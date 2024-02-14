@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
@@ -15,10 +15,9 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 		R_LOG_WARN ("Missing type for function argument to set (%s)", fcn_name);
 		return;
 	}
-	if (r_str_startswith (arg->orig_c_type, "const ")) {
-		arg->c_type = arg->orig_c_type + 6;
-	} else {
-		arg->c_type = arg->orig_c_type;
+	arg->c_type = arg->orig_c_type;
+	if (r_str_startswith (arg->c_type, "const ")) {
+		arg->c_type += 6;
 	}
 	r_strf_buffer (256);
 	const char *query = r_strf ("type.%s", arg->c_type);
@@ -28,30 +27,13 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num, -1);
 }
 
-R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
-	const char *str = func_name;
-	const char *name = func_name;
-	if (r_type_func_exist (anal->sdb_types, func_name)) {
-		return strdup (func_name);
-	}
-	while ((str = strchr (str, '.'))) {
-		name = str + 1;
-		str++;
-	}
-	if (r_type_func_exist (anal->sdb_types, name)) {
-		return strdup (name);
-	}
-	return r_type_func_guess (anal->sdb_types, (char*)func_name);
-}
-
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 	return (width == 8)? r_read_ble64 (buf, endian) : (ut64) r_read_ble32 (buf,endian);
 }
 
 static void print_arg_str(int argcnt, const char *name, bool color) {
 	if (color) {
-		r_cons_printf (Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ",
-				argcnt, name);
+		r_cons_printf (Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ", argcnt, name);
 	} else {
 		r_cons_printf (" arg [%d] -  %s : ", argcnt, name);
 	}
@@ -67,7 +49,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		free (buf);
 		return;
 	}
@@ -221,7 +203,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	char *key = resolve_fcn_name (core->anal, fcn_name);
+	char *key = r_type_func_name (core->anal->sdb_types, fcn_name);
 	if (!key) {
 		return NULL;
 	}

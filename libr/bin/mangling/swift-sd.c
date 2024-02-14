@@ -4,7 +4,8 @@
 #include <r_cons.h>
 #include <r_lib.h>
 
-#define USE_THIS_CODE 0
+// set this to true for debugging purposes
+#define USE_THIS_CODE 1
 
 static R_TH_LOCAL int have_swift_demangle = -1;
 #if R2__UNIX__
@@ -17,32 +18,45 @@ typedef struct {
 	const char *name;
 } SwiftType;
 
+/* basic types */
 static const SwiftType types[] = {
-	/* basic types */
-	{ "Sb", "Bool" },
-	{ "SS", "Swift.String" },
+	{ "Bi1", "Builtin.Int1" },
+	{ "Bb", "Builtin.BridgeObject" },
+	{ "BB", "Builtin.UnsafeValueBuffer" },
+	{ "Bo", "Builtin.NativeObject" },
+	{ "BO", "Builtin.UnknownObject" },
+	{ "Bp", "Builtin.RawPointer" },
+	{ "Bt", "Builtin.SILToken" },
+	{ "Bw", "Builtin.Word" },
 	{ "FS", "String" },
 	{ "GV", "mutableAddressor" },
+	{ "Sa", "Array" },
+	{ "Sb", "Bool" },
+	{ "SC", "Syntesized" },
+	{ "Sc", "UnicodeScalar" },
+	{ "Sd", "Swift.Double" },
+	{ "Sf", "Swift.Float" },
+	{ "Si", "Swift.Int" },
+	{ "Sp", "UnsafeMutablePointer" },
+	{ "SP", "UnsafePointer" },
+	{ "SQ", "ImplicitlyUnwrappedOptional" },
+	{ "Sq", "Optional" },
+	{ "SR", "UnsafeBufferPointer" },
+	{ "Sr", "UnsafeMutableBufferPointer" },
+	// { "So", "Swift.Optional" },
 	{ "Ss", "generic" },
+	{ "SS", "Swift.String" },
+	{ "Su", "UInt" },
+	{ "Sv", "UnsafeMutableRawPointer" },
+	{ "SV", "UnsafeRawPointer" },
 	{ "S_", "Generic" },
 	{ "TF", "GenericSpec" },
 	{ "Ts", "String" },
-	{ "Sa", "Array" },
-	{ "Si", "Swift.Int" },
-	{ "Sf", "Float" },
-	{ "Sb", "Bool" },
-	{ "Su", "UInt" },
-	{ "SQ", "ImplicitlyUnwrappedOptional" },
-	{ "Sc", "UnicodeScalar" },
-	{ "Sd", "Double" },
-	{ "Bi1", "Builtin.Int1" },
-	{ "Bp", "Builtin.RawPointer" },
-	{ "Bw", "Builtin.Word" },
 	{ NULL, NULL }
 };
 
+/* attributes */
 static const SwiftType metas [] = {
-	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
 	{ "RxC", ".." },
@@ -348,6 +362,14 @@ static char *my_swift_demangler(const char *s) {
 			return NULL;
 		}
 		p = resolve (flags, q, &attr);
+#if 0
+		if (attr && !strcmp (attr, "allocator")) {
+			char *o = r_strbuf_drain (out);
+			char *r = r_str_newf ("__C.%s", o);
+			free (o);
+			return r;
+		}
+#endif
 		if (!p && ((*q == 'U') || (*q == 'R'))) {
 			p = resolve (metas, q, &attr);
 			if (attr && *q == 'R') {
@@ -476,6 +498,7 @@ static char *my_swift_demangler(const char *s) {
 					break;
 				default:
 					p = resolve (types, q, &attr); // type
+					break;
 				}
 				if (p) {
 					q = getnum (p, &len);
@@ -599,11 +622,65 @@ static char *my_swift_demangler(const char *s) {
 	return NULL;
 }
 
-
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
-#if USE_THIS_CODE
-	syscmd = trylib = false; // debugging on macos
+	if (r_str_startswith (s, "_$")) {
+		s += 2;
+	}
+#if 0
+	if (strstr (s, "UITableViewHeaderFoote")) {
+		eprintf ("==> (%s)\n", s);
+	}
 #endif
+#if USE_THIS_CODE
+	syscmd = trylib = false; // useful for debugging the embedded demangler on macos
+#endif
+	const char *space = strchr (s, ' ');
+	if (space) {
+		if (isdigit (space[1])) {
+			char *ss = r_str_newf ("$s%s", space + 1);
+			char *res = r_bin_demangle_swift (ss, syscmd, trylib);
+			free (ss);
+			return res;
+		}
+		if (space) {
+			char *res = r_bin_demangle_swift (space + 1, syscmd, trylib);
+			if (res) {
+				if (strstr (s, "symbolic")) {
+					char *ss = r_str_newf ("symbolic %s", res);
+					free (res);
+					return ss;
+				}
+				return res;
+			}
+		}
+	}
+	if (!syscmd && !trylib) {
+		if (r_str_startswith (s, "$s")) {
+			s += 2;
+		}
+		if (r_str_startswith (s, "So") && r_str_endswith (s, "C")) {
+			int len = atoi (s + 2);
+			s += 2;
+			while (isdigit (*s)) {
+				s++;
+			}
+			char *ns = r_str_ndup (s, len);
+			char *fs = r_str_newf ("__C.%s", ns);
+			free (ns);
+			return fs;
+		}
+	}
+#if 0
+	if (syscmd || trylib) {
+		if (r_str_startswith (s, "So") && isdigit (s[2])) {
+			char *ss = r_str_newf ("$s%s", s);
+			char *res = r_bin_demangle_swift (ss, syscmd, trylib);
+			free (ss);
+			return res;
+		}
+	} else {
+#endif
+//	}
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
 	// check if string doesnt start with __ then return
@@ -619,6 +696,18 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
 		// modern swift symbols not yet supported in this parser (only via trylib)
 		if (!r_str_startswith (s, "$s")) {
+			switch (*s) {
+			case 'S':
+			case 'B':
+				{
+					const char *attr = NULL;
+					resolve (types, s, &attr); // type
+					if (attr) {
+						return strdup (attr);
+					}
+				}
+				break;
+			}
 			return NULL;
 		}
 	} else {

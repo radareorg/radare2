@@ -67,18 +67,14 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 }
 
 R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
-	r_return_if_fail (ht && sym && sym->name);
-	const char *name = sym->name;
-	// if (!strncmp (sym->name, "imp.", 4)) {
-	// demangle symbol name depending on the language specs if any
+	R_RETURN_IF_FAIL (ht && sym && sym->name);
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+#if 1
 	if (bf && bf->bo && bf->bo->lang) {
 		const char *lang = r_bin_lang_tostring (bf->bo->lang);
-		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr, false);
-		if (dn && *dn) {
-			sym->dname = dn;
-			// XXX this is wrong but is required for this test to pass
-			// pmb:new pancake$ bin/r2r.js db/formats/mangling/swift
-			sym->name = dn;
+		char *dn = r_bin_demangle (bf, lang, name, sym->vaddr, false);
+		if (R_STR_ISNOTEMPTY (dn)) {
+			r_bin_name_demangled (sym->name, dn);
 			// extract class information from demangled symbol name
 			char *p = strchr (dn, '.');
 			if (p) {
@@ -94,7 +90,9 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 				}
 			}
 		}
+		free (dn);
 	}
+#endif
 
 	r_strf_var (uname, 256, "%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
@@ -118,18 +116,14 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 	HtPP *ht = ht_pp_new0 ();
-	if (!ht) {
-		return;
-	}
-
-	RListIter *iter;
-	RBinSymbol *sym;
-	r_list_foreach (list, iter, sym) {
-		if (sym && R_STR_ISNOTEMPTY (sym->name)) {
+	if (R_LIKELY (ht)) {
+		RListIter *iter;
+		RBinSymbol *sym;
+		r_list_foreach (list, iter, sym) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}
+		ht_pp_free (ht);
 	}
-	ht_pp_free (ht);
 }
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
@@ -137,6 +131,9 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	HtSU *db = ht_su_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
+		if (!sec->name) {
+			continue;
+		}
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);
@@ -148,15 +145,15 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 
 static bool false_positive(const char *str) {
 	int i;
-//	ut8 bo[0x100];
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
-	// int di = 0;
 	int ln = 0;
-	// int sp = 0;
 	int nm = 0;
 #if 0
+	// int di = 0;
+	// int sp = 0;
+//	ut8 bo[0x100];
 	for (i = 0; i < 0x100; i++) {
 		bo[i] = 0;
 	}
@@ -204,6 +201,7 @@ static bool false_positive(const char *str) {
 }
 
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	bool purge = false;
 	if (bin->strpurge) {
 		char *addrs = strdup (bin->strpurge);
@@ -377,6 +375,7 @@ loop_end:
 }
 
 R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
 		return false;
 	}

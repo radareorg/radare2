@@ -191,7 +191,7 @@ static RDebugReasonType r_debug_qnx_wait(RDebug *dbg, int pid) {
 	return 0;
 }
 
-static int r_debug_qnx_stop(RDebug *dbg) {
+static bool r_debug_qnx_stop(RDebug *dbg) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd) {
 		return false;

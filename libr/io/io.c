@@ -341,7 +341,8 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 }
 
 R_API bool r_io_read(RIO* io, ut8* buf, int len) {
-	if (io && r_io_read_at (io, io->off, buf, len)) {
+	r_return_val_if_fail (io, false);
+	if (r_io_read_at (io, io->off, buf, len)) {
 		io->off += len;
 		return true;
 	}
@@ -349,7 +350,8 @@ R_API bool r_io_read(RIO* io, ut8* buf, int len) {
 }
 
 R_API bool r_io_write(RIO* io, ut8* buf, int len) {
-	if (io && buf && len > 0 && r_io_write_at (io, io->off, buf, len)) {
+	r_return_val_if_fail (io, false);
+	if (buf && len > 0 && r_io_write_at (io, io->off, buf, len)) {
 		io->off += len;
 		return true;
 	}
@@ -362,53 +364,37 @@ R_API ut64 r_io_size(RIO* io) {
 }
 
 R_API bool r_io_is_listener(RIO* io) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->listener) {
+	r_return_val_if_fail (io, false);
+	if (io->desc && io->desc->plugin && io->desc->plugin->listener) {
 		return io->desc->plugin->listener (io->desc);
 	}
 	return false;
 }
 
 R_API char *r_io_system(RIO* io, const char* cmd) {
-	if (io && io->desc) {
-		return r_io_desc_system (io->desc, cmd);
-	}
-	return NULL;
+	r_return_val_if_fail (io && cmd, NULL);
+	return io->desc? r_io_desc_system (io->desc, cmd): NULL;
 }
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {
-	if (io) {
-		RList *maps = r_io_map_get_by_fd (io, io->desc->fd);
-		RIOMap *current_map;
-		RListIter *iter;
-		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
-		const bool ret = r_io_desc_resize (io->desc, newsize);
-		r_list_foreach (maps, iter, current_map) {
-			// we just resize map of the same size of its fd
-			if (r_io_map_size (current_map) == fd_size) {
-				r_io_map_resize (io, current_map->id, newsize);
-			}
-		}
-		r_list_free (maps);
-		return ret;
-	}
-	return false;
+	r_return_val_if_fail (io, false);
+	return r_io_desc_resize (io->desc, newsize);
 }
 
 R_API bool r_io_close(RIO *io) {
-	return io ? r_io_desc_close (io->desc) : false;
+	r_return_val_if_fail (io, false);
+	return r_io_desc_close (io->desc);
 }
 
-R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
-	ut64 cur_size, tmp_size;
-	ut8* buffer;
-	if (!io || !io->desc || !io->desc->plugin || !size) {
+R_API bool r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
+	r_return_val_if_fail (io, false);
+	if (!io->desc || !io->desc->plugin || !size) {
 		return false;
 	}
 	if (io->desc->plugin->extend) {
-		int ret;
 		ut64 cur_off = io->off;
 		r_io_seek (io, addr, R_IO_SEEK_SET);
-		ret = r_io_desc_extend (io->desc, size);
+		int ret = r_io_desc_extend (io->desc, size);
 		//no need to seek here
 		io->off = cur_off;
 		return ret;
@@ -416,7 +402,7 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 	if ((io->desc->perm & R_PERM_RW) != R_PERM_RW) {
 		return false;
 	}
-	cur_size = r_io_desc_size (io->desc);
+	ut64 cur_size = r_io_desc_size (io->desc);
 	if (addr > cur_size) {
 		return false;
 	}
@@ -426,10 +412,12 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 	if (!r_io_resize (io, cur_size + size)) {
 		return false;
 	}
-	if ((tmp_size = cur_size - addr) == 0LL) {
+	ut64 tmp_size = cur_size - addr;
+	if (tmp_size == 0LL) {
 		return true;
 	}
-	if (!(buffer = calloc (1, (size_t) tmp_size + 1))) {
+	ut8 *buffer = calloc (1, (size_t) tmp_size + 1);
+	if (!buffer) {
 		return false;
 	}
 	r_io_pread_at (io, addr, buffer, (int) tmp_size);
@@ -445,7 +433,8 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 }
 
 R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
-	if (!io || len < 1) {
+	r_return_val_if_fail (io, false);
+	if (len < 1) {
 		return false;
 	}
 	free (io->write_mask);
@@ -461,6 +450,7 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 }
 
 R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
+	r_return_val_if_fail (io, 0);
 	RIOMap *map = r_io_map_get_paddr (io, pa);
 	if (map) {
 		return pa - map->delta + r_io_map_begin (map);
@@ -469,10 +459,10 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 }
 
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
+	r_return_val_if_fail (io, 0);
 	RIOMap *map = r_io_map_get_at (io, va);
 	if (map) {
-		st64 delta = va - r_io_map_begin (map);
-		return r_io_map_begin (map) + map->delta + delta;
+		return va - r_io_map_begin (map) + map->delta;
 	}
 	return UT64_MAX;
 }
@@ -522,7 +512,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 
 /* moves bytes up (+) or down (-) within the specified range */
 R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
-	ut8* buf;
+	r_return_val_if_fail (io && start < end, false);
 	ut64 chunksize = 0x10000;
 	ut64 saved_off = io->off;
 	ut64 src, shiftsize = r_num_abs (move);
@@ -530,7 +520,8 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 		return false;
 	}
 	ut64 rest = (end - start) - shiftsize;
-	if (!(buf = calloc (1, chunksize + 1))) {
+	ut8 *buf = calloc (1, chunksize + 1);
+	if (!buf) {
 		return false;
 	}
 	if (move > 0) {
@@ -558,9 +549,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 }
 
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
-	if (!io) {
-		return 0LL;
-	}
+	r_return_val_if_fail (io, 0);
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		io->off = offset;
@@ -576,12 +565,13 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	return io->off;
 }
 
-static bool drain_cb (void *user, void *data, ut32 id) {
+static bool drain_cb(void *user, void *data, ut32 id) {
 	r_io_map_drain_overlay ((RIOMap *)data);
 	return true;
 }
 
 R_API void r_io_drain_overlay(RIO *io) {
+	r_return_if_fail (io);
 	r_id_storage_foreach (io->maps, drain_cb, NULL);
 }
 

@@ -6,45 +6,43 @@ e anal.in=range
 e anal.from=0x8000
 e anal.to=0x8000+4K
 aac
-afna
 aar
 aan
 aav
-# aa;afna;aac;aar;aan;aav
 pd 17 @0x8058
 EOF
 EXPECT=<<EOF
 |       `=< 0x00008058      03e4           b 0x7862
             0x0000805a      0000           movs r0, r0
-            ; DATA XREF from sub.free_73a0 @ 0x7d30(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7d30(r)
             0x0000805c      .dword 0x000693da
-            ; DATA XREF from sub.free_73a0 @ 0x7d3e(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7d3e(r)
             0x00008060      .dword 0x0006c1f4
-            ; DATA XREF from sub.free_73a0 @ 0x7d48(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7d48(r)
             0x00008064      .dword 0x0006c1a6
-            ; DATA XREF from sub.free_73a0 @ 0x7e30(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7e30(r)
             0x00008068      .dword 0x0006c102
-            ; DATA XREF from sub.free_73a0 @ 0x7e3a(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7e3a(r)
             0x0000806c      .dword 0x0006c0b4
-            ; DATA XREF from sub.free_73a0 @ 0x7e58(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7e58(r)
             0x00008070      .dword 0x0006c0da
-            ; DATA XREF from sub.free_73a0 @ 0x7e62(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7e62(r)
             0x00008074      .dword 0x0006c08c
-            ; DATA XREF from sub.strcpy_7890 @ 0x7e80(r)
+            ; DATA XREF from sub._shell_input_line_property_7890 @ 0x7e80(r)
             0x00008078      .dword 0x0006c0b2
-            ; DATA XREF from sub.strcpy_7890 @ 0x7e8a(r)
+            ; DATA XREF from sub._shell_input_line_property_7890 @ 0x7e8a(r)
             0x0000807c      .dword 0x0006c064
-            ; DATA XREF from sub.strcpy_7890 @ 0x7ed8(r)
+            ; DATA XREF from sub._shell_input_line_property_7890 @ 0x7ed8(r)
             0x00008080      .dword 0x00069232
-            ; DATA XREF from sub.strcpy_7890 @ 0x7ee8(r)
+            ; DATA XREF from sub._shell_input_line_property_7890 @ 0x7ee8(r)
             0x00008084      .dword 0x0006c04a
-            ; DATA XREF from sub.strcpy_7890 @ 0x7ef2(r)
+            ; DATA XREF from sub._shell_input_line_property_7890 @ 0x7ef2(r)
             0x00008088      .dword 0x0006bffc
-            ; DATA XREF from sub.free_73a0 @ 0x7f64(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7f64(r)
             0x0000808c      .dword 0x0006bfce
-            ; DATA XREF from sub.free_73a0 @ 0x7f72(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7f72(r)
             0x00008090      .dword 0x0006bf7c
-            ; DATA XREF from sub.free_73a0 @ 0x7fcc(r)
+            ; DATA XREF from sub._shell_getc_73a0 @ 0x7fcc(r)
             0x00008094      .dword 0x0006bf66
 EOF
 RUN
@@ -169,5 +167,295 @@ EXPECT=<<EOF
 0x100000f73 -> 0x100000fe9  CODE:--x
 0x100000f89 -> 0x100000fbd  CODE:--x
 0x100000fed -> 0x100000fff  CODE:--x
+EOF
+RUN
+
+NAME=autonaming
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aa
+.afna@@@F
+afl
+EOF
+EXPECT=<<EOF
+0x100007440    1     16 sub.__TEXT.__auth_stubs_100007440
+0x100007450    1     16 sym.imp.__error
+0x100007460    1     16 sym.imp.__maskrune
+0x100007470    1     16 sym.imp.__stack_chk_fail
+0x100007480    1     16 sym.imp.__tolower
+0x100007490    1     16 sym.imp.abort
+0x1000074a0    1     16 sym.imp.acl_free
+0x1000074b0    1     16 sym.imp.acl_get_entry
+0x1000074c0    1     16 sym.imp.acl_get_flag_np
+0x1000074d0    1     16 sym.imp.acl_get_flagset_np
+0x1000074e0    1     16 sym.imp.acl_get_link_np
+0x1000074f0    1     16 sym.imp.acl_get_perm_np
+0x100007500    1     16 sym.imp.acl_get_permset
+0x100007510    1     16 sym.imp.acl_get_qualifier
+0x100007520    1     16 sym.imp.acl_get_tag_type
+0x100007530    1     16 sym.imp.bzero
+0x100007540    1     16 sym.imp.calloc
+0x100007550    1     16 sym.imp.compat_mode
+0x100007560    1     16 sym.imp.err
+0x100007570    1     16 sym.imp.errx
+0x100007580    1     16 sym.imp.exit
+0x100007590    1     16 sym.imp.fflagstostr
+0x1000075a0    1     16 sym.imp.fprintf
+0x1000075b0    1     16 sym.imp.fputc
+0x1000075c0    1     16 sym.imp.fputs
+0x1000075d0    1     16 sym.imp.free
+0x1000075e0    1     16 sym.imp.fts_children
+0x1000075f0    1     16 sym.imp.fts_close
+0x100007600    1     16 sym.imp.fts_open
+0x100007610    1     16 sym.imp.fts_read
+0x100007620    1     16 sym.imp.fts_set
+0x100007630    1     16 sym.imp.getbsize
+0x100007640    1     16 sym.imp.getenv
+0x100007650    1     16 main_args
+0x100007660    1     16 sym.imp.getpid
+0x100007670    1     16 sym.imp.getuid
+0x100007680    1     16 sym.imp.getxattr
+0x100007690    1     16 sym.imp.group_from_gid
+0x1000076a0    1     16 sym.imp.humanize_number
+0x1000076b0    1     16 sym.imp.ioctl
+0x1000076c0    1     16 sym.imp.isatty
+0x1000076d0    1     16 sym.imp.kill
+0x1000076e0    1     16 sym.imp.listxattr
+0x1000076f0    1     16 sym.imp.localtime
+0x100007700    1     16 sym.imp.malloc
+0x100007710    1     16 sym.imp.mbr_identifier_translate
+0x100007720    1     16 sym.imp.mbrtowc
+0x100007730    1     16 sym.imp.memchr
+0x100007740    1     16 sym.imp.nl_langinfo
+0x100007750    1     16 sym.imp.printf
+0x100007760    1     16 sym.imp.putchar
+0x100007770    1     16 sym.imp.puts
+0x100007780    1     16 sym.imp.readlink
+0x100007790    1     16 sym.imp.realloc
+0x1000077a0    1     16 sym.imp.reallocf
+0x1000077b0    1     16 sym.imp.setenv
+0x1000077c0    1     16 sym.imp.setlocale
+0x1000077d0    1     16 sym.imp.signal
+0x1000077e0    1     16 sym.imp.snprintf
+0x1000077f0    1     16 sym.imp.strcmp
+0x100007800    1     16 sym.imp.strcoll
+0x100007810    1     16 sym.imp.strcpy
+0x100007820    1     16 sym.imp.strdup
+0x100007830    1     16 sym.imp.strerror
+0x100007840    1     16 sym.imp.strftime
+0x100007850    1     16 sym.imp.strlen
+0x100007860    1     16 sym.imp.strmode
+0x100007870    1     16 sym.imp.strstr
+0x100007880    1     16 sym.imp.strtonum
+0x100007890    1     16 sym.imp.strtoul
+0x1000078a0    1     16 sym.imp.sysctlbyname
+0x1000078b0    1     16 sym.imp.tgetent
+0x1000078c0    1     16 sym.imp.tgetstr
+0x1000078d0    1     16 sym.imp.tgoto
+0x1000078e0    1     16 sym.imp.time
+0x1000078f0    1     16 sym.imp.tputs
+0x100007900    1     16 sym.imp.user_from_uid
+0x100007910    1     16 sym.imp.uuid_unparse_upper
+0x100007920    1     16 sym.imp.warn
+0x100007930    1     16 sym.imp.warnx
+0x100007940    1     16 sym.imp.wcwidth
+0x100007950    1     16 sym.imp.write
+0x100003a90  140   2656 sub.main_100003a90
+0x100003830    1     12 sub.strcoll_100003830
+0x10000383c    1     16 sub.strcoll_10000383c
+0x10000384c    7    100 sub.strcoll_10000384c
+0x1000038b0    1     16 sub.strcoll_10000384c_1000038b0
+0x1000038c0    7    100 sub.strcoll_1000038c0
+0x100003924    1     16 sub.strcoll_1000038c0_100003924
+0x100003934    7    100 sub.strcoll_100003934
+0x100003998    1     16 sub.strcoll_100003934_100003998
+0x1000039a8    7    100 sub.strcoll_1000039a8
+0x100003a0c    1     16 sub.strcoll_1000039a8_100003a0c
+0x100003a1c    5     56 sub.strcoll_100003a1c
+0x100003a54    5     60 sub.strcoll_100003a54
+0x1000047a8   45    692 sub.fts_open_1000047a8
+0x100004ab4   13    128 sub.sub.strcoll_100003830_100004ab4
+0x100004b34  124   2220 sub.LS_COLWIDTHS_100004b34
+0x1000053e0    3     20 sub.err_1000053e0
+0x1000053f4    1     16 sym.func.1000053f4
+0x100005404   12    212 sub.total__qu_n_100005404
+0x1000054d8   13    292 sub._ju_1000054d8
+0x1000055fc    5     60 sym.func.1000055fc
+0x100005638   82   1840 sub.total__qu_n_100005638
+0x100005d68    6    156 sub.humanize_number_100005d68
+0x100005e04   34    740 sub.nl_langinfo_100005e04
+0x1000060e8   12    172 sym.func.1000060e8
+0x1000061dc    7    180 sub.printf_1000061dc
+0x100006290   15    164 sub.putchar_100006290
+0x10000636c   13    232 sub.strlen_10000636c
+0x100006454   39    828 sub.realloc_100006454
+0x100006790   19    408 sub.strlen_100006790
+0x100006928    3     72 sub.sub.printf_1000061dc_100006928
+0x100006970    5     44 sub.nl_langinfo_100006970
+0x10000699c    1     52 sub.write_10000699c
+0x1000069d0    1     28 sub.putchar_1000069d0
+0x1000069ec   21    456 sub.printf_1000069ec
+0x100006bb4   17    332 sub.mbrtowc_100006bb4
+0x100006d00   17    348 sub.mbrtowc_100006d00
+0x100006e5c   16    308 sub.mbrtowc_100006e5c
+0x100006f90   39    600 sub.mbrtowc_100006f90
+0x1000071e8    1     44 sub.usage:_ls____ABCFGHILOPRSTUWabcdefghiklmnopqrstuvwxy1________colorwhen____D_format___file_...__n_1000071e8
+0x100007214    1     24 sub.fts_open_100007214
+0x10000722c    1     24 sub.fts_read_10000722c
+0x100007244    3     64 sub._s:_directory_causes_a_cycle_100007244
+0x100007284    1     68 sub.strerror_100007284
+0x1000072c8    1     80 sub.strerror_1000072c8
+0x100007318    1     24 sub.user_from_uid_100007318
+0x100007330    1     24 sub.group_from_gid_100007330
+0x100007348    1     24 sub.malloc_100007348
+0x100007360    1     24 sub.fflagstostr_100007360
+0x100007378    1     84 sub.strerror_100007378
+0x1000073cc    1     44 sub.printscol_1000073cc
+EOF
+RUN
+
+NAME=autonaming
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aa
+aan
+afl
+EOF
+EXPECT=<<EOF
+0x100007440    1     16 sym.imp.__assert_rtn
+0x100007450    1     16 sym.imp.__error
+0x100007460    1     16 sym.imp.__maskrune
+0x100007470    1     16 sym.imp.__stack_chk_fail
+0x100007480    1     16 sym.imp.__tolower
+0x100007490    1     16 sym.imp.abort
+0x1000074a0    1     16 sym.imp.acl_free
+0x1000074b0    1     16 sym.imp.acl_get_entry
+0x1000074c0    1     16 sym.imp.acl_get_flag_np
+0x1000074d0    1     16 sym.imp.acl_get_flagset_np
+0x1000074e0    1     16 sym.imp.acl_get_link_np
+0x1000074f0    1     16 sym.imp.acl_get_perm_np
+0x100007500    1     16 sym.imp.acl_get_permset
+0x100007510    1     16 sym.imp.acl_get_qualifier
+0x100007520    1     16 sym.imp.acl_get_tag_type
+0x100007530    1     16 sym.imp.bzero
+0x100007540    1     16 sym.imp.calloc
+0x100007550    1     16 sym.imp.compat_mode
+0x100007560    1     16 sym.imp.err
+0x100007570    1     16 sym.imp.errx
+0x100007580    1     16 sym.imp.exit
+0x100007590    1     16 sym.imp.fflagstostr
+0x1000075a0    1     16 sym.imp.fprintf
+0x1000075b0    1     16 sym.imp.fputc
+0x1000075c0    1     16 sym.imp.fputs
+0x1000075d0    1     16 sym.imp.free
+0x1000075e0    1     16 sym.imp.fts_children
+0x1000075f0    1     16 sym.imp.fts_close
+0x100007600    1     16 sym.imp.fts_open
+0x100007610    1     16 sym.imp.fts_read
+0x100007620    1     16 sym.imp.fts_set
+0x100007630    1     16 sym.imp.getbsize
+0x100007640    1     16 sym.imp.getenv
+0x100007650    1     16 sym.imp.getopt_long
+0x100007660    1     16 sym.imp.getpid
+0x100007670    1     16 sym.imp.getuid
+0x100007680    1     16 sym.imp.getxattr
+0x100007690    1     16 sym.imp.group_from_gid
+0x1000076a0    1     16 sym.imp.humanize_number
+0x1000076b0    1     16 sym.imp.ioctl
+0x1000076c0    1     16 sym.imp.isatty
+0x1000076d0    1     16 sym.imp.kill
+0x1000076e0    1     16 sym.imp.listxattr
+0x1000076f0    1     16 sym.imp.localtime
+0x100007700    1     16 sym.imp.malloc
+0x100007710    1     16 sym.imp.mbr_identifier_translate
+0x100007720    1     16 sym.imp.mbrtowc
+0x100007730    1     16 sym.imp.memchr
+0x100007740    1     16 sym.imp.nl_langinfo
+0x100007750    1     16 sym.imp.printf
+0x100007760    1     16 sym.imp.putchar
+0x100007770    1     16 sym.imp.puts
+0x100007780    1     16 sym.imp.readlink
+0x100007790    1     16 sym.imp.realloc
+0x1000077a0    1     16 sym.imp.reallocf
+0x1000077b0    1     16 sym.imp.setenv
+0x1000077c0    1     16 sym.imp.setlocale
+0x1000077d0    1     16 sym.imp.signal
+0x1000077e0    1     16 sym.imp.snprintf
+0x1000077f0    1     16 sym.imp.strcmp
+0x100007800    1     16 sym.imp.strcoll
+0x100007810    1     16 sym.imp.strcpy
+0x100007820    1     16 sym.imp.strdup
+0x100007830    1     16 sym.imp.strerror
+0x100007840    1     16 sym.imp.strftime
+0x100007850    1     16 sym.imp.strlen
+0x100007860    1     16 sym.imp.strmode
+0x100007870    1     16 sym.imp.strstr
+0x100007880    1     16 sym.imp.strtonum
+0x100007890    1     16 sym.imp.strtoul
+0x1000078a0    1     16 sym.imp.sysctlbyname
+0x1000078b0    1     16 sym.imp.tgetent
+0x1000078c0    1     16 sym.imp.tgetstr
+0x1000078d0    1     16 sym.imp.tgoto
+0x1000078e0    1     16 sym.imp.time
+0x1000078f0    1     16 sym.imp.tputs
+0x100007900    1     16 sym.imp.user_from_uid
+0x100007910    1     16 sym.imp.uuid_unparse_upper
+0x100007920    1     16 sym.imp.warn
+0x100007930    1     16 sym.imp.warnx
+0x100007940    1     16 sym.imp.wcwidth
+0x100007950    1     16 sym.imp.write
+0x100003a90  140   2656 main
+0x100003830    1     12 sub.strcoll_100003830
+0x10000383c    1     16 sub.strcoll_10000383c
+0x10000384c    7    100 sub.strcoll_10000384c
+0x1000038b0    1     16 sub.strcoll_10000384c_1000038b0
+0x1000038c0    7    100 sub.strcoll_1000038c0
+0x100003924    1     16 sub.strcoll_1000038c0_100003924
+0x100003934    7    100 sub.strcoll_100003934
+0x100003998    1     16 sub.strcoll_100003934_100003998
+0x1000039a8    7    100 sub.strcoll_1000039a8
+0x100003a0c    1     16 sub.strcoll_1000039a8_100003a0c
+0x100003a1c    5     56 sub.strcoll_100003a1c
+0x100003a54    5     60 sub.strcoll_100003a54
+0x1000047a8   45    692 sub.fts_open_1000047a8
+0x100004ab4   13    128 sub.sub.strcoll_100003830_100004ab4
+0x100004b34  124   2220 sub.LS_COLWIDTHS_100004b34
+0x1000053e0    3     20 sub.err_1000053e0
+0x1000053f4    1     16 sym.func.1000053f4
+0x100005404   12    212 sub.total__qu_n_100005404
+0x1000054d8   13    292 sub._ju_1000054d8
+0x1000055fc    5     60 sym.func.1000055fc
+0x100005638   82   1840 sub.total__qu_n_100005638
+0x100005d68    6    156 sub.humanize_number_100005d68
+0x100005e04   34    740 sub.nl_langinfo_100005e04
+0x1000060e8   12    172 sym.func.1000060e8
+0x1000061dc    7    180 sub.printf_1000061dc
+0x100006290   15    164 sub.putchar_100006290
+0x10000636c   13    232 sub.strlen_10000636c
+0x100006454   39    828 sub.realloc_100006454
+0x100006790   19    408 sub.strlen_100006790
+0x100006928    3     72 sub.sub.printf_1000061dc_100006928
+0x100006970    5     44 sub.nl_langinfo_100006970
+0x10000699c    1     52 sub.write_10000699c
+0x1000069d0    1     28 sub.putchar_1000069d0
+0x1000069ec   21    456 sub.printf_1000069ec
+0x100006bb4   17    332 sub.mbrtowc_100006bb4
+0x100006d00   17    348 sub.mbrtowc_100006d00
+0x100006e5c   16    308 sub.mbrtowc_100006e5c
+0x100006f90   39    600 sub.mbrtowc_100006f90
+0x1000071e8    1     44 sub.usage:_ls____ABCFGHILOPRSTUWabcdefghiklmnopqrstuvwxy1________colorwhen____D_format___file_...__n_1000071e8
+0x100007214    1     24 sub.fts_open_100007214
+0x10000722c    1     24 sub.fts_read_10000722c
+0x100007244    3     64 sub._s:_directory_causes_a_cycle_100007244
+0x100007284    1     68 sub.strerror_100007284
+0x1000072c8    1     80 sub.strerror_1000072c8
+0x100007318    1     24 sub.user_from_uid_100007318
+0x100007330    1     24 sub.group_from_gid_100007330
+0x100007348    1     24 sub.malloc_100007348
+0x100007360    1     24 sub.fflagstostr_100007360
+0x100007378    1     84 sub.strerror_100007378
+0x1000073cc    1     44 sub.printscol_1000073cc
 EOF
 RUN

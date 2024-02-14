@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -90,6 +90,13 @@ static RCoreHelpMessage help_msg_at_at = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_single_quote = {
+	"'", "# run a command without evaluating any special character", "",
+	"'", "?e hello @ world", "print the given string, including the @ sign and the rest (r2.call)",
+	"'", "0x123'?v $$", "run the '?v $$' command in the 0x123 offset (same as r2.callAt)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
@@ -134,6 +141,8 @@ static ut32 vernum(const char *s) {
 static RCoreHelpMessage help_msg_percent = {
 	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
 	"%", "", "list all environment variables",
+	"%", "*", "show env vars as r2 commands",
+	"%", "j", "show env vars in JSON format",
 	"%", "SHELL", "prints SHELL value",
 	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
 	NULL
@@ -266,10 +275,10 @@ static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",
+	"?'", "", "show help for the single quote (do not evaluate special characters in command)",
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
-	"?:", "", "list core cmd plugins",
 	"?=", " eip-0x804800", "update $? return code with result of operation",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
 	"??", " [cmd]", "run cmd if $? != 0",
@@ -638,7 +647,7 @@ static int cmd_help(void *data, const char *input) {
 	switch (input[0]) {
 	case ':':
 		// show help for ':' command
-		r_core_cmd_help_match (core, help_msg_at, ":", true);
+		r_core_cmd_help_match (core, help_msg_at, ":");
 		break;
 	case 't': { // "?t"
 		switch (input[1]) {
@@ -706,8 +715,11 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0x%"PFMT64x"\n", n);
 		}
 		break;
+	case '\'': // "?'"
+		r_core_cmd_help (core, help_msg_single_quote);
+		break;
 	case 'a': // "?a"
-		r_cons_printf ("%s", ret_ascii_table());
+		r_cons_printf ("%s", ret_ascii_table ());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
@@ -726,7 +738,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				r_core_cmd_help_match (core, help_msg_question, "?btw", true);
+				r_core_cmd_help_match (core, help_msg_question, "?btw");
 			}
 		} else {
 			n = r_num_math (core->num, input + 1);
@@ -749,7 +761,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			r_core_cmd_help_match (core, help_msg_question, "?h", false);
+			r_core_cmd_help_contains (core, help_msg_question, "?h");
 		}
 		break;
 	case 'F': // "?F"
@@ -769,11 +781,11 @@ static int cmd_help(void *data, const char *input) {
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (out);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?f", true);
+				r_core_cmd_help_match (core, help_msg_question, "?f");
 			}
 			free (p);
 		} else {
-			r_core_cmd_help_match (core, help_msg_question, "?f", true);
+			r_core_cmd_help_match (core, help_msg_question, "?f");
 		}
 		break;
 	case 'o': // "?o"
@@ -923,7 +935,7 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_question, "?q", true);
+			r_core_cmd_help_match (core, help_msg_question, "?q");
 		} else {
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -955,7 +967,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_question, "?v", false);
+			r_core_cmd_help_contains (core, help_msg_question, "?v");
 			break;
 		case '\0':
 			r_cons_printf ("%d\n", (st32)n);
@@ -1006,7 +1018,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				free (s);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?==", true);
+				r_core_cmd_help_match (core, help_msg_question, "?==");
 			}
 		} else {
 			if (input[1]) { // ?=
@@ -1479,17 +1491,18 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_set_raw (0);
 		break;
-	case 'w': { // "?w"
-		ut64 addr = r_num_math (core->num, input + 1);
-		char *rstr = core->print->hasrefs (core->print->user, addr, true);
-		if (!rstr) {
-			R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
-			break;
+	case 'w': // "?w"
+		{
+			  ut64 addr = r_num_math (core->num, input + 1);
+			  char *rstr = core->print->hasrefs (core->print->user, addr, true);
+			  if (!rstr) {
+				  R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
+				  break;
+			  }
+			  r_cons_println (rstr);
+			  free (rstr);
 		}
-		r_cons_println (rstr);
-		free (rstr);
 		break;
-	}
 	case '?': // "??"
 		if (input[1] == '?') {
 			if (input[2] == '?') { // "???"

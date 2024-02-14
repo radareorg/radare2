@@ -67,6 +67,21 @@ static inline csh cs_handle_for_session (RArchSession *as) {
 	return pd->cs_handle;
 }
 
+static char *filter_intel_syntax (char *mnemonic) {
+	// we don't really output operands in intel order but we can clean up
+	// XXX: this is not finished
+	mnemonic = r_str_replace (mnemonic, "$", "0x", true);
+	mnemonic = r_str_replace (mnemonic, "lda ", "lda [", true);
+	mnemonic = r_str_replace (mnemonic, "ldx ", "ldx [", true);
+	mnemonic = r_str_replace (mnemonic, "and ", "and [", true);
+	mnemonic = r_str_replace (mnemonic, "ora ", "ora [", true);
+	mnemonic = r_str_replace (mnemonic, " [#", " ", true);
+	if (strstr (mnemonic, "[")) {
+		mnemonic = r_str_append (mnemonic, "]");
+	}
+	return mnemonic;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -93,9 +108,39 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		opsize = -1;
 		goto beach;
 	}
+	op->nopcode = 1;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
+	op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 	op->type = R_ANAL_OP_TYPE_UNK;
+	if (insn->detail->groups_count > 0) {
+		// do we really need this anyway?
+		switch (insn->detail->groups[0]) {
+		case M680X_GRP_JUMP:
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case M680X_GRP_CALL:
+			op->type = R_ANAL_OP_TYPE_CALL;
+			break;
+		case M680X_GRP_RET:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case M680X_GRP_INT:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
+		case M680X_GRP_IRET:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case M680X_GRP_BRAREL: // all relative branching instructions
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			break;
+		case M680X_GRP_PRIV: // not used
+		default:
+			break;
+		}
+	}
+	op->prefix = 0;
+	op->cond = 0;
 	switch (insn->id) {
 	case M680X_INS_INVLD:
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -122,31 +167,47 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_AIM:
 	case M680X_INS_AIS:
 	case M680X_INS_AIX:
+		break;
 	case M680X_INS_AND:
 	case M680X_INS_ANDA:
 	case M680X_INS_ANDB:
 	case M680X_INS_ANDCC:
 	case M680X_INS_ANDD:
 	case M680X_INS_ANDR:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
 	case M680X_INS_ASL:
 	case M680X_INS_ASLA:
 	case M680X_INS_ASLB:
 	case M680X_INS_ASLD: ///< or LSLD
+		op->type = R_ANAL_OP_TYPE_SAL;
+		break;
 	case M680X_INS_ASR:
 	case M680X_INS_ASRA:
 	case M680X_INS_ASRB:
 	case M680X_INS_ASRD:
 	case M680X_INS_ASRX:
+		op->type = R_ANAL_OP_TYPE_SAR;
+		break;
 	case M680X_INS_BAND:
+		break;
 	case M680X_INS_BCC: ///< or BHS
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BCLR:
+		break;
 	case M680X_INS_BCS: ///< or BLO
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BEOR:
 		break;
 	case M680X_INS_BIAND:
 	case M680X_INS_BIEOR:
+		break;
 	case M680X_INS_BIH:
 	case M680X_INS_BIL:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BIOR:
 	case M680X_INS_BIT:
 	case M680X_INS_BITA:
@@ -177,9 +238,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_BPL:
 	case M680X_INS_BRCLR:
 	case M680X_INS_BRSET:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = addr + op->size;
+		break;
 	case M680X_INS_BRN:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	case M680X_INS_BSET:
+		break;
 	case M680X_INS_BSR:
+		op->type = R_ANAL_OP_TYPE_RCALL;
+		break;
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -187,6 +257,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->fail = addr + op->size;
 		break;
 	case M680X_INS_CALL:
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
 	case M680X_INS_CBA: ///< M6800/1/2/3
 	case M680X_INS_CBEQ:
 	case M680X_INS_CBEQA:
@@ -302,7 +374,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case M680X_INS_JSR:
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case M680X_INS_LBCC: ///< or LBHS
 	case M680X_INS_LBCS: ///< or LBLO
@@ -341,17 +413,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_LEAU:
 	case M680X_INS_LEAX:
 	case M680X_INS_LEAY:
+		break;
 	case M680X_INS_LSL:
 	case M680X_INS_LSLA:
 	case M680X_INS_LSLB:
 	case M680X_INS_LSLD:
 	case M680X_INS_LSLX:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
 	case M680X_INS_LSR:
 	case M680X_INS_LSRA:
 	case M680X_INS_LSRB:
 	case M680X_INS_LSRD: ///< or ASRD
 	case M680X_INS_LSRW:
 	case M680X_INS_LSRX:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		break;
 	case M680X_INS_MAXA:
 	case M680X_INS_MAXM:
 	case M680X_INS_MEM:
@@ -424,8 +501,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_RORX:
 	case M680X_INS_RSP:
 	case M680X_INS_RTC:
+		break;
 	case M680X_INS_RTI:
 	case M680X_INS_RTS:
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
 	case M680X_INS_SBA: ///< M6800/1/2/3
 	case M680X_INS_SBC:
 	case M680X_INS_SBCA:
@@ -454,6 +534,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_STW:
 	case M680X_INS_STX:
 	case M680X_INS_STY:
+		break;
 	case M680X_INS_SUB:
 	case M680X_INS_SUBA:
 	case M680X_INS_SUBB:
@@ -472,7 +553,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_SYNC:
 	case M680X_INS_TAB: ///< M6800/1/2/3
 	case M680X_INS_TAP: ///< M6800/1/2/3
+		break;
 	case M680X_INS_TAX:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case M680X_INS_TBA: ///< M6800/1/2/3
 	case M680X_INS_TBEQ:
@@ -515,6 +598,10 @@ beach:
 					insn->op_str[0]?" ": "", insn->op_str);
 			r_str_replace_in (op->mnemonic, strlen (op->mnemonic) + 1,
 				"ptr ", "", true);
+			if (as->config->syntax == R_ARCH_SYNTAX_INTEL) {
+				// XXX: should it be an option?
+				op->mnemonic = filter_intel_syntax (op->mnemonic);
+			}
 		}
 	}
 	cs_free (insn, n);
@@ -525,13 +612,38 @@ beach:
 static char *regs(RArchSession *as) {
 	const char *p = \
 		"=PC    pc\n"
-		"=SP    sp\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"gpr	pc	.16	48	0\n"
-		"gpr	sp	.16	48	0\n"
-		"gpr	a0	.16	48	0\n"
-		"gpr	a1	.16	48	0\n";
+		"=SP    s\n"
+		"gpr	pc	.16	0	0\n" ///< M6800/1/2/3/9, M6301/9
+		"gpr	s	.16	2	0\n" ///< M6809/M6309 system stack (=sp on others)
+		"gpr	cc	.8	4	0\n" ///< M6800/1/2/3/9, M6301/9
+		"flg	C	.1	4.0	0\n"
+		"flg	V	.1	4.1	0\n" // At least 6805 lacks it? Are the others shifted??
+		"flg	Z	.1	4.2	0\n"
+		"flg	N	.1	4.3	0\n"
+		"flg	I	.1	4.4	0\n"
+		"flg	H	.1	4.5	0\n"
+		"flg	F	.1	4.6	0\n"
+		"flg	E	.1	4.7	0\n"
+		"gpr	dp	.8	5	0\n" ///< M6809/M6309
+		"gpr	f	.8	6	0\n" ///< HD6309
+		"gpr	e	.8	7	0\n" ///< HD6309
+		"gpr	w	.16	6	0\n" ///< HD6309
+		"gpr	b	.8	8	0\n" ///< M6800/1/2/3/9, HD6301/9
+		"gpr	a	.8	9	0\n" ///< M6800/1/2/3/5/9, HD6301/9
+		"gpr	d	.16	8	0\n" ///< M6801/3/9, HD6301/9
+		"gpr	q	.32	6	0\n" ///< M6309
+		"gpr	x	.16	10	0\n" ///< M6800/1/2/3/9, M6301/9 Also 6808 but capstone disagrees
+		"gpr	y	.16	12	0\n" ///< M6809/M6309
+		"gpr	u	.16	14	0\n" ///< M6809/M6309
+		"gpr	v	.16	16	0\n" ///< M6309
+		"gpr	zero	.16	18	0\n" ///< HD6309
+		"gpr	tmp2	.16	20	0\n"  ///< CPU12
+		"gpr	tmp3	.16	22	0\n" ///< CPU12
+		"gpr	md	.8	24	0\n" ///< M6309
+		"flg	EM	.1	24.0	0\n"
+		"flg	FM	.1	24.1	0\n"
+		"flg	IE	.1	24.6	0\n"
+		"flg	ZD	.1	24.7	0\n";
 	return strdup (p);
 }
 
@@ -571,8 +683,10 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 		.license = "BSD",
 	},
 	.arch = "m680x",
+	.cpus = "6800,6801,6805,6808,6809,6811,6301,6309,cpu12,hcs08",
 	.regs = regs,
 	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.endian = R_SYS_ENDIAN_BIG,
 	.decode = decode,
 	.mnemonics = mnemonics,
 	.init = init,

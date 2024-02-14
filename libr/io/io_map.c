@@ -10,7 +10,8 @@ R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid);
 
 static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->maps, NULL);
-	if (!size) {
+	const ut64 fd_size = r_io_fd_size (io, fd);
+	if ((!size) || (fd_size <= delta)) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
@@ -23,9 +24,8 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	map->ts = io->mts++;
 	// RIOMap describes an interval of addresses
 	// r_io_map_from (map) -> r_io_map_to (map)
-	map->itv = (RInterval){ addr, size };
+	map->itv = (RInterval){ addr, R_MIN (size, fd_size - delta) };
 	map->perm = perm;
-	map->delta = delta;
 	return map;
 }
 
@@ -397,7 +397,7 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	return map_list;
 }
 
-R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
+R_IPI bool io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	r_return_val_if_fail (io, false);
 	RIOMap *map;
 	if (!newsize || !(map = r_io_map_get (io, id))) {
@@ -442,6 +442,28 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		}
 	} while (r_id_storage_get_next (io->banks, &bankid));
 	return true;
+}
+
+R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
+	r_return_val_if_fail (io, false);
+	RIOMap *map;
+	if (!newsize || !(map = r_io_map_get (io, id))) {
+		return false;
+	}
+	if (r_io_map_size (map) == newsize) {
+		return true;
+	}
+	if (!(map->tie_flags & R_IO_MAP_TIE_FLG_FORTH)) {
+		return io_map_resize (io, id, newsize);
+	}
+	const ut64 fdsize = r_io_fd_size (io, map->fd);
+	const double ratio = ((double)newsize) / ((double)r_io_map_size (map));
+	ut64 newfdsize = (ut64)((double)fdsize * ratio);
+	if ((newsize > r_io_map_size (map)) && (newfdsize < fdsize)) {
+		newfdsize = UT64_MAX;
+	}
+	r_io_fd_resize (io, map->fd, newfdsize);
+	return io_map_resize (io, id, newsize);
 }
 
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {

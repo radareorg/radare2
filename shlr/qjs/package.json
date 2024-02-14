@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "r2papi": "^0.1.8"
+    "r2papi": "0.3.3"
   }
 }

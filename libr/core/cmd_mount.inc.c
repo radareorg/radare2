@@ -303,14 +303,18 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case '-':
 		if (input[1] == '?') { // "m-?"
-			r_core_cmd_help_match (core, help_msg_m, "m-", true);
+			r_core_cmd_help_match (core, help_msg_m, "m-");
 		} else {
-			r_fs_umount (core->fs, input + 1);
+			if (!r_fs_umount (core->fs, input + 1)) {
+				R_LOG_ERROR ("Nothing to unmount");
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				return 1;
+			}
 		}
 		break;
 	case 'j':
 		if (input[1] == '?') { // "mj?"
-			r_core_cmd_help_match (core, help_msg_m, "mj", true);
+			r_core_cmd_help_match (core, help_msg_m, "mj");
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
@@ -353,7 +357,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match (core, help_msg_m, "mL", true);
+			r_core_cmd_help_match (core, help_msg_m, "mL");
 		} else if (input[1] == 'L') {
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				r_cons_printf ("%s\n", plug->meta.name);
@@ -379,7 +383,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
-			r_core_cmd_help_match (core, help_msg_m, "md", true);
+			r_core_cmd_help_match (core, help_msg_m, "md");
 		} else {
 			cmd_mount_ls (core, input + 1);
 		}
@@ -387,7 +391,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (input[0] == '?') { // "mp?"
-			r_core_cmd_help_match (core, help_msg_m, "mp", true);
+			r_core_cmd_help_match (core, help_msg_m, "mp");
 			break;
 		}
 		ptr = strchr (input, ' ');
@@ -410,7 +414,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "mo?"
-			r_core_cmd_help_match (core, help_msg_m, "mo", true);
+			r_core_cmd_help_match (core, help_msg_m, "mo");
 		} else {
 			file = r_fs_open (core->fs, input, false);
 			if (file) {
@@ -427,7 +431,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'i':
 		if (input[1] == '?') { // "mi?"
-			r_core_cmd_help_match (core, help_msg_m, "mi", true);
+			r_core_cmd_help_match (core, help_msg_m, "mi");
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			file = r_fs_open (core->fs, input, false);
@@ -443,7 +447,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'c': // "mc"
 		if (input[1] == '?') { // "mc?"
-			r_core_cmd_help_match (core, help_msg_m, "mc", true);
+			r_core_cmd_help_match (core, help_msg_m, "mc");
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			ptr = strchr (input, ' ');
@@ -465,7 +469,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g': // "mg"
 		if (input[1] == '?') { // "mg?"
-			r_core_cmd_help_match (core, help_msg_m, "mg", true);
+			r_core_cmd_help_match (core, help_msg_m, "mg");
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
@@ -579,7 +583,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 's': // "ms"
 		if (input[1] == '?') { // "ms?"
-			r_core_cmd_help_match (core, help_msg_m, "ms", true);
+			r_core_cmd_help_match (core, help_msg_m, "ms");
 			break;
 		};
 		if (!r_config_get_b (core->config, "scr.interactive")) {
@@ -613,7 +617,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (arg1) {
 				*arg1++ = 0;
 			} else {
-				r_core_cmd_help_match (core, help_msg_m, "mwf", true);
+				r_core_cmd_help_match (core, help_msg_m, "mwf");
 				free (arg0);
 				break;
 			}
@@ -645,12 +649,12 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			free (args);
 		} else {
-			r_core_cmd_help_match (core, help_msg_m, "mw", false);
+			r_core_cmd_help_contains (core, help_msg_m, "mw");
 		}
 		break;
 	case 'y':
 		if (input[1] == '?') { // "my?"
-			r_core_cmd_help_match (core, help_msg_m, "my", true);
+			r_core_cmd_help_match (core, help_msg_m, "my");
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);

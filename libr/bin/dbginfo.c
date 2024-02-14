@@ -2,28 +2,8 @@
 
 #include <r_bin.h>
 
-// XXX this api must return a struct instead of pa
-// R_API RBinDwarfRow *r_bin_addr2line(RBin *bin, ut64 addr) {}
-R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
-	r_return_val_if_fail (bin, false);
-	RBinFile *binfile = r_bin_cur (bin);
-	RBinObject *o = r_bin_cur_object (bin);
-	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
-	ut64 baddr = r_bin_get_baddr (bin);
-	if (baddr == UT64_MAX) {
-		baddr = 0;
-	}
-	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
-		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
-			return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
-		}
-		return r_bin_addr2line2 (bin, addr, file, len, line, column);
-	}
-	return false;
-}
 
-// XXX R2_590 why dupe
-R_API bool r_bin_addr2line2(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
+static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
 	r_return_val_if_fail (bin, false);
 	if (!bin->cur || !bin->cur->sdb_addrinfo) {
 		return false;
@@ -55,6 +35,26 @@ R_API bool r_bin_addr2line2(RBin *bin, ut64 addr, char *file, int len, int *line
 		}
 	}
 	free (key);
+	return false;
+}
+
+// XXX this api must return a struct instead of pa
+// R_API RBinDwarfRow *r_bin_addr2line(RBin *bin, ut64 addr) {}
+R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
+	r_return_val_if_fail (bin, false);
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinObject *o = r_bin_cur_object (bin);
+	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
+	ut64 baddr = r_bin_get_baddr (bin);
+	if (baddr == UT64_MAX) {
+		baddr = 0;
+	}
+	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
+		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
+			return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
+		}
+		return addr2line_from_sdb (bin, addr, file, len, line, column);
+	}
 	return false;
 }
 

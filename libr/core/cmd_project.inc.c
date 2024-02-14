@@ -209,7 +209,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case '!': // "P!"
 		if (input [1] == '?') {
-			r_core_cmd_help_match (core, help_msg_P, "P!", false);
+			r_core_cmd_help_contains (core, help_msg_P, "P!");
 		} else if (r_config_get_b (core->config, "scr.interactive")) {
 			char *pdir = r_file_new (
 				r_config_get (core->config, "dir.projects"),
@@ -253,7 +253,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_P, "PS", false);
+			r_core_cmd_help_contains (core, help_msg_P, "PS");
 		}
 		break;
 	case 'n': // "Pn"
@@ -359,7 +359,7 @@ static int cmd_project(void *data, const char *input) {
 						free (data);
 					}
 				} else {
-					r_core_cmd_help_match (core, help_msg_P, "Pn", false);
+					r_core_cmd_help_contains (core, help_msg_P, "Pn");
 				}
 				break;
 			case 'x': // "Pnx"

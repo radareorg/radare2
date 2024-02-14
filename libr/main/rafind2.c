@@ -180,6 +180,7 @@ static int show_help(const char *argv0, int line) {
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
+	// " -R         replace in place every search hit with the given argument\n"
 	" -s [str]   search for a string (more than one string can be passed)\n"
 	" -S [str]   search for a wide string (more than one string can be passed).\n"
 	" -t [to]    stop search at address 'to'\n"

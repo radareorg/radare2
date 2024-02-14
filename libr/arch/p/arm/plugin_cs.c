@@ -2203,8 +2203,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_ADRP:
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=",
-				IMM64 (1), REG64 (0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=", IMM64 (1), REG64 (0));
 		break;
 	case ARM64_INS_EXTR:
 		// from VEX
@@ -4820,7 +4819,7 @@ static RList *anal_preludes(RArchSession *as) {
 			r_list_append (l, r_str_newf ("f00f00f8 f00f00ff"));
 			r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
 			r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
-			r_list_append (l, r_str_newf ("7f2303d5ff"));
+			r_list_append (l, r_str_newf ("7f2303d5 ffffffff"));
 			break;
 		default:
 			r_list_free (l);

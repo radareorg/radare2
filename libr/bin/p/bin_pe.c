@@ -122,9 +122,8 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer (16);
 	#define ROWL(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
 
 	RBinPEObj *pe = PE_(get)(bf);
 	ut64 addr = pe->rich_header_offset ? pe->rich_header_offset : 128;
@@ -132,7 +131,7 @@ static RList *fields(RBinFile *bf) {
 	RListIter *it;
 	Pe_image_rich_entry *rich;
 	r_list_foreach (pe->rich_entries, it, rich) {
-		r_list_append (ret, r_bin_field_new (addr, addr, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
+		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
 		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
 		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
 		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;

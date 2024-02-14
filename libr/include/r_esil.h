@@ -389,6 +389,7 @@ R_API void r_esil_trace_restore(REsil *esil, int idx);
 R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
 R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
+extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus

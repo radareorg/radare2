@@ -91,8 +91,9 @@ static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
+			// TODO add hint about thumb entrypoint
 			ptr->paddr--;
 			ptr->vaddr--;
 		}
@@ -222,7 +223,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = strdup (name);
+	ptr->name = r_bin_name_new (name);
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 
@@ -252,13 +253,11 @@ static RList *imports(RBinFile *bf) {
 }
 
 static void _r_bin_reloc_free(RBinReloc *reloc) {
-	if (!reloc) {
-		return;
+	if (reloc) {
+		// XXX also need to free or unref RBinSymbol?
+		r_bin_import_free (reloc->import);
+		free (reloc);
 	}
-
-	// XXX also need to free RBinSymbol?
-	r_bin_import_free (reloc->import);
-	free (reloc);
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -280,8 +279,8 @@ static RList *relocs(RBinFile *bf) {
 		if (reloc->external) {
 			continue;
 		}
-		RBinReloc *ptr = NULL;
-		if (!(ptr = R_NEW0 (RBinReloc))) {
+		RBinReloc *ptr = R_NEW0 (RBinReloc);
+		if (!ptr) {
 			break;
 		}
 		ptr->type = reloc->type;
@@ -915,7 +914,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	filesize = magiclen + cmdsize + clen + dlen;
 	// TEXT SEGMENT should span the whole file //
 	W (p_codefsz, &filesize, 4);
-	W (p_codefsz-8, &filesize, 4); // vmsize = filesize
+	W (p_codefsz - 8, &filesize, 4); // vmsize = filesize
 	W (p_codeva, &codeva, 4);
 	// clen = 4096;
 	W (p_codesz, &clen, 4);

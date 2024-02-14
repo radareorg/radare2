@@ -12,6 +12,7 @@ R_LIB_VERSION_HEADER(r_lang);
 
 typedef char* (*RCoreCmdStrCallback)(void* core, const char *s);
 typedef int (*RCoreCmdfCallback)(void* core, const char *s, ...);
+typedef char *(*RCoreCallAtCallback)(void* core, ut64 addr, const char *s);
 
 typedef struct r_lang_t {
 	void *user;
@@ -20,6 +21,7 @@ typedef struct r_lang_t {
 	PrintfCallback cb_printf;
 	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
+	RCoreCallAtCallback call_at;
 	RList *sessions;
 	struct r_lang_session_t *session;
 } RLang;

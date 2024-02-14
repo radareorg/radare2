@@ -4,25 +4,6 @@
 
 #define I r_cons_singleton ()
 
-#if 0
-//R2__UNIX__
-#include <poll.h>
-static int __is_fd_ready(int fd) {
-	fd_set rfds;
-	struct timeval tv;
-	if (fd==-1)
-		return 0;
-	FD_ZERO (&rfds);
-	FD_SET (fd, &rfds);
-	tv.tv_sec = 0;
-	tv.tv_usec = 1;
-	if (select (1, &rfds, NULL, NULL, &tv) == -1)
-		return 0;
-	return 1;
-	return !FD_ISSET (0, &rfds);
-}
-#endif
-
 R_API int r_cons_controlz(int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {

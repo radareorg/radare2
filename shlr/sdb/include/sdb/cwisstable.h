@@ -1,4 +1,5 @@
 // Copyright 2022 Google LLC
+// Copyright 2024 radare2
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,9 +29,18 @@
 #ifndef CWISSTABLE_H_
 #define CWISSTABLE_H_
 
+#if defined(__APPLE__) && (defined(__ppc__) || defined(__powerpc__))
+#define CWISS_IS_MACPPC 1
+#define CWISS_THREAD_LOCAL
+#else
+#define CWISS_IS_MACPPC 0
+#endif
+
 #include <assert.h>
 #include <limits.h>
+#if !CWISS_IS_MACPPC
 #include <stdalign.h>
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -131,7 +141,7 @@
 #include <atomic>
 #define CWISS_ATOMIC_T(Type_) volatile std::atomic<Type_>
 #define CWISS_ATOMIC_INC(val_) (val_).fetch_add(1, std::memory_order_relaxed)
-#elif CWISS_IS_MSVC
+#elif CWISS_IS_MSVC || CWISS_IS_MACPPC
 #define CWISS_ATOMIC_T(Type_) volatile Type_
 #define CWISS_ATOMIC_INC(val_) (val_ += 1)
 #else
@@ -216,7 +226,9 @@
 #define CWISS_alignas(align_) __declspec(align(align_))
 
 #else
+#if !CWISS_IS_MACPPC
 #include <stdalign.h>
+#endif
 
 #ifdef alignas
 #define CWISS_alignas(align_) alignas(align_)
@@ -265,7 +277,7 @@
 
 /// `CWISS_THREAD_LOCAL` expands to the appropriate TLS annotation, if one is
 /// available.
-#if CWISS_IS_GCCISH
+#if CWISS_IS_GCCISH && !CWISS_IS_MACPPC
 #define CWISS_THREAD_LOCAL __thread
 #elif CWISS_IS_MSVC
 #define CWISS_THREAD_LOCAL
@@ -349,6 +361,26 @@
 
 #if CWISS_HAVE_MSAN
 #include <sanitizer/msan_interface.h>
+#endif
+
+/// Maximally careful endianness detection.
+/// Assume LITTLE_ENDIAN by default.
+#if defined(__ppc__) || defined(__powerpc__)
+# define CWISS_IS_BIG_ENDIAN 1
+#elif defined(_AIX)
+# define CWISS_IS_BIG_ENDIAN 1
+#elif defined(__has_include)
+# if __has_include(<endian.h>)
+#   include <endian.h>
+#   if defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)
+#     define CWISS_IS_BIG_ENDIAN 1
+#   endif
+# endif
+#else
+# warning "Cannot detect endianness; assuming little-endian."
+#endif
+#ifndef CWISS_IS_BIG_ENDIAN
+# define CWISS_IS_BIG_ENDIAN 0
 #endif
 
 CWISS_BEGIN
@@ -852,10 +884,12 @@ typedef uint64_t CWISS_Group;
 #define CWISS_Group_kWidth ((size_t)8)
 #define CWISS_Group_kShift 3
 
-// NOTE: Endian-hostile.
 static inline CWISS_Group CWISS_Group_new(const CWISS_ControlByte* pos) {
 	CWISS_Group val;
 	memcpy(&val, pos, sizeof(val));
+#if CWISS_IS_BIG_ENDIAN
+	val = __builtin_bswap64(val);
+#endif
 	return val;
 }
 
@@ -997,7 +1031,8 @@ CWISS_INLINE_NEVER static void CWISS_ConvertDeletedToEmptyAndFullToDeleted( CWIS
 	CWISS_DCHECK(ctrl[capacity] == CWISS_kSentinel, "bad ctrl value at %zu: %02x", capacity, ctrl[capacity]);
 	CWISS_DCHECK(CWISS_IsValidCapacity(capacity), "invalid capacity: %zu", capacity);
 
-	for (CWISS_ControlByte* pos = ctrl; pos < ctrl + capacity; pos += CWISS_Group_kWidth) {
+	CWISS_ControlByte* pos;
+	for (pos = ctrl; pos < ctrl + capacity; pos += CWISS_Group_kWidth) {
 		CWISS_Group g = CWISS_Group_new(pos);
 		CWISS_Group_ConvertSpecialToEmptyAndFullToDeleted(&g, pos);
 	}
@@ -1351,8 +1386,8 @@ static const void* const CWISS_AbslHash_kSeed = &CWISS_AbslHash_kSeed;
 // part of pi.
 // https://en.wikipedia.org/wiki/Nothing-up-my-sleeve_number
 static const uint64_t CWISS_AbslHash_kHashSalt[5] = {
-	0x243F6A8885A308D3, 0x13198A2E03707344, 0xA4093822299F31D0,
-	0x082EFA98EC4E6C89, 0x452821E638D01377,
+	0x243F6A8885A308D3ULL, 0x13198A2E03707344, 0xA4093822299F31D0ULL,
+	0x082EFA98EC4E6C89ULL, 0x452821E638D01377ULL,
 };
 
 #define CWISS_AbslHash_kPiecewiseChunkSize ((size_t)1024)
@@ -1360,16 +1395,14 @@ static const uint64_t CWISS_AbslHash_kHashSalt[5] = {
 typedef uint64_t CWISS_AbslHash_State_;
 #define CWISS_AbslHash_kInit_ ((CWISS_AbslHash_State_)(uintptr_t)CWISS_AbslHash_kSeed)
 
-static inline void CWISS_AbslHash_Mix(CWISS_AbslHash_State_* state,
-		uint64_t v) {
-	const uint64_t kMul = sizeof(size_t) == 4 ? 0xcc9e2d51 : 0x9ddfea08eb382d69;
-	*state = CWISS_AbslHash_LowLevelMix(*state + v, kMul);
+static inline void CWISS_AbslHash_Mix(CWISS_AbslHash_State_* state, uint64_t v) {
+	const uint64_t kMul = (sizeof (size_t) == 4) ? 0xcc9e2d51ULL : 0x9ddfea08eb382d69ULL;
+	*state = CWISS_AbslHash_LowLevelMix (*state + v, kMul);
 }
 
 CWISS_INLINE_NEVER
 static uint64_t CWISS_AbslHash_Hash64(const void* val, size_t len) {
-	return CWISS_AbslHash_LowLevelHash(val, len, CWISS_AbslHash_kInit_,
-			CWISS_AbslHash_kHashSalt);
+	return CWISS_AbslHash_LowLevelHash (val, len, CWISS_AbslHash_kInit_, CWISS_AbslHash_kHashSalt);
 }
 
 CWISS_END_EXTERN
@@ -1401,7 +1434,7 @@ typedef size_t CWISS_FxHash_State;
 #define CWISS_FxHash_kInit ((CWISS_FxHash_State)0)
 static inline void CWISS_FxHash_Write(CWISS_FxHash_State* state,
 		const void* val, size_t len) {
-	const size_t kSeed = (size_t)(UINT64_C(0x517cc1b727220a95));
+	const size_t kSeed = (size_t)(0x517cc1b727220a95ULL);
 	const uint32_t kRotate = 5;
 
 	const char* p = (const char*)val;
@@ -2342,7 +2375,8 @@ static inline CWISS_RawTable CWISS_RawTable_dup(const CWISS_Policy* policy,
 	// `CWISS_RawTable_rehash_and_grow_if_necessary()` because we are already
 	// big enough (since `self` is a priori) and tombstones cannot be created
 	// during this process.
-	for (CWISS_RawIter iter = CWISS_RawTable_citer(policy, self);
+	CWISS_RawIter iter;
+	for (iter = CWISS_RawTable_citer(policy, self);
 			CWISS_RawIter_get(policy, &iter); CWISS_RawIter_next(policy, &iter)) {
 		void* v = CWISS_RawIter_get(policy, &iter);
 		size_t hash = policy->key->hash(v);

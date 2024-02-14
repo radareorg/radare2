@@ -63,7 +63,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		return false;
 	}
 	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
-	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".qjs", 0);
+	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".r2.js", 0);
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
@@ -118,7 +118,7 @@ static bool lang_tsc_run(RLangSession *s, const char *code, int len) {
 }
 
 static bool lang_tsc_init(RLangSession *ls) {
-	bool found = false;
+	bool found = true;
 	if (ls == NULL) {
 		char *tsc = r_file_path ("tsc");
 		free (tsc);
@@ -135,6 +135,7 @@ static RLangPlugin r_lang_plugin_tsc = {
 		.license = "LGPL",
 		.desc = "Use #!tsc script.ts",
 	},
+	.ext = "ts",
 	.init = lang_tsc_init,
 	.run = lang_tsc_run,
 	.run_file = (void*)lang_tsc_file,

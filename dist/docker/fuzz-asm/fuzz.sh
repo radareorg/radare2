@@ -43,6 +43,6 @@ if [ -z "${OPS}" ]; then
 fi
 for a in ${OPS} ; do
 	LINE=`args $a`
-	echo "INPUT=$LINE" > /dev/stderr
+	echo "INPUT=$LINE" >&2
 	rasm2 -a $R2_ARCH -b $R2_BITS "$LINE"
 done

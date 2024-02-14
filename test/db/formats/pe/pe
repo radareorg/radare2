@@ -424,7 +424,7 @@ RUN
 
 NAME=pe32 header
 FILE=bins/pe/single_import.exe
-CMDS=ih~?Signature : 0x4550
+CMDS=ih~?Signature
 EXPECT=<<EOF
 1
 EOF

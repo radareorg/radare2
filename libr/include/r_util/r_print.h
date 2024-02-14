@@ -45,23 +45,23 @@ extern "C" {
 
 */
 
-#define $00 1
-#define $01 8
-#define $10 2
-#define $11 16
-#define $20 4
-#define $21 32
-#define $30 (1 << 8)
-#define $31 (2 << 8)
-#define BRAILE_ONE $00+$01+$11+$21+$31
-#define BRAILE_TWO $00+$01+$11+$20+$30+$31
-#define BRAILE_TRI $00+$01+$11+$21+$30+$31
-#define BRAILE_FUR $00+$10+$11+$21+$31
-#define BRAILE_FIV $00+$01+$10+$21+$30
-#define BRAILE_SIX $01+$10+$20+$21+$30+$31
-#define BRAILE_SEV $00+$01+$11+$20+$30
-#define BRAILE_EIG $00+$01+$10+$11+$20+$21+$30+$31
-#define BRAILE_NIN $00+$01+$10+$11+$21+$30
+#define _BR00 1
+#define _BR01 8
+#define _BR10 2
+#define _BR11 16
+#define _BR20 4
+#define _BR21 32
+#define _BR30 (1 << 8)
+#define _BR31 (2 << 8)
+#define _BRAILE_ONE _BR00+_BR01+_BR11+_BR21+_BR31
+#define _BRAILE_TWO _BR00+_BR01+_BR11+_BR20+_BR30+_BR31
+#define _BRAILE_TRI _BR00+_BR01+_BR11+_BR21+_BR30+_BR31
+#define _BRAILE_FUR _BR00+_BR10+_BR11+_BR21+_BR31
+#define _BRAILE_FIV _BR00+_BR01+_BR10+_BR21+_BR30
+#define _BRAILE_SIX _BR01+_BR10+_BR20+_BR21+_BR30+_BR31
+#define _BRAILE_SEV _BR00+_BR01+_BR11+_BR20+_BR30
+#define _BRAILE_EIG _BR00+_BR01+_BR10+_BR11+_BR20+_BR21+_BR30+_BR31
+#define _BRAILE_NIN _BR00+_BR01+_BR10+_BR11+_BR21+_BR30
 
 typedef struct {
 	char str[4];
@@ -182,6 +182,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
+R_API void r_print_bin_from_str(RPrint *p, char *str);
 R_API RPrint *r_print_new(void);
 R_API void r_print_free(RPrint *p);
 R_API bool r_print_mute(RPrint *p, int x);
@@ -223,8 +224,24 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 #define R_PRINT_DOT       (1 << 7)
 #define R_PRINT_QUIET     (1 << 8)
 #define R_PRINT_STRUCT    (1 << 9)
+typedef struct r_print_format_t {
+	RPrint *p;
+	PJ *pj;
+	int depth;
+	int endian;
+	ut64 seeki;
+	int mode;
+	int slide;
+	int oldslide;
+	int ident;
+	// RStrBuf *sb to hold a string for plaintext formats
+	// indentlevel (or nestlevel)
+} RPrintFormat;
+
 R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
+R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, const char *field);
+R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield);
 R_API const char *r_print_format_byname(RPrint *p, const char *name);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label);
 R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);

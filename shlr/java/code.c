@@ -161,7 +161,8 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			} else {
-				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+				const int num = (len > 2)? USHORT (bytes, 1): bytes[1];
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, num);
 			}
 			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
@@ -206,9 +207,9 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xa6: // if_acmpne
 	case 0xa7: // goto
 	case 0xa8: // jsr
-		if (len > 1) {
-			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name,
-					(addr + (short)USHORT (bytes, 1)));
+		if (len > 2) {
+			const short delta = USHORT (bytes, 1);
+			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name, addr + delta);
 			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}

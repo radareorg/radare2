@@ -32,7 +32,6 @@ entry0
 
 Disassembly of entry0:
             ;-- section..text:
-            ;-- .text:
             ;-- _start():
 / 16: entry0 (); // noreturn
 |           0x08049020      55             push ebp                    ; [10] -r-x section size 16 named .text

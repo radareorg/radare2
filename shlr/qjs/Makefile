@@ -46,23 +46,30 @@ src:
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
 	git add src
 
+NM=node_modules
+
 js_r2papi.c:
 #	npm i js_r2papi
 	printf "Using r2papi version: "
 	-jq .version node_modules/r2papi/package.json
-	mkdir -p $(shell npm bin)
+	mkdir -p $(NM)
 
 	cat	\
-		$(shell npm bin)/../r2papi/index.js \
-		$(shell npm bin)/../r2papi/shell.js \
-		$(shell npm bin)/../r2papi/esil.js \
-		> $(shell npm bin)/../r2papi/entrypoint.js
+		$(NM)/r2papi/r2papi.js \
+		$(NM)/r2papi/r2pipe.js \
+		$(NM)/r2papi/base64.js \
+		$(NM)/r2papi/ai.js \
+		$(NM)/r2papi/shell.js \
+		$(NM)/r2papi/esil.js \
+		> $(NM)/r2papi/entrypoint.js
 	sed \
 		-e 's,exports,G,g' \
 		-e 's,require(,G;//,g' \
-		< $(shell npm bin)/../r2papi/entrypoint.js \
+		< $(NM)/r2papi/entrypoint.js \
 		| grep -v 'use strict' \
+		| grep -v 'r2pipe\.js' \
 		> js_r2papi.qjs
+	echo 'const r2pipe_js_1 = G;' >> js_r2papi.qjs
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < js_r2papi.qjs > js_r2papi.mini.qjs
 	npx uglify-js --help > /dev/null || npm i uglify-js

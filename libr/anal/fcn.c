@@ -139,8 +139,13 @@ static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (len > 8) {
 		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
 			const char *arch = R_UNWRAP3 (anal, config, arch);
-			if (arch && !strcmp (arch, "java")) {
-				return true;
+			if (arch) {
+				if (anal->config->bits == 16 && !strcmp (arch, "x86")) {
+					return true;
+				}
+				if (!strcmp (arch, "java") || !strcmp (arch, "riscv")) {
+					return true;
+				}
 			}
 		}
 	}
@@ -575,6 +580,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *op_src = NULL;
 	if (depth < -1) {
 		// only happens when we want to analyze 1 basic block
+		R_LOG_DEBUG ("fcn recurse limit reached at 0x%08"PFMT64x, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	if (R_UNLIKELY ((depth < 0) && (depth != -1))) {
@@ -673,6 +679,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
+		R_LOG_DEBUG ("anal.limit");
 		gotoBeach (R_ANAL_RET_END);
 	}
 
@@ -745,13 +752,12 @@ repeat:
 		r_anal_op_fini (op);
 		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
 		if (oplen < 1) {
-			if (anal->verbose) {
-				R_LOG_WARN ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
-			}
+			R_LOG_DEBUG ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
 			// gotoBeach (R_ANAL_RET_ERROR);
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
+		R_LOG_DEBUG ("op 0x%08"PFMT64x" %d %s", at, op->size, r_anal_optype_tostring (op->type));
 		dst = r_vector_at (&op->dsts, 0);
 		free (op_dst);
 		op_dst = (dst && dst->reg)? strdup (dst->reg): NULL;
@@ -1076,7 +1082,7 @@ repeat:
 				// if page have exec perms
 				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
-					/// R2_590 - this must be CODE | READ , not CODE|DATA, but raises 10 fails
+					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
 					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
 					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
 				} else {
@@ -1700,26 +1706,6 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 	return ret;
 }
 
-// XXX deprecate
-R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
-	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ROOT);
-	if (!f) {
-		return false;
-	}
-	r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
-		if (fcn->type != R_ANAL_FCN_TYPE_LOC) {
-			continue;
-		}
-		if (r_anal_function_contains (fcn, addr)) {
-			r_anal_function_delete (fcn);
-			break;
-		}
-	}
-	r_anal_function_del (anal, addr);
-	return true;
-}
-
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
 	if (fcn) {
@@ -1961,6 +1947,31 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	return pj_drain (pj);
 }
 
+R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
+	Sdb *db = a->sdb_types;
+	const char *s = sdb_const_get (db, name, 0);
+	if (!s || strcmp (s, "func")) {
+		return false;
+	}
+	char *sdb_ret = r_str_newf ("func.%s.ret", name);
+	char *sdb_args = r_str_newf ("func.%s.args", name);
+	int argc = sdb_num_get (db, sdb_args, 0);
+
+	sdb_unset (db, sdb_ret, 0);
+	sdb_unset (db, sdb_args, 0);
+	int i;
+	for (i = 0; i < argc; i++) {
+		char *s = r_str_newf ("func.%s.arg.%d", name, i);
+		sdb_unset (db, s, 0);
+		free (s);
+	}
+	sdb_unset (db, name, 0);
+	free (sdb_ret);
+	free (sdb_args);
+	return true;
+}
+
+// MOVE To function.c
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	const char *realname = NULL, *import_substring = NULL;

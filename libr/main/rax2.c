@@ -161,7 +161,7 @@ static int help(void) {
 		"  -I      IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
-		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
+		"  -l      newline              ;  append newline to output (for -E/-D/-r/..\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number        ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N      binary number        ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
@@ -182,7 +182,6 @@ static int help(void) {
 static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 	const char *errstr = NULL;
 	ut64 flags = *_flags;
-	const char *nl = "";
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
@@ -209,7 +208,10 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
-			case 'l': nl = "\n"; break;
+			case 'l':
+				  *_flags |= (1 << 24); // nl
+				  flags = *_flags;
+				  break;
 			case 'a': print_ascii_table (); return 0;
 			case 's': flags ^= 1 << 0; break;
 			case 'e': flags ^= 1 << 1; break;
@@ -283,7 +285,7 @@ dotherax:
 #if __EMSCRIPTEN__
 			puts ("");
 #else
-			if (R_STR_ISNOTEMPTY (nl)) {
+			if (flags & (1 << 24)) {
 				puts ("");
 			}
 #endif
@@ -313,11 +315,11 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		int i;
-		ut8 buf[4096];
-		const int n = r_str_binstr2bin (str, buf, sizeof (buf));
-		for (i = 0; i < n; i++) {
-			printf ("%c", buf[i]);
+		ut8 out[256] = {0};
+		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
+			printf ("%s\n", out); // TODO accept non null terminated strings
+		} else {
+			eprintf ("Invalid binary input string\n");
 		}
 		return true;
 	} else if (flags & (1 << 4)) { // -x
@@ -389,21 +391,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		int i = 0;
-		// TODO: move to r_util
-		for (i = 0; i < strlen (str); i++) {
-			ut8 ch = str[i];
-			printf ("%d%d%d%d"
-				"%d%d%d%d",
-				ch & 128? 1: 0,
-				ch & 64? 1: 0,
-				ch & 32? 1: 0,
-				ch & 16? 1: 0,
-				ch & 8? 1: 0,
-				ch & 4? 1: 0,
-				ch & 2? 1: 0,
-				ch & 1? 1: 0);
-		}
+		char *newstr = r_mem_to_binstring((const ut8*)str, strlen (str));
+		printf ("%s\n", newstr);
+		free (newstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
@@ -488,12 +478,16 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
-		/* https://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
+		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
+		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
-			r_base64_encode (out, (const ut8 *)str, len);
-			printf ("%s%s", out, nl);
-			fflush (stdout);
+			int olen = r_base64_encode (out, (const ut8 *)str, len);
+			if (olen > 0) {
+				const char *nl = (flags & (1 << 24))? "\n": "";
+				printf ("%s%s", out, nl);
+				fflush (stdout);
+			}
 			free (out);
 		}
 		return true;
@@ -504,6 +498,9 @@ dotherax:
 			n = r_base64_decode (out, str, n);
 			if (n > 0) {
 				fwrite (out, n, 1, stdout);
+				if (flags & (1 << 24)) {
+					puts ("");
+				}
 				fflush (stdout);
 			} else {
 				R_LOG_ERROR ("Cannot decode");

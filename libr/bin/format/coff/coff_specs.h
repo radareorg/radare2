@@ -8,6 +8,7 @@
 #define COFF_FILE_MACHINE_UNKNOWN	0x0
 #define COFF_FILE_MACHINE_AM33		0x1d3
 #define COFF_FILE_MACHINE_AMD64		0x8664
+#define COFF_FILE_MACHINE_ALPHA		0x184 /* MS Visual C++ (Alpha) object file */
 #define COFF_FILE_MACHINE_ARM		0x1c0
 #define COFF_FILE_MACHINE_ARMNT		0x1c4
 #define COFF_FILE_MACHINE_ARM64		0xaa64
@@ -18,18 +19,17 @@
 #define COFF_FILE_MACHINE_MIPS16	0x266
 #define COFF_FILE_MACHINE_MIPSFPU	0x366
 #define COFF_FILE_MACHINE_MIPSFPU16	0x466
-#define COFF_FILE_MACHINE_AMD29KBE	0x7a01
-#define COFF_FILE_MACHINE_AMD29KLE	0x17a
-#define COFF_FILE_MACHINE_POWERPC	0x1f0
+#define COFF_FILE_MACHINE_AMD29K	0x17a
+#define COFF_FILE_MACHINE_POWERPC	0x1f0 /* MS Visual C++ (PowerPC) object file (little endian) */
 #define COFF_FILE_MACHINE_POWERPCFP	0x1f1
-#define COFF_FILE_MACHINE_R4000		0x166
+#define COFF_FILE_MACHINE_R4000		0x166 /* MS Visual C++ (MIPS) object file (little endian) */
 #define COFF_FILE_MACHINE_SH3		0x1a2
 #define COFF_FILE_MACHINE_SH3DSP	0x1a3
 #define COFF_FILE_MACHINE_SH4		0x1a6
 #define COFF_FILE_MACHINE_SH5		0x1a8
 #define COFF_FILE_MACHINE_THUMB		0x1c2
 #define COFF_FILE_MACHINE_WCEMIPSV2	0x169
-#define COFF_FILE_MACHINE_H8300		0x0083
+#define COFF_FILE_MACHINE_H8300		0x8300
 /* COFF magic numbers */
 #define COFF_FILE_TI_COFF		0xc1
 #define COFF_FILE_MACHINE_TMS470	0x0097
@@ -40,16 +40,16 @@
 #define COFF_FILE_MACHINE_MSP430	0x00A0
 #define COFF_FILE_MACHINE_TMS320C55PLUS	0x00A1
 /* XCOFF32 magic numbers */
-#define XCOFF32_FILE_MACHINE_U800WR	0x198 /* IBM RT, RW text      */
-#define XCOFF32_FILE_MACHINE_U800RO	0x19d /* IBM RT, RO text      */
-#define XCOFF32_FILE_MACHINE_U800TOC	0x19f /* IBM RT, RO text, TOC */
-#define XCOFF32_FILE_MACHINE_U802WR	0x1d8 /* IBM ??, RW text      */
-#define XCOFF32_FILE_MACHINE_U802RO	0x1dd /* IBM ??, RO text      */
-#define XCOFF32_FILE_MACHINE_U802TOC	0x1df /* IBM ??, RO text, TOC */
+#define XCOFF32_FILE_MACHINE_U800WR	0x0198
+#define XCOFF32_FILE_MACHINE_U800RO	0x019d
+#define XCOFF32_FILE_MACHINE_U800TOC	0x019f
+#define XCOFF32_FILE_MACHINE_U802WR	0x01d8
+#define XCOFF32_FILE_MACHINE_U802RO	0x01dd
+#define XCOFF32_FILE_MACHINE_U802TOC	0x01df /* IBM AIX 5.1 (PowerPC 32-bit, RO text, TOC) */
 /* XCOFF64 magic numbers */
 #define XCOFF64_FILE_MACHINE_U803TOC	0x1e7
 #define XCOFF64_FILE_MACHINE_U803XTOC	0x1ef
-#define XCOFF64_FILE_MACHINE_U64	0x1f7 /* IBM AIX */
+#define XCOFF64_FILE_MACHINE_U64	0x1f7 /* IBM AIX (PowerPC 64-bit)  */
 
 #define COFF_FLAGS_TI_F_RELFLG		0x0001
 #define COFF_FLAGS_TI_F_EXEC		0x0002
@@ -181,6 +181,16 @@
 #define COFF_SYM_CLASS_WEAK_EXTERNAL	105
 #define COFF_SYM_CLASS_CLR_TOKEN	107
 
+/* XCOFF32 loader */
+#define XCOFF_LDSYM_FLAGS(x) ((x)&0xF8)
+#define XCOFF_LDSYM_FLAG_EXPORT		0x10
+#define XCOFF_LDSYM_FLAG_ENTRYPOINT	0x20
+#define XCOFF_LDSYM_FLAG_IMPORT		0x40
+
+#define XCOFF_LDSYM_TYPE(x) ((x)&0x07)
+
+#define XCOFF_LDSYM_CLASS_FUNCTION	0x0a
+
 /* XCOFF64 auxiliary entry type */
 #define XCOFF_AUX_EXCEPT	255
 #define XCOFF_AUX_FCN		254
@@ -218,17 +228,45 @@
 #define COFF_IS_BIG_ENDIAN 1
 #define COFF_IS_LITTLE_ENDIAN 0
 
-/* COFF/XCOFF32 file header */
-R_PACKED(
-struct coff_hdr {
-	ut16 f_magic;	/* Magic number */
-	ut16 f_nscns;	/* Number of Sections */
-	ut32 f_timdat;	/* Time & date stamp */
-	ut32 f_symptr;	/* File pointer to Symbol Table */
-	ut32 f_nsyms;	/* Number of Symbols */
-	ut16 f_opthdr;	/* sizeof (Optional Header) */
-	ut16 f_flags;	/* Flags */
-});// __attribute__ ((packed));
+typedef enum {
+	COFF_TYPE_REGULAR,
+	COFF_TYPE_XCOFF,
+	COFF_TYPE_BIGOBJ,
+} coff_type;
+
+static const char coff_bigobj_magic[16] = {
+	0xC7, 0xA1, 0xBA, 0xD1, 0xEE, 0xBA, 0xa9, 0x4b,
+	0xAF, 0x20, 0xFA, 0xF6, 0x6A, 0xA4, 0xDC, 0xB8
+};
+
+R_PACKED (
+	/* COFF/XCOFF32 file header */
+	struct coff_hdr {
+		ut16 f_magic; /* Magic number */
+		ut16 f_nscns; /* Number of Sections */
+		ut32 f_timdat; /* Time & date stamp */
+		ut32 f_symptr; /* File pointer to Symbol Table */
+		ut32 f_nsyms; /* Number of Symbols */
+		ut16 f_opthdr; /* sizeof (Optional Header) */
+		ut16 f_flags; /* Flags */
+	}); // __attribute__ ((packed));
+
+R_PACKED (
+	struct coff_bigobj_hdr {
+		ut16 sig1; /* 0x0 */
+		ut16 sig2; /* 0xffff */
+		ut16 version; /* 0x2 */
+		ut16 f_magic; /* Magic number */
+		ut32 f_timdat; /* Time & date stamp */
+		ut8 uuid[16]; /* see coff_bigobj_magic */
+		ut32 unused1; /* 0x0 (sizeofdata?)*/
+		ut32 f_flags; /* 0x0 (flags?)*/
+		ut32 unused3; /* 0x0 (metadatasize?)*/
+		ut32 unused4; /* 0x0 (metadataoffset?)*/
+		ut32 f_nscns; /* Number of Sections */
+		ut32 f_symptr; /* File pointer to Symbol Table */
+		ut32 f_nsyms; /* Number of Symbols */
+	}); // __attribute__ ((packed));
 
 /* XCOFF64 file header */
 R_PACKED (
@@ -257,7 +295,7 @@ struct coff_opt_hdr {
 
 /* XCOFF32 extended auxiliary header */
 R_PACKED (
-struct coff_opt_hdr_ext {
+struct xcoff32_opt_hdr {
 	ut32 o_toc;
 	ut16 o_snentry;		/* Section number of entry point    */
 	ut16 o_sntext;		/* Section number of text section   */
@@ -360,6 +398,18 @@ struct coff_symbol {
 	ut8 n_numaux;	/* Auxiliary Count */
 });
 
+// Only change here vs regular coff is that
+// the section number is 4 bytes
+R_PACKED (
+	struct coff_bigobj_symbol {
+		char n_name[8]; /* Symbol Name */
+		ut32 n_value; /* Value of Symbol */
+		ut32 n_scnum; /* Section Number */
+		ut16 n_type; /* Symbol Type */
+		ut8 n_sclass; /* Storage Class */
+		ut8 n_numaux; /* Auxiliary Count */
+	});
+
 #define COFF_SYM_GET_DTYPE(type) (((type) >> 4) & 3)
 
 /* XCOFF64 symbol */
@@ -460,7 +510,7 @@ struct xcoff64_ldhdr {
 /* XCOFF32 loader symbol */
 R_PACKED (
 struct xcoff32_ldsym {
-	ut8  l_name[8];
+	char l_name[8];
 	ut32 l_value;
 	ut16 l_scnum;
 	ut8  l_smtype;

@@ -1,6 +1,8 @@
 #ifndef R_CTYPES_H
 #define R_CTYPES_H
 
+// TODO R2_590 - rename to r_util/r_type.h
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,7 +20,8 @@ typedef enum {
 	R_TYPE_ENUM = 1,
 	R_TYPE_STRUCT = 2,
 	R_TYPE_UNION = 3,
-	R_TYPE_TYPEDEF = 4
+	R_TYPE_TYPEDEF = 4,
+	R_TYPE_CLASS = 5
 } RTypeKind;
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);
@@ -45,6 +48,7 @@ R_API int r_type_func_args_count(Sdb *TDB, R_NONNULL const char *func_name);
 R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i);
 R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i);
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name);
+R_API R_OWN char *r_type_func_name(Sdb *types, const char *fname);
 
 #ifdef __cplusplus
 }

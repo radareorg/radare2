@@ -36,7 +36,7 @@ Usage Example:
 #define HAVE_R2PIPE 1
 #endif
 
-#if !R2__WINDOWS__
+#if !R2__WINDOWS__ && !__wasi__
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
@@ -187,9 +187,10 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 }
 #endif
 
+#if HAVE_R2PIPE
 static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	r_return_val_if_fail (r2p, NULL);
-#if HAVE_R2PIPE && (R2__UNIX__ || defined(__CYGWIN__))
+#if R2__UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -214,6 +215,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	return NULL;
 #endif
 }
+#endif
 
 static R2Pipe *r2pipe_new(void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);

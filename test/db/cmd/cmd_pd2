@@ -805,8 +805,8 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00005e6e      488d3d339b01.  lea rdi, section..fini_array ; 0x1f9a8
-            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m01[32m.  [36mlea[36m rdi[0m,[36m[36m section..fini_array[0m[0m[31m [31m; 0x1f9a8[0m
+            0x00005e6e      488d3d339b..   lea rdi, section..fini_array ; 0x1f9a8
+            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m..   [36mlea[36m rdi[0m,[36m[36m section..fini_array[0m[0m[31m [31m; 0x1f9a8[0m
 EOF
 RUN
 

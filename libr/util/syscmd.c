@@ -82,10 +82,35 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		const char *eIMG = "🌅";
 		const char *eHID = "👀";
 		const char *eANY = "  ";
+		const char *eZIP = "🤐";
+		const char *eMOV = "📺";
+		const char *eEXE = "🏃";
+		const char *eLIB = "📚";
+		const char *eCOD = "📖";
 		// --
 		const char *icon = eANY;
 		if (isdir) {
 			icon = eDIR;
+		} else if (r_str_casestr (nn, ".mov") || r_str_casestr (nn, ".mp4") || r_str_casestr (nn, ".mpg")) {
+			icon = eMOV;
+		} else if (r_str_endswith (nn, ".py")) {
+			icon = "🐍";
+		} else if (r_str_endswith (nn, ".c")) {
+			icon = eCOD;
+		} else if (r_str_endswith (nn, ".o")) {
+			icon = "📕";
+		} else if (r_str_casestr (nn, ".exe")) {
+			icon = eEXE;
+		} else if (r_str_casestr (nn, ".apk") || r_str_casestr (nn, ".dmg")) {
+			icon = "📦";
+		} else if (r_str_casestr (nn, ".so") || r_str_casestr (nn, ".dll") || r_str_casestr (nn, ".dylib")) {
+			icon = eLIB;
+		} else if (r_str_casestr (nn, ".csv") || r_str_casestr (nn, ".txt") || r_str_casestr (nn, ".xml") || r_str_casestr (nn, ".json") || r_str_casestr (nn, ".pdf")) {
+			icon = "📄";
+		} else if (r_str_casestr (nn, ".zip") || r_str_casestr (nn, ".gz") || r_str_casestr (nn, ".xz") || r_str_casestr (nn, ".bz2") || r_str_casestr (nn, "jar")) {
+			icon = eZIP;
+		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif") || r_str_casestr (nn, ".jpeg") || r_str_casestr (nn, ".svg")) {
+			icon = eIMG;
 #if R2__UNIX__
 		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
 			const char *eLNK = "📎";
@@ -93,16 +118,16 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		} else if (sb.st_mode & S_ISUID) {
 			const char *eUID = "🔼";
 			icon = eUID;
+		} else if (perm & 1) {
+			icon = eEXE;
 #endif
-		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif")) {
-			icon = eIMG;
 		} else if (*nn == '.') {
 			icon = eHID;
 		}
 		res = r_str_appendf (res, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
 		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-			isdir?'d': fch,
+			isdir? 'd': fch,
 			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
@@ -600,7 +625,6 @@ R_API bool r_syscmd_popd(void) {
 	if (r_list_empty (dirstack)) {
 		r_list_free (dirstack);
 		dirstack = NULL;
-		return false;
 	}
 	return true;
 }

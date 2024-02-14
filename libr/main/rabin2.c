@@ -91,7 +91,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_CODESIGN_VERBOSE\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
+		" RABIN2_SWIFTLIB:  1|0|               # load Swift libs to demangle (default: true)\n"
 		" RABIN2_VERBOSE:   e bin.verbose      # show debugging messages from the parser\n"
 		);
 	}
@@ -257,7 +257,8 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 		}
 		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
 			r_hex_bin2str (buf, len, ret);
-			printf ("%s %s\n", symbol->name, ret);
+			const char *name = r_bin_name_tostring (symbol->name);
+			printf ("%s %s\n", name, ret);
 		} else {
 			R_LOG_ERROR ("Cannot read from buffer");
 		}

@@ -29,11 +29,14 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 #endif
 
 static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
-	op->type = R_ANAL_OP_TYPE_UNK;
 	RStrBuf *mn = r_strbuf_new (NULL);
+	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = wsdis (mn, op->bytes, op->size);
 	if (op->size) {
 		char *buf_asm = r_strbuf_drain (mn);
+		if (!buf_asm) {
+			return false;
+		}
 		switch (*buf_asm) {
 		case 'n':
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -116,7 +119,6 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		}
-
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = buf_asm;
 		} else {

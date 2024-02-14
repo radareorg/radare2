@@ -89,13 +89,11 @@ static void cstr_realloc(CString *cstr, int new_size) {
 		size = size * 2;
 	}
 	void *data = realloc (cstr->data_allocated, size);
-	if (!data) {
-		eprintf ("Assert\n");
-		return;
+	if (data) {
+		cstr->data_allocated = data;
+		cstr->size_allocated = size;
+		cstr->data = data;
 	}
-	cstr->data_allocated = data;
-	cstr->size_allocated = size;
-	cstr->data = data;
 }
 
 /* add a byte */
@@ -1109,7 +1107,7 @@ static void tok_print(int *str) {
 #endif
 
 /* parse after #define */
-static void parse_define(TCCState *s1) {
+R_API void tcc_parse_define(TCCState *s1) {
 	Sym *s, *first, **ps;
 	int t, varg, is_vaargs, spc;
 	TokenString str;
@@ -1297,7 +1295,7 @@ redo:
 	switch (s1->tok) {
 	case TOK_DEFINE:
 		next_nomacro (s1);
-		parse_define (s1);
+		tcc_parse_define (s1);
 		break;
 	case TOK_UNDEF:
 		next_nomacro (s1);
@@ -2022,7 +2020,7 @@ float_frac_parse:
 		}
 
 		/* XXX: not exactly ANSI compliant */
-		if ((n & 0xffffffff00000000LL) != 0) {
+		if ((n & 0xffffffff00000000ULL) != 0) {
 			if ((n >> 63) != 0) {
 				s1->tok = TOK_CULLONG;
 			} else {

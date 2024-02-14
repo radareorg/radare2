@@ -58,9 +58,8 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
-				} else {
-					R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 				}
+				R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 			} else {
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;
@@ -188,6 +187,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	const char *sarch = R_UNWRAP3 (anal, config, arch);
 	if (!sarch) {
 		R_LOG_DEBUG ("Cannot find any valid arch");
+		free (jmptbl);
 		return false;
 	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;

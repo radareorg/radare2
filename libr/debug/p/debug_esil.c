@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2013-2021 pancake */
-// r2 -Desil ls
+/* radare - LGPL - Copyright 2013-2023 pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -46,7 +45,8 @@ static bool __esil_step(RDebug *dbg) {
 }
 
 static bool __esil_init(RDebug *dbg) {
-	dbg->tid = dbg->pid = 1;
+	R_LOG_DEBUG ("esil_init");
+	// dbg->tid = dbg->pid = 1;
 	// aeim
 	// aei
 	return true;
@@ -121,7 +121,7 @@ static bool __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int __esil_stop(RDebug *dbg) {
+static bool __esil_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
 	return true;
 }

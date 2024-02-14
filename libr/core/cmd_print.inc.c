@@ -33,6 +33,16 @@ static RCoreHelpMessage help_msg_psp = {
 	"psp2", "", "same as psp, but taking 2 byte for length",
 	"psp4", "", "same as psp, but using 4 byte dword (honoring cfg.bigendian) for length",
 	"pspj", "", "print pascal string in JSON",
+	"pspw", "", "print zero-terminated 16bit wide string, taking length in bytes defined by the first byte (pspw1)",
+	"pspw1", "", "same as pspw",
+	"pspw2", "", "same as pspw, but taking 2 byte for length",
+	"pspw4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
+	"pspwj", "", "print pascal 16bit wide string in JSON",
+	"pspW", "", "print zero-terminated 32bit wide string, taking length in bytes defined by the first byte (pspW1)",
+	"pspW1", "", "same as pspW",
+	"pspW2", "", "same as pspW, but taking 2 byte for length",
+	"pspW4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
+	"pspWj", "", "print pascal 32bit wide string in JSON",
 	NULL
 };
 
@@ -171,7 +181,7 @@ static RCoreHelpMessage help_msg_p = {
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][dfjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
-	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
+	"pa", "[?][edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
 	"pA", "[n_ops]", "show n_ops address and type",
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
@@ -292,7 +302,9 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-	"pds", "[bf] [N]", "disassemble summary: strings, calls, jumps, refs (b=N bytes f=function)",
+	"pds", "[?]", "print disasm summary, showing referenced names",
+	"pdsb", " [N]", "basic block summary",
+	"pdsf", "[q]", "show function summary of strings, calls, variables, references..",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
@@ -639,7 +651,7 @@ static const ut32 colormap[256] = {
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
-		r_core_cmd_help_match (core, help_msg_pa, "pad", false);
+		r_core_cmd_help_contains (core, help_msg_pa, "pad");
 		return;
 	}
 	r_asm_set_pc (core->rasm, core->offset);
@@ -766,7 +778,7 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (r_str_startswith (input, "fln ")) {
 		R_LOG_TODO ("waiting for r2shell");
 	} else {
-		r_core_cmd_help_match (core, help_msg_pr, "print", true);
+		r_core_cmd_help_match (core, help_msg_pr, "print");
 	}
 }
 
@@ -929,7 +941,7 @@ static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
 	ut64 at_max = 0LL;
 
 	r_list_foreach (methods, iter, sym) {
-		if (sym->vaddr) {
+		if (sym->vaddr && sym->vaddr != UT64_MAX) {
 			if (sym->vaddr < at_min) {
 				at_min = sym->vaddr;
 			}
@@ -948,9 +960,6 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (core->bin);
 	r_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) {
-			continue;
-		}
 		findMethodBounds (c->methods, &min, &max);
 		if (len) {
 			*len = (max - min);
@@ -961,8 +970,7 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 }
 
 static void cmd_pCD(RCore *core, const char *input) {
-	int h, w = r_cons_get_size (&h);
-	int i;
+	int i, h, w = r_cons_get_size (&h);
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
@@ -1138,7 +1146,7 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
-	const char *arg = sep? sep+1: NULL;
+	const char *arg = sep? r_str_trim_head_ro (sep): NULL;
 
 	ut64 addr = core->offset;
 	int len = core->blocksize;
@@ -1154,10 +1162,10 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 'a': // "pdua"
 		{
 		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pdua");
 			break;
 		}
-		ut64 to = r_num_get (core->num, arg);
+		ut64 to = r_num_math (core->num, arg);
 		if (!to) {
 			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;
@@ -1179,25 +1187,25 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'c': // "pduc"
 		if (input[1] == '?' || (input[1] && input[2] == '?')) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pduc", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pduc");
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, "call", false,
 				input[1] == 'j', NULL, NULL);
 		break;
-	/*case 'e': // "pdue"
+#if 0
+	case 'e': // "pdue"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pdue", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pdue");
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, esil, arg, false,
 				input[1] == 'j', NULL, NULL);
-		break;*/
+		break;
+#endif
 	case 'i': // "pdui"
 		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pdui");
 			break;
 		}
 		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, arg, false,
@@ -1205,7 +1213,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'o': // "pduo"
 		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pduo");
 			break;
 		}
 		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, arg, false,
@@ -1213,7 +1221,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 's': // "pdus"
 		if (input[1] == '?' || (input[1] && input[2] == '?')) {
-			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
+			r_core_cmd_help_match (core, help_msg_pdu, "pdus");
 			break;
 		}
 		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, "syscall", false,
@@ -1393,7 +1401,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'b': // "pFb"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_pF, "pFb", false);
+			r_core_cmd_help_contains (core, help_msg_pF, "pFb");
 		} else {
 			char *s = r_protobuf_decode (data, size, input[1]);
 			if (s) {
@@ -1424,7 +1432,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'B': // "pFB"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_pF, "pFB", true);
+			r_core_cmd_help_match (core, help_msg_pF, "pFB");
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			if (size > 0) {
@@ -1716,8 +1724,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 						pad?pad:"", pad2,
 						la->name?la->name: "",
 						la->value, la->value, la->value,
-						la->pos, la->sz
-					      );
+						la->pos, la->sz);
 			}
 			free (pad);
 			free (pad2);
@@ -1731,7 +1738,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
+	bool v2 = false;
 	int mode = R_PRINT_MUSTSEE;
+	if (_input[1] == '2') {
+		// "pf2"
+		_input++;
+		v2 = true;
+	}
 	switch (_input[1]) {
 	case '*': // "pf*"
 		_input++;
@@ -1767,7 +1780,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
 				R_LOG_WARN ("Struct %s not defined", _input);
-				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
+				r_core_cmd_help_match (core, help_msg_pf, "pfs");
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1777,10 +1790,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
 				R_LOG_WARN ("Struct %s not defined", _input);
-				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
+				r_core_cmd_help_match (core, help_msg_pf, "pfs");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
+			r_core_cmd_help_match (core, help_msg_pf, "pfs");
 		}
 		return;
 	}
@@ -1816,12 +1829,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (_input[2] == ' ') {
 			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
 		} else {
-			r_core_cmd_help_match (core, help_msg_pf, "pfb", true);
+			r_core_cmd_help_match (core, help_msg_pf, "pfb");
 		}
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_pf, "pfo", true);
+			r_core_cmd_help_match (core, help_msg_pf, "pfo");
 		} else if (_input[2] == ' ') {
 			const char *fname = r_str_trim_head_ro (_input + 3);
 			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
@@ -2031,11 +2044,16 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		char *save_ptr = NULL;
 		const char *arg1 = r_str_tok_r (args, " ", &save_ptr);
 		if (arg1 && r_str_isnumber (arg1)) {
-			r_core_cmd_help_match (core, help_msg_pf, "pf", true);
+			r_core_cmd_help_match (core, help_msg_pf, "pf");
 			goto err_arg1;
 		}
-		r_print_format (core->print, core->offset,
-			buf, size, fmt, mode, NULL, NULL);
+		if (v2) {
+			r_print_format2 (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		} else {
+			r_print_format (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		}
 	err_arg1:
 		free (args);
 	err_args:
@@ -3042,6 +3060,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_b (core->config, "asm.comments");
 	bool show_offset = r_config_get_b (core->config, "asm.offset");
+	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
@@ -3053,16 +3072,20 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	r_config_set_b (core->config, "asm.offset", true);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_b (core->config, "scr.html", false);
 	r_config_set_b (core->config, "asm.cmt.right", true);
+	r_config_set_b (core->config, "asm.offset", true);
+
+	if (strchr (input, 'q')) { // "pdsfq"
+		show_offset = false;
+	}
 
 	r_cons_push ();
 	line = NULL;
 	s = NULL;
-	if (!strncmp (input, "dsb", 3)) {
+	if (r_str_startswith (input, "dsb")) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
 			line = s = r_core_cmd_strf (core, "pD %"PFMT64u" @ 0x%08"PFMT64x, bb->size, bb->addr);
@@ -3250,8 +3273,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							}
 							r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 						}
-					}
-					else {
+					} else {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
 						}
@@ -3356,7 +3378,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	R_FREE (s);
 	R_FREE (switchcmp);
 restore_conf:
-	r_config_set_b (core->config, "asm.offset", show_offset);
+	r_config_set_b (core->config, "asm.offset", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_b (core->config, "scr.html", scr_html);
@@ -3596,7 +3618,11 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			switch (n) {
 			case 1:
 				v = r_read_ble8 (block);
-				r_cons_printf ("%" PFMT64d "\n", v);
+				if (*input == 'u') {
+					r_cons_printf ("%u\n", (unsigned char)v);
+				} else {
+					r_cons_printf ("%d\n", (signed char)v);
+				}
 				block += 1;
 				break;
 			case 2:
@@ -4125,6 +4151,10 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 }
 
 static void cmd_print_bars(RCore *core, const char *input) {
+	if (r_str_endswith (input, "?")) {
+		r_core_cmd_help (core, help_msg_p_equal);
+		return;
+	}
 	bool print_bars = false;
 	ut8 *ptr = NULL;
 	// p=e [nblocks] [totalsize] [skip]
@@ -5495,10 +5525,10 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ARCH_OP_MASK_BASIC);
 						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
 						if (rel) {
-							if (rel && rel->import && rel->import->name) {
-								dst2 = rel->import->name;
-							} else if (rel && rel->symbol && rel->symbol->name) {
-								dst2 = rel->symbol->name;
+							if (rel && rel->import) {
+								dst2 = r_bin_name_tostring (rel->import->name);
+							} else if (rel && rel->symbol) {
+								dst2 = r_bin_name_tostring (rel->symbol->name);
 							}
 						} else {
 							dst2 = dst;
@@ -5690,7 +5720,18 @@ static void cmd_psa(RCore *core, const char *_) {
 static void print_pascal_string(RCore *core, const char *input, int len) {
 	int disp = 1;
 	int slen = -1;
+	int options = R_PRINT_STRING_ZEROEND;
 	bool dojson = false;
+	switch (input[0]) {
+	case 'w': //pspw
+		options |= R_PRINT_STRING_WIDE;
+		input++;
+		break;
+	case 'W': //pspW
+		options |= R_PRINT_STRING_WIDE32;
+		input++;
+		break;
+	}
 	switch (input[0]) {
 	case 'j': // "pspj"
 		dojson = true;
@@ -5739,11 +5780,11 @@ static void print_pascal_string(RCore *core, const char *input, int len) {
 	}
 	if (slen + disp < core->blocksize) {
 		if (dojson) {
-			print_json_string (core, (const char *) core->block + disp, slen, NULL);
+			print_json_string (core, (const char *) core->block + disp, slen,
+				((options & R_PRINT_STRING_WIDE) == R_PRINT_STRING_WIDE)? "wide":
+				((options & R_PRINT_STRING_WIDE32) == R_PRINT_STRING_WIDE32)? "wide32": NULL);
 		} else {
-			r_print_string (core->print, core->offset,
-					core->block + disp, slen,
-					R_PRINT_STRING_ZEROEND);
+			r_print_string (core->print, core->offset, core->block + disp, slen, options);
 		}
 		core->num->value = slen;
 	} else {
@@ -5786,7 +5827,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (halp) {
-			r_core_cmd_help_match (core, help_msg_p, "pushd", true);
+			r_core_cmd_help_match (core, help_msg_p, "pushd");
 			r_core_return_value (core, 1);
 		}
 		return 0;
@@ -5795,7 +5836,7 @@ static int cmd_print(void *data, const char *input) {
 		bool all = strstr (input, "-a");
 		bool halp = strstr (input, "-h");
 		if (halp) {
-			r_core_cmd_help_match (core, help_msg_p, "popd", true);
+			r_core_cmd_help_match (core, help_msg_p, "popd");
 			r_core_return_value (core, 1);
 		} else {
 			bool suc = all
@@ -5970,7 +6011,7 @@ static int cmd_print(void *data, const char *input) {
 
 		int want = r_num_math (core->num, input + 1);
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pA", false);
+			r_core_cmd_help_contains (core, help_msg_p, "pA");
 		} else {
 			r_config_set_i (core->config, "search.maxhits", want);
 			r_config_set_i (core->config, "search.from", core->offset);
@@ -5990,7 +6031,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pa, "pae", true);
+				r_core_cmd_help_match (core, help_msg_pa, "pae");
 			} else {
 				int printed = 0;
 				int bufsz;
@@ -6020,7 +6061,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else if (input[1] == 'D') { // "paD"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pa, "paD", true);
+				r_core_cmd_help_match (core, help_msg_pa, "paD");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input + 2);
 			}
@@ -6028,7 +6069,7 @@ static int cmd_print(void *data, const char *input) {
 			switch (input[2]) {
 			case 'e': // "pade"
 				if (input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_pa, "pade", true);
+					r_core_cmd_help_match (core, help_msg_pa, "pade");
 				} else {
 					int printed = 0;
 					int bufsz;
@@ -6061,7 +6102,7 @@ static int cmd_print(void *data, const char *input) {
 				__cmd_pad (core, arg);
 				break;
 			case '?': // "pad?"
-				r_core_cmd_help_match (core, help_msg_pa, "pad", false);
+				r_core_cmd_help_contains (core, help_msg_pa, "pad");
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_pa);
@@ -6078,7 +6119,7 @@ static int cmd_print(void *data, const char *input) {
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
 				if (!acode->len) {
-					r_core_cmd_help_match (core, help_msg_pa, "pa", false);
+					r_core_cmd_help_contains (core, help_msg_pa, "pa");
 				} else {
 					size_t i;
 					for (i = 0; i < acode->len; i++) {
@@ -6094,7 +6135,7 @@ static int cmd_print(void *data, const char *input) {
 	break;
 	case 'b': { // "pb"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pb", true);
+			r_core_cmd_help_match (core, help_msg_p, "pb");
 		} else if (l != 0) {
 			int from, to;
 			const int size = len * 8;
@@ -6139,7 +6180,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'B': { // "pB"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pB", true);
+			r_core_cmd_help_match (core, help_msg_p, "pB");
 		} else if (l != 0) {
 			int size;
 			char *buf;
@@ -6304,7 +6345,7 @@ static int cmd_print(void *data, const char *input) {
 		case ',': // "pd,"
 		case 't': // "pdt" // R_DEPRECATE pdt imho
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pd,", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pd,");
 				return 0;
 			} else {
 				r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
@@ -6314,7 +6355,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'k': // "pdk" -print class
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdk", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdk");
 				return 0;
 			} else {
 				int len = 0;
@@ -6324,7 +6365,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "pdi" // "pDi"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdi", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdi");
 				return 0;
 			} else {
 				processed_cmd = true;
@@ -6339,9 +6380,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'a': // "pda"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pda", false);
+				r_core_cmd_help_contains (core, help_msg_pd, "pda");
 			} else if (input[2] == 'j' && input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdaj", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdaj");
 			} else {
 				r_core_print_disasm_all (core, core->offset, l, len, input[2]);
 				pd_result = true;
@@ -6349,7 +6390,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'o': // "pdo"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdo", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdo");
 				return 0;
 			}
 			core_print_decompile (core, input + 2);
@@ -6368,20 +6409,20 @@ static int cmd_print(void *data, const char *input) {
 			int mode = R_MODE_PRINT;
 			if (input[2] == 'j') {
 				if (input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_pde, "pdej", true);
+					r_core_cmd_help_match (core, help_msg_pde, "pdej");
 					return 0;
 				}
 				mode = R_MODE_JSON;
 			} else if (input[2] == 'q') {
 				if (input[3] == 'q') { // "pdeqq"
 					if (input[4] == '?') {
-						r_core_cmd_help_match (core, help_msg_pde, "pdeqq", true);
+						r_core_cmd_help_match (core, help_msg_pde, "pdeqq");
 						return 0;
 					}
 					mode = R_MODE_SIMPLEST; // Like pi
 				} else { // "pdeq"
 					if (input[3] == '?') {
-						r_core_cmd_help_match (core, help_msg_pde, "pdeq", false);
+						r_core_cmd_help_contains (core, help_msg_pde, "pdeq");
 						return 0;
 					}
 					mode = R_MODE_SIMPLE; // Like pdi
@@ -6402,11 +6443,11 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // "pdr"
 			processed_cmd = true;
 			if (input[2] == '?') { // "pdr?"
-				r_core_cmd_help_match (core, help_msg_pd, "pdr", false);
+				r_core_cmd_help_contains (core, help_msg_pd, "pdr");
 				pd_result = true;
 				break;
 			} else if (input[2] == '.' && input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdr.", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdr.");
 			} else {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -6421,7 +6462,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "pdb"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdb", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdb");
 			} else {
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
@@ -6458,10 +6499,10 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pds", true);
+				r_core_cmd_help_contains (core, help_msg_pd, "pds");
 			} else {
 				if (input[2] && input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_pd, "pds", true);
+					r_core_cmd_help_contains (core, help_msg_pd, "pds");
 				} else {
 					disasm_strings (core, input, NULL);
 				}
@@ -6470,7 +6511,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdf", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdf");
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
@@ -6558,7 +6599,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'p': // "pdp"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdp", true);
+				r_core_cmd_help_match (core, help_msg_pd, "pdp");
 				pd_result = true;
 				break;
 			};
@@ -7070,7 +7111,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pu", true);
+			r_core_cmd_help_match (core, help_msg_p, "pu");
 		} else {
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block, len,
@@ -7140,7 +7181,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_p, "pC", true);
+			r_core_cmd_help_match (core, help_msg_p, "pC");
 			break;
 		}
 		break;
@@ -7148,7 +7189,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case 'i': // "pri" // color raw image
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pr, "pri", true);
+				r_core_cmd_help_match (core, help_msg_pr, "pri");
 			} else if (input[2] == 'n') {
 				cmd_printmsg (core, input + 4);
 			} else if (input[2] == '1') {
@@ -7275,7 +7316,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "p3", true);
+			r_core_cmd_help_match (core, help_msg_p, "p3");
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			if (!data) {
@@ -7296,7 +7337,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'y': // "py"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_p, "py", false);
+			r_core_cmd_help_contains (core, help_msg_p, "py");
 			break;
 		case '-':
 			if (r_config_get_b (core->config, "scr.interactive")) {
@@ -7644,7 +7685,7 @@ static int cmd_print(void *data, const char *input) {
 				int mode = input[2];
 				int wordsize = core->anal->config->bits / 8;
 				if (mode == '?') {
-					r_core_cmd_help_match (core, help_msg_px, "pxr", false);
+					r_core_cmd_help_contains (core, help_msg_px, "pxr");
 					break;
 				}
 				if (mode && isdigit (mode)) {
@@ -7913,7 +7954,7 @@ static int cmd_print(void *data, const char *input) {
 	case '2': // "p2"
 		if (l) {
 			if (input[1] == '?') {
-				r_core_cmd_help_match (core, help_msg_p, "p2", true);
+				r_core_cmd_help_match (core, help_msg_p, "p2");
 			} else {
 				RConsContext *c = core->cons->context;
 				const char **colors = (const char *[]) {
@@ -7939,11 +7980,11 @@ static int cmd_print(void *data, const char *input) {
 			case 'd': // "p6d"
 				switch (input[2]) {
 				case '?':
-					r_core_cmd_help_match (core, help_msg_p6, "p6d", true);
+					r_core_cmd_help_match (core, help_msg_p6, "p6d");
 					break;
 				case 's': // "p6ds"
 					if (input[3] == '?') {
-						r_core_cmd_help_match (core, help_msg_p6, "p6ds", true);
+						r_core_cmd_help_match (core, help_msg_p6, "p6ds");
 					} else {
 						char *a = r_str_trim_dup (input + 3);
 						char *out = malloc ((4 + strlen (a)) * 4);
@@ -7958,7 +7999,7 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				case 'z': // "p6dz"
 					if (input[3] == '?') {
-						r_core_cmd_help_match (core, help_msg_p6, "p6dz", true);
+						r_core_cmd_help_match (core, help_msg_p6, "p6dz");
 					} else {
 						len = r_str_nlen ((const char *)block, len);
 						if (r_base64_decode (buf, (const char *) block, len)) {
@@ -7982,11 +8023,11 @@ static int cmd_print(void *data, const char *input) {
 			case 'e': // "p6e"
 				switch (input[2]) {
 				case '?':
-					r_core_cmd_help_match (core, help_msg_p6, "p6e", true);
+					r_core_cmd_help_match (core, help_msg_p6, "p6e");
 					break;
 				case 's': // "p6es"
 					if (input[3] == '?') {
-						r_core_cmd_help_match (core, help_msg_p6, "p6es", true);
+						r_core_cmd_help_match (core, help_msg_p6, "p6es");
 					} else {
 						char *a = r_str_trim_dup (input + 3);
 						char *out = calloc ((4 + strlen (a)), 4);
@@ -7998,7 +8039,7 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				case 'z': // "p6ez"
 					if (input[3] == '?') {
-						r_core_cmd_help_match (core, help_msg_p6, "p6ez", true);
+						r_core_cmd_help_match (core, help_msg_p6, "p6ez");
 					} else {
 						len = r_str_nlen ((const char *)block, len);
 						r_base64_encode ((char *) buf, block, len);
@@ -8073,23 +8114,25 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pk", false);
-		} else if (!strncmp (input, "kill", 4)) {
+			r_core_cmd_help_contains (core, help_msg_p, "pk");
+		} else if (r_str_startswith (input, "kill")) {
 			RListIter *iter;
 			RDebugPid *pid;
 			const char *arg = strchr (input, ' ');
-			RList *pids = (core->dbg->current && core->dbg->current->plugin.pids)
-				? core->dbg->current->plugin.pids (core->dbg, 0): NULL;
-			if (R_STR_ISNOTEMPTY (arg)) {
-				arg++;
-				r_list_foreach (pids, iter, pid) {
-					if (strstr (pid->path, arg)) {
-						r_cons_printf ("dk 9 %d\n", pid->pid);
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			if (plugin && plugin->pids) {
+				RList *pids = plugin->pids (core->dbg, 0);
+				if (pids && R_STR_ISNOTEMPTY (arg)) {
+					arg++;
+					r_list_foreach (pids, iter, pid) {
+						if (strstr (pid->path, arg)) {
+							r_cons_printf ("dk 9 %d\n", pid->pid);
+						}
+						// r_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
 					}
-					// r_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
 				}
+				r_list_free (pids);
 			}
-			r_list_free (pids);
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			char *s = r_print_randomart (block, len, core->offset);
@@ -8099,7 +8142,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K': // "pK"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "pK", true);
+			r_core_cmd_help_match (core, help_msg_p, "pK");
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			int w, h;

@@ -3501,9 +3501,6 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 			return false;
 		}
 	}
-	if (fcn) {
-		agraph_update_title (core, g, fcn);
-	}
 	if (core && core->config) {
 		if (r_config_get_b (core->config, "graph.trace")) {
 			// fold all bbs not traced
@@ -3542,6 +3539,9 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 		if (n) {
 			update_seek (g->can, n, g->force_update_seek);
 		}
+	}
+	if (fcn) {
+		agraph_update_title (core, g, fcn);
 	}
 	if (oldpos[0] || oldpos[1]) {
 		g->can->sx = oldpos[0];
@@ -4464,7 +4464,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		can = r_cons_canvas_new (w, h);
 		if (!can) {
 			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
-					"size? See scr.columns + scr.rows");
+					"size? See scr.cols + scr.rows");
 			r_config_hold_free (hc);
 			return false;
 		}

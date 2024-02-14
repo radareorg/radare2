@@ -61,10 +61,16 @@
 static int r_cmd_qjs_call(void *c, const char *input) {
 	RCore *core = c;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
+	if (pm == NULL) {
+		return false;
+	}
 
 	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
 	QjsCorePlugin *plugin;
 	R_VEC_FOREACH (&pm->core_plugins, plugin) {
+		if (plugin == NULL) {
+			continue;
+		}
 		QjsContext *qc = &plugin->qctx;
 		JSValueConst args[1] = { JS_NewString (qc->ctx, input) };
 		JSValue res = JS_Call (qc->ctx, qc->call_func, JS_UNDEFINED, countof (args), args);

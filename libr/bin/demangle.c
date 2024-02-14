@@ -129,6 +129,15 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 			}
 		}
 	}
+	if (r_str_startswith (str, "So") && isdigit (str[2])) {
+		char *ss = r_str_newf ("$s%s", str);
+		char *res = r_bin_demangle (bf, def, ss, vaddr, libs);
+		free (ss);
+		return res;
+	}
+	if (r_str_startswith (str, "_symbolic")) {
+		type = R_BIN_LANG_SWIFT;
+	}
 	if (r_str_startswith (str, "__")) {
 		if (str[2] == 'T') {
 			type = R_BIN_LANG_SWIFT;

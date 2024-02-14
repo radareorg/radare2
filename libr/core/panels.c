@@ -1606,12 +1606,11 @@ static void __fix_cursor_down(RCore *core) {
 	RPrint *print = core->print;
 	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
-		int i = 0;
-		//XXX: ugly hack
+		int i;
+		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RAnalOp op;
-			int sz = r_asm_disassemble (core->rasm,
-					&op, core->block, 32);
+			int sz = r_asm_disassemble (core->rasm, &op, core->block, 32);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -1682,7 +1681,7 @@ static void __cursor_down(RCore *core) {
 	} else {
 		print->cur += 4;
 	}
-	__fix_cursor_down (core);
+	// __fix_cursor_down (core);
 }
 
 static void __save_panel_pos(RPanel* panel) {
@@ -2938,6 +2937,9 @@ static void __direction_hexdump_cb(void *user, int direction) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
+	if (!cur) {
+		return;
+	}
 	if (cur->model->cache) {
 		__direction_default_cb (user, direction);
 		return;
@@ -4750,6 +4752,9 @@ static void __print_snow(RPanels *panels) {
 		panels->snows = r_list_newf (free);
 	}
 	RPanel *cur = __get_cur_panel (panels);
+	if (!cur) {
+		return;
+	}
 	int i, amount = r_num_rand (8);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
@@ -6379,8 +6384,11 @@ static char *__parse_panels_config(const char *cfg, int len) {
 		return NULL;
 	}
 	char *tmp = r_str_newlen (cfg, len + 1);
+	if (!tmp) {
+		return NULL;
+	}
 	int i = 0;
-	for (; i < len; i++) {
+	for (; tmp[i] && i < len; i++) {
 		if (tmp[i] == '}') {
 			if (i + 1 < len) {
 				if (tmp[i + 1] == ',') {

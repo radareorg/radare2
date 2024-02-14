@@ -489,9 +489,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 
 	ret = handle_attach (g);
 end:
-	if (cmd) {
-		free (cmd);
-	}
+	free (cmd);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -566,9 +564,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 
 	ret = 0;
 end:
-	if (cmd) {
-		free (cmd);
-	}
+	free (cmd);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -647,9 +643,7 @@ int gdbr_kill_pid(libgdbr_t *g, int pid) {
 	}
 
 end:
-	if (cmd) {
-		free (cmd);
-	}
+	free (cmd);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -925,9 +919,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
-	if (tmp) {
-		free (tmp);
-	}
+	free (tmp);
 	return ret;
 }
 
@@ -964,7 +956,7 @@ int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	}
 
 	if (sig <= 0) {
-		strncpy (command, CMD_C_CONT, sizeof (command) - 1);
+		r_str_ncpy (command, CMD_C_CONT, sizeof (command));
 	} else {
 		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
 	}
@@ -1017,9 +1009,7 @@ int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
-	if (command) {
-		free (command);
-	}
+	free (command);
 	return ret;
 }
 
@@ -1186,15 +1176,9 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 
 	ret = 0;
 end:
-	if (command) {
-		free (command);
-	}
-	if (buff) {
-		free (buff);
-	}
-	if (value) {
-		free (value);
-	}
+	free (command);
+	free (buff);
+	free (value);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -1610,9 +1594,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 
 	ret = 0;
 end:
-	if (buf) {
-		free (buf);
-	}
+	free (buf);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -1671,15 +1653,13 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 end:
 	gdbr_lock_leave (g);
 	if (ret != 0) {
-		if (path) {
-			free (path);
-		}
+		free (path);
 		return NULL;
 	}
 	return path;
 }
 
-bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
+bool gdbr_is_thread_dead(libgdbr_t *g, int pid, int tid) {
 	bool ret = false;
 
 	if (!g) {
@@ -1703,12 +1683,7 @@ bool gdbr_is_thread_dead (libgdbr_t *g, int pid, int tid) {
 	if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
 		goto end;
 	}
-	if (g->data_len == 3 && g->data[0] == 'E') {
-		ret = true;
-	} else {
-		ret = false;
-	}
-
+	ret = (g->data_len == 3 && g->data[0] == 'E');
 end:
 	gdbr_lock_leave (g);
 	return ret;
@@ -1802,15 +1777,11 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 end:
 	gdbr_lock_leave (g);
 	if (ret != 0) {
-		if (dpid) {
-			free (dpid);
-		}
+		free (dpid);
 		// We can't use r_debug_pid_free here
 		if (list) {
 			r_list_foreach (list, iter, dpid) {
-				if (dpid->path) {
-					free (dpid->path);
-				}
+				free (dpid->path);
 				free (dpid);
 			}
 			r_list_free (list);
@@ -1904,15 +1875,11 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 end:
 	gdbr_lock_leave (g);
 	if (ret != 0) {
-		if (dpid) {
-			free (dpid);
-		}
+		free (dpid);
 		// We can't use r_debug_pid_free here
 		if (list) {
 			r_list_foreach (list, iter, dpid) {
-				if (dpid->path) {
-					free (dpid->path);
-				}
+				free (dpid->path);
 				free (dpid);
 			}
 			r_list_free (list);

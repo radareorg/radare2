@@ -5,20 +5,13 @@
 
 #include <r_util.h>
 
-#if __i386__
-#define R2R_ARCH "x86"
-#elif __x86_64__
-#define R2R_ARCH "x64"
-#elif __arm64__ || __aarch64__
-#define R2R_ARCH "arm64"
-#elif __arm__
-#define R2R_ARCH "arm"
-#elif __mips__
-#define R2R_ARCH "mips"
-#else
-#define R2R_ARCH "unknown"
-#endif
+#if R_SYS_BITS & R_SYS_BITS_64
+#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_64"
+#elif R_SYS_BITS & R_SYS_BITS_32
+#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_32"
+#elif
 #define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH
+#endif
 
 typedef struct r2r_cmd_test_string_record {
 	char *value;

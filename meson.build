@@ -231,6 +231,10 @@ else
   r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
 endif
 
+if host_machine.system() == 'aix'
+  library_cflags += ['-D_LINUX_SOURCE_COMPAT']
+endif
+
 r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
 
 # load plugin configuration
@@ -326,7 +330,7 @@ else
 endif
 
 has_debugger = get_option('debugger')
-have_ptrace = not ['haiku', 'windows', 'cygwin', 'sunos'].contains(host_machine.system())
+have_ptrace = not ['haiku', 'windows', 'cygwin', 'sunos', 'aix'].contains(host_machine.system())
 can_ptrace_wrap = ['linux'].contains(host_machine.system())
 
 have_ptrace = have_ptrace and has_debugger
@@ -394,6 +398,7 @@ userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
 userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set10('WANT_DEBUGSTUFF', get_option('debugstuff'))
 userconf.set('R_CRITICAL_ENABLED', r2_critical_enabled)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', not get_option('nogpl'))

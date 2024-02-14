@@ -344,11 +344,11 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 		if (!t) {
 			t = ' ';
 		}
-
 		char *fromname = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 		char *toname = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-		r_table_add_rowf (table, "ddssss",
+		r_table_add_rowf (table, "xxnssss",
 				ref->at, ref->addr,
+				r_anal_ref_size (ref),
 				r_anal_ref_type_tostring (t),
 				r_anal_ref_perm_tostring (ref),
 				toname, fromname
@@ -595,6 +595,20 @@ R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref) {
 		}
 	}
 	return r_str_rwx_i (perm);
+}
+
+R_API int r_anal_ref_size(RAnalRef *ref) {
+	int size = R_ANAL_REF_TYPE_SIZE (ref->type);
+	if (size) {
+		return size;
+	}
+	switch (R_ANAL_REF_TYPE_MASK (ref->type)) {
+	case R_ANAL_REF_TYPE_ICOD:
+		return 4; // or 8?
+	case R_ANAL_REF_TYPE_DATA:
+		return 4; // or 8?
+	}
+	return 0;
 }
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {

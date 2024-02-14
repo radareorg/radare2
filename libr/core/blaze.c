@@ -650,8 +650,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 					}
 					r_anal_op_free (op);
 					op = NULL;
-				}
-				else {
+				} else {
 					// we have this offset into previous analyzed block, exit from this path flow.
 					break;
 				}

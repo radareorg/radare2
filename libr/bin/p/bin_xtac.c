@@ -96,9 +96,8 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer (128);
 #define ROWL(nam, siz, val, fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
 	RBinXtacObj *bin = bf->bo->bin_obj;
 
 	ut64 addr = 0;
@@ -113,13 +112,13 @@ static RList *fields(RBinFile *bf) {
 	ROWL ("num_of_addr_pairs", 4, bin->header->num_of_addr_pairs, "x");
 	addr += 4;
 
-	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_mod_name, bin->header->ptr_to_mod_name, 0, "mod_name", strdup (bin->mod_name_u8), "s", false));
+	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_mod_name, bin->header->ptr_to_mod_name, 0, 0, "mod_name", strdup (bin->mod_name_u8), "s", false));
 	ROWL ("ptr_to_mod_name", 4, bin->header->ptr_to_mod_name, "x");
 	addr += 4;
 	ROWL ("size_of_mod_name", 4, bin->header->size_of_mod_name, "x");
 	addr += 4;
 
-	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_nt_pname, bin->header->ptr_to_nt_pname, 0, "nt_pname", strdup (bin->nt_path_name_u8), "s", false));
+	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_nt_pname, bin->header->ptr_to_nt_pname, 0, 0, "nt_pname", strdup (bin->nt_path_name_u8), "s", false));
 	ROWL ("ptr_to_nt_pname", 4, bin->header->ptr_to_nt_pname, "x");
 	addr += 4;
 	ROWL ("size_of_nt_pname", 4, bin->header->size_of_nt_pname, "x");
@@ -590,7 +589,7 @@ static RList *symbols(RBinFile *bf) {
 		if (arm_vaddr == UT32_MAX || x86_vaddr == UT32_MAX) {
 			continue;
 		}
-		ptr->name = r_str_newf ("x86.%08x", x86_vaddr);
+		ptr->name = r_bin_name_new_from (r_str_newf ("x86.%08x", x86_vaddr));
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->size = 0;

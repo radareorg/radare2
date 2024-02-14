@@ -416,3 +416,9 @@ R_API void r_strbuf_fini(RStrBuf *sb) {
 		sb->buf[0] = '\0';
 	}
 }
+
+R_API void r_strbuf_trim(RStrBuf *sb) {
+	char *s = strdup (r_strbuf_get (sb));
+	r_str_trim (s);
+	r_strbuf_set (sb, s);
+}

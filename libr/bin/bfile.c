@@ -5,7 +5,7 @@
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
-#define R_STRING_SCAN_BUFFER_SIZE 2048
+#define R_STRING_SCAN_BUFFER_SIZE 4096
 #define R_STRING_MAX_UNI_BLOCKS 4
 
 static RBinClass *__getClass(RBinFile *bf, const char *name) {
@@ -51,19 +51,17 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
 	case R_MODE_JSON:
-		{
-			if (pj) {
-				pj_o (pj);
-				pj_kn (pj, "vaddr", vaddr);
-				pj_kn (pj, "paddr", string->paddr);
-				pj_kn (pj, "ordinal", string->ordinal);
-				pj_kn (pj, "size", string->size);
-				pj_kn (pj, "length", string->length);
-				pj_ks (pj, "section", section_name);
-				pj_ks (pj, "type", type_string);
-				pj_ks (pj, "string", string->string);
-				pj_end (pj);
-			}
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "vaddr", vaddr);
+			pj_kn (pj, "paddr", string->paddr);
+			pj_kn (pj, "ordinal", string->ordinal);
+			pj_kn (pj, "size", string->size);
+			pj_kn (pj, "length", string->length);
+			pj_ks (pj, "section", section_name);
+			pj_ks (pj, "type", type_string);
+			pj_ks (pj, "string", string->string);
+			pj_end (pj);
 		}
 		break;
 	case R_MODE_SIMPLEST:
@@ -107,11 +105,20 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
-	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
+	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
+	RStrBuf *sb = r_strbuf_new ("");
 	ut64 str_start, needle = from;
-	int count = 0, i, rc, runes;
+	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
 	const int limit = bf->rbin->limit;
+	int minstr = bin->minstrlen;
+	if (minstr < 1) {
+		minstr = 1;
+	}
+	int maxstr = bin->maxstrlen;
+	if (maxstr < 1) {
+		maxstr = R_STRING_SCAN_BUFFER_SIZE;
+	}
 
 	// if list is null it means its gonna dump
 	r_return_val_if_fail (bf, -1);
@@ -148,7 +155,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	char *charset = r_sys_getenv ("RABIN2_CHARSET");
-	if (!R_STR_ISEMPTY (charset)) {
+	if (R_STR_ISNOTEMPTY (charset)) {
 		RCharset *ch = r_charset_new ();
 		if (r_charset_use (ch, charset)) {
 			int outlen = len * 4;
@@ -179,21 +186,21 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 		// smol optimization
 		if (to > 4 && needle < to - 4) {
-			ut32 n1 = r_read_le32 (buf + (needle - from));
+			ut32 n1 = r_read_le32 (buf + needle - from);
 			if (!n1) {
 				needle += 4;
 				continue;
 			}
 		}
-		rc = r_utf8_decode (buf + (needle - from), to - needle, NULL);
+		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
 		}
-		bool addr_aligned = !(needle % 4);
+		const bool addr_aligned = !(needle % 4);
 
 		if (type == R_STRING_TYPE_DETECT) {
-			char *w = (char *)buf + (needle + rc - from);
+			char *w = (char *)buf + needle + rc - from;
 			if (((to - needle) > 8 + rc)) {
 				// TODO: support le and be
 				bool is_wide32le = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
@@ -207,7 +214,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					is_wide32le = false;
 				}
 				///is_wide32be &= (n1 < 0xff && n11 < 0xff); // false; // n11 < 0xff;
-				if (is_wide32le  && addr_aligned) {
+				if (is_wide32le && addr_aligned) {
 					str_type = R_STRING_TYPE_WIDE32; // asume big endian,is there little endian w32?
 				} else {
 					// bool is_wide = (n1 && n2 && n1 < 0xff && (!n2 || n2 < 0xff));
@@ -229,8 +236,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		runes = 0;
 		str_start = needle;
 
+		r_strbuf_set (sb, "");
 		/* Eat a whole C string */
-		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
+		for (i = 0; i < maxstr && needle < to; i += rc) {
 			RRune r = {0};
 			if (str_type == R_STRING_TYPE_WIDE32) {
 				rc = r_utf32le_decode (buf + needle - from, to - needle, &r);
@@ -243,7 +251,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					rc = 2;
 				}
 			} else {
-				rc = r_utf8_decode (buf + (needle - from), to - needle, &r);
+				rc = r_utf8_decode (buf + needle - from, to - needle, &r);
 				if (rc > 1) {
 					str_type = R_STRING_TYPE_UTF8;
 				}
@@ -263,16 +271,16 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						r = 0;
 					}
 				}
-				rc = r_utf8_encode (tmp + i, r);
+				rc = r_utf8_encode (tmp, r);
+				tmp[rc] = 0;
+				r_strbuf_append (sb, (const char *)tmp);
 				runes++;
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
 				/* Print the escape code */
 				if (strings_nofp) {
 					rc = 2;
 					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
-						// eprintf ("is special\n");
-						runes++;
-						// accept it as it is
+						runes++; // accept it as it is
 						rc = 1;
 					} else {
 						rc = 1;
@@ -280,9 +288,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						break;
 					}
 				} else {
-					if ((i + 32) < sizeof (tmp) && r < 93) {
-						tmp[i + 0] = '\\';
-						tmp[i + 1] = "       abtnvfr             e  "
+					if (r < 93) {
+						tmp[0] = '\\';
+						tmp[1] = "       abtnvfr             e  "
 							"                              "
 							"                              "
 							"  \\"[r];
@@ -291,6 +299,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						break;
 					}
 					rc = 2;
+					tmp[rc] = 0;
+					r_strbuf_append (sb, (const char *)tmp);
 					runes++;
 				}
 			} else {
@@ -299,21 +309,23 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			}
 		}
 
-		tmp[i++] = '\0';
+		i++;
 
 		if (runes < min && runes >= 2 && str_type == R_STRING_TYPE_ASCII && needle < to) {
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
 		if (runes >= min) {
+			const char *tmpstr = r_strbuf_get (sb);
+			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives
 			int j, num_blocks, *block_list;
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
-				for (j = 0; j < i; j++) {
-					char ch = tmp[j];
+				for (j = 0; j < tmplen; j++) {
+					char ch = tmpstr[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
-						if (!IS_PRINTABLE (tmp[j])) {
+						if (!IS_PRINTABLE (ch)) {
 							continue;
 						}
 					}
@@ -324,7 +336,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				block_list = r_utf_block_list ((const ut8*)tmp, i - 1,
+				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
@@ -362,8 +374,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			bs->type = str_type;
 			bs->length = runes;
 			bs->size = needle - str_start;
-			bs->ordinal = count++;
-			if (limit > 0 && count > limit) {
+			bs->ordinal = bf->string_count++;
+			if (limit > 0 && bf->string_count > limit) {
 				R_LOG_WARN ("el.limit for strings");
 				break;
 			}
@@ -400,9 +412,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
-			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
+			bs->string = r_strbuf_drain (sb);
+			sb = r_strbuf_new ("");
 			if (strings_nofp) {
 				r_str_trim (bs->string); // trim spaces to ease readability
+			} else {
+				r_str_trim_tail (bs->string);
 			}
 			if (list) {
 				r_list_append (list, bs);
@@ -431,10 +446,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 		pj_free (pj);
 	}
-	return count;
+	r_strbuf_free (sb);
+	return bf->string_count;
 }
 
-static bool __isDataSection(RBinFile *a, RBinSection *s) {
+static bool is_data_section(RBinFile *a, RBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
 	}
@@ -487,7 +503,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 	}
 	int type;
 	const char *enc = bf->rbin->strenc;
-	if (!enc) {
+	if (enc == NULL) {
 		type = R_STRING_TYPE_DETECT;
 	} else if (!strcmp (enc, "latin1")) {
 		type = R_STRING_TYPE_ASCII;
@@ -866,16 +882,17 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 
 // TODO: searchStrings() instead
 R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	RBinObject *o = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
-	r_return_val_if_fail (bf, NULL);
 	RListIter *iter;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (!raw && bf && bf->bo && bf->bo->sections && !r_list_empty (bf->bo->sections)) {
-		RBinObject *o = bf->bo;
+	bf->string_count = 0;
+	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
-			if (__isDataSection (bf, section)) {
+			if (is_data_section (bf, section)) {
 				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
@@ -1053,19 +1070,19 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, int visibility) {
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
-		c->name = strdup (name);
+		c->name = r_bin_name_new (name);
 		if (R_STR_ISNOTEMPTY (super)) {
 			c->super = r_list_newf (free);
-			r_list_append (c->super, strdup (super));
+			r_list_append (c->super, r_bin_name_new (super));
 		}
 		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
-		c->visibility = visibility;
+		c->attr = attr;
 	}
 	return c;
 }
@@ -1081,7 +1098,7 @@ R_API void r_bin_class_free(RBinClass *k) {
 	}
 }
 
-R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, int view) {
+R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, ut64 attr) {
 	r_return_val_if_fail (name && bf && bf->bo, NULL);
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
@@ -1092,7 +1109,7 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 		}
 		return c;
 	}
-	c = r_bin_class_new (name, super, view);
+	c = r_bin_class_new (name, super, attr);
 	if (c) {
 		// XXX. no need for a list, the ht is iterable too
 		c->index = r_list_length (bf->bo->classes);
@@ -1116,7 +1133,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 	if (!sym) {
 		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
-			sym->name = strdup (method);
+			sym->name = r_bin_name_new (method);
 			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->bo->methods_ht, name, sym);

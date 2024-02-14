@@ -84,6 +84,22 @@ R_API RRange *r_range_new_from_string(const char *string) {
 	return rgs;
 }
 
+R_API char *r_range_tostring(RRange *rgs) {
+	RStrBuf *sb = r_strbuf_new ("");
+	// squash and then walk the thingk
+	RListIter *iter;
+	RRangeItem *r;
+	bool second = false;
+	r_list_foreach_prev (rgs->ranges, iter, r) {
+		if (second) {
+			r_strbuf_append (sb, ",");
+		}
+		r_strbuf_appendf (sb, "0x%08"PFMT64x"-0x%08"PFMT64x, r->fr, r->to);
+		second = true;
+	}
+	return r_strbuf_drain (sb);
+}
+
 R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	ut64 addr, addr2;
 	int i, len = strlen (string) + 1;
@@ -107,7 +123,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 			if (p2) {
 				addr = r_num_get (NULL, p);
 				addr2 = r_num_get (NULL, p2);
-				r_range_add(rgs, addr, addr2, 1);
+				r_range_add (rgs, addr, addr2, 1);
 				p2 = NULL;
 			} else {
 				addr = r_num_get (NULL, p);

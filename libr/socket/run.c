@@ -1289,7 +1289,9 @@ R_API bool r_run_start(RRunProfile *p) {
 			// setvbuf (stdout, NULL, _IONBF, 0);
 			if (p->_timeout) {
 #if R2__UNIX__
+#if !__wasi__
 				int mypid = r_sys_getpid ();
+#endif
 				if (!r_sys_fork ()) {
 					int use_signal = p->_timeout_sig;
 					if (use_signal < 1) {

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2022 - pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2015-2023 - pancake, alvaro_fe */
 
 #define R_LOG_ORIGIN "debug.xnu"
 
@@ -10,8 +10,6 @@
 #else
 #define XNU_USE_EXCTHR 1
 #endif
-// ------------------------------------
-
 
 #include <r_debug.h>
 #include <r_asm.h>
@@ -268,7 +266,6 @@ bool xnu_step(RDebug *dbg) {
 	}
 	return ret;
 #else
-	//we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
 		R_LOG_ERROR ("step failed on task %d for pid %d", task, dbg->tid);

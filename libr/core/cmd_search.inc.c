@@ -188,7 +188,7 @@ static RCoreHelpMessage help_msg_slash_r = {
 	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
 	"/r", " [addr]", "search references to this specific address",
 	"/ra", "", "search all references",
-	"/rc", "", "search for call references",
+	"/rc", " ([addr])", "search for call references",
 	"/re", " [addr]", "search references using esil",
 	"/rr", "", "find read references",
 	"/ru", "[*qj]", "search for UDS CAN database tables (binbloom)",
@@ -392,10 +392,15 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		return 0;
 	}
 	char *zeropage = calloc (core->blocksize, 1);
+	if (!zeropage) {
+		free (b);
+		return 0;
+	}
 	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		free (b);
+		free (zeropage);
 		return 0;
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -540,13 +545,15 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		to = r_itv_end (p->itv);
 		if (R_STR_ISNOTEMPTY (prelude)) {
 			ut8 *kw = malloc (strlen (prelude) + 1);
-			int kwlen = r_hex_str2bin (prelude, kw);
-			if (kwlen < 1) {
-				R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
-				break;
+			if (kw) {
+				int kwlen = r_hex_str2bin (prelude, kw);
+				if (kwlen < 1) {
+					R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
+					break;
+				}
+				ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
+				free (kw);
 			}
-			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
-			free (kw);
 		} else {
 			RList *preds = r_anal_preludes (core->anal);
 			if (preds) {
@@ -815,6 +822,16 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
 			}
 		}
+	} else if (r_str_startswith (mode, "flag:")) {
+		const char *match = mode + 5;
+		const RList *ls = r_flag_get_list (core->flags, core->offset);
+		RFlagItem *fi;
+		RListIter *iter;
+		r_list_foreach (ls, iter, fi) {
+			if (fi->size > 1 && r_str_glob (fi->name, match)) {
+				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
+			}
+		}
 	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "file")) {
@@ -1020,7 +1037,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			R_LOG_WARN ("search.in = ( anal.bb | anal.fcn ) requires to seek into a valid function");
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
-	} else if (!strncmp (mode, "dbg.", 4)) {
+	} else if (r_str_startswith (mode, "dbg.")) {
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			int mask = 0;
 			int add = 0;
@@ -1795,7 +1812,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const int stats = r_config_get_i (core->config, "esil.stats");
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd_call (core, "aei");
+		cmd_aei (core);
 		if (!core->anal->esil) {
 			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
@@ -2020,8 +2037,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		return;
 	}
 
-	r_core_cmd0 (core, "aei"); // requied to have core->anal->esil initialized.. imho esil should never be NULL!
-	// r_core_cmd0 (core, "aeim");
+	cmd_aei (core);// requied to have core->anal->esil initialized.. imho esil should never be NULL!
 	ut64 oldoff = core->offset;
 #if !USE_EMULATION
 	int syscallNumber = 0;
@@ -2247,7 +2263,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 static void cmd_search_aF(RCore *core, const char *input) {
 	bool quiet = *input == 'd';
 	if (*input && *input != ' ' && *input != 'd') {
-		r_core_cmd_help_match (core, help_msg_slash_a, "aF", false);
+		r_core_cmd_help_contains (core, help_msg_slash_a, "aF");
 		return;
 	}
 	RAnalFunction *fcn;
@@ -2264,6 +2280,10 @@ static void cmd_search_aF(RCore *core, const char *input) {
 			// eprintf ("0x08%"PFMT64x"%c", bb->addr, 10);
 			int i;
 			for (i = 0; i < bb->ninstr; i++) {
+				if (i >= bb->op_pos_size) {
+					R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+					break;
+				}
 				ut64 addr = bb->addr + bb->op_pos[i];
 				ut8 *idata = bbdata + bb->op_pos[i];
 				RAnalOp asmop;
@@ -2403,7 +2423,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	}
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd_call (core, "aei");
+		cmd_aei (core);
 		if (!core->anal->esil) {
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;
@@ -3969,7 +3989,7 @@ reread:
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
-				  r_core_cmd_help_match (core, help_msg_slash, "/o", true);
+				  r_core_cmd_help_match (core, help_msg_slash, "/o");
 				  break;
 			  }
 			  ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -3990,7 +4010,7 @@ reread:
 		break;
 	case 'O': { // "/O" alternative to "/o"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/O", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/O");
 			break;
 		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -4069,23 +4089,23 @@ reread:
 			break;
 		}
 		switch (input[1]) {
-		case 'c': // "/rc"
-			{
-				RListIter *iter;
-				RIOMap *map;
-				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
-				}
-			}
-			break;
 		case 'a': // "/ra"
 			{
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 0);
+				}
+			}
+			break;
+		case 'c': // "/rc"
+			{
+				RListIter *iter;
+				RIOMap *map;
+				r_list_foreach (param.boundaries, iter, map) {
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
 				}
 			}
 			break;
@@ -4094,7 +4114,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
 					r_core_seek (core, r_io_map_begin (map), true);
@@ -4106,7 +4126,7 @@ reread:
 					r_core_seek (core, curseek, true);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash_r, "/re", true);
+				r_core_cmd_help_match (core, help_msg_slash_r, "/re");
 				dosearch = false;
 			}
 			break;
@@ -4128,7 +4148,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, input[1]);
 				}
 			}
@@ -4142,8 +4162,7 @@ reread:
 					ut64 from = r_io_map_begin (map);
 					ut64 to = r_io_map_end (map);
 					if (input[param_offset - 1] == ' ') {
-						r_core_anal_search (core, from, to,
-								r_num_math (core->num, input + 2), 0);
+						r_core_anal_search (core, from, to, r_num_math (core->num, input + 2), 0);
 						do_ref_search (core, r_num_math (core->num, input + 2), from, to, &param);
 					} else {
 						r_core_anal_search (core, from, to, core->offset, 0);
@@ -4229,7 +4248,7 @@ reread:
 		case 'z': // "/az"
 			switch (input[2]) {
 			case '?': // "/az"
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
 				break;
 			case 'q': // "/azq"
 				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
@@ -4244,7 +4263,7 @@ reread:
 				do_analstr_search (core, &param, false, "");
 				break;
 			default:
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
 				break;
 			}
 			dosearch = false;
@@ -4415,7 +4434,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_c, "/ca", true);
+					r_core_cmd_help_match (core, help_msg_slash_c, "/ca");
 					goto beach;
 				} else {
 					if (input[2] == 'j') {
@@ -4560,7 +4579,7 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_pattern);
 		} else if (input[1] == 'p') { // "/pp" -- find next prelude
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp", true);
+				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp");
 			} else {
 				__core_cmd_search_backward_prelude (core, false, true);
 			}
@@ -4613,14 +4632,14 @@ reread:
 				}
 			}
 			if (err) {
-				r_core_cmd_help_match (core, help_msg_slash, "/V", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/V");
 			}
 		}
 		dosearch = false;
 		break;
 	case 'v': // "/v"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/v");
 			break;
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -4637,7 +4656,7 @@ reread:
 				bsize = sizeof (ut64) * len;
 				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		case '1':
@@ -4645,7 +4664,7 @@ reread:
 				bsize = sizeof (ut8) * len;
 				v_buf = v_writebuf (core, nums, len, '1', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		case '2':
@@ -4653,7 +4672,7 @@ reread:
 				bsize = sizeof (ut16) * len;
 				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		default: // default size
@@ -4664,7 +4683,7 @@ reread:
 					v_buf = v_writebuf (core, nums, len, '4', bsize);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		}
@@ -4715,7 +4734,7 @@ reread:
 		break;
 	case 'i': // "/i"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/i", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/i");
 			break;
 		}
 		if (input[param_offset - 1] != ' ') {
@@ -4778,8 +4797,12 @@ reread:
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/e", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/e");
 		} else if (input[1]) {
+			if (input[1] == 'j') {
+				param.outmode = R_MODE_JSON;
+				input++;
+			}
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + 1, NULL);
 			if (!kw) {
@@ -4825,7 +4848,7 @@ reread:
 		if (p) {
 			*p++ = 0;
 			if (*arg == '?') {
-				r_core_cmd_help_match (core, help_msg_slash, "/h", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/h");
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -4865,7 +4888,7 @@ reread:
 		break;
 	case 'g': // "/g" graph search
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/g", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/g");
 		} else {
 			ut64 addr = UT64_MAX;
 			if (input[1]) {
@@ -4934,7 +4957,7 @@ reread:
 			r_str_argv_free (args);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/F", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/F");
 		}
 		break;
 	case 'x': // "/x" search hex
@@ -5005,7 +5028,7 @@ again:
 			free (str);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/+", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/+");
 		}
 		break;
 	case 'z': // "/z" search strings of min-max range
@@ -5013,7 +5036,7 @@ again:
 		char *p;
 		ut32 min, max;
 		if (!input[1]) {
-			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/z");
 			break;
 		}
 		const char *maxstr = NULL;
@@ -5022,7 +5045,7 @@ again:
 			maxstr = r_str_trim_head_ro (p + 1);
 			max = r_num_math (core->num, maxstr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/z");
 			break;
 		}
 		const char *minstr = r_str_trim_head_ro (input + 2);

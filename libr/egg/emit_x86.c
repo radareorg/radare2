@@ -216,16 +216,19 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 		/* XXX endian and 32/64bit issues */
 		int *n = (int *)(str+i);
 		p = r_egg_mkvar (egg, str2, dstvar, j);
-		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
-		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
+		if (attsyntax) {
+			r_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
+		} else {
+			r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
+		}
 		j -= 4;
 	}
 	p = r_egg_mkvar (egg, str2, dstvar, oj);
-	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
-	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
+	if (attsyntax) { r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
+	} else { r_egg_printf (egg, "  lea "R_AX", %s\n", p); }
 	p = r_egg_mkvar (egg, str2, dstvar, 0);
-	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
-	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
+	if (attsyntax) { r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
+	} else { r_egg_printf (egg, "  mov %s, "R_AX"\n", p); }
 #endif
 	free (s);
 }

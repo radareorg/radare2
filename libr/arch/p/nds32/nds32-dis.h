@@ -103,13 +103,13 @@ static const char *mnemonic_alu21[] =
 static const char *mnemonic_br2[] =
 {
   "ifcall", "01", "beqz", "bnez", "bgez",   "bltz",   "bgtz", "blez",
-  "10",     "11", "12",   "13",   "bgezal", "bltzal"
+  "10",     "11", "12",   "13",   "bgezal", "bltzal", "b16", "?"
 };
 
 static const char *mnemonic_misc[] =
 {
   "standby", "cctl", "mfsr",  "mtsr",    "iret",  "trap",  "teqz", "tnez",
-  "dsb",     "isb",  "break", "syscall", "msync", "isync", "tlbop"
+  "dsb",     "isb",  "break", "syscall", "msync", "isync", "tlbop", "?"
 };
 
 static const char *mnemonic_hwgp[] =
@@ -149,7 +149,8 @@ static const char *mnemonic_fpu_2op[] =
 static const char *mnemonic_fs2_cmp[] =
 {
   "fcmpeqs", "fcmpeqs.e", "fcmplts", "fcmplts.e",
-  "fcmples", "fcmples.e", "fcmpuns", "fcmpuns.e"
+  "fcmples", "fcmples.e", "fcmpuns", "fcmpuns.e",
+  "fcmp.unk0", "fcmp.unk1",
 };
 
 static const char *mnemonic_fd2_cmp[] =
@@ -1040,8 +1041,8 @@ print_insn32 (bfd_vma pc, disassemble_info *info, uint32_t insn)
   const int rt = RT5 (insn);
   const int ra = RA5 (insn);
   const int rb = RB5 (insn);
-  const int imm15s = IMMS (insn, 15);
-  const int imm15u = IMMU (insn, 15);
+  const unsigned int imm15s = IMMS (insn, 15);
+  const unsigned int imm15u = IMMU (insn, 15);
   uint32_t shift;
   fprintf_ftype func = info->fprintf_func;
   void *stream = info->stream;

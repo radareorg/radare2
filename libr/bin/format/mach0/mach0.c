@@ -5,9 +5,6 @@
 #include <r_hash.h>
 #include "mach0.h"
 
-// R2_590 - deprecate bprintf
-#define bprintf if (mo->verbose) eprintf
-
 #define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen (honor bin.limit too?)
@@ -1170,15 +1167,14 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		return false;
 	}
 
-	// TODO: this shouldnt be an bprintf...
-	if (arw_ptr && arw_sz > 0) {
+	if (mo->verbose && arw_ptr && arw_sz > 0) {
 		int i;
 		ut8 *p = arw_ptr;
-		bprintf ("arw ");
+		eprintf ("arw ");
 		for (i = 0; i < arw_sz; i++) {
-			bprintf ("%02x", 0xff & p[i]);
+			eprintf ("%02x", 0xff & p[i]);
 		}
-		bprintf ("\n");
+		eprintf ("\n");
 	}
 
 	if (is_first_thread) {
@@ -1599,6 +1595,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *mo, ut32 offset, ut32 siz
 }
 
 static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
+	R_LOG_DEBUG ("reconstructing chained fixups");
 	if (!mo->dyld_info) {
 		return false;
 	}
@@ -1611,10 +1608,10 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 	}
 	size_t wordsize = get_word_size (mo);
 	ut8 *p = NULL;
-	size_t j, count, skip, bind_size;
+	size_t j, count, skip;
 	int seg_idx = 0;
 	ut64 seg_off = 0;
-	bind_size = mo->dyld_info->bind_size;
+	size_t bind_size = mo->dyld_info->bind_size;
 	if (!bind_size || bind_size < 1) {
 		return false;
 	}
@@ -1759,7 +1756,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 	if (mo->hdr.sizeofcmds > mo->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		mo->hdr.sizeofcmds = mo->size - 128;
-		//return false;
+		// return false;
 	}
 	bool noFuncStarts = mo->nofuncstarts;
 	//bprintf ("Commands: %d\n", mo->hdr.ncmds);
@@ -1832,7 +1829,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			sdb_set (mo->kv, cmd_flagname, "dylib_code_sign_drs", 0);
-			// bprintf ("[mach0] code is signed\n");
+			R_LOG_DEBUG ("[mach0] code is signed");
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set (mo->kv, cmd_flagname, "version_min_macosx", 0);
@@ -2149,13 +2146,14 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 				}
 			}
 			break;
-		case LC_DYLD_EXPORTS_TRIE:
-			if (mo->verbose) {
+		case LC_DYLD_EXPORTS_TRIE: {
 				ut8 buf[8];
 				r_buf_read_at (mo->b, off + 8, buf, sizeof (buf));
-				ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
-				ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
-				R_LOG_INFO ("exports trie at 0x%x size %d", dataoff, datasize);
+				mo->exports_trie_off = r_read_ble32 (buf, mo->big_endian) + mo->symbols_off;
+				mo->exports_trie_size = r_read_ble32 (buf + 4, mo->big_endian);
+				if (mo->verbose) {
+					R_LOG_INFO ("exports trie at 0x%x size %d", mo->exports_trie_off, mo->exports_trie_size);
+				}
 			}
 			break;
 		case LC_DYLD_CHAINED_FIXUPS:
@@ -2172,9 +2170,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 		}
 	}
 
-	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 &&
-		(mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		R_LOG_DEBUG ("reconstructing chained fixups");
+	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
 		reconstruct_chained_fixup (mo);
 	}
 	return true;
@@ -2736,15 +2732,9 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
-static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
-	r_return_val_if_fail (bin, 0);
-	if (!bin->dyld_info) {
-		return 0;
-	}
-
+static int walk_exports_trie(struct MACH0_(obj_t) *bin, ut64 trie_off, ut64 size, RExportsIterator iterator, void *ctx) {
 	size_t count = 0;
 	ut8 *p = NULL;
-	ut64 size = bin->dyld_info->export_size;
 	if (!size || size >= SIZE_MAX) {
 		return 0;
 	}
@@ -2753,7 +2743,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		return 0;
 	}
 	ut8 *end = trie + size;
-	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
+	if (r_buf_read_at (bin->b, trie_off, trie, size) != size) {
 		return 0;
 	}
 
@@ -2893,9 +2883,21 @@ beach:
 	return count;
 }
 
+static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
+	r_return_val_if_fail (bin, 0);
+	size_t count = 0;
+	if (bin->dyld_info) {
+		count += walk_exports_trie (bin, bin->dyld_info->export_off, bin->dyld_info->export_size, iterator, ctx);
+	}
+	if (bin->exports_trie_off && bin->exports_trie_size) {
+		count += walk_exports_trie (bin, bin->exports_trie_off, bin->exports_trie_size, iterator, ctx);
+	}
+	return count;
+}
+
 static void _update_main_addr_if_needed(struct MACH0_(obj_t) *mo, const RBinSymbol *sym) {
 	if (!mo->main_addr || mo->main_addr == UT64_MAX) {
-		const char *name = sym->name;
+		const char *name = r_bin_name_tostring2 (sym->name, 'o');
 		if (!strcmp (name, "__Dmain")) {
 			mo->main_addr = sym->vaddr;
 		} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
@@ -2919,20 +2921,23 @@ static void _handle_arm_thumb(RBinSymbol *sym) {
 static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache, RBinSymbol *sym) {
 	int wordsize = MACH0_(get_bits) (bin);
 
-	if (sym->name[0] == '_' && !sym->is_imported) {
-		char *demangled = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
-		if (demangled) {
-			sym->dname = demangled;
-			char *p = strchr (demangled, '.');
-			if (p) {
-				if (IS_UPPER (sym->name[0])) {
-					sym->classname = strdup (sym->name);
-					sym->classname[p - sym->name] = 0;
-				} else if (IS_UPPER (p[1])) {
-					sym->classname = strdup (p + 1);
-					p = strchr (sym->classname, '.');
-					if (p) {
-						*p = 0;
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	if (oname) {
+		bin->dbg_info = r_str_startswith (oname, "radr://");
+	       	if (*oname == '_' && !sym->is_imported) {
+			char *demangled = r_bin_demangle (bf, oname, oname, sym->vaddr, false);
+			if (demangled) {
+				r_bin_name_demangled (sym->name, demangled);
+				char *p = strchr (demangled, '.');
+				if (p) {
+					if (IS_UPPER (*demangled)) {
+						sym->classname = r_str_ndup (demangled, (p - demangled));
+					} else if (IS_UPPER (p[1])) {
+						sym->classname = strdup (p + 1);
+						p = strchr (sym->classname, '.');
+						if (p) {
+							*p = 0;
+						}
 					}
 				}
 			}
@@ -2940,14 +2945,13 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 	}
 
 	sym->forwarder = "NONE";
-	sym->bind = sym->type && !strncmp (sym->type, "LOCAL", 5)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+	sym->bind = sym->type && r_str_startswith (sym->type, "LOCAL")? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
 	sym->type = R_BIN_TYPE_FUNC_STR;
 
 	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 		_handle_arm_thumb (sym);
 	}
 
-	bin->dbg_info = r_str_startswith (sym->name, "radr://");
 	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
 	ht_pp_insert (symcache, k, "found");
 }
@@ -2972,7 +2976,7 @@ static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
-	sym->name = strdup (name);
+	sym->name = r_bin_name_new (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
 	_enrich_symbol (context->bf, mo, context->symcache, sym);
@@ -3073,7 +3077,8 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				sym->bits = mo->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				sym->is_imported = false;
 				sym->type = mo->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
-				sym->name = sym_name;
+				sym->name = r_bin_name_new (sym_name);
+				R_FREE (sym_name);
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym);
@@ -3104,10 +3109,9 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
-			sym->name = symbol.name;
-			if (!sym->name) {
-				sym->name = r_str_newf ("entry%u", (ut32)i);
-			}
+			char *name = symbol.name? strdup (symbol.name): r_str_newf ("entry%u", (ut32)i);
+			sym->name = r_bin_name_new (name);
+			free (name);
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
@@ -3148,7 +3152,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
-			sym->name = sym_name;
+			sym->name = r_bin_name_new (sym_name);
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (mo, vaddr) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
@@ -3192,7 +3196,9 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 			sym->vaddr = mo->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
-			sym->name = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			char *n = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			sym->name = r_bin_name_new (n);
+			free (n);
 			sym->type = R_BIN_TYPE_FUNC_STR;
 			sym->forwarder = "NONE";
 			sym->bind = R_BIN_BIND_LOCAL_STR;
@@ -3228,11 +3234,11 @@ static inline bool is_debug_segment(const RBinSection *s, const void *user) {
 	return strstr (s->name, "DWARF.__debug_line") != NULL;
 }
 
-static inline bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+static inline bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	return RVecSegment_find (mo->segments_vec, NULL, is_debug_segment) != NULL;
 }
 #else
-static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	RList *sections = MACH0_(get_segments) (bf, mo);
 	if (!sections) {
 		return false;
@@ -3268,8 +3274,7 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 		ht_pp_free (symcache);
 	}
 
-	const bool is_debug = _check_if_debug_build (mo->options.bf, mo);
-	if (is_debug) {
+	if (is_debug_build (mo->options.bf, mo)) {
 		mo->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 	return !RVecRBinSymbol_empty (mo->symbols_vec);
@@ -3342,14 +3347,16 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = r_str_ndup (name, R_BIN_MACH0_STRING_LENGTH - 1);
+	char *s = r_str_ndup (name, R_BIN_MACH0_STRING_LENGTH - 1);
+	ptr->name = r_bin_name_new (s);
+	free (s);
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 	return ptr;
 }
 
 static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport *import) {
-	const char *name = import->name;
+	const char *name = r_bin_name_tostring (import->name);
 	if (*name == '_') {
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
@@ -3394,7 +3401,7 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
 			return NULL;
 		}
-		if (limit > 0 && idx > limit) {
+		if (limit > 0 && i > limit) {
 			R_LOG_WARN ("imports mo.limit reached");
 			break;
 		}
@@ -4805,7 +4812,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	ut64 addr = pa2va (bf, 0);
 	ut64 paddr = 0;
 
-	r_list_append (ret, r_bin_field_new (paddr, addr, 1, "header", "mach0_header", "mach0_header", true));
+	r_list_append (ret, r_bin_field_new (paddr, addr, -1, 1, "header", "mach0_header", "mach0_header", true));
 	addr += 0x20 - 4;
 	paddr += 0x20 - 4;
 	bool is64 = mh->cputype >> 16;
@@ -4842,7 +4849,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			snprintf (load_command_flagname, sizeof (load_command_flagname), "load_command_%d_%s", n, cmd_tostring (lcType));
-			r_list_append (ret, r_bin_field_new (paddr, addr, 1, load_command_flagname, pf_definition, pf_definition, true));
+			r_list_append (ret, r_bin_field_new (paddr, addr, 1, -1, load_command_flagname, pf_definition, pf_definition, true));
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
@@ -4858,7 +4865,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 					break;
 				}
 				snprintf (tool_flagname, sizeof (tool_flagname), "tool_%d", j++);
-				RBinField *f = r_bin_field_new (at, addr + off, 1,
+				RBinField *f = r_bin_field_new (at, addr + off, 1, -1,
 					tool_flagname, "mach0_build_version_tool", "mach0_build_version_tool", true);
 				r_list_append (ret, f);
 				off += 8;
@@ -4874,7 +4881,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
 				snprintf (section_flagname, sizeof (section_flagname), "section_%u", (ut32)j++);
-				RBinField *f = r_bin_field_new (paddr + off, addr + off, 1, section_flagname, sname, sname, true);
+				ut64 va = addr + off;
+				ut64 pa = paddr + off;
+				RBinField *f = r_bin_field_new (pa, va, -1, 1, section_flagname, sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;
 			}

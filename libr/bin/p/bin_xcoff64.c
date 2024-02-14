@@ -35,7 +35,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, int idx,
 	if (!coffname) {
 		return false;
 	}
-	ptr->name = coffname;
+	ptr->name = r_bin_name_new_from (coffname);
 	ptr->forwarder = "NONE";
 	ptr->bind = R_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;

@@ -59,7 +59,7 @@ ec graph.traced rgb:c19c00
 ec gui.cflow rgb:c19c00
 ec gui.dataoffset rgb:c19c00
 ec gui.background rgb:0c0c0c
-ec gui.alt_background rgb:cccccc
+ec gui.background2 rgb:cccccc
 ec gui.border rgb:0c0c0c
 ec wordhl rgb:c50f1f
 ec linehl rgb:000080

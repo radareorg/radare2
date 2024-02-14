@@ -45,7 +45,7 @@ NAME=objc method flags (ic*)
 FILE=bins/mach0/TestMethods
 CMDS=ic*~thisIsAClassMethod
 EXPECT=<<EOF
-"f method.class.ViewController.thisIsAClassMethod = 0x1000067bc"
+"f method.ViewController.class.thisIsAClassMethod = 0x1000067bc"
 EOF
 RUN
 
@@ -68,7 +68,7 @@ FILE=bins/mach0/TestSwiftObjc
 CMDS=ic~ class
 EXPECT=<<EOF
 0x100003078 [0x100001ad0 - 0x100001ad0]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass(TEST) :: TestSwiftObjc.ThisIsASwiftClass
-0x00001f34 [0x00001f34 - 0x00001f34]      0 swift class 0 ThisIsASwiftClass
+0x00001f34 [0x00001f34 - 0x00001f34]      0 swift class 0 ThisIsASwiftClass :: __C.NSObject
 0x1000031e8 [0x100001d80 - 0x100001d80]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
 EOF
 RUN
@@ -291,26 +291,26 @@ EXPECT=<<EOF
 0x002eb518 [0x002eb518 - 0x002eb518]      0 swift class 0 OpenExternalURLOptionsKey
 0x002eb540 [0x002eb540 - 0x002eb540]      0 swift class 0 CGPoint
 0x002ebebc [0x002ebebc - 0x002ebebc]      0 swift class 0 Code
-0x002ebf0c [0x002ebf0c - 0x002ebf0c]      0 swift class 0 FavoritedByViewController
+0x002ebf0c [0x002ebf0c - 0x002ebf0c]      0 swift class 0 FavoritedByViewController :: __C.UIViewController
 0x002ebffc [0x002ebffc - 0x002ebffc]      0 swift class 0 MediaPreviewTransitionItem
 0x002ec230 [0x1002ec00f - 0x1002f0117]  16648 swift class 0 Source
-0x002ec2d4 [0x002ec2d4 - 0x002ec2d4]      0 swift class 0 TimelineHeaderView
+0x002ec2d4 [0x002ec2d4 - 0x002ec2d4]      0 swift class 0 TimelineHeaderView :: __C.UIView
 0x002ec3e4 [0x002ec3e4 - 0x002ec3e4]      0 swift class 0 TableViewNavigation
-0x002ec5c4 [0x1002ec63e - 0x10042c606] 1310664 swift class 0 SuggestionAccountTableViewFooter
-0x002ec678 [0x002ec678 - 0x002ec678]      0 swift class 0 WelcomeViewController
+0x002ec5c4 [0x1002ec63e - 0x10042c606] 1310664 swift class 0 SuggestionAccountTableViewFooter :: __C.UITableViewHeaderFooter
+0x002ec678 [0x002ec678 - 0x002ec678]      0 swift class 0 WelcomeViewController :: __C.UIViewController
 0x002ec6ec [0x1002fc76a - 0x10042c752] 1245160 swift class 0 CommentContext
 0x002ec780 [0x1002ecb93 - 0x1002ecb93]      0 swift class 0 ReportItem
 0x002ec8c8 [0x1002ecadb - 0x1002ecadb]      0 swift class 0 HeaderContext
-0x002ec994 [0x1002ec9f5 - 0x10038e631] 662588 swift class 0 MastodonConfirmEmailViewController
-0x002eca18 [0x1002eca4c - 0x1002eca4c]      0 swift class 0 SidebarListHeaderView
+0x002ec994 [0x1002ec9f5 - 0x10038e631] 662588 swift class 0 MastodonConfirmEmailViewController :: __C.UIViewController
+0x002eca18 [0x1002eca4c - 0x1002eca4c]      0 swift class 0 SidebarListHeaderView :: __C.UICollectionReusableView
 0x002eca98 [0x10038e759 - 0x10038e759]      0 swift class 0 SearchToSearchDetailViewControllerAnimatedTransitioning
 0x002ecb28 [0x002ecb28 - 0x002ecb28]      0 swift class 0 FollowingListViewModel
-0x002ecc4c [0x1002ccd5b - 0x10042cd12] 1441719 swift class 0 MastodonPickServerViewModel
+0x002ecc4c [0x1002ccd5b - 0x10042cd12] 1441719 swift class 0 MastodonPickServerViewModel :: __C.NSObject
 0x002ecd54 [0x1002ecd67 - 0x1002ecd67]      0 swift class 0 EmptyStateViewState
 0x002ecec4 [0x002ecec4 - 0x002ecec4]      0 swift class 0 SignUpResponseThird
 0x002ecf08 [0x002ecf08 - 0x002ecf08]      0 swift class 0 SignUpResponseSecond
 0x002ecf44 [0x002ecf44 - 0x002ecf44]      0 swift class 0 SignUpResponseFirst
-0x002ecf78 [0x1002ecfbb - 0x1002ed4b3]   1272 swift class 0 State
+0x002ecf78 [0x1002ecfbb - 0x1002ed4b3]   1272 swift class 0 State :: __C.GKState
 0x002ed000 [0x002ed000 - 0x002ed000]      0 swift class 0 Initial
 0x002ed054 [0x002ed054 - 0x002ed054]      0 swift class 0 Reloading
 0x002ed0a4 [0x002ed0a4 - 0x002ed0a4]      0 swift class 0 Fail
@@ -318,70 +318,70 @@ EXPECT=<<EOF
 0x002ed144 [0x002ed144 - 0x002ed144]      0 swift class 0 Loading
 0x002ed194 [0x002ed194 - 0x002ed194]      0 swift class 0 NoMore
 0x002ed2dc [0x1002ed31f - 0x1002edb2f]   2064 swift class 0 DiscoveryHashtagsViewModel
-0x002ed398 [0x1002ed3db - 0x1002ed8d3]   1272 swift class 0 LoadOldestState
+0x002ed398 [0x1002ed3db - 0x1002ed8d3]   1272 swift class 0 LoadOldestState :: __C.GKState
 0x002ed420 [0x002ed420 - 0x002ed420]      0 swift class 0 Initial
 0x002ed470 [0x002ed470 - 0x002ed470]      0 swift class 0 Loading
 0x002ed4c0 [0x002ed4c0 - 0x002ed4c0]      0 swift class 0 Fail
 0x002ed510 [0x002ed510 - 0x002ed510]      0 swift class 0 Idle
 0x002ed560 [0x002ed560 - 0x002ed560]      0 swift class 0 NoMore
-0x002ed694 [0x002ed694 - 0x002ed694]      0 swift class 0 ProfileHeaderView
+0x002ed694 [0x002ed694 - 0x002ed694]      0 swift class 0 ProfileHeaderView :: __C.UIView
 0x002ed70c [0x1002ed744 - 0x1002ed74c]      8 swift class 0 ViewModel
 0x002ed7a0 [0x002ed7a0 - 0x002ed7a0]      0 swift class 0 WebViewModel
 0x002ed840 [0x1002fd8f6 - 0x10042d8ee] 1245176 swift class 0 ReportViewModel
-0x002edd20 [0x002edd20 - 0x002edd20]      0 swift class 0 MediaPreviewImageViewController
+0x002edd20 [0x002edd20 - 0x002edd20]      0 swift class 0 MediaPreviewImageViewController :: __C.UIViewController
 0x002edde4 [0x1002ede1a - 0x1002ede1a]      0 swift class 0 ServerItemAttribute
 0x002ede34 [0x1002ede7b - 0x1002fdc93]  65048 swift class 0 LoaderItemAttribute
 0x002edeb0 [0x1002ee0c3 - 0x1002ee0c3]      0 swift class 0 PickServerItem
 0x002ee01c [0x1002ee051 - 0x1002ee051]      0 swift class 0 ViewModel
 0x002ee060 [0x002ee060 - 0x002ee060]      0 swift class 0 Value
-0x002ee0f4 [0x1002ee131 - 0x1002ef441]   4880 swift class 0 NotificationTimelineViewController
-0x002ee2a4 [0x1002ee2db - 0x1002ee2db]      0 swift class 0 DragIndicatorView
+0x002ee0f4 [0x1002ee131 - 0x1002ef441]   4880 swift class 0 NotificationTimelineViewController :: __C.UIViewController
+0x002ee2a4 [0x1002ee2db - 0x1002ee2db]      0 swift class 0 DragIndicatorView :: __C.UIView
 0x002ee304 [0x1002ee617 - 0x1002ee617]      0 swift class 0 CategoryPickerItem
-0x002ee40c [0x1002ee45b - 0x1002ee47c]     33 swift class 0 NavigationBarProgressView
-0x002ee49c [0x002ee49c - 0x002ee49c]      0 swift class 0 PrivacyTableViewController
+0x002ee40c [0x1002ee45b - 0x1002ee47c]     33 swift class 0 NavigationBarProgressView :: __C.UIView
+0x002ee49c [0x002ee49c - 0x002ee49c]      0 swift class 0 PrivacyTableViewController :: __C.UIViewController
 0x002ee52c [0x002ee52c - 0x002ee52c]      0 swift class 0 PrivacyRow
-0x002ee5a4 [0x002ee5a4 - 0x002ee5a4]      0 swift class 0 PrimaryActionButton
+0x002ee5a4 [0x002ee5a4 - 0x002ee5a4]      0 swift class 0 PrimaryActionButton :: __C.UIButton
 0x002ee658 [0x1002ee66b - 0x1002ee66b]      0 swift class 0 Action
-0x002ee70c [0x002ee70c - 0x002ee70c]      0 swift class 0 AppearanceView
-0x002ee7f8 [0x1002ee82c - 0x1002ee82c]      0 swift class 0 CustomSearchController
+0x002ee70c [0x002ee70c - 0x002ee70c]      0 swift class 0 AppearanceView :: __C.UIView
+0x002ee7f8 [0x1002ee82c - 0x1002ee82c]      0 swift class 0 CustomSearchController :: __C.UISearchController
 0x002ee84c [0x002ee84c - 0x002ee84c]      0 swift class 0 SearchDetailViewController
 0x002eea30 [0x1002ceadb - 0x1002fea6a] 196495 swift class 0 MastodonServerRulesViewModel
-0x002eeaf4 [0x1002eeaf4 - 0x1002eeb3c]     72 swift class 0 MastodonResendEmailViewController
-0x002eeb5c [0x002eeb5c - 0x002eeb5c]      0 swift class 0 URLActivityItemWithMetadata
-0x002eec50 [0x002eec50 - 0x002eec50]      0 swift class 0 ThreadReplyLoaderTableViewCell
+0x002eeaf4 [0x1002eeaf4 - 0x1002eeb3c]     72 swift class 0 MastodonResendEmailViewController :: __C.UIViewController
+0x002eeb5c [0x002eeb5c - 0x002eeb5c]      0 swift class 0 URLActivityItemWithMetadata :: __C.NSObject
+0x002eec50 [0x002eec50 - 0x002eec50]      0 swift class 0 ThreadReplyLoaderTableViewCell :: __C.UITableViewCell
 0x002eecac [0x1002eecef - 0x1002efcff]   4112 swift class 0 ReportServerRulesViewModel
-0x002eeec4 [0x002eeec4 - 0x002eeec4]      0 swift class 0 ProfileViewModel
+0x002eeec4 [0x002eeec4 - 0x002eeec4]      0 swift class 0 ProfileViewModel :: __C.NSObject
 0x002ef5cc [0x1000618b4 - 0x1002ef671] 2678205 swift class 0 ViewModel
 0x002ef610 [0x002ef610 - 0x002ef610]      0 swift class 0 Value
-0x002ef6d4 [0x002ef6d4 - 0x002ef6d4]      0 swift class 0 HomeTimelineNavigationBarTitleView
+0x002ef6d4 [0x002ef6d4 - 0x002ef6d4]      0 swift class 0 HomeTimelineNavigationBarTitleView :: __C.UIView
 0x002ef77c [0x100335d15 - 0x100335d15]      0 swift class 0 DataSourceItem
 0x002ef7a0 [0x002ef7a0 - 0x002ef7a0]      0 swift class 0 Source
 0x002ef850 [0x1002efa63 - 0x1002efa63]      0 swift class 0 TagKind
-0x002ef908 [0x002ef908 - 0x002ef908]      0 swift class 0 TrendCollectionViewCell
-0x002ef968 [0x1002ef99e - 0x10033f9a6] 327688 swift class 0 DoubleTitleLabelNavigationBarTitleView
-0x002ef9e0 [0x1002efa1c - 0x1002efa3c]     32 swift class 0 DiscoveryPostsViewController
-0x002efbb0 [0x1002efc08 - 0x1003ddf00] 975608 swift class 0 StatusEditHistoryTableViewCell
+0x002ef908 [0x002ef908 - 0x002ef908]      0 swift class 0 TrendCollectionViewCell :: __C.UICollectionViewCell
+0x002ef968 [0x1002ef99e - 0x10033f9a6] 327688 swift class 0 DoubleTitleLabelNavigationBarTitleView :: __C.UIView
+0x002ef9e0 [0x1002efa1c - 0x1002efa3c]     32 swift class 0 DiscoveryPostsViewController :: __C.UIViewController
+0x002efbb0 [0x1002efc08 - 0x1003ddf00] 975608 swift class 0 StatusEditHistoryTableViewCell :: __C.UITableViewCell
 0x002efd08 [0x1002eb54f - 0x1002f62bb]  44396 swift class 0 HomeTimelineNavigationBarTitleViewModel
 0x002efd4c [0x1002efd5f - 0x1002efd5f]      0 swift class 0 State
-0x002efe98 [0x1002efedb - 0x1002f03d3]   1272 swift class 0 LoadThreadState
+0x002efe98 [0x1002efedb - 0x1002f03d3]   1272 swift class 0 LoadThreadState :: __C.GKState
 0x002eff20 [0x002eff20 - 0x002eff20]      0 swift class 0 Initial
 0x002eff70 [0x002eff70 - 0x002eff70]      0 swift class 0 Loading
 0x002effc0 [0x002effc0 - 0x002effc0]      0 swift class 0 Fail
 0x002f0010 [0x002f0010 - 0x002f0010]      0 swift class 0 NoMore
 0x002f00cc [0x1002f010e - 0x100330106] 262136 swift class 0 MediaPreviewImageViewModel
 0x002f0144 [0x002f0144 - 0x002f0144]      0 swift class 0 ImagePreviewItem
-0x002f01c8 [0x1002e26a3 - 0x1002f02ab]  56328 swift class 0 BookmarkViewController
+0x002f01c8 [0x1002e26a3 - 0x1002f02ab]  56328 swift class 0 BookmarkViewController :: __C.UIViewController
 0x002f02d0 [0x1002f0311 - 0x1002f0321]     16 swift class 0 NotificationTimelineViewModel
 0x002f0428 [0x1002eb873 - 0x1002f0563]  19696 swift class 0 NotificationViewModel
-0x002f053c [0x002f053c - 0x002f053c]      0 swift class 0 RebloggedByViewController
+0x002f053c [0x002f053c - 0x002f053c]      0 swift class 0 RebloggedByViewController :: __C.UIViewController
 0x002f0654 [0x1002f0767 - 0x1002f0767]      0 swift class 0 ReportResultView
 0x002f08d4 [0x002f08d4 - 0x002f08d4]      0 swift class 0 ReportActionButton
-0x002f09c8 [0x1002f0a08 - 0x1002f0a08]      0 swift class 0 WelcomeIllustrationView
-0x002f0a3c [0x1002f1a77 - 0x1002f1a7f]      8 swift class 0 NotificationTableViewCell
-0x002f0b8c [0x1002d0cab - 0x100430c52] 1441703 swift class 0 ReportStatusViewController
-0x002f0e1c [0x1002f1657 - 0x1002f165f]      8 swift class 0 ContentSplitViewController
+0x002f09c8 [0x1002f0a08 - 0x1002f0a08]      0 swift class 0 WelcomeIllustrationView :: __C.UIView
+0x002f0a3c [0x1002f1a77 - 0x1002f1a7f]      8 swift class 0 NotificationTableViewCell :: __C.UITableViewCell
+0x002f0b8c [0x1002d0cab - 0x100430c52] 1441703 swift class 0 ReportStatusViewController :: __C.UIViewController
+0x002f0e1c [0x1002f1657 - 0x1002f165f]      8 swift class 0 ContentSplitViewController :: __C.UIViewController
 0x002f1044 [0x002f1044 - 0x002f1044]      0 swift class 0 DiscoveryViewModel
-0x002f1198 [0x1002f11db - 0x1002f16d3]   1272 swift class 0 State
+0x002f1198 [0x1002f11db - 0x1002f16d3]   1272 swift class 0 State :: __C.GKState
 0x002f1220 [0x002f1220 - 0x002f1220]      0 swift class 0 Initial
 0x002f1274 [0x002f1274 - 0x002f1274]      0 swift class 0 Reloading
 0x002f12c4 [0x002f12c4 - 0x002f12c4]      0 swift class 0 Fail
@@ -389,26 +389,26 @@ EXPECT=<<EOF
 0x002f1364 [0x1002d40c2 - 0x1002f27b3] 124657 swift class 0 Loading
 0x002f13f0 [0x002f13f0 - 0x002f13f0]      0 swift class 0 NoMore
 0x002f1528 [0x1002f153b - 0x1002f153b]      0 swift class 0 RegisterSection
-0x002f15c0 [0x1002f1603 - 0x1002f1afb]   1272 swift class 0 LoadOldestState
+0x002f15c0 [0x1002f1603 - 0x1002f1afb]   1272 swift class 0 LoadOldestState :: __C.GKState
 0x002f1648 [0x002f1648 - 0x002f1648]      0 swift class 0 Initial
 0x002f1698 [0x002f1698 - 0x002f1698]      0 swift class 0 Loading
 0x002f16e8 [0x002f16e8 - 0x002f16e8]      0 swift class 0 Fail
 0x002f1738 [0x002f1738 - 0x002f1738]      0 swift class 0 Idle
 0x002f1788 [0x002f1788 - 0x002f1788]      0 swift class 0 NoMore
-0x002f17fc [0x002f17fc - 0x002f17fc]      0 swift class 0 SearchHistoryViewController
-0x002f1900 [0x1002d1983 - 0x1002f195a] 131031 swift class 0 StatusThreadRootTableViewCell
-0x002f19e4 [0x100361a2e - 0x100371a3e]  65552 swift class 0 MastodonServerRulesViewController
+0x002f17fc [0x002f17fc - 0x002f17fc]      0 swift class 0 SearchHistoryViewController :: __C.UIViewController
+0x002f1900 [0x1002d1983 - 0x1002f195a] 131031 swift class 0 StatusThreadRootTableViewCell :: __C.UITableViewCell
+0x002f19e4 [0x100361a2e - 0x100371a3e]  65552 swift class 0 MastodonServerRulesViewController :: __C.UIViewController
 0x002f1a84 [0x002f1a84 - 0x002f1a84]      0 swift class 0 UserListViewModel
 0x002f1b08 [0x002f1b08 - 0x002f1b08]      0 swift class 0 Kind
-0x002f1b64 [0x002f1b64 - 0x002f1b64]      0 swift class 0 SidebarAddAccountCollectionViewCell
-0x002f1c28 [0x002f1c28 - 0x002f1c28]      0 swift class 0 PickServerServerSectionTableHeaderView
-0x002f1c84 [0x002f1c84 - 0x002f1c84]      0 swift class 0 MastodonLoginServerTableViewCell
+0x002f1b64 [0x002f1b64 - 0x002f1b64]      0 swift class 0 SidebarAddAccountCollectionViewCell :: __C.UICollectionViewListCell
+0x002f1c28 [0x002f1c28 - 0x002f1c28]      0 swift class 0 PickServerServerSectionTableHeaderView :: __C.UIView
+0x002f1c84 [0x002f1c84 - 0x002f1c84]      0 swift class 0 MastodonLoginServerTableViewCell :: __C.UITableViewCell
 0x002f1cc4 [0x1002f1cf9 - 0x1002f1cf9]      0 swift class 0 ViewModel
 0x002f1d08 [0x002f1d08 - 0x002f1d08]      0 swift class 0 Value
-0x002f1da8 [0x1002f1de9 - 0x100421e07] 1245214 swift class 0 ComposeViewController
+0x002f1da8 [0x1002f1de9 - 0x100421e07] 1245214 swift class 0 ComposeViewController :: __C.UIViewController
 0x002f1e74 [0x1002f1e87 - 0x1002f1e87]      0 swift class 0 ComposeKeyCommand
 0x002f1f88 [0x002f1f88 - 0x002f1f88]      0 swift class 0 RemoteThreadViewModel
-0x002f2038 [0x1002f207b - 0x1002f2573]   1272 swift class 0 State
+0x002f2038 [0x1002f207b - 0x1002f2573]   1272 swift class 0 State :: __C.GKState
 0x002f20c0 [0x002f20c0 - 0x002f20c0]      0 swift class 0 Initial
 0x002f2114 [0x002f2114 - 0x002f2114]      0 swift class 0 Reloading
 0x002f2164 [0x002f2164 - 0x002f2164]      0 swift class 0 Fail
@@ -418,54 +418,54 @@ EXPECT=<<EOF
 0x002f2310 [0x002f2310 - 0x002f2310]      0 swift class 0 OnboardingNavigationController
 0x002f235c [0x002f235c - 0x002f235c]      0 swift class 0 StatusEditHistoryViewModel
 0x002f23a4 [0x1002f23b7 - 0x1002f23b7]      0 swift class 0 ServerRuleSection
-0x002f2464 [0x002f2464 - 0x002f2464]      0 swift class 0 MastodonPickServerViewController
+0x002f2464 [0x002f2464 - 0x002f2464]      0 swift class 0 MastodonPickServerViewController :: __C.UIViewController
 0x002f2544 [0x1002f2757 - 0x1002f2757]      0 swift class 0 UserItem
-0x002f2670 [0x1002f26ab - 0x1002f26ab]      0 swift class 0 ProfileFieldCollectionViewCell
+0x002f2670 [0x1002f26ab - 0x1002f26ab]      0 swift class 0 ProfileFieldCollectionViewCell :: __C.UICollectionViewCell
 0x002f26c4 [0x002f26c4 - 0x002f26c4]      0 swift class 0 GestureSubscription
 0x002f27ec [0x1002f26d7 - 0x1002f43df]   7432 swift class 0 GestureType
-0x002f2924 [0x002f2924 - 0x002f2924]      0 swift class 0 ProfileFieldEditCollectionViewCell
-0x002f297c [0x1002f31b7 - 0x1002f31bf]      8 swift class 0 DiscoveryNewsViewController
+0x002f2924 [0x002f2924 - 0x002f2924]      0 swift class 0 ProfileFieldEditCollectionViewCell :: __C.UICollectionViewCell
+0x002f297c [0x1002f31b7 - 0x1002f31bf]      8 swift class 0 DiscoveryNewsViewController :: __C.UIViewController
 0x002f2a58 [0x1002f2a6b - 0x1002f2a6b]      0 swift class 0 RecommendAccountSection
 0x002f2aec [0x002f2aec - 0x002f2aec]      0 swift class 0 Configuration
-0x002f2b8c [0x1002f2bc7 - 0x1002f2bc7]      0 swift class 0 SuggestionAccountViewModel
+0x002f2b8c [0x1002f2bc7 - 0x1002f2bc7]      0 swift class 0 SuggestionAccountViewModel :: __C.NSObject
 0x002f30b4 [0x1002f30f7 - 0x1002f3907]   2064 swift class 0 MastodonAuthenticationController
-0x002f313c [0x002f313c - 0x002f313c]      0 swift class 0 SettingsLinkTableViewCell
-0x002f319c [0x1002f3218 - 0x1003ee6e0] 1029320 swift class 0 MediaPreviewViewController
-0x002f3308 [0x1002e57e3 - 0x1002f33fb]  56344 swift class 0 FavoriteViewController
-0x002f3428 [0x1002f3464 - 0x1002f3484]     32 swift class 0 ThreadViewController
-0x002f3588 [0x002f3588 - 0x002f3588]      0 swift class 0 MediaPreviewImageView
-0x002f35ec [0x002f35ec - 0x002f35ec]      0 swift class 0 ProfileFieldCollectionViewHeaderFooterView
-0x002f364c [0x002f364c - 0x002f364c]      0 swift class 0 TimelineHeaderTableViewCell
-0x002f36bc [0x1002f36fc - 0x1002f371c]     32 swift class 0 HomeTimelineViewController
+0x002f313c [0x002f313c - 0x002f313c]      0 swift class 0 SettingsLinkTableViewCell :: __C.UITableViewCell
+0x002f319c [0x1002f3218 - 0x1003ee6e0] 1029320 swift class 0 MediaPreviewViewController :: __C.UIViewController
+0x002f3308 [0x1002e57e3 - 0x1002f33fb]  56344 swift class 0 FavoriteViewController :: __C.UIViewController
+0x002f3428 [0x1002f3464 - 0x1002f3484]     32 swift class 0 ThreadViewController :: __C.UIViewController
+0x002f3588 [0x002f3588 - 0x002f3588]      0 swift class 0 MediaPreviewImageView :: __C.UIScrollView
+0x002f35ec [0x002f35ec - 0x002f35ec]      0 swift class 0 ProfileFieldCollectionViewHeaderFooterView :: __C.UICollectionReusableView
+0x002f364c [0x002f364c - 0x002f364c]      0 swift class 0 TimelineHeaderTableViewCell :: __C.UITableViewCell
+0x002f36bc [0x1002f36fc - 0x1002f371c]     32 swift class 0 HomeTimelineViewController :: __C.UIViewController
 0x002f391c [0x002f391c - 0x002f391c]      0 swift class 0 MediaHostToMediaPreviewViewControllerAnimatedTransitioning
-0x002f3a4c [0x1002f399b - 0x1003f44c1] 1051430 swift class 0 ComposeStatusAttachmentCollectionViewCell
+0x002f3a4c [0x1002f399b - 0x1003f44c1] 1051430 swift class 0 ComposeStatusAttachmentCollectionViewCell :: __C.UICollectionViewCell
 0x002f3ad8 [0x1002f3ceb - 0x1002f3ceb]      0 swift class 0 MastodonRegisterView
 0x002f40e8 [0x002f40e8 - 0x002f40e8]      0 swift class 0 FormFootnoteModifier
 0x002f4110 [0x002f4110 - 0x002f4110]      0 swift class 0 WidthKey
 0x002f4148 [0x002f4148 - 0x002f4148]      0 swift class 0 FormTextFieldModifier
-0x002f4364 [0x1002f43b0 - 0x1002f43b0]      0 swift class 0 SecondaryPlaceholderViewController
+0x002f4364 [0x1002f43b0 - 0x1002f43b0]      0 swift class 0 SecondaryPlaceholderViewController :: __C.UIViewController
 0x002f43e4 [0x002f43e4 - 0x002f43e4]      0 swift class 0 FavoriteViewModel
 0x002f4444 [0x1002f4457 - 0x1002f4457]      0 swift class 0 TranslationFailure
-0x002f4510 [0x1002f4553 - 0x1002f4a4b]   1272 swift class 0 State
+0x002f4510 [0x1002f4553 - 0x1002f4a4b]   1272 swift class 0 State :: __C.GKState
 0x002f4598 [0x002f4598 - 0x002f4598]      0 swift class 0 Initial
 0x002f45ec [0x002f45ec - 0x002f45ec]      0 swift class 0 Reloading
 0x002f463c [0x002f463c - 0x002f463c]      0 swift class 0 Fail
 0x002f468c [0x002f468c - 0x002f468c]      0 swift class 0 Idle
 0x002f46dc [0x1002d743a - 0x1002f5b2b] 124657 swift class 0 Loading
 0x002f4768 [0x002f4768 - 0x002f4768]      0 swift class 0 NoMore
-0x002f47f4 [0x1002f4829 - 0x1002f4829]      0 swift class 0 MastodonResendEmailViewModelNavigationDelegateShim
-0x002f4840 [0x1000ea924 - 0x1002f48c4] 2138016 swift class 0 LoadLatestState
+0x002f47f4 [0x1002f4829 - 0x1002f4829]      0 swift class 0 MastodonResendEmailViewModelNavigationDelegateShim :: __C.NSObject
+0x002f4840 [0x1000ea924 - 0x1002f48c4] 2138016 swift class 0 LoadLatestState :: __C.GKState
 0x002f48d0 [0x002f48d0 - 0x002f48d0]      0 swift class 0 Initial
 0x002f4920 [0x002f4920 - 0x002f4920]      0 swift class 0 Loading
 0x002f4978 [0x002f4978 - 0x002f4978]      0 swift class 0 LoadingManually
 0x002f49c8 [0x002f49c8 - 0x002f49c8]      0 swift class 0 Fail
 0x002f4a18 [0x002f4a18 - 0x002f4a18]      0 swift class 0 Idle
-0x002f4a8c [0x002f4a8c - 0x002f4a8c]      0 swift class 0 FollowingListViewController
+0x002f4a8c [0x002f4a8c - 0x002f4a8c]      0 swift class 0 FollowingListViewController :: __C.UIViewController
 0x002f4b6c [0x1002f4baf - 0x1002f5bbf]   4112 swift class 0 HashtagTimelineViewModel
-0x002f4c28 [0x1002f5e8b - 0x1002f6133]    680 swift class 0 SettingsViewController
-0x002f4db8 [0x002f4db8 - 0x002f4db8]      0 swift class 0 HashtagTableViewCell
+0x002f4c28 [0x1002f5e8b - 0x1002f6133]    680 swift class 0 SettingsViewController :: __C.UIViewController
+0x002f4db8 [0x002f4db8 - 0x002f4db8]      0 swift class 0 HashtagTableViewCell :: __C.UITableViewCell
 0x002f4e08 [0x002f4e08 - 0x002f4e08]      0 swift class 0 RemoteProfileViewModel
-0x002f4ec0 [0x1002f4f03 - 0x1002f53fb]   1272 swift class 0 State
+0x002f4ec0 [0x1002f4f03 - 0x1002f53fb]   1272 swift class 0 State :: __C.GKState
 0x002f4f48 [0x002f4f48 - 0x002f4f48]      0 swift class 0 Initial
 0x002f4f9c [0x002f4f9c - 0x002f4f9c]      0 swift class 0 Reloading
 0x002f4fec [0x002f4fec - 0x002f4fec]      0 swift class 0 Fail
@@ -473,116 +473,116 @@ EXPECT=<<EOF
 0x002f508c [0x1002d7dea - 0x1002f64db] 124657 swift class 0 Loading
 0x002f5118 [0x002f5118 - 0x002f5118]      0 swift class 0 NoMore
 0x002f5180 [0x002f5180 - 0x002f5180]      0 swift class 0 PickServerLoaderTableViewCell
-0x002f51dc [0x002f51dc - 0x002f51dc]      0 swift class 0 ReportHeadlineTableViewCell
+0x002f51dc [0x002f51dc - 0x002f51dc]      0 swift class 0 ReportHeadlineTableViewCell :: __C.UITableViewCell
 0x002f528c [0x1002f52ce - 0x1003752de] 524304 swift class 0 FamiliarFollowersViewModel
-0x002f5384 [0x100100d50 - 0x1003e1610] 3016896 swift class 0 ThreadMetaView
-0x002f53b8 [0x1002f53fb - 0x1002f58f3]   1272 swift class 0 State
+0x002f5384 [0x100100d50 - 0x1003e1610] 3016896 swift class 0 ThreadMetaView :: __C.UIView
+0x002f53b8 [0x1002f53fb - 0x1002f58f3]   1272 swift class 0 State :: __C.GKState
 0x002f5440 [0x002f5440 - 0x002f5440]      0 swift class 0 Initial
 0x002f5494 [0x002f5494 - 0x002f5494]      0 swift class 0 Reloading
 0x002f54e4 [0x002f54e4 - 0x002f54e4]      0 swift class 0 Fail
 0x002f5534 [0x002f5534 - 0x002f5534]      0 swift class 0 Idle
 0x002f5584 [0x1002d82e2 - 0x1002f69d3] 124657 swift class 0 Loading
 0x002f5610 [0x002f5610 - 0x002f5610]      0 swift class 0 NoMore
-0x002f56c8 [0x1002f5706 - 0x100375707] 524289 swift class 0 ProfileFieldAddEntryCollectionViewCell
-0x002f5740 [0x002f5740 - 0x002f5740]      0 swift class 0 TimelineTableViewCellContextMenuConfiguration
-0x002f57a0 [0x1002f57d6 - 0x1002f57d6]      0 swift class 0 SafariActivity
+0x002f56c8 [0x1002f5706 - 0x100375707] 524289 swift class 0 ProfileFieldAddEntryCollectionViewCell :: __C.UICollectionViewCell
+0x002f5740 [0x002f5740 - 0x002f5740]      0 swift class 0 TimelineTableViewCellContextMenuConfiguration :: __C.UIContextMenuConfiguration
+0x002f57a0 [0x1002f57d6 - 0x1002f57d6]      0 swift class 0 SafariActivity :: __C.UIActivity
 0x002f5828 [0x1002f586b - 0x1003056ab]  65088 swift class 0 BottomLoaderAttribute
 0x002f58c4 [0x1002f5cd7 - 0x1002f5cd7]      0 swift class 0 SearchResultItem
-0x002f59e0 [0x002f59e0 - 0x002f59e0]      0 swift class 0 SuggestionAccountViewController
+0x002f59e0 [0x002f59e0 - 0x002f59e0]      0 swift class 0 SuggestionAccountViewController :: __C.UIViewController
 0x002f5b14 [0x002f5b14 - 0x002f5b14]      0 swift class 0 MediaPreviewPagingViewController
-0x002f5b60 [0x1002f5b9f - 0x1002f5bd7]     56 swift class 0 StatusEditHistoryViewController
+0x002f5b60 [0x1002f5b9f - 0x1002f5bd7]     56 swift class 0 StatusEditHistoryViewController :: __C.UIViewController
 0x002f5c2c [0x002f5c2c - 0x002f5c2c]      0 swift class 0 MastodonRegisterViewModel
 0x002f5ce8 [0x1002f5cfb - 0x1002f5cfb]      0 swift class 0 ValidateState
 0x002f63c4 [0x002f63c4 - 0x002f63c4]      0 swift class 0 SettingsViewModel
 0x002f6568 [0x1002f65a7 - 0x1002f65cf]     40 swift class 0 Context
 0x002f65ec [0x002f65ec - 0x002f65ec]      0 swift class 0 Thread
 0x002f6614 [0x1002f6a27 - 0x1002f6a27]      0 swift class 0 StatusItem
-0x002f68fc [0x002f68fc - 0x002f68fc]      0 swift class 0 HashtagTimelineHeaderView
+0x002f68fc [0x002f68fc - 0x002f68fc]      0 swift class 0 HashtagTimelineHeaderView :: __C.UIView
 0x002f6954 [0x1002f67b3 - 0x1002f778a]   4055 swift class 0 ContextMenuImagePreviewViewModel
-0x002f6a00 [0x1002ebeab - 0x1002f6abb]  44048 swift class 0 DiscoveryForYouViewController
-0x002f6b68 [0x002f6b68 - 0x002f6b68]      0 swift class 0 PrivacyTableViewCell
-0x002f6bb8 [0x1002f6c04 - 0x1002f6c04]      0 swift class 0 HomeTimelineViewModel
+0x002f6a00 [0x1002ebeab - 0x1002f6abb]  44048 swift class 0 DiscoveryForYouViewController :: __C.UIViewController
+0x002f6b68 [0x002f6b68 - 0x002f6b68]      0 swift class 0 PrivacyTableViewCell :: __C.UITableViewCell
+0x002f6bb8 [0x1002f6c04 - 0x1002f6c04]      0 swift class 0 HomeTimelineViewModel :: __C.NSObject
 0x002f6c78 [0x002f6c78 - 0x002f6c78]      0 swift class 0 ScrollPositionRecord
 0x002f6e90 [0x002f6e90 - 0x002f6e90]      0 swift class 0 ScrollDirection
 0x002f6f04 [0x002f6f04 - 0x002f6f04]      0 swift class 0 BookmarkViewModel
-0x002f7020 [0x1002f7068 - 0x10042706f] 1245191 swift class 0 SearchHistoryTableHeaderView
-0x002f709c [0x1003670e6 - 0x1003770f6]  65552 swift class 0 FollowedTagsViewController
-0x002f71a8 [0x002f71a8 - 0x002f71a8]      0 swift class 0 SidebarViewController
+0x002f7020 [0x1002f7068 - 0x10042706f] 1245191 swift class 0 SearchHistoryTableHeaderView :: __C.UIView
+0x002f709c [0x1003670e6 - 0x1003770f6]  65552 swift class 0 FollowedTagsViewController :: __C.UIViewController
+0x002f71a8 [0x002f71a8 - 0x002f71a8]      0 swift class 0 SidebarViewController :: __C.UIViewController
 0x002f72a8 [0x002f72a8 - 0x002f72a8]      0 swift class 0 UIControlSubscription
-0x002f7428 [0x1002f7469 - 0x1002f74b0]     71 swift class 0 ImageProvider
+0x002f7428 [0x1002f7469 - 0x1002f74b0]     71 swift class 0 ImageProvider :: __C.NSObject
 0x002f74f8 [0x002f74f8 - 0x002f74f8]      0 swift class 0 DiscoveryPostsViewModel
 0x002f75c0 [0x1002f78d3 - 0x1002f78d3]      0 swift class 0 DiscoveryItem
 0x002f76a8 [0x1002f79d6 - 0x1002f8bcf]   4601 swift class 0 ReportStatusViewModel
 0x002f78e8 [0x1002f7929 - 0x1002f7929]      0 swift class 0 ProfileHeaderViewModel
 0x002f793c [0x1002f79a0 - 0x1002f7a27]    135 swift class 0 ProfileInfo
-0x002f7e40 [0x1002f7e88 - 0x100427e8f] 1245191 swift class 0 DiscoveryIntroBannerView
-0x002f7f0c [0x10012dda0 - 0x1002f7f8c] 1876460 swift class 0 SettingsToggleTableViewCell
-0x002f800c [0x002f800c - 0x002f800c]      0 swift class 0 ContentWarningOverlayView
-0x002f80b4 [0x1002f80ec - 0x1002f80ec]      0 swift class 0 WebViewController
-0x002f811c [0x002f811c - 0x002f811c]      0 swift class 0 ReportResultViewController
+0x002f7e40 [0x1002f7e88 - 0x100427e8f] 1245191 swift class 0 DiscoveryIntroBannerView :: __C.UIView
+0x002f7f0c [0x10012dda0 - 0x1002f7f8c] 1876460 swift class 0 SettingsToggleTableViewCell :: __C.UITableViewCell
+0x002f800c [0x002f800c - 0x002f800c]      0 swift class 0 ContentWarningOverlayView :: __C.UIView
+0x002f80b4 [0x1002f80ec - 0x1002f80ec]      0 swift class 0 WebViewController :: __C.UIViewController
+0x002f811c [0x002f811c - 0x002f811c]      0 swift class 0 ReportResultViewController :: __C.UIViewController
 0x002f8368 [0x002f8368 - 0x002f8368]      0 swift class 0 FollowerListViewModel
-0x002f8460 [0x1002f84a2 - 0x1002f84e4]     66 swift class 0 State
+0x002f8460 [0x1002f84a2 - 0x1002f84e4]     66 swift class 0 State :: __C.GKState
 0x002f84f0 [0x002f84f0 - 0x002f84f0]      0 swift class 0 Initial
 0x002f8544 [0x002f8544 - 0x002f8544]      0 swift class 0 Reloading
 0x002f8594 [0x002f8594 - 0x002f8594]      0 swift class 0 Fail
 0x002f85e4 [0x002f85e4 - 0x002f85e4]      0 swift class 0 Idle
 0x002f8634 [0x1002db392 - 0x1002f9b6a] 124888 swift class 0 Loading
 0x002f86c0 [0x002f86c0 - 0x002f86c0]      0 swift class 0 NoMore
-0x002f8728 [0x1002f8765 - 0x1002f876d]      8 swift class 0 SettingsSectionHeader
+0x002f8728 [0x1002f8765 - 0x1002f876d]      8 swift class 0 SettingsSectionHeader :: __C.UIView
 0x002f8808 [0x002f8808 - 0x002f8808]      0 swift class 0 DiscoveryNewsViewModel
-0x002f8920 [0x002f8920 - 0x002f8920]      0 swift class 0 StatusContentWarningEditorView
-0x002f896c [0x002f896c - 0x002f896c]      0 swift class 0 TimelineFooterTableViewCell
+0x002f8920 [0x002f8920 - 0x002f8920]      0 swift class 0 StatusContentWarningEditorView :: __C.UIView
+0x002f896c [0x002f896c - 0x002f896c]      0 swift class 0 TimelineFooterTableViewCell :: __C.UITableViewCell
 0x002f89ac [0x1002f89e1 - 0x1002f89e9]      8 swift class 0 ViewModel
 0x002f8a44 [0x1002d8ac3 - 0x100308a82] 196543 swift class 0 SidebarViewModel
 0x002f8ab0 [0x002f8ab0 - 0x002f8ab0]      0 swift class 0 Item
 0x002f8ad4 [0x1002f8ae7 - 0x1002f8ae7]      0 swift class 0 Section
 0x002f8d98 [0x1002f8dd9 - 0x1002f8de9]     16 swift class 0 UserTimelineViewModel
 0x002f8e1c [0x002f8e1c - 0x002f8e1c]      0 swift class 0 QueryFilter
-0x002f8fb8 [0x002f8fb8 - 0x002f8fb8]      0 swift class 0 ContentSizedTableView
-0x002f900c [0x1002f9041 - 0x1002f9069]     40 swift class 0 ServerRulesTableViewCell
+0x002f8fb8 [0x002f8fb8 - 0x002f8fb8]      0 swift class 0 ContentSizedTableView :: __C.UITableView
+0x002f900c [0x1002f9041 - 0x1002f9069]     40 swift class 0 ServerRulesTableViewCell :: __C.UITableViewCell
 0x002f9090 [0x002f9090 - 0x002f9090]      0 swift class 0 ReportSupplementaryViewModel
-0x002f9228 [0x002f9228 - 0x002f9228]      0 swift class 0 NavigationActionView
+0x002f9228 [0x002f9228 - 0x002f9228]      0 swift class 0 NavigationActionView :: __C.UIView
 0x002f92f8 [0x002f92f8 - 0x002f92f8]      0 swift class 0 MastodonLoginViewModel
-0x002f93f8 [0x1002f9430 - 0x1002f9448]     24 swift class 0 LoadIndexedServerState
+0x002f93f8 [0x1002f9430 - 0x1002f9448]     24 swift class 0 LoadIndexedServerState :: __C.GKState
 0x002f9454 [0x002f9454 - 0x002f9454]      0 swift class 0 Initial
 0x002f9498 [0x002f9498 - 0x002f9498]      0 swift class 0 Loading
 0x002f94dc [0x002f94dc - 0x002f94dc]      0 swift class 0 Fail
 0x002f9520 [0x002f9520 - 0x002f9520]      0 swift class 0 Idle
-0x002f956c [0x002f956c - 0x002f956c]      0 swift class 0 PollTableView
+0x002f956c [0x002f956c - 0x002f956c]      0 swift class 0 PollTableView :: __C.UITableView
 0x002f95c4 [0x1002f95d7 - 0x1002f95d7]      0 swift class 0 ProfileFieldSection
 0x002f9694 [0x002f9694 - 0x002f9694]      0 swift class 0 Configuration
 0x002f973c [0x1002f974f - 0x1002f974f]      0 swift class 0 PageboyNavigationDirection
-0x002f9840 [0x002f9840 - 0x002f9840]      0 swift class 0 HandleTapAction
-0x002f9878 [0x100149f68 - 0x1002f98fc] 1767828 swift class 0 State
+0x002f9840 [0x002f9840 - 0x002f9840]      0 swift class 0 HandleTapAction :: __C.NSObject
+0x002f9878 [0x100149f68 - 0x1002f98fc] 1767828 swift class 0 State :: __C.GKState
 0x002f9908 [0x002f9908 - 0x002f9908]      0 swift class 0 Initial
 0x002f9958 [0x002f9958 - 0x002f9958]      0 swift class 0 Loading
 0x002f99a8 [0x002f99a8 - 0x002f99a8]      0 swift class 0 Fail
 0x002f99f8 [0x002f99f8 - 0x002f99f8]      0 swift class 0 Idle
 0x002f9a48 [0x002f9a48 - 0x002f9a48]      0 swift class 0 NoMore
 0x002f9ad0 [0x1002f9a2b - 0x1003000a7]  26236 swift class 0 MastodonConfirmEmailViewModel
-0x002f9b38 [0x1002f9b7a - 0x1002f9bbc]     66 swift class 0 State
+0x002f9b38 [0x1002f9b7a - 0x1002f9bbc]     66 swift class 0 State :: __C.GKState
 0x002f9bc8 [0x002f9bc8 - 0x002f9bc8]      0 swift class 0 Initial
 0x002f9c1c [0x002f9c1c - 0x002f9c1c]      0 swift class 0 Reloading
 0x002f9c6c [0x002f9c6c - 0x002f9c6c]      0 swift class 0 Fail
 0x002f9cbc [0x002f9cbc - 0x002f9cbc]      0 swift class 0 Idle
 0x002f9d0c [0x1002dca6a - 0x1002fb242] 124888 swift class 0 Loading
 0x002f9d98 [0x002f9d98 - 0x002f9d98]      0 swift class 0 NoMore
-0x002f9edc [0x002f9edc - 0x002f9edc]      0 swift class 0 ComposeStatusPollOptionCollectionViewCell
-0x002f9f20 [0x1002f9f63 - 0x1002fa45b]   1272 swift class 0 State
+0x002f9edc [0x002f9edc - 0x002f9edc]      0 swift class 0 ComposeStatusPollOptionCollectionViewCell :: __C.UICollectionViewCell
+0x002f9f20 [0x1002f9f63 - 0x1002fa45b]   1272 swift class 0 State :: __C.GKState
 0x002f9fa8 [0x002f9fa8 - 0x002f9fa8]      0 swift class 0 Initial
 0x002f9ffc [0x002f9ffc - 0x002f9ffc]      0 swift class 0 Reloading
 0x002fa04c [0x002fa04c - 0x002fa04c]      0 swift class 0 Fail
 0x002fa09c [0x002fa09c - 0x002fa09c]      0 swift class 0 Idle
 0x002fa0ec [0x1002dce4a - 0x1002fb53b] 124657 swift class 0 Loading
 0x002fa178 [0x002fa178 - 0x002fa178]      0 swift class 0 NoMore
-0x002fa248 [0x1002fa285 - 0x1002fa29c]     23 swift class 0 AccountListViewModel
+0x002fa248 [0x1002fa285 - 0x1002fa29c]     23 swift class 0 AccountListViewModel :: __C.NSObject
 0x002fa2b0 [0x002fa2b0 - 0x002fa2b0]      0 swift class 0 Section
 0x002fa2d4 [0x1002fa3e7 - 0x1002fa3e7]      0 swift class 0 Item
 0x002fa424 [0x1002fa437 - 0x1002fa437]      0 swift class 0 SettingsSection
-0x002fa8b8 [0x002fa8b8 - 0x002fa8b8]      0 swift class 0 MainTabBarController
+0x002fa8b8 [0x002fa8b8 - 0x002fa8b8]      0 swift class 0 MainTabBarController :: __C.UITabBarController
 0x002faa54 [0x1002faa67 - 0x1002faa67]      0 swift class 0 Tab
-0x002fac48 [0x002fac48 - 0x002fac48]      0 swift class 0 HeightFixedSearchBar
-0x002fac98 [0x002fac98 - 0x002fac98]      0 swift class 0 SearchViewController
+0x002fac48 [0x002fac48 - 0x002fac48]      0 swift class 0 HeightFixedSearchBar :: __C.UISearchBar
+0x002fac98 [0x002fac98 - 0x002fac98]      0 swift class 0 SearchViewController :: __C.UIViewController
 0x002fada8 [0x002fada8 - 0x002fada8]      0 swift class 0 SearchDetailViewModel
 0x002fadf0 [0x1002fae03 - 0x1002fae03]      0 swift class 0 SearchScope
 0x002faecc [0x1002faf0f - 0x1002fb71f]   2064 swift class 0 MediaPreviewVideoViewModel
@@ -593,36 +593,36 @@ EXPECT=<<EOF
 0x002fb1b8 [0x1002fb1f1 - 0x1002fb1f1]      0 swift class 0 ListBatchFetchViewModel
 0x002fb220 [0x1002fb333 - 0x1002fb333]      0 swift class 0 RegisterItem
 0x002fb2c4 [0x002fb2c4 - 0x002fb2c4]      0 swift class 0 MeProfileViewModel
-0x002fb3ac [0x002fb3ac - 0x002fb3ac]      0 swift class 0 FollowerListViewController
-0x002fb564 [0x1002fb4b3 - 0x1002fb69a]    487 swift class 0 SearchHistorySectionHeaderCollectionReusableView
-0x002fb600 [0x1002f1a9b - 0x1002fb6a3]  39944 swift class 0 DiscoveryHashtagsViewController
+0x002fb3ac [0x002fb3ac - 0x002fb3ac]      0 swift class 0 FollowerListViewController :: __C.UIViewController
+0x002fb564 [0x1002fb4b3 - 0x1002fb69a]    487 swift class 0 SearchHistorySectionHeaderCollectionReusableView :: __C.UICollectionReusableView
+0x002fb600 [0x1002f1a9b - 0x1002fb6a3]  39944 swift class 0 DiscoveryHashtagsViewController :: __C.UIViewController
 0x002fb6b8 [0x002fb6b8 - 0x002fb6b8]      0 swift class 0 ThreadViewModel
 0x002fb848 [0x002fb848 - 0x002fb848]      0 swift class 0 ThreadContext
 0x002fba34 [0x1002fba47 - 0x1002fba47]      0 swift class 0 PagerTabStripNavigationDirection
-0x002fbb50 [0x002fbb50 - 0x002fbb50]      0 swift class 0 SearchRecommendCollectionHeader
+0x002fbb50 [0x002fbb50 - 0x002fbb50]      0 swift class 0 SearchRecommendCollectionHeader :: __C.UIView
 0x002fbb8c [0x002fbb8c - 0x002fbb8c]      0 swift class 0 Item
 0x002fbbb0 [0x1002fbbc3 - 0x1002fbbc3]      0 swift class 0 Section
-0x002fbcc8 [0x002fbcc8 - 0x002fbcc8]      0 swift class 0 RootSplitViewController
-0x002fbe28 [0x1002fbe5d - 0x1002fbe65]      8 swift class 0 AdaptiveUserInterfaceStyleBarButtonItem
-0x002fbe88 [0x1002fbec6 - 0x1002fbeee]     40 swift class 0 AdaptiveCustomButton
+0x002fbcc8 [0x002fbcc8 - 0x002fbcc8]      0 swift class 0 RootSplitViewController :: __C.UISplitViewController
+0x002fbe28 [0x1002fbe5d - 0x1002fbe65]      8 swift class 0 AdaptiveUserInterfaceStyleBarButtonItem :: __C.UIBarButtonItem
+0x002fbe88 [0x1002fbec6 - 0x1002fbeee]     40 swift class 0 AdaptiveCustomButton :: __C.UIButton
 0x002fbf34 [0x1002fbf47 - 0x1002fbf47]      0 swift class 0 PickServerSection
 0x002fbfd8 [0x1002fc0eb - 0x1002fc0eb]      0 swift class 0 RecommendAccountItem
-0x002fc094 [0x1002fc0cb - 0x1002fc0cb]      0 swift class 0 MediaPreviewTransitionController
-0x002fc0fc [0x002fc0fc - 0x002fc0fc]      0 swift class 0 TrendSectionHeaderCollectionReusableView
+0x002fc094 [0x1002fc0cb - 0x1002fc0cb]      0 swift class 0 MediaPreviewTransitionController :: __C.NSObject
+0x002fc0fc [0x002fc0fc - 0x002fc0fc]      0 swift class 0 TrendSectionHeaderCollectionReusableView :: __C.UICollectionReusableView
 0x002fc1c8 [0x1002fc209 - 0x1002fc209]      0 swift class 0 AuthenticationViewModel
 0x002fc224 [0x002fc224 - 0x002fc224]      0 swift class 0 AuthenticateInfo
 0x002fc304 [0x1002fc317 - 0x1002fc317]      0 swift class 0 AuthenticationError
-0x002fc43c [0x10036c486 - 0x10037c496]  65552 swift class 0 SearchResultViewController
-0x002fc56c [0x002fc56c - 0x002fc56c]      0 swift class 0 AdaptiveStatusBarStyleNavigationController
-0x002fc624 [0x1002fc67c - 0x1002fc6ac]     48 swift class 0 PickServerCell
-0x002fc6a8 [0x1002fc6eb - 0x1002fcbe3]   1272 swift class 0 State
+0x002fc43c [0x10036c486 - 0x10037c496]  65552 swift class 0 SearchResultViewController :: __C.UIViewController
+0x002fc56c [0x002fc56c - 0x002fc56c]      0 swift class 0 AdaptiveStatusBarStyleNavigationController :: __C.UINavigationController
+0x002fc624 [0x1002fc67c - 0x1002fc6ac]     48 swift class 0 PickServerCell :: __C.UITableViewCell
+0x002fc6a8 [0x1002fc6eb - 0x1002fcbe3]   1272 swift class 0 State :: __C.GKState
 0x002fc730 [0x002fc730 - 0x002fc730]      0 swift class 0 Initial
 0x002fc784 [0x002fc784 - 0x002fc784]      0 swift class 0 Reloading
 0x002fc7d4 [0x002fc7d4 - 0x002fc7d4]      0 swift class 0 Fail
 0x002fc824 [0x002fc824 - 0x002fc824]      0 swift class 0 Idle
 0x002fc874 [0x1002df5d2 - 0x1002fdcc3] 124657 swift class 0 Loading
 0x002fc900 [0x002fc900 - 0x002fc900]      0 swift class 0 NoMore
-0x002fc968 [0x1002fc9aa - 0x10030c98b]  65505 swift class 0 EducationViewController
+0x002fc968 [0x1002fc9aa - 0x10030c98b]  65505 swift class 0 EducationViewController :: __C.UIViewController
 0x002fca20 [0x1002fb35a - 0x100301c53]  26873 swift class 0 AppearanceMode
 0x002fca54 [0x1002fca33 - 0x1002fca3b]      8 swift class 0 SettingsItem
 0x002fcb80 [0x002fcb80 - 0x002fcb80]      0 swift class 0 Link
@@ -633,43 +633,43 @@ EXPECT=<<EOF
 0x002fd0d4 [0x002fd0d4 - 0x002fd0d4]      0 swift class 0 ReportReasonRowView
 0x002fd23c [0x002fd23c - 0x002fd23c]      0 swift class 0 NotificationViewController
 0x002fd378 [0x1002fd38b - 0x1002fd38b]      0 swift class 0 CategorySwitch
-0x002fd4f0 [0x1002fd528 - 0x1002fd528]      0 swift class 0 SuggestionAccountTableViewCell
-0x002fd54c [0x002fd54c - 0x002fd54c]      0 swift class 0 SearchTransitionController
-0x002fd594 [0x1002fd5d1 - 0x1002fd5f9]     40 swift class 0 StatusHistoryView
-0x002fd648 [0x002fd648 - 0x002fd648]      0 swift class 0 ContextMenuImagePreviewViewController
+0x002fd4f0 [0x1002fd528 - 0x1002fd528]      0 swift class 0 SuggestionAccountTableViewCell :: __C.UITableViewCell
+0x002fd54c [0x002fd54c - 0x002fd54c]      0 swift class 0 SearchTransitionController :: __C.NSObject
+0x002fd594 [0x1002fd5d1 - 0x1002fd5f9]     40 swift class 0 StatusHistoryView :: __C.UIView
+0x002fd648 [0x002fd648 - 0x002fd648]      0 swift class 0 ContextMenuImagePreviewViewController :: __C.UIViewController
 0x002fd6f8 [0x002fd6f8 - 0x002fd6f8]      0 swift class 0 CachedProfileViewModel
 0x002fd798 [0x1002fd7d1 - 0x1002fd7d9]      8 swift class 0 SearchHistoryViewModel
 0x002fd7fc [0x1002dd87b - 0x10030d83a] 196543 swift class 0 DiscoveryCommunityViewModel
-0x002fd884 [0x1002fd8c7 - 0x1002fe9be]   4343 swift class 0 MastodonLoginView
-0x002fd99c [0x1002fe1d7 - 0x1002fe1df]      8 swift class 0 ReportReasonViewController
-0x002fdb84 [0x1002fe3bf - 0x1002fe3c7]      8 swift class 0 DiscoveryCommunityViewController
-0x002fdc9c [0x002fdc9c - 0x002fdc9c]      0 swift class 0 AccountListTableViewCell
+0x002fd884 [0x1002fd8c7 - 0x1002fe9be]   4343 swift class 0 MastodonLoginView :: __C.UIView
+0x002fd99c [0x1002fe1d7 - 0x1002fe1df]      8 swift class 0 ReportReasonViewController :: __C.UIViewController
+0x002fdb84 [0x1002fe3bf - 0x1002fe3c7]      8 swift class 0 DiscoveryCommunityViewController :: __C.UIViewController
+0x002fdc9c [0x002fdc9c - 0x002fdc9c]      0 swift class 0 AccountListTableViewCell :: __C.UITableViewCell
 0x002fdcf4 [0x1002fdd07 - 0x1002fdd07]      0 swift class 0 StatusSection
 0x002fddd4 [0x002fddd4 - 0x002fddd4]      0 swift class 0 ThreadCellRegistrationConfiguration
 0x002fde28 [0x002fde28 - 0x002fde28]      0 swift class 0 Configuration
 0x002fde98 [0x002fde98 - 0x002fde98]      0 swift class 0 CachedThreadViewModel
-0x002fdf08 [0x002fdf08 - 0x002fdf08]      0 swift class 0 AddAccountTableViewCell
+0x002fdf08 [0x002fdf08 - 0x002fdf08]      0 swift class 0 AddAccountTableViewCell :: __C.UITableViewCell
 0x002fdf64 [0x1002fdf77 - 0x1002fdf77]      0 swift class 0 NotificationSection
 0x002fe028 [0x002fe028 - 0x002fe028]      0 swift class 0 Configuration
-0x002fe0c0 [0x002fe0c0 - 0x002fe0c0]      0 swift class 0 ReportResultActionTableViewCell
-0x002fe10c [0x002fe10c - 0x002fe10c]      0 swift class 0 PickServerEmptyStateView
+0x002fe0c0 [0x002fe0c0 - 0x002fe0c0]      0 swift class 0 ReportResultActionTableViewCell :: __C.UITableViewCell
+0x002fe10c [0x002fe10c - 0x002fe10c]      0 swift class 0 PickServerEmptyStateView :: __C.UIView
 0x002fe154 [0x1002fe367 - 0x1002fe367]      0 swift class 0 SearchHistoryItem
 0x002fe204 [0x002fe204 - 0x002fe204]      0 swift class 0 PrivacyViewModel
-0x002fe2b0 [0x1002fe2e9 - 0x1002ff5f9]   4880 swift class 0 FamiliarFollowersViewController
-0x002fe380 [0x1002fe3b8 - 0x10038c088] 580816 swift class 0 AppDelegate
-0x002fe408 [0x002fe408 - 0x002fe408]      0 swift class 0 SidebarListContentView
+0x002fe2b0 [0x1002fe2e9 - 0x1002ff5f9]   4880 swift class 0 FamiliarFollowersViewController :: __C.UIViewController
+0x002fe380 [0x1002fe3b8 - 0x10038c088] 580816 swift class 0 AppDelegate :: __C.UIResponder
+0x002fe408 [0x002fe408 - 0x002fe408]      0 swift class 0 SidebarListContentView :: __C.UIView
 0x002fe458 [0x002fe458 - 0x002fe458]      0 swift class 0 Item
 0x002fe4e8 [0x002fe4e8 - 0x002fe4e8]      0 swift class 0 ContentConfiguration
 0x002fe664 [0x1002fe877 - 0x1002fe877]      0 swift class 0 NotificationItem
-0x002fe720 [0x1002f53b3 - 0x1002fe7c3]  37904 swift class 0 MastodonRegisterViewController
+0x002fe720 [0x1002f53b3 - 0x1002fe7c3]  37904 swift class 0 MastodonRegisterViewController :: __C.UIViewController
 0x002fea88 [0x1002fe9e3 - 0x1002febc3]    480 swift class 0 ReportReasonViewModel
 0x002feaf0 [0x1002feb03 - 0x1002feb03]      0 swift class 0 Reason
-0x002fedf4 [0x002fedf4 - 0x002fedf4]      0 swift class 0 ComposeToolbarView
+0x002fedf4 [0x002fedf4 - 0x002fedf4]      0 swift class 0 ComposeToolbarView :: __C.UIView
 0x002fee38 [0x1002fee4b - 0x1002fee4b]      0 swift class 0 VisibilitySelectionType
-0x002fefac [0x10036eff6 - 0x1003ff006] 589840 swift class 0 ProfileAboutViewController
-0x002ff0b0 [0x002ff0b0 - 0x002ff0b0]      0 swift class 0 SidebarListCollectionViewCell
-0x002ff180 [0x1002ff233 - 0x100300623]   5104 swift class 0 SettingsAppearanceTableViewCell
-0x002ff2c4 [0x1002ff30a - 0x1002ff30a]      0 swift class 0 SearchHistoryUserCollectionViewCell
+0x002fefac [0x10036eff6 - 0x1003ff006] 589840 swift class 0 ProfileAboutViewController :: __C.UIViewController
+0x002ff0b0 [0x002ff0b0 - 0x002ff0b0]      0 swift class 0 SidebarListCollectionViewCell :: __C.UICollectionViewListCell
+0x002ff180 [0x1002ff233 - 0x100300623]   5104 swift class 0 SettingsAppearanceTableViewCell :: __C.UITableViewCell
+0x002ff2c4 [0x1002ff30a - 0x1002ff30a]      0 swift class 0 SearchHistoryUserCollectionViewCell :: __C.UICollectionViewCell
 0x002ff434 [0x1003003a6 - 0x1003003a6]      0 swift class 0 SceneCoordinator
 0x002ff508 [0x002ff508 - 0x002ff508]      0 swift class 0 Scene
 0x002ff62c [0x100310085 - 0x100310085]      0 swift class 0 Difference
@@ -679,57 +679,57 @@ EXPECT=<<EOF
 0x002ff814 [0x002ff814 - 0x002ff814]      0 swift class 0 WelcomeViewModel
 0x002ff8bc [0x1002ff8f4 - 0x1002ff92c]     56 swift class 0 ViewModel
 0x002ff948 [0x1002ff98c - 0x1002ffaa0]    276 swift class 0 SearchResultViewModel
-0x002ffaa8 [0x002ffaa8 - 0x002ffaa8]      0 swift class 0 MediaPreviewViewModel
+0x002ffaa8 [0x002ffaa8 - 0x002ffaa8]      0 swift class 0 MediaPreviewViewModel :: __C.NSObject
 0x002ffb2c [0x002ffb2c - 0x002ffb2c]      0 swift class 0 PreviewItem
 0x002ffc4c [0x002ffc4c - 0x002ffc4c]      0 swift class 0 ProfileBannerPreviewContext
 0x002ffc8c [0x002ffc8c - 0x002ffc8c]      0 swift class 0 ProfileAvatarPreviewContext
 0x002ffccc [0x002ffccc - 0x002ffccc]      0 swift class 0 AttachmentPreviewContext
-0x002ffd14 [0x002ffd14 - 0x002ffd14]      0 swift class 0 StatusTableViewCell
-0x002ffde4 [0x002ffde4 - 0x002ffde4]      0 swift class 0 UserTableViewCell
+0x002ffd14 [0x002ffd14 - 0x002ffd14]      0 swift class 0 StatusTableViewCell :: __C.UITableViewCell
+0x002ffde4 [0x002ffde4 - 0x002ffde4]      0 swift class 0 UserTableViewCell :: __C.UITableViewCell
 0x002ffebc [0x1002ffecf - 0x1002ffecf]      0 swift class 0 StatusTableViewNavigation
 0x0030005c [0x0030005c - 0x0030005c]      0 swift class 0 Difference
 0x003000bc [0x1001def74 - 0x10039ac49] 1817813 swift class 0 ViewModel
-0x00300218 [0x1001e16b4 - 0x1003002f4] 1174592 swift class 0 SceneDelegate
-0x00300370 [0x00300370 - 0x00300370]      0 swift class 0 BadgeButton
-0x003003d0 [0x100370416 - 0x100380426]  65552 swift class 0 HashtagTimelineViewController
+0x00300218 [0x1001e16b4 - 0x1003002f4] 1174592 swift class 0 SceneDelegate :: __C.UIResponder
+0x00300370 [0x00300370 - 0x00300370]      0 swift class 0 BadgeButton :: __C.UIButton
+0x003003d0 [0x100370416 - 0x100380426]  65552 swift class 0 HashtagTimelineViewController :: __C.UIViewController
 0x00300550 [0x1002f05d5 - 0x10034058a] 327605 swift class 0 Configuration
 0x003005e4 [0x1003005f7 - 0x1003005f7]      0 swift class 0 DiscoverySection
 0x003006f8 [0x003006f8 - 0x003006f8]      0 swift class 0 HashtagTimelineHeaderViewActionButton
-0x00300808 [0x00300808 - 0x00300808]      0 swift class 0 ComposeStatusPollOptionAppendEntryCollectionViewCell
-0x00300870 [0x1003008b0 - 0x1003008b8]      8 swift class 0 MediaPreviewVideoViewController
-0x003009fc [0x003009fc - 0x003009fc]      0 swift class 0 MastodonLoginViewController
+0x00300808 [0x00300808 - 0x00300808]      0 swift class 0 ComposeStatusPollOptionAppendEntryCollectionViewCell :: __C.UICollectionViewCell
+0x00300870 [0x1003008b0 - 0x1003008b8]      8 swift class 0 MediaPreviewVideoViewController :: __C.UIViewController
+0x003009fc [0x003009fc - 0x003009fc]      0 swift class 0 MastodonLoginViewController :: __C.UIViewController
 0x00300b2c [0x100300b3f - 0x100300b3f]      0 swift class 0 MastodonLoginViewSection
 0x00300c20 [0x1002fa903 - 0x100300d5b]  25688 swift class 0 MastodonStatusThreadViewModel
 0x00300c80 [0x100300cb6 - 0x100300cb6]      0 swift class 0 Node
 0x00301054 [0x00301054 - 0x00301054]      0 swift class 0 ViewModel
 0x0030147c [0x10030148f - 0x10030148f]      0 swift class 0 State
-0x00301aa8 [0x100301ae5 - 0x100301b14]     47 swift class 0 FollowedTagsViewModel
+0x00301aa8 [0x100301ae5 - 0x100301b14]     47 swift class 0 FollowedTagsViewModel :: __C.NSObject
 0x00301b48 [0x100301c87 - 0x100302397]   1808 swift class 0 ProfileAboutViewModel
 0x00301bb4 [0x1003022ef - 0x1003022ef]      0 swift class 0 ProfileInfo
 0x00301e34 [0x100301e47 - 0x100301e47]      0 swift class 0 SearchResultSection
 0x00301ec8 [0x00301ec8 - 0x00301ec8]      0 swift class 0 Configuration
 0x00301f18 [0x100301f2b - 0x100301f2b]      0 swift class 0 SearchHistorySection
 0x00301fac [0x00301fac - 0x00301fac]      0 swift class 0 Configuration
-0x00301fe8 [0x00301fe8 - 0x00301fe8]      0 swift class 0 ProfilePagingViewModel
-0x003020ac [0x1003020f0 - 0x1004320ff] 1245199 swift class 0 AccountListViewController
+0x00301fe8 [0x00301fe8 - 0x00301fe8]      0 swift class 0 ProfilePagingViewModel :: __C.NSObject
+0x003020ac [0x1003020f0 - 0x1004320ff] 1245199 swift class 0 AccountListViewController :: __C.UIViewController
 0x0030218c [0x1003021c9 - 0x1003021e8]     31 swift class 0 DiscoveryForYouViewModel
-0x0030278c [0x1003727d6 - 0x10040a7f5] 622623 swift class 0 ProfileHeaderViewController
+0x0030278c [0x1003727d6 - 0x10040a7f5] 622623 swift class 0 ProfileHeaderViewController :: __C.UIViewController
 0x00302854 [0x100302867 - 0x100302867]      0 swift class 0 ImageType
 0x00302e70 [0x100302eba - 0x100302f0a]     80 swift class 0 DiscoveryViewController
-0x00302fc8 [0x00302fc8 - 0x00302fc8]      0 swift class 0 ProfileViewController
-0x00303588 [0x1003035bd - 0x1003035bd]      0 swift class 0 AltTextViewController
+0x00302fc8 [0x00302fc8 - 0x00302fc8]      0 swift class 0 ProfileViewController :: __C.UIViewController
+0x00303588 [0x1003035bd - 0x1003035bd]      0 swift class 0 AltTextViewController :: __C.UIViewController
 0x003035dc [0x100303611 - 0x100303611]      0 swift class 0 ViewModel
 0x00303620 [0x00303620 - 0x00303620]      0 swift class 0 Value
-0x003036d4 [0x100303711 - 0x100304a21]   4880 swift class 0 ReportSupplementaryViewController
-0x00303834 [0x00303834 - 0x00303834]      0 swift class 0 GradientBorderView
+0x003036d4 [0x100303711 - 0x100304a21]   4880 swift class 0 ReportSupplementaryViewController :: __C.UIViewController
+0x00303834 [0x00303834 - 0x00303834]      0 swift class 0 GradientBorderView :: __C.UIView
 0x00303874 [0x1002e38f5 - 0x1003138b2] 196541 swift class 0 ComposeViewModel
-0x00303910 [0x10038c1b3 - 0x10038c2ab]    248 swift class 0 Context
-0x003039d0 [0x100303a0c - 0x100303a2c]     32 swift class 0 ReportServerRulesViewController
-0x00303b9c [0x1003043d7 - 0x1003043df]      8 swift class 0 UserTimelineViewController
-0x00303cfc [0x100303d34 - 0x100303d3c]      8 swift class 0 ReportStatusTableViewCell
-0x00303d58 [0x00303d58 - 0x00303d58]      0 swift class 0 PortraitAlertController
+0x00303910 [0x10038c1b3 - 0x10038c96b]   1976 swift class 0 Context
+0x003039d0 [0x100303a0c - 0x100303a2c]     32 swift class 0 ReportServerRulesViewController :: __C.UIViewController
+0x00303b9c [0x1003043d7 - 0x1003043df]      8 swift class 0 UserTimelineViewController :: __C.UIViewController
+0x00303cfc [0x100303d34 - 0x100303d3c]      8 swift class 0 ReportStatusTableViewCell :: __C.UITableViewCell
+0x00303d58 [0x00303d58 - 0x00303d58]      0 swift class 0 PortraitAlertController :: __C.UIAlertController
 0x00303dd8 [0x100303e4a - 0x100303e62]     24 swift class 0 ReportResultViewModel
-0x003041e0 [0x100304223 - 0x10030471b]   1272 swift class 0 State
+0x003041e0 [0x100304223 - 0x10030471b]   1272 swift class 0 State :: __C.GKState
 0x00304268 [0x00304268 - 0x00304268]      0 swift class 0 Initial
 0x003042b8 [0x1002f3446 - 0x100305737]  74481 swift class 0 Loading
 0x00304388 [0x00304388 - 0x00304388]      0 swift class 0 Fail
@@ -740,40 +740,40 @@ EXPECT=<<EOF
 0x0030484c [0x0030484c - 0x0030484c]      0 swift class 0 ReportServerRulesRowView
 0x00304924 [0x00304924 - 0x00304924]      0 swift class 0 FieldValue
 0x00304964 [0x00304964 - 0x00304964]      0 swift class 0 ProfileFieldItem
-0x00304a7c [0x00304a7c - 0x00304a7c]      0 swift class 0 FollowedTagsTableViewCell
-0x00304ab8 [0x00304ab8 - 0x00304ab8]      0 swift class 0 RefreshControl
+0x00304a7c [0x00304a7c - 0x00304a7c]      0 swift class 0 FollowedTagsTableViewCell :: __C.UITableViewCell
+0x00304ab8 [0x00304ab8 - 0x00304ab8]      0 swift class 0 RefreshControl :: __C.UIRefreshControl
 0x00304b14 [0x00304b14 - 0x00304b14]      0 swift class 0 NotificationMediaTransitionContext
-0x00304b44 [0x100304b7c - 0x100304b7c]      0 swift class 0 OnboardingNextView
-0x00304b9c [0x00304b9c - 0x00304b9c]      0 swift class 0 ReportCommentTableViewCell
-0x00304c74 [0x100314cf6 - 0x100444cee] 1245176 swift class 0 ViewControllerAnimatedTransitioning
-0x00304d28 [0x100304d65 - 0x100304d6d]      8 swift class 0 PickServerCategoryCollectionViewCell
+0x00304b44 [0x100304b7c - 0x100304b7c]      0 swift class 0 OnboardingNextView :: __C.UIView
+0x00304b9c [0x00304b9c - 0x00304b9c]      0 swift class 0 ReportCommentTableViewCell :: __C.UITableViewCell
+0x00304c74 [0x100314cf6 - 0x100444cee] 1245176 swift class 0 ViewControllerAnimatedTransitioning :: __C.NSObject
+0x00304d28 [0x100304d65 - 0x100304d6d]      8 swift class 0 PickServerCategoryCollectionViewCell :: __C.UICollectionViewCell
 0x00304d90 [0x100304ea3 - 0x100304ea3]      0 swift class 0 SearchItem
-0x00304e28 [0x1002e4ea3 - 0x100314e62] 196543 swift class 0 SearchViewModel
-0x00304eb8 [0x00304eb8 - 0x00304eb8]      0 swift class 0 WelcomeSeparatorView
+0x00304e28 [0x1002e4ea3 - 0x100314e62] 196543 swift class 0 SearchViewModel :: __C.NSObject
+0x00304eb8 [0x00304eb8 - 0x00304eb8]      0 swift class 0 WelcomeSeparatorView :: __C.UIView
 0x00304f04 [0x100305017 - 0x100305017]      0 swift class 0 ServerRuleItem
 0x00304f94 [0x1003051a7 - 0x1003051a7]      0 swift class 0 RuleContext
-0x00305048 [0x1002daf34 - 0x10030511c] 172520 swift class 0 ReportViewController
-0x00305338 [0x00305338 - 0x00305338]      0 swift class 0 SendPostIntent
+0x00305048 [0x1002daf34 - 0x10030511c] 172520 swift class 0 ReportViewController :: __C.UIViewController
+0x00305338 [0x00305338 - 0x00305338]      0 swift class 0 SendPostIntent :: __C.INIntent
 0x0030538c [0x0030538c - 0x0030538c]      0 swift class 0 SendPostIntentResponseCode
-0x003053c8 [0x003053c8 - 0x003053c8]      0 swift class 0 SendPostIntentResponse
+0x003053c8 [0x003053c8 - 0x003053c8]      0 swift class 0 SendPostIntentResponse :: __C.INIntentResponse
 0x003054dc [0x003054dc - 0x003054dc]      0 swift class 0 PostVisibility
-0x00305520 [0x100305555 - 0x100305555]      0 swift class 0 PostVisibilityResolutionResult
-0x00305580 [0x00305580 - 0x00305580]      0 swift class 0 Post
-0x003055c8 [0x003055c8 - 0x003055c8]      0 swift class 0 PostResolutionResult
-0x00305634 [0x00305634 - 0x00305634]      0 swift class 0 Account
-0x00305678 [0x00305678 - 0x00305678]      0 swift class 0 AccountResolutionResult
-0x0030579c [0x0030579c - 0x0030579c]      0 swift class 0 FollowersCountIntent
+0x00305520 [0x100305555 - 0x100305555]      0 swift class 0 PostVisibilityResolutionResult :: __C.INEnumResolutionResult
+0x00305580 [0x00305580 - 0x00305580]      0 swift class 0 Post :: __C.INObject
+0x003055c8 [0x003055c8 - 0x003055c8]      0 swift class 0 PostResolutionResult :: __C.INObjectResolutionResult
+0x00305634 [0x00305634 - 0x00305634]      0 swift class 0 Account :: __C.INObject
+0x00305678 [0x00305678 - 0x00305678]      0 swift class 0 AccountResolutionResult :: __C.INObjectResolutionResult
+0x0030579c [0x0030579c - 0x0030579c]      0 swift class 0 FollowersCountIntent :: __C.INIntent
 0x003057f4 [0x003057f4 - 0x003057f4]      0 swift class 0 FollowersCountIntentResponseCode
-0x00305830 [0x00305830 - 0x00305830]      0 swift class 0 FollowersCountIntentResponse
-0x00305950 [0x00305950 - 0x00305950]      0 swift class 0 MultiFollowersCountIntent
+0x00305830 [0x00305830 - 0x00305830]      0 swift class 0 FollowersCountIntentResponse :: __C.INIntentResponse
+0x00305950 [0x00305950 - 0x00305950]      0 swift class 0 MultiFollowersCountIntent :: __C.INIntent
 0x003059a8 [0x003059a8 - 0x003059a8]      0 swift class 0 MultiFollowersCountIntentResponseCode
-0x003059f4 [0x003059f4 - 0x003059f4]      0 swift class 0 MultiFollowersCountIntentResponse
-0x00305b0c [0x00305b0c - 0x00305b0c]      0 swift class 0 LatestFollowersIntent
+0x003059f4 [0x003059f4 - 0x003059f4]      0 swift class 0 MultiFollowersCountIntentResponse :: __C.INIntentResponse
+0x00305b0c [0x00305b0c - 0x00305b0c]      0 swift class 0 LatestFollowersIntent :: __C.INIntent
 0x00305b64 [0x00305b64 - 0x00305b64]      0 swift class 0 LatestFollowersIntentResponseCode
-0x00305ba0 [0x00305ba0 - 0x00305ba0]      0 swift class 0 LatestFollowersIntentResponse
-0x00305ca8 [0x00305ca8 - 0x00305ca8]      0 swift class 0 HashtagIntent
+0x00305ba0 [0x00305ba0 - 0x00305ba0]      0 swift class 0 LatestFollowersIntentResponse :: __C.INIntentResponse
+0x00305ca8 [0x00305ca8 - 0x00305ca8]      0 swift class 0 HashtagIntent :: __C.INIntent
 0x00305cfc [0x00305cfc - 0x00305cfc]      0 swift class 0 HashtagIntentResponseCode
-0x00305d38 [0x00305d38 - 0x00305d38]      0 swift class 0 HashtagIntentResponse
+0x00305d38 [0x00305d38 - 0x00305d38]      0 swift class 0 HashtagIntentResponse :: __C.INIntentResponse
 0x1003db420 [0x100006ac8 - 0x10000701c]   1364 objc class 0 Mastodon.ProfilePagingViewController
 0x1003db690 [0x10000a34c - 0x10000a70c]    960 objc class 0 Mastodon.FavoritedByViewController
 0x1003db700 [0x1003db700 - 0x1003db700]      0 objc class 0 Mastodon.MediaPreviewTransitionItem

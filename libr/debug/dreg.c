@@ -1,34 +1,43 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
+#include <r_core.h> // just to get the RPrint instance
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
-	r_return_val_if_fail (dbg && dbg->reg && dbg->current, false);
+	r_return_val_if_fail (dbg && dbg->reg, false);
+	if (dbg->current == NULL) {
+		return true;
+	}
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (!plugin) {
+		// if dbg->current is null means that we didnt selected any debug plugin
+		// this function is only needed to sync the local regstate into the target process
+		return true;
+	}
 	int n, size;
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (must_write) {
-		if (!dbg->current->plugin.reg_write) {
+		if (!plugin->reg_write) {
 			return false;
 		}
 	} else {
-		if (!dbg->current->plugin.reg_read) {
+		if (!plugin->reg_read) {
 			return false;
 		}
 	}
 	// Sync all the types sequentially if asked
-	int i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
+	ut32 i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
 	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
 			// get regset mask
-			int mask = dbg->reg->regset[n].maskregstype;
+			const ut32 mask = dbg->reg->regset[n].maskregstype;
 			// convert request arena to mask value
-			int v = ((int)1 << i);
+			const ut32 v = ((ut32)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
 				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
@@ -42,7 +51,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	do {
 		if (must_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
-			if (!buf || !dbg->current->plugin.reg_write (dbg, i, buf, size)) {
+			if (!buf || !plugin->reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
 					R_LOG_ERROR ("cannot write registers %d to %d", i, dbg->tid);
 				}
@@ -56,24 +65,12 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 			int bufsize = dbg->reg->size;
 			if (bufsize > 0) {
 				ut8 *buf = calloc (2, bufsize);
-				if (!buf) {
-					return false;
+				if (buf) {
+					if (plugin->reg_read (dbg, i, buf, bufsize)) {
+						r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+					}
+					free (buf);
 				}
-#if 0
-				//we have already checked dbg->current.plugin and dbg->current->plugin.reg_read above
-				size = dbg->current->plugin.reg_read (dbg, i, buf, bufsize);
-				// we need to check against zero because reg_read can return false
-				if (size > 0) {
-					r_reg_set_bytes (dbg->reg, i, buf, size); //R_MIN (size, bufsize));
-			//		free (buf);
-			//		return true;
-				}
-#else
-				if (dbg->current->plugin.reg_read (dbg, i, buf, bufsize)) {
-					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
-				}
-#endif
-				free (buf);
 			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
@@ -83,15 +80,14 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
+
 static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname) {
-	if (!item || !pcname || !spname) {
-		return true;
-	}
+	r_return_val_if_fail (item, true);
 	// if regname is PC or SP should return false, otherwise return true
-	if (!strcmp (item->name, pcname)) {
+	if (pcname && !strcmp (item->name, pcname)) {
 		return false;
 	}
-	if (!strcmp (item->name, spname)) {
+	if (spname && !strcmp (item->name, spname)) {
 		return false;
 	}
 	return true;
@@ -124,14 +120,12 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		}
 	}
 	if (dbg->bits & R_SYS_BITS_64) {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 30: 25;
 		cols = 3;
 	} else {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%7s%s %s%s";
 		kwhites = "    ";
@@ -158,12 +152,11 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	}
 	const char *pcname = r_reg_get_name_by_type (dbg->reg, "PC");
 	const char *spname = r_reg_get_name_by_type (dbg->reg, "SP");
-#define IS_MANDATORY(x) is_mandatory ((x), pcname, spname)
 	bool isfirst = true;
 	r_list_foreach (list, iter, item) {
 		ut64 value;
 		utX valueBig;
-		if (type != -1 && IS_MANDATORY (item)) {
+		if (type != -1 && is_mandatory (item, pcname, spname)) {
 			if (type != item->type && R_REG_TYPE_FLG != item->type) {
 				continue;
 			}

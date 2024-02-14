@@ -478,9 +478,6 @@ SDB_API bool sdb_text_check(Sdb *s, const char *file) {
 		if (*p == '=') {
 			has_eq = true;
 		} else if (*p == '\n') {
-			if (!has_eq) {
-				break;
-			}
 			has_nl = true;
 		} else if (!has_eq) {
 			if (*p < 10 || *p > '~') {

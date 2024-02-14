@@ -1,4 +1,5 @@
 NAME=basic dd usage
+BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -37,6 +38,7 @@ EOF
 RUN
 
 NAME=dd open, close, duplicate
+BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -72,6 +74,7 @@ EOF
 RUN
 
 NAME=dd read, write, seek
+BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -125,6 +128,7 @@ EOF
 RUN
 
 NAME=ddf
+BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF

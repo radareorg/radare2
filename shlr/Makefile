@@ -49,7 +49,7 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(USE_CSNEXT),1)
-CS_TIP=a4df92eda647e739432860682be638da1b8b901a
+CS_TIP=58528853111377ba2f8ecb781f8d3bdc595900ed
 CS_BRA=next
 else
 ifeq ($(USE_CS4),1)
@@ -268,6 +268,7 @@ else
 
 capstone: capstone-sync
 
+patch-capstone capstone-patch:
 
 capstone-sync:
 ifeq ($(WITHOUT_PULL),1)

@@ -1,5 +1,5 @@
 NAME=Resaving maps fails
-FILE=-
+FILE=malloc://0x400
 CMDS=<<EOF
 om 3 0x8000 0x200 0x200 r--
 om 3 0xc000 0x100 0x300 r--
@@ -15,15 +15,15 @@ om*
 rm a.r2
 EOF
 EXPECT=<<EOF
-omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00000000 0x00000400 0x00000000 rwx
 omu 3 0x00008000 0x00000200 0x00000200 r--
 omu 3 0x0000c000 0x00000100 0x00000300 r--
 dos
-omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00000000 0x00000400 0x00000000 rwx
 omu 3 0x00008000 0x00000200 0x00000200 r--
 omu 3 0x0000c000 0x00000100 0x00000300 r--
 tre
-omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00000000 0x00000400 0x00000000 rwx
 omu 3 0x00008000 0x00000200 0x00000200 r--
 omu 3 0x0000c000 0x00000100 0x00000300 r--
 EOF
@@ -71,7 +71,7 @@ EXPECT=<<EOF
             0x100003c14      4155           push r13
             0x100003c16      4154           push r12
             0x100003c18      53             push rbx
-            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c19      4881ec3806..   sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
 0x100003c0c
@@ -87,7 +87,7 @@ EXPECT=<<EOF
             0x100003c14      4155           push r13
             0x100003c16      4154           push r12
             0x100003c18      53             push rbx
-            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c19      4881ec3806..   sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
  3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT

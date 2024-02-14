@@ -227,13 +227,53 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 	return ret;
 }
 
+typedef struct desc_map_resize_t {
+	RIO *io;
+	RQueue *del;
+	ut64 osize;
+	ut64 size;
+	int fd;
+} DescMapResize;
+
+static bool _resize_affected_maps (void *user, void *data, ut32 id) {
+	DescMapResize *dmr = (DescMapResize *)user;
+	RIOMap *map = (RIOMap *)data;
+	if (map->fd == dmr->fd) {
+		if (map->delta >= dmr->size) {
+			r_queue_enqueue (dmr->del, map);
+			return true;
+		}
+		if (map->tie_flags & R_IO_MAP_TIE_FLG_BACK) {
+			const double ratio = ((double)dmr->size) / ((double)dmr->osize);
+			io_map_resize (dmr->io, id, (ut64)(((double)r_io_map_size (map)) * ratio));
+		} else if ((map->delta + r_io_map_size (map)) > dmr->size) {
+			io_map_resize (dmr->io, id, dmr->size - map->delta);
+		}
+	}
+	return true;
+}
+
 R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
-	if (desc && desc->plugin && desc->plugin->resize) {
-		bool ret = desc->plugin->resize (desc->io, desc, newsize);
-		if (desc->io && desc->io->p_cache) {
+	if (desc && desc->plugin && desc->plugin->resize && desc->plugin->seek) {
+		const ut64 osize = r_io_desc_size (desc);
+		if (osize == newsize) {
+			return true;
+		}
+		if (!desc->plugin->resize (desc->io, desc, newsize)) {
+			return false;
+		}
+		if (osize > newsize && desc->io && desc->io->p_cache) {
 			r_io_desc_cache_cleanup (desc);
 		}
-		return ret;
+		DescMapResize dmr = {desc->io, r_queue_new (1), osize, newsize, desc->fd};
+		if (desc->io->maps) {
+			r_id_storage_foreach (desc->io->maps, _resize_affected_maps, &dmr);
+			while (!r_queue_is_empty (dmr.del)) {
+				r_io_map_del (desc->io, ((RIOMap *)r_queue_dequeue (dmr.del))->id);
+			}
+		}
+		r_queue_free (dmr.del);
+		return true;
 	}
 	return false;
 }
@@ -351,7 +391,7 @@ R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) 
 	return 0;
 }
 
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size) {
+R_API bool r_io_desc_extend(RIODesc *desc, ut64 size) {
 	if (desc && desc->plugin && desc->plugin->extend) {
 		return desc->plugin->extend (desc->io, desc, size);
 	}

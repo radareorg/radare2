@@ -1,6 +1,6 @@
 NAME=Open LE cdogs.exe
 FILE=bins/le/cdogs.exe
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LE
 EOF
@@ -228,7 +228,7 @@ RUN
 
 NAME=Open LX GCC.EXE
 FILE=bins/le/GCC.EXE
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LX
 EOF
@@ -311,7 +311,7 @@ RUN
 
 NAME=Open LX GNUGREP.DLL
 FILE=bins/le/GNUGREP.DLL
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LX
 EOF

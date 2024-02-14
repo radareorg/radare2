@@ -63,8 +63,8 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const char *cmdbp = r_config_get (core->config, "cmd.bp");
-	const bool cmdbp_exists = (cmdbp && *cmdbp);
-	const bool bpcmd_exists = (bpi->data && bpi->data[0]);
+	const bool cmdbp_exists = R_STR_ISNOTEMPTY (cmdbp);
+	const bool bpcmd_exists = R_STR_ISNOTEMPTY (bpi->data);
 	const bool may_output = (cmdbp_exists || bpcmd_exists);
 	if (may_output) {
 		r_cons_push ();
@@ -309,12 +309,38 @@ static bool __syncDebugMaps(RCore *core) {
 	return false;
 }
 
+R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
+	r_return_val_if_fail (core && core->cons, NULL);
+	r_cons_push ();
+	core->cons->context->noflush = true;
+	core->cons->context->cmd_str_depth++;
+	if (cmd && r_core_cmd_call_at (core, addr, cmd) == -1) {
+		//eprintf ("Invalid command: %s\n", cmd);
+		if (--core->cons->context->cmd_str_depth == 0) {
+			core->cons->context->noflush = false;
+			r_cons_flush ();
+		}
+		r_cons_pop ();
+		return NULL;
+	}
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
+	}
+	r_cons_filter ();
+	const char *static_str = r_cons_get_buffer ();
+	char *retstr = strdup (r_str_get (static_str));
+	r_cons_pop ();
+	r_cons_echo (NULL);
+	return retstr;
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
+	bnd->callat = (RCoreCallAt)r_core_cmd_call_str_at;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdstrf = (RCoreCmdStrF)r_core_cmd_strf;
 	bnd->help = (RCoreBindHelp)core_help;
@@ -2066,7 +2092,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("gui.cflow");
 			ADDARG ("gui.dataoffset");
 			ADDARG ("gui.background");
-			ADDARG ("gui.alt_background");
+			ADDARG ("gui.background2");
 			ADDARG ("gui.border");
 			ADDARG ("diff.unknown");
 			ADDARG ("diff.new");
@@ -2682,6 +2708,11 @@ static void r_core_setenv(RCore *core) {
 	char *h = r_xdg_datadir ("prefix/bin"); // support \\ on windows :?
 	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
+	{
+		char *cpstr = r_str_newf ("%p", core);
+		r_sys_setenv ("R2CORE", cpstr);
+		free (cpstr);
+	}
 	free (n);
 	free (h);
 	free (e);
@@ -3008,8 +3039,13 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	if (!msg) {
 		return false;
 	}
+	if (!origin) {
+		origin = "*";
+	}
 	RCore *core = (RCore*)user;
-	char *s = R_STR_ISNOTEMPTY (msg)? r_str_newf ("%s %s", origin? origin: "*", msg): strdup (origin);
+	char *s = R_STR_ISNOTEMPTY (msg)
+		? r_str_newf ("%s %s", origin, msg)
+		: strdup (origin);
 	r_core_log_add (core, s);
 	free (s);
 	return false;
@@ -3184,7 +3220,8 @@ R_API bool r_core_init(RCore *core) {
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
-	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
+	core->lang->cmdf = (RCoreCmdF)r_core_cmdf;
+	core->lang->call_at = (RCoreCallAtCallback) r_core_cmd_call_str_at;
 	r_core_bind_cons (core);
 	core->table = NULL;
 	core->lang->cb_printf = r_cons_printf;
@@ -3521,7 +3558,7 @@ static void set_prompt(RCore *r) {
 	const char *END = "";
 	const char *remote = "";
 
-	if (cmdprompt && *cmdprompt) {
+	if (R_STR_ISNOTEMPTY (cmdprompt)) {
 		r_core_cmd (r, cmdprompt, 0);
 	}
 
@@ -4344,23 +4381,23 @@ R_API RTable *r_core_table(RCore *core, const char *name) {
 
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
-	const char *config_string_encoding = r_config_get (core->config, "cfg.json.str");
-	const char *config_num_encoding = r_config_get (core->config, "cfg.json.num");
+	const char *se = r_config_get (core->config, "cfg.json.str");
+	const char *ne = r_config_get (core->config, "cfg.json.num");
 	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
 	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
 
-	if (!strcmp ("string", config_num_encoding)) {
+	if (r_str_startswith (ne, "str")) {
 		number_encoding = PJ_ENCODING_NUM_STR;
-	} else if (!strcmp ("hex", config_num_encoding)) {
+	} else if (strstr (ne, "hex")) {
 		number_encoding = PJ_ENCODING_NUM_HEX;
 	}
-	if (!strcmp ("base64", config_string_encoding)) {
+	if (!strcmp (se, "base64")) {
 		string_encoding = PJ_ENCODING_STR_BASE64;
-	} else if (!strcmp ("hex", config_string_encoding)) {
+	} else if (!strcmp (se, "hex")) {
 		string_encoding = PJ_ENCODING_STR_HEX;
-	} else if (!strcmp ("array", config_string_encoding)) {
+	} else if (!strcmp (se, "array")) {
 		string_encoding = PJ_ENCODING_STR_ARRAY;
-	} else if (!strcmp ("strip", config_string_encoding)) {
+	} else if (!strcmp (se, "strip")) {
 		string_encoding = PJ_ENCODING_STR_STRIP;
 	}
 	return pj_new_with_encoding (string_encoding, number_encoding);

@@ -29,8 +29,8 @@ wx 48ba306c5f666c34670a
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      48b974686973.  movabs rcx, 0x3030635f73696874 ; 'this_c00'
-            0x00000000      48ba306c5f66.  movabs rdx, 0xa67346c665f6c30 ; '0l_fl4g\n'
+            0x00000000      48b9746869..   movabs rcx, 0x3030635f73696874 ; 'this_c00'
+            0x00000000      48ba306c5f..   movabs rdx, 0xa67346c665f6c30 ; '0l_fl4g\n'
 EOF
 RUN
 

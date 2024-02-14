@@ -7,8 +7,6 @@
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
 
-#define R_REG_USE_VEC 1
-
 #ifdef __cplusplus
 extern "C" {
 #endif

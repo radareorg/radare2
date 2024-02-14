@@ -99,7 +99,6 @@ pd 10
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x000005f0      4140f008       la r4, 8(r15)               ; [13] -r-x section size 640 named .text
@@ -113,7 +112,6 @@ EXPECT=<<EOF
             0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini
             0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x000005f0      4140f008       la r4, 8(r15)               ; [13] -r-x section size 640 named .text

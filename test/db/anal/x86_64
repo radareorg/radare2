@@ -522,15 +522,15 @@ EOF
 EXPECT=<<EOF
 / 114: fcn.00487350 ();
 | 0x00487350      8b8710030000   mov eax, dword [rdi + 0x310]
-| 0x00487356      48b900000000.  movabs rcx, 0x200000000
+| 0x00487356      48b9000000..   movabs rcx, 0x200000000
 | 0x00487360      8d50ff         lea edx, [rax - 1]
-| 0x00487363      48b8ffffffff.  movabs rax, 0x3ffffffff
+| 0x00487363      48b8ffffff..   movabs rax, 0x3ffffffff
 | 0x0048736d      899710030000   mov dword [rdi + 0x310], edx
-| 0x00487373      482387100300.  and rax, qword [rdi + 0x310]
+| 0x00487373      4823871003..   and rax, qword [rdi + 0x310]
 | 0x0048737a      4839c8         cmp rax, rcx
 | 0x0048737d      7411           je 0x487390
 | // true: 0x00487390  false: 0x0048737f
-| 0x0048737f      f605d2542300.  test byte [0x006bc858], 0x40
+| 0x0048737f      f605d25423..   test byte [0x006bc858], 0x40
 | 0x00487386      7525           jne 0x4873ad
 | // true: 0x004873ad  false: 0x00487388
 | 0x00487388      f3c3           repz ret
@@ -539,12 +539,12 @@ EXPECT=<<EOF
 | 0x00487396      85c0           test eax, eax
 | 0x00487398      7426           je 0x4873c0
 | // true: 0x004873c0  false: 0x0048739a
-| 0x0048739a      f605b7542300.  test byte [0x006bc858], 0x40
-| 0x004873a1      c705d54d2300.  mov dword [0x006bc180], 2
+| 0x0048739a      f605b75423..   test byte [0x006bc858], 0x40
+| 0x004873a1      c705d54d23..   mov dword [0x006bc180], 2
 | 0x004873ab      74db           je 0x487388
 | // true: 0x00487388  false: 0x004873ad
 | 0x004873ad      488b7708       mov rsi, qword [rdi + 8]
-| 0x004873b1      488d3dd03502.  lea rdi, str._nclosing_file_s__direct_opencount_u_n
+| 0x004873b1      488d3dd035..   lea rdi, str._nclosing_file_s__direct_opencount_u_n
 | 0x004873b8      31c0           xor eax, eax
 | 0x004873ba      e9b16cffff     jmp fcn.0047e070
 
@@ -1508,7 +1508,7 @@ EXPECT=<<EOF
 ┌ 6: int sym.imp.puts (const char *s);
 └       ╎   0x004003f0      jmp qword [reloc.puts]                     ; [0x601018:8]=0x4003f6
         ╎   0x004003f6      push 0
-        └─< 0x004003fb      jmp sym..plt
+        └─< 0x004003fb      jmp section..plt
 EOF
 RUN
 
@@ -2209,10 +2209,10 @@ e anal.arch = x86
 e scr.color=false
 e scr.wheel = false
 aa
-axt @ str.Password:_
+axt @ str.Password:
 EOF
 EXPECT=<<EOF
-main 0x804843c [DATA:-w-] mov dword [esp], str.Password:_
+main 0x804843c [DATA:-w-] mov dword [esp], str.Password:
 EOF
 RUN
 
@@ -2404,7 +2404,7 @@ axt 0x00001e09
 EOF
 EXPECT=<<EOF
 main 0x1457 [STRN:r--] lea eax, str._Take_the_Red_Pill____n
-main 0x148e [STRN:r--] lea eax, str._use:_._exploit1_PILL_
+main 0x148e [STRN:r--] lea eax, str._use:_._exploit1_PILL
 main 0x14eb [STRN:r--] lea eax, str._____Red_Pill__0x50444552
 main 0x1502 [STRN:r--] lea eax, str._____Your_Pill_0x_08x_n
 main 0x1523 [STRN:r--] lea eax, str._n__Red_Pill
@@ -3535,29 +3535,29 @@ EXPECT=<<EOF
 0x140001012      0f871a010000   ja case.0x140001034.3
 0x140001034      ffe1           jmp rcx                                ; switch table (99 cases) at 0x140001148
 ;-- case 1:                                                            ; from 0x140001034
-0x140001036      488d0dd31100.  lea rcx, str.case_1                    ; 0x140002210 ; "case 1"
+0x140001036      488d0dd311..   lea rcx, str.case_1                    ; 0x140002210 ; "case 1"
 ;-- case 2:                                                            ; from 0x140001034
-0x14000104b      488d0dc61100.  lea rcx, str.case_2                    ; 0x140002218 ; "case 2"
+0x14000104b      488d0dc611..   lea rcx, str.case_2                    ; 0x140002218 ; "case 2"
 ;-- case 11:                                                           ; from 0x140001034
-0x140001060      488d0db91100.  lea rcx, str.case_11                   ; 0x140002220 ; "case 11"
+0x140001060      488d0db911..   lea rcx, str.case_11                   ; 0x140002220 ; "case 11"
 ;-- case 13:                                                           ; from 0x140001034
-0x140001075      488d0dac1100.  lea rcx, str.case_13                   ; 0x140002228 ; "case 13"
+0x140001075      488d0dac11..   lea rcx, str.case_13                   ; 0x140002228 ; "case 13"
 ;-- case 15...16:                                                      ; from 0x140001034
-0x14000108a      488d0d9f1100.  lea rcx, str.case_15_and_16            ; 0x140002230 ; "case 15 and 16"
+0x14000108a      488d0d9f11..   lea rcx, str.case_15_and_16            ; 0x140002230 ; "case 15 and 16"
 ;-- case 19:                                                           ; from 0x140001034
-0x14000109f      488d0d9a1100.  lea rcx, str.case_19                   ; 0x140002240 ; "case 19"
+0x14000109f      488d0d9a11..   lea rcx, str.case_19                   ; 0x140002240 ; "case 19"
 ;-- case 50:                                                           ; from 0x140001034
-0x1400010b4      488d0d8d1100.  lea rcx, str.case_50                   ; 0x140002248 ; "case 50"
+0x1400010b4      488d0d8d11..   lea rcx, str.case_50                   ; 0x140002248 ; "case 50"
 ;-- case 30:                                                           ; from 0x140001034
-0x1400010c9      488d0d801100.  lea rcx, str.case_30                   ; 0x140002250 ; "case 30"
+0x1400010c9      488d0d8011..   lea rcx, str.case_30                   ; 0x140002250 ; "case 30"
 ;-- case 20:                                                           ; from 0x140001034
-0x1400010de      488d0d731100.  lea rcx, str.case_20                   ; 0x140002258 ; "case 20"
+0x1400010de      488d0d7311..   lea rcx, str.case_20                   ; 0x140002258 ; "case 20"
 ;-- case 10:                                                           ; from 0x140001034
-0x1400010f3      488d0d661100.  lea rcx, str.case_10                   ; 0x140002260 ; "case 10"
+0x1400010f3      488d0d6611..   lea rcx, str.case_10                   ; 0x140002260 ; "case 10"
 ;-- case 99:                                                           ; from 0x140001034
-0x140001108      488d0d591100.  lea rcx, str.case_99                   ; 0x140002268 ; "case 99"
+0x140001108      488d0d5911..   lea rcx, str.case_99                   ; 0x140002268 ; "case 99"
 ;-- case 97:                                                           ; from 0x140001034
-0x14000111d      488d0d4c1100.  lea rcx, str.case_97                   ; 0x140002270 ; "case 97"
+0x14000111d      488d0d4c11..   lea rcx, str.case_97                   ; 0x140002270 ; "case 97"
 ;-- case 3...9:                                                        ; from 0x140001034
 ;-- case 12:                                                           ; from 0x140001034
 ;-- case 14:                                                           ; from 0x140001034
@@ -3847,7 +3847,7 @@ EXPECT=<<EOF
 |           0x00000004      b402           mov ah, 2
 |           0x00000006      66b83333       mov ax, 0x3333
 |           0x0000000a      b855554444     mov eax, 0x44445555
-|           0x0000000f      48b8bebafeca.  movabs rax, 0xdeadbeefcafebabe
+|           0x0000000f      48b8bebafe..   movabs rax, 0xdeadbeefcafebabe
 |           0x00000019      4889d8         mov rax, rbx
 |           0x0000001c      488d03         lea rax, [rbx]
 |           0x0000001f      488b4308       mov rax, qword [rbx + 8]
@@ -3888,7 +3888,7 @@ EXPECT=<<EOF
 |           0x00000004      b402           ah = 2
 |           0x00000006      66b83333       ax = 0x3333
 |           0x0000000a      b855554444     eax = 0x44445555
-|           0x0000000f      48b8bebafeca.  rax = 0xdeadbeefcafebabe
+|           0x0000000f      48b8bebafe..   rax = 0xdeadbeefcafebabe
 |           0x00000019      4889d8         rax = rbx
 |           0x0000001c      488d03         rax = rbx
 |           0x0000001f      488b4308       rax = qword [rbx + 8]
@@ -4036,7 +4036,7 @@ scale: 1
 esil: 0x1fce0,rip,+,[16],xmm0,=
 direction: read
 family: vec
-            0x140001358      660f6f05e0fc.  movdqa xmm0, xmmword [str._n_2.__1__a] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~\x7f"
+            0x140001358      660f6f05e0..   movdqa xmm0, xmmword [str._n_2.__1__a] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~\x7f"
             ;-- str._n_2.__1__a:
             ; DATA XREF from main @ +0x38(r)
             0x140021040     .string "\n*,2.)%#1%#)a~" ; len=15

@@ -117,7 +117,6 @@ EXPECT=<<EOF
 0   0x00000d8f 0x00000c20 LOCAL  SECT 4        .text$mn
 0   0x00000ec2 0x00000d30 LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:
-            ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
             0x00000d30      55             push ebp                    ; [05] -r-x section size 42 named .text$mn-5
             0x00000d31      8bec           mov ebp, esp
@@ -150,7 +149,125 @@ ARGS=-e bin.relocs.apply=1
 FILE=bins/coff/coff.obj
 CMDS=pd 2 @ sym.main+6
 EXPECT=<<EOF
-            0x00000006      4c8d05230000.  lea r8, [0x00000030]        ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
-            0x0000000d      488d152b0000.  lea rdx, [0x0000003f]       ; str.Coffee_time_ ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
+            0x00000006      4c8d052300..   lea r8, [0x00000030]        ; section..data_1 ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
+            0x0000000d      488d152b00..   lea rdx, [0x0000003f]       ; str.Coffee_time_ ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN
+
+NAME=MS Visual C++ 4.0 Alpha object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40AALPHA_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 6 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+alpha
+64
+lda sp, -16(sp)
+stq ra, 0(sp)
+bsr ra, 0x0000000c
+ldq ra, 0(sp)
+lda sp, 16(sp)
+ret
+EOF
+RUN
+
+NAME=MS Visual C++ 4.0 MIPS object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40AMIPS_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 7 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+mips
+32
+addiu sp, sp, -0x18
+sw ra, 0x14(sp)
+jal sym._setargv
+nop
+lw ra, 0x14(sp)
+jr ra
+addiu sp, sp, 0x18
+EOF
+RUN
+
+NAME=MS Visual C++ 4.0 PowerPC object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40APPC_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 9 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+ppc
+32
+stw r31, -4(r1)
+stwu r1, -0x40(r1)
+mflr r31
+bl sym..._setargv
+nop
+mtlr r31
+addi r1, r1, 0x40
+lwz r31, -4(r1)
+blr
+EOF
+RUN
+
+NAME=coff bigobj
+FILE=bins/coff/coff_bigobj.obj
+CMDS=<<EOF
+s 0x00001180
+iS.
+s 0x00138820
+iS.
+s 0x100
+iS.
+s 0x00138830
+is.
+s 0x00000030
+iE.
+s 0x00075740
+iE.
+EOF
+EXPECT=<<EOF
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00001180    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa277-280
+
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00138820    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa79999-80002
+
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00000100    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
+
+nth paddr      vaddr      bind  type size lib name          demangled
+---------------------------------------------------------------------
+0   0x0030d4d8 0x00138830 LOCAL UNK  4        .llvm_addrsig
+nth paddr      vaddr      bind   type size lib name                                                                                                                              demangled
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00000030 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0
+nth paddr      vaddr      bind   type size lib name                                                                                                                                  demangled
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00075740 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa30065
+EOF
+RUN
+

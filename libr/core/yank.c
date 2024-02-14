@@ -97,7 +97,7 @@ static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const c
 	return res;
 }
 
-R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
+R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 	// free (core->yank_buf);
 	if (buf && len) {
 		// FIXME: direct access to base should be avoided (use _sparse
@@ -110,17 +110,15 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 }
 
 // Call set and then null terminate the bytes.
-R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
-	// free (core->yank_buf);
-	int res = r_core_yank_set (core, addr, (ut8 *)str, len);
-	if (res) {
+R_API bool r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
+	if (r_core_yank_set (core, addr, (ut8 *)str, len)) {
 		ut8 zero = 0;
-		r_buf_write_at (core->yank_buf, len - 1, &zero, sizeof (zero));
+		return r_buf_write_at (core->yank_buf, len - 1, &zero, sizeof (zero)) != -1;
 	}
-	return res;
+	return false;
 }
 
-R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
+R_API bool r_core_yank(RCore *core, ut64 addr, int len) {
 	ut64 curseek = core->offset;
 	if (len < 0) {
 		R_LOG_ERROR ("cannot yank negative bytes");
@@ -146,7 +144,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 }
 
 /* Copy a zero terminated string to the clipboard. Clamp to maxlen or blocksize. */
-R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
+R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	ut64 curseek = core->offset;
 	ut8 *buf = NULL;
 	if (maxlen < 0) {
@@ -177,7 +175,7 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	return true;
 }
 
-R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
+R_API bool r_core_yank_paste(RCore *core, ut64 addr, int len) {
 	if (len < 0) {
 		return false;
 	}
@@ -195,11 +193,11 @@ R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
 	return true;
 }
 
-R_API int r_core_yank_to(RCore *core, const char *_arg) {
+R_API bool r_core_yank_to(RCore *core, const char *_arg) {
 	ut64 len = 0;
 	ut64 pos = -1;
 	char *str, *arg;
-	int res = false;
+	bool res = false;
 
 	while (*_arg == ' ') {
 		_arg++;
@@ -286,8 +284,8 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	return res;
 }
 
-R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
-	int res = false;
+R_API bool r_core_yank_hexdump(RCore *core, ut64 pos) {
+	bool res = false;
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
@@ -309,7 +307,7 @@ R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 	return res;
 }
 
-R_API int r_core_yank_cat(RCore *core, ut64 pos) {
+R_API bool r_core_yank_cat(RCore *core, ut64 pos) {
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
@@ -331,7 +329,7 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 	return false;
 }
 
-R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
+R_API bool r_core_yank_cat_string(RCore *core, ut64 pos) {
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
@@ -354,7 +352,7 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 	return false;
 }
 
-R_API int r_core_yank_hud_file(RCore *core, const char *input) {
+R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
@@ -366,7 +364,7 @@ R_API int r_core_yank_hud_file(RCore *core, const char *input) {
 	return res;
 }
 
-R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
+R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	char *buf = NULL;
 	ut32 len = 0;
 	int res;

@@ -1,0 +1,18 @@
+NAME=dbg.dL
+FILE=bins/elf/ls-focal
+CMDS=dL
+EXPECT=<<EOF
+0  ---  bf       LGPL3
+1  ---  bochs    LGPL3
+2  ---  esil     LGPL3
+3  ---  evm      LGPL3
+4  ---  gdb      LGPL3
+5  ---  io       MIT
+6  dbg  native   LGPL3
+7  ---  null     MIT
+8  ---  qnx      LGPL3
+9  ---  rap      LGPL3
+10  ---  rv32ima  MIT
+11  ---  winkd    LGPL3
+EOF
+RUN

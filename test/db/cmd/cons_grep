@@ -646,3 +646,24 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=sort + uniq
+FILE=--
+CMDS=<<EOF
+cat bins/src/sortuniq.txt
+?e --
+cat bins/src/sortuniq.txt~$$
+psz~<>
+EOF
+EXPECT=<<EOF
+hello
+world
+hello
+heheh
+world
+--
+heheh
+hello
+world
+EOF
+RUN

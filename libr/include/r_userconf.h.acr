@@ -7,6 +7,7 @@ extern "C" {
 
 #include "r_version.h"
 
+#define WANT_DEBUGSTUFF @WANT_DEBUGSTUFF@
 #define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
 #define R_CRITICAL_ENABLED @R_CRITICAL_ENABLED@
 #define DEBUGGER @DEBUGGER@
@@ -42,6 +43,7 @@ extern "C" {
 #define R2_PREFIX "@PREFIX@"
 #define R2_ETCDIR "@ETCDIR@"
 #define R2_LIBDIR "@LIBDIR@"
+#define R2_BINDIR "@BINDIR@"
 #define R2_INCDIR "@INCLUDEDIR@"
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT "@WWWROOT@"
@@ -59,6 +61,7 @@ extern "C" {
 #if R2__WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
 #define R2_ETCDIR "etc"
+#define R2_BINDIR "bin"
 #define R2_LIBDIR "lib"
 #define R2_INCDIR "include\\libr"
 #define R2_DATDIR "share"
@@ -70,6 +73,7 @@ extern "C" {
 #define R2_PREFIX "@PREFIX@"
 #define R2_ETCDIR "@ETCDIR@"
 #define R2_LIBDIR "@LIBDIR@"
+#define R2_BINDIR "@BINDIR@"
 #define R2_INCDIR "@INCLUDEDIR@/libr"
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"

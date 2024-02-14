@@ -290,6 +290,7 @@ extern const RArchPlugin r_arch_plugin_dalvik;
 extern const RArchPlugin r_arch_plugin_dis;
 extern const RArchPlugin r_arch_plugin_ebc;
 extern const RArchPlugin r_arch_plugin_evm;
+extern const RArchPlugin r_arch_plugin_fslsp;
 extern const RArchPlugin r_arch_plugin_gb;
 extern const RArchPlugin r_arch_plugin_h8300;
 extern const RArchPlugin r_arch_plugin_hppa_gnu;

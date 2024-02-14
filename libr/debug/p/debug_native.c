@@ -202,7 +202,7 @@ static void interrupt_process(RDebug *dbg) {
 }
 #endif
 
-static int r_debug_native_stop(RDebug *dbg) {
+static bool r_debug_native_stop(RDebug *dbg) {
 #if __linux__
 	// Stop all running threads except the thread reported by waitpid
 	return linux_stop_threads (dbg, dbg->reason.tid);
@@ -1154,6 +1154,17 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		map->shared = map_is_shared;
 #endif
 		map->file = strdup (name);
+#if 0
+		// TODO: this breaks 'dcu main' on linux, guess it's about bad use of map.file vs map.name
+		if (!strcmp (map->file, map->name)) {
+			const char *last_slash = r_str_lchr (map->file, '/');
+			if (last_slash) {
+				char *new_name = strdup (last_slash + 1);
+				free (map->name);
+				map->name = new_name;
+			}
+		}
+#endif
 		r_list_append (list, map);
 	}
 	fclose (fd);
@@ -1163,6 +1174,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 }
 
 static RList *r_debug_native_modules_get(RDebug *dbg) {
+R_LOG_INFO ("modules.get");
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
@@ -1249,7 +1261,7 @@ static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static bool r_debug_native_init(RDebug *dbg) {
-	dbg->current->plugin.desc = r_debug_desc_plugin_native;
+	dbg->current->plugin->desc = r_debug_desc_plugin_native;
 #if R2__WINDOWS__
 	r_w32_init ();
 	if (!dbg->user && dbg->iob.io->dbgwrap) {

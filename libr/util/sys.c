@@ -173,6 +173,7 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 }
 #elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
+#if WANT_DEBUGSTUFF
 	struct sigaction sigact = { };
 	int ret, i;
 	if (unsignable) {
@@ -197,6 +198,7 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 			return ret;
 		}
 	}
+#endif
 	return 0;
 }
 #else
@@ -332,6 +334,7 @@ R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
 #endif
 
 R_API void r_sys_backtrace(void) {
+#if WANT_DEBUGSTUFF
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
@@ -356,6 +359,7 @@ R_API void r_sys_backtrace(void) {
 	}
 #else
 #pragma message ("TODO: r_sys_bt : unimplemented")
+#endif
 #endif
 }
 
@@ -448,6 +452,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+#if WANT_DEBUGSTUFF
 #if R2__UNIX__
 static char *crash_handler_cmd = NULL;
 
@@ -483,7 +488,7 @@ static int checkcmd(const char *c) {
 }
 #endif
 
-R_API int r_sys_crash_handler(const char *cmd) {
+R_API bool r_sys_crash_handler(const char *cmd) {
 #ifndef R2__WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
 	if (!checkcmd (cmd)) {
@@ -502,6 +507,10 @@ R_API int r_sys_crash_handler(const char *cmd) {
 #endif
 	return true;
 }
+#else
+R_API bool r_sys_crash_handler(const char *cmd) {
+	return true;
+#endif
 
 R_API char *r_sys_getenv(const char *key) {
 #if R2__WINDOWS__
@@ -1023,14 +1032,13 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	if (pdelta) {
 		ptr += (4096 - pdelta);
 	}
-	if (!ptr || !buf) {
+	if (!p || !ptr || !buf) {
 		R_LOG_ERROR ("Cannot run empty buffer");
 		free (p);
 		return false;
 	}
 	memcpy (ptr, buf, len);
-	r_mem_protect (ptr, sz, "rx");
-	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
+	r_mem_protect (ptr, sz, "rx"); // rwx ?
 	cb = (int (*)())ptr;
 #if USE_FORK
 	int pid = r_sys_fork ();
@@ -1045,7 +1053,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	int st = 0;
 	waitpid (pid, &st, 0);
 	if (WIFSIGNALED (st)) {
-		int num = WTERMSIG(st);
+		const int num = WTERMSIG (st);
 		R_LOG_INFO ("Child process received signal %d", num);
 		ret = num;
 	} else {
@@ -1068,7 +1076,6 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 		R_LOG_ERROR ("Cannot allocate %d byte buffer", len);
 		return false;
 	}
-
 	if (!buf) {
 		R_LOG_ERROR ("Cannot execute empty rop chain");
 		free (bufptr);
@@ -1467,3 +1474,40 @@ R_API void r_sys_info_free(RSysInfo *si) {
 
 // R2_590 r_sys_endian_tostring() // endian == R_SYS_ENDIAN_BIG "big" .. R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little"
 
+R_API R_MUSTUSE char *r_file_home(const char *str) {
+	char *dst, *home = r_sys_getenv (R_SYS_HOME);
+	size_t length;
+	if (!home) {
+		home = r_file_tmpdir ();
+		if (!home) {
+			return NULL;
+		}
+	}
+	length = strlen (home) + 1;
+	if (R_STR_ISNOTEMPTY (str)) {
+		length += strlen (R_SYS_DIR) + strlen (str);
+	}
+	dst = (char *)calloc (1, length);
+	if (!dst) {
+		goto fail;
+	}
+	int home_len = strlen (home);
+	memcpy (dst, home, home_len + 1);
+	if (R_STR_ISNOTEMPTY (str)) {
+		dst[home_len] = R_SYS_DIR[0];
+		strcpy (dst + home_len + 1, str);
+	}
+fail:
+	free (home);
+	return dst;
+}
+
+R_API R_MUSTUSE char *r_file_homef(const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *r = r_str_newvf (fmt, ap);
+	char *s = r_file_home (r);
+	free (r);
+	va_end (ap);
+	return s;
+}

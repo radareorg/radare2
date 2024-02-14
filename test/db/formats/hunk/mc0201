@@ -1,5 +1,5 @@
-NAME=hunk
-FILE=bins/other/amiga-hunk-mc0201
+NAME=HUNK: mc0201
+FILE=bins/hunk/mc0201
 CMDS=<<EOF
 i
 af
@@ -7,30 +7,29 @@ agf
 EOF
 EXPECT=<<EOF
 fd       3
-file     bins/other/amiga-hunk-mc0201
+file     bins/hunk/mc0201
 size     0xcc
 humansz  204
 mode     r-x
 format   hunk
 iorw     false
 block    0x100
-type     ROM
+type     Hunk (Executable file)
 arch     m68k
-cpu      68040
 binsz    204
-bits     8
+bits     32
 canary   false
 injprot  false
 retguard false
 crypto   false
-endian   little
+endian   big
 havecode true
 laddr    0x0
 linenum  false
 lsyms    false
 machine  Amiga
 nx       false
-os       Workbench
+os       AmigaOS
 pic      false
 relocs   false
 sanitize false
@@ -42,8 +41,8 @@ va       true
  |  0x24                        |
  | 76: entry0 ();               |
  | move.w 0x1a0, 0xdff096.l     |
- | lea.l 0x4c.l, a1             |
- | move.l a1, 0xdff080.l        |
+ | lea.l 0x4c, a1               |
+ | move.l a1, 0xdff080          |
  | move.w 0x8080, 0xdff096.l    |
  `------------------------------'
      v
@@ -68,7 +67,7 @@ va       true
 .--------------------------------.
 |  0x4c                          |
 | move.w 0x80, 0xdff096.l        |
-| movea.l 0x4.l, a6              |
+| movea.l 0x4, a6                |
 | movea.l 0x9c(a6), a1           |
 | move.l 0x26(a1), 0xdff080.l    |
 | move.w 0x81a0, 0xdff096.l      |

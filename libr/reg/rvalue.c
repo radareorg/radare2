@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_reg.h>
 
@@ -119,6 +119,18 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		}
 		R_LOG_WARN ("32bit oob read %d", off);
 		break;
+	case 40:
+		if (off + 8 <= regset->arena->size) {
+			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFF;
+		}
+		R_LOG_WARN ("48bit oob read %d", off);
+		break;
+	case 48:
+		if (off + 8 <= regset->arena->size) {
+			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFFFF;
+		}
+		R_LOG_WARN ("48bit oob read %d", off);
+		break;
 	case 64:
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return r_read_ble64 (regset->arena->bytes + off, be);
@@ -191,6 +203,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 16:
 		r_write_ble16 (src, value, be);
+		break;
+	case 24:
+		r_write_ble24 (src, value, be);
 		break;
 	case 4:
 		// read from buffer fill the gaps

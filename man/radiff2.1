@@ -1,4 +1,4 @@
-.Dd Feb 10, 2018
+.Dd Nov 14, 2023
 .Dt RADIFF2 1
 .Sh NAME
 .Nm radiff2
@@ -73,6 +73,8 @@ Compute Levenshtein edit distance (substitution is allowed, O(N^2)) between two 
 Specify which column of the code diffing algo use for diffing
 .It Fl t Ar 0\-100
 Choose matching threshold for binary code diffing
+.It Fl T
+Load and analyze files in separate threads, this is an experimental feature which can result on segfaults, use it with care or use it to fix thread-safety bugs.
 .It Fl u
 Unified diff output
 .It Fl U

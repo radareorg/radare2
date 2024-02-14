@@ -1,0 +1,980 @@
+NAME=ic cpp classes
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+ic~_JNIEnv
+ic~FindClass
+EOF
+EXPECT=<<EOF
+0x00000000 [0x00006060 - 0x0000697c]   2332 jni class 0 _JNIEnv
+0x000074f8 jni   method   0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000699c jni   method   1      findBaseDexClassloader(_JNIEnv*, _jobject*)
+0x00006a2c jni   method   2      getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
+0x00006abc jni   method   3      getPathList(_JNIEnv*, _jobject*)
+0x00006af4 jni   method   4      getDexElements(_JNIEnv*, _jobject*)
+0x00006b1c jni   method   5      setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
+0x00006bb0 jni   method   6      combineArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006d00 jni   method   7      injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006e5c jni   method   8      appendArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006f68 jni   method   9      injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000720c jni   method  10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006060 jni   method   0      FindClass(char const*)
+EOF
+RUN
+
+NAME=ic?
+BROKEN=1
+FILE=bins/elf/libmagic.so
+CMDS=ic?~?Usage
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=icg
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+icg
+?e
+icg _JNIEnv
+?e
+icg System
+EOF
+EXPECT=<<EOF
+agn _JNIEnv
+agn SystemClassLoaderInjector
+agn std
+agn std::exception
+agn std::bad_exception
+agn __cxxabiv1::__forced_unwind
+agn __cxxabiv1::__foreign_exception
+agn __eh_globals_init
+agn __cxxabiv1
+agn __cxxabiv1::__fundamental_type_info
+agn std::type_info
+agn __cxxabiv1::__pointer_type_info
+agn __cxxabiv1::__pbase_type_info
+agn __cxxabiv1::__si_class_type_info
+agn __cxxabiv1::__class_type_info
+agn __gnu_cxx
+agn __gnu_cxx::__concurrence_lock_error
+agn __gnu_cxx::__concurrence_unlock_error
+agn std::bad_cast
+agn std::bad_typeid
+
+agn _JNIEnv
+
+agn SystemClassLoaderInjector
+EOF
+RUN
+
+NAME=icl
+FILE=bins/elf/libmagic.so
+CMDS=icl
+EXPECT=<<EOF
+0x6060 0x606a 0x6074 0x608e 0x6098 0x60a4 0x60c0 0x60dc 0x60ea 0x695e 0x697c
+0x74f8 0x699c 0x6a2c 0x6abc 0x6af4 0x6b1c 0x6bb0 0x6d00 0x6e5c 0x6f68 0x720c
+0x9470 0x886c 0x9494 0x94ac 0x94c8
+0x8884 0x88f4
+0x889c 0x8904
+0x88c4
+0x88dc
+0x8984
+0x943c 0x9488
+0x94e4
+0x97bc 0x97d4 0x97dc 0x9854 0x97e4 0x9808
+0x9528 0x9530 0x9574
+0x9df0 0x9e34 0x9dd0
+0x95f4 0x9638 0x969c 0x977c
+0x98d8 0x991c 0x9948 0x9868 0x98c4 0x998c
+0x9ec4 0x12780 0x127c8
+0x126b0 0x126f8
+0x126c0 0x126d0
+0x12bd8 0x12bc8
+0x12c2c 0x12c1c
+EOF
+RUN
+
+NAME=icj
+FILE=bins/elf/libmagic.so
+CMDS=icj~{}
+EXPECT=<<EOF
+[
+  {
+    "classname": "_JNIEnv",
+    "addr": 0,
+    "lang": "jni",
+    "index": 0,
+    "methods": [
+      {
+        "name": "FindClass(char const*)",
+        "flag": "method._JNIEnv.FindClass_char_const_",
+        "lang": "jni",
+        "addr": 24672
+      },
+      {
+        "name": "DeleteLocalRef(_jobject*)",
+        "flag": "method._JNIEnv.DeleteLocalRef__jobject_",
+        "lang": "jni",
+        "addr": 24682
+      },
+      {
+        "name": "NewObject(_jclass*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.NewObject__jclass___jmethodID__..._",
+        "lang": "jni",
+        "addr": 24692
+      },
+      {
+        "name": "GetObjectClass(_jobject*)",
+        "flag": "method._JNIEnv.GetObjectClass__jobject_",
+        "lang": "jni",
+        "addr": 24718
+      },
+      {
+        "name": "GetMethodID(_jclass*, char const*, char const*)",
+        "flag": "method._JNIEnv.GetMethodID__jclass__char_const__char_const_",
+        "lang": "jni",
+        "addr": 24728
+      },
+      {
+        "name": "CallObjectMethod(_jobject*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.CallObjectMethod__jobject___jmethodID__..._",
+        "lang": "jni",
+        "addr": 24740
+      },
+      {
+        "name": "CallVoidMethod(_jobject*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.CallVoidMethod__jobject___jmethodID__..._",
+        "lang": "jni",
+        "addr": 24768
+      },
+      {
+        "name": "GetStaticMethodID(_jclass*, char const*, char const*)",
+        "flag": "method._JNIEnv.GetStaticMethodID__jclass__char_const__char_const_",
+        "lang": "jni",
+        "addr": 24796
+      },
+      {
+        "name": "CallStaticObjectMethod(_jclass*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.CallStaticObjectMethod__jclass___jmethodID__..._",
+        "lang": "jni",
+        "addr": 24810
+      },
+      {
+        "name": "CallStaticIntMethod(_jclass*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.CallStaticIntMethod__jclass___jmethodID__..._",
+        "lang": "jni",
+        "addr": 26974
+      },
+      {
+        "name": "CallStaticVoidMethod(_jclass*, _jmethodID*, ...)",
+        "flag": "method._JNIEnv.CallStaticVoidMethod__jclass___jmethodID__..._",
+        "lang": "jni",
+        "addr": 27004
+      }
+    ]
+  },
+  {
+    "classname": "SystemClassLoaderInjector",
+    "addr": 0,
+    "lang": "jni",
+    "index": 1,
+    "methods": [
+      {
+        "name": "inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
+        "flag": "method.SystemClassLoaderInjector.inject__JNIEnv___jobject___jstring___jstring_",
+        "lang": "jni",
+        "addr": 29944
+      },
+      {
+        "name": "findBaseDexClassloader(_JNIEnv*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv___jobject_",
+        "lang": "jni",
+        "addr": 27036
+      },
+      {
+        "name": "getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)",
+        "flag": "method.SystemClassLoaderInjector.getField__JNIEnv___jobject___jobject___jstring_",
+        "lang": "jni",
+        "addr": 27180
+      },
+      {
+        "name": "getPathList(_JNIEnv*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.getPathList__JNIEnv___jobject_",
+        "lang": "jni",
+        "addr": 27324
+      },
+      {
+        "name": "getDexElements(_JNIEnv*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.getDexElements__JNIEnv___jobject_",
+        "lang": "jni",
+        "addr": 27380
+      },
+      {
+        "name": "setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.setField__JNIEnv___jobject___jobject___jstring___jobject_",
+        "lang": "jni",
+        "addr": 27420
+      },
+      {
+        "name": "combineArray(_JNIEnv*, _jobject*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.combineArray__JNIEnv___jobject___jobject_",
+        "lang": "jni",
+        "addr": 27568
+      },
+      {
+        "name": "injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
+        "flag": "method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv___jobject___jstring___jstring_",
+        "lang": "jni",
+        "addr": 27904
+      },
+      {
+        "name": "appendArray(_JNIEnv*, _jobject*, _jobject*)",
+        "flag": "method.SystemClassLoaderInjector.appendArray__JNIEnv___jobject___jobject_",
+        "lang": "jni",
+        "addr": 28252
+      },
+      {
+        "name": "injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
+        "flag": "method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv___jobject___jstring___jstring_",
+        "lang": "jni",
+        "addr": 28520
+      },
+      {
+        "name": "injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
+        "flag": "method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv___jobject___jstring___jstring_",
+        "lang": "jni",
+        "addr": 29196
+      }
+    ]
+  },
+  {
+    "classname": "std",
+    "addr": 0,
+    "lang": "c++",
+    "index": 2,
+    "methods": [
+      {
+        "name": "terminate()",
+        "flag": "method.std.terminate__",
+        "lang": "c++",
+        "addr": 38000
+      },
+      {
+        "name": "uncaught_exception()",
+        "flag": "method.std.uncaught_exception__",
+        "lang": "c++",
+        "addr": 34924
+      },
+      {
+        "name": "unexpected()",
+        "flag": "method.std.unexpected__",
+        "lang": "c++",
+        "addr": 38036
+      },
+      {
+        "name": "set_terminate(void (*)())",
+        "flag": "method.std.set_terminate_void______",
+        "lang": "c++",
+        "addr": 38060
+      },
+      {
+        "name": "set_unexpected(void (*)())",
+        "flag": "method.std.set_unexpected_void______",
+        "lang": "c++",
+        "addr": 38088
+      }
+    ]
+  },
+  {
+    "classname": "std::exception",
+    "addr": 0,
+    "lang": "c++",
+    "index": 3,
+    "methods": [
+      {
+        "name": "~exception()",
+        "flag": "method.std::exception.exception__",
+        "lang": "c++",
+        "addr": 34948
+      },
+      {
+        "name": "what() const",
+        "flag": "method.std::exception.what___const",
+        "lang": "c++",
+        "addr": 35060
+      }
+    ]
+  },
+  {
+    "classname": "std::bad_exception",
+    "addr": 0,
+    "lang": "c++",
+    "index": 4,
+    "methods": [
+      {
+        "name": "~bad_exception()",
+        "flag": "method.std::bad_exception.bad_exception__",
+        "lang": "c++",
+        "addr": 34972
+      },
+      {
+        "name": "what() const",
+        "flag": "method.std::bad_exception.what___const",
+        "lang": "c++",
+        "addr": 35076
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__forced_unwind",
+    "addr": 0,
+    "lang": "c++",
+    "index": 5,
+    "methods": [
+      {
+        "name": "~__forced_unwind()",
+        "flag": "method.__cxxabiv1::__forced_unwind.__forced_unwind__",
+        "lang": "c++",
+        "addr": 35012
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__foreign_exception",
+    "addr": 0,
+    "lang": "c++",
+    "index": 6,
+    "methods": [
+      {
+        "name": "~__foreign_exception()",
+        "flag": "method.__cxxabiv1::__foreign_exception.__foreign_exception__",
+        "lang": "c++",
+        "addr": 35036
+      }
+    ]
+  },
+  {
+    "classname": "__eh_globals_init",
+    "addr": 0,
+    "lang": "c++",
+    "index": 7,
+    "methods": [
+      {
+        "name": "~__eh_globals_init()",
+        "flag": "method.__eh_globals_init.__eh_globals_init__",
+        "lang": "c++",
+        "addr": 35204
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1",
+    "addr": 0,
+    "lang": "c++",
+    "index": 8,
+    "methods": [
+      {
+        "name": "__terminate(void (*)())",
+        "flag": "method.__cxxabiv1.__terminate_void______",
+        "lang": "c++",
+        "addr": 37948
+      },
+      {
+        "name": "__unexpected(void (*)())",
+        "flag": "method.__cxxabiv1.__unexpected_void______",
+        "lang": "c++",
+        "addr": 38024
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__fundamental_type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 9,
+    "methods": [
+      {
+        "name": "~__fundamental_type_info()",
+        "flag": "method.__cxxabiv1::__fundamental_type_info.__fundamental_type_info__",
+        "lang": "c++",
+        "addr": 38116
+      }
+    ]
+  },
+  {
+    "classname": "std::type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 10,
+    "methods": [
+      {
+        "name": "~type_info()",
+        "flag": "method.std::type_info.type_info__",
+        "lang": "c++",
+        "addr": 38844
+      },
+      {
+        "name": "__is_pointer_p() const",
+        "flag": "method.std::type_info.__is_pointer_p___const",
+        "lang": "c++",
+        "addr": 38868
+      },
+      {
+        "name": "__is_function_p() const",
+        "flag": "method.std::type_info.__is_function_p___const",
+        "lang": "c++",
+        "addr": 38876
+      },
+      {
+        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
+        "flag": "method.std::type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "lang": "c++",
+        "addr": 38996
+      },
+      {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
+        "flag": "method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "lang": "c++",
+        "addr": 38884
+      },
+      {
+        "name": "operator==(std::type_info const&) const",
+        "flag": "method.std::type_info.operator_std::type_info_const__const",
+        "lang": "c++",
+        "addr": 38920
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__pointer_type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 11,
+    "methods": [
+      {
+        "name": "__is_pointer_p() const",
+        "flag": "method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const",
+        "lang": "c++",
+        "addr": 38184
+      },
+      {
+        "name": "~__pointer_type_info()",
+        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_type_info__",
+        "lang": "c++",
+        "addr": 38192
+      },
+      {
+        "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
+        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "lang": "c++",
+        "addr": 38260
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__pbase_type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 12,
+    "methods": [
+      {
+        "name": "~__pbase_type_info()",
+        "flag": "method.__cxxabiv1::__pbase_type_info.__pbase_type_info__",
+        "lang": "c++",
+        "addr": 40432
+      },
+      {
+        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
+        "flag": "method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "lang": "c++",
+        "addr": 40500
+      },
+      {
+        "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
+        "flag": "method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
+        "lang": "c++",
+        "addr": 40400
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__si_class_type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 13,
+    "methods": [
+      {
+        "name": "~__si_class_type_info()",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__si_class_type_info__",
+        "lang": "c++",
+        "addr": 38388
+      },
+      {
+        "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "lang": "c++",
+        "addr": 38456
+      },
+      {
+        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__co",
+        "lang": "c++",
+        "addr": 38556
+      },
+      {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
+        "flag": "method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "lang": "c++",
+        "addr": 38780
+      }
+    ]
+  },
+  {
+    "classname": "__cxxabiv1::__class_type_info",
+    "addr": 0,
+    "lang": "c++",
+    "index": 14,
+    "methods": [
+      {
+        "name": "~__class_type_info()",
+        "flag": "method.__cxxabiv1::__class_type_info.__class_type_info__",
+        "lang": "c++",
+        "addr": 39128
+      },
+      {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
+        "lang": "c++",
+        "addr": 39196
+      },
+      {
+        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
+        "lang": "c++",
+        "addr": 39240
+      },
+      {
+        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
+        "lang": "c++",
+        "addr": 39016
+      },
+      {
+        "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
+        "lang": "c++",
+        "addr": 39108
+      },
+      {
+        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
+        "flag": "method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
+        "lang": "c++",
+        "addr": 39308
+      }
+    ]
+  },
+  {
+    "classname": "__gnu_cxx",
+    "addr": 0,
+    "lang": "c++",
+    "index": 15,
+    "methods": [
+      {
+        "name": "__verbose_terminate_handler()",
+        "flag": "method.__gnu_cxx.__verbose_terminate_handler__",
+        "lang": "c++",
+        "addr": 40644
+      },
+      {
+        "name": "__throw_concurrence_lock_error()",
+        "flag": "method.__gnu_cxx.__throw_concurrence_lock_error__",
+        "lang": "c++",
+        "addr": 75648
+      },
+      {
+        "name": "__throw_concurrence_unlock_error()",
+        "flag": "method.__gnu_cxx.__throw_concurrence_unlock_error__",
+        "lang": "c++",
+        "addr": 75720
+      }
+    ]
+  },
+  {
+    "classname": "__gnu_cxx::__concurrence_lock_error",
+    "addr": 0,
+    "lang": "c++",
+    "index": 16,
+    "methods": [
+      {
+        "name": "what() const",
+        "flag": "method.__gnu_cxx::__concurrence_lock_error.what___const",
+        "lang": "c++",
+        "addr": 75440
+      },
+      {
+        "name": "~__concurrence_lock_error()",
+        "flag": "method.__gnu_cxx::__concurrence_lock_error.__concurrence_lock_error__",
+        "lang": "c++",
+        "addr": 75512
+      }
+    ]
+  },
+  {
+    "classname": "__gnu_cxx::__concurrence_unlock_error",
+    "addr": 0,
+    "lang": "c++",
+    "index": 17,
+    "methods": [
+      {
+        "name": "what() const",
+        "flag": "method.__gnu_cxx::__concurrence_unlock_error.what___const",
+        "lang": "c++",
+        "addr": 75456
+      },
+      {
+        "name": "~__concurrence_unlock_error()",
+        "flag": "method.__gnu_cxx::__concurrence_unlock_error.__concurrence_unlock_error__",
+        "lang": "c++",
+        "addr": 75472
+      }
+    ]
+  },
+  {
+    "classname": "std::bad_cast",
+    "addr": 0,
+    "lang": "c++",
+    "index": 18,
+    "methods": [
+      {
+        "name": "~bad_cast()",
+        "flag": "method.std::bad_cast.bad_cast__",
+        "lang": "c++",
+        "addr": 76760
+      },
+      {
+        "name": "what() const",
+        "flag": "method.std::bad_cast.what___const",
+        "lang": "c++",
+        "addr": 76744
+      }
+    ]
+  },
+  {
+    "classname": "std::bad_typeid",
+    "addr": 0,
+    "lang": "c++",
+    "index": 19,
+    "methods": [
+      {
+        "name": "~bad_typeid()",
+        "flag": "method.std::bad_typeid.bad_typeid__",
+        "lang": "c++",
+        "addr": 76844
+      },
+      {
+        "name": "what() const",
+        "flag": "method.std::bad_typeid.what___const",
+        "lang": "c++",
+        "addr": 76828
+      }
+    ]
+  }
+]
+EOF
+RUN
+
+NAME=ic*
+FILE=bins/elf/libmagic.so
+CMDS=ic*
+EXPECT=<<EOF
+fs classes
+"f class._JNIEnv = 0x6060"
+"f method._JNIEnv.FindClass(char_const*) = 0x6060"
+"f method._JNIEnv.DeleteLocalRef(_jobject*) = 0x606a"
+"f method._JNIEnv.NewObject(_jclass*,__jmethodID*,_...) = 0x6074"
+"f method._JNIEnv.GetObjectClass(_jobject*) = 0x608e"
+"f method._JNIEnv.GetMethodID(_jclass*,_char_const*,_char_const*) = 0x6098"
+"f method._JNIEnv.CallObjectMethod(_jobject*,__jmethodID*,_...) = 0x60a4"
+"f method._JNIEnv.CallVoidMethod(_jobject*,__jmethodID*,_...) = 0x60c0"
+"f method._JNIEnv.GetStaticMethodID(_jclass*,_char_const*,_char_const*) = 0x60dc"
+"f method._JNIEnv.CallStaticObjectMethod(_jclass*,__jmethodID*,_...) = 0x60ea"
+"f method._JNIEnv.CallStaticIntMethod(_jclass*,__jmethodID*,_...) = 0x695e"
+"f method._JNIEnv.CallStaticVoidMethod(_jclass*,__jmethodID*,_...) = 0x697c"
+""td struct _JNIEnv { char empty[0];};
+"f class.SystemClassLoaderInjector = 0x699c"
+"f method.SystemClassLoaderInjector.inject(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x74f8"
+"f method.SystemClassLoaderInjector.findBaseDexClassloader(_JNIEnv*,__jobject*) = 0x699c"
+"f method.SystemClassLoaderInjector.getField(_JNIEnv*,__jobject*,__jobject*,__jstring*) = 0x6a2c"
+"f method.SystemClassLoaderInjector.getPathList(_JNIEnv*,__jobject*) = 0x6abc"
+"f method.SystemClassLoaderInjector.getDexElements(_JNIEnv*,__jobject*) = 0x6af4"
+"f method.SystemClassLoaderInjector.setField(_JNIEnv*,__jobject*,__jobject*,__jstring*,__jobject*) = 0x6b1c"
+"f method.SystemClassLoaderInjector.combineArray(_JNIEnv*,__jobject*,__jobject*) = 0x6bb0"
+"f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6d00"
+"f method.SystemClassLoaderInjector.appendArray(_JNIEnv*,__jobject*,__jobject*) = 0x6e5c"
+"f method.SystemClassLoaderInjector.injectInAliyunOs(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6f68"
+"f method.SystemClassLoaderInjector.injectBelowApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x720c"
+""td struct SystemClassLoaderInjector { char empty[0];};
+"f class.std = 0x886c"
+"f method.std.terminate() = 0x9470"
+"f method.std.uncaught_exception() = 0x886c"
+"f method.std.unexpected() = 0x9494"
+"f method.std.set_terminate(void_(*)()) = 0x94ac"
+"f method.std.set_unexpected(void_(*)()) = 0x94c8"
+""td struct std { char empty[0];};
+"f class.std::exception = 0x8884"
+"f method.std::exception.~exception() = 0x8884"
+"f method.std::exception.what()_const = 0x88f4"
+""td struct std::exception { char empty[0];};
+"f class.std::bad_exception = 0x889c"
+"f method.std::bad_exception.~bad_exception() = 0x889c"
+"f method.std::bad_exception.what()_const = 0x8904"
+""td struct std::bad_exception { char empty[0];};
+"f class.__cxxabiv1::__forced_unwind = 0x88c4"
+"f method.__cxxabiv1::__forced_unwind.~__forced_unwind() = 0x88c4"
+""td struct __cxxabiv1::__forced_unwind { char empty[0];};
+"f class.__cxxabiv1::__foreign_exception = 0x88dc"
+"f method.__cxxabiv1::__foreign_exception.~__foreign_exception() = 0x88dc"
+""td struct __cxxabiv1::__foreign_exception { char empty[0];};
+"f class.__eh_globals_init = 0x8984"
+"f method.__eh_globals_init.~__eh_globals_init() = 0x8984"
+""td struct __eh_globals_init { char empty[0];};
+"f class.__cxxabiv1 = 0x943c"
+"f method.__cxxabiv1.__terminate(void_(*)()) = 0x943c"
+"f method.__cxxabiv1.__unexpected(void_(*)()) = 0x9488"
+""td struct __cxxabiv1 { char empty[0];};
+"f class.__cxxabiv1::__fundamental_type_info = 0x94e4"
+"f method.__cxxabiv1::__fundamental_type_info.~__fundamental_type_info() = 0x94e4"
+""td struct __cxxabiv1::__fundamental_type_info { char empty[0];};
+"f class.std::type_info = 0x97bc"
+"f method.std::type_info.~type_info() = 0x97bc"
+"f method.std::type_info.__is_pointer_p()_const = 0x97d4"
+"f method.std::type_info.__is_function_p()_const = 0x97dc"
+"f method.std::type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9854"
+"f method.std::type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4"
+"f method.std::type_info.operator==(std::type_info_const&)_const = 0x9808"
+""td struct std::type_info { char empty[0];};
+"f class.__cxxabiv1::__pointer_type_info = 0x9528"
+"f method.__cxxabiv1::__pointer_type_info.__is_pointer_p()_const = 0x9528"
+"f method.__cxxabiv1::__pointer_type_info.~__pointer_type_info() = 0x9530"
+"f method.__cxxabiv1::__pointer_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574"
+""td struct __cxxabiv1::__pointer_type_info { char empty[0];};
+"f class.__cxxabiv1::__pbase_type_info = 0x9dd0"
+"f method.__cxxabiv1::__pbase_type_info.~__pbase_type_info() = 0x9df0"
+"f method.__cxxabiv1::__pbase_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34"
+"f method.__cxxabiv1::__pbase_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0"
+""td struct __cxxabiv1::__pbase_type_info { char empty[0];};
+"f class.__cxxabiv1::__si_class_type_info = 0x95f4"
+"f method.__cxxabiv1::__si_class_type_info.~__si_class_type_info() = 0x95f4"
+"f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638"
+"f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c"
+"f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c"
+""td struct __cxxabiv1::__si_class_type_info { char empty[0];};
+"f class.__cxxabiv1::__class_type_info = 0x9868"
+"f method.__cxxabiv1::__class_type_info.~__class_type_info() = 0x98d8"
+"f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c"
+"f method.__cxxabiv1::__class_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948"
+"f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868"
+"f method.__cxxabiv1::__class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4"
+"f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c"
+""td struct __cxxabiv1::__class_type_info { char empty[0];};
+"f class.__gnu_cxx = 0x9ec4"
+"f method.__gnu_cxx.__verbose_terminate_handler() = 0x9ec4"
+"f method.__gnu_cxx.__throw_concurrence_lock_error() = 0x12780"
+"f method.__gnu_cxx.__throw_concurrence_unlock_error() = 0x127c8"
+""td struct __gnu_cxx { char empty[0];};
+"f class.__gnu_cxx::__concurrence_lock_error = 0x126b0"
+"f method.__gnu_cxx::__concurrence_lock_error.what()_const = 0x126b0"
+"f method.__gnu_cxx::__concurrence_lock_error.~__concurrence_lock_error() = 0x126f8"
+""td struct __gnu_cxx::__concurrence_lock_error { char empty[0];};
+"f class.__gnu_cxx::__concurrence_unlock_error = 0x126c0"
+"f method.__gnu_cxx::__concurrence_unlock_error.what()_const = 0x126c0"
+"f method.__gnu_cxx::__concurrence_unlock_error.~__concurrence_unlock_error() = 0x126d0"
+""td struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};
+"f class.std::bad_cast = 0x12bc8"
+"f method.std::bad_cast.~bad_cast() = 0x12bd8"
+"f method.std::bad_cast.what()_const = 0x12bc8"
+""td struct std::bad_cast { char empty[0];};
+"f class.std::bad_typeid = 0x12c1c"
+"f method.std::bad_typeid.~bad_typeid() = 0x12c2c"
+"f method.std::bad_typeid.what()_const = 0x12c1c"
+""td struct std::bad_typeid { char empty[0];};
+EOF
+RUN
+
+NAME=icc
+FILE=bins/elf/libmagic.so
+CMDS=icc
+EXPECT=<<EOF
+class _JNIEnv {
+};
+
+class SystemClassLoaderInjector {
+};
+
+class std {
+};
+
+class std::exception {
+};
+
+class std::bad_exception {
+};
+
+class __cxxabiv1::__forced_unwind {
+};
+
+class __cxxabiv1::__foreign_exception {
+};
+
+class __eh_globals_init {
+};
+
+class __cxxabiv1 {
+};
+
+class __cxxabiv1::__fundamental_type_info {
+};
+
+class std::type_info {
+};
+
+class __cxxabiv1::__pointer_type_info {
+};
+
+class __cxxabiv1::__pbase_type_info {
+};
+
+class __cxxabiv1::__si_class_type_info {
+};
+
+class __cxxabiv1::__class_type_info {
+};
+
+class __gnu_cxx {
+};
+
+class __gnu_cxx::__concurrence_lock_error {
+};
+
+class __gnu_cxx::__concurrence_unlock_error {
+};
+
+class std::bad_cast {
+};
+
+class std::bad_typeid {
+};
+
+EOF
+RUN
+
+NAME=ic?~ (match all)
+FILE=malloc://512
+CMDS=ic?~List
+EXPECT=<<EOF
+| ic                 List classes, methods and fields (icj for json)
+| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+| icg [str]          List classes hirearchy graph with agn/age (match str if provided)
+| icq                List classes, in quiet mode (just the classname)
+| icqq               List classes, in quieter mode (only show non-system classnames)
+EOF
+RUN
+
+NAME=ic?~ (match one)
+FILE=malloc://512
+CMDS=ic?~Header
+EXPECT=<<EOF
+| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+EOF
+RUN
+
+NAME=ic?~ (match none)
+FILE=malloc://512
+CMDS=ic?~Guess
+EXPECT=<<EOF
+EOF
+RUN
+
+
+NAME=ic (file Java)
+FILE=bins/java/Hello.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x0000022b - 0x000002aa]    127 java class 0 Hello :: java/lang/Object
+0x0000022b java   method   0      <init>
+0x00000263 java   method   1      say
+0x000002aa java   method   2      main
+EOF
+RUN
+
+NAME=ic (file Java)
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+icg
+icg Hello
+icg no_match
+EOF
+EXPECT=<<EOF
+agn Hello
+agn java/lang/Object
+age java/lang/Object Hello
+agn Hello
+EOF
+RUN
+
+NAME=icq (file Java)
+FILE=bins/java/Hello.class
+CMDS=icq
+EXPECT=<<EOF
+0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
+EOF
+RUN
+
+NAME=icqq (file Java)
+FILE=bins/java/Hello.class
+CMDS=icqq
+EXPECT=<<EOF
+Hello
+EOF
+RUN
+
+NAME=icqq (file x86)
+FILE=bins/elf/ls
+CMDS=icqq
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=iqqc (file Java)
+BROKEN=1
+FILE=bins/java/Hello.class
+CMDS=iqqc
+EXPECT=<<EOF
+Hello
+EOF
+RUN
+
+NAME=iqqc (file x86)
+BROKEN=1
+FILE=bins/elf/ls
+CMDS=iqqc
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=iqcq (file Java)
+BROKEN=1
+FILE=bins/java/Hello.class
+CMDS=iqcq
+EXPECT=<<EOF
+Hello
+EOF
+RUN
+
+NAME=iqcq (file x86)
+BROKEN=1
+FILE=bins/elf/ls
+CMDS=iqcq
+EXPECT=<<EOF
+EOF
+RUN

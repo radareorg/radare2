@@ -31,7 +31,7 @@ static RCoreHelpMessage help_msg_e = {
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", " [var]", "open cfg.editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
-	"ed-", "", "delete ~/.radare2c",
+	"ed-", "[!]", "delete ~/.radare2c (Use ed-! to delete without prompting)",
 	"ej", "", "list config vars in JSON",
 	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
@@ -216,7 +216,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		while (theme && theme->name) {
 			if (!strcmp (theme->name, arg)) {
 				r_core_cmd0 (core, theme->script);
-				free (arg);
+				R_FREE (arg);
 				failed = false;
 				break;
 			}
@@ -435,13 +435,41 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "et", false);
+			r_core_cmd_help_contains (core, help_msg_e, "et");
 		}
 		break;
 	case 'n': // "en" "env"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_match (core, help_msg_e, "en", false);
+			r_core_cmd_help_contains (core, help_msg_e, "en");
 			break;
+		} else if (!strcmp (input + 1, "vj")) {
+			char **e = r_sys_get_environ ();
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			if (e != NULL) {
+				while (*e) {
+					char *s = strdup (*e);
+					char *q = strchr (s, '=');
+					if (q) {
+						*q = 0;
+						pj_ks (pj, s, q + 1);
+					}
+					free (s);
+					e++;
+				}
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_println (s);
+			free (s);
+		} else if (!strcmp (input + 1, "v*")) {
+			char **e = r_sys_get_environ ();
+			if (e != NULL) {
+				while (*e) {
+					r_cons_printf ("%%%s\n", *e);
+					e++;
+				}
+			}
 		} else if (!strchr (input, '=')) {
 			const char *var = strchr (input, ' ');
 			if (var) {
@@ -634,7 +662,7 @@ static int cmd_eval(void *data, const char *input) {
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
-					r_core_cmd_help_match (core, help_msg_ecH, "ecHw", true);
+					r_core_cmd_help_match (core, help_msg_ecH, "ecHw");
 					r_str_argv_free (argv);
 					return true;
 				}
@@ -690,18 +718,22 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'd': // "ed"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_e, "ed", false);
+			r_core_cmd_help_contains (core, help_msg_e, "ed");
 		} else if (input[1] == '-') { // "ed-"
+			const bool prompt = (input[2] != '!');
 			char *file = r_file_home (".radare2rc");
 			if (file) {
-				r_file_rm (file);
+				const bool rmfile = !prompt || r_cons_yesno ('n', "Do you want to delete ~/.radare2? (Y/n)");
+				if (rmfile) {
+					r_file_rm (file);
+				}
 				free (file);
 			}
 		} else {
 			char *file = r_file_home (".radare2rc");
 			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
-				char * res = r_cons_editor (file, NULL);
+				char *res = r_cons_editor (file, NULL);
 				if (res) {
 					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);
@@ -725,7 +757,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "ee", false);
+			r_core_cmd_help_contains (core, help_msg_e, "ee");
 		}
 		break;
 	case '!': // "e!"
@@ -735,7 +767,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("'%s' is not a boolean variable", input);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "e!", true);
+			r_core_cmd_help_match (core, help_msg_e, "e!");
 		}
 		break;
 	case 's': // "es"
@@ -755,7 +787,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "er", false);
+			r_core_cmd_help_contains (core, help_msg_e, "er");
 		}
 		break;
 	case ':': // "e:"

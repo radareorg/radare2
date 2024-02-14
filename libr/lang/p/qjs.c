@@ -372,9 +372,9 @@ static JSValue r2call0(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		pm->core->lang->cmdf (pm->core, "\"\"e scr.null=true");
-		ret = pm->core->lang->cmdf (pm->core, "\"\"%s", n);
-		pm->core->lang->cmdf (pm->core, "\"\"e scr.null=false");
+		pm->core->lang->cmdf (pm->core, "'e scr.null=true");
+		ret = pm->core->lang->cmdf (pm->core, "'%s", n);
+		pm->core->lang->cmdf (pm->core, "'e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -392,6 +392,25 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewString (ctx, r_str_get (ret));
 }
+
+static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 2 || !JS_IsString (argv[0]) || (!JS_IsString (argv[1]) && !JS_IsNumber (argv[1]))) {
+		return JS_ThrowRangeError (ctx, "r2.callAt takes two strings");
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	size_t plen;
+	const char *c = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[1], false);
+	char *ret = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ut64 at = r_num_math (pm->core->num, n);
+		ret = pm->core->lang->call_at (pm->core, at, c);
+	}
+	// JS_FreeValue (ctx, argv[0]);
+	return JS_NewString (ctx, r_str_get (ret));
+}
+
 
 static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	int i;
@@ -496,6 +515,7 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("cmd0", 1, r2cmd0),
 	// implemented in js JS_CFUNC_DEF ("call", 1, r2call);
 	JS_CFUNC_DEF ("call0", 1, r2call0),
+	JS_CFUNC_DEF ("callAt", 2, r2callAt),
 	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
 	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
 };
@@ -541,6 +561,7 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "b64", JS_NewCFunction (ctx, b64, "b64", 1));
 	// r2cmd deprecate . we have r2.cmd already same for r2log
 	JS_SetPropertyStr (ctx, global_obj, "r2cmd", JS_NewCFunction (ctx, r2cmd, "r2cmd", 1));
+	JS_SetPropertyStr (ctx, global_obj, "r2call", JS_NewCFunction (ctx, r2callAt, "r2call", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2log", JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
@@ -553,20 +574,27 @@ static void register_helpers(JSContext *ctx) {
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
+	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(x + ' @ ' + a);");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
-	eval (ctx, "r2.callj = (x)=> JSON.parse(r2.call(x));");
+	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
+	eval (ctx, "require = function(x) { if (x == 'r2papi') { return new R2Papi(r2); } ; return requirejs(x); }");
 	eval (ctx, "var exports = {};");
 	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
-	if (!r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
+	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
+		eval (ctx, "R=r2;");
+	} else {
 		eval (ctx, js_r2papi_qjs);
 		eval (ctx, "R=G.R=new R2Papi(r2);");
-	} else {
-		eval (ctx, "R=r2;");
+		eval (ctx, "G.Process = new ProcessClass(r2);");
+		eval (ctx, "G.Module = new ModuleClass(r2);");
+		eval (ctx, "G.Thread = new ThreadClass(r2);");
+		eval (ctx, "function ptr(x) { return new NativePointer(x); }");
+		eval (ctx, "G.NULL = ptr(0);");
 	}
-	eval (ctx, "function ptr(x) { return new NativePointer(x); }");
+	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };"); // calling r2.cmd requires a delayed initialization
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
@@ -581,7 +609,6 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	JS_AddIntrinsicOperators (ctx);
 	JS_EnableBignumExt (ctx, true);
 #endif
-	register_helpers (ctx);
 	return ctx;
 }
 
@@ -681,8 +708,10 @@ static bool init(RLangSession *ls) {
 	qc->call_func = func;
 	r2qjs_modules (ctx);
 	JS_SetRuntimeOpaque (rt, pm);  // expose pm to all qjs native functions in R2
-
 	ls->plugin_data = pm;
+
+	// requires pm to be set in the plugin_data
+	register_helpers (ctx);
 	return true;
 }
 

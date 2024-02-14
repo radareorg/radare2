@@ -6,15 +6,17 @@
 #if 0
 https://es.wikipedia.org/wiki/Amiga_Hunk
 http://amiga-dev.wikidot.com/file-format:hunk
+https://retro-commodore.eu/files/downloads/amigamanuals-xiik.net/eBooks/AmigaDOS%20Technical%20Reference%20Manual%20-%20eBook-ENG.pdf
 #endif
 
-#define HUNK_MAGIC "\x00\x00\x03\xf3"
+#define HUNK_HEADER "\x00\x00\x03\xf3"
+#define HUNK_CODE "\x00\x00\x03\xe9"
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
-		return (!memcmp (buf, HUNK_MAGIC, sizeof (buf)));
+		return (!memcmp (buf, HUNK_HEADER, sizeof (buf)));
 	}
 	return false;
 }
@@ -29,38 +31,13 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
-	ret->type = strdup ("ROM");
+	ret->type = strdup ("Hunk (Executable file)");
 	ret->machine = strdup ("Amiga");
-	ret->os = strdup ("Workbench");
+	ret->os = strdup ("AmigaOS");
 	ret->arch = strdup ("m68k");
-	ret->cpu = strdup ("68040");
-	ret->bits = 8;
+	ret->bits = 32;
 	ret->has_va = 1;
-	return ret;
-}
-
-#if 0
-static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
-	ptr->name = strdup (r_str_get (name));
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = size;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
-}
-#endif
-
-static RList* symbols(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
-#if 0
-	addsym (ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS,2);
-#endif
+	ret->big_endian = true;
 	return ret;
 }
 
@@ -73,7 +50,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("hunk");
+	ptr->name = strdup ("HUNK_HEADER");
 	ptr->paddr = 0;
 	ptr->size = r_buf_size (bf->buf);
 	ptr->vaddr = 0;
@@ -84,18 +61,27 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RList* entries(RBinFile *bf) {
 	RList *ret;
-	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
+	RBinAddr *ptr = NULL;
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	ptr->paddr = 0x24;
-	ptr->vaddr = 0x24;
-	r_list_append (ret, ptr);
+	int addr;
+	ut8 b[1024];
+	int last = r_buf_read_at (bf->buf, 0, b, sizeof (b)) - 4;
+	for (addr = 0x18; addr <= last; addr += 4) {
+		if (!memcmp (b + addr, HUNK_CODE, 4)) {
+			ptr->paddr = addr + 8;
+			ptr->vaddr = addr + 8;
+			r_list_append (ret, ptr);
+			return ret;
+		}
+	}
+	R_LOG_ERROR ("Cannot determine entrypoint, cannot find HUNK_CODE");
 	return ret;
 }
 
@@ -109,7 +95,6 @@ RBinPlugin r_bin_plugin_hunk = {
 	.check = &check,
 	.entries = &entries,
 	.sections = sections,
-	.symbols = &symbols,
 	.info = &info,
 };
 

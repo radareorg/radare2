@@ -220,11 +220,15 @@ static int log_callback_all(RCore *log, int count, const char *line) {
 	return 0;
 }
 
-R_API void r_core_log_view(RCore *core, int num) {
+R_API void r_core_log_view(RCore *core, int num, int shift) {
 	if (num < 1) {
 		num = 1;
 	}
 	int i;
+	int cons_width = r_cons_get_size (NULL);
+	if (cons_width < 1) {
+		cons_width = 60;
+	}
 	for (i = num - 3; i < num + 3; i++) {
 		r_cons_printf ("%s", (num == i)? "* ": "  ");
 		if (i < 1) {
@@ -241,7 +245,11 @@ R_API void r_core_log_view(RCore *core, int num) {
 		}
 		const char *msg = r_strpool_get_i (core->log->sp, i);
 		if (msg) {
-			char *m = r_str_ndup (msg, 60);
+			size_t msglen = strlen (msg);
+			if (shift < msglen) {
+				msg += shift;
+			}
+			char *m = r_str_ndup (msg, cons_width);
 			char *nl = strchr (m, '\n');
 			if (nl) {
 				*nl = 0;
@@ -289,7 +297,18 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case 'v': // "Tv"
-		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
+		{
+			char *args = strdup (input + 2);
+			char *arg = strchr (args, ' ');
+			int shift = 0;
+			if (arg) {
+				*arg++ = 0;
+				shift = r_num_math (core->num, arg);
+			}
+			int index = (int)r_num_math (core->num, args);
+			r_core_log_view (core, index, shift);
+			free (args);
+		}
 		break;
 	case 'l': // "Tl"
 		r_cons_printf ("%.2d\n", core->log->last - 1);
@@ -425,7 +444,7 @@ static int cmd_plugins(void *data, const char *input) {
 		case 'j': r_core_cmd_call (core, "phj"); break;
 		case 'q': r_core_cmd_call (core, "phq"); break;
 		case 0: r_core_cmd_call (core, "ph"); break;
-		default: r_core_cmd_help_match (core, help_msg_L, "Lh", true); break;
+		default: r_core_cmd_help_match (core, help_msg_L, "Lh"); break;
 		}
 		break;
 	case 'A': // "LA"
@@ -437,14 +456,14 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 's': // "Ls"
 		if (input[1] == '?') { // "Ls?"
-			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
+			r_core_cmd_help_match (core, help_msg_L, "Ls");
 		} else { // asm plugins
 			ranal2_list (core, NULL, input[1]);
 		}
 		break;
 	case 'a': // "La" // list arch plugins
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_L, "La", true);
+			r_core_cmd_help_match (core, help_msg_L, "La");
 		} else {
 			int mode = input[1];
 			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;

@@ -25,8 +25,9 @@ R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
 }
 
 R_API RList *r_debug_pids(RDebug *dbg, int pid) {
-	if (dbg && dbg->current && dbg->current->plugin.pids) {
-		return dbg->current->plugin.pids (dbg, pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->pids) {
+		return plugin->pids (dbg, pid);
 	}
 	return NULL;
 }
@@ -36,8 +37,9 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
-	if (dbg && dbg->current && dbg->current->plugin.pids) {
-		list = dbg->current->plugin.pids (dbg, R_MAX (0, pid));
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->pids) {
+		list = plugin->pids (dbg, R_MAX (0, pid));
 		if (!list) {
 			return false;
 		}
@@ -72,7 +74,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	return false;
 }
 
-R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
+R_API bool r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -82,8 +84,9 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 	if (pid == -1) {
 		return false;
 	}
-	if (dbg && dbg->current && dbg->current->plugin.threads) {
-		list = dbg->current->plugin.threads (dbg, pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->threads) {
+		list = plugin->threads (dbg, pid);
 		if (!list) {
 			return false;
 		}
@@ -123,12 +126,12 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf ("%s", pj_string (j));
+			dbg->cb_printf ("%s\n", pj_string (j));
 		}
 		pj_free (j);
 		r_list_free (list);
 	}
-	return false;
+	return true;
 }
 
 /* processes */

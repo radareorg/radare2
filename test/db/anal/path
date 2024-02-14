@@ -86,3 +86,51 @@ EXPECT=<<EOF
 421
 EOF
 RUN
+
+NAME=abpe-ls-m1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aeim
+aa
+s main
+abpe 0x100003b00
+pd 1 @ 0x100003b00
+afsv 0x100003b00
+afsv sym.imp.compat_mode
+arA
+EOF
+EXPECT=<<EOF
+|           0x100003b00      940e0094       bl sym.imp.compat_mode     ; bool compat_mode(const char *function, const char *mode)
+compat_mode("bin/ls", "Unix2003")
+compat_mode("bin/ls", "Unix2003")
+0x100007a3d 0x100007a3d 0x5500736c2f6e6962   bin/ls.U @ x0 ascii ('b')
+0x100007a44 0x100007a44 0x3330303278696e55   Unix2003 @ x1 ascii ('U')
+0x00000000 0x00000000 0xffffffffffffffff   ........
+0x00000000 0x00000000 0xffffffffffffffff   ........
+EOF
+RUN
+
+NAME=abpe-ls-m1 guesstypes
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aeim
+s main
+af
+abpe 0x100003b00
+pd 1 @ 0x100003b00
+afsv 0x100003b00
+afsv sym.imp.compat_mode
+arA
+EOF
+EXPECT=<<EOF
+|           0x100003b00      940e0094       bl sym.imp.compat_mode
+compat_mode("bin/ls", "Unix2003")
+compat_mode("bin/ls", "Unix2003")
+0x100007a3d 0x100007a3d 0x5500736c2f6e6962   bin/ls.U @ x0 ascii ('b')
+0x100007a44 0x100007a44 0x3330303278696e55   Unix2003 @ x1 ascii ('U')
+0x00000000 0x00000000 0xffffffffffffffff   ........
+0x00000000 0x00000000 0xffffffffffffffff   ........
+EOF
+RUN

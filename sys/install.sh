@@ -4,6 +4,13 @@
 cd "$(dirname $0)"/..
 pwd
 
+if [ "${SHELL}" = "/data/data/com.termux/files/usr/bin/bash" ]; then
+    echo "Termux environment detected. Installing necessary packages"  
+    pkg update -y && pkg install git build-essential binutils pkg-config -y
+    ${PWD}/sys/termux.sh
+    exit $?
+fi
+
 if [ "$(uname)" = "Haiku" ]; then
 	gcc-x86 --version > /dev/null 2>&1
 	if [ $? = 0 ]; then
@@ -27,8 +34,8 @@ fi
 
 echo "$PWD" | grep -q " "
 if [ $? = 0 ]; then
-	echo "You can't build radare from a directory with spaces with make" > /dev/stderr
-	echo "To solve this you must 'meson' instead" > /dev/stderr
+	echo "You can't build radare from a directory with spaces with make" >&2
+	echo "To solve this you must 'meson' instead" >&2
 	exit 1
 fi
 
@@ -56,6 +63,9 @@ while : ; do
 	"--without-pull")
 		export WITHOUT_PULL=1
 		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
+		;;
 	-*)
 		# just for the penguin face case
 		ARGS="${ARGS} $1"
@@ -68,16 +78,17 @@ while : ; do
 	shift
 done
 
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
-${MAKE} --help 2>&1 | grep -q gnu
-if [ $? != 0 ]; then
-	echo "You need GNU Make to build me"
-	exit 1
+if [ -z "${MAKE}" ]; then
+	MAKE=make
+	gmake --help >/dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
+	${MAKE} --help 2>&1 | grep -q gnu
+	if [ $? != 0 ]; then
+		echo "You need GNU Make to build me"
+		exit 1
+	fi
+	export MAKE="$MAKE"
 fi
-
-export MAKE="$MAKE"
 
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
@@ -169,6 +180,12 @@ if [ $? = 0 ]; then
 	fi
 else
 	echo "Warning: Cannot find system wide capstone"
+fi
+
+if [ "$NEED_CAPSTONE" = 1 ]; then
+	if [ ! -d shlr/capstone/.git -a ! -d .git ]; then
+		NEED_CAPSTONE=0
+	fi
 fi
 
 if [ "$NEED_CAPSTONE" = 1 ]; then

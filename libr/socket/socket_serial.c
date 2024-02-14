@@ -54,7 +54,9 @@ static bool set_interface_attribs(int fd, int speed, int parity) {
 	tty.c_cflag |= parity;
 #endif
 	tty.c_cflag &= ~CSTOPB;
+#ifdef CRTSCTS
 	tty.c_cflag &= ~CRTSCTS;
+#endif
 	tcsetattr (fd, TCSANOW, &tty);
 #endif
 #else

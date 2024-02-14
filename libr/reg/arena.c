@@ -357,11 +357,11 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 
 R_API void r_reg_arena_shrink(RReg *reg) {
 	r_return_if_fail (reg);
-	RListIter *iter;
-	RRegArena *a;
 	int i;
 	const size_t bytes_size = 1024;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegArena *a;
+		RListIter *iter;
 		r_list_foreach (reg->regset[i].pool, iter, a) {
 			free (a->bytes);
 			/* ha ha ha */

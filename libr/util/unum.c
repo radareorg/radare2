@@ -33,9 +33,9 @@ R_API size_t r_num_bit_clz32(ut32 val) { // CLZ
 }
 
 R_API size_t r_num_bit_clz64(ut64 val) { // CLZ
-	val = val - ((val >> 1) & 0x5555555555555555);
-	val = (val & 0x3333333333333333) + ((val >> 2) & 0x3333333333333333);
-	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 24;
+	val = val - ((val >> 1) & 0x5555555555555555ULL);
+	val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
+	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0FULL) * 0x0101010101010101ULL) >> 24;
 }
 
 R_API size_t r_num_bit_count(ut32 val) { // CLZ
@@ -478,7 +478,7 @@ R_API int r_num_is_float(RNum *num, const char *str) {
 	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
-R_API double r_num_get_float(RNum *num, const char *str) {
+R_API double r_num_get_double(RNum *num, const char *str) {
 	double d = 0.0f;
 	(void) sscanf (str, "%lf", &d);
 	return d;

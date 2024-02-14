@@ -57,8 +57,8 @@
 # define MAXPATHLEN 255
 #endif
 
-#define EATAB {while (isascii((ut8) *l) && isspace((ut8) *l)) { l++; }}
-#define LOWCASE(l) (isupper((ut8) (l)) ? tolower((ut8) (l)) : (l))
+#define EATAB {while (isascii ((ut8) *l) && isspace ((ut8) *l)) { l++; }}
+#define LOWCASE(l) (isupper ((ut8) (l)) ? tolower ((ut8) (l)) : (l))
 
 #ifndef MAP_FILE
 # define MAP_FILE 0
@@ -190,7 +190,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	}
 	ms->haderr = 0;
 	if (magicsize != FILE_MAGICSIZE) {
-		file_error(ms, 0, "magic element size %lu != %lu",
+		file_error (ms, 0, "magic element size %lu != %lu",
 		    (unsigned long)(size_t)sizeof (*magic),
 		    (unsigned long)FILE_MAGICSIZE);
 		return -1;
@@ -679,7 +679,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 					marray[i].mp->flag & BINTEST ? "binary" : "text");
 				if (marray[i].mp->flag & BINTEST) {
 #define SYMLEN 4 /* strlen("text") */
-					char *p = strstr(marray[i].mp->desc, "text");
+					char *p = strstr (marray[i].mp->desc, "text");
 					if (p && (p == marray[i].mp->desc || isspace ((ut8)p[-1])) &&
 					    (p + SYMLEN - marray[i].mp->desc == MAXstring ||
 					     (p[SYMLEN] == '\0' || isspace ((ut8 )p[SYMLEN])))) {
@@ -968,7 +968,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 #define ALLOC_INCR	(size_t)200
 	if (cont_level != 0) {
 		if (*nmentryp == 0) {
-			file_error(ms, 0, "No current entry for continuation");
+			file_error (ms, 0, "No current entry for continuation");
 			return -1;
 		}
 		me = &(*mentryp)[*nmentryp - 1];
@@ -1173,8 +1173,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			l = t;
 			m->num_mask = file_signextend (ms, m, val);
 			eatsize (&l);
-		}
-		else if (op == FILE_OPDIVIDE) {
+		} else if (op == FILE_OPDIVIDE) {
 			int have_range = 0;
 			for (l++; !isspace (*l); l++) {
 				switch (*l) {
@@ -1330,7 +1329,7 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 	struct r_magic_entry *me;
 
 	if (*nmentryp == 0) {
-		file_error(ms, 0, "No current entry for MIME type");
+		file_error (ms, 0, "No current entry for MIME type");
 		return -1;
 	}
 
@@ -1338,7 +1337,7 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 	m = &me->mp[me->cont_count == 0 ? 0 : me->cont_count - 1];
 
 	if (m->mimetype[0] != '\0') {
-		file_error(ms, 0, "Current entry already has a MIME type: %s\n"
+		file_error (ms, 0, "Current entry already has a MIME type: %s\n"
 		    "Description: %s\nNew type: %s", m->mimetype, m->desc, l);
 		return -1;
 	}
@@ -1559,7 +1558,7 @@ static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
 	case FILE_PSTRING:
 	case FILE_REGEX:
 	case FILE_SEARCH:
-		*p = getstr(ms, *p, m->value.s, sizeof (m->value.s), &slen, action);
+		*p = getstr (ms, *p, m->value.s, sizeof (m->value.s), &slen, action);
 		if (!*p) {
 			if (ms->flags & R_MAGIC_CHECK) {
 				file_magwarn (ms, "cannot get string from `%s'",
@@ -1623,7 +1622,7 @@ static const char *getstr(RMagic *ms, const char *s, char *p, int plen, int *sle
 			break;
 		}
 		if (p >= pmax) {
-			file_error(ms, 0, "string too long: `%s'", origs);
+			file_error (ms, 0, "string too long: `%s'", origs);
 			return NULL;
 		}
 		if (c == '\\') {
@@ -1865,8 +1864,8 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 
 	if (*ptr != MAGICNO) {
 		if (swap4(*ptr) != MAGICNO) {
-		//OPENBSDBUG file_error(ms, 0, "bad magic in `%s'");
-			file_error(ms, 0, "bad magic in `%s'", dbname);
+		//OPENBSDBUG file_error (ms, 0, "bad magic in `%s'");
+			file_error (ms, 0, "bad magic in `%s'", dbname);
 			goto error1;
 		}
 		needsbyteswap = 1;
@@ -1876,7 +1875,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 
 	version = needsbyteswap? swap4(ptr[1]): ptr[1];
 	if (version != VERSIONNO) {
-		file_error(ms, 0, "File %d.%d supports only %d version magic "
+		file_error (ms, 0, "File %d.%d supports only %d version magic "
 		    "files. `%s' is version %d", FILE_VERSION_MAJOR, patchlevel,
 		    VERSIONNO, dbname, version);
 		goto error1;
@@ -1930,24 +1929,24 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 	}
 
 	if ((fd = r_sandbox_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {
-		file_error(ms, errno, "cannot open `%s'", dbname);
+		file_error (ms, errno, "cannot open `%s'", dbname);
 		goto out;
 	}
 
 	if (write(fd, ar, sizeof (ar)) != (int)sizeof (ar)) {
-		file_error(ms, errno, "error writing `%s'", dbname);
+		file_error (ms, errno, "error writing `%s'", dbname);
 		goto beach;
 	}
 
 	if (lseek(fd, (off_t)sizeof (struct r_magic), SEEK_SET)
 	    != sizeof (struct r_magic)) {
-		file_error(ms, errno, "error seeking `%s'", dbname);
+		file_error (ms, errno, "error seeking `%s'", dbname);
 		goto beach;
 	}
 
 	if (write(fd, *magicp, (sizeof (struct r_magic) * *nmagicp))
 	    != (int)(sizeof (struct r_magic) * *nmagicp)) {
-		file_error(ms, errno, "error writing `%s'", dbname);
+		file_error (ms, errno, "error writing `%s'", dbname);
 		goto beach;
 	}
 

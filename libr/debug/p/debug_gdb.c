@@ -185,7 +185,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 	ut64 buflen = 0;
 	ut8 *buf = (ut8*) read_remote_maps (dbg, &buflen);
 	if (!buf) {
-		R_LOG_ERROR ("Cannot read /proc/pid/maps");
+		// makes no sense on non-linux targets
+		R_LOG_DEBUG ("Cannot read /proc/pid/maps");
 		return NULL;
 	}
 

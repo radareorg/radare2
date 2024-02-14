@@ -717,3 +717,19 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	free (str);
 	return result;
 }
+
+R_API char *r_type_func_name(Sdb *types, const char *fname) {
+	const char *str = fname;
+	const char *name = fname;
+	if (r_type_func_exist (types, fname)) {
+		return strdup (fname);
+	}
+	while ((str = strchr (str, '.'))) {
+		str++;
+		name = str;
+	}
+	if (r_type_func_exist (types, name)) {
+		return strdup (name);
+	}
+	return r_type_func_guess (types, (char*)fname);
+}

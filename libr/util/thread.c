@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_th.h>
 #include <r_util.h>
@@ -17,6 +17,13 @@
 #include <kernel/scheduler.h>
 #endif
 
+#if HAVE_PTHREAD
+// 1MB per thread. otherwise running analysis can segfault
+// this is pthread-specific for now, and will be good if we can have control
+// on this at some point, via api or dynamically depending on the task.
+#define THREAD_STACK_SIZE (1024 * 1024)
+#endif
+
 #if R2__WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
@@ -32,14 +39,20 @@ static void *_r_th_launcher(void *_th) {
 	}
 	r_th_lock_enter (th->lock);
 	do {
-		r_th_set_running (th, true);
+//		r_th_set_running (th, true);
+// th->lock is already, so no need to call r_th_set_running
+		th->running = true;
 		ret = th->fun (th);
 		if (ret < 0) {
 			th->ready = false;
+//			r_th_set_running (th, false);
+// don't call r_th_set_running, as it would unlock th->lock
+			th->running = false;
 			r_th_lock_leave (th->lock);
 			return 0;
 		}
-		r_th_set_running (th, false);
+//		r_th_set_running (th, false);
+		th->running = false;
 	} while (ret);
 	th->ready = false;
 	r_th_lock_leave (th->lock);
@@ -220,7 +233,16 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 		th->breaked = false;
 		th->ready = false;
 #if HAVE_PTHREAD
-		pthread_create (&th->tid, NULL, _r_th_launcher, th);
+		pthread_attr_t *pattr = NULL;
+		pthread_attr_t attr;
+		int rc = pthread_attr_init(&attr);
+		if (rc != -1) {
+			rc = pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE);
+			if (rc != -1) {
+				pattr = &attr;
+			}
+		}
+		pthread_create (&th->tid, pattr, _r_th_launcher, th);
 #elif R2__WINDOWS__
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif

@@ -32,8 +32,11 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 
 static char *fs_abspath(RFSShell *shell, const char *input) {
 	char *path = strdup (shell->cwd);
+	if (path == NULL) {
+		return NULL;
+	}
 	if (!strcmp (input, "..")) {
-		char* p = (char*) r_str_lchr (path, '/');
+		char *p = (char*) r_str_lchr (path, '/');
 		if (p) {
 			p[(p == path)? 1: 0] = 0;
 		}

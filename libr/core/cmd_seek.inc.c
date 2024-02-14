@@ -23,9 +23,12 @@ static RCoreHelpMessage help_msg_s = {
 	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
 	"sb", "", "seek aligned to bb start",
 	"sC", "[?] string", "seek to comment matching given string",
+	"sd", " ([addr])", "show delta seek compared to all possible reference bases",
 	"sf", "", "seek to next function (f->addr+f->size)",
 	"sf", " function", "seek to address of specified function",
 	"sf.", "", "seek to the beginning of current function",
+	"sfp", "", "seek to the function prelude checking back blocksize bytes",
+	"sff", "", "seek to the nearest flag backwards (uses fd and ignored the delta)",
 	"sg/sG", "", "seek begin (sg) or end (sG) of section or file",
 	"sh", "", "open a basic shell (aims to support basic posix syntax)",
 	"sl", "[?] [+-]line", "seek to line",
@@ -92,12 +95,10 @@ static RCoreHelpMessage help_msg_ss = {
 };
 
 static void __init_seek_line(RCore *core) {
-	ut64 from, to;
-
 	r_config_bump (core->config, "lines.to");
-	from = r_config_get_i (core->config, "lines.from");
+	ut64 from = r_config_get_i (core->config, "lines.from");
 	const char *to_str = r_config_get (core->config, "lines.to");
-	to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
+	ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 	if (r_core_lines_initcache (core, from, to) == -1) {
 		R_LOG_ERROR ("lines.from and lines.to are not defined");
 	}
@@ -249,7 +250,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	}
 	switch (*input) {
 	case '?': // "sort?"
-		r_core_cmd_help_match (core, help_msg_s, "sort", true);
+		r_core_cmd_help_match (core, help_msg_s, "sort");
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -392,7 +393,58 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
-			r_core_cmd_help_match (core, help_msg_s, "sr", false);
+			r_core_cmd_help_contains (core, help_msg_s, "sr");
+		}
+		break;
+	case 'd': // "sd"
+		{
+			st64 delta;
+			ut64 at = core->offset;
+			char *ro = r_core_get_reloff (core, RELOFF_TO_FLAG, at, &delta);
+			if (ro) {
+				r_cons_printf ("flag %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FUNC, at, &delta);
+			if (ro) {
+				r_cons_printf ("func %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_MAPS, at, &delta);
+			if (ro) {
+				r_cons_printf ("maps %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FILE, at, &delta);
+			if (ro) {
+				r_cons_printf ("file %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FMAP, at, &delta);
+			if (ro) {
+				r_cons_printf ("fmap %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_LIBS, at, &delta);
+			if (ro) {
+				r_cons_printf ("libs %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_SYMB, at, &delta);
+			if (ro) {
+				r_cons_printf ("symb %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_SECT, at, &delta);
+			if (ro) {
+				r_cons_printf ("sect %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_DMAP, at, &delta);
+			if (ro) {
+				r_cons_printf ("dmap %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
 		}
 		break;
 	case 'C': // "sC"
@@ -482,7 +534,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_s, "s/", false);
+			r_core_cmd_help_contains (core, help_msg_s, "s/");
 			break;
 		default:
 			R_LOG_ERROR ("unknown search subcommand");
@@ -748,6 +800,17 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek (core, fcn->addr, true);
 			}
 			break;
+		case 'p': // "sfp"
+			// find function prelude backwards
+			r_core_cmd0 (core, "s `ap`");
+			break;
+		case 'f': // "sff"
+			// find function prelude backwards
+			r_core_cmd0 (core, "s `fd~[0]`");
+			break;
+		default:
+			r_core_cmd_help_contains (core, help_msg_s, "sf");
+			break;
 		}
 		break;
 	}
@@ -757,13 +820,13 @@ static int cmd_seek(void *data, const char *input) {
 			if (input[2] == 't') {
 				cmd_sort (core, input);
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_s, "sort", true);
+				r_core_cmd_help_match (core, help_msg_s, "sort");
 			} else {
 				return -1;
 			}
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_s, "so", false);
+			r_core_cmd_help_contains (core, help_msg_s, "so");
 		case ' ':
 		case '\0':
 		case '+':
@@ -771,7 +834,7 @@ static int cmd_seek(void *data, const char *input) {
 			cmd_seek_opcode (core, input + 1);
 			break;
 		default:
-			return -1;	// invalid command
+			return -1; // invalid command
 		}
 		break;
 	case 'g': // "sg"
@@ -844,7 +907,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_cons_sleep_end (bed);
 				} else {
-					r_core_cmd_help_match (core, help_msg_sl, "sleep", true);
+					r_core_cmd_help_match (core, help_msg_sl, "sleep");
 				}
 			}
 			break;

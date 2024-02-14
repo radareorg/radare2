@@ -7,7 +7,7 @@
 #include <r_util/r_log.h>
 
 /* locks/mutex/sems */
-static bool lock_init(RThreadLock *thl, bool recursive) {
+static bool _lock_init(RThreadLock *thl, bool recursive) {
 #if HAVE_PTHREAD
 	if (recursive) {
 		pthread_mutexattr_t attr;
@@ -36,7 +36,7 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	return atomic_exchange_explicit (data, v, memory_order_acquire);
-#elif __GNUC__ && !__TINYC__
+#elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int orig = 0;
 	int conv = (int)v;
 	__atomic_exchange (data, &conv, &orig, __ATOMIC_ACQUIRE);
@@ -54,7 +54,7 @@ R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	atomic_store_explicit (data, v, memory_order_release);
-#elif __GNUC__ && !__TINYC__
+#elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int conv = (int)v;
 	__atomic_store (data, &conv, __ATOMIC_RELEASE);
 #elif _MSC_VER
@@ -70,7 +70,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 	R_LOG_DEBUG ("r_th_lock_new");
 	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (thl) {
-		if (lock_init (thl, recursive)) {
+		if (_lock_init (thl, recursive)) {
 			thl->type = R_TH_LOCK_TYPE_HEAP;
 			thl->active = true;
 			thl->activating = false;
@@ -100,7 +100,7 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 			// spinning
 		}
 		if (!thl->active) {
-			lock_init (thl, false);
+			_lock_init (thl, false);
 			thl->active = true;
 		}
 		// finish spinning

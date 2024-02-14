@@ -12,7 +12,7 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 		d->user = NULL;
 		d->off_a = off_a;
 		d->off_b = off_b;
-		d->diff_cmd = strdup ("diff -u");
+		d->diff_cmd = strdup ("diff -au");
 	}
 	return d;
 }

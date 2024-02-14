@@ -35,10 +35,10 @@ EXPECT=<<EOF
 0x100003e30 objc      var   1      name
 0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
 ---
-class Employee  {
-  property name;
+class Employee {
+  property name : Swift.String;
 }
-class Employer  {
+class Employer {
 }
 @objc
 class main.Employee : Swift._SwiftObject {
@@ -59,6 +59,7 @@ class main.Employer : main.Employee {
       {
         "name": "name",
         "kind": "property",
+        "type": "Swift.String",
         "addr": 4294983520
       }
     ]
@@ -74,9 +75,11 @@ class main.Employer : main.Employee {
     "addr": 4295000392,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "Swift._SwiftObject"
+    ],
+    "rawsuper": [
+      "_OBJC_CLASS_$__TtCs12_SwiftObject"
     ],
     "fields": [
       {
@@ -97,9 +100,11 @@ class main.Employer : main.Employee {
     "addr": 4295000576,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "main.Employee"
+    ],
+    "rawsuper": [
+      "_TtC4main8Employee"
     ]
   }
 ]

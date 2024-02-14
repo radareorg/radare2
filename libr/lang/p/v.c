@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2019-2022 pancake */
+/* radare - LGPL - Copyright 2019-2023 pancake */
 
 #include <r_core.h>
 
-static const char *const r2v_sym = "r2v__entry";
+#define R2V_SYM "r2v__entry"
 static bool lang_v_file(RLangSession *lang, const char *file);
 
 static const char *r2v_head = \
@@ -93,11 +93,11 @@ static void runlib(void *user, const char *lib) {
 	void *vl = r_lib_dl_open (lib);
 	if (vl) {
 		void (*fcn)(RCore *, int argc, const char **argv);
-		fcn = r_lib_dl_sym (vl, r2v_sym);
+		fcn = r_lib_dl_sym (vl, R2V_SYM);
 		if (fcn) {
 			fcn (user, 0, NULL);
 		} else {
-			R_LOG_ERROR ("Cannot find '%s' symbol in library", r2v_sym);
+			R_LOG_ERROR ("Cannot find '%s' symbol in library", R2V_SYM);
 		}
 		r_lib_dl_close (vl);
 	} else {

@@ -120,7 +120,7 @@ extern "C" {
 
 // Helper macros for doing a foreach-style loop over the elements of a vector.
 #define R_VEC_FOREACH(vec, iter) for (iter = (vec)->_start; iter != (vec)->_end; iter++)
-#define R_VEC_FOREACH_PREV(vec, iter) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
+#define R_VEC_FOREACH_PREV(vec, iter) if ((vec)->_start != (vec)->_end) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
 
 #define R_CONCAT_INNER(a, b) a ## b
 #define R_CONCAT(a, b) R_CONCAT_INNER(a, b)
@@ -295,10 +295,10 @@ extern "C" {
 	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, ut64 new_capacity) { \
 		r_return_val_if_fail (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
+			const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
 			type *buf = (type *)realloc (vec->_start, new_capacity * sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
-				const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 				vec->_start = buf; \
 				vec->_end = buf + num_elems; \
 				vec->_capacity = new_capacity; \
@@ -309,7 +309,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, shrink_to_fit)(vec_type *vec) { \
 		r_return_if_fail (vec); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (num_elems != capacity) { \
 			if (num_elems == 0) { \

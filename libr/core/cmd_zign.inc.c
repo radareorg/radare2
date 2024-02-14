@@ -184,7 +184,7 @@ static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input && input[1] == '?') {
 		char two[3] = { input[0], input[1], 0 };
-		r_core_cmd_help_match (core, help_msg_za, two, false);
+		r_core_cmd_help_contains (core, help_msg_za, two);
 		return 0;
 	}
 
@@ -196,7 +196,7 @@ static int cmdAdd(void *data, const char *input) {
 			char *args = r_str_trim_dup (input + 1);
 			int n = r_str_word_set0 (args);
 			if (input[1] == '?' || n > 2) {
-				r_core_cmd_help_match (core, help_msg_za, "zaf", false);
+				r_core_cmd_help_contains (core, help_msg_za, "zaf");
 				free (args);
 				return false;
 			}
@@ -219,7 +219,7 @@ static int cmdAdd(void *data, const char *input) {
 		break;
 	case 'c': // "zac"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_za, "zac", false);
+			r_core_cmd_help_contains (core, help_msg_za, "zac");
 		} else {
 			r_cons_break_push (NULL, NULL);
 			r_sign_resolve_collisions (core->anal);
@@ -228,7 +228,7 @@ static int cmdAdd(void *data, const char *input) {
 		break;
 	case 'F': // "zaF"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_za, "zaF", false);
+			r_core_cmd_help_contains (core, help_msg_za, "zaF");
 		} else {
 			int count = r_sign_all_functions (core->anal, false);
 			R_LOG_INFO ("generated zignatures: %d", count);
@@ -236,7 +236,7 @@ static int cmdAdd(void *data, const char *input) {
 		break;
 	case 'M': // "zaM"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_za, "zaM", false);
+			r_core_cmd_help_contains (core, help_msg_za, "zaM");
 		} else {
 			int count = r_sign_all_functions (core->anal, true);
 			R_LOG_INFO ("generated zignatures: %d", count);
@@ -294,19 +294,19 @@ static int cmdOpen(void *data, const char *input) {
 		if (input[1]) {
 			return r_sign_load (core->anal, r_str_trim_head_ro (input + 1), false);
 		}
-		r_core_cmd_help_match (core, help_msg_zo, "zo", false);
+		r_core_cmd_help_contains (core, help_msg_zo, "zo");
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_save (core->anal, r_str_trim_head_ro (input + 2));
 		}
-		r_core_cmd_help_match (core, help_msg_zo, "zos", false);
+		r_core_cmd_help_contains (core, help_msg_zo, "zos");
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_load_gz (core->anal, input + 2, false);
 		}
-		r_core_cmd_help_match (core, help_msg_zo, "zoz", false);
+		r_core_cmd_help_contains (core, help_msg_zo, "zoz");
 		return false;
 	case '?':
 		r_core_cmd_help (core, help_msg_zo);
@@ -325,7 +325,7 @@ static int cmdSpace(void *data, const char *input) {
 	switch (*input) {
 	case '+':
 		if (!input[1]) {
-			r_core_cmd_help_match (core, help_msg_zs, "zs+", false);
+			r_core_cmd_help_contains (core, help_msg_zs, "zs+");
 			return false;
 		}
 		char *sp = r_str_trim_dup (input + 1);
@@ -336,7 +336,7 @@ static int cmdSpace(void *data, const char *input) {
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
-			r_core_cmd_help_match (core, help_msg_zs, "zsr", false);
+			r_core_cmd_help_contains (core, help_msg_zs, "zsr");
 			return false;
 		}
 		r_spaces_rename (zs, NULL, input + 2);
@@ -366,7 +366,7 @@ static int cmdSpace(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
-		r_core_cmd_help_match (core, help_msg_zs, "zs", false);
+		r_core_cmd_help_contains (core, help_msg_zs, "zs");
 		return false;
 	}
 
@@ -380,7 +380,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 'd':
 		// TODO
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_zf, "zfd", false);
+			r_core_cmd_help_contains (core, help_msg_zf, "zfd");
 			return false;
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
@@ -388,7 +388,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 's':
 		// TODO
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_zf, "zfs", false);
+			r_core_cmd_help_contains (core, help_msg_zf, "zfs");
 			return false;
 		}
 		int depth = r_config_get_i (core->config, "dir.depth");
@@ -435,7 +435,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
-			r_cons_printf ("\"\"@0x%08"PFMT64x"\"\"afn %s\n", fcn->addr, tmp);
+			r_cons_printf ("'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
 			free (tmp);
 		}
 		return;
@@ -800,7 +800,7 @@ static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
 
 static double get_zb_threshold(RCore *core) {
 	const char *th = r_config_get (core->config, "zign.threshold");
-	double thresh = r_num_get_float (NULL, th);
+	double thresh = r_num_get_double (NULL, th);
 	if (thresh < 0.0 || thresh > 1.0) {
 		R_LOG_ERROR ("Invalid zign.threshold %s, using 0.0", th);
 		thresh = 0.0;
@@ -1149,7 +1149,7 @@ static int cmdCompare(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 			if (!input[2]) {
-				r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
+				r_core_cmd_help_contains (core, help_msg_zc, "zcn");
 				result = false;
 				break;
 			}
@@ -1157,14 +1157,14 @@ static int cmdCompare(void *data, const char *input) {
 			break;
 		case '!':
 			if (input[2] != ' ' || !input[3]) {
-				r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
+				r_core_cmd_help_contains (core, help_msg_zc, "zcn");
 				result = false;
 				break;
 			}
 			result = r_sign_diff_by_name (core->anal, options, input + 3, true);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
+			r_core_cmd_help_contains (core, help_msg_zc, "zcn");
 			result = false;
 		}
 		break;
@@ -1240,7 +1240,7 @@ static int cmdSearch(void *data, const char *input) {
 		case '*':
 			return search (core, input[1] == '*', true);
 		default:
-			r_core_cmd_help_match (core, help_msg_z_slash, "z/f", false);
+			r_core_cmd_help_contains (core, help_msg_z_slash, "z/f");
 			return false;
 		}
 	case '?':

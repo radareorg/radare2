@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.java"
 
@@ -6,21 +6,15 @@
 #include "../../shlr/java/class.h"
 #include "../../shlr/java/code.h"
 
-static void add_bin_obj_to_sdb(RBinJavaObj *bin);
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
-
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
-	int result = false;
-	char *addr, value[SDB_NUM_BUFSZ] = {
-		0
-	};
-	addr = sdb_itoa ((ut64) (size_t) bin_obj, 16, value, sizeof (value));
+static bool add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
+	char value[SDB_NUM_BUFSZ] = {0};
+	char *addr = sdb_itoa ((ut64) (size_t) bin_obj, 16, value, sizeof (value));
 	if (key && bin_obj && bin_obj->kv) {
 		R_LOG_DEBUG ("Adding %s:%s to the bin_objs db", key, addr);
 		sdb_set (bin_obj->kv, key, addr, 0);
-		result = true;
+		return true;
 	}
-	return result;
+	return false;
 }
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bj) {

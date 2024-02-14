@@ -87,7 +87,7 @@ static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 	if (!ptr) {
 		return;
 	}
-	ptr->name = name;
+	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
@@ -126,9 +126,8 @@ static RList *wad_fields(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 addr = 0;
-	r_strf_buffer (32);
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
 	addr += siz;
 	ut32 magic = r_buf_read_le32 (bf->buf);
 	ut32 numlumps = r_buf_read_le32 (bf->buf);

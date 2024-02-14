@@ -56,7 +56,7 @@ typedef enum ETCState { // TC - type code
 	eTCStateX,
 	eTCStateZ,
 	eTCState_,
-	eTCState$,
+	eTCStateDollar,
 	eTCStateMax
 } ETCState;
 
@@ -120,7 +120,7 @@ DECL_STATE_ACTION(W)
 DECL_STATE_ACTION(X)
 DECL_STATE_ACTION(Z)
 DECL_STATE_ACTION(_)
-DECL_STATE_ACTION($)
+DECL_STATE_ACTION(Dollar)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
@@ -152,7 +152,7 @@ static state_func const state_table[eTCStateMax] = {
 	NAME(X),
 	NAME(Z),
 	NAME(_),
-	NAME($),
+	NAME(Dollar),
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -408,7 +408,7 @@ static int get_template_params(SDemangler *sd, const char *sym, size_t *amount_o
 static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l, bool memorize) {
 	// C++ operator code (one character, or two if the first is '_')
 #define SET_OPERATOR_CODE(str) { \
-	str_info = malloc (sizeof (SStrInfo)); \
+	str_info = R_NEW (SStrInfo); \
 	if (!str_info) break; \
 	str_info->len = strlen (str); \
 	str_info->str_ptr = strdup (str); \
@@ -639,9 +639,8 @@ get_template_err:
 	if (memorize) {
 		r_list_append (sd->abbr_names, strdup (type_code_str.type_str));
 	}
-
-	//    will be free at a caller function
-	//    free_type_code_str_struct(&type_code_str);
+	// will be free at a caller function
+	// free_type_code_str_struct(&type_code_str);
 	return len;
 }
 
@@ -653,14 +652,11 @@ get_template_err:
 /// \return Return amount of processed chars
 ///
 static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeStr *type_code_str, size_t *amount_of_names, bool memorize) {
-	const char *curr_pos = NULL, *prev_pos = NULL, *tmp = NULL;
-	RList /* <SStrInfo *> */ *names_l = NULL;
+	const char *tmp = NULL;
 	RListIter *it = NULL;
 	SStrInfo *str_info = NULL;
-
-	size_t len = 0, read_len = 0, tmp_len = 0;
-
-	names_l = r_list_newf ((RListFree)sstrinfo_free);
+	size_t read_len = 0, tmp_len = 0;
+	RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
@@ -672,12 +668,12 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		read_len += res;
 	}
 
-	prev_pos = buf;
-	curr_pos = strchr (buf, '@');
+	const char *prev_pos = buf;
+	const char *curr_pos = strchr (buf, '@');
 
 	// hack for nested templates
 	// think about how better to fix this...
-	len = curr_pos - prev_pos;
+	size_t len = curr_pos - prev_pos;
 	if (len == 0) {
 		goto get_namespace_and_name_err;
 	}
@@ -741,7 +737,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			read_len++;
 			// Optional sequence number
 			char *num = NULL;
-			if (*(tmp + 1) != '?') {
+			if (tmp[1] != '?') {
 				SStateInfo state;
 				init_state_struct (&state, tmp + 1);
 				num = get_num (&state);
@@ -774,11 +770,8 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			}
 			len = 1;
 		} else {
-			char *tmpname = malloc (len + 1);
-			memset (tmpname, 0, len + 1);
-			memcpy (tmpname, prev_pos, len);
-			r_list_append (sd->abbr_names, tmpname);
-			tmp = tmpname;
+			tmp = r_str_ndup (prev_pos, len);
+			r_list_append (sd->abbr_names, (void*)tmp);
 		}
 
 		str_info->str_ptr = strdup (tmp);
@@ -820,7 +813,7 @@ get_namespace_and_name_err:
 	return read_len;
 }
 
-#define SINGLEQUOTED_$ '$'
+#define SINGLEQUOTED_Dollar '$'
 #define SINGLEQUOTED_A 'A'
 #define SINGLEQUOTED_B 'B'
 #define SINGLEQUOTED_C 'C'
@@ -1281,17 +1274,14 @@ static EDemanglerErr parse_function_args(SDemangler *sd, const char *sym, char *
 	}
 
 	free_type_code_str_struct (&func_str);
-
 	if (read_chars) {
 		*read_chars = curr_pos - sym + 1;
 	}
-
 	return err;
 }
 
 // TODO: use parse_function() instead
 static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, const char *pointer_str) {
-	const char *call_conv = NULL;
 	const char *storage = NULL;
 	char *ret_type = NULL;
 	size_t i = 0;
@@ -1300,7 +1290,7 @@ static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, c
 	state->state = eTCStateEnd;
 
 	// Calling convention
-	call_conv = get_calling_convention (*state->buff_for_parsing++);
+	const char *call_conv = get_calling_convention (*state->buff_for_parsing++);
 	if (!call_conv) {
 		// XXX unify error messages into a single enum
 		state->err = (ETCStateMachineErr)eDemanglerErrUncorrectMangledSymbol;
@@ -1401,7 +1391,7 @@ DEF_STATE_ACTION(B) {
 	PARSE_POINTER ("& volatile");
 }
 
-DEF_STATE_ACTION($) {
+DEF_STATE_ACTION(Dollar) {
 	if (*(state->buff_for_parsing++) != '$') {
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 		return;
@@ -1488,7 +1478,7 @@ static void tc_state_start(SDemangler *sd, SStateInfo *state, STypeCodeStr *type
 	ONE_LETTER_STATE (X)
 	ONE_LETTER_STATE (Z)
 	ONE_LETTER_STATE (_)
-	ONE_LETTER_STATE ($)
+	ONE_LETTER_STATE (Dollar)
 	default:
 		R_LOG_DEBUG ("Invalid TCState type '%c' (0x%02x)", ch, ch);
 		state->state = eTCStateEnd;
@@ -1522,7 +1512,6 @@ static bool init_type_code_str_struct(STypeCodeStr *type_coder_str) {
 		return false;
 	}
 	memset (type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof (char));
-
 	type_coder_str->curr_pos = 0; // strlen ("unknown type");
 //	strncpy (type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);
 #undef TYPE_STR_LEN
@@ -1530,10 +1519,10 @@ static bool init_type_code_str_struct(STypeCodeStr *type_coder_str) {
 }
 
 static void free_type_code_str_struct(STypeCodeStr *type_code_str) {
-	if (type_code_str->type_str) {
+	if (type_code_str) {
 		R_FREE (type_code_str->type_str);
+		type_code_str->type_str_len = 0;
 	}
-	type_code_str->type_str_len = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1576,7 +1565,7 @@ static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_
 	*amount_of_read_chars = state.amount_of_read_chars;
 
 get_type_code_string_err:
-	R_FREE (tmp_sym);
+	free (tmp_sym);
 	free_type_code_str_struct (&type_code_str);
 	return err;
 }
@@ -1724,11 +1713,11 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 	return eDemanglerErrOK;
 }
 
-static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type,
-	size_t *len, bool *is_static, bool *is_implicit_this_pointer) {
+static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type, size_t *len, bool *is_static, bool *implicit_this) {
 	const char *curr_pos = sym;
 	data_type->left = data_type->right = "";
-	*is_static = *is_implicit_this_pointer = false;
+	*is_static = false;
+	*implicit_this = false;
 	#define SET_THUNK_MODIFIER(letter, modifier_str) \
 	case letter: { \
 		SStateInfo state; \
@@ -1740,7 +1729,7 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type,
 		data_type->left = modifier_str; \
 		data_type->right = r_str_newf ("`adjustor{%s}'", num); \
 		free (num);\
-		*is_implicit_this_pointer = true; \
+		*implicit_this = true; \
 		curr_pos += state.amount_of_read_chars; \
 		break; \
 	}
@@ -1753,28 +1742,28 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type,
 
 	/* Functions */
 	switch (*curr_pos++) {
-	SET_ACCESS_MODIFIER ('A', is_implicit_this_pointer, "private");
-	SET_ACCESS_MODIFIER ('B', is_implicit_this_pointer, "private");
+	SET_ACCESS_MODIFIER ('A', implicit_this, "private");
+	SET_ACCESS_MODIFIER ('B', implicit_this, "private");
 	SET_ACCESS_MODIFIER ('C', is_static, "private: static");
 	SET_ACCESS_MODIFIER ('D', is_static, "private: static");
-	SET_ACCESS_MODIFIER ('E', is_implicit_this_pointer, "private virtual");
-	SET_ACCESS_MODIFIER ('F', is_implicit_this_pointer, "private virtual");
+	SET_ACCESS_MODIFIER ('E', implicit_this, "private virtual");
+	SET_ACCESS_MODIFIER ('F', implicit_this, "private virtual");
 	SET_THUNK_MODIFIER ('G', "[thunk]:private virtual");
 	SET_THUNK_MODIFIER ('H', "[thunk]:private virtual");
-	SET_ACCESS_MODIFIER ('I', is_implicit_this_pointer, "protected");
-	SET_ACCESS_MODIFIER ('J', is_implicit_this_pointer, "protected");
+	SET_ACCESS_MODIFIER ('I', implicit_this, "protected");
+	SET_ACCESS_MODIFIER ('J', implicit_this, "protected");
 	SET_ACCESS_MODIFIER ('K', is_static, "protected: static");
 	SET_ACCESS_MODIFIER ('L', is_static, "protected: static");
-	SET_ACCESS_MODIFIER ('M', is_implicit_this_pointer, "protected virtual");
-	SET_ACCESS_MODIFIER ('N', is_implicit_this_pointer, "protected virtual");
+	SET_ACCESS_MODIFIER ('M', implicit_this, "protected virtual");
+	SET_ACCESS_MODIFIER ('N', implicit_this, "protected virtual");
 	SET_THUNK_MODIFIER ('O', "[thunk]:protected virtual");
 	SET_THUNK_MODIFIER ('P', "[thunk]:protected virtual");
-	SET_ACCESS_MODIFIER ('Q', is_implicit_this_pointer, "public");
-	SET_ACCESS_MODIFIER ('R', is_implicit_this_pointer, "public");
+	SET_ACCESS_MODIFIER ('Q', implicit_this, "public");
+	SET_ACCESS_MODIFIER ('R', implicit_this, "public");
 	SET_ACCESS_MODIFIER ('S', is_static, "public: static");
 	SET_ACCESS_MODIFIER ('T', is_static, "public: static");
-	SET_ACCESS_MODIFIER ('U', is_implicit_this_pointer, "public virtual");
-	SET_ACCESS_MODIFIER ('V', is_implicit_this_pointer, "public virtual");
+	SET_ACCESS_MODIFIER ('U', implicit_this, "public virtual");
+	SET_ACCESS_MODIFIER ('V', implicit_this, "public virtual");
 	SET_THUNK_MODIFIER ('W', "[thunk]:public virtual");
 	SET_THUNK_MODIFIER ('X', "[thunk]:public virtual");
 	case 'Y': // near
@@ -1792,7 +1781,7 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type,
 
 static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeStr *type_code_str, char **demangled_function, size_t *chars_read) {
 	EDemanglerErr err = eDemanglerErrOK;
-	bool is_implicit_this_pointer;
+	bool implicit_this;
 	bool is_static;
 	const char *memb_func_access_code = NULL;
 	const char *call_conv = NULL;
@@ -1815,7 +1804,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 		curr_pos += 3;
 	}
 
-	err = parse_function_type (curr_pos, &data_type, &len, &is_static, &is_implicit_this_pointer);
+	err = parse_function_type (curr_pos, &data_type, &len, &is_static, &implicit_this);
 	if (err != eDemanglerErrOK) {
 		goto parse_function_err;
 	}
@@ -1832,7 +1821,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	}
 
 	// member function access code
-	if (is_implicit_this_pointer) {
+	if (implicit_this) {
 		err = get_storage_class (*curr_pos++, &memb_func_access_code);
 		if (err != eDemanglerErrOK) {
 			goto parse_function_err;
@@ -2038,23 +2027,12 @@ static EDemanglerErr parse_microsoft_rtti_mangled_name(SDemangler *sd, const cha
 	return err;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr microsoft_demangle(SDemangler *sd, char **demangled_name) {
-	EDemanglerErr err = eDemanglerErrOK;
-//	RListIter *it = NULL;
-//	char *tmp = NULL;
-
-	// TODO: need refactor... maybe remove the static variable somewhere?
 	if (!sd || !demangled_name) {
-		err = eDemanglerErrMemoryAllocation;
-		goto microsoft_demangle_err;
+		return eDemanglerErrMemoryAllocation;
 	}
-
 	if (r_str_startswith (sd->symbol, ".?")) {
-		err = parse_microsoft_rtti_mangled_name (sd, sd->symbol + 2, demangled_name, NULL);
-	} else {
-		err = parse_microsoft_mangled_name (sd, sd->symbol + 1, demangled_name, NULL);
+		return parse_microsoft_rtti_mangled_name (sd, sd->symbol + 2, demangled_name, NULL);
 	}
-microsoft_demangle_err:
-	return err;
+	return parse_microsoft_mangled_name (sd, sd->symbol + 1, demangled_name, NULL);
 }

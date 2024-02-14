@@ -73,6 +73,14 @@ typedef struct JSRefCountHeader {
     int ref_count;
 } JSRefCountHeader;
 
+#if defined(_AIX) && defined(__GNUC__)
+/* Make NAN and INFINITY constant expressions */
+#undef NAN
+#define NAN __builtin_nanf("0x7fc00000")
+#undef INFINITY
+#define INFINITY __builtin_huge_valf()
+#endif
+
 #define JS_FLOAT64_NAN NAN
 
 #if defined(JS_STRICT_NAN_BOXING)
