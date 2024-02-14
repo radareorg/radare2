@@ -195,11 +195,10 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 	if (banner_start != NULL) {
 		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
 		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
-		const char *version_start;
 		// We only care about the first match
 		const char *first_match = r_list_first (matches);
 		if (first_match)	{
-			version_start = first_match + strlen ("release version ");
+			const char *version_start = first_match + strlen ("release version ");
 			version = strtod (version_start, NULL);
 		}
 		r_list_free (matches);
