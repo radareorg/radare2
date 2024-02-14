@@ -815,7 +815,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 		if (r_str_scanf (buff, "%d %*s %c %d %d %*d %*d %lu %ld",
 			&p->pid, &p->s_name, &p->ppid, &p->pgrp,
 			&p->sid, &p->flag,
-			&no_li, &p->nice, &p->num_threads) < 7) {
+			&p->nice, &p->num_threads) < 7) {
 				free (buff);
 				return NULL;
 			}
