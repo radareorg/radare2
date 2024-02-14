@@ -812,9 +812,9 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 		long unsigned int no_lui;
 		long int no_li;
 		int no_num;
-		if(r_str_scanf (buff, "%d %.s %c %*d %u %*lu %*ld", &p->pid, sizeof (no_str), no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num, &no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
+		if (r_str_scanf (buff, "%d %.s %c %*d %u %*lu %*ld", &p->pid, sizeof (no_str), no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num, &no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
 			&no_lui, &no_lui, &no_lui, &no_li, &no_li,
-			&no_li, &p->nice, &p->num_threads) < 7){
+			&no_li, &p->nice, &p->num_threads) < 7) {
 				free (buff);
 				return NULL;
 			}
@@ -868,7 +868,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	file = r_strf ("/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (buff) {
-		if (r_str_scanf (buff, "%hx", &filter_flags) != 1){
+		if (r_str_scanf (buff, "%hx", &filter_flags) != 1) {
 			free (p);
 			return NULL;
 		}

@@ -47,7 +47,7 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			if(r_str_scanf (str, "0x%Lx - 0x%Lx %.s %.s", &map_start, &map_end, sizeof (perm), perm, sizeof (name), name) > 4){
+			if (r_str_scanf (str, "0x%Lx - 0x%Lx %.s %.s", &map_start, &map_end, sizeof (perm), perm, sizeof (name), name) > 4) {
 				break;
 			}
 			if (map_end != 0LL) {
