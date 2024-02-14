@@ -93,6 +93,13 @@ typedef struct r_cons_mark_t {
 	int pos;
 } RConsMark;
 
+typedef struct r_cons_fd_pair {
+	st16 fd_src; // target fd
+	st16 fd_new; // output file
+	st16 fd_bak; // backup of target fd in a new dupped fd
+} RConsFdPair;
+
+R_VEC_TYPE (RVecFdPairs, RConsFdPair);
 R_API void r_cons_mark_flush(void);
 R_API void r_cons_mark(ut64 addr, const char *name);
 R_API void r_cons_mark_free(RConsMark *m);
@@ -545,8 +552,7 @@ typedef struct r_cons_t {
 	// TODO: move into instance? + avoid unnecessary copies
 	RThreadLock *lock;
 	RConsCursorPos cpos;
-	int backup_fd;
-	int backup_fdn;
+	RVecFdPairs fds;
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -842,6 +848,7 @@ R_API void r_cons_break_timeout(int timeout);
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
+R_API void r_cons_pipe_close_all(void);
 
 #if R2__WINDOWS__
 R_API int r_cons_is_vtcompat(void);

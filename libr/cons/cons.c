@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2023 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2024 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -15,7 +15,7 @@ static R_TH_LOCAL RCons *r_cons_instance = NULL;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
-#define C (getctx())
+#define C (getctx ())
 
 static inline void cons_input_state_init(InputState *state) {
 	state->readbuffer = NULL;
@@ -692,8 +692,7 @@ R_API RCons *r_cons_new(void) {
 	I->teefile = NULL;
 	I->fix_columns = 0;
 	I->fix_rows = 0;
-	I->backup_fd = -1;
-	I->backup_fdn = -1;
+	RVecFdPairs_init (&I->fds);
 	I->mouse_event = 0;
 	I->force_rows = 0;
 	I->force_columns = 0;
@@ -771,12 +770,12 @@ R_API RCons *r_cons_free(void) {
 	R_FREE (C->lastOutput);
 	C->lastLength = 0;
 	R_FREE (I->pager);
+	RVecFdPairs_fini (&I->fds);
 	return NULL;
 }
 
 #define MOAR (4096 * 8)
 static bool palloc(int moar) {
-	void *temp;
 	if (moar <= 0) {
 		return false;
 	}
@@ -785,7 +784,7 @@ static bool palloc(int moar) {
 			return false;
 		}
 		size_t new_sz = moar + MOAR;
-		temp = calloc (1, new_sz);
+		void *temp = calloc (1, new_sz);
 		if (temp) {
 			C->buffer_sz = new_sz;
 			C->buffer = temp;

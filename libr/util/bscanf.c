@@ -175,16 +175,29 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				_BSCANF_CONSUME_WSPACE ();
 				_BSCANF_MATCH ();
 				buf_ptr++;
-			} else if ('c' == *fmt_ptr || 's' == *fmt_ptr) {
-				/* 'c'/'s': match a character sequence/string. */
+			} else if ('c' == *fmt_ptr) {
+				if (is_suppressed) {
+					_BSCANF_CONSUME_WSPACE ();
+					buf_ptr++;
+					fmt_ptr++;
+				} else if ('l' == length_mod) {
+					wchar_ptr = va_arg (args, wchar_t*);
+					wchar_t *wbuf_ptr = (wchar_t *) buf_ptr;
+					*wchar_ptr = *wbuf_ptr;
+					buf_ptr = (char *) (wbuf_ptr + 1);
+					fmt_ptr++;
+				} else {
+					_BSCANF_CONSUME_WSPACE ();
+					char_ptr = va_arg (args, char*);
+					*char_ptr = *buf_ptr;
+					buf_ptr++;
+					fmt_ptr++;
+				}
+				num_args_set++;
+			} else if ('s' == *fmt_ptr) {
+				/* 's': match a character sequence/string. */
 				/* String conversion requires a width. */
 				// _BSCANF_CHECK_STRING (); -- we want to actually *str = 0 instead of early fail
-
-				/* 'c' conversion specifiers DO NOT consume whitespace. */
-				if ('c' != *fmt_ptr) {
-					_BSCANF_CONSUME_WSPACE ();
-				}
-
 				if (is_suppressed) {
 					/* Consume the character (string) and ignore it in this case. */
 					while (true) {

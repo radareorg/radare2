@@ -4464,7 +4464,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		can = r_cons_canvas_new (w, h);
 		if (!can) {
 			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
-					"size? See scr.columns + scr.rows");
+					"size? See scr.cols + scr.rows");
 			r_config_hold_free (hc);
 			return false;
 		}
