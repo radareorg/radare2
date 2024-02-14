@@ -3,7 +3,6 @@
 #include <r_userconf.h>
 #include <r_drx.h>
 #include <r_core.h>
-#include <r_util.h>
 #include <signal.h>
 #include <sys/types.h>
 
