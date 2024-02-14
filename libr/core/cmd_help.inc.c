@@ -141,6 +141,8 @@ static ut32 vernum(const char *s) {
 static RCoreHelpMessage help_msg_percent = {
 	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
 	"%", "", "list all environment variables",
+	"%", "*", "show env vars as r2 commands",
+	"%", "j", "show env vars in JSON format",
 	"%", "SHELL", "prints SHELL value",
 	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
 	NULL
