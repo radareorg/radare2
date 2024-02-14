@@ -638,7 +638,6 @@
 #define DTF_1_PARINIT	0x00000001
 /* From
 
-   https://docs.sun.com:80/ab2/coll.45.13/LLM/@Ab2PageView/21165?Ab2Lang=C&Ab2Enc=iso-8859-1
 
    DTF_1_CONFEXP is the same as DTF_1_PARINIT. It is a typo. The value
    defined here is the same as the one in <sys/link.h> on Solaris 8.  */
