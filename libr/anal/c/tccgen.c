@@ -177,20 +177,16 @@ ST_INLN Sym *sym_find(TCCState *s1, int v) {
 // TODO: Add better way to store the meta information
 // about the pushed type
 int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta) {
-	CType *new_type = (CType *) malloc (sizeof (CType));
-	if (!new_type) {
-		return 0;
-	}
-	new_type->ref = sym_malloc (s1);
-	new_type->t = meta;
-
-	Sym *sym = sym_push (s1, 0, new_type, 0, 0);
-
-	free (new_type);
+	CType new_type = {
+		.ref = sym_malloc (s1),
+		.t = meta
+	};
+	Sym *sym = sym_push (s1, 0, &new_type, 0, 0);
 	return sym != NULL;
 }
 
-void dump_type(TCCState *s1, CType *type, int depth) {
+#if 0
+static void dump_type(TCCState *s1, CType *type, int depth) {
 	if (depth <= 0) {
 		return;
 	}
@@ -233,6 +229,7 @@ void dump_type(TCCState *s1, CType *type, int depth) {
 		// dump_type(&(type->ref->type), --depth);
 	}
 }
+#endif
 
 /* push a given symbol on the symbol stack */
 ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c) {
@@ -281,7 +278,7 @@ ST_FUNC Sym *global_identifier_push(TCCState *s1, int v, int t, long long c) {
 	if (s && v < SYM_FIRST_ANOM) {
 		int i = (v & ~SYM_STRUCT);
 		if (i < TOK_IDENT) {
-			eprintf ("Not found\n");
+			R_LOG_WARN ("token not found");
 			return NULL;
 		}
 		ps = &s1->table_ident[i - TOK_IDENT]->sym_identifier;
@@ -315,7 +312,7 @@ ST_FUNC void sym_pop(TCCState *s1, Sym **ptop, Sym *b) {
 		if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
 			int i = (v & ~SYM_STRUCT);
 			if (i < TOK_IDENT) {
-				eprintf ("Not found\n");
+				R_LOG_WARN ("token not found");
 				return;
 			}
 			ts = s1->table_ident[i - TOK_IDENT]; //(v & ~SYM_STRUCT) - TOK_IDENT];
@@ -375,41 +372,40 @@ static void vpushs(TCCState *s1, long long v) {
 
 /* push arbitrary 64 bit constant */
 void vpush64(TCCState *s1, int ty, unsigned long long v) {
-	CValue cval;
-	CType ctype;
-	ctype.t = ty;
-	ctype.ref = NULL;
-	cval.ull = v;
+	CValue cval = {
+		.ull = v
+	};
+	CType ctype = {
+		.t = ty,
+		.ref = NULL
+	};
 	vsetc (s1, &ctype, VT_CONST, &cval);
 }
 
 /* push long long constant */
 ST_FUNC void vpushll(TCCState *s1, long long v) {
-	CValue cval;
-	cval.ll = v;
+	CValue cval = { .ll = v };
 	vsetc (s1, &s1->int64_type, VT_CONST, &cval);
 }
 
 ST_FUNC void vset(TCCState *s1, CType *type, int r, int v) {
-	CValue cval;
-
-	cval.i = v;
+	CValue cval = { .i = v };
 	vsetc (s1, type, r, &cval);
 }
 
-static void vseti(TCCState *s1, int r, int v) {
-	CType type = {0};
-	type.t = VT_INT32;
-	type.ref = NULL;
+static inline void vseti(TCCState *s1, int r, int v) {
+	CType type = {
+		.t = VT_INT32,
+		.ref = NULL
+	};
 	vset (s1, &type, r, v);
 }
 
-static void vswap(TCCState *s1) {
-	SValue tmp;
+static inline void vswap(TCCState *s1) {
 	/* cannot let cpu flags if other instruction are generated. Also
 	   avoid leaving VT_JMP anywhere except on the top of the stack
 	   because it would complicate the code generator. */
-	tmp = s1->vtop[0];
+	SValue tmp = s1->vtop[0];
 	s1->vtop[0] = s1->vtop[-1];
 	s1->vtop[-1] = tmp;
 
@@ -509,11 +505,10 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 	} else if (bt == VT_QLONG || bt == VT_QFLOAT) {
 		*a = 8;
 		return 16;
-	} else {
-		/* char, void, function, _Bool */
-		*a = 1;
-		return 1;
 	}
+	/* char, void, function, _Bool */
+	*a = 1;
+	return 1;
 }
 
 /* return the pointed type of t */
@@ -524,11 +519,10 @@ static inline CType *pointed_type(CType *type) {
 /* modify type so that its it is a pointer to type. */
 ST_FUNC void mk_pointer(TCCState *s1, CType *type) {
 	Sym *s = sym_push (s1, SYM_FIELD, type, 0, -1);
-	if (!s) {
-		return;
+	if (s) {
+		type->t = VT_PTR | (type->t & ~VT_TYPE);
+		type->ref = s;
 	}
-	type->t = VT_PTR | (type->t & ~VT_TYPE);
-	type->ref = s;
 }
 
 /* compare function types. OLD functions match any new functions */
@@ -766,8 +760,10 @@ static void parse_attribute(TCCState *s1, AttributeDef *ad) {
 				if (s1->tok != TOK_STR) {
 					expect (s1, "alias(\"target\")");
 				}
+#if 0
 				ad->alias_target =	/* save string as token, for later */
 					tok_alloc (s1, (char *) s1->tokc.cstr->data, s1->tokc.cstr->size - 1)->tok;
+#endif
 				next (s1);
 				skip (s1, ')');
 				break;
@@ -2950,15 +2946,9 @@ R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 				next (s1);
 				continue;
 			}
-			if (l == VT_CONST &&
-			    (s1->tok == TOK_ASM1 || s1->tok == TOK_ASM2 || s1->tok == TOK_ASM3)) {
-				/* global asm block */
-#if 1
-				eprintf ("global asm not supported\n");
+			if (l == VT_CONST && (s1->tok == TOK_ASM1 || s1->tok == TOK_ASM2 || s1->tok == TOK_ASM3)) {
+				R_LOG_ERROR ("global asm statements are not supported");
 				return 1;
-#endif
-				// asm_global_instr ();
-				continue;
 			}
 			/* special test for old K&R protos without explicit int
 			   type. Only accepted when defining global data */
