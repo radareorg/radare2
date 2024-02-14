@@ -4,7 +4,6 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
-#include <r_util.h>
 
 #if DEBUGGER
 #if __APPLE__
@@ -213,7 +212,9 @@ static int update_self_regions(RIO *io, int pid) {
 		}
 		path[0]='\0';
 		strcpy (region, "0x");
-		r_str_scanf (line, "%.s %.s %*s %*s %*s %.[^\n]", sizeof (region[2]), region + 2, sizeof (perms), perms, sizeof (path), path);
+		if(r_str_scanf (line, "%.s %.s %*s %*s %*s %.[^\n]", sizeof (region[2]), region + 2, sizeof (perms), perms, sizeof (path), path) < 6){
+			return false;
+		}
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
