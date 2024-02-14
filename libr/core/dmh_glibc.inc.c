@@ -289,6 +289,7 @@ static bool GH(is_tcache)(RCore *core) {
 
 	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
 		return core->dbg->glibc_version_d > 2.25;
+	}
 	R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
 	return false;
 }
