@@ -433,7 +433,9 @@ typedef struct r_debug_t {
 	bool verbose;
 	size_t maxsnapsize;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
+	bool glibc_version_resolved; /* is the libc version resolved already? */
 	int glibc_version;
+	double glibc_version_d; // TODO: move over to this only
 } RDebug;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?

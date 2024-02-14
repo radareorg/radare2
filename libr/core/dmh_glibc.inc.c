@@ -100,29 +100,197 @@ static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
 	return main_arena;
 }
 
+static GH(section_content) GH(get_section_content)(RCore *core, const char *path, const char *section_name) {
+	RBin *bin = core->bin;
+	RBinFile *bf = r_bin_cur (bin);
+	bool found_section = false;
+	GHT paddr;
+	GH(section_content) content = {.size = GHT_MAX, .buf = NULL};
+
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	if (!r_bin_open (bin, path, &opt)) {
+		R_LOG_ERROR ("section_content: r_bin_open failed on path %s", path);
+		return content;
+	}
+
+	RBinFile *libc_bf = r_bin_cur (bin);
+	RList *sections = r_bin_get_sections (bin);
+	RBinSection *section;
+	RListIter *iter;
+
+	r_list_foreach (sections, iter, section) {
+		if (!strcmp (section->name, section_name)) {
+			found_section = true;
+			paddr = section->paddr;
+			content.size = section->size;
+			break;
+		}
+	}
+
+	if (!found_section) {
+		R_LOG_WARN ("section_content: section %s not found", section_name);
+		goto cleanup_exit;
+	}
+
+	// eprintf ("get_section_bytes: section found: %s content.size: %#08x  paddr: %#08x\n", section_name, content.size, paddr);
+	content.buf = calloc (content.size, 1);
+	if (!content.buf) {
+		R_LOG_ERROR ("section_content: calloc failed");
+		goto cleanup_exit;
+	}
+
+	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
+
+	if (read_size != content.size) {
+		R_LOG_ERROR ("section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		free (content.buf);
+		content.buf = NULL;
+	}
+
+cleanup_exit:
+	r_bin_file_delete (bin, libc_bf->id);
+	r_bin_file_set_cur_binfile (bin, bf);
+	return content;
+}
+
+R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
+	double version = 0.0;
+
+	// First see if there is a "__libc_version" symbol
+	// If yes read version from there
+	GHT version_symbol = GH (get_va_symbol) (core, libc_path, "__libc_version");
+	if (version_symbol != GHT_MAX) {
+		FILE *libc_file = fopen (libc_path, "rb");
+		if (libc_file == NULL) {
+			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", libc_path);
+			return false;
+		}
+		// TODO: futureproof this
+		char version_buffer[5] = {0};
+		fseek (libc_file, version_symbol, SEEK_SET);
+		if (fread (version_buffer, 1, 4, libc_file) != 4)	{
+			R_LOG_WARN ("resolve_glibc_version: Failed to read 4 bytes of version symbol");
+			return false;
+		};
+
+		fclose (libc_file);
+		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
+			return false;
+		}
+		version = strtod (version_buffer, NULL);
+		R_LOG_INFO ("libc version %.2f identified from symbol", version);
+		return version;
+	}
+
+	// Next up we try to read version from banner in .rodata section
+	// also inspired by pwndbg
+	GH(section_content)  rodata = GH (get_section_content) (core, libc_path, ".rodata");
+
+	const ut8 *banner_start = NULL;
+	if (rodata.buf != NULL) {
+		banner_start = r_mem_mem (rodata.buf, rodata.size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
+	}
+	if (banner_start != NULL) {
+		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
+		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
+		// We only care about the first match
+		const char *first_match = r_list_first (matches);
+		if (first_match)	{
+			const char *version_start = first_match + strlen ("release version ");
+			version = strtod (version_start, NULL);
+		}
+		r_list_free (matches);
+		r_regex_free (rx);
+	}
+	free (rodata.buf);
+	if (version != 0) {
+		R_LOG_INFO ("libc version %.2f identified from .rodata banner", version);
+		return version;
+	}
+
+	R_LOG_WARN ("get_glibc_version failed");
+	return version;
+}
+
+static bool GH(resolve_glibc_version)(RCore *core) {
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
+
+	double version = 0;
+	RDebugMap *map;
+	RListIter *iter;
+	bool found_glibc_map = false;
+
+	if (core->dbg->glibc_version_resolved) {
+		return true;
+	}
+
+	const char *dbg_glibc_version = r_config_get (core->config, "dbg.glibc.version");
+	if (R_STR_ISEMPTY (dbg_glibc_version)) {
+		dbg_glibc_version = NULL;
+	}
+
+	if (dbg_glibc_version)	{
+		// TODO: use ^ and $ which appear to be broken
+		if (!r_regex_match ("\\d.\\d\\d", "e", dbg_glibc_version)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
+						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
+		} else {
+			version = strtod (dbg_glibc_version, NULL);
+			core->dbg->glibc_version = (int) round ((version * 100));
+			core->dbg->glibc_version_d = version;
+			core->dbg->glibc_version_resolved = true;
+			R_LOG_INFO ("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
+			return true;
+		}
+	}
+
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
+	r_debug_map_sync (core->dbg);
+
+	// Search for binary in memory maps named *libc-* or *libc.*
+	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (r_str_startswith (core->bin->file, map->name)) {
+			continue;
+		}
+		if (r_regex_match (".*libc[.-]", "e", map->name)) {
+			found_glibc_map = true;
+			break;
+		}
+	}
+	// TODO: handle static binaries
+	if (!found_glibc_map) {
+		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
+		return false;
+	}
+	// At this point we found a map in memory that _should_ be libc
+	version = GH (get_glibc_version) (core, map->file);
+	if (version != 0)	{
+		core->dbg->glibc_version = (int) round ((version * 100));
+		core->dbg->glibc_version_d = version;
+		core->dbg->glibc_version_resolved = true;
+		char version_buffer[315] = {0};
+		// TODO: better way snprintf to 4 chars warns
+		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
+		snprintf (version_buffer, sizeof (version_buffer)-1, "%.2f", version);
+		r_config_set (core->config, "dbg.glibc.version", version_buffer);
+		return true;
+	}
+
+	return false;
+}
+
 static bool GH(is_tcache)(RCore *core) {
-	double v = 0;
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return r_config_get_b (core->config, "dbg.glibc.tcache");
 	}
-	RDebugMap *map;
-	RListIter *iter;
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		// In case the binary is named *libc-* or *libc.*
-		if (strncmp (map->name, core->bin->file, strlen (map->name)) != 0) {
-			char *fp = strstr (map->name, "libc-");
-			if (fp) {
-				break;
-			}
-			fp = strstr (map->name, "libc.");
-			if (fp) {
-				v = r_num_get_double (core->num, fp + 5);
-				core->dbg->glibc_version = (int) round((v * 100));
-				return (v > 2.25);
-			}
-		}
+
+	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
+		return core->dbg->glibc_version_d > 2.25;
 	}
+	R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
 	return false;
 }
 
@@ -388,6 +556,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 	if (core->dbg->main_arena_resolved) {
 		return true;
+	}
+
+	// R_LOG_INFO ("Resolving libc version");
+	if (!GH (resolve_glibc_version) (core)) {
+		R_LOG_WARN ("Could not determine libc version");
+		// TODO: maybe add config setting to hardcode libc version?
+		return false;
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
