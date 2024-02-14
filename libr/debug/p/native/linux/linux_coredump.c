@@ -812,7 +812,9 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 		long unsigned int no_lui;
 		long int no_li;
 		int no_num;
-		if (r_str_scanf (buff, "%d %.s %c %*d %u %*lu %*ld", &p->pid, sizeof (no_str), no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num, &no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
+		if (r_str_scanf (buff, "%d %*s %c %d %d %*d %*d %lu %ld",
+			&p->pid, &p->s_name, &p->ppid, &p->pgrp,
+			&p->sid, &p->flag,
 			&no_lui, &no_lui, &no_lui, &no_li, &no_li,
 			&no_li, &p->nice, &p->num_threads) < 7) {
 				free (buff);
