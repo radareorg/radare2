@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2019-2020 - pancake */
+/* radare - MIT - Copyright 2019-2024 - pancake */
 /*
  * Copyright (c) 1987, 1993, 1994
  * The Regents of the University of California.  All rights reserved.
@@ -35,6 +35,10 @@ R_API int r_getopt_next(RGetopt *opt) {
 		}
 		if (place[1] && *++place == '-') { // found "--"
 			opt->ind++;
+			if (place[1]) {
+				// any --WHATEVER will be an alias to -h
+				return 0;
+			}
 			place = EMSG;
 			return -1;
 		}

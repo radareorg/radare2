@@ -1230,6 +1230,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.version = true;
 			action = true;
 			break;
+		default:
+			r2pm.help = true;
+			break;
 		}
 	}
 	r2pm_setenv (r2pm.global);
