@@ -21,6 +21,14 @@ bool test_r_str_scanf(void) {
 	mu_assert_eq (0x120000023b2d8000, bignum, "portable ut64 scanf failed");
 	mu_assert_eq (res, 1, "return value for scanf failed");
 
+#if 0
+	// XXX the 0x%08Lx syntax is not supported by r_str_scanf, but it does for libc's scanf .. uncomment this test when implemented
+	bignum = 0;
+	res = r_str_scanf ("0x000000023b2d8000", "0x%08Lx", &bignum);
+	mu_assert_eq (0x23b2d8000, bignum, "portable ut64 scanf failed");
+	mu_assert_eq (res, 1, "return value for scanf failed");
+#endif
+
 	mu_end;
 }
 
