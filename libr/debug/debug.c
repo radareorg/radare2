@@ -366,8 +366,8 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->main_pid = -1;
 	dbg->n_threads = 0;
 	dbg->trace_clone = 0;
-	dbg->egg = r_egg_new ();
-	r_egg_setup (dbg->egg, R_SYS_ARCH, R_SYS_BITS, R_SYS_ENDIAN, R_SYS_OS);
+	dbg->egg = NULL; // r_egg_new ();
+	// r_egg_setup (dbg->egg, R_SYS_ARCH, R_SYS_BITS, R_SYS_ENDIAN, R_SYS_OS);
 	dbg->trace_aftersyscall = true;
 	dbg->follow_child = false;
 	R_FREE (dbg->btalgo);
@@ -440,7 +440,8 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_debug_session_free (dbg->session);
 		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
-		r_egg_free (dbg->egg);
+		// we dont own the egg now
+		// r_egg_free (dbg->egg);
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);
