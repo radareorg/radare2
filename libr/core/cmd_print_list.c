@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2023 - pancake */
+/* radare - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_core.h>
 
-
+struct treestate;
 typedef void (*treefcn)(struct treestate *ts, int indent);
 
 typedef struct treestate {
@@ -95,11 +95,11 @@ static void tree_functions(struct treestate *ts, int indent) {
 R_API void r_print_list(RCore *core, const char *input) {
 	TreeState ts = {0};
 	ts.core = core;
-	int level = 0;
+	// int level = 0;
 	char *oargstr = strdup (input);
 	char *argstr = oargstr;
-	char *arg = r_str_after (argstr, ' ');
-	bool dash = false;
+	// char *arg = r_str_after (argstr, ' ');
+	//bool dash = false;
 	while (*argstr) {
 		if (ts.layers > 3) {
 			R_LOG_ERROR ("too many layers");
@@ -107,16 +107,16 @@ R_API void r_print_list(RCore *core, const char *input) {
 		}
 		switch (*argstr) {
 		case '-':
-			dash = true;
+			// dash = true;
 			// ignored on purpose
 			break;
 		case ' ':
 			goto done;
 		case 'l':
-			ts.layer[ts.layers++] = &tree_files;
+			ts.layer[ts.layers++] = (treefcn)&tree_files;
 			break;
 		case 'f':
-			ts.layer[ts.layers++] = &tree_functions;
+			ts.layer[ts.layers++] = (treefcn)&tree_functions;
 			break;
 		default:
 			break;
@@ -125,7 +125,7 @@ R_API void r_print_list(RCore *core, const char *input) {
 	}
 done:
 	free (oargstr);
-	RListIter *iter;
+	// RListIter *iter;
 	// RPrintTreeCallback ptcb;
 	treefcn ptcb = ts.layer[0];
 	// ts.layer[0](&ts, 0);
