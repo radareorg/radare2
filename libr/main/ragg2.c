@@ -58,8 +58,6 @@ static REggState *__es_new(bool load_plugins) {
 	if (es) {
 		es->l = r_lib_new (NULL, NULL);
 		es->e = r_egg_new ();
-		es->e->anal = r_anal_new ();
-		r_anal_bind (es->e->anal, &es->e->rasm->analb);
 		if (load_plugins) {
 			__load_plugins (es);
 		}
