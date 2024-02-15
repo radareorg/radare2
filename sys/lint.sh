@@ -11,6 +11,7 @@ cd "$(dirname $0)"/..
 # Bad: static void foo() {
 # Good: static void foo(void) {
 # NAME=use void on functions without parameters
+(git grep sscanf libr| grep '%s' ) && exit 1
 (git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
 (git grep 'R_NEW0(' libr | grep c:) && exit 1
 (git grep "=='" libr | grep -v '===') && exit 1
