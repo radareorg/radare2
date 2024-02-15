@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1627,22 +1627,36 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_dmp);
 		} else if (input[1] == ' ') {
 			int perms;
-			char *p, *q;
 			ut64 size = 0, addr;
-			p = strchr (input + 2, ' ');
+			char *p = strchr (input + 2, ' ');
 			if (p) {
+				bool failed_somehow = false;
 				*p++ = 0;
-				q = strchr (p, ' ');
+				char *q = strchr (p, ' ');
 				if (q) {
 					*q++ = 0;
 					addr = r_num_math (core->num, input + 2);
+					if (core->num->nc.errors != 0) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid address (%s)", input + 2);
+					}
 					size = r_num_math (core->num, p);
+					if (core->num->nc.errors != 0) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid size (%s)", p);
+					}
 					perms = r_str_rwx (q);
-				//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-				//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
-					r_debug_map_protect (core->dbg, addr, size, perms);
+					if (perms < 1) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid perms (%s)", q);
+					}
 				} else {
-					R_LOG_WARN ("See dmp?");
+					failed_somehow = true;
+				}
+				if (failed_somehow) {
+					R_LOG_ERROR ("Invalid arguments. See dmp?");
+				} else {
+					r_debug_map_protect (core->dbg, addr, size, perms);
 				}
 			} else {
 				r_debug_map_sync (core->dbg); // update process memory maps
