@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
-static R_TH_LOCAL int fdsz = 0;
+static R_TH_LOCAL int fdsz = 0; // XXX delete this global
 
 static RCoreHelpMessage help_msg_o = {
 	"Usage: o","[file] ([offset])","Open and close files, maps, and banks",
@@ -561,6 +561,10 @@ static void cmd_omfg(RCore *core, const char *input) {
 	int perm = *input ? (*input == '+' || *input == '-')
 		? r_str_rwx (input + 1)
 		: r_str_rwx (input) : 7;
+	if (perm < 0) {
+		R_LOG_ERROR ("Invalid permission string");
+		return;
+	}
 	ut32 mapid;
 	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
 		ut32 fd = r_io_fd_get_current (core->io);
@@ -600,7 +604,12 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 		{
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
-				map->perm = r_str_rwx (argv[0]);
+				int nperm = r_str_rwx (argv[0]);
+				if (nperm < 0) {
+					R_LOG_ERROR ("Invalid permission string");
+				} else {
+					map->perm = nperm;
+				}
 			}
 		}
 		break;
@@ -610,7 +619,12 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 			const int id = r_num_math (core->num, argv[0]);
 			RIOMap *map = r_io_map_get (core->io, id);
 			if (map) {
-				map->perm = r_str_rwx (argv[1]);
+				int nperm = r_str_rwx (argv[1]);
+				if (nperm < 0) {
+					R_LOG_ERROR ("Invalid permission string");
+				} else {
+					map->perm = nperm;
+				}
 			}
 		}
 	}
@@ -691,6 +705,10 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 			// fallthrough
 		case 5:
 			rwx = r_str_rwx (r_str_word_get0 (s, 4));
+			if (rwx < 0) {
+				R_LOG_WARN ("Invalid permissions string");
+				rwx = 0;
+			}
 			rwx_arg = true;
 			// fallthrough
 		case 4:
@@ -1718,6 +1736,10 @@ static bool cmd_onn(RCore *core, const char* input) {
 		*arg_perm++ = 0;
 		arg0 = ptr;
 		perms = r_str_rwx (arg_perm);
+		if (perms < 0) {
+			R_LOG_WARN ("Invalid permissions string");
+			perms = 0;
+		}
 	}
 	Onn on = {arg0, NULL, core};
 	ut64 addr = 0LL;
@@ -1864,11 +1886,19 @@ static int cmd_open(void *data, const char *input) {
 				addr = r_num_math (core->num, argv[1]);
 			} else {
 				perms = r_str_rwx (argv[1]);
+				if (perms < 0) {
+					R_LOG_WARN ("Invalid permissions string");
+					perms = 0;
+				}
 			}
 		}
 		if (argc == 3) {
 			addr = r_num_math (core->num, argv[1]);
 			perms = r_str_rwx (argv[2]);
+			if (perms < 0) {
+				R_LOG_WARN ("Invalid permissions string");
+				perms = 0;
+			}
 		}
 		if (!strcmp (ptr, "-")) {
 			ptr = "malloc://512";
@@ -1903,6 +1933,10 @@ static int cmd_open(void *data, const char *input) {
 			}
 			if (argc == 2) {
 				perms = r_str_rwx (argv[1]);
+				if (perms < 0) {
+					R_LOG_WARN ("Invalid permissions string");
+					perms = 0;
+				}
 			}
 			fd = r_io_fd_open (core->io, argv[0], perms, 0);
 			r_core_return_value (core, fd);
@@ -2017,11 +2051,18 @@ static int cmd_open(void *data, const char *input) {
 					addr = r_num_math (core->num, argv[1]);
 				} else {
 					perms = r_str_rwx (argv[1]);
+					if (perms < 0) {
+						R_LOG_WARN ("Invalid permissions string");
+						perms = 0;
+					}
 				}
-			}
-			if (argc == 3) {
+			} else if (argc == 3) {
 				addr = r_num_math (core->num, argv[1]);
 				perms = r_str_rwx (argv[2]);
+				if (perms < 0) {
+					R_LOG_WARN ("Invalid permissions string");
+					perms = 0;
+				}
 			}
 		}
 		{

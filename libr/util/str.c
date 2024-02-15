@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_bin.h>
 #include <r_userconf.h>

@@ -2789,19 +2789,23 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 			sl = r_str_word_set0 (s);
 			if (sl == 4) {
-#define arg(x) r_str_word_get0(s,x)
+#define arg(x) r_str_word_get0 (s,x)
 			        n = (char)r_num_math (core->num, arg (0));
 			        off = r_num_math (core->num, arg (1));
 			        len = (int)r_num_math (core->num, arg (2));
-			        perm = (char)r_str_rwx (arg (3));
 			        if (len == -1) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 					r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			        } else {
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-					r_debug_drx_set (core->dbg, n, off, len, perm, 0);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					perm = (char)r_str_rwx (arg (3));
+					if (perm < 0) {
+						R_LOG_ERROR ("Invalid permissions string (%s)", arg (3));
+					} else {
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
+						r_debug_drx_set (core->dbg, n, off, len, perm, 0);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					}
 			        }
 			} else {
 				r_core_cmd_help_match (core, help_msg_dr, "drx");
@@ -5216,9 +5220,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
-
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & 4)) {
+		int nperm = r_str_rwx (perms);
+		if (!print && nperm > 0 && !(nperm & 4)) {
 			R_LOG_ERROR ("fd %d is not readable", fd);
 			free (perms);
 			ret = 1;
@@ -5253,9 +5257,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
-
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & 2)) {
+		int nperm = r_str_rwx (perms);
+		if (!print && nperm > 0 && !(nperm & 2)) {
 			R_LOG_ERROR ("fd %d is not writable", fd);
 			free (perms);
 			ret = 1;

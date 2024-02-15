@@ -879,8 +879,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			append_bound (list, NULL, search_itv, begin, end - begin, 7);
 		}
 	} else if (r_str_startswith (mode, "io.maps.")) {
-		int len = strlen ("io.maps.");
-		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
+		const char *sperm = mode + strlen ("io.maps.");
+		int mask = r_str_rwx (sperm);
+		if (mask < 0) {
+			R_LOG_WARN ("Invalid permissions string %s", sperm);
+			mask = 0;
+		}
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		RListIter *iter;
@@ -900,8 +904,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			}
 		}
 	} else if (r_str_startswith (mode, "bin.segments")) {
-		int len = strlen ("bin.segments.");
-		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
+		int len = strlen ("bin.segments");
+		const char *sperm = mode + len;
+		int mask = (mode[len] == '.')? r_str_rwx (sperm + 1): 0;
+		if (mask < 0) {
+			R_LOG_WARN ("Invalid permissions string %s", sperm + 1);
+			mask = 0;
+		}
 		bool only = (bool)(size_t)strstr (mode, ".only");
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
@@ -958,11 +967,16 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 					}
 				}
 			}
-			append_bound (list, core->io, search_itv, from, to-from, 1);
+			append_bound (list, core->io, search_itv, from, to - from, 1);
 		}
 	} else if (r_str_startswith (mode, "bin.sections")) {
-		int len = strlen ("bin.sections.");
-		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
+		const int len = strlen ("bin.sections");
+		const char *sperm = mode + len;
+		int mask = (mode[len] == '.')? r_str_rwx (sperm + 1): 0;
+		if (mask < 0) {
+			R_LOG_WARN ("Invalid permissions string %s", sperm + 1);
+			mask = 0;
+		}
 		bool only = (bool)(size_t)strstr (mode, ".only");
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
@@ -1066,8 +1080,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 					RIOMap *nmap = R_NEW0 (RIOMap);
 					if (nmap) {
 						// nmap->fd = core->io->desc->fd;
-						r_io_map_set_begin(nmap, from);
-						r_io_map_set_size(nmap, to - from);
+						r_io_map_set_begin (nmap, from);
+						r_io_map_set_size (nmap, to - from);
 						nmap->perm = perm;
 						nmap->delta = 0;
 						r_list_append (list, nmap);
@@ -1082,7 +1096,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				} else if (!strcmp (mode, "dbg.maps")) {
 					all = true;
 				} else if (r_str_startswith (mode, "dbg.maps.")) {
-					mask = r_str_rwx (mode + 9);
+					const char *sperm = mode + strlen ("dbg.maps.");
+					mask = r_str_rwx (sperm);
+					if (mask < 1) {
+						R_LOG_WARN ("Invalid permissions string %s", sperm);
+						mask = 0;
+					}
 					only = (bool)(size_t)strstr (mode, ".only");
 				} else if (!strcmp (mode, "dbg.heap")) {
 					heap = true;
