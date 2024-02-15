@@ -51,8 +51,13 @@ static RList *__io_maps(RDebug *dbg) {
 				break;
 			}
 			if (map_end != 0LL) {
-				RDebugMap *map = r_debug_map_new (name, map_start, map_end, r_str_rwx (perm), 0);
-				r_list_append (list, map);
+				int sperm = r_str_rwx (perm);
+				if (sperm >= 0) {
+					RDebugMap *map = r_debug_map_new (name, map_start, map_end, sperm, 0);
+					r_list_append (list, map);
+				} else {
+					R_LOG_WARN ("Invalid permission string (%s)", perm);
+				}
 			}
 			str = nl + 1;
 		} else {
