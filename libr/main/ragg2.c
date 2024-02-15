@@ -11,6 +11,7 @@
 typedef struct {
 	RLib *l;
 	REgg *e;
+	RAnal *a;
 	// TODO flags
 	// bool oneliner;
 	// bool coutput;
@@ -58,6 +59,8 @@ static REggState *__es_new(bool load_plugins) {
 	if (es) {
 		es->l = r_lib_new (NULL, NULL);
 		es->e = r_egg_new ();
+		es->a = r_anal_new ();
+		r_anal_bind (es->a, &es->e->rasm->analb);
 		if (load_plugins) {
 			__load_plugins (es);
 		}
