@@ -81,7 +81,7 @@ bool test_r_str_rwx(void) {
 	mu_assert_eq (rwx, 7, "rwx");
 	mu_assert_eq (rw, 6, "rw");
 	mu_assert_eq (rx, 5, "rx");
-	mu_assert_eq (none, 0, "no permissions");
+	mu_assert_eq (none, -1, "no permissions");
 	mu_assert_eq (number, 0, "large input number string");
 	mu_assert_eq (rx_number, 5, "rx number");
 	mu_assert_eq (rwx_number, 7, "rwx number");
