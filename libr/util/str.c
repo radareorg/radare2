@@ -184,12 +184,13 @@ R_API int r_str_bits64(char* strout, ut64 in) {
  *
  */
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
+	R_RETURN_VAL_IF_FAIL (buf && bitz, UT64_MAX);
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr (bitz, toupper ((const unsigned char)*buf));
+		char *ch = strchr (bitz, toupper ((int)(ut8)*buf));
 		if (!ch) {
-			ch = strchr (bitz, tolower ((const unsigned char)*buf));
+			ch = strchr (bitz, tolower ((int)(ut8)*buf));
 		}
 		if (ch) {
 			int bit = (int)(size_t)(ch - bitz);
@@ -204,12 +205,16 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 // Returns the permissions as in integer given an input in the form of rwx, rx,
 // etc.
 R_API int r_str_rwx(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, -1);
 	int ret = atoi (str);
 	if (!ret) {
 		ret |= strchr (str, 'm')? 16: 0;
 		ret |= strchr (str, 'r')? 4: 0;
 		ret |= strchr (str, 'w')? 2: 0;
 		ret |= strchr (str, 'x') ? 1 : 0;
+		if (*str && ret == 0 && strchr (str, '-')) {
+			ret = -1;
+		}
 	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
 		ret = 0;
 	}
