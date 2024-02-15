@@ -401,6 +401,7 @@ typedef struct r_bin_file_t {
 // #warning RBinFile.sdb_info will be removed in r2-5.7.0
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
+	void *addrinfo_priv; // future use to store abi-safe addrline info instead of k/v
 	struct r_bin_t *rbin;
 	int string_count;
 } RBinFile;
