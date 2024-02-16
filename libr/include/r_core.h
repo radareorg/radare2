@@ -250,6 +250,11 @@ typedef struct r_core_visual_t {
 	bool firstRun;
 	bool fromVisual;
 	char *menus_Colors[128];
+	int disMode;
+	int discroll;
+	int mousemode;
+	bool graphCursor;
+	bool coming_from_vmark;
 } RCoreVisual;
 
 typedef struct {
