@@ -68,6 +68,6 @@ aac
 aflc
 EOF
 EXPECT=<<EOF
-20
+21
 EOF
 RUN
