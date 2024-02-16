@@ -5015,6 +5015,9 @@ next_arroba:
 				*p = '\x00';
 				ut64 from = r_num_math (core->num, range);
 				ut64 to = r_num_math (core->num, arg);
+				if (from >= to) {
+					R_LOG_WARN ("Invalid @{from to} range");
+				}
 				// save current ranges
 				for (i = 0; fromvars[i]; i++) {
 					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
@@ -5030,6 +5033,11 @@ next_arroba:
 					r_config_set_i (core->config, tovars[i], to);
 				}
 				tmpseek = true;
+#if 0
+				// TODO may not work well for search commands XXX
+				r_core_seek (core, from, true);
+				r_core_block_size (core, to - from);
+#endif
 			}
 			if (usemyblock) {
 				if (addr_is_set) {
