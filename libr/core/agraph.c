@@ -352,8 +352,8 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			(void) G (-g->can->sx, -g->can->sy + 2);
 			snprintf (title, sizeof (title) - 1, "[ %s ]", n->title);
 			W (title);
-			if (core->visual.discroll > 0) {
-				char *body = r_str_ansi_crop (n->body, 0, core->visual.discroll, -1, -1);
+			if (g->discroll > 0) {
+				char *body = r_str_ansi_crop (n->body, 0, g->discroll, -1, -1);
 				(void) G (-g->can->sx, -g->can->sy + 3);
 				W (body);
 				free (body);
@@ -3781,21 +3781,22 @@ static void graphNodeMove(RAGraph *g, int dir, int speed) {
 	if (dir == 'h' || dir == 'l') {
 		// horizontal scroll
 		if (is_mini (g)) {
-			core->visual.discroll = 0;
+			g->discroll = 0;
 		} else {
 			int delta = (dir == 'l')? 1: -1;
 			move_current_node (g, speed * delta, 0);
 		}
-		return;
-	}
-	RCore *core = NULL;
-	// vertical scroll
-	if (is_mini (g)) {
-		core->visual.discroll += (delta * speed);
-	} else if (g->is_dis) {
-		r_core_cmdf (core, "so %d", (delta * 4) * speed);
 	} else {
-		move_current_node (g, 0, delta * speed);
+		// vertical scroll
+		if (is_mini (g)) {
+			g->discroll += (delta * speed);
+		} else if (g->is_dis) {
+			// XXX core is null here cant work
+			// RCore *core = NULL;
+			// r_core_cmdf (core, "so %d", (delta * 4) * speed);
+		} else {
+			move_current_node (g, 0, delta * speed);
+		}
 	}
 }
 
@@ -4637,7 +4638,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_update_dim = true;
 				g->need_set_layout = true;
 			}
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'e':
@@ -4723,7 +4724,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				graph_single_step_in (core, g);
 			}
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'S':
@@ -4749,7 +4750,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '@': // tab
 			r_config_set_i (core->config, "graph.layout",
 				r_config_get_i (core->config, "graph.layout")? 0: 1);
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			g->layout = r_config_get_i (core->config, "graph.layout");
 			g->need_reload_nodes = true;
 			agraph_update_seek (g, get_anode (g->curnode), true);
@@ -4761,7 +4762,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 9: // tab
 			agraph_next_node (g);
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			break;
 		case '?':
 			r_cons_clear00 ();
@@ -4780,7 +4781,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->mode = R_AGRAPH_MODE_COMMENTS;
 			}
 			g->need_reload_nodes = true;
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			// r_config_toggle (core->config, "graph.hints");
 			break;
@@ -5020,7 +5021,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'z':
 			agraph_toggle_mini (g);
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'v':
@@ -5125,7 +5126,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '.':
-			core->visual.discroll = 0;
+			g->discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'i':
