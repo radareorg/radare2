@@ -772,7 +772,7 @@ R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
-R_API void r_cons_canvas_goto_write(RConsCanvas *c, int x, int y, const char *s);
+R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
