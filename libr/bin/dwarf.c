@@ -2578,8 +2578,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	int len, ret;
 	const bool be = r_bin_is_big_endian (bin);
 	RBinSection *section = getsection (bin, DWARF_SN_LINE);
-	RBinFile *binfile = bin->cur;
-	if (binfile && section) {
+	RBinFile *bf = bin->cur;
+	if (bf && section) {
 		len = section->size;
 		if (len < 1) {
 			return NULL;
@@ -2588,7 +2588,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		if (!buf) {
 			return NULL;
 		}
-		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
 		if (ret != len) {
 			free (buf);
 			return NULL;
@@ -2604,7 +2604,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
-		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
+		SdbList *ls = sdb_foreach_list (bf->sdb_addrinfo, false);
 		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
 			const char *key = sdbkv_key (kv);
@@ -2642,8 +2642,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 
 R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 	RBinSection *section = getsection (bin, DWARF_SN_ARANGES);
-	RBinFile *binfile = bin ? bin->cur: NULL;
-	if (binfile && section) {
+	RBinFile *bf = bin ? bin->cur: NULL;
+	if (bf && section) {
 		size_t len = section->size;
 		if (len < 1 || len > ST32_MAX) {
 			return;
@@ -2652,8 +2652,7 @@ R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 		if (!buf) {
 			return;
 		}
-		int ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		if (!ret) {
+		if (!r_buf_read_at (bf ->buf, section->paddr, buf, len)) {
 			free (buf);
 			return;
 		}

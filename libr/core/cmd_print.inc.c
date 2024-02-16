@@ -197,6 +197,7 @@ static RCoreHelpMessage help_msg_p = {
 	"pj", "[?] [len]", "print as indented JSON",
 	"pk", " [len]", "print key in randomart mosaic",
 	"pK", " [len]", "print key in randomart mosaic",
+	"pl", "[?][format] [arg]", "print list of data (pl Ffvc)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
@@ -8176,6 +8177,9 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'n': // easter
 		R_LOG_ERROR ("easter egg license has expired");
+		break;
+	case 'l': // "pl"
+		r_print_list (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
