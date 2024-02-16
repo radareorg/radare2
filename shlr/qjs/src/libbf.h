@@ -1,6 +1,6 @@
 /*
  * Tiny arbitrary precision floating point library
- * 
+ *
  * Copyright (c) 2017-2021 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if !defined(_MSC_VER) && !defined(__TINYC__) && INTPTR_MAX >= INT64_MAX
+#if defined(__SIZEOF_INT128__) && (INTPTR_MAX >= INT64_MAX)
 #define LIMB_LOG2_BITS 6
 #else
 #define LIMB_LOG2_BITS 5
@@ -171,7 +171,7 @@ static inline bf_flags_t bf_set_exp_bits(int n)
 #define BF_ST_UNDERFLOW   (1 << 3)
 #define BF_ST_INEXACT     (1 << 4)
 /* indicate that a memory allocation error occured. NaN is returned */
-#define BF_ST_MEM_ERROR   (1 << 5) 
+#define BF_ST_MEM_ERROR   (1 << 5)
 
 #define BF_RADIX_MAX 36 /* maximum radix for bf_atof() and bf_ftoa() */
 
@@ -284,7 +284,7 @@ int bf_sub(bf_t *r, const bf_t *a, const bf_t *b, limb_t prec, bf_flags_t flags)
 int bf_add_si(bf_t *r, const bf_t *a, int64_t b1, limb_t prec, bf_flags_t flags);
 int bf_mul(bf_t *r, const bf_t *a, const bf_t *b, limb_t prec, bf_flags_t flags);
 int bf_mul_ui(bf_t *r, const bf_t *a, uint64_t b1, limb_t prec, bf_flags_t flags);
-int bf_mul_si(bf_t *r, const bf_t *a, int64_t b1, limb_t prec, 
+int bf_mul_si(bf_t *r, const bf_t *a, int64_t b1, limb_t prec,
               bf_flags_t flags);
 int bf_mul_2exp(bf_t *r, slimb_t e, limb_t prec, bf_flags_t flags);
 int bf_div(bf_t *r, const bf_t *a, const bf_t *b, limb_t prec, bf_flags_t flags);
@@ -341,12 +341,12 @@ int bf_mul_pow_radix(bf_t *r, const bf_t *T, limb_t radix,
 /* fractional format: prec digits after the decimal point rounded with
    (flags & BF_RND_MASK) */
 #define BF_FTOA_FORMAT_FRAC  (1 << 16)
-/* free format: 
-   
+/* free format:
+
    For binary radices with bf_ftoa() and for bfdec_ftoa(): use the minimum
    number of digits to represent 'a'. The precision and the rounding
    mode are ignored.
-   
+
    For the non binary radices with bf_ftoa(): use as many digits as
    necessary so that bf_atof() return the same number when using
    precision 'prec', rounding to nearest and the subnormal
@@ -373,7 +373,7 @@ char *bf_ftoa(size_t *plen, const bf_t *a, int radix, limb_t prec,
               bf_flags_t flags);
 
 /* modulo 2^n instead of saturation. NaN and infinity return 0 */
-#define BF_GET_INT_MOD (1 << 0) 
+#define BF_GET_INT_MOD (1 << 0)
 int bf_get_int32(int *pres, const bf_t *a, int flags);
 int bf_get_int64(int64_t *pres, const bf_t *a, int flags);
 int bf_get_uint64(uint64_t *pres, const bf_t *a);
@@ -387,10 +387,10 @@ int bf_normalize_and_round(bf_t *r, limb_t prec1, bf_flags_t flags);
 int bf_can_round(const bf_t *a, slimb_t prec, bf_rnd_t rnd_mode, slimb_t k);
 slimb_t bf_mul_log2_radix(slimb_t a1, unsigned int radix, int is_inv,
                           int is_ceil1);
-int mp_mul(bf_context_t *s, limb_t *result, 
-           const limb_t *op1, limb_t op1_size, 
+int mp_mul(bf_context_t *s, limb_t *result,
+           const limb_t *op1, limb_t op1_size,
            const limb_t *op2, limb_t op2_size);
-limb_t mp_add(limb_t *res, const limb_t *op1, const limb_t *op2, 
+limb_t mp_add(limb_t *res, const limb_t *op1, const limb_t *op2,
               limb_t n, limb_t carry);
 limb_t mp_add_ui(limb_t *tab, limb_t b, size_t n);
 int mp_sqrtrem(bf_context_t *s, limb_t *tabs, limb_t *taba, limb_t n);

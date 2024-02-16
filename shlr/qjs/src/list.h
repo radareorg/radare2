@@ -1,6 +1,6 @@
 /*
  * Linux klist like system
- * 
+ *
  * Copyright (c) 2016-2017 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,8 +36,7 @@ struct list_head {
 #define LIST_HEAD_INIT(el) { &(el), &(el) }
 
 /* return the pointer of type 'type *' containing 'el' as field 'member' */
-#define list_entry(el, type, member) \
-    ((type *)((uint8_t *)(el) - offsetof(type, member)))
+#define list_entry(el, type, member) container_of(el, type, member)
 
 static inline void init_list_head(struct list_head *head)
 {
@@ -45,13 +44,8 @@ static inline void init_list_head(struct list_head *head)
     head->next = head;
 }
 
-static inline int list_empty(const struct list_head *el)
-{
-    return el->next == el;
-}
-
 /* insert 'el' between 'prev' and 'next' */
-static inline void __list_add(struct list_head *el, 
+static inline void __list_add(struct list_head *el,
                               struct list_head *prev, struct list_head *next)
 {
     prev->next = el;
@@ -72,20 +66,6 @@ static inline void list_add_tail(struct list_head *el, struct list_head *head)
     __list_add(el, head->prev, head);
 }
 
-static inline void list_splice(const struct list_head *list,
-                               struct list_head *head)
-{
-    if (!list_empty(list)) {
-        struct list_head *a = list->next;
-        struct list_head *b = list->prev;
-        struct list_head *c = head->next;
-        head->next = a;
-        a->prev = head;
-        b->next = c;
-        c->prev = b;
-    }
-}
-
 static inline void list_del(struct list_head *el)
 {
     struct list_head *prev, *next;
@@ -95,6 +75,11 @@ static inline void list_del(struct list_head *el)
     next->prev = prev;
     el->prev = NULL; /* fail safe */
     el->next = NULL; /* fail safe */
+}
+
+static inline int list_empty(struct list_head *el)
+{
+    return el->next == el;
 }
 
 #define list_for_each(el, head) \

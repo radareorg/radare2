@@ -128,3 +128,7 @@ $(QJS_NAME):
 
 o:
 	make clean && make && make user-install
+
+sync:
+	git clone --depth=1 https://github.com/bellard/quickjs
+	cd src && for a in *.h *.c ; do cp ../quickjs/$$a . ; done
