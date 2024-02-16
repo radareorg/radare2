@@ -645,12 +645,12 @@ static RCoreHelpMessage help_msg_afl = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
 	"afl.", "", "display function in current offset (see afi.)",
+	"afl,", " [query]", "list functions in table format",
 	"afl+", "", "display sum all function sizes",
 	"afl=", "", "display ascii-art bars with function ranges",
 	"afla", "", "reverse call order (useful for afna and noret, also see afba)",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
-	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "[?]", "list functions in makefile style (af@@=`aflm~0x`)",
@@ -658,6 +658,12 @@ static RCoreHelpMessage help_msg_afl = {
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
 	"aflx", "[?*jv]", "list function xrefs (who references or calls the current function)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_aflt = {
+	"Usage:", "afl,", " List functions in table format",
+	"afl,", "[query]", "list functions",
 	NULL
 };
 
@@ -5397,10 +5403,19 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'l': // "afll"
 			if (input[3] == '?') {
 				r_core_cmd_help (core, help_msg_afll);
-				break;
+			} else {
+				r_core_anal_fcn_list (core, NULL, input + 2);
 			}
-			/* fallthrough */
+			break;
 		case ',': // "afl,"
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_aflt);
+				r_core_cmd0 (core, "is,:help");
+			} else {
+				r_core_anal_fcn_list (core, NULL, input + 2);
+			}
+			break;
+			/* fallthrough */
 		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"
