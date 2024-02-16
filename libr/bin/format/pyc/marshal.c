@@ -359,7 +359,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 	} else {
 		n2 = get_st32 (buffer, &error);
 	}
-	if (error) {
+	if (error || n2 < 1) {
 		return NULL;
 	}
 	ut8 *s2 = malloc (n2 + 1);
