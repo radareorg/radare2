@@ -111,7 +111,7 @@ static bool r_debug_winkd_attach(RDebug *dbg, int pid) {
 	if (!desc || !desc->plugin || !desc->plugin->meta.name || !desc->data) {
 		return false;
 	}
-	if (r_str_startswith (desc->plugin->meta.name, "winkd")) {
+	if (!r_str_startswith (desc->plugin->meta.name, "winkd")) {
 		return false;
 	}
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
