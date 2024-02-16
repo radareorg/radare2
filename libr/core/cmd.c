@@ -4937,9 +4937,11 @@ next_arroba:
 					r_config_set_i (core->config, tovars[i], to);
 				}
 				tmpseek = true;
-				// may not work well for search commands XXX
+#if 0
+				// TODO may not work well for search commands XXX
 				r_core_seek (core, from, true);
 				r_core_block_size (core, to - from);
+#endif
 			}
 			if (usemyblock) {
 				if (addr_is_set) {
