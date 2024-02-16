@@ -1210,7 +1210,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
 		ptr->paddr = section->paddr + bf->bo->boffset + paddr;
-		ptr->vaddr = K_PPTR (section->vaddr) + 0x1c;
+		ptr->vaddr = K_PPTR (section->vaddr);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
