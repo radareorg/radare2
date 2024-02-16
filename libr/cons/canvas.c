@@ -351,6 +351,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (os);
 }
 
+R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y) {
+	r_cons_canvas_gotoxy (c, x, y);
+	r_cons_canvas_write (c, s);
+}
+
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
 	if (color) {
 		free (c->bgcolor);
