@@ -4513,6 +4513,12 @@ R_API RBinPEObj* PE_(r_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
 	pe->b = r_buf_ref (buf);
 	pe->verbose = verbose;
 	pe->size = r_buf_size (buf);
+	// buffer can be a lot larger so we might overflow
+	if (pe->size < 0) {
+		// in that case just clamp it
+		// it's unlikely that whole buffer is just PE alone
+		pe->size = INT_MAX;
+	}
 	if (!bin_pe_init (pe)) {
 		return PE_(r_bin_pe_free)(pe);
 	}

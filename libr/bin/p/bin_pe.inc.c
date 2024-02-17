@@ -569,7 +569,12 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->type = strdup (typestr);
 
 	ut32 claimed_checksum = PE_(bin_pe_get_claimed_checksum) (pe);
-	ut32 actual_checksum = PE_(bin_pe_get_actual_checksum) (pe);
+	if (pe->size < 0x40000000 /* 1 GiB */) {
+		ut32 actual_checksum = PE_(bin_pe_get_actual_checksum) (pe);
+		ret->actual_checksum = r_str_newf ("0x%08x", actual_checksum);
+	} else {
+		R_LOG_WARN("Skipping calculating actual checksum because too large file (1+ GiB)");
+	}
 
 	ut32 pe_overlay = sdb_num_get (bf->sdb, "pe_overlay.size", 0);
 	ret->bits = PE_(r_bin_pe_get_bits) (pe);
@@ -580,7 +585,6 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_nx = haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = r_str_newf ("0x%08x", claimed_checksum);
-	ret->actual_checksum = r_str_newf ("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = pe? pe->is_signed: false;
 	ret->file_hashes = r_list_newf ((RListFree)r_bin_file_hash_free);
