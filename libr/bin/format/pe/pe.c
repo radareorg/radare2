@@ -3012,6 +3012,15 @@ static int read_image_resource_data_entry(RBuffer *b, ut64 addr, Pe_image_resour
 	return sizeof (Pe_image_resource_data_entry);
 }
 
+static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
+	/* We assume they're both POSIX timestamp and thus the higher bits would be equal if they're close to each other */
+	if ((certainPosixTimeStamp >> 16) == (possiblePosixOrDosTimeStamp >> 16)) {
+		return false;
+	}
+	return true;
+}
+
+
 static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, const char *resource_name) {
 	char *resourceEntryName = NULL;
 	int index = 0;
@@ -3131,7 +3140,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
-		if (r_time_stamp_is_dos_format ((ut32) sdb_num_get (pe->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
+		if (is_dos_time ((ut32) sdb_num_get (pe->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
 			rs->timestr = r_time_stamp_to_str ( r_time_dos_time_stamp_to_posix (dir->TimeDateStamp));
 		} else {
 			rs->timestr = r_time_stamp_to_str (dir->TimeDateStamp);
