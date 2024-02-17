@@ -131,4 +131,4 @@ o:
 
 sync:
 	git clone --depth=1 https://github.com/bellard/quickjs
-	cd src && for a in *.h *.c ; do cp ../quickjs/$$a . ; done
+	cd src && for a in VERSION *.h *.c ; do cp ../quickjs/$$a . ; done
