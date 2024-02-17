@@ -78,7 +78,7 @@ static bool r2k__close(RIODesc *fd) {
 
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (!whence) ? offset : whence == 1
-		? io->off + offset : UT64_MAX;
+		? io->off + offset : UT64_MAX - 1;
 }
 
 static bool r2k__plugin_open(RIO *io, const char *pathname, bool many) {

@@ -597,7 +597,7 @@ static ut64 windbg_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		io->off += (st64)offset;
 		break;
 	case R_IO_SEEK_END:
-		io->off = UT64_MAX;
+		io->off = UT64_MAX - 1; // UT64_MAX reserved for error case
 		break;
 	}
 	return io->off;
