@@ -224,17 +224,19 @@ static int get_time_correction(void) {
 }
 
 R_API int r_time_beats(ut64 ts, int *sub) {
-	if (sub) {
-		// R_WARN_LOG ("sub-beats not implemented yet");
-	}
 	ut64 seconds = ts / (1000 * 1000);
 	int time_correction = get_time_correction ();
 	seconds -= time_correction;
-	seconds %= 86400;
-	ut64 beats = (ut64)((seconds / 86.4) * 100) / 100;
-	if (beats >= 1000) {
-		return (int) R_ABS (beats - 1000);
-	}
-	return beats;
-}
+	seconds %= 86400; // Resets every 24 hours
 
+	double beats = (double)seconds / 86.4; // Compute beats with fractional part
+	if (sub) {
+		*sub = (int)((beats - (int)beats) * 1000); // Calculate sub-beats
+	}
+	int final_beats = (int)beats; // Cast to int to get the whole beats
+
+	if (final_beats >= 1000) {
+		final_beats = R_ABS (final_beats - 1000);
+	}
+	return final_beats;
+}

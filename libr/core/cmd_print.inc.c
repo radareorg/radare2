@@ -8224,8 +8224,8 @@ static int cmd_print(void *data, const char *input) {
 			}
 			for (l = 0; l < len; l += sizeof (ut64)) {
 				ut64 ts = r_read_le64 (block + l);
-				int beats = r_time_beats (ts, NULL);
-				r_cons_printf ("@%03d\n", beats);
+				int sb, beats = r_time_beats (ts, &sb);
+				r_cons_printf ("@%03d.%d\n", beats, sb);
 			}
 			break;
 		case 'd': // "ptd"
