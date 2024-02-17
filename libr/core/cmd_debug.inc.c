@@ -5394,8 +5394,9 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		bool use_beat = strstr (input, "-b");
 		if (use_beat) {
-			int beats = r_time_beats (r_time_now (), NULL);
-			r_cons_printf ("@%03d\n", beats);
+			int sub_beats = 0;
+			int beats = r_time_beats (r_time_now (), &sub_beats);
+			r_cons_printf ("@%03d.%d\n", beats, sub_beats);
 		} else {
 			char *nostr = r_time_stamp_to_str (time (0));
 			r_cons_println (nostr);
