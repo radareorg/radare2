@@ -78,7 +78,7 @@ static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 	case R_IO_SEEK_SET:
 		return treebuf->seek = offset;
 	case R_IO_SEEK_END:
-		return treebuf->seek = UT64_MAX;
+		return treebuf->seek = UT64_MAX - 1;
 	case R_IO_SEEK_CUR:
 		return treebuf->seek = R_MAX (treebuf->seek, treebuf->seek + offset);
 	}

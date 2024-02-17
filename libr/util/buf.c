@@ -276,13 +276,13 @@ R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	if (!r_buf_resize (b, 0)) {
 		return false;
 	}
-	if (r_buf_seek (b, 0, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
 		return false;
 	}
 	if (!r_buf_append_bytes (b, buf, length)) {
 		return false;
 	}
-	return r_buf_seek (b, 0, R_BUF_SET) >= 0;
+	return r_buf_seek (b, 0, R_BUF_SET) != -1;
 }
 
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -307,7 +307,7 @@ R_API char *r_buf_tostring(RBuffer *b) {
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	r_return_val_if_fail (b && buf && !b->readonly, false);
 
-	if (r_buf_seek (b, 0, R_BUF_END) < 0) {
+	if (r_buf_seek (b, 0, R_BUF_END) == -1) {
 		return false;
 	}
 	return r_buf_write (b, buf, length) >= 0;
@@ -327,12 +327,12 @@ R_API bool r_buf_append_nbytes(RBuffer *b, ut64 length) {
 R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length) {
 	r_return_val_if_fail (b && !b->readonly, -1);
 	st64 pos, r = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r < 0) {
+	if (r == -1) {
 		return r;
 	}
 	pos = r;
 	r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		goto restore_pos;
 	}
 
@@ -347,7 +347,7 @@ R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length
 		goto free_tmp;
 	}
 	r = r_buf_seek (b, addr + length, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		goto free_tmp;
 	}
 	r = r_buf_write (b, tmp, tmp_length);
@@ -355,7 +355,7 @@ R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length
 		goto free_tmp;
 	}
 	r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		goto free_tmp;
 	}
 	r = r_buf_write (b, buf, length);
@@ -581,7 +581,7 @@ R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	r_return_val_if_fail (b && buf && fmt, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		return r;
 	}
 	r = r_buf_fread (b, buf, fmt, n);
@@ -602,7 +602,7 @@ R_API st64 r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fm
 	r_return_val_if_fail (b && buf && fmt && !b->readonly, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		return r;
 	}
 	r = r_buf_fwrite (b, buf, fmt, n);
@@ -614,7 +614,7 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		return r;
 	}
 	r = r_buf_read (b, buf, len);
@@ -626,7 +626,7 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf && !b->readonly, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
-	if (r < 0) {
+	if (r == -1) {
 		return r;
 	}
 	r = r_buf_write (b, buf, len);

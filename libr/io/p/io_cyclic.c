@@ -9,7 +9,7 @@ R_IPI ut64 cyclic_seek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 	switch (whence) {
 	case 0: offset %= mal->cycle; break;
 	case 1: offset += mal->offset; offset %= mal->cycle; break;
-	case 2: return UT64_MAX; break;
+	case 2: return UT64_MAX - 1; break;
 	}
 	return io_memory_lseek (io, desc, offset, whence);
 }

@@ -80,8 +80,12 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		}
 		break;
 	case SEEK_END:
-		io->off = ((int)shm->size > 0) ? shm->size : UT64_MAX;
-		io->off += (int)offset;
+		if ((int)shm->size > 0) {
+			io->off = shm->size + (int)offset;
+		} else {
+			// UT64_MAX means error
+			io->off = UT64_MAX - 1;
+		}
 		break;
 	}
 	return io->off;
