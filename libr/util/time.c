@@ -22,6 +22,11 @@ R_API ut64 r_time_now(void) {
 	return ret;
 }
 
+// amount of seconds since 1970, affected by timezone
+R_API ut64 r_time_today(void) {
+	return time (0);
+}
+
 R_API ut64 r_time_now_mono(void) {
 #if R2__WINDOWS__
 	LARGE_INTEGER f;
@@ -50,7 +55,6 @@ R_API ut64 r_time_now_mono(void) {
 #endif
 }
 
-// R_API R_MUSTUSE char *r_time_stamp_to_str(time_t ts) {
 R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
 #if R2__WINDOWS__
 	time_t rawtime = (time_t)ts;
@@ -79,8 +83,8 @@ R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
 #endif
 }
 
-//R_API ut64 r_time_dos_time_stamp_to_posix(ut32 ts) {
-R_API ut64 r_time_from_dos(ut32 ts) {
+// TODO: honor timezone instead of depending on mktime
+R_API ut64 r_time_dos_today(ut32 ts, R_UNUSED int tz) {
 	ut16 date = ts >> 16;
 	ut16 time = ts & 0xFFFF;
 
@@ -124,7 +128,15 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, size_t len) {
 }
 #endif
 
-R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
+R_API ut64 r_time_hfs_today(ut32 hfsts, int tz) {
+	const ut32 hfs_unix_delta = 2082844800;
+	ut64 t = hfsts;
+	t += tz * 60 * 60;
+	t += hfs_unix_delta;
+	return t;
+}
+
+R_DEPRECATED R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	const int hfs_unix_delta = 2082844800;
 	int ret = 0;
 
@@ -141,7 +153,19 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
+R_API ut64 r_time_unix_today(ut32 unxts, int tz) {
+	return unxts + (tz * 60 * 60);
+}
+
+R_API ut64 r_time_w32_today(ut64 ts, int tz) {
+	ut64 t = ts;
+	const ut64 L = 0x2b6109100LL;
+	t /= 10000000; // 100ns to s
+	t = (t > L ? t - L : 0); // isValidUnixTime?
+	return t + (tz * 60 * 60);
+}
+
+R_DEPRECATED R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	int ret = 0;
 
 	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
@@ -160,7 +184,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
+R_DEPRECATED R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	const ut64 L = 0x2b6109100LL;
 	int ret = 0;
 
@@ -179,7 +203,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API char *r_time_usec_tostring(ut64 ts) {
+R_API R_MUSTUSE char *r_time_usecs_tostring(ut64 ts) {
 	time_t l = ts >> 20;
 	return r_time_secs_tostring (l);
 }
@@ -210,7 +234,6 @@ R_API int r_time_beats(ut64 ts, int *sub) {
 		*sub = (int)((beats - (int)beats) * 1000); // Calculate sub-beats
 	}
 	int final_beats = (int)beats; // Cast to int to get the whole beats
-
 	if (final_beats >= 1000) {
 		final_beats = R_ABS (final_beats - 1000);
 	}

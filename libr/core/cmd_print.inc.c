@@ -8185,13 +8185,14 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '.': // "pt." same as "date"
 			{
-				char *nostr = r_time_stamp_to_str (time (0));
+				char *nostr = r_time_secs_tostring (r_time_today ());
 				r_cons_println (nostr);
 				free (nostr);
 			}
 			break;
 		case ' ':
 		case '\0':
+#if 0
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				R_LOG_WARN ("You should change the block size: b %d", (int) sizeof (ut32));
@@ -8202,18 +8203,47 @@ static int cmd_print(void *data, const char *input) {
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_unix (core->print, block + l, sizeof (ut32));
 			}
+#else
+			if (len < sizeof (ut32)) {
+				R_LOG_WARN ("You should change the block size: b %d", (int) sizeof (ut32));
+			} else {
+				RPrint *p = core->print;
+				const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
+				for (l = 0; l + sizeof (ut32) <= len; l += sizeof (ut32)) {
+					ut32 hnxts = r_read_ble32 (block + l, be);
+					ut64 ts = r_time_unix_today (hnxts, p->datezone);
+					char *s = r_time_secs_tostring (ts);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+#endif
 			break;
 		case 'h': // "pth"
+#if 1
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
+			if (len < sizeof (ut32)) {
+				R_LOG_WARN ("We need at least 4 bytes");
+			} else {
+				RPrint *p = core->print;
+				const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
+				for (l = 0; l + sizeof (ut32) <= len; l += sizeof (ut32)) {
+					ut32 hfsts = r_read_ble32 (block + l, be);
+					ut64 ts = r_time_hfs_today (hfsts, p->datezone);
+					char *s = r_time_secs_tostring (ts);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+#else
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut32));
 			}
-			if (len % sizeof (ut32)) {
-				len = len - (len % sizeof (ut32));
-			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_hfs (core->print, block + l, sizeof (ut32));
 			}
+#endif
 			break;
 		case 'b': // "ptb"
 			if (len < sizeof (ut32)) {
