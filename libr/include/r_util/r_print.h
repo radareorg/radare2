@@ -254,10 +254,17 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 
 // time
+#if R2_600
 R_DEPRECATED R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len);
 R_DEPRECATED R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len);
 R_DEPRECATED R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_DEPRECATED R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
+#else
+R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len);
+R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len);
+R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
+R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
+#endif
 
 R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);

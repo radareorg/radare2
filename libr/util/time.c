@@ -111,14 +111,14 @@ R_API ut64 r_time_dos_today(ut32 ts, R_UNUSED int tz) {
 	return (ut64) mktime (&t);
 }
 
-#if 0
-R_API int r_print_date_dos(RPrint *p, const ut8 *buf, size_t len) {
+// R_DEPRECATED
+R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	if (len < 4) {
 		return 0;
 	}
 	// just r_read_le32
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
-	char *s = r_time_secs_tostring (r_time_from_dos (dt));
+	char *s = r_time_secs_tostring (r_time_dos_today (dt, p->datezone));
 	if (!s) {
 		return 0;
 	}
@@ -126,7 +126,6 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, size_t len) {
 	free (s);
 	return 4;
 }
-#endif
 
 R_API ut64 r_time_hfs_today(ut32 hfsts, int tz) {
 	const ut32 hfs_unix_delta = 2082844800;
@@ -136,7 +135,8 @@ R_API ut64 r_time_hfs_today(ut32 hfsts, int tz) {
 	return t;
 }
 
-R_DEPRECATED R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
+// R_DEPRECATED
+R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	const int hfs_unix_delta = 2082844800;
 	int ret = 0;
 
@@ -165,7 +165,8 @@ R_API ut64 r_time_w32_today(ut64 ts, int tz) {
 	return t + (tz * 60 * 60);
 }
 
-R_DEPRECATED R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
+// R_DEPRECATED
+R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	int ret = 0;
 
 	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
@@ -184,7 +185,8 @@ R_DEPRECATED R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_DEPRECATED R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
+// R_DEPRECATED
+R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	const ut64 L = 0x2b6109100LL;
 	int ret = 0;
 
