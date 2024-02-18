@@ -124,7 +124,7 @@ static int windbg_stop(RDebug *dbg) {
 
 static bool do_break = false;
 
-static void __break(void *user) {
+static void break_action(void *user) {
 	RDebug *dbg = (RDebug *)user;
 	DbgEngContext *idbg = dbg->user;
 	if (__is_target_kernel (idbg)) {
@@ -137,7 +137,7 @@ static RDebugReasonType windbg_wait(RDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
-	r_cons_break_push (__break, dbg);
+	r_cons_break_push (break_action, dbg);
 	const ULONG timeout = __is_target_kernel (idbg) ? INFINITE : TIMEOUT;
 	HRESULT hr;
 	while ((hr = ITHISCALL (dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {

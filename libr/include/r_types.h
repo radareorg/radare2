@@ -602,7 +602,11 @@ static inline void *r_new_copy(int size, void *data) {
 # endif
 #else
 #ifdef _MSC_VER
-#ifdef _WIN64
+#if defined(_M_ARM64)
+#define R_SYS_ARCH "arm"
+#define R_SYS_BITS R_SYS_BITS_64
+#define R_SYS_ENDIAN 0
+#elif defined(_WIN64)
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 0
