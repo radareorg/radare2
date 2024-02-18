@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -81,11 +81,11 @@ static void screenlock(RCore *core) {
 	do {
 		r_cons_clear00 ();
 		r_cons_printf ("Retries: %d\n", tries);
-		char *begstr = r_time_tostring (begin);
+		char *begstr = r_time_usecs_tostring (begin);
 		r_cons_printf ("Locked ts: %s\n", begstr);
 		free (begstr);
 		if (last != UT64_MAX) {
-			char *endstr = r_time_tostring (last);
+			char *endstr = r_time_usecs_tostring (last);
 			r_cons_printf ("Last try: %s\n", endstr);
 			free (endstr);
 		}
