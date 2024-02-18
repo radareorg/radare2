@@ -1,6 +1,6 @@
 /*
  * C utilities
- * 
+ *
  * Copyright (c) 2017 Fabrice Bellard
  * Copyright (c) 2018 Charlie Gordon
  *
@@ -172,7 +172,7 @@ int __attribute__((format(printf, 2, 3))) dbuf_printf(DynBuf *s,
     va_list ap;
     char buf[128];
     int len;
-    
+
     va_start(ap, fmt);
     len = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
@@ -297,7 +297,7 @@ int unicode_from_utf8(const uint8_t *p, int max_len, const uint8_t **pp)
             return -1;
         c = (c << 6) | (b & 0x3f);
     }
-    if (c < (int)utf8_min_code[l - 1])
+    if (c < utf8_min_code[l - 1])
         return -1;
     *pp = p;
     return c;
