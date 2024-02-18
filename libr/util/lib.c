@@ -381,7 +381,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		r_list_append (lib->plugins, p);
 		const char *fileName = r_str_rstr (file, R_SYS_DIR);
 		if (fileName) {
-			ht_pp_insert (lib->plugins_ht, strdup (fileName), p);
+			ht_pp_insert (lib->plugins_ht, strdup (fileName + 1), p);
 		}
 	}
 	return ret;
