@@ -1961,6 +1961,20 @@ static ut32 stg (ArmOp *op) {
 	return data;
 }
 
+static ut32 gmi (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		return data;
+	}
+
+	data = 0x00c09a;
+	data |= (5 & 63) << 18;
+	data |= encode3regs (op);
+
+	return data;
+}
+
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = { 0 };
 	if (!parseOpcode (str, &ops)) {
@@ -2096,6 +2110,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = subg (&ops);
 	} else if (r_str_startswith (str, "stg")) {
 		*op = stg (&ops);
+	} else if (r_str_startswith (str, "gmi")) {
+		*op = gmi (&ops);
 	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
