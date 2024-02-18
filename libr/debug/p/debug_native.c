@@ -1498,7 +1498,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		// no hw bps afaik
 		return false;
 #else
+#ifdef _MSC_VER
+#pragma message ( "r_debug_native_bp not implemented for this platform" )
+#else
 #warning r_debug_native_bp not implemented for this platform
+#endif
 #endif
 	}
 	return false;
