@@ -146,7 +146,7 @@ static void r2pm_register(const char *pkg, bool g) {
 	if (f) {
 		RStrBuf *sb = r_strbuf_new ("");
 		r_strbuf_appendf (sb, "Global: %s\n", r_str_bool (g));
-		char *s = r_time_secs_tostring (time (0));
+		char *s = r_time_secs_tostring (r_time_today ());
 		r_strbuf_appendf (sb, "InstallationDate: %s\n", s);
 		free (s);
 		char *ss = r_strbuf_drain (sb);
