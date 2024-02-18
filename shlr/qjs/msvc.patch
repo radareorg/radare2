@@ -1,0 +1,28 @@
+diff --git a/shlr/qjs/src/libregexp.c b/shlr/qjs/src/libregexp.c
+index 5f5ba371cb..3c6e76d3df 100644
+--- a/shlr/qjs/src/libregexp.c
++++ b/shlr/qjs/src/libregexp.c
+@@ -31,6 +31,10 @@
+ #include "cutils.h"
+ #include "libregexp.h"
+ 
++#if defined(_MSC_VER)
++#include <malloc.h>
++#endif
++
+ /*
+   TODO:
+ 
+diff --git a/shlr/qjs/src/quickjs.c b/shlr/qjs/src/quickjs.c
+index c3714b44d2..a4ffb56590 100644
+--- a/shlr/qjs/src/quickjs.c
++++ b/shlr/qjs/src/quickjs.c
+@@ -43,6 +43,8 @@
+ #elif defined(__FreeBSD__)
+ #include <malloc_np.h>
+ #include <sys/time.h>
++#elif defined(_MSC_VER)
++#include <malloc.h>
+ #endif
+ 
+ #include "cutils.h"
