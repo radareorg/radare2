@@ -4446,12 +4446,16 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	R_FREE (eo->symbols_by_ord);
 	eo->symbols_by_ord_size = nsym + 1;
 	eo->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
+	if (ret_ctr > ii->import_ret_ctr + nsym) {
+		return NULL;
+	}
 
 	RVecRBinElfSymbol *imports = NULL; // ii->ret;
 	if (!imports) {
 		imports = RVecRBinElfSymbol_new ();
 	}
 	const int import_ret_ctr = ii->import_ret_ctr + nsym - ret_ctr;
+	eprintf ("%d %d %d\n", ii->import_ret_ctr, nsym, ret_ctr);
 	if (!imports || !RVecRBinElfSymbol_reserve (imports, import_ret_ctr)) {
 		R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
 		_symbol_memory_free (&ii->memory);
