@@ -435,6 +435,7 @@ R_API bool r_reg_ro_reset(RReg *reg, const char *arg) {
 				res = false;
 			}
 		}
+		r_list_free (roregs);
 	}
 	return res;
 }
