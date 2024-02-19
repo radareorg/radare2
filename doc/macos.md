@@ -12,7 +12,7 @@ $ sys/install.sh
 
 ## Common Issues
 
-### Arm64e targets
+### Arm64e debug targets
 
 When running radare2 on arm64e processors, it is necessary to build radare2 for this specific architecture, because it is required to work with the pointer authentication stuff. To do this you'll need to:
 
