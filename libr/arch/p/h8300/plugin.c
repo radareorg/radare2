@@ -536,7 +536,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
-	if (len < 1) {
+	if (len < 2) {
 		return false;
 	}
 
@@ -727,9 +727,19 @@ static char* regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	return 0;
+	switch (q) {
+	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 2;
 }
-
 
 const RArchPlugin r_arch_plugin_h8300 = {
 	.meta = {
