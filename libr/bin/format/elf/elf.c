@@ -4446,6 +4446,9 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	R_FREE (eo->symbols_by_ord);
 	eo->symbols_by_ord_size = nsym + 1;
 	eo->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
+	if (ret_ctr > ii->import_ret_ctr + nsym) {
+		return NULL;
+	}
 
 	RVecRBinElfSymbol *imports = NULL; // ii->ret;
 	if (!imports) {
