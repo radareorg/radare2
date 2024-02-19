@@ -122,7 +122,8 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
-	if (!reg->regset[type2].regs) {
+	if (!reg->regset[type2].regs || reg->regset[type2].regs->length == 0) {
+		r_list_free(reg->regset[type2].regs);
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	r_ref (item);
