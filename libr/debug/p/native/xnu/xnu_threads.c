@@ -271,6 +271,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 
 	if (rc == KERN_SUCCESS) {
 		ut32 count = thread->count;
+	    kern_return_t rc;
 		rc = xnu_convert_thread_state (
 			thread->port,
 			THREAD_CONVERT_THREAD_STATE_TO_SELF,
@@ -281,8 +282,10 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 			R_LOG_WARN ("failed to convert %d", rc);
 		}
 #if  __arm64e__
-		if (dbg->bits == R_SYS_BITS_64) {
-			arm_thread_state64_ptrauth_strip (regs->ts_64);
+		else {
+			if (dbg->bits == R_SYS_BITS_64) {
+				arm_thread_state64_ptrauth_strip (regs->ts_64);
+			}
 		}
 #endif
 	}
