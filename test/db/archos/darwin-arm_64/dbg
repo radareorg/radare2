@@ -1,5 +1,5 @@
 NAME=dbg step
-FILE=bins/mach0/hello-macos-arm64-chained
+FILE=bins/mach0/hello-macos-arm64-chained-dbg
 BROKEN=1 # because not repeatable if stepping on jump
 ARGS=-d
 CMDS=<<EOF
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=dbg set register
-FILE=bins/mach0/hello-macos-arm64-chained
+FILE=bins/mach0/hello-macos-arm64-chained-dbg
 ARGS=-d
 CMDS=<<EOF
 dr x6=0x69
