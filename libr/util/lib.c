@@ -185,6 +185,7 @@ R_API void r_lib_free(RLib *lib) {
 		r_lib_close (lib, NULL);
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
+		ht_pp_free(lib->plugins_ht);
 		free (lib->symname);
 		free (lib->symnamefunc);
 		free (lib);
