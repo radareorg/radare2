@@ -2,7 +2,7 @@
 
 #include "sdb/buffer.h"
 
-void buffer_init(buffer *s, BufferOp op, int fd, char *buf, ut32 len) {
+void buffer_initialize(buffer *s, BufferOp op, int fd, char *buf, ut32 len) {
 	s->x = buf;
 	s->fd = fd;
 	s->op = op;
