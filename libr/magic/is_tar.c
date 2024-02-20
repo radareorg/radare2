@@ -122,7 +122,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 	return 1;			/* Old fashioned tar archive */
 }
 
-int file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
+int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	/*
 	 * Do the tar test first, because if the first file in the tar
 	 * archive starts with a dot, we can confuse it with an nroff file.
@@ -136,7 +136,7 @@ int file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	if (mime == R_MAGIC_MIME_ENCODING) {
 		return 0;
 	}
-	if (file_printf (ms, mime ? "application/x-tar" : tartype[tar - 1]) == -1) {
+	if (__magic_file_printf (ms, mime ? "application/x-tar" : tartype[tar - 1]) == -1) {
 		return -1;
 	}
 	return 1;
