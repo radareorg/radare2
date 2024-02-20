@@ -120,8 +120,8 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_set_state (thread->port, thread->flavor,
-				       (thread_state_t)&thread->debug.drx64,
-				       thread->count);
+						(thread_state_t)&thread->debug.drx64,
+						thread->count);
 	} else {
 		thread->count = ARM_DEBUG_STATE32_COUNT;
 		thread->flavor = ARM_DEBUG_STATE32;
@@ -132,11 +132,9 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 #elif __arm__ || __arm || __armv7__
 	thread->count = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
-	mach_msg_type_number_t count;
 	rc = thread_set_state (thread->port, thread->flavor,
-			       (thread_state_t)&thread->debug.drx,
-				&count);
-	thread->count = count;
+					(thread_state_t)&thread->debug.drx,
+					thread->count);
 #elif __POWERPC__
 /* not supported */
 # ifndef PPC_DEBUG_STATE32
