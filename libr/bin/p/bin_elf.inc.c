@@ -67,8 +67,7 @@ static void destroy(RBinFile *bf) {
 		for (i = 0; i < eo->imports_by_ord_size; i++) {
 			RBinImport *imp = eo->imports_by_ord[i];
 			if (imp) {
-				free (imp->name);
-				free (imp);
+				r_bin_import_free (eo->imports_by_ord[i]);
 				eo->imports_by_ord[i] = NULL;
 			}
 		}
