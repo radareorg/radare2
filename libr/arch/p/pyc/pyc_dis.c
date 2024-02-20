@@ -1,8 +1,9 @@
-/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3, pancake */
+/* radare - LGPL3 - Copyright 2016-2024 - c0riolis, x0urc3, pancake */
 
 #include "pyc_dis.h"
 
-static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
+#define CMP_OP_SIZE 12
+static const char *cmp_op[CMP_OP_SIZE] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
 
@@ -139,6 +140,9 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		return NULL;
 	}
 	if (op->type & HASCOMPARE) {
+		if (oparg < 0 || oparg >= CMP_OP_SIZE) {
+			return NULL;
+		}
 		arg = r_str_new (cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
@@ -182,11 +186,13 @@ static char *generic_array_obj_tostring(RList *l) {
 	}
 
 	char *buf = r_strbuf_get (rbuf);
-
-	/* remove last , */
-	buf[strlen (buf) - 1] = '\0';
-	char *r = r_str_newf ("(%s)", buf);
-
+	if (*buf) {
+		/* remove last , */
+		buf[strlen (buf) - 1] = '\0';
+		char *r = r_str_newf ("(%s)", buf);
+		r_strbuf_free (rbuf);
+		return r;
+	}
 	r_strbuf_free (rbuf);
-	return r;
+	return NULL;
 }
