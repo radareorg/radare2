@@ -631,7 +631,7 @@ RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 		__darwin_arm_thread_state64_get_pc (state.ts_64) : state.ts_32.__pc
 #elif __arm__ || __arm
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
-		__darwin_arm_thread_state64_get_pc (state.ts_64) : state.ts_32.__pc
+		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define CPU_PC state.srr0
 #elif __x86_64__ || __i386__
