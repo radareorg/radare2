@@ -92,14 +92,14 @@ static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	ms->o.buf = buf;
 	return 0;
 out:
-	file_error (ms, errno, "vasprintf failed");
+	__magic_file_error (ms, errno, "vasprintf failed");
 	return -1;
 }
 
 /*
  * Like printf, only we append to a buffer.
  */
-int file_printf(RMagic *ms, const char *fmt, ...) {
+int __magic_file_printf(RMagic *ms, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 
@@ -113,7 +113,7 @@ int file_printf(RMagic *ms, const char *fmt, ...) {
  * error - print best error message possible
  */
 /*VARARGS*/
-static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
+static void __magic_file_error_core(RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
 	/* Only the first error is ok */
 	if (!ms || ms->haderr) {
 		return;
@@ -121,12 +121,12 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 	if (lineno != 0) {
 		free (ms->o.buf);
 		ms->o.buf = NULL;
-		(void)file_printf (ms, "line %u: ", lineno);
+		(void)__magic_file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
 	file_vprintf (ms, f, va);
 	if (error > 0) {
-		(void)file_printf (ms, " (%s)", strerror (error));
+		(void)__magic_file_printf (ms, " (%s)", strerror (error));
 	}
 	ms->haderr++;
 	ms->error = error;
@@ -134,10 +134,10 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 
 /*VARARGS*/
 // XXX deprecate and just use R_LOG
-void file_error(RMagic *ms, int error, const char *f, ...) {
+void __magic_file_error(RMagic *ms, int error, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
-	file_error_core (ms, error, f, va, 0);
+	__magic_file_error_core (ms, error, f, va, 0);
 	va_end (va);
 }
 
@@ -145,26 +145,26 @@ void file_error(RMagic *ms, int error, const char *f, ...) {
  * Print an error with magic line number.
  */
 /*VARARGS*/
-void file_magerror(RMagic *ms, const char *f, ...) {
+void __magic_file_magerror(RMagic *ms, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
-	file_error_core (ms, 0, f, va, ms->line);
+	__magic_file_error_core (ms, 0, f, va, ms->line);
 	va_end (va);
 }
 
-void file_oomem(RMagic *ms, size_t len) {
-	file_error (ms, errno, "cannot allocate %u bytes", (unsigned int)len);
+void __magic_file_oomem(RMagic *ms, size_t len) {
+	__magic_file_error (ms, errno, "cannot allocate %u bytes", (unsigned int)len);
 }
 
-void file_badseek(RMagic *ms) {
-	file_error (ms, errno, "error seeking");
+void __magic_file_badseek(RMagic *ms) {
+	__magic_file_error (ms, errno, "error seeking");
 }
 
-void file_badread(RMagic *ms) {
-	file_error (ms, errno, "error reading");
+void __magic_file_badread(RMagic *ms) {
+	__magic_file_error (ms, errno, "error reading");
 }
 
-int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
+int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
 	int mime, m = 0;
 	if (!ms) {
 		return -1;
@@ -172,13 +172,13 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 	mime = ms->flags & R_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-			file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
+			__magic_file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
 			return -1;
 		}
 		return 1;
 	} else if (nb == 1) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-			file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
+			__magic_file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
 			return -1;
 		}
 		return 1;
@@ -187,21 +187,21 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 #if 0
 	/* try compression stuff */
 	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
-	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
+	    (m = __magic_file_zmagic(ms, fd, inname, buf, nb)) == 0) {
 #endif
 	    /* Check if we have a tar file */
 	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
-		(m = file_is_tar(ms, buf, nb)) == 0) {
+		(m = __magic_file_is_tar(ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
-		    (m = file_softmagic(ms, buf, nb, BINTEST)) == 0) {
+		    (m = __magic_file_softmagic(ms, buf, nb, BINTEST)) == 0) {
 		    /* try known keywords, check whether it is ASCII */
 		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0 ||
-			(m = file_ascmagic(ms, buf, nb)) == 0) {
+			(m = __magic_file_ascmagic(ms, buf, nb)) == 0) {
 			/* abandon hope, all ye who remain here */
 			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
 		//		if (mime)
-					file_printf (ms, "application/octet-stream");
+					__magic_file_printf (ms, "application/octet-stream");
 				return -1;
 			}
 			m = 1;
@@ -214,7 +214,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 	return m;
 }
 
-int file_reset(RMagic *ms) {
+int __magic_file_reset(RMagic *ms) {
 	if (!ms) {
 		return 0;
 	}
@@ -238,7 +238,7 @@ int file_reset(RMagic *ms) {
 	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
 	(o)++)
 
-const char *file_getbuffer(RMagic *ms) {
+const char *__magic_file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
 	size_t psize, len;
 
@@ -258,12 +258,12 @@ const char *file_getbuffer(RMagic *ms) {
 	/* * 4 is for octal representation, + 1 is for NUL */
 	len = strlen (ms->o.buf);
 	if (len > (SIZE_MAX - 1) / 4) {
-		file_oomem (ms, len);
+		__magic_file_oomem (ms, len);
 		return NULL;
 	}
 	psize = len * 4 + 1;
 	if (!(pbuf = realloc (ms->o.pbuf, psize))) {
-		file_oomem (ms, psize);
+		__magic_file_oomem (ms, psize);
 		return NULL;
 	}
 	ms->o.pbuf = pbuf;
@@ -320,13 +320,13 @@ const char *file_getbuffer(RMagic *ms) {
 	return ms->o.pbuf;
 }
 
-int file_check_mem(RMagic *ms, unsigned int level) {
+int __magic_file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
 		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
 		ms->c.li = (!ms->c.li) ? malloc (len) :
 		    realloc (ms->c.li, len);
 		if (!ms->c.li) {
-			file_oomem (ms, len);
+			__magic_file_oomem (ms, len);
 			return -1;
 		}
 	}
