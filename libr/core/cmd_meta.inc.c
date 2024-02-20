@@ -974,6 +974,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					r_search_begin (ss);
 					r_search_update (ss, addr, buf, range);
 					r_search_free (ss);
+					free (buf);
 				} else {
 					R_LOG_ERROR ("Cannot allocate");
 				}
