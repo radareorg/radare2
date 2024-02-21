@@ -117,7 +117,8 @@ extern "C" {
 typedef enum {
 	R_TH_FREED = -1,
 	R_TH_STOP = 0,
-	R_TH_REPEAT = 1
+	R_TH_REPEAT = 1,
+	R_TH_PAUSE = 2
 } RThreadFunctionRet;
 
 struct r_th_t;
