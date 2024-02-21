@@ -29,9 +29,10 @@ static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
 static void *_r_th_launcher(void *_th) {
 #endif
-	int ret = R_TH_REPEAT;
+	int ret = 0;
+	bool repeat = true;
 	RThread *th = _th;
-	while (ret == R_TH_REPEAT && !th->breaked) {
+	do {
 		while (!th->ready) {
 			// spinlock
 #ifdef	__GNUC__
@@ -50,17 +51,25 @@ static void *_r_th_launcher(void *_th) {
 			th->delay = 0;
 		}
 		ret = th->fun (th);
-		if (ret < 0) {
+		switch (ret) {
+		case R_TH_STOP:
+			repeat = false;
+		case R_TH_PAUSE:
 			th->ready = false;
+		case R_TH_REPEAT:
 			r_th_lock_leave (th->lock);
+			break;
+		case R_TH_FREED:
+		default:
+			th->ready = false;
 			th->running = false;
+			r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 			pthread_exit (&ret);
 #endif
 			return 0;
 		}
-		r_th_lock_leave (th->lock);
-	}
+	} while (repeat && !th->breaked);
 	th->running = false;
 #if HAVE_PTHREAD
 	pthread_exit (&ret);
