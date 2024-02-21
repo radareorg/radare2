@@ -1,3 +1,5 @@
+/* radare - LGPL3 - Copyright 2016-2024 - c0riolis, x0urc3, pancake */
+
 #include "opcode.h"
 
 static version_opcode version_op[] = {

@@ -10,7 +10,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
-	st64 start_offset, end_offset;
+	st64 start_offset = 0, end_offset = 0;
 	RListIter *iter = NULL;
 
 	if (cobjs) {
@@ -18,29 +18,34 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 			start_offset = t->start_offset;
 			end_offset = t->end_offset;
 			// pc in [start_offset, end_offset)
-			if (start_offset <= pc && pc < end_offset) {
+			// if (start_offset <= pc && pc < end_offset)
+			if (R_BETWEEN (start_offset, pc, end_offset - 1)) {
 				cobj = t;
 				break;
 			}
 		}
 	}
 
-	/* TODO: adding line number and offset */
-	RList *varnames = cobj? cobj->varnames->data: NULL;
-	RList *consts = cobj?cobj->consts->data: NULL;
-	RList *names = cobj?cobj->names->data: NULL;
-	RList *freevars = cobj?cobj->freevars->data: NULL;
-	RList *cellvars = cobj? cobj->cellvars->data: NULL;
+	if (!cobj) {
+		return 0;
+	}
 
-	ut8 op = code[i];
-	i++;
+	ut8 op = code[i++];
+
 	char *name = strdup (ops->opcodes[op].op_name);
 	if (!name) {
 		return 0;
 	}
-	r_str_case (name, 0);
-	opstruct->mnemonic = strdup (name);
-	free (name);
+	r_str_case (name, false);
+	opstruct->mnemonic = name;
+
+	/* TODO: adding line number and offset */
+	RList *varnames = R_UNWRAP3 (cobj, varnames, data);
+	RList *consts = R_UNWRAP3 (cobj, consts, data);
+	RList *names = R_UNWRAP3 (cobj, names, data);
+	RList *freevars = R_UNWRAP3 (cobj, freevars, data);
+	RList *cellvars = R_UNWRAP3 (cobj, cellvars, data);
+
 	if (op >= ops->have_argument) {
 		if (ops->bits == 16) {
 			oparg = code[i] + code[i + 1] * 256 + extended_arg;
@@ -69,7 +74,6 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	} else if (ops->bits == 8) {
 		i += 1;
 	}
-
 	return i;
 }
 
@@ -100,7 +104,9 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		case TYPE_CODE_v0:
 		case TYPE_CODE_v1:
 			tmp_cobj = t->data;
-			arg = r_str_newf ("CodeObject(%s) from %s", (char *)tmp_cobj->name->data, (char *)tmp_cobj->filename->data);
+			arg = r_str_newf ("CodeObject(%s) from %s",
+				(const char *)tmp_cobj->name->data,
+				(const char *)tmp_cobj->filename->data);
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SET:
@@ -150,7 +156,6 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 			arg = r_str_newf ("%u", oparg);
 			return arg;
 		}
-
 		if (oparg < r_list_length (cellvars)) {
 			t = (pyc_object *)r_list_get_n (cellvars, oparg);
 		} else if ((oparg - r_list_length (cellvars)) < r_list_length (freevars)) {
@@ -161,16 +166,11 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		if (!t) {
 			return NULL;
 		}
-
 		arg = r_str_new (t->data);
 	}
-	if (op->type & HASNARGS) {
+	if (op->type & (HASVARGS | HASNARGS)) {
 		arg = r_str_newf ("%u", oparg);
 	}
-	if (op->type & HASVARGS) {
-		arg = r_str_newf ("%u", oparg);
-	}
-
 	return arg;
 }
 
