@@ -356,6 +356,8 @@ dB "cmpp sp, x13" ff03cdba
 ad "stg x13, [x3], 0" 6d0420d9
 ad "stg x13, [x3, 0x10]" 6d1820d9
 ad "stg x13, [x3, 0x10]!" 6d1c20d9
+ad "stg sp, [sp, 0x20]" ff2b20d9
+ad "stg x9 [x9]" 290920d9
 ad "stzgm x12, [x0]" 0c0020d9
 ad "ldg x13, [x3, 0x10]" 6d1060d9
 ad "ldg x13, [x3]" 6d0060d9
