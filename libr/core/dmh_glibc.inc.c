@@ -214,13 +214,30 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 	return version;
 }
 
+static const char* GH(get_libc_filename_from_maps)(RCore *core) {
+	RListIter *iter;
+	RDebugMap *map = NULL;
+
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps, NULL);
+	r_debug_map_sync (core->dbg);
+
+	// Search for binary in memory maps named *libc-* or *libc.*  *libc6_* or similiar
+	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (r_str_startswith (core->bin->file, map->name)) {
+			continue;
+		}
+		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name))
+			break;
+	}
+	return map->file;
+}
+
+
 static bool GH(resolve_glibc_version)(RCore *core) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
 	double version = 0;
-	RDebugMap *map;
-	RListIter *iter;
-	bool found_glibc_map = false;
 
 	if (core->dbg->glibc_version_resolved) {
 		return true;
@@ -246,27 +263,14 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		}
 	}
 
-	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
-	r_debug_map_sync (core->dbg);
+	const char *libc_filename = GH(get_libc_filename_from_maps) (core);
 
-	// Search for binary in memory maps named *libc-* or *libc.*
-	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (r_str_startswith (core->bin->file, map->name)) {
-			continue;
-		}
-		if (r_regex_match (".*libc[.-]", "e", map->name)) {
-			found_glibc_map = true;
-			break;
-		}
-	}
-	// TODO: handle static binaries
-	if (!found_glibc_map) {
+	if (!libc_filename) {
 		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
 		return false;
 	}
 	// At this point we found a map in memory that _should_ be libc
-	version = GH (get_glibc_version) (core, map->file);
+	version = GH (get_glibc_version) (core, libc_filename);
 	if (version != 0)	{
 		core->dbg->glibc_version = (int) round ((version * 100));
 		core->dbg->glibc_version_d = version;
