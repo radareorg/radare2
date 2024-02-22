@@ -1955,9 +1955,59 @@ static ut32 subg (ArmOp *op) {
 	return data;
 }
 
-static ut32 stg (ArmOp *op) {
+static ut32 subp (ArmOp *op) {
 	ut32 data = UT32_MAX;
 
+	if (!is_valid_mte (op)) {
+		return data;
+	}
+
+	data = 0x00d09a;
+	data |= encode3regs (op);
+
+	return data;
+}
+
+static ut32 stg (ArmOp *op) {
+	if (!is_valid_mte (op)) {
+		return UT32_MAX;
+	}
+
+	ut32 data = 0x0020d9;
+	data |= encode2regs (op);
+	data |= encodeImm9 (op->operands[2].immediate) << 12;
+
+	// the major difference here is in the opcode used for each mode, so set it here
+	if (op->operands[2].preindex) {
+		if (op->writeback) {
+			R_LOG ("pre-index");
+			data |= 0x0c0000;
+		} else {
+			R_LOG ("signed offset");
+			data |= 0x080000;
+		}
+	} else {
+		R_LOG ("post-index");
+		data |= 0x040000;
+	}
+
+	return data;
+}
+
+static ut32 stzg (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		return data;
+	}
+
+	data = 0x0060d9;
+
+	// detect address encoding style
+	// check if it is either pre or post indexed
+	if (op->operands[2].preindex) {
+		R_LOG ("Pre-indexed store op");
+	}
 	return data;
 }
 
@@ -2061,7 +2111,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (!strncmp (str, "ldp", 3)) {
 		*op = stp (&ops, 0x000040a9);
-	} else if (!strncmp (str, "sub", 3) && strncmp (str, "subg", 4)) { // w, skip this for subg ins
+	} else if (!strncmp (str, "sub", 3) && strncmp (str, "subg", 4) && strncmp (str, "subp", 4)) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
 	} else if (!strncmp (str, "madd x", 6)) {
 		*op = math (&ops, 0x9b, true);
@@ -2110,8 +2160,12 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = subg (&ops);
 	} else if (r_str_startswith (str, "stg")) {
 		*op = stg (&ops);
+	} else if (r_str_startswith (str, "stzg")) {
+		*op = stzg (&ops);
 	} else if (r_str_startswith (str, "gmi")) {
 		*op = gmi (&ops);
+	} else if (r_str_startswith (str, "subp")) {
+		*op = subp (&ops);
 	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
