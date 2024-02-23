@@ -809,7 +809,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_reloff = ds->show_reloff_to != 0; // r_config_get_i (core->config, "asm.offset.rel");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_b (core->config, "asm.comments");
-	ds->show_usercomments = r_config_get_b (core->config, "asm.usercomments");
+	ds->show_usercomments = r_config_get_b (core->config, "asm.cmt.user");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_call_indirect = r_config_get_i (core->config, "asm.hint.call.indirect");
