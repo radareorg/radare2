@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - GustavoLCR */
+/* radare - LGPL - Copyright 2020-2024 - GustavoLCR */
 
 #define INITGUID
 #include <r_core.h>
@@ -517,7 +517,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		const char *store = io->coreb.cfgGet (core, "pdb.symstore");
 		const char *server = io->coreb.cfgGet (core, "pdb.server");
 		char *s = strdup (server);
-		r_str_replace_ch (s, ';', '*', true);
+		r_str_replace_ch (s, ' ', '*', true);
 		char *sympath = r_str_newf ("cache*;srv*%s*%s", store, s);
 		ITHISCALL (dbgSymbols, SetSymbolPath, sympath);
 		free (s);

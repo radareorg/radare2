@@ -3430,7 +3430,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.times", "", &cb_cmdtimes, "run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "microsoft-symbol-server/6.11.0001.402", "User agent for Microsoft symbol server");
-	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
+	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Space separated list of base URLs for Microsoft symbol servers");
 	{
 		char *pdb_path = r_xdg_datadir ("pdb");
 		SETPREF ("pdb.symstore", pdb_path, "path to downstream symbol store"); // XXX rename to dir.pdb
