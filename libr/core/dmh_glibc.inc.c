@@ -110,7 +110,7 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, path, &opt)) {
-		R_LOG_ERROR ("section_content: r_bin_open failed on path %s", path);
+		R_LOG_ERROR ("get_section_content: r_bin_open failed on path %s", path);
 		return content;
 	}
 
@@ -129,21 +129,21 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	}
 
 	if (!found_section) {
-		R_LOG_WARN ("section_content: section %s not found", section_name);
+		R_LOG_WARN ("get_section_content: section %s not found", section_name);
 		goto cleanup_exit;
 	}
 
 	// eprintf ("get_section_bytes: section found: %s content.size: %#08x  paddr: %#08x\n", section_name, content.size, paddr);
 	content.buf = calloc (content.size, 1);
 	if (!content.buf) {
-		R_LOG_ERROR ("section_content: calloc failed");
+		R_LOG_ERROR ("get_section_content: calloc failed");
 		goto cleanup_exit;
 	}
 
 	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
 
 	if (read_size != content.size) {
-		R_LOG_ERROR ("section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		R_LOG_ERROR ("get_section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
 		free (content.buf);
 		content.buf = NULL;
 	}
