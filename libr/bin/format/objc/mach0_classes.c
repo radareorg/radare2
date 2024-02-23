@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2024 - inisider, pancake */
 
 #define R_LOG_ORIGIN "bin"
 
@@ -1725,7 +1725,7 @@ static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
 	if (ms->data) {
 		return ms->data;
 	}
-	void *data = calloc (ms->size, 1);
+	void *data = calloc (ms->size + 4, 1);
 	if (data) {
 		// align size and addr
 		if (ms->addr % 4) {
