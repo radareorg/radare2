@@ -1626,7 +1626,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
 					char *str = strdup (r_config_get (core->config, "pdb.server"));
-					RList *server_l = r_str_split_list (str, ";", 0);
+					RList *server_l = r_str_split_list (str, " ", 0);
 					RListIter *it;
 					char *server;
 					int r = 1;
