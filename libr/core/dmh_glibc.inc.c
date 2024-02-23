@@ -215,22 +215,23 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 }
 
 static const char* GH(get_libc_filename_from_maps)(RCore *core) {
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps && core->bin && core->bin->file, NULL);
 	RListIter *iter;
 	RDebugMap *map = NULL;
 
-	r_return_val_if_fail (core && core->dbg && core->dbg->maps, NULL);
 	r_debug_map_sync (core->dbg);
 
 	// Search for binary in memory maps named *libc-* or *libc.*  *libc6_* or similiar
 	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if (r_str_startswith (core->bin->file, map->name)) {
+		if (!map->name || r_str_startswith (core->bin->file, map->name)) {
 			continue;
 		}
-		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name))
-			break;
+		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name)) {
+			return map->file;
+		}
 	}
-	return map->file;
+	return NULL;
 }
 
 
