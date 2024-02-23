@@ -3611,17 +3611,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.bytes.opcolor", "false", "colorize bytes depending on opcode size + variant information");
 	SETI ("asm.types", 1, "display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETBPREF ("asm.midcursor", "false", "cursor in visual disasm mode breaks the instruction");
-	SETBPREF ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
-	SETBPREF ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
-	SETBPREF ("asm.cmt.esil", "false", "show ESIL expressions as comments");
-	SETI ("asm.cmt.col", 71, "column to align comments");
 	SETICB ("asm.codealign", 0, &cb_asm_codealign, "only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
 	SETBPREF ("asm.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view");
-	SETBPREF ("asm.cmt.token", ";", "token to use before printing a comment");
 	// R2-590 - rename to asm.cmt.user
-	SETBPREF ("asm.usercomments", "false", "show user comments even if asm.comments is false");
 	SETBPREF ("asm.sub.jmp", "true", "always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "show jump hints [numbers] in disasm");
@@ -3733,7 +3727,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.sub.varonly", "true", "substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF ("asm.sub.reg", "false", "substitute register names with their associated role name (drp~=)");
 	SETBPREF ("asm.sub.rel", "true", "substitute pc relative expressions in disasm");
-	SETBPREF ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "show symbol+delta instead of absolute offset");
 	SETBPREF ("asm.anal", "false", "analyze code and refs while disassembling (see anal.strings)");
@@ -3767,9 +3760,16 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.describe", "false", "show opcode description");
 	SETPREF ("asm.highlight", "", "highlight current line");
 	SETBPREF ("asm.marks", "true", "show marks before the disassembly");
+	SETBPREF ("asm.cmt.user", "false", "show user comments even if asm.comments is false");
 	SETBPREF ("asm.cmt.refs", "false", "show flag and comments from refs in disasm");
 	SETBPREF ("asm.cmt.patch", "false", "show patch comments in disasm");
 	SETBPREF ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
+	SETBPREF ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
+	SETBPREF ("asm.cmt.token", ";", "token to use before printing a comment");
+	SETBPREF ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
+	SETBPREF ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
+	SETBPREF ("asm.cmt.esil", "false", "show ESIL expressions as comments");
+	SETI ("asm.cmt.col", 71, "column to align comments");
 	SETBPREF ("asm.payloads", "false", "show payload bytes in disasm");
 
 	/* bin */
