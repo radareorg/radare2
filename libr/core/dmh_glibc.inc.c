@@ -110,7 +110,7 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, path, &opt)) {
-		R_LOG_ERROR ("section_content: r_bin_open failed on path %s", path);
+		R_LOG_ERROR ("get_section_content: r_bin_open failed on path %s", path);
 		return content;
 	}
 
@@ -129,21 +129,21 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	}
 
 	if (!found_section) {
-		R_LOG_WARN ("section_content: section %s not found", section_name);
+		R_LOG_WARN ("get_section_content: section %s not found", section_name);
 		goto cleanup_exit;
 	}
 
 	// eprintf ("get_section_bytes: section found: %s content.size: %#08x  paddr: %#08x\n", section_name, content.size, paddr);
 	content.buf = calloc (content.size, 1);
 	if (!content.buf) {
-		R_LOG_ERROR ("section_content: calloc failed");
+		R_LOG_ERROR ("get_section_content: calloc failed");
 		goto cleanup_exit;
 	}
 
 	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
 
 	if (read_size != content.size) {
-		R_LOG_ERROR ("section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		R_LOG_ERROR ("get_section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
 		free (content.buf);
 		content.buf = NULL;
 	}
@@ -214,13 +214,31 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 	return version;
 }
 
+static const char* GH(get_libc_filename_from_maps)(RCore *core) {
+	r_return_val_if_fail (core && core->dbg && core->dbg->maps && core->bin && core->bin->file, NULL);
+	RListIter *iter;
+	RDebugMap *map = NULL;
+
+	r_debug_map_sync (core->dbg);
+
+	// Search for binary in memory maps named *libc-* or *libc.*  *libc6_* or similiar
+	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (!map->name || r_str_startswith (core->bin->file, map->name)) {
+			continue;
+		}
+		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name)) {
+			return map->file;
+		}
+	}
+	return NULL;
+}
+
+
 static bool GH(resolve_glibc_version)(RCore *core) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
 	double version = 0;
-	RDebugMap *map;
-	RListIter *iter;
-	bool found_glibc_map = false;
 
 	if (core->dbg->glibc_version_resolved) {
 		return true;
@@ -246,27 +264,14 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		}
 	}
 
-	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
-	r_debug_map_sync (core->dbg);
+	const char *libc_filename = GH(get_libc_filename_from_maps) (core);
 
-	// Search for binary in memory maps named *libc-* or *libc.*
-	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (r_str_startswith (core->bin->file, map->name)) {
-			continue;
-		}
-		if (r_regex_match (".*libc[.-]", "e", map->name)) {
-			found_glibc_map = true;
-			break;
-		}
-	}
-	// TODO: handle static binaries
-	if (!found_glibc_map) {
+	if (!libc_filename) {
 		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
 		return false;
 	}
 	// At this point we found a map in memory that _should_ be libc
-	version = GH (get_glibc_version) (core, map->file);
+	version = GH (get_glibc_version) (core, libc_filename);
 	if (version != 0)	{
 		core->dbg->glibc_version = (int) round ((version * 100));
 		core->dbg->glibc_version_d = version;
