@@ -904,7 +904,6 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	cobj->code = get_object (buffer, 0);
 	cobj->end_offset = r_buf_tell (buffer);
 
-	eprintf ("get const\n");
 	cobj->consts = get_object (buffer, 0);
 	cobj->names = get_object (buffer, 0);
 
