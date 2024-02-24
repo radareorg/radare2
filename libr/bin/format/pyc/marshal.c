@@ -486,11 +486,7 @@ static pyc_object *get_interned_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
-	pyc_object *tmp = NULL;
-	pyc_object *ret = NULL;
-	ut32 i = 0;
-
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -499,8 +495,9 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 		free (ret);
 		return NULL;
 	}
+	ut32 i;
 	for (i = 0; i < size; i++) {
-		tmp = get_object (buffer);
+		pyc_object *tmp = get_object (buffer, 0);
 		if (!tmp || !r_list_append (ret->data, tmp)) {
 			free_object (tmp);
 			((RList*)ret->data)->free = NULL;
@@ -514,15 +511,12 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 
 /* small TYPE_SMALL_TUPLE doesn't exist in python2 */
 static pyc_object *get_small_tuple_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
-	ut8 n = 0;
-
-	n = get_ut8 (buffer, &error);
+	ut8 n = get_ut8 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
-	ret = get_array_object_generic (buffer, n);
+	pyc_object *ret = get_array_object_generic (buffer, n);
 	if (ret) {
 		ret->type = TYPE_SMALL_TUPLE;
 		return ret;
@@ -580,7 +574,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 		return NULL;
 	}
 	for (;;) {
-		key = get_object (buffer);
+		key = get_object (buffer, 0);
 		if (!key) {
 			break;
 		}
@@ -590,7 +584,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 			free_object (key);
 			return NULL;
 		}
-		val = get_object (buffer);
+		val = get_object (buffer, 0);
 		if (!val) {
 			break;
 		}
@@ -921,7 +915,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	}
 
 	if (!(v10_to_12 || v13_to_20)) {
-		cobj->freevars = get_object (buffer, 0 );
+		cobj->freevars = get_object (buffer, 0);
 		cobj->cellvars = get_object (buffer, 0);
 	} else {
 		cobj->freevars = NULL;
@@ -965,16 +959,13 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 	magic_int = magic;
 	pyc_object *co = get_code_object (buffer);
-	ut64 result = 0;
-	if (!co) {
-		return 0;
+	if (co) {
+		pyc_code_object *cobj = co->data;
+		ut64 result = cobj->start_offset;
+		free_object (co);
+		return result;
 	}
-
-	pyc_code_object *cobj = co->data;
-	result = cobj->start_offset;
-	free_object (co);
-
-	return result;
+	return 0;
 }
 
 static pyc_object *get_object(RBuffer *buffer, int wanted_type) {
@@ -995,7 +986,13 @@ static pyc_object *get_object(RBuffer *buffer, int wanted_type) {
 			ref_idx = r_list_append (refs, noneret);
 		}
 	}
-	eprintf ("type %d %d\n", wanted_type, type);
+	if (wanted_type != 0) {
+		R_LOG_DEBUG ("type %d %d", wanted_type, type);
+		if (wanted_type != type) {
+			R_LOG_WARN ("Unexpected object type");
+			return NULL;
+		}
+	}
 
 	switch (type) {
 	case TYPE_NULL:
