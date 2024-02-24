@@ -240,6 +240,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		}
 		free (buf);
 	}
+	r_list_free (secs);
 }
 
 static RList* entries(RBinFile *bf) {
@@ -1022,6 +1023,7 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			break;
 		}
 	}
+	r_list_free (secs);
 }
 
 static bool has_sanitizers(RBinFile *bf) {
@@ -1198,6 +1200,7 @@ static ut64 size(RBinFile *bf) {
 				len = section->size;
 			}
 		}
+		r_list_free (secs);
 	}
 	return off + len;
 }
