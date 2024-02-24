@@ -6,7 +6,7 @@ CMDS=<<EOF
 e asm.functions = false
 e asm.flags = false
 e asm.comments = false
-e asm.calls = false
+e asm.cmt.calls = false
 aaa
 s sym.parse__IO_FILE__
 pif~?
@@ -23,7 +23,7 @@ CMDS=<<EOF
 e asm.functions = false
 e asm.flags = false
 e asm.comments = false
-e asm.calls = false
+e asm.cmt.calls = false
 aaa
 pif~?
 EOF
