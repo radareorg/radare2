@@ -1157,7 +1157,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	symbol->size = cobj->end_offset - cobj->start_offset;
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
-	symbol->ordinal = Gcount++;
+	symbol->ordinal = Gscount++;
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail2;
 	}
