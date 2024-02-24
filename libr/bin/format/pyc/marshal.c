@@ -1126,13 +1126,14 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	if_true_return (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED, false);
 	if_true_return (!cobj->name->data, false);
 	if_true_return (!cobj->consts, false);
+	RBinSymbol *symbol = NULL;
 
 	// add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
 		goto fail;
 	}
 	RBinSection *section = R_NEW0 (RBinSection);
-	RBinSymbol *symbol = R_NEW0 (RBinSymbol);
+	symbol = R_NEW0 (RBinSymbol);
 	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix || !section || !symbol) {
