@@ -1,5 +1,3 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
-
 #ifndef PYC_DIS_H
 #define PYC_DIS_H
 
