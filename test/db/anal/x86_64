@@ -1905,7 +1905,7 @@ RUN
 NAME=afva for cdecl/stdcall with no esp vars
 FILE=bins/elf/analysis/fast
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 aa
 s sym.nonfastcaslled
 afc
@@ -1962,7 +1962,7 @@ CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
 e anal.arch = x86
-e asm.calls=false
+e asm.cmt.calls=false
 wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
 aa
 afvn new_1 old_1

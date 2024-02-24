@@ -161,7 +161,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e asm.calls=false
+e asm.cmt.calls=false
 "wa push ebp;mov ebp,esp;pop ebp;ret"
 af
 agf

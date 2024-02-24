@@ -197,7 +197,7 @@ e asm.nbytes=0
 e asm.comments=false
 e asm.flags=false
 e asm.lines.fcn=false
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.functions=false
 e scr.color=false
 f-rip

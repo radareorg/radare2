@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 #include <r_types_base.h>
@@ -3613,9 +3613,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.midcursor", "false", "cursor in visual disasm mode breaks the instruction");
 	SETICB ("asm.codealign", 0, &cb_asm_codealign, "only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
-	SETBPREF ("asm.calls", "true", "show callee function related info as comments in disasm");
-	SETBPREF ("asm.comments", "true", "show comments in disassembly view");
-	// R2-590 - rename to asm.cmt.user
 	SETBPREF ("asm.sub.jmp", "true", "always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "disable all asm.hint* if false");
 	SETBPREF ("asm.hint.jmp", "false", "show jump hints [numbers] in disasm");
@@ -3760,6 +3757,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.describe", "false", "show opcode description");
 	SETPREF ("asm.highlight", "", "highlight current line");
 	SETBPREF ("asm.marks", "true", "show marks before the disassembly");
+	SETBPREF ("asm.comments", "true", "show comments in disassembly view (see 'e asm.cmt.')");
+	SETBPREF ("asm.cmt.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.cmt.user", "false", "show user comments even if asm.comments is false");
 	SETBPREF ("asm.cmt.refs", "false", "show flag and comments from refs in disasm");
 	SETBPREF ("asm.cmt.patch", "false", "show patch comments in disasm");

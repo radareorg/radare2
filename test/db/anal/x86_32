@@ -3207,7 +3207,7 @@ RUN
 NAME=reflines offset
 FILE=malloc://1023
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.cpu=x86
 e asm.arch=x86
@@ -3271,7 +3271,7 @@ RUN
 NAME=reflines offset (ascii)
 FILE=malloc://1023
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.cpu=x86
 e anal.cpu=x86
@@ -3354,7 +3354,7 @@ e asm.bits=32
 e asm.arch = x86
 e anal.arch = x86
 e anal.vars.stackname=true
-e asm.calls=false
+e asm.cmt.calls=false
 wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
 e asm.bits=32
 e asm.comments=false

@@ -50,7 +50,7 @@ NAME=ib
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e bin.baddr=0
-e asm.calls=false
+e asm.cmt.calls=false
 ib
 op 3
 e io.va=0
@@ -305,7 +305,7 @@ RUN
 NAME=ib java class file
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.comments=false
 e asm.cmt.flgrefs=false
 e scr.color=false
