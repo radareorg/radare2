@@ -651,7 +651,7 @@ static int r_io_internal_read(RIODscObject * dsc, ut64 off_global, ut8 *buf, int
 
 static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence) {
 	if (!dsc || offset == UT64_MAX) {
-		return UT64_MAX - 1;
+		return UT64_MAX;
 	}
 
 	ut64 off_global;
@@ -667,7 +667,7 @@ static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int wh
 			off_global = dsc->total_size + offset;
 			break;
 		default:
-			return UT64_MAX - 1;
+			return UT64_MAX;
 	}
 
 	RIODscSlice * slice = r_io_dsc_object_get_slice(dsc, off_global);
@@ -676,13 +676,13 @@ static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int wh
 			io->off = dsc->total_size;
 			return io->off;
 		}
-		return UT64_MAX - 1;
+		return UT64_MAX;
 	}
 
 	ut64 off_local = off_global - slice->start;
 	off_local = lseek (slice->fd, off_local, SEEK_SET);
 	if (off_local == UT64_MAX) {
-		return UT64_MAX - 1;
+		return UT64_MAX;
 	}
 
 	io->off = off_local + slice->start;
