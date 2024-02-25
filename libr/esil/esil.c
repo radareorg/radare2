@@ -201,6 +201,7 @@ R_API void r_esil_free(REsil *esil) {
 	free (esil->cmd_step);
 	free (esil->cmd_step_out);
 	free (esil->cmd_ioer);
+	free (esil->mdev_range);
 	free (esil);
 }
 
