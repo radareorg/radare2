@@ -990,8 +990,10 @@ print_insn32_fpu (bfd_vma pc ATTRIBUTE_UNUSED, disassemble_info *info,
 	      rt, gpr_map[ra], gpr_map[rb], sv);
       return;
     case 0x4:			/* fs2 */
-      func (stream, "%s\t$fs%d, $fs%d, $fs%d",
-	    mnemonic_fs2_cmp[mask_sub_op], rt, ra, rb);
+      {
+	    const char *fs2cmp = mask_sub_op < 10? mnemonic_fs2_cmp[mask_sub_op]: "fs2cmp?";
+	    func (stream, "%s\t$fs%d, $fs%d, $fs%d", fs2cmp, rt, ra, rb);
+      }
       return;
     case 0x9:			/* mtcp */
       switch (mask_sub_op)
