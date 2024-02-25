@@ -6303,6 +6303,8 @@ static int cmd_print(void *data, const char *input) {
 						free (fmt);
 					}
 					free (offs);
+				}
+			}
 #else
 		core->offset = off;
 		// "pd--" // context disasm
@@ -6317,7 +6319,6 @@ static int cmd_print(void *data, const char *input) {
 					fmt = r_str_newf ("d %"PFMT64d, -1 * off);
 				} else {
 					fmt = r_str_newf ("d %s", input + 2);
-#endif
 				}
 				if (fmt) {
 					cmd_print (core, fmt);
@@ -6327,6 +6328,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				free (offs);
 			}
+#endif
 			ret = 0;
 			goto beach;
 		}
