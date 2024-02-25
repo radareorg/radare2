@@ -1397,7 +1397,7 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 R_API void r_bin_field_free(void *_field) {
 	RBinField *field = (RBinField*) _field;
 	if (field) {
-		free (field->name);
+		r_bin_name_free (field->name);
 		free (field->comment);
 		free (field->format);
 		free (field);
