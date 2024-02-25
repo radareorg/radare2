@@ -6917,7 +6917,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
-
 			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &addr)) {
 				nbytes = old_offset - addr;
 			} else if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
@@ -6940,7 +6939,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
 			} else {
 				if (nb_bytes > 0) {
-					memset (buf, 0xff, nb_bytes);
+					memset (buf, core->io->Oxff, nb_bytes);
 				}
 			}
 		} else {

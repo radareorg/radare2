@@ -487,7 +487,6 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	// if (n > core->blocksize) n = core->blocksize;
-	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
 	const int addrbytes = core->io->addrbytes;
@@ -496,8 +495,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	if (!hits) {
 		return NULL;
 	}
-
-	len = R_MIN (len - len % addrbytes, addrbytes * addr);
+	len = R_MIN (len - (len % addrbytes), addrbytes * addr);
 	if (len < 1) {
 		r_list_free (hits);
 		return NULL;
@@ -511,7 +509,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		free (buf);
 		return NULL;
 	}
-	if (!r_io_read_at (core->io, addr - len / addrbytes, buf, len)) {
+	if (!r_io_read_at (core->io, addr - (len / addrbytes), buf, len)) {
 		r_list_free (hits);
 		free (buf);
 		return NULL;
@@ -538,7 +536,9 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 			break;
 		}
 	}
-	at = addr - idx / addrbytes;
+
+	ut64 at = addr - idx / addrbytes;
+
 	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
 		RAnalOp op;
