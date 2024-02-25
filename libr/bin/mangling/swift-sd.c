@@ -298,11 +298,13 @@ static char *my_swift_demangler(const char *s) {
 	// workaround with tests, need proper testing when format is clarified
 	if (trick) {
 		if (!isdigit (p[1])) {
+			r_strbuf_free (out);
 			return NULL;
 		}
 		if (p[1] && p[2]) {
 			int len = atoi (p + 1);
 			if (len > strlen (p + 2)) {
+				r_strbuf_free (out);
 				return NULL;
 			}
 		}
