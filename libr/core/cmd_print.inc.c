@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -8367,7 +8367,9 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	}
 beach:
-	free (block);
+	if (myblock) {
+		free (block);
+	}
 	if (tmpseek != UT64_MAX && tmpseek != core->offset) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 		r_core_block_read (core);
