@@ -6312,10 +6312,10 @@ static int cmd_print(void *data, const char *input) {
 			l = use_blocksize;
 		}
 		// may be unnecessary, fixes 'pd 1;pdj 100;pd 1' bug
-#if 1
+#if 0
 		core->offset = at; // "pd" doesnt know about the current offset for pd -X
-		r_core_block_read (core);
 #endif
+		r_core_block_read (core);
 
 		switch (input[1]) {
 		case 'C': // "pdC"
