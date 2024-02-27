@@ -2045,6 +2045,24 @@ static ut32 gmi (ArmOp *op) {
 	return data;
 }
 
+static ut32 ldg (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		R_LOG_ERROR ("Not a valid ARMv8.5 instruction");
+		return data;
+	}
+
+	data = 0x0060d9;
+	data |= encode2regs (op);
+
+	if (op->operands_count == 3) {
+		data |= encodeImm9 (op->operands[2].immediate) << 12;
+	}
+
+	return data;
+}
+
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = { 0 };
 	if (!parseOpcode (str, &ops)) {
@@ -2192,6 +2210,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = gmi (&ops);
 	} else if (r_str_startswith (str, "subp")) {
 		*op = subp (&ops);
+	} else if (r_str_startswith (str, "ldg")) {
+		*op = ldg (&ops);
 	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
