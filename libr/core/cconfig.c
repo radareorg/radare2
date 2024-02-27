@@ -3891,7 +3891,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
 
 	/* log */
-	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
+	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_log_config_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
 	SETCB ("log.ts", "false", cb_log_config_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_log_config_traplevel, "Log level for trapping R2 when hit");

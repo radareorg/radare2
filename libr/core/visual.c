@@ -1847,7 +1847,7 @@ static void visual_textlogs(RCore *core) {
 			}
 			break;
 		case '+':
-			if (log_level <= R_LOGLVL_LAST) {
+			if (log_level <= R_LOG_LEVEL_LAST) {
 				r_log_set_level (log_level + 1);
 			}
 			break;

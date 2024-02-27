@@ -1,11 +1,8 @@
-/* radare - LGPL - 2022 - terorie */
+/* radare - LGPL - 2022-2024 - terorie */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_io.h>
-#include <string.h>
 
 #define MAX_SECTION_COUNT 128
 #define MAX_IMP_COUNT 128
@@ -507,7 +504,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	}
 	// clang-format on
 
-	if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN) && b->iob.overlay_write_at != _overlay_write_at_hack) {
+	if (r_log_match (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN) && b->iob.overlay_write_at != _overlay_write_at_hack) {
 		assert (size > 0 && size <= 8);
 		char value_old_hex[9], value_new_hex[9];
 		char fmt[] = "%08x";
