@@ -3344,6 +3344,30 @@ static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	return true;
 }
 
+static bool cb_log_cons(void *user, int level, const char *origin, const char *msg) {
+	if (!msg) {
+		// log level doesn't match
+		return false;
+	}
+	const char *levelstr = r_log_level_tostring (level);
+	const char *originstr = origin? origin: "";
+	r_cons_printf ("%s: [%s] %s\n", levelstr, originstr, msg);
+	return true;
+}
+
+static bool cb_config_log_cons(void *coreptr, void *nodeptr) {
+	RCore *core = (RCore*)coreptr;
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	if (r_str_is_true (node->value)) {
+		r_config_set_b (core->config, "log.quiet", true);
+		r_log_add_callback (cb_log_cons, NULL);
+	} else {
+		r_config_set_b (core->config, "log.quiet", false);
+		r_log_del_callback (cb_log_cons);
+	}
+	return true;
+}
+
 static bool cb_log_config_quiet(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	r_log_set_quiet (r_str_is_true (node->value));
@@ -3876,6 +3900,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("log.source", "false", cb_log_source, "Show source [file:line] in the log message");
 	SETCB ("log.color", "false", cb_log_config_colors, "Should the log output use colors");
 	SETCB ("log.quiet", "false", cb_log_config_quiet, "Be quiet, dont log anything to console");
+	SETCB ("log.cons", "false", cb_config_log_cons, "Log messages using rcons (handy for monochannel r2pipe)");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "default prefix for zignatures matches");

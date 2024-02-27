@@ -16,7 +16,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_DEBUG]     = "DEBUG",
 };
 
-static const char *level_name(int i) {
+R_API const char *r_log_level_tostring(int i) {
 	if (i >= 0 && i < R_LOGLVL_LAST) {
 		return level_tags[i];
 	}
@@ -144,7 +144,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		RListIter *iter;
 		RLogCallback cb;
 		r_list_foreach (rlog->cbs, iter, cb) {
-			cb (rlog->user, type, NULL, out);
+			cb (rlog->user, type, origin, out);
 		}
 	}
 	RStrBuf *sb = r_strbuf_new ("");
@@ -170,7 +170,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		default:
 			break;
 		}
-		r_strbuf_appendf (sb, "%s%s:", k, level_name (level));
+		r_strbuf_appendf (sb, "%s%s:", k, r_log_level_tostring (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, " "Color_YELLOW "[%s]" Color_RESET, origin);
 		} else {
@@ -180,7 +180,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	} else {
-		r_strbuf_appendf (sb, "%s:", level_name (level));
+		r_strbuf_appendf (sb, "%s:", r_log_level_tostring (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, " [%s]", origin);
 		}
@@ -202,6 +202,9 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	sb = NULL;
 	if (!rlog->quiet) {
 		eprintf ("%s", s);
+	}
+	if (rlog->cb_printf) {
+		rlog->cb_printf ("%s", s);
 	}
 	if (R_STR_ISNOTEMPTY (rlog->file)) {
 		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);

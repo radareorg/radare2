@@ -26,7 +26,7 @@ extern "C" {
 
 #define R_LOGLVL_DEFAULT R_LOGLVL_TODO
 
-// TODO .rename to R_LOG_LEVEL_XXXX
+// TODO R2_590 - rename to R_LOG_LEVEL_XXXX
 typedef enum r_log_level {
 	R_LOGLVL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
 	R_LOGLVL_ERROR = 1,
@@ -51,6 +51,7 @@ typedef struct r_log_t {
 	bool show_source;
 	bool show_ts;
 	RList *cbs;
+	PrintfCallback cb_printf;
 } RLog;
 
 typedef struct r_log_source_t {
@@ -101,6 +102,7 @@ R_API RLogLevel r_log_get_level(void);
 R_API RLogLevel r_log_get_traplevel(void);
 R_API void r_log_set_traplevel(RLogLevel level);
 R_API void r_log_set_callback(RLogCallback cbfunc);
+R_API const char *r_log_level_tostring(int i);
 
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(6, 7);
 R_API void r_vlog(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);
