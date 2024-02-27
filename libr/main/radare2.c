@@ -666,7 +666,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	mr.envprofile = r_run_get_environ_profile (env);
 
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
-		r_log_set_level (R_LOGLVL_DEBUG);
+		r_log_set_level (R_LOG_LEVEL_DEBUG);
 		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
 		char *fmt = (sysdbg && *sysdbg)
 			? strdup (sysdbg)

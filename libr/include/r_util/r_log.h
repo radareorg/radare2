@@ -24,17 +24,16 @@ extern "C" {
 // unused, but could be a good replacement for eprintf when fully transitioned?
 #define etrace(m) eprintf ("--> %s:%d : %s\n", __FUNCTION__, __LINE__, m)
 
-#define R_LOGLVL_DEFAULT R_LOGLVL_TODO
+#define R_LOG_LEVEL_DEFAULT R_LOG_LEVEL_TODO
 
-// TODO R2_590 - rename to R_LOG_LEVEL_XXXX
 typedef enum r_log_level {
-	R_LOGLVL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
-	R_LOGLVL_ERROR = 1,
-	R_LOGLVL_INFO = 2,
-	R_LOGLVL_WARN = 3,
-	R_LOGLVL_TODO = 4,
-	R_LOGLVL_DEBUG = 5,
-	R_LOGLVL_LAST = 6,
+	R_LOG_LEVEL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOG_LEVEL_ERROR = 1,
+	R_LOG_LEVEL_INFO = 2,
+	R_LOG_LEVEL_WARN = 3,
+	R_LOG_LEVEL_TODO = 4,
+	R_LOG_LEVEL_DEBUG = 5,
+	R_LOG_LEVEL_LAST = 6,
 } RLogLevel;
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
@@ -77,14 +76,14 @@ R_API void r_log_del_callback(RLogCallback cb);
 #define R_LOG_WARN(f,...) do {} while(0)
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #else
-#define R_LOG(f,...) if (r_log_match (R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_FATAL(f,...) if (r_log_match (R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_ERROR(f,...) if (r_log_match (R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_INFO(f,...) if (r_log_match (R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_TODO(f,...) if (r_log_match (R_LOGLVL_TODO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_WARN(f,...) if (r_log_match (R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_FATAL(f,...) if (r_log_match (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_ERROR(f,...) if (r_log_match (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_INFO(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_TODO(f,...) if (r_log_match (R_LOG_LEVEL_TODO, R_LOG_ORIGIN)) {r_log_message(R_LOG_LEVEL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_WARN(f,...) if (r_log_match (R_LOG_LEVEL_WARN, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #if WANT_DEBUGSTUFF
-#define R_LOG_DEBUG(f,...) if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_DEBUG(f,...) if (r_log_match (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #else
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #endif

@@ -8,16 +8,16 @@
 static R_TH_LOCAL RLog *rlog = NULL;
 
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_FATAL]     = "FATAL",
-	[R_LOGLVL_ERROR]     = "ERROR",
-	[R_LOGLVL_INFO]      = "INFO",
-	[R_LOGLVL_WARN]      = "WARN",
-	[R_LOGLVL_TODO]      = "TODO",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
+	[R_LOG_LEVEL_FATAL]     = "FATAL",
+	[R_LOG_LEVEL_ERROR]     = "ERROR",
+	[R_LOG_LEVEL_INFO]      = "INFO",
+	[R_LOG_LEVEL_WARN]      = "WARN",
+	[R_LOG_LEVEL_TODO]      = "TODO",
+	[R_LOG_LEVEL_DEBUG]     = "DEBUG",
 };
 
 R_API const char *r_log_level_tostring(int i) {
-	if (i >= 0 && i < R_LOGLVL_LAST) {
+	if (i >= 0 && i < R_LOG_LEVEL_LAST) {
 		return level_tags[i];
 	}
 	return "UNKN";
@@ -30,7 +30,7 @@ R_API bool r_log_init(void) {
 		if (!rlog) {
 			return false;
 		}
-		rlog->level = R_LOGLVL_DEFAULT;
+		rlog->level = R_LOG_LEVEL_DEFAULT;
 	}
 	return true;
 }
@@ -57,7 +57,7 @@ R_API RLogLevel r_log_get_level(void) {
 }
 
 R_API RLogLevel r_log_get_traplevel(void) {
-	return rlog? rlog->traplevel: R_LOGLVL_FATAL;
+	return rlog? rlog->traplevel: R_LOG_LEVEL_FATAL;
 }
 
 R_API void r_log_set_level(RLogLevel level) {
@@ -154,17 +154,17 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	if (rlog->color) {
 		const char *k = Color_YELLOW;
 		switch (level) {
-		case R_LOGLVL_FATAL:
-		case R_LOGLVL_ERROR:
+		case R_LOG_LEVEL_FATAL:
+		case R_LOG_LEVEL_ERROR:
 			k = Color_RED;
 			break;
-		case R_LOGLVL_INFO:
+		case R_LOG_LEVEL_INFO:
 			k = Color_YELLOW;
 			break;
-		case R_LOGLVL_WARN:
+		case R_LOG_LEVEL_WARN:
 			k = Color_MAGENTA;
 			break;
-		case R_LOGLVL_DEBUG:
+		case R_LOG_LEVEL_DEBUG:
 			k = Color_GREEN;
 			break;
 		default:
@@ -210,7 +210,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);
 	}
 	free (s);
-	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOGLVL_FATAL)) {
+	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOG_LEVEL_FATAL)) {
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}
