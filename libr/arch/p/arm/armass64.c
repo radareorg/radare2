@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake */
 
+#include "r_types.h"
 #include "r_types_base.h"
 #include "r_util/r_log.h"
 #include "r_util/r_str.h"
@@ -1955,6 +1956,7 @@ static ut32 subg (ArmOp *op) {
 	return data;
 }
 
+// TODO this does not encode correctly, but for now it is unimportant so I am skipping it
 static ut32 subp (ArmOp *op) {
 	ut32 data = UT32_MAX;
 
@@ -1962,7 +1964,9 @@ static ut32 subp (ArmOp *op) {
 		return data;
 	}
 
-	data = 0x00009a;
+	R_LOG ("SUBP");
+
+	data = 0x00c09a;
 	data |= encode3regs (op);
 
 	return data;
@@ -2059,6 +2063,19 @@ static ut32 ldg (ArmOp *op) {
 	if (op->operands_count == 3) {
 		data |= encodeImm9 (op->operands[2].immediate) << 12;
 	}
+
+	return data;
+}
+
+static ut32 ldgm (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		return data;
+	}
+
+	data = 0x00e0d9;
+	data |= encode2regs (op);
 
 	return data;
 }
@@ -2230,6 +2247,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = gmi (&ops);
 	} else if (r_str_startswith (str, "subp")) {
 		*op = subp (&ops);
+	} else if (r_str_startswith (str, "ldgm")) {
+		*op = ldgm (&ops);
 	} else if (r_str_startswith (str, "ldg")) {
 		*op = ldg (&ops);
 	} else if (!strcmp (str, "nop")) {
