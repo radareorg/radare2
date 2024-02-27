@@ -2063,6 +2063,21 @@ static ut32 ldg (ArmOp *op) {
 	return data;
 }
 
+/*
+ * Alias for SUBPS and always the prefered disass
+ */
+static ut32 cmpp (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		R_LOG_ERROR ("Invalid MTE instruction");
+	}
+
+	data = 0x00c0ba;
+	data |= encode3regs (op);
+	return data;
+}
+
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = { 0 };
 	if (!parseOpcode (str, &ops)) {
@@ -2190,7 +2205,12 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (handlePAC (op, str)) { // PAC
 		free (ops.mnemonic);
 		return true;
-	} else if (r_str_startswith (str, "irg")) { // mte
+	}
+	// mte
+	// cmpp is an alias for subps
+	else if (r_str_startswith (str, "cmpp") || r_str_startswith (str, "subps")) {
+		*op = cmpp (&ops);
+	} else if (r_str_startswith (str, "irg")) {
 		*op = irg (&ops);
 	} else if (r_str_startswith (str, "addg")) {
 		*op = addg (&ops);
