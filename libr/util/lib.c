@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
@@ -164,7 +164,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	if (lib) {
 		// __has_debug = r_sys_getenv_asbool ("R2_DEBUG"); /// XXX just use loglevel
 		if (r_sys_getenv_asbool ("R2_DEBUG")) {
-			r_log_set_level (R_LOGLVL_DEBUG);
+			r_log_set_level (R_LOG_LEVEL_DEBUG);
 		}
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
