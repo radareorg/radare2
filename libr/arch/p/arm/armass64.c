@@ -1986,6 +1986,7 @@ static ut32 stg (ArmOp *op) {
 			R_LOG ("Pre");
 			data |= 0x0c0000;
 		} else {
+			// not totally happy with this being an else branch, but it was the only way to make sure it was trigged in the case of the optinion third param for signed offset address mode
 			R_LOG ("SIGN");
 			data |= 0x080000;
 		}
