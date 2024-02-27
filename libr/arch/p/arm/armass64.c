@@ -2018,6 +2018,19 @@ static ut32 stzg (ArmOp *op) {
 	return data;
 }
 
+static ut32 stgm (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	if (!is_valid_mte (op)) {
+		return data;
+	}
+
+	data = 0x00a0d9;
+	data |= encode2regs (op);
+
+	return data;
+}
+
 static ut32 gmi (ArmOp *op) {
 	ut32 data = UT32_MAX;
 
@@ -2165,6 +2178,12 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = addg (&ops);
 	} else if (r_str_startswith (str, "subg")) {
 		*op = subg (&ops);
+		/*
+		 * do this check first otherwise i2 will follow the stg branch and not stgm as they start the same
+		 * you could also merge these into one function and just check for the presence of the 'm', but this is quicker for now :p
+		 */
+	} else if (r_str_startswith (str, "stgm")) {
+		*op = stgm (&ops);
 	} else if (r_str_startswith (str, "stg")) {
 		*op = stg (&ops);
 	} else if (r_str_startswith (str, "stzg")) {
