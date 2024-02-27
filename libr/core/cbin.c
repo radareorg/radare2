@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2024 - earada, pancake */
 
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
