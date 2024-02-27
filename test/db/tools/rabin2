@@ -79,7 +79,7 @@ CMDS=!rabin2 -k ${R2_FILE}
 EXPECT=
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-[31mERROR:[0m Missing file
+ERROR: Missing file
 EOF
 RUN
 
@@ -933,7 +933,7 @@ NAME=rabin2 -D Unsupported
 FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-[31mERROR:[0m Unsupported demangler
+ERROR: Unsupported demangler
 EOF
 RUN
 
@@ -973,7 +973,7 @@ NAME=rabin2 -O bad op
 FILE=-
 CMDS=!rabin2 -O bad_op -
 EXPECT_ERR=<<EOF
-[31mERROR:[0m Unknown operation. use -O help
+ERROR: Unknown operation. use -O help
 EOF
 RUN
 
@@ -1249,6 +1249,6 @@ NAME=rabin2 -S ""
 FILE=-
 CMDS=!rabin2 -S ""
 EXPECT_ERR=<<EOF
-[31mERROR:[0m Cannot open empty path
+ERROR: Cannot open empty path
 EOF
 RUN
