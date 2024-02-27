@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2010-2024 - pancake, ret2libc */
 
 #define R_LOG_ORIGIN "util.log"
 
@@ -21,6 +21,28 @@ R_API const char *r_log_level_tostring(int i) {
 		return level_tags[i];
 	}
 	return "UNKN";
+}
+
+R_API const char *r_log_level_tocolor(int level) {
+	const char *k = Color_YELLOW;
+	switch (level) {
+	case R_LOG_LEVEL_FATAL:
+	case R_LOG_LEVEL_ERROR:
+		k = Color_RED;
+		break;
+	case R_LOG_LEVEL_INFO:
+		k = Color_YELLOW;
+		break;
+	case R_LOG_LEVEL_WARN:
+		k = Color_MAGENTA;
+		break;
+	case R_LOG_LEVEL_DEBUG:
+		k = Color_GREEN;
+		break;
+	default:
+		break;
+	}
+	return k;
 }
 
 // shouldnt be necessary as global thread-local instance
@@ -152,24 +174,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		func += 2;
 	}
 	if (rlog->color) {
-		const char *k = Color_YELLOW;
-		switch (level) {
-		case R_LOG_LEVEL_FATAL:
-		case R_LOG_LEVEL_ERROR:
-			k = Color_RED;
-			break;
-		case R_LOG_LEVEL_INFO:
-			k = Color_YELLOW;
-			break;
-		case R_LOG_LEVEL_WARN:
-			k = Color_MAGENTA;
-			break;
-		case R_LOG_LEVEL_DEBUG:
-			k = Color_GREEN;
-			break;
-		default:
-			break;
-		}
+		const char *k = r_log_level_tocolor (level);
 		r_strbuf_appendf (sb, "%s%s:", k, r_log_level_tostring (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, " "Color_YELLOW "[%s]" Color_RESET, origin);
