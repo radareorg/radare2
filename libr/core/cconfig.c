@@ -1601,6 +1601,7 @@ static bool cb_scr_color_ophex(void *user, void *data) {
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_COLOROP);
 	}
+	r_config_set_b (core->config, "log.color", node->i_value);
 	return true;
 }
 
