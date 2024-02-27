@@ -1962,7 +1962,7 @@ static ut32 subp (ArmOp *op) {
 		return data;
 	}
 
-	data = 0x00d09a;
+	data = 0x00009a;
 	data |= encode3regs (op);
 
 	return data;
@@ -1975,20 +1975,26 @@ static ut32 stg (ArmOp *op) {
 
 	ut32 data = 0x0020d9;
 	data |= encode2regs (op);
-	data |= encodeImm9 (op->operands[2].immediate) << 12;
 
-	// the major difference here is in the opcode used for each mode, so set it here
-	if (op->operands[2].preindex) {
-		if (op->writeback) {
-			R_LOG ("pre-index");
+	// if there are three operands, then then normally this is imm9
+	if (op->operands_count == 3) {
+		data |= encodeImm9 (op->operands[2].immediate) << 12;
+		if (!op->operands[2].preindex && !op->writeback) {
+			R_LOG ("Post");
+			data |= 0x040000;
+		} else if (op->operands[2].preindex && op->writeback) {
+			R_LOG ("Pre");
 			data |= 0x0c0000;
 		} else {
-			R_LOG ("signed offset");
+			R_LOG ("SIGN");
 			data |= 0x080000;
 		}
-	} else {
-		R_LOG ("post-index");
-		data |= 0x040000;
+	} else if (op->operands_count == 2) {
+		// signed offset is the only addressing mode that does not require a third imm parameter
+		if (!op->writeback) {
+			R_LOG ("SIGN");
+			data |= 0x080000;
+		}
 	}
 
 	return data;
