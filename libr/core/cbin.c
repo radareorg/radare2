@@ -1806,12 +1806,32 @@ static inline bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
-static void warn_if_uri(RCore *r) {
-	int fd = r_io_fd_get_current (r->io);
-	RIODesc *desc = r_io_desc_get (r->io, fd);
-	if (desc->uri && strstr (desc->uri, "://")) {
-		R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
+static bool warn_if_uri(RCore *core) {
+	RIODesc *desc = NULL;
+	RIOMap *map = r_io_map_get_at (core->io, 0); // core->offset);
+	if (map) {
+		desc = r_io_desc_get (core->io, map->fd);
+	} else {
+		RBinFile *bf = core->bin->cur;
+		int fd;
+		if (bf) {
+			fd = bf->fd;
+		} else {
+			fd = r_io_fd_get_current (core->io);
+		}
+		if (fd != -1) {
+			desc = r_io_desc_get (core->io, fd);
+		}
 	}
+	if (desc) {
+		const char *uri = desc->uri;
+		R_LOG_DEBUG ("Using uri %s", uri);
+		if (uri && strstr (uri, "://")) {
+			R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
+			return false;
+		}
+	}
+	return true;
 }
 
 static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
@@ -1832,7 +1852,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	const bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (r->config, "bin.cache");
 	if (apply_relocs) {
-		warn_if_uri (r);
+		if (!warn_if_uri (r)) {
+			return false;
+		}
 		//TODO: remove the bin.cache crap
 		if (bc) {
 			if (!(r->io->cachemode & R_PERM_W)) {
@@ -1848,7 +1870,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 	} else {
 		if (bc) {
-			warn_if_uri (r);
+			if (!warn_if_uri (r)) {
+				return false;
+			}
 			if (!(r->io->cachemode & R_PERM_W)) {
 				r_config_set_b (r->config, "io.cache", true);
 			}
@@ -4999,12 +5023,12 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_list(RCore *core, int mode) {
-	r_return_val_if_fail (core, false);
+	r_return_val_if_fail (core && core->bin, false);
 	// list all binfiles and there objects and there archs
 	RListIter *iter;
 	RBinFile *binfile = NULL;
 	RBin *bin = core->bin;
-	const RList *binfiles = bin ? bin->binfiles: NULL;
+	const RList *binfiles = bin->binfiles;
 	if (!binfiles) {
 		return false;
 	}
