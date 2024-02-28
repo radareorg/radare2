@@ -3994,7 +3994,7 @@ static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	R_CRITICAL_ENTER (core);
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
-	const char *quotestr = "`";
+	const char *quotestr = "`\"'";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
