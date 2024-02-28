@@ -6973,7 +6973,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	bool result = false;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
+	r_cons_break_push (NULL, NULL);
 	for (;;) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		RAnalOp asmop;
 		bool end_nbopcodes, end_nbbytes;
 		int skip_bytes_flag = 0, skip_bytes_bb = 0;
@@ -7213,6 +7217,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 	}
+	r_cons_break_pop ();
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {

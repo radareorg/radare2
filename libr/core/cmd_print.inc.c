@@ -6553,7 +6553,6 @@ static int cmd_print(void *data, const char *input) {
 					pj_a (pj);
 					r_list_sort (f->bbs, bb_cmpaddr);
 					r_list_foreach (f->bbs, locs_it, b) {
-
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
