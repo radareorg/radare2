@@ -543,7 +543,8 @@ typedef struct r_cons_t {
 	int maxpage;
 	char *break_word;
 	int break_word_len;
-	ut64 timeout; // must come from r_time_now_mono()
+	ut64 timeout;
+	int otimeout;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;

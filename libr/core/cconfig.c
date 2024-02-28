@@ -2457,6 +2457,13 @@ static bool cb_scroptimize(void* user, void* data) {
 	return true;
 }
 
+static bool cb_scrtimeout(void* user, void* data) {
+	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore*) user;
+	r_cons_break_timeout (node->i_value);
+	return true;
+}
+
 static bool cb_scrcolumns(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore*) user;
@@ -4287,6 +4294,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "run pg in prompt, visual and panels");
 	SETBPREF ("scr.panelborder", "false", "specify panels border active area (0 by default)");
 	SETCB ("scr.theme", "default", &cb_scrtheme, "specify the theme name to load on startup (See 'ec?')");
+	SETICB ("scr.timeout", 0, &cb_scrtimeout, "check for timeout during the break.(push|pop) contexts");
 	SETICB ("scr.cols", 0, &cb_scrcolumns, "force console column count (width)");
 	SETICB ("scr.optimize", 0, &cb_scroptimize, "optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETBPREF ("scr.dumpcols", "false", "prefer pC commands before p ones");

@@ -446,10 +446,14 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 }
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
+	if (r_stack_size (C->break_stack) > 0) {
+		r_cons_break_timeout (I->otimeout);
+	}
 	r_cons_context_break_push (C, cb, user, true);
 }
 
 R_API void r_cons_break_pop(void) {
+	I->timeout = 0;
 	r_cons_context_break_pop (C, true);
 }
 
@@ -478,11 +482,12 @@ R_API bool r_cons_is_breaked(void) {
 		I->cb_break (I->user);
 	}
 	if (R_UNLIKELY (I->timeout)) {
-		if (r_time_now_mono () > I->timeout) {
-			C->breaked = true;
-			C->was_breaked = true;
-			eprintf ("\nTimeout!\n");
-			I->timeout = 0;
+		if (r_stack_size (C->break_stack) > 0) {
+			if (r_time_now_mono () > I->timeout) {
+				C->breaked = true;
+				C->was_breaked = true;
+				r_cons_break_timeout (I->otimeout);
+			}
 		}
 	}
 	if (R_UNLIKELY (!C->was_breaked)) {
@@ -539,8 +544,17 @@ R_API int r_cons_get_cur_line(void) {
 }
 
 R_API void r_cons_break_timeout(int timeout) {
+	if (timeout > 0) {
+		I->timeout = r_time_now_mono () + (timeout * 1000);
+		I->otimeout = timeout;
+	} else {
+		I->otimeout = 0;
+		I->timeout = 0;
+	}
+#if 0
 	I->timeout = (timeout && !I->timeout)
 		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
+#endif
 }
 
 R_API void r_cons_break_end(void) {
