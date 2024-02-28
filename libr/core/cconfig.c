@@ -2459,7 +2459,6 @@ static bool cb_scroptimize(void* user, void* data) {
 
 static bool cb_scrtimeout(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
-	RCore *core = (RCore*) user;
 	r_cons_break_timeout (node->i_value);
 	return true;
 }
