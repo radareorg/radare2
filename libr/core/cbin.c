@@ -1808,11 +1808,17 @@ static inline bool is_file_reloc(RBinReloc *r) {
 
 static bool warn_if_uri(RCore *core) {
 	RIODesc *desc = NULL;
-	RIOMap *map = r_io_map_get_at (core->io, core->offset);
+	RIOMap *map = r_io_map_get_at (core->io, 0); // core->offset);
 	if (map) {
 		desc = r_io_desc_get (core->io, map->fd);
 	} else {
-		int fd = r_io_fd_get_current (core->io);
+		RBinFile *bf = core->bin->cur;
+		int fd;
+		if (bf) {
+			fd = bf->fd;
+		} else {
+			fd = r_io_fd_get_current (core->io);
+		}
 		if (fd != -1) {
 			desc = r_io_desc_get (core->io, fd);
 		}
@@ -5017,12 +5023,12 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_list(RCore *core, int mode) {
-	r_return_val_if_fail (core, false);
+	r_return_val_if_fail (core && core->bin, false);
 	// list all binfiles and there objects and there archs
 	RListIter *iter;
 	RBinFile *binfile = NULL;
 	RBin *bin = core->bin;
-	const RList *binfiles = bin ? bin->binfiles: NULL;
+	const RList *binfiles = bin->binfiles;
 	if (!binfiles) {
 		return false;
 	}
