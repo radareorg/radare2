@@ -483,15 +483,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
-			size_t j;
-			for (j = 0; j <= i; j++) {
-				free (c->b[i]);
-			}
-			ht_up_free (c->attrs);
-			free (c->blen);
-			free (c->bsize);
-			free (c->b);
-			free (c);
+			r_cons_canvas_free (c);
 			return false;
 		}
 		c->b[i] = newline;
