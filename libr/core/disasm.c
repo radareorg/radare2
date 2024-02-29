@@ -5497,6 +5497,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	REsil *esil = core->anal->esil;
 	bool (*hook_mem_write)(REsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	ut64 at = r_core_pava (core, ds->at);
+	if (!ds->show_comments) {
+		return;
+	}
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return;
@@ -5511,7 +5514,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	if (!can_emulate_metadata (core, at)) {
 		goto beach;
 	}
-	if (ds->show_color) {
+	if (ds->show_color && ds->show_comments) {
 		r_cons_print (ds->pal_comment);
 	}
 	esil = core->anal->esil;
@@ -5693,7 +5696,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	if (ds->show_cmt_user || ds->show_comments) {
-		if (desc && *desc) {
+		if (R_STR_ISNOTEMPTY (desc)) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_print (ds->color_comment);

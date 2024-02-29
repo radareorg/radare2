@@ -338,3 +338,4 @@ Relic malfunction detected
 It's now safe to turn off your computer.
 No newline at end of file
 Display output is not active.
+The Quick Brown Fox Jumped Over The Lazy Dog!
