@@ -22,7 +22,6 @@ static char *iocmd(RBinFile *bf, const char *s) {
 		R_LOG_ERROR ("NO IO");
 		return NULL;
 	}
-	RList *ret = r_list_new ();
 	char *res = r_io_system (io, s);
 	if (!res) {
 		const char *buffer = r_cons_get_buffer ();
@@ -55,6 +54,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+#if 0
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (R_LIKELY (ptr)) {
@@ -65,6 +65,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 		r_list_append (ret, ptr);
 	}
 }
+#endif
 
 static RList *symbols(RBinFile *bf) {
 	char *res = iocmd (bf, "is");
