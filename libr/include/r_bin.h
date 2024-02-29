@@ -979,6 +979,7 @@ extern RBinPlugin r_bin_plugin_lua;
 extern RBinPlugin r_bin_plugin_xtac;
 extern RBinPlugin r_bin_plugin_pdp11;
 extern RBinPlugin r_bin_plugin_pcap;
+extern RBinPlugin r_bin_plugin_io;
 
 #ifdef __cplusplus
 }
