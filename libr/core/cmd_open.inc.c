@@ -351,7 +351,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'i': // "obi"
-		r_core_cmdf (core, "i%s", input + 2);
+		if (input[2] == 'o') { // "obio"
+			r_bin_force_plugin (core->bin, "io");
+			r_core_bin_load (core, NULL, 0);
+		} else {
+			r_core_cmdf (core, "i%s", input + 2);
+		}
 		break;
 	case 'm': // "obm"
 		{
