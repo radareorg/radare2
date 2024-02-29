@@ -25,7 +25,10 @@ static char *iocmd(RBinFile *bf, const char *s) {
 	RList *ret = r_list_new ();
 	char *res = r_io_system (io, s);
 	if (!res) {
-		res = strdup (r_cons_get_buffer ());
+		const char *buffer = r_cons_get_buffer ();
+		if (buffer != NULL) {
+			res = strdup (buffer);
+		}
 	}
 	return res;
 }
