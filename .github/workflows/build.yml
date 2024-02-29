@@ -7,6 +7,44 @@ on:
   pull_request:
 
 jobs:
+  linux-s390x:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: s390x
+          distro: ubuntu22.04
+          githubToken: ${{ github.token }}
+          run: |
+            apt update
+            apt install -y make git patch wget curl build-essential
+            sys/install.sh
+      - name: Get the output
+        # Echo the `uname` output parameter from the `runcmd` step
+        run: |
+          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
+  linux-armv7:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: armv7
+          distro: ubuntu22.04
+          githubToken: ${{ github.token }}
+          run: |
+            apt update
+            apt install -y make git patch wget curl build-essential
+            sys/install.sh
+      - name: Get the output
+        # Echo the `uname` output parameter from the `runcmd` step
+        run: |
+          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
   # WASI
   linux-wasi:
     runs-on: ubuntu-20.04
