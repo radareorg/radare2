@@ -21,31 +21,33 @@ static int cmd_macro(void *data, const char *_input) {
 	char *buf = NULL;
 	RCore *core = (RCore*)data;
 	char *input = strdup (_input);
-	if (strlen (_input) > 2 && *_input != '-' && (r_str_endswith (_input, ";") || !r_str_endswith (_input, ")"))) {
-		free (input);
-		RStrBuf *sb = r_strbuf_new (_input);
-		if (!strchr (_input, ';')) {
-			r_strbuf_append (sb, ";");
-		}
-		r_line_set_prompt ("> ");
-		bool closepar = true;
-		while (true) {
-			const char *ptr = r_line_readline ();
-			if (R_STR_ISEMPTY (ptr)) {
-				break;
-			}
-			if (!strcmp (ptr, ")")) {
-				r_strbuf_append (sb, ptr);
-				closepar = false;
-			} else {
-				r_strbuf_append (sb, ptr);
+	if (r_config_get_b (core->config, "scr.interactive")) {
+		if (strlen (_input) > 2 && *_input != '-' && (r_str_endswith (_input, ";") || !r_str_endswith (_input, ")"))) {
+			free (input);
+			RStrBuf *sb = r_strbuf_new (_input);
+			if (!strchr (_input, ';')) {
 				r_strbuf_append (sb, ";");
 			}
+			r_line_set_prompt ("> ");
+			bool closepar = true;
+			while (true) {
+				const char *ptr = r_line_readline ();
+				if (R_STR_ISEMPTY (ptr)) {
+					break;
+				}
+				if (!strcmp (ptr, ")")) {
+					r_strbuf_append (sb, ptr);
+					closepar = false;
+				} else {
+					r_strbuf_append (sb, ptr);
+					r_strbuf_append (sb, ";");
+				}
+			}
+			if (closepar) {
+				r_strbuf_append (sb, ")");
+			}
+			input = r_strbuf_drain (sb);
 		}
-		if (closepar) {
-			r_strbuf_append (sb, ")");
-		}
-		input = r_strbuf_drain (sb);
 	}
 
 #if !SHELLFILTER
