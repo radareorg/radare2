@@ -2410,7 +2410,7 @@ static int cmd_kuery(void *data, const char *input) {
 			r_cons_println ("No Output from sdb");
 			break;
 		}
-		PJ * pj = pj_new ();
+		PJ *pj = pj_new ();
 		if (!pj) {
   			free (out);
   			break;
