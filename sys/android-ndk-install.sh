@@ -21,6 +21,10 @@ API=28
 ARCH=arm64
 [ -n "$2" ] && ARCH="$2"
 
+if [ "${ARCH}" = "aarch64" ]; then
+  ARCH=arm64
+fi
+
 echo Downloading NDK $V...
 wget -c -q https://dl.google.com/android/repository/android-ndk-$V-$O-x86_64.zip
 echo Unzipping in /tmp/ndkzip

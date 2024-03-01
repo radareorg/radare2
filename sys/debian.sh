@@ -9,6 +9,13 @@ if [ "$ARG" = "arm64" ]; then
   ARCH=arm64
   CFGARGS="--with-compiler=aarch64-linux-gnu-gcc"
   export CC="aarch64-linux-gnu-gcc"
+elif [ "$ARG" = "amd64" ]; then
+  ARCH=amd64
+  export CFLAGS="-Werror"
+elif [ "$ARG" = "i386" ]; then
+  ARCH=i386
+  export CFLAGS="-m32 -Werror"
+  export LDFLAGS=-m32
 else
   CFGARGS=$*
 fi
@@ -23,6 +30,7 @@ fi
 if [ "${ARCH}" = "aarch64" ]; then
   ARCH=arm64
 fi
+export ARCH
 
 echo "[debian] preparing radare2 package..."
 PKGDIR=dist/debian/radare2/root
