@@ -61,6 +61,7 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
+#define PANEL_CONFIG_MIN_SIZE    2
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
 
@@ -1051,19 +1052,40 @@ static void __layout_equal_hor(RPanels *panels) {
 	}
 }
 
-static void __adjust_side_panels(RCore *core) {
+/* makes space for a side panel, returns the amount of space made*/
+static unsigned int __adjust_side_panels(RCore *core) {
 	int i, h;
+	unsigned int smallest_panel_size = INT32_MAX;
+	unsigned int available_space;
 	(void)r_cons_get_size (&h);
 	RPanels *panels = core->panels;
+
+	/* first find out how much space is available on the left*/
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
 		if (p && (p->view->pos.x == 0)) {
-			if (p->view->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
-				p->view->pos.x += PANEL_CONFIG_SIDEPANEL_W - 1;
-				p->view->pos.w -= PANEL_CONFIG_SIDEPANEL_W - 1;
+			if (smallest_panel_size > p->view->pos.w) {
+				smallest_panel_size = p->view->pos.w;
 			}
 		}
 	}
+	/* 2-wide margin, like in del_invalid_panels */
+	if (smallest_panel_size > PANEL_CONFIG_SIDEPANEL_W + PANEL_CONFIG_MIN_SIZE) {
+
+		available_space = PANEL_CONFIG_SIDEPANEL_W;
+	} else {
+		available_space = smallest_panel_size / 2;
+	}
+
+	/* now resize all panels at x = 0 to make space */
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = __get_panel (panels, i);
+		if (p && (p->view->pos.x == 0)) {
+			p->view->pos.x += available_space;
+			p->view->pos.w -= available_space;
+		}
+	}
+	return available_space;
 }
 
 static void __update_help(RCore *core, RPanels *ps) {
@@ -1234,9 +1256,20 @@ static void __insert_panel(RCore *core, int n, const char *name, const char *cmd
 	__init_panel_param (core, panel[n], name, cmd);
 }
 
+static void __adjust_and_add_panel(RCore *core, const char *name, char *cmd) {
+	int h;
+	unsigned int available_space;
+	(void)r_cons_get_size (&h);
+	RPanels *panels = core->panels;
+	available_space = __adjust_side_panels (core);
+	__insert_panel (core, 0, name, cmd);
+	RPanel *p0 = __get_panel (panels, 0);
+	__set_geometry (&p0->view->pos, 0, 1, available_space + 1, h - 1);
+	__set_curnode (core, 0);
+}
+
 static int __add_cmd_panel(void *user) {
 	RCore *core = (RCore *)user;
-	RPanels *panels = core->panels;
 	if (!__check_panel_num (core)) {
 		return 0;
 	}
@@ -1247,13 +1280,7 @@ static int __add_cmd_panel(void *user) {
 	if (!cmd) {
 		return 0;
 	}
-	int h;
-	(void)r_cons_get_size (&h);
-	__adjust_side_panels (core);
-	__insert_panel (core, 0, child->name, cmd);
-	RPanel *p0 = __get_panel (panels, 0);
-	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
-	__set_curnode (core, 0);
+	__adjust_and_add_panel (core, child->name, cmd);
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	free (cmd);
 	menu->n_refresh = 0; // close the menu bar
@@ -1262,15 +1289,8 @@ static int __add_cmd_panel(void *user) {
 
 static void __add_help_panel(RCore *core) {
 	//TODO: all these things done below are very hacky and refactoring needed
-	RPanels *ps = core->panels;
-	int h;
-	const char *help = "Help";
-	(void)r_cons_get_size (&h);
-	__adjust_side_panels (core);
-	__insert_panel (core, 0, help, help);
-	RPanel *p0 = __get_panel (ps, 0);
-	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
-	__set_curnode (core, 0);
+	char *help = "Help";
+	__adjust_and_add_panel (core, help, help);
 }
 
 static char *__load_cmdf(RCore *core, RPanel *p, char *input, char *str) {
@@ -1488,12 +1508,12 @@ static void __del_invalid_panels(RCore *core) {
 	int i;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.w < 2) {
+		if (panel->view->pos.w < PANEL_CONFIG_MIN_SIZE) {
 			__del_panel (core, i);
 			__del_invalid_panels (core);
 			break;
 		}
-		if (panel->view->pos.h < 2) {
+		if (panel->view->pos.h < PANEL_CONFIG_MIN_SIZE) {
 			__del_panel (core, i);
 			__del_invalid_panels (core);
 			break;
