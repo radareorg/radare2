@@ -700,6 +700,8 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: dist/artifacts
+      - name: Generate checksums
+        run: find dist/artifacts -type f -exec sha256sum {} \; | awk '{sub(".*/", "", $2); print $1"  "$2}' | sort -k3 -V -o /tmp/checksums.txt
       - name: Create GitHub release
         id: create_release
         uses: actions/create-release@v1
@@ -901,3 +903,12 @@ jobs:
           asset_path: dist/artifacts/w64-static/r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip
+      - name: Upload checksums
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: /tmp/checksums.txt
+          asset_name: checksums.txt
+          asset_content_type: text/plain
