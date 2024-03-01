@@ -550,7 +550,7 @@ jobs:
 
   # FreeBSD
 #  freebsd:
-#    runs-on: macos-10.15
+#    runs-on: ubuntu-latest
 #    steps:
 #    - uses: actions/checkout@v3
 #    - name: Extract r2 version
@@ -559,7 +559,7 @@ jobs:
 #      id: r2v
 #    - name: Build r2 in FreeBSD
 #      id: build
-#      uses: vmactions/freebsd-vm@v0.1.6
+#      uses: vmactions/freebsd-vm@v1
 #      with:
 #        usesh: true
 #        prepare: pkg install -y curl gmake patch git python gawk
