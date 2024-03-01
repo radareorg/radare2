@@ -80,11 +80,12 @@ jobs:
         gcc -v
         export CFLAGS="-Werror"
         sys/debian.sh
+        mv -v dist/debian/*/radare2*.deb .
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         name: linux-acr-deb-64
-        path: dist/debian/*/*.deb
+        path: radare2*.deb
   linux-acr-deb-arm64:
     # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
@@ -96,12 +97,15 @@ jobs:
         sudo apt update --assume-yes
         sudo apt install --assume-yes gcc-aarch64-linux-gnu
     - name: Packaging for Debian
-      run: gcc -v ; sys/debian.sh arm64
+      run: |
+        gcc -v
+        sys/debian.sh arm64
+        mv -v dist/debian/*/radare2*.deb .
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         name: linux-acr-deb-arm64
-        path: dist/debian/*/*.deb
+        path: radare2*.deb
 
   linux-acr-deb-32:
     runs-on: ubuntu-20.04
@@ -116,11 +120,12 @@ jobs:
         export LDFLAGS=-m32
         export ARCH=i386
         sys/debian.sh
+        mv -v dist/debian/*/radare2*.deb .
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         name: linux-acr-deb-32
-        path: dist/debian/*/*.deb
+        path: radare2*.deb
 
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
@@ -136,11 +141,13 @@ jobs:
 #        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
 #    - name: rpmbuild
 #      uses: robertdebock/rpmbuild-action@1.1.1
+#    - name: Organize artifacts
+#      run: mv -v RPMS/*/*.rpm dist/rpm/*.rpm .
 #    - name: Pub
 #      uses: actions/upload-artifact@v3
 #      with:
 #        name: linux-meson-rpm
-#        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
+#        path: *.rpm
 #
 #  centos-meson-rpm:
 #    runs-on: ubuntu:20.04
@@ -166,11 +173,12 @@ jobs:
 #        wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
 #        cd -
 #        rpmbuild -ba radare2.spec
+#        mv -v rpmbuild/RPMS/*/*.rpm .
 #    - name: Pub
 #      uses: actions/upload-artifact@v3
 #      with:
 #        name: centos-meson-rpm
-#        path: rpmbuild/RPMS/*/*.rpm
+#        path: *.rpm
 #
 
 
@@ -241,13 +249,13 @@ jobs:
         pushd /tmp/r2ios
         zip -r /tmp/r2ios-sdk.zip *
         popd
-        mv /tmp/r2ios-sdk.zip .
+        mv /tmp/r2ios-sdk.zip dist/cydia/radare2/
     - uses: actions/upload-artifact@v3
       with:
         name: ios-cydia
         path: |
-          ./r2ios-sdk.zip
-          ./dist/cydia/radare2*/*.deb
+          ./dist/cydia/radare2/r2ios-sdk.zip
+          ./dist/cydia/radare2/*.deb
 
 
   # Android
@@ -686,7 +694,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-64/radare2/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
+          asset_path: dist/artifacts/linux-acr-deb-64/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Debian (arm64)
@@ -695,7 +703,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-arm64/radare2/radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
+          asset_path: dist/artifacts/linux-acr-deb-arm64/radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload prefetched tarball (source)
@@ -722,7 +730,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-32/radare2/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
+          asset_path: dist/artifacts/linux-acr-deb-32/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Windows (w64)
@@ -767,7 +775,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/ios-cydia/dist/cydia/radare2/radare2_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
+          asset_path: dist/artifacts/ios-cydia/radare2_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for iPhoneOS (arm32)
@@ -830,7 +838,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-64/radare2-dev/radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
+          asset_path: dist/artifacts/linux-acr-deb-64/radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Debian dev (i386)
@@ -839,7 +847,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-32/radare2-dev/radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
+          asset_path: dist/artifacts/linux-acr-deb-32/radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for WASI
