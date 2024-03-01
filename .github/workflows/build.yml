@@ -867,6 +867,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-static/r2blob.zip
+          asset_path: dist/artifacts/w64-static/r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip
