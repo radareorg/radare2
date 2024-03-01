@@ -597,17 +597,19 @@ jobs:
       is_release: ${{ steps.release.outputs.is }}
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
+      - linux-wasi
+      - tarball
+      - linux-static
+#      - linux-acr-rpm-64
       - linux-acr-deb
-      - w64-static
-      - w64-meson
-      - w32-meson
       - macos-acr
       - ios
       - android-acr
-      - linux-static
-      - linux-wasi
-#      - freebsd
 #      - android-meson
+      - w32-meson
+      - w64-meson
+      - w64-static
+#      - freebsd
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -630,6 +632,21 @@ jobs:
     needs:
       - check_release
     runs-on: ubuntu-latest
+    env:
+      ASSET_FILES: |
+        dist/artifacts/tarball/*.tar.xz
+        dist/artifacts/linux-acr-deb-*/radare2_*.deb
+        dist/artifacts/w64-meson/*.zip
+        dist/artifacts/w32-meson/*.zip
+        dist/artifacts/macos-acr-*/*.pkg
+        dist/artifacts/ios-cydia/*.deb
+        dist/artifacts/ios-cydia32/*.deb
+        dist/artifacts/ios-cydia/r2ios-sdk-*.zip
+        dist/artifacts/android-acr-*/*.tar.gz
+        dist/artifacts/linux-static/*.tar.xz
+        dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
+        dist/artifacts/linux-wasi/*.zip
+        dist/artifacts/w64-static/*.zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -642,218 +659,21 @@ jobs:
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: dist/artifacts
       - name: Generate checksums
-        run: find dist/artifacts -type f -exec sha256sum {} \; | awk '{sub(".*/", "", $2); print $1"  "$2}' | sort -k3 -V -o /tmp/checksums.txt
+        run: sha256sum $ASSET_FILES | awk '{sub(".*/", "", $2); print $1"  "$2}' > checksums.txt
       - name: Create GitHub release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
+          name: ${{ steps.r2v.outputs.branch }}
           tag_name: ${{ needs.check_release.outputs.tag_name }}
-          release_name: ${{ steps.r2v.outputs.branch }}
           body_path: ./RELEASE_NOTES.md
           draft: false
           prerelease: false
-      - name: Upload asset for Debian (amd64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-amd64/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
-          asset_name: radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for Debian (arm64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-arm64/radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
-          asset_name: radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload prefetched tarball (source)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/tarball/radare2-${{ steps.r2v.outputs.branch }}.tar.xz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}.tar.xz
-          asset_content_type: application/x-txz
-      - name: Upload prefetched zip (source)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/tarball/radare2-${{ steps.r2v.outputs.branch }}.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}.zip
-          asset_content_type: application/x-zip
-      - name: Upload asset for Debian (i386)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-i386/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
-          asset_name: radare2_${{ steps.r2v.outputs.branch }}_i386.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for Windows (w64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-meson/radare2-${{ steps.r2v.outputs.branch }}-w64.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-w64.zip
-          asset_content_type: application/zip
-      - name: Upload asset for Windows (w32)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w32-meson/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
-          asset_content_type: application/zip
-      - name: Upload asset for macOS (x86_64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr-x86_64/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
-          asset_name: radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
-          asset_content_type: application/x-xar
-      - name: Upload asset for macOS (arm64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr-arm64/radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
-          asset_name: radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
-          asset_content_type: application/x-xar
-      - name: Upload asset for iPhoneOS (arm)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/ios-cydia/radare2_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
-          asset_name: radare2_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for iPhoneOS (arm32)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/ios-cydia32/radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
-          asset_name: radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for iOS SDK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/ios-cydia/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
-          asset_name: r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
-          asset_content_type: application/zip
-      - name: Upload asset for Android (arm)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/android-acr-arm/radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
-          asset_content_type: application/gzip
-#      - name: Upload asset for Android (x86_64)
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: dist/artifacts/android-meson-x86_64/radare2-android-x86_64.tar.gz
-#          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-x86_64.tar.gz
-#          asset_content_type: application/x-tar
-      - name: Upload asset for Android (aarch64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/android-acr-aarch64/radare2-${{ steps.r2v.outputs.branch }}-android-aarch64.tar.gz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-aarch64.tar.gz
-          asset_content_type: application/gzip
-      - name: Upload asset for Linux (static)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-static/radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
-          asset_content_type: application/x-xz
-      - name: Upload asset for Debian dev (amd64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-amd64/radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
-          asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for Debian dev (i386)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-i386/radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
-          asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
-          asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for WASI
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-wasi/radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
-          asset_content_type: application/zip
-#      - name: Upload asset for FreeBSD
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: dist/artifacts/freebsd/radare2-freebsd.tgz
-#          asset_name: radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
-#          asset_content_type: application/gzip
-      - name: Upload asset for Windows (w64-blob)
-        continue-on-error: true
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-static/r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
-          asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
-          asset_content_type: application/zip
-      - name: Upload checksums
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: /tmp/checksums.txt
-          asset_name: checksums.txt
-          asset_content_type: text/plain
+          generate_release_notes: false
+          files: |
+            ${{ env.ASSET_FILES }}
+            checksums.txt
