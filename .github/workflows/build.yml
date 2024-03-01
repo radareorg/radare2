@@ -66,69 +66,46 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Packaging for Debian
+    - name: Packaging for RPM
       run: make -C dist/rpm
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         name: linux-acr-rpm-64
         path: dist/rpm/*.rpm
-  linux-acr-deb-64:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Packaging for Debian
-      run: |
-        gcc -v
-        export CFLAGS="-Werror"
-        sys/debian.sh
-        mv -v dist/debian/*/radare2*.deb .
-    - name: Pub
-      uses: actions/upload-artifact@v3
-      with:
-        name: linux-acr-deb-64
-        path: radare2*.deb
-  linux-acr-deb-arm64:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Installing crosscompiler
-      run: |
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes gcc-aarch64-linux-gnu
-    - name: Packaging for Debian
-      run: |
-        gcc -v
-        sys/debian.sh arm64
-        mv -v dist/debian/*/radare2*.deb .
-    - name: Pub
-      uses: actions/upload-artifact@v3
-      with:
-        name: linux-acr-deb-arm64
-        path: radare2*.deb
 
-  linux-acr-deb-32:
+  linux-acr-deb:
+    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - amd64
+          - arm64
+          - i386
+        include:
+          - arch: arm64
+            gcc: aarch64-linux-gnu
+          - arch: i386
+            gcc: multilib
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Packaging for 32bit Debian
+    - if: ${{ matrix.gcc }}
+      name: Installing crosscompiler
       run: |
         sudo apt update --assume-yes
-        sudo apt install -y gcc-multilib gperf
-        export CFLAGS="-m32 -Werror"
-        export LDFLAGS=-m32
-        export ARCH=i386
-        sys/debian.sh
+        sudo apt install --assume-yes gcc-${{ matrix.gcc }} gperf
+    - name: Packaging for Debian
+      run: |
+        gcc -v
+        sys/debian.sh ${{ matrix.arch }}
         mv -v dist/debian/*/radare2*.deb .
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
-        name: linux-acr-deb-32
+        name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
 
 ## RPM PACKAGES DISABLED
@@ -187,27 +164,16 @@ jobs:
 
 
   # macOS
-  macos-acr-x64:
-    runs-on: macos-11
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Install pkg-config
-      run: brew install pkg-config
-    - name: Packaging
-      run: dist/macos/build-pkg.sh
-#    - name: Building Radare2
-#      run: |
-#        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
-#        sys/install.sh && make -C dist/macos
-    - name: Pub
-      uses: actions/upload-artifact@v3
-      with:
-        path: dist/macos/*.pkg
-        name: macos-acr-x64
-
-  macos-acr-m1:
-    runs-on: macos-12
+  macos-acr:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            macos: 12
+          - arch: x86_64
+            macos: 11
+    runs-on: macos-${{ matrix.macos }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -215,31 +181,26 @@ jobs:
       run: brew install pkg-config
     - name: Packaging
       env:
-        ARCHFLAGS: '-arch arm64'
-      run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
+        ARCHFLAGS: '-arch ${{ matrix.arch }}'
+        CC: gcc -arch ${{ matrix.arch }}
+      run: dist/macos/build-pkg.sh
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         path: dist/macos/*.pkg
-        name: macos-acr-m1
-  ios-cydia32:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-11
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
-    - name: Create cydia32 package
-      run: ./sys/ios-cydia32.sh
-    - name: List sys/cydia
-      run: ls -lahR ./dist/cydia
-    - uses: actions/upload-artifact@v3
-      with:
-        name: ios-cydia32
-        path: ./dist/cydia/radare2/radare2-arm32_*_iphoneos-arm.deb
+        name: macos-acr-${{ matrix.arch }}
 
-  ios-cydia:
+  ios:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    strategy:
+      fail-fast: false
+      matrix:
+        type:
+          - cydia
+          - cydia32
+        include:
+          - type: cydia
+            sdk: true
     runs-on: macos-11
     steps:
     - uses: actions/checkout@v3
@@ -249,9 +210,10 @@ jobs:
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
-    - name: Create cydia package
-      run: ./sys/ios-cydia.sh
-    - name: Create iOS SDK
+    - name: Create ${{ matrix.type }} package
+      run: ./sys/ios-${{ matrix.type }}.sh
+    - if: ${{ matrix.sdk }}
+      name: Create iOS SDK
       run: |
         ./sys/ios-sdk.sh
         pushd /tmp/r2ios
@@ -260,54 +222,40 @@ jobs:
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
     - uses: actions/upload-artifact@v3
       with:
-        name: ios-cydia
+        name: ios-${{ matrix.type }}
         path: |
           ./dist/cydia/radare2/r2ios-sdk-*.zip
           ./dist/cydia/radare2/*.deb
 
-
   # Android
-  android-acr-aarch64:
+  android-acr:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        arch:
+          - aarch64
+          - arm
+        include: # Force API 16 only for ARM (32 bits)
+          - arch: arm
+            api: 16
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
-        sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+        sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip
+        pip3 install --user meson ninja
     - name: Compile with acr
       run: |
-        sys/android-ndk-install.sh
-        sys/android-build.sh arm64
+        sys/android-ndk-install.sh "${{ matrix.api }}" "${{ matrix.arch }}"
+        sys/android-build.sh "${{ matrix.arch }}"
         ls -l
     - uses: actions/upload-artifact@v3
       with:
-        name: android-acr-aarch64
-        path: radare2*android*aarch64.tar.gz
-
-  android-acr-arm:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies
-      run: |
-        sudo apt-get --assume-yes update
-        sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
-    - name: Compile with acr
-      run: |
-        sys/android-ndk-install.sh 16 arm
-        sys/android-build.sh arm
-        ls -l
-    - uses: actions/upload-artifact@v3
-      with:
-        name: android-acr-arm
-        path: radare2*android*arm.tar.gz
+        name: android-acr-${{ matrix.arch }}
+        path: radare2*android*${{ matrix.arch }}.tar.gz
 
   # disabled because the ndk link is broken for a while
   android-meson:
@@ -316,14 +264,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-      #  name: [x86_64, arm, aarch64]
-        name: [x86_64]
+        arch:
+          - x86_64
+          # - aarch64
+          # - arm
     steps:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
-        sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+        sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip
+        pip3 install --user meson ninja
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -331,17 +282,17 @@ jobs:
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.arch }}.ini
         ninja -C build && ninja -C build install
-    - name: Create radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz
+    - name: Create radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz
       run: |
         cd /tmp
         rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz android-dir/
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v3
       with:
-        name: android-meson-${{ matrix.name }}
-        path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz
+        name: android-meson-${{ matrix.arch }}
+        path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz
 
 
   # Windows
@@ -646,19 +597,13 @@ jobs:
       is_release: ${{ steps.release.outputs.is }}
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
-      - linux-acr-deb-64
-      - linux-acr-deb-arm64
-      - linux-acr-deb-32
+      - linux-acr-deb
       - w64-static
       - w64-meson
       - w32-meson
-      - macos-acr-x64
-      - macos-acr-m1
-      - ios-cydia
-      - ios-cydia32
-      - ios-cydia
-      - android-acr-arm
-      - android-acr-aarch64
+      - macos-acr
+      - ios
+      - android-acr
       - linux-static
       - linux-wasi
 #      - freebsd
@@ -719,7 +664,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-64/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
+          asset_path: dist/artifacts/linux-acr-deb-amd64/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Debian (arm64)
@@ -755,7 +700,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-32/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
+          asset_path: dist/artifacts/linux-acr-deb-i386/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Windows (w64)
@@ -776,22 +721,22 @@ jobs:
           asset_path: dist/artifacts/w32-meson/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_content_type: application/zip
-      - name: Upload asset for macOS-x64
+      - name: Upload asset for macOS (x86_64)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr-x64/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
+          asset_path: dist/artifacts/macos-acr-x86_64/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
           asset_name: radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
           asset_content_type: application/x-xar
-      - name: Upload asset for macOS-m1
+      - name: Upload asset for macOS (arm64)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr-m1/radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
+          asset_path: dist/artifacts/macos-acr-arm64/radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
           asset_name: radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
           asset_content_type: application/x-xar
       - name: Upload asset for iPhoneOS (arm)
@@ -863,7 +808,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-64/radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
+          asset_path: dist/artifacts/linux-acr-deb-amd64/radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for Debian dev (i386)
@@ -872,7 +817,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-acr-deb-32/radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
+          asset_path: dist/artifacts/linux-acr-deb-i386/radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_name: radare2-dev_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload asset for WASI
