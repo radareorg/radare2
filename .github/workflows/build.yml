@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Installing with symlinks
       run: sys/wasi.sh
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: linux-wasi
         path: radare2-*-wasi.zip
@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Creating zip and tarball
       run: sys/tarball.sh
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: tarball
         path: radare2-?.?.?.*
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -55,7 +55,7 @@ jobs:
         make -C binr/blob
         tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz r2-static
     - name: Pub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-static
         path: radare2-*-static.tar.xz
@@ -65,11 +65,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Packaging for RPM
       run: make -C dist/rpm
     - name: Pub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-acr-rpm-64
         path: dist/rpm/*.rpm
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - if: ${{ matrix.gcc }}
       name: Installing crosscompiler
       run: |
@@ -103,7 +103,7 @@ jobs:
         sys/debian.sh ${{ matrix.arch }}
         mv -v dist/debian/*/radare2*.deb .
     - name: Pub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
@@ -114,7 +114,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v3
+#      uses: actions/checkout@v4
 #    - name: Prepare Skeleton
 #      run: |
 #        mkdir -p SOURCES SPECS
@@ -125,7 +125,7 @@ jobs:
 #    - name: Organize artifacts
 #      run: mv -v RPMS/*/*.rpm dist/rpm/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v3
+#      uses: actions/upload-artifact@v4
 #      with:
 #        name: linux-meson-rpm
 #        path: *.rpm
@@ -135,7 +135,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v3
+#      uses: actions/checkout@v4
 #    - name: Install tools for CentOS:8
 #      run: |
 #        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
@@ -156,7 +156,7 @@ jobs:
 #        rpmbuild -ba radare2.spec
 #        mv -v rpmbuild/RPMS/*/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v3
+#      uses: actions/upload-artifact@v4
 #      with:
 #        name: centos-meson-rpm
 #        path: *.rpm
@@ -176,7 +176,7 @@ jobs:
     runs-on: macos-${{ matrix.macos }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Packaging
@@ -185,7 +185,7 @@ jobs:
         CC: gcc -arch ${{ matrix.arch }}
       run: dist/macos/build-pkg.sh
     - name: Pub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: dist/macos/*.pkg
         name: macos-acr-${{ matrix.arch }}
@@ -203,7 +203,7 @@ jobs:
             sdk: true
     runs-on: macos-11
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
     - name: Extract r2 version
@@ -220,7 +220,7 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ios-${{ matrix.type }}
         path: |
@@ -241,7 +241,7 @@ jobs:
             api: 16
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -252,7 +252,7 @@ jobs:
         sys/android-ndk-install.sh "${{ matrix.api }}" "${{ matrix.arch }}"
         sys/android-build.sh "${{ matrix.arch }}"
         ls -l
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: android-acr-${{ matrix.arch }}
         path: radare2*android*${{ matrix.arch }}.tar.gz
@@ -269,7 +269,7 @@ jobs:
           # - aarch64
           # - arm
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -289,7 +289,7 @@ jobs:
         cd /tmp
         rm -rf android-dir/include android-dir/lib
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: android-meson-${{ matrix.arch }}
         path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz
@@ -301,14 +301,14 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.3
+      uses: al-cheb/configure-pagefile-action@v1.4
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -328,14 +328,14 @@ jobs:
         ninja -C build -j1 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
-#    - uses: actions/checkout@v3
+#    - uses: actions/checkout@v4
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: w32-meson
         path: |
@@ -345,14 +345,14 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.3
+      uses: al-cheb/configure-pagefile-action@v1.4
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Preparing nmake
@@ -389,7 +389,7 @@ jobs:
         cd prefix\bin
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64-2022.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       continue-on-error: true
       with:
         name: w64-static-2022
@@ -399,14 +399,14 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.3
+      uses: al-cheb/configure-pagefile-action@v1.4
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Preparing nmake
@@ -440,7 +440,7 @@ jobs:
         cd prefix\bin
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       continue-on-error: true
       with:
         name: w64-static
@@ -450,14 +450,14 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.3
+      uses: al-cheb/configure-pagefile-action@v1.4
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Preparing nmake
@@ -484,14 +484,14 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
-#    - uses: actions/checkout@v3
+#    - uses: actions/checkout@v4
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: w64-meson
         path: |
@@ -503,7 +503,7 @@ jobs:
 #  freebsd:
 #    runs-on: ubuntu-latest
 #    steps:
-#    - uses: actions/checkout@v3
+#    - uses: actions/checkout@v4
 #    - name: Extract r2 version
 #      shell: bash
 #      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -530,7 +530,7 @@ jobs:
 #          rm -rf * .git*
 #          cp /tmp/radare2-freebsd.tgz radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
 #          echo DATE: ; date
-#    - uses: actions/upload-artifact@v3
+#    - uses: actions/upload-artifact@v4
 #      with:
 #        name: freebsd
 #        path: radare2-*-freebsd.tgz
@@ -613,7 +613,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
@@ -649,7 +649,7 @@ jobs:
         dist/artifacts/w64-static/*.zip
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version
@@ -659,14 +659,14 @@ jobs:
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: dist/artifacts
       - name: Generate checksums
         run: sha256sum $ASSET_FILES | awk '{sub(".*/", "", $2); print $1"  "$2}' > checksums.txt
       - name: Create GitHub release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
         with:
           name: ${{ steps.r2v.outputs.branch }}
           tag_name: ${{ needs.check_release.outputs.tag_name }}
