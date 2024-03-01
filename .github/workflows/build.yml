@@ -39,6 +39,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
     - name: Installing the musl runtime
       run: |
         sudo apt update --assume-yes
@@ -49,12 +53,12 @@ jobs:
         NOLTO=1 sys/static.sh
         # NOLTO=1 sys/static.sh
         make -C binr/blob
-        tar cJvf r2-static.tar.xz r2-static
+        tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz r2-static
     - name: Pub
       uses: actions/upload-artifact@v3
       with:
         name: linux-static
-        path: r2-static.tar.xz
+        path: radare2-*-static.tar.xz
 
   linux-acr-rpm-64:
     # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -241,6 +245,10 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
     - name: Create cydia package
       run: ./sys/ios-cydia.sh
     - name: Create iOS SDK
@@ -249,12 +257,12 @@ jobs:
         pushd /tmp/r2ios
         zip -r /tmp/r2ios-sdk.zip *
         popd
-        mv /tmp/r2ios-sdk.zip dist/cydia/radare2/
+        mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
     - uses: actions/upload-artifact@v3
       with:
         name: ios-cydia
         path: |
-          ./dist/cydia/radare2/r2ios-sdk.zip
+          ./dist/cydia/radare2/r2ios-sdk-*.zip
           ./dist/cydia/radare2/*.deb
 
 
@@ -316,20 +324,24 @@ jobs:
       run: |
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
         CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
-    - name: Create radare2-android-${{ matrix.name }}.tar.gz
+    - name: Create radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz
       run: |
         cd /tmp
         rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v3
       with:
         name: android-meson-${{ matrix.name }}
-        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
+        path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz
 
 
   # Windows
@@ -369,12 +381,9 @@ jobs:
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
-#    - name: Extract r2 version
-#      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
-#      id: extract_version
 #    - name: Create installer
 #      shell: pwsh
-#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
     - uses: actions/upload-artifact@v3
       with:
         name: w32-meson
@@ -404,6 +413,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget r2env
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+      id: r2v
     - name: preconfigure
       continue-on-error: true
       shell: cmd
@@ -419,11 +432,17 @@ jobs:
       run: |
         cd prefix\bin
         r2blob -v
+    - name: Zipping Executable
+      shell: cmd
+      run: |
+        cd prefix\bin
+        dir
+        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64-2022.zip r2blob.static.exe
     - uses: actions/upload-artifact@v3
       continue-on-error: true
       with:
         name: w64-static-2022
-        path: prefix\bin\r2blob.static.exe
+        path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64-2022.zip
 
   w64-static:
     runs-on: windows-2019
@@ -520,7 +539,7 @@ jobs:
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
-#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
     - uses: actions/upload-artifact@v3
       with:
         name: w64-meson
@@ -534,6 +553,10 @@ jobs:
 #    runs-on: macos-10.15
 #    steps:
 #    - uses: actions/checkout@v3
+#    - name: Extract r2 version
+#      shell: bash
+#      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
+#      id: r2v
 #    - name: Build r2 in FreeBSD
 #      id: build
 #      uses: vmactions/freebsd-vm@v0.1.6
@@ -554,12 +577,12 @@ jobs:
 #          (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
 #          r2r test/db/cmd
 #          rm -rf * .git*
-#          cp /tmp/radare2-freebsd.tgz .
+#          cp /tmp/radare2-freebsd.tgz radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
 #          echo DATE: ; date
 #    - uses: actions/upload-artifact@v3
 #      with:
 #        name: freebsd
-#        path: radare2-freebsd.tgz
+#        path: radare2-*-freebsd.tgz
 
 
 # R2_590 - uncomment after the 590 release
@@ -597,7 +620,7 @@ jobs:
 #    - name: Untar
 #      run: |
 #        mkdir r2-static
-#        tar -xvf r2-static.tar.xz -C r2-static --strip-components=1
+#        tar -xvf radare2-*-static.tar.xz -C r2-static --strip-components=1
 #        mkdir r2-static-latest
 #        tar -xvf r2-static-latest.tar.xz -C r2-static-latest --strip-components=1
 #    - name: ABI compatibility check
@@ -793,7 +816,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/ios-cydia/r2ios-sdk.zip
+          asset_path: dist/artifacts/ios-cydia/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
           asset_name: r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
           asset_content_type: application/zip
       - name: Upload asset for Android (arm)
@@ -829,7 +852,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/linux-static/r2-static.tar.xz
+          asset_path: dist/artifacts/linux-static/radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
           asset_content_type: application/x-xz
       - name: Upload asset for Debian dev (amd64)
