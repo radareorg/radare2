@@ -560,6 +560,12 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
 	if (core->dbg->main_arena_resolved) {
+		GHT dbg_glibc_main_arena = r_config_get_i (core->config, "dbg.glibc.main_arena");
+		if (!dbg_glibc_main_arena) {
+			R_LOG_ERROR ("core->dbg->main_arena_resolved is true but dbg.glibc.main_arena is NULL");
+			return false;
+		}
+		*m_arena = dbg_glibc_main_arena;
 		return true;
 	}
 
@@ -645,6 +651,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		GH (update_main_arena) (core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
+		r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
 		free (ta);
 		return true;
 	}
@@ -657,6 +664,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (in_debugger) {
 				core->dbg->main_arena_resolved = true;
 			}
+			r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
 			return true;
 		}
 		addr_srch += sizeof (GHT);
