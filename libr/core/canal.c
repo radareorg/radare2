@@ -5219,9 +5219,9 @@ static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
-		if (dst) {
-			return dst->imm + dst->delta;
-		}
+		// XXX fix invalid var analysis when using esil
+		return 0;
+		// if (dst) { return dst->imm + dst->delta; }
 	} else {
 		if (src1 && (src1->imm || src1->delta)) {
 			return src1->imm + src1->delta;
@@ -5241,17 +5241,20 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RAnalVarAccessType t
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (ctx->fcn && regname) {
 		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
+		// XXX the delte computed here is incorrect because in esil that state can be inconsistent with the function boundaries
+		// XXX and that causes some var names to be incorrectly identified
 		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
 			// int stack_off = ctx->initial_sp - addr; // R2STACK
 			// eprintf (" (%llx) %llx = %d\n", ctx->initial_sp, addr, stack_off);
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
-			if (!var) {
-				var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
+			if (var) {
+				R_LOG_DEBUG ("Do not reanalyze an already defined variable");
+				return;
 			}
+			var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
 			if (!var && stack_off >= -ctx->fcn->maxstack) {
-				char *varname;
-				varname = ctx->fcn->anal->opt.varname_stack
+				char *varname = ctx->fcn->anal->opt.varname_stack
 					? r_str_newf (VARPREFIX"_%xh", R_ABS (stack_off))
 					: r_anal_function_autoname_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, VARPREFIX, delta_for_access (ctx->op, type));
 				var = r_anal_function_set_var (ctx->fcn, stack_off, R_ANAL_VAR_KIND_SPV, NULL, len, false, varname);
@@ -5275,6 +5278,7 @@ static bool is_stack(RIO *io, ut64 addr) {
 }
 
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	// XXX causes invalid var names
 	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
 	// ignore writes in stack
 	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
@@ -5685,7 +5689,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 	iend = end - start;
-	if (iend < 0) {
+	if (iend < 1) {
 		return;
 	}
 	if (iend > MAX_SCAN_SIZE) {
@@ -6001,6 +6005,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 #endif
 			}
+			break;
+		case R_ANAL_OP_TYPE_STORE:
+			// TODO: the same as we do for load imho
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
 			{

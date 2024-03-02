@@ -1224,3 +1224,40 @@ address    noret size  nbbs edges    cc cost  min bound range max bound  calls l
 0x00000000     0   10     1     0     1    7 0x00000000    10 0x0000000a     0    0      0    0    12 fcn.00000000
 EOF
 RUN
+
+
+NAME=invalid varname after esil
+FILE=bins/elf/blah.bin
+CMDS=<<EOF
+s main
+af
+aaef
+pd 12
+EOF
+EXPECT=<<EOF
+            ;-- pc:
+            ;-- r15:
+/ 484: int main (int argc, char **argv);
+|           ; arg int argc @ r0
+|           ; arg char **argv @ r1
+|           ; var int32_t var_10h @ fp-0x10
+|           ; var int32_t var_14h @ fp-0x14
+|           ; var int32_t var_18h @ fp-0x18
+|           ; var int32_t var_1ch @ fp-0x1c
+|           ; var int32_t var_20h @ fp-0x20
+|           ; var int32_t var_24h @ fp-0x24
+|           ; var int32_t var_8h @ sp+0x18
+|           0x00008470      10482de9       push {r4, fp, lr}
+|           0x00008474      08b08de2       add fp, var_8h
+|           0x00008478      1cd04de2       sub sp, sp, 0x1c
+|           0x0000847c      20000be5       str r0, [var_20h]           ; 0x20 ; 32 ; argc
+|           0x00008480      24100be5       str r1, [var_24h]           ; 0x24 ; 36 ; argv
+|           0x00008484      0630a0e3       mov r3, 6
+|           0x00008488      10300be5       str r3, [var_10h]           ; 0x10 ; 16
+|           0x0000848c      0030a0e3       mov r3, 0
+|           0x00008490      14300be5       str r3, [var_14h]           ; 0x14 ; 20
+|           0x00008494      20301be5       ldr r3, [var_20h]           ; 0x20 ; 32
+|           0x00008498      020053e3       cmp r3, 2                   ; 2
+|       ,=< 0x0000849c      0300000a       beq 0x84b0
+EOF
+RUN
