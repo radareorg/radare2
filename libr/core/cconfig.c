@@ -3598,6 +3598,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "glibc", "jemalloc", NULL);
 	SETPREF ("dbg.glibc.path", "", "if not empty, use the given path to resolve the libc");
 	SETPREF ("dbg.glibc.version", "", "if not empty, assume the given libc version");
+	SETI ("dbg.glibc.main_arena", 0x0, "main_arena address");
 #if __GLIBC_MINOR__ > 25
 	SETBPREF ("dbg.glibc.tcache", "true", "parse the tcache (glibc.minor > 2.25.x)");
 #else
