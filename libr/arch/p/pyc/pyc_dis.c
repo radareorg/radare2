@@ -5,7 +5,7 @@
 #define CMP_OP_SIZE 12
 static const char *cmp_op[CMP_OP_SIZE] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
-static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt);
 
 int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
@@ -40,12 +40,6 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	opstruct->mnemonic = name;
 
 	/* TODO: adding line number and offset */
-	RList *varnames = R_UNWRAP3 (cobj, varnames, data);
-	RList *consts = R_UNWRAP3 (cobj, consts, data);
-	RList *names = R_UNWRAP3 (cobj, names, data);
-	RList *freevars = R_UNWRAP3 (cobj, freevars, data);
-	RList *cellvars = R_UNWRAP3 (cobj, cellvars, data);
-
 	if (op >= ops->have_argument) {
 		if (ops->bits == 16) {
 			oparg = code[i] + code[i + 1] * 256 + extended_arg;
@@ -62,9 +56,7 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 				extended_arg = oparg << 8;
 			}
 		}
-		char *arg = parse_arg (&ops->opcodes[op], oparg, names,
-			consts, varnames, interned_table, freevars, cellvars,
-			ops->opcode_arg_fmt);
+		char *arg = parse_arg (&ops->opcodes[op], oparg, cobj, interned_table, ops->opcode_arg_fmt);
 		if (arg) {
 			char *nm = r_str_newf ("%s %s", opstruct->mnemonic, arg);
 			free (opstruct->mnemonic);
@@ -77,14 +69,40 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	return i;
 }
 
+static RList *list_from_pycobj(pyc_object *obj) {
+	if (obj) {
+		switch (obj->type) {
+		case TYPE_DICT:
+		case TYPE_FROZENSET:
+		case TYPE_SET:
+		case TYPE_LIST:
+		case TYPE_TUPLE:
+		case TYPE_SMALL_TUPLE:
+			return obj->data;
+		// TYPE_REF = 'r', // not sure????
+		default:
+			break;
+		}
+	}
+	return NULL;
+}
+
 static char *generic_array_obj_tostring(RList *l);
 
-static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	char *arg = NULL;
 	pyc_code_object *tmp_cobj;
 	pyc_arg_fmt *fmt;
 	RListIter *i = NULL;
+
+	// TODO: don't traverse if you are not going to use
+	// Also, this should probably be more stringent on the allowed types
+	RList *varnames = list_from_pycobj (R_UNWRAP2 (cobj, varnames));
+	RList *consts = list_from_pycobj (R_UNWRAP2 (cobj, consts));
+	RList *names = list_from_pycobj (R_UNWRAP2 (cobj, names));
+	RList *freevars = list_from_pycobj (R_UNWRAP2 (cobj, freevars));
+	RList *cellvars = list_from_pycobj (R_UNWRAP2 (cobj, cellvars));
 
 	// version-specific formatter for certain opcodes
 	r_list_foreach (opcode_arg_fmt, i, fmt)

@@ -1083,7 +1083,7 @@ static pyc_object *get_object(RBuffer *buffer, int wanted_type) {
 		break;
 	case TYPE_STOPITER:
 	case TYPE_ELLIPSIS:
-		ret = R_NEW0 (pyc_object);
+		ret = R_NEW0 (pyc_object); // XXX: type is not set proper?
 		break;
 	case TYPE_UNKNOWN:
 		R_LOG_DEBUG ("Get not implemented for type 0x%x", type);
