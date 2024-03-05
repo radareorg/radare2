@@ -77,6 +77,7 @@ static RList *list_from_pycobj(pyc_object *obj) {
 		case TYPE_SET:
 		case TYPE_LIST:
 		case TYPE_TUPLE:
+		case TYPE_SMALL_TUPLE:
 			return obj->data;
 		// TYPE_REF = 'r', // not sure????
 		default:
