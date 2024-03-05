@@ -71,33 +71,15 @@ static inline GHT GH(get_next_pointer)(RCore *core, GHT pos, GHT next) {
 	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR (pos, next);
 }
 
-static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
-	r_return_val_if_fail (core && map, GHT_MAX);
-	GHT base_addr = map->addr;
-	r_return_val_if_fail (base_addr != GHT_MAX, GHT_MAX);
-
-	GHT main_arena = GHT_MAX;
+static GHT GH(get_main_arena_offset_with_symbol)(RCore *core, const char *libc_filename) {
 	GHT vaddr = GHT_MAX;
-	char *path = strdup (map->name);
-	if (path && r_file_exists (path)) {
-		vaddr = GH (get_va_symbol) (core, path, "main_arena");
+	if (libc_filename && r_file_exists (libc_filename)) {
+		vaddr = GH (get_va_symbol)(core, libc_filename, "main_arena");
 		if (vaddr != GHT_MAX) {
-			main_arena = base_addr + vaddr;
-		} else {
-			vaddr = GH (get_va_symbol) (core, path, "__malloc_hook");
-			if (vaddr == GHT_MAX) {
-				return main_arena;
-			}
-			RBinInfo *info = r_bin_get_info (core->bin);
-			if (!strcmp (info->arch, "x86")) {
-				main_arena = GH (align_address_to_size) (vaddr + base_addr + sizeof (GHT), 0x20);
-			} else if (!strcmp (info->arch, "arm")) {
-				main_arena = vaddr + base_addr - sizeof (GHT) * 2 - sizeof (MallocState);
-			}
+			R_LOG_INFO("Found main_arena with symbol");
 		}
 	}
-	free (path);
-	return main_arena;
+	return vaddr;
 }
 
 static GH(section_content) GH(get_section_content)(RCore *core, const char *path, const char *section_name) {
@@ -228,12 +210,21 @@ static const char* GH(get_libc_filename_from_maps)(RCore *core) {
 			continue;
 		}
 		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name)) {
+			r_config_set (core->config, "dbg.glibc.path", map->file);
 			return map->file;
 		}
 	}
 	return NULL;
 }
 
+// TODO: more options to get libc filename
+static const char* GH(get_libc_filename)(RCore *core) {
+	const char *dbg_glibc_path = r_config_get (core->config, "dbg.glibc.path");
+	if (!R_STR_ISEMPTY (dbg_glibc_path)) {
+		return dbg_glibc_path;
+	}
+	return GH(get_libc_filename_from_maps) (core);
+}
 
 static bool GH(resolve_glibc_version)(RCore *core) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
@@ -284,6 +275,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		return true;
 	}
 
+	R_LOG_WARN ("Could not determine libc version");
 	return false;
 }
 
@@ -556,6 +548,74 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("}\n\n");
 }
 
+static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc_path) {
+	RBin *bin = core->bin;
+	RBinFile *bf = r_bin_cur (bin);
+	GHT main_arena = GHT_MAX;
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	if (!r_bin_open (bin, libc_path, &opt)) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to open libc %s", libc_path);
+		return GHT_MAX;
+	}
+	RRBTree *relocs = r_bin_get_relocs (bin);
+	if (!relocs) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to get relocs from libc %s", libc_path);
+		return GHT_MAX;
+	}
+
+	// Get .data section to limit search
+	RList* section_list = r_bin_get_sections (bin);
+	RListIter *iter;
+	RBinSection *section;
+	RBinSection *data_section = NULL;
+	r_list_foreach (section_list, iter, section) {
+		if (!strcmp (section->name, ".data")) {
+			data_section = section;
+			break;
+		}
+	}
+	if (!data_section) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to find .data section in %s", libc_path);
+		return GHT_MAX;
+	}
+	GH(section_content)  libc_data = GH (get_section_content) (core, libc_path, ".data");
+
+	// TODO: switch for version, this is valid for >= 2.27 malloc_state
+	GHT next_field_offset = offsetof(GH(RHeap_MallocState_tcache), next);
+	GHT malloc_state_size = sizeof (GH(RHeap_MallocState_tcache));
+
+	// Iterate over relocations and look for malloc_state structure
+	RRBNode *node;
+	RBinReloc *reloc;
+	RHeap_MallocState_tcache_64 expected;
+	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
+		// We only care about relocations in .data section
+		if (reloc->vaddr - next_field_offset < data_section->vaddr ||
+			reloc->vaddr > data_section->vaddr + data_section->size)
+			continue;
+		//eprintf("vaddr: %p addend: %p \n", reloc->vaddr, reloc->addend);
+		// If reloc->addend is the offset of main_arena, then reloc->vaddr should be the offset of main_arena.next
+		if (reloc->vaddr - next_field_offset == reloc->addend)	{
+			//eprintf("candidate found\n");
+			// Candidate found, to be sure compare data with expected malloc_state
+			GHT search_start = reloc->addend - data_section->vaddr;
+			expected.next = reloc->addend;
+			if (memcmp (libc_data.buf + search_start, &expected, malloc_state_size)) {
+				R_LOG_WARN ("Found main_arena offset with relocations");
+				main_arena = reloc->addend - data_section->vaddr;
+				break;
+			}
+		}
+	}
+
+	RBinFile *libc_bf = r_bin_cur (bin);
+	r_bin_file_delete (bin, libc_bf->id);
+	r_bin_file_set_cur_binfile (bin, bf);
+
+	return main_arena;
+}
+
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 
@@ -569,49 +629,49 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return true;
 	}
 
-	// R_LOG_INFO ("Resolving libc version");
 	if (!GH (resolve_glibc_version) (core)) {
-		R_LOG_WARN ("Could not determine libc version");
-		// TODO: maybe add config setting to hardcode libc version?
+		R_LOG_WARN ("r_resolve_main_arena: Could not resolve main glibc version!");
 		return false;
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
-	GHT main_arena_sym = GHT_MAX;
+	GHT main_arena_addr = GHT_MAX;
+	GHT main_arena_offset = GHT_MAX;
+
 	const bool in_debugger = r_config_get_b (core->config, "cfg.debug");
 
 	if (in_debugger) {
-		const char *dbg_glibc_path = r_config_get (core->config, "dbg.glibc.path");
-		if (R_STR_ISEMPTY (dbg_glibc_path)) {
-			dbg_glibc_path = NULL;
+		const char *libc_filename = GH(get_libc_filename) (core);
+		if (!libc_filename)	{
+			R_LOG_WARN ("r_resolve_main_arena: Could not resolve libc filename");
+			return false;
 		}
-		bool first_libc = true;
+
+		main_arena_offset = GH (get_main_arena_offset_with_symbol) (core, libc_filename);
+		if (main_arena_offset == GHT_MAX) {
+			main_arena_offset = GH (get_main_arena_offset_with_relocs) (core, libc_filename);
+		}
+		if (main_arena_offset == GHT_MAX) {
+			R_LOG_WARN ("Could not find main_arena via symbol or relocations");
+			// in this case fall back to bruteforce below
+		}
+
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (dbg_glibc_path) {
-				if (map->perm == R_PERM_RW && strstr (map->name, dbg_glibc_path)) {
-					libc_addr_sta = map->addr;
-					libc_addr_end = map->addr_end;
-					main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
-					break;
-				}
-				continue;
-			}
-			/* Try to find the main arena address using the glibc's symbols. */
-			if ((first_libc && main_arena_sym == GHT_MAX) && (strstr (map->name, "/libc-") || strstr (map->name, "/libc."))) {
-				first_libc = false;
-				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
-			}
-			if (map->perm == R_PERM_RW && (strstr (map->name, "/libc-") || strstr (map->name, "/libc."))) {
+			if (map->perm == R_PERM_RW && strstr (map->name, libc_filename)) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
+				if (main_arena_offset != GHT_MAX) {
+					main_arena_addr = map->addr + main_arena_offset;
+				}
 				break;
 			}
 		}
 	} else {
+		// TODO: this is never hit unless libc version is set manually since it is resolved using `dm`
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		if (!bank) {
 			return false;
@@ -647,9 +707,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return false;
 	}
 
-	if (main_arena_sym != GHT_MAX) {
-		GH (update_main_arena) (core, main_arena_sym, ta);
-		*m_arena = main_arena_sym;
+	if (main_arena_addr != GHT_MAX) {
+		GH (update_main_arena) (core, main_arena_addr, ta);
+		*m_arena = main_arena_addr;
 		core->dbg->main_arena_resolved = true;
 		r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
 		free (ta);
@@ -665,11 +725,12 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 				core->dbg->main_arena_resolved = true;
 			}
 			r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
+			R_LOG_WARN ("Found main_arena offset with pattern matching");
 			return true;
 		}
 		addr_srch += sizeof (GHT);
 	}
-	R_LOG_WARN ("Can't find main_arena in `dm`");
+	R_LOG_WARN ("Cannot find main_arena");
 	free (ta);
 	return false;
 }
