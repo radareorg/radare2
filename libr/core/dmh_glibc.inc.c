@@ -568,7 +568,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	RList* section_list = r_bin_get_sections (bin);
 	RListIter *iter;
 	RBinSection *section;
-	RBinSection *data_section;
+	RBinSection *data_section = NULL;
 	r_list_foreach (section_list, iter, section) {
 		if (!strcmp (section->name, ".data")) {
 			data_section = section;
