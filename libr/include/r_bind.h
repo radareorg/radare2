@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2023 - pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - pancake */
 
 #ifndef R2_BIND_H
 #define R2_BIND_H
@@ -17,7 +17,7 @@ typedef char *(*RCoreCallAt)(void *user, ut64 addr, const char *cmd);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
-typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage *help);
+typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage help);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
