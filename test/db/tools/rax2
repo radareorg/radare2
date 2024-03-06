@@ -84,6 +84,14 @@ CMDS=rax2 -E "\x60\x00\x66\x00\x67"
 EXPECT=YABmAGc=
 RUN
 
+NAME=r rax2 -D URL safe
+FILE=-
+CMDS=rax2 -D __-_ |rax2 -S
+EXPECT=<<EOF
+ffffbf
+EOF
+RUN
+
 NAME=rax2 -S hello | rax2 -s
 FILE=-
 CMDS=!rax2 -S hello | rax2 -s
