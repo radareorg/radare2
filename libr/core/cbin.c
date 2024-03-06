@@ -369,7 +369,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		r_cons_break_push (NULL, NULL);
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Strings]");
-		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
+		r_table_set_columnsf (table, "nXXnnssss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "blocks", "string");
 	}
 	RBinString b64 = {0};
 	r_list_foreach (list, iter, string) {
@@ -386,7 +386,20 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		if (maxstr && string->length > maxstr) {
 			continue;
 		}
-
+#if FALSE_POSITIVES
+		{
+			int *block_list = r_utf_block_list ((const ut8*)string->string, -1, NULL);
+			if (block_list) {
+				if (block_list[0] == 0 && block_list[1] == -1) {
+					/* Don't show block list if
+					   just Basic Latin (0x00 - 0x7F) */
+					// nothing
+				} else {
+					continue;
+				}
+			}
+		}
+#endif
 		section = obj? r_bin_get_section_at (obj, paddr, 0): NULL;
 		section_name = section ? section->name : "";
 		type_string = r_bin_string_type (string->type);
@@ -447,19 +460,19 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
 						   just Basic Latin (0x00 - 0x7F) */
-						R_FREE (block_list);
-						break;
+					} else {
+						int *block_ptr = block_list;
+						pj_k (pj, "blocks");
+						pj_a (pj);
+						for (; *block_ptr != -1; block_ptr++) {
+							const char *utfName = r_utf_block_name (*block_ptr);
+							pj_s (pj, r_str_get (utfName));
+						}
+						pj_end (pj);
 					}
-					int *block_ptr = block_list;
-					pj_k (pj, "blocks");
-					pj_a (pj);
-					for (; *block_ptr != -1; block_ptr++) {
-						const char *utfName = r_utf_block_name (*block_ptr);
-						pj_s (pj, r_str_get (utfName));
-					}
-					pj_end (pj);
 					R_FREE (block_list);
 				}
+				break;
 			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
@@ -498,6 +511,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 				}
 			}
 
+			char *blocks = NULL;
 			RStrBuf *buf = r_strbuf_new (str);
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
@@ -511,22 +525,27 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 						break;
 					}
 					int *block_ptr = block_list;
-					r_strbuf_append (buf, " blocks=");
+					RStrBuf *sb = r_strbuf_new ("");
+					// a bit noisy and useless for listing here imho
 					for (; *block_ptr != -1; block_ptr++) {
 						if (block_ptr != block_list) {
-							r_strbuf_append (buf, ",");
+							r_strbuf_append (sb, ",");
 						}
 						const char *name = r_utf_block_name (*block_ptr);
-						r_strbuf_appendf (buf, "%s", r_str_get (name));
+						if (name) {
+							r_strbuf_append (sb, name);
+						}
 					}
 					free (block_list);
+					blocks = r_strbuf_drain (sb);
 				}
 				break;
 			}
 			char *bufstr = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "nXXddsss", (ut64)string->ordinal, paddr, vaddr,
+			r_table_add_rowf (table, "nXXddssss", (ut64)string->ordinal, paddr, vaddr,
 				(int)string->length, (int)string->size, section_name,
-				type_string, bufstr);
+				type_string, blocks?blocks:NULL, bufstr);
+			free (blocks);
 			free (bufstr);
 			free (no_dbl_bslash_str);
 		}
