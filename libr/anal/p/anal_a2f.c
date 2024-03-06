@@ -433,7 +433,7 @@ static bool analcall(RAnal *anal, const char *input) {
 		switch (input[2]) {
 		case 'f':
 			if (input[3] == '?') {
-				anal->coreb.help (core, &help_msg_a2f);
+				anal->coreb.help (core, help_msg_a2f);
 				return true;
 			}
 
@@ -442,7 +442,7 @@ static bool analcall(RAnal *anal, const char *input) {
 			}
 			break;
 		default:
-			anal->coreb.help (core, &help_msg_a2f);
+			anal->coreb.help (core, help_msg_a2f);
 			break;
 		}
 		return true;
