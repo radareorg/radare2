@@ -260,6 +260,7 @@ static int main_help(int line) {
 		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 		" R2_LOG_FILE     dump all logs to a file\n"
 		"Paths:\n"
+		" R2_RCFILE    ~/.radare2rc\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_BINDIR    "R2_BINDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
@@ -288,6 +289,7 @@ static int main_print_var(const char *var_name) {
 	char *libdir = strdup (R2_LIBDIR);
 	char *bindir = strdup (R2_BINDIR);
 #endif
+	char *rcfile = r_file_home (".radare2rc");
 	char *confighome = r_xdg_configdir (NULL);
 	char *datahome = r_xdg_datadir (NULL);
 	char *cachehome = r_xdg_cachedir (NULL);
@@ -306,6 +308,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
 		{ "R2_BINDIR", bindir },
+		{ "R2_RCFILE", rcfile },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_RDATAHOME", datahome },
@@ -332,6 +335,7 @@ static int main_print_var(const char *var_name) {
 		}
 		i++;
 	}
+	free (rcfile);
 	free (incdir);
 	free (libdir);
 	free (confighome);
