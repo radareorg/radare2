@@ -2125,7 +2125,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "rev", 3)) {
 		*op = rev (&ops);
 	} else if (!strncmp (str, "mvn", 3)) {
-		*op = _mvn (&ops);
+		*op = mvn (&ops);
 	} else if (!strncmp (str, "rbit", 4)) {
 		*op = rbit (&ops);
 	} else if (!strncmp (str, "tst", 3)) {
