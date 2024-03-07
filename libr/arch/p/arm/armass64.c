@@ -124,7 +124,7 @@ static int countTrailingZeros(ut64 x) {
 	return count;
 }
 
-R_UNUSED static bool has64reg (const char *str) {
+R_UNUSED static bool has64reg(const char *str) {
 	char *w = strchr (str, 'x');
 	return (w && IS_DIGIT (w[1]));
 }
