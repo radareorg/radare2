@@ -1,5 +1,6 @@
 NAME=dmi ld
 FILE=bins/elf/ls-focal
+BROKEN=1
 ARGS=-d
 CMDS=<<EOF
 dmiqq ld

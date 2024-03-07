@@ -1,15 +1,12 @@
-Calling Conventions profiles
-============================
+# Calling Conventions
 
 Radare2 uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype (WIP at the time of writing this wiki).
 
-Profile grammar
-===============
+## Profile grammar
 
 Since the profiles are based on sdb database, Creating one is as simple as creating group of `key=value` pairs in text file. then parsing it into sdb data file.
 
-Attribute list
-==============
+## Attribute list
 
 Note that you will substitute `x` for the calling convention name you will use.
 
@@ -27,13 +24,10 @@ Note that you will substitute `x` for the calling convention name you will use.
 
 `cc.x.ret=reg`: used to set where the return value is stored for the given calling convention.
 
-File Path
-=========
+## File Path
 
 In order to integrate the calling convention profile you created with the r2 source, few set of conventions should be followed:
 
-- Store the unparsed sdb file in `path-to-radare2-source/libr/anal/d`.
-- If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`
-- In the file `path-to-radare2-source/libr/anal/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
-
-
+* Store the unparsed sdb file in `path-to-radare2-source/libr/anal/d`.
+* If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`
+* In the file `path-to-radare2-source/libr/anal/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.

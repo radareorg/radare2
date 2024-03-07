@@ -50,14 +50,16 @@ RUN
 
 NAME=rax2 -E | rax2 -D
 FILE=-
-CMDS=!rax2 -E hello |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -D
+CMDS=!rax2 -E hello | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -D
 EXPECT=hello
 RUN
 
 NAME=rax2 -E | rax2 -D 2
 FILE=-
-CMDS=!rax2 -E hello |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -Dl
-EXPECT=hello
+CMDS=!rax2 -E hello | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -lD
+EXPECT=<<EOF
+hello
+EOF
 RUN
 
 NAME=rax2 -E | rax2 -D 3
@@ -80,6 +82,14 @@ NAME=r rax2 -E null byte
 FILE=-
 CMDS=rax2 -E "\x60\x00\x66\x00\x67"
 EXPECT=YABmAGc=
+RUN
+
+NAME=r rax2 -D URL safe
+FILE=-
+CMDS=rax2 -D __-_ |rax2 -S
+EXPECT=<<EOF
+ffffbf
+EOF
 RUN
 
 NAME=rax2 -S hello | rax2 -s

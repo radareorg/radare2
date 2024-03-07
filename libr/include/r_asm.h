@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H

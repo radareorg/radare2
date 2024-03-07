@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2024 - pancake, maijin */
 
 #if R_INCLUDE_BEGIN
 
@@ -104,10 +104,10 @@ static RCoreHelpMessage help_msg_aF = {
 };
 
 static RCoreHelpMessage help_msg_an = {
-	"Usage:", "an", " # analyze name for the current address",
-	"an", "", "show flag/function/symbol name",
-	"an*", "", "same as above but in r2 commands",
-	"anj", "", "same as above but in json",
+	"Usage:", "an", "[aj*] # analyze name for the current address (see fd and aan commands)",
+	"an", "[j*]", "show flag/function/symbol name (in json or r2 commands)",
+	"anf", "", "propose name for current function (see anal.slow and 'aan')",
+	"anfl", "", "list all names used in the autonaming guess algorithm",
 	NULL
 };
 
@@ -579,7 +579,7 @@ static RCoreHelpMessage help_msg_afb = {
 	".afbr-*", "", "remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
-	"afb,", "", "show basic blocks of current function in a table (previously known as afbt)",
+	"afb,", "", "show basic blocks of current function in a table",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afba", "[!]", "list basic blocks of current offset in analysis order (EXPERIMENTAL, see afla)",
@@ -645,12 +645,12 @@ static RCoreHelpMessage help_msg_afl = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
 	"afl.", "", "display function in current offset (see afi.)",
+	"afl,", " [query]", "list functions in table format",
 	"afl+", "", "display sum all function sizes",
 	"afl=", "", "display ascii-art bars with function ranges",
 	"afla", "", "reverse call order (useful for afna and noret, also see afba)",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
-	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "[?]", "list functions in makefile style (af@@=`aflm~0x`)",
@@ -658,6 +658,12 @@ static RCoreHelpMessage help_msg_afl = {
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
 	"aflx", "[?*jv]", "list function xrefs (who references or calls the current function)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_aflt = {
+	"Usage:", "afl,", " List functions in table format",
+	"afl,", "[query]", "list functions",
 	NULL
 };
 
@@ -2839,13 +2845,17 @@ static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-static RVecUT64 *get_xrefs(RAnalBlock *block) {
+static RVecUT64 *get_xrefs(RAnalBlock *bb) {
 	RVecUT64 *result = RVecUT64_new ();
 
 	size_t i;
-	for (i = 0; i < block->ninstr; i++) {
-		const ut64 ia = block->addr + block->op_pos[i];
-		RVecAnalRef *xrefs = r_anal_xrefs_get (block->anal, ia);
+	for (i = 0; i < bb->ninstr; i++) {
+		if (i >= bb->op_pos_size) {
+			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+			break;
+		}
+		const ut64 ia = bb->addr + bb->op_pos[i];
+		RVecAnalRef *xrefs = r_anal_xrefs_get (bb->anal, ia);
 		if (xrefs) {
 			RAnalRef *ref;
 			R_VEC_FOREACH (xrefs, ref) {
@@ -2854,11 +2864,9 @@ static RVecUT64 *get_xrefs(RAnalBlock *block) {
 					RVecUT64_free (result);
 					return NULL;
 				}
-
 				*addr = ref->addr;
 			}
 		}
-
 		RVecAnalRef_free (xrefs);
 	}
 
@@ -3262,7 +3270,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 
 	RTable *t = NULL;
-	if (mode == 't') {
+	if (mode == ',') {
 		t = r_table_new ("fcnbbs");
 		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
@@ -3273,7 +3281,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 		}
 		switch (mode) {
-		case ',': // "afb," "afbt"
+		case ',': // "afb,"
 			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
 			break;
 		case 'r': // "afbr"
@@ -3336,7 +3344,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			break;
 		}
 	}
-	if (mode == 't') {
+	if (mode == ',') {
 		const char *arg = input;
 		if (r_table_query (t, arg)) {
 			char *ts = r_table_tofancystring (t);
@@ -5395,10 +5403,19 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'l': // "afll"
 			if (input[3] == '?') {
 				r_core_cmd_help (core, help_msg_afll);
-				break;
+			} else {
+				r_core_anal_fcn_list (core, NULL, input + 2);
 			}
-			/* fallthrough */
+			break;
 		case ',': // "afl,"
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_aflt);
+				r_core_cmd0 (core, "is,:help");
+			} else {
+				r_core_anal_fcn_list (core, NULL, input + 2);
+			}
+			break;
+			/* fallthrough */
 		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"
@@ -5789,7 +5806,7 @@ static int cmd_af(RCore *core, const char *input) {
 		case '=': // "afb="
 		case '*': // "afb*"
 		case 'j': // "afbj"
-		case 't': // "afbt"
+		case ',': // "afb,"
 			anal_fcn_list_bb (core, input + 2, false);
 			break;
 		case 'i': // "afbi"
@@ -5815,10 +5832,14 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'n': // "afn"
 		switch (input[2]) {
 		case 's': // "afns"
-			if (input[3] == 'j') { // "afnsj"
-				free (r_core_anal_fcn_autoname (core, core->offset, 'j'));
-			} else {
-				free (r_core_anal_fcn_autoname (core, core->offset, 's'));
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					const char ch = (input[3] == 'j')? 'j': 's'; // "afnsj"
+					free (r_core_anal_fcn_autoname (core, fcn, ch));
+				} else {
+					R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->offset);
+				}
 			}
 			break;
 		case '*': // "afn*"
@@ -5839,12 +5860,17 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'a': // "afna"
 			if (input[3] == '?') {
 				r_core_cmd_help (core, help_msg_afna);
-				break;
-			}
-			char *name = r_core_anal_fcn_autoname (core, core->offset, 'v');
-			if (name) {
-				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
-				free (name);
+			} else {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					char *name = r_core_anal_fcn_autoname (core, fcn, 'v');
+					if (name) {
+						r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
+						free (name);
+					}
+				} else {
+					R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->offset);
+				}
 			}
 			break;
 		case '.': // "afn."
@@ -12431,6 +12457,10 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				to = map->addr_end;
 			}
 		} else {
+			const char *v = r_config_get (core->config, "anal.in");
+			if (!strcmp (v, "bin.ormaps.x")) {
+				r_config_set (core->config, "anal.in", "io.maps.x");
+			}
 			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 			RListIter *iter;
 			RIOMap* map;
@@ -13726,10 +13756,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
 					if (input[2] == 'a') { // "aaaa"
-						logline (core, 98, "Reanalizing graph references to improve function count (aarr)");
+						logline (core, 98, "Reanalizing graph references to adjust functions count (aarr)");
 						r_core_cmd_call (core, "aarr");
-
-						logline (core, 99, "Autoname all functions");
+						// const char *mode = core->anal->opt.slow? "slow": "fast";
+						logline (core, 99, "Autoname all functions (.afna@@c:afla)");
 						r_core_cmd0 (core, ".afna@@c:afla");
 					}
 				} else {
@@ -14870,36 +14900,50 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "an"
-		{
-		const char *name = "";
-		int mode = 0;
-		switch (input[1]) {
-		case '?':
-			r_core_cmd_help (core, help_msg_an);
-			mode = -1;
-			break;
-		case 'j':
-		case '*':
-			mode = input[1];
-			input++;
-			break;
-		}
-		if (mode >= 0) {
-			if (input[1] == ' ') {
-				name = input + 1;
-				while (name[0] == ' ') {
-					name++;
+		if (input[1] == 'f') {
+			const bool list = input[2] == 'l';
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			if (fcn) {
+				if (list) {
+					free (r_core_anal_fcn_autoname (core, fcn, 'l'));
+				} else {
+					char *n = r_core_anal_fcn_autoname (core, fcn, 0);
+					r_cons_printf ("%s\n", n? n: fcn->name);
+					free (n);
 				}
-				char *end = strchr (name, ' ');
-				if (end) {
-					*end = '\0';
+			} else {
+				R_LOG_WARN ("cant find function here");
+			}
+		} else {
+			const char *name = "";
+			int mode = 0;
+			switch (input[1]) {
+			case '?':
+				r_core_cmd_help (core, help_msg_an);
+				mode = -1;
+				break;
+			case 'j':
+			case '*':
+				mode = input[1];
+				input++;
+				break;
+			}
+			if (mode >= 0) {
+				if (input[1] == ' ') {
+					name = input + 1;
+					while (name[0] == ' ') {
+						name++;
+					}
+					char *end = strchr (name, ' ');
+					if (end) {
+						*end = '\0';
+					}
 				}
+				if (R_STR_ISEMPTY (name)) {
+					name = NULL;
+				}
+				cmd_an (core, name, mode);
 			}
-			if (R_STR_ISEMPTY (name)) {
-				name = NULL;
-			}
-			cmd_an (core, name, mode);
-		}
 		}
 		break;
 	case 'g': // "ag"

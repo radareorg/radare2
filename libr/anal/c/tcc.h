@@ -23,6 +23,8 @@
 
 #include "r_types.h"
 #include <r_util/r_str.h>
+#include <r_th.h>
+#include <r_vector.h>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -66,10 +68,6 @@ typedef UINT_PTR uintptr_t;
 # endif
 # define inline __inline
 # define inp next_inp
-# ifdef LIBTCC_AS_DLL
-#  define LIBTCCAPI __declspec(dllexport)
-#  define PUB_FUNC LIBTCCAPI
-# endif
 #endif
 
 #ifndef O_BINARY
@@ -367,17 +365,17 @@ struct TCCState {
 
 	/* used by main and tcc_parse_args only */
 	char *deps_outfile; /* option -MF */
-	// === previously globals ====
+	// previously globals
 	bool const_wanted;	/* true if constant wanted */
 	bool global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
 	size_t arraysize;
 
 	/* loc : local variable index
-ind : output code index
-rsym: return symbol
-anon_sym: anonymous symbol index
+         * ind : output code index
+         * rsym: return symbol
+         * anon_sym: anonymous symbol index
 	 */
-	int anon_sym; //  = SYM_FIRST_ANOM;
+	int anon_sym; // = SYM_FIRST_ANOM;
 	int loc;
 	int ch, tok;
 	CValue tokc;
@@ -478,7 +476,7 @@ static const bool tcc_ext = true;
 #define VT_DOUBLE          10  /* IEEE double */
 #define VT_LDOUBLE         11  /* IEEE long double */
 #define VT_BOOL            12  /* ISOC99 boolean type */
-#define VT_INT64		   13  /* int64_t */
+#define VT_INT64	   13  /* int64_t */
 #define VT_LONG            14  /* long integer (NEVER USED as type, only
 				  during parsing) */
 #define VT_QLONG           15  /* 128-bit integer. Only used for x86-64 ABI */
@@ -695,34 +693,32 @@ enum tcc_token {
 #define PATHCMP strcmp
 #endif
 
-/* space exlcuding newline */
-static inline int is_space(int ch) {
+/* space excluding newline */
+static inline bool is_space(int ch) {
 	return ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r';
 }
 
-static inline int isid(int c) {
+static inline bool isid(int c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static inline int isnum(int c) {
+// TODO: deprecate. we have isdigit()
+static inline bool isnum(int c) {
 	return c >= '0' && c <= '9';
 }
 
-static inline int isdot(int c) {
+static inline bool isdot(int c) {
 	return c == '.';
 }
 
-static inline int isoct(int c) {
+static inline bool isoct(int c) {
 	return c >= '0' && c <= '7';
 }
 
+// TODO: deprecate, we have toupper()
 static inline int toup(int c) {
 	return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
 }
-
-#ifndef PUB_FUNC
-# define PUB_FUNC
-#endif
 
 #ifdef ONE_SOURCE
 #define ST_INLN static inline
@@ -745,14 +741,14 @@ static inline int tcc_nerr(TCCState *s1) {
 #define AFF_PREPROCESS      0x0004 /* preprocess file */
 
 /* public functions currently used by the tcc main function */
-PUB_FUNC char *strcat2(char *buf, int buf_size, const char *s);
-PUB_FUNC char *pstrncpy(char *out, const char *in, size_t num);
-PUB_FUNC char *tcc_basename(const char *name);
-PUB_FUNC char *tcc_fileextension (const char *name);
-PUB_FUNC void tcc_error_noabort(const char *fmt, ...);
-PUB_FUNC void tcc_error(TCCState *s1, const char *fmt, ...);
-PUB_FUNC void tcc_warning(TCCState *s1, const char *fmt, ...);
-PUB_FUNC void strcat_printf(char *buf, int buf_size, const char *fmt, ...);
+R_API char *strcat2(char *buf, int buf_size, const char *s);
+R_API char *pstrncpy(char *out, const char *in, size_t num);
+R_API char *tcc_basename(const char *name);
+R_API char *tcc_fileextension(const char *name);
+R_API void tcc_error_noabort(const char *fmt, ...);
+R_API void tcc_error(TCCState *s1, const char *fmt, ...);
+R_API void tcc_warning(TCCState *s1, const char *fmt, ...);
+R_API void strcat_printf(char *buf, int buf_size, const char *fmt, ...);
 
 /* other utilities */
 ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data);
@@ -775,7 +771,8 @@ ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen);
 ST_FUNC int tcc_open(TCCState *s1, const char *filename);
 ST_FUNC void tcc_close(TCCState *s1);
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
-PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv);
+R_API int tcc_parse_args(TCCState *s, int argc, char **argv);
+R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init);
 
 /* ------------ tccpp.c ------------ */
 
@@ -803,7 +800,7 @@ ST_INLN void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *fir
 ST_FUNC void define_undef(TCCState *s1, Sym *s);
 ST_INLN Sym *define_find(TCCState *s1, int v);
 ST_FUNC void free_defines(TCCState *s1, Sym *b);
-// ST_FUNC void parse_define(void);
+R_API void tcc_parse_define(TCCState *s1);
 ST_FUNC void preprocess(TCCState *s1, bool is_bof);
 ST_FUNC void next_nomacro(TCCState *s1);
 ST_INLN void unget_tok(TCCState *s1, int last_tok);
@@ -845,9 +842,9 @@ ST_FUNC long long expr_const(TCCState *s1);
 #define ST_DATA
 #endif
 /********************************************************/
-PUB_FUNC void tcc_appendf(TCCState *s, const char *fmt, ...);
-PUB_FUNC void tcc_typedef_appendf(TCCState *s, const char *fmt, ...);
-PUB_FUNC void tcc_typedef_alias_fields(TCCState *s, const char *alias);
+R_API void tcc_appendf(TCCState *s, const char *fmt, ...);
+R_API void tcc_typedef_appendf(TCCState *s, const char *fmt, ...);
+R_API void tcc_typedef_alias_fields(TCCState *s, const char *alias);
 
 extern void (*tcc_cb)(const char *, char **);
 

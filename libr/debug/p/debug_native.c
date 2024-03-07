@@ -1091,9 +1091,8 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
-				&region[2], &region2[2], &ign, &ign,
-				unkstr, perms, &ign, &ign) != 8) {
+		if (r_str_scanf (line, "%.s %.s %*d %*d %*s %.s %*d %*d",
+			sizeof (region)-2, &region[2], sizeof (region2)-2, &region2[2], sizeof (perms), perms) != 3) {
 			R_LOG_ERROR ("%s: Unable to parse \"%s\"", __func__, path);
 			r_list_free (list);
 			return NULL;
@@ -1109,11 +1108,16 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #else
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
+		i = r_str_scanf (line, "%.s %.s %Lx %*s %*s %.[^\n]",
+			sizeof (region) - 2, &region[2],
+			sizeof (perms), perms,
+			&offset,
+			sizeof (name), name);
 		if (i == 3) {
 			name[0] = '\0';
 		} else if (i != 4) {
-			R_LOG_ERROR ("Unable to parse \"%s\"", path);
+			R_LOG_ERROR ("Unable to parse \"%s\" %d vs 4", path, i);
+			R_LOG_ERROR ("Line: %s", line);
 			r_list_free (list);
 			return NULL;
 		}
@@ -1228,7 +1232,7 @@ R_LOG_INFO ("modules.get");
 
 static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
-	if (pid == 0) {
+	if (pid < 1) {
 		pid = dbg->pid;
 	}
 #if R2__WINDOWS__
@@ -1480,7 +1484,7 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
-#elif (__arm64__ || __aarch64__) && __linux__
+#elif (__arm64__ || __arm64e__ || __aarch64__) && __linux__
 		RDebug *dbg = bp->user;
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
@@ -1494,7 +1498,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		// no hw bps afaik
 		return false;
 #else
+#ifdef _MSC_VER
+#pragma message ( "r_debug_native_bp not implemented for this platform" )
+#else
 #warning r_debug_native_bp not implemented for this platform
+#endif
 #endif
 	}
 	return false;
@@ -1616,20 +1624,6 @@ static int r_debug_desc_native_open(const char *path) {
 	return 0;
 }
 
-#if 0
-static int r_debug_setup_ownership(int fd, RDebug *dbg) {
-	RDebugInfo *info = r_debug_info (dbg, NULL);
-
-	if (!info) {
-		R_LOG_ERROR ("getting debug info");
-		return -1;
-	}
-	fchown (fd, info->uid, info->gid);
-	r_debug_info_free (info);
-  	return 0;
-}
-#endif
-
 static bool r_debug_gcore(RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
@@ -1664,7 +1658,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
 	.canstep = true, // XXX it's 1 on some platforms...
-#elif __aarch64__ || __arm64__
+#elif __aarch64__ || __arm64__ || __arm64e__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
 #if __APPLE__

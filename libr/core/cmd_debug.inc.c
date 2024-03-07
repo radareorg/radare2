@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -250,13 +250,12 @@ static RCoreHelpMessage help_msg_dm = {
 	"dml", " <file>", "load contents of file into the current map region",
 	"dmm", "[?][j*]", "list modules (libraries, binaries loaded in memory)",
 	"dmp", "[?] <address> <size> <perms>", "change page at <address> with <size>, protection <perms> (perm)",
-	"dms", "[?] <id> <mapaddr>", "take memory snapshot",
-	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
-	"dmS", " [addr|libname] [sectname]", "list sections of target lib",
-	"dmS*", " [addr|libname] [sectname]", "list sections of target lib in radare commands",
+	"dms", "[?] <id> <mapaddr>", "take/store memory snapshot",
+	"dms-", " <id> <mapaddr>", "restore memory snapshot",
+	"dmS", "[*] [addr|libname] [sectname]", "list sections of target lib",
 	"dmL", " address size", "allocate <size> bytes at <address> and promote to huge page",
 	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+	// "TODO:", "", "map files in process memory. (dmf file @ [addr])",
 	NULL
 };
 
@@ -494,8 +493,9 @@ static RCoreHelpMessage help_msg_dt = {
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "interactive debug trace",
-	"dts", "[?]", "trace sessions",
+	"dts", "[?]", "manage trace sessions, used for step back (EXPERIMENTAL)",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
+	"dtt.", "", "show current tag",
 	NULL
 };
 
@@ -1627,22 +1627,36 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_dmp);
 		} else if (input[1] == ' ') {
 			int perms;
-			char *p, *q;
 			ut64 size = 0, addr;
-			p = strchr (input + 2, ' ');
+			char *p = strchr (input + 2, ' ');
 			if (p) {
+				bool failed_somehow = false;
 				*p++ = 0;
-				q = strchr (p, ' ');
+				char *q = strchr (p, ' ');
 				if (q) {
 					*q++ = 0;
 					addr = r_num_math (core->num, input + 2);
+					if (core->num->nc.errors != 0) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid address (%s)", input + 2);
+					}
 					size = r_num_math (core->num, p);
+					if (core->num->nc.errors != 0) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid size (%s)", p);
+					}
 					perms = r_str_rwx (q);
-				//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-				//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
-					r_debug_map_protect (core->dbg, addr, size, perms);
+					if (perms < 1) {
+						failed_somehow = true;
+						R_LOG_ERROR ("Invalid perms (%s)", q);
+					}
 				} else {
-					R_LOG_WARN ("See dmp?");
+					failed_somehow = true;
+				}
+				if (failed_somehow) {
+					R_LOG_ERROR ("Invalid arguments. See dmp?");
+				} else {
+					r_debug_map_protect (core->dbg, addr, size, perms);
 				}
 			} else {
 				r_debug_map_sync (core->dbg); // update process memory maps
@@ -2775,19 +2789,23 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 			sl = r_str_word_set0 (s);
 			if (sl == 4) {
-#define arg(x) r_str_word_get0(s,x)
+#define arg(x) r_str_word_get0 (s,x)
 			        n = (char)r_num_math (core->num, arg (0));
 			        off = r_num_math (core->num, arg (1));
 			        len = (int)r_num_math (core->num, arg (2));
-			        perm = (char)r_str_rwx (arg (3));
 			        if (len == -1) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 					r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			        } else {
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-					r_debug_drx_set (core->dbg, n, off, len, perm, 0);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					perm = (char)r_str_rwx (arg (3));
+					if (perm < 0) {
+						R_LOG_ERROR ("Invalid permissions string (%s)", arg (3));
+					} else {
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
+						r_debug_drx_set (core->dbg, n, off, len, perm, 0);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					}
 			        }
 			} else {
 				r_core_cmd_help_match (core, help_msg_dr, "drx");
@@ -5202,9 +5220,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
-
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & 4)) {
+		int nperm = r_str_rwx (perms);
+		if (!print && nperm > 0 && !(nperm & 4)) {
 			R_LOG_ERROR ("fd %d is not readable", fd);
 			free (perms);
 			ret = 1;
@@ -5239,9 +5257,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
-
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & 2)) {
+		int nperm = r_str_rwx (perms);
+		if (!print && nperm > 0 && !(nperm & 2)) {
 			R_LOG_ERROR ("fd %d is not writable", fd);
 			free (perms);
 			ret = 1;
@@ -5376,10 +5394,11 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		bool use_beat = strstr (input, "-b");
 		if (use_beat) {
-			int beats = r_time_beats (r_time_now (), NULL);
-			r_cons_printf ("@%03d\n", beats);
+			int sub_beats = 0;
+			int beats = r_time_beats (r_time_now (), &sub_beats);
+			r_cons_printf ("@%03d.%d\n", beats, sub_beats);
 		} else {
-			char *nostr = r_time_stamp_to_str (time (0));
+			char *nostr = r_time_secs_tostring (r_time_today ());
 			r_cons_println (nostr);
 			free (nostr);
 		}
@@ -5423,7 +5442,9 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 't': // "dtt"
-			if (input[2]) {
+			if (input[2] == '.') {
+				r_cons_printf ("%d\n", core->dbg->trace->tag);
+			} else if (input[2]) {
 				r_debug_trace_tag (core->dbg, atoi (input + 3));
 			} else {
 				r_debug_trace_tag (core->dbg, 0);
@@ -5617,33 +5638,45 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				if (core->dbg->session) {
 					R_LOG_INFO ("Session already started");
-					break;
+				} else {
+					core->dbg->session = r_debug_session_new ();
+					r_debug_add_checkpoint (core->dbg);
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					r_debug_session_free (core->dbg->session);
+					core->dbg->session = NULL;
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_free (core->dbg->session);
-				core->dbg->session = NULL;
 				break;
 			case 't': // "dtst"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						r_debug_session_save (core->dbg->session, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_save (core->dbg->session, input + 4);
 				break;
 			case 'f': // "dtsf"
 				if (core->dbg->session) {
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_session_load (core->dbg, input + 4);
+				{
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						core->dbg->session = r_debug_session_new ();
+						r_debug_session_load (core->dbg, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				}
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {
@@ -5657,7 +5690,6 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 		default:
 			r_core_cmd_help (core, help_msg_dt);
-			r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			break;
 		}
 		break;
@@ -5730,7 +5762,7 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			switch (input[1]) {
 			case '\0': // "di"
-				if (r_config_get_b (core->config, "cfg.debug")) {
+				if (!r_config_get_b (core->config, "cfg.debug")) {
 					R_LOG_WARN ("No debugee information available when not using the debugger");
 				} else {
 #define P r_cons_printf

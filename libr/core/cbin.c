@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2024 - earada, pancake */
 
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
@@ -1806,6 +1806,34 @@ static inline bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
+static bool warn_if_uri(RCore *core) {
+	RIODesc *desc = NULL;
+	RIOMap *map = r_io_map_get_at (core->io, 0); // core->offset);
+	if (map) {
+		desc = r_io_desc_get (core->io, map->fd);
+	} else {
+		RBinFile *bf = core->bin->cur;
+		int fd;
+		if (bf) {
+			fd = bf->fd;
+		} else {
+			fd = r_io_fd_get_current (core->io);
+		}
+		if (fd != -1) {
+			desc = r_io_desc_get (core->io, fd);
+		}
+	}
+	if (desc) {
+		const char *uri = desc->uri;
+		R_LOG_DEBUG ("Using uri %s", uri);
+		if (uri && strstr (uri, "://")) {
+			R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
@@ -1824,6 +1852,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	const bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (r->config, "bin.cache");
 	if (apply_relocs) {
+		if (!warn_if_uri (r)) {
+			return false;
+		}
 		//TODO: remove the bin.cache crap
 		if (bc) {
 			if (!(r->io->cachemode & R_PERM_W)) {
@@ -1839,6 +1870,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 	} else {
 		if (bc) {
+			if (!warn_if_uri (r)) {
+				return false;
+			}
 			if (!(r->io->cachemode & R_PERM_W)) {
 				r_config_set_b (r->config, "io.cache", true);
 			}
@@ -2299,7 +2333,9 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 	if (!r || !sym || !sym->name) {
 		return;
 	}
+	sym->name->name = NULL;
 	const char *sym_name = r_bin_name_tostring (sym->name);
+
 	sn->name = r_str_newf ("%s%s", sym->is_imported ? "imp." : "", sym_name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = symbol_flag_prefix (sym);
@@ -2471,7 +2507,11 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	}
 
 	RBinSymbol *symbol;
+	r_cons_break_push (NULL, NULL);
 	R_VEC_FOREACH (symbols, symbol) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		const char *rawname = r_bin_name_tostring2 (symbol->name, 'o');
 		const char *name = r_bin_name_tostring (symbol->name);
 		if (!name) {
@@ -2572,8 +2612,8 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			if (sn.demname) {
 				pj_ks (pj, "demname", sn.demname);
 			}
-			pj_ks (pj, "flagname", sn.nameflag);
-			pj_ks (pj, "realname", name);
+			pj_ks (pj, "flagname", (bin_demangle && sn.demflag) ? sn.demflag : sn.nameflag);
+			pj_ks (pj, "realname", (bin_demangle && sn.demname) ? sn.demname : name);
 			if (rawname) {
 				pj_ks (pj, "rawname", rawname);
 			}
@@ -2682,6 +2722,7 @@ next:
 			break;
 		}
 	}
+	r_cons_break_pop ();
 	if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			if (!r_table_query (table, r->table_query)) {
@@ -4035,13 +4076,15 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
 					}
 					if (bin_filter) {
-						// XXX SUPER SLOW and probably unnecessary
-						char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
-						r_str_trim (s);
-						if (R_STR_ISNOTEMPTY (s)) {
-							pj_ks (pj, "realname", s);
-						}
-						free (s);
+						#if 0
+							// XXX SUPER SLOW and probably unnecessary
+							char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=%d", sym->vaddr, r_config_get_b (r->config, "bin.demangle"));
+							r_str_trim (s);
+							if (R_STR_ISNOTEMPTY (s)) {
+								pj_ks (pj, "realname", s);
+							}
+							free (s);
+						#endif
 					}
 					if (sym->attr) {
 						char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
@@ -4980,12 +5023,12 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_list(RCore *core, int mode) {
-	r_return_val_if_fail (core, false);
+	r_return_val_if_fail (core && core->bin, false);
 	// list all binfiles and there objects and there archs
 	RListIter *iter;
 	RBinFile *binfile = NULL;
 	RBin *bin = core->bin;
-	const RList *binfiles = bin ? bin->binfiles: NULL;
+	const RList *binfiles = bin->binfiles;
 	if (!binfiles) {
 		return false;
 	}

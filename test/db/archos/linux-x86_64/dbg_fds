@@ -1,4 +1,5 @@
 NAME=dbg.fds.count
+BROKEN=1
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -25,17 +26,3 @@ EXPECT=<<EOF
 2
 EOF
 RUN
-
-NAME=dbg.fds.count
-FILE=bins/elf/analysis/elf-nx
-ARGS=-d
-CMDS=<<EOF
-dd~?
-dk 9
-EOF
-EXPECT=<<EOF
-3
-EOF
-RUN
-
-

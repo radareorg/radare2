@@ -5,9 +5,6 @@
 #include <r_hash.h>
 #include "mach0.h"
 
-// R2_590 - deprecate bprintf
-#define bprintf if (mo->verbose) eprintf
-
 #define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen (honor bin.limit too?)
@@ -1170,15 +1167,14 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		return false;
 	}
 
-	// TODO: this shouldnt be an bprintf...
-	if (arw_ptr && arw_sz > 0) {
+	if (mo->verbose && arw_ptr && arw_sz > 0) {
 		int i;
 		ut8 *p = arw_ptr;
-		bprintf ("arw ");
+		eprintf ("arw ");
 		for (i = 0; i < arw_sz; i++) {
-			bprintf ("%02x", 0xff & p[i]);
+			eprintf ("%02x", 0xff & p[i]);
 		}
-		bprintf ("\n");
+		eprintf ("\n");
 	}
 
 	if (is_first_thread) {
@@ -1760,7 +1756,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 	if (mo->hdr.sizeofcmds > mo->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		mo->hdr.sizeofcmds = mo->size - 128;
-		//return false;
+		// return false;
 	}
 	bool noFuncStarts = mo->nofuncstarts;
 	//bprintf ("Commands: %d\n", mo->hdr.ncmds);
@@ -1833,7 +1829,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			sdb_set (mo->kv, cmd_flagname, "dylib_code_sign_drs", 0);
-			// bprintf ("[mach0] code is signed\n");
+			R_LOG_DEBUG ("[mach0] code is signed");
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set (mo->kv, cmd_flagname, "version_min_macosx", 0);
@@ -2150,13 +2146,14 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 				}
 			}
 			break;
-		case LC_DYLD_EXPORTS_TRIE:
-			if (mo->verbose) {
+		case LC_DYLD_EXPORTS_TRIE: {
 				ut8 buf[8];
 				r_buf_read_at (mo->b, off + 8, buf, sizeof (buf));
-				ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
-				ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
-				R_LOG_INFO ("exports trie at 0x%x size %d", dataoff, datasize);
+				mo->exports_trie_off = r_read_ble32 (buf, mo->big_endian) + mo->symbols_off;
+				mo->exports_trie_size = r_read_ble32 (buf + 4, mo->big_endian);
+				if (mo->verbose) {
+					R_LOG_INFO ("exports trie at 0x%x size %d", mo->exports_trie_off, mo->exports_trie_size);
+				}
 			}
 			break;
 		case LC_DYLD_CHAINED_FIXUPS:
@@ -2735,15 +2732,9 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
-static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
-	r_return_val_if_fail (bin, 0);
-	if (!bin->dyld_info) {
-		return 0;
-	}
-
+static int walk_exports_trie(struct MACH0_(obj_t) *bin, ut64 trie_off, ut64 size, RExportsIterator iterator, void *ctx) {
 	size_t count = 0;
 	ut8 *p = NULL;
-	ut64 size = bin->dyld_info->export_size;
 	if (!size || size >= SIZE_MAX) {
 		return 0;
 	}
@@ -2752,7 +2743,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		return 0;
 	}
 	ut8 *end = trie + size;
-	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
+	if (r_buf_read_at (bin->b, trie_off, trie, size) != size) {
 		return 0;
 	}
 
@@ -2889,6 +2880,18 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 beach:
 	r_list_free (states);
 	R_FREE (trie);
+	return count;
+}
+
+static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
+	r_return_val_if_fail (bin, 0);
+	size_t count = 0;
+	if (bin->dyld_info) {
+		count += walk_exports_trie (bin, bin->dyld_info->export_off, bin->dyld_info->export_size, iterator, ctx);
+	}
+	if (bin->exports_trie_off && bin->exports_trie_size) {
+		count += walk_exports_trie (bin, bin->exports_trie_off, bin->exports_trie_size, iterator, ctx);
+	}
 	return count;
 }
 

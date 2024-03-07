@@ -60,7 +60,7 @@ static void open_plugins_at(RCore *core, const char *arg, const char *user_path)
 	}
 }
 
-static void __loadSystemPlugins(RCore *core, int where, const char *path) {
+static void load_plugins(RCore *core, int where, const char *path) {
 #if R2_LOADLIBS
 	if (!where) {
 		where = -1;
@@ -137,23 +137,13 @@ static bool is_script(const char *name) {
 	return false;
 }
 
-R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
-	ut64 prev = r_time_now_mono ();
-	__loadSystemPlugins (core, where, path);
-	/* TODO: all those default plugin paths should be defined in r_lib */
-	if (!r_config_get_b (core->config, "cfg.plugins")) {
-		core->times->loadlibs_time = 0;
-		return false;
-	}
-	// load script plugins
-	char *homeplugindir = r_xdg_datadir ("plugins");
-	RList *files = r_sys_dir (homeplugindir);
+static void load_scripts_at(RCore *core, const char *plugindir) {
+	RList *files = r_sys_dir (plugindir);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (is_script (file)) {
-			// r_core_cmdf (core, "\"\". %s/%s", homeplugindir, file);
-			char *script_file = r_str_newf ("%s/%s", homeplugindir, file);
+			char *script_file = r_str_newf ("%s/%s", plugindir, file);
 			if (!r_core_run_script (core, script_file)) {
 				R_LOG_ERROR ("Failed to run script '%s'", script_file);
 			}
@@ -161,7 +151,26 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 		}
 	}
 	r_list_free (files);
+}
+
+static void load_scripts(RCore *core) {
+	char *homeplugindir = r_xdg_datadir ("plugins");
+	load_scripts_at (core, homeplugindir);
 	free (homeplugindir);
+
+	char *sysplugindir = r_str_newf ("%s/radare2/%s", R2_LIBDIR, R2_VERSION);
+	load_scripts_at (core, sysplugindir);
+	free (sysplugindir);
+}
+
+R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
+	if (!r_config_get_b (core->config, "cfg.plugins")) {
+		core->times->loadlibs_time = 0;
+		return false;
+	}
+	const ut64 prev = r_time_now_mono ();
+	load_plugins (core, where, path);
+	load_scripts (core);
 	core->times->loadlibs_time = r_time_now_mono () - prev;
 	return true;
 }

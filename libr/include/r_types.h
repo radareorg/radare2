@@ -100,7 +100,7 @@
 #endif
 
 #ifndef TARGET_OS_IPHONE
-#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__ || __arm64e__)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0
@@ -528,7 +528,7 @@ static inline void *r_new_copy(int size, void *data) {
 #elif R2__WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
-# if __arm__ || __arm64__
+# if __arm__ || __arm64__ || __arm64e__
 # define R_SYS_BASE ((ut64)0x4000)
 # else
 # define R_SYS_BASE ((ut64)0x8048000)
@@ -564,7 +564,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 0
-#elif __arm64__ || __aarch64__
+#elif __arm64__ || __aarch64__ || __arm64e__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 0
@@ -602,7 +602,11 @@ static inline void *r_new_copy(int size, void *data) {
 # endif
 #else
 #ifdef _MSC_VER
-#ifdef _WIN64
+#if defined(_M_ARM64)
+#define R_SYS_ARCH "arm"
+#define R_SYS_BITS R_SYS_BITS_64
+#define R_SYS_ENDIAN 0
+#elif defined(_WIN64)
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 0

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_bin.h>
 #include <r_userconf.h>
@@ -184,12 +184,13 @@ R_API int r_str_bits64(char* strout, ut64 in) {
  *
  */
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
+	R_RETURN_VAL_IF_FAIL (buf && bitz, UT64_MAX);
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr (bitz, toupper ((const unsigned char)*buf));
+		char *ch = strchr (bitz, toupper ((int)(ut8)*buf));
 		if (!ch) {
-			ch = strchr (bitz, tolower ((const unsigned char)*buf));
+			ch = strchr (bitz, tolower ((int)(ut8)*buf));
 		}
 		if (ch) {
 			int bit = (int)(size_t)(ch - bitz);
@@ -204,12 +205,16 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 // Returns the permissions as in integer given an input in the form of rwx, rx,
 // etc.
 R_API int r_str_rwx(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, -1);
 	int ret = atoi (str);
 	if (!ret) {
 		ret |= strchr (str, 'm')? 16: 0;
 		ret |= strchr (str, 'r')? 4: 0;
 		ret |= strchr (str, 'w')? 2: 0;
 		ret |= strchr (str, 'x') ? 1 : 0;
+		if (*str && ret == 0 && strchr (str, '-')) {
+			ret = -1;
+		}
 	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
 		ret = 0;
 	}
@@ -237,34 +242,6 @@ R_API void r_str_case(char *str, bool up) {
 			*str = tolower ((int)(ut8)*str);
 		}
 	}
-}
-
-R_API R_MUSTUSE char *r_file_home(const char *str) {
-	char *dst, *home = r_sys_getenv (R_SYS_HOME);
-	size_t length;
-	if (!home) {
-		home = r_file_tmpdir ();
-		if (!home) {
-			return NULL;
-		}
-	}
-	length = strlen (home) + 1;
-	if (R_STR_ISNOTEMPTY (str)) {
-		length += strlen (R_SYS_DIR) + strlen (str);
-	}
-	dst = (char *)calloc (1, length);
-	if (!dst) {
-		goto fail;
-	}
-	int home_len = strlen (home);
-	memcpy (dst, home, home_len + 1);
-	if (R_STR_ISNOTEMPTY (str)) {
-		dst[home_len] = R_SYS_DIR[0];
-		strcpy (dst + home_len + 1, str);
-	}
-fail:
-	free (home);
-	return dst;
 }
 
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
@@ -1246,6 +1223,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 }
 
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
+	r_return_if_fail (p && dst);
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1830,7 +1808,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	return new_buf;
 }
 
-// http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
+// https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 // https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
 R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 	RStrBuf sb;
@@ -1961,16 +1939,18 @@ R_API size_t r_str_ansi_strip(char *str) {
 	return i;
 }
 
+#if 0
+// unused
 // insert a string into another string, supports ansi control chars
 R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
-	char *a = r_str_ndup (src, pos);
+	r_str_var (a, pos, src);
 	char *b = strdup (src + pos + r_str_ansi_len (str));
 	char *r = r_str_newf ("%s%s%s", a, str, b);
-	free (a);
 	free (b);
 	free (src);
 	return r;
 }
+#endif
 
 R_API size_t r_str_ansi_len(const char *str) {
 	r_return_val_if_fail (str, 0);

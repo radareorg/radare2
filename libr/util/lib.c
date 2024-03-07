@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
@@ -35,7 +35,11 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if R2__UNIX__
 	if (libname) {
 #if __linux__
-		ret = dlopen (libname, RTLD_NOW);
+		if (strstr (libname, "python")) {
+			ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+		} else {
+			ret = dlopen (libname, RTLD_NOW);
+		}
 #endif
 		if (!ret) {
 			ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
@@ -160,7 +164,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	if (lib) {
 		// __has_debug = r_sys_getenv_asbool ("R2_DEBUG"); /// XXX just use loglevel
 		if (r_sys_getenv_asbool ("R2_DEBUG")) {
-			r_log_set_level (R_LOGLVL_DEBUG);
+			r_log_set_level (R_LOG_LEVEL_DEBUG);
 		}
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
@@ -181,6 +185,7 @@ R_API void r_lib_free(RLib *lib) {
 		r_lib_close (lib, NULL);
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
+		ht_pp_free(lib->plugins_ht);
 		free (lib->symname);
 		free (lib->symnamefunc);
 		free (lib);
@@ -377,7 +382,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		r_list_append (lib->plugins, p);
 		const char *fileName = r_str_rstr (file, R_SYS_DIR);
 		if (fileName) {
-			ht_pp_insert (lib->plugins_ht, strdup (fileName), p);
+			ht_pp_insert (lib->plugins_ht, strdup (fileName + 1), p);
 		}
 	}
 	return ret;
@@ -444,7 +449,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
-			R_LOG_DEBUG ("Cannot open %s", file);
+			R_LOG_DEBUG ("Skip/Ignore %s", file);
 		}
 	}
 	closedir (dh);

@@ -75,7 +75,7 @@ R_API RList *r_file_lsrf(const char *dir);
 R_API bool r_file_is_newer(const char *f1, const char *f2);
 R_API bool r_file_rm_rf(const char *dir);
 R_API R_MUSTUSE char *r_file_home(const char *str);
-// R2_590: implement r_file_homef() for format string purposes
+R_API R_MUSTUSE char *r_file_homef(const char *fmt, ...);
 
 // XDG
 R_API char *r_xdg_configdir(const char *s);

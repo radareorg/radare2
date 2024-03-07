@@ -54,7 +54,7 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	if [ "$#" -gt 1 ]; then
+	if [ $# -gt 1 ]; then
 		par=""
 		p=0
 		while : ; do

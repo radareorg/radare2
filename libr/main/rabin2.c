@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
@@ -440,8 +440,11 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	case 'p':
 		{
 			int perms = (int)r_num_math (NULL, ptr2);
-			if (!perms) {
+			if (perms < 1) {
 				perms = r_str_rwx (ptr2);
+				if (perms < 0) {
+					R_LOG_ERROR ("Invalid permissions string (%s)", ptr2);
+				}
 			}
 			r_bin_wr_scn_perms (bin, ptr, perms);
 			rc = r_bin_wr_output (bin, output);

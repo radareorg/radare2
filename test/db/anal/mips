@@ -17,7 +17,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-421
+420
 EOF
 RUN
 
@@ -198,7 +198,7 @@ RUN
 NAME=mips LE correct relative jump reference if not mapped from command line.
 FILE=malloc://40
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e anal.nopskip=false
@@ -230,7 +230,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.lines.bb=false
@@ -266,7 +266,7 @@ FILE=malloc://20
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
@@ -288,7 +288,7 @@ RUN
 NAME=mips branch delay function sizing.
 FILE=malloc://20
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
@@ -309,7 +309,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
@@ -340,7 +340,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
@@ -372,7 +372,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
@@ -403,7 +403,7 @@ FILE=malloc://56
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
@@ -437,7 +437,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=0
@@ -573,7 +573,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e anal.in=io.maps
 e asm.bits=32
 e asm.arch=mips
@@ -645,7 +645,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e anal.in=io.maps
 e asm.arch=mips

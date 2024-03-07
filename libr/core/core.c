@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "core"
 
@@ -11,8 +11,7 @@
 #define DB core->sdb
 
 R_LIB_VERSION (r_core);
-
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -3187,7 +3186,8 @@ R_API bool r_core_init(RCore *core) {
 	core->yank_buf = r_buf_new ();
 	core->crypto = r_crypto_new ();
 	core->egg = r_egg_new ();
-	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
+// 	core->egg->rasm = core->rasm;
+	// r_anal_bind (core->anal, &(core->egg->rasm->analb));
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
 	core->fixedarch = false;
@@ -3230,9 +3230,10 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm = core->egg->rasm;
 	core->rasm->num = core->num;
 	core->anal = r_anal_new ();
-	core->egg->anal = core->anal;
-	r_anal_bind (core->egg->anal, &core->egg->rasm->analb);
+	r_anal_bind (core->anal, &core->egg->rasm->analb);
 	r_asm_set_user_ptr (core->rasm, core);
+	// XXX this should be tied to RArchConfig
+	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 #if 1
 	// TODO: use r_ref_set
 	r_ref (core->rasm->config);
@@ -3327,6 +3328,7 @@ R_API bool r_core_init(RCore *core) {
 	r_core_bind (core, &core->dbg->coreb);
 	r_core_bind (core, &core->dbg->bp->coreb);
 	r_core_bind (core, &core->io->coreb);
+	core->dbg->egg = core->egg;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	// r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
@@ -3369,6 +3371,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_anal_type_init (core);
 	__init_autocomplete (core);
+	r_anal_bind (core->anal, &(core->rasm->analb));
 	return 0;
 }
 
@@ -4252,7 +4255,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 		}
 		break;
 	case 64:
-		if (strcmp (name, "read") && !num ) {
+		if (strcmp (name, "read") && !num) {
 			R_LOG_ERROR ("syscall not found!");
 			return 0;
 		}

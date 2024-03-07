@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -181,7 +181,7 @@ static RCoreHelpMessage help_msg_p = {
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][dfjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
-	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
+	"pa", "[?][edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
 	"pA", "[n_ops]", "show n_ops address and type",
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
@@ -197,6 +197,7 @@ static RCoreHelpMessage help_msg_p = {
 	"pj", "[?] [len]", "print as indented JSON",
 	"pk", " [len]", "print key in randomart mosaic",
 	"pK", " [len]", "print key in randomart mosaic",
+	"pl", "[?][format] [arg]", "print list of data (pl Ffvc)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
@@ -1724,8 +1725,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 						pad?pad:"", pad2,
 						la->name?la->name: "",
 						la->value, la->value, la->value,
-						la->pos, la->sz
-					      );
+						la->pos, la->sz);
 			}
 			free (pad);
 			free (pad2);
@@ -1739,7 +1739,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
+	bool v2 = false;
 	int mode = R_PRINT_MUSTSEE;
+	if (_input[1] == '2') {
+		// "pf2"
+		_input++;
+		v2 = true;
+	}
 	switch (_input[1]) {
 	case '*': // "pf*"
 		_input++;
@@ -2042,8 +2048,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			r_core_cmd_help_match (core, help_msg_pf, "pf");
 			goto err_arg1;
 		}
-		r_print_format (core->print, core->offset,
-			buf, size, fmt, mode, NULL, NULL);
+		if (v2) {
+			r_print_format2 (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		} else {
+			r_print_format (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		}
 	err_arg1:
 		free (args);
 	err_args:
@@ -3068,7 +3079,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
 
-	if (strchr (input, 'q')) {
+	if (strchr (input, 'q')) { // "pdsfq"
 		show_offset = false;
 	}
 
@@ -4141,6 +4152,10 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 }
 
 static void cmd_print_bars(RCore *core, const char *input) {
+	if (r_str_endswith (input, "?")) {
+		r_core_cmd_help (core, help_msg_p_equal);
+		return;
+	}
 	bool print_bars = false;
 	ut8 *ptr = NULL;
 	// p=e [nblocks] [totalsize] [skip]
@@ -5342,6 +5357,7 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 }
 
 static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
+	// len is block_len
 	char ch = input[1];
 	if (ch == '+' || ch == '-' || IS_DIGIT (ch)) {
 		ch = ' ';
@@ -6267,12 +6283,9 @@ static int cmd_print(void *data, const char *input) {
 			return 0;
 		}
 
-		const char *sp = NULL;
-		if (input[1] == '.' || input[1] == '+') {
-			sp = input + 2;
-		} else {
-			sp = strchr (input + 1, ' ');
-		}
+		const char *sp = (input[1] == '.' || input[1] == '+')
+			? input + 2: strchr (input + 1, ' ');
+
 		if (IS_DIGIT (input[1])) {
 			sp = input + 1;
 		} else if (!sp && input[1] == '-') {
@@ -6299,12 +6312,15 @@ static int cmd_print(void *data, const char *input) {
 			l = use_blocksize;
 		}
 		// may be unnecessary, fixes 'pd 1;pdj 100;pd 1' bug
+#if 0
+		core->offset = at; // "pd" doesnt know about the current offset for pd -X
+#endif
 		r_core_block_read (core);
 
 		switch (input[1]) {
 		case 'C': // "pdC"
 			r_core_disasm_pdi (core, l, 0, 'C');
-			pd_result = 0;
+			pd_result = false;
 			processed_cmd = true;
 			break;
 		case 'v': // "pdv" // east decompiler
@@ -6325,7 +6341,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
-			pd_result = 0;
+			pd_result = false;
 			processed_cmd = true;
 			break;
 		case ',': // "pd,"
@@ -6474,7 +6490,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_return_value (core, dislen);
 						}
 						free (block);
-						pd_result = 0;
+						pd_result = false;
 					}
 				} else {
 					R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
@@ -6537,7 +6553,6 @@ static int cmd_print(void *data, const char *input) {
 					pj_a (pj);
 					r_list_sort (f->bbs, bb_cmpaddr);
 					r_list_foreach (f->bbs, locs_it, b) {
-
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
@@ -6551,7 +6566,7 @@ static int cmd_print(void *data, const char *input) {
 					pj_end (pj);
 					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
-					pd_result = 0;
+					pd_result = false;
 					r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 				} else if (f) {
 					ut64 linearsz = r_anal_function_linear_size (f);
@@ -6570,7 +6585,7 @@ static int cmd_print(void *data, const char *input) {
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
 					}
-					pd_result = 0;
+					pd_result = false;
 				} else {
 					R_LOG_ERROR ("pdf: Cannot find function at 0x%08"PFMT64x, core->offset);
 					processed_cmd = true;
@@ -6612,17 +6627,17 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 				r_cons_break_pop ();
-				pd_result = 0;
+				pd_result = false;
 			}
 			break;
-		case 'j': // pdj
+		case 'j': // "pdj"
 			processed_cmd = true;
 			if (*input == 'D') {
 				cmd_pDj (core, input + 2);
 			} else {
 				cmd_pdj (core, input + 2, block);
 			}
-			pd_result = 0;
+			pd_result = false;
 			break;
 		case 'J': // pdJ
 			formatted_json = true;
@@ -6636,7 +6651,7 @@ static int cmd_print(void *data, const char *input) {
 		case '?': // "pd?"
 			processed_cmd = true;
 			r_core_cmd_help (core, help_msg_pd);
-			pd_result = 0;
+			pd_result = false;
 		case '.':
 		case '-':
 		case '+':
@@ -8163,17 +8178,21 @@ static int cmd_print(void *data, const char *input) {
 	case 'n': // easter
 		R_LOG_ERROR ("easter egg license has expired");
 		break;
+	case 'l': // "pl"
+		r_print_list (core, r_str_trim_head_ro (input + 1));
+		break;
 	case 't': // "pt"
 		switch (input[1]) {
 		case '.': // "pt." same as "date"
 			{
-				char *nostr = r_time_stamp_to_str (time (0));
+				char *nostr = r_time_secs_tostring (r_time_today ());
 				r_cons_println (nostr);
 				free (nostr);
 			}
 			break;
 		case ' ':
 		case '\0':
+#if 0
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				R_LOG_WARN ("You should change the block size: b %d", (int) sizeof (ut32));
@@ -8184,18 +8203,47 @@ static int cmd_print(void *data, const char *input) {
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_unix (core->print, block + l, sizeof (ut32));
 			}
+#else
+			if (len < sizeof (ut32)) {
+				R_LOG_WARN ("You should change the block size: b %d", (int) sizeof (ut32));
+			} else {
+				RPrint *p = core->print;
+				const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
+				for (l = 0; l + sizeof (ut32) <= len; l += sizeof (ut32)) {
+					ut32 hnxts = r_read_ble32 (block + l, be);
+					ut64 ts = r_time_unix_today (hnxts, p->datezone);
+					char *s = r_time_secs_tostring (ts);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+#endif
 			break;
 		case 'h': // "pth"
+#if 1
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
+			if (len < sizeof (ut32)) {
+				R_LOG_WARN ("We need at least 4 bytes");
+			} else {
+				RPrint *p = core->print;
+				const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
+				for (l = 0; l + sizeof (ut32) <= len; l += sizeof (ut32)) {
+					ut32 hfsts = r_read_ble32 (block + l, be);
+					ut64 ts = r_time_hfs_today (hfsts, p->datezone);
+					char *s = r_time_secs_tostring (ts);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+#else
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut32));
 			}
-			if (len % sizeof (ut32)) {
-				len = len - (len % sizeof (ut32));
-			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_hfs (core->print, block + l, sizeof (ut32));
 			}
+#endif
 			break;
 		case 'b': // "ptb"
 			if (len < sizeof (ut32)) {
@@ -8206,8 +8254,8 @@ static int cmd_print(void *data, const char *input) {
 			}
 			for (l = 0; l < len; l += sizeof (ut64)) {
 				ut64 ts = r_read_le64 (block + l);
-				int beats = r_time_beats (ts, NULL);
-				r_cons_printf ("@%03d\n", beats);
+				int sb, beats = r_time_beats (ts, &sb);
+				r_cons_printf ("@%03d.%d\n", beats, sb);
 			}
 			break;
 		case 'd': // "ptd"
@@ -8321,7 +8369,7 @@ beach:
 	if (myblock) {
 		free (block);
 	}
-	if (tmpseek != UT64_MAX) {
+	if (tmpseek != UT64_MAX && tmpseek != core->offset) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 		r_core_block_read (core);
 	}

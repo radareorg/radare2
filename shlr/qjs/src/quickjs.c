@@ -43,6 +43,8 @@
 #elif defined(__FreeBSD__)
 #include <malloc_np.h>
 #include <sys/time.h>
+#elif defined(_MSC_VER)
+#include <malloc.h>
 #endif
 
 #include "cutils.h"

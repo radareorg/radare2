@@ -96,7 +96,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	}
 	core->visual.hold = r_config_hold_new (core->config);
 	r_config_hold (core->visual.hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
-	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
+	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.cmt.user", "asm.instr", NULL);
 	if (for_graph) {
 		r_config_set (core->config, "asm.hint.pos", "-2");
 		r_config_set_b (core->config, "asm.lines", false);
@@ -111,7 +111,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "asm.comments", false);
-	r_config_set_b (core->config, "asm.usercomments", true);
+	r_config_set_b (core->config, "asm.cmt.user", true);
 	r_config_set_b (core->config, "asm.instr", false);
 }
 
@@ -1847,7 +1847,7 @@ static void visual_textlogs(RCore *core) {
 			}
 			break;
 		case '+':
-			if (log_level <= R_LOGLVL_LAST) {
+			if (log_level <= R_LOG_LEVEL_LAST) {
 				r_log_set_level (log_level + 1);
 			}
 			break;

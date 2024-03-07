@@ -793,8 +793,6 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 /* set screen_bounds to addr if the cursor is not visible on the screen anymore.
  * Note: screen_bounds is set only the first time this happens. */
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
-	int r, rc;
-
 	r_return_if_fail (p);
 
 	if (!p->screen_bounds) {
@@ -808,6 +806,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 
 	if (p->screen_bounds == 1) {
+		int r, rc;
 		(void)p->consbind.get_size (&r);
 		(void)p->consbind.get_cursor (&rc);
 

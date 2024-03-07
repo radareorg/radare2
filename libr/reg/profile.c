@@ -122,7 +122,8 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
-	if (!reg->regset[type2].regs) {
+	if (!reg->regset[type2].regs || reg->regset[type2].regs->length == 0) {
+		r_list_free(reg->regset[type2].regs);
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	r_ref (item);
@@ -350,9 +351,8 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			r_strbuf_free (sb);
 			return false;
 		}
-		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
-			&offset, &size, type, groups);
-		// Groups is optional, others not
+		ret = r_str_scanf (ptr, "%.s %d %d %d %d %.s %.s", sizeof (name), name, &number, &rel, &offset, &size, sizeof (type), type, sizeof (groups), groups);
+		// Groups is optional, others are not
 		if (ret < 6) {
 			if (*ptr != '*') {
 				R_LOG_WARN ("Could not parse line: %s", ptr);

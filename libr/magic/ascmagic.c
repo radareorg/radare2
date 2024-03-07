@@ -106,7 +106,7 @@ R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 
 static int looks_ascii(const ut8 *, size_t, unichar *, size_t *);
 static int looks_utf8_with_BOM(const ut8 *, size_t, unichar *, size_t *);
-int file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);
+int __magic_file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);
 static int looks_ucs16(const ut8 *, size_t, unichar *, size_t *);
 static int looks_latin1(const ut8 *, size_t, unichar *, size_t *);
 static int looks_extended(const ut8 *, size_t, unichar *, size_t *);
@@ -114,7 +114,7 @@ R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
 static int ascmatch(const ut8 *, const unichar *, size_t);
 static ut8 *encode_utf8(ut8 *, size_t, unichar *, size_t);
 
-int file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
+int __magic_file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
 return 0;
 	size_t i;
 	ut8 *nbuf = NULL, *utf8_buf = NULL, *utf8_end;
@@ -171,7 +171,7 @@ return 0;
 		code = "UTF-8 Unicode (with BOM)";
 		code_mime = "utf-8";
 		type = "text";
-	} else if (file_looks_utf8(buf, nbytes, ubuf, &ulen) > 1) {
+	} else if (__magic_file_looks_utf8(buf, nbytes, ubuf, &ulen) > 1) {
 		code = "UTF-8 Unicode";
 		code_mime = "utf-8";
 		type = "text";
@@ -226,13 +226,13 @@ return 0;
 	   re-converting conversion. */
 	mlen = ulen * 6;
 	if (!(utf8_buf = malloc(mlen))) {
-		file_oomem(ms, mlen);
+		__magic_file_oomem(ms, mlen);
 		goto done;
 	}
 	if (!(utf8_end = encode_utf8 (utf8_buf, mlen, ubuf, ulen))) {
 		goto done;
 	}
-	if (file_softmagic(ms, utf8_buf, utf8_end - utf8_buf, TEXTTEST) != 0) {
+	if (__magic_file_softmagic(ms, utf8_buf, utf8_end - utf8_buf, TEXTTEST) != 0) {
 		rv = 1;
 		goto done;
 	}
@@ -322,11 +322,11 @@ subtype_identified:
 	if (mime) {
 		if (mime & R_MAGIC_MIME_TYPE) {
 			if (subtype_mime) {
-				if (file_printf (ms, subtype_mime) == -1) {
+				if (__magic_file_printf (ms, subtype_mime) == -1) {
 					goto done;
 				}
 			} else {
-				if (file_printf (ms, "text/plain") == -1) {
+				if (__magic_file_printf (ms, "text/plain") == -1) {
 					goto done;
 				}
 			}
@@ -334,43 +334,43 @@ subtype_identified:
 
 		if ((mime == 0 || mime == R_MAGIC_MIME) && code_mime) {
 			if ((mime & R_MAGIC_MIME_TYPE) &&
-				file_printf (ms, " charset=") == -1) {
+				__magic_file_printf (ms, " charset=") == -1) {
 				goto done;
 			}
-			if (file_printf (ms, code_mime) == -1) {
+			if (__magic_file_printf (ms, code_mime) == -1) {
 				goto done;
 			}
 		}
 
 		if (mime == R_MAGIC_MIME_ENCODING) {
-			if (file_printf (ms, "binary") == -1) {
+			if (__magic_file_printf (ms, "binary") == -1) {
 				rv = 1;
 				goto done;
 			}
 		}
 	} else {
-		if (file_printf (ms, code) == -1) {
+		if (__magic_file_printf (ms, code) == -1) {
 			goto done;
 		}
 
 		if (subtype) {
-			if (file_printf (ms, " ") == -1) {
+			if (__magic_file_printf (ms, " ") == -1) {
 				goto done;
 			}
-			if (file_printf (ms, subtype) == -1) {
+			if (__magic_file_printf (ms, subtype) == -1) {
 				goto done;
 			}
 		}
 
-		if (file_printf (ms, " ") == -1) {
+		if (__magic_file_printf (ms, " ") == -1) {
 			goto done;
 		}
-		if (file_printf (ms, type) == -1) {
+		if (__magic_file_printf (ms, type) == -1) {
 			goto done;
 		}
 
 		if (has_long_lines) {
-			if (file_printf (ms, ", with very long lines") == -1) {
+			if (__magic_file_printf (ms, ", with very long lines") == -1) {
 				goto done;
 			}
 		}
@@ -381,64 +381,64 @@ subtype_identified:
 		 */
 		if ((n_crlf == 0 && n_cr == 0 && n_nel == 0 && n_lf == 0) ||
 		    (n_crlf != 0 || n_cr != 0 || n_nel != 0)) {
-			if (file_printf (ms, ", with") == -1) {
+			if (__magic_file_printf (ms, ", with") == -1) {
 				goto done;
 			}
 
 			if (n_crlf == 0 && n_cr == 0 && n_nel == 0 && n_lf == 0)			{
-				if (file_printf (ms, " no") == -1) {
+				if (__magic_file_printf (ms, " no") == -1) {
 					goto done;
 				}
 			} else {
 				if (n_crlf) {
-					if (file_printf (ms, " CRLF") == -1) {
+					if (__magic_file_printf (ms, " CRLF") == -1) {
 						goto done;
 					}
 					if (n_cr || n_lf || n_nel) {
-						if (file_printf (ms, ",") == -1) {
+						if (__magic_file_printf (ms, ",") == -1) {
 							goto done;
 						}
 					}
 				}
 				if (n_cr) {
-					if (file_printf (ms, " CR") == -1) {
+					if (__magic_file_printf (ms, " CR") == -1) {
 						goto done;
 					}
 					if (n_lf || n_nel) {
-						if (file_printf (ms, ",") == -1) {
+						if (__magic_file_printf (ms, ",") == -1) {
 							goto done;
 						}
 					}
 				}
 				if (n_lf) {
-					if (file_printf (ms, " LF") == -1) {
+					if (__magic_file_printf (ms, " LF") == -1) {
 						goto done;
 					}
 					if (n_nel) {
-						if (file_printf (ms, ",") == -1) {
+						if (__magic_file_printf (ms, ",") == -1) {
 							goto done;
 						}
 					}
 				}
 				if (n_nel) {
-					if (file_printf (ms, " NEL") == -1) {
+					if (__magic_file_printf (ms, " NEL") == -1) {
 						goto done;
 					}
 				}
 			}
 
-			if (file_printf (ms, " line terminators") == -1) {
+			if (__magic_file_printf (ms, " line terminators") == -1) {
 				goto done;
 			}
 		}
 
 		if (has_escapes) {
-			if (file_printf (ms, ", with escape sequences") == -1) {
+			if (__magic_file_printf (ms, ", with escape sequences") == -1) {
 				goto done;
 			}
 		}
 		if (has_backspace) {
-			if (file_printf (ms, ", with overstriking") == -1) {
+			if (__magic_file_printf (ms, ", with overstriking") == -1) {
 				goto done;
 			}
 		}
@@ -653,7 +653,7 @@ static ut8 * encode_utf8(ut8 *buf, size_t len, unichar *ubuf, size_t ulen) {
  * If ubuf is non-NULL on entry, text is decoded into ubuf, *ulen;
  * ubuf must be big enough!
  */
-int file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
+int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	size_t i;
 	int n;
 	unichar c;
@@ -731,7 +731,7 @@ done:
  */
 static int looks_utf8_with_BOM(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	if (nbytes > 3 && buf[0] == 0xef && buf[1] == 0xbb && buf[2] == 0xbf) {
-		return file_looks_utf8 (buf + 3, nbytes - 3, ubuf, ulen);
+		return __magic_file_looks_utf8 (buf + 3, nbytes - 3, ubuf, ulen);
 	}
 	return -1;
 }
@@ -785,7 +785,7 @@ static int looks_ucs16(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ule
  * The following EBCDIC-to-ASCII table may relate more closely to reality,
  * or at least to modern reality.  It comes from
  *
- *   http://ftp.s390.ibm.com/products/oe/bpxqp9.html
+ *   https://ftp.s390.ibm.com/products/oe/bpxqp9.html
  *
  * and maps the characters of EBCDIC code page 1047 (the code used for
  * Unix-derived software on IBM's 390 systems) to the corresponding

@@ -236,12 +236,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		// We assume Linux target, for now, so -
-		// 7ffff7dda000-7ffff7dfd000 r-xp 00000000 08:05 265428 /usr/lib/ld-2.25.so
-		// Android
-		// "12c00000-12c40000 rw-p 00000000 00:00 0                                  [anon:dalvik-main space (region space)]";
-		ret = sscanf (ptr, "%s %s %"PFMT64x" %*s %*s %[^\n]", &region1[2],
-			      perms, &offset, name);
+		ret = r_str_scanf (ptr, "%.s %.s %Lx %*s %*s %.[^\n]",
+			sizeof (region1) - 2, region1 + 2, sizeof (perms), perms, offset, sizeof (name), name);
 #endif
 		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {

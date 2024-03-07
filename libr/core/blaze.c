@@ -159,24 +159,25 @@ static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail,
 	return true;
 }
 
+#if 0
 static void dump_block(bb_t *block) {
 	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x" t: %d\n"
 			, block->start, block->end, block->jump, block->fail, block->type);
 }
 
-void dump_blocks(RList* list) {
+static void dump_blocks(RList* list) {
 	RListIter *iter;
 	bb_t *block = NULL;
 	r_list_foreach (list, iter, block) {
-		dump_block(block);
+		dump_block (block);
 	}
 }
+#endif
 
 static bool checkFunction(fcn_t *fcn) {
 	if (fcn && fcn->ends > 0 && fcn->size > 0) {
 		return true;
 	}
-
 	return false;
 }
 

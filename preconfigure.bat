@@ -46,8 +46,10 @@ if %ERRORLEVEL% == 0 (
 REM vs uses HOST_TARGET syntax, so: x86_amd64 means 32bit compiler for 64bit target
 REM: Hosts: x86 amd64 x64
 REM: Targets: x86 amd64 x64 arm arm64
-if "%*" == "x86" (
+IF "%*" == "x86" (
   set VSARCH=x86
+) ELSE IF "%*" == "arm64" (
+  set VSARCH=x86_arm64
 ) ELSE (
   set VSARCH=x86_amd64
 )

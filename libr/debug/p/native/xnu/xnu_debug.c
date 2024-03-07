@@ -95,7 +95,7 @@ thread_flavor_array[] = {
 
 static int coredump_nflavors = 3;
 
-#elif defined (__aarch64__) || defined (__arm64__)
+#elif defined (__aarch64__) || defined (__arm64__) || defined (__arm64e__)
 
 static coredump_thread_state_flavor_t
 thread_flavor_array[] = {
@@ -428,7 +428,7 @@ char *xnu_reg_profile(RDebug *dbg) {
 	}
 #elif __POWERPC__
 #	include "reg/darwin-ppc.h"
-#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
+#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__ || __arm64e__)
 	if (dbg->bits == R_SYS_BITS_64) {
 #		include "reg/darwin-arm64.h"
 	} else {
@@ -454,7 +454,7 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		memcpy (&th->drx.uds.ds32, buf, R_MIN (size, sizeof (th->drx)));
 #elif __i386__
 		memcpy (&th->drx.uds.ds64, buf, R_MIN (size, sizeof (th->drx)));
-#elif __arm64 || __aarch64
+#elif __arm64 || __aarch64 || __arm64e
 		if (dbg->bits == R_SYS_BITS_64) {
 			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
 		} else {
@@ -472,11 +472,12 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #else
 		// memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
 		{
-		size_t buf_size = R_MIN (size, sizeof (th->gpr));
 #if __x86_64__ || __i386__
+		size_t buf_size = R_MIN (size, sizeof (th->gpr));
 		memcpy (&th->gpr.uts, buf, buf_size);
 #else
-		memcpy (&th->gpr, buf, buf_size);
+		size_t buf_size = R_MIN (size, th->state_size);
+		memcpy (th->state, buf, buf_size);
 #endif
 #endif
 		}
@@ -623,9 +624,11 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 */
 
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
-#if __arm64__ || __aarch_64__
+#if __arm64__ || __aarch_64__ || __arm64e__
+	//#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	//	state.arm64.__pc : state.arm32.__pc
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
-		state.arm64.__pc : state.arm32.__pc
+		__darwin_arm_thread_state64_get_pc (state.ts_64) : state.ts_32.__pc
 #elif __arm__ || __arm
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
 		state.ts_64.__pc : state.ts_32.__pc
@@ -774,7 +777,7 @@ static void get_mach_header_sizes(size_t *mach_header_sz, size_t *segment_comman
 // XXX: What about arm?
 }
 
-#if __ppc64__ || __x86_64__|| __i386__ || __ppc__ || __POWERPC__ || __arm64__
+#if __ppc64__ || __x86_64__|| __i386__ || __ppc__ || __POWERPC__ || __arm64__ || __arm64e__
 // XXX: This function could use less function calls, but works.
 static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	int mib[CTL_MAXNAME];
@@ -825,7 +828,7 @@ static void xnu_build_corefile_header(vm_offset_t header, int segment_count, int
 	mh->filetype = MH_CORE;
 	mh->ncmds = segment_count + thread_count;
 	mh->sizeofcmds = command_size;
-#elif __arm64__
+#elif __arm64__ || __arm64e__
 	struct mach_header_64 *mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
 	mh64->cputype = xnu_get_cpu_type (pid);
@@ -939,7 +942,7 @@ static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int st
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
 				}
-#if __ppc64__ || __x86_64__ || __aarch64__ || __arm64__
+#if __ppc64__ || __x86_64__ || __aarch64__ || __arm64__ || __arm64e__
 				rc = r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
 // #elif __i386__ || __ppc__ || __arm__
 #else
@@ -1460,7 +1463,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	if (only_modules) {
 		return modules;
 	}
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __arm64e__
 	size = osize = 16384;
 #else
 	size = osize = 4096;

@@ -6,9 +6,11 @@
 #include "vsf/vsf_specs.h"
 
 static const char VICE_MAGIC[] = "VICE Snapshot File\032";
+static const char VICE_VERSION[] = "VICE Version\032";
 #define VICE_MAGIC_LEN sizeof (VICE_MAGIC) - 1
 static const char VICE_MAINCPU[] = "MAINCPU";
 static const char VICE_C64MEM[] = "C64MEM";
+static const char VICE_C64MEMHACKS[] = "C64MEMHACKS";
 static const char VICE_C64ROM[] = "C64ROM";
 static const char VICE_C128MEM[] = "C128MEM";
 static const char VICE_C128ROM[] = "C128ROM";
@@ -75,6 +77,12 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 		}
 		// read all VSF modules
 		offset = sizeof (struct vsf_hdr);
+		ut8 vice_version[sizeof (VICE_VERSION)];
+		if (r_buf_read_at (bf->buf, offset, vice_version, sizeof (VICE_VERSION)) == sizeof (VICE_VERSION)) {
+			if (!memcmp (vice_version, VICE_VERSION, sizeof (VICE_VERSION) - 1)) {
+				offset += sizeof (VICE_VERSION) + 7;
+			}
+		}
 		ut64 sz = r_buf_size (bf->buf);
 		while (offset < sz) {
 			struct vsf_module module;
@@ -85,7 +93,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 				return false;
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
-			if (!CMP_MODULE (VICE_C64MEM) && !module.major) {
+			if (!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS) && !module.major) {
 				res->mem = offset + read;
 			} else if (!CMP_MODULE (VICE_C64ROM) && !module.major) {
 				res->rom = offset + read;
@@ -96,6 +104,10 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
 				res->maincpu = R_NEW (struct vsf_maincpu);
 				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
+			} else {
+				char safe_name[sizeof (module.module_name) + 1];
+				r_str_ncpy (safe_name, module.module_name, sizeof (safe_name));
+				R_LOG_TODO ("Ignoring unsupported module: %s", safe_name);
 			}
 #undef CMP_MODULE
 			offset += module.length;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 // needed for spp
 #define USE_R2 1
@@ -310,6 +310,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
+// R2_600
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_return_if_fail (a);
@@ -366,8 +367,8 @@ static bool is_invalid(RAnalOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
 	r_asm_op_init (op);
-	r_return_val_if_fail (a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
@@ -489,7 +490,7 @@ R_API void r_asm_list_directives(void) {
 	}
 }
 
-// returns instruction size
+// returns instruction size.. but we have the size in analop and should return bool because thats just a wrapper around analb.encode
 static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 	r_return_val_if_fail (a && op && buf, 0);
 	int ret = 0;
@@ -509,6 +510,9 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 		if (ret > 0) {
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
 		}
+	} else {
+		R_LOG_ERROR ("Cannot assemble because there are no anal binds into the asm instance %p", a);
+		ret = -1;
 #if 0
 	} else if (ase) {
 		/* find callback if no assembler support in current plugin */
@@ -753,8 +757,7 @@ static inline char *next_token(const char *tok) {
 
 R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
-	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL;
-	RAsmCode *acode = NULL;
+	char *ptr = NULL, *ptr_start = NULL;
 	RAnalOp op = {0};
 	ut64 off, pc;
 
@@ -773,13 +776,15 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		free (tokens);
 		return NULL;
 	}
-	if (!(acode = r_asm_code_new ())) {
+	RAsmCode *acode = r_asm_code_new ();
+	if (!acode) {
 		free (tokens);
 		return NULL;
 	}
 	acode->assembly = strdup (assembly);
 	acode->bytes = calloc (1, 64);
-	lbuf = strdup (assembly);
+
+	char *lbuf = strdup (assembly);
 	acode->code_align = 0;
 
 	/* consider ,, an alias for a newline */
@@ -1105,6 +1110,7 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 	return 0;
 }
 
+// XXX find better name for this function asm_rasm_assemble wtf
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 	r_return_val_if_fail (a && buf, NULL);
 	char *lbuf = strdup (buf);

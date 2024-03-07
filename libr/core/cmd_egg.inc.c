@@ -229,7 +229,7 @@ static int cmd_egg(void *data, const char *input) {
 			"suid",
 			NULL
 		};
-		r_cons_printf ("Configuration options\n");
+		r_cons_printf ("# Configuration options\n");
 		int i;
 		for (i = 0; configList[i]; i++) {
 			const char *p = configList[i];
@@ -239,10 +239,11 @@ static int cmd_egg(void *data, const char *input) {
 				r_cons_printf ("%s : %s\n", p, "");
 			}
 		}
-		r_cons_printf ("\nTarget options\n");
+		r_cons_printf ("\n# Target options\n");
 		RArchConfig *ac = core->anal->config;
+		const char *os = ac->os? ac->os: R_SYS_OS;
 		r_cons_printf ("arch : %s\n", ac->cpu);
-		r_cons_printf ("os   : %s\n", ac->os);
+		r_cons_printf ("os   : %s\n", os);
 		r_cons_printf ("bits : %d\n", ac->bits);
 	}
 	break;

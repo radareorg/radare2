@@ -383,6 +383,7 @@ typedef struct r_anal_options_t {
 	bool retpoline;
 	bool propagate_noreturn;
 	bool recursive_noreturn; // anal.rnr
+	bool slow;
 } RAnalOptions;
 
 typedef enum {
@@ -603,12 +604,16 @@ typedef struct r_anal_bb_t {
 	RAnalDiff *diff;
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
-	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
 	int parent_reg_arena_size;
+#if R2_590
+	USE RVec
+#else
+	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
 	int op_pos_size; // size of the op_pos array
 	int ninstr;
+#endif
 	int stackptr;
 	int parent_stackptr;
 	ut64 cmpval;

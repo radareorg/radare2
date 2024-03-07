@@ -93,6 +93,13 @@ typedef struct r_cons_mark_t {
 	int pos;
 } RConsMark;
 
+typedef struct r_cons_fd_pair {
+	st16 fd_src; // target fd
+	st16 fd_new; // output file
+	st16 fd_bak; // backup of target fd in a new dupped fd
+} RConsFdPair;
+
+R_VEC_TYPE (RVecFdPairs, RConsFdPair);
 R_API void r_cons_mark_flush(void);
 R_API void r_cons_mark(ut64 addr, const char *name);
 R_API void r_cons_mark_free(RConsMark *m);
@@ -536,7 +543,8 @@ typedef struct r_cons_t {
 	int maxpage;
 	char *break_word;
 	int break_word_len;
-	ut64 timeout; // must come from r_time_now_mono()
+	ut64 timeout;
+	int otimeout;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;
@@ -545,8 +553,7 @@ typedef struct r_cons_t {
 	// TODO: move into instance? + avoid unnecessary copies
 	RThreadLock *lock;
 	RConsCursorPos cpos;
-	int backup_fd;
-	int backup_fdn;
+	RVecFdPairs fds;
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -798,7 +805,7 @@ R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
-R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char *s);
+R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
@@ -842,6 +849,7 @@ R_API void r_cons_break_timeout(int timeout);
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
+R_API void r_cons_pipe_close_all(void);
 
 #if R2__WINDOWS__
 R_API int r_cons_is_vtcompat(void);

@@ -224,8 +224,24 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 #define R_PRINT_DOT       (1 << 7)
 #define R_PRINT_QUIET     (1 << 8)
 #define R_PRINT_STRUCT    (1 << 9)
+typedef struct r_print_format_t {
+	RPrint *p;
+	PJ *pj;
+	int depth;
+	int endian;
+	ut64 seeki;
+	int mode;
+	int slide;
+	int oldslide;
+	int ident;
+	// RStrBuf *sb to hold a string for plaintext formats
+	// indentlevel (or nestlevel)
+} RPrintFormat;
+
 R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
+R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, const char *field);
+R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield);
 R_API const char *r_print_format_byname(RPrint *p, const char *name);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label);
 R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
@@ -236,11 +252,20 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 #define R_PRINT_STRING_WIDE32 16
 #define R_PRINT_STRING_ESC_NL 32
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
+
+// time
+#if R2_600
+R_DEPRECATED R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len);
+R_DEPRECATED R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len);
+R_DEPRECATED R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
+R_DEPRECATED R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
+#else
 R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
-R_API int r_print_date_get_now(RPrint *p, char *str);
+#endif
+
 R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols, const char *title);

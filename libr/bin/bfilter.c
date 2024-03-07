@@ -68,7 +68,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
 	R_RETURN_IF_FAIL (ht && sym && sym->name);
-	const char *name = r_bin_name_tostring (sym->name);
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 #if 1
 	if (bf && bf->bo && bf->bo->lang) {
 		const char *lang = r_bin_lang_tostring (bf->bo->lang);
@@ -131,6 +131,9 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	HtSU *db = ht_su_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
+		if (!sec->name) {
+			continue;
+		}
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);

@@ -214,7 +214,7 @@ R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw);
 R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *c);
 R_API int r_socket_rap_client_write(RSocket *s, const ut8 *buf, int count);
 R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count);
-R_API int r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence);
+R_API ut64 r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512

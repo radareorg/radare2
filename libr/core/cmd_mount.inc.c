@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 // pancake */
+/* radare - LGPL - Copyright 2009-2024 // pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -383,7 +383,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
-			r_core_cmd_help_match (core, help_msg_m, "md");
+			r_core_cmd_help_contains (core, help_msg_m, "md");
 		} else {
 			cmd_mount_ls (core, input + 1);
 		}

@@ -27,8 +27,8 @@ all:
 install:
 	${INSTALL_SCRIPT} r2-docker.sh "${DESTDIR}${BINDIR}/r2-docker"
 
-pub:
-	docker buildx build --push --platform=linux/arm64,linux/amd64 . -t radare/radare2
+#pub:
+# docker buildx build --push --platform=linux/arm64,linux/amd64 . -t radare/radare2
 # docker buildx build --push --platform linux/amd64 --tag radare/radare2:latest .
 #docker buildx build --push --platform linux/arm64,linux/amd64 --tag radare/radare2:latest .
 #docker buildx build --push --platform linux/amd64,linux/arm64 --tag radare/radare2:latest .

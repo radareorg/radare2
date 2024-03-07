@@ -1,6 +1,8 @@
+# Crosscompiling
+
 So you want to cross-compile radare to some exotic architecture? Use docker and you'll save some headache:
 
-https://github.com/dockcross/dockcross
+* [https://github.com/dockcross/dockcross](https://github.com/dockcross/dockcross)
 
 Here's and example on how changes required for i.e ARMv5 (no hard float) borrowed from `mk/armel.mk`:
 
@@ -20,14 +22,14 @@ CC_AR=${CROSS_ROOT}/${CROSS_TRIPLET}-ar -r ${LIBAR}
 After defining your new `mk/arch.mk` file it should be pretty straightforward to install the `dockcross`
 tool from one of its own containers:
 
-```
+```bash
 $ docker run thewtex/cross-compiler-linux-armv5 > ~/bin/dockcross
 $ chmod +x ~/bin/dockcross
 ```
 
 And then, compile normally from inside the container:
 
-```
+```bash
 $ dockcross --image thewtex/cross-compiler-linux-armv5 ./configure --with-compiler=armel --host=armel
 $ dockcross make
 ```

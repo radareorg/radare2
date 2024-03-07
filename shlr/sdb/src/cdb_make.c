@@ -42,7 +42,7 @@ int cdb_make_start(struct cdb_make *c, int fd) {
 	c->numentries = 0;
 	c->fd = fd;
 	c->pos = sizeof (c->final);
-	buffer_init (&c->b, (BufferOp)write, fd, c->bspace, sizeof (c->bspace));
+	buffer_initialize (&c->b, (BufferOp)write, fd, c->bspace, sizeof (c->bspace));
 	c->memsize = 1;
 	for (i = 0; i < 256; i++) {
 		c->count[i] = 0;

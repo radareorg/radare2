@@ -1055,7 +1055,7 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 
 	switch (opcode) {
 	case DW_LNE_end_sequence:
-		regs->end_sequence = DWARF_TRUE;
+		regs->end_sequence = true;
 
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
@@ -1158,9 +1158,9 @@ static const ut8 *parse_spec_opcode(
 					regs->line, regs->column, mode, print);
 		}
 	}
-	regs->basic_block = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
+	regs->basic_block = false; // XXX cant we just use true and false here??
+	regs->prologue_end = false;
+	regs->epilogue_begin = false;
 	regs->discriminator = 0;
 
 	return buf;
@@ -1197,7 +1197,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 					regs->line, regs->column, mode, print);
 			}
 		}
-		regs->basic_block = DWARF_FALSE;
+		regs->basic_block = false;
 		break;
 	case DW_LNS_advance_pc:
 		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
@@ -1229,7 +1229,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		regs->column = addr;
 		break;
 	case DW_LNS_negate_stmt:
-		regs->is_stmt = regs->is_stmt ? DWARF_FALSE : DWARF_TRUE;
+		regs->is_stmt = regs->is_stmt ? false: true;
 		if (mode == R_MODE_PRINT) {
 			print ("Set is_stmt to %d\n", regs->is_stmt);
 		}
@@ -1238,7 +1238,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		if (mode == R_MODE_PRINT) {
 			print ("set_basic_block\n");
 		}
-		regs->basic_block = DWARF_TRUE;
+		regs->basic_block = true;
 		break;
 	case DW_LNS_const_add_pc:
 		adj_opcode = 255 - hdr->opcode_base;
@@ -1294,10 +1294,10 @@ static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegister
 	regs->line = 1;
 	regs->column = 0;
 	regs->is_stmt = hdr->default_is_stmt;
-	regs->basic_block = DWARF_FALSE;
-	regs->end_sequence = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
+	regs->basic_block = false;
+	regs->end_sequence = false;
+	regs->prologue_end = false;
+	regs->epilogue_begin = false;
 	regs->isa = 0;
 }
 
@@ -1492,9 +1492,13 @@ static bool init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	if (!die) {
 		return false;
 	}
-	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
-	if (!die->attr_values) {
-		return false;
+	if (attr_count) {
+		die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
+		if (!die->attr_values) {
+			return false;
+		}
+	} else {
+		die->attr_values = NULL;
 	}
 	die->abbrev_code = abbr_code;
 	die->capacity = attr_count;
@@ -2176,30 +2180,32 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 	for (i = 0; i < die->count; i++) {
 		memset (&die->attr_values[i], 0, sizeof (RBinDwarfDie));
 	}
-	for (i = 0; i < abbrev->count && i < die->capacity; i++) {
-		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
-		// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
-		const ut8 *nbuf = parse_attr_value (bin, buf, buf_end - buf,
-			&abbrev->defs[i], &die->attr_values[i], hdr, be);
-		if (!nbuf) {
-			break;
-		}
-		buf = nbuf;
-		RBinDwarfAttrValue *attribute = &die->attr_values[i];
+	if (abbrev->count) {
+		for (i = 0; i < abbrev->count && i < die->capacity; i++) {
+			memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
+			// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
+			const ut8 *nbuf = parse_attr_value (bin, buf, buf_end - buf,
+				&abbrev->defs[i], &die->attr_values[i], hdr, be);
+			if (!nbuf) {
+				break;
+			}
+			buf = nbuf;
+			RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
-		bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string ||
-			attribute->attr_form == DW_FORM_line_strp);
-		bool is_valid_string_form = is_string && attribute->string.content;
-		if (attribute->attr_name == DW_AT_stmt_list) {
-			debug_line_offset = attribute->reference;
+			bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string ||
+				attribute->attr_form == DW_FORM_line_strp);
+			bool is_valid_string_form = is_string && attribute->string.content;
+			if (attribute->attr_name == DW_AT_stmt_list) {
+				debug_line_offset = attribute->reference;
+			}
+			if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
+				comp_dir = strdup (attribute->string.content);
+				r_str_ansi_strip (comp_dir);
+				r_str_replace_ch (comp_dir, '\n', 0, true);
+				r_str_replace_ch (comp_dir, '\t', 0, true);
+			}
+			die->count++;
 		}
-		if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
-			comp_dir = strdup (attribute->string.content);
-			r_str_ansi_strip (comp_dir);
-			r_str_replace_ch (comp_dir, '\n', 0, true);
-			r_str_replace_ch (comp_dir, '\t', 0, true);
-		}
-		die->count++;
 	}
 	comp_dir_key = get_compilation_directory_key (debug_line_offset);
 	if (!comp_dir_key) {
@@ -2572,8 +2578,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	int len, ret;
 	const bool be = r_bin_is_big_endian (bin);
 	RBinSection *section = getsection (bin, DWARF_SN_LINE);
-	RBinFile *binfile = bin->cur;
-	if (binfile && section) {
+	RBinFile *bf = bin->cur;
+	if (bf && section) {
 		len = section->size;
 		if (len < 1) {
 			return NULL;
@@ -2582,7 +2588,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		if (!buf) {
 			return NULL;
 		}
-		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
+		ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
 		if (ret != len) {
 			free (buf);
 			return NULL;
@@ -2598,7 +2604,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
-		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
+		SdbList *ls = sdb_foreach_list (bf->sdb_addrinfo, false);
 		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
 			const char *key = sdbkv_key (kv);
@@ -2636,8 +2642,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 
 R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 	RBinSection *section = getsection (bin, DWARF_SN_ARANGES);
-	RBinFile *binfile = bin ? bin->cur: NULL;
-	if (binfile && section) {
+	RBinFile *bf = bin ? bin->cur: NULL;
+	if (bf && section) {
 		size_t len = section->size;
 		if (len < 1 || len > ST32_MAX) {
 			return;
@@ -2646,8 +2652,7 @@ R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 		if (!buf) {
 			return;
 		}
-		int ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		if (!ret) {
+		if (!r_buf_read_at (bf ->buf, section->paddr, buf, len)) {
 			free (buf);
 			return;
 		}

@@ -1,4 +1,4 @@
-// by jeremie miller - 2010-2018
+// by jeremie miller - 2010-2024
 // public domain, contributions/improvements welcome via github
 
 // opportunity to further optimize would be having different jump tables for higher depths
@@ -22,9 +22,9 @@
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #pragma GCC diagnostic push
-#endif
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wpragmas"
+#endif
 #pragma GCC diagnostic ignored "-Winitializer-overrides"
 
 #define HAVE_RAWSTR 0

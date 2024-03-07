@@ -212,7 +212,9 @@ static int update_self_regions(RIO *io, int pid) {
 		}
 		path[0]='\0';
 		strcpy (region, "0x");
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
+		if (r_str_scanf (line, "%.s %.s %*s %*s %*s %.[^\n]", sizeof (region) - 2, region + 2, sizeof (perms), perms, sizeof (path), path) < 6) {
+			return false;
+		}
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
@@ -423,7 +425,8 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		} else {
 			io->off = UT32_MAX;
 		}
-		return UT64_MAX;
+		// UT64_MAX means error
+		return UT64_MAX - 1;
 	}
 	return offset;
 }

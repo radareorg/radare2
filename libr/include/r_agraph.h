@@ -68,6 +68,7 @@ typedef struct r_ascii_graph_t {
 	bool is_interactive;
 	int zoom;
 	int movspeed;
+	int discroll;
 	bool hints;
 
 	RANode *update_seek_on;

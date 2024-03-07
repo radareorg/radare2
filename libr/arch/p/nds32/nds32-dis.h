@@ -723,9 +723,18 @@ print_insn32_alu2 (bfd_vma pc ATTRIBUTE_UNUSED,
 
     case 0x20:			/* mfusr */
     case 0x21:			/* mtusr */
-      func (stream, "%s\t%s, $%s", mnemonic_alu20[op],
-	    gpr_map[rt], usr_map[__GF (insn, 10, 5)][__GF (insn, 15, 5)]);
+      {
+	    int i = __GF (insn, 10, 5);
+	    int j = __GF (insn, 15, 5);
+	    const char *usrmap;
+	    if (i < 0 || i > 2) {
+		usrmap = "?";
+	    } else {
+	    	usrmap = usr_map[i][j];
+	    }
+      	func (stream, "%s\t%s, $%s", mnemonic_alu20[op], gpr_map[rt], usrmap);
       return;
+      }
     case 0x28:			/* mults64 */
     case 0x29:			/* mult64 */
     case 0x2a:			/* madds64 */
@@ -990,8 +999,10 @@ print_insn32_fpu (bfd_vma pc ATTRIBUTE_UNUSED, disassemble_info *info,
 	      rt, gpr_map[ra], gpr_map[rb], sv);
       return;
     case 0x4:			/* fs2 */
-      func (stream, "%s\t$fs%d, $fs%d, $fs%d",
-	    mnemonic_fs2_cmp[mask_sub_op], rt, ra, rb);
+      {
+	    const char *fs2cmp = mask_sub_op < 10? mnemonic_fs2_cmp[mask_sub_op]: "fs2cmp?";
+	    func (stream, "%s\t$fs%d, $fs%d, $fs%d", fs2cmp, rt, ra, rb);
+      }
       return;
     case 0x9:			/* mtcp */
       switch (mask_sub_op)

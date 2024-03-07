@@ -206,7 +206,12 @@ R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
 		if (!imp) {
 			break;
 		}
-		imp->name = r_bin_name_new (__read_nonnull_str_at (bin->buf, &offset));
+		const char *name = __read_nonnull_str_at (bin->buf, &offset);
+		if (!name) {
+			r_bin_import_free (imp);
+			break;
+		}
+		imp->name = r_bin_name_new (name);
 		if (!imp->name) {
 			r_bin_import_free (imp);
 			break;
@@ -215,7 +220,6 @@ R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
 		r_list_append (l, imp);
 	}
 	return l;
-
 }
 
 R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin) {

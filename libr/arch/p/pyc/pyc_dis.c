@@ -1,15 +1,16 @@
-/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3, pancake */
+/* radare - LGPL3 - Copyright 2016-2024 - c0riolis, x0urc3, pancake */
 
 #include "pyc_dis.h"
 
-static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
+#define CMP_OP_SIZE 12
+static const char *cmp_op[CMP_OP_SIZE] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
-static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt);
 
 int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
-	st64 start_offset, end_offset;
+	st64 start_offset = 0, end_offset = 0;
 	RListIter *iter = NULL;
 
 	if (cobjs) {
@@ -17,29 +18,28 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 			start_offset = t->start_offset;
 			end_offset = t->end_offset;
 			// pc in [start_offset, end_offset)
-			if (start_offset <= pc && pc < end_offset) {
+			// if (start_offset <= pc && pc < end_offset)
+			if (R_BETWEEN (start_offset, pc, end_offset - 1)) {
 				cobj = t;
 				break;
 			}
 		}
 	}
 
-	/* TODO: adding line number and offset */
-	RList *varnames = cobj? cobj->varnames->data: NULL;
-	RList *consts = cobj?cobj->consts->data: NULL;
-	RList *names = cobj?cobj->names->data: NULL;
-	RList *freevars = cobj?cobj->freevars->data: NULL;
-	RList *cellvars = cobj? cobj->cellvars->data: NULL;
+	if (!cobj) {
+		return 0;
+	}
 
-	ut8 op = code[i];
-	i++;
+	ut8 op = code[i++];
+
 	char *name = strdup (ops->opcodes[op].op_name);
 	if (!name) {
 		return 0;
 	}
-	r_str_case (name, 0);
-	opstruct->mnemonic = strdup (name);
-	free (name);
+	r_str_case (name, false);
+	opstruct->mnemonic = name;
+
+	/* TODO: adding line number and offset */
 	if (op >= ops->have_argument) {
 		if (ops->bits == 16) {
 			oparg = code[i] + code[i + 1] * 256 + extended_arg;
@@ -56,9 +56,7 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 				extended_arg = oparg << 8;
 			}
 		}
-		char *arg = parse_arg (&ops->opcodes[op], oparg, names,
-			consts, varnames, interned_table, freevars, cellvars,
-			ops->opcode_arg_fmt);
+		char *arg = parse_arg (&ops->opcodes[op], oparg, cobj, interned_table, ops->opcode_arg_fmt);
 		if (arg) {
 			char *nm = r_str_newf ("%s %s", opstruct->mnemonic, arg);
 			free (opstruct->mnemonic);
@@ -68,18 +66,43 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	} else if (ops->bits == 8) {
 		i += 1;
 	}
-
 	return i;
+}
+
+static RList *list_from_pycobj(pyc_object *obj) {
+	if (obj) {
+		switch (obj->type) {
+		case TYPE_DICT:
+		case TYPE_FROZENSET:
+		case TYPE_SET:
+		case TYPE_LIST:
+		case TYPE_TUPLE:
+		case TYPE_SMALL_TUPLE:
+			return obj->data;
+		// TYPE_REF = 'r', // not sure????
+		default:
+			break;
+		}
+	}
+	return NULL;
 }
 
 static char *generic_array_obj_tostring(RList *l);
 
-static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	char *arg = NULL;
 	pyc_code_object *tmp_cobj;
 	pyc_arg_fmt *fmt;
 	RListIter *i = NULL;
+
+	// TODO: don't traverse if you are not going to use
+	// Also, this should probably be more stringent on the allowed types
+	RList *varnames = list_from_pycobj (R_UNWRAP2 (cobj, varnames));
+	RList *consts = list_from_pycobj (R_UNWRAP2 (cobj, consts));
+	RList *names = list_from_pycobj (R_UNWRAP2 (cobj, names));
+	RList *freevars = list_from_pycobj (R_UNWRAP2 (cobj, freevars));
+	RList *cellvars = list_from_pycobj (R_UNWRAP2 (cobj, cellvars));
 
 	// version-specific formatter for certain opcodes
 	r_list_foreach (opcode_arg_fmt, i, fmt)
@@ -99,7 +122,9 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		case TYPE_CODE_v0:
 		case TYPE_CODE_v1:
 			tmp_cobj = t->data;
-			arg = r_str_newf ("CodeObject(%s) from %s", (char *)tmp_cobj->name->data, (char *)tmp_cobj->filename->data);
+			arg = r_str_newf ("CodeObject(%s) from %s",
+				(const char *)tmp_cobj->name->data,
+				(const char *)tmp_cobj->filename->data);
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SET:
@@ -139,6 +164,9 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		return NULL;
 	}
 	if (op->type & HASCOMPARE) {
+		if (oparg < 0 || oparg >= CMP_OP_SIZE) {
+			return NULL;
+		}
 		arg = r_str_new (cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
@@ -146,7 +174,6 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 			arg = r_str_newf ("%u", oparg);
 			return arg;
 		}
-
 		if (oparg < r_list_length (cellvars)) {
 			t = (pyc_object *)r_list_get_n (cellvars, oparg);
 		} else if ((oparg - r_list_length (cellvars)) < r_list_length (freevars)) {
@@ -157,16 +184,11 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		if (!t) {
 			return NULL;
 		}
-
 		arg = r_str_new (t->data);
 	}
-	if (op->type & HASNARGS) {
+	if (op->type & (HASVARGS | HASNARGS)) {
 		arg = r_str_newf ("%u", oparg);
 	}
-	if (op->type & HASVARGS) {
-		arg = r_str_newf ("%u", oparg);
-	}
-
 	return arg;
 }
 
@@ -182,11 +204,13 @@ static char *generic_array_obj_tostring(RList *l) {
 	}
 
 	char *buf = r_strbuf_get (rbuf);
-
-	/* remove last , */
-	buf[strlen (buf) - 1] = '\0';
-	char *r = r_str_newf ("(%s)", buf);
-
+	if (*buf) {
+		/* remove last , */
+		buf[strlen (buf) - 1] = '\0';
+		char *r = r_str_newf ("(%s)", buf);
+		r_strbuf_free (rbuf);
+		return r;
+	}
 	r_strbuf_free (rbuf);
-	return r;
+	return NULL;
 }

@@ -250,6 +250,10 @@ typedef struct r_core_visual_t {
 	bool firstRun;
 	bool fromVisual;
 	char *menus_Colors[128];
+	int discroll;
+	int mousemode;
+	bool graphCursor;
+	bool coming_from_vmark;
 } RCoreVisual;
 
 typedef struct {
@@ -669,7 +673,7 @@ R_API bool r_core_esil_step_back(RCore *core);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int mode);
+R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode);
 R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad);
@@ -984,6 +988,7 @@ typedef struct r_core_task_t {
 
 typedef void (*RCoreTaskOneShot)(void *);
 
+R_API void r_print_list(RCore *core, const char *input);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RTable *r_core_table(RCore *core, const char *name);
 

@@ -351,6 +351,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (os);
 }
 
+R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y) {
+	r_cons_canvas_gotoxy (c, x, y);
+	r_cons_canvas_write (c, s);
+}
+
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
 	if (color) {
 		free (c->bgcolor);
@@ -478,15 +483,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
-			size_t j;
-			for (j = 0; j <= i; j++) {
-				free (c->b[i]);
-			}
-			ht_up_free (c->attrs);
-			free (c->blen);
-			free (c->bsize);
-			free (c->b);
-			free (c);
+			r_cons_canvas_free (c);
 			return false;
 		}
 		c->b[i] = newline;

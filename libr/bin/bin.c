@@ -158,7 +158,7 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 
 R_API void r_bin_import_free(RBinImport *imp) {
 	if (imp) {
-		free (imp->name);
+		r_bin_name_free (imp->name);
 		free (imp->libname);
 		free (imp->classname);
 		free (imp->descriptor);
@@ -1031,8 +1031,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 }
 
 static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
-	RStrBuf *sb = r_strbuf_new ("");
-	r_strbuf_appendf (sb, "%s_%d", arch, bits);
+	RStrBuf *sb = r_strbuf_newf ("%s_%d", arch, bits);
 	if (R_STR_ISNOTEMPTY (info->cpu)) {
 		r_strbuf_appendf (sb, " cpu=%s", info->cpu);
 	}
@@ -1398,7 +1397,7 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 R_API void r_bin_field_free(void *_field) {
 	RBinField *field = (RBinField*) _field;
 	if (field) {
-		free (field->name);
+		r_bin_name_free (field->name);
 		free (field->comment);
 		free (field->format);
 		free (field);

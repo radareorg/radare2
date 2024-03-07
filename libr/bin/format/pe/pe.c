@@ -642,7 +642,7 @@ error:
 
 int PE_(read_dos_header)(RBuffer *b, PE_(image_dos_header) *header) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, 0, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, 0, R_BUF_SET) == -1) {
 		return -1;
 	}
 	header->e_magic = r_buf_read_le16 (b);
@@ -669,7 +669,7 @@ int PE_(read_dos_header)(RBuffer *b, PE_(image_dos_header) *header) {
 		header->e_res2[i] = r_buf_read_le16 (b);
 	}
 	header->e_lfanew = r_buf_read_le32 (b);
-	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, o_addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	return sizeof (PE_(image_dos_header));
@@ -677,7 +677,7 @@ int PE_(read_dos_header)(RBuffer *b, PE_(image_dos_header) *header) {
 
 int PE_(read_nt_headers)(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	headers->Signature = r_buf_read_le32 (b);
@@ -734,7 +734,7 @@ int PE_(read_nt_headers)(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) 
 		headers->optional_header.DataDirectory[i].VirtualAddress = r_buf_read_le32 (b);
 		headers->optional_header.DataDirectory[i].Size = r_buf_read_le32 (b);
 	}
-	if (r_buf_seek (b, o_addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, o_addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	return sizeof (PE_(image_nt_headers));
@@ -816,7 +816,7 @@ static int bin_pe_init_hdr(RBinPEObj* pe) {
 	// adding compile time to the SDB
 	{
 		sdb_num_set (pe->kv, "image_file_header.TimeDateStamp", pe->nt_headers->file_header.TimeDateStamp, 0);
-		char *timestr = r_time_stamp_to_str (pe->nt_headers->file_header.TimeDateStamp);
+		char *timestr = r_time_secs_tostring (pe->nt_headers->file_header.TimeDateStamp);
 		sdb_set_owned (pe->kv, "image_file_header.TimeDateStamp_string", timestr, 0);
 	}
 	pe->optional_header = &pe->nt_headers->optional_header;
@@ -947,7 +947,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 
 int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_header) *section_header) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		section_header->Name[0] = 0;
 		return -1;
 	}
@@ -1391,7 +1391,7 @@ static int bin_pe_init_overlay(RBinPEObj* pe) {
 
 static int read_image_clr_header(RBuffer *b, ut64 addr, PE_(image_clr_header) *header) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (PE_(image_clr_header))];
@@ -1450,7 +1450,7 @@ static int bin_pe_init_clr_hdr(RBinPEObj* pe) {
 
 static int read_image_import_directory(RBuffer *b, ut64 addr, PE_(image_import_directory) *import_dir) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (PE_(image_import_directory))];
@@ -1466,7 +1466,7 @@ static int read_image_import_directory(RBuffer *b, ut64 addr, PE_(image_import_d
 
 static int read_image_delay_import_directory(RBuffer *b, ut64 addr, PE_(image_delay_import_directory) *directory) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (PE_(image_delay_import_directory))];
@@ -1600,7 +1600,7 @@ fail:
 
 static int read_image_export_directory(RBuffer *b, ut64 addr, PE_(image_export_directory) *export_dir) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (PE_(image_export_directory))];
@@ -1655,7 +1655,7 @@ static void _free_resource(r_pe_resource *rs) {
 
 static int read_image_resource_directory(RBuffer *b, ut64 addr, Pe_image_resource_directory *dir) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	dir->Characteristics = r_buf_read_le32 (b);
@@ -1729,7 +1729,7 @@ static void bin_pe_store_tls_callbacks(RBinPEObj* pe, PE_DWord callbacks) {
 
 static int read_tls_directory(RBuffer *b, ut64 addr, PE_(image_tls_directory) *tls_directory) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	tls_directory->StartAddressOfRawData = r_buf_read_le32 (b);
@@ -2988,7 +2988,7 @@ static char* _resource_type_str(int type) {
 
 static int read_image_resource_directory_entry(RBuffer *b, ut64 addr, Pe_image_resource_directory_entry *entry) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	entry->u1.Name = r_buf_read_le32 (b);
@@ -2999,7 +2999,7 @@ static int read_image_resource_directory_entry(RBuffer *b, ut64 addr, Pe_image_r
 
 static int read_image_resource_data_entry(RBuffer *b, ut64 addr, Pe_image_resource_data_entry *entry) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (Pe_image_resource_data_entry)];
@@ -3011,6 +3011,15 @@ static int read_image_resource_data_entry(RBuffer *b, ut64 addr, Pe_image_resour
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return sizeof (Pe_image_resource_data_entry);
 }
+
+static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
+	/* We assume they're both POSIX timestamp and thus the higher bits would be equal if they're close to each other */
+	if ((certainPosixTimeStamp >> 16) == (possiblePosixOrDosTimeStamp >> 16)) {
+		return false;
+	}
+	return true;
+}
+
 
 static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, const char *resource_name) {
 	char *resourceEntryName = NULL;
@@ -3131,10 +3140,11 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
-		if (r_time_stamp_is_dos_format ((ut32) sdb_num_get (pe->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
-			rs->timestr = r_time_stamp_to_str ( r_time_dos_time_stamp_to_posix (dir->TimeDateStamp));
+		if (is_dos_time ((ut32) sdb_num_get (pe->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
+			int tz = 0; // TODO: use configurable timezone
+			rs->timestr = r_time_secs_tostring (r_time_dos_today (dir->TimeDateStamp, tz));
 		} else {
-			rs->timestr = r_time_stamp_to_str (dir->TimeDateStamp);
+			rs->timestr = r_time_secs_tostring (dir->TimeDateStamp);
 		}
 		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
@@ -3731,7 +3741,7 @@ static int get_debug_info(RBinPEObj* pe, PE_(image_debug_directory_entry)* dbg_d
 
 static int read_image_debug_directory_entry(RBuffer *b, ut64 addr, PE_(image_debug_directory_entry) *entry) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
 		return -1;
 	}
 	ut8 buf[sizeof (PE_(image_debug_directory_entry))];
@@ -4269,12 +4279,9 @@ void PE_(r_bin_pe_check_sections)(RBinPEObj* pe, struct r_bin_pe_section_t* * se
 	*sects = sections;
 out_function:
 	free (entry);
-	return;
-
 }
 
 static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
-	struct r_bin_pe_section_t* sections = NULL;
 	int i, j, section_count = 0;
 
 	if (!pe || !pe->nt_headers) {
@@ -4287,7 +4294,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 			section_count++;
 		}
 	}
-	sections = calloc (section_count + 1, sizeof (struct r_bin_pe_section_t));
+	struct r_bin_pe_section_t* sections = calloc (section_count + 1, sizeof (struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
@@ -4340,15 +4347,14 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 					sections[j].vsize += sa - diff;
 				}
 				if (sections[j].vaddr % sa) {
-					pe_printf ("Warning: section %s not aligned to SectionAlignment.\n",
-							sections[j].name);
+					R_LOG_WARN ("section %s not aligned to SectionAlignment", sections[j].name);
 				}
 			}
 			const ut32 fa = pe->optional_header->FileAlignment;
 			if (fa) {
 				const ut64 diff = sections[j].paddr % fa;
-				if (diff) {
-					pe_printf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+				if (diff != 0) {
+					R_LOG_WARN ("section %s not aligned to FileAlignment", sections[j].name);
 					sections[j].paddr -= diff;
 					sections[j].size += diff;
 				}
@@ -4517,6 +4523,12 @@ R_API RBinPEObj* PE_(r_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
 	pe->b = r_buf_ref (buf);
 	pe->verbose = verbose;
 	pe->size = r_buf_size (buf);
+	// buffer can be a lot larger so we might overflow
+	if (pe->size < 0) {
+		// in that case just clamp it
+		// it's unlikely that whole buffer is just PE alone
+		pe->size = INT_MAX;
+	}
 	if (!bin_pe_init (pe)) {
 		return PE_(r_bin_pe_free)(pe);
 	}

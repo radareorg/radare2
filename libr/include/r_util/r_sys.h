@@ -138,7 +138,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #  define r_sys_breakpoint() __builtin_trap()
 #elif __i386__ || __x86_64__
 #   define r_sys_breakpoint() __asm__ volatile ("int3");
-#elif __arm64__ || __aarch64__
+#elif __arm64__ || __aarch64__ || __arm64e__
 #  define r_sys_breakpoint() __asm__ volatile ("brk 0");
 // #define r_sys_breakpoint() __asm__ volatile ("brk #1");
 #elif (__arm__ || __thumb__)

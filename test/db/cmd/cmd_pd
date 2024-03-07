@@ -197,7 +197,7 @@ e asm.nbytes=0
 e asm.comments=false
 e asm.flags=false
 e asm.lines.fcn=false
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.functions=false
 e scr.color=false
 f-rip
@@ -266,7 +266,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.cols = 90
 wx ba3d000000
 pd 1
 EOF
@@ -280,7 +280,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.cols = 90
 wx c6852fffffff61
 pd 1
 EOF
@@ -295,7 +295,7 @@ CMDS=<<EOF
 e asm.arch = x86
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.cols = 90
 aa
 pd 1 @ 0x0040050a
 EOF

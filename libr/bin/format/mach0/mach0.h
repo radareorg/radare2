@@ -197,6 +197,8 @@ struct MACH0_(obj_t) {
 	int internal_buffer_size;
 	int limit; // user defined
 	bool nofuncstarts;
+	ut64 exports_trie_off;
+	ut32 exports_trie_size;
 };
 
 typedef struct {

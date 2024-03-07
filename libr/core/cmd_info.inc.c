@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1173,7 +1173,7 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info (core, cmd);
 			cmd[1] = narg;
 			cmd[2] = 0;
-			const char *subcmds = "ieEcsSmz";
+			const char *subcmds = "ieEcsSmz"; // TODO: deprecate
 			while (*subcmds) {
 				cmd[0] = *subcmds;
 				if (mode == R_MODE_JSON) {
@@ -1189,6 +1189,15 @@ static int cmd_info(void *data, const char *input) {
 			r_cons_println ("{}");
 		}
 		goto done;
+		break;
+	case 'A': // "iA"
+		if (input[1] == 'j') {
+			pj_o (pj); // weird
+			r_bin_list_archs (core->bin, pj, 'j');
+			pj_end (pj);
+		} else {
+			r_bin_list_archs (core->bin, NULL, 1);
+		}
 		break;
 	case 'b': // "ib"
 		{
@@ -1244,6 +1253,60 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'k': // "ik"
+		{
+			RBinObject *o = r_bin_cur_object (core->bin);
+			db = o? o->kv: NULL;
+			switch (input[1]) {
+			case 'v':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input + 3);
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '*':
+				r_core_bin_export_info (core, R_MODE_RADARE);
+				break;
+			case '.':
+			case ' ':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input + 2);
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '\0':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, "*");
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '?':
+			default:
+				r_core_cmd_help_contains (core, help_msg_i, "ik");
+				break;
+			}
+			goto done;
+		}
+		break;
+	case 'o': // "io"
+		if (desc) {
+			const char *fn = input[1] == ' '? input + 2: desc->name;
+			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			r_core_bin_load (core, fn, baddr);
+		} else {
+			R_LOG_ERROR ("Core file not open");
+			return 0;
+		}
+		break;
 	case 'H': // "iH"
 		if (input[1] == 'H') { // "iHH"
 			// alias for ihh
@@ -1297,70 +1360,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		break;
-		case 'k': // "ik"
-		{
-			RBinObject *o = r_bin_cur_object (core->bin);
-			db = o? o->kv: NULL;
-			switch (input[1]) {
-			case 'v':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, input + 3);
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '*':
-				r_core_bin_export_info (core, R_MODE_RADARE);
-				break;
-			case '.':
-			case ' ':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, input + 2);
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '\0':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, "*");
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '?':
-			default:
-				r_core_cmd_help_contains (core, help_msg_i, "ik");
-			}
-			goto done;
-		}
-		break;
-		case 'o': // "io"
-		{
-			if (!desc) {
-				R_LOG_ERROR ("Core file not open");
-				return 0;
-			}
-			const char *fn = input[1] == ' '? input + 2: desc->name;
-			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			r_core_bin_load (core, fn, baddr);
-		}
-		break;
-		case 'A': // "iA"
-			if (input[1] == 'j') {
-				pj_o (pj);
-				r_bin_list_archs (core->bin, pj, 'j');
-				pj_end (pj);
-			} else {
-				r_bin_list_archs (core->bin, NULL, 1);
-			}
-			break;
 		case 'E': // "iE"
 		{
 			if (input[1] == 'j' && input[2] == '.') {
@@ -1509,8 +1508,6 @@ static int cmd_info(void *data, const char *input) {
 					core->bin->cur = cur;
 					r_list_free (objs);
 				}
-
-
 			}
 			input += strlen (input) - 1;
 			break;
@@ -1522,7 +1519,8 @@ static int cmd_info(void *data, const char *input) {
 			r_list_foreach (objs, iter, bf) {
 				RBinObject *obj = bf->bo;
 				core->bin->cur = bf;
-				RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? r_list_length (obj->libs): 0);
+				int nlibs = (obj && obj->libs)? r_list_length (obj->libs): 0;
+				RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, nlibs);
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
@@ -1628,7 +1626,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
 					char *str = strdup (r_config_get (core->config, "pdb.server"));
-					RList *server_l = r_str_split_list (str, ";", 0);
+					RList *server_l = r_str_split_list (str, " ", 0);
 					RListIter *it;
 					char *server;
 					int r = 1;

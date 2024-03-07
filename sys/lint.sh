@@ -11,6 +11,7 @@ cd "$(dirname $0)"/..
 # Bad: static void foo() {
 # Good: static void foo(void) {
 # NAME=use void on functions without parameters
+(git grep sscanf libr| grep '%s' ) && exit 1
 (git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
 (git grep 'R_NEW0(' libr | grep c:) && exit 1
 (git grep "=='" libr | grep -v '===') && exit 1
@@ -29,7 +30,7 @@ cd "$(dirname $0)"/..
 # validated and ready to go lintings
 (git grep -e '0x%"PFMT64d' -e '0x%d' libr | grep c:) && exit 1
 (git grep -e 'R_MIN(' -e 'R_MAX(' libr | grep c:) && exit 1
-(git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
+(git grep -n 'cmp(' libr | grep -v "R_API" | grep -v "R_IPI" |grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1

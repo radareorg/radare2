@@ -56,6 +56,8 @@ if get_option('enable_tests')
     'stack',
     'str',
     'strbuf',
+    'scanf',
+    'printf',
     'table',
     'tree',
     'uleb128',

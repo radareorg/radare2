@@ -520,7 +520,7 @@ foobar:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  realname: foobar
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
@@ -543,7 +543,7 @@ foobar:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  realname: foobar
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
@@ -1755,15 +1755,15 @@ zg
 z*~N
 EOF
 EXPECT=<<EOF
-za _main N imp.atoi
-za foo__ N foo(int)
-za foo_int__int_ N _main
-za foo_int_ N foo(int, int)
---
 za sym.foo_int__int_ N main
 za sym.foo__ N sym.foo_int_
 za main N sym.imp.atoi
 za sym.foo_int_ N sym.foo_int__int_
+--
+za foo__ N foo(int)
+za foo_int__int_ N main
+za foo_int_ N foo(int, int)
+za main N sym.imp.atoi
 EOF
 RUN
 

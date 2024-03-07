@@ -10,7 +10,9 @@
 
 #define SZ 1024
 static const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const char cd64[] = "|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
+
+// This table will handle standard base64 decoding and also url safe decoding with characteres "-" and "_"
+static const char cd64[] = "|$|$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$}$XYZ[\\]^_`abcdefghijklmnopq";
 
 static void local_b64_encode(const ut8 in[3], char out[4], int len) {
 	if (len < 1) {
