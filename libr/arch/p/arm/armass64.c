@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake */
 
-#include "r_types.h"
 #include "r_types_base.h"
 #include "r_util/r_log.h"
 #include "r_util/r_str.h"
@@ -244,7 +243,7 @@ static inline ut32 encode3regs(ArmOp *op) {
 
 static inline ut32 encodeUimm4(ArmOp *op) {
 	int ui4 = op->operands[3].immediate;
-	R_LOG ("uimm4: %d", ui4);
+	R_LOG_DEBUG ("uimm4: %d", ui4);
 
 	ut32 data = ui4;
 	return data << 18;
@@ -252,7 +251,7 @@ static inline ut32 encodeUimm4(ArmOp *op) {
 
 static inline ut32 encodeUimm6(ArmOp *op) {
 	int ui6 = op->operands[2].immediate;
-	R_LOG ("uimm6: %d", ui6);
+	R_LOG_DEBUG ("uimm6: %d", ui6);
 	ut32 data;
 
 	if (!(ui6 % 16)) {
@@ -261,7 +260,7 @@ static inline ut32 encodeUimm6(ArmOp *op) {
 		return 0;
 	}
 
-	R_LOG ("Encoded uimm6: %d", data);
+	R_LOG_DEBUG ("Encoded uimm6: %d", data);
 	return data << 8;
 }
 
@@ -1893,7 +1892,7 @@ static bool is_valid_mte(ArmOp *op) {
 	}
 
 	if (!(op->operands[0].reg_type && ARM_REG64)) {
-		R_LOG ("Only available on arm64 registers");
+		R_LOG_DEBUG ("Only available on arm64 registers");
 		return false; // instruction only available on arm64
 	}
 
@@ -1964,8 +1963,6 @@ static ut32 subp(ArmOp *op) {
 		return data;
 	}
 
-	R_LOG ("SUBP");
-
 	data = 0x00c09a;
 	data |= encode3regs (op);
 
@@ -1984,20 +1981,16 @@ static ut32 stg(ArmOp *op) {
 	if (op->operands_count == 3) {
 		data |= encodeImm9 (op->operands[2].immediate) << 12;
 		if (!op->operands[2].preindex && !op->writeback) {
-			R_LOG ("Post");
 			data |= 0x040000;
 		} else if (op->operands[2].preindex && op->writeback) {
-			R_LOG ("Pre");
 			data |= 0x0c0000;
 		} else {
 			// not totally happy with this being an else branch, but it was the only way to make sure it was trigged in the case of the optinion third param for signed offset address mode
-			R_LOG ("SIGN");
 			data |= 0x080000;
 		}
 	} else if (op->operands_count == 2) {
 		// signed offset is the only addressing mode that does not require a third imm parameter
 		if (!op->writeback) {
-			R_LOG ("SIGN");
 			data |= 0x080000;
 		}
 	}
@@ -2017,7 +2010,6 @@ static ut32 stzg(ArmOp *op) {
 	// detect address encoding style
 	// check if it is either pre or post indexed
 	if (op->operands[2].preindex) {
-		R_LOG ("Pre-indexed store op");
 	}
 	return data;
 }
