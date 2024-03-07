@@ -87,10 +87,7 @@ typedef struct Opcode_t {
 	Operand operands[MAX_OPERANDS];
 } ArmOp;
 
-#define check_cond(cond) \
-	if (!(cond)) { \
-		return data; \
-	}
+#define check_cond(cond) if (!(cond)) { return data; }
 
 static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
