@@ -6043,12 +6043,12 @@ toro:
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
 		r_anal_op_fini (&ds->analop);
-		r_anal_op_init (&ds->analop);
 		if (r_anal_op (core->anal, &ds->analop, core->offset + core->print->cur,
 			buf + core->print->cur, (int)(len - core->print->cur), R_ARCH_OP_MASK_ALL)) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
+		r_anal_op_fini (&ds->analop);
 	} else {
 		/* highlight eip */
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
@@ -6542,8 +6542,8 @@ toro:
 			inc = 1;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
+		r_anal_op_fini (&ds->analop);
 	}
-	r_anal_op_fini (&ds->analop);
 
 	R_FREE (nbuf);
 	r_cons_break_pop ();
