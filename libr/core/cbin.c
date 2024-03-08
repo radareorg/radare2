@@ -3088,8 +3088,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			continue;
 		}
 
-		if ((printHere && !(section->paddr <= r->offset && r->offset < (section->paddr + section->size)))
-				&& (printHere && !(addr <= r->offset && r->offset < (addr + section->size)))) {
+		if (printHere && !(addr <= r->offset && r->offset < (addr + section->size))) {
 			continue;
 		}
 
