@@ -1,8 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
+cd "$(dirname $0)"/..
+pwd
+
 if [ -z "${PREFIX}" ]; then
 	echo "PREFIX env var not set, are you running this script from Termux?"
 	PREFIX=/data/data/com.termux/files/usr
 fi
+
 export ANDROID=1
 # make clean > /dev/null 2>&1
 rm -f libr/include/r_version.h
