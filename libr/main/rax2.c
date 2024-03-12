@@ -1,10 +1,36 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #define R_LOG_ORIGIN "rax2"
 
 #include <r_main.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
+
+typedef enum {
+	RAX2_FLAG_HEXSTR2RAW = (1 << 0), // -s
+	RAX2_FLAG_SWAPENDIAN = (1 << 1), // -e
+	RAX2_FLAG_RAW2HEXSTR = (1 << 2), // -S
+	RAX2_FLAG_BINSTR2RAW = (1 << 3), // -b
+	RAX2_FLAG_HASHSTRING = (1 << 4), // -x
+	RAX2_FLAG_KEEPBASE   = (1 << 5), // -k
+	RAX2_FLAG_FLOATING   = (1 << 6), // -f
+	RAX2_FLAG_DECIMAL    = (1 << 7), // -d
+	RAX2_FLAG_RANDOMART  = (1 << 8), // -K
+	RAX2_FLAG_BINARYNUM  = (1 << 9), // -n
+	RAX2_FLAG_SHOWUNITS  = (1 << 10), // -u
+	RAX2_FLAG_TIMESTAMP  = (1 << 11), // -t
+	RAX2_FLAG_B64ENCODE  = (1 << 12), // -E
+	RAX2_FLAG_B64DECODE  = (1 << 13), // -D
+	RAX2_FLAG_SLURPHEX   = (1 << 14), // -F
+	RAX2_FLAG_BINARYRAW  = (1 << 15), // -N
+	RAX2_FLAG_SIGNEDWORD = (1 << 16), // -w
+	RAX2_FLAG_STR2HEXSTR = (1 << 17), // -B
+	RAX2_FLAG_MANYBASES  = (1 << 18), // -r
+	RAX2_FLAG_BINSTR2HEX = (1 << 19), // -L
+	RAX2_FLAG_DUMPCSTR   = (1 << 20), // -i
+	RAX2_FLAG_OCTAL2RAW  = (1 << 21), // -o
+	RAX2_FLAG_IPADDR2NUM = (1 << 22), // -I
+	RAX2_FLAG_NEWLINE    = (1 << 23), // -l
+} RaxAction;
 
 // XXX don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
@@ -20,7 +46,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 		return 0;
 	}
 	int l;
-	if (!(*flags & (1 << 14))) {
+	if (!(*flags & RAX2_FLAG_SLURPHEX)) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -33,7 +59,6 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 				continue;
 			}
 			buf[n] = 0;
-			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 			buf[STDIN_BUFFER_SIZE] = '\0';
 			if (!rax (num, buf, l, 0, flags, fm)) {
 				break;
@@ -53,19 +78,28 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	return rc;
 }
 
+static void rax2_newline(int flags) {
+#if __EMSCRIPTEN__
+	puts ("");
+#else
+	if (flags & RAX2_FLAG_NEWLINE) {
+		puts ("");
+	}
+#endif
+}
+
 static bool format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
 	const char *errstr = NULL;
 	ut64 n = r_num_calc (num, s, &errstr);
 	if (errstr) {
 		R_LOG_ERROR (errstr);
-		// eprintf ("%s\n", num->nc.calc_err);
 		return false;
 	}
 	char strbits[65];
 	if (force_mode) {
 		mode = force_mode;
 	}
-	if (flags & 2) {
+	if (flags & RAX2_FLAG_SWAPENDIAN) {
 		ut64 n2 = n;
 		r_mem_swapendian ((ut8 *) &n, (ut8 *) &n2, 8);
 		if (!(int) n) {
@@ -166,10 +200,10 @@ static int help(void) {
 		"  -n      binary number        ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N      binary number        ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
-		"  -r      r2 style output      ;  rax2 -r 0x1234\n"
+		"  -r      r2 style output      ;  rax2 -r 0x1234 # same as r2 -c '? 0x1234'\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
 		"  -S      raw -> hexstr        ;  rax2 -S < /bin/ls > ls.hex\n"
-		"  -rS     raw -> hex.r2        ;  rax2 -rS < /bin/ls > ls.r2  # script for r2\n"
+		"  -rS     raw -> hex.r2        ;  rax2 -rS < /bin/ls > ls.r2\n"
 		"  -t      tstamp -> str        ;  rax2 -t 1234567890\n"
 		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v      version              ;  rax2 -v\n"
@@ -209,33 +243,33 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'l':
-				  *_flags |= (1 << 24); // nl
+				  *_flags |= RAX2_FLAG_NEWLINE;
 				  flags = *_flags;
 				  break;
 			case 'a': print_ascii_table (); return 0;
-			case 's': flags ^= 1 << 0; break;
-			case 'e': flags ^= 1 << 1; break;
-			case 'S': flags ^= 1 << 2; break;
-			case 'b': flags ^= 1 << 3; break;
-			case 'B': flags ^= 1 << 17; break;
-			case 'x': flags ^= 1 << 4; break;
-			case 'k': flags ^= 1 << 5; break;
-			case 'f': flags ^= 1 << 6; break;
-			case 'd': flags ^= 1 << 7; break;
-			case 'K': flags ^= 1 << 8; break;
-			case 'n': flags ^= 1 << 9; break;
-			case 'u': flags ^= 1 << 10; break;
-			case 't': flags ^= 1 << 11; break;
-			case 'E': flags ^= 1 << 12; break;
-			case 'D': flags ^= 1 << 13; break;
-			case 'F': flags ^= 1 << 14; break;
-			case 'N': flags ^= 1 << 15; break;
-			case 'w': flags ^= 1 << 16; break;
-			case 'r': flags ^= 1 << 18; break;
-			case 'L': flags ^= 1 << 19; break;
-			case 'i': flags ^= 1 << 21; break;
-			case 'o': flags ^= 1 << 22; break;
-			case 'I': flags ^= 1 << 23; break;
+			case 's': flags ^= RAX2_FLAG_HEXSTR2RAW; break;
+			case 'e': flags ^= RAX2_FLAG_SWAPENDIAN; break;
+			case 'S': flags ^= RAX2_FLAG_RAW2HEXSTR; break;
+			case 'b': flags ^= RAX2_FLAG_BINSTR2RAW; break;
+			case 'x': flags ^= RAX2_FLAG_HASHSTRING; break;
+			case 'k': flags ^= RAX2_FLAG_KEEPBASE; break;
+			case 'f': flags ^= RAX2_FLAG_FLOATING; break;
+			case 'd': flags ^= RAX2_FLAG_DECIMAL; break;
+			case 'K': flags ^= RAX2_FLAG_RANDOMART; break;
+			case 'n': flags ^= RAX2_FLAG_BINARYNUM; break;
+			case 'u': flags ^= RAX2_FLAG_SHOWUNITS; break;
+			case 't': flags ^= RAX2_FLAG_TIMESTAMP; break;
+			case 'E': flags ^= RAX2_FLAG_B64ENCODE; break;
+			case 'D': flags ^= RAX2_FLAG_B64DECODE; break;
+			case 'F': flags ^= RAX2_FLAG_SLURPHEX; break;
+			case 'N': flags ^= RAX2_FLAG_BINARYRAW; break;
+			case 'w': flags ^= RAX2_FLAG_SIGNEDWORD; break;
+			case 'B': flags ^= RAX2_FLAG_STR2HEXSTR; break;
+			case 'r': flags ^= RAX2_FLAG_MANYBASES; break;
+			case 'L': flags ^= RAX2_FLAG_BINSTR2HEX; break;
+			case 'i': flags ^= RAX2_FLAG_DUMPCSTR; break;
+			case 'o': flags ^= RAX2_FLAG_OCTAL2RAW; break;
+			case 'I': flags ^= RAX2_FLAG_IPADDR2NUM; break;
 			case 'v': return r_main_version_print ("rax2");
 			case '\0':
 				*_flags = flags;
@@ -273,7 +307,7 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		}
 	}
 dotherax:
-	if (flags & 1) { // -s
+	if (flags & RAX2_FLAG_HEXSTR2RAW) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
 		if (buf) {
@@ -282,20 +316,14 @@ dotherax:
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
 			}
-#if __EMSCRIPTEN__
-			puts ("");
-#else
-			if (flags & (1 << 24)) {
-				puts ("");
-			}
-#endif
+			rax2_newline (flags);
 			fflush (stdout);
 			free (buf);
 		}
 		return true;
 	}
-	if (flags & (1 << 2)) { // -S
-		if (flags & (1 << 18)) {
+	if (flags & RAX2_FLAG_RAW2HEXSTR) { // -S
+		if (flags & RAX2_FLAG_STR2HEXSTR) {
 			int j;
 			printf ("s+0\n");
 			for (i = 0; i < len;) {
@@ -314,31 +342,34 @@ dotherax:
 			printf ("\n");
 		}
 		return true;
-	} else if (flags & (1 << 3)) { // -b
+	}
+	if (flags & RAX2_FLAG_BINSTR2RAW) { // -b
 		ut8 out[256] = {0};
 		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
 			printf ("%s\n", out); // TODO accept non null terminated strings
 		} else {
-			eprintf ("Invalid binary input string\n");
+			R_LOG_ERROR ("Invalid binary input string");
 		}
 		return true;
-	} else if (flags & (1 << 4)) { // -x
+	}
+	if (flags & RAX2_FLAG_HASHSTRING) { // -x
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return true;
-	} else if (flags & (1 << 5)) { // -k
+	}
+	if (flags & RAX2_FLAG_KEEPBASE) { // -k
 		out_mode = 'I';
-	} else if (flags & (1 << 6)) { // -f
+	} else if (flags & RAX2_FLAG_FLOATING) { // -f
 		out_mode = 'f';
-	} else if (flags & (1 << 8)) { // -K
+	}
+	if (flags & RAX2_FLAG_RANDOMART) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
-		buf = (ut8 *) malloc (n);
+		buf = (ut8 *) calloc (1, n);
 		if (!buf) {
 			return false;
 		}
 		ut32 *m = (ut32 *) buf;
-		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8 *) buf);
 		if (n < 1 || r_str_startswith (str, "0x")) {
 			ut64 q = r_num_calc (num, str, &errstr);
@@ -348,16 +379,15 @@ dotherax:
 				return false;
 			}
 			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
-			printf ("%s\n", s);
-			free (s);
 		} else {
 			s = r_print_randomart ((ut8 *) buf, n, *m);
-			printf ("%s\n", s);
-			free (s);
 		}
+		printf ("%s\n", s);
+		free (s);
 		free (m);
 		return true;
-	} else if (flags & (1 << 9)) { // -n
+	}
+	if (flags & RAX2_FLAG_BINARYNUM) { // -n
 		ut64 n = r_num_calc (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
@@ -390,12 +420,12 @@ dotherax:
 			}
 		}
 		return true;
-	} else if (flags & (1 << 17)) { // -B (bin -> str)
+	} else if (flags & RAX2_FLAG_STR2HEXSTR) { // -B (bin -> str)
 		char *newstr = r_mem_to_binstring((const ut8*)str, strlen (str));
 		printf ("%s\n", newstr);
 		free (newstr);
 		return true;
-	} else if (flags & (1 << 16)) { // -w
+	} else if (flags & RAX2_FLAG_SIGNEDWORD) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
@@ -411,7 +441,7 @@ dotherax:
 		}
 		printf ("%" PFMT64d "\n", n);
 		return true;
-	} else if (flags & (1 << 15)) { // -N
+	} else if (flags & RAX2_FLAG_BINARYRAW) { // -N
 		ut64 n = r_num_calc (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
@@ -444,7 +474,7 @@ dotherax:
 			}
 		}
 		return true;
-	} else if (flags & (1 << 10)) { // -u
+	} else if (flags & RAX2_FLAG_SHOWUNITS) { // -u
 		char buf[8] = {0};
 		r_num_units (buf, sizeof (buf), r_num_calc (NULL, str, &errstr));
 		if (errstr) {
@@ -453,7 +483,7 @@ dotherax:
 		}
 		printf ("%s\n", buf);
 		return true;
-	} else if (flags & (1 << 11)) { // -t
+	} else if (flags & RAX2_FLAG_TIMESTAMP) { // -t
 		RList *split = r_str_split_list (str, "GMT", 0);
 		char *ts = r_list_head (split)->data;
 		const char *gmt = NULL;
@@ -477,30 +507,28 @@ dotherax:
 		r_print_free (p);
 		r_list_free (split);
 		return true;
-	} else if (flags & (1 << 12)) { // -E
+	} else if (flags & RAX2_FLAG_B64ENCODE) { // -E
 		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
 			int olen = r_base64_encode (out, (const ut8 *)str, len);
 			if (olen > 0) {
-				const char *nl = (flags & (1 << 24))? "\n": "";
-				printf ("%s%s", out, nl);
+				printf ("%s", out);
+				rax2_newline (flags);
 				fflush (stdout);
 			}
 			free (out);
 		}
 		return true;
-	} else if (flags & (1 << 13)) { // -D
+	} else if (flags & RAX2_FLAG_B64DECODE) { // -D
 		int n = strlen (str);
-		ut8 *out = calloc (1, n / 4 * 3 + 1);
+		ut8 *out = calloc (1, (n / 4 * 3) + 1);
 		if (out) {
 			n = r_base64_decode (out, str, n);
 			if (n > 0) {
 				fwrite (out, n, 1, stdout);
-				if (flags & (1 << 24)) {
-					puts ("");
-				}
+				rax2_newline (flags);
 				fflush (stdout);
 			} else {
 				R_LOG_ERROR ("Cannot decode");
@@ -508,7 +536,7 @@ dotherax:
 			free (out);
 		}
 		return true;
-	} else if (flags & 1 << 14) { // -F
+	} else if (flags & RAX2_FLAG_SLURPHEX) { // -F
 		char *s = r_stdin_slurp (NULL);
 		if (s) {
 			char *res = r_hex_from_code (s);
@@ -522,7 +550,7 @@ dotherax:
 			free (s);
 		}
 		return false;
-	} else if (flags & (1 << 18)) { // -r
+	} else if (flags & RAX2_FLAG_MANYBASES) { // -r -B wtf should be -r aka 19 wtf but it was is 18
 		char *asnum, unit[8];
 		char out[128];
 		ut32 n32, s, a;
@@ -547,72 +575,54 @@ dotherax:
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
 		r_num_units (unit, sizeof (unit), n);
-#if 0
-		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
-			" %s %04x:%04x ",
-			n, n, n, unit, s, a);
-
 		if (n >> 32) {
-			eprintf ("%" PFMT64d " ", (st64) n);
+			printf ("int64   %"PFMT64d"\n", (st64)n);
+			printf ("uint64  %"PFMT64u"\n", (ut64)n);
 		} else {
-			eprintf ("%d ", (st32) n);
+			printf ("int32   %d\n", (st32)n);
+			printf ("uint32  %u\n", (ut32)n);
 		}
+		printf ("hex     0x%"PFMT64x"\n", n);
+		printf ("octal   0%"PFMT64o"\n", n);
+		printf ("unit    %s\n", unit);
+		printf ("segment %04x:%04x\n", s, a);
 		if (asnum) {
-			eprintf ("\"%s\" ", asnum);
+			printf ("string  \"%s\"\n", asnum);
 			free (asnum);
 		}
 		/* binary and floating point */
-		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
-		eprintf ("%s %.01lf %ff %lf\n",
-			out, num->fvalue, f, d);
-#endif
-				if (n >> 32) {
-					printf ("int64   %"PFMT64d"\n", (st64)n);
-					printf ("uint64  %"PFMT64u"\n", (ut64)n);
-				} else {
-					printf ("int32   %d\n", (st32)n);
-					printf ("uint32  %u\n", (ut32)n);
-				}
-				printf ("hex     0x%"PFMT64x"\n", n);
-				printf ("octal   0%"PFMT64o"\n", n);
-				printf ("unit    %s\n", unit);
-				printf ("segment %04x:%04x\n", s, a);
-				if (asnum) {
-					printf ("string  \"%s\"\n", asnum);
-					free (asnum);
-				}
-				/* binary and floating point */
-				r_str_bits64 (out, n);
-				memcpy (&f, &n, sizeof (f));
-				memcpy (&d, &n, sizeof (d));
-				printf ("float   %ff\n", f);
-				printf ("double  %lf\n", d);
-				printf ("binary  0b%s\n", out);
+		r_str_bits64 (out, n);
+		memcpy (&f, &n, sizeof (f));
+		memcpy (&d, &n, sizeof (d));
+		printf ("float   %ff\n", f);
+		printf ("double  %lf\n", d);
+		printf ("binary  0b%s\n", out);
 
-				/* ternary */
-				r_num_to_ternary (out, n);
-				printf ("ternary 0t%s\n", out);
+		/* ternary */
+		r_num_to_ternary (out, n);
+		printf ("ternary 0t%s\n", out);
 
-				// base36
-				char b36str[16];
-				b36_fromnum (b36str, n);
-				printf ("base36  %s\n", b36str);
+		// base36
+		char b36str[16];
+		b36_fromnum (b36str, n);
+		printf ("base36  %s\n", b36str);
 		return true;
-	} else if (flags & (1 << 19)) { // -L
+	}
+	if (flags & RAX2_FLAG_BINSTR2HEX) { // -L
 		r_print_hex_from_bin (NULL, str);
 		return true;
-	} else if (flags & (1 << 21)) { // -i
+	}
+	if (flags & RAX2_FLAG_DUMPCSTR) { // -i
 		RStrBuf *sb = r_strbuf_new ("unsigned char buf[] = {");
-		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
-		for (i = 0; i < len-1; i++) {
-			/* wrapping every N bytes */
+		for (i = 0; i < len - 1; i++) {
+			// wrapping every N bytes
 			if (i % byte_per_col == 0) {
 				r_strbuf_append (sb, "\n  ");
 			}
 			r_strbuf_appendf (sb, "0x%02x, ", (ut8) str[i]);
 		}
-		/* some care for the last element */
+		// some care for the last element
 		if (i % byte_per_col == 0) {
 			r_strbuf_append (sb, "\n  ");
 		}
@@ -623,33 +633,24 @@ dotherax:
 		if (s) {
 			printf ("%s", s);
 			free (s);
-			return true;
 		}
-		return false;
-	} else if (flags & (1 << 22)) { // -o
-		// check -r
-		// flags & (1 << 18)
-		char *modified_str;
-
-		// To distinguish octal values.
-		if (*str != '0') {
-			modified_str = r_str_newf ("0%s", str);
-		} else {
-			modified_str = r_str_new (str);
-		}
-
+		return true;
+	}
+	if (flags & RAX2_FLAG_OCTAL2RAW) { // -o
+		char *modified_str = (*str == '0')
+			? r_str_new (str)
+			: r_str_newf ("0%s", str);
 		const char *errstr = NULL;
 		ut64 n = r_num_calc (num, modified_str, &errstr);
 		free (modified_str);
 		if (errstr) {
-			R_LOG_ERROR ("Division by Zero");
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		if (num->dbz) {
 			R_LOG_ERROR ("Division by Zero");
 			return false;
 		}
-
 		char *asnum = r_num_as_string (NULL, n, false);
 		if (asnum) {
 			printf ("%s", asnum);
@@ -659,7 +660,8 @@ dotherax:
 			return false;
 		}
 		return true;
-	} else if (flags & (1 << 23)) { // -I
+	}
+	if (flags & RAX2_FLAG_IPADDR2NUM) { // -I
 		if (strchr (str, '.')) {
 			ut8 ip[4];
 			sscanf (str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
@@ -677,9 +679,10 @@ dotherax:
 		}
 		return true;
 	}
+	// no flags passed
 
 	if  (str[0] == '0' && (tolower ((ut8)str[1]) == 'x')) {
-		out_mode = (flags & 32)? '0': 'I';
+		out_mode = (flags & RAX2_FLAG_KEEPBASE)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
 		str++;
@@ -716,10 +719,7 @@ dotherax:
 		}
 		str = p + 1;
 	}
-	if (*str) {
-		return format_output (num, out_mode, str, *fm, flags);
-	}
-	return true;
+	return *str? format_output (num, out_mode, str, *fm, flags): true;
 }
 
 R_API int r_main_rax2(int argc, const char **argv) {
