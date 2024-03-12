@@ -103,6 +103,7 @@ static RCoreHelpMessage help_msg_ob = {
 	"ob*", "", "list opened binary files and objid (r2 commands)",
 	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
 	"obi", "?[..]", "alias for 'i'",
+	"obio", "", "Load bin info from the io plugin forcing the use of bin.io",
 	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
 	"obm-", "([id])", "same as obm, but deletes the current binfile",
 	"ob-", "*", "delete all binfiles",
