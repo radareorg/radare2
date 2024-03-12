@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2018 - pancake, r00tus3r */
+/* radare - LGPL - Copyright 2018-2024 - pancake, r00tus3r */
 
-#include <r_util.h>
+#include <r_types_base.h>
 
-static const char *ascii_table =
+static const char ascii_table[] =
 "The following table contains the 128 ASCII characters.\n"
 "\n"
 "Oct   Dec   Hex   Char                        Oct   Dec   Hex   Char\n"
@@ -74,6 +74,6 @@ static const char *ascii_table =
 "077   63    3F    ?                           177   127   7F    DEL\n"
 ;
 
-R_API const char *ret_ascii_table(void) {
+R_API const char *r_str_asciitable(void) {
 	return ascii_table;
 }

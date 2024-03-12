@@ -289,9 +289,37 @@ static inline void *untagged_pointer_check(void *x) {
 
 #define ALLOC_SIZE_LIMIT 0xffffff
 
+#ifdef R_IPI
+#undef R_IPI
+#endif
+
+#define R_IPI
+
+#ifdef R_HEAP
+#undef R_HEAP
+#endif
+#define R_HEAP
+
+#ifdef R_API
+#undef R_API
+#endif
+#if R_SWIG
+  #define R_API export
+#elif R_INLINE
+  #define R_API inline
+#else
+  #if R2__WINDOWS__
+    #define R_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
+    #define R_API __attribute__((visibility("default")))
+  #else
+    #define R_API
+  #endif
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif // R2_TYPES_BASE_H

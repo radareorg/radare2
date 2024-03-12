@@ -719,7 +719,7 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_single_quote);
 		break;
 	case 'a': // "?a"
-		r_cons_printf ("%s", ret_ascii_table ());
+		r_cons_printf ("%s", r_str_asciitable ());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {

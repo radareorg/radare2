@@ -69,6 +69,7 @@ static void rax2_newline(int flags) {
 		puts ("");
 	}
 #endif
+	fflush (stdout);
 }
 
 static bool format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
@@ -106,10 +107,12 @@ static bool format_output(RNum *num, char mode, const char *s, int force_mode, u
 		printf ("%.01lf\n", num->fvalue);
 		break;
 	case 'l':
-		R_STATIC_ASSERT (sizeof (float) == 4);
-		float f = (float) num->fvalue;
-		ut32 *p = (ut32 *) &f;
-		printf ("Fx%08x\n", *p);
+		{
+			R_STATIC_ASSERT (sizeof (float) == 4);
+			float f = (float) num->fvalue;
+			ut32 *p = (ut32 *) &f;
+			printf ("Fx%08x\n", *p);
+		}
 		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
 	case 'B':
@@ -133,10 +136,6 @@ static bool format_output(RNum *num, char mode, const char *s, int force_mode, u
 		return false;
 	}
 	return true;
-}
-
-static void print_ascii_table(void) {
-	printf ("%s", ret_ascii_table());
 }
 
 static void help_usage(void) {
@@ -239,10 +238,12 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'l':
-				  *_flags |= RAX2_FLAG_NEWLINE;
-				  flags = *_flags;
-				  break;
-			case 'a': print_ascii_table (); return 0;
+				*_flags |= RAX2_FLAG_NEWLINE;
+				flags = *_flags;
+				break;
+			case 'a':
+				printf ("%s", r_str_asciitable ());
+				return 0;
 			case 's': flags ^= RAX2_FLAG_HEXSTR2RAW; break;
 			case 'e': flags ^= RAX2_FLAG_SWAPENDIAN; break;
 			case 'S': flags ^= RAX2_FLAG_RAW2HEXSTR; break;
@@ -305,15 +306,13 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 dotherax:
 	if (flags & RAX2_FLAG_HEXSTR2RAW) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
-		buf = malloc (n);
+		buf = calloc (1, n);
 		if (buf) {
-			memset (buf, 0, n);
 			n = r_hex_str2bin (str, (ut8 *) buf);
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
 			}
 			rax2_newline (flags);
-			fflush (stdout);
 			free (buf);
 		}
 		return true;
@@ -391,7 +390,7 @@ dotherax:
 		}
 		if (n >> 32) {
 			/* is 64 bit value */
-			if (flags & 1) {
+			if (flags & RAX2_FLAG_HEXSTR2RAW) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				int i;
@@ -404,7 +403,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) n;
-			if (flags & 1) {
+			if (flags & RAX2_FLAG_HEXSTR2RAW) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
 				int i;
@@ -445,7 +444,7 @@ dotherax:
 		}
 		if (n >> 32) {
 			/* is 64 bit value */
-			if (flags & 1) {
+			if (flags & RAX2_FLAG_HEXSTR2RAW) {
 				fwrite (&n, sizeof (n), 1, stdout);
 			} else {
 				int i;
@@ -458,7 +457,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32) n;
-			if (flags & 1) {
+			if (flags & RAX2_FLAG_HEXSTR2RAW) {
 				fwrite (&n32, sizeof (n32), 1, stdout);
 			} else {
 				int i;
@@ -512,7 +511,6 @@ dotherax:
 			if (olen > 0) {
 				printf ("%s", out);
 				rax2_newline (flags);
-				fflush (stdout);
 			}
 			free (out);
 		}
@@ -525,7 +523,6 @@ dotherax:
 			if (n > 0) {
 				fwrite (out, n, 1, stdout);
 				rax2_newline (flags);
-				fflush (stdout);
 			} else {
 				R_LOG_ERROR ("Cannot decode");
 			}
