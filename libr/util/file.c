@@ -342,6 +342,38 @@ R_API char *r_file_path(const char *bin) {
 	return NULL;
 }
 
+R_API char *r_stdin_readline(int *sz) {
+	int l = 0;
+	RStrBuf *sb = r_strbuf_new ("");
+	*sz = 0;
+	if (!sb) {
+		return NULL;
+	}
+	char buf[4096];
+	for (;;) {
+		int n = read (0, buf, sizeof (buf));
+		if (n < 1) {
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		r_strbuf_append_n (sb, buf, n);
+		l += n;
+		if (0 && buf[n - 1] == '\n') {
+			l--;
+			buf[n - 1] = 0;
+			break;
+		}
+		if (n < sizeof (buf)) {
+			break;
+		}
+	}
+	*sz = l;
+	// NOTE that r_strbuf_drain uses r_str_ndup which chops strings with null bytes
+	char *res = r_mem_dup (r_strbuf_getbin (sb, NULL), l);
+	r_strbuf_free (sb);
+	return res;
+}
+
 R_API char *r_stdin_slurp(int *sz) {
 #if __wasi__
 #warning r_stdin_slurp not available for wasi
