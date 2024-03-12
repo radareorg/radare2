@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare2 - LGPL - Copyright 2007-2024 - pancake */
 
 #define R_LOG_ORIGIN "rax2"
 
@@ -32,8 +32,6 @@ typedef enum {
 	RAX2_FLAG_NEWLINE    = (1 << 23), // -l
 } RaxAction;
 
-// XXX don't use fixed sized buffers
-#define STDIN_BUFFER_SIZE 354096
 static bool rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
 static int use_stdin(RNum *num, ut64 *flags, int *fm) {
@@ -41,40 +39,25 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	if (!flags) {
 		return 0;
 	}
-	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
-	if (!buf) {
-		return 0;
-	}
-	int l;
-	if (!(*flags & RAX2_FLAG_SLURPHEX)) {
-		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
-			// make sure we don't read beyond boundaries
-			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
-			if (n < 1) {
-				break;
-			}
-			l += n;
-			if (buf[l - 1] == 0) {
-				l--;
-				continue;
-			}
-			buf[n] = 0;
-			buf[STDIN_BUFFER_SIZE] = '\0';
-			if (!rax (num, buf, l, 0, flags, fm)) {
-				break;
-			}
-			l = -1;
-		}
-	} else {
-		l = 1;
-	}
 	int rc = 0;
-	if (l > 0) {
-		if (!rax (num, buf, l, 0, flags, fm)) {
+	if (*flags & RAX2_FLAG_SLURPHEX) {
+		char buf[1]= {0};
+		if (!rax (num, buf, 1, 0, flags, fm)) {
 			rc = 1;
 		}
+	} else {
+		int l = 0;
+		for (;;) {
+			char *buf = r_stdin_readline (&l);
+			if (!buf) {
+				break;
+			}
+			if (!rax (num, buf, l, 0, flags, fm)) {
+				rc = 1;
+			}
+			free (buf);
+		}
 	}
-	free (buf);
 	return rc;
 }
 
@@ -213,17 +196,30 @@ static int help(void) {
 	return true;
 }
 
+static bool invalid_length(ut64 flags) {
+	if (flags & RAX2_FLAG_RAW2HEXSTR) {
+		return false;
+	}
+	if (flags & RAX2_FLAG_B64DECODE) {
+		return false;
+	}
+	if (flags & RAX2_FLAG_B64ENCODE) {
+		return false;
+	}
+	return true;
+}
+
 static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 	const char *errstr = NULL;
 	ut64 flags = *_flags;
 	ut8 *buf;
-	char *p, out_mode = (flags & 128)? 'I': '0';
+	char *p, out_mode = (flags & RAX2_FLAG_DECIMAL)? 'I': '0';
 	int i;
-	// For -S and -E we do not compute the length again since it may contain null byte.
-	if ((!(flags & 4) && !(flags & 4096)) || !len) {
+	if (len == 0 || invalid_length (flags)) {
 		len = strlen (str);
 	}
-	if ((flags & 4)) {
+	// For -S and -E we do not compute the length again since it may contain null byte.
+	if (flags & RAX2_FLAG_RAW2HEXSTR) {
 		goto dotherax;
 	}
 	if (*str == '=') {
