@@ -332,6 +332,8 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
   #endif
 #endif
 
+
+
 #define R_HIDDEN __attribute__((visibility("hidden")))
 
 #define R_LIB_VERSION_HEADER(x) \
