@@ -590,6 +590,8 @@ R_API RIODesc *r_core_file_open(RCore *core, const char *file, int flags, ut64 l
 R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API bool r_core_file_close_all_but(RCore *core);
 
+R_API char *r_core_slurp(RCore *core, const char *path, size_t *len);
+
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size);
