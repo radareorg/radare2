@@ -1149,16 +1149,11 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'a': // "ca"
 		if (input[1] == 't') { // "cat"
 			const char *path = r_str_trim_head_ro (input + 2);
-			if (*path == '$' && !path[1]) {
-				R_LOG_ERROR ("No alias name given");
-			} else if (*path == '$') {
-				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path + 1);
-				if (v) {
-					char *v_str = r_cmd_alias_val_strdup (v);
+			if (*path == '$') {
+				char *v_str = r_core_slurp (core, path, NULL);
+				if (v_str) {
 					r_cons_println (v_str);
 					free (v_str);
-				} else {
-					R_LOG_ERROR ("No such alias \"$%s\"", path + 1);
 				}
 			} else if (*path) {
 				if (r_fs_check (core->fs, path)) {

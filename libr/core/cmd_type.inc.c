@@ -319,6 +319,26 @@ static void showFormat(RCore *core, const char *name, int mode) {
 	}
 }
 
+R_API char *r_core_slurp(RCore *core, const char *path, size_t *len) {
+	if (*path == '$') {
+		if (!path[1]) {
+			R_LOG_ERROR ("No alias name given");
+			return NULL;
+		}
+		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path + 1);
+		if (!v) {
+			R_LOG_ERROR ("No such alias \"$%s\"", path + 1);
+			return NULL;
+		}
+		char *r = r_cmd_alias_val_strdup (v);
+		if (len) {
+			*len = strlen (r);
+		}
+		return r;
+	}
+	return r_file_slurp (path, len);
+}
+
 static int cmd_tac(void *data, const char *_input) { // "tac"
 	RCore *core = (RCore *) data;
 	char *input = strdup (_input);
@@ -332,15 +352,19 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 		break;
 	default: // "tac"
 		if (R_STR_ISNOTEMPTY (arg)) {
-			char *filedata = r_file_slurp (arg, NULL);
-			RList *lines = r_str_split_list (filedata, "\n", 0);
-			RListIter *iter;
-			char *line;
-			r_list_foreach_prev (lines, iter, line) {
-				r_cons_printf ("%s\n", line);
+			char *filedata = r_core_slurp (core, arg, NULL);
+			if (filedata) {
+				RList *lines = r_str_split_list (filedata, "\n", 0);
+				RListIter *iter;
+				char *line;
+				r_list_foreach_prev (lines, iter, line) {
+					r_cons_printf ("%s\n", line);
+				}
+				r_list_free (lines);
+				free (filedata);
+			} else {
+				R_LOG_ERROR ("File not found");
 			}
-			r_list_free (lines);
-			free (filedata);
 		} else {
 			r_core_cmd_help_match (core, help_msg_t, "tac");
 		}
