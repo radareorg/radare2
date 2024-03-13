@@ -1,15 +1,33 @@
+/* radare - LGPL - Copyright 2009-2024 - pancake */
+
 #ifndef R2_HASH_H
 #define R2_HASH_H
 
-#include "r_types.h"
-#include "r_util/r_mem.h"
-#include "r_util/r_log.h"
+#include <r_types.h>
+#include <r_util/r_mem.h>
+#include <r_util/r_log.h>
+#include <r_lib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER (r_hash);
+
+typedef struct r_hash_plugin_t {
+	RPluginMeta meta;
+	bool support_hmac;
+	void *(*context_new)();
+	void (*context_free)(void *context);
+	int (*digest_size)(void *context);
+	int (*block_size)(void *context);
+	bool (*init)(void *context);
+	bool (*update)(void *context, const ut8 *data, ut64 size);
+	bool (*final)(void *context, ut8 *digest);
+	bool (*small_block)(const ut8 *data, ut64 size, ut8 **digest, int *digest_size);
+} RHashPlugin;
+
+extern RHashPlugin r_hash_plugin_xorbyte;
 
 #if WANT_SSL_CRYPTO
 #include <openssl/sha.h>
@@ -488,7 +506,6 @@ enum HASH_INDICES {
 #define R_HASH_CRC64_ISO (1ULL << R_HASH_IDX_CRC64_ISO)
 #endif /* #if R_HAVE_CRC64 */
 #define R_HASH_SIP (1ULL << R_HASH_IDX_SIP)
-
 #define R_HASH_ALL ((1ULL << R_MIN(63, R_HASH_NUM_INDICES))-1)
 
 #ifdef R_API

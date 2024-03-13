@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2024 - pancake */
 
 #include <math.h>
 #include <r_lib.h>

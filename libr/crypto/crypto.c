@@ -12,28 +12,26 @@ static RCryptoPlugin *crypto_static_plugins[] = {
 };
 
 R_API void r_crypto_init(RCrypto *cry) {
-	r_return_if_fail (cry);
+	R_RETURN_IF_FAIL (cry);
 	int i;
 	cry->user = NULL;
 	cry->plugins = r_list_newf (free);
 	for (i = 0; crypto_static_plugins[i]; i++) {
-		RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
+		RCryptoPlugin *p = r_mem_dup (crypto_static_plugins[i], sizeof (RCryptoPlugin));
 		if (p) {
-			memcpy (p, crypto_static_plugins[i], sizeof (RCryptoPlugin));
 			r_crypto_add (cry, p);
 		}
 	}
-	// TODO register hash algorithms
 }
 
 R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h) {
-	r_return_val_if_fail (cry && cry->plugins && h, false);
+	R_RETURN_VAL_IF_FAIL (cry && cry->plugins && h, false);
 	r_list_append (cry->plugins, h);
 	return true;
 }
 
 R_API bool r_crypto_del(RCrypto *cry, RCryptoPlugin *h) {
-	r_return_val_if_fail (cry && h, false);
+	R_RETURN_VAL_IF_FAIL (cry && h, false);
 	r_list_delete_data (cry->plugins, h);
 	return true;
 }
@@ -63,6 +61,7 @@ R_API void r_crypto_free(RCrypto *cry) {
 		RCryptoPlugin *p;
 		r_list_foreach (cry->plugins, iter, p) {
 			if (p->fini) {
+				// should be defined in the destructor pointer of the list
 				p->fini (cry, p);
 			}
 		}
@@ -120,18 +119,20 @@ R_API int r_crypto_job_get_key_size(RCryptoJob *cj) {
 }
 
 R_API bool r_crypto_job_set_iv(RCryptoJob *cj, const ut8 *iv, int ivlen) {
-	r_return_val_if_fail (cj, false);
-	return (cj->h && cj->h->set_iv)?
-		cj->h->set_iv (cj, iv, ivlen): 0;
+	R_RETURN_VAL_IF_FAIL (cj, false);
+	RCryptoJobSetIVCallback set_iv = R_UNWRAP3 (cj, h, set_iv);
+	return set_iv? set_iv (cj, iv, ivlen): 0;
 }
 
 // return the number of bytes written in the output buffer
 R_API bool r_crypto_job_update(RCryptoJob *cj, const ut8 *buf, int len) {
-	r_return_val_if_fail (cj, 0);
-	return (cj->h && cj->h->update)? cj->h->update (cj, buf, len): 0;
+	R_RETURN_VAL_IF_FAIL (cj, 0);
+	RCryptoJobUpdateCallback update = R_UNWRAP3 (cj, h, update);
+	return update? update (cj, buf, len): 0;
 }
 
 R_API RCryptoJob *r_crypto_job_new(RCrypto *cry, RCryptoPlugin *cp) {
+	R_RETURN_VAL_IF_FAIL (cry && cp, NULL);
 	RCryptoJob *cj = R_NEW0 (RCryptoJob);
 	if (R_UNLIKELY (cj)) {
 		cj->h = cp;
@@ -141,13 +142,13 @@ R_API RCryptoJob *r_crypto_job_new(RCrypto *cry, RCryptoPlugin *cp) {
 }
 
 R_API bool r_crypto_job_end(RCryptoJob *cj, const ut8 *buf, int len) {
-	r_return_val_if_fail (cj, 0);
+	R_RETURN_VAL_IF_FAIL (cj && buf, false);
 	return (cj->h && cj->h->end)? cj->h->end (cj, buf, len): 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use r_buf here
 R_API int r_crypto_job_append(RCryptoJob *cj, const ut8 *buf, int len) {
-	r_return_val_if_fail (cj&& buf, -1);
+	R_RETURN_VAL_IF_FAIL (cj && buf, -1);
 	if (cj->output_len+len > cj->output_size) {
 		cj->output_size += 4096 + len;
 		cj->output = realloc (cj->output, cj->output_size);
@@ -158,7 +159,7 @@ R_API int r_crypto_job_append(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
-	r_return_val_if_fail (cj, NULL);
+	R_RETURN_VAL_IF_FAIL (cj, NULL);
 	if (cj->output_size < 1) {
 		return NULL;
 	}
@@ -172,17 +173,25 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
 	} else {
 		size_t newlen = 4096;
 		ut8 *newbuf = realloc (buf, newlen);
-		if (!newbuf) {
+		if (newbuf) {
+			buf = newbuf;
+			cj->output = newbuf;
+			cj->output_len = 0;
+			cj->output_size = newlen;
+		} else {
 			free (buf);
-			return NULL;
 		}
-		buf = newbuf;
-		cj->output = newbuf;
-		cj->output_len = 0;
-		cj->output_size = newlen;
 		return NULL;
 	}
 	return buf;
+}
+
+static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_printf) {
+	const char type = cp->type? cp->type: 'c';
+	const char *license = cp->meta.license? cp->meta.license: "LGPL";
+	const char *desc = r_str_get (cp->meta.desc);
+	const char *author = r_str_get (cp->meta.author);
+	cb_printf ("%c %12s %5s %s %s\n", type, cp->meta.name, license, desc, author);
 }
 
 R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
@@ -237,17 +246,11 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			{
-				char mode = cp->type? cp->type: 'c';
-				const char *license = cp->meta.license? cp->meta.license: "LGPL";
-				const char *desc = r_str_get (cp->meta.desc);
-				const char *author = r_str_get (cp->meta.author);
-				cb_printf ("%c %12s %5s %s %s\n", mode, cp->meta.name, license, desc, author);
-			}
+			print_plugin_verbose (cp, cb_printf);
 			break;
 		}
 	}
-	// TODO: move all those static hashes into crypto plugins
+	// TODO: R2_592 move all those static hashes into crypto plugins and remove the code below
 	int i;
 	for (i = 0; i < 64; i++) {
 		ut64 bits = ((ut64)1) << i;
