@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -54,6 +54,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_xor = {
 	.meta = {
 		.name = "xor",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.implements = "xor",

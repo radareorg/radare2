@@ -178,7 +178,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	int index1, index2;
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
-		//let user deal with padding
+		// let user deal with padding
 		if (buflen % 8 != 0) {
 			R_LOG_ERROR ("Invalid input length %d. Expected length is multiple of 8 bytes", buflen);
 		}
@@ -310,10 +310,7 @@ static bool blowfish_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mod
 
 static int blowfish_get_key_size(RCryptoJob *cj) {
 	struct blowfish_state *st = get_st (cj);
-	if (st) {
-		return st->key_size;
-	}
-	return -1;
+	return st? st->key_size: -1;
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
@@ -343,6 +340,7 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 	.meta = {
 		.name = "blowfish",
 		.license = "LGPL3",
+		.author = "pancake"
 	},
 	.implements = "blowfish",
 	.set_key = blowfish_set_key,
