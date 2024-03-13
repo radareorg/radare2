@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 /*
 Usage Example:
 
@@ -46,13 +46,11 @@ static void env(const char *s, int f) {
 
 R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 #if HAVE_R2PIPE
-	char *cmd;
-	int ret, len;
 	if (!r2pipe || !str) {
 		return -1;
 	}
-	len = strlen (str) + 2; /* include \n\x00 */
-	cmd = malloc (len + 2);
+	int len = strlen (str) + 2; /* include \n\x00 */
+	char *cmd = malloc (len + 2);
 	if (!cmd) {
 		return 0;
 	}
@@ -61,9 +59,9 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 #if R2__WINDOWS__
 	DWORD dwWritten = -1;
 	WriteFile (r2pipe->pipe, cmd, len, &dwWritten, NULL);
-	ret = (dwWritten == len);
+	int ret = (dwWritten == len);
 #else
-	ret = (write (r2pipe->input[1], cmd, len) == len);
+	int ret = (write (r2pipe->input[1], cmd, len) == len);
 #endif
 	free (cmd);
 	return ret;
@@ -188,7 +186,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 #endif
 
 #if HAVE_R2PIPE
-static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
+static R2Pipe* r2p_open_pipes(R2Pipe* r2p, const char *cmd) {
 	r_return_val_if_fail (r2p, NULL);
 #if R2__UNIX__ || defined(__CYGWIN__)
 	char *out = r_sys_getenv ("R2PIPE_IN");
@@ -265,7 +263,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	}
 	if (R_STR_ISEMPTY (cmd)) {
 		r2p->child = NO_CHILD;
-		return r2p_open_spawn (r2p, cmd);
+		return r2p_open_pipes(r2p, cmd);
 	}
 #if R2__WINDOWS__
 	w32_createPipe (r2p, cmd);
@@ -311,7 +309,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		r2p->output[1] = -1;
 	} else {
 		int rc = 0;
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			close (0);
 			close (1);
 			dup2 (r2p->input[0], 0);

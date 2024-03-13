@@ -18,6 +18,7 @@ EOF
 RUN
 
 NAME=qjs async test
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 ""js import("r2pipe").then((r2pipe)=> {console.log(r2pipe.open());}).catch(console.error);

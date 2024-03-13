@@ -9,6 +9,7 @@
 #include "quickjs.h"
 #include "../js_require.c"
 #include "../js_r2papi.c"
+#define QJS_STRING(x) JS_NewString(ctx, x)
 
 typedef struct {
 	R_BORROW JSContext *ctx;
@@ -528,11 +529,118 @@ static JSModuleDef *js_init_module_r2(JSContext *ctx) {
 	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
 	if (m) {
 		JSValue global_obj = JS_GetGlobalObject (ctx);
-		JSValue name = JS_NewString(ctx, "r2");
-		JSValue v = JS_NewObjectProtoClass(ctx, name, 0);
+		JSValue name = JS_NewString (ctx, "r2");
+		JSValue v = JS_NewObjectProtoClass (ctx, name, 0);
 		JS_SetPropertyStr (ctx, global_obj, "r2", v);
-		JS_SetPropertyFunctionList(ctx, v, js_r2_funcs, countof(js_r2_funcs));
+		JS_SetPropertyFunctionList (ctx, v, js_r2_funcs, countof (js_r2_funcs));
 		// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof(js_r2_funcs));
+	}
+	return m;
+}
+
+// r2pipe
+static JSValue qjs_r2pipe_instance_cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 1) {
+		return JS_ThrowRangeError (ctx, "Only one argument permitted");
+	}
+	R2Pipe *r2p = JS_GetOpaque (this_val, 0);
+	size_t plen;
+	if (r2p) {
+		const char *cmd = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+		char *s = r2pipe_cmd (r2p, cmd);
+		return QJS_STRING (s);
+	}
+	return JS_ThrowRangeError (ctx, "Only one argument permitted");
+}
+
+static JSValue qjs_r2pipe_instance_cmdj(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	JSValue arg0 = qjs_r2pipe_instance_cmd (ctx, this_val, argc, argv);
+	const char jp[] = "JSON.parse";
+	JSValue json_parse = JS_Eval (ctx, jp, strlen (jp), "-", JS_EVAL_TYPE_GLOBAL);
+	JSValue args = JS_NewArray (ctx);
+	JS_SetPropertyUint32 (ctx, args, 0, arg0);
+	return JS_Call (ctx, json_parse, this_val, 1, &args);
+}
+
+static JSValue qjs_r2pipe_instance_quit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	R2Pipe *r2p = JS_GetOpaque (this_val, 0);
+	if (r2p) {
+		r2pipe_close (r2p);
+		JS_SetOpaque (this_val, NULL);
+		return JS_NewBool (ctx, false);
+	}
+	return JS_NewBool (ctx, false);
+}
+
+static const JSCFunctionListEntry js_r2pipe_instance_funcs[] = {
+	JS_CFUNC_DEF ("cmd", 2, qjs_r2pipe_instance_cmd),
+	JS_CFUNC_DEF ("cmdj", 2, qjs_r2pipe_instance_cmdj),
+	JS_CFUNC_DEF ("quit", 2, qjs_r2pipe_instance_quit)
+};
+
+static JSValue qjs_r2pipe_open(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	// JSRuntime *rt = JS_GetRuntime (ctx);
+	// QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (argc == 0) {
+		// return the same current global instance of the r2
+		return JS_Eval (ctx, "r2", 2, "-", JS_EVAL_TYPE_GLOBAL);
+	}
+	if (argc > 2) {
+		return JS_ThrowRangeError (ctx, "Too many arguments");
+	}
+	char *args = strdup ("");
+	if (argc == 2) {
+		if (JS_IsArray (ctx, argv[1])) {
+			int i;
+			RStrBuf *sb = r_strbuf_new ("");
+			JSValue array = argv[1];
+			ut32 array_length;
+			JSValue v = JS_GetPropertyStr (ctx, array, "length");
+			JS_ToUint32 (ctx, &array_length, v);
+			for (i = 0; i < array_length; i++) {
+				v = JS_GetPropertyUint32 (ctx, array, i);
+				size_t plen;
+				const char *n = JS_ToCStringLen2 (ctx, &plen, v, false);
+				r_strbuf_append (sb, n);
+				r_strbuf_append (sb, " ");
+			}
+			r_strbuf_append (sb, " ");
+			free (args);
+			args = r_strbuf_drain (sb);
+		} else {
+			return JS_ThrowRangeError (ctx, "Second argument must be an array");
+		}
+	}
+	size_t plen;
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	char *c = r_str_newf ("radare2 %s-q0 %s", args, n);
+	R2Pipe *pipe = r2pipe_open (c);
+	free (c);
+	JSValue v = JS_NewObjectProtoClass (ctx, QJS_STRING ("r2pipeInstance"), 0);
+	// char *r2p = r_str_newf ("%p", pipe);
+	// JS_SetPropertyStr (ctx, v, "_r2p_", QJS_STRING (r2p));
+	JS_SetOpaque (v, pipe);
+	// free (r2p);
+	JS_SetPropertyFunctionList (ctx, v, js_r2pipe_instance_funcs, countof (js_r2pipe_instance_funcs));
+	return v;
+}
+
+static const JSCFunctionListEntry js_r2pipe_funcs[] = {
+	JS_CFUNC_DEF ("open", 2, qjs_r2pipe_open)
+	// JS_CFUNC_DEF ("openCore", 2, qjs_r2pipe_opencore) // r2pipe_open_corebind()
+};
+
+static int js_r2pipe_init(JSContext *ctx, JSModuleDef *m) {
+	return JS_SetModuleExportList (ctx, m, js_r2pipe_funcs, countof (js_r2pipe_funcs));
+}
+
+static JSModuleDef *js_init_module_r2pipe(JSContext *ctx) {
+	JSModuleDef *m = JS_NewCModule (ctx, "r2pipe", js_r2pipe_init);
+	if (m) {
+		JSValue global = JS_GetGlobalObject (ctx);
+		JSValue v = JS_NewObjectProtoClass (ctx, QJS_STRING ("r2pipe"), 0);
+		JS_SetPropertyStr (ctx, global, "r2pipe", v);
+		JS_SetPropertyFunctionList (ctx, v, js_r2pipe_funcs, countof (js_r2pipe_funcs));
 	}
 	return m;
 }
@@ -542,18 +650,11 @@ static void register_helpers(JSContext *ctx) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	js_std_set_worker_new_context_func (JS_NewCustomContext);
 	js_std_init_handlers (rt);
-
 	JS_SetModuleLoaderFunc (rt, NULL, js_module_loader, NULL);
 #endif
-	/*
-	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
-	if (!m) {
-		return;
-	}
-	js_r2_init (ctx, m);
-	*/
 	js_init_module_os (ctx);
 	js_init_module_r2 (ctx);
+	js_init_module_r2pipe (ctx);
 	r2qjs_modules (ctx);
 	// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 	JSValue global_obj = JS_GetGlobalObject (ctx);
@@ -581,7 +682,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, js_require_qjs);
 	eval (ctx, "require = function(x) { if (x == 'r2papi') { return new R2Papi(r2); } ; return requirejs(x); }");
 	eval (ctx, "var exports = {};");
-	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
+	// eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
 	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
 		eval (ctx, "R=r2;");
@@ -599,7 +700,6 @@ static void register_helpers(JSContext *ctx) {
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	JSContext *ctx = JS_NewContext (rt);
-	// JSContext *ctx = JS_NewContextRaw (rt);
 	if (!ctx) {
 		return NULL;
 	}
@@ -685,20 +785,17 @@ static bool init(RLangSession *ls) {
 	if (!rt) {
 		return false;
 	}
-
 	JSContext *ctx = JS_NewCustomContext (rt);
 	if (!ctx) {
 		JS_FreeRuntime (rt);
 		return false;
 	}
-
 	QjsPluginManager *pm = R_NEW0 (QjsPluginManager);
 	if (!pm) {
 		JS_FreeContext (ctx);
 		JS_FreeRuntime (rt);
 		return false;
 	}
-
 	RCore *core = ls->lang->user;
 	plugin_manager_init (pm, core, rt);
 
