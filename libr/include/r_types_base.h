@@ -289,6 +289,70 @@ static inline void *untagged_pointer_check(void *x) {
 
 #define ALLOC_SIZE_LIMIT 0xffffff
 
+/* operating system */
+#undef R2__BSD__
+#undef __KFBSD__
+#undef R2__UNIX__
+#undef R2__WINDOWS__
+
+#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#define __KFBSD__ 1
+#else
+#define __KFBSD__ 0
+#endif
+
+#ifdef _MSC_VER
+  #define restrict
+  #define strcasecmp stricmp
+  #define strncasecmp strnicmp
+  #define R2__WINDOWS__ 1
+
+  #include <time.h>
+  static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
+#endif
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__) || defined(_AIX)
+  #define R2__BSD__ 0
+  #define R2__UNIX__ 1
+#endif
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
+  #define R2__BSD__ 1
+  #define R2__UNIX__ 1
+#endif
+
+#ifdef __HAIKU__
+# define R2__UNIX__ 1
+#endif
+
+#ifdef R_IPI
+#undef R_IPI
+#endif
+
+#define R_IPI
+
+#ifdef R_HEAP
+#undef R_HEAP
+#endif
+#define R_HEAP
+
+#ifdef R_API
+#undef R_API
+#endif
+#if R_SWIG
+  #define R_API export
+#elif R_INLINE
+  #define R_API inline
+#else
+  #if R2__WINDOWS__
+    #define R_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
+    #define R_API __attribute__((visibility("default")))
+  #else
+    #define R_API
+  #endif
+#endif
+
+#define R_HIDDEN __attribute__((visibility("hidden")))
+
 #ifdef __cplusplus
 }
 #endif

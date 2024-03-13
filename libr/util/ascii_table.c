@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2018-2024 - pancake, r00tus3r */
 
-#include <r_types.h>
+#include <r_types_base.h>
 
 static const char ascii_table[] =
 "The following table contains the 128 ASCII characters.\n"
