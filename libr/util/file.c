@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
-#define R_LOG_ORIGIN "filter"
+#define R_LOG_ORIGIN "util.file"
 
 #include <r_util.h>
 #include <time.h>
@@ -369,7 +369,7 @@ R_API char *r_stdin_readline(int *sz) {
 	}
 	*sz = l;
 	// NOTE that r_strbuf_drain uses r_str_ndup which chops strings with null bytes
-	char *res = r_mem_dup (r_strbuf_getbin (sb, NULL), l);
+	char *res = r_mem_dup (r_strbuf_getbin (sb, NULL), l + 1);
 	r_strbuf_free (sb);
 	return res;
 }
