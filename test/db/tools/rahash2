@@ -163,24 +163,24 @@ FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
 c      aes-ecb   MIT  pancake
-c      aes-cbc  LGPL  
+c      aes-cbc  LGPL  pancake
 c     aes-wrap  LGPL  Sylvain Pelissier
 e       base64  LGPL  rakholiyajenish.07
-e       base91  LGPL  pancake
-c     blowfish LGPL3  
+e       base91   MIT  rakholiyajenish.07
+c     blowfish LGPL3  pancake
 c         cps2  LGPL  pof,esanfelix
 c      des-ecb  LGPL  deroad
 h      entropy   MIT  pancake
 e     punycode  LGPL  
-c          rc2  LGPL  
-c          rc4  LGPL  
+c          rc2  LGPL  pancake
+c          rc4  LGPL  pancake
 c          rc6  LGPL  pancake
 c          rol  LGPL  pancake
-c          ror  LGPL  
+c          ror  LGPL  pancake
 c          rot   MIT  pancake
-c  serpent-ecb  LGPL  
+c  serpent-ecb  LGPL  pancake
 c      sm4-ecb LGPL3  Sylvain Pelissier
-c          xor   MIT  
+c          xor   MIT  pancake
 h          md5
 h         sha1
 h       sha256
