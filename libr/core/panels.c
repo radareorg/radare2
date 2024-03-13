@@ -1946,7 +1946,7 @@ static void __handle_tab_new(RCore *core) {
 static void __init_sdb(RCore *core) {
 	Sdb *db = core->panels->db;
 	sdb_set (db, "Symbols", "isq", 0);
-	sdb_set (db, "Stack"  , "px", 0);
+	sdb_set (db, "Stack", "pxr@r:SP", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
 	sdb_set (db, "FPU Registers", PANEL_CMD_FPU_REGISTERS, 0);
