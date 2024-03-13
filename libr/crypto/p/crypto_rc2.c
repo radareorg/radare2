@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -31,8 +31,7 @@ struct rc2_state {
 	int key_size;
 };
 
-// takes a 8-128 len ut8 key
-// expands it to a 64 len ut16 key
+// takes a 8-128 len ut8 key which expands to an 64 len ut16 key
 static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) {
 	int i;
 
@@ -103,7 +102,6 @@ static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 	outbuf[7] = (ut8) (x76 >> 8);
 }
 
-
 static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 	int i;
 	ut16 x76, x54, x32, x10;
@@ -149,11 +147,10 @@ static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) 
 }
 
 static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;
 	char data_block[BLOCK_SIZE + 1] = {0};
-	int idx = 0;
 	char dcrypted_block[BLOCK_SIZE + 1] = {0};
 	char *ptr = (char *) outbuf;
+	int i, idx = 0;
 
 	for (i = 0; i < buflen; i++) {
 		data_block[idx] = inbuf[i];
@@ -184,7 +181,6 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 			idx = 0;
 		}
 	}
-
 	size_t mod = idx % BLOCK_SIZE;
 	if (mod) {
 		while (idx % BLOCK_SIZE) {
@@ -245,6 +241,8 @@ static bool fini(RCryptoJob *cj) {
 RCryptoPlugin r_crypto_plugin_rc2 = {
 	.meta = {
 		.name = "rc2",
+		.author = "pancake",
+		.license = "LGPL",
 	},
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,

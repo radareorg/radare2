@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -40,7 +40,8 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_base91 = {
 	.meta = {
 		.name = "base91",
-		.author = "pancake",
+		.author = "rakholiyajenish.07",
+		.license = "MIT",
 	},
 	.implements = "base91",
 	.type = R_CRYPTO_TYPE_ENCODER,

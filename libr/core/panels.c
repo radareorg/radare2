@@ -1,8 +1,8 @@
-/* Copyright radare2 2014-2023 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2024 - Author: pancake, vane11ope */
 
 #include <r_core.h>
 
-/* few remaining static functions */
+// few remaining static functions
 static bool __init_panels_menu(RCore *core);
 static bool __init_panels(RCore *core, RPanels *panels);
 static void __init_menu_screen_settings_layout(void *_core, const char *parent);
@@ -120,8 +120,10 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Tiny Graph",
-	"Functions", "Function Calls", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
+	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets",
+	"Graph", "Tiny Graph",
+	"Functions", "Function Calls", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN,
+	"Symbols", "Imports",
 	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Xrefs Here", "Methods",
 	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", PANEL_TITLE_ALL_DECOMPILER,
 	NULL
@@ -143,7 +145,8 @@ static const char *menus_Emulate[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "RegisterCols", "DRX", "Breakpoints", "Watchpoints",
+	"Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "RegisterCols",
+	"DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Stack", "Step", "Step Over", "Reload",
 	NULL
@@ -314,8 +317,7 @@ static RPanel *__get_panel(RPanels *panels, int i) {
 
 static void __update_edge_x(RCore *core, int x) {
 	RPanels *panels = core->panels;
-	int i, j;
-	int tmp_x = 0;
+	int i, j, tmp_x = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p0 = __get_panel (panels, i);
 		if (p0 && (p0->view->pos.x - 2 <= panels->mouse_orig_x &&

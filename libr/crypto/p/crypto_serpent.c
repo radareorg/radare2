@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake */
+/* radare - LGPL - Copyright 2017-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -112,6 +112,8 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_serpent = {
 	.meta = {
 		.name = "serpent-ecb",
+		.license = "LGPL",
+		.author = "pancake",
 	},
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,

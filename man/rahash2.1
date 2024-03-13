@@ -1,4 +1,4 @@
-.Dd Mar 12, 2022
+.Dd Mar 12, 2024
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
@@ -6,12 +6,12 @@
 .Sh SYNOPSIS
 .Nm rahash2
 .Op Fl BbdDehjrknvq
-.Op Fl a Ar algorithm
+.Op Fl a Ar algo
 .Op Fl b Ar size
-.Op Fl D Ar algo
-.Op Fl E Ar algo
+.Op Fl D Ar deco
+.Op Fl E Ar enco
 .Op Fl f Ar from
-.Op Fl i Ar iterations
+.Op Fl i Ar iters
 .Op Fl I Ar IV
 .Op Fl n Ar blocks
 .Op Fl s Ar string
@@ -39,11 +39,11 @@ Define the block size
 .It Fl c Ar hash
 Compare the computed hash with this one. Allowed only when a single hash is computed.
 .It Fl D Ar algo
-Decrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
+Decrypt or decode using the given algorithm (See: `rahash2 -L | grep -e ^e -e ^c`)
 .It Fl e
 Use little endian to display checksums
 .It Fl E Ar algo
-Encrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
+Encrypt or encode using the given algorithm (see `rahash2 -L | grep -e ^e -e ^c`)
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
 .It Fl I Ar [^]s:string|hexstr
@@ -79,6 +79,16 @@ Show version information
 .It Fl h
 Show usage help message.
 .El
+.Sh EXAMPLES
+.Pp
+Compute the md5 of the infamous 'ls':
+.Pp
+  $ rahash2 -qqa md5 /bin/ls
+.Pp
+Base64 encoded Hello World:
+.Pp
+  $ rahash2 -E base64 -s hello
+.Pp
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp

@@ -100,6 +100,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_aes_cbc = {
 	.meta = {
 		.name = "aes-cbc",
+		.author = "pancake",
 	},
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,

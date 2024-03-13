@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2016-2024 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -71,6 +73,8 @@ static bool fini(RCryptoJob *cj) {
 RCryptoPlugin r_crypto_plugin_ror = {
 	.meta = {
 		.name = NAME,
+		.author = "pancake",
+		.license = "LGPL",
 	},
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
