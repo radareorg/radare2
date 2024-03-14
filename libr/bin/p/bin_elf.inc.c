@@ -498,8 +498,13 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_386_8:        ADD(8,  0); break;
 		case R_386_PC8:      ADD(8, -(st64)P); break;
 		case R_386_COPY:     ADD(32, 0); break; // XXX: copy symbol at runtime
-		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break;
+		case R_386_IRELATIVE:
+			r->is_ifunc = true;
+			SET (32);
+			break;
+		default:
+			R_LOG_WARN ("Unsupported reloc type %d for x86-32", rel->type);
+			break;
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
@@ -520,7 +525,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_X86_64_GOTPCREL:  ADD(64, got_addr - P); break;
 		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
-		default: break;
+		default:
+			R_LOG_WARN ("Unsupported reloc type %d for x64", rel->type);
+			break;
 		}
 		break;
 	case EM_ARM:
@@ -571,13 +578,67 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {
-		case R_AARCH64_NONE:      break;
-		case R_AARCH64_ABS32:     ADD (32, 0); break;
-		case R_AARCH64_ABS16:     ADD (16, 0); break;
-		case R_AARCH64_GLOB_DAT:  SET (64); break;
+		case R_AARCH64_NONE: break;
+		case R_AARCH64_GLOB_DAT: SET (64); break;
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
-		case R_AARCH64_RELATIVE:  ADD (64, B); break;
-		default: break; // reg relocations
+		case R_AARCH64_RELATIVE: ADD (64, B); break;
+		  // data references
+		case R_AARCH64_PREL16: ADD (16, B); break;
+		case R_AARCH64_PREL32: ADD (32, B); break;
+		case R_AARCH64_PREL64: ADD (64, B); break;
+		case R_AARCH64_ABS64: ADD (64, 0); break;
+		case R_AARCH64_ABS32: ADD (32, 0); break;
+		case R_AARCH64_ABS16: ADD (16, 0); break;
+		// instructions
+		case R_AARCH64_ADR_PREL_PG_HI21:
+			R_LOG_WARN ("Poorly supported AARCH64 instruction reloc type %d at 0x%08"PFMT64x, rel->type, rel->rva);
+		case R_AARCH64_ADD_ABS_LO12_NC:
+		case R_AARCH64_CALL26:
+		case R_AARCH64_LDST32_ABS_LO12_NC:
+		case R_AARCH64_LDST64_ABS_LO12_NC:
+			ADD (32, 0);
+			break;
+#if 0
+/* Instructions. */
+#define R_AARCH64_MOVW_UABS_G0		263
+#define R_AARCH64_MOVW_UABS_G0_NC	264
+#define R_AARCH64_MOVW_UABS_G1		265
+#define R_AARCH64_MOVW_UABS_G1_NC	266
+#define R_AARCH64_MOVW_UABS_G2		267
+#define R_AARCH64_MOVW_UABS_G2_NC	268
+#define R_AARCH64_MOVW_UABS_G3		269
+
+#define R_AARCH64_MOVW_SABS_G0		270
+#define R_AARCH64_MOVW_SABS_G1		271
+#define R_AARCH64_MOVW_SABS_G2		272
+
+#define R_AARCH64_LD_PREL_LO19		273
+#define R_AARCH64_ADR_PREL_LO21		274
+#define R_AARCH64_ADR_PREL_PG_HI21	275
+#define R_AARCH64_ADR_PREL_PG_HI21_NC	276
+#define R_AARCH64_ADD_ABS_LO12_NC	277
+#define R_AARCH64_LDST8_ABS_LO12_NC	278
+
+#define R_AARCH64_TSTBR14		279
+#define R_AARCH64_CONDBR19		280
+#define R_AARCH64_JUMP26		282
+#define R_AARCH64_CALL26		283
+#define R_AARCH64_LDST16_ABS_LO12_NC	284
+#define R_AARCH64_LDST32_ABS_LO12_NC	285
+#define R_AARCH64_LDST64_ABS_LO12_NC	286
+#define R_AARCH64_LDST128_ABS_LO12_NC	299
+
+#define R_AARCH64_MOVW_PREL_G0		287
+#define R_AARCH64_MOVW_PREL_G0_NC	288
+#define R_AARCH64_MOVW_PREL_G1		289
+#define R_AARCH64_MOVW_PREL_G1_NC	290
+#define R_AARCH64_MOVW_PREL_G2		291
+#define R_AARCH64_MOVW_PREL_G2_NC	292
+#define R_AARCH64_MOVW_PREL_G3		293
+#endif
+		default:
+			R_LOG_WARN ("Unsupported reloc type %d for aarch64", rel->type);
+			break; // reg relocations
 		}
 		break;
 	case EM_PPC: switch (rel->type) {
@@ -619,6 +680,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 	default:
+		R_LOG_ERROR("unimplemented ELF reloc type %d", rel->type);
 		R_LOG_DEBUG ("unimplemented ELF reloc type %d", rel->type);
 		break;
 	}
@@ -665,9 +727,14 @@ static RList* relocs(RBinFile *bf) {
 		if (ptr && ptr->paddr != UT64_MAX) {
 			r_list_append (ret, ptr);
 			ht_up_insert (reloc_ht, reloc->rva, ptr);
+		} else {
+			if (ptr) {
+				ht_up_insert (reloc_ht, reloc->rva, ptr);
+			} else {
+				R_LOG_ERROR ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+			}
 		}
 	}
-
 	ht_up_free (reloc_ht);
 	return ret;
 }

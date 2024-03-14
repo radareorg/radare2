@@ -107,18 +107,18 @@ s section..init_array
 pd 10
 EOF
 EXPECT=<<EOF
-175
+264
             ;-- section..init_array:
             ;-- segment.LOAD1:
-            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
-            0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
-            0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
+            0x00126510      .qword 0x0000000000005a6c ; reloc..datadiv_decode9958896245423089702 ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
+            0x00126518      .qword 0x0000000000005a80 ; reloc..datadiv_decode10476194973746341988 ; sym..datadiv_decode10476194973746341988
+            0x00126520      .qword 0x00000000000efddc ; reloc..datadiv_decode16323044921667855934 ; sym..datadiv_decode16323044921667855934
             0x00126528      .qword 0x0000000000009080 ; entry.init0
             0x00126530      .qword 0x0000000000077d14 ; entry.init1
-            0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
-            0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
-            0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963
-            0x00126550      .qword 0x00000000000f22ec ; sym..datadiv_decode16406252260792032531
-            0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347
+            0x00126538      .qword 0x00000000000f22e0 ; reloc..datadiv_decode667225052219618748 ; sym..datadiv_decode667225052219618748
+            0x00126540      .qword 0x00000000000f22e4 ; reloc..datadiv_decode8132880250332170398 ; sym..datadiv_decode8132880250332170398
+            0x00126548      .qword 0x00000000000f22e8 ; reloc..datadiv_decode3655886617018729963 ; sym..datadiv_decode3655886617018729963
+            0x00126550      .qword 0x00000000000f22ec ; reloc..datadiv_decode16406252260792032531 ; sym..datadiv_decode16406252260792032531
+            0x00126558      .qword 0x00000000000f22f0 ; reloc..datadiv_decode13403071575248320347 ; sym..datadiv_decode13403071575248320347
 EOF
 RUN

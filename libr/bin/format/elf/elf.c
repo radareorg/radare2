@@ -3248,7 +3248,6 @@ const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
 	if (!populate_relocs_record (eo)) {
 		return NULL;
 	}
-
 	return &eo->g_relocs;
 }
 
