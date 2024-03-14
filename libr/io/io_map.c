@@ -517,10 +517,23 @@ R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len)
 	chunk = (MapOverlayChunk *)node->data;
 	do {
 		addr = R_MAX (r_itv_begin (search_itv), r_itv_begin (chunk->itv));
-		ut8 *dst = &buf[addr - r_itv_begin (search_itv)];
-		const ut8 *src = &chunk->buf[addr - r_itv_begin (chunk->itv)];
-		const size_t read_len = (size_t)(R_MIN (r_itv_end (search_itv), r_itv_end (chunk->itv)) - addr);
-		memcpy (dst, src, read_len);
+		int chunk_size = r_itv_size (chunk->itv);
+		// int left = r_itv_end (chunk->itv) - addr;
+		int delta = addr - r_itv_begin (search_itv);
+		ut8 *dst = buf + delta;
+		const ut8 *src = chunk->buf + delta;
+		if (delta < chunk_size) {
+			// const size_t read_len = (size_t)(R_MIN (r_itv_end (search_itv), left));
+			const size_t dst_left = len - delta;
+			const size_t src_left = chunk_size - delta;
+			// R_LOG_INFO ("Prevent memcpy of %d on a chunk of %d", dst_left, src_left);
+			memset (dst, 0, dst_left);
+			memcpy (dst, src, R_MIN (dst_left, src_left));
+		} else {
+			// overflow
+			R_LOG_DEBUG ("Prevent oobread of %d on a chunk of %d", delta, chunk_size);
+			memset (dst, 0, len - delta);
+		}
 		node = r_rbnode_next (node);
 		chunk = node? (MapOverlayChunk *)node->data: NULL;
 	} while (chunk && r_itv_overlap (chunk->itv, search_itv));
@@ -552,7 +565,7 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	RInterval x = {addr, len};
 	RInterval search_itv = r_itv_intersect (map->itv, x);
 	if (!r_itv_size (search_itv)) {
-		return true;	// is this correct?
+		return true; // is this correct?
 	}
 	if (!map->overlay) {
 		if (!(map->overlay = r_crbtree_new (_overlay_chunk_free))) {
@@ -593,9 +606,15 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		return true;
 	}
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
-		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
-		// realloc cannot fail here because the new size is smaller than the old size
-		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv) * sizeof (ut8));
+		size_t new_size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
+		chunk->itv.size = new_size;
+		if (new_size > 0) {
+			// realloc cannot fail here because the new size is smaller than the old size
+			ut8 *tmp = realloc (chunk->buf, new_size * sizeof (ut8));
+			if (tmp) {
+				chunk->buf = tmp;
+			}
+		}
 		node = r_rbnode_next (node);
 	}
 	if (node) {
@@ -607,16 +626,19 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		}
 	}
 	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-		ut8 *ptr = realloc (chunk->buf,
-			(r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8));
-		if (!ptr) {
-			return false;
+		int new_size = (r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8);
+		if (new_size > 0) {
+			ut8 *ptr = realloc (chunk->buf, new_size);
+			if (!ptr) {
+				chunk->buf = NULL;
+				return false;
+			}
+			chunk->buf = ptr;
+			memmove (&chunk->buf[r_itv_size (search_itv)],
+				&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+				r_itv_end (chunk->itv) - r_itv_end (search_itv));
+			memcpy (chunk->buf, buf, r_itv_size (search_itv));
 		}
-		chunk->buf = ptr;
-		memmove (&chunk->buf[r_itv_size (search_itv)],
-			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
-			r_itv_end (chunk->itv) - r_itv_end (search_itv));
-		memcpy (chunk->buf, buf, r_itv_size (search_itv));
 		chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
 		chunk->itv.addr = search_itv.addr;
 		return true;
