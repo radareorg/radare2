@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -19,8 +19,11 @@ static RCoreHelpMessage help_msg_e = {
 	"e", "??", "list config vars with description",
 	"e", " a", "get value of var 'a'",
 	"e", " a=b", "set var 'a' the 'b' value",
+#if 0
+	// commented to avoid misleading confussions
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
+#endif
 	"e.", "a=b", "same as 'e a=b' but without using a space",
 	"e,", "[table-query]", "show the output in table format",
 	"e/", "asm", "filter configuration variables by name",
