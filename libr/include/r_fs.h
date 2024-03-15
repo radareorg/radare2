@@ -40,6 +40,9 @@ typedef struct r_fs_file_t {
 	ut8 *data;
 	void *ctx;
 	char type;
+	ut32 uid; // owner
+	ut32 gid; // group
+	ut32 perm; // rwx
 	ut64 time;
 	struct r_fs_plugin_t *p;
 	struct r_fs_root_t *root;
@@ -110,7 +113,19 @@ static inline void r_fs_shell_free(RFSShell *s) {
 #define R_FS_FILE_TYPE_REGULAR 'r'
 #define R_FS_FILE_TYPE_DELETED 'x'
 #define R_FS_FILE_TYPE_SPECIAL 's'
+#define R_FS_FILE_TYPE_BLOCK 'b'
+#define R_FS_FILE_TYPE_CHAR 'c'
 #define R_FS_FILE_TYPE_MOUNT 'm'
+
+// symlinked types
+#define R_FS_FILE_TYPE_S_MOUNTPOINT 'M'
+#define R_FS_FILE_TYPE_S_DIRECTORY 'D'
+#define R_FS_FILE_TYPE_S_REGULAR 'R'
+#define R_FS_FILE_TYPE_S_DELETED 'X'
+#define R_FS_FILE_TYPE_S_SPECIAL 'S'
+#define R_FS_FILE_TYPE_S_BLOCK 'B'
+#define R_FS_FILE_TYPE_S_CHAR 'C'
+#define R_FS_FILE_TYPE_S_MOUNT 'M'
 
 typedef int (*RFSPartitionIterator)(void *disk, void *ptr, void *user);
 typedef struct r_fs_partition_type_t {

@@ -58,8 +58,28 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		char *fp = r_str_newf ("%s/%s", path, file);
 		fsf->path = fp;
 		fsf->type = 'f';
-		if (!stat (fp, &st)) {
-			fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+		if (!lstat (fp, &st)) {
+			bool is_symlink = S_IFLNK == (st.st_mode & S_IFMT);
+			if (is_symlink) {
+				// uppercase denotes symlink
+				stat (fp, &st);
+			}
+			fsf->perm = st.st_mode & 0xfff;
+			fsf->uid = st.st_uid;
+			fsf->gid = st.st_gid;
+			if (S_ISDIR (st.st_mode)) {
+				fsf->type = 'd';
+			} else if (S_ISBLK (st.st_mode)) {
+				fsf->type = 'b';
+			} else if (S_ISCHR (st.st_mode)) {
+				fsf->type = 'c';
+			} else {
+				// regular file
+				fsf->type = 'f';
+			}
+			if (is_symlink) {
+				fsf->type = toupper (fsf->type);
+			}
 			fsf->time = st.st_atime;
 		} else {
 			fsf->type = 'f';
