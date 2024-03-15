@@ -10,6 +10,7 @@
 .Op Fl b Ar size
 .Op Fl c Ar hash
 .Op Fl D Ar deco
+.Op Fl e
 .Op Fl E Ar enco
 .Op Fl f Ar from
 .Op Fl i Ar num
@@ -43,6 +44,8 @@ Specify the block size.
 Compare the computed hash with the provided one. This is allowed only when a single hash is computed.
 .It Fl D Ar deco
 Decrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
+.It Fl e
+Swap endianness to show digests or injest keys in big or little endian.
 .It Fl E Ar enco
 Encrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
 .It Fl f Ar from
@@ -103,6 +106,13 @@ Encode the string "Hello World" with base64:
 Calculate SHA256 hash of a specific part of a file:
 .Pp
   $ rahash2 -qqa sha256 -f 0x1000 -t 0x2000 file_to_hash
+.Pp
+Encrypt and decrypt the "hello" string using the ror and rol plugins:
+.Pp
+  $ rahash2 -S 12333 -E ror -s hello && echo
+  Cell{
+  $ rahash2 -S 12333 -E rol -s Cell{ && echo
+  hello
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp
