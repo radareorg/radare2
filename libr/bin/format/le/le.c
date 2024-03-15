@@ -542,7 +542,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
 			if ((ordinal - 1) < bin->header->objcnt) {
-			rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
+				rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
 				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
 					if (header.target & F_TARGET_OFF32) {
 						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
