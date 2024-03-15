@@ -3574,8 +3574,9 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				if (size > 0 && !ds_print_data_type (ds, b, ds->hint? ds->hint->immbase: 0, mi_size)) {
 					if (size > delta) {
 						r_cons_printf ("hex size=%d delta=%d\n", size , delta);
-						int remaining = size - delta;
+						int remaining = (size - delta) - idx;
 						remaining = R_MAX (remaining, 0);
+						remaining = R_MIN (mi_size, remaining - idx);
 						if (remaining > (len - delta)) {
 							size_t calloc_size = R_MAX (len, size - delta);
 							if (idx < calloc_size) {
