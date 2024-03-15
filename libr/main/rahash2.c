@@ -13,6 +13,7 @@ typedef struct {
 	int quiet;
 	int iterations;
 	bool incremental; //  = true;
+	int endian;
 	ut64 from;
 	ut64 to;
 	RHashSeed *_s;
@@ -63,16 +64,22 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	} else {
 		ro->s.prefix = 0;
 	}
-	if (!strncmp (sptr, "s:", 2)) {
+	if (r_str_startswith (sptr, "s:")) {
 		strcpy ((char *) ro->s.buf, sptr + 2);
 		ro->s.len = strlen (sptr + 2);
-	} else {
+	} else if (r_str_startswith (sptr, "0x")) {
 		ro->s.len = r_hex_str2bin (sptr, ro->s.buf);
 		if (ro->s.len < 1) {
 			strcpy ((char *) ro->s.buf, sptr);
 			ro->s.len = strlen (sptr);
-			R_LOG_WARN ("This is not an hexpair, assuming a string, prefix it with 's:' to skip this message");
+			R_LOG_WARN ("Expected seed/key in hexpair format, use 0x or s: prefix instead")
+			// assuming a string, prefix it with 's:' to skip this message");
 		}
+	} else {
+		// TODO: honor endian
+		ut32 n = r_num_math (NULL, sptr);
+		r_write_ble32 (ro->s.buf, n, ro->endian);
+		ro->s.len = 4;
 	}
 }
 
@@ -511,7 +518,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'D': decrypt = opt.arg; break;
 		case 'E': encrypt = opt.arg; break;
 		case 'L': listplugins = true; break;
-		case 'e': ule = 1; break;
+		case 'e': ule = 1; ro->endian = !ro->endian; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'p': ptype = opt.arg; break;
