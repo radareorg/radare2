@@ -605,21 +605,21 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 			r_crbtree_delete (map->overlay, &chunk->itv, _overlay_chunk_find, NULL);
 			chunk = node? (MapOverlayChunk *)node->data: NULL;
 		}
-	}
-	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-		ut8 *ptr = realloc (chunk->buf,
-			(r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8));
-		if (!ptr) {
-			return false;
+		if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
+			ut8 *ptr = realloc (chunk->buf,
+				(r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8));
+			if (!ptr) {
+				return false;
+			}
+			chunk->buf = ptr;
+			memmove (&chunk->buf[r_itv_size (search_itv)],
+				&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+				r_itv_end (chunk->itv) - r_itv_end (search_itv));
+			memcpy (chunk->buf, buf, r_itv_size (search_itv));
+			chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
+			chunk->itv.addr = search_itv.addr;
+			return true;
 		}
-		chunk->buf = ptr;
-		memmove (&chunk->buf[r_itv_size (search_itv)],
-			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
-			r_itv_end (chunk->itv) - r_itv_end (search_itv));
-		memcpy (chunk->buf, buf, r_itv_size (search_itv));
-		chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
-		chunk->itv.addr = search_itv.addr;
-		return true;
 	}
 	chunk = R_NEW0 (MapOverlayChunk);
 	if (!chunk) {
