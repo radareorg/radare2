@@ -67,7 +67,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 			}
 #else
 			bool is_symlink = false;
-#warning support symlinks on windows too
+#pragma message("support symlinks on windows too")
 #endif
 			fsf->perm = st.st_mode & 0xfff;
 			fsf->uid = st.st_uid;
