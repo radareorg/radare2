@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2024 - nibble, pancake, alvaro_fe */
 
 // R2R db/formats/elf/versioninfo
 #define R_LOG_ORIGIN "elf"
