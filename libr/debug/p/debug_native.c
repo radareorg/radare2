@@ -1326,7 +1326,6 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 #else
 	drxt regs[1] = {0};
 #endif
-
 	switch (api_type) {
 	case DRX_API_LIST:
 		drx_list (regs);
@@ -1477,6 +1476,7 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
+// TODO should return bool
 static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (b && b->hw) {
 #if __i386__ || __x86_64__

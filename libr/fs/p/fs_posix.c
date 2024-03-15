@@ -8,6 +8,7 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
+
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
@@ -58,17 +59,21 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		char *fp = r_str_newf ("%s/%s", path, file);
 		fsf->path = fp;
 		fsf->type = 'f';
-		if (!lstat (fp, &st)) {
+		fsf->time = 0;
+		bool is_symlink = false;
 #if R2__UNIX__
-			bool is_symlink = S_IFLNK == (st.st_mode & S_IFMT);
+		int stat_result = lstat (fp, &st);
+		if (stat_result == 0) {
+			is_symlink = S_IFLNK == (st.st_mode & S_IFMT);
 			if (is_symlink) {
 				// uppercase denotes symlink
 				stat (fp, &st);
 			}
+		}
 #else
-			bool is_symlink = false;
-#pragma message("support symlinks on windows too")
+		int stat_result = stat (fp, &st);
 #endif
+		if (stat_result == 0) {
 			fsf->perm = st.st_mode & 0xfff;
 			fsf->uid = st.st_uid;
 			fsf->gid = st.st_gid;
@@ -88,9 +93,6 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 				fsf->type = toupper (fsf->type);
 			}
 			fsf->time = st.st_atime;
-		} else {
-			fsf->type = 'f';
-			fsf->time = 0;
 		}
 		r_list_append (list, fsf);
 	}
