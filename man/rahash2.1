@@ -1,101 +1,108 @@
-.Dd Mar 12, 2024
+.Dd Mar 15, 2024
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
-.Nd block based hashing utility
+.Nd block-based hashing, encoding and encryption utility
 .Sh SYNOPSIS
 .Nm rahash2
-.Op Fl BbdDehjrknvq
+.Op Fl BbdehjkLqrv
 .Op Fl a Ar algo
 .Op Fl b Ar size
-.Op Fl D Ar deco
-.Op Fl E Ar enco
-.Op Fl f Ar from
-.Op Fl i Ar iters
-.Op Fl I Ar IV
-.Op Fl n Ar blocks
-.Op Fl s Ar string
-.Op Fl S Ar seed
-.Op Fl p Ar type
-.Op Fl x Ar hexstr
-.Op Fl t Ar to
 .Op Fl c Ar hash
-.Op [file] ...
+.Op Fl E Ar enco
+.Op Fl D Ar deco
+.Op Fl f Ar from
+.Op Fl i Ar num
+.Op Fl I Ar iv
+.Op Fl j
+.Op Fl J
+.Op Fl S Ar seed
+.Op Fl k
+.Op Fl s Ar string
+.Op Fl t Ar to
+.Op Fl x Ar hexstr
+.Op Fl v
+.Op Ar [file] ...
 .Sh DESCRIPTION
 This program is part of the radare project.
 .Pp
-Rahash2 allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+.Rahash2 allows you to calculate, check, and display hash values of each block of a target file. By default, the block size is set to 32768 bytes. It supports reading from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
-You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
+It's particularly useful for hashing large files and identifying modifications in filesystem analysis.
 .Pp
-This command can be used to calculate hashes of a certain part of a file or a command line passed string.
+.Rahash2 can be used to calculate the entropy or hashes of specific parts of a file or command-line passed strings. But it is also able to encode, decode, encrypt and decrypt files using a variety of cryptographic algorithms and methods.
 .Pp
-This is the command used by the 'ph' command of radare.
+This command provides the same features as the 'ph' command of radare.
 .Bl -tag -width Fl
 .It Fl a Ar algo
-Comma separated list of algorithms to use when hashing files or strings. See -L to list the supported hashing algorithms. This flag can be passed multiple times instead of separating them by commas.
-.It Fl b Ar blocksize
-Define the block size
+Comma-separated list of algorithms to use when hashing files or strings. Refer to -L to list supported hashing algorithms. This flag can be passed multiple times instead of separating them by commas.
+.It Fl b Ar size
+Specify the block size.
 .It Fl c Ar hash
-Compare the computed hash with this one. Allowed only when a single hash is computed.
-.It Fl D Ar algo
-Decrypt or decode using the given algorithm (See: `rahash2 -L | grep -e ^e -e ^c`)
-.It Fl e
-Use little endian to display checksums
-.It Fl E Ar algo
-Encrypt or encode using the given algorithm (see `rahash2 -L | grep -e ^e -e ^c`)
-.It Fl i Ar iters
-Apply the hash Iters times to itself+seed
-.It Fl I Ar [^]s:string|hexstr
-Set initialization vector (IV) for the cryptographic functions.
-.It Fl j
-Show output in JSON (see -r and -J). If passed more than once results in -J
-.It Fl J
-New simplified JSON output, maybe this format will replace -j, but it's added as a new flag to not break backward compatibility until proper discussion
-.It Fl B
-Show per-block hash
-.It Fl k
-Show result using OpenSSH's VisualHostKey randomart algorithm
-.It Fl n
-Amount of blocks to hash
-.It Fl s Ar string
-Hash this string instead of using the 'source' and 'hash-file' arguments.
-.It Fl S Ar [^]s:string|hexstr
-Set seed to hash with, use ^to prefix seed, otherwise it's suffixed. If the seed is just a dash '-' it will read from stdin. This is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
+Compare the computed hash with the provided one. This is allowed only when a single hash is computed.
+.It Fl E Ar enco
+Encrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
+.It Fl D Ar deco
+Decrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
 .It Fl f Ar from
-Start hashing at given address
+Start hashing at the given address.
+.It Fl i Ar num
+Repeat hash `num` iterations.
+.It Fl I Ar iv
+Use the given initialization vector (IV) (hexadecimal or string).
+.It Fl j
+Display output in JSON format.
+.It Fl J
+New simplified JSON output format (equivalent to -jj).
+.It Fl S Ar seed
+Use the given seed (hexadecimal or string). Use ^ to prefix (key for -E). '-' will slurp the key from stdin, and '@' prefix points to a file.
+.It Fl k
+Display hash using OpenSSH's randomkey algorithm.
+.It Fl s Ar string
+Hash the provided string instead of using the 'source' and 'hash-file' arguments.
 .It Fl t Ar to
-Stop hashing at given address
-.It Fl p Ar arg
-Show vertical entropy/statistical entropy graphs
-.It Fl q
-Quiet mode (-qq for even quieter!)
-.It Fl r
-Show output in radare commands
+Stop hashing at the given address.
 .It Fl x Ar hexstr
-Hash the given hexpair string instead of using the 'source' and 'hash-file' arguments.
+Hash the provided hexadecimal string instead of using 'source' and 'hash-file' arguments.
 .It Fl v
-Show version information
-.It Fl h
-Show usage help message.
+Display version information.
 .El
 .Sh EXAMPLES
 .Pp
-Compute the md5 of the infamous 'ls':
+Calculate the MD5 hash of the 'ls' binary:
 .Pp
   $ rahash2 -qqa md5 /bin/ls
 .Pp
-Base64 encoded Hello World:
+Calculate the SHA256 hash of string from stdin:
 .Pp
-  $ rahash2 -E base64 -s hello
+  $ echo -n "Hello, World" | rahash2 -a sha256 -
+  $ rahash2 -a sha256 -s "Hello, World"
+Compare CRC32 of the given file didnt changed
 .Pp
+  $ rahash2 -qqa crc32 /bin/ls
+  63212007
+  $ rahash2 -a crc32 -c 63212007 /bin/ls
+  INFO: Computed hash matches the expected one
+  $ echo $?
+  0
+.Pp
+Encode the string "Hello World" with base64:
+.Pp
+  $ rahash2 -E base64 -s "Hello World"
+.Pp
+Calculate SHA256 hash of a specific part of a file:
+.Pp
+  $ rahash2 -qqa sha256 -f 0x1000 -t 0x2000 file_to_hash
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp
-When -c is used, exit status 0 indicates a match between the expected and computed hashes.
+When using the -c flag, an exit status of 0 indicates a match between the expected and computed hashes.
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
+.Sh WWW
+.Pp
+https://www.radare.org/
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
