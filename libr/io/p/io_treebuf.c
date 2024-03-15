@@ -191,17 +191,17 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 			r_crbtree_delete (treebuf->tree, &chunk->itv, _treebuf_chunk_find, NULL);
 			chunk = node? (IOTreeBufChunk *)node->data: NULL;
 		}
-	}
-	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-		chunk->buf = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
-		memmove (&chunk->buf[r_itv_size (search_itv)],
-			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
-			r_itv_end (chunk->itv) - r_itv_end (search_itv));
-		memcpy (chunk->buf, buf, r_itv_size (search_itv));
-		chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
-		chunk->itv.addr = search_itv.addr;
-		treebuf->seek = r_itv_end (search_itv);
-		return (int)r_itv_size (search_itv);
+		if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
+			chunk->buf = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+			memmove (&chunk->buf[r_itv_size (search_itv)],
+				&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+				r_itv_end (chunk->itv) - r_itv_end (search_itv));
+			memcpy (chunk->buf, buf, r_itv_size (search_itv));
+			chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
+			chunk->itv.addr = search_itv.addr;
+			treebuf->seek = r_itv_end (search_itv);
+			return (int)r_itv_size (search_itv);
+		}
 	}
 	chunk = R_NEW0 (IOTreeBufChunk);
 	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
