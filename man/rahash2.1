@@ -80,7 +80,8 @@ Calculate the SHA256 hash of string from stdin:
 .Pp
   $ echo -n "Hello, World" | rahash2 -a sha256 -
   $ rahash2 -a sha256 -s "Hello, World"
-Compare CRC32 of the given file didnt changed
+.Pp
+Compare CRC32 of the given file didnt changed:
 .Pp
   $ rahash2 -qqa crc32 /bin/ls
   63212007
@@ -88,6 +89,12 @@ Compare CRC32 of the given file didnt changed
   INFO: Computed hash matches the expected one
   $ echo $?
   0
+.Pp
+List only the cryptographic plugins loaded:
+.Pp
+  $ rahash2 -L | grep ^c
+.Pp
+  $ rahash2 -qqa crc32 /bin/ls
 .Pp
 Encode the string "Hello World" with base64:
 .Pp
