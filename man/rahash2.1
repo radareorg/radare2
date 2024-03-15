@@ -9,13 +9,14 @@
 .Op Fl a Ar algo
 .Op Fl b Ar size
 .Op Fl c Ar hash
-.Op Fl E Ar enco
 .Op Fl D Ar deco
+.Op Fl E Ar enco
 .Op Fl f Ar from
 .Op Fl i Ar num
 .Op Fl I Ar iv
 .Op Fl j
 .Op Fl J
+.Op Fl L
 .Op Fl S Ar seed
 .Op Fl k
 .Op Fl s Ar string
@@ -40,10 +41,10 @@ Comma-separated list of algorithms to use when hashing files or strings. Refer t
 Specify the block size.
 .It Fl c Ar hash
 Compare the computed hash with the provided one. This is allowed only when a single hash is computed.
-.It Fl E Ar enco
-Encrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
 .It Fl D Ar deco
 Decrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
+.It Fl E Ar enco
+Encrypt using the specified algorithm. Use -S to set the key and -I to set the IV.
 .It Fl f Ar from
 Start hashing at the given address.
 .It Fl i Ar num
@@ -54,12 +55,14 @@ Use the given initialization vector (IV) (hexadecimal or string).
 Display output in JSON format.
 .It Fl J
 New simplified JSON output format (equivalent to -jj).
-.It Fl S Ar seed
-Use the given seed (hexadecimal or string). Use ^ to prefix (key for -E). '-' will slurp the key from stdin, and '@' prefix points to a file.
 .It Fl k
 Display hash using OpenSSH's randomkey algorithm.
+.It Fl L
+List available hash, checksum and crypto plugins. This flag can be combined with -j to read the results in JSON format.
 .It Fl s Ar string
 Hash the provided string instead of using the 'source' and 'hash-file' arguments.
+.It Fl S Ar seed
+Use the given seed (hexadecimal or string). Use ^ to prefix (key for -E). '-' will slurp the key from stdin, and '@' prefix points to a file.
 .It Fl t Ar to
 Stop hashing at the given address.
 .It Fl x Ar hexstr

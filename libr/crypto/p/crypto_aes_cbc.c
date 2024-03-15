@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_util/r_log.h>
@@ -101,6 +101,7 @@ RCryptoPlugin r_crypto_plugin_aes_cbc = {
 	.meta = {
 		.name = "aes-cbc",
 		.author = "pancake",
+		.license = "LGPL",
 	},
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,
