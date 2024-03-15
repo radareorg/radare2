@@ -400,3 +400,18 @@ EXPECT=<<EOF
 0   0x00041148  0x1000 0x0003d000  0x1000 -r-x ---- obj.1.page.45
 EOF
 RUN
+
+NAME=DOOM.LE patched relocs
+ARGS=-e bin.relocs.apply=true
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+s 0x0001ef2d
+pd~debug~?
+pd 6~w~?
+EOF
+EXPECT=<<EOF
+1
+1
+EOF
+RUN
+

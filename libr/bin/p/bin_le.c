@@ -125,6 +125,87 @@ static RList *relocs(RBinFile *bf) {
 	return r_bin_le_get_relocs (bf->bo->bin_obj);
 }
 
+static RList* patch_relocs(RBinFile * bf) {
+	RList * ret = NULL;
+	RBin * b = bf->rbin;
+	RBinLEObj * bin = bf->bo->bin_obj;
+	LE_image_header * h = bin->header;
+
+	if (!(ret = r_list_newf ((RListFree)free))) {
+		return NULL;
+	}
+	RList * all_relocs = relocs (bf);
+	if (all_relocs == NULL) {
+		goto beach;
+	}
+
+	RListIter * it;
+	RBinReloc * original;
+
+	r_list_foreach (all_relocs, it, original) {
+		if (original->import || original->symbol) {
+			continue;
+		}
+
+		RBinReloc * r = R_NEW0 (RBinReloc);
+		if (!r) {
+			break;
+		}
+
+		r->import = NULL;
+		r->symbol = NULL;
+		r->is_ifunc = false;
+		r->vaddr = original->vaddr;
+		r->paddr = original->paddr;
+		r->laddr = original->laddr;
+		r->addend = original->addend;
+		r->type = original->type;
+
+		r_list_append (ret, r);
+
+		int size = 0, offset = 0;
+		ut8 buf[8] = {0};
+		switch (r->type) {
+			case R_BIN_RELOC_8:
+				size = 1;
+				buf[0] = r->addend & 0xff;
+				break;
+			case R_BIN_RELOC_16:
+				size = 2;
+				r_write_ble16 (buf, r->addend & 0xffff, h->worder);
+				break;
+			case R_BIN_RELOC_32:
+				size = 4;
+				r_write_ble32 (buf, r->addend, h->worder);
+				break;
+			case R_BIN_RELOC_48:
+				size = 5;
+				r_write_ble64 (buf, r->addend, h->worder);
+				if (h->worder) {
+					offset = 3;
+				}
+			default:
+				R_LOG_WARN ("Unsupported reloc type %d", r->type);
+				break;
+		}
+		if (size) {
+			if (!b->iob.overlay_write_at (b->iob.io, r->vaddr, buf + offset, size)) {
+				R_LOG_ERROR ("write error at 0x%"PFMT64x, r->vaddr);
+			}
+		}
+	}
+
+end:
+	r_list_free (all_relocs);
+
+	return ret;
+
+beach:
+	r_list_free (ret);
+	ret = NULL;
+	goto end;
+}
+
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
 	if (info) {
@@ -161,6 +242,7 @@ RBinPlugin r_bin_plugin_le = {
 	.imports = &imports,
 	.libs = &libs,
 	.relocs = &relocs,
+	.patch_relocs = &patch_relocs,
 	.minstrlen = 4
 	// .regstate = &regstate
 };
