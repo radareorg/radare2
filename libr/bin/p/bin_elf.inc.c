@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, luctielen */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, luctielen */
 
 #define R_LOG_ORIGIN "bin.elf"
 
@@ -396,6 +396,11 @@ static bool symbols_vec(RBinFile *bf) {
 			break;
 		}
 		ptr->is_imported = true;
+		// object files have no plt section, imports are referenced by relocs not trampolines
+		if (ptr->paddr == 0) {
+			ptr->paddr = UT64_MAX;
+			ptr->vaddr = UT64_MAX;
+		}
 		// special case where there is no entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
