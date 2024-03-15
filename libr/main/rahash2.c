@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "rahash2"
 
@@ -6,7 +6,6 @@
 #include <r_main.h>
 #include <r_hash.h>
 #include <r_util/r_print.h>
-#include <r_util.h>
 #include <r_crypto.h>
 
 
@@ -527,9 +526,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		if (ro->quiet) {
 			algolist ('q');
 		} else {
-			algolist (0);
+			algolist (rad);
 		}
-		ret(0);
+		ret (0);
 	}
 	if (compareStr) {
 		int compareBin_len;

@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
-#include "r_crypto.h"
-#include "r_hash.h"
-#include "config.h"
+#include <r_crypto.h>
+#include <r_hash.h>
+#include <config.h>
 #include "r_util/r_assert.h"
 
 R_LIB_VERSION (r_crypto);
@@ -189,12 +189,46 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 	if (!cb_printf) {
 		cb_printf = (PrintfCallback)printf;
 	}
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_o (pj);
+		pj_ka (pj, "plugins");
+	}
 	RListIter *iter;
 	RCryptoPlugin *cp;
 	r_list_foreach (cry->plugins, iter, cp) {
 		switch (mode) {
 		case 'q':
 			cb_printf ("%s\n", cp->meta.name);
+			break;
+		case 'j':
+			pj_o (pj);
+			pj_ks (pj, "type", "hash");
+			pj_ks (pj, "name", cp->meta.name);
+			switch (cp->type) {
+			case R_CRYPTO_TYPE_HASH:
+				pj_ks (pj, "type", "hash");
+				break;
+			case R_CRYPTO_TYPE_ENCRYPT:
+				pj_ks (pj, "type", "crypto");
+				break;
+			case R_CRYPTO_TYPE_ENCODER:
+				pj_ks (pj, "type", "encoder");
+				break;
+			}
+			pj_ko (pj, "meta");
+			if (cp->meta.author) {
+				pj_ks (pj, "author", cp->meta.author);
+			}
+			if (cp->meta.desc) {
+				pj_ks (pj, "description", cp->meta.desc);
+			}
+			if (cp->meta.license) {
+				pj_ks (pj, "license", cp->meta.license);
+			}
+			pj_end (pj);
+			pj_end (pj);
 			break;
 		default:
 			{
@@ -216,6 +250,12 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			continue;
 		}
 		switch (mode) {
+		case 'j':
+			pj_o (pj);
+			pj_ks (pj, "type", "hash");
+			pj_ks (pj, "name", name);
+			pj_end (pj);
+			break;
 		case 'q':
 			cb_printf ("%s\n", name);
 			break;
@@ -223,5 +263,12 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			cb_printf ("h %12s\n", name);
 			break;
 		}
+	}
+	if (mode == 'j') {
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		cb_printf ("%s\n", s);
+		free (s);
 	}
 }
