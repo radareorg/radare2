@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - Dirk Eibach, Guntermann & Drunck GmbH */
+/* radare - LGPL - Copyright 2018-2024 - Dirk Eibach, Guntermann & Drunck GmbH */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -1165,9 +1165,12 @@ static int fast_flash_write(struct gport *port, ut32 address, ut8 *buf, size_t s
 	r_buf_append_bytes (request, buf, size);
 
 	ut16 crc = calculate_crc_16 (buf, size);
-
-	r_buf_append_ut8 (request, (crc >> 24) & 0xff);
-	r_buf_append_ut8 (request, (crc >> 16) & 0xff);
+// (1169): warning C4333: '>>': right shift by too large amount, data loss
+	// r_buf_append_ut8 (request, (crc >> 24) & 0xff);
+// (1170): warning C4333: '>>': right shift by too large amount, data loss
+	// r_buf_append_ut8 (request, (crc >> 16) & 0xff);
+	r_buf_append_ut8 (request, 0);
+	r_buf_append_ut8 (request, 0);
 	r_buf_append_ut8 (request, (crc >> 8) & 0xff);
 	r_buf_append_ut8 (request, (crc >> 0) & 0xff);
 
