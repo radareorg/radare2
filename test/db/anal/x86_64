@@ -813,9 +813,14 @@ RUN
 NAME=iS. and iSj. implementation
 FILE=bins/elf/lab1B
 CMDS=<<EOF
-s 0x188
+s 0x08048188
 iS.
 s 0x08058000
+iS.
+s 0x08048760
+iSj.
+e io.va=false
+s 0x188
 iS.
 s 0x760
 iSj.
@@ -833,6 +838,13 @@ nth paddr  size vaddr  vsize perm type name
 -------------------------------------------
 
 {"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","paddr":1888,"vaddr":134514528}
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000188  0x24 0x00000188   0x24 -r-- NOTE .note.gnu.build-id
+
+{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","paddr":1888,"vaddr":1888}
 EOF
 RUN
 
