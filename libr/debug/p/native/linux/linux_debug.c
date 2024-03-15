@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
 
@@ -177,14 +177,14 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	dbg->pid = dbg->forked_pid;
 	dbg->tid = dbg->forked_pid;
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
-
+#if __i386__ || __x86_64__
 	// Unset all hw breakpoints in the child process
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
 	r_list_foreach (dbg->bp->bps, iter, b) {
 		r_debug_drx_unset (dbg, r_bp_get_index_at (dbg->bp, b->addr));
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
-
+#endif
 	// Unset software breakpoints in the child process
 	r_debug_bp_update (dbg);
 	r_bp_restore (dbg->bp, false);
