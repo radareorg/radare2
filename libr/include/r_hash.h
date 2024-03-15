@@ -14,6 +14,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
+#if 0
 typedef struct r_hash_plugin_t {
 	RPluginMeta meta;
 	bool support_hmac;
@@ -26,6 +27,7 @@ typedef struct r_hash_plugin_t {
 	bool (*final)(void *context, ut8 *digest);
 	bool (*small_block)(const ut8 *data, ut64 size, ut8 **digest, int *digest_size);
 } RHashPlugin;
+#endif
 
 extern RHashPlugin r_hash_plugin_xorbyte;
 
