@@ -190,7 +190,10 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 		cb_printf = (PrintfCallback)printf;
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == 'J') {
+		pj = pj_new ();
+		pj_a (pj);
+	} else if (mode == 'j') {
 		pj = pj_new ();
 		pj_o (pj);
 		pj_ka (pj, "plugins");
@@ -201,6 +204,9 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 		switch (mode) {
 		case 'q':
 			cb_printf ("%s\n", cp->meta.name);
+			break;
+		case 'J':
+			pj_s (pj, cp->meta.name);
 			break;
 		case 'j':
 			pj_o (pj);
@@ -250,6 +256,9 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			continue;
 		}
 		switch (mode) {
+		case 'J':
+			pj_s (pj, name);
+			break;
 		case 'j':
 			pj_o (pj);
 			pj_ks (pj, "type", "hash");
@@ -264,7 +273,12 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			break;
 		}
 	}
-	if (mode == 'j') {
+	if (mode == 'J') {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		cb_printf ("%s\n", s);
+		free (s);
+	} else if (mode == 'j') {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
