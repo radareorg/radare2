@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -8,6 +8,7 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
+
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
@@ -58,12 +59,40 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		char *fp = r_str_newf ("%s/%s", path, file);
 		fsf->path = fp;
 		fsf->type = 'f';
-		if (!stat (fp, &st)) {
-			fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+		fsf->time = 0;
+		bool is_symlink = false;
+#if R2__UNIX__
+		int stat_result = lstat (fp, &st);
+		if (stat_result == 0) {
+			is_symlink = S_IFLNK == (st.st_mode & S_IFMT);
+			if (is_symlink) {
+				// uppercase denotes symlink
+				stat (fp, &st);
+			}
+		}
+#else
+		int stat_result = stat (fp, &st);
+#endif
+		if (stat_result == 0) {
+			fsf->perm = st.st_mode & 0xfff;
+			fsf->uid = st.st_uid;
+			fsf->gid = st.st_gid;
+			if (S_ISDIR (st.st_mode)) {
+				fsf->type = 'd';
+#if R2__UNIX__
+			} else if (S_ISBLK (st.st_mode)) {
+				fsf->type = 'b';
+			} else if (S_ISCHR (st.st_mode)) {
+				fsf->type = 'c';
+#endif
+			} else {
+				// regular file
+				fsf->type = 'f';
+			}
+			if (is_symlink) {
+				fsf->type = toupper (fsf->type);
+			}
 			fsf->time = st.st_atime;
-		} else {
-			fsf->type = 'f';
-			fsf->time = 0;
 		}
 		r_list_append (list, fsf);
 	}
