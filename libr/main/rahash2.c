@@ -20,7 +20,7 @@ typedef struct {
 	RHashSeed s;
 } RahashOptions;
 
-static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret, int rad) {
+static void compare_hashes(const RHash *ctx, RahashOptions *ro, const ut8 *compare, int length, int *ret, int rad) {
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
@@ -28,7 +28,7 @@ static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int
 				R_LOG_INFO ("Computed hash matches the expected one");
 			}
 		} else {
-			if (rad != 'q') {
+			if (rad != 'q' || ro->quiet < 2) {
 				R_LOG_WARN ("Computed hash doesn't match the expected one");
 			}
 			*ret = 1;
@@ -67,7 +67,12 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	if (r_str_startswith (sptr, "s:")) {
 		strcpy ((char *) ro->s.buf, sptr + 2);
 		ro->s.len = strlen (sptr + 2);
-	} else if (r_str_startswith (sptr, "0x")) {
+	} else if (r_str_startswith (sptr, "+")) {
+		// TODO: honor endian
+		ut32 n = r_num_math (NULL, sptr);
+		r_write_ble32 (ro->s.buf, n, ro->endian);
+		ro->s.len = 4;
+	} else {
 		ro->s.len = r_hex_str2bin (sptr, ro->s.buf);
 		if (ro->s.len < 1) {
 			strcpy ((char *) ro->s.buf, sptr);
@@ -75,11 +80,6 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 			R_LOG_WARN ("Expected seed/key in hexpair format, use 0x or s: prefix instead")
 			// assuming a string, prefix it with 's:' to skip this message");
 		}
-	} else {
-		// TODO: honor endian
-		ut32 n = r_num_math (NULL, sptr);
-		r_write_ble32 (ro->s.buf, n, ro->endian);
-		ro->s.len = 4;
 	}
 }
 
@@ -108,7 +108,8 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	free (buf);
 }
 
-static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad, int ule) {
+static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad) {
+	int ule = ro->endian;
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
@@ -131,7 +132,7 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	case 'n':
-		if (ro->quiet) {
+		if (ro->quiet > 2) {
 			// print nothing
 		} else {
 			if (hash & R_HASH_SSDEEP) {
@@ -151,9 +152,10 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 		pj_k (pj, hname);
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
-	case 'q':
+	case 'Q':
 		// nothing to print
 		break;
+	case 'q':
 	default:
 		o = r_print_randomart (c, dlen, ro->from);
 		printf ("%s\n%s\n", hname, o);
@@ -162,7 +164,7 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	}
 }
 
-static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 *buf, int len, PJ *pj, int rad, int print, int le) {
+static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 *buf, int len, PJ *pj, int rad, int print) {
 	if (len < 0) {
 		return 0;
 	}
@@ -173,7 +175,7 @@ static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 
 	if (ro->iterations > 0) {
 		r_hash_do_spice (ctx, hash, ro->iterations, ro->_s);
 	}
-	do_hash_print (ctx, ro, hash, dlen, pj, rad, le);
+	do_hash_print (ctx, ro, hash, dlen, pj, rad);
 	return 1;
 }
 
@@ -235,15 +237,15 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
 				if (ro->s.buf && ro->s.prefix) {
-					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0, ule);
+					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
 				}
 				for (j = ro->from; j < ro->to; j += bsize) {
 					int len = ((j + bsize) > ro->to)? (ro->to - j): bsize;
 					r_io_pread_at (io, j, buf, len);
-					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 0, ule);
+					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 0);
 				}
 				if (ro->s.buf && !ro->s.prefix) {
-					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0, ule);
+					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
 				}
 				r_hash_do_end (ctx, i);
 				if (ro->iterations > 0) {
@@ -255,9 +257,11 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				if (!ro->quiet && rad != 'j') {
 					printf ("%s: ", file);
 				}
-				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad, ule);
+				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
 				if (ro->quiet == 1) {
 					printf (" %s\n", file);
+				} else if (ro->quiet > 0 && ro->quiet < 3 && !rad) {
+					printf ("\n");
 				}
 			}
 		}
@@ -285,9 +289,9 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					if (ro->to > fsize) {
 						ro->to = fsize;
 					}
-					do_hash_internal (ctx, ro, hashbit, buf, nsize, pj, rad, 1, ule);
+					do_hash_internal (ctx, ro, hashbit, buf, nsize, pj, rad, 1);
 				}
-				do_hash_internal (ctx, ro, hashbit, NULL, 0, pj, rad, 1, ule);
+				do_hash_internal (ctx, ro, hashbit, NULL, 0, pj, rad, 1);
 				ro->from = ofrom;
 				ro->to = oto;
 			}
@@ -303,7 +307,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	if (ro->quiet) {
 		mode = 'q';
 	}
-	compare_hashes (ctx, compare, r_hash_size (algobit), &ret, mode);
+	compare_hashes (ctx, ro, compare, r_hash_size (algobit), &ret, mode);
 	r_hash_free (ctx);
 	free (buf);
 	return ret;
@@ -726,8 +730,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					ctx = r_hash_new (true, hashbit);
 					ro->from = 0;
 					ro->to = strsz;
-					do_hash_internal (ctx, ro, hashbit, (const ut8 *) str, strsz, pj, rad, 1, ule);
-					compare_hashes (ctx, compareBin, r_hash_size (algobit), &_ret, mode);
+					do_hash_internal (ctx, ro, hashbit, (const ut8 *) str, strsz, pj, rad, 1);
+					compare_hashes (ctx, ro, compareBin, r_hash_size (algobit), &_ret, mode);
 					r_hash_free (ctx);
 				}
 			}
