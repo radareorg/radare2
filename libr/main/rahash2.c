@@ -19,13 +19,17 @@ typedef struct {
 	RHashSeed s;
 } RahashOptions;
 
-static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
+static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret, int rad) {
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
-			R_LOG_INFO ("Computed hash matches the expected one");
+			if (rad != 'q') {
+				R_LOG_INFO ("Computed hash matches the expected one");
+			}
 		} else {
-			R_LOG_WARN ("Computed hash doesn't match the expected one");
+			if (rad != 'q') {
+				R_LOG_WARN ("Computed hash doesn't match the expected one");
+			}
 			*ret = 1;
 		}
 	}
@@ -120,10 +124,14 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	case 'n':
-		if (hash & R_HASH_SSDEEP) {
-			printf ("%s", ctx->digest);
+		if (ro->quiet) {
+			// print nothing
 		} else {
-			do_hash_hexprint (c, dlen, ule, pj, rad);
+			if (hash & R_HASH_SSDEEP) {
+				printf ("%s", ctx->digest);
+			} else {
+				do_hash_hexprint (c, dlen, ule, pj, rad);
+			}
 		}
 		break;
 	case 'j':
@@ -135,6 +143,9 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 'J':
 		pj_k (pj, hname);
 		do_hash_hexprint (c, dlen, ule, pj, rad);
+		break;
+	case 'q':
+		// nothing to print
 		break;
 	default:
 		o = r_print_randomart (c, dlen, ro->from);
@@ -240,10 +251,6 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad, ule);
 				if (ro->quiet == 1) {
 					printf (" %s\n", file);
-				} else {
-					if (ro->quiet && !rad) {
-						printf ("\n");
-					}
 				}
 			}
 		}
@@ -285,7 +292,11 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 		pj_free (pj);
 	}
 
-	compare_hashes (ctx, compare, r_hash_size (algobit), &ret);
+	int mode = rad;
+	if (ro->quiet) {
+		mode = 'q';
+	}
+	compare_hashes (ctx, compare, r_hash_size (algobit), &ret, mode);
 	r_hash_free (ctx);
 	free (buf);
 	return ret;
@@ -698,6 +709,10 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					pj_a (pj);
 				}
 			}
+			int mode = rad;
+			if (ro->quiet) {
+				mode = 'q';
+			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
 				if (algobit & i) {
 					ut64 hashbit = i & algobit;
@@ -705,7 +720,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					ro->from = 0;
 					ro->to = strsz;
 					do_hash_internal (ctx, ro, hashbit, (const ut8 *) str, strsz, pj, rad, 1, ule);
-					compare_hashes (ctx, compareBin, r_hash_size (algobit), &_ret);
+					compare_hashes (ctx, compareBin, r_hash_size (algobit), &_ret, mode);
 					r_hash_free (ctx);
 				}
 			}
