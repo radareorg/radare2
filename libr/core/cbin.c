@@ -1916,6 +1916,10 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
 			add_metadata (r, reloc, addr, mode);
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			if (reloc->import) {
+				r_cons_printf ("0x%08"PFMT64x"\n", addr);
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			if (reloc->import) {
 				const char *name = r_bin_name_tostring (reloc->import->name);

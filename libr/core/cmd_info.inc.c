@@ -1093,8 +1093,14 @@ static int cmd_info(void *data, const char *input) {
 		switch (input[i - 1]) {
 		case '*': mode = R_MODE_RADARE; break;
 		case 'j': mode = R_MODE_JSON; break;
-		case 'q': mode = R_MODE_SIMPLE; break;
 		case 'k': mode = R_MODE_KV; break;
+		case 'q':
+			if (i > 1 && input[i - 2] == 'q') {
+				mode = R_MODE_SIMPLEST;
+			} else {
+				mode = R_MODE_SIMPLE;
+			}
+			break;
 		}
 	}
 #endif
@@ -1330,6 +1336,21 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
+		goto done;
+		break;
+	case 'r': // "ir"
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
 		goto done;
 		break;
 	}
@@ -1586,20 +1607,6 @@ static int cmd_info(void *data, const char *input) {
 		}
 		case 'R': // "iR"
 			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
-			break;
-		case 'r': // "ir"
-			{
-				RList *objs = r_core_bin_files (core);
-				RListIter *iter;
-				RBinFile *bf;
-				RBinFile *cur = core->bin->cur;
-				r_list_foreach (objs, iter, bf) {
-					core->bin->cur = bf;
-					RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
-				}
-				core->bin->cur = cur;
-				r_list_free (objs);
-			}
 			break;
 		case 'X': // "iX"
 			RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
