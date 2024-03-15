@@ -523,11 +523,10 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		ret (1);
 	}
 	if (listplugins) {
-		if (ro->quiet) {
-			algolist ('q');
-		} else {
-			algolist (rad);
+		if (rad == 'j' && ro->quiet) {
+			rad = 'J';
 		}
+		algolist (rad);
 		ret (0);
 	}
 	if (compareStr) {
