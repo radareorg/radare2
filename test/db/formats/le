@@ -388,3 +388,15 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=DOOM.LE iS. by vaddr
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+?v $$
+iS.~obj.1.page.45
+EOF
+EXPECT=<<EOF
+0x3dde0
+0   0x00041148  0x1000 0x0003d000  0x1000 -r-x ---- obj.1.page.45
+EOF
+RUN
