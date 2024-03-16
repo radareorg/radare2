@@ -1,4 +1,4 @@
-.Dd Mar 15, 2024
+.Dd Mar 16, 2024
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
@@ -23,6 +23,7 @@
 .Op Fl s Ar string
 .Op Fl t Ar to
 .Op Fl x Ar hexstr
+.Op Fl X
 .Op Fl v
 .Op Ar [file] ...
 .Sh DESCRIPTION
@@ -30,7 +31,7 @@ This program is part of the radare project.
 .Pp
 .Rahash2 allows you to calculate, check, and display hash values of each block of a target file. By default, the block size is set to 32768 bytes. It supports reading from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
-It's particularly useful for hashing large files and identifying modifications in filesystem analysis.
+It's particularly useful for hashing large files and identifying modifications in forensics filesystem analysis.
 .Pp
 .Rahash2 can be used to calculate the entropy or hashes of specific parts of a file or command-line passed strings. But it is also able to encode, decode, encrypt and decrypt files using a variety of cryptographic algorithms and methods.
 .Pp
@@ -70,6 +71,8 @@ Use the given seed (hexadecimal or string). Use ^ to prefix (key for -E). '-' wi
 Stop hashing at the given address.
 .It Fl x Ar hexstr
 Hash the provided hexadecimal string instead of using 'source' and 'hash-file' arguments.
+.It Fl X
+Output of encryption in hexpairs instead of raw (see -j for json output)
 .It Fl v
 Display version information.
 .El
@@ -113,6 +116,17 @@ Encrypt and decrypt the "hello" string using the ror and rol plugins:
   Cell{
   $ rahash2 -S 12333 -E rol -s Cell{ && echo
   hello
+.Pp
+Encrypting and decrypting using AES-CBC:
+.Pp
+  $ export AES_KEY="11111111111111111111111111113211"
+  $ rahash2 -E aes-ecb -S "$AES_KEY" -s "hello world you bastard" > .file
+  $ cat .file | rahash2 -D aes-ecb -S "$AES_KEY" -s - && echo
+.Pp
+Encrypting a file using Blowfish and encode it into a json:
+.Pp
+  $ rahash2 -E blowfish -S "11111111111111111111111111113211" -j /bin/ls > ls.json
+.Pp
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp
