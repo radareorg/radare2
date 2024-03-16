@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2023 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2024 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>
@@ -594,8 +594,15 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	}
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
 		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
-		// realloc cannot fail here because the new size is smaller than the old size
-		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv) * sizeof (ut8));
+		st64 new_size = r_itv_size (chunk->itv) * sizeof (ut8);
+		if (new_size > 0) {
+			ut8 *chunk_buf = realloc (chunk->buf, new_size);
+			if (chunk_buf) {
+				chunk->buf = chunk_buf;
+			} else {
+				// Chunk reallocation failed
+			}
+		}
 		node = r_rbnode_next (node);
 	}
 	if (node) {
@@ -606,17 +613,20 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 			chunk = node? (MapOverlayChunk *)node->data: NULL;
 		}
 		if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-			ut8 *ptr = realloc (chunk->buf,
-				(r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8));
-			if (!ptr) {
-				return false;
+			ut64 new_size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
+			st64 new_size2 = new_size * sizeof (ut8);
+			if (new_size > 0) {
+				ut8 *ptr = realloc (chunk->buf, new_size2);
+				if (!ptr) {
+					return false;
+				}
+				chunk->buf = ptr;
+				memmove (&chunk->buf[r_itv_size (search_itv)],
+					&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+					r_itv_end (chunk->itv) - r_itv_end (search_itv));
+				memcpy (chunk->buf, buf, r_itv_size (search_itv));
+				chunk->itv.size = new_size;
 			}
-			chunk->buf = ptr;
-			memmove (&chunk->buf[r_itv_size (search_itv)],
-				&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
-				r_itv_end (chunk->itv) - r_itv_end (search_itv));
-			memcpy (chunk->buf, buf, r_itv_size (search_itv));
-			chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
 			chunk->itv.addr = search_itv.addr;
 			return true;
 		}
@@ -693,7 +703,8 @@ R_API void r_io_map_drain_overlay(RIOMap *map) {
 			if (!r_queue_is_empty (q)) {
 				MapOverlayChunk *start = (MapOverlayChunk *)start_n->data;
 				const ut64 new_size = r_itv_end (cur->itv) - r_itv_begin (start->itv);
-				ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
+				const st64 new_size2 = new_size * sizeof (ut8);
+				ut8 *buf = (new_size2 > 0) ? realloc (start->buf, new_size2): NULL;
 				if (buf) {
 					start->buf = buf;
 					memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
@@ -721,7 +732,8 @@ R_API void r_io_map_drain_overlay(RIOMap *map) {
 		MapOverlayChunk *cur = (MapOverlayChunk *)cur_n->data;
 		MapOverlayChunk *start = (MapOverlayChunk *)start_n->data;
 		const ut64 new_size = r_itv_end (cur->itv) - r_itv_begin (start->itv);
-		ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
+		const st64 new_size2 = new_size * sizeof (ut8);
+		ut8 *buf = (new_size2 > 0)? realloc (start->buf, new_size2): NULL;
 		if (buf) {
 			start->buf = buf;
 			memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
