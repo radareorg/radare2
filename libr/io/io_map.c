@@ -594,8 +594,12 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	}
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
 		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
-		// realloc cannot fail here because the new size is smaller than the old size
-		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv) * sizeof (ut8));
+		// realloc can only fail here on bad implementations, because the new size is smaller than the old size
+		ut8 *ptr = realloc (chunk->buf, r_itv_size (chunk->itv));
+		if (R_UNLIKELY (!ptr)) {
+			return false;
+		}
+		chunk->buf = ptr;
 		node = r_rbnode_next (node);
 	}
 	if (node) {
