@@ -182,8 +182,7 @@ static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 
 }
 
 static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
-	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
-	RHash *ctx;
+	ut64 j, algobit = r_hash_name_to_bits (algo);
 	ut8 *buf;
 	int ret = 0;
 	ut64 i;
@@ -191,7 +190,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 		R_LOG_ERROR ("Invalid hashing algorithm specified. Use rahash2 -L");
 		return 1;
 	}
-	fsize = r_io_desc_size (io->desc);
+	ut64 fsize = r_io_desc_size (io->desc);
 	if (fsize < 1) {
 		R_LOG_ERROR ("Invalid file size");
 		return 1;
@@ -230,8 +229,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 			pj_a (pj);
 		}
 	}
-	ctx = r_hash_new (true, algobit);
-
+	RHash *ctx = r_hash_new (true, algobit);
 	if (ro->incremental) {
 		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			if (algobit & i) {
@@ -402,7 +400,8 @@ static void print_result(RahashOptions *ro, const char *algo, const ut8 *result,
 
 // direction: 0 => decrypt, 1 => encrypt
 static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
+	// TODO: generalise this for all non key encoding/decoding.
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		RCryptoJob *cj = r_crypto_use (cry, algo);
@@ -427,6 +426,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
+			r_crypto_free (cry);
 			return 0;
 		} else {
 			R_LOG_ERROR ("Unknown %s algorithm '%s'", (direction? "encryption": "decryption"), algo);
@@ -477,6 +477,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
+			r_crypto_free (cry);
 			return 0;
 		} else {
 			R_LOG_ERROR ("Unknown %s algorithm '%s'", direction? "encryption": "decryption", algo);
@@ -511,6 +512,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	const char *file = NULL;
 	char *algo = NULL;
 	const char *seed = NULL;
+	bool show_version = false;
 	const char *decrypt = NULL;
 	const char *encrypt = NULL;
 	char *hashstr = NULL;
@@ -567,7 +569,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
 		case 'f': ro->from = r_num_math (NULL, opt.arg); break;
 		case 't': ro->to = 1 + r_num_math (NULL, opt.arg); break;
-		case 'v': ret (r_main_version_print ("rahash2"));
+		case 'v': show_version = true; break;
 		case 'h': ret (do_help (0));
 		case 's': setHashString (opt.arg, 0); break;
 		case 'x': setHashString (opt.arg, 1); break;
@@ -575,6 +577,10 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		default: ret (do_help (0));
 		}
 	}
+	if (show_version) {
+		ret (r_main_version_print ("rahash2", rad));
+	}
+
 	algo = r_list_empty (algos) ? strdup ("sha1") : r_str_list_join (algos, ",");
 	if (encrypt && decrypt) {
 		R_LOG_ERROR ("Option -E and -D are incompatible with each other");

@@ -1199,7 +1199,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.diffmode = 'U';
 			break;
 		case 'v':
-			return r_main_version_print ("radiff2");
+			return r_main_version_print ("radiff2", 0);
 		case 'q':
 			ro.quiet = true;
 			break;

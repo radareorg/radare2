@@ -1262,11 +1262,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r2pm_upgrade (r2pm.force);
 	}
 	if (r2pm.version) {
+		int mode = 0;
 		if (r2pm.quiet) {
-			printf ("%s\n", R2_VERSION);
-			return 0;
+			mode = 'q';
 		}
-		return r_main_version_print ("r2pm");
+		return r_main_version_print ("r2pm", mode);
 	}
 	if (r2pm.help || argc == 1) {
 		printf ("%s", helpmsg);

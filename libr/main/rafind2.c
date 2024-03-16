@@ -535,7 +535,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'v':
 			rafind_options_fini (&ro);
-			return r_main_version_print ("rafind2");
+			return r_main_version_print ("rafind2", 0);
 		case 'h':
 			rafind_options_fini (&ro);
 			return show_help (argv[0], 0);

@@ -967,6 +967,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return rc;
 	}
 	if (mr.show_version) {
+#if 0
 		if (mr.json) {
 			PJ *pj = pj_new ();
 			pj_o (pj);
@@ -989,10 +990,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else if (mr.quiet) {
 			printf ("%s\n", R2_VERSION);
 			mainr2_fini (&mr);
-		} else {
+		} else 
+#endif
+		{
 			r_main_version_verify (r, 0, mr.json);
+			int mode = 0;
+			if (mr.json) {
+				mode = 'j';
+			} else if (mr.quiet) {
+				mode = 'q';
+			}
+			int res = r_main_version_print ("radare2", mode);
 			mainr2_fini (&mr);
-			return r_main_version_print ("radare2");
+			return res;
 		}
 		return 0;
 	}
