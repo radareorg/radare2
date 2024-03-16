@@ -37,15 +37,15 @@ is a versatile program designed to find byte patterns in files.
 The following options are available:
 .Bl -tag -width Fl
 .It Fl a Ar align
-Only accept aligned hits.
+Only accept aligned search results.
 .It Fl b Ar size
-Define the block size for searching.
+Define the block size for searching. Depending on the cpu cache, memory and storage different sizes may affect the performance.
 .It Fl c
-Disable colorful output, primarily useful for non-interactive sessions.
+Disable colorful output, primarily useful for non-interactive or batch use-cases.
 .It Fl e Ar regex
 Search for matches using regular expressions. Multiple expressions can be provided.
 .It Fl f Ar from
-Specify the starting address for the search.
+Specify the starting address for the search. (See -t)
 .It Fl F Ar file
 Read keywords from the specified file for searching.
 .It Fl h
@@ -71,7 +71,7 @@ Search for the specified string(s) in the file(s).
 .It Fl S Ar str
 Search for wide strings (Unicode) in the file(s).
 .It Fl t Ar to
-Specify the ending address for the search.
+Specify the ending address for the search. (See -f)
 .It Fl v
 Display the version of rafind2 and exit.
 .It Fl V Ar s:num
@@ -92,17 +92,17 @@ Search for a specific string in a file:
 $ rafind2 -s "search_string" file.txt
 .Ed
 .Pp
-Search for a hex pattern in a directory:
+Search for a hex pattern in all the files from directory:
 .Bd -literal -offset indent
 $ rafind2 -x "909090" directory_path
 .Ed
 .Pp
-Identify the file type of a binary:
+Identify the file type using the magic database:
 .Bd -literal -offset indent
 $ rafind2 -i binary_file
 .Ed
 .Pp
-Search for a value in a file:
+Search for the little endian 123 stored in a 4 byte word inside a file:
 .Bd -literal -offset indent
 $ rafind2 -V 4:123 file.bin
 .Ed
