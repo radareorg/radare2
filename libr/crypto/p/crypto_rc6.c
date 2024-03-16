@@ -159,7 +159,7 @@ static struct rc6_state *getnewstate(RCryptoJob *cj) {
 
 static bool rc6_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	struct rc6_state *st = getnewstate (cj);
-	cj->flag = (direction != 0);
+	cj->flag = (direction == R_CRYPTO_DIR_DECRYPT);
 	return rc6_init (st, key, keylen, direction);
 }
 

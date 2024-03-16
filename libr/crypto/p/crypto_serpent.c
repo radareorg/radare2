@@ -74,18 +74,21 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		free (tmp);
 		return false;
 	}
-	if (cj->dir == 0) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_encrypt (st, ibuf + delta, tmp + delta);
 		}
-	} else if (cj->dir > 0) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_decrypt (st, ibuf + delta, tmp + delta);
 		}
+		break;
 	}
 
 	// Construct ut32 blocks from byte stream

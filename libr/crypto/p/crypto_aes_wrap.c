@@ -50,12 +50,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	if (len < 16 && cj->dir == 0) {
+	if (len < 16 && cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		R_LOG_ERROR ("Length must be at least 16");
 		return false;
 	}
 
-	if (len < 24 && cj->dir == 1) {
+	if (len < 24 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
 		R_LOG_ERROR ("Length must be at least 24");
 		return false;
 	}
@@ -78,7 +78,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	st.columns = st.key_size / 4;
 	memcpy (st.key, cj->key, st.key_size);
 
-	if (cj->dir == 0) {
+	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		// Encrypt
 		memcpy (obuf, cj->iv, BLOCK_SIZE);
 		memcpy (obuf + BLOCK_SIZE, buf, len);
@@ -100,7 +100,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 			}
 		}
 		r_crypto_job_append (cj, obuf, len + BLOCK_SIZE);
-	} else if (cj->dir == 1) {
+	} else if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
 		// Decrypt
 		blocks -= 1;
 		t = 6 * blocks;

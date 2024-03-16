@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -373,7 +373,7 @@ static int cmd_wo(void *data, const char *input) {
 	case 'E': // "woE" encrypt
 	case 'D': // "woD" decrypt
 		{
-			int direction = (input[0] == 'E') ? 0 : 1;
+			int direction = (input[0] == 'E') ? R_CRYPTO_DIR_ENCRYPT : R_CRYPTO_DIR_DECRYPT;
 			const char *algo = NULL;
 			const char *key = NULL;
 			const char *iv = NULL;

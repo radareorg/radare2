@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, DennisGoodlett */
+/* radare - LGPL - Copyright 2009-2024 - pancake, DennisGoodlett */
 
 #define R_LOG_ORIGIN "rasign2"
 
@@ -275,6 +275,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'v':
 			conf.show_version = true;
+			break;
 		case 'h':
 			rasign_show_help ();
 			return 0;

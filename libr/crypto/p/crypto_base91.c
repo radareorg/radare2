@@ -27,10 +27,13 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	if (cj->dir == 0) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
-	} else if (cj->dir == 1) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		olen = r_base91_decode (obuf, (const char *)buf, len);
+		break;
 	}
 	r_crypto_job_append (cj, obuf, olen);
 	free (obuf);

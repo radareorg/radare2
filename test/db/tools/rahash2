@@ -78,7 +78,7 @@ NAME=rahash2 -h
 FILE=-
 CMDS=!rahash2~Usage
 EXPECT=<<EOF
-Usage: rahash2 [-BhjkLqrv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+Usage: rahash2 [-BehjkLqrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
 EOF
 RUN
 

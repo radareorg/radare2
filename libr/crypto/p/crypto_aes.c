@@ -54,12 +54,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	st.columns = (st.key_size / 4);
 	memcpy (st.key, cj->key, st.key_size);
 
-	if (cj->dir == 0) {
+	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
 			aes_encrypt (&st, ibuf + delta, obuf + delta);
 		}
-	} else if (cj->dir > 0) {
+	} else {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
 			aes_decrypt (&st, ibuf + delta, obuf + delta);
