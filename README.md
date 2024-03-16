@@ -120,35 +120,16 @@ r2env add radare2@git
 * [USAGE.md](USAGE.md): Some example commands
 * [INSTALL.md](INSTALL.md): Installation instructions using make or meson
 
-# Contributing
-
-There are many ways to contribute to the project. Contact the
-[community](#community), check out the github issues, or grep for
-TODO/FIXME/XXX comments in the source.
-
-To contribute code, push your changes to a branch on your fork of the
-repository. Please ensure that you follow the coding and style guidelines and
-that your changes pass the testing suite, which you can run with the `r2r`
-tool. If you are adding significant code, it may be necessary to modify or add
-additional tests in the `test/` directory.
-
-For more details, see [CONTRIBUTING.md](CONTRIBUTING.md) and
-[DEVELOPERS.md](DEVELOPERS.md).
-
 ## Documentation
 
-To learn more about r2 we encourage you to watch [youtube
-talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). In
-addition to reading blogposts, slides or the [official radare2
-book](https://book.rada.re), here are some methods to contact us:
+Learn more about r2 watching [youtube talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). There are also many blogposts, slidedecks and the [official radare2 book](https://book.rada.re), but it's always a good idea to join any of the official chats and drop your questions/feedback around.
 
 ## Community
 
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
-* Telegram: [Main Channel](https://t.me/radare) and [Side Channel](https://t.me/radare_side)
+* Telegram: [Main](https://t.me/radare) and [Side](https://t.me/radare_side) channels
 * [Discord server](https://discord.gg/YBey7CR9jf)
-
 * Mastodon: [@radareorg](https://infosec.exchange/@radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
