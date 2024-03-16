@@ -32,7 +32,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {
-		return r_main_version_print ("rarun2");
+		return r_main_version_print ("rarun2", 0);
 	}
 	const char *file = argv[1];
 	if (!strcmp (file, "-t")) {

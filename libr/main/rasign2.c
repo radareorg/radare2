@@ -8,7 +8,7 @@
 struct rasignconf {
 	const char *ofile, *space;
 	size_t a_cnt;
-	bool merge, sdb, ar, rad, quiet, json, flirt, collision;
+	bool merge, sdb, ar, rad, quiet, json, flirt, collision, show_version;
 };
 
 static void rasign_show_help(void) {
@@ -274,7 +274,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			conf.flirt = true;
 			break;
 		case 'v':
-			return r_main_version_print ("rasign2");
+			conf.show_version = true;
 		case 'h':
 			rasign_show_help ();
 			return 0;
@@ -282,6 +282,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			rasign_show_help ();
 			return -1;
 		}
+	}
+	if (conf.show_version) {
+		int mode = conf.quiet? 'q': 0;
+		return r_main_version_print ("rasign2", mode);
 	}
 
 	if (conf.a_cnt > 2) {

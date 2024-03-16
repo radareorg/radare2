@@ -776,10 +776,12 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			break;
 		case 'v':
-			if (as->quiet) {
-				printf ("%s\n", R2_VERSION);
-			} else {
-				ret = r_main_version_print ("rasm2");
+			{
+				int mode = 0;
+				if (as->quiet) {
+					mode = 'q';
+				}
+				ret = r_main_version_print ("rasm2", mode);
 			}
 			goto beach;
 		case 'w':

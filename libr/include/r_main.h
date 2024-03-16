@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #ifndef R2_MAIN_H
 #define R2_MAIN_H
@@ -25,7 +25,7 @@ R_API RMain *r_main_new(const char *name);
 R_API void r_main_free(RMain *m);
 R_API int r_main_run(RMain *m, int argc, const char **argv);
 
-R_API int r_main_version_print(const char *program);
+R_API int r_main_version_print(const char *program, int rad);
 R_API int r_main_ravc2(int argc, const char **argv);
 R_API int r_main_rax2(int argc, const char **argv);
 R_API int r_main_rarun2(int argc, const char **argv);

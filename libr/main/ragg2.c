@@ -404,7 +404,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'v':
 			free (sequence);
 			__es_free (es);
-			return r_main_version_print ("ragg2");
+			return r_main_version_print ("ragg2", 0);
 		case 'z':
 			show_str = 1;
 			break;

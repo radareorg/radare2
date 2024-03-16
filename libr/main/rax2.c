@@ -267,7 +267,7 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'i': flags ^= RAX2_FLAG_DUMPCSTR; break;
 			case 'o': flags ^= RAX2_FLAG_OCTAL2RAW; break;
 			case 'I': flags ^= RAX2_FLAG_IPADDR2NUM; break;
-			case 'v': return r_main_version_print ("rax2");
+			case 'v': return r_main_version_print ("rax2", 0);
 			case '\0':
 				*_flags = flags;
 				return !use_stdin (num, _flags, fm);
