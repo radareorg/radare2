@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -4650,7 +4650,7 @@ reread:
 									vmin, vmax, vsize,
 									_CbInRangeSearchV, &param);
 							if (param.outmode != R_MODE_JSON) {
-								eprintf ("hits: %d\n", hits);
+								R_LOG_INFO ("hits: %d", hits);
 							}
 						}
 					}

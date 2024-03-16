@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "rafind2"
 
@@ -17,6 +17,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool pluglist;
+	bool bigendian;
 	bool json;
 	int mode;
 	int align;
@@ -161,15 +162,17 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
+	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
+	" -B         use big endian instead of the little one (See -V)\n"
 	" -c         disable colourful output (mainly for for -X)\n"
 	" -e [regex] search for regex matches (can be used multiple times)\n"
+	" -E         perform a search using an esil expression\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -F [file]  read the contents of the file and use it as keyword\n"
 	" -h         show this help\n"
@@ -186,7 +189,7 @@ static int show_help(const char *argv0, int line) {
 	" -t [to]    stop search at address 'to'\n"
 	" -q         quiet: fewer output do not show headings or filenames.\n"
 	" -v         print version and exit\n"
-	" -V [s:num] search for given value (-V 4:123) // assume local endian\n"
+	" -V [s:num] search for given value in given endian (-V 4:123)\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -X         show hexdump of search results\n"
 	" -z         search for zero-terminated strings\n"
@@ -389,11 +392,25 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	rafind_options_init (&ro);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:b:cjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:");
+	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			ro.align = r_num_math (NULL, opt.arg);
+			break;
+		case 'b':
+			{
+			int bs = (int)r_num_math (NULL, opt.arg);
+			if (bs < 2) {
+				rafind_options_fini (&ro);
+				R_LOG_ERROR ("Invalid blocksize <= 1");
+				return 1;
+			}
+			ro.bsize = bs;
+			}
+			break;
+		case 'B':
+			ro.bigendian = true;
 			break;
 		case 'c':
 			ro.color = false;
@@ -436,17 +453,6 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			ro.hexstr = false;
 			ro.widestr = true;
 			r_list_append (ro.keywords, (void*)opt.arg);
-			break;
-		case 'b':
-			{
-			int bs = (int)r_num_math (NULL, opt.arg);
-			if (bs < 2) {
-				rafind_options_fini (&ro);
-				R_LOG_ERROR ("Invalid blocksize <= 1");
-				return 1;
-			}
-			ro.bsize = bs;
-			}
 			break;
 		case 'M':
 			// XXX should be from hexbin
@@ -495,7 +501,6 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				ut8 buf[8] = {0};
 				int size = (R_SYS_BITS & R_SYS_BITS_64)? 8: 4;
 				ut64 value = 0;
-				// TODO: const int endian = R_SYS_ENDIAN;
 				if (colon) {
 					*colon++ = 0;
 					size = atoi (arg);
@@ -510,13 +515,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 					buf[0] = value;
 					break;
 				case 2:
-					r_write_le16 (buf, value);
+					r_write_ble16 (buf, value, ro.bigendian);
 					break;
 				case 4:
-					r_write_le32 (buf, value);
+					r_write_ble32 (buf, value, ro.bigendian);
 					break;
 				case 8:
-					r_write_le64 (buf, value);
+					r_write_ble64 (buf, value, ro.bigendian);
 					break;
 				default:
 					R_LOG_ERROR ("Invalid value size. Must be 1, 2, 4 or 8");
@@ -535,7 +540,8 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'v':
 			rafind_options_fini (&ro);
-			return r_main_version_print ("rafind2", 0);
+			int mode = ro.json? 'j': ro.quiet? 'q': 0;
+			return r_main_version_print ("rafind2", mode);
 		case 'h':
 			rafind_options_fini (&ro);
 			return show_help (argv[0], 0);
