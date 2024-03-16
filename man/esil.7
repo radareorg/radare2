@@ -9,6 +9,17 @@ provides an abstract, stack-based format for representing CPU instruction semant
 Evaluable Strings Intermediate Language (ESIL) adopts a Forth-like syntax, offering a method to describe and emulate the behavior of machine instructions in a platform-agnostic manner. It is particularly useful in reverse engineering, allowing for cross-architecture binary analysis and exploitation through radare2.
 .Sh SYNTAX
 ESIL expressions use a series of operands and operations, manipulating values on an internal stack. These expressions are executed within an ESIL virtual machine (VM), enabling the simulation of CPU instructions' effects on registers and memory.
+.Pp
+Uppercase words are special keywords that operate on the esil VM.
+.Pp
+Lowercase words are register names that can be used for reading or writing through operations.
+.Pp
+Words starting with $ represent internal variables of the VM that are readonly
+.Pp
+Numbers can be in base 10 or hexadecimal.
+.Pp
+The rest of keywords can be added or removed via esil or arch plugins, but this document describes all the common and standard ESIL commands. Note that the list of instructions is subject to change (will be reduced over time) for simplicity reasons.
+.Pp
 .Sh USING ESIL IN RADARE2
 Radare2's visual mode and various configuration options, such as `emu.str` and `asm.esil`, facilitate the inspection of ESIL evaluations alongside traditional disassembly. This dual view can greatly enhance understanding of binary behavior without requiring physical execution.
 .Sh "ESIL COMMANDS"
