@@ -13,7 +13,9 @@ typedef struct {
 	int quiet;
 	int iterations;
 	bool incremental; //  = true;
+	int direction;
 	int endian;
+	int mode;
 	ut64 from;
 	ut64 to;
 	RHashSeed *_s;
@@ -314,7 +316,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-BhjkLqrv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rahash2 [-BehjkLqrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
@@ -327,7 +329,7 @@ static int do_help(int line) {
 		" -E algo     encrypt. Use -S to set key and -I to set IV\n"
 		" -D algo     decrypt. Use -S to set key and -I to set IV\n"
 		" -f from     start hashing at given address\n"
-		" -i num      repeat hash N iterations\n"
+		" -i num      repeat hash N iterations (f.ex: 3DES)\n"
 		" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 		" -j          output in json\n"
 		" -J          new simplified json output (same as -jj)\n"
@@ -340,6 +342,7 @@ static int do_help(int line) {
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
 		" -x hexstr   hash this hexpair string instead of files\n"
+		" -X          output in hexpairs instead of binary/plain\n"
 		" -v          show version information\n");
 	return 0;
 }
@@ -363,7 +366,41 @@ static bool is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
-// direction: 0 => encrypt, 1 => decrypt
+static void print_result(RahashOptions *ro, const char *algo, const ut8 *result, int result_size) {
+	int i;
+	switch (ro->mode) {
+	case 'j':
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_ks (pj, "algo", algo);
+			pj_ks (pj, "mode", ro->direction? "encrypt": "decrypt");
+			pj_ka (pj, "data");
+			for (i = 0; i < result_size; i++) {
+				pj_n (pj, result[i]);
+			}
+			pj_end (pj);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			printf ("%s\n", s);
+			free (s);
+		}
+		break;
+	case 'x':
+		for (i = 0; i < result_size; i++) {
+			printf ("%02x", result[i]);
+		}
+		printf ("\n");
+		break;
+	default:
+		if (write (1, result, result_size) != result_size) {
+			R_LOG_WARN ("cannot write result");
+		}
+		break;
+	}
+}
+
+// direction: 0 => decrypt, 1 => encrypt
 static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || ro->s.len > 0) {
@@ -384,9 +421,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					if (write (1, result, result_size) != result_size) {
-						R_LOG_WARN ("cannot write result");
-					}
+					print_result (ro, algo, result, result_size);
 					free (result);
 				}
 			} else {
@@ -394,17 +429,18 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 			}
 			return 0;
 		} else {
-			R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+			R_LOG_ERROR ("Unknown %s algorithm '%s'", (direction? "encryption": "decryption"), algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		R_LOG_ERROR ("%s key not defined. Use -S [key]", ((!direction)? "Encryption": "Decryption"));
+		R_LOG_ERROR ("%s key not defined. Use -S [key]", (direction? "Encryption": "Decryption"));
 	}
 	return 1;
 }
 
 static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
+	// TODO: generalise this for all non key encoding/decoding. aka crypto vs encoder plugins after moving all those hash algos to crypto plugins
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		RCryptoJob *cj = r_crypto_use (cry, algo);
@@ -423,7 +459,6 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 					R_LOG_ERROR ("Cannot open '%s'", filename);
 					return -1;
 				}
-
 				if (iv && !r_crypto_job_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					free (buf);
@@ -435,7 +470,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					(void)write (1, result, result_size);
+					print_result (ro, algo, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -444,11 +479,11 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 			}
 			return 0;
 		} else {
-			R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+			R_LOG_ERROR ("Unknown %s algorithm '%s'", direction? "encryption": "decryption", algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		R_LOG_ERROR ("%s key not defined. Use -S [key]", ((!direction)? "Encryption": "Decryption"));
+		R_LOG_ERROR ("%s key not defined. Use -S [key]", direction? "Encryption": "Decryption");
 	}
 	return 1;
 }
@@ -501,7 +536,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 // #define ret(x) {_ret=x;printf("%d\n", __LINE__);goto beach;}
 #define ret(x) {_ret=x;goto beach;}
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:X");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q':
@@ -514,13 +549,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				ret (1);
 			}
 			break;
+		case 'X': rad = 'x'; break;
 		case 'j': rad = (rad == 'j')? 'J': 'j'; break;
 		case 'J': rad = 'J'; break;
 		case 'S': seed = opt.arg; break;
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
-		case 'D': decrypt = opt.arg; break;
-		case 'E': encrypt = opt.arg; break;
+		case 'D': ro->direction = R_CRYPTO_DIR_DECRYPT; decrypt = opt.arg; break;
+		case 'E': ro->direction = R_CRYPTO_DIR_ENCRYPT; encrypt = opt.arg; break;
 		case 'L': listplugins = true; break;
 		case 'e': ule = 1; ro->endian = !ro->endian; break;
 		case 'r': rad = 1; break;
@@ -591,6 +627,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			ret (1);
 		}
 	}
+	ro->mode = rad;
 	if ((st64) ro->from >= 0 && (st64) ro->to < 0) {
 		ro->to = 0; // end of file
 	}
@@ -678,9 +715,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			hashstr_len = r_str_unescape (nhashstr);
 		}
 		if (encrypt) {
-			ret (encrypt_or_decrypt (ro, encrypt, 0, nhashstr, hashstr_len, iv, ivlen, 0));
+			ret (encrypt_or_decrypt (ro, encrypt, R_CRYPTO_DIR_ENCRYPT, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else if (decrypt) {
-			ret (encrypt_or_decrypt (ro, decrypt, 1, nhashstr, hashstr_len, iv, ivlen, 0));
+			ret (encrypt_or_decrypt (ro, decrypt, R_CRYPTO_DIR_DECRYPT, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else {
 			char *str = (char *) nhashstr;
 			int strsz = hashstr_len;

@@ -22,8 +22,8 @@ enum {
 };
 
 enum {
-	R_CRYPTO_DIR_CIPHER,
-	R_CRYPTO_DIR_DECIPHER,
+	R_CRYPTO_DIR_DECRYPT = 0,
+	R_CRYPTO_DIR_ENCRYPT = 1,
 };
 
 typedef struct r_crypto_t {
