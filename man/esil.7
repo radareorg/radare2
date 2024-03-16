@@ -1,36 +1,210 @@
-.TH ESIL 7
-.SH NAME
-ESIL \- Evaluable Strings Intermediate Language
-.SH DESCRIPTION
+.Dd Mar 16, 2024
+.Dt ESIL 7
+.Sh NAME
+ESIL - Evaluable Strings Intermediate Language
+.Sh SYNOPSIS
+ESIL
+provides an abstract, stack-based format for representing CPU instruction semantics across various architectures, facilitating instruction emulation for analysis and debugging within the radare2 framework.
+.Sh DESCRIPTION
+Evaluable Strings Intermediate Language (ESIL) adopts a Forth-like syntax, offering a method to describe and emulate the behavior of machine instructions in a platform-agnostic manner. It is particularly useful in reverse engineering, allowing for cross-architecture binary analysis and exploitation through radare2.
+.Sh SYNTAX
+ESIL expressions use a series of operands and operations, manipulating values on an internal stack. These expressions are executed within an ESIL virtual machine (VM), enabling the simulation of CPU instructions' effects on registers and memory.
+.Pp
+Uppercase words are special keywords that operate on the esil VM.
+.Pp
+Lowercase words are register names that can be used for reading or writing through operations.
+.Pp
+Words starting with $ represent internal variables of the VM that are readonly
+.Pp
+Numbers can be in base 10 or hexadecimal.
+.Pp
+The rest of keywords can be added or removed via esil or arch plugins, but this document describes all the common and standard ESIL commands. Note that the list of instructions is subject to change (will be reduced over time) for simplicity reasons.
+.Pp
+.Sh USING ESIL IN RADARE2
+Radare2's visual mode and various configuration options, such as `emu.str` and `asm.esil`, facilitate the inspection of ESIL evaluations alongside traditional disassembly. This dual view can greatly enhance understanding of binary behavior without requiring physical execution.
+.Sh "ESIL COMMANDS"
+Radare2 leverages ESIL for detailed emulation of instruction execution, enabling users to step through instructions, inspect changes to registers and memory, and evaluate conditional logic in a controlled environment.
+.Pp
+In the visual mode of radare2 you can emulate code doing single stepping, but it is also possible to debug the expressions using the `aev` command
+.Pp
+ae:
+Evaluate an ESIL expression. Note that some expressions contain special characters that can be evaluated by the radare2 shell, so it's better to prefix the command with a single quote ' to skip that parsing.
+.Pp
+"aev":
+Enter the interactive visual debugger to debug and emulate an esil expression.
+.Pp
+"aes":
+ESIL Step: execute a single step in ESIL emulation.
+.Pp
+"aeso":
+ESIL Step Over: perform a step over call instructions in ESIL emulation.
+.Pp
+"aesu":
+ESIL Step Until: continue ESIL execution until a specified address is reached.
+.Pp
+"ar":
+Show or modify ESIL registers.
+.Sh WORDS
+The comma separated words in an ESIL expression can be grouped into different scopes:
+.Bl -tag -width Fl
+.It internal flags
+Prefixed with '$' they represent internal states of the esil vm and are used to perform conditional
+.Pp
+comparison flags: $z, $c, $b, $p, $s, $o, $ds, $jt, $js
+.Pp
+current address: $$
+.Pp
+.It assignment
+Pop the value and the destination from the stack
+.Pp
+"=": strong assignment (update flags)
+.Pp
+":=": weak assignment without updating flags
+.It arithmetic and binary operations
+Basic math operations like add, sub, mul, mod, div, shift, rotate, and, or
+.Pp
++ - / * % 
+.Pp
+"~" sign extend
+.Pp
+"<<" shift left (see ">>" for shift right)
+.Pp
+"<<<" rotate left (">>>" for rotate right
+.Pp
+"<<<<" arithmetic shift left (">>>>" for asr)
+.Pp
+"&" binary AND
+.Pp
+"|" binary OR
+.Pp
+"!" negate value ins tack
+.Pp
+"L*": long multiplication
+.Pp
+"*": multiplication
+.Pp
+"^": xor
+.Pp
+"~/": signed division
+.Pp
+"%": mod
+.It comparison
+.Pp
+Comparison words update the internal flags and can be used to make conditional operations.
+.Pp
+"<": smaller than
+.Pp
+"<=": smaller or equal
+.Pp
+"<=": bigger or equal
+.Pp
+">": bigger than
+.Pp
+"==": compare equality
+.It control flow
+Conditional expressions, loops
+.Pp
+GOTO BREAK "?{" "}" "}{"
+.It memory access
+The memory access expressions contain the [] braces to read and =[] to write, address and value are popped from the stack, and size is defined between the brackets.
+.Pp
+In order to simplify the VM and reduce the amount of keywords those combined operations may change in the future.
+.Pp
+reading: [1] [2] [4] [8] [16]
+.Pp
+writing: =[1] =[2] =[4] =[8] =[16]
+.Pp
+combined: |=[2] +=[4] &=[4] --=[2]
+.Pp
+special [*] =[*]
+.It special
+Represented as uppercase words, they are used to manipulate the internal esil stack, swaping, perform a cast, set flags and so on
+.Pp
+STACK POP TODO CLEAR DUP NUM SWAP TRAP BITS SETJT SETJTS SETD
+.It other (may use uppercase words)
+.Pp
+"()": syscall
+"$": interrupt
+"#!": r2 command
+.It floating point
+.Pp
+NAN I2D U2D D2I D2F F2D F== F!= F< F<= F+ F- F* F/ -F CEIL FLOOR ROUND SQRT
+.Pp
+.Sh BASIC OPERATIONS
+Core operations in ESIL are designed to replicate basic CPU instructions' behavior, including arithmetic, logical, and control flow.
+.Pp
+"="
+Assignment: Transfers the value from the right operand to the left operand.
+.Pp
+"+"
+Addition: Adds the two topmost values on the stack, pushing the result.
+.Pp
+"-"
+Subtraction: Subtracts the top value from the second top value on the stack, pushing the result.
+.Pp
+"*"
+Multiplication: Multiplies the two topmost values on the stack, pushing the result.
+.Pp
+"/"
+Division: Divides the second top value by the top value on the stack, pushing the result.
+.Pp
+"[]"
+Memory Access: Represents reading or writing to memory, with operation size being context-dependent.
+.Pp
+"?{"
+Conditional Execution: If the top value of the stack is not zero, execute the following block of instructions.
+.Pp
+"$"
+Special Flags and Operations: Accesses internal VM flags for conditions like carry, zero, and overflow or performs special operations like system calls.
+.Pp
+"<<", ">>"
+Bit Shifts: Performs bitwise shift left or right operations.
+.Pp
+"&", "|", "^"
+Bitwise Operations: Executes AND, OR, XOR on the two topmost stack values.
+.Pp
+"!"
+Logical NOT: Inverts the top value on the stack.
+.Sh INTERNAL FLAGS AND COMPARISONS
+ESIL uses internal flags to represent the outcome of operations, similar to how CPU flags work. These flags enable conditional execution and comparisons within the ESIL VM.
+.Pp
+"$z"
+Zero Flag: Set if the result of an operation is zero. Used to perform equality checks.
+.Pp
+"$c"
+Carry Flag: Set if an operation results in a carry out of the most significant bit. Useful for unsigned arithmetic operations.
+.Pp
+"$s"
+Sign Flag: Set if the result of an operation is negative, indicating the sign in signed arithmetic.
+.Pp
+"$o"
+Overflow Flag: Set if an arithmetic operation produces a result too large for the destination register, indicating overflow in signed arithmetic.
+.Pp
+"$p"
+Parity Flag: Set if the number of set bits in the operation result is even. Rarely used in high-level analysis.
 
-ESIL aims to describe a Forth-like representation for every target CPU opcode semantics. ESIL representations can be evaluated (interpreted) in order to emulate individual instructions.
+Flags are often used following comparison or arithmetic operations to guide conditional jumps and other control flow decisions, mimicking the behavior of physical CPUs.
 
-.SH SYNTAX
-
-Each command of an ESIL expression is separated by a comma
-
-.IP <source0>,<source1>,<operation>
-.IP <source>,<destination>,<operation>
-.IP <source_destination>,<operation>
-
-.SH BASIC OPERATIONS
-
-These operations should be enough to emulate most instructions of any architecture
-
-.IP =
-sets the value of the destination to the value of the source
-.IP +
-adds the values of source0 and source1 and pushes the result on the esil stack
-.IP -
-subtracts the value of source0 from the value of source1 and pushes the result on the esil stack
-.IP *
-multiplies the values of source0 and source1 and pushes the result on the esil stack
-.IP /
-divides the value of source1 by the value of source0
-
-.SH BASIC OPERATIONS EXAMPLES (x86)
-
-.IP "jmp eax -> eax,eip,="
-
-.SH "SEE ALSO"
-.BR radare2 (1)
+.Sh EXPRESSION EXAMPLES
+.Pp
+Compares EAX and EBX, setting the zero flag (zf) in ESIL if they are equal.
+  cmp eax, ebx -> ebx,eax,==,$z,zf,:="
+.Pp
+Adds 1 to EAX, demonstrating basic arithmetic.
+  add eax, 1 -> 1,eax,+=
+.Pp
+Jumps to the label if the zero flag (zf) is set, illustrating conditional execution based on comparison results.
+  jz .label -> zf,?{,.label,eip,=,}
+.Pp
+.Sh R2WARS
+Code-wars like game implemented on top of ESIL, this is the implementation used in the r2con conference.
+.Pp
+https://github.com/radareorg/r2wars
+.Sh "SEE ALSO"
+.Xr radare2(1),
+.Sh WWW
+.Pp
+https://www.radare.org/
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
