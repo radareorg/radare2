@@ -868,7 +868,7 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size); // 
 
 // Call cb on every direct successor address of block
 // returns false if the loop was breaked by cb
-R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user);
+R_API void r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user);
 
 // Call cb on block and every (recursive) successor of it
 // returns false if the loop was breaked by cb
@@ -1075,6 +1075,7 @@ R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
+// R2_590 R_API bool r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
