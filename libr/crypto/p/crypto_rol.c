@@ -52,7 +52,7 @@ static bool fini(RCryptoJob *cj) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	if (cj->flag) {
+	if (cj->flag == R_CRYPTO_DIR_DECRYPT) {
 		R_LOG_ERROR ("Use ROR instead of ROL");
 		return false;
 	}

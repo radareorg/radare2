@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake */
+/* radare - LGPL - Copyright 2017-2024 - pancake */
 
 #include "crypto_serpent_algo.h"
 #include "r_util/r_assert.h"

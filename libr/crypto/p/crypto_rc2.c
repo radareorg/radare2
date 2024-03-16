@@ -223,10 +223,13 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		free (obuf);
 		return false;
 	}
-	if (cj->flag == 0) {
+	switch (cj->flag) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		rc2_crypt (state, buf, obuf, len);
-	} else if (cj->flag == 1) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		rc2_dcrypt (state, buf, obuf, len);
+		break;
 	}
 	r_crypto_job_append (cj, obuf, len);
 	free (obuf);

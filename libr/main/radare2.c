@@ -990,7 +990,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else if (mr.quiet) {
 			printf ("%s\n", R2_VERSION);
 			mainr2_fini (&mr);
-		} else 
+		}
 #endif
 		{
 			r_main_version_verify (r, 0, mr.json);

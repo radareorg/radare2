@@ -320,9 +320,9 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	if (cj->dir == 0) {
+	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		blowfish_crypt (st, buf, obuf, len);
-	} else if (cj->dir == 1) {
+	} else {
 		blowfish_decrypt (st, buf, obuf, len);
 	}
 	r_crypto_job_append (cj, obuf, len);

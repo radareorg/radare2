@@ -143,16 +143,19 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	//  }
 
 	int i;
-	if (cj->dir) {
-		for (i = 0; i < blocks; i++) {
-			ut32 next = (DES_BLOCK_SIZE * i);
-			des_decrypt (st, ibuf + next, obuf + next);
-		}
-	} else {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_encrypt (st, ibuf + next, obuf + next);
 		}
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
+		for (i = 0; i < blocks; i++) {
+			ut32 next = (DES_BLOCK_SIZE * i);
+			des_decrypt (st, ibuf + next, obuf + next);
+		}
+		break;
 	}
 
 	r_crypto_job_append (cj, obuf, size);
