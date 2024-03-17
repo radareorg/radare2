@@ -548,13 +548,14 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 	if (!block) {
 		return false;
 	}
+	RVector path;
+	r_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
 	HtUP *visited = ht_up_new0 ();
 	if (!visited) {
 		goto beach;
 	}
 	RAnal *anal = block->anal;
-	RVector path;
-	r_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
+	// TODO R2_590  use RVec instead
 	RAnalBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	r_vector_push (&path, &ctx);
