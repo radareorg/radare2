@@ -2011,6 +2011,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_STURH:
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
 	{
+		op->type = R_ANAL_OP_TYPE_STORE;
 		int size = REGSIZE64 (0);
 		if (insn->id == ARM64_INS_STRB || insn->id == ARM64_INS_STURB) {
 		    size = 1;
@@ -3639,6 +3640,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
+		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (2);
