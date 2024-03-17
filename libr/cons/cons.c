@@ -1508,6 +1508,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 // XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
 	// This implementation is very slow
+	if (rows) {
+		*rows = 0;
+	}
 	return 0;
 #if 0
 	RConsContext *c = C;
@@ -2257,7 +2260,7 @@ R_API void r_cons_mark(ut64 addr, const char *name) {
 	if (mark) {
 		RConsContext *ctx = getctx ();
 		mark->addr = addr;
-		int row, col = r_cons_get_cursor (&row);
+		int row = 0, col = r_cons_get_cursor (&row);
 		mark->name = strdup (name); // TODO. use a const pool
 		mark->pos = ctx->buffer_len;
 		mark->col = col;
