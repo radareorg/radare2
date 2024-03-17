@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2022 pancake */
+/* radare2 - LGPL - Copyright 2007-2024 pancake */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -333,7 +333,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 }
 
 R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSeed *seed) {
-	r_return_if_fail (ctx);
+	R_RETURN_IF_FAIL (ctx);
 	int i, len, hlen = r_hash_size (algo);
 	size_t buf_len = hlen + (seed? seed->len: 0);
 	ut8 *buf = calloc (1, buf_len);
@@ -360,7 +360,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 }
 
 R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
-	r_return_val_if_fail (name && len >= 0 && data, NULL);
+	R_RETURN_VAL_IF_FAIL (name && len >= 0 && data, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;

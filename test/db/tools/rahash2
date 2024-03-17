@@ -171,7 +171,7 @@ c     blowfish LGPL3  pancake
 c         cps2  LGPL  pof,esanfelix
 c      des-ecb  LGPL  deroad
 h      entropy   MIT  pancake
-e     punycode  LGPL  
+e     punycode  LGPL  pancake
 c          rc2  LGPL  pancake
 c          rc4  LGPL  pancake
 c          rc6  LGPL  pancake
