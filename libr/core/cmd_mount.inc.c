@@ -60,14 +60,34 @@ static char *readman(const char *page) {
 					p++;
 				}
 				break;
-			case 'F': // ".Fl"
 			case 'T': // ".Tn"
+				if (p[2] == 'P') {
+					memset (p, ' ', 3);
+					break;
+				}
+				if (p[2] == 'H') {
+					memcpy (p, "\n#", 2);
+					break;
+				}
+				// fallthrough
 			case 'B': // ".Bl"
+				if (p[2] == ' ') {
+					char *nl = strchr (p, '\n');
+					if (nl) {
+						memmove (p, p + 1, nl - p - 1);
+						memcpy (p, " '", 2);
+						nl[-1] = '\'';
+						p = nl;
+					}
+					break;
+				}
+			case 'F': // ".Fl"
 				while (*p && *p != '\n') {
 					*p = ' ';
 					p++;
 				}
 				break;
+			case 'R': // ".RS" ".RE"
 			case 'E': // ".El"
 			case 'N': // ".Nm"
 			case 'X': // ".Xr"
@@ -90,6 +110,7 @@ static char *readman(const char *page) {
 			p = strstr (p, "\n.");
 		}
 		// replace \n.XX with stuff
+		res = r_str_replace_all (res, "\\-", "-");
 		res = r_str_replace_all (res, " Ar ", " ");
 	}
 	free (p);
@@ -249,16 +270,16 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
-	if (r_str_startswith (_input, "an")) {
+	if (r_str_startswith (_input, "an")) { // "ma" "man"
 		return cmd_man (data, _input);
 	}
-	if (r_str_startswith (_input, "ktemp")) {
+	if (r_str_startswith (_input, "ktemp")) { // "mktemp"
 		return cmd_mktemp (data, _input);
 	}
-	if (r_str_startswith (_input, "kdir")) {
+	if (r_str_startswith (_input, "kdir")) { // "mkdir"
 		return cmd_mkdir (data, _input);
 	}
-	if (r_str_startswith (_input, "v")) {
+	if (r_str_startswith (_input, "v")) { // "mv"
 		return cmd_mv (data, _input);
 	}
 	input = oinput = strdup (_input);
