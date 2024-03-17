@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2024 - pancake, unlogic, emvivre */
 
 #include <r_arch.h>
 
@@ -2090,7 +2090,7 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x20;
 			}
 		} else {
-			if (op->operands[0].type & OT_WORD) {
+			if (a->config->bits > 16 && op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
 			}
 			data[l++] = (op->operands[0].type & OT_BYTE) ? 0x88 : 0x89;
