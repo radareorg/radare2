@@ -4081,8 +4081,6 @@ static void visual_title(RCore *core, int color) {
 		if (curpc && curpc != UT64_MAX && curpc != core->visual.oldpc) {
 			// check dbg.follow here
 			int follow = (int) (st64) r_config_get_i (core->config, "dbg.follow");
-			eprintf ("FOLLOW %d\n", follow);
-			sleep(1);
 			if (follow > 0) {
 				if ((curpc < core->offset) || (curpc > (core->offset + follow))) {
 					r_core_seek (core, curpc, true);
