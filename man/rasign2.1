@@ -7,9 +7,7 @@ rasign2 \- a tool for generating and managing binary file signatures
 [options] [file]
 
 .SH DESCRIPTION
-The
-.B rasign2
-tool is designed for creating, dumping, and managing signature files for binary analysis. It facilitates the generation of signature databases (SDB) from binary files, making it easier to identify and catalog functions and other symbols. The tool can interpret FLIRT 'I.sig' files, execute custom Radare2 scripts, and output signatures in multiple formats.
+The rasign2 tool is designed for creating, dumping, and managing signature files for binary analysis. It facilitates the generation of signature databases (SDB) from binary files, making it easier to identify and catalog functions and other symbols. The tool can interpret FLIRT 'I.sig' files, execute custom Radare2 scripts, and output signatures in multiple formats.
 
 .SH OPTIONS
 .TP
@@ -100,7 +98,7 @@ Merging signatures:
 .RS
 .B rasign2 -m -o existing_sigs.sdb new_sigs.sdb
 .RE
-Merges or overwrites signatures in Iexisting_sigs.sdbP with those from Inew_sigs.sdbP.
+Merges or overwrites signatures in 'existing_sigs.sdb' with those from 'new_sigs.sdb'.
 
 
 .SH "THE Z COMMAND IN RADARE2"
@@ -109,9 +107,7 @@ The
 command in radare2 is dedicated to the management of binary signatures, known as zignatures. Zignatures are used for identifying and cataloging functions across different binaries by their unique characteristics, such as bytes patterns, graph metrics, and other attributes.
 
 .SH "CONFIGURATION OPTIONS"
-The behavior of zignature processing can be fine-tuned through a variety of configuration options, accessible via
-.B e??zign.
-in radare2. Some key configuration options include:
+The behavior of zignature processing can be fine-tuned through a variety of configuration options, accessible via 'e??zign.' in radare2. Some key configuration options include:
 
 .TP
 .B zign.autoload
@@ -138,15 +134,7 @@ Minimum similarity required for inclusion in zb output.
 Use types for matching.
 
 .SH "ADDING ZIGNATURES"
-Zignatures can be added with the
-.B za
-command, supporting a variety of types such as bytes patterns (
-.B a
-and
-.B b
-), graph metrics (
-.B g
-), and more. Examples include:
+Zignatures can be added with the 'za' command, supporting a variety of types such as bytes patterns, graph metrics, and more.
 
 .TP
 .B za foo b 558bec..e8........
@@ -255,9 +243,7 @@ Each metric allows for a nuanced approach to identifying and comparing functions
 
 
 .SH "USAGE EXAMPLES FOR THE Z COMMAND"
-The
-.B z
-command in radare2 is versatile, offering various functionalities through its subcommands. Here are five usage examples:
+The z command in radare2 is versatile, offering various functionalities through its subcommands. Here are five usage examples:
 
 .TP
 .B Show all zignatures
