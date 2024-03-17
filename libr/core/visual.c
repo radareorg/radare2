@@ -4013,7 +4013,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	return true;
 }
 
-R_API void r_core_visual_title(RCore *core, int color) {
+static void visual_title(RCore *core, int color) {
 	bool showDelta = r_config_get_b (core->config, "asm.slow");
 	core->visual.oldpc = 0;
 	const char *BEGIN = core->cons->context->pal.prompt;
@@ -4486,7 +4486,7 @@ R_IPI void visual_refresh(RCore *core) {
 	if (R_STR_ISNOTEMPTY (vi)) {
 		r_core_cmd0 (core, vi);
 	}
-	r_core_visual_title (core, core->visual.color);
+	visual_title (core, core->visual.color);
 	const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
 	if (R_STR_ISNOTEMPTY (vi2)) {
 		r_core_cmd0 (core, vi2);

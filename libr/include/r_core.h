@@ -509,7 +509,6 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls);
 R_API bool r_core_run_script(RCore *core, const char *file);
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb);
 R_API bool r_core_visual_bit_editor(RCore *core);
-R_API void r_core_visual_title(RCore *core, int color);
 R_API int r_core_seek_base(RCore *core, const char *hex);
 R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_seek_next(RCore *core, const char *type);
