@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 /* XXX : move to r_util??? rename method names.. to long? */
 /* proc IO is not related to socket io.. this is shitty!! */
@@ -21,7 +21,6 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 #else
 	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
 #endif
-
 	if (!sp) {
 		return NULL;
 	}
@@ -37,7 +36,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		goto error;
 	}
 
-	if (pipe (sp->fd1)==-1) {
+	if (pipe (sp->fd1) == -1) {
 		r_sys_perror ("pipe");
 		goto error;
 	}
@@ -74,6 +73,7 @@ error:
 }
 
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
+	R_RETURN_VAL_IF_FAIL (sp, -1);
 #if R2__UNIX__ && !__wasi__
 	/* this is wrong */
 	kill (sp->pid, SIGKILL);
@@ -89,6 +89,7 @@ R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 }
 
 R_API int r_socket_proc_read(RSocketProc *sp, unsigned char *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (sp, -1);
 	RSocket s;
 	s.is_ssl = false;
 	s.fd = sp->fd1[0];
@@ -96,6 +97,7 @@ R_API int r_socket_proc_read(RSocketProc *sp, unsigned char *buf, int len) {
 }
 
 R_API int r_socket_proc_gets(RSocketProc *sp, char *buf, int size) {
+	R_RETURN_VAL_IF_FAIL (sp, -1);
 	RSocket s;
 	s.is_ssl = false;
 	s.fd = sp->fd1[0];
@@ -103,6 +105,7 @@ R_API int r_socket_proc_gets(RSocketProc *sp, char *buf, int size) {
 }
 
 R_API int r_socket_proc_write(RSocketProc *sp, void *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (sp, -1);
 	RSocket s;
 	s.is_ssl = false;
 	s.fd = sp->fd0[1];
@@ -110,7 +113,8 @@ R_API int r_socket_proc_write(RSocketProc *sp, void *buf, int len) {
 }
 
 R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...) {
-	RSocket s;
+	R_RETURN_IF_FAIL (sp);
+	RSocket s = {0};
 	char buf[BUFFER_SIZE];
 	va_list ap;
 	s.is_ssl = false;
@@ -118,12 +122,13 @@ R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...) {
 	if (s.fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
-		r_socket_write (&s, buf, strlen(buf));
+		r_socket_write (&s, buf, strlen (buf));
 		va_end (ap);
 	}
 }
 
 R_API int r_socket_proc_ready(RSocketProc *sp, int secs, int usecs) {
+	R_RETURN_VAL_IF_FAIL (sp, -1);
 	RSocket s;
 	s.is_ssl = false;
 	s.fd = sp->fd1[0];
