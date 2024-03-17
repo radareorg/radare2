@@ -47,7 +47,7 @@ static char *readman(const char *page) {
 		res = r_file_slurp (p, NULL);
 	}
 	if (res) {
-		char *p = strstr (res, "\n.");
+		char *p = strstr (res, ".");
 		while (p) {
 			if (p[1] == '\\' || p != res) {
 				p++;

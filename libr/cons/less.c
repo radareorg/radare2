@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2023 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -6,7 +6,7 @@
 #include "pager_private.h"
 
 static const char *r_cons_less_help = \
-	" u/space  - page up/down\n"
+	" u/space  - page up/down (same as ^F / ^B)\n"
 	" jk       - line down/up\n"
 	" gG       - begin/end buffer\n"
 	" /        - search in buffer\n"
@@ -17,7 +17,7 @@ static const char *r_cons_less_help = \
 	"\n";
 
 R_API int r_cons_less_str(const char *str, const char *exitkeys) {
-	r_return_val_if_fail (str && *str, 0);
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
 	if (!r_cons_is_interactive ()) {
 		R_LOG_ERROR ("Internal less requires scr.interactive=true");
 		return 0;
@@ -92,12 +92,14 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				in_help = false;
 			}
 			break;
+		case 104: // ^B
 		case 'u':
 			from -= h;
 			if (from < 0) {
 				from = 0;
 			}
 			break;
+		case 108: // ^F
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
 		case 'G': from = lines_count - h; break;
