@@ -1,4 +1,4 @@
-.Dd Jun 31, 2022
+.Dd Mar 17, 2024
 .Dt R2R 1
 .Sh NAME
 .Nm r2r
@@ -64,6 +64,9 @@ Use the -n flag to not run any test. Just load them.
   $ r2r -n
   [r2r] Loading tests...
 .Pp
+Run the tests contained in a directory interactively, if any of those tests fail to run, prompt the user to autofix, edit the commands, etc.
+.Pp
+  $ r2r -i test/db/cmd/cmd_pdf
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
