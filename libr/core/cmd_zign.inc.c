@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #if R_INCLUDE_BEGIN
 
@@ -180,8 +180,44 @@ static inline bool za_add(RCore *core, const char *input) {
 	return ret;
 }
 
+static void cmd_za_detailed_help(void) {
+	r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
+			"Zignature types:\n"
+			"  a: bytes pattern, r2 creates mask from analysis\n"
+			"  b: bytes pattern\n"
+			"  c: base64 comment\n"
+			"  n: real function name\n"
+			"  g: graph metrics\n"
+			"  o: original offset\n"
+			"  r: references\n"
+			"  x: cross references\n"
+			"  h: bbhash (hashing of fcn basic blocks)\n"
+			"  v: vars (and args)\n"
+			"Bytes patterns:\n"
+			"  bytes can contain '..' (dots) to specify a binary mask\n\n"
+			"Graph metrics:\n"
+			"  cc:    cyclomatic complexity\n"
+			"  edges: number of edges\n"
+			"  nbbs:  number of basic blocks\n"
+			"  ebbs:  number of end basic blocks\n\n"
+			"Examples:\n"
+			"  za foo b 558bec..e8........\n"
+			"  za foo a e811223344\n"
+			"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
+			"  za foo g nbbs=3 edges=3\n"
+			"  za foo v b-32 b-48 b-64\n"
+			"  za foo o 0x08048123\n"
+			"  za foo c this is a comment (base64?)\n"
+			"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n"
+			"  za foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n");
+}
+
 static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (r_str_endswith (input, "??")) {
+		cmd_za_detailed_help ();
+		return 0;
+	}
 	if (*input && input[1] == '?') {
 		char two[3] = { input[0], input[1], 0 };
 		r_core_cmd_help_contains (core, help_msg_za, two);
@@ -243,40 +279,7 @@ static int cmdAdd(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		if (input[1] == '?') {
-			// TODO #7967 help refactor: move to detail
-			r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
-				"Zignature types:\n"
-				"  a: bytes pattern, r2 creates mask from analysis\n"
-				"  b: bytes pattern\n"
-				"  c: base64 comment\n"
-				"  n: real function name\n"
-				"  g: graph metrics\n"
-				"  o: original offset\n"
-				"  r: references\n"
-				"  x: cross references\n"
-				"  h: bbhash (hashing of fcn basic blocks)\n"
-				"  v: vars (and args)\n"
-				"Bytes patterns:\n"
-				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
-				"Graph metrics:\n"
-				"  cc:    cyclomatic complexity\n"
-				"  edges: number of edges\n"
-				"  nbbs:  number of basic blocks\n"
-				"  ebbs:  number of end basic blocks\n\n"
-				"Examples:\n"
-				"  za foo b 558bec..e8........\n"
-				"  za foo a e811223344\n"
-				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
-				"  za foo g nbbs=3 edges=3\n"
-				"  za foo v b-32 b-48 b-64\n"
-				"  za foo o 0x08048123\n"
-				"  za foo c this is a comment (base64?)\n"
-				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n"
-				"  za foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n");
-		} else {
-			r_core_cmd_help (core, help_msg_za);
-		}
+		r_core_cmd_help (core, help_msg_za);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_za);
