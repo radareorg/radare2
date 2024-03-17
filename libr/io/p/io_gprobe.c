@@ -1178,12 +1178,11 @@ static int fast_flash_write(struct gport *port, ut32 address, ut8 *buf, size_t s
 		goto fail;
 	}
 
-	r_buf_free (request);
-
 	if (get_reply (port, GPROBE_ACK, &reply)) {
 		goto fail;
 	}
 
+	r_buf_free (request);
 	r_buf_free (reply);
 
 	return 0;
