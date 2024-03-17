@@ -58,15 +58,18 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	if (plugin && plugin->reg_profile) {
 		char *p = plugin->reg_profile (dbg);
 		if (p) {
-			r_reg_set_profile_string (dbg->reg, p);
-			if (dbg->anal && dbg->reg != dbg->anal->reg) {
-				r_reg_free (dbg->anal->reg);
-				dbg->anal->reg = dbg->reg;
+			if (!r_reg_set_profile_string (dbg->reg, p)) {
+				R_LOG_ERROR ("Cannot set the register profile once");
+			} else {
+				if (dbg->anal && dbg->reg != dbg->anal->reg) {
+					r_reg_free (dbg->anal->reg);
+					dbg->anal->reg = dbg->reg;
+				}
+				if (plugin && plugin->init_debugger) {
+					plugin->init_debugger (dbg);
+				}
+				r_reg_set_profile_string (dbg->reg, p);
 			}
-			if (plugin && plugin->init_debugger) {
-				plugin->init_debugger (dbg);
-			}
-			r_reg_set_profile_string (dbg->reg, p);
 			free (p);
 		} else {
 			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", plugin->meta.name); //dbg->current->plugin.meta.name);
