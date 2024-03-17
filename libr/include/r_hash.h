@@ -29,8 +29,6 @@ typedef struct r_hash_plugin_t {
 } RHashPlugin;
 #endif
 
-extern RHashPlugin r_hash_plugin_xorbyte;
-
 #if WANT_SSL_CRYPTO
 #include <openssl/sha.h>
 #include <openssl/md5.h>
