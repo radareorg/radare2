@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Determine current repository
-        id: "determine-repo"
         run: echo "{repo}={${GITHUB_REPOSITORY}}" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v3
       - name: Download Coverity Build Tool
@@ -21,23 +20,19 @@ jobs:
           tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
 
       - name: Fixed world writable dirs
         run: |
           chmod go-w $HOME
           sudo chmod -R go-w /usr/share
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
 
       - name: Configure
         run: ./configure
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
 
       - name: Build with cov-build
         run: |
           export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
           cov-build --dir cov-int make
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
 
       # TODO: Make it GitHub Action instead
       - name: Submit the result to Coverity Scan
@@ -53,4 +48,3 @@ jobs:
             https://scan.coverity.com/builds?project=radare2
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
