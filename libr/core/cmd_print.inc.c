@@ -5608,8 +5608,6 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	return false;
 }
 
-#include "esil2c.c"
-
 static void core_print_decompile(RCore *core, const char *input) {
 	int i, count = r_num_get (core->num, input);
 	if (count < 1) {
