@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2023 - pancake */
+/* radare - LGPL - Copyright 2014-2024 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -478,7 +478,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		R_LOG_ERROR ("Cannot create pipe");
 #elif R2__UNIX__
 		if (in) {
-			int pipes[2];
+			int pipes[2] = { -1, -1 };
 			if (pipe (pipes) != -1) {
 				size_t cmdl = strlen (cmd)-2;
 				if (write (pipes[1], cmd + 1, cmdl) != cmdl) {
@@ -1094,7 +1094,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_input) {
 		char *inp;
-		int f2[2];
+		int f2[2] = { -1, -1 };
 		if (pipe (f2) != -1) {
 			close (0);
 #if !__wasi__
