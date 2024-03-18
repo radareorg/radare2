@@ -12261,7 +12261,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			{
 				core->graph->is_callgraph = true;
 				r_core_cmdf (core, "ag-;.agR*;");
-				r_core_agraph_print(core, -1, input + 1);
+				r_core_agraph_print (core, -1, input + 1);
 				core->graph->is_callgraph = false;
 			}
 			break;
