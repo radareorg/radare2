@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - mrmacete, pancake */
+/* radare - LGPL - Copyright 2008-2024 - mrmacete, pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -1059,10 +1059,15 @@ static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset) {
 }
 
 static bool is_valid_magic(ut8 magic[16]) {
-	return !strcmp ((char *) magic, "dyld_v1   arm64")
-		|| !strcmp ((char *) magic, "dyld_v1  arm64e")
-		|| !strcmp ((char *) magic, "dyld_v1  x86_64")
-		|| !strcmp ((char *) magic, "dyld_v1 x86_64h");
+	// do not assume the string is null terminated
+	char ma[17];
+	// copies 16 chars, and fills the 17th with a null byte
+	r_str_ncpy (ma, (const char *)magic, sizeof (ma));
+	return 0 \
+		|| !strcmp (ma, "dyld_v1   arm64")
+		|| !strcmp (ma, "dyld_v1  arm64e")
+		|| !strcmp (ma, "dyld_v1  x86_64")
+		|| !strcmp (ma, "dyld_v1 x86_64h");
 }
 
 static bool is_null_uuid(ut8 uuid[16]) {
