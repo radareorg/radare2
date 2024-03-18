@@ -1059,15 +1059,15 @@ static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset) {
 }
 
 static bool is_valid_magic(ut8 magic[16]) {
-	// do not assume the string is null terminated
-	char ma[17];
-	// copies 16 chars, and fills the 17th with a null byte
-	r_str_ncpy (ma, (const char *)magic, sizeof (ma));
-	return 0 \
-		|| !strcmp (ma, "dyld_v1   arm64")
-		|| !strcmp (ma, "dyld_v1  arm64e")
-		|| !strcmp (ma, "dyld_v1  x86_64")
-		|| !strcmp (ma, "dyld_v1 x86_64h");
+	if (r_str_startswith ((const char *)magic, "dyld_v1 ")) {
+		const size_t left = sizeof (magic) - strlen ("dyld_v1 ");
+		return 0 \
+			|| !strncmp (ma, "  arm64", left)
+			|| !strncmp (ma, " arm64e", left)
+			|| !strncmp (ma, " x86_64", left)
+			|| !strncmp (ma, "x86_64h", left);
+	}
+	return false;
 }
 
 static bool is_null_uuid(ut8 uuid[16]) {
