@@ -1,0 +1,58 @@
+NAME=arm64 relocs for android
+FILE=bins/elf/libtool-checker.so
+CMDS=<<EOF
+s..ad4
+af
+pds
+?e imports
+ii
+?e relocs
+ir
+EOF
+EXPECT=<<EOF
+0x00000ae0 arg1
+0x00000ae4 arg2
+0x00000ae8 arg3
+0x00000aec arg1
+0x00000af8 bl rsym._ZN7_JNIEnv14GetArrayLengthEP7_jarray
+0x00000b24 bl rsym._ZN7_JNIEnv21GetObjectArrayElementEP13_jobjectArrayi
+0x00000b3c bl rsym._ZN7_JNIEnv17GetStringUTFCharsEP8_jstringPh
+0x00000b48 bl rsym._Z6existsPKc
+0x00000b64 bl rsym._ZN7_JNIEnv21ReleaseStringUTFCharsEP8_jstringPKc
+;-- _JNIEnv::GetArrayLength(_jarray*):
+0x00000b98 _JNIEnv::GetArrayLength(_jarray*)
+;-- _JNIEnv::GetObjectArrayElement(_jobjectArray*, int):
+0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+imports
+[Imports]
+nth vaddr      bind   type lib name
+-----------------------------------
+3   0x000008f0 GLOBAL FUNC     __cxa_finalize
+4   0x00000920 GLOBAL FUNC     fclose
+5   0x00000940 GLOBAL FUNC     __android_log_print
+6   0x00000970 GLOBAL FUNC     fopen
+7   0x00000980 GLOBAL FUNC     __cxa_atexit
+
+relocs
+[Relocations]
+
+vaddr      paddr      type   name
+---------------------------------
+0x00002d78 0x00001d78 ADD_64  0x000009a0
+0x00002d80 0x00001d80 ADD_64  0x00000990
+0x00002d88 0x00001d88 ADD_64  0x00002d88
+0x00002fa8 0x00001fa8 SET_64 __cxa_finalize
+0x00002fb0 0x00001fb0 SET_64 exists(char const*)
+0x00002fb8 0x00001fb8 SET_64 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+0x00002fc0 0x00001fc0 SET_64 fclose
+0x00002fc8 0x00001fc8 SET_64 _JNIEnv::GetStringUTFChars(_jstring*, unsigned char*)
+0x00002fd0 0x00001fd0 SET_64 __android_log_print
+0x00002fd8 0x00001fd8 SET_64 _JNIEnv::GetArrayLength(_jarray*)
+0x00002fe0 0x00001fe0 SET_64 _JNIEnv::ReleaseStringUTFChars(_jstring*, char const*)
+0x00002fe8 0x00001fe8 SET_64 fopen
+0x00002ff0 0x00001ff0 SET_64 __cxa_atexit
+
+
+13 relocations
+EOF
+RUN
