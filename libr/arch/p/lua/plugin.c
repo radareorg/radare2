@@ -1,4 +1,4 @@
-/* radare2 - BSD - Copyright 2017-2022 - pancake */
+/* radare2 - BSD - Copyright 2017-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_lib.h>

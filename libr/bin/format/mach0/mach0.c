@@ -4491,7 +4491,7 @@ static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 		cb_printf = printf;
 	}
 	struct MACH0_(obj_t) *bo = bf->bo->bin_obj;
-	SuperBlob sb;
+	SuperBlob sb = {0};
 	if (r_buf_fread_at (bo->b, addr, (ut8*)&sb, "3I", 1) != -1) {
 		cb_printf ("0x%08"PFMT64x" superblob.magic = 0x%08x\n", (ut64)addr, sb.magic);
 		cb_printf ("0x%08"PFMT64x" superblob.length = 0x%08x\n", (ut64)addr + 4, sb.length);
