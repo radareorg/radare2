@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -502,9 +502,10 @@ static int cmp(const void *a, const void *b) {
 		a = ca;
 		b = cb;
 	}
+	int res = strcmp (a, b);
 	free (da);
 	free (db);
-	return strcmp (a, b);
+	return res;
 }
 
 static bool gron(RStrBuf *sb, RJson *node, const char *root) {
