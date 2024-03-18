@@ -134,12 +134,10 @@ static bool __is_valid_ident(ut8 *e_ident) {
 }
 
 static bool init_ehdr(ELFOBJ *eo) {
-	ut8 *e_ident;
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
-	int i, len;
+	int i;
 
-	e_ident = (ut8*)&eo->ehdr.e_ident;
-
+	ut8 *e_ident = (ut8*)&eo->ehdr.e_ident;
 	if (r_buf_read_at (eo->b, 0, e_ident, EI_NIDENT) != EI_NIDENT) {
 		R_LOG_DEBUG ("read (magic)");
 		return false;
@@ -151,7 +149,7 @@ static bool init_ehdr(ELFOBJ *eo) {
 
 	eo->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 
-	len = r_buf_read_at (eo->b, 0, ehdr, sizeof (ehdr));
+	int len = r_buf_read_at (eo->b, 0, ehdr, sizeof (ehdr));
 	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
 		R_LOG_DEBUG ("read (ehdr)");
 		return false;
@@ -244,7 +242,6 @@ static bool read_phdr(ELFOBJ *eo) {
 				break;
 			}
 		}
-
 		if (!load_header_found) {
 			const ut64 load_addr = Elf_(get_baddr) (eo);
 			eo->ehdr.e_phoff = Elf_(v2p) (eo, load_addr + eo->ehdr.e_phoff);
@@ -5225,8 +5222,7 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 		r_buf_read_at (eo->b, rvaddr, (ut8*)&n32, 4);
 		pltptr = n32;
 #endif
-		bool ismagic = (reloc->type == 21 || reloc->type == 22);
-		// if (pltptr && pltptr != -1 && ismagic) {
+		bool ismagic = (reloc->type == 21 || reloc->type == 22 || reloc->type == 1026);
 		if (ismagic) {
 			// text goes after the plt. so its possible that some symbols are pointed locally, thats all lsym is about
 			if (pltptr > baddr) {
@@ -5246,6 +5242,9 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 #endif
 				// TODO: if (reloc->type == 22) { // on arm!  // extra check of bounds
 				ut64 naddr = baddr + pltptr + (index * 12) + 0x20;
+				if (reloc->type == 1026) {
+					naddr = baddr + pltptr + (index * 16) + 64 - 16;
+				}
 				if (naddr != UT64_MAX) {
 					// this thing registers an 'rsym.${importname}' as a flag when loading the relocs from core/cbin.c
 					reloc->laddr = naddr;
@@ -5253,6 +5252,8 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 					R_LOG_DEBUG ("Cannot resolve reloc reference");
 				}
 			}
+		} else {
+			R_LOG_WARN ("Reloc type %d not used for imports", reloc->type);
 		}
 	}
 	return true;
