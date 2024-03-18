@@ -195,6 +195,7 @@ static bool esil2c_mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static void esil2c_setup(REsil *esil) {
+	R_RETURN_IF_FAIL (esil);
 	REsilC *user = R_NEW (REsilC);
 	esil->user = user;
 	esil->verbose = true; // r_config_get_b (core->config, "esil.verbose");
@@ -218,21 +219,31 @@ static void esil2c_setup(REsil *esil) {
 	// r_esil_set_op (esil, "+=", esil2c_set, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
 }
 
-R_API REsilC *r_esil_toc_new() {
+R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, const int bits) {
 	REsilC *ec = R_NEW0 (REsilC);
-	int ss = 16 * 1024;
-	const int bits = 64;
-	REsil *esil = r_esil_new (ss, 0, bits);
-	esil2c_setup (esil);
-	ec->esil = esil;
+	if (ec) {
+		int ss = 16 * 1024;
+		REsil *esil = r_esil_new (ss, 0, bits);
+		if (esil) {
+			esil2c_setup (esil);
+			ec->anal = anal;
+			ec->esil = esil;
+		} else {
+			R_FREE (ec);
+		}
+	}
 	return ec;
 }
 
-R_API void r_esil_toc_free (REsilC *ec) {
-	esil2c_free (ec->esil->user);
-	ec->esil->user = NULL;
-	r_esil_free (ec->esil);
-	free (ec);
+R_API void r_esil_toc_free(REsilC *ec) {
+	if (ec) {
+		if (ec->esil) {
+			esil2c_free (ec->esil->user);
+			ec->esil->user = NULL;
+			r_esil_free (ec->esil);
+		}
+		free (ec);
+	}
 }
 
 R_API char *r_esil_toc(REsilC *ec, const char *expr) {
