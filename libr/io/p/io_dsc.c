@@ -1059,7 +1059,8 @@ static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset) {
 }
 
 static bool is_valid_magic(ut8 magic[16]) {
-	if (r_str_startswith ((const char *)magic, "dyld_v1 ")) {
+	const char * ma = (const char *)magic;
+	if (r_str_startswith (ma, "dyld_v1 ")) {
 		const size_t left = sizeof (magic) - strlen ("dyld_v1 ");
 		return 0 \
 			|| !strncmp (ma, "  arm64", left)
