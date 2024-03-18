@@ -1,23 +1,9 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2024 - pancake */
 
-typedef struct {
-	RCore *core;
-	RStrBuf *sb;
-} EsilC;
-
-static char *esil2c(RCore *core, REsil *esil, const char *expr) {
-	EsilC *user = esil->user;
-	RStrBuf *sb = r_strbuf_new ("");
-	user->sb = sb;
-	if (!r_esil_parse (esil, expr)) {
-		R_LOG_ERROR ("Invalid ESIL expression");
-	}
-	user->sb = NULL;
-	return r_strbuf_drain (sb);
-}
+#include <r_esil.h>
 
 static bool esil2c_eq(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -38,7 +24,7 @@ static bool esil2c_eq(REsil *esil) {
 }
 
 static bool esil2c_peek8(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
 
 	if (!src) {
@@ -51,7 +37,7 @@ static bool esil2c_peek8(REsil *esil) {
 }
 
 static bool esil2c_poke8(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -67,7 +53,7 @@ static bool esil2c_poke8(REsil *esil) {
 }
 
 static bool esil2c_addeq(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -83,7 +69,7 @@ static bool esil2c_addeq(REsil *esil) {
 }
 
 static bool esil2c_add(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -99,7 +85,7 @@ static bool esil2c_add(REsil *esil) {
 }
 
 static bool esil2c_subeq(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -115,7 +101,7 @@ static bool esil2c_subeq(REsil *esil) {
 }
 
 static bool esil2c_xor(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -134,7 +120,7 @@ static bool esil2c_xor(REsil *esil) {
 }
 
 static bool esil2c_sub(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 	const bool lgtm = (src && dst);
@@ -148,7 +134,7 @@ static bool esil2c_sub(REsil *esil) {
 }
 
 static bool esil2c_dec(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -159,7 +145,7 @@ static bool esil2c_dec(REsil *esil) {
 }
 
 static bool esil2c_inc(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -170,7 +156,7 @@ static bool esil2c_inc(REsil *esil) {
 }
 
 static bool esil2c_neg(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -184,7 +170,7 @@ static bool esil2c_neg(REsil *esil) {
 }
 
 static bool esil2c_goto(REsil *esil) {
-	EsilC *user = esil->user;
+	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -194,7 +180,7 @@ static bool esil2c_goto(REsil *esil) {
 	return true;
 }
 
-static void esil2c_free(EsilC *user) {
+static void esil2c_free(REsilC *user) {
 	free (user);
 }
 
@@ -208,10 +194,9 @@ static bool esil2c_mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	return true;
 }
 
-static void esil2c_setup(RCore *core, REsil *esil) {
-	EsilC *user = R_NEW (EsilC);
+static void esil2c_setup(REsil *esil) {
+	REsilC *user = R_NEW (REsilC);
 	esil->user = user;
-	esil->anal = core->anal;
 	esil->verbose = true; // r_config_get_b (core->config, "esil.verbose");
 	esil->cb.mem_read = esil2c_mr;
 	esil->cb.mem_write = esil2c_mw;
@@ -231,5 +216,33 @@ static void esil2c_setup(RCore *core, REsil *esil) {
 	r_esil_set_op (esil, "[]", esil2c_peek8, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
 	r_esil_set_op (esil, "GOTO", esil2c_goto, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
 	// r_esil_set_op (esil, "+=", esil2c_set, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+}
+
+R_API REsilC *r_esil_toc_new() {
+	REsilC *ec = R_NEW0 (REsilC);
+	int ss = 16 * 1024;
+	const int bits = 64;
+	REsil *esil = r_esil_new (ss, 0, bits);
+	esil2c_setup (esil);
+	ec->esil = esil;
+	return ec;
+}
+
+R_API void r_esil_toc_free (REsilC *ec) {
+	esil2c_free (ec->esil->user);
+	ec->esil->user = NULL;
+	r_esil_free (ec->esil);
+	free (ec);
+}
+
+R_API char *r_esil_toc(REsil *esil, const char *expr) {
+	REsilC *user = esil->user;
+	RStrBuf *sb = r_strbuf_new ("");
+	user->sb = sb;
+	if (!r_esil_parse (esil, expr)) {
+		R_LOG_ERROR ("Invalid ESIL expression");
+	}
+	user->sb = NULL;
+	return r_strbuf_drain (sb);
 }
 
