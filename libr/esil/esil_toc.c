@@ -235,14 +235,14 @@ R_API void r_esil_toc_free (REsilC *ec) {
 	free (ec);
 }
 
-R_API char *r_esil_toc(REsil *esil, const char *expr) {
-	REsilC *user = esil->user;
+R_API char *r_esil_toc(REsilC *ec, const char *expr) {
+	REsil *esil = ec->esil;
 	RStrBuf *sb = r_strbuf_new ("");
-	user->sb = sb;
+	ec->sb = sb;
 	if (!r_esil_parse (esil, expr)) {
 		R_LOG_ERROR ("Invalid ESIL expression");
 	}
-	user->sb = NULL;
+	ec->sb = NULL;
 	return r_strbuf_drain (sb);
 }
 

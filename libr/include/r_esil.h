@@ -354,7 +354,7 @@ typedef struct {
 } REsilC;
 R_API REsilC *r_esil_toc_new();
 R_API void r_esil_toc_free (REsilC *ec);
-R_API char *r_esil_toc(REsil *esil, const char *expr);
+R_API char *r_esil_toc(REsilC *esil, const char *expr);
 
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type);
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op);
