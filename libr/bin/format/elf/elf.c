@@ -5176,6 +5176,18 @@ typedef struct {
 	ut64 plt_va;
 } GotPltBounds;
 
+static bool is_important(RBinElfReloc *reloc) {
+	switch (reloc->type) {
+	case 21:
+	case 22:
+	case 1026:
+		return true;
+	}
+
+	R_LOG_DEBUG ("Reloc type %d not used for imports", reloc->type);
+	return false;
+}
+
 static bool reloc_fill_local_address(ELFOBJ *eo) {
 	RBinElfReloc *reloc;
 	GotPltBounds ri = {0};
@@ -5222,7 +5234,7 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 		r_buf_read_at (eo->b, rvaddr, (ut8*)&n32, 4);
 		pltptr = n32;
 #endif
-		bool ismagic = (reloc->type == 21 || reloc->type == 22 || reloc->type == 1026);
+		bool ismagic = is_important (reloc);
 		if (ismagic) {
 			// text goes after the plt. so its possible that some symbols are pointed locally, thats all lsym is about
 			if (pltptr > baddr) {
@@ -5245,6 +5257,9 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 				if (reloc->type == 1026) {
 					naddr = baddr + pltptr + (index * 16) + 64 - 16;
 				}
+				if (reloc->type == 6) {
+					eprintf ("NAAAA %llx\n", naddr);
+				}
 				if (naddr != UT64_MAX) {
 					// this thing registers an 'rsym.${importname}' as a flag when loading the relocs from core/cbin.c
 					reloc->laddr = naddr;
@@ -5252,8 +5267,6 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 					R_LOG_DEBUG ("Cannot resolve reloc reference");
 				}
 			}
-		} else {
-			R_LOG_WARN ("Reloc type %d not used for imports", reloc->type);
 		}
 	}
 	return true;
