@@ -260,7 +260,8 @@ static const RCoreHelpMessage help_msg_equalg = {
 
 static const RCoreHelpMessage help_msg_b = {
 	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
-	"b", " 33", "set block size to 33",
+	"b", " 32", "set block size to 33",
+	"b", "=32", "same as 'b 32'",
 	"b", " eip+4", "numeric argument can be an expression",
 	"b", "", "display current block size",
 	"b", "+3", "increase blocksize by 3",
@@ -2676,8 +2677,9 @@ static int cmd_bsize(void *data, const char *input) {
 	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
+	case '=':
 	case ' ':
-		r_core_block_size (core, r_num_math (core->num, input));
+		r_core_block_size (core, r_num_math (core->num, input + 1));
 		break;
 	default:
 	case '?': // "b?"
