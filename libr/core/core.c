@@ -549,6 +549,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RBinSection *s;
 	RAnalOp op;
 	ut64 ret = 0;
+	r_anal_op_init (&op);
 
 	if (ok) {
 		*ok = false;
