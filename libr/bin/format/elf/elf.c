@@ -5257,9 +5257,6 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 				if (reloc->type == 1026) {
 					naddr = baddr + pltptr + (index * 16) + 64 - 16;
 				}
-				if (reloc->type == 6) {
-					eprintf ("NAAAA %llx\n", naddr);
-				}
 				if (naddr != UT64_MAX) {
 					// this thing registers an 'rsym.${importname}' as a flag when loading the relocs from core/cbin.c
 					reloc->laddr = naddr;
