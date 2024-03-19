@@ -1,4 +1,4 @@
-.Dd Dec 28, 2023
+.Dd Mar 19, 2024
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
@@ -10,48 +10,74 @@
 .Sh DESCRIPTION
 This command is part of the radare project.
 .Pp
-This command allows you to convert values between positive and negative integer, float, octal, binary and hexadecimal values.
+Rax2 is a powerful calculator within the Radare2 suite, primarily used for
+numerical system conversions, encoding and decoding C strings, hexpairs, and
+base64, essential for binary analysis and reverse engineering tasks.
+.Pp
+The most common numerical bases include binary (base 2) for direct machine code
+interaction, hexadecimal (base 16) for memory addresses and compact data
+representation, and decimal (base 10) for human-readable calculations and
+interpretations.
 .Sh OPTIONS
 .Bl -tag -width Fl
+.It Fl a
+Show ASCII table
 .It Fl b
 Convert from binary string to character (rax2 \-b 01000101)
-.It Fl k
-Keep the same base as the input data
+.It Fl B
+Convert from character string to binary (rax2 \-B hello)
+.It Fl d
+Print the result in decimal (base 10)
+.It Fl D
+Decode the input data using base64
 .It Fl e
-Swap endian.
+Swap endianess
+.It Fl E
+Encode the input data using base64
+.It Fl f
+Interpret the input number as a 32bit dword and display it using IEEE 754
+standard for floating point arithmetic
 .It Fl F
 Read C strings from stdin and output in hexpairs. Useful to load shellcodes
+.It Fl h
+Show usage help message
+.It Fl k
+Keep the same base as the input data
+.It Fl K
+Show randomart key asciiart for values or hexpairs
 .It Fl i
 Dump stdin to C array in stdout (xxd replacement)
 .It Fl I
 Convert LONG to/from IP ADDRESS
 .It Fl l
-Append newline to the decoded output for human friendly-ness
-.It Fl K
-Show randomart key asciiart for values or hexpairs
-.It Fl r
-Show the same output as the r2's `? 0x804` command.
-When combined with -S (-rS) it will print r2 commands to write the actual binary into radare2
-.It Fl s
-Convert from hex string to character (rax2 \-s 43 4a 50)
-.It Fl S
-Convert from character to hex string (rax2 \-S C J P)
+Append newline to the decoded output for human friendlyness
+.It Fl L
+Convert a bit stream (an arbitrary sequence of 0 and 1 of any length) to
+hexadecimal. The result can be larger than 64bits
 .It Fl n
 Show hexpairs from integer value
 .It Fl N
 Show hexadecimal C string from integer value
+.It Fl o
+Convert from octal string to char (rax2 -o 162 62)
+.It Fl r
+Show the same output as the r2's `? 0x804` command.
+When combined with -S (-rS) it will print r2 commands to write the actual binary into radare2
+.It Fl s
+Convert from hex pairs string to character (rax2 \-s 43 4a 50)
+.It Fl S
+Convert from character to hex string (rax2 \-S C J P)
+.It Fl t
+Convert epoch timestamp to human readable date format
 .It Fl u
 Convert given value to human readable units format
 .It Fl v
 Show program version
+.It Fl w
+Display the result as 16bit signed integer value
 .It Fl x
 Convert a string into a hash
-.It Fl h
-Show usage help message
-.It Fl o
-Convert from octal string to char (rax2 -o 162 62)
-.El
-.Sh USAGE
+.Sh OUTPUT BASES
 .Pp
 Force output mode (numeric base)
 .Pp
@@ -62,6 +88,7 @@ Force output mode (numeric base)
   =10   decimal
   =16   hexadecimal
 .Pp
+.Sh USAGE
 Available variable types are:
 .Pp
   int   \->  hex    rax2 10
@@ -77,6 +104,7 @@ Available variable types are:
   bin   \->  hex    rax2 1100011b
   hex   \->  bin    rax2 Bx63
 .Pp
+.Sh EXAMPLES
 With no arguments, rax2 reads values from stdin. You can pass one or more values
 as arguments.
 .Pp
@@ -90,17 +118,35 @@ You can do 'unpack' hexpair encoded strings easily.
   $ rax2 \-s 41 42 43
   ABC
 .Pp
-And it supports some math operations.
+It supports some math operations:
 .Pp
-  $ rax2
-  0x5*101b+5
+  $ rax2 1+1 "0x5*101b+5"
+  2
   30
+.Pp
+Encode and decode binary file using base64:
+.Pp
+  $ rax2 -E < /bin/ls > ls.b64
+  $ rax2 -D < ls.b64 > ls
+.Pp
+  $ cmp /bin/ls ls && echo $?
+  0
+.Pp
+Use -B/-b to convert between binary and hexadecimal:
+.Pp
+  $ rax2 -B 0x1123
+  001100000111100000110001001100010011001000110011
+  $ rax2 -b 001100000111100000110001001100010011001000110011
+  0x1123
 .Pp
 It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
 .Pp
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
+.Sh WWW
+.Pp
+https://www.radare.org
 .Sh AUTHORS
 .Pp
 Written by pancake <pancake@nopcode.org>.
