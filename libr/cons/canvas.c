@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
