@@ -10,7 +10,7 @@ typedef enum {
 	RAX2_FLAG_SWAPENDIAN = (1 << 1), // -e
 	RAX2_FLAG_RAW2HEXSTR = (1 << 2), // -S
 	RAX2_FLAG_BINSTR2RAW = (1 << 3), // -b
-	RAX2_FLAG_HASHSTRING = (1 << 4), // -x
+	RAX2_FLAG_HASHSTRING = (1 << 4), // -X
 	RAX2_FLAG_KEEPBASE   = (1 << 5), // -k
 	RAX2_FLAG_FLOATING   = (1 << 6), // -f
 	RAX2_FLAG_DECIMAL    = (1 << 7), // -d
@@ -190,7 +190,7 @@ static int help(void) {
 		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v      version              ;  rax2 -v\n"
 		"  -w      signed word          ;  rax2 -w 16 0xffff\n"
-		"  -x      hash string          ;  rax2 -x linux osx\n"
+		"  -X      hash string          ;  rax2 -X linux osx\n"
 	);
 	return true;
 }
@@ -248,7 +248,7 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'e': flags ^= RAX2_FLAG_SWAPENDIAN; break;
 			case 'S': flags ^= RAX2_FLAG_RAW2HEXSTR; break;
 			case 'b': flags ^= RAX2_FLAG_BINSTR2RAW; break;
-			case 'x': flags ^= RAX2_FLAG_HASHSTRING; break;
+			case 'X': flags ^= RAX2_FLAG_HASHSTRING; break;
 			case 'k': flags ^= RAX2_FLAG_KEEPBASE; break;
 			case 'f': flags ^= RAX2_FLAG_FLOATING; break;
 			case 'd': flags ^= RAX2_FLAG_DECIMAL; break;
@@ -347,7 +347,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags & RAX2_FLAG_HASHSTRING) { // -x
+	if (flags & RAX2_FLAG_HASHSTRING) { // -X
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return true;
