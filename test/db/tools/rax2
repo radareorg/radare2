@@ -56,7 +56,7 @@ RUN
 
 NAME=rax2 -E | rax2 -D 2
 FILE=-
-CMDS=!rax2 -E hello | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -lD
+CMDS=!rax2 -E hello | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -D | rax2 -E | rax2 -nD
 EXPECT=<<EOF
 hello
 EOF
