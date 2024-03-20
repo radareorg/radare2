@@ -1216,7 +1216,7 @@ static RList* fields(RBinFile *bf) {
 	addr += 0x4;
 
 	if (r_buf_read8_at (bf->buf, 0x04) == 1) {
-		ROW ("Entry point", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
+		ROW ("EntryPoint", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 		addr += 0x4;
 		ROW ("PhOff", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 		addr += 0x4;
