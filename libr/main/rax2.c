@@ -29,7 +29,7 @@ typedef enum {
 	RAX2_FLAG_DUMPCSTR   = (1 << 20), // -i
 	RAX2_FLAG_OCTAL2RAW  = (1 << 21), // -o
 	RAX2_FLAG_IPADDR2NUM = (1 << 22), // -I
-	RAX2_FLAG_NEWLINE    = (1 << 23), // -l
+	RAX2_FLAG_NEWLINE    = (1 << 23), // -n
 } RaxAction;
 
 static bool rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
@@ -178,8 +178,8 @@ static int help(void) {
 		"  -I      IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
-		"  -l      newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
+		"  -n      newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -r      r2 style output      ;  rax2 -r 0x1234 # same as r2 -c '? 0x1234'\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
@@ -237,7 +237,7 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
-			case 'l':
+			case 'n':
 				*_flags |= RAX2_FLAG_NEWLINE;
 				flags = *_flags;
 				break;
