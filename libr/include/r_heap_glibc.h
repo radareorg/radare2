@@ -115,7 +115,39 @@ typedef RHeapChunk32 *mfastbinptr32;
 typedef RHeapChunk32 *mchunkptr32;
 */
 
-typedef struct r_malloc_state_32 {
+// 2.23 > GLIBC_VERSION >= 2.12
+// https://github.com/bminor/glibc/blob/glibc-2.12/malloc/malloc.c#L2362-L2400
+typedef struct r_malloc_state_212_32 {
+	int mutex;
+	int flags;
+	ut32 fastbinsY[NFASTBINS];
+	ut32 top;
+	ut32 last_remainder;
+	ut32 bins[NBINS * 2 - 2];
+	unsigned int binmap[BINMAPSIZE];
+	ut32 next;
+	ut32 next_free;
+	ut32 system_mem;
+	ut32 max_system_mem;
+} RHeap_MallocState_212_32;
+
+typedef struct r_malloc_state_212_64 {
+	int mutex;
+	int flags;
+	ut64 fastbinsY[NFASTBINS];
+	ut64 top;
+	ut64 last_remainder;
+	ut64 bins[NBINS * 2 - 2];
+	unsigned int binmap[BINMAPSIZE];
+	ut64 next;
+	ut64 next_free;
+	ut64 system_mem;
+	ut64 max_system_mem;
+} RHeap_MallocState_212_64;
+
+// 2.27 > GLIBC_VERSION >= 2.23
+// https://github.com/bminor/glibc/blob/1c9a5c270d8b66f30dcfaf1cb2d6cf39d3e18369/malloc/malloc.c#L1678-L1716
+typedef struct r_malloc_state_223_32 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
 	ut32 fastbinsY[NFASTBINS];              /* array of fastchunks */
@@ -128,9 +160,9 @@ typedef struct r_malloc_state_32 {
 	unsigned int attached_threads;          /* threads attached */
 	ut32 system_mem;                        /* current allocated memory of current arena */
 	ut32 max_system_mem;                    /* maximum system memory */
-} RHeap_MallocState_32;
+} RHeap_MallocState_223_32;
 
-typedef struct r_malloc_state_64 {
+typedef struct r_malloc_state_223_64 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
 	ut64 fastbinsY[NFASTBINS];              /* array of fastchunks */
@@ -143,7 +175,7 @@ typedef struct r_malloc_state_64 {
 	unsigned int attached_threads;          /* threads attached */
 	ut64 system_mem;                        /* current allocated memory of current arena */
 	ut64 max_system_mem;                    /* maximum system memory */
-} RHeap_MallocState_64;
+} RHeap_MallocState_223_64;
 
 typedef struct r_tcache_perthread_struct_32 {
 	ut16 counts[TCACHE_MAX_BINS];
@@ -183,7 +215,9 @@ typedef struct {
 	} RHeapTcache;
 } RTcache_32;
 
-typedef struct r_malloc_state_tcache_32 {
+// GLIBC_VERSION >= 2.27
+// https://github.com/bminor/glibc/blob/glibc-2.34/malloc/malloc.c#L1831
+typedef struct r_malloc_state_227_32 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
 	int have_fast_chunks;                   /* have fast chunks */
@@ -194,12 +228,12 @@ typedef struct r_malloc_state_tcache_32 {
 	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
 	ut32 next;                              /* double linked list of chunks */
 	ut32 next_free;                         /* double linked list of free chunks */
-	unsigned int attached_threads;          /* threads attached */
+	ut32 attached_threads; 			        /* threads attached */
 	ut32 system_mem;                        /* current allocated memory of current arena */
 	ut32 max_system_mem;                    /* maximum system memory */
-} RHeap_MallocState_tcache_32;
+} RHeap_MallocState_227_32;
 
-typedef struct r_malloc_state_tcache_64 {
+typedef struct r_malloc_state_227_64 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
 	int have_fast_chunks;                   /* have fast chunks */
@@ -210,10 +244,10 @@ typedef struct r_malloc_state_tcache_64 {
 	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
 	ut64 next;                              /* double linked list of chunks */
 	ut64 next_free;                         /* double linked list of free chunks */
-	unsigned int attached_threads;          /* threads attached */
+	ut64 attached_threads;  		        /* threads attached */
 	ut64 system_mem;                        /* current allocated memory of current arena */
 	ut64 max_system_mem;                    /* maximum system memory */
-} RHeap_MallocState_tcache_64;
+} RHeap_MallocState_227_64;
 
 typedef struct r_malloc_state {
 	int mutex;                              /* serialized access */
