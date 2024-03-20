@@ -4,7 +4,6 @@
 #define R2_CRYPTO_H
 
 #include <r_types.h>
-#include <r_list.h>
 #include <r_th.h>
 #include <r_crypto/r_des.h>
 #include <r_hash.h>
@@ -24,10 +23,12 @@ enum {
 	R_CRYPTO_MODE_CFB,
 };
 
-// TODO: use encode/decode wordings
+// TODO: use encode/decode wordings?
 enum {
-	R_CRYPTO_DIR_DECRYPT = 0,
-	R_CRYPTO_DIR_ENCRYPT = 1,
+	R_CRYPTO_DIR_NONE = -1,
+	R_CRYPTO_DIR_HASH = 0,
+	R_CRYPTO_DIR_DECRYPT = 1,
+	R_CRYPTO_DIR_ENCRYPT = 2,
 };
 
 typedef struct r_crypto_t {
@@ -41,6 +42,7 @@ typedef struct r_crypto_t {
 	int output_size;
 	int dir;
 #endif
+	bool bigendian;
 	void *user;
 	RList *plugins;
 } RCrypto;
@@ -66,8 +68,8 @@ typedef struct r_crypto_job_t {
 
 typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
-	R_CRYPTO_TYPE_HASH = 'h',
-	R_CRYPTO_TYPE_ENCRYPT = 'c',
+	R_CRYPTO_TYPE_HASHER = 'h',
+	R_CRYPTO_TYPE_ENCRYPT = 'c', // CIPHER
 } RCryptoType;
 
 typedef bool (*RCryptoJobSetIVCallback)(RCryptoJob *ci, const ut8 *iv, int ivlen);
@@ -118,6 +120,7 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cry, int *size);
 #endif
 
 /* plugin pointers */
+extern RCryptoPlugin r_crypto_plugin_strhash;
 extern RCryptoPlugin r_crypto_plugin_aes;
 extern RCryptoPlugin r_crypto_plugin_des;
 extern RCryptoPlugin r_crypto_plugin_rc4;
