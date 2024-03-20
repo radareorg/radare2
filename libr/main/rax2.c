@@ -15,13 +15,13 @@ typedef enum {
 	RAX2_FLAG_FLOATING   = (1 << 6), // -f
 	RAX2_FLAG_DECIMAL    = (1 << 7), // -d
 	RAX2_FLAG_RANDOMART  = (1 << 8), // -K
-	RAX2_FLAG_BINARYNUM  = (1 << 9), // -n
+	RAX2_FLAG_BINARYNUM  = (1 << 9), // -x
 	RAX2_FLAG_SHOWUNITS  = (1 << 10), // -u
 	RAX2_FLAG_TIMESTAMP  = (1 << 11), // -t
 	RAX2_FLAG_B64ENCODE  = (1 << 12), // -E
 	RAX2_FLAG_B64DECODE  = (1 << 13), // -D
 	RAX2_FLAG_SLURPHEX   = (1 << 14), // -F
-	RAX2_FLAG_BINARYRAW  = (1 << 15), // -N
+	RAX2_FLAG_BINARYRAW  = (1 << 15), // -c
 	RAX2_FLAG_SIGNEDWORD = (1 << 16), // -w
 	RAX2_FLAG_STR2HEXSTR = (1 << 17), // -B
 	RAX2_FLAG_MANYBASES  = (1 << 18), // -r
@@ -166,6 +166,7 @@ static int help(void) {
 		"  -a      show ascii table     ;  rax2 -a\n"
 		"  -b      bin -> str           ;  rax2 -b 01000101 01110110\n"
 		"  -B      str -> bin           ;  rax2 -B hello\n"
+		"  -c      output in C string   ;  rax2 -c 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -d      force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e      swap endianness      ;  rax2 -e 0x33\n"
 		"  -D      base64 decode        ;  rax2 -D \"aGVsbG8=\"\n"
@@ -179,8 +180,6 @@ static int help(void) {
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -l      newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
-		"  -n      output in hexpairs   ;  rax2 -n 0x1234 # 34120000\n"
-		"  -N      output in C string   ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -r      r2 style output      ;  rax2 -r 0x1234 # same as r2 -c '? 0x1234'\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
@@ -190,6 +189,7 @@ static int help(void) {
 		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v      version              ;  rax2 -v\n"
 		"  -w      signed word          ;  rax2 -w 16 0xffff\n"
+		"  -x      output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
 		"  -X      hash string          ;  rax2 -X linux osx\n"
 	);
 	return true;
@@ -253,13 +253,13 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'f': flags ^= RAX2_FLAG_FLOATING; break;
 			case 'd': flags ^= RAX2_FLAG_DECIMAL; break;
 			case 'K': flags ^= RAX2_FLAG_RANDOMART; break;
-			case 'n': flags ^= RAX2_FLAG_BINARYNUM; break;
+			case 'x': flags ^= RAX2_FLAG_BINARYNUM; break;
 			case 'u': flags ^= RAX2_FLAG_SHOWUNITS; break;
 			case 't': flags ^= RAX2_FLAG_TIMESTAMP; break;
 			case 'E': flags ^= RAX2_FLAG_B64ENCODE; break;
 			case 'D': flags ^= RAX2_FLAG_B64DECODE; break;
 			case 'F': flags ^= RAX2_FLAG_SLURPHEX; break;
-			case 'N': flags ^= RAX2_FLAG_BINARYRAW; break;
+			case 'c': flags ^= RAX2_FLAG_BINARYRAW; break;
 			case 'w': flags ^= RAX2_FLAG_SIGNEDWORD; break;
 			case 'B': flags ^= RAX2_FLAG_STR2HEXSTR; break;
 			case 'r': flags ^= RAX2_FLAG_MANYBASES; break;
@@ -382,7 +382,7 @@ dotherax:
 		free (m);
 		return true;
 	}
-	if (flags & RAX2_FLAG_BINARYNUM) { // -n
+	if (flags & RAX2_FLAG_BINARYNUM) { // -x
 		ut64 n = r_num_calc (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
@@ -436,7 +436,7 @@ dotherax:
 		}
 		printf ("%" PFMT64d "\n", n);
 		return true;
-	} else if (flags & RAX2_FLAG_BINARYRAW) { // -N
+	} else if (flags & RAX2_FLAG_BINARYRAW) { // -c
 		ut64 n = r_num_calc (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
