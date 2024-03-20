@@ -300,7 +300,7 @@ static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	return 0;
 }
 
-static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_with_tc)(GH(RHeap_MallocState_227) *cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -323,7 +323,7 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
 }
 
-static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_without_tc)(GH(RHeap_MallocState_223) *cmain_arena, MallocState *main_arena) {
 	size_t i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -348,18 +348,18 @@ static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, Mall
 static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena) {
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (tcache) {
-		GH(RHeap_MallocState_tcache) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_tcache));
+		GH(RHeap_MallocState_227) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_227));
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_tcache)));
+		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)));
 		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
-		GH(RHeap_MallocState) *cmain_arena = R_NEW0 (GH(RHeap_MallocState));
+		GH(RHeap_MallocState_223) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_223));
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState)));
+		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)));
 		GH(update_arena_without_tc)(cmain_arena, main_arena);
 	}
 	return true;
@@ -548,6 +548,21 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("}\n\n");
 }
 
+typedef struct GH(expected_arenas) {
+	GH(RHeap_MallocState_227) expected_227;
+	GH(RHeap_MallocState_223) expected_223;
+	GH(RHeap_MallocState_212) expected_212;
+} GH(expected_arenas_s);
+
+static GH(expected_arenas_s) GH (get_expected_main_arena_structures ) (RCore *core, GHT addend) {
+	GH(expected_arenas_s) expected_arenas = {
+			.expected_227 = {.next = addend, .attached_threads = 1},
+			.expected_223 = {.next = addend, .attached_threads = 1},
+			.expected_212 = {.next = addend}
+	};
+	return expected_arenas;
+}
+
 static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc_path) {
 	RBin *bin = core->bin;
 	RBinFile *bf = r_bin_cur (bin);
@@ -565,7 +580,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	}
 
 	// Get .data section to limit search
-	RList* section_list = r_bin_get_sections (bin);
+	RList *section_list = r_bin_get_sections(bin);
 	RListIter *iter;
 	RBinSection *section;
 	RBinSection *data_section = NULL;
@@ -579,32 +594,58 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 		R_LOG_WARN ("get_main_arena_with_relocs: Failed to find .data section in %s", libc_path);
 		return GHT_MAX;
 	}
-	GH(section_content)  libc_data = GH (get_section_content) (core, libc_path, ".data");
+	GH(section_content) libc_data = GH (get_section_content)(core, libc_path, ".data");
 
-	// TODO: switch for version, this is valid for >= 2.27 malloc_state
-	GHT next_field_offset = offsetof(GH(RHeap_MallocState_tcache), next);
-	GHT malloc_state_size = sizeof (GH(RHeap_MallocState_tcache));
+	if (!core->dbg->glibc_version_resolved && !GH (resolve_glibc_version)(core)) {
+		R_LOG_WARN("get_main_arena_offset_with_relocs: glibc_version could not be resolved");
+		return GHT_MAX;
+	}
+	GHT next_field_offset = GHT_MAX;
+	GHT malloc_state_size = GHT_MAX;
+
+	if (core->dbg->glibc_version_d >= 2.27) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_227), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_227));
+	} else if (core->dbg->glibc_version_d >= 2.23) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_223), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_223));
+	} else if (core->dbg->glibc_version_d >= 2.12) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_212), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_212));
+	} else  {
+		R_LOG_WARN ("get_main_arena_offset_with_relocs: cannot handle glibc version %.2f", core->dbg->glibc_version_d);
+		return GHT_MAX;
+	}
 
 	// Iterate over relocations and look for malloc_state structure
 	RRBNode *node;
 	RBinReloc *reloc;
-	RHeap_MallocState_tcache_64 expected;
+
 	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
 		// We only care about relocations in .data section
 		if (reloc->vaddr - next_field_offset < data_section->vaddr ||
 			reloc->vaddr > data_section->vaddr + data_section->size)
 			continue;
-		//eprintf("vaddr: %p addend: %p \n", reloc->vaddr, reloc->addend);
 		// If reloc->addend is the offset of main_arena, then reloc->vaddr should be the offset of main_arena.next
 		if (reloc->vaddr - next_field_offset == reloc->addend)	{
-			//eprintf("candidate found\n");
 			// Candidate found, to be sure compare data with expected malloc_state
 			GHT search_start = reloc->addend - data_section->vaddr;
-			expected.next = reloc->addend;
-			if (memcmp (libc_data.buf + search_start, &expected, malloc_state_size)) {
+			GH(expected_arenas_s) expected_arenas = GH(get_expected_main_arena_structures) (core, reloc->addend);
+			void *expected_p = NULL;
+
+			if (core->dbg->glibc_version_d >= 2.27) {
+				expected_p = (void *)&expected_arenas.expected_227;
+			} else if (core->dbg->glibc_version_d >= 2.23) {
+				expected_p = (void *)&expected_arenas.expected_223;
+			} else if (core->dbg->glibc_version_d >= 2.12) {
+				expected_p = (void *)&expected_arenas.expected_212;
+			} // else checked above
+			if (!memcmp (libc_data.buf + search_start, expected_p, malloc_state_size)) {
 				R_LOG_WARN ("Found main_arena offset with relocations");
 				main_arena = reloc->addend - data_section->vaddr;
 				break;
+			} else {
+				R_LOG_WARN ("get_main_arena_offset_with_relocs: main_arena candidate did not match");
 			}
 		}
 	}
@@ -1293,7 +1334,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 			PRINT_YA ("Tcache thread arena @ ");
 			PRINTF_BA (" 0x%"PFMT64x, (ut64)ta->GH (next));
 			mmap_start = ((ta->GH (next) >> 16) << 16);
-			tcache_start = mmap_start + sizeof (GH (RHeapInfo)) + sizeof (GH (RHeap_MallocState_tcache)) + GH (MMAP_ALIGN);
+			tcache_start = mmap_start + sizeof (GH (RHeapInfo)) + sizeof (GH (RHeap_MallocState_227)) + GH (MMAP_ALIGN);
 
 			if (!GH (update_main_arena) (core, ta->GH (next), ta)) {
 				free (ta);
@@ -1347,10 +1388,10 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
-			tcache_initial_brk = brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
+			tcache_initial_brk = brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_227)) + GH(MMAP_ALIGN);
 			initial_brk =  tcache_initial_brk + offset;
 		} else {
-			initial_brk =  brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState)) + MMAP_OFFSET;
+			initial_brk =  brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_223)) + MMAP_OFFSET;
 		}
 	}
 
