@@ -18,6 +18,9 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 	}
 	state->key_size = keylen;
 	state->key = malloc (keylen);
+	if (state->key == NULL) {
+		return false;
+	}
 	memcpy (state->key, key, keylen);
 	return true;
 }
@@ -27,7 +30,7 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
  */
 
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;//index for input
+	int i;
 	for (i = 0; i < buflen; i++) {
 		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}

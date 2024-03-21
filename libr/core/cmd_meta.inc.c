@@ -605,7 +605,17 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char *newcomment = r_str_trim_head_ro (input + 2);
+		const char *arg = r_str_trim_head_ro (input + 2);
+		const char *newcomment = arg;
+		if (r_str_startswith (arg, "base64:")) {
+			char *s = (char *)sdb_decode (arg + 7, NULL);
+			if (s) {
+				newcomment = s;
+			} else {
+				R_LOG_ERROR ("Invalid base64 string");
+				break;
+			}
+		}
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		char *text;
 		char *nc = strdup (newcomment);
@@ -655,7 +665,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		char *newcomment;
 		const char *arg = input + 2;
 		while (*arg && *arg == ' ') arg++;
-		if (!strncmp (arg, "base64:", 7)) {
+		if (r_str_startswith (arg, "base64:")) {
 			char *s = (char *)sdb_decode (arg + 7, NULL);
 			if (s) {
 				newcomment = s;
