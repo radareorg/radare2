@@ -517,16 +517,13 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			break;
 		}
 		ut64 repeat = 0;
-		ut64 source = 0;
+		st16 source = 0;
 		if (header.source & F_SOURCE_LIST) {
 			repeat = r_buf_read8_at (bin->buf, offset);
 			offset += sizeof (ut8);
 		} else {
 			source = r_buf_read_ble16_at (bin->buf, offset, h->worder);
-			if (source == UT16_MAX) {
-				break;
-			}
-			offset += sizeof (ut16);
+			offset += sizeof (st16);
 		}
 		ut32 ordinal;
 		if (header.target & F_TARGET_ORD16) {
@@ -618,14 +615,19 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			}
 			rel->addend += additive;
 		}
-		if (!repeat) {
-			rel->vaddr = cur_page_offset + source;
-			rel->paddr = cur_section ? cur_section->paddr + source : 0;
+		if (!repeat && source >= 0) {
+			/* Negative source means we already handled the cross-page
+			 * fixup in the previous page, so there's no need to dupe it
+			 */
+			rel->vaddr = cur_page_offset + (st64) source;
+			rel->paddr = cur_section ? cur_section->paddr + (st64) source : 0;
 			r_list_append (l, rel);
 			rel_appended = true;
 		}
 
 		if (header.target & F_TARGET_CHAIN) {
+			// TODO: add tests for this case
+			ut64 source = 0;
 			ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
 			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
 			do {
