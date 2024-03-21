@@ -603,3 +603,5 @@
 !:mime	application/msword
 >546	string	jbjb			Microsoft Word Document 2
 !:mime	application/msword
+
+0	lelong 0x53445352 CODEVIEW_INFO header
