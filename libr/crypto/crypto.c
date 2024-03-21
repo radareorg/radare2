@@ -105,7 +105,7 @@ R_API bool r_crypto_job_set_key(RCryptoJob *cj, const ut8* key, int keylen, int 
 		keylen = strlen ((const char *)key);
 	}
 	if (!cj->h || !cj->h->set_key) {
-		return false;
+		return true;
 	}
 	cj->key_len = keylen;
 	cj->key = calloc (1, cj->key_len);
@@ -222,7 +222,7 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 			pj_ks (pj, "type", "hash");
 			pj_ks (pj, "name", cp->meta.name);
 			switch (cp->type) {
-			case R_CRYPTO_TYPE_HASH:
+			case R_CRYPTO_TYPE_HASHER:
 				pj_ks (pj, "type", "hash");
 				break;
 			case R_CRYPTO_TYPE_ENCRYPT:

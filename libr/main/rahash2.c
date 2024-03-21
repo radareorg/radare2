@@ -4,7 +4,6 @@
 
 #include <r_io.h>
 #include <r_main.h>
-#include <r_hash.h>
 #include <r_util/r_print.h>
 #include <r_crypto.h>
 
@@ -20,6 +19,7 @@ typedef struct {
 	ut64 to;
 	RHashSeed *_s;
 	RHashSeed s;
+	const char *algorithm;
 } RahashOptions;
 
 static void compare_hashes(const RHash *ctx, RahashOptions *ro, const ut8 *compare, int length, int *ret, int rad) {
@@ -364,14 +364,14 @@ static bool is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
-static void print_result(RahashOptions *ro, const char *algo, const ut8 *result, int result_size) {
+static void print_result(RahashOptions *ro, const ut8 *result, int result_size) {
 	int i;
 	switch (ro->mode) {
 	case 'j':
 		{
 			PJ *pj = pj_new ();
 			pj_o (pj);
-			pj_ks (pj, "algo", algo);
+			pj_ks (pj, "algo", ro->algorithm);
 			pj_ks (pj, "mode", ro->direction? "encrypt": "decrypt");
 			pj_ka (pj, "data");
 			for (i = 0; i < result_size; i++) {
@@ -398,8 +398,9 @@ static void print_result(RahashOptions *ro, const char *algo, const ut8 *result,
 	}
 }
 
-// direction: 0 => decrypt, 1 => encrypt
-static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
+	const int direction = ro->direction;
+	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding.
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || ro->s.len > 0) {
@@ -420,7 +421,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, algo, result, result_size);
+					print_result (ro, result, result_size);
 					free (result);
 				}
 			} else {
@@ -438,7 +439,9 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 	return 1;
 }
 
-static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, const ut8 *iv, int ivlen, int mode) {
+	const int direction = ro->direction;
+	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding. aka crypto vs encoder plugins after moving all those hash algos to crypto plugins
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || ro->s.len > 0) {
@@ -470,7 +473,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, algo, result, result_size);
+					print_result (ro, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -490,12 +493,14 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 }
 
 static void add_algo(RList *algos, const char *a) {
+	R_RETURN_IF_FAIL (algos);
 	if (R_STR_ISEMPTY (a)) {
 		return;
 	}
 	RListIter *iter;
 	const char *ua;
 	char *ha = strdup (a);
+	// TODO: Use a set
 	RList *words = r_str_split_list (ha, ",", 0);
 	r_list_foreach (words, iter, ua) {
 		if (!r_list_find (algos, ua, (RListComparator)strcmp)) {
@@ -506,6 +511,16 @@ static void add_algo(RList *algos, const char *a) {
 	free (ha);
 }
 
+static bool check_base_flags(RahashOptions *ro) {
+	const char *algo = ro->algorithm;
+	switch (ro->direction) {
+	case R_CRYPTO_DIR_ENCRYPT:
+	case R_CRYPTO_DIR_DECRYPT:
+		return !strcmp (algo, "base64") || !strcmp (algo, "base91");
+	}
+	return false;
+}
+
 R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
 	int c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
@@ -513,8 +528,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	char *algo = NULL;
 	const char *seed = NULL;
 	bool show_version = false;
-	const char *decrypt = NULL;
-	const char *encrypt = NULL;
 	char *hashstr = NULL;
 	ut8 *iv = NULL;
 	int ivlen = -1;
@@ -534,8 +547,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	bool listplugins = false;
 	int _ret = 0;
 
+	ro->direction = -1;
 	ro->incremental = true;
-// #define ret(x) {_ret=x;printf("%d\n", __LINE__);goto beach;}
 #define ret(x) {_ret=x;goto beach;}
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:X");
@@ -557,8 +570,22 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'S': seed = opt.arg; break;
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
-		case 'D': ro->direction = R_CRYPTO_DIR_DECRYPT; decrypt = opt.arg; break;
-		case 'E': ro->direction = R_CRYPTO_DIR_ENCRYPT; encrypt = opt.arg; break;
+		case 'D':
+			  if (ro->direction != -1) {
+				  R_LOG_ERROR ("Cannot use -D and -E at the same time");
+				  ret (1);
+			  }
+			  ro->direction = R_CRYPTO_DIR_DECRYPT;
+			  ro->algorithm = opt.arg;
+			  break;
+		case 'E':
+			  if (ro->direction != -1) {
+				  R_LOG_ERROR ("Cannot use -D and -E at the same time");
+				  ret (1);
+			  }
+			  ro->direction = R_CRYPTO_DIR_ENCRYPT;
+			  ro->algorithm = opt.arg;
+			  break;
 		case 'L': listplugins = true; break;
 		case 'e': ule = 1; ro->endian = !ro->endian; break;
 		case 'r': rad = 1; break;
@@ -581,11 +608,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		ret (r_main_version_print ("rahash2", rad));
 	}
 
-	algo = r_list_empty (algos) ? strdup ("sha1") : r_str_list_join (algos, ",");
-	if (encrypt && decrypt) {
-		R_LOG_ERROR ("Option -E and -D are incompatible with each other");
-		ret (1);
-	}
 	if (listplugins) {
 		if (rad == 'j' && ro->quiet) {
 			rad = 'J';
@@ -593,19 +615,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		algolist (rad);
 		ret (0);
 	}
+	algo = r_list_empty (algos) ? strdup ("sha1") : r_str_list_join (algos, ",");
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !ro->incremental) {
 			R_LOG_ERROR ("Option -c incompatible with -b and -B options");
 			ret (1);
 		}
-		bool flag = false;
-		if (encrypt) {
-			flag = !strcmp (encrypt, "base64") || !strcmp (encrypt, "base91");
-		} else if (decrypt) {
-			flag = !strcmp (decrypt, "base64") || !strcmp (decrypt, "base91");
-		}
-		if (flag) {
+		if (check_base_flags (ro)) {
 			R_LOG_ERROR ("Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options");
 			ret (1);
 		}
@@ -720,10 +737,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		if (!bytes_read && !hashstr_hex) {
 			hashstr_len = r_str_unescape (nhashstr);
 		}
-		if (encrypt) {
-			ret (encrypt_or_decrypt (ro, encrypt, R_CRYPTO_DIR_ENCRYPT, nhashstr, hashstr_len, iv, ivlen, 0));
-		} else if (decrypt) {
-			ret (encrypt_or_decrypt (ro, decrypt, R_CRYPTO_DIR_DECRYPT, nhashstr, hashstr_len, iv, ivlen, 0));
+		if (ro->direction != -1) {
+			ret (encrypt_or_decrypt (ro, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else {
 			char *str = (char *) nhashstr;
 			int strsz = hashstr_len;
@@ -815,14 +830,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			ret (1);
 		}
 
-		if (encrypt) {// for encrytion when files are provided
-			int rt = encrypt_or_decrypt_file (ro, encrypt, 0, argv[i], iv, ivlen, 0);
-			if (rt == -1) {
-				continue;
-			}
-			ret (rt);
-		} else if (decrypt) {
-			int rt = encrypt_or_decrypt_file (ro, decrypt, 1, argv[i], iv, ivlen, 0);
+		if (ro->direction != -1) {
+			int rt = encrypt_or_decrypt_file (ro, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
 				continue;
 			}

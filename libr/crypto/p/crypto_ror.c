@@ -51,7 +51,7 @@ static bool ror_check(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	if (!cj->flag) {
+	if (cj->flag != R_CRYPTO_DIR_ENCRYPT) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
