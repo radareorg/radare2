@@ -72,7 +72,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
 * [r2yara](https://github.com/radareorg/r2yara) Run Yara from r2 or use r2 primitives from Yara
 * [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
-* [r2sarif](https://github.com/radareorg/radare2-extras/tree/master/sarif/local) Run a Language Model in localhost with Llama inside r2!
+* [r2sarif](https://github.com/radareorg/radare2-extras/tree/master/sarif) Run a Language Model in localhost with Llama inside r2!
 
 ## Usage
 
