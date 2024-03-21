@@ -53,7 +53,7 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 }
 
 static bool rot_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->flag = direction;
+	cj->flag = direction == R_CRYPTO_DIR_ENCRYPT;
 	return rot_init (&cj->rot_key, key, keylen);
 }
 

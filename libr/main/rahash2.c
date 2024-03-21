@@ -364,14 +364,14 @@ static bool is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
-static void print_result(RahashOptions *ro, const char *algo, const ut8 *result, int result_size) {
+static void print_result(RahashOptions *ro, const ut8 *result, int result_size) {
 	int i;
 	switch (ro->mode) {
 	case 'j':
 		{
 			PJ *pj = pj_new ();
 			pj_o (pj);
-			pj_ks (pj, "algo", algo);
+			pj_ks (pj, "algo", ro->algorithm);
 			pj_ks (pj, "mode", ro->direction? "encrypt": "decrypt");
 			pj_ka (pj, "data");
 			for (i = 0; i < result_size; i++) {
@@ -421,7 +421,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, algo, result, result_size);
+					print_result (ro, result, result_size);
 					free (result);
 				}
 			} else {
@@ -473,7 +473,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 				int result_size = 0;
 				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, algo, result, result_size);
+					print_result (ro, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -515,7 +515,6 @@ static bool check_base_flags(RahashOptions *ro) {
 	const char *algo = ro->algorithm;
 	switch (ro->direction) {
 	case R_CRYPTO_DIR_ENCRYPT:
-		return !strcmp (algo, "base64") || !strcmp (algo, "base91");
 	case R_CRYPTO_DIR_DECRYPT:
 		return !strcmp (algo, "base64") || !strcmp (algo, "base91");
 	}
