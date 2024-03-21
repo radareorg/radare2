@@ -63,7 +63,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		return false;
 	}
 	bool use_node = true;
-	if (r_sys_getenv_bool ("R2_TSR2JS")) {
+	if (r_sys_getenv_asbool ("R2_TSR2JS")) {
 		use_node = false;
 	}
 	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
