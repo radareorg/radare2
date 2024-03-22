@@ -377,6 +377,18 @@ R_API int r_esil_fire_interrupt(REsil *esil, ut32 intr_num);
 R_API int r_esil_do_syscall(REsil *esil, ut32 sysc_num);
 R_API void r_esil_handlers_fini(REsil *esil);
 
+// esil_compiler.c
+
+typedef struct {
+	REsil *esil;
+	char *final;
+} REsilCompiler;
+R_API REsilCompiler *r_esil_compiler_new(void);
+R_API void r_esil_compiler_free(REsilCompiler *ec);
+R_API char *r_esil_compiler_tostring(REsilCompiler *ec);
+R_API void r_esil_compiler_parse(REsilCompiler *ec, const char *expr);
+R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
+
 // esil_plugin.c
 R_API void r_esil_plugins_init(REsil *esil);
 R_API void r_esil_plugins_fini(REsil *esil);

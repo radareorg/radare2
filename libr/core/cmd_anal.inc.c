@@ -350,6 +350,7 @@ static RCoreHelpMessage help_msg_aei = {
 static RCoreHelpMessage help_msg_ae = {
 	"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
 	"ae", " [expr]", "evaluate ESIL expression",
+	"ae!", " [file]", "compile esil file into an esil expression",
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
 	"aea", "[f] [count]", "analyse n esil instructions accesses (regs, mem..)",
@@ -8154,6 +8155,22 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 	}
 }
 
+static void esil_compile(RCore *core, const char *input) {
+	const char *file = r_str_trim_head_ro (input);
+	const char *code = r_file_slurp (file, NULL);
+	if (!code) {
+		R_LOG_ERROR ("Cannot open file");
+		return;
+	}
+	REsilCompiler *ec = r_esil_compiler_new ();
+	r_esil_compiler_use (ec, core->anal->esil);
+	r_esil_compiler_parse (ec, code);
+	char *s = r_esil_compiler_tostring (ec);
+	r_cons_printf ("%s\n", s);
+	free (s);
+	r_esil_compiler_free (ec);
+}
+
 static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	REsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -8166,6 +8183,9 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	RAnalOp *op = NULL;
 
 	switch (input[0]) {
+	case '!': // "ae!"
+		esil_compile (core, input + 1);
+		break;
 	case 'v': // "aev"
 		r_core_visual_esil (core, r_str_trim_head_ro (input + 1));
 		break;
