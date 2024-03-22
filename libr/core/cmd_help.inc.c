@@ -1339,7 +1339,7 @@ static int cmd_help(void *data, const char *input) {
 			  {
 				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
 				  char *legend = strchr (str, ',');
-				  RList *llist;
+				  RList *llist = NULL;
 				  if (legend) {
 					  *legend = 0;
 					  r_str_trim (legend + 1);
