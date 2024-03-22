@@ -28,7 +28,7 @@ static void drawSectorLine(char *out, int size, int percent, int ch) {
 static void fillSectorLine(char *out, int size, int percent, int ch) {
 	int i;
 	for (i = 0; i < size; i++) {
-		drawSectorLine (out, 16, percent +i, ch);
+		drawSectorLine (out, size, percent +i, ch);
 	}
 }
 
