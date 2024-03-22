@@ -256,6 +256,14 @@ typedef struct {
 	uint32_t page_size;
 	uint32_t page_starts_count;
 	uint32_t padding;
+	uint64_t value_add;
+} cache_slide5_t;
+
+typedef struct {
+	uint32_t version;
+	uint32_t page_size;
+	uint32_t page_starts_count;
+	uint32_t padding;
 	uint64_t auth_value_add;
 } cache_slide3_t;
 
