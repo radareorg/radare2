@@ -3077,22 +3077,22 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
 		int va_sect = va;
-		ut64 addr;
+		ut64 addr, size;
 
 		if (va && !(section->perm & R_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
 		addr = rva (r->bin, section->paddr, section->vaddr, va_sect);
-
+		size = va ? section->vsize : section->size;
 		if (name && strcmp (section->name, name)) {
 			continue;
 		}
 
-		if (printHere && !(addr <= r->offset && r->offset < (addr + section->size))) {
+		if (printHere && !(addr <= r->offset && r->offset < (addr + size))) {
 			continue;
 		}
 
-		if (at != UT64_MAX && (!section->size || !is_in_range (at, addr, section->size))) {
+		if (at != UT64_MAX && (!size || !is_in_range (at, addr, size))) {
 			continue;
 		}
 
@@ -3160,7 +3160,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				str = r_str_newf ("%s.%s", type, section->name);
 			}
 			r_name_filter (str, R_FLAG_NAME_SIZE);
-			ut64 size = r->io->va? section->vsize: section->size;
+
 			r_flag_set (r->flags, str, addr, size);
 			R_FREE (str);
 

@@ -75,3 +75,11 @@ EXPECT=<<EOF
 ffffffffffffffffffff
 EOF
 RUN
+
+NAME=sections list here bss
+FILE=bins/elf/analysis/main_wrong_sect
+CMDS=iS.@0x00600914~bss~?
+EXPECT=<<EOF
+1
+EOF
+RUN
