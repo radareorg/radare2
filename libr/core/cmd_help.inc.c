@@ -1363,7 +1363,7 @@ static int cmd_help(void *data, const char *input) {
 					  j++;
 				  }
 				  int size = r_config_get_i (core->config, "hex.cols");
-				  r_print_pie (core->print, r_list_length (list), nums, text, size);
+				  r_print_pie (core->print, r_list_length (list), nums, (const char**)text, size);
 				  free (text);
 				  r_list_free (list);
 			//	  r_list_free (llist);
