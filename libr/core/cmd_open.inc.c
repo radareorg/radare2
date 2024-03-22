@@ -1442,6 +1442,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		return;
 	}
 
+	core->dbg->main_arena_resolved = false;
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = core->bin->cur->bo->baddr_shift;
 	int bits = core->rasm->config->bits;
@@ -1512,6 +1513,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		return;
 	}
 
+	core->dbg->main_arena_resolved = false;
 	RList *old_sections = __save_old_sections (core);
 	ut64 old_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	int bits = core->rasm->config->bits;
