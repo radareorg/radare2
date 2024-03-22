@@ -138,3 +138,16 @@ nth paddr        size vaddr        vsize perm type name
 
 EOF
 RUN
+
+NAME=PE: corkami 96workingsections.exe - iS. pa
+FILE=bins/pe/96emptysections.exe
+ARGS=-e io.va=false
+CMDS=<<EOF
+iS.@0x000013ff~sect_0~?
+iS.@0x00001400~sect_0~?
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
