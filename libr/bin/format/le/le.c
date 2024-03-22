@@ -436,16 +436,33 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 					s->paddr = ((ut64)page.offset << pageshift) + pages_start_off;
 				}
 			}
-			s->vsize = h->pagesize;
+			s->vsize = R_MIN (h->pagesize, sec->vsize - page_size_sum);
 			s->vaddr = sec->vaddr + page_size_sum;
 			s->perm = sec->perm;
-			s->size = page.size;
+			s->size = R_MIN (page.size, s->vsize);
 			s->add = true;
 			s->bits = sec->bits;
 			r_list_append (l, s);
 			page_size_sum += s->vsize;
 		}
 		if (entry->page_tbl_entries) {
+			if (page_size_sum < sec->vsize) {
+				RBinSection *s = R_NEW0 (RBinSection);
+				if (!s) {
+					r_bin_section_free (sec);
+					return l;
+				}
+				ut64 remainder_size = sec->vsize - page_size_sum;
+				s->vsize = remainder_size;
+				s->vaddr = sec->vaddr + page_size_sum;
+				s->perm = sec->perm;
+				s->size = 0;
+				s->add = true;
+				s->bits = sec->bits;
+				s->name = r_str_newf ("%s.page.zerofill", sec->name);
+				s->is_data = sec->is_data;
+				r_list_append (l, s);
+			}
 			r_bin_section_free (sec);
 		}
 	}
