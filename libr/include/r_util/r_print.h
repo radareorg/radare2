@@ -283,7 +283,7 @@ R_API void r_print_init_rowoffsets(RPrint *p);
 R_API ut32 r_print_rowoff(RPrint *p, int i);
 R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite);
 R_API int r_print_row_at_off(RPrint *p, ut32 offset);
-R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size);
+R_API int r_print_pie(RPrint *p, int nvalues, ut64 *values, const char **text, int size);
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
 
 // WIP

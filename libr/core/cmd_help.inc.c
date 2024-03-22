@@ -1337,17 +1337,36 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case 'p':
 			  {
-			char *word, *str = strdup (input + 2);
+				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
+				  char *legend = strchr (str, ',');
+				  RList *llist;
+				  if (legend) {
+					  *legend = 0;
+					  r_str_trim (legend + 1);
+					  llist = r_str_split_list (legend + 1, " ", 0);
+				  }
+					  r_str_trim (str);
 				  RList *list = r_str_split_list (str, " ", 0);
 				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
+				  char **text = calloc (sizeof (char *), r_list_length (list));
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
 					nums[i] = r_num_math (core->num, word);
 					i++;
 				  }
+				  int j = 0;
+				  r_list_foreach (llist, iter, word) {
+					  if (j >= i) {
+						  break;
+					  }
+					  text[j] = word;
+					  j++;
+				  }
 				  int size = r_config_get_i (core->config, "hex.cols");
-				  r_print_pie (core->print, nums, r_list_length (list), size);
+				  r_print_pie (core->print, r_list_length (list), nums, text, size);
+				  free (text);
 				  r_list_free (list);
+			//	  r_list_free (llist);
 			  }
 			break;
 		case ' ': {
