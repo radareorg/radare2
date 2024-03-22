@@ -15,7 +15,6 @@ static void drawSectorLine(char *out, int size, int percent, int ch) {
 	int i, x, y;
 	double foo = 0.02;
 	double A = (percent * PI) / 50;
-	int xpad = 10;
 	for (i = (size - 1) / 2; i < (size*2); i++) {
 		x = y = (size - 1) / 2;
 		x += (int)(cos (A) * foo);
