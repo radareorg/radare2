@@ -57,7 +57,7 @@ R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, ut64 *values, const cha
 	for (i = 0; i < 20; i++) {
 		leg[i] = "??";
 	}
-	for (i = 0;i<nvalues;i++) {
+	for (i = 0; i < nvalues;i++) {
 		if (text[i]) {
 			leg[i] = text[i];
 		}
@@ -128,13 +128,13 @@ R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, ut64 *values, const cha
 					if (y % 2) {
 						if (leg[legend_idx]) {
 							if (use_colors) {
-							p->cb_printf ("  %s  "Color_RESET" - %s",
-								bg_colors[legend_idx], leg[legend_idx]);
+								p->cb_printf ("  %s  "Color_RESET" - %s",
+									bg_colors[legend_idx], leg[legend_idx]);
 							} else {
-							p->cb_printf ("  %c%c - %s",
-								'0' + legend_idx, 
-								'0' + legend_idx, 
-								leg[legend_idx]);
+								p->cb_printf ("  %c%c - %s",
+									'0' + legend_idx,
+									'0' + legend_idx,
+									leg[legend_idx]);
 							}
 						}
 						legend_idx++;
