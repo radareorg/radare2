@@ -146,22 +146,19 @@ R_API void r_graph_reset(RGraph *t) {
 		return;
 	}
 	t->nodes->free = (RListFree)r_graph_node_free;
-	t->n_nodes = 0;
+	t->n_nodes = 0; // XXX isnt r_list_length enough?
 	t->n_edges = 0;
 	t->last_index = 0;
 }
 
 R_API RGraphNode *r_graph_add_node(RGraph *t, void *data) {
-	if (!t) {
-		return NULL;
-	}
+	r_return_val_if_fail (t && data, NULL);
 	RGraphNode *n = r_graph_node_new (data);
-	if (!n) {
-		return NULL;
+	if (n) {
+		n->idx = t->last_index++;
+		r_list_append (t->nodes, n);
+		t->n_nodes++; /// istn r_list_length enough?
 	}
-	n->idx = t->last_index++;
-	r_list_append (t->nodes, n);
-	t->n_nodes++;
 	return n;
 }
 

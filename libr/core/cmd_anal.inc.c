@@ -789,6 +789,7 @@ static RCoreHelpMessage help_msg_ag = {
 	"agc", "[format]", "function callgraph",
 	"agC", "[format]", "global callgraph",
 	"agd", "[format] [fcn addr]", "diff graph",
+	"agD", "[format]", "function dom graph",
 	"agf", "[format]", "basic blocks function graph",
 	"agi", "[format]", "imports graph",
 	"agr", "[format]", "references graph",
@@ -12088,10 +12089,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		return;
 	}
 	switch (input[0]) {
+	case 'D': // "agD"-> dom function graph
+		r_core_visual_graph (core, NULL, NULL, 3); // 3 means dom graph
+		break;
 	case 'f': // "agf"
 		switch (input[1]) {
 		case 0: // "agf"
-			r_core_visual_graph (core, NULL, NULL, false);
+			r_core_visual_graph (core, NULL, NULL, 0);
 			break;
 		case 'b': // "agfb" // braile
 			cmd_agfb (core);
