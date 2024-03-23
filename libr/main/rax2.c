@@ -3,7 +3,9 @@
 #define R_LOG_ORIGIN "rax2"
 
 #include <r_main.h>
+#include <r_util/pj.h>
 #include <r_util/r_print.h>
+#include <r_util/r_str.h>
 
 typedef enum {
 	RAX2_FLAG_HEXSTR2RAW = (1 << 0), // -s
@@ -30,11 +32,12 @@ typedef enum {
 	RAX2_FLAG_OCTAL2RAW  = (1 << 21), // -o
 	RAX2_FLAG_IPADDR2NUM = (1 << 22), // -I
 	RAX2_FLAG_NEWLINE    = (1 << 23), // -n
+	RAX2_FLAG_JSONBASES  = (1 << 24), // -j
 } RaxAction;
 
-static bool rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
+static bool rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm, PJ **pj);
 
-static int use_stdin(RNum *num, ut64 *flags, int *fm) {
+static int use_stdin(RNum *num, ut64 *flags, int *fm, PJ **pj) {
 	r_return_val_if_fail (num && flags, -1);
 	if (!flags) {
 		return 0;
@@ -42,7 +45,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	int rc = 0;
 	if (*flags & RAX2_FLAG_SLURPHEX) {
 		char buf[1]= {0};
-		if (!rax (num, buf, 1, 0, flags, fm)) {
+		if (!rax (num, buf, 1, 0, flags, fm, pj)) {
 			rc = 1;
 		}
 	} else {
@@ -52,7 +55,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 			if (!buf) {
 				break;
 			}
-			if (!rax (num, buf, l, 0, flags, fm)) {
+			if (!rax (num, buf, l, 0, flags, fm, pj)) {
 				rc = 1;
 			}
 			free (buf);
@@ -176,6 +179,7 @@ static int help(void) {
 		"  -h      help                 ;  rax2 -h\n"
 		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
 		"  -I      IP address <-> LONG  ;  rax2 -I 3530468537\n"
+		"  -j      json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
@@ -208,7 +212,7 @@ static bool invalid_length(ut64 flags) {
 	return true;
 }
 
-static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm, PJ **pj) {
 	const char *errstr = NULL;
 	ut64 flags = *_flags;
 	ut8 *buf;
@@ -267,10 +271,11 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'i': flags ^= RAX2_FLAG_DUMPCSTR; break;
 			case 'o': flags ^= RAX2_FLAG_OCTAL2RAW; break;
 			case 'I': flags ^= RAX2_FLAG_IPADDR2NUM; break;
+			case 'j': flags ^= RAX2_FLAG_JSONBASES; break;
 			case 'v': return r_main_version_print ("rax2", 0);
 			case '\0':
 				*_flags = flags;
-				return !use_stdin (num, _flags, fm);
+				return !use_stdin (num, _flags, fm, pj);
 			default:
 				/* not as complete as for positive numbers */
 				out_mode = (flags ^ 32)? '0': 'I';
@@ -289,7 +294,7 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		}
 		*_flags = flags;
 		if (last) {
-			return !use_stdin (num, _flags, fm);
+			return !use_stdin (num, _flags, fm, pj);
 		}
 		return true;
 	}
@@ -591,14 +596,73 @@ dotherax:
 		printf ("double  %lf\n", d);
 		printf ("binary  0b%s\n", out);
 
-		/* ternary */
-		r_num_to_ternary (out, n);
-		printf ("ternary 0t%s\n", out);
-
 		// base36
 		char b36str[16];
 		b36_fromnum (b36str, n);
 		printf ("base36  %s\n", b36str);
+
+		/* ternary */
+		r_num_to_ternary (out, n);
+		printf ("ternary 0t%s\n", out);
+
+		return true;
+	} else if (flags & RAX2_FLAG_JSONBASES) {
+		r_strf_buffer (256);
+		char unit[8];
+		char out[128];
+		ut32 n32, s, a;
+		double d;
+		float f;
+		const char *errstr = NULL;
+		ut64 n = r_num_calc (num, str, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
+		if (num->dbz) { // XXX should be done in errstr already
+			R_LOG_ERROR ("division by zero");
+			return false;
+		}
+		n32 = (ut32) (n & UT32_MAX);
+
+		if (!*pj) {
+			*pj = pj_new ();
+			pj_o (*pj);
+		}
+
+		pj_ks (*pj, "int32", r_strf ("%d", (st32)(n & UT32_MAX)));
+		pj_ks (*pj, "uint32", r_strf ("%u", (ut32)n));
+		pj_ks (*pj, "int64", r_strf ("%"PFMT64d, (st64)n));
+		pj_ks (*pj, "uint64", r_strf ("%"PFMT64u, (ut64)n));
+		pj_ks (*pj, "hex", r_strf ("0x%08"PFMT64x, n));
+		pj_ks (*pj, "octal", r_strf ("0%"PFMT64o, n));
+
+		/* decimal, hexa, octal */
+		s = n >> 16 << 12;
+		a = n & 0x0fff;
+		r_num_units (unit, sizeof (unit), n);
+
+		pj_ks (*pj, "unit", unit);
+		pj_ks (*pj, "segment", r_strf ("%04x:%04x", s, a));
+
+		/* binary and floating point */
+		r_str_bits64 (out, n);
+		memcpy (&f, &n32, sizeof (f));
+		memcpy (&d, &n, sizeof (d));
+
+		pj_ks (*pj, "fvalue", r_strf ("%.1lf", num->fvalue));
+		pj_ks (*pj, "float", r_strf ("%ff", f));
+		pj_ks (*pj, "double", r_strf ("%lf", d));
+		pj_ks (*pj, "binary", r_strf ("0b%s", out));
+		char b36str[16];
+		b36_fromnum (b36str, n);
+		pj_ks (*pj, "base36", b36str);
+		r_num_to_ternary (out, n);
+		pj_ks (*pj, "ternary", r_strf ("0t%s", out));
+
+		if (last) {
+			pj_end (*pj);
+		}
 		return true;
 	}
 	if (flags & RAX2_FLAG_BINSTR2HEX) { // -L
@@ -726,15 +790,20 @@ R_API int r_main_rax2(int argc, const char **argv) {
 	} else {
 		RNum *num = r_num_new (NULL, NULL, NULL);
 		ut64 flags = 0;
+		PJ *pj = NULL;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = strdup (argv[i]);
 			if (argv_i) {
 				len = r_str_unescape (argv_i);
-				if (!rax (num, argv_i, len, i == argc - 1, &flags, &fm)) {
+				if (!rax (num, argv_i, len, i == argc - 1, &flags, &fm, &pj)) {
 					rc = 1;
 				}
 				free (argv_i);
 			}
+		}
+		if (pj) {
+			printf ("%s\n", pj_string (pj));
+			pj_free (pj);
 		}
 		r_num_free (num);
 	}

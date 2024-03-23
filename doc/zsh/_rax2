@@ -13,6 +13,7 @@ _rax2() {
   '-F[stdin slurp C hex ;  rax2 -F < shellcode.c]'
   '-h[help              ;  rax2 -h]'
   '-i[dump as C array   ;  rax2 -i < bytes]'
+  '-j[json format output;  rax2 -j 0x1234]'
   '-k[keep base         ;  rax2 -k 33+3 -> 36]'
   '-K[randomart         ;  rax2 -K 0x34 1020304050]'
   '-L[bin -> hex        ;  rax2 -L 1111111]'
