@@ -727,7 +727,10 @@ static RList* relocs(RBinFile *bf) {
 		if (already_inserted) {
 			continue;
 		}
-
+		// TODO: implement this, this stops spam for glibc main_arena resolving
+		if (reloc->type == R_X86_64_TPOFF64) {
+			continue;
+		}
 		RBinReloc *ptr = reloc_convert (eo, reloc, got_addr);
 		if (ptr && ptr->paddr != UT64_MAX) {
 			r_list_append (ret, ptr);
