@@ -35,3 +35,15 @@ SHA512_Constants
 0x00000010: yara0_SHA512_Constants_4 : 22ae28d7
 EOF
 RUN
+
+NAME=yara: versions
+FILE=malloc://1024
+CMDS=<<EOF
+yrv~yara?
+yara version~yara?
+EOF
+EXPECT=<<EOF
+2
+2
+EOF
+RUN
