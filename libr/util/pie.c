@@ -31,25 +31,96 @@ static void fillSectorLine(char *out, int size, int percent, int ch) {
 	}
 }
 
-R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, ut64 *values, const char **text, int size) {
+static void drawPieChart(char *out, int size, int numSlices, int sliceSizes[], const char **text) {
+	int totalDegrees = 0;
+	char sliceChars[] = "0123456789"; // {'*', '+', '=', '-', '#', '%', '&', '$'}; // Characters for different slices
+	int sliceCharCount = sizeof(sliceChars) / sizeof(sliceChars[0]);
+	int RADIUS = size / 2;
+	int x, y, i;
+	// Calculate the start and end angle for each slice
+	int sliceAngles[11]; // max slices is 10
+	sliceAngles[0] = 0; // Starting angle for the first slice
+	for (i = 0; i < numSlices; i++) {
+		totalDegrees += (int)(360.0 * sliceSizes[i] / 100.0);
+		sliceAngles[i+1] = totalDegrees;
+//		printf ("%d\n", totalDegrees);
+	}
+	// if (numSlices < 11 && totalDegrees < 360) {
+	if (totalDegrees < 360) {
+		numSlices++;
+		sliceAngles[numSlices] = 360; //  - totalDegrees;
+	}
+
+	int half = RADIUS;
+#define A out[(x+half) + ((y+half) * (half*2))]
+	// Draw the pie chart
+	for (y = -RADIUS; y <= RADIUS; y++) {
+		for (x = -RADIUS; x <= RADIUS; x++) {
+			double distance = sqrt (x * x + y * y);
+			// Check if the current point is within the circle
+			if (distance < RADIUS) {
+				double angle = atan2(y, x) * 180 / PI;
+				if (angle < 0) {
+					angle += 360;
+				}
+				int sliceIndex = -1;
+				for (i = 0; i < numSlices; i++) {
+					if (angle >= sliceAngles[i] && angle < sliceAngles[i+1]) {
+						sliceIndex = i;
+						break;
+					}
+				}
+				if (sliceIndex != -1) {
+					const char ch = sliceChars[sliceIndex % sliceCharCount];
+					A = ch;
+				//	printf ("%c%c", ch, ch);
+				} else {
+					A = ' ';
+				//	printf ("  "); // Should not happen, but just in case
+				}
+			} else {
+				A = ' ';
+				//printf ("  ");
+			}
+		}
+		// printf ("\n");
+	}
+}
+
+R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, int *values, const char **text, int size) {
+	if (nvalues > 9) {
+		R_LOG_WARN ("Cant render more than 10 portions in a pie chart");
+		nvalues = 9;
+	}
 	ut8 *nv = calloc (nvalues, sizeof (ut8));
 	char *out = calloc (size, size);
+
+	drawPieChart (out, size, nvalues, values, text);
+
 	const bool use_colors = p? p->flags & R_PRINT_FLAGS_COLOR: false;
 	const char *fg_colors[10] = {
 		Color_GREEN,
 		Color_RED,
 		Color_YELLOW,
 		Color_BLUE,
+		Color_WHITE,
 		Color_MAGENTA,
 		Color_CYAN,
+		Color_GREEN,
+		Color_RED,
+		Color_YELLOW,
 	};
 	const char *bg_colors[10] = {
 		Color_BGGREEN,
 		Color_BGRED,
 		Color_BGYELLOW,
 		Color_BGBLUE,
+		Color_BGWHITE,
 		Color_BGMAGENTA,
 		Color_BGCYAN,
+		Color_BGGREEN,
+		Color_BGRED,
+		Color_BGYELLOW,
 	};
 	const char *leg[20] = {0};
 	int i, x, y;
@@ -63,6 +134,7 @@ R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, ut64 *values, const cha
 	}
 	int legend_idx = 0;
 	if (nv && out) {
+#if 0
 		ut64 total = 0;
 		for (i = 0; i < nvalues; i++) {
 			total += values[i];
@@ -110,6 +182,7 @@ R_API int r_print_pie(R_NULLABLE RPrint *p, int nvalues, ut64 *values, const cha
 			drawSectorLine (out, size, nv[i] + amount, ',');
 			amount += nv[i];
 		}
+#endif
 #endif
 
 		/// render
