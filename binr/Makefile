@@ -49,7 +49,8 @@ symstall install-symlink:
 	cd .. && ln -fs "${BTOP}/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	cd .. && rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	-cd .. && ln -fs "${DESTDIR}${BINDIR}/radare2" "${DESTDIR}${BINDIR}/r2"
+	rm -f "${DESTDIR}${BINDIR}/r2"
+	-cd .. && ln -fs "${BTOP}/radare2/radare2" "${DESTDIR}${BINDIR}/r2"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/radare2" "${DESTDIR}${BINDIR}/r2p"
 	-cd .. && ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${DESTDIR}${LIBDIR}/libr2.$(EXT_SO)"
 	-cd .. && cd "${DESTDIR}${LIBDIR}" && \
