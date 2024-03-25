@@ -157,7 +157,7 @@ char *pic_pic18_disassemble(const ut8 *b, int blen, int *opsz) {
 		{
 		ut32 dword_instr = *(ut32 *)b;
 		//I dont even know how the bits are arranged but it works !!!
-		//`the wierdness of little endianess`
+		//`the wierdness of little endianness`
 		if (dword_instr >> 28 != 0xf) {
 			return NULL;
 		}

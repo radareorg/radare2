@@ -2110,7 +2110,7 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		value->address = READ16 (buf);
 		break;
 	case DW_FORM_addrx3:
-		// I need to add 3byte endianess free read here TODO
+		// I need to add 3byte endianness free read here TODO
 		value->kind = DW_AT_KIND_ADDRESS;
 		buf += 3;
 		break;
