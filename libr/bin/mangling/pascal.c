@@ -75,7 +75,11 @@ static void demangle_freepascal_unit(RStrBuf *ds, char *mangled, size_t mangled_
 				r_strbuf_append_n (ds, mangled, end - mangled);
 			}
 		} else {
-			r_strbuf_append_n (ds, mangled, end - mangled);
+			if (end > mangled) {
+				r_strbuf_append_n (ds, mangled, end - mangled);
+			} else {
+				// should never happen
+			}
 		}
 	} else {
 		r_strbuf_append_n (ds, mangled, mangled_len);

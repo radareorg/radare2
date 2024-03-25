@@ -229,12 +229,16 @@ R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
 	r_return_val_if_fail (sb && s, false);
 
-	int l = strlen (s);
+	size_t l = strlen (s);
 	return r_strbuf_append_n (sb, s, l);
 }
 
 R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 	r_return_val_if_fail (sb && s, false);
+	if (l > ST32_MAX) {
+		R_LOG_WARN ("Negative length used in r_strbuf_append_n");
+		return false;
+	}
 
 	if (sb->weakref) {
 		return false;
