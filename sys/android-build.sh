@@ -112,7 +112,6 @@ echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 export CFLAGS="-fPIC -fPIE ${FLAGS}"
 
 if [ "${BUILD}" = 1 ]; then
-	rm -f plugis.cfg
 	if [ -z "${NDK}" ]; then
 		exec sys/android-shell.sh ${NDK_ARCH} $0 $@
 	fi
@@ -129,7 +128,7 @@ if [ "${BUILD}" = 1 ]; then
 		echo ./configure --with-compiler=android \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS}
-		cp -f plugins.android.cfg plugins.cfg
+		cp -f dist/plugins-cfg/plugins.android.cfg plugins.cfg
 		./configure --with-compiler=android --with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
 		${MAKE} -s -j 4 || exit 1
