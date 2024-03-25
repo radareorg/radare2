@@ -18,6 +18,7 @@ endif
 CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
+CFLAGS+=-lm
 LDFLAGS+=-lm
 else
 ifneq (${OSTYPE},linux)
