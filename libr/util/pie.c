@@ -123,7 +123,8 @@ R_API void r_print_pie(R_NULLABLE RPrint *p, int nvalues, int *values, const cha
 				const char ch = out[x + (y * size)];
 				if (use_colors && isdigit (ch)) {
 					const int index = ch - '0';
-					p->cb_printf ("%s··"Color_RESET, fg_colors[index]);
+					// p->cb_printf ("%s··"Color_RESET, fg_colors[index]);
+					p->cb_printf ("%s##"Color_RESET, fg_colors[index]);
 				} else {
 					p->cb_printf ("%c%c", ch, ch);
 				}
