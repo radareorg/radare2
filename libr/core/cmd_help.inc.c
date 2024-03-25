@@ -265,7 +265,7 @@ static RCoreHelpMessage help_msg_question_e = {
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?ef", " text", "echo text with thin ascii art frame around",
 	"?en", " nonl", "echo message without ending newline",
-	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
+	"?ep", " 10 20,ten twe", "render pie chart with portions and  (e hex.cols for size)",
 	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
 	"?et", " msg", "change terminal title",
 	NULL
@@ -1337,17 +1337,36 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case 'p':
 			  {
-			char *word, *str = strdup (input + 2);
+				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
+				  char *legend = strchr (str, ',');
+				  RList *llist = NULL;
+				  if (legend) {
+					  *legend = 0;
+					  r_str_trim (legend + 1);
+					  llist = r_str_split_list (strdup (legend + 1), " ", 0);
+				  }
+				  r_str_trim (str);
 				  RList *list = r_str_split_list (str, " ", 0);
-				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
+				  int *nums = calloc (sizeof (ut64), r_list_length (list));
+				  char **text = calloc (sizeof (char *), r_list_length (list));
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
 					nums[i] = r_num_math (core->num, word);
 					i++;
 				  }
+				  int j = 0;
+				  r_list_foreach (llist, iter, word) {
+					  if (j >= i) {
+						  break;
+					  }
+					  text[j] = word;
+					  j++;
+				  }
 				  int size = r_config_get_i (core->config, "hex.cols");
-				  r_print_pie (core->print, nums, r_list_length (list), size);
+				  r_print_pie (core->print, r_list_length (list), nums, (const char**)text, size);
+				  free (text);
 				  r_list_free (list);
+				  r_list_free (llist);
 			  }
 			break;
 		case ' ': {

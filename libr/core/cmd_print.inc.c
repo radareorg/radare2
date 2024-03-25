@@ -459,12 +459,12 @@ static RCoreHelpMessage help_msg_piE = {
 	"Usage:", "piE[q]", " # print esil of N bytes",
 	"piE", "", "print esil of the instructions found in N bytes",
 	"piEq", "", "same as above but without displaying the instruction address",
-	// "piej", "", "same but in JSON format",
+	// "piEj", "", "same but in JSON format",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_pie = {
-	"Usage:", "pie[fq]", " # print esil of N instructions",
+	"Usage:", "pie[bqf]", " # print esil of N instructions",
 	"pie", "", "print esil of N instructions",
 	"pieb", "", "alias for `pie $Fi`",
 	"pieq", "", "same as above but hiding the offset",
