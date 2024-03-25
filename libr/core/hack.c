@@ -86,6 +86,12 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 			break;
 		default:
 			switch (buf[3]) {
+			case 0x36: // tbz
+				r_core_cmdf (core, "wx 37 @ $$+3");
+				break;
+			case 0x37: // tbnz
+				r_core_cmdf (core, "wx 36 @ $$+3");
+				break;
 			case 0x34: // cbz
 			case 0xb4: // cbz
 				r_core_cmdf (core, "wx 35 @ $$+3");
