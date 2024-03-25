@@ -1018,7 +1018,7 @@ R_API void r_anal_op_fini(RAnalOp *op);
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
-R_API RList *r_anal_op_list_new(void);
+// R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 R_API int r_anal_opasm(RAnal *anal, ut64 pc, const char *s, ut8 *outbuf, int outlen);
 R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op);

@@ -3,6 +3,7 @@
 BUILD=1
 FLAGS=""
 PREFIX="/data/data/org.radare.radare2installer/radare2"
+export PAGER=cat
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -159,7 +160,6 @@ rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
 
 # use busybox style symlinkz
 cd binr/blob
-#${MAKE} || exit 1
 #CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
 ${MAKE} -j4 || exit 1
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1

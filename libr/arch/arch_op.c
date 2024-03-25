@@ -74,6 +74,7 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 }
 
 
+#if 0
 R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
 	if (list) {
@@ -81,6 +82,7 @@ R_API RList *r_anal_op_list_new(void) {
 	}
 	return list;
 }
+#endif
 
 R_API void r_anal_op_init(RAnalOp *op) {
 	if (op) {
