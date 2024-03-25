@@ -112,6 +112,7 @@ echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 export CFLAGS="-fPIC -fPIE ${FLAGS}"
 
 if [ "${BUILD}" = 1 ]; then
+	rm -f plugis.cfg
 	if [ -z "${NDK}" ]; then
 		exec sys/android-shell.sh ${NDK_ARCH} $0 $@
 	fi
