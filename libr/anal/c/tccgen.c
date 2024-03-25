@@ -1046,8 +1046,8 @@ do_decl:
 					}
 					lbit_pos = 0;
 					// FIXME: Here it handles bitfields only in a way
-					// of the same endianess as the host system (this code was compiled for)
-					// It should depend on the endianess of the `asm.arch` instead.
+					// of the same endianness as the host system (this code was compiled for)
+					// It should depend on the endianness of the `asm.arch` instead.
 					if (bit_size >= 0) {
 						bt = type1.t & VT_BTYPE;
 						if (bt != VT_INT8 &&

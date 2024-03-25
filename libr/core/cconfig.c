@@ -3556,7 +3556,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_getter (cfg, "arch.bits", (RConfigCallback)cb_archbits_getter);
 	SETCB ("arch.platform", "", &cb_arch_platform, "define arch platform to use");
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
-	SETDESC (n, "set arch endianess");
+	SETDESC (n, "set arch endianness");
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
 	n = NODECB ("arch.arch", "null", &cb_archarch);
 	SETDESC (n, "select the architecture to use");
