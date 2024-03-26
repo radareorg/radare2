@@ -1912,10 +1912,12 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 }
 
 static size_t __str_ansi_sanitize_length(char const *str) {
+	const signed char str0 = (const signed char)str[0];
+	const signed char str1 = (const signed char)str[1];
 	size_t i = 0;
-	if (str[0] == 0x1b || str[0] == 0x07 || str[0] == 0x05 || str[0] == 0x7f) { // ESC, BEL, ENQ, DEL
+	if (str0 == 0x1b || str0 == 0x07 || str0 == 0x05 || str0 == 0x7f) { // ESC, BEL, ENQ, DEL
 		i++;
-	} else if (str[0] == -0x3e && str[1] >= -0x80 && str[1] <= -0x61) { // C1 control codes U+0080 - U+009F
+	} else if (str0 == -0x3e && str1 >= -0x80 && str1 <= -0x61) { // C1 control codes U+0080 - U+009F
 		i += 2;
 	}
 	return i;
