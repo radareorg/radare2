@@ -1605,21 +1605,21 @@ static bool __vi_mode(void) {
 		/* fall through */
 		case '\n':
 			return true;
-		default:					// escape key
+		default: 				// escape key
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {
-			case 'k':			// up
+			case 'k': 		// up
 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_up ();
 				break;
-			case 'j':			// down
+			case 'j': 		// down
 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_down ();
 				break;
-			case 'l':			// right
+			case 'l': 		// right
 				__move_cursor_right ();
 				break;
-			case 'h':			// left
+			case 'h': 		// left
 				__move_cursor_left ();
 				break;
 			}
@@ -1709,14 +1709,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-#if 0
-		// detect truncation
-		if (I.buffer.length > I.length) {
-			I.buffer.data[0] = 0;
-			I.buffer.length = 0;
-			return NULL;
-		}
-#endif
 		I.buffer.data[I.buffer.length] = '\0';
 		if (cb) {
 			int cbret = cb (user, I.buffer.data);
@@ -1759,15 +1751,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
-		if (I.echo && cons->context->color_mode) {
-			r_cons_clear_line (0);
-		}
 		(void) r_cons_get_size (&rows);
 		switch (*buf) {
-		case 0:	// control-space
+		case 0: // control-space
 			/* ignore atm */
 			break;
-		case 1:	// ^A
+		case 1: // ^A
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
@@ -1776,10 +1765,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			I.buffer.index = 0;
 			break;
-		case 2:	// ^b // emacs left
+		case 2: // ^b // emacs left
 			__move_cursor_left ();
 			break;
-		case 5:	// ^E
+		case 5: // ^E
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
@@ -1804,7 +1793,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.index = I.buffer.length;
 			}
 			break;
-		case 3:	// ^C
+		case 3: // ^C
 			if (I.hud) {
 				I.hud->activate = false;
 				I.hud->current_entry_n = -1;
@@ -1816,7 +1805,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			*I.buffer.data = '\0';
 			gcomp = 0;
 			goto _end;
-		case 4:	// ^D
+		case 4: // ^D
 			if (!I.buffer.data[0]) {/* eof */
 				if (I.echo) {
 					eprintf ("^D\n");
@@ -1833,7 +1822,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
 			break;
-		case 6:	// ^f // emacs right
+		case 6: // ^f // emacs right
 			__move_cursor_right ();
 			break;
 		case 12:// ^L -- right
@@ -1914,11 +1903,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			paste ();
 			yank_flag = 1;
 			break;
-		case 29:	// ^^ - rotate kill ring
+		case 29: // ^^ - rotate kill ring
 			rotate_kill_ring ();
 			yank_flag = enable_yank_pop? 1: 0;
 			break;
-		case 20:	// ^t Kill from point to the end of the current word,
+		case 20: // ^t Kill from point to the end of the current word,
 			kill_word (MINOR_BREAK, 'w');
 			break;
 		case 15:// ^o kill backward
@@ -1978,10 +1967,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			buf[0] = r_cons_readchar_timeout (50);
 #endif
 			switch (buf[0]) {
-			case 127:	// alt+bkspace
+			case 127: // alt+bkspace
 				backward_kill_word (MINOR_BREAK);
 				break;
-			case -1:	// escape key, goto vi mode
+			case -1: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
@@ -1995,10 +1984,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					selection_widget_erase ();
 				}
 				break;
-			case 1:	// begin
+			case 1: // begin
 				I.buffer.index = 0;
 				break;
-			case 5:	// end
+			case 5: // end
 				I.buffer.index = I.buffer.length;
 				break;
 			case 'B':
@@ -2047,7 +2036,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 				if (buf[0] == '[') {	// [
 					switch (buf[1]) {
-					case '3':	// supr or mouse click
+					case '3': // supr or mouse click
 						__delete_current_char ();
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
@@ -2073,7 +2062,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						break;
-					case '5':	// pag up
+					case '5': // pag up
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
 						}
@@ -2088,7 +2077,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						}
 						break;
-					case '6':	// pag down
+					case '6': // pag down
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
 						}
@@ -2103,7 +2092,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						}
 						break;
-					case '9':	// handle mouse wheel
+					case '9': // handle mouse wheel
 						key = r_cons_readchar ();
 						cons->mouse_event = 1;
 						if (key == '6') {	// up
@@ -2118,7 +2107,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						while (r_cons_readchar () != 'M') {}
 						break;
 					/* arrows */
-					case 'A':	// up arrow
+					case 'A': // up arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n > 0) {
 								I.hud->top_entry_n--;
@@ -2136,7 +2125,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						break;
-					case 'B':	// down arrow
+					case 'B': // down arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n++;
@@ -2156,13 +2145,13 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						break;
-					case 'C':	// right arrow
+					case 'C': // right arrow
 						__move_cursor_right ();
 						break;
-					case 'D':	// left arrow
+					case 'D': // left arrow
 						__move_cursor_left ();
 						break;
-					case 0x31:	// control + arrow
+					case 0x31: // control + arrow
 						if (I.vtmode == 2) {
 							ch = r_cons_readchar ();
 							if (ch == 0x7e) {	// HOME in screen/tmux
@@ -2218,10 +2207,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						r_cons_set_raw (true);
 						break;
-					case 0x37:	// HOME xrvt-unicode
+					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar ();
 						break;
-					case 0x48:	// HOME
+					case 0x48: // HOME
 						if (I.sel_widget) {
 							selection_widget_up (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
@@ -2229,10 +2218,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						I.buffer.index = 0;
 						break;
-					case 0x34:	// END
-					case 0x38:	// END xrvt-unicode
+					case 0x34: // END
+					case 0x38: // END xrvt-unicode
 						r_cons_readchar ();
-					case 0x46:	// END
+					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
@@ -2252,7 +2241,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			__delete_prev_char ();
 			break;
-		case 9:	// TAB tab
+		case 9: // TAB tab
 			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
 				strcpy (I.buffer.data + I.buffer.length, " ");
 				I.buffer.length++;
