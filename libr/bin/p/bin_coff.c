@@ -355,7 +355,7 @@ static RList *sections(RBinFile *bf) {
 	ut32 f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
 	if (f_nscns < 1) {
 		// return NULL;
-		f_nscns &= 0xff;
+		f_nscns &= 0xffff;
 	}
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < f_nscns; i++) {
