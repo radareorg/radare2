@@ -463,14 +463,14 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 		return true;
 	}
 
-	if (obj->type != COFF_TYPE_BIGOBJ) {
+	if (obj->type != COFF_TYPE_BIGOBJ && f_nsyms >= 0xffff) {
 		// too much symbols, probably not allocatable
 		return false;
 	}
 #if 0
 	if (ST32_MUL_OVFCHK (symbol_size, f_nsyms)) {
 		R_LOG_WARN ("Dimming f_nsyms count because is poluted or too large");
-		f_nsyms &= 0xff;
+//		f_nsyms &= 0xff;
 		return false;
 	}
 #endif
