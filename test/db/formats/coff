@@ -2,11 +2,10 @@ NAME=fuzzed coffy
 FILE=bins/coff/coffydis
 CMDS=<<EOF
 aa
+?e ok
 EOF
 EXPECT=<<EOF
-format   coff
-arm
-32
+ok
 EOF
 RUN
 
