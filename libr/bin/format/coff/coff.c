@@ -92,13 +92,16 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	int len = 0;
 	ut32 offset = 0; // offset into the string table.
 
-	union {
+	typedef union {
 		char name[8];
 		struct {
 			ut32 zero;
 			ut32 offset;
 		};
-	} *p = ptr;
+	} NameOff;
+	NameOff no;
+	memcpy (&no, ptr, sizeof (no));
+	NameOff *p = &no;
 	if (!ptr) {
 		return NULL;
 	}
