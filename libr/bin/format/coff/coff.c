@@ -123,15 +123,29 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	}
 
 	// Calculate the actual pointer to the symbol/section name we're interested in.
-	ut64 name_ptr;
+	st64 name_ptr;
 	if (obj->type == COFF_TYPE_BIGOBJ) {
-		name_ptr = obj->bigobj_hdr.f_symptr + (obj->bigobj_hdr.f_nsyms * sizeof (struct coff_bigobj_symbol) + offset);
+		ut32 f_nsyms = obj->bigobj_hdr.f_nsyms;
+		if (f_nsyms < 1 || f_nsyms > UT24_MAX) {
+		//	R_LOG_WARN ("Invalid amount of big fsyms %d", f_nsyms);
+		//	f_nsyms &= 0xff;
+		//	return NULL;
+		}
+		name_ptr = obj->bigobj_hdr.f_symptr + (f_nsyms * sizeof (struct coff_bigobj_symbol) + offset);
 	} else {
-		name_ptr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + offset);
+		ut32 f_nsyms = obj->hdr.f_nsyms;
+		if (f_nsyms < 1 || f_nsyms > UT24_MAX) {
+		//	R_LOG_WARN ("Invalid amount of fsyms %d", f_nsyms);
+		//	f_nsyms &= 0xff;
+		//	return NULL;
+		}
+		name_ptr = obj->hdr.f_symptr + (f_nsyms * sizeof (struct coff_symbol) + offset);
 	}
-	if (name_ptr > obj->size) {
+#if 0
+	if (name_ptr < 0 || name_ptr >= obj->size) {
 		return NULL;
 	}
+#endif
 	len = r_buf_read_at (obj->b, name_ptr, (ut8 *)n, sizeof (n));
 	if (len < 1) {
 		return NULL;
@@ -154,7 +168,11 @@ static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, int symbol_index)
 		n_value = obj->symbols[symbol_index].n_value;
 		f_nscns = obj->hdr.f_nscns;
 	}
-
+#if 0
+	if (n_scnum < 1 || n_scnum > UT16_MAX) {
+		return 0;
+	}
+#endif
 	if (n_scnum < 1 || n_scnum > f_nscns) {
 		return 0;
 	}
@@ -233,7 +251,11 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 	}
 
 	int i;
-
+#if 0
+	if (symbol_count < 1 || symbol_count > UT16_MAX) {
+		return false;
+	}
+#endif
 	for (i = 0; i < symbol_count; i++) {
 		const char *name = (const char *)symbols + (i * symbol_size);
 		if ((!strcmp (name, "_start") || !strcmp (name, "start")) &&
@@ -371,7 +393,8 @@ static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 #endif
 
 static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
-	int ret, size, f_nscns;
+	int ret, size;
+	ut32 f_nscns;
 
 	ut64 offset = 0;
 	ut16 f_magic;
@@ -518,6 +541,21 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 
 static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 	int f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
+#if 0
+	if (f_nscns < 1) {
+		R_LOG_WARN ("Invalid amount of f_nscns %d", f_nscns);
+		return true;
+	}
+	if (f_nscns > UT16_MAX) {
+		R_LOG_WARN ("Invalid amount of f_nscns %d", f_nscns);
+		return true;
+	}
+	if (ST32_MUL_OVFCHK (sizeof (struct coff_scn_hdr), f_nscns)) {
+		R_LOG_WARN ("Dimming f_nscns count because is poluted or too large");
+		f_nscns &= 0xff;
+		return false;
+	}
+#endif
 	obj->scn_va = R_NEWS (ut64, f_nscns);
 	if (!obj->scn_va) {
 		return false;
