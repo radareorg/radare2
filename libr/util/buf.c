@@ -565,6 +565,7 @@ static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	return res;
 }
 
+// TODO: add r_buf_fnread or nfread for safety reasons. callers never know what they are doing
 R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	// XXX: we assume the caller knows what he's doing
