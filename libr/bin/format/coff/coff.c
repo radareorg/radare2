@@ -382,6 +382,16 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 		f_nscns = obj->hdr.f_nscns;
 		f_magic = obj->hdr.f_magic;
 	}
+	if (ST32_MUL_OVFCHK (sizeof (struct coff_scn_hdr), f_nscns)) {
+	// if ((st32)f_nscns < 1 || f_nscns > UT16_MAX)
+		R_LOG_WARN ("Dimming f_nscns count because is poluted or too large");
+		f_nscns &= 0xff;
+		if (obj->type == COFF_TYPE_BIGOBJ) {
+			obj->bigobj_hdr.f_nscns = f_nscns;
+		} else {
+			obj->hdr.f_nscns = f_nscns;
+		}
+	}
 
 	if (f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
