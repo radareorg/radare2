@@ -3,6 +3,8 @@
 # find
 cd "$(dirname $0)"/..
 pwd
+export PAGER=cat
+unset LINK
 
 if [ "${SHELL}" = "/data/data/com.termux/files/usr/bin/bash" ]; then
     echo "Termux environment detected. Installing necessary packages"  

@@ -1,6 +1,7 @@
 #!/bin/sh
 
 OSNAME=$(uname)
+unset LINK
 
 . `dirname $0`/make-jobs.inc.sh
 

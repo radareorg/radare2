@@ -2,6 +2,7 @@
 
 cd "$(dirname $0)"/..
 pwd
+unset LINK
 
 if [ -z "${PREFIX}" ]; then
 	echo "PREFIX env var not set, are you running this script from Termux?"
