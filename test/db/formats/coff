@@ -1,3 +1,15 @@
+NAME=fuzzed coffy
+FILE=bins/coff/coffydis
+CMDS=<<EOF
+aa
+EOF
+EXPECT=<<EOF
+format   coff
+arm
+32
+EOF
+RUN
+
 NAME=arm coff
 FILE=bins/coff/arm.obj
 CMDS=<<EOF
