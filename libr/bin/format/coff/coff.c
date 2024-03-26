@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2024 pancake, inisider */
 
 #include <r_util.h>
 #include "coff.h"
@@ -105,7 +105,8 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 
 	if (p->zero && *p->name != '/') {
 		return r_str_ndup (p->name, 8);
-	} else if (*p->name == '/') {
+	}
+	if (*p->name == '/') {
 		char *offset_str = (p->name + 1);
 		if (*offset_str == '/') {
 			r_coff_decode_base64 (p->name + 2, 6, &offset);
@@ -451,7 +452,7 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
-	int ret, size;
+	int ret;
 	ut32 f_symptr = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_symptr: obj->hdr.f_symptr;
 	ut32 f_nsyms = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nsyms: obj->hdr.f_nsyms;
 	ut64 offset = f_symptr;
@@ -462,10 +463,18 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 		return true;
 	}
 
-	if (obj->type != COFF_TYPE_BIGOBJ && f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
+	if (obj->type != COFF_TYPE_BIGOBJ) {
+		// too much symbols, probably not allocatable
 		return false;
 	}
-	size = f_nsyms * symbol_size;
+#if 0
+	if (ST32_MUL_OVFCHK (symbol_size, f_nsyms)) {
+		R_LOG_WARN ("Dimming f_nsyms count because is poluted or too large");
+		f_nsyms &= 0xff;
+		return false;
+	}
+#endif
+	int size = f_nsyms * symbol_size;
 	if (size < 0 ||
 		size > obj->size ||
 		offset > obj->size ||
@@ -511,9 +520,7 @@ static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
-	if (!obj || !buf) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (obj && buf, false);
 	obj->b = r_buf_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
