@@ -93,7 +93,7 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	ut32 offset = 0; // offset into the string table.
 
 	typedef union {
-		char name[8];
+		char name[9];
 		struct {
 			ut32 zero;
 			ut32 offset;
@@ -111,9 +111,11 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	}
 	if (*p->name == '/') {
 		char *offset_str = (p->name + 1);
+		no.name[8] = 0;
 		if (*offset_str == '/') {
 			r_coff_decode_base64 (p->name + 2, 6, &offset);
 		} else {
+			// ensure null termination
 			offset = atoi (offset_str);
 		}
 	} else {
@@ -404,7 +406,9 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", f_nscns);
+	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs,
+			obj->endian? "8c6I2S1I": "8c6i2s1i", f_nscns);
+	// 8 + (6*4) + (2*2) + (4) = 40
 	if (ret != size) {
 		R_FREE (obj->scn_hdrs);
 		return false;
