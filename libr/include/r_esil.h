@@ -381,12 +381,15 @@ R_API void r_esil_handlers_fini(REsil *esil);
 
 typedef struct {
 	REsil *esil;
-	char *final;
+	char *str;
+	void *priv;
 } REsilCompiler;
+
 R_API REsilCompiler *r_esil_compiler_new(void);
 R_API void r_esil_compiler_free(REsilCompiler *ec);
 R_API char *r_esil_compiler_tostring(REsilCompiler *ec);
-R_API void r_esil_compiler_parse(REsilCompiler *ec, const char *expr);
+R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr);
+R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr);
 R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
 
 // esil_plugin.c

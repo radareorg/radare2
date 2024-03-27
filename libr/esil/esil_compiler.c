@@ -18,21 +18,9 @@ typedef struct {
 	int line;
 } ParseState;
 
-R_API REsilCompiler *r_esil_compiler_new(void) {
-	REsilCompiler *ec = R_NEW0 (REsilCompiler);
-	return ec;
-}
-
-R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil) {
-	R_RETURN_IF_FAIL (ec);
-	ec->esil = esil;
-}
-
-static ParseState *ps_new(REsilCompiler *ec, const char *expr) {
+static ParseState *ps_new(REsilCompiler *ec) {
 	ParseState *ps = R_NEW0 (ParseState);
 	ps->esil = ec->esil;
-	ps->cur = expr;
-	ps->tok = expr;
 	ps->available = true;
 	ps->db = sdb_new0 ();
 	ps->sb = r_list_newf (free);
@@ -41,11 +29,30 @@ static ParseState *ps_new(REsilCompiler *ec, const char *expr) {
 	return ps;
 }
 
+static void ps_init(ParseState *ps, const char *expr) {
+	ps->cur = expr;
+	ps->tok = expr;
+}
+
 static void ps_free(ParseState *ps) {
 	sdb_free (ps->db);
 	r_list_free (ps->program);
 	r_list_free (ps->sb);
 	free (ps);
+}
+
+/////////////
+
+R_API REsilCompiler *r_esil_compiler_new(void) {
+	REsilCompiler *ec = R_NEW0 (REsilCompiler);
+	ParseState *ps = ps_new (ec);
+	ec->priv = (void *)ps;
+	return ec;
+}
+
+R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil) {
+	R_RETURN_IF_FAIL (ec);
+	ec->esil = esil;
 }
 
 static char peek(ParseState *ps) {
@@ -150,12 +157,12 @@ static void sep(ParseState *ps) {
 				}
 			}
 			if (uses_token) {
+				r_str_trim (s);
 				char *resolve = sdb_get (ps->db, s, 0);
 				RList *target = ps->deftoken? ps->sb: ps->program;
 				if (resolve) {
 					r_list_append (target, resolve);
 				} else {
-					r_str_trim (s);
 					checkword (ps, s);
 					r_list_append (target, strdup (s));
 				}
@@ -167,9 +174,20 @@ static void sep(ParseState *ps) {
 	ps->tok = ps->cur;
 }
 
-R_API void r_esil_compiler_parse(REsilCompiler *ec, const char *expr) {
-	ParseState *ps = ps_new (ec, expr);
-	R_RETURN_IF_FAIL (ec);
+R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr) {
+	// TODO
+	// parse esil expression and return an esil source
+	// 1. replace commas with spaces
+	// 2. check every word on every sub exression
+	// 3. if that matches then prepend the token definition source with comments
+	// 4. and replace subexpression with token name
+	return NULL;
+}
+
+R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr) {
+	R_RETURN_VAL_IF_FAIL (ec && expr, false);
+	ParseState *ps = ec->priv;
+	ps_init (ps, expr);
 	R_LOG_DEBUG ("PARSE '%s'", expr);
 	// parse a space separated list of tokens
 	for (;ps->available && !ps->error;) {
@@ -183,16 +201,18 @@ R_API void r_esil_compiler_parse(REsilCompiler *ec, const char *expr) {
 			break;
 		}
 	}
-	free (ec->final);
-	ec->final = r_str_list_join (ps->program, ",");
-	ps_free (ps);
+	free (ec->str);
+	ec->str = r_str_list_join (ps->program, ",");
+	return !ps->error;
 }
 
 R_API char *r_esil_compiler_tostring(REsilCompiler *ec) {
-	return ec->final;
+	return ec->str;
 }
 
 R_API void r_esil_compiler_free(REsilCompiler *ec) {
+	ParseState *ps = ec->priv;
+	ps_free (ps);
 	free (ec);
 }
 
