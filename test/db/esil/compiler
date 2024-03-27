@@ -1,0 +1,10 @@
+NAME=compiler
+FILE=--
+CMDS=<<EOF
+ae!bins/other/sample.esil
+EOF
+EXPECT=<<EOF
+0x8000,1,0x8000,1,[2],+,SWAP,=[2],POP
+EOF
+RUN
+
