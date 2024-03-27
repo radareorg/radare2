@@ -1,7 +1,7 @@
 use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
 
-esil_plugins = [ 'dummy' ]
+esil_plugins = [ 'null', 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null' ]

@@ -8,7 +8,8 @@ if [ "$1" = "--help" ]; then
 fi
 
 if [ "$1" = "--meson" ]; then
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+	[ "`uname`" != Darwin ] && export CFLAGS="-static" LDFLAGS="-static" 
+	meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
 	exit $?
 fi
