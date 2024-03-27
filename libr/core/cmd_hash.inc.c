@@ -356,7 +356,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		R_LOG_ERROR ("hashbang disabled in sandbox mode");
 		return false;
 	}
-	if (r_str_endswith (input, "?")) {
+	if (!strchr (input, ' ') && r_str_endswith (input, "?")) {
 		char *ex = strchr (input, '!');
 		if (ex) {
 			char *name = r_str_ndup (ex + 1, strlen (ex) - 2);
