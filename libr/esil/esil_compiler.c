@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
 #include <r_esil.h>
+#include <r_anal.h>
 
 typedef struct {
 	REsil *esil;
@@ -68,6 +69,34 @@ static bool is_invalid_token(const char *token) {
 	return false;
 }
 
+static bool checkword(ParseState *ps, const char *s) {
+	if (*s && ps->esil) {
+		if (*s == '$' || isdigit (*s)) {
+			// internal flag or number
+		} else {
+			RAnal *anal = ps->esil->anal;
+			// check if its a valid esil keyword
+			REsilOp *eop = ht_pp_find (ps->esil->ops, s, NULL);
+			if (eop) {
+			} else {
+				RRegItem *ri = r_reg_get (anal->reg, s, -1);
+				if (ri) {
+
+				} else {
+					if (islower (*s)) {
+						R_LOG_ERROR ("Invalid register name '%s' at line %d", s, ps->line);
+					} else {
+						R_LOG_ERROR ("Invalid operation '%s' at line %d", s, ps->line);
+					}
+					ps->error = true;
+				}
+			}
+			// must be a valid register name for the currnet arch
+		}
+	}
+	return !ps->error;
+}
+
 static void sep(ParseState *ps) {
 	int toklen = ps->cur - ps->tok - 1;
 	char *s = r_str_ndup (ps->tok, toklen);
@@ -98,40 +127,37 @@ static void sep(ParseState *ps) {
 		if (is_invalid_token (s)) {
 			R_LOG_ERROR ("invalid token '%s' at line %d", s, ps->line);
 			ps->error = true;
-		}
-		if (ps->deftoken == 1) {
+		} else if (ps->deftoken == 1) {
 			// allocate new token
 			free (ps->token);
 			ps->token = strdup (s);
 			ps->deftoken = 2;
 		} else if (ps->comment) {
 			// do nothing
-		} else {
-			char *resolve = sdb_get (ps->db, s, 0);
-			if (ps->deftoken) {
-				char *token = resolve? resolve: strdup (s);
-				if (*token) {
-					r_list_append (ps->sb, token);
-				} else {
-					free (token);
+		} else if (*s) {
+			bool uses_token = true;
+			if (!ps->deftoken) {
+				if (!strcmp (s, "{DUP2}")) {
+					uses_token = false;
+					char *a = r_list_pop (ps->program);
+					char *b = r_list_pop (ps->program);
+					r_list_push (ps->program, strdup (a));
+					r_list_push (ps->program, strdup (b));
+					r_list_push (ps->program, strdup (a));
+					r_list_push (ps->program, strdup (b));
+					free (a);
+					free (b);
 				}
-			} else {
+			}
+			if (uses_token) {
+				char *resolve = sdb_get (ps->db, s, 0);
+				RList *target = ps->deftoken? ps->sb: ps->program;
 				if (resolve) {
-					r_str_trim (resolve);
-					r_list_append (ps->program, resolve);
+					r_list_append (target, resolve);
 				} else {
-					if (ps->esil && isupper (*s)) {
-						// check if its a valid esil keyword
-						REsilOp *eop = ht_pp_find (ps->esil->ops, s, NULL);
-						if (eop) {
-						} else {
-							R_LOG_WARN ("Invalid operation '%s' at line %d", s, ps->line);
-						}
-					}
 					r_str_trim (s);
-					if (*s) {
-						r_list_append (ps->program, strdup (s));
-					}
+					checkword (ps, s);
+					r_list_append (target, strdup (s));
 				}
 			}
 		}
