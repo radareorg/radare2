@@ -2924,6 +2924,16 @@ static bool esil_dup(REsil *esil) {
 	return false;
 }
 
+static bool esil_over(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	char *a = r_esil_pop (esil);
+	char *b = r_esil_pop (esil);
+	r_esil_push (esil, b);
+	r_esil_push (esil, a);
+	r_esil_push (esil, b);
+	return true;
+}
+
 static bool esil_swap(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	const int stackptr = esil->stackptr;
@@ -3952,6 +3962,7 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("BREAK", esil_break, 0, 0, OT_CTR);
 	OP ("CLEAR", esil_clear, 0, 0, OT_UNK);
 	OP ("DUP", esil_dup, 2, 1, OT_UNK);
+	OP ("OVER", esil_over, 2, 3, OT_UNK);
 	OP ("NUM", esil_num, 1, 1, OT_UNK);
 	OP ("SWAP", esil_swap, 2, 2, OT_UNK);
 	OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
