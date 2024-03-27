@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 pancake */
+/* radare - LGPL - Copyright 2020-2024 pancake */
 
 #include <r_lib.h>
 #include <r_core.h>
@@ -15,6 +15,7 @@ typedef struct {
 	R_BORROW JSContext *ctx;
 	JSValue call_func;
 } QjsContext;
+#define QJS_CORE_MAGIC 0x07534617
 
 typedef struct qjs_core_plugin {
 	char *name;
@@ -57,6 +58,7 @@ R_VEC_TYPE_WITH_FINI (RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
 R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
 
 typedef struct qjs_plugin_manager_t {
+	ut32 magic;
 	R_BORROW RCore *core;
 	R_BORROW JSRuntime *rt;
 	QjsContext default_ctx; // context for running normal JS code
@@ -65,6 +67,7 @@ typedef struct qjs_plugin_manager_t {
 	RVecIoPlugin io_plugins;
 } QjsPluginManager;
 
+static QjsPluginManager *Gpm = NULL;
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
@@ -796,6 +799,8 @@ static bool init(RLangSession *ls) {
 		JS_FreeRuntime (rt);
 		return false;
 	}
+	Gpm = pm;
+	pm->magic = QJS_CORE_MAGIC;
 	RCore *core = ls->lang->user;
 	plugin_manager_init (pm, core, rt);
 
