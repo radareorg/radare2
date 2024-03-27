@@ -386,6 +386,7 @@ typedef struct {
 } REsilCompiler;
 
 R_API REsilCompiler *r_esil_compiler_new(void);
+R_API void r_esil_compiler_reset(REsilCompiler *ec);
 R_API void r_esil_compiler_free(REsilCompiler *ec);
 R_API char *r_esil_compiler_tostring(REsilCompiler *ec);
 R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr);

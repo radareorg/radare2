@@ -8167,6 +8167,11 @@ static void esil_compile(RCore *core, const char *input) {
 	r_esil_compiler_parse (ec, code);
 	char *s = r_esil_compiler_tostring (ec);
 	r_cons_printf ("%s\n", s);
+#if 0
+	char *us = r_esil_compiler_unparse (ec, s);
+	r_cons_printf ("(((%s)))\n", us);
+	free (us);
+#endif
 	free (s);
 	r_esil_compiler_free (ec);
 }

@@ -50,6 +50,12 @@ R_API REsilCompiler *r_esil_compiler_new(void) {
 	return ec;
 }
 
+R_API void r_esil_compiler_reset(REsilCompiler *ec) {
+	R_RETURN_IF_FAIL (ec);
+	ps_free (ec->priv);
+	ec->priv = ps_new (ec);
+}
+
 R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil) {
 	R_RETURN_IF_FAIL (ec);
 	ec->esil = esil;
@@ -57,23 +63,14 @@ R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil) {
 
 static char peek(ParseState *ps) {
 	char ch = ps->cur[0];
-	if (ch == 0) {
-		ps->available = false;
-	}
+	ps->available = (ch != 0);
 	ps->cur++;
 	return ch;
 }
 
-static bool is_invalid_token(const char *token) {
+static inline bool is_invalid_token(const char *token) {
 	const char t0 = *token;
-	switch (t0) {
-	case '(':
-	case ')':
-	case ':':
-	case ';':
-		return true;
-	}
-	return false;
+	return t0 && strchr ("():;", t0);
 }
 
 static bool checkword(ParseState *ps, const char *s) {
@@ -88,13 +85,10 @@ static bool checkword(ParseState *ps, const char *s) {
 			} else {
 				RRegItem *ri = r_reg_get (anal->reg, s, -1);
 				if (ri) {
-
+					r_unref (ri);
 				} else {
-					if (islower (*s)) {
-						R_LOG_ERROR ("Invalid register name '%s' at line %d", s, ps->line);
-					} else {
-						R_LOG_ERROR ("Invalid operation '%s' at line %d", s, ps->line);
-					}
+					const char *type = islower (*s)? "register": "operation";
+					R_LOG_ERROR ("Invalid %s '%s' at line %d", type, s, ps->line);
 					ps->error = true;
 				}
 			}
@@ -175,6 +169,8 @@ static void sep(ParseState *ps) {
 }
 
 R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr) {
+	ParseState *ps = ec->priv;
+	sdb_query (ps->db, "*");
 	// TODO
 	// parse esil expression and return an esil source
 	// 1. replace commas with spaces
@@ -190,10 +186,11 @@ R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr) {
 	ps_init (ps, expr);
 	R_LOG_DEBUG ("PARSE '%s'", expr);
 	// parse a space separated list of tokens
-	for (;ps->available && !ps->error;) {
+	for (; ps->available && !ps->error; ) {
 		switch (peek (ps)) {
 		case '\n':
 			ps->line ++;
+			// passthrough
 		case 0:
 		case '\t':
 		case ' ':
@@ -207,13 +204,16 @@ R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr) {
 }
 
 R_API char *r_esil_compiler_tostring(REsilCompiler *ec) {
+	R_RETURN_VAL_IF_FAIL (ec, NULL);
 	return ec->str;
 }
 
 R_API void r_esil_compiler_free(REsilCompiler *ec) {
-	ParseState *ps = ec->priv;
-	ps_free (ps);
-	free (ec);
+	if (ec) {
+		ParseState *ps = ec->priv;
+		ps_free (ps);
+		free (ec);
+	}
 }
 
 #if 0
