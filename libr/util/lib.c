@@ -200,7 +200,7 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
 	if (h) {
 		if (h->constructor) {
-			R_LOG_DEBUG ("PLUGIN LOADED %p fcn %p", h, h->constructor);
+			R_LOG_DEBUG ("PLUGIN %s LOADED %p fcn %p", h->desc, h, h->constructor);
 			return h->constructor (plugin, h->user, symbol->data);
 		}
 		R_LOG_DEBUG ("Cannot find plugin constructor");
