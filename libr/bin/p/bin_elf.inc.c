@@ -1208,7 +1208,7 @@ static RList* fields(RBinFile *bf) {
 		return ret;
 	}
 	ut64 addr = 0;
-	ROW ("ELF", 4, r_buf_read_ble32_at (bf->buf, addr, be), "x", NULL);
+	ROW ("ELF", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 	addr += 0x10;
 	ROW ("Type", 2, r_buf_read_ble16_at (bf->buf, addr, be), "w", NULL);
 	addr += 0x2;
