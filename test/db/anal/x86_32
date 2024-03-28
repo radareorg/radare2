@@ -2652,6 +2652,16 @@ ifunc_89210
 ifunc_8a9d0
 ifunc_89840
 ifunc_8a6c0
+0x00000038
+0x00000030
+0x00000050
+0x00000040
+0x00000048
+0x00000058
+0x00000060
+0x00000078
+0x00000080
+0x00000088
 stderr
 error_one_per_line
 realloc
@@ -2664,6 +2674,7 @@ __ctype32_tolower
 _rtld_global
 __progname
 argp_err_exit_status
+0x00000028
 mallwatch
 __rcmd_errstr
 __libc_enable_secure
@@ -2677,9 +2688,11 @@ __timezone
 ifunc_a4800
 memalign
 _dl_exception_create
+0x00000074
 _rtld_global_ro
 __malloc_initialize_hook
 ifunc_90b10
+0x00000010
 optarg
 __ctype_tolower
 __ctype_toupper
@@ -2697,6 +2710,7 @@ ifunc_a5f90
 ifunc_8ab70
 __daylight
 __memalign_hook
+0x00000020
 __malloc_hook
 __free_hook
 _nl_domain_bindings
@@ -2706,6 +2720,7 @@ _dl_find_dso_for_object
 argp_program_bug_address
 __key_decryptsession_pk_LOCAL
 h_errlist
+0x00000018
 program_invocation_short_name
 calloc
 optind
@@ -2731,6 +2746,7 @@ opterr
 __ctype32_toupper
 __realloc_hook
 _dl_argv
+0x00000008
 0x00183fe9
 0x00183f44
 0x00183f54
