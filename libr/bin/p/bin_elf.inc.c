@@ -736,7 +736,13 @@ static RList* relocs(RBinFile *bf) {
 			if (ptr) {
 				ht_up_insert (reloc_ht, reloc->rva, ptr);
 			} else {
-				R_LOG_ERROR ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+				if (reloc->rva != reloc->offset) {
+					ht_up_insert (reloc_ht, reloc->rva, ptr);
+					R_LOG_DEBUG ("Suspicious reloc patching at 0x%"PFMT64x" for 0x%08"PFMT64x" via 0x%"PFMT64x,
+						got_addr, reloc->rva, reloc->offset);
+				} else {
+					R_LOG_ERROR ("reloc conversion failed for 0x%"PFMT64x, got_addr);
+				}
 			}
 		}
 	}
