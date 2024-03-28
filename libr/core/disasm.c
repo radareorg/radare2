@@ -6978,6 +6978,49 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
 	r_cons_break_push (NULL, NULL);
+	{ /* used by asm.emu */
+		r_reg_arena_push (core->anal->reg);
+		ds_print_esil_anal_init (ds);
+	}
+	if (ds->show_emu) {
+		// check if we are in the middle of a basic block, so we can emulate the previous instructions
+		RList *list = r_anal_get_blocks_in (core->anal, ds->addr);
+		if (!r_list_empty (list)) {
+			RAnalBlock *bb = r_list_first (list);
+			if (bb) {
+				REsil *esil = core->anal->esil;
+				esil->cb.hook_reg_write = NULL;
+				if (bb->esil) {
+					r_esil_parse (core->anal->esil, bb->esil);
+				}
+				// set regstate from here
+				if (ds->addr != bb->addr) {
+					int i;
+					for (i = 0; i < bb->ninstr; i++) {
+						if (i >= bb->op_pos_size) {
+							R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+							break;
+						}
+						ut64 addr = bb->addr + (i > 0? bb->op_pos[i - 1]: 0);
+						if (ds->addr == addr) {
+							break;
+						}
+						RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
+						if (op) {
+							const char *esilstr = R_STRBUF_SAFEGET (&op->esil);
+							if (R_STR_ISNOTEMPTY (esilstr)) {
+								r_esil_parse (core->anal->esil, esilstr);
+							}
+						}
+						r_anal_op_free (op);
+					}
+				}
+				esil->cb.hook_reg_write = myregwrite;
+			}
+		}
+		r_list_free (list);
+	}
+
 	for (;;) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -7079,6 +7122,19 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 		}
 
+		if (ds->show_emu) {
+			RAnalBlock *bb = r_anal_get_block_at (core->anal, ds->at);
+			if (bb && ds->at == bb->addr) {
+				if (bb->esil) {
+					REsil *esil = core->anal->esil;
+					// disable emulation callbacks
+					esil->cb.hook_reg_write = NULL;
+					r_esil_parse (core->anal->esil, bb->esil);
+					esil->cb.hook_reg_write = myregwrite;
+				}
+			}
+		}
+
 		pj_o (pj);
 		pj_kn (pj, "offset", at);
 		if (ds->analop.ptr != UT64_MAX) {
@@ -7169,7 +7225,52 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 					free (b64comment);
 				}
 			}
+			if (ds->show_emu) {
+				if (ds->analop.type == R_ANAL_OP_TYPE_CALL || 
+					ds->analop.type == R_ANAL_OP_TYPE_UCALL ||
+					ds->analop.type == R_ANAL_OP_TYPE_ICALL ||
+					ds->analop.type == R_ANAL_OP_TYPE_RCALL ||
+					ds->analop.type == R_ANAL_OP_TYPE_IRCALL) {
+
+					fpos_t pos;
+					fgetpos(stdout, &pos);
+					int fd = dup(fileno(stdout));
+					FILE* redirected = freopen("tmp.txt", "w", stdout);
+					if (!redirected) {
+						goto refs;
+					}
+									
+					ds_print_esil_anal(ds);
+
+					fflush(redirected);
+					fclose(redirected);
+					
+					dup2(fd, fileno(stdout));
+					close(fd);
+					clearerr(stdout);
+					fsetpos(stdout, &pos);
+										
+					FILE* temp_file = fopen("tmp.txt", "r");
+					if (!temp_file) {
+						goto refs;
+					}
+					fseek(temp_file, 0, SEEK_END);
+					size_t size = ftell(temp_file);
+					char* buffer = malloc(size + 1);
+					if (!buffer) {
+						goto refs;
+					}
+					fseek(temp_file, 0, SEEK_SET);
+					fread(buffer, 1, size, temp_file);
+					buffer[size] = '\0';
+					fclose(temp_file);
+					
+					pj_ks (pj, "emulated-refs", buffer);
+					free(buffer);
+				}
+			}
 		}
+	refs:
 		/* add refs */
 		{
 			RVecAnalRef *refs = r_anal_refs_get (core->anal, at);
@@ -7222,6 +7323,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 	}
 	r_cons_break_pop ();
+	ds_print_esil_anal_fini (ds);
+	r_reg_arena_pop (core->anal->reg);
+
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {
