@@ -532,6 +532,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
 		case R_X86_64_TPOFF64:   ADD(64, 0); break;
 		case R_X86_64_DTPMOD64:  break; // id of module containing symbol (keep it as zero)
+		case R_X86_64_DTPOFF64:  ADD(64, 0); break; // offset inside module's tls
 		default:
 			R_LOG_WARN ("Unsupported reloc type %d for x64", rel->type);
 			break;
@@ -863,6 +864,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		case R_X86_64_DTPMOD64:
 			word = 0;
 			// do nothing
+			break;
+		case R_X86_64_DTPOFF64:
+			word = 8;
+			V = S + A;
 			break;
 		case R_X86_64_TPOFF64:
 			word = 8;
