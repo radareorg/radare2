@@ -530,6 +530,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_X86_64_GOTPCREL:  ADD(64, got_addr - P); break;
 		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
+		case R_X86_64_TPOFF64:   ADD(64, 0); break;
 		default:
 			R_LOG_WARN ("Unsupported reloc type %d for x64", rel->type);
 			break;
@@ -850,6 +851,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
  			r_write_le32 (buf, v);
 			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 			}
+			break;
  		default:
  			break;
  		}
@@ -857,6 +859,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
+		case R_X86_64_TPOFF64:
+			word = 8;
+			V = S + A;
+			break;
 		case R_X86_64_8:
 			word = 1;
 			V = S + A;
