@@ -1806,7 +1806,7 @@ static inline bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
-static bool warn_if_uri(RCore *core) {
+static bool warn_if_dbg(RCore *core) {
 	RIODesc *desc = NULL;
 	RIOMap *map = r_io_map_get_at (core->io, 0); // core->offset);
 	if (map) {
@@ -1826,7 +1826,7 @@ static bool warn_if_uri(RCore *core) {
 	if (desc) {
 		const char *uri = desc->uri;
 		R_LOG_DEBUG ("Using uri %s", uri);
-		if (uri && strstr (uri, "://")) {
+		if (r_io_desc_is_dbg (desc)) {
 			R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
 			return false;
 		}
@@ -1852,7 +1852,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	const bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (r->config, "bin.cache");
 	if (apply_relocs) {
-		if (!warn_if_uri (r)) {
+		if (!warn_if_dbg (r)) {
 			return false;
 		}
 		//TODO: remove the bin.cache crap
@@ -1870,7 +1870,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 	} else {
 		if (bc) {
-			if (!warn_if_uri (r)) {
+			if (!warn_if_dbg (r)) {
 				return false;
 			}
 			if (!(r->io->cachemode & R_PERM_W)) {
