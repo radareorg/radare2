@@ -5,11 +5,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-static bool esil_forth_operation(REsil *esil) {
-	R_LOG_INFO ("Dummy: Operation executed");
-	return true;
-}
-
+#if 0
 static bool esil_forth_interrupt_handler(REsil *esil, ut32 intr, void *user) {
 	R_LOG_INFO ("Dummy: Interrupt %d fired", intr);
 	return true;
@@ -19,6 +15,8 @@ static bool esil_forth_syscall_handler(REsil *esil, ut32 sysc, void *user) {
 	R_LOG_INFO ("Dummy: Syscall %d called", sysc);
 	return true;
 }
+#endif
+
 static bool esil_over(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	char *a = r_esil_pop (esil);
@@ -30,28 +28,31 @@ static bool esil_over(REsil *esil) {
 }
 
 static void *r_esil_forth_init(REsil *esil) {
-	OP ("OVER", esil_over, 2, 3, OT_UNK);
-	r_esil_set_op (esil, "forth_op", esil_forth_operation,
-		0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "OVER", esil_over,
+		2, 3, R_ESIL_OP_TYPE_CUSTOM);
+#if 0
 	r_esil_set_interrupt (esil, 1337,
 		esil_forth_interrupt_handler, NULL);
 	r_esil_set_syscall (esil, 1337,
 		esil_forth_syscall_handler, NULL);
+#endif
 	R_LOG_INFO ("esil.forth: Activated");
 	return NULL;
 }
 
 static void r_esil_forth_fini(REsil *esil, void *user) {
-	REsilOp *op = r_esil_get_op (esil, "forth_op");
-	if (op && op->code == esil_forth_operation) {
-		r_esil_del_op (esil, "forth_op");
+	REsilOp *op = r_esil_get_op (esil, "OVER");
+	if (op && op->code == esil_over) {
+		r_esil_del_op (esil, "OVER");
 	}
+#if 0
 	if (r_esil_get_interrupt (esil, 1337) == esil_forth_interrupt_handler) {
 		r_esil_del_interrupt (esil, 1337);
 	}
 	if (r_esil_get_syscall (esil, 1337) == esil_forth_syscall_handler) {
 		r_esil_del_syscall (esil, 1337);
 	}
+#endif
 	R_LOG_INFO ("esil.forth: Deactivated");
 }
 
