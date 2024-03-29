@@ -2924,15 +2924,6 @@ static bool esil_dup(REsil *esil) {
 	return false;
 }
 
-static bool esil_over(REsil *esil) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	char *a = r_esil_pop (esil);
-	char *b = r_esil_pop (esil);
-	r_esil_push (esil, b);
-	r_esil_push (esil, a);
-	r_esil_push (esil, b);
-	return true;
-}
 
 static bool esil_swap(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
@@ -3078,7 +3069,7 @@ static bool esil_is_nan(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float (esil, src, &s)) {
-			ret = r_esil_pushnum (esil, isnan(s));
+			ret = r_esil_pushnum (esil, isnan (s));
 		} else {
 			R_LOG_DEBUG ("esil_is_nan: invalid parameters");
 		}
@@ -3113,7 +3104,7 @@ static bool esil_signed_to_double(REsil *esil) {
 }
 
 static bool esil_unsigned_to_double(REsil *esil) {
-	return esil_int_to_double(esil, 0);
+	return esil_int_to_double (esil, 0);
 }
 
 static bool esil_double_to_int(REsil *esil) {
@@ -3178,7 +3169,7 @@ static bool esil_float_to_double(REsil *esil) {
 	char *src = r_esil_pop (esil);
 
 	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float (esil, dst, &d.f64)) {
-		if (isnan(d.f64) || isinf(d.f64)) {
+		if (isnan (d.f64) || isinf (d.f64)) {
 			ret = esil_pushnum_float (esil, d.f64);
 		} else if (s == 32) {
 			ret = esil_pushnum_float (esil, (double)d.f32);
@@ -3203,10 +3194,10 @@ static bool esil_float_cmp(REsil *esil) {
 	char *src = r_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
-		if (isnan(s) || isnan(d)) {
+		if (isnan (s) || isnan (d)) {
 			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
+			ret = r_esil_pushnum (esil, fabs (s - d) <= DBL_EPSILON);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_cmp: invalid parameters");
@@ -3223,10 +3214,10 @@ static bool esil_float_negcmp(REsil *esil) {
 	char *src = r_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
-		if (isnan(s) || isnan(d)) {
+		if (isnan (s) || isnan (d)) {
 			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_esil_pushnum (esil, fabs(s - d) >= DBL_EPSILON);
+			ret = r_esil_pushnum (esil, fabs (s - d) >= DBL_EPSILON);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_negcmp: invalid parameters");
@@ -3283,15 +3274,15 @@ static bool esil_float_add(REsil *esil) {
 	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s)) {
+		if (isnan (s)) {
 			ret = esil_pushnum_float (esil, s);
-		} else if (isnan(d)) {
+		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept(FE_OVERFLOW);
+			feclearexcept (FE_OVERFLOW);
 			double tmp = s + d;
 			(void)(tmp); // suppress unused warning
-			int raised = fetestexcept(FE_OVERFLOW);
+			int raised = fetestexcept (FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float (esil, NAN);
 			} else {
@@ -3312,16 +3303,16 @@ static bool esil_float_sub(REsil *esil) {
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
-	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s)) {
+	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
+		if (isnan (s)) {
 			ret = esil_pushnum_float (esil, s);
-		} else if (isnan(d)) {
+		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept(FE_OVERFLOW);
+			feclearexcept (FE_OVERFLOW);
 			double tmp = d - s;
 			(void)(tmp);
-			int raised = fetestexcept(FE_OVERFLOW);
+			int raised = fetestexcept (FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float (esil, NAN);
 			} else {
@@ -3373,12 +3364,12 @@ static bool esil_float_div(REsil *esil) {
 	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s)) {
+		if (isnan (s)) {
 			ret = esil_pushnum_float (esil, s);
-		} else if (isnan(d)) {
+		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept(FE_OVERFLOW);
+			feclearexcept (FE_OVERFLOW);
 			double tmp = d / s;
 			(void)(tmp);
 			int raised = fetestexcept (FE_OVERFLOW);
@@ -3421,7 +3412,7 @@ static bool esil_float_ceil(REsil *esil) {
 
 	if (src) {
 		if (esil_get_parm_float (esil, src, &s)) {
-			if (isnan(s)) {
+			if (isnan (s)) {
 				ret = esil_pushnum_float (esil, s);
 			} else {
 				ret = esil_pushnum_float (esil, ceil(s));
@@ -3491,7 +3482,7 @@ static bool esil_float_sqrt(REsil *esil) {
 			if (isnan (s)) {
 				ret = esil_pushnum_float (esil, s);
 			} else {
-				ret = esil_pushnum_float (esil, sqrt(s));
+				ret = esil_pushnum_float (esil, sqrt (s));
 			}
 		} else {
 			R_LOG_DEBUG ("esil_float_sqrt: invalid parameters");
@@ -3601,7 +3592,7 @@ static bool runword(REsil *esil, const char *word) {
 	return true;
 }
 
-static const char *gotoWord(const char *str, int n) {
+static const char *goto_word(const char *str, int n) {
 	const char *ostr = str;
 	int count = 0;
 	while (*str) {
@@ -3634,7 +3625,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	}
 	if (esil->parse_goto != -1) {
 		// TODO: detect infinite loop??? how??
-		*str = gotoWord (ostr, esil->parse_goto);
+		*str = goto_word (ostr, esil->parse_goto);
 		if (*str) {
 			esil->parse_goto = -1;
 			return 2;
@@ -3653,7 +3644,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	return 3;
 }
 
-static bool __stepOut(REsil *esil, const char *cmd) {
+static bool step_out(REsil *esil, const char *cmd) {
 	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
 		esil->in_cmd_step = true;
 		if (esil->cmd (esil, cmd, esil->addr, 0)) {
@@ -3683,8 +3674,8 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 		return false;
 	}
 
-	if (__stepOut (esil, esil->cmd_step)) {
-		(void)__stepOut (esil, esil->cmd_step_out);
+	if (step_out (esil, esil->cmd_step)) {
+		(void)step_out (esil, esil->cmd_step_out);
 		return true;
 	}
 	esil->trap = 0;
@@ -3709,7 +3700,7 @@ repeat:
 		}
 		if (R_UNLIKELY (wordi > 62)) {
 			R_LOG_DEBUG ("Invalid esil string");
-			__stepOut (esil, esil->cmd_step_out);
+			step_out (esil, esil->cmd_step_out);
 			return -1;
 		}
 		dorunword = 0;
@@ -3763,7 +3754,7 @@ repeat:
 	rc = 1;
 step_out:
 	r_esil_runpending (esil, NULL);
-	__stepOut (esil, esil->cmd_step_out);
+	step_out (esil, esil->cmd_step_out);
 	return rc;
 }
 
@@ -3962,7 +3953,6 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("BREAK", esil_break, 0, 0, OT_CTR);
 	OP ("CLEAR", esil_clear, 0, 0, OT_UNK);
 	OP ("DUP", esil_dup, 2, 1, OT_UNK);
-	OP ("OVER", esil_over, 2, 3, OT_UNK);
 	OP ("NUM", esil_num, 1, 1, OT_UNK);
 	OP ("SWAP", esil_swap, 2, 2, OT_UNK);
 	OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
