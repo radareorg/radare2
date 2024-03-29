@@ -15,6 +15,8 @@ typedef struct r_bin_le_obj_s {
 	ut32 headerOff; /* File offset to start of LE/LX header */
 	LE_object_entry *objtbl;
 	void *buf; /* Pointer to RBuffer of file */
+	ut64 *obj_bases;
+	size_t n_bases;
 } RBinLEObj;
 
 R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf);
