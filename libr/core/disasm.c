@@ -7226,47 +7226,43 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				}
 			}
 			if (ds->show_emu) {
-				if (ds->analop.type == R_ANAL_OP_TYPE_CALL || 
+				if (ds->analop.type == R_ANAL_OP_TYPE_CALL ||
 					ds->analop.type == R_ANAL_OP_TYPE_UCALL ||
 					ds->analop.type == R_ANAL_OP_TYPE_ICALL ||
 					ds->analop.type == R_ANAL_OP_TYPE_RCALL ||
 					ds->analop.type == R_ANAL_OP_TYPE_IRCALL) {
 
 					fpos_t pos;
-					fgetpos(stdout, &pos);
-					int fd = dup(fileno(stdout));
-					FILE* redirected = freopen("tmp.txt", "w", stdout);
+					fgetpos (stdout, &pos);
+					int fd = dup (fileno (stdout));
+					FILE* redirected = freopen ("tmp.txt", "w", stdout);
 					if (!redirected) {
 						goto refs;
 					}
-									
-					ds_print_esil_anal(ds);
+					ds_print_esil_anal (ds);
 
-					fflush(redirected);
-					fclose(redirected);
-					
-					dup2(fd, fileno(stdout));
-					close(fd);
-					clearerr(stdout);
-					fsetpos(stdout, &pos);
-										
-					FILE* temp_file = fopen("tmp.txt", "r");
+					fflush (redirected);
+					fclose (redirected);
+					dup2 (fd, fileno (stdout));
+					close (fd);
+					clearerr (stdout);
+					fsetpos (stdout, &pos);
+					FILE* temp_file = fopen ("tmp.txt", "r");
 					if (!temp_file) {
 						goto refs;
 					}
-					fseek(temp_file, 0, SEEK_END);
-					size_t size = ftell(temp_file);
-					char* buffer = malloc(size + 1);
+					fseek (temp_file, 0, SEEK_END);
+					size_t size = ftell (temp_file);
+					char* buffer = malloc (size + 1);
 					if (!buffer) {
 						goto refs;
 					}
-					fseek(temp_file, 0, SEEK_SET);
-					fread(buffer, 1, size, temp_file);
+					fseek (temp_file, 0, SEEK_SET);
+					fread (buffer, 1, size, temp_file);
 					buffer[size] = '\0';
-					fclose(temp_file);
-					
+					fclose (temp_file);
 					pj_ks (pj, "emulated-refs", buffer);
-					free(buffer);
+					free (buffer);
 				}
 			}
 		}
