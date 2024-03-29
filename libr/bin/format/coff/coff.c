@@ -293,7 +293,7 @@ R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
-	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || (obj->symbols)) {
+	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
 		if (r_coff_get_entry_helper (obj, addr)) {
 			return addr;
 		}
@@ -493,19 +493,27 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 
 static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	int ret;
-	ut32 f_symptr = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_symptr: obj->hdr.f_symptr;
-	ut32 f_nsyms = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nsyms: obj->hdr.f_nsyms;
+	ut32 f_symptr, f_nsyms;
+	ut32 symbol_size;
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		symbol_size = sizeof (struct coff_bigobj_symbol);
+		f_symptr = obj->bigobj_hdr.f_symptr;
+		f_nsyms = obj->bigobj_hdr.f_nsyms;
+	} else {
+		symbol_size = sizeof (struct coff_symbol);
+		f_symptr = obj->hdr.f_symptr;
+		f_nsyms = obj->hdr.f_nsyms;
+		if (f_nsyms >= 0xffff) {
+			// R_FREE (obj->bigobj_symbols);
+			// R_FREE (obj->symbols);
+			// too much symbols, probably not allocatable
+			return false;
+		}
+	}
 	ut64 offset = f_symptr;
-	ut32 symbol_size = obj->type == COFF_TYPE_BIGOBJ? sizeof (struct coff_bigobj_symbol): sizeof (struct coff_symbol);
-	void *symbols = obj->type == COFF_TYPE_BIGOBJ? (void *)obj->bigobj_symbols: (void *)obj->symbols;
 
 	if (!f_nsyms) {
 		return true;
-	}
-
-	if (obj->type != COFF_TYPE_BIGOBJ && f_nsyms >= 0xffff) {
-		// too much symbols, probably not allocatable
-		return false;
 	}
 #if 0
 	if (ST32_MUL_OVFCHK (symbol_size, f_nsyms)) {
@@ -515,25 +523,29 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	}
 #endif
 	int size = f_nsyms * symbol_size;
-	if (size < 0 ||
-		size > obj->size ||
-		offset > obj->size ||
-		offset + size > obj->size) {
+	if (size < 0 || size > obj->size || offset > obj->size || offset + size > obj->size) {
+		R_FREE (obj->bigobj_symbols);
+		R_FREE (obj->symbols);
 		return false;
 	}
-	symbols = calloc (1, size + symbol_size);
+	void *symbols = calloc (1, size + symbol_size);
 	if (!symbols) {
+		R_FREE (obj->bigobj_symbols);
+		R_FREE (obj->symbols);
 		return false;
 	}
 	if (obj->type == COFF_TYPE_BIGOBJ) {
 		obj->bigobj_symbols = symbols;
-		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, obj->endian? "8c2I1S2c": "8c2i1s2c", f_nsyms);
+		const char *fmt = obj->endian? "8c2I1S2c": "8c2i1s2c";
+		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, fmt, f_nsyms);
 	} else {
 		obj->symbols = symbols;
-		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", f_nsyms);
+		const char *fmt = obj->endian? "8c1I2S2c": "8c1i2s2c";
+		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, fmt, f_nsyms);
 	}
 	if (ret != size) {
-		R_FREE (symbols);
+		R_FREE (obj->bigobj_symbols);
+		R_FREE (obj->symbols);
 		return false;
 	}
 	return true;
