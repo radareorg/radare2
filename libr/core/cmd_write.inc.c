@@ -932,6 +932,7 @@ static int w_incdec_handler(void *data, const char *input, int inc) {
 		break;
 	default:
 		r_core_cmd_help_match (core, help_msg_w, "w");
+		break;
 	}
 	return 0;
 }
