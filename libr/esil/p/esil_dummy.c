@@ -49,6 +49,7 @@ REsilPlugin r_esil_plugin_dummy = {
 	.meta = {
 		.name = "dummy",
 		.desc = "dummy esil plugin",
+		.author = "pancake",
 		.license = "LGPL3",
 	},
 	.init = r_esil_dummy_init,

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2023 - pancake */
+/* radare2 - LGPL - Copyright 2023-2024 - pancake */
 
 #define R_LOG_ORIGIN "esil.null"
 
@@ -16,6 +16,7 @@ static void r_esil_null_fini(REsil *esil, void *user) {
 REsilPlugin r_esil_plugin_null = {
 	.meta = {
 		.name = "null",
+		.author = "pancake",
 		.desc = "null esil plugin",
 		.license = "MIT",
 	},
