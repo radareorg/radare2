@@ -60,6 +60,7 @@ REsilPlugin r_esil_plugin_forth = {
 	.meta = {
 		.name = "forth",
 		.desc = "forth for esil",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.init = r_esil_forth_init,
