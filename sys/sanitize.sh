@@ -51,6 +51,8 @@ if [ "`uname`" != Darwin ]; then
 	done
 fi
 
+export CFLAGS="${CFLAGS} -fno-omit-frame-pointer"
+
 echo 'int main(){return 0;}' > .a.c
 [ -z "${CC}" ] && CC=gcc
 ${CC} ${CFLAGS} ${LDFLAGS} -o .a.out .a.c
