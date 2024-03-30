@@ -1,0 +1,22 @@
+diff --git a/arch/TriCore/TriCoreInstPrinter.c b/arch/TriCore/TriCoreInstPrinter.c
+index aaee3b5..2c6b871 100644
+--- a/arch/TriCore/TriCoreInstPrinter.c
++++ b/arch/TriCore/TriCoreInstPrinter.c
+@@ -402,7 +402,7 @@ static void printDisp4Imm(MCInst *MI, int OpNum, SStream *O)
+ 		case TRICORE_LOOP_sbr:
+ 			// {27b’111111111111111111111111111, disp4, 0};
+ 			disp = (int32_t)MI->address +
+-			       ((0b111111111111111111111111111 << 5) |
++			       ((0x7ffffff << 5) |
+ 				(disp << 1));
+ 			break;
+ 		default:
+@@ -449,7 +449,7 @@ static void printOExtImm_4(MCInst *MI, int OpNum, SStream *O)
+ 	if (MCOperand_isImm(MO)) {
+ 		uint32_t imm = MCOperand_getImm(MO);
+ 		// {27b’111111111111111111111111111, disp4, 0};
+-		imm = 0b11111111111111111111111111100000 | (imm << 1);
++		imm = 0xffffffe0 | (imm << 1);
+ 
+ 		printInt32Bang(O, imm);
+ 		fill_imm(MI, imm);
