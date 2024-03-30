@@ -6,6 +6,12 @@
 #include <stdint.h>
 #include "sdb/sdb.h"
 #include "sdb/heap.h"
+// #include <sys/mman.h>
+#if !defined(MAP_ANONYMOUS) && __MACH__
+  #define MAP_ANONYMOUS 0x1000
+#else
+  #define MAP_ANONYMOUS 0
+#endif
 
 // generic global
 SdbGlobalHeap Gheap = {NULL, NULL};
@@ -92,8 +98,8 @@ static void *remove_offset(void *ptr) {
 	return (void *)((const ut8*)ptr - HEADER_SIZE);
 }
 
-static void *getFooter(void *header_ptr) {
-	return (void*)((ut8*)header_ptr + ((Header *)header_ptr)->size - FOOTER_SIZE);
+static Footer *getFooter(void *header_ptr) {
+	return (Footer*)((ut8*)header_ptr + ((Header *)header_ptr)->size - FOOTER_SIZE);
 }
 
 static void setFree(void *ptr, int val) {
@@ -234,14 +240,11 @@ static void *sdb_heap_malloc(SdbHeap *heap, int size) {
 	// Each next allocation will be doubled in size from the previous one
 	// (to decrease the number of mmap sys calls we make).
 	// int bytes = MAX (PAGES (required_size), heap->last_mapped_size) * SDB_PAGE_SIZE;
-	size_t bytes = PAGES(MAX (PAGES (required_size), heap->last_mapped_size)) * SDB_PAGE_SIZE;
+	size_t bytes = PAGES (MAX (PAGES (required_size), heap->last_mapped_size)) * SDB_PAGE_SIZE;
 	heap->last_mapped_size *= 2;
 
 	// last_address my not be returned by mmap, but makes it more efficient if it happens.
-#ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS 0
-#endif
-	void *new_region = mmap (heap->last_address, bytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	void *new_region = mmap (NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	if (new_region == MAP_FAILED) {
 		perror ("mmap");
 		return NULL;
@@ -271,7 +274,7 @@ static void *sdb_heap_malloc(SdbHeap *heap, int size) {
 
 static void coalesce(SdbHeap *heap, void *ptr) {
 	Header *current_header = (Header *)ptr;
-	Footer *current_footer = (Footer *)getFooter(ptr);
+	Footer *current_footer = getFooter (ptr);
 	if (current_header->has_prev && ((Footer *)((ut8*)ptr - FOOTER_SIZE))->free) {
 		int prev_size = ((Footer *)((ut8*)ptr - FOOTER_SIZE))->size;
 		Header *prev_header = (Header *)((ut8*)ptr - prev_size);
