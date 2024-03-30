@@ -35,6 +35,17 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 		priv->buf = (ut8 *)u->data_steal;
 		priv->is_bufowner = u->steal;
 	} else {
+#if 0
+		size_t length = priv->length > 0? priv->length: 1;
+		priv->buf = malloc (length);
+		if (!priv->buf) {
+			free (priv);
+			return false;
+		}
+		if (priv->length > 0) {
+			memmove (priv->buf, u->data, priv->length);
+		}
+#else
 		if (priv->length > 0) {
 			priv->buf = malloc (priv->length);
 			if (!priv->buf) {
@@ -43,6 +54,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 			}
 			memmove (priv->buf, u->data, priv->length);
 		}
+#endif
 		priv->is_bufowner = true;
 	}
 	b->priv = priv;

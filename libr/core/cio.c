@@ -159,9 +159,11 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			len = xlen;
 		} else {  // use clipboard as key
 			const ut8 *tmp = r_buf_data (core->yank_buf, &len);
-			str = r_mem_dup (tmp, len);
-			if (!str) {
-				goto beach;
+			if (tmp && len > 0) {
+				str = r_mem_dup (tmp, len);
+				if (!str) {
+					goto beach;
+				}
 			}
 		}
 	} else {
