@@ -4,6 +4,8 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
+R_VEC_FORWARD_DECLARE(RVecUT64);
+R_VEC_FORWARD_DECLARE(RVecAddr);
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecAddr, ut64); // DUPE
 
@@ -4251,6 +4253,7 @@ typedef struct {
 	char *regstate;
 } BlockItem;
 
+R_VEC_FORWARD_DECLARE(RVecBlocks);
 R_VEC_TYPE (RVecBlocks, BlockItem);
 
 static BlockItem *find_predecessor(RVecBlocks *blocks, BlockItem *b0) {

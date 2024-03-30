@@ -1326,7 +1326,7 @@ typedef struct r_table_visual_state_t {
 	bool va;
 	RenderTableRows render_fn;
 	void *user;
-} TableVisualState;
+};
 
 static void r_table_visual_row(RTable *table, const RListInfo *info, int i, TableVisualState *state) {
 	RCons *cons = (RCons *) table->cons;

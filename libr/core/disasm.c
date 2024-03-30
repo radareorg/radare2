@@ -5,6 +5,7 @@
 #include "r_core.h"
 #include <r_vec.h>
 
+R_VEC_FORWARD_DECLARE(RVecAnalRef);
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #define HASRETRY 1
@@ -3857,6 +3858,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 	core->print->flags = oldFlags;
 }
 
+R_VEC_FORWARD_DECLARE(RVecUT64);
 R_VEC_TYPE(RVecUT64, ut64);
 
 static int bb_cmp(const void *a, const void *b) {

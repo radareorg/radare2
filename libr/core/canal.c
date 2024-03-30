@@ -8,6 +8,7 @@
 
 HEAPTYPE (ut64);
 
+R_VEC_FORWARD_DECLARE(RVecAnalRef);
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static R_TH_LOCAL RCore *mycore = NULL;

@@ -109,7 +109,10 @@ static inline void fini_access(REsilTraceAccess *access) {
 	free (access->mem.data);
 }
 
+R_VEC_FORWARD_DECLARE(RVecTraceOp);
 R_VEC_TYPE(RVecTraceOp, REsilTraceOp);
+
+R_VEC_FORWARD_DECLARE(RVecAccess);
 R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
 
 typedef struct {

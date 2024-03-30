@@ -99,6 +99,7 @@ typedef struct r_cons_fd_pair {
 	st16 fd_bak; // backup of target fd in a new dupped fd
 } RConsFdPair;
 
+R_VEC_FORWARD_DECLARE (RVecFdPairs);
 R_VEC_TYPE (RVecFdPairs, RConsFdPair);
 R_API void r_cons_mark_flush(void);
 R_API void r_cons_mark(ut64 addr, const char *name);

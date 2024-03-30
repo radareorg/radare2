@@ -225,14 +225,14 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
-R_VEC_FORWARD_DECLARE(RVecDebugTracepoint);
+R_VEC_FORWARD_DECLARE (RVecDebugTracepoint);
 
 typedef struct r_debug_trace_t {
 	RVecDebugTracepoint *traces;
 	int count;
 	int enabled;
 	int tag;
-	int dup;
+	// int dupe;
 	char *addresses;
 	HtPP *ht; // use rbtree like the iocache?
 } RDebugTrace;
@@ -290,7 +290,7 @@ typedef struct r_debug_desc_plugin_t {
 	RList* (*list)(int pid);
 } RDebugDescPlugin;
 
-typedef struct r_debug_plugin_session_t RDebugPluginSession;
+typedef struct r_debug_plugin_session_t _RDebugPluginSession;
 typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
 typedef struct r_debug_plugin_t {
 	RPluginMeta meta;
@@ -299,8 +299,8 @@ typedef struct r_debug_plugin_t {
 	int canstep;
 	int keepio;
 	/* life */
-	bool (*init_plugin)(RDebug *dbg, RDebugPluginSession *ds);
-	bool (*fini_plugin)(RDebug *dbg, RDebugPluginSession *ds);
+	bool (*init_plugin)(RDebug *dbg, _RDebugPluginSession *ds);
+	bool (*fini_plugin)(RDebug *dbg, _RDebugPluginSession *ds);
 	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
 	bool (*attach)(RDebug *dbg, int pid);
@@ -347,7 +347,7 @@ typedef struct r_debug_plugin_session_t {
 
 R_VEC_FORWARD_DECLARE (RVecDebugPluginSession);
 
-typedef struct r_debug_t {
+struct r_debug_t {
 	// R2_590 use RArchConfig instead
 	char *arch;
 	int bits; /// XXX: MUST SET ///
@@ -436,7 +436,7 @@ typedef struct r_debug_t {
 	bool glibc_version_resolved; /* is the libc version resolved already? */
 	int glibc_version;
 	double glibc_version_d; // TODO: move over to this only
-} RDebug;
+}; // declared above
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
 typedef struct r_debug_pid_t {

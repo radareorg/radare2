@@ -107,6 +107,7 @@ static inline void r_bin_section_fini(RBinSection *bs) {
 	}
 }
 
+R_VEC_FORWARD_DECLARE (RVecSegment);
 R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
 
 struct MACH0_(obj_t) {

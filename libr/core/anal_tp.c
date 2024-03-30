@@ -7,6 +7,8 @@
 #define D if (false)
 #define DD if (false)
 
+R_VEC_FORWARD_DECLARE(RVecUT64);
+R_VEC_FORWARD_DECLARE(RVecBuf);
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
 
@@ -319,6 +321,7 @@ static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 }
 
 typedef const char* String;
+R_VEC_FORWARD_DECLARE (RVecString);
 R_VEC_TYPE (RVecString, String);  // no fini, these are owned by SDB
 
 static bool parse_format(RCore *core, const char *fmt, RVecString *vec) {

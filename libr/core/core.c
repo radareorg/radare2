@@ -11,6 +11,7 @@
 #define DB core->sdb
 
 R_LIB_VERSION (r_core);
+R_VEC_FORWARD_DECLARE(RVecAnalRef);
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {

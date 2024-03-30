@@ -5366,6 +5366,7 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
+R_VEC_FORWARD_DECLARE(RVecDebugTracepoint);
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
 
 static int cmd_debug(void *data, const char *input) {

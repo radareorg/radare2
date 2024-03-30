@@ -11,6 +11,7 @@
 #include <r_core.h>
 #include <r_vec.h>
 
+R_VEC_FORWARD_DECLARE (RVecAnalRef);
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 typedef struct {
