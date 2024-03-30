@@ -5157,6 +5157,9 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+				if (ds->pj) {
+					pj_ks (ds->pj, "flag", fi->name);
+				}
 			}
 		}
 	}
