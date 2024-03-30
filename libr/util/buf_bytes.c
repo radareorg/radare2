@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - ret2libc */
+/* radare - LGPL - Copyright 2009-2024 - ret2libc */
 
 #include <r_util.h>
 
@@ -35,12 +35,12 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 		priv->buf = (ut8 *)u->data_steal;
 		priv->is_bufowner = u->steal;
 	} else {
-		priv->buf = malloc (priv->length);
-		if (!priv->buf) {
-			free (priv);
-			return false;
-		}
-		if (priv->length) {
+		if (priv->length > 0) {
+			priv->buf = malloc (priv->length);
+			if (!priv->buf) {
+				free (priv);
+				return false;
+			}
 			memmove (priv->buf, u->data, priv->length);
 		}
 		priv->is_bufowner = true;
