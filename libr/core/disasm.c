@@ -1345,7 +1345,6 @@ static void ds_begin_line(RDisasmState *ds) {
 				}
 			}
 		}
-		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
 	if (!ds->pj && ds->asm_hint_pos == -1) {
@@ -1360,10 +1359,10 @@ static void ds_newline(RDisasmState *ds) {
 		const bool is_html = r_config_get_b (ds->core->config, "scr.html");
 		if (is_html) {
 			char *s = r_cons_html_filter (r_cons_get_buffer (), NULL);
-			pj_s (ds->pj, s);
+			pj_ks (ds->pj, "text", s);
 			free (s);
 		} else {
-			pj_s (ds->pj, r_cons_get_buffer ());
+			pj_ks (ds->pj, "text", r_cons_get_buffer ());
 		}
 		r_cons_reset ();
 		pj_end (ds->pj);
@@ -5029,6 +5028,10 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		// reduce false positives in emu.str=true when loading strings via adrp+add
 		return false;
 	}
+	if (ds->pj) {
+		// "pdJ" -> reg: value
+		pj_kn (ds->pj, name, *val);
+	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
 		ssa_set (esil, name);
@@ -5117,6 +5120,10 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				}
 #endif
 				ds->emuptr = *val;
+				if (ds->pj) {
+					// "pdJ"
+					pj_ks (ds->pj, "str", str);
+				}
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				if (escstr) {
 					char *m;
@@ -5150,11 +5157,14 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+				if (ds->pj) {
+					pj_ks (ds->pj, "flag", fi->name);
+				}
 			}
 		}
 	}
 	if (ds->show_emu_str) {
-		if (msg && *msg) {
+		if (R_STR_ISNOTEMPTY (msg)) {
 			ds->emuptr = *val;
 			if (ds->show_emu_stroff && *msg == '"') {
 				ds_comment_esil (ds, true, false, "%s 0x%"PFMT64x" %s", ds->cmtoken, *val, msg);
@@ -5473,9 +5483,17 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (nargs > 0) {
 		ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");
 		if (fcn_name) {
+			if (ds->pj) {
+				// "pdJ"
+				pj_ks (ds->pj, "call", fcn_name);
+			}
 			ds_comment_middle (ds, "%s %s(", ds->cmtoken, fcn_name);
 		} else {
 			ds_comment_middle (ds, "%s 0x%"PFMT64x"(", ds->cmtoken, pcv);
+			if (ds->pj) {
+				// "pdJ"
+				pj_kn (ds->pj, "call", pcv);
+			}
 		}
 		const char *cc = r_anal_syscc_default (core->anal);
 		int i;
@@ -5541,7 +5559,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	if (R_STR_ISNOTEMPTY (esilstr)) {
 		mipsTweak (ds);
 		r_esil_set_pc (esil, at);
+		if (ds->pj) {
+			pj_ko (ds->pj, "esil");
+			pj_ks (ds->pj, "expr", esilstr);
+		}
 		r_esil_parse (esil, esilstr);
+		if (ds->pj) {
+			pj_end (ds->pj);
+		}
 	}
 	r_esil_stack_free (esil);
 	r_config_hold (hc, "io.cache", NULL);
