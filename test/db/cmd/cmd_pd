@@ -1261,7 +1261,7 @@ EOF
 EXPECT=<<EOF
 [{"offset":0,"text":"  0x00000000      90             nop                                   ; test"}]
 [{"offset":0,"text":"  0x00000000      90             nop                                   ; test \"with quotes\""}]
-[{"offset":0,"text":{"offset":0,"text":"  ; test \"with quotes\"\n  ; "},{"offset":0,"text":"  0x00000000      90             nop"}}
+[{"offset":0,{"offset":0,"text":"  ; test \"with quotes\"\n  ; "},{"offset":0,"text":"  0x00000000      90             nop"}}
 EOF
 RUN
 
@@ -1364,7 +1364,7 @@ e asm.emu=1
 pdJ 1 @ 0x08048566
 EOF
 EXPECT=<<EOF
-[{"offset":134514022,"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; eip=0x8048394 -> 0xa00c25ff"},{"offset":134514022,"text":"                                                                       ; int printf(-1)"}]
+[{"offset":134514022,"esil":{"expr":"134513556,eip,4,esp,-=,esp,=[4],eip,=","esp":18446744073709551612,"eip":134513556},"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; eip=0x8048394 -> 0xa00c25ff"},{"offset":134514022,"text":"                                                                       ; int printf(-1)"}]
 EOF
 RUN
 
@@ -1382,9 +1382,9 @@ pdJ 1
 EOF
 EXPECT=<<EOF
             0x080484aa      b8e1850408     mov eax, 0x80485e1          ; "%ls" ; eax=0x80485e1 -> 0x736c25
-[{"offset":134513834,"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
+[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
             [32m0x080484aa[0m      [36mb8[36me1[36m85[36m04[36m08[0m     [36mmov[36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[31m          [31m; "%ls"[0m[31m ; eax=0x80485e1 -> 0x736c25[0m
-[{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
+[{"offset":134513834,"esil":{"expr":"134514145,eax,=","eax":134514145},"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[36mb8\u001b[36me1\u001b[36m85\u001b[36m04\u001b[36m08\u001b[0m     \u001b[36mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
 EOF
 RUN
 
