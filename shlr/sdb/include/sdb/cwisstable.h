@@ -884,7 +884,7 @@ typedef uint64_t CWISS_Group;
 #define CWISS_Group_kWidth ((size_t)8)
 #define CWISS_Group_kShift 3
 
-#if __has_builtin(__builtin_bswap64)
+#if CWISS_HAVE_CLANG_BUILTIN(__builtin_bswap64)
 # define bswap64 __builtin_bswap64
 #else
 static inline uint64_t bswap64(uint64_t v) {
