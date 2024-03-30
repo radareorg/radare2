@@ -430,7 +430,7 @@ EOF
 RUN
 
 NAME=DOOM.LE object bases
-ENV=R_LE_BASES=0x1db000:0x27f000
+ENV=RABIN2_LE_BASES=0x1db000:0x27f000
 ARGS=-e bin.relocs.apply=true
 FILE=bins/le/DOOM.LE
 CMDS=<<EOF
