@@ -435,17 +435,33 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return r_core_seek (core, addr, true);
 }
 
-// TODO: kill this wrapper
+// TODO: R2_600 deprecate this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	r_return_val_if_fail (core && buf && addr != UT64_MAX, false);
 	if (size < 1) {
 		return false;
 	}
-	bool ret = r_io_write_at (core->io, addr, buf, size);
+#if 1
+	int ret = r_io_write_at (core->io, addr, buf, size);
+	if (ret > 0) {
+		// ensure a little because we can't use bank_write_to_submap_at
+		ut8 word[4];
+		r_io_read_at (core->io, addr, word, sizeof (word));
+		ret = !memcmp (word, buf, R_MIN (size, sizeof (word)));
+	}
+#else
+	int ret = r_io_bank_write_to_submap_at (core->io, core->io->bank, addr, buf, size);
+	if (r_config_get_b (core->config, "io.cache")) {
+		ret = r_io_write_at (core->io, addr, buf, size);
+	} else {
+		ret = r_io_bank_write_to_submap_at (core->io, core->io->bank, addr, buf, size) > 0;
+	}
+	// bool ret = r_io_write_at (core->io, addr, buf, size);
+#endif
 	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		r_core_block_read (core);
 	}
-	return ret;
+	return ret > 0;
 }
 
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
