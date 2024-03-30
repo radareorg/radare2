@@ -737,7 +737,7 @@ R_IPI void r_bin_le_free(RBinLEObj *bin) {
 static void parse_obj_bases_from_env(RBinLEObj *bin) {
 	ut64 * bases = NULL;
 	RList * bases_str = NULL;
-	char * bases_raw = r_sys_getenv ("R_LE_BASES");
+	char * bases_raw = r_sys_getenv ("RABIN2_LE_BASES");
 	if (!bases_raw) {
 		goto beach;
 	}
