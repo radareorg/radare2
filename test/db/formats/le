@@ -428,3 +428,30 @@ mov ecx, dword [0xbc534]
 1
 EOF
 RUN
+
+NAME=DOOM.LE object bases
+ENV=RABIN2_LE_BASES=0x1db000:0x27f000
+ARGS=-e bin.relocs.apply=true
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+s 0x0001e9f2d
+pd~debug~?
+pd 6~w~?
+pi 1 @ 0x206144
+pi 1 @ 0x206175
+pxwj 4@0x2eb518
+pxwj 4@0x2eb534
+iS.@0x2eb518~obj.2.page.zerofill~?
+iS.@0x2eb534~obj.2.page.zerofill~?
+EOF
+EXPECT=<<EOF
+1
+1
+mov ecx, dword [0x2eb518]
+mov ecx, dword [0x2eb534]
+[0]
+[0]
+1
+1
+EOF
+RUN

@@ -56,6 +56,14 @@ static const char *__get_arch(RBinLEObj *bin) {
 	}
 }
 
+static ut64 get_object_base(RBinLEObj * bin, size_t idx) {
+	r_return_val_if_fail (bin && bin->header && idx < bin->header->objcnt, 0);
+	if (idx < bin->n_bases) {
+		return bin->obj_bases[idx];
+	}
+	return bin->objtbl[idx].reloc_base_addr;
+}
+
 static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 	ut8 size = r_buf_read8_at (buf, *offset);
 	size &= 0x7F; // Max is 127
@@ -122,7 +130,7 @@ static RList *__get_entries(RBinLEObj *bin) {
 			switch (header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
 			case ENTRY16:
 				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+					entry = (ut64)e.entry_16.offset + get_object_base (bin, header.objnum - 1);
 				}
 				offset += sizeof (e.entry_16);
 				if (typeinfo) {
@@ -131,7 +139,7 @@ static RList *__get_entries(RBinLEObj *bin) {
 				break;
 			case CALLGATE:
 				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.callgate.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+					entry = (ut64)e.callgate.offset + get_object_base (bin, header.objnum - 1);
 				}
 				offset += sizeof (e.callgate);
 				if (typeinfo) {
@@ -140,7 +148,7 @@ static RList *__get_entries(RBinLEObj *bin) {
 				break;
 			case ENTRY32:
 				if ((header.objnum - 1) < bin->header->objcnt) {
-					entry = (ut64)e.entry_32.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+					entry = (ut64)e.entry_32.offset + get_object_base (bin, header.objnum - 1);
 				}
 				offset += sizeof (e.entry_32);
 				if (typeinfo) {
@@ -230,7 +238,7 @@ R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin) {
 	RBinAddr *entry = R_NEW0 (RBinAddr);
 	if (entry) {
 		if ((bin->header->startobj - 1) < bin->header->objcnt) {
-			entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
+			entry->vaddr = get_object_base (bin, bin->header->startobj - 1) + bin->header->eip;
 		}
 	}
 	r_list_append (l, entry);
@@ -361,7 +369,7 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 		}
 		sec->name = r_str_newf ("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
-		sec->vaddr = entry->reloc_base_addr;
+		sec->vaddr = get_object_base (bin, i);
 		sec->add = true;
 		if (entry->flags & O_READABLE) {
 			sec->perm |= R_PERM_R;
@@ -556,7 +564,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
 			if ((ordinal - 1) < bin->header->objcnt) {
-				rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
+				rel->addend = get_object_base (bin, ordinal - 1);
 				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
 					if (header.target & F_TARGET_OFF32) {
 						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
@@ -721,8 +729,42 @@ R_IPI void r_bin_le_free(RBinLEObj *bin) {
 		free (bin->header);
 		free (bin->objtbl);
 		free (bin->filename);
+		free (bin->obj_bases);
 		free (bin);
 	}
+}
+
+static void parse_obj_bases_from_env(RBinLEObj *bin) {
+	ut64 * bases = NULL;
+	RList * bases_str = NULL;
+	char * bases_raw = r_sys_getenv ("RABIN2_LE_BASES");
+	if (!bases_raw) {
+		goto beach;
+	}
+	bases_str = r_str_split_list (bases_raw, ":", 0);
+	if (!bases_str) {
+		goto beach;
+	}
+	size_t n_bases = r_list_length (bases_str);
+	if (!n_bases) {
+		goto beach;
+	}
+	bases = R_NEWS0 (ut64, n_bases);
+	if (!bases) {
+		goto beach;
+	}
+	RListIter * it;
+	char * base;
+	size_t i = 0;
+	r_list_foreach (bases_str, it, base) {
+		if (i < n_bases) {
+			bases[i++] = r_num_get (NULL, base);
+		}
+	}
+	bin->obj_bases = bases;
+	bin->n_bases = n_bases;
+beach:
+	free (bases_str);
 }
 
 R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
@@ -761,5 +803,6 @@ R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
 	free (fmt);
 #endif
 	bin->buf = buf;
+	parse_obj_bases_from_env (bin);
 	return bin;
 }
