@@ -27,13 +27,14 @@ R_API RThreadSemaphore *r_th_sem_new(unsigned int initial) {
 	name[0] = '/';
 	uuid_unparse (uuid, name + 1);
 	if (strlen (name) > R_SEM_NAME_LEN_MAX-1) {
-	    name[R_SEM_NAME_LEN_MAX-1] = '\0';
+		name[R_SEM_NAME_LEN_MAX-1] = '\0';
 	}
-	sem->sem = sem_open (name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, initial);
-	if (sem->sem == SEM_FAILED) {
+	sem_t *s = sem_open (name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, initial);
+	if (s == SEM_FAILED) {
 		free (sem);
 		return NULL;
 	}
+	sem->sem = s;
 #  else
 	sem->sem = malloc (sizeof (sem_t));
 	if (!sem->sem) {
