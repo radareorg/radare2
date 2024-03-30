@@ -303,9 +303,12 @@ R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 
 R_API void *r_mem_dup(const void *s, int l) {
 	r_return_val_if_fail (s, NULL);
-	void *d = malloc (l);
-	if (d != NULL) {
-		memcpy (d, s, l);
+	void *d = NULL;
+	if (l > 0) {
+		d = malloc (l);
+		if (d != NULL) {
+			memcpy (d, s, l);
+		}
 	}
 	return d;
 }
