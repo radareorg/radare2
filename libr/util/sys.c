@@ -510,6 +510,7 @@ R_API bool r_sys_crash_handler(const char *cmd) {
 #else
 R_API bool r_sys_crash_handler(const char *cmd) {
 	return true;
+}
 #endif
 
 R_API char *r_sys_getenv(const char *key) {
