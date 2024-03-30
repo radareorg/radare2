@@ -307,22 +307,24 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				len = numsize;
 			}
 		}
-		for (i = j = 0; i < core->blocksize; i++) {
-			switch (op) {
-			case 'x': buf[i] ^= str[j]; break;
-			case 'a': buf[i] += str[j]; break;
-			case 's': buf[i] -= str[j]; break;
-			case 'm': buf[i] *= str[j]; break;
-			case 'w': buf[i] = str[j]; break;
-			case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
-			case 'r': buf[i] >>= str[j]; break;
-			case 'l': buf[i] <<= str[j]; break;
-			case 'o': buf[i] |= str[j]; break;
-			case 'A': buf[i] &= str[j]; break;
-			}
-			j++;
-			if (j >= len) {
-				j = 0; /* cyclic key */
+		if (str) {
+			for (i = j = 0; i < core->blocksize; i++) {
+				switch (op) {
+				case 'x': buf[i] ^= str[j]; break;
+				case 'a': buf[i] += str[j]; break;
+				case 's': buf[i] -= str[j]; break;
+				case 'm': buf[i] *= str[j]; break;
+				case 'w': buf[i] = str[j]; break;
+				case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
+				case 'r': buf[i] >>= str[j]; break;
+				case 'l': buf[i] <<= str[j]; break;
+				case 'o': buf[i] |= str[j]; break;
+				case 'A': buf[i] &= str[j]; break;
+				}
+				j++;
+				if (j >= len) {
+					j = 0; /* cyclic key */
+				}
 			}
 		}
 	}
