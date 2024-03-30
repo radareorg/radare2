@@ -67,7 +67,7 @@ pkgconfig:
 include/sdb/version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > include/sdb/version.h
 
-CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
+CFILES=cdb.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data

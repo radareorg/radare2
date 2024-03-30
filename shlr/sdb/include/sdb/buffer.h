@@ -21,25 +21,27 @@ typedef struct buffer {
 #define BUFFER_INSIZE 8192
 #define BUFFER_OUTSIZE 8192
 
+#if 0
 void buffer_initialize(buffer *,BufferOp,int,char *,unsigned int);
 
 int buffer_flush(buffer *);
 int buffer_put(buffer *,const char *,unsigned int);
 int buffer_putalign(buffer *,const char *,unsigned int);
 int buffer_putflush(buffer *,const char *,unsigned int);
-
-#define buffer_PUTC(s,c) \
-  ( ((s)->n != (s)->p) \
-    ? ( (s)->x[(s)->p++] = (c), 0 ) \
-    : buffer_put((s),&(c),1) \
-  )
-
 int buffer_get(buffer *,char *,unsigned int);
 int buffer_bget(buffer *,char *,unsigned int);
 int buffer_feed(buffer *);
 
 char *buffer_peek(buffer *);
 void buffer_seek(buffer *,unsigned int);
+
+#endif
+
+#define buffer_PUTC(s,c) \
+  ( ((s)->n != (s)->p) \
+    ? ( (s)->x[(s)->p++] = (c), 0 ) \
+    : buffer_put((s),&(c),1) \
+  )
 
 #define buffer_PEEK(s) ( (s)->x + (s)->n )
 #define buffer_SEEK(s,len) ( ( (s)->p -= (len) ) , ( (s)->n += (len) ) )

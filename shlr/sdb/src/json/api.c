@@ -50,6 +50,6 @@ char *api_json_set (const char *s, const char *k, const char *v) {
 
 char *api_json_seti (const char *s, const char *k, int a) {
 	char str[64];
-	sprintf (str, "%d", a);
+	snprintf (str, sizeof (str), "%d", a);
 	return api_json_set (s, k, str);
 }

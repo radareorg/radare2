@@ -3,6 +3,7 @@
 #include "sdb/sdb.h"
 #include "sdb/cdb.h"
 #include "sdb/cdb_make.h"
+#include "buffer.inc.c"
 
 #define ALIGNMENT sizeof (void*)
 #define USE_GHA 1

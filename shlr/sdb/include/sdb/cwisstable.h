@@ -884,11 +884,26 @@ typedef uint64_t CWISS_Group;
 #define CWISS_Group_kWidth ((size_t)8)
 #define CWISS_Group_kShift 3
 
+#if CWISS_HAVE_CLANG_BUILTIN(__builtin_bswap64)
+# define bswap64 __builtin_bswap64
+#else
+static inline uint64_t bswap64(uint64_t v) {
+	return ((v & ((uint64_t)0xff << (7 * 8))) >> (7 * 8)) |
+		((v & ((uint64_t)0xff << (6 * 8))) >> (5 * 8)) |
+		((v & ((uint64_t)0xff << (5 * 8))) >> (3 * 8)) |
+		((v & ((uint64_t)0xff << (4 * 8))) >> (1 * 8)) |
+		((v & ((uint64_t)0xff << (3 * 8))) << (1 * 8)) |
+		((v & ((uint64_t)0xff << (2 * 8))) << (3 * 8)) |
+		((v & ((uint64_t)0xff << (1 * 8))) << (5 * 8)) |
+		((v & ((uint64_t)0xff << (0 * 8))) << (7 * 8));
+}
+#endif
+
 static inline CWISS_Group CWISS_Group_new(const CWISS_ControlByte* pos) {
 	CWISS_Group val;
 	memcpy(&val, pos, sizeof(val));
 #if CWISS_IS_BIG_ENDIAN
-	val = __builtin_bswap64(val);
+	val = bswap64(val);
 #endif
 	return val;
 }

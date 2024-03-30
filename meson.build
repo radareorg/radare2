@@ -470,7 +470,6 @@ subdir('shlr/zip')
 sdb_files = [
   'shlr/sdb/src/array.c',
   'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
   'shlr/sdb/src/set.c',
   'shlr/sdb/src/cdb.c',
   'shlr/sdb/src/cdb_make.c',
