@@ -84,7 +84,11 @@
 #if __linux__ && __GLIBC_MINOR < 12
 #define HAVE_PTHREAD_NP 0
 #else
+#if __APPLE__ && __ppc__
+#define HAVE_PTHREAD_NP 0
+#else
 #define HAVE_PTHREAD_NP 1
+#endif
 #endif
 #if __APPLE__
 #include <pthread.h>
