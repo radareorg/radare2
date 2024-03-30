@@ -9,7 +9,6 @@ EXTRA_PRE+=$(SDBLIB)
 # CFLAGS+=-DHAVE_MMAN=0
 
 SDB_OBJS=
-SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o
 SDB_OBJS+=heap.o
 SDB_OBJS+=set.o
