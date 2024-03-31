@@ -120,6 +120,7 @@ static bool parse_ipv4(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	{
 		ut32 tcpoff = ((ipv4->ver_len & 0x0F) * 4);
 		if (!parse_tcp (b, off, rec, ipv4->tot_len - tcpoff)) {// tot_len - tcpoff);
+			free (ipv4);
 			return false;
 		}
 		// rec, buf + tcpoff, ipv4->tot_len - tcpoff);
@@ -144,6 +145,7 @@ static bool parse_ipv6(RBuffer *b, ut64 off, pcaprec_t *rec) {
 	switch (ipv6->nxt) {
 	case TRANSPORT_TCP:
 		if (!parse_tcp (b, off + sizeof (pcaprec_ipv6_t), rec, ipv6->plen)) {
+			free (ipv6);
 			return false;
 		}
 		break;
@@ -218,12 +220,11 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		rec->hdr = rec_hdr;
 		ut8 *pktbuf = malloc (rec_hdr->incl_len);
 		if (!pktbuf) {
-			free (rec_hdr);
+			pcaprec_free (rec);
 			goto error;
 		}
 		if (r_buf_read_at (obj->b, off, pktbuf, rec_hdr->incl_len) != rec_hdr->incl_len) {
-			free (rec->data);
-			free (rec_hdr);
+			pcaprec_free (rec);
 			goto error;
 		}
 
@@ -232,7 +233,7 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		case LINK_ETHERNET:
 			if (!parse_ether (b, off, rec)) {
 				itsok = false;
-			// ignore errors here	return false;
+				// ignore errors here	return false;
 			}
 			break;
 		default:
@@ -241,6 +242,8 @@ static bool pcap_obj_init_recs(pcap_obj_t *obj) {
 		free (pktbuf);
 		if (itsok) {
 			r_list_append (recs, rec);
+		} else {
+			free (rec);
 		}
 		off += rec_hdr->incl_len;
 	}
@@ -300,6 +303,7 @@ static void pcaprec_tcp_sym_add(RList *list, pcaprec_t* rec, ut64 paddr, int siz
 	}
 	pcaprec_tcp_t *tcp = rec->transport.tcp_hdr;
 	if (!tcp) {
+		free (ptr);
 		return;
 	}
 	int datasz = size - ((tcp->hdr_len & 0xF0) >> 2);
@@ -376,6 +380,7 @@ void pcaprec_ether_sym_add(RList *list, pcaprec_t *rec, ut64 paddr) {
 	}
 	pcaprec_ether_t *ether = rec->link.ether_hdr;
 	if (!ether) {
+		free (ptr);
 		return;
 	}
 	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Ethernet, Src: %02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x
