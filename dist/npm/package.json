@@ -24,8 +24,8 @@
   "maintainers": [
     "pancake <pancake@nopcode.org>"
   ],
-  "name": "radare2-git",
-  "version": "5.8.9",
+  "name": "radare2",
+  "version": "5.9.0",
   "bugs": {
     "url": "https://github.com/radareorg/radare2/issues"
   },
