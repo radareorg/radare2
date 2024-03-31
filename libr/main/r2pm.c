@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - pancake */
+/* radare - LGPL - Copyright 2021-2024 - pancake */
 
 #define R_LOG_ORIGIN "r2pm"
 
@@ -177,6 +177,18 @@ static char *r2pm_pkgpath(const char *file) {
 	return NULL;
 }
 
+static char *find_newline(char *s) {
+	char *r = strchr (s, '\r');
+	char *n = strchr (s, '\n');
+	if (r && n) {
+		return (r < n)? r: n;
+	}
+	if (r) {
+		return r;
+	}
+	return n;
+
+}
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	char *res = NULL;
 	char *dbdir = r2pm_dbdir ();
@@ -194,7 +206,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 		switch (type) {
 		case TT_TEXTLINE:
 			descptr += strlen (needle);
-			nl = strchr (descptr, '\n');
+			nl = find_newline (descptr);
 			if (nl) {
 				*nl = 0;
 				nl--;
@@ -210,23 +222,22 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 			break;
 		case TT_TEXTLINE_LIST:
 			descptr += strlen (needle);
-			nl = strchr (descptr, '\n');
+			nl = find_newline (descptr);
 			if (nl) {
 				*nl = 0;
 			}
 			res = strdup (descptr);
 			break;
 		case TT_ENDQUOTE:
-			nl = strchr (descptr + strlen (token), '\n');
+			nl = find_newline (descptr + strlen (token));
 			if (nl) {
 				char *begin = nl + 1;
-				char *eoc = strstr (begin, "\n\"\n");
+				char *eoc = strstr (begin, "\n\"\n"); // windows have \r\n
 				if (eoc) {
 					return r_str_ndup (begin, eoc - begin);
-				} else {
-					R_LOG_ERROR ("Cannot find end of thing");
-					return NULL;
 				}
+				R_LOG_ERROR ("Cannot find end of thing");
+				return NULL;
 			}
 			break;
 		case TT_CODEBLOCK: {
