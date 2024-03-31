@@ -95,12 +95,12 @@ nth paddr      vaddr      bind   type size lib name            demangled
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x00000009 0x0000006d ADD_32 .data
-0x00000010 0x00000074 ADD_32 .data
-0x0000001c 0x00000080 ADD_32 MessageBoxA
-0x00000023 0x00000087 ADD_32 ExitProcess
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00000009 0x0000006d ADD_32 4     .data
+0x00000010 0x00000074 ADD_32 4     .data
+0x0000001c 0x00000080 ADD_32 4     MessageBoxA
+0x00000023 0x00000087 ADD_32 4     ExitProcess
 
 
 4 relocations

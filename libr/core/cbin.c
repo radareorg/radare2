@@ -1978,7 +1978,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				pj_ks (pj, "demname", mn);
 			}
 			pj_ks (pj, "type", bin_reloc_type_name (reloc));
-			pj_ks (pj, "ntype", reloc->ntype);
+			pj_kn (pj, "ntype", reloc->ntype);
 			pj_kn (pj, "vaddr", reloc->vaddr);
 			pj_kn (pj, "paddr", reloc->paddr);
 			if (reloc->symbol) {

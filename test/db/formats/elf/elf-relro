@@ -12,25 +12,25 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x0000e210 0x0000e210 SET_64 __cxa_finalize
-0x0000e218 0x0000e218 SET_64 __stack_chk_fail
-0x0000e220 0x0000e220 SET_64 dlopen
-0x0000e228 0x0000e228 SET_64 loadSymbols(void*, dispatchTable&, int)
-0x0000e230 0x0000e230 SET_64 dlerror
-0x0000e238 0x0000e238 SET_64 __android_log_print
-0x0000e240 0x0000e240 SET_64 dlclose
-0x0000e248 0x0000e248 SET_64 loadIOSuppSyms(void*, ioSuppDT&)
-0x0000e250 0x0000e250 SET_64 malloc
-0x0000e258 0x0000e258 SET_64 calloc
-0x0000e260 0x0000e260 SET_64 free
-0x0000e268 0x0000e268 SET_64 AndroidBitmap_lockPixels
-0x0000e270 0x0000e270 SET_64 AndroidBitmap_getInfo
-0x0000e278 0x0000e278 SET_64 AndroidBitmap_unlockPixels
-0x0000e280 0x0000e280 SET_64 memcpy
-0x0000e288 0x0000e288 SET_64 memset
-0x0000e290 0x0000e290 SET_64 dlsym
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x0000e210 0x0000e210 SET_64 1026  __cxa_finalize
+0x0000e218 0x0000e218 SET_64 1026  __stack_chk_fail
+0x0000e220 0x0000e220 SET_64 1026  dlopen
+0x0000e228 0x0000e228 SET_64 1026  loadSymbols(void*, dispatchTable&, int)
+0x0000e230 0x0000e230 SET_64 1026  dlerror
+0x0000e238 0x0000e238 SET_64 1026  __android_log_print
+0x0000e240 0x0000e240 SET_64 1026  dlclose
+0x0000e248 0x0000e248 SET_64 1026  loadIOSuppSyms(void*, ioSuppDT&)
+0x0000e250 0x0000e250 SET_64 1026  malloc
+0x0000e258 0x0000e258 SET_64 1026  calloc
+0x0000e260 0x0000e260 SET_64 1026  free
+0x0000e268 0x0000e268 SET_64 1026  AndroidBitmap_lockPixels
+0x0000e270 0x0000e270 SET_64 1026  AndroidBitmap_getInfo
+0x0000e278 0x0000e278 SET_64 1026  AndroidBitmap_unlockPixels
+0x0000e280 0x0000e280 SET_64 1026  memcpy
+0x0000e288 0x0000e288 SET_64 1026  memset
+0x0000e290 0x0000e290 SET_64 1026  dlsym
 
 
 17 relocations

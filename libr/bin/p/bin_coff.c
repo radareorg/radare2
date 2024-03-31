@@ -575,6 +575,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 				}
 			}
 
+			reloc->ntype = rel[j].r_type;
 			if (sym_vaddr) {
 				int plen = 0;
 				ut8 patch_buf[8];

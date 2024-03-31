@@ -471,6 +471,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		return NULL;
 	}
 	r->import = NULL;
+	r->ntype = rel->type;
 	r->symbol = NULL;
 	r->is_ifunc = false;
 	r->addend = rel->addend;

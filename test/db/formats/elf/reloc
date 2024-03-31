@@ -4,13 +4,13 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x00600988 0x00000988 SET_64 __gmon_start__
-0x006009a8 0x000009a8 SET_64 write
-0x006009b0 0x000009b0 SET_64 close
-0x006009b8 0x000009b8 SET_64 __libc_start_main
-0x006009c0 0x000009c0 SET_64 open
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00600988 0x00000988 SET_64 6     __gmon_start__
+0x006009a8 0x000009a8 SET_64 7     write
+0x006009b0 0x000009b0 SET_64 7     close
+0x006009b8 0x000009b8 SET_64 7     __libc_start_main
+0x006009c0 0x000009c0 SET_64 7     open
 
 
 5 relocations
@@ -231,130 +231,130 @@ EOF
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x0003f94c 0x0001f94c ADD_32 _Jv_RegisterClasses
-0x0003f954 0x0001f954 ADD_32 __register_frame_info
-0x0003f958 0x0001f958 ADD_32 __deregister_frame_info
-0x0003f98c 0x0001f98c ADD_32 atexit
-0x0003f998 0x0001f998 ADD_32 exit
-0x0003f9a4 0x0001f9a4 ADD_32 _exit
-0x0003f9b0 0x0001f9b0 ADD_32 __deregister_frame_info
-0x0003f9bc 0x0001f9bc ADD_32 __register_frame_info
-0x0003f9c8 0x0001f9c8 ADD_32 _Jv_RegisterClasses
-0x0003f9d4 0x0001f9d4 ADD_32 fputs
-0x0003f9e0 0x0001f9e0 ADD_32 printf
-0x0003f9ec 0x0001f9ec ADD_32 __flsbuf
-0x0003f9f8 0x0001f9f8 ADD_32 free
-0x0003fa04 0x0001fa04 ADD_32 strncmp
-0x0003fa10 0x0001fa10 ADD_32 strcoll
-0x0003fa1c 0x0001fa1c ADD_32 longjmp
-0x0003fa28 0x0001fa28 ADD_32 strcmp
-0x0003fa34 0x0001fa34 ADD_32 strrchr
-0x0003fa40 0x0001fa40 ADD_32 .udiv
-0x0003fa4c 0x0001fa4c ADD_32 .umul
-0x0003fa58 0x0001fa58 ADD_32 setjmp
-0x0003fa64 0x0001fa64 ADD_32 __assert_c99
-0x0003fa70 0x0001fa70 ADD_32 strlen
-0x0003fa7c 0x0001fa7c ADD_32 sprintf
-0x0003fa88 0x0001fa88 ADD_32 memset
-0x0003fa94 0x0001fa94 ADD_32 lstat64
-0x0003faa0 0x0001faa0 ADD_32 stat64
-0x0003faac 0x0001faac ADD_32 __major
-0x0003fab8 0x0001fab8 ADD_32 __minor
-0x0003fac4 0x0001fac4 ADD_32 strncpy
-0x0003fad0 0x0001fad0 ADD_32 strcpy
-0x0003fadc 0x0001fadc ADD_32 mbrtowc
-0x0003fae8 0x0001fae8 ADD_32 wcwidth
-0x0003faf4 0x0001faf4 ADD_32 mbsinit
-0x0003fb00 0x0001fb00 ADD_32 fwrite
-0x0003fb0c 0x0001fb0c ADD_32 memcpy
-0x0003fb18 0x0001fb18 ADD_32 fflush
-0x0003fb24 0x0001fb24 ADD_32 sigprocmask
-0x0003fb30 0x0001fb30 ADD_32 raise
-0x0003fb3c 0x0001fb3c ADD_32 signal
-0x0003fb48 0x0001fb48 ADD_32 .urem
-0x0003fb54 0x0001fb54 ADD_32 localtime
-0x0003fb60 0x0001fb60 ADD_32 abort
-0x0003fb6c 0x0001fb6c ADD_32 fprintf
-0x0003fb78 0x0001fb78 ADD_32 setlocale
-0x0003fb84 0x0001fb84 ADD_32 getenv
-0x0003fb90 0x0001fb90 ADD_32 ioctl
-0x0003fb9c 0x0001fb9c ADD_32 opendir
-0x0003fba8 0x0001fba8 ADD_32 fstat64
-0x0003fbb4 0x0001fbb4 ADD_32 readdir64
-0x0003fbc0 0x0001fbc0 ADD_32 closedir
-0x0003fbcc 0x0001fbcc ADD_32 sigismember
-0x0003fbd8 0x0001fbd8 ADD_32 isatty
-0x0003fbe4 0x0001fbe4 ADD_32 strchr
-0x0003fbf0 0x0001fbf0 ADD_32 tcgetpgrp
-0x0003fbfc 0x0001fbfc ADD_32 sigemptyset
-0x0003fc08 0x0001fc08 ADD_32 sigaction
-0x0003fc14 0x0001fc14 ADD_32 sigaddset
-0x0003fc20 0x0001fc20 ADD_32 malloc
-0x0003fc2c 0x0001fc2c ADD_32 acl_trivial
-0x0003fc38 0x0001fc38 ADD_32 readlink
-0x0003fc44 0x0001fc44 ADD_32 iswcntrl
-0x0003fc50 0x0001fc50 ADD_32 memcmp
-0x0003fc5c 0x0001fc5c ADD_32 strerror_r
-0x0003fc68 0x0001fc68 ADD_32 strcat
-0x0003fc74 0x0001fc74 ADD_32 tolower
-0x0003fc80 0x0001fc80 ADD_32 wctype
-0x0003fc8c 0x0001fc8c ADD_32 btowc
-0x0003fc98 0x0001fc98 ADD_32 iswctype
-0x0003fca4 0x0001fca4 ADD_32 memchr
-0x0003fcb0 0x0001fcb0 ADD_32 wcslen
-0x0003fcbc 0x0001fcbc ADD_32 wmemcpy
-0x0003fcc8 0x0001fcc8 ADD_32 wcscat
-0x0003fcd4 0x0001fcd4 ADD_32 towlower
-0x0003fce0 0x0001fce0 ADD_32 wmemchr
-0x0003fcec 0x0001fcec ADD_32 mbsrtowcs
-0x0003fcf8 0x0001fcf8 ADD_32 clock_gettime
-0x0003fd04 0x0001fd04 ADD_32 gettimeofday
-0x0003fd10 0x0001fd10 ADD_32 strdup
-0x0003fd1c 0x0001fd1c ADD_32 calloc
-0x0003fd28 0x0001fd28 ADD_32 _Q_flt
-0x0003fd34 0x0001fd34 ADD_32 _Q_qtoull
-0x0003fd40 0x0001fd40 ADD_32 _Q_lltoq
-0x0003fd4c 0x0001fd4c ADD_32 _Q_add
-0x0003fd58 0x0001fd58 ADD_32 _Q_fne
-0x0003fd64 0x0001fd64 ADD_32 localeconv
-0x0003fd70 0x0001fd70 ADD_32 _Q_div
-0x0003fd7c 0x0001fd7c ADD_32 _Q_mul
-0x0003fd88 0x0001fd88 ADD_32 _Q_itoq
-0x0003fd94 0x0001fd94 ADD_32 _Q_fle
-0x0003fda0 0x0001fda0 ADD_32 memmove
-0x0003fdac 0x0001fdac ADD_32 getpwuid
-0x0003fdb8 0x0001fdb8 ADD_32 getpwnam
-0x0003fdc4 0x0001fdc4 ADD_32 getgrgid
-0x0003fdd0 0x0001fdd0 ADD_32 getgrnam
-0x0003fddc 0x0001fddc ADD_32 iswprint
-0x0003fde8 0x0001fde8 ADD_32 toupper
-0x0003fdf4 0x0001fdf4 ADD_32 mbrlen
-0x0003fe00 0x0001fe00 ADD_32 tzset
-0x0003fe0c 0x0001fe0c ADD_32 strftime
-0x0003fe18 0x0001fe18 ADD_32 .div
-0x0003fe24 0x0001fe24 ADD_32 .rem
-0x0003fe30 0x0001fe30 ADD_32 gmtime_r
-0x0003fe3c 0x0001fe3c ADD_32 localtime_r
-0x0003fe48 0x0001fe48 ADD_32 realloc
-0x0003fe54 0x0001fe54 ADD_32 strtoul
-0x0003fe60 0x0001fe60 ADD_32 strtoumax
-0x0003fe6c 0x0001fe6c ADD_32 __fpending
-0x0003fe78 0x0001fe78 ADD_32 fclose
-0x0003fe84 0x0001fe84 ADD_32 _Q_fgt
-0x0003fe90 0x0001fe90 ADD_32 _Q_qtoi
-0x0003fe9c 0x0001fe9c ADD_32 _Q_sub
-0x0003fea8 0x0001fea8 ADD_32 _Q_fge
-0x0003feb4 0x0001feb4 ADD_32 _Q_feq
-0x0003fec0 0x0001fec0 ADD_32 snprintf
-0x0003fecc 0x0001fecc ADD_32 frexp
-0x0003fed8 0x0001fed8 ADD_32 ldexp
-0x00040578 0x00040578 ADD_32 __iob
-0x000406b8 0x000406b8 ADD_32 errno
-0x000406c0 0x000406c0 ADD_32 __ctype
-0x000408d8 0x000408d8 ADD_32 tzname
-0x000408e8 0x000408e8 ADD_32 _environ
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x0003f94c 0x0001f94c ADD_32 20    _Jv_RegisterClasses
+0x0003f954 0x0001f954 ADD_32 20    __register_frame_info
+0x0003f958 0x0001f958 ADD_32 20    __deregister_frame_info
+0x0003f98c 0x0001f98c ADD_32 21    atexit
+0x0003f998 0x0001f998 ADD_32 21    exit
+0x0003f9a4 0x0001f9a4 ADD_32 21    _exit
+0x0003f9b0 0x0001f9b0 ADD_32 21    __deregister_frame_info
+0x0003f9bc 0x0001f9bc ADD_32 21    __register_frame_info
+0x0003f9c8 0x0001f9c8 ADD_32 21    _Jv_RegisterClasses
+0x0003f9d4 0x0001f9d4 ADD_32 21    fputs
+0x0003f9e0 0x0001f9e0 ADD_32 21    printf
+0x0003f9ec 0x0001f9ec ADD_32 21    __flsbuf
+0x0003f9f8 0x0001f9f8 ADD_32 21    free
+0x0003fa04 0x0001fa04 ADD_32 21    strncmp
+0x0003fa10 0x0001fa10 ADD_32 21    strcoll
+0x0003fa1c 0x0001fa1c ADD_32 21    longjmp
+0x0003fa28 0x0001fa28 ADD_32 21    strcmp
+0x0003fa34 0x0001fa34 ADD_32 21    strrchr
+0x0003fa40 0x0001fa40 ADD_32 21    .udiv
+0x0003fa4c 0x0001fa4c ADD_32 21    .umul
+0x0003fa58 0x0001fa58 ADD_32 21    setjmp
+0x0003fa64 0x0001fa64 ADD_32 21    __assert_c99
+0x0003fa70 0x0001fa70 ADD_32 21    strlen
+0x0003fa7c 0x0001fa7c ADD_32 21    sprintf
+0x0003fa88 0x0001fa88 ADD_32 21    memset
+0x0003fa94 0x0001fa94 ADD_32 21    lstat64
+0x0003faa0 0x0001faa0 ADD_32 21    stat64
+0x0003faac 0x0001faac ADD_32 21    __major
+0x0003fab8 0x0001fab8 ADD_32 21    __minor
+0x0003fac4 0x0001fac4 ADD_32 21    strncpy
+0x0003fad0 0x0001fad0 ADD_32 21    strcpy
+0x0003fadc 0x0001fadc ADD_32 21    mbrtowc
+0x0003fae8 0x0001fae8 ADD_32 21    wcwidth
+0x0003faf4 0x0001faf4 ADD_32 21    mbsinit
+0x0003fb00 0x0001fb00 ADD_32 21    fwrite
+0x0003fb0c 0x0001fb0c ADD_32 21    memcpy
+0x0003fb18 0x0001fb18 ADD_32 21    fflush
+0x0003fb24 0x0001fb24 ADD_32 21    sigprocmask
+0x0003fb30 0x0001fb30 ADD_32 21    raise
+0x0003fb3c 0x0001fb3c ADD_32 21    signal
+0x0003fb48 0x0001fb48 ADD_32 21    .urem
+0x0003fb54 0x0001fb54 ADD_32 21    localtime
+0x0003fb60 0x0001fb60 ADD_32 21    abort
+0x0003fb6c 0x0001fb6c ADD_32 21    fprintf
+0x0003fb78 0x0001fb78 ADD_32 21    setlocale
+0x0003fb84 0x0001fb84 ADD_32 21    getenv
+0x0003fb90 0x0001fb90 ADD_32 21    ioctl
+0x0003fb9c 0x0001fb9c ADD_32 21    opendir
+0x0003fba8 0x0001fba8 ADD_32 21    fstat64
+0x0003fbb4 0x0001fbb4 ADD_32 21    readdir64
+0x0003fbc0 0x0001fbc0 ADD_32 21    closedir
+0x0003fbcc 0x0001fbcc ADD_32 21    sigismember
+0x0003fbd8 0x0001fbd8 ADD_32 21    isatty
+0x0003fbe4 0x0001fbe4 ADD_32 21    strchr
+0x0003fbf0 0x0001fbf0 ADD_32 21    tcgetpgrp
+0x0003fbfc 0x0001fbfc ADD_32 21    sigemptyset
+0x0003fc08 0x0001fc08 ADD_32 21    sigaction
+0x0003fc14 0x0001fc14 ADD_32 21    sigaddset
+0x0003fc20 0x0001fc20 ADD_32 21    malloc
+0x0003fc2c 0x0001fc2c ADD_32 21    acl_trivial
+0x0003fc38 0x0001fc38 ADD_32 21    readlink
+0x0003fc44 0x0001fc44 ADD_32 21    iswcntrl
+0x0003fc50 0x0001fc50 ADD_32 21    memcmp
+0x0003fc5c 0x0001fc5c ADD_32 21    strerror_r
+0x0003fc68 0x0001fc68 ADD_32 21    strcat
+0x0003fc74 0x0001fc74 ADD_32 21    tolower
+0x0003fc80 0x0001fc80 ADD_32 21    wctype
+0x0003fc8c 0x0001fc8c ADD_32 21    btowc
+0x0003fc98 0x0001fc98 ADD_32 21    iswctype
+0x0003fca4 0x0001fca4 ADD_32 21    memchr
+0x0003fcb0 0x0001fcb0 ADD_32 21    wcslen
+0x0003fcbc 0x0001fcbc ADD_32 21    wmemcpy
+0x0003fcc8 0x0001fcc8 ADD_32 21    wcscat
+0x0003fcd4 0x0001fcd4 ADD_32 21    towlower
+0x0003fce0 0x0001fce0 ADD_32 21    wmemchr
+0x0003fcec 0x0001fcec ADD_32 21    mbsrtowcs
+0x0003fcf8 0x0001fcf8 ADD_32 21    clock_gettime
+0x0003fd04 0x0001fd04 ADD_32 21    gettimeofday
+0x0003fd10 0x0001fd10 ADD_32 21    strdup
+0x0003fd1c 0x0001fd1c ADD_32 21    calloc
+0x0003fd28 0x0001fd28 ADD_32 21    _Q_flt
+0x0003fd34 0x0001fd34 ADD_32 21    _Q_qtoull
+0x0003fd40 0x0001fd40 ADD_32 21    _Q_lltoq
+0x0003fd4c 0x0001fd4c ADD_32 21    _Q_add
+0x0003fd58 0x0001fd58 ADD_32 21    _Q_fne
+0x0003fd64 0x0001fd64 ADD_32 21    localeconv
+0x0003fd70 0x0001fd70 ADD_32 21    _Q_div
+0x0003fd7c 0x0001fd7c ADD_32 21    _Q_mul
+0x0003fd88 0x0001fd88 ADD_32 21    _Q_itoq
+0x0003fd94 0x0001fd94 ADD_32 21    _Q_fle
+0x0003fda0 0x0001fda0 ADD_32 21    memmove
+0x0003fdac 0x0001fdac ADD_32 21    getpwuid
+0x0003fdb8 0x0001fdb8 ADD_32 21    getpwnam
+0x0003fdc4 0x0001fdc4 ADD_32 21    getgrgid
+0x0003fdd0 0x0001fdd0 ADD_32 21    getgrnam
+0x0003fddc 0x0001fddc ADD_32 21    iswprint
+0x0003fde8 0x0001fde8 ADD_32 21    toupper
+0x0003fdf4 0x0001fdf4 ADD_32 21    mbrlen
+0x0003fe00 0x0001fe00 ADD_32 21    tzset
+0x0003fe0c 0x0001fe0c ADD_32 21    strftime
+0x0003fe18 0x0001fe18 ADD_32 21    .div
+0x0003fe24 0x0001fe24 ADD_32 21    .rem
+0x0003fe30 0x0001fe30 ADD_32 21    gmtime_r
+0x0003fe3c 0x0001fe3c ADD_32 21    localtime_r
+0x0003fe48 0x0001fe48 ADD_32 21    realloc
+0x0003fe54 0x0001fe54 ADD_32 21    strtoul
+0x0003fe60 0x0001fe60 ADD_32 21    strtoumax
+0x0003fe6c 0x0001fe6c ADD_32 21    __fpending
+0x0003fe78 0x0001fe78 ADD_32 21    fclose
+0x0003fe84 0x0001fe84 ADD_32 21    _Q_fgt
+0x0003fe90 0x0001fe90 ADD_32 21    _Q_qtoi
+0x0003fe9c 0x0001fe9c ADD_32 21    _Q_sub
+0x0003fea8 0x0001fea8 ADD_32 21    _Q_fge
+0x0003feb4 0x0001feb4 ADD_32 21    _Q_feq
+0x0003fec0 0x0001fec0 ADD_32 21    snprintf
+0x0003fecc 0x0001fecc ADD_32 21    frexp
+0x0003fed8 0x0001fed8 ADD_32 21    ldexp
+0x00040578 0x00040578 ADD_32 19    __iob
+0x000406b8 0x000406b8 ADD_32 19    errno
+0x000406c0 0x000406c0 ADD_32 19    __ctype
+0x000408d8 0x000408d8 ADD_32 19    tzname
+0x000408e8 0x000408e8 ADD_32 19    _environ
 
 
 122 relocations
@@ -432,214 +432,214 @@ EOF
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x000ec004 0x000cc004 ADD_32 __gmon_start__
-0x000ec044 0x000cc044 ADD_32 fileno
-0x000ec050 0x000cc050 ADD_32 fputs
-0x000ec05c 0x000cc05c ADD_32 abort
-0x000ec068 0x000cc068 ADD_32 __errno_location
-0x000ec074 0x000cc074 ADD_32 endservent
-0x000ec080 0x000cc080 ADD_32 sigemptyset
-0x000ec08c 0x000cc08c ADD_32 connect
-0x000ec098 0x000cc098 ADD_32 getpid
-0x000ec0a4 0x000cc0a4 ADD_32 getdtablesize
-0x000ec0b0 0x000cc0b0 ADD_32 dcngettext
-0x000ec0bc 0x000cc0bc ADD_32 strerror
-0x000ec0c8 0x000cc0c8 ADD_32 regfree
-0x000ec0d4 0x000cc0d4 ADD_32 setrlimit64
-0x000ec0e0 0x000cc0e0 ADD_32 strcoll
-0x000ec0ec 0x000cc0ec ADD_32 sysconf
-0x000ec0f8 0x000cc0f8 ADD_32 memcmp
-0x000ec104 0x000cc104 ADD_32 qsort
-0x000ec110 0x000cc110 ADD_32 freeaddrinfo
-0x000ec11c 0x000cc11c ADD_32 __strncpy_chk
-0x000ec128 0x000cc128 ADD_32 __longjmp_chk
-0x000ec134 0x000cc134 ADD_32 open64
-0x000ec140 0x000cc140 ADD_32 tgetflag
-0x000ec14c 0x000cc14c ADD_32 __ctype_get_mb_cur_max
-0x000ec158 0x000cc158 ADD_32 __gmon_start__
-0x000ec164 0x000cc164 ADD_32 realloc
-0x000ec170 0x000cc170 ADD_32 wcscoll
-0x000ec17c 0x000cc17c ADD_32 __xstat64
-0x000ec188 0x000cc188 ADD_32 localtime
-0x000ec194 0x000cc194 ADD_32 setservent
-0x000ec1a0 0x000cc1a0 ADD_32 strchr
-0x000ec1ac 0x000cc1ac ADD_32 __printf_chk
-0x000ec1b8 0x000cc1b8 ADD_32 strncpy
-0x000ec1c4 0x000cc1c4 ADD_32 wcslen
-0x000ec1d0 0x000cc1d0 ADD_32 ttyname
-0x000ec1dc 0x000cc1dc ADD_32 write
-0x000ec1e8 0x000cc1e8 ADD_32 tzset
-0x000ec1f4 0x000cc1f4 ADD_32 mbsrtowcs
-0x000ec200 0x000cc200 ADD_32 dlclose
-0x000ec20c 0x000cc20c ADD_32 fgets
-0x000ec218 0x000cc218 ADD_32 regexec
-0x000ec224 0x000cc224 ADD_32 wcschr
-0x000ec230 0x000cc230 ADD_32 memset
-0x000ec23c 0x000cc23c ADD_32 setitimer
-0x000ec248 0x000cc248 ADD_32 fopen64
-0x000ec254 0x000cc254 ADD_32 __libc_start_main
-0x000ec260 0x000cc260 ADD_32 __memcpy_chk
-0x000ec26c 0x000cc26c ADD_32 strrchr
-0x000ec278 0x000cc278 ADD_32 tcgetattr
-0x000ec284 0x000cc284 ADD_32 bindtextdomain
-0x000ec290 0x000cc290 ADD_32 mbrtowc
-0x000ec29c 0x000cc29c ADD_32 read
-0x000ec2a8 0x000cc2a8 ADD_32 __strcat_chk
-0x000ec2b4 0x000cc2b4 ADD_32 getrusage
-0x000ec2c0 0x000cc2c0 ADD_32 gettimeofday
-0x000ec2cc 0x000cc2cc ADD_32 strtol
-0x000ec2d8 0x000cc2d8 ADD_32 fdopen
-0x000ec2e4 0x000cc2e4 ADD_32 tcsetpgrp
-0x000ec2f0 0x000cc2f0 ADD_32 __ctype_toupper_loc
-0x000ec2fc 0x000cc2fc ADD_32 free
-0x000ec308 0x000cc308 ADD_32 __lxstat64
-0x000ec314 0x000cc314 ADD_32 __strtoll_internal
-0x000ec320 0x000cc320 ADD_32 setpgid
-0x000ec32c 0x000cc32c ADD_32 dcgettext
-0x000ec338 0x000cc338 ADD_32 access
-0x000ec344 0x000cc344 ADD_32 dlsym
-0x000ec350 0x000cc350 ADD_32 _Q_lltoq
-0x000ec35c 0x000cc35c ADD_32 tgetent
-0x000ec368 0x000cc368 ADD_32 sigaction
-0x000ec374 0x000cc374 ADD_32 sbrk
-0x000ec380 0x000cc380 ADD_32 fflush
-0x000ec38c 0x000cc38c ADD_32 regcomp
-0x000ec398 0x000cc398 ADD_32 opendir
-0x000ec3a4 0x000cc3a4 ADD_32 wctype
-0x000ec3b0 0x000cc3b0 ADD_32 ioctl
-0x000ec3bc 0x000cc3bc ADD_32 wcrtomb
-0x000ec3c8 0x000cc3c8 ADD_32 iswlower
-0x000ec3d4 0x000cc3d4 ADD_32 socket
-0x000ec3e0 0x000cc3e0 ADD_32 dup2
-0x000ec3ec 0x000cc3ec ADD_32 __ctype_b_loc
-0x000ec3f8 0x000cc3f8 ADD_32 wctob
-0x000ec404 0x000cc404 ADD_32 isatty
-0x000ec410 0x000cc410 ADD_32 strsignal
-0x000ec41c 0x000cc41c ADD_32 getaddrinfo
-0x000ec428 0x000cc428 ADD_32 umask
-0x000ec434 0x000cc434 ADD_32 fclose
-0x000ec440 0x000cc440 ADD_32 mbstowcs
-0x000ec44c 0x000cc44c ADD_32 setuid
-0x000ec458 0x000cc458 ADD_32 mbsinit
-0x000ec464 0x000cc464 ADD_32 dup
-0x000ec470 0x000cc470 ADD_32 tcgetpgrp
-0x000ec47c 0x000cc47c ADD_32 getservent
-0x000ec488 0x000cc488 ADD_32 readdir64
-0x000ec494 0x000cc494 ADD_32 memcpy
-0x000ec4a0 0x000cc4a0 ADD_32 strtoul
-0x000ec4ac 0x000cc4ac ADD_32 strlen
-0x000ec4b8 0x000cc4b8 ADD_32 setgrent
-0x000ec4c4 0x000cc4c4 ADD_32 alarm
-0x000ec4d0 0x000cc4d0 ADD_32 unlink
-0x000ec4dc 0x000cc4dc ADD_32 getpwuid
-0x000ec4e8 0x000cc4e8 ADD_32 gai_strerror
-0x000ec4f4 0x000cc4f4 ADD_32 getppid
-0x000ec500 0x000cc500 ADD_32 setlocale
-0x000ec50c 0x000cc50c ADD_32 waitpid
-0x000ec518 0x000cc518 ADD_32 clearerr
-0x000ec524 0x000cc524 ADD_32 sigdelset
-0x000ec530 0x000cc530 ADD_32 strcpy
-0x000ec53c 0x000cc53c ADD_32 getegid
-0x000ec548 0x000cc548 ADD_32 dlopen
-0x000ec554 0x000cc554 ADD_32 wcsrtombs
-0x000ec560 0x000cc560 ADD_32 __vsnprintf_chk
-0x000ec56c 0x000cc56c ADD_32 killpg
-0x000ec578 0x000cc578 ADD_32 __vfprintf_chk
-0x000ec584 0x000cc584 ADD_32 chdir
-0x000ec590 0x000cc590 ADD_32 tputs
-0x000ec59c 0x000cc59c ADD_32 getuid
-0x000ec5a8 0x000cc5a8 ADD_32 asprintf
-0x000ec5b4 0x000cc5b4 ADD_32 mblen
-0x000ec5c0 0x000cc5c0 ADD_32 getrlimit64
-0x000ec5cc 0x000cc5cc ADD_32 __strcpy_chk
-0x000ec5d8 0x000cc5d8 ADD_32 __snprintf_chk
-0x000ec5e4 0x000cc5e4 ADD_32 strcasecmp
-0x000ec5f0 0x000cc5f0 ADD_32 getgrent
-0x000ec5fc 0x000cc5fc ADD_32 select
-0x000ec608 0x000cc608 ADD_32 closedir
-0x000ec614 0x000cc614 ADD_32 close
-0x000ec620 0x000cc620 ADD_32 fwrite
-0x000ec62c 0x000cc62c ADD_32 eaccess
-0x000ec638 0x000cc638 ADD_32 strstr
-0x000ec644 0x000cc644 ADD_32 time
-0x000ec650 0x000cc650 ADD_32 setvbuf
-0x000ec65c 0x000cc65c ADD_32 execve
-0x000ec668 0x000cc668 ADD_32 malloc
-0x000ec674 0x000cc674 ADD_32 wcscmp
-0x000ec680 0x000cc680 ADD_32 iswalnum
-0x000ec68c 0x000cc68c ADD_32 sigprocmask
-0x000ec698 0x000cc698 ADD_32 setpwent
-0x000ec6a4 0x000cc6a4 ADD_32 __stack_chk_fail
-0x000ec6b0 0x000cc6b0 ADD_32 gethostname
-0x000ec6bc 0x000cc6bc ADD_32 __fprintf_chk
-0x000ec6c8 0x000cc6c8 ADD_32 fputc
-0x000ec6d4 0x000cc6d4 ADD_32 dlerror
-0x000ec6e0 0x000cc6e0 ADD_32 pathconf
-0x000ec6ec 0x000cc6ec ADD_32 strtold
-0x000ec6f8 0x000cc6f8 ADD_32 strnlen
-0x000ec704 0x000cc704 ADD_32 tgoto
-0x000ec710 0x000cc710 ADD_32 strcasestr
-0x000ec71c 0x000cc71c ADD_32 sleep
-0x000ec728 0x000cc728 ADD_32 __strtoull_internal
-0x000ec734 0x000cc734 ADD_32 sigaddset
-0x000ec740 0x000cc740 ADD_32 tgetnum
-0x000ec74c 0x000cc74c ADD_32 readlink
-0x000ec758 0x000cc758 ADD_32 strncasecmp
-0x000ec764 0x000cc764 ADD_32 memmove
-0x000ec770 0x000cc770 ADD_32 __ctype_tolower_loc
-0x000ec77c 0x000cc77c ADD_32 strcat
-0x000ec788 0x000cc788 ADD_32 towlower
-0x000ec794 0x000cc794 ADD_32 getcwd
-0x000ec7a0 0x000cc7a0 ADD_32 puts
-0x000ec7ac 0x000cc7ac ADD_32 iswctype
-0x000ec7b8 0x000cc7b8 ADD_32 fork
-0x000ec7c4 0x000cc7c4 ADD_32 textdomain
-0x000ec7d0 0x000cc7d0 ADD_32 __fxstat64
-0x000ec7dc 0x000cc7dc ADD_32 mbtowc
-0x000ec7e8 0x000cc7e8 ADD_32 tcsetattr
-0x000ec7f4 0x000cc7f4 ADD_32 fcntl
-0x000ec800 0x000cc800 ADD_32 endpwent
-0x000ec80c 0x000cc80c ADD_32 wcsdup
-0x000ec818 0x000cc818 ADD_32 getgroups
-0x000ec824 0x000cc824 ADD_32 strncmp
-0x000ec830 0x000cc830 ADD_32 _IO_putc
-0x000ec83c 0x000cc83c ADD_32 strpbrk
-0x000ec848 0x000cc848 ADD_32 pipe
-0x000ec854 0x000cc854 ADD_32 strftime
-0x000ec860 0x000cc860 ADD_32 __sprintf_chk
-0x000ec86c 0x000cc86c ADD_32 iswupper
-0x000ec878 0x000cc878 ADD_32 setgid
-0x000ec884 0x000cc884 ADD_32 tgetstr
-0x000ec890 0x000cc890 ADD_32 kill
-0x000ec89c 0x000cc89c ADD_32 wcwidth
-0x000ec8a8 0x000cc8a8 ADD_32 __memmove_chk
-0x000ec8b4 0x000cc8b4 ADD_32 __mbrlen
-0x000ec8c0 0x000cc8c0 ADD_32 getpwent
-0x000ec8cc 0x000cc8cc ADD_32 getpeername
-0x000ec8d8 0x000cc8d8 ADD_32 ferror
-0x000ec8e4 0x000cc8e4 ADD_32 getpwnam
-0x000ec8f0 0x000cc8f0 ADD_32 lseek64
-0x000ec8fc 0x000cc8fc ADD_32 strcmp
-0x000ec908 0x000cc908 ADD_32 confstr
-0x000ec914 0x000cc914 ADD_32 __sigsetjmp
-0x000ec920 0x000cc920 ADD_32 towupper
-0x000ec92c 0x000cc92c ADD_32 exit
-0x000ec938 0x000cc938 ADD_32 endgrent
-0x000ec944 0x000cc944 ADD_32 __fpurge
-0x000ec950 0x000cc950 ADD_32 getpgrp
-0x000ec95c 0x000cc95c ADD_32 getgid
-0x000ec968 0x000cc968 ADD_32 _init
-0x000ec974 0x000cc974 ADD_32 wcsncmp
-0x000ec980 0x000cc980 ADD_32 geteuid
-0x000f0c58 0x000f0c58 ADD_32 PC
-0x000f0c5c 0x000f0c5c ADD_32 UP
-0x000f0c60 0x000f0c60 ADD_32 stderr
-0x000f0c68 0x000f0c68 ADD_32 __environ
-0x000f0c70 0x000f0c70 ADD_32 stdin
-0x000f0c74 0x000f0c74 ADD_32 BC
-0x000f0c78 0x000f0c78 ADD_32 stdout
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x000ec004 0x000cc004 ADD_32 20    __gmon_start__
+0x000ec044 0x000cc044 ADD_32 21    fileno
+0x000ec050 0x000cc050 ADD_32 21    fputs
+0x000ec05c 0x000cc05c ADD_32 21    abort
+0x000ec068 0x000cc068 ADD_32 21    __errno_location
+0x000ec074 0x000cc074 ADD_32 21    endservent
+0x000ec080 0x000cc080 ADD_32 21    sigemptyset
+0x000ec08c 0x000cc08c ADD_32 21    connect
+0x000ec098 0x000cc098 ADD_32 21    getpid
+0x000ec0a4 0x000cc0a4 ADD_32 21    getdtablesize
+0x000ec0b0 0x000cc0b0 ADD_32 21    dcngettext
+0x000ec0bc 0x000cc0bc ADD_32 21    strerror
+0x000ec0c8 0x000cc0c8 ADD_32 21    regfree
+0x000ec0d4 0x000cc0d4 ADD_32 21    setrlimit64
+0x000ec0e0 0x000cc0e0 ADD_32 21    strcoll
+0x000ec0ec 0x000cc0ec ADD_32 21    sysconf
+0x000ec0f8 0x000cc0f8 ADD_32 21    memcmp
+0x000ec104 0x000cc104 ADD_32 21    qsort
+0x000ec110 0x000cc110 ADD_32 21    freeaddrinfo
+0x000ec11c 0x000cc11c ADD_32 21    __strncpy_chk
+0x000ec128 0x000cc128 ADD_32 21    __longjmp_chk
+0x000ec134 0x000cc134 ADD_32 21    open64
+0x000ec140 0x000cc140 ADD_32 21    tgetflag
+0x000ec14c 0x000cc14c ADD_32 21    __ctype_get_mb_cur_max
+0x000ec158 0x000cc158 ADD_32 21    __gmon_start__
+0x000ec164 0x000cc164 ADD_32 21    realloc
+0x000ec170 0x000cc170 ADD_32 21    wcscoll
+0x000ec17c 0x000cc17c ADD_32 21    __xstat64
+0x000ec188 0x000cc188 ADD_32 21    localtime
+0x000ec194 0x000cc194 ADD_32 21    setservent
+0x000ec1a0 0x000cc1a0 ADD_32 21    strchr
+0x000ec1ac 0x000cc1ac ADD_32 21    __printf_chk
+0x000ec1b8 0x000cc1b8 ADD_32 21    strncpy
+0x000ec1c4 0x000cc1c4 ADD_32 21    wcslen
+0x000ec1d0 0x000cc1d0 ADD_32 21    ttyname
+0x000ec1dc 0x000cc1dc ADD_32 21    write
+0x000ec1e8 0x000cc1e8 ADD_32 21    tzset
+0x000ec1f4 0x000cc1f4 ADD_32 21    mbsrtowcs
+0x000ec200 0x000cc200 ADD_32 21    dlclose
+0x000ec20c 0x000cc20c ADD_32 21    fgets
+0x000ec218 0x000cc218 ADD_32 21    regexec
+0x000ec224 0x000cc224 ADD_32 21    wcschr
+0x000ec230 0x000cc230 ADD_32 21    memset
+0x000ec23c 0x000cc23c ADD_32 21    setitimer
+0x000ec248 0x000cc248 ADD_32 21    fopen64
+0x000ec254 0x000cc254 ADD_32 21    __libc_start_main
+0x000ec260 0x000cc260 ADD_32 21    __memcpy_chk
+0x000ec26c 0x000cc26c ADD_32 21    strrchr
+0x000ec278 0x000cc278 ADD_32 21    tcgetattr
+0x000ec284 0x000cc284 ADD_32 21    bindtextdomain
+0x000ec290 0x000cc290 ADD_32 21    mbrtowc
+0x000ec29c 0x000cc29c ADD_32 21    read
+0x000ec2a8 0x000cc2a8 ADD_32 21    __strcat_chk
+0x000ec2b4 0x000cc2b4 ADD_32 21    getrusage
+0x000ec2c0 0x000cc2c0 ADD_32 21    gettimeofday
+0x000ec2cc 0x000cc2cc ADD_32 21    strtol
+0x000ec2d8 0x000cc2d8 ADD_32 21    fdopen
+0x000ec2e4 0x000cc2e4 ADD_32 21    tcsetpgrp
+0x000ec2f0 0x000cc2f0 ADD_32 21    __ctype_toupper_loc
+0x000ec2fc 0x000cc2fc ADD_32 21    free
+0x000ec308 0x000cc308 ADD_32 21    __lxstat64
+0x000ec314 0x000cc314 ADD_32 21    __strtoll_internal
+0x000ec320 0x000cc320 ADD_32 21    setpgid
+0x000ec32c 0x000cc32c ADD_32 21    dcgettext
+0x000ec338 0x000cc338 ADD_32 21    access
+0x000ec344 0x000cc344 ADD_32 21    dlsym
+0x000ec350 0x000cc350 ADD_32 21    _Q_lltoq
+0x000ec35c 0x000cc35c ADD_32 21    tgetent
+0x000ec368 0x000cc368 ADD_32 21    sigaction
+0x000ec374 0x000cc374 ADD_32 21    sbrk
+0x000ec380 0x000cc380 ADD_32 21    fflush
+0x000ec38c 0x000cc38c ADD_32 21    regcomp
+0x000ec398 0x000cc398 ADD_32 21    opendir
+0x000ec3a4 0x000cc3a4 ADD_32 21    wctype
+0x000ec3b0 0x000cc3b0 ADD_32 21    ioctl
+0x000ec3bc 0x000cc3bc ADD_32 21    wcrtomb
+0x000ec3c8 0x000cc3c8 ADD_32 21    iswlower
+0x000ec3d4 0x000cc3d4 ADD_32 21    socket
+0x000ec3e0 0x000cc3e0 ADD_32 21    dup2
+0x000ec3ec 0x000cc3ec ADD_32 21    __ctype_b_loc
+0x000ec3f8 0x000cc3f8 ADD_32 21    wctob
+0x000ec404 0x000cc404 ADD_32 21    isatty
+0x000ec410 0x000cc410 ADD_32 21    strsignal
+0x000ec41c 0x000cc41c ADD_32 21    getaddrinfo
+0x000ec428 0x000cc428 ADD_32 21    umask
+0x000ec434 0x000cc434 ADD_32 21    fclose
+0x000ec440 0x000cc440 ADD_32 21    mbstowcs
+0x000ec44c 0x000cc44c ADD_32 21    setuid
+0x000ec458 0x000cc458 ADD_32 21    mbsinit
+0x000ec464 0x000cc464 ADD_32 21    dup
+0x000ec470 0x000cc470 ADD_32 21    tcgetpgrp
+0x000ec47c 0x000cc47c ADD_32 21    getservent
+0x000ec488 0x000cc488 ADD_32 21    readdir64
+0x000ec494 0x000cc494 ADD_32 21    memcpy
+0x000ec4a0 0x000cc4a0 ADD_32 21    strtoul
+0x000ec4ac 0x000cc4ac ADD_32 21    strlen
+0x000ec4b8 0x000cc4b8 ADD_32 21    setgrent
+0x000ec4c4 0x000cc4c4 ADD_32 21    alarm
+0x000ec4d0 0x000cc4d0 ADD_32 21    unlink
+0x000ec4dc 0x000cc4dc ADD_32 21    getpwuid
+0x000ec4e8 0x000cc4e8 ADD_32 21    gai_strerror
+0x000ec4f4 0x000cc4f4 ADD_32 21    getppid
+0x000ec500 0x000cc500 ADD_32 21    setlocale
+0x000ec50c 0x000cc50c ADD_32 21    waitpid
+0x000ec518 0x000cc518 ADD_32 21    clearerr
+0x000ec524 0x000cc524 ADD_32 21    sigdelset
+0x000ec530 0x000cc530 ADD_32 21    strcpy
+0x000ec53c 0x000cc53c ADD_32 21    getegid
+0x000ec548 0x000cc548 ADD_32 21    dlopen
+0x000ec554 0x000cc554 ADD_32 21    wcsrtombs
+0x000ec560 0x000cc560 ADD_32 21    __vsnprintf_chk
+0x000ec56c 0x000cc56c ADD_32 21    killpg
+0x000ec578 0x000cc578 ADD_32 21    __vfprintf_chk
+0x000ec584 0x000cc584 ADD_32 21    chdir
+0x000ec590 0x000cc590 ADD_32 21    tputs
+0x000ec59c 0x000cc59c ADD_32 21    getuid
+0x000ec5a8 0x000cc5a8 ADD_32 21    asprintf
+0x000ec5b4 0x000cc5b4 ADD_32 21    mblen
+0x000ec5c0 0x000cc5c0 ADD_32 21    getrlimit64
+0x000ec5cc 0x000cc5cc ADD_32 21    __strcpy_chk
+0x000ec5d8 0x000cc5d8 ADD_32 21    __snprintf_chk
+0x000ec5e4 0x000cc5e4 ADD_32 21    strcasecmp
+0x000ec5f0 0x000cc5f0 ADD_32 21    getgrent
+0x000ec5fc 0x000cc5fc ADD_32 21    select
+0x000ec608 0x000cc608 ADD_32 21    closedir
+0x000ec614 0x000cc614 ADD_32 21    close
+0x000ec620 0x000cc620 ADD_32 21    fwrite
+0x000ec62c 0x000cc62c ADD_32 21    eaccess
+0x000ec638 0x000cc638 ADD_32 21    strstr
+0x000ec644 0x000cc644 ADD_32 21    time
+0x000ec650 0x000cc650 ADD_32 21    setvbuf
+0x000ec65c 0x000cc65c ADD_32 21    execve
+0x000ec668 0x000cc668 ADD_32 21    malloc
+0x000ec674 0x000cc674 ADD_32 21    wcscmp
+0x000ec680 0x000cc680 ADD_32 21    iswalnum
+0x000ec68c 0x000cc68c ADD_32 21    sigprocmask
+0x000ec698 0x000cc698 ADD_32 21    setpwent
+0x000ec6a4 0x000cc6a4 ADD_32 21    __stack_chk_fail
+0x000ec6b0 0x000cc6b0 ADD_32 21    gethostname
+0x000ec6bc 0x000cc6bc ADD_32 21    __fprintf_chk
+0x000ec6c8 0x000cc6c8 ADD_32 21    fputc
+0x000ec6d4 0x000cc6d4 ADD_32 21    dlerror
+0x000ec6e0 0x000cc6e0 ADD_32 21    pathconf
+0x000ec6ec 0x000cc6ec ADD_32 21    strtold
+0x000ec6f8 0x000cc6f8 ADD_32 21    strnlen
+0x000ec704 0x000cc704 ADD_32 21    tgoto
+0x000ec710 0x000cc710 ADD_32 21    strcasestr
+0x000ec71c 0x000cc71c ADD_32 21    sleep
+0x000ec728 0x000cc728 ADD_32 21    __strtoull_internal
+0x000ec734 0x000cc734 ADD_32 21    sigaddset
+0x000ec740 0x000cc740 ADD_32 21    tgetnum
+0x000ec74c 0x000cc74c ADD_32 21    readlink
+0x000ec758 0x000cc758 ADD_32 21    strncasecmp
+0x000ec764 0x000cc764 ADD_32 21    memmove
+0x000ec770 0x000cc770 ADD_32 21    __ctype_tolower_loc
+0x000ec77c 0x000cc77c ADD_32 21    strcat
+0x000ec788 0x000cc788 ADD_32 21    towlower
+0x000ec794 0x000cc794 ADD_32 21    getcwd
+0x000ec7a0 0x000cc7a0 ADD_32 21    puts
+0x000ec7ac 0x000cc7ac ADD_32 21    iswctype
+0x000ec7b8 0x000cc7b8 ADD_32 21    fork
+0x000ec7c4 0x000cc7c4 ADD_32 21    textdomain
+0x000ec7d0 0x000cc7d0 ADD_32 21    __fxstat64
+0x000ec7dc 0x000cc7dc ADD_32 21    mbtowc
+0x000ec7e8 0x000cc7e8 ADD_32 21    tcsetattr
+0x000ec7f4 0x000cc7f4 ADD_32 21    fcntl
+0x000ec800 0x000cc800 ADD_32 21    endpwent
+0x000ec80c 0x000cc80c ADD_32 21    wcsdup
+0x000ec818 0x000cc818 ADD_32 21    getgroups
+0x000ec824 0x000cc824 ADD_32 21    strncmp
+0x000ec830 0x000cc830 ADD_32 21    _IO_putc
+0x000ec83c 0x000cc83c ADD_32 21    strpbrk
+0x000ec848 0x000cc848 ADD_32 21    pipe
+0x000ec854 0x000cc854 ADD_32 21    strftime
+0x000ec860 0x000cc860 ADD_32 21    __sprintf_chk
+0x000ec86c 0x000cc86c ADD_32 21    iswupper
+0x000ec878 0x000cc878 ADD_32 21    setgid
+0x000ec884 0x000cc884 ADD_32 21    tgetstr
+0x000ec890 0x000cc890 ADD_32 21    kill
+0x000ec89c 0x000cc89c ADD_32 21    wcwidth
+0x000ec8a8 0x000cc8a8 ADD_32 21    __memmove_chk
+0x000ec8b4 0x000cc8b4 ADD_32 21    __mbrlen
+0x000ec8c0 0x000cc8c0 ADD_32 21    getpwent
+0x000ec8cc 0x000cc8cc ADD_32 21    getpeername
+0x000ec8d8 0x000cc8d8 ADD_32 21    ferror
+0x000ec8e4 0x000cc8e4 ADD_32 21    getpwnam
+0x000ec8f0 0x000cc8f0 ADD_32 21    lseek64
+0x000ec8fc 0x000cc8fc ADD_32 21    strcmp
+0x000ec908 0x000cc908 ADD_32 21    confstr
+0x000ec914 0x000cc914 ADD_32 21    __sigsetjmp
+0x000ec920 0x000cc920 ADD_32 21    towupper
+0x000ec92c 0x000cc92c ADD_32 21    exit
+0x000ec938 0x000cc938 ADD_32 21    endgrent
+0x000ec944 0x000cc944 ADD_32 21    __fpurge
+0x000ec950 0x000cc950 ADD_32 21    getpgrp
+0x000ec95c 0x000cc95c ADD_32 21    getgid
+0x000ec968 0x000cc968 ADD_32 21    _init
+0x000ec974 0x000cc974 ADD_32 21    wcsncmp
+0x000ec980 0x000cc980 ADD_32 21    geteuid
+0x000f0c58 0x000f0c58 ADD_32 19    PC
+0x000f0c5c 0x000f0c5c ADD_32 19    UP
+0x000f0c60 0x000f0c60 ADD_32 19    stderr
+0x000f0c68 0x000f0c68 ADD_32 19    __environ
+0x000f0c70 0x000f0c70 ADD_32 19    stdin
+0x000f0c74 0x000f0c74 ADD_32 19    BC
+0x000f0c78 0x000f0c78 ADD_32 19    stdout
 
 
 206 relocations
