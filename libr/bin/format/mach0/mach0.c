@@ -3280,28 +3280,33 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 	return !RVecRBinSymbol_empty (mo->symbols_vec);
 }
 
-static bool parse_import_ptr(struct MACH0_(obj_t) *mo, struct reloc_t *reloc, int idx) {
+static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) *mo, int jota) {
+	int idx = mo->dysymtab.iundefsym + jota;
 	int i, j, sym;
 	if (idx < 0 || idx >= mo->nsymtab) {
-		return false;
+		return NULL;
 	}
 	const size_t wordsize = get_word_size (mo);
 	const ut32 stype = ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
 		? S_LAZY_SYMBOL_POINTERS: S_NON_LAZY_SYMBOL_POINTERS;
 
-	reloc->offset = 0;
-	reloc->addr = 0;
-	reloc->addend = 0;
-#define CASE(T) case ((T) / 8): reloc->type = R_BIN_RELOC_ ## T; break
+	int type = 0;
+#define CASE(T) case ((T) / 8): type = R_BIN_RELOC_ ## T; break
 	switch (wordsize) {
 	CASE(8);
 	CASE(16);
 	CASE(32);
 	CASE(64);
-	default: return false;
+	default: return NULL;
 	}
 #undef CASE
 
+	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+	reloc->addr = 0;
+	reloc->type = type;
+	reloc->offset = 0;
+	reloc->addend = 0;
+	reloc->ntype = stype;
 	for (i = 0; i < mo->nsects; i++) {
 		if ((mo->sects[i].flags & SECTION_TYPE) == stype) {
 			for (j = 0, sym = -1; mo->sects[i].reserved1 + j < mo->nindirectsyms; j++) {
@@ -3316,21 +3321,22 @@ static bool parse_import_ptr(struct MACH0_(obj_t) *mo, struct reloc_t *reloc, in
 			}
 			reloc->offset = sym == -1 ? 0 : mo->sects[i].offset + sym * wordsize;
 			reloc->addr = sym == -1 ? 0 : mo->sects[i].addr + sym * wordsize;
-			return true;
+			return reloc;
 		}
 	}
-	return false;
+	free (reloc);
+	return NULL;
 }
 
 static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	RBinImport *ptr = R_NEW0 (RBinImport);
-	if (!ptr) {
+	if (R_UNLIKELY (!ptr)) {
 		return NULL;
 	}
 
 	char *name = (char*) orig_name;
-	const char *const _objc_class = "_OBJC_CLASS_$";
-	const char *const _objc_metaclass = "_OBJC_METACLASS_$";
+	const char _objc_class[] = "_OBJC_CLASS_$";
+	const char _objc_metaclass[] = "_OBJC_METACLASS_$";
 	const char *type;
 
 	if (r_str_startswith (name, _objc_class)) {
@@ -3832,6 +3838,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 									}
 									*reloc = *ref;
 									reloc->addr = addr;
+									reloc->ntype = op;
 									reloc->offset = paddr;
 									if (addend != -1) {
 										reloc->addend = addend;
@@ -3931,15 +3938,18 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 		reloc->addend = addend;\
 	}\
 	/* library ordinal ??? */ \
+	reloc->ntype = op; \
 	reloc->ord = lib_ord;\
 	reloc->ord = sym_ord;\
 	reloc->type = rel_type;\
-	if (sym_name)\
+	if (sym_name) {\
 		r_str_ncpy (reloc->name, sym_name, 256);\
-	if (threaded_binds)\
+	}\
+	if (threaded_binds) {\
 		r_pvector_set (threaded_binds, sym_ord, reloc);\
-	else\
+	} else {\
 		r_skiplist_insert (mo->relocs_cache, reloc);\
+	}\
 } while (0)
 				case BIND_OPCODE_DO_BIND:
 					if (!threaded_binds && addr >= segment_end_addr) {
@@ -4007,16 +4017,12 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 			amount = bin_limit;
 		}
 		for (j = 0; j < amount; j++) {
-			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+			struct reloc_t *reloc = parse_import_ptr (mo, j);
 			if (!reloc) {
 				break;
 			}
-			if (parse_import_ptr (mo, reloc, mo->dysymtab.iundefsym + j)) {
-				reloc->ord = j;
-				r_skiplist_insert_autofree (mo->relocs_cache, reloc);
-			} else {
-				R_FREE (reloc);
-			}
+			reloc->ord = j;
+			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
 		}
 	}
 

@@ -1637,7 +1637,7 @@ static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const c
 		// addend is the function pointer for the resolving ifunc
 		r_strbuf_appendf (buf, "ifunc_%"PFMT64x, reloc->addend);
 	} else {
-		// TODO(eddyb) implement constant relocs.
+		// TODO implement constant relocs.
 		r_strbuf_set (buf, "");
 	}
 	return r_strbuf_drain (buf);
@@ -1855,7 +1855,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		if (!warn_if_uri (r)) {
 			return false;
 		}
-		//TODO: remove the bin.cache crap
+		// TODO: remove the bin.cache crap
 		if (bc) {
 			if (!(r->io->cachemode & R_PERM_W)) {
 				r_config_set_b (r->config, "io.cache", true);
@@ -1895,7 +1895,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		r_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
-		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name");
+		r_table_set_columnsf (table, "XXsds", "vaddr", "paddr", "type", "ntype", "name");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -1978,6 +1978,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				pj_ks (pj, "demname", mn);
 			}
 			pj_ks (pj, "type", bin_reloc_type_name (reloc));
+			pj_ks (pj, "ntype", reloc->ntype);
 			pj_kn (pj, "vaddr", reloc->vaddr);
 			pj_kn (pj, "paddr", reloc->paddr);
 			if (reloc->symbol) {
@@ -2028,8 +2029,8 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			}
 
 			char *res = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "XXss", addr, reloc->paddr,
-				bin_reloc_type_name (reloc), res);
+			r_table_add_rowf (table, "XXsds", addr, reloc->paddr,
+				bin_reloc_type_name (reloc), reloc->ntype, res);
 			free (res);
 		}
 		i++;

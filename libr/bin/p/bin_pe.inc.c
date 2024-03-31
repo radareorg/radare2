@@ -254,10 +254,9 @@ static void filter_import(ut8 *n) {
 }
 
 static RList* imports(RBinFile *bf) {
-	RList *ret = NULL, *relocs = NULL;
+	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	RBinReloc *rel = NULL;
-	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
 	RBinPEObj *pe = PE_(get) (bf);
@@ -267,32 +266,32 @@ static RList* imports(RBinFile *bf) {
 	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
-	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
-	if (pe->relocs) {
-		r_list_free (pe->relocs);
-	}
-	if (!(relocs = r_list_newf (free))) {
+	r_list_free (pe->relocs);
+	RList *relocs = r_list_newf (free);
+	if (!relocs) {
 		free (ret);
 		return NULL;
 	}
 	pe->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(pe))) {
+	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports)(pe);
+	if (!imports) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
+		struct r_bin_pe_import_t *imp = &imports[i];
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
 		}
-		filter_import (imports[i].name);
-		ptr->name = r_bin_name_new ((char*)imports[i].name);
-		ptr->libname = strdup ((char*)imports[i].libname);
+		filter_import (imp->name);
+		ptr->name = r_bin_name_new ((char*)imp->name);
+		ptr->libname = strdup ((char*)imp->libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
-		ptr->ordinal = imports[i].ordinal;
+		ptr->ordinal = imp->ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
-		//ptr->hint = imports[i].hint;
+		//ptr->hint = imp->hint;
 		r_list_append (ret, ptr);
 
 		if (!(rel = R_NEW0 (RBinReloc))) {
@@ -308,11 +307,12 @@ static RList* imports(RBinFile *bf) {
 		rel->addend = 0;
 		{
 			ut8 addr[4];
-			r_buf_read_at (bf->buf, imports[i].paddr, addr, 4);
+			r_buf_read_at (bf->buf, imp->paddr, addr, 4);
 			ut64 newaddr = (ut64) r_read_le32 (&addr);
 			rel->vaddr = newaddr;
 		}
-		rel->paddr = imports[i].paddr;
+		rel->paddr = imp->paddr;
+		rel->ntype = imp->ntype;
 		r_list_append (relocs, rel);
 	}
 	free (imports);
