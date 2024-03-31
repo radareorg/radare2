@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2024 - Oscar Salvador */
 
 #include <r_util.h>
 #include "bflt.h"

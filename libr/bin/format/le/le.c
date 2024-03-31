@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2023 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2024 - GustavoLCR, mrmacete */
 
 #include "le.h"
 #include <r_bin.h>
@@ -561,6 +561,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			ordinal = r_buf_read8_at (bin->buf, offset);
 			offset += sizeof (ut8);
 		}
+		rel->ntype = header.source & F_SOURCE_TYPE_MASK; // XXX correct?
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
 			if ((ordinal - 1) < bin->header->objcnt) {
