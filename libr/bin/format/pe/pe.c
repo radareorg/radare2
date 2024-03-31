@@ -3721,7 +3721,7 @@ static int get_debug_info(RBinPEObj* pe, PE_(image_debug_directory_entry)* dbg_d
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
 			if (dbg_data_len < 20) {
-				R_LOG_WARN ("Truncated NB10 entry, not enough data to parse\n");
+				R_LOG_WARN ("Truncated NB10 entry, not enough data to parse");
 				return 0;
 			}
 			SCV_NB10_HEADER nb10_hdr = {{0}};
