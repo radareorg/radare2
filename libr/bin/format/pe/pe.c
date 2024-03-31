@@ -626,7 +626,7 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].libname[PE_NAME_LENGTH] = '\0';
 			ut64 addr = FirstThunk + (i * sizeof (PE_DWord));
-			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (pe, addr); 
+			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (pe, addr);
 			(*importp)[*nimp].paddr = PE_(va2pa) (pe, addr);
 			(*importp)[*nimp].hint = import_hint;
 			(*importp)[*nimp].ntype = IMAGE_REL_BASED_HIGHLOW; // ABSOLUTE; // TODO
