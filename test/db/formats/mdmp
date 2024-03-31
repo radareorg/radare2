@@ -203,7 +203,7 @@ NAME=: 32bit - relocs resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ir~__dllonexit
 EXPECT=<<EOF
-0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
+0x00406160 0x0009dd32 SET_32 0     msvcrt.dll___dllonexit
 EOF
 RUN
 
@@ -336,7 +336,7 @@ NAME=: 64bit - relocs resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ir~KERNEL32.dll_DeleteCriticalSection
 EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
+0x004081fc    0x0009ae8b SET_64 0     KERNEL32.dll_DeleteCriticalSection
 EOF
 RUN
 

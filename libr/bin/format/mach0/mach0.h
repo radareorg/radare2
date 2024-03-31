@@ -61,6 +61,7 @@ struct reloc_t {
 	ut64 addr;
 	st64 addend;
 	ut8 type;
+	ut64 ntype;
 	int ord;
 	char name[256];
 	bool external;

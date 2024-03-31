@@ -36,21 +36,21 @@ nth vaddr      bind   type lib name
 relocs
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x00002d78 0x00001d78 ADD_64  0x000009a0
-0x00002d80 0x00001d80 ADD_64  0x00000990
-0x00002d88 0x00001d88 ADD_64  0x00002d88
-0x00002fa8 0x00001fa8 SET_64 __cxa_finalize
-0x00002fb0 0x00001fb0 SET_64 exists(char const*)
-0x00002fb8 0x00001fb8 SET_64 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
-0x00002fc0 0x00001fc0 SET_64 fclose
-0x00002fc8 0x00001fc8 SET_64 _JNIEnv::GetStringUTFChars(_jstring*, unsigned char*)
-0x00002fd0 0x00001fd0 SET_64 __android_log_print
-0x00002fd8 0x00001fd8 SET_64 _JNIEnv::GetArrayLength(_jarray*)
-0x00002fe0 0x00001fe0 SET_64 _JNIEnv::ReleaseStringUTFChars(_jstring*, char const*)
-0x00002fe8 0x00001fe8 SET_64 fopen
-0x00002ff0 0x00001ff0 SET_64 __cxa_atexit
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00002d78 0x00001d78 ADD_64 1027   0x000009a0
+0x00002d80 0x00001d80 ADD_64 1027   0x00000990
+0x00002d88 0x00001d88 ADD_64 1027   0x00002d88
+0x00002fa8 0x00001fa8 SET_64 1026  __cxa_finalize
+0x00002fb0 0x00001fb0 SET_64 1026  exists(char const*)
+0x00002fb8 0x00001fb8 SET_64 1026  _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+0x00002fc0 0x00001fc0 SET_64 1026  fclose
+0x00002fc8 0x00001fc8 SET_64 1026  _JNIEnv::GetStringUTFChars(_jstring*, unsigned char*)
+0x00002fd0 0x00001fd0 SET_64 1026  __android_log_print
+0x00002fd8 0x00001fd8 SET_64 1026  _JNIEnv::GetArrayLength(_jarray*)
+0x00002fe0 0x00001fe0 SET_64 1026  _JNIEnv::ReleaseStringUTFChars(_jstring*, char const*)
+0x00002fe8 0x00001fe8 SET_64 1026  fopen
+0x00002ff0 0x00001ff0 SET_64 1026  __cxa_atexit
 
 
 13 relocations

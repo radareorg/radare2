@@ -284,6 +284,7 @@ static RList *relocs(RBinFile *bf) {
 			break;
 		}
 		ptr->type = reloc->type;
+		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
 		if (reloc->name[0]) {
 			RBinImport *imp;

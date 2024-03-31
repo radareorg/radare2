@@ -489,6 +489,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			reloc->paddr = seg->paddr + rel.offset;
+			reloc->ntype = rel.type;
 			switch (rel.type) {
 			case LOBYTE:
 				reloc->type = R_BIN_RELOC_8;

@@ -3136,7 +3136,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		if (!read_reloc (eo, reloc, DT_RELA, eo->dyn_info.dt_rela + offset)) {
 			break;
 		}
-
 		int index = r_vector_index (&eo->g_relocs);
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
@@ -3147,7 +3146,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
 			break;
 		}
-
 		int index = r_vector_index (&eo->g_relocs);
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
@@ -3236,11 +3234,9 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 
 const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-
 	if (eo->relocs_loaded) {
 		return &eo->g_relocs;
 	}
-
 	eo->relocs_loaded = true;
 	if (!populate_relocs_record (eo)) {
 		return NULL;

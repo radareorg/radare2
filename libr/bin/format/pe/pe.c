@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 nibble, pancake, inisider */
+/* radare - LGPL - Copyright 2008-2024 nibble, pancake, inisider */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -508,14 +508,24 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 	char* symname = NULL;
 	char* symdllname = NULL;
 
-	if (!dll_name || !*dll_name || *dll_name == '0') {
+	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return 0;
 	}
 
-	if (!(off = PE_(va2pa) (pe, OriginalFirstThunk)) &&
-	!(off = PE_(va2pa) (pe, FirstThunk))) {
+#if 0
+	// R2_590
+	PE_DWord off = PE_(va2pa) (pe, OriginalFirstThunk);
+	if (!off) {
+		off = PE_(va2pa) (pe, FirstThunk);
+		if (!off) {
+			return 0;
+		}
+	}
+#else
+	if (!(off = PE_(va2pa) (pe, OriginalFirstThunk)) && !(off = PE_(va2pa) (pe, FirstThunk))) {
 		return 0;
 	}
+#endif
 	do {
 		if (import_ordinal >= UT16_MAX) {
 			break;
@@ -527,7 +537,8 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 		if (import_table == PE_DWORD_MAX) {
 			pe_printf ("Warning: read (import table)\n");
 			goto error;
-		} else if (import_table) {
+		}
+		if (import_table) {
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
@@ -579,6 +590,7 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 				import_ordinal++;
 				const ut64 off = PE_(va2pa) (pe, import_table);
 				if (off > pe->size || (off + sizeof (PE_Word)) > pe->size) {
+					// R2_590 -- eliminate pe_printf R_LOG_WARN ("off > pe->size");
 					pe_printf ("Warning: off > pe->size\n");
 					goto error;
 				}
@@ -599,7 +611,7 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 				name[PE_NAME_LENGTH] = '\0';
 				int len = snprintf (import_name, sizeof (import_name), "%s" , name);
 				if (len >= sizeof (import_name)) {
-					eprintf ("Import name '%s' has been truncated.\n", import_name);
+					R_LOG_WARN ("Import name '%s' has been truncated", import_name);
 				}
 			}
 			struct r_bin_pe_import_t *new_importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t));
@@ -607,14 +619,17 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
+			// XXX too much indirections here
 			*importp = new_importp;
 			memcpy ((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].libname[PE_NAME_LENGTH] = '\0';
-			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (pe, FirstThunk + i * sizeof (PE_DWord));
-			(*importp)[*nimp].paddr = PE_(va2pa) (pe, FirstThunk) + i * sizeof (PE_DWord);
+			ut64 addr = FirstThunk + (i * sizeof (PE_DWord));
+			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (pe, addr);
+			(*importp)[*nimp].paddr = PE_(va2pa) (pe, addr);
 			(*importp)[*nimp].hint = import_hint;
+			(*importp)[*nimp].ntype = IMAGE_REL_BASED_HIGHLOW; // ABSOLUTE; // TODO
 			(*importp)[*nimp].ordinal = import_ordinal;
 			(*importp)[*nimp].last = 0;
 			(*nimp)++;
@@ -1146,7 +1161,7 @@ const char* PE_(bin_pe_compute_authentihash)(RBinPEObj* pe) {
 	r_str_replace_char (hashtype, '-', 0);
 	ut64 algobit = r_hash_name_to_bits (hashtype);
 	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256))) {
-		eprintf ("Authenticode only supports md5, sha1, sha256. This PE uses %s\n", hashtype);
+		R_LOG_INFO ("Authenticode only supports md5, sha1, sha256. This PE uses %s", hashtype);
 		free (hashtype);
 		return NULL;
 	}
@@ -3280,7 +3295,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		cert->wRevision = r_buf_read_le16_at (pe->b, offset + 4);
 		cert->wCertificateType = r_buf_read_le16_at (pe->b, offset + 6);
 		if (cert->dwLength < 6) {
-			eprintf ("Cert.dwLength must be > 6\n");
+			R_LOG_ERROR ("Cert.dwLength must be > 6");
 			R_FREE (cert);
 			return false;
 		}
@@ -3706,7 +3721,7 @@ static int get_debug_info(RBinPEObj* pe, PE_(image_debug_directory_entry)* dbg_d
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
 			if (dbg_data_len < 20) {
-				eprintf ("Truncated NB10 entry, not enough data to parse\n");
+				R_LOG_WARN ("Truncated NB10 entry, not enough data to parse");
 				return 0;
 			}
 			SCV_NB10_HEADER nb10_hdr = {{0}};

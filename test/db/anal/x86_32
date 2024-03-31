@@ -1487,7 +1487,7 @@ RUN
 
 NAME=resolve reloc symbols 2
 FILE=bins/elf/libc.so.6
-CMDS=ir~0x[3]
+CMDS=ir~0x[4]
 EXPECT=<<EOF
 0x001bf3c0
 _res

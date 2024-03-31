@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, alvarofe */
 
 #include "bin_pe.inc.c"
 

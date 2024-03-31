@@ -27,6 +27,21 @@ struct r_bin_pe_section_t {
 	int last;
 };
 
+#define IMAGE_REL_BASED_ABSOLUTE       0  //The base relocation is skipped. This type can be used to pad a block.
+#define IMAGE_REL_BASED_HIGH           1  //The base relocation adds the high 16 bits of the difference to the 16-bit field at offset. The 16-bit field represents the high value of a 32-bit word.
+#define IMAGE_REL_BASED_LOW            2  //The base relocation adds the low 16 bits of the difference to the 16-bit field at offset. The 16-bit field represents the low half of a 32-bit word.
+#define IMAGE_REL_BASED_HIGHLOW        3  //The base relocation applies all 32 bits of the difference to the 32-bit field at offset.
+#define IMAGE_REL_BASED_HIGHADJ        4  //The base relocation adds the high 16 bits of the difference to the 16-bit field at offset. The 16-bit field represents the high value of a 32-bit word. The low 16 bits of the 32-bit value are stored in the 16-bit word that follows this base relocation. This means that this base relocation occupies two slots.
+#define IMAGE_REL_BASED_MIPS_JMPADDR   5  //The relocation interpretation is dependent on the machine type.When the machine type is MIPS, the base relocation applies to a MIPS jump instruction.
+#define IMAGE_REL_BASED_ARM_MOV32      5  //This relocation is meaningful only when the machine type is ARM or Thumb. The base relocation applies the 32-bit address of a symbol across a consecutive MOVW/MOVT instruction pair.
+#define IMAGE_REL_BASED_RISCV_HIGH20   5  //This relocation is only meaningful when the machine type is RISC-V. The base relocation applies to the high 20 bits of a 32-bit absolute address.
+#define IMAGE_REL_BASED_THUMB_MOV32    7  //This relocation is meaningful only when the machine type is Thumb. The base relocation applies the 32-bit address of a symbol to a consecutive MOVW/MOVT instruction pair.
+#define IMAGE_REL_BASED_RISCV_LOW12I   7  //This relocation is only meaningful when the machine type is RISC-V. The base relocation applies to the low 12 bits of a 32-bit absolute address formed in RISC-V I-type instruction format.
+#define IMAGE_REL_BASED_RISCV_LOW12S   8  //This relocation is only meaningful when the machine type is RISC-V. The base relocation applies to the low 12 bits of a 32-bit absolute address formed in RISC-V S-type instruction format.
+#define IMAGE_REL_BASED_MIPS_JMPADDR16 9  //The relocation is only meaningful when the machine type is MIPS. The base relocation applies to a MIPS16 jump instruction.
+#define IMAGE_REL_BASED_DIR64          10 //The base relocation applies the difference to the 64-bit field at offset.
+
+
 struct r_bin_pe_import_t {
 	ut8 name[PE_NAME_LENGTH + 1];
 	ut8 libname[PE_NAME_LENGTH + 1];
@@ -34,6 +49,7 @@ struct r_bin_pe_import_t {
 	ut64 paddr;
 	ut64 hint;
 	ut64 ordinal;
+	int ntype;
 	int last;
 };
 

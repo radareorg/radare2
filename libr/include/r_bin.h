@@ -618,6 +618,7 @@ typedef struct r_bin_class_t {
 typedef struct r_bin_reloc_t {
 	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
+	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;
 	RBinImport *import;
 	ut64 laddr; // local symbol address | UT64_MAX

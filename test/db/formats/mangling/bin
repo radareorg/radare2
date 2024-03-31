@@ -129,7 +129,7 @@ NAME=demangle in irj
 FILE=bins/elf/demangle-test-cpp
 CMDS=irj~{9}
 EXPECT=<<EOF
-{"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"is_ifunc":false}
+{"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","ntype":7,"vaddr":16424,"paddr":12328,"is_ifunc":false}
 EOF
 RUN
 
