@@ -1475,10 +1475,10 @@ R_API RList *r_file_lsrf(const char *dir) {
 }
 
 R_API bool r_file_rm_rf(const char *dir) {
-	RList *files = r_file_lsrf (dir);
 	if (r_file_exists (dir)) {
 		return r_file_rm (dir);
 	}
+	RList *files = r_file_lsrf (dir);
 	if (!files) {
 		return false;
 	}
@@ -1488,6 +1488,7 @@ R_API bool r_file_rm_rf(const char *dir) {
 	r_list_foreach_prev (files, iter, f)  {
 		r_file_rm (f);
 	}
+	r_list_free (files);
 	return r_file_rm (dir);
 }
 

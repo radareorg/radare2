@@ -195,8 +195,8 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	char *path = r_str_newf ("%s/%s", dbdir, file);
 	free (dbdir);
 	char *data = r_file_slurp (path, NULL);
+	free (path);
 	if (!data) {
-		free (path);
 		return NULL;
 	}
 	const char *needle = token; // "\nR2PM_DESC ";
@@ -237,6 +237,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 					return r_str_ndup (begin, eoc - begin);
 				}
 				R_LOG_ERROR ("Cannot find end of thing");
+				free (data);
 				return NULL;
 			}
 			break;
@@ -244,9 +245,12 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 			char *begin = descptr + strlen (token);
 			char *eoc = strstr (begin, "\n}\n");
 			if (eoc) {
-				return r_str_ndup (begin, eoc - begin);
+				char *res = r_str_ndup (begin, eoc - begin);
+				free (data);
+				return res;
 			}
 			R_LOG_ERROR ("Cannot find end of thing");
+			free (data);
 			return NULL;
 		} break;
 		}
@@ -711,6 +715,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 				R_LOG_INFO ("R2PM_NEEDS: Found %s in PATH", dep);
 			}
 		}
+		r_list_free (l);
 		free (needs);
 		if (error) {
 			if (r2pm_check ("apt") && r_file_is_directory ("/system/bin")) {
@@ -850,6 +855,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		r2pm_register (pkg, global);
 	}
 #endif
+	free (script);
 	free (srcdir);
 	return res;
 }
@@ -1131,12 +1137,16 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r_cons_new ();
 	}
 #if R2__UNIX__
-	while (!getcwd (NULL, 0)) {
+	char *wd = getcwd (NULL, 0);
+	while (!wd) {
 		if (chdir ("..") == -1) {
 			R_LOG_ERROR ("Cannot chdir one dir up");
 			return 1;
 		}
+		free (wd);
+		wd = getcwd (NULL, 0);
 	}
+	free (wd);
 #endif
 	int level = r_sys_getenv_asint ("R2_LOG_LEVEL");
 	if (level > 0) {
