@@ -135,6 +135,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BRCL:
 	case SYSZ_INS_BRASL:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = INSOP (1).imm;
 		break;
 	case SYSZ_INS_LDR:
 		op->type = R_ANAL_OP_TYPE_LOAD;
