@@ -8,7 +8,12 @@
 static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
 	const ut64 pc = r_op->addr;
 	const char *op, *fmt;
-	RBpfSockFilter *f = (RBpfSockFilter *)buf;
+	RBpfSockFilter f[1] = {{
+		r_read_le16 (buf),
+		buf[2],
+		buf[3],
+		r_read_le32 (buf + 4)
+	}};
 	int val = f->k;
 	char vbuf[256];
 
@@ -688,7 +693,12 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	bool ret = parse_instruction (&f, &p, op->addr);
 	token_fini (&p);
 	if (ret) {
-		r_anal_op_set_bytes (op, op->addr, (const ut8*)&f, 8);
+		ut8 encoded[8];
+		r_write_le16 (encoded, f.code);
+		encoded[2] = f.jt;
+		encoded[3] = f.jf;
+		r_write_le32 (encoded + 4, f.k);
+		r_anal_op_set_bytes (op, op->addr, encoded, 8);
 		op->size = 8;
 		return true;
 	}
