@@ -140,7 +140,7 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 # ifndef PPC_DEBUG_STATE32
 # define PPC_DEBUG_STATE32 1
 # endif
-	ppc_debug_state_t *regs;
+	//ppc_debug_state_t *regs;
 	//thread->flavor = PPC_DEBUG_STATE32;
 	//thread->count  = R_MIN (thread->count, sizeof (regs->uds.ds32));
 	return false;
@@ -264,6 +264,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 				     sizeof (x86_thread_state64_t) :
 				     sizeof (x86_thread_state32_t);
 #endif
+#if !__POWERPC__
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, &thread->count);
 
@@ -279,6 +280,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		if (rc != KERN_SUCCESS) {
 			R_LOG_WARN ("failed to convert %d", rc);
 		}
+#endif
 #if  __arm64e__
 		else {
 			if (dbg->bits == R_SYS_BITS_64) {
@@ -286,7 +288,9 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 			}
 		}
 #endif
+#if !__POWERPC__
 	}
+#endif
 	if (rc != KERN_SUCCESS) {
 		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
