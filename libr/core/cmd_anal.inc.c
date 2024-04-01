@@ -521,6 +521,7 @@ static RCoreHelpMessage help_msg_aep = {
 	"aepa", " ([addr])", "auto set pin in current or given address by flag name (see aaep)",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep ", "memcpy=wf `dr?A1` `dr?A2` @r:A0", "override esil.cmd.pin for this pin name",
+	"aep ", "soft.show.r9=dr?r9", "set a 'soft.' esil pin, only executed in the disasm loop",
 	"aep", "", "list pins",
 	"aep.", "", "show pin name in current address if any",
 	"aepk", " [query]", "kuery the sdb of pins",
