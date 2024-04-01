@@ -12,6 +12,7 @@
 #define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 0x20
 #define LOONGARCH_PLT_OFFSET 0x20
+#define S390_PLT_OFFSET 0x20
 
 #define RISCV_PLT_ENTRY_SIZE 0x10
 #define LOONGARCH_PLT_ENTRY_SIZE 0x10
@@ -1735,6 +1736,15 @@ static ut64 get_import_addr_sparc(ELFOBJ *eo, RBinElfReloc *rel) {
 	return (tmp == UT64_MAX) ? UT64_MAX : tmp + SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
 
+static ut64 get_import_addr_s390x(ELFOBJ *eo, RBinElfReloc *rel) {
+	ut64 a = get_got_entry (eo, rel);
+	if (a == UT64_MAX) {
+		// GLOBALS, OBJECTS, NOTYPE, ..
+		return UT64_MAX;
+	}
+	return a - 14;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 plt_addr = eo->dyn_info.dt_pltgot;
 	if (plt_addr == R_BIN_ELF_ADDR_MAX) {
@@ -1757,7 +1767,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	}
 
 	ut64 nrel = get_num_relocs_dynamic_plt (eo);
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, plt_addr, 0x0);
+	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, plt_addr, 0x0);
 
 	if (eo->endian) {
 		base -= (nrel * 16);
@@ -1862,6 +1872,8 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 	}
 
 	switch (eo->ehdr.e_machine) {
+	case EM_S390:
+		return get_import_addr_s390x (eo, rel);
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm (eo, rel);
