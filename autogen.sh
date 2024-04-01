@@ -31,6 +31,6 @@ fi
 [ -z "$EDITOR" ] && EDITOR=vim
 $EDITOR README.md
 $EDITOR dist/npm/package.json
-$EDITOR dist/wapm/r2/wapm.toml
-$EDITOR dist/wapm/rax2/wapm.toml
-$EDITOR dist/wapm/rasm2/wapm.toml
+for a in dist/wapm/*/*.toml ; do
+	$EDITOR $a
+done
