@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_anal.h>
 
@@ -107,6 +107,13 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	if (key) {
 		r_strf_buffer (128);
 		const char *name = sdb_const_get (DB, key, NULL);
+		if (!name) {
+			return NULL;
+		}
+		if (r_str_startswith (name, "soft.")) {
+			// do not call soft esil pins from here
+			return NULL;
+		}
 		char *ckey = r_strf ("cmd.%s", name);
 		const char *cmd = sdb_const_get (DB, ckey, NULL);
 		if (R_STR_ISNOTEMPTY (cmd)) {

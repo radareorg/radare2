@@ -11,7 +11,7 @@
 #endif
 #endif
 
-static const char * const SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+#define SPECIAL_CHARS "@;~$#|`\"'()<>"
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
@@ -5115,7 +5115,7 @@ fuji:
 beach:
 	if (grep) {
 		char *old_grep = grep;
-		grep = unescape_special_chars (old_grep, SPECIAL_CHARS_REGULAR);
+		grep = unescape_special_chars (old_grep, SPECIAL_CHARS);
 		free (old_grep);
 		r_cons_grep_expression (grep);
 		free (grep);

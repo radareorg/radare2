@@ -1392,10 +1392,18 @@ static void ds_begin_comment(RDisasmState *ds) {
 }
 
 static void ds_print_pins(RDisasmState *ds) {
-	const char *lepin = r_anal_pin_at (ds->core->anal, ds->at);
+	RCore *core = ds->core;
+	const char *lepin = r_anal_pin_at (core->anal, ds->at);
 	if (R_STR_ISNOTEMPTY (lepin)) {
 	 	ds_begin_comment (ds);
 		ds_comment (ds, true, "%s [aep: %s]", ds->cmtoken, lepin);
+		if (r_str_startswith (lepin, "soft.")) {
+			const char *cmd = r_anal_pin_get (core->anal, lepin);
+			if (cmd) {
+				r_cons_newline ();
+				r_core_cmd0 (core, cmd);
+			}
+		}
 	}
 }
 
