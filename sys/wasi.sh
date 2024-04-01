@@ -3,6 +3,7 @@
 WASI_ROOT=${HOME}/Downloads/wasi
 WASI_MAJOR=20
 WASI_VERSION=${WASI_MAJOR}.0
+TOOLS="rax2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
 
 export WASI_SDK=${WASI_ROOT}/wasi-sdk-${WASI_VERSION}
 export WASI_SYSROOT=${WASI_ROOT}/wasi-sysroot-${WASI_VERSION}
@@ -44,7 +45,7 @@ make -j
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
-for a in rax2 radare2 rasm2 rabin2 rafind2 ; do
+for a in ${TOOLS} ; do
 	make -C binr/$a
 	cp -f binr/$a/$a.wasm $D || ERR=1
 done

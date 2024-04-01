@@ -1,0 +1,15 @@
+[package]
+name = "pancake/radiff2"
+version = "5.9.0"
+description = "Unix-Like Reverse Engineering Framework"
+license = "LGPL3"
+readme = "README.md"
+
+[[module]]
+name = "radiff2"
+source = "radiff2.wasm"
+abi = "wasi"
+
+[[command]]
+name = "radiff2"
+module = "radiff2"

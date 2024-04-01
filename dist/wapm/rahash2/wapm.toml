@@ -1,0 +1,15 @@
+[package]
+name = "pancake/rahash2"
+version = "5.9.0"
+description = "Unix-Like Reverse Engineering Framework"
+license = "LGPL3"
+readme = "README.md"
+
+[[module]]
+name = "rahash2"
+source = "rahash2.wasm"
+abi = "wasi"
+
+[[command]]
+name = "rahash2"
+module = "rahash2"
