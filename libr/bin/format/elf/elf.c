@@ -475,7 +475,6 @@ static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
 
 static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_pltrelsz = 0;
-	eo->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_hash = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_strtab = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_symtab = R_BIN_ELF_ADDR_MAX;

@@ -676,7 +676,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_BPF_64_ABS32:    ADD (32, 0); break;
 		case R_BPF_64_NODYLD32: ADD (32, 0); break;
 		default:
-			R_LOG_DEBUG ("unimplemented ELF/BPF reloc type %d", rel->type);
+			R_LOG_DEBUG ("Unimplemented ELF/BPF reloc type %d", rel->type);
 			break;
 		}
 		break;
@@ -689,8 +689,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 	default:
-		R_LOG_ERROR("unimplemented ELF reloc type %d", rel->type);
-		R_LOG_DEBUG ("unimplemented ELF reloc type %d", rel->type);
+		R_LOG_ERROR ("Unimplemented ELF reloc type %d", rel->type);
 		break;
 	}
 #undef SET
