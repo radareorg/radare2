@@ -618,7 +618,7 @@ static bool parse_alu(RBpfSockFilter *f, const char *m, int opc, const bpf_token
 static bool parse_instruction(RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
 	const char *mnemonic_tok = token_next (p);
 	PARSE_NEED_TOKEN (mnemonic_tok);
-	int mlen = strnlen (mnemonic_tok, 5);
+	int mlen = r_str_nlen (mnemonic_tok, 5);
 	if (mlen < 2 || mlen > 4) {
 		R_LOG_ERROR ("invalid mnemonic");
 	}
