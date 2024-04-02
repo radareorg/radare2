@@ -157,6 +157,59 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BR:
 		op->type = R_ANAL_OP_TYPE_RJMP;
 		break;
+	case SYSZ_INS_NGR:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case SYSZ_INS_AGR:
+	case SYSZ_INS_AGHI:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case SYSZ_INS_SGR:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case SYSZ_INS_SRAG:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		break;
+	case SYSZ_INS_SRLG:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
+	case SYSZ_INS_XC:
+	case SYSZ_INS_XG:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case SYSZ_INS_STMG:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case SYSZ_INS_BCR:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		break;
+	case SYSZ_INS_LARL: // absolute
+	case SYSZ_INS_LGRL: // relative
+		// Load Address Relative Long
+		op->type = R_ANAL_OP_TYPE_LEA;
+		op->ptr = INSOP (1).imm;
+		break;
+	case SYSZ_INS_LAT: // lai
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
+	case SYSZ_INS_CLI:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case SYSZ_INS_LHI:
+	case SYSZ_INS_LMG:
+	case SYSZ_INS_MVI:
+	case SYSZ_INS_LPGR:
+	case SYSZ_INS_LLCR:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case SYSZ_INS_RISBGN:
+	case SYSZ_INS_RISBG:
+		op->type = R_ANAL_OP_TYPE_ROR;
+		break;
+	case SYSZ_INS_ICY:
+	case SYSZ_INS_STC:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
 	case SYSZ_INS_BRC:
 	case SYSZ_INS_BER:
 	case SYSZ_INS_BHR:
@@ -176,6 +229,12 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BRCT:
 	case SYSZ_INS_BRCTG:
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
+	case SYSZ_INS_CGIJE:
+	case SYSZ_INS_CGRJE:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = INSOP (2).imm;
+		op->fail = addr + op->size;
 		break;
 	case SYSZ_INS_JE:
 	case SYSZ_INS_JGE:
