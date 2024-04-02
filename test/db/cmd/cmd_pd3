@@ -1,3 +1,15 @@
+NAME=bytes.ascii
+FILE=bins/mach0/swift/movabs
+CMDS=<<EOF
+-e asm.nbytes=8
+-e asm.bytes.ascii=1
+af
+pdf~Hello
+EOF
+EXPECT=<<EOF
+|           0x1000044e4      H.Hello.  movabs rax, 0x6f6c6c6548        ; 'Hello'
+EOF
+RUN
 NAME=bytes.space
 FILE=bins/elf/intof_mod
 CMDS=<<EOF
