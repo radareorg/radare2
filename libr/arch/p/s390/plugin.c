@@ -189,9 +189,11 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_LEA;
 		op->ptr = INSOP (1).imm;
 		break;
+#if CS_VERSION_MAJOR >= 5
 	case SYSZ_INS_LAT: // lai
 		op->type = R_ANAL_OP_TYPE_LEA;
 		break;
+#endif
 	case SYSZ_INS_CLI:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -202,7 +204,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_LLCR:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
+#if CS_VERSION_MAJOR >= 5
 	case SYSZ_INS_RISBGN:
+#endif
 	case SYSZ_INS_RISBG:
 		op->type = R_ANAL_OP_TYPE_ROR;
 		break;
