@@ -479,8 +479,8 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		size_t buf_size = R_MIN (size, th->state_size);
 		memcpy (th->state, buf, buf_size);
 #endif
-#endif
 		}
+#endif
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
 	}
