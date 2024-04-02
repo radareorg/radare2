@@ -556,7 +556,7 @@ jobs:
         wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
         sudo dpkg -i abigail-tools_2.2-2_amd64.deb
     - name: Download Build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linux-static
         path: /tmp
