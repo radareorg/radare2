@@ -280,6 +280,13 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
+static RList *preludes(RArchSession *as) {
+	r_return_val_if_fail (as && as->config, NULL);
+	RList *l = r_list_newf (free);
+	r_list_append (l, strdup ("c010000104")); // imports -- some false positives
+	r_list_append (l, strdup ("eb6ff03000")); // stgm
+	return l;
+}
 const RArchPlugin r_arch_plugin_s390_cs = {
 	.meta = {
 		.name = "s390",
@@ -289,9 +296,10 @@ const RArchPlugin r_arch_plugin_s390_cs = {
 	},
 	.arch = "s390",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
-	.decode = &decode,
+	.decode = decode,
 	.info = archinfo,
-	.regs = &regs,
+	.regs = regs,
+	.preludes = preludes,
 	.mnemonics = mnemonics,
 	.init = init,
 	.fini = fini
