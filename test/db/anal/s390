@@ -109,8 +109,8 @@ EXPECT=<<EOF
             0x00000606      d707f000f000   xc 0(8, r15), 0(r15)
             0x0000060c      ebeff0a00024   stmg r14, r15, 0xa0(r15)
             0x00000612      4170f0a0       la r7, 0xa0(r15)
-            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini
-            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init
+            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini ; 0x810
+            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init ; 0x7a8
             ;-- section..text:
             ;-- entry0:
             ;-- _start:
@@ -122,8 +122,8 @@ EXPECT=<<EOF
             0x00000606      d707f000f000   xc 0(8, r15), 0(r15)
             0x0000060c      ebeff0a00024   stmg r14, r15, 0xa0(r15)
             0x00000612      4170f0a0       la r7, 0xa0(r15)
-            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini
-            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init
+            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini ; 0x810
+            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init ; 0x7a8
 EOF
 RUN
 

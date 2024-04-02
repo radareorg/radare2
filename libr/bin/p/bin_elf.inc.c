@@ -490,6 +490,16 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->mode == DT_RELA; return r
 
 	switch (eo->ehdr.e_machine) {
+	case EM_S390:
+		switch (rel->type) {
+		case R_390_GLOB_DAT: // globals
+			SET (64);
+			break;
+		case R_390_RELATIVE:
+			ADD (64, 0);
+			break;
+		}
+		break;
 	case EM_386: switch (rel->type) {
 		case R_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
 		case R_386_32:       ADD(32, 0); break;
@@ -759,6 +769,16 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	ut64 P = rel->rva;
 	ut8 buf[8] = {0};
 	switch (e_machine) {
+	case EM_S390:
+		switch (rel->type) {
+		case R_390_GLOB_DAT: // globals
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			break;
+		case R_390_RELATIVE:
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
+			break;
+		}
+		break;
 	case EM_ARM:
 		if (!rel->sym && rel->mode == DT_REL) {
 			iob->read_at (iob->io, rel->rva, buf, 4);
