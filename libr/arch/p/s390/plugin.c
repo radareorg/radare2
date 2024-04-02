@@ -111,6 +111,12 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	op->size = insn->size;
+	if (op->size > 1 && !memcmp (buf, "\x07\x07", 2)) {
+		// bcr 0, r7 -> used for padding
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 2;
+		return false;
+	}
 	switch (insn->id) {
 #if CS_API_MAJOR >= 5
 	case SYSZ_INS_SVC:
