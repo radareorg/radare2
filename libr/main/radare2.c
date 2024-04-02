@@ -1318,8 +1318,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if R2__WINDOWS__
 					{
 						char *pfile = r_acp_to_utf8 (mr.pfile);
-						free (mr.pfile);
-						mr.pfile = pfile;
+						if (pfile != NULL) {
+							free (mr.pfile);
+							mr.pfile = pfile;
+						}
 					}
 #endif
 					mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
@@ -1399,6 +1401,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 #elif R2__WINDOWS__
 				char *acpfile = r_acp_to_utf8 (f);
+				if (!acpfile) {
+					acpfile = strdup (f);
+				}
 				// backslashes must be escaped because they are unscaped when parsing the uri
 				char *r = r_str_replace (acpfile, "\\", "\\\\", true);
 				if (r) {
@@ -1442,7 +1447,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				while (opt.ind < argc) {
 					R_FREE (mr.pfile);
 #if R2__WINDOWS__
-					mr.pfile = r_acp_to_utf8 (mr.pfile);
+					const char *argvi = argv[opt.ind++];
+					char *pfile = r_acp_to_utf8 (argvi);
+					if (pfile) {
+						mr.pfile = pfile;
+					} else {
+						mr.pfile = strdup (argvi);
+					}
 #else
 					mr.pfile = strdup (argv[opt.ind++]);
 #endif
