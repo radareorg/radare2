@@ -81,6 +81,7 @@ typedef struct {
 
 static void r_io_dsc_rebase_infos_free(RDyldRebaseInfosEntry * entry);
 
+R_VEC_FORWARD_DECLARE (RIODscRebaseInfos);
 R_VEC_TYPE_WITH_FINI (RIODscRebaseInfos, RDyldRebaseInfosEntry, r_io_dsc_rebase_infos_free);
 
 typedef struct {
@@ -106,6 +107,7 @@ typedef struct {
 
 static void r_io_dsc_slice_free(RIODscSlice * slice);
 
+R_VEC_FORWARD_DECLARE (RIODscSlices);
 R_VEC_TYPE_WITH_FINI (RIODscSlices, RIODscSlice, r_io_dsc_slice_free);
 
 typedef struct {

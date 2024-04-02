@@ -10,7 +10,7 @@ static inline void debug_plugin_session_fini(RDebugPluginSession *ds) {
 	R_FREE (ds->plugin_data);
 }
 
-R_VEC_TYPE_WITH_FINI(RVecDebugPluginSession, RDebugPluginSession, debug_plugin_session_fini);
+R_VEC_TYPE_WITH_FINI (RVecDebugPluginSession, RDebugPluginSession, debug_plugin_session_fini);
 
 static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS

@@ -1575,6 +1575,7 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid);
 
 // bt
 
+R_VEC_FORWARD_DECLARE(RVecBacktrace);
 R_VEC_TYPE (RVecBacktrace, ut64);
 R_API void r_anal_backtrace_add(RAnal *a, ut64 addr, RVecBacktrace *bt);
 R_API void r_anal_backtrace_del(RAnal *a, ut64 addr);

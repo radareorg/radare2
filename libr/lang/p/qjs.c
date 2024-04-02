@@ -53,6 +53,9 @@ static void arch_plugin_fini(QjsArchPlugin *ap) {
 	free (ap->arch);
 }
 
+R_VEC_FORWARD_DECLARE (RVecCorePlugin);
+R_VEC_FORWARD_DECLARE (RVecArchPlugin);
+R_VEC_FORWARD_DECLARE (RVecIoPlugin);
 R_VEC_TYPE_WITH_FINI (RVecCorePlugin, QjsCorePlugin, core_plugin_fini);
 R_VEC_TYPE_WITH_FINI (RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
 R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function

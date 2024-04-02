@@ -332,9 +332,13 @@ typedef struct r_bin_import_t {
 // XXX only forward declare here for better compile times
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
+R_VEC_FORWARD_DECLARE (RVecRBinImport);
 R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
+R_VEC_FORWARD_DECLARE (RVecRBinSymbol);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
+R_VEC_FORWARD_DECLARE (RVecRBinSection);
 R_VEC_TYPE(RVecRBinSection, RBinSection);
+R_VEC_FORWARD_DECLARE (RVecRBinEntry);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 
 typedef struct r_bin_object_t {

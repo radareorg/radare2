@@ -109,6 +109,7 @@ typedef struct r_bin_elf_lib_t {
 } RBinElfLib;
 
 #include <r_vec.h>
+R_VEC_FORWARD_DECLARE (RVecRBinElfSymbol);
 R_VEC_TYPE (RVecRBinElfSymbol, RBinElfSymbol);
 
 struct Elf_(obj_t) {

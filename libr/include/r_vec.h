@@ -169,7 +169,7 @@ extern "C" {
 		type *_start; \
 		type *_end; \
 		size_t _capacity; \
-	} vec_type; \
+	}; \
 	typedef void (*R_VEC_COPY(vec_type))(type *dst, type const *src); \
 	typedef int (*R_VEC_CMP(vec_type))(type const *a, type const *b); \
 	typedef int (*R_VEC_FIND_CMP(vec_type))(type const *a, const void *b); \

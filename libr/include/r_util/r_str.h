@@ -36,6 +36,7 @@ typedef struct {
 	ut16 to;
 } RStringSlice;
 
+R_VEC_FORWARD_DECLARE (RVecStringSlice);
 R_VEC_TYPE (RVecStringSlice, RStringSlice);
 
 
