@@ -1110,7 +1110,7 @@ static RCoreHelpMessage help_msg_axf= {
 	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axfq", " [addr]", "find and list the data/code references in quiet mode",
 	"axfm", " [addr]", "show refs to in 'make' syntax (see aflm and axtm)",
-	"axf*", " [addr]", "same as axt, but prints as r2 commands",
+	"axf*", " [addr]", "same as axf, but prints as r2 commands",
 	NULL
 };
 

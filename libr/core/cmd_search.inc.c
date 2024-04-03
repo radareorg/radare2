@@ -150,7 +150,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",
 	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
 	"/ae", " esil", "search for esil expressions matching substring",
-	"/af", "[l] family", "search for instruction of specific family (afl=list",
+	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
 	"/ai", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "same as aoml, list all opcodes",
