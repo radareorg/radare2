@@ -1162,6 +1162,23 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'E':
+		if (input[1] == 'j' && input[2] == '.') {
+			mode = R_MODE_JSON;
+			INIT_PJ ();
+			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0);
+		} else if (input[1] == ',') {
+			R_FREE (core->table_query);
+			core->table_query = strdup (input + 2);
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			// table query here
+		} else {
+			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
+		}
+		input = input + strlen (input) - 1;
+		goto done;
+		break;
 	case 'a': // "ia"
 		if (r_bin_cur_object (core->bin)) {
 			int narg = 0;
@@ -1169,7 +1186,7 @@ static int cmd_info(void *data, const char *input) {
 			case R_MODE_RADARE: narg = '*'; break;
 			case R_MODE_SIMPLE: narg = 'q'; break;
 			case R_MODE_JSON: // "iaj"
-				r_cons_printf ("{\"i\":");
+				r_cons_printf ("{\"info\":");
 				narg = 'j';
 				break;
 			}
@@ -1381,24 +1398,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		case 'E': // "iE"
-		{
-			if (input[1] == 'j' && input[2] == '.') {
-				mode = R_MODE_JSON;
-				INIT_PJ ();
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0);
-			} else if (input[1] == ',') {
-				R_FREE (core->table_query);
-				core->table_query = strdup (input + 2);
-				RBinObject *obj = r_bin_cur_object (core->bin);
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
-				// table query here
-			} else {
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
-			}
-			input = input + strlen (input) - 1;
-			break;
-		}
 		case 't': // "it"
 			{
 				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
