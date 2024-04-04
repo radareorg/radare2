@@ -1351,6 +1351,21 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'Z': // "iZ"
+		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
+		goto done;
+		break;
+	case 'O': // "iO"
+		switch (input[1]) {
+		case ' ':
+			r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
+			break;
+		default:
+			r_sys_cmdf ("rabin2 -O help");
+			break;
+		}
+		goto done;
+		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
 		goto done;
@@ -1463,19 +1478,6 @@ static int cmd_info(void *data, const char *input) {
 				r_list_free (old_hashes);
 			}
 			break;
-		case 'Z': // "iZ"
-			RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
-			break;
-		case 'O': // "iO"
-			switch (input[1]) {
-			case ' ':
-				r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
-				break;
-			default:
-				r_sys_cmdf ("rabin2 -O help");
-				break;
-			}
-			return 0;
 		case 'S': // "iS"
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
