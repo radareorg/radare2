@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2022 - pancake */
+/* radare - LGPL - Copyright 2006-2024 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>
@@ -652,10 +652,11 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	if (!sock) {
 		return NULL;
 	}
-	//signal (SIGPIPE, SIG_DFL);
+	// signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == R_INVALID_SOCKET) {
-		if (errno != EWOULDBLOCK) {
+		// EINTR Is received when the terminal is resized
+		if (errno != EWOULDBLOCK && errno != EINTR) {
 			// not just a timeout
 			r_sys_perror ("accept");
 		}
