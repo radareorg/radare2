@@ -1,5 +1,5 @@
-malloc
-free$
-calloc
-kalloc
-realloc
+*.malloc
+*.free$
+*.calloc
+*.kalloc
+*.realloc

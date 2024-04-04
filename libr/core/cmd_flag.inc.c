@@ -536,7 +536,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RListIter *iter;
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
-			r_cons_printf ("%s:\n", tag);
+		//	r_cons_printf ("%s:\n", tag);
 			r_core_cmdf (core, "ftn %s", tag);
 		}
 		r_list_free (list);
@@ -589,10 +589,13 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RFlagItem *flag;
 		RList *flags = r_flag_tags_get (core->flags, arg);
 		switch (mode) {
-		case 'n':
+		case 'n': // "ftn"
+			  // TODO : implement ftnj
+			  // TODO : implement ftn, -> using table api
 			r_list_foreach (flags, iter, flag) {
 				// r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
-				r_cons_printf ("0x%08"PFMT64x"  %s\n", flag->offset, flag->name);
+				r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
+						flag->offset, arg, flag->name);
 			}
 			break;
 		default:
