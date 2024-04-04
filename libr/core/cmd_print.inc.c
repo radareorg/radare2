@@ -49,11 +49,11 @@ static RCoreHelpMessage help_msg_psp = {
 static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
-	"p8*", "","display r2 commands to write this block",
+	"p8*", "", "display r2 commands to write this block",
 	"p8d", "", "space separated list of byte values in decimal",
 	"p8f", "", "print hexpairs of function (linear)",
 	"p8j", "", "print hexpairs in JSON array",
-	"p8x", "","print hexpairs honoring hex.cols",
+	"p8x", "", "print hexpairs honoring hex.cols",
 	NULL
 };
 
@@ -431,7 +431,7 @@ static RCoreHelpMessage help_detail2_pf = {
 	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "print nested anonymous structures",
 	"pf", " ;..x", "print value located 6 bytes from current offset",
 	"pf", " [10]z[3]i[10]Zb", "print an fixed size str, widechar, and var",
-	"pfj", " +F @ 0x14","print the content at given offset with flag",
+	"pfj", " +F @ 0x14", "print the content at given offset with flag",
 	"pf", " n2", "print signed short (2 bytes) value. Use N instead of n for printing unsigned values",
 	"pf", " [2]? (plop)structname @ 0", "prints an array of structs",
 	"pf", " eqew bigWord beef", "swap endianness and print with given labels",
@@ -484,19 +484,19 @@ static RCoreHelpMessage help_msg_pif = {
 };
 
 static RCoreHelpMessage help_msg_po = {
-	"Usage:","po[24aAdlmorsx]"," [hexpairs] @ addr[!bsize] (see also `poke`)",
-	"po[24aAdlmorsx]","", "without hexpair values, clipboard is used",
-	"po2"," [val]","2=  2 byte endian swap",
-	"po4"," [val]", "4=  4 byte endian swap",
-	"poa"," [val]", "+=  addition (f.ex: poa 0102)",
-	"poA"," [val]","&=  and",
-	"pod"," [val]", "/=  divide",
-	"pol"," [val]","<<= shift left",
-	"pom"," [val]", "*=  multiply",
-	"poo"," [val]","|=  or",
-	"por"," [val]", ">>= shift right",
-	"pos"," [val]", "-=  substraction",
-	"pox"," [val]","^=  xor  (f.ex: pox 0x90)",
+	"Usage:", "po[24aAdlmorsx]", " [hexpairs] @ addr[!bsize] (see also `poke`)",
+	"po[24aAdlmorsx]", "", "without hexpair values, clipboard is used",
+	"po2", " [val]", "2=  2 byte endian swap",
+	"po4", " [val]", "4=  4 byte endian swap",
+	"poa", " [val]", "+=  addition (f.ex: poa 0102)",
+	"poA", " [val]", "&=  and",
+	"pod", " [val]", "/=  divide",
+	"pol", " [val]", "<<= shift left",
+	"pom", " [val]", "*=  multiply",
+	"poo", " [val]", "|=  or",
+	"por", " [val]", ">>= shift right",
+	"pos", " [val]", "-=  substraction",
+	"pox", " [val]", "^=  xor  (f.ex: pox 0x90)",
 	NULL
 };
 

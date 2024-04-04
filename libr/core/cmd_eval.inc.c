@@ -3,19 +3,19 @@
 #if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_ecH = {
-	"Usage ecH[iw-?]","","",
-	"ecHi","[color]","highlight current instruction with 'color' background",
-	"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
-	"ecH","","list all the highlight rules",
-	"ecH.","","show highlight rule in current offset",
-	"ecH-","*","remove all the highlight hints",
-	"ecH-","","remove all highlights on current instruction",
+	"Usage ecH[iw-?]", "", "",
+	"ecHi", "[color]", "highlight current instruction with 'color' background",
+	"ecHw", "[word] [color]", "highlight 'word ' in current instruction with 'color' background",
+	"ecH", "", "list all the highlight rules",
+	"ecH.", "", "show highlight rule in current offset",
+	"ecH-", "*", "remove all the highlight hints",
+	"ecH-", "", "remove all highlights on current instruction",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_e = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
-	"e","?asm.bytes", "show description",
+	"e", "?asm.bytes", "show description",
 	"e", "??", "list config vars with description",
 	"e", " a", "get value of var 'a'",
 	"e", " a=b", "set var 'a' the 'b' value",

@@ -1835,7 +1835,7 @@ static const char* GH(help_msg)[] = {
 	"dmha", "", "List all malloc_state instances in application",
 	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
 	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
-	"dmhbg"," [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
+	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
 	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
 	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
 	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
