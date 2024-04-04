@@ -555,7 +555,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
-	"afd", "[addr]","show function + delta for given offset",
+	"afd", "[addr]", "show function + delta for given offset",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
@@ -721,7 +721,7 @@ static RCoreHelpMessage help_msg_aft = {
 };
 
 static RCoreHelpMessage help_msg_afv = {
-	"Usage:", "afv[rbs]"," Function variables manipulation",
+	"Usage:", "afv[rbs]", " Function variables manipulation",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
 	"afv-", "([name])", "remove all or given var",
 	"afv=", "", "list function variables and arguments with disasm refs",
@@ -801,7 +801,7 @@ static RCoreHelpMessage help_msg_ag = {
 	"ag-", "", "clear the custom graph",
 	"agn", "[?] title body", "add a node to the custom graph",
 	"age", "[?] title1 title2", "add an edge to the custom graph",
-	"","","",
+	"", "", "",
 	"Output formats:", "", "",
 	"<blank>", "", "ascii art",
 	"*", "", "r2 commands",

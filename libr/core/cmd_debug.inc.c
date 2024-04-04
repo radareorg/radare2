@@ -116,14 +116,14 @@ static RCoreHelpMessage help_msg_dbt = {
 };
 
 static RCoreHelpMessage help_msg_drr = {
-	"Usage: drr", ""," # Show references to registers (see pxr?)",
+	"Usage: drr", "", " # Show references to registers (see pxr?)",
 	"drr", "", "periscope register values",
 	"drrj", "", "same, but output in JSON",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_dbw = {
-	"Usage: dbw", "<addr> <r/w/rw>"," # Add watchpoint",
+	"Usage: dbw", "<addr> <r/w/rw>", " # Add watchpoint",
 	NULL
 };
 
@@ -375,7 +375,7 @@ static RCoreHelpMessage help_msg_dr = {
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "stack register states",
 	"drt", "[?]", "show all register types",
-	"drw"," <hexnum>", "set contents of the register arena",
+	"drw", " <hexnum>", "set contents of the register arena",
 	"drx", "[?]", "show debug registers",
 	".dr", "*", "include common register values in flags",
 	".dr", "-", "unflag all registers",
@@ -483,7 +483,7 @@ static RCoreHelpMessage help_msg_dt = {
 	"dt", " [addr]", "show trace info at address",
 	"dt*", "", "list all traced opcode offsets",
 	"dtj", "", "list instruction trace logs in json",
-	"dt+"," [addr] [times]", "add trace for address N times",
+	"dt+", " [addr] [times]", "add trace for address N times",
 	"dt-", "", "reset traces (instruction/calls)",
 	"dt=", "", "show ascii-art color bars with the debug trace ranges",
 	"dta", " 0x804020 ...", "only trace given addresses",

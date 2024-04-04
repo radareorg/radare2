@@ -88,16 +88,16 @@ static RCoreHelpMessage help_msg_Ct = {
 };
 
 static RCoreHelpMessage help_msg_CS = {
-	"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
-	"CS","","display metaspaces",
-	"CS"," *","select all metaspaces",
-	"CS"," metaspace","select metaspace or create if it doesn't exist",
-	"CS","-metaspace","remove metaspace",
-	"CS","-*","remove all metaspaces",
-	"CS","+foo","push previous metaspace and set",
-	"CS","-","pop to the previous metaspace",
-	//	"CSm"," [addr]","move metas at given address to the current metaspace",
-	"CSr"," newname","rename selected metaspace",
+	"Usage: CS", "[*] [+-][metaspace|addr]", " # Manage metaspaces",
+	"CS", "", "display metaspaces",
+	"CS", " *", "select all metaspaces",
+	"CS", " metaspace", "select metaspace or create if it doesn't exist",
+	"CS", "-metaspace", "remove metaspace",
+	"CS", "-*", "remove all metaspaces",
+	"CS", "+foo", "push previous metaspace and set",
+	"CS", "-", "pop to the previous metaspace",
+	//	"CSm", " [addr]", "move metas at given address to the current metaspace",
+	"CSr", " newname", "rename selected metaspace",
 	NULL
 };
 

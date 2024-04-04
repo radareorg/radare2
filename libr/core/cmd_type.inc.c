@@ -35,7 +35,7 @@ static RCoreHelpMessage help_msg_tx = {
 	"tx", " int32_t", "list functions names using this type",
 	"txt", " int32_t", "same as 'tx type'",
 	"txf", " ([addr])", "list all types used in the current or given function (same as tx.)",
-	"txl","","list all types used by any function",
+	"txl", "", "list all types used by any function",
 	"txg", "", "render the type xrefs graph (usage .txg;aggv)",
 	NULL
 };
