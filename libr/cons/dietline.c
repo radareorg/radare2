@@ -25,6 +25,7 @@ static const char word_break_characters[] = "\t\r\n ~`!@#$%^&*()-=+[]{}\\|;:\"'<
 
 // TODO: remove global variables
 static R_TH_LOCAL bool enable_yank_pop = false;
+static R_TH_LOCAL int count = 0;
 
 typedef enum {
 	MINOR_BREAK,
@@ -1141,7 +1142,6 @@ static const char *promptcolor(void) {
 	return Color_RESET;
 }
 
-static R_TH_LOCAL int count = 0;
 static void __print_prompt(void) {
 	RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
@@ -1913,11 +1913,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			paste ();
 			yank_flag = 1;
 			break;
-		case 29:	// ^^ - rotate kill ring
+		case 29: // ^^ - rotate kill ring
 			rotate_kill_ring ();
 			yank_flag = enable_yank_pop? 1: 0;
 			break;
-		case 20:	// ^t Kill from point to the end of the current word,
+		case 20: // ^t Kill from point to the end of the current word,
 			kill_word (MINOR_BREAK, 'w');
 			break;
 		case 15:// ^o kill backward
