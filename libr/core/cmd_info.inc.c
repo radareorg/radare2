@@ -1351,10 +1351,30 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'Z': // "iZ"
+		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
+		goto done;
+		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
 		goto done;
 		break;
+	case 'l': { // "il"
+		RList *objs = r_core_bin_files (core);
+		RListIter *iter;
+		RBinFile *bf;
+		RBinFile *cur = core->bin->cur;
+		r_list_foreach (objs, iter, bf) {
+			RBinObject *obj = bf->bo;
+			core->bin->cur = bf;
+			int nlibs = (obj && obj->libs)? r_list_length (obj->libs): 0;
+			RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, nlibs);
+		}
+		core->bin->cur = cur;
+		r_list_free (objs);
+		goto done;
+		break;
+	}
 	case 'r': // "ir"
 		{
 			RList *objs = r_core_bin_files (core);
@@ -1463,19 +1483,6 @@ static int cmd_info(void *data, const char *input) {
 				r_list_free (old_hashes);
 			}
 			break;
-		case 'Z': // "iZ"
-			RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
-			break;
-		case 'O': // "iO"
-			switch (input[1]) {
-			case ' ':
-				r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
-				break;
-			default:
-				r_sys_cmdf ("rabin2 -O help");
-				break;
-			}
-			return 0;
 		case 'S': // "iS"
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
@@ -1531,21 +1538,16 @@ static int cmd_info(void *data, const char *input) {
 			}
 			input += strlen (input) - 1;
 			break;
-		case 'l': { // "il"
-			RList *objs = r_core_bin_files (core);
-			RListIter *iter;
-			RBinFile *bf;
-			RBinFile *cur = core->bin->cur;
-			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->bo;
-				core->bin->cur = bf;
-				int nlibs = (obj && obj->libs)? r_list_length (obj->libs): 0;
-				RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, nlibs);
+		case 'O': // "iO"
+			switch (input[1]) {
+			case ' ':
+				r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
+				break;
+			default:
+				r_sys_cmdf ("rabin2 -O help");
+				break;
 			}
-			core->bin->cur = cur;
-			r_list_free (objs);
 			break;
-		}
 		case 'L': { // "iL"
 			char *ptr = strchr (input, ' ');
 			int json = input[1] == 'j'? 'j': 0;
