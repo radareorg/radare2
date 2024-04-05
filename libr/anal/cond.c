@@ -32,10 +32,8 @@ R_API void r_anal_cond_fini(RAnalCond *c) {
 	if (!c) {
 		return;
 	}
-#if 0
 	r_anal_value_free (c->arg[0]);
 	r_anal_value_free (c->arg[1]);
-#endif
 	c->arg[0] = c->arg[1] = NULL;
 }
 
@@ -117,8 +115,8 @@ R_API char *r_anal_cond_tostring(RAnalCond *cond) {
 }
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
-	RAnalCond *cond;
-	if (!(cond = r_anal_cond_new ())) {
+	RAnalCond *cond = r_anal_cond_new ();
+	if (!cond) {
 		return NULL;
 	}
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
