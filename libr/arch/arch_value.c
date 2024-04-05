@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2010-2024 - pancake, condret */
 
 #include <r_arch.h>
 #include <r_io.h>
