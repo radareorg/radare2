@@ -639,8 +639,10 @@ R_API int r_line_hist_cmd_down(RLine *line) {
 	return true;
 }
 
+// TODO argument can be "owned" so we can save some unnecessary free/malloc's
+// R2_600 - return bool instead of int
 R_API int r_line_hist_add(const char *line) {
-	if (!line || !*line) {
+	if (R_STR_ISEMPTY (line)) {
 		return false;
 	}
 	if (!I.history.data) {
