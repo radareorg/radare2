@@ -4002,6 +4002,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	char *arroba = NULL;
 	char *grep = NULL;
 	RIODesc *tmpdesc = NULL;
+	bool old_iova = r_config_get_b (core->config, "io.va");
 	bool pamode = (core->io? !core->io->va: false);
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
@@ -5073,7 +5074,7 @@ next_arroba:
 		}
 		if (tmpdesc) {
 			if (pamode) {
-				r_config_set_b (core->config, "io.va", false);
+				r_config_set_b (core->config, "io.va", old_iova);
 			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;
@@ -5129,6 +5130,9 @@ beach:
 	}
 	r_list_free (tmpenvs);
 	if (tmpdesc) {
+		if (pamode) {
+			r_config_set_b (core->config, "io.va", old_iova);
+		}
 		r_io_desc_close (tmpdesc);
 		tmpdesc = NULL;
 	}
@@ -5143,6 +5147,13 @@ beach:
 	return rc;
 fail:
 	rc = -1;
+	if (tmpdesc) {
+		if (pamode) {
+			r_config_set_b (core->config, "io.va", old_iova);
+		}
+		r_io_desc_close (tmpdesc);
+		tmpdesc = NULL;
+	}
 	goto beach;
 }
 

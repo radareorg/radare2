@@ -2967,22 +2967,24 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			__core_visual_gogo (core, 'G');
 			break;
 		case 'A':
-		{
-			const int oce = core->print->cur_enabled;
-			const int oco = core->print->ocur;
-			const int occ = core->print->cur;
-			ut64 off = oce? core->offset + core->print->cur: core->offset;
-			core->print->cur_enabled = 0;
-			r_cons_enable_mouse (false);
-			r_core_visual_asm (core, off);
-			core->print->cur_enabled = oce;
-			core->print->cur = occ;
-			core->print->ocur = oco;
-			if (r_config_get_b (core->config, "scr.wheel")) {
-				r_cons_enable_mouse (true);
+			if (0) {
+				r_core_cmd0 (core, "wx 9090");
+			} else {
+				const int oce = core->print->cur_enabled;
+				const int oco = core->print->ocur;
+				const int occ = core->print->cur;
+				ut64 off = oce? core->offset + core->print->cur: core->offset;
+				core->print->cur_enabled = 0;
+				r_cons_enable_mouse (false);
+				r_core_visual_asm (core, off);
+				core->print->cur_enabled = oce;
+				core->print->cur = occ;
+				core->print->ocur = oco;
+				if (r_config_get_b (core->config, "scr.wheel")) {
+					r_cons_enable_mouse (true);
+				}
 			}
-		}
-		break;
+			break;
 		case '\\':
 			if (core->visual.splitPtr == UT64_MAX) {
 				core->visual.splitPtr = core->offset;
