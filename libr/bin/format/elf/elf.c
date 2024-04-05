@@ -4750,7 +4750,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 			.import_ret_ctr = &import_ret_ctr,
 		};
 		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
-			eprintf ("faile here\n");
+			R_LOG_ERROR ("failed parsing imports in section");
 			_symbol_memory_free (&memory);
 			return NULL;
 		}
@@ -4761,6 +4761,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 			break;
 		}
 	}
+	RVecRBinElfSymbol_free (ret);
 
 	if (!ret) {
 		return Elf_(load_symbols_type) (eo, type);
