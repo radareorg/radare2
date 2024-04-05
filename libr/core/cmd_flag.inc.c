@@ -1062,6 +1062,7 @@ rep:
 		if (addFlag) {
 			if (!r_name_check (cstr)) {
 				R_LOG_ERROR ("Invalid flag name '%s'", cstr);
+				free (str);
 				return false;
 			}
 			item = r_flag_set (core->flags, cstr, off, bsze);
@@ -1595,9 +1596,7 @@ rep:
 			switch (input[1]) {
 			case '?':
 				r_core_cmd_help (core, help_msg_fd);
-				if (str) {
-					free (str);
-				}
+				free (str);
 				return false;
 			case '\0':
 				addr = core->offset;
@@ -1655,16 +1654,18 @@ rep:
 				if (pj) {
 					pj_free (pj);
 				}
-
+				free (str);
 				return 0;
 				}
 			case 'w': {
 				arg = strchr (input, ' ');
 				if (!arg) {
+					free (str);
 					return 0;
 				}
 				arg++;
 				if (!*arg) {
+					free (str);
 					return 0;
 				}
 
@@ -1696,6 +1697,7 @@ rep:
 					}
 				}
 				r_list_free (temp);
+				free (str);
 				return 0;
 			}
 			default:
