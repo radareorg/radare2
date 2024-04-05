@@ -118,8 +118,11 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 #endif
 	ut8 *aligned_buf = (ut8*)r_malloc_aligned (len, sizeof (ptrace_word));
 	if (aligned_buf) {
-		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), aligned_buf, len, addr);
-		memcpy (buf, aligned_buf, len);
+		int aligned_delta = addr % sizeof (ptrace_word);
+		ut64 aligned_addr = addr - aligned_delta;
+		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), aligned_buf,
+				len + sizeof (ptrace_word), aligned_addr);
+		memcpy (buf, aligned_buf + aligned_delta, len);
 		r_free_aligned (aligned_buf);
 		return res;
 	}
