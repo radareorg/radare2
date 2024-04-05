@@ -4761,7 +4761,6 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 			break;
 		}
 	}
-	RVecRBinElfSymbol_free (ret);
 
 	if (!ret) {
 		return Elf_(load_symbols_type) (eo, type);
@@ -4769,6 +4768,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
 	if (nsym == -1) {
+		RVecRBinElfSymbol_free (ret);
 		_symbol_memory_free (&memory);
 		return NULL;
 	}
@@ -4781,7 +4781,9 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 			.import_ret_ctr = import_ret_ctr,
 			.nsym = nsym,
 		};
-		return _load_additional_imported_symbols (eo, &ii);
+		RVecRBinElfSymbol *res = _load_additional_imported_symbols (eo, &ii);
+		RVecRBinElfSymbol_free (ret);
+		return res;
 	}
 
 	return ret;
