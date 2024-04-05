@@ -103,21 +103,32 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 	while (*fmt_ptr) {
 		/* We ignore spaces before specifiers. */
+		R_LOG_DEBUG ("--> %c",*buf_ptr);
 		if (isspace (*fmt_ptr)) {
 			/* Any whitespace in the format consumes all of the whitespace in the buffer. */
 			_BSCANF_CONSUME_WSPACE ();
 			fmt_ptr++;
+			R_LOG_DEBUG ("space consumed");
 			continue;
 		}
 
 		if ('%' == *fmt_ptr) {
 			/* Handle conversion specifier. */
 			fmt_ptr++;
+			if (*fmt_ptr == 0) {
+				R_LOG_ERROR ("End of format string, expected a character after %%");
+				break;
+			}
 
+			R_LOG_DEBUG ("format consumed %c", *fmt_ptr);
 			/* Check for assignment-suppressing character. */
 			if ('*' == *fmt_ptr) {
 				is_suppressed = true;
 				fmt_ptr++;
+				if (*fmt_ptr == 0) {
+					R_LOG_ERROR ("End of format string, expected a character after %%");
+					break;
+				}
 			} else {
 				is_suppressed = false;
 			}
@@ -127,6 +138,10 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				// R2SCANF extension. '.' works like %*s in printf
 				max_width = va_arg (args, size_t) - 1;
 				fmt_ptr++;
+				if (*fmt_ptr == 0) {
+					R_LOG_ERROR ("End of format string, expected a character after %%");
+					break;
+				}
 			} else if (isdigit (*fmt_ptr)) {
 				max_width = strtoul (fmt_ptr, &end_ptr, 0);
 				/* Check if the sequence is a number > 0. */
@@ -139,6 +154,10 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 			if ('h' == *fmt_ptr || 'l' == *fmt_ptr || 'L' == *fmt_ptr) {
 				length_mod = *fmt_ptr;
 				fmt_ptr++;
+				if (*fmt_ptr == 0) {
+					R_LOG_ERROR ("End of format string, expected a character after %%");
+					break;
+				}
 			} else {
 				length_mod = '\0';
 			}
@@ -193,6 +212,10 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					buf_ptr++;
 					fmt_ptr++;
 				}
+				if (*fmt_ptr == 0) {
+					R_LOG_ERROR ("End of format string, expected a character after %%");
+					break;
+				}
 				num_args_set++;
 			} else if ('s' == *fmt_ptr) {
 				/* 's': match a character sequence/string. */
@@ -212,7 +235,6 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					}
 					fmt_ptr++;
 					continue;
-
 				} else if ('l' == length_mod) {
 					wchar_ptr = va_arg (args, wchar_t*);
 					wchar_t *wbuf_ptr = (wchar_t *) buf_ptr;
@@ -318,7 +340,10 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				}
 				// reset max width value
 				max_width = 0;
-
+				if (*fmt_ptr == 0) {
+					// end of string not expecting anything after that
+					break;
+				}
 			} else if ('i' == *fmt_ptr || 'd' == *fmt_ptr) {
 				/* 'i'/'d': match a integer/decimal integer. */
 				_BSCANF_CONSUME_WSPACE ();

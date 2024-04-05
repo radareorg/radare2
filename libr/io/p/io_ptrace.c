@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -116,7 +116,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 	}
 #endif
-	ut8 *aligned_buf = (ut8*)r_malloc_aligned (len, sizeof (ptrace_word));
+	ut8 *aligned_buf = (ut8*)r_malloc_aligned (len + sizeof (ptrace_word), sizeof (ptrace_word));
 	if (aligned_buf) {
 		int aligned_delta = addr % sizeof (ptrace_word);
 		ut64 aligned_addr = addr - aligned_delta;
