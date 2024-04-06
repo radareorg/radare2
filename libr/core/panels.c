@@ -1320,7 +1320,9 @@ static int __add_cmdf_panel(RCore *core, char *input, char *str) {
 	__insert_panel (core, 0, child->name, "");
 	RPanel *p0 = __get_panel (panels, 0);
 	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
-	__set_cmd_str_cache (core, p0, __load_cmdf (core, p0, input, str));
+	char *cmdf = __load_cmdf (core, p0, input, str);
+	__set_cmd_str_cache (core, p0, cmdf);
+	free (cmdf);
 	__set_curnode (core, 0);
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -2073,12 +2075,16 @@ static char *__search_strings(RCore *core, bool whole) {
 
 static void __search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
 	RCore *core = (RCore *)user;
-	__create_panel (core, panel, dir, title, __search_strings (core, false));
+	char *str = __search_strings (core, false);
+	__create_panel (core, panel, dir, title, str);
+	free (str);
 }
 
 static void __search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
 	RCore *core = (RCore *)user;
-	__create_panel (core, panel, dir, title, __search_strings (core, true));
+	char *str = __search_strings (core, true);
+	__create_panel (core, panel, dir, title, str);
+	free (str);
 }
 
 static RPanels *__get_panels(RPanelsRoot *panels_root, int i) {
@@ -2314,6 +2320,7 @@ static void __rotate_panel_cmds(RCore *core, const char **cmds, const int cmdsle
 	}
 	__set_cmd_str_cache (core, p, NULL);
 	p->view->refresh = true;
+	free (between);
 }
 
 static void __rotate_entropy_v_cb(void *user, bool rev) {
@@ -4583,6 +4590,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 			free (panel->model->cmdStrCache);
 			panel->model->cmdStrCache = strdup (cmdstr);
 			__update_pdc_contents (core, panel, cmdstr);
+			free (cmdstr);
 		}
 	} else {
 		cmdstr = __find_cmd_str_cache (core, panel);
@@ -4712,13 +4720,14 @@ static void __print_stack_cb(void *user, void *p) {
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	const char sign = (delta < 0)? '+': '-';
 	const int absdelta = R_ABS (delta);
-	char *cmd = r_str_newf ("%s%s %d", PANEL_CMD_STACK, bits == 32 ? "w" : "q", size);
+	char *cmd = r_str_newf ("%s%s %d", PANEL_CMD_STACK, bits == 32? "w": "q", size);
 	panel->model->cmd = cmd;
 	ut64 sp_addr = r_reg_getv (core->anal->reg, "SP");
 	char *k = r_str_newf ("%s @ 0x%08"PFMT64x"%c%d", cmd, sp_addr, sign, absdelta);
-	const char *cmdstr = r_core_cmd_str (core, k);
+	char *cmdstr = r_core_cmd_str (core, k);
 	free (k);
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __print_hexdump_cb(void *user, void *p) {
@@ -4748,6 +4757,7 @@ static void __print_hexdump_cb(void *user, void *p) {
 		core->offset = o_offset;
 	}
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __hudstuff(RCore *core) {
@@ -6314,6 +6324,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 				}
 			}
 			panel->view->refresh = true;
+			free (prompt);
 		}
 		return true;
 	case 'l':
@@ -6397,6 +6408,8 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 		fclose (fd);
 		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 		(void)__show_status (core, "Panels layout saved!");
+	} else {
+		pj_free (pj);
 	}
 	free (config_path);
 }
@@ -6477,7 +6490,9 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 			if (!rsb) {
 				return false;
 			}
-			__set_read_only (core, p, r_strbuf_drain (rsb));
+			char *drained_string = r_strbuf_drain (rsb);
+			__set_read_only (core, p, drained_string);
+			free (drained_string);
 		}
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}
