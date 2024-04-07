@@ -199,8 +199,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_asm_op_fini (&op);
 					continue;
 				}
-				//opsz = op.size;
-				opst = strdup (op.mnemonic);
+				if (op.mnemonic) {
+					//opsz = op.size;
+					opst = strdup (op.mnemonic);
+				} else {
+					R_LOG_DEBUG ("Cannot disassemble at 0x%08"PFMT64x, addr);
+				}
 				r_asm_op_fini (&op);
 			}
 			if (opst) {
