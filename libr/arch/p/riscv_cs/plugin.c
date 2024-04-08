@@ -414,6 +414,7 @@ beach:
 
 static char *regs(RArchSession *as) {
 	// https://www.ocf.berkeley.edu/~qmn/linux/riscv.html
+	// https://popolon.org/gblog3/?p=1049&lang=en
 	const char *p = NULL;
 	switch (as->config->bits) {
 	case 32: p =
@@ -422,7 +423,7 @@ static char *regs(RArchSession *as) {
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
 		"=A0	a0\n"
-		"=SN	x2\n"
+		"=SN	a7\n"
 		"=A1	a1\n"
 		"=TR	tp\n" // ABI: thread pointer
 
@@ -510,7 +511,7 @@ static char *regs(RArchSession *as) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
-		"=SN	sp\n" // should be x2 but this is sp wtf
+		"=SN	a7\n" // should be x2 but this is sp wtf
 		"=A0	a0\n"
 		"=A1	a1\n"
 
