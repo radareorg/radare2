@@ -160,6 +160,7 @@ static char *regs(RArchSession *as) {
 	const char *const p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
+	"=BP	r31\n"
 	"=A0	r0\n"
 	"=A1	r1\n"
 	"=A2	r2\n"
