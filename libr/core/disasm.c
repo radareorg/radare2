@@ -4226,15 +4226,17 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 }
 
 static ut64 get_ptr(RDisasmState *ds, ut64 addr) {
-	ut8 buf[sizeof (ut64)] = {0};
-	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
-	ut64 n64_32;
-	if (ds->core->rasm->config->bits == 64) {
-		n64_32 = r_read_ble64 (buf, 0);
-	} else {
-		n64_32 = r_read_ble32 (buf, 0);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
+	const int bits = r_config_get_i (ds->core->config, "asm.bits");
+
+	if (bits == 64) {
+		ut8 buf[sizeof (ut64)] = {0};
+		r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
+		return r_read_ble64 (buf, be);
 	}
-	return n64_32;
+	ut8 buf[sizeof (ut32)] = {0};
+	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
+	return (ut64) r_read_ble32 (buf, be);
 }
 
 static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr) {
@@ -4279,7 +4281,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		if (mi) {
 			int obits = ds->core->rasm->config->bits;
 			r_arch_config_set_bits (ds->core->rasm->config, size * 8);
-			slen = ds_print_shortcut(ds, get_ptr (ds, ds->at), pos);
+			slen = ds_print_shortcut (ds, get_ptr (ds, ds->at), pos);
 			r_arch_config_set_bits (ds->core->rasm->config, obits);
 			gotShortcut = true;
 		}
