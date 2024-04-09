@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
+
+// R2R db/cmd/projects
 
 static RCoreHelpMessage help_msg_P = {
 	"Usage:", "P[?.+-*cdilnsS] [file]", "Project management",
@@ -150,7 +152,8 @@ static int cmd_project(void *data, const char *input) {
 		if (input[1] == '&') { // "Po&"
 			r_core_cmdf (core, "& Po %s", file);
 		} else if (input[1]) { // "Po"
-			r_core_project_open (core, file);
+			bool success = r_core_project_open (core, file);
+			r_core_return_code (core, success? 0: 1);
 		} else {
 			if (R_STR_ISNOTEMPTY (str)) {
 				r_cons_println (str);

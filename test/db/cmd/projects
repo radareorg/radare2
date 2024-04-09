@@ -194,6 +194,7 @@ C- @ 0x00404800
 P project.r2
 cat .tmp/testset/rc.r2 | grep CC
 rm -rf .tmp/testset
+q 0
 EOF
 EXPECT=<<EOF
 CCu base64:IlNlY29uZCBjb21tZW50Ig== @ 0x00404800
