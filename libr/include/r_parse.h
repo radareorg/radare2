@@ -41,6 +41,7 @@ typedef struct r_parse_t {
 } RParse; // TODO rename to RAsmParseState
 
 typedef struct r_parse_plugin_t {
+	// TODO R2_600 Use RPluginMeta instead
 	char *name;
 	char *desc;
 	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
