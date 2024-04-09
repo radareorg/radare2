@@ -267,7 +267,7 @@ typedef struct r_anal_function_meta_t {
 } RAnalFcnMeta;
 
 typedef struct r_anal_function_t {
-	// TODO Use RBinName here
+	// TODO R2_600 Use RBinName here
 	char *name;
 	char *realname; // R2_590: add realname for the mangled one
 	int bits; // ((> bits 0) (set-bits bits))
