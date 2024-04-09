@@ -2,6 +2,9 @@
 
 #if R_INCLUDE_BEGIN
 
+// R2R db/cmd/write
+// R2R db/cmd/cmd_macros
+
 static RCoreHelpMessage help_msg_lparen = {
 	"Usage:", "(foo args;cmd1;cmd2;..)", "Command macros",
 	"(foo args;..;..)", "", "define a macro",
@@ -94,13 +97,13 @@ static int cmd_macro(void *data, const char *_input) {
 		}
 		buf[strlen (buf) - 1] = 0;
 		char *comma = strchr (buf, ' '); // haveargs
+		if (!comma) {
+			comma = strchr (buf, ';');
+		}
 		if (comma) {
 			r_cmd_macro_add (&core->rcmd->macro, buf);
 		}
 		if (mustcall) {
-			if (!comma) {
-				comma = strchr (buf, ';');
-			}
 			if (comma) {
 				*comma = ' ';
 				memmove (comma + 1, buf + mustcall, strlen (buf + mustcall) + 1);

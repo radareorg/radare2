@@ -1,5 +1,6 @@
 NAME=optype
 FILE=-
+ARGS=-a arm -b64
 CMDS=<<EOF
 '(optype;ao~type)
 (optype)()
