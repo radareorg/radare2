@@ -523,6 +523,7 @@ static char *shrink(char *op) {
 	return op;
 }
 
+#undef PPC
 #define CSINC PPC
 #if 0
 #define CSINC_MODE \
