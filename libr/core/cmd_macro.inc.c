@@ -2,6 +2,9 @@
 
 #if R_INCLUDE_BEGIN
 
+// R2R db/cmd/write
+// R2R db/cmd/cmd_macros
+
 static RCoreHelpMessage help_msg_lparen = {
 	"Usage:", "(foo args;cmd1;cmd2;..)", "Command macros",
 	"(foo args;..;..)", "", "define a macro",
@@ -93,20 +96,25 @@ static int cmd_macro(void *data, const char *_input) {
 			}
 		}
 		buf[strlen (buf) - 1] = 0;
-		r_cmd_macro_add (&core->rcmd->macro, buf);
+		char *comma = strchr (buf, ' '); // haveargs
+		if (!comma) {
+			comma = strchr (buf, ';');
+		}
+		if (comma) {
+			r_cmd_macro_add (&core->rcmd->macro, buf);
+		}
 		if (mustcall) {
-			char *comma = strchr (buf, ' ');
-			if (!comma) {
-				comma = strchr (buf, ';');
-			}
 			if (comma) {
 				*comma = ' ';
 				memmove (comma + 1, buf + mustcall, strlen (buf + mustcall) + 1);
 				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else {
-				eprintf ("Invalid syntax for macro\n");
-				r_core_return_value (core, R_CMD_RC_FAILURE);
+				char *s = r_str_newf ("%s)()", buf);
+				r_cmd_macro_call (&core->rcmd->macro, s);
+				free (s);
 			}
+		} else {
+			r_cmd_macro_add (&core->rcmd->macro, buf);
 		}
 		free (buf);
 		} break;
