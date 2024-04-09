@@ -625,7 +625,7 @@ static RCoreHelpMessage help_msg_afi = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi", "[.j*]", "function, variables and arguments",
-	"afii", "[-][import]", "show/add/delete imports used in function",
+	"afii", "[?][-][import]", "show/add/delete imports used in function (see aii)",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
 	"afiq", "", "show quite few info about the function",
@@ -667,6 +667,14 @@ static RCoreHelpMessage help_msg_afl = {
 static RCoreHelpMessage help_msg_aflt = {
 	"Usage:", "afl,", " List functions in table format",
 	"afl,", "[query]", "list functions",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_afii = {
+	"Usage:", "afii", " Manage imports used in current functions (see aii for globals). trims down those strings from disasm",
+	"afii", "", "list imports used by current function",
+	"afii", " sym.imp", "trim out the 'sym.imp' prefix from all calls",
+	"afii", "-sym.imp", "remove this import from current function",
 	NULL
 };
 
@@ -5218,7 +5226,9 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			/* fallthrough */
 		case 'i': // "afii"
-			if (input[3] == '-') {
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_afii);
+			} if (input[3] == '-') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_list_free (fcn->imports);
