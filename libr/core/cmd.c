@@ -3701,7 +3701,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 		return r_core_cmd_call (core, cmd + 1);
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
-		// R2_590 - deprecate "" -> use ' <---------- discuss!
+		// R2_600 - deprecate "" -> use ' <---------- discuss!
 		if (cmd[2] == '@') {
 			int res = 1;
 			char *arg = strdup (cmd + 2);
@@ -3996,7 +3996,7 @@ static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	R_CRITICAL_ENTER (core);
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
-	const char *quotestr = "`\"'";
+	const char quotestr[] = "`\"'";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
@@ -6086,6 +6086,9 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
 	int ret = handle_command_call (core, cstr);
 	if (ret != -1) {
+		if (log) {
+			r_line_hist_add (cstr);
+		}
 		return ret;
 	}
 	if (R_STR_ISNOTEMPTY (core->cmdfilter)) {
