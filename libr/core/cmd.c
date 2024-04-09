@@ -142,6 +142,7 @@ static const RCoreHelpMessage help_msg_dash = {
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
 	"-L", "", "same as Lo (or r2 -L)",
+	"-P", " project", "same as 'P [prjname]' to load a project",
 	"-v", "", "same as -V",
 	"-V", "", "show r2 version, same as ?V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
@@ -1849,6 +1850,13 @@ static int cmd_stdin(void *data, const char *input) {
 				r_core_cmd_callf (core, "L%c", input[1]);
 			} else {
 				r_core_cmd_call (core, "Lo");
+			}
+			break;
+		case 'P': // "-P"
+			if (input[1]) {
+				r_core_cmd_callf (core, "P %s", r_str_trim_head_ro (input + 1));
+			} else {
+				r_core_cmd_call (core, "P");
 			}
 			break;
 		case 'a': // "-a"
