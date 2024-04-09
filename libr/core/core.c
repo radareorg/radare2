@@ -147,7 +147,7 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 		if (pos < core->asmqjmps_count) {
 			return core->asmqjmps[pos + 1];
 		}
-	} else if (str[0] > '0' && str[1] <= '9') {
+	} else if (isdigit (str[0])) {
 		const int pos = str[0] - '0';
 		if (pos <= core->asmqjmps_count) {
 			return core->asmqjmps[pos];
