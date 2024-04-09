@@ -1,3 +1,17 @@
+NAME=optype
+FILE=-
+CMDS=<<EOF
+'(optype;ao~type)
+(optype)()
+wa nop
+(optype)()
+EOF
+EXPECT=<<EOF
+type: ill
+type: nop
+EOF
+RUN
+
 NAME=escaping colons
 FILE=-
 CMDS=<<EOF
