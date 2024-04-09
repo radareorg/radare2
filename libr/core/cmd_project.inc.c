@@ -200,10 +200,15 @@ static int cmd_project(void *data, const char *input) {
 			file = str;
 		}
 		if (!R_STR_ISEMPTY (file)) {
-			if (!r_core_project_save (core, file)) {
+			bool res = r_core_project_save (core, file);
+			if (res) {
+				r_core_return_code (core, 0);
+			} else {
 				R_LOG_ERROR ("Cannot save project");
+				r_core_return_code (core, 1);
 			}
 		} else {
+			r_core_return_code (core, 1);
 			R_LOG_INFO ("Use: Ps [projectname]");
 		}
 		break;
