@@ -1752,8 +1752,12 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	}
 
 	if (rel->rva < plt_addr) {
-		R_LOG_WARN ("reloc rva lower than plt_addr: 0x%"PFMT64x " < 0x%"PFMT64x, rel->rva, plt_addr);
-		return UT64_MAX;
+		ut64 orva = rel->rva;
+		int delta = plt_addr - rel->rva;
+		orva += (2* delta);
+		// orva += 0xef0;
+		R_LOG_DEBUG ("Massaged pointer below plt from 0x%"PFMT64x" to 0x%"PFMT64x, rel->rva, orva);
+		return orva;
 	}
 
 	ut64 p_plt_addr = Elf_(v2p_new) (eo, plt_addr);
@@ -1770,8 +1774,14 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, plt_addr, 0x0);
 
 	if (eo->endian) {
+#if 0
+		base += plt_addr;
+		base -= (nrel * 16);
+		base += (pos * 8);
+#else
 		base -= (nrel * 16);
 		base += (pos * 16);
+#endif
 		return base;
 	}
 
