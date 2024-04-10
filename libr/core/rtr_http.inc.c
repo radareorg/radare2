@@ -2,26 +2,45 @@
 
 #define WEBCONFIG 1
 
-static R_NONNULL const char *guess_filetype(const char *path) {
-	const char *ct = "Content-Type: application/octet-stream\n"; // binary by default, but never NULL
-	if (strstr (path, ".js")) { ct = "Content-Type: application/javascript\n"; } else
-	if (strstr (path, ".png")) { ct = "Content-Type: image/png\n"; } else
-	if (strstr (path, ".jpg")) { ct = "Content-Type: image/jpeg\n"; } else
-	if (strstr (path, ".gif")) { ct = "Content-Type: image/gif\n"; } else
-	if (strstr (path, ".mp4")) { ct = "Content-Type: video/mp4\n"; } else
-	if (strstr (path, ".sh")) { ct = "Content-Type: application/x-sh\n"; } else
-	if (strstr (path, ".json")) { ct = "Content-Type: application/json\n"; } else
-	if (strstr (path, ".js")) { ct = "Content-Type: text/javascript\n"; } else
-	if (strstr (path, ".ttf")) { ct = "Content-Type: font/ttf\n"; } else
-	if (strstr (path, ".woff")) { ct = "Content-Type: font/woff\n"; } else
-	if (strstr (path, ".gz")) { ct = "Content-Type: application/gzip\n"; } else
-	if (strstr (path, ".zip")) { ct = "Content-Type: application/zip\n"; } else
-	if (strstr (path, ".pdf")) { ct = "Content-Type: application/pdf\n"; } else
-	if (strstr (path, ".md")) { ct = "Content-Type: text/plain\n"; } else
-	if (strstr (path, ".txt")) { ct = "Content-Type: text/plain\n"; } else
-	if (strstr (path, ".css")) { ct = "Content-Type: text/css\n"; } else
-	if (strstr (path, ".html")) { ct = "Content-Type: text/html\n"; }
-	return ct;
+typedef struct {
+	const char *ext;
+	const char *type;
+} ExtAndType;
+
+static const ExtAndType eat[] = {
+	{ ".js", "application/javascript" },
+	{ ".png", "application/png" },
+	{ ".jpg", "image/jpg" },
+	{ ".jpeg", "image/jpeg" },
+	{ ".gif", "image/gif" },
+	{ ".mp4", "video/mp4" },
+	{ ".sh", "application/x-sh" },
+	{ ".json", "application/json" },
+	{ ".ttf", "font/ttf" },
+	{ ".woff", "font/woff" },
+	{ ".gz", "application/gzip" },
+	{ ".zip", "application/zip" },
+	{ ".pdf", "application/pdf" },
+	{ ".txt", "text/plain" },
+	{ ".md", "text/plain" },
+	{ ".css", "text/css" },
+	{ ".html", "text/html" },
+	{NULL, NULL}
+};
+
+static R_NONNULL char *guess_filetype(const char *path) {
+	const char *lastdot = r_str_lchr (path, '.');
+	if (lastdot) {
+		const ExtAndType *neat = eat;
+		while (neat->ext) {
+			if (!strcmp (neat->ext, lastdot)) {
+				return r_str_newf ("Content-Type: %s\n", neat->type);
+			}
+			neat++;
+		}
+	}
+	// binary by default, but never NULL
+	return strdup ("Content-Type: application/octet-stream\n");
 }
 
 // return 1 on error WHY
@@ -467,11 +486,12 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					size_t sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
-						const char *ct = guess_filetype (path);
+						char *ct = guess_filetype (path);
 						char *hdr = r_str_newf ("%s%s", ct, headers);
 						r_socket_http_response (rs, 200, f, (int)sz, hdr);
 						free (hdr);
 						free (f);
+						free (ct);
 					} else {
 						r_socket_http_response (rs, 403, "Permission denied", 0, headers);
 						http_logf (core, "http: Cannot open '%s'\n", path);
