@@ -2,15 +2,25 @@
 
 #define WEBCONFIG 1
 
-static const char *guess_filetype(const char *path) {
-	const char *ct = NULL;
-	if (strstr (path, ".js")) {
-		ct = "Content-Type: application/javascript\n";
-	} else if (strstr (path, ".css")) {
-		ct = "Content-Type: text/css\n";
-	} else if (strstr (path, ".html")) {
-		ct = "Content-Type: text/html\n";
-	}
+static R_NONNULL const char *guess_filetype(const char *path) {
+	const char *ct = "Content-Type: application/octet-stream\n"; // binary by default, but never NULL
+	if (strstr (path, ".js")) { ct = "Content-Type: application/javascript\n"; } else
+	if (strstr (path, ".png")) { ct = "Content-Type: image/png\n"; } else
+	if (strstr (path, ".jpg")) { ct = "Content-Type: image/jpeg\n"; } else
+	if (strstr (path, ".gif")) { ct = "Content-Type: image/gif\n"; } else
+	if (strstr (path, ".mp4")) { ct = "Content-Type: video/mp4\n"; } else
+	if (strstr (path, ".sh")) { ct = "Content-Type: application/x-sh\n"; } else
+	if (strstr (path, ".json")) { ct = "Content-Type: application/json\n"; } else
+	if (strstr (path, ".js")) { ct = "Content-Type: text/javascript\n"; } else
+	if (strstr (path, ".ttf")) { ct = "Content-Type: font/ttf\n"; } else
+	if (strstr (path, ".woff")) { ct = "Content-Type: font/woff\n"; } else
+	if (strstr (path, ".gz")) { ct = "Content-Type: application/gzip\n"; } else
+	if (strstr (path, ".zip")) { ct = "Content-Type: application/zip\n"; } else
+	if (strstr (path, ".pdf")) { ct = "Content-Type: application/pdf\n"; } else
+	if (strstr (path, ".md")) { ct = "Content-Type: text/plain\n"; } else
+	if (strstr (path, ".txt")) { ct = "Content-Type: text/plain\n"; } else
+	if (strstr (path, ".css")) { ct = "Content-Type: text/css\n"; } else
+	if (strstr (path, ".html")) { ct = "Content-Type: text/html\n"; }
 	return ct;
 }
 
@@ -281,9 +291,11 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			}
 		}
 		if (r_config_get_b (core->config, "http.cors")) {
-			strcpy (headers, "Access-Control-Allow-Origin: *\n"
+			r_str_ncpy (headers,
+				"Access-Control-Allow-Origin: *\n"
 				"Access-Control-Allow-Headers: Origin, "
-				"X-Requested-With, Content-Type, Accept\n");
+				"X-Requested-With, Content-Type, Accept\n",
+				sizeof (headers));
 		} else {
 			headers[0] = 0;
 		}
@@ -380,8 +392,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 							if (out) {
 								char *res = r_str_uri_encode (out);
-								char *newheaders = r_str_newf (
-										"Content-Type: text/plain\n%s", headers);
+								char *newheaders = r_str_newf ("Content-Type: text/plain\n%s", headers);
 								r_socket_http_response (rs, 200, out, 0, newheaders);
 								free (out);
 								free (newheaders);
