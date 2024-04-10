@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2022 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include "index.h"
 #include <r_main.h>
