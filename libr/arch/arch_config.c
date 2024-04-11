@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022 - pancake */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake */
 
 #include <r_arch.h>
 
@@ -73,13 +73,12 @@ R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax) {
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	r_return_val_if_fail (c, NULL);
 	RArchConfig *ac = R_NEW0 (RArchConfig);
-	if (!ac) {
-		return NULL;
+	if (R_LIKELY (ac)) {
+		ac->arch = R_STR_DUP (c->arch);
+		ac->abi = R_STR_DUP (c->abi);
+		ac->cpu = R_STR_DUP (c->cpu);
+		ac->os = R_STR_DUP (c->os);
 	}
-	ac->arch = R_STR_DUP (c->arch);
-	ac->abi = R_STR_DUP (c->abi);
-	ac->cpu = R_STR_DUP (c->cpu);
-	ac->os = R_STR_DUP (c->os);
 	return ac;
 }
 
@@ -89,16 +88,12 @@ R_API RArchConfig *r_arch_config_new(void) {
 		return NULL;
 	}
 	ac->arch = strdup (R_SYS_ARCH);
-#if 1
 #if R_SYS_BITS == R_SYS_BITS_32
 	ac->bits = 32;
 #elif R_SYS_BITS == R_SYS_BITS_64
 	ac->bits = 64;
 #else
 	ac->bits = 64;
-#endif
-#else
-	ac->bits = R_SYS_BITS;
 #endif
 	ac->bitshift = 0;
 	ac->syntax = R_ARCH_SYNTAX_INTEL;

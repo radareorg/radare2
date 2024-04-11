@@ -630,6 +630,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ENDIAN_LITTLE 1
 #define R_SYS_ENDIAN_BIG 2
 #define R_SYS_ENDIAN_BI 3
+#define R_SYS_ENDIAN_MIDDLE 4
 
 typedef enum {
 	R_SYS_ARCH_NONE = 0,
