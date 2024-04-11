@@ -88,6 +88,11 @@ bool test_r_reg_get_value_gpr(void) {
 	value = r_reg_getv (reg, "bx");
 	mu_assert_eq (value, 0xcdef, "get bx register value");
 
+	// force little endian
+	reg->config->endian = R_SYS_ENDIAN_BIG;
+	value = r_reg_getv (reg, "ax");
+	mu_assert_eq (value, 26437, "get big endian ax register value");
+
 	r_reg_free (reg);
 	mu_end;
 }

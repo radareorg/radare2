@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
 #include <r_lib.h>
@@ -203,7 +203,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		j = 0;
 		// For every word
 		while (*p) {
-			// Skip the whitespace
+			// Skip whitespace
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
@@ -233,43 +233,61 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Save the token
 			tok[j++] = strdup (tmp);
 		}
-		// Empty line, eww
 		if (j) {
 			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
 			if (r_str_startswith (first, "=RS")) {
 				reg->bits_default = atoi (tok[1]);
-				// Clean up
-				for (i = 0; i < j; i++) {
-					free (tok[i]);
-				}
 			} else {
-				const char *r = (*first == '=')
-					? parse_alias (reg, tok, j)
-					: parse_def (reg, tok, j);
-				if (!strncmp (first, "=A0", 3)) {
-					have_a0 = true;
+				const char *r;
+				if (*first == '^') {
+					int endian = R_SYS_ENDIAN;
+					switch (first[1]) {
+					case 'l':
+						endian = R_SYS_ENDIAN_LITTLE;
+						break;
+					case 'b':
+						endian = R_SYS_ENDIAN_BIG;
+						break;
+					case 'm':
+						endian = R_SYS_ENDIAN_MIDDLE;
+						break;
+					}
+					if (reg->config) {
+						reg->config->endian = endian;
+					} else {
+						R_LOG_WARN ("Cannot force reg profile endianness");
+					}
+				} else if (*first == '=') {
+					r = parse_alias (reg, tok, j);
+					if (!have_a0 && r_str_startswith (first + 1, "A0")) {
+						have_a0 = true;
+					}
+				} else {
+					r = parse_def (reg, tok, j);
 				}
-				// Clean up
-				for (i = 0; i < j; i++) {
-					free (tok[i]);
-				}
-				// Warn the user if something went wrong
 				if (r) {
 					R_LOG_ERROR ("Parse error @ line %d (%s)", l, r);
 					// Clean up
 					r_reg_free_internal (reg, false);
 					r_reg_init (reg);
+					for (i = 0; i < j; i++) {
+						free (tok[i]);
+					}
 					return false;
 				}
+			}
+			// Clean up
+			for (i = 0; i < j; i++) {
+				free (tok[i]);
 			}
 		}
 	} while (*p++);
 	if (!have_a0) {
 		R_LOG_ERROR ("=A0 is not defined");
-		//r_reg_free_internal (reg, false);
-		///return false;
+		// r_reg_free_internal (reg, false);
+		// return false;
 	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
