@@ -1,3 +1,20 @@
+NAME=emu x86-32 aaef via aaa
+FILE=bins/elf/libtest_32.so
+CMDS=<<EOF
+aaa
+s 0x00000500
+pd 1
+axt
+EOF
+EXPECT=<<EOF
+            ;-- section..rodata:
+            ;-- str.Hello_World__n:
+            ; STRN XREF from sym.test @ 0x4d3(r)
+            0x00000500     .string "Hello World!\n" ; len=14           ; [13] -r-- section size 14 named .rodata
+sym.test 0x4d3 [STRN:r--] lea ecx, str.Hello_World__n
+EOF
+RUN
+
 NAME=emu ret0
 FILE=bins/mach0/ret0ret1restr
 ARGS=-2
