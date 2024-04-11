@@ -596,8 +596,14 @@ typedef struct r_bin_class_t {
 	int index; // should be unsigned?
 	ut64 addr;
 	char *ns; // namespace // maybe RBinName?
+#if R2_USE_NEW_ABI
+	// Use RVec here
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
+#else
+	RList *methods; // <RBinSymbol>
+	RList *fields; // <RBinField>
+#endif
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
 	ut64 lang;
