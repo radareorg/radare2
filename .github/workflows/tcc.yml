@@ -8,7 +8,7 @@ on:
 
 jobs:
   newabi:
-    name: ubuntu-tcc-test
+    name: ubuntu-tcc-newabi
     runs-on: ubuntu-latest
     steps:
     - name: Checkout TinyCC repository
@@ -20,7 +20,7 @@ jobs:
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
-          sh ./configure --prefix=/usr --with-new-abi
+          sh ./configure --prefix=/usr
           make -j
           sudo make install
     - uses: actions/checkout@v3
@@ -35,11 +35,11 @@ jobs:
         sudo apt-get --assume-yes install gperf wheel setuptools || true
         sudo python -m pip install --upgrade pip
         pip install r2pipe
-    - name: Configure, build and install
+    - name: Configure, build and install (Using the new ABI)
       env:
           CC: tcc
       run: |
-          ./configure --prefix=/usr --with-compiler=tcc
+          ./configure --prefix=/usr --with-compiler=tcc --with-new-abi
           make -j
           sudo make install
     - name: Run tests
