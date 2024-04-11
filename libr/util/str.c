@@ -4014,6 +4014,10 @@ R_API char *r_str_version(const char *program) {
 #if __has_feature(address_sanitizer)
 	asanstr = " asan";
 #endif
+#else
+#if defined(__SANITIZE_ADDRESS__) // gcc < 14
+	asanstr = " asan";
+#endif
 #endif
 #if R2_VERSION_COMMIT == 0
 	release = " release";
