@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
 
@@ -298,6 +298,7 @@ R_API void r_reg_free(RReg *reg) {
 R_API RReg *r_reg_init(RReg *reg) {
 	r_return_val_if_fail (reg, NULL);
 	r_ref_init (reg, &r_reg_free);
+	reg->config = r_arch_config_new ();
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		memset (&reg->regset[i], 0, sizeof (RRegSet));
