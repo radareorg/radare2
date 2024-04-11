@@ -45,6 +45,9 @@ bool test_r_reg_get_value_gpr(void) {
 	reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
+	// force little endian
+	reg->config->endian = R_SYS_ENDIAN_LITTLE;
+
 	r_reg_set_profile_string (reg, "=A0 eax\n\
 		gpr eax .32 0 0\n\
 		gpr	ax	.16	0	0\n\
