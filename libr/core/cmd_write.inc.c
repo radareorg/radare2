@@ -81,24 +81,25 @@ static RCoreHelpMessage help_msg_wa = {
 static RCoreHelpMessage help_msg_wc = {
 	"Usage:", "wc[jir+-*?]", "  # See `e io.cache = true`",
 	"wc", "", "list all write changes in the current cache layer",
-	"wca", "", "list all write changes in all the cache layers",
-	"wcj", "", "list all write changes in JSON",
-	"wc-", " [from] [to]", "remove write op at curseek or given addr",
-	"wc--", "", "pop (discard) last write cache layer",
-	"wc+", " [from] [to]", "commit change from cache to io",
-	"wc++", "", "push a new io cache layer",
 	"wc*", "", "print write commands to replicate the patches in the current cache layer",
 	"wc**", "", "same as 'wc*' but for all the cache layers",
-	"wcr", "", "revert all writes in the cache",
-	"wcu", "", "undo last change",
+	"wc+", " [from] [to]", "commit change from cache to io",
+	"wc++", "", "push a new io cache layer",
+	"wc-", " [from] [to]", "remove write op at curseek or given addr",
+	"wc--", "", "pop (discard) last write cache layer",
 	"wcU", "", "redo undone change (TODO)",
-	"wci", "", "commit write cache",
-	"wcl", "", "list io cache layers",
-	"wcs", "", "squash the consecutive write ops",
+	"wca", "", "list all write changes in all the cache layers",
+	"wcd", "", "list all write changes in disasm diff format",
 	"wcf", " [file]", "commit write cache into given file",
+	"wci", "", "commit write cache",
+	"wcj", "", "list all write changes in JSON",
+	"wcl", "", "list io cache layers",
 	"wcp", " [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
 	"wcp*", " [fd]", "list all cached write-operations on p-layer in radare commands",
 	"wcpi", " [fd]", "commit and invalidate pcache for specified fd or current fd",
+	"wcr", "", "revert all writes in the cache",
+	"wcs", "", "squash the consecutive write ops",
+	"wcu", "", "undo last change",
 	NULL
 };
 
@@ -1387,6 +1388,39 @@ static int cmd_wc(void *data, const char *input) {
 	switch (input[0]) {
 	case '\0': // "wc"
 		r_io_cache_list (core->io, 0, false);
+		break;
+	case 'd':
+		{
+			RIOCacheLayer *layer;
+			RListIter *liter;
+			r_list_foreach (core->io->cache.layers, liter, layer) {
+				void **iter;
+				// list (io, layer, pj, rad);
+				r_pvector_foreach (layer->vec, iter) {
+					RIOCacheItem *ci = *iter;
+					r_cons_printf ("0x%08"PFMT64x":\n", ci->itv.addr);
+					char *a = r_hex_bin2strdup (ci->data, ci->itv.size);
+					char *b = r_hex_bin2strdup (ci->odata, ci->itv.size);
+					char *a0 = r_core_cmd_strf (core, "pad %s", b);
+					char *b0 = r_core_cmd_strf (core, "pad %s", a);
+					char *a1 = r_str_prefix_all (a0, "- ");
+					char *b1 = r_str_prefix_all (b0, "+ ");
+					r_str_trim (a1);
+					r_str_trim (b1);
+					if (r_config_get_i (core->config, "scr.color") > 0) {
+						r_cons_printf (Color_RED"%s\n"Color_GREEN"%s\n"Color_RESET, a1, b1);
+					} else {
+						r_cons_printf ("%s\n%s\n", a1, b1);
+					}
+					free (a);
+					free (b);
+					free (a0);
+					free (b0);
+					free (a1);
+					free (b1);
+				}
+			}
+		}
 		break;
 	case 'a':
 		if (input[1] == 'j') {
