@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2024 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,6 +11,9 @@ typedef enum {
 	R_BUFFER_MMAP,
 	R_BUFFER_SPARSE,
 	R_BUFFER_REF,
+#if R2_USE_NEW_ABI
+	R_BUFFER_CACHE,
+#endif
 } RBufferType;
 
 #include "buf_file.c"
@@ -19,6 +22,10 @@ typedef enum {
 #include "buf_mmap.c"
 #include "buf_io.c"
 #include "buf_ref.c"
+
+#if R2_USE_NEW_ABI
+#include "buf_cache.c"
+#endif
 
 static bool buf_init(RBuffer *b, const void *user) {
 	r_return_val_if_fail (b && b->methods, false);
@@ -108,6 +115,11 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 	case R_BUFFER_MMAP:
 		b->methods = &buffer_mmap_methods;
 		break;
+#if R2_USE_NEW_ABI
+	case R_BUFFER_CACHE:
+		b->methods = &buffer_cache_methods;
+		break;
+#endif
 	case R_BUFFER_SPARSE:
 		b->methods = &buffer_sparse_methods;
 		break;
@@ -201,6 +213,20 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 	}
 	return b;
 }
+
+#if R2_USE_NEW_ABI
+R_API RBuffer *r_buf_new_with_cache(RBuffer *sb, bool steal) {
+	RBuffer *b = new_buffer (R_BUFFER_CACHE, NULL);
+	if (b) {
+		struct minicachebuf {
+			RBuffer *sb;
+		};
+		struct minicachebuf *mcb = b->priv;
+		mcb->sb = sb;
+	}
+	return b;
+}
+#endif
 
 R_API RBuffer *r_buf_new(void) {
 	struct buf_bytes_user u = {0};
