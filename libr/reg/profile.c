@@ -240,7 +240,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			if (r_str_startswith (first, "=RS")) {
 				reg->bits_default = atoi (tok[1]);
 			} else {
-				const char *r;
+				const char *r = NULL;
 				if (*first == '^') {
 					int endian = R_SYS_ENDIAN;
 					switch (first[1]) {
