@@ -4,11 +4,17 @@
 
 #define JMPTBL_MAXSZ 512
 
-static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
-	r_meta_set_data_at (anal, case_addr_loc, offset_sz);
-	r_anal_hint_set_immbase (anal, case_addr_loc, 10);
+	/*
+	 * In the case of ARM-style jump table (as in walkthrough_arm_jmptbl_style)
+	 * Do not treat the case as data, since it is in fact, instruction.
+	 */
+	if (!case_is_insn) {
+		r_meta_set_data_at (anal, case_addr_loc, offset_sz);
+		r_anal_hint_set_immbase (anal, case_addr_loc, 10);
+	}
 	r_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 	if (block) {
 		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
@@ -144,7 +150,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		r_anal_hint_set_immbase (anal, jmpptr_idx_off, 10);
 
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz);
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -244,11 +250,11 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 				break;
 			}
 		}
-		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
+		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, false);
 		//(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs);
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -412,7 +418,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
 		jmpptr = jmptbl_loc + offs;
-		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
+		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, true);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
