@@ -183,7 +183,7 @@ jobs:
       env:
         ARCHFLAGS: '-arch ${{ matrix.arch }}'
         CC: gcc -arch ${{ matrix.arch }}
-      run: dist/macos/build-pkg.sh
+      run: make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v4
       with:
