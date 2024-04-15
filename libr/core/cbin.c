@@ -2992,6 +2992,7 @@ static bool bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
 		free (s);
 	}
 	r_list_free (segments);
+	r_list_free (sections);
 	r_table_free (table);
 	return true;
 }
@@ -3012,13 +3013,14 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 #endif
 	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
-	const char *type = print_segments ? "segment" : "section";
+	const char *type = print_segments? "segment": "section";
 	bool segments_only = true;
 	RList *io_section_info = NULL;
 	ut64 bin_hashlimit = r_config_get_i (r->config, "bin.hashlimit");
 	ut64 filesize = (r->io->desc) ? r_io_fd_size (r->io, r->io->desc->fd): 0;
 
 	if (!dup_chk_ht) {
+		r_table_free (table);
 		return false;
 	}
 
@@ -3032,6 +3034,8 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			free (hashtypes);
+			ht_pp_free (dup_chk_ht);
+			r_table_free (table);
 			return false;
 		}
 		RBinSection *s;
@@ -3383,6 +3387,7 @@ out:
 	free (hashtypes);
 	r_table_free (table);
 	ht_pp_free (dup_chk_ht);
+	r_list_free (io_section_info);
 	return ret;
 }
 
@@ -3634,9 +3639,11 @@ static void classdump_c(RCore *r, RBinClass *c) {
 			char *n = objc_name_toc (fn);
 			char *t = ft? objc_type_toc (ft): NULL;
 			if (f->offset < 32 && !t) {
+				free (n);
 				continue;
 			}
 			if (R_STR_ISEMPTY (t)) {
+				free (t);
 				t = strdup ("void*");
 			}
 			if (!is_objc && !strcmp (n, "isa")) {
@@ -3671,9 +3678,11 @@ static void classdump_cxx(RCore *r, RBinClass *c) {
 			char *n = objc_name_toc (fn);
 			char *t = ft? objc_type_toc (ft): NULL;
 			if (f->offset < 32 && !t) {
+				free (n);
 				continue;
 			}
 			if (R_STR_ISEMPTY (t)) {
+				free (t);
 				t = strdup ("void*");
 			}
 			if (!is_objc && !strcmp (n, "isa")) {
@@ -4038,6 +4047,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					char *n = objc_name_toc (fn);
 					char *t = objc_type_toc (tn);
 					if (R_STR_ISEMPTY (t)) {
+						free (t);
 						t = strdup ("void* ");
 					}
 					r_cons_printf (" %s %s;", t, n);
