@@ -745,7 +745,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	if (is_array) {\
 		pj_k (pj, n);\
 	}\
-	if (z) { tts_say (core, n, z);}\
+	if (z) { tts_say (core, n, z); }\
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
 static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va) {
@@ -1351,6 +1351,22 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'L': // "iL"
+		{
+			char *ptr = strchr (input, ' ');
+			int json = input[1] == 'j'? 'j': 0;
+
+			if (ptr && ptr[1]) {
+				const char *plugin_name = ptr + 1;
+				if (is_array) {
+					pj_k (pj, "plugin");
+				}
+				r_bin_list_plugin (core->bin, plugin_name, pj, json);
+			} else {
+				r_bin_list (core->bin, pj, json);
+			}
+			goto done;
+		}
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		goto done;
@@ -1548,21 +1564,6 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			}
 			break;
-		case 'L': { // "iL"
-			char *ptr = strchr (input, ' ');
-			int json = input[1] == 'j'? 'j': 0;
-
-			if (ptr && ptr[1]) {
-				const char *plugin_name = ptr + 1;
-				if (is_array) {
-					pj_k (pj, "plugin");
-				}
-				r_bin_list_plugin (core->bin, plugin_name, pj, json);
-			} else {
-				r_bin_list (core->bin, pj, json);
-			}
-			goto done;
-		}
 		case 's':
 			{ // "is"
 			RList *objs = r_core_bin_files (core);

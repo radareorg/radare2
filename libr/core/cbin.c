@@ -3795,7 +3795,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 		if (ms) {
 			mn = ms + strlen ("method.");
 		}
-		r_cons_printf ("  func %s", mn);
+		r_cons_printf ("  func %s", mn? mn: ms? ms: "method");
 		if (!strchr (mn, '(')) {
 			r_cons_printf ("()");
 		}

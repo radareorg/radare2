@@ -364,7 +364,7 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 		ut64 sc_entry_cursor = subCacheArrayOffset;
 
 		for (i = 0; i != subCacheArrayCount; i++) {
-			char * suffix;
+			char * suffix = NULL;
 			ut8 check_uuid[16];
 
 			if (lseek (fd, sc_entry_cursor, SEEK_SET) < 0) {
@@ -372,39 +372,31 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 			}
 
 			switch (sc_format) {
-				case SUBCACHE_FORMAT_V1:
-				{
-					RDscSubcacheEntryV1 entry;
+			case SUBCACHE_FORMAT_V1:
+			{
+				RDscSubcacheEntryV1 entry;
 
-					if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-						goto error;
-					}
-
-					suffix = r_str_newf (".%d", i + 1);
-					memcpy (check_uuid, entry.uuid, 16);
-					break;
+				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
+					goto error;
 				}
-				case SUBCACHE_FORMAT_V2:
-				{
-					RDscSubcacheEntryV2 entry;
 
-					if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
-						return false;
-					}
-
-					suffix = malloc (33);
-					if (!suffix) {
-						goto error;
-					}
-					memcpy (suffix, entry.suffix, 32);
-					suffix[32] = 0;
-
-					memcpy (check_uuid, entry.uuid, 16);
-					break;
+				suffix = r_str_newf (".%d", i + 1);
+				memcpy (check_uuid, entry.uuid, 16);
+				break;
+			}
+			case SUBCACHE_FORMAT_V2:
+			{
+				RDscSubcacheEntryV2 entry;
+				if (read (fd, &entry, sc_entry_size) != sc_entry_size) {
+					return false;
 				}
-				case SUBCACHE_FORMAT_UNDEFINED:
-					suffix = NULL;
-					break;
+				suffix = r_str_ndup (entry.suffix, 32);
+				memcpy (check_uuid, entry.uuid, 16);
+				break;
+			}
+			case SUBCACHE_FORMAT_UNDEFINED:
+				suffix = NULL;
+				break;
 			}
 
 			char * subcache_filename = r_str_newf ("%s%s", dsc->filename, suffix);
