@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2024 - pancake, Luc Tielen */
 
 #include <r_debug.h>
+#include <r_util/r_str.h>
 
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
 
@@ -184,7 +185,7 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	R_RETURN_IF_FAIL (dbg && dbg->trace);
 	if (dbg->trace->enabled) {
 		r_esil_trace_op (dbg->anal->esil, op);
-		r_debug_trace_add (dbg, op->addr, op->size - 1);
+		r_debug_trace_add (dbg, op->addr, op->size);
 	}
 }
 
@@ -198,7 +199,7 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, NULL);
 	const int tag = dbg->trace->tag;
-	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
+	r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
 	return ht_pp_find (dbg->trace->ht, key, NULL);
 }
 
@@ -337,8 +338,7 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 // XXX: find better name, make it public?
 static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	if (dbg->trace->addresses) {
-		char addr_str[32];
-		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);
+		r_strf_var (addr_str, 64, "0x%08"PFMT64x, addr);
 		if (!strstr (dbg->trace->addresses, addr_str)) {
 			return false;
 		}
@@ -348,7 +348,7 @@ static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 
 R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	R_RETURN_VAL_IF_FAIL (dbg, NULL);
-	int tag = dbg->trace->tag;
+	const int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr)) {
 		return NULL;
 	}
@@ -362,15 +362,15 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		tp->count = ++dbg->trace->count;
 		RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
 		if (last) {
-			eprintf ("Last -> %llx\n", last->addr);
 			tp->times = last->times + 1;
 		} else {
-			eprintf ("NoLast \n");
 			tp->times = 1;
 		}
-		r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
+		r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
+		ht_pp_delete (dbg->trace->ht, key);
 		ht_pp_update (dbg->trace->ht, key, tp);
-		eprintf ("UP %s %llx\n", key, addr);
+		// ht_pp_insert (dbg->trace->ht, key, tp);
+		// eprintf ("UP %s %llx\n", key, addr);
 	}
 	return tp;
 }
