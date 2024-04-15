@@ -587,7 +587,11 @@ beach:
 static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_val_if_fail (io && io->desc && io->desc->plugin, NULL);
 	RFixupRebaseContext ctx = {0};
+#if R2_USE_NEW_ABI
+	RBuffer *nb = r_buf_new_with_cache (obj->b, false);
+#else
 	RBuffer *nb = r_buf_new_with_buf (obj->b);
+#endif
 	RBuffer *ob = obj->b;
 	obj->b = nb;
 	ut64 count = r_buf_size (obj->b);
