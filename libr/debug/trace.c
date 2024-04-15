@@ -36,13 +36,14 @@ R_API void r_debug_trace_free(RDebugTrace *trace) {
 // TODO: added overlap/mask support here... wtf?
 // TODO: think about tagged traces .. must return 0 or ntag :?
 R_API int r_debug_trace_tag(RDebug *dbg, int tag) {
-	r_return_val_if_fail (dbg && dbg->trace, 0);
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, 0);
 	ut32 ntag = (tag > 0)? (ut32)tag: UT32_MAX;
 	dbg->trace->tag = ntag;
 	return ntag;
 }
 
 R_API bool r_debug_trace_ins_before(RDebug *dbg) {
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	RListIter *it, *it_tmp;
 	RAnalValue *val;
 	ut8 buf_pc[32];
@@ -162,7 +163,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
  * something happened at the given pc that we need to trace
  */
 R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
-	r_return_val_if_fail (dbg && dbg->trace, false);
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, false);
 	ut8 buf[32];
 	RAnalOp op = {0};
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
@@ -179,29 +180,24 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	return true;
 }
 
-static R_TH_LOCAL ut64 oldpc = UT64_MAX; // XXX Must trace the previously traced instruction
-
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
-	r_return_if_fail (dbg && dbg->trace);
+	R_RETURN_IF_FAIL (dbg && dbg->trace);
 	if (dbg->trace->enabled) {
 		r_esil_trace_op (dbg->anal->esil, op);
-		if (oldpc != UT64_MAX) {
-			r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
-		}
+		r_debug_trace_add (dbg, op->addr, op->size - 1);
 	}
-	oldpc = op->addr;
 }
 
 R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
-	r_return_if_fail (dbg && dbg->trace);
+	R_RETURN_IF_FAIL (dbg && dbg->trace);
 	// TODO: parse offsets and so use ut64 instead of strstr()
 	free (dbg->trace->addresses);
 	dbg->trace->addresses = R_STR_ISNOTEMPTY (str)? strdup (str): NULL;
 }
 
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
-	r_return_val_if_fail (dbg && dbg->trace, NULL);
-	int tag = dbg->trace->tag;
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, NULL);
+	const int tag = dbg->trace->tag;
 	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
 	return ht_pp_find (dbg->trace->ht, key, NULL);
 }
@@ -254,7 +250,7 @@ static inline void listinfo_fini(RListInfo *info) {
 	free (info->extra);
 }
 
-R_VEC_TYPE_WITH_FINI(RVecListInfo, RListInfo, listinfo_fini);
+R_VEC_TYPE_WITH_FINI (RVecListInfo, RListInfo, listinfo_fini);
 
 static void r_debug_trace_list_table(RDebug *dbg, ut64 offset) {
 	RVecListInfo info_vec;
@@ -317,7 +313,7 @@ static void r_debug_trace_list_default(RDebug *dbg) {
 }
 
 R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
-	r_return_if_fail (dbg && dbg->trace);
+	R_RETURN_IF_FAIL (dbg && dbg->trace);
 	switch (mode) {
 		case 'j':
 			r_debug_trace_list_json (dbg);
@@ -351,7 +347,7 @@ static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 }
 
 R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr)) {
 		return NULL;
@@ -366,19 +362,21 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		tp->count = ++dbg->trace->count;
 		RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
 		if (last) {
-			last->times++;
-			tp->times = last->times;
+			eprintf ("Last -> %llx\n", last->addr);
+			tp->times = last->times + 1;
 		} else {
+			eprintf ("NoLast \n");
 			tp->times = 1;
 		}
 		r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
 		ht_pp_update (dbg->trace->ht, key, tp);
+		eprintf ("UP %s %llx\n", key, addr);
 	}
 	return tp;
 }
 
 R_API void r_debug_trace_reset(RDebug *dbg) {
-	r_return_if_fail (dbg);
+	R_RETURN_IF_FAIL (dbg);
 	RDebugTrace *t = dbg->trace;
 	ht_pp_free (t->ht);
 	t->ht = ht_pp_new0 ();
