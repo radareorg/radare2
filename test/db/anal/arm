@@ -903,6 +903,8 @@ wx+ d90d9828440d90139d109c
 s 0
 af
 pds 1@0x2e~:1
+(foo;?== `Cd.` 2;?? echo fail;s+2)
+92.(foo) @ switch.0x0000002e + 4
 EOF
 EXPECT=<<EOF
 0x0000002e switch table (92 cases) at 0x32
@@ -1222,5 +1224,19 @@ bx lr
 address    noret size  nbbs edges    cc cost  min bound range max bound  calls locals args xref frame name
 ========== ===== ===== ===== ===== ===== ==== ========== ===== ========== ===== ====== ==== ==== ===== ====
 0x00000000     0   10     1     0     1    7 0x00000000    10 0x0000000a     0    0      0    0    12 fcn.00000000
+EOF
+RUN
+
+NAME=arm jmptbl case check
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 020050e300f18f90030000ea010000ea000000eaffffffea
+af
+(foo;Cd.;s+4)
+4.(foo) @ 0x8
+EOF
+EXPECT=<<EOF
 EOF
 RUN
