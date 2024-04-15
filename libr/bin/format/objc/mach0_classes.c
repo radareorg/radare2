@@ -1677,6 +1677,10 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
 			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d - 1] - 4;
 			ut64 field_method_addr = field_name_addr;
+			if (field_method_addr & 1) {
+				// unaligned aka invalid
+				break;
+			}
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr);
 			if (!field_name) {
