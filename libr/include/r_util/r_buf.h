@@ -70,6 +70,9 @@ R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size);
 R_API RBuffer *r_buf_new_empty(ut64 len);
 R_API RBuffer *r_buf_new_mmap(const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff);
+#if R2_USE_NEW_ABI
+R_API RBuffer *r_buf_new_with_cache(RBuffer *b, bool steal);
+#endif
 
 /* methods */
 R_API bool r_buf_dump(RBuffer *buf, const char *file);

@@ -100,6 +100,26 @@ bool test_buf(RBuffer *b) {
 	return MU_PASSED;
 }
 
+#if R2_USE_NEW_ABI
+bool test_r_buf_cache(void) {
+	const char bytes[] = "ABCDEFGHIJKLMNOP";
+	RBuffer *b0 = r_buf_new_with_bytes ((const ut8*)bytes, sizeof (bytes));
+	RBuffer *b1 = r_buf_new_with_cache (b0, false);
+	char buf[5] = {0};
+	r_buf_read_at (b0, 2, (ut8*)buf, 4);
+	mu_assert_streq (buf, "CDEF", "read original buffer");
+	r_buf_read_at (b1, 2, (ut8*)buf, 4);
+	mu_assert_streq (buf, "CDEF", "read cache buffer");
+	r_buf_write_at (b1, 2, (const ut8*)"XY", 2);
+	r_buf_read_at (b1, 2, (ut8*)buf, 4);
+	mu_assert_streq (buf, "XYEF", "read patched cache buffer");
+
+	r_buf_free (b0);
+	r_buf_free (b1);
+	mu_end;
+}
+#endif
+
 bool test_r_buf_file(void) {
 	RBuffer *b;
 	char *filename = "r2-XXXXXX";
@@ -405,6 +425,9 @@ bool test_r_buf_slice_too_big(void) {
 }
 
 int all_tests() {
+#if R2_USE_NEW_ABI
+	mu_run_test (test_r_buf_cache);
+#endif
 	mu_run_test (test_r_buf_file);
 	mu_run_test (test_r_buf_bytes);
 	mu_run_test (test_r_buf_mmap);
