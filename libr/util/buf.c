@@ -220,9 +220,13 @@ R_API RBuffer *r_buf_new_with_cache(RBuffer *sb, bool steal) {
 	if (b) {
 		struct minicachebuf {
 			RBuffer *sb;
+			bool owned;
+			ut64 length;
 		};
 		struct minicachebuf *mcb = b->priv;
 		mcb->sb = sb;
+		mcb->owned = steal;
+		mcb->length = r_buf_size (sb);
 	}
 	return b;
 }

@@ -5,11 +5,14 @@
 #if R2_USE_NEW_ABI
 
 typedef struct buf_cache_priv {
+	// init
 	RBuffer *sb; // source/parent buffer
-	RIOCacheLayer *cl;
-	ut64 length;
-	ut64 offset;
 	bool is_bufowner;
+	ut64 length;
+	// internal
+	RIOCacheLayer *cl;
+	ut64 offset;
+	ut8 *buf;
 } RBufCache;
 
 static inline RBufCache *get_priv_cache_bytes(RBuffer *b) {
@@ -104,7 +107,6 @@ static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 		RInterval its = r_itv_intersect (ci->tree_itv[0], itv);
 		int itvlen = R_MIN (r_itv_size (its), r_itv_size (ci->itv));
 		if (r_itv_begin (its) > addr) {
-			// R_LOG_ERROR ("io-cache missfeature");
 			ut64 aa = addr;
 			// ut64 as = len;
 			ut64 ba = r_itv_begin (its);
@@ -181,43 +183,15 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 //////////////////////////////////////////
 
 static bool buf_cache_init(RBuffer *b, const void *user) {
+	// TODO take sb and owned from user instead of setting it in with_cache() after init
 	RBufCache *priv = R_NEW0 (RBufCache);
 	if (!priv) {
 		return false;
 	}
-
 	priv->cl = iocache_layer_new ();
+	priv->length = 0;
 	priv->offset = 0;
-	priv->is_bufowner = false; // TODO never true
-#if 0
-	//priv->length = u->length;
-	if (u->data_steal) {
-		priv->buf = (ut8 *)u->data_steal;
-		priv->is_bufowner = u->steal;
-	} else {
-#if 0
-		size_t length = priv->length > 0? priv->length: 1;
-		priv->buf = malloc (length);
-		if (!priv->buf) {
-			free (priv);
-			return false;
-		}
-		if (priv->length > 0) {
-			memmove (priv->buf, u->data, priv->length);
-		}
-#else
-		if (priv->length > 0) {
-			priv->buf = malloc (priv->length);
-			if (!priv->buf) {
-				free (priv);
-				return false;
-			}
-			memmove (priv->buf, u->data, priv->length);
-		}
-#endif
-		priv->is_bufowner = true;
-	}
-#endif
+	priv->is_bufowner = false;
 	b->priv = priv;
 	return true;
 }
@@ -228,6 +202,7 @@ static bool buf_cache_fini(RBuffer *b) {
 		r_buf_free (priv->sb);
 	}
 	iocache_layer_free (priv->cl);
+	R_FREE (priv->buf);
 	R_FREE (b->priv);
 	return true;
 }
@@ -275,8 +250,15 @@ static ut8 *buf_cache_get_whole_buf(RBuffer *b, ut64 *sz) {
 	if (sz) {
 		*sz = priv->length;
 	}
-	R_LOG_ERROR ("wholebuf not supported for cachebuffer yet");
-	return NULL; // priv->buf;
+	if (priv->buf) {
+		R_FREE (priv->buf);
+	}
+	ut8 *nbuf = malloc (priv->length);
+	if (nbuf) {
+		r_buf_read_at (b, 0, nbuf, priv->length);
+		priv->buf = nbuf;
+	}
+	return priv->buf;
 }
 
 static const RBufferMethods buffer_cache_methods = {
