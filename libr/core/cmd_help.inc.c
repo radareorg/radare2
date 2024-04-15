@@ -719,7 +719,15 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_single_quote);
 		break;
 	case 'a': // "?a"
+#if R2_USE_NEW_ABI
+		if (input[1] == 'e') {
+			r_cons_printf ("%s", r_str_chartable ('e'));
+		} else {
+			r_cons_printf ("%s", r_str_chartable (0));
+		}
+#else
 		r_cons_printf ("%s", r_str_asciitable ());
+#endif
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
