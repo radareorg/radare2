@@ -1034,7 +1034,8 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 	ut64 ptr_thread, pc = UT64_MAX, pc_offset = UT64_MAX;
 	ut32 flavor, count;
 	ut8 *arw_ptr = NULL;
-	int arw_sz, len = 0;
+	int arw_sz = 0;
+	int len = 0;
 	ut8 thc[sizeof (struct thread_command)] = {0};
 	ut8 tmp[4];
 

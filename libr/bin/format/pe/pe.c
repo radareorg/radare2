@@ -3715,9 +3715,8 @@ static int get_debug_info(RBinPEObj* pe, PE_(image_debug_directory_entry)* dbg_d
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
 			dbgname = (char*) rsds_hdr.file_name;
-			strncpy (res->file_name, (const char*)
+			r_str_ncpy (res->file_name, (const char*)
 				dbgname, sizeof (res->file_name));
-			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
 			if (dbg_data_len < 20) {
