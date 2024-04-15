@@ -4008,6 +4008,7 @@ R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev
 R_API char *r_str_version(const char *program) {
 	const char *release = "";
 	const char *asanstr = "";
+	const char *newabi = "";
 	const char *gplstr = "lgpl";
 	char optistr[5] = " -O?";
 #if defined(__has_feature)
@@ -4021,6 +4022,9 @@ R_API char *r_str_version(const char *program) {
 #endif
 #if R2_VERSION_COMMIT == 0
 	release = " release";
+#endif
+#if R2_USE_NEW_ABI
+	newabi = " newabi";
 #endif
 #ifdef _FORTIFY_SOURCE
 	// clang
@@ -4044,8 +4048,8 @@ R_API char *r_str_version(const char *program) {
 	if (*R2_GITTIP) {
 		s = r_str_append (s, "commit: "R2_GITTIP"\n");
 	}
-	s = r_str_appendf (s, "options:%s%s%s%s cs:%d cl:%d %s",
-			gplstr, asanstr, release, optistr, csv, R_CHECKS_LEVEL, R_BUILDSYSTEM);
+	s = r_str_appendf (s, "options:%s%s%s%s%s cs:%d cl:%d %s",
+			gplstr, asanstr, newabi, release, optistr, csv, R_CHECKS_LEVEL, R_BUILDSYSTEM);
 	return s;
 }
 
