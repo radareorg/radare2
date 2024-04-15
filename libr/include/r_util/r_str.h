@@ -116,6 +116,9 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char *r_str_slice(const char *str, RStringSlice s);
 R_API const char *r_str_asciitable(void);
+#if R2_USE_NEW_ABI
+R_API const char *r_str_chartable(int c);
+#endif
 
 R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n);
 R_API RList *r_str_split_list(char *str, const char *c, int n);
