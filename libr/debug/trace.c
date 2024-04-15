@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake, Luc Tielen */
 
 #include <r_debug.h>
 
@@ -271,7 +271,6 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset) {
 				RVecListInfo_fini (&info_vec);
 				return;
 			}
-
 			info->pitv = (RInterval) {trace->addr, trace->size};
 			info->vitv = info->pitv;
 			info->perm = -1;
@@ -365,7 +364,13 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		tp->tags = tag;
 		tp->size = size;
 		tp->count = ++dbg->trace->count;
-		tp->times = 1;
+		RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
+		if (last) {
+			last->times++;
+			tp->times = last->times;
+		} else {
+			tp->times = 1;
+		}
 		r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
 		ht_pp_update (dbg->trace->ht, key, tp);
 	}
