@@ -2,6 +2,7 @@
 
 #include <r_debug.h>
 #include <r_util/r_str.h>
+#include <sdb/ht_pu.h>
 
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
 
@@ -19,6 +20,7 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 		return NULL;
 	}
 	t->ht = ht_pp_new0 ();
+	// t->ht = ht_pu_new0 ();
 	if (!t->ht) {
 		r_debug_trace_free (t);
 		return NULL;
@@ -26,11 +28,12 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 	return t;
 }
 
-R_API void r_debug_trace_free(RDebugTrace *trace) {
-	if (trace) {
-		RVecDebugTracepoint_free (trace->traces);
-		ht_pp_free (trace->ht);
-		free (trace);
+R_API void r_debug_trace_free(RDebugTrace *t) {
+	if (t) {
+		RVecDebugTracepoint_free (t->traces);
+		ht_pp_free (t->ht);
+		// ht_pu_free (t->ht);
+		free (t);
 	}
 }
 
@@ -200,7 +203,13 @@ R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, NULL);
 	const int tag = dbg->trace->tag;
 	r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
-	return ht_pp_find (dbg->trace->ht, key, NULL);
+	bool found = false;
+	int pos = (int)(size_t)ht_pp_find (dbg->trace->ht, key, &found);
+	if (found) {
+		return RVecDebugTracepoint_at (dbg->trace->traces, pos - 1);
+	}
+	return NULL;
+	// return ht_pp_find (dbg->trace->ht, key, NULL);
 }
 
 static int cmpaddr(const RListInfo *a, const RListInfo *b) {
@@ -353,6 +362,13 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	}
 	r_anal_trace_bb (dbg->anal, addr);
+	int last_times = 1;
+	RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
+	if (last) {
+		last_times = last->times;
+	}
+	int pos = RVecDebugTracepoint_length (dbg->trace->traces) + 1;
+	// emplacedback pointers are not constant, so we may rely on the index instead of ptr
 	RDebugTracepoint *tp = RVecDebugTracepoint_emplace_back (dbg->trace->traces);
 	if (R_LIKELY (tp)) {
 		tp->stamp = r_time_now ();
@@ -360,16 +376,14 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		tp->tags = tag;
 		tp->size = size;
 		tp->count = ++dbg->trace->count;
-		RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
-		if (last) {
-			tp->times = last->times + 1;
-		} else {
-			tp->times = 1;
-		}
+		tp->times = last_times;
 		r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
-		ht_pp_delete (dbg->trace->ht, key);
-		ht_pp_update (dbg->trace->ht, key, tp);
-		// ht_pp_insert (dbg->trace->ht, key, tp);
+		void *ip = (void*)(size_t)(pos);
+		ht_pp_update (dbg->trace->ht, key, ip);
+		// for some reason pu mode doesnt work but storing integers as pointers works
+		// ht_pu_update (dbg->trace->ht, key, pos);
+		// ht_pp_delete (dbg->trace->ht, key);
+		// ht_pu_insert (dbg->trace->ht, key, pos);
 		// eprintf ("UP %s %llx\n", key, addr);
 	}
 	return tp;
@@ -380,6 +394,8 @@ R_API void r_debug_trace_reset(RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
 	ht_pp_free (t->ht);
 	t->ht = ht_pp_new0 ();
+	// ht_pu_free (t->ht);
+	// t->ht = ht_pu_new0 ();
 	RVecDebugTracepoint_free (t->traces);
 	t->traces = RVecDebugTracepoint_new ();
 }
