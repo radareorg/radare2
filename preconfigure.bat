@@ -49,7 +49,7 @@ REM: Targets: x86 amd64 x64 arm arm64
 IF "%*" == "x86" (
   set VSARCH=x86
 ) ELSE IF "%*" == "arm64" (
-  set VSARCH=x86_arm64
+  set VSARCH=x64_arm64
 ) ELSE (
   set VSARCH=x86_amd64
 )
