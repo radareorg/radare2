@@ -2239,6 +2239,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 	if (bits & 7) {
 		return false;
 	}
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config);
 	bool ret = false;
 	char res[SDB_NUM_BUFSZ];
 	ut64 addr;
@@ -2253,8 +2254,8 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof (ut64) * 2] = {0};
 			ret = r_esil_mem_read (esil, addr, a, bytes);
-			ut64 b = r_read_ble64 (&a, 0); //esil->anal->config->big_endian);
-			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->config->big_endian);
+			ut64 b = r_read_ble64 (&a, be);
+			ut64 c = r_read_ble64 (&a[8], be);
 			sdb_itoa (b, 16, res, sizeof (res));
 			r_esil_push (esil, res);
 			sdb_itoa (c, 16, res, sizeof (res));
@@ -2269,7 +2270,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
 #else
 		ut64 b = r_read_ble64 (a, 0);
-		if (R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config)) {
+		if (be) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
