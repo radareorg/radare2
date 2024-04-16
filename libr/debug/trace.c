@@ -365,7 +365,7 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	int last_times = 1;
 	RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
 	if (last) {
-		last_times = last->times;
+		last_times = last->times + 1;
 	}
 	int pos = RVecDebugTracepoint_length (dbg->trace->traces) + 1;
 	// emplacedback pointers are not constant, so we may rely on the index instead of ptr
