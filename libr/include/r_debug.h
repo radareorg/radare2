@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #ifndef R2_DEBUG_H
 #define R2_DEBUG_H
@@ -225,7 +225,7 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
-R_VEC_FORWARD_DECLARE(RVecDebugTracepoint);
+R_VEC_FORWARD_DECLARE (RVecDebugTracepoint);
 
 typedef struct r_debug_trace_t {
 	RVecDebugTracepoint *traces;
