@@ -46,13 +46,49 @@ if %ERRORLEVEL% == 0 (
 REM vs uses HOST_TARGET syntax, so: x86_amd64 means 32bit compiler for 64bit target
 REM: Hosts: x86 amd64 x64
 REM: Targets: x86 amd64 x64 arm arm64
-IF "%*" == "x86" (
-  set VSARCH=x86
-) ELSE IF "%*" == "arm64" (
-  set VSARCH=x86_arm64
-) ELSE (
-  set VSARCH=x86_amd64
+
+REM Detect the host architecture intuitively and easily
+
+if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
+    set "HOST_ARCH=x64"
+) else if "%PROCESSOR_ARCHITECTURE%"=="x86" (
+    set "HOST_ARCH=x86"
+) else (
+    set "HOST_ARCH=unknown"
 )
+
+REM Check if arguments are passed
+if "%~1"=="" (
+    echo Your current Host Architecture is !HOST_ARCH!
+    echo Please select the Target Architecture:
+    echo 1. x86
+    echo 2. x64 [amd64]
+    echo 3. arm
+    echo 4. arm64
+    set /P "CHOICE=Enter your choice (1-4): "
+
+    REM Set target architecture based on user input
+    if "!CHOICE!"=="1" (
+        set "TARGET_ARCH=x86"
+    ) else if "!CHOICE!"=="2" (
+        set "TARGET_ARCH=x64"
+    ) else if "!CHOICE!"=="3" (
+        set "TARGET_ARCH=arm"
+    ) else if "!CHOICE!"=="4" (
+        set "TARGET_ARCH=arm64"
+    ) else (
+        echo Invalid choice. Defaulting to arm64.
+        set "TARGET_ARCH=arm64"
+    )
+
+    REM Combine host and target into VSARCH
+    set "VSARCH=!HOST_ARCH!_!TARGET_ARCH!"
+) else (
+    REM Use provided host_target argument
+    set "VSARCH=%1"
+)
+
+echo VSARCH is set to: %VSARCH%
 
 echo === Finding Visual Studio...
 cl --help > NUL 2> NUL
