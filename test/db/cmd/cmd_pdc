@@ -168,10 +168,10 @@ EOF
 EXPECT=<<EOF
 int sym.func.100003a54 (int x0, int x1) {
     loc_0x100003a54:
-        x8 = [x0 + 0x60] // 0xda // 218 // arg1
-        x8 = [x8 + 0x60] // 0xe2 // 226
-        x9 = [x1 + 0x60] // 0xdb // 219 // arg2
-        x9 = [x9 + 0x60] // 0xe3 // 227
+        x8 = [x0 + 0x60] // arg1
+        x8 = [x8 + 0x60]
+        x9 = [x1 + 0x60] // arg2
+        x9 = [x9 + 0x60]
         if (x8 == x9)
         goto ifle 0x100003a74 // likely
         goto loc_0x100003a6c

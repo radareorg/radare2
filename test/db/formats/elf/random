@@ -34,7 +34,7 @@ EXPECT=<<EOF
 |           0x08000810      a92301d1       sub x9, x29, 0x48
 |           0x08000814      e91300f9       str x9, [sp, 0x20]
 |           0x08000818      e90308aa       mov x9, x8
-|           0x0800081c      e81340f9       ldr x8, [var_20h]           ; 0x5 ; 5
+|           0x0800081c      e81340f9       ldr x8, [var_20h]
 |           0x08000820      e21700f9       str x2, [sp, 0x28]          ; arg3
 |           0x08000824      002100f9       str x0, [x8, 0x40]          ; arg1
 |           0x08000828      011d00f9       str x1, [x8, 0x38]          ; arg2
@@ -42,9 +42,9 @@ EXPECT=<<EOF
 |           0x08000830      041500f9       str x4, [x8, 0x28]          ; arg5
 |           0x08000834      08000090       adrp x8, segment.ehdr       ; 0x8000000; RELOC 32 .rodata @ 0x080057f8 + 0x18
 |           0x08000838      08010091       add x8, x8, 0               ; RELOC 32 .rodata @ 0x080057f8 + 0x18 ; segment.ehdr
-|           0x0800083c      0001c03d       ldr q0, [x8]                ; 0xe2 ; 226 ; segment.ehdr
+|           0x0800083c      0001c03d       ldr q0, [x8]                ; segment.ehdr
 |           0x08000840      2001803d       str q0, [x9]
-|           0x08000844      080940f9       ldr x8, [x8, 0x10]          ; 0xe2 ; 226
+|           0x08000844      080940f9       ldr x8, [x8, 0x10]
 |           0x08000848      280900f9       str x8, [x9, 0x10]
 |           0x0800084c      5f0000b9       str wzr, [x2]               ; arg3
 EOF
@@ -114,7 +114,7 @@ EXPECT=<<EOF
 |           0x00000fa4      a92301d1       sub x9, x29, 0x48
 |           0x00000fa8      e91300f9       str x9, [sp, 0x20]
 |           0x00000fac      e90308aa       mov x9, x8
-|           0x00000fb0      e81340f9       ldr x8, [var_20h]           ; 0x5
+|           0x00000fb0      e81340f9       ldr x8, [var_20h]
 |           0x00000fb4      e21700f9       str x2, [sp, 0x28]          ; arg3
 |           0x00000fb8      002100f9       str x0, [x8, 0x40]          ; arg1
 |           0x00000fbc      011d00f9       str x1, [x8, 0x38]          ; arg2
@@ -122,9 +122,9 @@ EXPECT=<<EOF
 |           0x00000fc4      041500f9       str x4, [x8, 0x28]          ; arg5
 |           0x00000fc8      280000b0       adrp x8, 0x5000
 |           0x00000fcc      08e13e91       add x8, x8, 0xfb8           ; str.O_n_
-|           0x00000fd0      0001c03d       ldr q0, [x8]                ; 0xe2 ; str.O_n_
+|           0x00000fd0      0001c03d       ldr q0, [x8]                ; str.O_n_
 |           0x00000fd4      2001803d       str q0, [x9]
-|           0x00000fd8      080940f9       ldr x8, [x8, 0x10]          ; 0xe2
+|           0x00000fd8      080940f9       ldr x8, [x8, 0x10]
 |           0x00000fdc      280900f9       str x8, [x9, 0x10]
 |           0x00000fe0      5f0000b9       str wzr, [x2]               ; arg3
 0x00005fb8  0x5a8a51be3e7c0a4f                       O.|>.Q.Z
