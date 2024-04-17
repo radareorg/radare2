@@ -1303,11 +1303,15 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 	return NULL;
 }
 
+#if R2_USE_NEW_ABI
+// this api is deprecated. just access the binobject instead
+#else
 R_API RList* /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *bo = r_bin_cur_object (bin);
 	return bo ? bo->classes : NULL;
 }
+#endif
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin, * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {

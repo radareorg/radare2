@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
+#define R_INCLUDE_BEGIN 1
 #if R_INCLUDE_BEGIN
 
 // R2R db/formats/dwarf
@@ -164,8 +165,14 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	RBinClass *k;
 	RBinField *f;
 	RBinSymbol *m;
+#if R2_USE_NEW_ABI
+	RListIter *iter2;
+	R_VEC_FOREACH (&bo->classes, k)
+#else
 	RListIter *iter, *iter2;
-	r_list_foreach (bo->classes, iter, k) {
+	r_list_foreach (bo->classes, iter, k)
+#endif
+	{
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
@@ -830,8 +837,26 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_list_foreach (bfiles, objs_iter, bf) {
 		RBinObject *obj = bf->bo;
 		RBinClass *klass;
-		RListIter *iter, *iter2;
 		core->bin->cur = bf;
+#if R2_USE_NEW_ABI
+		RListIter *iter2;
+		R_VEC_FOREACH (&obj->classes, klass) {
+			const char *kname = r_bin_name_tostring (klass->name);
+			RBinSymbol *method;
+			r_list_foreach (klass->methods, iter2, method) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, iova? method->vaddr: method->paddr);
+				r_table_add_row (t, addr, "method", kname, method->name, NULL);
+				free (addr);
+			}
+			RBinField *field;
+			r_list_foreach (klass->fields, iter2, field) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, iova? field->vaddr: field->paddr);
+				r_table_add_row (t, addr, "field", kname, field->name, NULL);
+				free (addr);
+			}
+		}
+#else
+		RListIter *iter, *iter2;
 		r_list_foreach (obj->classes, iter, klass) {
 			const char *kname = r_bin_name_tostring (klass->name);
 			RBinSymbol *method;
@@ -847,6 +872,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 				free (addr);
 			}
 		}
+#endif
 	}
 	core->bin->cur = cur;
 	r_list_free (bfiles);
@@ -878,15 +904,25 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 	char *klass_name = strdup (input);
 	char *method_name = r_str_after (klass_name, '.');
 	RBinClass *klass = NULL;
+#if R2_USE_NEW_ABI
+	RBinObject *bo = R_UNWRAP4 (core, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, k)
+#else
 	RList *klasses = r_bin_get_classes (core->bin);
-	r_list_foreach (klasses, iter, k) {
+	r_list_foreach (klasses, iter, k)
+#endif
+	{
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		if (!strcmp (kname, klass_name)) {
 			if (method_name) {
 				klass = k;
 			} else {
 				// delete class!
+#if R2_USE_NEW_ABI
+				R_LOG_WARN ("TODO: delete class");
+#else
 				r_list_delete (klasses, iter);
+#endif
 				return;
 			}
 			break;
@@ -910,13 +946,19 @@ void cmd_ic_add(RCore *core, const char *input) {
 		R_LOG_INFO ("Usage: ic+[klassname][.methodname]");
 		return;
 	}
-	RList *klasses = r_bin_get_classes (core->bin);
 	RListIter *iter;
 	RBinClass *k;
 	char *klass_name = strdup (input);
 	char *method_name = r_str_after (klass_name, '.');
 	RBinClass *klass = NULL;
-	r_list_foreach (klasses, iter, k) {
+#if R2_USE_NEW_ABI
+	RBinObject *bo = R_UNWRAP4 (core, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, k)
+#else
+	RList *klasses = r_bin_get_classes (core->bin);
+	r_list_foreach (klasses, iter, k)
+#endif
+	{
 		const char *kname = r_bin_name_tostring (k->name);
 		if (!strcmp (kname, klass_name)) {
 			klass = k;
@@ -926,7 +968,11 @@ void cmd_ic_add(RCore *core, const char *input) {
 	if (!klass) {
 		klass = R_NEW0 (RBinClass);
 		klass->name = r_bin_name_new (klass_name);
+#if R2_USE_NEW_ABI
+		RVecRBinClass_push_back (&bo->classes, klass);
+#else
 		r_list_append (klasses, klass);
+#endif
 	}
 	if (method_name == NULL) {
 		klass->addr = core->offset;
@@ -955,14 +1001,20 @@ void cmd_ic_add(RCore *core, const char *input) {
 static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 0: 'o';
 	RBinClass *cls;
-	RListIter *iter, *iter2;
 	if (!obj) {
 		return;
 	}
 	bool fullGraph = true;
 	const char *match = r_str_trim_head_ro (arg);
+#if R2_USE_NEW_ABI
+	RListIter *iter2;
+#define CLASSES_FOREACH R_VEC_FOREACH (&obj->classes, cls)
+#else
+	RListIter *iter, *iter2;
+#define CLASSES_FOREACH r_list_foreach (obj->classes, iter, cls)
+#endif
 	if (R_STR_ISNOTEMPTY (match)) {
-		r_list_foreach (obj->classes, iter, cls) {
+		CLASSES_FOREACH {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			if (!match || !strstr (kname, match)) {
 				continue;
@@ -980,7 +1032,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 			}
 		}
 	} else if (fullGraph) {
-		r_list_foreach (obj->classes, iter, cls) {
+		CLASSES_FOREACH {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			RBinName *bn;
 			r_cons_printf ("agn %s\n", kname);
@@ -991,7 +1043,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 			}
 		}
 	} else {
-		r_list_foreach (obj->classes, iter, cls) {
+		CLASSES_FOREACH {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			char *sk;
 			RListIter *iter;
@@ -1035,10 +1087,21 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 	RBinSymbol *sym;
 	RBinClass *cls;
 	if (mode == 'c') {
+#if R2_USE_NEW_ABI
+		r_cons_printf ("%d\n", RVecRBinClass_length (&obj->classes));
+#else
 		r_cons_printf ("%d\n", r_list_length (obj->classes));
+#endif
 		return;
 	}
-	r_list_foreach (obj->classes, iter, cls) {
+#if R2_USE_NEW_ABI
+	int classes_length = RVecRBinClass_length (&obj->classes);
+	R_VEC_FOREACH (&obj->classes, cls)
+#else
+	int classes_length = r_list_length (obj->classes);
+	r_list_foreach (obj->classes, iter, cls)
+#endif
+	{
 		const char *kname = r_bin_name_tostring2 (cls->name, pref);
 		if ((idx >= 0 && idx != (*count)++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
 			continue;
@@ -1059,7 +1122,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			{
 				listed_classes = true;
 				int mode = R_MODE_RADARE;
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 			}
 #if 0
 			r_list_foreach (cls->methods, iter2, sym) {
@@ -1078,16 +1141,14 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		case 'j':
 			{
 				int mode = R_MODE_JSON; // (oldmode == 'q')? R_MODE_SIMPLE: 0;
-				int len = r_list_length (obj->classes);
 				listed_classes = true;
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 			}
 			break;
 		case 0:
 			if (idx == -1 && R_STR_ISEMPTY (cls_name)) {
-				size_t len = r_list_length (obj->classes);
 				int mode = 0;
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 				listed_classes = true;
 			} else {
 				r_cons_printf ("class %s\n", kname);
@@ -1103,9 +1164,9 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			break;
 		case 'q':
 			{
-				size_t len = r_list_length (obj->classes);
-				int mode = R_MODE_SIMPLE;
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				int oldmode = mode;
+				int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 				listed_classes = true;
 			}
 			break;
@@ -1218,8 +1279,20 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				return;
 			}
 			r_list_foreach (objs, objs_iter, bf) {
-				RBinObject *bo = bf->bo;
-				if (!bo || !bo->classes || r_list_empty (bo->classes)) {
+				RBinObject *obj = bf->bo;
+#if R2_USE_NEW_ABI
+				int classes_length = RVecRBinClass_length (&obj->classes);
+				RListIter *iter2;
+#else
+				int classes_length = r_list_length (obj->classes);
+				RListIter *iter, *iter2;
+#endif
+#if R2_USE_NEW_ABI
+				if (!obj || !obj->classes || classes_length == 0)
+#else
+				if (!obj || !obj->classes || r_list_empty (obj->classes))
+#endif
+				{
 					if (r_str_startswith (input, "lc")) { // "iclc"
 						r_cons_printf ("0\n");
 					}
@@ -1232,11 +1305,15 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				first = false;
 				RBinClass *cls;
 				RBinSymbol *sym;
-				RListIter *iter, *iter2;
 				core->bin->cur = bf;
 
 				if (is_superquiet && is_jvm) {
-					r_list_foreach (bo->classes, iter, cls) {
+#if R2_USE_NEW_ABI
+					R_VEC_FOREACH (&obj->classes, cls)
+#else
+					r_list_foreach (obj->classes, iter, cls)
+#endif
+					{
 						const char *kname = r_bin_name_tostring (cls->name);
 						if (!isKnownAndroidPackage (kname)) {
 							r_cons_printf ("%s\n", kname);
@@ -1244,13 +1321,18 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					}
 					break;
 				}
-				tts_say (core, "classes", r_list_length (bo->classes));
+				tts_say (core, "classes", classes_length);
 				switch (cmd) {
 				case 'g':
 					cmd_icg (core, bo, arg);
 					break;
 				case 's': // "ics"
-					r_list_foreach (bo->classes, iter, cls) {
+#if R2_USE_NEW_ABI
+					R_VEC_FOREACH (&obj->classes, cls)
+#else
+					r_list_foreach (obj->classes, iter, cls)
+#endif
+					{
 						const char *kname = r_bin_name_tostring (cls->name);
 						r_list_foreach (cls->methods, iter2, sym) {
 							ut64 addr = iova? sym->vaddr: sym->paddr;
@@ -1269,7 +1351,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					if (r_str_startswith (input, "lc")) {
 						cmd_ic0 (core, bo, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					} else {
-						r_list_foreach (bo->classes, iter, cls) {
+#if R2_USE_NEW_ABI
+						R_VEC_FOREACH (&obj->classes, cls)
+#else
+						r_list_foreach (obj->classes, iter, cls)
+#endif
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
 								r_cons_printf ("%s0x%"PFMT64x, comma,
@@ -1287,7 +1373,12 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					ut64 min = UT64_MAX;
 					const char *method = NULL;
 					ut64 max = 0LL;
-					r_list_foreach (bo->classes, iter, cls) {
+#if R2_USE_NEW_ABI
+					R_VEC_FOREACH (&obj->classes, cls)
+#else
+					r_list_foreach (obj->classes, iter, cls)
+#endif
+					{
 						method = NULL;
 						r_list_foreach (cls->methods, iter2, sym) {
 							ut64 at = iova? sym->vaddr: sym->paddr;
@@ -1328,7 +1419,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						olang = strdup (r_config_get (core->config, "bin.lang"));
 						r_config_set (core->config, "bin.lang", lang + 1);
 					}
-					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 					if (olang) {
 						r_config_set (core->config, "bin.lang", olang);
 						free (olang);
@@ -1340,7 +1431,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						mode = R_MODE_JSON;
 					}
 					// TODO add the ability to filter by name
-					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, classes_length);
 					break;
 				case ' ': // "ic"
 				case 0: // "ic"

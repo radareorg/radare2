@@ -10,7 +10,7 @@ static size_t blocks_count(RAnal *anal) {
 	size_t count = 0;
 	RBIter iter;
 	RAnalBlock *block;
-	r_rbtree_foreach(anal->bb_tree, iter, block, RAnalBlock, _rb) {
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		count++;
 	}
 	return count;
@@ -77,6 +77,8 @@ bool test_r_anal_block_split(void) {
 	block->jump = 0xdeadbeef;
 	block->fail = 0xc0ffee;
 	block->ninstr = 5;
+	free (block->op_pos);
+	block->op_pos = calloc (block->ninstr, sizeof (ut16));
 	r_anal_bb_set_offset (block, 0, 0);
 	r_anal_bb_set_offset (block, 1, 1);
 	r_anal_bb_set_offset (block, 2, 2);
