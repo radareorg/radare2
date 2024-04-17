@@ -51,7 +51,11 @@ static void object_delete_items(RBinObject *o) {
 	}
 	r_list_free (o->symbols);
 
+#if R2_USE_NEW_ABI
+	RVecRBinClass_fini (&o->classes);
+#else
 	r_list_free (o->classes);
+#endif
 	ht_pp_free (o->classes_ht);
 	ht_pp_free (o->methods_ht);
 	r_list_free (o->lines);
@@ -168,7 +172,7 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	}
 }
 
-static RList *classes_from_symbols(RBinFile *bf) {
+static void classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	// TODO: Use rvec here
@@ -181,7 +185,6 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			classes_from_symbols2 (bf, sym);
 		}
 	}
-	return bf->bo->classes;
 }
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
@@ -198,7 +201,11 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->regstate = NULL;
 	bo->kv = sdb_new0 (); // XXX bf->sdb bf->bo->sdb wtf
 	bo->baddr = baseaddr;
+#if R2_USE_NEW_ABI
+	RVecRBinClass_init (&bo->classes);
+#else
 	bo->classes = r_list_newf ((RListFree)r_bin_class_free);
+#endif
 	bo->classes_ht = ht_pp_new0 ();
 	bo->methods_ht = ht_pp_new0 ();
 	bo->baddr_shift = 0;
@@ -258,13 +265,19 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	return bo;
 }
 
-static void filter_classes(RBinFile *bf, RList *list) {
+static void filter_classes(RBinFile *bf) {
 	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
-	RListIter *iter, *iter2;
 	RBinClass *cls;
 	RBinSymbol *sym;
-	r_list_foreach (list, iter, cls) {
+#if R2_USE_NEW_ABI
+	R_VEC_FOREACH (&bf->bo->classes, cls)
+	RListIter *iter2;
+#else
+	RListIter *iter, *iter2;
+	r_list_foreach (bf->bo->classes, iter, cls)
+#endif
+	{
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
 		if (fname) {
@@ -298,10 +311,19 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	ht_pp_free (bo->methods_ht);
 	bo->methods_ht = ht_pp_new0 ();
 
+#if R2_USE_NEW_ABI
+	RListIter *it2;
+#else
 	RListIter *it, *it2;
+#endif
 	RBinClass *klass;
 	RBinSymbol *method;
-	r_list_foreach (bo->classes, it, klass) {
+#if R2_USE_NEW_ABI
+	R_VEC_FOREACH (&bo->classes, klass)
+#else
+	r_list_foreach (bo->classes, it, klass)
+#endif
+	{
 		if (klass->name) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
 			r_list_foreach (klass->methods, it2, method) {
@@ -429,26 +451,43 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (p->classes) {
+#if R2_USE_NEW_ABI
+			p->classes (bf);
+#else
 			RList *classes = p->classes (bf);
 			if (classes) {
 				// XXX we should probably merge them instead
 				r_list_free (bo->classes);
 				bo->classes = classes;
-				r_bin_object_rebuild_classes_ht (bo);
 			}
+#endif
+			r_bin_object_rebuild_classes_ht (bo);
 			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
-				bo->classes = classes_from_symbols (bf);
+				classes_from_symbols (bf);
+				bo->classes = bf->bo->classes; // XXX unnecessary i think
 			}
 		} else {
-			RList *classes = classes_from_symbols (bf);
-			if (classes) {
-				bo->classes = classes;
-			}
+			classes_from_symbols (bf);
+			bo->classes = bf->bo->classes;
 		}
 		if (bin->filter) {
-			filter_classes (bf, bo->classes);
+			filter_classes (bf);
 		}
+#if R2_USE_NEW_ABI
+		if (RVecRBinClass_length (&bo->classes) > 0 && !bo->addr2klassmethod) {
+			RListIter *iter;
+			RBinClass *klass;
+			RBinSymbol *method;
+			bo->addr2klassmethod = ht_up_new0 ();
+			R_VEC_FOREACH (&bo->classes, klass) {
+				// this is slow. must be optimized, but at least its cached
+				r_list_foreach (klass->methods, iter, method) {
+					ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
+				}
+			}
+		}
+#else
 		// cache addr=class+method
 		if (bo->classes) {
 			RList *klasses = bo->classes;
@@ -465,6 +504,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				}
 			}
 		}
+#endif
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);

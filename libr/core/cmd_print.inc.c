@@ -1098,10 +1098,16 @@ static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
 
 static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 	ut64 min = 0, max = 0;
-	RListIter *iter;
 	RBinClass *c;
+#if R2_USE_NEW_ABI
+	RBinObject *bo = R_UNWRAP4 (core, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, c)
+#else
+	RListIter *iter;
 	RList *cs = r_bin_get_classes (core->bin);
-	r_list_foreach (cs, iter, c) {
+	r_list_foreach (cs, iter, c)
+#endif
+	{
 		findMethodBounds (c->methods, &min, &max);
 		if (len) {
 			*len = (max - min);
