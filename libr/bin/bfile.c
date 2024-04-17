@@ -745,8 +745,8 @@ R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 	return bf? r_bin_file_set_cur_binfile (bin, bf): false;
 }
 
-R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
-	R_RETURN_VAL_IF_FAIL (bin && bf && obj, false);
+R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, R_NULLABLE RBinObject *obj) {
+	R_RETURN_VAL_IF_FAIL (bin && bf, false);
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
