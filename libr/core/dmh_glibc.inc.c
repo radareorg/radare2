@@ -591,7 +591,9 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 		R_LOG_WARN ("get_main_arena_with_relocs: Failed to open libc %s", libc_path);
 		return GHT_MAX;
 	}
+#if R2_USE_NEW_ABI
 	int bfid = bf? bf->id: -1;
+#endif
 	RRBTree *relocs = r_bin_get_relocs (bin);
 	if (!relocs) {
 		R_LOG_WARN ("get_main_arena_with_relocs: Failed to get relocs from libc %s", libc_path);
