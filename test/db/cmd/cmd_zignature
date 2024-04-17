@@ -1816,3 +1816,26 @@ s3:
 s4:
 EOF
 RUN
+
+NAME=Generate zignature and show only one
+FILE=bins/elf/arg
+CMDS=<<EOF
+aa
+zg
+z $$
+aflc
+EOF
+EXPECT=<<EOF
+entry0:
+  bytes: 31ed4989d15e4889e24883e4f050544c8d053a020000488d0dc3010000488d3d5a010000ff1516092000
+  mask: ffffffffffffffffffffffffffffffff000000000000ff000000000000ff000000000000ff0000000000
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=42
+  addr: 0x000006a0
+  next: sym.deregister_tm_clones
+  types: void entry0 (int64_t arg3)
+  refs: sym.__libc_csu_fini, sym.__libc_csu_init, sym.main
+  vars: tr73:arg3:int64_t
+  bbhash: 77ece050bbc234ae3b587a8ef8da536b640f0b000414d63490214c47b18021d2
+18
+EOF
+RUN

@@ -1186,10 +1186,10 @@ static int cmdCompare(void *data, const char *input) {
 
 static int cmdCheck(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	struct ctxSearchCB ctx;
-	memset (&ctx, 0, sizeof (struct ctxSearchCB));
-	ctx.rad = input[0] == '*';
-	ctx.core = core;
+	struct ctxSearchCB ctx = {
+		.rad = input[0] == '*',
+		.core = core
+	};
 
 	RSignSearchMetrics sm;
 	if (!fill_search_metrics (&sm, core, (void *)&ctx)) {
@@ -1273,10 +1273,23 @@ static int cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
+	case ' ':
 	case '*': // "z*"
 	case 'q': // "zq"
 	case 'j': // "zj"
-		r_sign_list (core->anal, *input);
+		{
+			ut64 naddr = UT64_MAX;
+			if (*input == ' ' || (*input && input[1] == ' ')) {
+				naddr = r_num_math (core->num, input + 1);
+				if (naddr == 0) {
+					naddr = UT64_MAX;
+				}
+			}
+			ut64 oaddr = core->offset;
+			core->offset = naddr; // XXX R2_600 - this is a hack because we cant break the abi
+			r_sign_list (core->anal, *input);
+			core->offset = oaddr;
+		}
 		break;
 	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
