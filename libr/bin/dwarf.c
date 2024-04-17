@@ -991,12 +991,12 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	case '*':
 #if R2_590
 		/// XXX CL must take filename as last argument to support spaces imho
-		print ("\"\"CL %s|%d|%d 0x%08"PFMT64x"\n", p, (int)line, (int)column, addr);
+		print ("'CL %s|%d|%d 0x%08"PFMT64x"\n", p, (int)line, (int)column, addr);
 #else
 		if (column) {
-			print ("\"\"CL %s:%d:%d 0x%08"PFMT64x"\n", p, (int)line, (int)column, addr);
+			print ("'CL %s:%d:%d 0x%08"PFMT64x"\n", p, (int)line, (int)column, addr);
 		} else if (line > 0) {
-			print ("\"\"CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
+			print ("'CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
 		}
 #endif
 		break;
