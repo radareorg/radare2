@@ -137,6 +137,7 @@ static const RCoreHelpMessage help_msg_dash = {
 	"-b", " 32", "same as e or r2 -e",
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
+	"-k", " kernel", "same as r2 -k or e asm.os",
 	"-f", "", "block size = file size (b $s)",
 	"-j", "", "enter the js: repl",
 	"-i", " [file]", "same as . [file], to run a script",
@@ -1890,6 +1891,14 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'c': // "-c"
 			r_core_cmdf (core, "e asm.cpu=%s", arg);
+			break;
+		case 'k': // "-k"
+			if (R_STR_ISEMPTY (arg)) {
+				const char *os = r_config_get (core->config, "asm.os");
+				r_cons_printf ("%s\n", os);
+			} else {
+				r_config_set (core->config, "asm.os", arg);
+			}
 			break;
 		case 'e': // "-e"
 			if (*arg == '?') {
