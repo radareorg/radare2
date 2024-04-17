@@ -45,7 +45,8 @@ enum {
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
 	TYPE_REV = 20,
-	TYPE_NEG = 21
+	TYPE_NEG = 21,
+	TYPE_MVN = 22
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -113,7 +114,7 @@ static ArmOp ops[] = {
 	{ "movw", 0x3, TYPE_MOVW },
 	{ "movt", 0x4003, TYPE_MOVT },
 	{ "mov", 0xa001, TYPE_MOV },
-	{ "mvn", 0xe000, TYPE_MOV },
+	{ "mvn", 0xe001, TYPE_MVN },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
 
@@ -6234,6 +6235,15 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				}
 				break;
+			case TYPE_MVN:
+				if (ao->a[2]) {
+					shift = arm_getshift (ao->a[2], true);
+					if (shift == -1) {
+						return 0;
+					}
+					ao->o |= shift;
+				}
+				/* Fallthrough */
 			case TYPE_MOV:
 				if (!strcmpnull (ao->op, "movs")) {
 					ao->o = 0xb0e1;
