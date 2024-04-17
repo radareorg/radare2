@@ -355,7 +355,8 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				} else if ('l' == length_mod) {
 					long_ptr = va_arg (args, long*);
 					_BSCANF_CHECK_NULL (long_ptr);
-					*long_ptr = (long) strtol (buf_ptr, &end_ptr, base);
+					long longnum = (long) strtol (buf_ptr, &end_ptr, base);
+					memcpy (long_ptr, &longnum, sizeof (longnum));
 				} else if ('L' == length_mod) {
 					ut64_ptr = va_arg (args, ut64*);
 					_BSCANF_CHECK_NULL (ut64_ptr);

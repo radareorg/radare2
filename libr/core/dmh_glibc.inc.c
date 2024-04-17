@@ -132,7 +132,9 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 
 cleanup_exit:
 	r_bin_file_delete (bin, libc_bf->id);
-	r_bin_file_set_cur_binfile (bin, bf);
+	if (bf) {
+		r_bin_file_set_cur_binfile (bin, bf);
+	}
 	return content;
 }
 
