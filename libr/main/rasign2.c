@@ -74,16 +74,20 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
-static int inline output(RAnal *anal, RasignOptions *conf) {
+static int inline output(RCore *core, RasignOptions *conf) {
+	RAnal *anal = core->anal;
 	if (conf->collision) {
 		r_sign_resolve_collisions (anal);
 	}
+	ut64 oaddr = core->offset; // R2_600 - r_sign_list should take addr as arg
+	core->offset = UT64_MAX;
 	if (conf->rad) {
 		r_sign_list (anal, '*');
 	}
 	if (conf->json) {
 		r_sign_list (anal, 'j');
 	}
+	core->offset = oaddr;
 	// write sigs to file
 	if (conf->ofile && !r_sign_save (anal, conf->ofile)) {
 		R_LOG_ERROR ("Failed to write file");
@@ -108,7 +112,7 @@ static int handle_sdb(const char *fname, RasignOptions *conf) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
-		ret = output (core->anal, conf);
+		ret = output (core, conf);
 	}
 	r_core_free (core);
 	return ret;
@@ -142,7 +146,7 @@ static int signs_from_file(const char *fname, RasignOptions *conf) {
 	// create zignatures
 	r_sign_all_functions (core->anal, conf->merge);
 
-	int ret = output (core->anal, conf);
+	int ret = output (core, conf);
 	r_core_free (core);
 	return ret;
 }

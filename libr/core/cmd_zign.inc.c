@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, Dennis Goodlett */
 
 #if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_z = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
-	"z", "", "show zignatures",
-	"z.", "", "find matching zignatures in current offset",
+	"z", " ([addr])", "show/list zignatures", // TODO: rename to zl ?
+	"z.", "", "find matching zignatures in current offset", // rename to 'z' ?
 	"zb", "[?][n=5]", "search for best match",
 	"zd", "zignature", "diff current function and signature",
-	"z*", "", "show zignatures in radare format",
-	"zq", "", "show zignatures in quiet mode",
-	"zj", "", "show zignatures in json format",
+	"z*", " ([addr])", "show zignatures in radare format",
+	"zq", " ([addr])", "show zignatures in quiet mode",
+	"zj", " ([addr])", "show zignatures in json format",
 	"zk", "", "show zignatures in sdb format",
 	"z-", "zignature", "delete zignature",
 	"z-", "*", "delete all zignatures",
@@ -1186,10 +1186,10 @@ static int cmdCompare(void *data, const char *input) {
 
 static int cmdCheck(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	struct ctxSearchCB ctx;
-	memset (&ctx, 0, sizeof (struct ctxSearchCB));
-	ctx.rad = input[0] == '*';
-	ctx.core = core;
+	struct ctxSearchCB ctx = {
+		.rad = input[0] == '*',
+		.core = core
+	};
 
 	RSignSearchMetrics sm;
 	if (!fill_search_metrics (&sm, core, (void *)&ctx)) {
@@ -1273,10 +1273,23 @@ static int cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
+	case ' ':
 	case '*': // "z*"
 	case 'q': // "zq"
 	case 'j': // "zj"
-		r_sign_list (core->anal, *input);
+		{
+			ut64 naddr = UT64_MAX;
+			if (*input == ' ' || (*input && input[1] == ' ')) {
+				naddr = r_num_math (core->num, input + 1);
+				if (naddr == 0) {
+					naddr = UT64_MAX;
+				}
+			}
+			ut64 oaddr = core->offset;
+			core->offset = naddr; // XXX R2_600 - this is a hack because we cant break the abi
+			r_sign_list (core->anal, *input);
+			core->offset = oaddr;
+		}
 		break;
 	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
