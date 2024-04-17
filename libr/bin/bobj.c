@@ -376,8 +376,10 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		RBinSymbol *sym;
 		HtPP *ht = ht_pp_new0 ();
 		if (ht) {
-			R_VEC_FOREACH (&bo->symbols_vec, sym) {
-				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+			if (bin->filter) {
+				R_VEC_FOREACH (&bo->symbols_vec, sym) {
+					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+				}
 			}
 			ht_pp_free (ht);
 		}
@@ -391,9 +393,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
-#if 1
 	bo->info = p->info? p->info (bf): NULL;
-#endif
 	if (p->libs) {
 		bo->libs = p->libs (bf);
 	}
