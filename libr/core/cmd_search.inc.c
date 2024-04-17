@@ -3173,6 +3173,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	if (param->inverse) {
 		core->search->maxhits = 1;
 	}
+	const bool search_verbose = r_config_get_b (core->config, "search.verbose");
 	if (core->search->n_kws > 0) {
 		/* set callback */
 		/* TODO: handle last block of data */
@@ -3201,8 +3202,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			if (param->outmode != R_MODE_JSON) {
 				int lenstr = kw? kw->keyword_length: 0;
 				const char *bytestr = lenstr > 1? "bytes": "byte";
-				eprintf ("Searching %d %s in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
-					kw? kw->keyword_length: 0, bytestr, itv.addr, r_itv_end (itv));
+				if (search_verbose) {
+					R_LOG_INFO ("Searching %d %s in [0x%"PFMT64x "-0x%"PFMT64x "]",
+						kw? kw->keyword_length: 0, bytestr, itv.addr, r_itv_end (itv));
+				}
 			}
 			if (r_sandbox_enable (0) && itv.size > 1024 * 64) {
 				R_LOG_ERROR ("Sandbox restricts search range");
@@ -3254,8 +3257,8 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
 			r_core_return_value (core, search->nhits);
-			if (param->outmode != R_MODE_JSON) {
-				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+			if (search_verbose && param->outmode != R_MODE_JSON) {
+				R_LOG_INFO ("hits: %" PFMT64d, search->nhits - saved_nhits);
 			}
 		}
 	done:
