@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, Dennis Goodlett */
 
 #if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_z = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
-	"z", "", "show zignatures",
-	"z.", "", "find matching zignatures in current offset",
+	"z", " ([addr])", "show/list zignatures", // TODO: rename to zl ?
+	"z.", "", "find matching zignatures in current offset", // rename to 'z' ?
 	"zb", "[?][n=5]", "search for best match",
 	"zd", "zignature", "diff current function and signature",
-	"z*", "", "show zignatures in radare format",
-	"zq", "", "show zignatures in quiet mode",
-	"zj", "", "show zignatures in json format",
+	"z*", " ([addr])", "show zignatures in radare format",
+	"zq", " ([addr])", "show zignatures in quiet mode",
+	"zj", " ([addr])", "show zignatures in json format",
 	"zk", "", "show zignatures in sdb format",
 	"z-", "zignature", "delete zignature",
 	"z-", "*", "delete all zignatures",
