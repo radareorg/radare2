@@ -5,13 +5,15 @@
 #include <r_bin.h>
 
 /* XXX Implement r__bin_wr_scn_{   set, del   } instead */
+// R2_600 evaluate return bool here
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	RBinFile *bf = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (plugin && plugin->write && plugin->write->scn_resize) {
 		return plugin->write->scn_resize (bf, name, size);
 	}
-	return false;
+	return 0;
 }
 
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {

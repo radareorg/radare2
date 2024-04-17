@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2024 - pancake, h4ng3r */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -693,9 +693,9 @@ beach:
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinObject *o = bf->bo;
-	r_return_val_if_fail (o && o->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (o && o->bin_obj, NULL);
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
 	return bin->kv;
 }
@@ -793,7 +793,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *strings(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
 	int i;
@@ -880,7 +880,7 @@ static char *simplify(char *s) {
 }
 
 static char *dex_class_name_byid(RBinDexObj *dex, int cid) {
-	r_return_val_if_fail (dex && dex->types, NULL);
+	R_RETURN_VAL_IF_FAIL (dex && dex->types, NULL);
 	if (cid < 0 || cid >= dex->header.types_size) {
 		return NULL;
 	}
@@ -910,7 +910,7 @@ static char *dex_class_name(RBinDexObj *dex, RBinDexClass *c) {
 static char *dex_field_name(RBinDexObj *dex, int fid) {
 	int tid;
 	ut16 cid, type_id;
-	r_return_val_if_fail (dex&& dex->fields, NULL);
+	R_RETURN_VAL_IF_FAIL (dex&& dex->fields, NULL);
 
 	if (fid < 0 || fid >= dex->header.fields_size) {
 		return NULL;
@@ -949,7 +949,7 @@ static char *dex_field_name(RBinDexObj *dex, int fid) {
 }
 
 static char *dex_method_fullname(RBinDexObj *dex, int method_idx) {
-	r_return_val_if_fail (dex && dex->types, NULL);
+	R_RETURN_VAL_IF_FAIL (dex && dex->types, NULL);
 	if (method_idx < 0 || method_idx >= dex->header.method_size) {
 		return NULL;
 	}
@@ -1003,7 +1003,7 @@ static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
 }
 
 static const char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
-	r_return_val_if_fail (bin && bin->types && c, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->types && c, NULL);
 	int cid = c->super_class;
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
@@ -1442,7 +1442,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 }
 
 static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *methods, int *sym_count) {
-	r_return_if_fail (bf && bf->bo && c);
+	R_RETURN_IF_FAIL (bf && bf->bo && c);
 
 	RBinDexObj *dex = bf->bo->bin_obj;
 	RBin *rbin = bf->rbin;
@@ -1590,8 +1590,8 @@ static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 }
 
 static bool dex_loadcode(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
-	RBinDexObj *dex = bf->bo->bin_obj;
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	RBinDexObj *dex = (RBinDexObj*)bf->bo->bin_obj;
 	dex->verbose = true;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	size_t i;
@@ -1638,7 +1638,7 @@ static bool dex_loadcode(RBinFile *bf) {
 
 	// TODO: is this posible after R_MIN ??
 	if (dex->header.strings_size > dex->size) {
-		eprintf ("Invalid strings size\n");
+		R_LOG_WARN ("Invalid strings size");
 		return false;
 	}
 	dex->dexSubsystem = NULL;
@@ -1743,7 +1743,7 @@ static bool dex_loadcode(RBinFile *bf) {
 }
 
 static RList* imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *dex = (RBinDexObj*) bf->bo->bin_obj;
 	if (!dex->imports_list) {
 		dex_loadcode (bf);
@@ -1752,7 +1752,7 @@ static RList* imports(RBinFile *bf) {
 }
 
 static RList *trycatch(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	if (!bin->trycatch_list) {
 		dex_loadcode (bf);
@@ -1761,7 +1761,7 @@ static RList *trycatch(RBinFile *bf) {
 }
 
 static RList *methods(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	if (!bin->methods_list) {
 		dex_loadcode (bf);
@@ -1794,7 +1794,7 @@ static RList *entries(RBinFile *bf) {
 	RBinSymbol *m;
 	RBinAddr *ptr;
 
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
@@ -1897,9 +1897,9 @@ typedef struct {
 } Section;
 
 static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Section s, int perm, char *format) {
-	r_return_val_if_fail (ret && name, NULL);
-	r_return_val_if_fail (s.addr < UT32_MAX, NULL);
-	r_return_val_if_fail (s.size > 0 && s.size < UT32_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (ret && name, NULL);
+	R_RETURN_VAL_IF_FAIL (s.addr < UT32_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (s.size > 0 && s.size < UT32_MAX, NULL);
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	if (ptr) {
 		ptr->name = strdup (name);
@@ -1925,7 +1925,7 @@ static void add_segment(RList *ret, ut64 baddr, const char *name, Section s, int
 }
 
 static bool validate_section(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
-	r_return_val_if_fail (cur && all, false);
+	R_RETURN_VAL_IF_FAIL (cur && all, false);
 	if (pre && cur->addr < (pre->addr + pre->size)) {
 		R_LOG_WARN ("%s Section starts before the previous", name);
 	}
@@ -2130,7 +2130,7 @@ static bool is_classes_dex(const char *filename) {
 }
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	char *path = r_file_dirname (bf->file);
 	if (r_str_startswith (path, "./")) {
 		// avoids stuff like .//.//.//.//.//
@@ -2168,7 +2168,7 @@ static RList* libs(RBinFile *bf) {
 }
 
 static void destroy(RBinFile *bf) {
-	r_return_if_fail (bf && bf->bo);
+	R_RETURN_IF_FAIL (bf && bf->bo);
 	RBinDexObj *obj = bf->bo->bin_obj;
 	r_bin_dex_free (obj);
 }

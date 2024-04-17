@@ -1,12 +1,11 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
 #include "i/private.h"
 
-static char *__hashify(const char *s, ut64 vaddr) {
-	r_return_val_if_fail (s, NULL);
-
+static char *hashify(const char *s, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
@@ -22,7 +21,7 @@ static char *__hashify(const char *s, ut64 vaddr) {
 }
 
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *name) {
-	r_return_val_if_fail (db && name, NULL);
+	R_RETURN_VAL_IF_FAIL (db && name, NULL);
 
 	int count = 0;
 
@@ -50,7 +49,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 	char *resname = NULL;
 	if (vaddr) {
-		resname = __hashify (name, vaddr);
+		resname = hashify (name, vaddr);
 	}
 	if (count > 1) {
 		resname = r_str_appendf (resname, "_%d", count - 1);
@@ -93,7 +92,6 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 		free (dn);
 	}
 #endif
-
 	r_strf_var (uname, 256, "%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
 	if (!res) {
@@ -250,7 +248,7 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 	return purge;
 }
 
-static int get_char_ratio(char ch, const char *str) {
+static int get_char_ratio(const char ch, const char *str) {
 	int i;
 	int ch_count = 0;
 	for (i = 0; str[i]; i++) {
@@ -302,23 +300,21 @@ loop_end:
 		}
 		break;
 	case 'e': // emails
-		if (str && *str) {
-			if (!strchr (str + 1, '@')) {
-				return false;
-			}
-			if (!strchr (str + 1, '.')) {
-				return false;
-			}
-		} else {
+		if (R_STR_ISEMPTY (str)) {
+			return false;
+		}
+		if (!strchr (str + 1, '@')) {
+			return false;
+		}
+		if (!strchr (str + 1, '.')) {
 			return false;
 		}
 		break;
 	case 'f': // format-string
-		if (str && *str) {
-			if (!strchr (str + 1, '%')) {
-				return false;
-			}
-		} else {
+		if (R_STR_ISEMPTY (str)) {
+			return false;
+		}
+		if (!strchr (str + 1, '%')) {
 			return false;
 		}
 		break;

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2023 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2024 - n4x0r, soez, pancake */
 
 #if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea
@@ -132,7 +132,9 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 
 cleanup_exit:
 	r_bin_file_delete (bin, libc_bf->id);
-	r_bin_file_set_cur_binfile (bin, bf);
+	if (bf) {
+		r_bin_file_set_cur_binfile (bin, bf);
+	}
 	return content;
 }
 

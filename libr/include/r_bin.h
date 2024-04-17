@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2024 - pancake */
+
 #ifndef R2_BIN_H
 #define R2_BIN_H
 
@@ -683,7 +685,7 @@ typedef struct r_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
+	RList *mirrors;	//for mirror access; stuff here should only create new maps not new fds
 } RBinMem;
 
 typedef struct r_bin_map_t {
@@ -699,9 +701,9 @@ typedef struct r_bin_dbginfo_t {
 } RBinDbgInfo;
 
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBinFile *bf, const char *name, ut64 size);
+	ut64 (*scn_resize)(RBinFile *bf, const char *name, ut64 size); // R2_600 return bool instead
 	bool (*scn_perms)(RBinFile *bf, const char *name, int perms);
-	int (*rpath_del)(RBinFile *bf);
+	int (*rpath_del)(RBinFile *bf); // R2_600 return bool instead
 	bool (*entry)(RBinFile *bf, ut64 addr);
 	bool (*addlib)(RBinFile *bf, const char *lib);
 } RBinWrite;

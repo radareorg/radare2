@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2024 - pancake, h4ng3r */
 
 #define R_LOG_ORIGIN "dex"
 

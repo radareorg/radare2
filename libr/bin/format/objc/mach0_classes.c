@@ -218,7 +218,7 @@ static inline bool is_thumb(RBinFile *bf) {
 }
 
 static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, 0);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, 0);
 
 	mach0_ut r = 0;
 	RBinObject *obj = bf->bo;
@@ -1141,7 +1141,7 @@ static char *demangle_classname(const char *s) {
 }
 
 static char *get_class_name(RBinFile *bf, mach0_ut p) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinObject *bo = bf->bo;
 	ut32 offset, left;
 	ut64 r;
@@ -1765,8 +1765,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	if (!bf->bo->bin_obj || !bf->bo->info) {
 		return NULL;
 	}
-	bool bigendian = bf->bo->info->big_endian;
-
+	const bool bigendian = bf->bo->info->big_endian;
 	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
 
 	/* check if it's Swift */
@@ -2069,8 +2068,8 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, const RS
 }
 
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
-	r_return_val_if_fail (out, false);
-	r_return_val_if_fail (bf && bf->bo && bf->bo->info, false);
+	R_RETURN_VAL_IF_FAIL (out, false);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->info, false);
 
 	size_t ptr_size = sizeof (mach0_ut);
 	ut8 pp[sizeof (mach0_ut)] = {0};
@@ -2087,7 +2086,7 @@ static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
 }
 
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
-	r_return_val_if_fail (bf, false);
+	R_RETURN_VAL_IF_FAIL (bf, false);
 	ut32 offset = 0, left = 0;
 	mach0_ut paddr = va2pa (bf, vaddr, &offset, &left);
 	if (paddr == 0 || left < sizeof (mach0_ut)) {
@@ -2097,7 +2096,7 @@ static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
 }
 
 static char *readstr(RBinFile *bf, ut64 addr) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 
 	int name_len = 256;
 	char *name = calloc (1, name_len + 1);
@@ -2116,7 +2115,7 @@ static char *readstr(RBinFile *bf, ut64 addr) {
 }
 
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
-	r_return_val_if_fail (bf && offset && left, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && offset && left, NULL);
 
 	mach0_ut paddr = va2pa (bf, p, offset, left);
 	if (paddr == 0 || *left <= 1) {
