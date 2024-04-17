@@ -1,12 +1,11 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
 #include "i/private.h"
 
-static char *__hashify(const char *s, ut64 vaddr) {
-	r_return_val_if_fail (s, NULL);
-
+static char *hashify(const char *s, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
@@ -50,7 +49,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 	char *resname = NULL;
 	if (vaddr) {
-		resname = __hashify (name, vaddr);
+		resname = hashify (name, vaddr);
 	}
 	if (count > 1) {
 		resname = r_str_appendf (resname, "_%d", count - 1);

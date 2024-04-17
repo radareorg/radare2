@@ -276,7 +276,7 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 }
 
 // if its ipi no need to be prefixed with r_
-R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
+R_IPI int r_bin_lang_type(R_NULLABLE RBinFile *bf, R_NULLABLE const char *def, R_NULLABLE const char *sym) {
 	int type = R_BIN_LANG_NONE;
 	if (sym) {
 		if (r_str_startswith (sym, "__")) {
