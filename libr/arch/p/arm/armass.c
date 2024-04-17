@@ -605,8 +605,9 @@ static char *getrange(char *s) {
 			p = s + 1;
 			*p = 0;
 		}
-		if (*s == '[' || *s == ']') {
+		if (*s == '[' || *s == ']' || *s == '!') {
 			memmove (s, s + 1, strlen (s + 1) + 1);
+			continue;
 		}
 		if (*s == '}') {
 			*s = 0;
@@ -6063,7 +6064,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							ao->o |= 1;
 							ao->o |= (ret & 0x0f) << 8;
 						} else {
-							ao->o |= (strstr (str, "],")) ? 6 : 7;
+							if (strstr (str, "],")) {
+								ao->o |= 6;
+							} else if (strstr (str, "]!")) {
+								ao->o |= 0x2007;
+							} else {
+								ao->o |= 7;
+							}
 							ao->o |= (ret & 0x0f) << 24;
 						}
 						if (ao->a[3]) {
@@ -6081,7 +6088,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						if (rex) {
 							ao->o |= 1;
 						} else {
-							ao->o |= (strstr (str, "],")) ? 4 : 5;
+							if (strstr (str, "],")) {
+								ao->o |= 4;
+							} else if (strstr (str, "]!")) {
+								ao->o |= 0x2005;
+							} else {
+								ao->o |= 5;
+							}
 						}
 						ao->o |= 1;
 						ao->o |= (num & 0xff) << 24;
