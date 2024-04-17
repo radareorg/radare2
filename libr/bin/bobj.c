@@ -271,8 +271,8 @@ static void filter_classes(RBinFile *bf) {
 	RBinClass *cls;
 	RBinSymbol *sym;
 #if R2_USE_NEW_ABI
-	R_VEC_FOREACH (&bf->bo->classes, cls)
 	RListIter *iter2;
+	R_VEC_FOREACH (&bf->bo->classes, cls)
 #else
 	RListIter *iter, *iter2;
 	r_list_foreach (bf->bo->classes, iter, cls)
