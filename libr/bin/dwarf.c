@@ -1540,25 +1540,20 @@ static bool init_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	return false;
 }
 
-static int expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
+static void expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	if (!ad || !ad->capacity || ad->capacity != ad->count) {
-		return -EINVAL;
+		return;
 	}
-
 	RBinDwarfAttrDef *tmp = (RBinDwarfAttrDef *)realloc (ad->defs,
 		ad->capacity * 2 * sizeof (RBinDwarfAttrDef));
-
 	if (!tmp) {
-		return -ENOMEM;
+		return;
 	}
-
 	// Set the area in the buffer past the length to 0
 	memset ((ut8 *)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
 		0, ad->capacity * sizeof (RBinDwarfAttrDef));
 	ad->defs = tmp;
 	ad->capacity *= 2;
-
-	return 0;
 }
 
 static bool init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
