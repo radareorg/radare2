@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.obj"
 
@@ -373,15 +373,15 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
-		RBinSymbol *sym;
-		HtPP *ht = ht_pp_new0 ();
-		if (ht) {
-			if (bin->filter) {
+		if (bin->filter) {
+			RBinSymbol *sym;
+			HtPP *ht = ht_pp_new0 ();
+			if (ht) {
 				R_VEC_FOREACH (&bo->symbols_vec, sym) {
 					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 				}
+				ht_pp_free (ht);
 			}
-			ht_pp_free (ht);
 		}
 	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s
