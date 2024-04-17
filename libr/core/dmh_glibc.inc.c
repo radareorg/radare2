@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2023 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2024 - n4x0r, soez, pancake */
 
 #if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea

@@ -67,7 +67,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 				nerd = ptr;
 				str = ptr + 1;
 			}
-			if (nerd && *nerd) {
+			if (R_STR_ISNOTEMPTY (nerd)) {
 				*nerd = 0;
 				if (bf) {
 					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);

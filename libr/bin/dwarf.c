@@ -1,9 +1,5 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2024 - pancake, Fedor Sakharov */
 
-#include <errno.h>
-
-#include <r_bin.h>
-#include <r_bin_dwarf.h>
 #include <r_core.h>
 
 #define READ8(buf)                                                \
@@ -1660,27 +1656,25 @@ static void free_attr_value(RBinDwarfAttrValue *val) {
 }
 
 static void free_die(RBinDwarfDie *die) {
-	size_t i;
-	if (!die) {
-		return;
+	if (die) {
+		size_t i;
+		for (i = 0; i < die->count; i++) {
+			free_attr_value (&die->attr_values[i]);
+		}
+		R_FREE (die->attr_values);
 	}
-	for (i = 0; i < die->count; i++) {
-		free_attr_value (&die->attr_values[i]);
-	}
-	R_FREE (die->attr_values);
 }
 
 static void free_comp_unit(RBinDwarfCompUnit *cu) {
-	size_t i;
-	if (!cu) {
-		return;
-	}
-	for (i = 0; i < cu->count; i++) {
-		if (cu->dies) {
-			free_die (&cu->dies[i]);
+	if (cu) {
+		size_t i;
+		for (i = 0; i < cu->count; i++) {
+			if (cu->dies) {
+				free_die (&cu->dies[i]);
+			}
 		}
+		R_FREE (cu->dies);
 	}
-	R_FREE (cu->dies);
 }
 
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
