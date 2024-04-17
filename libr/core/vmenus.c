@@ -1050,7 +1050,6 @@ R_API int r_core_visual_types(RCore *core) {
 }
 
 R_API bool r_core_visual_hudclasses(RCore *core) {
-	RListIter *iter, *iter2;
 	RBinClass *c;
 	RBinField *f;
 	RBinSymbol *m;
@@ -1062,8 +1061,16 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	}
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	list->free = free;
+#if R2_USE_NEW_ABI
+	RListIter *iter2;
+	RBinObject *bo = R_UNWRAP4 (core, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, c)
+#else
+	RListIter *iter, *iter2;
 	RList *classes = r_bin_get_classes (core->bin);
-	r_list_foreach (classes, iter, c) {
+	r_list_foreach (classes, iter, c)
+#endif
+	{
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
 		r_list_foreach (c->fields, iter2, f) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
@@ -1362,11 +1369,18 @@ R_API int r_core_visual_classes(RCore *core) {
 	int oldcur = 0;
 	char *grep = NULL;
 	bool grepmode = false;
+#if R2_USE_NEW_ABI
+#warning TODO not implemented the visual header classes with this vector thing
+	//RBinObject *bo = R_UNWRAP4 (core, bin, cur, bo);
+	// R_VEC_FOREACH (&bo->classes, c)
+	RList *list = NULL;
+#else
 	RList *list = r_bin_get_classes (core->bin);
 	if (r_list_empty (list)) {
 		r_cons_message ("No Classes");
 		return false;
 	}
+#endif
 	for (;;) {
 		int cols;
 		r_cons_clear00 ();

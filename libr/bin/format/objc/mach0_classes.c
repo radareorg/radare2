@@ -1670,7 +1670,11 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			free (method_name);
 		}
 	}
+#if R2_USE_NEW_ABI
+	RVecRBinClass_push_back (&bf->bo->classes, klass);
+#else
 	r_list_append (list, klass);
+#endif
 
 	if (st.fields != UT64_MAX) {
 		int i;
@@ -1760,8 +1764,11 @@ static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
 }
 
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 
+#if R2_USE_NEW_ABI
+	RBinObject *bo = bf->bo;
+#endif
 	ut64 num_of_unnamed_class = 0;
 	ut32 size = 0;
 	RList *sctns = NULL;
@@ -1789,6 +1796,12 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			goto get_classes_error;
 		}
 	}
+#if R2_USE_NEW_ABI
+	RListIter *iter;
+	r_list_foreach (ret, iter, klass) {
+		RVecRBinClass_push_back (&bo->classes, klass);
+	}
+#endif
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
 	// 2s / 16s
@@ -1877,7 +1890,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			free (klass_name);
 			num_of_unnamed_class++;
 		}
+#if R2_USE_NEW_ABI
+		RVecRBinClass_push_back (&bo->classes, klass);
+#else
 		r_list_append (ret, klass);
+#endif
 	}
 	metadata_sections_fini (&ms);
 	return ret;
@@ -1891,18 +1908,21 @@ get_classes_error:
 }
 
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
 	R_LOG_DEBUG ("parse objc categories");
 	const size_t ptr_size = sizeof (mach0_ut);
-	if (!ms->catlist.have) {
+	if (!ms->catlist.have || !relocs) {
 		return NULL;
 	}
-
+#if R2_USE_NEW_ABI
+	RBinObject *bo = bf->bo;
+	RList *ret = NULL;
+#else
 	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
 	if (!ret || !relocs) {
 		goto error;
 	}
-
+#endif
 	ut32 i;
 	for (i = 0; i < ms->catlist.size; i += ptr_size) {
 		mach0_ut p;
@@ -1943,7 +1963,11 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		//	free (klass->name);
 		//	klass->name = name;
 		}
+#if R2_USE_NEW_ABI
+		RVecRBinClass_push_back (&bo->classes, klass);
+#else
 		r_list_append (ret, klass);
+#endif
 	}
 	return ret;
 

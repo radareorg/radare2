@@ -3881,10 +3881,19 @@ static bool is_javaish(RBinFile *bf) {
 
 static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
-	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
+#if R2_USE_NEW_ABI
+	RListIter *iter2, *iter3;
+	RBinObject *bo = R_UNWRAP4 (r, bin, cur, bo);
+	if (!bo) {
+		return false;
+	}
+#define CLASSES_FOREACH R_VEC_FOREACH (&bo->classes, c)
+#else
+	RListIter *iter, *iter2, *iter3;
+#define CLASSES_FOREACH r_list_foreach (cs, iter, c)
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
@@ -3894,6 +3903,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 		}
 		return false;
 	}
+#endif
 	// XXX: support for classes is broken and needs more love
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
@@ -3906,7 +3916,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 		r_cons_println ("fs classes");
 	}
 	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
-	r_list_foreach (cs, iter, c) {
+	CLASSES_FOREACH {
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
 		const char *rname = r_bin_name_tostring2 (c->name, 'o');
 		if (!c || R_STR_ISEMPTY (cname)) {
