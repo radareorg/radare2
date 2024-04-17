@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -1940,7 +1940,8 @@ R_API void r_sign_list(RAnal *a, int format) {
 
 	{ // R2_600 - we need to pass addr as argument
 		RCore *core = a->coreb.core;
-		struct ctxListCB ctx = { a, 0, format, pj, core->offset};
+		ut64 addr = core? core->offset: UT64_MAX;
+		struct ctxListCB ctx = { a, 0, format, pj, addr};
 		r_sign_foreach (a, listCB, &ctx);
 	}
 
