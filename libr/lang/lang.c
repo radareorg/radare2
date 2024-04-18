@@ -25,6 +25,7 @@ R_LIB_VERSION (r_lang);
 #include "p/poke.c"
 #include "p/tsc.c"
 #include "p/nim.c"
+#include "p/dart.c"
 
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
@@ -65,6 +66,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
 	r_lang_plugin_add (lang, &r_lang_plugin_tsc);
 	r_lang_plugin_add (lang, &r_lang_plugin_nim);
+	r_lang_plugin_add (lang, &r_lang_plugin_dart);
 
 	return lang;
 }
