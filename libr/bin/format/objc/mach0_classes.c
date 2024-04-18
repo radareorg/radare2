@@ -1221,25 +1221,22 @@ static char *get_class_name(RBinFile *bf, mach0_ut p) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
-	struct MACH0_(obj_t) *bin;
 	struct MACH0_(SClassRoT) cro = {0};
 	ut32 offset, left, i;
 	ut64 r, s;
 	int len;
-	bool bigendian;
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
 		R_LOG_WARN ("Invalid RBinFile pointer");
 		return;
 	}
-	bigendian = bf->bo->info->big_endian;
-	bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
+	const bool bigendian = bf->bo->info->big_endian;
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
 	if (!(r = va2pa (bf, p, &offset, &left))) {
 		// eprintf ("No pointer\n");
 		return;
 	}
-
 	if (r + left < r || r + sizeof (cro) < r) {
 		return;
 	}
@@ -1323,7 +1320,6 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 #else
 	sdb_set (bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
-
 	if (cro.baseMethods > 0) {
 		const char *klass_name = r_bin_name_tostring2 (klass->name, 'd');
 		if (cro.baseMethods & 1) {
@@ -1659,7 +1655,10 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		}
 	}
 #if R2_USE_NEW_ABI
+//		eprintf ("PPP %s\n", r_bin_name_tostring (klass->name));
 	RVecRBinClass_push_back (&bf->bo->classes, klass);
+	free (klass);
+	klass = RVecRBinClass_last (&bf->bo->classes);
 #else
 	r_list_append (list, klass);
 #endif
@@ -1852,6 +1851,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
 		R_FREE (klass->name); // allow NULL name in rbinclass?
+		// TODO r_bin_name_free (klass->name);
 		klass->lang = R_BIN_LANG_OBJC;
 		size = sizeof (mach0_ut);
 		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
@@ -1874,6 +1874,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 #if R2_USE_NEW_ABI
 		RVecRBinClass_push_back (&bo->classes, klass);
+		free (klass);
 #else
 		r_list_append (ret, klass);
 #endif
@@ -1946,6 +1947,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		//	klass->name = name;
 		}
 #if R2_USE_NEW_ABI
+		// eprintf ("PPP %s\n", r_bin_name_tostring (klass->name));
 		RVecRBinClass_push_back (&bo->classes, klass);
 #else
 		r_list_append (ret, klass);

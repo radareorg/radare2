@@ -8,7 +8,7 @@
 #define R_STRING_SCAN_BUFFER_SIZE 4096
 #define R_STRING_MAX_UNI_BLOCKS 4
 
-static RBinClass *__getClass(RBinFile *bf, const char *name) {
+static RBinClass *get_class(RBinFile *bf, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->classes_ht && name, NULL);
 #if R2_USE_NEW_ABI
 	void *htidxptr = ht_pp_find (bf->bo->classes_ht, name, NULL);
@@ -1099,6 +1099,19 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 }
 
 #if R2_USE_NEW_ABI
+R_API void r_bin_class_init(RBinClass *c, const char *name, const char *super, ut64 attr) {
+	R_RETURN_IF_FAIL (c && name);
+	c->name = r_bin_name_new (name);
+	if (R_STR_ISNOTEMPTY (super)) {
+		c->super = r_list_newf (free);
+		r_list_append (c->super, r_bin_name_new (super));
+	}
+	// TODO: use vectors!
+	c->methods = r_list_newf (r_bin_symbol_free);
+	c->fields = r_list_newf (r_bin_field_free);
+	c->attr = attr;
+}
+
 R_API void r_bin_class_fini(RBinClass *k) {
 	if (k) {
 		free (k->name);
@@ -1127,7 +1140,7 @@ R_API void r_bin_class_free(RBinClass *k) {
 
 R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, ut64 attr) {
 	R_RETURN_VAL_IF_FAIL (name && bf && bf->bo, NULL);
-	RBinClass *c = __getClass (bf, name);
+	RBinClass *c = get_class (bf, name);
 	if (c) {
 		if (R_STR_ISNOTEMPTY (super)) {
 			r_list_free (c->super);
@@ -1136,24 +1149,30 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 		}
 		return c;
 	}
+#if R2_USE_NEW_ABI
+	RBinClass bc = {0};
+	r_bin_class_init (&bc, name, super, attr);
+	bc.index = RVecRBinClass_length (&bf->bo->classes);
+	RVecRBinClass_push_back (&bf->bo->classes, &bc);
+	// free (c);
+	// const int htidx = bc.index + 1;
+	const int htidx = RVecRBinClass_length (&bf->bo->classes); // bc.index + 1;
+	ht_pp_update (bf->bo->classes_ht, name, (void*)(size_t)htidx);
+	// eprintf ("0-> %s (%s)\n", r_bin_name_tostring (c->name), name);
+ 	c = RVecRBinClass_last (&bf->bo->classes);
+	// eprintf ("1-> %s (%s)\n", r_bin_name_tostring (c->name), name);
+	// free (c);
+	// c = RVecRBinClass_at (&bf->bo->classes, 0);
+	// return c;
+#else
 	c = r_bin_class_new (name, super, attr);
 	if (c) {
-#if R2_USE_NEW_ABI
-		c->index = RVecRBinClass_length (&bf->bo->classes);
-		RVecRBinClass_push_back (&bf->bo->classes, c);
-		// free (c);
-		const int htidx = c->index + 1;
-		ht_pp_update (bf->bo->classes_ht, name, (void*)(size_t)htidx);
-// 		c = RVecRBinClass_last (&bf->bo->classes);
-// c = RVecRBinClass_at (&bf->bo->classes, 0);
-// return c;
-#else
 		// XXX. no need for a list, the ht is iterable too
 		c->index = r_list_length (bf->bo->classes);
 		r_list_append (bf->bo->classes, c);
 		ht_pp_insert (bf->bo->classes_ht, name, c);
-#endif
 	}
+#endif
 	return c;
 }
 
@@ -1175,8 +1194,11 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->bo->methods_ht, name, sym);
+#if R2_USE_NEW_ABI
+#else
 			// RBinSymbol *dsym = r_bin_symbol_clone (sym);
 			r_list_append (c->methods, sym);
+#endif
 			free (name);
 		}
 	}
@@ -1253,6 +1275,7 @@ R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *op
 
 // TODO Improve this API
 R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
+	R_RETURN_IF_FAIL (dst && src);
 	// merge imports
 	// merge dbginfo
 	sdb_merge (dst->bo->kv, src->bo->kv);

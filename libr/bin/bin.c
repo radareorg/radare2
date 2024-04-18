@@ -234,6 +234,7 @@ R_API void r_bin_string_free(void *_str) {
 	}
 }
 
+// R2_600 - return RBinFile instead of bool. avoid toctou
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->iob.io && opt, false);
 
@@ -270,6 +271,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	return res;
 }
 
+// R2_600 - return RBinFile instead of bool. avoid toctou
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && opt, false);
 
@@ -318,10 +320,12 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 		return false;
 	}
 	// r_ref (bf);
+	// return bf instead of bool!
 	bin->cur = bf;
 	return res;
 }
 
+// R2_600 - return RBinFile instead of bool. avoid toctou
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && opt && bin->iob.io, false);
 	R_RETURN_VAL_IF_FAIL (opt->fd >= 0 && (st64)opt->sz >= 0, false);

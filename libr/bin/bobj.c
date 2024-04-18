@@ -319,15 +319,24 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	RBinClass *klass;
 	RBinSymbol *method;
 #if R2_USE_NEW_ABI
+	int klass_idx = 0;
 	R_VEC_FOREACH (&bo->classes, klass)
 #else
 	r_list_foreach (bo->classes, it, klass)
 #endif
 	{
 		if (klass->name) {
-			ht_pp_insert (bo->classes_ht, klass->name, klass);
+			const char *klass_name = r_bin_name_tostring (klass->name);
+#if R2_USE_NEW_ABI
+			void *htidxptr = (void*)(size_t)klass_idx;
+			ht_pp_insert (bo->classes_ht, klass_name, htidxptr);
+			klass_idx++;
+			/// TODO
+#else
+			ht_pp_insert (bo->classes_ht, klass_name, klass);
+#endif
 			r_list_foreach (klass->methods, it2, method) {
-				const char *klass_name = r_bin_name_tostring (klass->name);
+				// const char *klass_name = r_bin_name_tostring (klass->name);
 				const char *method_name = r_bin_name_tostring (method->name);
 				char *name = r_str_newf ("%s::%s", klass_name, method_name);
 				ht_pp_insert (bo->methods_ht, name, method);
