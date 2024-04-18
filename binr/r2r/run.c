@@ -463,9 +463,9 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				proc->ret = -1;
 			}
 			ut8 r = 0;
-			int ret = write (proc->killpipe[1], &r, 1);
 			r_th_lock_leave (proc->lock);
 			r_th_lock_leave (subprocs_mutex);
+			int ret = write (proc->killpipe[1], &r, 1);
 			if (ret != 1) {
 				break;
 			}
@@ -1159,7 +1159,6 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		out->bytes_size = (size_t)byteslen;
 rip:
 		r_pvector_pop (&args);
-		r_th_lock_leave (proc->lock);
 		r_th_lock_free (proc->lock);
 		r2r_subprocess_free (proc);
 	}
@@ -1186,7 +1185,6 @@ ship:
 		free (hex);
 		r_pvector_pop (&args);
 		r_pvector_pop (&args);
-		r_th_lock_leave (proc->lock);
 		r_th_lock_free (proc->lock);
 		r2r_subprocess_free (proc);
 	}
