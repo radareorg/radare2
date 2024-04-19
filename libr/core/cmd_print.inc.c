@@ -103,6 +103,7 @@ static RCoreHelpMessage help_msg_pc = {
 	"pcV", "", "V (vlang.io)",
 	"pcw", "", "C words (4 byte)",
 	"pcy", "", "yara",
+	"pcY", "", "quiet yara",
 	"pcz", "", "Swift",
 	NULL
 };

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -314,13 +314,22 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\n]\n");
 		break;
 	case 'y': // "pcy"
+		p->cb_printf ("{");
+		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf (" %02x", buf[i] & 0xff);
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf (" }\n");
+		break;
+	case 'Y': // "pcY"
 		p->cb_printf ("$hex_%"PFMT64x" = {", addr);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf (" %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("}\n");
+		p->cb_printf (" }\n");
 		break;
 	case 'j': // "pcj"
 		p->cb_printf ("[");

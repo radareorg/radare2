@@ -1900,11 +1900,10 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
 	RListIter *exc_iter = NULL, *methods_iter = NULL;
 	RBinJavaField *method;
-	ut64 func_addr = -1;
 	RBinJavaExceptionEntry *exc_entry;
 
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL;
-	func_addr = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): -1;
+	ut64 func_addr = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): -1;
 
 	if (!bin) {
 		return false;
