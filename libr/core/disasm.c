@@ -413,9 +413,13 @@ static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	}
 }
 
-static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
+static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds, int a) {
 	int i;
-	int len = strlen (line);
+	size_t len = strlen (line);
+	if (a) {
+		r_cons_printf ("....");
+		return;
+	}
 	if (ds->core->cons->use_utf8 || ds->linesopts & R_ANAL_REFLINE_TYPE_UTF8) {
 		if (ds->show_color) {
 			for (i = 0; i < len; i++) {
@@ -446,6 +450,10 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 			r_cons_printf ("%s", line);
 		}
 	}
+}
+
+static void ds_print_ref_lines2(char *line, char *line_col, RDisasmState *ds) {
+	ds_print_ref_lines (line, line_col, ds, 1);
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
@@ -521,7 +529,7 @@ static void ds_comment_align(RDisasmState *ds) {
 		r_cons_print (COLOR_RESET (ds));
 		ds_print_pre (ds, true);
 		r_cons_printf ("%s", sn);
-		ds_print_ref_lines (ds->refline, ds->line_col, ds);
+		ds_print_ref_lines (ds->refline, ds->line_col, ds, 0);
 		r_cons_printf ("   %s", COLOR (ds, color_comment));
 	}
 }
@@ -940,6 +948,8 @@ static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	r_list_free (anal->reflines);
 	anal->reflines = NULL;
+	r_list_free (anal->reflines2);
+	anal->reflines2 = NULL;
 	R_FREE (ds->refline);
 	R_FREE (ds->refline2);
 	R_FREE (ds->prev_line_col);
@@ -952,12 +962,23 @@ static void ds_reflines_init(RDisasmState *ds) {
 
 	if (inlimit && (ds->show_lines_bb || ds->pj)) {
 		ds_reflines_fini (ds);
-		anal->reflines = r_anal_reflines_get (anal,
-			ds->addr, ds->buf, ds->len, ds->count,
-			ds->linesout, ds->show_lines_call);
+		if (false) {
+			anal->reflines = r_anal_reflines_get (anal,
+					ds->addr, ds->buf, ds->len, ds->count,
+					ds->linesout, ds->show_lines_call);
+		} else {
+			anal->reflines = r_anal_reflines_get (anal,
+					ds->addr, ds->buf, ds->len, ds->count,
+					ds->linesout, -1);
+			anal->reflines2 = r_anal_reflines_get (anal,
+					ds->addr, ds->buf, ds->len, ds->count,
+					ds->linesout, -2);
+		}
 	} else {
 		r_list_free (anal->reflines);
 		anal->reflines = NULL;
+		r_list_free (anal->reflines2);
+		anal->reflines2 = NULL;
 	}
 }
 
@@ -1379,7 +1400,7 @@ static void ds_begin_cont(RDisasmState *ds) {
 	if (!ds->linesright && ds->show_lines_bb && ds->line) {
 		RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
 				ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-		ds_print_ref_lines (refstr->str, refstr->cols, ds);
+		ds_print_ref_lines (refstr->str, refstr->cols, ds, 0);
 		r_anal_reflines_str_free (refstr);
 	}
 }
@@ -2970,8 +2991,9 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 }
 
 static void ds_print_lines_right(RDisasmState *ds) {
+	ds_print_ref_lines2 (ds->line, ds->line_col, ds);
 	if (ds->linesright && ds->show_lines_bb && ds->line) {
-		ds_print_ref_lines (ds->line, ds->line_col, ds);
+		ds_print_ref_lines (ds->line, ds->line_col, ds, 0);
 	}
 }
 
@@ -3053,7 +3075,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		}
 	}
 	if (ds->line) {
-		ds_print_ref_lines (ds->line, ds->line_col, ds);
+		ds_print_ref_lines (ds->line, ds->line_col, ds, 0);
 	}
 }
 
@@ -5330,7 +5352,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 			ds_update_ref_lines (ds);
 			refline = ds->refline2;
 			reflinecol = ds->prev_line_col;
-			ds_print_ref_lines (refline, reflinecol, ds);
+			ds_print_ref_lines (refline, reflinecol, ds, 0);
 		}
 		r_cons_printf ("|");
 		ds_newline (ds);
@@ -6561,7 +6583,7 @@ toro:
 				}
 				ds_begin_line (ds);
 				ds_print_pre (ds, true);
-				ds_print_ref_lines (ds->line, ds->line_col, ds);
+				ds_print_ref_lines (ds->line, ds->line_col, ds, 0);
 				r_cons_printf ("%s --------------------------------------", ds->cmtoken);
 				ds_newline (ds);
 			}

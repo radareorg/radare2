@@ -31,12 +31,27 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	re->r = ref;
 	return re;
 }
+#if 0
+typedef struct {
+	RList *list;
+	RList *sten;
+} RefLineState;
+#endif
 
-static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type) {
+static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type, int linescall) {
 	ReflineEnd *re1, *re2;
 	RAnalRefline *item = R_NEW0 (RAnalRefline);
 	if (!item) {
 		return false;
+	}
+	if (linescall < 0) {
+		if (linescall == -1) {
+			if (to > addr)
+				return true;
+		} else {
+			if (to < addr)
+				return true;
+		}
 	}
 	item->from = addr;
 	item->to = to;
@@ -153,7 +168,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 		}
 		if (bind_addr != 0 && bind_addr != UT64_MAX) {
-			add_refline (list, sten, addr, bind_addr, &count, 'b');
+			add_refline (list, sten, addr, bind_addr, &count, 'b', linescall);
 			bind_addr = UT64_MAX;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
@@ -190,13 +205,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!add_refline (list, sten, addr, op.jump, &count, 'j')) {
+			if (!add_refline (list, sten, addr, op.jump, &count, 'j', linescall)) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!add_refline (list, sten, addr, op.fail, &count, 'f')) {
+				if (!add_refline (list, sten, addr, op.fail, &count, 'f', linescall)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -215,7 +230,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j')) {
+				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j', linescall)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
