@@ -609,7 +609,10 @@ static JSValue qjs_r2pipe_instance_cmd(JSContext *ctx, JSValueConst this_val, in
 	if (r2p) {
 		const char *cmd = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 		char *s = r2pipe_cmd (r2p, cmd);
-		return QJS_STRING (s);
+		if (s) {
+			return QJS_STRING (s);
+		}
+		return JS_ThrowRangeError (ctx, "Empty command returns undefined");
 	}
 	return JS_ThrowRangeError (ctx, "Only one argument permitted");
 }
