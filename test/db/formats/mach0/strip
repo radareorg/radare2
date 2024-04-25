@@ -1,0 +1,63 @@
+NAME=stripped check 0
+FILE=bins/mach0/aout-notstripped
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped false
+EOF
+RUN
+
+NAME=stripped check 1
+FILE=bins/mach0/aout-stripped
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
+
+NAME=stripped check 2
+FILE=bins/mach0/aout-notstripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=0
+!!rabin2 -I bins/mach0/aout-notstripped~^strip
+EOF
+EXPECT=<<EOF
+stripped false
+EOF
+RUN
+
+NAME=stripped check 3
+FILE=bins/mach0/aout-stripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=0
+!!rabin2 -I bins/mach0/aout-stripped~^strip
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
+
+NAME=stripped check 4
+FILE=bins/mach0/aout-notstripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=1
+!!rabin2 -I bins/mach0/aout-notstripped~^strip
+EOF
+EXPECT=<<EOF
+stripped false
+EOF
+RUN
+
+NAME=stripped check 5
+FILE=bins/mach0/aout-stripped
+CMDS=<<EOF
+%RABIN2_MACHO_NOFUNCSTARTS=1
+!!rabin2 -I bins/mach0/aout-stripped~^strip
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
