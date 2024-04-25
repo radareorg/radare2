@@ -258,7 +258,8 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 #endif
 	for (i = 0; i < symbol_count; i++) {
 		const char *name = (const char *)symbols + (i * symbol_size);
-		if ((!strcmp (name, "_start") || !strcmp (name, "start")) &&
+		// can be non null terminated
+		if ((!strncmp (name, "_start", symbol_size) || !strncmp (name, "start", symbol_size)) &&
 			r_coff_rebase_sym (obj, address, i)) {
 			return true;
 		}
@@ -266,7 +267,7 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 
 	for (i = 0; i < symbol_count; i++) {
 		const char *name = (const char *)symbols + (i * symbol_size);
-		if ((!strcmp (name, "_main") || !strcmp (name, "main")) &&
+		if ((!strncmp (name, "_main", symbol_size) || !strncmp (name, "main", symbol_size)) &&
 			r_coff_rebase_sym (obj, address, i)) {
 			return true;
 		}
@@ -511,17 +512,18 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 		}
 	}
 	ut64 offset = f_symptr;
-
 	if (!f_nsyms) {
 		return true;
 	}
-#if 0
 	if (ST32_MUL_OVFCHK (symbol_size, f_nsyms)) {
 		R_LOG_WARN ("Dimming f_nsyms count because is poluted or too large");
-//		f_nsyms &= 0xff;
-		return false;
+		f_nsyms = 1;
+		if (obj->type == COFF_TYPE_BIGOBJ) {
+			obj->bigobj_hdr.f_nsyms = f_nsyms;
+		} else {
+			obj->hdr.f_nsyms = f_nsyms;
+		}
 	}
-#endif
 	int size = f_nsyms * symbol_size;
 	if (size < 0 || size > obj->size || offset > obj->size || offset + size > obj->size) {
 		R_FREE (obj->bigobj_symbols);
@@ -534,6 +536,7 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 		R_FREE (obj->symbols);
 		return false;
 	}
+	// XXX RBuf.readAt() is unsafe, so we need to trim down the f_nsyms
 	if (obj->type == COFF_TYPE_BIGOBJ) {
 		obj->bigobj_symbols = symbols;
 		const char *fmt = obj->endian? "8c2I1S2c": "8c2i1s2c";
