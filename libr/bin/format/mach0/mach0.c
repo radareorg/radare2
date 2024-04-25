@@ -3235,7 +3235,6 @@ static void parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo,
 			// XXX this is slow. we can check with addr ht/set
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
-				eprintf ("CHK (%s\n", symstr);
 				bool found = false;
 				ht_pp_find (symcache, symstr, &found);
 				if (!found) {
@@ -3248,10 +3247,8 @@ static void parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo,
 			}
 		}
 		if (is_stripped) {
-			eprintf ("is stripped\n");
 			mo->dbg_info |= R_BIN_DBG_STRIPPED;
 		} else if (mo->dbg_info & R_BIN_DBG_STRIPPED) {
-			eprintf ("not stripped\n");
 			mo->dbg_info ^= R_BIN_DBG_STRIPPED;
 			// R_BIT_UNSET (mo->dbg_info, R_BIN_DBG_STRIPPED);
 		}
