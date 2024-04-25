@@ -351,6 +351,9 @@ purge: purge-doc purge-dev uninstall user-uninstall
 system-purge: purge
 	sys/purge.sh
 
+user-purge:
+	rm -rf $(HOME)/.local/share/radare2
+
 dist:
 	$(MAKE) -C dist/tarball
 	cp -f dist/tarball/*.$(TAREXT) .
