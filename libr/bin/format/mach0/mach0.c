@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2010-2023 - nibble, mrmacete, pancake */
+/* radare - LGPL - Copyright 2010-2024 - nibble, mrmacete, pancake */
 
 #define R_LOG_ORIGIN "bin.macho"
 
 #include <r_hash.h>
 #include "mach0.h"
+
+// R2R db/formats/mach0/strip
 
 #define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
@@ -2983,7 +2985,7 @@ static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags
 	_enrich_symbol (context->bf, mo, context->symcache, sym);
 }
 
-static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
+static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to = UT32_MAX;
 	ut32 from = UT32_MAX;
@@ -3023,6 +3025,8 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 	j = 0; // symbol_idx
 	mo->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
+	bool is_stripped = true;
+	const int limit = bf->rbin->limit;
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -3079,11 +3083,13 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				sym->is_imported = false;
 				sym->type = mo->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
 				sym->name = r_bin_name_new (sym_name);
+				if (is_stripped && strcmp (sym_name, "__mh_execute_header")) {
+					is_stripped = false;
+				}
 				R_FREE (sym_name);
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym);
-				const int limit = bf->rbin->limit;
 				if (limit > 0 && ordinal > limit) {
 					R_LOG_WARN ("symbols mo.limit reached");
 					break;
@@ -3099,6 +3105,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			R_LOG_WARN ("mach0-get-symbols: error");
 			break;
 		}
+
 		if (parse_import_stub (mo, &symbol, i) && symbol.addr >= 100) {
 			if (symbol.name && strstr (symbol.name, "<redacted>")) {
 				free (symbol.name);
@@ -3110,9 +3117,16 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
-			char *name = symbol.name? strdup (symbol.name): r_str_newf ("entry%u", (ut32)i);
-			sym->name = r_bin_name_new (name);
-			free (name);
+			if (symbol.name) {
+				if (is_stripped && strcmp (symbol.name, "__mh_execute_header")) {
+					is_stripped = false;
+				}
+				sym->name = r_bin_name_new (symbol.name);
+			} else {
+				char *name = r_str_newf ("entry%u", (ut32)i);
+				sym->name = r_bin_name_new (symbol.name);
+				free (name);
+			}
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
@@ -3135,23 +3149,29 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				continue;
 			}
 			char *sym_name = get_name (mo, st->n_strx, false);
-			if (sym_name && strstr (sym_name, "<redacted>")) {
-				free (sym_name);
-				continue;
-			}
-			if (!sym_name) {
+			if (sym_name) {
+				if (strstr (sym_name, "<redacted>")) {
+					free (sym_name);
+					continue;
+				}
+			} else {
 				sym_name = r_str_newf ("entry%u", (ut32)i);
+			}
+			if (is_stripped && strcmp (sym_name, "__mh_execute_header")) {
+				is_stripped = false;
 			}
 			if (hash_find_or_insert (hash, sym_name, vaddr)) {
 				free (sym_name);
 				continue;
 			}
-			const int limit = bf->rbin->limit;
 			if (limit > 0 && ordinal > limit) {
-				R_LOG_WARN ("symbols2 mo.limit reached");
+				R_LOG_WARN ("funcstart count reached bin.limit");
 				break;
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
+			if (R_UNLIKELY (!sym)) {
+				break;
+			}
 			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = r_bin_name_new (sym_name);
 			sym->vaddr = vaddr;
@@ -3164,11 +3184,14 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			j++;
 		}
 	}
+	if (is_stripped) {
+		mo->dbg_info |= R_BIN_DBG_STRIPPED;
+	}
 
 	ht_pp_free (hash);
 }
 
-static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
+static void parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	RBinObject *obj = bf? bf->bo: NULL;
 	if (!obj) {
 		return;
@@ -3178,11 +3201,12 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 	}
 
 	int wordsize = MACH0_(get_bits) (mo);
-	bool is_stripped = false;
 	ut32 i = RVecRBinSymbol_length (mo->symbols_vec);
 
 	// functions from LC_FUNCTION_STARTS
 	if (mo->func_start) {
+		const int limit = bf->rbin->limit;
+		bool is_stripped = false;
 		char symstr[128];
 		ut64 value = 0, address = 0;
 		const ut8 *temp = mo->func_start;
@@ -3211,21 +3235,26 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 			// XXX this is slow. we can check with addr ht/set
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
+				eprintf ("CHK (%s\n", symstr);
 				bool found = false;
 				ht_pp_find (symcache, symstr, &found);
 				if (!found) {
 					is_stripped = true;
 				}
 			}
-			const int limit = bf->rbin->limit;
 			if (limit > 0 && sym->ordinal > limit) {
 				R_LOG_WARN ("funcstart mo.limit reached");
 				break;
 			}
 		}
-	}
-	if (is_stripped) {
-		mo->dbg_info |= R_BIN_DBG_STRIPPED;
+		if (is_stripped) {
+			eprintf ("is stripped\n");
+			mo->dbg_info |= R_BIN_DBG_STRIPPED;
+		} else if (mo->dbg_info & R_BIN_DBG_STRIPPED) {
+			eprintf ("not stripped\n");
+			mo->dbg_info ^= R_BIN_DBG_STRIPPED;
+			// R_BIT_UNSET (mo->dbg_info, R_BIN_DBG_STRIPPED);
+		}
 	}
 }
 
@@ -3268,9 +3297,9 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 	HtPP *symcache = ht_pp_new0 ();
 	if (R_LIKELY (symcache)) {
 		RBinFile *bf = mo->options.bf;
-		_parse_symbols (bf, mo, symcache);
+		parse_symbols (bf, mo, symcache);
 		if (mo->parse_start_symbols) {
-			_parse_function_start_symbols (bf, mo, symcache);
+			parse_function_start_symbols (bf, mo, symcache);
 		}
 		ht_pp_free (symcache);
 	}
