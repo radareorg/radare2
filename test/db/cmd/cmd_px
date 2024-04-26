@@ -5,22 +5,26 @@ e asm.arch=x86
 e asm.bits=64
 woe 1 255
 s+11
+?e vuit
 b 8
 pxr8
 pxr4
 pxr2
 pxr1
+?e quatre
 b 4
 pxr8
 pxr4
 pxr2
 pxr1
+?e dos
 b 2
 pxr8
 pxr4
 pxr2
 pxr1
 pxr2
+?e u
 b 1
 pxr8
 pxr4
@@ -28,6 +32,7 @@ pxr2
 pxr1
 EOF
 EXPECT=<<EOF
+vuit
 0x0000000b 0x0101010101010101   ........
 0x0000000b 0x01010101  .... 16843009
 0x0000000f 0x01010101  .... 16843009
@@ -44,6 +49,7 @@ EXPECT=<<EOF
 0x00000010 001 .
 0x00000011 001 .
 0x00000012 001 .
+quatre
 0x0000000b 0x0000000001010101   ....
 0x0000000b 0x01010101  .... 16843009
 0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
@@ -53,6 +59,7 @@ EXPECT=<<EOF
 0x0000000c 001 .
 0x0000000d 001 .
 0x0000000e 001 .
+dos
 0x0000000b 0x0000000000000101   ..
 0x0000000b 0x00000101  ..
 0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
@@ -60,6 +67,7 @@ EXPECT=<<EOF
 0x0000000b 001 .
 0x0000000c 001 .
 0x0000000b 0101  .. 257 R W X 'add byte [rax], al'
+u
 0x0000000b 0x0000000000000001   .
 0x0000000b 0x00000001  .
 0x0000000b 01    .
