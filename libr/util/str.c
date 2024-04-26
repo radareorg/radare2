@@ -4045,8 +4045,10 @@ R_API char *r_str_version(const char *program) {
 	int csv = R2_CSVERSION;
 	s = r_str_appendf (s, "birth: git.%s "R2_BIRTH"\n",
 			*R2_GITTAP ? R2_GITTAP: "");
-	if (*R2_GITTIP) {
-		s = r_str_append (s, "commit: "R2_GITTIP"\n");
+	if (*R2_GITTIP) { // Can't use && because of a bug in clang :lol:
+		if (strcmp (R2_GITTIP, "unknown")) {
+			s = r_str_append (s, "commit: "R2_GITTIP"\n");
+		}
 	}
 	s = r_str_appendf (s, "options:%s%s%s%s%s cs:%d cl:%d %s",
 			gplstr, asanstr, newabi, release, optistr, csv, R_CHECKS_LEVEL, R_BUILDSYSTEM);
