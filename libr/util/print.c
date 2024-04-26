@@ -1151,8 +1151,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (base == 32) {
 						// only needed for big endian
 						ut32 n32;
-						r_mem_swaporcopy ((ut8 *)&n32, buf +j, 4, be);
-						n = n32;
+						r_mem_swaporcopy ((ut8 *)&n32, buf + j, 4, be);
+						if (sz_n == 2) {
+							n = n32 & 0xffff;
+						} else {
+							n = n32;
+						}
 					} else {
 						r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
 					}
