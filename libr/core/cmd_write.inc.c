@@ -399,12 +399,12 @@ static int cmd_wo(void *data, const char *input) {
 			free (args);
 		}
 		break;
-	case 'p': // debrujin patterns
+	case 'p': // debruijn patterns
 		switch (input[1]) {
 		case 'D': // "wopD"
 			{
 				char *sp = strchr (input, ' ');
-				len = sp?  r_num_math (core->num, sp + 1): core->blocksize;
+				len = sp? r_num_math (core->num, sp + 1): core->blocksize;
 			}
 			if (len > 0) {
 				/* XXX This seems to fail at generating long patterns (wopD 512K) */

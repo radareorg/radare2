@@ -7118,7 +7118,7 @@ static void initialize_stack(RCore *core, ut64 addr, ut64 size) {
 			ut64 left = R_MIN (bs, size - i);
 		//	r_core_cmdf (core, "wx 10203040 @ 0x%"PFMT64x, addr);
 			switch (*mode) {
-			case 'd': // "debrujn"
+			case 'd': // "debruijn"
 				r_core_cmdf (core, "wopD %"PFMT64u" @ 0x%"PFMT64x, left, addr + i);
 				break;
 			case 's': // "seq"
