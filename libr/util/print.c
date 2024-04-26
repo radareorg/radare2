@@ -1148,6 +1148,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						j += sz_n;
 						continue;
 					}
+#if R_SYS_ENDIAN
 					if (base == 32) {
 						// only needed for big endian
 						ut32 n32;
@@ -1160,6 +1161,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					} else {
 						r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
 					}
+#else
+					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
+#endif
 					r_print_cursor (p, j, sz_n, 1);
 					// stub for colors
 					if (p && p->colorfor) {
