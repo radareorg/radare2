@@ -1,9 +1,11 @@
-/* radare2 - LGPL - Copyright 2007-2023 - pancake */
+/* radare2 - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
 
 #define DFLT_ROWS 16
+// TODO: get rid of this macro
+#define print(x) printfmt("%s", x)
 
 static const char hex[16] = "0123456789ABCDEF";
 
@@ -67,7 +69,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-#define cb_print(x) p->cb_printf("%s", x)
+#define cb_print(x) p->cb_printf ("%s", x)
 	size_t i, j;
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
@@ -434,7 +436,6 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	const char *white = "";
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
-#define print(x) printfmt("%s", x)
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
@@ -635,7 +636,6 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 
 R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
-	#define print(x) printfmt("%s", x)
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
@@ -644,11 +644,11 @@ R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) 
 	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = r_print_byte_color (p, addr, ch);
 		if (bytecolor) {
-			print (bytecolor);
+			printfmt ("%s", bytecolor);
 		}
 		printfmt (fmt, rch);
 		if (bytecolor) {
-			print (Color_RESET);
+			printfmt ("%s", Color_RESET);
 		}
 	} else {
 		printfmt (fmt, rch);
@@ -832,7 +832,6 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	r_return_if_fail (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
-#define print(x) printfmt("%s", x)
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
 	int inc = p? p->cols : 16;
@@ -945,7 +944,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	if (use_header) {
 		if (c) {
-			print (color_title);
+			printfmt ("%s", color_title);
 		}
 		if (base < 32) {
 			// XXX: use r_print_addr_header
@@ -1149,7 +1148,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						j += sz_n;
 						continue;
 					}
-					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
+					if (base == 32) {
+						// only needed for big endian
+						ut32 n32;
+						r_mem_swaporcopy ((ut8 *)&n32, buf +j, 4, be);
+						n = n32;
+					} else {
+						r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
+					}
 					r_print_cursor (p, j, sz_n, 1);
 					// stub for colors
 					if (p && p->colorfor) {
