@@ -1101,7 +1101,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				print ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
-				if (j!=i && use_align && rowbytes == inc) {
+				if (j != i && use_align && rowbytes == inc) {
 					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 					if (sz >= 0) {
 						rowbytes = bytes;
@@ -1151,15 +1151,36 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 #if R_SYS_ENDIAN
 					if (base == 32) {
 						// only needed for big endian
-						ut32 n32;
+						ut32 n32 = 0;
 						r_mem_swaporcopy ((ut8 *)&n32, buf + j, 4, be);
-						if (sz_n == 2) {
+						switch (sz_n) {
+						case 1:
+							n = n32 & 0xff;
+							break;
+						case 2:
 							n = n32 & 0xffff;
-						} else {
+							break;
+						case 4:
 							n = n32;
+							break;
 						}
 					} else {
-						r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
+						ut64 n64 = 0;
+						r_mem_swaporcopy ((ut8 *) &n64, buf + j, 8, be);
+						switch (sz_n) {
+						case 1:
+							n = n64 & 0xff;
+							break;
+						case 2:
+							n = n64 & 0xffff;
+							break;
+						case 4:
+							n = n64 & 0xffffffff;
+							break;
+						default:
+							n = n64;
+							break;
+						}
 					}
 #else
 					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
@@ -1278,25 +1299,22 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					} else {
 						r_print_byte (p, addr + j, bytefmt, j, buf[j]);
 					}
+					bool mustspace = false;
 					if (pairs && !compact && (inc & 1)) {
-						bool mustspace = (rows % 2) ? !(j&1) : (j&1);
-						if (mustspace) {
-							print (" ");
-						}
+						mustspace = (rows % 2) ? !(j&1) : (j&1);
 					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
-								if (!compact) {
-									print (" ");
-								}
+								mustspace = !compact;
 							} else {
 								print ("|");
 							}
 						} else {
-							if (!compact) {
-								print (" ");
-							}
+							mustspace = !compact;
 						}
+					}
+					if (mustspace) {
+						print (" ");
 					}
 				}
 				if (hl) {
