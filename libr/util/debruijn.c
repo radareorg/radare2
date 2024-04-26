@@ -19,10 +19,11 @@ static void de_bruijn_seq(int pnl_len_t, int lnp_len_p, int order,
 	if (strlen (sequence) == maxlen) {
 		return;
 	}
+	int i;
 	if (pnl_len_t > order) {
 		if (order % lnp_len_p == 0) {
-			for (j = 1; j <= lnp_len_p; j++) {
-				sequence[strlen(sequence)] = charset[pnl_a[j]];
+			for (i = 1; i <= lnp_len_p; i++) {
+				sequence[strlen (sequence)] = charset[pnl_a[i]];
 				if (strlen (sequence) == maxlen) {
 					return;
 				}
@@ -31,8 +32,8 @@ static void de_bruijn_seq(int pnl_len_t, int lnp_len_p, int order,
 	} else {
 		pnl_a[pnl_len_t] = pnl_a[pnl_len_t - lnp_len_p];
 		de_bruijn_seq (pnl_len_t + 1, lnp_len_p, order, maxlen, size, pnl_a, sequence, charset);
-		for (j = pnl_a[pnl_len_t - lnp_len_p] + 1; j < size; j++) {
-			pnl_a[pnl_len_t] = j;
+		for (i = pnl_a[pnl_len_t - lnp_len_p] + 1; i < size; i++) {
+			pnl_a[pnl_len_t] = i;
 			de_bruijn_seq (pnl_len_t + 1, pnl_len_t, order, maxlen,
 					size, pnl_a, sequence, charset);
 		}
