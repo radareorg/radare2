@@ -115,14 +115,14 @@ r2pm -l <pkg>   # list installed packages
 
 ## Documentation
 
-Learn more about r2 watching [youtube talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). There are also many blogposts, slidedecks and the [official radare2 book](https://book.rada.re), but it's always a good idea to join any of the official chats and drop your questions/feedback around.
+Learn more about r2 watching [youtube talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). There are also many blogposts, slidedecks and the [official radare2 book](https://book.rada.re), but it's always a good idea to join any of the official chats and drop your questions or feedback there.
 
 ## Community
 
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
 * Telegram: [Main](https://t.me/radare) and [Side](https://t.me/radare_side) channels
-* [Discord server](https://discord.gg/YBey7CR9jf)
+* Discord: [Server](https://discord.gg/YBey7CR9jf)
 * Mastodon: [@radareorg](https://infosec.exchange/@radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
@@ -131,7 +131,7 @@ Learn more about r2 watching [youtube talks](https://www.youtube.com/c/r2con) fr
 ## Operating Systems
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android,
-[Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, Haiku, Vinix, FirefoxOS.
+[Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, AIX, Haiku, Vinix, FirefoxOS.
 
 ## Architectures
 
