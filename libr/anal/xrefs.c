@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, defragger, ret2libc */
 
 // R2R db/cmd/cmd_aflxj db/cmd/cmd_aflxv db/cmd/cmd_ax
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #define R_LOG_ORIGIN "core.anal"
 
@@ -800,7 +800,9 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 			// check if its used as data or code.. or at least check what's in the destination
 			{
 				const RAnalRefType t = r_anal_data_type (core->anal, ref->addr);
-				switch (R_ANAL_REF_TYPE_MASK (t)) {
+				if (t == R_ANAL_REF_TYPE_ERROR) {
+					// invalid reference to unreadable memory
+				} else switch (R_ANAL_REF_TYPE_MASK (t)) {
 				case R_ANAL_REF_TYPE_ERROR:
 					R_LOG_DEBUG ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
 					break;
