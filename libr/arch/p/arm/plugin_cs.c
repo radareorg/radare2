@@ -4648,7 +4648,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		break;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case R_ANAL_ARCHINFO_ALIGN: // espai de jocs
+	case R_ANAL_ARCHINFO_ALIGN:
 		if (as->config && as->config->bits == 16) {
 			return 2;
 		}
