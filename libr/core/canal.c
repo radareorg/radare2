@@ -801,11 +801,13 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 			{
 				const RAnalRefType t = r_anal_data_type (core->anal, ref->addr);
 				if (t == R_ANAL_REF_TYPE_ERROR) {
-					R_LOG_DEBUG ("Invalid reference to unreadable memory at 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
+					R_LOG_WARN ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
+					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+					if (baddr == 0) {
+						R_LOG_WARN ("Try running the analysis with -B 0x800000");
+					}
+
 				} else switch (R_ANAL_REF_TYPE_MASK (t)) {
-				case R_ANAL_REF_TYPE_ERROR:
-					R_LOG_DEBUG ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
-					break;
 				case R_ANAL_REF_TYPE_ICOD:
 				case R_ANAL_REF_TYPE_CODE:
 					r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth - 1);
@@ -975,7 +977,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && !r_anal_function_realsize (fcn))) { /* Error analyzing function */
 			if (core->anal->opt.followbrokenfcnsrefs) {
-				r_anal_analyze_fcn_refs (core, fcn, depth);
+				//r_anal_analyze_fcn_refs (core, fcn, depth);
 			}
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
