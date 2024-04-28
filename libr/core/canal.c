@@ -801,7 +801,7 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 			{
 				const RAnalRefType t = r_anal_data_type (core->anal, ref->addr);
 				if (t == R_ANAL_REF_TYPE_ERROR) {
-					R_LOG_DEBUG ("Invalid reference to unreadable memory at 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->from, ref->addr);
+					R_LOG_DEBUG ("Invalid reference to unreadable memory at 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
 				} else switch (R_ANAL_REF_TYPE_MASK (t)) {
 				case R_ANAL_REF_TYPE_ERROR:
 					R_LOG_DEBUG ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
