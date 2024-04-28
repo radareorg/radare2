@@ -78,8 +78,9 @@ static RCoreHelpMessage help_msg_aae = {
 
 static RCoreHelpMessage help_msg_aav = {
 	"Usage:", "aav", "[sat] # find values referencing a specific section or map",
-	"aav", "", "find absolute reference values",
-	"aavr", "", "find relative reference values (address + 4 byte signed int)",
+	"aav", "", "find absolute reference values (see aav0)",
+	"aav0", "", "find absolute reference values (accept maps at address zero)",
+	"aavr", "[0]", "find relative reference values (address + 4 byte signed int)",
 	NULL
 };
 
@@ -12770,8 +12771,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	r_return_if_fail (*input == 'v');
-	bool relative = input[1] == 'r';
-	bool verbose = input[1] != 'q';
+	const bool relative = input[1] == 'r';
+	const bool verbose = input[1] != 'q';
+	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0');
 	ut64 o_align = geti ("search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
@@ -12799,8 +12801,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				break;
 			}
 			ut64 from = r_io_map_begin (map);
-			if (from == 0) {
-				R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000");
+			if (!forcemode && from == 0) {
+				R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000 or aav0");
 				continue;
 			}
 			(void)r_core_search_value_in_range (core, relative, map->itv,
@@ -12840,8 +12842,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					free (unit);
 					continue;
 				}
-				if (from == 0) {
-					R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000");
+				if (!forcemode && from == 0) {
+					R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000 or aav0");
 					continue;
 				}
 				if (verbose) {
