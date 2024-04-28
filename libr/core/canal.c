@@ -10,7 +10,6 @@ HEAPTYPE (ut64);
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-static R_TH_LOCAL RCore *mycore = NULL;
 static R_TH_LOCAL bool esil_anal_stop = false;
 
 // used to speedup strcmp with rconfig.get in loops
@@ -5279,14 +5278,15 @@ static bool is_stack(RIO *io, ut64 addr) {
 }
 
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	RCore *core = esil->anal->coreb.core;
 	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
 	// ignore writes in stack
-	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-		if (!is_stack (mycore->io, addr)) {
-			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+		if (!is_stack (core->io, addr)) {
+			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			/** resolve ptr */
 			//if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-	//			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA);
+	//			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA);
 			//}
 		}
 	}
@@ -5300,12 +5300,13 @@ static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
+	RCore *core = esil->anal->coreb.core;
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
 	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_READ, len);
-	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
+	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
 		switch (len) {
@@ -5323,27 +5324,27 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			break;
 		default:
 			trace = false;
-			r_io_read_at (mycore->io, addr, (ut8*)buf, len);
+			r_io_read_at (core->io, addr, (ut8*)buf, len);
 			break;
 		}
 		// TODO incorrect
-		if (trace && myvalid (mycore->io, refptr)) {
+		if (trace && myvalid (core->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
 				str[0] = 0;
-				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
+				if (r_io_read_at (core->io, refptr, str, sizeof (str)) < 1) {
 					//eprintf ("Invalid read\n");
 					str[0] = 0;
 				} else {
-					r_anal_xrefs_set (mycore->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+					r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 					str[sizeof (str) - 1] = 0;
-					add_string_ref (mycore, esil->addr, refptr);
+					add_string_ref (core, esil->addr, refptr);
 					esilbreak_last_data = UT64_MAX;
 				}
 			}
 		}
-		if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-			if (!is_stack (mycore->io, addr)) {
-				r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+		if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+			if (!is_stack (core->io, addr)) {
+				r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 			}
 		}
 	}
@@ -5619,7 +5620,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	esil_anal_stop = false;
 	// R_LOG_INFO ("start is %llx", addr);
 
-	mycore = core;
 	if (!strcmp (str, "?")) {
 		R_LOG_INFO ("should never happen");
 		return;
@@ -5974,7 +5974,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					break;
 				}
 				if ((target && dst == ntarget) || !target) {
-					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (mycore->io, dst)) {
+					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core->io, dst)) {
 						RFlagItem *f;
 						char *str;
 						if (CHECKREF (dst) || CHECKREF (cur)) {
@@ -5984,7 +5984,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-							} else if ((str = is_string_at (mycore, dst, NULL))) {
+							} else if ((str = is_string_at (core, dst, NULL))) {
 								char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
@@ -6010,7 +6010,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = esilbreak_last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (mycore->io, dst)) {
+					if (myvalid (core->io, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -6019,7 +6019,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 				dst = esilbreak_last_data;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (mycore->io, dst)) {
+					if (myvalid (core->io, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -6160,7 +6160,6 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	if (relative) {
 		align = 4;
 	}
-	mycore = core;
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
@@ -6274,7 +6273,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				if (isValidMatch) {
 					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
-						add_string_ref (mycore, addr, value);
+						add_string_ref (core, addr, value);
 					}
 					hitctr++;
 				}
