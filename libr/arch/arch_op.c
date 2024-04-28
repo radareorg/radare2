@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake, nibble, condret */
+/* radare - LGPL - Copyright 2010-2024 - pancake, nibble, condret */
 
 #include <r_arch.h>
-#include <r_util.h>
-#include <r_list.h>
 
 // XXX this is unused
 

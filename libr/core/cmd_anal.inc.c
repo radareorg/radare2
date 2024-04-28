@@ -2692,14 +2692,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					*sp = 0;
 				}
 				char *d = r_asm_describe (core->rasm, opname);
-				if (d && *d) {
+				if (R_STR_ISNOTEMPTY (d)) {
 					printline ("description", "%s\n", d);
 				}
 				free (d);
 				free (opname);
 			}
 			{
-				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
+				const int left = len - idx;
+				const int instlen = R_MIN (op.size, left);
+				ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->offset + idx);
 				if (smart_mask) {
 					char *maskstr = r_core_cmd_strf (core, "aobm@0x%08"PFMT64x, op.addr);
 					r_str_trim (maskstr);
