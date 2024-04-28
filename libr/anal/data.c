@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_anal.h>
 
@@ -384,7 +384,9 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 #if 0
 	if (!buf) {
 		int type = r_anal_data_type (anal, addr);
-		switch (R_ANAL_REF_TYPE_MASK (type)) {
+		if (type == R_ANAL_REF_TYPE_ERROR) {
+			return NULL;
+		} else switch (R_ANAL_REF_TYPE_MASK (type)) {
 		case R_ANAL_REF_TYPE_CODE:
 		case R_ANAL_REF_TYPE_DATA:
 			break;
