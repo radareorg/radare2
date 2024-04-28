@@ -977,7 +977,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && !r_anal_function_realsize (fcn))) { /* Error analyzing function */
 			if (core->anal->opt.followbrokenfcnsrefs) {
-				//r_anal_analyze_fcn_refs (core, fcn, depth);
+				r_anal_analyze_fcn_refs (core, fcn, depth);
 			}
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
