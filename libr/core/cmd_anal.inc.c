@@ -6661,6 +6661,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int tail_return_value = 0;
 	int ret;
 	ut8 code[32];
+	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
 	// esil->trap = 0;
@@ -6686,6 +6687,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
+	if (maxopsz > sizeof (code)) {
+		R_LOG_WARN ("Max instruction size is larger than %d, Dimming down", sizeof (code));
+		maxopsz = sizeof (code);
+	}
 	for (; true; r_anal_op_fini (&op)) {
 		esil->trap = 0;
 		oaddr = addr;
@@ -6743,10 +6748,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				}
 			}
 		}
-		(void) r_io_read_at (core->io, addr, code, sizeof (code));
-		// TODO: sometimes this is dupe
-		ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
-		naddr = addr + op.size;
+		int re = r_io_read_at (core->io, addr, code, maxopsz);
+		if (re < 1) {
+			ret = 0;
+		} else {
+			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+		}
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
@@ -6763,6 +6770,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				op.size = 1; // avoid inverted stepping
 			}
 		}
+		naddr = addr + op.size;
 		if (stepOver) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_SWI:
@@ -7480,6 +7488,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length, const char *es
 	if (!buf) {
 		return false;
 	}
+	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
 	r_reg_arena_push (core->anal->reg);
@@ -7510,6 +7519,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length, const char *es
 		} else {
 			len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 			esilstr = R_STRBUF_SAFEGET (&aop.esil);
+		}
+		if (len < 1) {
+			len += minopsz;
+			R_LOG_DEBUG ("Skip invalid instruction");
+			continue;
 		}
 		if (R_STR_ISNOTEMPTY (esilstr)) {
 			if (len < 1) {
