@@ -1324,7 +1324,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							break;
 						}
 					} else {
-						R_LOG_ERROR ("Missing read callback");
+						R_LOG_ERROR ("Missing read callback 3");
 					}
 				}
 				// dont break;
@@ -1487,12 +1487,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			if (bits != 16) {
 				ut8 thunk[4] = {0};
 #if ARCH_HAVE_READ
-#if 0
-				if (a->read_at (as, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-#else
 				RBin *bin = as->arch->binb.bin;
 				if (bin && bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-#endif
 					/* Handle CALL ebx_pc (callpop)
 					   8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
@@ -1504,6 +1500,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size, reg32_to_name (reg));
 						break;
 					}
+				} else {
+					R_LOG_ERROR ("Missing read callback 1");
 				}
 			}
 			if (bits == 32) {
@@ -1518,6 +1516,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
 							break;
 						}
+					} else {
+						R_LOG_ERROR ("Missing read callback 2");
 					}
 				}
 			}
