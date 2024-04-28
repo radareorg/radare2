@@ -12798,8 +12798,13 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			ut64 from = r_io_map_begin (map);
+			if (from == 0) {
+				R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000");
+				continue;
+			}
 			(void)r_core_search_value_in_range (core, relative, map->itv,
-				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
+				from, r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 		}
 		r_list_free (list);
 	} else {
@@ -12816,7 +12821,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			//TODO: Reduce multiple hits for same addr
+			// TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
 			if ((to - from) > MAX_SCAN_SIZE) {
@@ -12833,6 +12838,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					char *unit = r_num_units (NULL, 0, end - begin);
 					R_LOG_WARN ("Skipping huge range (%s)", unit);
 					free (unit);
+					continue;
+				}
+				if (from == 0) {
+					R_LOG_WARN ("Skipping aav because base address is zero. Use -B 0x800000");
 					continue;
 				}
 				if (verbose) {
