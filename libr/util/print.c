@@ -2132,6 +2132,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 		return pal->math;
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_NOR:
 	case R_ANAL_OP_TYPE_XOR:
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_SHL:
