@@ -181,7 +181,6 @@ repeat:
 					char *sb2ss = r_str_ss (sb2s, 0, 0);
 					char *p = sb2ss;
 					char *nextlist = strstr (p, "\n");
-					// r_strbuf_appendf (sb, "  ");
 					if (usecolor) {
 						r_strbuf_append (sb, Color_BLACK);
 						r_strbuf_append (sb, Color_BGGREEN);
