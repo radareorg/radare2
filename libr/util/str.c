@@ -3457,6 +3457,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 			*e = 0;
 			e += clen;
 		}
+		// TODO: make string trim optional
 		r_str_trim (aux);
 		r_list_append (lst, aux);
 		aux = e;

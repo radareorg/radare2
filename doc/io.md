@@ -1,13 +1,7 @@
-How IO should work
-==================
+# How IO should work
 
-* Maps
-
-    Used to select fd. Mapaddr..size
-
-* Sections
-
-    Used to specify vaddr<->paddr
+* Maps: Used to select fd. Mapaddr..size
+* Sections: Used to specify vaddr <-> paddr
 
 Manually selecting fd is still valid and it should override maps fdselection. This is.. We need a way to tell r2 to view one fd or all of them. In case of having two files mapped on the same address space we will select the last opened.
 

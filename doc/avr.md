@@ -1,8 +1,10 @@
-# AVR (arduino, atmega128, ..)
+# AVR
 
 This document explains how to debug an AVR microcontroller connecting with the JTAG interface via USB using the GDB protocol, commonly used by Arduino.
 
-On some systems it is necessary to install a driver and the SDK. You can find the links below
+On some systems it is necessary to install a driver and the SDK. You can find the links below:
+
+Works for arduino and atmega128, ..
 
 ## macOS installation
 

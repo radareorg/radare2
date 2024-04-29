@@ -25,7 +25,8 @@ static RCoreHelpMessage help_msg_m = {
 	"mw", " [file] [data]", "write data into file",
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
-	"ma", "[n] [page]", "manpage reading",
+	"mal", "", "list available r2 docs",
+	"man", " [page]", "man=manpage reading (see mal)",
 	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 	NULL
 };
@@ -37,9 +38,248 @@ static RCoreHelpMessage help_msg_mf = {
 	NULL
 };
 
-static char *readman(const char *page) {
+static bool is_document(const char *name) {
+	return r_str_endswith (name, ".r2s") || r_str_endswith (name, ".md") || r_str_endswith (name, ".txt");
+}
+
+static void fill_line(RStrBuf *sb, int maxcol) {
+	int i;
+	if (maxcol < 1) {
+		return;
+	}
+	for (i = 0; i< maxcol; i++) {
+		r_strbuf_append (sb, " ");
+	}
+	r_strbuf_append (sb, Color_RESET_BG);
+	r_strbuf_append (sb, Color_RESET);
+	r_strbuf_append (sb, "\n");
+}
+
+// R2_600 - Rename to RStr.md2txt ?
+static char *unmarkdown(const char *page, bool usecolor) {
+	char *b = r_file_slurp (page, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	int col = 0;
+	const int maxcol = 75;
+	bool codeblock = false;
+	bool contline = false;
+	bool title = false;
+	bool codeblockline = false;
+	while (*b) {
+		int ch = *b;
+repeat:
+		switch (ch) {
+		case 10:
+			if (codeblock || title) {
+				const int j = title? maxcol + 2: maxcol - 4;
+				if (usecolor) {
+					if (!contline) {
+						fill_line (sb, j - col);
+					}
+					if (title) {
+						r_strbuf_append (sb, Color_BLACK);
+						r_strbuf_append (sb, Color_BGBLUE);
+						fill_line (sb, maxcol + 4);
+					}
+				}
+				title = false;
+			}
+			if (contline) {
+				contline = false;
+			} else {
+				col = 0;
+			}
+			if (usecolor) {
+				r_strbuf_append (sb, Color_RESET);
+			}
+			if (!codeblock) {
+				r_strbuf_append (sb, "\n");
+			}
+			if (codeblockline) {
+				codeblock = false;
+				codeblockline = false;
+			}
+			break;
+		case '\t':
+			if (col == 0) {
+				codeblock = true;
+				codeblockline = true;
+			} else {
+				r_strbuf_append (sb, "  ");
+			}
+			break;
+		case 13:
+			// ignore
+			break;
+		default:
+			if (col > maxcol) {
+				ch = 10;
+				if (*b == ' ') {
+					b++;
+				} else {
+					if (codeblock) {
+						col = 1;
+						// nothing
+					} else {
+						r_strbuf_append (sb, "-");
+					}
+#if 0
+					contline = true;
+					if (codeblock) {
+						r_strbuf_append (sb, "\n");
+						col = 0;
+					}
+#endif
+				}
+				b--;
+				goto repeat;
+			}
+			if (col == 0) {
+				if (r_str_startswith (b, "```")) {
+					while (*b && *b != '\n') {
+						b++;
+					}
+					codeblock = !codeblock;
+					if (!codeblock) {
+						r_strbuf_append (sb, Color_RESET_BG);
+					}
+					continue;
+				} else if (!codeblock && r_str_startswith (b, "###")) {
+					if (usecolor) {
+						r_strbuf_append (sb, Color_BLACK);
+						r_strbuf_append (sb, Color_BGBLUE);
+						fill_line (sb, maxcol + 4);
+						r_strbuf_append (sb, Color_BLUE);
+						r_strbuf_append (sb, Color_BGCYAN);
+					}
+					r_strbuf_append (sb, "  ");
+					b += 3;
+					title = true;
+				} else if (!codeblock && r_str_startswith (b, "##")) {
+					if (usecolor) {
+						r_strbuf_append (sb, Color_BLACK);
+						r_strbuf_append (sb, Color_BGBLUE);
+						fill_line (sb, maxcol + 4);
+						r_strbuf_append (sb, Color_BLACK);
+						r_strbuf_append (sb, Color_BGBLUE);
+					}
+					r_strbuf_append (sb, "  ");
+					ch = ' ';
+					b += 2;
+					title = true;
+				} else if (!codeblock && r_str_startswith (b, "#")) {
+					RStrBuf *sb2 = r_strbuf_new ("");
+					while (*b) {
+						if (*b == '\n') {
+							b++;
+							break;
+						}
+						r_strbuf_appendf (sb2, "%c", *b);
+						b++;
+					}
+					char *sb2s = r_strbuf_drain (sb2);
+					char *sb2ss = r_str_ss (sb2s, 0, 0);
+					char *p = sb2ss;
+					char *nextlist = strstr (p, "\n");
+					// r_strbuf_appendf (sb, "  ");
+					if (usecolor) {
+						r_strbuf_append (sb, Color_BLACK);
+						r_strbuf_append (sb, Color_BGGREEN);
+					}
+					while (nextlist) {
+						char *line = r_str_ndup (p, nextlist - p);
+						r_strbuf_appendf (sb, "%s", line);
+						int col = strlen (line);
+						int i;
+						for (i = col; i < maxcol + 1; i++) {
+							r_strbuf_append (sb, " ");
+						}
+						if (usecolor) {
+							r_strbuf_append (sb, "  ");
+							r_strbuf_append (sb, " "Color_RESET_BG""Color_RESET"\n"Color_BGGREEN""Color_BLACK);
+						} else {
+							r_strbuf_append (sb, "   \n");
+						}
+						p = nextlist + 1;
+						nextlist = strstr (p, "\n");
+					}
+					//r_strbuf_append (sb, sb2ss);
+					free (sb2ss);
+					free (sb2s);
+					if (usecolor) {
+						r_strbuf_append (sb, Color_RESET_BG""Color_RESET"\n");
+					} else {
+						r_strbuf_append (sb, "\n");
+					}
+					title = false;
+					break;
+				} else {
+					if (codeblock) {
+						if (usecolor) {
+							r_strbuf_append (sb, "  "Color_BGYELLOW" "Color_BLACK);
+						} else {
+							r_strbuf_append (sb, "   ");
+						}
+					} else {
+						r_strbuf_append (sb, "  ");
+					}
+				}
+			}
+			col ++;
+			r_strbuf_appendf (sb, "%c", ch);
+			break;
+		}
+		b++;
+	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_printf ("%s", s);
+	free (s);
+	return NULL;
+}
+
+static char *readman(RCore *core, const char *page) {
+	const char *docdir = R2_DATDIR"/doc/radare2/";
+	if (!strcmp (page, "?")) {
+		RStrBuf *sb = r_strbuf_new ("");
+		RList *files = r_sys_dir (docdir);
+		RListIter *iter;
+		const char *name;
+		r_list_foreach (files, iter, name) {
+			if (*name == '.') {
+				continue;
+			}
+			if (is_document (name)) {
+				r_strbuf_appendf (sb, "%s\n", name);
+			}
+		}
+		r_list_free (files);
+		char *s = r_strbuf_drain (sb);
+		r_cons_printf ("%s", s);
+		return NULL;
+	}
 	int cat = 1;
-	char *p = r_str_newf ("%s/man/man%d/%s.%d",R2_DATDIR, cat, page, cat);
+	if (r_file_exists (page)) {
+		return r_file_slurp (page, NULL);
+	}
+	char *n = r_str_newf (R2_DATDIR"/doc/radare2/%s", page);
+	if (r_file_exists (n)) {
+		if (r_str_endswith (page, ".r2s")) {
+			r_core_cmdf (core, ". %s", n);
+			free (n);
+			return NULL;
+		}
+		if (r_str_endswith (page, ".md")) {
+			char *data = unmarkdown (n, r_config_get_i (core->config, "scr.color")  > 0);
+			free (n);
+			return data;
+		}
+		char *data = NULL;
+		data = r_file_slurp (n, NULL);
+		free (n);
+		return data;
+	}
+	free (n);
+	char *p = r_str_newf ("%s/man/man%d/%s.%d", R2_DATDIR, cat, page, cat);
 	char *res = r_file_slurp (p, NULL);
 	if (!res) {
 		free (p);
@@ -125,7 +365,7 @@ static int cmd_man(RCore *core, const char *input) {
 #if 0 && R2__UNIX__
 		r_sys_cmdf ("man %s", page);
 #else
-		char *text = readman (r_str_trim_head_ro (arg));
+		char *text = readman (core, r_str_trim_head_ro (arg));
 		if (text) {
 			r_cons_less_str (text, NULL);
 			free (text);
@@ -270,8 +510,15 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
+	if (r_str_startswith (_input, "a?")) { // "ma?"
+		r_core_cmd_help_contains (core, help_msg_m, "ma");
+		return 0;
+	}
 	if (r_str_startswith (_input, "an")) { // "ma" "man"
 		return cmd_man (data, _input);
+	}
+	if (r_str_startswith (_input, "al")) { // "mal" "man ?"
+		return cmd_man (data, "man ?");
 	}
 	if (r_str_startswith (_input, "ktemp")) { // "mktemp"
 		return cmd_mktemp (data, _input);
