@@ -36,13 +36,13 @@ static const char *printfmtColumns[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 11
+#define PRINT_HEX_FORMATS 13
 #define PRINT_3_FORMATS 2
 #define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 7
 
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
-	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxu", "pxd", "pxr",
+	"px", "pxa", "pxr", "prcn", "prcb", "prx", "pxb", "pxh", "pxw", "pxq", "pxu", "pxd", "pxr",
 };
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
 	"pxw 64@r:SP;dr=;drcq;pd $r", // DEBUGGER
@@ -3967,14 +3967,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case 'z':
 		{
-			RAnalFunction *fcn;
+			ut64 at = core->offset;
 			if (core->print->cur_enabled) {
-				fcn = r_anal_get_fcn_in (core->anal,
-					core->offset + core->print->cur, R_ANAL_FCN_TYPE_NULL);
-			} else {
-				fcn = r_anal_get_fcn_in (core->anal,
-					core->offset, R_ANAL_FCN_TYPE_NULL);
+				at += core->print->cur;
 			}
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (fcn) {
 				fcn->folded = !fcn->folded;
 			} else {

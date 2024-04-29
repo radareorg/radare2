@@ -117,7 +117,7 @@ R_API void r_str_reverse(char *str) {
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j, idx;
 	if (bitz) {
-		for (i = j = 0; i < len && (!bitz||bitz[i]); i++) {
+		for (i = j = 0; i < len && (!bitz || bitz[i]); i++) {
 			if (i > 0 && (i % 8) == 0) {
 				buf++;
 			}
