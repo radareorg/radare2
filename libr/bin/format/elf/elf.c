@@ -2133,7 +2133,14 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 			delta = 0x30;
 		}
 		if (delta) {
-			ut64 pa = Elf_(v2p) (eo, r_read_le32 (&buf[delta - 1]) & ~1);
+			ut64 pa = r_read_le32 (&buf[delta - 1]);
+			bool thumb = pa & 1;
+			if (thumb) {
+				pa = Elf_(v2p) (eo, pa & ~1);
+				pa++;
+			} else {
+				pa = Elf_(v2p) (eo, pa);
+			}
 			if (pa < r_buf_size (eo->b)) {
 				return pa;
 			}
