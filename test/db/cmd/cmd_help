@@ -151,8 +151,6 @@ hex     0x1
 octal   01
 unit    1
 segment 0000:0001
-bedec   invalid
-ledec   invalid
 string  "\x01"
 fvalue  1.0
 float   0.000000f
@@ -174,8 +172,6 @@ hex     0x0
 octal   00
 unit    0
 segment 0000:0000
-bedec   invalid
-ledec   invalid
 string  "\0"
 fvalue  0.0
 float   0.000000f
@@ -197,8 +193,6 @@ hex     0xffffffffffffffff
 octal   01777777777777777777777
 unit    16E
 segment fffff000:ffff
-bedec   invalid
-ledec   invalid
 string  "\xff\xff\xff\xff\xff\xff\xff\xff"
 fvalue  -1.0
 float   nanf
@@ -219,8 +213,6 @@ hex     0x2
 octal   02
 unit    2
 segment 0000:0002
-bedec   invalid
-ledec   invalid
 string  "\x02"
 fvalue  3.0
 float   0.000000f
@@ -307,5 +299,16 @@ EOF
 EXPECT=<<EOF
 ok
 ok
+EOF
+RUN
+
+NAME=?d help
+CMDS=<<EOF
+-a x86; -b 64
+?d 0x90
+EOF
+EXPECT=<<EOF
+bedec   nop
+ledec   add byte [rax], al
 EOF
 RUN

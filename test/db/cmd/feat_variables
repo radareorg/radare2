@@ -273,8 +273,6 @@ hex     0x8
 octal   010
 unit    8
 segment 0000:0008
-bedec   invalid
-ledec   stxrb w0, w0, [x0]
 string  "\b"
 fvalue  8.0
 float   0.000000f
@@ -289,8 +287,6 @@ hex     0x0
 octal   00
 unit    0
 segment 0000:0000
-bedec   invalid
-ledec   invalid
 string  "\0"
 fvalue  0.0
 float   0.000000f
@@ -352,8 +348,6 @@ hex     0x7b
 octal   0173
 unit    123
 segment 0000:007b
-bedec   jnp 0x8048062
-ledec   add byte [eax], al
 string  "{"
 fvalue  123.0
 float   0.000000f
