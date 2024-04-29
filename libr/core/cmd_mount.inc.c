@@ -47,7 +47,7 @@ static void fill_line(RStrBuf *sb, int maxcol) {
 	if (maxcol < 1) {
 		return;
 	}
-	for (i = 0; i< maxcol; i++) {
+	for (i = 0; i < maxcol; i++) {
 		r_strbuf_append (sb, " ");
 	}
 	r_strbuf_append (sb, Color_RESET_BG);
