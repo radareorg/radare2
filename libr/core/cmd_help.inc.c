@@ -288,6 +288,7 @@ static RCoreHelpMessage help_msg_question = {
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
+	"?d", " [num]", "disasssemble given number as a little and big endian dword",
 	"?e", "[=bdgnpst] arg", "echo messages, bars, pie charts and more (see ?e? for details)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
@@ -728,6 +729,29 @@ static int cmd_help(void *data, const char *input) {
 #else
 		r_cons_printf ("%s", r_str_asciitable ());
 #endif
+		break;
+	case 'd':
+		{
+			RAnalOp aop = {0};
+			ut8 data[32];
+			ut64 n = r_num_math (core->num, input + 1);
+			r_write_le32 (data, n);
+			int res = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
+			if (res > 0) {
+				r_cons_printf ("bedec   %s\n", aop.mnemonic);
+			} else {
+				r_cons_printf ("bedec   invalid\n");
+			}
+			r_anal_op_fini (&aop);
+			r_write_be32 (data, n);
+			res = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
+			if (res > 0) {
+				r_cons_printf ("ledec   %s\n", aop.mnemonic);
+			} else {
+				r_cons_printf ("ledec   invalid\n");
+			}
+			r_anal_op_fini (&aop);
+		}
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
