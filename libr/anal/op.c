@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2024 - pancake, nibble */
 
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_list.h>
 
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {
@@ -326,6 +324,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MOD, "mod" },
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_NOR, "nor" },
 	{ R_ANAL_OP_TYPE_CAST, "cast" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
 	{ R_ANAL_OP_TYPE_DIV, "div" },
@@ -549,6 +548,9 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CMP:
 		memcpy (ret, ";", 2);
+		break;
+	case R_ANAL_OP_TYPE_NOR: // NOT + OR
+		memcpy (ret, "nor", 4);
 		break;
 	case R_ANAL_OP_TYPE_NOP:
 		memcpy (ret, "nop", 4);
