@@ -103,10 +103,12 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		bool is_arm = eo->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
 		ret->vaddr = Elf_(p2v) (eo, addr);
-		if (is_arm && addr & 1) {
-			ret->bits = 16;
-			ret->vaddr--;
-			ret->paddr--;
+		if (is_arm) {
+			if (addr & 1) {
+				ret->bits = 16;
+				ret->vaddr--;
+				ret->paddr--;
+			}
 		}
 	}
 	return ret;
