@@ -238,6 +238,12 @@ static RCoreHelpMessage help_msg_pxu = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_prc = {
+	"Usage:", "prc=[#] ([size]) ", "see p=? to find valid values for #",
+	"prc", "", "print bytes as colors in palette",
+	"prc=e", "", "entropy",
+	NULL
+};
 static RCoreHelpMessage help_msg_p_equal = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -592,13 +598,13 @@ static RCoreHelpMessage help_msg_pz = {
 	"e ", "zoom.from", "start address",
 	"e ", "zoom.to", "end address",
 	"e ", "zoom.byte", "specify how to calculate each byte",
-	"pzp", "", "number of printable chars",
-	"pzf", "", "count of flags in block",
-	"pzs", "", "strings in range",
 	"pz0", "", "number of bytes with value '0'",
 	"pzF", "", "number of bytes with value 0xFF",
 	"pze", "", "calculate entropy and expand to 0-255 range",
+	"pzf", "", "count of flags in block",
 	"pzh", "", "head (first byte value); This is the default mode",
+	"pzp", "", "number of printable chars",
+	"pzs", "", "strings in range",
 	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 	NULL
 };
@@ -7202,9 +7208,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'c': // "prc" // color raw dump
 			if (input[2] == '?') {
 				// TODO: change =e to colorized =mode
-				r_cons_printf ("prc=e # colorblocks of entropy\n");
+				R_LOG_INFO ("See pz? and p=?");
 				// TODO: replace pz? help text with "See also"
-				r_core_cmd0 (core, "pz?");
+				r_core_cmd_help (core, help_msg_prc);
 			} else if (input[2] == '=') {
 				if (input[3] == '?') {
 					r_core_cmd_help (core, help_msg_p_equal);
