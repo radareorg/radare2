@@ -1681,6 +1681,9 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 	const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 
 	switch (rel->type) {
+	case R_ARM_CALL:
+		// never reached
+		break;
 	case R_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
 		if (plt_addr & 1) {
