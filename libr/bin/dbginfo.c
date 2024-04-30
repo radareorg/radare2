@@ -2,45 +2,73 @@
 
 #include <r_bin.h>
 
+// R2R db/formats/mangling/bin
+// R2R db/formats/dwarf
+// R2R db/perf/dex
+// R2R db/cmd/lea_intel
+
+// R2_600 - make this api public -- see row_free in dwarf.c
+static void r_bin_dbgitem_free(RBinDbgItem *di) {
+	if (di) {
+		free (di->file);
+		free (di);
+	}
+}
+
+// R2_600 - make this api public
+static RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
+	r_strf_var (key, 64, "0x%"PFMT64x, addr); // TODO: use sdb_itoa because its faster
+	char *data = sdb_get (bin->cur->sdb_addrinfo, key, 0);
+	if (data) {
+		RBinDbgItem *di = R_NEW0 (RBinDbgItem);
+		di->address = addr;
+		// 0xaddr=file.c|line:column
+		char *token = strchr (data, '|');
+		if (!token) {
+			token = strchr (data, ':');
+		}
+		if (token) {
+			*token++ = 0;
+			char *token2 = strchr (token, ':');
+			if (token2) {
+				*token2++ = 0;
+				di->column = atoi (token2);
+			} else {
+				di->column = 0;
+			}
+			di->line = atoi (token);
+		}
+		di->file = data;
+		return di;
+	}
+	return NULL;
+}
+
+// XXX this is an useless wrapper
 static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 	if (!bin->cur || !bin->cur->sdb_addrinfo) {
 		return false;
 	}
-	char *key = r_str_newf ("0x%"PFMT64x, addr);
-	char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);
-	if (file_line) {
-		char *token = strchr (file_line, '|');
-		if (token) {
-			*token++ = 0;
-			char *token2 = strchr (token, ':'); // 0xaddr=file.c|line:column
-			if (token2) {
-				*token2++ = 0;
-				if (column) {
-					*column = atoi (token2);
-				}
-			} else {
-				if (column) {
-					*column = 0;
-				}
-			}
-			if (line) {
-				*line = atoi (token);
-			}
-			r_str_ncpy (file, file_line, len);
-			free (key);
-			free (file_line);
-			return true;
+	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
+	if (di) {
+		if (line) {
+			*line = di->line;
 		}
+		if (column) {
+			*column = di->column;
+		}
+		r_str_ncpy (file, di->file, len);
+		r_bin_dbgitem_free (di);
+		return true;
 	}
-	free (key);
 	return false;
 }
 
 // XXX this api must return a struct instead of pa
 // R_API RBinDwarfRow *r_bin_addr2line(RBin *bin, ut64 addr) {}
 R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
@@ -57,154 +85,112 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 	return false;
 }
 
-R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
-	r_return_val_if_fail (bin, NULL);
-	char file[4096];
+static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin, false);
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinObject *o = r_bin_cur_object (bin);
+	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
+	ut64 baddr = r_bin_get_baddr (bin);
+	if (baddr == UT64_MAX) {
+		baddr = 0;
+	}
+	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
+		char file[4096];
+		int line = 0;
+		int column= 0;
+		int len = sizeof (file);
+		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
+			if (cp->dbginfo->get_line (bin->cur, addr, file, len, &line, &column)) {
+				RBinDbgItem *di = R_NEW0 (RBinDbgItem);
+				di->file = file;
+				di->address = addr;
+				di->line = line;
+				di->column = column;
+				return di;
+			}
+		}
+		// like addr2line but ensure we are not calling the sdb thing again
+	}
+	return NULL;
+}
+
+// given an address, return the filename:line:column\tcode or filename:line:column if the file doesnt exist
+// origin can be 0, 1 or 2
+R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	int line = 0;
 	int colu = -1;
 	char *out = NULL, *out2 = NULL;
-	char *file_nopath = NULL;
 	if (!bin->cur) {
 		return NULL;
 	}
-	char *key = r_str_newf ("0x%"PFMT64x, addr);
-	char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);
-	if (file_line) {
-		char *token = strchr (file_line, '|'); /// XXX use : everywhere instead of |
-		if (token) {
-			*token++ = 0;
-			line = atoi (token);
-			char *colupos = strchr (token, ':');
-			if (colupos) {
-				colu = atoi (colupos + 1);
-			}
-			bool found = true;
-			const char *filename = file_line;
-			char *nf = NULL;
-			if (!bin->srcdir) {
-#if __APPLE__
-				// __APPLE__ makes accessing /home very slow.
-				if (r_str_startswith (file_line, "/home")) {
-					file_line = "/";
-				}
+	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
+	if (!di) {
+		di = r_bin_dbgitem_api (bin, addr);
+	}
+	if (di) {
+		char *res = NULL;
+		line = di->line;
+		colu = di->column;
+		char *basename = strdup (r_file_basename (di->file));
+		// early optimization because mac's home is slow
+#if 0
+		if (R_STR_ISEMPTY (bin->srcdir) && (di->file[0] == '/')) {
+			char *res = r_str_newf ("%s:%d:%d", basename, di->line, di->column);
+			r_bin_dbgitem_free (di);
+			return res;
+		}
 #endif
-				if (*file_line == '/') {
-					file_nopath = strrchr (file_line, '/');
-					return r_str_newf ("%s:%d:%d", file_nopath + 1, line, colu);
+		char *filename = strdup (di->file);
+		// check absolute path
+		if (!r_file_exists (di->file)) {
+			// check in current directory
+			if (r_file_exists (basename)) {
+				free (filename);
+				filename = strdup (basename);
+			} else if (R_STR_ISNOTEMPTY (bin->srcdir)) {
+				char *nf = r_str_newf ("%s/%s", bin->srcdir, basename);
+				// check in srcdircurrent directory
+				if (r_file_exists (nf)) {
+					free (filename);
+					filename = nf;
 				}
 			}
-			if (!r_file_exists (file_line)) {
-				const char *bn = r_file_basename (file_line);
-				// TODO: use dir.source
-				if (r_file_exists (bn)) {
-					filename = bn;
-				} else {
-					nf = r_str_newf ("%s/%s", bin->srcdir, bn);
-					if (r_file_exists (nf)) {
-						filename = nf;
-					} else {
-						found = false;
-						// R_LOG_WARN ("Cannot find %s", filename);
-						// return NULL;
-					}
-				}
-			}
-			if (found) {
-				out = r_file_slurp_line (filename, line, 0);
-				*token++ = ':';
-				free (nf);
-			}
-		} else {
-			return file_line;
 		}
-	}
-	free (key);
-	if (out) {
-		if (origin > 1) {
-			file_nopath = file_line;
-		} else {
-			file_nopath = strrchr (file_line, '/');
-			if (file_nopath) {
-				file_nopath++;
-			} else {
-				file_nopath = file_line;
-			}
-		}
+		// out contains the contents of the slurped line
+		out = r_file_slurp_line (filename, di->line, 0);
 		if (origin) {
-			char *res;
-			if (colu == -1) {
-				res = r_str_newf ("%s:%d%s%s",
-					r_str_get (file_nopath),
-					line, file_nopath? " ": "",
-					r_str_get (out));
+			// filename + text or fullpath + text
+			if (colu > 0) {
+				res = r_str_newf ("%s:%d:%d%s", (origin > 1)?di->file:basename,
+					line, colu, r_str_get (out));
 			} else {
-				res = r_str_newf ("%s:%d:%d%s%s",
-					r_str_get (file_nopath),
-					line, colu, file_nopath? " ": "",
-					r_str_get (out));
+				res = r_str_newf ("%s:%d%s", (origin > 1)?di->file:basename,
+					line, r_str_get (out));
 			}
-			free (out);
-			out = res;
-		}
-		free (file_line);
-		return out;
-	}
-	R_FREE (file_line);
-
-	file[0] = 0;
-	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line, &colu)) {
-		if (R_STR_ISNOTEMPTY (bin->srcdir)) {
-			char *slash = strrchr (file, '/');
-			char *nf = r_str_newf ("%s/%s", bin->srcdir, slash? slash + 1: file);
-			strncpy (file, nf, sizeof (file) - 1);
-			free (nf);
-		}
-		// TODO: this is slow. must use a cached pool of mapped files and line:off entries
-		out = r_file_slurp_line (file, line, 0);
-		if (!out) {
-			if (origin > 1) {
-				file_nopath = file;
-			} else {
-				file_nopath = strrchr (file, '/');
-				if (file_nopath) {
-					file_nopath++;
-				} else {
-					file_nopath = file;
-				}
-			}
-			if (colu == -1) {
-				return r_str_newf ("%s:%d", r_str_get (file_nopath), line);
-			}
-			return r_str_newf ("%s:%d:%d", r_str_get (file_nopath), line, colu);
-		}
-		if (origin) {
-			file_nopath = (origin < 2)? strrchr (file, '/'): NULL;
-			if (colu != -1) {
-				out2 = r_str_newf ("%s:%d:%d%s%s", file_nopath? file_nopath + 1: file,
-					line, colu, *out? " ": "", out);
-			} else {
-				out2 = r_str_newf ("%s:%d:%s%s", file_nopath? file_nopath + 1: file,
-					line, *out? " ": "", out);
-			}
-			free (out);
 		} else {
-			out2 = out;
+			// just the text from the file
+			free (res);
+			res = out;
 		}
+		r_bin_dbgitem_free (di);
+		return res;
 	}
+	return NULL;
 	return out2;
 }
 
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	char file[1024];
 	int line = 0;
 	int colu = -1;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file) - 1, &line, &colu)) {
-		char *file_nopath = strrchr (file, '/');
-		if (colu != -1) {
-			return r_str_newf ("%s:%d:%d", file_nopath? file_nopath + 1: file, line, colu);
+		const char *file_nopath = r_file_basename (file);
+		if (colu > 0) {
+			return r_str_newf ("%s:%d:%d", file_nopath, line, colu);
 		}
-		return r_str_newf ("%s:%d", file_nopath? file_nopath + 1: file, line);
+		return r_str_newf ("%s:%d", file_nopath, line);
 	}
 	return NULL;
 }

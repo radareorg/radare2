@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, montekki, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, montekki, pancake */
 
 #include <r_bin.h>
 
 // TODO: use proper dwarf api here.. or deprecate
+// XXX this is the generic api, so it doesnt belong to elf. this code can be removed
 static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, int *colu) {
 	if (bf->sdb_addrinfo) {
 		char offset[SDB_NUM_BUFSZ];
@@ -28,10 +29,11 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, in
 
 #if R_BIN_ELF64
 RBinDbgInfo r_bin_dbginfo_elf64 = {
-	.get_line = &get_line,
+// set to null, because this code does nothing
+//	.get_line = &get_line,
 };
 #else
 RBinDbgInfo r_bin_dbginfo_elf = {
-	.get_line = &get_line,
+//	.get_line = &get_line,
 };
 #endif

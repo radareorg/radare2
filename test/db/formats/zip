@@ -34,13 +34,13 @@ va       true
             0x00000458      ff430191       add sp, sp, 0x50
             0x0000045c      c0035fd6       ret
             ;-- _r_io_open:
-            0x00000460      ff8301d1       sub sp, sp, 0x60            ; io.c:71:0
+            0x00000460      ff8301d1       sub sp, sp, 0x60            ; io.c:71
             0x00000464      fd7b05a9       stp x29, x30, [sp, 0x50]
             0x00000468      fd430191       add x29, sp, 0x50
             0x0000046c      a0031ff8       stur x0, [x29, -0x10]
             0x00000470      a1831ef8       stur x1, [x29, -0x18]
             0x00000474      a2431eb8       stur w2, [x29, -0x1c]
             0x00000478      a3031eb8       stur w3, [x29, -0x20]
-        ,=< 0x0000047c      01000014       b 0x480                     ; io.c:72:0
+        ,=< 0x0000047c      01000014       b 0x480                     ; io.c:72
 EOF
 RUN

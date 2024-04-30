@@ -1024,26 +1024,23 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs, int mode) {
 	r_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
 
-	bool be = r_bin_is_big_endian (bin);
+	const bool be = r_bin_is_big_endian (bin);
 	PrintfCallback print = bin->cb_printf;
-	const ut8 *buf;
-	const ut8 *buf_end;
-	ut8 opcode;
 	ut64 addr;
-	buf = obuf;
+	const ut8 *buf = obuf;
 	st64 op_len;
 	RBinFile *binfile = bin->cur;
 	RBinObject *o = binfile->bo;
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
 
-	buf_end = buf + len;
+	const ut8 *buf_end = buf + len;
 	buf = r_leb128 (buf, len, &op_len);
 	if (buf >= buf_end) {
 		return NULL;
 	}
 
-	opcode = *buf++;
+	ut8 opcode = *buf++;
 
 	if (mode == R_MODE_PRINT) {
 		print ("  Extended opcode %d: ", opcode);
@@ -1546,14 +1543,13 @@ static void expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	}
 	RBinDwarfAttrDef *tmp = (RBinDwarfAttrDef *)realloc (ad->defs,
 		ad->capacity * 2 * sizeof (RBinDwarfAttrDef));
-	if (!tmp) {
-		return;
+	if (tmp) {
+		// Set the area in the buffer past the length to 0
+		memset ((ut8 *)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
+			0, ad->capacity * sizeof (RBinDwarfAttrDef));
+		ad->defs = tmp;
+		ad->capacity *= 2;
 	}
-	// Set the area in the buffer past the length to 0
-	memset ((ut8 *)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
-		0, ad->capacity * sizeof (RBinDwarfAttrDef));
-	ad->defs = tmp;
-	ad->capacity *= 2;
 }
 
 static bool init_debug_abbrev(RBinDwarfDebugAbbrev *da) {

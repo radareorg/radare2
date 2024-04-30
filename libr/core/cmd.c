@@ -261,7 +261,7 @@ static const RCoreHelpMessage help_msg_equalg = {
 };
 
 static const RCoreHelpMessage help_msg_b = {
-	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
+	"Usage:",  "b[f] [arg]", "change working block size",
 	"b", " 32", "set block size to 33",
 	"b", "=32", "same as 'b 32'",
 	"b", " eip+4", "numeric argument can be an expression",
