@@ -420,7 +420,7 @@ retry:
 		filter_format = 0;
 	}
 
-	if (all) {
+	if (all && core->bin->cur) {
 		if (remove) {
 			sdb_reset (core->bin->cur->sdb_addrinfo);
 		} else {
