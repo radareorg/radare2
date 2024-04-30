@@ -611,18 +611,18 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_ARM_GOTOFF:           ADD(32,-(st64)G); break;
 		case R_ARM_GOTPC:            ADD(32, G - P); break;
 		case R_ARM_CALL:             // ADD(24, got_addr -P);
-					     // eprintf ("CAL %llx\n", got_addr);
-					     // eprintf ("CAL %llx\n", P);
-					     // SET(24); 
-					    // P = address of bl instruction to patch
 					     r->type = R_BIN_RELOC_24;
 					     if (G == UT64_MAX) {
 						     r->addend = B-P; // 171295;
-						     eprintf( "jeje 0x%x 0x%x\n", P, B);
+						     eprintf( "jeje 0x%x 0x%x\n", P, got_addr);
 					     } else {
+						     eprintf( "joje 0x%x 0x%x\n", P, got_addr);
 						     r->addend = got_addr -P;
 					     }
-					     rel->addend = r->addend;
+					     // r->addend = 0x08004dad;
+					     r->addend = 0x00004dad;
+					     // rel->laddr += 685182;
+					     rel->addend = r->addend + rel->laddr;
 					     // rel->addend = 685182 /4; // 171295
 					     r->additive = DT_RELA;
 					     return r;
@@ -898,7 +898,13 @@ static RList* relocs(RBinFile *bf) {
 	if (got_addr == UT64_MAX && eo->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(get_section_addr) (eo, ".got.r2");
 	}
-
+#if 0
+	if (got_addr == UT64_MAX) {
+		// XXX
+		got_addr = Elf_(get_section_addr) (eo, ".debug_info");
+		// got_addr = 0x08001e60;
+	}
+#endif
 	const RVector *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return ret;
@@ -913,9 +919,9 @@ static RList* relocs(RBinFile *bf) {
 	r_vector_foreach (relocs, reloc) {
 		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
 		if (already_inserted) {
+			R_LOG_DEBUG ("Reloc already inserted at 0x%08"PFMT64x, reloc->rva);
 			continue;
 		}
-
 		RBinReloc *ptr = reloc_convert (eo, reloc, got_addr);
 		if (ptr && ptr->paddr != UT64_MAX) {
 			r_list_append (ret, ptr);
@@ -953,9 +959,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_S390:
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
-			break;
-		case R_390_RELATIVE:
+		case R_390_RELATIVE: // pic
 			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
 		}
@@ -964,14 +968,15 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 #if 0
 		// review this implementation and make it work to replace the old one
 		if (rel->type == R_ARM_CALL) {
+			eprintf ("one\n");
 			// read original bytes of the "bl" instruction
 			iob->read_at (iob->io, rel->rva, buf, 4);
 			V = r_read_le32 (buf);
 
 			int delta = A;
-			if (rel->rva == 0x08001ec8) {
+//			if (rel->rva == 0x08001ec8) {
 			eprintf ("DELTA = %llx\n",A);
-			}
+//			}
 			delta &= 0xfffff;
 #if 0
 			if (rel->rva == 0x08001ec8) {
@@ -1165,7 +1170,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			V = B + A;
 			break;
 		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			R_LOG_WARN ("relocation %d not handle at this time", rel->type);
 			break;
 		}
 		switch (word) {
