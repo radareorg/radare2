@@ -196,6 +196,11 @@ R_API bool r_file_exists(const char *str) {
 	r_return_val_if_fail (str, false);
 	struct stat buf = {0};
 #if 1
+#if 0
+	// maybe faster?
+	int res = access (str, R_OK);
+	return (res == 0);
+#endif
 	if (file_stat (str, &buf) != 0) {
 		return false;
 	}

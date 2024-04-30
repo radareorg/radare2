@@ -82,6 +82,13 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			bool found = true;
 			const char *filename = file_line;
 			char *nf = NULL;
+#if 1
+			// __APPLE__ makes accessing / very slow. disable source slurping to avoid superslow disasm
+			if (bin->srcdir && *file_line == '/') {
+				file_nopath = strrchr (file_line, '/');
+				return r_str_newf ("%s:%d", file_nopath + 1, line);
+			}
+#endif
 			if (!r_file_exists (file_line)) {
 				const char *bn = r_file_basename (file_line);
 				// TODO: use dir.source
@@ -142,7 +149,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line, &colu)) {
-		if (bin->srcdir && *bin->srcdir) {
+		if (R_STR_ISNOTEMPTY (bin->srcdir)) {
 			char *slash = strrchr (file, '/');
 			char *nf = r_str_newf ("%s/%s", bin->srcdir, slash? slash + 1: file);
 			strncpy (file, nf, sizeof (file) - 1);
