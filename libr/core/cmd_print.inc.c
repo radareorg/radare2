@@ -641,6 +641,8 @@ static RCoreHelpMessage help_msg_pg = {
 };
 
 static const ut32 colormap16[16] = {
+#if 0
+	// rainbow from r2ai
 	0x303030,
 	0xffff00,
 	0x00ff00,
@@ -657,6 +659,24 @@ static const ut32 colormap16[16] = {
 	0xffd700,
 	0xc0c0c0,
 	0xff0000,
+#else
+	0xe71d43, // Dark Red
+	0xff0000, // Red
+	0xff6e00, // Orange
+	0xffc300, // Orange Yellow
+	0xffff00, // Yellow
+	0xaad500, // Lime
+	0x55aa00, // Grass Green
+	0x008000, // Forest Green
+	0x005555, // Dark Teal
+	0x002baa, // Navy
+	0x0000ff, // Blue
+	0x3200ac, // Purple
+	0x4b0082, // Magenta
+	0x812ba6, // Dark Pink
+	0xb857ca, // Light Pink
+	0xd03a87, // Salmon
+#endif
 };
 
 static const ut32 colormap[256] = {
@@ -712,7 +732,7 @@ static char *get_color(ut8 ch) {
 	ut32 c0 = colormap16[ch];
 	const int brightness = ((c0 & 0xff0000) >> 16) + 2 * ((c0 & 0xff00) >> 8) + (c0 & 0xff) / 2;
 	// char *str = r_str_newf ("rgb:%s rgb:%06x", brightness <= 0x7f * 3 ? "fff" : "000", c0);
-	char *str = r_str_newf ("rgb:%s rgb:%06x", brightness <= 0x7f * 3 ? "aaa" : "333", c0);
+	char *str = r_str_newf ("rgb:%s rgb:%06x", brightness <= 0x40 * 3 ? "aaa" : "222", c0);
 	char *res = r_cons_pal_parse (str, NULL);
 	free (str);
 	return res;
