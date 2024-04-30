@@ -1608,10 +1608,6 @@ static ut64 get_got_entry(ELFOBJ *eo, RBinElfReloc *rel) {
 	return (!addr || addr == R_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
-static bool is_thumb_symbol(ut64 plt_addr) {
-	return plt_addr & 1;
-}
-
 static ut64 get_import_addr_qdsp6(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 got_addr = eo->dyn_info.dt_pltgot;
 	if (got_addr == R_BIN_ELF_ADDR_MAX) {
@@ -1648,10 +1644,31 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
-		if (is_thumb_symbol (plt_addr)) {
+		if (plt_addr & 1) {
 			plt_addr--;
 		}
 		return plt_addr;
+	default:
+		R_LOG_WARN ("Unsupported relocation type for imports %d", rel->type);
+		return UT64_MAX;
+	}
+	return UT64_MAX;
+}
+
+static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
+	ut64 got_addr = eo->dyn_info.dt_pltgot;
+	if (got_addr == R_BIN_ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry (eo, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
+
+	switch (rel->type) {
 	case R_AARCH64_RELATIVE:
 		R_LOG_WARN ("Unsupported arm64 relocation type for imports %d", rel->type);
 		return UT64_MAX;
@@ -1885,8 +1902,9 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 	case EM_S390:
 		return get_import_addr_s390x (eo, rel);
 	case EM_ARM:
-	case EM_AARCH64:
 		return get_import_addr_arm (eo, rel);
+	case EM_AARCH64:
+		return get_import_addr_arm64 (eo, rel);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips (eo, rel);
 	case EM_QDSP6: // also known as HEXAGON
@@ -5207,6 +5225,7 @@ static bool is_important(RBinElfReloc *reloc) {
 	switch (reloc->type) {
 	case 21:
 	case 22:
+	case 28: // R_ARM_CALL
 	case 1026:
 		return true;
 	}
