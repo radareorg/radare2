@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
 #include <r_bin.h>
-
 
 static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
 	r_return_val_if_fail (bin, false);
@@ -82,13 +81,18 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			bool found = true;
 			const char *filename = file_line;
 			char *nf = NULL;
-#if 1
-			// __APPLE__ makes accessing / very slow. disable source slurping to avoid superslow disasm
-			if (bin->srcdir && *file_line == '/') {
-				file_nopath = strrchr (file_line, '/');
-				return r_str_newf ("%s:%d", file_nopath + 1, line);
-			}
+			if (!bin->srcdir) {
+#if __APPLE__
+				// __APPLE__ makes accessing /home very slow.
+				if (r_str_startswith (file_line, "/home")) {
+					file_line = "/";
+				}
 #endif
+				if (*file_line == '/') {
+					file_nopath = strrchr (file_line, '/');
+					return r_str_newf ("%s:%d:%d", file_nopath + 1, line, colu);
+				}
+			}
 			if (!r_file_exists (file_line)) {
 				const char *bn = r_file_basename (file_line);
 				// TODO: use dir.source
