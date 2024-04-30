@@ -4414,33 +4414,31 @@ static void ds_print_dwarf(RDisasmState *ds) {
 	int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
 	free (ds->sl);
 	ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
-	if (ds->sl) {
-		if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
-			char *line = strdup (ds->sl);
-			if (!line) {
-				return;
-			}
-			r_str_replace_char (line, '\t', ' ');
-			r_str_replace_char (line, '\x1b', ' ');
-			r_str_replace_char (line, '\r', ' ');
-			r_str_replace_char (line, '\n', '\x00');
-			r_str_trim (line);
-			if (!*line) {
-				free (line);
-				return;
-			}
-			// handle_set_pre (ds, "  ");
-			ds_align_comment (ds);
-			if (ds->show_color) {
-				r_cons_printf ("%s%s %s"Color_RESET, ds->pal_comment, ds->cmtoken, line);
-			} else {
-				r_cons_printf ("%s %s", ds->cmtoken, line);
-			}
-			free (ds->osl);
-			ds->osl = ds->sl;
-			ds->sl = NULL;
-			free (line);
+	if (ds->sl && (!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
+		char *line = strdup (ds->sl);
+		if (!line) {
+			return;
 		}
+		r_str_replace_char (line, '\t', ' ');
+		r_str_replace_char (line, '\x1b', ' ');
+		r_str_replace_char (line, '\r', ' ');
+		r_str_replace_char (line, '\n', '\x00');
+		r_str_trim (line);
+		if (!*line) {
+			free (line);
+			return;
+		}
+		// handle_set_pre (ds, "  ");
+		ds_align_comment (ds);
+		if (ds->show_color) {
+			r_cons_printf ("%s%s %s"Color_RESET, ds->pal_comment, ds->cmtoken, line);
+		} else {
+			r_cons_printf ("%s %s", ds->cmtoken, line);
+		}
+		free (ds->osl);
+		ds->osl = ds->sl;
+		ds->sl = NULL;
+		free (line);
 	}
 }
 
