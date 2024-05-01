@@ -8,7 +8,7 @@ typedef struct {
 	uint32_t ext_offset;
 	uint32_t size;
 	uint32_t line_index;
-	unsigned char *data;
+	const ut8 *data;
 } datablock;
 
 char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *jump, int *len) {
@@ -17,7 +17,7 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 		.ext_offset = 0,
 		.size = size,
 		.line_index = 0,
-		.data = data
+		.data = (ut8*)data
 	};
 	datablock *block = &_block;
 	RStrBuf *sb = r_strbuf_new ("");
