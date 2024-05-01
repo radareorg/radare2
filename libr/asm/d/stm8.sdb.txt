@@ -1,0 +1,8 @@
+srlw=Shift Right Logical Word
+srl=Shift Right Logical
+sraw=Shift Right Arithmetic Word
+sra=Shift Right Arithmetic
+sll=Shift Left Logical
+sllw=Shift Left Logical Word
+exg=Exchange Register Contents
+lf=Load Far

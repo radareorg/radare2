@@ -345,6 +345,7 @@ extern const RArchPlugin r_arch_plugin_x86_cs;
 extern const RArchPlugin r_arch_plugin_x86_nasm;
 extern const RArchPlugin r_arch_plugin_x86_nz;
 extern const RArchPlugin r_arch_plugin_xap;
+extern const RArchPlugin r_arch_plugin_stm8;
 extern const RArchPlugin r_arch_plugin_xcore_cs;
 extern const RArchPlugin r_arch_plugin_xtensa;
 extern const RArchPlugin r_arch_plugin_z80;
