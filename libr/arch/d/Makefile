@@ -1,4 +1,4 @@
-FILES=nes bf
+FILES=nes bf stm8
 OPDIR=${DESTDIR}/$(DATADIR)/radare2/${VERSION}/platform
 
 include ../../../config-user.mk
