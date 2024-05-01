@@ -1,8 +1,7 @@
 // Evolved from https://github.com/volbus/gmtdisas
 
 #include <r_util.h>
-#include "gmtdisas.h"
-#include "ins.h"
+#include "ins.inc.c"
 
 typedef struct {
 	uint32_t start_add;
