@@ -24,6 +24,7 @@ r_arch_sources = [
   'p/ppc/gnu/ppc-dis.c',
   'p/ppc/gnu/ppc-opc.c',
   'p/ppc/libvle/vle.c',
+  'p/stm8/plugin.c',
   'p/ppc/libps/libps.c',
   'p/ppc_cs/plugin.c',
   'p/null/plugin.c',

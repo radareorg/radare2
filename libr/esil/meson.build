@@ -7,6 +7,7 @@ r_esil_sources = [
   'esil_trace.c',
   'esil_toc.c',
   'p/esil_null.c',
+  'p/esil_forth.c',
   'p/esil_dummy.c',
 ]
 esil_extra_inc = include_directories('..', '../include')

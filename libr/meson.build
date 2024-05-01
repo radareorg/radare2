@@ -181,6 +181,7 @@ if get_option('plugins') == ''
     arch_plugins += [
       'arm_gnu',
       'lanai',
+      'stm8',
       'loongarch_gnu',
       'm68k_gnu',
       'mips_gnu',
