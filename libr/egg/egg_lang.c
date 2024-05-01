@@ -566,9 +566,11 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		}
 		str[len] = '\0';
 		snprintf (foo, sizeof (foo) - 1, ".fix%d", egg->lang.nargs * 16);	/* XXX FIX DELTA !!!1 */
-		free (egg->lang.dstvar);
+		char* tmp = egg->lang.dstvar;
 		egg->lang.dstvar = r_str_trim_dup (foo);
 		rcc_pushstr (egg, str, mustfilter);
+		free (egg->lang.dstvar);
+		egg->lang.dstvar = tmp;
 		ret = r_egg_mkvar (egg, out, foo, 0);
 		free (oldstr);
 	}
