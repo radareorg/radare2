@@ -4,8 +4,6 @@
 #include "gmtdisas.h"
 #include "ins.h"
 
-static uint32_t prog_mode = 0;
-
 char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *jump, int *len) {
 	datablock _block = {
 		.start_add = pc,
