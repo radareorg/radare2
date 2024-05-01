@@ -90,7 +90,7 @@ f ioreg.SPI_SR_WKUP_bp=3
 f ioreg.SPI_SR_TXE_bp=1
 f ioreg.SPI_SR_RXNE_bp=0
 
-# USART_CR1 bits 
+# USART_CR1 bits
 f ioreg.USART_CR1_R8_bp=7
 f ioreg.USART_CR1_T8_bp=6
 f ioreg.USART_CR1_UARTD_bp=5
@@ -110,7 +110,7 @@ f ioreg.USART_CR2_REN_bp=2
 f ioreg.USART_CR2_RWU_bp=1
 f ioreg.USART_CR2_SBK_bp=0
 
-# USART_CR3 bits 
+# USART_CR3 bits
 f ioreg.USART_CR3_LINEN_bp=6
 f ioreg.USART_CR3_STOP2_bp=5
 f ioreg.USART_CR3_STOP1_bp=4
@@ -129,7 +129,7 @@ f ioreg.USART_SR_NF_bp=2
 f ioreg.USART_SR_FE_bp=1
 f ioreg.USART_SR_PE_bp=0
 
-# TIM_IER bits 
+# TIM_IER bits
 f ioreg.TIM_IER_BIE_bp=7
 f ioreg.TIM_IER_TIE_bp=6
 f ioreg.TIM_IER_COMIE_bp=5
@@ -139,7 +139,7 @@ f ioreg.TIM_IER_CC2IE_bp=2
 f ioreg.TIM_IER_CC1IE_bp=1
 f ioreg.TIM_IER_UIE_bp=0
 
-# TIM_CR1 bits 
+# TIM_CR1 bits
 f ioreg.TIM_CR1_APRE_bp=7
 f ioreg.TIM_CR1_CMSH_bp=6
 f ioreg.TIM_CR1_CMSL_bp=5
@@ -149,7 +149,7 @@ f ioreg.TIM_CR1_URS_bp=2
 f ioreg.TIM_CR1_UDIS_bp=1
 f ioreg.TIM_CR1_CEN_bp=0
 
-# TIM_SR1 bits 
+# TIM_SR1 bits
 f ioreg.TIM_SR1_BIF_bp=7
 f ioreg.TIM_SR1_TIF_bp=6
 f ioreg.TIM_SR1_COMIF_bp=5

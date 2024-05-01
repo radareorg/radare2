@@ -1,22 +1,10 @@
+// Evolved from https://github.com/volbus/gmtdisas
+
 #include <r_util.h>
 #include "gmtdisas.h"
 #include "ins.h"
 
 static uint32_t prog_mode = 0;
-// static uint32_t prog_mode = PROG_MODE_IONAME;
-
-static int Get_IOreg_Name(uint32_t add, char *text) {
-	if (!(prog_mode & PROG_MODE_IONAME)) {
-		return -1;
-	}
-	for (int i=0; i<ioreg_cnt; i++) {
-		if ( (ioregtable+i)->add == add ) {
-			strcpy (text, (ioregtable+i)->name);
-			return 0;
-		}
-	}
-	return -1;
-}
 
 char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *jump, int *len) {
 	datablock _block = {
@@ -31,7 +19,6 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 	int cnt, n, add, err;
 	instruction ins;
 	int oc[6];
-	char ioname[36];
 
 	cnt = 0;
 	add = block->start_add;
@@ -104,31 +91,31 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 			case STM8_NONE:
 				break;
 			case STM8_REG_A:
-				r_strbuf_appendf (sb, " a");
+				r_strbuf_append (sb, " a");
 				break;
 			case STM8_REG_XL:
-				r_strbuf_appendf (sb, " xl");
+				r_strbuf_append (sb, " xl");
 				break;
 			case STM8_REG_YL:
-				r_strbuf_appendf (sb, " yl");
+				r_strbuf_append (sb, " yl");
 				break;
 			case STM8_REG_XH:
-				r_strbuf_appendf (sb, " xh");
+				r_strbuf_append (sb, " xh");
 				break;
 			case STM8_REG_YH:
-				r_strbuf_appendf (sb, " yh");
+				r_strbuf_append (sb, " yh");
 				break;
 			case STM8_REG_CC:
-				r_strbuf_appendf (sb, " cc");
+				r_strbuf_append (sb, " cc");
 				break;
 			case STM8_REG_X:
-				r_strbuf_appendf (sb, " x");
+				r_strbuf_append (sb, " x");
 				break;
 			case STM8_REG_Y:
-				r_strbuf_appendf (sb, " y");
+				r_strbuf_append (sb, " y");
 				break;
 			case STM8_REG_SP:
-				r_strbuf_appendf (sb, " sp");
+				r_strbuf_append (sb, " sp");
 				break;
 			case STM8_IMM_BYTE_2:
 				r_strbuf_appendf (sb, " 0x%02x", oc[2]);
@@ -137,10 +124,10 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
 				break;
 			case STM8_PTR_X:
-				r_strbuf_appendf (sb, " (x)");
+				r_strbuf_append (sb, " (x)");
 				break;
 			case STM8_PTR_Y:
-				r_strbuf_appendf (sb, " (y)");
+				r_strbuf_append (sb, " (y)");
 				break;
 			case SHORTMEM_2:
 				r_strbuf_appendf (sb, " 0x%02x", oc[2]);
@@ -149,45 +136,17 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " 0x%02x", oc[3]);
 				break;
 			case LONGMEM_23:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[2]<<8 | oc[3];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+1) ) {
-						ioname[0] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
-						*jump = (oc[2] <<8)|oc[3];
-					}
-				} else {
-					r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
-					*jump = (oc[2] <<8)|oc[3];
-				}
+				// ioreg
+				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
+				*jump = (oc[2] <<8) | oc[3];
 				break;
 			case LONGMEM_34:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[3]<<8 | oc[4];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+1) ) {
-						ioname[0] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, " 0x%02x%02x", oc[3], oc[4]);
-					}
-				} else {
-					r_strbuf_appendf (sb, " 0x%02x%02x", oc[3], oc[4]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, " 0x%02x%02x", oc[3], oc[4]);
 				break;
 			case LONGMEM_45:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[4]<<8 | oc[5];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+1) ) {
-						ioname[0] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, " 0x%02x%02x", oc[4], oc[5]);
-					}
-				} else {
-					r_strbuf_appendf (sb, " 0x%02x%02x", oc[4], oc[5]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, " 0x%02x%02x", oc[4], oc[5]);
 				break;
 			case EXTMEM_234:
 				r_strbuf_appendf (sb, " 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
@@ -254,17 +213,8 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " ([0x%02x%02x], y)", oc[2], oc[3]);
 				break;
 			case LONGMEM_BIT_123:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[2]<<8 | oc[3];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+1) ) {
-						ioname[0] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
-					}
-				} else {
-					r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
 				r_strbuf_appendf (sb, ", %d", (oc[1] & 0x0F)>>1);
 				break;
 			}
@@ -272,31 +222,31 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 			case STM8_NONE:
 				break;
 			case STM8_REG_A:
-				r_strbuf_appendf (sb, ", a");
+				r_strbuf_append (sb, ", a");
 				break;
 			case STM8_REG_XL:
-				r_strbuf_appendf (sb, ", xl");
+				r_strbuf_append (sb, ", xl");
 				break;
 			case STM8_REG_YL:
-				r_strbuf_appendf (sb, ", yl");
+				r_strbuf_append (sb, ", yl");
 				break;
 			case STM8_REG_XH:
-				r_strbuf_appendf (sb, ", xh");
+				r_strbuf_append (sb, ", xh");
 				break;
 			case STM8_REG_YH:
-				r_strbuf_appendf (sb, ", yh");
+				r_strbuf_append (sb, ", yh");
 				break;
 			case STM8_REG_CC:
-				r_strbuf_appendf (sb, ", CC");
+				r_strbuf_append (sb, ", cc");
 				break;
 			case STM8_REG_X:
-				r_strbuf_appendf (sb, ", x");
+				r_strbuf_append (sb, ", x");
 				break;
 			case STM8_REG_Y:
-				r_strbuf_appendf (sb, ", y");
+				r_strbuf_append (sb, ", y");
 				break;
 			case STM8_REG_SP:
-				r_strbuf_appendf (sb, ", sp");
+				r_strbuf_append (sb, ", sp");
 				break;
 			case STM8_IMM_BYTE_2:
 				r_strbuf_appendf (sb, ", 0x%02x", oc[2]);
@@ -305,10 +255,10 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
 				break;
 			case STM8_PTR_X:
-				r_strbuf_appendf (sb, ", (x)");
+				r_strbuf_append (sb, ", (x)");
 				break;
 			case STM8_PTR_Y:
-				r_strbuf_appendf (sb, ", (y)");
+				r_strbuf_append (sb, ", (y)");
 				break;
 			case SHORTMEM_2:
 				r_strbuf_appendf (sb, ", 0x%02x", oc[2]);
@@ -317,46 +267,15 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", 0x%02x", oc[3]);
 				break;
 			case LONGMEM_23:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[2]<<8 | oc[3];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+2) ) {
-						ioname[0] = ',';
-						ioname[1] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
-					}
-				} else {
-					r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
-				}
+				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
 				break;
 			case LONGMEM_34:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[3]<<8 | oc[4];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+2) ) {
-						ioname[0] = ',';
-						ioname[1] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, ", 0x%02x%02x", oc[3], oc[4]);
-					}
-				} else {
-					r_strbuf_appendf (sb, ", 0x%02x%02x", oc[3], oc[4]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[3], oc[4]);
 				break;
 			case LONGMEM_45:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[4]<<8 | oc[5];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname+2) ) {
-						ioname[0] = ',';
-						ioname[1] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, ", 0x%02x%02x", oc[4], oc[5]);
-					}
-				} else {
-					r_strbuf_appendf (sb, ", 0x%02x%02x", oc[4], oc[5]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[4], oc[5]);
 				break;
 			case EXTMEM_234:
 				r_strbuf_appendf (sb, ", 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
@@ -423,18 +342,8 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", ([0x%02x%02x], y)", oc[2], oc[3]);
 				break;
 			case LONGMEM_BIT_123:
-				if (prog_mode & PROG_MODE_IONAME) {
-					n = oc[2]<<8 | oc[3];
-					if ( (n>=0x5000) && (n<0x5800) && !Get_IOreg_Name(n, ioname + 2) ) {
-						ioname[0] = ',';
-						ioname[1] = ' ';
-						r_strbuf_appendf (sb, "%s", ioname);
-					} else {
-						r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
-					}
-				} else {
-					r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
-				}
+				// ioreg
+				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
 				r_strbuf_appendf (sb, ", %d", (oc[1] & 0x0F)>>1);
 				break;
 			}
@@ -446,14 +355,3 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 	*len = cnt;
 	return r_strbuf_drain (sb);
 }
-
-#if 0
-int main(int argc, char **argv) {
-	const uint8_t *data = (const unsigned char *)"\x23\x44\xa8\x55";
-	char *s = stm8_disasm (0, data, 4);
-	printf ("(%s)\n", s);
-	free (s);
-
-	return 0;
-}
-#endif

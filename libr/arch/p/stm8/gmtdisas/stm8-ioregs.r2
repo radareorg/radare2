@@ -111,7 +111,7 @@ f ioreg.RST_SR=0x50B1
 f ioreg.PWR_CSR1=0x50B2
 f ioreg.PWR_CSR2=0x50B3
 
-# CLK 
+# CLK
 f ioreg.CLK_CKDIVR=0x50C0
 f ioreg.CLK_CRTCR=0x50C1
 f ioreg.CLK_ICKCR=0x50C2
