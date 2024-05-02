@@ -2,6 +2,7 @@
 
 #include <r_bin.h>
 
+#if 0
 // TODO: use proper dwarf api here.. or deprecate
 // XXX this is the generic api, so it doesnt belong to elf. this code can be removed
 static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, int *colu) {
@@ -26,6 +27,7 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, in
 	}
 	return false;
 }
+#endif
 
 #if R_BIN_ELF64
 RBinDbgInfo r_bin_dbginfo_elf64 = {
