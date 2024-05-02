@@ -15,7 +15,7 @@ typedef struct {
 	bool hexstr2raw;	// -s
 	bool swapendian;	// -e
 	bool raw2hexstr;	// -S
-	bool binstr2raw;	// -b
+	bool binstr2raw;	// -l
 	bool hashstr;		// -X
 	bool keepbase;		// -k
 	bool floating;		// -f
@@ -168,7 +168,6 @@ static int help(void) {
 		"  raw     ->  hex              ;  rax2 -S < /binfile\n"
 		"  hex     ->  raw              ;  rax2 -s 414141\n"
 		"  -a      show ascii table     ;  rax2 -a\n"
-		"  -b      bin -> str           ;  rax2 -b 01000101 01110110\n"
 		"  -B      str -> bin           ;  rax2 -B hello\n"
 		"  -c      output in C string   ;  rax2 -c 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -d      force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -183,6 +182,7 @@ static int help(void) {
 		"  -j      json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
+		"  -l      bin -> str           ;  rax2 -l 01000101 01110110\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
@@ -247,7 +247,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, int 
 			case 's': flags->hexstr2raw = !flags->hexstr2raw; break;
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
-			case 'b': flags->binstr2raw = !flags->binstr2raw; break;
+			case 'l': flags->binstr2raw = !flags->binstr2raw; break;
 			case 'X': flags->hashstr = !flags->hashstr; break;
 			case 'k': flags->keepbase = !flags->keepbase; break;
 			case 'f': flags->floating = !flags->floating; break;
@@ -337,7 +337,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags->binstr2raw) { // -b
+	if (flags->binstr2raw) { // -l
 		ut8 out[256] = {0};
 		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
 			printf ("%s\n", out); // TODO accept non null terminated strings
