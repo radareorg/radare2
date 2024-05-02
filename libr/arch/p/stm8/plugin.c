@@ -60,9 +60,10 @@ const RArchPlugin r_arch_plugin_stm8 = {
 		.license = "GPL3",
 	},
 	.arch = "stm8",
-	.info = archinfo,
-	.bits = R_SYS_BITS_PACK (32),
+	.cpus = NULL,
 	.endian = R_SYS_ENDIAN_LITTLE,
+	.bits = R_SYS_BITS_PACK (32),
+	.info = archinfo,
 	.decode = &stm8_op,
 	.regs = &regs,
 };
