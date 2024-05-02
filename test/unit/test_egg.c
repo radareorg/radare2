@@ -3,6 +3,7 @@
 #include <r_egg.h>
 #include "minunit.h" 
 
+#if __linux__
 const char *arch = R_SYS_ARCH;
 const char *os = R_EGG_OS_NAME;
 int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
@@ -64,6 +65,12 @@ bool test_r_egg_save(void) {
 	
 	mu_end;
 }
+#else
+bool test_r_egg_save(void) {
+	R_LOG_WARN ("This test is linux specific because it's using memfd");
+	mu_end;
+}
+#endif
 
 bool all_tests() {
 	mu_run_test (test_r_egg_save);

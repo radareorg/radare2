@@ -770,9 +770,13 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, R_NULLABLE RBinObject *ob
 	return true;
 }
 
-R_API bool r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
+R_API bool r_bin_file_set_cur_binfile(RBin *bin, R_NULLABLE RBinFile *bf) {
 	// R2_600 - deprecate - because this is unsafe. always use id
-	R_RETURN_VAL_IF_FAIL (bin && bf, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
+	if (bf == NULL) {
+		bin->cur = NULL;
+		return true;
+	}
 	return r_bin_file_set_obj (bin, bf, bf->bo);
 }
 
