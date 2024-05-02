@@ -118,9 +118,6 @@ static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
 // origin can be 0, 1 or 2
 R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	int line = 0;
-	int colu = -1;
-	char *out = NULL, *out2 = NULL;
 	if (!bin->cur) {
 		return NULL;
 	}
@@ -130,8 +127,6 @@ R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	}
 	if (di) {
 		char *res = NULL;
-		line = di->line;
-		colu = di->column;
 		char *basename = strdup (r_file_basename (di->file));
 		// early optimization because mac's home is slow
 #if 0
@@ -154,30 +149,34 @@ R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 				if (r_file_exists (nf)) {
 					free (filename);
 					filename = nf;
+				} else {
+					free (nf);
 				}
 			}
 		}
 		// out contains the contents of the slurped line
-		out = r_file_slurp_line (filename, di->line, 0);
+		char *out = r_file_slurp_line (filename, di->line, 0);
 		if (origin) {
 			// filename + text or fullpath + text
-			if (colu > 0) {
-				res = r_str_newf ("%s:%d:%d%s", (origin > 1)?di->file:basename,
-					line, colu, r_str_get (out));
+			if (di->column > 0) {
+				res = r_str_newf ("%s:%d:%d%s", (origin > 1)? di->file: basename,
+					di->line, di->column, r_str_get (out));
 			} else {
-				res = r_str_newf ("%s:%d%s", (origin > 1)?di->file:basename,
-					line, r_str_get (out));
+				res = r_str_newf ("%s:%d%s", (origin > 1)? di->file: basename,
+					di->line, r_str_get (out));
 			}
+			free (out);
 		} else {
 			// just the text from the file
 			free (res);
 			res = out;
 		}
+		free (filename);
+		free (basename);
 		r_bin_dbgitem_free (di);
 		return res;
 	}
 	return NULL;
-	return out2;
 }
 
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {

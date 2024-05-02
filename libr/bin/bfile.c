@@ -9,12 +9,12 @@
 #define R_STRING_MAX_UNI_BLOCKS 4
 
 static RBinClass *__getClass(RBinFile *bf, const char *name) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->classes_ht && name, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->classes_ht && name, NULL);
 	return ht_pp_find (bf->bo->classes_ht, name, NULL);
 }
 
 static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *method) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->methods_ht && klass && method, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->methods_ht && klass && method, NULL);
 	r_strf_var (name, 128, "%s::%s", klass, method);
 	return ht_pp_find (bf->bo->methods_ht, name, NULL);
 }
@@ -27,7 +27,7 @@ static RBinString *__stringAt(RBinFile *bf, RList *ret, ut64 addr) {
 }
 
 static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
-	r_return_if_fail (bf && string);
+	R_RETURN_IF_FAIL (bf && string);
 
 	int mode = bf->strmode;
 	RBin *bin = bf->rbin;
@@ -459,10 +459,9 @@ static bool is_data_section(RBinFile *a, RBinSection *s) {
 }
 
 static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
-	r_return_if_fail (bf && bf->buf);
+	R_RETURN_IF_FAIL (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
-
 	if (!raw && (!plugin || !plugin->info)) {
 		return;
 	}
@@ -1101,7 +1100,7 @@ R_API void r_bin_class_free(RBinClass *k) {
 }
 
 R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, ut64 attr) {
-	r_return_val_if_fail (name && bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (name && bf && bf->bo, NULL);
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
 		if (R_STR_ISNOTEMPTY (super)) {
@@ -1122,7 +1121,7 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 }
 
 R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const char *method, int nargs) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 
 	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
 	if (!c) {
