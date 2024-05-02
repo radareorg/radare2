@@ -26,7 +26,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 	return !memcmp (b, ELFMAG, SELFMAG) && b[4] != 2;
 }
 
-extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
+// extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -149,7 +149,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.dbginfo = &r_bin_dbginfo_elf,
+	// .dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
 	.regstate = &regstate,

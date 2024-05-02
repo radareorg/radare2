@@ -27,7 +27,6 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, in
 	}
 	return false;
 }
-#endif
 
 #if R_BIN_ELF64
 RBinDbgInfo r_bin_dbginfo_elf64 = {
@@ -38,4 +37,5 @@ RBinDbgInfo r_bin_dbginfo_elf64 = {
 RBinDbgInfo r_bin_dbginfo_elf = {
 //	.get_line = &get_line,
 };
+#endif
 #endif
