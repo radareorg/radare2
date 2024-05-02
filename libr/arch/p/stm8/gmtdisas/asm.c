@@ -8,7 +8,7 @@ typedef struct {
 	uint32_t ext_offset;
 	uint32_t size;
 	uint32_t line_index;
-	const ut8 *data;
+	ut8 *data;
 } datablock;
 
 char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *jump, int *len) {
