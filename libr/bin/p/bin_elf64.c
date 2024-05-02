@@ -15,7 +15,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
+// extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
 static ut64 get_elf_vaddr64(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
@@ -151,7 +151,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.dbginfo = &r_bin_dbginfo_elf64,
+//	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,

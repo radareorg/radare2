@@ -1,15 +1,4 @@
 // https://www.st.com/resource/en/programming_manual/pm0044-stm8-cpu-programming-manual-stmicroelectronics.pdf
-//
-typedef enum {
-	INHERENT,
-	IMMEDIATE,
-	DIRECT,
-	INDEXED,
-	SP_INDEXED,
-	INDIRECT,
-	RELATIVE,
-	BIT_OPERATION
-} Adressing_Mode;
 
 typedef enum {
 	STM8_NONE = 0,

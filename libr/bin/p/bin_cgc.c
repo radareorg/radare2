@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2024 - ret2libc, pancake */
 
 #define R_BIN_CGC 1
 #include "bin_elf.inc.c"
 
-extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
+// extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
 static bool check(RBinFile *bf, RBuffer *buf) {
@@ -115,7 +115,7 @@ RBinPlugin r_bin_plugin_cgc = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.dbginfo = &r_bin_dbginfo_elf,
+//	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.patch_relocs = &patch_relocs,
 	.write = &r_bin_write_elf,
