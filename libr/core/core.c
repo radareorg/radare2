@@ -2791,7 +2791,7 @@ static void __init_autocomplete_default(RCore* core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!qjs", "#!tiny", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o", "oe", "ot", "o+", "o++", "on",
-		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2", "wff",
+		"idp", "idpi", "L", "obf", "o+", "o", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2", "wff",
 		"rafind2", "cd", "ls", "lua", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
 		"vi", "vim", "nvi", "neovim", "nvim", "nano", "-i", "yr",
@@ -2809,13 +2809,13 @@ static void __init_autocomplete_default(RCore* core) {
 	const char *mounts[] = {
 		"m", "md", "mg", "mo", "ms", "mc", "mi", "mw", NULL
 	};
+	__foreach (core, files, R_CORE_AUTOCMPLT_FILE);
 	__foreach (core, flags, R_CORE_AUTOCMPLT_FLAG);
 	__foreach (core, seeks, R_CORE_AUTOCMPLT_SEEK);
 	__foreach (core, fcns, R_CORE_AUTOCMPLT_FCN);
 	__foreach (core, evals, R_CORE_AUTOCMPLT_EVAL);
 	__foreach (core, vars, R_CORE_AUTOCMPLT_VARS);
 	__foreach (core, breaks, R_CORE_AUTOCMPLT_BRKP);
-	__foreach (core, files, R_CORE_AUTOCMPLT_FILE);
 	__foreach (core, projs, R_CORE_AUTOCMPLT_PRJT);
 	__foreach (core, mounts, R_CORE_AUTOCMPLT_MS);
 
