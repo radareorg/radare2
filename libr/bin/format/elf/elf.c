@@ -3237,11 +3237,6 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			i++;
 			continue;
 		}
-		if (strstr (section->name, "rel.dyn")) {
-			i++;
-			eprintf ("SKIPPING %s\n", section->name);
-			continue;
-		}
 		if (section->size > eo->size || section->offset > eo->size) {
 			i++;
 			continue;
