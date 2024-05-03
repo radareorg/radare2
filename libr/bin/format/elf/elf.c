@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2024 - nibble, pancake, alvaro_fe */
 
 // R2R db/formats/elf/versioninfo
+// R2R db/formats/elf/reloc
 #define R_LOG_ORIGIN "elf"
 #include <r_types.h>
 #include <r_util.h>
@@ -3220,7 +3221,7 @@ static size_t get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, siz
 		return eo->dyn_info.dt_jmprel + eo->dyn_info.dt_pltrelsz - section_vaddr;
 	}
 
-	return UT64_MAX;
+	return offset; // UT64_MAX;
 }
 
 static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
@@ -3247,9 +3248,11 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 		}
 
 		size_t size = get_size_rel_mode (rel_mode);
+		ut64 dim_relocs = section->size / size;
+		dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
 		ut64 j;
 		for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-			j < section->size && pos < num_relocs;
+			j < section->size && pos <= dim_relocs;
 			j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 			RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
