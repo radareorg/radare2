@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_debug.h>
 #include <r_core.h> // just to get the RPrint instance
@@ -31,7 +31,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	ut32 i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
-	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
+	if (i >= R_REG_TYPE_GPR || (dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length)) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
 			// get regset mask
