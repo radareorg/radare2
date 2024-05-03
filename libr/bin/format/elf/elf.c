@@ -3202,22 +3202,25 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 static size_t get_next_not_analysed_offset(ELFOBJ *eo, size_t section_vaddr, size_t offset) {
 	size_t gvaddr = section_vaddr + offset;
 
-	if (eo->dyn_info.dt_rela != R_BIN_ELF_ADDR_MAX && eo->dyn_info.dt_rela <= gvaddr
+	if (eo->dyn_info.dt_rela != R_BIN_ELF_ADDR_MAX \
+		&& gvaddr >= eo->dyn_info.dt_rela \
 		&& gvaddr < eo->dyn_info.dt_rela + eo->dyn_info.dt_relasz) {
 		return eo->dyn_info.dt_rela + eo->dyn_info.dt_relasz - section_vaddr;
 	}
 
-	if (eo->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX && eo->dyn_info.dt_rel <= gvaddr
+	if (eo->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX \
+		&& gvaddr >= eo->dyn_info.dt_rel \
 		&& gvaddr < eo->dyn_info.dt_rel + eo->dyn_info.dt_relsz) {
 		return eo->dyn_info.dt_rel + eo->dyn_info.dt_relsz - section_vaddr;
 	}
 
-	if (eo->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX && eo->dyn_info.dt_jmprel <= gvaddr
+	if (eo->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX \
+		&& gvaddr >= eo->dyn_info.dt_jmprel \
 		&& gvaddr < eo->dyn_info.dt_jmprel + eo->dyn_info.dt_pltrelsz) {
 		return eo->dyn_info.dt_jmprel + eo->dyn_info.dt_pltrelsz - section_vaddr;
 	}
 
-	return offset;
+	return UT64_MAX;
 }
 
 static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t num_relocs) {
@@ -3229,13 +3232,22 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 	RBinElfSection *section;
 	r_vector_foreach (&eo->g_sections, section) {
 		Elf_(Xword) rel_mode = get_section_mode (eo, i);
-		if (!is_reloc_section (rel_mode) || section->size > eo->size || section->offset > eo->size) {
+		if (!is_reloc_section (rel_mode)) {
+			i++;
+			continue;
+		}
+		if (strstr (section->name, "rel.dyn")) {
+			i++;
+			eprintf ("SKIPPING %s\n", section->name);
+			continue;
+		}
+		if (section->size > eo->size || section->offset > eo->size) {
 			i++;
 			continue;
 		}
 
 		size_t size = get_size_rel_mode (rel_mode);
-		size_t j;
+		ut64 j;
 		for (j = get_next_not_analysed_offset (eo, section->rva, 0);
 			j < section->size && pos < num_relocs;
 			j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
