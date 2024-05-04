@@ -2053,6 +2053,7 @@ static char *regs(RArchSession *as) {
 		"=PC	pc\n"
 		"=BP	a14\n"
 		"=SP	a1\n"
+		"=SN	a1\n"
 		"=A0	a2\n"
 		"=A1	a3\n"
 		"=A2	a4\n"
