@@ -154,6 +154,9 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				break;
 			case EXTMEM_234:
 				r_strbuf_appendf (sb, " 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
+				if (*type == R_ANAL_OP_TYPE_SWI) {
+					*jump = (oc[2] <<16) | oc[3]<<8 | oc[4];
+				}
 				break;
 			case SHORTOFF_2:
 				(oc[2] & 0x80) ? (n = oc[2] - 0x100) : (n = oc[2]);
