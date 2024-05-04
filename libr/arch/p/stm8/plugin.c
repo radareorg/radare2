@@ -13,7 +13,13 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	op->mnemonic = stm8_disasm (op->addr, op->bytes, op->size, &op->type, &jump, &len);
 	if (jump != UT64_MAX) {
 		op->jump = jump;
-		op->fail = op->addr + len; // not for non-conditional
+		op->fail = UT64_MAX;
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			op->fail = op->addr + len; // not for non-conditional
+			break;
+		}
 	}
 	op->size = len;
 	return op->size;
