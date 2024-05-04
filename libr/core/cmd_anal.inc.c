@@ -4475,9 +4475,9 @@ static void xrefs_map(RCore *core, const char *input) {
 }
 
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) {
-	int depth = r_config_get_i (core->config, "anal.depth");
+	const int depth = r_config_get_i (core->config, "anal.depth");
 
-	//r_core_anal_undefine (core, core->offset);
+	// r_core_anal_undefine (core, core->offset);
 	r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
@@ -4507,7 +4507,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					R_LOG_DEBUG ("ignore 0x%08"PFMT64x" call 0x%08"PFMT64x, ref->at, ref->addr);
 					continue;
 				}
-				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+				ut32 rt = R_ANAL_REF_TYPE_MASK (ref->type);
 				if (rt != R_ANAL_REF_TYPE_CODE && rt != R_ANAL_REF_TYPE_CALL) {
 					/* only follow code/call references */
 					continue;

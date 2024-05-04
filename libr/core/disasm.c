@@ -2952,6 +2952,10 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 			}
 		}
 		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_SWI:
+			if (ds->analop.jump == UT64_MAX) {
+				break;
+			}
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
@@ -4105,9 +4109,10 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	if (!ds->show_comments) {
 		return;
 	}
-	if (ds->analop.type != R_ANAL_OP_TYPE_JMP
-		&& ds->analop.type != R_ANAL_OP_TYPE_CJMP
-		&& ds->analop.type != R_ANAL_OP_TYPE_CALL) {
+	ut32 optype = ds->analop.type;
+	if (optype != R_ANAL_OP_TYPE_JMP
+		&& optype != R_ANAL_OP_TYPE_CJMP
+		&& optype != R_ANAL_OP_TYPE_CALL) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
@@ -4338,6 +4343,10 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			gotShortcut = true;
 		}
 		break;
+	case R_ANAL_OP_TYPE_SWI:
+		if (ds->analop.jump == UT64_MAX) {
+			break;
+		}
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
 		if (ds->asm_hint_jmp) {
