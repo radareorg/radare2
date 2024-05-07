@@ -846,7 +846,7 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 	r_strbuf_appendf (
 		&op->esil,
 			"0x%x" 		CM
-			"$$"   		CM
+			"0x%"PFMT64x	CM
 			"3"		CM
 			"+"		CM
 			"0xFFFFFFFC"	CM
@@ -857,6 +857,7 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 			"=",
 		// offset
 		offset,
+		op->addr,
 		// data
 		xtensa_regfile_shortname (isa, dst_rf),
 		dst
