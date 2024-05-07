@@ -315,6 +315,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pds", "[?]", "print disasm summary, showing referenced names",
 	"pdsb", " [N]", "basic block summary",
 	"pdsf", "[q]", "show function summary of strings, calls, variables, references..",
+	"pdss", " [N]", "string summary in current function",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
@@ -3198,7 +3199,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *ox, *qo, *string = NULL;
 	char *line, *s, *string2 = NULL;
 	char *switchcmp = NULL;
-	int i, count, use_color = r_config_get_i (core->config, "scr.color");
+	int i, count;
+	int use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_b (core->config, "asm.comments");
 	bool show_offset = r_config_get_b (core->config, "asm.offset");
 	bool orig_show_offset = show_offset;
@@ -3221,6 +3223,15 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 
 	if (strchr (input, 'q')) { // "pdsfq"
 		show_offset = false;
+	}
+	PJ *pj = NULL;
+	if (strchr (input, 'j')) { // "pdsfj"
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+	bool pdsfs = false;
+	if (strchr (input, 's')) { // "pdsfs"
+		pdsfs = true;
 	}
 
 	r_cons_push ();
@@ -3314,7 +3325,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				R_FREE (string2);
 			}
 		}
-		if (asm_flags) {
+		if (asm_flags && pj == NULL) {
 			str = strstr (line, ";-- ");
 			if (str) {
 				if (!r_str_startswith (str + 4, "case")) {
@@ -3406,19 +3417,19 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			const char *str = NULL;
 			if (show_comments) {
 				char *comment = r_core_anal_get_comments (core, addr);
-				if (comment) {
-					if (switchcmp) {
-						if (strcmp (comment, switchcmp)) {
+				if (R_STR_ISNOTEMPTY (comment)) {
+					if (!switchcmp || strcmp (comment, switchcmp)) {
+						if (pj) {
+							pj_o (pj);
+							pj_ki (pj, "addr", addr);
+							pj_ks (pj, "comment", comment);
+							pj_end (pj);
+						} else {
 							if (show_offset) {
 								r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
 							}
 							r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 						}
-					} else {
-						if (show_offset) {
-							r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
-						}
-						r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					}
 					if (r_str_startswith (comment, "switch table")) {
 						free (switchcmp);
@@ -3428,7 +3439,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 
-			if (fcn) {
+			if (fcn && !pj) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
 				RAnalBlock *bb;
@@ -3464,7 +3475,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					}
 				}
 			}
-			if (string && *string) {
+			if (R_STR_ISNOTEMPTY (string)) {
 				if (string && !strncmp (string, "0x", 2)) {
 					str = string;
 				}
@@ -3491,7 +3502,17 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					}
 					//// TODO implememnt avoid duplicated strings
 					// eprintf ("---> %s\n", string);
-					if (use_color) {
+					if (pj) {
+						pj_o (pj);
+						pj_ki (pj, "addr", addr);
+						if (flag) {
+							pj_ks (pj, "name", flag->name);
+						}
+						if (R_STR_ISNOTEMPTY (string)) {
+							pj_ks (pj, "text", string);
+						}
+						pj_end (pj);
+					} else if (use_color) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
 						}
@@ -3525,6 +3546,12 @@ restore_conf:
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_b (core->config, "asm.emu", asm_emu);
 	r_config_set_b (core->config, "emu.str", emu_str);
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
 }
 
 static void algolist(int mode) {
