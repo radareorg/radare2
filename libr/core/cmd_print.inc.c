@@ -314,7 +314,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "print disasm summary, showing referenced names",
 	"pdsb", " [N]", "basic block summary",
-	"pdsf", "[q]", "show function summary of strings, calls, variables, references..",
+	"pdsf", "[sjq]", "show function summary of strings, calls, variables, references..",
 	"pdss", " [N]", "string summary in current function",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
@@ -3225,12 +3225,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		show_offset = false;
 	}
 	PJ *pj = NULL;
-	if (strchr (input, 'j')) { // "pdsfj"
+	if (strchr (input + 2, 'j')) { // "pdsfj"
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	bool pdsfs = false;
-	if (strchr (input, 's')) { // "pdsfs"
+	if (strchr (input + 2, 's')) { // "pdsfs"
 		pdsfs = true;
 	}
 
@@ -3325,7 +3325,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				R_FREE (string2);
 			}
 		}
-		if (asm_flags && pj == NULL) {
+		if (asm_flags && pj == NULL && !pdsfs) {
 			str = strstr (line, ";-- ");
 			if (str) {
 				if (!r_str_startswith (str + 4, "case")) {
@@ -3333,6 +3333,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 		}
+		if (pdsfs) {
+			str = strstr (line, " str.");
+
+		} else {
 #define USE_PREFIXES 1
 #if USE_PREFIXES
 		// XXX leak
@@ -3362,6 +3366,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 #endif
+		}
 		if (str) {
 			char *qoe = NULL;
 			if (!qoe) {
@@ -3387,11 +3392,15 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		R_FREE (string2);
-		_handle_call (core, line, &str);
-		if (!str) {
-			str = strstr (line, "sym.");
+		if (pdsfs) {
+			str = NULL;
+		} else {
+			_handle_call (core, line, &str);
 			if (!str) {
-				str = strstr (line, "fcn.");
+				str = strstr (line, "sym.");
+				if (!str) {
+					str = strstr (line, "fcn.");
+				}
 			}
 		}
 		if (str) {
@@ -3415,7 +3424,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		}
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
-			if (show_comments) {
+			if (show_comments && !pdsfs) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (R_STR_ISNOTEMPTY (comment)) {
 					if (!switchcmp || strcmp (comment, switchcmp)) {
@@ -3499,6 +3508,17 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					r_str_trim (string);
 					if (string2) {
 						r_str_trim (string2);
+					}
+					if (pdsfs) {
+						if (r_str_startswith (string, "str.")) {
+							char *ns = r_core_cmd_strf (core, "psj @ %s~{string}", string);
+							r_str_trim (ns);
+							ns = r_str_replace_all (ns, "\n", "\\n");
+							ns = r_str_replace_all (ns, "\r", "\\r");
+							ns = r_str_replace_all (ns, "\t", "\\t");
+							free (string);
+							string = ns;
+						}
 					}
 					//// TODO implememnt avoid duplicated strings
 					// eprintf ("---> %s\n", string);
