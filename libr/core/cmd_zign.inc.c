@@ -6,6 +6,7 @@ static RCoreHelpMessage help_msg_z = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", " ([addr])", "show/list zignatures", // TODO: rename to zl ?
 	"z.", "", "find matching zignatures in current offset", // rename to 'z' ?
+	"z,", "([:help])", "list zignatures loaded in table format (see z,:help)",
 	"zb", "[?][n=5]", "search for best match",
 	"zd", "zignature", "diff current function and signature",
 	"z*", " ([addr])", "show zignatures in radare format",
@@ -1267,6 +1268,51 @@ static int cmdInfo(void *data, const char *input) {
 	return true;
 }
 
+struct ctxListCB {
+	RAnal *anal;
+	RTable *t;
+};
+
+
+// R2_600 - move into anal/sign.c
+static bool listCB(RSignItem *it, void *user) {
+	struct ctxListCB *ctx = (struct ctxListCB *)user;
+#if 0
+	RAnal *a = ctx->anal;
+	if (!validate_item (it)) {
+		return true;
+	}
+#endif
+	// End item
+	char *bytes = r_hex_bin2strdup (it->bytes->bytes, it->bytes->size);
+	char *masks = r_hex_bin2strdup (it->bytes->mask, it->bytes->size);
+	r_table_add_rowf (ctx->t, "dssss", it->addr, it->name, it->hash->bbhash, bytes, masks);
+	free (bytes);
+	free (masks);
+
+	return true;
+}
+
+static int csvZignatures(RCore *core, const char *arg) {
+	RTable *t = r_table_new ("pxr");
+	RTableColumnType *n = r_table_type ("number");
+	RTableColumnType *s = r_table_type ("string");
+	r_table_add_column (t, n, "addr", 0);
+	r_table_add_column (t, s, "name", 1);
+	r_table_add_column (t, s, "hash", 2);
+	r_table_add_column (t, s, "data", 3);
+	r_table_add_column (t, s, "mask", 4);
+	struct ctxListCB ctx = { core->anal, t };
+	r_sign_foreach (core->anal, listCB, &ctx);
+	if (r_table_query (t, arg)) {
+		char *ts = r_table_tostring (t);
+		r_cons_printf ("%s", ts); // \n?
+		free (ts);
+	}
+	r_table_free (t);
+	return 0;
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *arg = input + 1;
@@ -1291,6 +1337,8 @@ static int cmd_zign(void *data, const char *input) {
 			core->offset = oaddr;
 		}
 		break;
+	case ',':
+		return csvZignatures (core, arg);
 	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
 		break;
