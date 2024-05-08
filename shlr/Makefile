@@ -56,7 +56,7 @@ ifeq ($(USE_CS4),1)
 CS_TIP=0efa3cc530ea188c0e03c945ab884ee19dd16342
 CS_BRA=v4
 else
-CS_TIP=30a4ecf01b43abed8527d0d84c1ea182e6e3da8b
+CS_TIP=11a2ea286336c52c485da8256ea70148b04a990c
 CS_BRA=v5
 endif
 endif
