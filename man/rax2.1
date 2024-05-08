@@ -22,6 +22,15 @@ interpretations.
 .Bl -tag -width Fl
 .It Fl a
 Show ASCII table
+.It Fl b
+Force output mode (numeric base)
+.Pp
+  f    floating point
+  2    binary
+  3    ternary
+  8    octal
+  10   decimal
+  16   hexadecimal
 .It Fl B
 Convert from character string to binary (rax2 \-B hello)
 .It Fl c
@@ -79,17 +88,6 @@ Display the result as 16bit signed integer value
 Show hexpairs from integer value
 .It Fl X
 Convert a string into a hash
-.Sh OUTPUT BASES
-.Pp
-Force output mode (numeric base)
-.Pp
-  =f    floating point
-  =2    binary
-  =3    ternary
-  =8    octal
-  =10   decimal
-  =16   hexadecimal
-.Pp
 .Sh USAGE
 Available variable types are:
 .Pp
@@ -134,12 +132,12 @@ Encode and decode binary file using base64:
   $ cmp /bin/ls ls && echo $?
   0
 .Pp
-Use -B/-b to convert between binary and hexadecimal:
+Use -l/-B to convert between binary and string:
 .Pp
-  $ rax2 -B 0x1123
+  $ rax2 -B hello
   001100000111100000110001001100010011001000110011
-  $ rax2 -b 001100000111100000110001001100010011001000110011
-  0x1123
+  $ rax2 -l 0110100001100101011011000110110001101111
+  hello
 .Pp
 It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
 .Pp
