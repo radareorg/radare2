@@ -32,17 +32,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rax2 =10 0x46
+NAME=rax2 -b 10 0x46
 FILE=-
-CMDS=!rax2 =10 0x46
+CMDS=!rax2 -b 10 0x46
 EXPECT=<<EOF
 70
 EOF
 RUN
 
-NAME=rax2 =16 0x3+0x3
+NAME=rax2 -b 16 0x3+0x3
 FILE=-
-CMDS=!rax2 =16 0x3+0x3
+CMDS=!rax2 -b 16 0x3+0x3
 EXPECT=<<EOF
 0x6
 EOF
