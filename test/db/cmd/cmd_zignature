@@ -1097,6 +1097,8 @@ RUN
 
 NAME=PowerPC function with jumpback
 FILE=bins/elf/busybox-powerpc
+# it's broken because (git)capstone-v5 vs (release)capstone-5.0 differ and break the testsuite
+BROKEN=1
 CMDS=<<EOF
 s 0x10002d70
 af
