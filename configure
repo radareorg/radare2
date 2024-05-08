@@ -661,7 +661,9 @@ else
 USE_CAPSTONE="0"; fi
 if [ "$WITHOUT_SYSCAPSTONE" = "0" ]; then
 USE_CAPSTONE="0"
-HAVE_PKGCFG_CAPSTONE="0"; fi
+HAVE_PKGCFG_CAPSTONE="0"
+CAPSTONE_CFLAGS=""
+CAPSTONE_LDFLAGS=""; fi
 if [ -z "${PKGCONFIG}" ]; then pkg-config --version >/dev/null 2>&1 ; if [ 0 = 0 ]; then PKGCONFIG=pkg-config ; else PKGCONFIG=pkgconf ; fi; fi
 printf 'checking pkg-config flags for liblz4... '
 tmp=`${PKGCONFIG} --cflags liblz4 2>/dev/null`
