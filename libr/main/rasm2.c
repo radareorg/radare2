@@ -264,7 +264,6 @@ static int rasm_show_help(int v) {
 			" -l [len]     input/Output length\n"
 			" -L           list RAsm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
 			" -LL          list RAnal plugins (see anal.arch=?) combines with -j\n"
-			" -LLL         list RArch plugins (see arch.arch=?) combines with -j\n"
 			" -o,-@ [addr] set start address for code (default 0)\n"
 			" -O [file]    output file name (rasm2 -Bf a.asm -O a)\n"
 			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n"

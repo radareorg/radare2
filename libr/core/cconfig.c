@@ -372,19 +372,6 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
-static void update_archarch_options(RCore *core, RConfigNode *node) {
-	RArchPlugin *ap;
-	RListIter *it;
-	if (core && core->anal && core->anal->arch && node) {
-		r_config_node_purge_options (node);
-		r_list_foreach (core->anal->arch->plugins, it, ap) {
-			if (ap->meta.name) {
-				SETOPTIONS (node, ap->meta.name, NULL);
-			}
-		}
-	}
-}
-
 static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -512,53 +499,6 @@ static bool cb_archendian(void *user, void *data) {
 	}
 	return false;
 }
-
-static bool cb_archarch(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (*node->value == '?') {
-		update_archarch_options (core, node);
-		print_node_options (node);
-		return false;
-	}
-	r_return_val_if_fail (node && core && core->anal && core->anal->arch, false);
-	return core->anal->arch? r_arch_set_arch (core->anal->arch, node->value): true;
-}
-
-static bool cb_archarch_getter(RCore *core, RConfigNode *node) {
-	r_return_val_if_fail (node && core && core->anal && core->anal->arch, false);
-	if (core->anal->arch->cfg && core->anal->arch->cfg->arch) {
-		node->value = strdup (core->anal->arch->cfg->arch);
-	}
-	return true;
-}
-
-#if 0
-static bool cb_archautoselect(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	r_return_val_if_fail (node && core && core->anal && core->anal->arch, false);
-	core->anal->arch->autoselect = node->i_value;
-	return true;
-}
-
-static bool cb_analcpu(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (strstr (node->value, "?")) {
-		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
-	}
-	// r_anal_set_cpu (core->anal, node->value);
-	r_arch_config_set_cpu (core->anal->config, node->value);
-	/* set codealign */
-	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
- 	if (v != -1) {
- 		core->anal->config->codealign = v;
- 	}
-	r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
-	return true;
-}
-#endif
 
 static bool cb_analrecont(void *user, void *data) {
 	RCore *core = (RCore*) user;
@@ -3558,9 +3498,6 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
 	SETDESC (n, "set arch endianness");
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
-	n = NODECB ("arch.arch", "null", &cb_archarch);
-	SETDESC (n, "select the architecture to use");
-	r_config_set_getter (cfg, "arch.arch", (RConfigCallback)cb_archarch_getter);
 	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
