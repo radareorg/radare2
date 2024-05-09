@@ -15,7 +15,7 @@ typedef struct {
 	bool hexstr2raw;	// -s
 	bool swapendian;	// -e
 	bool raw2hexstr;	// -S
-	bool binstr2raw;	// -l
+	bool binstr2raw;	// -Z
 	bool hashstr;		// -H
 	bool keepbase;		// -k
 	bool floating;		// -f
@@ -192,7 +192,6 @@ static int help(void) {
 		"  -j         json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k         keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K         randomart            ;  rax2 -K 0x34 1020304050\n"
-		"  -l         bin -> str           ;  rax2 -l 01000101 01110110\n"
 		"  -L         bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n         newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -o         octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
@@ -205,6 +204,7 @@ static int help(void) {
 		"  -v         version              ;  rax2 -v\n"
 		"  -w         signed word          ;  rax2 -w 16 0xffff\n"
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
+		"  -Z         bin -> str           ;  rax2 -Z 01000101 01110110\n"
 	);
 	return true;
 }
@@ -244,7 +244,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 's': flags->hexstr2raw = !flags->hexstr2raw; break;
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
-			case 'l': flags->binstr2raw = !flags->binstr2raw; break;
+			case 'Z': flags->binstr2raw = !flags->binstr2raw; break;
 			case 'H': flags->hashstr = !flags->hashstr; break;
 			case 'k': flags->keepbase = !flags->keepbase; break;
 			case 'f': flags->floating = !flags->floating; break;
@@ -335,7 +335,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags->binstr2raw) { // -l
+	if (flags->binstr2raw) { // -Z
 		ut8 out[256] = {0};
 		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
 			printf ("%s\n", out); // TODO accept non null terminated strings

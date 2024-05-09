@@ -62,8 +62,6 @@ Convert a string into a hash
 Convert LONG to/from IP ADDRESS
 .It Fl j
 Show the output in json format, the same as the r2 `?j 0x804` command.
-.It Fl l
-Convert from binary string to character (rax2 \-l 01000101)
 .It Fl L
 Convert a bit stream (an arbitrary sequence of 0 and 1 of any length) to
 hexadecimal. The result can be larger than 64bits
@@ -88,6 +86,8 @@ Show program version
 Display the result as 16bit signed integer value
 .It Fl x
 Show hexpairs from integer value
+.It Fl Z
+Convert from binary string to string (rax2 \-l 01000101)
 .Sh USAGE
 Available variable types are:
 .Pp
@@ -132,11 +132,11 @@ Encode and decode binary file using base64:
   $ cmp /bin/ls ls && echo $?
   0
 .Pp
-Use -l/-B to convert between binary and string:
+Use -l/-Z to convert between binary and string:
 .Pp
   $ rax2 -B hello
   001100000111100000110001001100010011001000110011
-  $ rax2 -l 0110100001100101011011000110110001101111
+  $ rax2 -Z 0110100001100101011011000110110001101111
   hello
 .Pp
 It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
