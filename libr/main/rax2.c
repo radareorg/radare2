@@ -16,7 +16,7 @@ typedef struct {
 	bool swapendian;	// -e
 	bool raw2hexstr;	// -S
 	bool binstr2raw;	// -l
-	bool hashstr;		// -X
+	bool hashstr;		// -H
 	bool keepbase;		// -k
 	bool floating;		// -f
 	bool decimal;		// -d
@@ -187,6 +187,7 @@ static int help(void) {
 		"  -f         floating point       ;  rax2 -f 6.3+2.1\n"
 		"  -F         stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h         help                 ;  rax2 -h\n"
+		"  -H         hash string          ;  rax2 -H linux osx\n"
 		"  -I         IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -j         json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k         keep base            ;  rax2 -k 33+3 -> 36\n"
@@ -204,7 +205,6 @@ static int help(void) {
 		"  -v         version              ;  rax2 -v\n"
 		"  -w         signed word          ;  rax2 -w 16 0xffff\n"
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
-		"  -X         hash string          ;  rax2 -X linux osx\n"
 	);
 	return true;
 }
@@ -245,7 +245,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
 			case 'l': flags->binstr2raw = !flags->binstr2raw; break;
-			case 'X': flags->hashstr = !flags->hashstr; break;
+			case 'H': flags->hashstr = !flags->hashstr; break;
 			case 'k': flags->keepbase = !flags->keepbase; break;
 			case 'f': flags->floating = !flags->floating; break;
 			case 'd': flags->decimal = !flags->decimal; break;
@@ -344,7 +344,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags->hashstr) { // -X
+	if (flags->hashstr) { // -H
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return true;
