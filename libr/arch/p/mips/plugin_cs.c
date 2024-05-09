@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -889,10 +889,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	op->size = 4;
+	if (op->mnemonic) {
+		*op->mnemonic = 0;
+	}
 	n = cs_disasm (handle, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
+			op->type = R_ANAL_OP_TYPE_ILL;
 			opsize = 4;
 		}
 		goto beach;
@@ -904,6 +908,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			insn->op_str);
 		if (op->mnemonic) {
 			r_str_replace_char (op->mnemonic, '$', 0);
+		}
+		if (R_STR_ISEMPTY (op->mnemonic)) {
+			insn->id = MIPS_INS_INVALID;
 		}
 	}
 	op->id = insn->id;
