@@ -113,6 +113,9 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 		printf ("%ff\n", *f);
 		}
 		break;
+	case 'V':
+
+		break;
 	case 'f':
 		printf ("%.01lf\n", num->fvalue);
 		break;
