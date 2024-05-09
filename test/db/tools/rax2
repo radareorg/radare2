@@ -568,9 +568,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rax2 -i
+NAME=rax2 -C
 FILE=-
-CMDS=!printf A | rax2 -i
+CMDS=!printf A | rax2 -C
 EXPECT=<<EOF
 unsigned char buf[] = {
   0x41
