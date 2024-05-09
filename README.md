@@ -64,15 +64,16 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [keystone](https://github.com/radareorg/radare2-extras/tree/master/keystone) Assembler instructions using the Keystone library
 * [r2ai](https://github.com/radareorg/r2ai) Run a Language Model in localhost with Llama inside r2!
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
-* [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s diffing engine working on top of radare2
+* [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s binary diffing engine on top of radare2
 * [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
-* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command
+* [r2ghidra](https://github.com/radareorg/r2ghidra): The standalone native ghidra decompiler accessible with `pdg`
 * [r2papi](https://github.com/radareorg/radare2-r2papi) High level api on top of r2pipe
 * [r2pipe](https://github.com/radareorg/radare2-r2pipe) Script radare2 from any programming language
 * [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
+* [goresym](https://github.com/hanemile/radare2-GoReSym): Import GoReSym symbol as flags
 * [r2yara](https://github.com/radareorg/r2yara) Run Yara from r2 or use r2 primitives from Yara
 * [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
-* [r2sarif](https://github.com/radareorg/r2sarif) import/export SARIF documents, streamlining vulnerability reporting and visualization in binaries
+* [r2sarif](https://github.com/radareorg/r2sarif) import/extend/export SARIF documents
 
 ## Usage
 
@@ -130,7 +131,7 @@ Learn more about r2 watching [youtube talks](https://www.youtube.com/c/r2con) fr
 
 ## Operating Systems
 
-Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android,
+Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android, Wasmer,
 [Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, AIX, Haiku, Vinix, FirefoxOS.
 
 ## Architectures
@@ -141,7 +142,7 @@ CRIS, XAP (CSR), PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM, OR1K
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa, xcore,
 NIOS II, Java, Dalvik, Pickle, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI, lm32,
-MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x.
+MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x, STM8.
 
 ## File Formats
 
