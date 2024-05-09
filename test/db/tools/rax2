@@ -438,9 +438,9 @@ Fri Feb
 EOF
 RUN
 
-NAME=rax2 -X linux osx
+NAME=rax2 -H linux osx
 FILE=-
-CMDS=!rax2 -X linux osx
+CMDS=!rax2 -H linux osx
 EXPECT=<<EOF
 0x5ca62a43
 0xad593a1
