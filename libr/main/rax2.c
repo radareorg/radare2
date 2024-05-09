@@ -29,7 +29,7 @@ typedef struct {
 	bool slurphex;		// -F
 	bool binaryraw;		// -c
 	bool signedword;	// -w
-	bool str2hexstr;	// -B
+	bool str2hexstr;	// -z
 	bool manybases;		// -r
 	bool binstr2hex;	// -L
 	bool dumpcstr;		// -C
@@ -177,7 +177,6 @@ static int help(void) {
 		"  hex        ->  raw              ;  rax2 -s 414141\n"
 		"  -a         show ascii table     ;  rax2 -a\n"
 		"  -b <base>  output in <base>     ;  rax2 -b 10 0x46\n"
-		"  -B         str -> bin           ;  rax2 -B hello\n"
 		"  -c         output in C string   ;  rax2 -c 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -C         dump as C byte array ;  rax2 -C < bytes\n"
 		"  -d         force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -204,6 +203,7 @@ static int help(void) {
 		"  -v         version              ;  rax2 -v\n"
 		"  -w         signed word          ;  rax2 -w 16 0xffff\n"
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
+		"  -z         str -> bin           ;  rax2 -z hello\n"
 		"  -Z         bin -> str           ;  rax2 -Z 01000101 01110110\n"
 	);
 	return true;
@@ -258,7 +258,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'F': flags->slurphex = !flags->slurphex; break;
 			case 'c': flags->binaryraw = !flags->binaryraw; break;
 			case 'w': flags->signedword = !flags->signedword; break;
-			case 'B': flags->str2hexstr = !flags->str2hexstr; break;
+			case 'z': flags->str2hexstr = !flags->str2hexstr; break;
 			case 'r': flags->manybases = !flags->manybases; break;
 			case 'L': flags->binstr2hex = !flags->binstr2hex; break;
 			case 'C': flags->dumpcstr = !flags->dumpcstr; break;
@@ -412,7 +412,7 @@ dotherax:
 			}
 		}
 		return true;
-	} else if (flags->str2hexstr) { // -B (bin -> str)
+	} else if (flags->str2hexstr) { // -z (bin -> str)
 		char *newstr = r_mem_to_binstring((const ut8*)str, strlen (str));
 		printf ("%s\n", newstr);
 		free (newstr);
