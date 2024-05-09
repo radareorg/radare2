@@ -32,7 +32,7 @@ typedef struct {
 	bool str2hexstr;	// -B
 	bool manybases;		// -r
 	bool binstr2hex;	// -L
-	bool dumpcstr;		// -i
+	bool dumpcstr;		// -C
 	bool octal2raw;		// -o
 	bool ipaddr2num;	// -I
 	bool newline;		// -n
@@ -179,6 +179,7 @@ static int help(void) {
 		"  -b <base>  output in <base>     ;  rax2 -b 10 0x46\n"
 		"  -B         str -> bin           ;  rax2 -B hello\n"
 		"  -c         output in C string   ;  rax2 -c 0x1234 # \\x34\\x12\\x00\\x00\n"
+		"  -C         dump as C byte array ;  rax2 -C < bytes\n"
 		"  -d         force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e         swap endianness      ;  rax2 -e 0x33\n"
 		"  -D         base64 decode        ;  rax2 -D \"aGVsbG8=\"\n"
@@ -186,7 +187,6 @@ static int help(void) {
 		"  -f         floating point       ;  rax2 -f 6.3+2.1\n"
 		"  -F         stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h         help                 ;  rax2 -h\n"
-		"  -i         dump as C byte array ;  rax2 -i < bytes\n"
 		"  -I         IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -j         json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k         keep base            ;  rax2 -k 33+3 -> 36\n"
@@ -261,7 +261,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'B': flags->str2hexstr = !flags->str2hexstr; break;
 			case 'r': flags->manybases = !flags->manybases; break;
 			case 'L': flags->binstr2hex = !flags->binstr2hex; break;
-			case 'i': flags->dumpcstr = !flags->dumpcstr; break;
+			case 'C': flags->dumpcstr = !flags->dumpcstr; break;
 			case 'o': flags->octal2raw = !flags->octal2raw; break;
 			case 'I': flags->ipaddr2num = !flags->ipaddr2num; break;
 			case 'j': flags->jsonbases = !flags->jsonbases; break;
@@ -661,7 +661,7 @@ dotherax:
 		r_print_hex_from_bin (NULL, str);
 		return true;
 	}
-	if (flags->dumpcstr) { // -i
+	if (flags->dumpcstr) { // -C
 		RStrBuf *sb = r_strbuf_new ("unsigned char buf[] = {");
 		const int byte_per_col = 12;
 		for (i = 0; i < len - 1; i++) {
