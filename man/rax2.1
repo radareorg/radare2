@@ -31,8 +31,6 @@ Force output mode (numeric base)
   8    octal
   10   decimal
   16   hexadecimal
-.It Fl B
-Convert from character string to binary (rax2 \-B hello)
 .It Fl c
 Show hexadecimal C string from integer value
 .It Fl C
@@ -86,6 +84,8 @@ Show program version
 Display the result as 16bit signed integer value
 .It Fl x
 Show hexpairs from integer value
+.It Fl z
+Convert from character string to binary (rax2 \-z hello)
 .It Fl Z
 Convert from binary string to string (rax2 \-l 01000101)
 .Sh USAGE
@@ -132,9 +132,9 @@ Encode and decode binary file using base64:
   $ cmp /bin/ls ls && echo $?
   0
 .Pp
-Use -l/-Z to convert between binary and string:
+Use -z/-Z to convert between binary and string:
 .Pp
-  $ rax2 -B hello
+  $ rax2 -z hello
   001100000111100000110001001100010011001000110011
   $ rax2 -Z 0110100001100101011011000110110001101111
   hello
