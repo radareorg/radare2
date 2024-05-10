@@ -1257,6 +1257,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+		__replaceImports (ds);
 		char *asm_str = colorize_asm_string (core, ds, print_color);
 		if (asm_str) {
 			free (ds->opstr);
@@ -1266,13 +1267,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 	} else {
 		r_str_trim (ds->opstr); // trim before coloring git
+		__replaceImports (ds);
 		char *asm_str = colorize_asm_string (core, ds, print_color);
 		free (ds->opstr);
 		ds->opstr = asm_str;
 	}
 	r_str_trim (ds->opstr);
-	// updates ds->opstr
-	__replaceImports (ds);
 	if (ds->show_color) {
 		int i = 0;
 		char *word = NULL;
