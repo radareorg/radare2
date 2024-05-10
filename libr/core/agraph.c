@@ -2202,7 +2202,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		return NULL;
 	}
 	r_config_hold (hc, "asm.lines", "asm.bytes", "asm.flags.inbytes",
-		"asm.cmt.col", "asm.marks", "asm.offset",
+		"asm.cmt.col", "asm.marks", "asm.offset", "asm.dwarf.file",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
 	const bool o_comments = r_config_get_b (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_b (core->config, "graph.cmtright");
@@ -2210,6 +2210,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
 	const bool o_graph_offset = r_config_get_b (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
+	r_config_set_b (core->config, "asm.dwarf.file", false);
 	int mw = r_config_get_i (core->config, "graph.bb.maxwidth");
 	if (opts & BODY_COMMENTS) {
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
@@ -2262,7 +2263,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (mw > 0) {
 		body = r_str_ansi_crop (body, 0, 0, mw, -1);
 	}
-	r_config_set_i (core->config, "scr.html", html);
+	r_config_set_b (core->config, "scr.html", html);
 	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
 	// body = r_str_ansi_crop (body, 0, 0, 40, 20);
 	// body = r_str_ansi_resetbg (body, Color_BGRED); // color);
