@@ -918,7 +918,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 
 static int pickle_info(RArchSession *s, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		// some ops accept newline terminated strings of arbitrary len...

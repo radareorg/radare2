@@ -83,7 +83,7 @@ static int info(RArchSession *as, ut32 q) {
 		return 4;
 	case R_ANAL_ARCHINFO_INV_OP_SIZE:
 		return 2;
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 1;

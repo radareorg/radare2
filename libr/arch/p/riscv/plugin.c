@@ -978,7 +978,7 @@ static char *get_reg_profile(RArchSession *s) {
 
 static int info(RArchSession *s, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 2;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 4;

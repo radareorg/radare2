@@ -610,7 +610,7 @@ static char *set_reg_profile(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return (as && as->config->bits == 16)? 2: 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {

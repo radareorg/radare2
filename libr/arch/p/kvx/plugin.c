@@ -296,7 +296,7 @@ static int kvx_info(RArchSession *a, ut32 query) {
 		return 4;
 	case R_ARCH_INFO_MAX_OP_SIZE:
 		return 12;
-	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 4;
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;

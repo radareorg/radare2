@@ -7323,7 +7323,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i += minopsz) {
 		RAnalOp asmop;
@@ -7479,7 +7479,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	int opinc = (minopsz < opalign)? opalign: minopsz;
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
 	r_config_set_b (core->config, "asm.marks", false);

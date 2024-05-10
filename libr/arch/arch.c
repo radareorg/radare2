@@ -319,7 +319,7 @@ R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
 	if (decode) {
 		res = decode (a->session, op, mask);
 		if (!res) {
-			int align = r_arch_info (a, R_ARCH_INFO_ALIGN);
+			int align = r_arch_info (a, R_ARCH_INFO_CODE_ALIGN);
 			if (align < 1) {
 				align = 1;
 			}

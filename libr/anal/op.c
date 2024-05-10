@@ -90,7 +90,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!r_arch_encode (anal->arch, op, 0)) {
 			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
 			if (ret < 1) {
-				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
+				ret = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 				if (ret < 1) {
 					ret = 1;
 				}

@@ -1905,7 +1905,7 @@ static char *regs(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		{
 			const char *cpu = as->config->cpu;
