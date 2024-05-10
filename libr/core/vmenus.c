@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 
@@ -1184,7 +1184,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	int skip = *idx - 10;
 	bool found = false;
 
-	const char *_cname = r_bin_name_tostring (_c->name);
+	const char *_cname = _c? r_bin_name_tostring (_c->name): "";
 	switch (mode) {
 	case 'c':
 		r_cons_printf ("[hjkl_/Cfm]> classes:\n\n");
