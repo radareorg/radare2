@@ -2579,7 +2579,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static int archinfo(RArchSession *anal, ut32 q) {
-	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+	if (q == R_ARCH_INFO_DATA_ALIGN) {
 		return 4;
 	}
 	if (q == R_ARCH_INFO_CODE_ALIGN) {
@@ -2588,10 +2588,10 @@ static int archinfo(RArchSession *anal, ut32 q) {
 		}
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == R_ARCH_INFO_MAXOP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_MINOP_SIZE) {
 		if (anal && anal->config->bits == 16) {
 			return 2;
 		}

@@ -224,19 +224,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+	if (q == R_ARCH_INFO_DATA_ALIGN) {
 		return 2;
 	}
 	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return 2;
 	}
-	if (q == R_ANAL_ARCHINFO_INV_OP_SIZE) {
+	if (q == R_ARCH_INFO_INVOP_SIZE) {
 		return 2;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == R_ARCH_INFO_MAXOP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_MINOP_SIZE) {
 		return 2;
 	}
 	return 4; // XXX

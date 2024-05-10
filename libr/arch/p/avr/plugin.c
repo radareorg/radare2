@@ -2305,10 +2305,10 @@ static int info(RArchSession *as, ut32 q) {
 	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return 2;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == R_ARCH_INFO_MAXOP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_MINOP_SIZE) {
 		return 2;
 	}
 	return 2; // XXX

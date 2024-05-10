@@ -708,7 +708,7 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 		}
 	}
 	if (!data) {
-		const int maxis = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		const int maxis = r_anal_archinfo (anal, R_ARCH_INFO_MAXOP_SIZE);
 		owned = malloc (maxis);
 		if (!owned) {
 			return false;

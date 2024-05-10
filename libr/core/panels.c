@@ -1652,8 +1652,8 @@ static void __cursor_right(RCore *core) {
 
 // copypasta from visual
 static ut64 insoff(RCore *core, int delta) {
-	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 addr = core->offset + delta; // should be core->print->cur
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
 	if (bb) {
