@@ -1692,8 +1692,17 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	// XXX
-	return 0;
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 6;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return -1;
 }
 
 const RArchPlugin r_arch_plugin_dalvik = {
