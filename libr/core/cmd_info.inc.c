@@ -41,11 +41,12 @@ static RCoreHelpMessage help_msg_i = {
 	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
-	"iE.", "", "current export",
+	"iE.", "", "show export in current address",
 	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
 	"iH", "", "verbose Headers in raw text", // XXX
-	"ii", "[?][cj*,]", "imports",
-	"iI", "", "binary info",
+	"ii", "[?][j*,]", "imports",
+	"iic", "", "classify imports",
+	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
 	"ik", " [query]", "key-value database from RBinObject",
 	"il", "", "libraries",
 	"iL ", "[plugin]", "list all RBin plugins loaded or plugin details",
@@ -159,7 +160,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 }
 
 static bool demangle(RCore *core, const char *s) {
-	r_return_val_if_fail (core && s, false);
+	R_RETURN_VAL_IF_FAIL (core && s, false);
 	const char *ss = strchr (s, ' ');
 	if (!*s) {
 		return false;
@@ -468,9 +469,9 @@ static void tts_say(RCore *core, const char *n, int len) {
 }
 
 static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool *equal) {
-	r_return_val_if_fail (lfile_hashes, false);
-	r_return_val_if_fail (rfile_hashes, false);
-	r_return_val_if_fail (equal, false);
+	R_RETURN_VAL_IF_FAIL (lfile_hashes, false);
+	R_RETURN_VAL_IF_FAIL (rfile_hashes, false);
+	R_RETURN_VAL_IF_FAIL (equal, false);
 
 	*equal = true;
 	RBinFileHash *fh_l, *fh_r;
@@ -537,6 +538,9 @@ static bool isKnownPackage(const char *cn) {
 			return true;
 		}
 		if (r_str_startswith (cn, "Landroid")) {
+			return true;
+		}
+		if (r_str_startswith (cn, "Ljava")) {
 			return true;
 		}
 		if (r_str_startswith (cn, "Lokio")) {
@@ -1054,15 +1058,14 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 }
 
 static bool bin_header(RCore *r, int mode) {
-	r_return_val_if_fail (r, false);
+	R_RETURN_VAL_IF_FAIL (r, false);
 	RBinFile *cur = r_bin_cur (r->bin);
-	if (!cur) {
-		return false;
-	}
-	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
-	if (plg && plg->header) {
-		plg->header (cur);
-		return true;
+	if (cur) {
+		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
+		if (plg && plg->header) {
+			plg->header (cur);
+			return true;
+		}
 	}
 	return false;
 }
@@ -1142,7 +1145,37 @@ static int cmd_info(void *data, const char *input) {
 	if (!space && question) {
 		space = question + 1;
 	}
+	if (input[0] && input[1] == '?') {
+		char cmd[3] = "ii";
+		cmd[1] = input[0];
+		switch (input[0]) {
+		case 'h':
+			r_core_cmd_help (core, help_msg_ih);
+			break;
+		case 'c':
+			r_core_cmd_help (core, help_msg_ic);
+			break;
+		case 'd':
+			r_core_cmd_help (core, help_msg_id);
+			break;
+		default:
+			r_core_cmd_help_contains (core, help_msg_i, cmd);
+			break;
+		}
+		goto done;
+	}
 	switch (input[0]) {
+	case 'O': // "iO"
+		switch (input[1]) {
+		case ' ':
+			r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"",
+				r_str_trim_head_ro (input + 1), desc->name);
+			break;
+		default:
+			r_sys_cmdf ("rabin2 -O help");
+			break;
+		}
+		goto done;
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
 			cmd_iic (core, 0); // TODO: support json, etc
@@ -1162,6 +1195,87 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'I': // "iI" -- dupe of "i"
+		  {
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
+		  }
+		break;
+	case 'M': // "iM"
+		  {
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
+		  }
+		break;
+	case 'm': // "im"
+		  {
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
+		  }
+		break;
+	case 'w': // "iw"
+		  {
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
+		  }
+		break;
+	case 'V': // "iV"
+		  {
+			  RList *bfiles = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (bfiles, iter, bf) {
+				  core->bin->cur = bf;
+				  RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (bfiles);
+		  }
+		break;
+	case 'q': // "iq"
+		mode = R_MODE_SIMPLE;
+		cmd_info_bin (core, va, pj, mode);
+		goto done;
+	case 'j': // "ij"
+		mode = R_MODE_JSON;
+		if (is_array > 1) {
+			mode |= R_MODE_ARRAY;
+		}
+		cmd_info_bin (core, va, pj, mode);
+		goto done;
 	case 'E':
 		if (input[1] == 'j' && input[2] == '.') {
 			mode = R_MODE_JSON;
@@ -1171,7 +1285,8 @@ static int cmd_info(void *data, const char *input) {
 			R_FREE (core->table_query);
 			core->table_query = strdup (input + 2);
 			RBinObject *obj = r_bin_cur_object (core->bin);
-			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS,
+				input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			// table query here
 		} else {
 			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
@@ -1415,8 +1530,10 @@ static int cmd_info(void *data, const char *input) {
 			*tmp = 0;
 		}
 		if (*prefix == 'd') {
+			// corner case
 			r_core_cmd_help (core, help_msg_id);
 		} else {
+			// we have contains already
 			r_core_cmdf (core, "i?~& i%s", prefix);
 		}
 		free (prefix);
@@ -1553,16 +1670,6 @@ static int cmd_info(void *data, const char *input) {
 				}
 			}
 			input += strlen (input) - 1;
-			break;
-		case 'O': // "iO"
-			switch (input[1]) {
-			case ' ':
-				r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
-				break;
-			default:
-				r_sys_cmdf ("rabin2 -O help");
-				break;
-			}
 			break;
 		case 's':
 			{ // "is"
@@ -1726,76 +1833,6 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
 			}
 			break;
-		case 'I': // "iI" -- dupe of "i"
-			  {
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			  }
-			break;
-		case 'M': // "iM"
-			  {
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			  }
-			break;
-		case 'm': // "im"
-			  {
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			  }
-			break;
-		case 'w': // "iw"
-			  {
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			  }
-			break;
-		case 'V': // "iV"
-			  {
-				  RList *bfiles = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (bfiles, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (bfiles);
-			  }
-			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
 			  {
@@ -1922,17 +1959,6 @@ static int cmd_info(void *data, const char *input) {
 			goto redone;
 		case '*': // "i*"
 			mode = R_MODE_RADARE;
-			goto done;
-		case 'q': // "iq"
-			mode = R_MODE_SIMPLE;
-			cmd_info_bin (core, va, pj, mode);
-			goto done;
-		case 'j': // "ij"
-			mode = R_MODE_JSON;
-			if (is_array > 1) {
-				mode |= R_MODE_ARRAY;
-			}
-			cmd_info_bin (core, va, pj, mode);
 			goto done;
 		case '.': // "i."
 			cmd_info_here (core, pj, input[1]);
