@@ -4,7 +4,6 @@
 
 // few remaining static functions
 static bool __init_panels_menu(RCore *core);
-static bool __init_panels(RCore *core, RPanels *panels);
 static void __init_menu_screen_settings_layout(void *_core, const char *parent);
 static void __init_new_panels_root(RCore *core);
 static void __init_menu_color_settings_layout(void *core, const char *parent);
@@ -16,14 +15,6 @@ static void __panels_refresh(RCore *core);
 #define MENU_Y 1
 #define PANEL_NUM_LIMIT 16
 
-#define PANEL_TITLE_SYMBOLS          "Symbols"
-#define PANEL_TITLE_STACK            "Stack"
-#define PANEL_TITLE_XREFS_HERE       "Xrefs Here"
-#define PANEL_TITLE_XREFS            "Xrefs"
-#define PANEL_TITLE_REGISTERS        "Registers"
-#define PANEL_TITLE_FPU_REGISTERS    "FPU Registers"
-#define PANEL_TITLE_XMM_REGISTERS    "XMM Registers"
-#define PANEL_TITLE_YMM_REGISTERS    "YMM Registers"
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
 #define PANEL_TITLE_ALL_DECOMPILER   "Show All Decompiler Output"
@@ -31,8 +22,6 @@ static void __panels_refresh(RCore *core);
 #define PANEL_TITLE_DECOMPILER_O     "Decompiler With Offsets"
 #define PANEL_TITLE_GRAPH            "Graph"
 #define PANEL_TITLE_TINY_GRAPH       "Tiny Graph"
-#define PANEL_TITLE_FUNCTIONS        "Functions"
-#define PANEL_TITLE_FUNCTIONCALLS    "Function Calls"
 #define PANEL_TITLE_BREAKPOINTS      "Breakpoints"
 #define PANEL_TITLE_STRINGS_DATA     "Strings in data sections"
 #define PANEL_TITLE_STRINGS_BIN      "Strings in the whole bin"
@@ -41,8 +30,6 @@ static void __panels_refresh(RCore *core);
 #define PANEL_TITLE_COMMENTS         "Comments"
 
 #define PANEL_CMD_SYMBOLS            "isq"
-#define PANEL_CMD_XREFS_HERE         "ax."
-#define PANEL_CMD_XREFS              "ax"
 #define PANEL_CMD_STACK              "px"
 #define PANEL_CMD_REGISTERS          "dr"
 #define PANEL_CMD_FPU_REGISTERS      "dr fpu;drf"
@@ -58,8 +45,6 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CMD_HEXDUMP            "xc"
 #define PANEL_CMD_CONSOLE            "cat $console"
 
-#define PANEL_CONFIG_MENU_MAX    64
-#define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_MIN_SIZE    2
 #define PANEL_CONFIG_RESIZE_W    4
@@ -1073,7 +1058,6 @@ static unsigned int __adjust_side_panels(RCore *core) {
 	}
 	/* 2-wide margin, like in del_invalid_panels */
 	if (smallest_panel_size > PANEL_CONFIG_SIDEPANEL_W + PANEL_CONFIG_MIN_SIZE) {
-
 		available_space = PANEL_CONFIG_SIDEPANEL_W;
 	} else {
 		available_space = smallest_panel_size / 2;
@@ -2485,6 +2469,24 @@ static RPanels *__panels_new(RCore *core) {
 		return NULL;
 	}
 	return panels;
+}
+
+static bool __init_panels(RCore *core, RPanels *panels) {
+	panels->panel = calloc (sizeof (RPanel *), PANEL_NUM_LIMIT);
+	if (!panels->panel) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
+		panels->panel[i] = R_NEW0 (RPanel);
+		panels->panel[i]->model = R_NEW0 (RPanelModel);
+		__renew_filter (panels->panel[i], PANEL_NUM_LIMIT);
+		panels->panel[i]->view = R_NEW0 (RPanelView);
+		if (!panels->panel[i]->model || !panels->panel[i]->view) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static void __handle_tab_new_with_cur_panel(RCore *core) {
@@ -5926,24 +5928,6 @@ static bool __init_panels_menu(RCore *core) {
 	panels_menu->history = calloc (8, sizeof (RPanelsMenuItem *));
 	__clear_panels_menu (core);
 	panels_menu->refreshPanels = calloc (8, sizeof (RPanel *));
-	return true;
-}
-
-static bool __init_panels(RCore *core, RPanels *panels) {
-	panels->panel = calloc (sizeof (RPanel *), PANEL_NUM_LIMIT);
-	if (!panels->panel) {
-		return false;
-	}
-	int i;
-	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
-		panels->panel[i] = R_NEW0 (RPanel);
-		panels->panel[i]->model = R_NEW0 (RPanelModel);
-		__renew_filter (panels->panel[i], PANEL_NUM_LIMIT);
-		panels->panel[i]->view = R_NEW0 (RPanelView);
-		if (!panels->panel[i]->model || !panels->panel[i]->view) {
-			return false;
-		}
-	}
 	return true;
 }
 
