@@ -166,7 +166,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 2;
 	}
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return 2;
 	}
 	if (q == R_ANAL_ARCHINFO_INV_OP_SIZE) {

@@ -799,7 +799,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 		r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	}
 	/* reload types and cc info */
@@ -894,7 +894,7 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set codealign */
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 		r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	}
 	return ret;

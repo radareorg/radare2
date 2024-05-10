@@ -2451,7 +2451,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 	}
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
-	const int align = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	const int align = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
 	const ut64 end_write = addr + size;
 
 	r_list_foreach (blocks, it, bb) {

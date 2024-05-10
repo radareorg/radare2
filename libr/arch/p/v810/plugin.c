@@ -449,7 +449,7 @@ static char *v810_regs(RArchSession *s) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 2;

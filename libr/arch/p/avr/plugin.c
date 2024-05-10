@@ -2302,7 +2302,7 @@ static char *regs(RArchSession *as) {
 }
 
 static int info(RArchSession *as, ut32 q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return 2;
 	}
 	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {

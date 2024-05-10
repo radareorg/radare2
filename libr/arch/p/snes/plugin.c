@@ -76,7 +76,7 @@ static char *snes_disass(struct snes_asm_flags snesflags, ut64 pc, const ut8 *bu
 
 static int snes_info(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		// some ops accept newline terminated strings of arbitrary len...

@@ -372,7 +372,7 @@ static bool fini(RArchSession *s) {
 
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
-	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
 	case R_ARCH_INFO_MAX_OP_SIZE:
 		return 33;

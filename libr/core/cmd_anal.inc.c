@@ -7068,7 +7068,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			pj_ki (pj, "invopsz", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 			pj_ki (pj, "dtalign", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 			pj_ki (pj, "codealign", v);
 			pj_end (pj);
 			char *s = pj_drain (pj);
@@ -7083,7 +7083,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			r_cons_printf ("invopsz %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 			r_cons_printf ("dtalign %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf ("codealign %d\n", v);
 		}
 		break;
@@ -12715,7 +12715,7 @@ static bool archIsThumbable(RCore *core) {
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool asterisk = user;
-	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int arch_align = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
 	int searchAlign = r_config_get_i (core->config, "search.align");
 	int align = (searchAlign > 0)? searchAlign: arch_align;
@@ -12793,7 +12793,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	const bool is_debug = r_config_get_b (core->config, "cfg.debug");
-	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int archAlign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
 

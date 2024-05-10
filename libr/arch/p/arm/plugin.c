@@ -131,7 +131,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		break;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		if (a->config && a->config->bits == 16) {
 			return 2;
 		}

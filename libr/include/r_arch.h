@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2023 - pancake, condret */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -16,6 +16,12 @@ typedef enum {
 } RArchValueType;
 #define RAnalValueType RArchValueType
 
+#define R_ARCH_INFO_MIN_OP_SIZE	0
+#define R_ARCH_INFO_MAX_OP_SIZE	1
+#define R_ARCH_INFO_INV_OP_SIZE	2
+// #define R_ARCH_INFO_DATA_ALIGN	8
+#define R_ARCH_INFO_JMPMID	16
+
 #define R_ARCH_INFO_MINOP_SIZE 0
 #define R_ARCH_INFO_MAXOP_SIZE 1
 #define R_ARCH_INFO_INVOP_SIZE 2
@@ -24,8 +30,12 @@ typedef enum {
 #define R_ARCH_INFO_DATA2_ALIGN 16
 #define R_ARCH_INFO_DATA4_ALIGN 32
 #define R_ARCH_INFO_DATA8_ALIGN 64
-// R2_590 - deprecated but compatible types
+#define R_ARCH_INFO_JMPMID 256
+#define R_ARCH_INFO_ISVM 128
+
+// R2_600 - deprecated but compatible types
 #if 1
+#define R_ARCH_INFO_ALIGN	4
 #define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
 #define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
 #define R_ANAL_ARCHINFO_INV_OP_SIZE 2
@@ -98,13 +108,6 @@ typedef struct r_arch_config_t {
 } RArchConfig;
 
 #define	R_ARCH_CONFIG_IS_BIG_ENDIAN(cfg_) (((cfg_)->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG)
-
-#define R_ARCH_INFO_MIN_OP_SIZE	0
-#define R_ARCH_INFO_MAX_OP_SIZE	1
-#define R_ARCH_INFO_INV_OP_SIZE	2
-#define R_ARCH_INFO_ALIGN	4
-#define R_ARCH_INFO_DATA_ALIGN	8
-#define R_ARCH_INFO_JMPMID	16
 
 typedef enum {
 	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast

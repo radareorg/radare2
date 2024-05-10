@@ -2582,7 +2582,7 @@ static int archinfo(RArchSession *anal, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
