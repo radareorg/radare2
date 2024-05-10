@@ -6662,7 +6662,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int tail_return_value = 0;
 	int ret;
 	ut8 code[32];
-	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
 	// esil->trap = 0;
@@ -6685,7 +6685,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 addr = -1;
 	ut64 oaddr = -1;
 	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MIN_OP_SIZE);
-	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	int dataAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
 	if (maxopsz > sizeof (code)) {
@@ -7060,13 +7060,13 @@ static void cmd_anal_info(RCore *core, const char *input) {
 		if (input[1] == 'j') { // "aiaj"
 			PJ *pj = pj_new ();
 			pj_o (pj);
-			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 			pj_ki (pj, "minopsz", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 			pj_ki (pj, "maxopsz", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_INVOP_SIZE);
 			pj_ki (pj, "invopsz", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_DATA_ALIGN);
 			pj_ki (pj, "dtalign", v);
 			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 			pj_ki (pj, "codealign", v);
@@ -7075,13 +7075,13 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			r_cons_printf ("%s\n", s);
 			free (s);
 		} else {
-			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 			r_cons_printf ("minopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 			r_cons_printf ("maxopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_INVOP_SIZE);
 			r_cons_printf ("invopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+			v = r_anal_archinfo (core->anal, R_ARCH_INFO_DATA_ALIGN);
 			r_cons_printf ("dtalign %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf ("codealign %d\n", v);
@@ -7466,7 +7466,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length, const char *es
 	if (!core) {
 		return false;
 	}
-	int maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int maxopsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (maxopsize < 1) {
 		maxopsize = 16;
 	}
@@ -7489,7 +7489,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length, const char *es
 	if (!buf) {
 		return false;
 	}
-	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
 	r_reg_arena_push (core->anal->reg);
@@ -7675,7 +7675,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	int i, j = 0;
 	RAnalOp aop = {0};
 	int ret , bsize = R_MAX (4096, core->blocksize);
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 
@@ -9592,7 +9592,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		return;
 	}
 	memset (block1, -1, bsz);
-	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	if (minop < 1) {
 		minop = 1;
 	}

@@ -1341,7 +1341,7 @@ static char *get_reg_profile(RArchSession * as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	// R2_590 - R_ARCH_INFO_CODE_ALIGN instead of R_ANAL_ARCHINF..
-	if (q == R_ARCH_INFO_CODE_ALIGN || q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_CODE_ALIGN || q == R_ARCH_INFO_MINOP_SIZE) {
 		const char *cpu = as->config->cpu;
 		if (cpu && !strcmp (cpu, "micro")) {
 			return 2; // (anal->bits == 16) ? 2: 4;

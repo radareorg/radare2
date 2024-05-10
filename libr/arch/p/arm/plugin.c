@@ -126,11 +126,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_DATA_ALIGN:
+	case R_ARCH_INFO_INVOP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		break;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 	case R_ARCH_INFO_CODE_ALIGN:
 		if (a->config && a->config->bits == 16) {
 			return 2;

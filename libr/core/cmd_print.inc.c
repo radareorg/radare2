@@ -5801,7 +5801,7 @@ static void core_print_decompile(RCore *core, const char *input) {
 		count = 1;
 	}
 	ut64 addr = core->offset;
-	int minopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int minopsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	REsilC *ec = r_esil_toc_new (core->anal, bits);
 	for (i = 0; i < count; i++) {

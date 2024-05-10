@@ -620,15 +620,15 @@ static int archinfo(RArchSession *as, ut32 q) {
 	const int bits = as->config->bits;
 	switch (q) {
 		// R_ARCH_INFO_MINOPSZ
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return (bits == 64)? 16: 8;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 8;
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 8;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
 	}
 	return 0;

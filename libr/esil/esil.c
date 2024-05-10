@@ -217,7 +217,7 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 }
 
 static bool alignCheck(REsil *esil, ut64 addr) {
-	// r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	// r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
 	const unsigned int da = esil->data_align;
 	return !(da > 0 && addr % da);
 }

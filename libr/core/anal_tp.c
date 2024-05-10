@@ -611,7 +611,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	Sdb *TDB = anal->sdb_types;
 	int ret;
 	const bool chk_constraint = r_config_get_b (core->config, "anal.types.constraint");
-	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = r_anal_archinfo (anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	int cur_idx, prev_idx = 0;
 	RConfigHold *hc = r_config_hold_new (core->config);

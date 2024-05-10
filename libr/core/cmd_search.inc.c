@@ -1975,7 +1975,7 @@ static const char *get_syscall_register(RCore *core) {
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, bsize = R_MIN (64, core->blocksize);
 	RAnalOp aop;
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = get_syscall_register (core);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
@@ -2043,7 +2043,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int kwidx = core->search->n_kws;
 	RIOMap* map;
 	RListIter *iter;
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	REsil *esil;
 	int align = core->search->align;
@@ -3797,8 +3797,8 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 	RAnalOp analop;
 	ut64 at;
 	r_cons_break_push (NULL, NULL);
-	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (minopsz < 1 || maxopsz < 1) {
 		R_LOG_ERROR ("Invalid MAX_OPSIZE. assuming 4");
 		minopsz = 4;

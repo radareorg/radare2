@@ -88,7 +88,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		}
 		r_anal_op_set_mnemonic (op, addr, s);
 		if (!r_arch_encode (anal->arch, op, 0)) {
-			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			int ret = r_arch_info (anal->arch, R_ARCH_INFO_INVOP_SIZE);
 			if (ret < 1) {
 				ret = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 				if (ret < 1) {
@@ -183,7 +183,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		r_anal_op_set_bytes (op, addr, data, len);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 			}
@@ -196,7 +196,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// ret = anal->arch->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 			}
@@ -211,7 +211,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 				ret = -1;
@@ -246,7 +246,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (ret == -1) {
 		free (op->mnemonic);
 		op->mnemonic = strdup ("invalid");
-		int minop = r_arch_info (anal->arch, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		int minop = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
 		op->size = minop;
 		ut64 nextpc = op->addr + op->size;
 		if (codealign > 1) {
