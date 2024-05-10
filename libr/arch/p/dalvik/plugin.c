@@ -1701,6 +1701,8 @@ static int archinfo(RArchSession *as, ut32 q) {
 		return 2;
 	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
 	}
 	return -1;
 }
@@ -1708,6 +1710,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_dalvik = {
 	.meta = {
 		.name = "dalvik",
+		.author = "pancake",
 		.desc = "Dalvik (Android VM) bytecode analysis plugin",
 		.license = "LGPL3",
 	},

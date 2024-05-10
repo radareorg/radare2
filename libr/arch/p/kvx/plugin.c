@@ -292,9 +292,9 @@ static bool kvx_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 
 static int kvx_info(RArchSession *a, ut32 query) {
 	switch (query) {
-	case R_ARCH_INFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 4;
-	case R_ARCH_INFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 12;
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 4;

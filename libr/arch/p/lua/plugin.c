@@ -233,6 +233,9 @@ static int finit(void *user) {
 
 #endif
 static int archinfo(RArchSession *cfg, ut32 q) {
+	if (q == R_ARCH_INFO_ISVM) {
+		return R_ARCH_INFO_ISVM;
+	}
 	return 4;
 }
 

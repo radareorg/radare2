@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2023 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - Apache 2.0 - Copyright 2010-2024 - pancake and dso */
 
 #include <r_arch.h>
 
@@ -347,13 +347,31 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 }
 #endif
 
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_CODE_ALIGN:
+		return 1;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 6;
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 1;
+	case R_ARCH_INFO_MINOP_SIZE:
+		return 1;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
+	}
+	return 1;
+}
+
 const RArchPlugin r_arch_plugin_java = {
 	.meta = {
 		.name = "java",
 		.desc = "Java bytecode analysis plugin",
+		.author = "dso",
 		.license = "Apache",
 	},
 	.arch = "java",
+	.info = archinfo,
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
 	.encode = encode,
