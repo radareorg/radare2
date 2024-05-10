@@ -225,10 +225,6 @@ static RCoreHelpMessage help_msg_slash_x = {
 	NULL
 };
 
-static R_TH_LOCAL int preludecnt = 0;
-static R_TH_LOCAL int searchflags = 0;
-static R_TH_LOCAL int searchshow = 0;
-static R_TH_LOCAL const char *searchprefix = NULL;
 
 struct search_parameters {
 	RCore *core;
@@ -240,6 +236,9 @@ struct search_parameters {
 	bool inverse;
 	bool key_search;
 	int key_search_len;
+	int searchflags;
+	int searchshow;
+	const char *searchprefix;
 	int c; // used for progress
 	int count;
 };
@@ -362,6 +361,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 typedef struct {
 	RCore *core;
 	bool forward;
+	int preludecnt;
 } UserPrelude;
 
 static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -374,7 +374,8 @@ static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) 
 }
 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	RCore *core = (RCore *) user;
+	UserPrelude *up = (UserPrelude*) user;
+	RCore *core = up->core;
 	if (r_config_get_b (core->config, "anal.calls")) {
 		// XXX dont use RCore.cmdf here its slow
 		r_core_cmdf (core, "afr@0x%"PFMT64x, addr);
@@ -382,7 +383,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		int depth = r_config_get_i (core->config, "anal.depth");
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	}
-	preludecnt++;
+	up->preludecnt++;
 	return 1;
 }
 
@@ -407,8 +408,8 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	r_search_kw_add (core->search, r_search_keyword_new (buf, blen, mask, mlen, NULL));
 	r_search_begin (core->search);
-	r_search_set_callback (core->search, &__prelude_cb_hit, core);
-	preludecnt = 0;
+	UserPrelude up = {core, false, 0};
+	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
 	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -434,7 +435,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	// searches start by resetting core->search) For now we use `r_search_kw_reset`
 	r_search_kw_reset (core->search);
 	free (b);
-	return preludecnt;
+	return up.preludecnt;
 }
 
 R_API int r_core_search_uds(RCore *core, int mode) {
@@ -612,7 +613,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 
-	if (searchshow && kw && kw->keyword_length > 0) {
+	if (param->searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (param->outmode == R_MODE_JSON)? 3: 1;
@@ -688,7 +689,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 			pj_end (param->pj);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
-				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
+				base_addr + addr, param->searchprefix, kw->kwidx, kw->count, s);
 		}
 		free (s);
 		free (buf);
@@ -700,16 +701,16 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 			pj_ki (param->pj, "len", klen);
 			pj_end (param->pj);
 		} else {
-			if (searchflags) {
-				r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
+			if (param->searchflags) {
+				r_cons_printf ("%s%d_%d\n", param->searchprefix, kw->kwidx, kw->count);
 			} else {
-				r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x "\n", searchprefix,
+				r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x "\n", param->searchprefix,
 					kw->kwidx, kw->count, klen, base_addr + addr);
 			}
 		}
 	}
-	if (searchflags && kw) {
-		char *flag = r_str_newf ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
+	if (param->searchflags && kw) {
+		char *flag = r_str_newf ("%s%d_%d", param->searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, base_addr + addr, klen);
 		free (flag);
 	}
@@ -2195,8 +2196,8 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					R_LOG_DEBUG ("Cant find an syscall for %d %d", scNumber, scVector);
 				}
 				memset (previnstr, 0, (MAXINSTR + 1) * sizeof (*previnstr)); // clearing the buffer
-				if (searchflags) {
-					char *flag = r_str_newf ("%s%d_%d.%s", searchprefix, kwidx, count, item? item->name: "syscall");
+				if (param->searchflags) {
+					char *flag = r_str_newf ("%s%d_%d.%s", param->searchprefix, kwidx, count, item? item->name: "syscall");
 					r_flag_set (core->flags, flag, at, ret);
 					free (flag);
 				}
@@ -2389,7 +2390,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 		break;
 	case R_MODE_RADARE:
 		r_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
-				searchprefix, kwidx, param->count, hit->addr);
+				param->searchprefix, kwidx, param->count, hit->addr);
 		break;
 	default:
 		if (asm_sub_names) {
@@ -2414,10 +2415,10 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 		}
 		break;
 	}
-	if (searchflags) {
+	if (param->searchflags) {
 		char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
 			? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
-			: r_str_newf ("%s%d_%d", searchprefix, kwidx, param->count);
+			: r_str_newf ("%s%d_%d", param->searchprefix, kwidx, param->count);
 		if (flagname) {
 			r_flag_set (core->flags, flagname, hit->addr, hit->len);
 			free (flagname);
@@ -2982,10 +2983,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						break;
 					}
 					R_FREE (opstr);
-					if (*input && searchflags) {
+					if (*input && param->searchflags) {
 						char flag[64];
 						snprintf (flag, sizeof (flag), "%s%d_%d",
-							searchprefix, kwidx, count);
+							param->searchprefix, kwidx, count);
 						r_flag_set (core->flags, flag, at, ret);
 					}
 					if (*param->cmd_hit) {
@@ -3171,7 +3172,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	}
 	RListIter *iter;
 	RIOMap *map;
-	if (!searchflags && param->outmode != R_MODE_JSON) {
+	if (!param->searchflags && param->outmode != R_MODE_JSON) {
 		r_cons_printf ("fs hits\n");
 	}
 	core->search->inverse = param->inverse;
@@ -3910,6 +3911,9 @@ static int cmd_search(void *data, const char *input) {
 		.inverse = false,
 		.key_search = false,
 		.key_search_len = 0,
+		.searchflags = r_config_get_i (core->config, "search.flags"),
+		.searchshow = r_config_get_i (core->config, "search.show"),
+		.searchprefix = r_config_get (core->config, "search.prefix"),
 		.count = 0,
 		.c = 0,
 	};
@@ -3962,7 +3966,6 @@ static int cmd_search(void *data, const char *input) {
 		search_itv.size = UT64_MAX;
 	}
 
-	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries_prot (core, -1, param.mode, "search");
 
@@ -3979,11 +3982,9 @@ static int cmd_search(void *data, const char *input) {
 	 */
 
 	core->search->align = r_config_get_i (core->config, "search.align");
-	searchflags = r_config_get_i (core->config, "search.flags");
 	core->search->maxhits = r_config_get_i (core->config, "search.maxhits");
-	searchprefix = r_config_get (core->config, "search.prefix");
 	if (r_config_get_b (core->config, "search.named")) {
-		searchprefix = r_str_newf ("hit.%s.", r_str_trim_head_ro (input));
+		param.searchprefix = r_str_newf ("hit.%s.", r_str_trim_head_ro (input));
 	}
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	core->search->bckwrds = false;
