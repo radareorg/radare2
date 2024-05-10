@@ -61,9 +61,12 @@ static RCoreHelpMessage help_msg_slash_pattern = {
 };
 
 static RCoreHelpMessage help_msg_slash_ad = {
-	"Usage: /ad<jq>", "[value]", "Backward search subcommands",
+	"Usage: /ad[/<*jq>]", "[value]", "Backward search subcommands",
 	"/ad", " rax", "search in disasm plaintext for matching instructions",
+	"/adj", " rax", "json output searching in disasm with plaintext",
 	"/adq", " rax", "quiet mode ideal for scripting",
+	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",
+	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
 	NULL
 };
 
@@ -104,7 +107,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/p", "[?][p] patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
-	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
+	"/r", "[?][erwx] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", "[?] [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
@@ -146,9 +149,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/aa", " mov eax", "linearly find aproximated assembly (case insensitive strstr)",
 	"/ab", " [delta]", "search for backward jumps (usually loops)",
 	"/ac", " mov eax", "same as /aa, but case-sensitive",
-	"/ad", "[/*j] push;mov", "match ins1 followed by ins2 in linear disasm",
-	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",
-	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
+	"/ad", "[?][/*jq] push;mov", "match ins1 followed by ins2 in linear disasm",
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
@@ -157,7 +158,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
 	"/as", "[qjl] ([type])", "search for syscalls (See /at swi and /af priv)",
-	"/at", "[qjl] ([type])", "search for instructions of given type",
+	"/at", "[?][qjl] ([type])", "search for instructions of given type",
 	"/az[q]", " ([minstr])", "search assembly constructed strings (q)uiet reduces FP (uses bin.minsz)",
 	NULL
 };
@@ -165,7 +166,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 static RCoreHelpMessage help_msg_slash_c = {
 	"Usage: /c", "", "Search for crypto materials",
 	"/ca", "[?] [algo]", "search for keys expanded in memory (algo can be 'aes' or 'sm4')",
-	"/cc", "[algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
+	"/cc", "[?] [algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "search for ASN1/DER certificates",
 	"/cg", "", "search for GPG/PGP keys and signatures (Plaintext and binary form)",
 	"/ck", "", "find well known constant tables from different hash and crypto algorithms",
@@ -173,7 +174,7 @@ static RCoreHelpMessage help_msg_slash_c = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_slash_cc  = {
+static RCoreHelpMessage help_msg_slash_cc = {
 	"Usage: /cc[aAldpb]", "[algo] [digest]", "find collisions",
 	"/cca", " [algo] [digest]", "lowercase alphabet chars only",
 	"/ccA", " [algo] [digest]", "uppercase alphabet chars only",
@@ -427,9 +428,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		}
 	}
 	free (zeropage);
-	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data), but im not sure.
-	//add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
-	//For now we will just use r_search_kw_reset
+	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data),
+	// but im not sure. Add a commit that puts it in there to this PR if it wouldn't
+	// break anything. (don't have to worry about this happening again, since all
+	// searches start by resetting core->search) For now we use `r_search_kw_reset`
 	r_search_kw_reset (core->search);
 	free (b);
 	return preludecnt;
@@ -3091,11 +3093,14 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
 	int count = 0;
-	RList *hits;
 	RIOMap *map;
-	bool regexp = input[0] && input[1] == '/'; // "/c/"
+	bool regexp = input[0] && input[1] == '/'; // "/ad/"
 	bool everyByte = regexp && input[0] && input[1] && input[2] == 'a';
 	char *end_cmd = strchr (input, ' ');
+	if (regexp && input[2] == '?') {
+		r_core_cmd_help_contains (core, help_msg_slash_ad, "/ad/");
+		return;
+	}
 	switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
 	case 'j':
 		param->outmode = R_MODE_JSON;
@@ -3136,8 +3141,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (maxhits && count >= maxhits) {
 			break;
 		}
-		hits = r_core_asm_strsearch (core, end_cmd,
-				from, to, maxhits, regexp, everyByte, mode);
+		RList *hits; hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
 			r_cons_singleton ()->context->breaked = false;
 			r_list_foreach (hits, iter, hit) {
@@ -3153,6 +3157,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		pj_end (param->pj);
 	}
 	r_cons_break_pop ();
+	// increment search index
+	r_config_set_i (core->config, "search.kwidx", ++core->search->n_kws);
 }
 
 static void do_string_search(RCore *core, RInterval search_itv, struct search_parameters *param) {
