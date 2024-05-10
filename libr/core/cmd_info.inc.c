@@ -1196,74 +1196,79 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 		break;
 	case 'I': // "iI" -- dupe of "i"
-		  {
-			  RList *objs = r_core_bin_files (core);
-			  RListIter *iter;
-			  RBinFile *bf;
-			  RBinFile *cur = core->bin->cur;
-			  r_list_foreach (objs, iter, bf) {
-				  core->bin->cur = bf;
-				  RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
-			  }
-			  core->bin->cur = cur;
-			  r_list_free (objs);
-		  }
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+		goto done;
 		break;
 	case 'M': // "iM"
-		  {
-			  RList *objs = r_core_bin_files (core);
-			  RListIter *iter;
-			  RBinFile *bf;
-			  RBinFile *cur = core->bin->cur;
-			  r_list_foreach (objs, iter, bf) {
-				  core->bin->cur = bf;
-				  RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
-			  }
-			  core->bin->cur = cur;
-			  r_list_free (objs);
-		  }
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+		goto done;
 		break;
 	case 'm': // "im"
-		  {
-			  RList *objs = r_core_bin_files (core);
-			  RListIter *iter;
-			  RBinFile *bf;
-			  RBinFile *cur = core->bin->cur;
-			  r_list_foreach (objs, iter, bf) {
-				  core->bin->cur = bf;
-				  RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
-			  }
-			  core->bin->cur = cur;
-			  r_list_free (objs);
-		  }
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+		goto done;
 		break;
 	case 'w': // "iw"
-		  {
-			  RList *objs = r_core_bin_files (core);
-			  RListIter *iter;
-			  RBinFile *bf;
-			  RBinFile *cur = core->bin->cur;
-			  r_list_foreach (objs, iter, bf) {
-				  core->bin->cur = bf;
-				  RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
-			  }
-			  core->bin->cur = cur;
-			  r_list_free (objs);
-		  }
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+		goto done;
 		break;
 	case 'V': // "iV"
-		  {
-			  RList *bfiles = r_core_bin_files (core);
-			  RListIter *iter;
-			  RBinFile *bf;
-			  RBinFile *cur = core->bin->cur;
-			  r_list_foreach (bfiles, iter, bf) {
-				  core->bin->cur = bf;
-				  RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
-			  }
-			  core->bin->cur = cur;
-			  r_list_free (bfiles);
-		  }
+		{
+			RList *bfiles = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (bfiles, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (bfiles);
+		}
+		goto done;
 		break;
 	case 'q': // "iq"
 		mode = R_MODE_SIMPLE;
