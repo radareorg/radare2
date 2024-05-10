@@ -67,6 +67,8 @@ static int archinfo(RArchSession *as, ut32 query) {
 		}
 	default:
 		return -1;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
 	}
 }
 
@@ -173,7 +175,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			//op->fail = addr + ((is_python36)? 2: 3);
+			// op->fail = addr + ((is_python36)? 2: 3);
 		}
 	} else if (op_obj->type & HASCOMPARE) {
 		op->type = R_ANAL_OP_TYPE_CMP;

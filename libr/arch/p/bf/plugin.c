@@ -306,6 +306,8 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
 	case R_ARCH_INFO_MAXOP_SIZE:
 		return 0xff;
 		// return 32;
@@ -318,6 +320,7 @@ const RArchPlugin r_arch_plugin_bf = {
 		.name = "bf",
 		.desc = "brainfuck code analysis plugin",
 		.license = "LGPL3",
+		.author = "pancake"
 	},
 	.arch = "bf",
 	.bits = R_SYS_BITS_PACK (32),

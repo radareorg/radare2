@@ -16,12 +16,6 @@ typedef enum {
 } RArchValueType;
 #define RAnalValueType RArchValueType
 
-#define R_ARCH_INFO_MIN_OP_SIZE	0
-#define R_ARCH_INFO_MAX_OP_SIZE	1
-#define R_ARCH_INFO_INV_OP_SIZE	2
-// #define R_ARCH_INFO_DATA_ALIGN	8
-#define R_ARCH_INFO_JMPMID	16
-
 #define R_ARCH_INFO_MINOP_SIZE 0
 #define R_ARCH_INFO_MAXOP_SIZE 1
 #define R_ARCH_INFO_INVOP_SIZE 2
@@ -30,11 +24,14 @@ typedef enum {
 #define R_ARCH_INFO_DATA2_ALIGN 16
 #define R_ARCH_INFO_DATA4_ALIGN 32
 #define R_ARCH_INFO_DATA8_ALIGN 64
-#define R_ARCH_INFO_JMPMID 256
-#define R_ARCH_INFO_ISVM 128
+#define R_ARCH_INFO_JMPMID 128
+#define R_ARCH_INFO_ISVM 256
 
-// R2_600 - deprecated but compatible types
 #if 1
+// R2_600 - Old and Deprecated Names. keeping it for compat until 6.0
+#define R_ARCH_INFO_MIN_OP_SIZE	0
+#define R_ARCH_INFO_MAX_OP_SIZE	1
+#define R_ARCH_INFO_INV_OP_SIZE	2
 #define R_ARCH_INFO_ALIGN	4
 #define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
 #define R_ANAL_ARCHINFO_MAX_OP_SIZE 1

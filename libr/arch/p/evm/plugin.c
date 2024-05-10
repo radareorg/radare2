@@ -374,9 +374,9 @@ static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
-	case R_ARCH_INFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 33;
-	case R_ARCH_INFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return 0;

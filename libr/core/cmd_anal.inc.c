@@ -6684,7 +6684,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	r_cons_break_push (NULL, NULL);
 	ut64 addr = -1;
 	ut64 oaddr = -1;
-	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MIN_OP_SIZE);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	int dataAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
@@ -13752,7 +13752,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
 					logline (core, 68, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
-					if (!r_str_startswith (asm_arch, "dalvik") && !r_str_startswith (asm_arch, "java") && !r_str_startswith (asm_arch, "python")) {
+					int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+					if (!isvm) {
 						r_core_cmd_call (core, "aavq");
 					}
 					r_core_task_yield (&core->tasks);

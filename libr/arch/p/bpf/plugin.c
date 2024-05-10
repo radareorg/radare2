@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2023 - mrmacete, pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - mrmacete, pancake */
 
 #include <r_arch.h>
 #include <r_anal/op.h>
@@ -1183,6 +1183,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 		return 8;
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
+	case R_ARCH_INFO_ISVM:
+		// dont run aav in aaa
+		return R_ARCH_INFO_ISVM;
 	}
 	return 0;
 }
@@ -1225,6 +1228,7 @@ const RArchPlugin r_arch_plugin_bpf = {
 		.name = "bpf.mr",
 		.desc = "Classic BPF analysis plugin",
 		.license = "LGPLv3",
+		.author = "mrmacete"
 	},
 	.arch = "bpf",
 	.bits = 32,

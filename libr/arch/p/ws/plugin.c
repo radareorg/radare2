@@ -130,15 +130,28 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	return op->size;
 }
 
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 0xff;
+		// return 32;
+	}
+	return 1;
+}
+
 const RArchPlugin r_arch_plugin_ws = {
 	.meta = {
 		.name = "ws",
 		.desc = "Space, tab and linefeed analysis plugin",
 		.license = "LGPL3",
+		.author = "pancake"
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "ws",
 	.bits = 32,
+	.info = archinfo,
 	.decode = &decode,
 };
 
