@@ -34,7 +34,7 @@ typedef struct {
 	bool binstr2hex;	// -L
 	bool dumpcstr;		// -C
 	bool octal2raw;		// -o
-	bool ipaddr2num;	// -I
+	bool ipaddr2num;	// -i
 	bool newline;		// -n
 	bool jsonbases;		// -j
 	bool forcebase;		// -b
@@ -187,7 +187,7 @@ static int help(void) {
 		"  -F         stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h         help                 ;  rax2 -h\n"
 		"  -H         hash string          ;  rax2 -H linux osx\n"
-		"  -I         IP address <-> LONG  ;  rax2 -I 3530468537\n"
+		"  -i         IP address <-> LONG  ;  rax2 -i 3530468537\n"
 		"  -j         json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k         keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K         randomart            ;  rax2 -K 0x34 1020304050\n"
@@ -263,7 +263,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'L': flags->binstr2hex = !flags->binstr2hex; break;
 			case 'C': flags->dumpcstr = !flags->dumpcstr; break;
 			case 'o': flags->octal2raw = !flags->octal2raw; break;
-			case 'I': flags->ipaddr2num = !flags->ipaddr2num; break;
+			case 'i': flags->ipaddr2num = !flags->ipaddr2num; break;
 			case 'j': flags->jsonbases = !flags->jsonbases; break;
 			case 'b': flags->forcebase = !flags->forcebase; break;
 			case 'v': return r_main_version_print ("rax2", 0);
@@ -710,7 +710,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags->ipaddr2num) { // -I
+	if (flags->ipaddr2num) { // -i
 		if (strchr (str, '.')) {
 			ut8 ip[4];
 			sscanf (str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
