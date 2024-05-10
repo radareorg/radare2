@@ -47,7 +47,7 @@ EXPECT=<<EOF
 |           0x00015632      702085035400   invoke-direct {v4, v5}, Ljava/lang/StringBuilder.<init>(Ljava/lang/String;)V ; 0x385
 |           0x00015638      6e208a033400   invoke-virtual {v4, v3}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
 |           0x0001563e      0c04           move-result-object v4
-|           0x00015640      .dword 0x0002051a ; aav.0x0002051a
+|           0x00015640      1a050200       const-string v5, 0x2b125
 |           0x00015644      6e208a035400   invoke-virtual {v4, v5}, Ljava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ; 0x38a
 |           0x0001564a      0c04           move-result-object v4
 |           0x0001564c      6e108c030400   invoke-virtual {v4}, Ljava/lang/StringBuilder.toString()Ljava/lang/String; ; 0x38c
