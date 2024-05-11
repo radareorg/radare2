@@ -38,6 +38,9 @@ for a in $* ; do
 	'')
 		:
 		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
+		;;
 	--**|-)
 		shift
 		CFGARG="${CFGARG} $a"
