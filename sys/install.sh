@@ -67,6 +67,7 @@ while : ; do
 		;;
 	'--prefix='*)
 		PREFIX=`echo "$1" | cut -d = -f 2`
+		ARGS="${ARGS} $1"
 		;;
 	-*)
 		# just for the penguin face case
@@ -127,19 +128,21 @@ else
 	[ -n "${NOSUDO}" ] && SUDO=
 fi
 
-if [ "$(id -u)" = 0 ]; then
-	SUDO=""
-else
-	if [ -d /system/bin ]; then
-		# This is an android
+if [ "${NOSUDO}" != 1 ]; then
+	if [ "$(id -u)" = 0 ]; then
 		SUDO=""
 	else
-		[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+		if [ -d /system/bin ]; then
+			# This is an android
+			SUDO=""
+		else
+			[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+		fi
 	fi
-fi
 
-if [ "${USE_SU}" = 1 ]; then
-	SUDO="/bin/su -m root -c"
+	if [ "${USE_SU}" = 1 ]; then
+		SUDO="/bin/su -m root -c"
+	fi
 fi
 
 ${SHELL} --help 2> /dev/null | grep -q fish
