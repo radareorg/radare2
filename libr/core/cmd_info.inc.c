@@ -523,7 +523,7 @@ static RList *r_core_bin_files(RCore *core) {
 	return list;
 }
 
-static bool isKnownPackage(const char *cn) {
+static bool isKnownAndroidPackage(const char *cn) {
 	if (*cn == 'L') {
 		if (r_str_startswith (cn, "Lkotlin")) {
 			return true;
@@ -610,7 +610,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 	}
 	if (ch0 == 0 || ch0 == '?') {
 		// delete klass or method
-		eprintf ("Usage: ic-[klassname][.methodname]\n");
+		R_LOG_INFO ("Usage: ic-[klassname][.methodname]");
 		return;
 	}
 	char *klass_name = strdup (input);
@@ -645,7 +645,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 void cmd_ic_add(RCore *core, const char *input) {
 	const char ch0 = *input;
 	if (ch0 == 0 || ch0 == '?') {
-		eprintf ("Usage: ic+[klassname][.methodname]\n");
+		R_LOG_INFO ("Usage: ic+[klassname][.methodname]");
 		return;
 	}
 	RList *klasses = r_bin_get_classes (core->bin);
@@ -818,6 +818,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				r_core_cmd_help_contains (core, help_msg_i, "ic");
 				break;
 			}
+			bool is_dalvik = !strcmp (core->rasm->config->arch, "dalvik");
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
 			RBinFile *bf;
@@ -851,10 +852,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				RListIter *iter, *iter2;
 				core->bin->cur = bf;
 
-				if (is_superquiet) {
+				if (is_superquiet && is_dalvik) {
 					r_list_foreach (obj->classes, iter, cls) {
 						const char *kname = r_bin_name_tostring (cls->name);
-						if (!isKnownPackage (kname)) {
+						if (!isKnownAndroidPackage (kname)) {
 							r_cons_printf ("%s\n", kname);
 						}
 					}
@@ -928,7 +929,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					break;
 				case 'c': // "icc"
 					mode = R_MODE_CLASSDUMP;
-					eprintf ("icc\n");
 					if (mode == '*') {
 						mode |= R_MODE_RADARE;
 					} else if (mode == 'k') { // "icck"
@@ -1068,6 +1068,71 @@ static bool bin_header(RCore *r, int mode) {
 		}
 	}
 	return false;
+}
+
+static void cmd_it(RCore *core, PJ *pj, bool is_json) {
+	ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (!info) {
+		R_LOG_ERROR ("Cannot get bin info");
+		r_core_return_code (core, 1);
+		return;
+	}
+
+	RList *new_hashes = r_bin_file_compute_hashes (core->bin, limit);
+	RList *old_hashes = r_bin_file_set_hashes (core->bin, new_hashes);
+	bool equal = true;
+	if (!r_list_empty (new_hashes) && !r_list_empty (old_hashes)) {
+		if (!is_equal_file_hashes (new_hashes, old_hashes, &equal)) {
+			R_LOG_ERROR ("is_equal_file_hashes: Cannot compare file hashes");
+			r_list_free (old_hashes);
+			r_core_return_code (core, 1);
+			return;
+		}
+	}
+	RBinFileHash *fh_old, *fh_new;
+	RListIter *hiter_old, *hiter_new;
+	if (is_json) { // "itj"
+		pj_o (pj);
+		r_list_foreach (new_hashes, hiter_new, fh_new) {
+			pj_ks (pj, fh_new->type, fh_new->hex);
+		}
+		if (!equal) {
+			// print old hashes prefixed with `o` character like `omd5` and `isha1`
+			r_list_foreach (old_hashes, hiter_old, fh_old) {
+				char *key = r_str_newf ("o%s", fh_old->type);
+				pj_ks (pj, key, fh_old->hex);
+				free (key);
+			}
+		}
+		pj_end (pj);
+	} else { // "it"
+		if (!equal) {
+			R_LOG_INFO ("File has been modified");
+			hiter_new = r_list_iterator (new_hashes);
+			hiter_old = r_list_iterator (old_hashes);
+			while (r_list_iter_next (hiter_new) && r_list_iter_next (hiter_old)) {
+				fh_new = (RBinFileHash *)r_list_iter_get (hiter_new);
+				fh_old = (RBinFileHash *)r_list_iter_get (hiter_old);
+				if (strcmp (fh_new->type, fh_old->type)) {
+					R_LOG_WARN ("Wrong file hashes structure");
+				}
+				if (!strcmp (fh_new->hex, fh_old->hex)) {
+					r_cons_printf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
+				} else {
+					// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
+					r_cons_printf ("- %s %s\n+ %s %s\n",
+							fh_old->type, fh_old->hex,
+							fh_new->type, fh_new->hex);
+				}
+			}
+		} else { // hashes are equal
+			r_list_foreach (new_hashes, hiter_new, fh_new) {
+				r_cons_printf ("%s %s\n", fh_new->type, fh_new->hex);
+			}
+		}
+	}
+	r_list_free (old_hashes);
 }
 
 static int cmd_info(void *data, const char *input) {
@@ -1487,6 +1552,14 @@ static int cmd_info(void *data, const char *input) {
 			}
 			goto done;
 		}
+	case 't': // "it"
+		{
+			// TODO: generalize is_json outside each command. also if `pj` is not null it means is_json
+			const bool is_json = input[1] == 'j'; // "itj"
+			cmd_it (core, pj, is_json);
+			goto done;
+		}
+		break;
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		goto done;
@@ -1556,71 +1629,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		case 't': // "it"
-			{
-				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
-				RBinInfo *info = r_bin_get_info (core->bin);
-				if (!info) {
-					R_LOG_ERROR ("Cannot get bin info");
-					return 0;
-				}
-
-				RList *new_hashes = r_bin_file_compute_hashes (core->bin, limit);
-				RList *old_hashes = r_bin_file_set_hashes (core->bin, new_hashes);
-				bool equal = true;
-				if (!r_list_empty (new_hashes) && !r_list_empty (old_hashes)) {
-					if (!is_equal_file_hashes (new_hashes, old_hashes, &equal)) {
-						R_LOG_ERROR ("is_equal_file_hashes: Cannot compare file hashes");
-						r_list_free (old_hashes);
-						return 0;
-					}
-				}
-				RBinFileHash *fh_old, *fh_new;
-				RListIter *hiter_old, *hiter_new;
-				const bool is_json = input[1] == 'j'; // "itj"
-				if (is_json) { // "itj"
-					pj_o (pj);
-					r_list_foreach (new_hashes, hiter_new, fh_new) {
-						pj_ks (pj, fh_new->type, fh_new->hex);
-					}
-					if (!equal) {
-						// print old hashes prefixed with `o` character like `omd5` and `isha1`
-						r_list_foreach (old_hashes, hiter_old, fh_old) {
-							char *key = r_str_newf ("o%s", fh_old->type);
-							pj_ks (pj, key, fh_old->hex);
-							free (key);
-						}
-					}
-					pj_end (pj);
-				} else { // "it"
-					if (!equal) {
-						R_LOG_INFO ("File has been modified");
-						hiter_new = r_list_iterator (new_hashes);
-						hiter_old = r_list_iterator (old_hashes);
-						while (r_list_iter_next (hiter_new) && r_list_iter_next (hiter_old)) {
-							fh_new = (RBinFileHash *)r_list_iter_get (hiter_new);
-							fh_old = (RBinFileHash *)r_list_iter_get (hiter_old);
-							if (strcmp (fh_new->type, fh_old->type)) {
-								R_LOG_WARN ("Wrong file hashes structure");
-							}
-							if (!strcmp (fh_new->hex, fh_old->hex)) {
-								r_cons_printf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
-							} else {
-								// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-								r_cons_printf ("- %s %s\n+ %s %s\n",
-									fh_old->type, fh_old->hex,
-									fh_new->type, fh_new->hex);
-							}
-						}
-					} else { // hashes are equal
-						r_list_foreach (new_hashes, hiter_new, fh_new) {
-							r_cons_printf ("%s %s\n", fh_new->type, fh_new->hex);
-						}
-					}
-				}
-				r_list_free (old_hashes);
-			}
-			break;
 		case 'S': // "iS"
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
