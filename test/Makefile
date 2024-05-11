@@ -1,3 +1,4 @@
+include ../config-user.mk
 RUNTEST=r2r -L -o results.json
 
 all: r2r-tests
@@ -73,7 +74,10 @@ install:
 uninstall:
 
 unit unit-tests: bins
-	$(MAKE) rc
-	$(MAKE) -C unit run
+	PATH="$(BINDIR):$(PATH)" $(MAKE) rc
+	PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig \
+	LD_LIBRARY_PATH=$(PREFIX)/lib \
+	PATH="$(BINDIR):$(PATH)" \
+		$(MAKE) -C unit run
 
 .PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara unit-tests
