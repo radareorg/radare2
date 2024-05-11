@@ -1991,7 +1991,7 @@ static int cmd_info(void *data, const char *input) {
 	if (space && (*space == ' ' || *space == ',')) {
 		core->table_query = r_str_trim_dup (space + 1);
 	}
-
+#if 0
 	// TODO: slowly deprecate the loopy subcommands in here
 	while (*input) {
 		const char ch = *input;
@@ -2028,6 +2028,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 	}
+#endif
 done:
 	if (mode & R_MODE_JSON) {
 		if (is_array && !is_izzzj && !is_idpij) {
@@ -2036,7 +2037,6 @@ done:
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
-redone:
 	return 0;
 }
 
