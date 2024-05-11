@@ -1424,6 +1424,47 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mod
 	}
 }
 
+static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mode, bool va) {
+	RList *objs = r_core_bin_files (core);
+	RListIter *iter;
+	RBinFile *bf;
+	if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
+		mode = R_MODE_JSON;
+	} else if (input[1] == 'q' && input[2] == 'q') { // "isq"
+		mode = R_MODE_SIMPLEST;
+	}
+	r_list_foreach (objs, iter, bf) {
+		RBinObject *obj = bf->bo;
+		if (!obj) {
+			continue;
+		}
+		core->bin->cur = bf;
+		// Case for isj.
+#if R2_590
+		// TODO: use obj->symbols_vec if obj->symbols is null
+#else
+		size_t symcount = (obj && obj->symbols)? r_list_length (obj->symbols): 0;
+		if (input[1] == 'j' && input[2] == '.') {
+			RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, symcount);
+		} else if (input[1] == ',') {
+			R_FREE (core->table_query);
+			core->table_query = strdup (input + 2);
+			RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
+		} else if (input[1] == 'q' && input[2] == 'q') {
+			mode = R_MODE_SIMPLEST;
+			RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 3, symcount);
+		} else if (input[1] == 'q' && input[2] == '.') {
+			mode = R_MODE_SIMPLE;
+			RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
+		} else {
+			RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
+		}
+#endif
+	}
+	input = input + strlen (input) - 1;
+	r_list_free (objs);
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int fd = r_io_fd_get_current (core->io);
@@ -1502,13 +1543,13 @@ static int cmd_info(void *data, const char *input) {
 		char cmd[3] = "ii";
 		cmd[1] = input[0];
 		switch (input[0]) {
-		case 'h':
+		case 'h': // "ih?"
 			r_core_cmd_help (core, help_msg_ih);
 			break;
-		case 'c':
+		case 'c': // "ic?"
 			r_core_cmd_help (core, help_msg_ic);
 			break;
-		case 'd':
+		case 'd': // "id?"
 			r_core_cmd_help (core, help_msg_id);
 			break;
 		default:
@@ -1812,6 +1853,7 @@ static int cmd_info(void *data, const char *input) {
 				/// XXX header vs fields wtf
 				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
 					R_LOG_ERROR ("No header fields found");
+					r_core_return_code (core, 1);
 				}
 			}
 		} else {
@@ -1867,6 +1909,9 @@ static int cmd_info(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
 		}
 		return 0;
+	case 's': // "is"
+		cmd_is (core, input, pj, is_array, mode, va);
+		goto done;
 	case 'T': // "iT"
 	case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
 		{
@@ -1954,49 +1999,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		case 's':
-			{ // "is"
-			RList *objs = r_core_bin_files (core);
-			RListIter *iter;
-			RBinFile *bf;
-			if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
-				mode = R_MODE_JSON;
-				INIT_PJ ();
-			} else if (input[1] == 'q' && input[2] == 'q') { // "isq"
-				mode = R_MODE_SIMPLEST;
-			}
-			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->bo;
-				if (!obj) {
-					continue;
-				}
-				core->bin->cur = bf;
-				// Case for isj.
-#if R2_590
-				// TODO: use obj->symbols_vec if obj->symbols is null
-#else
-				size_t symcount = (obj && obj->symbols)? r_list_length (obj->symbols): 0;
-				if (input[1] == 'j' && input[2] == '.') {
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, symcount);
-				} else if (input[1] == ',') {
-					R_FREE (core->table_query);
-					core->table_query = strdup (input + 2);
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
-				} else if (input[1] == 'q' && input[2] == 'q') {
-					mode = R_MODE_SIMPLEST;
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 3, symcount);
-				} else if (input[1] == 'q' && input[2] == '.') {
-					mode = R_MODE_SIMPLE;
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
-				} else {
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
-				}
-#endif
-			}
-			input = input + strlen (input) - 1;
-			r_list_free (objs);
-			break;
-		}
 		case '?': // "i?"
 			if (input[1] == 'j') {
 				r_cons_cmd_help_json (help_msg_i);
