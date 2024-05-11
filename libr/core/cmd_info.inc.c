@@ -1987,6 +1987,9 @@ static int cmd_info(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_i);
 		break;
+	case 0:
+		// do nothing
+		break;
 	default:
 		R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 		r_core_return_value (core, 1);
