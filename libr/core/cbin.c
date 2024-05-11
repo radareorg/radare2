@@ -81,10 +81,7 @@ static void pair_ut64x(PJ *pj, const char *key, ut64 val) {
 
 static void pair_str(PJ *pj, const char *key, const char *val) {
 	if (pj) {
-		if (!val) {
-			val = "";
-		}
-		pj_ks (pj, key, val);
+		pj_ks (pj, key, val? val: "");
 	} else {
 		pair (key, val);
 	}
@@ -153,7 +150,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 		}
 		if (strstr (dup, ".cparse")) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf ("\"td %s\"\n", v);
+				r_cons_printf ("'td %s\n", v);
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
 				char *errmsg = NULL;
@@ -262,7 +259,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 			return false;
 		}
 	}
-	if (strchr (file, '\"')) { // TODO: escape "?
+	if (strchr (file, '\'') || strchr (file, '\"')) { // TODO: escape "?
 		R_LOG_ERROR ("Invalid char found in filename");
 		return false;
 	}
