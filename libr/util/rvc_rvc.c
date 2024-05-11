@@ -574,8 +574,7 @@ static RList *get_blobs(Rvc *rvc, RList *ignore) {
 	RListIter *i;
 	char *hash;
 	r_list_foreach (commits, i, hash) {
-		char *commit_path = r_file_new (rvc->path, ".rvc", "commits",
-				hash, NULL);
+		char *commit_path = r_file_new (rvc->path, ".rvc", "commits", hash, NULL);
 		if (!commit_path) {
 			goto fail_ret;
 		}
