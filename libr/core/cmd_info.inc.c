@@ -745,6 +745,20 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	}
 }
 
+static bool isjvm(RCore *core) {
+	RArchConfig *cfg = R_UNWRAP3 (core, rasm, config);
+	if (cfg) {
+		const char *arch = cfg->arch;
+		if (!strcmp (arch, "dalvik")) {
+			return true;
+		}
+		if (!strcmp (arch, "java")) {
+			return true;
+		}
+	}
+	return false;
+}
+
 #define RBININFO(n,x,y,z)\
 	if (is_array) {\
 		pj_k (pj, n);\
@@ -818,7 +832,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				r_core_cmd_help_contains (core, help_msg_i, "ic");
 				break;
 			}
-			bool is_dalvik = !strcmp (core->rasm->config->arch, "dalvik");
+			bool is_jvm = isjvm (core);
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
 			RBinFile *bf;
@@ -852,7 +866,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				RListIter *iter, *iter2;
 				core->bin->cur = bf;
 
-				if (is_superquiet && is_dalvik) {
+				if (is_superquiet && is_jvm) {
 					r_list_foreach (obj->classes, iter, cls) {
 						const char *kname = r_bin_name_tostring (cls->name);
 						if (!isKnownAndroidPackage (kname)) {
