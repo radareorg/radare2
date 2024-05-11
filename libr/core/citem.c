@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2024 - pancake */
 
 #include <r_core.h>
 
 R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	RCoreItem *ci = R_NEW0 (RCoreItem);
 	ci->addr = addr;
 	RIOMap *map = r_io_map_get_at (core->io, addr);
@@ -75,7 +76,11 @@ R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr) {
 		free (cmt);
 	}
 	if (!ci->type) {
-		ci->type = "code";
+		if (ci->perm) {
+			ci->type = "code";
+		} else {
+			ci->type = "void";
+		}
 	}
 	ci->next = ci->addr + ci->size;
 	char *prev = r_core_cmd_strf (core, "pd -1@e:asm.lines=0~[0]");
@@ -86,6 +91,8 @@ R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_item_free(RCoreItem *ci) {
-	free (ci->data);
-	free (ci);
+	if (ci) {
+		free (ci->data);
+		free (ci);
+	}
 }
