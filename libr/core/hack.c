@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_core.h>
 
@@ -303,7 +303,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 }
 
 R_API bool r_core_hack(RCore *core, const char *op) {
-	r_return_val_if_fail (core && op, false);
+	R_RETURN_VAL_IF_FAIL (core && op, false);
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
 	const int asmbits = core->rasm->config->bits;
@@ -353,14 +353,15 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 		R_LOG_WARN ("Write hacks are only implemented for x86, arm32, arm64 and dalvik");
 	}
 	if (hack) {
-		RAnalOp aop = {0};
-		aop.addr = core->offset;
+		RAnalOp aop = { .addr = core->offset };
 		r_anal_op_set_bytes (&aop, core->offset, core->block, 4);
 		// TODO: use r_arch_decode
 		if (!r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("anal op fail");
+			r_anal_op_fini (&aop);
 			return false;
 		}
+		r_anal_op_fini (&aop);
 		bool res = hack (core, op, &aop);
 		if (doseek) {
 			r_core_seek (core, core->offset + aop.size, 1);
