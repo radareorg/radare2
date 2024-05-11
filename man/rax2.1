@@ -60,9 +60,6 @@ Convert a string into a hash
 Convert LONG to/from IP ADDRESS
 .It Fl j
 Show the output in json format, the same as the r2 `?j 0x804` command.
-.It Fl L
-Convert a bit stream (an arbitrary sequence of 0 and 1 of any length) to
-hexadecimal. The result can be larger than 64bits
 .It Fl n
 Append newline to the decoded output for human friendlyness
 .It Fl o
@@ -84,6 +81,9 @@ Show program version
 Display the result as 16bit signed integer value
 .It Fl x
 Show hexpairs from integer value
+.It Fl X
+Convert a bit stream (an arbitrary sequence of 0 and 1 of any length) to
+hexadecimal. The result can be larger than 64bits
 .It Fl z
 Convert from character string to binary (rax2 \-z hello)
 .It Fl Z
