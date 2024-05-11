@@ -3436,7 +3436,7 @@ R_API void r_core_fini(RCore *c) {
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
 	//c->file = NULL;
-	R_FREE (c->table_query);
+	free (c->table_query);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
