@@ -2,6 +2,9 @@
 
 #if R_INCLUDE_BEGIN
 
+// R2R db/formats/dwarf
+// R2R db/cmd/cmd_i
+
 #include "../bin/format/pdb/pdb_downloader.h"
 
 static RCoreHelpMessage help_msg_ih = {
@@ -171,13 +174,16 @@ static bool demangle(RCore *core, const char *s) {
 		return true;
 	}
 	char *p = strdup (s);
-	char *q = p + (ss - s);
-	*q = 0;
-	demangle_internal (core, p, q + 1);
-	free (p);
+	if (R_UNLIKELY (p)) {
+		char *q = p + (ss - s);
+		*q = 0;
+		demangle_internal (core, p, q + 1);
+		free (p);
+	}
 	return true;
 }
 
+// XXX i.j ij. is broken
 static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	RCoreItem *item = r_core_item_at (core, core->offset);
 	// fixme: other modes
@@ -289,8 +295,7 @@ static void cmd_iic(RCore *r, int mode) {
 			}
 		}
 	}
-
-	return;
+#if 0
 	first = true;
 	r_list_foreach (imports, iter, imp) {
 		const char *name = r_bin_name_tostring2 (imp->name, 'o');
@@ -303,6 +308,7 @@ static void cmd_iic(RCore *r, int mode) {
 			r_cons_printf (" + %s\n", name);
 		}
 	}
+#endif
 }
 
 static void r_core_file_info(RCore *core, PJ *pj, int mode) {
@@ -1149,6 +1155,121 @@ static void cmd_it(RCore *core, PJ *pj, bool is_json) {
 	r_list_free (old_hashes);
 }
 
+static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mode) {
+	const bool va = r_config_get_b (core->config, "io.va");
+	if (input[1] == 'p') { // "idp"
+		SPDBOptions pdbopts;
+		RBinInfo *info;
+		bool file_found;
+		char *filename;
+
+		switch (input[2]) {
+		case ' ': // "idp file.pdb"
+			r_core_cmdf (core, ".idpi* %s", input + 3);
+			while (input[2]) {
+				input++;
+			}
+			break;
+		case '\0': // "idp"
+			r_core_cmd0 (core, ".idpi*");
+			break;
+		case 'd': // "idpd"
+			pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
+			pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
+			pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
+			char *str = strdup (r_config_get (core->config, "pdb.server"));
+			RList *server_l = r_str_split_list (str, " ", 0);
+			RListIter *it;
+			char *server;
+			int r = 1;
+			r_list_foreach (server_l, it, server) {
+				pdbopts.symbol_server = server;
+				r = r_bin_pdb_download (core, pj, input[3] == 'j', &pdbopts);
+				if (!r) {
+					break;
+				}
+			}
+			if (r > 0) {
+				R_LOG_ERROR ("Cannot download the pdb file");
+			}
+			free (str);
+			r_list_free (server_l);
+			input++;
+			break;
+		case 'i': // "idpi"
+			info = r_bin_get_info (core->bin);
+			filename = strchr (input, ' ');
+			while (input[2]) input++;
+			if (filename) {
+				*filename++ = '\0';
+				filename = strdup (filename);
+				file_found = r_file_exists (filename);
+			} else {
+				/* Autodetect local file */
+				if (!info || !info->debug_file_name) {
+					R_LOG_ERROR ("Cannot get file's debug information");
+					break;
+				}
+				// Check raw path for debug filename
+				file_found = r_file_exists (r_file_basename (info->debug_file_name));
+				if (file_found) {
+					filename = strdup (r_file_basename (info->debug_file_name));
+				} else {
+					// Check debug filename basename in current directory
+					char* basename = (char*) r_file_basename (info->debug_file_name);
+					file_found = r_file_exists (basename);
+					if (!file_found) {
+						// Check if debug file is in file directory
+						char* dir = r_file_dirname (core->bin->cur->file);
+						filename = r_str_newf ("%s/%s", dir, basename);
+						file_found = r_file_exists (filename);
+					} else {
+						filename = strdup (basename);
+					}
+				}
+
+				// Last chance: Check if file is in downstream symbol store
+				if (!file_found) {
+					const char* symstore_path = r_config_get (core->config, "pdb.symstore");
+					const char *base_file = r_file_basename (info->debug_file_name);
+					char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
+							symstore_path, base_file, info->guid, base_file);
+					file_found = r_file_exists (pdb_path);
+					if (file_found) {
+						filename = pdb_path;
+					} else {
+						R_FREE (pdb_path);
+					}
+				}
+			}
+			if (!file_found) {
+				if (info->debug_file_name) {
+					const char *fn = r_file_basename (info->debug_file_name);
+					R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
+				} else {
+					R_LOG_ERROR ("Cannot open file");
+				}
+				free (filename);
+				break;
+			}
+			r_core_pdb_info (core, filename, pj, mode);
+			free (filename);
+			break;
+		case '?':
+		default:
+			r_core_cmd_help (core, help_msg_id);
+			input++;
+			break;
+		}
+		input++;
+	} else if (input[1] == '?') { // "id?"
+		r_core_cmd_help (core, help_msg_id);
+		input++;
+	} else { // "id"
+		RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
+	}
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int fd = r_io_fd_get_current (core->io);
@@ -1578,10 +1699,38 @@ static int cmd_info(void *data, const char *input) {
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 		goto done;
 		break;
+	case 'R': // "iR"
+		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+		goto done;
+	case 'X': // "iX"
+		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
+		goto done;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
 		goto done;
-		break;
+	case 'D': // "iD"
+		if (input[1] != ' ' || !demangle (core, input + 2)) {
+			r_core_cmd_help_match (core, help_msg_i, "iD");
+		}
+		return 0;
+	case 'T': // "iT"
+	case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
+		{
+			RList *bfiles = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (bfiles, iter, bf) {
+				core->bin->cur = bf;
+				RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (bfiles);
+		}
+		goto done;
+	case 'd':
+		cmd_id (core, pj, input, is_array, mode);
+		goto done;
 	case 'l': { // "il"
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
@@ -1612,7 +1761,9 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 		}
 		goto done;
-		break;
+	case '.': // "i."
+		cmd_info_here (core, pj, input[1]);
+		goto done;
 	}
 	if (question < space && question > input) {
 		question--;
@@ -1741,140 +1892,6 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 			break;
 		}
-		case 'R': // "iR"
-			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
-			break;
-		case 'X': // "iX"
-			RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
-			break;
-		case 'd': // "id"
-			if (input[1] == 'p') { // "idp"
-				SPDBOptions pdbopts;
-				RBinInfo *info;
-				bool file_found;
-				char *filename;
-
-				switch (input[2]) {
-				case ' ': // "idp file.pdb"
-					r_core_cmdf (core, ".idpi* %s", input + 3);
-					while (input[2]) {
-						input++;
-					}
-					break;
-				case '\0': // "idp"
-					r_core_cmd0 (core, ".idpi*");
-					break;
-				case 'd': // "idpd"
-					pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
-					pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
-					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
-					char *str = strdup (r_config_get (core->config, "pdb.server"));
-					RList *server_l = r_str_split_list (str, " ", 0);
-					RListIter *it;
-					char *server;
-					int r = 1;
-					r_list_foreach (server_l, it, server) {
-						pdbopts.symbol_server = server;
-						r = r_bin_pdb_download (core, pj, input[3] == 'j', &pdbopts);
-						if (!r) {
-							break;
-						}
-					}
-					if (r > 0) {
-						R_LOG_ERROR ("Cannot download the pdb file");
-					}
-					free (str);
-					r_list_free (server_l);
-					input++;
-					break;
-				case 'i': // "idpi"
-					info = r_bin_get_info (core->bin);
-					filename = strchr (input, ' ');
-					while (input[2]) input++;
-					if (filename) {
-						*filename++ = '\0';
-						filename = strdup (filename);
-						file_found = r_file_exists (filename);
-					} else {
-						/* Autodetect local file */
-						if (!info || !info->debug_file_name) {
-							R_LOG_ERROR ("Cannot get file's debug information");
-							break;
-						}
-						// Check raw path for debug filename
-						file_found = r_file_exists (r_file_basename (info->debug_file_name));
-						if (file_found) {
-							filename = strdup (r_file_basename (info->debug_file_name));
-						} else {
-							// Check debug filename basename in current directory
-							char* basename = (char*) r_file_basename (info->debug_file_name);
-							file_found = r_file_exists (basename);
-							if (!file_found) {
-								// Check if debug file is in file directory
-								char* dir = r_file_dirname (core->bin->cur->file);
-								filename = r_str_newf ("%s/%s", dir, basename);
-								file_found = r_file_exists (filename);
-							} else {
-								filename = strdup (basename);
-							}
-						}
-
-						// Last chance: Check if file is in downstream symbol store
-						if (!file_found) {
-							const char* symstore_path = r_config_get (core->config, "pdb.symstore");
-							const char *base_file = r_file_basename (info->debug_file_name);
-							char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
-										     symstore_path, base_file, info->guid, base_file);
-							file_found = r_file_exists (pdb_path);
-							if (file_found) {
-								filename = pdb_path;
-							} else {
-								R_FREE (pdb_path);
-							}
-						}
-					}
-					if (!file_found) {
-						if (info->debug_file_name) {
-							const char *fn = r_file_basename (info->debug_file_name);
-							R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
-						} else {
-							R_LOG_ERROR ("Cannot open file");
-						}
-						free (filename);
-						break;
-					}
-					r_core_pdb_info (core, filename, pj, mode);
-					free (filename);
-					break;
-				case '?':
-				default:
-					r_core_cmd_help (core, help_msg_id);
-					input++;
-					break;
-				}
-				input++;
-			} else if (input[1] == '?') { // "id?"
-				r_core_cmd_help (core, help_msg_id);
-				input++;
-			} else { // "id"
-				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
-			}
-			break;
-		case 'T': // "iT"
-		case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
-			  {
-				  RList *bfiles = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (bfiles, iter, bf) {
-					  core->bin->cur = bf;
-					  RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (bfiles);
-			  }
-			break;
 		case 'z': // "iz"
 			if (input[1] == '-') { // "iz-"
 				char *strpurge = core->bin->strpurge;
@@ -1972,11 +1989,6 @@ static int cmd_info(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'D': // "iD"
-			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				r_core_cmd_help_match (core, help_msg_i, "iD");
-			}
-			return 0;
 		case '?': // "i?"
 			if (input[1] == 'j') {
 				r_cons_cmd_help_json (help_msg_i);
@@ -1987,16 +1999,12 @@ static int cmd_info(void *data, const char *input) {
 		case '*': // "i*"
 			mode = R_MODE_RADARE;
 			goto done;
-		case '.': // "i."
-			cmd_info_here (core, pj, input[1]);
-			goto done;
 		case '-':
 		case '+':
 		case ',':
-			// ignore comma
+			// chars to be ignored
 			goto done;
 		default:
-	//		cmd_info_bin (core, va, pj, mode);
 			R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 			goto done;
 		}
