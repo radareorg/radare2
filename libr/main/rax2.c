@@ -31,7 +31,7 @@ typedef struct {
 	bool signedword;	// -w
 	bool str2hexstr;	// -z
 	bool manybases;		// -r
-	bool binstr2hex;	// -L
+	bool binstr2hex;	// -X
 	bool dumpcstr;		// -C
 	bool octal2raw;		// -o
 	bool ipaddr2num;	// -i
@@ -191,7 +191,6 @@ static int help(void) {
 		"  -j         json format output   ;  rax2 -j 0x1234 # same as r2 -c '?j 0x1234'\n"
 		"  -k         keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K         randomart            ;  rax2 -K 0x34 1020304050\n"
-		"  -L         bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n         newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -o         octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -r         r2 style output      ;  rax2 -r 0x1234 # same as r2 -c '? 0x1234'\n"
@@ -203,6 +202,7 @@ static int help(void) {
 		"  -v         version              ;  rax2 -v\n"
 		"  -w         signed word          ;  rax2 -w 16 0xffff\n"
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
+		"  -X         bin -> hex(bignum)   ;  rax2 -X 111111111 # 0x1ff\n"
 		"  -z         str -> bin           ;  rax2 -z hello\n"
 		"  -Z         bin -> str           ;  rax2 -Z 01000101 01110110\n"
 	);
@@ -260,7 +260,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'w': flags->signedword = !flags->signedword; break;
 			case 'z': flags->str2hexstr = !flags->str2hexstr; break;
 			case 'r': flags->manybases = !flags->manybases; break;
-			case 'L': flags->binstr2hex = !flags->binstr2hex; break;
+			case 'X': flags->binstr2hex = !flags->binstr2hex; break;
 			case 'C': flags->dumpcstr = !flags->dumpcstr; break;
 			case 'o': flags->octal2raw = !flags->octal2raw; break;
 			case 'i': flags->ipaddr2num = !flags->ipaddr2num; break;
@@ -657,7 +657,7 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags->binstr2hex) { // -L
+	if (flags->binstr2hex) { // -X
 		r_print_hex_from_bin (NULL, str);
 		return true;
 	}
