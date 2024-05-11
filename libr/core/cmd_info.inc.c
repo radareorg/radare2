@@ -1077,6 +1077,160 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	}
 }
 
+static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
+	bool rdump = false;
+	if (input[1] == '-') { // "iz-"
+		char *strpurge = core->bin->strpurge;
+		ut64 addr = core->offset;
+		bool old_tmpseek = core->tmpseek;
+		input++;
+		if (input[1] == ' ') {
+			const char *argstr = r_str_trim_head_ro (input + 2);
+			ut64 arg = r_num_get (NULL, argstr);
+			input++;
+			if (arg != 0 || *argstr == '0') {
+				addr = arg;
+			}
+		}
+		core->tmpseek = false;
+		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
+				r_str_get (strpurge),
+				(strpurge && *strpurge)? ",": "",
+				addr);
+		core->tmpseek = old_tmpseek;
+	} else if (input[1] == 'z') { // "izz"
+		switch (input[2]) {
+			case 'z':// "izzz"
+				rdump = true;
+				break;
+			case '*': // "izz*"
+				mode = R_MODE_RADARE;
+				break;
+			case 'j': // "izzj"
+				mode = R_MODE_JSON;
+				break;
+			case 'q': // "izzq"
+				if (input[3] == 'q') { // "izzqq"
+					mode = R_MODE_SIMPLEST;
+					input++;
+				} else {
+					mode = R_MODE_SIMPLE;
+				}
+				break;
+			default:
+				mode = R_MODE_PRINT;
+				break;
+		}
+		input++;
+		if (rdump) {
+			RBinFile *bf = r_bin_cur (core->bin);
+			int min = r_config_get_i (core->config, "bin.str.min");
+			if (bf) {
+				bf->strmode = mode;
+				RList *res = r_bin_dump_strings (bf, min, 2);
+				r_list_free (res);
+			}
+		} else {
+			RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+		}
+	} else {
+		// "iz"
+		bool validcmd = true;
+		switch (input[1]) {
+			case 'J':
+				validcmd = false;
+				break;
+			case '*':
+			case 'j':
+			case 0:
+				validcmd = true;
+				break;
+			case 'q':
+				// "izq"
+				mode = (input[2] == 'q')
+					? R_MODE_SIMPLEST
+					: R_MODE_SIMPLE;
+				input++;
+				break;
+			default:
+				// invalid subcommand handler?
+				break;
+		}
+		if (validcmd) {
+			RList *bfiles = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (bfiles, iter, bf) {
+				core->bin->cur = bf;
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
+						(obj && obj->strings)? r_list_length (obj->strings): 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (bfiles);
+		} else {
+			//
+		}
+	}
+}
+
+static void cmd_iS(RCore *core, const char *input, PJ *pj, int mode, const bool va, const bool is_array) {
+	//we comes from ia or iS
+	if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
+		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
+	} else if (input[1] == ',' || input[1] == ' ') {
+		R_FREE (core->table_query);
+		core->table_query = strdup (input + 2);
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		int count = (obj && obj->sections)? r_list_length (obj->sections): 0;
+		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1, count);
+	} else if (input[1] == 'S' && !input[2]) {  // "iSS"
+		RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
+	} else {  //iS/iSS entropy,sha1
+		const char *name = "sections";
+		int action = R_CORE_BIN_ACC_SECTIONS;
+		int param_shift = 0;
+		if (input[1] == 'S') {
+			name = "segments";
+			input++;
+			action = R_CORE_BIN_ACC_SEGMENTS;
+		}
+		// case for iS=
+		if (input[1] == '=') {
+			mode = R_MODE_EQUAL;
+		} else if (input[1] == '*') {
+			mode = R_MODE_RADARE;
+		} else if (input[1] == 'q' && input[2] == 'q') {
+			mode = R_MODE_SIMPLEST;
+		} else if (input[1] == 'q' && input[2] == '.') {
+			mode = R_MODE_SIMPLE;
+		} else if (input[1] == 'j' && input[2] == '.') {
+			mode = R_MODE_JSON;
+		}
+		if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
+			if (input[param_shift + 1]) {
+				param_shift ++;
+			}
+		}
+		{
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				RBinObject *obj = bf->bo;
+				core->bin->cur = bf;
+				RBININFO (name, action, input + 1 + param_shift,
+						(obj && obj->sections)? r_list_length (obj->sections): 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+	}
+	input += strlen (input) - 1;
+}
+
 static bool bin_header(RCore *r, int mode) {
 	R_RETURN_VAL_IF_FAIL (r, false);
 	RBinFile *cur = r_bin_cur (r->bin);
@@ -1276,7 +1430,6 @@ static int cmd_info(void *data, const char *input) {
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i;
 	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
-	bool rdump = false;
 	int is_array = 0;
 	bool is_izzzj = false;
 	bool is_idpij = false;
@@ -1479,6 +1632,7 @@ static int cmd_info(void *data, const char *input) {
 		if (is_array > 1) {
 			mode |= R_MODE_ARRAY;
 		}
+		INIT_PJ ();
 		cmd_info_bin (core, va, pj, mode);
 		goto done;
 	case 'E':
@@ -1761,8 +1915,14 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 		}
 		goto done;
+	case 'S': // "iS"
+		cmd_iS (core, input, pj, mode, va, is_array);
+		goto done;
 	case '.': // "i."
 		cmd_info_here (core, pj, input[1]);
+		goto done;
+	case 'z': // "iz"
+		cmd_iz (core, pj, mode, is_array, va, input);
 		goto done;
 	}
 	if (question < space && question > input) {
@@ -1794,61 +1954,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		case 'S': // "iS"
-			//we comes from ia or iS
-			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
-				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
-			} else if (input[1] == ',') {
-				R_FREE (core->table_query);
-				core->table_query = strdup (input + 2);
-				RBinObject *obj = r_bin_cur_object (core->bin);
-				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1, (obj && obj->sections)? r_list_length (obj->sections): 0);
-			} else if (input[1] == 'S' && !input[2]) {  // "iSS"
-				RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
-			} else {  //iS/iSS entropy,sha1
-				const char *name = "sections";
-				int action = R_CORE_BIN_ACC_SECTIONS;
-				int param_shift = 0;
-				if (input[1] == 'S') {
-					name = "segments";
-					input++;
-					action = R_CORE_BIN_ACC_SEGMENTS;
-				}
-				// case for iS=
-				if (input[1] == '=') {
-					mode = R_MODE_EQUAL;
-				} else if (input[1] == '*') {
-					mode = R_MODE_RADARE;
-				} else if (input[1] == 'q' && input[2] == 'q') {
-					mode = R_MODE_SIMPLEST;
-				} else if (input[1] == 'q' && input[2] == '.') {
-					mode = R_MODE_SIMPLE;
-				} else if (input[1] == 'j' && input[2] == '.') {
-					mode = R_MODE_JSON;
-					INIT_PJ ();
-				}
-				if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
-					if (input[param_shift + 1]) {
-						param_shift ++;
-					}
-				}
-				{
-					RList *objs = r_core_bin_files (core);
-					RListIter *iter;
-					RBinFile *bf;
-					RBinFile *cur = core->bin->cur;
-					r_list_foreach (objs, iter, bf) {
-						RBinObject *obj = bf->bo;
-						core->bin->cur = bf;
-						RBININFO (name, action, input + 1 + param_shift,
-								(obj && obj->sections)? r_list_length (obj->sections): 0);
-					}
-					core->bin->cur = cur;
-					r_list_free (objs);
-				}
-			}
-			input += strlen (input) - 1;
-			break;
 		case 's':
 			{ // "is"
 			RList *objs = r_core_bin_files (core);
@@ -1892,103 +1997,6 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 			break;
 		}
-		case 'z': // "iz"
-			if (input[1] == '-') { // "iz-"
-				char *strpurge = core->bin->strpurge;
-				ut64 addr = core->offset;
-				bool old_tmpseek = core->tmpseek;
-				input++;
-				if (input[1] == ' ') {
-					const char *argstr = r_str_trim_head_ro (input + 2);
-					ut64 arg = r_num_get (NULL, argstr);
-					input++;
-					if (arg != 0 || *argstr == '0') {
-						addr = arg;
-					}
-				}
-				core->tmpseek = false;
-				r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
-						r_str_get (strpurge),
-						(strpurge && *strpurge)? ",": "",
-						addr);
-				core->tmpseek = old_tmpseek;
-			} else if (input[1] == 'z') { // "izz"
-				switch (input[2]) {
-				case 'z':// "izzz"
-					rdump = true;
-					break;
-				case '*': // "izz*"
-					mode = R_MODE_RADARE;
-					break;
-				case 'j': // "izzj"
-					mode = R_MODE_JSON;
-					INIT_PJ ();
-					break;
-				case 'q': // "izzq"
-					if (input[3] == 'q') { //izzqq
-						mode = R_MODE_SIMPLEST;
-						input++;
-					} else {
-						mode = R_MODE_SIMPLE;
-					}
-					break;
-				default:
-					mode = R_MODE_PRINT;
-					break;
-				}
-				input++;
-				if (rdump) {
-					RBinFile *bf = r_bin_cur (core->bin);
-					int min = r_config_get_i (core->config, "bin.str.min");
-					if (bf) {
-						bf->strmode = mode;
-						RList *res = r_bin_dump_strings (bf, min, 2);
-						r_list_free (res);
-					}
-					goto done;
-				}
-				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
-			} else {
-				// "iz"
-				bool validcmd = true;
-				switch (input[1]) {
-				case 'J':
-					validcmd = false;
-					break;
-				case '*':
-				case 'j':
-				case 0:
-					validcmd = true;
-					break;
-				case 'q':
-					// "izq"
-					mode = (input[2] == 'q')
-					? R_MODE_SIMPLEST
-					: R_MODE_SIMPLE;
-					input++;
-					break;
-				default:
-					// invalid subcommand handler?
-					break;
-				}
-				if (validcmd) {
-					RList *bfiles = r_core_bin_files (core);
-					RListIter *iter;
-					RBinFile *bf;
-					RBinFile *cur = core->bin->cur;
-					r_list_foreach (bfiles, iter, bf) {
-						core->bin->cur = bf;
-						RBinObject *obj = r_bin_cur_object (core->bin);
-						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-								(obj && obj->strings)? r_list_length (obj->strings): 0);
-					}
-					core->bin->cur = cur;
-					r_list_free (bfiles);
-				} else {
-					//
-				}
-			}
-			break;
 		case '?': // "i?"
 			if (input[1] == 'j') {
 				r_cons_cmd_help_json (help_msg_i);
