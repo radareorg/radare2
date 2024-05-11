@@ -665,6 +665,7 @@ R_API int r_cons_pal_len(void) {
 	return keys_len;
 }
 
+// R2_600 TODO: rename to RCons.pal_reload() // pal_apply() maybe?
 R_API void r_cons_pal_update_event(void) {
 	__cons_pal_update_event (r_cons_context ());
 }
