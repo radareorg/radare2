@@ -1,4 +1,4 @@
-include ../config-user.mk
+-include ../config-user.mk
 RUNTEST=r2r -L -o results.json
 
 all: r2r-tests

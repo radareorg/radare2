@@ -1235,6 +1235,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	case 'f':
 		// show fields
 		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _cname);
+		if (_c)
 		r_list_foreach (_c->fields, iter, f) {
 			const char *name = r_bin_name_tostring2 (f->name, 'f');
 			if (grep) {
@@ -1280,7 +1281,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!fur) {
 			*idx = i - 1;
-			if (r_list_empty (_c->fields)) {
+			if (_c && r_list_empty (_c->fields)) {
 				return NULL;
 			}
 			// r_cons_clear00 ();
@@ -1339,7 +1340,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		if (!mur) {
 			*idx = i - 1;
-			if (r_list_empty (_c->methods)) {
+			if (_c && r_list_empty (_c->methods)) {
 				return NULL;
 			}
 			// r_cons_clear00 ();
