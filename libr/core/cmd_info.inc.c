@@ -16,6 +16,15 @@ static RCoreHelpMessage help_msg_ih = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_is = {
+	"Usage: is", "[*hjq]", "List symbols from current selected binary",
+	"is,", "[table-query]", "list symbols in table using given expression",
+	"is.", "", "current symbol",
+	"is*", "", "same as above, but in r2 commands",
+	"isj", "", "in json format",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ic = {
 	"Usage: ic", "[.-+clgjsq][jq]", "Display class information",
 	"ic", "", "List classes, methods and fields (icj for json)",
@@ -31,10 +40,40 @@ static RCoreHelpMessage help_msg_ic = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_iz = {
+	"Usage: iz", "[][jq*]", "List strings",
+	"iz", "", "strings in data sections (in JSON/Base64)",
+	"iz-", " [addr]", "purge string via bin.str.purge",
+	"iz*", "", "print flags and comments r2 commands for all the strings",
+	"izz", "", "search for Strings in the whole binary",
+	"izz*", "", "same as iz* but exposing the strings of the whole binary",
+	"izzz", "", "dump Strings from whole binary to r2 shell (for huge files)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iE = { // rename to ise? maybe
+	"Usage: iE", "[][jq*]", "List exported symbols",
+	"iE", "", "exports (global symbols)",
+	"iE", "", "exports (global symbols)",
+	"iE,", "[table-query]", "exported symbols using the table query",
+	"iE.", "", "show export in current address",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iS = {
+	"Usage: iS", "[][jq*]", "List sections and segments",
+	"iS ", "[entropy,sha1]", "sections (choose which hash algorithm to use)",
+	"iS.", "", "current section",
+	"iS,", "[table-query]", "list sections in table using given expression",
+	"iS=", "", "show ascii-art color bars with the section ranges",
+	"iSS", "", "list memory segments (maps with om)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"i", "[*jq]", "show info of current file (in JSON)",
-	"iA", "", "list archs",
+	"iA", "", "list archs found in current binary",
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "[?]", "List classes, methods and fields (icj for json)",
@@ -42,43 +81,29 @@ static RCoreHelpMessage help_msg_i = {
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
-	"iE", "", "exports (global symbols)",
-	"iE,", "[table-query]", "exported symbols using the table query",
-	"iE.", "", "show export in current address",
+	"iE", "[?]", "exports (global symbols)",
+	"ig", "", "guess size of binary program",
 	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
 	"iH", "", "verbose Headers in raw text", // XXX
-	"ii", "[?][j*,]", "imports",
+	"ii", "[?][j*,]", "list the symbols imported from other libraries",
 	"iic", "", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
 	"ik", " [query]", "key-value database from RBinObject",
 	"il", "", "libraries",
-	"iL ", "[plugin]", "list all RBin plugins loaded or plugin details",
+	"iL", " [plugin]", "list all RBin plugins loaded or plugin details",
 	"im", "", "show info about predefined memory allocation",
 	"iM", "", "show main address",
 	"io", " [file]", "load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "perform binary operation (dump, resize, change sections, ...)",
-	"ir", "", "list the Relocations",
-	"iR", "", "list the Resources",
-	"is", "", "list the Symbols",
-	"is,", "[table-query]", "list symbols in table using given expression",
-	"is.", "", "current symbol",
-	"iS ", "[entropy,sha1]", "sections (choose which hash algorithm to use)",
-	"iS.", "", "current section",
-	"iS,", "[table-query]", "list sections in table using given expression",
-	"iS=", "", "show ascii-art color bars with the section ranges",
-	"iSS", "", "list memory segments (maps with om)",
-	"it", "", "file hashes",
-	"iT", "", "file signature",
-	"iV", "", "display file version info",
-	"iw", "", "show try/catch blocks",
-	"iX", "", "display source files used (via dwarf)",
-	"iz", "[?][j]", "strings in data sections (in JSON/Base64)",
-	"iz*", "", "print flags and comments r2 commands for all the strings",
-	"izz", "", "search for Strings in the whole binary",
-	"izz*", "", "same as iz* but exposing the strings of the whole binary",
-	"izzz", "", "dump Strings from whole binary to r2 shell (for huge files)",
-	"iz-", " [addr]", "purge string via bin.str.purge",
-	"iZ", "", "guess size of binary program",
+	"ir", "", "list the relocations",
+	"iR", "", "list the resources",
+	"is", "[?]", "list the symbols",
+	"iS", "[?]", "list sections, segments and compute their hash",
+	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
+	"iT", "", "file signature", // iT for signatures omg thats worst
+	"iV", "", "display file version info", // wtf why not iv
+	"iw", "", "show try/catch blocks", // bad naming..
+	"iz", "[?]", "strings in data sections (in JSON/Base64)",
 	NULL
 };
 
@@ -90,6 +115,7 @@ static RCoreHelpMessage help_msg_id = {
 	"idpi", " [file.pdb]", "show pdb file information",
 	"idpi*", "", "show symbols from pdb as flags (prefix with dot to import)",
 	"idpd", "", "download pdb file on remote server",
+	"idx", "", "display source files used via dwarf (previously known as iX)",
 	NULL
 };
 
@@ -1331,7 +1357,9 @@ static void cmd_it(RCore *core, PJ *pj) {
 
 static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mode) {
 	const bool va = r_config_get_b (core->config, "io.va");
-	if (input[1] == 'p') { // "idp"
+	if (input[1] == 'x') { // "idx" "iX"
+		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
+	} else if (input[1] == 'p') { // "idp"
 		SPDBOptions pdbopts;
 		RBinInfo *info;
 		bool file_found;
@@ -1605,6 +1633,18 @@ static int cmd_info(void *data, const char *input) {
 		case 'h': // "ih?"
 			r_core_cmd_help (core, help_msg_ih);
 			break;
+		case 'E': // "iE?"
+			r_core_cmd_help (core, help_msg_iE);
+			break;
+		case 's': // "is?"
+			r_core_cmd_help (core, help_msg_is);
+			break;
+		case 'S': // "iS?"
+			r_core_cmd_help (core, help_msg_iS);
+			break;
+		case 'z': // "iz?"
+			r_core_cmd_help (core, help_msg_iz);
+			break;
 		case 'c': // "ic?"
 			r_core_cmd_help (core, help_msg_ic);
 			break;
@@ -1703,6 +1743,7 @@ static int cmd_info(void *data, const char *input) {
 			r_list_free (objs);
 		}
 		break;
+	case 'v': // "iv" // should replace iV imho.. but 'V' is there because of rabin2 -v is for version
 	case 'V': // "iV"
 		{
 			RList *bfiles = r_core_bin_files (core);
@@ -1897,9 +1938,6 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'R': // "iR"
 		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
-		break;
-	case 'X': // "iX"
-		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
 		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
