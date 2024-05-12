@@ -582,7 +582,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	}
 
 	// Get .data section to limit search
-	RList *section_list = r_bin_get_sections(bin);
+	RList *section_list = r_bin_get_sections (bin);
 	RListIter *iter;
 	RBinSection *section;
 	RBinSection *data_section = NULL;

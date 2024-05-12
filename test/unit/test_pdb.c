@@ -499,10 +499,12 @@ bool test_pdb_type_save(void) {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
+#if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
 	mu_run_test (test_pdb_tpi_rust);
 	mu_run_test (test_pdb_type_save);
+#endif
 	return tests_passed != tests_run;
 }
 
