@@ -2977,7 +2977,8 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		free (abs);
 	}
 
-	abs = r_str_newf (R_JOIN_3_PATHS ("%s", R2_ZIGNS, "%s"), r_sys_prefix (NULL), file);
+	// abs = r_str_newf (R_JOIN_3_PATHS ("%s", R2_ZIGNS, "%s"), r_sys_prefix (NULL), file);
+	abs = r_file_new (r_sys_prefix (NULL), R2_ZIGNS, file, NULL);
 	if (r_file_is_regular (abs)) {
 		return abs;
 	}

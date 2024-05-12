@@ -564,7 +564,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 	// imho nobody uses this: run scripts depending on a specific filetype
 	char *file;
 	RListIter *iter;
-	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
+	char *hdir = r_str_newf ("%s%s%s%sbin-%s", R2_HOME_BINRC, R_SYS_DIR, "bin-%s", R_SYS_DIR, name);
 	char *path = r_file_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {

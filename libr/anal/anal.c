@@ -296,8 +296,9 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
 	// char *ff = r_str_newf ("types-%s.sdb", os);
-	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff);
-	char *dbpath = r_str_newf ("%s/%s/types-%s.sdb", dir_prefix, R2_SDB_FCNSIGN, os);
+	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff, NULL);
+	char *dbpath = r_str_newf ("%s%s%s%stypes-%s.sdb",
+		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
