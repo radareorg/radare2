@@ -168,8 +168,6 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 // Used to remove breakpoints before detaching from a fork, without it the child
 // will die upon hitting a breakpoint while not being traced
 static void linux_remove_fork_bps(RDebug *dbg) {
-	RListIter *iter;
-	RBreakpointItem *b;
 	int prev_pid = dbg->pid;
 	int prev_tid = dbg->tid;
 
@@ -178,6 +176,8 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	dbg->tid = dbg->forked_pid;
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
 #if __i386__ || __x86_64__
+	RListIter *iter;
+	RBreakpointItem *b;
 	// Unset all hw breakpoints in the child process
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
 	r_list_foreach (dbg->bp->bps, iter, b) {

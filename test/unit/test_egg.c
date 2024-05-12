@@ -5,9 +5,10 @@
 #include "minunit.h" 
 
 #if __linux__
-const char *arch = R_SYS_ARCH;
+// const char *arch = R_SYS_ARCH;
+const char *arch = "x86";
 const char *os = R_EGG_OS_NAME;
-int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+const int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 const char program[] = "                \
 read@syscall(0);                        \
 write@syscall(1);                       \
