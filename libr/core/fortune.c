@@ -5,7 +5,7 @@
 static char *getFortuneFile(RCore *core, const char *type) {
 	r_strf_var (fname, 64, "fortunes.%s", type);
 	char *fortunedir = r_xdg_datadir ("fortunes");
-	char *path = path = r_file_new (fortunedir, fname, NULL);
+	char *path = r_file_new (fortunedir, fname, NULL);
 	free (fortunedir);
 	if (path && r_file_exists (path)) {
 		return path;

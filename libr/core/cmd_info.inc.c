@@ -1426,6 +1426,7 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mod
 						char* dir = r_file_dirname (core->bin->cur->file);
 						filename = r_str_newf ("%s/%s", dir, basename);
 						file_found = r_file_exists (filename);
+						free (dir);
 					} else {
 						filename = strdup (basename);
 					}
@@ -1439,9 +1440,10 @@ static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mod
 							symstore_path, base_file, info->guid, base_file);
 					file_found = r_file_exists (pdb_path);
 					if (file_found) {
+						free (filename);
 						filename = pdb_path;
 					} else {
-						R_FREE (pdb_path);
+						free (pdb_path);
 					}
 				}
 			}
