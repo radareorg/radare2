@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_util.h>
 #if R2__UNIX__
@@ -402,6 +402,7 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 
 R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
 	int i, j, k, ret;
+	str = r_str_trim_head_ro (str);
 
 	int str_len = strlen (str);
 	ut8 *b = buf;
