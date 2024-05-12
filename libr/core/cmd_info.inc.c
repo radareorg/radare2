@@ -569,7 +569,7 @@ static bool isKnownAndroidPackage(const char *cn) {
 }
 
 static void cmd_ic_comma(RCore *core, const char *input) {
-	r_return_if_fail (core && input[0] == ',');
+	R_RETURN_IF_FAIL (core && input[0] == ',');
 	const char *q = input + 1;
 	RList *bfiles = r_core_bin_files (core);
 	RListIter *objs_iter;
@@ -1208,21 +1208,24 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 			input++;
 			action = R_CORE_BIN_ACC_SEGMENTS;
 		}
-		// case for iS=
-		if (input[1] == '=') {
+		switch (input[1]) {
+		case '=': // "iS="
 			mode = R_MODE_EQUAL;
-		} else if (input[1] == '*') {
+			break;
+		case '*':
 			mode = R_MODE_RADARE;
-		} else if (input[1] == 'q' && input[2] == 'q') {
-			mode = R_MODE_SIMPLEST;
-		} else if (input[1] == 'q' && input[2] == '.') {
-			mode = R_MODE_SIMPLE;
-		} else if (input[1] == 'j' && input[2] == '.') {
-			mode = R_MODE_JSON;
-			if (!pj) {
-				*_pj = r_core_pj_new (core);
-				pj = *_pj;
-				// pj_o (pj);
+			break;
+		case 'q':
+			mode = (input[2] == 'q')? R_MODE_SIMPLEST: R_MODE_SIMPLE;
+			break;
+		case 'j':
+			if (input[2] == '.') {
+				mode = R_MODE_JSON;
+				if (!pj) {
+					*_pj = r_core_pj_new (core);
+					pj = *_pj;
+					// pj_o (pj);
+				}
 			}
 		}
 		if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
@@ -1643,7 +1646,6 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'I': // "iI" -- dupe of "i"
 		{
@@ -1658,7 +1660,6 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'M': // "iM"
 		{
@@ -1673,7 +1674,6 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'm': // "im"
 		{
@@ -1688,7 +1688,6 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'w': // "iw"
 		{
@@ -1703,7 +1702,6 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'V': // "iV"
 		{
@@ -1718,12 +1716,11 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (bfiles);
 		}
-		goto done;
 		break;
 	case 'q': // "iq"
 		mode = R_MODE_SIMPLE;
 		cmd_info_bin (core, va, pj, mode);
-		goto done;
+		break;
 	case 'j': // "ij"
 		mode = R_MODE_JSON;
 		if (is_array > 1) {
@@ -1731,7 +1728,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 		INIT_PJ ();
 		cmd_info_bin (core, va, pj, mode);
-		goto done;
+		break;
 	case 'E':
 		if (input[1] == 'j' && input[2] == '.') {
 			mode = R_MODE_JSON;
@@ -1748,7 +1745,6 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 		}
 		input = input + strlen (input) - 1;
-		goto done;
 		break;
 	case 'a': // "ia"
 		if (r_bin_cur_object (core->bin)) {
@@ -1782,7 +1778,6 @@ static int cmd_info(void *data, const char *input) {
 		} else {
 			r_cons_println ("{}");
 		}
-		goto done;
 		break;
 	case 'A': // "iA"
 		if (input[1] == 'j') {
@@ -1807,7 +1802,6 @@ static int cmd_info(void *data, const char *input) {
 			__r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core);
 		}
-		goto done;
 		break;
 	case 'e': // "ie"
 		{
@@ -1835,7 +1829,6 @@ static int cmd_info(void *data, const char *input) {
 			  core->bin->cur = cur;
 			  r_list_free (objs);
 		}
-		goto done;
 		break;
 	case 'h': // "ih"
 		if (question) {
@@ -1848,7 +1841,7 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 	case 'k': // "ik"
 		cmd_ik (core, input);
-		goto done;
+		break;
 	case 'o': // "io"
 		if (desc) {
 			const char *fn = input[1] == ' '? input + 2: desc->name;
@@ -1879,7 +1872,6 @@ static int cmd_info(void *data, const char *input) {
 				}
 			}
 		}
-		goto done;
 		break;
 	case 'L': // "iL"
 		{
@@ -1895,24 +1887,23 @@ static int cmd_info(void *data, const char *input) {
 			} else {
 				r_bin_list (core->bin, pj, json);
 			}
-			goto done;
+			break;
 		}
 	case 't': // "it"
 		cmd_it (core, pj);
-		goto done;
+		break;
 	case 'Z': // "iZ"
 		RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
-		goto done;
 		break;
 	case 'R': // "iR"
 		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
-		goto done;
+		break;
 	case 'X': // "iX"
 		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
-		goto done;
+		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);
-		goto done;
+		break;
 	case 'D': // "iD"
 		if (input[1] != ' ' || !demangle (core, input + 2)) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
@@ -1929,7 +1920,7 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 	case 'T': // "iT"
 	case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
-		{
+		if (core->bin->cur) {
 			RList *bfiles = r_core_bin_files (core);
 			RListIter *iter;
 			RBinFile *bf;
@@ -1944,7 +1935,7 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 	case 'd':
 		cmd_id (core, pj, input, is_array, mode);
-		goto done;
+		break;
 	case 'l': { // "il"
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
@@ -1959,7 +1950,6 @@ static int cmd_info(void *data, const char *input) {
 		core->bin->cur = cur;
 		r_list_free (objs);
 		goto done;
-		break;
 	}
 	case 'r': // "ir"
 		{
