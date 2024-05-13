@@ -1227,7 +1227,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	op->addr = addr;
 	// Be endian aware
 	if (len >= 4) {
+#if R_SYS_ENDIAN
+		opcode = r_read_ble32 (b, !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#else
 		opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#endif
 	} else if (len >= 2) {
 		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	}
