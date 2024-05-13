@@ -2287,7 +2287,6 @@ ST_FUNC long long expr_const(TCCState *s1) {
 		expect (s1, "constant expression");
 		return 0;
 	}
-	return r_read_le64 (&s1->vtop->c.ll);
 	return s1->vtop->c.ll;
 }
 
