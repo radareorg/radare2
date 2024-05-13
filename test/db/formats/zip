@@ -19,7 +19,7 @@ endian   little
 havecode true
 laddr    0x0
 lang     c
-linenum  false
+linenum  true
 lsyms    false
 machine  all
 nx       false
