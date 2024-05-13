@@ -6661,7 +6661,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
 	int ret;
-	ut8 code[32];
+	ut8 code[64];
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
