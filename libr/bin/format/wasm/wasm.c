@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
+/* radare2 - LGPL - Copyright 2017-2024 - pancake, cgvwzq, Dennis Goodlett */
 
 #define R_LOG_ORIGIN "bin.wasm"
 
@@ -263,7 +263,7 @@ static inline RBinWasmSection *section_first_with_id(RList *sections, ut8 id) {
 	return NULL;
 }
 
-const char *r_bin_wasm_valuetype_tostring (r_bin_wasm_value_type_t type) {
+const char *r_bin_wasm_valuetype_tostring(r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
 		return "i32";

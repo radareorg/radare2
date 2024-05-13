@@ -2847,7 +2847,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 						r_asm_op_set_asm (&ds->asmop, r_strf (".int32 %d%s", (st32)ds->analop.val, tail));
 						break;
 					case 32:
-						r_asm_op_set_asm (&ds->asmop, r_strf (".ipaddr 0x%08x%s", (ut32)ds->analop.val, tail));
+						{
+							ut32 oval = ds->analop.val;
+							ut32 eval  = r_read_le32 (&oval);
+							r_asm_op_set_asm (&ds->asmop, r_strf (".ipaddr 0x%08x%s", (ut32)eval, tail));
+						}
 						break;
 					default:
 						r_asm_op_set_asm (&ds->asmop, r_strf (".dword 0x%08x%s", (ut32)ds->analop.val, tail));
