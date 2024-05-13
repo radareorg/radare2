@@ -197,7 +197,11 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 			if (r != sizeof (shdr)) {
 				return 0;
 			}
-			ut64 num = shdr.sh_info;
+#if R_BIN_ELF64
+			ut64 num = r_read_ble64 (&shdr.sh_info, eo->endian);
+#else
+			ut64 num = (ut64)r_read_ble32 (&shdr.sh_info, eo->endian);
+#endif
 			if ((int) num < 1) {
 				return UT16_MAX;
 			}

@@ -957,7 +957,6 @@ do_decl:
 					next (s1);
 					// eprintf ("TOK %d %c\n", s1->tok, s1->tok);
 					iota = expr_const (s1);
-					eprintf ("IOTA %d\n", iota);
 					// eprintf ("TOK %d %c\n", s1->tok, s1->tok);
 					//const char *valstr = get_tok_str (s1, s1->ch, NULL);
 					//eprintf ("TOK %d %s\n", s1->ch, valstr);
