@@ -82,6 +82,7 @@ get_capstone() {
 }
 
 update_capstone_git() {
+	export PAGER=cat
 	cd capstone || fatal_msg 'Failed to chdir'
 	git checkout "${CS_BRA}" || fatal_msg "Cannot checkout to branch $CS_BRA"
 #	if [ -n "${CS_TIP}" ]; then
