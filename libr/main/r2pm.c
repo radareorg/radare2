@@ -385,11 +385,14 @@ static void r2pm_setenv(bool global) {
 	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
 	char *r2pm_pkgcfg = r_xdg_datadir ("prefix/lib/pkgconfig");
 	if (R_STR_ISNOTEMPTY (pkgcfg)) {
-		char *pcp = r_str_newf ("%s:%s:%s", r2pm_pkgcfg, R2_PREFIX "/lib/pkgconfig", pkgcfg);
+		char *pcp = r_str_newf ("%s%s%s%s%s",r2pm_pkgcfg,
+				R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig",
+				R_SYS_ENVSEP, pkgcfg);
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	} else {
-		char *pcp = r_str_newf ("%s:%s", r2pm_pkgcfg, R2_PREFIX "/lib/pkgconfig");
+		char *pcp = r_str_newf ("%s%s%s", r2pm_pkgcfg,
+				R_SYS_ENVSEP, R2_PREFIX "/lib/pkgconfig");
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	}
@@ -413,7 +416,7 @@ static void r2pm_setenv(bool global) {
 		oldpath = strdup ("/bin");
 	}
 	if (!strstr (oldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/bin:%s", r2_prefix, oldpath);
+		char *newpath = r_str_newf ("%s/bin%s%s", r2_prefix, R_SYS_ENVSEP, oldpath);
 		r_sys_setenv ("PATH", newpath);
 		free (newpath);
 	}
@@ -444,7 +447,7 @@ static void r2pm_setenv(bool global) {
 		ldpath = strdup ("");
 	}
 	if (!strstr (ldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/lib:%s", r2_prefix, ldpath);
+		char *newpath = r_str_newf ("%s/lib%s%s", r2_prefix, R_SYS_ENVSEP, ldpath);
 		r_sys_setenv (ldpathvar, newpath);
 		free (ldpath);
 		ldpath = newpath;
@@ -454,7 +457,7 @@ static void r2pm_setenv(bool global) {
 		r_str_trim (gr2_prefix);
 		if (R_STR_ISNOTEMPTY (gr2_prefix)) {
 			if (!strstr (ldpath, gr2_prefix)) {
-				char *newpath = r_str_newf ("%s/lib:%s", gr2_prefix, ldpath);
+				char *newpath = r_str_newf ("%s/lib%s%s", gr2_prefix, R_SYS_ENVSEP, ldpath);
 				r_sys_setenv (ldpathvar, newpath);
 				free (newpath);
 			}
@@ -463,7 +466,7 @@ static void r2pm_setenv(bool global) {
 	}
 
 	if (!strstr (ldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/lib:%s", r2_prefix, ldpath);
+		char *newpath = r_str_newf ("%s/lib%s%s", r2_prefix, R_SYS_ENVSEP, ldpath);
 		r_sys_setenv (ldpathvar, newpath);
 		free (newpath);
 	}
