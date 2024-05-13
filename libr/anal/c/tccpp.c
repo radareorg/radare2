@@ -242,7 +242,7 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 	case TOK_CUINT:
 		/* XXX: not quite exact, but only useful for testing */
 		if (cv) {
-			snprintf (p, sizeof (s1->tok_buf), "%u", cv->ui);
+			snprintf (p, sizeof (s1->tok_buf), "%"PFMT64u, cv->ull);
 		}
 		break;
 	case TOK_CLLONG:
