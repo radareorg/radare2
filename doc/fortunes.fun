@@ -340,3 +340,17 @@ No newline at end of file
 Display output is not active.
 The Quick Brown Fox Jumped Over The Lazy Dog!
 gcc: error: no input files
+Now you're thinking with portals
+The bug you've just found it's fixed in git
+Plug me in, and I'll take you up.
+Plug me in, we're running out of time.
+Corrupted cores! We're in luck.
+You think I'll betray you. And on any other day, you'd be right
+I can't believe you came back.
+You don't have permission to access this resource.
+Sign in or head back to home.
+I'd love to help you solve the tests. But I can't.
+Did anything happen while I was out?
+You look great, by the way. Very healthy
+Press the button again.
+It's been a long time.
