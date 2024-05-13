@@ -297,8 +297,9 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	if (len < 2) {
 		return NULL;
 	}
-	insn_t word = {0};
-	memcpy (&word, buf, R_MIN (sizeof (word), len));
+	ut8 word_bytes[8] = {0};
+	memcpy (word_bytes, buf, R_MIN (8, len));
+	insn_t word = r_read_le64 (word_bytes);
 	int xlen = s->config->bits;
 	int ilen = riscv_insn_length (word);
 	if (len < ilen) {
