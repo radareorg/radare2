@@ -84,7 +84,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iE", "[?]", "exports (global symbols)",
 	"ig", "", "guess size of binary program",
 	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
-	"iH", "", "verbose Headers in raw text", // XXX
+	"iH", "[H]", "show binary headers in plain text (iHH verbose output)", // XXX pretty bad description
 	"ii", "[?][j*,]", "list the symbols imported from other libraries",
 	"iic", "", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
@@ -810,7 +810,7 @@ static bool isjvm(RCore *core) {
 	if (z) { tts_say (core, n, z); }\
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
-static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va) {
+static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool va) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	int cmd = input[0];
 	int mode = 0;
@@ -1355,7 +1355,7 @@ static void cmd_it(RCore *core, PJ *pj) {
 	r_list_free (old_hashes);
 }
 
-static void cmd_id(RCore *core, PJ *pj, const char *input, int is_array, int mode) {
+static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
 	const bool va = r_config_get_b (core->config, "io.va");
 	if (input[1] == 'x') { // "idx" "iX"
 		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
@@ -1560,7 +1560,7 @@ static int cmd_info(void *data, const char *input) {
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i;
 	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
-	int is_array = 0;
+	bool is_array = false;
 	bool is_izzzj = false;
 	bool is_idpij = false;
 	PJ *pj = NULL;
@@ -1657,7 +1657,7 @@ static int cmd_info(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_i, cmd);
 			break;
 		}
-		goto done;
+		return 0;
 	}
 	switch (input[0]) {
 	case 'O': // "iO"
@@ -1670,7 +1670,7 @@ static int cmd_info(void *data, const char *input) {
 			r_sys_cmdf ("rabin2 -O help");
 			break;
 		}
-		goto done;
+		break;
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
 			cmd_iic (core, 0); // TODO: support json, etc
@@ -1766,7 +1766,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'j': // "ij"
 		mode = R_MODE_JSON;
-		if (is_array > 1) {
+		if (is_array) {
 			mode |= R_MODE_ARRAY;
 		}
 		INIT_PJ ();
@@ -1881,7 +1881,7 @@ static int cmd_info(void *data, const char *input) {
 		} else {
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 		}
-		goto done;
+		break;
 	case 'k': // "ik"
 		cmd_ik (core, input);
 		break;
@@ -1894,7 +1894,7 @@ static int cmd_info(void *data, const char *input) {
 			R_LOG_ERROR ("Core file not open");
 			return 0;
 		}
-		goto done;
+		break;
 	case 'H': // "iH"
 		if (input[1] == 'H') { // "iHH"
 			// alias for ihh
@@ -1921,7 +1921,7 @@ static int cmd_info(void *data, const char *input) {
 			char *ptr = strchr (input, ' ');
 			int json = input[1] == 'j'? 'j': 0;
 
-			if (ptr && ptr[1]) {
+			if (ptr && ptr[0] && ptr[1]) {
 				const char *plugin_name = ptr + 1;
 				if (is_array) {
 					pj_k (pj, "plugin");
@@ -1948,7 +1948,7 @@ static int cmd_info(void *data, const char *input) {
 		if (input[1] != ' ' || !demangle (core, input + 2)) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
 		}
-		return 0;
+		break;
 	case 's': // "is"
 		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
 			mode = R_MODE_JSON;
@@ -1957,22 +1957,22 @@ static int cmd_info(void *data, const char *input) {
 			mode = R_MODE_SIMPLEST;
 		}
 		cmd_is (core, input, pj, is_array, mode, va);
-		goto done;
+		break;
 	case 'T': // "iT"
 	case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
-		if (core->bin->cur) {
-			RList *bfiles = r_core_bin_files (core);
+		{
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			RList *bfiles = r_core_bin_files (core);
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
 			}
-			core->bin->cur = cur;
 			r_list_free (bfiles);
+			core->bin->cur = cur;
 		}
-		goto done;
+		break;
 	case 'd':
 		cmd_id (core, pj, input, is_array, mode);
 		break;
@@ -1989,8 +1989,8 @@ static int cmd_info(void *data, const char *input) {
 		}
 		core->bin->cur = cur;
 		r_list_free (objs);
-		goto done;
 	}
+		break;
 	case 'r': // "ir"
 		{
 			RList *objs = r_core_bin_files (core);
@@ -2004,16 +2004,16 @@ static int cmd_info(void *data, const char *input) {
 			core->bin->cur = cur;
 			r_list_free (objs);
 		}
-		goto done;
+		break;
 	case 'S': // "iS"
 		cmd_iS (core, input, &pj, mode, va, is_array);
-		goto done;
+		break;
 	case '.': // "i."
 		cmd_info_here (core, pj, mode); // input[1]);
-		goto done;
+		break;
 	case 'z': // "iz"
 		cmd_iz (core, pj, mode, is_array, va, input);
-		goto done;
+		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_i);
 		break;
@@ -2023,13 +2023,9 @@ static int cmd_info(void *data, const char *input) {
 	default:
 		R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 		r_core_return_value (core, 1);
-		goto done;
+		break;
 	}
 	R_FREE (core->table_query);
-	if (space && (*space == ' ' || *space == ',')) {
-		core->table_query = r_str_trim_dup (space + 1);
-	}
-done:
 	if (pj || mode & R_MODE_JSON) {
 		if (is_array && !is_izzzj && !is_idpij) {
 			pj_end (pj);
