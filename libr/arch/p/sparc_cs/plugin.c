@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2023 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -136,7 +136,11 @@ performed in big-endian byte order.
 	if (op->size < 4) {
 		return false;
 	}
+#if R_SYS_ENDIAN
+	ut32 lbuf = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#else
 	ut32 lbuf = r_read_ble32 (op->bytes, !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#endif
 
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)&lbuf, sizeof (lbuf), addr, 1, &insn);
