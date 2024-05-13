@@ -134,7 +134,7 @@ typedef union CValue {
 	double d;
 	float f;
 	int i;
-	unsigned int ui;
+	unsigned int ui; // endian issues because we use 32bit with 64bit mixed types instead of casting
 	unsigned int ul; /* address (should be unsigned long on 64 bit cpu) */
 	long long ll;
 	unsigned long long ull;

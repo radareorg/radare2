@@ -355,7 +355,8 @@ void vpush(TCCState *s1, CType *type) {
 /* push integer constant */
 ST_FUNC void vpushi(TCCState *s1, int v) {
 	CValue cval = {0};
-	cval.i = v;
+	// cval.i = v;
+	cval.ll = v;
 	vsetc (s1, &s1->int32_type, VT_CONST, &cval);
 }
 
@@ -942,7 +943,7 @@ do_decl:
 		if (a == TOK_ENUM) {
 			if (!strcmp (name, "{")) {
 				// UNNAMED
-				eprintf ("anonymous enums are ignored\n");
+				R_LOG_WARN ("anonymous enums are ignored");
 			}
 			while (tcc_nerr (s1) == 0) {
 				v = s1->tok;
@@ -956,6 +957,7 @@ do_decl:
 					next (s1);
 					// eprintf ("TOK %d %c\n", s1->tok, s1->tok);
 					iota = expr_const (s1);
+					eprintf ("IOTA %d\n", iota);
 					// eprintf ("TOK %d %c\n", s1->tok, s1->tok);
 					//const char *valstr = get_tok_str (s1, s1->ch, NULL);
 					//eprintf ("TOK %d %s\n", s1->ch, valstr);
@@ -2273,7 +2275,7 @@ static void unary_type(TCCState *s1, CType *type) {
 
 /* parse a constant expression and return value in s1->vtop.  */
 static void expr_const1(TCCState *s1) {
-	bool a = s1->const_wanted;
+	const bool a = s1->const_wanted;
 	s1->const_wanted = true;
 	expr_cond (s1);
 	s1->const_wanted = a;
@@ -2286,6 +2288,7 @@ ST_FUNC long long expr_const(TCCState *s1) {
 		expect (s1, "constant expression");
 		return 0;
 	}
+	return r_read_le64 (&s1->vtop->c.ll);
 	return s1->vtop->c.ll;
 }
 
