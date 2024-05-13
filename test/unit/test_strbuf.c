@@ -216,7 +216,7 @@ bool test_r_strbuf_initf(void) {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_strbuf_append);
 	mu_run_test (test_r_strbuf_strong_string);
 	mu_run_test (test_r_strbuf_strong_binary);

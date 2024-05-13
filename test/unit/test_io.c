@@ -277,7 +277,7 @@ bool test_r_io_priority2(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_io_cache);
 	mu_run_test(test_r_io_mapsplit);
 	mu_run_test(test_r_io_mapsplit2);

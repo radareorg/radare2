@@ -242,7 +242,7 @@ bool test_r_reg_get_pack(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
 	mu_run_test (test_r_reg_get_value_gpr);
@@ -254,5 +254,5 @@ int all_tests() {
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }

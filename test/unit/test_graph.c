@@ -137,7 +137,7 @@ static bool test_legacy_graph(void) {
 	mu_end;
 }
 
-static int all_tests() {
+static int all_tests(void) {
 	mu_run_test (test_legacy_graph);
 	return tests_passed != tests_run;
 }

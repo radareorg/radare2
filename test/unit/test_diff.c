@@ -53,7 +53,7 @@ bool test_r_diff_buffers_distance(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_diff_buffers_distance);
 	return tests_passed != tests_run;
 }

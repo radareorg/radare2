@@ -31,7 +31,7 @@ bool check_invariants(RIntervalNode *node) {
 	return true;
 }
 
-bool test_r_interval_tree_insert_at() {
+bool test_r_interval_tree_insert_at(void) {
 	RIntervalTree tree;
 	r_interval_tree_init (&tree, NULL);
 
@@ -154,13 +154,13 @@ bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
 	return true;
 }
 
-#define TEST_IN(name, end_inclusive, intervals) bool name() { if(!test_r_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
+#define TEST_IN(name, end_inclusive, intervals) bool name(void) { if(!test_r_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
 TEST_IN (test_r_interval_tree_in_end_exclusive_point, false, false)
 TEST_IN (test_r_interval_tree_in_end_inclusive_point, true, false)
 TEST_IN (test_r_interval_tree_in_end_exclusive_interval, false, true)
 TEST_IN (test_r_interval_tree_in_end_inclusive_interval, true, true)
 
-bool test_r_interval_tree_all_at() {
+bool test_r_interval_tree_all_at(void) {
 	RIntervalTree tree;
 	r_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
@@ -196,7 +196,7 @@ bool test_r_interval_tree_all_at() {
 	mu_end;
 }
 
-bool test_r_interval_tree_node_at_data() {
+bool test_r_interval_tree_node_at_data(void) {
 	RIntervalTree tree;
 	r_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
@@ -218,7 +218,7 @@ bool test_r_interval_tree_node_at_data() {
 	mu_end;
 }
 
-bool test_r_interval_tree_delete() {
+bool test_r_interval_tree_delete(void) {
 	RIntervalTree tree;
 	r_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
@@ -310,15 +310,15 @@ bool test_r_interval_tree_resize(bool end_only) {
 	mu_end;
 }
 
-bool test_r_interval_tree_resize_start_and_end() {
+bool test_r_interval_tree_resize_start_and_end(void) {
 	return test_r_interval_tree_resize (false);
 }
 
-bool test_r_interval_tree_resize_end_only() {
+bool test_r_interval_tree_resize_end_only(void) {
 	return test_r_interval_tree_resize (true);
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_interval_tree_insert_at);
 	mu_run_test (test_r_interval_tree_in_end_exclusive_point);
 	mu_run_test (test_r_interval_tree_in_end_inclusive_point);

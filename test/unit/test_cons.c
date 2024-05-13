@@ -1,7 +1,7 @@
 #include <r_cons.h>
 #include "minunit.h"
 
-bool test_r_cons() {
+bool test_r_cons(void) {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
 
@@ -118,7 +118,7 @@ bool test_r_cons() {
 	mu_end;
 }
 
-bool test_cons_to_html() {
+bool test_cons_to_html(void) {
 	char *html;
 
 	html = r_cons_html_filter ("\x1b[32mhello\x1b[0m", NULL);
@@ -164,7 +164,7 @@ bool test_cons_to_html() {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	return tests_passed != tests_run;

@@ -1,7 +1,7 @@
 #include <r_util.h>
 #include "minunit.h"
 
-bool test_r_hex_from_code() {
+bool test_r_hex_from_code(void) {
 	const char *s;
 	char *r;
 	s = "char *s = \"ABCD\";";
@@ -52,7 +52,7 @@ bool test_r_hex_from_code() {
 	mu_end;
 }
 
-bool test_r_hex_from_c() {
+bool test_r_hex_from_c(void) {
 	const char *s;
 	char *r;
 	s = "char *s = \"ABCD\";";
@@ -95,7 +95,7 @@ bool test_r_hex_from_c() {
 	mu_end;
 }
 
-bool test_r_hex_from_py() {
+bool test_r_hex_from_py(void) {
 	const char *s;
 	char *r;
 	s = "s = \"ABCD\";";
@@ -126,7 +126,7 @@ bool test_r_hex_from_py() {
 	mu_end;
 }
 
-bool test_r_hex_no_code() {
+bool test_r_hex_no_code(void) {
 	const char *s;
 	char *r;
 	s = "\"ABCD\"";
@@ -153,7 +153,7 @@ bool test_r_hex_no_code() {
 	mu_end;
 }
 
-bool test_str2bin_alloc () {
+bool test_str2bin_alloc (void) {
 	R_ALIGNED(8) ut8 *buf = NULL;
 	int len;
 	// bad strings
@@ -199,7 +199,7 @@ bool test_str2bin_alloc () {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_hex_from_c);
 	mu_run_test (test_r_hex_from_py);
 	mu_run_test (test_r_hex_from_code);

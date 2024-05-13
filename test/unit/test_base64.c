@@ -41,7 +41,7 @@ int test_r_base64_encode(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_base64_decode_dyn);
 	mu_run_test(test_r_base64_decode);
 	mu_run_test(test_r_base64_decode_invalid);

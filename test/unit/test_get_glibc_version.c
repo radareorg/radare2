@@ -39,7 +39,7 @@ bool test_get_glibc_version (void) {
 	mu_end;
 }
 
-bool all_tests () {
+bool all_tests (void) {
 	mu_run_test (test_get_glibc_version);
 	return tests_passed != tests_run;
 }

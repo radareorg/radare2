@@ -30,8 +30,8 @@ bool test_r_glob(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_r_glob);
+int all_tests(void) {
+	mu_run_test (test_r_glob);
 	return tests_passed != tests_run;
 }
 

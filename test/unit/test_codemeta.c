@@ -20,8 +20,7 @@ static RCodeMetaItem make_code_annotation(int st, int en, RCodeMetaItemType type
 	return annotation;
 }
 
-static RCodeMetaItem make_variable_annotation(int st, int en, RCodeMetaItemType typec,
-	const char *name) {
+static RCodeMetaItem make_variable_annotation(int st, int en, RCodeMetaItemType typec, const char *name) {
 	RCodeMetaItem annotation = {0};
 	annotation.start = st;
 	annotation.end = en;
@@ -30,8 +29,7 @@ static RCodeMetaItem make_variable_annotation(int st, int en, RCodeMetaItemType 
 	return annotation;
 }
 
-static RCodeMetaItem make_reference_annotation(int st, int en, RCodeMetaItemType typec,
-	ut64 offset, const char *name) {
+static RCodeMetaItem make_reference_annotation(int st, int en, RCodeMetaItemType typec, ut64 offset, const char *name) {
 	RCodeMetaItem annotation = {0};
 	annotation.start = st;
 	annotation.end = en;

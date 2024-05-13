@@ -20,7 +20,7 @@ static size_t blocks_count(RAnal *anal) {
 #define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
 #define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
 
-bool test_r_anal_block_create() {
+bool test_r_anal_block_create(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -55,7 +55,7 @@ bool test_r_anal_block_create() {
 	mu_end;
 }
 
-bool test_r_anal_block_contains() {
+bool test_r_anal_block_contains(void) {
 	RAnalBlock dummy = {0};
 	dummy.addr = 0x1337;
 	dummy.size = 42;
@@ -67,7 +67,7 @@ bool test_r_anal_block_contains() {
 	mu_end;
 }
 
-bool test_r_anal_block_split() {
+bool test_r_anal_block_split(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -122,7 +122,7 @@ bool test_r_anal_block_split() {
 	mu_end;
 }
 
-bool test_r_anal_block_split_in_function() {
+bool test_r_anal_block_split_in_function(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -156,7 +156,7 @@ bool test_r_anal_block_split_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge() {
+bool test_r_anal_block_merge(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -204,7 +204,7 @@ bool test_r_anal_block_merge() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge_in_function() {
+bool test_r_anal_block_merge_in_function(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -237,7 +237,7 @@ bool test_r_anal_block_merge_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_delete() {
+bool test_r_anal_block_delete(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -265,7 +265,7 @@ bool test_r_anal_block_delete() {
 	mu_end;
 }
 
-bool test_r_anal_block_set_size() {
+bool test_r_anal_block_set_size(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -304,7 +304,7 @@ bool test_r_anal_block_set_size() {
 	mu_end;
 }
 
-bool test_r_anal_block_relocate() {
+bool test_r_anal_block_relocate(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -369,7 +369,7 @@ bool test_r_anal_block_relocate() {
 	mu_end;
 }
 
-bool test_r_anal_block_query() {
+bool test_r_anal_block_query(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -486,7 +486,7 @@ bool addr_list_cb(ut64 addr, void *user) {
 	return true;
 }
 
-bool test_r_anal_block_successors() {
+bool test_r_anal_block_successors(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -567,7 +567,7 @@ bool test_r_anal_block_successors() {
 	mu_end;
 }
 
-bool test_r_anal_block_automerge() {
+bool test_r_anal_block_automerge(void) {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
 		RAnal *anal = r_anal_new ();
@@ -671,7 +671,7 @@ bool test_r_anal_block_chop_noreturn(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_anal_block_chop_noreturn);
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);

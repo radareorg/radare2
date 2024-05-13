@@ -21,7 +21,7 @@ static bool test_r2pipe_404(void) {
 	mu_end;
 }
 
-static int all_tests() {
+static int all_tests(void) {
 	r_sys_setenv ("R2_NOPLUGINS", "1");
 	mu_run_test (test_r2pipe);
 	mu_run_test (test_r2pipe_404);

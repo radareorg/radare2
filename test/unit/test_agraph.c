@@ -14,7 +14,7 @@ static char *_graph_node_info_get_body(void *data, void *user) {
 	return (info && info->body)? strdup (info->body): NULL;
 }
 
-bool test_graph_to_agraph() {
+bool test_graph_to_agraph(void) {
 	RCore *core = r_core_new ();
 	r_core_cmd0 (core, "ac A");
 	r_core_cmd0 (core, "ac B");
@@ -113,7 +113,7 @@ bool test_graph_to_agraph() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_graph_to_agraph);
 	return tests_passed != tests_run;
 }

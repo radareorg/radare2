@@ -181,7 +181,7 @@ bool test_r2r_fix(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
 	return tests_passed != tests_run;

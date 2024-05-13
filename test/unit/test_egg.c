@@ -4,9 +4,8 @@
 #include <r_egg.h>
 #include "minunit.h" 
 
-#if __linux__
-// const char *arch = R_SYS_ARCH;
-const char *arch = "x86";
+#if __linux__ && __x86_64__
+const char *arch = R_SYS_ARCH;
 const char *os = R_EGG_OS_NAME;
 const int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 const char program[] = "                \
@@ -74,7 +73,7 @@ bool test_r_egg_save(void) {
 }
 #endif
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_egg_save);
 	return tests_passed != tests_run;
 }

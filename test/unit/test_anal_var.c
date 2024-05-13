@@ -42,7 +42,7 @@ static bool sanitize(RAnalFunction *fcn) {
 	} \
 } while (0);
 
-bool test_r_anal_var() {
+bool test_r_anal_var(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 64);
@@ -267,7 +267,7 @@ bool test_r_anal_var() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_anal_var);
 	return tests_passed != tests_run;
 }

@@ -460,7 +460,7 @@ bool test_remove_cmd(void) {
 }
 #endif
 
-int all_tests() {
+int all_tests(void) {
 #if 0
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);

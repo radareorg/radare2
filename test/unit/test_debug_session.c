@@ -3,7 +3,7 @@
 #include <r_reg.h>
 #include "minunit.h"
 
-static Sdb *ref_db() {
+static Sdb *ref_db(void) {
 	Sdb *db = sdb_new0 ();
 
 	sdb_num_set (db, "maxcnum", 1, 0);
@@ -37,7 +37,7 @@ static Sdb *ref_db() {
 	return db;
 }
 
-static RDebugSession *ref_session() {
+static RDebugSession *ref_session(void) {
 	size_t i;
 	RDebugSession *s = r_debug_session_new ();
 	if (!s) {
@@ -198,7 +198,7 @@ static bool test_session_load(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_session_save);
 	mu_run_test (test_session_load);
 	return tests_passed != tests_run;

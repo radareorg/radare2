@@ -60,7 +60,7 @@ int test_overflow_mul2(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_overflow_add);
 	mu_run_test (test_underflow_add);
 	mu_run_test (test_underflow_sub);

@@ -13,8 +13,8 @@ bool test_r_buf_new_sparse(void) {
 	mu_end;
 }
 
-bool all_tests() {
-	mu_run_test(test_r_buf_new_sparse);
+bool all_tests(void) {
+	mu_run_test (test_r_buf_new_sparse);
 	return tests_passed != tests_run;
 }
 

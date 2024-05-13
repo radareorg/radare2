@@ -112,7 +112,7 @@ bool test_space_event(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_space_basic);
 	mu_run_test (test_space_stack);
 	mu_run_test (test_space_event);

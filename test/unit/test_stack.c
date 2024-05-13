@@ -45,7 +45,7 @@ bool test_r_stack_grow(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_stack_pop_empty);
 	mu_run_test (test_r_stack_push_pop);
 	mu_run_test (test_r_stack_push_pop_multi);

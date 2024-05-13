@@ -58,7 +58,7 @@ bool test_r_flag_by_spaces(void) {
 	mu_end;
 }
 
-bool test_r_flag_get_at() {
+bool test_r_flag_get_at(void) {
 	RFlag *flag = r_flag_new ();
 
 	r_flag_space_set (flag, "sp1");
@@ -128,7 +128,7 @@ bool test_r_flag_get_at() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_flag_get_set);
 	mu_run_test (test_r_flag_by_spaces);
 	mu_run_test (test_r_flag_get_at);

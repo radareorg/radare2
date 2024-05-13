@@ -240,7 +240,7 @@ bool test_log(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
 	mu_run_test (test_dll_names);

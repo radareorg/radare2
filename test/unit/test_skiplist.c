@@ -189,7 +189,7 @@ bool test_join(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_empty);
 	mu_run_test(test_oneelement);
 	mu_run_test(test_insert);

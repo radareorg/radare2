@@ -74,7 +74,7 @@ bool test_get_main_arena_offset_with_relocs(void) {
 	mu_end;
 }
 
-bool all_tests () {
+bool all_tests (void) {
 	mu_run_test (test_get_main_arena_offset_with_symbol);
 #if R_SYS_ENDIAN == 0
 	// XXX this thing fails on big endian machines

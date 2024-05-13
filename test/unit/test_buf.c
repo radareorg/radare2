@@ -424,7 +424,7 @@ bool test_r_buf_slice_too_big(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 #if R2_USE_NEW_ABI
 	mu_run_test (test_r_buf_cache);
 #endif

@@ -1280,8 +1280,7 @@ bool test_big_endian_dwarf2(void) {
 	mu_end;
 }
 
-
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_dwarf_cpp_empty_line_info);
 	mu_run_test (test_dwarf2_cpp_many_comp_units);
 	mu_run_test (test_dwarf3_c_basic);

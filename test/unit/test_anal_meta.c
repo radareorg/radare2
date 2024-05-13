@@ -3,7 +3,7 @@
 
 #include "minunit.h"
 
-bool test_meta_set() {
+bool test_meta_set(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -131,7 +131,7 @@ bool test_meta_set() {
 	mu_end;
 }
 
-bool test_meta_get_at() {
+bool test_meta_get_at(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -169,7 +169,7 @@ bool test_meta_get_at() {
 	mu_end;
 }
 
-bool test_meta_get_in() {
+bool test_meta_get_in(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -210,7 +210,7 @@ bool test_meta_get_in() {
 	mu_end;
 }
 
-bool test_meta_get_all_at() {
+bool test_meta_get_all_at(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -250,7 +250,7 @@ bool test_meta_get_all_at() {
 	mu_end;
 }
 
-bool test_meta_get_all_in() {
+bool test_meta_get_all_in(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -312,7 +312,7 @@ bool test_meta_get_all_in() {
 	mu_end;
 }
 
-bool test_meta_get_all_intersect() {
+bool test_meta_get_all_intersect(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -376,7 +376,7 @@ bool test_meta_get_all_intersect() {
 	mu_end;
 }
 
-bool test_meta_del() {
+bool test_meta_del(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -441,7 +441,7 @@ bool test_meta_del() {
 	mu_end;
 }
 
-bool test_meta_rebase() {
+bool test_meta_rebase(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x200, 4, NULL);
@@ -491,7 +491,7 @@ bool test_meta_rebase() {
 	mu_end;
 }
 
-bool test_meta_spaces() {
+bool test_meta_spaces(void) {
 	RAnal *anal = r_anal_new ();
 
 	r_meta_set (anal, R_META_TYPE_DATA, 0x100, 4, NULL);
@@ -591,7 +591,7 @@ bool test_meta_spaces() {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test(test_meta_set);
 	mu_run_test(test_meta_get_at);
 	mu_run_test(test_meta_get_in);

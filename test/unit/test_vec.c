@@ -25,9 +25,9 @@ static inline int find_compare_st32(const st32 *a, const void *b) {
 	return compare_st32 (a, (st32*) b);
 }
 
-R_VEC_TYPE(RVecUT32, ut32);
-R_VEC_TYPE(RVecST32, st32);
-R_VEC_TYPE_WITH_FINI(RVecS, S, fini_S);
+R_VEC_TYPE (RVecUT32, ut32);
+R_VEC_TYPE (RVecST32, st32);
+R_VEC_TYPE_WITH_FINI (RVecS, S, fini_S);
 
 
 static bool test_vec_init(void) {
