@@ -6,6 +6,7 @@
 #include "mach0.h"
 
 // R2R db/formats/mach0/strip
+// R2R db/formats/zip
 
 #define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
@@ -2985,6 +2986,21 @@ static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags
 	_enrich_symbol (context->bf, mo, context->symcache, sym);
 }
 
+static bool apple_symbol(const char *sym_name) {
+#if 0
+	if (r_str_startswith (sym_name, "__")) {
+		return true;
+	}
+#endif
+	if (r_str_startswith (sym_name, "radr://")) {
+		return true;
+	}
+	if (!strcmp (sym_name, "__mh_execute_header")) {
+		return true;
+	}
+	return false;
+}
+
 static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to = UT32_MAX;
@@ -3083,7 +3099,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				sym->is_imported = false;
 				sym->type = mo->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
 				sym->name = r_bin_name_new (sym_name);
-				if (is_stripped && strcmp (sym_name, "__mh_execute_header")) {
+				if (is_stripped && !apple_symbol (sym_name)) {
 					is_stripped = false;
 				}
 				R_FREE (sym_name);
@@ -3118,9 +3134,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
 			if (symbol.name) {
-				if (is_stripped && strcmp (symbol.name, "__mh_execute_header")) {
-					is_stripped = false;
-				}
+				// imports cant affect the strip state
 				sym->name = r_bin_name_new (symbol.name);
 			} else {
 				char *name = r_str_newf ("entry%u", (ut32)i);
@@ -3157,7 +3171,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 			} else {
 				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}
-			if (is_stripped && strcmp (sym_name, "__mh_execute_header")) {
+			if (is_stripped && !apple_symbol (sym_name)) {
 				is_stripped = false;
 			}
 			if (hash_find_or_insert (hash, sym_name, vaddr)) {
@@ -3191,68 +3205,70 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 	ht_pp_free (hash);
 }
 
-static void parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
+static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	RBinObject *obj = bf? bf->bo: NULL;
 	if (!obj) {
-		return;
+		return false;
 	}
 	if (mo->nofuncstarts) {
-		return;
+		return mo->dbg_info & R_BIN_DBG_STRIPPED;
 	}
 
 	int wordsize = MACH0_(get_bits) (mo);
 	ut32 i = RVecRBinSymbol_length (mo->symbols_vec);
 
 	// functions from LC_FUNCTION_STARTS
-	if (mo->func_start) {
-		const int limit = bf->rbin->limit;
-		bool is_stripped = false;
-		char symstr[128];
-		ut64 value = 0, address = 0;
-		const ut8 *temp = mo->func_start;
-		const ut8 *temp_end = mo->func_start + mo->func_size;
-		strcpy (symstr, "sym0x");
-		while (temp + 3 < temp_end && *temp) {
-			temp = r_uleb128_decode (temp, NULL, &value);
-			address += value;
-			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
-			// probably not necessary if we fill all the fields below, just in case.. but maybe we can have another rvec method for this
-			memset (sym, 0, sizeof (RBinSymbol));
-			sym->vaddr = mo->baddr + address;
-			sym->paddr = address + obj->boffset;
-			sym->size = 0;
-			char *n = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
-			sym->name = r_bin_name_new (n);
-			free (n);
-			sym->type = R_BIN_TYPE_FUNC_STR;
-			sym->forwarder = "NONE";
-			sym->bind = R_BIN_BIND_LOCAL_STR;
-			sym->ordinal = i++;
-			if (mo->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
-				_handle_arm_thumb (sym);
-			}
-			// if any func is not found in syms then we consider it to be stripped
-			// XXX this is slow. we can check with addr ht/set
-			if (!is_stripped) {
-				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
-				bool found = false;
-				ht_pp_find (symcache, symstr, &found);
-				if (!found) {
-					is_stripped = true;
-				}
-			}
-			if (limit > 0 && sym->ordinal > limit) {
-				R_LOG_WARN ("funcstart mo.limit reached");
-				break;
+	bool is_stripped = false;
+	if (!mo->func_start) {
+		return true;
+	}
+	const int limit = bf->rbin->limit;
+	char symstr[128];
+	ut64 value = 0, address = 0;
+	const ut8 *temp = mo->func_start;
+	const ut8 *temp_end = mo->func_start + mo->func_size;
+	strcpy (symstr, "sym0x");
+	while (temp + 3 < temp_end && *temp) {
+		temp = r_uleb128_decode (temp, NULL, &value);
+		address += value;
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
+		// probably not necessary if we fill all the fields below, just in case.. but maybe we can have another rvec method for this
+		memset (sym, 0, sizeof (RBinSymbol));
+		sym->vaddr = mo->baddr + address;
+		sym->paddr = address + obj->boffset;
+		sym->size = 0;
+		char *n = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+		sym->name = r_bin_name_new (n);
+		free (n);
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->forwarder = "NONE";
+		sym->bind = R_BIN_BIND_LOCAL_STR;
+		sym->ordinal = i++;
+		if (mo->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+			_handle_arm_thumb (sym);
+		}
+		// if any func is not found in syms then we consider it to be stripped
+		// XXX this is slow. we can check with addr ht/set
+		if (!is_stripped) {
+			snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
+			bool found = false;
+			ht_pp_find (symcache, symstr, &found);
+			if (!found) {
+				is_stripped = true;
 			}
 		}
-		if (is_stripped) {
-			mo->dbg_info |= R_BIN_DBG_STRIPPED;
-		} else if (mo->dbg_info & R_BIN_DBG_STRIPPED) {
-			mo->dbg_info ^= R_BIN_DBG_STRIPPED;
-			// R_BIT_UNSET (mo->dbg_info, R_BIN_DBG_STRIPPED);
+		if (limit > 0 && sym->ordinal > limit) {
+			R_LOG_WARN ("funcstart mo.limit reached");
+			break;
 		}
 	}
+	if (is_stripped) {
+		mo->dbg_info |= R_BIN_DBG_STRIPPED;
+	} else if (mo->dbg_info & R_BIN_DBG_STRIPPED) {
+		mo->dbg_info &= ~R_BIN_DBG_STRIPPED;
+		// R_BIT_UNSET (mo->dbg_info, R_BIN_DBG_STRIPPED);
+	}
+	return mo->dbg_info & ~R_BIN_DBG_STRIPPED;
 }
 
 #if 0
@@ -3274,11 +3290,10 @@ static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
-		if (strstr (section->name, "DWARF.__debug_line")) {
+		if (strstr (section->name, ".__debug_line")) {
 			return true;
 		}
 	}
-
 	r_list_free (sections);
 	return false;
 }
@@ -3296,13 +3311,17 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 		RBinFile *bf = mo->options.bf;
 		parse_symbols (bf, mo, symcache);
 		if (mo->parse_start_symbols) {
-			parse_function_start_symbols (bf, mo, symcache);
+			bool is_stripped = parse_function_start_symbols (bf, mo, symcache);
+			if (is_stripped) {
+				mo->dbg_info |= R_BIN_DBG_STRIPPED;
+			}
 		}
 		ht_pp_free (symcache);
 	}
 
 	if (is_debug_build (mo->options.bf, mo)) {
 		mo->dbg_info |= R_BIN_DBG_LINENUMS;
+		mo->dbg_info &= ~R_BIN_DBG_STRIPPED;
 	}
 	return !RVecRBinSymbol_empty (mo->symbols_vec);
 }
