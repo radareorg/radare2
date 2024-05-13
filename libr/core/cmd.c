@@ -2640,9 +2640,13 @@ static int cmd_bsize(void *data, const char *input) {
 		if (r_str_startswith (input, "64:")) {
 			int len = 0;
 			char *cmd = (char *)sdb_decode (input + 3, &len);
-			cmd[len] = 0;
-			r_core_cmd_call (core, cmd);
-			free (cmd);
+			if (cmd) {
+				cmd[len] = 0;
+				r_core_cmd_call (core, cmd);
+				free (cmd);
+			} else {
+				R_LOG_ERROR ("Missing base64 string after b64:");
+			}
 		} else {
 			r_core_cmd_help_contains (core, help_msg_b, "b64:");
 		}
