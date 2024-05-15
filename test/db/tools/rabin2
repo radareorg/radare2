@@ -921,6 +921,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -D swift deinit
+FILE=--
+CMDS=!rabin2 -D swift  's16IOSSecuritySuiteAACfD'
+EXPECT=<<EOF
+IOSSecuritySuite...deinit.deallocating
+EOF
+RUN
+
 NAME=rabin2 -D swift conforms
 FILE=--
 CMDS=!rabin2 -D swift  '_$s16IOSSecuritySuite11FailedCheckOSQAAMc'

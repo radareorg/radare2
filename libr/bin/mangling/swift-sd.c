@@ -231,6 +231,7 @@ static const char *conformsto(char p) {
 	case 'H':
 		return "Hashable";
 	}
+	return NULL;
 }
 
 static bool looks_valid(char p) {
@@ -242,6 +243,7 @@ static bool looks_valid(char p) {
 	case 'I':
 	case 'M':
 	case 'o':
+	case 'f':
 	case 'N': // ON
 	case 's':
 	case 'S': // SHA SQAAMc
@@ -273,6 +275,9 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	if (R_STR_ISEMPTY (p)) {
 		return NULL;
 	}
+	if (p[1] == 'f') {
+		p++;
+	}
 	switch (p[1]) {
 	case 'T':
 		r_strbuf_append (out, "Swift.");
@@ -296,6 +301,10 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	case 's':
 		// nothing here
 		break;
+	case 'd':
+		return "..deinit";
+	case 'D':
+		return "..deinit.deallocating";
 	case 'N':
 		return "..metadata.type";
 	case 'M':
@@ -461,10 +470,19 @@ static char *my_swift_demangler(const char *s) {
 					q++;
 				}
 				switch (*q) {
+				case 'A': // skip 'AAC' cases
+					if (!isdigit (q[1])) {
+						q += 2;
+						r_strbuf_append (out, ".");
+						continue;
+					}
+					// ignored stuff here
+					break;
+				case 'C': // "s16IOSSecuritySuiteAACMu"
 				case 'O':
 					if (!isdigit (q[1]) && looks_valid (q[1])) {
 						if (q[1] == 'S') {
-						const char *tail = conformsto (q[2]);
+							const char *tail = conformsto (q[2]);
 							r_strbuf_append (out, ".conformsto.");
 							r_strbuf_append (out, tail);
 						} else {
