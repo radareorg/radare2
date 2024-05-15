@@ -1,5 +1,5 @@
 /* work-in-progress reverse engineered swift-demangler in C
- * Copyright MIT 2015-2023 by pancake@nopcode.org */
+ * Copyright MIT 2015-2024 by pancake@nopcode.org */
 
 #include <r_cons.h>
 #include <r_lib.h>
@@ -483,8 +483,16 @@ static char *my_swift_demangler(const char *s) {
 					if (!isdigit (q[1]) && looks_valid (q[1])) {
 						if (q[1] == 'S') {
 							const char *tail = conformsto (q[2]);
-							r_strbuf_append (out, ".conformsto.");
-							r_strbuf_append (out, tail);
+							if (tail) {
+								r_strbuf_append (out, ".conformsto.");
+								r_strbuf_append (out, tail);
+							} else {
+								R_LOG_DEBUG ("Unhandled s9Alamofire10HTTPMethodO8rawValueACSgSS_tcfC");
+								r_strbuf_append (out, ".");
+								r_strbuf_append (out, q);
+								q = q_end;
+								continue;
+							}
 						} else {
 							const char *tail = get_mangled_tail (&q, out);
 							if (tail) {
