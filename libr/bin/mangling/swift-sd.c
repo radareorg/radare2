@@ -420,6 +420,8 @@ static char *my_swift_demangler(const char *s) {
 					q++;
 				}
 				switch (*q) {
+				case 'O':
+					r_strbuf_append (out, ".");
 				case 's':
 					{
 						int n = 0;
@@ -586,7 +588,7 @@ static char *my_swift_demangler(const char *s) {
 			}
 		}
 	} else {
-		//printf ("Unsupported type: %c\n", *p);
+		R_LOG_DEBUG ("Unsupported swift mangling type: %c", *p);
 	}
 	// https://www.guardsquare.com/blog/swift-native-method-swizzling
 	if (r_str_endswith (s, "FTX")) {
