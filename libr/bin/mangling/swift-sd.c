@@ -200,6 +200,39 @@ static inline const char *str_removeprefix(const char *s, const char *prefix) {
 	return s;
 }
 
+static const char *conformsto(char p) {
+	switch (p) {
+	case 'Q':
+		return "Equatable";
+	case 'Y':
+		return "RawRepresentable";
+	case 'X':
+		return "RangeExpression";
+	case 'Z':
+		return "SignedInteger";
+	case 'U':
+		return "UnsignedInteger";
+	case 'T':
+		return "Sequence";
+	case 'M':
+		return "MutableCollection";
+	case 'L':
+		return "Comparable";
+	case 'K':
+		return "BidirectionalCollection";
+	case 'G':
+		return "RandomNumberGenerator";
+	case 'F':
+		return "FloatingPoint";
+	case 'E':
+		return "Encodable";
+	case 'B':
+		return "BinaryFloatingPoint";
+	case 'H':
+		return "Hashable";
+	}
+}
+
 static bool looks_valid(char p) {
 	if (IS_DIGIT (p)) {
 		return true;
@@ -209,7 +242,9 @@ static bool looks_valid(char p) {
 	case 'I':
 	case 'M':
 	case 'o':
+	case 'N': // ON
 	case 's':
+	case 'S': // SHA SQAAMc
 	case 't':
 	case 'T':
 	case 'v':
@@ -233,7 +268,7 @@ typedef struct {
 	const char *tail;
 } SwiftState;
 
-static char *get_mangled_tail(const char **pp, RStrBuf *out) {
+static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	const char *p = *pp;
 	if (R_STR_ISEMPTY (p)) {
 		return NULL;
@@ -247,6 +282,8 @@ static char *get_mangled_tail(const char **pp, RStrBuf *out) {
 		switch (p[2]) {
 		case 'a':
 			return "..protocol";
+		case 'C':
+			return "..enum.case";
 		}
 		break;
 	case 'F':
@@ -259,16 +296,20 @@ static char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	case 's':
 		// nothing here
 		break;
+	case 'N':
+		return "..metadata.type";
 	case 'M':
 		switch (p[2]) {
-		case 'a':
-			return "..accessor.metadata";
 		case 'e':
 			return "..override";
 		case 'm':
 			return "..metaclass";
+		case 'n':
+			return "..nominal.type.descriptor";
+		case 'a':
+			return "..metadata.accessor";
 		case 'L':
-			return "..lazy.metadata";
+			return "..metadata.lazy";
 		default:
 			return "..metadata";
 		}
@@ -421,7 +462,25 @@ static char *my_swift_demangler(const char *s) {
 				}
 				switch (*q) {
 				case 'O':
-					r_strbuf_append (out, ".");
+					if (!isdigit (q[1]) && looks_valid (q[1])) {
+						if (q[1] == 'S') {
+						const char *tail = conformsto (q[2]);
+							r_strbuf_append (out, ".conformsto.");
+							r_strbuf_append (out, tail);
+						} else {
+							const char *tail = get_mangled_tail (&q, out);
+							if (tail) {
+								r_strbuf_append (out, tail);
+							} else {
+								r_strbuf_append (out, ".");
+							}
+						}
+						q++;
+						continue;
+					} else {
+						r_strbuf_append (out, ".");
+						// fallthorugh
+					}
 				case 's':
 					{
 						int n = 0;

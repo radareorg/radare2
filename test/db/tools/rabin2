@@ -921,6 +921,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -D swift conforms
+FILE=--
+CMDS=!rabin2 -D swift  '_$s16IOSSecuritySuite11FailedCheckOSQAAMc'
+EXPECT=<<EOF
+IOSSecuritySuite.FailedCheck.conformsto.Equatable
+EOF
+RUN
+
 NAME=rabin2 -D swift
 FILE=--
 CMDS=!rabin2 -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
