@@ -922,10 +922,18 @@ EOF
 RUN
 
 NAME=rabin2 -D swift
-FILE=bins/elf/libc.so.0
+FILE=--
 CMDS=!rabin2 -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
 Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
+EOF
+RUN
+
+NAME=rabin2 -D swift O attribute
+FILE=--
+CMDS=!rabin2 -D swift '_$s16IOSSecuritySuite11FailedCheckO13symbolicLinksyA2CmFWC'
+EXPECT=<<EOF
+IOSSecuritySuite.FailedCheck.symbolicLinks
 EOF
 RUN
 
