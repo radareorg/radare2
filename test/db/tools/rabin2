@@ -921,6 +921,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -D swift TODO
+FILE=--
+CMDS=!rabin2 -D swift  's9Alamofire10HTTPMethodO8rawValueACSgSS_tcfC'
+EXPECT=<<EOF
+Alamofire.HTTPMethod.rawValue.CSgSS_tcfC
+EOF
+RUN
+
 NAME=rabin2 -D swift deinit
 FILE=--
 CMDS=!rabin2 -D swift  's16IOSSecuritySuiteAACfD'
