@@ -13751,7 +13751,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
-					logline (core, 68, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
+					logline (core, 68, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
 					int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 					if (!isvm) {
 						r_core_cmd_call (core, "aavq");

@@ -385,7 +385,7 @@ CMDS=iq
 EXPECT=<<EOF
 arch arm
 bits 16
-os linux
+os android
 endian little
 EOF
 RUN
@@ -396,7 +396,7 @@ CMDS=iaq
 EXPECT=<<EOF
 arch arm
 bits 16
-os linux
+os android
 endian little
 __cxa_finalize
 __cxa_atexit
