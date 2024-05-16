@@ -3209,9 +3209,14 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		one = true;
 		input++;
 	}
-	if (*input) {
+	if (*input) { // "afbj"
 		mode = *input;
 		input++;
+		if (mode == 'i') { // "afbi"
+			if (*input == 'j') {
+				mode = 'J'; // afbij"
+			}
+		}
 	}
 	if (*input == '.') {
 		one = true;
@@ -3229,7 +3234,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (one) {
 		bbaddr = addr;
 	}
-	if (mode == 'j') {
+	if (mode == 'j' || mode == 'J') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
 			r_cons_println ("[]");
@@ -3323,16 +3328,10 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			print_bb (pj, b, fcn, addr);
 			break;
 		case 'i': // "afbi"
-			if (*input == 'j') { // "afbij"
-				PJ *pj = r_core_pj_new (core);
-				if (pj) {
-					print_bb (pj, b, fcn, addr);
-					r_cons_println (pj_string (pj));
-					pj_free (pj);
-				}
-			} else {
-				print_bb (NULL, b, fcn, addr);
-			}
+			print_bb (NULL, b, fcn, addr);
+			break;
+		case 'J': // "afbij"
+			print_bb (pj, b, fcn, addr);
 			break;
 		default:
 			tp = r_debug_trace_get (core->dbg, b->addr);
@@ -3366,7 +3365,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			free (ts);
 		}
 		r_table_free (t);
-	} else if (mode == 'j') {
+	} else if (pj) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
