@@ -170,6 +170,7 @@ struct Elf_(obj_t) {
 	bool fields_loaded;
 	RVector g_fields;  // RBinElfField
 	int limit;
+	char *osabi;
 };
 
 int Elf_(has_va)(struct Elf_(obj_t) *bin);
