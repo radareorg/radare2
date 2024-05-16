@@ -561,9 +561,13 @@ static char *my_swift_demangler(const char *s) {
 						q++;
 					}
 					if (*q == 'S') {
-						// r_strbuf_append (out, ".String");
+					//	r_strbuf_append (out, ".String");
 					}
 					switch (q[1]) {
+					case 'g':
+						r_strbuf_append (out, q);
+						q = q_end;
+						break;
 					case 'v':
 						if (q + 2 < q_end) {
 							q += 2;
