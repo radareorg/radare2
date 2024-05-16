@@ -8,9 +8,17 @@ RUN
 
 NAME=swift long method
 FILE=--
+CMDS=iD swift s16IOSSecuritySuiteAAC14denySymbolHook_2at10imageSlideySS_SPySo11mach_headerVGSitFZ
+EXPECT=<<EOF
+IOSSecuritySuite..denySymbolHook.at.imageSlide
+EOF
+RUN
+
+NAME=swift long method
+FILE=--
 CMDS=iD swift s16IOSSecuritySuiteAAC16amIRuntimeHooked13dyldAllowList14detectionClass8selector02isJ6MethodSbSaySSG_yXlXp10ObjectiveC8SelectorVSbtFZ
 EXPECT=<<EOF
-IOSSecuritySuite..amIRuntimeHooked
+IOSSecuritySuite..amIRuntimeHooked.dyldAllowList
 EOF
 RUN
 

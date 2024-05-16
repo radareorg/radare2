@@ -925,7 +925,7 @@ NAME=rabin2 -D swift TODO
 FILE=--
 CMDS=!rabin2 -D swift  's9Alamofire10HTTPMethodO8rawValueACSgSS_tcfC'
 EXPECT=<<EOF
-Alamofire.HTTPMethod.rawValue.CSgSS_tcfC
+Alamofire.HTTPMethod.rawValue.SgSS_tcfC
 EOF
 RUN
 
