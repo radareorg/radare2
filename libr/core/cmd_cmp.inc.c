@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1340,6 +1340,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_cmd_help_match_spec (core, help_msg_c, "c", width);
 			break;
 		}
+		const bool be = r_config_get_b (core->config, "cfg.bigendian");
 
 		if (width == '1') {
 			if (mode == '*') {
@@ -1349,13 +1350,13 @@ static int cmd_cmp(void *data, const char *input) {
 				val = cmp_bits (core, r_num_math (core->num, arg));
 			}
 		} else if (width == '2') {
-			cmp_val.v16 = (ut16) r_num_math (core->num, arg);
+			r_write_ble16 (&cmp_val.v16, r_num_math (core->num, arg), be);
 			val = radare_compare (core, block, (ut8 *) &cmp_val.v16, sizeof (wordcmp.v16), mode);
 		} else if (width == '4') {
-			cmp_val.v32 = (ut32) r_num_math (core->num, arg);
+			r_write_ble32 (&cmp_val.v32, r_num_math (core->num, arg), be);
 			val = radare_compare (core, block, (ut8 *) &cmp_val.v32, sizeof (wordcmp.v32), mode);
 		} else if (width == '8') {
-			cmp_val.v64 = r_num_math (core->num, arg);
+			r_write_ble64 (&cmp_val.v64, r_num_math (core->num, arg), be);
 			val = radare_compare (core, block, (ut8 *) &cmp_val.v64, sizeof (wordcmp.v64), mode);
 		}
 		break;
