@@ -874,9 +874,11 @@ continuation:
 	if (grep->counter) {
 		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
 		free (cons->context->buffer);
-		cons->context->buffer = r_str_newf ("%d\n", cnt);
-		cons->context->buffer_len = strlen (cons->context->buffer);
-		cons->context->buffer_sz = cons->context->buffer_len+1;
+		char *cntstr = r_str_newf ("%d\n", cnt);
+		size_t cntstr_len = cntstr? strlen (cntstr): 0;
+		cons->context->buffer = cntstr;
+		cons->context->buffer_len = cntstr_len;
+		cons->context->buffer_sz = cntstr_len + 1;
 		cons->num->value = cons->lines;
 		r_strbuf_free (ob);
 		return;
