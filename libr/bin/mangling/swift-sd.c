@@ -516,6 +516,25 @@ static char *my_swift_demangler(const char *s) {
 						r_strbuf_append (out, ".");
 						// fallthorugh
 					}
+					if (isdigit(q[1])) {
+						int n = 0;
+						const char *Q = getnum (q + 1, &n);
+						const char *res = getstring (Q, n);
+						if (res) {
+							r_strbuf_append (out, res);
+						}
+						q = Q + n;
+						if (isdigit(q[0])) {
+							r_strbuf_append (out, ".");
+							const char *Q = getnum (q, &n);
+							const char *res = getstring (Q, n);
+							if (res) {
+								r_strbuf_append (out, res);
+							}
+							q = Q + n;
+						}
+						continue;
+					}
 				case 's':
 					{
 						int n = 0;
@@ -615,7 +634,27 @@ static char *my_swift_demangler(const char *s) {
 				case '_':
 					// it's return value time!
 					p = resolve (types, q + 1, &attr); // type
-					// printf ("RETURN TYPE %s\n", attr);
+					if (!p) { 
+						int n = 0;
+						const char *Q = getnum (q + 1, &n);
+						const char *res = getstring (Q, n);
+						if (res) {
+							r_strbuf_append (out, ".");
+							r_strbuf_append (out, res);
+						}
+						q = Q + n;
+						if (isdigit(*q)) {
+							int n = 0;
+							const char *Q = getnum (q, &n);
+							const char *res = getstring (Q, n);
+							if (res) {
+								r_strbuf_append (out, ".");
+								r_strbuf_append (out, res);
+							}
+							q = Q + n;
+						}
+					}
+					q++;
 					break;
 				default:
 					p = resolve (types, q, &attr); // type
