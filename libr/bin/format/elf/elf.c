@@ -2866,8 +2866,7 @@ static inline bool needle(ELFOBJ *eo, const char *s) {
 	return false;
 }
 
-// TODO: must return const char * all those strings must be const char os[LINUX] or so
-char* Elf_(get_osabi_name)(ELFOBJ *eo) {
+static char* guess_osabi_name(ELFOBJ *eo) {
 	switch (eo->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_LINUX: return strdup ("linux");
 	case ELFOSABI_SOLARIS: return strdup ("solaris");
@@ -2907,7 +2906,26 @@ char* Elf_(get_osabi_name)(ELFOBJ *eo) {
 	if (needle (eo, "GNU")) {
 		return strdup ("linux");
 	}
+	// if a lib is "liblog.so", lets assume android again.
+	RBinElfLib *it;
+	const RVector *libs = Elf_(load_libs)(eo);
+	if (libs) {
+		r_vector_foreach (libs, it) {
+			if (!strcmp (it->name, "liblog.so")) {
+				return strdup ("android");
+			}
+		}
+	}
 	return strdup ("linux");
+}
+
+// TODO: make it const char *
+char* Elf_(get_osabi_name)(ELFOBJ *eo) {
+	if (eo->osabi) {
+		return strdup (eo->osabi);
+	}
+	eo->osabi = guess_osabi_name (eo);
+	return strdup (eo->osabi);
 }
 
 typedef struct reg_offset_state {
@@ -4894,6 +4912,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	if (!eo) {
 		return;
 	}
+	free (eo->osabi);
 	free (eo->phdr);
 	free (eo->shdr);
 	free (eo->strtab);

@@ -1964,7 +1964,7 @@ static const char *get_syscall_register(RCore *core) {
 		if (!os) {
 			os = r_config_get (core->config, "asm.os");
 		}
-		if (!strcmp (os, "linux")) {
+		if (!strcmp (os, "linux") || !strcmp (os, "android")) {
 			a0 = "x8";
 		} else if (!strcmp (os, "macos")) {
 			a0 = "x16";
