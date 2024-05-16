@@ -634,7 +634,7 @@ static char *my_swift_demangler(const char *s) {
 				case '_':
 					// it's return value time!
 					p = resolve (types, q + 1, &attr); // type
-					if (!p) { 
+					if (!p) {
 						int n = 0;
 						const char *Q = getnum (q + 1, &n);
 						const char *res = getstring (Q, n);
