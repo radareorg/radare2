@@ -65,7 +65,7 @@ zip_source_file_common_new(const char *fname, void *file, zip_uint64_t start, zi
         return NULL;
     }
 
-    if (ops->write != NULL && (ops->commit_write == NULL || ops->create_temp_output == NULL || ops->remove == NULL || ops->rollback_write == NULL || ops->tell == NULL)) {
+    if (ops->write != NULL && (ops->commit_write == NULL || ops->remove == NULL || ops->rollback_write == NULL || ops->tell == NULL)) {
         zip_error_set(error, ZIP_ER_INTERNAL, 0);
         return NULL;
     }
@@ -218,6 +218,9 @@ read_file(void *state, void *data, zip_uint64_t len, zip_source_cmd_t cmd) {
             zip_error_set(&ctx->error, ZIP_ER_INTERNAL, 0);
             return -1;
         }
+        if (ctx->ops->create_temp_output == NULL) {
+            return -1;
+	}
         return ctx->ops->create_temp_output(ctx);
 
     case ZIP_SOURCE_BEGIN_WRITE_CLONING:
@@ -226,6 +229,9 @@ read_file(void *state, void *data, zip_uint64_t len, zip_source_cmd_t cmd) {
             zip_error_set(&ctx->error, ZIP_ER_INTERNAL, 0);
             return -1;
         }
+        if (ctx->ops->create_temp_output_cloning == NULL) {
+            return -1;
+	}
         return ctx->ops->create_temp_output_cloning(ctx, len);
 
     case ZIP_SOURCE_CLOSE:
