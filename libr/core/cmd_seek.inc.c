@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -167,7 +167,6 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	int i, bsz = core->blocksize;
 	ut64 off = start_addr;
-	ut64 baddr;
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
 		return -1;
 	}
@@ -178,7 +177,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-	baddr = r_config_get_i (core->config, "bin.baddr");
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 
 	int line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
@@ -208,7 +207,8 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 					core->print->lines_cache = tmp;
 				} else {
 					R_FREE (core->print->lines_cache);
-					goto beach;
+					line_count = -1;
+					break;
 				}
 			}
 		}
@@ -217,10 +217,6 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	free (buf);
 	r_cons_break_pop ();
 	return line_count;
-beach:
-	free (buf);
-	r_cons_break_pop ();
-	return -1;
 }
 
 static void seek_to_register(RCore *core, const char *input, bool is_silent) {
