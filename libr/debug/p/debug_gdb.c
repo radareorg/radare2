@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2024 - pancake, defragger */
 
 #include <r_core.h>
 #include <libgdbr.h>
@@ -269,7 +269,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		map_start = r_num_get (NULL, region1);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			R_LOG_WARN ("%s: ignoring invalid map size: %s - %s", region1, region2);
+			R_LOG_WARN ("ignoring invalid map size: %s - %s", region1, region2);
 			ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 			continue;
 		}

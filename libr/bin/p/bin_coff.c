@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2023 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2024 - Fedor Sakharov */
 
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
@@ -291,7 +291,7 @@ static void truncate_section(RBinSection *ptr, const struct r_bin_coff_obj *obj)
 	// file_end in [0,2^33) as both arguments in [0,2^32), thus no overflow.
 	if (R_UNLIKELY (file_start > obj->size)) {
 		R_LOG_WARN ("File range of section \"%s\" is fully out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
-			    ptr->name, file_start, file_end);
+			    ptr->name, file_start, file_end, obj->size);
 		ptr->size = 0;
 	} else if (R_UNLIKELY (file_end > obj->size)) {
 		R_LOG_WARN ("File range of section \"%s\" is partially out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
