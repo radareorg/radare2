@@ -4,6 +4,9 @@
 #include <r_cons.h>
 #include <r_lib.h>
 
+// R2R db/formats/mangling/swift
+// R2R db/tools/rabin2
+
 // set this to true for debugging purposes
 #define USE_THIS_CODE 1
 
@@ -315,6 +318,12 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 			return "..metaclass";
 		case 'n':
 			return "..nominal.type.descriptor";
+		case 'o':
+			return "..metadata.base";
+		case 'V':
+			return "..method.descriptor";
+		case 'u':
+			return "..method.lookup";
 		case 'a':
 			return "..metadata.accessor";
 		case 'L':
@@ -532,7 +541,29 @@ static char *my_swift_demangler(const char *s) {
 					if (q[1] == '1') {
 						q++;
 					}
+					if (*q == 'S') {
+						// r_strbuf_append (out, ".String");
+					}
 					switch (q[1]) {
+					case 'v':
+						if (q + 2 < q_end) {
+							q += 2;
+							const char *tail = get_mangled_tail (&q, out);
+							if (tail) {
+								r_strbuf_append (out, tail);
+							} else {
+								R_LOG_DEBUG ("Unhandled s9Alamofire10HTTPMethodO8rawValueACSgSS_tcfC");
+								r_strbuf_append (out, ".");
+								r_strbuf_append (out, q);
+								q = q_end;
+							}
+						} else {
+							R_LOG_DEBUG ("Unhandled s9Alamofire10HTTPMethodO8rawValueACSgSS_tcfC");
+							r_strbuf_append (out, ".");
+							r_strbuf_append (out, q);
+							q = q_end;
+						}
+						break;
 					case '0':
 						r_strbuf_append (out, " (self) -> ()");
 						if (attr) {
@@ -544,6 +575,7 @@ static char *my_swift_demangler(const char *s) {
 					case 'S':
 						// swift string
 						r_strbuf_append (out, "__String");
+						q++;
 						break;
 					case '_':
 						// swift string

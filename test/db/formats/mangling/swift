@@ -6,6 +6,22 @@ swift
 EOF
 RUN
 
+NAME=swift long method
+FILE=--
+CMDS=iD swift s16IOSSecuritySuiteAAC16amIRuntimeHooked13dyldAllowList14detectionClass8selector02isJ6MethodSbSaySSG_yXlXp10ObjectiveC8SelectorVSbtFZ
+EXPECT=<<EOF
+IOSSecuritySuite..amIRuntimeHooked
+EOF
+RUN
+
+NAME=swift missing A2CmFWC attributes
+FILE=--
+CMDS=iD swift s16IOSSecuritySuite11FailedCheckO30restrictedDirectoriesWriteableyA2CmFWC
+EXPECT=<<EOF
+IOSSecuritySuite.FailedCheck.restrictedDirectoriesWriteable
+EOF
+RUN
+
 NAME=elf swift demangle (requires swift-demangle program)
 FILE=bins/elf/analysis/hello-swift
 ARGS=-e bin.demangle.trylib=false
