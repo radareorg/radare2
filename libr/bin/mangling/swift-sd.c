@@ -84,7 +84,12 @@ static const SwiftType flags [] = {
 
 static const char *getnum(const char* n, int *num) {
 	if (num && *n) {
-		*num = atoi (n);
+		int snum = atoi (n);
+		if (snum > 0) {
+			*num = snum;
+		} else {
+			*num = 0;
+		}
 	}
 	while (*n && *n >= '0' && *n <='9') {
 		n++;
@@ -418,7 +423,7 @@ static char *my_swift_demangler(const char *s) {
 				r_strbuf_append (out, getstring (q, len));
 			}
 		}
-		if (q > q_end) {
+		if (q >= q_end) {
 			r_strbuf_free (out);
 			return NULL;
 		}
@@ -516,7 +521,7 @@ static char *my_swift_demangler(const char *s) {
 						r_strbuf_append (out, ".");
 						// fallthorugh
 					}
-					if (isdigit(q[1])) {
+					if (isdigit (q[1])) {
 						int n = 0;
 						const char *Q = getnum (q + 1, &n);
 						const char *res = getstring (Q, n);
@@ -524,8 +529,12 @@ static char *my_swift_demangler(const char *s) {
 							r_strbuf_append (out, res);
 						}
 						q = Q + n;
-						if (isdigit(q[0])) {
+						if (q + 1 >= q_end) {
+							continue;
+						}
+						if (isdigit (q[0])) {
 							r_strbuf_append (out, ".");
+							n = 0;
 							const char *Q = getnum (q, &n);
 							const char *res = getstring (Q, n);
 							if (res) {
@@ -647,7 +656,10 @@ static char *my_swift_demangler(const char *s) {
 							r_strbuf_append (out, res);
 						}
 						q = Q + n;
-						if (isdigit(*q)) {
+						if (q + 1 >= q_end) {
+							continue;
+						}
+						if (isdigit (*q)) {
 							int n = 0;
 							const char *Q = getnum (q, &n);
 							const char *res = getstring (Q, n);
@@ -664,6 +676,10 @@ static char *my_swift_demangler(const char *s) {
 					p = resolve (types, q, &attr); // type
 					break;
 				}
+				if (q + 1 >= q_end) {
+					break;
+				}
+				// if (q + 1 >= q_end || p >= q_end) { break; }
 				if (p) {
 					q = getnum (p, &len);
 					if (attr && !strcmp (attr, "generic")) {
@@ -730,8 +746,8 @@ static char *my_swift_demangler(const char *s) {
 					q += len;
 					p = q;
 				} else {
-					if (R_STR_ISEMPTY (q)) {
-						break;
+					if (q + 1 >= q_end || R_STR_ISEMPTY (q)) {
+						continue;
 					}
 					q++;
 					char *n = strstr (q, "__");

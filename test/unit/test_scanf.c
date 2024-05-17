@@ -91,7 +91,7 @@ bool test_r_str_scanf_other(void) {
 
 bool test_r_str_scanf_procstat(void) {
 	char no_str[128];
-	long unsigned int no_lui;
+	unsigned long no_lui;
 	long int no_li;
 	int no_num;
 	int p_nice;
