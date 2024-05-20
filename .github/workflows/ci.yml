@@ -261,14 +261,14 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   linux-tinyasan-fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Building Radare2
       run: |
-        pip install r2pipe
+        pip install --break-system-packages r2pipe
         export SANITIZE=address
         sys/sanitize.sh
     - name: Installing tools for the testsuite
@@ -279,15 +279,14 @@ jobs:
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        sudo sysctl -w vm.mmap_rnd_bits=28
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make -C test fuzz-tests
   linux-asan-fuzz:
     runs-on: ubuntu-22.04
@@ -298,7 +297,7 @@ jobs:
       uses: actions/checkout@v3
     - name: Building Radare2
       run: |
-        pip install r2pipe
+        pip install --break-system-packages r2pipe
         sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
@@ -308,15 +307,14 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make tests
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        sudo sysctl -w vm.mmap_rnd_bits=28
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make -C test fuzz-tests
 
   w64-make:
