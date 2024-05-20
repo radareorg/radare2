@@ -281,7 +281,6 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
-        cat /proc/sys/kernel/randomize_va_space
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
@@ -289,7 +288,6 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
-        cat /proc/sys/kernel/randomize_va_space
         make -C test fuzz-tests
   linux-asan-fuzz:
     runs-on: ubuntu-22.04
