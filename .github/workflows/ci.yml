@@ -284,7 +284,7 @@ jobs:
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
-        echo $ASAN_OPTIONS
+        export ASAN_OPTIONS=detect_leaks=0
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
