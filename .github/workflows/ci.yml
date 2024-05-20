@@ -261,7 +261,7 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   linux-tinyasan-fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     continue-on-error: true
     steps:
     - name: Checkout
@@ -269,6 +269,7 @@ jobs:
     - name: Building Radare2
       run: |
         pip install r2pipe
+        sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         export SANITIZE=address
         sys/sanitize.sh
     - name: Installing tools for the testsuite
@@ -287,10 +288,9 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        sudo sysctl -w vm.mmap_rnd_bits=28
         make -C test fuzz-tests
   linux-asan-fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     continue-on-error: true
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
@@ -299,6 +299,7 @@ jobs:
     - name: Building Radare2
       run: |
         pip install r2pipe
+        sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
@@ -316,7 +317,6 @@ jobs:
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        sudo sysctl -w vm.mmap_rnd_bits=28
         make -C test fuzz-tests
 
   w64-make:
