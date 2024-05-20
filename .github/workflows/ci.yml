@@ -268,7 +268,7 @@ jobs:
       uses: actions/checkout@v3
     - name: Building Radare2
       run: |
-        pip install --break-system-packages r2pipe
+        pip install r2pipe
         sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         export SANITIZE=address
         sys/sanitize.sh
@@ -298,7 +298,7 @@ jobs:
       uses: actions/checkout@v3
     - name: Building Radare2
       run: |
-        pip install --break-system-packages r2pipe
+        pip install r2pipe
         sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         sys/sanitize.sh
     - name: Installing tools for the testsuite
