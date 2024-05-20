@@ -269,6 +269,7 @@ jobs:
     - name: Building Radare2
       run: |
         pip install --break-system-packages r2pipe
+        echo 0 > /proc/sys/kernel/randomize_va_space
         export SANITIZE=address
         sys/sanitize.sh
     - name: Installing tools for the testsuite
@@ -280,13 +281,15 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
+        cat /proc/sys/kernel/randomize_va_space
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        echo $ASAN_OPTIONS
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
+        cat /proc/sys/kernel/randomize_va_space
         make -C test fuzz-tests
   linux-asan-fuzz:
     runs-on: ubuntu-22.04
@@ -298,6 +301,7 @@ jobs:
     - name: Building Radare2
       run: |
         pip install --break-system-packages r2pipe
+        echo 0 > /proc/sys/kernel/randomize_va_space
         sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
@@ -308,6 +312,7 @@ jobs:
         export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
+        echo 0 > /proc/sys/kernel/randomize_va_space
         make tests
     - name: Run fuzz tests
       run: |
@@ -315,6 +320,7 @@ jobs:
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
+        echo 0 > /proc/sys/kernel/randomize_va_space
         make -C test fuzz-tests
 
   w64-make:
