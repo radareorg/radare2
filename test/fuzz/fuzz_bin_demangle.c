@@ -7,7 +7,9 @@
 #include <r_util/r_sys.h>
 #include <r_util/r_sandbox.h>
 
-static int demangle_type = R_BIN_LANG_CXX;
+// static int demangle_type = R_BIN_LANG_CXX;
+// static int demangle_type = R_BIN_LANG_JAVA;
+static int demangle_type = R_BIN_LANG_SWIFT;
 
 static void usage() {
 	printf (
@@ -80,7 +82,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	case R_BIN_LANG_CXX: demangled = r_bin_demangle_cxx (NULL, str, vaddr); break;
 	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;
 	default:
-		abort();
+		abort ();
 	}
 
 	free (str);
