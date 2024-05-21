@@ -276,7 +276,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
     - name: Running tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
@@ -284,7 +284,7 @@ jobs:
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
@@ -305,7 +305,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
     - name: Running tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
@@ -313,7 +313,7 @@ jobs:
         make tests
     - name: Run fuzz tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
