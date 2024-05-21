@@ -62,7 +62,8 @@ static RCoreHelpMessage help_msg_slash_pattern = {
 
 static RCoreHelpMessage help_msg_slash_ad = {
 	"Usage: /ad[/<*jq>]", "[value]", "Backward search subcommands",
-	"/ad", " rax", "search in disasm plaintext for matching instructions",
+	"/ad", " rax", "search in plaintext disasm for matching instructions",
+	"/ad", " rax$", "search in plaintext disasm for instruction matchin given glob expression",
 	"/adj", " rax", "json output searching in disasm with plaintext",
 	"/adq", " rax", "quiet mode ideal for scripting",
 	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",

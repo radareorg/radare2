@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
-#include <r_types.h>
 #include <r_core.h>
-#include <r_asm.h>
 
 #define IFDBG if (0)
 
@@ -214,9 +212,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
-					matches = !!strstr (opst, tokens[matchcount]);
+					const char *curtok = tokens[matchcount];
+					if (strchr (curtok, '$') || strchr (curtok, '*') || strchr (curtok, '^')) {
+						matches = r_str_glob (opst, curtok);
+					} else {
+						matches = !!strstr (opst, tokens[matchcount]);
+					}
 				} else {
 					rx = r_regex_new (tokens[matchcount], "es");
+					eprintf ("JEJE pene\n");
 					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
 					r_regex_free (rx);
 				}
