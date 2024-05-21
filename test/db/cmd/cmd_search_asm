@@ -419,3 +419,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=glob search with /ad
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+/ad ret~?
+/ad ret$~?
+EOF
+EXPECT=<<EOF
+40
+18
+EOF
+RUN
+
