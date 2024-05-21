@@ -13,7 +13,8 @@ else
 
 fi
 # SANITIZE=${SANITIZE:="thread"}
-export CFLAGS="-mno-omit-leaf-frame-pointer -fno-omit-frame-pointer -fno-optimize-sibling-calls -O0"
+# export CFLAGS="-mno-omit-leaf-frame-pointer -fno-omit-frame-pointer -fno-optimize-sibling-calls -O0"
+export CFLAGS="-mno-omit-leaf-frame-pointer -fno-omit-frame-pointer -fno-optimize-sibling-calls"
 
 printf "\033[32m"
 echo "========================================================================="
