@@ -3,14 +3,18 @@
 # SANITIZE="address signed-integer-overflow"  # Faster build
 # default:
 if [ -n "$(echo $SANITIZE | grep memory)" ]; then
-	# This is linux Specific
+	# This is linux (and CLANG) Specific
 	SANITIZE=${SANITIZE:="memory"}
+#	SANITIZE=${SANITIZE:="memory undefined signed-integer-overflow"}
 	export CFLAGS="-fsanitize-memory-track-origins=2"
 	export CC=clang
 else
 	SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+
 fi
 # SANITIZE=${SANITIZE:="thread"}
+# export CFLAGS="-mno-omit-leaf-frame-pointer -fno-omit-frame-pointer -fno-optimize-sibling-calls -O0"
+export CFLAGS="-mno-omit-leaf-frame-pointer -fno-omit-frame-pointer -fno-optimize-sibling-calls"
 
 printf "\033[32m"
 echo "========================================================================="
