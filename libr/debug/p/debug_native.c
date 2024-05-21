@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
 #include <r_drx.h>
@@ -1654,6 +1654,10 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32,
 	.arch = "x86",
 	.canstep = true,
+#elif __riscv || __riscv__ || __riscv64__
+	.bits = R_SYS_BITS_64,
+	.arch = "riscv",
+	.canstep = false,
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
