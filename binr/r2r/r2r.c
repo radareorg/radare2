@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 #if ALLINC
@@ -61,6 +61,21 @@ static void parse_skip(const char *arg) {
 	}
 }
 
+static void helpvars(void) {
+	printf (
+		"R2R_SKIP_ARCHOS=0  # do not run the arch-os-specific tests\n"
+		"R2R_SKIP_JSON=0    # do not run the JSON tests\n"
+		"R2R_SKIP_FUZZ=0    # do not run the fuzz tests\n"
+		"R2R_SKIP_UNIT=0    # do not run the unit tests\n"
+		"R2R_SKIP_CMD=0     # do not run the cmds tests\n"
+		"R2R_SKIP_ASM=0     # do not run the rasm2 tests\n"
+		"R2R_JOBS=%d         # maximum parallel jobs\n"
+		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
+		"R2R_OFFLINE=0      # same as passing -u\n"
+		, WORKERS_DEFAULT, TIMEOUT_DEFAULT
+	       );
+}
+
 static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
@@ -72,6 +87,7 @@ static int help(bool verbose) {
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -g           run the tests specified via '// R2R' comments in modified source files\n"
 		" -h           print this help\n"
+		" -H           display environment variables\n"
 		" -i           interactive mode\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
@@ -81,16 +97,9 @@ static int help(bool verbose) {
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
 		" -v           show version\n"
-		"\n"
-		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
-		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=1    # do not run the fuzz tests\n"
-		"R2R_SKIP_UNIT=1    # do not run the unit tests\n"
-		"R2R_SKIP_CMD=1     # do not run the cmds tests\n"
-		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
-		"R2R_TIMEOUT=3600   # timeout after 1 minute (60 * 60)\n"
-		"R2R_OFFLINE=1      # same as passing -u\n"
-		"\n"
+		"\n");
+		helpvars ();
+		printf ("\n"
 		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
@@ -308,9 +317,13 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
+	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
+	if (r2r_jobs > 0) {
+		workers_count = r2r_jobs;
+	}
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ug");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ugH");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -369,6 +382,9 @@ int main(int argc, char **argv) {
 			free (json_test_file);
 			json_test_file = strdup (opt.arg);
 			break;
+		case 'H':
+			helpvars ();
+			goto beach;
 		case 'u':
 			get_bins = false;
 			break;
