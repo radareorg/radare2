@@ -1192,7 +1192,8 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_return_value (core, r_buf_size (core->yank_buf));
 		break;
 	case 'r':
-		R_LOG_ERROR ("Missing plugin. Run r2pm -ci r2yara");
+		R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2yara");
+		r_core_return_code (core, 1);
 		break;
 	case 'y': // "yy"
 		input = r_str_trim_head_ro (input);
@@ -2807,6 +2808,11 @@ static int cmd_resize(void *data, const char *input) {
 	case 'b': // "rb" rebase
 		return cmd_rebase (core, input + 1);
 	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
+		if (r_str_startswith (input + 1, "ai")) {
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2yara");
+			r_core_return_code (core, 1);
+			return true;
+		}
 		// TODO: use argv[0] instead of 'radare2'
 		// TODO: { char **argv = { "r2", NULL }; r_main_radare2 (1, argv); }
 		r_sys_cmdf ("radare%s", input);

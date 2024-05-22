@@ -6509,18 +6509,22 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'd': // "pdd" // r2dec
 			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2dec");
+			r_core_return_code (core, 1);
 			processed_cmd = true;
 			break;
 		case 'z': // "pdz" // retdec
 			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2retdec");
+			r_core_return_code (core, 1);
 			processed_cmd = true;
 			break;
 		case 'g': // "pdg" // r2ghidra
 			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2ghidra");
+			r_core_return_code (core, 1);
 			processed_cmd = true;
 			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
+			r_core_return_code (core, 1);
 			pd_result = false;
 			processed_cmd = true;
 			break;
