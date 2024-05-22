@@ -6524,7 +6524,6 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
-			r_core_return_code (core, 1);
 			pd_result = false;
 			processed_cmd = true;
 			break;
