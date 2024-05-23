@@ -165,7 +165,7 @@ struct MACH0_(obj_t) {
 	RBuffer *b;
 	int os;
 	Sdb *kv;
-	int has_crypto;
+	bool has_crypto;
 	int has_canary;
 	int has_retguard;
 	int has_sanitizers;

@@ -1753,7 +1753,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 
 	mo->uuidn = 0;
 	mo->os = 0;
-	mo->has_crypto = 0;
+	mo->has_crypto = false;
 	mo->segments_vec = NULL;
 	r_pvector_init (&mo->libs_cache, (RPVectorFree) free);
 
