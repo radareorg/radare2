@@ -96,13 +96,13 @@ bool test_r_str_scanf_procstat(void) {
 	int no_num;
 	int p_nice;
 	int p_num_threads;
-	int p_flag;
+	unsigned int p_flag;
 	int p_sid;
 	int p_s_name;
 	int p_pid;
 	int p_ppid;
 	int p_pgrp;
-	const char *fmt = "%d %.s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld";
+	const char *fmt = "%d %.s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %d %d";
 	const char *buff = "70735 (apache2) S 1833 1833 1833 0 -1 4194624 223 0 0 0 0 0 0 0 20 0 1 0 13243950 225329152 72 18446744073709551615 1 1 0 0 0 0 0 16781314 134235881 0 0 0 17 3 0 0 0 0 0 0 0 0 0 0 0 0 0\n";
 	int ret = r_str_scanf (buff, fmt, &p_pid,
 			sizeof (no_str), no_str,
@@ -113,7 +113,7 @@ bool test_r_str_scanf_procstat(void) {
 	mu_assert_eq (ret, 20, "return value for scanf failed");
 	mu_assert_streq (no_str, "(apache2)", "process name");
 
-	const char *fmt2 = "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld";
+	const char *fmt2 = "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %d %d";
 	int res = sscanf (buff, fmt2, &p_pid, no_str,
 			&p_s_name, &p_ppid, &p_pgrp, &no_num, &no_num,
 			&p_sid, &p_flag, &no_lui, &no_lui, &no_lui,
