@@ -445,7 +445,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&thread_list, sizeof (thread_list));
+		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&thread_list, "i", 1);
 		if (r != sizeof (thread_list)) {
 			break;
 		}
@@ -493,7 +493,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MEMORY_LIST_STREAM:
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&memory_list, sizeof (memory_list));
+		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&memory_list, "i", 1);
 		if (r != sizeof (memory_list)) {
 			break;
 		}
@@ -513,7 +513,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			if (!desc) {
 				break;
 			}
-			r = r_buf_read_at (obj->b, offset, (ut8 *)desc, sizeof (*desc));
+			r = r_buf_fread_at (obj->b, offset, (ut8 *)desc, "lii", 1);
 			if (r != sizeof (*desc)) {
 				break;
 			}
@@ -528,7 +528,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			break;
 		}
 
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)obj->streams.exception, sizeof (*obj->streams.exception));
+		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)obj->streams.exception, "4i2l2i15l2i", 1);
 		if (r != sizeof (*obj->streams.exception)) {
 			break;
 		}
@@ -572,7 +572,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case THREAD_EX_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&thread_ex_list, sizeof (thread_ex_list));
+		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&thread_ex_list, "i", 1);
 		if (r != sizeof (thread_ex_list)) {
 			break;
 		}
