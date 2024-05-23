@@ -5212,55 +5212,55 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 						switch (event) {
 						case R_FIXUP_EVENT_BIND: {
 							RFixupBindEventDetails event_details = {
-								.type = event;
-								.bin = mo;
-								.offset = cursor;
-								.raw_ptr = raw_ptr;
-								.ptr_size = ptr_size;
-								.ordinal = ordinal;
-								.addend = addend;
+								.type = event,
+								.bin = mo,
+								.offset = cursor,
+								.raw_ptr = raw_ptr,
+								.ptr_size = ptr_size,
+								.ordinal = ordinal,
+								.addend = addend,
 							};
 							carry_on = callback (context, (RFixupEventDetails *) &event_details);
 							break;
 						}
 						case R_FIXUP_EVENT_BIND_AUTH: {
 							RFixupBindAuthEventDetails event_details = {
-								.type = event;
-								.bin = mo;
-								.offset = cursor;
-								.raw_ptr = raw_ptr;
-								.ptr_size = ptr_size;
-								.ordinal = ordinal;
-								.key = key;
-								.addr_div = addr_div;
-								.diversity = diversity;
+								.type = event,
+								.bin = mo,
+								.offset = cursor,
+								.raw_ptr = raw_ptr,
+								.ptr_size = ptr_size,
+								.ordinal = ordinal,
+								.key = key,
+								.addr_div = addr_div,
+								.diversity = diversity,
 							};
 							carry_on = callback (context, (RFixupEventDetails *) &event_details);
 							break;
 						}
 						case R_FIXUP_EVENT_REBASE: {
 							RFixupRebaseEventDetails event_details = {
-								.type = event;
-								.bin = mo;
-								.offset = cursor;
-								.raw_ptr = raw_ptr;
-								.ptr_size = ptr_size;
-								.ptr_value = ptr_value;
+								.type = event,
+								.bin = mo,
+								.offset = cursor,
+								.raw_ptr = raw_ptr,
+								.ptr_size = ptr_size,
+								.ptr_value = ptr_value,
 							};
 							carry_on = callback (context, (RFixupEventDetails *) &event_details);
 							break;
 						}
 						case R_FIXUP_EVENT_REBASE_AUTH: {
 							RFixupRebaseAuthEventDetails event_details = {
-								.type = event;
-								.bin = mo;
-								.offset = cursor;
-								.raw_ptr = raw_ptr;
-								.ptr_size = ptr_size;
-								.ptr_value = ptr_value;
-								.key = key;
-								.addr_div = addr_div;
-								.diversity = diversity;
+								.type = event,
+								.bin = mo,
+								.offset = cursor,
+								.raw_ptr = raw_ptr,
+								.ptr_size = ptr_size,
+								.ptr_value = ptr_value,
+								.key = key,
+								.addr_div = addr_div,
+								.diversity = diversity,
 							};
 							carry_on = callback (context, (RFixupEventDetails *) &event_details);
 							break;
