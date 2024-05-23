@@ -1925,7 +1925,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 		return;
 	}
 
-	ut32 ptr_size = sizeof (mach0_ut);
+	const size_t ptr_size = sizeof (mach0_ut);
 	const ut32 bits = 8 * ptr_size;
 
 	const ut8 *scp = (const ut8*)&sc;
