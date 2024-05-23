@@ -200,6 +200,8 @@ struct MACH0_(obj_t) {
 	bool nofuncstarts;
 	ut64 exports_trie_off;
 	ut32 exports_trie_size;
+	RInterval lastrange;
+	ut64 lastrange_pa;
 };
 
 typedef struct {

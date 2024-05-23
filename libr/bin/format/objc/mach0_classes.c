@@ -227,16 +227,34 @@ static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	if (left) {
 		*left = 0;
 	}
+	// rename bin to 'mo'
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
 	if (bin->va2pa) {
 		// TODO: bf must be first
 		return bin->va2pa (p, offset, left, bf);
 	}
 	mach0_ut addr = p;
+	if (bin->lastrange.addr) {
+		// memoizatiooon
+		RInterval itv = bin->lastrange;
+		if (addr >= itv.addr && addr < itv.addr + itv.size) {
+			if (offset) {
+				*offset = addr - itv.addr;
+			}
+			if (left) {
+				*left = itv.size - (addr - itv.addr);
+			}
+			return bin->lastrange_pa - obj->boffset + (addr - itv.addr);
+		}
+	}
 	RBinSection *s;
 	RVecSegment *sections = MACH0_(get_segments_vec) (bf, bin);  // don't free, cached by bin
 	R_VEC_FOREACH (sections, s) {
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
+			// XXX range should be with psize, otherwise the bound can be wrong on pa
+			bin->lastrange.addr = s->vaddr;
+			bin->lastrange.size = s->vsize;
+			bin->lastrange_pa = s->paddr;
 			if (offset) {
 				*offset = addr - s->vaddr;
 			}
@@ -1119,17 +1137,13 @@ static char *demangle_classname(const char *s) {
 }
 
 static char *get_class_name(RBinFile *bf, mach0_ut p) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->info && bf->bo->bin_obj, NULL);
 	RBinObject *bo = bf->bo;
 	ut32 offset, left;
 	int len;
 	ut8 sc[sizeof (mach0_ut)] = {0};
 	const ut32 ptr_size = sizeof (mach0_ut);
 
-	if (!bo->bin_obj || !bo->info) {
-		R_LOG_WARN ("Invalid RBinFile pointer");
-		return NULL;
-	}
 	if (!p) {
 		return NULL;
 	}
@@ -1188,8 +1202,19 @@ static char *get_class_name(RBinFile *bf, mach0_ut p) {
 		if (bin->has_crypto) {
 			return strdup ("some_encrypted_data");
 		}
+#if 0
+		char name[MAX_CLASS_NAME_LEN];
+		int name_len = R_MIN (sizeof (name), left);
+		int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
+		if (rc != name_len) {
+			rc = 0;
+		}
+		name[sizeof (name) - 1] = 0;
+		return strdup (name); // demangle_classname (name);
+#else
 		ut32 off = r;
-		return readstr (bf, r, &off, &left); // demangle_classname (name);
+		return readstr (bf, name, &off, &left); // demangle_classname (name);
+#endif
 	}
 	return NULL;
 }
@@ -1375,11 +1400,28 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 	if (c.superclass) {
 		char *klass_name = get_class_name (bf, c.superclass);
 		if (klass_name) {
+#if 0
+			// avoid registering when baseklass == superklass
+			const char *base_klass_name = r_bin_name_tostring2 (klass->name, 'o');
+			eprintf ("%s \n", base_klass_name, klass_name);
+			if (base_klass_name && !strcmp (klass_name, base_klass_name)) {
+				free (klass_name);
+				return;
+			}
+#endif
 			if (!klass->super) {
 				klass->super = r_list_newf ((void *)r_bin_name_free);
 			}
 			RBinName *bn = r_bin_name_new (klass_name);
 			char *dn = demangle_classname (klass_name);
+#if 0
+			// avoid registering when demangled baseklass == demangled superklass
+			const char *base_klass_name = r_bin_name_tostring2 (klass->name, 'd');
+			if (base_klass_name && !strcmp (dn, base_klass_name)) {
+				free (klass_name);
+				return;
+			}
+#endif
 			if (dn) {
 				r_bin_name_demangled (bn, dn);
 				free (dn);
@@ -1418,6 +1460,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
+		klass->lang = R_BIN_LANG_SWIFT;
 		R_LOG_DEBUG ("This is a Swift class");
 	}
 #endif
@@ -1570,7 +1613,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			char *rawname = NULL;
 			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
 				rawname = strdup (r_bin_name_tostring (sym->name));
-				method_name = r_name_filter_dup (r_bin_name_tostring (sym->name));
+				method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
 				r_bin_name_filtered (sym->name, method_name);
 				char *dname = r_bin_demangle_swift (method_name, 0, false);
 				if (dname) {
@@ -1708,7 +1751,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	r_return_val_if_fail (bf && bf->bo, NULL);
 
 	ut64 num_of_unnamed_class = 0;
-	RBinClass *klass = NULL;
 	ut32 size = 0;
 	RList *sctns = NULL;
 	mach0_ut p = 0;
@@ -1778,7 +1820,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	if (!ms.clslist.have) {
-		// retain just for debug
 		// eprintf ("there is no section __objc_classlist\n");
 		goto get_classes_error;
 	}
@@ -1796,7 +1837,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
-		klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
+		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
 		R_FREE (klass->name); // allow NULL name in rbinclass?
 		klass->lang = R_BIN_LANG_OBJC;
 		size = sizeof (mach0_ut);
