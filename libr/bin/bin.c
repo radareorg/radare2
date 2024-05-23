@@ -1551,7 +1551,8 @@ R_API char *r_bin_name_tostring2(RBinName *bn, int type) {
 	}
 	if (type == 'd' && bn->name) {
 		return bn->name;
-	} else if (type == 'f' && bn->fname) {
+	}
+	if (type == 'f' && bn->fname) {
 		if (bn->fname) {
 			return bn->fname;
 		}

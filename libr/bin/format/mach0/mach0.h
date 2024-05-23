@@ -165,7 +165,7 @@ struct MACH0_(obj_t) {
 	RBuffer *b;
 	int os;
 	Sdb *kv;
-	int has_crypto;
+	bool has_crypto;
 	int has_canary;
 	int has_retguard;
 	int has_sanitizers;
@@ -200,6 +200,8 @@ struct MACH0_(obj_t) {
 	bool nofuncstarts;
 	ut64 exports_trie_off;
 	ut32 exports_trie_size;
+	RInterval lastrange;
+	ut64 lastrange_pa;
 };
 
 typedef struct {

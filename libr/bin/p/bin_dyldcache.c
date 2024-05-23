@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2023 - pancake, mrmacete, keegan */
+/* radare2 - LGPL - Copyright 2018-2024 - pancake, mrmacete, keegan */
 
 #include <r_core.h>
 #include <sdb/ht_su.h>
@@ -1466,9 +1466,9 @@ static RList *classes(RBinFile *bf) {
 				bf->bo->bin_obj = mach0;
 				bf->buf = cache->buf;
 				if (is_classlist) {
-					MACH0_(get_class_t) (pointer_to_class, bf, klass, false, NULL, cache->oi);
+					MACH0_(get_class_t) (bf, klass, pointer_to_class, false, NULL, cache->oi);
 				} else {
-					MACH0_(get_category_t) (pointer_to_class, bf, klass, NULL, cache->oi);
+					MACH0_(get_category_t) (bf, klass, pointer_to_class, NULL, cache->oi);
 				}
 				bf->bo->bin_obj = cache;
 				bf->buf = orig_buf;
