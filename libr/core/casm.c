@@ -220,7 +220,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 				} else {
 					rx = r_regex_new (tokens[matchcount], "es");
-					eprintf ("JEJE pene\n");
 					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
 					r_regex_free (rx);
 				}
