@@ -209,7 +209,8 @@ static char *parse_key(const char **key, char *p) {
 	return NULL; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, char *p) {
+static char *parse_value(RJson *parent, R_NULLABLE const char *key, char *p) {
+	R_RETURN_VAL_IF_FAIL (parent && p, NULL);
 	RJson *js;
 	p = skip_whitespace (p); // TODO: use r_str_trim_head_ro()
 	if (!p) {
@@ -291,11 +292,14 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	case '"':
 		p++;
 		js = create_json (R_JSON_STRING, key, parent);
-		js->str_value = unescape_string (p, &p);
-		if (!js->str_value) {
-			return NULL; // propagate error
+		if (js) {
+			js->str_value = unescape_string (p, &p);
+			if (!js->str_value) {
+				return NULL; // propagate error
+			}
+			return p;
 		}
-		return p;
+		return NULL;
 	case '-':
 	case '0':
 	case '1':
@@ -339,16 +343,22 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	case 't':
 		if (r_str_startswith (p, "true")) {
 			js = create_json (R_JSON_BOOLEAN, key, parent);
-			js->num.u_value = 1;
-			return p + 4;
+			if (js) {
+				js->num.u_value = 1;
+				return p + 4;
+			}
+			return NULL;
 		}
 		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	case 'f':
 		if (r_str_startswith (p, "false")) {
 			js = create_json (R_JSON_BOOLEAN, key, parent);
-			js->num.u_value = 0;
-			return p + 5;
+			if (R_LIKELY (js)) {
+				js->num.u_value = 0;
+				return p + 5;
+			}
+			return NULL;
 		}
 		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
@@ -367,18 +377,18 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 }
 
 R_API R_MUSTUSE RJson *r_json_parse(R_BORROW char *text) {
+	R_RETURN_VAL_IF_FAIL (text, NULL);
 	RJson js = {0};
 	bool res = parse_value (&js, 0, text);
 	if (!res) {
-		if (js.children.first) {
-			r_json_free (js.children.first);
-		}
-		return 0;
+		r_json_free (js.children.first);
+		return NULL;
 	}
 	return js.children.first;
 }
 
 R_API const RJson *r_json_get(const RJson *json, const char *key) {
+	R_RETURN_VAL_IF_FAIL (json, NULL);
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (js->key && !strcmp (js->key, key)) {
@@ -389,6 +399,7 @@ R_API const RJson *r_json_get(const RJson *json, const char *key) {
 }
 
 R_API const RJson *r_json_item(const RJson *json, size_t idx) {
+	R_RETURN_VAL_IF_FAIL (json, NULL);
 	RJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) {
@@ -399,6 +410,7 @@ R_API const RJson *r_json_item(const RJson *json, size_t idx) {
 }
 
 R_API const char *r_json_type(const RJson *json) {
+	R_RETURN_VAL_IF_FAIL (json, NULL);
 	switch (json->type) {
 	case R_JSON_ARRAY:
 		return "array";
