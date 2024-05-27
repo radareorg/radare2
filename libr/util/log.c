@@ -166,7 +166,9 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		RListIter *iter;
 		RLogCallback cb;
 		r_list_foreach (rlog->cbs, iter, cb) {
-			cb (rlog->user, type, origin, out);
+			if (cb (rlog->user, type, origin, out)) {
+				return;
+			}
 		}
 	}
 	RStrBuf *sb = r_strbuf_new ("");
