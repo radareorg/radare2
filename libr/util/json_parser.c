@@ -209,8 +209,8 @@ static char *parse_key(const char **key, char *p) {
 	return NULL; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, char *p) {
-	R_RETURN_VAL_IF_FAIL (parent && key && p, NULL);
+static char *parse_value(RJson *parent, R_NULLABLE const char *key, char *p) {
+	R_RETURN_VAL_IF_FAIL (parent && p, NULL);
 	RJson *js;
 	p = skip_whitespace (p); // TODO: use r_str_trim_head_ro()
 	if (!p) {
