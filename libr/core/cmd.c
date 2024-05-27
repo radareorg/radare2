@@ -956,10 +956,10 @@ static int cmd_alias(void *data, const char *input) {
 			} else {
 				r_core_cmd0 (core, (char *)v->data);
 			}
-			r_core_return_code (core, 0);
+			r_core_return_value (core, 0);
 		} else {
 			R_LOG_ERROR ("No such alias \"$%s\"", buf);
-			r_core_return_code (core, 1);
+			r_core_return_value (core, 1);
 		}
 	}
 	free (buf);
@@ -3306,6 +3306,25 @@ static int cmd_last(void *data, const char *input) {
 	return 0;
 }
 
+static bool stderr_cb(void *user, int type, const char *origin, const char *msg) {
+	RList *stderr_list = (RList*)user;
+	if (!msg) {
+		return false;
+	}
+	PJ *j = pj_new ();
+	pj_o (j);
+	pj_ks (j, "type", r_log_level_tostring (type));
+	if (origin) {
+		pj_ks (j, "origin", origin);
+	}
+	if (msg) {
+		pj_ks (j, "message", msg);
+	}
+	pj_end (j);
+	r_list_append (stderr_list, pj_drain (j));
+	return true;
+}
+
 static int cmd_json(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
@@ -3333,7 +3352,11 @@ static int cmd_json(void *data, const char *input) {
 			is_trim = j_trim->num.u_value == 1;
 		}
 		const char *r_cmd = j_cmd->str_value;
+		RList *stderr_list = r_list_newf (free);
+		// capture stderr
+		r_log_add_callback (stderr_cb, stderr_list);
 		char *res = r_core_cmd_str (core, r_cmd);
+		r_log_del_callback (stderr_cb);
 		if (is_trim) {
 			r_str_trim (res);
 		}
@@ -3346,6 +3369,17 @@ static int cmd_json(void *data, const char *input) {
 		free (res);
 		pj_kb (pj, "error", false);
 		pj_kn (pj, "value", core->num->value);
+		pj_kn (pj, "code", core->rc);
+		if (!r_list_empty (stderr_list)) {
+			pj_ka (pj, "logs");
+			char *m;
+			RListIter *iter;
+			r_list_foreach (stderr_list, iter, m) {
+				pj_raw (pj, m);
+			}
+			pj_end (pj);
+		}
+		r_list_free (stderr_list);
 		pj_kn (pj, "code", core->rc);
 	} else {
 		pj_ks (pj, "res", "");
