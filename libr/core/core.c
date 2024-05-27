@@ -4407,6 +4407,22 @@ R_API PJ *r_core_pj_new(RCore *core) {
 	return pj_new_with_encoding (string_encoding, number_encoding);
 }
 
+static void channel_stop(void *u) {
+	// RCore *core = (RCore *)u;
+	RThreadChannelPromise *promise = (RThreadChannelPromise*)u;
+	promise->tc->responses = NULL;
+	r_th_lock_leave (promise->tc->lock);
+#if 0
+	r_th_lock_free (promise->tc->lock);
+#endif
+	promise->tc->lock = NULL;
+//	r_th_channel_promise_free (promise);
+#if 0
+	r_th_channel_free (core->chan);
+	core->chan = NULL;
+#endif
+}
+
 // reentrant version of RCore.cmd()
 R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	if (r_str_startswith (cmd, "::")) {
@@ -4417,13 +4433,18 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	}
 	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
 	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);
+	r_cons_break_push (channel_stop, promise);
 	RThreadChannelMessage *response = r_th_channel_promise_wait (promise);
-	char *res = response->msg? strdup ((const char *)response->msg): NULL;
+	char *res = NULL;
+	if (response) {
+		res = response->msg? strdup ((const char *)response->msg): NULL;
+	}
 	// r_cons_printf ("%s", response->msg);
 	r_th_channel_message_free (message);
 	r_th_channel_promise_free (promise);
-	if (message != response) {
+	if (response && message != response) {
 		r_th_channel_message_free (response);
 	}
+	r_cons_break_pop ();
 	return res;
 }
