@@ -4,6 +4,7 @@
 
 #include <r_core.h>
 #include <r_vec.h>
+#include <r_util/r_json.h>
 #if R2__UNIX__
 #include <sys/utsname.h>
 #ifndef __wasi__
@@ -596,7 +597,6 @@ static bool print_aliases(void *use_b64, const void *key, const void *val) {
 		char *val_str = base64
 			? r_cmd_alias_val_strdup_b64 (v)
 			: r_cmd_alias_val_strdup (v);
-
 		r_cons_printf ("$%s=%s%s\n", k, base64? "base64:": "", val_str);
 		free (val_str);
 	}
@@ -956,8 +956,10 @@ static int cmd_alias(void *data, const char *input) {
 			} else {
 				r_core_cmd0 (core, (char *)v->data);
 			}
+			r_core_return_code (core, 0);
 		} else {
-			R_LOG_WARN ("No such alias \"$%s\"", buf);
+			R_LOG_ERROR ("No such alias \"$%s\"", buf);
+			r_core_return_code (core, 1);
 		}
 	}
 	free (buf);
@@ -3301,6 +3303,62 @@ static int cmd_last(void *data, const char *input) {
 	default:
 		r_core_cmd_help ((RCore *)data, help_msg_last);
 	}
+	return 0;
+}
+
+static int cmd_json(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	if (*input == '?') {
+		r_cons_printf ("Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true}\n");
+		r_cons_printf ("| The only required element is `cmd`\n");
+		return 0;
+	}
+	char *s_input = strdup (input - 1);
+	const RJson *j_cmd = NULL;
+	RJson *j = r_json_parse (s_input);
+	if (j) {
+		j_cmd = r_json_get (j, "cmd");
+	}
+	PJ *pj = pj_new ();
+	pj_o (pj);
+	if (j_cmd) {
+		const RJson *j_json = r_json_get (j, "json");
+		const RJson *j_trim = r_json_get (j, "trim");
+		bool is_json = false;
+		if (j_json && j_json->type == R_JSON_BOOLEAN) {
+			is_json = j_json->num.u_value == 1;
+		}
+		bool is_trim = false;
+		if (j_trim && j_trim->type == R_JSON_BOOLEAN) {
+			is_trim = j_trim->num.u_value == 1;
+		}
+		const char *r_cmd = j_cmd->str_value;
+		char *res = r_core_cmd_str (core, r_cmd);
+		if (is_trim) {
+			r_str_trim (res);
+		}
+		if (is_json) {
+			pj_k (pj, "res");
+			pj_raw (pj, res);
+		} else {
+			pj_ks (pj, "res", res);
+		}
+		free (res);
+		pj_kb (pj, "error", false);
+		pj_kn (pj, "value", core->num->value);
+		pj_kn (pj, "code", core->rc);
+	} else {
+		pj_ks (pj, "res", "");
+		pj_kb (pj, "error", true);
+		pj_kn (pj, "value", core->num->value);
+		pj_kn (pj, "code", core->rc);
+	}
+	pj_end (pj);
+	char *j_res = pj_drain (pj);
+	r_cons_printf ("%s\n", j_res);
+	free (j_res);
+	r_json_free (j);
+	free (s_input);
 	return 0;
 }
 
@@ -6112,6 +6170,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	R_RETURN_VAL_IF_FAIL (core && cstr, 0);
 	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
+	r_core_return_code (core, 0);
 	int ret = handle_command_call (core, cstr);
 	if (ret != -1) {
 		if (log) {
@@ -6565,6 +6624,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	} cmds[] = {
 		{ "!", "run system command", cmd_system },
 		{ "_", "print last output", cmd_last },
+		{ "{", "run a command in json", cmd_json },
 		{ "#", "calculate hash", cmd_hash },
 		{ "$", "alias", cmd_alias },
 		{ "%", "short version of 'env' command", cmd_env },
