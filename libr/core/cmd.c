@@ -3357,17 +3357,21 @@ static int cmd_json(void *data, const char *input) {
 		r_log_add_callback (stderr_cb, stderr_list);
 		char *res = r_core_cmd_str (core, r_cmd);
 		r_log_del_callback (stderr_cb);
-		if (is_trim) {
-			r_str_trim (res);
-		}
-		if (is_json) {
-			pj_k (pj, "res");
-			pj_raw (pj, res);
+		if (res) {
+			if (is_trim) {
+				r_str_trim (res);
+			}
+			if (is_json) {
+				pj_k (pj, "res");
+				pj_raw (pj, res);
+			} else {
+				pj_ks (pj, "res", res);
+			}
+			free (res);
+			pj_kb (pj, "error", false);
 		} else {
-			pj_ks (pj, "res", res);
+			pj_kb (pj, "error", true);
 		}
-		free (res);
-		pj_kb (pj, "error", false);
 		pj_kn (pj, "value", core->num->value);
 		pj_kn (pj, "code", core->rc);
 		if (!r_list_empty (stderr_list)) {
