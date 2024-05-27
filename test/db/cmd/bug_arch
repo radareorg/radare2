@@ -1,0 +1,26 @@
+NAME=-a bug
+FILE=--
+ARGS=-a ppc -b32
+CMDS=<<EOF
+-a
+-b
+EOF
+EXPECT=<<EOF
+ppc
+32
+EOF
+RUN
+
+NAME=-a bug
+FILE=-
+ARGS=-a ppc -b32
+CMDS=<<EOF
+-a
+-b
+EOF
+EXPECT=<<EOF
+ppc
+32
+EOF
+RUN
+

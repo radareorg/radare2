@@ -1703,6 +1703,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (f);
 		}
 	} else {
+		if (mr.asmarch) {
+			r_config_set (r->config, "asm.arch", mr.asmarch);
+		}
+		if (mr.asmbits) {
+			r_config_set (r->config, "asm.bits", mr.asmbits);
+		}
+		if (mr.asmos) {
+			r_config_set (r->config, "asm.os", mr.asmos);
+		}
 		r_core_block_read (r);
 	}
 	{
