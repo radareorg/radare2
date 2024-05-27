@@ -68,12 +68,16 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 	while (true) {
 		RListIter *iter;
 		RThreadChannelMessage *res;
-		r_th_lock_enter (promise->tc->lock);
-		r_list_foreach (promise->tc->responses, iter, res) {
-			if (res->id == promise->id) {
-				r_list_split_iter (promise->tc->responses, iter);
-				r_th_lock_leave (promise->tc->lock);
-				return res;
+		if (!r_th_lock_enter (promise->tc->lock)) {
+			break;
+		}
+		if (promise->tc->responses) {
+			r_list_foreach (promise->tc->responses, iter, res) {
+				if (res->id == promise->id) {
+					r_list_split_iter (promise->tc->responses, iter);
+					r_th_lock_leave (promise->tc->lock);
+					return res;
+				}
 			}
 		}
 		r_th_lock_leave (promise->tc->lock);

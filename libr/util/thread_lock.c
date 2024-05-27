@@ -91,7 +91,10 @@ R_API bool r_th_lock_wait(RThreadLock *thl) {
 
 #if WANT_THREADS
 R_API bool r_th_lock_enter(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	if (!thl) {
+		return false;
+	}
+//	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_enter");
 
 	// initialize static locks on acquisition
@@ -107,12 +110,12 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 		r_atomic_store (&thl->activating, false);
 	}
 #if HAVE_PTHREAD
-	return pthread_mutex_lock (&thl->lock);
+	return pthread_mutex_lock (&thl->lock) == 0;
 #elif R2__WINDOWS__
 	EnterCriticalSection (&thl->lock);
-	return 0;
+	return true;
 #else
-	return 0;
+	return true;
 #endif
 }
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
@@ -126,8 +129,12 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	return false;
 #endif
 }
+
 R_API bool r_th_lock_leave(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	if (!thl) {
+		return false;
+	}
+	//r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
