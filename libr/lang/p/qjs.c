@@ -738,6 +738,8 @@ static void register_helpers(JSContext *ctx) {
 		"{console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));}"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
+	eval (ctx, "r2.cmd2 = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\"}`));");
+	eval (ctx, "r2.cmd2j = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\",\"json\":true}`));");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
 	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(x + ' @ ' + a);");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
