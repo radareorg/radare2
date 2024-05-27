@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 
 R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
-	r_return_val_if_fail (core && core->log, 0);
+	R_RETURN_VAL_IF_FAIL (core && core->log, 0);
 	int printed = 0;
 	int count = 0, idx, id = core->log->first;
 	RStrpool *sp = core->log->sp;
@@ -80,7 +80,7 @@ R_API RCoreLog *r_core_log_new(void) {
 }
 
 R_API void r_core_log_init(RCoreLog *log) {
-	r_return_if_fail (log);
+	R_RETURN_IF_FAIL (log);
 	log->first = 1;
 	log->last = 1;
 	log->sp = r_strpool_new (0);
@@ -117,9 +117,9 @@ R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback cb_run
 }
 
 R_API char *r_core_log_get(RCore *core, int index) {
-	r_return_val_if_fail (core && core->config, NULL);
+	R_RETURN_VAL_IF_FAIL (core && core->config, NULL);
 	const char *host = r_config_get (core->config, "http.sync");
-	if (host && *host) {
+	if (R_STR_ISNOTEMPTY (host)) {
 		char *url = index > 0
 			? r_str_newf ("%s/cmd/T%%20%d", host, index)
 			: r_str_newf ("%s/cmd/T", host);

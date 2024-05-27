@@ -6,6 +6,10 @@
 #include <stdarg.h>
 
 static R_TH_LOCAL RLog *rlog = NULL;
+typedef struct r_log_cbuser_t {
+	void *user;
+	RLogCallback cb;
+} RLogCallbackUser;
 
 static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOG_LEVEL_FATAL]     = "FATAL",
@@ -145,9 +149,9 @@ R_API bool r_log_match(int level, const char *origin) {
 	}
 	if (rlog->cbs) {
 		RListIter *iter;
-		RLogCallback cb;
-		r_list_foreach (rlog->cbs, iter, cb) {
-			if (cb (rlog->user, level, origin, NULL)) {
+		RLogCallbackUser *cbu;
+		r_list_foreach (rlog->cbs, iter, cbu) {
+			if (cbu->cb (cbu->user, level, origin, NULL)) {
 				return true;
 			}
 		}
@@ -157,16 +161,16 @@ R_API bool r_log_match(int level, const char *origin) {
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
-	int type = 3;
+	int type = R_LOG_LEVEL_WARN;
 	if (!r_log_init ()) {
 		return;
 	}
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
 		RListIter *iter;
-		RLogCallback cb;
-		r_list_foreach (rlog->cbs, iter, cb) {
-			if (cb (rlog->user, type, origin, out)) {
+		RLogCallbackUser *cbu;
+		r_list_foreach (rlog->cbs, iter, cbu) {
+			if (cbu->cb (cbu->user, type, origin, out)) {
 				return;
 			}
 		}
@@ -235,19 +239,29 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 		return;
 	}
 	if (!rlog->cbs) {
-		rlog->cbs = r_list_new ();
+		rlog->cbs = r_list_newf (free);
 	}
+#if !R2_USE_NEW_ABI
 	if (user) {
 		rlog->user = user;
 	}
-	if (!r_list_contains (rlog->cbs, cb)) {
-		r_list_append (rlog->cbs, cb);
-	}
+#endif
+	RLogCallbackUser *cbu = R_NEW (RLogCallbackUser);
+	cbu->cb = cb;
+	cbu->user = user;
+	r_list_append (rlog->cbs, cbu);
 }
 
 R_API void r_log_del_callback(RLogCallback cb) {
 	if (r_log_init ()) {
-		r_list_delete_data (rlog->cbs, cb);
+		RLogCallbackUser *p;
+		RListIter *iter;
+		r_list_foreach (rlog->cbs, iter, p) {
+			if (cb == p->cb) {
+				r_list_delete (rlog->cbs, iter);
+				return;
+			}
+		}
 	}
 }
 
