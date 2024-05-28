@@ -49,63 +49,78 @@ EXPECT=<<EOF
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze all flags starting with sym. and entry0 (aa)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze imports (af@@@i)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze symbols (af@@@s)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Recovering variables"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze all functions arguments/locals (afva@@@F)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze function calls (aac)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "find and analyze function preludes (aap)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyze len bytes of instructions for references (aar)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Finding and parsing C++ vtables (avrr)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Analyzing methods"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Emulate functions to find computed references (aaef)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Recovering local variables (afva)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Type matching analysis for all functions (aaft)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "logline",
       "message": "Propagate noreturn information (aanr)"
-    }{
+    },
+    {
       "type": "WARN",
       "origin": "cmd_anal_all",
       "message": "Use -AA or aaaa to perform additional experimental analysis"

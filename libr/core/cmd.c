@@ -3380,6 +3380,9 @@ static int cmd_json(void *data, const char *input) {
 			RListIter *iter;
 			r_list_foreach (stderr_list, iter, m) {
 				pj_raw (pj, m);
+				if (iter->n) {
+					pj_raw (pj, ",");
+				}
 			}
 			pj_end (pj);
 		}
