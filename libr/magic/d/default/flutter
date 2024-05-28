@@ -1,0 +1,9 @@
+#------------------------------------------------------------------------------
+# flutter: file(1) magic for Dart/Flutter AOT snapshots
+#
+# See
+#
+#	https://www.macromedia.com/software/flash/open/
+#
+
+0	 string		\xf5\xf5\xdc\xdc	Flutter AOT Snapshot Header
