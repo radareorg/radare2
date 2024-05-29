@@ -3297,18 +3297,20 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				int datalen = section->size;
 				int limit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
 				if (datalen > 0 && datalen < limit) {
-					ut8 *data = malloc (datalen);
+					ut8 *data = calloc (datalen, 1);
 					if (!data) {
 						goto out;
 					}
+					r_io_use_fd (r->io, r->bin->cur->fd);
 					int dl = r_io_pread_at (r->io, section->paddr, data, datalen);
 					if (dl == datalen) {
 						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
-					} else if (r->bin->verbose) {
+					} else {
+						hashstr = strdup ("*error*");
 						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
-				} else if (r->bin->verbose) {
+				} else {
 					R_LOG_WARN ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}

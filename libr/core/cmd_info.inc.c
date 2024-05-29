@@ -62,7 +62,7 @@ static RCoreHelpMessage help_msg_iE = { // rename to ise? maybe
 
 static RCoreHelpMessage help_msg_iS = {
 	"Usage: iS", "[][jq*]", "List sections and segments",
-	"iS ", "[entropy,sha1]", "sections (choose which hash algorithm to use)",
+	"iS ", "[sha1,crc32(,..)]", "sections (see Lh to list the hash algorithms supported)",
 	"iS.", "", "current section",
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
