@@ -135,7 +135,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		memset (buf, 0x00, bs);
 		int res = r_io_read_at (core->io, at, buf, bs);
 		if (res < 1) {
-			R_LOG_ERROR ("Error reading at 0x%08"PFMT64x, at);
+			R_LOG_ERROR ("Reading at 0x%08"PFMT64x, at);
 			break;
 		}
 		idx = 0, matchcount = 0;
