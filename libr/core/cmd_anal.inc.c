@@ -4882,16 +4882,22 @@ static bool afla_purge(void *user, const ut64 key, const void *val) {
 	RVecAddr *va = (RVecAddr *)val;
 	rcd->inloop = true;
 	int index = 0;
+	bool hasdone = false;
 repeat:
 	index = 0;
 	R_VEC_FOREACH (va, v) {
 		R_VEC_FOREACH (rcd->togo, v2) {
 			if (*v == *v2) {
 				RVecAddr_remove (va, index);
+				hasdone = true;
 				goto repeat;
 			}
 		}
 		index++;
+	}
+	if (!hasdone) {
+		R_LOG_WARN ("Leaving an infinite loop before it's too late");
+		rcd->inloop = false;
 	}
 	return true;
 }
