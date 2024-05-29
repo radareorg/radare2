@@ -3856,3 +3856,29 @@ nth  paddr      vaddr       bind  type size lib name       demangled
 1503 0x00023b68 0x100023b68 LOCAL FUNC 0        imp.memcpy
 EOF
 RUN
+
+NAME=iS sha1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+iS sha1,crc32
+EOF
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr         vsize perm sha1, crc32                                       type             name
+-----------------------------------------------------------------------------------------------------------------------
+0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x                                                   REGULAR          0.__TEXT.__text
+1   0x00007440   0x520 0x100007440   0x520 -r-x 50d3d6842dcc27779e36328bd63f5f81e3fedc43 3b2e9755 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+2   0x00007960    0xdc 0x100007960    0xdc -r-x 5e1360a742e0a5f6353d85b7384154fdf71638a4 66f4beca REGULAR          2.__TEXT.__const
+3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x b2d3430179b36eb6d6d4f40567200fca6eb55dd2 509843f1 CSTRINGS         3.__TEXT.__cstring
+4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 5a2314eb29ff90684dcdd86a6925564862e5c594 b0ded58b REGULAR          4.__TEXT.__unwind_info
+5   0x00008000   0x290 0x100008000   0x290 -rw- ee3f452cb100d6d1fcbf672412c3e8461e7e53f2 aae96e37 NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
+6   0x00008290    0x30 0x100008290    0x30 -rw- 0e15d630f62b65d21110a4ba17ce0f8211c6ca8b e6402175 NONLAZY_POINTERS 6.__DATA_CONST.__got
+7   0x000082c0   0x268 0x1000082c0   0x268 -rw- be33657ad47139b81533a6212659ae955b02cdac de20cceb REGULAR          7.__DATA_CONST.__const
+8   0x0000c000    0x20 0x10000c000    0x20 -rw- de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
+9   0x00000000     0x0 0x10000c020    0xb0 -rw-                                                   ZEROFILL         9.__DATA.__common
+10  0x00000000     0x0 0x10000c0d0   0x150 -rw-                                                   ZEROFILL         10.__DATA.__bss
+
+EOF
+RUN

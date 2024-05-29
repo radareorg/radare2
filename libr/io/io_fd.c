@@ -117,9 +117,9 @@ R_API bool r_io_use_fd(RIO* io, int fd) {
 		return io->desc;
 	}
 	if (io->desc->fd != fd) {
-		RIODesc* desc;
+		RIODesc* desc = r_io_desc_get (io, fd);
 		//update io->desc if fd is not the same
-		if (!(desc = r_io_desc_get (io, fd))) {
+		if (!desc) {
 			return false;
 		}
 		io->desc = desc;
