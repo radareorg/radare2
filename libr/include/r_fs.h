@@ -206,6 +206,7 @@ extern RFSPlugin r_fs_plugin_posix;
 extern RFSPlugin r_fs_plugin_r2;
 extern RFSPlugin r_fs_plugin_reiserfs;
 extern RFSPlugin r_fs_plugin_sfs;
+extern RFSPlugin r_fs_plugin_squashfs;
 extern RFSPlugin r_fs_plugin_tar;
 extern RFSPlugin r_fs_plugin_tar;
 extern RFSPlugin r_fs_plugin_udf;

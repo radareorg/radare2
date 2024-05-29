@@ -48,6 +48,16 @@ else
   ]
 endif
 
+if use_libsqsh
+  r_fs_sources += [
+    'p/fs_squashfs.c'
+  ]
+  r_fs_deps += [ libsqsh_dep ]
+  if get_option('blob')
+    r_fs_static_deps += [ libsqsh_static_dep ]
+  endif
+endif
+
 r_fs = library('r_fs', r_fs_sources,
   include_directories: platform_inc,
   c_args: r_fs_cflags,
