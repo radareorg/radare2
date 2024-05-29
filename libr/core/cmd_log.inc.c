@@ -626,6 +626,9 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_o (pj);
 				pj_ks (pj, "name", cp->meta.name);
 				pj_ks (pj, "desc", cp->meta.desc);
+				if (cp->meta.version) {
+					pj_ks (pj, "version", cp->meta.version);
+				}
 				pj_ks (pj, "license", cp->meta.license? cp->meta.license: "???");
 				if (cp->meta.author) {
 					pj_ks (pj, "author", cp->meta.author);
