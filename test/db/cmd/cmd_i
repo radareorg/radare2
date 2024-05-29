@@ -3868,7 +3868,7 @@ EXPECT=<<EOF
 
 nth paddr         size vaddr         vsize perm sha1, crc32                                       type             name
 -----------------------------------------------------------------------------------------------------------------------
-0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x                                                   REGULAR          0.__TEXT.__text
+0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 597dd9392a6e194e98d21b2ca4ddebb298f09575 f0140c0d REGULAR          0.__TEXT.__text
 1   0x00007440   0x520 0x100007440   0x520 -r-x 50d3d6842dcc27779e36328bd63f5f81e3fedc43 3b2e9755 SYMBOL_STUBS     1.__TEXT.__auth_stubs
 2   0x00007960    0xdc 0x100007960    0xdc -r-x 5e1360a742e0a5f6353d85b7384154fdf71638a4 66f4beca REGULAR          2.__TEXT.__const
 3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x b2d3430179b36eb6d6d4f40567200fca6eb55dd2 509843f1 CSTRINGS         3.__TEXT.__cstring
@@ -3879,6 +3879,25 @@ nth paddr         size vaddr         vsize perm sha1, crc32                     
 8   0x0000c000    0x20 0x10000c000    0x20 -rw- de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
 9   0x00000000     0x0 0x10000c020    0xb0 -rw-                                                   ZEROFILL         9.__DATA.__common
 10  0x00000000     0x0 0x10000c0d0   0x150 -rw-                                                   ZEROFILL         10.__DATA.__bss
+
+EOF
+RUN
+
+NAME=iSS sha1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+iSS sha1,crc32
+EOF
+EXPECT=<<EOF
+[Segments]
+
+nth paddr         size vaddr         vsize perm sha1, crc32                                       type name
+-----------------------------------------------------------------------------------------------------------
+0   0x00018000  0x8000 0x100000000  0x8000 -r-x 62f28c2d31aeeafc99420eebdaaf9976175c4553 b46855f0 MAP  __TEXT
+1   0x00020000  0x4000 0x100008000  0x4000 -rw- 62f2f64918ef72b1bf82ae39e986d9ddf5e42181 979dd9de MAP  __DATA_CONST
+2   0x00024000  0x4000 0x10000c000  0x4000 -rw- 869518459b4db2174417ed9a87668b47acf04bf7 d0361e49 MAP  __DATA
+3   0x00028000  0x8000 0x100010000  0x8000 -r--                                                   MAP  __LINKEDIT
 
 EOF
 RUN
