@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_io.h>
 #include "config.h"
@@ -122,6 +122,9 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		}
 		if (plugin->meta.license) {
 			pj_ks (pj, "license", plugin->meta.license);
+		}
+		if (plugin->meta.version) {
+			pj_ks (pj, "version", plugin->meta.version);
 		}
 		if (plugin->uris) {
 			char *uri;
