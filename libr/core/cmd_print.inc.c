@@ -336,7 +336,7 @@ static RCoreHelpMessage help_msg_ph = {
 	"ph", " md5", "compute md5 hash of current block",
 	"ph", ":md5", "same as 'ph md5' (colon acts as a space)",
 	"ph", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
-	"ph", "", "list available hash plugins",
+	"ph", "", "list available hash plugins (same as Lh and phl/phL)",
 	"phj", "", "list available hash plugins in json",
 	NULL
 };
@@ -3607,31 +3607,31 @@ static void algolist(int mode) {
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char algo[128];
 	ut32 osize = 0, len = core->blocksize;
-	const char *ptr;
 	int pos = 0, handled_cmd = false;
 
-	if (*input == '?') {
+	const char i0 = input[0];
+	if (i0 == '?') {
 		r_core_cmd_help (core, help_msg_ph);
 		return true;
 	}
-	if (!*input) {
+	if (!i0 || i0 == 'l' || i0 == 'L') {
 		algolist (1);
 		return true;
 	}
-	if (*input == 'j') {
+	if (i0 == 'j') {
 		algolist ('j');
 		return true;
 	}
-	if (*input == '=') {
+	if (i0 == '=') {
 		algolist (0);
 		return true;
 	}
-	if (*input == ':') {
+	if (i0 == ':') {
 		input++;
 	}
 	input = r_str_trim_head_ro (input);
-	ptr = strchr (input, ' ');
-	sscanf (input, "%31s", algo);
+	const char *ptr = strchr (input, ' ');
+	r_str_ncpy (algo, input, sizeof (algo) - 1);
 	if (ptr && ptr[1]) { // && r_num_is_valid_input (core->num, ptr + 1)) {
 		int nlen = r_num_math (core->num, ptr + 1);
 		if (nlen > 0) {
