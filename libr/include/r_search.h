@@ -76,8 +76,8 @@ typedef struct r_search_t {
 	int mode;
 	int longest; // iff > 0, longest element in kws
 	ut32 pattern_size;
-	ut32 string_min; // max length of strings for R_SEARCH_STRING
-	ut32 string_max; // min length of strings for R_SEARCH_STRING
+	ut32 string_min;
+	ut32 string_max;
 	void *data; // data used by search algorithm
 	RSearchDFree *datafree;
 	void *user; // user data passed to callback

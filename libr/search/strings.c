@@ -61,18 +61,18 @@ static bool is_encoded(int encoding, unsigned char c) {
 
 static int findstrings(RSearch *s, ut64 from, const ut8 *buf, int len, RSearchKeyword *kw) {
 	int i = 0;
-	int widechar = false;
-	int matches = 0;
-	char str[4096];
+	bool widechar = false;
+	size_t matches = 0;
+	size_t max_matches = s->string_max + 1;
 	for (i = 0; i < len; i++) {
-		char ch = buf[i];
+		const char ch = buf[i];
 		// non-cp850 encoded
 		if (IS_PRINTABLE (ch) || IS_WHITESPACE (ch) || is_encoded (0, ch)) {
-			str[matches] = ch;
-			if (matches < sizeof (str)) {
+			if (matches < max_matches) {
 				matches++;
 			} else {
 				R_LOG_WARN ("Truncated match, keyword is too large");
+				matches = 0;
 			}
 		} else {
 			/* wide char check \x??\x00\x??\x00 */
@@ -82,8 +82,7 @@ static int findstrings(RSearch *s, ut64 from, const ut8 *buf, int len, RSearchKe
 			}
 			/* check if the length fits on our request */
 			if (matches >= s->string_min && (s->string_max == 0 || matches <= s->string_max)) {
-				str[matches] = '\0';
-				size_t len = strlen (str);
+				size_t len = matches;
 				if (len > 2) {
 					kw->keyword_length = len;
 					if (widechar) {
