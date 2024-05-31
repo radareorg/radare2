@@ -1089,7 +1089,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				} else if (type == 's') { // "Cs"
 					int name_len = 0;
 					// TODO 256 is the limit. and that shouldnt be a hard limit
-					if (input[1] == 'w') {
+					if (input[1] == 'w' || input[1] == 'g') { // "Csw" "Csg"
 						int i, j;
 						char tmp[256] = {0};
 						(void)r_io_read_at (core->io, addr, (ut8*)tmp, sizeof (tmp) - 3);
