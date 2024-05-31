@@ -813,6 +813,102 @@ static bool isjvm(RCore *core) {
 	if (z) { tts_say (core, n, z); }\
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
+static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {
+	const bool iova = va; // r_config_get_b (core->config, "io.va");
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
+	RListIter *iter, *iter2;
+	RBinSymbol *sym;
+	RBinClass *cls;
+	r_list_foreach (obj->classes, iter, cls) {
+		const char *kname = r_bin_name_tostring2 (cls->name, pref);
+		if ((idx >= 0 && idx != *count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
+			continue;
+		}
+		if (is_doublerad) {
+			r_cons_printf ("ac %s\n", kname);
+			r_list_foreach (cls->methods, iter2, sym) {
+				const char *name = r_bin_name_tostring2 (sym->name, pref);
+				r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", kname,
+						name, iova? sym->vaddr: sym->paddr);
+			}
+			continue;
+		}
+		bool listed_classes = false;
+
+		switch (mode) {
+		case '*':
+			{
+				listed_classes = true;
+				int mode = R_MODE_RADARE;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+			}
+#if 0
+			r_list_foreach (cls->methods, iter2, sym) {
+				r_cons_printf ("f sym.%s @ 0x%"PFMT64x "\n",
+						sym->name, iova? sym->vaddr: sym->paddr);
+			}
+#endif
+			break;
+		case 'l': // "icl"
+			r_list_foreach (cls->methods, iter2, sym) {
+				const char *comma = iter2->p? " ": "";
+				r_cons_printf ("%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+			}
+			r_cons_newline ();
+			break;
+		case 'j':
+			{
+				int mode = R_MODE_JSON; // (oldmode == 'q')? R_MODE_SIMPLE: 0;
+				int len = r_list_length (obj->classes);
+				listed_classes = true;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+			}
+			break;
+		case 0:
+			if (idx == -1 && R_STR_ISEMPTY (cls_name)) {
+				size_t len = r_list_length (obj->classes);
+				int mode = 0;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				listed_classes = true;
+			} else {
+				r_cons_printf ("class %s\n", kname);
+				r_list_foreach (cls->methods, iter2, sym) {
+					char *flags = r_core_bin_attr_tostring (sym->attr, true);
+					const char *name = r_bin_name_tostring (sym->name);
+					r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
+							iova? sym->vaddr: sym->paddr,
+							kname, flags, name);
+					free (flags);
+				}
+			}
+			break;
+		case 'q':
+			{
+				size_t len = r_list_length (obj->classes);
+				int oldmode = mode;
+				int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				listed_classes = true;
+			}
+			break;
+		default:
+			r_cons_printf ("class %s\n", kname);
+			r_list_foreach (cls->methods, iter2, sym) {
+				char *flags = r_core_bin_attr_tostring (sym->attr, true);
+				const char *name = r_bin_name_tostring (sym->name);
+				r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
+						iova? sym->vaddr: sym->paddr,
+						kname, flags, name);
+				free (flags);
+			}
+			break;
+		}
+		if (listed_classes) {
+			break;
+		}
+	}
+}
+
 static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool va) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	int cmd = input[0];
@@ -990,6 +1086,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						min = UT64_MAX;
 						max = 0LL;
 					}
+					}
 					break;
 				case 'c': // "icc"
 					mode = R_MODE_CLASSDUMP;
@@ -1022,103 +1119,13 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				case ' ': // "ic"
 				case 0: // "ic"
 				default:
-					{
-					r_list_foreach (obj->classes, iter, cls) {
-						const char *kname = r_bin_name_tostring2 (cls->name, pref);
-						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
-							continue;
-						}
-						if (is_doublerad) {
-							r_cons_printf ("ac %s\n", kname);
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *name = r_bin_name_tostring2 (sym->name, pref);
-								r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", kname,
-										name, iova? sym->vaddr: sym->paddr);
-							}
-							continue;
-						}
-						bool listed_classes = false;
-
-						switch (mode) {
-						case '*':
-							{
-								listed_classes = true;
-								int mode = R_MODE_RADARE;
-								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
-							}
-#if 0
-							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("f sym.%s @ 0x%"PFMT64x "\n",
-										sym->name, iova? sym->vaddr: sym->paddr);
-							}
-#endif
-							break;
-						case 'l': // "icl"
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p? " ": "";
-								r_cons_printf ("%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
-							}
-							r_cons_newline ();
-							break;
-						case 'j':
-							{
-								int mode = R_MODE_JSON; // (oldmode == 'q')? R_MODE_SIMPLE: 0;
-								int len = r_list_length (obj->classes);
-								listed_classes = true;
-								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
-							}
-							break;
-						case 0:
-							if (idx == -1 && R_STR_ISEMPTY (cls_name)) {
-								size_t len = r_list_length (obj->classes);
-								int mode = 0;
-								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
-								listed_classes = true;
-							} else {
-								r_cons_printf ("class %s\n", kname);
-								r_list_foreach (cls->methods, iter2, sym) {
-									char *flags = r_core_bin_attr_tostring (sym->attr, true);
-									const char *name = r_bin_name_tostring (sym->name);
-									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
-											iova? sym->vaddr: sym->paddr,
-											kname, flags, name);
-									free (flags);
-								}
-							}
-							break;
-						case 'q':
-							{
-								size_t len = r_list_length (obj->classes);
-								int oldmode = mode;
-								int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
-								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
-								listed_classes = true;
-							}
-							break;
-						default:
-							r_cons_printf ("class %s\n", kname);
-							r_list_foreach (cls->methods, iter2, sym) {
-								char *flags = r_core_bin_attr_tostring (sym->attr, true);
-								const char *name = r_bin_name_tostring (sym->name);
-								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
-										iova? sym->vaddr: sym->paddr,
-										kname, flags, name);
-								free (flags);
-							}
-							break;
-						}
-						if (listed_classes) {
-							break;
-						}
-					}
-					}
+					cmd_ic0 (core, obj, mode, pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					break;
 				}
 				core->bin->cur = cur;
 			}
-			}
-			break;
 		}
+		break;
 	}
 }
 
@@ -1145,26 +1152,26 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		core->tmpseek = old_tmpseek;
 	} else if (input[1] == 'z') { // "izz"
 		switch (input[2]) {
-			case 'z':// "izzz"
-				rdump = true;
-				break;
-			case '*': // "izz*"
-				mode = R_MODE_RADARE;
-				break;
-			case 'j': // "izzj"
-				mode = R_MODE_JSON;
-				break;
-			case 'q': // "izzq"
-				if (input[3] == 'q') { // "izzqq"
-					mode = R_MODE_SIMPLEST;
-					input++;
-				} else {
-					mode = R_MODE_SIMPLE;
-				}
-				break;
-			default:
-				mode = R_MODE_PRINT;
-				break;
+		case 'z':// "izzz"
+			rdump = true;
+			break;
+		case '*': // "izz*"
+			mode = R_MODE_RADARE;
+			break;
+		case 'j': // "izzj"
+			mode = R_MODE_JSON;
+			break;
+		case 'q': // "izzq"
+			if (input[3] == 'q') { // "izzqq"
+				mode = R_MODE_SIMPLEST;
+				input++;
+			} else {
+				mode = R_MODE_SIMPLE;
+			}
+			break;
+		default:
+			mode = R_MODE_PRINT;
+			break;
 		}
 		input++;
 		if (rdump) {
@@ -1182,24 +1189,24 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		// "iz"
 		bool validcmd = true;
 		switch (input[1]) {
-			case 'J':
-				validcmd = false;
-				break;
-			case '*':
-			case 'j':
-			case 0:
-				validcmd = true;
-				break;
-			case 'q':
-				// "izq"
-				mode = (input[2] == 'q')
-					? R_MODE_SIMPLEST
-					: R_MODE_SIMPLE;
-				input++;
-				break;
-			default:
-				// invalid subcommand handler?
-				break;
+		case 'J':
+			validcmd = false;
+			break;
+		case '*':
+		case 'j':
+		case 0:
+			validcmd = true;
+			break;
+		case 'q':
+			// "izq"
+			mode = (input[2] == 'q')
+				? R_MODE_SIMPLEST
+				: R_MODE_SIMPLE;
+			input++;
+			break;
+		default:
+			// invalid subcommand handler?
+			break;
 		}
 		if (validcmd) {
 			RList *bfiles = r_core_bin_files (core);
@@ -1492,6 +1499,7 @@ static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mo
 			pj_a (pj);
 			pj_end (pj);
 		}
+		r_list_free (objs);
 		return;
 	}
 	r_list_foreach (objs, iter, bf) {
