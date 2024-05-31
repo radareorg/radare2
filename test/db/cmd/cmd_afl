@@ -97,3 +97,74 @@ EXPECT=<<EOF
 [{"addr":4294983576,"type":"CALL","at":4294983548},{"addr":4294983588,"type":"CALL","at":4294983556}]
 EOF
 RUN
+
+NAME=afla infinite loop
+FILE=bins/elf/android/car
+CMDS=<<EOF
+aa
+afla
+EOF
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+INFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze entrypoint (af@ entry0)
+INFO: Analyze symbols (af@@@s)
+INFO: Recovering variables
+INFO: Analyze all functions arguments/locals (afva@@@F)
+[2KWARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+WARN: Leaving an infinite loop before it's too late
+EOF
+EXPECT=<<EOF
+0x00002a10
+0x00002a80
+0x00002af0
+0x000029f0
+0x0000201c
+0x00002a60
+0x00001cf0
+0x00002ad0
+0x00001e64
+0x00002a40
+0x00002ab0
+0x000029b0
+0x00002a20
+0x00002a90
+0x00002b00
+0x00002a00
+0x00002a70
+0x00002ae0
+0x000022c8
+0x000029e0
+0x00002a50
+0x00002ac0
+0x00002a30
+0x00002aa0
+0x00001d54
+0x00002b10
+EOF
+RUN
