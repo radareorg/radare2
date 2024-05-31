@@ -496,6 +496,9 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 			pj_end (pj);
 		}
 	} else {
+		if (mode & R_MODE_JSON) {
+			r_cons_printf ("{}");
+		}
 		R_LOG_ERROR ("No file selected");
 	}
 }
@@ -895,6 +898,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				}
 			}
 			bool first = true;
+			if (r_list_empty (objs) && mode == 'j') {
+				r_cons_printf ("[]");
+				return;
+			}
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *obj = bf->bo;
 				if (!obj || !obj->classes || r_list_empty (obj->classes)) {
@@ -982,7 +989,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						}
 						min = UT64_MAX;
 						max = 0LL;
-					}
 					}
 					break;
 				case 'c': // "icc"
@@ -1109,6 +1115,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					break;
 				}
 				core->bin->cur = cur;
+			}
 			}
 			break;
 		}
@@ -1480,6 +1487,13 @@ static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mo
 	RList *objs = r_core_bin_files (core);
 	RListIter *iter;
 	RBinFile *bf;
+	if (r_list_empty (objs)) {
+		if (pj) {
+			pj_a (pj);
+			pj_end (pj);
+		}
+		return;
+	}
 	r_list_foreach (objs, iter, bf) {
 		RBinObject *obj = bf->bo;
 		if (!obj) {
@@ -1679,11 +1693,15 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
-			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->bo;
-				core->bin->cur = bf;
-				int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
-				RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
+			if (!r_list_empty (objs)) {
+				r_list_foreach (objs, iter, bf) {
+					RBinObject *obj = bf->bo;
+					core->bin->cur = bf;
+					int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
+					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
+				}
+			} else if (mode & R_MODE_JSON) {
+				r_cons_printf ("[]");
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
@@ -1860,13 +1878,19 @@ static int cmd_info(void *data, const char *input) {
 			  if (!show_entries && !show_constructors) {
 				  show_entries = true;
 			  }
-			  r_list_foreach (objs, iter, bf) {
-				  core->bin->cur = bf;
-				  if (show_constructors) {
-					  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+			  if (r_list_empty (objs)) {
+				  if (mode & R_MODE_JSON) {
+					  r_cons_printf ("[]");
 				  }
-				  if (show_entries) {
-					  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+			  } else {
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  if (show_constructors) {
+						  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+					  }
+					  if (show_entries) {
+						  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+					  }
 				  }
 			  }
 			  core->bin->cur = cur;
