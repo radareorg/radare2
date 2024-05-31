@@ -365,8 +365,31 @@ static int is_binary(const char *s) {
 	return 0;
 }
 
+static ut64 pcpos(const char* buf) {
+	ut64 pos = 0;
+	int pair = 0;
+	while (*buf) {
+		const char ch = *buf;
+		if (IS_HEXCHAR (ch)) {
+			pair++;
+			if (pair == 2) {
+				pos++;
+				pair = 0;
+			}
+		} else if (ch == '<') {
+			return pos;
+		} else if (IS_WHITESPACE (ch)) {
+			// ignore
+		} else {
+			// invalid hexpair string
+			return UT64_MAX;
+		}
+		buf++;
+	}
+	return UT64_MAX;
+}
+
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
-	RAsmCode *acode;
 	ut8 *data = NULL;
 	int ret = 0;
 	ut64 clen = 0;
@@ -397,6 +420,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			len = 4;
 		}
 	}
+	ut64 pcaddr = UT64_MAX;
 	if (bin) {
 		if (len < 0) {
 			return false;
@@ -404,14 +428,29 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {
-		clen = r_hex_str2bin (buf, NULL);
-		if ((int)clen < 1 || !(data = malloc (clen))) {
+		pcaddr = pcpos (buf);
+		char *nbuf = (char *)buf;
+		if (pcaddr != UT64_MAX) {
+			nbuf = strdup (buf);
+			r_str_replace_char (nbuf, '<', ' ');
+			r_str_replace_char (nbuf, '>', ' ');
+		}
+		clen = r_hex_str2bin (nbuf, NULL);
+		if (clen > 0) {
+			data = malloc (clen);
+			if (data) {
+				r_hex_str2bin (nbuf, data);
+				len = clen;
+			}
+		}
+		if (nbuf != buf) {
+			free (nbuf);
+		}
+		if (clen < 1) {
 			R_LOG_WARN ("Invalid hexpair string");
 			ret = 0;
 			goto beach;
 		}
-		r_hex_str2bin (buf, data);
-		len = clen;
 	}
 
 	if (!len || clen <= len) {
@@ -421,6 +460,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	if (hex == 2) {
 		RAnalOp aop = {0};
 		while (ret < len) {
+			if (ret == pcaddr) {
+				printf ("=PC:\n");
+			}
 			aop.size = 0;
 			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ARCH_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
@@ -446,6 +488,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			if (!op.mnemonic) {
 				r_asm_op_set_asm (&op, "unaligned");
 			}
+			if (ret == pcaddr) {
+				printf ("=PC:\n");
+			}
 			char *op_hex = r_asm_op_get_hex (&op);
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
 				as->a->pc, op.size, op_hex,
@@ -456,20 +501,24 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			r_anal_op_fini (&op);
 		}
 	} else {
+		if (addr == 0 && pcaddr != UT64_MAX) {
+			R_LOG_WARN ("The provided hexpair contains PC information, display it with -D instead of -d");
+			addr = pcaddr;
+		}
 		r_asm_set_pc (as->a, addr);
-		if (!(acode = r_asm_mdisassemble (as->a, data, len))) {
-			goto beach;
+		RAsmCode *acode = r_asm_mdisassemble (as->a, data, len);
+		if (acode) {
+			if (as->oneliner) {
+				r_str_replace_char (acode->assembly, '\n', ';');
+				printf ("%s\"\n", acode->assembly);
+			} else if (acode->assembly[0]) {
+				printf ("%s", acode->assembly);
+			} else {
+				printf ("empty\n");
+			}
+			ret = acode->len;
+			r_asm_code_free (acode);
 		}
-		if (as->oneliner) {
-			r_str_replace_char (acode->assembly, '\n', ';');
-			printf ("%s\"\n", acode->assembly);
-		} else if (acode->assembly[0]) {
-			printf ("%s", acode->assembly);
-		} else {
-			printf ("empty\n");
-		}
-		ret = acode->len;
-		r_asm_code_free (acode);
 	}
 beach:
 	if (data && data != (ut8 *)buf) {
@@ -616,11 +665,10 @@ static void __load_plugins(RAsmState *as) {
 }
 
 static char *io_slurp(const char *file, size_t *len) {
-	RIODesc *des = NULL;
 	ut8 *ret = NULL;
 	RIO *io = r_io_new ();
 	if (io) {
-		des = r_io_open_nomap (io, file, R_PERM_R, 0);
+		RIODesc *des = r_io_open_nomap (io, file, R_PERM_R, 0);
 		if (des) {
 			ut64 size = r_io_desc_size (des);
 			ret = (ut8*)malloc (size + 1);
@@ -630,10 +678,10 @@ static char *io_slurp(const char *file, size_t *len) {
 				*len = size;
 				ret[size] = '\0';
 			}
+			r_io_desc_free (des);
 		}
+		r_io_free (io);
 	}
-	r_io_desc_free (des);
-	r_io_free (io);
 	return (char *)ret;
 }
 
