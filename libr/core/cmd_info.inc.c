@@ -821,7 +821,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 	RBinClass *cls;
 	r_list_foreach (obj->classes, iter, cls) {
 		const char *kname = r_bin_name_tostring2 (cls->name, pref);
-		if ((idx >= 0 && idx != *count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
+		if ((idx >= 0 && idx != (*count)++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
 			continue;
 		}
 		if (is_doublerad) {
