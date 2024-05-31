@@ -408,3 +408,18 @@ EXPECT=<<EOF
             0x00000000      cmp rax, 18446744073709551615
 EOF
 RUN
+
+NAME=ahi 31 small integer
+ARGS=-a arm -b 64
+FILE=-
+CMDS=<<EOF
+wx fd430191
+pd 1
+ahi 31
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      fd430191       add x29, sp, 0x50
+            0x00000000      fd430191       add x29, sp, 0x28
+EOF
+RUN
