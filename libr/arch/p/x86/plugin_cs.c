@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_anal.h>
@@ -1324,7 +1324,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							break;
 						}
 					} else {
-						R_LOG_ERROR ("Missing read callback 3");
+						R_LOG_DEBUG ("Missing read callback required for a POP");
 					}
 				}
 				// dont break;
@@ -1501,23 +1501,22 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 						break;
 					}
 				} else {
-					R_LOG_ERROR ("Missing read callback 1");
+					R_LOG_DEBUG ("Missing read callback for CALLPOP");
 				}
 			}
 			if (bits == 32) {
 				ut8 b[4] = {0};
-				ut64 at = addr + op->size;
+				const ut64 at = addr + op->size;
 				ut64 n = r_num_get (NULL, arg0);
 				if (n == at) {
 					RBin *bin = as->arch->binb.bin;
 					if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, at, b, sizeof (b))) {
-					// if (a->read_at (as, at, b, sizeof (b))) {
 						if (b[0] == 0x5b) { // pop ebx
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
 							break;
 						}
 					} else {
-						R_LOG_ERROR ("Missing read callback 2");
+						R_LOG_DEBUG ("Missing read callback for CALLPOP");
 					}
 				}
 			}
