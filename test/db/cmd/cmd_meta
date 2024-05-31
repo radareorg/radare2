@@ -7,6 +7,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Csp
+FILE=-
+CMDS=<<EOF
+wv2 12;w hello world @ $$ + 2
+Csp2
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- str.pascal.hello_world:
+            0x00000000      .word 0x000c
+            0x00000002     .string "hello world" ; len=12
+EOF
+RUN
+
 NAME=vars commenting
 FILE=malloc://1024
 CMDS=<<EOF
