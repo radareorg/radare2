@@ -10864,7 +10864,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				       (input[2] == 'd') ? 10 :
 				       (input[2] == 'h') ? 16 :
 				       (input[2] == 'i') ? 32 : // ip address
-				       (input[2] == '3') ? (input[3]=='1')? 31: 36 : // base36 // could trick 31
+				       (input[2] == '3') ? (input[3] == '1') ? 31: 36 : // base36 // could trick 31
 				       (input[2] == 'S') ? 80 : // syscall
 				       (int) r_num_math (core->num, input + 1);
 			}
