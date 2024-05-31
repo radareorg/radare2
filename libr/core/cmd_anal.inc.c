@@ -918,6 +918,7 @@ static RCoreHelpMessage help_msg_ahi = {
 	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
 	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
 	"ahi", " 10u|du", "set base to unsigned decimal (11)",
+	"ahi", " l", "ignore lower bit, Dart small integer (>>=1)",
 	"ahi", " b", "set base to binary (2)",
 	"ahi", " o", "set base to octal (8)",
 	"ahi", " h", "set base to hexadecimal (16)",
@@ -10845,7 +10846,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_set_immbase (core->anal, addr? addr: core->offset, 0);
 			break;
 		}
-		if (isdigit ((unsigned char)input[1])) {
+		if (isdigit ((ut8)input[1])) {
 			r_anal_hint_set_nword (core->anal, core->offset, input[1] - '0');
 			input++;
 		}
@@ -10859,10 +10860,11 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				       (input[2] == 'b') ? 2 :
 				       (input[2] == 'p') ? 3 :
 				       (input[2] == 'o') ? 8 :
+				       (input[2] == 'l') ? 31 : // smaLL integers (SMI)
 				       (input[2] == 'd') ? 10 :
 				       (input[2] == 'h') ? 16 :
 				       (input[2] == 'i') ? 32 : // ip address
-				       (input[2] == '3') ? 36 : // base36
+				       (input[2] == '3') ? (input[3]=='1')? 31: 36 : // base36 // could trick 31
 				       (input[2] == 'S') ? 80 : // syscall
 				       (int) r_num_math (core->num, input + 1);
 			}

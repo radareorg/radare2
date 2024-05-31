@@ -3367,6 +3367,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	case 3: type = "htons"; break;
 	case 4: type = isSigned? ".int32": ".dword"; break;
 	case 8: type = isSigned? ".int64": ".qword"; break;
+	case 31: type = ".smi"; break;
 	default: return false;
 	}
 	ut8 buf[sizeof (ut64)] = {0};
@@ -3412,6 +3413,9 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 		break;
 	case 10:
 		r_cons_printf ("%s %" PFMT64d, type, n);
+		break;
+	case 31:
+		r_cons_printf ("%s 0x%02x", type, (ut32)(n & UT32_MAX) >> 1);
 		break;
 	default:
 		switch (size) {

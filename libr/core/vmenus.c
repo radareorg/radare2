@@ -4067,6 +4067,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		,"[Vd]- Define current block as:"
 		," $    define flag size"
 		," 1    edit bits"
+		," >    small integer (shift right by 1)"
 		," a    assembly"
 		," b    as byte (1 byte)"
 		," B    define half word (16 bit, 2 byte size)"

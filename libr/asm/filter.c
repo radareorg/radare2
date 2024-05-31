@@ -530,6 +530,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			case 11:
 				snprintf (num, sizeof (num), "%"PFMT64u, off);
 				break;
+			case 31: // small integer
+				snprintf (num, sizeof (num), "0x%x", (ut32)(off >> 1));
+				break;
 			case 32:
 				{
 					ut32 ip32 = off;
