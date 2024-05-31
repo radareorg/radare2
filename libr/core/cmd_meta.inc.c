@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1115,6 +1115,16 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						ut8 fourbuf[4];
 						(void)r_io_read_at (core->io, addr, (ut8*)fourbuf, sizeof (fourbuf));
 						name_len = 0;
+						if (n == 0 || n > 4) {
+							// autoguess
+							if (!fourbuf[0] && !fourbuf[1]) {
+								n = 4;
+							} else if (!fourbuf[1]) {
+								n = 2;
+							} else {
+								n = 1;
+							}
+						}
 						switch (n) {
 						case 4:
 							name_len = r_read_le32 (fourbuf);
