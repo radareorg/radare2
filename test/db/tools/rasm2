@@ -711,3 +711,35 @@ EXPECT=<<EOF
 48c7c003000000
 EOF
 RUN
+
+NAME=rasm2 -a x86 -b 64 -D PCHINT
+FILE=-
+CMDS=<<EOF
+'!rasm2 -a x86 -b 64 -D '8b 5f 50 48 85 db 0f 84 c2 00 00 00 e8 93 bc c4 f1 48 c7 c1 38 14 56 c1 48 89 da 48 c7 c7 aa c2 57 c1 48 89 c6 e8 6a 2c 1c f1 <0f> 0b 5b 41 5c 41 5d 41 5e 5d 31 c0 31 d2 31 c9 31 f6 31 ff 45 31'
+EOF
+EXPECT=<<EOF
+0x00000000   3                   8b5f50  mov ebx, dword [rdi + 0x50]
+0x00000003   3                   4885db  test rbx, rbx
+0x00000006   6             0f84c2000000  je 0xce
+0x0000000c   5               e893bcc4f1  call 0xfffffffff1c4bca4
+0x00000011   7           48c7c1381456c1  mov rcx, 0xffffffffc1561438
+0x00000018   3                   4889da  mov rdx, rbx
+0x0000001b   7           48c7c7aac257c1  mov rdi, 0xffffffffc157c2aa
+0x00000022   3                   4889c6  mov rsi, rax
+0x00000025   5               e86a2c1cf1  call 0xfffffffff11c2c94
+=PC:
+0x0000002a   2                     0f0b  ud2
+0x0000002c   1                       5b  pop rbx
+0x0000002d   2                     415c  pop r12
+0x0000002f   2                     415d  pop r13
+0x00000031   2                     415e  pop r14
+0x00000033   1                       5d  pop rbp
+0x00000034   2                     31c0  xor eax, eax
+0x00000036   2                     31d2  xor edx, edx
+0x00000038   2                     31c9  xor ecx, ecx
+0x0000003a   2                     31f6  xor esi, esi
+0x0000003c   2                     31ff  xor edi, edi
+0x0000003e   1                       45  invalid
+0x0000003f   1                       31  invalid
+EOF
+RUN
