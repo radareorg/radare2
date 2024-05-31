@@ -3403,6 +3403,10 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	RBin *bin = r->bin;
 	RBinObject *o = r_bin_cur_object (bin);
 	if (!o) {
+		if (IS_MODE_JSON (mode)) {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	RList *fields = o->fields;
