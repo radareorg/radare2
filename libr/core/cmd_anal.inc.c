@@ -918,7 +918,7 @@ static RCoreHelpMessage help_msg_ahi = {
 	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
 	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
 	"ahi", " 10u|du", "set base to unsigned decimal (11)",
-	"ahi", " l", "ignore lower bit, Dart small integer (>>=1)",
+	"ahi", " 31", "31bit small integer, ignore lower bit (>>=1)",
 	"ahi", " b", "set base to binary (2)",
 	"ahi", " o", "set base to octal (8)",
 	"ahi", " h", "set base to hexadecimal (16)",
