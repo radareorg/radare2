@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2023 - pancake */
+/* radare - LGPL - Copyright 2019-2024 - pancake */
 
 #include <r_util/r_table.h>
 #include <r_core.h>
@@ -8,8 +8,7 @@
 #define WRITE_SHOW_FLAG(t, bitflag, condition) \
 	if ((condition) == true) { \
 		(t)->showMode |= bitflag; \
-	} \
-	else { \
+	} else { \
 		(t)->showMode &= ~bitflag; \
 	}
 
@@ -68,10 +67,17 @@ static int sortNumber(const void *a, const void *b) {
 	return r_num_get (NULL, a) - r_num_get (NULL, b);
 }
 
+static int sortFloat(const void *a, const void *b) {
+	double fa = strtod ((const char *) a, NULL);
+	double fb = strtod ((const char *) b, NULL);
+	return (fa * 100) - (fb * 100);
+}
+
 // maybe just index by name instead of exposing those symbols as global
 static RTableColumnType r_table_type_string = { "string", sortString };
 static RTableColumnType r_table_type_number = { "number", sortNumber };
 static RTableColumnType r_table_type_bool = { "bool", sortNumber };
+static RTableColumnType r_table_type_float = { "float", sortFloat };
 
 R_API RTableColumnType *r_table_type(const char *name) {
 	if (r_str_startswith (name, "bool")) {
@@ -82,6 +88,9 @@ R_API RTableColumnType *r_table_type(const char *name) {
 	}
 	if (!strcmp (name, "number")) {
 		return &r_table_type_number;
+	}
+	if (!strcmp (name, "float")) {
+		return &r_table_type_float;
 	}
 	return NULL;
 }
@@ -206,10 +215,11 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 	va_start (ap, fmt);
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
+	RTableColumnType *typeFloat = r_table_type ("float");
 	RTableColumnType *typeBool = r_table_type ("bool");
 	const char *name;
 	const char *f = fmt;
-	for (;*f;f++) {
+	for (; *f; f++) {
 		name = va_arg (ap, const char *);
 		if (!name) {
 			break;
@@ -221,6 +231,9 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 		case 's':
 		case 'z':
 			r_table_add_column (t, typeString, name, 0);
+			break;
+		case 'f':
+			r_table_add_column (t, typeFloat, name, 0);
 			break;
 		case 'i':
 		case 'd':
@@ -249,6 +262,9 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 		case 'z':
 			arg = va_arg (ap, const char *);
 			r_list_append (list, strdup (r_str_get (arg)));
+			break;
+		case 'f':
+			r_list_append (list, r_str_newf ("%.03lf", va_arg (ap, double)));
 			break;
 		case 'b':
 			r_list_append (list, r_str_new (r_str_bool (va_arg (ap, int))));
