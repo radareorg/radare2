@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2023 - pancake */
+/* radare - LGPL - Copyright 2018-2024 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -322,7 +322,7 @@ R_API PJ *pj_f(PJ *j, float f) {
 R_API PJ *pj_d(PJ *j, double d) {
 	r_return_val_if_fail (j, NULL);
 	char numstr[64];
-	snprintf (numstr, sizeof (numstr), "%lf", d);
+	snprintf (numstr, sizeof (numstr), "%.03lf", d);
 	pj_comma (j);
 	pj_raw (j, numstr);
 	return j;
