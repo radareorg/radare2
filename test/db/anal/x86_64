@@ -2705,6 +2705,9 @@ minbound: 0x00000000
 maxbound: 0x00000007
 is-lineal: true
 end-bbs: 0
+maxbbins: 1
+midbbins: 0.50
+ratbbins: 2.00
 noreturn: false
 in-degree: 0
 out-degree: 0
@@ -2764,6 +2767,9 @@ minbound: 0x00000000
 maxbound: 0x0000000d
 is-lineal: false
 end-bbs: 1
+maxbbins: 3
+midbbins: 2.50
+ratbbins: 1.20
 noreturn: false
 in-degree: 0
 out-degree: 0
@@ -2839,6 +2845,9 @@ minbound: 0x00000000
 maxbound: 0x0000000e
 is-lineal: false
 end-bbs: 0
+maxbbins: 3
+midbbins: 2.50
+ratbbins: 1.20
 noreturn: false
 in-degree: 0
 out-degree: 0
@@ -2922,6 +2931,9 @@ minbound: 0x00000000
 maxbound: 0x0000000e
 is-lineal: false
 end-bbs: 0
+maxbbins: 3
+midbbins: 1.67
+ratbbins: 1.80
 noreturn: false
 in-degree: 0
 out-degree: 0
@@ -3014,6 +3026,9 @@ minbound: 0x00000000
 maxbound: 0x00000013
 is-lineal: false
 end-bbs: 0
+maxbbins: 3
+midbbins: 1.75
+ratbbins: 1.71
 noreturn: false
 in-degree: 0
 out-degree: 0

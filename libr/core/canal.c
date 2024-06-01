@@ -3008,6 +3008,28 @@ static int RAnalRef_compare_by_addr(const RAnalRef *ref1, const RAnalRef *ref2) 
 	return 0;
 }
 
+static double midbbins(RAnalFunction *fcn) {
+	int bbins = 0;
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		bbins += bb->ninstr;
+	}
+	return (double)bbins / r_list_length (fcn->bbs);
+}
+
+static int maxbbins(RAnalFunction *fcn) {
+	int bbins = 0;
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->ninstr > bbins) {
+			bbins = bb->ninstr;
+		}
+	}
+	return bbins;
+}
+
 // Lists function names and their calls (uniqified)
 static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	RListIter *fcniter;
@@ -3162,7 +3184,14 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	}
 	pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
 	pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
-
+	{
+		int _maxbbins = maxbbins (fcn);
+		double _midbbins = midbbins (fcn);
+		double _ratbbins = _maxbbins / _midbbins;
+		pj_kn (pj, "maxbbins", _maxbbins);
+		pj_kd (pj, "midbbins", _midbbins);
+		pj_kd (pj, "ratbbins", _ratbbins);
+	}
 	int outdegree = 0;
 	int indegree = 0;
 	if (dorefs) {
@@ -3533,6 +3562,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 		}
 		RVecAnalRef_free (refs);
 	}
+	int a = maxbbins (fcn);
+	double b = midbbins (fcn);
+	r_cons_printf ("\nmaxbbins: %d", a);
+	r_cons_printf ("\nmidbbins: %.02f", b);
+	r_cons_printf ("\nratbbins: %.02f", ((double)a / b));
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
@@ -3580,6 +3614,9 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RTable *t = r_core_table (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
+#if 0 && R2_USE_NEW_ABI
+	RTableColumnType *typeFloat = r_table_type ("float");
+#endif
 	r_table_add_column (t, typeNumber, "addr", 0);
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
@@ -3590,6 +3627,11 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
+#if 0 && R2_USE_NEW_ABI
+	r_table_add_column (t, typeFloat, "maxbi", 0);
+	r_table_add_column (t, typeFloat, "midbi", 0);
+	r_table_add_column (t, typeFloat, "ratbi", 0);
+#endif
 	r_table_add_column (t, typeNumber, "cc", 0);
 	r_table_add_column (t, typeNumber, "file", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -3611,7 +3653,6 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		xrefs = r_anal_function_get_all_xrefs (fcn);
 		snprintf (axref, sizeof (axref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
-
 		RVecAnalRef *calls = r_core_anal_fcn_get_calls (core, fcn);
 		if (calls) {
 			RVecAnalRef_sort (calls, RAnalRef_compare_by_addr);
@@ -3626,7 +3667,19 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		if (!file) {
 			file = strdup ("");
 		}
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, axref, castr, ccstr, file, NULL);
+#if 0 && R2_USE_NEW_ABI
+		double _maxbbins = maxbbins (fcn);
+		double _midbbins = midbbins (fcn);
+		double _ratbbins = _maxbbins / _midbbins;
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+				nins, refs, xref, axref, castr,
+				_maxbbins, _midbbins, _ratbbins,
+				ccstr, file, NULL);
+#else
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+				nins, refs, xref, axref, castr,
+				ccstr, file, NULL);
+#endif
 		free (file);
 	}
 	if (r_table_query (t, q)) {

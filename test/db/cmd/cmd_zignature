@@ -1306,7 +1306,7 @@ za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:
 zbrj sym.exact 1
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00410210","similarity":1.000000,"byte similarity":1.000000,"graph similarity":1.000000}]
+[{"name":"fcn.00410210","similarity":1.000,"byte similarity":1.000,"graph similarity":1.000}]
 EOF
 RUN
 
