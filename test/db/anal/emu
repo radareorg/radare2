@@ -147,3 +147,36 @@ walk path two must be zero
 EOF
 RUN
 
+NAME=emu trace infloop
+FILE=bins/mach0/infloop
+CMDS=<<EOF
+af
+aeim
+e dbg.trace=true
+e asm.trace=true
+e asm.comments=false
+e asm.lines=0
+e asm.bytes=0
+30ds
+pdf
+EOF
+EXPECT=<<EOF
+  ;-- section.0.__TEXT.__text:
+  ;-- entry0:
+  ;-- _main:
+  ;-- func.100003f88:
+32: int main (int argc);
+; arg int argc @ x0
+; var int64_t var_8h @ sp+0x8
+0x100003f88 01:0001        sub sp, sp, 0x10
+0x100003f8c 01:0002        str wzr, [sp, 0xc]
+0x100003f90 01:0003        str wzr, [sp, 8]
+0x100003f94 01:0004        b 0x100003f98
+0x100003f98 07:001d        ldr w8, [var_8h]
+0x100003f9c 07:001e        add w8, w8, 1
+;-- pc:
+0x100003fa0 06:001b        str w8, [sp, 8]
+0x100003fa4 06:001c        b 0x100003f98
+EOF
+RUN
+
