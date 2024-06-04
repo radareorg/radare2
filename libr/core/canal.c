@@ -3009,6 +3009,9 @@ static int RAnalRef_compare_by_addr(const RAnalRef *ref1, const RAnalRef *ref2) 
 }
 
 static double midbbins(RAnalFunction *fcn) {
+	if (r_list_empty (fcn->bbs)) {
+		return 0.0;
+	}
 	int bbins = 0;
 	RAnalBlock *bb;
 	RListIter *iter;
