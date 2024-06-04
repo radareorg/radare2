@@ -885,7 +885,6 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		case 'q':
 			{
 				size_t len = r_list_length (obj->classes);
-				int oldmode = mode;
 				int mode = R_MODE_SIMPLE;
 				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 				listed_classes = true;
