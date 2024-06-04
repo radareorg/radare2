@@ -3976,6 +3976,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.trace.continue", "true", &cb_dbg_trace_continue, "trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	SETBPREF ("dbg.trace.inrange", "false", "while tracing, avoid following calls outside specified range");
 	SETBPREF ("dbg.trace.libs", "true", "trace library code too");
+	SETBPREF ("dbg.trace.eval", "true", "evaluate instructions when tracing (analtp workaround)");
 	SETCB ("dbg.trace", "false", &cb_trace, "trace program execution (see asm.trace)");
 	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "trace tag");
 	/* debug */
