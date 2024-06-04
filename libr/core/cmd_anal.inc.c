@@ -6824,7 +6824,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				core->dbg->reg = core->anal->reg;
 				r_debug_trace_op (core->dbg, &op);
 				core->dbg->reg = reg;
-			} else if (R_STR_ISNOTEMPTY (e)) {
+			}
+			if (R_STR_ISNOTEMPTY (e)) {
 				R_LOG_DEBUG ("esil_parse: %s", e);
 				r_esil_parse (esil, e);
 				if (esil->trap) {
@@ -8440,7 +8441,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case ' ':
 			n = strchr (input, ' ');
 			n1 = n ? n + 1: NULL;
-			if (!n1 || !*n1) {
+			if (R_STR_ISEMPTY (n1)) {
 				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				break;
 			}
