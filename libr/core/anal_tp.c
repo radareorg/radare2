@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2023 - oddcoder, sivaramaaa, pancake */
+/* radare - LGPL - Copyright 2016-2024 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_core.h>
@@ -176,7 +176,7 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 
 static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, bool ref, bool pfx) {
 	DD eprintf ("Var retype %s %s\n", var->name, type);
-	r_return_if_fail (anal && var && type);
+	R_RETURN_IF_FAIL (anal && var && type);
 	// XXX types should be passed without spaces to trim
 	type = r_str_trim_head_ro (type);
 	// default type if none is provided
@@ -249,7 +249,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	DD eprintf ("getsrcregname 0x%"PFMT64x" %s %d\n", addr, regname, size);
-	r_return_if_fail (core && regname && size > 0);
+	R_RETURN_IF_FAIL (core && regname && size > 0);
 	RAnal *anal = core->anal;
 	regname[0] = 0;
 	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
@@ -402,7 +402,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
  */
 static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
-	r_return_if_fail (core && core->anal->esil && core->anal->esil->trace && fcn_name);
+	R_RETURN_IF_FAIL (core && core->anal->esil && core->anal->esil->trace && fcn_name);
 	RAnal *anal = core->anal;
 	REsilTrace *etrace = anal->esil->trace;
 	Sdb *TDB = anal->sdb_types;
@@ -600,7 +600,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	r_return_if_fail (core && core->anal && fcn);
+	R_RETURN_IF_FAIL (core && core->anal && fcn);
 
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
@@ -666,7 +666,8 @@ repeat:
 	r_list_foreach (fcn->bbs, it, bb) {
 		RVecUT64_push_back (&bblist, &bb->addr);
 	}
-	int j;
+	int i, j;
+	r_config_set_b (core->config, "dbg.trace.eval", false);
 	for (j = 0; j < bblist_size; j++) {
 		REsilTrace *etrace = core->anal->esil->trace;
 		{
@@ -690,14 +691,10 @@ repeat:
 		if (r_io_read_at (core->io, addr, buf_ptr, bb_size) < 1) {
 			break;
 		}
-		int i = 0;
 		r_reg_setv (core->dbg->reg, pc, addr);
 		for (i = 0; i < bb_size;) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
-			}
-			if (i >= bb_size) {
-				break;
 			}
 			ut64 pcval = r_reg_getv (anal->reg, pc);
 			D eprintf ("---> 0x%"PFMT64x"\n", addr);
@@ -725,10 +722,14 @@ repeat:
 #endif
 			r_esil_trace_loopcount_increment (etrace, addr);
 			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
+		//		eprintf ("%x nonlinear\n", pcval);
 				r_reg_setv (core->dbg->reg, pc, addr + aop.size); // + ret
+				//
 			} else {
+		//		eprintf ("%x linear\n", pcval);
 				// eprintf ("STEP 0x%"PFMT64x"\n", addr);
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				// r_reg_setv (core->dbg->reg, pc, addr + aop.size); // + ret
 			}
 #if 1
 			// XXX this code looks wrong and slow maybe is not needed
@@ -742,10 +743,11 @@ repeat:
 				}
 			}
 #endif
-
 			bool userfnc = false;
 			cur_idx = etrace_index (etrace) - 1;
-			if (cur_idx < 0) cur_idx = 0;
+			if (cur_idx < 0) {
+				cur_idx = 0;
+			}
 			anal->esil->trace->cur_idx = etrace_index (etrace);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 			DD eprintf ("CUR IDX %d %s\n", cur_idx, var?var->name:"");
@@ -968,6 +970,7 @@ repeat:
 			r_anal_op_fini (&aop);
 		}
 	}
+	r_config_set_b (core->config, "dbg.trace.eval", true);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 
@@ -978,10 +981,7 @@ repeat:
 	r_list_foreach (list, iter, rvar) {
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
-		if (!i) {
-			continue;
-		}
-		if (lvar) {
+		if (i && lvar) {
 			// Propagate local var type = to => register-based var
 			var_retype (anal, rvar, NULL, lvar->type, false, false);
 			// Propagate local var type <= from = register-based var

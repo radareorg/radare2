@@ -6698,6 +6698,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		R_LOG_WARN ("Max instruction size is larger than %d, Dimming down", sizeof (code));
 		maxopsz = sizeof (code);
 	}
+	bool wanteval = r_config_get_b (core->config, "dbg.trace.eval");
 	for (; true; r_anal_op_fini (&op)) {
 		esil->trap = 0;
 		oaddr = addr;
@@ -6825,7 +6826,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_debug_trace_op (core->dbg, &op);
 				core->dbg->reg = reg;
 			}
-			if (R_STR_ISNOTEMPTY (e)) {
+			if (wanteval && R_STR_ISNOTEMPTY (e)) {
 				R_LOG_DEBUG ("esil_parse: %s", e);
 				r_esil_parse (esil, e);
 				if (esil->trap) {
