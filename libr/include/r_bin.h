@@ -700,12 +700,17 @@ typedef struct r_bin_dbginfo_t {
 	bool (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line, int *column);
 } RBinDbgInfo;
 
+typedef bool (*RBinWriteAddLib)(RBinFile *bf, const char *lib);
+typedef ut64 (*RBinWriteScnResize)(RBinFile *bf, const char *name, ut64 newsize);
+typedef bool (*RBinWriteScnPerms)(RBinFile *bf, const char *name, int perms);
+typedef bool (*RBinWriteEntry)(RBinFile *bf, ut64 addr);
+typedef int (*RBinWriteRpathDel)(RBinFile *bf);
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBinFile *bf, const char *name, ut64 size); // R2_600 return bool instead
-	bool (*scn_perms)(RBinFile *bf, const char *name, int perms);
-	int (*rpath_del)(RBinFile *bf); // R2_600 return bool instead
-	bool (*entry)(RBinFile *bf, ut64 addr);
-	bool (*addlib)(RBinFile *bf, const char *lib);
+	RBinWriteScnResize scn_resize;
+	RBinWriteScnPerms scn_perms;
+	RBinWriteRpathDel rpath_del;
+	RBinWriteEntry entry;
+	RBinWriteAddLib addlib;
 } RBinWrite;
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
