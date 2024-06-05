@@ -110,7 +110,7 @@ INFO: Analyze all flags starting with sym. and entry0 (aa)
 INFO: Analyze imports (af@@@i)
 INFO: Analyze entrypoint (af@ entry0)
 INFO: Analyze symbols (af@@@s)
-INFO: Recovering variables
+INFO: Recovering variables (afva@@@F)
 INFO: Analyze all functions arguments/locals (afva@@@F)
 [2KWARN: Leaving an infinite loop before it's too late
 WARN: Leaving an infinite loop before it's too late
