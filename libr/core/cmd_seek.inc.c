@@ -659,10 +659,10 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case '+': // "s+"
 		if (input[1] != '\0') {
-			int delta = off;
+			st64 delta = off;
 			if (input[1] == '+') {
 				delta = core->blocksize;
-				int mult = r_num_math (core->num, input + 2);
+				st64 mult = r_num_math (core->num, input + 2);
 				if (mult > 0) {
 					delta /= mult;
 				}
