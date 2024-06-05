@@ -13451,7 +13451,7 @@ R_API int r_core_anal_all(RCore *core) {
 	r_core_task_yield (&core->tasks);
 	// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
 	if (anal_vars) {
-		logline (core, 22, "Recovering variables");
+		logline (core, 22, "Recovering variables (afva@@@F)");
 		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
@@ -13800,7 +13800,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 				if (core->anal->opt.vars) {
-					logline (core, 80, "Recovering local variables (afva)");
+					logline (core, 80, "Recovering local variables (afva@@@F)");
 					RAnalFunction *fcni;
 					RListIter *iter;
 					r_list_foreach (core->anal->fcns, iter, fcni) {
