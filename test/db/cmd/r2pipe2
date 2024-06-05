@@ -63,11 +63,6 @@ EXPECT=<<EOF
     {
       "type": "WARN",
       "origin": "logline",
-      "message": "Recovering variables"
-    },
-    {
-      "type": "WARN",
-      "origin": "logline",
       "message": "Analyze all functions arguments/locals (afva@@@F)"
     },
     {
@@ -93,7 +88,7 @@ EXPECT=<<EOF
     {
       "type": "WARN",
       "origin": "logline",
-      "message": "Analyzing methods"
+      "message": "Analyzing methods (af @@ method.*)"
     },
     {
       "type": "WARN",
@@ -108,7 +103,7 @@ EXPECT=<<EOF
     {
       "type": "WARN",
       "origin": "logline",
-      "message": "Recovering local variables (afva)"
+      "message": "Recovering local variables (afva@@@F)"
     },
     {
       "type": "WARN",
