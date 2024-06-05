@@ -13488,13 +13488,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "aef@@F");
 		} else if (input[1] == 'r') {
 			ut64 cur = core->offset;
-			bool hasnext = r_config_get_b (core->config, "anal.hasnext");
 			RListIter *iter;
 			RIOMap *map;
 			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 			if (!list) {
 				break;
 			}
+			bool hasnext = r_config_get_b (core->config, "anal.hasnext");
 			r_list_foreach (list, iter, map) {
 				r_core_seek (core, r_io_map_begin (map), true);
 				r_config_set_b (core->config, "anal.hasnext", true);

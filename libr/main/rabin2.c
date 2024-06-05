@@ -10,7 +10,7 @@ typedef struct rabin2_state_t {
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang mangledsymbol] file\n");
+		"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
