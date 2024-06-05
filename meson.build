@@ -333,6 +333,7 @@ if get_option('use_libsqsh')
   libsqsh_dep = dependency('libsqsh', version: '>=1.4.0', required: false)
   use_libsqsh = libsqsh_dep.found()
   if not libsqsh_dep.found()
+    use_libsqsh = false
     warning('use_libsqsh option was set to true, but libsqsh was not found.')
   endif
 else

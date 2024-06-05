@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2023 - pancake */
+/* radare2 - LGPL - Copyright 2011-2024 - pancake */
 
 #define R_LOG_ORIGIN "fs"
 
