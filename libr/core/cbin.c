@@ -3019,6 +3019,13 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	bool segments_only = true;
 	RList *io_section_info = NULL;
 	ut64 bin_hashlimit = r_config_get_i (r->config, "bin.hashlimit");
+	if (r->bin->cur == NULL) {
+		if (pj) {
+			pj_a (pj);
+			pj_end (pj);
+		}
+		return false;
+	}
 	r_io_use_fd (r->io, r->bin->cur->fd);
 	ut64 filesize = (r->io->desc) ? r_io_fd_size (r->io, r->io->desc->fd): 0;
 
