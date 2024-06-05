@@ -479,12 +479,13 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		recursive_help (core, detail, "??");
 		recursive_help (core, detail, "~");
 	}
-
-	char *s = r_core_cmd_strf (core, "%s?", cmd_prefix);
-	if (!s) {
+	if (strchr (cmd_prefix, '[')) {
+		R_LOG_WARN ("Invalid char in command, help message must be fixed: %s", cmd_prefix);
 		return;
 	}
-	if (!*s) {
+	R_LOG_DEBUG ("[recursive help] %s", cmd_prefix);
+	char *s = r_core_cmd_strf (core, "%s?", cmd_prefix);
+	if (R_STR_ISEMPTY (s)) {
 		free (s);
 		return;
 	}
@@ -512,7 +513,6 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 						key_found = true;
 					}
 				}
-
 				if (!key_found) {
 					free (k);
 				}
