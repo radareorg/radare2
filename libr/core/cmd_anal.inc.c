@@ -13477,7 +13477,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aa);
 		break;
 	case 'b': // "aab"
-		cmd_anal_blocks (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aab");
+		} else {
+			cmd_anal_blocks (core, input + 1);
+		}
 		break;
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
