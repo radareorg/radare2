@@ -13691,7 +13691,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
-#if 0
+#if 1
+			// TODO: should not be run sometimes
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
 				logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
