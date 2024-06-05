@@ -53,7 +53,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		return 0;
 	}
 
-	R_LOG_INFO ("File size delta: %"PFMT64d"\n", delta);
+	R_LOG_INFO ("File size delta: %"PFMT64d, delta);
 
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
@@ -137,7 +137,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			r_sys_perror ("write (shdr)");
 		}
 #endif
-		R_LOG_DEBUG ("-> elf section (%s)\n", strtab + shdrp->sh_name);
+		R_LOG_DEBUG ("-> elf section (%s)", strtab + shdrp->sh_name);
 	}
 
 	/* rewrite program headers */
