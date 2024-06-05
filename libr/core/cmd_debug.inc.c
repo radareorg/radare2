@@ -5532,12 +5532,10 @@ static int cmd_debug(void *data, const char *input) {
 				RAnalOp *op = r_core_op_anal (core, addr, R_ARCH_OP_MASK_HINT);
 				if (op) {
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-					if (!tp) {
-						r_anal_op_free (op);
-						break;
+					if (tp) {
+						tp->count = count;
+						r_anal_trace_bb (core->anal, addr);
 					}
-					tp->count = count;
-					r_anal_trace_bb (core->anal, addr);
 					r_anal_op_free (op);
 				} else {
 					R_LOG_ERROR ("Cannot analyze opcode at 0x%08" PFMT64x, addr);

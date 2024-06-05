@@ -174,8 +174,8 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		R_LOG_ERROR ("trace_pc: cannot read memory at 0x%"PFMT64x, pc);
 		return false;
 	}
-	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL) < 1) {
+	int res = dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+	if (res > 0 && r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL) < 1) {
 		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
 		return false;
 	}
@@ -365,6 +365,11 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	int last_times = 1;
 	RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
 	if (last) {
+		RDebugTracepoint *endtp = RVecDebugTracepoint_last (dbg->trace->traces);
+		if (last == endtp) {
+			// avoid tracing the same instruction twice
+			return NULL;
+		}
 		last_times = last->times + 1;
 	}
 	int pos = RVecDebugTracepoint_length (dbg->trace->traces) + 1;

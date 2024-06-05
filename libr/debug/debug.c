@@ -64,10 +64,13 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 	/* initialize the output parameter */
 	*pb = NULL;
 
+#if 0
 	/* if we are tracing, update the tracing data */
+	// uncommenting this line causes the trace to be dupped
 	if (dbg->trace->enabled) {
 		r_debug_trace_pc (dbg, pc);
 	}
+#endif
 
 	/* remove all sw breakpoints for now. we'll set them back in stage 2
 	 *
