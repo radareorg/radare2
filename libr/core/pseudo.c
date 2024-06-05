@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_core.h>
 #define TYPE_NONE 0
@@ -28,9 +28,8 @@ static void find_and_change(char* in, int len) {
 	if (!in || len < 1) {
 		return;
 	}
-	char *end;
 	RFindCTX ctx = {0};
-	end = in + len;
+	char *end = in + len;
 //	type = TYPE_NONE;
 	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
@@ -200,7 +199,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}}
 #define NEWLINE(a,i) {\
 	size_t eos = R_MIN ((i) * 2, sizeof (indentstr) - 2);\
-	if (eos < 1) eos = 0;\
+	if (eos < 1) { eos = 0; }\
 	memset (indentstr, ' ', sizeof (indentstr)); indentstr [(eos * 2)] = 0;\
 	if (pj) {\
 		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
@@ -543,32 +542,49 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (!r_list_contains (visited, bb)) {
-			char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
-			s = r_str_replace (s, ";", "//", true);
-			s = r_str_replace (s, "goto ", "goto loc_", true);
+		if (r_list_contains (visited, bb)) {
+			continue;
+		}
+		char *s = NULL;
+		if (show_addr) {
+			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=1", bb->addr);
+		} else {
+			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
+		}
+		s = r_str_replace (s, ";", "//", true);
+		s = r_str_replace (s, "goto ", "goto loc_", true);
+		if (show_addr) {
+			// indent with | or stgh
+			char *os = r_str_prefix_all (s, " ");
+			free (s);
+			s = os;
+		} else {
 			char *os = r_str_prefix_all (s, indentstr);
 			free (s);
 			s = os;
-			size_t codelen = r_strbuf_length (codestr);
-			if (pj) {
-				pj_o (pj);
-				pj_kn (pj, "start", codelen);
-				r_strbuf_append (codestr, s);
-				pj_kn (pj, "end", codelen);
-				pj_kn (pj, "offset", addr);
-				pj_ks (pj, "type", "offset");
-				pj_end (pj);
-			} else {
-				r_strbuf_append (codestr, s);
-				// PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
-			}
-			if (codelen > 0) {
-				NEWLINE (bb->addr, 1);
-				PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
-			}
-			free (s);
 		}
+		size_t codelen = r_strbuf_length (codestr);
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "start", codelen);
+			r_strbuf_append (codestr, s);
+			pj_kn (pj, "end", codelen);
+			pj_kn (pj, "offset", addr);
+			pj_ks (pj, "type", "offset");
+			pj_end (pj);
+		} else {
+			r_strbuf_append (codestr, s);
+			// PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
+		}
+		if (codelen > 0) {
+			if (show_addr) {
+				r_strbuf_appendf (out, "\n 0x%08"PFMT64x" | ", bb->addr);
+			} else {
+				NEWLINE (bb->addr, 1);
+			}
+			PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+		}
+		free (s);
 	}
 	r_list_free (visited);
 	indent = 0;
