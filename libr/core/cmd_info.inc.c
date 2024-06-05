@@ -82,7 +82,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
 	"iE", "[?]", "exports (global symbols)",
-	"ig", "", "guess size of binary program",
+	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
 	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
 	"iH", "[H]", "show binary headers in plain text (iHH verbose output)", // XXX pretty bad description
 	"ii", "[?][j*,]", "list the symbols imported from other libraries",
@@ -1971,6 +1971,20 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'R': // "iR"
 		RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+		break;
+	case 'g': // "ig"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_i, "ig");
+		} else if (input[1] == 'h') {
+			char ss[64];
+			ut64 bs = r_bin_get_size (core->bin);
+			if (r_num_units (ss, sizeof (ss), bs)) {
+				r_cons_printf ("%s\n", ss);
+			}
+		} else {
+			ut64 bs = r_bin_get_size (core->bin);
+			r_cons_printf ("0x%08"PFMT64x"\n", bs);
+		}
 		break;
 	case 'c': // "ic"
 		cmd_ic (core, input + 1, pj, is_array, va);

@@ -317,3 +317,15 @@ EXPECT=<<EOF
 0x00000032  ShrStrndx   27
 EOF
 RUN
+
+NAME=ig and igh
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ig
+igh
+EOF
+EXPECT=<<EOF
+0x00001323
+4.8K
+EOF
+RUN
