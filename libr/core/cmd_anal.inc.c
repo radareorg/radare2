@@ -13552,7 +13552,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'x': // "aax"
-		r_core_cmd0 (core, "af@@=`axlq~CALL[2]`");
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aax");
+		} else {
+			r_core_cmd0 (core, "af@@=`axlq~CALL[2]`");
+		}
 		break;
 	case 'w': // "aaw"
 		if (input[1] == '?') {
@@ -13592,10 +13596,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'F': // "aaF" "aaFa"
-		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
-			r_core_anal_inflags (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aaF");
 		} else {
-			r_core_cmd_help_contains (core, help_msg_aa, "aaF");
+			if (!input[1] || input[1] == ' ' || input[1] == 'a') {
+				r_core_anal_inflags (core, input + 1);
+			} else {
+				r_core_cmd_help_contains (core, help_msg_aa, "aaF");
+			}
 		}
 		break;
 	case 'n': // "aan"
