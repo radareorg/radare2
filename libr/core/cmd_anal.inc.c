@@ -875,7 +875,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", "[s][?] <type>", "mark immediate as a type offset (deprecated, moved to \"aho\")",
+	"aht", "[?][s] <type>", "mark immediate as a type offset (deprecated, moved to \"aho\")",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
