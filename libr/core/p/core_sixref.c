@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2022 - Siguza, pancake, hot3eed */
+/* radare - LGPL - Copyright 2021-2024 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 
@@ -301,6 +301,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	input = r_str_trim_head_ro (input + strlen ("sixref"));
 
 	RCore *core = (RCore *)user;
+	const ut64 oaddr = core->offset;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 
@@ -365,6 +366,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 
 done:
+	r_core_seek (core, oaddr, true);
 	return true;
 }
 
