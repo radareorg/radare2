@@ -346,8 +346,8 @@ PS* ctypes~?Foo
 P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
-9
-9
+10
+10
 8
 EOF
 RUN
