@@ -1,6 +1,9 @@
 /* radare - BSD2 - Copyright 2024 - Enno Boland */
 
 #include <r_fs.h>
+#include <r_userconf.h>
+
+#if R2_USE_SQSH
 #include <sqsh.h>
 
 static char sqsh_to_r_type(enum SqshFileType type) {
@@ -38,6 +41,7 @@ static int fs_sqsh_mapper_init(
 	sqsh_mapper_set_user_data (mapper, (void *)input);
 	return 0;
 }
+
 static int fs_sqsh_mapper_map(
 	const struct SqshMapper *mapper, sqsh_index_t offset, size_t size,
 	uint8_t **data) {
@@ -57,6 +61,7 @@ static int fs_sqsh_mapper_map(
 	*data = buf;
 	return 0;
 }
+
 static int fs_sqsh_mapper_cleanup(struct SqshMapper *mapper) {
 	// Do nothing, cleanup happens in _umount.
 	return 0;
@@ -249,5 +254,11 @@ R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_FS,
 	.data = &r_fs_plugin_squashfs,
 	.version = R2_VERSION
+};
+#endif
+
+#else
+RFSPlugin r_fs_plugin_squashfs = {
+	.meta = {0}, 0
 };
 #endif
