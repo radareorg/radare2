@@ -1085,7 +1085,7 @@ static const char *radare_argv[] = {
 	"l",
 	"L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo",
 	"m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my",
-	"o?", "o", "o-", "o--", "o+", "oe", "oa", "oa-", "oq", "oqq", "o*", "o**", "o.", "o=",
+	"o?", "o", "o-", "o--", "o+", "oe", "oa", "oa-", "oq", "oqq", "open", "o*", "o**", "o.", "o=",
 	"ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*", "obi",
 	"oc", "of", "oi", "oj", "oL", "om", "on",
 	"oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+",
@@ -2790,7 +2790,7 @@ static void __init_autocomplete_default(RCore* core) {
 	};
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!qjs", "#!tiny", "#!vala", "v.",
-		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o", "oe", "ot", "o+", "o++", "on",
+		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o", "oe", "ot", "o+", "o++", "on", "open",
 		"idp", "idpi", "L", "obf", "o+", "o", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2", "wff",
 		"rafind2", "cd", "ls", "lua", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
