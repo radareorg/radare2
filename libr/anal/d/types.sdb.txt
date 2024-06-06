@@ -176,6 +176,14 @@ func.atoi.args=1
 func.atoi.arg.0=const char *,str
 func.atoi.ret=int
 
+strtonum=func
+func.strtonum.args=4
+func.strtonum.arg.0=const char *,str
+func.strtonum.arg.1=long long,minval
+func.strtonum.arg.2=long long,maxval
+func.strtonum.arg.3=const char **,errstr
+func.strtonum.ret=long long
+
 ioctl=func
 func.ioctl.args=2
 func.ioctl.arg.0=int,fd
