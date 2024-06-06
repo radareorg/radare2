@@ -329,6 +329,7 @@ else
   message('Not using libuv, thus using fallback server implementations')
 endif
 
+use_libsqsh = false
 if get_option('use_libsqsh')
   libsqsh_dep = dependency('libsqsh', version: '>=1.4.0', required: false)
   use_libsqsh = libsqsh_dep.found()
@@ -398,6 +399,7 @@ userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set('R2_BUILDSYSTEM', 'meson')
+userconf.set10('USE_SQSH', use_libsqsh)
 capstone_version = get_option('use_capstone_version')
 userconf.set10('USE_CS4', capstone_version == 'v4')
 userconf.set10('USE_CSNEXT', capstone_version == 'v6')

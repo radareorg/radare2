@@ -9,6 +9,10 @@ CFLAGS:=-I$(SHLR)/grub/include $(CFLAGS)
 ifeq ($(WITH_GPL),1)
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 endif
+ifeq ($(R2_USE_SQSH),1)
+CFLAGS+=$(SQSH_CFLAGS)
+LDFLAGS+=$(SQSH_LDFLAGS)
+endif
 
 EXTRA_TARGETS=plugins
 
@@ -20,7 +24,7 @@ STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS} fs.o fs_file.o fs_shell.o
 
 pre:
-	cd d && ${MAKE}
+	$(MAKE) -C d
 
 re:
 	rm -f fs.o libr_fs.so
