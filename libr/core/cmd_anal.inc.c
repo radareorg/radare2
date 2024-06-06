@@ -3147,6 +3147,7 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 				pj_kn (pj, "jump", case_op->jump);
 				pj_kn (pj, "value", case_op->value);
 				pj_end (pj);
+				outputs++;
 			}
 			}
 			pj_end (pj);
