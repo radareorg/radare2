@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>
@@ -85,8 +82,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
-		{ 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
-		{ 0, "movk", "# = #", { 1, 2 } },
+		// { 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
+		{ 3, "movk", "# = # #", { 1, 2, 3 } },
 		{ 0, "movn", "# = ~#", { 1, 2 } },
 		{ 0, "neg", "# = !#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },

@@ -192,3 +192,22 @@ int sym.func.100003a54 (int x0, int x1) {
 EOF
 RUN
 
+NAME=movk pseudo
+FILE=-
+CMDS=<<EOF
+-a arm
+-b 64
+wx 018d8e520101a872
+pd 2
+?e --
+e asm.pseudo=true
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      018d8e52       mov w1, 0x7468              ; 'ht'
+            0x00000004      0101a872       movk w1, 0x4008, lsl 16
+--
+            0x00000000      018d8e52       w1 = 0x7468                 ; 'ht'
+            0x00000004      0101a872       w1 = 0x4008 << 16
+EOF
+RUN
