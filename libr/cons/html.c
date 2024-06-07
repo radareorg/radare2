@@ -112,9 +112,11 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			tmp = (int) (size_t) (ptr - str);
 			if (tmp > 0) {
 				r_strbuf_append_n (res, str, tmp);
-				r_strbuf_append (res, "&nbsp;");
 				str = ptr + 1;
+			} else {
+				str++;
 			}
+			r_strbuf_append (res, "&nbsp;");
 			continue;
 		}
 		if (ptr[0] == 0x1b) {
