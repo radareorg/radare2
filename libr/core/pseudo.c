@@ -541,15 +541,22 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 	}
 	RListIter *iter;
+	bool use_html = r_config_get_b (core->config, "scr.html");
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
 		char *s = NULL;
+		if (use_html) {
+			r_config_set_b (core->config, "scr.html", false);
+		}
 		if (show_addr) {
 			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=1", bb->addr);
 		} else {
 			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
+		}
+		if (use_html) {
+			r_config_set_b (core->config, "scr.html", true);
 		}
 		s = r_str_replace (s, ";", "//", true);
 		s = r_str_replace (s, "goto ", "goto loc_", true);

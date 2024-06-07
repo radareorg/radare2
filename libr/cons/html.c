@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #include <r_cons.h>
 
@@ -48,7 +48,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	if (!res) {
 		return NULL;
 	}
-	for (; ptr[0]; ptr = ptr + 1) {
+	for (; ptr[0]; ptr++) {
 		if (esc == 0 && ptr[0] != 0x1b && need_to_set) {
 			if (has_set) {
 				r_strbuf_append (res, "</font>");
@@ -82,15 +82,19 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			need_to_set = false;
 		}
 		if (ptr[0] == '\n') {
-			tmp = (int) (size_t) (ptr - str);
-			r_strbuf_append_n (res, str, tmp);
-			if (!ptr[1]) {
-				// write new line if it's the end of the output
-				r_strbuf_append (res, "\n");
+			if (ptr > str) {
+				tmp = (int) (size_t) (ptr - str);
+				r_strbuf_append_n (res, str, tmp);
+				if (!ptr[1]) {
+					// write new line if it's the end of the output
+					r_strbuf_append (res, "\n");
+				} else {
+					r_strbuf_append (res, "<br />");
+				}
+				str = ptr + 1;
 			} else {
-				r_strbuf_append (res, "<br />");
+				r_strbuf_append (res, "<br />\n");
 			}
-			str = ptr + 1;
 			continue;
 		} else if (ptr[0] == '<') {
 			tmp = (int)(size_t) (ptr - str);
@@ -106,9 +110,11 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			continue;
 		} else if (ptr[0] == ' ') {
 			tmp = (int) (size_t) (ptr - str);
-			r_strbuf_append_n (res, str, tmp);
-			r_strbuf_append (res, "&nbsp;");
-			str = ptr + 1;
+			if (tmp > 0) {
+				r_strbuf_append_n (res, str, tmp);
+				r_strbuf_append (res, "&nbsp;");
+				str = ptr + 1;
+			}
 			continue;
 		}
 		if (ptr[0] == 0x1b) {
@@ -190,13 +196,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				str = ptr;
 				continue;
-			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && ptr[2] == '0') {
-				// bg color is kind of ignored, but no glitch so far
-				r_cons_gotoxy (0, 0);
-				ptr += 4;
-				esc = 0;
-				str = ptr;
-				continue;
 			} else if (ptr[0] == '0' && ptr[1] == 'm') {
 				ptr++;
 				str = ptr + 1;
@@ -246,7 +245,9 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			}
 		}
 	}
-	r_strbuf_append_n (res, str, ptr - str);
+	if (ptr > str) {
+		r_strbuf_append_n (res, str, ptr - str);
+	}
 	if (has_set) {
 		r_strbuf_append (res, "</font>");
 	}
