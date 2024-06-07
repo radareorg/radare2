@@ -272,6 +272,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 	char *s = strdup (str);
 	if (s) {
+		s = r_str_replace (s, "wzr", "0", 1);
 		s = r_str_replace (s, " lsl ", " << ", 1);
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
