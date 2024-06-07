@@ -530,7 +530,7 @@ static void ds_comment_lineup(RDisasmState *ds) {
 	ds_comment_align (ds);
 }
 
-static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
+static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *format, va_list ap) {
 	char *s = r_str_newvf (format, ap);
 	char *p = s;
 	bool multiline = strchr (p, '\n');
@@ -560,14 +560,14 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 		if (!nl) {
 			break;
 		}
-		if (!ds->show_cmt_right && nl) {
+		if (!ds->show_cmt_right && donl) {
 			r_cons_newline ();
 		}
 		first = false;
 		p = nl + 1;
 	}
 	free (s);
-	if (!ds->show_cmt_right && nl) {
+	if (!ds->show_cmt_right && donl) {
 		ds_newline (ds);
 	}
 }
@@ -1309,14 +1309,12 @@ static void ds_hint_begin(RDisasmState *ds, ut64 at) {
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
-	if (fcn) {
-		if (fcn->bits == 16 || fcn->bits == 32) {
-			if (!ds->hint) {
-				ds->hint = R_NEW0 (RAnalHint);
-			}
-			ds->hint->bits = fcn->bits;
-			ds->hint->new_bits = fcn->bits;
+	if (fcn && fcn->bits == 16 || fcn->bits == 32) {
+		if (!ds->hint) {
+			ds->hint = R_NEW0 (RAnalHint);
 		}
+		ds->hint->bits = fcn->bits;
+		ds->hint->new_bits = fcn->bits;
 	}
 }
 
@@ -4003,11 +4001,7 @@ static void ds_print_vliw(RDisasmState *ds, bool after) {
 		}
 	} else {
 		if (v > 0) {
-			if (c > 0) {
-				r_cons_printf ("}{");
-			} else {
-				r_cons_printf ("{");
-			}
+			r_cons_printf ((c > 0)? "}{": "{");
 			ds->vliw_count = v;
 		}
 	}
@@ -5382,14 +5376,13 @@ static void delete_last_comment(RDisasmState *ds) {
 		return;
 	}
 	const char *ll = r_cons_get_buffer ();
-	if (!ll) {
-		return;
-	}
-	ll += ds->buf_line_begin;
-	const char *begin = ll;
-	if (begin) {
-		ds_newline (ds);
-		ds_begin_cont (ds);
+	if (ll) {
+		ll += ds->buf_line_begin;
+		const char *begin = ll;
+		if (begin) {
+			ds_newline (ds);
+			ds_begin_cont (ds);
+		}
 	}
 }
 
@@ -5414,7 +5407,7 @@ static void mipsTweak(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *asm_arch = r_config_get (core->config, "asm.arch");
 	if (asm_arch && *asm_arch && strstr (asm_arch, "mips")) {
-		if (r_config_get_i (core->config, "anal.gpfixed")) {
+		if (r_config_get_b (core->config, "anal.gpfixed")) {
 			ut64 gp = r_config_get_i (core->config, "anal.gp");
 			r_reg_setv (core->anal->reg, "gp", gp);
 		}
@@ -5469,6 +5462,7 @@ static void ds_comment_call(RDisasmState *ds) {
 		// ds_comment_start (ds, "");
 		ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 		if (fcn_type) {
+			// XXX this makes some emu.str function signature + call arguments to be displayed one line below the call
 			ds_comment_middle (ds, "%s %s%s%s(", ds->cmtoken, r_str_getf (fcn_type),
 					(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 					r_str_getf (key));
@@ -5828,6 +5822,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	}
 	free (desc);
 #if 1
+	// TODO: if0 this block
 	if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
 		ds_print_calls_hints (ds);
 	}
@@ -6067,10 +6062,6 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	if (pdu_condition) {
 		ds->count_bytes = false;
 		ds->count = INT_MAX;
-
-		/*if (pdu_condition_type == esil) {
-			pdu_condition_esil = (const char *)pdu_condition;
-		} else*/
 		if (pdu_condition_type == pdu_instruction) {
 			pdu_condition_instruction = (const char *)pdu_condition;
 		} else if (pdu_condition_type == pdu_opcode) {
@@ -6864,11 +6855,7 @@ toro:
 			const char *opcolor = NULL;
 			if (R_STR_ISEMPTY (ds->opstr)) {
 				free (ds->opstr);
-				if (unaligned) {
-					ds->opstr = strdup ("unaligned");
-				} else {
-					ds->opstr = strdup ("invalid");
-				}
+				ds->opstr = strdup (unaligned? "unaligned": "invalid");
 			}
 			if (ds->show_color) {
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);
