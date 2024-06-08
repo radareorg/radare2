@@ -3075,3 +3075,41 @@ func.swift_beginAccess.arg.1=void *
 func.swift_beginAccess.arg.2=void *
 func.swift_beginAccess.arg.3=void *
 func.swift_beginAccess.ret=void
+
+err=func
+func.err.args=2
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.ret=void
+
+errx=func
+func.errx.args=2
+func.errx.arg.0=int,eval
+func.errx.arg.1=const char *,fmt
+func.errx.ret=void
+
+errc=func
+func.errc.args=3
+func.errc.arg.0=int,eval
+func.errc.arg.1=int,code
+func.errc.arg.2=const char *,fmt
+func.errc.ret=void
+
+warn=func
+func.warn.args=2
+func.warn.arg.0=int,eval
+func.warn.arg.1=const char *,fmt
+func.warn.ret=void
+
+warnx=func
+func.warnx.args=2
+func.warnx.arg.0=int,eval
+func.warnx.arg.1=const char *,fmt
+func.warnx.ret=void
+
+warnc=func
+func.warnc.args=3
+func.warnc.arg.0=int,eval
+func.warnc.arg.1=int,code
+func.warnc.arg.2=const char *,fmt
+func.warnc.ret=void
