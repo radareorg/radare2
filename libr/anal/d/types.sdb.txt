@@ -2590,22 +2590,6 @@ func.printf.args=1
 func.printf.arg.0=const char *,format
 func.printf.ret=int
 
-warn=func
-func.warn.args=1
-func.warn.arg.0=const char *,format
-func.warn.ret=void
-
-warnx=func
-func.warnx.args=1
-func.warnx.arg.0=const char *,format
-func.warnx.ret=void
-
-warnc=func
-func.warnc.args=2
-func.warnc.arg.1=int,opt
-func.warnc.arg.0=const char *,format
-func.warnc.ret=void
-
 lstat=func
 func.lstat.args=2
 func.lstat.arg.0=const char *,path
@@ -3077,18 +3061,21 @@ func.swift_beginAccess.arg.3=void *
 func.swift_beginAccess.ret=void
 
 err=func
+func.err.noreturn=true
 func.err.args=2
 func.err.arg.0=int,eval
 func.err.arg.1=const char *,fmt
 func.err.ret=void
 
 errx=func
+func.errx.noreturn=true
 func.errx.args=2
 func.errx.arg.0=int,eval
 func.errx.arg.1=const char *,fmt
 func.errx.ret=void
 
 errc=func
+func.errc.noreturn=true
 func.errc.args=3
 func.errc.arg.0=int,eval
 func.errc.arg.1=int,code
