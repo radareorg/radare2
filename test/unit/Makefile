@@ -24,7 +24,13 @@ $(UNITS_BINDIR)/%: %.c
 	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 run: $(BINS)
-	r=0 ; cd .. ; for a in $(BINS) ; do echo "$$a" ; $(ASAN_LD_PRELOAD) ./unit/$$a || r=1; done ; echo unit$$r ; exit $$r
+	R=0 ; r=0 ; cd .. ; \
+	  for a in $(BINS) ; do \
+	  	echo "$$a" ; \
+		R=0 ; $(ASAN_LD_PRELOAD) ./unit/$$a || R=1; \
+		if [ "$$R" = 1 ]; then r=1; echo '[XX]'; fi; \
+	  done ; \
+	echo unit$$r ; exit $$r
 
 clean:
 	rm -f $(BINS)

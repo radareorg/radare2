@@ -1309,7 +1309,7 @@ static void ds_hint_begin(RDisasmState *ds, ut64 at) {
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
-	if (fcn && fcn->bits == 16 || fcn->bits == 32) {
+	if (fcn && (fcn->bits == 16 || fcn->bits == 32)) {
 		if (!ds->hint) {
 			ds->hint = R_NEW0 (RAnalHint);
 		}
