@@ -560,7 +560,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *for
 		if (!nl) {
 			break;
 		}
-		if (!ds->show_cmt_right && donl) {
+		if (!ds->show_cmt_right) {
 			r_cons_newline ();
 		}
 		first = false;
