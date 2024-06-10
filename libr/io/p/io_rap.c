@@ -54,6 +54,19 @@ static bool __rap_close(RIODesc *desc) {
 
 static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RSocket *s = RIORAP_FD (fd);
+	if (RIORAP_IS_LISTEN (fd)) {
+		switch (whence) {
+		case R_IO_SEEK_SET:
+			io->off = offset;
+			break;
+		case R_IO_SEEK_CUR:
+			io->off += offset;
+			break;
+		case R_IO_SEEK_END:
+			io->off = UT64_MAX;
+		}
+		return io->off;
+	}
 	return r_socket_rap_client_seek (s, offset, whence);
 }
 
@@ -62,7 +75,7 @@ static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
-	int i, listenmode;
+	int i;
 	char *port;
 
 	if (!__rap_plugin_open (io, pathname, 0)) {
@@ -74,7 +87,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		R_LOG_ERROR ("rap: wrong uri");
 		return NULL;
 	}
-	listenmode = (*host == ':');
+	int listenmode = (*host == ':');
 	*port++ = 0;
 	if (!*port) {
 		return NULL;

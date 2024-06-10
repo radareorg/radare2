@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -177,6 +177,7 @@ R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count) {
 }
 
 R_API ut64 r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence) {
+	R_RETURN_VAL_IF_FAIL (s, UT64_MAX);
 	ut8 tmp[10];
 	tmp[0] = RAP_PACKET_SEEK;
 	tmp[1] = (ut8)whence;

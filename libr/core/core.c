@@ -3889,7 +3889,7 @@ reaccept:
 						} else {
 							pipefd = -1;
 						}
-						R_LOG_ERROR ("(flags: %d) len: %d filename: '%s'", flg, cmd, ptr);
+						R_LOG_INFO ("(flags: %d) len: %d filename: '%s'", flg, cmd, ptr);
 					} else {
 						pipefd = -1;
 						R_LOG_ERROR ("Cannot open file (%s)", ptr);
