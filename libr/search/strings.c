@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2023 pancake */
+/* radare - LGPL - Copyright 2006-2024 pancake */
 
 #define R_LOG_ORIGIN "search.strings"
 
@@ -71,7 +71,7 @@ static int findstrings(RSearch *s, ut64 from, const ut8 *buf, int len, RSearchKe
 			if (matches < max_matches) {
 				matches++;
 			} else {
-				R_LOG_WARN ("Truncated match, keyword is too large");
+				R_LOG_WARN ("Truncated match, keyword is too large at 0x%08"PFMT64x, from + i);
 				matches = 0;
 			}
 		} else {
