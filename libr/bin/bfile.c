@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
 
+#define NEW_MASTER 0
 #include <r_bin.h>
 #include <r_hash.h>
 #include "i/private.h"
@@ -101,8 +102,15 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
+// this is always ok
 // TODO: this code must be implemented in RSearch as options for the strings mode
-static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+	R_RETURN_VAL_IF_FAIL (bf, -1);
+#if R2_USE_NEW_ABI
+	int utf_list_size = 0;
+	int *utf_list = NULL;
+	int *utf_freq = NULL;
+#endif
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
@@ -119,9 +127,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	if (maxstr < 1) {
 		maxstr = R_STRING_SCAN_BUFFER_SIZE;
 	}
-
-	// if list is null it means its gonna dump
-	R_RETURN_VAL_IF_FAIL (bf, -1);
 
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
@@ -312,15 +317,20 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
+		// TODO: allow the user to filter strings by type at scan time, this is, dont expect utf32 or utf16 strings
 		if (runes >= min) {
 			const char *tmpstr = r_strbuf_get (sb);
 			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives
+#if R2_USE_NEW_ABI
+			int j, num_blocks, *block_list;
+#else
 			int j, num_blocks;
+#endif
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
 				for (j = 0; j < tmplen; j++) {
-					char ch = tmpstr[j];
+					const char ch = tmpstr[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
 						if (!IS_PRINTABLE (ch)) {
 							continue;
@@ -332,6 +342,51 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
+#if R2_USE_NEW_ABI
+				if (tmplen > utf_list_size) {
+					// not here
+					int newsize = tmplen + 128;
+					int *a = realloc (utf_list, sizeof (int) * newsize);
+					int *b = realloc (freq_list, sizeof (int) * newsize);
+					if (a && b) {
+						utf_list_size = newsize;
+						utf_list = a;
+						utf_freq = b;
+					} else {
+						R_LOG_ERROR ("Cannot allocate %d", tmplen);
+						return 0;
+					}
+				}
+				// freq_list = (str_type == R_STRING_TYPE_WIDE || str_type == R_STRING_TYPE_WIDE32)? utf_freq: NULL;
+				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
+				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen - 1, utf_list, freq_list);
+				if (freq_list) {
+					// not here
+					num_chars = 0;
+					actual_ascii = 0;
+					for (j = 0; j < num_blocks; j++) {
+						num_chars += freq_list[j];
+						if (!utf_list[j]) { // ASCII
+							actual_ascii += freq_list[j];
+						}
+					}
+					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
+					if (actual_ascii > expected_ascii) {
+						ascii_only = true;
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+							break;
+						}
+						needle = str_start;
+						continue;
+					}
+				}
+				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					needle++;
+					continue;
+				}
+#else
 				num_blocks = 0;
 				int *block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
@@ -339,6 +394,16 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
 					}
+#if NEW_MASTER
+					if (num_blocks > 0) {
+						num_blocks--;
+					}
+#if 0
+					for (j = 0; block_list[j] != -1 && block_list[j] < 200; j++) {
+						num_blocks++;
+					}
+#endif
+#endif
 				}
 				if (freq_list) {
 					num_chars = 0;
@@ -353,9 +418,22 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
 					if (actual_ascii > expected_ascii) {
 						ascii_only = true;
+#if NEW_MASTER
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+						}
+						R_FREE (block_list);
+						if (str_start > needle) {
+							needle = str_start;
+							continue;
+						}
+						break;
+#else
 						needle = str_start;
 						R_FREE (block_list);
 						continue;
+#endif
 					}
 				}
 				R_FREE (block_list);
@@ -363,6 +441,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					needle++;
 					continue;
 				}
+#endif
 			}
 			RBinString *bs = R_NEW0 (RBinString);
 			if (!bs) {
@@ -378,6 +457,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 				break;
 			}
 			// TODO: move into adjust_offset
+#if 1
 			switch (str_type) {
 			case R_STRING_TYPE_WIDE:
 				if (str_start - from > 1) {
@@ -396,6 +476,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 				}
 				break;
 			}
+#endif
 			if (!s) {
 				if (section) {
 					s = section;
@@ -409,7 +490,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			}
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
-			bs->vaddr = str_start - pdelta + vdelta + baddr;
+			bs->vaddr = str_start + baddr + vdelta - pdelta;
 			bs->string = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
 			if (strings_nofp) {
@@ -445,6 +526,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		pj_free (pj);
 	}
 	r_strbuf_free (sb);
+#if R2_USE_NEW_ABI
+	free (utf_list);
+	free (utf_freq);
+#endif
 	return bf->string_count;
 }
 
