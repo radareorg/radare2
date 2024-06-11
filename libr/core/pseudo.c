@@ -209,7 +209,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_append (out, indentstr); }\
 	}
-#define PRINTGOTO(y, x) if (y != x) { NEWLINE (x, indent); PRINTF ("goto loc_0x%"PFMT64x, x); }
+#define PRINTGOTO(y, x) if (y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -570,6 +570,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			free (s);
 			s = os;
 		} else {
+			int eos = indent;
+			memset (indentstr, ' ', sizeof (indentstr)); indentstr [(eos * 2)] = 0;
 			char *os = r_str_prefix_all (s, indentstr);
 			free (s);
 			s = os;
