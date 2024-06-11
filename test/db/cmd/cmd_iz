@@ -554,10 +554,10 @@ NAME=ascii substring detection
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf
 EXPECT=<<EOF
-7130 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
-7135 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
-7298 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
-7299 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
+7140 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
+7145 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
+7308 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
+7309 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
 EOF
 RUN
 
