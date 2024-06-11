@@ -754,11 +754,7 @@ R_API int r_utf_block_idx(RRune ch) {
 }
 
 #if R2_USE_NEW_ABI
-R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list)
-#else
-static int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list)
-#endif
-{
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
 	// list must be sizeof (int) * len + 1 at least
 	if (!str || len < 1) {
 		return 0;
@@ -802,6 +798,7 @@ static int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list)
 	}
 	return num_blocks;
 }
+#endif
 
 /* str must be UTF8-encoded */
 // R2_600 DEPRECATE THIS
