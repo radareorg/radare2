@@ -181,6 +181,17 @@ static RCoreHelpMessage help_msg_pdc = {
 	NULL
 };
 
+static void unvisit(RList *visited, RAnalBlock *bb) {
+	RListIter *iter;
+	RAnalBlock *b;
+	r_list_foreach (visited, iter, b) {
+		if (b->addr == bb->addr) {
+			r_list_delete (visited, iter);
+			break;
+		}
+	}
+}
+
 #define I_TAB 2
 #define K_MARK(x) r_strf ("mark.%"PFMT64x,x)
 #define K_ELSE(x) r_strf ("else.%"PFMT64x,x)
@@ -404,6 +415,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
 			// XXX check if can't pop
+			unvisit (visited, bb);
 			R_LOG_DEBUG ("%s// 0x%08"PFMT64x" already analyzed", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
@@ -598,14 +610,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				NEWLINE (bb->addr, 1);
 			}
 			PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			ut64 nbbaddr = UT64_MAX;
 			if (iter->n) {
 				RAnalBlock *nbb = (RAnalBlock*)iter->n;
-				if (bb->jump == UT64_MAX) {
-					NEWLINE (bb->addr, indent);
-					PRINTF ("return;");
-				} else {
-					PRINTGOTO (nbb->addr, bb->jump);
-				}
+				nbbaddr = nbb->addr;
+			}
+			if (bb->jump == UT64_MAX) {
+				NEWLINE (bb->addr, indent);
+				PRINTF ("return %s;", r0);
+			} else {
+				PRINTGOTO (nbbaddr, bb->jump);
 			}
 		}
 		free (s);
