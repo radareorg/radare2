@@ -121,9 +121,9 @@ int entry0 (int stack, int stack) {
         si-
         var = si - 0
         if  (var > 0) goto loc_0x402018 // unlikely
-        goto loc_0x402042
+        goto loc_0x402042;
          // } while (?);
-        goto loc_0x402042
+        goto loc_0x402042;
         }
         return eax;
     loc_0x402042:
@@ -171,12 +171,12 @@ int sym.func.100003a54 (int x0, int x1) {
         x8 = [x8 + 0x60]
         x9 = [x1 + 0x60] // arg2
         x9 = [x9 + 0x60]
-        if (x8 == x9)
-        goto ifle 0x100003a74 // likely
-        goto loc_0x100003a6c
+        (a, b) = compare (x8, x9)
+        if (a <= b) 0x100003a74 // likely
+        goto loc_0x100003a6c;
     loc_0x100003a74:
-        b.ge 0x100003a80 // likely
-        goto loc_0x100003a78
+        if (a >= b) 0x100003a80 // likely
+        goto loc_0x100003a78;
     loc_0x100003a80:
         x8 = x1 + 0x68 // arg2
         x1 = x0 + 0x68 // arg1
