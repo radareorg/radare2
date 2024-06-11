@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - thelemon, kazarmy, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -726,13 +726,11 @@ R_API char *r_acp_to_utf8_l(const char *str, int len) {
 
 R_API int r_utf_block_idx(RRune ch) {
 	const int last = R_UTF_BLOCKS_COUNT;
-	int low, hi, mid;
-
-	low = 0;
-	hi = last - 1;
+	int low = 0;
+	int hi = last - 1;
 
 	do {
-		mid = (low + hi) >> 1;
+		int mid = (low + hi) >> 1;
 		if (ch >= r_utf_blocks[mid].from && ch <= r_utf_blocks[mid].to) {
 			return mid;
 		}
@@ -802,6 +800,47 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	}
 	return list;
 }
+
+#if R2_USE_NEW_ABI
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
+	// list must be sizeof(int) * len+1 at least
+	R_RETURN_VAL_IF_FAIL (str && len >= 0, 0);
+	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
+	int num_blocks = 0;
+	int *list_ptr = list;
+	const ut8 *str_ptr = str;
+	const ut8 *str_end = str + len;
+	RRune ch;
+	while (str_ptr < str_end) {
+		int block_idx;
+		int ch_bytes = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
+		if (!ch_bytes) {
+			block_idx = R_UTF_BLOCKS_COUNT - 1;
+			ch_bytes = 1;
+		} else {
+			block_idx = r_utf_block_idx (ch);
+		}
+		if (!block_freq[block_idx]) {
+			*list_ptr++ = block_idx;
+			num_blocks++;
+		}
+		block_freq[block_idx]++;
+		str_ptr += ch_bytes;
+	}
+	int i;
+	if (freq_list) {
+		int *p = freq_list;
+		for (i = 0; i < num_blocks; i++) {
+			*p++ = block_freq[list[i]];
+		}
+	}
+	list_ptr = list;
+	for (i = 0; i < num_blocks; i++) {
+	//	block_freq[list_ptr[i]] = 0;
+	}
+	return num_blocks;
+}
+#endif
 
 R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
 	if (ptrlen > 3) {

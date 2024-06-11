@@ -102,7 +102,11 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
-static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+	R_RETURN_VAL_IF_FAIL (bf, -1);
+#if R2_USE_NEW_ABI
+	int utf_list[128], utf_freq[128];
+#endif
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
@@ -119,9 +123,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	if (maxstr < 1) {
 		maxstr = R_STRING_SCAN_BUFFER_SIZE;
 	}
-
-	// if list is null it means its gonna dump
-	R_RETURN_VAL_IF_FAIL (bf, -1);
 
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
@@ -319,7 +320,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			const char *tmpstr = r_strbuf_get (sb);
 			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives
+#if R2_USE_NEW_ABI
+			int j, num_blocks;
+#else
 			int j, num_blocks, *block_list;
+#endif
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
 				for (j = 0; j < tmplen; j++) {
@@ -335,6 +340,39 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
+#if R2_USE_NEW_ABI
+				if (tmplen > (sizeof (utf_list) / sizeof (*utf_list))) {
+					// TODO: use the old method to avoid overflow
+					R_LOG_WARN ("utf8 overflow ahead %d", tmplen);
+					r_sys_breakpoint ();
+				}
+				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
+				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen - 1, utf_list, freq_list);
+				if (freq_list) {
+					num_chars = 0;
+					actual_ascii = 0;
+					for (j = 0; j < num_blocks; j++) {
+						num_chars += freq_list[j];
+						if (!utf_list[j]) { // ASCII
+							actual_ascii = freq_list[j];
+						}
+					}
+					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
+					if (actual_ascii > expected_ascii) {
+						ascii_only = true;
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+						}
+						needle = str_start;
+						continue;
+					}
+				}
+				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					needle++;
+					continue;
+				}
+#else
 				num_blocks = 0;
 				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
@@ -356,6 +394,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
 					if (actual_ascii > expected_ascii) {
 						ascii_only = true;
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+						}
 						needle = str_start;
 						free (block_list);
 						continue;
@@ -366,6 +408,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					needle++;
 					continue;
 				}
+#endif
 			}
 			RBinString *bs = R_NEW0 (RBinString);
 			if (!bs) {
