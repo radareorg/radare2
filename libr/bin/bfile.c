@@ -105,7 +105,9 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	R_RETURN_VAL_IF_FAIL (bf, -1);
 #if R2_USE_NEW_ABI
-	int utf_list[128], utf_freq[128];
+	// TODO: use single malloc here
+	int utf_list[4096];
+	int utf_freq[4096];
 #endif
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;

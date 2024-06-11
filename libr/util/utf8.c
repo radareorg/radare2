@@ -803,7 +803,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 
 #if R2_USE_NEW_ABI
 R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
-	// list must be sizeof(int) * len+1 at least
+	// list must be sizeof (int) * len + 1 at least
 	R_RETURN_VAL_IF_FAIL (str && len >= 0, 0);
 	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
 	int num_blocks = 0;
