@@ -148,12 +148,12 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	use_clang = false;
 	if (!strcmp (cEnv->TRIPLET, "darwin-arm-64")) {
 		free (cEnv->CC);
-		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0");
+		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=10.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	} else if (!strcmp (cEnv->TRIPLET, "darwin-arm-32")) {
 		free (cEnv->CC);
-		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0");
+		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=10.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	}
@@ -259,7 +259,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	r_str_sanitize (cEnv->CC);
 
 	// Compile
-	char *cmd = r_str_newf ("'%s' %s -o '%s.tmp' -S '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
+	char *cmd = r_str_newf ("%s %s -o '%s.tmp' -S '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
 	eprintf ("%s\n", cmd);
 	int rc = r_sys_cmd (cmd);
 	free (cmd);
@@ -279,7 +279,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 	// Assemble
-	cmd = r_str_newf ("'%s' %s -o '%s.o' '%s.s'", cEnv->CC, cEnv->LDFLAGS, file, file);
+	cmd = r_str_newf ("%s %s -o '%s.o' '%s.s'", cEnv->CC, cEnv->LDFLAGS, file, file);
 	eprintf ("%s\n", cmd);
 	rc = r_sys_cmd (cmd);
 	free (cmd);
