@@ -754,11 +754,11 @@ R_API int r_utf_block_idx(RRune ch) {
 }
 
 #if R2_USE_NEW_ABI
-R_API 
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list)
 #else
-static
+static int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list)
 #endif
-int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
+{
 	// list must be sizeof (int) * len + 1 at least
 	if (!str || len < 1) {
 		return 0;
@@ -863,10 +863,20 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		}
 		freq_list_ptr = *freq_list;
 	}
-	int count = r_utf_block_list2 (str, len, list, freq_list? *freq_list: NULL);
-if (count < 1) {
-return NULL;
-}
+	int count = r_utf_block_list2 (str, len, list, freq_list_ptr);
+	if (count > 0) {
+		if (freq_list) {
+			freq_list[count] = -1;
+		}
+	}
+#if 1
+	if (count < 1) {
+		free (list);
+		free (freq_list_ptr);
+		return NULL;
+	}
+#endif
+
 #endif
 	return list;
 }

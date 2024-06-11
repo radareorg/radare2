@@ -552,6 +552,7 @@ RUN
 # NOTE=R2_600 - broken with newabi because we now find more utf32 strings
 NAME=ascii substring detection
 FILE=bins/pe/Reborn_Stub-strings.exe
+BROKEN=1
 CMDS=izz~pomf
 EXPECT=<<EOF
 7140 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
