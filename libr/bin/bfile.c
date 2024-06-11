@@ -216,7 +216,6 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 				if (!addr_aligned) {
 					is_wide32le = false;
 				}
-				///is_wide32be &= (n1 < 0xff && n11 < 0xff); // false; // n11 < 0xff;
 				if (is_wide32le && addr_aligned) {
 					str_type = R_STRING_TYPE_WIDE32; // asume big endian,is there little endian w32?
 				} else {
@@ -225,11 +224,9 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
 				}
 			} else {
-				if (rc > 1) {
-					str_type = R_STRING_TYPE_UTF8; // could be charset if set :?
-				} else {
-					str_type = R_STRING_TYPE_ASCII;
-				}
+				str_type = (rc > 1)
+					? R_STRING_TYPE_UTF8
+					: R_STRING_TYPE_ASCII;
 			}
 		} else if (type == R_STRING_TYPE_UTF8) {
 			str_type = R_STRING_TYPE_ASCII; // initial assumption
@@ -318,6 +315,7 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
+		// TODO: allow the user to filter strings by type at scan time, this is, dont expect utf32 or utf16 strings
 		if (runes >= min) {
 			const char *tmpstr = r_strbuf_get (sb);
 			size_t tmplen = r_strbuf_length (sb);
@@ -342,19 +340,21 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-#if R2_USE_NEW_ABI
+#if R2_USE_NEW_ABI && 1
 				if (tmplen > utf_list_size) {
-					int *a = realloc (utf_list, sizeof (int) * (tmplen + 1));
-					int *b = realloc (freq_list, sizeof (int) * (tmplen + 1));
+					int newsize = tmplen + 128;
+					int *a = realloc (utf_list, sizeof (int) * newsize);
+					int *b = realloc (freq_list, sizeof (int) * newsize);
 					if (a && b) {
-						utf_list_size = tmplen;
+						utf_list_size = newsize;
 						utf_list = a;
-						freq_list = b;
+						utf_freq = b;
 					} else {
 						R_LOG_ERROR ("Cannot allocate %d", tmplen);
 						return 0;
 					}
 				}
+				// freq_list = (str_type == R_STRING_TYPE_WIDE || str_type == R_STRING_TYPE_WIDE32)? utf_freq: NULL;
 				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
 				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen - 1, utf_list, freq_list);
 				if (freq_list) {
@@ -383,15 +383,25 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 				}
 #else
 				num_blocks = 0;
+			int *block_list;
 				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
 					}
+					num_blocks --;
 				}
+#if 0
+printf ("--> ");
+for (i = 0; i<num_blocks;i++) {
+printf ("%d ", block_list[i]);
+}
+eprintf ("NB %d\n", num_blocks);
+#endif
 				if (freq_list) {
 					num_chars = 0;
+// eprintf ("FLKST\n");
 					actual_ascii = 0;
 					for (j = 0; freq_list[j] != -1; j++) {
 						num_chars += freq_list[j];
