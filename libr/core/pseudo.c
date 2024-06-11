@@ -410,7 +410,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		} else {
 			NEWLINE (bb->addr, indent);
-			PRINTF ("goto loc_0x%"PFMT64x, bb->fail);
+			PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
@@ -549,10 +549,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 				}
 				PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
+#if 0
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);
 					PRINTF ("} else {");
 				}
+#endif
 				indent = nindent;
 			}
 			PRINTGOTO (bb->addr, gotoaddr);
@@ -577,7 +579,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			r_config_set_b (core->config, "scr.html", true);
 		}
 		s = r_str_replace (s, ";", "//", true);
-		s = r_str_replace (s, "goto ", "goto loc_", true);
+		char *lastgoto = strstr (s, "goto ");
+		if (lastgoto) {
+			if (!strchr (lastgoto, '\n')) {
+				*s = 0;
+			}
+		}
+		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		if (show_addr) {
 			// indent with | or stgh
 			char *os = r_str_prefix_all (s, " ");
@@ -609,7 +617,20 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			} else {
 				NEWLINE (bb->addr, 1);
 			}
-			PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
+			if (fi && r_str_startswith (fi->name, "case.")) {
+				const char *val = r_str_lchr (fi->name, '.') + 1;
+				char *hex = r_str_newf ("0x%s", val);
+				int nval = r_num_get (NULL, hex);
+				free (hex);
+				if (IS_PRINTABLE (nval)) {
+					PRINTF ("loc_0x%08"PFMT64x": // case '%c'\n%s", bb->addr, nval, s);
+				} else {
+					PRINTF ("loc_0x%08"PFMT64x": // case %s\n%s", bb->addr, val, s);
+				}
+			} else {
+				PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			}
 			ut64 nbbaddr = UT64_MAX;
 			if (iter->n) {
 				RAnalBlock *nbb = (RAnalBlock*)iter->n;
