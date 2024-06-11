@@ -105,9 +105,9 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	R_RETURN_VAL_IF_FAIL (bf, -1);
 #if R2_USE_NEW_ABI
-	// TODO: use single malloc here
-	int utf_list[4096];
-	int utf_freq[4096];
+	int utf_list_size = 0;
+	int *utf_list = NULL;
+	int *utf_freq = NULL;
 #endif
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
@@ -330,7 +330,7 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
 				for (j = 0; j < tmplen; j++) {
-					char ch = tmpstr[j];
+					const char ch = tmpstr[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
 						if (!IS_PRINTABLE (ch)) {
 							continue;
@@ -343,10 +343,12 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 #if R2_USE_NEW_ABI
-				if (tmplen > (sizeof (utf_list) / sizeof (*utf_list))) {
-					// TODO: use the old method to avoid overflow
-					R_LOG_WARN ("utf8 overflow ahead %d", tmplen);
-					r_sys_breakpoint ();
+				if (tmplen > utf_list_size) {
+					free (utf_list);
+					free (freq_list);
+					utf_list_size = tmplen;
+					utf_list = malloc (sizeof (int) * (tmplen + 1));
+					freq_list = malloc (sizeof (int) * (tmplen + 1));
 				}
 				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
 				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen - 1, utf_list, freq_list);
@@ -492,6 +494,8 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 		pj_free (pj);
 	}
 	r_strbuf_free (sb);
+	free (utf_list);
+	free (utf_freq);
 	return bf->string_count;
 }
 
