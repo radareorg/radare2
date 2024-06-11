@@ -557,7 +557,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 				indent = nindent;
 			}
-			PRINTGOTO (bb->addr, gotoaddr);
+			if (bb) {
+				PRINTGOTO (bb->addr, gotoaddr);
+			} else {
+				PRINTGOTO (UT64_MAX, gotoaddr);
+			}
 		}
 	}
 	RListIter *iter;
