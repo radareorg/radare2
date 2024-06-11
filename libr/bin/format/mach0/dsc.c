@@ -143,12 +143,15 @@ static const RDSCField dsc_header_fields[] = {
 	{ "i", "imagesOffset" },
 	{ "i", "imagesCount" },
 	{ "i", "cacheSubType" },
+	{ "i", "padding" },
 	{ "l", "objcOptsOffset" },
 	{ "l", "objcOptsSize" },
 	{ "l", "cacheAtlasOffset" },
 	{ "l", "cacheAtlasSize" },
 	{ "l", "dynamicDataOffset" },
 	{ "l", "dynamicDataMaxSize" },
+	{ "i", "maybePointsToLinkeditMapAtTheEndOfSubCachesArray" },
+	{ "i", "previousPointerMakesSense" },
 	{ NULL, NULL }
 };
 

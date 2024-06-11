@@ -201,7 +201,7 @@ static int r_io_dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence);
 
 static bool r_io_dsc_object_dig_slices(RIODscObject * dsc);
-static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format);
+static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format);
 static bool r_io_dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size);
 static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
 static RIODscSlice * r_io_dsc_object_get_slice(RIODscObject * dsc, ut64 off_global);
@@ -343,7 +343,11 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 		RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
 
 		if (subCacheArrayCount) {
-			if (!r_io_dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, next_or_end, &sc_entry_size, &sc_format)) {
+			ut32 array_end = 0;
+
+			dsc_header_get_u32 (header, "maybePointsToLinkeditMapAtTheEndOfSubCachesArray", &array_end);
+
+			if (!r_io_dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, array_end, next_or_end, &sc_entry_size, &sc_format)) {
 				R_LOG_ERROR ("Could not detect subcache entry format");
 				goto error;
 			}
@@ -440,12 +444,21 @@ error:
 	return false;
 }
 
-static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format) {
+static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format) {
 	RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
 	ut64 sc_entry_size = 0;
+	ut64 array_size_v2 = sizeof (RDscSubcacheEntryV2) * sc_count;
+
+	if (array_end) {
+		if (array_end == sc_offset + array_size_v2) {
+			sc_format = SUBCACHE_FORMAT_V2;
+			sc_entry_size = sizeof (RDscSubcacheEntryV2);
+			goto beach;
+		}
+	}
+
 	if (sc_count != 0) {
 		ut64 array_size_v1 = sizeof (RDscSubcacheEntryV1) * sc_count;
-		ut64 array_size_v2 = sizeof (RDscSubcacheEntryV2) * sc_count;
 		char test_v1, test_v2;
 
 		if (array_size_v1 + 1 >= size || array_size_v2 + 1 >= size) {
@@ -473,7 +486,7 @@ static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_coun
 			sc_entry_size = sizeof (RDscSubcacheEntryV2);
 		}
 	}
-
+beach:
 	*out_entry_size = sc_entry_size;
 	*out_format = sc_format;
 
@@ -1214,6 +1227,7 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 				info->info = get_rebase_info (fd, slideInfoOffset, slideInfoSize, info->start, 0);
 				if (!info->info) {
 					R_LOG_ERROR ("Failed to get rebase info");
+					return false;
 				}
 			}
 		}
@@ -1242,6 +1256,7 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 			info->info = get_rebase_info (fd, slideInfoOffset, slideInfoSize, info->start, 0);
 			if (!info->info) {
 				R_LOG_ERROR ("Failed to get rebase info");
+				return false;
 			}
 		}
 	}
