@@ -429,9 +429,13 @@ R_API char *r_print_code_tocolor(const char *o) {
 			const char *msg = Color_CYAN"int "Color_RESET;
 			r_strbuf_append (sb, msg);
 			p = w + 4;
+		} else if (r_str_startswith (w, "return;")) {
+			r_strbuf_append_n (sb, p, w - p);
+			r_strbuf_append (sb, Color_CYAN"return;"Color_RESET);
+			p = w + 7;
 		} else if (r_str_startswith (w, "return ")) {
 			r_strbuf_append_n (sb, p, w - p);
-			const char *msg = Color_GREEN "return "Color_RESET;
+			const char *msg = Color_CYAN"return "Color_RESET;
 			r_strbuf_append (sb, msg);
 			p = w + 7;
 		} else if (r_str_startswith (w, "break;")) {
