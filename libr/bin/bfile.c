@@ -340,7 +340,7 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-#if R2_USE_NEW_ABI && 1
+#if R2_USE_NEW_ABI
 				if (tmplen > utf_list_size) {
 					int newsize = tmplen + 128;
 					int *a = realloc (utf_list, sizeof (int) * newsize);
@@ -383,7 +383,6 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 				}
 #else
 				num_blocks = 0;
-			int *block_list;
 				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
@@ -392,16 +391,8 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 					}
 					num_blocks --;
 				}
-#if 0
-printf ("--> ");
-for (i = 0; i<num_blocks;i++) {
-printf ("%d ", block_list[i]);
-}
-eprintf ("NB %d\n", num_blocks);
-#endif
 				if (freq_list) {
 					num_chars = 0;
-// eprintf ("FLKST\n");
 					actual_ascii = 0;
 					for (j = 0; freq_list[j] != -1; j++) {
 						num_chars += freq_list[j];

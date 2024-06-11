@@ -786,14 +786,6 @@ int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
 			str_ptr += runesize;
 		} else {
 			str_ptr++;
-#if 0
-			block_idx = R_UTF_BLOCKS_COUNT - 1;
-			if (!block_freq[block_idx]) {
-				*list_ptr = block_idx;
-				list_ptr++;
-			}
-			block_freq[block_idx]++;
-#endif
 		}
 	}
 	*list_ptr = -1;
@@ -811,7 +803,7 @@ int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
 /* str must be UTF8-encoded */
 // R2_600 DEPRECATE THIS
 R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
-#if 1
+#if 0
 	if (!str) {
 		return NULL;
 	}
