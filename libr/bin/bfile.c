@@ -386,10 +386,9 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
-					for (j = 0; block_list[j] != -1; j++) {
+					for (j = 0; block_list[j] != -1 && block_list[j] < 200; j++) {
 						num_blocks++;
 					}
-					num_blocks --;
 				}
 				if (freq_list) {
 					num_chars = 0;

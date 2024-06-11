@@ -760,7 +760,10 @@ static
 #endif
 int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
 	// list must be sizeof (int) * len + 1 at least
-	R_RETURN_VAL_IF_FAIL (str && len >= 0, 0);
+	if (!str || len < 1) {
+		return 0;
+	}
+	R_RETURN_VAL_IF_FAIL (len >= 0, 0);
 	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
 	int num_blocks = 0;
 	int *list_ptr = list;
@@ -803,10 +806,7 @@ int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
 /* str must be UTF8-encoded */
 // R2_600 DEPRECATE THIS
 R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
-#if 0
-	if (!str) {
-		return NULL;
-	}
+#if 1
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
@@ -864,6 +864,9 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		freq_list_ptr = *freq_list;
 	}
 	int count = r_utf_block_list2 (str, len, list, freq_list? *freq_list: NULL);
+if (count < 1) {
+return NULL;
+}
 #endif
 	return list;
 }
