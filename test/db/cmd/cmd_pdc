@@ -186,6 +186,11 @@ int sym.func.100003a54 (int x0, int x1) {
          // } else {
         }
         return x0;
+    loc_0x100003a6c: // orphan
+         w0 = 1
+         
+
+        return x0;
 }
 
 EOF
