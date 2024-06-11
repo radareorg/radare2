@@ -48,7 +48,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "bl", "# ()", { 1 } },
 		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", {0} },
-		{ 1, "br", "goto register(#)", { 1 } },
+		{ 1, "br", "switch #", { 1 } },
 		{ 0, "bxeq", "je #", { 1 } },
 		{ 0, "b.eq", "if (eq) goto #", { 1 } },
 		{ 0, "b.ne", "if (eq) goto #", { 1 } },
