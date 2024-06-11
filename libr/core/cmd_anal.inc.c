@@ -9607,6 +9607,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		minop = 1;
 	}
 	int setBits = r_config_get_i (core->config, "asm.bits");
+	bool armthumb_switches = false;
+	if (setBits == 16 || setBits == 32) {
+		if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
+			armthumb_switches = true;
+		}
+	}
 	r_cons_break_push (NULL, NULL);
 	bool valid = true;
 	while (addr < addr_end && !r_cons_is_breaked ()) {
@@ -9621,13 +9627,18 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			addr += bsz;
 			continue;
 		}
-		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-		if (hint && hint->bits) {
-			setBits = hint->bits;
-		}
-		r_anal_hint_free (hint);
-		if (setBits != core->rasm->config->bits) {
-			r_config_set_i (core->config, "asm.bits", setBits);
+		if (armthumb_switches) {
+			// this thing is slow
+			RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+			if (hint) {
+				if (hint->bits) {
+					setBits = hint->bits;
+				}
+				r_anal_hint_free (hint);
+			}
+			if (setBits != core->rasm->config->bits) {
+				r_config_set_i (core->config, "asm.bits", setBits);
+			}
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
