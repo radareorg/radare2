@@ -8,6 +8,8 @@
 #define IS_STRING(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
 #define IS_SYMBOL(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
 
+// R2R db/cmd/cmd_pdc
+
 typedef struct _find_ctx {
 	char *comment;
 	char *left;
@@ -209,7 +211,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_append (out, indentstr); }\
 	}
-#define PRINTGOTO(y, x) if (y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%"PFMT64x, x); }
+#define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -406,7 +408,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				nindent = 1;
-#if 0
+#if 1
 				int i;
 				for (i = indent; i != nindent && i > 0; i--) {
 					NEWLINE (bb->addr, i);
@@ -611,7 +613,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
-	// PRINTF ("}\n");
+	PRINTF ("}\n");
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (pj) {

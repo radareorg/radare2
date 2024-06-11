@@ -105,8 +105,7 @@ int entry0 (int stack, int stack) {
     loc_0x40200f:
         si = 3
         fcn.00402000  ()
-        goto loc_0x402018
-        do {
+        
     loc_0x402018:
         push  (0)
         push  ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
