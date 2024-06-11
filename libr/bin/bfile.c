@@ -344,11 +344,16 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 			case R_STRING_TYPE_WIDE32:
 #if R2_USE_NEW_ABI
 				if (tmplen > utf_list_size) {
-					free (utf_list);
-					free (freq_list);
-					utf_list_size = tmplen;
-					utf_list = malloc (sizeof (int) * (tmplen + 1));
-					freq_list = malloc (sizeof (int) * (tmplen + 1));
+					int *a = realloc (utf_list, sizeof (int) * (tmplen + 1));
+					int *b = realloc (freq_list, sizeof (int) * (tmplen + 1));
+					if (a && b) {
+						utf_list_size = tmplen;
+						utf_list = a;
+						freq_list = b;
+					} else {
+						R_LOG_ERROR ("Cannot allocate %d", tmplen);
+						return 0;
+					}
 				}
 				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
 				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen - 1, utf_list, freq_list);
@@ -494,8 +499,10 @@ static int string_scan_range(R_NULLABLE RList *list, RBinFile *bf, int min, cons
 		pj_free (pj);
 	}
 	r_strbuf_free (sb);
+#if R2_USE_NEW_ABI
 	free (utf_list);
 	free (utf_freq);
+#endif
 	return bf->string_count;
 }
 
