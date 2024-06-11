@@ -209,6 +209,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_append (out, indentstr); }\
 	}
+#define PRINTGOTO(y, x) if (y != x) { NEWLINE (x, indent); PRINTF ("goto loc_0x%"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -380,13 +381,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		bool closed = false;
+		ut64 gotoaddr = UT64_MAX;
 		if (bb->fail == UT64_MAX) {
 			if (bb->jump != UT64_MAX) {
 #if 1
-				if (bb->jump != UT64_MAX) { // nbb->addr) {
-					NEWLINE (bb->addr, indent);
-					PRINTF ("goto loc_0x%"PFMT64x, bb->jump);
-				}
+				gotoaddr = bb->jump;
+				// PRINTGOTO (UT64_MAX, bb->jump);
 #endif
 			} else {
 				closed = true;
@@ -405,13 +405,15 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			R_LOG_DEBUG ("%s// 0x%08"PFMT64x" already analyzed", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
-				int i;
 				nindent = 1;
+#if 0
+				int i;
 				for (i = indent; i != nindent && i > 0; i--) {
 					NEWLINE (bb->addr, i);
 					PRINTF ("}");
 					closed = true;
 				}
+#endif
 				if (closed) {
 					NEWLINE (bb->addr, indent);
 					PRINTF ("return %s;", r0);
@@ -429,6 +431,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (!nbb) {
 					break;
 				}
+				PRINTGOTO (nbb->addr, gotoaddr);
 				bb = nbb;
 				indent--;
 				continue;
@@ -510,7 +513,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 							blocktype = "else";
 						}
 						NEWLINE (bb->addr, indent);
-						PRINTF ("do {");
+						// PRINTF ("do {");
 						indent++;
 						indent++;
 					}
@@ -538,6 +541,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				}
 				indent = nindent;
 			}
+			PRINTGOTO (bb->addr, gotoaddr);
 		}
 	}
 	RListIter *iter;
@@ -590,13 +594,22 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				NEWLINE (bb->addr, 1);
 			}
 			PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			if (iter->n) {
+				RAnalBlock *nbb = (RAnalBlock*)iter->n;
+				if (bb->jump == UT64_MAX) {
+					NEWLINE (bb->addr, indent);
+					PRINTF ("return;");
+				} else {
+					PRINTGOTO (nbb->addr, bb->jump);
+				}
+			}
 		}
 		free (s);
 	}
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
-	PRINTF ("}\n");
+	// PRINTF ("}\n");
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (pj) {
