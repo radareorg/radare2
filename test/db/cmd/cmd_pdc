@@ -102,11 +102,11 @@ EXPECT=<<EOF
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 int entry0 (int stack, int stack) {
-    loc_0x40200f:
+    loc_0x0040200f:
         si = 3
         fcn.00402000  ()
         
-    loc_0x402018:
+    loc_0x00402018:
         push  (0)
         push  ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         push  ("Hello, World!") // section..data
@@ -121,12 +121,12 @@ int entry0 (int stack, int stack) {
         si-
         var = si - 0
         if  (var > 0) goto loc_0x402018 // unlikely
-        goto loc_0x402042;
+        goto loc_0x00402042;
          // } while (?);
-        goto loc_0x402042;
+        goto loc_0x00402042;
         }
         return eax;
-    loc_0x402042:
+    loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
         push  ("Hello, World!") // section..data
         // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -172,10 +172,10 @@ int sym.func.100003a54 (int x0, int x1) {
         x9 = [x1 + 0x60] // arg2
         x9 = [x9 + 0x60]
         (a, b) = compare (x8, x9)
-        if (a <= b) 0x100003a74 // likely
+        if (a <= b) goto 0x100003a74 // likely
         goto loc_0x100003a6c;
     loc_0x100003a74:
-        if (a >= b) 0x100003a80 // likely
+        if (a >= b) goto 0x100003a80 // likely
         goto loc_0x100003a78;
     loc_0x100003a80:
         x8 = x1 + 0x68 // arg2

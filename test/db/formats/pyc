@@ -194,6 +194,6 @@ EXPECT=<<EOF
 \           0x00000036      53             return_value
 EOF
 EXPECT_ERR=<<EOF
-WARN: set your favourite calling convention in `e anal.cc=?`
+WARN: select the calling convention with `e anal.cc=?`
 EOF
 RUN
