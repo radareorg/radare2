@@ -1136,6 +1136,12 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 }
 
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (!info && pj) {
+		r_cons_print ("{}");
+		r_core_return_value (core, 1);
+		return;
+	}
 	bool rdump = false;
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
@@ -1235,6 +1241,12 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 
 static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
 	PJ *pj = *_pj;
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (!info && pj) {
+		r_cons_print ("{}");
+		r_core_return_value (core, 1);
+		return;
+	}
 	if (!input[1]) {
 		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
 	} else if (input[1] == ',' || input[1] == ' ') {
@@ -1314,7 +1326,11 @@ static void cmd_it(RCore *core, PJ *pj) {
 	ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info) {
-		R_LOG_ERROR ("Cannot get bin info");
+		if (!is_json) {
+			R_LOG_ERROR ("Cannot get bin info");
+		} else {
+			r_cons_print ("{}");
+		}
 		r_core_return_value (core, 1);
 		return;
 	}
@@ -1851,7 +1867,7 @@ static int cmd_info(void *data, const char *input) {
 				r_cons_println ("}");
 			}
 		} else {
-			r_cons_println ("{}");
+			r_cons_printf ("{}");
 		}
 		break;
 	case 'A': // "iA"
@@ -1937,7 +1953,9 @@ static int cmd_info(void *data, const char *input) {
 		} else if (!bin_header (core, mode)) {
 			/// XXX header vs fields wtf
 			if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
-				R_LOG_ERROR ("No header fields found");
+				if (!pj) {
+					R_LOG_ERROR ("No header fields found");
+				}
 				r_core_return_value (core, 1);
 			}
 		}
