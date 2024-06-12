@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -368,24 +368,22 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
-	if (!out) {
-		return NULL;
+	if (R_LIKELY (out)) {
+		out->out = r_strbuf_drain_nofree (&proc->out);
+		out->err = r_strbuf_drain_nofree (&proc->err);
+		out->ret = proc->ret;
 	}
-	out->out = r_strbuf_drain_nofree (&proc->out);
-	out->err = r_strbuf_drain_nofree (&proc->err);
-	out->ret = proc->ret;
 	return out;
 }
 
 R_API void r2r_subprocess_free(R2RSubprocess *proc) {
-	if (!proc) {
-		return;
+	if (R_LIKELY (proc)) {
+		CloseHandle (proc->stdin_write);
+		CloseHandle (proc->stdout_read);
+		CloseHandle (proc->stderr_read);
+		CloseHandle (proc->proc);
+		free (proc);
 	}
-	CloseHandle (proc->stdin_write);
-	CloseHandle (proc->stdout_read);
-	CloseHandle (proc->stderr_read);
-	CloseHandle (proc->proc);
-	free (proc);
 }
 #else
 
@@ -928,11 +926,9 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 		r_pvector_push (&envvals, "1");
 	}
 	
-	if (extra_env)
-	{
-		RListIter * eit;
-		char * kv;
-
+	if (extra_env) {
+		RListIter *eit;
+		char *kv;
 		r_list_foreach (extra_env, eit, kv) {
 			char * equal = strstr (kv, "=");
 			if (!equal) {
@@ -943,6 +939,14 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 			r_pvector_push (&envvals, equal + 1);
 		}
 	}
+#if 0
+	void **at;
+	eprintf ("->{\n");
+	r_pvector_foreach (&args, at) {
+		eprintf ("--> %s\n", *at);
+	}
+	eprintf ("->}\n");
+#endif
 
 	size_t env_size = r_pvector_length (&envvars);
 
@@ -1075,16 +1079,38 @@ R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *tes
 	return ret;
 }
 
+R_API R2RProcessOutput *r2r_run_json_test_nofile(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user) {
+	RList *files = r_list_new ();
+	r_list_push (files, "--");
+	// TODO: config->timeout_ms is already inside config, no need to pass it twice! chk other calls
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, test->cmd, files, NULL, NULL, test->load_plugins, runner, user);
+	r_list_free (files);
+	return ret;
+}
+
+static bool r2r_empty_json_check(R2RProcessOutput *out) {
+	char *s = r_str_trim_dup (out->out);
+	const bool is_not_empty = (R_STR_ISNOTEMPTY (s));
+	free (s);
+	return is_not_empty;
+}
+
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	const char *args[] = { "." };
-	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
-	r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
-	r2r_subprocess_wait (proc, UT64_MAX);
-	bool ret = proc->ret == 0;
-	r2r_subprocess_free (proc);
+	bool ret = false;
+	if (r2r_empty_json_check (out)) {
+		R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+		r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
+		r2r_subprocess_wait (proc, UT64_MAX);
+		ret = proc->ret == 0;
+		r2r_subprocess_free (proc);
+	} else {
+		eprintf ("\n");
+		R_LOG_ERROR ("[XX] Empty json for %s", test->cmd);
+	}
 	return ret;
 }
 
@@ -1377,6 +1403,19 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			R2RJsonTest *json_test = test->json_test;
 			R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
 			success = r2r_check_json_test (out, json_test);
+#if TEST_JSON_WITH_NO_FILES
+// R2_590 - enable these tests
+			if (strchr (json_test->cmd, '@')) {
+				// ignore json tests with @ when running r2 with no files
+			} else {
+				// test output of commands when no file is provided
+				r2r_process_output_free (out);
+				out = r2r_run_json_test_nofile (config, json_test, subprocess_runner, NULL);
+				if (!r2r_check_json_test (out, json_test)) {
+					success = false;
+				}
+			}
+#endif
 			ret->proc_out = out;
 			ret->timeout = out->timeout;
 			ret->run_failed = !out;

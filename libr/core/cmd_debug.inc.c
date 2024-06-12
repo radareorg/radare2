@@ -1484,6 +1484,9 @@ static bool cmd_dmh(RCore *core, const char *input) {
 		return false;
 #endif
 	}
+	if (input[1] == 'j') {
+		r_cons_println ("{}");
+	}
 	return true;
 }
 
@@ -1996,7 +1999,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_debug_map_sync (core->dbg); // update process memory maps
 			r_debug_map_list (core->dbg, core->offset, input);
 		} else {
-			R_LOG_WARN ("Memory Maps require to be (cfg.debug/-d) in debugger mode. Otherwise use 'om'");
+			R_LOG_INFO ("dm requires the debugger or use `om` instead");
+			if (*input == 'j') {
+				r_cons_println ("{}");
+			}
 		}
 		break;
 	case '=': // "dm="
