@@ -80,8 +80,8 @@ static RCoreHelpMessage help_msg_iS = {
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"i", "[*jq]", "show info of current file (in JSON)",
-	"iA", "", "list archs found in current binary",
 	"ia", "", "show all info (imports, exports, sections..)",
+	"iA", "", "list archs found in current binary",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "[?]", "List classes, methods and fields (icj for json)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
@@ -1138,7 +1138,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
-		r_cons_print ("{}");
+		r_cons_print ("[]");
 		r_core_return_value (core, 1);
 		return;
 	}
@@ -1243,7 +1243,7 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	PJ *pj = *_pj;
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info && pj) {
-		r_cons_print ("{}");
+		r_cons_print ("[]");
 		r_core_return_value (core, 1);
 		return;
 	}
@@ -1326,10 +1326,10 @@ static void cmd_it(RCore *core, PJ *pj) {
 	ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (!info) {
-		if (!is_json) {
-			R_LOG_ERROR ("Cannot get bin info");
-		} else {
+		if (is_json) {
 			r_cons_print ("{}");
+		} else {
+			R_LOG_ERROR ("Cannot get bin info");
 		}
 		r_core_return_value (core, 1);
 		return;
@@ -1743,6 +1743,9 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("{}");
+			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
@@ -1757,6 +1760,9 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("{}");
+			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
@@ -1771,6 +1777,9 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("[]");
+			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
@@ -1800,6 +1809,9 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("[]");
+			}
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
@@ -1864,7 +1876,7 @@ static int cmd_info(void *data, const char *input) {
 				subcmds++;
 			}
 			if (mode == R_MODE_JSON) {
-				r_cons_println ("}");
+				r_cons_printf ("}");
 			}
 		} else {
 			r_cons_printf ("{}");
@@ -2022,6 +2034,10 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("{}");
+				break;
+			}
 			RList *bfiles = r_core_bin_files (core);
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
@@ -2039,6 +2055,9 @@ static int cmd_info(void *data, const char *input) {
 		RListIter *iter;
 		RBinFile *bf;
 		RBinFile *cur = core->bin->cur;
+		if (!cur && pj) {
+			r_cons_printf ("[]");
+		}
 		r_list_foreach (objs, iter, bf) {
 			RBinObject *obj = bf->bo;
 			core->bin->cur = bf;
@@ -2049,12 +2068,15 @@ static int cmd_info(void *data, const char *input) {
 		r_list_free (objs);
 	}
 		break;
-	case 'r': // "ir"
+	case 'r':  // "ir"
 		{
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (!cur && pj) {
+				r_cons_printf ("[]");
+			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
 				RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
