@@ -4038,6 +4038,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
 		result = true;
+		if (mode == 'j') {
+			r_cons_println ("{}");
+		}
 		goto cleanup;
 	}
 	RListIter *iter;
@@ -4057,6 +4060,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	ut64 piece = R_MAX ((to - from) / R_MAX (cols, w), 1);
 	as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {
+		if (mode == 'j') {
+			r_cons_println ("{}");
+		}
 		goto cleanup;
 	}
 
