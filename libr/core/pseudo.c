@@ -222,7 +222,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_append (out, indentstr); }\
 	}
-#define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%"PFMT64x, x); }
+#define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%08"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
@@ -356,7 +356,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					queuegoto = 0LL;
 				}
 				NEWLINE (bb->addr, indent - 1);
-				PRINTF ("loc_0x%"PFMT64x":", bb->addr);
+				PRINTF ("loc_0x%08"PFMT64x":", bb->addr);
 				// foreach lines
 				RList *lines = r_str_split_list (code, "\n", 0);
 				RListIter *iter;
@@ -410,7 +410,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		} else {
 			NEWLINE (bb->addr, indent);
-			PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
+			PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
@@ -430,10 +430,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #endif
 				if (closed) {
 					NEWLINE (bb->addr, indent);
-					PRINTF ("return %s;", r0);
+					if (r0) {
+						PRINTF ("return %s;", r0);
+					} else {
+						PRINTF ("return;");
+					}
 				} else if (bb->fail != UT64_MAX) {
 					NEWLINE (bb->addr, indent);
-					PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
+					PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
 				}
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
 				if (r_list_contains (visited, nbb)) {
@@ -548,7 +552,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						PRINTF ("}");
 					}
 				}
-				PRINTF ("goto loc_0x%"PFMT64x";", bb->fail);
+				PRINTF ("goto loc_0x%08"PFMT64x";", bb->fail);
 #if 0
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);
@@ -642,7 +646,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (bb->jump == UT64_MAX) {
 				NEWLINE (bb->addr, indent);
-				PRINTF ("return %s;", r0);
+				if (r0) {
+					PRINTF ("return %s;", r0);
+				} else {
+					PRINTF ("return;");
+				}
 			} else {
 				PRINTGOTO (nbbaddr, bb->jump);
 			}

@@ -17,6 +17,7 @@ mips.pseudo
 ppc.pseudo
 riscv.pseudo
 sh.pseudo
+stm8.pseudo
 tms320.pseudo
 v850.pseudo
 wasm.pseudo

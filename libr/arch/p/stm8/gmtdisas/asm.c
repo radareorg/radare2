@@ -85,11 +85,13 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 			r_strbuf_appendf (sb, "%s", ins.text);
 
 			if (n == 1) {
-				for (; n < ins.size; n++)
+				for (; n < ins.size; n++) {
 					oc[n+1] = *(block->data + cnt + n);
+				}
 			} else {
-				for (; n < ins.size; n++)
+				for (; n < ins.size; n++) {
 					oc[n] = *(block->data + cnt + n);
+				}
 			}
 			switch (ins.des) {
 			case STM8_NONE:
@@ -128,10 +130,10 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
 				break;
 			case STM8_PTR_X:
-				r_strbuf_append (sb, " (x)");
+				r_strbuf_append (sb, " [x]");
 				break;
 			case STM8_PTR_Y:
-				r_strbuf_append (sb, " (y)");
+				r_strbuf_append (sb, " [y]");
 				break;
 			case SHORTMEM_2:
 				r_strbuf_appendf (sb, " 0x%02x", oc[2]);
@@ -181,25 +183,25 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				*jump = add + ins.size + n;
 				break;
 			case SHORTOFF_X_2:
-				r_strbuf_appendf (sb, " (0x%02x, x)", oc[2]);
+				r_strbuf_appendf (sb, " [x + 0x%02x]", oc[2]);
 				break;
 			case SHORTOFF_Y_2:
-				r_strbuf_appendf (sb, " (0x%02x, y)", oc[2]);
+				r_strbuf_appendf (sb, " [y + 0x%02x]", oc[2]);
 				break;
 			case SHORTOFF_SP_2:
-				r_strbuf_appendf (sb, " (0x%02x, sp)", oc[2]);
+				r_strbuf_appendf (sb, " [sp + 0x%02x]", oc[2]);
 				break;
 			case LONGOFF_X_23:
-				r_strbuf_appendf (sb, " (0x%02x%02x, x)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, " [x + 0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case LONGOFF_Y_23:
-				r_strbuf_appendf (sb, " (0x%02x%02x, y)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, " [y + 0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case EXTOFF_X_234:
-				r_strbuf_appendf (sb, " (0x%02x%02x%02x, x)", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, " [x + 0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case EXTOFF_Y_234:
-				r_strbuf_appendf (sb, " (0x%02x%02x%02x, y)", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, " [y + 0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case SHORTPTR_2:
 				r_strbuf_appendf (sb, " [0x%02x]", oc[2]);
@@ -208,16 +210,16 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case SHORTPTR_OFF_X_2:
-				r_strbuf_appendf (sb, " ([0x%02x], x)", oc[2]);
+				r_strbuf_appendf (sb, " x + [0x%02x]", oc[2]);
 				break;
 			case SHORTPTR_OFF_Y_2:
-				r_strbuf_appendf (sb, " ([0x%02x], y)", oc[2]);
+				r_strbuf_appendf (sb, " y + [0x%02x]", oc[2]);
 				break;
 			case LONGPTR_OFF_X_23:
-				r_strbuf_appendf (sb, " ([0x%02x%02x], x)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, " x + [0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case LONGPTR_OFF_Y_23:
-				r_strbuf_appendf (sb, " ([0x%02x%02x], y)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, " y + [0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case LONGMEM_BIT_123:
 				// ioreg
@@ -310,25 +312,25 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				*jump = add + ins.size + n;
 				break;
 			case SHORTOFF_X_2:
-				r_strbuf_appendf (sb, ", (0x%02x, x)", oc[2]);
+				r_strbuf_appendf (sb, ", [x + 0x%02x]", oc[2]);
 				break;
 			case SHORTOFF_Y_2:
-				r_strbuf_appendf (sb, ", (0x%02x, y)", oc[2]);
+				r_strbuf_appendf (sb, ", [y + 0x%02x]", oc[2]);
 				break;
 			case SHORTOFF_SP_2:
-				r_strbuf_appendf (sb, ", (0x%02x, sp)", oc[2]);
+				r_strbuf_appendf (sb, ", [sp + 0x%02x]", oc[2]);
 				break;
 			case LONGOFF_X_23:
-				r_strbuf_appendf (sb, ", (0x%02x%02x, x)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, ", [x + 0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case LONGOFF_Y_23:
-				r_strbuf_appendf (sb, ", (0x%02x%02x, y)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, ", [y + 0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case EXTOFF_X_234:
-				r_strbuf_appendf (sb, ", (0x%02x%02x%02x, x)", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, ", [x + 0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case EXTOFF_Y_234:
-				r_strbuf_appendf (sb, ", (0x%02x%02x%02x, y)", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, ", [y + 0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case SHORTPTR_2:
 				r_strbuf_appendf (sb, ", [0x%02x]", oc[2]);
@@ -337,7 +339,7 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case SHORTPTR_OFF_X_2:
-				r_strbuf_appendf (sb, ", ([0x%02x], x)", oc[2]);
+				r_strbuf_appendf (sb, ", [0x%02x] + x", oc[2]);
 				break;
 			case SHORTPTR_OFF_Y_2:
 				r_strbuf_appendf (sb, ", ([0x%02x], y)", oc[2]);

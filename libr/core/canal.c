@@ -913,7 +913,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		if (r_anal_cc_once (core->anal)) {
-			R_LOG_WARN ("set your favourite calling convention in `e anal.cc=?`");
+			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
