@@ -974,6 +974,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 					map->delta, r_io_map_begin (map), r_io_map_to (map),
 					r_str_rwx_i (map->perm), r_str_get (map->name));
 			}
+		} else if (input[2] == 'j') {
+			r_cons_println ("{}");
 		}
 		break;
 	case 'r': // "omr"

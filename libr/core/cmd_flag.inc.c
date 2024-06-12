@@ -105,6 +105,7 @@ static RCoreHelpMessage help_msg_fd = {
 	"Usage: fd[d]", " [offset|flag|expression]", " # Describe flags",
 	"fd", " $$" , "# describe flag + delta for given offset",
  	"fd.", " $$", "# check flags in current address (no delta)",
+	"fdj", " $$", "# describe current flag in json",
 	"fdd", " $$", "# describe flag without space restrictions",
 	"fdw", " [string]", "# filter closest flag by string for current offset",
 	NULL
@@ -1756,6 +1757,8 @@ rep:
 						}
 					}
 				}
+			} else if (input[1] == 'j') {
+				r_cons_println ("{}");
 			}
 		}
 		break;
