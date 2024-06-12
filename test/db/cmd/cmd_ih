@@ -297,9 +297,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ihh (file x86)
+NAME=iH (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ihh
+CMDS=iH
 EXPECT=<<EOF
 0x00000000  ELF MAGIC   0x464c457f
 0x00000010  Type        0x0002

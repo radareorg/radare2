@@ -2860,9 +2860,9 @@ vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=progra
 EOF
 RUN
 
-NAME=iH (file x86_64)
+NAME=ih (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=iH
+CMDS=ih
 EXPECT=<<EOF
 [Header fields]
 0x00000000 0x00000000 0x464c457f ELF
