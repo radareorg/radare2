@@ -1072,9 +1072,9 @@ static RCoreHelpMessage help_msg_ax = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axf", "[?] [addr]", "find data/code references from this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
-	"axg", " [addr]", "show xrefs graph to reach current function",
-	"axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
-	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
+	"axg", "[j*] [addr]", "show xrefs graph to reach current function",
+	// "axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
+	// "axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axi", " addr [at]", "add indirect code reference (see ax?)",
 	"axj", "", "add jmp reference", // list refs in json format",
 	"axl", "[jcq]", "list xrefs (axlc = count, axlq = quiet, axlj = json)",
@@ -10259,7 +10259,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			} else if (input[1] == 'j') {
 				PJ *pj = pj_new ();
 				anal_axg (core, input + 2, 0, db, R_CORE_ANAL_JSON, pj);
-				r_cons_printf("%s\n", pj_string (pj));
+				const char *pjs = pj_string (pj);
+				r_cons_printf ("%s\n", *pjs? pjs: "{}");
 				pj_free (pj);
 			} else {
 				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0, NULL);

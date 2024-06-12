@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "r2r.load"
@@ -89,9 +89,8 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			r_strbuf_append (buf, line);
 			if (end) {
 				return r_strbuf_drain (buf);
-			} else {
-				r_strbuf_append (buf, "\n");
 			}
+			r_strbuf_append (buf, "\n");
 		} while ((line = *nextline));
 		R_LOG_ERROR ("Missing closing end token %s", endtoken);
 		r_strbuf_free (buf);
@@ -265,12 +264,11 @@ R_API R2RAsmTest *r2r_asm_test_new(void) {
 }
 
 R_API void r2r_asm_test_free(R2RAsmTest *test) {
-	if (!test) {
-		return;
+	if (test != NULL) {
+		free (test->disasm);
+		free (test->bytes);
+		free (test);
 	}
-	free (test->disasm);
-	free (test->bytes);
-	free (test);
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
