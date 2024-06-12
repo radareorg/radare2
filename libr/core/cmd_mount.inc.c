@@ -519,6 +519,9 @@ static int cmd_mount(void *data, const char *_input) {
 	if (r_str_startswith (_input, "al")) { // "mal" "man ?"
 		return cmd_man (data, "man ?");
 	}
+	if (r_str_startswith (_input, "ake")) { // "make"
+		return r_sys_cmdf ("make%s", _input + 3);
+	}
 	if (r_str_startswith (_input, "ktemp")) { // "mktemp"
 		return cmd_mktemp (data, _input);
 	}
