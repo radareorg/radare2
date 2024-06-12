@@ -1,5 +1,5 @@
 rabin2 -gj /bin/ls
-r2 -jV
+# r2 -jV
 pcj
 # pdbj
 # pdfj
