@@ -20,8 +20,8 @@ static RCoreHelpMessage help_msg_s = {
 	"s[j*=!]", "", "list undo seek history (JSON, =list, *r2, !=names, s==)",
 	"s/", " DATA", "search for next occurrence of 'DATA' (see /?)",
 	"s/x", " 9091", "search for next occurrence of \\x90\\x91",
-	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
-	"sb", "", "seek aligned to bb start",
+	"sa", " ([+-]addr)", "seek to block-size aligned address (addr=$$ if not specified)",
+	"sb", " ([addr])", "seek to the beginning of the basic block",
 	"sC", "[?] string", "seek to comment matching given string",
 	"sd", " ([addr])", "show delta seek compared to all possible reference bases",
 	"sf", "", "seek to next function (f->addr+f->size)",
@@ -35,7 +35,7 @@ static RCoreHelpMessage help_msg_s = {
 	"sn/sp", " ([nkey])", "seek to next/prev location, as specified by scr.nkey",
 	"snp", "", "seek to next function prelude",
 	"spp", "", "seek to prev function prelude",
-	"so", " [N]", "seek to N next opcode(s)",
+	"so", " ([[-]N])", "seek to N opcode(s) forward (or backward when N is negative), N=1 by default",
 	"sr", " PC", "seek to register (or register alias) value",
 	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
@@ -90,7 +90,7 @@ static RCoreHelpMessage help_msg_sl = {
 
 static RCoreHelpMessage help_msg_ss = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
-	"s?", "", "works with all s subcommands",
+	"s?", "", "works with all s subcommands, for example ssr = silent 'sr'",
 	NULL
 };
 
@@ -374,11 +374,14 @@ static int cmd_seek(void *data, const char *input) {
 		}
 	}
 #endif
+	// this makes adds all the subcommands of s under ss which breaks some logics
 	bool silent = false;
 	if (*input == 's') {
 		silent = true;
 		input++;
-		if (*input == '?') {
+		switch (*input) {
+		case '?':
+		case 0:
 			r_core_cmd_help (core, help_msg_ss);
 			return 0;
 		}
@@ -748,32 +751,40 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "sa"
-		off = core->blocksize;
-		if (input[1] && input[2]) {
-			cmd = strdup (input);
-			p = strchr (cmd + 2, ' ');
-			if (p) {
-				off = r_num_math (core->num, p + 1);
-				*p = '\0';
+		if (input[1] == 0 || input[1] == ' ') {
+			off = core->blocksize;
+			if (input[1] && input[2]) {
+				cmd = strdup (input);
+				p = strchr (cmd + 2, ' ');
+				if (p) {
+					off = r_num_math (core->num, p + 1);
+					*p = '\0';
+				}
+				cmd[0] = 's';
+				// perform real seek if provided
+				r_cmd_call (core->rcmd, cmd);
+				free (cmd);
 			}
-			cmd[0] = 's';
-			// perform real seek if provided
-			r_cmd_call (core->rcmd, cmd);
-			free (cmd);
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
+			r_core_seek_align (core, off, 0);
+		} else {
+			r_core_cmd_help_contains (core, help_msg_s, "sa");
 		}
-		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-		}
-		r_core_seek_align (core, off, 0);
 		break;
 	case 'b': // "sb"
-		if (off == 0) {
-			off = core->offset;
+		if (input[1] == 0 || input[1] == ' ') {
+			if (off == 0) {
+				off = core->offset;
+			}
+			if (!silent) {
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			}
+			r_core_anal_bb_seek (core, off);
+		} else {
+			r_core_cmd_help_contains (core, help_msg_s, "sb");
 		}
-		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-		}
-		r_core_anal_bb_seek (core, off);
 		break;
 	case 'f': { // "sf"
 		RAnalFunction *fcn;
@@ -834,29 +845,33 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'g': // "sg"
-	{
-		RIOMap *map  = r_io_map_get_at (core->io, core->offset);
-		if (map) {
-			r_core_seek (core, r_io_map_begin (map), true);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_s, "sg");
 		} else {
-			r_core_seek (core, 0, true);
+			RIOMap *map  = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				r_core_seek (core, r_io_map_begin (map), true);
+			} else {
+				r_core_seek (core, 0, true);
+			}
 		}
-	}
-	break;
+		break;
 	case 'G': // "sG"
-	{
-		if (!core->io->desc) {
-			break;
-		}
-		RIOMap *map = r_io_map_get_at (core->io, core->offset);
-		// XXX: this +2 is a hack. must fix gap between sections
-		if (map) {
-			r_core_seek (core, r_io_map_end (map) + 2, true);
+		if (input[1] == '?') {
+			r_core_cmd_help_contains (core, help_msg_s, "sG");
 		} else {
-			r_core_seek (core, r_io_fd_size (core->io, core->io->desc->fd), true);
+			if (!core->io->desc) {
+				break;
+			}
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			// XXX: this +2 is a hack. must fix gap between sections
+			if (map) {
+				r_core_seek (core, r_io_map_end (map) + 2, true);
+			} else {
+				r_core_seek (core, r_io_fd_size (core->io, core->io->desc->fd), true);
+			}
 		}
-	}
-	break;
+		break;
 	case 'h': // "sh"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_sh);
@@ -948,7 +963,7 @@ static int cmd_seek(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_s);
 		break;
 	default:
-		{
+		if (input[0] && input[1]) {
 			ut64 n = r_num_math (core->num, input);
 			if (n) {
 				if (!silent) {
@@ -957,6 +972,8 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek (core, n, true);
 				r_core_block_read (core);
 			}
+		} else {
+			R_LOG_ERROR ("Invalid s subcommand");
 		}
 		break;
 	}
