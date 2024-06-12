@@ -157,7 +157,7 @@ struct MACH0_(obj_t) {
 	bool libs_loaded;
 	RPVector libs_cache;
 	int nlibs;
-	int size;
+	ut64 size;
 	ut64 baddr;
 	ut64 entry;
 	bool big_endian;
