@@ -8,11 +8,18 @@
 #include "../bin/format/pdb/pdb_downloader.h"
 
 static RCoreHelpMessage help_msg_ih = {
-	"Usage: ih", "[*hjq]", "Display header information",
+	"Usage: ih", "[*jq]", "Display header information",
 	"ih", "", "normal output to display binary headers",
 	"ih*", "", "same as above, but in r2 commands",
 	"ihj", "", "in json format",
-	"ihh", "", "call RBinPlugin.field callback to render custom",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iH = {
+	"Usage: iH", "[*jq]", "Display header fields information",
+	"iH", "", "normal output to display binary headers",
+	"iH*", "", "same as above, but in r2 commands",
+	"iHj", "", "in json format",
 	NULL
 };
 
@@ -83,8 +90,8 @@ static RCoreHelpMessage help_msg_i = {
 	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
 	"iE", "[?]", "exports (global symbols)",
 	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
-	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
-	"iH", "[H]", "show binary headers in plain text (iHH verbose output)", // XXX pretty bad description
+	"ih", "[?]", "show binary headers (see iH)",
+	"iH", "[?]", "show binary headers fields",
 	"ii", "[?][j*,]", "list the symbols imported from other libraries",
 	"iic", "", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
@@ -1904,15 +1911,6 @@ static int cmd_info(void *data, const char *input) {
 			  r_list_free (objs);
 		}
 		break;
-	case 'h': // "ih"
-		if (question) {
-			r_core_cmd_help (core, help_msg_ih);
-		} else if (input[1] == 'h') {
-			bin_header (core, mode);
-		} else {
-			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
-		}
-		break;
 	case 'k': // "ik"
 		cmd_ik (core, input);
 		break;
@@ -1926,24 +1924,21 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		}
 		break;
-	case 'H': // "iH"
-		if (input[1] == 'H') { // "iHH"
-			// alias for ihh
-			tts_say (core, "header", -1);
-			if (!bin_header (core, mode)) {
-				/// XXX header vs fields wtf
-				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
-					R_LOG_ERROR ("No header fields found");
-					r_core_return_value (core, 1);
-				}
-			}
+	case 'h': // "ih"
+		if (question) {
+			r_core_cmd_help (core, help_msg_ih);
 		} else {
-			// alias for ih
-			tts_say (core, "fields", -1);
-			if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
-				if (!bin_header (core, mode)) {
-					R_LOG_ERROR ("No header fields found");
-				}
+			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
+		}
+		break;
+	case 'H': // "iH"
+		if (question) {
+			r_core_cmd_help (core, help_msg_iH);
+		} else if (!bin_header (core, mode)) {
+			/// XXX header vs fields wtf
+			if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
+				R_LOG_ERROR ("No header fields found");
+				r_core_return_value (core, 1);
 			}
 		}
 		break;

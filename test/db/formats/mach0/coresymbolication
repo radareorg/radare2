@@ -18,7 +18,7 @@ RUN
 
 NAME=Xcode symbols cache (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
-CMDS=ihh~{:
+CMDS=iH~{:
 EXPECT=<<EOF
 cs_version: 1
 size: 7406
@@ -34,7 +34,7 @@ RUN
 
 NAME=Xcode symbols cache new (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
-CMDS=ihh~{:
+CMDS=iH~{:
 EXPECT=<<EOF
 cs_version: 1
 size: 7231
@@ -50,7 +50,7 @@ RUN
 
 NAME=Xcode symbols cache new2 (header)
 FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
-CMDS=ihh~{:
+CMDS=iH~{:
 EXPECT=<<EOF
 cs_version: 7
 size: 10425
