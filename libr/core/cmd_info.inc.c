@@ -1228,7 +1228,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 
 static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
 	PJ *pj = *_pj;
-	if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
+	if (!input[1]) {
 		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
 	} else if (input[1] == ',' || input[1] == ' ') {
 		R_FREE (core->table_query);
