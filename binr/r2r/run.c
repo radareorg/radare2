@@ -1403,6 +1403,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			R2RJsonTest *json_test = test->json_test;
 			R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
 			success = r2r_check_json_test (out, json_test);
+#define TEST_JSON_WITH_NO_FILES 0
 #if TEST_JSON_WITH_NO_FILES
 // R2_590 - enable these tests
 			if (strchr (json_test->cmd, '@')) {

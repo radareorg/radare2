@@ -3435,9 +3435,11 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 			*flagdesc2 = r_str_newf ("%s", f->name);
 		}
 	}
-	if (!strcmp (*flagdesc, *flagdesc2)) {
-		free (*flagdesc2);
-		*flagdesc2 = NULL;
+	if (*flagdesc && *flagdesc2) {
+		if (!strcmp (*flagdesc, *flagdesc2)) {
+			free (*flagdesc2);
+			*flagdesc2 = NULL;
+		}
 	}
 	if (pcstr && spstr) {
 		if (core->dbg->bits & R_SYS_BITS_64) {
