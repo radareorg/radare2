@@ -185,84 +185,10 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
-	char *newstr = p->localvar_only
-		? r_str_newf ("%s", var->name)
-		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
-	if (IS_UPPER (*tstr)) {
-		char *space = strrchr (newstr, ' ');
-		if (space) {
-			*space = 0;
-			r_str_case (newstr, true);
-			*space = ' ';
-		}
-	}
-	char *ret = r_str_replace (tstr, oldstr, newstr, 1);
-	free (newstr);
-	return ret;
-}
-
-static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
-	RList *spargs = NULL;
-	RList *bpargs = NULL;
-	RListIter *iter;
-	RAnal *anal = p->analb.anal;
-	char *oldstr;
-	bool newstack = anal->opt.var_newstack;
-	char *tstr = strdup (data);
-	if (!tstr) {
-		return false;
-	}
-
-	if (p->subrel) {
-		char *rip;
-		if (p->pseudo) {
-			rip = (char *)r_str_casestr (tstr, "[pc +");
-			if (!rip) {
-				rip = (char *)r_str_casestr (tstr, "[pc -");
-			}
-		} else {
-			rip = (char *)r_str_casestr (tstr, "[pc, ");
-		}
-
-		if (rip && !strchr (rip + 4, ',')) {
-			rip += 4;
-			char *tstr_new, *ripend = strchr (rip, ']');
-			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr (tstr, ".W")) ? 4 : 8;
-			ut64 repl_num = (addr + off) & ~3;
-			if (!ripend) {
-				ripend = "]";
-			}
-			if (neg) {
-				repl_num -= r_num_get (NULL, neg + 1);
-			} else {
-				repl_num += r_num_get (NULL, rip);
-			}
-			rip -= 3;
-			*rip = 0;
-			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
-			free (tstr);
-			tstr = tstr_new;
-		}
-	}
-	if (len > strlen (tstr)) {
-		strcpy  (str, tstr);
-	} else {
-		// TOO BIG STRING CANNOT REPLACE HERE
-		free (tstr);
-		return false;
-	}
-	free (tstr);
-	return true;
-}
-
 RParsePlugin r_parse_plugin_stm8_pseudo = {
 	.name = "stm8.pseudo",
 	.desc = "STM8 pseudo syntax",
 	.parse = parse,
-//	.subvar = &subvar,
 };
 
 #ifndef R2_PLUGIN_INCORE
