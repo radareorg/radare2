@@ -2960,24 +2960,32 @@ static int cmd_panels(void *data, const char *input) {
 		return true;
 	}
 	if (*input == 'e') {
+		if (input[1] == ' ') {
 #define getpanel(x,y) ((x) && (y) < 16)? (x)->panel[y]: NULL
-		RPanel *pan = getpanel (core->panels, core->panels->curnode);
+			RPanel *pan = getpanel (core->panels, core->panels->curnode);
 #undef getpanel
-		if (pan) {
-			char *r = r_cons_pal_parse (r_str_trim_head_ro (input + 2), NULL);
-			if (r) {
-				free (pan->model->bgcolor);
-				pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);
-				free (r);
-			} else {
-				R_LOG_ERROR ("Invalid color %sXXX"Color_RESET, r);
+			if (pan) {
+				char *r = r_cons_pal_parse (r_str_trim_head_ro (input + 2), NULL);
+				if (r) {
+					free (pan->model->bgcolor);
+					pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);
+					free (r);
+				} else {
+					R_LOG_ERROR ("Invalid color %sXXX"Color_RESET, r);
+				}
 			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_v, "ve");
 		}
 		return true;
 	}
 	if (*input == '=') {
-		r_core_panels_save (core, input + 1);
-		r_config_set (core->config, "scr.layout", input + 1);
+		if (input[1]) {
+			r_core_panels_save (core, input + 1);
+			r_config_set (core->config, "scr.layout", input + 1);
+		} else {
+			r_core_cmd_help_match (core, help_msg_v, "v=");
+		}
 		return true;
 	}
 	if (*input == 'i') {
@@ -2989,10 +2997,16 @@ static int cmd_panels(void *data, const char *input) {
 			} else {
 				R_LOG_ERROR ("Cannot open file (%s)", sp + 1);
 			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_v, "vi");
 		}
 		return false;
 	}
-	r_core_panels_root (core, core->panels_root);
+	if (*input) {
+		r_core_cmd_help (core, help_msg_v);
+	} else {
+		r_core_panels_root (core, core->panels_root);
+	}
 	return true;
 }
 
