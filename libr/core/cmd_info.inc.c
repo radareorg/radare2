@@ -504,7 +504,7 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 		}
 	} else {
 		if (mode & R_MODE_JSON) {
-			r_cons_printf ("{}");
+			r_cons_print ("{}");
 		}
 		R_LOG_ERROR ("No file selected");
 	}
@@ -1001,7 +1001,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			}
 			bool first = true;
 			if (r_list_empty (objs) && mode == 'j') {
-				r_cons_printf ("[]");
+				r_cons_print ("[]");
 				return;
 			}
 			r_list_foreach (objs, objs_iter, bf) {
@@ -1136,12 +1136,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 }
 
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
-	RBinInfo *info = r_bin_get_info (core->bin);
-	if (!info && pj) {
-		r_cons_print ("[]");
-		r_core_return_value (core, 1);
-		return;
-	}
 	bool rdump = false;
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
@@ -1731,7 +1725,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
 				}
 			} else if (mode & R_MODE_JSON) {
-				r_cons_printf ("[]");
+				r_cons_print ("[]");
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
@@ -1744,7 +1738,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("{}");
+				r_cons_print ("{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -1761,7 +1755,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("{}");
+				r_cons_print ("{}");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -1778,7 +1772,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("[]");
+				r_cons_print ("[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
@@ -1810,7 +1804,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("[]");
+				r_cons_print ("[]");
 			}
 			r_list_foreach (bfiles, iter, bf) {
 				core->bin->cur = bf;
@@ -1876,10 +1870,10 @@ static int cmd_info(void *data, const char *input) {
 				subcmds++;
 			}
 			if (mode == R_MODE_JSON) {
-				r_cons_printf ("}");
+				r_cons_print ("}");
 			}
 		} else {
-			r_cons_printf ("{}");
+			r_cons_print ("{}");
 		}
 		break;
 	case 'A': // "iA"
@@ -1922,7 +1916,7 @@ static int cmd_info(void *data, const char *input) {
 			  }
 			  if (r_list_empty (objs)) {
 				  if (mode & R_MODE_JSON) {
-					  r_cons_printf ("[]");
+					  r_cons_print ("[]");
 				  }
 			  } else {
 				  r_list_foreach (objs, iter, bf) {
@@ -2035,7 +2029,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("{}");
+				r_cons_print ("{}");
 				break;
 			}
 			RList *bfiles = r_core_bin_files (core);
@@ -2056,7 +2050,7 @@ static int cmd_info(void *data, const char *input) {
 		RBinFile *bf;
 		RBinFile *cur = core->bin->cur;
 		if (!cur && pj) {
-			r_cons_printf ("[]");
+			r_cons_print ("[]");
 		}
 		r_list_foreach (objs, iter, bf) {
 			RBinObject *obj = bf->bo;
@@ -2075,7 +2069,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			if (!cur && pj) {
-				r_cons_printf ("[]");
+				r_cons_print ("[]");
 			}
 			r_list_foreach (objs, iter, bf) {
 				core->bin->cur = bf;
