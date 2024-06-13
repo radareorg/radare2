@@ -24,7 +24,6 @@ EOF
 RUN
 
 NAME=check tcache list on glibc 2.31
-BROKEN=1
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF
@@ -44,7 +43,6 @@ EOF
 RUN
 
 NAME=check tcache list on glibc 2.27
-BROKEN=1
 FILE=bins/elf/glibc-heap-2.27
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.27.so -d
 CMDS=<<EOF

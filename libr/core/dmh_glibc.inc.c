@@ -354,14 +354,20 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)));
+		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)))) {
+			R_LOG_ERROR ("Error reading");
+			return false;
+		}
 		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
 		GH(RHeap_MallocState_223) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_223));
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)));
+		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)))) {
+			R_LOG_ERROR ("Error reading");
+			return false;
+		}
 		GH(update_arena_without_tc)(cmain_arena, main_arena);
 	}
 	return true;
@@ -1232,6 +1238,13 @@ static void GH (tcache_free) (GH (RTcache)* tcache) {
 
 static bool GH (tcache_read) (RCore *core, GHT tcache_start, GH (RTcache)* tcache) {
 	r_return_val_if_fail (core && tcache, false);
+	if ((st64)(tcache_start | UT16_MAX) <1) {
+		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, (ut64)tcache_start);
+		return false;
+	}
+	if (!r_io_is_valid_offset (core->io, tcache_start, R_PERM_R)) {
+		return false;
+	}
 	return tcache->type == NEW
 		? r_io_read_at (core->io, tcache_start, (ut8 *)tcache->RHeapTcache.heap_tcache, sizeof (GH (RHeapTcache)))
 		: r_io_read_at (core->io, tcache_start, (ut8 *)tcache->RHeapTcache.heap_tcache_pre_230, sizeof (GH (RHeapTcachePre230)));
@@ -1346,7 +1359,9 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 			if (ta->attached_threads) {
 				PRINT_BA ("\n");
-				GH (tcache_read) (core, tcache_start, r_tcache);
+				if (!GH (tcache_read) (core, tcache_start, r_tcache)) {
+					break;
+				}
 				GH (tcache_print) (core, r_tcache, demangle);
 			} else {
 				PRINT_GA (" free\n");
@@ -1577,7 +1592,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				free (cnk_next);
 				return;
 			}
-			GH (tcache_read) (core, tcache_initial_brk, tcache_heap);
+			if (!GH (tcache_read) (core, tcache_initial_brk, tcache_heap)) {
+				break;
+			}
 			size_t i;
 			for (i = 0; i < TCACHE_MAX_BINS; i++) {
 				int count = GH (tcache_get_count) (tcache_heap, i);
