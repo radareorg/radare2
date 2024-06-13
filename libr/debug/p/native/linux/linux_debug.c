@@ -59,7 +59,11 @@ char *linux_reg_profile (RDebug *dbg) {
 #		include "reg/linux-ppc64.h"
 	}
 #elif __s390x__
-#	include "reg/linux-s390x.h"
+	if (dbg->bits & R_SYS_BITS_32) {
+#		include "reg/linux-s390x.h"
+	} else {
+#		include "reg/linux-zarch.h"
+	}
 #else
 #	error "Unsupported Linux CPU"
 	return NULL;
