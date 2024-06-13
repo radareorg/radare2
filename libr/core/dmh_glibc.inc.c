@@ -355,7 +355,7 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 			return false;
 		}
 		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)))) {
-			R_LOG_ERROR ("Error reading");
+			R_LOG_ERROR ("Cannot read");
 			return false;
 		}
 		GH(update_arena_with_tc)(cmain_arena, main_arena);
@@ -365,7 +365,7 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 			return false;
 		}
 		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)))) {
-			R_LOG_ERROR ("Error reading");
+			R_LOG_ERROR ("Cannot read");
 			return false;
 		}
 		GH(update_arena_without_tc)(cmain_arena, main_arena);
