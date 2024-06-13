@@ -225,6 +225,8 @@
 #define MASK_MRET  0xffffffff
 #define MATCH_DRET 0x7b200073
 #define MASK_DRET  0xffffffff
+#define MATCH_SFENCE_VMA 0x12000073
+#define MASK_SFENCE_VMA  0xfe007fff
 #define MATCH_SFENCE_VM 0x10400073
 #define MASK_SFENCE_VM  0xfff07fff
 #define MATCH_WFI 0x10500073
