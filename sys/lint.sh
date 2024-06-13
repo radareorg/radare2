@@ -18,7 +18,9 @@ cd "$(dirname $0)"/..
 (git grep '|Usage' libr) && exit 1
 # (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
 # TODO  : also check for '{0x'
+#
 (git grep '\t{"' libr | grep -v strcmp | grep -v format | grep -v '{",' | grep -v esil | grep c:) && exit 1
+
 # TODO: this check is good but suddently after updating xcode its failing everywhere
 # (git grep -e "\telse" libr | grep c:) && exit 1
 (git grep '"},' libr | grep -v strcmp | grep -v format | grep -v '"},' | grep -v '"}{' | grep -v esil | grep -v anal/p | grep c:) && exit 1
@@ -43,6 +45,7 @@ cd "$(dirname $0)"/..
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
 (git grep -n -e '	$' | grep libr/ | grep c:) && exit 1
+
 (git grep 'eprintf ("|' libr ) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep "`printf '\tfree('`" libr | grep c: ) && exit 1
@@ -52,6 +55,7 @@ cd "$(dirname $0)"/..
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
+# TODO (git grep cons_printf libr | grep '"' | grep -v '%') && exit 1
 (git grep appendf libr | grep '"' | grep -v '%') && exit 1
 (git grep strbuf_setf libr | grep '"' | grep -v '%') && exit 1
 (git grep 'strbuf_append (' libr | grep '"' | grep '%') && exit 1
