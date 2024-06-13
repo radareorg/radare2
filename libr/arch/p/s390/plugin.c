@@ -234,6 +234,17 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BRCTG:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		break;
+	case SYSZ_INS_CLRJLE:
+	// case SYSZ_INS_CLRJGE:
+	case SYSZ_INS_CLRJE:
+	case SYSZ_INS_CLRJNE:
+	case SYSZ_INS_CLRJNLE:
+	case SYSZ_INS_CLRJNLH:
+	case SYSZ_INS_CLRJHE:
+	case SYSZ_INS_CLRJL:
+	case SYSZ_INS_CLRJLH:
+	case SYSZ_INS_CLGIJLE:
+	case SYSZ_INS_CLGIJH:
 	case SYSZ_INS_CGIJE:
 	case SYSZ_INS_CGRJE:
 		op->type = R_ANAL_OP_TYPE_CJMP;

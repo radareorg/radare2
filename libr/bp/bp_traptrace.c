@@ -1,23 +1,23 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
-// TODO: use r_range here??
 #include <r_bp.h>
 #include <r_list.h>
 
 R_API void r_bp_traptrace_free(void *ptr) {
-	RBreakpointTrace *trace = ptr;
-	free (trace->buffer);
-	free (trace->traps);
-	free (trace->bits);
-	free (trace);
+	if (ptr) {
+		RBreakpointTrace *trace = ptr;
+		free (trace->buffer);
+		free (trace->traps);
+		free (trace->bits);
+		free (trace);
+	}
 }
 
 R_API RList *r_bp_traptrace_new(void) {
 	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
+	if (R_LIKELY (list)) {
+		list->free = &r_bp_traptrace_free;
 	}
-	list->free = &r_bp_traptrace_free;
 	return list;
 }
 
@@ -87,12 +87,12 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	if (!buf) {
 		return false;
 	}
-	trap = (ut8*) malloc ((int)len+4);
+	trap = (ut8*) malloc ((int)len + 4);
 	if (!trap) {
 		free (buf);
 		return false;
 	}
-	bitlen = (len>>4)+1;
+	bitlen = (len >> 4) + 1;
 	bits = malloc (bitlen);
 	if (!bits) {
 		free (buf);
@@ -145,6 +145,7 @@ R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
 }
 
 R_API void r_bp_traptrace_list(RBreakpoint *bp) {
+	R_RETURN_IF_FAIL (bp);
 	int i;
 	RListIter *iter;
 	RBreakpointTrace *trace;
@@ -157,7 +158,9 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 	}
 }
 
+// R2_600 - return bool instead of int
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
+	R_RETURN_VAL_IF_FAIL (bp, false);
 	int delta;
 	RListIter *iter;
 	RBreakpointTrace *trace;
