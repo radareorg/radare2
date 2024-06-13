@@ -195,7 +195,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		if (rc == KERN_SUCCESS) {
 			R_LOG_INFO ("convert from self works");
 		} else {
-			R_LOG_WARN ("failed to convert %d", rc);
+			R_LOG_DEBUG ("failed to convert %d", rc);
 		}
 
 		thread->flavor = ARM_UNIFIED_THREAD_STATE;

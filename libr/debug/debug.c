@@ -283,7 +283,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 			}
 			r_list_free (list);
 		} else {
-			//module holds the address
+			// module holds the address
 			addr = (ut64)r_num_math (dbg->num, module);
 			if (!addr) {
 				return NULL;
