@@ -468,15 +468,18 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 	while (cursor < end) {
 		ut32 cmd = r_read_le32 (cursor);
 		ut32 cmdsize = r_read_le32 (cursor + sizeof (ut32));
+		ut8 *cmd_end = cursor + cmdsize;
 		if (cmd == LC_LOAD_DYLIB ||
 				cmd == LC_LOAD_WEAK_DYLIB ||
 				cmd == LC_REEXPORT_DYLIB ||
 				cmd == LC_LOAD_UPWARD_DYLIB) {
+			ut32 path_offset = r_read_le32 (cursor + 2 * sizeof (ut32));
 			bool found;
-			if (cursor + 24 >= end) {
-				break;
+			if (cursor + path_offset >= cmd_end) {
+				R_LOG_ERROR ("Malformed load command");
+				goto nextcmd;
 			}
-			const char *key = (const char *) cursor + 24;
+			const char *key = (const char *) cursor + path_offset;
 			size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				R_LOG_WARN ("alien dep '%s'", key);
