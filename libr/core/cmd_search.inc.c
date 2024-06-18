@@ -5012,7 +5012,7 @@ reread:
 			}
 			if (kw) {
 				r_search_kw_add (core->search, kw);
-				// R_LOG_INFO ("Searching %d byte(s)...", kw->keyword_length);
+				// R_LOG_INFO ("Searching %d byte(s)", kw->keyword_length);
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {
