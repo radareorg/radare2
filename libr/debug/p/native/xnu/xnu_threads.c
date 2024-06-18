@@ -279,7 +279,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 			regs, count,
 			regs, &count);
 		if (rc != KERN_SUCCESS) {
-			R_LOG_WARN ("failed to convert %d", rc);
+			R_LOG_DEBUG ("failed to convert %d", rc);
 		}
 #endif
 #if  __arm64e__

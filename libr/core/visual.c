@@ -130,6 +130,7 @@ static void setcursor(RCore *core, bool cur) {
 	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
+// R2_600 make this function static and disMode must be taken from core->visual.disMode instead of an argument
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
 	core->visual.currentFormat = R_ABS (disMode) % 5;
 	switch (core->visual.currentFormat) {
@@ -484,7 +485,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 	r_cons_context ()->color_mode = use_color;
 
 	r_core_visual_showcursor (core, true);
-	if (c && *c && r_file_exists (c)) {
+	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {
 		res = r_cons_hud_file (c);
 	}
 	if (!res && homehud) {
@@ -2295,6 +2296,65 @@ static bool fix_cursor(RCore *core) {
 	return res;
 }
 
+static void visual_windows(RCore *core) {
+	// TODO add more formats
+	// hud for all modes from visual
+	//int pidx = core->visual.printidx;
+	//int mode = core->visual.hexMode; // MODE_PX
+	//int mode = core->visual.disMode; // MODE_DB/PD
+	//int mode = core->visual.currentFormat; // MODE_OV / CD
+	RList *pmodes = r_list_newf (free);
+	r_list_append (pmodes, strdup ("0:0 standard hexdump"));
+	r_list_append (pmodes, strdup ("0:1 hexdump with flag names and colors"));
+	r_list_append (pmodes, strdup ("0:2 pxr recursive hexdump regsize word"));
+	r_list_append (pmodes, strdup ("0:5 hexdump with st32"));
+	r_list_append (pmodes, strdup ("0:7 hexdump with ut16"));
+	r_list_append (pmodes, strdup ("0:8 hexdump with ut32"));
+	r_list_append (pmodes, strdup ("0:6 bit viewer at byte level hexdump"));
+	r_list_append (pmodes, strdup ("1:0 standard disassembly view"));
+	r_list_append (pmodes, strdup ("1:2 disassembly with esil expressions"));
+	r_list_append (pmodes, strdup ("1:2 pseudo disassembly"));
+	r_list_append (pmodes, strdup ("2:0 standard debugger"));
+	r_list_append (pmodes, strdup ("3:0 raw byte image pixel view"));
+	r_list_append (pmodes, strdup ("3:5 entropy bars"));
+	r_list_append (pmodes, strdup ("4:0 code dump"));
+	r_list_append (pmodes, strdup ("4:1 assembly code"));
+	r_list_append (pmodes, strdup ("4:2 hex bytes"));
+	char *res = r_cons_hud (pmodes, NULL);
+	if (R_STR_ISNOTEMPTY (res)) {
+		int a, b;
+		sscanf (res, "%d:%d", &a, &b);
+		core->visual.printidx = a;
+		switch (core->visual.printidx) {
+		case R_CORE_VISUAL_MODE_PD:
+		case R_CORE_VISUAL_MODE_DB:
+			core->visual.disMode = b;
+			r_core_visual_applyDisMode (core, core->visual.disMode);
+			break;
+		case R_CORE_VISUAL_MODE_PX:
+			core->visual.hexMode = b;
+			r_core_visual_applyHexMode (core, core->visual.hexMode);
+			core->visual.currentFormat = b;
+			printfmtSingle[0] = printHexFormats[R_ABS (core->visual.hexMode) % PRINT_HEX_FORMATS];
+			break;
+		case R_CORE_VISUAL_MODE_OV:
+			// core->visual.hexMode = b;
+			core->visual.current4format = b;
+			core->visual.currentFormat = b;
+			break;
+		case R_CORE_VISUAL_MODE_CD:
+			// core->visual.hexMode = b;
+			core->visual.current5format = b;
+		//	core->visual.currentFormat = b;
+		core->visual.currentFormat = R_ABS (core->visual.current5format) % PRINT_5_FORMATS;
+		printfmtSingle[4] = print5Formats[core->visual.currentFormat];
+			break;
+		}
+	}
+	r_list_free (pmodes);
+	free (res);
+}
+
 static bool insert_mode_enabled(RCore *core) {
 	if (!core->visual.ime) {
 		return false;
@@ -2472,8 +2532,8 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		"# Browse stuff:\n"
 		" _  hud mode (V_)\n"
 		" 1  bit editor (vd1)\n"
-		" b  blocks\n"
 		" a  anal classes\n"
+		" b  blocks\n"
 		" c  classes\n"
 		" C  comments\n"
 		" d  debug traces\n"
@@ -2495,6 +2555,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" t  types\n"
 		" T  themes\n"
 		" v  vars\n"
+		" w  window panels\n"
 		" x  xrefs\n"
 		" X  refs\n"
 		" z  browse function zignatures\n"
@@ -2547,6 +2608,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		case 'v': // "vbv"
 			r_core_visual_anal (core, "v");
 			break;
+		case 'w': // "vbw"
+			visual_windows (core);
+			return;
 		case 'e': // "vbe"
 			r_core_visual_config (core);
 			break;
@@ -3082,7 +3146,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					r_cons_printf ("[t] ");
 				}
-				r_cons_flush();
+				r_cons_flush ();
 				r_cons_set_raw (true);
 				int ch = r_cons_readchar ();
 				if (isdigit (ch)) {
@@ -4025,22 +4089,6 @@ static void visual_title(RCore *core, int color) {
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (core->visual.autoblocksize) {
 		switch (core->visual.printidx) {
-#if 0
-		case R_CORE_VISUAL_MODE_PXR: // prc
-		case R_CORE_VISUAL_MODE_PRC: // prc
-			r_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
-			break;
-		case R_CORE_VISUAL_MODE_PXa: // pxa
-		case R_CORE_VISUAL_MODE_PW: // XXX pw
-			r_core_block_size (core, (int)(core->cons->rows * hexcols));
-			break;
-		case R_CORE_VISUAL_MODE_PC: // XXX pc
-			r_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
-			break;
-		case R_CORE_VISUAL_MODE_PXA: // pxA
-			r_core_block_size (core, hexcols * core->cons->rows * 8);
-			break;
-#endif
 		case R_CORE_VISUAL_MODE_PX: // x
 			if (core->visual.currentFormat == 3 || core->visual.currentFormat == 9 || core->visual.currentFormat == 5) { // prx
 				r_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
