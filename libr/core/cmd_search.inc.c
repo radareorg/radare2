@@ -542,7 +542,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
 				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv));
 			if (!(p->perm & R_PERM_X)) {
-				eprintf ("skip\n");
+				R_LOG_INFO ("skip");
 				continue;
 			}
 		}
@@ -1813,7 +1813,7 @@ static bool esil_addrinfo(REsil *esil) {
 		num = r_core_anal_address (core, num);
 		r_esil_pushnum (esil, num);
 	} else {
-// error. empty stack?
+		// error. empty stack?
 		return false;
 	}
 	free (src);
@@ -1822,7 +1822,6 @@ static bool esil_addrinfo(REsil *esil) {
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
-	const bool cfgDebug = r_config_get_b (core->config, "cfg.debug");
 	RSearch *search = core->search;
 	RSearchKeyword kw = {0};
 	if (input[0] != 'E') {
@@ -1902,9 +1901,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			hit_happens = false;
 			res = r_esil_pop (esil);
 			if (r_esil_get_parm (esil, res, &nres)) {
-				if (cfgDebug) {
-					eprintf ("RES 0x%08"PFMT64x" %"PFMT64d"\n", addr, nres);
-				}
+				R_LOG_DEBUG ("RES 0x%08"PFMT64x" %"PFMT64d, addr, nres);
 				if (nres) {
 					eprintf ("hits: %d\r", kw.count);
 					hit_happens = true;
@@ -3146,7 +3143,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		}
 		RList *hits; hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
-			r_cons_singleton ()->context->breaked = false;
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
 					break;
@@ -4415,7 +4411,7 @@ reread:
 					r_search_kw_add (core->search, kw);
 					r_search_begin (core->search);
 				} else {
-					eprintf ("bad pointer\n");
+					R_LOG_ERROR ("invalid pointer");
 					dosearch = false;
 				}
 			}
@@ -4551,10 +4547,9 @@ reread:
 						continue;
 					}
 					char *mp = r_str_newf ("/mnt%d", count);
-					eprintf ("[*] Trying to mount at 0x%08"PFMT64x"\r[", addr);
 					if (r_fs_mount (core->fs, NULL, mp, addr)) {
 						count ++;
-						eprintf ("Mounted %s at 0x%08"PFMT64x"\n", mp, addr);
+						R_LOG_INFO ("Mounted %s at 0x%08"PFMT64x, mp, addr);
 					}
 					free (mp);
 				}
@@ -4846,7 +4841,7 @@ reread:
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + 1, NULL);
 			if (!kw) {
-				eprintf ("Invalid regexp specified\n");
+				R_LOG_ERROR ("Invalid regexp specified");
 				break;
 			}
 			r_search_reset (core->search, R_SEARCH_REGEXP);
@@ -4957,14 +4952,14 @@ reread:
 			size_t size;
 			buf = (ut8 *)r_file_slurp (args[0], &size);
 			if (!buf) {
-				eprintf ("Cannot open '%s'\n", args[0]);
+				R_LOG_ERROR ("Cannot open '%s'", args[0]);
 				r_str_argv_free (args);
 				break;
 			}
 			if (n_args > 1) {
 				offset = r_num_math (core->num, args[1]);
 				if (size <= offset) {
-					eprintf ("size <= offset\n");
+					R_LOG_ERROR ("size <= offset");
 					r_str_argv_free (args);
 					free (buf);
 					break;
@@ -4973,7 +4968,7 @@ reread:
 			if (n_args > 2) {
 				len = r_num_math (core->num, args[2]);
 				if (len > size - offset) {
-					eprintf ("len too large\n");
+					R_LOG_ERROR ("len too large");
 					r_str_argv_free (args);
 					free (buf);
 					break;
@@ -4991,7 +4986,7 @@ reread:
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {
-				eprintf ("no keyword\n");
+				R_LOG_ERROR ("no keyword");
 			}
 
 			r_str_argv_free (args);
@@ -5017,11 +5012,11 @@ reread:
 			}
 			if (kw) {
 				r_search_kw_add (core->search, kw);
-				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
+				// R_LOG_INFO ("Searching %d byte(s)...", kw->keyword_length);
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {
-				eprintf ("no keyword\n");
+				R_LOG_ERROR ("no keyword");
 			}
 			free (p);
 		}
@@ -5045,23 +5040,23 @@ reread:
 			}
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);
-			eprintf ("Using chunksize: %d\n", chunksize);
+			R_LOG_INFO ("Using chunksize: %d", chunksize);
 			core->in_search = false;
 			for (i = 0; i < len; i += chunksize) {
 				chunksize = ochunksize;
 again:
 				r_hex_bin2str ((ut8 *) str + i, R_MIN (chunksize, len - i), buf);
-				eprintf ("/x %s\n", buf);
+				R_LOG_INFO ("/x %s", buf);
 				r_core_cmdf (core, "/x %s", buf);
 				if (core->num->value == 0) {
 					chunksize--;
 					if (chunksize < 1) {
-						eprintf ("Oops\n");
+						R_LOG_ERROR ("Invalid chunksize");
 						free (buf);
 						free (str);
 						goto beach;
 					}
-					eprintf ("Repeat with chunk size %d\n", chunksize);
+					R_LOG_INFO ("Repeat with chunk size %d", chunksize);
 					goto again;
 				}
 			}
@@ -5114,7 +5109,7 @@ again:
 		r_core_cmd_help (core, help_msg_slash);
 		break;
 	default:
-		eprintf ("See /? for help.\n");
+		R_LOG_INFO ("See /? for help");
 		break;
 	}
 	r_config_set_i (core->config, "search.kwidx", search->n_kws);
