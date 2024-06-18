@@ -244,7 +244,7 @@ static char *cleancomments(char *s) {
 		if (!nlnl) {
 			break;
 		}
-		char *prev = r_str_rchr (p, nlnl, '\n');
+		char *prev = (char *)r_str_rchr (p, nlnl, '\n');
 		if (!prev) {
 			break;
 		}
