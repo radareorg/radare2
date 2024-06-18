@@ -192,6 +192,68 @@ static void unvisit(RList *visited, RAnalBlock *bb) {
 	}
 }
 
+static char *cleancomments(char *s) {
+	// trim newline+spaces before //
+	char *p = s;
+	char *nl = NULL;
+	int spaces = 0;
+	bool ispfx = false;
+	while (*p) {
+		if (*p == '\n') {
+			nl = p;
+			spaces = 0;
+			ispfx = true;
+		} else if (r_str_startswith (p, "//")) {
+			char *dsnl = strchr (p, '\n');
+			if (r_str_startswith (p, "// goto")) {
+				memmove (p, dsnl + 1, strlen (dsnl + 1) + 1);
+				p = dsnl;
+				continue;
+			}
+			if (nl && spaces > 4) {
+				*nl = ' ';
+				if (0) {
+					char *nnl = strchr (p, '\n');
+					char *port = r_str_ndup (p, nnl - p);
+					eprintf ("MEMMO (%s)\n", port);
+					free (port);
+				}
+				memmove (nl + 1, p, strlen (p) + 1);
+				p = strchr (nl + 1, '\n');
+				if (!p) {
+					break;
+				}
+				spaces = 0;
+				nl = p;
+			}
+		} else if (*p == ' ') {
+			if (ispfx) {
+				spaces++;
+			}
+		} else {
+			ispfx = false;
+			spaces = 0;
+		}
+		p++;
+	}
+	// remove empty lines
+	s = r_str_replace (s, "\n\n", "\n", true);
+	p = s;
+	while (*p) {
+		char *nlnl = strstr (p, "  \n");
+		if (!nlnl) {
+			break;
+		}
+		char *prev = r_str_rchr (p, nlnl, '\n');
+		if (!prev) {
+			break;
+		}
+		memmove (prev + 1, nlnl + 3, strlen (nlnl + 3) + 1);
+		p = prev + 2;
+	}
+	return s;
+}
+
 #define I_TAB 2
 #define K_MARK(x) r_strf ("mark.%"PFMT64x,x)
 #define K_ELSE(x) r_strf ("else.%"PFMT64x,x)
@@ -224,7 +286,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 #define PRINTGOTO(y, x) if (x != UT64_MAX && y != x) { NEWLINE (x, indent); PRINTF (" goto loc_0x%08"PFMT64x, x); }
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
-	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+	if (R_STR_ISNOTEMPTY (cmdPdc) && !strstr (cmdPdc, "pdc")) {
 		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
 			if (!strcmp (input, "*")) {
 				input = " -r2";
@@ -343,7 +405,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		// SET_INDENT (indent);
 		// PRINTF ("\n---\n");
+		code = r_str_replace (code, "\n\n", "\n", true);
 		code = r_str_replace (code, ";", "//", true);
+		code = cleancomments (code);
 		size_t len = strlen (code);
 		code[len - 1] = 0; // chop last newline
 		find_and_change (code, len);
@@ -574,15 +638,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
-		char *s = NULL;
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", false);
 		}
-		if (show_addr) {
-			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=1", bb->addr);
-		} else {
-			s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
-		}
+		char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=%d", bb->addr, show_addr);
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", true);
 		}
@@ -594,6 +653,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
+		s = cleancomments (s);
 		if (show_addr) {
 			// indent with | or stgh
 			char *os = r_str_prefix_all (s, " ");
