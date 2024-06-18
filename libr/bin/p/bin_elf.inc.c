@@ -468,6 +468,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	r_return_val_if_fail (eo && rel, NULL);
 	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
+	ut64 G = got_addr;
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	if (!r) {
 		return NULL;
@@ -509,8 +510,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_386_GLOB_DAT: SET(32); break;
 		case R_386_JMP_SLOT: SET(32); break;
 		case R_386_RELATIVE: ADD(32, B); break;
-		case R_386_GOTOFF:   ADD(32, -(st64)got_addr); break;
-		case R_386_GOTPC:    ADD(32, got_addr - P); break;
+		case R_386_GOTOFF:   ADD(32, -(st64)G); break;
+		case R_386_GOTPC:    ADD(32, G- P); break;
 		case R_386_16:       ADD(16, 0); break;
 		case R_386_PC16:     ADD(16,-(st64)P); break;
 		case R_386_8:        ADD(8,  0); break;
@@ -529,7 +530,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_X86_64_NONE:      break; // malloc then free. meh. then again, there's no real world use for _NONE.
 		case R_X86_64_64:        ADD(64, 0); break;
 		case R_X86_64_PLT32:     ADD(32,-(st64)P /* +L */); break;
-		case R_X86_64_GOT32:     ADD(32, got_addr); break;
+		case R_X86_64_GOT32:     ADD(32, G); break;
 		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
 		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
 		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
@@ -563,9 +564,25 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_ARM_JUMP_SLOT:        ADD(32, 0); break;
 		case R_ARM_COPY:             ADD(32, 0); break; // copy symbol at runtime
 		case R_ARM_RELATIVE:         ADD(32, B); break;
-		case R_ARM_GOTOFF:           ADD(32,-(st64)got_addr); break;
-		case R_ARM_GOTPC:            ADD(32, got_addr - P); break;
-		case R_ARM_CALL:             ADD(24, -(st64)P); break;
+		case R_ARM_GOTOFF:           ADD(32,-(st64)G); break;
+		case R_ARM_GOTPC:            ADD(32, G - P); break;
+		case R_ARM_CALL:             // ADD(24, got_addr -P);
+					     r->type = R_BIN_RELOC_24;
+					     if (G == UT64_MAX) {
+						     r->addend = B-P; // 171295;
+						     eprintf( "jeje 0x%x 0x%x\n", P, got_addr);
+					     } else {
+						     eprintf( "joje 0x%x 0x%x\n", P, got_addr);
+						     r->addend = got_addr -P;
+					     }
+					     // r->addend = 0x08004dad;
+					     r->addend = 0x00004dad;
+					     // rel->laddr += 685182;
+					     rel->addend = r->addend + rel->laddr;
+					     // rel->addend = 685182 /4; // 171295
+					     r->additive = DT_RELA;
+					     return r;
+					     break;
 		case R_ARM_JUMP24:           ADD(24, -(st64)P); break;
 		case R_ARM_THM_JUMP24:       ADD(24, -(st64)P); break;
 		case R_ARM_PREL31:           ADD(32, -(st64)P); break;
@@ -729,7 +746,13 @@ static RList* relocs(RBinFile *bf) {
 	if (got_addr == UT64_MAX && eo->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(get_section_addr) (eo, ".got.r2");
 	}
-
+#if 0
+	if (got_addr == UT64_MAX) {
+		// XXX
+		got_addr = Elf_(get_section_addr) (eo, ".debug_info");
+		// got_addr = 0x08001e60;
+	}
+#endif
 	const RVector *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return ret;
@@ -744,9 +767,9 @@ static RList* relocs(RBinFile *bf) {
 	r_vector_foreach (relocs, reloc) {
 		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
 		if (already_inserted) {
+			R_LOG_DEBUG ("Reloc already inserted at 0x%08"PFMT64x, reloc->rva);
 			continue;
 		}
-
 		RBinReloc *ptr = reloc_convert (eo, reloc, got_addr);
 		if (ptr && ptr->paddr != UT64_MAX) {
 			r_list_append (ret, ptr);
@@ -778,22 +801,53 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_S390:
 		switch (rel->type) {
 		case R_390_GLOB_DAT: // globals
-			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
-			break;
-		case R_390_RELATIVE:
+		case R_390_RELATIVE: // pic
 			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
 		}
 		break;
 	case EM_ARM:
-		if (!rel->sym && rel->mode == DT_REL) {
+		if (rel->type == R_ARM_CALL) {
+			eprintf ("one\n");
+			// read original bytes of the "bl" instruction
 			iob->read_at (iob->io, rel->rva, buf, 4);
-			V = r_read_ble32 (buf, bo->endian);
+			V = r_read_le32 (buf);
+
+			int delta = A;
+//			if (rel->rva == 0x08001ec8) {
+			eprintf ("DELTA = %llx\n",A);
+//			}
+			delta &= 0xfffff;
+#if 0
+			if (rel->rva == 0x08001ec8) {
+			eprintf ("RAW DELTA 0x%llx -> %llx\n", P, delta);
+				eprintf ("V 0x%llx + %d\n", P , delta);
+			}
+			// delta = 685182 / 4;
+			#endif
+#if 1
+			V+=delta;
+			V &= 0xffffff;
+			V |= (0xeb << 24);
+#endif
+			// 	eprintf ("DELTA  %x %x %x = %d\n", B ,P, L, delta);
+				// V += (1 << 24); // (rel->rva - (S/2) / 4);
+				r_write_le32 (buf, V);
+			if (rel->rva == 0x08001ec8) {
+				eprintf ("delta = %d\n", delta);
+			}
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+			// ignored
 		} else {
-			V = S + A;
+			if (!rel->sym && rel->mode == DT_REL) {
+				iob->read_at (iob->io, rel->rva, buf, 4);
+				V = r_read_ble32 (buf, bo->endian);
+			} else {
+				V = S + A;
+			}
+			r_write_le32 (buf, V);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 		}
-		r_write_le32 (buf, V);
-		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 		break;
 	case EM_AARCH64:
 		V = S + A;
@@ -946,7 +1000,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			V = B + A;
 			break;
 		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			R_LOG_WARN ("relocation %d not handle at this time", rel->type);
 			break;
 		}
 		switch (word) {
