@@ -238,15 +238,15 @@ static RCoreHelpMessage help_msg_aar = {
 
 static RCoreHelpMessage help_msg_ab = {
 	"Usage:", "ab", "# analyze basic block",
-	"ab", " [addr]", "show basic block information at given address",
+	"ab", " [addr]", "show basic block information at given address (same as abi/afbi)",
 	"ab-", "[addr]", "delete basic block at given address",
 	"ab.", "", "same as: ab $$",
+	"abi", "[?]", "alias for afbi",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
 	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
-	"abi", "", "same as ab. or ab",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
@@ -14828,45 +14828,144 @@ static int cmd_apt(RCore *core, const char *input) {
 	return 0;
 }
 
+static void cmd_ab(RCore *core, const char *input) {
+	ut64 addr = core->offset;
+	if (*input && input[1] == '?') {
+		char cmd[5] = "ab#";
+		cmd[2] = input[0];
+		r_core_cmd_help_match (core, help_msg_ab, cmd);
+		return;
+	}
+	switch (*input) {
+	case '.': // "ab."
+		r_core_cmd_call (core, "ab $$");
+		break;
+	case 'a': // "aba"
+		r_core_cmdf (core, "aeab%s", input);
+		break;
+	case 'b': // "abb"
+		core_anal_bbs (core, input + 1);
+		break;
+	case 'c': // "abc"
+		cmd_afbc (core, r_str_trim_head_ro (input + 1));
+		break;
+	case 'o': // "abo"
+		abo (core);
+		break;
+	case 'i': // "abi"
+		r_core_cmdf (core, "afb%s", input);
+		break;
+	case 'e': // "abe"
+		{
+			const char *arg = r_str_trim_head_ro (input + 1);
+			if (*arg == '?') {
+				r_core_cmd_help_match (core, help_msg_ab, "abe");
+			} else {
+				RListIter *iter;
+				RAnalBlock *bb;
+				RList *blocks = r_anal_get_blocks_in (core->anal, core->offset);
+				r_list_foreach (blocks, iter, bb) {
+					if (arg && *arg) {
+						free (bb->esil);
+						bb->esil = strdup (arg);
+					} else {
+						if (bb->esil) {
+							r_cons_printf ("%s\n", bb->esil);
+						}
+					}
+				}
+			}
+		}
+		// OLD not confuse with aeb: r_core_cmdf (core, "aeb%s", input + 2);
+		break;
+	case 'f': // "abf"
+		core_anal_abf (core, input + 1);
+		break;
+	case 'r': // "abr"
+		core_anal_bbs_range (core, input + 1);
+		break;
+	case 't': // "abt"
+		cmd_anal_abt (core, input + 1);
+		break;
+	case ',': // "ab,"
+	case 'p': // "abp"
+		cmd_anal_abp (core, input + 1);
+		break;
+	case 'l': // "abl"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_abl);
+		} else {
+			anal_bb_list (core, input + 1);
+		}
+		break;
+	case 'j': // "abj"
+		if (input[1] && input[1] != '.') {
+			addr = r_num_math (core->num, input + 2);
+		}
+		r_core_cmd_call_at (core, addr, "afbij");
+		break;
+	case '-': // "ab-"
+		  if (input[1] == '*') {
+			  r_anal_block_reset (core->anal);
+		  } else {
+			  ut64 addr = core->offset;
+			  if (input[1] == ' ') {
+				  addr = r_num_math (core->num, input);
+			  }
+			  r_anal_delete_block_at (core->anal, addr);
+		  }
+		  break;
+	case 0:
+	case ' ': // "ab "
+		if (input[0] && input[0] != '.') {
+			addr = r_num_math (core->num, input);
+		}
+		r_core_cmd_call_at (core, addr, "afbi");
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_ab);
+		break;
+	}
+}
+
+static void cmd_ap(RCore *core, const char *input) {
+	RListIter *iter;
+	RSearchKeyword *k;
+	RList *list;
+	switch (input[1]) {
+	case 'l': // "apl"
+		// list function preludes
+		list = r_anal_preludes (core->anal);
+		r_list_foreach (list, iter, k) {
+			char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
+			char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
+			// XXX must add an align field
+			r_cons_printf ("ap+ %s %s\n", hex0, hex1);
+			free (hex0);
+			free (hex1);
+		}
+		break;
+	case 't': // "apt"
+		cmd_apt (core, input + 2);
+		break;
+	case ' ':
+	case 0:
+		match_prelude (core, r_str_trim_head_ro (input));
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_ap);
+		break;
+	}
+}
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 'p': // "ap"
-		switch (input[1]) {
-		case '?':
-			r_core_cmd_help (core, help_msg_ap);
-			break;
-		case 'l': // "apl"
-			// list function preludes
-			{
-				RSearchKeyword *k;
-				RListIter *iter;
-				RList *list = r_anal_preludes (core->anal);
-				r_list_foreach (list, iter, k) {
-					char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
-					char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
-					// XXX must add an align field
-					r_cons_printf ("ap+ %s %s\n", hex0, hex1);
-					free (hex0);
-					free (hex1);
-				}
-			}
-			break;
-		case 't': // "apt"
-			cmd_apt (core, input + 2);
-			break;
-		case ' ':
-		case 0:
-			match_prelude (core, r_str_trim_head_ro (input));
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_ap);
-			break;
-		}
+		cmd_ap (core, input);
 		break;
-	case '8':  // "a8"
+	case '8': // "a8"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_a8);
 			break;
@@ -14881,99 +14980,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "ab"
-		switch (input[1]) {
-		case '.': // "ab."
-			r_core_cmd_call (core, "ab $$");
-			break;
-		case 'a': // "aba"
-			r_core_cmdf (core, "aeab%s", input + 1);
-			break;
-		case 'b': // "abb"
-			core_anal_bbs (core, input + 2);
-			break;
-		case 'c': // "abc"
-			cmd_afbc (core, r_str_trim_head_ro (input + 2));
-			break;
-		case 'o': // "abo"
-			abo (core);
-			break;
-		case 'e': // "abe"
-			{
-				const char *arg = r_str_trim_head_ro (input + 2);
-				if (*arg == '?') {
-					r_core_cmd_help_match (core, help_msg_ab, "abe");
-				} else {
-					RListIter *iter;
-					RAnalBlock *bb;
-					RList *blocks = r_anal_get_blocks_in (core->anal, core->offset);
-					r_list_foreach (blocks, iter, bb) {
-						if (arg && *arg) {
-							free (bb->esil);
-							bb->esil = strdup (arg);
-						} else {
-							if (bb->esil) {
-								r_cons_printf ("%s\n", bb->esil);
-							}
-						}
-					}
-				}
-			}
-			// OLD not confuse with aeb: r_core_cmdf (core, "aeb%s", input + 2);
-			break;
-		case 'f': // "abf"
-			core_anal_abf (core, input + 2);
-			break;
-		case 'r': // "abr"
-			core_anal_bbs_range (core, input + 2);
-			break;
-		case 't': // "abt"
-			cmd_anal_abt (core, input + 2);
-			break;
-		case ',': // "ab,"
-		case 'p': // "abp"
-			cmd_anal_abp (core, input + 2);
-			break;
-		case 'l': // "abl"
-			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_abl);
-			} else {
-				anal_bb_list (core, input + 2);
-			}
-			break;
-		case 'j': { // "abj"
-			ut64 addr = core->offset;
-			if (input[2] && input[2] != '.') {
-				addr = r_num_math (core->num, input + 2);
-			}
-			r_core_cmd_call_at (core, addr, "afbij");
-			break;
-		}
-		case '-': // "ab-"
-			  if (input[2] == '*') {
-				  r_anal_block_reset (core->anal);
-			  } else {
-				  ut64 addr = core->offset;
-				  if (input[2] == ' ') {
-					  addr = r_num_math (core->num, input + 1);
-				  }
-				  r_anal_delete_block_at (core->anal, addr);
-			  }
-			  break;
-		case 0:
-		case ' ': // "ab "
-			{
-				// find block
-				ut64 addr = core->offset;
-				if (input[1] && input[1] != '.') {
-					addr = r_num_math (core->num, input + 1);
-				}
-				r_core_cmd_call_at (core, addr, "afbi");
-			}
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_ab);
-			break;
-		}
+		cmd_ab (core, input + 1);
 		break;
 	case 'c': // "ac"
 		cmd_anal_classes (core, input + 1);
