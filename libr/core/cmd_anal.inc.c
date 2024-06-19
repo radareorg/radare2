@@ -14989,6 +14989,7 @@ static void cmd_ap(RCore *core, const char *input) {
 			free (hex0);
 			free (hex1);
 		}
+		r_list_free (list);
 		break;
 	case 't': // "apt"
 		cmd_apt (core, input + 2);
@@ -15002,6 +15003,7 @@ static void cmd_ap(RCore *core, const char *input) {
 		break;
 	}
 }
+
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
