@@ -2885,9 +2885,9 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	return 0;
 }
 
-static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
+static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
-		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
+		r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 	} else {
 		const bool use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 		char *name = r_core_anal_fcn_name (core, fcn);
@@ -2911,10 +2911,7 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		__fcn_print_default (core, fcn, quiet);
-		if (quiet) {
-			r_cons_newline ();
-		}
+		fcn_print (core, fcn, quiet);
 	}
 	return 0;
 }
