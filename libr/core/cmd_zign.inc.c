@@ -279,7 +279,7 @@ static int cmdAdd(void *data, const char *input) {
 			R_LOG_INFO ("generated zignatures: %d", count);
 		}
 		break;
-	case '?':
+	case '?': // “za?”
 		r_core_cmd_help (core, help_msg_za);
 		break;
 	default:
@@ -294,25 +294,25 @@ static int cmdOpen(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
 	switch (*input) {
-	case ' ':
+	case ' ': // "zo"
 		if (input[1]) {
 			return r_sign_load (core->anal, r_str_trim_head_ro (input + 1), false);
 		}
 		r_core_cmd_help_contains (core, help_msg_zo, "zo");
 		return false;
-	case 's':
+	case 's': // "zos"
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_save (core->anal, r_str_trim_head_ro (input + 2));
 		}
 		r_core_cmd_help_contains (core, help_msg_zo, "zos");
 		return false;
-	case 'z':
+	case 'z': // "zoz"
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_load_gz (core->anal, input + 2, false);
 		}
 		r_core_cmd_help_contains (core, help_msg_zo, "zoz");
 		return false;
-	case '?':
+	case '?': // "zo?"
 		r_core_cmd_help (core, help_msg_zo);
 		break;
 	default:
@@ -327,7 +327,7 @@ static int cmdSpace(void *data, const char *input) {
 	RSpaces *zs = &core->anal->zign_spaces;
 
 	switch (*input) {
-	case '+':
+	case '+': // "zs+"
 		if (!input[1]) {
 			r_core_cmd_help_contains (core, help_msg_zs, "zs+");
 			return false;
@@ -338,14 +338,14 @@ static int cmdSpace(void *data, const char *input) {
 			free (sp);
 		}
 		break;
-	case 'r':
+	case 'r': // "zsr"
 		if (input[1] != ' ' || !input[2]) {
 			r_core_cmd_help_contains (core, help_msg_zs, "zsr");
 			return false;
 		}
 		r_spaces_rename (zs, NULL, input + 2);
 		break;
-	case '-':
+	case '-': // "zs-"
 		if (input[1] == '\x00') {
 			r_spaces_pop (zs);
 		} else if (input[1] == '*') {
@@ -354,19 +354,19 @@ static int cmdSpace(void *data, const char *input) {
 			r_spaces_unset (zs, input + 1);
 		}
 		break;
-	case 'j':
-	case '*':
+	case 'j': // "zsj"
+	case '*': // "zs*"
 	case '\0':
 		spaces_list (zs, input[0]);
 		break;
-	case ' ':
+	case ' ': // "zs"
 		if (!input[1]) {
 			r_core_cmd_help (core, help_msg_zs);
 			return false;
 		}
 		r_spaces_set (zs, input + 1);
 		break;
-	case '?':
+	case '?': // "zs?"
 		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
@@ -381,7 +381,7 @@ static int cmdFlirt(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
 	switch (*input) {
-	case 'd':
+	case 'd': // "zfd"
 		// TODO
 		if (input[1] != ' ') {
 			r_core_cmd_help_contains (core, help_msg_zf, "zfd");
@@ -389,7 +389,7 @@ static int cmdFlirt(void *data, const char *input) {
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
 		break;
-	case 's':
+	case 's': // "zfs"
 		// TODO
 		if (input[1] != ' ') {
 			r_core_cmd_help_contains (core, help_msg_zf, "zfs");
@@ -404,10 +404,10 @@ static int cmdFlirt(void *data, const char *input) {
 		}
 		r_list_free (files);
 		break;
-	case 'z':
+	case 'z': // "zfz"
 		// TODO
 		break;
-	case '?':
+	case '?': // "zf?"
 		r_core_cmd_help (core, help_msg_zf);
 		break;
 	default:
@@ -928,22 +928,22 @@ static bool bestmatch(void *data, const char *input) {
 	bool json = false;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
-	case 'r':
+	case 'r': // "zbr"
 		input++;
 		if (*input == 'j') {
 			input++;
 			json = true;
 		}
 		return bestmatch_fcn (core, input, json);
-	case 'j':
+	case 'j': // "zbj"
 		json = true;
 		/* fallthrough */
-	case ' ':
+	case ' ': // "zb"
 		input++;
 		/* fallthrough */
 	case '\x00':
 		return bestmatch_sig (core, input, json);
-	case '?':
+	case '?': // "zb?"
 	default:
 		r_core_cmd_help (core, help_msg_zb);
 		return false;
@@ -1141,7 +1141,7 @@ static int cmdCompare(void *data, const char *input) {
 	RSignOptions *options = r_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
 
 	switch (*input) {
-	case ' ':
+	case ' ': // "zc"
 		if (!input[1]) {
 			r_core_cmd_help (core, help_msg_zc);
 			result = false;
@@ -1151,7 +1151,7 @@ static int cmdCompare(void *data, const char *input) {
 		break;
 	case 'n':
 		switch (input[1]) {
-		case ' ':
+		case ' ': // "zcn"
 			if (!input[2]) {
 				r_core_cmd_help_contains (core, help_msg_zc, "zcn");
 				result = false;
@@ -1159,7 +1159,7 @@ static int cmdCompare(void *data, const char *input) {
 			}
 			result = r_sign_diff_by_name (core->anal, options, input + 2, false);
 			break;
-		case '!':
+		case '!': // "zcn!"
 			if (input[2] != ' ' || !input[3]) {
 				r_core_cmd_help_contains (core, help_msg_zc, "zcn");
 				result = false;
@@ -1172,7 +1172,7 @@ static int cmdCompare(void *data, const char *input) {
 			result = false;
 		}
 		break;
-	case '?':
+	case '?': // "zc?"
 		r_core_cmd_help (core, help_msg_zc);
 		break;
 	default:
@@ -1247,7 +1247,7 @@ static int cmdSearch(void *data, const char *input) {
 			r_core_cmd_help_contains (core, help_msg_z_slash, "z/f");
 			return false;
 		}
-	case '?':
+	case '?': // "z/?"
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
@@ -1319,7 +1319,7 @@ static int cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
-	case ' ':
+	case ' ': // "z"
 	case '*': // "z*"
 	case 'q': // "zq"
 	case 'j': // "zj"
@@ -1337,7 +1337,7 @@ static int cmd_zign(void *data, const char *input) {
 			core->offset = oaddr;
 		}
 		break;
-	case ',':
+	case ',': // "z,"
 		return csvZignatures (core, arg);
 	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
