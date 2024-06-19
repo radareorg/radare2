@@ -2191,7 +2191,9 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 			} else {
 				RAnalOp op;
 				prev_roff = 0;
+				r_asm_op_init (&op);
 				r_core_seek (core, prev_addr, true);
+				r_asm_set_pc (core->rasm, prev_addr);
 				prev_sz = r_asm_disassemble (core->rasm, &op,
 					core->block, 32);
 				r_asm_op_fini (&op);
@@ -2206,7 +2208,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 				p->cur--;
 			}
 		} else {
-			p->cur = prev_roff + delta; //res;
+			p->cur = prev_roff + delta; // res;
 		}
 	} else {
 		p->cur -= p->cols;
@@ -3551,7 +3553,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
 							cols = r_config_get_i (core->config, "hex.cols");
 						}
-						r_core_seek_delta (core, -cols);
+						if (cols != 0) {
+							r_core_seek_delta (core, -cols);
+						}
 					}
 				}
 			}
@@ -4618,29 +4622,69 @@ static void visual_refresh_oneshot(RCore *core) {
 	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) visual_refresh, core);
 }
 
+#if R2_USE_NEW_ABI
+static int varcount(RCore *core, RAnalFunction *f) {
+	RAnalFcnVarsCache vars_cache;
+	if (!f) {
+		f = r_anal_get_function_at (core->anal, core->offset);
+		if (!f) {
+			return 0;
+		}
+	}
+	r_anal_function_vars_cache_init (core->anal, &vars_cache, f);
+	int len = r_list_length (vars_cache.rvars);
+	len += r_list_length (vars_cache.bvars);
+	len += r_list_length (vars_cache.svars);
+	return len;
+}
+#endif
+
 R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (f && f->folded) {
-		*cols = core->offset - f->addr; // + f->size;
+		*cols = core->offset - f->addr;
 		if (*cols < 1) {
 			*cols = 4;
 		}
 	} else {
+#if R2_USE_NEW_ABI
+		if (f && core->offset == f->addr) {
+			if (core->skiplines > 0) {
+				core->skiplines--;
+				*cols = 0;
+			} else {
+				int delta = r_core_visual_prevopsz (core, core->offset);
+				*cols = delta;
+			}
+			return;
+		}
+		int delta = r_core_visual_prevopsz (core, core->offset);
+		if (f && core->offset - delta == f->addr) {
+			core->skiplines = varcount (core, f);
+			*cols = delta;
+			if (core->skiplines > 0) {
+				core->skiplines--;
+			}
+		} else {
+			*cols = delta;
+			// *cols = 0;
+		}
+#else
 		*cols = r_core_visual_prevopsz (core, core->offset);
+#endif
 	}
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = r_config_get_i (core->config, "asm.bbmiddle");
-	RAnalFunction *f = NULL;
-	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	ut64 orig = core->offset;
 	op->size = 1;
 	if (f && f->folded) {
 		*cols = core->offset - r_anal_function_max_addr (f);
 	} else {
 		r_asm_set_pc (core->rasm, core->offset);
-
 		int maxopsize = r_anal_archinfo (core->anal,
 			R_ARCH_INFO_MAXOP_SIZE);
 		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
@@ -4649,7 +4693,6 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 			R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)bufsize);
 			return;
 		};
-		ut64 orig = core->offset;
 		size_t bufpos = 0;
 		size_t cpysize = 0;
 		while (bufpos < bufsize) {
@@ -4681,9 +4724,24 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 			}
 		}
 	}
+#if R2_USE_NEW_ABI
+	if (f && f->addr == orig) {
+		// skip line by line here
+		if (varcount (core, f) <= core->skiplines) {
+			*cols = op->size > 1 ? op->size : 1;
+			core->skiplines = 0;
+		} else {
+			core->skiplines ++;
+			*cols = 0;
+		}
+	} else if (*cols < 1) {
+		*cols = op->size > 1 ? op->size : 1;
+	}
+#else
 	if (*cols < 1) {
 		*cols = op->size > 1 ? op->size : 1;
 	}
+#endif
 }
 
 #ifdef R2__WINDOWS__
