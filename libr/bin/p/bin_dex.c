@@ -1474,7 +1474,11 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		goto beach;
 	}
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
+#if R2_USE_NEW_ABI
+	RVecRBinClass_push_back (&bf->bo->classes, cls);
+#else
 	r_list_append (dex->classes_list, cls);
+#endif
 	if (dex->dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls_name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
@@ -1618,6 +1622,9 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (!dex->lines_list) {
 		return false;
 	}
+#if R2_USE_NEW_ABI
+	RVecRBinClass_init (&bf->bo->classes);
+#else
 	dex->classes_list = r_list_newf ((RListFree)r_bin_class_free);
 	if (!dex->classes_list) {
 		r_list_free (dex->methods_list);
@@ -1625,7 +1632,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		r_list_free (dex->imports_list);
 		return false;
 	}
-
+#endif
 	if (dex->header.method_size > dex->size) {
 		dex->header.method_size = 0;
 		return false;
@@ -1770,12 +1777,19 @@ static RList *methods(RBinFile *bf) {
 }
 
 static RList *classes(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	if (!bin->classes_list) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+#if R2_USE_NEW_ABI
+	if (RVecRBinClass_length (&bf->bo->classes) == 0) {
 		dex_loadcode (bf);
 	}
-	return bin->classes_list;
+	return NULL;
+#else
+	RBinDexObj *dex = (RBinDexObj*) bf->bo->bin_obj;
+	if (!dex->classes_list) {
+		dex_loadcode (bf);
+	}
+	return dex->classes_list;
+#endif
 }
 
 static bool already_entry(RList *entries, ut64 vaddr) {

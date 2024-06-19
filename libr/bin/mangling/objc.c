@@ -4,16 +4,24 @@
 #include "../i/private.h"
 
 R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
+#if R2_USE_NEW_ABI
+	r_return_val_if_fail ((!bf || (bf && bf->bo)) && sym, NULL);
+#else
 	r_return_val_if_fail ((!bf || (bf && bf->bo && bf->bo->classes)) && sym, NULL);
+#endif
 	char *clas = NULL;
 	char *name = NULL;
 	char *args = NULL;
 	int i, nargs = 0;
 	const char *type = NULL;
 
+#if R2_USE_NEW_ABI
+	// no need to check
+#else
 	if (bf && bf->bo && bf->bo->classes) {
 		bf = NULL;
 	}
+#endif
 	/* classes */
 	if (r_str_startswith (sym, "_OBJC_")) {
 		const char *sym2 = sym + strlen ("_OBJC_");
