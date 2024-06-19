@@ -1202,7 +1202,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Commited", -1);
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
@@ -1256,7 +1256,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
 	RTable *tbl = __new_heapblock_tbl ();
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		bool go = true;
@@ -1356,7 +1356,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			if (!type) {
 				type = "";
 			}
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			RTable *tbl = __new_heapblock_tbl ();
 			ut64 headerAddr = off - granularity;
 			switch (input[0]) {

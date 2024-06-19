@@ -1384,7 +1384,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 	if (bsize < 0) {
 		bsize = -bsize;
 	}
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
 		return;
 	}
@@ -1404,7 +1404,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 
 static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	int nblines = r_num_math (core->num, arg);
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
 		return;
 	}
@@ -3574,11 +3574,11 @@ restore_conf:
 	}
 }
 
-static void algolist(int mode) {
+static void algolist(RCore *core, int mode) {
 	int i;
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	for (i = 0; i < R_HASH_NBITS; i++) {
@@ -3615,15 +3615,15 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		return true;
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
-		algolist (1);
+		algolist (core, 1);
 		return true;
 	}
 	if (i0 == 'j') {
-		algolist ('j');
+		algolist (core, 'j');
 		return true;
 	}
 	if (i0 == '=') {
-		algolist (0);
+		algolist (core, 0);
 		return true;
 	}
 	if (i0 == ':') {
@@ -4082,7 +4082,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 #endif
 		goto cleanup;
 	case 'j': // "p-j"
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			goto cleanup;
 		}
@@ -4730,7 +4730,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int i;
 		switch (submode) {
 		case 'j': {
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			if (!pj) {
 				return;
 			}
@@ -5136,7 +5136,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	ut8 buf[128];
 	PJ *pj = NULL;
 	if (type_print == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -5197,7 +5197,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	}
 	r_list_sort (f->bbs, (RListComparator) bbcmp);
 	if (input == 'j' && b) { // "pdrj"
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -5432,7 +5432,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		r_table_add_column (t, s, "refs", 0);
 	}
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -5674,7 +5674,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			// check for bounds
 			if (input[3] != 0) {
 				if (input[3] == 'j') { // "pifcj"
-					pj = pj_new ();
+					pj = r_core_pj_new (core);
 					pj_a (pj);
 				}
 			}
@@ -6730,7 +6730,7 @@ static int cmd_print(void *data, const char *input) {
 					ut32 fcn_size = r_anal_function_realsize (f);
 					const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 					r_config_set_i (core->config, "asm.bbmiddle", false);
-					pj = pj_new ();
+					pj = r_core_pj_new (core);
 					if (!pj) {
 						break;
 					}
@@ -6979,7 +6979,7 @@ static int cmd_print(void *data, const char *input) {
 				char *s = print_analstr (core, core->offset, 128);
 				if (s) {
 					if (input[2] == 'j') {
-						PJ *pj = pj_new ();
+						PJ *pj = r_core_pj_new (core);
 						pj_o (pj);
 						pj_kn (pj, "addr", core->offset);
 						pj_ks (pj, "text", s);

@@ -112,7 +112,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	RList *list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			break;
 		}

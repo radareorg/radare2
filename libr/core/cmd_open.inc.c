@@ -477,7 +477,7 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 	r_return_if_fail (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -951,7 +951,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		map = r_io_map_get_at (core->io, core->offset);
 		if (map) {
 			if (input[2] == 'j') { // "om.j"
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
 				if (!pj) {
 					return;
 				}
@@ -2159,7 +2159,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_o, "oj");
 			break;
 		}
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		pj_a (pj);
 		r_id_storage_foreach (core->io->files, desc_list_json_cb, pj);
 		pj_end (pj);

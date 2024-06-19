@@ -1156,7 +1156,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case 'j': // "?Vj"
 			{
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				pj_o (pj);
 				pj_ks (pj, "arch", R_SYS_ARCH);
 				pj_ks (pj, "os", R_SYS_OS);

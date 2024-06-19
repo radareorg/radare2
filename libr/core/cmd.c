@@ -2431,7 +2431,7 @@ static int cmd_kuery(void *data, const char *input) {
 			r_cons_println ("No Output from sdb");
 			break;
 		}
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
   			free (out);
   			break;
@@ -2683,7 +2683,7 @@ static int cmd_bsize(void *data, const char *input) {
 		}
 		break;
 	case 'j': { // "bj"
-		PJ * pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
 			break;
 		}
@@ -2847,7 +2847,7 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		return true;
 	case 'j': { // "rj"
-			PJ * pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			if (oldsize != -1) {
 				pj_kn (pj, "size", oldsize);
@@ -3352,7 +3352,7 @@ static int cmd_json(void *data, const char *input) {
 	if (j) {
 		j_cmd = r_json_get (j, "cmd");
 	}
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	pj_o (pj);
 	if (j_cmd) {
 		const RJson *j_json = r_json_get (j, "json");

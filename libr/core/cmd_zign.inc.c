@@ -357,7 +357,7 @@ static int cmdSpace(void *data, const char *input) {
 	case 'j': // "zsj"
 	case '*': // "zs*"
 	case '\0':
-		spaces_list (zs, input[0]);
+		spaces_list (core, zs, input[0]);
 		break;
 	case ' ': // "zs"
 		if (!input[1]) {

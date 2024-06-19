@@ -2103,8 +2103,8 @@ static void ds_show_functions(RDisasmState *ds) {
 			RAnalVar *var;
 			RListIter *iter;
 
-			int skipped = 0;
 #if R2_USE_NEW_ABI
+			int skipped = 0;
 			if (f->addr == core->offset) {
 				skipped = core->skiplines;
 			}

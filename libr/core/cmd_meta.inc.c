@@ -1466,13 +1466,13 @@ static int cmd_meta(void *data, const char *input) {
 		case 'j': // "CSj"
 		case '\0': // "CS"
 		case '*': // "CS*"
-			spaces_list (ms, input[1]);
+			spaces_list (core, ms, input[1]);
 			break;
 		case ' ': // "CS "
 			r_spaces_set (ms, input + 2);
 			break;
 		default:
-			spaces_list (ms, 0);
+			spaces_list (core, ms, 0);
 			break;
 		}
 		break;

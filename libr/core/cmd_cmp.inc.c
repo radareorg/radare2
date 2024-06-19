@@ -392,7 +392,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		return 0;
 	}
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return -1;
 		}

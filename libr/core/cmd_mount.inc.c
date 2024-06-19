@@ -435,7 +435,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	RList *list = r_fs_dir (core->fs, input);
 	PJ *pj = NULL;
 	if (isJSON) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	if (list) {

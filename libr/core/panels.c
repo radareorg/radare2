@@ -6372,7 +6372,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 	}
 	char *config_path = __create_panels_config_path (name);
 	RPanels *panels = core->panels;
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		pj_o (pj);

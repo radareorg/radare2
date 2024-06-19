@@ -447,7 +447,7 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		} else if (!strcmp (input + 1, "vj")) {
 			char **e = r_sys_get_environ ();
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			if (e != NULL) {
 				while (*e) {

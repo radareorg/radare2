@@ -2959,7 +2959,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		return;
 	}
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_o (pj);
 		pj_ka (pj, "blocks");
 	} else if (mode == ',' || mode == 't') {
@@ -3752,7 +3752,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 	}
 
 	if (json) {
-		PJ *j = pj_new ();
+		PJ *j = r_core_pj_new (core);
 		if (!j) {
 			return;
 		}
@@ -6278,7 +6278,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		if (rs) {
 			RRegItem *r;
 			RListIter *iter;
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
 			r_list_foreach (rs->regs, iter, r) {
 				if (use_json) {
@@ -6306,7 +6306,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'A': // "arA"
 		if (str[1] == 'j') { // "arAj"
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			int nargs = 4;
 			RReg *reg = core->anal->reg;
@@ -7092,7 +7092,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 		break;
 	case 'a': // "aia"
 		if (input[1] == 'j') { // "aiaj"
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 			pj_ki (pj, "minopsz", v);
@@ -7624,7 +7624,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length, const char *es
 	} else if ((mode >> 3) & 1) {
 		showregs (regnow);
 	} else if ((mode >> 4) & 1) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return false;
 		}
@@ -9898,7 +9898,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "asj"
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 		list = r_syscall_list (core->anal->syscall);
 		r_list_foreach (list, iter, si) {
@@ -10281,7 +10281,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (input[1] == '*') {
 				anal_axg (core, input + 2, 0, db, R_CORE_ANAL_GRAPHBODY, NULL); // r2 commands
 			} else if (input[1] == 'j') {
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				anal_axg (core, input + 2, 0, db, R_CORE_ANAL_JSON, pj);
 				const char *pjs = pj_string (pj);
 				r_cons_printf ("%s\n", *pjs? pjs: "{}");

@@ -594,7 +594,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				r_list_free (list);
 			}
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
 			for (i = 0; i < lsz; i++) {
 				ut64 *addr = r_list_get_n (addrs, i);

@@ -327,13 +327,13 @@ static void __flag_graph(RCore *core, const char *input, int mode) {
 	r_list_free (flags);
 }
 
-static void spaces_list(RSpaces *sp, int mode) {
+static void spaces_list(RCore *core, RSpaces *sp, int mode) {
 	RSpaceIter *it;
 	RSpace *s;
 	const RSpace *cur = r_spaces_current (sp);
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	r_spaces_foreach (sp, it, s) {
@@ -570,7 +570,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 	if (mode == 'j') { // "ftj"
 		RListIter *iter, *iter2;
 		const char *tag, *flg;
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		pj_o (pj);
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
@@ -715,13 +715,13 @@ static void print_space_stack(RFlag *f, int ordinal, const char *name, bool sele
 	}
 }
 
-static int flag_space_stack_list(RFlag *f, int mode) {
+static int flag_space_stack_list(RCore *core, RFlag *f, int mode) {
 	RListIter *iter;
 	char *space;
 	int i = 0;
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	r_list_foreach (f->spaces.spacestack, iter, space) {
@@ -776,12 +776,13 @@ static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 	}
 }
 
-static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
-	r_return_if_fail (anal || fcn);
+static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
+	r_return_if_fail (core || fcn);
+	RAnal *anal = core->anal;
 	PJ *pj = NULL;
 	bool json = rad == 'j';
 	if (json) {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 	}
 	if (fcn) {
 		print_function_labels_for (fcn, rad, pj);
@@ -1119,11 +1120,11 @@ rep:
 				r_core_cmd_help_contains (core, help_msg_f, "f.");
 			} else if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					print_function_labels (core->anal, NULL, input[1]);
+					print_function_labels (core, NULL, input[1]);
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
-						print_function_labels (core->anal, fcn, input[1]);
+						print_function_labels (core, fcn, input[1]);
 					} else {
 						R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, off);
 					}
@@ -1153,7 +1154,7 @@ rep:
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				print_function_labels (core->anal, fcn, 0);
+				print_function_labels (core, fcn, 0);
 			} else {
 				R_LOG_ERROR ("Local flags require a function to work");
 			}
@@ -1261,7 +1262,7 @@ rep:
 			}
 			break;
 		case 's': // "fss"
-			flag_space_stack_list (core->flags, input[2]);
+			flag_space_stack_list (core, core->flags, input[2]);
 			break;
 		case '-': // "fs-"
 			switch (input[2]) {
@@ -1309,10 +1310,10 @@ rep:
 		case '\0':
 		case '*':
 		case 'q':
-			spaces_list (&core->flags->spaces, input[1]);
+			spaces_list (core, &core->flags->spaces, input[1]);
 			break;
 		default:
-			spaces_list (&core->flags->spaces, 0);
+			spaces_list (core, &core->flags->spaces, 0);
 			break;
 		}
 		break;
@@ -1532,7 +1533,7 @@ rep:
 			const RList *list = r_flag_get_list (core->flags, core->offset);
 			PJ *pj = NULL;
 			if (mode == 'j') {
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
 				pj_a (pj);
 			}
 			RListIter *iter;
@@ -1683,7 +1684,7 @@ rep:
 				}
 				flaglist = r_flag_get_list (core->flags, addr);
 				isJson = strchr (input, 'j');
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				if (isJson) {
 					pj_a (pj);
 				}
@@ -1776,7 +1777,7 @@ rep:
 				if (f->offset != addr) {
 					// if input contains 'j' print json
 					if (strchr (input, 'j')) {
-						PJ *pj = pj_new ();
+						PJ *pj = r_core_pj_new (core);
 						pj_o (pj);
 						pj_kn (pj, "offset", f->offset);
 						pj_ks (pj, "name", f->name);
@@ -1801,7 +1802,7 @@ rep:
 					}
 				} else {
 					if (strchr (input, 'j')) {
-						PJ *pj = pj_new ();
+						PJ *pj = r_core_pj_new (core);
 						pj_o (pj);
 						pj_ks (pj, "name", f->name);
 						// Print flag's real name if defined
