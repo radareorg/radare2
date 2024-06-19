@@ -1,4 +1,6 @@
-/* radare2 - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - thelemon, kazarmy, pancake */
+
+// R2R db/cmd/cmd_iz
 
 #include <r_types.h>
 #include <r_util.h>
@@ -495,17 +497,20 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 			*ch = (ut32)ptr[0];
 		}
 		return 1;
-	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
+	}
+	if (ptrlen > 1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		}
 		return 2;
-	} else if (ptrlen>2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
+	}
+	if (ptrlen > 2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		}
 		return 3;
-	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
+	}
+	if (ptrlen > 3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		}
@@ -519,16 +524,19 @@ R_API int r_utf8_encode(ut8 *ptr, const RRune ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
-	} else if (ch < 0x800) {
+	}
+	if (ch < 0x800) {
 		ptr[0] = 0xc0 | (ch >> 6);
 		ptr[1] = 0x80 | (ch & 0x3f);
 		return 2;
-	} else if (ch < 0x10000) {
+	}
+	if (ch < 0x10000) {
 		ptr[0] = 0xe0 | (ch >> 12);
 		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
 		ptr[2] = 0x80 | (ch & 0x3f);
 		return 3;
-	} else if (ch < 0x200000) {
+	}
+	if (ch < 0x200000) {
 		ptr[0] = 0xf0 | (ch >> 18);
 		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
 		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
@@ -726,13 +734,11 @@ R_API char *r_acp_to_utf8_l(const char *str, int len) {
 
 R_API int r_utf_block_idx(RRune ch) {
 	const int last = R_UTF_BLOCKS_COUNT;
-	int low, hi, mid;
-
-	low = 0;
-	hi = last - 1;
+	int low = 0;
+	int hi = last - 1;
 
 	do {
-		mid = (low + hi) >> 1;
+		int mid = (low + hi) >> 1;
 		if (ch >= r_utf_blocks[mid].from && ch <= r_utf_blocks[mid].to) {
 			return mid;
 		}
@@ -747,11 +753,57 @@ R_API int r_utf_block_idx(RRune ch) {
 	return R_UTF_BLOCKS_COUNT - 1; /* index for "No_Block" */
 }
 
-/* str must be UTF8-encoded */
-R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
-	if (!str) {
-		return NULL;
+#if R2_USE_NEW_ABI
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
+	// list must be sizeof (int) * len + 1 at least
+	if (!str || len < 1) {
+		return 0;
 	}
+	R_RETURN_VAL_IF_FAIL (len >= 0, 0);
+	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
+	int num_blocks = 0;
+	int *list_ptr = list;
+	const ut8 *str_ptr = str;
+	const ut8 *str_end = str + len;
+	RRune ch;
+	bool eos = false;
+	while (str_ptr < str_end) {
+		int block_idx;
+		int runesize = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
+		if (runesize > 0) {
+			block_idx = r_utf_block_idx (ch);
+			if (!block_freq[block_idx]) {
+				*list_ptr++ = block_idx;
+				if (block_idx == -1) {
+					eos = true;
+				}
+				if (!eos) {
+					num_blocks++;
+				}
+			}
+			block_freq[block_idx]++;
+			str_ptr += runesize;
+		} else {
+			str_ptr++;
+		}
+	}
+	*list_ptr = -1;
+	int i;
+	if (freq_list) {
+		int *p = freq_list;
+		for (i = 0; i < num_blocks; i++) {
+			*p++ = block_freq[list[i]];
+		}
+		*p = -1;
+	}
+	return num_blocks;
+}
+#endif
+
+/* str must be UTF8-encoded */
+// R2_600 DEPRECATE THIS
+R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
+#if 1
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
@@ -797,11 +849,35 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		}
 		*freq_list_ptr = -1;
 	}
-	for (list_ptr = list; *list_ptr != -1; list_ptr++) {
-		block_freq[*list_ptr] = 0;
+#else
+	int *freq_list_ptr = NULL;
+	int *list = R_NEWS (int, len + 1);
+	if (freq_list) {
+		*freq_list = R_NEWS (int, len + 1);
+		if (!*freq_list) {
+			free (list);
+			return NULL;
+		}
+		freq_list_ptr = *freq_list;
 	}
+	int count = r_utf_block_list2 (str, len, list, freq_list_ptr);
+	if (count > 0) {
+		if (freq_list) {
+			freq_list[count] = -1;
+		}
+	}
+#if 1
+	if (count < 1) {
+		free (list);
+		free (freq_list_ptr);
+		return NULL;
+	}
+#endif
+
+#endif
 	return list;
 }
+
 
 R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
 	if (ptrlen > 3) {

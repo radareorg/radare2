@@ -365,7 +365,7 @@ izq~Alpc
 izq~Timer
 EOF
 EXPECT=<<EOF
-22884
+22885
 0x77820352 10 4 Alpc
 0x77825ffd 41 40 AlpcAdjustCompletionListConcurrencyCount
 0x77826026 30 29 AlpcFreeCompletionListMessage
