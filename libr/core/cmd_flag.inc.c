@@ -42,12 +42,14 @@ static RCoreHelpMessage help_msg_f = {
 	"fc", "[?][name] [color]", "set color for given flag",
 	"fC", " [name] [cmt]", "set comment for given flag",
 	"fd", "[?] addr", "return flag+delta",
+	"fD", " name (=addr)", "(de)mangle flag or set a new flag",
 	"fe", " [name]", "create flag name.#num# enumerated flag. (f.ex: fe foo @@= 1 2 3 4)",
 	"fe-", "", "resets the enumerator counter",
 	"ff", " ([glob])", "distance in bytes to reach the next flag (see sn/sp)",
 	"fi", " [size] | [from] [to]", "show flags in current block or range",
 	"fg", "[*] ([prefix])", "construct a graph with the flag names",
 	"fj", "", "list flags in JSON format",
+	"fq", "", "list flags in quiet mode",
 	"fl", " (@[flag]) [size]", "show or set flag length (size)",
 	"fla", " [glob]", "automatically compute the size of all flags matching glob",
 	"fm", " addr", "move flag at current offset to new address",
@@ -64,7 +66,6 @@ static RCoreHelpMessage help_msg_f = {
 	"ft", "[?]*", "flag tags, useful to find all flags matching some words",
 	"fV", "[*-] [nkey] [offset]", "dump/restore visual marks (mK/'K)",
 	"fx", "[d]", "show hexdump (or disasm) of flag:flagsize",
-	"fq", "", "list flags in quiet mode",
 	"fz", "[?][name]", "add named flag zone -name to delete. see fz?[name]",
 	NULL
 };
@@ -1586,6 +1587,53 @@ rep:
 				core->offset, core->offset + core->blocksize);
 			r_flag_list (core->flags, 'i', arg);
 			free (arg);
+		}
+		break;
+	case 'D': // "fD"
+		switch (input[1]) {
+		case ' ':
+			{
+				char *orig = r_str_trim_dup (input + 2);
+				char *nfn = r_name_filter_dup (orig);
+				r_cons_printf ("%s\n", nfn);
+				free (nfn);
+				free (orig);
+			}
+			break;
+		case '*':
+			{
+				char *orig = r_str_trim_dup (input + 2);
+				char *nfn = r_name_filter_dup (orig);
+				r_cons_printf ("f %s\n", nfn);
+				free (nfn);
+				free (orig);
+			}
+			break;
+		case '.':
+			{
+				char *orig = r_str_trim_dup (input + 2);
+				char *nfn = r_name_filter_dup (orig);
+				r_flag_set (core->flags, nfn, core->offset, 1);
+				free (nfn);
+				free (orig);
+			}
+			break;
+		case 'j':
+			{
+				char *orig = r_str_trim_dup (input + 2);
+				char *nfn = r_name_filter_dup (orig);
+				PJ *pj = r_core_pj_new (core);
+				pj_o (pj);
+				pj_ks (pj, "orig", orig);
+				pj_ks (pj, "filtered", nfn);
+				pj_end (pj);
+				free (nfn);
+				free (orig);
+			}
+			break;
+		case '?':
+			r_cons_printf ("Use: 'fD foo+bar to mangle or '@0x80'fD. foo+bar to set\n");
+			break;
 		}
 		break;
 	case 'd': // "fd"
