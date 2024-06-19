@@ -13810,7 +13810,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					r_core_task_yield (&core->tasks);
 				}
-				const bool run_aaef = r_config_get_b (core->config, "anal.emu");;
+				const bool run_aaef = r_config_get_b (core->config, "anal.emu");
 				/// if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
 				if (run_aaef) { // emulate all functions
 					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
