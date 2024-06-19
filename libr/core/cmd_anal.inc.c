@@ -4873,6 +4873,7 @@ static bool afla_leafs(void *user, const ut64 addr, const void *data) {
 	RVecAddr *va = (RVecAddr *)data;
 	if (RVecAddr_empty (va)) {
 		r_cons_printf ("0x%08"PFMT64x"\n", addr);
+		RVecAddr_push_back (rcd->list, &addr);
 		RVecAddr_push_back (rcd->togo, &addr);
 	}
 	return true;
@@ -4898,7 +4899,7 @@ repeat:
 		index++;
 	}
 	if (!hasdone) {
-		R_LOG_WARN ("Leaving an infinite loop before it's too late");
+		R_LOG_DEBUG ("Leaving an infinite loop before it's too late");
 		rcd->inloop = false;
 	}
 	return true;
@@ -4912,8 +4913,13 @@ static void cmd_afla(RCore *core, const char *input) {
 	RVecAddr *unrefed = RVecAddr_new ();
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, fcn->addr);
-		if (!xrefs) {
-			RVecAddr_push_back (unrefed, &fcn->addr);
+		if (!xrefs || RVecAnalRef_length (xrefs) == 0) {
+			const ut64 v = fcn->addr;
+			RVecAddr_push_back (unrefed, &v);
+			RVecAddr *va0 = RVecAddr_new ();
+			RVecAddr_push_back (va0, &v);
+			ht_up_insert (ht, v, va0);
+			// RVecAddr *va = ht_up_find (ht, k, NULL);
 			continue;
 		}
 		R_VEC_FOREACH (xrefs, xref) {
@@ -4943,6 +4949,7 @@ static void cmd_afla(RCore *core, const char *input) {
 	ReverseCallData rcd = {
 		.core = core,
 		.togo = RVecAddr_new (),
+		.list = RVecAddr_new (),
 		.inloop = true
 	};
 	do {
@@ -4955,6 +4962,20 @@ static void cmd_afla(RCore *core, const char *input) {
 		RVecAddr_free (rcd.togo);
 		rcd.togo = RVecAddr_new ();
 	} while (rcd.inloop);
+
+	// add missing entries here
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		bool found = false;
+		R_VEC_FOREACH (rcd.list, v) {
+			if (*v == fcn->addr) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
+		}
+	}
 }
 
 static int cmd_af(RCore *core, const char *input) {
