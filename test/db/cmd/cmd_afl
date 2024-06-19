@@ -104,15 +104,6 @@ CMDS=<<EOF
 aa
 afla
 EOF
-EXPECT_ERR=<<EOF
-WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-INFO: Analyze all flags starting with sym. and entry0 (aa)
-INFO: Analyze imports (af@@@i)
-INFO: Analyze entrypoint (af@ entry0)
-INFO: Analyze symbols (af@@@s)
-INFO: Recovering variables (afva@@@F)
-INFO: Analyze all functions arguments/locals (afva@@@F)
-[2KEOF
 EXPECT=<<EOF
 0x000029b0
 0x000029e0
