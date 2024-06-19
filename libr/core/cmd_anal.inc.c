@@ -5315,10 +5315,10 @@ static int cmd_af(RCore *core, const char *input) {
 						r_anal_function_cost (fcn), r_anal_function_complexity (fcn));
 					r_cons_printf ("  attr:  ");
 					if (r_anal_function_islineal (fcn)) {
-						r_cons_printf ("lineal");
+						r_cons_print ("lineal");
 					}
 					if (fcn->is_noreturn) {
-						r_cons_printf ("noreturn");
+						r_cons_print ("noreturn");
 					}
 					r_cons_newline ();
 				}
@@ -5941,6 +5941,9 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		break;
 	}
+	case 'e': // "afe" used by "anal.emu" - see aef
+		r_core_anal_esil (core, "f", NULL);
+		break;
 #if 0
 	/* this is undocumented, broken and probably have no uses. plz discuss */
 	case 'e': // "afe"
@@ -13807,7 +13810,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					r_core_task_yield (&core->tasks);
 				}
-				if (!r_str_startswith (asm_arch, "hex")) {
+				const bool run_aaef = r_config_get_b (core->config, "anal.emu");;
+				/// if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
+				if (run_aaef) { // emulate all functions
+					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
 					// XXX moving this oustide the x86 guard breaks some tests, missing types
 					if (cfg_debug) {
 						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
@@ -13829,7 +13835,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				if (r_config_get_i (core->config, "anal.autoname")) {
+				if (r_config_get_b (core->config, "anal.autoname")) {
 					logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					r_core_task_yield (&core->tasks);
@@ -13961,14 +13967,25 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			} else {
 				r_core_cmd0 (core, "aeim");
 				RListIter *it;
-				RAnalFunction *fcn;
 				ut64 cur_seek = core->offset;
-				r_list_foreach (core->anal->fcns, it, fcn) {
-					r_core_seek (core, fcn->addr, true);
+				char *offsets = r_core_cmd_str (core, "afla");
+				RList *list = r_str_split_list (offsets, "\n", 0);
+
+				char *of;
+				r_list_foreach (list, it, of) {
+					ut64 addr = r_num_get (NULL, of);
+					r_core_seek (core, addr, true);
 					r_core_anal_esil (core, "f", NULL);
 					// __anal_esil_function (core, fcn->addr);
 				}
+				RAnalFunction *fcn = r_anal_get_function_at (core->anal, cur_seek);
+				if (fcn) {
+					r_core_seek (core, fcn->addr, true);
+					r_core_anal_esil (core, "f", NULL);
+				}
 				r_core_seek (core, cur_seek, true);
+				r_list_free (list);
+				free (offsets);
 			}
 		} else if (input[1] == '?') { // "aae?"
 			r_core_cmd_help (core, help_msg_aae);

@@ -1,7 +1,9 @@
 NAME=emu x86-32 aaef via aaa
 FILE=bins/elf/libtest_32.so
 CMDS=<<EOF
+e anal.emu=true
 aaa
+aaef
 s 0x00000500
 pd 1
 axt
