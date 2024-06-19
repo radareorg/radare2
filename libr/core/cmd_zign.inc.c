@@ -279,7 +279,7 @@ static int cmdAdd(void *data, const char *input) {
 			R_LOG_INFO ("generated zignatures: %d", count);
 		}
 		break;
-	case '?': 
+	case '?': // “za?”
 		r_core_cmd_help (core, help_msg_za);
 		break;
 	default:
