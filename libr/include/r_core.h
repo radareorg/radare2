@@ -412,6 +412,10 @@ struct r_core_t {
 	int (*r_main_ragg2)(int argc, const char **argv);
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
+#if R2_USE_NEW_ABI
+	int skiplines; // used only for disasm
+	void *priv;
+#endif
 };
 
 // maybe move into RAnal

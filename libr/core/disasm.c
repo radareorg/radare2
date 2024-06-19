@@ -323,6 +323,7 @@ typedef struct r_disasm_state_t {
 	// ugly ones but at least not globals
 	ut64 emustack_min;
 	ut64 emustack_max;
+	int skiplines; // for smooth scrolling in visual disasm
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -2101,10 +2102,21 @@ static void ds_show_functions(RDisasmState *ds) {
 			char spaces[32];
 			RAnalVar *var;
 			RListIter *iter;
+
+			int skipped = 0;
+#if R2_USE_NEW_ABI
+			if (f->addr == core->offset) {
+				skipped = core->skiplines;
+			}
+#endif
 			RList *all_vars = vars_cache.rvars;
 			r_list_join (all_vars, vars_cache.bvars);
 			r_list_join (all_vars, vars_cache.svars);
 			r_list_foreach (all_vars, iter, var) {
+				if (skipped > 0) {
+					skipped--;
+					continue;
+				}
 				ds_begin_line (ds);
 				int idx;
 				RAnal *anal = ds->core->anal;
