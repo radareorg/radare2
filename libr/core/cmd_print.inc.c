@@ -6662,7 +6662,7 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, b->addr, block, b->size);
 
 						if (input[2] == 'j') {
-							pj = pj_new ();
+							pj = r_core_pj_new (core);
 							if (!pj) {
 								break;
 							}
