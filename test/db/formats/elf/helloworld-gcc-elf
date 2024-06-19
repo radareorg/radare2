@@ -13,6 +13,7 @@ RUN
 NAME=armr - functions bits
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
+e anal.emu=true
 aaa
 pid 1@@f
 EOF
