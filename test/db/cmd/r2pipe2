@@ -98,11 +98,6 @@ EXPECT=<<EOF
     {
       "type": "WARN",
       "origin": "logline",
-      "message": "Emulate functions to find computed references (aaef)"
-    },
-    {
-      "type": "WARN",
-      "origin": "logline",
       "message": "Recovering local variables (afva@@@F)"
     },
     {
