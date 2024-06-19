@@ -14892,7 +14892,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		cmd_anal_abp (core, input + 1);
 		break;
 	case 'l': // "abl"
-		if (input[2] == '?') {
+		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_abl);
 		} else {
 			anal_bb_list (core, input + 1);
