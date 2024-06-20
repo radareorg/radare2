@@ -28,7 +28,7 @@ run: $(BINS)
 	  for a in $(BINS) ; do \
 	  	echo "$$a" ; \
 		R=0 ; $(ASAN_LD_PRELOAD) ./unit/$$a || R=1; \
-		if [ "$$R" = 1 ]; then r=1; echo '[XX]'; fi; \
+		if [ "$$R" = 1 ]; then r=1; echo '[X''X]'; fi; \
 	  done ; \
 	echo unit$$r ; exit $$r
 
