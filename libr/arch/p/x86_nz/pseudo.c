@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static int replace(int argc, char *argv[], char *newstr) {
+static bool replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -66,6 +66,7 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "jle", "if (var <= 0) goto loc_#", {1}},
 		{ "jmp",  "goto loc_#", {1}},
 		{ "jne", "if (var) goto loc_#", {1}},
+		{ "leav",  ";", {}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
 		{ "movabs", "# = #", {1, 2}},
@@ -117,6 +118,12 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "xor",  "# ^= #", {1, 2}},
 		{ NULL }
 	};
+	if (argc == 1) {
+		if (argv[0][0] && !argv[0][1]) {
+			*newstr = 0;
+			return true;
+		}
+	}
 
 	if (argc > 2 && !strcmp (argv[0], "xor")) {
 		if (!strcmp (argv[1], argv[2])) {
@@ -125,37 +132,35 @@ static int replace(int argc, char *argv[], char *newstr) {
 		}
 	}
 	for (i = 0; ops[i].op; i++) {
-		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				d = 0;
-				j = 0;
-				ch = ops[i].str[j];
-				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
-					if (ch == '#') {
-						if (d >= MAXPSEUDOOPS) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						int idx = ops[i].args[d];
-						d++;
-						if (idx <= 0) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						const char *w = argv[idx];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ch;
-					}
-				}
-				newstr[k] = '\0';
-			}
-			return true;
+		if (strcmp (ops[i].op, argv[0])) {
+			continue;
 		}
+		d = 0;
+		j = 0;
+		ch = ops[i].str[j];
+		for (j = 0, k = 0; ch != '\0'; j++, k++) {
+			ch = ops[i].str[j];
+			if (ch == '#') {
+				if (d >= MAXPSEUDOOPS) {
+					// XXX Shouldn't ever happen...
+					continue;
+				}
+				int idx = ops[i].args[d++];
+				if (idx <= 0) {
+					// XXX Shouldn't ever happen...
+					continue;
+				}
+				const char *w = argv[idx];
+				if (w) {
+					strcpy (newstr + k, w);
+					k += strlen (w) - 1;
+				}
+			} else {
+				newstr[k] = ch;
+			}
+		}
+		newstr[k] = '\0';
+		return true;
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
@@ -174,12 +179,13 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i;
 	size_t len = strlen (data);
 	int sz = 32;
-	char *buf, *ptr, *optr, *end;
+	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
 	}
 	// strdup can be slow here :?
-	if (!(buf = strdup (data))) {
+	char *buf = strdup (data);
+	if (!buf) {
 		return false;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
@@ -224,9 +230,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (ptr++; *ptr == ' '; ptr++) {
-					;
-				}
+				ptr = r_str_trim_head_ro (ptr + 1);
 				r_str_ncpy (w2, optr, sizeof (w2));
 				r_str_ncpy (w3, ptr, sizeof (w3));
 			}
@@ -283,12 +287,6 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
-#if 0
-	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
-		r_str_ncpy (wa[0], " ", 2);
-		r_str_ncpy (wa[1], " ", 2);
-		replace (nw, wa, str);
-#endif
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
 		R_FREE (p->retleave_asm);
