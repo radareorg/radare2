@@ -5830,6 +5830,95 @@ static void core_print_decompile(RCore *core, const char *input) {
 	r_esil_toc_free (ec);
 }
 
+static void cmd_print_pxb(RCore *core, int len, const char *input) {
+	const int cols = r_config_get_i (core->config, "hex.cols");
+	r_cons_printf ("%d\n", cols);
+	ut32 n;
+	ut64 n64;
+	int columns = cols / 4;
+	if (columns % 2) {
+		columns++;
+	}
+	switch (columns) {
+	case 3:
+	case 5:
+		columns = 4;
+		break;
+	case 6:
+	case 7:
+		columns = 8;
+		break;
+	case 1:
+	case 2:
+	case 4:
+	case 8:
+		break;
+	default:
+		if (columns < 1) {
+			columns = 1;
+		} else {
+			columns = 4;
+		}
+		break;
+	}
+	int lastc = columns - 1;
+	int i, c;
+	char buf[32];
+	for (i = c = 0; i < len; i++, c++) {
+		if (c == 0) {
+			ut64 ea = core->offset + i;
+			if (core->print->pava) {
+				ut64 va = r_io_p2v (core->io, ea);
+				if (va != UT64_MAX) {
+					ea = va;
+				}
+			}
+			r_print_section (core->print, ea);
+			r_print_offset (core->print, ea, 0, 0, NULL);
+		}
+		r_str_bits (buf, core->block + i, 8, NULL);
+
+		// split bits
+		memmove (buf + 5, buf + 4, 5);
+		buf[4] = 0;
+		r_print_cursor (core->print, i, 1, 1);
+		if (input[1] == 'B') {
+			r_str_replace_ch (buf, '0', '.', true);
+			r_str_replace_ch (buf + 5, '0', '.', true);
+		}
+		r_cons_printf ("%s_%s  ", buf, buf + 5);
+		r_print_cursor (core->print, i, 1, 0);
+		if (c == lastc) {
+			const ut8 *b = core->block + i - 3;
+			int (*k) (const ut8 *, int) = cmd_pxb_k;
+			char (*p) (char) = cmd_pxb_p;
+			switch (columns) {
+			case 1:
+				n = k (b, 0);
+				r_cons_printf ("0x%02x  %c\n", n, p (b[0]));
+				break;
+			case 2:
+				n = k (b, 0) | k (b, 1);
+				r_cons_printf ("0x%04x  %c%c\n", n, p (b[0]), p (b[1]));
+				break;
+			case 4:
+				n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
+				r_cons_printf ("0x%08x  %c%c%c%c\n",
+					n, p (b[0]), p (b[1]), p (b[2]), p (b[3]));
+				break;
+			case 8:
+				n64 = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3)
+				  | k (b, 4) | k (b, 5) | k (b, 6) | k (b, 7);
+				r_cons_printf ("0x%016"PFMT64x"  %c%c%c%c%c%c%c%c\n", n64,
+					p (b[0]), p (b[1]), p (b[2]), p (b[3]),
+					p (b[4]), p (b[5]), p (b[6]), p (b[7]));
+				break;
+			}
+			c = -1;
+		}
+	}
+}
+
 #if 0
 static void bitimage0(RCore *core, int cols) {
 	int stride = r_config_get_i (core->config, "hex.stride");
@@ -7684,44 +7773,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "pxb"
 		case 'B': // "pxB"
 			if (l) {
-				ut32 n;
-				int i, c;
-				char buf[32];
-				for (i = c = 0; i < len; i++, c++) {
-					if (c == 0) {
-						ut64 ea = core->offset + i;
-						if (core->print->pava) {
-							ut64 va = r_io_p2v (core->io, ea);
-							if (va != UT64_MAX) {
-								ea = va;
-							}
-						}
-						r_print_section (core->print, ea);
-						r_print_offset (core->print, ea, 0, 0, NULL);
-					}
-					r_str_bits (buf, core->block + i, 8, NULL);
-
-					// split bits
-					memmove (buf + 5, buf + 4, 5);
-					buf[4] = 0;
-					r_print_cursor (core->print, i, 1, 1);
-					if (input[1] == 'B') {
-						r_str_replace_ch (buf, '0', '.', true);
-						r_str_replace_ch (buf + 5, '0', '.', true);
-					}
-					r_cons_printf ("%s_%s  ", buf, buf + 5);
-					r_print_cursor (core->print, i, 1, 0);
-					if (c == 3) {
-						const ut8 *b = core->block + i - 3;
-						int (*k) (const ut8 *, int) = cmd_pxb_k;
-						char (*p) (char) = cmd_pxb_p;
-
-						n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
-						r_cons_printf ("0x%08x  %c%c%c%c\n",
-							n, p (b[0]), p (b[1]), p (b[2]), p (b[3]));
-						c = -1;
-					}
-				}
+				cmd_print_pxb (core, len, input);
 			}
 			break;
 		case 'c': // "pxc"
