@@ -95,33 +95,16 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	} else {
 		len = olen - (dn - buf);
 	}
-	if (len == 0 || 1) {
-		char *res = calloc (olen, 1);
-		int total = 0;
-		do {
-			r_socket_block_time (s, true, 0, 0);
-			ret = r_socket_read (s, (ut8*) res + total, olen - total);
-			if (ret == -1) {
-				R_LOG_ERROR ("-1");
-				break;
-			}
-			if (ret == 0) {
-				continue;
-			}
-			total += ret;
-		} while (total < olen);
-		eprintf ("%d\n", total);
-		return res;
+	if (len == 0) {
+		eprintf ("LEN = 0\n");
 	}
-	eprintf ("LEN I%d\n", len);
 	if (len > 0) {
-				eprintf ("READING %d\n", len);
 		if (len > olen) {
 			res = malloc (len + 2);
 			if (!res) {
 				goto exit;
 			}
-			olen -= dn - buf;
+			olen -= (dn - buf);
 			memcpy (res, dn + delta, olen);
 			do {
 				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
@@ -322,16 +305,16 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	}
 	host += 3;
 	char *port = strchr (host, ':');
-	if (!port) {
-		port = (ssl)? "443": "80";
-	} else {
-		*port++ = 0;
-	}
 	char *path = strchr (host, '/');
-	if (!path) {
-		path = "";
+	if (port && (!path || (path && port < path))) {
+		*port++ = 0;
 	} else {
+		port = ssl? "443": "80";
+	}
+	if (path) {
 		*path++ = 0;
+	} else {
+		path = "";
 	}
 	s = r_socket_new (ssl);
 	if (!s) {
@@ -353,7 +336,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 			"Host: %s:%d\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, atoi(port), (int)strlen (data));
+			"\r\n", path, host, atoi (port), (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, code, rlen, 0);
