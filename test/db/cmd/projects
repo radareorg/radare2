@@ -293,7 +293,7 @@ PS*types~?link.,symlink,unlink
 PS*types~?zoby
 EOF
 EXPECT=<<EOF
-15
+10
 1
 EOF
 RUN
@@ -346,8 +346,8 @@ PS* ctypes~?Foo
 P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
-10
-10
+12
+12
 8
 EOF
 RUN

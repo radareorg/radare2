@@ -11,7 +11,7 @@ s..5343
 pd 30~(
 EOF
 EXPECT=<<EOF
- ; int listxattr(?, ?, -1, -1)
+ ; int listxattr(-1, ?, -1, -1)
  ; void *reallocf(-1, -1)
      call sym.imp.getxattr ; sym.imp.getxattr(-1, -1, 0x0, 0x0)
  ; size_t strlen(-1)
