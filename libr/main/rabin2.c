@@ -518,7 +518,7 @@ static void setup_trylib_from_environment(RBin *bin, int type) {
 	bool trylib = false;
 	if (type == R_BIN_LANG_SWIFT) {
 		trylib = true;
-		char *swiftlib = r_sys_getenv ("RABIN2_TRYLIB");
+		char *swiftlib = r_sys_getenv ("RABIN2_SWIFTLIB");
 		if (swiftlib) {
 			trylib = r_str_is_true (swiftlib);
 			free (swiftlib);
@@ -645,6 +645,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (r_sys_getenv_asbool ("RABIN2_VERBOSE")) {
 		r_config_set_b (core.config, "bin.verbose", true);
 	}
+	r_config_set_b (core.config, "bin.demangle.trylib",
+		r_sys_getenv_asbool ("RABIN2_SWIFTLIB"));
 	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE"))) {
 		r_config_set (core.config, "bin.demangle", tmp);
 		free (tmp);
@@ -920,7 +922,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 					free (state.stdin_buf);
 					return 1;
 				}
-				if (res && *res) {
+				if (R_STR_ISNOTEMPTY (res)) {
 					printf ("%s\n", res);
 				} else if (file && *file) {
 					printf ("%s\n", file);
