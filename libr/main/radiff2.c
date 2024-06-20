@@ -1288,11 +1288,27 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		r_config_set_i (c2->config, "diff.bare", ro.showbare);
 		r_anal_diff_setup_i (c->anal, ro.diffops, ro.threshold, ro.threshold);
 		r_anal_diff_setup_i (c2->anal, ro.diffops, ro.threshold, ro.threshold);
-		if (ro.pdc) {
-			if (!addr) {
-				//addr = "entry0";
-				addr = "main";
+		if (addr) {
+			bool err = false;
+			if (r_num_math (c->num, addr) == 0) {
+				err = true;
+			} else if (r_num_math (c2->num, addr) == 0) {
+				err = true;
 			}
+			if (err) {
+				R_LOG_ERROR ("Unknown symbol name '%s'", addr);
+				return -1;
+			}
+		} else {
+			if (r_num_math (c->num, "main")) {
+				addr = "main";
+			} else if (r_num_math (c->num, "entry0")) {
+				addr = "entry0";
+			} else {
+				R_LOG_WARN ("Cannot find entrypoint");
+			}
+		}
+		if (ro.pdc) {
 			/* should be in mode not in bool pdc */
 			r_config_set_i (c->config, "scr.color", COLOR_MODE_DISABLED);
 			r_config_set_i (c2->config, "scr.color", COLOR_MODE_DISABLED);
