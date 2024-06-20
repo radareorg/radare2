@@ -96,7 +96,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 		len = olen - (dn - buf);
 	}
 	if (len == 0) {
-		eprintf ("LEN = 0\n");
+		R_LOG_DEBUG ("LEN = 0");
 	}
 	if (len > 0) {
 		if (len > olen) {
