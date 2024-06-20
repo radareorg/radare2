@@ -66,7 +66,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "jle", "if (var <= 0) goto loc_#", {1}},
 		{ "jmp",  "goto loc_#", {1}},
 		{ "jne", "if (var) goto loc_#", {1}},
-		{ "leav",  ";", {}},
+		{ "leav",  ";", {0}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
 		{ "movabs", "# = #", {1, 2}},
