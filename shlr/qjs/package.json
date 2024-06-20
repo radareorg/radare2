@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "r2papi": "0.4.7"
+  },
+  "devDependencies": {
+    "minify": "11.2.1",
+    "uglify": "0.1.5"
   }
 }

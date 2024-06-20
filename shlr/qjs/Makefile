@@ -1,7 +1,7 @@
 include deps.mk
 
-USE_MINIFY=0
-USE_UGLIFY=0
+USE_MINIFY=1
+USE_UGLIFY=1
 
 ifeq ($(QJS_BRANCH),frida)
 	QJS_NAME=quickjs-frida
