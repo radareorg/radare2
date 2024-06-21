@@ -169,7 +169,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	}
 }
 
-static bool demangle_internal(RCore *core, const char *lang, const char *s) {
+static char *demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
@@ -182,38 +182,78 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
 	case R_BIN_LANG_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
-		r_bin_demangle_list (core->bin);
-		return true;
+		r_core_return_code (core, 1);
 	}
+	return res;
+}
+static bool is_demangled(char *res) {
 	if (res) {
 		if (*res) {
 			r_cons_printf ("%s\n", res);
 		}
-		free (res);
-		return false;
-	}
-	return true;
-}
-
-static bool demangle(RCore *core, const char *s) {
-	R_RETURN_VAL_IF_FAIL (core && s, false);
-	const char *ss = strchr (s, ' ');
-	if (!*s) {
-		return false;
-	}
-	if (!ss) {
-		const char *lang = r_config_get (core->config, "bin.lang");
-		demangle_internal (core, lang, s);
 		return true;
 	}
-	char *p = strdup (s);
+	return false;
+}
+
+static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) {
+	if (input[1] == 'j' && input[2] == ' ') {
+		mode = R_MODE_JSON;
+		input += 3;
+	} else if (input[1] == ' ') {
+		input += 2;
+	} else {
+		if (!pj) {
+			r_core_cmd_help_match (core, help_msg_i, "iD");
+		} else {
+			r_cons_print ("{}");
+		}
+		return;
+	}
+	const char *s = strchr (input, ' ');
+	if (!s) {
+		const char *lang = r_config_get (core->config, "bin.lang");
+		char *res = demangle_internal (core, lang, input);
+		if (!res && core->rc != 0) {
+			goto iD_lang_err;
+		}
+	}
+	char *p = strdup (input);
 	if (R_UNLIKELY (p)) {
-		char *q = p + (ss - s);
+		const char *err = "Cannot demangle string";
+		char *q = p + (s - input);
 		*q = 0;
-		demangle_internal (core, p, q + 1);
+		char *res = demangle_internal (core, p, q + 1);
+		if (!res && core->rc != 0) {
+			goto iD_lang_err;
+		}
+		if (mode == R_MODE_JSON) {
+			pj_ks (pj, "lang", p);
+			pj_ks (pj, "mangled", q + 1);
+			if (res) {
+				pj_ks (pj, "demangled", res);
+			} else {
+				pj_ks (pj, "error", err);
+			}
+		} else {
+			if (res) {
+				is_demangled (res);
+			} else {
+				R_LOG_ERROR (err);
+			}
+		}
 		free (p);
 	}
-	return true;
+	return;
+
+iD_lang_err:
+	if (!pj) {
+		R_LOG_ERROR ("Missing or unknown language. Use one of the following:");
+		r_bin_demangle_list (core->bin);
+	} else {
+		R_LOG_ERROR ("Missing or unknown language.")
+	}
+	r_core_return_value (core, 1);
 }
 
 // XXX i.j ij. is inconsistent maybe move to 'ai'?
@@ -2009,9 +2049,7 @@ static int cmd_info(void *data, const char *input) {
 		cmd_ic (core, input + 1, pj, is_array, va);
 		break;
 	case 'D': // "iD"
-		if (input[1] != ' ' || !demangle (core, input + 2)) {
-			r_core_cmd_help_match (core, help_msg_i, "iD");
-		}
+		cmd_info_demangle (core, input, pj, mode);
 		break;
 	case 's': // "is"
 		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."

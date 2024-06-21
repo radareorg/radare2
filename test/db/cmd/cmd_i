@@ -1300,6 +1300,14 @@ Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.W
 EOF
 RUN
 
+NAME=iDj
+FILE=bins/elf/libmagic.so
+CMDS=iDj swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+EXPECT=<<EOF
+{"lang":"swift","mangled":"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS","demangled":"Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String"}
+EOF
+RUN
+
 NAME=ie (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ie
