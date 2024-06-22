@@ -730,7 +730,7 @@ repeat:
 				// eprintf ("STEP 0x%"PFMT64x"\n", addr);
 				int res = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				if (breakoninvalid && !res) {
-					R_LOG_ERROR ("step failed at 0x%08"PFMT64x"\n", addr);
+					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
 					goto repeat;
 				}

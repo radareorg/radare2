@@ -6716,7 +6716,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 addr = -1;
 	ut64 oaddr = -1;
 	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
-	int dataAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
+	// int dataAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
+	int codeAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_CODE_ALIGN);
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
 	if (maxopsz > sizeof (code)) {
@@ -6770,17 +6771,29 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				return_tail (1);
 			}
 		}
+#if 0
 		if (dataAlign > 1) {
 			if (addr % dataAlign) {
 				if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 					esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
 				}
 				if (breakoninvalid) {
-					R_LOG_INFO ("Execution stopped on unaligned instruction (see e?esil.breakoninvalid)");
+					R_LOG_INFO ("Execution stopped on unaligned %d instruction (see e?esil.breakoninvalid)", dataAlign);
 					return_tail (0);
 				}
 			}
 		}
+#else
+		if (codeAlign > 1 && addr % codeAlign) {
+			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
+				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
+			}
+			if (breakoninvalid) {
+				R_LOG_INFO ("Execution stopped on unaligned %d instruction (see e?esil.breakoninvalid)", codeAlign);
+				return_tail (0);
+			}
+		}
+#endif
 		int re = r_io_read_at (core->io, addr, code, maxopsz);
 		if (re < 1) {
 			ret = 0;
