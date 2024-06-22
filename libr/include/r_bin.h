@@ -462,6 +462,9 @@ struct r_bin_t {
 	char strfilter; // string filtering
 	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
+#if R2_USE_NEW_ABI
+	char *srcdir_base; // dir.source.base
+#endif
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;

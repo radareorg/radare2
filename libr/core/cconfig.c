@@ -1399,6 +1399,20 @@ static bool cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
+#if R2_USE_NEW_ABI
+static bool cb_dirsrc_base(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore *)user;
+	free (core->bin->srcdir);
+	if (R_STR_ISNOTEMPTY (node->value)) {
+		core->bin->srcdir = strdup (node->value);
+	} else {
+		core->bin->srcdir = NULL;
+	}
+	return true;
+}
+#endif
+
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (strstr (node->value, "?")) {
@@ -3883,6 +3897,9 @@ R_API int r_core_config_init(RCore *core) {
 		SETPREF ("dir.plugins", path, "path to plugin files to be loaded at startup");
 		free (path);
 	}
+#if R2_USE_NEW_ABI
+	SETCB ("dir.source.base", "", &cb_dirsrc_base, "path to trim out from the one in dwarf");
+#endif
 	SETCB ("dir.source", "", &cb_dirsrc, "path to find source files");
 	SETPREF ("dir.types", "/usr/include", "default colon-separated list of paths to find C headers to cparse types");
 	SETPREF ("dir.libs", "", "specify path to find libraries to load when bin.libs=true");
