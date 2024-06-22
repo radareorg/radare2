@@ -186,15 +186,6 @@ static char *demangle_internal(RCore *core, const char *lang, const char *s) {
 	}
 	return res;
 }
-static bool is_demangled(char *res) {
-	if (res) {
-		if (*res) {
-			r_cons_printf ("%s\n", res);
-		}
-		return true;
-	}
-	return false;
-}
 
 static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) {
 	if (input[1] == 'j' && input[2] == ' ') {
@@ -215,7 +206,14 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		const char *lang = r_config_get (core->config, "bin.lang");
 		char *res = demangle_internal (core, lang, input);
 		if (!res) {
-			goto iD_lang_err;
+			if (pj) {
+				R_LOG_ERROR ("Missing or unknown language.")
+			} else {
+				R_LOG_ERROR ("Missing or unknown language. Use one of the following:");
+				r_bin_demangle_list (core->bin);
+				return;
+			}
+			r_core_return_value (core, 1);
 		}
 		s = input;
 	}
@@ -225,9 +223,6 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		char *q = p + (s - input);
 		*q = 0;
 		char *res = demangle_internal (core, p, q + 1);
-		if (!res) {
-			goto iD_lang_err;
-		}
 		if (mode == R_MODE_JSON) {
 			pj_ks (pj, "lang", p);
 			pj_ks (pj, "mangled", q + 1);
@@ -238,7 +233,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 			}
 		} else {
 			if (res) {
-				is_demangled (res);
+				r_cons_printf ("%s\n", res);
 			} else {
 				R_LOG_ERROR (err);
 			}
@@ -246,15 +241,6 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		free (p);
 	}
 	return;
-
-iD_lang_err:
-	if (pj) {
-		R_LOG_ERROR ("Missing or unknown language.")
-	} else {
-		R_LOG_ERROR ("Missing or unknown language. Use one of the following:");
-		r_bin_demangle_list (core->bin);
-	}
-	r_core_return_value (core, 1);
 }
 
 // XXX i.j ij. is inconsistent maybe move to 'ai'?
