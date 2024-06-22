@@ -610,6 +610,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnal *anal = core->anal;
 	Sdb *TDB = anal->sdb_types;
 	int ret;
+	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const bool chk_constraint = r_config_get_b (core->config, "anal.types.constraint");
 	const int mininstrsz = r_anal_archinfo (anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
@@ -726,10 +727,13 @@ repeat:
 				r_reg_setv (core->dbg->reg, pc, addr + aop.size); // + ret
 				//
 			} else {
-		//		eprintf ("%x linear\n", pcval);
 				// eprintf ("STEP 0x%"PFMT64x"\n", addr);
-				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
-				// r_reg_setv (core->dbg->reg, pc, addr + aop.size); // + ret
+				int res = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				if (breakoninvalid && !res) {
+					R_LOG_ERROR ("step failed at 0x%08"PFMT64x"\n", addr);
+					retries--;
+					goto repeat;
+				}
 			}
 #if 1
 			// XXX this code looks wrong and slow maybe is not needed
