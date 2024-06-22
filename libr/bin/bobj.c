@@ -267,7 +267,14 @@ static void filter_classes(RBinFile *bf, RList *list) {
 	r_list_foreach (list, iter, cls) {
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
-		if (fname) {
+		if (R_STR_ISEMPTY (fname)) {
+			R_LOG_WARN ("Corrupted class storage");
+			break;
+#if 0
+			R_LOG_DEBUG ("Invalid class, must be removed");
+			continue;
+#endif
+		} else {
 			r_bin_name_update (cls->name, fname);
 			free (fname);
 		}
@@ -450,6 +457,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			filter_classes (bf, bo->classes);
 		}
 		// cache addr=class+method
+#if 0
 		if (bo->classes) {
 			RList *klasses = bo->classes;
 			RListIter *iter, *iter2;
@@ -465,6 +473,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				}
 			}
 		}
+#endif
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
