@@ -182,7 +182,7 @@ static char *demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
 	case R_BIN_LANG_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
-		r_core_return_code (core, 1);
+		r_core_return_value (core, 1);
 	}
 	return res;
 }
@@ -214,9 +214,10 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	if (!s) {
 		const char *lang = r_config_get (core->config, "bin.lang");
 		char *res = demangle_internal (core, lang, input);
-		if (!res && core->rc != 0) {
+		if (!res) {
 			goto iD_lang_err;
 		}
+		s = input;
 	}
 	char *p = strdup (input);
 	if (R_UNLIKELY (p)) {
@@ -224,7 +225,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		char *q = p + (s - input);
 		*q = 0;
 		char *res = demangle_internal (core, p, q + 1);
-		if (!res && core->rc != 0) {
+		if (!res) {
 			goto iD_lang_err;
 		}
 		if (mode == R_MODE_JSON) {
@@ -247,11 +248,11 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	return;
 
 iD_lang_err:
-	if (!pj) {
+	if (pj) {
+		R_LOG_ERROR ("Missing or unknown language.")
+	} else {
 		R_LOG_ERROR ("Missing or unknown language. Use one of the following:");
 		r_bin_demangle_list (core->bin);
-	} else {
-		R_LOG_ERROR ("Missing or unknown language.")
 	}
 	r_core_return_value (core, 1);
 }
