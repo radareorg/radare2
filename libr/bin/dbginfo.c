@@ -124,59 +124,73 @@ R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
 	if (!di) {
 		di = r_bin_dbgitem_api (bin, addr);
+		if (!di) {
+			return NULL;
+		}
 	}
-	if (di) {
-		char *res = NULL;
-		char *basename = strdup (r_file_basename (di->file));
-		// early optimization because mac's home is slow
-#if 0
-		if (R_STR_ISEMPTY (bin->srcdir) && (di->file[0] == '/')) {
-			char *res = r_str_newf ("%s:%d:%d", basename, di->line, di->column);
-			r_bin_dbgitem_free (di);
-			return res;
-		}
-#endif
-		char *filename = strdup (di->file);
-		// check absolute path
-		if (!r_file_exists (di->file)) {
-			// check in current directory
-			if (r_file_exists (basename)) {
-				free (filename);
-				filename = strdup (basename);
-			} else if (R_STR_ISNOTEMPTY (bin->srcdir)) {
-				char *nf = r_str_newf ("%s/%s", bin->srcdir, basename);
-				// check in srcdircurrent directory
-				if (r_file_exists (nf)) {
-					free (filename);
-					filename = nf;
-				} else {
-					free (nf);
-				}
-			}
-		}
-		// out contains the contents of the slurped line
-		char *out = r_file_slurp_line (filename, di->line, 0);
-		if (origin) {
-			// filename + text or fullpath + text
-			if (di->column > 0) {
-				res = r_str_newf ("%s:%d:%d%s", (origin > 1)? di->file: basename,
-					di->line, di->column, r_str_get (out));
-			} else {
-				res = r_str_newf ("%s:%d%s", (origin > 1)? di->file: basename,
-					di->line, r_str_get (out));
-			}
-			free (out);
-		} else {
-			// just the text from the file
-			free (res);
-			res = out;
-		}
+	char *res = NULL;
+	char *filename = strdup (di->file);
+#if R2_USE_NEW_ABI
+	if (R_STR_ISNOTEMPTY (bin->srcdir_base) && r_str_startswith (filename, bin->srcdir_base)) {
+		char *fn = strdup (filename + strlen (bin->srcdir_base));
 		free (filename);
-		free (basename);
+		filename = fn;
+	}
+#endif
+	char *basename = strdup (r_file_basename (di->file));
+#if __APPLE__
+	// early optimization because mac's home is slow
+	if (r_str_startswith (filename, "/home")) {
+		// XXX
+		free (filename);
+		filename = strdup (basename);
+	}
+#endif
+#if 0
+	if (R_STR_ISEMPTY (bin->srcdir) && (di->file[0] == '/')) {
+		char *res = r_str_newf ("%s:%d:%d", basename, di->line, di->column);
 		r_bin_dbgitem_free (di);
 		return res;
 	}
-	return NULL;
+#endif
+	// check absolute path
+	if (!r_file_exists (filename)) {
+		// check in current directory
+		if (strcmp (filename, basename) && r_file_exists (basename)) {
+			free (filename);
+			filename = strdup (basename);
+		} else if (R_STR_ISNOTEMPTY (bin->srcdir)) {
+			char *nf = r_str_newf ("%s/%s", bin->srcdir, basename);
+			// check in srcdircurrent directory
+			if (r_file_exists (nf)) {
+				free (filename);
+				filename = nf;
+			} else {
+				free (nf);
+			}
+		}
+	}
+	// out contains the contents of the slurped line
+	char *out = r_file_slurp_line (filename, di->line, 0);
+	if (origin) {
+		// filename + text or fullpath + text
+		if (di->column > 0) {
+			res = r_str_newf ("%s:%d:%d%s", (origin > 1)? di->file: basename,
+				di->line, di->column, r_str_get (out));
+		} else {
+			res = r_str_newf ("%s:%d%s", (origin > 1)? di->file: basename,
+				di->line, r_str_get (out));
+		}
+		free (out);
+	} else {
+		// just the text from the file
+		free (res);
+		res = out;
+	}
+	free (filename);
+	free (basename);
+	r_bin_dbgitem_free (di);
+	return res;
 }
 
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {
