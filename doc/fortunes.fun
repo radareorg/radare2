@@ -354,3 +354,4 @@ Did anything happen while I was out?
 You look great, by the way. Very healthy
 Press the button again.
 It's been a long time.
+Relic malfunction detected.

@@ -3342,8 +3342,7 @@ static bool stderr_cb(void *user, int type, const char *origin, const char *msg)
 static int cmd_json(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
-		r_cons_printf ("Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true}\n");
-		r_cons_printf ("| The only required element is `cmd`\n");
+		r_cons_printf ("Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true} # `cmd` is required\n");
 		return 0;
 	}
 	char *s_input = strdup (input - 1);
@@ -3372,7 +3371,7 @@ static int cmd_json(void *data, const char *input) {
 		char *res = r_core_cmd_str (core, r_cmd);
 		r_log_del_callback (stderr_cb);
 		if (res) {
-			if (is_trim) {
+			if (is_trim || is_json) {
 				r_str_trim (res);
 			}
 			if (is_json) {
