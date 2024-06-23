@@ -169,9 +169,8 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	}
 }
 
-static char *demangle_internal(RCore *core, const char *lang, const char *s) {
+static char *demangle_internal(RCore *core, int type, const char *s) {
 	char *res = NULL;
-	int type = r_bin_demangle_type (lang);
 	switch (type) {
 	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
 	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (s); break;
@@ -194,6 +193,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	} else if (input[1] == ' ') {
 		input += 2;
 	} else {
+		// iD receives no arguments
 		if (!pj) {
 			r_core_cmd_help_match (core, help_msg_i, "iD");
 		} else {
@@ -201,45 +201,44 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		}
 		return;
 	}
-	const char *s = strchr (input, ' ');
-	if (!s) {
-		const char *lang = r_config_get (core->config, "bin.lang");
-		char *res = demangle_internal (core, lang, input);
-		if (!res) {
-			if (pj) {
-				R_LOG_ERROR ("Missing or unknown language.")
-			} else {
-				R_LOG_ERROR ("Missing or unknown language. Use one of the following:");
-				r_bin_demangle_list (core->bin);
-				return;
-			}
-			r_core_return_value (core, 1);
+	char *args = r_str_trim_dup (input);
+	const char *lang = args;
+	char *text = strchr (args, ' ');
+	const char *err = "Cannot demangle string";
+	if (text) {
+		*text ++ = 0;
+	} else {
+		// iD receives 1 argument we will assume language is the one defined in bin.lang config var
+		lang = r_config_get (core->config, "bin.lang");
+		if (R_STR_ISEMPTY (lang)) {
+			err = "Set the language in `e bin.lang` or pass a second argument";
 		}
-		s = input;
+		text = args;
 	}
-	char *p = strdup (input);
-	if (R_UNLIKELY (p)) {
-		const char *err = "Cannot demangle string";
-		char *q = p + (s - input);
-		*q = 0;
-		char *res = demangle_internal (core, p, q + 1);
-		if (mode == R_MODE_JSON) {
-			pj_ks (pj, "lang", p);
-			pj_ks (pj, "mangled", q + 1);
-			if (res) {
-				pj_ks (pj, "demangled", res);
-			} else {
-				pj_ks (pj, "error", err);
-			}
+	int lang_type = r_bin_demangle_type (lang);
+	if (lang_type == R_BIN_LANG_NONE) {
+		if (!pj) {
+			r_bin_demangle_list (core->bin);
+		}
+		r_core_return_value (core, 1);
+	}
+	char *res = demangle_internal (core, lang_type, text);
+	if (mode == R_MODE_JSON) {
+		pj_ks (pj, "lang", lang);
+		pj_ks (pj, "mangled", text);
+		if (res) {
+			pj_ks (pj, "demangled", res);
 		} else {
-			if (res) {
-				r_cons_printf ("%s\n", res);
-			} else {
-				R_LOG_ERROR (err);
-			}
+			pj_ks (pj, "error", err);
 		}
-		free (p);
+	} else {
+		if (res) {
+			r_cons_printf ("%s\n", res);
+		} else {
+			R_LOG_ERROR (err);
+		}
 	}
+	free (args);
 	return;
 }
 
