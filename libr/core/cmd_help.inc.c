@@ -204,6 +204,7 @@ static RCoreHelpMessage help_msg_root = {
 	"/", "[?]", "search for bytes, regexps, patterns, ..",
 	"!", "[?] [cmd]", "run given command as in system(3)",
 	"#", "[?] !lang [..]", "Hashbang to run an rlang script",
+	"{", "[?] ...}", "run a command using the json syntax for r2pipe2",
 	"a", "[?]", "analysis commands",
 	"b", "[?]", "display or change the block size",
 	"c", "[?] [arg]", "compare block with given data",
