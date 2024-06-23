@@ -26,8 +26,7 @@ NAME=r2pipe2 json
 FILE=-
 CMDS={"cmd":"ij", "json":true}
 EXPECT=<<EOF
-{"res":{"core":{"type":"","file":"malloc://512","fd":3,"size":512,"humansz":"512","iorw":true,"mode":"rwx","block":256,"format":"any"}}
-,"error":false,"value":0,"code":0,"code":0}
+{"res":{"core":{"type":"","file":"malloc://512","fd":3,"size":512,"humansz":"512","iorw":true,"mode":"rwx","block":256,"format":"any"}},"error":false,"value":0,"code":0,"code":0}
 EOF
 RUN
 
