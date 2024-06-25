@@ -80,12 +80,12 @@ static const char *menus_File[] = {
 };
 
 static const char *menus_Settings[] = {
-	"Colors", "Decompiler", "Disassembly", "Screen",
+	"Color Themes", "Decompiler", "Disassembly", "Screen",
 	NULL
 };
 
 static const char *menus_ReOpen[] = {
-	"In RW", "In Debugger",
+	"In Read+Write", "In Debugger",
 	NULL
 };
 
@@ -398,6 +398,9 @@ static RPanel *__get_cur_panel(RPanels *panels) {
 }
 
 static bool __check_if_cur_panel(RCore *core, RPanel *panel) {
+	if (core->panels->mode == PANEL_MODE_MENU) {
+		return false;
+	}
 	return __get_cur_panel (core->panels) == panel;
 }
 
@@ -754,7 +757,8 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
 		}
 	} else {
-		r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+		// r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+		r_strbuf_setf (title, " o    %s   ", panel->model->title);
 		if (panel->view->pos.w > 24) {
 			// r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
 			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
@@ -845,21 +849,21 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 			tit = strdup ("");
 		}
 		if (__check_if_cur_panel (core, panel)) {
-			r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
+			r_strbuf_setf (title, Color_INVERT"%s[X] ", core->cons->context->pal.graph_box2);
 			if (panel->view->pos.w > 4) {
-				r_strbuf_appendf (title, "%s"Color_RESET, r_str_get (tit));
+				r_strbuf_appendf (title, "%s", r_str_get (tit));
 			} else {
-				r_strbuf_appendf (title, "%s (%s)"Color_RESET, tit?tit:"", cmd_title);
+				r_strbuf_appendf (title, "%s (%s)", tit?tit:"", cmd_title);
 			}
 			if (panel->view->pos.w > 24) {
 			// 	r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
 				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
 			}
 		} else {
-			if (cmd_title && !strcmp (panel->model->title, cmd_title)) {
-				r_strbuf_setf (title, "[X]   %s   ", tit);
+			if (cmd_title && !strcmp (panel->model->title, tit)) {
+				r_strbuf_setf (title, " =  %s   ", tit);
 			} else {
-				r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, tit);
+				r_strbuf_setf (title, " =  %s (%s)  ", panel->model->title, tit);
 			}
 			if (panel->view->pos.w > 24) {
 				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
@@ -5134,6 +5138,10 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 		p_item = panels->panels_menu->root;
 		ht_pp_insert (panels->mht, r_strf ("%s", name), item);
 	}
+	if (p_item == NULL) {
+		R_LOG_WARN ("Cannot find panel %s", parent);
+		sleep (1);
+	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
 	item->name = name ? r_str_new (name) : NULL;
@@ -5250,7 +5258,7 @@ static int __settings_colors_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
 	}
-	__update_menu (core, "Settings.Colors", __init_menu_color_settings_layout);
+	__update_menu (core, "Settings.Color Themes", __init_menu_color_settings_layout);
 	return 0;
 }
 
@@ -5330,7 +5338,7 @@ static int __calculator_cb(void *user) {
 	RCore *core = (RCore *)user;
 	for (;;) {
 		char *s = __show_status_input (core, "> ");
-		if (!s || !*s) {
+		if (R_STR_ISEMPTY (s)) {
 			free (s);
 			break;
 		}
@@ -5537,7 +5545,7 @@ static int __help_cb(void *user) {
 }
 
 static int __license_cb(void *user) {
-	r_cons_message ("Copyright 2006-2023 - pancake - LGPL");
+	r_cons_message ("Copyright 2006-2024 - pancake - LGPL");
 	return 0;
 }
 
@@ -5625,7 +5633,7 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	const char *color = core->cons->context->pal.graph_box2;
 	char *now = r_core_cmd_str (core, "eco.");
 	r_str_split (now, '\n');
-	parent = "Settings.Colors";
+	parent = "Settings.Color Themes";
 	RList *list = __sorted_list (core, (const char **)core->visual.menus_Colors, COUNT (core->visual.menus_Colors));
 	char *pos;
 	RListIter* iter;
@@ -5880,7 +5888,7 @@ static bool __init_panels_menu(RCore *core) {
 
 	parent = "File.ReOpen";
 	for (i = 0; menus_ReOpen[i]; i++) {
-		if (!strcmp (menus_ReOpen[i], "In RW")) {
+		if (!strcmp (menus_ReOpen[i], "In Read+Write")) {
 			__add_menu (core, parent, menus_ReOpen[i], __rw_cb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			__add_menu (core, parent, menus_ReOpen[i], __debugger_cb);
@@ -5898,7 +5906,7 @@ static bool __init_panels_menu(RCore *core) {
 
 	__init_menu_saved_layout (core, "File.Load Layout.Saved");
 
-	__init_menu_color_settings_layout (core, "Settings.Colors");
+	__init_menu_color_settings_layout (core, "Settings.Color Themes");
 
 	{
 		parent = "Settings.Decompiler";
@@ -6019,9 +6027,8 @@ static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, bool col
 	} else {
 		__default_panel_print (core, panel);
 	}
-	int w, h;
-	w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
-	h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
+	int w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
+	int h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
 	if (color) {
 		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
 	} else {
@@ -6076,6 +6083,11 @@ static void __panels_refresh(RCore *core) {
 		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
 	} else {
 		RPanelsMenuItem *parent = panels->panels_menu->root;
+		if (panels->mode == PANEL_MODE_MENU) {
+			r_strbuf_append (title, " > ");
+		} else {
+			r_strbuf_append (title, Color_YELLOW"[m]"Color_RESET);
+		}
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
@@ -6101,15 +6113,12 @@ static void __panels_refresh(RCore *core) {
 	int tab_pos = i;
 	for (i = core->panels_root->n_panels; i > 0; i--) {
 		RPanels *panels = core->panels_root->panels[i - 1];
-		char *name = NULL;
-		if (panels) {
-			name = panels->name;
-		}
+		const char *name = panels? panels->name: NULL;
 		if (i - 1 == core->panels_root->cur_panels) {
-			if (!name) {
-				r_strbuf_setf (title, "%s[%d] "Color_RESET, color, i);
+			if (name) {
+				r_strbuf_setf (title, "%s(%s) "Color_RESET, color, name);
 			} else {
-				r_strbuf_setf (title, "%s[%s] "Color_RESET, color, name);
+				r_strbuf_setf (title, "%s(%d) "Color_RESET, color, i);
 			}
 			tab_pos -= r_str_ansi_len (r_strbuf_get (title));
 		} else {
@@ -6123,7 +6132,7 @@ static void __panels_refresh(RCore *core) {
 		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
 		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
-	r_strbuf_set (title, "Tab ");
+	r_strbuf_set (title, "[t]ab ");
 	tab_pos -= r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
 	r_cons_canvas_write (can, r_strbuf_get (title));
@@ -6555,41 +6564,41 @@ static void __redo_seek(RCore *core) {
 static void __handle_tab(RCore *core) {
 	r_cons_gotoxy (0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new T:new with current panel -:del =:name"Color_RESET, core->cons->context->pal.graph_box2);
+		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit t:new T:new+curpanel -:del =:name"Color_RESET,
+			core->cons->context->pal.graph_box2);
 	} else {
 		const int min = 1;
 		const int max = core->panels_root->n_panels;
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new T:new with current panel -:del =:name"Color_RESET,
+		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:new+curpanel -:del =:name"Color_RESET,
 			core->cons->context->pal.graph_box2, min, max);
 	}
 	r_cons_flush ();
 	r_cons_set_raw (true);
-	int ch = r_cons_readchar ();
+	const int ch = r_cons_readchar ();
 
 	if (isdigit (ch)) {
 		__handle_tab_nth (core, ch);
-		return;
-	}
-
-	switch (ch) {
-	case 'n':
-		__handle_tab_next (core);
-		return;
-	case 'p':
-		__handle_tab_prev (core);
-		return;
-	case '-':
-		__set_root_state (core, DEL);
-		return;
-	case '=':
-		__handle_tab_name (core);
-		return;
-	case 't':
-		__handle_tab_new (core);
-		return;
-	case 'T':
-		__handle_tab_new_with_cur_panel (core);
-		return;
+	} else {
+		switch (ch) {
+		case 'n':
+			__handle_tab_next (core);
+			break;
+		case 'p':
+			__handle_tab_prev (core);
+			break;
+		case '-':
+			__set_root_state (core, DEL);
+			break;
+		case '=':
+			__handle_tab_name (core);
+			break;
+		case 't':
+			__handle_tab_new (core);
+			break;
+		case 'T':
+			__handle_tab_new_with_cur_panel (core);
+			break;
+		}
 	}
 }
 
