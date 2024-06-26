@@ -87,23 +87,23 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
-static void block_free(RAnalBlock *block) {
-	if (!block) {
+static void block_free(RAnalBlock *bb) {
+	if (!bb) {
 		return;
 	}
-	free (block->esil);
-	r_anal_cond_free (block->cond);
-	free (block->fingerprint);
-	r_anal_diff_free (block->diff);
-	free (block->op_bytes);
-	r_anal_switch_op_free (block->switch_op);
-	r_list_free (block->fcns);
-	free (block->op_pos);
-	free (block->parent_reg_arena);
-	free (block);
+	free (bb->esil);
+	r_anal_cond_free (bb->cond);
+	free (bb->fingerprint);
+	r_anal_diff_free (bb->diff);
+	free (bb->op_bytes);
+	r_anal_switch_op_free (bb->switch_op);
+	r_list_free (bb->fcns);
+	free (bb->op_pos);
+	free (bb->parent_reg_arena);
+	free (bb);
 }
 
-void __block_free_rb(RBNode *node, void *user) {
+R_IPI void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = unwrap (node);
 	r_anal_block_unref (block);
 	// block_free (block);

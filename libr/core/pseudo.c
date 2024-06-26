@@ -638,6 +638,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
+		ut64 nextbbaddr = UT64_MAX;
+		if (iter->n) {
+			RListIter *nit = (RListIter*)(iter->n);
+			RAnalBlock *nbb = (RAnalBlock*)(nit->data);
+			nextbbaddr = nbb->addr;
+		}
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", false);
 		}
@@ -699,11 +705,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			} else {
 				PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
 			}
-			ut64 nbbaddr = UT64_MAX;
+			ut64 nbbaddr = nextbbaddr; // UT64_MAX;
+#if 0
+			eprintf ("iter %p %p\n", iter, iter->n);
+			if (nextbbaddr) {
+			}
 			if (iter->n) {
-				RAnalBlock *nbb = (RAnalBlock*)iter->n;
+				RAnalBlock *nbb = (RAnalBlock*)(iter->n);
 				nbbaddr = nbb->addr;
 			}
+#endif
 			if (bb->jump == UT64_MAX) {
 				NEWLINE (bb->addr, indent);
 				if (r0) {
