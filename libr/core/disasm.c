@@ -1986,6 +1986,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	} else {
 		fcn_name = f->name;
 	}
+#if 0
 	if (core->cons->context->demo) {
 		const char *nl = core->vmode? "\n"R_CONS_CLEAR_LINE: NULL;
 		char *r = r_str_ss (fcn_name, nl, 0);
@@ -1994,6 +1995,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_cons_print (s_in);
 		free (s_in);
 	}
+#endif
 	ds_begin_line (ds);
 	char *sign = r_anal_function_get_signature (f);
 	if (empty_signature (sign)) {
