@@ -162,7 +162,10 @@ static const char *menus_settings_screen[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
+	"Manpages...",
+	"--",
 	"License", "Version", "Full Version",
+	"--",
 	"Fortune", "2048",
 	NULL
 };
@@ -2115,6 +2118,72 @@ static void __update_disassembly_or_open(RCore *core) {
 		__set_cursor (core, false);
 		__set_curnode (core, 0);
 	}
+}
+
+static int __help_manpage_radare2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man radare2");
+	return 0;
+}
+
+static int __help_manpage_rabin2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rabin2");
+	return 0;
+}
+
+static int __help_manpage_rasm2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rasm2");
+	return 0;
+}
+
+static int __help_manpage_r2agent_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man r2agent");
+	return 0;
+}
+
+static int __help_manpage_ragg2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man ragg2");
+	return 0;
+}
+
+static int __help_manpage_ravc2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man ravc2");
+	return 0;
+}
+
+static int __help_manpage_rax2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rax2");
+	return 0;
+}
+
+static int __help_manpage_rahash2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rahash2");
+	return 0;
+}
+
+static int __help_manpage_rafind2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rafind2");
+	return 0;
+}
+
+static int __help_manpage_rarun2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rarun2");
+	return 0;
+}
+
+static int __help_manpage_rasign2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "man rasign2");
+	return 0;
 }
 
 static int __continue_cb(void *user) {
@@ -5327,8 +5396,7 @@ static int __config_toggle_cb(void *user) {
 	}
 	if (!strcmp (parent->name, "asm")) {
 		__update_menu (core, "Settings.Disassembly....asm", __init_menu_disasm_asm_settings_layout);
-	}
-	if (!strcmp (parent->name, "Screen")) {
+	} else if (!strcmp (parent->name, "Screen")) {
 		__update_menu (core, "Settings.Screen", __init_menu_screen_settings_layout);
 	}
 	return 0;
@@ -5668,6 +5736,21 @@ static RList *__sorted_list(RCore *core, const char *menu[], int count) {
 	return list;
 }
 
+static void __init_menu_manpages(void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
+	__add_menu (core, parent, "r2agent", __help_manpage_r2agent_cb);
+	__add_menu (core, parent, "rabin2", __help_manpage_rabin2_cb);
+	__add_menu (core, parent, "radare2", __help_manpage_radare2_cb);
+	__add_menu (core, parent, "rafind2", __help_manpage_rafind2_cb);
+	__add_menu (core, parent, "ragg2", __help_manpage_ragg2_cb);
+	__add_menu (core, parent, "rahash2", __help_manpage_rahash2_cb);
+	__add_menu (core, parent, "rarun2", __help_manpage_rarun2_cb);
+	__add_menu (core, parent, "rasign2", __help_manpage_rasign2_cb);
+	__add_menu (core, parent, "rasm2", __help_manpage_rasm2_cb);
+	__add_menu (core, parent, "ravc2", __help_manpage_ravc2_cb);
+	__add_menu (core, parent, "rax2", __help_manpage_rax2_cb);
+}
+
 static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	char *now = r_core_cmd_str (core, "eco.");
@@ -5946,6 +6029,10 @@ static bool __init_panels_menu(RCore *core) {
 			__add_menu (core, parent, menu, __fortune_cb);
 		} else if (!strcmp (menu, "2048")) {
 			__add_menu (core, parent, menu, __game_cb);
+		} else if (!strcmp (menu, "Manpages...")) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		} else if (*menu == '-') {
+			__add_menu (core, parent, menu, __separator);
 		} else {
 			__add_menu (core, parent, menu, __help_cb);
 		}
@@ -5973,6 +6060,7 @@ static bool __init_panels_menu(RCore *core) {
 
 	__init_menu_saved_layout (core, "Settings.Load Layout.Saved");
 	__init_menu_color_settings_layout (core, "Settings.Color Themes...");
+	__init_menu_manpages (core, "Help.Manpages...");
 
 	{
 		parent = "Settings.Decompiler...";
