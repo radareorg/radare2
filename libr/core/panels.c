@@ -76,12 +76,13 @@ static const char *menus[] = {
 };
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Save Layout", "Load Layout", "Clear Saved Layouts", "Quit",
+	"New", "Open File", "ReOpen", "Close File", "--", "Open Project", "Save Project", "Close Project", "--", "Quit",
 	NULL
 };
 
 static const char *menus_Settings[] = {
-	"Color Themes", "Decompiler", "Disassembly", "Screen",
+	"Edit radare2rc", "--", "Color Themes...", "Decompiler...", "Disassembly...", "Screen...", "--",
+	"Save Layout", "Load Layout", "Clear Saved Layouts",
 	NULL
 };
 
@@ -139,7 +140,7 @@ static const char *menus_Debug[] = {
 };
 
 static const char *menus_Analyze[] = {
-	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
+	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "Preludes", "References",
 	NULL
 };
 
@@ -1253,6 +1254,10 @@ static void __adjust_and_add_panel(RCore *core, const char *name, char *cmd) {
 	RPanel *p0 = __get_panel (panels, 0);
 	__set_geometry (&p0->view->pos, 0, 1, available_space + 1, h - 1);
 	__set_curnode (core, 0);
+}
+
+static int __separator(void *user) {
+	return 0;
 }
 
 static int __add_cmd_panel(void *user) {
@@ -5086,6 +5091,24 @@ static int __close_file_cb(void *user) {
 	return 0;
 }
 
+static int __project_open_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "Po `?i ProjectName`");
+	return 0;
+}
+
+static int __project_save_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd_call (core, "Ps");
+	return 0;
+}
+
+static int __project_close_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd_call (core, "Pc");
+	return 0;
+}
+
 static int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_panels_save (core, NULL);
@@ -5201,7 +5224,7 @@ static int __clear_layout_cb(void *user) {
 	r_list_free (dir);
 	free (dir_path);
 
-	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
+	__update_menu (core, "Settings.Load Layout.Saved", __init_menu_saved_layout);
 	return 0;
 }
 
@@ -5254,7 +5277,7 @@ static int __settings_colors_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
 	}
-	__update_menu (core, "Settings.Color Themes", __init_menu_color_settings_layout);
+	__update_menu (core, "Settings.Color Themes...", __init_menu_color_settings_layout);
 	return 0;
 }
 
@@ -5277,7 +5300,7 @@ static int __config_value_cb(void *user) {
 		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
-		__update_menu (core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
+		__update_menu (core, "Settings.Disassembly....asm", __init_menu_disasm_asm_settings_layout);
 	}
 	if (!strcmp (parent->name, "Screen")) {
 		__update_menu (core, "Settings.Screen", __init_menu_screen_settings_layout);
@@ -5303,7 +5326,7 @@ static int __config_toggle_cb(void *user) {
 		menu->refreshPanels[i - 1] = p;
 	}
 	if (!strcmp (parent->name, "asm")) {
-		__update_menu (core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
+		__update_menu (core, "Settings.Disassembly....asm", __init_menu_disasm_asm_settings_layout);
 	}
 	if (!strcmp (parent->name, "Screen")) {
 		__update_menu (core, "Settings.Screen", __init_menu_screen_settings_layout);
@@ -5491,6 +5514,18 @@ static int __program_cb(void *user) {
 	return 0;
 }
 
+static int __aae_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aae");
+	return 0;
+}
+
+static int __aap_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aap");
+	return 0;
+}
+
 static int __basic_blocks_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aab");
@@ -5564,6 +5599,15 @@ static int __version_cb(void *user) {
 	return 0;
 }
 
+static int __r2rc_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_set_raw (false);
+	r_core_cmd0 (core, "edit");
+	r_cons_set_raw (true);
+	r_cons_flush ();
+	return 0;
+}
+
 static int __writeValueCb(void *user) {
 	RCore *core = (RCore *)user;
 	char *res = __show_status_input (core, "insert number: ");
@@ -5628,7 +5672,7 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	char *now = r_core_cmd_str (core, "eco.");
 	r_str_split (now, '\n');
-	parent = "Settings.Color Themes";
+	parent = "Settings.Color Themes...";
 	RList *list = __sorted_list (core, (const char **)core->visual.menus_Colors, COUNT (core->visual.menus_Colors));
 	char *pos;
 	RListIter* iter;
@@ -5655,7 +5699,7 @@ static void __init_menu_disasm_settings_layout(void *_core, const char *parent) 
 	r_list_foreach (list, iter, pos) {
 		if (!strcmp (pos, "asm")) {
 			__add_menu (core, parent, pos, __open_menu_cb);
-			__init_menu_disasm_asm_settings_layout (core, "Settings.Disassembly.asm");
+			__init_menu_disasm_asm_settings_layout (core, "Settings.Disassembly....asm");
 		} else {
 			r_strbuf_set (rsb, pos);
 			r_strbuf_append (rsb, ": ");
@@ -5725,50 +5769,67 @@ static bool __init_panels_menu(RCore *core) {
 	}
 	const char *parent = "File";
 	for (i = 0; menus_File[i]; i++) {
-		if (!strcmp (menus_File[i], "Open")) {
-			__add_menu (core, parent, menus_File[i], __open_file_cb);
-		} else if (!strcmp (menus_File[i], "ReOpen")) {
-			__add_menu (core, parent, menus_File[i], __open_menu_cb);
-		} else if (!strcmp (menus_File[i], "Close")) {
-			__add_menu (core, parent, menus_File[i], __close_file_cb);
-		} else if (!strcmp (menus_File[i], "Save Layout")) {
-			__add_menu (core, parent, menus_File[i], __save_layout_cb);
-		} else if (!strcmp (menus_File[i], "Load Layout")) {
-			__add_menu (core, parent, menus_File[i], __open_menu_cb);
-		} else if (!strcmp (menus_File[i], "Clear Saved Layouts")) {
-			__add_menu (core, parent, menus_File[i], __clear_layout_cb);
-		} else if (!strcmp (menus_File[i], "Quit")) {
-			__add_menu (core, parent, menus_File[i], __quit_cb);
+		const char *menu = menus_File[i];
+		if (!strcmp (menu, "Open File")) {
+			__add_menu (core, parent, menu, __open_file_cb);
+		} else if (!strcmp (menu, "ReOpen")) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		} else if (!strcmp (menu, "Close File")) {
+			__add_menu (core, parent, menu, __close_file_cb);
+		} else if (!strcmp (menu, "Open Project")) {
+			__add_menu (core, parent, menu, __project_open_cb);
+		} else if (!strcmp (menu, "Save Project")) {
+			__add_menu (core, parent, menu, __project_save_cb);
+		} else if (!strcmp (menu, "Close Project")) {
+			__add_menu (core, parent, menu, __project_close_cb);
+		} else if (!strcmp (menu, "Quit")) {
+			__add_menu (core, parent, menu, __quit_cb);
+		} else if (*menu == '-') {
+			__add_menu (core, parent, menu, __separator);
 		} else {
-			__add_menu (core, parent, menus_File[i], __add_cmd_panel);
+			__add_menu (core, parent, menu, __add_cmd_panel);
 		}
 	}
 
 	parent = "Settings";
 	for (i = 0; menus_Settings[i]; i++) {
-		__add_menu (core, parent, menus_Settings[i], __open_menu_cb);
+		const char *menu = menus_Settings[i];
+		if (!strcmp (menu, "Edit radare2rc")) {
+			__add_menu (core, parent, menu, __r2rc_cb);
+		} else if (!strcmp (menu, "Save Layout")) {
+			__add_menu (core, parent, menu, __save_layout_cb);
+		} else if (!strcmp (menu, "Load Layout")) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		} else if (!strcmp (menu, "Clear Saved Layouts")) {
+			__add_menu (core, parent, menu, __clear_layout_cb);
+		} else if (*menu) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		}
 	}
 
 	parent = "Edit";
 	for (i = 0; menus_Edit[i]; i++) {
-		if (!strcmp (menus_Edit[i], "Copy")) {
-			__add_menu (core, parent, menus_Edit[i], __copy_cb);
-		} else if (!strcmp (menus_Edit[i], "Paste")) {
-			__add_menu (core, parent, menus_Edit[i], __paste_cb);
-		} else if (!strcmp (menus_Edit[i], "Write String")) {
-			__add_menu (core, parent, menus_Edit[i], __write_str_cb);
-		} else if (!strcmp (menus_Edit[i], "Write Hex")) {
-			__add_menu (core, parent, menus_Edit[i], __write_hex_cb);
-		} else if (!strcmp (menus_Edit[i], "Write Value")) {
-			__add_menu (core, parent, menus_Edit[i], __writeValueCb);
-		} else if (!strcmp (menus_Edit[i], "Assemble")) {
-			__add_menu (core, parent, menus_Edit[i], __assemble_cb);
-		} else if (!strcmp (menus_Edit[i], "Fill")) {
-			__add_menu (core, parent, menus_Edit[i], __fill_cb);
-		} else if (!strcmp (menus_Edit[i], "io.cache")) {
-			__add_menu (core, parent, menus_Edit[i], __open_menu_cb);
+		const char *menu = menus_Edit[i];
+		if (!strcmp (menu, "Copy")) {
+			__add_menu (core, parent, menu, __copy_cb);
+		} else if (!strcmp (menu, "Paste")) {
+			__add_menu (core, parent, menu, __paste_cb);
+		} else if (!strcmp (menu, "Write String")) {
+			__add_menu (core, parent, menu, __write_str_cb);
+		} else if (!strcmp (menu, "Write Hex")) {
+			__add_menu (core, parent, menu, __write_hex_cb);
+		} else if (!strcmp (menu, "Write Value")) {
+			__add_menu (core, parent, menu, __writeValueCb);
+		} else if (!strcmp (menu, "Assemble")) {
+			__add_menu (core, parent, menu, __assemble_cb);
+		} else if (!strcmp (menu, "Fill")) {
+			__add_menu (core, parent, menu, __fill_cb);
+		} else if (!strcmp (menu, "io.cache")) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		} else if (*menu == '-') {
+			__add_menu (core, parent, menu, __separator);
 		} else {
-			__add_menu (core, parent, menus_Edit[i], __add_cmd_panel);
+			__add_menu (core, parent, menu, __add_cmd_panel);
 		}
 	}
 
@@ -5788,40 +5849,43 @@ static bool __init_panels_menu(RCore *core) {
 
 	parent = "Tools";
 	for (i = 0; menus_Tools[i]; i++) {
-		if (!strcmp (menus_Tools[i], "Calculator")) {
-			__add_menu (core, parent, menus_Tools[i], __calculator_cb);
-		} else if (!strcmp (menus_Tools[i], "Assembler")) {
-			__add_menu (core, parent, menus_Tools[i], __r2_assembler_cb);
-		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
-			__add_menu (core, parent, menus_Tools[i], __r2_shell_cb);
-		} else if (!strcmp (menus_Tools[i], "System Shell")) {
-			__add_menu (core, parent, menus_Tools[i], __system_shell_cb);
+		const char *menu = menus_Tools[i];
+		if (!strcmp (menu, "Calculator")) {
+			__add_menu (core, parent, menu, __calculator_cb);
+		} else if (!strcmp (menu, "Assembler")) {
+			__add_menu (core, parent, menu, __r2_assembler_cb);
+		} else if (!strcmp (menu, "R2 Shell")) {
+			__add_menu (core, parent, menu, __r2_shell_cb);
+		} else if (!strcmp (menu, "System Shell")) {
+			__add_menu (core, parent, menu, __system_shell_cb);
 		}
 	}
 
 	parent = "Search";
 	for (i = 0; menus_Search[i]; i++) {
-		if (!strcmp (menus_Search[i], "String (Whole Bin)")) {
-			__add_menu (core, parent, menus_Search[i], __string_whole_bin_cb);
-		} else if (!strcmp (menus_Search[i], "String (Data Sections)")) {
-			__add_menu (core, parent, menus_Search[i], __string_data_sec_cb);
-		} else if (!strcmp (menus_Search[i], "ROP")) {
-			__add_menu (core, parent, menus_Search[i], __rop_cb);
-		} else if (!strcmp (menus_Search[i], "Code")) {
-			__add_menu (core, parent, menus_Search[i], __code_cb);
-		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
-			__add_menu (core, parent, menus_Search[i], __hexpairs_cb);
+		const char *menu = menus_Search[i];
+		if (!strcmp (menu, "String (Whole Bin)")) {
+			__add_menu (core, parent, menu, __string_whole_bin_cb);
+		} else if (!strcmp (menu, "String (Data Sections)")) {
+			__add_menu (core, parent, menu, __string_data_sec_cb);
+		} else if (!strcmp (menu, "ROP")) {
+			__add_menu (core, parent, menu, __rop_cb);
+		} else if (!strcmp (menu, "Code")) {
+			__add_menu (core, parent, menu, __code_cb);
+		} else if (!strcmp (menu, "Hexpairs")) {
+			__add_menu (core, parent, menu, __hexpairs_cb);
 		}
 	}
 
 	parent = "Emulate";
 	for (i = 0; menus_Emulate[i]; i++) {
-		if (!strcmp (menus_Emulate[i], "Step From")) {
-			__add_menu (core, parent, menus_Emulate[i], __esil_init_cb);
-		} else if (!strcmp (menus_Emulate[i], "Step To")) {
-			__add_menu (core, parent, menus_Emulate[i], __esil_step_to_cb);
-		} else if (!strcmp (menus_Emulate[i], "Step Range")) {
-			__add_menu (core, parent, menus_Emulate[i], __esil_step_range_cb);
+		const char *menu = menus_Emulate[i];
+		if (!strcmp (menu, "Step From")) {
+			__add_menu (core, parent, menu, __esil_init_cb);
+		} else if (!strcmp (menu, "Step To")) {
+			__add_menu (core, parent, menu, __esil_step_to_cb);
+		} else if (!strcmp (menu, "Step Range")) {
+			__add_menu (core, parent, menu, __esil_step_range_cb);
 		}
 	}
 	{
@@ -5850,61 +5914,68 @@ static bool __init_panels_menu(RCore *core) {
 
 	parent = "Analyze";
 	for (i = 0; menus_Analyze[i]; i++) {
-		if (!strcmp (menus_Analyze[i], "Function")) {
-			__add_menu (core, parent, menus_Analyze[i], __function_cb);
-		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
-			__add_menu (core, parent, menus_Analyze[i], __symbols_cb);
-		} else if (!strcmp (menus_Analyze[i], "Program")) {
-			__add_menu (core, parent, menus_Analyze[i], __program_cb);
-		} else if (!strcmp (menus_Analyze[i], "BasicBlocks")) {
-			__add_menu (core, parent, menus_Analyze[i], __basic_blocks_cb);
-		} else if (!strcmp (menus_Analyze[i], "Calls")) {
-			__add_menu (core, parent, menus_Analyze[i], __calls_cb);
-		} else if (!strcmp (menus_Analyze[i], "References")) {
-			__add_menu (core, parent, menus_Analyze[i], __references_cb);
+		const char *menu = menus_Analyze[i];
+		if (!strcmp (menu, "Function")) {
+			__add_menu (core, parent, menu, __function_cb);
+		} else if (!strcmp (menu, "Symbols")) {
+			__add_menu (core, parent, menu, __symbols_cb);
+		} else if (!strcmp (menu, "Program")) {
+			__add_menu (core, parent, menu, __program_cb);
+		} else if (!strcmp (menu, "BasicBlocks")) {
+			__add_menu (core, parent, menu, __basic_blocks_cb);
+		} else if (!strcmp (menu, "Preludes")) {
+			__add_menu (core, parent, menu, __aap_cb);
+		} else if (!strcmp (menu, "Emulation")) {
+			__add_menu (core, parent, menu, __aae_cb);
+		} else if (!strcmp (menu, "Calls")) {
+			__add_menu (core, parent, menu, __calls_cb);
+		} else if (!strcmp (menu, "References")) {
+			__add_menu (core, parent, menu, __references_cb);
 		}
 	}
 	parent = "Help";
 	for (i = 0; menus_Help[i]; i++) {
-		if (!strcmp (menus_Help[i], "License")) {
-			__add_menu (core, parent, menus_Help[i], __license_cb);
-		} else if (!strcmp (menus_Help[i], "Version")) {
-			__add_menu (core, parent, menus_Help[i], __version_cb);
-		} else if (!strcmp (menus_Help[i], "Full Version")) {
-			__add_menu (core, parent, menus_Help[i], __version2_cb);
-		} else if (!strcmp (menus_Help[i], "Fortune")) {
-			__add_menu (core, parent, menus_Help[i], __fortune_cb);
-		} else if (!strcmp (menus_Help[i], "2048")) {
-			__add_menu (core, parent, menus_Help[i], __game_cb);
+		const char *menu = menus_Help[i];
+		if (!strcmp (menu, "License")) {
+			__add_menu (core, parent, menu, __license_cb);
+		} else if (!strcmp (menu, "Version")) {
+			__add_menu (core, parent, menu, __version_cb);
+		} else if (!strcmp (menu, "Full Version")) {
+			__add_menu (core, parent, menu, __version2_cb);
+		} else if (!strcmp (menu, "Fortune")) {
+			__add_menu (core, parent, menu, __fortune_cb);
+		} else if (!strcmp (menu, "2048")) {
+			__add_menu (core, parent, menu, __game_cb);
 		} else {
-			__add_menu (core, parent, menus_Help[i], __help_cb);
+			__add_menu (core, parent, menu, __help_cb);
 		}
 	}
 
 	parent = "File.ReOpen";
 	for (i = 0; menus_ReOpen[i]; i++) {
-		if (!strcmp (menus_ReOpen[i], "In Read+Write")) {
-			__add_menu (core, parent, menus_ReOpen[i], __rw_cb);
-		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
-			__add_menu (core, parent, menus_ReOpen[i], __debugger_cb);
+		const char *menu = menus_ReOpen[i];
+		if (!strcmp (menu, "In Read+Write")) {
+			__add_menu (core, parent, menu, __rw_cb);
+		} else if (!strcmp (menu, "In Debugger")) {
+			__add_menu (core, parent, menu, __debugger_cb);
 		}
 	}
 
-	parent = "File.Load Layout";
+	parent = "Settings.Load Layout";
 	for (i = 0; menus_loadLayout[i]; i++) {
-		if (!strcmp (menus_loadLayout[i], "Saved")) {
-			__add_menu (core, parent, menus_loadLayout[i], __open_menu_cb);
-		} else if (!strcmp (menus_loadLayout[i], "Default")) {
-			__add_menu (core, parent, menus_loadLayout[i], __load_layout_default_cb);
+		const char *menu = menus_loadLayout[i];
+		if (!strcmp (menu, "Saved")) {
+			__add_menu (core, parent, menu, __open_menu_cb);
+		} else if (!strcmp (menu, "Default")) {
+			__add_menu (core, parent, menu, __load_layout_default_cb);
 		}
 	}
 
-	__init_menu_saved_layout (core, "File.Load Layout.Saved");
-
-	__init_menu_color_settings_layout (core, "Settings.Color Themes");
+	__init_menu_saved_layout (core, "Settings.Load Layout.Saved");
+	__init_menu_color_settings_layout (core, "Settings.Color Themes...");
 
 	{
-		parent = "Settings.Decompiler";
+		parent = "Settings.Decompiler...";
 		char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
 		RList *optl = r_str_split_list (opts, "\n", 0);
 		RListIter *iter;
@@ -5916,8 +5987,8 @@ static bool __init_panels_menu(RCore *core) {
 		free (opts);
 	}
 
-	__init_menu_disasm_settings_layout (core, "Settings.Disassembly");
-	__init_menu_screen_settings_layout (core, "Settings.Screen");
+	__init_menu_disasm_settings_layout (core, "Settings.Disassembly...");
+	__init_menu_screen_settings_layout (core, "Settings.Screen...");
 
 	parent = "Edit.io.cache";
 	for (i = 0; menus_iocache[i]; i++) {
@@ -6397,7 +6468,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 		fprintf (fd, "%s\n", pjs);
 		free (pjs);
 		fclose (fd);
-		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
+		__update_menu (core, "Settings.Load Layout.Saved", __init_menu_saved_layout);
 		(void)__show_status (core, "Panels layout saved!");
 	} else {
 		pj_free (pj);
