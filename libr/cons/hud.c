@@ -490,6 +490,7 @@ static char *r_cons_message_multiline(const char *msg) {
 	r_cons_any_key (NULL);
 	r_list_free (lines);
 	free (s);
+	free (newmsg);
 	return NULL;
 }
 

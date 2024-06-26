@@ -5159,7 +5159,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	}
 	if (p_item == NULL) {
 		R_LOG_WARN ("Cannot find panel %s", parent);
-		sleep (1);
+		r_sys_sleep (1);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -5167,7 +5167,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
-	if (item->p) {
+	if (item->p && p_item) {
 		item->p->model = R_NEW0 (RPanelModel);
 		item->p->view = R_NEW0 (RPanelView);
 		if (item->p->model && item->p->view) {

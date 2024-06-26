@@ -300,7 +300,7 @@ bool callback(RTokenizer *tok) {
 		switch (tok->ch) {
 		case '}':
 			R_FREE (data->s);
-			// pj_end (data->pj);
+			pj_end (data->pj);
 			pj_end (data->pj);
 			break;
 		}
@@ -337,7 +337,7 @@ bool callback(RTokenizer *tok) {
 					pj_end (data->pj);
 					if (first) {
 						first = false;
-						pj_ka (data->pj, "blocks");
+						pj_ka (data->pj, "body");
 					}
 				}
 			}
@@ -354,7 +354,7 @@ bool callback(RTokenizer *tok) {
 				R_FREE (data->s);
 			}
 			// pj_ka (data->pj, "body");
-			pj_a (data->pj);
+			//pj_a (data->pj);
 		} else if (tok->ch == '(') {
 			data->parlevel++;
 			if (data->word) {
