@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2024 - Author: pancake, vane11ope */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -14,6 +14,7 @@ static void __panels_refresh(RCore *core);
 
 #define MENU_Y 1
 #define PANEL_NUM_LIMIT 16
+#define PANEL_HL_COLOR core->cons->context->pal.graph_box2
 
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
@@ -483,7 +484,7 @@ static char *__search_db(RCore *core, const char *title) {
 
 static int __show_status(RCore *core, const char *msg) {
 	r_cons_gotoxy (0, 0);
-	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_flush ();
 	r_cons_set_raw (true);
 	return r_cons_readchar ();
@@ -492,11 +493,11 @@ static int __show_status(RCore *core, const char *msg) {
 static bool __show_status_yesno(RCore *core, int def, const char *msg) {
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();
-	return r_cons_yesno (def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+	return r_cons_yesno (def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
 
 static char *__show_status_input(RCore *core, const char *msg) {
-	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();
 	char *out = r_cons_input (n_msg);
@@ -749,19 +750,16 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 	RStrBuf *title = r_strbuf_new (NULL);
 	RStrBuf *cache_title = r_strbuf_new (NULL);
 	if (__check_if_cur_panel (core, panel)) {
-		r_strbuf_setf (title, "%s[X] %s"Color_RESET,
-				core->cons->context->pal.graph_box2, panel->model->title);
+		r_strbuf_setf (title, "%s[X] %s"Color_RESET, PANEL_HL_COLOR, panel->model->title);
 		if (panel->view->pos.w > 16) {
-			// r_strbuf_setf (cache_title, "%s[Cache] N/A"Color_RESET, core->cons->context->pal.graph_box2);
-			// r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
-			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
+			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, PANEL_HL_COLOR, panel->model->cache ? " cache" : "");
 		}
 	} else {
 		// r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
 		r_strbuf_setf (title, " o    %s   ", panel->model->title);
 		if (panel->view->pos.w > 24) {
 			// r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
-			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
+			r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, PANEL_HL_COLOR, panel->model->cache ? " cache" : "");
 			// r_strbuf_set (cache_title, "[Cache] N/A");
 		}
 	}
@@ -849,15 +847,14 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 			tit = strdup ("");
 		}
 		if (__check_if_cur_panel (core, panel)) {
-			r_strbuf_setf (title, Color_INVERT"%s[X] ", core->cons->context->pal.graph_box2);
+			r_strbuf_setf (title, Color_INVERT"%s[X] ", PANEL_HL_COLOR);
 			if (panel->view->pos.w > 4) {
 				r_strbuf_appendf (title, "%s", r_str_get (tit));
 			} else {
 				r_strbuf_appendf (title, "%s (%s)", tit?tit:"", cmd_title);
 			}
 			if (panel->view->pos.w > 24) {
-			// 	r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
-				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
+				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, PANEL_HL_COLOR, panel->model->cache ? " cache" : "");
 			}
 		} else {
 			if (cmd_title && !strcmp (panel->model->title, tit)) {
@@ -866,7 +863,7 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 				r_strbuf_setf (title, " =  %s (%s)  ", panel->model->title, tit);
 			}
 			if (panel->view->pos.w > 24) {
-				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? " cache" : "");
+				r_strbuf_setf (cache_title, "%s[&%s]"Color_RESET, PANEL_HL_COLOR, panel->model->cache ? " cache" : "");
 				// r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
 			}
 		}
@@ -876,7 +873,7 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 		__update_help_title (core, panel);
 #endif
 	} else {
-		r_strbuf_setf (cache_title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, "");
+		r_strbuf_setf (cache_title, "%s[X] %s"Color_RESET, PANEL_HL_COLOR, "");
 	}
 	r_strbuf_slice (title, 0, panel->view->pos.w);
 	r_strbuf_slice (cache_title, 0, panel->view->pos.w);
@@ -3945,8 +3942,7 @@ static RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item) {
 	size_t i;
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
-			r_strbuf_appendf (buf, "%s> %s"Color_RESET,
-					core->cons->context->pal.graph_box2, item->sub[i]->name);
+			r_strbuf_appendf (buf, "%s> %s"Color_RESET, PANEL_HL_COLOR, item->sub[i]->name);
 		} else {
 			r_strbuf_appendf (buf, "  %s", item->sub[i]->name);
 		}
@@ -4013,7 +4009,7 @@ static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, c
 		return false;
 	}
 	if (start == modal->idx) {
-		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
+		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, PANEL_HL_COLOR, name);
 	} else {
 		r_strbuf_appendf (modal->data, "   %s", name);
 	}
@@ -4058,7 +4054,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) 
 	r_cons_canvas_write (can, r_strbuf_get (modal->data));
 	r_strbuf_free (modal->data);
 
-	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
+	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, PANEL_HL_COLOR);
 
 	print_notch (core);
 	r_cons_canvas_print (can);
@@ -5630,7 +5626,6 @@ static RList *__sorted_list(RCore *core, const char *menu[], int count) {
 
 static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
-	const char *color = core->cons->context->pal.graph_box2;
 	char *now = r_core_cmd_str (core, "eco.");
 	r_str_split (now, '\n');
 	parent = "Settings.Color Themes";
@@ -5640,7 +5635,7 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	r_list_foreach (list, iter, pos) {
 		if (pos && !strcmp (now, pos)) {
-			r_strbuf_setf (buf, "%s%s", color, pos);
+			r_strbuf_setf (buf, "%s%s", PANEL_HL_COLOR, pos);
 			__add_menu (core, parent, r_strbuf_get (buf), __settings_colors_cb);
 			continue;
 		}
@@ -6030,7 +6025,7 @@ static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, bool col
 	int w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
 	int h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
 	if (color) {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, PANEL_HL_COLOR);
 	} else {
 		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
 	}
@@ -6076,22 +6071,25 @@ static void __panels_refresh(RCore *core) {
 	}
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
-	const char *color = core->cons->context->pal.graph_box2;
 	if (panels->mode == PANEL_MODE_ZOOM) {
-		r_strbuf_appendf (title, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
+		r_strbuf_appendf (title, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, PANEL_HL_COLOR);
 	} else if (panels->mode == PANEL_MODE_WINDOW) {
-		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
+		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, PANEL_HL_COLOR);
 	} else {
 		RPanelsMenuItem *parent = panels->panels_menu->root;
 		if (panels->mode == PANEL_MODE_MENU) {
 			r_strbuf_append (title, " > ");
 		} else {
-			r_strbuf_append (title, Color_YELLOW"[m]"Color_RESET);
+			if (panels->can->color) {
+				r_strbuf_appendf (title, "%s[m]"Color_RESET, PANEL_HL_COLOR);
+			} else {
+				r_strbuf_append (title, "[m]");
+			}
 		}
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
-				r_strbuf_appendf (title, "%s[%s]"Color_RESET, color, item->name);
+				r_strbuf_appendf (title, "%s[%s]"Color_RESET, PANEL_HL_COLOR, item->name);
 			} else {
 				r_strbuf_appendf (title, " %s ", item->name);
 			}
@@ -6116,9 +6114,9 @@ static void __panels_refresh(RCore *core) {
 		const char *name = panels? panels->name: NULL;
 		if (i - 1 == core->panels_root->cur_panels) {
 			if (name) {
-				r_strbuf_setf (title, "%s(%s) "Color_RESET, color, name);
+				r_strbuf_setf (title, "%s(%s) "Color_RESET, PANEL_HL_COLOR, name);
 			} else {
-				r_strbuf_setf (title, "%s(%d) "Color_RESET, color, i);
+				r_strbuf_setf (title, "%s(%d) "Color_RESET, PANEL_HL_COLOR, i);
 			}
 			tab_pos -= r_str_ansi_len (r_strbuf_get (title));
 		} else {
@@ -6132,8 +6130,8 @@ static void __panels_refresh(RCore *core) {
 		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
 		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
-	r_strbuf_set (title, "[t]ab ");
-	tab_pos -= r_strbuf_length (title);
+	r_strbuf_setf (title, "%s[t]%sab ", PANEL_HL_COLOR, Color_RESET);
+	tab_pos -= r_str_ansi_len (r_strbuf_get (title));
 	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
 	r_cons_canvas_write (can, r_strbuf_get (title));
 	r_strbuf_free (title);
@@ -6564,13 +6562,12 @@ static void __redo_seek(RCore *core) {
 static void __handle_tab(RCore *core) {
 	r_cons_gotoxy (0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit t:new T:new+curpanel -:del =:name"Color_RESET,
-			core->cons->context->pal.graph_box2);
+		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit t:new T:newWithCurPanel -:del =:setName"Color_RESET, PANEL_HL_COLOR);
 	} else {
 		const int min = 1;
 		const int max = core->panels_root->n_panels;
-		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:new+curpanel -:del =:name"Color_RESET,
-			core->cons->context->pal.graph_box2, min, max);
+		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:newWithCurPanel -:del =:setName"Color_RESET,
+				PANEL_HL_COLOR, min, max);
 	}
 	r_cons_flush ();
 	r_cons_set_raw (true);
