@@ -55,7 +55,7 @@ EXPECT=<<EOF
       }
     ],
     "body": [
-      {
+      "args": {
         "type": "call",
         "name": "puts",
         "args": [
