@@ -4534,7 +4534,7 @@ repeat:;
 		}
 
 		char *nextgt = strchr (r_str_trim_head_ro (ptr + 1), '>');
-		if (nextgt) {
+		if (nextgt && nextgt[0] != '>') {
 			char *back = ptr + 1;
 			while (nextgt > back) {
 				if (!isdigit (*nextgt) && *nextgt != 'H') {
@@ -4588,6 +4588,7 @@ repeat:;
 				// R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
 				// goto errorout;
 			}
+			*str = 0;
 			if (next_redirect) {
 				ptr = next_redirect;
 				*next_redirect = ' ';

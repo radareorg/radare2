@@ -225,7 +225,7 @@ static void indent(RTokenizer *tok) {
 	if (data->incase) {
 		n++;
 	}
-	// R_LOG_DEBUG ("%s", r_str_pad (' ', n));
+	R_LOG_DEBUG ("%s", r_str_pad (' ', n));
 }
 
 bool callback(RTokenizer *tok) {
