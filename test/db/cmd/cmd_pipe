@@ -43,3 +43,28 @@ Disassembly of entry0:
 
 EOF
 RUN
+
+NAME=double redirect into an alias
+FILE=--
+CMDS=<<EOF
+echo hello > $a
+echo world > $a
+cat $a
+EOF
+EXPECT=<<EOF
+world
+EOF
+RUN
+
+# XXX note that theres a missing newline here
+NAME=double redirect into an alias append
+FILE=--
+CMDS=<<EOF
+echo hello > $a
+echo world >> $a
+cat $a
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
