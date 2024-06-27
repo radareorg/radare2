@@ -2179,7 +2179,7 @@ static int cmd_table(void *data, const char *input) {
 			if (*file == '$' && !file[1]) {
 				R_LOG_ERROR ("No alias name given");
 			} else if (*file == '$') {
-				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file+1);
+				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file + 1);
 				if (file_data) {
 					char *file_data_str = r_cmd_alias_val_strdup (file_data);
 					load_table (core, core->table, strdup (file_data_str));
@@ -4568,11 +4568,8 @@ repeat:;
 				ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
 				const char *arg = r_str_trim_head_ro (str + 1);
 				if (appendResult) {
-					if (r_cmd_alias_append_raw (core->rcmd, arg, alias_data, alias_len)) {
+					if (!r_cmd_alias_append_raw (core->rcmd, arg, alias_data, alias_len)) {
 						R_LOG_INFO ("Alias '$%s' is a command - will not attempt to append", arg);
-					} else {
-						/* No existing alias */
-						r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len);
 					}
 				} else {
 					r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len);
