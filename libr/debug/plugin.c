@@ -80,6 +80,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
+	char spaces2[16];
 	char spaces[16];
 	memset (spaces, ' ', 15);
 	spaces[15] = 0;
@@ -96,7 +97,11 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	R_VEC_FOREACH (dbg->plugins, ds) {
 		RPluginMeta meta = ds->plugin->meta;
 		int sp = 8 - strlen (meta.name);
+		memset (spaces, ' ', sp);
 		spaces[sp] = 0;
+		int sp2 = 6 - strlen (meta.license);
+		memset (spaces2, ' ', sp2);
+		spaces2[sp2] = 0;
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", meta.name);
 		} else if (mode == 'j') {
@@ -110,9 +115,11 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 			}
 			pj_end (pj);
 		} else {
-			dbg->cb_printf ("%s %s %s%s\n",
+			dbg->cb_printf ("%s %s %s%s %s%s\n",
 				(ds == dbg->current)? "*": "-",
-				meta.name, spaces, meta.license);
+				meta.name,
+				spaces, meta.license,
+				spaces2, meta.desc);
 		}
 		spaces[sp] = ' ';
 	}
