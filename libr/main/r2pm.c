@@ -24,13 +24,13 @@ static const char *helpmsg =
 	" -H variable       show the value of given internal environment variable (See -HH)\n"
 	" -HH               show all the internal environment variable values\n"
 	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
-	" -I                information about repository and installed packages\n"
+	" -I                information about the repository and installed packages\n"
 	" -l                list installed packages\n"
 	" -q                be quiet\n"
 	" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"
 	" -s [<keyword>]    search available packages in database matching a string\n"
-	" -t [YYYY-MM-DD]   force a moment in time to pull the code from the git packages\n"
-	" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"
+	" -t [YYYY-MM-DD]   set a moment in time to pull the code from the git packages\n"
+	" -u <pkgname>      uninstall package (see -f to force uninstall)\n"
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
 	" -U                initialize/update database and upgrade all outdated packages\n"
@@ -1229,6 +1229,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.time = opt.arg;
 			break;
 		case 'r':
+			r_sys_setenv ("R2PM_OFFLINE", "1");
 			r2pm.run = true;
 			action = true;
 			break;
@@ -1236,6 +1237,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.global = true;
 			break;
 		case 'H':
+			r_sys_setenv ("R2PM_OFFLINE", "1");
 			if (!strcmp (opt.arg, "H")) {
 				r2pm_envhelp (true);
 			} else {
@@ -1243,6 +1245,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			}
 			return 0;
 		case 'h':
+			r_sys_setenv ("R2PM_OFFLINE", "1");
 			if (r2pm.help) {
 				r2pm.envhelp = true;
 			} else {
