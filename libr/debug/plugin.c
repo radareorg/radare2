@@ -116,7 +116,7 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 			pj_end (pj);
 		} else {
 			dbg->cb_printf ("%s %s %s%s %s%s\n",
-				(ds == dbg->current)? "*": "-",
+				(ds == dbg->current)? "o": "-",
 				meta.name,
 				spaces, meta.license,
 				spaces2, meta.desc);
