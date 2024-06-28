@@ -14,6 +14,31 @@
 
 #define SPECIAL_CHARS "@;~$#|`\"'()<>"
 
+static const char help_message[] = \
+"\nWelcome to radare2!\n" \
+"\n" \
+"* Type `?` for the root list of commands. \n" \
+"* Append the `?` to any command to list the sub-commands.\n" \
+"* Prefix the command with `'` to avoid evaluating special chars\n" \
+"* The `@` modifier can be used for temporal seeks\n" \
+"* The `~` represents the internal grep. System pipes also work `|`.\n" \
+"* Multiple commands can be chained with `;`.\n" \
+"* Run external scripts with the `.` source command (r2, r2js, python, ..) \n" \
+"* Use the `?*~...` command to inspect all the commands in visual mode\n" \
+"\n" \
+"Use the `e` command to change the configuration options.\n" \
+"* Run `edit` to tweak your ~/.radare2rc script\n" \
+"\n" \
+"Basic commands:\n" \
+"\n" \
+"* s [addr] - seek to a different address\n" \
+"* px, pd  - print hexadecimal, disassembly (pdf/pdr the whole function)\n" \
+"* wx, wa  - write hexpairs, write assembly (w - write string)\n" \
+"* aaa, af - analyze the whole program or function\n" \
+"* /, /x   - search for strings or hexadecimal patterns\n" \
+"* f~...   - search for strings or hexadecimal patterns\n" \
+"* q       - quit (alias for ^D or exit)\n";
+
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
@@ -709,6 +734,17 @@ static int cmd_head(void *data, const char *_input) { // "head"
 	}
 	free (input);
 	return 0;
+}
+
+static int cmd_h(void *data, const char *_input) { // "head"
+	if (r_str_startswith (_input, "ead")) {
+		return cmd_head (data, _input);
+	}
+	if (r_str_startswith (_input, "elp")) {
+		r_cons_printf ("%s\n", help_message);
+		return 0;
+	}
+	return -1; // invalid command
 }
 
 static int cmd_undo(void *data, const char *input) {
@@ -6704,7 +6740,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "k", "perform sdb query", cmd_kuery },
 		{ "l", "list files and directories", cmd_l },
 		{ "j", "join the contents of the two files", cmd_join },
-		{ "h", "show the top n number of line in file", cmd_head },
+		{ "h", "show the top n number of line in file", cmd_h },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins },
 		{ "m", "mount filesystem", cmd_mount },
 		{ "o", "open or map file", cmd_open },
