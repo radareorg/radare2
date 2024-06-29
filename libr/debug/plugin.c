@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 pancake */
+/* radare - LGPL - Copyright 2009-2024 pancake */
 
 #include <r_debug.h>
 #include <config.h>
@@ -17,7 +17,7 @@ static RDebugPlugin *debug_static_plugins[] = {
 };
 
 R_API void r_debug_init_plugins(RDebug *dbg) {
-	r_return_if_fail (dbg);
+	R_RETURN_IF_FAIL (dbg);
 	int i;
 	dbg->plugins = RVecDebugPluginSession_new ();
 	for (i = 0; debug_static_plugins[i]; i++) {
@@ -26,7 +26,7 @@ R_API void r_debug_init_plugins(RDebug *dbg) {
 }
 
 R_API void r_debug_fini_plugins(RDebug *dbg) {
-	r_return_if_fail (dbg);
+	R_RETURN_IF_FAIL (dbg);
 	RVecDebugPluginSession_free (dbg->plugins);
 }
 
@@ -35,7 +35,7 @@ static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void 
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	if (R_STR_ISNOTEMPTY (str)) {
 		RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
 		if (!ds) {
@@ -79,9 +79,9 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 }
 
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
+	char spaces2[16];
 	char spaces[16];
-	int count = 0;
 	memset (spaces, ' ', 15);
 	spaces[15] = 0;
 	PJ *pj = NULL;
@@ -97,7 +97,11 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	R_VEC_FOREACH (dbg->plugins, ds) {
 		RPluginMeta meta = ds->plugin->meta;
 		int sp = 8 - strlen (meta.name);
+		memset (spaces, ' ', sp);
 		spaces[sp] = 0;
+		int sp2 = 6 - strlen (meta.license);
+		memset (spaces2, ' ', sp2);
+		spaces2[sp2] = 0;
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", meta.name);
 		} else if (mode == 'j') {
@@ -111,12 +115,13 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 			}
 			pj_end (pj);
 		} else {
-			dbg->cb_printf ("%d  %s  %s %s%s\n",
-				count, (ds == dbg->current)? "dbg": "---",
-				meta.name, spaces, meta.license);
+			dbg->cb_printf ("%s %s %s%s %s%s\n",
+				(ds == dbg->current)? "o": "-",
+				meta.name,
+				spaces, meta.license,
+				spaces2, meta.desc);
 		}
 		spaces[sp] = ' ';
-		count++;
 	}
 	if (mode == 'j') {
 		pj_end (pj);
@@ -126,7 +131,7 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
-	r_return_val_if_fail (dbg && plugin, false);
+	R_RETURN_VAL_IF_FAIL (dbg && plugin, false);
 	if (!plugin->meta.name) {
 		return false;
 	}
@@ -148,7 +153,7 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 }
 
 R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
-	r_return_val_if_fail (dbg && plugin, false);
+	R_RETURN_VAL_IF_FAIL (dbg && plugin, false);
 	RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins,
 		(void*)plugin->meta.name, find_plugin_by_name);
 	if (ds) {
@@ -159,7 +164,7 @@ R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
 }
 
 R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
-	r_return_val_if_fail (dbg && profile, false);
+	R_RETURN_VAL_IF_FAIL (dbg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		R_LOG_ERROR ("r_debug_plugin_set_reg_profile: Cannot find '%s'", profile);

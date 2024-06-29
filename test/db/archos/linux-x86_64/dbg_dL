@@ -2,17 +2,17 @@ NAME=dbg.dL
 FILE=bins/elf/ls-focal
 CMDS=dL
 EXPECT=<<EOF
-0  ---  bf       LGPL3
-1  ---  bochs    LGPL3
-2  ---  esil     LGPL3
-3  ---  evm      LGPL3
-4  ---  gdb      LGPL3
-5  ---  io       MIT
-6  dbg  native   LGPL3
-7  ---  null     MIT
-8  ---  qnx      LGPL3
-9  ---  rap      LGPL3
-10  ---  rv32ima  MIT
-11  ---  winkd    LGPL3
+- bf       LGPL3  BF debug plugin
+- bochs    LGPL3  bochs debug plugin
+- esil     LGPL3  esil debug plugin
+- evm      LGPL3  evm debugger backend
+- gdb      LGPL3  gdb debug plugin
+- io       MIT    io debug plugin
+o native   LGPL3  native debug plugin
+- null     MIT    null debug plugin (does nothing)
+- qnx      LGPL3  qnx debug plugin
+- rap      LGPL3  rap debug plugin
+- rv32ima  MIT    experimental riscv32ima emulator
+- winkd    LGPL3  winkd debug plugin
 EOF
 RUN

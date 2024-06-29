@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2024 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_drx.h>
