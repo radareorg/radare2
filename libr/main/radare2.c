@@ -246,6 +246,7 @@ static int main_help(int line) {
 		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 		" R2_ARGS         ignore cli arguments and use these ones instead\n"
 		" R2_DEBUG        if defined, show error messages and crash signal.\n"
+		" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
 		" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
 		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
 		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"

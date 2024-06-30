@@ -753,7 +753,15 @@ static void register_helpers(JSContext *ctx) {
 	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
 		eval (ctx, "R=r2;");
 	} else {
-		eval (ctx, js_r2papi_qjs);
+		char *custom_papi = r_sys_getenv ("R2_PAPI_SCRIPT");
+		if (R_STR_ISNOTEMPTY (custom_papi)) {
+			char *script = r_file_slurp (custom_papi, NULL);
+			eval (ctx, script);
+			free (script);
+			free (custom_papi);
+		} else {
+			eval (ctx, js_r2papi_qjs);
+		}
 		eval (ctx, "R=G.R=new R2Papi(r2);");
 		eval (ctx, "G.Process = new ProcessClass(r2);");
 		eval (ctx, "G.Module = new ModuleClass(r2);");
