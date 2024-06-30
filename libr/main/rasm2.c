@@ -392,7 +392,7 @@ static ut64 pcpos(const char* buf) {
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
 	ut8 *data = NULL;
 	int ret = 0;
-	ut64 clen = 0;
+	st64 clen = 0;
 	if (bits == 1) {
 		len /= 8;
 	}
