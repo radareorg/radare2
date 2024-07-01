@@ -1,362 +1,343 @@
 static const char *const js_r2papi_qjs = "" \
-  "\"use strict\";var A=a=>typeof a==='number';var b=a=>typeof a=="\
-  "='string';const{keys:c}=Object;const{defineProperty:d}=Object"\
-  ";d(exports,'__esModule',{value:!0});exports.R2Shell=void 0;cl"\
-  "ass R2Shell{constructor(B){this.rp=B}mkdir(C,_b){_b===!0?this"\
-  ".rp.call(`mkdir -p ${C}`):this.rp.call(`mkdir ${C}`);return!0"\
-  "}unlink(_a){this.rp.call(`rm ${_a}`);return!0}chdir(D){this.r"\
-  "p.call(`cd ${D}`);return!0}ls(){var _A=this.rp.call(`ls -q`);"\
-  "return _A.trim().split('\\n')}fileExists(e){return!1}open(E){t"\
-  "his.rp.call(`open ${E}`)}system(aA){this.rp.call(`!${aA}`);re"\
-  "turn 0}mount(aB,_B,_c){!_c&&(_c=0);this.rp.call(`m ${aB} ${_B"\
-  "} ${_c}`);return!0}umount(aC){this.rp.call(`m-${aC}`)}chdir2("\
-  "aD){this.rp.call(`mdq ${aD}`)}ls2(aE){var aF=this.rp.call(`md"\
-  "q ${aE}`);return aF.trim().split('\\n')}enumerateFilesystemTyp"\
-  "es(){return this.rp.cmdj('mLj')}enumerateMountpoints(){var aG"\
-  "=this.rp.cmdj('mj');return aG['mountpoints']}isSymlink(aH){re"\
-  "turn!1}isDirectory(aI){return!1}}exports.R2Shell=R2Shell;d(ex"\
-  "ports,'__esModule',{value:!0});exports.EsilParser=exports.Esi"\
-  "lNode=exports.EsilToken=void 0;class EsilToken{constructor(aJ"\
-  "='',aK=0){this.label=this.comment=this.text='';this.addr='0';"\
-  "this.position=0;this.text=aJ;this.position=aK}toString(){retu"\
-  "rn this.text}}exports.EsilToken=EsilToken;class EsilNode{cons"\
-  "tructor(aL=new EsilToken(),aM='none'){this.type='none';this.t"\
-  "oken=aL;this.children=[]}setSides(aN,aO){this.lhs=aN;this.rhs"\
-  "=aO}addChildren(aP,aQ){aP!==void 0&&this.children.push(aP);aQ"\
-  "!==void 0&&this.children.push(aQ)}toEsil(){if(this.lhs!==void"\
-  " 0&&this.rhs!==void 0){let aS=this.lhs.toEsil();aS!==''&&(aS+"\
-  "=',');var aR=this.rhs.toEsil();return`${aR},${aS}${this.token"\
-  "}`}return''}toString(){let aT='';this.token.label!==''&&(aT+="\
-  "this.token.label+':\\n');this.token.addr!=='0';this.token.comm"\
-  "ent!==''&&(aT+='/*'+this.token.comment+'*/\\n');if(`${this.tok"\
-  "en}`==='GOTO')if(this.children.length>0){var aU=this.children"\
-  "[0];aT+='goto label_'+aU.token.position+';\\n'}else{var _C=0;a"\
-  "T+=`goto label_${_C};\\n`}if(this.children.length>0){aT+=`  (i"\
-  "f (${this.rhs})\\n`;for(const aV of this.children)if(aV!==null"\
-  "){var x=`${aV}`;x!=''&&(aT+=`  ${x}\\n`)}aT+='  )\\n'}if(this.l"\
-  "hs!==void 0&&this.rhs!==void 0)return aT+`    ( ${this.lhs} $"\
-  "{this.token} ${this.rhs} )`;return aT+`${this.token}`}}export"\
-  "s.EsilNode=EsilNode;class EsilParser{constructor(aW){this.cur"\
-  "=0;this.r2=aW;this.cur=0;this.stack=this.nodes=this.tokens=[]"\
-  ";this.root=new EsilNode(new EsilToken('function', 0), 'block'"\
-  ")}toJSON(){if(this.stack.length>0)throw Error('The ESIL stack"\
-  " is not empty');return JSON.stringify(this.root,null,2)}toEsi"\
-  "l(){return this.nodes.map(x=>x.toEsil()).join(',')}optimizeFl"\
-  "ags(aX){aX.rhs!==void 0&&this.optimizeFlags(aX.rhs);aX.lhs!=="\
-  "void 0&&this.optimizeFlags(aX.lhs);for(let i=0;i<aX.children."\
-  "length;i++)this.optimizeFlags(aX.children[i]);var aY=`${aX}`;"\
-  "if(+aY>4096){var aZ=r2.cmd(`fd.@ ${aY}`),_d=aZ.trim().split('"\
-  "\\n')[0].trim();(_d!=''&&_d.indexOf('+')===-1)&&(aX.token.text"\
-  "=_d)}}optimize(bA){bA.indexOf('flag')!=-1&&this.optimizeFlags"\
-  "(this.root)}toString(){return this.root.children.map(x=>`${x}"\
-  "`).join(';\\n')}reset(){this.nodes=this.stack=this.tokens=[];t"\
-  "his.cur=0;this.root=new EsilNode(new EsilToken('function', 0)"\
-  ", 'block')}parseRange(bB,bC){let bD=bB;while (bD<this.tokens."\
-  "length&&bD<bC) {var _D=this.peek(bD);if(!_D)break;this.cur=bD"\
-  ";this.pushToken(_D);bD=this.cur;bD++}}parseFunction(bE){var b"\
-  "F=this,_e=r2.cmdj(`afbj@${bE}`);function bG(n){var bI=r2.cmd("\
-  "`pie ${n} @e:scr.color=0`),bJ=bI.trim().split('\\n');for(const"\
-  " bL of bJ){if(bL.length===0){console.log('Empty');continue}va"\
-  "r bK=bL.split(' ');bK.length>1&&(r2.cmd(`s ${bK[0]}`),bF.pars"\
-  "e(bK[1],bK[0]),bF.optimize('flags,labels'))}}var bH=r2.cmd('?"\
-  "v $$').trim();bE===void 0&&(bE=bH);for(const bb of _e){r2.cmd"\
-  "(`s ${bb.addr}`);bG(bb.ninstr)}r2.cmd(`s ${bH}`)}parse(bM,bN)"\
-  "{var bO=bM.trim().split(',').map(x=>x.trim());for(const bQ of"\
-  " bO){var bP=new EsilToken(bQ, this.tokens.length);bN!==void 0"\
-  "&&(bP.addr=bN);this.tokens.push(bP)}this.parseRange(this.toke"\
-  "ns.length,this.tokens.length)}peek(a){return this.tokens[a]}p"\
-  "ushToken(bR){if(this.isNumber(bR)){var bS=new EsilNode(bR, 'n"\
-  "umber');this.stack.push(bS);this.nodes.push(bS)}else if(this."\
-  "isInternal(bR)){const bT=new EsilNode(bR, 'flag');this.stack."\
-  "push(bT);this.nodes.push(bT)}else if(this.isOperation(bR)){}e"\
-  "lse{const bU=new EsilNode(bR, 'register');this.stack.push(bU)"\
-  ";this.nodes.push(bU)}}isNumber(bV){if(`${bV}`.startsWith('0')"\
-  ")return!0;return +bV>0}isInternal(bW){var bX=`${bW}`;return b"\
-  "X.startsWith('$')&&bX.length>1}parseUntil(bY){var bZ=bY+1,cB="\
-  "[],_E=this.nodes.length;let cA=bZ;for(const x of this.stack)c"\
-  "B.push(x);while (cA<this.tokens.length) {var f=this.peek(cA);"\
-  "if(!f)break;if(`${f}`==='}')break;if(`${f}`==='}{')break;cA++"\
-  "}this.stack=cB;this.parseRange(bZ,cA);var g=this.nodes.length"\
-  "==_E;if(g)return null;return this.nodes[this.nodes.length-1]}"\
-  "getNodeFor(cC){var cD=this.peek(cC);if(cD===void 0)return nul"\
-  "l;for(const cE of this.nodes)if(cE.token.position===cC)return"\
-  " cE;this.nodes.push(new EsilNode(new EsilToken('label', cC), "\
-  "'label'));return null}findNodeFor(cF){for(const cG of this.no"\
-  "des)if(cG.token.position===cF)return cG;return null}isOperati"\
-  "on(cH){switch(`${cH}`) {case '[1]':case '[2]':case '[4]':case"\
-  " '[8]':if(this.stack.length>=1){var cI=this.stack.pop();var c"\
-  "J=new EsilNode(cI.token, 'operation');this.stack.push(cI)}els"\
-  "e throw Error('Stack needs more items');return!0;case '!':if("\
-  "this.stack.length>=1){var cK=new EsilNode(new EsilToken('', c"\
-  "H.position), 'none');var cL=new EsilNode(cH, 'operation');cL."\
-  "setSides(cK,this.stack.pop());this.stack.push(cL)}else throw "\
-  "Error('Stack needs more items');return!0;case '':case '}':cas"\
-  "e '}{':return!0;case 'DUP':if(this.stack.length<1)throw Error"\
-  "('goto cant pop');else{var F=this.stack.pop();this.stack.push"\
-  "(F);this.stack.push(F)}return!0;case 'GOTO':{var G=this.peek("\
-  "cH.position-1);if(G!==null){if(this.stack.length<1)throw Erro"\
-  "r('goto cant pop');const cM=this.stack.pop();if(cM!==null){va"\
-  "r h=0| +`${cM}`;if(h>0){var I=this.peek(h);if(I!==void 0){I.l"\
-  "abel=`label_${h}`;I.comment='hehe';const cN=new EsilNode(cH, "\
-  "'goto');var j=this.getNodeFor(I.position);j!=null&&cN.childre"\
-  "n.push(j);this.root.children.push(cN)}else console.error('Can"\
-  "not find goto node')}else console.error('Cannot find dest nod"\
-  "e for goto')}}}return!0;case '?{':if(this.stack.length>=1){co"\
-  "nst cO=new EsilNode(cH, 'operation');cO.setSides(new EsilNode"\
-  "(new EsilToken('if', cH.position), 'none'),this.stack.pop());"\
-  "var K=this.parseUntil(cH.position);let cP=null;if(K!==null){c"\
-  "O.children.push(K);this.nodes.push(K);cP=this.parseUntil(K.to"\
-  "ken.position+1);cP!==null&&(cO.children.push(cP),this.nodes.p"\
-  "ush(cP))}this.nodes.push(cO);this.root.children.push(cO);cP!="\
-  "=null&&(this.cur=cP.token.position)}else throw Error('Stack n"\
-  "eeds more items');return!0;case '-':if(this.stack.length>=2){"\
-  "const cQ=new EsilNode(cH, 'operation');cQ.setSides(this.stack"\
-  ".pop(),this.stack.pop());this.stack.length===0;this.stack.pus"\
-  "h(cQ);this.nodes.push(cQ)}else throw Error('Stack needs more "\
-  "items');return!0;case '<':case '>':case '^':case '&':case '|'"\
-  ":case '+':case '*':case '/':case '>>=':case '<<=':case '>>>='"\
-  ":case '<<<=':case '>>>>=':case '<<<<=':if(this.stack.length>="\
-  "2){const cR=new EsilNode(cH, 'operation');cR.setSides(this.st"\
-  "ack.pop(),this.stack.pop());this.stack.length===0;this.stack."\
-  "push(cR);this.nodes.push(cR)}else throw Error('Stack needs mo"\
-  "re items');return!0;case '=':case ':=':case '-=':case '+=':ca"\
-  "se '==':case '=[1]':case '=[2]':case '=[4]':case '=[8]':if(th"\
-  "is.stack.length>=2){const cS=new EsilNode(cH, 'operation');cS"\
-  ".setSides(this.stack.pop(),this.stack.pop());this.stack.lengt"\
-  "h===0&&this.root.children.push(cS);this.nodes.push(cS)}else t"\
-  "hrow Error('Stack needs more items');return!0}return!1}}expor"\
-  "ts.EsilParser=EsilParser;d(exports,'__esModule',{value:!0});e"\
-  "xports.Base64=void 0;class Base64{static encode(cT){return 0,"\
-  "exports.b64(cT)}static decode(cU){return 0,exports.b64(cU,!0)"\
-  "}}exports.Base64=Base64;d(exports,'__esModule',{value:!0});ex"\
-  "ports.newAsyncR2PipeFromSync=exports.R2PipeSyncFromSync=void "\
-  "0;class R2PipeSyncFromSync{constructor(cV){this.r2p=cV}cmd(cW"\
-  "){return this.r2p.cmd(cW)}cmdAt(cX,cY){return this.r2p.cmdAt("\
-  "cX,cY)}cmdj(cZ){return this.r2p.cmdj(cZ)}call(dA){return this"\
-  ".r2p.call(dA)}callj(dB){return this.r2p.cmdj(dB)}callAt(dC,dD"\
-  "){return this.r2p.cmdAt(dC,dD)}log(dE){return this.r2p.log(dE"\
-  ")}plugin(dF,dG){return this.r2p.plugin(dF,dG)}unload(dH,dI){r"\
-  "eturn this.r2p.unload(dH,dI)}}exports.R2PipeSyncFromSync=R2Pi"\
-  "peSyncFromSync;function _(dJ){return new R2PipeSyncFromSync(d"\
-  "J)}exports.newAsyncR2PipeFromSync=_;d(exports,'__esModule',{v"\
-  "alue:!0});exports.R2AI=void 0;class R2AI{constructor(dK,dL,dM"\
-  "){this.available=!1;this.model='';this.r2=dK;this.available=!"\
-  "1}checkAvailability(){if(this.available)return!0;this.availab"\
-  "le=r2pipe_js_1.r2.cmd('r2ai -h').trim()!=='';return this.avai"\
-  "lable}reset(){this.checkAvailability();this.available&&r2pipe"\
-  "_js_1.r2.call('r2ai -R')}setRole(dN){if(this.available){r2pip"\
-  "e_js_1.r2.call(`r2ai -r ${dN}`);return!0}return!1}setModel(dO"\
-  "){if(this.available){r2pipe_js_1.r2.call(`r2ai -m ${this.mode"\
-  "l}`);return!0}return!1}getModel(){this.available&&(this.model"\
-  "=r2pipe_js_1.r2.call('r2ai -m').trim());return this.model}lis"\
-  "tModels(){if(this.available){var models=r2pipe_js_1.r2.call('"\
-  "r2ai -M');return models.replace('-m ','').trim().split(/\\n/g)"\
-  ".filter(x=>x.indexOf(':')!==-1)}return[]}query(dP){if(!this.a"\
-  "vailable||dP=='')return'';var dQ=dP.trim().replace(/\\n/g,'.')"\
-  ",dR=r2pipe_js_1.r2.call(`r2ai ${dQ}`);return dR.trim()}}expor"\
-  "ts.R2AI=R2AI;d(exports,'__esModule',{value:!0});exports.Nativ"\
-  "ePointer=exports.NativeCallback=exports.NativeFunction=export"\
-  "s.R2PapiSync=exports.Assembler=exports.ProcessClass=exports.M"\
-  "oduleClass=exports.ThreadClass=void 0;class ThreadClass{const"\
-  "ructor(r2){this.api=null;this.api=r2}backtrace(){return r2pip"\
-  "e_js_1.r2.call('dbtj')}sleep(dS){return r2pipe_js_1.r2.call(`"\
-  "sleep ${dS}`)}}exports.ThreadClass=ThreadClass;class ModuleCl"\
-  "ass{constructor(r2){this.api=null;this.api=r2}fileName(){retu"\
-  "rn this.api.call('dpe').trim()}name(){return'Module'}findBase"\
-  "Address(){return'TODO'}getBaseAddress(dT){return'TODO'}getExp"\
-  "ortByName(dU){return ptr(r2pipe_js_1.r2.call(`iE,name/eq/${dU"\
-  "},vaddr/cols,:quiet`))}findExportByName(dV){return this.getEx"\
-  "portByName(dV)}enumerateExports(){return r2pipe_js_1.r2.callj"\
-  "('iEj')}enumerateImports(){return r2pipe_js_1.r2.callj('iij')"\
-  "}enumerateSymbols(){return r2pipe_js_1.r2.callj('isj')}enumer"\
-  "ateEntrypoints(){return r2pipe_js_1.r2.callj('iej')}enumerate"\
-  "Ranges(){return r2pipe_js_1.r2.callj('omj')}}exports.ModuleCl"\
-  "ass=ModuleClass;class ProcessClass{constructor(r2){this.r2=nu"\
-  "ll;this.r2=r2}enumerateMallocRanges(){}enumerateSystemRanges("\
-  "){}enumerateRanges(){}enumerateThreads(){return r2pipe_js_1.r"\
-  "2.callj('dptj')}enumerateModules(){r2pipe_js_1.r2.call('cfg.j"\
-  "son.num=string');if(r2pipe_js_1.r2.callj('e cfg.debug')){var "\
-  "dW=r2pipe_js_1.r2.callj('dmmj'),dX=[];for(const eB of dW){var"\
-  " _f={base:new NativePointer(eB.addr),size:new NativePointer(e"\
-  "B.addr_end).sub(eB.addr),path:eB.file,name:eB.name};dX.push(_"\
-  "f)}return dX}{var dY=x=>{const y=x.split('/');return y[y.leng"\
-  "th-1]},dZ=r2pipe_js_1.r2.callj('obj'),eC=[];for(const eD of d"\
-  "Z){eC.push({base:new NativePointer(eD.addr),size:eD.size,path"\
-  ":eD.file,name:dY(eD.file)})}var eA=r2pipe_js_1.r2.callj('ilj'"\
-  ");for(const lib of eA){eC.push({base:0,size:0,path:lib,name:d"\
-  "Y(lib)})}return eC}}getModuleByAddress(eE){}getModuleByName(e"\
-  "F){}codeSigningPolicy(){return'optional'}getTmpDir(){return t"\
-  "his.r2.call('e dir.tmp').trim()}getHomeDir(){return this.r2.c"\
-  "all('e dir.home').trim()}platform(){return this.r2.call('e as"\
-  "m.os').trim()}getCurrentDir(){return this.r2.call('pwd').trim"\
-  "()}getCurrentThreadId(){return +this.r2.call('dpq')}pageSize("\
-  "){if(this.r2.callj('e asm.bits')===64&&this.r2.call('e asm.ar"\
-  "ch').startsWith('arm'))return 16384;return 4096}isDebuggerAtt"\
-  "ached(){return this.r2.callj('e cfg.debug')}setExceptionHandl"\
-  "er(){}id(){return this.r2.callj('dpq').trim()}pointerSize(){r"\
-  "eturn r2pipe_js_1.r2.callj('e asm.bits')/8}}exports.ProcessCl"\
-  "ass=ProcessClass;class Assembler{constructor(eG){this.program"\
-  "='';this.labels={};this.endian=!1;this.pc=ptr(0);eG===void 0?"\
-  "this.r2=0,r2pipe_js_1.newAsyncR2PipeFromSync(r2pipe_js_1.r2):"\
-  "this.r2=eG;this.program='';this.labels={}}setProgramCounter(p"\
-  "c){this.pc=pc}setEndian(eH){this.endian=eH}toString(){return "\
-  "this.program}append(x){this.pc=this.pc.add(x.length/2);this.p"\
-  "rogram+=x}label(s){var eI=this.pc;this.labels[s]=this.pc;retu"\
-  "rn eI}encode(s){var eJ=this.r2.call(`pa ${s}`);return eJ.trim"\
-  "()}decode(s){var eK=this.r2.call(`pad ${s}`);return eK.trim()"\
-  "}}exports.Assembler=Assembler;class R2PapiSync{constructor(r2"\
-  "){this.r2=r2}toString(){return'[object R2Papi]'}toJSON(){retu"\
-  "rn`${this}`}getBaseAddress(){return new NativePointer(this.cm"\
-  "d('e bin.baddr'))}jsonToTypescript(eL,a){let eM=`interface ${"\
-  "eL} {\\n`;(a.length&&a.length>0)&&(a=a[0]);for(const k of c(a)"\
-  "){var eN=typeof a[k],eO=k;eM+=`    ${eO}: ${eN};\\n`}return`${"\
-  "eM}}\\n`}getBits(){return +this.cmd('-b')}getArch(){return thi"\
-  "s.cmdTrim('-a')}callTrim(x){var eP=this.call(x);return eP.tri"\
-  "m()}cmdTrim(x){var eQ=this.cmd(x);return eQ.trim()}getCpu(){r"\
-  "eturn this.cmdTrim('-e asm.cpu')}setArch(eR,eS){this.cmd(`-a "\
-  "${eR}`);eS!==void 0&&this.cmd(`-b ${eS}`)}setFlagSpace(eT){th"\
-  "is.cmd(`fs ${eT}`)}demangleSymbol(eU,eV){return this.cmdTrim("\
-  "'iD '+eU+' '+eV)}setLogLevel(eW){this.cmd(`e log.level=${eW}`"\
-  ")}newMap(eX,eY,eZ,fA,fB,_F=''){this.cmd(`om ${eX} ${eY} ${eZ}"\
-  " ${fA} ${fB} ${_F}`)}at(a){return new NativePointer(a)}getShe"\
-  "ll(){return new shell_js_1.R2Shell(this)}version(){var v=this"\
-  ".r2.cmd('?Vq');return v.trim()}platform(){var fC=this.r2.cmd("\
-  "'uname');return fC.trim()}arch(){var fD=this.r2.cmd('uname -a"\
-  "');return fD.trim()}bits(){var fE=this.r2.cmd('uname -b');ret"\
-  "urn fE.trim()}id(){return +this.r2.cmd('?vi:$p')}printAt(fF,x"\
-  ",y){}clearScreen(){this.r2.cmd('!clear');return this}getConfi"\
-  "g(fG){if(fG==='')return Error('Empty key');var fH=this.r2.cmd"\
-  "(`e~^${fG} =`);if(fH.trim()==='')return Error('Config key doe"\
-  "s not exist');var fI=this.r2.call(`e ${fG}`);return fI.trim()"\
-  "}setConfig(fJ,fK){this.r2.call('e '+fJ+'='+fK);return this}ge"\
-  "tRegisterStateForEsil(){var fL=this.cmdj('dre');return this.c"\
-  "mdj('dre')}getRegisters(){return this.cmdj('drj')}resizeFile("\
-  "fM){this.cmd(`r ${fM}`);return this}insertNullBytes(fN,fO){fO"\
-  "===void 0&&(fO='$$');this.cmd(`r+${fN}@${fO}`);return this}re"\
-  "moveBytes(fP,fQ){fQ===void 0&&(fQ='$$');this.cmd(`r-${fP}@${f"\
-  "Q}`);return this}seek(fR){this.cmd(`s ${fR}`);return this}cur"\
-  "rentSeek(){return new NativePointer('$$')}seekToRelativeOpcod"\
-  "e(fS){this.cmd(`so ${fS}`);return this.currentSeek()}getBlock"\
-  "Size(){return +this.cmd('b')}setBlockSize(a){this.cmd(`b ${a}"\
-  "`);return this}countFlags(){return +this.cmd('f~?')}countFunc"\
-  "tions(){return +this.cmd('aflc')}analyzeFunctionsWithEsil(fT)"\
-  "{this.cmd('aaef')}analyzeProgramWithEsil(fU){this.cmd('aae')}"\
-  "analyzeProgram(fV){fV===void 0&&(fV=0);switch(fV) {case 0:thi"\
-  "s.cmd('aa');break;case 1:this.cmd('aaa');break;case 2:this.cm"\
-  "d('aaaa');break;case 3:this.cmd('aaaaa');break}return this}en"\
-  "umerateThreads(){var fW=this.cmdj('drj'),fX={context:fW,id:0,"\
-  "state:'waiting',selected:!0};return[fX]}currentThreadId(){if("\
-  "+this.cmd('e cfg.debug'))return +this.cmd('dpt.');return this"\
-  ".id()}setRegisters(fY){for(const r of c(fY)){var v=fY[r];this"\
-  ".r2.cmd('dr '+r+'='+v)}}hex(s){var fZ=this.r2.cmd(`?v ${s}`);"\
-  "return fZ.trim()}step(){this.r2.cmd('ds');return this}stepOve"\
-  "r(){this.r2.cmd('dso');return this}math(gA){return +this.r2.c"\
-  "md(`?v ${gA}`)}stepUntil(gB){this.cmd(`dsu ${gB}`)}enumerateX"\
-  "refsTo(s){var gC=this.call(`axtq ${s}`);return gC.trim().spli"\
-  "t(/\\n/)}findXrefsTo(s,gD){gD?this.call(`/r ${s}`):this.call(`"\
-  "/re ${s}`)}analyzeFunctionsFromCalls(){this.call('aac');retur"\
-  "n this}autonameAllFunctions(){this.call('aan');return this}an"\
-  "alyzeFunctionsWithPreludes(){this.call('aap');return this}ana"\
-  "lyzeObjCReferences(){this.cmd('aao');return this}analyzeImpor"\
-  "ts(){this.cmd('af @ sym.imp.*');return this}searchDisasm(s){r"\
-  "eturn this.callj(`/ad ${s}`)}searchString(s){return this.cmdj"\
-  "(`/j ${s}`)}searchBytes(gE){function gF(gG){return (gG&0xff)."\
-  "toString(16)}var s=gE.map(gF).join('');return this.cmdj(`/xj "\
-  "${s}`)}binInfo(){try{return this.cmdj('ij~{bin}')}catch(e){re"\
-  "turn{}}}selectBinary(id){this.call(`ob ${id}`)}openFile(gH){v"\
-  "ar gI=this.call('oqq');this.call(`o ${gH}`);var gJ=this.call("\
-  "'oqq');if(gI.trim()===gJ.trim())return Error('Cannot open fil"\
-  "e');return parseInt(gJ)}openFileNomap(gK){var gL=this.call('o"\
-  "qq');this.call(`of ${gK}`);var gM=this.call('oqq');if(gL.trim"\
-  "()===gM.trim())return Error('Cannot open file');return parseI"\
-  "nt(gM)}currentFile(gN){return this.call('o.').trim()}enumerat"\
-  "ePlugins(gO){switch(gO) {case 'bin':return this.callj('Lij');"\
-  "case 'io':return this.callj('Loj');case 'core':return this.ca"\
-  "llj('Lcj');case 'arch':return this.callj('LAj');case 'anal':r"\
-  "eturn this.callj('Laj');case 'lang':return this.callj('Llj')}"\
-  "return[]}enumerateModules(){return this.callj('dmmj')}enumera"\
-  "teFiles(){return this.callj('oj')}enumerateBinaries(){return "\
-  "this.callj('obj')}enumerateMaps(){return this.callj('omj')}en"\
-  "umerateClasses(){return this.callj('icj')}enumerateSymbols(){"\
-  "return this.callj('isj')}enumerateExports(){return this.callj"\
-  "('iEj')}enumerateImports(){return this.callj('iij')}enumerate"\
-  "Libraries(){return this.callj('ilj')}enumerateSections(){retu"\
-  "rn this.callj('iSj')}enumerateSegments(){return this.callj('i"\
-  "SSj')}enumerateEntrypoints(){return this.callj('iej')}enumera"\
-  "teRelocations(){return this.callj('irj')}enumerateFunctions()"\
-  "{return this.cmdj('aflj')}enumerateFlags(){return this.cmdj('"\
-  "fj')}skip(){this.r2.cmd('dss')}ptr(s){return new NativePointe"\
-  "r(s, this)}call(s){return this.r2.call(s)}callj(s){return JSO"\
-  "N.parse(this.call(s))}cmd(s){return this.r2.cmd(s)}cmdj(s){re"\
-  "turn JSON.parse(this.cmd(s))}log(s){return this.r2.log(s)}cli"\
-  "ppy(gP){this.r2.log(this.r2.cmd(`?E ${gP}`))}ascii(gQ){this.r"\
-  "2.log(this.r2.cmd(`?ea ${gQ}`))}}exports.R2PapiSync=R2PapiSyn"\
-  "c;class NativeFunction{constructor(){}}exports.NativeFunction"\
-  "=NativeFunction;class NativeCallback{constructor(){}}exports."\
-  "NativeCallback=NativeCallback;class NativePointer{constructor"\
-  "(s,gR){this.api=gR??exports.R;this.addr=`${s}`.trim()}filterF"\
-  "lag(gS){return this.api.call(`fD ${gS}`)}setFlag(gT){this.api"\
-  ".call(`f ${gT}=${this.addr}`)}unsetFlag(){this.api.call(`f-${"\
-  "this.addr}`)}hexdump(gU){var gV=gU===void 0?'':`${gU}`;return"\
-  " this.api.cmd(`x${gV}@${this.addr}`)}functionGraph(gW){if(gW="\
-  "=='dot')return this.api.cmd(`agfd@ ${this.addr}`);if(gW==='js"\
-  "on')return this.api.cmd(`agfj@${this.addr}`);if(gW==='mermaid"\
-  "')return this.api.cmd(`agfm@${this.addr}`);return this.api.cm"\
-  "d(`agf@${this.addr}`)}readByteArray(gX){return JSON.parse(thi"\
-  "s.api.cmd(`p8j ${gX}@${this.addr}`))}readHexString(gY){return"\
-  " this.api.cmd(`p8 ${gY}@${this.addr}`).trim()}and(a){var gZ=t"\
-  "his.api.call(`?v ${this.addr} & ${a}`);return new NativePoint"\
-  "er(gZ.trim())}or(a){var hA=this.api.call(`?v ${this.addr} | $"\
-  "{a}`);return new NativePointer(hA.trim())}add(a){var hB=this."\
-  "api.call(`?v ${this.addr}+${a}`);return new NativePointer(hB)"\
-  "}sub(a){var hC=this.api.call(`?v ${this.addr}-${a}`);return n"\
-  "ew NativePointer(hC)}writeByteArray(hD){this.api.cmd('wx '+hD"\
-  ".join(''));return this}writeAssembly(hE){this.api.cmd(`wa ${h"\
-  "E} @ ${this.addr}`);return this}writeCString(s){this.api.call"\
-  "(`w ${s}`);return this}writeWideString(s){this.api.call(`ww $"\
-  "{s}`);return this}isNull(){return this.toNumber()==0}compare("\
-  "a){var hF=b(a)||A(a)?new NativePointer(a):a,hG=r2pipe_js_1.r2"\
-  ".call(`?vi ${this.addr} - ${hF.addr}`);if(hG[0]==='-')return "\
-  "-1;if(hG[0]==='0')return 0;return 1}pointsToNull(){var hH=thi"\
-  "s.readPointer();return hH.compare(0)==0}toJSON(){var hI=this."\
-  "api.cmd('?vi '+this.addr.trim());return hI.trim()}toString(){"\
-  "return this.api.cmd('?v '+this.addr.trim()).trim()}toNumber()"\
-  "{return parseInt(`${this}`)}writePointer(p){}readRelativePoin"\
-  "ter(){return this.add(this.readS32())}readPointer(){var hJ=th"\
-  "is.api.call('pvp@'+this.addr);return new NativePointer(hJ)}re"\
-  "adS8(){return parseInt(this.api.cmd(`pv1d@${this.addr}`))}rea"\
-  "dU8(){return parseInt(this.api.cmd(`pv1u@${this.addr}`))}read"\
-  "U16(){return parseInt(this.api.cmd(`pv2d@${this.addr}`))}read"\
-  "U16le(){}readU16be(){}readS16(){}readS16le(){}readS16be(){}re"\
-  "adS32(){}readU32(){}readU32le(){}readU32be(){}readU64(){retur"\
-  "n parseInt(this.api.cmd(`pv8u@${this.addr}`))}readU64le(){}re"\
-  "adU64be(){}writeInt(n){return this.writeU32(n)}writeU8(n){thi"\
-  "s.api.cmd(`wv1 ${n}@${this.addr}`);return!0}writeU16(n){this."\
-  "api.cmd(`wv2 ${n}@${this.addr}`);return!0}writeU16be(n){this."\
-  "api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendian=true`);return!"\
-  "0}writeU16le(n){this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.big"\
-  "endian=false`);return!0}writeU32(n){this.api.cmd(`wv4 ${n}@${"\
-  "this.addr}`);return!0}writeU32be(n){this.api.cmd(`wv4 ${n}@${"\
-  "this.addr}@e:cfg.bigendian=true`);return!0}writeU32le(n){this"\
-  ".api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=false`);retur"\
-  "n!0}writeU64(n){this.api.cmd(`wv8 ${n}@${this.addr}`);return!"\
-  "0}writeU64be(n){this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.big"\
-  "endian=true`);return!0}writeU64le(n){this.api.cmd(`wv8 ${n}@$"\
-  "{this.addr}@e:cfg.bigendian=false`);return!0}readInt32(){retu"\
-  "rn this.readU32()}readCString(){return JSON.parse(this.api.cm"\
-  "d(`pszj@${this.addr}`)).string}readWideString(){return JSON.p"\
-  "arse(this.api.cmd(`pswj@${this.addr}`)).string}readPascalStri"\
-  "ng(){return JSON.parse(this.api.cmd(`pspj@${this.addr}`)).str"\
-  "ing}instruction(){var hK=this.api.cmdj(`aoj@${this.addr}`);re"\
-  "turn hK[0]}disassemble(hL){var hM=hL===void 0?'':`${hL}`;retu"\
-  "rn this.api.cmd(`pd ${hM}@${this.addr}`)}analyzeFunction(){th"\
-  "is.api.cmd('af@'+this.addr);return this}analyzeFunctionRecurs"\
-  "ively(){this.api.cmd('afr@'+this.addr);return this}name(){ret"\
-  "urn this.api.cmd('fd '+this.addr).trim()}methodName(){return "\
-  "this.api.cmd('ic.@'+this.addr).trim()}symbolName(){var hN=thi"\
-  "s.api.cmd('isj.@'+this.addr);return hN.trim()}getFunction(){r"\
-  "eturn this.api.cmdj('afij@'+this.addr)}basicBlock(){return th"\
-  "is.api.cmdj('abj@'+this.addr)}functionBasicBlocks(){return th"\
-  "is.api.cmdj('afbj@'+this.addr)}xrefs(){return this.api.cmdj('"\
-  "axtj@'+this.addr)}}exports.NativePointer=NativePointer;var u="\
-  "R2PapiSync;\n";
+  "\"use strict\";\n\nObject.defineProperty(exports, \"__esModule\", {"\
+  " value: true });\nexports.R2Shell = void 0;\nclass R2Shell {\n c"\
+  "onstructor(papi) {\n this.rp = papi;\n }\n mkdir(file, recursive"\
+  ") {\n if (recursive === true) {\n this.rp.call(`mkdir -p ${file"\
+  "}`);\n }\n else {\n this.rp.call(`mkdir ${file}`);\n }\n return tr"\
+  "ue;\n }\n unlink(file) {\n this.rp.call(`rm ${file}`);\n return t"\
+  "rue;\n }\n chdir(path) {\n this.rp.call(`cd ${path}`);\n return t"\
+  "rue;\n }\n ls() {\n const files = this.rp.call(`ls -q`);\n return"\
+  " files.trim().split(\"\\n\");\n }\n fileExists(path) {\n \n return f"\
+  "alse;\n }\n open(arg) {\n this.rp.call(`open ${arg}`);\n }\n syste"\
+  "m(cmd) {\n this.rp.call(`!${cmd}`);\n return 0;\n }\n mount(fstyp"\
+  "e, path, offset) {\n if (!offset) {\n offset = 0;\n }\n this.rp.c"\
+  "all(`m ${fstype} ${path} ${offset}`);\n return true;\n }\n umoun"\
+  "t(path) {\n this.rp.call(`m-${path}`);\n }\n chdir2(path) {\n thi"\
+  "s.rp.call(`mdq ${path}`);\n }\n ls2(path) {\n const files = this"\
+  ".rp.call(`mdq ${path}`);\n return files.trim().split(\"\\n\");\n }"\
+  "\n enumerateFilesystemTypes() {\n return this.rp.cmdj(\"mLj\");\n "\
+  "}\n enumerateMountpoints() {\n const output = this.rp.cmdj(\"mj\""\
+  ");\n return output[\"mountpoints\"];\n }\n isSymlink(file) {\n retu"\
+  "rn false;\n }\n isDirectory(file) {\n return false;\n }\n}\nexports"\
+  ".R2Shell = R2Shell;\n\"use strict\";\nObject.defineProperty(expor"\
+  "ts, \"__esModule\", { value: true });\nexports.EsilParser = expo"\
+  "rts.EsilNode = exports.EsilToken = void 0;\n\nclass EsilToken {"\
+  "\n constructor(text = \"\", position = 0) {\n this.label = \"\";\n t"\
+  "his.comment = \"\";\n this.text = \"\";\n this.addr = \"0\"; \n this.p"\
+  "osition = 0;\n this.text = text;\n this.position = position;\n }"\
+  "\n toString() {\n return this.text;\n }\n}\nexports.EsilToken = Es"\
+  "ilToken;\nclass EsilNode {\n constructor(token = new EsilToken("\
+  "), type = \"none\") {\n this.type = \"none\";\n this.token = token;"\
+  "\n this.children = [];\n }\n setSides(lhs, rhs) {\n this.lhs = lh"\
+  "s;\n this.rhs = rhs;\n }\n addChildren(ths, fhs) {\n if (ths !== "\
+  "undefined) {\n this.children.push(ths);\n }\n if (fhs !== undefi"\
+  "ned) {\n this.children.push(fhs);\n }\n }\n toEsil() {\n if (this."\
+  "lhs !== undefined && this.rhs !== undefined) {\n \n let left = "\
+  "this.lhs.toEsil();\n if (left !== \"\") {\n left += \",\";\n }\n cons"\
+  "t right = this.rhs.toEsil();\n return `${right},${left}${this."\
+  "token}`;\n }\n return \"\"; \n }\n toString() {\n let str = \"\";\n if "\
+  "(this.token.label !== \"\") {\n str += this.token.label + \":\\n\";"\
+  "\n }\n if (this.token.addr !== \"0\") {\n \n }\n if (this.token.comm"\
+  "ent !== \"\") {\n static encode(input) {\n return (0, exports.b64"\
+  ")(input);\n }\n static decode(input) {\n return (0, exports.b64)"\
+  "(input, true);\n }\n}\nexports.Base64 = Base64;\n\"use strict\";\nOb"\
+  "ject.defineProperty(exports, \"__esModule\", { value: true });\n"\
+  "exports.newAsyncR2PipeFromSync = exports.R2PipeSyncFromSync ="\
+  " void 0;\nclass R2PipeSyncFromSync {\n constructor(r2p) {\n this"\
+  ".r2p = r2p;\n }\n cmd(command) {\n return this.r2p.cmd(command);"\
+  "\n }\n cmdAt(command, address) {\n return this.r2p.cmdAt(command"\
+  ", address);\n }\n cmdj(cmd) {\n return this.r2p.cmdj(cmd);\n }\n c"\
+  "all(command) {\n return this.r2p.call(command);\n }\n callj(cmd)"\
+  " {\n return this.r2p.cmdj(cmd);\n }\n callAt(command, address) {"\
+  "\n return this.r2p.cmdAt(command, address);\n }\n log(msg) {\n re"\
+  "turn this.r2p.log(msg);\n }\n plugin(type, maker) {\n return thi"\
+  "s.r2p.plugin(type, maker);\n }\n unload(type, name) {\n return t"\
+  "his.r2p.unload(type, name);\n }\n}\nexports.R2PipeSyncFromSync ="\
+  " R2PipeSyncFromSync;\nfunction newAsyncR2PipeFromSync(r2p) {\n "\
+  "const asyncR2Pipe = new R2PipeSyncFromSync(r2p);\n return asyn"\
+  "cR2Pipe;\n}\nexports.newAsyncR2PipeFromSync = newAsyncR2PipeFro"\
+  "mSync;\n\"use strict\";\nObject.defineProperty(exports, \"__esModu"\
+  "le\", { value: true });\nexports.R2AI = void 0;\nclass R2AI {\n c"\
+  "onstructor(r2, num, model) {\n this.available = false;\n this.m"\
+  "odel = \"\";\n this.r2 = r2;\n this.available = false;\n }\n checkA"\
+  "vailability() {\n if (this.available) {\n return true;\n }\n this"\
+  ".available = r2pipe_js_1.r2.cmd(\"r2ai -h\").trim() !== \"\";\n re"\
+  "turn this.available;\n }\n reset() {\n this.checkAvailability();"\
+  "\n if (this.available) {\n r2pipe_js_1.r2.call(\"r2ai -R\");\n }\n "\
+  "}\n setRole(msg) {\n if (this.available) {\n r2pipe_js_1.r2.call"\
+  "(`r2ai -r ${msg}`);\n return true;\n }\n return false;\n }\n setMo"\
+  "del(modelName) {\n if (this.available) {\n r2pipe_js_1.r2.call("\
+  "`r2ai -m ${this.model}`);\n return true;\n }\n return false;\n }\n"\
+  " getModel() {\n if (this.available) {\n this.model = r2pipe_js_"\
+  "1.r2.call(\"r2ai -m\").trim();\n }\n return this.model;\n }\n listM"\
+  "odels() {\n if (this.available) {\n const models = r2pipe_js_1."\
+  "r2.call(\"r2ai -M\");\n return models\n .replace(/-m /, \"\")\n .tri"\
+  "m()\n .split(/\\n/g)\n .filter((x) => x.indexOf(\":\") !== -1);\n }"\
+  "\n return [];\n }\n query(msg) {\n if (!this.available || msg == "\
+  "\"\") {\n return \"\";\n }\n const fmsg = msg.trim().replace(/\\n/g, "\
+  "\".\");\n const response = r2pipe_js_1.r2.call(`r2ai ${fmsg}`);\n"\
+  " return response.trim();\n }\n}\nexports.R2AI = R2AI;\n\"use stric"\
+  "t\";\n\nObject.defineProperty(exports, \"__esModule\", { value: tr"\
+  "ue });\nexports.NativePointer = exports.NativeCallback = expor"\
+  "ts.NativeFunction = exports.R2PapiSync = exports.Assembler = "\
+  "exports.ProcessClass = exports.ModuleClass = exports.ThreadCl"\
+  "ass = void 0;\nclass ThreadClass {\n constructor(r2) {\n this.ap"\
+  "i = null;\n this.api = r2;\n }\n backtrace() {\n return r2pipe_js"\
+  "_1.r2.call(\"dbtj\");\n }\n sleep(seconds) {\n return r2pipe_js_1."\
+  "r2.call(\"sleep \" + seconds);\n }\n}\nexports.ThreadClass = Threa"\
+  "dClass;\nclass ModuleClass {\n constructor(r2) {\n this.api = nu"\
+  "ll;\n this.api = r2;\n }\n fileName() {\n return this.api.call(\"d"\
+  "pe\").trim();\n }\n name() {\n return \"Module\";\n }\n findBaseAddre"\
+  "ss() {\n return \"TODO\";\n }\n getBaseAddress(name) {\n return \"TO"\
+  "DO\";\n }\n getExportByName(name) {\n const res = r2pipe_js_1.r2."\
+  "call(\"iE,name/eq/\" + name + \",vaddr/cols,:quiet\");\n return pt"\
+  "r(res);\n }\n findExportByName(name) {\n return this.getExportBy"\
+  "Name(name);\n }\n enumerateExports() {\n \n return r2pipe_js_1.r2"\
+  ".callj(\"iEj\");\n }\n enumerateImports() {\n \n return r2pipe_js_1"\
+  ".r2.callj(\"iij\");\n }\n enumerateSymbols() {\n \n return r2pipe_j"\
+  "s_1.r2.callj(\"isj\");\n }\n enumerateEntrypoints() {\n \n return r"\
+  "2pipe_js_1.r2.callj(\"iej\");\n }\n enumerateRanges() {\n \n return"\
+  " r2pipe_js_1.r2.callj(\"omj\");\n }\n}\nexports.ModuleClass = Modu"\
+  "leClass;\nclass ProcessClass {\n constructor(r2) {\n this.r2 = n"\
+  "ull;\n this.r2 = r2;\n }\n enumerateMallocRanges() { }\n enumerat"\
+  "eSystemRanges() { }\n enumerateRanges() { }\n enumerateThreads("\
+  ") {\n return r2pipe_js_1.r2.callj(\"dptj\");\n }\n enumerateModule"\
+  "s() {\n r2pipe_js_1.r2.call(\"cfg.json.num=string\"); \n if (r2pi"\
+  "pe_js_1.r2.callj(\"e cfg.debug\")) {\n const modules = r2pipe_js"\
+  "_1.r2.callj(\"dmmj\");\n const res = [];\n for (const mod of modu"\
+  "les) {\n const entry = {\n base: new NativePointer(mod.addr),\n "\
+  "size: new NativePointer(mod.addr_end).sub(mod.addr),\n path: m"\
+  "od.file,\n name: mod.name\n };\n res.push(entry);\n }\n return res"\
+  ";\n }\n else {\n const fname = (x) => {\n const y = x.split(\"/\");"\
+  "\n return y[y.length - 1];\n };\n const bobjs = r2pipe_js_1.r2.c"\
+  "allj(\"obj\");\n const res = [];\n for (const obj of bobjs) {\n co"\
+  "nst entry = {\n base: new NativePointer(obj.addr),\n size: obj."\
+  "size,\n path: obj.file,\n name: fname(obj.file)\n };\n res.push(e"\
+  "ntry);\n }\n const libs = r2pipe_js_1.r2.callj(\"ilj\");\n for (co"\
+  "nst lib of libs) {\n const entry = {\n base: 0,\n size: 0,\n path"\
+  ": lib,\n name: fname(lib)\n };\n res.push(entry);\n }\n return res"\
+  ";\n }\n }\n getModuleByAddress(addr) { }\n getModuleByName(module"\
+  "Name) { }\n codeSigningPolicy() {\n return \"optional\";\n }\n getT"\
+  "mpDir() {\n return this.r2.call(\"e dir.tmp\").trim();\n }\n getHo"\
+  "meDir() {\n return this.r2.call(\"e dir.home\").trim();\n }\n plat"\
+  "form() {\n return this.r2.call(\"e asm.os\").trim();\n }\n getCurr"\
+  "entDir() {\n return this.r2.call(\"pwd\").trim();\n }\n getCurrent"\
+  "ThreadId() {\n return +this.r2.call(\"dpq\");\n }\n pageSize() {\n "\
+  "if (this.r2.callj(\"e asm.bits\") === 64 &&\n this.r2.call(\"e as"\
+  "m.arch\").startsWith(\"arm\")) {\n return 16384;\n }\n return 4096;"\
+  "\n }\n isDebuggerAttached() {\n return this.r2.callj(\"e cfg.debu"\
+  "g\");\n }\n setExceptionHandler() {\n \n }\n id() {\n \n return this."\
+  "r2.callj(\"dpq\").trim();\n }\n pointerSize() {\n return r2pipe_js"\
+  "_1.r2.callj(\"e asm.bits\") / 8;\n }\n}\nexports.ProcessClass = Pr"\
+  "ocessClass;\nclass Assembler {\n constructor(myr2) {\n this.prog"\
+  "ram = \"\";\n this.labels = {};\n this.endian = false;\n this.pc ="\
+  " ptr(0);\n if (myr2 === undefined) {\n this.r2 = (0, r2pipe_js_"\
+  "1.newAsyncR2PipeFromSync)(r2pipe_js_1.r2);\n }\n else {\n this.r"\
+  "2 = myr2;\n }\n this.program = \"\";\n this.labels = {};\n }\n setPr"\
+  "ogramCounter(pc) {\n this.pc = pc;\n }\n setEndian(big) {\n this."\
+  "endian = big;\n }\n toString() {\n return this.program;\n }\n appe"\
+  "nd(x) {\n \n this.pc = this.pc.add(x.length / 2);\n this.program"\
+  " += x;\n }\n \n label(s) {\n const pos = this.pc; \n this.labels[s"\
+  "] = this.pc;\n return pos;\n }\n encode(s) {\n const output = thi"\
+  "s.r2.call(`pa ${s}`);\n return output.trim();\n }\n decode(s) {\n"\
+  " const output = this.r2.call(`pad ${s}`);\n return output.trim"\
+  "();\n }\n}\nexports.Assembler = Assembler;\nclass R2PapiSync {\n c"\
+  "onstructor(r2) {\n this.r2 = r2;\n }\n toString() {\n return \"[ob"\
+  "ject R2Papi]\";\n }\n toJSON() {\n return this.toString();\n }\n ge"\
+  "tBaseAddress() {\n return new NativePointer(this.cmd(\"e bin.ba"\
+  "ddr\"));\n }\n jsonToTypescript(name, a) {\n let str = `interface"\
+  " ${name} {\\n`;\n if (a.length && a.length > 0) {\n a = a[0];\n }"\
+  "\n for (const k of Object.keys(a)) {\n const typ = typeof a[k];"\
+  "\n const nam = k;\n str += ` ${nam}: ${typ};\\n`;\n }\n return `${"\
+  "str}}\\n`;\n }\n getBits() {\n return +this.cmd(\"-b\");\n }\n getArc"\
+  "h() {\n return this.cmdTrim(\"-a\");\n }\n callTrim(x) {\n const re"\
+  "s = this.call(x);\n return res.trim();\n }\n cmdTrim(x) {\n const"\
+  " res = this.cmd(x);\n return res.trim();\n }\n getCpu() {\n \n ret"\
+  "urn this.cmdTrim(\"-e asm.cpu\"); \n }\n \n setArch(arch, bits) {\n"\
+  " this.cmd(\"-a \" + arch);\n if (bits !== undefined) {\n this.cmd"\
+  "(\"-b \" + bits);\n }\n }\n setFlagSpace(name) {\n this.cmd(\"fs \" +"\
+  " name);\n }\n demangleSymbol(lang, mangledName) {\n return this."\
+  "cmdTrim(\"iD \" + lang + \" \" + mangledName);\n }\n setLogLevel(le"\
+  "vel) {\n this.cmd(\"e log.level=\" + level);\n }\n \n newMap(fd, va"\
+  "ddr, size, paddr, perm, name = \"\") {\n this.cmd(`om ${fd} ${va"\
+  "ddr} ${size} ${paddr} ${perm} ${name}`);\n }\n at(a) {\n return "\
+  "new NativePointer(a);\n }\n getShell() {\n return new shell_js_1"\
+  ".R2Shell(this);\n }\n \n version() {\n const v = this.r2.cmd(\"?Vq"\
+  "\");\n return v.trim();\n }\n \n platform() {\n const output = this"\
+  ".r2.cmd(\"uname\");\n return output.trim();\n }\n arch() {\n const "\
+  "output = this.r2.cmd(\"uname -a\");\n return output.trim();\n }\n "\
+  "bits() {\n const output = this.r2.cmd(\"uname -b\");\n return out"\
+  "put.trim();\n }\n id() {\n \n return +this.r2.cmd(\"?vi:$p\");\n }\n "\
+  "\n printAt(msg, x, y) {\n \n }\n clearScreen() {\n this.r2.cmd(\"!c"\
+  "lear\");\n return this;\n }\n getConfig(key) {\n if (key === \"\") {"\
+  "\n return new Error(\"Empty key\");\n }\n const exist = this.r2.cm"\
+  "d(`e~^${key} =`);\n if (exist.trim() === \"\") {\n return new Err"\
+  "or(\"Config key does not exist\");\n }\n const value = this.r2.ca"\
+  "ll(\"e \" + key);\n return value.trim();\n }\n setConfig(key, val)"\
+  " {\n this.r2.call(\"e \" + key + \"=\" + val);\n return this;\n }\n g"\
+  "etRegisterStateForEsil() {\n const dre = this.cmdj(\"dre\");\n re"\
+  "turn this.cmdj(\"dre\");\n }\n getRegisters() {\n \n return this.cm"\
+  "dj(\"drj\");\n }\n resizeFile(newSize) {\n this.cmd(`r ${newSize}`"\
+  ");\n return this;\n }\n insertNullBytes(newSize, at) {\n if (at ="\
+  "== undefined) {\n at = \"$$\";\n }\n this.cmd(`r+${newSize}@${at}`"\
+  ");\n return this;\n }\n removeBytes(newSize, at) {\n if (at === u"\
+  "ndefined) {\n at = \"$$\";\n }\n this.cmd(`r-${newSize}@${at}`);\n "\
+  "return this;\n }\n seek(addr) {\n this.cmd(`s ${addr}`);\n return"\
+  " this;\n }\n currentSeek() {\n return new NativePointer(\"$$\");\n "\
+  "}\n seekToRelativeOpcode(nth) {\n this.cmd(`so ${nth}`);\n retur"\
+  "n this.currentSeek();\n }\n getBlockSize() {\n return +this.cmd("\
+  "\"b\");\n }\n setBlockSize(a) {\n this.cmd(`b ${a}`);\n return this"\
+  ";\n }\n countFlags() {\n return Number(this.cmd(\"f~?\"));\n }\n cou"\
+  "ntFunctions() {\n return Number(this.cmd(\"aflc\"));\n }\n analyze"\
+  "FunctionsWithEsil(depth) {\n this.cmd(\"aaef\");\n }\n analyzeProg"\
+  "ramWithEsil(depth) {\n this.cmd(\"aae\");\n }\n analyzeProgram(dep"\
+  "th) {\n if (depth === undefined) {\n depth = 0;\n }\n switch (dep"\
+  "th) {\n case 0:\n this.cmd(\"aa\");\n break;\n case 1:\n this.cmd(\"a"\
+  "aa\");\n break;\n case 2:\n this.cmd(\"aaaa\");\n break;\n case 3:\n t"\
+  "his.cmd(\"aaaaa\");\n break;\n }\n return this;\n }\n enumerateThrea"\
+  "ds() {\n \n const regs0 = this.cmdj(\"drj\");\n const thread0 = {\n"\
+  " context: regs0,\n id: 0,\n state: \"waiting\",\n selected: true\n "\
+  "};\n return [thread0];\n }\n currentThreadId() {\n if (+this.cmd("\
+  "\"e cfg.debug\")) {\n return +this.cmd(\"dpt.\");\n }\n return this."\
+  "id();\n }\n setRegisters(obj) {\n for (const r of Object.keys(ob"\
+  "j)) {\n const v = obj[r];\n this.r2.cmd(\"dr \" + r + \"=\" + v);\n "\
+  "}\n }\n hex(s) {\n const output = this.r2.cmd(\"?v \" + s);\n retur"\
+  "n output.trim();\n }\n step() {\n this.r2.cmd(\"ds\");\n return thi"\
+  "s;\n }\n stepOver() {\n this.r2.cmd(\"dso\");\n return this;\n }\n ma"\
+  "th(expr) {\n return +this.r2.cmd(\"?v \" + expr);\n }\n stepUntil("\
+  "dst) {\n this.cmd(`dsu ${dst}`);\n }\n enumerateXrefsTo(s) {\n co"\
+  "nst output = this.call(\"axtq \" + s);\n return output.trim().sp"\
+  "lit(/\\n/);\n }\n \n findXrefsTo(s, use_esil) {\n if (use_esil) {\n"\
+  " this.call(\"/r \" + s);\n }\n else {\n this.call(\"/re \" + s);\n }\n"\
+  " }\n analyzeFunctionsFromCalls() {\n this.call(\"aac\");\n return "\
+  "this;\n }\n autonameAllFunctions() {\n this.call(\"aan\");\n return"\
+  " this;\n }\n analyzeFunctionsWithPreludes() {\n this.call(\"aap\")"\
+  ";\n return this;\n }\n analyzeObjCReferences() {\n this.cmd(\"aao\""\
+  ");\n return this;\n }\n analyzeImports() {\n this.cmd(\"af @ sym.i"\
+  "mp.*\");\n return this;\n }\n searchDisasm(s) {\n const res = this"\
+  ".callj(\"/ad \" + s);\n return res;\n }\n searchString(s) {\n const"\
+  " res = this.cmdj(\"/j \" + s);\n return res;\n }\n searchBytes(dat"\
+  "a) {\n function num2hex(data) {\n return (data & 0xff).toString"\
+  "(16);\n }\n const s = data.map(num2hex).join(\"\");\n const res = "\
+  "this.cmdj(\"/xj \" + s);\n return res;\n }\n binInfo() {\n try {\n r"\
+  "eturn this.cmdj(\"ij~{bin}\");\n }\n catch (e) {\n return {};\n }\n "\
+  "}\n \n selectBinary(id) {\n this.call(`ob ${id}`);\n }\n openFile("\
+  "name) {\n const ofd = this.call(\"oqq\");\n this.call(`o ${name}`"\
+  ");\n const nfd = this.call(\"oqq\");\n if (ofd.trim() === nfd.tri"\
+  "m()) {\n return new Error(\"Cannot open file\");\n }\n return pars"\
+  "eInt(nfd);\n }\n openFileNomap(name) {\n const ofd = this.call(\""\
+  "oqq\");\n this.call(`of ${name}`);\n const nfd = this.call(\"oqq\""\
+  ");\n if (ofd.trim() === nfd.trim()) {\n return new Error(\"Canno"\
+  "t open file\");\n }\n return parseInt(nfd);\n }\n currentFile(name"\
+  ") {\n return (this.call(\"o.\")).trim();\n }\n enumeratePlugins(ty"\
+  "pe) {\n switch (type) {\n case \"bin\":\n return this.callj(\"Lij\")"\
+  ";\n case \"io\":\n return this.callj(\"Loj\");\n case \"core\":\n retur"\
+  "n this.callj(\"Lcj\");\n case \"arch\":\n return this.callj(\"LAj\");"\
+  "\n case \"anal\":\n return this.callj(\"Laj\");\n case \"lang\":\n retu"\
+  "rn this.callj(\"Llj\");\n }\n return [];\n }\n enumerateModules() {"\
+  "\n return this.callj(\"dmmj\");\n }\n enumerateFiles() {\n return t"\
+  "his.callj(\"oj\");\n }\n enumerateBinaries() {\n return this.callj"\
+  "(\"obj\");\n }\n enumerateMaps() {\n return this.callj(\"omj\");\n }\n"\
+  " enumerateClasses() {\n return this.callj(\"icj\");\n }\n enumerat"\
+  "eSymbols() {\n return this.callj(\"isj\");\n }\n enumerateExports("\
+  ") {\n return this.callj(\"iEj\");\n }\n enumerateImports() {\n retu"\
+  "rn this.callj(\"iij\");\n }\n enumerateLibraries() {\n return this"\
+  ".callj(\"ilj\");\n }\n enumerateSections() {\n return this.callj(\""\
+  "iSj\");\n }\n enumerateSegments() {\n return this.callj(\"iSSj\");\n"\
+  " }\n enumerateEntrypoints() {\n return this.callj(\"iej\");\n }\n e"\
+  "numerateRelocations() {\n return this.callj(\"irj\");\n }\n enumer"\
+  "ateFunctions() {\n return this.cmdj(\"aflj\");\n }\n enumerateFlag"\
+  "s() {\n return this.cmdj(\"fj\");\n }\n skip() {\n this.r2.cmd(\"dss"\
+  "\");\n }\n ptr(s) {\n return new NativePointer(s, this);\n }\n call"\
+  "(s) {\n return this.r2.call(s);\n }\n callj(s) {\n return JSON.pa"\
+  "rse(this.call(s));\n }\n cmd(s) {\n return this.r2.cmd(s);\n }\n c"\
+  "mdj(s) {\n return JSON.parse(this.cmd(s));\n }\n log(s) {\n retur"\
+  "n this.r2.log(s);\n }\n clippy(msg) {\n this.r2.log(this.r2.cmd("\
+  "\"?E \" + msg));\n }\n ascii(msg) {\n this.r2.log(this.r2.cmd(\"?ea"\
+  " \" + msg));\n }\n}\nexports.R2PapiSync = R2PapiSync;\n\nclass Nati"\
+  "veFunction {\n constructor() { }\n}\nexports.NativeFunction = Na"\
+  "tiveFunction;\n\nclass NativeCallback {\n constructor() { }\n}\nex"\
+  "ports.NativeCallback = NativeCallback;\nclass NativePointer {\n"\
+  " constructor(s, api) {\n this.api = api ?? exports.R;\n this.ad"\
+  "dr = (\"\" + s).trim();\n }\n filterFlag(name) {\n return this.api"\
+  ".call(`fD ${name}`);\n }\n setFlag(name) {\n this.api.call(`f ${"\
+  "name}=${this.addr}`);\n }\n unsetFlag() {\n this.api.call(`f-${t"\
+  "his.addr}`);\n }\n hexdump(length) {\n const len = length === un"\
+  "defined ? \"\" : \"\" + length;\n return this.api.cmd(`x${len}@${t"\
+  "his.addr}`);\n }\n functionGraph(format) {\n if (format === \"dot"\
+  "\") {\n return this.api.cmd(`agfd@ ${this.addr}`);\n }\n if (form"\
+  "at === \"json\") {\n return this.api.cmd(`agfj@${this.addr}`);\n "\
+  "}\n if (format === \"mermaid\") {\n return this.api.cmd(`agfm@${t"\
+  "his.addr}`);\n }\n return this.api.cmd(`agf@${this.addr}`);\n }\n"\
+  " readByteArray(len) {\n return JSON.parse(this.api.cmd(`p8j ${"\
+  "len}@${this.addr}`));\n }\n readHexString(len) {\n return (this."\
+  "api.cmd(`p8 ${len}@${this.addr}`)).trim();\n }\n and(a) {\n cons"\
+  "t addr = this.api.call(`?v ${this.addr} & ${a}`);\n return new"\
+  " NativePointer(addr.trim());\n }\n or(a) {\n const addr = this.a"\
+  "pi.call(`?v ${this.addr} | ${a}`);\n return new NativePointer("\
+  "addr.trim());\n }\n add(a) {\n const addr = this.api.call(`?v ${"\
+  "this.addr}+${a}`);\n return new NativePointer(addr);\n }\n sub(a"\
+  ") {\n const addr = this.api.call(`?v ${this.addr}-${a}`);\n ret"\
+  "urn new NativePointer(addr);\n }\n writeByteArray(data) {\n this"\
+  ".api.cmd(\"wx \" + data.join(\"\"));\n return this;\n }\n writeAssem"\
+  "bly(instruction) {\n this.api.cmd(`wa ${instruction} @ ${this."\
+  "addr}`);\n return this;\n }\n writeCString(s) {\n this.api.call(\""\
+  "w \" + s);\n return this;\n }\n writeWideString(s) {\n this.api.ca"\
+  "ll(\"ww \" + s);\n return this;\n }\n isNull() {\n return (this.toN"\
+  "umber()) == 0;\n }\n compare(a) {\n const bv = typeof a === \"str"\
+  "ing\" || typeof a === \"number\"\n ? new NativePointer(a)\n : a;\n "\
+  "const dist = r2pipe_js_1.r2.call(`?vi ${this.addr} - ${bv.add"\
+  "r}`);\n if (dist[0] === \"-\") {\n return -1;\n }\n if (dist[0] ==="\
+  " \"0\") {\n return 0;\n }\n return 1;\n }\n pointsToNull() {\n const "\
+  "value = this.readPointer();\n return (value.compare(0)) == 0;\n"\
+  " }\n toJSON() {\n const output = this.api.cmd(\"?vi \" + this.add"\
+  "r.trim());\n return output.trim();\n }\n toString() {\n return (t"\
+  "his.api.cmd(\"?v \" + this.addr.trim())).trim();\n }\n toNumber()"\
+  " {\n return parseInt(this.toString());\n }\n writePointer(p) {\n "\
+  "}\n readRelativePointer() {\n return this.add(this.readS32());\n"\
+  " }\n readPointer() {\n const address = this.api.call(\"pvp@\" + t"\
+  "his.addr);\n return new NativePointer(address);\n }\n readS8() {"\
+  "\n return parseInt(this.api.cmd(`pv1d@${this.addr}`));\n }\n rea"\
+  "dU8() {\n return parseInt(this.api.cmd(`pv1u@${this.addr}`));\n"\
+  " }\n readU16() {\n return parseInt(this.api.cmd(`pv2d@${this.ad"\
+  "dr}`));\n }\n readU16le() {\n }\n readU16be() {\n }\n readS16() {\n "\
+  "}\n readS16le() {\n }\n readS16be() {\n }\n readS32() {\n \n }\n read"\
+  "U32() {\n }\n readU32le() {\n }\n readU32be() {\n }\n readU64() {\n "\
+  "\n return parseInt(this.api.cmd(`pv8u@${this.addr}`));\n }\n rea"\
+  "dU64le() {\n }\n readU64be() {\n }\n writeInt(n) {\n return this.w"\
+  "riteU32(n);\n }\n writeU8(n) {\n this.api.cmd(`wv1 ${n}@${this.a"\
+  "ddr}`);\n return true;\n }\n writeU16(n) {\n this.api.cmd(`wv2 ${"\
+  "n}@${this.addr}`);\n return true;\n }\n writeU16be(n) {\n this.ap"\
+  "i.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendian=true`);\n return "\
+  "true;\n }\n writeU16le(n) {\n this.api.cmd(`wv2 ${n}@${this.addr"\
+  "}@e:cfg.bigendian=false`);\n return true;\n }\n writeU32(n) {\n t"\
+  "his.api.cmd(`wv4 ${n}@${this.addr}`);\n return true;\n }\n write"\
+  "U32be(n) {\n this.api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendi"\
+  "an=true`);\n return true;\n }\n writeU32le(n) {\n this.api.cmd(`w"\
+  "v4 ${n}@${this.addr}@e:cfg.bigendian=false`);\n return true;\n "\
+  "}\n writeU64(n) {\n this.api.cmd(`wv8 ${n}@${this.addr}`);\n ret"\
+  "urn true;\n }\n writeU64be(n) {\n this.api.cmd(`wv8 ${n}@${this."\
+  "addr}@e:cfg.bigendian=true`);\n return true;\n }\n writeU64le(n)"\
+  " {\n this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false"\
+  "`);\n return true;\n }\n readInt32() {\n return this.readU32();\n "\
+  "}\n readCString() {\n const output = this.api.cmd(`pszj@${this."\
+  "addr}`);\n return JSON.parse(output).string;\n }\n readWideStrin"\
+  "g() {\n const output = this.api.cmd(`pswj@${this.addr}`);\n ret"\
+  "urn JSON.parse(output).string;\n }\n readPascalString() {\n cons"\
+  "t output = this.api.cmd(`pspj@${this.addr}`);\n return JSON.pa"\
+  "rse(output).string;\n }\n instruction() {\n const output = this."\
+  "api.cmdj(`aoj@${this.addr}`);\n return output[0];\n }\n disassem"\
+  "ble(length) {\n const len = length === undefined ? \"\" : \"\" + l"\
+  "ength;\n return this.api.cmd(`pd ${len}@${this.addr}`);\n }\n an"\
+  "alyzeFunction() {\n this.api.cmd(\"af@\" + this.addr);\n return t"\
+  "his;\n }\n analyzeFunctionRecursively() {\n this.api.cmd(\"afr@\" "\
+  "+ this.addr);\n return this;\n }\n name() {\n return (this.api.cm"\
+  "d(\"fd \" + this.addr)).trim();\n }\n methodName() {\n \n return (t"\
+  "his.api.cmd(\"ic.@\" + this.addr)).trim();\n }\n symbolName() {\n "\
+  "\n const name = this.api.cmd(\"isj.@\" + this.addr);\n return nam"\
+  "e.trim();\n }\n getFunction() {\n return this.api.cmdj(\"afij@\" +"\
+  " this.addr);\n }\n basicBlock() {\n return this.api.cmdj(\"abj@\" "\
+  "+ this.addr);\n }\n functionBasicBlocks() {\n return this.api.cm"\
+  "dj(\"afbj@\" + this.addr);\n }\n xrefs() {\n return this.api.cmdj("\
+  "\"axtj@\" + this.addr);\n }\n}\nexports.NativePointer = NativePoin"\
+  "ter;\nvar R2Papi=R2PapiSync;\n";
