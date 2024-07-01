@@ -560,11 +560,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					// break;
 				}
 				if (sdb_get (db, K_INDENT (jump), 0)) {
-					// already tracekd
+					// already traced
 					if (!sdb_get (db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else {
-						R_LOG_ERROR ("sdb.get fail");
+						bb = r_anal_bb_from_offset (core->anal, jump);
+						// R_LOG_ERROR ("sdb.get fail");
 					}
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
