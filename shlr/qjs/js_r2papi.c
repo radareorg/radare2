@@ -1,341 +1,663 @@
 static const char *const js_r2papi_qjs = "" \
-  "Object.defineProperty(G,\"__esModule\",{value:!0}),G.NativePoin"\
-  "ter=G.NativeCallback=G.NativeFunction=G.R2Papi=G.Assembler=G."\
-  "ProcessClass=G.ModuleClass=G.ThreadClass=void 0;const shell_j"\
-  "s_1=G;class ThreadClass{constructor(t){this.api=null,this.api"\
-  "=t}backtrace(){return r2pipe_js_1.r2.call(\"dbtj\")}sleep(t){re"\
-  "turn r2pipe_js_1.r2.call(\"sleep \"+t)}}G.ThreadClass=ThreadCla"\
-  "ss;class ModuleClass{constructor(t){this.api=null,this.api=t}"\
-  "fileName(){return this.api.call(\"dpe\").trim()}name(){return\"M"\
-  "odule\"}findBaseAddress(){return\"TODO\"}findExportByName(t){ret"\
-  "urn\"TODO\"}getBaseAddress(t){return\"TODO\"}getExportByName(t){r"\
-  "eturn r2pipe_js_1.r2.call(\"iE,name/eq/\"+t+\",vaddr/cols,:quiet"\
-  "\")}enumerateExports(){return r2pipe_js_1.r2.callj(\"iEj\")}enum"\
-  "erateImports(){return r2pipe_js_1.r2.callj(\"iij\")}enumerateRa"\
-  "nges(){return r2pipe_js_1.r2.callj(\"isj\")}enumerateSymbols(){"\
-  "return r2pipe_js_1.r2.callj(\"isj\")}}G.ModuleClass=ModuleClass"\
-  ";class ProcessClass{constructor(t){this.r2=null,this.r2=t}enu"\
-  "merateMallocRanges(){}enumerateSystemRanges(){}enumerateRange"\
-  "s(){}enumerateThreads(){return r2pipe_js_1.r2.call(\"dptj\")}en"\
-  "umerateModules(){if(r2pipe_js_1.r2.call(\"cfg.json.num=string\""\
-  "),r2pipe_js_1.r2.callj(\"e cfg.debug\")){const t=r2pipe_js_1.r2"\
-  ".callj(\"dmmj\"),e=[];for(const r of t){const t={base:new Nativ"\
-  "ePointer(r.addr),size:new NativePointer(r.addr_end).sub(r.add"\
-  "r),path:r.file,name:r.name};e.push(t)}return e}{const t=t=>{c"\
-  "onst e=t.split(\"/\");return e[e.length-1]},e=r2pipe_js_1.r2.ca"\
-  "llj(\"obj\"),r=[];for(const s of e){const e={base:new NativePoi"\
-  "nter(s.addr),size:s.size,path:s.file,name:t(s.file)};r.push(e"\
-  ")}const s=r2pipe_js_1.r2.callj(\"ilj\");for(const e of s){const"\
-  " s={base:0,size:0,path:e,name:t(e)};r.push(s)}return r}}getMo"\
-  "duleByAddress(t){}getModuleByName(t){}codeSigningPolicy(){ret"\
-  "urn\"optional\"}getTmpDir(){return this.r2.call(\"e dir.tmp\").tr"\
-  "im()}getHomeDir(){return this.r2.call(\"e dir.home\").trim()}pl"\
-  "atform(){return this.r2.call(\"e asm.os\").trim()}getCurrentDir"\
-  "(){return this.r2.call(\"pwd\").trim()}getCurrentThreadId(){ret"\
-  "urn+this.r2.call(\"dpq\")}pageSize(){return 64===this.r2.callj("\
-  "\"e asm.bits\")&&this.r2.call(\"e asm.arch\").startsWith(\"arm\")?1"\
-  "6384:4096}isDebuggerAttached(){return this.r2.callj(\"e cfg.de"\
-  "bug\")}setExceptionHandler(){}id(){return this.r2.callj(\"dpq\")"\
-  "}pointerSize(){return r2pipe_js_1.r2.callj(\"e asm.bits\")/8}}G"\
-  ".ProcessClass=ProcessClass;class Assembler{constructor(t){thi"\
-  "s.program=\"\",this.labels={},this.endian=!1,this.pc=0,this.r2="\
-  "null,this.r2=void 0===t?r2pipe_js_1.r2:t,this.program=\"\",this"\
-  ".labels={}}setProgramCounter(t){this.pc=t}setEndian(t){this.e"\
-  "ndian=t}toString(){return this.program}append(t){this.pc+=t.l"\
-  "ength/2,this.program+=t}label(t){const e=this.pc;return this."\
-  "labels[t]=this.pc,e}asm(t){let e=this.r2.cmd('\"\"pa '+t).trim("\
-  ");e.length<16||(e=\"____\"),this.append(e)}}G.Assembler=Assembl"\
-  "er;class R2Papi{constructor(t){this.r2=t}toString(){return\"[o"\
-  "bject R2Papi]\"}toJSON(){return this.toString()}getBaseAddress"\
-  "(){return new NativePointer(this.cmd(\"e bin.baddr\"))}jsonToTy"\
-  "pescript(t,e){let r=`interface ${t} {\\n`;e.length&&e.length>0"\
-  "&&(e=e[0]);for(let t of Object.keys(e)){r+=`    ${t}: ${typeo"\
-  "f e[t]};\\n`}return`${r}}\\n`}getBits(){return this.cmd(\"-b\")}g"\
-  "etArch(){return this.cmd(\"-a\")}getCpu(){return this.cmd(\"-e a"\
-  "sm.cpu\")}setArch(t,e){this.cmd(\"-a \"+t),void 0!==e&&this.cmd("\
-  "\"-b \"+e)}setFlagSpace(t){this.cmd(\"fs \"+t)}setLogLevel(t){ret"\
-  "urn this.cmd(\"e log.level=\"+t),this}newMap(t,e,r,s,i,n=\"\"){th"\
-  "is.cmd(`om ${t} ${e} ${r} ${s} ${i} ${n}`)}at(t){return new N"\
-  "ativePointer(t)}getShell(){return new shell_js_1.R2PapiShell("\
-  "this)}version(){return this.r2.cmd(\"?Vq\").trim()}platform(){r"\
-  "eturn this.r2.cmd(\"uname\").trim()}arch(){return this.r2.cmd(\""\
-  "uname -a\").trim()}bits(){return this.r2.cmd(\"uname -b\").trim("\
-  ")}id(){return+this.r2.cmd(\"?vi:$p\")}printAt(t,e,r){}clearScre"\
-  "en(){return this.r2.cmd(\"!clear\"),this}getConfig(t){if(\"\"===t"\
-  ")return new Error(\"Empty key\");return\"\"===this.r2.cmd(`e~^${t"\
-  "} =`).trim()?new Error(\"Config key does not exist\"):this.r2.c"\
-  "all(\"e \"+t).trim()}setConfig(t,e){return this.r2.call(\"e \"+t+"\
-  "\"=\"+e),this}getRegisterStateForEsil(){return this.cmdj(\"dre\")"\
-  ".trim()}getRegisters(){return this.cmdj(\"drj\")}resizeFile(t){"\
-  "return this.cmd(`r ${t}`),this}insertNullBytes(t,e){return vo"\
-  "id 0===e&&(e=\"$$\"),this.cmd(`r+${t}@${e}`),this}removeBytes(t"\
-  ",e){return void 0===e&&(e=\"$$\"),this.cmd(`r-${t}@${e}`),this}"\
-  "seek(t){return this.cmd(`s ${t}`),this}currentSeek(){return n"\
-  "ew NativePointer(\"$$\")}seekToRelativeOpcode(t){return this.cm"\
-  "d(`so ${t}`),this.currentSeek()}getBlockSize(){return+this.cm"\
-  "d(\"b\")}setBlockSize(t){return this.cmd(`b ${t}`),this}countFl"\
-  "ags(){return Number(this.cmd(\"f~?\"))}countFunctions(){return "\
-  "Number(this.cmd(\"aflc\"))}analyzeFunctionsWithEsil(t){this.cmd"\
-  "(\"aaef\")}analyzeProgramWithEsil(t){this.cmd(\"aae\")}analyzePro"\
-  "gram(t){switch(void 0===t&&(t=0),t){case 0:this.cmd(\"aa\");bre"\
-  "ak;case 1:this.cmd(\"aaa\");break;case 2:this.cmd(\"aaaa\");break"\
-  ";case 3:this.cmd(\"aaaaa\")}return this}enumerateThreads(){retu"\
-  "rn[{context:this.cmdj(\"drj\"),id:0,state:\"waiting\",selected:!0"\
-  "}]}currentThreadId(){return+this.cmd(\"e cfg.debug\")?+this.cmd"\
-  "(\"dpt.\"):this.id()}setRegisters(t){for(let e of Object.keys(t"\
-  ")){const r=t[e];this.r2.cmd(\"dr \"+e+\"=\"+r)}}hex(t){return thi"\
-  "s.r2.cmd(\"?v \"+t).trim()}step(){return this.r2.cmd(\"ds\"),this"\
-  "}stepOver(){return this.r2.cmd(\"dso\"),this}math(t){return+thi"\
-  "s.r2.cmd(\"?v \"+t)}stepUntil(t){this.cmd(`dsu ${t}`)}enumerate"\
-  "XrefsTo(t){return this.call(\"axtq \"+t).trim().split(/\\n/)}fin"\
-  "dXrefsTo(t,e){e?this.call(\"/r \"+t):this.call(\"/re \"+t)}analyz"\
-  "eFunctionsFromCalls(){return this.call(\"aac\"),this}analyzeFun"\
-  "ctionsWithPreludes(){return this.call(\"aap\"),this}analyzeObjC"\
-  "References(){return this.cmd(\"aao\"),this}analyzeImports(){ret"\
-  "urn this.cmd(\"af @ sym.imp.*\"),this}searchDisasm(t){return th"\
-  "is.callj(\"/ad \"+t)}searchString(t){return this.cmdj(\"/j \"+t)}"\
-  "searchBytes(t){const e=t.map((function(t){return(255&t).toStr"\
-  "ing(16)})).join(\"\");return this.cmdj(\"/xj \"+e)}binInfo(){try{"\
-  "return this.cmdj(\"ij~{bin}\")}catch(t){return{}}}selectBinary("\
-  "t){this.call(`ob ${t}`)}openFile(t){const e=this.call(\"oqq\")."\
-  "trim();this.call(`o ${t}`);const r=this.call(\"oqq\").trim();re"\
-  "turn e===r?new Error(\"Cannot open file\"):parseInt(r)}openFile"\
-  "Nomap(t){const e=this.call(\"oqq\").trim();this.call(`of ${t}`)"\
-  ";const r=this.call(\"oqq\").trim();return e===r?new Error(\"Cann"\
-  "ot open file\"):parseInt(r)}currentFile(t){return this.call(\"o"\
-  ".\").trim()}enumeratePlugins(t){switch(t){case\"bin\":return thi"\
-  "s.callj(\"Lij\");case\"io\":return this.callj(\"Loj\");case\"core\":r"\
-  "eturn this.callj(\"Lcj\");case\"arch\":return this.callj(\"LAj\");c"\
-  "ase\"anal\":return this.callj(\"Laj\");case\"lang\":return this.cal"\
-  "lj(\"Llj\")}return[]}enumerateModules(){return this.callj(\"dmmj"\
-  "\")}enumerateFiles(){return this.callj(\"oj\")}enumerateBinaries"\
-  "(){return this.callj(\"obj\")}enumerateMaps(){return this.callj"\
-  "(\"omj\")}enumerateClasses(){return this.callj(\"icj\")}enumerate"\
-  "Symbols(){return this.callj(\"isj\")}enumerateExports(){return "\
-  "this.callj(\"iEj\")}enumerateImports(){return this.callj(\"iij\")"\
-  "}enumerateLibraries(){return this.callj(\"ilj\")}enumerateSecti"\
-  "ons(){return this.callj(\"iSj\")}enumerateSegments(){return thi"\
-  "s.callj(\"iSSj\")}enumerateEntrypoints(){return this.callj(\"iej"\
-  "\")}enumerateRelocations(){return this.callj(\"irj\")}enumerateF"\
-  "unctions(){return this.cmdj(\"aflj\")}enumerateFlags(){return t"\
-  "his.cmdj(\"fj\")}skip(){this.r2.cmd(\"dss\")}ptr(t){return new Na"\
-  "tivePointer(t,this)}call(t){return this.r2.call(t)}callj(t){r"\
-  "eturn JSON.parse(this.call(t))}cmd(t){return this.r2.cmd(t)}c"\
-  "mdj(t){return JSON.parse(this.cmd(t))}log(t){return this.r2.l"\
-  "og(t)}clippy(t){this.r2.log(this.r2.cmd(\"?E \"+t))}ascii(t){th"\
-  "is.r2.log(this.r2.cmd(\"?ea \"+t))}}G.R2Papi=R2Papi;class Nativ"\
-  "eFunction{constructor(){}}G.NativeFunction=NativeFunction;cla"\
-  "ss NativeCallback{constructor(){}}G.NativeCallback=NativeCall"\
-  "back;class NativePointer{constructor(t,e){this.api=void 0===e"\
-  "?G.R:e,this.addr=(\"\"+t).trim()}setFlag(t){this.api.call(`f ${"\
-  "t}=${this.addr}`)}unsetFlag(){this.api.call(`f-${this.addr}`)"\
-  "}hexdump(t){let e=void 0===t?\"\":\"\"+t;return this.api.cmd(`x${"\
-  "e}@${this.addr}`)}functionGraph(t){return\"dot\"===t?this.api.c"\
-  "md(`agfd@ ${this.addr}`):\"json\"===t?this.api.cmd(`agfj@${this"\
-  ".addr}`):\"mermaid\"===t?this.api.cmd(`agfm@${this.addr}`):this"\
-  ".api.cmd(`agf@${this.addr}`)}readByteArray(t){return JSON.par"\
-  "se(this.api.cmd(`p8j ${t}@${this.addr}`))}readHexString(t){re"\
-  "turn this.api.cmd(`p8 ${t}@${this.addr}`).trim()}and(t){const"\
-  " e=this.api.call(`?v ${this.addr} & ${t}`).trim();return new "\
-  "NativePointer(e)}or(t){const e=this.api.call(`?v ${this.addr}"\
-  " | ${t}`).trim();return new NativePointer(e)}add(t){const e=t"\
-  "his.api.call(`?v ${this.addr}+${t}`).trim();return new Native"\
-  "Pointer(e)}sub(t){const e=this.api.call(`?v ${this.addr}-${t}"\
-  "`).trim();return new NativePointer(e)}writeByteArray(t){retur"\
-  "n this.api.cmd(\"wx \"+t.join(\"\")),this}writeAssembly(t){return"\
-  " this.api.cmd(`wa ${t} @ ${this.addr}`),this}writeCString(t){"\
-  "return this.api.call(\"w \"+t),this}writeWideString(t){return t"\
-  "his.api.call(\"ww \"+t),this}isNull(){return 0==this.toNumber()"\
-  "}compare(t){return\"string\"!=typeof t&&\"number\"!=typeof t||(t="\
-  "new NativePointer(t)),t.addr===this.addr||new NativePointer(t"\
-  ".addr).toNumber()===this.toNumber()}pointsToNull(){return thi"\
-  "s.readPointer().compare(0)}toJSON(){return this.api.cmd(\"?vi "\
-  "\"+this.addr.trim()).trim()}toString(){return this.api.cmd(\"?v"\
-  " \"+this.addr.trim()).trim()}toNumber(){return parseInt(this.t"\
-  "oString())}writePointer(t){this.api.cmd(`wvp ${t}@${this}`)}r"\
-  "eadRelativePointer(){return this.add(this.readS32())}readPoin"\
-  "ter(){return new NativePointer(this.api.call(\"pvp@\"+this.addr"\
-  "))}readS8(){return parseInt(this.api.cmd(`pv1d@${this.addr}`)"\
-  ")}readU8(){return parseInt(this.api.cmd(`pv1u@${this.addr}`))"\
-  "}readU16(){return parseInt(this.api.cmd(`pv2d@${this.addr}`))"\
-  "}readU16le(){return parseInt(this.api.cmd(`pv2d@${this.addr}@"\
-  "e:cfg.bigendian=false`))}readU16be(){return parseInt(this.api"\
-  ".cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`))}readS16(){ret"\
-  "urn parseInt(this.api.cmd(`pv2d@${this.addr}`))}readS16le(){r"\
-  "eturn parseInt(this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendia"\
-  "n=false`))}readS16be(){return parseInt(this.api.cmd(`pv2d@${t"\
-  "his.addr}@e:cfg.bigendian=true`))}readS32(){return parseInt(t"\
-  "his.api.cmd(`pv4d@${this.addr}`))}readU32(){return parseInt(t"\
-  "his.api.cmd(`pv4u@${this.addr}`))}readU32le(){return parseInt"\
-  "(this.api.cmd(`pv4u@${this.addr}@e:cfg.bigendian=false`))}rea"\
-  "dU32be(){return parseInt(this.api.cmd(`pv4u@${this.addr}@e:cf"\
-  "g.bigendian=true`))}readU64(){return parseInt(this.api.cmd(`p"\
-  "v8u@${this.addr}`))}readU64le(){return parseInt(this.api.cmd("\
-  "`pv8u@${this.addr}@e:cfg.bigendian=false`))}readU64be(){retur"\
-  "n parseInt(this.api.cmd(`pv8u@${this.addr}@e:cfg.bigendian=tr"\
-  "ue`))}writeInt(t){return this.writeU32(t)}writeU8(t){return t"\
-  "his.api.cmd(`wv1 ${t}@${this.addr}`),!0}writeU16(t){return th"\
-  "is.api.cmd(`wv2 ${t}@${this.addr}`),!0}writeU16be(t){return t"\
-  "his.api.cmd(`wv2 ${t}@${this.addr}@e:cfg.bigendian=true`),!0}"\
-  "writeU16le(t){return this.api.cmd(`wv2 ${t}@${this.addr}@e:cf"\
-  "g.bigendian=false`),!0}writeU32(t){return this.api.cmd(`wv4 $"\
-  "{t}@${this.addr}`),!0}writeU32be(t){return this.api.cmd(`wv4 "\
-  "${t}@${this.addr}@e:cfg.bigendian=true`),!0}writeU32le(t){ret"\
-  "urn this.api.cmd(`wv4 ${t}@${this.addr}@e:cfg.bigendian=false"\
-  "`),!0}writeU64(t){return this.api.cmd(`wv8 ${t}@${this.addr}`"\
-  "),!0}writeU64be(t){return this.api.cmd(`wv8 ${t}@${this.addr}"\
-  "@e:cfg.bigendian=true`),!0}writeU64le(t){return this.api.cmd("\
-  "`wv8 ${t}@${this.addr}@e:cfg.bigendian=false`),!0}readInt32()"\
-  "{return this.readU32()}readCString(){return JSON.parse(this.a"\
-  "pi.cmd(`pszj@${this.addr}`)).string}readWideString(){return J"\
-  "SON.parse(this.api.cmd(`pswj@${this.addr}`)).string}readPasca"\
-  "lString(){return JSON.parse(this.api.cmd(`pspj@${this.addr}`)"\
-  ").string}instruction(){return this.api.cmdj(`aoj@${this.addr}"\
-  "`)[0]}disassemble(t){let e=void 0===t?\"\":\"\"+t;return this.api"\
-  ".cmd(`pd ${e}@${this.addr}`)}analyzeFunction(){return this.ap"\
-  "i.cmd(\"af@\"+this.addr),this}analyzeFunctionRecursively(){retu"\
-  "rn this.api.cmd(\"afr@\"+this.addr),this}name(){return this.api"\
-  ".cmd(\"fd \"+this.addr).trim()}methodName(){return this.api.cmd"\
-  "(\"ic.@\"+this.addr).trim()}symbolName(){return this.api.cmd(\"i"\
-  "sj.@\"+this.addr).trim()}getFunction(){return this.api.cmdj(\"a"\
-  "fij@\"+this.addr)}basicBlock(){return this.api.cmdj(\"abj@\"+thi"\
-  "s.addr)}functionBasicBlocks(){return this.api.cmdj(\"afbj@\"+th"\
-  "is.addr)}xrefs(){return this.api.cmdj(\"axtj@\"+this.addr)}}G.N"\
-  "ativePointer=NativePointer,Object.defineProperty(G,\"__esModul"\
-  "e\",{value:!0}),Object.defineProperty(G,\"__esModule\",{value:!0"\
-  "}),G.Base64=void 0;class Base64{static encode(t){return(0,G.b"\
-  "64)(t)}static decode(t){return(0,G.b64)(t,!0)}}G.Base64=Base6"\
-  "4,Object.defineProperty(G,\"__esModule\",{value:!0}),G.R2AI=voi"\
-  "d 0;class R2AI{constructor(t,e){if(this.available=!1,this.mod"\
-  "el=\"\",this.available=\"\"!==r2pipe_js_1.r2.cmd(\"r2ai -h\").trim("\
-  "),!this.available)throw new Error(\"ERROR: r2ai is not install"\
-  "ed\");t&&r2pipe_js_1.r2.call(`r2ai -n ${t}`),e&&(this.model=e)"\
-  "}reset(){this.available&&r2pipe_js_1.r2.call(\"r2ai -R\")}setRo"\
-  "le(t){this.available&&r2pipe_js_1.r2.call(`r2ai -r ${t}`)}set"\
-  "Model(t){this.available&&r2pipe_js_1.r2.call(`r2ai -m ${this."\
-  "model}`)}getModel(){return this.available?r2pipe_js_1.r2.call"\
-  "(\"r2ai -m\"):this.model}listModels(){return this.available?r2p"\
-  "ipe_js_1.r2.call(\"r2ai -M\").trim().split(/\\n/g):[]}query(t){i"\
-  "f(!this.available||\"\"==t)return\"\";const e=t.trim().replace(/\\"\
-  "n/g,\".\");return r2pipe_js_1.r2.call(`r2ai ${e}`)}}G.R2AI=R2AI"\
-  ",Object.defineProperty(G,\"__esModule\",{value:!0}),G.R2PapiShe"\
-  "ll=void 0;class R2PapiShell{constructor(t){this.rp=t}mkdir(t,"\
-  "e){return!0===e?this.rp.call(`mkdir -p ${t}`):this.rp.call(`m"\
-  "kdir ${t}`),!0}unlink(t){return this.rp.call(`rm ${t}`),!0}ch"\
-  "dir(t){return this.rp.call(`cd ${t}`),!0}ls(){return this.rp."\
-  "call(\"ls -q\").trim().split(\"\\n\")}fileExists(t){return!1}open("\
-  "t){this.rp.call(`open ${t}`)}system(t){return this.rp.call(`!"\
-  "${t}`),0}run(t){return this.rp.call(`rm ${t}`),0}mount(t,e){r"\
-  "eturn this.rp.call(`m ${t} ${e}`),!0}umount(t){this.rp.call(`"\
-  "m-${t}`)}chdir2(t){return void 0===t&&(t=\"/\"),this.rp.call(`m"\
-  "dq ${t}`),!0}ls2(t){return void 0===t&&(t=\"/\"),this.rp.call(`"\
-  "mdq ${t}`).trim().split(\"\\n\")}enumerateMountpoints(){return t"\
-  "his.rp.cmdj(\"mlj\")}isSymlink(t){return!1}isDirectory(t){retur"\
-  "n!1}}G.R2PapiShell=R2PapiShell,Object.defineProperty(G,\"__esM"\
-  "odule\",{value:!0}),G.EsilParser=G.EsilNode=G.EsilToken=void 0"\
-  ";class EsilToken{constructor(t=\"\",e=0){this.label=\"\",this.com"\
-  "ment=\"\",this.text=\"\",this.addr=\"0\",this.position=0,this.text="\
-  "t,this.position=e}toString(){return this.text}}G.EsilToken=Es"\
-  "ilToken;class EsilNode{constructor(t=new EsilToken,e=\"none\"){"\
-  "this.type=\"none\",this.token=t,this.children=[]}setSides(t,e){"\
-  "this.lhs=t,this.rhs=e}addChildren(t,e){void 0!==t&&this.child"\
-  "ren.push(t),void 0!==e&&this.children.push(e)}toEsil(){if(voi"\
-  "d 0!==this.lhs&&void 0!==this.rhs){let t=this.lhs.toEsil();re"\
-  "turn\"\"!==t&&(t+=\",\"),`${this.rhs.toEsil()},${t}${this.token}`"\
-  "}return\"\"}toString(){let t=\"\";if(\"\"!==this.token.label&&(t+=t"\
-  "his.token.label+\":\\n\"),this.token.addr,\"\"!==this.token.commen"\
-  "t&&(t+=\"/*\"+this.token.comment+\"*/\\n\"),\"GOTO\"===this.token.to"\
-  "String())if(this.children.length>0){t+=\"goto label_\"+this.chi"\
-  "ldren[0].token.position+\";\\n\"}else{t+=`goto label_${0};\\n`}if"\
-  "(this.children.length>0){t+=`  (if (${this.rhs})\\n`;for(let e"\
-  " of this.children)if(null!==e){const r=e.toString();\"\"!=r&&(t"\
-  "+=`  ${r}\\n`)}t+=\"  )\\n\"}return void 0!==this.lhs&&void 0!==t"\
-  "his.rhs?t+`    ( ${this.lhs} ${this.token} ${this.rhs} )`:t+t"\
-  "his.token.toString()}}G.EsilNode=EsilNode;class EsilParser{co"\
-  "nstructor(t){this.cur=0,this.r2=t,this.cur=0,this.stack=[],th"\
-  "is.nodes=[],this.tokens=[],this.root=new EsilNode(new EsilTok"\
-  "en(\"function\",0),\"block\")}toJSON(){if(this.stack.length>0)thr"\
-  "ow new Error(\"The ESIL stack is not empty\");return JSON.strin"\
-  "gify(this.root,null,2)}toEsil(){return this.nodes.map((t=>t.t"\
-  "oEsil())).join(\",\")}optimizeFlags(t){void 0!==t.rhs&&this.opt"\
-  "imizeFlags(t.rhs),void 0!==t.lhs&&this.optimizeFlags(t.lhs);f"\
-  "or(let e=0;e<t.children.length;e++)this.optimizeFlags(t.child"\
-  "ren[e]);const e=t.toString();if(+e>4096){const r=r2.cmd(`fd.@"\
-  " ${e}`).trim().split(\"\\n\")[0].trim();\"\"!=r&&-1===r.indexOf(\"+"\
-  "\")&&(t.token.text=r)}}optimize(t){-1!=t.indexOf(\"flag\")&&this"\
-  ".optimizeFlags(this.root)}toString(){return this.root.childre"\
-  "n.map((t=>t.toString())).join(\";\\n\")}reset(){this.nodes=[],th"\
-  "is.stack=[],this.tokens=[],this.cur=0,this.root=new EsilNode("\
-  "new EsilToken(\"function\",0),\"block\")}parseRange(t,e){let r=t;"\
-  "for(;r<this.tokens.length&&r<e;){const t=this.peek(r);if(!t)b"\
-  "reak;this.cur=r,this.pushToken(t),r=this.cur,r++}}parseFuncti"\
-  "on(t){var e=this;function r(t){const r=r2.cmd(\"pie \"+t+\" @e:s"\
-  "cr.color=0\").trim().split(\"\\n\");for(const t of r){if(0===t.le"\
-  "ngth){console.log(\"Empty\");continue}const r=t.split(\" \");r.le"\
-  "ngth>1&&(r2.cmd(`s ${r[0]}`),e.parse(r[1],r[0]),e.optimize(\"f"\
-  "lags,labels\"))}}const s=r2.cmd(\"?v $$\").trim();void 0===t&&(t"\
-  "=s);const i=r2.cmdj(`afbj@${t}`);for(let t of i)r2.cmd(`s ${t"\
-  ".addr}`),r(t.ninstr);r2.cmd(`s ${s}`)}parse(t,e){const r=t.tr"\
-  "im().split(\",\").map((t=>t.trim())),s=this.tokens.length;for(l"\
-  "et t of r){const r=new EsilToken(t,this.tokens.length);void 0"\
-  "!==e&&(r.addr=e),this.tokens.push(r)}const i=this.tokens.leng"\
-  "th;this.parseRange(s,i)}peek(t){return this.tokens[t]}pushTok"\
-  "en(t){if(this.isNumber(t)){const e=new EsilNode(t,\"number\");t"\
-  "his.stack.push(e),this.nodes.push(e)}else if(this.isInternal("\
-  "t)){const e=new EsilNode(t,\"flag\");this.stack.push(e),this.no"\
-  "des.push(e)}else if(this.isOperation(t));else{const e=new Esi"\
-  "lNode(t,\"register\");this.stack.push(e),this.nodes.push(e)}}is"\
-  "Number(t){return!!t.toString().startsWith(\"0\")||+t>0}isIntern"\
-  "al(t){const e=t.toString();return e.startsWith(\"$\")&&e.length"\
-  ">1}parseUntil(t){const e=t+1;let r=e;const s=[],i=this.nodes."\
-  "length;for(this.stack.forEach((t=>s.push(t)));r<this.tokens.l"\
-  "ength;){const t=this.peek(r);if(!t)break;if(\"}\"===t.toString("\
-  "))break;if(\"}{\"===t.toString())break;r++}this.stack=s;const n"\
-  "=r;this.parseRange(e,n);return this.nodes.length==i?null:this"\
-  ".nodes[this.nodes.length-1]}getNodeFor(t){if(void 0===this.pe"\
-  "ek(t))return null;for(let e of this.nodes)if(e.token.position"\
-  "===t)return e;return this.nodes.push(new EsilNode(new EsilTok"\
-  "en(\"label\",t),\"label\")),null}findNodeFor(t){for(let e of this"\
-  ".nodes)if(e.token.position===t)return e;return null}isOperati"\
-  "on(t){switch(t.toString()){case\"[1]\":case\"[2]\":case\"[4]\":case"\
-  "\"[8]\":if(!(this.stack.length>=1))throw new Error(\"Stack needs"\
-  " more items\");{const t=this.stack.pop();new EsilNode(t.token,"\
-  "\"operation\");this.stack.push(t)}return!0;case\"!\":if(!(this.st"\
-  "ack.length>=1))throw new Error(\"Stack needs more items\");{con"\
-  "st e=new EsilNode(new EsilToken(\"\",t.position),\"none\"),r=this"\
-  ".stack.pop(),s=new EsilNode(t,\"operation\");s.setSides(e,r),th"\
-  "is.stack.push(s)}return!0;case\"\":case\"}\":case\"}{\":return!0;ca"\
-  "se\"DUP\":{if(this.stack.length<1)throw new Error(\"goto cant po"\
-  "p\");const t=this.stack.pop();this.stack.push(t),this.stack.pu"\
-  "sh(t)}return!0;case\"GOTO\":if(null!==this.peek(t.position-1)){"\
-  "if(this.stack.length<1)throw new Error(\"goto cant pop\");const"\
-  " e=this.stack.pop();if(null!==e){const r=0|+e.toString();if(r"\
-  ">0){const e=this.peek(r);if(void 0!==e){e.label=\"label_\"+r,e."\
-  "comment=\"hehe\";const s=new EsilNode(t,\"goto\"),i=this.getNodeF"\
-  "or(e.position);null!=i&&s.children.push(i),this.root.children"\
-  ".push(s)}else console.error(\"Cannot find goto node\")}else con"\
-  "sole.error(\"Cannot find dest node for goto\")}}return!0;case\"?"\
-  "{\":if(!(this.stack.length>=1))throw new Error(\"Stack needs mo"\
-  "re items\");{const e=new EsilNode(new EsilToken(\"if\",t.positio"\
-  "n),\"none\"),r=this.stack.pop(),s=new EsilNode(t,\"operation\");s"\
-  ".setSides(e,r);let i=this.parseUntil(t.position),n=null;null!"\
-  "==i&&(s.children.push(i),this.nodes.push(i),n=this.parseUntil"\
-  "(i.token.position+1),null!==n&&(s.children.push(n),this.nodes"\
-  ".push(n))),this.nodes.push(s),this.root.children.push(s),null"\
-  "!==n&&(this.cur=n.token.position)}return!0;case\"-\":if(!(this."\
-  "stack.length>=2))throw new Error(\"Stack needs more items\");{c"\
-  "onst e=this.stack.pop(),r=this.stack.pop(),s=new EsilNode(t,\""\
-  "operation\");s.setSides(e,r),this.stack.length,this.stack.push"\
-  "(s),this.nodes.push(s)}return!0;case\"<\":case\">\":case\"^\":case\""\
-  "&\":case\"|\":case\"+\":case\"*\":case\"/\":case\">>=\":case\"<<=\":case\">"\
-  ">>=\":case\"<<<=\":case\">>>>=\":case\"<<<<=\":if(!(this.stack.lengt"\
-  "h>=2))throw new Error(\"Stack needs more items\");{const e=this"\
-  ".stack.pop(),r=this.stack.pop(),s=new EsilNode(t,\"operation\")"\
-  ";s.setSides(e,r),this.stack.length,this.stack.push(s),this.no"\
-  "des.push(s)}return!0;case\"=\":case\":=\":case\"-=\":case\"+=\":case\""\
-  "==\":case\"=[1]\":case\"=[2]\":case\"=[4]\":case\"=[8]\":if(!(this.sta"\
-  "ck.length>=2))throw new Error(\"Stack needs more items\");{cons"\
-  "t e=this.stack.pop(),r=this.stack.pop(),s=new EsilNode(t,\"ope"\
-  "ration\");s.setSides(e,r),0===this.stack.length&&this.root.chi"\
-  "ldren.push(s),this.nodes.push(s)}return!0}return!1}}G.EsilPar"\
-  "ser=EsilParser;const r2pipe_js_1=G;\n";
+  "\"use strict\";\n// shell utilities on top of r2pipe\nObject.defi"\
+  "neProperty(exports, \"__esModule\", { value: true });\nexports.R"\
+  "2Shell = void 0;\n/**\n * Provides a way to script the interact"\
+  "ions with different language models using javascript from ins"\
+  "ide radare2.\n *\n * @typedef R2Shell\n */\nclass R2Shell {\n /**\n"\
+  " * Create a new instance of the R2Shell\n *\n * @param {R2Papi}"\
+  " take the R2Papi intance to used as backend to run the comman"\
+  "ds\n * @returns {R2Shell} instance of the shell api\n */\n const"\
+  "ructor(papi) {\n this.rp = papi;\n }\n /**\n * Create a new direc"\
+  "tory in the host system, if the opational recursive argument "\
+  "is set to\n * true it will create all the necessary subdirecto"\
+  "ries instead of just the specified one.\n *\n * @param {string}"\
+  " text path to the new directory to be created\n * @param {bool"\
+  "ean?} disabled by default, but if it's true, it will create s"\
+  "ubdirectories recursively if necessary\n * @returns {boolean} "\
+  "true if successful\n */\n mkdir(file, recursive) {\n if (recursi"\
+  "ve === true) {\n this.rp.call(`mkdir -p ${file}`);\n }\n else {\n"\
+  " this.rp.call(`mkdir ${file}`);\n }\n return true;\n }\n /**\n * D"\
+  "eletes a file\n *\n * @param {string} path to the file to remov"\
+  "e\n * @returns {boolean} true if successful\n */\n unlink(file) "\
+  "{\n this.rp.call(`rm ${file}`);\n return true;\n }\n /**\n * Chang"\
+  "e current directory\n *\n * @param {string} path to the directo"\
+  "ry\n * @returns {boolean} true if successful\n */\n chdir(path) "\
+  "{\n this.rp.call(`cd ${path}`);\n return true;\n }\n /**\n * List "\
+  "files in the current directory\n *\n * @returns {string[]} arra"\
+  "y of file names\n */\n ls() {\n const files = this.rp.call(`ls -"\
+  "q`);\n return files.trim().split(\"\\n\");\n }\n /**\n * TODO: Check"\
+  "s if a file exists (not implemented)\n *\n * @returns {boolean}"\
+  " true if the file exists, false if it does not\n */\n fileExist"\
+  "s(path) {\n // TODO\n return false;\n }\n /**\n * Opens an URL or "\
+  "application\n * Execute `xdg-open` on linux, `start` on window"\
+  "s, `open` on Mac\n *\n * @param {string} URI or file to open by"\
+  " the system\n */\n open(arg) {\n this.rp.call(`open ${arg}`);\n }"\
+  "\n /**\n * Run a system command and get the return code\n *\n * @"\
+  "param {string} system command to be executed\n * @returns {num"\
+  "ber} return code (0 is success)\n */\n system(cmd) {\n this.rp.c"\
+  "all(`!${cmd}`);\n return 0;\n }\n /**\n * Mount the given offset "\
+  "on the specified path using the filesytem.\n * This is not a s"\
+  "ystem-level mountpoint, it's using the internal filesystem ab"\
+  "straction of radare2.\n *\n * @param {string} filesystem type n"\
+  "ame (see .\n * @param {string} system command to be executed\n "\
+  "* @param {string|number}\n * @returns {number} return code (0 "\
+  "is success)\n */\n mount(fstype, path, offset) {\n if (!offset) "\
+  "{\n offset = 0;\n }\n this.rp.call(`m ${fstype} ${path} ${offset"\
+  "}`);\n return true;\n }\n /**\n * Unmount the mountpoint associat"\
+  "ed with the given path.\n *\n * @param {string} path to the mou"\
+  "nted filesystem\n * @returns {void} TODO: should return boolea"\
+  "n\n */\n umount(path) {\n this.rp.call(`m-${path}`);\n }\n /**\n * "\
+  "Change current directory on the internal radare2 filesystem\n "\
+  "*\n * @param {string} path name to change to\n * @returns {void"\
+  "} TODO: should return boolean\n */\n chdir2(path) {\n this.rp.ca"\
+  "ll(`mdq ${path}`);\n }\n /**\n * List the files contained in the"\
+  " given path within the virtual radare2 filesystem.\n *\n * @par"\
+  "am {string} path name to change to\n * @returns {void} TODO: s"\
+  "hould return boolean\n */\n ls2(path) {\n const files = this.rp."\
+  "call(`mdq ${path}`);\n return files.trim().split(\"\\n\");\n }\n /*"\
+  "*\n * Enumerate all the mountpoints set in the internal virtua"\
+  "l filesystem of radare2\n * @returns {any[]} array of mount\n *"\
+  "/\n enumerateFilesystemTypes() {\n return this.rp.cmdj(\"mLj\");\n"\
+  " }\n /**\n * Enumerate all the mountpoints set in the internal "\
+  "virtual filesystem of radare2\n * @returns {any[]} array of mo"\
+  "unt\n */\n enumerateMountpoints() {\n const output = this.rp.cmd"\
+  "j(\"mj\");\n return output[\"mountpoints\"];\n }\n /**\n * TODO: not "\
+  "implemented\n */\n isSymlink(file) {\n return false;\n }\n /**\n * "\
+  "TODO: not implemented\n */\n isDirectory(file) {\n return false;"\
+  "\n }\n}\nexports.R2Shell = R2Shell;\n\"use strict\";\nObject.defineP"\
+  "roperty(exports, \"__esModule\", { value: true });\nexports.Esil"\
+  "Parser = exports.EsilNode = exports.EsilToken = void 0;\n// (\""\
+  "this is just a comment\"), -- comments are also part of the ru"\
+  "ntime\n/*\n=(\"//\", {\n =(obj, {}())\n =([obj, comment], 32)\n if(e"\
+  "q([obj,comment], 32),\n ret()\n )\n ret(obj)\n})\n*/\nclass EsilTok"\
+  "en {\n constructor(text = \"\", position = 0) {\n this.label = \"\""\
+  ";\n this.comment = \"\";\n this.text = \"\";\n this.addr = \"0\"; // f"\
+  "or ut64 we use strings for numbers :<\n this.position = 0;\n th"\
+  "is.text = text;\n this.position = position;\n }\n toString() {\n "\
+  "return this.text;\n }\n}\nexports.EsilToken = EsilToken;\nclass E"\
+  "silNode {\n constructor(token = new EsilToken(), type = \"none\""\
+  ") {\n this.type = \"none\";\n this.token = token;\n this.children "\
+  "= [];\n }\n setSides(lhs, rhs) {\n this.lhs = lhs;\n this.rhs = r"\
+  "hs;\n }\n addChildren(ths, fhs) {\n if (ths !== undefined) {\n th"\
+  "is.children.push(ths);\n }\n if (fhs !== undefined) {\n this.chi"\
+  "ldren.push(fhs);\n }\n }\n toEsil() {\n if (this.lhs !== undefine"\
+  "d && this.rhs !== undefined) {\n // XXX handle ?{ }{ }\n let le"\
+  "ft = this.lhs.toEsil();\n if (left !== \"\") {\n left += \",\";\n }\n"\
+  " const right = this.rhs.toEsil();\n return `${right},${left}${"\
+  "this.token}`;\n }\n return \"\"; // this.token.text;\n }\n toString"\
+  "() {\n let str = \"\";\n if (this.token.label !== \"\") {\n str += t"\
+  "his.token.label + \":\\n\";\n }\n if (this.token.addr !== \"0\") {\n "\
+  "// str += \"// @ \" + this.token.addr + \"\\n\";\n }\n if (this.toke"\
+  "n.comment !== \"\") {\n str += \"/*\" + this.token.comment + \"*/\\n"\
+  "\";\n }\n if (this.token.toString() === \"GOTO\") {\n if (this.chil"\
+  "dren.length > 0) {\n const children = this.children[0];\n str +"\
+  "= \"goto label_\" + children.token.position + \";\\n\";\n }\n else {"\
+  "\n // console.log(JSON.stringify(this,null, 2));\n const pos = "\
+  "0;\n str += `goto label_${pos};\\n`;\n }\n }\n if (this.children.l"\
+  "ength > 0) {\n str += ` (if (${this.rhs})\\n`;\n for (const chil"\
+  "dren of this.children) {\n if (children !== null) {\n const x ="\
+  " children.toString();\n if (x != \"\") {\n str += ` ${x}\\n`;\n }\n "\
+  "}\n }\n str += \" )\\n\";\n }\n if (this.lhs !== undefined && this.r"\
+  "hs !== undefined) {\n return str + ` ( ${this.lhs} ${this.toke"\
+  "n} ${this.rhs} )`;\n // return str + `${this.lhs} ${this.token"\
+  "} ${this.rhs}`;\n }\n return str + this.token.toString();\n }\n}\n"\
+  "exports.EsilNode = EsilNode;\nclass EsilParser {\n constructor("\
+  "r2) {\n this.cur = 0;\n this.r2 = r2;\n this.cur = 0;\n this.stac"\
+  "k = [];\n this.nodes = [];\n this.tokens = [];\n this.root = new"\
+  " EsilNode(new EsilToken(\"function\", 0), \"block\");\n }\n toJSON("\
+  ") {\n if (this.stack.length > 0) {\n // return JSON.stringify ("\
+  "this.stack, null, 2);\n throw new Error(\"The ESIL stack is not"\
+  " empty\");\n }\n return JSON.stringify(this.root, null, 2);\n }\n "\
+  "toEsil() {\n return this.nodes.map((x) => x.toEsil()).join(\",\""\
+  ");\n }\n optimizeFlags(node) {\n if (node.rhs !== undefined) {\n "\
+  "this.optimizeFlags(node.rhs);\n }\n if (node.lhs !== undefined)"\
+  " {\n this.optimizeFlags(node.lhs);\n }\n for (let i = 0; i < nod"\
+  "e.children.length; i++) {\n this.optimizeFlags(node.children[i"\
+  "]);\n }\n const addr = node.toString();\n if (+addr > 4096) {\n c"\
+  "onst cname = r2.cmd(`fd.@ ${addr}`);\n const fname = cname.tri"\
+  "m().split(\"\\n\")[0].trim();\n if (fname != \"\" && fname.indexOf("\
+  "\"+\") === -1) {\n node.token.text = fname;\n }\n }\n }\n optimize(o"\
+  "ptions) {\n if (options.indexOf(\"flag\") != -1) {\n this.optimiz"\
+  "eFlags(this.root);\n }\n }\n toString() {\n return this.root.chil"\
+  "dren.map((x) => x.toString()).join(\";\\n\");\n }\n reset() {\n thi"\
+  "s.nodes = [];\n this.stack = [];\n this.tokens = [];\n this.cur "\
+  "= 0;\n this.root = new EsilNode(new EsilToken(\"function\", 0), "\
+  "\"block\");\n }\n parseRange(from, to) {\n let pos = from;\n while "\
+  "(pos < this.tokens.length && pos < to) {\n const token = this."\
+  "peek(pos);\n if (!token) {\n // console.log(\"BREAK\");\n break;\n "\
+  "}\n // console.log(pos, token);\n this.cur = pos;\n this.pushTok"\
+  "en(token);\n pos = this.cur;\n pos++;\n }\n // console.log(\"done\""\
+  ");\n }\n parseFunction(addr) {\n const ep = this;\n function pars"\
+  "eAmount(n) {\n // console.log(\"PDQ \"+n);\n const output = r2.cm"\
+  "d(\"pie \" + n + \" @e:scr.color=0\");\n const lines = output.trim"\
+  "().split(\"\\n\");\n for (const line of lines) {\n if (line.length"\
+  " === 0) {\n console.log(\"Empty\");\n continue;\n }\n // console.lo"\
+  "g(\"parse\", r2.cmd(\"?v:$$\"));\n const kv = line.split(\" \");\n if"\
+  " (kv.length > 1) {\n // line != \"\") {\n // console.log(\"// @ \" "\
+  "+ kv[0]);\n //ep.reset ();\n r2.cmd(`s ${kv[0]}`);\n ep.parse(kv"\
+  "[1], kv[0]);\n ep.optimize(\"flags,labels\");\n //console.log(ep."\
+  "toString());\n }\n }\n // console.log(ep.toString());\n }\n const "\
+  "oaddr = (r2.cmd(\"?v $$\")).trim();\n // const func = r2.cmdj(\"p"\
+  "drj\"); // XXX this command changes the current seek\n if (addr"\
+  " === undefined) {\n addr = oaddr;\n }\n const bbs = r2.cmdj(`afb"\
+  "j@${addr}`); // XXX this command changes the current seek\n fo"\
+  "r (const bb of bbs) {\n // console.log(\"bb_\" + bb.addr + \":\");"\
+  "\n r2.cmd(`s ${bb.addr}`);\n parseAmount(bb.ninstr);\n }\n r2.cmd"\
+  "(`s ${oaddr}`);\n }\n parse(expr, addr) {\n const tokens = expr\n"\
+  " .trim()\n .split(\",\")\n .map((x) => x.trim());\n const from = t"\
+  "his.tokens.length;\n for (const tok of tokens) {\n const token "\
+  "= new EsilToken(tok, this.tokens.length);\n if (addr !== undef"\
+  "ined) {\n token.addr = addr;\n }\n this.tokens.push(token);\n }\n "\
+  "const to = this.tokens.length;\n this.parseRange(from, to);\n }"\
+  "\n peek(a) {\n return this.tokens[a];\n }\n pushToken(tok) {\n if "\
+  "(this.isNumber(tok)) {\n const node = new EsilNode(tok, \"numbe"\
+  "r\");\n this.stack.push(node);\n this.nodes.push(node);\n }\n else"\
+  " if (this.isInternal(tok)) {\n const node = new EsilNode(tok, "\
+  "\"flag\");\n this.stack.push(node);\n this.nodes.push(node);\n }\n "\
+  "else if (this.isOperation(tok)) {\n // run the operation login"\
+  "\n }\n else {\n // assume it's a register, so just push the stri"\
+  "ng\n const node = new EsilNode(tok, \"register\");\n this.stack.p"\
+  "ush(node);\n this.nodes.push(node);\n }\n // we need a list of r"\
+  "egister names to do this check properly\n // throw new Error ("\
+  "\"Unknown token\");\n }\n isNumber(expr) {\n if (expr.toString().s"\
+  "tartsWith(\"0\")) {\n return true;\n }\n return +expr > 0;\n }\n isI"\
+  "nternal(expr) {\n const text = expr.toString();\n return text.s"\
+  "tartsWith(\"$\") && text.length > 1;\n }\n parseUntil(start) {\n c"\
+  "onst from = start + 1;\n let pos = from;\n const origStack = []"\
+  ";\n const this_nodes_length = this.nodes.length;\n this.stack.f"\
+  "orEach((x) => origStack.push(x));\n while (pos < this.tokens.l"\
+  "ength) {\n const token = this.peek(pos);\n if (!token) {\n break"\
+  ";\n }\n if (token.toString() === \"}\") {\n break;\n }\n if (token.t"\
+  "oString() === \"}{\") {\n // return token;\n break;\n }\n // consol"\
+  "e.log(\"peek \", this.tokens[pos]);\n pos++;\n }\n this.stack = or"\
+  "igStack;\n const to = pos;\n this.parseRange(from, to);\n const "\
+  "same = this.nodes.length == this_nodes_length;\n // console.lo"\
+  "g(\"BLOCK (\"+ ep.toString());\n if (same) {\n return null;\n }\n r"\
+  "eturn this.nodes[this.nodes.length - 1]; // this.tokens.lengt"\
+  "h - 1];\n }\n getNodeFor(index) {\n const tok = this.peek(index)"\
+  ";\n if (tok === undefined) {\n return null;\n }\n for (const node"\
+  " of this.nodes) {\n if (node.token.position === index) {\n retu"\
+  "rn node;\n }\n }\n this.nodes.push(new EsilNode(new EsilToken(\"l"\
+  "abel\", index), \"label\"));\n return null;\n }\n findNodeFor(index"\
+  ") {\n for (const node of this.nodes) {\n if (node.token.positio"\
+  "n === index) {\n return node;\n }\n }\n return null;\n }\n isOperat"\
+  "ion(expr) {\n switch (expr.toString()) {\n // 1pop1push\n case \""\
+  "[1]\":\n case \"[2]\":\n case \"[4]\":\n case \"[8]\":\n if (this.stack."\
+  "length >= 1) {\n const i1 = this.stack.pop();\n // TODO: Memory"\
+  "ReferenceNode(i1));\n const mn = new EsilNode(i1.token, \"opera"\
+  "tion\"); // expr.toString());\n this.stack.push(i1); // mn);\n }"\
+  "\n else {\n throw new Error(\"Stack needs more items\");\n }\n retu"\
+  "rn true;\n // 1pop1push\n case \"!\":\n if (this.stack.length >= 1"\
+  ") {\n const i0 = new EsilNode(new EsilToken(\"\", expr.position)"\
+  ", \"none\");\n const i1 = this.stack.pop();\n const nn = new Esil"\
+  "Node(expr, \"operation\");\n nn.setSides(i0, i1);\n this.stack.pu"\
+  "sh(nn);\n }\n else {\n throw new Error(\"Stack needs more items\")"\
+  ";\n }\n return true;\n case \"\":\n case \"}\":\n case \"}{\":\n // no po"\
+  "ps or nothing, just does nothing\n return true;\n case \"DUP\":\n "\
+  "if (this.stack.length < 1) {\n throw new Error(\"goto cant pop\""\
+  ");\n }\n else {\n const destNode = this.stack.pop();\n this.stack"\
+  ".push(destNode);\n this.stack.push(destNode);\n }\n return true;"\
+  "\n case \"GOTO\":\n // take previous statement which should be co"\
+  "nst and add a label\n {\n const prev = this.peek(expr.position "\
+  "- 1);\n if (prev !== null) {\n // TODO: check stack\n if (this.s"\
+  "tack.length < 1) {\n throw new Error(\"goto cant pop\");\n }\n con"\
+  "st destNode = this.stack.pop();\n if (destNode !== null) {\n co"\
+  "nst value = 0 | +destNode.toString();\n if (value > 0) {\n cons"\
+  "t destToken = this.peek(value);\n if (destToken !== undefined)"\
+  " {\n destToken.label = \"label_\" + value;\n destToken.comment = "\
+  "\"hehe\";\n const nn = new EsilNode(expr, \"goto\");\n const gn = t"\
+  "his.getNodeFor(destToken.position);\n if (gn != null) {\n nn.ch"\
+  "ildren.push(gn);\n }\n this.root.children.push(nn);\n }\n else {\n"\
+  " console.error(\"Cannot find goto node\");\n }\n }\n else {\n conso"\
+  "le.error(\"Cannot find dest node for goto\");\n }\n }\n }\n }\n retu"\
+  "rn true;\n // controlflow\n case \"?{\": // ESIL_TOKEN_IF\n if (th"\
+  "is.stack.length >= 1) {\n const i0 = new EsilNode(new EsilToke"\
+  "n(\"if\", expr.position), \"none\");\n const i1 = this.stack.pop()"\
+  ";\n const nn = new EsilNode(expr, \"operation\");\n nn.setSides(i"\
+  "0, i1); // left side can be ignored for now.. but we can expr"\
+  "ess this somehow\n const trueBlock = this.parseUntil(expr.posi"\
+  "tion);\n let falseBlock = null;\n // nn.addChildren(trueBlock, "\
+  "falseBlock);\n if (trueBlock !== null) {\n nn.children.push(tru"\
+  "eBlock);\n this.nodes.push(trueBlock);\n falseBlock = this.pars"\
+  "eUntil(trueBlock.token.position + 1);\n if (falseBlock !== nul"\
+  "l) {\n nn.children.push(falseBlock);\n this.nodes.push(falseBlo"\
+  "ck);\n }\n }\n // console.log(\"true\", trueBlock);\n // console.lo"\
+  "g(\"false\", falseBlock);\n // this.stack.push(nn);\n this.nodes."\
+  "push(nn);\n this.root.children.push(nn);\n if (falseBlock !== n"\
+  "ull) {\n this.cur = falseBlock.token.position;\n }\n }\n else {\n "\
+  "throw new Error(\"Stack needs more items\");\n }\n return true;\n "\
+  "case \"-\":\n if (this.stack.length >= 2) {\n const i0 = this.sta"\
+  "ck.pop();\n const i1 = this.stack.pop();\n const nn = new EsilN"\
+  "ode(expr, \"operation\");\n nn.setSides(i0, i1);\n if (this.stack"\
+  ".length === 0) {\n //\tthis.root.children.push(nn);\n }\n this.st"\
+  "ack.push(nn);\n this.nodes.push(nn);\n }\n else {\n throw new Err"\
+  "or(\"Stack needs more items\");\n }\n return true;\n // 2pop1push\n"\
+  " case \"<\":\n case \">\":\n case \"^\":\n case \"&\":\n case \"|\":\n case "\
+  "\"+\":\n case \"*\":\n case \"/\":\n case \">>=\":\n case \"<<=\":\n case \">"\
+  ">>=\":\n case \"<<<=\":\n case \">>>>=\":\n case \"<<<<=\":\n if (this.s"\
+  "tack.length >= 2) {\n const i0 = this.stack.pop();\n const i1 ="\
+  " this.stack.pop();\n const nn = new EsilNode(expr, \"operation\""\
+  ");\n nn.setSides(i0, i1);\n if (this.stack.length === 0) {\n //\t"\
+  "this.root.children.push(nn);\n }\n this.stack.push(nn);\n this.n"\
+  "odes.push(nn);\n }\n else {\n throw new Error(\"Stack needs more "\
+  "items\");\n }\n return true;\n // 2pop0push\n case \"=\":\n case \":=\""\
+  ":\n case \"-=\":\n case \"+=\":\n case \"==\":\n case \"=[1]\":\n case \"=["\
+  "2]\":\n case \"=[4]\":\n case \"=[8]\":\n if (this.stack.length >= 2)"\
+  " {\n const i0 = this.stack.pop();\n const i1 = this.stack.pop()"\
+  ";\n const nn = new EsilNode(expr, \"operation\");\n nn.setSides(i"\
+  "0, i1);\n if (this.stack.length === 0) {\n this.root.children.p"\
+  "ush(nn);\n }\n this.nodes.push(nn);\n }\n else {\n throw new Error"\
+  "(\"Stack needs more items\");\n }\n return true;\n }\n return false"\
+  ";\n }\n}\nexports.EsilParser = EsilParser;\n\"use strict\";\nObject."\
+  "defineProperty(exports, \"__esModule\", { value: true });\nexpor"\
+  "ts.Base64 = void 0;\nclass Base64 {\n /**\n * Encode the given i"\
+  "nput string using base64\n *\n * @param {string} input string t"\
+  "o encode\n * @returns {string} base64 encoded string\n */\n stat"\
+  "ic encode(input) {\n return (0, exports.b64)(input);\n }\n /**\n "\
+  "* Decode the given base64 string into plain text\n *\n * @param"\
+  " {string} input string encoded in base64 format\n * @returns {"\
+  "string} base64 decoded string\n */\n static decode(input) {\n re"\
+  "turn (0, exports.b64)(input, true);\n }\n}\nexports.Base64 = Bas"\
+  "e64;\n\"use strict\";\nObject.defineProperty(exports, \"__esModule"\
+  "\", { value: true });\nexports.newAsyncR2PipeFromSync = exports"\
+  ".R2PipeSyncFromSync = void 0;\nclass R2PipeSyncFromSync {\n con"\
+  "structor(r2p) {\n this.r2p = r2p;\n }\n /**\n * Run a command in "\
+  "the associated instance of radare2 and return the output as a"\
+  " string\n *\n * @param {string} command to be executed inside r"\
+  "adare2.\n * @returns {string} The output of the command execut"\
+  "ion\n */\n cmd(command) {\n return this.r2p.cmd(command);\n }\n cm"\
+  "dAt(command, address) {\n return this.r2p.cmdAt(command, addre"\
+  "ss);\n }\n cmdj(cmd) {\n return this.r2p.cmdj(cmd);\n }\n call(com"\
+  "mand) {\n return this.r2p.call(command);\n }\n callj(cmd) {\n ret"\
+  "urn this.r2p.cmdj(cmd);\n }\n callAt(command, address) {\n retur"\
+  "n this.r2p.cmdAt(command, address);\n }\n log(msg) {\n return th"\
+  "is.r2p.log(msg);\n }\n plugin(type, maker) {\n return this.r2p.p"\
+  "lugin(type, maker);\n }\n unload(type, name) {\n return this.r2p"\
+  ".unload(type, name);\n }\n}\nexports.R2PipeSyncFromSync = R2Pipe"\
+  "SyncFromSync;\nfunction newAsyncR2PipeFromSync(r2p) {\n const a"\
+  "syncR2Pipe = new R2PipeSyncFromSync(r2p);\n return asyncR2Pipe"\
+  ";\n}\nexports.newAsyncR2PipeFromSync = newAsyncR2PipeFromSync;\n"\
+  "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { "\
+  "value: true });\nexports.R2AI = void 0;\n/**\n * Provides a way "\
+  "to script the interactions with different language models usi"\
+  "ng javascript from inside radare2.\n *\n * @typedef R2AI\n */\ncl"\
+  "ass R2AI {\n constructor(r2, num, model) {\n /**\n * Instance va"\
+  "riable that informs if the `r2ai` plugin is loaded, must be t"\
+  "rue in order to use the rest of the methods of this class.\n *"\
+  "\n * @type {boolean}\n */\n this.available = false;\n /**\n * Name"\
+  " of the model instantiated to be used for the subsequent call"\
+  "s.\n *\n * @type {string}\n */\n this.model = \"\";\n this.r2 = r2;\n"\
+  " this.available = false;\n }\n checkAvailability() {\n if (this."\
+  "available) {\n return true;\n }\n this.available = r2pipe_js_1.r"\
+  "2.cmd(\"r2ai -h\").trim() !== \"\";\n /*\n if (this.available) {\n i"\
+  "f (num) {\n r2.call(`r2ai -n ${num}`)\n }\n // r2.call('r2ai -e "\
+  "DEBUG=1')\n if (model) {\n this.model = model;\n }\n }\n */\n retur"\
+  "n this.available;\n }\n /**\n * Reset conversation messages\n */\n"\
+  " reset() {\n this.checkAvailability();\n if (this.available) {\n"\
+  " r2pipe_js_1.r2.call(\"r2ai -R\");\n }\n }\n /**\n * Set the role ("\
+  "system prompt) message for the language model to obey.\n *\n * "\
+  "@param {string} text containing the system prompt\n * @returns"\
+  " {boolean} true if successful\n */\n setRole(msg) {\n if (this.a"\
+  "vailable) {\n r2pipe_js_1.r2.call(`r2ai -r ${msg}`);\n return t"\
+  "rue;\n }\n return false;\n }\n /**\n * Set the Model name or path "\
+  "to the GGUF file to use.\n *\n * @param {string} model name or "\
+  "path to GGUF file\n * @returns {boolean} true if successful\n *"\
+  "/\n setModel(modelName) {\n if (this.available) {\n r2pipe_js_1."\
+  "r2.call(`r2ai -m ${this.model}`);\n return true;\n }\n return fa"\
+  "lse;\n }\n /**\n * Get the current selected model name.\n *\n * @r"\
+  "eturns {boolean} model name\n */\n getModel() {\n if (this.avail"\
+  "able) {\n this.model = r2pipe_js_1.r2.call(\"r2ai -m\").trim();\n"\
+  " }\n return this.model;\n }\n /**\n * Get a list of suggestions f"\
+  "or model names to use.\n *\n * @returns {string[]} array of str"\
+  "ings containing the model names known to work\n */\n listModels"\
+  "() {\n if (this.available) {\n const models = r2pipe_js_1.r2.ca"\
+  "ll(\"r2ai -M\");\n return models\n .replace(/-m /, \"\")\n .trim()\n "\
+  ".split(/\\n/g)\n .filter((x) => x.indexOf(\":\") !== -1);\n }\n ret"\
+  "urn [];\n }\n /**\n * Send message to the language model to be a"\
+  "ppended to the current conversation (see `.reset()`)\n *\n * @p"\
+  "aram {string} text sent from the user to the language model\n "\
+  "* @returns {string} response from the language model\n */\n que"\
+  "ry(msg) {\n if (!this.available || msg == \"\") {\n return \"\";\n }"\
+  "\n const fmsg = msg.trim().replace(/\\n/g, \".\");\n const respons"\
+  "e = r2pipe_js_1.r2.call(`r2ai ${fmsg}`);\n return response.tri"\
+  "m();\n }\n}\nexports.R2AI = R2AI;\n\"use strict\";\n// main r2papi f"\
+  "ile\nObject.defineProperty(exports, \"__esModule\", { value: tru"\
+  "e });\nexports.NativePointer = exports.NativeCallback = export"\
+  "s.NativeFunction = exports.R2PapiSync = exports.Assembler = e"\
+  "xports.ProcessClass = exports.ModuleClass = exports.ThreadCla"\
+  "ss = void 0;\nclass ThreadClass {\n constructor(r2) {\n this.api"\
+  " = null;\n this.api = r2;\n }\n backtrace() {\n return r2pipe_js_"\
+  "1.r2.call(\"dbtj\");\n }\n sleep(seconds) {\n return r2pipe_js_1.r"\
+  "2.call(\"sleep \" + seconds);\n }\n}\nexports.ThreadClass = Thread"\
+  "Class;\nclass ModuleClass {\n constructor(r2) {\n this.api = nul"\
+  "l;\n this.api = r2;\n }\n fileName() {\n return this.api.call(\"dp"\
+  "e\").trim();\n }\n name() {\n return \"Module\";\n }\n findBaseAddres"\
+  "s() {\n return \"TODO\";\n }\n getBaseAddress(name) {\n return \"TOD"\
+  "O\";\n }\n getExportByName(name) {\n const res = r2pipe_js_1.r2.c"\
+  "all(\"iE,name/eq/\" + name + \",vaddr/cols,:quiet\");\n return ptr"\
+  "(res);\n }\n findExportByName(name) {\n return this.getExportByN"\
+  "ame(name);\n }\n enumerateExports() {\n // TODO: adjust to be th"\
+  "e same output as Frida\n return r2pipe_js_1.r2.callj(\"iEj\");\n "\
+  "}\n enumerateImports() {\n // TODO: adjust to be the same outpu"\
+  "t as Frida\n return r2pipe_js_1.r2.callj(\"iij\");\n }\n enumerate"\
+  "Symbols() {\n // TODO: adjust to be the same output as Frida\n "\
+  "return r2pipe_js_1.r2.callj(\"isj\");\n }\n enumerateEntrypoints("\
+  ") {\n // TODO: adjust to be the same output as Frida\n return r"\
+  "2pipe_js_1.r2.callj(\"iej\");\n }\n enumerateRanges() {\n // TODO:"\
+  " adjust to be the same output as Frida\n return r2pipe_js_1.r2"\
+  ".callj(\"omj\");\n }\n}\nexports.ModuleClass = ModuleClass;\nclass "\
+  "ProcessClass {\n constructor(r2) {\n this.r2 = null;\n this.r2 ="\
+  " r2;\n }\n enumerateMallocRanges() { }\n enumerateSystemRanges()"\
+  " { }\n enumerateRanges() { }\n enumerateThreads() {\n return r2p"\
+  "ipe_js_1.r2.callj(\"dptj\");\n }\n enumerateModules() {\n r2pipe_j"\
+  "s_1.r2.call(\"cfg.json.num=string\"); // to handle 64bit values"\
+  " properly\n if (r2pipe_js_1.r2.callj(\"e cfg.debug\")) {\n const "\
+  "modules = r2pipe_js_1.r2.callj(\"dmmj\");\n const res = [];\n for"\
+  " (const mod of modules) {\n const entry = {\n base: new NativeP"\
+  "ointer(mod.addr),\n size: new NativePointer(mod.addr_end).sub("\
+  "mod.addr),\n path: mod.file,\n name: mod.name\n };\n res.push(ent"\
+  "ry);\n }\n return res;\n }\n else {\n const fname = (x) => {\n cons"\
+  "t y = x.split(\"/\");\n return y[y.length - 1];\n };\n const bobjs"\
+  " = r2pipe_js_1.r2.callj(\"obj\");\n const res = [];\n for (const "\
+  "obj of bobjs) {\n const entry = {\n base: new NativePointer(obj"\
+  ".addr),\n size: obj.size,\n path: obj.file,\n name: fname(obj.fi"\
+  "le)\n };\n res.push(entry);\n }\n const libs = r2pipe_js_1.r2.cal"\
+  "lj(\"ilj\");\n for (const lib of libs) {\n const entry = {\n base:"\
+  " 0,\n size: 0,\n path: lib,\n name: fname(lib)\n };\n res.push(ent"\
+  "ry);\n }\n return res;\n }\n }\n getModuleByAddress(addr) { }\n get"\
+  "ModuleByName(moduleName) { }\n codeSigningPolicy() {\n return \""\
+  "optional\";\n }\n getTmpDir() {\n return this.r2.call(\"e dir.tmp\""\
+  ").trim();\n }\n getHomeDir() {\n return this.r2.call(\"e dir.home"\
+  "\").trim();\n }\n platform() {\n return this.r2.call(\"e asm.os\")."\
+  "trim();\n }\n getCurrentDir() {\n return this.r2.call(\"pwd\").tri"\
+  "m();\n }\n getCurrentThreadId() {\n return +this.r2.call(\"dpq\");"\
+  "\n }\n pageSize() {\n if (this.r2.callj(\"e asm.bits\") === 64 &&\n"\
+  " this.r2.call(\"e asm.arch\").startsWith(\"arm\")) {\n return 1638"\
+  "4;\n }\n return 4096;\n }\n isDebuggerAttached() {\n return this.r"\
+  "2.callj(\"e cfg.debug\");\n }\n setExceptionHandler() {\n // do no"\
+  "thing\n }\n id() {\n //\n return this.r2.callj(\"dpq\").trim();\n }\n"\
+  " pointerSize() {\n return r2pipe_js_1.r2.callj(\"e asm.bits\") /"\
+  " 8;\n }\n}\nexports.ProcessClass = ProcessClass;\n/**\n * Assemble"\
+  "r and disassembler facilities to decode and encode instructio"\
+  "ns\n *\n * @typedef Assembler\n */\nclass Assembler {\n constructo"\
+  "r(myr2) {\n this.program = \"\";\n this.labels = {};\n this.endian"\
+  " = false;\n this.pc = ptr(0);\n if (myr2 === undefined) {\n this"\
+  ".r2 = (0, r2pipe_js_1.newAsyncR2PipeFromSync)(r2pipe_js_1.r2)"\
+  ";\n }\n else {\n this.r2 = myr2;\n }\n this.program = \"\";\n this.la"\
+  "bels = {};\n }\n /**\n * Change the address of the program count"\
+  "er, some instructions need to know where\n * are they located "\
+  "before being encoded or decoded.\n *\n * @param {NativePointerV"\
+  "alue}\n */\n setProgramCounter(pc) {\n this.pc = pc;\n }\n setEndi"\
+  "an(big) {\n this.endian = big;\n }\n toString() {\n return this.p"\
+  "rogram;\n }\n append(x) {\n // append text\n this.pc = this.pc.ad"\
+  "d(x.length / 2);\n this.program += x;\n }\n // api\n label(s) {\n "\
+  "const pos = this.pc; // this.#program.length / 4;\n this.label"\
+  "s[s] = this.pc;\n return pos;\n }\n /**\n * Encode (assemble) an "\
+  "instruction by taking the string representation.\n *\n * @param"\
+  " {string} the string representation of the instruction to ass"\
+  "emble\n * @returns {string} the hexpairs that represent the as"\
+  "sembled instruciton\n */\n encode(s) {\n const output = this.r2."\
+  "call(`pa ${s}`);\n return output.trim();\n }\n /**\n * Decode (di"\
+  "sassemble) an instruction by taking the hexpairs string as in"\
+  "put.\n * TODO: should take an array of bytes too\n *\n * @param "\
+  "{string} the hexadecimal pairs of bytes to decode as an instr"\
+  "uction\n * @returns {string} the mnemonic and operands of the "\
+  "resulting decoding\n */\n decode(s) {\n const output = this.r2.c"\
+  "all(`pad ${s}`);\n return output.trim();\n }\n}\nexports.Assemble"\
+  "r = Assembler;\n/**\n * High level abstraction on top of the r2"\
+  " command interface provided by r2pipe.\n *\n * @typedef R2Papi\n"\
+  " */\nclass R2PapiSync {\n /**\n * Create a new instance of the R"\
+  "2Papi class, taking an r2pipe interface as reference.\n *\n * @"\
+  "param {R2PipeSync} the r2pipe instance to use as backend.\n * "\
+  "@returns {R2Papi} instance\n */\n constructor(r2) {\n this.r2 = "\
+  "r2;\n }\n toString() {\n return \"[object R2Papi]\";\n }\n toJSON() "\
+  "{\n return this.toString();\n }\n /**\n * Get the base address us"\
+  "ed by the current loaded binary\n *\n * @returns {NativePointer"\
+  "} address of the base of the binary\n */\n getBaseAddress() {\n "\
+  "return new NativePointer(this.cmd(\"e bin.baddr\"));\n }\n jsonTo"\
+  "Typescript(name, a) {\n let str = `interface ${name} {\\n`;\n if"\
+  " (a.length && a.length > 0) {\n a = a[0];\n }\n for (const k of "\
+  "Object.keys(a)) {\n const typ = typeof a[k];\n const nam = k;\n "\
+  "str += ` ${nam}: ${typ};\\n`;\n }\n return `${str}}\\n`;\n }\n /**\n"\
+  " * Get the general purpose register size of the targize archi"\
+  "tecture in bits\n *\n * @returns {number} the regsize\n */\n getB"\
+  "its() {\n return +this.cmd(\"-b\");\n }\n /**\n * Get the name of t"\
+  "he arch plugin selected, which tends to be the same target ar"\
+  "chitecture.\n * Note that on some situations, this info will b"\
+  "e stored protected bby the AirForce.\n * When using the r2ghid"\
+  "ra arch plugin the underlying arch is in `asm.cpu`:\n *\n * @re"\
+  "turns {string} the name of the target architecture.\n */\n getA"\
+  "rch() {\n return this.cmdTrim(\"-a\");\n }\n callTrim(x) {\n const "\
+  "res = this.call(x);\n return res.trim();\n }\n cmdTrim(x) {\n con"\
+  "st res = this.cmd(x);\n return res.trim();\n }\n /**\n * Get the "\
+  "name of the selected CPU for the current selected architectur"\
+  "e.\n *\n * @returns {string} the value of asm.cpu\n */\n getCpu()"\
+  " {\n // return this.cmd('-c');\n return this.cmdTrim(\"-e asm.cp"\
+  "u\"); // use arch.cpu\n }\n // TODO: setEndian, setCpu, ...\n set"\
+  "Arch(arch, bits) {\n this.cmd(\"-a \" + arch);\n if (bits !== und"\
+  "efined) {\n this.cmd(\"-b \" + bits);\n }\n }\n setFlagSpace(name) "\
+  "{\n this.cmd(\"fs \" + name);\n }\n demangleSymbol(lang, mangledNa"\
+  "me) {\n return this.cmdTrim(\"iD \" + lang + \" \" + mangledName);"\
+  "\n }\n setLogLevel(level) {\n this.cmd(\"e log.level=\" + level);\n"\
+  " }\n /**\n * should return the id for the new map using the giv"\
+  "en file descriptor\n */\n // rename to createMap or mapFile?\n n"\
+  "ewMap(fd, vaddr, size, paddr, perm, name = \"\") {\n this.cmd(`o"\
+  "m ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);\n }\n at(a"\
+  ") {\n return new NativePointer(a);\n }\n getShell() {\n return ne"\
+  "w shell_js_1.R2Shell(this);\n }\n // Radare/Frida\n version() {\n"\
+  " const v = this.r2.cmd(\"?Vq\");\n return v.trim();\n }\n // Proce"\
+  "ss\n platform() {\n const output = this.r2.cmd(\"uname\");\n retur"\
+  "n output.trim();\n }\n arch() {\n const output = this.r2.cmd(\"un"\
+  "ame -a\");\n return output.trim();\n }\n bits() {\n const output ="\
+  " this.r2.cmd(\"uname -b\");\n return output.trim();\n }\n id() {\n "\
+  "// getpid();\n return +this.r2.cmd(\"?vi:$p\");\n }\n // Other stu"\
+  "ff\n printAt(msg, x, y) {\n // see pg, but pg is obrken :D\n }\n "\
+  "clearScreen() {\n this.r2.cmd(\"!clear\");\n return this;\n }\n get"\
+  "Config(key) {\n if (key === \"\") {\n return new Error(\"Empty key"\
+  "\");\n }\n const exist = this.r2.cmd(`e~^${key} =`);\n if (exist."\
+  "trim() === \"\") {\n return new Error(\"Config key does not exist"\
+  "\");\n }\n const value = this.r2.call(\"e \" + key);\n return value"\
+  ".trim();\n }\n setConfig(key, val) {\n this.r2.call(\"e \" + key +"\
+  " \"=\" + val);\n return this;\n }\n getRegisterStateForEsil() {\n c"\
+  "onst dre = this.cmdj(\"dre\");\n return this.cmdj(\"dre\");\n }\n ge"\
+  "tRegisters() {\n // this.r2.log(\"winrar\" + JSON.stringify(JSON"\
+  ".parse(this.r2.cmd(\"drj\")),null, 2) );\n return this.cmdj(\"drj"\
+  "\");\n }\n resizeFile(newSize) {\n this.cmd(`r ${newSize}`);\n ret"\
+  "urn this;\n }\n insertNullBytes(newSize, at) {\n if (at === unde"\
+  "fined) {\n at = \"$$\";\n }\n this.cmd(`r+${newSize}@${at}`);\n ret"\
+  "urn this;\n }\n removeBytes(newSize, at) {\n if (at === undefine"\
+  "d) {\n at = \"$$\";\n }\n this.cmd(`r-${newSize}@${at}`);\n return "\
+  "this;\n }\n seek(addr) {\n this.cmd(`s ${addr}`);\n return this;\n"\
+  " }\n currentSeek() {\n return new NativePointer(\"$$\");\n }\n seek"\
+  "ToRelativeOpcode(nth) {\n this.cmd(`so ${nth}`);\n return this."\
+  "currentSeek();\n }\n getBlockSize() {\n return +this.cmd(\"b\");\n "\
+  "}\n setBlockSize(a) {\n this.cmd(`b ${a}`);\n return this;\n }\n c"\
+  "ountFlags() {\n return Number(this.cmd(\"f~?\"));\n }\n countFunct"\
+  "ions() {\n return Number(this.cmd(\"aflc\"));\n }\n analyzeFunctio"\
+  "nsWithEsil(depth) {\n this.cmd(\"aaef\");\n }\n analyzeProgramWith"\
+  "Esil(depth) {\n this.cmd(\"aae\");\n }\n analyzeProgram(depth) {\n "\
+  "if (depth === undefined) {\n depth = 0;\n }\n switch (depth) {\n "\
+  "case 0:\n this.cmd(\"aa\");\n break;\n case 1:\n this.cmd(\"aaa\");\n "\
+  "break;\n case 2:\n this.cmd(\"aaaa\");\n break;\n case 3:\n this.cmd"\
+  "(\"aaaaa\");\n break;\n }\n return this;\n }\n enumerateThreads() {\n"\
+  " // TODO: use apt/dpt to list threads at iterate over them to"\
+  " get the registers\n const regs0 = this.cmdj(\"drj\");\n const th"\
+  "read0 = {\n context: regs0,\n id: 0,\n state: \"waiting\",\n select"\
+  "ed: true\n };\n return [thread0];\n }\n currentThreadId() {\n if ("\
+  "+this.cmd(\"e cfg.debug\")) {\n return +this.cmd(\"dpt.\");\n }\n re"\
+  "turn this.id();\n }\n setRegisters(obj) {\n for (const r of Obje"\
+  "ct.keys(obj)) {\n const v = obj[r];\n this.r2.cmd(\"dr \" + r + \""\
+  "=\" + v);\n }\n }\n hex(s) {\n const output = this.r2.cmd(\"?v \" + "\
+  "s);\n return output.trim();\n }\n step() {\n this.r2.cmd(\"ds\");\n "\
+  "return this;\n }\n stepOver() {\n this.r2.cmd(\"dso\");\n return th"\
+  "is;\n }\n math(expr) {\n return +this.r2.cmd(\"?v \" + expr);\n }\n "\
+  "stepUntil(dst) {\n this.cmd(`dsu ${dst}`);\n }\n enumerateXrefsT"\
+  "o(s) {\n const output = this.call(\"axtq \" + s);\n return output"\
+  ".trim().split(/\\n/);\n }\n // TODO: rename to searchXrefsTo ?\n "\
+  "findXrefsTo(s, use_esil) {\n if (use_esil) {\n this.call(\"/r \" "\
+  "+ s);\n }\n else {\n this.call(\"/re \" + s);\n }\n }\n analyzeFuncti"\
+  "onsFromCalls() {\n this.call(\"aac\");\n return this;\n }\n autonam"\
+  "eAllFunctions() {\n this.call(\"aan\");\n return this;\n }\n analyz"\
+  "eFunctionsWithPreludes() {\n this.call(\"aap\");\n return this;\n "\
+  "}\n analyzeObjCReferences() {\n this.cmd(\"aao\");\n return this;\n"\
+  " }\n analyzeImports() {\n this.cmd(\"af @ sym.imp.*\");\n return t"\
+  "his;\n }\n searchDisasm(s) {\n const res = this.callj(\"/ad \" + s"\
+  ");\n return res;\n }\n searchString(s) {\n const res = this.cmdj("\
+  "\"/j \" + s);\n return res;\n }\n searchBytes(data) {\n function nu"\
+  "m2hex(data) {\n return (data & 0xff).toString(16);\n }\n const s"\
+  " = data.map(num2hex).join(\"\");\n const res = this.cmdj(\"/xj \" "\
+  "+ s);\n return res;\n }\n binInfo() {\n try {\n return this.cmdj(\""\
+  "ij~{bin}\");\n }\n catch (e) {\n return {};\n }\n }\n // TODO: take "\
+  "a BinFile as argument instead of number\n selectBinary(id) {\n "\
+  "this.call(`ob ${id}`);\n }\n openFile(name) {\n const ofd = this"\
+  ".call(\"oqq\");\n this.call(`o ${name}`);\n const nfd = this.call"\
+  "(\"oqq\");\n if (ofd.trim() === nfd.trim()) {\n return new Error("\
+  "\"Cannot open file\");\n }\n return parseInt(nfd);\n }\n openFileNo"\
+  "map(name) {\n const ofd = this.call(\"oqq\");\n this.call(`of ${n"\
+  "ame}`);\n const nfd = this.call(\"oqq\");\n if (ofd.trim() === nf"\
+  "d.trim()) {\n return new Error(\"Cannot open file\");\n }\n return"\
+  " parseInt(nfd);\n }\n currentFile(name) {\n return (this.call(\"o"\
+  ".\")).trim();\n }\n enumeratePlugins(type) {\n switch (type) {\n c"\
+  "ase \"bin\":\n return this.callj(\"Lij\");\n case \"io\":\n return thi"\
+  "s.callj(\"Loj\");\n case \"core\":\n return this.callj(\"Lcj\");\n cas"\
+  "e \"arch\":\n return this.callj(\"LAj\");\n case \"anal\":\n return th"\
+  "is.callj(\"Laj\");\n case \"lang\":\n return this.callj(\"Llj\");\n }\n"\
+  " return [];\n }\n enumerateModules() {\n return this.callj(\"dmmj"\
+  "\");\n }\n enumerateFiles() {\n return this.callj(\"oj\");\n }\n enum"\
+  "erateBinaries() {\n return this.callj(\"obj\");\n }\n enumerateMap"\
+  "s() {\n return this.callj(\"omj\");\n }\n enumerateClasses() {\n re"\
+  "turn this.callj(\"icj\");\n }\n enumerateSymbols() {\n return this"\
+  ".callj(\"isj\");\n }\n enumerateExports() {\n return this.callj(\"i"\
+  "Ej\");\n }\n enumerateImports() {\n return this.callj(\"iij\");\n }\n"\
+  " enumerateLibraries() {\n return this.callj(\"ilj\");\n }\n enumer"\
+  "ateSections() {\n return this.callj(\"iSj\");\n }\n enumerateSegme"\
+  "nts() {\n return this.callj(\"iSSj\");\n }\n enumerateEntrypoints("\
+  ") {\n return this.callj(\"iej\");\n }\n enumerateRelocations() {\n "\
+  "return this.callj(\"irj\");\n }\n enumerateFunctions() {\n return "\
+  "this.cmdj(\"aflj\");\n }\n enumerateFlags() {\n return this.cmdj(\""\
+  "fj\");\n }\n skip() {\n this.r2.cmd(\"dss\");\n }\n ptr(s) {\n return "\
+  "new NativePointer(s, this);\n }\n call(s) {\n return this.r2.cal"\
+  "l(s);\n }\n callj(s) {\n return JSON.parse(this.call(s));\n }\n cm"\
+  "d(s) {\n return this.r2.cmd(s);\n }\n cmdj(s) {\n return JSON.par"\
+  "se(this.cmd(s));\n }\n log(s) {\n return this.r2.log(s);\n }\n cli"\
+  "ppy(msg) {\n this.r2.log(this.r2.cmd(\"?E \" + msg));\n }\n ascii("\
+  "msg) {\n this.r2.log(this.r2.cmd(\"?ea \" + msg));\n }\n}\nexports."\
+  "R2PapiSync = R2PapiSync;\n// useful to call functions via dxc "\
+  "and to define and describe function signatures\nclass NativeFu"\
+  "nction {\n constructor() { }\n}\nexports.NativeFunction = Native"\
+  "Function;\n// uhm not sure how to map this into r2 yet\nclass N"\
+  "ativeCallback {\n constructor() { }\n}\nexports.NativeCallback ="\
+  " NativeCallback;\n/**\n * Class providing a way to work with 64"\
+  "bit pointers from Javascript, this API mimics the same\n * wel"\
+  "l-known promitive available in Frida, but it's baked by the c"\
+  "urrent session of r2.\n *\n * It is also possible to use this c"\
+  "lass via the global `ptr` function.\n *\n * @typedef NativePoin"\
+  "ter\n */\nclass NativePointer {\n constructor(s, api) {\n this.ap"\
+  "i = api ?? exports.R;\n this.addr = (\"\" + s).trim();\n }\n /**\n "\
+  "* Filter a string to be used as a valid flag name\n *\n * @para"\
+  "m {string} name of the symbol name\n * @returns {string} filte"\
+  "red name to be used as a flag\n */\n filterFlag(name) {\n return"\
+  " this.api.call(`fD ${name}`);\n }\n /**\n * Set a flag (name) at"\
+  " the offset pointed\n *\n * @param {string} name of the flag to"\
+  " set\n * @returns {string} base64 decoded string\n */\n setFlag("\
+  "name) {\n this.api.call(`f ${name}=${this.addr}`);\n }\n /**\n * "\
+  "Remove the flag in the current offset\n *\n */\n unsetFlag() {\n "\
+  "this.api.call(`f-${this.addr}`);\n }\n /**\n * Render an hexadec"\
+  "imal dump of the bytes contained in the range starting\n * in "\
+  "the current pointer and given length.\n *\n * @param {number} l"\
+  "ength optional amount of bytes to dump, using blocksize\n * @r"\
+  "eturns {string} string containing the hexadecimal dump of mem"\
+  "ory\n */\n hexdump(length) {\n const len = length === undefined "\
+  "? \"\" : \"\" + length;\n return this.api.cmd(`x${len}@${this.addr"\
+  "}`);\n }\n functionGraph(format) {\n if (format === \"dot\") {\n re"\
+  "turn this.api.cmd(`agfd@ ${this.addr}`);\n }\n if (format === \""\
+  "json\") {\n return this.api.cmd(`agfj@${this.addr}`);\n }\n if (f"\
+  "ormat === \"mermaid\") {\n return this.api.cmd(`agfm@${this.addr"\
+  "}`);\n }\n return this.api.cmd(`agf@${this.addr}`);\n }\n readByt"\
+  "eArray(len) {\n return JSON.parse(this.api.cmd(`p8j ${len}@${t"\
+  "his.addr}`));\n }\n readHexString(len) {\n return (this.api.cmd("\
+  "`p8 ${len}@${this.addr}`)).trim();\n }\n and(a) {\n const addr ="\
+  " this.api.call(`?v ${this.addr} & ${a}`);\n return new NativeP"\
+  "ointer(addr.trim());\n }\n or(a) {\n const addr = this.api.call("\
+  "`?v ${this.addr} | ${a}`);\n return new NativePointer(addr.tri"\
+  "m());\n }\n add(a) {\n const addr = this.api.call(`?v ${this.add"\
+  "r}+${a}`);\n return new NativePointer(addr);\n }\n sub(a) {\n con"\
+  "st addr = this.api.call(`?v ${this.addr}-${a}`);\n return new "\
+  "NativePointer(addr);\n }\n writeByteArray(data) {\n this.api.cmd"\
+  "(\"wx \" + data.join(\"\"));\n return this;\n }\n writeAssembly(inst"\
+  "ruction) {\n this.api.cmd(`wa ${instruction} @ ${this.addr}`);"\
+  "\n return this;\n }\n writeCString(s) {\n this.api.call(\"w \" + s)"\
+  ";\n return this;\n }\n writeWideString(s) {\n this.api.call(\"ww \""\
+  " + s);\n return this;\n }\n /**\n * Check if it's a pointer to th"\
+  "e address zero. Also known as null pointer.\n *\n * @returns {b"\
+  "oolean} true if null\n */\n isNull() {\n return (this.toNumber()"\
+  ") == 0;\n }\n /**\n * Compare current pointer with the passed on"\
+  "e, and return -1, 0 or 1.\n *\n * * if (this < arg) return -1;\n"\
+  " * * if (this > arg) return 1;\n * * if (this == arg) return 0"\
+  ";\n *\n * @returns {number} returns -1, 0 or 1 depending on the"\
+  " comparison of the pointers\n */\n compare(a) {\n const bv = typ"\
+  "eof a === \"string\" || typeof a === \"number\"\n ? new NativePoin"\
+  "ter(a)\n : a;\n const dist = r2pipe_js_1.r2.call(`?vi ${this.ad"\
+  "dr} - ${bv.addr}`);\n if (dist[0] === \"-\") {\n return -1;\n }\n i"\
+  "f (dist[0] === \"0\") {\n return 0;\n }\n return 1;\n }\n /**\n * Che"\
+  "ck if it's a pointer to the address zero. Also known as null "\
+  "pointer.\n *\n * @returns {boolean} true if null\n */\n pointsToN"\
+  "ull() {\n const value = this.readPointer();\n return (value.com"\
+  "pare(0)) == 0;\n }\n toJSON() {\n const output = this.api.cmd(\"?"\
+  "vi \" + this.addr.trim());\n return output.trim();\n }\n toString"\
+  "() {\n return (this.api.cmd(\"?v \" + this.addr.trim())).trim();"\
+  "\n }\n toNumber() {\n return parseInt(this.toString());\n }\n writ"\
+  "ePointer(p) {\n }\n readRelativePointer() {\n return this.add(th"\
+  "is.readS32());\n }\n readPointer() {\n const address = this.api."\
+  "call(\"pvp@\" + this.addr);\n return new NativePointer(address);"\
+  "\n }\n readS8() {\n return parseInt(this.api.cmd(`pv1d@${this.ad"\
+  "dr}`));\n }\n readU8() {\n return parseInt(this.api.cmd(`pv1u@${"\
+  "this.addr}`));\n }\n readU16() {\n return parseInt(this.api.cmd("\
+  "`pv2d@${this.addr}`));\n }\n readU16le() {\n }\n readU16be() {\n }"\
+  "\n readS16() {\n }\n readS16le() {\n }\n readS16be() {\n }\n readS32"\
+  "() {\n // same as readInt32()\n }\n readU32() {\n }\n readU32le() "\
+  "{\n }\n readU32be() {\n }\n readU64() {\n // XXX: use bignum or st"\
+  "ring here\n return parseInt(this.api.cmd(`pv8u@${this.addr}`))"\
+  ";\n }\n readU64le() {\n }\n readU64be() {\n }\n writeInt(n) {\n retu"\
+  "rn this.writeU32(n);\n }\n /**\n * Write a byte in the current o"\
+  "ffset, the value must be between 0 and 255\n *\n * @param {stri"\
+  "ng} n number to write in the pointed byte in the current addr"\
+  "ess\n * @returns {boolean} false if the operation failed\n */\n "\
+  "writeU8(n) {\n this.api.cmd(`wv1 ${n}@${this.addr}`);\n return "\
+  "true;\n }\n writeU16(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}`"\
+  ");\n return true;\n }\n writeU16be(n) {\n this.api.cmd(`wv2 ${n}@"\
+  "${this.addr}@e:cfg.bigendian=true`);\n return true;\n }\n writeU"\
+  "16le(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendia"\
+  "n=false`);\n return true;\n }\n writeU32(n) {\n this.api.cmd(`wv4"\
+  " ${n}@${this.addr}`);\n return true;\n }\n writeU32be(n) {\n this"\
+  ".api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=true`);\n retu"\
+  "rn true;\n }\n writeU32le(n) {\n this.api.cmd(`wv4 ${n}@${this.a"\
+  "ddr}@e:cfg.bigendian=false`);\n return true;\n }\n writeU64(n) {"\
+  "\n this.api.cmd(`wv8 ${n}@${this.addr}`);\n return true;\n }\n wr"\
+  "iteU64be(n) {\n this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bige"\
+  "ndian=true`);\n return true;\n }\n writeU64le(n) {\n this.api.cmd"\
+  "(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false`);\n return true"\
+  ";\n }\n readInt32() {\n return this.readU32();\n }\n readCString()"\
+  " {\n const output = this.api.cmd(`pszj@${this.addr}`);\n return"\
+  " JSON.parse(output).string;\n }\n readWideString() {\n const out"\
+  "put = this.api.cmd(`pswj@${this.addr}`);\n return JSON.parse(o"\
+  "utput).string;\n }\n readPascalString() {\n const output = this."\
+  "api.cmd(`pspj@${this.addr}`);\n return JSON.parse(output).stri"\
+  "ng;\n }\n instruction() {\n const output = this.api.cmdj(`aoj@${"\
+  "this.addr}`);\n return output[0];\n }\n disassemble(length) {\n c"\
+  "onst len = length === undefined ? \"\" : \"\" + length;\n return t"\
+  "his.api.cmd(`pd ${len}@${this.addr}`);\n }\n analyzeFunction() "\
+  "{\n this.api.cmd(\"af@\" + this.addr);\n return this;\n }\n analyze"\
+  "FunctionRecursively() {\n this.api.cmd(\"afr@\" + this.addr);\n r"\
+  "eturn this;\n }\n name() {\n return (this.api.cmd(\"fd \" + this.a"\
+  "ddr)).trim();\n }\n methodName() {\n // TODO: @ should be option"\
+  "al here, as addr should be passable as argument imho\n return "\
+  "(this.api.cmd(\"ic.@\" + this.addr)).trim();\n }\n symbolName() {"\
+  "\n // TODO: @ should be optional here, as addr should be passa"\
+  "ble as argument imho\n const name = this.api.cmd(\"isj.@\" + thi"\
+  "s.addr);\n return name.trim();\n }\n getFunction() {\n return thi"\
+  "s.api.cmdj(\"afij@\" + this.addr);\n }\n basicBlock() {\n return t"\
+  "his.api.cmdj(\"abj@\" + this.addr);\n }\n functionBasicBlocks() {"\
+  "\n return this.api.cmdj(\"afbj@\" + this.addr);\n }\n xrefs() {\n r"\
+  "eturn this.api.cmdj(\"axtj@\" + this.addr);\n }\n}\nexports.Native"\
+  "Pointer = NativePointer;\nvar R2Papi=R2PapiSync;\n";

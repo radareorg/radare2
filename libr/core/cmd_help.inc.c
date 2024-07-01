@@ -822,7 +822,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'o': // "?o"
-		n = r_num_math (core->num, input+1);
+		n = r_num_math (core->num, input + 1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
 	case 'T': // "?T"
@@ -1055,7 +1055,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (input[1]) { // ?=
-				r_num_math (core->num, input+1);
+				r_num_math (core->num, input + 1);
 			} else {
 				r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 			}
@@ -1403,7 +1403,7 @@ static int cmd_help(void *data, const char *input) {
 			  }
 			break;
 		case ' ': {
-			const char *msg = r_str_trim_head_ro (input+1);
+			const char *msg = r_str_trim_head_ro (input + 1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
@@ -1473,7 +1473,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '_': // "?_" hud input
-		r_core_yank_hud_file (core, input+1);
+		r_core_yank_hud_file (core, input + 1);
 		break;
 	case 'i': // "?i" input num
 		r_cons_set_raw(0);
@@ -1588,5 +1588,62 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	}
 	return 0;
+}
+
+static RCoreHelpMessage help_msg_h = {
+	"help", "", "Show a friendly message",
+	"head", " [n] [file]", "Print first n lines in file (default n=5)",
+	NULL
+};
+
+static int cmd_head(void *data, const char *_input) { // "head"
+	RCore *core = (RCore *)data;
+	int lines = 5;
+	char *input = strdup (_input);
+	char *arg = strchr (input, ' ');
+	char *tmp, *count;
+	if (arg) {
+		arg = (char *)r_str_trim_head_ro (arg + 1); // contains "count filename"
+		count = strchr (arg, ' ');
+		if (count) {
+			*count = 0;	// split the count and file name
+			tmp = (char *)r_str_trim_head_ro (count + 1);
+			lines = atoi (arg);
+			arg = tmp;
+		}
+	}
+	switch (*input) {
+	case '?': // "head?"
+		r_core_cmd_help (core, help_msg_h);
+		break;
+	default: // "head"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_head (arg, lines);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	free (input);
+	return 0;
+}
+
+static int cmd_h(void *data, const char *_input) { // "head"
+	if (r_str_startswith (_input, "ead")) {
+		return cmd_head (data, _input);
+	}
+	if (r_str_startswith (_input, "elp")) {
+		r_cons_printf ("%s\n", help_message);
+		return 0;
+	}
+	r_core_cmd_help ((RCore*)data, help_msg_h);
+	return -1; // invalid command
 }
 #endif

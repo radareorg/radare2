@@ -1,6 +1,6 @@
 include deps.mk
 
-USE_MINIFY=1
+USE_MINIFY=0
 USE_UGLIFY=0
 
 ifeq ($(QJS_BRANCH),frida)
@@ -64,7 +64,12 @@ R2PAPI_FILES+=shell.js
 R2PAPI_FILES+=esil.js
 R2PAPI_FILES_JS=$(addprefix $(NM)/r2papi/,$(R2PAPI_FILES))
 
+USE_CUSTOM_R2PAPI=1
+
 js_r2papi.c: node_modules
+ifeq ($(USE_CUSTOM_R2PAPI),1)
+	cp /tmp/r2papi.r2.js js_r2papi.qjs
+else
 #	npm i js_r2papi
 	printf "Using r2papi version: "
 	-jq .version node_modules/r2papi/package.json
@@ -80,11 +85,17 @@ js_r2papi.c: node_modules
 		| grep -v 'r2pipe\.js' \
 		>> js_r2papi.qjs
 	echo 'const r2pipe_js_1 = G;' >> js_r2papi.qjs
+endif
 ifeq ($(USE_MINIFY),1)
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < js_r2papi.qjs > js_r2papi.mini.qjs
 else
 	cp -f js_r2papi.qjs js_r2papi.mini.qjs
+	# TODO remove multiline /* */ comments too
+	cat js_r2papi.qjs | sed \
+		-e 's,  *, ,g' \
+		-e 's,\\/\\/.*/,,' \
+		> js_r2papi.mini.qjs
 endif
 ifeq ($(USE_UGLIFY),1)
 	npx uglify-js --help > /dev/null || npm i uglify-js
