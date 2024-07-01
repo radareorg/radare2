@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -17,21 +17,25 @@ static RCoreHelpMessage help_msg_q = {
 
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	if (input[0] == '!') {
-		if (input[1] == '!' || !input[1]) {
+	const char *arg = strchr (input, ' ');
+	if (!arg) {
+		while (*input == '!') {
+			input++;
+		}
+		arg = input;
+	}
+	const int rv = arg? r_num_math (core->num, arg): 0;
+	if (input[0] == '!') { // "q!"
+		if (input[1] == '!' || !input[1]) { // "q!!"
 			if (!r_sandbox_enable (false)) {
 				r_cons_flush ();
-				exit (0);
+				exit (rv);
 			}
 			return R_CMD_RC_QUIT;
 		}
 		r_config_set_b (core->config, "scr.hist.save", false);
 	}
-	if (IS_DIGIT (input[0]) || input[0] == ' ') {
-		r_core_return_code (core, r_num_math (core->num, input));
-	} else {
-		r_core_return_code (core, 0);
-	}
+	r_core_return_code (core, rv);
 	return R_CMD_RC_QUIT;
 }
 
