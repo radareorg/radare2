@@ -91,7 +91,11 @@ ifeq ($(USE_MINIFY),1)
 	npx minify --js < js_r2papi.qjs > js_r2papi.mini.qjs
 else
 	cp -f js_r2papi.qjs js_r2papi.mini.qjs
-	cat js_r2papi.qjs | sed -e 's,  *, ,g' -e '/\/\*/,/\*\//d' -e 's/\/\/.*//' > js_r2papi.mini.qjs
+	cat js_r2papi.qjs | sed \
+		-e 's,  *, ,g' \
+		-e 's,\\/\\/.*/,,' \
+		> js_r2papi.mini.qjs
+#cat js_r2papi.qjs | sed -e 's,  *, ,g' -e '/\/\*/,/\*\//d' -e 's/\/\/.*//' > js_r2papi.mini.qjs
 endif
 ifeq ($(USE_UGLIFY),1)
 	npx uglify-js --help > /dev/null || npm i uglify-js
