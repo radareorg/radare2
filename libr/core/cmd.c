@@ -693,60 +693,6 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	return 0;
 }
 
-static int cmd_head(void *data, const char *_input) { // "head"
-	RCore *core = (RCore *)data;
-	int lines = 5;
-	char *input = strdup (_input);
-	char *arg = strchr (input, ' ');
-	char *tmp, *count;
-	static RCoreHelpMessage help_msg_h = {
-		"head", " [n] [file]", "Print first n lines in file (default n=5)",
-		NULL
-	};
-	if (arg) {
-		arg = (char *)r_str_trim_head_ro (arg + 1); // contains "count filename"
-		count = strchr (arg, ' ');
-		if (count) {
-			*count = 0;	// split the count and file name
-			tmp = (char *)r_str_trim_head_ro (count + 1);
-			lines = atoi (arg);
-			arg = tmp;
-		}
-	}
-	switch (*input) {
-	case '?': // "head?"
-		r_core_cmd_help (core, help_msg_h);
-		break;
-	default: // "head"
-		if (!arg) {
-			arg = "";
-		}
-		if (r_fs_check (core->fs, arg)) {
-			r_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = r_syscmd_head (arg, lines);
-			if (res) {
-				r_cons_print (res);
-				free (res);
-			}
-		}
-		break;
-	}
-	free (input);
-	return 0;
-}
-
-static int cmd_h(void *data, const char *_input) { // "head"
-	if (r_str_startswith (_input, "ead")) {
-		return cmd_head (data, _input);
-	}
-	if (r_str_startswith (_input, "elp")) {
-		r_cons_printf ("%s\n", help_message);
-		return 0;
-	}
-	return -1; // invalid command
-}
-
 static int cmd_undo(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
