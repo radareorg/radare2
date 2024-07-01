@@ -747,7 +747,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
 	eval (ctx, "require = function(x) { if (x == 'r2papi') { return new R2Papi(r2); } ; return requirejs(x); }");
-	eval (ctx, "var exports = {};");
+	eval (ctx, "var exports = G;");
 	// eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
 	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
@@ -756,8 +756,12 @@ static void register_helpers(JSContext *ctx) {
 		char *custom_papi = r_sys_getenv ("R2_PAPI_SCRIPT");
 		if (R_STR_ISNOTEMPTY (custom_papi)) {
 			char *script = r_file_slurp (custom_papi, NULL);
-			eval (ctx, script);
-			free (script);
+			if (script) {
+				eval (ctx, script);
+				free (script);
+			} else {
+				R_LOG_ERROR ("Cannot find %s", custom_papi);
+			}
 			free (custom_papi);
 		} else {
 			eval (ctx, js_r2papi_qjs);
