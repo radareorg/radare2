@@ -545,8 +545,9 @@ static RList *symbols(RBinFile *bf) {
 
 		ut64 prev = line;
 
-		const ut8 b = r_buf_read8_at (bf->buf, pcs + offset);
-		if (b == UT8_MAX) {
+		ut8 b;
+		st64 r = r_buf_read_at (bf->buf, pcs + offset, &b, sizeof (b));
+		if (r != sizeof (b)) {
 			goto error;
 		}
 		offset += sizeof (ut8);
