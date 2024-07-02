@@ -760,13 +760,14 @@ static void register_helpers(JSContext *ctx) {
 				eval (ctx, script);
 				free (script);
 			} else {
-				R_LOG_ERROR ("Cannot find %s", custom_papi);
+				R_LOG_ERROR ("Cannot find %s. Loading default r2papi", custom_papi);
+				eval (ctx, js_r2papi_qjs);
 			}
-			free (custom_papi);
 		} else {
 			eval (ctx, js_r2papi_qjs);
 			// r_file_dump ("rapi.qjs", js_r2papi_qjs, strlen (js_r2papi_qjs), 0);
 		}
+		free (custom_papi);
 		eval (ctx, "R=G.R=new R2Papi(r2);");
 		eval (ctx, "G.Process = new ProcessClass(r2);");
 		eval (ctx, "G.Module = new ModuleClass(r2);");
