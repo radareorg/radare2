@@ -486,7 +486,21 @@ static RList *symbols(RBinFile *bf) {
 		case 'b':
 			break;
 		// TODO: source file line offset
-		case 'Z':
+		case 'Z': {
+			ut64 fin = (o->header.syms > offset)? o->header.syms - offset: 0;
+			for (i = 0; i < fin; i += sizeof (ut16)) {
+				ut16 index = r_buf_read_be16_at (bf->buf, syms + offset + i);
+				if (index == UT16_MAX) {
+					goto error;
+				}
+
+				// read indices until a zero index
+				if (index == 0) {
+					offset += i + sizeof (ut16);
+					break;
+				}
+			}
+		}
 			// fallthrough
 		default:
 			sym_fini (&sym, NULL);
@@ -531,8 +545,9 @@ static RList *symbols(RBinFile *bf) {
 
 		ut64 prev = line;
 
-		const ut8 b = r_buf_read8_at (bf->buf, pcs + offset);
-		if (b == UT8_MAX) {
+		ut8 b;
+		st64 r = r_buf_read_at (bf->buf, pcs + offset, &b, sizeof (b));
+		if (r != sizeof (b)) {
 			goto error;
 		}
 		offset += sizeof (ut8);
