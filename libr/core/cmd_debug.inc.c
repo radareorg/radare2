@@ -2094,6 +2094,16 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 	ht_up_free (db);
 }
 
+static const char *mode_to_bitstr(int mode) {
+	switch (mode) {
+	case '3': return "32";
+	case '6': return "64";
+	case '8': return "8";
+	case '1': return "16";
+	}
+	return "";
+}
+
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
@@ -2119,7 +2129,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "refstr");
-	const char *str = (mode=='3')? "32": (mode=='6')? "64": (mode=='1')? "16": (mode=='8')? "8": "";
+	const char *str = mode_to_bitstr (mode);
 	const int pcbits = grab_bits (core, str, NULL);
 	r_list_foreach (list, iter, r) {
 		if (r->size != pcbits) {
