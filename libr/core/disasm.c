@@ -5057,7 +5057,8 @@ static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 static bool mymemwrite0(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return mymemwrite1 (esil, addr, buf, len);
+	(void)mymemwrite1 (esil, addr, buf, len);
+	return false;
 }
 
 static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
