@@ -5032,12 +5032,33 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 }
 
-static bool mymemwrite0(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return false;
+static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	RDisasmState *ds = esil->cb.user;
+	const bool be = false;
+	ut64 v = 0;
+	switch (len) {
+	case 1:
+		v = buf[0];
+		break;
+	case 2:
+		v = r_read_ble16 (buf, be);
+		break;
+	case 4:
+		v = r_read_ble32 (buf, be);
+		break;
+	case 8:
+		v = r_read_ble64 (buf, be);
+		break;
+	}
+	if (!ds->show_emu_str) {
+		ds_comment_esil (ds, true, true, "; [0x%08"PFMT64x":%d] = 0x%"PFMT64x, addr, len, v);
+	}
+	return true;
 }
 
-static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return true;
+static bool mymemwrite0(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	(void)mymemwrite1 (esil, addr, buf, len);
+	return false;
 }
 
 static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
