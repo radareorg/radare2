@@ -2094,15 +2094,23 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 	ht_up_free (db);
 }
 
+static const char *mode_to_bitstr(int mode) {
+	switch (mode) {
+	case '3': return "32";
+	case '6': return "64";
+	case '8': return "8";
+	case '1': return "16";
+	}
+	return "";
+}
+
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
-	int scr_color = r_config_get_i (core->config, "scr.color");
+	const int scr_color = r_config_get_i (core->config, "scr.color");
 	bool use_colors = scr_color != 0;
 	int delta = 0;
 	ut64 diff, value;
-	int bits = core->rasm->config->bits;
-	//XXX: support other RRegisterType
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
@@ -2121,8 +2129,10 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 
 	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "refstr");
+	const char *str = mode_to_bitstr (mode);
+	const int pcbits = grab_bits (core, str, NULL);
 	r_list_foreach (list, iter, r) {
-		if (r->size != bits) {
+		if (r->size != pcbits) {
 			continue;
 		}
 
@@ -3189,6 +3199,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case 'j': // "drrj"
 			r_core_debug_rr (core, core->dbg->reg, 'j');
+			break;
+		case ' ':
+			if (isdigit (str[2])) {
+				r_core_debug_rr (core, core->dbg->reg, str[2]);
+			} else {
+				r_core_debug_rr (core, core->dbg->reg, 0);
+			}
 			break;
 		default:
 			r_core_debug_rr (core, core->dbg->reg, 0);
