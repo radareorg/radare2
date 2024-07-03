@@ -3242,7 +3242,7 @@ s 0x00003cb8-0x30
 pd 20~env
 EOF
 EXPECT=<<EOF
-0x00003cb8      call sym.imp.getenv ; rsp=0x177fe8 -> 0x464c457f ; rip=0x3430 -> 0x97fa25ff
+0x00003cb8      call sym.imp.getenv ; rsp=0x177fe8 -> 0x464c457f ; [0x00177fe8:8] = 0x3cbd ; rip=0x3430 -> 0x97fa25ff
                     ; char *getenv("COLUMNS")
 EOF
 RUN
