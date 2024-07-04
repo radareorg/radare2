@@ -40,8 +40,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# we shouldnt be using anal.emu=true to find this xref
 NAME=aaa missing stref
 FILE=bins/elf/libtoolocore.so
+ARGS=-e anal.emu=true
 CMDS=<<EOF
 aaa
 s 0x00001373
