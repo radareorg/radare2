@@ -599,7 +599,7 @@ RUN
 NAME=: reload file
 FILE=bins/mdmp/calc.dmp
 CMDS=<<EOF
-ib
+ooi
 ?e ok
 EOF
 EXPECT=<<EOF
