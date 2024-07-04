@@ -279,10 +279,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 
 		RListIter * iter;
 		RIODscTrimmedSlice * trimmed;
-		int total = 0;
-		int failures = 0;
-		int index = 0;
-		int n_slices = r_list_length (slices);
 
 		pj_a (pj);
 
