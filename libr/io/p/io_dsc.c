@@ -308,11 +308,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 
 					ut64 raw_value = r_read_le64 (raw_value_buf);
 
-					char * tmp;
-
 					pj_o (pj);
 
-					tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
+					char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
 					pj_ks (pj, "paddr", tmp);
 					free (tmp);
 
@@ -325,38 +323,38 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 					free (tmp);
 
 					switch (trimmed_info->info->info->version) {
-						case 1:
-						case 2:
-						case 4:
-							break;
-						case 3:
-							if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-								bool has_diversity = (raw_value & (1ULL << 48)) != 0;
-								pj_kb (pj, "has_diversity", has_diversity);
-								if (has_diversity) {
-									ut64 diversity = (raw_value >> 32) & 0xFFFF;
-									pj_kn (pj, "diversity", diversity);
-								}
-								ut64 key = (raw_value >> 49) & 3;
-								const char * names[4] = { "ia", "ib", "da", "db" };
-								pj_ks (pj, "key", names[key]);
+					case 1:
+					case 2:
+					case 4:
+						break;
+					case 3:
+						if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+							bool has_diversity = (raw_value & (1ULL << 48)) != 0;
+							pj_kb (pj, "has_diversity", has_diversity);
+							if (has_diversity) {
+								ut64 diversity = (raw_value >> 32) & 0xFFFF;
+								pj_kn (pj, "diversity", diversity);
 							}
-							break;
-						case 5:
-							if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-								bool has_diversity = (raw_value & (1ULL << 50)) != 0;
-								pj_kb (pj, "has_diversity", has_diversity);
-								if (has_diversity) {
-									ut64 diversity = (raw_value >> 34) & 0xFFFF;
-									pj_kn (pj, "diversity", diversity);
-								}
-								ut64 key = (raw_value >> 51) & 1;
-								const char * names[2] = { "ia", "da" };
-								pj_ks (pj, "key", names[key]);
+							ut64 key = (raw_value >> 49) & 3;
+							const char * names[4] = { "ia", "ib", "da", "db" };
+							pj_ks (pj, "key", names[key]);
+						}
+						break;
+					case 5:
+						if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+							bool has_diversity = (raw_value & (1ULL << 50)) != 0;
+							pj_kb (pj, "has_diversity", has_diversity);
+							if (has_diversity) {
+								ut64 diversity = (raw_value >> 34) & 0xFFFF;
+								pj_kn (pj, "diversity", diversity);
 							}
-							break;
-						default:
-							R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
+							ut64 key = (raw_value >> 51) & 1;
+							const char * names[2] = { "ia", "da" };
+							pj_ks (pj, "key", names[key]);
+						}
+						break;
+					default:
+						R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
 					}
 					pj_end (pj);
 				}
@@ -368,9 +366,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 
 		pj_end (pj);
 
-		char * result = strdup (pj_string (pj));
-		pj_free (pj);
-		return result;
+		return pj_drain (pj);
 	}
 
 	return NULL;
