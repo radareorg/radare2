@@ -163,7 +163,7 @@ static RCoreHelpMessage help_msg_oo = {
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
 	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
-	"ooi", "", "",
+	"ooi", "", "reopen bin info without reloading the file",
 	"ooc", "", "reopen core with current file",
 	"ood", "[?]", "reopen in debug mode",
 	"oom", "[?]", "reopen in malloc://",
