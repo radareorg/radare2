@@ -570,22 +570,6 @@ static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool 
 	return true;
 }
 
-static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
-	int result = 0;
-	RIODesc *cd = r->io->desc;
-	if (baseaddr == UT64_MAX) {
-		baseaddr = 0;
-	}
-	if (cd) {
-		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cd->fd);
-		if (bf) {
-			result = r_bin_reload (r->bin, bf->id, baseaddr);
-		}
-	}
-	r_core_bin_set_env (r, r_bin_cur (r->bin));
-	return result;
-}
-
 static RList *r_core_bin_files(RCore *core) {
 	RList *list = r_list_newf (NULL);
 	if (core->allbins) {
@@ -1909,21 +1893,6 @@ static int cmd_info(void *data, const char *input) {
 			pj_end (pj);
 		} else {
 			r_bin_list_archs (core->bin, NULL, 1);
-		}
-		break;
-	case 'b': // "ib"
-		{
-			const char *arg = strchr (input, ' ');
-			if (arg) {
-				arg++;
-			}
-			ut64 baddr = arg? r_num_math (core->num, arg) : r_config_get_i (core->config, "bin.baddr");
-			// XXX: this will reload the bin using the buffer.
-			// An assumption is made that assumes there is an underlying
-			// plugin that will be used to load the bin (e.g. malloc://)
-			// TODO: Might be nice to reload a bin at a specified offset?
-			__r_core_bin_reload (core, NULL, baddr);
-			r_core_block_read (core);
 		}
 		break;
 	case 'e': // "ie"

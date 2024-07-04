@@ -163,6 +163,7 @@ static RCoreHelpMessage help_msg_oo = {
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
 	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
+	"ooi", "", "",
 	"ooc", "", "reopen core with current file",
 	"ood", "[?]", "reopen in debug mode",
 	"oom", "[?]", "reopen in malloc://",
@@ -1729,6 +1730,23 @@ static bool find_desc_by_name(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static int cmd_ooi(RCore *r, const char *file, ut64 baseaddr) {
+	int result = 0;
+	RIODesc *cd = r->io->desc;
+	if (baseaddr == UT64_MAX) {
+		baseaddr = 0;
+	}
+	if (cd) {
+		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cd->fd);
+		if (bf) {
+			result = r_bin_reload (r->bin, bf->id, baseaddr);
+		}
+	}
+	r_core_bin_set_env (r, r_bin_cur (r->bin));
+	return result;
+}
+
+
 static bool cmd_onn(RCore *core, const char* input) {
 	const char *arg0 = input;
 	while (*arg0 && *arg0 != ' ') {
@@ -2343,6 +2361,21 @@ static int cmd_open(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_oo, "ooc");
 			} else {
 				r_core_cmd0 (core, "oc `o.`");
+			}
+			break;
+		case 'i': // "ooi" // reload info
+			{
+				const char *arg = strchr (input, ' ');
+				if (arg) {
+					arg++;
+				}
+				ut64 baddr = arg? r_num_math (core->num, arg) : r_config_get_i (core->config, "bin.baddr");
+				// XXX: this will reload the bin using the buffer.
+				// An assumption is made that assumes there is an underlying
+				// plugin that will be used to load the bin (e.g. malloc://)
+				// TODO: Might be nice to reload a bin at a specified offset?
+				cmd_ooi (core, NULL, baddr);
+				r_core_block_read (core);
 			}
 			break;
 		case 'b': // "oob" : reopen with bin info
