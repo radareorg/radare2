@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
 
@@ -32,7 +32,7 @@ static bool its_a_mips(RCore *core) {
 	return cfg && cfg->arch && !strcmp (cfg->arch, "mips");
 }
 
-static void loadGP(RCore *core) {
+static void load_gp(RCore *core) {
 	// R2R db/cmd/cmd_eval
 	if (its_a_mips (core)) {
 		ut64 e0 = r_num_math (core->num, "entry0");
@@ -190,7 +190,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd_call (core, "sr PC");
 	} else {
-		loadGP (core);
+		load_gp (core);
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
@@ -631,8 +631,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r_return_val_if_fail (r && r->io, false);
 	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
-	RBinFile *binfile = NULL;
-	RBinPlugin *plugin = NULL;
 	RIODesc *desc = r->io->desc;
 	if (!desc && filenameuri) {
 		desc = r_io_desc_get_byuri (r->io, filenameuri);
@@ -654,36 +652,34 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// dont try to guess the bin file in the address 0 if we are using r2frida
 			is_io_load = false;
 		}
-	//	r_io_use_fd (r->io, desc->fd);
 	}
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
 	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	R_CRITICAL_LEAVE (r);
-	if (is_io_load) {
+	if (desc && is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
 		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
 			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
+			if (filenameuri && strcmp (filenameuri, desc->uri)) {
+				r_core_file_open (r, filenameuri, 0, baddr);
+			}
 			r_core_file_load_for_io_plugin (r, baddr, 0LL);
 		}
 		r_io_use_fd (r->io, desc->fd);
-		// Restore original desc
 	} else if (desc != NULL) {
 		r_io_use_fd (r->io, desc->fd);
 		r_io_map_add (r->io, desc->fd, R_PERM_RWX, 0LL, 0, r_io_desc_size (desc));
 	}
-	if (binfile && desc) {
-		binfile->fd = desc->fd;
-	}
-	binfile = r_bin_cur (r->bin);
+	RBinFile *binfile = r_bin_cur (r->bin);
 	if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->plugin && r->bin->cur->bo->plugin->strfilter) {
 		char msg[2];
 		msg[0] = r->bin->cur->bo->plugin->strfilter;
 		msg[1] = 0;
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
-	plugin = r_bin_file_cur_plugin (binfile);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 #if 0
 	//r_core_bin_set_env (r, binfile);
 	if (plugin && plugin->name) {
@@ -714,7 +710,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				if (!va) {
 					r_config_set_i (r->config, "io.va", 0);
 				}
-				//workaround to map correctly malloc:// and raw binaries
+				// workaround to map correctly malloc:// and raw binaries
 				if (r_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
 					r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 				}
@@ -746,7 +742,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12;wx `ph adler32 $s-12 @12` @8)");
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
-		loadGP (r);
+		load_gp (r);
 	}
 	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;
@@ -969,8 +965,8 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 			}
 		}
 	}
-	//used by r_core_bin_load otherwise won't load correctly
-	//this should be argument of r_core_bin_load <shrug>
+	// used by r_core_bin_load otherwise won't load correctly
+	// this should be argument of r_core_bin_load <shrug>
 	if (loadaddr != UT64_MAX) {
 		r_config_set_i (r->config, "bin.laddr", loadaddr);
 	}

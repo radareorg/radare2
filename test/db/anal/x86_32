@@ -3577,7 +3577,6 @@ EXPECT=<<EOF
 |           0x08048056      xor eax, eax
 |           0x08048058      inc eax
 |           ;-- syscall.exit:
-|           ;-- syscall.exit.0:
 \           0x08048059      int 0x80
 EOF
 RUN
