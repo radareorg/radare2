@@ -306,7 +306,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 					remaining_size -= 8;
 					cursor += 8;
 					if (!got_raw_value) {
-						R_LOG_ERROR ("Error reading raw pointer");
+						R_LOG_ERROR ("reading raw pointer");
 						break;
 					}
 
