@@ -662,9 +662,12 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
 			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
-			if (filenameuri && strcmp (filenameuri, desc->uri)) {
+			eprintf ("--> %s // %s\n", filenameuri, desc->uri);
+#if 1
+			if (filenameuri && filenameuri[0] != '-' && strcmp (filenameuri, desc->uri)) {
 				r_core_file_open (r, filenameuri, 0, baddr);
 			}
+#endif
 			r_core_file_load_for_io_plugin (r, baddr, 0LL);
 		}
 		r_io_use_fd (r->io, desc->fd);
