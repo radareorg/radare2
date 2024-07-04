@@ -2364,7 +2364,9 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case 'i': // "ooi" // reload info
-			{
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_oo, "ooi");
+			} else {
 				const char *arg = strchr (input, ' ');
 				if (arg) {
 					arg++;
