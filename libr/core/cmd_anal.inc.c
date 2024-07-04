@@ -13846,14 +13846,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				const bool run_aaef = r_config_get_b (core->config, "anal.emu");
 				/// if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
-				if (run_aaef) { // emulate all functions
+				if (true) { // emulate all functions
 					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
 					// XXX moving this oustide the x86 guard breaks some tests, missing types
 					if (cfg_debug) {
 						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
 					} else {
-						bool use_pcache = true; // false;
+						bool use_pcache = run_aaef; // true; // false;
 						const bool io_cache = r_config_get_b (core->config, "io.pcache");
 						if (use_pcache) {
 							r_config_set_b (core->config, "io.pcache", true);
