@@ -13844,8 +13844,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					r_core_task_yield (&core->tasks);
 				}
-				const bool run_aaef = r_config_get_b (core->config, "anal.emu");
-				/// if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
+				bool run_aaef = r_config_get_b (core->config, "anal.emu");
+				if (r_str_startswith (asm_arch, "x86") || r_str_startswith (asm_arch, "hex")) {
+					// hackaround
+					run_aaef = false;
+				}
+				if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+					run_aaef = false;
+				}
 				if (run_aaef) { // emulate all functions
 					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
 					// XXX moving this oustide the x86 guard breaks some tests, missing types
@@ -13853,16 +13859,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
 					} else {
-						bool use_pcache = true; // false;
-						const bool io_cache = r_config_get_b (core->config, "io.pcache");
-						if (use_pcache) {
-							r_config_set_b (core->config, "io.pcache", true);
-						}
-						logline (core, 70, "Emulate functions to find computed references (aaef)");
-						r_core_cmd_call (core, "aaef");
-						r_core_task_yield (&core->tasks);
-						if (use_pcache) {
-							r_config_set_b (core->config, "io.pcache", io_cache);
+						if (r_config_get_b (core->config, "anal.emumem")) {
+							bool use_pcache = run_aaef; // true; // false;
+							const bool io_cache = r_config_get_b (core->config, "io.pcache");
+							if (use_pcache) {
+								r_config_set_b (core->config, "io.pcache", true);
+							}
+							logline (core, 70, "Emulate functions to find computed references (aaef)");
+							r_core_cmd_call (core, "aaef");
+							r_core_task_yield (&core->tasks);
+							if (use_pcache) {
+								r_config_set_b (core->config, "io.pcache", io_cache);
+							}
+						} else {
+							logline (core, 70, "Emulate functions to find computed references (aaef)");
+							r_core_cmd_call (core, "aaef");
 						}
 					}
 				}
