@@ -3441,7 +3441,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETCB ("anal.noret.refs", "false", (RConfigCallback)&cb_anal_noret_refs, "recursive no return checks (EXPERIMENTAL)");
 	SETCB ("anal.slow", "true", (RConfigCallback)&cb_anal_slow, "uses emulation and deeper analysis for better results");
-	SETPREF ("anal.emu", "false", "run aaef after analysis (EXPERIMENTAL)");
+	SETPREF ("anal.emu", "true", "run aaef after analysis");
+	SETPREF ("anal.emumem", "false", "run aaef with memory cache enabled after analysis (EXPERIMENTAL)");
 	SETCB ("anal.noret", "true", (RConfigCallback)&cb_anal_noret, "propagate noreturn attributes (EXPERIMENTAL)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "lower limit on the address range for analysis");
