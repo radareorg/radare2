@@ -13849,6 +13849,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					// hackaround
 					run_aaef = false;
 				}
+				if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+					run_aaef = false;
+				}
 				if (run_aaef) { // emulate all functions
 					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
 					// XXX moving this oustide the x86 guard breaks some tests, missing types
