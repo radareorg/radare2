@@ -3268,43 +3268,66 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ieeej
+NAME=ilj twofiles
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ieeej~{}
+CMDS=<<EOF
+o bins/elf/ls.odd
+?e one
+ilj
+?e all
+ob *
+ilj
+EOF
 EXPECT=<<EOF
-{
-  "initfini": [
-    {
-      "vaddr": 134513616,
-      "paddr": 976,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518172,
-      "hpaddr": 1436,
-      "type": "init"
-    },
-    {
-      "vaddr": 134513584,
-      "paddr": 944,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518176,
-      "hpaddr": 1440,
-      "type": "fini"
-    }
-  ],
-  "entries": [
-    {
-      "vaddr": 134513408,
-      "paddr": 768,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134512664,
-      "haddr": 24,
-      "type": "program"
-    }
-  ]
-}
+one
+["libc.so.6"]
+all
+[{"id":0,"filename":"bins/elf/analysis/x86-helloworld-gcc","data":["libc.so.6"]},{"id":1,"filename":"bins/elf/ls.odd","data":["libc.so.6"]}]
+EOF
+RUN
+
+NAME=iej+ieej
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+?e entries
+iej~{}
+?e constructors
+ieej~{}
+EOF
+EXPECT=<<EOF
+entries
+[
+  {
+    "vaddr": 134513408,
+    "paddr": 768,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134512664,
+    "haddr": 24,
+    "type": "program"
+  }
+]
+constructors
+[
+  {
+    "vaddr": 134513616,
+    "paddr": 976,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518172,
+    "hpaddr": 1436,
+    "type": "init"
+  },
+  {
+    "vaddr": 134513584,
+    "paddr": 944,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518176,
+    "hpaddr": 1440,
+    "type": "fini"
+  }
+]
 EOF
 RUN
 
