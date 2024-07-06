@@ -380,7 +380,7 @@ R_API char *r_stdin_readline(int *sz) {
 }
 
 R_API char *r_stdin_slurp(int *sz) {
-#if R2__UNIX__ || R2__WINDOWS__
+#if (R2__UNIX__ || R2__WINDOWS__) && !__wasi__
 	int i, ret, newfd;
 	char *buf = NULL;
 #if R2__WINDOWS__
