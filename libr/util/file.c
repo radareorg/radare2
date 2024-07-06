@@ -380,27 +380,32 @@ R_API char *r_stdin_readline(int *sz) {
 }
 
 R_API char *r_stdin_slurp(int *sz) {
-#if __wasi__
-#warning r_stdin_slurp not available for wasi
-	return NULL;
-#elif R2__UNIX__ || R2__WINDOWS__
+#if R2__UNIX__ || R2__WINDOWS__
 	int i, ret, newfd;
-	if ((newfd = dup (0)) < 0) {
-		return NULL;
+	char *buf = NULL;
+#if R2__WINDOWS__
+	int stdinfd = _fileno (stdin);
+	int omode = _setmode (stdinfd, _O_BINARY);
+#else
+	int stdinfd = fileno (stdin);
+#endif
+	if ((newfd = dup (stdinfd)) < 0) {
+		goto beach;
 	}
-	char *buf = malloc (BS);
+	buf = malloc (BS);
 	if (!buf) {
 		close (newfd);
-		return NULL;
+		goto beach;
 	}
 	for (i = ret = 0; i >= 0; i += ret) {
-		char *new = realloc (buf, i + BS);
-		if (!new) {
-			free (buf);
-			return NULL;
+		char *nbuf = realloc (buf, i + BS);
+		if (!nbuf) {
+			R_LOG_WARN ("Realloc fail %d", i + BS);
+			R_FREE (buf);
+			goto beach;
 		}
-		buf = new;
-		ret = read (0, buf + i, BS);
+		buf = nbuf;
+		ret = read (stdinfd, buf + i, BS);
 		if (ret < 1) {
 			break;
 		}
@@ -410,7 +415,7 @@ R_API char *r_stdin_slurp(int *sz) {
 		R_FREE (buf);
 	} else {
 		buf[i] = 0;
-		dup2 (newfd, 0);
+		dup2 (newfd, stdinfd);
 		close (newfd);
 	}
 	if (sz) {
@@ -419,6 +424,10 @@ R_API char *r_stdin_slurp(int *sz) {
 	if (!i) {
 		R_FREE (buf);
 	}
+beach:
+#if R2__WINDOWS__
+	_setmode (_fileno (stdin), omode);
+#endif
 	return buf;
 #else
 #warning TODO r_stdin_slurp
