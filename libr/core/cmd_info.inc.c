@@ -1937,7 +1937,7 @@ static int cmd_info(void *data, const char *input) {
 			  // ieee = show entries and constructors (DREPRECATED)
 			  bool show_constructors = r_str_startswith (input, "ee"); // "iee"
 			  if (r_list_empty (objs)) {
-				  if (show_constructors && mode & R_MODE_JSON) {
+				  if (mode & R_MODE_JSON) {
 					  r_cons_print ("[]");
 				  }
 			  } else {
