@@ -555,7 +555,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afc", "[?] type @[addr]", "set calling convention for function",
-	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
+	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afd", "[addr]", "show function + delta for given offset",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
@@ -572,7 +572,7 @@ static RCoreHelpMessage help_msg_af = {
 //	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
-	"afv[absrx]", "?", "manipulate args, registers and variables in function",
+	"afv", "[?]", "manipulate args, registers and variables in function",
 	"afx", "[m]", "list function references",
 	NULL
 };
@@ -1750,7 +1750,13 @@ static int var_cmd(RCore *core, const char *str) {
 			r_cons_println ("{}");
 			break;
 		default:
-			R_LOG_ERROR ("No function found in current offset");
+			if (str[1] == '?') {
+				char cmd[5] = "afvb";
+				cmd[3] = str[0];
+				r_core_cmd_help_match (core, help_msg_afv, cmd);
+			} else {
+				R_LOG_ERROR ("No function found in current offset");
+			}
 			break;
 		}
 		return false;
@@ -1766,7 +1772,7 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		return true;
 	}
-	if (str[1] == '?'|| str[0] == '?') {
+	if (str[1] == '?' || str[0] == '?') {
 		var_help (core, *str);
 		return res;
 	}
@@ -1993,6 +1999,8 @@ static int var_cmd(RCore *core, const char *str) {
 			R_LOG_ERROR ("No function");
 		}
 		pj_free (pj);
+		break;
+	case '?':
 		break;
 	case '.': // "afv[bsr]."
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0, NULL);
