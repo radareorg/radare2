@@ -781,3 +781,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=jmptbl
+FILE=bins/elf/mips-ncc
+CMDS=<<EOF
+s 0x004ee1a4
+af
+s 0x004ee230
+pdsf~case
+abj~{[0].switch_op.cases}
+EOF
+EXPECT=<<EOF
+0x004ee230 switch table (5 cases) at 0x5a74b4
+[{"addr":5238184,"jump":5238184,"value":0},{"addr":5238044,"jump":5238044,"value":1},{"addr":5238184,"jump":5238184,"value":2},{"addr":5239196,"jump":5239196,"value":3},{"addr":5239252,"jump":5239252,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
+EOF
+RUN
+
