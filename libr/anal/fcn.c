@@ -613,11 +613,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	bool arch_destroys_dst = does_arch_destroys_dst (arch);
 	const bool is_arm = !strncmp (arch, "arm", 3);
+	const bool is_mips = r_str_startswith (arch, "mips");
 	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
+	ut64 v1 = UT64_MAX;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -723,6 +725,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool has_variadic_reg = !!variadic_reg;
 
 	op = r_anal_op_new ();
+	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			last_reg_mov_lea_name = NULL;
@@ -750,7 +753,8 @@ repeat:
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);
-		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+		oplen = r_anal_op (anal, op, at, buf, bytes_read, opflags);
+
 		if (oplen < 1) {
 			R_LOG_DEBUG ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
 			// gotoBeach (R_ANAL_RET_ERROR);
@@ -1075,6 +1079,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
 			// R2R db/anal/arm db/esil/apple
+			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
@@ -1083,6 +1088,14 @@ repeat:
 				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
 					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
+					if (is_mips && anal->opt.jmptbl) {
+						const char *esil = r_strbuf_get (&op->esil);
+						if (strstr (esil, "v1,=")) {
+							// eprintf("iftarget is v1 (%s)\n", esil);
+							// eprintf ("LOAD FROM %llx -> %llx\n", op->ptr, da);
+							v1 = da;
+						}
+					}
 					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
 					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
 				} else {
@@ -1094,14 +1107,24 @@ repeat:
 				// r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
 				if (anal->opt.loads) {
 					// set this address as data if destination is not code
-						r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
+					r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 				}
 			}
 			break;
 			break;
 			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
-			if (is_arm && anal->config->bits == 32) {
+			if (is_mips) {
+				if (anal->opt.jmptbl && v1 != UT64_MAX) {
+					// TODO: ensure we add in v1 // const char *esil = r_strbuf_get (&op->esil);
+					v1 += (st32)op->val;
+					// align v1
+					while (v1 & 3) {
+						v1++;
+					}
+					R_LOG_DEBUG ("[0x%"PFMT64x"]============= 0x%"PFMT64x, op->addr, v1);
+				}
+			} else if (is_arm && anal->config->bits == 32) {
 				if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
 					// add lr, pc, 0 //
 					last_is_add_lr_pc = true; // TODO: support different values, not just 0
@@ -1235,7 +1258,7 @@ repeat:
 			if (bb->cond) {
 				bb->cond->type = op->cond;
 			}
-			if (anal->opt.jmptbl) {
+			if (anal->opt.jmptbl && !is_mips) {
 				if (op->ptr != UT64_MAX) {
 					ut64 table_size, default_case;
 					table_size = anal->cmpval + 1;
@@ -1310,6 +1333,32 @@ repeat:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->fail = op->addr + 4;
 				break;
+			} else if (is_mips && anal->opt.jmptbl) {
+				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
+				// sll v0, s0, 2   // select the case from the pointer table * 4
+				// addiu v1, v1, 0x74b4 ; [gp-0x7fc4] + 0x74b4 ;; is jmptbl_ptr_addr
+				// addu v0, v0, v1 // increment the pointer
+				ut64 jmptbl_ptr_addr = v1; // 0x005a74b4;
+				ut64 default_case = UT64_MAX; // op->addr + 8;
+				int tablesize = 0;
+				ut64 tblptr = v1;
+				while (1) {
+					ut8 dd[4];
+					// read le32 until the number is not negative
+					(void)anal->iob.read_at (anal->iob.io, tblptr, (ut8 *) dd, sizeof (dd));
+					// if page have exec perms
+					st32 n = (st32)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+					if (n >= -1) {
+						break;
+					}
+					tblptr += 4;
+					tablesize ++;
+				}
+				tablesize *= 4;
+				ut64 tblloc = jmptbl_ptr_addr;
+				int sz = 4;
+				ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0,
+						tblloc, jmptbl_ptr_addr, sz, tablesize, default_case, ret);
 			} else if (is_v850 && anal->opt.jmptbl) {
 				int ptsz = (anal->cmpval && anal->cmpval != UT64_MAX)? anal->cmpval + 1: 4;
 				if ((int)anal->cmpval > 0) {

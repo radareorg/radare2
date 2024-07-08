@@ -721,6 +721,7 @@ typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
 typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
+// R2_600 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -729,6 +730,7 @@ typedef struct r_bin_bind_t {
 	RBinGetSections get_sections;
 	RBinGetSectionAt get_vsect_at;
 	RBinDemangle demangle;
+	// RBinBaddr baddr;
 	ut32 visibility;
 } RBinBind;
 

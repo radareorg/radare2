@@ -949,10 +949,20 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case MIPS_OP_MEM:
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
 				op->ptr = as->config->gp + OPERAND(1).mem.disp;
-				if (REGID(0) == MIPS_REG_T9) {
+#if 0
+				if (REGID (0) == MIPS_REG_T9) {
 					pd->t9_pre = op->ptr;
+					// read pointer again
+					ut32 na = 0;
+					RBin *bin = as->arch->binb.bin;
+					if (bin && bin->iob.read_at (bin->iob.io, op->ptr, &na, sizeof (na))) {
+						pd->t9_pre = na; // UT64_MAX;
+					}
+
+					// eprintf ("SET PRE9 0x%llx\n", op->ptr);
 				}
-			} else if (REGID(0) == MIPS_REG_T9) {
+#endif
+			} else if (REGID (0) == MIPS_REG_T9) {
 				pd->t9_pre = UT64_MAX;
 			}
 			break;
@@ -990,10 +1000,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case MIPS_INS_JALR:
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
-		if (REGID(0) == MIPS_REG_25) {
+		if (REGID (0) == MIPS_REG_25) {
+			op->type = R_ANAL_OP_TYPE_RCALL;
 			op->jump = pd->t9_pre;
 			pd->t9_pre = UT64_MAX;
-			op->type = R_ANAL_OP_TYPE_RCALL;
 		}
 		break;
 	case MIPS_INS_JAL:
@@ -1184,11 +1194,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->type = R_ANAL_OP_TYPE_RET;
 			pd->t9_pre = UT64_MAX;
 		}
-		if (REGID(0) == MIPS_REG_25) {
-				op->jump = pd->t9_pre;
-				pd->t9_pre = UT64_MAX;
+		if (REGID (0) == MIPS_REG_25) {
+			op->jump = pd->t9_pre;
+			pd->t9_pre = UT64_MAX;
 		}
-
 		break;
 	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
