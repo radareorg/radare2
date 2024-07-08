@@ -12,6 +12,7 @@ RUN
 
 NAME=ab cases
 FILE=bins/mach0/ls-m1
+ARGS=-a arm
 CMDS=<<EOF
 af
 0x100003c38
