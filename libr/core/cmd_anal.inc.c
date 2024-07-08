@@ -3204,6 +3204,20 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 		r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
 		r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: 0x%"PFMT64x"\n",
 			b->addr, b->size, inputs, outputs, b->ninstr, b->traced);
+		if (b->switch_op) {
+			r_cons_printf ("cases: %d\n", r_list_length (b->switch_op->cases));
+			r_cons_printf ("switch_at: 0x%08"PFMT64x"\n", b->switch_op->addr);
+#if 0
+			r_cons_printf ("switch_min: 0x%08"PFMT64x"\n", b->switch_op->min_val);
+			r_cons_printf ("switch_max: 0x%08"PFMT64x"\n", b->switch_op->max_val);
+			r_cons_printf ("switch_def: 0x%08"PFMT64x"\n", b->switch_op->def_val);
+#endif
+			RListIter *case_op_iter;
+			RAnalCaseOp *case_op;
+			r_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+				r_cons_printf ("case.%"PFMT64d": 0x%08"PFMT64x"\n", case_op->value, case_op->jump);
+			}
+		}
 	}
 }
 
@@ -3222,10 +3236,8 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (*input) { // "afbj"
 		mode = *input;
 		input++;
-		if (mode == 'i') { // "afbi"
-			if (*input == 'j') {
-				mode = 'J'; // afbij"
-			}
+		if (mode == 'i' && *input == 'j') {
+			mode = 'J'; // afbij"
 		}
 	}
 	if (*input == '.') {
