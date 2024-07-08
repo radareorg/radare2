@@ -40,9 +40,6 @@ ninstr: 8
 traced: 0x0
 cases: 46
 switch_at: 0x100003c60
-switch_min: 0x00000000
-switch_max: 0x00000000
-switch_def: 0x00000000
 case.0: 0x100003c6c
 case.1: 0x100004100
 case.7: 0x100003ecc
