@@ -958,14 +958,8 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 		RSignItem *it = NULL;
 		if (merge || !name_exists (a->sdb_zigns, realname, sp)) {
 			it = item_from_func (a, fcn, realname);
-		} else {
-			char *name = get_unique_name (a->sdb_zigns, fcn->name, sp);
-			if (name) {
-				it = item_from_func (a, fcn, name);
-			}
-			free (name);
-			free (realname);
 		}
+		free (realname);
 		if (it) {
 			if (prev_name) {
 				it->next = prev_name;
