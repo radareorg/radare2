@@ -1517,7 +1517,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 			r_cons_printf ("* %s\n", var->name);
 			RAnalVarAccess *acc;
 			r_vector_foreach (&var->accesses, acc) {
-				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+				if (!(acc->type & R_PERM_R)) {
 					continue;
 				}
 				r_cons_printf ("R 0x%"PFMT64x"  ", fcn->addr + acc->offset);
@@ -1525,7 +1525,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 				r_core_print_disasm_instructions (core, 0, 1);
 			}
 			r_vector_foreach (&var->accesses, acc) {
-				if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE)) {
+				if (!(acc->type & R_PERM_W)) {
 					continue;
 				}
 				r_cons_printf ("W 0x%"PFMT64x"  ", fcn->addr + acc->offset);
@@ -1551,7 +1551,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		r_list_free (list);
 		return;
 	}
-	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
+	int access_type = type == 'R' ? R_PERM_R : R_PERM_W;
 	if (pj) {
 		pj_a (pj);
 	}
@@ -2049,7 +2049,7 @@ static int var_cmd(RCore *core, const char *str) {
 				res = false;
 				break;
 			}
-			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
+			int rw = (str[1] == 'g') ? R_PERM_R : R_PERM_W;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2024 - pancake, oddcoder */
 
 #define R_LOG_ORIGIN "anal.var"
 
@@ -632,7 +632,7 @@ R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 	r_return_val_if_fail (var, NULL);
 	RAnalVarAccess *acc;
 	r_vector_foreach (&var->accesses, acc) {
-		if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+		if (!(acc->type & R_PERM_R)) {
 			continue;
 		}
 		ut64 addr = var->fcn->addr + acc->offset;
@@ -644,7 +644,7 @@ R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 				continue;
 			}
 			RAnalVarAccess *other_acc = r_anal_var_get_access_at (used_var, addr);
-			if (other_acc && other_acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+			if (other_acc && other_acc->type & R_PERM_W) {
 				return used_var;
 			}
 		}
@@ -1003,7 +1003,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	const int maxarg = 32; // TODO: use maxarg ?
-	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
+	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
 	if (*sign == '+') {
 		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
@@ -1348,7 +1348,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				reg_set[i] = 1;
 			}
 			if (var) {
-				r_anal_var_set_access (var, var->regname, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_anal_var_set_access (var, var->regname, op->addr, R_PERM_R, 0);
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
 			}
 		}
@@ -1367,7 +1367,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_PERM_R, 0);
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
@@ -1392,7 +1392,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_anal_var_set_access (newvar, newvar->regname, op->addr, R_PERM_R, 0);
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);

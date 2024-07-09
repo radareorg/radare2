@@ -7,6 +7,7 @@
 // still required by core in lot of places
 #define USE_VARSUBS 0
 
+#include <r_cons.h>
 #include <r_types.h>
 #include <r_io.h>
 #include <r_esil.h>
@@ -503,17 +504,19 @@ typedef enum {
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
 
+#if 0
 typedef enum {
 	R_ANAL_VAR_ACCESS_TYPE_PTR = 0,
 	R_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
 	R_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
 } RAnalVarAccessType;
+#endif
 
 typedef struct r_anal_var_access_t {
 	const char *reg; // register used for access
 	st64 offset; // relative to the function's entrypoint
 	st64 stackptr; // delta added to register to get the var, e.g. [rbp - 0x10]
-	ut8 type; // RAnalVarAccessType bits
+	ut8 type; // R_PERM_{R/W/NONE} // TODO: R2_600 what about using rwx instead of custom enum?
 } RAnalVarAccess;
 
 typedef struct r_anal_var_constraint_t {
@@ -608,7 +611,8 @@ typedef struct r_anal_bb_t {
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
 	int parent_reg_arena_size;
-#if R2_590
+#if R2_600
+	// for the oppos
 	USE RVec
 #else
 	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
@@ -620,7 +624,6 @@ typedef struct r_anal_bb_t {
 	ut64 cmpval;
 	const char *cmpreg;
 	ut32 bbhash; // calculated with xxhash
-
 	RList *fcns;
 	RAnal *anal;
 	char *esil;
@@ -721,17 +724,17 @@ enum {
 	R_ANAL_ESIL_DFG_TAG_MEM = 64,
 	R_ANAL_ESIL_DFG_TAG_MERGE = 128,
 	R_ANAL_ESIL_DFG_TAG_SIBLING = 256,
-};	//RAnalEsilDFGTagType
+}; // RAnalEsilDFGTagType
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
 	int fd;
 	RIOBind iob;
 	RReg *reg;
-	Sdb *regs;		//resolves regnames to intervals
-	RRBTree *vars;		//vars represented in regs and mem
-	RQueue *todo;		//todo-queue allocated in this struct for perf
-	void *insert;		//needed for setting regs in dfg
+	Sdb *regs;     // resolves regnames to intervals
+	RRBTree *vars; // vars represented in regs and mem
+	RQueue *todo;  // todo-queue allocated in this struct for perf
+	void *insert;  // needed for setting regs in dfg
 	RGraph *flow;
 	RGraphNode *cur;
 	RGraphNode *old;
@@ -787,7 +790,7 @@ typedef struct r_anal_plugin_t {
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
-int * (r_anal_compare) (RAnalFunction , RAnalFunction );
+int * (r_anal_compare) (RAnalFunction , RAnalFunction);
 /*----------------------------------------------------------------------------------------------*/
 
 #ifdef R_API
@@ -1021,7 +1024,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 R_API int r_anal_opasm(RAnal *anal, ut64 pc, const char *s, ut8 *outbuf, int outlen);
 R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op);
 
-
 /* pin */
 R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
@@ -1249,7 +1251,6 @@ R_API int r_anal_data_type(RAnal *a, ut64 da);
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int size, int wide);
 R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len);
 R_API void r_anal_data_free(RAnalData *d);
-#include <r_cons.h>
 R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal);
 
 /* meta

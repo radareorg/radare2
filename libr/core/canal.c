@@ -5228,10 +5228,12 @@ typedef struct {
 	ut64 initial_sp;
 } EsilBreakCtx;
 
-static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
+typedef int RPerm;
+
+static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->reg;
 		}
@@ -5241,11 +5243,11 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 	return NULL;
 }
 
-static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
+static ut64 delta_for_access(RAnalOp *op, RPerm type) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
-	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->imm + dst->delta;
 		}
@@ -5260,10 +5262,8 @@ static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	return 0;
 }
 
-static void handle_var_stack_access(REsil *esil, ut64 addr, RAnalVarAccessType type, int len) {
-	if (!esil || !esil->user) {
-		return;
-	}
+static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len) {
+	R_RETURN_IF_FAIL (esil && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (ctx->fcn && regname) {
@@ -5303,7 +5303,7 @@ static bool is_stack(RIO *io, ut64 addr) {
 
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	RCore *core = esil->anal->coreb.core;
-	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
+	handle_var_stack_access (esil, addr, R_PERM_W, len);
 	// ignore writes in stack
 	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		if (!is_stack (core->io, addr)) {
@@ -5329,7 +5329,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
-	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_READ, len);
+	handle_var_stack_access (esil, addr, R_PERM_R, len);
 	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
@@ -5376,14 +5376,12 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
-	if (!esil || !esil->anal || !esil->user) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->config->bits / 8);
+	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8);
 	const bool is_arm = !strcmp (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
