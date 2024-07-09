@@ -1943,7 +1943,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			{
 				r_line_set_prompt ("offset: ");
 				const char *line = r_line_readline ();
-				if (line && *line) {
+				if (R_STR_ISNOTEMPTY (line)) {
 					ut64 off = r_num_math (core->num, line);
 					r_core_seek (core, off, true);
 					addr = off;
@@ -3370,7 +3370,7 @@ static RCoreHelpMessage help_visual_anal_keys = {
 };
 
 static ut64 r_core_visual_anal_refresh(RCore *core) {
-	r_return_val_if_fail (core, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
 	ut64 addr;
 	RStrBuf *buf;
 	bool color = r_config_get_i (core->config, "scr.color");
@@ -3393,7 +3393,8 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_cons_print (core->cons->context->pal.prompt);
 		}
-		r_cons_print (".-- functions -----------------------------------------.");
+		r_cons_gotoxy (0, 0);
+		r_cons_print (".-- functions -------------------------------------------.");
 		r_cons_gotoxy (20, 0);
 		if (selectPanel) {
 			r_cons_printf ("[%s]", printCmds[printMode]);
@@ -3404,11 +3405,11 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 			r_cons_print (Color_RESET);
 		}
 		r_cons_newline ();
-		r_cons_print ("| (a)nalyze (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
-		r_cons_print ("| (r)ename  (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
-		r_cons_print ("| (d)efine  (v)ars    (?)help  (:)shell    (q) quit    |\n");
-		r_cons_print ("| (s)ignature edit                                     |\n");
-		r_cons_printf ("'------------------------------------------------------'");
+		r_cons_print ("| (a)nalyze   (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
+		r_cons_print ("| (r)ename    (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
+		r_cons_print ("| (d)efine    (v)ars    (?)help  (:)shell    (q) quit    |\n");
+		r_cons_print ("| (s)ignature                                            |\n");
+		r_cons_printf ("'--------------------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
@@ -3493,7 +3494,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		r_core_cmd0 (core, "x 64@r:SP");
 		r_core_cmd0 (core, "dri");
 		// limit by rows here
-		//int rows = r_cons_get_size (NULL);
+		// int rows = r_cons_get_size (NULL);
 		r_core_cmdf (core, "dtd %d", delta);
 		r_cons_visual_flush ();
 		signed char ch;
@@ -3521,24 +3522,24 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 				r_core_seek (core, oseek, true);
 			}
 			break;
-		case 'q':
+		case 'q': // "vbdq"
 			goto beach;
 			break;
-		case ']':
+		case ']': // "vbd]"
 			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
 			break;
-		case '[':
+		case '[': // "vbd]"
 			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
 			break;
-		case 'J':
+		case 'J': // "vbdJ"
 			delta += 10;
 			break;
-		case 'K':
+		case 'K': // "vbdK"
 			delta -= 10;
 			if (delta < 0) {
 				delta = 0;
 			}
-		case 'j':
+		case 'j': // "vbdj"
 			delta++;
 			break;
 		case 'k':
@@ -3547,11 +3548,11 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 				delta = 0;
 			}
 			break;
-		case ':':
+		case ':': // "vbd:"
 			r_core_visual_prompt (core);
 			r_cons_any_key (NULL);
 			break;
-		case '?':
+		case '?': // "vbd?"
 			r_core_visual_debugtraces_help (core);
 			break;
 		}
@@ -3630,7 +3631,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case '?':
 			r_cons_clear00 ();
 			RStrBuf *rsb = r_strbuf_new ("");
-			r_core_visual_append_help (rsb, "Functions/Variables Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
+			r_core_visual_append_help (rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
 			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
 			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
 			r_cons_less_str (r_strbuf_get (rsb), "?");
@@ -3680,6 +3681,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case 'r':
 			{
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (!f) {
+					r_cons_any_key ("No function found in the current offset");
+					break;
+				}
 				switch (level) {
 				case 1:
 					r_cons_show_cursor (true);
@@ -3706,6 +3712,9 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				r_cons_show_cursor (false);
 			}
 			break;
+		case 'R': // "VvR"
+			r_core_cmd0 (core, "ecn");
+			break;
 		case 't':
 			if (level == 1) {
 				r_cons_show_cursor (true);
@@ -3724,9 +3733,6 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case '.':
 			delta = 0;
 			break;
-		case 'R':
-			r_core_cmd0 (core, "ecn");
-			break;
 		case 'p':
 			printMode ++;
 			break;
@@ -3737,24 +3743,31 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				printMode --;
 			}
 			break;
-		case 'd':
+		case 'd': // "Vvd"
 			r_core_visual_define (core, "", 0);
 			break;
-		case '-':
+		case '-': // "Vv-"
 			switch (level) {
 			case 0:
 				r_core_cmdf (core, "af-0x%"PFMT64x, addr);
 				break;
 			}
 			break;
-		case 'x':
+		case 'x': // "Vvx"
 			r_core_visual_refs (core, false, true);
 			break;
-		case 'X':
+		case 'X': // "VvX"
 			r_core_visual_refs (core, true, true);
 			break;
-		case 's':
-			r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
+		case 's': // "Vvs"
+			{
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (f) {
+					r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
+				} else {
+					r_cons_any_key ("No function found in the current offset");
+				}
+			}
 			break;
 		case 'c':
 			level = 2;
@@ -4357,8 +4370,15 @@ onemoretime:
 		handleHints (core);
 		break;
 	case 'r': // "Vdr"
-		r_core_cmdf (core, "cls;pd 10 @ 0x%08"PFMT64x, off);
-		r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
+		{
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (f) {
+				r_core_cmdf (core, "cls;pd 10 @ 0x%08"PFMT64x, off);
+				r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
+			} else {
+				r_cons_any_key ("No function found in the current offset");
+			}
+		}
 		break;
 	case 'z': // "Vdz"
 		r_core_cmdf (core, "?i zone name;fz `yp` @ 0x%08"PFMT64x, off);
