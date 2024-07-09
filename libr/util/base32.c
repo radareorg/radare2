@@ -91,12 +91,13 @@ R_API ut8 *r_base32_decode(const char *data, size_t input_length, size_t *output
 
 R_API char *base32_encode_ut64(ut64 input) {
 	size_t encoded_size = 13; // Maximum 13 characters for 64-bit input
-	char *encoded_data = (char *)malloc(encoded_size + 1);
+	char *encoded_data = (char *)malloc (encoded_size + 1);
 	if (!encoded_data) {
 		return NULL;
 	}
 
-	for (int i = 12; i >= 0; i--) {
+	int i;
+	for (i = 12; i >= 0; i--) {
 		encoded_data[i] = base32_alphabet[input & 0x1F];
 		input >>= 5;
 	}
@@ -108,8 +109,9 @@ R_API char *base32_encode_ut64(ut64 input) {
 // Decode function for ut64
 R_API ut64 base32_decode_ut64(const char *input) {
 	ut64 decoded_value = 0;
-	for (int i = 0; i < 13; i++) {
-		int index = base32_char_index(toupper(input[i]));
+	int i;
+	for (i = 0; i < 13; i++) {
+		int index = base32_char_index (toupper (input[i]));
 		if (index == -1) {
 			return 0;
 		}
