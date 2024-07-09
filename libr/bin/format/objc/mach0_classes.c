@@ -835,7 +835,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 				name = malloc (name_len + 1);
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				name[name_len] = 0;
-				eprintf ("%d %d\n", name_len, strlen (name));
+				// eprintf ("%d %d\n", name_len, strlen (name));
 				if (len < 1) {
 					goto error;
 				}
@@ -1866,7 +1866,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			num_of_unnamed_class++;
 		}
 		if (strlen (klass->name) > 512) {
-			eprintf ("Invalid class name, probably corrupted binary\n");
+			R_LOG_INFO ("Invalid class name, probably corrupted binary");
 			break;
 		}
 		r_list_append (ret, klass);

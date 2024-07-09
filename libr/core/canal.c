@@ -89,9 +89,27 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
+static void init_addr2klass(RCore *core, RBinObject *bo) {
+	if (bo->addr2klassmethod) {
+		return;
+	}
+	RList *klasses = bo->classes;
+	RListIter *iter, *iter2;
+	RBinClass *klass;
+	RBinSymbol *method;
+	// this is slow. must be optimized, but at least its cached
+	bo->addr2klassmethod = ht_up_new0 ();
+	r_list_foreach (klasses, iter, klass) {
+		r_list_foreach (klass->methods, iter2, method) {
+			ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
+		}
+	}
+}
+
 static char *get_function_name(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->bo) {
+		init_addr2klass (core, bf->bo);
 		RBinSymbol *sym = ht_up_find (bf->bo->addr2klassmethod, addr, NULL);
 		if (sym && sym->classname && sym->name) {
 			const char *sym_name = r_bin_name_tostring (sym->name);

@@ -268,16 +268,11 @@ static void filter_classes(RBinFile *bf, RList *list) {
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
 		if (R_STR_ISEMPTY (fname)) {
-			R_LOG_WARN ("Corrupted class storage");
+			R_LOG_INFO ("Corrupted class storage with nameless classes");
 			break;
-#if 0
-			R_LOG_DEBUG ("Invalid class, must be removed");
-			continue;
-#endif
-		} else {
-			r_bin_name_update (cls->name, fname);
-			free (fname);
 		}
+		r_bin_name_update (cls->name, fname);
+		free (fname);
 		r_list_foreach (cls->methods, iter2, sym) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}
@@ -332,7 +327,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
 	bf->bo = bo;
 
-#if 0
 	bo->info = p->info? p->info (bf): NULL;
 	if (bo->info && bo->info->type) {
 		if (strstr (bo->info->type, "CORE")) {
@@ -344,7 +338,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
-#endif
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential
 	// inconsistencies
@@ -458,6 +451,8 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 		// cache addr=class+method
 #if 0
+		// moved into libr/core/canal.c
+		// XXX SLOW on large binaries. only used when needed by getFunctionName from canal.c
 		if (bo->classes) {
 			RList *klasses = bo->classes;
 			RListIter *iter, *iter2;
