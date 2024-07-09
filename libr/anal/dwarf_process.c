@@ -61,7 +61,7 @@ static void variable_free(Variable *var) {
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	st32 i;
-	r_return_val_if_fail (die, -1);
+	R_RETURN_VAL_IF_FAIL (die, -1);
 	for (i = 0; i < die->count; i++) {
 		if (die->attr_values[i].attr_name == attr_name) {
 			return i;
@@ -73,7 +73,7 @@ static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 /* return NULL if attr isn't found */
 static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
 	st32 i;
-	r_return_val_if_fail (die, NULL);
+	R_RETURN_VAL_IF_FAIL (die, NULL);
 	for (i = 0; i < die->count; i++) {
 		if (die->attr_values[i].attr_name == attr_name) {
 			return &die->attr_values[i];
@@ -91,7 +91,7 @@ static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
  * @param c
  */
 static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
 	size_t l = strlen (s);
 	// fast path if no chars to append
 	if (l == 0) {
@@ -125,7 +125,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
  * @param needle
  */
 static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needle) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
 	size_t l = strlen (s);
 	// fast path if no chars to append
 	if (l == 0) {
@@ -257,7 +257,7 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
  * multiple times which means it's parsed multiple times instead of once
  */
 static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
-	r_return_val_if_fail (strbuf, -1);
+	R_RETURN_VAL_IF_FAIL (strbuf, -1);
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
 	if (!die) {
 		return -1;
@@ -391,7 +391,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
  * @return RAnalStructMember* ptr to parsed Member
  */
 static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStructMember *result) {
-	r_return_val_if_fail (result, NULL);
+	R_RETURN_VAL_IF_FAIL (result, NULL);
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
 	char *name = NULL;
@@ -1138,7 +1138,7 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 	case 30: return "r30";
 	case 31: return "r31";
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
@@ -1375,7 +1375,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 				address = r_read_ble64 (dump, be);
 				break;
 			default:
-				r_warn_if_reached (); /* weird addr_size */
+				R_WARN_IF_REACHED (); /* weird addr_size */
 				return NULL;
 			}
 			kind = LOCATION_GLOBAL; // address
@@ -1678,7 +1678,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		r_strbuf_append (&ret_type, "void");
 	}
 
-	r_warn_if_fail (ctx->lang);
+	R_WARN_IF_FAIL (ctx->lang);
 	if (ctx->anal->binb.demangle) {
 		char *mangled_name = fcn.name;
 		char *demangled_name = ctx->anal->binb.demangle (NULL, ctx->lang, mangled_name, fcn.addr, false);
@@ -1711,7 +1711,7 @@ cleanup:
  * @return char* string literal language represantation for demangling BinDemangle
  */
 static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
-	r_return_val_if_fail (die, NULL);
+	R_RETURN_VAL_IF_FAIL (die, NULL);
 
 	int idx = find_attr_idx (die, DW_AT_language);
 	const char *lang = "cxx"; // default fallback
@@ -1720,10 +1720,9 @@ static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 		return lang;
 	}
 	const RBinDwarfAttrValue *val = &die->attr_values[idx];
-	r_warn_if_fail (val->kind == DW_AT_KIND_CONSTANT);
+	R_WARN_IF_FAIL (val->kind == DW_AT_KIND_CONSTANT);
 
-	switch (val->uconstant)
-	{
+	switch (val->uconstant) {
 	case DW_LANG_Java:
 		return "java";
 	case DW_LANG_ObjC:
@@ -1771,7 +1770,7 @@ static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
  * @param idx index of the current entry
  */
 static void parse_type_entry(Context *ctx, ut64 idx) {
-	r_return_if_fail (ctx);
+	R_RETURN_IF_FAIL (ctx);
 
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 	switch (die->tag) {
@@ -1808,7 +1807,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @param ctx
  */
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) {
-	r_return_if_fail (ctx && anal);
+	R_RETURN_IF_FAIL (ctx && anal);
 	Sdb *dwarf_sdb = sdb_ns (anal->sdb, "dwarf", 1);
 	size_t i, j;
 	const RBinDwarfDebugInfo *info = ctx->info;
@@ -1843,7 +1842,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param dwarf_sdb
  */
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb) {
-	r_return_if_fail (anal && dwarf_sdb);
+	R_RETURN_IF_FAIL (anal && dwarf_sdb);
 
 	/* get all entries with value == func */
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
@@ -1903,17 +1902,18 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			} else if (*kind == 's' && fcn) {
 				r_anal_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
 			} else if (*kind == 'r' && fcn) {
-				RRegItem *i = r_reg_get (anal->reg, extra, -1);
-				if (!i) {
+				RRegItem *ri = r_reg_get (anal->reg, extra, -1);
+				if (ri) {
+					r_anal_function_set_var (fcn, ri->index, *kind, type, 4, false, var_name);
+				} else {
 					goto loop_end;
 				}
-				r_anal_function_set_var (fcn, i->index, *kind, type, 4, false, var_name);
 			} else if (fcn) { /* kind == 'b' */
 				r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
+		loop_end:
 			free (var_key);
 			free (var_data);
-		loop_end:
 			sdb_aforeach_next (var_name);
 		}
 		free (var_names_key);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - jfrankowski, pancake */
+/* radare - LGPL - Copyright 2014-2024 - jfrankowski, pancake */
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
 /* thanks LemonBoy for the improved research on rheax original work */
@@ -384,7 +384,7 @@ static ut32 read_word(RFlirt *f) {
 }
 
 static ut16 read_max_2_bytes(RFlirt *f) {
-	ut16 r = read_byte (f);
+	const ut16 r = read_byte (f);
 	return (r & 0x80) ? ((r & 0x7f) << 8) + read_byte (f) : r;
 }
 
