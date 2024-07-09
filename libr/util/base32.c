@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
-#include <r_base32.h>
+#include <r_util/r_base32.h>
 
 #if R2_USE_NEW_ABI
 static const char base32_alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
