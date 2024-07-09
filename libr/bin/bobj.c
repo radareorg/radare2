@@ -258,7 +258,8 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	return bo;
 }
 
-static void filter_classes(RBinFile *bf, RList *list) {
+static bool filter_classes(RBinFile *bf, RList *list) {
+	bool rc = true;
 	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
@@ -269,16 +270,23 @@ static void filter_classes(RBinFile *bf, RList *list) {
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
 		if (R_STR_ISEMPTY (fname)) {
 			R_LOG_INFO ("Corrupted class storage with nameless classes");
+			rc = false;
 			break;
 		}
 		r_bin_name_update (cls->name, fname);
 		free (fname);
 		r_list_foreach (cls->methods, iter2, sym) {
-			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+			if (R_LIKELY (sym->name)) {
+				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+			} else {
+				R_LOG_INFO ("Unnamed method. Assuming corrupted storage");
+				break;
+			}
 		}
 	}
 	ht_su_free (db);
 	ht_pp_free (ht);
+	return rc;
 }
 
 static RRBTree *list2rbtree(RList *relocs) {
