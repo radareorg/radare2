@@ -3869,6 +3869,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zign.maxsz", 500, "maximum zignature length");
 	SETI ("zign.minsz", 16, "minimum zignature length for matching");
 	SETI ("zign.mincc", 10, "minimum cyclomatic complexity for matching");
+	SETBPREF ("zign.dups", "false", "allow duplicate zignatures");
 	SETBPREF ("zign.graph", "true", "use graph metrics for matching");
 	SETBPREF ("zign.bytes", "true", "use bytes patterns for matching");
 	SETBPREF ("zign.offset", "false", "use original offset for matching");
