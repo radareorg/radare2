@@ -1572,7 +1572,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 }
 
 static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	if (!fcn) {
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
 	}
@@ -3704,7 +3704,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 
 /* TODO: move into r_anal_function_rename (); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
-	r_return_val_if_fail (core && _name, false);
+	R_RETURN_VAL_IF_FAIL (core && _name, false);
 	bool ret = false;
 	char *name = getFunctionName (core, addr, r_str_trim_head_ro (_name), prefix);
 	char *fname = r_name_filter_dup (name);
@@ -4346,7 +4346,7 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 }
 
 static void cmd_afbd(RCore *core, const char *input) {
-	r_return_if_fail (core && input);
+	R_RETURN_IF_FAIL (core && input);
 	ut64 addr = core->offset;
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (!f) {
@@ -4391,7 +4391,7 @@ static void cmd_afbd(RCore *core, const char *input) {
 }
 
 static void cmd_afbc(RCore *core, const char *input) {
-	r_return_if_fail (core && input);
+	R_RETURN_IF_FAIL (core && input);
 	char *ptr = strdup (input);
 	if (!ptr) {
 		return;
@@ -7008,7 +7008,7 @@ tail_return:
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	r_return_val_if_fail (core && core->anal, false);
+	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
 #if 0
 	if (!core->anal->esil || !core->anal->esil->trace) {
 		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
@@ -8099,7 +8099,7 @@ static char *_aeg_get_body(void *data, void *user) {
 }
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
-	r_return_if_fail (core && argc >= 0 && argv);
+	R_RETURN_IF_FAIL (core && argc >= 0 && argv);
 	RAGraphTransitionCBs cbs = {
 		.get_title = _aeg_get_title,
 		.get_body = _aeg_get_body
@@ -8188,7 +8188,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1],
 				r_config_get_b (core->config, "esil.dfg.mapinfo"),
 				r_config_get_b (core->config, "esil.dfg.maps"));
-			r_return_if_fail (dfg);
+			R_RETURN_IF_FAIL (dfg);
 			agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
 			r_anal_esil_dfg_free (dfg);
 		}
@@ -8710,7 +8710,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		{
 			int argc;
 			char **argv = r_str_argv (input, &argc);
-			r_return_if_fail (argv);
+			R_RETURN_IF_FAIL (argv);
 			cmd_aeg (core, argc, argv);
 			int i;
 			for (i = 0; i < argc; i++) {
@@ -12141,7 +12141,7 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 
 static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf) {
 	if (b->switch_op) {
-		r_return_val_if_fail (b->switch_op->cases, false);
+		R_RETURN_VAL_IF_FAIL (b->switch_op->cases, false);
 		RListIter *itt;
 		RAnalCaseOp *c;
 		r_list_foreach (b->switch_op->cases, itt, c) {
@@ -12793,12 +12793,12 @@ static bool archIsThumbable(RCore *core) {
 	return false;
 }
 
-static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	bool asterisk = user;
-	int arch_align = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+static void aav_cb(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
+	const bool asterisk = user;
+	const int arch_align = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
-	int searchAlign = r_config_get_i (core->config, "search.align");
-	int align = (searchAlign > 0)? searchAlign: arch_align;
+	const int search_align = r_config_get_i (core->config, "search.align");
+	const int align = (search_align > 0)? search_align: arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
 			bool itsFine = false;
@@ -12818,6 +12818,9 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 	if (!vinfun) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
 		if (fcn) {
+			if (core->anal->verbose) {
+				R_LOG_WARN ("aav: skipping dword in function at 0x%08"PFMT64x, from);
+			}
 			return;
 		}
 	}
@@ -12830,9 +12833,8 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
-			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
+			r_strf_var (name, 64, "aav.0x%08"PFMT64x, to);
 			r_flag_set (core->flags, name, to, vsize);
-			free (name);
 		}
 	}
 }
@@ -12862,19 +12864,17 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 }
 
 static void cmd_anal_aav(RCore *core, const char *input) {
-#define seti(x,y) r_config_set_i(core->config, x, y);
-#define geti(x) r_config_get_i(core->config, x);
-	r_return_if_fail (*input == 'v');
+	R_RETURN_IF_FAIL (*input == 'v');
 	const bool relative = input[1] == 'r';
 	const bool verbose = input[1] != 'q';
 	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0');
-	ut64 o_align = geti ("search.align");
+	ut64 o_align = r_config_get_i (core->config, "search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	const bool is_debug = r_config_get_b (core->config, "cfg.debug");
 	int archAlign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
-	seti ("search.align", archAlign);
+	r_config_set_i (core->config, "search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
 
 	int vsize = 4; // 32bit dword
@@ -12900,7 +12900,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				continue;
 			}
 			(void)r_core_search_value_in_range (core, relative, map->itv,
-				from, r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
+				from, r_io_map_end (map), vsize, aav_cb, (void *)(size_t)asterisk);
 		}
 		r_list_free (list);
 	} else {
@@ -12943,16 +12943,16 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				if (verbose) {
 					R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
 				}
-				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
+				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, aav_cb, (void *)(size_t)asterisk);
 			}
 		}
 		r_list_free (list);
 	}
 beach:
 	r_cons_break_pop ();
+	r_config_set_i (core->config, "search.align", o_align);
 	r_config_set (core->config, "anal.in", tmp);
 	free (tmp);
-	seti ("search.align", o_align);
 }
 
 static void cmd_anal_abtn(RCore *core, const char *input) {
@@ -13150,7 +13150,7 @@ static bool is_apple_target(RCore *core) {
 		return false;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
-	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->meta.name), false);
+	R_RETURN_VAL_IF_FAIL (!bo || (bo->plugin && bo->plugin->meta.name), false);
 	return bo? strstr (bo->plugin->meta.name, "mach"): false;
 }
 
@@ -13856,14 +13856,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 
-				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
-					logline (core, 68, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
-					int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
-					if (!isvm) {
-						r_core_cmd_call (core, "aavq");
-					}
-					r_core_task_yield (&core->tasks);
-				}
 				bool run_aaef = r_config_get_b (core->config, "anal.emu");
 				if (r_str_startswith (asm_arch, "x86") || r_str_startswith (asm_arch, "hex")) {
 					// hackaround
@@ -13945,16 +13937,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				// apply dwarf function information
 				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
 				if (dwarf_sdb) {
-					logline (core, 95, "Integrate dwarf function information");
+					logline (core, 94, "Integrate dwarf function information");
 					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
 				}
 
 				if (input[1] == 'a') { // "aaaa"
-					logline (core, 96, "Scanning for strings constructed in code (/azs)");
+					logline (core, 95, "Scanning for strings constructed in code (/azs)");
 					r_core_cmd_call (core, "/azs");
 					if (!didAap) {
 						didAap = true;
-						logline (core, 90, "Finding function preludes (aap)");
+						logline (core, 96, "Finding function preludes (aap)");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_core_task_yield (&core->tasks);
 					}
@@ -13969,6 +13961,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
+				}
+				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
+					logline (core, 99, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
+					int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+					if (!isvm) {
+						r_core_cmd_call (core, "aavq");
+					}
+					r_core_task_yield (&core->tasks);
 				}
 				r_core_cmd_call (core, "s-");
 				if (dh_orig) {
