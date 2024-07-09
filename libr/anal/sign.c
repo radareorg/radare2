@@ -948,8 +948,10 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	const RSpace *sp = r_spaces_current (&a->zign_spaces);
 	char *prev_name = NULL;
 	r_cons_break_push (NULL, NULL);
-	RCore *core = a->coreb.core;
-	bool do_mangled = a->coreb.cfggeti (core, "zign.mangled");
+	RCoreBind cb = a->coreb;
+	RCore *core = cb.core;
+	bool do_mangled = cb.cfggeti (core, "zign.mangled");
+	bool zign_dups = cb.cfggeti (core, "zign.dups");
 	r_list_foreach_prev (a->fcns, iter, fcn) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -958,6 +960,12 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 		RSignItem *it = NULL;
 		if (merge || !name_exists (a->sdb_zigns, realname, sp)) {
 			it = item_from_func (a, fcn, realname);
+		} else if (zign_dups) {
+			char *name = get_unique_name (a->sdb_zigns, fcn->name, sp);
+			if (name) {
+				it = item_from_func (a, fcn, name);
+			}
+			free (name);
 		}
 		free (realname);
 		if (it) {
