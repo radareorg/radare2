@@ -89,6 +89,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+// R2_600 typedef int RPerm;
 
 
 // HACK to fix capstone-android-mips build
