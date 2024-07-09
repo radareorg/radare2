@@ -835,12 +835,16 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 				name = malloc (name_len + 1);
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				name[name_len] = 0;
+				// eprintf ("%d %d\n", name_len, strlen (name));
 				if (len < 1) {
 					goto error;
 				}
 			}
 			if (class_name) { // XXX to save memory we can just ref the RBinName instance from the class
 				method->classname = strdup (class_name);
+			} else {
+				R_LOG_ERROR ("Invalid class name for method. Avoid parsing invalid data");
+				goto error;
 			}
 			method->name = r_bin_name_new (name);
 			R_FREE (name);
@@ -1293,6 +1297,8 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			return;
 		}
 		if (bin->has_crypto) {
+			R_LOG_ERROR ("Not parsing encrypted data");
+			return;
 			const char kn[] = "some_encrypted_data";
 			klass->name = r_bin_name_new (kn);
 			// klass->name = strdup ("some_encrypted_data");
@@ -1853,7 +1859,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
 		MACH0_(get_class_t) (bf, klass, p, false, relocs, oi);
-		if (!klass->name) {
+		if (klass->name) {
+			const char *klass_name = r_bin_name_tostring (klass->name);
+			if (strlen (klass_name) > 512) {
+				R_LOG_INFO ("Invalid class name, probably corrupted binary");
+				break;
+			}
+		} else {
 			char *klass_name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			klass->name = r_bin_name_new (klass_name);
 			free (klass_name);
@@ -2049,6 +2061,10 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 	R_FREE (category_name);
 
 	const char *klass_name = r_bin_name_tostring (klass->name);
+	if (R_STR_ISEMPTY (klass_name)) {
+		R_LOG_ERROR ("Invalid class name");
+		return;
+	}
 	if (c.instanceMethods > 0) {
 		get_method_list (bf, klass, klass_name, false, oi, c.instanceMethods);
 	}
