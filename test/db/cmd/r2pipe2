@@ -41,7 +41,7 @@ EXPECT=<<EOF
 {
   "res": ,
   "error": false,
-  "value": 8,
+  "value": 0,
   "code": 0,
   "logs": [
     {
@@ -92,11 +92,6 @@ EXPECT=<<EOF
     {
       "type": "WARN",
       "origin": "logline",
-      "message": "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)"
-    },
-    {
-      "type": "WARN",
-      "origin": "logline",
       "message": "Emulate functions to find computed references (aaef)"
     },
     {
@@ -118,6 +113,11 @@ EXPECT=<<EOF
       "type": "WARN",
       "origin": "cmd_anal_all",
       "message": "Use -AA or aaaa to perform additional experimental analysis"
+    },
+    {
+      "type": "WARN",
+      "origin": "logline",
+      "message": "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)"
     }
   ],
   "code": 0
