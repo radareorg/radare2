@@ -174,7 +174,7 @@ jobs:
         meson -Dnogpl=true build-nogpl
         ninja -C build-nogpl
   macos-test:
-    runs-on: macos-11
+    runs-on: macos-12
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -210,7 +210,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: macos-rpath
     continue-on-error: true
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
     - name: Checkout
       uses: actions/checkout@v3
