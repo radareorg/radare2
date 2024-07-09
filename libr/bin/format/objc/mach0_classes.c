@@ -1859,15 +1859,17 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
 		MACH0_(get_class_t) (bf, klass, p, false, relocs, oi);
-		if (!klass->name) {
+		if (klass->name) {
+			const char *klass_name = r_bin_name_tostring (klass->name);
+			if (strlen (klass_name) > 512) {
+				R_LOG_INFO ("Invalid class name, probably corrupted binary");
+				break;
+			}
+		} else {
 			char *klass_name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			klass->name = r_bin_name_new (klass_name);
 			free (klass_name);
 			num_of_unnamed_class++;
-		}
-		if (strlen (klass->name) > 512) {
-			R_LOG_INFO ("Invalid class name, probably corrupted binary");
-			break;
 		}
 		r_list_append (ret, klass);
 	}
