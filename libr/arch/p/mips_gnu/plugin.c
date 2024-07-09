@@ -1536,6 +1536,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		insn.i_reg.rt = mips_reg_decode (rt);
 		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%" PFMT32d, imm);
 
+		// eprintf ("OPTYPE %d\n", optype);
 		RAnalValue *src, *dst;
 		switch (optype) {
 		case 1:
@@ -1611,6 +1612,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			dst = r_vector_push (&op->dsts, NULL);
@@ -1650,8 +1652,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			break;
 		case 10: // slti
 			insn.id = MIPS_INS_SLTI;
+			op->type = R_ANAL_OP_TYPE_CMOV; // maybe cmp too?
 			break;
 		case 11: // sltiu
+			op->type = R_ANAL_OP_TYPE_CMOV; // maybe cmp too?
 			insn.id = MIPS_INS_SLTIU;
 			break;
 		case 12: // andi
