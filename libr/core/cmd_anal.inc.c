@@ -1572,7 +1572,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 }
 
 static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	if (!fcn) {
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
 	}
@@ -3704,7 +3704,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 
 /* TODO: move into r_anal_function_rename (); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
-	r_return_val_if_fail (core && _name, false);
+	R_RETURN_VAL_IF_FAIL (core && _name, false);
 	bool ret = false;
 	char *name = getFunctionName (core, addr, r_str_trim_head_ro (_name), prefix);
 	char *fname = r_name_filter_dup (name);
@@ -4346,7 +4346,7 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 }
 
 static void cmd_afbd(RCore *core, const char *input) {
-	r_return_if_fail (core && input);
+	R_RETURN_IF_FAIL (core && input);
 	ut64 addr = core->offset;
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (!f) {
@@ -4391,7 +4391,7 @@ static void cmd_afbd(RCore *core, const char *input) {
 }
 
 static void cmd_afbc(RCore *core, const char *input) {
-	r_return_if_fail (core && input);
+	R_RETURN_IF_FAIL (core && input);
 	char *ptr = strdup (input);
 	if (!ptr) {
 		return;
@@ -7008,7 +7008,7 @@ tail_return:
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	r_return_val_if_fail (core && core->anal, false);
+	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
 #if 0
 	if (!core->anal->esil || !core->anal->esil->trace) {
 		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
@@ -8099,7 +8099,7 @@ static char *_aeg_get_body(void *data, void *user) {
 }
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
-	r_return_if_fail (core && argc >= 0 && argv);
+	R_RETURN_IF_FAIL (core && argc >= 0 && argv);
 	RAGraphTransitionCBs cbs = {
 		.get_title = _aeg_get_title,
 		.get_body = _aeg_get_body
@@ -8188,7 +8188,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1],
 				r_config_get_b (core->config, "esil.dfg.mapinfo"),
 				r_config_get_b (core->config, "esil.dfg.maps"));
-			r_return_if_fail (dfg);
+			R_RETURN_IF_FAIL (dfg);
 			agraph = r_agraph_new_from_graph (dfg->flow, &cbs, NULL);
 			r_anal_esil_dfg_free (dfg);
 		}
@@ -8710,7 +8710,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		{
 			int argc;
 			char **argv = r_str_argv (input, &argc);
-			r_return_if_fail (argv);
+			R_RETURN_IF_FAIL (argv);
 			cmd_aeg (core, argc, argv);
 			int i;
 			for (i = 0; i < argc; i++) {
@@ -12141,7 +12141,7 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 
 static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf) {
 	if (b->switch_op) {
-		r_return_val_if_fail (b->switch_op->cases, false);
+		R_RETURN_VAL_IF_FAIL (b->switch_op->cases, false);
 		RListIter *itt;
 		RAnalCaseOp *c;
 		r_list_foreach (b->switch_op->cases, itt, c) {
@@ -12797,7 +12797,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 	bool asterisk = user;
 	int arch_align = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
-	int searchAlign = r_config_get_i (core->config, "search.align");
+	const int searchAlign = r_config_get_i (core->config, "search.align");
 	int align = (searchAlign > 0)? searchAlign: arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
@@ -12864,7 +12864,7 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
-	r_return_if_fail (*input == 'v');
+	R_RETURN_IF_FAIL (*input == 'v');
 	const bool relative = input[1] == 'r';
 	const bool verbose = input[1] != 'q';
 	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0');
@@ -13150,7 +13150,7 @@ static bool is_apple_target(RCore *core) {
 		return false;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
-	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->meta.name), false);
+	R_RETURN_VAL_IF_FAIL (!bo || (bo->plugin && bo->plugin->meta.name), false);
 	return bo? strstr (bo->plugin->meta.name, "mach"): false;
 }
 
