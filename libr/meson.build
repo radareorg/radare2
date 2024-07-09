@@ -479,6 +479,7 @@ r_util_files = [
   'include/r_util/r_asn1.h',
   'include/r_util/r_assert.h',
   'include/r_util/r_axml.h',
+  'include/r_util/r_base32.h',
   'include/r_util/r_base36.h',
   'include/r_util/r_base64.h',
   'include/r_util/r_base91.h',

@@ -19,6 +19,7 @@ r_util_sources = [
   'sstext.c',
   'getopt.c',
   'print_code.c',
+  'base32.c',
   'base36.c',
   'base85.c',
   'base91.c',

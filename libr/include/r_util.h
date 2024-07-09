@@ -36,6 +36,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_new_rbtree.h"
 #include "r_util/r_intervaltree.h"
 #include "r_util/r_big.h"
+#include "r_util/r_base32.h"
 #include "r_util/r_base36.h"
 #include "r_util/r_base64.h"
 #include "r_util/r_base91.h"
