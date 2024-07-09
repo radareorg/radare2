@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
@@ -386,6 +386,7 @@ typedef struct r_anal_options_t {
 	bool slow;
 } RAnalOptions;
 
+// XXX we have cc / calling conventions / abi settings already no need for a custom enum here
 typedef enum {
 	R_ANAL_CPP_ABI_ITANIUM = 0, // default for GCC
 	R_ANAL_CPP_ABI_MSVC
@@ -690,7 +691,6 @@ typedef struct r_esil_word_t {
 	const char *str;
 } REsilWord;
 
-
 enum {
 	R_ANAL_TRAP_NONE = 0,
 	R_ANAL_TRAP_UNHANDLED = 1,
@@ -704,8 +704,6 @@ enum {
 	R_ANAL_TRAP_TODO = 9,
 	R_ANAL_TRAP_HALT = 10,
 };
-
-
 
 typedef struct r_anal_esil_cfg_t {
 	RGraphNode *start;
