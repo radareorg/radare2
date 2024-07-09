@@ -170,9 +170,9 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            macos: 12
+            macos: 13
           - arch: x86_64
-            macos: 11
+            macos: 12
     runs-on: macos-${{ matrix.macos }}
     steps:
     - name: Checkout
@@ -201,7 +201,7 @@ jobs:
         include:
           - type: cydia
             sdk: true
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
     - uses: actions/checkout@v4
     - name: Install pkg-config/ldid2 with Homebrew
