@@ -65,6 +65,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 	return resname;
 }
 
+// R2_600 - return bool for success or not
 R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
 	R_RETURN_IF_FAIL (ht && sym && sym->name);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
