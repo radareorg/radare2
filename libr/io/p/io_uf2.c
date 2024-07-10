@@ -27,21 +27,21 @@ enum UF2_Flags {
 
 typedef struct {
 	// 32 byte header
-	uint32_t magicStart0; // First magic number, 0x0A324655 ("UF2\n")
-	uint32_t magicStart1; // Second magic number, 0x9E5D5157
-	uint32_t flags;
-	uint32_t targetAddr;  // Address in flash where the data should be written
-	uint32_t payloadSize; // Number of bytes used in data (often 256)
-	uint32_t blockNo;     // Sequential block number; starts at 0
-	uint32_t numBlocks;   // Total number of blocks in file
-	uint32_t fileSize;    // File size or board family ID or zero
+	ut32 magicStart0; // First magic number, 0x0A324655 ("UF2\n")
+	ut32 magicStart1; // Second magic number, 0x9E5D5157
+	ut32 flags;
+	ut32 targetAddr;  // Address in flash where the data should be written
+	ut32 payloadSize; // Number of bytes used in data (often 256)
+	ut32 blockNo;     // Sequential block number; starts at 0
+	ut32 numBlocks;   // Total number of blocks in file
+	ut32 fileSize;    // File size or board family ID or zero
 
 	// raw data
-	// uint8_t data[476];    // Data, padded with zeros
-	uint8_t *data;        // Data, padded with zeros
+	// ut8 data[476];    // Data, padded with zeros
+	ut8 *data;        // Data, padded with zeros
 
 	// store magic also at the end to limit damage from partial block reads
-	uint32_t magicEnd;    // Final magic number, 0x0AB16F30
+	ut32 magicEnd;    // Final magic number, 0x0AB16F30
 } UF2_Block;
 
 #if 0
@@ -82,12 +82,12 @@ static void dump(UF2_Block *block) {
 #endif
 
 typedef struct {
-	uint32_t id;
+	ut32 id;
 	char *name;
 	char *desc;
 	char *arch;
 	char *cpu;
-	uint8_t bits;
+	st16 bits;
 } UF2_Family;
 
 // FAMILY_IDs from https://github.com/microsoft/uf2/blob/master/utils/uf2families.json
@@ -147,7 +147,7 @@ static UF2_Family uf2families[] = {
 	{ 0xf71c0343, "ESP32C5", "ESP32-C5", NULL, NULL, -1 },
 };
 
-static int binary_search(UF2_Family *A, uint32_t key, int imin, int imax) {
+static int binary_search(UF2_Family *A, ut32 key, int imin, int imax) {
 	int imid;
 
 	// continually narrow search until just one element remains
@@ -172,7 +172,7 @@ static int binary_search(UF2_Family *A, uint32_t key, int imin, int imax) {
 	return -1;
 }
 
-static void process_family_id(RCore *core, uint32_t family_id) {
+static void process_family_id(RCore *core, ut32 family_id) {
 	const int n = sizeof (uf2families) / sizeof (uf2families[0]);
 	const int idx = binary_search (uf2families, family_id,  0, n - 1);
 	if (idx < 0) {
@@ -206,22 +206,22 @@ static inline int pad(int offset, int n) {
 static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 
 	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
-	uint32_t family_id = 0;
+	ut32 family_id = 0;
 	RCore *core = io->coreb.core;
 	char *comment = NULL;
 
 	UF2_Block block;
 	do {
-		block.magicStart0 = *(uint32_t *)(buf + 0x00); // First magic number, 0x0A324655 ("UF2\n")
-		block.magicStart1 = *(uint32_t *)(buf + 0x04); // Second magic number, 0x9E5D5157
-		block.flags       = *(uint32_t *)(buf + 0x08);
-		block.targetAddr  = *(uint32_t *)(buf + 0x0c); // Address in flash where the data should be written
-		block.payloadSize = *(uint32_t *)(buf + 0x10); // Number of bytes used in data (often 256)
-		block.blockNo     = *(uint32_t *)(buf + 0x14); // Sequential block number; starts at 0
-		block.numBlocks   = *(uint32_t *)(buf + 0x18); // Total number of blocks in file
-		block.fileSize    = *(uint32_t *)(buf + 0x1c); // File size or board family ID or zero
-		block.data        = (uint8_t *)(buf + 0x20); // Raw Data, padded with zeros [476]
-		block.magicEnd    = *(uint32_t *)(buf + 0x1fc); // Final magic number, 0x0AB16F30
+		block.magicStart0 = *(ut32 *)(buf + 0x00); // First magic number, 0x0A324655 ("UF2\n")
+		block.magicStart1 = *(ut32 *)(buf + 0x04); // Second magic number, 0x9E5D5157
+		block.flags       = *(ut32 *)(buf + 0x08);
+		block.targetAddr  = *(ut32 *)(buf + 0x0c); // Address in flash where the data should be written
+		block.payloadSize = *(ut32 *)(buf + 0x10); // Number of bytes used in data (often 256)
+		block.blockNo     = *(ut32 *)(buf + 0x14); // Sequential block number; starts at 0
+		block.numBlocks   = *(ut32 *)(buf + 0x18); // Total number of blocks in file
+		block.fileSize    = *(ut32 *)(buf + 0x1c); // File size or board family ID or zero
+		block.data        = (ut8 *)(buf + 0x20); // Raw Data, padded with zeros [476]
+		block.magicEnd    = *(ut32 *)(buf + 0x1fc); // Final magic number, 0x0AB16F30
 		buf += 512;
 
 		// dump (&block);
@@ -256,7 +256,7 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			// The field fileSize holds the file size of the current file,
 			// and the field targetAddr holds the offset in current file.
 			// The file name is stored at &data[payloadSize] and terminated with a 0x00.
-			uint8_t *file_name = (uint8_t *)(block.data + block.payloadSize);
+			ut8 *file_name = (ut8 *)(block.data + block.payloadSize);
 			R_LOG_WARN ("uf2: Found FILE_CONTAINER flag @ block #%d, TODO"
 					"{ file_name: \"%s\", chunk: %d, total_size: %d, offset: %d }", block.blockNo,
 					file_name, block.payloadSize, block.fileSize, block.targetAddr);
@@ -287,11 +287,11 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 		if ((block.flags & EXTENSION_TAGS) != 0) {
 			// Extension tags can, but don't have to, be repeated in all blocks.
 			R_LOG_WARN ("uf2: Found EXTENSION_TAGS flag @ block #%d", block.blockNo);
-			uint16_t offset = block.payloadSize;
+			ut16 offset = block.payloadSize;
 			while (offset < 476) {
-				uint32_t tag_sz = *(uint32_t *)(block.data + offset);
-				uint32_t tag = (tag_sz >> 8) & 0xffffff;
-				uint8_t size = (uint8_t)(tag_sz & 0xff);
+				ut32 tag_sz = *(ut32 *)(block.data + offset);
+				ut32 tag = (tag_sz >> 8) & 0xffffff;
+				ut8 size = (ut8)(tag_sz & 0xff);
 				switch (tag) {
 				case ETAG_FW_VERSION:
 				case ETAG_FW_CHECKSUM:
