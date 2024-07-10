@@ -1367,6 +1367,9 @@ static mach0_ut get_isa_value(void) {
 
 void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
+	RBin *bin = bf->rbin;
+	bool trylib = bin? bin->demangle_trylib: false;
+	bool usecmd = bin? bin->demangle_usecmd: false;
 	struct MACH0_(SClass) c = {0};
 	const int size = sizeof (struct MACH0_(SClass));
 	ut32 offset = 0, left = 0;
@@ -1449,7 +1452,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 				target_class_name += _objc_class_len;
 				r_bin_name_demangled (sup, target_class_name);
 				if (r_str_startswith (target_class_name, "_T")) {
-					char *dsuper = r_bin_demangle_swift (target_class_name, true, true);
+					char *dsuper = r_bin_demangle_swift (target_class_name, usecmd, trylib);
 					if (dsuper && strcmp (dsuper, target_class_name)) {
 						r_bin_name_demangled (sup, dsuper);
 					}
@@ -1577,6 +1580,9 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		R_LOG_DEBUG ("swift-type-parse missing name");
 		return;
 	}
+	RBin *bin = bf->rbin;
+	bool trylib = bin? bin->demangle_trylib: false;
+	bool usecmd = bin? bin->demangle_usecmd: false;
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
@@ -1584,7 +1590,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		if (*super_name > 5) {
 			klass->super = r_list_newf ((void *)r_bin_name_free);
 			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = r_bin_demangle_swift (super_name, 0, false);
+			char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
 			if (R_STR_ISNOTEMPTY (sname)) {
 				r_bin_name_demangled (bn, sname);
 			}
@@ -1621,7 +1627,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 				rawname = strdup (r_bin_name_tostring (sym->name));
 				method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
 				r_bin_name_filtered (sym->name, method_name);
-				char *dname = r_bin_demangle_swift (method_name, 0, false);
+				char *dname = r_bin_demangle_swift (method_name, usecmd, trylib);
 				if (dname) {
 					r_bin_name_demangled (sym->name, dname);
 					free (sym->name->oname);
@@ -1704,7 +1710,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 				const char *mangled_type = ftype;
 				if (!field->type) {
 					field->type = r_bin_name_new (mangled_type);
-					char *demangled_type = r_bin_demangle_swift (mangled_type, 0, false);
+					char *demangled_type = r_bin_demangle_swift (mangled_type, usecmd, trylib);
 					if (demangled_type) {
 						r_bin_name_demangled (field->type, demangled_type);
 						free (demangled_type);
