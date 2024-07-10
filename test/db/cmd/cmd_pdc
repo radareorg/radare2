@@ -118,7 +118,7 @@ int entry0 (int stack, int stack) {
         var = si - 0
         if  (var > 0) goto loc_0x402018 // unlikely
         goto loc_0x00402042;
-         // } while (?);
+         // while ();
         goto loc_0x00402042;
         }
         return eax;
@@ -170,7 +170,7 @@ int sym.func.100003a54 (int x0, int x1) {
         x1 = x0 + 0x68 // arg1
         x0 = x8
         goto sym.imp.strcoll // int strcoll("", "")
-         // } else {
+         // else
         }
         return x0;
     loc_0x100003a6c: // orphan
