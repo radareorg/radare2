@@ -439,7 +439,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		case '\0':
 			return __infoPointer (dsc, size, R_MODE_PRINT);
 		}
-	} else if (command && command[0] == '?'){
+	} else if (command && command[0] == '?') {
 		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
 		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n\n");
 	}
