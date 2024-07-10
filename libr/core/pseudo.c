@@ -521,9 +521,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (sdb_num_get (db, K_ELSE (bb->addr), 0)) {
 				NEWLINE (addr, indent);
 				if (!strcmp (blocktype, "else")) {
-					PRINTF (" // } %s {", blocktype);
+					PRINTF (" // %s", blocktype);
 				} else {
-					PRINTF (" // } %s (?);", blocktype);
+					PRINTF (" // %s ();", blocktype);
 				}
 			}
 			if (addr != bb->addr) {
