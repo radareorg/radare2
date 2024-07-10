@@ -312,6 +312,7 @@ extern const RArchPlugin r_arch_plugin_mcs96;
 extern const RArchPlugin r_arch_plugin_mips_cs;
 extern const RArchPlugin r_arch_plugin_mips_gnu;
 extern const RArchPlugin r_arch_plugin_msp430;
+extern const RArchPlugin r_arch_plugin_nds32;
 extern const RArchPlugin r_arch_plugin_nios2;
 extern const RArchPlugin r_arch_plugin_null;
 extern const RArchPlugin r_arch_plugin_or1k;
@@ -333,9 +334,11 @@ extern const RArchPlugin r_arch_plugin_sm5xx;
 extern const RArchPlugin r_arch_plugin_snes;
 extern const RArchPlugin r_arch_plugin_sparc_cs;
 extern const RArchPlugin r_arch_plugin_sparc_gnu;
+extern const RArchPlugin r_arch_plugin_stm8;
 extern const RArchPlugin r_arch_plugin_tms320;
 extern const RArchPlugin r_arch_plugin_tricore;
 extern const RArchPlugin r_arch_plugin_tricore_cs;
+extern const RArchPlugin r_arch_plugin_uxn;
 extern const RArchPlugin r_arch_plugin_v810;
 extern const RArchPlugin r_arch_plugin_v850;
 extern const RArchPlugin r_arch_plugin_vax;
@@ -345,11 +348,9 @@ extern const RArchPlugin r_arch_plugin_x86_cs;
 extern const RArchPlugin r_arch_plugin_x86_nasm;
 extern const RArchPlugin r_arch_plugin_x86_nz;
 extern const RArchPlugin r_arch_plugin_xap;
-extern const RArchPlugin r_arch_plugin_stm8;
 extern const RArchPlugin r_arch_plugin_xcore_cs;
 extern const RArchPlugin r_arch_plugin_xtensa;
 extern const RArchPlugin r_arch_plugin_z80;
-extern const RArchPlugin r_arch_plugin_nds32;
 
 #ifdef __cplusplus
 }
