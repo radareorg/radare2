@@ -564,6 +564,14 @@ export CC="ccache gcc"
 This will automatically detect when files do not need to recompiled and avoid
 unnecessary work.
 
+Huge increase in recompilation speed could also be achieved by recompilating only modified modules (directories) by using:
+
+```sh
+make
+```
+
+while inside a modified module (eg: `libr/core`).
+
 ## Repeated installation
 
 There is an alternative installation method for radare2 to make it easier to
