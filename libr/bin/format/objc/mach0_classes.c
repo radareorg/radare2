@@ -1101,39 +1101,10 @@ static inline const char *skipnum(const char *s) {
 	return s;
 }
 
-// TODO: split up between module + classname
-static char *demangle_classname(const char *s) {
-	const char *kstr;
-	char *ret, *klass;
+static char *demangle_classname(RBin *rbin, const char *s) {
+	char *ret;
 	if (r_str_startswith (s, "_TtC")) {
-		int off = 4;
-		// TODO while (s[off] && !isdigit(s[off]))
-		while (s[off] && (s[off] < '0' || s[off] > '9')) {
-			off++;
-		}
-		size_t len = atoi (s + off);
-		size_t modlen = strlen (s + off);
-		if (!len || len >= modlen) {
-			return strdup (s);
-		}
-		char *module = r_str_ndup (skipnum (s + off), len);
-		int skip = skipnum (s + off) - s + len;
-		if (s[skip] == 'P') {
-			skip++;
-			len = atoi (s + skip);
-			skip = skipnum (s + skip) - s + len;
-		}
-		kstr = s + skip;
-		len = atoi (kstr);
-		modlen = strlen (kstr);
-		if (!len || len >= modlen) {
-			free (module);
-			return strdup (s);
-		}
-		klass = r_str_ndup (skipnum (kstr), len);
-		ret = r_str_newf ("%s.%s", module, klass);
-		free (module);
-		free (klass);
+		ret = r_bin_demangle_swift (s, rbin->demangle_usecmd, rbin->demangle_trylib);
 	} else {
 		ret = strdup (s);
 	}
@@ -1214,10 +1185,10 @@ static char *get_class_name(RBinFile *bf, mach0_ut p) {
 			rc = 0;
 		}
 		name[sizeof (name) - 1] = 0;
-		return strdup (name); // demangle_classname (name);
+		return strdup (name);
 #else
 		ut32 off = r;
-		return readstr (bf, name, &off, &left); // demangle_classname (name);
+		return readstr (bf, name, &off, &left);
 #endif
 	}
 	return NULL;
@@ -1314,7 +1285,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			}
 			name[rc] = 0;
 			klass->name = r_bin_name_new (name);
-			char *dn = demangle_classname (name);
+			char *dn = demangle_classname (bf->rbin, name);
 			if (dn) {
 				r_bin_name_demangled (klass->name, dn);
 				free (dn);
@@ -1424,7 +1395,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 				klass->super = r_list_newf ((void *)r_bin_name_free);
 			}
 			RBinName *bn = r_bin_name_new (klass_name);
-			char *dn = demangle_classname (klass_name);
+			char *dn = demangle_classname (bf->rbin, klass_name);
 #if 0
 			// avoid registering when demangled baseklass == demangled superklass
 			const char *base_klass_name = r_bin_name_tostring2 (klass->name, 'd');
@@ -1672,6 +1643,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			free (method_name);
 		}
 	}
+	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 	r_list_append (list, klass);
 
 	if (st.fields != UT64_MAX) {
@@ -1879,6 +1851,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			free (klass_name);
 			num_of_unnamed_class++;
 		}
+		klass->index = r_list_length (bf->bo->classes) + r_list_length (ret);
 		r_list_append (ret, klass);
 	}
 	metadata_sections_fini (&ms);
@@ -1945,6 +1918,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		//	free (klass->name);
 		//	klass->name = name;
 		}
+		klass->index = r_list_length (bf->bo->classes) + r_list_length (ret);
 		r_list_append (ret, klass);
 	}
 	return ret;
@@ -2053,7 +2027,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 		if (target_class_name) {
 			char *kname = r_str_newf ("%s(%s)", target_class_name, category_name);
 			klass->name = r_bin_name_new (kname);
-			char *demangled = demangle_classname (target_class_name);
+			char *demangled = demangle_classname (bf->rbin, target_class_name);
 			if (demangled) {
 				char *dname = r_str_newf ("%s(%s)", demangled, category_name);
 				r_bin_name_demangled (klass->name, dname);

@@ -1535,6 +1535,7 @@ static RList *classes(RBinFile *bf) {
 					free (kname);
 					num_of_unnamed_class++;
 				}
+				klass->index = r_list_length (ret);
 				r_list_append (ret, klass);
 			}
 
