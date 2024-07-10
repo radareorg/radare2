@@ -80,6 +80,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "fdv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "fml", "# = # * #", { 1, 2, 3 } },
 		{ 2, "ldr", "# = #", { 1, 2 } },
+		{ 0, "ldur", "# = # #", { 1, 2, 3 } },
 		{ 2, "ldrh", "# = (word) #", { 1, 2 } },
 		{ 3, "ldrh", "# = (word) # + #", { 1, 2, 3 } },
 		{ 3, "ldruh", "# = (uword) # + #", { 1, 2, 3 } },
