@@ -16,6 +16,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
+		{ 2, "uxtb", "# = #", { 1, 2 } },
 		{ 0, "abs", "# = abs(#)", { 1, 1 } },
 		{ 0, "adc", "# = # + #", { 1, 2, 3 } },
 		{ 3, "add", "# = # + #", { 1, 2, 3 } },
@@ -79,8 +80,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "sxth", "# = (short) #", { 1, 2 } },
 		{ 0, "fdv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "fml", "# = # * #", { 1, 2, 3 } },
+		{ 3, "ldurb", "# = (byte) # #", { 1, 2, 3 } },
+		{ 3, "ldur", "# = # #", { 1, 2, 3 } },
+		{ 3, "ldursw", "# = # #", { 1, 2, 3 } },
 		{ 2, "ldr", "# = #", { 1, 2 } },
-		{ 0, "ldur", "# = # #", { 1, 2, 3 } },
 		{ 2, "ldrh", "# = (word) #", { 1, 2 } },
 		{ 3, "ldrh", "# = (word) # + #", { 1, 2, 3 } },
 		{ 3, "ldruh", "# = (uword) # + #", { 1, 2, 3 } },
@@ -351,7 +354,7 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 }
 
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
