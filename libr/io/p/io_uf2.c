@@ -439,7 +439,7 @@ RIOPlugin r_io_plugin_uf2 = {
 	.read = __read,
 	.check = __check,
 	.seek = __lseek,
-	// .write = __write,
+	.write = __write,
 	.resize = __resize,
 	.system = __system,
 };
