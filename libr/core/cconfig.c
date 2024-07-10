@@ -3777,7 +3777,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.cache", "false", "use io.cache.read if bin needs to patch relocs");
 	SETPREF ("bin.lang", "", "language for bin.demangle");
 	SETBPREF ("bin.demangle", "true", "import demangled symbols from RBin");
-	SETCB("bin.demangle.trylib", "true", &cb_demangle_trylib, "try to use system available libraries to demangle");
+	SETCB("bin.demangle.trylib", "false", &cb_demangle_trylib, "try to use system available libraries to demangle");
+	SETCB ("bin.demangle.usecmd", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW) (see bin.demangle.trylib)");
 	SETBPREF ("bin.demangle.libs", "false", "show library name on demangled symbols names");
 	SETI ("bin.baddr", -1, "base address of the binary");
 	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
@@ -3928,7 +3929,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.delta", 0,  "delta for the stack dump");
 
 	/* cmd */
-	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "maximum command depth");
 	SETPREF ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
 	SETPREF ("cmd.bp", "", "run when a breakpoint is hit");

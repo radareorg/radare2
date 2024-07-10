@@ -1590,7 +1590,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		if (*super_name > 5) {
 			klass->super = r_list_newf ((void *)r_bin_name_free);
 			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = r_bin_demangle_swift (super_name, 0, false);
+			char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
 			if (R_STR_ISNOTEMPTY (sname)) {
 				r_bin_name_demangled (bn, sname);
 			}
@@ -1627,7 +1627,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 				rawname = strdup (r_bin_name_tostring (sym->name));
 				method_name = r_name_filter_dup (rawname); // r_bin_name_tostring (sym->name));
 				r_bin_name_filtered (sym->name, method_name);
-				char *dname = r_bin_demangle_swift (method_name, false, false);
+				char *dname = r_bin_demangle_swift (method_name, usecmd, trylib);
 				if (dname) {
 					r_bin_name_demangled (sym->name, dname);
 					free (sym->name->oname);
