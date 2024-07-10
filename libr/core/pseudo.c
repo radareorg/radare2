@@ -518,14 +518,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				indent--;
 				continue;
 			}
+#if 0
 			if (sdb_num_get (db, K_ELSE (bb->addr), 0)) {
 				NEWLINE (addr, indent);
 				if (!strcmp (blocktype, "else")) {
-					PRINTF (" // } %s {", blocktype);
+					PRINTF (" // %s", blocktype);
 				} else {
-					PRINTF (" // } %s (?);", blocktype);
+					PRINTF (" // %s ();", blocktype);
 				}
 			}
+#endif
 			if (addr != bb->addr) {
 				queuegoto = addr;
 				// r_cons_printf ("\n%s  goto loc_0x%"PFMT64x, indentstr, addr);

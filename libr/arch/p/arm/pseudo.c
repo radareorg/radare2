@@ -16,9 +16,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
+		{ 2, "uxtb", "# = #", { 1, 2 } },
 		{ 0, "abs", "# = abs(#)", { 1, 1 } },
 		{ 0, "adc", "# = # + #", { 1, 2, 3 } },
 		{ 3, "add", "# = # + #", { 1, 2, 3 } },
+		{ 0, "fcvtzs", "# = #", { 1, 2 } },
+		{ 0, "scvtf", "# = #", { 1, 2 } },
 		{ 2, "add", "# += #", { 1, 2 } },
 		{ 2, "adds", "# += #", { 1, 2 } },
 		{ 4, "madd", "# = (# * #) + #", { 1, 2, 3, 4 } },
@@ -43,6 +46,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "b.gt", "if (a > b) goto #", { 1 } },
 		{ 0, "b.le", "if (a <= b) goto #", { 1 } },
 		{ 0, "b.lt", "if (a < b) goto #", { 1 } },
+		{ 0, "b.ls", "if (a < b) goto #", { 1 } },
 		{ 0, "b.ge", "if (a >= b) goto #", { 1 } },
 		{ 0, "beq lr", "ifeq ret", {0} },
 		{ 0, "beq", "je #", { 1 } },
@@ -76,6 +80,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "sxth", "# = (short) #", { 1, 2 } },
 		{ 0, "fdv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "fml", "# = # * #", { 1, 2, 3 } },
+		{ 3, "ldurb", "# = (byte) # #", { 1, 2, 3 } },
+		{ 3, "ldur", "# = # #", { 1, 2, 3 } },
+		{ 3, "ldursw", "# = # #", { 1, 2, 3 } },
 		{ 2, "ldr", "# = #", { 1, 2 } },
 		{ 2, "ldrh", "# = (word) #", { 1, 2 } },
 		{ 3, "ldrh", "# = (word) # + #", { 1, 2, 3 } },
@@ -347,7 +354,7 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 }
 
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
