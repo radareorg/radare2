@@ -47,6 +47,7 @@ r_io_sources = [
   'p/io_shm.c',
   'p/io_sparse.c',
   'p/io_tcpslurp.c',
+  'p/io_uf2.c',
   'p/io_winkd.c',
   'p/io_winedbg.c',
   'p/io_zip.c',

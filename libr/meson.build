@@ -359,6 +359,7 @@ if get_option('plugins') == ''
     'sparse',
     'socket',
     'tcpslurp',
+    'uf2',
     'winkd',
     'winedbg',
     'zip'
