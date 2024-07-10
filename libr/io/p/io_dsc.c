@@ -255,118 +255,193 @@ static ut64 __lseek_dsc(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return r_io_dsc_object_seek (io, (RIODscObject *)fd->data, offset, whence);
 }
 
+static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
+	if (mode == R_MODE_JSON) {
+		pj = pj_new ();
+		if (!pj) {
+			return NULL;
+		}
+	} else if (mode == R_MODE_PRINT) {
+		sb = r_strbuf_new ("");
+	} else {
+		return NULL;
+	}
+
+	ut64 paddr = dsc->last_seek;
+
+	RList * slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
+	if (!slices) {
+		return NULL;
+	}
+
+	RListIter * iter;
+	RIODscTrimmedSlice * trimmed;
+
+	if (pj) {
+		pj_a (pj);
+	}
+
+	r_list_foreach (slices, iter, trimmed) {
+		RList * infos = r_io_dsc_slice_get_rebase_infos_by_range (trimmed->slice, trimmed->seek, trimmed->count);
+		if (!infos) {
+			return NULL;
+		}
+
+		RListIter * iter;
+		RIODscTrimmedRebaseInfo * trimmed_info;
+
+		r_list_foreach (infos, iter, trimmed_info) {
+			ut64 remaining_size = trimmed_info->count;
+			ut64 cursor = 0;
+			while (remaining_size > 0) {
+				ut8 raw_value_buf[8];
+				bool got_raw_value;
+				ut64 off_local = trimmed_info->off_local + cursor;
+				RIO_FREAD_AT_INTO_DIRECT (trimmed->slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
+				remaining_size -= 8;
+				cursor += 8;
+				if (!got_raw_value) {
+					R_LOG_ERROR ("reading raw pointer");
+					break;
+				}
+
+				ut64 raw_value = r_read_le64 (raw_value_buf);
+
+				if (pj) {
+					pj_o (pj);
+				}
+
+				char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
+				if (pj) {
+					pj_ks (pj, "paddr", tmp);
+				} else if (sb) {
+					r_strbuf_appendf (sb, "paddr: %s\n", tmp);
+				}
+				free (tmp);
+
+				tmp = r_str_newf ("0x%"PFMT64x, raw_value);
+				if (pj) {
+					pj_ks (pj, "raw", tmp);
+				} else if (sb) {
+					r_strbuf_appendf (sb, "raw: %s\n", tmp);
+				}
+				free (tmp);
+
+				tmp = r_str_newf ("v%d", trimmed_info->info->info->version);
+				if (pj) {
+					pj_ks (pj, "format", tmp);
+				} else if (sb) {
+					r_strbuf_appendf (sb, "format: %s\n", tmp);
+				}
+				free (tmp);
+
+				switch (trimmed_info->info->info->version) {
+				case 1:
+				case 2:
+				case 4:
+					break;
+				case 3:
+					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+						bool has_diversity = (raw_value & (1ULL << 48)) != 0;
+						if (pj) {
+							pj_kb (pj, "has_diversity", has_diversity);
+						}
+						if (has_diversity) {
+							ut64 diversity = (raw_value >> 32) & 0xFFFF;
+							if (pj) {
+								pj_kn (pj, "diversity", diversity);
+							} else if (sb) {
+								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
+							}
+						}
+						ut64 key = (raw_value >> 49) & 3;
+						const char * names[4] = { "ia", "ib", "da", "db" };
+						if (pj) {
+							pj_ks (pj, "key", names[key]);
+						} else if (sb) {
+							r_strbuf_appendf (sb, "key: %s\n", names[key]);
+						}
+					}
+					break;
+				case 5:
+					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+						bool has_diversity = (raw_value & (1ULL << 50)) != 0;
+						if (pj) {
+							pj_kb (pj, "has_diversity", has_diversity);
+						}
+						if (has_diversity) {
+							ut64 diversity = (raw_value >> 34) & 0xFFFF;
+							if (pj) {
+								pj_kn (pj, "diversity", diversity);
+							} else if (sb) {
+								r_strbuf_appendf (sb, "diversity: 0x%"PFMT64x"\n", diversity);
+							}
+						}
+						ut64 key = (raw_value >> 51) & 1;
+						const char * names[2] = { "ia", "da" };
+						if (pj) {
+							pj_ks (pj, "key", names[key]);
+						} else if (sb) {
+							r_strbuf_appendf (sb, "key: %s\n", names[key]);
+						}
+					}
+					break;
+				default:
+					R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
+				}
+				if (pj) {
+					pj_end (pj);
+				} else if (sb) {
+					r_strbuf_append (sb, "\n");
+				}
+			}
+		}
+		r_list_free (infos);
+	}
+
+	r_list_free (slices);
+
+	if (pj) {
+		pj_end (pj);
+	}
+
+	if (pj) {
+		return pj_drain (pj);
+	}
+	if (sb) {
+		return r_strbuf_drain (sb);
+	}
+	return NULL;
+}
+
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	r_return_val_if_fail (io && fd && fd->data && command, NULL);
 	RIODscObject *dsc = (RIODscObject*) fd->data;
 
 	if (r_str_startswith (command, "iP")) {
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
-
 		ut64 size = 8;
-		if (command[2] == ' ') {
-			size = r_num_math (NULL, command + 3);
-		}
-
-		ut64 paddr = dsc->last_seek;
-
-		RList * slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
-		if (!slices) {
+		switch (command[2]) {
+		case '?':
+			io->cb_printf ("Usage: :iP[j?] [size]\n");
+			io->cb_printf (" :iP?   get this help message\n");
+			io->cb_printf (" :iP    show pointer metadata\n");
+			io->cb_printf (" :iPj   show pointer metadata in json\n\n");
 			return NULL;
-		}
-
-		RListIter * iter;
-		RIODscTrimmedSlice * trimmed;
-
-		pj_a (pj);
-
-		r_list_foreach (slices, iter, trimmed) {
-			RList * infos = r_io_dsc_slice_get_rebase_infos_by_range (trimmed->slice, trimmed->seek, trimmed->count);
-			if (!infos) {
-				return NULL;
+		case 'j':
+			if (command[3] == ' ') {
+				size = r_num_math (NULL, command + 4);
 			}
-
-			RListIter * iter;
-			RIODscTrimmedRebaseInfo * trimmed_info;
-
-			r_list_foreach (infos, iter, trimmed_info) {
-				ut64 remaining_size = trimmed_info->count;
-				ut64 cursor = 0;
-				while (remaining_size > 0) {
-					ut8 raw_value_buf[8];
-					bool got_raw_value;
-					ut64 off_local = trimmed_info->off_local + cursor;
-					RIO_FREAD_AT_INTO_DIRECT (trimmed->slice->fd, off_local, &raw_value_buf, 8, got_raw_value);
-					remaining_size -= 8;
-					cursor += 8;
-					if (!got_raw_value) {
-						R_LOG_ERROR ("reading raw pointer");
-						break;
-					}
-
-					ut64 raw_value = r_read_le64 (raw_value_buf);
-
-					pj_o (pj);
-
-					char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start + off_local);
-					pj_ks (pj, "paddr", tmp);
-					free (tmp);
-
-					tmp = r_str_newf ("0x%"PFMT64x, raw_value);
-					pj_ks (pj, "raw", tmp);
-					free (tmp);
-
-					tmp = r_str_newf ("v%d", trimmed_info->info->info->version);
-					pj_ks (pj, "format", tmp);
-					free (tmp);
-
-					switch (trimmed_info->info->info->version) {
-					case 1:
-					case 2:
-					case 4:
-						break;
-					case 3:
-						if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-							bool has_diversity = (raw_value & (1ULL << 48)) != 0;
-							pj_kb (pj, "has_diversity", has_diversity);
-							if (has_diversity) {
-								ut64 diversity = (raw_value >> 32) & 0xFFFF;
-								pj_kn (pj, "diversity", diversity);
-							}
-							ut64 key = (raw_value >> 49) & 3;
-							const char * names[4] = { "ia", "ib", "da", "db" };
-							pj_ks (pj, "key", names[key]);
-						}
-						break;
-					case 5:
-						if (R_IS_PTR_AUTHENTICATED (raw_value)) {
-							bool has_diversity = (raw_value & (1ULL << 50)) != 0;
-							pj_kb (pj, "has_diversity", has_diversity);
-							if (has_diversity) {
-								ut64 diversity = (raw_value >> 34) & 0xFFFF;
-								pj_kn (pj, "diversity", diversity);
-							}
-							ut64 key = (raw_value >> 51) & 1;
-							const char * names[2] = { "ia", "da" };
-							pj_ks (pj, "key", names[key]);
-						}
-						break;
-					default:
-						R_LOG_ERROR ("Unsupported rebase info version %d", trimmed_info->info->info->version);
-					}
-					pj_end (pj);
-				}
-			}
-			r_list_free (infos);
+			return __infoPointer (dsc, size, R_MODE_JSON);
+		case ' ':
+			size = r_num_math (NULL, command + 3);
+		case '\0':
+			return __infoPointer (dsc, size, R_MODE_PRINT);
 		}
-
-		r_list_free (slices);
-
-		pj_end (pj);
-
-		return pj_drain (pj);
+	} else if (command && command[0] == '?') {
+		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
+		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n\n");
 	}
 
 	return NULL;
