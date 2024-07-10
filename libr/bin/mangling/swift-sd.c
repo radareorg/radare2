@@ -8,7 +8,7 @@
 // R2R db/tools/rabin2
 
 // set this to true for debugging purposes
-#define USE_THIS_CODE 1
+#define USE_THIS_CODE 0
 
 static R_TH_LOCAL int have_swift_demangle = -1;
 #if R2__UNIX__
