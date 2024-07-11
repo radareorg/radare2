@@ -312,7 +312,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 		: r_diff_buffers_static (d, a, la, b, lb);
 }
 
-// Eugene W. Myers' O(ND) diff algorithm
+// Eugene W. Myers O(ND) diff algorithm
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
 R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	r_return_val_if_fail (a && b, false);

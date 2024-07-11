@@ -457,7 +457,7 @@ static int show_help(int v) {
 			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
 			"  -r         output in radare commands\n"
-			"  -s         compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm)\n"
+			"  -s         compute edit distance (no substitution, Eugene W. Myers O(ND) diff algorithm)\n"
 			"  -ss        compute Levenshtein edit distance (substitution is allowed, O(N^2))\n"
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
