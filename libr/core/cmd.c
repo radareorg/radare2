@@ -1346,7 +1346,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		r_core_cmdf (core, "'poke -f %s", file);
 		ret = true;
 	} else if (r_str_endswith (file, ".html")) {
-		const bool httpSandbox = r_config_get_i (core->config, "http.sandbox");
+		const bool httpSandbox = r_config_get_b (core->config, "http.sandbox");
 		char *httpIndex = strdup (r_config_get (core->config, "http.index"));
 		r_config_set_b (core->config, "http.sandbox", false);
 		char *absfile = r_file_abspath (file);
@@ -1506,8 +1506,8 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 				} else if (!strcmp (ext, "py")) {
 					static const char *python_bins[] = {
 						"python3",
-						"python2",
 						"python",
+						"python2",
 						NULL
 					};
 					const char *bin;
