@@ -373,9 +373,8 @@ R_API char *r_syscmd_head(const char *file, int count) {
 		}
 		free (filename);
 		return data;
-	} else {
-		eprintf ("Usage: head 7 [file]\n");
 	}
+	R_LOG_INFO ("Usage: head 7 [file]");
 	return NULL;
 }
 
@@ -388,7 +387,7 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 			p = file;
 		}
 	}
-	if (p && *p) {
+	if (R_STR_ISNOTEMPTY (p)) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
 		char *data = r_file_slurp_lines_from_bottom (filename, count);
@@ -397,9 +396,8 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 		}
 		free (filename);
 		return data;
-	} else {
-		eprintf ("Usage: tail 7 [file]\n");
 	}
+	R_LOG_INFO ("Usage: tail 7 [file]");
 	return NULL;
 }
 
