@@ -826,11 +826,11 @@ static int cmd_alias(void *data, const char *input) {
 				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			case '+':
-				at = r_num_get (core->num, buf + 1) + at;
+				at = r_num_get (core->num, buf) + at;
 				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			case '-':
-				at = r_num_get (core->num, buf + 1) - at;
+				at = r_num_get (core->num, buf) - at;
 				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			}
@@ -2813,7 +2813,9 @@ static int cmd_resize(void *data, const char *input) {
 		if (input[1] == ' ') {
 			const char *file = r_str_trim_head_ro (input + 2);
 			if (*file == '$') {
-				r_cmd_alias_del (core->rcmd, file);
+				if (!r_cmd_alias_del (core->rcmd, file + 1)) {
+					R_LOG_ERROR ("Cannot find alias file %s", file);
+				}
 			} else {
 				r_file_rm (file);
 			}
