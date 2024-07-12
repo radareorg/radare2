@@ -1678,6 +1678,57 @@ static int cmd_l(void *data, const char *input) { // "l"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
+	char *tmp = strdup (input);
+	const char *arg1 = strchr (tmp, ' ');
+	if (!arg1) {
+		goto beach;
+	}
+	arg1 = r_str_trim_head_ro (arg1);
+	if (!arg1) {
+		goto beach;
+	}
+	char *end = strchr (arg1, ' ');
+	if (!end) {
+		goto beach;
+	}
+	*end = '\0';
+	const char *arg2 = end + 1;
+	if (!arg2) {
+		goto beach;
+	}
+	arg2 = r_str_trim_head_ro (arg2);
+	switch (*input) {
+	case '?': // "join?"
+		goto beach;
+	default: // "join"
+		if (!arg1) {
+			arg1 = "";
+		}
+		if (!arg2) {
+			arg2 = "";
+		}
+		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
+			char *res = r_syscmd_join (arg1, arg2);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	free (tmp);
+	return R_CMD_RC_SUCCESS;
+beach:
+	r_core_cmd_help (core, help_msg_j);
+	free (tmp);
+	return R_CMD_RC_SUCCESS;
+}
+
+static int cmd_j(void *data, const char *input) { // "j"
+	RCore *core = (RCore *)data;
+	if (r_str_startswith (input, "oin")) {
+		return cmd_join (data, input);
+	}
 	if (r_str_startswith (input, "i:")) {
 		char *res = r_core_cmd_str (core, input + 2);
 		char *indented = r_print_json_indent (res, true, "  ", NULL);
@@ -1689,7 +1740,8 @@ static int cmd_join(void *data, const char *input) { // "join"
 	if (input[0] == 'q') { // "jq"
 		r_core_cmd_callf (core, "!jq%s", input + 1);
 		return R_CMD_RC_SUCCESS;
-	} else if (input[0] == 's') { // "js"
+	}
+	if (input[0] == 's') { // "js"
 		if (input[1] == ':' || input[1] == '.') { // "js:"
 			if (input[2]) {
 				if (r_lang_use (core->lang, "qjs")) {
@@ -1758,50 +1810,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 		free (s);
 		return R_CMD_RC_SUCCESS;
 	}
-	char *tmp = strdup (input);
-	const char *arg1 = strchr (tmp, ' ');
-	if (!arg1) {
-		goto beach;
-	}
-	arg1 = r_str_trim_head_ro (arg1);
-	if (!arg1) {
-		goto beach;
-	}
-	char *end = strchr (arg1, ' ');
-	if (!end) {
-		goto beach;
-	}
-	*end = '\0';
-	const char *arg2 = end + 1;
-	if (!arg2) {
-		goto beach;
-	}
-	arg2 = r_str_trim_head_ro (arg2);
-	switch (*input) {
-	case '?': // "join?"
-		goto beach;
-	default: // "join"
-		if (!arg1) {
-			arg1 = "";
-		}
-		if (!arg2) {
-			arg2 = "";
-		}
-		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
-			char *res = r_syscmd_join (arg1, arg2);
-			if (res) {
-				r_cons_print (res);
-				free (res);
-			}
-		}
-		break;
-	}
-	free (tmp);
-	return R_CMD_RC_SUCCESS;
-beach:
-	r_core_cmd_help (core, help_msg_j);
-	free (tmp);
-	return R_CMD_RC_SUCCESS;
+	return R_CMD_RC_FAILURE;
 }
 
 static int cmd_plus(void *data, const char *input) {
@@ -6687,7 +6696,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "i", "get file info", cmd_info },
 		{ "k", "perform sdb query", cmd_kuery },
 		{ "l", "list files and directories", cmd_l },
-		{ "j", "join the contents of the two files", cmd_join },
+		{ "j", "join the contents of the two files", cmd_j },
 		{ "h", "show the top n number of line in file", cmd_h },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins },
 		{ "m", "mount filesystem", cmd_mount },
