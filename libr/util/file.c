@@ -760,9 +760,13 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 	r_return_val_if_fail (file, NULL);
 	int i, lines = 0;
 	size_t sz;
+	if (line < 1) {
+		return strdup ("");
+	}
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
+		r_str_trim (str);
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
 				lines++;
@@ -772,13 +776,14 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 			return str;	// number of lines requested in more than present, return all
 		}
 		i--;
+		line++;
 		for (; str[i] && line; i--) {
 			if (str[i] == '\n') {
 				line--;
 			}
 		}
 		ptr = str + i;
-		ptr = strdup (ptr);
+		ptr = strdup (ptr + 2);
 		free (str);
 	}
 	return ptr;
