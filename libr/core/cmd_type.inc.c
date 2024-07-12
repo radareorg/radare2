@@ -375,17 +375,22 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 }
 
 static int cmd_tail(void *data, const char *_input) { // "tail"
+	char *tmp, *arg;
 	char *input = strdup (_input);
 	RCore *core = (RCore *)data;
 	int lines = 5;
-	char *tmp, *arg = strchr (input, ' ');
+	if (r_str_startswith (input, "ail")) {
+		arg = input + 3;
+	} else {
+		arg = strchr (input, ' ');
+	}
 	if (arg) {
-		arg = (char *)r_str_trim_head_ro (arg + 1); 	// contains "count filename"
+		arg = (char *)r_str_trim_head_ro (arg);
 		char *count = strchr (arg, ' ');
 		if (count) {
-			*count = 0;	// split the count and file name
+			*count = 0; // split the count and file name
 			tmp = (char *)r_str_trim_head_ro (count + 1);
-			lines = atoi (arg);
+			lines = r_num_math (core->num, arg);
 			arg = tmp;
 		}
 	}
