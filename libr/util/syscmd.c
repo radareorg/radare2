@@ -434,10 +434,6 @@ R_API char *r_syscmd_uniq(const char *file) {
 
 R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	const char *p1 = NULL, *p2 = NULL;
-	RList *list1, *list2, *list;
-	if (!list) {
-		return NULL;
-	}
 	if (file1) {
 		if ((p1 = strchr (file1, ' '))) {
 			p1++;
@@ -453,11 +449,14 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		}
 	}
 	if (R_STR_ISEMPTY (p1) || R_STR_ISEMPTY (p2)) {
-		R_LOG_INFO ("Usage: join file1 file2\n");
+		R_LOG_INFO ("Usage: join file1 file2");
 		return NULL;
 	}
 
-	list = r_list_newf (free);
+	RList *list = r_list_newf (free);
+	if (!list) {
+		return NULL;
+	}
 	char *filename1 = strdup (p1);
 	char *filename2 = strdup (p2);
 	r_str_trim (filename1);
@@ -469,8 +468,8 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	if (!data1 || !data2) {
 		R_LOG_ERROR ("No such files or directory");
 	} else {
-		list1 = r_str_split_list (data1, "\n",  0);
-		list2 = r_str_split_list (data2, "\n", 0);
+		RList *list1 = r_str_split_list (data1, "\n",  0);
+		RList *list2 = r_str_split_list (data2, "\n", 0);
 
 		char *str1, *str2;
 		r_list_foreach (list1, iter1, str1) {
