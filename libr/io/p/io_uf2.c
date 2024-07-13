@@ -318,7 +318,7 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 		}
 
 		r_strf_var (comment, 64,  "CC uf2 block #%02d (%d bytes)", block.blockNo, block.payloadSize);
-		io->coreb.callat (io->coreb.core, comment, block.targetAddr);
+		io->coreb.callat (io->coreb.core, block.targetAddr, comment);
 
 	} while (block.blockNo < block.numBlocks - 1);
 
@@ -333,7 +333,7 @@ typedef struct {
 extern RIOPlugin r_io_plugin_uf2;
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return r_str_startswith ("uf2://");
+	return r_str_startswith (pathname, "uf2://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
