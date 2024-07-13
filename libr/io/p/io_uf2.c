@@ -189,22 +189,25 @@ static void process_family_id(RIO *io, ut32 family_id) {
 	}
 
 	if (family.cpu != NULL) {
-		io->coreb.cmdf (io->coreb.core, "e asm.cpu=%s", family.cpu);
+		io->coreb.cmdf (io->coreb.core, "'e asm.cpu=%s", family.cpu);
 	}
 
 	if (family.bits >= 0) {
-		io->coreb.cmdf (io->coreb.core, "e asm.bits=%d", family.bits);
+		io->coreb.cmdf (io->coreb.core, "'e asm.bits=%d", family.bits);
 	}
 }
 
 static inline int pad(int offset, int n) {
+	if (n < 1) {
+		return 0;
+	}
 	return (offset % n != 0
 		? (offset / n + 1)
 		: (offset / n)) * n;
 }
 
 static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
-	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+	const bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 	ut32 family_id = 0;
 
 	UF2_Block block;
@@ -253,7 +256,7 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			// The field fileSize holds the file size of the current file,
 			// and the field targetAddr holds the offset in current file.
 			// The file name is stored at &data[payloadSize] and terminated with a 0x00.
-			ut8 *file_name = (ut8 *)(block.data + block.payloadSize);
+			const char *file_name = (const char *)(block.data + block.payloadSize);
 			R_LOG_WARN ("uf2: Found FILE_CONTAINER flag @ block #%d, TODO"
 					"{ file_name: \"%s\", chunk: %d, total_size: %d, offset: %d }", block.blockNo,
 					file_name, block.payloadSize, block.fileSize, block.targetAddr);
@@ -314,7 +317,8 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			R_LOG_DEBUG ("uf2: Block #%02d (%d bytes @ 0x%08x)", block.blockNo, block.payloadSize, block.targetAddr);
 		}
 
-		io->coreb.cmdf (io->coreb.core, "\"CC uf2 block #%02d (%d bytes)\" @ 0x%08x",
+		r_strf_var (comment, 64,  "CC uf2 block #%02d (%d bytes)", block.blockNo, block.payloadSize);
+		io->callat (io->coreb.core, comment, block.targetAddr);
 				block.blockNo, block.payloadSize, block.targetAddr);
 
 	} while (block.blockNo < block.numBlocks - 1);
@@ -330,7 +334,7 @@ typedef struct {
 extern RIOPlugin r_io_plugin_uf2;
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "uf2://", 6));
+	return r_str_startswith ("uf2://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -428,6 +432,7 @@ RIOPlugin r_io_plugin_uf2 = {
 		.name = "uf2",
 		.desc = "Open UF2 files",
 		.license = "LGPL3",
+		.author = "aviciano"
 	},
 	.uris = "uf2://",
 	.open = __open,
