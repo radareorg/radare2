@@ -319,7 +319,6 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 
 		r_strf_var (comment, 64,  "CC uf2 block #%02d (%d bytes)", block.blockNo, block.payloadSize);
 		io->coreb.callat (io->coreb.core, comment, block.targetAddr);
-				block.blockNo, block.payloadSize, block.targetAddr);
 
 	} while (block.blockNo < block.numBlocks - 1);
 
