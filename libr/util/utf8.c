@@ -1,4 +1,6 @@
-/* radare2 - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - thelemon, kazarmy, pancake */
+
+// R2R db/cmd/cmd_iz
 
 #include <r_types.h>
 #include <r_util.h>
@@ -490,24 +492,40 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	if (ptrlen < 1) {
 		return 0;
 	}
-	if (ptr[0] < 0x80) {
+	const ut8 p0 = ptr[0];
+	if (p0 < 0x80) {
 		if (ch) {
-			*ch = (ut32)ptr[0];
+			*ch = (ut32)p0;
 		}
 		return 1;
-	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
+	}
+	if (ptrlen < 2) {
+		return 0;
+	}
+	const ut8 p1 = ptr[1];
+	if ((p0 & 0xe0) == 0xc0 && (p1 & 0xc0) == 0x80) {
 		if (ch) {
-			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+			*ch = (p0 & 0x1f) << 6 | (p1 & 0x3f);
 		}
 		return 2;
-	} else if (ptrlen>2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
+	}
+	if (ptrlen < 3) {
+		return 0;
+	}
+	const ut8 p2 = ptr[2];
+	if ((p0 & 0xf0) == 0xe0 && (p1 & 0xc0) == 0x80 && (p2 & 0xc0) == 0x80) {
 		if (ch) {
-			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+			*ch = (p0 & 0xf) << 12 | (p1 & 0x3f) << 6 | (p2 & 0x3f);
 		}
 		return 3;
-	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
+	}
+	if (ptrlen < 4) {
+		return 0;
+	}
+	const ut8 p3 = ptr[3];
+	if ((p0 & 0xf8) == 0xf0 && (p1 & 0xc0) == 0x80 && (p2 & 0xc0) == 0x80 && (p3 & 0xc0) == 0x80) {
 		if (ch) {
-			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+			*ch = (p0 & 7) << 18 | (p1 & 0x3f) << 12 | (p2 & 0x3f) << 6 | (p3 & 0x3f);
 		}
 		return 4;
 	}
@@ -519,16 +537,19 @@ R_API int r_utf8_encode(ut8 *ptr, const RRune ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
-	} else if (ch < 0x800) {
+	}
+	if (ch < 0x800) {
 		ptr[0] = 0xc0 | (ch >> 6);
 		ptr[1] = 0x80 | (ch & 0x3f);
 		return 2;
-	} else if (ch < 0x10000) {
+	}
+	if (ch < 0x10000) {
 		ptr[0] = 0xe0 | (ch >> 12);
 		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
 		ptr[2] = 0x80 | (ch & 0x3f);
 		return 3;
-	} else if (ch < 0x200000) {
+	}
+	if (ch < 0x200000) {
 		ptr[0] = 0xf0 | (ch >> 18);
 		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
 		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
@@ -726,13 +747,11 @@ R_API char *r_acp_to_utf8_l(const char *str, int len) {
 
 R_API int r_utf_block_idx(RRune ch) {
 	const int last = R_UTF_BLOCKS_COUNT;
-	int low, hi, mid;
-
-	low = 0;
-	hi = last - 1;
+	int low = 0;
+	int hi = last - 1;
 
 	do {
-		mid = (low + hi) >> 1;
+		int mid = (low + hi) >> 1;
 		if (ch >= r_utf_blocks[mid].from && ch <= r_utf_blocks[mid].to) {
 			return mid;
 		}

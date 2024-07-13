@@ -1,3 +1,18 @@
+# XXX this test breaks other tests if fixed
+NAME=iz le32
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+wx+6b00 0000 f500 0000 5500 0000 6401 0000
+wx+4a01 0000 9a01 0000 bc00 0000 8500 0000
+wx+d500 0000 a400 0000 7a01 0000 0500 0000
+izzz
+EOF
+EXPECT=<<EOF
+000 0x00000000 0x00000000   7  32 () utf32le kõUŤŊƚ¼
+EOF
+RUN
+
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iz
