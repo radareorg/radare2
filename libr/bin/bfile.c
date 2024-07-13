@@ -213,7 +213,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 				if (!addr_aligned) {
 					is_wide32le = false;
 				}
-				///is_wide32be &= (n1 < 0xff && n11 < 0xff); // false; // n11 < 0xff;
 				if (is_wide32le && addr_aligned) {
 					str_type = R_STRING_TYPE_WIDE32; // asume big endian,is there little endian w32?
 				} else {
@@ -222,11 +221,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
 				}
 			} else {
-				if (rc > 1) {
-					str_type = R_STRING_TYPE_UTF8; // could be charset if set :?
-				} else {
-					str_type = R_STRING_TYPE_ASCII;
-				}
+				str_type = (rc > 1)
+					? R_STRING_TYPE_UTF8
+					: R_STRING_TYPE_ASCII;
 			}
 		} else if (type == R_STRING_TYPE_UTF8) {
 			str_type = R_STRING_TYPE_ASCII; // initial assumption
