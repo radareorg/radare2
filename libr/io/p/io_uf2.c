@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2024 - aviciano */
 
-#include <r_core.h>
+#include <r_io.h>
 
 // Little endian is used, as most microcontrollers are little endian.
 // https://github.com/Microsoft/uf2
@@ -172,7 +172,7 @@ static int binary_search(UF2_Family *A, ut32 key, int imin, int imax) {
 	return -1;
 }
 
-static void process_family_id(RCore *core, ut32 family_id) {
+static void process_family_id(RIO *io, ut32 family_id) {
 	const int n = sizeof (uf2families) / sizeof (uf2families[0]);
 	const int idx = binary_search (uf2families, family_id,  0, n - 1);
 	if (idx < 0) {
@@ -185,15 +185,15 @@ static void process_family_id(RCore *core, ut32 family_id) {
 			family_id, family.name, family.desc, family.arch, family.cpu, family.bits);
 
 	if (family.arch != NULL) {
-		r_core_cmdf (core, "e asm.arch=%s", family.arch);
+		io->coreb.cmdf (io->coreb.core, "e asm.arch=%s", family.arch);
 	}
 
 	if (family.cpu != NULL) {
-		r_core_cmdf (core, "e asm.cpu=%s", family.cpu);
+		io->coreb.cmdf (io->coreb.core, "e asm.cpu=%s", family.cpu);
 	}
 
 	if (family.bits >= 0) {
-		r_core_cmdf (core, "e asm.bits=%d", family.bits);
+		io->coreb.cmdf (io->coreb.core, "e asm.bits=%d", family.bits);
 	}
 }
 
@@ -204,11 +204,8 @@ static inline int pad(int offset, int n) {
 }
 
 static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
-
 	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 	ut32 family_id = 0;
-	RCore *core = io->coreb.core;
-	char *comment = NULL;
 
 	UF2_Block block;
 	do {
@@ -271,7 +268,7 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 					R_LOG_WARN ("uf2: FAMILY_ID 0x%08x changed", block.fileSize);
 				}
 				family_id =  block.fileSize;
-				process_family_id (core, family_id);
+				process_family_id (io, family_id);
 			}
 		}
 
@@ -317,9 +314,8 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			R_LOG_DEBUG ("uf2: Block #%02d (%d bytes @ 0x%08x)", block.blockNo, block.payloadSize, block.targetAddr);
 		}
 
-		comment = r_str_newf ("uf2 block #%02d (%d bytes @ 0x%08x)\n", block.blockNo, block.payloadSize, block.targetAddr);
-		r_meta_set_string (core->anal, R_META_TYPE_COMMENT, block.targetAddr, comment);
-		free (comment);
+		io->coreb.cmdf (io->coreb.core, "\"CC uf2 block #%02d (%d bytes)\" @ 0x%08x",
+				block.blockNo, block.payloadSize, block.targetAddr);
 
 	} while (block.blockNo < block.numBlocks - 1);
 
