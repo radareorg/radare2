@@ -794,10 +794,10 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	RRune ch;
 	while (str_ptr < str_end) {
 		int block_idx;
-		int ch_bytes = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
-		if (!ch_bytes) {
+		int runesize = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
+		if (!runesize) {
 			block_idx = R_UTF_BLOCKS_COUNT - 1;
-			ch_bytes = 1;
+			runesize = 1;
 		} else {
 			block_idx = r_utf_block_idx (ch);
 		}
@@ -806,7 +806,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 			list_ptr++;
 		}
 		block_freq[block_idx]++;
-		str_ptr += ch_bytes;
+		str_ptr += runesize;
 	}
 	*list_ptr = -1;
 	if (freq_list_ptr) {
@@ -816,31 +816,40 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		}
 		*freq_list_ptr = -1;
 	}
-	for (list_ptr = list; *list_ptr != -1; list_ptr++) {
-		block_freq[*list_ptr] = 0;
-	}
 	return list;
 }
 
 R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
+	if (ptrlen < 2) {
+		return R_STRING_ENC_GUESS;
+	}
 	if (ptrlen > 3) {
-		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
+		const ut8 p0 = ptr[0];
+		const ut8 p1 = ptr[1];
+		const ut8 p2 = ptr[2];
+		const ut8 p3 = ptr[3];
+		if (p0 == 0xff && p1 == 0xfe && !p2 && !p3) {
 			return R_STRING_ENC_UTF32LE;
 		}
-		if (!ptr[0] && !ptr[1] && ptr[2] == 0xfe && ptr[3] == 0xff) {
+		if (!p0 && !p1 && p2 == 0xfe && p3 == 0xff) {
 			return R_STRING_ENC_UTF32BE;
 		}
 	}
 	if (ptrlen > 2) {
-		if (ptr[0] == 0xef && ptr[1] == 0xbb && ptr[2] == 0xbf) {
+		const ut8 p0 = ptr[0];
+		const ut8 p1 = ptr[1];
+		const ut8 p2 = ptr[2];
+		if (p0 == 0xef && p1 == 0xbb && p2 == 0xbf) {
 			return R_STRING_ENC_UTF8;
 		}
 	}
 	if (ptrlen > 1) {
-		if (ptr[0] == 0xff && ptr[1] == 0xfe) {
+		const ut8 p0 = ptr[0];
+		const ut8 p1 = ptr[1];
+		if (p0 == 0xff && p1 == 0xfe) {
 			return R_STRING_ENC_UTF16LE;
 		}
-		if (ptr[0] == 0xfe && ptr[1] == 0xff) {
+		if (p0 == 0xfe && p1 == 0xff) {
 			return R_STRING_ENC_UTF16BE;
 		}
 	}
