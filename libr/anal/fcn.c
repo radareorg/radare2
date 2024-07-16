@@ -771,18 +771,10 @@ repeat:
 		src1 = r_vector_at (&op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
-			if (at == 0) {
-				goto noskip;
-			}
-			if (anal->config->bits == 64) {
-				if (at % 8) {
+			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
+			if (codealign > 1) {
+				if (at % codealign) {
 					goto noskip;
-				}
-			} else {
-				if (r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN) == 4) {
-					if (at % 4) {
-						goto noskip;
-					}
 				}
 			}
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
