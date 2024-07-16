@@ -271,6 +271,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 		if (R_STR_ISEMPTY (fname)) {
 			R_LOG_INFO ("Corrupted class storage with nameless classes");
 			rc = false;
+			free (fname);
 			break;
 		}
 		r_bin_name_update (cls->name, fname);

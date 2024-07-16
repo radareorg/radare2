@@ -75,7 +75,7 @@ int uxn_assemble(const char* mnemonic, uint8_t* code, size_t code_size) {
 		args++;
 	}
 
-	int opcode = find_opcode(op);
+	int opcode = find_opcode (op);
 	if (opcode == -1) {
 		return -1;
 	}
@@ -84,14 +84,17 @@ int uxn_assemble(const char* mnemonic, uint8_t* code, size_t code_size) {
 
 	code[code_len++] = instr.opcode;
 	if (args > 1) {
-		if (instr.opcode == 0x80 || (instr.opcode >= 0xA0 && instr.opcode <= 0xBF) ||
-				instr.opcode == 0x2C || instr.opcode == 0x2D || instr.opcode == 0x2E) {
+		if (instr.opcode == 0x80
+		|| (instr.opcode >= 0xA0 && instr.opcode <= 0xBF)
+		|| instr.opcode == 0x2C
+		|| instr.opcode == 0x2D
+		|| instr.opcode == 0x2E) {
 			// LIT2, JMP2, JCN2, JSR2, and their variations
 			code[code_len++] = (instr.operand >> 8) & 0xFF;
 			code[code_len++] = instr.operand & 0xFF;
 		} else if (instr.opcode == 0x60) { // JSI
 			code[code_len++] = instr.operand & 0xFF;
-		} else if (instr.opcode >= 0x80) {
+		} else if (instr.opcode > 0x80) {
 			code[code_len++] = instr.operand & 0xFF;
 		}
 	}
@@ -100,8 +103,9 @@ int uxn_assemble(const char* mnemonic, uint8_t* code, size_t code_size) {
 }
 
 R_IPI int uxn_disassemble(const uint8_t* code, size_t code_size, char *text, size_t text_size) {
-	Instruction instr = {0};
-	instr.opcode = code[0];
+	Instruction instr = {
+		.opcode = code[0]
+	};
 
 	const char* op = instruction_mnemonics[instr.opcode];
 	if (!op) {
