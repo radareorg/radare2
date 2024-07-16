@@ -3556,6 +3556,10 @@ static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {
 }
 
 static void set_prompt(RCore *r) {
+	if (r->incomment) {
+		r_line_set_prompt (" * ");
+		return;
+	}
 	char tmp[128];
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
@@ -3665,6 +3669,10 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		return R_CORE_CMD_EXIT; // ^D
 	}
 	if (ret == -1) {
+		if (r->incomment) {
+			r->incomment = false;
+			return 1;
+		}
 		return false; // FD READ ERROR
 	}
 	r->num->value = rnv;
