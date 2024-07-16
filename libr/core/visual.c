@@ -36,13 +36,19 @@ static const char *printfmtColumns[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 13
+#define PRINT_HEX_FORMATS 12
 #define PRINT_3_FORMATS 2
 #define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 7
 
+// always in pairs, because thats how <space> knows how to toggle
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
-	"px", "pxa", "pxr", "prcn", "prcb", "prx", "pxb", "pxh", "pxw", "pxq", "pxu", "pxd", "pxr",
+	"px", "pxa",
+	"pxr", "pxr4",
+	"prcn", "prcb",
+	"pxb", "pxh",
+	"pxw", "pxq",
+	"pxu", "pxd",
 };
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
 	"pxw 64@r:SP;dr=;drcq;pd $r", // DEBUGGER
@@ -433,7 +439,12 @@ R_API void r_core_visual_showcursor(RCore *core, int x) {
 	r_cons_flush ();
 }
 
-static void printFormat(RCore *core, const int next) {
+static void printFormat(RCore *core, int next) {
+	if (next == 1 || next == -1) {
+		next *= 2;
+	} else {
+		next /= 2;
+	}
 	switch (core->visual.printidx) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
 		core->visual.hexMode += next;
@@ -2348,8 +2359,8 @@ static void visual_windows(RCore *core) {
 			// core->visual.hexMode = b;
 			core->visual.current5format = b;
 		//	core->visual.currentFormat = b;
-		core->visual.currentFormat = R_ABS (core->visual.current5format) % PRINT_5_FORMATS;
-		printfmtSingle[4] = print5Formats[core->visual.currentFormat];
+			core->visual.currentFormat = R_ABS (core->visual.current5format) % PRINT_5_FORMATS;
+			printfmtSingle[4] = print5Formats[core->visual.currentFormat];
 			break;
 		}
 	}
@@ -2767,6 +2778,42 @@ static int process_get_click(RCore *core, int ch) {
 		}
 	}
 	return ch;
+}
+
+static void handle_space_key(RCore *core, int force) {
+	if (force == 0) {
+		switch (core->visual.printidx) {
+		case R_CORE_VISUAL_MODE_PX: // hex
+			if (core->visual.hexMode % 2) {
+				printFormat (core, 2);
+			} else {
+				printFormat (core, -2);
+			}
+			r_core_visual_applyHexMode (core, core->visual.hexMode);
+			break;
+		case R_CORE_VISUAL_MODE_PD:
+		case R_CORE_VISUAL_MODE_DB:
+			force = 'V';
+			break;
+		case R_CORE_VISUAL_MODE_OV: // hex
+		case R_CORE_VISUAL_MODE_CD: // hex
+			break;
+		}
+	}
+	if (force == 'V') {
+		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+		if (!fun) {
+			r_cons_message ("Not in a function. Type 'df' to define it here");
+		} else if (r_list_empty (fun->bbs)) {
+			r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
+		} else {
+			const int ocolor = r_config_get_i (core->config, "scr.color");
+			reset_print_cur (core->print);
+			eprintf ("\rRendering graph...");
+			r_core_visual_graph (core, NULL, NULL, true);
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
+	}
 }
 
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
@@ -3341,22 +3388,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			visual_refresh (core);
 			break;
 		case ' ':
+			handle_space_key (core, 0);
+			break;
 		case 'V':
-			{
-				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-				int ocolor = r_config_get_i (core->config, "scr.color");
-				if (!fun) {
-					r_cons_message ("Not in a function. Type 'df' to define it here");
-					break;
-				} else if (r_list_empty (fun->bbs)) {
-					r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
-					break;
-				}
-				reset_print_cur (core->print);
-				eprintf ("\rRendering graph...");
-				r_core_visual_graph (core, NULL, NULL, true);
-				r_config_set_i (core->config, "scr.color", ocolor);
-			}
+			handle_space_key (core, 'V');
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);
