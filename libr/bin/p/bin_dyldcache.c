@@ -1141,12 +1141,28 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static RList *entries(RBinFile *bf) {
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
+	if (!cache) {
+		return NULL;
+	}
+
 	RBinAddr *ptr = NULL;
 	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
+		if (cache->n_maps > 0) {
+			size_t i;
+			for (i = 0; i < cache->n_maps; i++) {
+				cache_map_t * map = &cache->maps[i];
+				if (map->fileOffset == 0) {
+					ptr->paddr = 0;
+					ptr->vaddr = map->address;
+					break;
+				}
+			}
+		}
 		r_list_append (ret, ptr);
 	}
 	return ret;
