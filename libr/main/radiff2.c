@@ -759,16 +759,22 @@ static int import_cmp(const RBinImport *a, const RBinImport *b) {
 }
 
 static ut8 *get_classes(RCore *c, int *len) {
-	RListIter *iter;
 
 	if (!c || !len) {
 		return NULL;
 	}
 
 	RBinClass *klass;
-	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
-	r_list_foreach (list, iter, klass) {
+#if R2_USE_NEW_ABI
+	RBinObject *bo = R_UNWRAP4 (c, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, klass)
+#else
+	RListIter *iter;
+	const RList *list = r_bin_get_classes (c->bin);
+	r_list_foreach (list, iter, klass)
+#endif
+	{
 		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_append (reslist, strdup (kname));
 	}
@@ -789,10 +795,17 @@ static ut8 *get_fields(RCore *c, int *len) {
 	}
 
 	RBinClass *klass;
-	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
+#if R2_USE_NEW_ABI
+	RListIter *iter2;
+	RBinObject *bo = R_UNWRAP4 (c, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, klass)
+#else
 	RListIter *iter, *iter2;
-	r_list_foreach (list, iter, klass) {
+	const RList *list = r_bin_get_classes (c->bin);
+	r_list_foreach (list, iter, klass)
+#endif
+	{
 		const char *kname = r_bin_name_tostring (klass->name);
 		RBinField *field;
 		r_list_foreach (klass->fields, iter2, field) {
@@ -808,17 +821,23 @@ static ut8 *get_fields(RCore *c, int *len) {
 }
 
 static ut8 *get_methods(RCore *c, int *len) {
-	RListIter *iter, *iter2;
-
 	if (!c || !len) {
 		return NULL;
 	}
 
 	RBinClass *klass;
 	RBinSymbol *sym;
-	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
-	r_list_foreach (list, iter, klass) {
+#if R2_USE_NEW_ABI
+	RListIter *iter2;
+	RBinObject *bo = R_UNWRAP4 (c, bin, cur, bo);
+	R_VEC_FOREACH (&bo->classes, klass)
+#else
+	RListIter *iter, *iter2;
+	const RList *list = r_bin_get_classes (c->bin);
+	r_list_foreach (list, iter, klass)
+#endif
+	{
 		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_foreach (klass->methods, iter2, sym) {
 			const char *name = r_bin_name_tostring (sym->name);
