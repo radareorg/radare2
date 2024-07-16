@@ -1299,10 +1299,12 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 		if (bin->has_crypto) {
 			R_LOG_ERROR ("Not parsing encrypted data");
 			return;
+#if 0
 			const char kn[] = "some_encrypted_data";
 			klass->name = r_bin_name_new (kn);
 			// klass->name = strdup ("some_encrypted_data");
 			left = strlen (kn) + 1;
+#endif
 		} else {
 			char name[MAX_CLASS_NAME_LEN];
 			int name_len = R_MIN (MAX_CLASS_NAME_LEN - 1, left);

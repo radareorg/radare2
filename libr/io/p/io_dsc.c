@@ -272,8 +272,10 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 
 	ut64 paddr = dsc->last_seek;
 
-	RList * slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
+	RList *slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
 	if (!slices) {
+		pj_free (pj);
+		r_strbuf_free (sb);
 		return NULL;
 	}
 
@@ -287,6 +289,9 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	r_list_foreach (slices, iter, trimmed) {
 		RList * infos = r_io_dsc_slice_get_rebase_infos_by_range (trimmed->slice, trimmed->seek, trimmed->count);
 		if (!infos) {
+			pj_free (pj);
+			r_list_free (slices);
+			r_strbuf_free (sb);
 			return NULL;
 		}
 
@@ -406,9 +411,6 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 
 	if (pj) {
 		pj_end (pj);
-	}
-
-	if (pj) {
 		return pj_drain (pj);
 	}
 	if (sb) {
