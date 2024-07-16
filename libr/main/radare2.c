@@ -1427,7 +1427,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					free (escaped_arg);
 					opt.ind++;
 				}
-				mr.pfile = strdup (mr.file);
+				if (mr.file) {
+					mr.pfile = strdup (mr.file);
+				} else {
+					R_LOG_ERROR ("Cannot find program to spawn");
+					ret = 1;
+					goto beach;
+				}
 			}
 		}
 		if (!mr.debug || mr.debug == 2) {
