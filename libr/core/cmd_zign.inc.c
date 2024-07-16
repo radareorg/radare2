@@ -113,6 +113,29 @@ static bool addGraphZign(RCore *core, const char *name, RList *args) {
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
+// R2_600 - move to libr/anal/sign.c as public api
+static RSignItem *item_new_named(RAnal *a, const char *n) {
+	RSignItem *it = r_sign_item_new ();
+	if (it && (it->name = strdup (n))) {
+		it->space = r_spaces_current (&a->zign_spaces);
+		return it;
+	}
+	r_sign_item_free (it);
+	return NULL;
+}
+static bool r_sign_add_next(RAnal *a, const char *name, const char *nextname) {
+	R_RETURN_VAL_IF_FAIL (a && name && nextname, false);
+
+	bool retval = false;
+	RSignItem *it = item_new_named (a, name);
+	if (it) {
+		it->next = strdup (nextname);
+		retval = r_sign_add_item (a, it);
+		r_sign_item_free (it);
+	}
+	return retval;
+}
+
 static inline bool za_add(RCore *core, const char *input) {
 	char *args = r_str_trim_dup (input + 1);
 	if (!args) {
@@ -173,8 +196,12 @@ static inline bool za_add(RCore *core, const char *input) {
 	case R_SIGN_BBHASH:
 		ret = r_sign_add_hash (core->anal, name, t, sig, strlen (sig));
 		break;
+	case R_SIGN_NEXT:
+		// TODO
+		ret = r_sign_add_next(core->anal, name, sig);
+		break;
 	default:
-		R_LOG_ERROR ("unknown zignature type");
+		R_LOG_ERROR ("unknown zignature type: %s", stype);
 	}
 	r_list_free (lst);
 	free (args);
