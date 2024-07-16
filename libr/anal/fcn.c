@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2024 - nibble, alvaro, pancake */
 
 #define R_LOG_ORIGIN "fcn"
 
@@ -771,6 +771,12 @@ repeat:
 		src1 = r_vector_at (&op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
+			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
+			if (codealign > 1) {
+				if (at % codealign) {
+					goto noskip;
+				}
+			}
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strstr (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
@@ -798,6 +804,7 @@ repeat:
 				}
 			}
 		}
+noskip:
 		if (op->hint.new_bits) {
 			r_anal_hint_set_bits (anal, op->jump, op->hint.new_bits);
 		}
