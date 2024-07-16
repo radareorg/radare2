@@ -85,6 +85,7 @@ R_VEC_TYPE_WITH_FINI (RIODscRebaseInfos, RDyldRebaseInfosEntry, r_io_dsc_rebase_
 
 typedef struct {
 	int fd;
+	char * file_name;
 	ut64 start;
 	ut64 end;
 	RIODscRebaseInfos rebase_infos;
@@ -204,7 +205,7 @@ static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int wh
 static bool r_io_dsc_object_dig_slices(RIODscObject * dsc);
 static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_count, ut32 array_end, ut64 size, ut64 * out_entry_size, RDscSubcacheFormat * out_format);
 static bool r_io_dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size);
-static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
+static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
 static RIODscSlice * r_io_dsc_object_get_slice(RIODscObject * dsc, ut64 off_global);
 static RList * r_io_dsc_object_get_slices_by_range(RIODscObject * dsc, ut64 off_global, int size);
 
@@ -416,6 +417,83 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	return NULL;
 }
 
+static char *__infoSubCache(RIODscObject * dsc, ut64 size, int mode) {
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
+	if (mode == R_MODE_JSON) {
+		pj = pj_new ();
+		if (!pj) {
+			return NULL;
+		}
+	} else if (mode == R_MODE_PRINT) {
+		sb = r_strbuf_new ("");
+	} else {
+		return NULL;
+	}
+
+	ut64 paddr = dsc->last_seek;
+
+	RList * slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
+	if (!slices) {
+		return NULL;
+	}
+
+	RListIter * iter;
+	RIODscTrimmedSlice * trimmed;
+
+	if (pj) {
+		pj_a (pj);
+	}
+
+	r_list_foreach (slices, iter, trimmed) {
+		if (pj) {
+			pj_o (pj);
+		}
+
+		if (pj) {
+			pj_ks (pj, "file", trimmed->slice->file_name);
+		} else {
+		    r_strbuf_appendf (sb, "file: %s\n", trimmed->slice->file_name);
+		}
+
+		char * tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->start);
+		if (pj) {
+			pj_ks (pj, "start", tmp);
+		} else if (sb) {
+			r_strbuf_appendf (sb, "start: %s\n", tmp);
+		}
+		free (tmp);
+
+		tmp = r_str_newf ("0x%"PFMT64x, trimmed->slice->end);
+		if (pj) {
+			pj_ks (pj, "end", tmp);
+		} else if (sb) {
+			r_strbuf_appendf (sb, "end: %s\n", tmp);
+		}
+		free (tmp);
+
+		if (pj) {
+			pj_end (pj);
+		} else if (sb) {
+			r_strbuf_append (sb, "\n");
+		}
+	}
+
+	r_list_free (slices);
+
+	if (pj) {
+		pj_end (pj);
+	}
+
+	if (pj) {
+		return pj_drain (pj);
+	}
+	if (sb) {
+		return r_strbuf_drain (sb);
+	}
+	return NULL;
+}
+
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	r_return_val_if_fail (io && fd && fd->data && command, NULL);
 	RIODscObject *dsc = (RIODscObject*) fd->data;
@@ -439,9 +517,29 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		case '\0':
 			return __infoPointer (dsc, size, R_MODE_PRINT);
 		}
+	} else if (r_str_startswith (command, "iF")) {
+		ut64 size = 8;
+		switch (command[2]) {
+		case '?':
+			io->cb_printf ("Usage: :iF[j?] [size]\n");
+			io->cb_printf (" :iF?   get this help message\n");
+			io->cb_printf (" :iF    show info about (sub)cache file\n");
+			io->cb_printf (" :iF    show info about (sub)cache file in JSON\n\n");
+			return NULL;
+		case 'j':
+			if (command[3] == ' ') {
+				size = r_num_math (NULL, command + 4);
+			}
+			return __infoSubCache (dsc, size, R_MODE_JSON);
+		case ' ':
+			size = r_num_math (NULL, command + 3);
+		case '\0':
+			return __infoSubCache (dsc, size, R_MODE_PRINT);
+		}
 	} else if (command && command[0] == '?') {
 		io->cb_printf ("DSC commands are prefixed with `:` (alias for `=!`).\n");
-		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n\n");
+		io->cb_printf (":iP[j?] [size]        show pointer metadata at current seek\n");
+		io->cb_printf (":iF[j?] [size]        show info about (sub)cache file at current seek\n\n");
 	}
 
 	return NULL;
@@ -504,7 +602,7 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 	if (!dsc_header_get_u32 (header, "subCacheArrayOffset", &subCacheArrayOffset)) {
 		// not a multi-file cache
 		dsc->total_size = next_or_end;
-		return r_io_dsc_object_dig_one_slice (dsc, fd, 0, next_or_end, NULL, header, false);
+		return r_io_dsc_object_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, false);
 	} else {
 		if (!dsc_header_get_u32 (header, "subCacheArrayCount", &subCacheArrayCount)) {
 			R_LOG_ERROR ("Malformed multi file cache");
@@ -527,7 +625,7 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 				if (is_valid_magic (tmp)) {
 					// cache files are cat together ("monocache")
 					dsc->total_size = next_or_end;
-					return r_io_dsc_object_dig_one_slice (dsc, fd, 0, next_or_end, NULL, header, true);
+					return r_io_dsc_object_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, true);
 				}
 			}
 		}
@@ -555,7 +653,7 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 		ut64 cursor = 0;
 		int i;
 
-		r_io_dsc_object_dig_one_slice (dsc, fd, 0, next_or_end, NULL, header, false);
+		r_io_dsc_object_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, false);
 		cursor = next_or_end;
 
 		ut64 sc_entry_cursor = subCacheArrayOffset;
@@ -707,7 +805,7 @@ static bool r_io_dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut6
 
 	*out_size = size;
 
-	if (!r_io_dsc_object_dig_one_slice (dsc, sc_fd, start, start + size, check_uuid, sc_header, false)) {
+	if (!r_io_dsc_object_dig_one_slice (dsc, sc_fd, filename, start, start + size, check_uuid, sc_header, false)) {
 		close (sc_fd);
 		dsc_header_free (sc_header);
 		return false;
@@ -717,7 +815,7 @@ static bool r_io_dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut6
 	return true;
 }
 
-static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache) {
+static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache) {
 	if (check_uuid) {
 		ut8 uuid[16];
 
@@ -739,6 +837,9 @@ static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start
 
 	slice->fd = fd;
 	slice->start = start;
+	if (file_name) {
+		slice->file_name = strdup (file_name);
+	}
 
 	if (walk_monocache) {
 		ut64 cursor = start;
@@ -780,6 +881,7 @@ static void r_io_dsc_slice_free(RIODscSlice * slice) {
 	if (!slice) {
 		return;
 	}
+	R_FREE (slice->file_name);
 	close (slice->fd);
 	RIODscRebaseInfos_fini (&slice->rebase_infos);
 }
