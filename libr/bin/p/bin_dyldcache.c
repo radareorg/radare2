@@ -1339,6 +1339,39 @@ static RList *sections(RBinFile *bf) {
 		}
 	}
 
+	ut32 j = 0;
+	for (i = 0; i < cache->n_hdr; i++) {
+		cache_hdr_t *hdr = &cache->hdr[i];
+		if (hdr->mappingCount < 1) {
+			continue;
+		}
+		ut32 maps_index = cache->maps_index[i];
+		cache_map_t * first_map = &cache->maps[maps_index];
+
+		bool is_stubs = hdr->imagesCount == 0 &&
+			hdr->mappingCount == 1 &&
+			first_map->size > 0x4000 &&
+			first_map->initProt == 5;
+
+		if (!is_stubs) {
+			continue;
+		}
+
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			r_list_free (ret);
+			break;
+		}
+		ptr->name = r_str_newf ("STUBS_ISLAND.%d", j++);
+		ptr->size = first_map->size - 0x4000;
+		ptr->vsize = ptr->size;
+		ptr->paddr = first_map->fileOffset + 0x4000;
+		ptr->vaddr = first_map->address + 0x4000;
+		ptr->add = true;
+		ptr->is_segment = false;
+		ptr->perm = prot2perm (first_map->initProt);
+		r_list_append (ret, ptr);
+	}
+
 	return ret;
 }
 
