@@ -395,7 +395,7 @@ static void printSnow(RCore *core) {
 }
 #endif
 
-static void rotateAsmBits(RCore *core) {
+static void rotate_asm_bits(RCore *core) {
 	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
 	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
 	int retries = 4;
@@ -440,11 +440,6 @@ R_API void r_core_visual_showcursor(RCore *core, int x) {
 }
 
 static void printFormat(RCore *core, int next) {
-	if (next == 1 || next == -1) {
-		next *= 2;
-	} else {
-		next /= 2;
-	}
 	switch (core->visual.printidx) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
 		core->visual.hexMode += next;
@@ -478,10 +473,20 @@ static void printFormat(RCore *core, int next) {
 }
 
 static inline void nextPrintFormat(RCore *core) {
+	if (core->visual.printidx == R_CORE_VISUAL_MODE_PX) {
+		if (!(core->visual.hexMode % 2)) {
+			printFormat (core, 1);
+		}
+	}
 	printFormat (core, 1);
 }
 
 static inline void prevPrintFormat(RCore *core) {
+	if (core->visual.printidx == R_CORE_VISUAL_MODE_PX) {
+		if (!(core->visual.hexMode % 2)) {
+			printFormat (core, -1);
+		}
+	}
 	printFormat (core, -1);
 }
 
@@ -622,16 +627,17 @@ repeat:
 	case 'p':
 		r_strbuf_append (p, "Visual Print Modes:\n\n");
 		r_strbuf_append (p,
-			" pP  -> change to the next/previous print mode (hex, dis, ..)\n"
-			" TAB -> rotate between all the configurations for the current print mode\n"
+			" pP     change to the next/previous print mode (hex, dis, ..)\n"
+			" TAB    rotate between all the configurations for the current print mode\n"
+			" SPACE  toggle between graph/disasm or similar hex modes\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'e':
 		r_strbuf_append (p, "Visual Evals:\n\n");
 		r_strbuf_append (p,
-			" E      toggle asm.hint.lea\n"
-			" &      rotate asm.bits=16,32,64\n"
+			" E   toggle asm.hint.lea\n"
+			" &   rotate asm.bits=16,32,64\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
@@ -642,22 +648,22 @@ repeat:
 	case 'i':
 		r_strbuf_append (p, "Visual Insertion Help:\n\n");
 		r_strbuf_append (p,
-			" i   -> insert bits, bytes or text depending on view\n"
-			" a   -> assemble instruction and write the bytes in the current offset\n"
-			" A   -> visual assembler\n"
-			" +   -> increment value of byte\n"
-			" -   -> decrement value of byte\n"
+			" i   insert bits, bytes or text depending on view\n"
+			" a   assemble instruction and write the bytes in the current offset\n"
+			" A   visual assembler\n"
+			" +   increment value of byte\n"
+			" -   decrement value of byte\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'd':
 		r_strbuf_append (p, "Visual Debugger Help:\n\n");
 		r_strbuf_append (p,
-			" $   -> set the program counter (PC register)\n"
-			" s   -> step in\n"
-			" S   -> step over\n"
-			" B   -> toggle breakpoint\n"
-			" :dc -> continue\n"
+			" $    set the program counter (PC register)\n"
+			" s    step in\n"
+			" S    step over\n"
+			" B    toggle breakpoint\n"
+			" :dc  continue\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
@@ -678,13 +684,13 @@ repeat:
 	case 'a':
 		r_strbuf_append (p, "Visual Analysis:\n\n");
 		r_strbuf_append (p,
-			" df -> define function\n"
-			" du -> undefine function\n"
-			" dc -> define as code\n"
-			" dw -> define as dword (32bit)\n"
-			" dw -> define as qword (64bit)\n"
-			" dd -> define current block or selected bytes as data\n"
-			" V  -> view graph (same as press the 'space' key)\n"
+			" df  define function\n"
+			" du  undefine function\n"
+			" dc  define as code\n"
+			" dw  define as dword (32bit)\n"
+			" dw  define as qword (64bit)\n"
+			" dd  define current block or selected bytes as data\n"
+			" V   view graph (same as press the 'space' key)\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
@@ -2785,9 +2791,9 @@ static void handle_space_key(RCore *core, int force) {
 		switch (core->visual.printidx) {
 		case R_CORE_VISUAL_MODE_PX: // hex
 			if (core->visual.hexMode % 2) {
-				printFormat (core, 2);
+				printFormat (core, -1);
 			} else {
-				printFormat (core, -2);
+				printFormat (core, 1);
 			}
 			r_core_visual_applyHexMode (core, core->visual.hexMode);
 			break;
@@ -2941,6 +2947,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			nextPrintFormat (core);
 			break;
 		case 'O': // tab TAB
+			prevPrintFormat (core);
+			break;
 		case 9: // tab TAB
 			r_core_visual_toggle_decompiler_disasm (core, false, true);
 			if (core->visual.splitView) {
@@ -2969,7 +2977,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 					}
 				} else {
-					prevPrintFormat (core);
+					nextPrintFormat (core);
 				}
 			}
 			break;
@@ -2984,7 +2992,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				r_cons_clear ();
 			} else {
-				rotateAsmBits (core);
+				rotate_asm_bits (core);
 			}
 			break;
 		case 'a':
@@ -4082,7 +4090,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 		}
 		break;
-		case 'Z': // shift-tab SHIFT-TAB
+		case 'Z': // Z=90 shift-tab SHIFT-TAB
 			if (och == 27) { // shift-tab
 				if (core->print->cur_enabled && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					core->print->cur = 0;
@@ -4094,8 +4102,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					prevPrintFormat (core);
 				}
 			} else { // "Z"
+				prevPrintFormat (core);
+#if 0
 				ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
 				toggle_bb (core, addr);
+#endif
 			}
 			break;
 		case '?':
