@@ -437,6 +437,8 @@ static char *__infoSubCache(RIODscObject * dsc, ut64 size, int mode) {
 
 	RList * slices = r_io_dsc_object_get_slices_by_range (dsc, paddr, size);
 	if (!slices) {
+		r_strbuf_free (sb);
+		pj_free (pj);
 		return NULL;
 	}
 

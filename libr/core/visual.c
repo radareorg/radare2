@@ -2755,6 +2755,8 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 			r_warn_if_reached ();
 		}
 		return true;
+	} else {
+		r_config_toggle (core->config, "asm.cmt.fold");
 	}
 	return false;
 }
@@ -4082,12 +4084,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				at += core->print->cur;
 			}
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
-			if (fcn) {
-				fcn->folded = !fcn->folded;
-			} else {
-				r_config_toggle (core->config, "asm.cmt.fold");
-			}
+			toggle_bb (core, at);
 		}
 		break;
 		case 'Z': // Z=90 shift-tab SHIFT-TAB
@@ -4103,10 +4100,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else { // "Z"
 				prevPrintFormat (core);
-#if 0
-				ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
-				toggle_bb (core, addr);
-#endif
 			}
 			break;
 		case '?':
