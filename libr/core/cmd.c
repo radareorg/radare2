@@ -6215,8 +6215,15 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	R_RETURN_VAL_IF_FAIL (core && cstr, 0);
 	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
+	int ret = 0;
+	if (core->incomment) {
+		if (r_str_startswith (cstr, "*/")) {
+			core->incomment = false;
+		}
+		goto beach; // false
+	}
 	r_core_return_code (core, 0);
-	int ret = handle_command_call (core, cstr);
+	ret = handle_command_call (core, cstr);
 	if (ret != -1) {
 		if (log) {
 			r_line_hist_add (cstr);
@@ -6267,18 +6274,13 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		// raw comment syntax
 		goto beach; // false;
 	}
-	if (!strncmp (cstr, "/*", 2)) {
+	if (r_str_startswith (cstr, "/*")) {
 		if (r_sandbox_enable (0)) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			goto beach; // false
 		}
 		core->incomment = true;
-	} else if (!strncmp (cstr, "*/", 2)) {
-		core->incomment = false;
-		goto beach; // false
-	}
-	if (core->incomment) {
-		goto beach; // false
+		goto beach;
 	}
 	if (log && (*cstr && (*cstr != '.' || !strncmp (cstr, ".(", 2)))) {
 		free (core->lastcmd);
