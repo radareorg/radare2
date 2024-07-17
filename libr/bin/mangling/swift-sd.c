@@ -643,6 +643,44 @@ static char *my_swift_demangler(const char *s) {
 					break;
 				case 'V':
 					p = resolve (types, q + 1, &attr); // type
+					if (!p) {
+						int n = 0;
+repeat:;
+						const char *Q = getnum (q + 1, &n);
+						const char *res = getstring (Q, n);
+						if (res) {
+							r_strbuf_append (out, ".");
+							r_strbuf_append (out, res);
+						}
+						q = Q + n;
+						if (q >= q_end) {
+							eprintf ("end\n");
+							continue;
+						}
+						if (!isdigit (*q)) {
+							while (*q) {
+								if (isdigit (*q)) {
+									break;
+								}
+								q++;
+							}
+						}
+						if (isdigit (*q)) {
+							q--;
+							goto repeat;
+#if 0
+							int n = 0;
+							const char *Q = getnum (q, &n);
+							const char *res = getstring (Q, n);
+							if (res) {
+								r_strbuf_append (out, ".");
+								r_strbuf_append (out, res);
+							}
+							q = Q + n;
+#endif
+						}
+					}
+					q++;
 					break;
 				case '_':
 					// it's return value time!
@@ -887,7 +925,8 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 				}
 				break;
 			}
-			return NULL;
+			s--;
+			// return NULL;
 		}
 	} else {
 		// TIFF ones found on COFF binaries, swift-unrelated, return early to avoid FP
