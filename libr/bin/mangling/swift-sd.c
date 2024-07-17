@@ -839,6 +839,7 @@ repeat:;
 }
 
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
+	const char *os = s;
 	if (r_str_startswith (s, "_$")) {
 		s += 2;
 	}
@@ -924,7 +925,9 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 				}
 				break;
 			}
-			s--;
+			if (s > os) {
+				s--;
+			}
 			// return NULL;
 		}
 	} else {
