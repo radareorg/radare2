@@ -34,6 +34,12 @@ EXPECT=<<EOF
 0x00000000 objc      var   0      isa
 0x100003e30 objc      var   1      name
 0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
+0x00000000 [0x100003f04 - 0x100003f04]      0 ? class 4 Greet
+0x100003f04 ?   method   0      symbolic main.Greet.
+0x00000000 [0x100003f14 - 0x100003f14]      0 ? class 5 Employee_1
+0x100003f14 ?   method   0      symbolic main.Employee.allocator
+0x00000000 [0x100003f1e - 0x100003f1e]      0 ? class 6 Employer_1
+0x100003f1e ?   method   0      symbolic main.Employer.allocator
 ---
 class Employee {
   property name : Swift.String;
@@ -47,6 +53,15 @@ class main.Employee : Swift._SwiftObject {
 }
 @objc
 class main.Employer : main.Employee {
+}
+class Greet {
+  func symbolic main.Greet.() {}  // 0x100003f04
+}
+class Employee_1 {
+  func symbolic main.Employee.allocator() {}  // 0x100003f14
+}
+class Employer_1 {
+  func symbolic main.Employer.allocator() {}  // 0x100003f1e
 }
 ---
 [
@@ -105,6 +120,45 @@ class main.Employer : main.Employee {
     ],
     "rawsuper": [
       "_TtC4main8Employee"
+    ]
+  },
+  {
+    "classname": "Greet",
+    "addr": 0,
+    "index": 4,
+    "methods": [
+      {
+        "name": "symbolic main.Greet.",
+        "flag": "section.5.__TEXT.__swift5_typeref",
+        "rawname": "_symbolic $s4main5GreetP",
+        "addr": 4294983428
+      }
+    ]
+  },
+  {
+    "classname": "Employee_1",
+    "addr": 0,
+    "index": 5,
+    "methods": [
+      {
+        "name": "symbolic main.Employee.allocator",
+        "flag": "method.Employee_1.symbolic_main.Employee.allocator",
+        "rawname": "_symbolic _____ 4main8EmployeeC",
+        "addr": 4294983444
+      }
+    ]
+  },
+  {
+    "classname": "Employer_1",
+    "addr": 0,
+    "index": 6,
+    "methods": [
+      {
+        "name": "symbolic main.Employer.allocator",
+        "flag": "method.Employer_1.symbolic_main.Employer.allocator",
+        "rawname": "_symbolic _____ 4main8EmployerC",
+        "addr": 4294983454
+      }
     ]
   }
 ]
