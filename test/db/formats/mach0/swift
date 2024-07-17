@@ -375,25 +375,25 @@ EXPECT=<<EOF
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "So11UITextFieldCSgXw",
+        "type": "UITextField.allocator",
         "addr": 4295134384
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "So14UIProgressViewCSgXw",
+        "type": "UIProgressView.allocator",
         "addr": 4295134391
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "So8UIButtonCSgXw",
+        "type": "UIButton.allocator",
         "addr": 4295134403
       },
       {
         "name": "wkWebView",
         "kind": "property",
-        "type": "So9WKWebViewCSg",
+        "type": "WKWebView.allocator",
         "addr": 4295134414
       },
       {
@@ -416,13 +416,13 @@ EXPECT=<<EOF
       {
         "name": "wkWebViewPlaceholder",
         "kind": "property",
-        "type": "So6UIViewCSgXw",
+        "type": "UIView.allocator",
         "addr": 4295134528
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "So15UIBarButtonItemCSgXw",
+        "type": "UIBarButtonItem.allocator",
         "addr": 4295134549
       }
     ]
@@ -442,7 +442,7 @@ EXPECT=<<EOF
       {
         "name": "window",
         "kind": "property",
-        "type": "So8UIWindowCSg",
+        "type": "UIWindow.allocator",
         "addr": 4295134564
       }
     ]
@@ -488,7 +488,7 @@ EXPECT=<<EOF
       {
         "name": "versionLabel",
         "kind": "property",
-        "type": "So7UILabelCSgXw",
+        "type": "UILabel.allocator",
         "addr": 4295134606
       }
     ]
@@ -720,19 +720,19 @@ EXPECT=<<EOF
       {
         "name": "optionsSwitch",
         "kind": "property",
-        "type": "So8UISwitchCSgXw",
+        "type": "UISwitch.allocator",
         "addr": 4295134704
       },
       {
         "name": "optionsNameLabel",
         "kind": "property",
-        "type": "So7UILabelCSgXw",
+        "type": "UILabel.allocator",
         "addr": 4295134720
       },
       {
         "name": "optionsDescriptionLabel",
         "kind": "property",
-        "type": "So7UILabelCSgXw",
+        "type": "UILabel.allocator",
         "addr": 4295134752
       },
       {
@@ -865,7 +865,7 @@ EXPECT=<<EOF
       {
         "name": "preferencesTableView",
         "kind": "property",
-        "type": "So11UITableViewCSg",
+        "type": "UITableView.allocator",
         "addr": 4295134880
       }
     ]
@@ -1104,19 +1104,19 @@ EXPECT=<<EOF
       {
         "name": "baseUrlTextField",
         "kind": "property",
-        "type": "So11UITextFieldCSgXw",
+        "type": "UITextField.allocator",
         "addr": 4295135056
       },
       {
         "name": "contentTextView",
         "kind": "property",
-        "type": "So10UITextViewCSgXw",
+        "type": "UITextView.allocator",
         "addr": 4295135073
       },
       {
         "name": "parentWebView",
         "kind": "property",
-        "type": "So16UIViewControllerCSg",
+        "type": "UIViewController.allocator",
         "addr": 4295135089
       },
       {
@@ -1148,31 +1148,31 @@ EXPECT=<<EOF
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "So11UITextFieldCSgXw",
+        "type": "UITextField.allocator",
         "addr": 4295135136
       },
       {
         "name": "uiWebView",
         "kind": "property",
-        "type": "So9UIWebViewCSgXw",
+        "type": "UIWebView.allocator",
         "addr": 4295135143
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "So14UIProgressViewCSgXw",
+        "type": "UIProgressView.allocator",
         "addr": 4295135153
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "So8UIButtonCSgXw",
+        "type": "UIButton.allocator",
         "addr": 4295135165
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "So15UIBarButtonItemCSgXw",
+        "type": "UIBarButtonItem.allocator",
         "addr": 4295135176
       },
       {
@@ -1196,7 +1196,7 @@ EXPECT=<<EOF
       {
         "name": "loadContentButtonPressed",
         "kind": "property",
-        "type": "So15UIBarButtonItemCSgXw",
+        "type": "UIBarButtonItem.allocator",
         "addr": 4295135264
       }
     ]
