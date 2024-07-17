@@ -654,7 +654,6 @@ repeat:;
 						}
 						q = Q + n;
 						if (q >= q_end) {
-							eprintf ("end\n");
 							continue;
 						}
 						if (!isdigit (*q)) {

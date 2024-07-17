@@ -52,6 +52,12 @@ class getExistentialTypeMetadata(swift {
   func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x1000036b0
   func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::TheLazy {}  // 0x100008588
 }
+class SuperKlass_1 {
+  func symbolic klass.SuperKlass.allocator() {}  // 0x100003e7e
+}
+class SomeClass_1 {
+  func symbolic klass.SomeClass.allocator() {}  // 0x100003e84
+}
 class swift {
   func getRootSuperclass() {}  // 0x100002b70
   func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
@@ -2478,10 +2484,283 @@ EXPECT=<<EOF
     ]
   },
   {
+    "classname": "URL",
+    "addr": 0,
+    "index": 31,
+    "methods": [
+      {
+        "name": "symbolic Foundation.URL.",
+        "flag": "section.7.__TEXT.__swift5_typeref",
+        "rawname": "_symbolic _____Sg 10Foundation3URLV",
+        "addr": 4295133308
+      },
+      {
+        "name": "symbolic Foundation.URL.",
+        "flag": "sym.URL._symbolic_Say_____G_10Foundation3URLV",
+        "rawname": "_symbolic Say_____G 10Foundation3URLV",
+        "addr": 4295133506
+      },
+      {
+        "name": "symbolic Foundation.URL.",
+        "flag": "method.URL.symbolic_Foundation.URL.",
+        "rawname": "_symbolic _____ySay_____GG s16IndexingIteratorV 10Foundation3URLV",
+        "addr": 4295133516
+      }
+    ]
+  },
+  {
+    "classname": "WKWebViewController",
+    "addr": 0,
+    "index": 32,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewController.allocator",
+        "flag": "method.WKWebViewController.symbolic_WheresMyBrowser.WKWebViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser19WKWebViewControllerC",
+        "addr": 4295133316
+      }
+    ]
+  },
+  {
+    "classname": "WKWebViewPreferencesManager",
+    "addr": 0,
+    "index": 33,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.allocator",
+        "flag": "sym.WKWebViewPreferencesManager._symbolic______Sg_15WheresMyBrowser27WKWebViewPreferencesManagerC",
+        "rawname": "_symbolic _____Sg 15WheresMyBrowser27WKWebViewPreferencesManagerC",
+        "addr": 4295133424
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "sym.WKWebViewPreferencesManager._symbolic_SS______t_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "rawname": "_symbolic SS______t 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "addr": 4295134038
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "sym.WKWebViewPreferencesManager._symbolic_Say_____G_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "rawname": "_symbolic Say_____G 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "addr": 4295134048
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "sym.WKWebViewPreferencesManager._symbolic______ySay_____GG_s16IndexingIteratorV_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebG7SettingC",
+        "rawname": "_symbolic _____ySay_____GG s16IndexingIteratorV 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebG7SettingC",
+        "addr": 4295134058
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "sym.WKWebViewPreferencesManager._symbolic_SDySS_____G_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "rawname": "_symbolic SDySS_____G 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "addr": 4295134076
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.allocator",
+        "flag": "method.WKWebViewPreferencesManager.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser27WKWebViewPreferencesManagerC",
+        "addr": 4295134088
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "method.WKWebViewPreferencesManager.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
+        "addr": 4295134156
+      }
+    ]
+  },
+  {
+    "classname": "AppDelegate",
+    "addr": 0,
+    "index": 34,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.AppDelegate.allocator",
+        "flag": "method.AppDelegate.symbolic_WheresMyBrowser.AppDelegate.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser11AppDelegateC",
+        "addr": 4295133606
+      }
+    ]
+  },
+  {
+    "classname": "JavaScriptBridgeMessageHandler",
+    "addr": 0,
+    "index": 35,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
+        "flag": "method.JavaScriptBridgeMessageHandler.symbolic_WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser30JavaScriptBridgeMessageHandlerC",
+        "addr": 4295133732
+      }
+    ]
+  },
+  {
+    "classname": "AboutViewController",
+    "addr": 0,
+    "index": 36,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.AboutViewController.allocator",
+        "flag": "method.AboutViewController.symbolic_WheresMyBrowser.AboutViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser19AboutViewControllerC",
+        "addr": 4295133738
+      }
+    ]
+  },
+  {
+    "classname": "DocumentationViewController",
+    "addr": 0,
+    "index": 37,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.DocumentationViewController.allocator",
+        "flag": "method.DocumentationViewController.symbolic_WheresMyBrowser.DocumentationViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser27DocumentationViewControllerC",
+        "addr": 4295133760
+      }
+    ]
+  },
+  {
+    "classname": "MainTabBarViewController",
+    "addr": 0,
+    "index": 38,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedEncodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
+        "rawname": "_symbolic _____y_____G s22KeyedEncodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
+        "addr": 4295133766
+      },
+      {
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedDecodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
+        "rawname": "_symbolic _____y_____G s22KeyedDecodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
+        "addr": 4295133780
+      },
+      {
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.allocator",
+        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC",
+        "addr": 4295133794
+      },
+      {
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "flag": "sym.MainTabBarViewController._symbolic_______15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV",
+        "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV",
+        "addr": 4295133824
+      },
+      {
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
+        "addr": 4295133830
+      }
+    ]
+  },
+  {
+    "classname": "Locale",
+    "addr": 0,
+    "index": 39,
+    "methods": [
+      {
+        "name": "symbolic Foundation.Locale.",
+        "flag": "method.Locale.symbolic_Foundation.Locale.",
+        "rawname": "_symbolic _____Sg 10Foundation6LocaleV",
+        "addr": 4295133860
+      }
+    ]
+  },
+  {
+    "classname": "WKOptionsCellDelegate",
+    "addr": 0,
+    "index": 40,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.WKOptionsCellDelegate.",
+        "flag": "sym.WKOptionsCellDelegate._symbolic__s15WheresMyBrowser21WKOptionsCellDelegateP",
+        "rawname": "_symbolic $s15WheresMyBrowser21WKOptionsCellDelegateP",
+        "addr": 4295133878
+      },
+      {
+        "name": "symbolic WheresMyBrowser.WKOptionsCellDelegate.",
+        "flag": "method.WKOptionsCellDelegate.symbolic_WheresMyBrowser.WKOptionsCellDelegate.",
+        "rawname": "_symbolic ______pSg 15WheresMyBrowser21WKOptionsCellDelegateP",
+        "addr": 4295133968
+      }
+    ]
+  },
+  {
+    "classname": "WKOptionsViewCell",
+    "addr": 0,
+    "index": 41,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.WKOptionsViewCell.allocator",
+        "flag": "method.WKOptionsViewCell.symbolic_WheresMyBrowser.WKOptionsViewCell.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser17WKOptionsViewCellC",
+        "addr": 4295133944
+      }
+    ]
+  },
+  {
+    "classname": "WKPreferencesViewController",
+    "addr": 0,
+    "index": 42,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.WKPreferencesViewController.allocator",
+        "flag": "method.WKPreferencesViewController.symbolic_WheresMyBrowser.WKPreferencesViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser27WKPreferencesViewControllerC",
+        "addr": 4295134012
+      }
+    ]
+  },
+  {
+    "classname": "LoadContentViewController",
+    "addr": 0,
+    "index": 43,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.LoadContentViewController.allocator",
+        "flag": "method.LoadContentViewController.symbolic_WheresMyBrowser.LoadContentViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser25LoadContentViewControllerC",
+        "addr": 4295134162
+      }
+    ]
+  },
+  {
+    "classname": "URLRequest",
+    "addr": 0,
+    "index": 44,
+    "methods": [
+      {
+        "name": "symbolic Foundation.URLRequest.",
+        "flag": "method.URLRequest.symbolic_Foundation.URLRequest.",
+        "rawname": "_symbolic _____Sg 10Foundation10URLRequestV",
+        "addr": 4295134212
+      }
+    ]
+  },
+  {
+    "classname": "UIWebViewController",
+    "addr": 0,
+    "index": 45,
+    "methods": [
+      {
+        "name": "symbolic WheresMyBrowser.UIWebViewController.allocator",
+        "flag": "method.UIWebViewController.symbolic_WheresMyBrowser.UIWebViewController.allocator",
+        "rawname": "_symbolic _____ 15WheresMyBrowser19UIWebViewControllerC",
+        "addr": 4295134220
+      }
+    ]
+  },
+  {
     "classname": "swift::AsyncTask",
     "addr": 0,
     "lang": "c++",
-    "index": 31,
+    "index": 46,
     "methods": [
       {
         "name": "waitFuture(swift::AsyncTask*, swift::AsyncContext*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, swift::OpaqueValue*)",
@@ -2507,7 +2786,7 @@ EXPECT=<<EOF
     "classname": "swift",
     "addr": 0,
     "lang": "c++",
-    "index": 32,
+    "index": 47,
     "methods": [
       {
         "name": "swift56override_swift_task_future_wait(swift::OpaqueValue*, swift::AsyncContext*, swift::AsyncTask*, void ( swiftasynccall*)(swift::AsyncContext* swift_async_context), swift::AsyncContext*, void ( swiftasynccall*)(swift::OpaqueValue*, swift::AsyncContext* swift_async_context, swift::AsyncTask*, void (swift::AsyncContext* swift_async_context), swift::AsyncContext*))",
@@ -2659,7 +2938,7 @@ EXPECT=<<EOF
     "classname": "swift::MutexPlatformHelper",
     "addr": 0,
     "lang": "c++",
-    "index": 33,
+    "index": 48,
     "methods": [
       {
         "name": "init(os_unfair_lock_s&, bool)",

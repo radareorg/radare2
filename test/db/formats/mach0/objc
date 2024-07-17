@@ -70,6 +70,7 @@ EXPECT=<<EOF
 0x100003078 [0x100001ad0 - 0x100001ad0]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass(TEST) :: TestSwiftObjc.ThisIsASwiftClass
 0x00001f34 [0x00001f34 - 0x00001f34]      0 swift class 0 ThisIsASwiftClass :: __C.NSObject
 0x1000031e8 [0x100001d80 - 0x100001d80]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
+0x00000000 [0x100001f80 - 0x100001f80]      0 ? class 3 ThisIsASwiftClass_1
 EOF
 RUN
 
