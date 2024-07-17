@@ -1854,6 +1854,9 @@ static int cmd_stdin(void *data, const char *input) {
 				r_core_cmd_call (core, "P");
 			}
 			break;
+		case 'D': // "-a"
+			r_core_cmd_callf (core, "iD%s", input+1);
+			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
 				const char *arch = r_config_get (core->config, "asm.arch");
