@@ -146,7 +146,7 @@ static const RCoreHelpMessage help_msg_j = {
 	"j:", "?e", "run '?e' command and show the result stats in json",
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
 	"jq", " [...]", "same as !jq",
-	"js", " [expr]", "run given javascript expression",
+	"js", " [expr]", "run given javascript expression ('expr' can start with base64:)",
 	"js-", "", "read from stdin until ^D",
 	"js!", "", "reset js vm (same as #!!)",
 	"js:", "", "enter the interactive repl with autocompletion and colors",
@@ -1782,7 +1782,16 @@ static int cmd_j(void *data, const char *input) { // "j"
 			}
 		} else if (input[1] == ' ') { // "js "
 			if (r_lang_use (core->lang, "qjs")) {
-				r_lang_run (core->lang, input + 1, -1);
+				const char *arg = r_str_trim_head_ro (input + 1);
+				if (r_str_startswith (arg, "base64:")) {
+					char *script = (char *)r_base64_decode_dyn (arg + 7, -1);
+					if (script) {
+						r_lang_run (core->lang, script, -1);
+						free (script);
+					}
+				} else {
+					r_lang_run (core->lang, input + 1, -1);
+				}
 			} else {
 				r_core_cmdf (core, "#!pipe node -e '%s'", input + 1);
 			}
