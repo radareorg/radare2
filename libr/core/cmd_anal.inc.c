@@ -4339,6 +4339,7 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 		char *regstate = r_core_cmd_str (core, "dre");
 		r_str_trim (regstate);
 		r_core_cmdf (core, "abe %s @0x%"PFMT64x, regstate, b0->from);
+		free (regstate);
 		r_core_cmdf (core, "aeb @0x%"PFMT64x, b0->from);
 		b0->regstate = strdup ("dr0,#!"); //initial regstate
 		save_regstate_in_destinations (core, blocks, b0, NULL);
