@@ -99,7 +99,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
-	"/h", "[t] [hash] [len]", "find block matching this hash. See ph",
+	"/h", "[?][algorithm] [digest] [size]", "find block of size bytes having this digest. See ph",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
@@ -4879,26 +4879,26 @@ reread:
 	case 'h': // "/h"
 	{
 		char *p, *arg = r_str_trim_dup (input + 1);
+		if (*arg == '?') {
+			r_core_cmd_help_match (core, help_msg_slash, "/h");
+			break;
+		}
 		p = strchr (arg, ' ');
 		if (p) {
 			*p++ = 0;
-			if (*arg == '?') {
-				r_core_cmd_help_match (core, help_msg_slash, "/h");
-			} else {
-				ut32 min = UT32_MAX;
-				ut32 max = UT32_MAX;
-				char *pmax, *pmin = strchr (p, ' ');
-				if (pmin) {
-					*pmin++ = 0;
-					pmax = strchr (pmin, ' ');
-					if (pmax) {
-						*pmax++ = 0;
-						max = r_num_math (core->num, pmax);
-					}
-					min = r_num_math (core->num, pmin);
+			ut32 min = UT32_MAX;
+			ut32 max = UT32_MAX;
+			char *pmax, *pmin = strchr (p, ' ');
+			if (pmin) {
+				*pmin++ = 0;
+				pmax = strchr (pmin, ' ');
+				if (pmax) {
+					*pmax++ = 0;
+					max = r_num_math (core->num, pmax);
 				}
-				search_hash (core, arg, p, min, max, &param);
+				min = r_num_math (core->num, pmin);
 			}
+			search_hash (core, arg, p, min, max, &param);
 		} else {
 			R_LOG_ERROR ("Missing hash. See ph?");
 		}
