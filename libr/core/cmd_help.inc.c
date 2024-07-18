@@ -251,6 +251,7 @@ static RCoreHelpMessage help_msg_question_i = {
 	"?im", " [msg]", "like ?ie, but using RCons.message (clear-screen + press-any-key)",
 	"?ik", "", "press any key",
 	"?ip", " ([path])", "interactive hud mode to find files in given path",
+	"?iu", " (ui-expr)", "input using user interface expression",
 	NULL
 };
 
@@ -294,12 +295,7 @@ static RCoreHelpMessage help_msg_question = {
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
 	"?h", " [str]", "calculate hash for given string",
-	"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
-	"?ik", "", "press any key input dialog",
-	"?im", " message", "show message centered in screen",
-	"?in", " prompt", "noyes input prompt",
-	"?ip", " prompt", "path input prompt",
-	"?iy", " prompt", "yesno input prompt",
+	"?i", "[?] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
 	"?j", " arg", "same as '? num' but in JSON",
 	"?l", "[q] str", "returns the length of string ('q' for quiet, just set $?)",
 	"?o", " num", "get octal value",
@@ -633,6 +629,25 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	r_cons_printf (f, l, s, msg, s, l);
 	free (l);
 	free (s);
+}
+
+#include "visual_riu.inc.c"
+
+static int cmd_qiu(RCore *core, const char *input) {
+	if (!*input || *input == '?') {
+		r_cons_printf ("Usage: ?iu fieldname(type,command,value)\n");
+		r_cons_printf ("  Types: string, button, title\n");
+		r_cons_printf ("Examples:\n");
+		r_cons_printf (" '?iu name(string,?i;yp,test) addr(string,f~...) ok(button) cancel(button)\n");
+		r_cons_printf ("Values for every field are saved in the global SdbKv database (see `k` command)\n");
+		return 0;
+	}
+	RIU *riu = riu_new (core, input);
+	do {
+		riu_render (riu);
+	} while (riu_input (riu));
+	riu_free (riu);
+	return 0;
 }
 
 static int cmd_help(void *data, const char *input) {
@@ -1521,6 +1536,9 @@ static int cmd_help(void *data, const char *input) {
 			case 'y': // "?iy"
 				 for (input += 2; *input == ' '; input++);
 				 r_core_return_value (core, r_cons_yesno (1, "%s? (Y/n)", input));
+				 break;
+			case 'u':
+				 r_core_return_value (core, cmd_qiu (core, r_str_trim_head_ro (input + 2)));
 				 break;
 			case 'n': // "?in"
 				 for (input += 2; *input == ' '; input++);
