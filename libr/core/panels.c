@@ -132,7 +132,7 @@ static const char *menus_Emulate[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "RegisterCols",
+	"Registers", "Bit Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "RegisterCols",
 	"DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Stack", "Step", "Step Over", "Reload",
@@ -1946,6 +1946,7 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "Stack", "pxr@r:SP", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
+	sdb_set (db, "Bit Registers", "dr 1", 0);
 	sdb_set (db, "FPU Registers", PANEL_CMD_FPU_REGISTERS, 0);
 	sdb_set (db, "XMM Registers", PANEL_CMD_XMM_REGISTERS, 0);
 	sdb_set (db, "YMM Registers", PANEL_CMD_YMM_REGISTERS, 0);
