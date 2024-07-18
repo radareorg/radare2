@@ -636,9 +636,10 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 static int cmd_qiu(RCore *core, const char *input) {
 	if (!*input || *input == '?') {
 		r_cons_printf ("Usage: ?iu fieldname(type,command,value)\n");
-		r_cons_printf ("  Types: string, button, title\n");
+		r_cons_printf ("  Types: string, button, title, run\n");
 		r_cons_printf ("Examples:\n");
-		r_cons_printf (" '?iu name(string,?i;yp,test) addr(string,f~...) ok(button) cancel(button)\n");
+		r_cons_printf ("'?iu name(string,?i;yp,test) addr(string,f~...) ok(button) cancel(button)\n");
+		r_cons_printf ("'?iu addr(string,f~...) hexdump(run,x 32@k:riu.addr) ok(button)\n");
 		r_cons_printf ("Values for every field are saved in the global SdbKv database (see `k` command)\n");
 		return 0;
 	}
