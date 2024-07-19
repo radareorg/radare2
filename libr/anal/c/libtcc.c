@@ -275,32 +275,18 @@ static int tcc_compile(TCCState *s1) {
 #endif
 	Sym *define_start = s1->define_stack;
 	s1->nocode_wanted = true;
-#if 0
-#ifndef __wasi__
-	const bool sjres = setjmp (s1->error_jmp_buf) == 0;
-#else
-	const bool sjres = false;
-#endif
-	if (sjres) {
-		s1->nb_errors = 0;
-		s1->error_set_jmp_enabled = true;
-		s1->ch = s1->file->buf_ptr[0];
-		s1->tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
-		s1->parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
-		// parse_flags = PARSE_FLAG_TOK_NUM;
-		// pvtop = vtop;
-		next (s1);
-		tcc_decl0 (s1, VT_CONST, 0);
-		if (s1->tok != TOK_EOF) {
-			expect (s1, "declaration");
-		}
-#if 0
-		if (pvtop != vtop) {
-			eprintf ("internal compiler vstack leak? (%d)", vtop - pvtop);
-		}
-#endif
+	s1->nb_errors = 0;
+	s1->error_set_jmp_enabled = true;
+	s1->ch = s1->file->buf_ptr[0];
+	s1->tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
+	s1->parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
+	// parse_flags = PARSE_FLAG_TOK_NUM;
+	// pvtop = vtop;
+	next (s1);
+	tcc_decl0 (s1, VT_CONST, 0);
+	if (s1->tok != TOK_EOF) {
+		expect (s1, "declaration");
 	}
-#endif
 	s1->error_set_jmp_enabled = false;
 
 	/* reset define stack, but leave -Dsymbols (may be incorrect if

@@ -436,20 +436,19 @@ redo:
 			s1->file->buf_ptr = p;
 			c = handle_eob (s1);
 			p = s1->file->buf_ptr;
-			if (c == '\\') {
+			if (c != '\\') {
+				goto redo;
+			}
+			PEEKC_EOB (s1, c, p);
+			if (c == '\n') {
+				s1->file->line_num++;
+				PEEKC_EOB (s1, c, p);
+			} else if (c == '\r') {
 				PEEKC_EOB (s1, c, p);
 				if (c == '\n') {
 					s1->file->line_num++;
 					PEEKC_EOB (s1, c, p);
-				} else if (c == '\r') {
-					PEEKC_EOB (s1, c, p);
-					if (c == '\n') {
-						s1->file->line_num++;
-						PEEKC_EOB (s1, c, p);
-					}
 				}
-			} else {
-				goto redo;
 			}
 		} else {
 			p++;
@@ -1335,15 +1334,14 @@ include_syntax:
 				}
 				buf1[0] = 0;
 				i = n;	/* force end loop */
-
 			} else if (i == -1) {
 				/* search in current dir if "header.h" */
 				if (c != '\"') {
 					continue;
 				}
 				path = s1->file->filename;
-				pstrncpy (buf1, path, tcc_basename (path) - path);
-
+				r_str_ncpy (buf1, path, tcc_basename (path) - path);
+				// pstrncpy (buf1, path, tcc_basename (path) - path);
 			} else {
 				/* search in all the include paths */
 				if (i < s1->nb_include_paths) {
@@ -1835,7 +1833,7 @@ num_too_long:
 				s = -1;
 				ch = *p++;
 			}
-			if (ch < '0' || ch > '9') {
+			if (!isdigit (ch)) {
 				expect (s1, "exponent digits");
 				return;
 			}
@@ -2115,20 +2113,18 @@ maybe_newline:
 			preprocess (s1, s1->tok_flags & TOK_FLAG_BOF);
 			p = s1->file->buf_ptr;
 			goto maybe_newline;
+		}
+		if (c == '#') {
+			p++;
+			s1->tok = TOK_TWOSHARPS;
 		} else {
-			if (c == '#') {
-				p++;
-				s1->tok = TOK_TWOSHARPS;
-			} else {
-				if (s1->parse_flags & PARSE_FLAG_ASM_COMMENTS) {
-					p = parse_line_comment (s1, p - 1);
-					goto redo_no_start;
-				}
-				s1->tok = '#';
+			if (s1->parse_flags & PARSE_FLAG_ASM_COMMENTS) {
+				p = parse_line_comment (s1, p - 1);
+				goto redo_no_start;
 			}
+			s1->tok = '#';
 		}
 		break;
-
 	case 'a': case 'b': case 'c': case 'd':
 	case 'e': case 'f': case 'g': case 'h':
 	case 'i': case 'j': case 'k': case 'l':
@@ -2214,18 +2210,15 @@ parse_ident_slow:
 		if (t != '\\' && t != '\'' && t != '\"') {
 			/* fast case */
 			goto parse_ident_fast;
-		} else {
-			PEEKC (s1, c, p);
-			if (c == '\'' || c == '\"') {
-				is_long = 1;
-				goto str_const;
-			} else {
-				cstr_reset (&s1->tokcstr);
-				cstr_ccat (&s1->tokcstr, 'L');
-				goto parse_ident_slow;
-			}
 		}
-		break;
+		PEEKC (s1, c, p);
+		if (c == '\'' || c == '\"') {
+			is_long = 1;
+			goto str_const;
+		}
+		cstr_reset (&s1->tokcstr);
+		cstr_ccat (&s1->tokcstr, 'L');
+		goto parse_ident_slow;
 	case '0': case '1': case '2': case '3':
 	case '4': case '5': case '6': case '7':
 	case '8': case '9':
