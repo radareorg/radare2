@@ -1,28 +1,10 @@
-/*
- *  TCC - Tiny C Compiler
- *
- *  Copyright (c) 2001-2004 Fabrice Bellard
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+/* LGPLv2 - Tiny C Compiler - 2001-2004 fbellard, 2009-2024 pancake */
 
 #include "tcc.h"
 
-#define TCC_ERR(...) do {				\
-	tcc_error (s1, __VA_ARGS__);			\
-	return;								\
+#define TCC_ERR(...) do { \
+	tcc_error (s1, __VA_ARGS__); \
+	return; \
 } while (0)
 
 /* ------------------------------------------------------------------------- */
@@ -38,19 +20,19 @@ static void unary_type(TCCState *s1, CType *type);
 static bool is_compatible_parameter_types(CType *type1, CType *type2);
 
 /* ------------------------------------------------------------------------- */
-ST_INLN bool is_structured(CType *t) {
+static inline bool is_structured(CType *t) {
 	return (t->t & VT_BTYPE) == VT_STRUCT || (t->t & VT_BTYPE) == VT_UNION;
 }
 
-ST_INLN bool is_struct(CType *t) {
+static inline bool is_struct(CType *t) {
 	return (t->t & VT_BTYPE) == VT_STRUCT;
 }
 
-ST_INLN bool is_union(CType *t) {
+static inline bool is_union(CType *t) {
 	return (t->t & VT_BTYPE) == VT_UNION;
 }
 
-ST_INLN bool is_enum(CType *t) {
+static inline bool is_enum(CType *t) {
 	return (t->t & VT_BTYPE) == VT_ENUM;
 }
 
@@ -64,26 +46,14 @@ static void gexpr(TCCState *s1) {
 	}
 }
 
-ST_INLN bool is_float(int t) {
-	int bt;
-	bt = t & VT_BTYPE;
+static inline bool is_float(int t) {
+	int bt = t & VT_BTYPE;
 	return bt == VT_LDOUBLE || bt == VT_DOUBLE || bt == VT_FLOAT || bt == VT_QFLOAT;
 }
 
-ST_INLN bool not_structured(CType *t) {
+static inline bool not_structured(CType *t) {
 	return (t->t & VT_BTYPE) != VT_STRUCT && (t->t & VT_BTYPE) != VT_UNION;
 }
-
-/* ------------------------------------------------------------------------- */
-#if 0
-/* we use our own 'finite' function to avoid potential problems with
- * non standard math libs */
-/* XXX: endianness dependent */
-ST_FUNC int ieee_finite(double d) {
-	int *p = (int *) &d;
-	return ((unsigned) ((p[1] | 0x800fffff) + 1)) >> 31;
-}
-#endif
 
 ST_FUNC void test_lvalue(TCCState *s1) {
 	if (!(s1->vtop->r & VT_LVAL)) {
@@ -91,7 +61,6 @@ ST_FUNC void test_lvalue(TCCState *s1) {
 	}
 }
 
-/* ------------------------------------------------------------------------- */
 /* symbol allocator */
 static Sym *__sym_malloc(TCCState *s1) {
 	Sym *sym_pool = calloc (SYM_POOL_NB, sizeof (Sym));
@@ -120,7 +89,7 @@ static inline Sym *sym_malloc(TCCState *s1) {
 	return sym;
 }
 
-ST_INLN void sym_free(TCCState *s1, Sym *sym) {
+static inline void sym_free(TCCState *s1, Sym *sym) {
 	sym->next = s1->sym_free_first;
 	free (sym->asm_label);
 	s1->sym_free_first = sym;
@@ -166,7 +135,7 @@ static Sym *struct_find(TCCState *s1, int v) {
 }
 
 /* find an identifier */
-ST_INLN Sym *sym_find(TCCState *s1, int v) {
+static inline Sym *sym_find(TCCState *s1, int v) {
 	v -= TOK_IDENT;
 	if ((unsigned) v >= (unsigned) (s1->tok_ident - TOK_IDENT)) {
 		return NULL;
@@ -174,8 +143,7 @@ ST_INLN Sym *sym_find(TCCState *s1, int v) {
 	return s1->table_ident[v]->sym_identifier;
 }
 
-// TODO: Add better way to store the meta information
-// about the pushed type
+// TODO: Add better way to store the meta information about the pushed type
 int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta) {
 	CType new_type = {
 		.ref = sym_malloc (s1),
@@ -233,8 +201,7 @@ static void dump_type(TCCState *s1, CType *type, int depth) {
 
 /* push a given symbol on the symbol stack */
 ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c) {
-	Sym *s, **ps;
-	TokenSym *ts;
+	Sym **ps;
 
 	if (s1->local_stack) {
 		ps = &s1->local_stack;
@@ -242,7 +209,7 @@ ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c) {
 		ps = &s1->global_stack;
 	}
 	// dump_type(type, 5);
-	s = sym_push2 (s1, ps, v, type->t, c);
+	Sym *s = sym_push2 (s1, ps, v, type->t, c);
 	if (!s) {
 		return NULL;
 	}
@@ -257,7 +224,7 @@ ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c) {
 		}
 		// ts = table_ident[i - TOK_IDENT];
 		/* record symbol in token array */
-		ts = s1->table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
+		TokenSym *ts = s1->table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
 		if (v & SYM_STRUCT) {
 			ps = &ts->sym_struct;
 		} else {
@@ -272,7 +239,6 @@ ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c) {
 #if 1
 /* push a global identifier */
 ST_FUNC Sym *global_identifier_push(TCCState *s1, int v, int t, long long c) {
-	Sym **ps;
 	Sym *s = sym_push2 (s1, &s1->global_stack, v, t, c);
 	/* don't record anonymous symbol */
 	if (s && v < SYM_FIRST_ANOM) {
@@ -281,9 +247,8 @@ ST_FUNC Sym *global_identifier_push(TCCState *s1, int v, int t, long long c) {
 			R_LOG_WARN ("token not found");
 			return NULL;
 		}
-		ps = &s1->table_ident[i - TOK_IDENT]->sym_identifier;
-		/* modify the top most local identifier, so that
-		   sym_identifier will point to 's' when popped */
+		Sym **ps = &s1->table_ident[i - TOK_IDENT]->sym_identifier;
+		/* modify the top most local identifier, to make sym_identifier point to 's' when popped */
 		while (*ps) {
 			ps = &(*ps)->prev_tok;
 		}
@@ -332,8 +297,6 @@ ST_FUNC void sym_pop(TCCState *s1, Sym **ptop, Sym *b) {
 static void weaken_symbol(Sym *sym) {
 	sym->type.t |= VT_WEAK;
 }
-
-/* ------------------------------------------------------------------------- */
 
 static void vsetc(TCCState *s1, CType *type, int r, CValue *vc) {
 	if (s1->vtop >= s1->vstack + (VSTACK_SIZE - 1)) {
@@ -384,12 +347,12 @@ void vpush64(TCCState *s1, int ty, unsigned long long v) {
 }
 
 /* push long long constant */
-ST_FUNC void vpushll(TCCState *s1, long long v) {
+static void vpushll(TCCState *s1, long long v) {
 	CValue cval = { .ll = v };
 	vsetc (s1, &s1->int64_type, VT_CONST, &cval);
 }
 
-ST_FUNC void vset(TCCState *s1, CType *type, int r, int v) {
+static void vset(TCCState *s1, CType *type, int r, int v) {
 	CValue cval = { .i = v };
 	vsetc (s1, type, r, &cval);
 }
@@ -455,7 +418,8 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 		s = type->ref;
 		*a = s->r;
 		return s->c;
-	} else if (bt == VT_PTR) {
+	}
+	if (bt == VT_PTR) {
 		if (type->t & VT_ARRAY) {
 			s = type->ref;
 			int ts = type_size (s1, &s->type, a);
@@ -466,10 +430,12 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 		}
 		*a = PTR_SIZE;
 		return PTR_SIZE;
-	} else if (bt == VT_LDOUBLE) {
+	}
+	if (bt == VT_LDOUBLE) {
 		*a = LDOUBLE_ALIGN;
 		return LDOUBLE_SIZE;
-	} else if (bt == VT_DOUBLE || bt == VT_INT64) {
+	}
+	if (bt == VT_DOUBLE || bt == VT_INT64) {
 		if (!strncmp (s1->arch, "x86", 3) && s1->bits == 32) {
 			if (!strncmp (s1->os, "windows", 7)) {
 				*a = 8;
@@ -492,18 +458,22 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 			*a = 8;
 		}
 		return 8;
-	} else if (bt == VT_ENUM) {
+	}
+	if (bt == VT_ENUM) {
 		/* Non standard, but still widely used
 		 * and implemented in GCC, MSVC */
 		*a = 8;
 		return 8;
-	} else if (bt == VT_INT32 || bt == VT_FLOAT) {
+	}
+	if (bt == VT_INT32 || bt == VT_FLOAT) {
 		*a = 4;
 		return 4;
-	} else if (bt == VT_INT16) {
+	}
+	if (bt == VT_INT16) {
 		*a = 2;
 		return 2;
-	} else if (bt == VT_QLONG || bt == VT_QFLOAT) {
+	}
+	if (bt == VT_QLONG || bt == VT_QFLOAT) {
 		*a = 8;
 		return 16;
 	}
@@ -554,16 +524,12 @@ static bool is_compatible_func(CType *type1, CType *type2) {
 		s1 = s1->next;
 		s2 = s2->next;
 	}
-	if (s2) {
-		return false;
-	}
-	return true;
+	return s2? false: true;
 }
 
-/* return true if type1 and type2 are the same.  If unqualified is
-true, qualifiers on the types are ignored.
-
-- enums are not checked as gcc __builtin_types_compatible_p ()
+/* return true if type1 and type2 are the same.
+ * If unqualified is true, qualifiers on the types are ignored.
+ * enums are not checked as gcc __builtin_types_compatible_p ()
  */
 static bool compare_types(CType *type1, CType *type2, int unqualified) {
 	int t1 = type1->t & VT_TYPE;
@@ -577,15 +543,16 @@ static bool compare_types(CType *type1, CType *type2, int unqualified) {
 	if (t1 != t2) {
 		return false;
 	}
-	/* test more complicated cases */
-	int bt1 = t1 & VT_BTYPE;
+	const int bt1 = t1 & VT_BTYPE;
 	if (bt1 == VT_PTR) {
 		type1 = pointed_type (type1);
 		type2 = pointed_type (type2);
 		return is_compatible_types (type1, type2);
-	} else if (bt1 == VT_STRUCT || bt1 == VT_UNION) {
+	}
+	if (bt1 == VT_STRUCT || bt1 == VT_UNION) {
 		return type1->ref == type2->ref;
-	} else if (bt1 == VT_FUNC) {
+	}
+	if (bt1 == VT_FUNC) {
 		return is_compatible_func (type1, type2);
 	}
 	return true;
@@ -711,7 +678,7 @@ add_tstr:
 			}
 		}
 		strcat2 (buf, buf_size, ")");
-		goto no_var;
+		return;
 	case VT_PTR:
 		s = type->ref;
 		if (t & VT_ARRAY) {
@@ -723,14 +690,12 @@ add_tstr:
 			}
 			type_to_str (s1, buf, buf_size, &s->type, buf1);
 		}
-		goto no_var;
+		return;
 	}
 	if (varstr) {
 		strcat2 (buf, buf_size, " ");
 		strcat2 (buf, buf_size, varstr);
 	}
-no_var:
-	;
 }
 
 /* Parse GNUC __attribute__ extension. Currently, the following
@@ -1117,7 +1082,7 @@ do_decl:
 						type_to_str (s1, b, sizeof (b), &type1, NULL);
 						{
 							int type_bt = type1.t & VT_BTYPE;
-							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
+							// eprintf("2: %s.%s = %s\n", ctype, name, varstr);
 							if (is_typedef && autonamed) {
 								tcc_typedef_appendf (s1, "[+]typedef.%%s.fields=%s\n", varstr);
 								tcc_typedef_appendf (s1, "typedef.%%s.%s.meta=%d\n", varstr, type_bt);
@@ -1181,8 +1146,7 @@ do_decl:
 	}
 }
 
-/* parse an expression of the form '(type)' or '(expr)' and return its
- * type */
+/* parse an expression of the form '(type)' or '(expr)' and return its type */
 static void parse_expr_type(TCCState *s1, CType *type) {
 	int n;
 	AttributeDef ad;
@@ -1196,9 +1160,7 @@ static void parse_expr_type(TCCState *s1, CType *type) {
 	skip (s1, ')');
 }
 
-/* return 0 if no type declaration. otherwise, return the basic type
- * and skip it.
- */
+/* return 0 if no type declaration. otherwise, return the basic type and skip it */
 static int parse_btype(TCCState *s1, CType *type, AttributeDef *ad) {
 	int t, u, type_found, typespec_found, typedef_found;
 	Sym *s;
@@ -1426,13 +1388,14 @@ the_end:
 		tcc_error (s1, "signed and unsigned modifier");
 		return 0;
 	}
+#if 0
 	if (s1->char_is_unsigned) {
 		if ((t & (VT_SIGNED | VT_UNSIGNED | VT_BTYPE)) == VT_INT8) {
 			t |= VT_UNSIGNED;
 		}
 	}
+#endif
 	t &= ~VT_SIGNED;
-
 	/* long is never used as type */
 	if ((t & VT_BTYPE) == VT_LONG) {
 		if (!strncmp (s1->os, "windows", 7) ||
@@ -1443,7 +1406,6 @@ the_end:
 		}
 	}
 	type->t = t;
-
 	return type_found;
 }
 
@@ -1543,12 +1505,10 @@ old_proto:
 			l = FUNC_OLD;
 		}
 		skip (s1, ')');
-		/* NOTE: const is ignored in returned type as it has a special
-		   meaning in gcc / C++ */
+		/* NOTE: const is ignored in returned type as it has a special meaning in gcc / C++ */
 		type->t &= ~VT_CONSTANT;
-		/* some ancient pre-K&R C allows a function to return an array
-		   and the array brackets to be put after the arguments, such
-		   that "int c()[]" means something like "int[] c()" */
+		/* some ancient pre-K&R C allows a function to return an array and the array brackets
+		   to be put after the arguments, such that "int c()[]" means something like "int[] c()" */
 		if (s1->tok == '[') {
 			next (s1);
 			skip (s1, ']');	/* only handle simple "[]" */
@@ -1572,7 +1532,9 @@ old_proto:
 		}
 		n = -1;
 		t1 = 0;
-		if (s1->tok != ']') {
+		if (s1->tok == ']') {
+			n = 0;
+		} else {
 			if (!s1->local_stack || s1->nocode_wanted) {
 				vpushll (s1, expr_const (s1));
 			} else {
@@ -1594,26 +1556,23 @@ old_proto:
 		/* parse next post type */
 		post_type (s1, type, ad);
 
-		/* we push an anonymous symbol which will contain the array
-		   element type */
+		/* we push an anonymous symbol which will contain the array element type */
 		s1->arraysize = n;
 		if (n < 0) {
-			eprintf ("array with no size []\n");
+			TCC_ERR ("array with no size []");
 		}
 		s = sym_push (s1, SYM_FIELD, type, 0, n);
-		if (!s) {
-			return;
+		if (s) {
+			type->t = (t1? VT_VLA: VT_ARRAY) | VT_PTR;
+			type->ref = s;
 		}
-		type->t = (t1? VT_VLA: VT_ARRAY) | VT_PTR;
-		type->ref = s;
 	}
 }
 
-/* Parse a type declaration (except basic type), and return the type
- * in 'type'. 'td' is a bitmask indicating which kind of type decl is
- * expected. 'type' should contain the basic type. 'ad' is the
- * attribute definition of the basic type. It can be modified by
- * type_decl().
+/* Parse a type declaration (except basic type), and return the type in 'type'.
+ * 'td' is a bitmask indicating which kind of type decl is expected.
+ * 'type' should contain the basic type.
+ * 'ad' is the attribute definition of the basic type. It can be modified by type_decl().
  */
 static void type_decl(TCCState *s1, CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
@@ -1718,25 +1677,28 @@ redo:
 }
 
 /* compute the lvalue VT_LVAL_xxx needed to match type t. */
-ST_FUNC int lvalue_type(int t) {
-	int bt, r;
-	r = VT_LVAL;
-	bt = t & VT_BTYPE;
-	if (bt == VT_INT8 || bt == VT_BOOL) {
-		r |= VT_LVAL_BYTE;
-	} else if (bt == VT_INT16) {
-		r |= VT_LVAL_SHORT;
-	} else {
-		return r;
-	}
+static int lvalue_type(int t) {
+	int r = VT_LVAL;
 	if (t & VT_UNSIGNED) {
 		r |= VT_LVAL_UNSIGNED;
+	}
+	const int bt = t & VT_BTYPE;
+	switch (bt) {
+	case VT_INT8:
+	case VT_BOOL:
+		r |= VT_LVAL_BYTE;
+		break;
+	case VT_INT16:
+		r |= VT_LVAL_SHORT;
+		break;
+	default:
+		return r;
 	}
 	return r;
 }
 
 /* indirection with full error checking and bound check */
-ST_FUNC void indir(TCCState *s1) {
+static void indir(TCCState *s1) {
 	if ((s1->vtop->type.t & VT_BTYPE) != VT_PTR) {
 		if ((s1->vtop->type.t & VT_BTYPE) == VT_FUNC) {
 			return;
@@ -1762,20 +1724,21 @@ static void parse_type(TCCState *s1, CType *type) {
 }
 
 static void vpush_tokc(TCCState *s1, int t) {
-	CType type = {0};
-	type.t = t;
-	type.ref = NULL;
+	CType type = {
+		.t = t,
+		.ref = NULL
+	};
 	vsetc (s1, &type, VT_CONST, &s1->tokc);
 }
 
 static void unary(TCCState *s1) {
-	int n, t, align, size, r, sizeof_caller;
+	int n, t, align, size, r;
 	CType type = {0};
 	Sym *s;
 	AttributeDef ad;
 	static R_TH_LOCAL int in_sizeof = 0;
 
-	sizeof_caller = in_sizeof;
+	int sizeof_caller = in_sizeof;
 	in_sizeof = 0;
 tok_next:
 	switch (s1->tok) {
@@ -1819,10 +1782,8 @@ tok_next:
 	/* fall thru */
 	case TOK___FUNC__:
 	{
-		// void *ptr = NULL;
-		int len;
 		/* special function name identifier */
-		len = strlen (s1->funcname) + 1;
+		int len = strlen (s1->funcname) + 1;
 		/* generate char[len] type */
 		type.t = VT_INT8;
 		mk_pointer (s1, &type);
@@ -1836,11 +1797,7 @@ tok_next:
 	}
 	break;
 	case TOK_LSTR:
-		if (!strncmp (s1->os, "windows", 7)) {
-			t = VT_INT16 | VT_UNSIGNED;
-		} else {
-			t = VT_INT32;
-		}
+		t = r_str_startswith (s1->os, "windows")? VT_INT32: VT_INT16 | VT_UNSIGNED;
 		goto str_init;
 	case TOK_STR:
 		/* string parsing */
@@ -1938,7 +1895,7 @@ str_init:
 		type2.t &= ~(VT_CONSTANT | VT_VOLATILE);
 		vpushi (s1, is_compatible_types (&type1, &type2));
 	}
-	break;
+		break;
 	case TOK_builtin_constant_p:
 	{
 		long long res;
@@ -1952,7 +1909,7 @@ str_init:
 		skip (s1, ')');
 		vpushll (s1, res);
 	}
-	break;
+		break;
 	case TOK_builtin_frame_address:
 	{
 		int level;
@@ -1966,10 +1923,10 @@ str_init:
 		skip (s1, ')');
 		type.t = VT_VOID;
 		mk_pointer (s1, &type);
-		vset (s1, &type, VT_LOCAL, 0);	/* local frame */
+		vset (s1, &type, VT_LOCAL, 0);	// local frame
 		while (level--) {
 			mk_pointer (s1, &s1->vtop->type);
-			indir (s1);		/* -> parent frame */
+			indir (s1); // -> parent frame
 		}
 	}
 	break;
@@ -2000,7 +1957,6 @@ str_init:
 			// vpushll(classify_x86_64_va_arg(&type));
 		}
 		break;
-
 	// special qnan , snan and infinity values
 	case TOK___NAN__:
 		vpush64 (s1, VT_DOUBLE, 0x7ff8000000000000ULL);
@@ -2019,7 +1975,7 @@ tok_identifier:
 		t = s1->tok;
 		next (s1);
 		if (t < TOK_UIDENT) {
-			eprintf ("%d %d\n", t, TOK_UIDENT);
+			// eprintf ("%d %d\n", t, TOK_UIDENT);
 			expect (s1, "identifier5");
 			break;
 		}
@@ -2065,7 +2021,7 @@ tok_identifier:
 			gaddrof (s1);
 			next (s1);
 			/* expect pointer on structure */
-			if (not_structured(&s1->vtop->type)) {
+			if (not_structured (&s1->vtop->type)) {
 				expect (s1, "struct or union");
 			}
 			s = s1->vtop->type.ref;
@@ -2095,19 +2051,13 @@ tok_identifier:
 			gexpr (s1);
 			indir (s1);
 			skip (s1, ']');
-			/*
-			} else if (s1->tok == '(') {
-			SValue ret;
-			Sym *sa;
-			int nb_args, sret;
-			*/
 		} else {
 			break;
 		}
 	}
 }
 
-ST_FUNC void expr_prod(TCCState *s1) {
+static void expr_prod(TCCState *s1) {
 	unary (s1);
 	while (s1->tok == '*' || s1->tok == '/' || s1->tok == '%') {
 		next (s1);
@@ -2262,8 +2212,7 @@ static void expr_type(TCCState *s1, CType *type) {
 	s1->nocode_wanted = saved_nocode_wanted;
 }
 
-/* parse a unary expression and return its type without any side
- * effect. */
+/* parse a unary expression and return its type without any side effect. */
 static void unary_type(TCCState *s1, CType *type) {
 	bool a = s1->nocode_wanted;
 	s1->nocode_wanted = true;
@@ -2272,7 +2221,7 @@ static void unary_type(TCCState *s1, CType *type) {
 	s1->nocode_wanted = a;
 }
 
-/* parse a constant expression and return value in s1->vtop.  */
+/* parse a constant expression and return value in s1->vtop. */
 static void expr_const1(TCCState *s1) {
 	const bool a = s1->const_wanted;
 	s1->const_wanted = true;
@@ -2290,17 +2239,14 @@ ST_FUNC long long expr_const(TCCState *s1) {
 	return s1->vtop->c.ll;
 }
 
-/* return the label token if current token is a label, otherwise
- * return zero */
+/* return the label token if current token is a label, otherwise return zero */
 static bool is_label(TCCState *s1) {
-	int last_tok;
-
 	/* fast test first */
 	if (s1->tok < TOK_UIDENT) {
 		return false;
 	}
 	/* no need to save tokc because s1->tok is an identifier */
-	last_tok = s1->tok;
+	const int last_tok = s1->tok;
 	next (s1);
 	if (s1->tok == ':') {
 		next (s1);
@@ -2310,14 +2256,9 @@ static bool is_label(TCCState *s1) {
 	return false;
 }
 
-/* t is the array or struct type. c is the array or struct
- * address. cur_index/cur_field is the pointer to the current
- * value. 'size_only' is true if only size info is needed (only used
- * in arrays) */
-static void decl_designator(TCCState *s1, CType *type, unsigned long c,
-			    long long *cur_index, Sym **cur_field,
-			    int size_only)
-{
+/* t is the array or struct type. c is the array or struct address. cur_index/cur_field is the pointer
+ * to the current value. 'size_only' is true if only size info is needed (only used in arrays) */
+static void decl_designator(TCCState *s1, CType *type, unsigned long c, long long *cur_index, Sym **cur_field, int size_only) {
 	Sym *s, *f = NULL;
 	long long index, index_last;
 	int notfirst, align, l, nb_elems, elem_size;
@@ -2431,8 +2372,7 @@ struct_field:
 
 /* store a value or an expression directly in global data or in local array */
 static void init_putv(TCCState *s1, CType *type, unsigned long c, long long v, int expr_type) {
-	int saved_global_expr;
-	CType dtype;
+	int tmp;
 
 	switch (expr_type) {
 	case EXPR_VAL:
@@ -2440,10 +2380,10 @@ static void init_putv(TCCState *s1, CType *type, unsigned long c, long long v, i
 		break;
 	case EXPR_CONST:
 		/* compound literals must be allocated globally in this case */
-		saved_global_expr = s1->global_expr;
+		tmp = s1->global_expr;
 		s1->global_expr = 1;
 		expr_const1 (s1);
-		s1->global_expr = saved_global_expr;
+		s1->global_expr = tmp;
 		/* NOTE: symbols are accepted */
 		if ((s1->vtop->r & (VT_VALMASK | VT_LVAL)) != VT_CONST) {
 			TCC_ERR ("initializer element is not constant");
@@ -2454,7 +2394,7 @@ static void init_putv(TCCState *s1, CType *type, unsigned long c, long long v, i
 		break;
 	}
 
-	dtype = *type;
+	CType dtype = *type;
 	dtype.t &= ~VT_CONSTANT;/* need to do that to avoid false warning */
 
 	vset (s1, &dtype, VT_LOCAL | VT_LVAL, c);
@@ -2475,7 +2415,7 @@ static void init_putz(TCCState *s1, CType *t, unsigned long c, int size) {
  * size only evaluation is wanted (only for arrays). */
 static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int first, int size_only) {
 	long long index;
-	int n, no_oblock, nb, parlevel, parlevel1;
+	int n, no_oblock, parlevel, parlevel1;
 	size_t array_length, size1, i;
 	int align1, expr_type;
 	Sym *s, *f;
@@ -2489,11 +2429,9 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 		size1 = type_size (s1, t1, &align1);
 
 		no_oblock = 1;
-		if ((first && s1->tok != TOK_LSTR && s1->tok != TOK_STR) ||
-		    s1->tok == '{') {
+		if ((first && s1->tok != TOK_LSTR && s1->tok != TOK_STR) || s1->tok == '{') {
 			if (s1->tok != '{') {
-				TCC_ERR ("character array initializer must be a literal,"
-					" optionally enclosed in braces");
+				TCC_ERR ("character array initializer must be a literal or enclosed in braces");
 			}
 			skip (s1, '{');
 			no_oblock = 0;
@@ -2506,14 +2444,8 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 			while (tcc_nerr (s1) == 0 && (s1->tok == TOK_STR || s1->tok == TOK_LSTR)) {
 				CString *cstr = s1->tokc.cstr;
 				/* compute maximum number of chars wanted */
-				int cstr_len;
-				if (s1->tok == TOK_STR) {
-					cstr_len = cstr->size;
-				} else {
-					cstr_len = cstr->size / sizeof (nwchar_t);
-				}
-				cstr_len--;
-				nb = cstr_len;
+				const int cstr_len = ((s1->tok == TOK_STR) ? cstr->size : cstr->size / sizeof (nwchar_t)) - 1;
+				int nb = cstr_len;
 				if (n >= 0 && nb > (n - array_length)) {
 					nb = n - array_length;
 				}
@@ -2525,18 +2457,16 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 					   string in global variable, we handle it
 					   specifically */
 					for (i = 0; i < nb; i++) {
-						int ch = (s1->tok == TOK_STR)
+						const int ch = (s1->tok == TOK_STR)
 							? ((unsigned char *) cstr->data)[i]
 							: ((nwchar_t *) cstr->data)[i];
-						init_putv (s1, t1, c + (array_length + i) * size1,
-							ch, EXPR_VAL);
+						init_putv (s1, t1, c + (array_length + i) * size1, ch, EXPR_VAL);
 					}
 				}
 				array_length += nb;
 				next (s1);
 			}
-			/* only add trailing zero if enough storage (no
-			   warning in this case since it is standard) */
+			/* only add trailing zero if enough storage (no warning in this case since it is standard) */
 			if (n < 0 || array_length < n) {
 				if (!size_only) {
 					init_putv (s1, t1, c + (array_length * size1), 0, EXPR_VAL);
@@ -2550,19 +2480,15 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 				if (n >= 0 && index >= n) {
 					TCC_ERR ("index too large");
 				}
-				/* must put zero in holes (note that doing it that way
-				   ensures that it even works with designators) */
+				// fill with zeros to ensure designators work as intended
 				if (!size_only && array_length < index) {
-					init_putz (s1, t1, c + array_length * size1,
-						(index - array_length) * size1);
+					init_putz (s1, t1, c + array_length * size1, (index - array_length) * size1);
 				}
 				index++;
 				if (index > array_length) {
 					array_length = index;
 				}
-				/* special test for multi dimensional arrays (may not
-				   be strictly correct if designators are used at the
-				   same time) */
+				/* special case for multi dimensional arrays (may not be strictly correct if designators are used at the same time) */
 				if (index >= n && no_oblock) {
 					break;
 				}
@@ -2585,17 +2511,14 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 			s->c = array_length;
 		}
 	} else if (is_structured (type) && (!first || s1->tok == '{')) {
-		int par_count;
-
-		/* NOTE: the previous test is a specific case for automatic
-		   struct/union init */
+		/* NOTE: the previous test is a specific case for automatic struct/union init */
 		/* XXX: union needs only one init */
 
 		/* XXX: this test is incorrect for local initializers
 		   beginning with ( without {. It would be much more difficult
 		   to do it correctly (ideally, the expression parser should
 		   be used in all cases) */
-		par_count = 0;
+		int par_count = 0;
 		if (s1->tok == '(') {
 			AttributeDef ad1;
 			STACK_NEW0 (CType, type1);
@@ -2649,8 +2572,8 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 				}
 				/* if yes, test for bitfield shift */
 				if ((f->type.t & VT_BITFIELD) && (f->next->type.t & VT_BITFIELD)) {
-					int bit_pos_1 = (f->type.t >> VT_STRUCT_SHIFT) & 0x3f;
-					int bit_pos_2 = (f->next->type.t >> VT_STRUCT_SHIFT) & 0x3f;
+					const int bit_pos_1 = (f->type.t >> VT_STRUCT_SHIFT) & 0x3f;
+					const int bit_pos_2 = (f->next->type.t >> VT_STRUCT_SHIFT) & 0x3f;
 					// printf("bitfield %d %d\n", bit_pos_1, bit_pos_2);
 					if (bit_pos_1 != bit_pos_2) {
 						break;
@@ -2670,8 +2593,7 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 		}
 		/* put zeros at the end */
 		if (!size_only && array_length < n) {
-			init_putz (s1, type, c + array_length,
-				n - array_length);
+			init_putz (s1, type, c + array_length, n - array_length);
 		}
 		if (!no_oblock) {
 			skip (s1, '}');
@@ -2701,8 +2623,7 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 			next (s1);
 		}
 	} else {
-		/* currently, we always use constant expression for globals
-		   (may change for scripting case) */
+		/* currently, we always use constant expression for globals (may change for scripting case) */
 		expr_type = EXPR_CONST;
 		init_putv (s1, type, c, 0, expr_type);
 	}
@@ -2717,15 +2638,13 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
  * If 'has_init' is 2, a special parsing is done to handle string
  * constants. */
 static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, int r, int has_init, int v, char *asm_label, int scope) {
-	int size, align, addr;
+	int align;
 	int level;
 	ParseState saved_parse_state = {
 		0
 	};
 	TokenString init_str;
-	Sym *flexible_array;
-
-	flexible_array = NULL;
+	Sym *flexible_array = NULL;
 	if (is_struct (type)) {
 		Sym *field;
 		field = type->ref;
@@ -2737,14 +2656,14 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 		}
 	}
 
-	size = type_size (s1, type, &align);
+	int size = type_size (s1, type, &align);
 	/* If unknown size, we must evaluate it before
 	   evaluating initializers because
 	   initializers can generate global data too
 	   (e.g. string pointers or ISOC99 compound
 	   literals). It also simplifies local
 	   initializers handling */
-	tok_str_new (&init_str);
+	tok_str_init (&init_str);
 	if (size < 0 || (flexible_array && has_init)) {
 		if (!has_init) {
 			TCC_ERR ("unknown type size");
@@ -2807,7 +2726,7 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 	}
 	if ((r & VT_VALMASK) == VT_LOCAL) {
 		s1->loc = (s1->loc - size) & - align;
-		addr = s1->loc;
+		const int addr = s1->loc;
 		if (v) {
 			/* local variable */
 			sym_push (s1, v, type, r, addr);
@@ -2816,9 +2735,7 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 			vset (s1, type, r, addr);
 		}
 	} else {
-		Sym *sym;
-
-		sym = NULL;
+		Sym *sym = NULL;
 		if (v && scope == VT_CONST) {
 			/* see if the symbol was already defined */
 			sym = sym_find (s1, v);
@@ -2846,7 +2763,7 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 					   twice */
 					/* no init data, we won't add more to the symbol */
 					if (!has_init) {
-						goto no_alloc;
+						return;
 					}
 				}
 			}
@@ -2867,8 +2784,6 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 			weaken_symbol (sym);
 		}
 	}
-no_alloc:
-	;
 }
 
 #if 1
@@ -2979,14 +2894,12 @@ R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 					tcc_error (s1, "function without file scope cannot be static");
 					return 1;
 				}
-				/* if old style function prototype, we accept a
-				   declaration list */
+				/* if old style function prototype, we accept a declaration list */
 				sym = type.ref;
 				if (sym->c == FUNC_OLD) {
 					func_decl_list (s1, sym);
 				}
 			}
-
 			if (ad.weak) {
 				type.t |= VT_WEAK;
 			}
@@ -3009,13 +2922,13 @@ R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 
 				/* reject abstract declarators in function definition */
 				sym = type.ref;
-				if (sym) {
-					while ((sym = sym->next))
-						if (!(sym->v & ~SYM_FIELD)) {
-							expect (s1, "identifier6");
-						}
-				} else {
+				if (!sym) {
 					return 0; // XXX unmatching braces in typedef?
+				}
+				while ((sym = sym->next)) {
+					if (!(sym->v & ~SYM_FIELD)) {
+						expect (s1, "identifier6");
+					}
 				}
 
 				/* XXX: cannot do better now: convert extern line to static inline */
@@ -3028,11 +2941,9 @@ R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 					if ((sym->type.t & VT_BTYPE) != VT_FUNC) {
 						goto func_error1;
 					}
-
 					r = sym->type.ref->r;
 					/* use func_call from prototype if not defined */
-					if (FUNC_CALL (r) != FUNC_CDECL
-					    && FUNC_CALL (type.ref->r) == FUNC_CDECL) {
+					if (FUNC_CALL (r) != FUNC_CDECL && FUNC_CALL (type.ref->r) == FUNC_CDECL) {
 						/// XXX workaround for the buggy tcc type punning crap
 						AttributeDef rd = {0};
 						memcpy (&rd, &r, sizeof (r));

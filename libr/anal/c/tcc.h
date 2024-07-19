@@ -1,36 +1,13 @@
-/*
- *  TCC - Tiny C Compiler
- *
- *  Copyright (c) 2001-2004 Fabrice Bellard
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+/* LGPLv2 - Tiny C Compiler - 2001-2004 fbellard, 2009-2024 pancake */
 
 #ifndef _TCC_H
 #define _TCC_H
 
-#include "r_types.h"
+#include <r_types.h>
 #include <r_util/r_str.h>
 #include <r_th.h>
 #include <r_vector.h>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include "tcc_config.h"
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -83,7 +60,8 @@ typedef UINT_PTR uintptr_t;
 #define MAX_ALIGN 8
 #define PTR_SIZE 4
 
-/* -------------------------------------------- */
+#define ST_FUNC static
+#define ST_DATA static
 
 // TODO: Read this from the configuration variables in r2
 
@@ -202,11 +180,12 @@ typedef struct AttributeDef {
 #define SYM_FIELD      0x20000000 /* struct/union field symbol space */
 #define SYM_FIRST_ANOM 0x10000000 /* first anonymous sym */
 
-#define VLA_SP_LOC_SET     0x01 /* Location of SP on stack has been allocated */
-#define VLA_SP_SAVED       0x02 /* SP has been saved to slot already */
-#define VLA_NEED_NEW_FRAME 0x04 /* Needs new frame for next VLA */
-#define VLA_IN_SCOPE       0x08 /* One or more VLAs are in scope */
-#define VLA_SCOPE_FLAGS    (VLA_SP_SAVED|VLA_NEED_NEW_FRAME|VLA_IN_SCOPE) /* Flags which are saved and restored upon entering and exiting a block */
+#define VLA_SP_LOC_SET     1 /* Location of SP on stack has been allocated */
+#define VLA_SP_SAVED       2 /* SP has been saved to slot already */
+#define VLA_NEED_NEW_FRAME 4 /* Needs new frame for next VLA */
+#define VLA_IN_SCOPE       8 /* One or more VLAs are in scope */
+/* Flags which are saved and restored upon entering and exiting a block */
+#define VLA_SCOPE_FLAGS    (VLA_SP_SAVED | VLA_NEED_NEW_FRAME | VLA_IN_SCOPE)
 
 /* stored in 'Sym.c' field */
 #define FUNC_NEW       1 /* ansi function prototype */
@@ -300,9 +279,6 @@ struct TCCState {
 	char *arch;
 	int bits;
 	char *os;
-
-	/* C language options */
-	bool char_is_unsigned;
 
 	/* warning switches */
 	int warn_write_strings;
@@ -436,8 +412,6 @@ struct TCCState {
 };
 
 static const bool gnu_ext = true; // move into tcc_state
-static const bool tcc_ext = true;
-
 
 /* The current value can be: */
 #define VT_VALMASK   0x003f  /* mask for value location, register or: */
@@ -720,18 +694,6 @@ static inline int toup(int c) {
 	return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
 }
 
-#ifdef ONE_SOURCE
-#define ST_INLN static inline
-#define ST_FUNC static
-#define ST_DATA static
-#else
-#define ST_INLN
-#define ST_FUNC
-#define ST_DATA extern
-#endif
-
-/* ------------ libtcc.c ------------ */
-
 static inline int tcc_nerr(TCCState *s1) {
 	return s1->nb_errors;
 }
@@ -760,11 +722,11 @@ ST_FUNC void cstr_new(CString *cstr);
 ST_FUNC void cstr_free(CString *cstr);
 ST_FUNC void cstr_reset(CString *cstr);
 
-ST_INLN void sym_free(TCCState *s1, Sym *sym);
+static inline void sym_free(TCCState *s1, Sym *sym);
 ST_FUNC Sym *sym_push2(TCCState *s1, Sym **ps, int v, int t, long long c);
 ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c);
 ST_FUNC void sym_pop(TCCState *s1, Sym **ptop, Sym *b);
-ST_INLN Sym *sym_find(TCCState *s1, int v);
+static inline Sym *sym_find(TCCState *s1, int v);
 ST_FUNC Sym *global_identifier_push(TCCState *s1, int v, int t, long long c);
 
 ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen);
@@ -792,18 +754,18 @@ R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init);
 ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len);
 ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv);
 ST_FUNC void save_parse_state(TCCState *s1, ParseState *s);
-ST_INLN void tok_str_new(TokenString *s);
+static inline void tok_str_init(TokenString *s);
 ST_FUNC void tok_str_free(int *str);
 ST_FUNC void tok_str_add(TCCState *s1, TokenString *s, int t);
 ST_FUNC void tok_str_add_tok(TCCState *s1, TokenString *s);
-ST_INLN void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *first_arg);
+static inline void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *first_arg);
 ST_FUNC void define_undef(TCCState *s1, Sym *s);
-ST_INLN Sym *define_find(TCCState *s1, int v);
+static inline Sym *define_find(TCCState *s1, int v);
 ST_FUNC void free_defines(TCCState *s1, Sym *b);
 R_API void tcc_parse_define(TCCState *s1);
 ST_FUNC void preprocess(TCCState *s1, bool is_bof);
 ST_FUNC void next_nomacro(TCCState *s1);
-ST_INLN void unget_tok(TCCState *s1, int last_tok);
+static inline void unget_tok(TCCState *s1, int last_tok);
 ST_FUNC void preprocess_init(TCCState *s1);
 ST_FUNC void preprocess_new(TCCState *s1);
 ST_FUNC int tcc_preprocess(TCCState *s1);
@@ -822,16 +784,14 @@ ST_FUNC void expect(TCCState *s1, const char *msg);
 #define REG_LRET 2
 #define REG_FRET 3
 
-ST_INLN bool is_structured(CType *t);
-ST_INLN bool is_struct(CType *t);
-ST_INLN bool is_union(CType *t);
-ST_INLN bool is_float(int t);
-ST_INLN bool not_structured(CType *t);
+static inline bool is_structured(CType *t);
+static inline bool is_struct(CType *t);
+static inline bool is_union(CType *t);
+static inline bool is_float(int t);
+static inline bool not_structured(CType *t);
 
 ST_FUNC int type_size(TCCState *s1, CType *type, int *a);
 ST_FUNC void mk_pointer(TCCState *s1, CType *type);
-ST_FUNC int lvalue_type(int t);
-ST_FUNC void indir(TCCState *s1);
 ST_FUNC long long expr_const(TCCState *s1);
 
 /********************************************************/
