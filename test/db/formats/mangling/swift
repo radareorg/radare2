@@ -67,7 +67,7 @@ NAME=macho swift demangle
 FILE=bins/mach0/swift/klass.orig
 CMDS=ic
 EXPECT=<<EOF
-0x00003cb0 [0x100003cff - 0x100003d90]    145 swift class 0 SomeClass
+0x00003cb0 [0x100003cff - 0x100003d90]    145 swift class 1 SomeClass
 0x100003cff swift   method   0      0
 0x100003d08 swift   method   1      1
 0x100003d0e swift   method   2      2
@@ -80,18 +80,18 @@ EXPECT=<<EOF
 0x100003d34 swift   method   9      9
 0x100003e8d swift property   0      meh
 0x100003e91 swift property   1      cow
-0x00003d44 [0x1000028f0 - 0x100003d9c]   5292 swift class 0 SuperKlass
+0x00003d44 [0x1000028f0 - 0x100003d9c]   5292 swift class 2 SuperKlass
 0x1000028f0 swift   method   0      superfield.allocator__Swift.Int
 0x100002950 swift   method   1      superfield.allocator__Swift.Int
 0x1000029b0 swift   method   2      superfield.allocator__Swift.Int
 0x100002a10 swift   method   3      allocator
 0x100003d9c swift   method   4      4
 0x100003e95 swift property   0      superfield
-0x100008260 [0x100008260 - 0x100008260]      0 objc class 0 klass.SomeClass :: klass.SuperKlass
+0x100008260 [0x100008260 - 0x100008260]      0 objc class 3 klass.SomeClass :: klass.SuperKlass
 0x00000000 objc      var   0      isa
 0x100003c80 objc      var   1      meh
 0x100003c88 objc      var   2      cow
-0x100008288 [0x100008288 - 0x100008288]      0 objc class 0 klass.SuperKlass :: Swift._SwiftObject
+0x100008288 [0x100008288 - 0x100008288]      0 objc class 4 klass.SuperKlass :: Swift._SwiftObject
 0x00000000 objc      var   0      isa
 0x100003d30 objc      var   1      superfield
 0x100002ab0 [0x100002ab0 - 0x100002ab0]      0 ? class 4 _swiftoverride_class_getSuperclass(swift
