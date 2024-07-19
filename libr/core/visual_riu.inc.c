@@ -43,17 +43,15 @@ static RIU *riu_new(RCore *core, const char *input) {
 	const char *p = input;
 	const char *p_n = p;
 	const char *p_b = p;
-	const char *p_e = p;
 	while (*p) {
 		switch (*p) {
 		case '(':
 			p_b = p + 1;
 			break;
 		case ')':
-			p_e = p;
 			{
 				char *name = r_str_ndup (p_n, p_b - p_n - 1);
-				char *args = r_str_ndup (p_b, p_e - p_b);
+				char *args = r_str_ndup (p_b, p - p_b);
 				RList *largs = r_str_split_list (args, ",", 0);
 				char *type = strdup (r_str_get (r_list_get_n (largs, 0)));
 				char *cmnd = strdup (r_str_get (r_list_get_n (largs, 1)));
@@ -70,7 +68,6 @@ static RIU *riu_new(RCore *core, const char *input) {
 				free (data);
 				r_list_free (largs);
 				p_b = NULL;
-				p_e = NULL;
 				p_n = NULL;
 			}
 			break;
@@ -150,6 +147,9 @@ static bool riu_input(RIU *riu) {
 		// activate!
 		{
 			RIUWidget *w = r_list_get_n (riu->items, riu->cur);
+			if (!w) {
+				break;
+			}
 			if (w->type[0] == 'b') {
 				r_core_cmd0 (riu->core, w->cmnd);
 				r_core_cmdf (riu->core, "'k riu=%s", w->name);
