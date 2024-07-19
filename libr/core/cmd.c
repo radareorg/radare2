@@ -3824,8 +3824,13 @@ static int handle_command_call(RCore *core, const char *cmd) {
 	}
 	if (R_UNLIKELY (*cmd == '\'')) {
 		if (cmd[1] == '@') {
+			cmd += 2;
+		} else {
+			cmd++;
+		}
+		if (r_str_startswith (cmd, "0x")) {
 			int res = 1;
-			char *arg = strdup (cmd + 1);
+			char *arg = strdup (cmd);
 			char *end = strstr (arg, "'");
 			if (!end) {
 				R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
@@ -3834,7 +3839,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 				*end = 0;
 				cmd = end + 1;
 				ut64 addr = core->offset;
-				ut64 at = r_num_math (core->num, arg + 1);
+				ut64 at = r_num_math (core->num, arg);
 				r_core_seek (core, at, true);
 				res = r_core_cmd_call (core, cmd);
 				r_core_seek (core, addr, true);
@@ -3842,7 +3847,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 			}
 			return res;
 		}
-		return r_core_cmd_call (core, cmd + 1);
+		return r_core_cmd_call (core, cmd);
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
 		// R2_600 - deprecate "" -> use ' <---------- discuss!
@@ -4516,8 +4521,7 @@ repeat:;
 		// note that 'x>a' is not working .. but 'x > a' or 'x >a' is valid
 		bool redirect_check = (ptr > cmd && (!ptr[-1] || !ptr[-2] || IS_WHITECHAR (ptr[-2])));
 		if (redirect_check) { // R2R db/cmd/cmd_macros
-			R_LOG_DEBUG ("FD FROM (%s)", ptr - 1 );
-		//	eprintf ("COMPUTE FD (%s) (ptr=%s)\n", ptr -1, ptr-1);
+			R_LOG_DEBUG ("FD FROM (%s)", ptr - 1);
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') { // "H>"
 				scr_html = r_cons_context ()->is_html;
