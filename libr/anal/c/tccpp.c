@@ -2593,6 +2593,7 @@ static int macro_subst_tok(TCCState *s1, TokenString *tok_str, Sym **nested_list
 	} else if (s1->tok == TOK___FILE__) {
 		cstrval = s1->file->filename;
 		goto add_cstr;
+#if 0
 	} else if (s1->tok == TOK___DATE__ || s1->tok == TOK___TIME__) {
 		time_t ti;
 		struct tm *tm;
@@ -2607,6 +2608,7 @@ static int macro_subst_tok(TCCState *s1, TokenString *tok_str, Sym **nested_list
 				tm->tm_hour, tm->tm_min, tm->tm_sec);
 		}
 		cstrval = buf;
+#endif
 add_cstr:
 		t1 = TOK_STR;
 add_cstr1:
@@ -2681,7 +2683,7 @@ redo:
 				if (!sa) {
 					tcc_error (s1, "macro '%s' used with too many args", get_tok_str (s1, s->v, 0));
 				}
-				tok_str_new (&str);
+				tok_str_init (&str);
 				parlevel = spc = 0;
 				/* NOTE: non zero sa->t indicates VA_ARGS */
 				while ((parlevel > 0 ||
