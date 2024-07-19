@@ -29,11 +29,11 @@ EOF
 EXPECT=<<EOF
 0x00003e44 [0x00003e44 - 0x00003e44]      0 swift class 0 Employee
 0x100003f60 swift property   0      name
-0x00003eac [0x00003eac - 0x00003eac]      0 swift class 0 Employer
-0x100008148 [0x100008148 - 0x100008148]      0 objc class 0 main.Employee :: Swift._SwiftObject
+0x00003eac [0x00003eac - 0x00003eac]      0 swift class 1 Employer
+0x100008148 [0x100008148 - 0x100008148]      0 objc class 2 main.Employee :: Swift._SwiftObject
 0x00000000 objc      var   0      isa
 0x100003e30 objc      var   1      name
-0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
+0x100008200 [0x100008200 - 0x100008200]      0 objc class 3 main.Employer :: main.Employee
 0x00000000 [0x100003f04 - 0x100003f04]      0 ? class 4 Greet
 0x100003f04 ?   method   0      symbolic main.Greet.
 0x00000000 [0x100003f14 - 0x100003f14]      0 ? class 5 Employee_1
@@ -83,13 +83,13 @@ class Employer_1 {
     "classname": "Employer",
     "addr": 16044,
     "lang": "swift",
-    "index": 0
+    "index": 1
   },
   {
     "classname": "main.Employee",
     "addr": 4295000392,
     "lang": "objc",
-    "index": 0,
+    "index": 2,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -114,7 +114,7 @@ class Employer_1 {
     "classname": "main.Employer",
     "addr": 4295000576,
     "lang": "objc",
-    "index": 0,
+    "index": 3,
     "super": [
       "main.Employee"
     ],

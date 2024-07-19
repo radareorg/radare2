@@ -273,7 +273,7 @@ CMDS=ic
 EXPECT=<<EOF
 0x100009298 [0x100001e90 - 0x100001e90]      0 objc class 0 ViewController :: UIViewController
 0x100001e90 objc   method   0      viewDidLoad
-0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 objc class 0 AppDelegate :: UIResponder
+0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 objc class 1 AppDelegate :: UIResponder
 0x100001ee4 objc   method   0      application:didFinishLaunchingWithOptions:
 0x100001f74 objc   method   1      application:configurationForConnectingSceneSession:options:
 0x1000020a4 objc   method   2      application:didDiscardSceneSessions:
@@ -282,7 +282,7 @@ EXPECT=<<EOF
 0x00000000 objc property   2      superclass
 0x00000000 objc property   3      description
 0x00000000 objc property   4      debugDescription
-0x100009310 [0x1000021d0 - 0x100002494]    708 objc class 0 SceneDelegate :: UIResponder
+0x100009310 [0x1000021d0 - 0x100002494]    708 objc class 2 SceneDelegate :: UIResponder
 0x1000021d0 objc   method   0      scene:willConnectToSession:options:
 0x100002280 objc   method   1      sceneDidDisconnect:
 0x1000022d4 objc   method   2      sceneDidBecomeActive:

@@ -96,7 +96,7 @@ EXPECT=<<EOF
     "classname": "WKWebViewController",
     "addr": 149892,
     "lang": "swift",
-    "index": 0,
+    "index": 3,
     "super": [
       "__C.UIViewController"
     ],
@@ -431,7 +431,7 @@ EXPECT=<<EOF
     "classname": "AppDelegate",
     "addr": 150312,
     "lang": "swift",
-    "index": 0,
+    "index": 4,
     "super": [
       "__C.UIResponder"
     ],
@@ -451,7 +451,7 @@ EXPECT=<<EOF
     "classname": "LaunchOptionsKey",
     "addr": 150500,
     "lang": "swift",
-    "index": 0,
+    "index": 5,
     "fields": [
       {
         "name": "_rawValue",
@@ -465,7 +465,7 @@ EXPECT=<<EOF
     "classname": "JavaScriptBridgeMessageHandler",
     "addr": 150944,
     "lang": "swift",
-    "index": 0,
+    "index": 6,
     "super": [
       "__C.NSObject"
     ],
@@ -477,7 +477,7 @@ EXPECT=<<EOF
     "classname": "AboutViewController",
     "addr": 151028,
     "lang": "swift",
-    "index": 0,
+    "index": 7,
     "super": [
       "__C.UIViewController"
     ],
@@ -497,7 +497,7 @@ EXPECT=<<EOF
     "classname": "DocumentationViewController",
     "addr": 151132,
     "lang": "swift",
-    "index": 0,
+    "index": 8,
     "super": [
       "__C.UIViewController"
     ],
@@ -509,7 +509,7 @@ EXPECT=<<EOF
     "classname": "MainTabBarViewController",
     "addr": 151308,
     "lang": "swift",
-    "index": 0,
+    "index": 9,
     "super": [
       "__C.UITabBarController"
     ],
@@ -535,7 +535,7 @@ EXPECT=<<EOF
     "classname": "UpdateData",
     "addr": 151404,
     "lang": "swift",
-    "index": 0,
+    "index": 10,
     "fields": [
       {
         "name": "latest_version",
@@ -555,7 +555,7 @@ EXPECT=<<EOF
     "classname": "CodingKeys",
     "addr": 151576,
     "lang": "swift",
-    "index": 0,
+    "index": 11,
     "methods": [
       {
         "name": "0",
@@ -581,13 +581,13 @@ EXPECT=<<EOF
     "classname": "ComparisonResult",
     "addr": 151928,
     "lang": "swift",
-    "index": 0
+    "index": 12
   },
   {
     "classname": "WKOptionsViewCell",
     "addr": 152148,
     "lang": "swift",
-    "index": 0,
+    "index": 13,
     "super": [
       "__C.UITableViewCell"
     ],
@@ -771,7 +771,7 @@ EXPECT=<<EOF
     "classname": "WKPreferencesViewController",
     "addr": 152428,
     "lang": "swift",
-    "index": 0,
+    "index": 14,
     "super": [
       "__C.UITableViewController"
     ],
@@ -874,7 +874,7 @@ EXPECT=<<EOF
     "classname": "WKWebViewPreferencesManager",
     "addr": 152636,
     "lang": "swift",
-    "index": 0,
+    "index": 15,
     "methods": [
       {
         "name": "options.allocator__Array",
@@ -1035,7 +1035,7 @@ EXPECT=<<EOF
     "classname": "WebViewSetting",
     "addr": 152856,
     "lang": "swift",
-    "index": 0,
+    "index": 16,
     "methods": [
       {
         "name": "0",
@@ -1093,7 +1093,7 @@ EXPECT=<<EOF
     "classname": "LoadContentViewController",
     "addr": 152972,
     "lang": "swift",
-    "index": 0,
+    "index": 17,
     "super": [
       "__C.UIViewController"
     ],
@@ -1137,7 +1137,7 @@ EXPECT=<<EOF
     "classname": "UIWebViewController",
     "addr": 153188,
     "lang": "swift",
-    "index": 0,
+    "index": 18,
     "super": [
       "__C.UIViewController"
     ],
@@ -1205,7 +1205,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKWebViewController",
     "addr": 4295176568,
     "lang": "objc",
-    "index": 0,
+    "index": 19,
     "super": [
       "UIViewController"
     ],
@@ -1465,7 +1465,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.AppDelegate",
     "addr": 4295177008,
     "lang": "objc",
-    "index": 0,
+    "index": 20,
     "super": [
       "UIResponder"
     ],
@@ -1557,7 +1557,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.JavaScriptBridgeMessageHandler",
     "addr": 4295177216,
     "lang": "objc",
-    "index": 0,
+    "index": 21,
     "super": [
       "NSObject"
     ],
@@ -1583,7 +1583,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.AboutViewController",
     "addr": 4295177368,
     "lang": "objc",
-    "index": 0,
+    "index": 22,
     "super": [
       "UIViewController"
     ],
@@ -1651,7 +1651,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.DocumentationViewController",
     "addr": 4295177408,
     "lang": "objc",
-    "index": 0,
+    "index": 23,
     "super": [
       "UIViewController"
     ],
@@ -1677,7 +1677,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.MainTabBarViewController",
     "addr": 4295177496,
     "lang": "objc",
-    "index": 0,
+    "index": 24,
     "super": [
       "UITabBarController"
     ],
@@ -1733,7 +1733,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKOptionsViewCell",
     "addr": 4295177656,
     "lang": "objc",
-    "index": 0,
+    "index": 25,
     "super": [
       "UITableViewCell"
     ],
@@ -1870,7 +1870,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKPreferencesViewController",
     "addr": 4295177696,
     "lang": "objc",
-    "index": 0,
+    "index": 26,
     "super": [
       "UITableViewController"
     ],
@@ -1961,7 +1961,7 @@ EXPECT=<<EOF
     "classname": "WheresMyBrowser.WKWebViewPreferencesManager",
     "addr": 4295177784,
     "lang": "objc",
-    "index": 0,
+    "index": 27,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -2008,11 +2008,10 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "WheresMyBrowser.WKWebViewPreferencesManager",
-    "rawclassname": "_TtCC15WheresMyBrowser27WKWebViewPreferencesManager14WebViewSetting",
+    "classname": "WheresMyBrowser.WKWebViewPreferencesManager.WebViewSetting",
     "addr": 4295178088,
     "lang": "objc",
-    "index": 0,
+    "index": 28,
     "super": [
       "Swift._SwiftObject"
     ],
@@ -2050,10 +2049,9 @@ EXPECT=<<EOF
   },
   {
     "classname": "WheresMyBrowser.LoadContentViewController",
-    "rawclassname": "_TtC15WheresMyBrowser25LoadContentViewController",
     "addr": 4295178328,
     "lang": "objc",
-    "index": 0,
+    "index": 29,
     "super": [
       "UIViewController"
     ],
@@ -2168,10 +2166,9 @@ EXPECT=<<EOF
   },
   {
     "classname": "WheresMyBrowser.UIWebViewController",
-    "rawclassname": "_TtC15WheresMyBrowser19UIWebViewController",
     "addr": 4295178472,
     "lang": "objc",
-    "index": 0,
+    "index": 30,
     "super": [
       "UIViewController"
     ],
@@ -2509,20 +2506,20 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "WKWebViewController",
+    "classname": "WKWebViewController_1",
     "addr": 0,
     "index": 32,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKWebViewController.allocator",
-        "flag": "method.WKWebViewController.symbolic_WheresMyBrowser.WKWebViewController.allocator",
+        "flag": "method.WKWebViewController_1.symbolic_WheresMyBrowser.WKWebViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser19WKWebViewControllerC",
         "addr": 4295133316
       }
     ]
   },
   {
-    "classname": "WKWebViewPreferencesManager",
+    "classname": "WKWebViewPreferencesManager_1",
     "addr": 0,
     "index": 33,
     "methods": [
@@ -2558,72 +2555,72 @@ EXPECT=<<EOF
       },
       {
         "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.allocator",
-        "flag": "method.WKWebViewPreferencesManager.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.allocator",
+        "flag": "method.WKWebViewPreferencesManager_1.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser27WKWebViewPreferencesManagerC",
         "addr": 4295134088
       },
       {
         "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
-        "flag": "method.WKWebViewPreferencesManager.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "flag": "method.WKWebViewPreferencesManager_1.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134156
       }
     ]
   },
   {
-    "classname": "AppDelegate",
+    "classname": "AppDelegate_1",
     "addr": 0,
     "index": 34,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.AppDelegate.allocator",
-        "flag": "method.AppDelegate.symbolic_WheresMyBrowser.AppDelegate.allocator",
+        "flag": "method.AppDelegate_1.symbolic_WheresMyBrowser.AppDelegate.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser11AppDelegateC",
         "addr": 4295133606
       }
     ]
   },
   {
-    "classname": "JavaScriptBridgeMessageHandler",
+    "classname": "JavaScriptBridgeMessageHandler_1",
     "addr": 0,
     "index": 35,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
-        "flag": "method.JavaScriptBridgeMessageHandler.symbolic_WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
+        "flag": "method.JavaScriptBridgeMessageHandler_1.symbolic_WheresMyBrowser.JavaScriptBridgeMessageHandler.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser30JavaScriptBridgeMessageHandlerC",
         "addr": 4295133732
       }
     ]
   },
   {
-    "classname": "AboutViewController",
+    "classname": "AboutViewController_1",
     "addr": 0,
     "index": 36,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.AboutViewController.allocator",
-        "flag": "method.AboutViewController.symbolic_WheresMyBrowser.AboutViewController.allocator",
+        "flag": "method.AboutViewController_1.symbolic_WheresMyBrowser.AboutViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser19AboutViewControllerC",
         "addr": 4295133738
       }
     ]
   },
   {
-    "classname": "DocumentationViewController",
+    "classname": "DocumentationViewController_1",
     "addr": 0,
     "index": 37,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.DocumentationViewController.allocator",
-        "flag": "method.DocumentationViewController.symbolic_WheresMyBrowser.DocumentationViewController.allocator",
+        "flag": "method.DocumentationViewController_1.symbolic_WheresMyBrowser.DocumentationViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser27DocumentationViewControllerC",
         "addr": 4295133760
       }
     ]
   },
   {
-    "classname": "MainTabBarViewController",
+    "classname": "MainTabBarViewController_1",
     "addr": 0,
     "index": 38,
     "methods": [
@@ -2641,7 +2638,7 @@ EXPECT=<<EOF
       },
       {
         "name": "symbolic WheresMyBrowser.MainTabBarViewController.allocator",
-        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.allocator",
+        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC",
         "addr": 4295133794
       },
@@ -2653,7 +2650,7 @@ EXPECT=<<EOF
       },
       {
         "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
-        "flag": "method.MainTabBarViewController.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133830
       }
@@ -2692,39 +2689,39 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "WKOptionsViewCell",
+    "classname": "WKOptionsViewCell_1",
     "addr": 0,
     "index": 41,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKOptionsViewCell.allocator",
-        "flag": "method.WKOptionsViewCell.symbolic_WheresMyBrowser.WKOptionsViewCell.allocator",
+        "flag": "method.WKOptionsViewCell_1.symbolic_WheresMyBrowser.WKOptionsViewCell.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser17WKOptionsViewCellC",
         "addr": 4295133944
       }
     ]
   },
   {
-    "classname": "WKPreferencesViewController",
+    "classname": "WKPreferencesViewController_1",
     "addr": 0,
     "index": 42,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.WKPreferencesViewController.allocator",
-        "flag": "method.WKPreferencesViewController.symbolic_WheresMyBrowser.WKPreferencesViewController.allocator",
+        "flag": "method.WKPreferencesViewController_1.symbolic_WheresMyBrowser.WKPreferencesViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser27WKPreferencesViewControllerC",
         "addr": 4295134012
       }
     ]
   },
   {
-    "classname": "LoadContentViewController",
+    "classname": "LoadContentViewController_1",
     "addr": 0,
     "index": 43,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.LoadContentViewController.allocator",
-        "flag": "method.LoadContentViewController.symbolic_WheresMyBrowser.LoadContentViewController.allocator",
+        "flag": "method.LoadContentViewController_1.symbolic_WheresMyBrowser.LoadContentViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser25LoadContentViewControllerC",
         "addr": 4295134162
       }
@@ -2744,13 +2741,13 @@ EXPECT=<<EOF
     ]
   },
   {
-    "classname": "UIWebViewController",
+    "classname": "UIWebViewController_1",
     "addr": 0,
     "index": 45,
     "methods": [
       {
         "name": "symbolic WheresMyBrowser.UIWebViewController.allocator",
-        "flag": "method.UIWebViewController.symbolic_WheresMyBrowser.UIWebViewController.allocator",
+        "flag": "method.UIWebViewController_1.symbolic_WheresMyBrowser.UIWebViewController.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser19UIWebViewControllerC",
         "addr": 4295134220
       }
