@@ -11,7 +11,7 @@ DEF(TOK_INT64, "int64_t")
 DEF(TOK_UINT64, "uint64_t")
 DEF(TOK_INT128, "int128_t")
 DEF(TOK_UINT128, "uint128_t")
-/* THose will depend from the target platform */
+/* Those will depend from the target platform */
 DEF(TOK_INT, "int")
 DEF(TOK_VOID, "void")
 DEF(TOK_CHAR, "char")
@@ -90,8 +90,6 @@ DEF(TOK_LINE, "line")
 DEF(TOK_PRAGMA, "pragma")
 DEF(TOK___LINE__, "__LINE__")
 DEF(TOK___FILE__, "__FILE__")
-DEF(TOK___DATE__, "__DATE__")
-DEF(TOK___TIME__, "__TIME__")
 DEF(TOK___FUNCTION__, "__FUNCTION__")
 DEF(TOK___VA_ARGS__, "__VA_ARGS__")
 
