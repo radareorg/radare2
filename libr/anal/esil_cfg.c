@@ -538,7 +538,7 @@ R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
-	R_RETURN_VAL_IF_FAIL (cfg && anal, NULL);
+	R_RETURN_VAL_IF_FAIL (expr && anal, NULL);
 	if (!anal->esil) {
 		return NULL;
 	}
