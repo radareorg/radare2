@@ -12989,18 +12989,15 @@ static void cmd_anal_abtn(RCore *core, const char *input) {
 
 static void cmd_anal_abt(RCore *core, const char *input) {
 	switch (*input) {
-	case '?':
-		r_core_cmd_help (core, help_msg_abt);
-		break;
-	case 'n':
+	case 'n': // "abtn"
 		cmd_anal_abtn (core, input);
 		break;
-	case '*':
-	case 'j':
+	case '*': // "abt*"
+	case 'j': // "abtj"
 	case 0:
 		r_anal_backtrace_list (core->anal, core->offset, *input);
 		break;
-	case '+':
+	case '+': // "abt+"
 		{
 			char *arg_addr = strdup (input);
 			char *arg_bt = r_str_after (arg_addr, ' ');
@@ -13019,7 +13016,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			free (arg_addr);
 		}
 		break;
-	case '-':
+	case '-': // "abt-"
 		{
 			ut64 n = r_num_math (core->num, input + 1);
 			if (!n) {
@@ -13027,6 +13024,9 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			}
 			r_anal_backtrace_del (core->anal, n);
 		}
+		break;
+	case '?': // "abt?"
+		r_core_cmd_help (core, help_msg_abt);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_abt);
@@ -14920,7 +14920,7 @@ static int cmd_apt(RCore *core, const char *input) {
 
 static void cmd_ab(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-	if (*input && input[1] == '?') {
+	if (input[0] && input[0] != 't' && input[1] == '?') {
 		char cmd[5] = "ab#";
 		cmd[2] = input[0];
 		r_core_cmd_help_match (core, help_msg_ab, cmd);
