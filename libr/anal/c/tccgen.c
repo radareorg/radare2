@@ -1507,9 +1507,8 @@ old_proto:
 		skip (s1, ')');
 		/* NOTE: const is ignored in returned type as it has a special meaning in gcc / C++ */
 		type->t &= ~VT_CONSTANT;
-		/* some ancient pre-K&R C allows a function to return an array
-		   and the array brackets to be put after the arguments, such
-		   that "int c()[]" means something like "int[] c()" */
+		/* some ancient pre-K&R C allows a function to return an array and the array brackets
+		   to be put after the arguments, such that "int c()[]" means something like "int[] c()" */
 		if (s1->tok == '[') {
 			next (s1);
 			skip (s1, ']');	/* only handle simple "[]" */
@@ -1533,7 +1532,9 @@ old_proto:
 		}
 		n = -1;
 		t1 = 0;
-		if (s1->tok != ']') {
+		if (s1->tok == ']') {
+			n = 0;
+		} else {
 			if (!s1->local_stack || s1->nocode_wanted) {
 				vpushll (s1, expr_const (s1));
 			} else {
@@ -1555,26 +1556,23 @@ old_proto:
 		/* parse next post type */
 		post_type (s1, type, ad);
 
-		/* we push an anonymous symbol which will contain the array
-		   element type */
+		/* we push an anonymous symbol which will contain the array element type */
 		s1->arraysize = n;
 		if (n < 0) {
 			TCC_ERR ("array with no size []");
 		}
 		s = sym_push (s1, SYM_FIELD, type, 0, n);
-		if (!s) {
-			return;
+		if (s) {
+			type->t = (t1? VT_VLA: VT_ARRAY) | VT_PTR;
+			type->ref = s;
 		}
-		type->t = (t1? VT_VLA: VT_ARRAY) | VT_PTR;
-		type->ref = s;
 	}
 }
 
-/* Parse a type declaration (except basic type), and return the type
- * in 'type'. 'td' is a bitmask indicating which kind of type decl is
- * expected. 'type' should contain the basic type. 'ad' is the
- * attribute definition of the basic type. It can be modified by
- * type_decl().
+/* Parse a type declaration (except basic type), and return the type in 'type'.
+ * 'td' is a bitmask indicating which kind of type decl is expected.
+ * 'type' should contain the basic type.
+ * 'ad' is the attribute definition of the basic type. It can be modified by type_decl().
  */
 static void type_decl(TCCState *s1, CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
