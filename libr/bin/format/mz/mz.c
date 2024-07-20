@@ -199,7 +199,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	}
 	bin->dos_header = mz;
 
-	ut8 raw[sizeof(*mz)];
+	ut8 raw[sizeof (*mz)];
 	if (r_buf_read_at (bin->b, 0, raw, sizeof (raw)) == -1) {
 		R_LOG_ERROR ("read (MZ_image_dos_header)");
 		return false;
