@@ -535,8 +535,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				break;
 			case 32:
 				{
-					ut32 ip32 = off;
-					ut8 *ip = (ut8*)&ip32;
+					ut8 ip[4] = { off & 0xff, (off >> 8) & 0xff, (off >> 16) & 0xff, (off >> 24) & 0xff };
 					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 				}
 				break;
