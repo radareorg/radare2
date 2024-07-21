@@ -4,7 +4,7 @@
 
 static const char tcc_keywords[] =
 #define DEF(id, str) str "\0"
-#include "tcctok.h"
+#include "tokens.h"
 #undef DEF
 ;
 
@@ -160,19 +160,17 @@ static TokenSym *tok_alloc_new(TCCState *s1, TokenSym **pts, const char *str, in
 
 /* find a token and add it if not found */
 ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len) {
-	TokenSym *ts, **pts;
-	int i;
-	unsigned int h;
+	unsigned int h = TOK_HASH_INIT;
 
-	h = TOK_HASH_INIT;
+	int i;
 	for (i = 0; i < len; i++) {
 		h = TOK_HASH_FUNC (h, ((ut8 *) str)[i]);
 	}
 	h &= (TOK_HASH_SIZE - 1);
 
-	pts = &s1->hash_ident[h];
+	TokenSym **pts = &s1->hash_ident[h];
 	for (;;) {
-		ts = *pts;
+		TokenSym *ts = *pts;
 		if (!ts) {
 			break;
 		}
@@ -188,14 +186,13 @@ ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len) {
 /* XXX: float tokens */
 ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 	CString *cstr;
-	char *p;
 	int i, len;
 
 	/* NOTE: to go faster, we give a fixed buffer for small strings */
 	cstr_reset (&s1->tok_cstr_buf);
 	s1->tok_cstr_buf.data = s1->tok_buf;
 	s1->tok_cstr_buf.size_allocated = sizeof (s1->tok_buf);
-	p = s1->tok_buf;
+	char *p = s1->tok_buf;
 
 	switch (v) {
 	case TOK_CINT:
@@ -686,8 +683,7 @@ redo_no_start:
 				s1->file->buf_ptr = p;
 				next_nomacro (s1);
 				p = s1->file->buf_ptr;
-				if (a == 0 &&
-				    (s1->tok == TOK_ELSE || s1->tok == TOK_ELIF || s1->tok == TOK_ENDIF)) {
+				if (a == 0 && (s1->tok == TOK_ELSE || s1->tok == TOK_ELIF || s1->tok == TOK_ENDIF)) {
 					goto the_end;
 				}
 				if (s1->tok == TOK_IF || s1->tok == TOK_IFDEF || s1->tok == TOK_IFNDEF) {
@@ -1232,8 +1228,7 @@ ST_FUNC void preprocess(TCCState *s1, bool is_bof) {
 	Sym *s;
 
 	saved_parse_flags = s1->parse_flags;
-	s1->parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM |
-		      PARSE_FLAG_LINEFEED;
+	s1->parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM | PARSE_FLAG_LINEFEED;
 	next_nomacro (s1);
 redo:
 	switch (s1->tok) {
@@ -1511,8 +1506,7 @@ skip:
 		s1->ifdef_stack_ptr--;
 		/* '#ifndef macro' was at the start of file. Now we check if
 		   an '#endif' is exactly at the end of file */
-		if (s1->file->ifndef_macro &&
-		    s1->ifdef_stack_ptr == s1->file->ifdef_stack_ptr) {
+		if (s1->file->ifndef_macro && s1->ifdef_stack_ptr == s1->file->ifdef_stack_ptr) {
 			s1->file->ifndef_macro_saved = s1->file->ifndef_macro;
 			/* need to set to zero to avoid false matches if another
 			   #ifndef at middle of file */
@@ -1588,9 +1582,7 @@ the_end:
 /* evaluate escape codes in a string. */
 static void parse_escape_string(TCCState *s1, CString *outstr, const uint8_t *buf, int is_long) {
 	int c, n;
-	const uint8_t *p;
-
-	p = buf;
+	const uint8_t *p = buf;
 	for (;;) {
 		c = *p;
 		if (c == '\0') {
@@ -1697,41 +1689,17 @@ add_char_nonext:
 	}
 }
 
-/* we use 64 bit numbers */
-#define BN_SIZE 2
-
-/* bn = (bn << shift) | or_val */
-static void bn_lshift(unsigned int *bn, int shift, int or_val) {
-	int i;
-	unsigned int v;
-	for (i = 0; i < BN_SIZE; i++) {
-		v = bn[i];
-		bn[i] = (v << shift) | or_val;
-		or_val = v >> (32 - shift);
-	}
-}
-
-static void bn_zero(unsigned int *bn) {
-	int i;
-	for (i = 0; i < BN_SIZE; i++) {
-		bn[i] = 0;
-	}
-}
-
 /* parse number in null terminated string 'p' and return it in the current token */
 static void parse_number(TCCState *s1, const char *p) {
-	int b, t, shift, frac_bits, s, exp_val, ch;
-	char *q;
-	unsigned int bn[BN_SIZE];
+	int shift, frac_bits, s, exp_val;
+	ut64 bn;
 	double d;
 
-	/* number */
-	q = s1->token_buf;
-	ch = *p++;
-	t = ch;
-	ch = *p++;
+	char *q = s1->token_buf;
+	int t = *p++;
+	int ch = *p++;
 	*q++ = t;
-	b = 10;
+	int b = 10;
 	if (t == '.') {
 		goto float_frac_parse;
 	}
@@ -1768,9 +1736,7 @@ num_too_long:
 		*q++ = ch;
 		ch = *p++;
 	}
-	if (ch == '.' ||
-	    ((ch == 'e' || ch == 'E') && b == 10) ||
-	    ((ch == 'p' || ch == 'P') && (b == 16 || b == 2))) {
+	if (ch == '.' || ((ch == 'e' || ch == 'E') && b == 10) || ((ch == 'p' || ch == 'P') && (b == 16 || b == 2))) {
 		if (b != 10) {
 			/* NOTE: strtox should support that for hexa numbers, but
 			   non ISOC99 libcs do not support it, so we prefer to do
@@ -1783,7 +1749,7 @@ num_too_long:
 			} else {
 				shift = 2;
 			}
-			bn_zero (bn);
+			bn = 0;
 			q = s1->token_buf;
 			for (;;) {
 				t = *q++;
@@ -1796,7 +1762,7 @@ num_too_long:
 				} else {
 					t = t - '0';
 				}
-				bn_lshift (bn, shift, t);
+				bn = (bn << shift) | t;
 			}
 			frac_bits = 0;
 			if (ch == '.') {
@@ -1815,7 +1781,7 @@ num_too_long:
 					if (t >= b) {
 						tcc_error (s1, "invalid digit");
 					}
-					bn_lshift (bn, shift, t);
+					bn = (bn << shift) | t;
 					frac_bits += shift;
 					ch = *p++;
 				}
@@ -1845,7 +1811,7 @@ num_too_long:
 
 			/* now we can generate the number */
 			/* XXX: should patch directly float number */
-			d = (double) bn[1] * 4294967296.0 + (double) bn[0];
+			d = (double) bn; // bn[1] * 4294967296.0 + (double) bn[0];
 			d = ldexp (d, exp_val - frac_bits);
 			t = toup (ch);
 			if (t == 'F') {
@@ -2063,8 +2029,7 @@ redo_no_start:
 		}
 parse_eof:
 		{
-			if ((s1->parse_flags & PARSE_FLAG_LINEFEED)
-			    && !(s1->tok_flags & TOK_FLAG_EOF)) {
+			if ((s1->parse_flags & PARSE_FLAG_LINEFEED) && !(s1->tok_flags & TOK_FLAG_EOF)) {
 				s1->tok_flags |= TOK_FLAG_EOF;
 				s1->tok = TOK_LINEFEED;
 				goto keep_tok_flags;
@@ -2107,8 +2072,7 @@ maybe_newline:
 	case '#':
 		/* XXX: simplify */
 		PEEKC (s1, c, p);
-		if ((s1->tok_flags & TOK_FLAG_BOL) &&
-		    (s1->parse_flags & PARSE_FLAG_PREPROCESS)) {
+		if ((s1->tok_flags & TOK_FLAG_BOL) && (s1->parse_flags & PARSE_FLAG_PREPROCESS)) {
 			s1->file->buf_ptr = p;
 			preprocess (s1, s1->tok_flags & TOK_FLAG_BOF);
 			p = s1->file->buf_ptr;
@@ -2231,9 +2195,8 @@ parse_num:
 			t = c;
 			cstr_ccat (&s1->tokcstr, c);
 			PEEKC (s1, c, p);
-			if (!(isnum (c) || isid (c) || isdot (c) ||
-			      ((c == '+' || c == '-') &&
-			       (t == 'e' || t == 'E' || t == 'p' || t == 'P')))) {
+			if (!(isnum (c) || isid (c) || isdot (c)
+			|| ((c == '+' || c == '-') && (t == 'e' || t == 'E' || t == 'p' || t == 'P')))) {
 				break;
 			}
 		}
@@ -2520,8 +2483,8 @@ static int *macro_arg_subst(TCCState *s1, Sym **nested_list, const int *macro_st
 					   reliable. should fix it to avoid security
 					   problems */
 					if (gnu_ext && s->type.t &&
-					    last_tok == TOK_TWOSHARPS &&
-					    str.len >= 2 && str.str[str.len - 2] == ',') {
+						last_tok == TOK_TWOSHARPS &&
+						str.len >= 2 && str.str[str.len - 2] == ',') {
 						if (*st == 0) {
 							/* suppress ',' '##' */
 							str.len -= 2;
@@ -2679,10 +2642,7 @@ redo:
 				tok_str_init (&str);
 				parlevel = spc = 0;
 				/* NOTE: non zero sa->t indicates VA_ARGS */
-				while ((parlevel > 0 ||
-					(s1->tok != ')' &&
-					 (s1->tok != ',' || (sa && sa->type.t)))) &&
-				       s1->tok != -1) {
+				while ((parlevel > 0 || (s1->tok != ')' && (s1->tok != ',' || (sa && sa->type.t)))) && s1->tok != -1) {
 					if (s1->tok == '(') {
 						parlevel++;
 					} else if (s1->tok == ')') {
@@ -2943,8 +2903,7 @@ redo:
 	} else {
 		/* if not reading from macro substituted string, then try
 		   to substitute macros */
-		if (s1->tok >= TOK_IDENT &&
-		    (s1->parse_flags & PARSE_FLAG_PREPROCESS)) {
+		if (s1->tok >= TOK_IDENT && (s1->parse_flags & PARSE_FLAG_PREPROCESS)) {
 			s = define_find (s1, s1->tok);
 			if (s) {
 				/* we have a macro: we try to substitute */
@@ -3036,8 +2995,7 @@ ST_FUNC int tcc_preprocess(TCCState *s1) {
 	Sym *define_start = s1->define_stack;
 	s1->ch = s1->file->buf_ptr[0];
 	s1->tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
-	s1->parse_flags = PARSE_FLAG_ASM_COMMENTS | PARSE_FLAG_PREPROCESS |
-		      PARSE_FLAG_LINEFEED | PARSE_FLAG_SPACES;
+	s1->parse_flags = PARSE_FLAG_ASM_COMMENTS | PARSE_FLAG_PREPROCESS | PARSE_FLAG_LINEFEED | PARSE_FLAG_SPACES;
 	int token_seen = 0;
 	int line_ref = 0;
 	file_ref = NULL;
@@ -3063,10 +3021,9 @@ ST_FUNC int tcc_preprocess(TCCState *s1) {
 print_line:
 				iptr_new = s1->include_stack_ptr;
 				s = iptr_new > iptr? " 1"
-				    : iptr_new < iptr? " 2"
-				    : iptr_new > s1->include_stack? " 3"
-				    : ""
-				;
+					: iptr_new < iptr? " 2"
+					: iptr_new > s1->include_stack? " 3"
+					: "";
 				iptr = iptr_new;
 				fprintf (s1->ppfp, "# %d \"%s\"%s\n", s1->file->line_num, s1->file->filename, s);
 			} else {

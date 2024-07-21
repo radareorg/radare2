@@ -643,7 +643,7 @@ static const bool gnu_ext = true; // move into tcc_state
 enum tcc_token {
 	TOK_LAST = TOK_IDENT - 1,
 #define DEF(id, str) id,
-#include "tcctok.h"
+#include "tokens.h"
 #undef DEF
 };
 

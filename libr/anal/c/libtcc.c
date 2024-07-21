@@ -109,8 +109,7 @@ static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char
 }
 
 static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap) {
-	int len;
-	len = strlen (buf);
+	size_t len = strlen (buf);
 	vsnprintf (buf + len, buf_size - len, fmt, ap);
 }
 
@@ -260,19 +259,6 @@ static int tcc_compile(TCCState *s1) {
 	}
 	s1->func_old_type.t = VT_FUNC;
 	s1->func_old_type.ref = sym_push (s1, SYM_FIELD, &s1->int32_type, FUNC_CDECL, FUNC_OLD);
-#if 0
-	/* define 'void *alloca(unsigned int)' builtin function */
-	{
-		Sym *s1;
-
-		p = anon_sym++;
-		sym = sym_push (p, mk_pointer (VT_VOID), FUNC_CDECL, FUNC_NEW);
-		s1 = sym_push (SYM_FIELD, VT_UNSIGNED | VT_INT, 0, 0);
-		s1->next = NULL;
-		sym->next = s1;
-		sym_push (TOK_alloca, VT_FUNC | (p << VT_STRUCT_SHIFT), VT_CONST, 0);
-	}
-#endif
 	Sym *define_start = s1->define_stack;
 	s1->nocode_wanted = true;
 	s1->nb_errors = 0;
@@ -289,8 +275,7 @@ static int tcc_compile(TCCState *s1) {
 	}
 	s1->error_set_jmp_enabled = false;
 
-	/* reset define stack, but leave -Dsymbols (may be incorrect if
-	   they are undefined) */
+	/* reset define stack, but leave -Dsymbols (may be incorrect if they are undefined) */
 	free_defines (s1, define_start);
 
 	sym_pop (s1, &s1->global_stack, NULL);
@@ -388,16 +373,6 @@ static void tcc_init_defines(TCCState *s) {
 	tcc_define_symbol (s, "R_IPI", "");
 	tcc_define_symbol (s, "R_NULLABLE", "");
 	tcc_define_symbol (s, "R_PRINTF_CHECK(a,b)", "");
-#if 0
-	tcc_compile_string (s, "typedef int (*PrintfCallback)(const char *s);");
-	tcc_compile_string (s, "typedef struct RList {} RList;");
-	tcc_compile_string (s, "typedef struct RCore {} RCore;");
-	tcc_compile_string (s, "typedef struct HtUP {} HtUP;");
-	tcc_compile_string (s, "typedef struct HtPP {} HtPP;");
-	tcc_compile_string (s, "typedef struct RStrBuf {} RStrBuf;");
-	tcc_compile_string (s, "typedef struct RStrConstPool {} RStrConstPool;");
-	tcc_compile_string (s, "typedef struct RStack {} RStack;");
-#endif
 
 	/* standard defines */
 	tcc_define_symbol (s, "__STDC__", NULL);
@@ -421,7 +396,7 @@ static void tcc_init_defines(TCCState *s) {
 	tcc_define_symbol (s, "st64", "int64_t");
 
 	/* target defines */
-	if (!strncmp (arch, "x86", 3)) {
+	if (r_str_startswith (arch, "x86")) {
 		if (bits == 32 || bits == 16) {
 			tcc_define_symbol (s, "__i386__", NULL);
 			tcc_define_symbol (s, "__i386", NULL);
@@ -429,7 +404,7 @@ static void tcc_init_defines(TCCState *s) {
 		} else {
 			tcc_define_symbol (s, "__x86_64__", NULL);
 		}
-	} else if (!strncmp (arch, "arm", 3)) {
+	} else if (r_str_startswith (arch, "arm")) {
 		tcc_define_symbol (s, "__ARM_ARCH_4__", NULL);
 		tcc_define_symbol (s, "__arm_elf__", NULL);
 		tcc_define_symbol (s, "__arm_elf", NULL);
@@ -442,41 +417,37 @@ static void tcc_init_defines(TCCState *s) {
 	// TODO: Add other architectures
 	// TODO: Move that in SDB
 
-	if (!strncmp (os, "windows", 7)) {
+	if (r_str_startswith (os, "windows")) {
+		tcc_define_symbol (s, "__WCHAR_TYPE__", "unsigned short");
 		tcc_define_symbol (s, "R2__WINDOWS__", NULL);
 		if (bits == 64) {
 			tcc_define_symbol (s, "_WIN64", NULL);
+			tcc_define_symbol (s, "__SIZE_TYPE__", "unsigned long long");
+			tcc_define_symbol (s, "__PTRDIFF_TYPE__", "long long");
+		} else {
+			tcc_define_symbol (s, "__SIZE_TYPE__", "unsigned long");
+			tcc_define_symbol (s, "__PTRDIFF_TYPE__", "long");
 		}
-	} else {
-		tcc_define_symbol (s, "__unix__", NULL);
-		tcc_define_symbol (s, "__unix", NULL);
-		tcc_define_symbol (s, "unix", NULL);
-
-		if (!strncmp (os, "linux", 5)) {
-			tcc_define_symbol (s, "__linux__", NULL);
-			tcc_define_symbol (s, "__linux", NULL);
-		}
-#define str(s) #s
-		if (!strncmp (os, "freebsd", 7)) {
-			tcc_define_symbol (s, "__FreeBSD__", str ( __FreeBSD__));
-		}
-#undef str
-	}
-	/* TinyCC & gcc defines */
-	if (!strncmp (os, "windows", 7) && (bits == 64)) {
-		tcc_define_symbol (s, "__SIZE_TYPE__", "unsigned long long");
-		tcc_define_symbol (s, "__PTRDIFF_TYPE__", "long long");
-	} else {
-		tcc_define_symbol (s, "__SIZE_TYPE__", "unsigned long");
-		tcc_define_symbol (s, "__PTRDIFF_TYPE__", "long");
-	}
-	if (!strncmp (os, "windows", 7)) {
-		tcc_define_symbol (s, "__WCHAR_TYPE__", "unsigned short");
 	} else {
 		tcc_define_symbol (s, "__WCHAR_TYPE__", "int");
 		/* glibc defines */
 		tcc_define_symbol (s, "__REDIRECT(name, proto, alias)", "name proto __asm__(#alias)");
 		tcc_define_symbol (s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__(#alias) __THROW");
+
+		tcc_define_symbol (s, "R2__UNIX__", NULL);
+		tcc_define_symbol (s, "__unix__", NULL);
+		tcc_define_symbol (s, "__unix", NULL);
+		tcc_define_symbol (s, "unix", NULL);
+
+		if (r_str_startswith (os, "linux")) {
+			tcc_define_symbol (s, "__linux__", NULL);
+			tcc_define_symbol (s, "__linux", NULL);
+		}
+#define str(s) #s
+		if (r_str_startswith (os, "freebsd")) {
+			tcc_define_symbol (s, "__FreeBSD__", str (__FreeBSD__));
+		}
+#undef str
 	}
 }
 
@@ -577,15 +548,6 @@ R_API int tcc_add_file(TCCState *s1, const char *filename, const char *directory
 	}
 	return tcc_add_file_internal (s1, filename, flags);
 }
-
-#define WD_ALL    0x0001/* warning is activated when using -Wall */
-#define FD_INVERT 0x0002/* invert value before storing */
-
-typedef struct FlagDef {
-	uint16_t offset;
-	uint16_t flags;
-	const char *name;
-} FlagDef;
 
 R_API void tcc_set_callback(TCCState *s, TccCallback cb, char **p) {
 	if (cb) {
