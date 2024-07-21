@@ -559,8 +559,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			break;
 		}
 
-		sdb_num_set (obj->kv, "mdmp_system_info.offset",
-			entry->location.rva, 0);
+		sdb_num_set (obj->kv, "mdmp_system_info.offset", entry->location.rva, 0);
 		/* TODO: We need E as a byte! */
 		sdb_set (obj->kv, "mdmp_system_info.format", "[2]EwwbBddd[4]Ed[2]Ew[2]q "
 			"(mdmp_processor_architecture)ProcessorArchitecture "

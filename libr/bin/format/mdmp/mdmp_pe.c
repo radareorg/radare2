@@ -75,11 +75,11 @@ RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin
 	return ret;
 }
 
-static void filter_import(ut8 *n) {
-	int I;
-	for (I = 0; n[I]; I++) {
-		if (n[I] < 30 || n[I] >= 0x7f) {
-			n[I] = 0;
+static inline void filter_import(ut8 *n) {
+	int i;
+	for (i = 0; n[i]; i++) {
+		if (n[i] < 30 || n[i] >= 0x7f) {
+			n[i] = 0;
 			break;
 		}
 	}

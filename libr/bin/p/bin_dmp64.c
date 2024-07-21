@@ -1,7 +1,6 @@
-/* radare2 - LGPL - Copyright 2020-2023 - abcSup */
+/* radare2 - LGPL - Copyright 2020-2024 - abcSup */
 
 #include <r_bin.h>
-
 #include "dmp/dmp64.h"
 
 static Sdb *get_sdb(RBinFile *bf) {

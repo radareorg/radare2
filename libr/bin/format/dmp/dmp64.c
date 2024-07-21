@@ -1,7 +1,4 @@
-/* radare2 - LGPL - Copyright 2020 - abcSup */
-
-#include <r_types.h>
-#include <r_util.h>
+/* radare2 - LGPL - Copyright 2020-2024 - abcSup */
 
 #include "dmp64.h"
 
@@ -39,7 +36,7 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 				free (runs);
 				return false;
 			}
-			page->start = (run->BasePage + j) * DMP_PAGE_SIZE ;
+			page->start = (run->BasePage + j) * DMP_PAGE_SIZE;
 			page->file_offset = base + num_page * DMP_PAGE_SIZE;
 			r_list_append (obj->pages, page);
 			num_page++;
@@ -54,14 +51,40 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 }
 
 static int r_bin_dmp64_init_header(struct r_bin_dmp64_obj_t *obj) {
-	if (!(obj->header = R_NEW0 (dmp64_header))) {
-		r_sys_perror ("R_NEW0 (header)");
-		return false;
-	}
-	if (r_buf_read_at (obj->b, 0, (ut8*)obj->header, sizeof (dmp64_header)) < 0) {
+	ut8 buf[sizeof (dmp64_header)];
+	if (r_buf_read_at (obj->b, 0, buf, sizeof (buf)) < 0) {
 		R_LOG_WARN ("read header");
 		return false;
 	}
+	obj->header = R_NEW0 (dmp64_header);
+	if (!obj->header) {
+		r_sys_perror ("R_NEW0 (header)");
+		return false;
+	}
+	memcpy (obj->header, buf, sizeof (buf));
+#define DMPREAD(x) obj->header->x = r_read_le32 (buf + r_offsetof (dmp64_header, x))
+#define DMPREAD_64(x) obj->header->x = r_read_le64 (buf + r_offsetof (dmp64_header, x))
+	DMPREAD (MajorVersion);
+	DMPREAD (MinorVersion);
+	DMPREAD_64 (DirectoryTableBase);
+	DMPREAD_64 (PfnDataBase);
+	DMPREAD_64 (PsLoadedModuleList);
+	DMPREAD_64 (PsActiveProcessHead);
+	DMPREAD (MachineImageType);
+	DMPREAD (NumberProcessors);
+	DMPREAD (BugCheckCode);
+	DMPREAD_64 (KdDebuggerDataBlock);
+	DMPREAD (DumpType);
+	DMPREAD (MiniDumpFields);
+	DMPREAD (SecondaryDataState);
+	DMPREAD (ProductType);
+	DMPREAD (SuiteMask);
+	DMPREAD (WriterStatus);
+	DMPREAD_64 (RequiredDumpSpace);
+	DMPREAD_64 (SystemUpTime);
+	DMPREAD_64 (SystemTime);
+#undef DMPREAD_64
+#undef DMPREAD
 	obj->dtb = obj->header->DirectoryTableBase;
 
 	return true;
@@ -77,7 +100,10 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
-	ut64 num_pages = obj->bmp_header->Pages;
+	int num_pages = obj->bmp_header->Pages;
+	if (num_pages < 1) {
+		return false;
+	}
 	RBitmap *bitmap = r_bitmap_new (num_pages);
 	r_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
@@ -87,7 +113,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 			continue;
 		}
 		dmp_page_desc *page = R_NEW0 (dmp_page_desc);
-		if (!page) {
+		if (R_UNLIKELY (!page)) {
 			return false;
 		}
 		page->start = i * DMP_PAGE_SIZE;
@@ -109,15 +135,23 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		r_sys_perror ("R_NEW0 (dmp_bmp_header)");
 		return false;
 	}
-	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, offsetof (dmp_bmp_header, Bitmap)) < 0) {
+	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header,
+			r_offsetof (dmp_bmp_header, Bitmap)) < 0) {
 		R_LOG_WARN ("read bmp_header");
 		return false;
 	}
+	obj->bmp_header->FirstPage = r_read_le64 (&obj->bmp_header->FirstPage);
+	obj->bmp_header->TotalPresentPages = r_read_le64 (&obj->bmp_header->TotalPresentPages);
+	obj->bmp_header->Pages = r_read_le64 (&obj->bmp_header->Pages);
 	if (!!memcmp (obj->bmp_header, DMP_BMP_MAGIC, 8)) {
 		R_LOG_WARN ("Invalid Bitmap Magic");
 		return false;
 	}
-	ut64 bitmapsize = obj->bmp_header->Pages / 8;
+	int bitmapsize = obj->bmp_header->Pages / 8;
+	if (bitmapsize < 1) {
+		R_LOG_WARN ("Invalid Bitmap Size");
+		return false;
+	}
 	obj->bitmap = calloc (1, bitmapsize);
 	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		R_LOG_WARN ("read bitmap");

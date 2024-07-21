@@ -1,11 +1,11 @@
-/* radare2 - LGPL - Copyright 2016-2023 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2024 - Davis, Alex Kornitzer */
 
 #include <r_util/r_print.h>
 #include <r_bin.h>
 #include "mdmp/mdmp.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	return (mdmp && mdmp->kv) ? mdmp->kv: NULL;
 }
@@ -16,24 +16,22 @@ static void destroy(RBinFile *bf) {
 
 static RList* entries(RBinFile *bf) {
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
-	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RListIter *it;
-	RList* ret, *list;
 
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
-
-	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
-		list = Pe32_r_bin_mdmp_pe_get_entrypoint (pe32_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
-	}
-	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
-		list = Pe64_r_bin_mdmp_pe_get_entrypoint (pe64_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+	RList *ret = r_list_newf (free);
+	if (R_LIKELY (ret)) {
+		struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
+		r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
+			RList *list = Pe32_r_bin_mdmp_pe_get_entrypoint (pe32_bin);
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
+		struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
+		r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
+			RList *list = Pe64_r_bin_mdmp_pe_get_entrypoint (pe64_bin);
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 
 	return ret;
@@ -160,9 +158,9 @@ static RList* libs(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
-	if (res) {
+	if (R_LIKELY (res)) {
 		sdb_ns_set (bf->sdb, "info", res->kv);
 		bf->bo->bin_obj = res;
 		return true;
@@ -175,7 +173,6 @@ static RList *sections(RBinFile *bf) {
 	struct minidump_memory_descriptor64 *memory64;
 	struct minidump_module *module;
 	struct minidump_string *str;
-	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RList *ret, *pe_secs;
@@ -183,7 +180,7 @@ static RList *sections(RBinFile *bf) {
 	RBinSection *ptr;
 	ut64 index;
 
-	obj = (struct r_bin_mdmp_obj *)bf->bo->bin_obj;
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
