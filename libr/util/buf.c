@@ -517,7 +517,7 @@ R_API ut8 r_buf_read8(RBuffer *b) {
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 	ut8 res;
 	st64 r = r_buf_read_at (b, addr, &res, sizeof (res));
-	return r == sizeof (res)? res: b->Oxff_priv;
+	return (r == sizeof (res))? res: b->Oxff_priv;
 }
 
 static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {

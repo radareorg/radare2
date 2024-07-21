@@ -5102,6 +5102,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	if (!ds) {
 		return false;
 	}
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
 	if (!ds->show_emu_strlea && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 		// useful for ARM64
 		// reduce false positives in emu.str=true when loading strings via adrp+add
@@ -5226,7 +5227,8 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (!ds->show_emu_str) {
-					msg = r_str_appendf (msg, "-> 0x%x", *n32);
+					ut32 v = r_read_ble32 (n32, be);
+					msg = r_str_appendf (msg, "-> 0x%x", v);
 				}
 			}
 		}
