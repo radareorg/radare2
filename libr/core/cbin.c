@@ -3373,11 +3373,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// This is damn slow if section vsize is HUGE
 			if (section->vsize < 1024 * 1024 * 2) {
 				R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
-#if R2_590
-				r_core_cmdf_at (r, section->vaddr, "%s", section->format);
-#else
-				r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
-#endif
+				r_core_cmd_call_at (r, section->vaddr, section->format);
 			}
 		}
 	}

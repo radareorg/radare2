@@ -137,30 +137,30 @@ DEBUG: add dt.dyn.entry tag=16 value=0x00000000
 DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: (section .dynstr) Css 674 @ 0x484
-DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCallAt(0x00000484): Css 674
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
 DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
-DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: RCoreCallAt(0x00000940): Cd 4[98]
 DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
-DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
+DEBUG: RCoreCallAt(0x00012000): Cd 4[48]
 DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
-DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
+DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
 DEBUG: (section .dynstr) Css 674 @ 0x484
-DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCallAt(0x00000484): Css 674
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
 DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
-DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: RCoreCallAt(0x00000940): Cd 4[98]
 DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
-DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
+DEBUG: RCoreCallAt(0x00012000): Cd 4[48]
 DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
-DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
+DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: RCoreCmd: =!
