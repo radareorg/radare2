@@ -114,15 +114,14 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
-#if R2_590
 static bool sections_vec(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->bo, false);
-	ELFOBJ *eo = bf->bo->bin_obj
+	ELFOBJ *eo = bf->bo->bin_obj;
 	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
 }
-#else
 
-// DEPRECATE: we must use sections_vec instead
+#if 0
+// R2_600 - DEPRECATE: we must use sections_vec instead
 static RList* sections(RBinFile *bf) {
 	ELFOBJ *eo = (bf && bf->bo)? bf->bo->bin_obj : NULL;
 	if (!eo) {
@@ -131,7 +130,7 @@ static RList* sections(RBinFile *bf) {
 
 	// there is no leak here with sections since they are cached by elf.c
 	// and freed within Elf_(free) R2_590. must return bool
-	const RVector *sections = Elf_(load_sections) (bf, eo);
+	const RVecRBinElfSection *sections = Elf_(load_sections) (bf, eo);
 	if (!sections) {
 		return NULL;
 	}
@@ -139,7 +138,7 @@ static RList* sections(RBinFile *bf) {
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (ret) {
 		RBinSection *section;
-		r_vector_foreach (sections, section) {
+		R_VEC_FOREACH (sections, section) {
 			r_list_append (ret, r_bin_section_clone (section));
 		}
 	}
@@ -170,19 +169,12 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 }
 
 static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	RBinSection *sec;
-	r_list_foreach (secs, iter, sec) {
-#endif
 		if (sec->size > ALLOC_SIZE_LIMIT) {
 			continue;
 		}
@@ -217,7 +209,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			}
 			sec->size = size;
 		}
-// XXX R2_590 this can be done once with proper compile time ifdef
+// XXX R2_600 this can be done once with proper compile time ifdef
 		if (bits == 32) {
 			int i;
 			for (i = 0; (i + 3) < sec->size; i += 4) {
@@ -241,7 +233,6 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		}
 		free (buf);
 	}
-	r_list_free (secs);
 }
 
 static RList* entries(RBinFile *bf) {
@@ -1116,17 +1107,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *sections = &(bf->bo->sections_vec);
 	R_VEC_FOREACH (sections, section) {
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	r_list_foreach (secs, iter, section) {
-#endif
 		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
@@ -1143,7 +1128,6 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			break;
 		}
 	}
-	r_list_free (secs);
 }
 
 static bool has_sanitizers(RBinFile *bf) {
@@ -1305,24 +1289,15 @@ static RList* fields(RBinFile *bf) {
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
-#if R2_590
 	if (!bf->bo->sections && sections_vec (bf)) {
 		RBinSection *section;
 		RVecRBinSection *sections = &(bf->bo->sections_vec);
 		R_VEC_FOREACH (sections, section) {
-#else
-	if (!bf->bo->sections) {
-		RBinSection *section;
-		RList *secs = sections (bf);
-		RListIter *iter;
-		r_list_foreach (secs, iter, section) {
-#endif
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
 			}
 		}
-		r_list_free (secs);
 	}
 	return off + len;
 }

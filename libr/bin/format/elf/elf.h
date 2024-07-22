@@ -35,6 +35,7 @@
 #define R_BIN_ELF_XWORD_MAX UT64_MAX
 #endif
 
+// Use RBinSection to avoid dupes
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
 	ut64 rva;
@@ -110,6 +111,7 @@ typedef struct r_bin_elf_lib_t {
 
 #include <r_vec.h>
 R_VEC_TYPE (RVecRBinElfSymbol, RBinElfSymbol);
+R_VEC_TYPE (RVecRBinElfSection, RBinElfSection);
 
 struct Elf_(obj_t) {
 	Elf_(Ehdr) ehdr;
@@ -159,12 +161,8 @@ struct Elf_(obj_t) {
 	RVector g_relocs;  // RBinElfReloc
 	bool sections_loaded;
 	bool sections_cached;
-#if R2_590
-	RVecRBinElfSection g_sections_elf;
-#else
-	RVector g_sections; // RBinElfSection
-#endif
-	RVector cached_sections; // RBinSection
+	RVecRBinElfSection g_sections;
+	RVecRBinElfSection cached_sections;
 	bool libs_loaded;
 	RVector g_libs; // RBinElfLib
 	bool fields_loaded;
