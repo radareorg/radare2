@@ -27,11 +27,13 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 				free (op->bytes);
 			}
 		}
+#if 0
 		if (size > 512) {
 			eprintf ("%d\n", size);
 			r_sys_backtrace ();
 		}
-		size = R_MIN (size, sizeof (op->bytes));
+#endif
+		size = R_MIN (size, 64); // sizeof (op->bytes_buf));
 		if (size < sizeof (op->bytes_buf)) {
 			op->weakbytes = true;
 			op->bytes = op->bytes_buf;
