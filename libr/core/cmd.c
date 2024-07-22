@@ -5283,8 +5283,6 @@ beach:
 		r_io_desc_close (tmpdesc);
 		tmpdesc = NULL;
 	}
-	core->fixedarch = oldfixedarch;
-	core->fixedbits = oldfixedbits;
 	if (tmpseek) {
 		*tmpseek = cmd_tmpseek;
 	}
