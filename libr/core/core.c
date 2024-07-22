@@ -1185,12 +1185,12 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
 	RFSFile *file;
-	char *lpath = r_str_new (path);
+	char *lpath = R_STR_DUP (path);
 	char *p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
-			dirname  = r_str_new ("/");
+			dirname  = R_STR_DUP ("/");
 		} else if (lpath[0] == '.') { // ./xxx/yyy
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
@@ -1202,14 +1202,14 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 				dirname = r_file_new (pwd, lpath, NULL);
 			}
 		}
-		basename = r_str_new (p + 1);
+		basename = R_STR_DUP (p + 1);
 	} else { // xxx
 		if (strlen (pwd) == 1) {
 			dirname = r_str_newf ("%s", R_SYS_DIR);
 		} else {
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		}
-		basename = r_str_new (lpath);
+		basename = R_STR_DUP (lpath);
 	}
 	R_FREE (pwd);
 
@@ -1340,7 +1340,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 		path++;
 	}
 #endif
-	lpath = r_str_new (path);
+	lpath = R_STR_DUP (path);
 #if R2__WINDOWS__
 	r_str_replace_ch (lpath, '/', '\\', true);
 #endif
@@ -1351,7 +1351,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 #if R2__WINDOWS__
 			dirname = strdup ("\\.\\");
 #else
-			dirname = r_str_new (R_SYS_DIR);
+			dirname = R_STR_DUP (R_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = r_file_home (lpath + 2);
@@ -1372,10 +1372,10 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 #endif
 			dirname = r_str_newf (fmt, R_SYS_DIR, lpath, R_SYS_DIR);
 		}
-		basename = r_str_new (p + 1);
+		basename = R_STR_DUP (p + 1);
 	} else { // xxx
 		dirname = r_str_newf (".%s", R_SYS_DIR);
-		basename = r_str_new (lpath);
+		basename = R_STR_DUP (lpath);
 	}
 
 	if (!dirname || !basename) {
@@ -1419,7 +1419,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 	char *pipe = strchr (buf->data, '>');
 
 	if (pipe) {
-		args = r_str_new (pipe);
+		args = R_STR_DUP (pipe);
 #if 0
 		if (pipe[1] == ' ') {
 			// currently unreachable
@@ -1427,7 +1427,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 		}
 #endif
 	} else {
-		args = r_str_new (buf->data);
+		args = R_STR_DUP (buf->data);
 	}
 
 	if (!args) {
@@ -1439,7 +1439,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 		goto out;
 	}
 
-	input = r_str_new (r_str_word_get0 (args, narg));
+	input = R_STR_DUP (r_str_word_get0 (args, narg));
 	if (!input) {
 		goto out;
 	}
@@ -1608,7 +1608,7 @@ static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const cha
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	lpath = r_str_new (str);
+	lpath = R_STR_DUP (str);
 	p1 = strchr (lpath, '/');
 	if (p1) {
 		*p1 = 0;

@@ -4184,9 +4184,9 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *mo) {
 
 char *MACH0_(get_class)(struct MACH0_(obj_t) *mo) {
 #if R_BIN_MACH064
-	return r_str_new ("MACH064");
+	return R_STR_DUP ("MACH064");
 #else
-	return r_str_new ("MACH0");
+	return R_STR_DUP ("MACH0");
 #endif
 }
 

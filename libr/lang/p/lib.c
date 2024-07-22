@@ -5,7 +5,7 @@
 static bool lang_lib_file_run(RLangSession *user, const char *file) {
 	char *libpath;
 	void *lib;
-	if (!(libpath = r_str_new (file))) {
+	if (!(libpath = R_STR_DUP (file))) {
 		return false;
 	}
 	if (!r_str_startswith (libpath, "/") && !r_str_startswith (libpath, "./")) {

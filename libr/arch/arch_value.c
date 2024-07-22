@@ -100,7 +100,7 @@ R_API bool r_arch_value_set_ut64(RArchValue *val, RReg *reg, RIOBind *iob, ut64 
 R_API char *r_arch_value_tostring(RArchValue *value) {
 	char *out = NULL;
 	if (value) {
-		out = r_str_new ("");
+		out = R_STR_DUP ("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL) {
 				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);

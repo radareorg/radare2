@@ -10183,7 +10183,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		buf_asm = r_print_colorize_opcode (core->print, str,
 				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
-		buf_asm = r_str_new (str);
+		buf_asm = R_STR_DUP (str);
 	}
 	return buf_asm;
 }
