@@ -3881,6 +3881,14 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
+	if (!r_config_get_b (r->config, "bin.classes")) {
+		if (IS_MODE_JSON (mode)) {
+			pj_a (pj);
+			pj_end (pj);
+			return true;
+		}
+		return false;
+	}
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
@@ -3894,9 +3902,6 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
-		if (!r_config_get_b (r->config, "bin.classes")) {
-			return false;
-		}
 		r_flag_space_set (r->flags, R_FLAGS_FS_CLASSES);
 	} else if (IS_MODE_RAD (mode) && !IS_MODE_CLASSDUMP (mode)) {
 		r_cons_println ("fs classes");
