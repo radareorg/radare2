@@ -3881,14 +3881,6 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
-	if (!r_config_get_b (r->config, "bin.classes")) {
-		if (IS_MODE_JSON (mode)) {
-			pj_a (pj);
-			pj_end (pj);
-			return true;
-		}
-		return false;
-	}
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
