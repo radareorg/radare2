@@ -6558,12 +6558,14 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 
 R_API int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && cmd, -1);
-	ut64 oaddr = core->offset;
-	if (addr != core->offset) {
+	R_LOG_DEBUG ("RCoreCallAt(0x%08"PFMT64x"): %s", addr, cmd);
+	const ut64 oaddr = core->offset;
+	const bool mustseek = addr != oaddr;
+	if (mustseek) {
 		r_core_seek (core, addr, 1);
 	}
 	int res = r_cmd_call (core->rcmd, cmd);
-	if (addr != core->offset) {
+	if (mustseek) {
 		r_core_seek (core, oaddr, 1);
 	}
 	return res;
