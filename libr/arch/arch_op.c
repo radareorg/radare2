@@ -17,13 +17,46 @@ R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
 
 R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
 	if (op) {
+		// TODO: use maxopsz from archbits
+		size = R_MIN (size, 32); // maximum speed
 		op->addr = addr;
+#if R2_USE_NEW_ABI
+		if (op->weakbytes) {
+			op->weakbytes = false;
+		} else {
+			if (op->bytes != op->bytes_buf) {
+				free (op->bytes);
+			}
+		}
+		if (size < 32) {
+			op->weakbytes = true;
+			op->bytes = op->bytes_buf;
+			memcpy (op->bytes_buf, data, size);
+		} else {
+			op->bytes = r_mem_dup (data, size);
+		}
+#else
+#if 0
+		static ut8 Gbytes[32];
+		if (op->weakbytes) {
+			op->weakbytes = false;
+		} else {
+			if (op->bytes != Gbytes) {
+				free (op->bytes);
+			}
+		}
+		op->weakbytes = true;
+		memcpy (Gbytes, data, size);
+		op->bytes = Gbytes; // r_mem_dup (data, size);
+#else
 		if (op->weakbytes) {
 			op->weakbytes = false;
 		} else {
 			free (op->bytes);
 		}
 		op->bytes = r_mem_dup (data, size);
+#endif
+#endif
 		op->size = size;
 		return true;
 	}
@@ -71,14 +104,9 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	return nop;
 }
 
-
 #if 0
 R_API RList *r_anal_op_list_new(void) {
-	RList *list = r_list_new ();
-	if (list) {
-		list->free = &r_anal_op_free;
-	}
-	return list;
+	return r_list_newf (r_anal_op_free);
 }
 #endif
 
