@@ -6,17 +6,9 @@
 #include <stdint.h>
 #include "sdb/sdb.h"
 #include "sdb/heap.h"
-// #include <sys/mman.h>
-#if !defined(MAP_ANONYMOUS) && __MACH__
-  #define MAP_ANONYMOUS 0x1000
-#else
-  #define MAP_ANONYMOUS 0
-#endif
 
-// generic global
-SdbGlobalHeap Gheap = {NULL, NULL};
-// local heap allocator api
 const SdbGlobalHeap sdb_gh_libc = { NULL, NULL, NULL };
+SdbGlobalHeap Gheap = {NULL, NULL};
 
 SDB_API char *sdb_strdup(const char *s) {
 	size_t sl = strlen (s) + 1;
@@ -26,6 +18,17 @@ SDB_API char *sdb_strdup(const char *s) {
 	}
 	return p;
 }
+
+#if USE_MMAN
+// #include <sys/mman.h>
+
+#if !defined(MAP_ANONYMOUS)
+#if __MACH__
+  #define MAP_ANONYMOUS 0x1000
+#else
+  #define MAP_ANONYMOUS 0x20
+#endif
+#endif
 
 #if __SDB_WINDOWS__
 #include <windows.h>
@@ -77,7 +80,7 @@ typedef struct Footer {
 
 #define ALIGNMENT 8
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
-#define SDB_PAGE_SIZE sysconf(_SC_PAGESIZE)
+#define SDB_PAGE_SIZE 131072 // 96096*2 //sysconf(_SC_PAGESIZE)
 #define CEIL(X) ((X - (int)(X)) > 0 ? (int)(X + 1) : (int)(X))
 #define PAGES(size) (CEIL(size / (double)SDB_PAGE_SIZE))
 #define MIN_SIZE (ALIGN(sizeof(free_list) + META_SIZE))
@@ -128,7 +131,7 @@ static inline int getSize(void *ptr) {
 }
 
 static void remove_from_free_list(SdbHeap *heap, void *block) {
-	setFree(block, USED);
+	setFree (block, USED);
 
 	free_list *free_block = (free_list *)add_offset(block);
 	free_list *next = free_block->next;
@@ -229,7 +232,7 @@ static void *sdb_heap_malloc(SdbHeap *heap, int size) {
 		// Header ptr
 		void *address = remove_offset (free_block);
 		// Mark block as used.
-		setFree(address, USED);
+		setFree (address, USED);
 		// Split the block into two, where the second is free.
 		split (heap, address, ((Header *)address)->size, required_size);
 		remove_from_free_list (heap, address);
@@ -255,7 +258,7 @@ static void *sdb_heap_malloc(SdbHeap *heap, int size) {
 	*header_ptr = header;
 	Footer footer = {};
 	footer.free = USED;
-	*((Footer *)getFooter(new_region)) = footer;
+	*((Footer *)getFooter (new_region)) = footer;
 
 	if (new_region == heap->last_address && heap->last_address != 0) {
 		// if we got a block of memory after the last block, as we requested.
@@ -278,7 +281,7 @@ static void coalesce(SdbHeap *heap, void *ptr) {
 	if (current_header->has_prev && ((Footer *)((ut8*)ptr - FOOTER_SIZE))->free) {
 		int prev_size = ((Footer *)((ut8*)ptr - FOOTER_SIZE))->size;
 		Header *prev_header = (Header *)((ut8*)ptr - prev_size);
-		Footer *prev_footer = (Footer *)((Footer *)((ut8*)ptr - FOOTER_SIZE));
+		Footer *prev_footer = (Footer *)((ut8*)ptr - FOOTER_SIZE);
 
 		// Merge with previous block.
 		remove_from_free_list (heap, current_header);
@@ -352,17 +355,6 @@ static void sdb_heap_free(SdbHeap *heap, void *ptr) {
 	}
 }
 
-#if 0
-static void copy_block(int *src, int *dst, int size) {
-	// bettter do memcpy here
-	int i;
-	// Know that it is 8-bit aligned, so can copy whole ints.
-	for (i = 0; i * sizeof(int) < size; i++) {
-		dst[i] = src[i];
-	}
-}
-#endif
-
 SDB_API void sdb_heap_init(SdbHeap *heap) {
 	heap->last_address = NULL;
 	heap->free_list_start = NULL;
@@ -421,13 +413,12 @@ SDB_API void *sdb_heap_realloc(SdbHeap *heap, void *ptr, int size) {
 
 	// Not enough room to enlarge -> allocate new region.
 	void *new_ptr = sdb_heap_malloc (heap, size);
-	// Copy old data.
-	// copy_block(ptr, new_ptr, current_size);
-	memcpy (ptr, new_ptr, current_size);
+	memcpy (new_ptr, ptr, current_size);
 
 	// Free old location.
 	sdb_heap_free (heap, ptr);
 	return new_ptr;
 }
 
+#endif
 #endif
