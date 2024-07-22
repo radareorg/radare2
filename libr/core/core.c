@@ -3192,8 +3192,6 @@ R_API bool r_core_init(RCore *core) {
 	// r_anal_bind (core->anal, &(core->egg->rasm->analb));
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
-	core->fixedarch = false;
-	core->fixedbits = false;
 
 	core->theme = strdup ("default");
 	/* initialize libraries */

@@ -260,13 +260,6 @@ static bool cb_anal_jmptailcall_delta(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analarmthumb(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.armthumb = node->i_value;
-	return true;
-}
-
 static bool cb_analdepth(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3038,6 +3031,27 @@ static bool cb_anal_from(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_anal_fixed_bits(void *user, void *_node) {
+	RConfigNode *node = _node;
+	RCore *core = (RCore*)user;
+	core->fixedbits = node->i_value;
+	return true;
+}
+
+static bool cb_anal_fixed_arch(void *user, void *_node) {
+	RConfigNode *node = _node;
+	RCore *core = (RCore*)user;
+	core->fixedarch = node->i_value;
+	return true;
+}
+
+static bool cb_anal_fixed_thumb(void *user, void *_node) {
+	RConfigNode *node = _node;
+	RCore *core = (RCore*)user;
+	core->anal->opt.armthumb = !node->i_value;
+	return true;
+}
+
 static bool cb_anal_limits(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	if (node->i_value) {
@@ -3437,7 +3451,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "comma separated list of register names to be readonly");
 	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.offset.segment and asm.offset.segment.bits)");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "set the value of the GP register (MIPS)");
-	SETBPREF ("anal.gpfixed", "true", "set gp register to anal.gp before emulating each instruction in aae");
+	SETBPREF ("anal.fixed.gp", "true", "set gp register to anal.gp before emulating each instruction in aae");
+	SETCB ("anal.fixed.arch", "false", &cb_anal_fixed_arch, "permit arch changes during analysis");
+	SETCB ("anal.fixed.bits", "false", &cb_anal_fixed_bits, "permit bits changes during analysis (arm/thumb)");
+	SETCB ("anal.fixed.thumb", "true", &cb_anal_fixed_thumb, "permit switching between arm:32 and arm:16 during analysis");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETCB ("anal.noret.refs", "false", (RConfigCallback)&cb_anal_noret_refs, "recursive no return checks (EXPERIMENTAL)");
 	SETCB ("anal.slow", "true", (RConfigCallback)&cb_anal_slow, "uses emulation and deeper analysis for better results");
@@ -3464,7 +3481,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");
 	SETICB ("anal.jmp.tailcall.delta", 0, &cb_anal_jmptailcall_delta, "consume a branch as a call if delta is big");
 
-	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");
 #if __wasi__
 	SETICB ("anal.depth", 32, &cb_analdepth, "max depth at code analysis");

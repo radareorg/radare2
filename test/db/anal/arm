@@ -348,7 +348,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
-e anal.armthumb=true
+e anal.fixed.thumb=false
 wx 0910 a0e3 11ff 2fe1 0421 0924
 aae
 pi 2 @8

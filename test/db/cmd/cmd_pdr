@@ -19,7 +19,7 @@ NAME=pdr recursive emu with gp
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=mips
-e anal.gpfixed=false
+e anal.fixed.gp=false
 wx 10000824cc009c270500281500000000200c082521401c010a00000800000000300c082521401c010800e003
 af
 e asm.lines.fcn=false

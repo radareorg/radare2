@@ -1771,7 +1771,7 @@ s 0x00400820
 af
 e asm.emu=true
 e emu.write=true
-e anal.gpfixed=false
+e anal.fixed.gp=false
 e asm.lines.bb=false
 e asm.lines.fcn=false
 e asm.imm.str=false
