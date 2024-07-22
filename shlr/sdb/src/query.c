@@ -891,7 +891,10 @@ static char *slurp(const char *file) {
 		close (fd);
 		return NULL;
 	}
-	lseek (fd, 0, SEEK_SET);
+	if (lseek (fd, 0, SEEK_SET) == (off_t)-1) {
+		close (fd);
+		return NULL;
+	}
 	char *text = (char *)sdb_gh_malloc (sz + 1);
 	if (!text) {
 		close (fd);

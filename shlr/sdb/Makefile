@@ -6,7 +6,7 @@ PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
 ASANOPTS=address undefined signed-integer-overflow
 LEAKOPTS=leak
-CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS))
+CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS)) $(CFLAGS)
 CFLAGS_LEAK=$(addprefix -fsanitize=,$(LEAKOPTS))
 MKDIR=mkdir
 
@@ -50,6 +50,7 @@ heap:
 asan:
 	$(MAKE) include/sdb/version.h
 	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
+
 asantest:
 	export ASAN_OPTIONS=detect_leaks=0 ; \
 	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C test
