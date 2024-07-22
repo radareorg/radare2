@@ -27,6 +27,10 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 				free (op->bytes);
 			}
 		}
+		if (size > 512) {
+			eprintf ("%d\n", size);
+			r_sys_backtrace ();
+		}
 		size = R_MIN (size, sizeof (op->bytes));
 		if (size < sizeof (op->bytes_buf)) {
 			op->weakbytes = true;
@@ -52,13 +56,9 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 		op->bytes = Gbytes; // r_mem_dup (data, size);
 #else
 #if 0
-		if (size > 512) {
-		eprintf ("%d\n", size);
-			r_sys_backtrace ();
-		}
 #endif
 //		size = R_MIN (size, 512); // maximum speed
-		// size = R_MIN (size, 32); // maximum speed
+		size = R_MIN (size, 64); // maximum speed
 		if (op->weakbytes) {
 			op->weakbytes = false;
 		} else {
