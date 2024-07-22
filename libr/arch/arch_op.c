@@ -20,7 +20,6 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 		// TODO: use maxopsz from archbits
 		op->addr = addr;
 #if R2_USE_NEW_ABI
-		size = R_MIN (size, 32); // maximum speed
 		if (op->weakbytes) {
 			op->weakbytes = false;
 		} else {
@@ -28,12 +27,14 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 				free (op->bytes);
 			}
 		}
+		size = R_MIN (size, sizeof (op->bytes));
 		if (size < sizeof (op->bytes_buf)) {
 			op->weakbytes = true;
 			op->bytes = op->bytes_buf;
 			memcpy (op->bytes_buf, data, size);
 		} else {
 			op->bytes = r_mem_dup (data, size);
+			op->weakbytes = false;
 		}
 #else
 #if 0
@@ -50,7 +51,14 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 		memcpy (Gbytes, data, size);
 		op->bytes = Gbytes; // r_mem_dup (data, size);
 #else
-		// size = R_MIN (size, 512); // maximum speed
+#if 0
+		if (size > 512) {
+		eprintf ("%d\n", size);
+			r_sys_backtrace ();
+		}
+#endif
+//		size = R_MIN (size, 512); // maximum speed
+		// size = R_MIN (size, 32); // maximum speed
 		if (op->weakbytes) {
 			op->weakbytes = false;
 		} else {
