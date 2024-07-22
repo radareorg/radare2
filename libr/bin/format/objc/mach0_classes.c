@@ -1734,7 +1734,7 @@ static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
 }
 
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 
 	ut64 num_of_unnamed_class = 0;
 	ut32 size = 0;
@@ -1866,7 +1866,7 @@ get_classes_error:
 }
 
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
 	R_LOG_DEBUG ("parse objc categories");
 	const size_t ptr_size = sizeof (mach0_ut);
 	if (!ms->catlist.have) {

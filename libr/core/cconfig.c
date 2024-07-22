@@ -2798,6 +2798,17 @@ static bool cb_rawstr(void *user, void *data) {
 	core->bin->rawstr = node->i_value;
 	return true;
 }
+static bool cb_bin_classes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	const ut32 req = R_BIN_REQ_CLASSES;
+	if (node->i_value) {
+		core->bin->filter_rules |= req;
+	} else {
+		core->bin->filter_rules &= ~req;
+	}
+	return true;
+}
 
 static bool cb_debase64(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -3812,7 +3823,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.str.raw", "false", &cb_rawstr, "load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "load strings from rbin on startup");
 	SETCB ("bin.str.debase64", "false", &cb_debase64, "try to debase64 all strings");
-	SETBPREF ("bin.classes", "true", "load classes from rbin on startup");
+	SETCB ("bin.classes", "true", &cb_bin_classes, "load classes from rbin on startup");
 	SETCB ("bin.verbose", "false", &cb_binverbose, "show RBin warnings when loading binaries");
 
 	/* prj */
