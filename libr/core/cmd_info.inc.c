@@ -42,7 +42,7 @@ static RCoreHelpMessage help_msg_ic = {
 	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
-	"icl", "", "Show addresses of class and it methods, without names",
+	"icl", "[c]", "Show addresses of class and it methods, without names (iclc = class count)",
 	"ics", "", "Show class symbols in an easy to parse format",
 	NULL
 };
@@ -836,6 +836,10 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 	RListIter *iter, *iter2;
 	RBinSymbol *sym;
 	RBinClass *cls;
+	if (mode == 'c') {
+		r_cons_printf ("%d\n", r_list_length (obj->classes));
+		return;
+	}
 	r_list_foreach (obj->classes, iter, cls) {
 		const char *kname = r_bin_name_tostring2 (cls->name, pref);
 		if ((idx >= 0 && idx != (*count)++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
@@ -961,7 +965,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	}
 	const bool is_superquiet = strstr (input, "qq");
 	const bool is_doublerad = strstr (input, "**");
-	///
 	switch (cmd) {
 	// help message
 	case '?': // "ic?"
@@ -1017,6 +1020,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *obj = bf->bo;
 				if (!obj || !obj->classes || r_list_empty (obj->classes)) {
+					if (r_str_startswith (input, "lc")) { // "iclc"
+						r_cons_printf ("0\n");
+					}
 					if (mode == 'j') {
 						r_cons_printf ("%s[]", first? "": ",");
 					}
@@ -1060,14 +1066,18 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					classdump_keys (core, obj);
 					return;
 				case 'l': // "icl"
-					r_list_foreach (obj->classes, iter, cls) {
-						r_list_foreach (cls->methods, iter2, sym) {
-							const char *comma = iter2->p? " ": "";
-							r_cons_printf ("%s0x%"PFMT64x, comma,
-									iova? sym->vaddr: sym->paddr);
-						}
-						if (!r_list_empty (cls->methods)) {
-							r_cons_newline ();
+					if (r_str_startswith (input, "lc")) {
+						cmd_ic0 (core, obj, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
+					} else {
+						r_list_foreach (obj->classes, iter, cls) {
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? " ": "";
+								r_cons_printf ("%s0x%"PFMT64x, comma,
+										iova? sym->vaddr: sym->paddr);
+							}
+							if (!r_list_empty (cls->methods)) {
+								r_cons_newline ();
+							}
 						}
 					}
 					break;
