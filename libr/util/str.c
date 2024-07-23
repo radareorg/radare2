@@ -672,7 +672,7 @@ R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 	if (strlen (str) < len) {
 		return strdup (str);
 	}
-	char *buf = r_str_newlen (str, len);
+	char *buf = r_str_ndup (str, len);
 	if (buf && len > 4) {
 		strcpy (buf + len - 4, "...");
 	}
@@ -817,7 +817,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	r_return_val_if_fail (string, NULL);
-	char *msg = r_str_newlen (string, slen);
+	char *msg = r_str_ndup (string, slen);
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
 	return ret;
@@ -2417,7 +2417,7 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 				needle_end++;
 			}
 			// Find the pattern in between wildcards
-			char* needle = r_str_ndup(glob, needle_end - glob);
+			char* needle = r_str_ndup (glob, needle_end - glob);
 			const char *advance_to = strstr (str, needle);
 			free (needle);
 			if (!advance_to) {

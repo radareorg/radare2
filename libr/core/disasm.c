@@ -1283,7 +1283,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		char **wc_array = r_str_argv (wcdata, &argc);
 		for (i = 0; i < argc; i++) {
 			bgcolor = strchr (wc_array[i], '\x1b');
-			word = r_str_newlen (wc_array[i], bgcolor - wc_array[i]);
+			word = r_str_ndup (wc_array[i], bgcolor - wc_array[i]);
 			ds_highlight_word (ds, word, bgcolor);
 		}
 	}
