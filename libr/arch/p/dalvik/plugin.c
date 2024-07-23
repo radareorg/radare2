@@ -761,7 +761,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			R_FREE (strasm);
 			size = 2;
 		}
-		op->mnemonic = R_STR_DUP (r_str_get_fail (strasm, "invalid"));
+		op->mnemonic = strdup (r_str_get_fail (strasm, "invalid"));
 	} else if (len > 0) {
 		op->mnemonic = strdup ("invalid");
 		size = len;
