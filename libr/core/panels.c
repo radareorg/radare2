@@ -3923,7 +3923,12 @@ static char *__get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x
 		tmp++;
 		i++;
 	}
-	char *ret = r_str_ndup (pos += strlen (padding), i - strlen (padding));
+	char *ret;
+	if (i - strlen (padding) >= 1) {
+		ret = r_str_ndup (pos += strlen (padding), i - strlen (padding));
+	} else {
+		ret = NULL;
+	}
 	if (!ret) {
 		ret = strdup (pos);
 	}
@@ -6569,7 +6574,12 @@ static char *__parse_panels_config(const char *cfg, int len) {
 	if (R_STR_ISEMPTY (cfg) || len < 2) {
 		return NULL;
 	}
-	char *tmp = r_str_ndup (cfg, len + 1);
+	char *tmp;
+	if (len + 1) {
+		tmp = r_str_ndup (cfg, len + 1);
+	} else {
+		tmp = NULL;
+	}
 	if (!tmp) {
 		return NULL;
 	}

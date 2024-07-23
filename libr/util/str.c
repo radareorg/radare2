@@ -672,7 +672,12 @@ R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 	if (strlen (str) < len) {
 		return strdup (str);
 	}
-	char *buf = r_str_ndup (str, len);
+	char *buf;
+	if (len) {
+		buf = r_str_ndup (str, len);
+	} else {
+		buf = NULL;
+	}
 	if (buf && len > 4) {
 		strcpy (buf + len - 4, "...");
 	}
@@ -817,7 +822,10 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	r_return_val_if_fail (string, NULL);
-	char *msg = r_str_ndup (string, slen);
+	char *msg = NULL;
+	if (slen) {
+		msg = r_str_ndup (string, slen);
+	}
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
 	return ret;
