@@ -1003,7 +1003,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				if (maskMatches (s->perm, mask, only)) {
 					continue;
 				}
-				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 addr = core->io->va?
+					(s->perm && R_PERM_R)? r_bin_get_vaddr(core->bin, s->paddr, s->vaddr) : s->vaddr
+				: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
 				append_bound (list, core->io, search_itv, addr, size, s->perm);
 			}
