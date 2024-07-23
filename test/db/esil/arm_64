@@ -1166,3 +1166,22 @@ pc = 0x00000000
 pstate = 0x00000000
 EOF
 RUN
+
+NAME=invalid instruction skip
+FILE=malloc://0x2048
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 00000000100000d01002019100021fd6
+f sym.something 8 @ 0x2040
+aaex 16
+axt 0x2040
+aaex 12@4
+axt 0x2040
+EOF
+EXPECT=<<EOF
+(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
+(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
+EOF
+RUN
+

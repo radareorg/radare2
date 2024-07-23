@@ -5879,9 +5879,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
 			if (is_thumb) {
 				i++; // codelalign is not always the best option to catch unaligned instructions
+				r_anal_op_fini (&op);
+				goto repeat;
 			}
-			r_anal_op_fini (&op);
-			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i += minopsize - 1
