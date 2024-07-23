@@ -2522,7 +2522,7 @@ static int cmd_kuery(void *data, const char *input) {
 		RLine *line = core->cons->line;
 		if (!line->sdbshell_hist) {
 			line->sdbshell_hist = r_list_newf (free);
-			r_list_append (line->sdbshell_hist, R_STR_DUP ("\0"));
+			r_list_append (line->sdbshell_hist, strdup ("\0"));
 		}
 		RList *sdb_hist = line->sdbshell_hist;
 		r_line_set_hist_callback (line, &r_line_hist_sdb_up, &r_line_hist_sdb_down);

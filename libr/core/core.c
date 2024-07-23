@@ -1190,7 +1190,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
-			dirname  = R_STR_DUP ("/");
+			dirname  = strdup ("/");
 		} else if (lpath[0] == '.') { // ./xxx/yyy
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy

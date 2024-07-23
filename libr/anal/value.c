@@ -66,7 +66,7 @@ R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
 R_API char *r_anal_value_tostring(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
-		out = R_STR_DUP ("");
+		out = strdup ("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL) {
 				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);
