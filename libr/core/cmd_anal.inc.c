@@ -6742,7 +6742,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
 	if (maxopsz > sizeof (code)) {
-		R_LOG_WARN ("Max instruction size is larger than %d, Dimming down", sizeof (code));
+		R_LOG_WARN ("Max instruction size is larger than %d, Dimming down", maxopsz); // sizeof (code));
 		maxopsz = sizeof (code);
 	}
 	bool wanteval = r_config_get_b (core->config, "dbg.trace.eval");
