@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include "r_util/r_str_util.h"
@@ -1358,9 +1358,9 @@ static inline void vi_delete_commands(int rep) {
 }
 
 static inline void __move_cursor_right(void) {
-	I.buffer.index = I.buffer.index < I.buffer.length - 1
+	I.buffer.index = I.buffer.index < I.buffer.length
 		? I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index)
-		: I.buffer.length - 1;
+		: I.buffer.length;
 }
 
 static inline void __move_cursor_left(void) {
