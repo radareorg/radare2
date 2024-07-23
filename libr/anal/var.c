@@ -334,10 +334,9 @@ R_API RList *r_anal_var_deserialize(const char *ser) {
 			}
 			nxt++;
 		}
-		if (i >= 1) {
+		v->name = NULL;
+		if (i) {
 			v->name = r_str_ndup (ser, i);
-		} else {
-			v->name = NULL;
 		}
 		if (!v->name) {
 			goto bad_serial;
@@ -349,10 +348,9 @@ R_API RList *r_anal_var_deserialize(const char *ser) {
 		for (i = 0; *nxt && *nxt != ','; i++) {
 			nxt++;
 		}
-		if (i >= 1) {
+		v->type = NULL;
+		if (i) {
 			v->type = r_str_ndup (ser, i);
-		} else {
-			v->type = NULL;
 		}
 		if (!v->type) {
 			goto bad_serial;

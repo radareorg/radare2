@@ -455,10 +455,9 @@ static char *filterFlags(RCore *core, const char *msg) {
 			// find }
 			end = strchr (dollar + 2, '}');
 			if (end) {
-				if (end-dollar-2 >= 1) {
+				word = NULL;
+				if (end-dollar-2) {
 					word = r_str_ndup (dollar+2, end-dollar-2);
-				} else {
-					word = NULL;
 				}
 				end++;
 			} else {
@@ -475,10 +474,9 @@ static char *filterFlags(RCore *core, const char *msg) {
 			if (!end) {
 				end = dollar + strlen (dollar);
 			}
-			if (end-dollar-1 >=1 ) {
+			word = NULL;
+			if (end-dollar-1) {
 				word = r_str_ndup (dollar+1, end-dollar-1);
-			} else {
-				word = NULL;
 			}
 		}
 		if (end && word) {
