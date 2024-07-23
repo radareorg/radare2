@@ -29,8 +29,7 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 		}
 #if 0
 		if (size > 512) {
-			eprintf ("%d\n", size);
-			r_sys_backtrace ();
+			R_LOG_DEBUG ("large opsetbytes of %d. check backtrace to fix", size);
 		}
 #endif
 		size = R_MIN (size, 64); // sizeof (op->bytes_buf));
@@ -43,31 +42,13 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 			op->weakbytes = false;
 		}
 #else
-#if 0
-		static ut8 Gbytes[32];
-		size = R_MIN (size, sizeof (Gbytes));
-		if (op->weakbytes) {
-			op->weakbytes = false;
-		} else {
-			if (op->bytes != Gbytes) {
-				free (op->bytes);
-			}
-		}
-		op->weakbytes = true;
-		memcpy (Gbytes, data, size);
-		op->bytes = Gbytes; // r_mem_dup (data, size);
-#else
-#if 0
-#endif
-//		size = R_MIN (size, 512); // maximum speed
-		size = R_MIN (size, 64); // maximum speed
+		size = R_MIN (size, 64); // speedup. no tests fail with 64, but some do with 32.
 		if (op->weakbytes) {
 			op->weakbytes = false;
 		} else {
 			free (op->bytes);
 		}
 		op->bytes = r_mem_dup (data, size);
-#endif
 #endif
 		op->size = size;
 		return true;

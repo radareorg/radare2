@@ -235,7 +235,7 @@ typedef struct r_anal_op_t {
 	bool weakbytes;
 	ut8 *bytes;     /* can be null, but is used for encoding and decoding, malloc of `size` */
 #if R2_USE_NEW_ABI
-	ut8 bytes_buf[32];
+	ut8 bytes_buf[64];
 #endif
 	int size;       /* size in bytes of opcode */
 	bool tlocal;    // uses the thread local storage
