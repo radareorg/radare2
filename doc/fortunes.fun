@@ -355,3 +355,4 @@ You look great, by the way. Very healthy
 Press the button again.
 It's been a long time.
 Relic malfunction detected.
+You are offline. Some functionality may be unavailable.
