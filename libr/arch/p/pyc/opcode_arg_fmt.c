@@ -22,7 +22,7 @@ char *format_CALL_FUNCTION_KW_36(ut32 oparg) {
 }
 
 char *format_CALL_FUNCTION_EX_36(ut32 oparg) {
-	return R_STR_DUP ((oparg & 0x01)? "keyword args": "");
+	return strdup ((oparg & 0x01)? "keyword args": "");
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
