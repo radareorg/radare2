@@ -111,7 +111,7 @@ EXPECT=<<EOF
     },
     {
       "type": "WARN",
-      "origin": "cmd_anal_all",
+      "origin": "cmd_aaa",
       "message": "Use -AA or aaaa to perform additional experimental analysis"
     },
     {

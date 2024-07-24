@@ -1318,6 +1318,7 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	}
 	/* hack to realign thumb symbols */
 	if (bin->cur->bo && bin->cur->bo->info && bin->cur->bo->info->arch) {
+		// TODO: honor fixedbits and fixedarch
 		if (bin->cur->bo->info->bits == 16) {
 			RBinSection *s = r_bin_get_section_at (bin->cur->bo, paddr, false);
 			// autodetect thumb
