@@ -20,6 +20,19 @@ jobs:
         name: linux-wasi
         path: radare2-*-wasi.zip
 
+  # WASI API
+  linux-wasi:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Installing with symlinks
+      run: sys/wasi-api.sh
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux-wasi-api
+        path: radare2-*-wasi.zip
+
   # Source Tarballs
   tarball:
     runs-on: ubuntu-20.04
