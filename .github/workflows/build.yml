@@ -21,7 +21,7 @@ jobs:
         path: radare2-*-wasi.zip
 
   # WASI API
-  linux-wasi:
+  linux-wasi-api:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
