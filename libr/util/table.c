@@ -267,7 +267,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			r_list_append (list, r_str_newf ("%.03lf", va_arg (ap, double)));
 			break;
 		case 'b':
-			r_list_append (list, R_STR_DUP (r_str_bool (va_arg (ap, int))));
+			r_list_append (list, strdup (r_str_bool (va_arg (ap, int))));
 			break;
 		case 'i':
 		case 'd':

@@ -64,11 +64,11 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 	if (i == off) {
 		return NULL;
 	}
+	char *res = NULL;
 	if (i - off - 1) {
-		return r_str_ndup (buf + off, i - off - 1);
-	} else {
-		return NULL;
+		res = r_str_ndup (buf + off, i - off - 1);
 	}
+	return res;
 }
 
 #define VERIFY_AR_NUM_FIELD(x, s)                                                                \
