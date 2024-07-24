@@ -116,7 +116,11 @@ ${BINS}: ${OBJS}
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
  ifeq ($(COMPILER),wasi)
-	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
+  ifeq ($(OSTYPE),wasi-api)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS) -Wl,--no-entry -Wl,--export-all -mexec-model=reactor
+  else
+  	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
+  endif
  else
   ifeq ($(CC),emcc)
 	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js

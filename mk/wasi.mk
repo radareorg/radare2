@@ -1,10 +1,7 @@
-WASI_SDK=$(HOME)/Downloads/wasi/wasi-sdk-20.0
-WASI_SYSROOT=$(HOME)/Downloads/wasi/wasi-sysroot-20.0
-
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 EXT_EXE=.wasm
-EXT_SO=.o
+EXT_SO=so
 WITH_LIBS=0
 EXT_AR=a
 CC=$(WASI_SDK)/bin/clang --sysroot=$(WASI_SYSROOT) -DHAVE_PTHREAD=0 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -DHAVE_PTY=0
