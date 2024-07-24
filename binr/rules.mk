@@ -119,7 +119,7 @@ ${BEXE}: ${OBJ} ${SHARED_OBJ}
   ifeq ($(OSTYPE),wasi-api)
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS) -Wl,--no-entry -Wl,--export-all -mexec-model=reactor
   else
-  	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
   endif
  else
   ifeq ($(CC),emcc)
