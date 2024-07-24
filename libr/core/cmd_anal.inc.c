@@ -13554,6 +13554,275 @@ R_API int r_core_anal_all(RCore *core) {
 }
 #endif
 
+static void cmd_aaa(RCore *core, const char *input) {
+	if (strchr (input, '?')) {
+		r_core_cmd_help (core, help_msg_aaa);
+		return;
+	}
+	char *s = r_core_cmd_str (core, "dpe");
+	if (r_str_startswith (s, "frida://")) {
+		const char *io_backend = r_config_get (core->config, "dbg.backend");
+		if (strcmp (io_backend, "io")) {
+			r_core_cmd0 (core, ".:init");
+		}
+		r_core_cmd0 (core, "af @@ sym.*");
+		free (s);
+		return;
+	}
+	free (s);
+
+	r_str_var (asm_arch, 32, r_config_get (core->config, "asm.arch"));
+	bool didAap = false;
+	char *dh_orig = NULL;
+	if (r_str_startswith (input, "aaaaa")) {
+		R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
+		R_LOG_INFO ("Contact support for premium service");
+		if (r_cons_is_interactive ()) {
+			r_cons_any_key (NULL);
+		}
+		goto jacuzzi;
+	}
+	ut64 curseek = core->offset;
+	logline (core, 4, "Analyze all flags starting with sym. and entry0 (aa)");
+	r_cons_break_push (NULL, NULL);
+	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
+	bool anal_imports = false;
+	if (r_config_get_b (core->config, "anal.imports")) {
+		logline (core, 8, "Analyze imports (af@@@i)");
+		r_core_cmd0 (core, "af@@@i");
+		anal_imports = true;
+	}
+	r_config_set_b (core->config, "anal.imports", false);
+	cmd_aa (core, input[0] == 'a');
+	r_config_set_b (core->config, "anal.imports", anal_imports);
+	r_core_task_yield (&core->tasks);
+	if (r_cons_is_breaked ()) {
+		goto jacuzzi;
+	}
+#if 1
+	// TODO: should not be run sometimes
+	// Run afvn in all fcns
+	if (r_config_get_b (core->config, "anal.vars")) {
+		logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
+		// r_core_cmd0 (core, "afva@@f");
+		r_core_cmd0 (core, "afva@@@F");
+	}
+#endif
+
+	// Run pending analysis immediately after analysis
+	// Usefull when running commands with ";" or via r2 -c,-i
+	dh_orig = (core->dbg->current && core->dbg->current->plugin)
+		? strdup (core->dbg->current->plugin->meta.name)
+		: strdup ("esil");
+	if (core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
+		//use dh_origin if we are debugging
+		R_FREE (dh_orig);
+	}
+	if (r_cons_is_breaked ()) {
+		goto jacuzzi;
+	}
+	r_cons_clear_line (1);
+	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
+	if (*input == 'a') { // "aaa" .. which is checked just in the case above
+		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
+			logline (core, 30, "Find function and symbol names from golang binaries (aang)");
+			r_core_anal_autoname_all_golang_fcns (core);
+			logline (core, 35, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+			r_core_cmd0 (core, "aF @@@F:sym.go.*");
+		}
+		r_core_task_yield (&core->tasks);
+		if (!cfg_debug) {
+			if (dh_orig && strcmp (dh_orig, "esil")) {
+				r_core_cmd_call (core, "dL esil");
+				r_core_task_yield (&core->tasks);
+			}
+		}
+		// XXX do not override user settings!
+		// int c = r_config_get_i (core->config, "anal.calls");
+		// r_config_set_b (core->config, "anal.calls", true);
+		r_core_cmd_call (core, "s $S");
+		if (r_cons_is_breaked ()) {
+			goto jacuzzi;
+		}
+
+		logline (core, 40, "Analyze function calls (aac)");
+		(void)cmd_anal_calls (core, "", false, false); // "aac"
+		r_core_seek (core, curseek, true);
+		// R_LOG_INFO ("Analyze data refs as code (LEA)");
+		// (void) cmd_anal_aad (core, NULL); // "aad"
+		r_core_task_yield (&core->tasks);
+		if (r_cons_is_breaked ()) {
+			goto jacuzzi;
+		}
+		if (is_unknown_file (core)) {
+			logline (core, 45, "find and analyze function preludes (aap)");
+			(void)r_core_search_preludes (core, false); // "aap"
+			didAap = true;
+			r_core_task_yield (&core->tasks);
+			if (r_cons_is_breaked ()) {
+				goto jacuzzi;
+			}
+		}
+
+		logline (core, 50, "Analyze len bytes of instructions for references (aar)");
+		(void)r_core_anal_refs (core, ""); // "aar"
+		r_core_task_yield (&core->tasks);
+		if (r_cons_is_breaked ()) {
+			goto jacuzzi;
+		}
+		if (is_apple_target (core)) {
+			logline (core, 55, "Check for objc references (aao)");
+			cmd_anal_objc (core, input + 1, true);
+		}
+		r_core_task_yield (&core->tasks);
+		logline (core, 60, "Finding and parsing C++ vtables (avrr)");
+		r_core_cmd_call (core, "avrr");
+		logline (core, 65, "Analyzing methods (af @@ method.*)");
+		r_core_cmd0 (core, "af @@ method.*");
+		r_core_task_yield (&core->tasks);
+		// r_config_set_b (core->config, "anal.calls", c);
+		r_core_task_yield (&core->tasks);
+		if (r_cons_is_breaked ()) {
+			goto jacuzzi;
+		}
+		const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (asm_arch, "arm");
+
+		if (!didAap && isPreludableArch) {
+			didAap = true;
+			logline (core, 67, "Finding function preludes (aap)");
+			(void)r_core_search_preludes (core, false); // "aap"
+			r_core_task_yield (&core->tasks);
+		}
+
+		bool run_aaef = r_config_get_b (core->config, "anal.emu");
+		if (r_str_startswith (asm_arch, "x86") || r_str_startswith (asm_arch, "hex")) {
+			// hackaround
+			run_aaef = false;
+		}
+		if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+			run_aaef = false;
+		}
+		if (run_aaef) { // emulate all functions
+				// if (!r_str_startswith (asm_arch, "hex"))  maybe?
+				// XXX moving this oustide the x86 guard breaks some tests, missing types
+			if (cfg_debug) {
+				logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
+				// nothing to do
+			} else {
+				if (r_config_get_b (core->config, "anal.emumem")) {
+					bool use_pcache = run_aaef; // true; // false;
+					const bool io_cache = r_config_get_b (core->config, "io.pcache");
+					if (use_pcache) {
+						r_config_set_b (core->config, "io.pcache", true);
+					}
+					logline (core, 70, "Emulate functions to find computed references (aaef)");
+					r_core_cmd_call (core, "aaef");
+					r_core_task_yield (&core->tasks);
+					if (use_pcache) {
+						r_config_set_b (core->config, "io.pcache", io_cache);
+					}
+				} else {
+					logline (core, 70, "Emulate functions to find computed references (aaef)");
+					r_core_cmd_call (core, "aaef");
+				}
+			}
+		}
+		if (r_cons_is_breaked ()) {
+			goto jacuzzi;
+		}
+		if (r_config_get_b (core->config, "anal.autoname")) {
+			logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
+			r_core_anal_autoname_all_fcns (core);
+			r_core_task_yield (&core->tasks);
+		}
+		if (core->anal->opt.vars) {
+			logline (core, 80, "Recovering local variables (afva@@@F)");
+			RAnalFunction *fcni;
+			RListIter *iter;
+			r_list_foreach (core->anal->fcns, iter, fcni) {
+				if (r_cons_is_breaked ()) {
+					break;
+				}
+				RList *list = r_anal_var_list (core->anal, fcni, 'r');
+				if (!r_list_empty (list)) {
+					r_list_free (list);
+					continue;
+				}
+				// extract only reg based var here
+				r_core_recover_vars (core, fcni, true);
+				r_list_free (list);
+			}
+			r_core_task_yield (&core->tasks);
+		}
+		if (!sdb_isempty (core->anal->sdb_zigns)) {
+			logline (core, 85, "Check for zignature from zigns folder (z/)");
+			r_core_cmd_call (core, "z/");
+			r_core_task_yield (&core->tasks);
+		}
+		if (cfg_debug) {
+			logline (core, 90, "Skipping type matching analysis in debugger mode (aaft)");
+			// nothing to do
+		} else {
+			logline (core, 90, "Type matching analysis for all functions (aaft)");
+			r_core_cmd_call (core, "aaft");
+		}
+		r_core_task_yield (&core->tasks);
+
+		logline (core, 92, "Propagate noreturn information (aanr)");
+		r_core_anal_propagate_noreturn (core, UT64_MAX);
+		r_core_task_yield (&core->tasks);
+
+		// apply dwarf function information
+		Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+		if (dwarf_sdb) {
+			logline (core, 94, "Integrate dwarf function information");
+			r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
+		}
+
+		if (input[1] == 'a') { // "aaaa"
+			logline (core, 95, "Scanning for strings constructed in code (/azs)");
+			r_core_cmd_call (core, "/azs");
+			if (!didAap) {
+				didAap = true;
+				logline (core, 96, "Finding function preludes (aap)");
+				(void)r_core_search_preludes (core, false); // "aap"
+				r_core_task_yield (&core->tasks);
+			}
+			logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
+			r_config_set_b (core->config, "anal.types.constraint", true);
+			if (input[2] == 'a') { // "aaaa"
+				logline (core, 98, "Reanalizing graph references to adjust functions count (aarr)");
+				r_core_cmd_call (core, "aarr");
+				// const char *mode = core->anal->opt.slow? "slow": "fast";
+				logline (core, 99, "Autoname all functions (.afna@@c:afla)");
+				r_core_cmd0 (core, ".afna@@c:afla");
+			}
+		} else {
+			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
+		}
+		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
+			logline (core, 99, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
+			int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+			if (!isvm) {
+				r_core_cmd_call (core, "aavq");
+			}
+			r_core_task_yield (&core->tasks);
+		}
+		r_core_cmd_call (core, "s-");
+		if (dh_orig) {
+			r_core_cmdf (core, "dL %s", dh_orig);
+			r_core_task_yield (&core->tasks);
+		}
+	}
+	r_core_seek (core, curseek, true);
+jacuzzi:
+	// XXX this shouldnt be called. flags muts be created wheen the function is registered
+	flag_every_function (core);
+	r_core_anal_propagate_noreturn (core, UT64_MAX);
+	r_cons_break_pop ();
+	R_FREE (dh_orig);
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -13719,272 +13988,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case '\0': // "aa"
 	case 'a':
-		if (strchr (input, '?')) {
-			r_core_cmd_help (core, help_msg_aaa);
-		} else {
-			char *s = r_core_cmd_str (core, "dpe");
-			if (r_str_startswith (s, "frida://")) {
-				const char *io_backend = r_config_get (core->config, "dbg.backend");
-				if (strcmp (io_backend, "io")) {
-					r_core_cmd0 (core, ".:init");
-				}
-				r_core_cmd0 (core, "af @@ sym.*");
-				free (s);
-				break;
-			}
-			free (s);
-
-			r_str_var (asm_arch, 32, r_config_get (core->config, "asm.arch"));
-			bool didAap = false;
-			char *dh_orig = NULL;
-			if (r_str_startswith (input, "aaaaa")) {
-				R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
-				R_LOG_INFO ("Contact support for premium service");
-				if (r_cons_is_interactive ()) {
-					r_cons_any_key (NULL);
-				}
-				goto jacuzzi;
-			}
-			ut64 curseek = core->offset;
-			logline (core, 4, "Analyze all flags starting with sym. and entry0 (aa)");
-			r_cons_break_push (NULL, NULL);
-			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
-			bool anal_imports = false;
-			if (r_config_get_b (core->config, "anal.imports")) {
-				logline (core, 8, "Analyze imports (af@@@i)");
-				r_core_cmd0 (core, "af@@@i");
-				anal_imports = true;
-			}
-			r_config_set_b (core->config, "anal.imports", false);
-			cmd_aa (core, input[0] == 'a');
-			r_config_set_b (core->config, "anal.imports", anal_imports);
-			r_core_task_yield (&core->tasks);
-			if (r_cons_is_breaked ()) {
-				goto jacuzzi;
-			}
-#if 1
-			// TODO: should not be run sometimes
-			// Run afvn in all fcns
-			if (r_config_get_b (core->config, "anal.vars")) {
-				logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
-				// r_core_cmd0 (core, "afva@@f");
-				r_core_cmd0 (core, "afva@@@F");
-			}
-#endif
-
-			// Run pending analysis immediately after analysis
-			// Usefull when running commands with ";" or via r2 -c,-i
-			dh_orig = (core->dbg->current && core->dbg->current->plugin)
-				? strdup (core->dbg->current->plugin->meta.name)
-				: strdup ("esil");
-			if (core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
-				//use dh_origin if we are debugging
-				R_FREE (dh_orig);
-			}
-			if (r_cons_is_breaked ()) {
-				goto jacuzzi;
-			}
-			r_cons_clear_line (1);
-			const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
-			if (*input == 'a') { // "aaa" .. which is checked just in the case above
-				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
-					logline (core, 30, "Find function and symbol names from golang binaries (aang)");
-					r_core_anal_autoname_all_golang_fcns (core);
-					logline (core, 35, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
-					r_core_cmd0 (core, "aF @@@F:sym.go.*");
-				}
-				r_core_task_yield (&core->tasks);
-				if (!cfg_debug) {
-					if (dh_orig && strcmp (dh_orig, "esil")) {
-						r_core_cmd_call (core, "dL esil");
-						r_core_task_yield (&core->tasks);
-					}
-				}
-				// XXX do not override user settings!
-				// int c = r_config_get_i (core->config, "anal.calls");
-				// r_config_set_b (core->config, "anal.calls", true);
-				r_core_cmd_call (core, "s $S");
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
-
-				logline (core, 40, "Analyze function calls (aac)");
-				(void)cmd_anal_calls (core, "", false, false); // "aac"
-				r_core_seek (core, curseek, true);
-				// R_LOG_INFO ("Analyze data refs as code (LEA)");
-				// (void) cmd_anal_aad (core, NULL); // "aad"
-				r_core_task_yield (&core->tasks);
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
-				if (is_unknown_file (core)) {
-					logline (core, 45, "find and analyze function preludes (aap)");
-					(void)r_core_search_preludes (core, false); // "aap"
-					didAap = true;
-					r_core_task_yield (&core->tasks);
-					if (r_cons_is_breaked ()) {
-						goto jacuzzi;
-					}
-				}
-
-				logline (core, 50, "Analyze len bytes of instructions for references (aar)");
-				(void)r_core_anal_refs (core, ""); // "aar"
-				r_core_task_yield (&core->tasks);
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
-				if (is_apple_target (core)) {
-					logline (core, 55, "Check for objc references (aao)");
-					cmd_anal_objc (core, input + 1, true);
-				}
-				r_core_task_yield (&core->tasks);
-				logline (core, 60, "Finding and parsing C++ vtables (avrr)");
-				r_core_cmd_call (core, "avrr");
-				logline (core, 65, "Analyzing methods (af @@ method.*)");
-				r_core_cmd0 (core, "af @@ method.*");
-				r_core_task_yield (&core->tasks);
-				// r_config_set_b (core->config, "anal.calls", c);
-				r_core_task_yield (&core->tasks);
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
-				const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (asm_arch, "arm");
-
-				if (!didAap && isPreludableArch) {
-					didAap = true;
-					logline (core, 67, "Finding function preludes (aap)");
-					(void)r_core_search_preludes (core, false); // "aap"
-					r_core_task_yield (&core->tasks);
-				}
-
-				bool run_aaef = r_config_get_b (core->config, "anal.emu");
-				if (r_str_startswith (asm_arch, "x86") || r_str_startswith (asm_arch, "hex")) {
-					// hackaround
-					run_aaef = false;
-				}
-				if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
-					run_aaef = false;
-				}
-				if (run_aaef) { // emulate all functions
-					// if (!r_str_startswith (asm_arch, "hex"))  maybe?
-					// XXX moving this oustide the x86 guard breaks some tests, missing types
-					if (cfg_debug) {
-						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
-						// nothing to do
-					} else {
-						if (r_config_get_b (core->config, "anal.emumem")) {
-							bool use_pcache = run_aaef; // true; // false;
-							const bool io_cache = r_config_get_b (core->config, "io.pcache");
-							if (use_pcache) {
-								r_config_set_b (core->config, "io.pcache", true);
-							}
-							logline (core, 70, "Emulate functions to find computed references (aaef)");
-							r_core_cmd_call (core, "aaef");
-							r_core_task_yield (&core->tasks);
-							if (use_pcache) {
-								r_config_set_b (core->config, "io.pcache", io_cache);
-							}
-						} else {
-							logline (core, 70, "Emulate functions to find computed references (aaef)");
-							r_core_cmd_call (core, "aaef");
-						}
-					}
-				}
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
-				if (r_config_get_b (core->config, "anal.autoname")) {
-					logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
-					r_core_anal_autoname_all_fcns (core);
-					r_core_task_yield (&core->tasks);
-				}
-				if (core->anal->opt.vars) {
-					logline (core, 80, "Recovering local variables (afva@@@F)");
-					RAnalFunction *fcni;
-					RListIter *iter;
-					r_list_foreach (core->anal->fcns, iter, fcni) {
-						if (r_cons_is_breaked ()) {
-							break;
-						}
-						RList *list = r_anal_var_list (core->anal, fcni, 'r');
-						if (!r_list_empty (list)) {
-							r_list_free (list);
-							continue;
-						}
-						// extract only reg based var here
-						r_core_recover_vars (core, fcni, true);
-						r_list_free (list);
-					}
-					r_core_task_yield (&core->tasks);
-				}
-				if (!sdb_isempty (core->anal->sdb_zigns)) {
-					logline (core, 85, "Check for zignature from zigns folder (z/)");
-					r_core_cmd_call (core, "z/");
-					r_core_task_yield (&core->tasks);
-				}
-				if (cfg_debug) {
-					logline (core, 90, "Skipping type matching analysis in debugger mode (aaft)");
-					// nothing to do
-				} else {
-					logline (core, 90, "Type matching analysis for all functions (aaft)");
-					r_core_cmd_call (core, "aaft");
-				}
-				r_core_task_yield (&core->tasks);
-
-				logline (core, 92, "Propagate noreturn information (aanr)");
-				r_core_anal_propagate_noreturn (core, UT64_MAX);
-				r_core_task_yield (&core->tasks);
-
-				// apply dwarf function information
-				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
-				if (dwarf_sdb) {
-					logline (core, 94, "Integrate dwarf function information");
-					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
-				}
-
-				if (input[1] == 'a') { // "aaaa"
-					logline (core, 95, "Scanning for strings constructed in code (/azs)");
-					r_core_cmd_call (core, "/azs");
-					if (!didAap) {
-						didAap = true;
-						logline (core, 96, "Finding function preludes (aap)");
-						(void)r_core_search_preludes (core, false); // "aap"
-						r_core_task_yield (&core->tasks);
-					}
-					logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
-					r_config_set_b (core->config, "anal.types.constraint", true);
-					if (input[2] == 'a') { // "aaaa"
-						logline (core, 98, "Reanalizing graph references to adjust functions count (aarr)");
-						r_core_cmd_call (core, "aarr");
-						// const char *mode = core->anal->opt.slow? "slow": "fast";
-						logline (core, 99, "Autoname all functions (.afna@@c:afla)");
-						r_core_cmd0 (core, ".afna@@c:afla");
-					}
-				} else {
-					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
-				}
-				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
-					logline (core, 99, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
-					int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
-					if (!isvm) {
-						r_core_cmd_call (core, "aavq");
-					}
-					r_core_task_yield (&core->tasks);
-				}
-				r_core_cmd_call (core, "s-");
-				if (dh_orig) {
-					r_core_cmdf (core, "dL %s", dh_orig);
-					r_core_task_yield (&core->tasks);
-				}
-			}
-			r_core_seek (core, curseek, true);
-		jacuzzi:
-			// XXX this shouldnt be called. flags muts be created wheen the function is registered
-			flag_every_function (core);
-			r_core_anal_propagate_noreturn (core, UT64_MAX);
-			r_cons_break_pop ();
-			R_FREE (dh_orig);
-		}
+		cmd_aaa (core, input);
 		break;
 	case 't': // "aat"
 		if (input[1] == '?') {
