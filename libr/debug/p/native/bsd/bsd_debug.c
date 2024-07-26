@@ -189,18 +189,20 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 		rdi->gid = kp->p__pgid;
 		rdi->exe = strdup (kp->p_comm);
 
-		rdi->status = R_DBG_PROC_STOP;
-
-		if (kp->p_psflags & PS_ZOMBIE) {
-				rdi->status = R_DBG_PROC_ZOMBIE;
-		} else if (kp->p_psflags & PS_STOPPED) {
+		switch (kp->p_stat) {
+			case SDEAD:
+				rdi->status = R_DBG_PROC_DEAD;
+				break;
+			case SSTOP:
 				rdi->status = R_DBG_PROC_STOP;
-		} else if (kp->p_psflags & PS_PPWAIT) {
+				break;
+			case SSLEEP:
 				rdi->status = R_DBG_PROC_SLEEP;
-		} else if ((kp->p_psflags & PS_EXEC) || (kp->p_psflags & PS_INEXEC)) {
+				break;
+			default:
 				rdi->status = R_DBG_PROC_RUN;
+				break;
 		}
-
 	}
 
 	kvm_close (kd);
