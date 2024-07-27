@@ -514,7 +514,7 @@ static bool __check_panel_type(RPanel *panel, const char *type) {
 	if (!panel || !panel->model->cmd || !type) {
 		return false;
 	}
-	char *tmp = R_STR_DUP (panel->model->cmd);
+	char *tmp = strdup (panel->model->cmd);
 	int n = r_str_split (tmp, ' ');
 	if (!n) {
 		free (tmp);
@@ -623,14 +623,14 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (func) {
 		if (core->panels_root->cur_pdc_cache) {
-			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), R_STR_DUP (s), 0);
+			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
 		} else {
 			Sdb *sdb = sdb_new0 ();
 			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), R_STR_DUP (s), 0);
 			core->panels_root->cur_pdc_cache = sdb;
 			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-				sdb_ptr_set (core->panels_root->pdc_caches, R_STR_DUP (pdc_now), sdb, 0);
+				sdb_ptr_set (core->panels_root->pdc_caches, strdup (pdc_now), sdb, 0);
 			}
 		}
 	}
@@ -639,7 +639,7 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 
 static void __set_read_only(RCore *core, RPanel *p, char *s) {
 	free (p->model->readOnly);
-	p->model->readOnly = R_STR_DUP (s);
+	p->model->readOnly = strdup (s);
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
@@ -2294,7 +2294,7 @@ static int __show_all_decompiler_cb(void *user) {
 		r_config_set (core->config, "cmd.pdc", opt);
 		RPanel *panel = __get_panel (panels, i++);
 		panels->n_panels = i;
-		panel->model->title = R_STR_DUP (opt);
+		panel->model->title = strdup (opt);
 		__set_read_only (core, panel, r_core_cmd_str (core, opt));
 	}
 	__layout_equal_hor (panels);
@@ -2317,7 +2317,7 @@ static void __init_modal_db(RCore *core) {
 	SdbList *sdb_list = sdb_foreach_list (core->panels->db, true);
 	ls_foreach (sdb_list, sdb_iter, kv) {
 		const char *key = sdbkv_key (kv);
-		sdb_ptr_set (db, R_STR_DUP (key), &__create_panel_db, 0);
+		sdb_ptr_set (db, strdup (key), &__create_panel_db, 0);
 	}
 	sdb_ptr_set (db, "Search strings in data sections", &__search_strings_data_create, 0);
 	sdb_ptr_set (db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
@@ -2597,7 +2597,7 @@ static void __handle_tab_new_with_cur_panel(RCore *core) {
 	RPanel *new_panel = __get_panel (new_panels, 0);
 	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd);
 	new_panel->model->cache = cur->model->cache;
-	new_panel->model->funcName = R_STR_DUP (cur->model->funcName);
+	new_panel->model->funcName = strdup (cur->model->funcName);
 	__set_cmd_str_cache (core, new_panel, cur->model->cmdStrCache);
 	__maximize_panel_size (new_panels);
 

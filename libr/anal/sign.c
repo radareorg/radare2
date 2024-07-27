@@ -227,8 +227,8 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	R_RETURN_VAL_IF_FAIL (a && it && k && v, false);
 
 	bool success = true;
-	char *k2 = R_STR_DUP (k);
-	char *v2 = R_STR_DUP (v);
+	char *k2 = strdup (k);
+	char *v2 = strdup (v);
 	if (!k2 || !v2) {
 		success = false;
 		goto out;

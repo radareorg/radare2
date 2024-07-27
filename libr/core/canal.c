@@ -2452,7 +2452,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 	}
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
-		? R_STR_DUP (f->name)
+		? strdup (f->name)
 		: r_str_newf ("0x%" PFMT64x, addr);
 
 	RGraphNode *curr_node = r_graph_add_node_info (graph, me, NULL, addr);

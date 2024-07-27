@@ -23,7 +23,7 @@ static Rvc *open_git(const char *path) {
 	if (!vc) {
 		return NULL;
 	}
-	vc->path = R_STR_DUP (path);
+	vc->path = strdup (path);
 	if (!vc->path) {
 		free (vc);
 		return NULL;

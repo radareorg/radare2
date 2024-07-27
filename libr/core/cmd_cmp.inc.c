@@ -112,7 +112,7 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 		found = true;
 	}
 	cmpw->size = size;
-	cmpw->cmd = R_STR_DUP (cmd);
+	cmpw->cmd = strdup (cmd);
 	if (!cmpw->cmd) {
 		free (cmpw);
 		return false;

@@ -66,7 +66,7 @@ static Rvc *rvc_rvc_new(const char *path) {
 		R_LOG_ERROR ("Failed to create repo");
 		return NULL;
 	}
-	rvc->path = R_STR_DUP (path);
+	rvc->path = strdup (path);
 	if (!rvc->path) {
 		free (rvc);
 		return NULL;
@@ -325,7 +325,7 @@ static char *absp2rp(Rvc *rvc, const char *absp) {
 		free (arp);
 		return NULL;
 	}
-	char *p = R_STR_DUP (absp + r_str_len_utf8 (arp));
+	char *p = strdup (absp + r_str_len_utf8 (arp));
 	free (arp);
 	if (!p) {
 		return NULL;
@@ -716,7 +716,7 @@ R_API RList *branches_rvc(Rvc *rvc) {
 		if (!r_str_startswith ((char *)kv->base.key, BPREFIX)) {
 			continue;
 		}
-		if (!r_list_append (ret, R_STR_DUP ((char *)kv->base.key + bplen))
+		if (!r_list_append (ret, strdup ((char *)kv->base.key + bplen))
 				&& !ret->head->data) {
 			r_list_free (ret);
 			ret = NULL;

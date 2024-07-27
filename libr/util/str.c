@@ -673,7 +673,7 @@ R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 		return strdup (str);
 	}
 	char *buf = NULL;
-	if (len) {
+	if (len > 0) {
 		buf = r_str_ndup (str, len);
 	}
 	if (buf && len > 4) {

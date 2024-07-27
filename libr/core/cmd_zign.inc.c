@@ -1099,7 +1099,7 @@ static bool diff_zig(void *data, const char *input) {
 		return false;
 	}
 
-	char *argv = R_STR_DUP (input);
+	char *argv = strdup (input);
 	if (!argv) {
 		return false;
 	}

@@ -1202,14 +1202,14 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 				dirname = r_file_new (pwd, lpath, NULL);
 			}
 		}
-		basename = R_STR_DUP (p + 1);
+		basename = strdup (p + 1);
 	} else { // xxx
 		if (strlen (pwd) == 1) {
 			dirname = r_str_newf ("%s", R_SYS_DIR);
 		} else {
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		}
-		basename = R_STR_DUP (lpath);
+		basename = strdup (lpath);
 	}
 	R_FREE (pwd);
 
@@ -1340,7 +1340,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 		path++;
 	}
 #endif
-	lpath = R_STR_DUP (path);
+	lpath = strdup (path);
 #if R2__WINDOWS__
 	r_str_replace_ch (lpath, '/', '\\', true);
 #endif
@@ -1351,7 +1351,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 #if R2__WINDOWS__
 			dirname = strdup ("\\.\\");
 #else
-			dirname = R_STR_DUP (R_SYS_DIR);
+			dirname = strdup (R_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = r_file_home (lpath + 2);
@@ -1419,7 +1419,7 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 	char *pipe = strchr (buf->data, '>');
 
 	if (pipe) {
-		args = R_STR_DUP (pipe);
+		args = strdup (pipe);
 #if 0
 		if (pipe[1] == ' ') {
 			// currently unreachable
@@ -1608,7 +1608,7 @@ static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const cha
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	lpath = R_STR_DUP (str);
+	lpath = strdup (str);
 	p1 = strchr (lpath, '/');
 	if (p1) {
 		*p1 = 0;

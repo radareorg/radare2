@@ -28,7 +28,7 @@ static bool _push_types(RList *type_list, char *fortune_dir) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_push (type_list, R_STR_DUP (file + 9));
+			r_list_push (type_list, strdup (file + 9));
 		}
 	}
 	r_list_free (files);

@@ -65,7 +65,7 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 		return NULL;
 	}
 	char *res = NULL;
-	if (i - off - 1) {
+	if (i - off - 1 > 0) {
 		res = r_str_ndup (buf + off, i - off - 1);
 	}
 	return res;
