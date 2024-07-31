@@ -300,6 +300,7 @@ if get_option('plugins') == ''
     'blowfish',
     'cps2',
     'des',
+    'ed25519',
     'rc2',
     'rc4',
     'rc6',

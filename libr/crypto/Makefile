@@ -12,6 +12,7 @@ STATIC_OBJS=$(subst ..,p/..,$(subst crypto_,p/crypto_,$(STATIC_OBJ)))
 
 OBJS=${STATIC_OBJS} crypto.o des.o
 include hash/deps.mk
+include signature/ed25519/deps.mk
 
 pre:
 	@if [ ! -e ${LIBSO} ]; then rm -f ${STATIC_OBJS} ; fi

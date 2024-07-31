@@ -139,6 +139,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 extern RCryptoPlugin r_crypto_plugin_serpent;
 extern RCryptoPlugin r_crypto_plugin_sm4;
 extern RCryptoPlugin r_crypto_plugin_aes_wrap;
+extern RCryptoPlugin r_crypto_plugin_ed25519;
 extern RCryptoPlugin r_crypto_plugin_entropy;
 
 #define R_CRYPTO_NONE 0ULL
