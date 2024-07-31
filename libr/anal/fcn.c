@@ -612,8 +612,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	bool arch_destroys_dst = does_arch_destroys_dst (arch);
-	const bool is_arm = !strncmp (arch, "arm", 3);
-	const bool is_mips = r_str_startswith (arch, "mips");
+#if R2_USE_NEW_ABI
+	const bool flagends = anal->opt.flagends;
+#else
+	const bool flagends = anal->coreb.cfggeti (anal->coreb.core, "anal.flagends");
+#endif
+	const bool is_arm = r_str_startswith (arch, "arm");
+	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
 	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
@@ -821,6 +826,14 @@ noskip:
 				}
 				overlapped = true;
 				R_LOG_DEBUG ("Overlapped at 0x%08"PFMT64x, at);
+			}
+		}
+		if (flagends && fcn->addr != at) {
+			RFlagItem *flag = anal->flag_get (anal->flb.f, at);
+			if (flag) {
+				if (r_str_startswith (flag->name, "sym")) {
+					gotoBeach (R_ANAL_RET_END);
+				}
 			}
 		}
 		if (!overlapped) {

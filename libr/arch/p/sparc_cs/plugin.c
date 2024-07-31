@@ -177,7 +177,7 @@ performed in big-endian byte order.
 			op->delay = 1;
 			break;
 		case SPARC_INS_UNIMP:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
 		case SPARC_INS_CALL:
 			switch (INSOP(0).type) {

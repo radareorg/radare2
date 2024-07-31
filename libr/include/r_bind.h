@@ -46,7 +46,8 @@ typedef struct r_core_bind_t {
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;
 	RCoreSeekArchBits archbits;
-	RCoreConfigGetI cfggeti; // inconsistent flat vs snake below
+	// R2_600 cfgGetB for booleans
+	RCoreConfigGetI cfggeti; // R2_600 inconsistent flat vs snake below
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;

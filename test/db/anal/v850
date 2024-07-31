@@ -62,7 +62,7 @@ EXPECT=<<EOF
 0x001076d2    4     50 sym.__kill_r
 0x001048e8   20    370 sym.___multiply
 0x00104a70   15    188 sym.___pow5mult
-0x00104b2c   21    342 sym.___lshift
+0x00104b2c   16    276 sym.___lshift
 0x00104c82   14    318 sym.___mdiff
 0x00104e58   14    180 sym.___b2d
 0x001047d8   12     86 sym.___hi0bits
@@ -83,7 +83,8 @@ EXPECT=<<EOF
 0x00106300    1     24 sym._vfiprintf
 0x00106318    5    146 sym.___sbprintf_1
 0x001063ae    4     50 fcn.001063ae
-0x00106430   12    142 fcn.00106430
+0x00106430    1     10 fcn.00106430
+0x0010643e   12    128 fcn.0010643e
 0x001064ec   18    172 sym.__fclose_r
 0x0010659e    1     12 fcn.0010659e
 0x001065aa    1     20 sym.__fiprintf_r
@@ -311,7 +312,7 @@ EXPECT=<<EOF
 0x00115cca    4     50 sym.__kill_r
 0x0010ed8e   20    370 sym.___multiply
 0x0010ef16   15    188 sym.___pow5mult
-0x0010efd2   21    342 sym.___lshift
+0x0010efd2   16    276 sym.___lshift
 0x0010f128   14    318 sym.___mdiff
 0x0010f2fe   14    180 sym.___b2d
 0x0010ec7e   12     86 sym.___hi0bits
@@ -357,7 +358,8 @@ EXPECT=<<EOF
 0x00114ca0    1     22 sym.___swbuf
 0x00114cb6    1     22 sym.__wctomb_r
 0x00114cf0    1     22 sym.__write
-0x00114d66   12    142 fcn.00114d66
+0x00114d66    1     10 fcn.00114d66
+0x00114d74   12    128 fcn.00114d74
 0x00114df6    1     18 fcn.00114df6
 0x00114e08    1     20 sym.__fiprintf_r
 0x00114e36   17    198 sym.___fputwc

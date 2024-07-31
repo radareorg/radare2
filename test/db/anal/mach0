@@ -274,7 +274,7 @@ EXPECT=<<EOF
 0x100003a0c    1     16 sub.strcoll_1000039a8_100003a0c
 0x100003a1c    5     56 sub.strcoll_100003a1c
 0x100003a54    5     60 sub.strcoll_100003a54
-0x1000047a8   45    692 sub.fts_open_1000047a8
+0x1000047a8   45    688 sub.fts_open_1000047a8
 0x100004ab4   13    128 sub.sub.strcoll_100003830_100004ab4
 0x100004b34  124   2220 sub.LS_COLWIDTHS_100004b34
 0x1000053e0    3     20 sub.err_1000053e0
@@ -287,7 +287,7 @@ EXPECT=<<EOF
 0x100005e04   34    740 sub.nl_langinfo_100005e04
 0x1000060e8   12    172 sym.func.1000060e8
 0x1000061dc    7    180 sub.printf_1000061dc
-0x100006290   15    164 sub.putchar_100006290
+0x100006290   14    160 sub.putchar_100006290
 0x10000636c   13    232 sub.strlen_10000636c
 0x100006454   39    828 sub.realloc_100006454
 0x100006790   19    408 sub.strlen_100006790
@@ -419,7 +419,7 @@ EXPECT=<<EOF
 0x100003a0c    1     16 sub.strcoll_1000039a8_100003a0c
 0x100003a1c    5     56 sub.strcoll_100003a1c
 0x100003a54    5     60 sub.strcoll_100003a54
-0x1000047a8   45    692 sub.fts_open_1000047a8
+0x1000047a8   45    688 sub.fts_open_1000047a8
 0x100004ab4   13    128 sub.sub.strcoll_100003830_100004ab4
 0x100004b34  124   2220 sub.LS_COLWIDTHS_100004b34
 0x1000053e0    3     20 sub.err_1000053e0
@@ -432,7 +432,7 @@ EXPECT=<<EOF
 0x100005e04   34    740 sub.nl_langinfo_100005e04
 0x1000060e8   12    172 sym.func.1000060e8
 0x1000061dc    7    180 sub.printf_1000061dc
-0x100006290   15    164 sub.putchar_100006290
+0x100006290   14    160 sub.putchar_100006290
 0x10000636c   13    232 sub.strlen_10000636c
 0x100006454   39    828 sub.realloc_100006454
 0x100006790   19    408 sub.strlen_100006790

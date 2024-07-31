@@ -19,6 +19,6 @@ aaft
 aflc
 EOF
 EXPECT=<<EOF
-575
+1143
 EOF
 RUN

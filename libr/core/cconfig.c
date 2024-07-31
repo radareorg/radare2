@@ -239,6 +239,15 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_flagends(void *user, void *data) {
+#if R2_USE_NEW_ABI
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.flagends = node->i_value;
+#endif
+	return true;
+}
+
 static bool cb_anal_jmpretpoline(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3488,6 +3497,7 @@ R_API int r_core_config_init(RCore *core) {
 		"anal.fcn", "anal.bb",
 	NULL);
 	SETI ("anal.timeout", 0, "stop analyzing after a couple of seconds");
+	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function when a flag is found");
 	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "analyze retpolines, may be slower if not needed");
 	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");
 	SETICB ("anal.jmp.tailcall.delta", 0, &cb_anal_jmptailcall_delta, "consume a branch as a call if delta is big");

@@ -155,15 +155,16 @@ NAME=anal.fcnprefix sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
 s 0x00018c08
+# e anal.flagends=false
 e anal.fcnprefix=root
 af
 afl
 EOF
 EXPECT=<<EOF
-0x00018c08  347   7292 main
+0x00018c08  344   7244 main
 0x0001b334    7    136 sym.set_program_name
-0x0003fb78    1      8 sym.imp.setlocale
-0x0003f98c    2     56 sym.imp.atexit
+0x0003fb78    2     12 sym.imp.setlocale
+0x0003f98c    1      8 sym.imp.atexit
 0x0003fb60    1      8 sym.imp.abort
 0x00022a74    2     24 sym.set_quoting_style
 0x0003fb84    1      8 sym.imp.getenv
@@ -182,13 +183,14 @@ EXPECT=<<EOF
 0x0003fa40    1      8 sym.imp..udiv
 0x00022a24    2     56 sym.clone_quoting_options
 0x00025720    1     32 sym.xmemdup
-0x00022a5c    2     24 sym.get_quoting_style
-0x00022a8c    2     80 sym.set_char_quoting
-0x0003fa4c    1      8 sym.imp..umul
 0x000255f0    3     56 sym.xmalloc
 0x0003fc20    1      8 sym.imp.malloc
 0x0001b558    1     44 sym.xalloc_die
 0x0001bb8c    4    120 sym.error
+0x0003fb0c    1      8 sym.imp.memcpy
+0x00022a5c    2     24 sym.get_quoting_style
+0x00022a8c    2     80 sym.set_char_quoting
+0x0003fa4c    1      8 sym.imp..umul
 0x0001386c    5    180 sym.clear_files
 0x0003f9f8    1      8 sym.imp.free
 0x00015f6c  129   2488 sym.gobble_file
@@ -203,24 +205,30 @@ EXPECT=<<EOF
 0x0003fa70    1      8 sym.imp.strlen
 0x0001caf4  198   2720 sym.internal_fnmatch
 0x00013cd8    1     52 sym.file_failure
+0x0002396c    1     20 sym.quotearg_colon
+0x00023950    1     28 sym.quotearg_char
+0x000238c0    1    144 sym.quotearg_char_mem
+0x00023634   15    372 sym.quotearg_n_options
+0x00013ca0    5     56 sym.set_exit_status
 0x0003fbc0    1      8 sym.imp.closedir
 0x00015c2c   13    364 sym.sort_files
 0x00016a20   31    512 sym.quote_name
-0x0003fb0c    1      8 sym.imp.memcpy
 0x0003f9d4    1      8 sym.imp.fputs
-0x00016da0   31    420 sym.restore_default_color
+0x00016da0    1     32 sym.restore_default_color
+0x00016d50    3     80 sym.put_indicator
+0x00016d0c    3     68 sym.prep_non_filename_text
 0x0003fb18    1      8 sym.imp.fflush
 0x0003fbcc    1      8 sym.imp.sigismember
 0x0003fb3c    1      8 sym.imp.signal
 0x0003fb30    1      8 sym.imp.raise
 0x0003fbd8    1      8 sym.imp.isatty
-0x000237dc    1    108 sym.quotearg
+0x000237dc    1     24 sym.quotearg
 0x000237a8    1     28 sym.quotearg_n
-0x00023634   15    372 sym.quotearg_n_options
-0x000237c4    1     24 sym.quotearg_n_mem
-0x00022afc    1     16 sym.quoting_options_from_style
 0x0001b7e4    3     88 sym.__xargmatch_internal
 0x0001b694    3     88 sym.argmatch_invalid
+0x00023810    1     28 sym.quotearg_n_style
+0x00022afc    1     16 sym.quoting_options_from_style
+0x00022750    1     24 sym.quote_n
 0x0001b6ec    9    248 sym.argmatch_valid
 0x00013920    1     40 sym.add_ignore_pattern
 0x0001b528    1     48 sym.version_etc
@@ -228,15 +236,14 @@ EXPECT=<<EOF
 0x00013d80   23    352 sym.extract_dirs_from_files
 0x0003fa64    1      8 sym.imp.__assert_c99
 0x00022414   23    408 sym._obstack_newchunk
-0x0002396c    3    588 sym.quotearg_colon
 0x0003faa0    1      8 sym.imp.stat64
 0x0003f9ec    1      8 sym.imp.__flsbuf
 0x0001f998    1      8 sym.hash_get_n_entries
-0x000201f0   26    324 sym.hash_free
+0x000201f0   22    264 sym.hash_free
 0x0001f8d0   10    184 sym.hard_locale
 0x0003fa04    1      8 sym.imp.strncmp
 0x0003fbe4    1      8 sym.imp.strchr
-0x00022768    1    700 sym.quote
+0x00022768    1     28 sym.quote
 0x00017b7c    3     56 sym.print_current_files
 0x000137a4    9    132 sym.is_colored
 0x0003fbf0    1      8 sym.imp.tcgetpgrp
@@ -247,11 +254,10 @@ EXPECT=<<EOF
 0x00022250    8    224 sym._obstack_begin
 0x00013620   12    240 sym.dired_dump_obstack
 0x00013c38    5    104 sym.queue_directory
-0x00025758   14    436 sym.xstrtol_fatal
+0x00025758   11    148 sym.xstrtol_fatal
 0x00025740    1     24 sym.xstrdup
 0x00013948    1     64 sym.get_funky_string
 0x0003fa28    1      8 sym.imp.strcmp
-0x0003fc2c    1      8 sym.imp.acl_trivial
 EOF
 RUN
 

@@ -951,7 +951,11 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	RCoreBind cb = a->coreb;
 	RCore *core = cb.core;
 	bool do_mangled = cb.cfggeti (core, "zign.mangled");
+#if R2_USE_NEW_ABI
+	bool zign_dups = a->opt.zigndups;
+#else
 	bool zign_dups = cb.cfggeti (core, "zign.dups");
+#endif
 	r_list_foreach_prev (a->fcns, iter, fcn) {
 		if (r_cons_is_breaked ()) {
 			break;
