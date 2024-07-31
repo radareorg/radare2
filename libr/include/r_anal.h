@@ -385,7 +385,11 @@ typedef struct r_anal_options_t {
 	bool propagate_noreturn;
 	bool recursive_noreturn; // anal.rnr
 	bool slow;
+#if R2_USE_NEW_ABI
+	bool flagends;
+	bool zigndups; // R2_600 -  not used yet..
 	// R2_600 - add zign_dups field for "zign.dups" config
+#endif
 } RAnalOptions;
 
 // XXX we have cc / calling conventions / abi settings already no need for a custom enum here
