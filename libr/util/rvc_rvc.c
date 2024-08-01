@@ -352,7 +352,7 @@ static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 		return NULL;
 	}
 	if (!r_file_exists (absp)) {
-		ret->fhash = R_STR_DUP (NULLVAL);
+		ret->fhash = strdup (NULLVAL);
 		if (!ret->fhash) {
 			goto fail_ret;
 		}
@@ -642,7 +642,7 @@ static char *find_blob_hash(Rvc *rvc, const char *fname) {
 		RvcBlob *b;
 		r_list_foreach_prev (blobs, i, b) {
 			if (!strcmp (b->fname, fname)) {
-				char *bhash = R_STR_DUP (b->fhash);
+				char *bhash = strdup (b->fhash);
 				free_blobs (blobs);
 				return bhash;
 			}

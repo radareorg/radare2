@@ -343,7 +343,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			if (token[0] != 0) {
 				it->hash = R_NEW0 (RSignHash);
 				if (it->hash) {
-					it->hash->bbhash = R_STR_DUP (token);
+					it->hash->bbhash = strdup (token);
 				}
 			}
 			break;
