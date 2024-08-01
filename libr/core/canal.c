@@ -429,7 +429,6 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 			default:
 				continue;
 			}
-
 			// If dump is true, print all strings referenced by the function
 			if (dump) {
 				// take only strings flags
@@ -602,7 +601,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
+		if (r_str_startswith (fcn->name, "fcn.") || r_str_startswith (fcn->name, "sym.func.")) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
 				char *name = r_core_anal_fcn_autoname (core, fcn, 0);
