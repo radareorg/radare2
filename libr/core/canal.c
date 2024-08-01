@@ -108,7 +108,7 @@ static void init_addr2klass(RCore *core, RBinObject *bo) {
 	}
 }
 
-static char *get_function_name(RCore *core, ut64 addr) {
+static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->bo) {
 		init_addr2klass (core, bf->bo);
@@ -119,7 +119,10 @@ static char *get_function_name(RCore *core, ut64 addr) {
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
-	return (flag && flag->name) ? strdup (flag->name) : NULL;
+	if (flag) {
+		return strdup (flag->name);
+	}
+	return NULL;
 }
 
 // XXX: copypaste from anal/data.c
@@ -542,7 +545,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
 		} else if (r_str_startswith (name, "sym.imp.")) {
-			name += 4;
+			name += 8; // 4?
 		} else if (r_str_startswith (name, "sym.")) {
 			name += 4;
 		} else if (r_str_startswith (name, "imp.")) {
@@ -687,6 +690,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 }
 
 static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
+	// TODO: use rlist or rvector. but not this crap
 	ut64 *tmp_next = realloc (next, sizeof (ut64) * (1 + *nexti));
 	if (!tmp_next) {
 		return NULL;
@@ -848,22 +852,16 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 }
 
 static void function_rename(RFlag *flags, RAnalFunction *fcn) {
-	const char *locname = "loc.";
-	const size_t locsize = strlen (locname);
-	char *fcnname = fcn->name;
-
-	if (strncmp (fcn->name, locname, locsize) == 0) {
-		const char *fcnpfx, *restofname;
-		RFlagItem *f;
-
+	if (r_str_startswith (fcn->name, "loc.")) {
+		char *fcnname = fcn->name;
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
-		fcnpfx = r_anal_functiontype_tostring (fcn->type);
-		restofname = fcn->name + locsize;
+		const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
+		const char *restofname = fcn->name + strlen ("loc.");
 		fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
-
-		f = r_flag_get_i (flags, fcn->addr);
-		r_flag_rename (flags, f, fcn->name);
-
+		RFlagItem *f = r_flag_get_i (flags, fcn->addr);
+		if (f) {
+			r_flag_rename (flags, f, fcn->name);
+		}
 		free (fcnname);
 	}
 }
@@ -930,7 +928,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	const char *sarch = r_config_get (core->config, "asm.arch");
 	const bool is_x86 = (sarch && r_str_startswith (sarch, "x86"));
 	bool has_next = r_config_get_b (core->config, "anal.hasnext");
-	RAnalHint *hint = NULL;
 	int i, nexti = 0;
 	ut64 *next = NULL;
 	int fcnlen = 0;
@@ -949,7 +946,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
 	r_warn_if_fail (fcn->cc);
-	hint = r_anal_hint_get (core->anal, at);
+
+	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
 		fcn->bits = 16;
@@ -957,11 +955,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		fcn->bits = core->anal->config->bits;
 	}
 	fcn->addr = at;
-	fcn->name = get_function_name (core, at);
-
-	if (!fcn->name) {
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
-	}
+	fcn->name = get_function_name (core, fcnpfx, at);
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
 		goto error;
@@ -1033,7 +1027,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				} else {
 					R_FREE (fcn->name);
 					const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
-					if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
+					if (R_STR_ISEMPTY (fcnpfx) || !strcmp (fcnpfx, "fcn")) {
 						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
 					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
@@ -1135,10 +1129,11 @@ error:
 			if (!map || (map && (map->perm & R_PERM_X))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
-					if (!next[i]) {
+					ut64 addr = next[i];
+					if (!addr) {
 						continue;
 					}
-					r_core_anal_fcn (core, next[i], next[i], 0, depth - 1);
+					r_core_anal_fcn (core, addr, addr, 0, depth - 1);
 				}
 				free (next);
 			}
@@ -2451,10 +2446,10 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
+	R_RETURN_IF_FAIL (graph);
 	if (addr == UT64_MAX) {
 		return;
 	}
-	r_return_if_fail (graph);
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
 		? r_str_new (f->name)
@@ -4007,7 +4002,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 
 // TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	r_return_if_fail (core && core->anal && fcn);
+	R_RETURN_IF_FAIL (core && core->anal && fcn);
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
@@ -6461,7 +6456,7 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 }
 
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	PJ *pj = NULL;
@@ -6525,7 +6520,7 @@ static int __addrs_cmp(void *_a, void *_b) {
 }
 
 R_API void r_core_anal_inflags(RCore *core, R_NULLABLE const char *glob) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
 	const bool a2f = r_config_get_b (core->config, "anal.a2f");

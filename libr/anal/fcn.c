@@ -805,6 +805,7 @@ repeat:
 					r_anal_op_fini (op);
 					addr = at + op->size;
 					fcn->addr = addr;
+					// force function rename if needed
 					goto repeat;
 				}
 			}
