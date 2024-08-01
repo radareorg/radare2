@@ -652,8 +652,8 @@ EXPECT=<<EOF
 0x00010304    1     28 sym.call_weak_fn
 0x00010328    1     36 sym.deregister_tm_clones
 0x00010358    1     44 sym.register_tm_clones
-0x00010390    1     36 sym.__do_global_dtors_aux
-0x000103b8    4     44 sym.frame_dummy
+0x00010390    1     36 entry.fini0
+0x000103b8    4     44 entry.init0
 0x000103ec    1     28 sym.func
 0x00010408    1     40 main
 0x00010434    3     88 sym.__libc_csu_init

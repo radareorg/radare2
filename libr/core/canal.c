@@ -887,22 +887,33 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
-static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
+static bool set_fcn_name_from_flag(RCore *core, RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
 	bool nameChanged = false;
 	if (f && f->name) {
-		if (!strncmp (fcn->name, "loc.", 4) || !strncmp (fcn->name, "fcn.", 4)) {
+		if (r_str_startswith (fcn->name, "sym.func.") && !r_str_startswith (f->name, "sect")) {
+			char *s = r_core_cmd_strf (core, "fd@0x%08"PFMT64x, fcn->addr);
+			r_str_trim (s);
+			if (!r_str_startswith (s, "sym.func.") && !strstr (s, "sect")) {
+				r_anal_function_rename (fcn, s);
+				nameChanged = true;
+			}
+			free (s);
+		} else if (r_str_startswith (fcn->name, "loc.") || r_str_startswith (fcn->name, "fcn.")) {
 			r_anal_function_rename (fcn, f->name);
 			nameChanged = true;
-		} else if (strncmp (f->name, "sect", 4)) {
+		} else if (!r_str_startswith (f->name, "sect")) {
 			r_anal_function_rename (fcn, f->name);
 			nameChanged = true;
 		}
 	}
+#if 0
 	if (!nameChanged) {
 		char *nn = r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr);
 		r_anal_function_rename (fcn, nn);
 		free (nn);
 	}
+#endif
+	return nameChanged;
 }
 
 static bool is_entry_flag(RFlagItem *f) {
@@ -926,7 +937,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	r_warn_if_fail (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-	if (!fcnpfx) {
+	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
 	}
 	const char *cc = r_anal_cc_default (core->anal);
@@ -990,7 +1001,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			}
 		}
 		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-		set_fcn_name_from_flag (fcn, f, fcnpfx);
+		bool renamed = set_fcn_name_from_flag (core, fcn, f, fcnpfx);
 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && !r_anal_function_realsize (fcn))) { /* Error analyzing function */
@@ -998,37 +1009,40 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				r_anal_analyze_fcn_refs (core, fcn, depth);
 			}
 			goto error;
-		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				char *new_name = strdup (f->name);
-				if (is_entry_flag (f)) {
-					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-					RBinSymbol *sym;
-					RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
-					R_VEC_FOREACH (syms, sym) {
-						if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
-							free (new_name);
-							const char *sym_name = r_bin_name_tostring2 (sym->name, 'f');
-							new_name = r_str_newf ("sym.%s", sym_name);
-							break;
+		}
+		if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
+			if (!renamed) {
+				f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+				if (f && f->name && !r_str_startswith (f->name, "sect")) { /* Check if it's already flagged */
+					char *new_name = strdup (f->name);
+					if (is_entry_flag (f)) {
+						ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+						RBinSymbol *sym;
+						RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
+						R_VEC_FOREACH (syms, sym) {
+							if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
+								free (new_name);
+								const char *sym_name = r_bin_name_tostring2 (sym->name, 'f');
+								new_name = r_str_newf ("sym.%s", sym_name);
+								break;
+							}
 						}
 					}
+					free (fcn->name);
+					fcn->name = new_name;
+				} else {
+					R_FREE (fcn->name);
+					const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
+					if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
+						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+					}
+					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+					autoname_imp_trampoline (core, fcn);
+					/* Add flag */
+					r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
+					r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_function_linear_size (fcn));
+					r_flag_space_pop (core->flags);
 				}
-				free (fcn->name);
-				fcn->name = new_name;
-			} else {
-				R_FREE (fcn->name);
-				const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
-				if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
-					fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-				}
-				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
-				autoname_imp_trampoline (core, fcn);
-				/* Add flag */
-				r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
-				r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_function_linear_size (fcn));
-				r_flag_space_pop (core->flags);
 			}
 
 			/* New function: Add initial xref */
