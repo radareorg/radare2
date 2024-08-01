@@ -627,7 +627,7 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 		} else {
 			Sdb *sdb = sdb_new0 ();
 			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
-			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), R_STR_DUP (s), 0);
+			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
 			core->panels_root->cur_pdc_cache = sdb;
 			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
 				sdb_ptr_set (core->panels_root->pdc_caches, strdup (pdc_now), sdb, 0);
@@ -5236,7 +5236,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->name = name ? R_STR_DUP (name) : NULL;
+	item->name = R_STR_DUP (name);
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);

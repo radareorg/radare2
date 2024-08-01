@@ -167,7 +167,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		if (oparg < 0 || oparg >= CMP_OP_SIZE) {
 			return NULL;
 		}
-		arg = R_STR_DUP (cmp_op[oparg]);
+		arg = strdup (cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {

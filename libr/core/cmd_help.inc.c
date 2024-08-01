@@ -456,8 +456,8 @@ static char *filterFlags(RCore *core, const char *msg) {
 			end = strchr (dollar + 2, '}');
 			if (end) {
 				word = NULL;
-				if (end-dollar-2) {
-					word = r_str_ndup (dollar+2, end-dollar-2);
+				if (end - dollar - 2 > 0) {
+					word = r_str_ndup (dollar + 2, end - dollar - 2);
 				}
 				end++;
 			} else {
@@ -475,7 +475,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 				end = dollar + strlen (dollar);
 			}
 			word = NULL;
-			if (end-dollar-1) {
+			if (end - dollar - 1 > 0) {
 				word = r_str_ndup (dollar+1, end-dollar-1);
 			}
 		}

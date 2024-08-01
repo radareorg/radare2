@@ -145,7 +145,7 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 	}
 
 	binstring->string = NULL;
-	if (length) {
+	if (length > 0) {
 		binstring->string = r_str_ndup ((char *) buf + offset, length);
 	}
 	binstring->vaddr = binstring->paddr = offset;
