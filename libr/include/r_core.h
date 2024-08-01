@@ -415,6 +415,7 @@ struct r_core_t {
 #if R2_USE_NEW_ABI
 	int skiplines; // used only for disasm
 	void *priv;
+	bool esil_anal_stop;
 #endif
 };
 
