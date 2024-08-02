@@ -130,10 +130,7 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 	const char *s = r_strbuf_get (sb);
 	const char *fr = r_str_ansi_chrn (s, from + 1);
 	const char *to = r_str_ansi_chrn (s, from + len + 1);
-	char *r = NULL;
-	if (to > fr) {
-		r = r_str_ndup (fr, to - fr);
-	}
+	char *r = R_STR_NDUP (fr, to - fr);
 	r_strbuf_fini (sb);
 	r_strbuf_init (sb);
 	if (from >= len) {
