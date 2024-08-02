@@ -66,9 +66,6 @@ typedef struct r_charset_t {
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) (((x) != NULL) ? strdup ((x)) : NULL)
-static inline char *R_STR_NDUP(R_NULLABLE const char *x, int len) {
-	return (x && len > 0) ? r_str_ndup (x, len) : NULL;
-}
 #define r_str_array(x,y) ((y >= 0 && y < (sizeof (x) / sizeof (*(x))))?(x)[(y)]: "")
 R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
@@ -302,6 +299,9 @@ R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefi
 		str += strlen (prefix);
 	}
 	return str;
+}
+static inline char *R_STR_NDUP(R_NULLABLE const char *x, int len) {
+	int _len = len; return (_len > 0) ? r_str_ndup (x, _len) : NULL;
 }
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber(const char *str);
