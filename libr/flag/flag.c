@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2024 - pancake, ret2libc */
 
 #include <r_flag.h>
-#include <r_util.h>
 #include <r_cons.h>
-#include <stdio.h>
 
-R_LIB_VERSION(r_flag);
+R_LIB_VERSION (r_flag);
 
 #define IS_FI_NOTIN_SPACE(f, i) (r_flag_space_cur (f) && (i)->space != r_flag_space_cur (f))
 #define IS_FI_IN_SPACE(fi, sp) (!(sp) || (fi)->space == (sp))
@@ -93,7 +91,7 @@ static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 off, int dir) {
 }
 
 static void remove_offsetmap(RFlag *f, RFlagItem *item) {
-	r_return_if_fail (f && item);
+	R_RETURN_IF_FAIL (f && item);
 	RFlagsAtOffset *flags = r_flag_get_nearest_list (f, item->offset, 0);
 	if (flags) {
 		r_list_delete_data (flags->flags, item);
@@ -142,7 +140,7 @@ static char *filter_item_name(const char *name) {
 }
 
 static void set_name(RFlagItem *item, char *name) {
-	r_return_if_fail (item && name);
+	R_RETURN_IF_FAIL (item && name);
 	free_item_name (item);
 	item->name = name;
 	free_item_realname (item);
@@ -387,7 +385,7 @@ static bool print_flag_orig_name(RFlagItem *flag, void *user) {
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
 R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
-	r_return_if_fail (f);
+	R_RETURN_IF_FAIL (f);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
@@ -799,21 +797,21 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 
 /* add/replace/remove the alias of a flag item */
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias) {
-	r_return_if_fail (item);
+	R_RETURN_IF_FAIL (item);
 	free (item->alias);
 	item->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
 }
 
 /* add/replace/remove the comment of a flag item */
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
-	r_return_if_fail (item);
+	R_RETURN_IF_FAIL (item);
 	free (item->comment);
 	item->comment = R_STR_ISEMPTY (comment)? NULL: strdup (comment);
 }
 
 /* add/replace/remove the realname of a flag item */
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
-	r_return_if_fail (item);
+	R_RETURN_IF_FAIL (item);
 	free_item_realname (item);
 	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
 }
@@ -829,12 +827,12 @@ R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
 /* change the name of a flag item, if the new name is available.
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
-	r_return_val_if_fail (f && item && name && *name, false);
+	R_RETURN_VAL_IF_FAIL (f && item && name && *name, false);
 	return update_flag_item_name (f, item, name, false);
 }
 
 R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
-	r_return_if_fail (fi && type);
+	R_RETURN_IF_FAIL (fi && type);
 	free (fi->type);
 	fi->type = strdup (type);
 }
@@ -900,7 +898,7 @@ R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 
 /* unset all flag items in the RFlag f */
 R_API void r_flag_unset_all(RFlag *f) {
-	r_return_if_fail (f);
+	R_RETURN_IF_FAIL (f);
 	ht_pp_free (f->ht_name);
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	r_skiplist_purge (f->by_off);
@@ -957,7 +955,7 @@ R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to) {
 
 // BIND
 R_API void r_flag_bind(RFlag *f, RFlagBind *fb) {
-	r_return_if_fail (f && fb);
+	R_RETURN_IF_FAIL (f && fb);
 	fb->f = f;
 	fb->exist_at = r_flag_exist_at;
 	fb->get = r_flag_get;

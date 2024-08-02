@@ -570,6 +570,18 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 	return fcn && r_anal_var_count_all (fcn) > 0;
 }
 
+static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
+	r_strf_var (addrstr, 64, "%08"PFMT64x, fcn->addr);
+	char *s = strstr (fcn->name, addrstr);
+	if (s) {
+		char *pfx = r_str_ndup (fcn->name, s - fcn->name);
+		free (fcn->name);
+		fcn->name = r_str_newf ("%s%08"PFMT64x, pfx, to);
+		free (pfx);
+	}
+	fcn->addr = to;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const char *variadic_reg = NULL;
 	ReadAhead ra = {0};
@@ -786,7 +798,7 @@ repeat:
 			if (!fi || strstr (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
-						fcn->addr += oplen;
+						fcn_rename_readdr (fcn, fcn->addr + oplen);
 						idx = delay.un_idx;
 						r_anal_op_fini (op);
 						goto repeat;
@@ -804,7 +816,8 @@ repeat:
 				if (r_anal_block_relocate (bb, at + op->size, bb->size)) {
 					r_anal_op_fini (op);
 					addr = at + op->size;
-					fcn->addr = addr;
+					fcn_rename_readdr (fcn, addr);
+					// force function rename if needed
 					goto repeat;
 				}
 			}

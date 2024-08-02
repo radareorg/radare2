@@ -1015,10 +1015,10 @@ s 0x00001120
 e zign.maxsz = 32
 af
 zaf
-z* ~za sym.__do_global_dtors_aux b
+z* ~za entry.fini0 b
 EOF
 EXPECT=<<EOF
-za sym.__do_global_dtors_aux b f30f1efb5589e553e853ffffff81c3d32e000083ec0480bb180000000075288b:ffffffffffffffffff00000000ff0000000000ffffffffffffffffffffff00ff
+za entry.fini0 b f30f1efb5589e553e853ffffff81c3d32e000083ec0480bb180000000075288b:ffffffffffffffffff00000000ff0000000000ffffffffffffffffffffff00ff
 EOF
 RUN
 
