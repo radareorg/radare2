@@ -119,10 +119,7 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
-	if (flag) {
-		return strdup (flag->name);
-	}
-	return NULL;
+	return flag? strdup (flag->name): NULL;
 }
 
 // XXX: copypaste from anal/data.c
@@ -545,7 +542,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
 		} else if (r_str_startswith (name, "sym.imp.")) {
-			name += 8; // 4?
+			name += 4; // 8?
 		} else if (r_str_startswith (name, "sym.")) {
 			name += 4;
 		} else if (r_str_startswith (name, "imp.")) {
@@ -956,6 +953,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 	fcn->addr = at;
 	fcn->name = get_function_name (core, fcnpfx, at);
+	if (!fcn->name) {
+		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
+	}
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
 		goto error;
