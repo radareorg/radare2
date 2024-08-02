@@ -66,7 +66,7 @@ typedef struct r_charset_t {
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) (((x) != NULL) ? strdup ((x)) : NULL)
-static inline R_STR_NDUP(const char *x, int len) { int _len = len;  (_len > 0) ? r_str_ndup (x, _len) : NULL; }
+static inline char *R_STR_NDUP(const char *x, int len) { int _len = len;  (_len > 0) ? r_str_ndup (x, _len) : NULL; }
 #define r_str_array(x,y) ((y >= 0 && y < (sizeof (x) / sizeof (*(x))))?(x)[(y)]: "")
 R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
