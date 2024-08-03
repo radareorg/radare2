@@ -1185,7 +1185,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
 	RFSFile *file;
-	char *lpath = R_STR_DUP (path);
+	char *lpath = strdup (path);
 	char *p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
