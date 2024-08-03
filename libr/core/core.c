@@ -1372,7 +1372,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 #endif
 			dirname = r_str_newf (fmt, R_SYS_DIR, lpath, R_SYS_DIR);
 		}
-		basename = R_STR_DUP (p + 1);
+		basename = strdup (p + 1);
 	} else { // xxx
 		dirname = r_str_newf (".%s", R_SYS_DIR);
 		basename = R_STR_DUP (lpath);
