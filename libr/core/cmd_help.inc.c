@@ -455,7 +455,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 			// find }
 			end = strchr (dollar + 2, '}');
 			if (end) {
-				word = R_STR_NDUP (dollar + 2, end - dollar - 2);
+				word = r_str_ndup (dollar + 2, end - dollar - 2);
 				end++;
 			} else {
 				msg = dollar + 1;
