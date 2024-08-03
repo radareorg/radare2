@@ -471,7 +471,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 			if (!end) {
 				end = dollar + strlen (dollar);
 			}
-			word = R_STR_NDUP (dollar + 1, end - dollar - 1);
+			word = r_str_ndup (dollar + 1, end - dollar - 1);
 		}
 		if (end && word) {
 			ut64 val = r_num_math (core->num, word);
