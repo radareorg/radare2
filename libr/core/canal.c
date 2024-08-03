@@ -2472,7 +2472,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 			continue;
 		}
 		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-		char *src = item? R_STR_DUP (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
+		char *src = item? strdup (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
 		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
 		free (src);
 		r_graph_add_edge (graph, reference_from, curr_node);
