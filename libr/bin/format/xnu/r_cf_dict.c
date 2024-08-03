@@ -673,7 +673,7 @@ static RCFValue *r_cf_value_clone(RCFValue *value) {
 			RListIter *iter;
 			RCFKeyValue *item;
 			r_list_foreach (((RCFValueDict *)value)->pairs, iter, item) {
-				char *key = R_STR_DUP (item->key);
+				char *key = strdup (item->key);
 				if (key) {
 					RCFValue *clone = r_cf_value_clone (item->value);
 					if (clone) {
