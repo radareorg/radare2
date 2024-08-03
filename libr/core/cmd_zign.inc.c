@@ -842,7 +842,7 @@ static double get_zb_threshold(RCore *core) {
 static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 	r_return_val_if_fail (input && core, false);
 
-	char *argv = R_STR_DUP (input);
+	char *argv = strdup (input);
 	if (!argv) {
 		return false;
 	}
