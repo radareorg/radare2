@@ -671,6 +671,15 @@ bool test_r_mem_to_binstring(void) {
 	mu_end;
 }
 
+bool test_r_str_ndup_zero_len (void) {
+	char str[] = "deadbeef";
+
+	mu_assert_null (R_STR_NDUP (str, 0), "uppercase yields NULL");
+	mu_assert_streq (r_str_ndup (str, 0), "", "lowercase yields empty string");
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_newf);
@@ -707,6 +716,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_tok_r);
 	mu_run_test (test_r_mem_from_binstring);
 	mu_run_test (test_r_mem_to_binstring);
+	mu_run_test (test_r_str_ndup_zero_len);
 	return tests_passed != tests_run;
 }
 
