@@ -1351,19 +1351,20 @@ R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 }
 
 static void addComment(RCore *core, ut64 addr) {
-	char buf[1024];
 	r_cons_printf ("Enter comment for reference:\n");
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
 	r_line_set_prompt (PROMPTSTR);
 	r_cons_enable_mouse (false);
+	char buf[1024];
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
-	r_core_cmdf (core, "\"\"@0x%08"PFMT64x"\"\"CC %s", addr, buf);
-	r_core_visual_showcursor (core, false);
+	r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr, buf);
 	r_cons_set_raw (true);
+	r_cons_enable_mouse (r_config_get_b (core->config, "scr.wheel"));
+	r_core_visual_showcursor (core, false);
 }
 
 static void add_ref(RCore *core) {

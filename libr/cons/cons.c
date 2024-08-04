@@ -642,43 +642,34 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
-	if ((I->mouse && enable) || (!I->mouse && !enable)) {
-		return I->mouse;
-	}
+	bool enabled = I->mouse;
 #if R2__WINDOWS__
+	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (h, &mode);
+	DWORD mode |= ENABLE_EXTENDED_FLAGS;
+	mode |= enable
+		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
+		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
+	if (SetConsoleMode (h, mode)) {
+		I->mouse = enable;
+	}
+#else
 	if (I->vtmode == 2) {
-#endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
 			// : "\x1b[?1001r\x1b[?1000l";
 		// : "\x1b[?1000;1006;1015l";
 		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
-		bool enabled = I->mouse;
 		const size_t click_len = strlen (click);
 		if (write (2, click, click_len) != click_len) {
-			return false;
+			enabled = false;
+		} else {
+			I->mouse = enable;
 		}
-		I->mouse = enable;
-		return enabled;
-#if R2__WINDOWS__
 	}
-	DWORD mode;
-	HANDLE h;
-	bool enabled = I->mouse;
-	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &mode);
-	mode |= ENABLE_EXTENDED_FLAGS;
-	mode = enable
-		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
-		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
-	if (SetConsoleMode (h, mode)) {
-		I->mouse = enable;
-	}
-	return enabled;
-#else
-	return false;
 #endif
+	return enabled;
 }
 
 R_API RCons *r_cons_new(void) {
