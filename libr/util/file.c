@@ -1553,10 +1553,7 @@ R_API RList* r_file_glob(const char *_globbed_path, int maxdepth) {
 				path = r_file_home (r_str_get (rpath));
 				free (rpath);
 			} else {
-				path = NULL;
-				if (last_slash - globbed_path + 1) {
-					path = r_str_ndup (globbed_path, last_slash - globbed_path + 1);
-				}
+				path = R_STR_NDUP (globbed_path, last_slash - globbed_path + 1);
 			}
 		} else {
 			glob_ptr = globbed_path;

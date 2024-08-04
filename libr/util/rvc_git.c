@@ -182,7 +182,7 @@ R_API RList *branches_git(Rvc *rvc) {
 			char *name;
 			r_list_foreach (ret, iter, name) {
 				if (*(char *)iter->data == '*') {
-					iter->data = R_STR_DUP (name + 2);
+					iter->data = strdup (name + 2);
 					free (name);
 				}
 

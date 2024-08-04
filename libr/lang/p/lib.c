@@ -3,9 +3,9 @@
 #include <r_lang.h>
 
 static bool lang_lib_file_run(RLangSession *user, const char *file) {
-	char *libpath;
+	char *libpath = R_STR_DUP (file);
 	void *lib;
-	if (!(libpath = R_STR_DUP (file))) {
+	if (!libpath) {
 		return false;
 	}
 	if (!r_str_startswith (libpath, "/") && !r_str_startswith (libpath, "./")) {
