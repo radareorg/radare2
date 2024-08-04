@@ -65,7 +65,6 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 		return NULL;
 	}
 	return R_STR_NDUP (buf + off, i - off - 1);
-	return res;
 }
 
 #define VERIFY_AR_NUM_FIELD(x, s)                                                                \
