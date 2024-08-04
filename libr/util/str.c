@@ -817,7 +817,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	r_return_val_if_fail (string, NULL);
-	char *msg = r_str_ndup (string, slen);
+	char *msg = R_STR_NDUP (string, slen); // only fails for token.c
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
 	return ret;
