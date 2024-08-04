@@ -1701,7 +1701,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s) {
 	const char *word;
 	RListIter *iter;
 	if (compact) {
-		const *w = s;
+		const char *w = s;
 		while (*w) {
 			for (i = 0; i < 64; i++) {
 				const char *bn = attr_bit_name (i, true);
@@ -1714,7 +1714,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s) {
 		}
 	} else {
 		char *a = strdup (s);
-		RList *words = r_str_split_list (a, ' ', 0);
+		RList *words = r_str_split_list (a, " ", 0);
 		r_list_foreach (words, iter, word) {
 			for (i = 0; i < 64; i++) {
 				const char *bn = attr_bit_name (i, false);
