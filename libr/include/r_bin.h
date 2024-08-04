@@ -917,7 +917,11 @@ R_API void r_bin_name_filtered(RBinName *bn, const char *fname);
 R_API void r_bin_name_free(RBinName *bn);
 
 R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar);
+#if R2_USE_NEW_ABI
+R_API ut64 r_bin_attr_fromstring(const char *s, bool compact);
+#else
 R_API ut64 r_bin_attr_fromstring(const char *s);
+#endif
 
 /* filter.c */
 typedef struct HtSU_t HtSU;
