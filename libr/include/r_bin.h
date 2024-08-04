@@ -583,9 +583,12 @@ typedef struct r_bin_plugin_t {
 	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
-	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
+#if R2_USE_NEW_ABI
+	bool (*cmd)(RBinFile *bf, const char *command);
+	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
+#endif
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;
@@ -763,6 +766,9 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
+#if R2_USE_NEW_ABI
+R_API bool r_bin_command(RBin *bin, const char *input);
+#endif
 
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
 R_API void r_bin_class_free(RBinClass *);

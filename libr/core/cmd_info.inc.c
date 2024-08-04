@@ -80,6 +80,9 @@ static RCoreHelpMessage help_msg_iS = {
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"i", "[*jq]", "show info of current file (in JSON)",
+#if R2_USE_NEW_ABI
+	"i:", "[?]", "run rbinplugin specific commands",
+#endif
 	"ia", "", "show all info (imports, exports, sections..)",
 	"iA", "", "list archs found in current binary",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
@@ -2063,6 +2066,15 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'D': // "iD"
 		cmd_info_demangle (core, input, pj, mode);
+		break;
+	case ':': // "i:"
+#if R2_USE_NEW_ABI
+		if (!r_bin_command (core->bin, input)) {
+			R_LOG_ERROR ("Unhandled RBinPlugin.cmd");
+		}
+#else
+		R_LOG_ERROR ("Recompile with-new-abi to use the RBinPlugin commands");
+#endif
 		break;
 	case 's': // "is"
 		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
