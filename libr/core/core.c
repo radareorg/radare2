@@ -4183,7 +4183,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 	}
 	close (fd);
 
-	if (name && (!editor || !*editor || !strcmp (editor, "-"))) {
+	if (name && (R_STR_ISEMPTY (editor) || !strcmp (editor, "-"))) {
 		RCons *cons = r_cons_singleton ();
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;

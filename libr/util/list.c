@@ -463,18 +463,23 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	return false;
 }
 
-R_API void *r_list_get_n(const RList *list, int n) {
+#if R2_USE_NEW_ABI
+R_API RListIter *r_list_get_nth(const RList *list, int n) {
+	R_RETURN_VAL_IF_FAIL (list, NULL);
 	RListIter *it;
 	int i;
-
-	R_RETURN_VAL_IF_FAIL (list, NULL);
-
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
-			return it->data;
+			return it;
 		}
 	}
 	return NULL;
+}
+#endif
+
+R_API void *r_list_get_n(const RList *list, int n) {
+	RListIter *it = r_list_get_nth (list, n);
+	return it? it->data: NULL;
 }
 
 R_API RListIter *r_list_contains(const RList *list, const void *p) {
