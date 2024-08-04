@@ -637,9 +637,9 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 }
 #endif
 
-static void __set_read_only(RCore *core, RPanel *p, char *s) {
+static void __set_read_only(RCore *core, RPanel *p, R_NULLABLE const char *s) {
 	free (p->model->readOnly);
-	p->model->readOnly = strdup (s);
+	p->model->readOnly = R_STR_DUP (s);
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
@@ -1115,8 +1115,10 @@ static void __update_help(RCore *core, RPanels *ps) {
 				break;
 			}
 			char *drained = r_strbuf_drain (rsb);
-			__set_read_only (core, p, drained);
-			free (drained);
+			if (drained) {
+				__set_read_only (core, p, drained);
+				free (drained);
+			}
 			p->view->refresh = true;
 		}
 	}
@@ -6642,8 +6644,10 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 				return false;
 			}
 			char *drained_string = r_strbuf_drain (rsb);
-			__set_read_only (core, p, drained_string);
-			free (drained_string);
+			if (drained_string) {
+				__set_read_only (core, p, drained_string);
+				free (drained_string);
+			}
 		}
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}
