@@ -645,8 +645,9 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 	bool enabled = I->mouse;
 #if R2__WINDOWS__
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
+	DWORD mode = 0;
 	GetConsoleMode (h, &mode);
-	DWORD mode |= ENABLE_EXTENDED_FLAGS;
+	mode |= ENABLE_EXTENDED_FLAGS;
 	mode |= enable
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
 		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
