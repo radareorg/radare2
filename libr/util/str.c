@@ -3437,11 +3437,11 @@ R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 }
 
 // Splits the string <str> by string <c> and returns the result in a list.
-// XXX should take const char * as argument!!
+// R2_600 - char *arg must be const!!
 R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	r_return_val_if_fail (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
-	char *aux = str; // XXX should be an strdup
+	char *aux = str; // R2_600 - XXX should be an strdup
 	int i = 0;
 	char *e = aux;
 	const size_t clen = strlen (c);
