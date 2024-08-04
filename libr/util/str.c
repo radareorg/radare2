@@ -3447,10 +3447,12 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	const size_t clen = strlen (c);
 	for (;e;) {
 		e = strstr (aux, c);
-			if (e == aux) {
-				aux++;
-				continue;
-			}
+#if 0
+		if (e == aux) {
+			aux++;
+			continue;
+		}
+#endif
 		if (n > 0) {
 			if (++i > n) {
 				r_list_append (lst, aux);
