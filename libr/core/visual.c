@@ -1517,7 +1517,7 @@ repeat:
 					}
 				}
 				if (w > 45) {
-					if (strlen (name) > w -45) {
+					if (strlen (name) > w - 45) {
 						name[w - 45] = 0;
 					}
 				} else {
@@ -1658,7 +1658,7 @@ repeat:
 	case 'G':
 		skip = 9999;
 		goto repeat;
-	case ';':
+	case ';': // "Vx;"
 		addComment (core, cur_ref_addr);
 		goto repeat;
 	case '.':
@@ -1943,16 +1943,15 @@ static void visual_textlogs(RCore *core) {
 static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
-	char *comment, *cwd, *cmtfile;
 	const char *prev_cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-	comment = prev_cmt ? strdup (prev_cmt) : NULL;
-	cmtfile = r_str_between (comment, ",(", ")");
-	cwd = getcommapath (core);
+	char *comment = prev_cmt ? strdup (prev_cmt) : NULL;
+	char *cmtfile = r_str_between (comment, ",(", ")");
+	char *cwd = getcommapath (core);
 	if (!cmtfile) {
 		char *fn = r_cons_input ("<comment-file> ");
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
-			if (!comment || !*comment) {
+			if (R_STR_ISEMPTY (comment)) {
 				comment = r_str_newf (",(%s)", fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
 			} else {
@@ -2638,7 +2637,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			break;
 		case 'C': // "vbC"
 			r_core_visual_comments (core);
-			//r_core_cmd0 (core, "s $(CC~...)");
+			// r_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't': // "vbt"
 			r_core_visual_types (core);
@@ -2782,7 +2781,7 @@ static int process_get_click(RCore *core, int ch) {
 	return ch;
 }
 
-static void visual_comment(RCore *core) {
+static void visual_add_comment(RCore *core) {
 	char buf[1024];
 	r_cons_enable_mouse (false);
 	r_cons_gotoxy (0, 0);
@@ -4048,7 +4047,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_hudstuff (core);
 			break;
 		case ';': // "V;"
-			visual_comment (core);
+			visual_add_comment (core);
 			break;
 		case 'b':
 			r_core_visual_browse (core, arg + 1);

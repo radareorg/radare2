@@ -1,21 +1,30 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton ()
 
+typedef struct {
+	char *lines;
+	char *path;
+	char prompt[32];
+	int bytes;
+	int nlines;
+	int n;
+} RConsEditor;
+
 /* TODO: remove global vars */
-static R_TH_LOCAL char *lines = NULL;
-static R_TH_LOCAL char *path = NULL;
-static R_TH_LOCAL char prompt[32];
-static R_TH_LOCAL int bytes = 0;
-static R_TH_LOCAL int nlines = 0;
-static R_TH_LOCAL int _n = 1;
+static R_TH_LOCAL RConsEditor G = {0};
+
+static void r_cons_editor_init(void) {
+	memset (&G, 0, sizeof (G));
+	G.n = 1;
+}
 
 static void setnewline(int old) {
-	snprintf (prompt, sizeof (prompt), "%d: ", _n);
-	r_line_set_prompt (prompt);
-	char *curline = r_file_slurp_line (path, _n, 0);
-	// const char *curline = r_str_word_get0 (lines, _n),
+	snprintf (G.prompt, sizeof (G.prompt), "%d: ", G.n);
+	r_line_set_prompt (G.prompt);
+	char *curline = r_file_slurp_line (G.path, G.n, 0);
+	// const char *curline = r_str_word_get0 (lines, G.n),
 #if 1
 	r_str_ncpy (I->line->buffer.data, r_str_get (curline), sizeof (I->line->buffer.data) - 1);
 	I->line->buffer.data[sizeof (I->line->buffer.data) - 1] = '\0';
@@ -26,29 +35,29 @@ static void setnewline(int old) {
 }
 
 static void saveline(int n, const char *str) {
-	r_file_dump_line (path, _n, str, false);
+	r_file_dump_line (G.path, G.n, str, false);
 #if 0
 	char *out;
 	if (!str) {
 		return;
 	}
-	out = r_str_word_get0set (lines, bytes, _n, str, &bytes);
+	out = r_str_word_get0set (lines, bytes, G.n, str, &bytes);
 	free (lines);
 	lines = out;
 #endif
 }
 
 static int up(void *n) {
-	int old = _n;
-	if (_n > 1) {
-		_n--;
+	int old = G.n;
+	if (G.n > 1) {
+		G.n--;
 	}
 	setnewline (old);
 	return -1;
 }
 
 static int down(void *n) {
-	int old = _n++;
+	int old = G.n++;
 	setnewline (old);
 	return -1;
 }
@@ -84,32 +93,30 @@ static void filesave(void) {
 	} else {
 		R_LOG_ERROR ("Cannot save file");
 	}
-	nlines = r_str_split (lines, '\n');
+	G.nlines = r_str_split (lines, '\n');
 }
 #endif
 
 R_API char *r_cons_editor(const char *file, const char *str) {
-	const char *line;
-	_n = 1;
 	if (I->cb_editor) {
 		return I->cb_editor (I->user, file, str);
 	}
-	free (path);
-	if (file) {
-		path = strdup (file);
-		bytes = 0;
+	r_cons_editor_init ();
+	if (R_STR_ISNOTEMPTY (file)) {
+		G.path = strdup (file);
+		G.bytes = 0;
 		size_t sz = 0;
-		lines = r_file_slurp (file, &sz);
-		bytes = (int)sz;
-		if (!lines) {
+		G.lines = r_file_slurp (file, &sz);
+		G.bytes = (int)sz;
+		if (!G.lines) {
 			R_LOG_ERROR ("Failed to load '%s'", file);
-			R_FREE (path);
+			R_FREE (G.path);
 			return NULL;
 		}
-		nlines = r_str_split (lines, '\n');
-		R_LOG_INFO ("Loaded %d lines on %d byte(s)", (nlines? (nlines - 1): 0), bytes);
+		G.nlines = r_str_split (G.lines, '\n');
+		R_LOG_INFO ("Loaded %d lines on %d byte(s)", (G.nlines? (G.nlines - 1): 0), G.bytes);
 	} else {
-		path = NULL;
+		G.path = NULL;
 	}
 	I->line->hist_up = up;
 	I->line->hist_down = down;
@@ -118,22 +125,31 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 	down (NULL);
 	up (NULL);
 	for (;;) {
-		char *curline = r_file_slurp_line (file, _n, 0);
+		char *curline = r_file_slurp_line (file, G.n, 0);
 		I->line->contents = curline;
-		setnewline (_n);
-		line = r_line_readline ();
-		if (line && *line && curline && strcmp (curline, line)) {
-			saveline (_n, line);
+		setnewline (G.n);
+		const char *line = r_line_readline ();
+		if (R_STR_ISNOTEMPTY (line) && curline && strcmp (curline, line)) {
+			saveline (G.n, line);
 		}
 		down (NULL);
-		setnewline (_n);
+		setnewline (G.n);
 		if (!line) {
 			break;
 		}
 	}
 	// filesave ();
+	if (true) {
+		int i;
+		for (i = 0; i < G.bytes; i++) {
+			if (G.lines[i] == '\0') {
+				G.lines[i] = '\n';
+			}
+		}
+	}
+	r_str_trim (G.lines);
 	I->line->hist_up = NULL;
 	I->line->hist_down = NULL;
 	I->line->contents = NULL;
-	return lines;
+	return G.lines;
 }
