@@ -514,7 +514,7 @@ static bool __check_panel_type(RPanel *panel, const char *type) {
 	if (!panel || !panel->model->cmd || !type) {
 		return false;
 	}
-	char *tmp = r_str_new (panel->model->cmd);
+	char *tmp = strdup (panel->model->cmd);
 	int n = r_str_split (tmp, ' ');
 	if (!n) {
 		free (tmp);
@@ -623,14 +623,14 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (func) {
 		if (core->panels_root->cur_pdc_cache) {
-			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (s), 0);
+			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
 		} else {
 			Sdb *sdb = sdb_new0 ();
 			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
-			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (s), 0);
+			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
 			core->panels_root->cur_pdc_cache = sdb;
 			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-				sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
+				sdb_ptr_set (core->panels_root->pdc_caches, strdup (pdc_now), sdb, 0);
 			}
 		}
 	}
@@ -639,7 +639,7 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 
 static void __set_read_only(RCore *core, RPanel *p, char *s) {
 	free (p->model->readOnly);
-	p->model->readOnly = r_str_new (s);
+	p->model->readOnly = strdup (s);
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
@@ -2294,7 +2294,7 @@ static int __show_all_decompiler_cb(void *user) {
 		r_config_set (core->config, "cmd.pdc", opt);
 		RPanel *panel = __get_panel (panels, i++);
 		panels->n_panels = i;
-		panel->model->title = r_str_new (opt);
+		panel->model->title = strdup (opt);
 		__set_read_only (core, panel, r_core_cmd_str (core, opt));
 	}
 	__layout_equal_hor (panels);
@@ -2317,7 +2317,7 @@ static void __init_modal_db(RCore *core) {
 	SdbList *sdb_list = sdb_foreach_list (core->panels->db, true);
 	ls_foreach (sdb_list, sdb_iter, kv) {
 		const char *key = sdbkv_key (kv);
-		sdb_ptr_set (db, r_str_new (key), &__create_panel_db, 0);
+		sdb_ptr_set (db, strdup (key), &__create_panel_db, 0);
 	}
 	sdb_ptr_set (db, "Search strings in data sections", &__search_strings_data_create, 0);
 	sdb_ptr_set (db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
@@ -2597,7 +2597,7 @@ static void __handle_tab_new_with_cur_panel(RCore *core) {
 	RPanel *new_panel = __get_panel (new_panels, 0);
 	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd);
 	new_panel->model->cache = cur->model->cache;
-	new_panel->model->funcName = r_str_new (cur->model->funcName);
+	new_panel->model->funcName = strdup (cur->model->funcName);
 	__set_cmd_str_cache (core, new_panel, cur->model->cmdStrCache);
 	__maximize_panel_size (new_panels);
 
@@ -3923,7 +3923,7 @@ static char *__get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x
 		tmp++;
 		i++;
 	}
-	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
+	char *ret = R_STR_NDUP (pos += strlen (padding), i - strlen (padding));
 	if (!ret) {
 		ret = strdup (pos);
 	}
@@ -4685,7 +4685,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 	return;
 #if 0
 	if (core->panels_root->cur_pdc_cache) {
-		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
+		cmdstr = R_STR_DUP ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
 			__set_cmd_str_cache (core, panel, cmdstr);
@@ -5233,7 +5233,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->name = name ? r_str_new (name) : NULL;
+	item->name = R_STR_DUP (name);
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
@@ -6569,7 +6569,7 @@ static char *__parse_panels_config(const char *cfg, int len) {
 	if (R_STR_ISEMPTY (cfg) || len < 2) {
 		return NULL;
 	}
-	char *tmp = r_str_newlen (cfg, len + 1);
+	char *tmp = R_STR_NDUP (cfg, len + 1);
 	if (!tmp) {
 		return NULL;
 	}
@@ -7564,10 +7564,10 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, r_str_new (pdc_now), 0);
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, R_STR_DUP (pdc_now), 0);
 		} else {
 			Sdb *sdb = sdb_new0();
-			sdb_ptr_set (panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
+			sdb_ptr_set (panels_root->pdc_caches, R_STR_DUP (pdc_now), sdb, 0);
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}

@@ -761,9 +761,9 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			R_FREE (strasm);
 			size = 2;
 		}
-		op->mnemonic = r_str_new (r_str_get_fail (strasm, "invalid"));
+		op->mnemonic = strdup (r_str_get_fail (strasm, "invalid"));
 	} else if (len > 0) {
-		op->mnemonic = r_str_new ("invalid");
+		op->mnemonic = strdup ("invalid");
 		size = len;
 	}
 
@@ -794,7 +794,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz > len) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = r_str_new ("invalid");
+			op->mnemonic = strdup ("invalid");
 		}
 		return false;
 	}

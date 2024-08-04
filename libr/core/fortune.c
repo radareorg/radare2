@@ -28,7 +28,7 @@ static bool _push_types(RList *type_list, char *fortune_dir) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_push (type_list, r_str_new (file + 9));
+			r_list_push (type_list, strdup (file + 9));
 		}
 	}
 	r_list_free (files);
@@ -102,7 +102,7 @@ static char *getrandomline(RCore *core) {
 		return NULL;
 	}
 	const char *file = (const char *)r_list_get_n (types, r_num_rand (r_list_length (types)));
-	char *type = r_str_new (file);
+	char *type = R_STR_DUP (file);
 	r_list_free (types);
 	if (!type) {
 		return NULL;

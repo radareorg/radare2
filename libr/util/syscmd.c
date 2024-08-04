@@ -483,7 +483,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 			}
 			r_list_foreach (list2, iter2, str2) {
 				if (r_str_startswith (str2, field)) {
-					char *out = r_str_new (field);
+					char *out = strdup (field);
 					char *first = strchr (str1, ' ');
 					char *second = strchr (str2, ' ');
 					out = r_str_append (out, r_str_get_fail (first, " "));

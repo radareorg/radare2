@@ -688,7 +688,7 @@ dotherax:
 	}
 	if (flags->octal2raw) { // -o
 		char *modified_str = (*str == '0')
-			? r_str_new (str)
+			? strdup (str)
 			: r_str_newf ("0%s", str);
 		const char *errstr = NULL;
 		ut64 n = r_num_calc (num, modified_str, &errstr);

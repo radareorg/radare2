@@ -139,13 +139,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return 1;
 		}
-		char *message = r_str_new (opt.argv[opt.ind + 1]);
+		char *message = R_STR_DUP (opt.argv[opt.ind + 1]);
 		if (message) {
 			RList *files = r_list_new();
 			if (files) {
 				size_t i;
 				for (i = 2; i < argc - 1; i++) {
-					char *file = r_str_new(argv[opt.ind + i]);
+					char *file = strdup (argv[opt.ind + i]);
 					if (!file || !r_list_append (files, file)) {
 						free (message);
 						r_list_free (files);

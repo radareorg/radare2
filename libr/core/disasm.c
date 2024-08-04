@@ -1283,7 +1283,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		char **wc_array = r_str_argv (wcdata, &argc);
 		for (i = 0; i < argc; i++) {
 			bgcolor = strchr (wc_array[i], '\x1b');
-			word = r_str_newlen (wc_array[i], bgcolor - wc_array[i]);
+			word = R_STR_NDUP (wc_array[i], bgcolor - wc_array[i]);
 			ds_highlight_word (ds, word, bgcolor);
 		}
 	}
@@ -4856,7 +4856,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, refaddr);
 		if (f) {
 			if (strlen (msg) != 1) {
-				char *msg2 = r_str_new (msg);
+				char *msg2 = strdup (msg);
 				if (msg2) {
 					r_str_filter (msg2, 0);
 					if (!strncmp (msg2, "UH..", 4)) {

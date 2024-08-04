@@ -2163,7 +2163,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
 			r_cons_print (Color_RESET);
 		} else {
-			namestr = r_str_new (r->name);
+			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
 		}
 		ut64 o_offset = core->offset;

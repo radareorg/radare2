@@ -31,7 +31,7 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 				// op @Ri; op Rn
 				disasm = r_str_newf (name, buf[0] & mask);
 			} else {
-				disasm = r_str_new (name);
+				disasm = strdup (name);
 			}
 			break;
 		case 2:

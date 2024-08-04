@@ -23,7 +23,7 @@ static Rvc *open_git(const char *path) {
 	if (!vc) {
 		return NULL;
 	}
-	vc->path = r_str_new (path);
+	vc->path = strdup (path);
 	if (!vc->path) {
 		free (vc);
 		return NULL;
@@ -182,7 +182,7 @@ R_API RList *branches_git(Rvc *rvc) {
 			char *name;
 			r_list_foreach (ret, iter, name) {
 				if (*(char *)iter->data == '*') {
-					iter->data = r_str_new (name + 2);
+					iter->data = strdup (name + 2);
 					free (name);
 				}
 

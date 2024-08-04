@@ -455,7 +455,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				break;
 			}
 			const String *type_ = RVecString_at (&types, pos++);
-			type = type_ ? r_str_new (*type_) : NULL;
+			type = type_ ? R_STR_DUP (*type_) : NULL;
 			DD R_LOG_INFO ("TYPE (%s)", type);
 		} else {
 			type = r_type_func_args_type (TDB, fcn_name, arg_num);

@@ -227,8 +227,8 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	R_RETURN_VAL_IF_FAIL (a && it && k && v, false);
 
 	bool success = true;
-	char *k2 = r_str_new (k);
-	char *v2 = r_str_new (v);
+	char *k2 = strdup (k);
+	char *v2 = strdup (v);
 	if (!k2 || !v2) {
 		success = false;
 		goto out;
@@ -248,7 +248,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	}
 
 	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
-	it->name = r_str_new (r_str_word_get0 (k2, 2));
+	it->name = R_STR_DUP (r_str_word_get0 (k2, 2));
 
 	// remove newline at end
 	char *save_ptr = NULL;
@@ -343,7 +343,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			if (token[0] != 0) {
 				it->hash = R_NEW0 (RSignHash);
 				if (it->hash) {
-					it->hash->bbhash = r_str_new (token);
+					it->hash->bbhash = strdup (token);
 				}
 			}
 			break;

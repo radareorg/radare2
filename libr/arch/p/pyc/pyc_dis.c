@@ -139,14 +139,14 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 			arg = r_str_newf ("'%s'", (char *)t->data);
 			break;
 		default:
-			arg = r_str_new (t->data);
+			arg = R_STR_DUP (t->data);
 		}
 	}
 	if (op->type & HASNAME) {
 		if (names) {
 			t = (pyc_object *)r_list_get_n (names, oparg);
 			if (t) {
-				return r_str_new (t->data);
+				return R_STR_DUP (t->data);
 			}
 		}
 		return NULL;
@@ -167,7 +167,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		if (oparg < 0 || oparg >= CMP_OP_SIZE) {
 			return NULL;
 		}
-		arg = r_str_new (cmp_op[oparg]);
+		arg = strdup (cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {
@@ -184,7 +184,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		if (!t) {
 			return NULL;
 		}
-		arg = r_str_new (t->data);
+		arg = R_STR_DUP (t->data);
 	}
 	if (op->type & (HASVARGS | HASNARGS)) {
 		arg = r_str_newf ("%u", oparg);
