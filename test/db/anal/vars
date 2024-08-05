@@ -592,8 +592,8 @@ EXPECT=<<EOF
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int64_t var_ch @ sp+0xc
 |           0x100003f64      ff4300d1       sub sp, sp, 0x10           ; [00] -r-x section size 68 named 0.__TEXT.__text
-|           0x100003f68      ff0f00b9       str wzr, [sp, 0xc]         ; argc
-|           0x100003f6c      e00b00b9       str w0, [sp, 8]            ; argc
+|           0x100003f68      ff0f00b9       str wzr, [var_ch]          ; argc
+|           0x100003f6c      e00b00b9       str w0, [var_8h]           ; argc
 |           0x100003f70      e10300f9       str x1, [sp]               ; argv
 |           0x100003f74      e80b40b9       ldr w8, [var_8h]
 |           0x100003f78      08090071       subs w8, w8, 2
@@ -602,9 +602,9 @@ EXPECT=<<EOF
 |      ,==< 0x100003f84      01000014       b 0x100003f88
 |      ||   ; CODE XREF from main @ 0x100003f84(x)
 |      `--> 0x100003f88      28008052       mov w8, 1
-|       |   0x100003f8c      e80f00b9       str w8, [sp, 0xc]
+|       |   0x100003f8c      e80f00b9       str w8, [var_ch]
 |      ,==< 0x100003f90      03000014       b 0x100003f9c
-|      |`-> 0x100003f94      ff0f00b9       str wzr, [sp, 0xc]         ; argc
+|      |`-> 0x100003f94      ff0f00b9       str wzr, [var_ch]          ; argc
 |      |,=< 0x100003f98      01000014       b 0x100003f9c
 |      ||   ; CODE XREFS from main @ 0x100003f90(x), 0x100003f98(x)
 |      ``-> 0x100003f9c      e00f40b9       ldr w0, [var_ch]

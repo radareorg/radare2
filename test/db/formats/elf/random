@@ -28,14 +28,14 @@ EXPECT=<<EOF
 |           ; var int64_t var_100h @ sp+0x100
 |           ; var int64_t var_110h @ sp+0x110
 |           0x08000800      ff8304d1       sub sp, sp, 0x120
-|           0x08000804      fd7b10a9       stp x29, x30, [sp, 0x100]
-|           0x08000808      fc8b00f9       str x28, [sp, 0x110]
+|           0x08000804      fd7b10a9       stp x29, x30, [var_100h]
+|           0x08000808      fc8b00f9       str x28, [var_110h]
 |           0x0800080c      fd030491       add x29, sp, 0x100
 |           0x08000810      a92301d1       sub x9, x29, 0x48
-|           0x08000814      e91300f9       str x9, [sp, 0x20]
+|           0x08000814      e91300f9       str x9, [var_20h]
 |           0x08000818      e90308aa       mov x9, x8
 |           0x0800081c      e81340f9       ldr x8, [var_20h]
-|           0x08000820      e21700f9       str x2, [sp, 0x28]          ; arg3
+|           0x08000820      e21700f9       str x2, [var_28h]           ; arg3
 |           0x08000824      002100f9       str x0, [x8, 0x40]          ; arg1
 |           0x08000828      011d00f9       str x1, [x8, 0x38]          ; arg2
 |           0x0800082c      031900f9       str x3, [x8, 0x30]          ; arg4
@@ -108,14 +108,14 @@ EXPECT=<<EOF
 |           ; var int64_t var_100h @ sp+0x100
 |           ; var int64_t var_110h @ sp+0x110
 |           0x00000f94      ff8304d1       sub sp, sp, 0x120
-|           0x00000f98      fd7b10a9       stp x29, x30, [sp, 0x100]
-|           0x00000f9c      fc8b00f9       str x28, [sp, 0x110]
+|           0x00000f98      fd7b10a9       stp x29, x30, [var_100h]
+|           0x00000f9c      fc8b00f9       str x28, [var_110h]
 |           0x00000fa0      fd030491       add x29, sp, 0x100
 |           0x00000fa4      a92301d1       sub x9, x29, 0x48
-|           0x00000fa8      e91300f9       str x9, [sp, 0x20]
+|           0x00000fa8      e91300f9       str x9, [var_20h]
 |           0x00000fac      e90308aa       mov x9, x8
 |           0x00000fb0      e81340f9       ldr x8, [var_20h]
-|           0x00000fb4      e21700f9       str x2, [sp, 0x28]          ; arg3
+|           0x00000fb4      e21700f9       str x2, [var_28h]           ; arg3
 |           0x00000fb8      002100f9       str x0, [x8, 0x40]          ; arg1
 |           0x00000fbc      011d00f9       str x1, [x8, 0x38]          ; arg2
 |           0x00000fc0      031900f9       str x3, [x8, 0x30]          ; arg4
