@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #ifndef R2_PARSE_H
 #define R2_PARSE_H

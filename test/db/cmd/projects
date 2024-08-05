@@ -275,8 +275,8 @@ PS*var~blahblah
 rm .tmp/var
 EOF
 EXPECT=<<EOF
-"afvb 8 ImageHandle blah"
-"afvr edi blahblah typeR"
+'afvb 8 ImageHandle blah
+'afvr edi blahblah typeR
 EOF
 RUN
 

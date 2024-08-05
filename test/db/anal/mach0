@@ -69,7 +69,7 @@ EXPECT=<<EOF
 |           0x100003a90      7f2303d5       pacibsp
 |           0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
 |           0x100003a98      fa6701a9       stp x26, x25, [sp, 0x10]
-|           0x100003a9c      f85f02a9       stp x24, x23, [sp, 0x20]
+|           0x100003a9c      f85f02a9       stp x24, x23, [var_20h]
 EOF
 RUN
 
