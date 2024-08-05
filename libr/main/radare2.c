@@ -1702,8 +1702,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
-				bool isInteractive = r_cons_is_interactive ();
-				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+				const bool isint = r_cons_is_interactive ();
+				if (isint && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					r_core_cmd_file (r, path);
 				}
 			}

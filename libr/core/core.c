@@ -962,7 +962,6 @@ R_API RCore *r_core_new(void) {
 	return c;
 }
 
-/*-----------------------------------*/
 #define radare_argc (sizeof (radare_argv) / sizeof (const char*) - 1)
 #define ms_argc (sizeof (ms_argv) / sizeof (const char*) - 1)
 static const char *ms_argv[] = {
@@ -3172,7 +3171,6 @@ R_API bool r_core_init(RCore *core) {
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
 	core_visual_init (&core->visual);
-
 	core->lastcmd = NULL;
 
 	if (core->print->charset) {
@@ -3489,7 +3487,14 @@ R_API void r_core_free(RCore *c) {
 	}
 }
 
+#if !R2_USE_NEW_ABI
+R_IPI int Gload_index = 0;
+#endif
+
 R_API bool r_core_prompt_loop(RCore *r) {
+#if !R2_USE_NEW_ABI
+	Gload_index = r_cons_singleton()->line->history.index;
+#endif
 	int ret = 0;
 	do {
 		int err = r_core_prompt (r, false);

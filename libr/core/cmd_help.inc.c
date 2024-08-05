@@ -175,10 +175,11 @@ static RCoreHelpMessage help_msg_env = {
 
 static RCoreHelpMessage help_msg_exclamation = {
 	"Usage:", "!<cmd>", "  Run given command as in system(3)",
-	"!", "", "list all historic commands",
+	"!", "", "list all commands in the shell history",
 	"!", "ls", "execute 'ls' in shell",
 	"!*", "r2p x", "run r2 command via r2pipe in current session",
-	"!!", "", "save command history to hist file",
+	"!.", "", "save command history to hist file",
+	"!!", "", "list commands used in current session",
 	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
 	"!!!", "cmd [args|$type]", "adds the autocomplete value",
 	"!!!-", "cmd [args]", "removes the autocomplete value",
