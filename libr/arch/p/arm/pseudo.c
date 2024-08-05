@@ -404,7 +404,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		spargs = p->varlist (f, 's');
 		bool ucase = IS_UPPER (*tstr);
 		RAnalVarField *var;
-		if (strstr (tstr, "[bp")) {
+		bool is64 = f->bits == 64;
+		// NOTE: on arm32 bp is fp
+		if ((is64 && strstr (tstr, "[bp")) || !is64) {
 			r_list_foreach (bpargs, iter, var) {
 				st64 delta = p->get_ptr_at
 					? p->get_ptr_at (f, var->delta, addr)
@@ -430,28 +432,27 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				free (oldstr);
 			}
 		}
-		bool is64 = f->bits == 64;
-		if (!is64 || (is64 && strstr (tstr, "[sp"))) {
+		if ((is64 && strstr (tstr, "[sp")) || !is64) {
 			r_list_foreach (spargs, iter, var) {
-#if 1
-				st64 delta = var->delta;
-				if (!newstack) {
-					delta = p->get_ptr_at
-						? p->get_ptr_at (f, var->delta, addr)
-						: ST64_MAX;
-					if (delta == ST64_MAX && var->field) {
-						delta = var->delta;
-					} else if (delta == ST64_MAX) {
-						delta = -var->delta + 8;
-						continue;
+				st64 delta;
+				if (is64) {
+					const int maxstack = f->maxstack;
+					// st64 delta = -var->delta + 8;
+					delta = maxstack - R_ABS (var->delta);
+				} else {
+					delta = var->delta;
+					if (!newstack) {
+						delta = p->get_ptr_at
+							? p->get_ptr_at (f, var->delta, addr)
+							: ST64_MAX;
+						if (delta == ST64_MAX && var->field) {
+							delta = var->delta;
+						} else if (delta == ST64_MAX) {
+							// delta = -var->delta + 8;
+							continue;
+						}
 					}
 				}
-#else
-			int maxstack = f->maxstack;
-				// 64bit magic
-				st64 delta = -var->delta + 8;
-				st64 delta = maxstack - R_ABS (var->delta);
-#endif
 				const char *reg = NULL;
 				if (p->get_reg_at) {
 					reg = p->get_reg_at (f, delta, addr);
