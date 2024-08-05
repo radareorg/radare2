@@ -296,20 +296,23 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 		}
 		p++;
 	}
-	while (*esilfmt) {
-		char ch = *esilfmt;
-		if (ch == '#') {
-			int n = esilfmt[1] - '0';
-			if (n >= 0 && n < 10) {
-				r_strbuf_appendf (sb, "%s", (const char *)r_list_get_n (args, n));
-				esilfmt += 2;
-				continue;
+	if (args) {
+		while (*esilfmt) {
+			char ch = *esilfmt;
+			if (ch == '#') {
+				int n = esilfmt[1] - '0';
+				if (n >= 0 && n < 10) {
+					const char *argn = (const char *)r_list_get_n (args, n);
+					r_strbuf_appendf (sb, "%s", argn);
+					esilfmt += 2;
+					continue;
+				}
 			}
+			r_strbuf_append_n (sb, &ch, 1);
+			esilfmt++;
 		}
-		r_strbuf_append_n (sb, &ch, 1);
-		esilfmt++;
+		r_list_free (args);
 	}
-	r_list_free (args);
 	char *res = r_strbuf_drain (sb);
 	if (r_str_startswith (res, "DISPOSE,")) {
 		RList *regs = r_str_split_list (res + 8, ",", 0);

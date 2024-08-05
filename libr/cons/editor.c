@@ -99,6 +99,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 			r_list_free (G.lines);
 			G.lines = r_str_split_list (data, "\n", 0);
 		}
+		free (data);
 		if (!G.lines) {
 			R_LOG_ERROR ("Failed to load '%s'", file);
 			R_FREE (G.path);
