@@ -322,7 +322,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	} else {
 		ret = r_core_cmd_file (core, rcpath);
 	}
-	char *prj_path = r_file_dirname(rcpath);
+	char *prj_path = r_file_dirname (rcpath);
 	if (prj_path) {
 		//check if the project uses git
 		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
@@ -758,7 +758,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (r_config_get_b (core->config, "prj.history")) {
 		char *history = r_core_cmd_str (core, "!!");
 		char *file = r_file_new (prj_dir, "history");
-		r_file_dump (file, history, -1);
+		r_file_dump (file, (const ut8*)history, -1, false);
 		free (history);
 	}
 	if (r_config_get_b (core->config, "prj.zip")) {
