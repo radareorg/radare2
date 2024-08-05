@@ -119,7 +119,6 @@ int entry0 (int stack, int stack) {
         if  (var > 0) goto loc_0x402018 // unlikely
         goto loc_0x00402042;
         goto loc_0x00402042;
-        }
         return eax;
     loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
@@ -136,7 +135,6 @@ int entry0 (int stack, int stack) {
         dword [MessageBoxA]  () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
         push  (0)
         dword [ExitProcess]  () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
-        }
         return eax;
 }
 
@@ -169,7 +167,6 @@ int sym.func.100003a54 (int x0, int x1) {
         x1 = x0 + 0x68 // arg1
         x0 = x8
         goto sym.imp.strcoll // int strcoll("", "")
-        }
         return x0;
     loc_0x100003a6c: // orphan
          w0 = 1
