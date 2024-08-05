@@ -2129,6 +2129,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_STP: // stp x6, x7, [x6,0xf90]
 	{
 		int disp = (int)MEMDISP64 (2);
+		op->disp = disp;
 		char sign = (disp >= 0)?'+':'-';
 		st64 abs = (disp >= 0)? MEMDISP64 (2): -(st64)MEMDISP64 (2);
 		int size = REGSIZE64 (0);

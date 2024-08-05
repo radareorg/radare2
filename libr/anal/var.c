@@ -827,7 +827,7 @@ R_API int r_anal_var_count_args(RAnalFunction *fcn) {
 
 R_API int r_anal_var_count_locals(RAnalFunction *fcn) {
 	// if it's not an arg then it's local
-	int args = r_anal_var_count_args (fcn);
+	const int args = r_anal_var_count_args (fcn);
 	return r_anal_var_count_all (fcn) - args;
 }
 
@@ -1602,13 +1602,13 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					R_LOG_ERROR ("Register not found");
 					break;
 				}
-				anal->cb_printf ("\"afv%c %s %s %s\"\n",
+				anal->cb_printf ("'afv%c %s %s %s\n",
 					kind, i->name, var->name, var->type);
 			} else {
 				int delta = kind == R_ANAL_VAR_KIND_BPV
 					? var->delta + fcn->bp_off
 					: var->delta;
-				anal->cb_printf ("\"afv%c %d %s %s\"\n",
+				anal->cb_printf ("'afv%c %d %s %s\n",
 					kind, delta, var->name, var->type);
 			}
 			break;
