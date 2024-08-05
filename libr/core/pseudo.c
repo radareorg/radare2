@@ -484,13 +484,15 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				nindent = 1;
-#if 1
+#if 0
 				int i;
 				for (i = indent; i != nindent && i > 0; i--) {
 					NEWLINE (bb->addr, i);
-					PRINTF ("}");
+				//	PRINTF ("}");
 					closed = true;
 				}
+#else
+				closed = true;
 #endif
 				if (closed) {
 					NEWLINE (bb->addr, indent);
