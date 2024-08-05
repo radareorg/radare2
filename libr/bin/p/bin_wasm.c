@@ -51,7 +51,7 @@ static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
+	R_RETURN_VAL_IF_FAIL (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
 	if (check (bf, buf)) {
 		bf->bo->bin_obj = r_bin_wasm_init (bf, buf);
@@ -73,7 +73,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = (RBinWasmObj *)bf->bo->bin_obj;
 	// TODO
 	ut64 addr = (ut64)r_bin_wasm_get_entrypoint (bin);
@@ -311,7 +311,7 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
@@ -342,7 +342,7 @@ bad_alloc:
 }
 
 static RList *get_imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {

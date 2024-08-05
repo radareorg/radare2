@@ -17,7 +17,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	r_return_val_if_fail (bf && b, false);
+	R_RETURN_VAL_IF_FAIL (bf && b, false);
 	ut64 sz = r_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
 		return false;
@@ -117,7 +117,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

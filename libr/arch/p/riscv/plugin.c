@@ -992,7 +992,7 @@ static int info(RArchSession *s, ut32 q) {
 }
 
 static bool _init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -1003,7 +1003,7 @@ static bool _init(RArchSession *as) {
 }
 
 static bool _fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

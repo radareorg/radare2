@@ -306,7 +306,7 @@ static void addEntry(LuaFunction *func, ParseStruct *parseStruct){
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	if (bf->size < 20) {
 		return NULL;
 	}

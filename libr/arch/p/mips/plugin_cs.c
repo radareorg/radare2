@@ -811,7 +811,7 @@ typedef struct plugin_data_t {
 
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
@@ -837,7 +837,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	R_FREE (pd->cpu);
 	cs_close (&pd->cpd.cs_handle);
@@ -846,7 +846,7 @@ static bool fini(RArchSession *as) {
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -1359,7 +1359,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }

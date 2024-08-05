@@ -6,7 +6,7 @@
 #define USE_TRI 1
 
 R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
-	r_return_val_if_fail (code, NULL);
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMetaItem *mi = r_codemeta_item_new ();
 	if (!mi) {
 		return NULL;
@@ -81,12 +81,12 @@ R_API void r_codemeta_item_fini(RCodeMetaItem *mi) {
 }
 
 R_API bool r_codemeta_item_is_reference(RCodeMetaItem *mi) {
-	r_return_val_if_fail (mi, false);
+	R_RETURN_VAL_IF_FAIL (mi, false);
 	return (mi->type == R_CODEMETA_TYPE_GLOBAL_VARIABLE || mi->type == R_CODEMETA_TYPE_CONSTANT_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_NAME);
 }
 
 R_API bool r_codemeta_item_is_variable(RCodeMetaItem *mi) {
-	r_return_val_if_fail (mi, false);
+	R_RETURN_VAL_IF_FAIL (mi, false);
 	return (mi->type == R_CODEMETA_TYPE_LOCAL_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_PARAMETER);
 }
 
@@ -166,7 +166,7 @@ R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
 }
 
 R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
-	r_return_val_if_fail (code, NULL);
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RPVector *r = r_pvector_new (NULL);
 	if (!r) {
 		return NULL;
@@ -216,7 +216,7 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 }
 
 R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
-	r_return_val_if_fail (code, NULL);
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RVector *r = r_vector_new (sizeof (ut64), NULL, NULL);
 	if (!r) {
 		return NULL;

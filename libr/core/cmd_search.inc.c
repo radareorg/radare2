@@ -609,7 +609,7 @@ static char *getstring(char *b, int l) {
 }
 
 static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
-	r_return_val_if_fail (kw && user, -1);
+	R_RETURN_VAL_IF_FAIL (kw && user, -1);
 	struct search_parameters *param = user;
 	RCore *core = param->core;
 	ut64 base_addr = 0;
@@ -796,7 +796,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 // TODO(maskray) returns RList<RInterval>
 // XXX perm parameter is unused
 R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const char *mode, const char *prefix) {
-	r_return_val_if_fail (core, NULL);
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
 	if (!list) {

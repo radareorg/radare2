@@ -78,7 +78,7 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 		ra->cache_addr = addr;
 	}
 	int delta = addr - ra->cache_addr;
-	r_return_val_if_fail (delta >= 0, -1);
+	R_RETURN_VAL_IF_FAIL (delta >= 0, -1);
 	size_t length = sizeof (ra->cache) - delta;
 	memcpy (buf, ra->cache + delta, R_MIN (len, length));
 	return len;
@@ -89,7 +89,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 
-	r_return_val_if_fail (fcn, false);
+	R_RETURN_VAL_IF_FAIL (fcn, false);
 
 	if (newsize < 1) {
 		return false;
@@ -174,7 +174,7 @@ static bool is_symbol_flag(const char *name) {
 }
 
 static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
-	r_return_val_if_fail (anal && op && anal->flb.get_at, false);
+	R_RETURN_VAL_IF_FAIL (anal && op && anal->flb.get_at, false);
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && is_symbol_flag (fi->name));
 }
@@ -294,7 +294,7 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
-	r_return_val_if_fail (fcn && fcn->bbs, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs, UT64_MAX);
 	RListIter *iter;
 	RAnalBlock *tmp_bb;
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
@@ -313,7 +313,7 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 }
 
 static inline bool regs_exist(RAnalValue *src, RAnalValue *dst) {
-	r_return_val_if_fail (src && dst, false);
+	R_RETURN_VAL_IF_FAIL (src && dst, false);
 	return src->reg && dst->reg;
 }
 
@@ -1642,12 +1642,12 @@ beach:
 }
 
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
-	r_return_val_if_fail (anal && fcn, -1);
+	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
 	return fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
 }
 
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
-	r_return_val_if_fail (anal && buf, false);
+	R_RETURN_VAL_IF_FAIL (anal && buf, false);
 	RAnalOp op = {
 		0
 	};
@@ -1736,7 +1736,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	r_return_val_if_fail (anal && fcn, 0);
+	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
 	RPVector *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
 	if (metas) {
 		void **it;
@@ -1956,7 +1956,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	if (result < 1 && (!anal || anal->verbose)) {
 		R_LOG_WARN ("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x, E, N, P, fcn->addr);
 	}
-	// r_return_val_if_fail (result > 0, 0);
+	// R_RETURN_VAL_IF_FAIL (result > 0, 0);
 	return result;
 }
 
@@ -2124,7 +2124,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
-	r_return_val_if_fail (a || f || sig, false);
+	R_RETURN_VAL_IF_FAIL (a || f || sig, false);
 	char *error_msg = NULL;
 	const char *out = r_anal_cparse (a, sig, &error_msg);
 	if (out) {
@@ -2166,7 +2166,7 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	r_return_val_if_fail (anal && fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
@@ -2186,7 +2186,7 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 }
 
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	r_return_val_if_fail (fcn && addr != UT64_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn && addr != UT64_MAX, NULL);
 	RAnalBlock *b = r_anal_get_block_at (anal, addr);
 	if (b) {
 		return b;
@@ -2236,7 +2236,7 @@ R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 }
 
 R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs) {
-	r_return_val_if_fail (fcn, 0);
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	RListIter *iter;
 	RAnalBlock *bb;
 	int edges = 0;

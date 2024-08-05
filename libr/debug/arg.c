@@ -3,7 +3,7 @@
 #include <r_debug.h>
 
 R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num) {
-	r_return_val_if_fail (dbg, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (dbg, UT64_MAX);
 	if (!cc) {
 		cc = r_anal_syscc_default (dbg->anal);
 	}
@@ -39,7 +39,7 @@ R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num) {
 }
 
 R_API bool r_debug_arg_set(RDebug *dbg, const char *cc, int num, ut64 val) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	if (!R_STR_ISEMPTY (cc)) {
 		cc = r_anal_syscc_default (dbg->anal);
 	}

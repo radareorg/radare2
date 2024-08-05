@@ -443,7 +443,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 
 // TODO: R2_600 deprecate this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	r_return_val_if_fail (core && buf && addr != UT64_MAX, false);
+	R_RETURN_VAL_IF_FAIL (core && buf && addr != UT64_MAX, false);
 	if (size < 1) {
 		return false;
 	}
@@ -471,7 +471,7 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 }
 
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
-	r_return_val_if_fail (core && core->io, false);
+	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	if (!core->io->desc || size < 1 || addr == UT64_MAX) {
 		return false;
 	}

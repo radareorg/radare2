@@ -304,7 +304,7 @@ R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
-	r_return_val_if_fail (bytes && output && outlen > 0, -1);
+	R_RETURN_VAL_IF_FAIL (bytes && output && outlen > 0, -1);
 	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
 	if (len > 0) {
 		return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);

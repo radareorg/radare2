@@ -378,7 +378,7 @@ static void _dfs_ins_edge(const RGraphEdge *e, RGraphVisitor *vi) {
 }
 
 R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
-	r_return_val_if_fail (graph && root, NULL);
+	R_RETURN_VAL_IF_FAIL (graph && root, NULL);
 	RGraph *g = r_graph_new ();
 	if (!g) {
 		return NULL;
@@ -465,7 +465,7 @@ static void _invert_edges (RGraph *g) {
 }
 
 R_API RGraph *r_graph_pdom_tree(RGraph *graph, RGraphNode *root) {
-	r_return_val_if_fail (graph && root, NULL);
+	R_RETURN_VAL_IF_FAIL (graph && root, NULL);
 	_invert_edges (graph);
 	RGraph *g = r_graph_dom_tree (graph, root);
 	_invert_edges (graph);

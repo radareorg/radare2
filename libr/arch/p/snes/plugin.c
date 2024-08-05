@@ -13,7 +13,7 @@ struct snes_asm_flags {
 };
 
 static bool snes_init(RArchSession *s) {
-	r_return_val_if_fail (s && !s->data, false);
+	R_RETURN_VAL_IF_FAIL (s && !s->data, false);
 	s->data = R_NEW0 (struct snes_asm_flags);
 	return s->data? true: false;
 }

@@ -4,7 +4,7 @@
 #include "dmp/dmp64.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
@@ -110,7 +110,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 	struct r_bin_dmp64_obj_t *res = r_bin_dmp64_new_buf (buf);
 	if (res) {
 		sdb_ns_set (bf->sdb, "info", res->kv);

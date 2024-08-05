@@ -21,19 +21,19 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static inline csh *cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	PluginData *pd = (PluginData*) as->data;
 	return &(pd->cs_handle);
 }
 
 static inline HtUU *ht_itblock_for_session (RArchSession *as) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	PluginData *pd = (PluginData*) as->data;
 	return pd->ht_itblock;
 }
 
 static inline HtUU *ht_it_for_session (RArchSession *as) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	PluginData *pd = (PluginData*) as->data;
 	return pd->ht_it;
 }
@@ -864,7 +864,7 @@ static const char *decode_shift_64(arm64_shifter shift) {
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
 
 static unsigned int regsize32(cs_insn *insn, int n) {
-	r_return_val_if_fail(n >= 0 && n < insn->detail->arm.op_count, 0);
+	R_RETURN_VAL_IF_FAIL (n >= 0 && n < insn->detail->arm.op_count, 0);
 	unsigned int reg = insn->detail->arm.operands[n].reg;
 	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
 		return 8;
@@ -4858,7 +4858,7 @@ static inline bool cs_init(RArchSession *as, csh *cs_handle) {
 }
 
 static bool init(RArchSession* as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -4895,7 +4895,7 @@ static bool init(RArchSession* as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 
 	PluginData *pd = (PluginData*) as->data;
 	ht_uu_free (pd->ht_itblock);

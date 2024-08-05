@@ -22,7 +22,7 @@ static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
 #define R_SANDBOX_GUARD(x,y) if (G_enabled && !(G_graintype & (x))) { return (y); }
 
 static bool inHomeWww(const char *path) {
-	r_return_val_if_fail (path, false);
+	R_RETURN_VAL_IF_FAIL (path, false);
 	bool ret = false;
 	char *homeWww = r_xdg_datadir ("www");
 	if (homeWww) {
@@ -41,7 +41,7 @@ static bool inHomeWww(const char *path) {
  * path are ok.
  */
 R_API bool r_sandbox_check_path(const char *path) {
-	r_return_val_if_fail (path, false);
+	R_RETURN_VAL_IF_FAIL (path, false);
 	size_t root_len;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
@@ -220,7 +220,7 @@ R_API bool r_sandbox_enable(bool e) {
 }
 
 R_API int r_sandbox_system(const char *x, int n) {
-	r_return_val_if_fail (x, -1);
+	R_RETURN_VAL_IF_FAIL (x, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);
 	if (G_enabled) {
 		eprintf ("sandbox: system call disabled\n");
@@ -363,7 +363,7 @@ R_API int r_sandbox_close(int fd) {
 
 /* perm <-> mode */
 R_API int r_sandbox_open(const char *path, int perm, int mode) {
-	r_return_val_if_fail (path, -1);
+	R_RETURN_VAL_IF_FAIL (path, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
 	char *epath = expand_home (path);
 	int ret = -1;
@@ -443,7 +443,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 }
 
 R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
-	r_return_val_if_fail (path && mode, NULL);
+	R_RETURN_VAL_IF_FAIL (path && mode, NULL);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
@@ -480,7 +480,7 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 }
 
 R_API int r_sandbox_chdir(const char *path) {
-	r_return_val_if_fail (path, -1);
+	R_RETURN_VAL_IF_FAIL (path, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, -1);
 	if (G_enabled) {
 		// TODO: check path
@@ -496,7 +496,7 @@ R_API int r_sandbox_chdir(const char *path) {
 }
 
 R_API int r_sandbox_kill(int pid, int sig) {
-	r_return_val_if_fail (pid != -1, -1);
+	R_RETURN_VAL_IF_FAIL (pid != -1, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (G_enabled) {
@@ -509,7 +509,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 }
 #if R2__WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
-	r_return_val_if_fail (path, NULL);
+	R_RETURN_VAL_IF_FAIL (path, NULL);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
@@ -527,7 +527,7 @@ R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 }
 #else
 R_API DIR* r_sandbox_opendir(const char *path) {
-	r_return_val_if_fail (path, NULL);
+	R_RETURN_VAL_IF_FAIL (path, NULL);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {

@@ -1295,7 +1295,7 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
 /* This is the basic operation analysis. Just initialize and jump to
  * routines defined in first_nibble_decode table */
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 	RArch *a = s->arch;
 	if (op->size < 2) {
 		return false;

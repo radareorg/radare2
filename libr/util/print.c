@@ -410,7 +410,7 @@ R_API bool r_print_have_cursor(RPrint *p, int cur, int len) {
 }
 
 R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	if (!p->cur_enabled) {
 		return false;
 	}
@@ -515,7 +515,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 }
 
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
-	r_return_val_if_fail (p && str, NULL);
+	R_RETURN_VAL_IF_FAIL (p && str, NULL);
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *) calloc ((strlen (str) + 2), 32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;

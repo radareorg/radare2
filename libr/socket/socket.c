@@ -253,7 +253,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 }
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 #if R2__WINDOWS__
 #define gai_strerror gai_strerrorA
 	WSADATA wsadata;

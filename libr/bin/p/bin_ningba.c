@@ -9,7 +9,7 @@
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 lict[156];
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
 	return !memcmp (lict, lic_gba, 156);
 }

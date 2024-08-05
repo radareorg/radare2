@@ -37,7 +37,7 @@ R_API void r_esil_plugins_fini(REsil *esil) {
 }
 
 R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
-	r_return_val_if_fail (esil && esil->plugins && plugin, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->plugins && plugin, false);
 	r_list_append (esil->plugins, plugin);
 	return true;
 }
@@ -57,7 +57,7 @@ R_API void r_esil_plugin_del(REsil *esil, const char *name) {
 
 //this crap solely exists for trash generics in core
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
-	r_return_val_if_fail (esil && esil->plugins && plugin && plugin->meta.name, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->plugins && plugin && plugin->meta.name, false);
 	RListIter *iter;
 	REsilPlugin *ep;
 	r_list_foreach (esil->plugins, iter, ep) {
@@ -81,7 +81,7 @@ static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
 }
 
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
-	r_return_val_if_fail (esil && esil->plugins &&
+	R_RETURN_VAL_IF_FAIL (esil && esil->plugins &&
 				esil->active_plugins && name, false);
 	// check if plugin is already activated
 	if (_get_active_plugin (esil, name)) {

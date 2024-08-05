@@ -82,7 +82,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 }
 
 R_API bool r_th_lock_wait(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_wait");
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
@@ -94,7 +94,7 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 	if (!thl) {
 		return false;
 	}
-//	r_return_val_if_fail (thl, false);
+//	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_enter");
 
 	// initialize static locks on acquisition
@@ -119,7 +119,7 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 #endif
 }
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_tryenter");
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
@@ -134,7 +134,7 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 	if (!thl) {
 		return false;
 	}
-	//r_return_val_if_fail (thl, false);
+	//R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;

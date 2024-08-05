@@ -13,7 +13,7 @@ typedef struct Filetable {
 } filetable;
 
 static RArFp *arfp_new(RBuffer *b, ut32 *refcount) {
-	r_return_val_if_fail (b, NULL);
+	R_RETURN_VAL_IF_FAIL (b, NULL);
 	RArFp *f = R_NEW (RArFp);
 	if (f) {
 		if (refcount) {
@@ -77,7 +77,7 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 
 /* -1 error, 0 continue, 1 finished */
 static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
-	r_return_val_if_fail (arf && arf->buf && tbl, -1);
+	R_RETURN_VAL_IF_FAIL (arf && arf->buf && tbl, -1);
 	RBuffer *b = arf->buf;
 
 	ut64 h_off = r_buf_tell (b);
@@ -291,7 +291,7 @@ R_API RList *ar_open_all(const char *arname) {
  * >0 if it's done.
  */
 R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
-	r_return_val_if_fail (arname, -1);
+	R_RETURN_VAL_IF_FAIL (arname, -1);
 	RBuffer *b = r_buf_new_file (arname, O_RDWR, 0);
 	if (!b) {
 		r_sys_perror (__FUNCTION__);

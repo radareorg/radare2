@@ -22,7 +22,7 @@ typedef struct sbl_header {
 static R_TH_LOCAL SblHeader sb = {0};
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 bufsz = r_buf_size (b);
 	if (sizeof (SblHeader) < bufsz) {
 		int ret = r_buf_fread_at (b, 0, (ut8*)&sb, "10i", 1);

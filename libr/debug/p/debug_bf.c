@@ -64,7 +64,7 @@ static bool r_debug_bf_step(RDebug *dbg) {
 }
 
 static bool r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	r_return_val_if_fail (dbg && buf && size > 0, -1);
+	R_RETURN_VAL_IF_FAIL (dbg && buf && size > 0, -1);
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
@@ -90,7 +90,7 @@ static bool r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static bool r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	if (!is_io_bf (dbg)) {
 		return 0;
 	}
@@ -210,14 +210,14 @@ static bool r_debug_bf_stop(RDebug *dbg) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	ds->plugin_data = R_NEW0 (PluginData);
 	return !!ds->plugin_data;
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	if (!ds->plugin_data) {
 		return false;

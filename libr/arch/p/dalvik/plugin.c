@@ -789,7 +789,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *data = op->bytes;
 	const int len = op->size;
-	r_return_val_if_fail (as && op && data && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL (as && op && data && len > 0, -1);
 
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz > len) {

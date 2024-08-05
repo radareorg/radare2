@@ -1383,7 +1383,7 @@ static char *regs(RArchSession* as) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -1400,7 +1400,7 @@ static bool init(RArchSession *s) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	R_FREE (s->data);
 	return true;
 }

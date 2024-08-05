@@ -3,7 +3,7 @@
 #include "r_config.h"
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	r_return_val_if_fail (name && *name && value, NULL);
+	R_RETURN_VAL_IF_FAIL (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
 	if (R_LIKELY (node)) {
 		node->name = strdup (name);
@@ -37,7 +37,7 @@ R_API void r_config_node_add_option(RConfigNode *node, const char *option) {
 }
 
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
-	r_return_val_if_fail (n, NULL);
+	R_RETURN_VAL_IF_FAIL (n, NULL);
 	RConfigNode *cn = R_NEW0 (RConfigNode);
 	if (R_LIKELY (cn)) {
 		cn->name = strdup (n->name);
@@ -317,12 +317,12 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	r_return_val_if_fail (cfg && name, NULL);
+	R_RETURN_VAL_IF_FAIL (cfg && name, NULL);
 	return ht_pp_find (cfg->ht, name, NULL);
 }
 
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
-	r_return_val_if_fail (cfg && name, NULL);
+	R_RETURN_VAL_IF_FAIL (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) {
@@ -360,7 +360,7 @@ R_API bool r_config_get_b(RConfig *cfg, const char *name) {
 }
 
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
-	r_return_val_if_fail (cfg, 0ULL);
+	R_RETURN_VAL_IF_FAIL (cfg, 0ULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) {
@@ -381,7 +381,7 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 }
 
 R_API const char* r_config_node_type(RConfigNode *node) {
-	r_return_val_if_fail (node, "");
+	R_RETURN_VAL_IF_FAIL (node, "");
 
 	if (r_config_node_is_bool (node)) {
 		return "bool";
@@ -434,8 +434,8 @@ static inline bool is_true_or_false(const char *s) {
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
 	char *ov = NULL;
 	ut64 oi;
-	r_return_val_if_fail (cfg && cfg->ht, NULL);
-	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
+	R_RETURN_VAL_IF_FAIL (cfg && cfg->ht, NULL);
+	R_RETURN_VAL_IF_FAIL (!IS_NULLSTR (name), NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (r_config_node_is_ro (node)) {
@@ -529,7 +529,7 @@ R_API RConfigNode *r_config_desc(RConfig *cfg, const char *name, const char *des
 }
 
 R_API RConfigNode* r_config_node_desc(RConfigNode *node, const char *desc) {
-	r_return_val_if_fail (node, NULL);
+	R_RETURN_VAL_IF_FAIL (node, NULL);
 	if (desc) {
 		free (node->desc);
 		node->desc = strdup (desc);
@@ -569,7 +569,7 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 			}
 		}
 		R_LOG_WARN ("This node is not boolean");
-		r_return_val_if_fail (false, NULL);
+		R_RETURN_VAL_IF_FAIL (false, NULL);
 		// return NULL;
 	}
 	node = r_config_node_new (name, r_str_bool (b));
@@ -587,7 +587,7 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 
 R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
-	r_return_val_if_fail (cfg && name, NULL);
+	R_RETURN_VAL_IF_FAIL (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	R_DIRTY (cfg);
 	if (node) {
@@ -664,7 +664,7 @@ static void eval_config_string(RConfig *cfg, char *name) {
 }
 
 R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
-	r_return_val_if_fail (cfg && str, false);
+	R_RETURN_VAL_IF_FAIL (cfg && str, false);
 
 	char *s = r_str_trim_dup (str);
 
@@ -791,7 +791,7 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 }
 
 R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
-	r_return_val_if_fail (config && db, false);
+	R_RETURN_VAL_IF_FAIL (config && db, false);
 	*err = NULL;
 	sdb_foreach (db, load_config_cb, config);
 	return *err == NULL;

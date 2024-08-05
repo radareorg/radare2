@@ -156,7 +156,7 @@ static bool is_segment_heap(HANDLE h_proc, PVOID heapBase) {
 
 // These functions are basically Heap32First and Heap32Next but faster
 static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
-	r_return_val_if_fail (heapInfo && hb, false);
+	R_RETURN_VAL_IF_FAIL (heapInfo && hb, false);
 	PHeapBlockBasicInfo block;
 
 	hb->index = 0;
@@ -196,7 +196,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 }
 
 static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
-	r_return_val_if_fail (heapInfo && hb, false);
+	R_RETURN_VAL_IF_FAIL (heapInfo && hb, false);
 	PHeapBlockBasicInfo block;
 
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
@@ -331,7 +331,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 }
 
 static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
-	r_return_val_if_fail (dbg, 0);
+	R_RETURN_VAL_IF_FAIL (dbg, 0);
 	WPARAM lfhKeyLocation;
 
 	if (!GetHeapGlobalsOffset (dbg, h_proc)) {
@@ -354,7 +354,7 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 }
 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
-	r_return_val_if_fail (heap && entry, false);
+	R_RETURN_VAL_IF_FAIL (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
@@ -368,7 +368,7 @@ static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 }
 
 static bool DecodeLFHEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
-	r_return_val_if_fail (heap && entry, false);
+	R_RETURN_VAL_IF_FAIL (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
@@ -579,7 +579,7 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 }
 
 static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHeapBlockBasicInfo *blocks, ut64 *count, SIZE_T *allocated) {
-	r_return_val_if_fail (h_proc && blocks && count && allocated, false);
+	R_RETURN_VAL_IF_FAIL (h_proc && blocks && count && allocated, false);
 	WPARAM bytesRead;
 	SEGMENT_HEAP segheapHeader;
 	ReadProcessMemory (h_proc, heapBase, &segheapHeader, sizeof (SEGMENT_HEAP), &bytesRead);

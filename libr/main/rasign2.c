@@ -152,7 +152,7 @@ static int signs_from_file(const char *fname, RasignOptions *conf) {
 }
 
 static RList *get_ar_file_uris(const char *fname) {
-	r_return_val_if_fail (fname, NULL);
+	R_RETURN_VAL_IF_FAIL (fname, NULL);
 	RIO *io = r_io_new ();
 	// core is only used to to list uri's in archive, then it's free'd
 	if (!io) {

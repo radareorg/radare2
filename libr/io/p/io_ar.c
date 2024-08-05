@@ -18,7 +18,7 @@ static const char *r_io_get_individual_schema(const char *file) {
 }
 
 static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
-	r_return_val_if_fail (io && file, false);
+	R_RETURN_VAL_IF_FAIL (io && file, false);
 	if (many) {
 		return (r_io_get_individual_schema (file));
 	}
@@ -33,7 +33,7 @@ static bool r_io_ar_close(RIODesc *fd) {
 }
 
 static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
-	r_return_val_if_fail (r_io_ar_plugin_open (io, file, false), NULL);
+	R_RETURN_VAL_IF_FAIL (r_io_ar_plugin_open (io, file, false), NULL);
 	char *uri = strdup (file);
 	if (!uri) {
 		return NULL;
@@ -89,7 +89,7 @@ static int __io_ar_list(RArFp *arf, void *user) {
 }
 
 static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
-	r_return_val_if_fail (io && file, NULL);
+	R_RETURN_VAL_IF_FAIL (io && file, NULL);
 	ar_many_data data;
 	if ((data.schema = r_io_get_individual_schema (file)) == NULL) {
 		r_warn_if_reached ();
@@ -108,7 +108,7 @@ static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
 }
 
 static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	r_return_val_if_fail (io && fd && fd->data, -1);
+	R_RETURN_VAL_IF_FAIL (io && fd && fd->data, -1);
 
 	RArFp *arf = (RArFp *) fd->data;
 	ut64 size = arf->end - arf->start;

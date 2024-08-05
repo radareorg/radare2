@@ -145,7 +145,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
-	r_return_val_if_fail (reg && str, false);
+	R_RETURN_VAL_IF_FAIL (reg && str, false);
 //	eprintf ("@SET PROFIL strin%c", 10);
 //	r_sys_backtrace ();
 	char *tok[PARSER_MAX_TOKENS];
@@ -313,7 +313,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 // read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	// eprintf ("@SET PROFIL%c", 10);
-	r_return_val_if_fail (reg && profile, false);
+	R_RETURN_VAL_IF_FAIL (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		char *base = r_sys_getenv (R_LIB_ENV);
@@ -333,7 +333,7 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 }
 
 static char *gdb_to_r2_profile(const char *gdb) {
-	r_return_val_if_fail (gdb, NULL);
+	R_RETURN_VAL_IF_FAIL (gdb, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
 		return NULL;

@@ -335,7 +335,7 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 }
 
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	RDebugMap *map, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (dbg->maps, iter, map) {

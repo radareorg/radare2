@@ -11,7 +11,7 @@
 static RBinInfo* info(RBinFile *bf);
 
 static RList *maps(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	return Elf_(get_maps)(bf->bo->bin_obj);
 }
 
@@ -116,7 +116,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 
 #if R2_590
 static bool sections_vec(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, false);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	ELFOBJ *eo = bf->bo->bin_obj
 	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
 }
@@ -149,7 +149,7 @@ static RList* sections(RBinFile *bf) {
 #endif
 
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
@@ -245,7 +245,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList* entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
@@ -354,7 +354,7 @@ static RList* entries(RBinFile *bf) {
 // fill bf->bo->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
 // thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 
 	ELFOBJ *eo = bf->bo->bin_obj;
 	// traverse symbols
@@ -415,7 +415,7 @@ static bool symbols_vec(RBinFile *bf) {
 }
 
 static RList* imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
@@ -446,7 +446,7 @@ static RList* imports(RBinFile *bf) {
 }
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -465,7 +465,7 @@ static RList* libs(RBinFile *bf) {
 }
 
 static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
-	r_return_val_if_fail (eo && rel, NULL);
+	R_RETURN_VAL_IF_FAIL (eo && rel, NULL);
 	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
@@ -715,7 +715,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 }
 
 static RList* relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = NULL;
 	ELFOBJ *eo = bf->bo->bin_obj;
 	if (!(ret = r_list_newf (free))) {
@@ -975,7 +975,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 }
 
 static RList* patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinReloc *ptr = NULL;
 	RBin *b = bf->rbin;
 	RIO *io = b->iob.io;

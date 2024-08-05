@@ -23,7 +23,7 @@ R_API RGraphNodeInfo *r_graph_create_node_info(const char *title, const char *bo
 }
 
 R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const char *body, ut64 offset) {
-	r_return_val_if_fail (graph, NULL);
+	R_RETURN_VAL_IF_FAIL (graph, NULL);
 	RGraphNodeInfo *data = r_graph_create_node_info (title, body, offset);
 	if (!data) {
 		return NULL;

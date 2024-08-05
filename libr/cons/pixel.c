@@ -30,7 +30,7 @@ R_API void r_cons_pixel_free(RConsPixel *p) {
 }
 
 R_API ut8 r_cons_pixel_get(RConsPixel *p, int x, int y) {
-	r_return_val_if_fail (p, 0);
+	R_RETURN_VAL_IF_FAIL (p, 0);
 	if (x < 0 || x >= p->w) {
 		return 0;
 	}
@@ -100,7 +100,7 @@ R_API void r_cons_pixel_fill(RConsPixel *p, int _x, int _y, int w, int h, int v)
 }
 
 R_API char *r_cons_pixel_drain(RConsPixel *p) {
-	r_return_val_if_fail (p, NULL);
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	char *s = r_cons_pixel_tostring (p);
 	r_cons_pixel_free (p);
 	return s;
@@ -124,7 +124,7 @@ static int pixel_get(RConsPixel *p, int x, int y) {
 }
 
 R_API char *r_cons_pixel_tostring(RConsPixel *p) {
-	r_return_val_if_fail (p, NULL);
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new (NULL);
 	size_t x, y;
 	for (y = 0; y < p->h; y += 4) {

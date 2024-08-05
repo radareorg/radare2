@@ -1941,7 +1941,7 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 }
 
 static bool esil_avr_init(RArchSession *as, REsil *esil) {
-	r_return_val_if_fail (as && as->data && esil, false);
+	R_RETURN_VAL_IF_FAIL (as && as->data && esil, false);
 
 	PluginData *pd = as->data;
 	pd->desctx.round = 0;
@@ -2382,7 +2382,7 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -2393,7 +2393,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

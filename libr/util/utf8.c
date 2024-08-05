@@ -669,7 +669,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 	if (!cstring || len < -1) {
 		return NULL;
 	}
-	// r_return_val_if_fail (cstring && len >= -1, NULL);
+	// R_RETURN_VAL_IF_FAIL (cstring && len >= -1, NULL);
 
 	if (len == -1) {
 		len = strlen (cstring);
@@ -721,7 +721,7 @@ R_API char *r_utf8_to_acp_l(const char *str, int len) {
 
 R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	// there are some asserts that are boring to debug, make the precondition at runtime
-	// r_return_val_if_fail (str && len >= -1, NULL);
+	// R_RETURN_VAL_IF_FAIL (str && len >= -1, NULL);
 	if (!str || len < -1) {
 		return NULL;
 	}

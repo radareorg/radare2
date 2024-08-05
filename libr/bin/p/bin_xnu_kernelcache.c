@@ -2044,7 +2044,7 @@ static void swizzle_io_read(RKernelCacheObj *obj, RIO *io) {
 }
 
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	r_return_val_if_fail (io, -1);
+	R_RETURN_VAL_IF_FAIL (io, -1);
 	RCore *core = (RCore*) io->coreb.core;
 
 	if (!fd || !core || !core->bin || !core->bin->binfiles) {

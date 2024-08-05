@@ -9,7 +9,7 @@
 #define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
-	r_return_val_if_fail (anal && var, false);
+	R_RETURN_VAL_IF_FAIL (anal && var, false);
 	char *fmt = r_type_format (anal->sdb_types, var->type);
 	RRegItem *ri;
 	if (!fmt) {
@@ -68,7 +68,7 @@ static const char * const __int_type_from_size(int size) {
 }
 
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
-	r_return_val_if_fail (a && fcn, false);
+	R_RETURN_VAL_IF_FAIL (a && fcn, false);
 	RListIter *it;
 	RAnalVar *var;
 	RList *var_list = r_anal_var_all_list (a, fcn);
@@ -130,7 +130,7 @@ static inline bool valid_var_kind(char kind) {
 }
 
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
-	r_return_val_if_fail (fcn && name, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
 	if (existing && (existing->kind != kind || existing->delta != delta)) {
 		// var name already exists at a different kind+delta
@@ -187,7 +187,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 }
 
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
-	r_return_val_if_fail (fcn && l, false);
+	R_RETURN_VAL_IF_FAIL (fcn && l, false);
 	RListIter *iter;
 	RAnalVarProt *vp;
 	r_list_foreach (l, iter, vp) {
@@ -289,7 +289,7 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 }
 
 R_API RList *r_anal_var_deserialize(const char *ser) {
-	r_return_val_if_fail (ser, NULL);
+	R_RETURN_VAL_IF_FAIL (ser, NULL);
 	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
 	while (*ser) {
 		RAnalVarProt *v = R_NEW0 (RAnalVarProt);
@@ -390,7 +390,7 @@ static inline void sanitize_var_serial(char *name, bool colon) {
 }
 
 static inline bool serialize_single_var(RAnalVarProt *vp, RStrBuf *sb) {
-	r_return_val_if_fail (vp && sb, false);
+	R_RETURN_VAL_IF_FAIL (vp && sb, false);
 	// shouldn't have special chars in them anyways, so replace in place
 	sanitize_var_serial (vp->name, false);
 	sanitize_var_serial (vp->type, true);
@@ -402,7 +402,7 @@ static inline bool serialize_single_var(RAnalVarProt *vp, RStrBuf *sb) {
 }
 
 R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
-	r_return_val_if_fail (l, NULL);
+	R_RETURN_VAL_IF_FAIL (l, NULL);
 	if (l->length == 0) {
 		return NULL;
 	}
@@ -428,7 +428,7 @@ R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
 }
 
 R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
 	if (ret) {
 		void **p;
@@ -449,7 +449,7 @@ R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
 }
 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
-	r_return_val_if_fail (fcn && name, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -461,7 +461,7 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, cons
 }
 
 R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -473,7 +473,7 @@ R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta
 }
 
 R_API ut64 r_anal_var_addr(RAnalVar *var) {
-	r_return_val_if_fail (var, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (var, UT64_MAX);
 	RAnal *anal = var->fcn->anal;
 	const char *regname = NULL;
 	if (var->kind == R_ANAL_VAR_KIND_BPV) {
@@ -517,7 +517,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 }
 
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	st64 offset = addr - fcn->addr;
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
@@ -552,7 +552,7 @@ R_API bool r_anal_var_check_name(const char *name) {
 }
 
 R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) {
-	r_return_val_if_fail (var, false);
+	R_RETURN_VAL_IF_FAIL (var, false);
 	if (!r_anal_var_check_name (new_name)) {
 		return false;
 	}
@@ -573,7 +573,7 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) 
 }
 
 R_API int r_anal_var_get_argnum(RAnalVar *var) {
-	r_return_val_if_fail (var, -1);
+	R_RETURN_VAL_IF_FAIL (var, -1);
 	RAnal *anal = var->fcn->anal;
 	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG) { // TODO: support bp and sp too
 		return -1;
@@ -605,7 +605,7 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 }
 
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return ht_up_find (fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
 
@@ -629,7 +629,7 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 }
 
 R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
-	r_return_val_if_fail (var, NULL);
+	R_RETURN_VAL_IF_FAIL (var, NULL);
 	RAnalVarAccess *acc;
 	r_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & R_PERM_R)) {
@@ -723,7 +723,7 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 }
 
 R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
-	r_return_val_if_fail (var, NULL);
+	R_RETURN_VAL_IF_FAIL (var, NULL);
 	st64 offset = addr - var->fcn->addr;
 	size_t index;
 	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
@@ -788,7 +788,7 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
-	r_return_val_if_fail (fcn && a && type >= 0 && type <= 1, -1);
+	R_RETURN_VAL_IF_FAIL (fcn && a && type >= 0 && type <= 1, -1);
 	// type { local: 0, arg: 1 };
 	RList *list = r_anal_var_list (a, fcn, kind);
 	RAnalVar *var;
@@ -808,12 +808,12 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 }
 
 R_API int r_anal_var_count_all(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, 0);
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	return r_pvector_length (&fcn->vars);
 }
 
 R_API int r_anal_var_count_args(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, 0); // No function implies no variables, but probably mistake
+	R_RETURN_VAL_IF_FAIL (fcn, 0); // No function implies no variables, but probably mistake
 	int args = 0;
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
@@ -1108,7 +1108,7 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 }
 #else
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
-	r_return_val_if_fail (regname && anal && op, false);
+	R_RETURN_VAL_IF_FAIL (regname && anal && op, false);
 	int i;
 	for (i = 0; i < 3; i++) {
 		RAnalValue *src = r_vector_at (&op->srcs, i);
@@ -1149,7 +1149,7 @@ static inline bool op_affect_dst(RAnalOp* op) {
 }
 
 static inline bool arch_destroys_dst(const char *arch) {
-	r_return_val_if_fail (arch, false);
+	R_RETURN_VAL_IF_FAIL (arch, false);
 	return (!strcmp (arch, "arm") || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
 }
 
@@ -1418,7 +1418,7 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 }
 
 static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind) {
-	r_return_val_if_fail (a && fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (a && fcn, NULL);
 	RList *list = r_list_new ();
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
@@ -1466,7 +1466,7 @@ static void var_field_free(RAnalVarField *field) {
 }
 
 R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	RList *list = r_list_newf ((RListFree)var_field_free);
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars

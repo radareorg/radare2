@@ -641,7 +641,7 @@ static bool linkcb(void *user, void *data, ut32 id) {
 }
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
-	r_return_val_if_fail (r && r->io, false);
+	R_RETURN_VAL_IF_FAIL (r && r->io, false);
 	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RIODesc *desc = r->io->desc;
@@ -920,7 +920,7 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 
 /* loadaddr is r2 -m (mapaddr) */
 R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
-	r_return_val_if_fail (r && file, NULL);
+	R_RETURN_VAL_IF_FAIL (r && file, NULL);
 	ut64 prev = r_time_now_mono ();
 
 	if (!strcmp (file, "-")) {

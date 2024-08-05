@@ -248,7 +248,7 @@ leave:
 }
 
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
-	r_return_val_if_fail (core && core->io, false);
+	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -284,7 +284,7 @@ R_API bool r_core_bin_set_by_name(RCore *core, const char *name) {
 }
 
 R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
-	r_return_val_if_fail (r, false);
+	R_RETURN_VAL_IF_FAIL (r, false);
 
 	RBinObject *binobj = binfile? binfile->bo: NULL;
 	RBinInfo *info = binobj? binobj->info: NULL;
@@ -318,7 +318,7 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 }
 
 R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
-	r_return_val_if_fail (core && binfile, false);
+	R_RETURN_VAL_IF_FAIL (core && binfile, false);
 	ut32 fd = UT32_MAX;
 	if (!core->bin) {
 		return false;
@@ -662,7 +662,7 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 static bool is_executable(RBinObject *obj) {
 	RListIter *it;
 	RBinSection* sec;
-	r_return_val_if_fail (obj, false);
+	R_RETURN_VAL_IF_FAIL (obj, false);
 	if (obj->info && obj->info->arch) {
 		return true;
 	}
@@ -1285,7 +1285,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 }
 
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
-	r_return_val_if_fail (core && file, false);
+	R_RETURN_VAL_IF_FAIL (core && file, false);
 
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	if (!baddr && core->bin->cur && core->bin->cur->bo && core->bin->cur->bo->baddr) {
@@ -1393,7 +1393,7 @@ static bool bin_source(RCore *r, PJ *pj, int mode) {
 }
 
 static ut64 a2b(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
 		return o->baddr_shift + addr;
@@ -1861,7 +1861,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	RTable *table = r_core_table (r, "relocs");
-	r_return_val_if_fail (table, false);
+	R_RETURN_VAL_IF_FAIL (table, false);
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
@@ -2160,7 +2160,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
-	r_return_val_if_fail (bin, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	ut64 addr = UT64_MAX;
 	if (!name || !*name) {
 		return addr;
@@ -2190,7 +2190,7 @@ static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	RTable *table = r_core_table (r, "imports");
-	r_return_val_if_fail (table, false);
+	R_RETURN_VAL_IF_FAIL (table, false);
 	RBinImport *import;
 	RListIter *iter;
 	r_strf_buffer (64);
@@ -2864,7 +2864,7 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 }
 
 static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at, ut64 gap) {
-	r_return_val_if_fail (io && sec, false);
+	R_RETURN_VAL_IF_FAIL (io && sec, false);
 
 	bool reused = false;
 	char *uri = r_str_newf ("null://%"PFMT64u, gap);
@@ -4797,7 +4797,7 @@ static bool bin_signature(RCore *r, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
-	r_return_val_if_fail (core, false);
+	R_RETURN_VAL_IF_FAIL (core, false);
 	const char *name = (filter && filter->name)? filter->name : NULL;
 	bool ret = true;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
@@ -5007,7 +5007,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 }
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
-	r_return_val_if_fail (core && bf, false);
+	R_RETURN_VAL_IF_FAIL (core && bf, false);
 	if (!bf->bo) {
 		return false;
 	}
@@ -5068,7 +5068,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_list(RCore *core, int mode) {
-	r_return_val_if_fail (core && core->bin, false);
+	R_RETURN_VAL_IF_FAIL (core && core->bin, false);
 	// list all binfiles and there objects and there archs
 	RListIter *iter;
 	RBinFile *binfile = NULL;
@@ -5146,7 +5146,7 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 }
 
 R_API bool r_core_bin_rebase(RCore *core, ut64 baddr) {
-	r_return_val_if_fail (core && core->bin, false);
+	R_RETURN_VAL_IF_FAIL (core && core->bin, false);
 	if (core->bin->cur && baddr != UT64_MAX) {
 		RBinFile *bf = core->bin->cur;
 		bf->bo->baddr = baddr;

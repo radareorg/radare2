@@ -74,7 +74,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 b_size = r_buf_size (b);
 	if (b_size <= 0x3d) {
 		return false;

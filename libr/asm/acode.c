@@ -35,7 +35,7 @@ static bool replace_cb(void *user, const void *key, const void *value) {
 }
 
 R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
-	r_return_val_if_fail (code && _str, NULL);
+	R_RETURN_VAL_IF_FAIL (code && _str, NULL);
 	char *str = strdup (_str);
 	UserData data = {
 		.code = code,
@@ -47,7 +47,7 @@ R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
 }
 
 R_API char* r_asm_code_get_hex(RAsmCode *acode) {
-	r_return_val_if_fail (acode, NULL);
+	R_RETURN_VAL_IF_FAIL (acode, NULL);
 	char* str = calloc (acode->len + 1, 2);
 	if (str) {
 		r_hex_bin2str (acode->bytes, acode->len, str);
@@ -70,7 +70,7 @@ R_API bool r_asm_code_set_hex(RAsmCode *acode, const char *hexstr) {
 #endif
 
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key) {
-	r_return_val_if_fail (code && key, NULL);
+	R_RETURN_VAL_IF_FAIL (code && key, NULL);
 	bool found = false;
 	return ht_pp_find (code->equs, key, &found);
 }

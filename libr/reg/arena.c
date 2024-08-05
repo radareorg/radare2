@@ -4,7 +4,7 @@
 
 /* non-endian safe - used for raw mapping with system registers */
 R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
-	r_return_val_if_fail (reg, NULL);
+	R_RETURN_VAL_IF_FAIL (reg, NULL);
 	RRegArena *arena;
 	int i, sz, osize;
 	ut8 *buf, *newbuf;
@@ -55,7 +55,7 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 /* deserialize ALL register types into buffer */
 /* XXX does the same as r_reg_get_bytes? */
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
-	r_return_val_if_fail (reg && buf, false);
+	R_RETURN_VAL_IF_FAIL (reg && buf, false);
 	int i, off = 0;
 	RRegArena *arena;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -89,7 +89,7 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 }
 
 R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
-	r_return_val_if_fail (reg && buf, false);
+	R_RETURN_VAL_IF_FAIL (reg && buf, false);
 	if (len < 1) {
 		return false;
 	}
@@ -242,7 +242,7 @@ R_API void r_reg_arena_pop(RReg *reg) {
 }
 
 R_API int r_reg_arena_push(RReg *reg) {
-	r_return_val_if_fail (reg, 0);
+	R_RETURN_VAL_IF_FAIL (reg, 0);
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena; // current arena
@@ -279,7 +279,7 @@ R_API void r_reg_arena_zero(RReg *reg) {
 }
 
 R_API ut8 *r_reg_arena_peek(RReg *reg, int *size) {
-	r_return_val_if_fail (reg, NULL);
+	R_RETURN_VAL_IF_FAIL (reg, NULL);
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
@@ -310,7 +310,7 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret, int len) {
 }
 
 R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
-	r_return_val_if_fail (reg && source, NULL);
+	R_RETURN_VAL_IF_FAIL (reg && source, NULL);
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
@@ -324,7 +324,7 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
 }
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
-	r_return_val_if_fail (reg && str, -1);
+	R_RETURN_VAL_IF_FAIL (reg && str, -1);
 	str = r_str_trim_head_ro (str);
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {

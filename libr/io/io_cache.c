@@ -111,7 +111,7 @@ static RRBNode *_find_entry_ci_node(RRBTree *cache_tree, RInterval *itv) {
 
 // write happens only in the last layer
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && (len > 0), false);
+	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
 	RInterval itv = (RInterval){addr, len};
 	if (r_list_empty (io->cache.layers)) {
 		return false;
@@ -149,7 +149,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 // read happens by iterating over all the layers
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && (len > 0), false);
+	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
 #if 0
 	// X perm is the io.cache.. this is disabled by bin.cache.. so many tests fail because of this
 	if (!(io->cache.mode & R_PERM_X)) {
@@ -212,7 +212,7 @@ R_API bool r_io_cache_readable(RIO *io) {
 
 // used only by the testsuite
 R_API bool r_io_cache_at(RIO *io, ut64 addr) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RInterval itv = (RInterval){addr, 0};
 	RIOCacheLayer *layer;
 	RListIter *liter;
@@ -226,7 +226,7 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 
 // this uses closed boundary input
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
-	r_return_val_if_fail (io && from <= to, 0);
+	R_RETURN_VAL_IF_FAIL (io && from <= to, 0);
 	RInterval itv = (RInterval){from, (to + 1) - from};
 	void **iter;
 	ut32 invalidated_cache_bytes = 0;
@@ -485,7 +485,7 @@ static RIOCacheItem *_clone_ci(RIOCacheItem *ci) {
 
 // why?
 R_API RIOCache *r_io_cache_clone(RIO *io) {
-	r_return_val_if_fail (io, NULL);
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (!io->cache) {
 		return NULL;
 	}
@@ -527,7 +527,7 @@ R_API bool r_io_cache_pop(RIO *io) {
 }
 
 R_API bool r_io_cache_undo(RIO *io) { // "wcu"
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	if (r_list_empty (io->cache.layers)) {
 		return false;
 	}

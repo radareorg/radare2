@@ -255,7 +255,7 @@ R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 }
 
 R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {
-	r_return_val_if_fail (lang && h, NULL);
+	R_RETURN_VAL_IF_FAIL (lang && h, NULL);
 	RLangSession *session = R_NEW0 (RLangSession);
 	if (session) {
 		session->lang = lang;
@@ -289,7 +289,7 @@ R_API bool r_lang_unuse(RLang *lang) {
 }
 
 R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h) {
-	r_return_val_if_fail (lang && h, false);
+	R_RETURN_VAL_IF_FAIL (lang && h, false);
 	RListIter *iter;
 	RLangSession *s = NULL;
 	r_list_foreach (lang->sessions, iter, s) {
@@ -308,14 +308,14 @@ R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h) {
 }
 
 R_API bool r_lang_use(RLang *lang, const char *name) {
-	r_return_val_if_fail (lang && name, false);
+	R_RETURN_VAL_IF_FAIL (lang && name, false);
 	RLangPlugin *h = r_lang_get_by_name (lang, name);
 	return h? r_lang_use_plugin (lang, h): false;
 }
 
 // TODO: store in r_lang and use it from the plugin?
 R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
-	r_return_val_if_fail (lang && argc >= 0, false);
+	R_RETURN_VAL_IF_FAIL (lang && argc >= 0, false);
 	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
 	if (p && p->set_argv) {
 		return p->set_argv (lang->session, argc, argv);
@@ -324,7 +324,7 @@ R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
 }
 
 R_API bool r_lang_run(RLang *lang, const char *code, int len) {
-	r_return_val_if_fail (lang && code, false);
+	R_RETURN_VAL_IF_FAIL (lang && code, false);
 	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
 	if (p && p->run) {
 		return p->run (lang->session, code, len);
@@ -333,12 +333,12 @@ R_API bool r_lang_run(RLang *lang, const char *code, int len) {
 }
 
 R_API bool r_lang_run_string(RLang *lang, const char *code) {
-	r_return_val_if_fail (lang && code, false);
+	R_RETURN_VAL_IF_FAIL (lang && code, false);
 	return r_lang_run (lang, code, strlen (code));
 }
 
 R_API bool r_lang_run_file(RLang *lang, const char *file) {
-	r_return_val_if_fail (lang && file, false);
+	R_RETURN_VAL_IF_FAIL (lang && file, false);
 	bool ret = false;
 	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
 	if (p) {
@@ -362,7 +362,7 @@ R_API bool r_lang_run_file(RLang *lang, const char *file) {
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
 R_API bool r_lang_prompt(RLang *lang) {
-	r_return_val_if_fail (lang, false);
+	R_RETURN_VAL_IF_FAIL (lang, false);
 	char buf[1024];
 	const char *p;
 

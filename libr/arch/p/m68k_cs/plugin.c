@@ -245,7 +245,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 }
 
 static inline csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -881,7 +881,7 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -903,7 +903,7 @@ static bool init(RArchSession *s) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	CapstonePluginData *cpd = s->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (s->data);

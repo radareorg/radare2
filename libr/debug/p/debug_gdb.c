@@ -643,7 +643,7 @@ static RList* r_debug_gdb_frames(RDebug *dbg, ut64 at) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
@@ -657,7 +657,7 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = ds->plugin_data;
 	if (!pd) {

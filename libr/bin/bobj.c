@@ -186,7 +186,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
 R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
-	r_return_val_if_fail (bf && plugin, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && plugin, NULL);
 	ut64 bytes_sz = r_buf_size (bf->buf);
 	RBinObject *bo = R_NEW0 (RBinObject);
 	if (!bo) {
@@ -327,7 +327,7 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 }
 
 R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
-	r_return_val_if_fail (bf && bo && bo->plugin, false);
+	R_RETURN_VAL_IF_FAIL (bf && bo && bo->plugin, false);
 
 	int i;
 	bool isSwift = false;
@@ -515,7 +515,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 }
 
 R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
-	r_return_val_if_fail (bf && bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bo, NULL);
 
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bf);
@@ -532,12 +532,12 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 }
 
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
-	r_return_val_if_fail (bin && bin->cur, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur, NULL);
 	return bin->cur->bo;
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bf && arch && name, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && arch && name, NULL);
 	if (bf->bo) {
 		RBinInfo *info = bf->bo->info;
 		if (info && info->arch && info->file &&
@@ -551,7 +551,7 @@ R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch,
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 
 	bool res = false;
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);

@@ -400,7 +400,7 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 }
 
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
-	r_return_val_if_fail (in, 0);
+	R_RETURN_VAL_IF_FAIL (in, 0);
 	long nibbles = 0;
 
 	while (in && *in) {
@@ -449,7 +449,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 // get the hex chars from start of string, until first non-hex char, as a heap
 // allocated ut8* buffer
 R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
-	// r_return_val_if_fail (in && out, -1);
+	// R_RETURN_VAL_IF_FAIL (in && out, -1);
 	if (!in || !out) {
 		return -1;
 	}

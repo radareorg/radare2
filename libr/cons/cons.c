@@ -1425,7 +1425,7 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
-	r_return_val_if_fail (str && len >= 0, -1);
+	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
 	if (len < 1) {
 		return 0;
 	}

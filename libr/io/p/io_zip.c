@@ -93,7 +93,7 @@ static bool r_io_zip_plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int mode, int rw) {
-	r_return_val_if_fail (archivename, NULL);
+	R_RETURN_VAL_IF_FAIL (archivename, NULL);
 	int zip_errorp;
 	struct zip * za = zip_open (archivename, perm, &zip_errorp);
 	if (za) {
@@ -118,7 +118,7 @@ static struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int
 }
 
 static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
-	r_return_val_if_fail (zfo, -1);
+	R_RETURN_VAL_IF_FAIL (zfo, -1);
 	bool res = false;
 	struct zip *za = r_io_zip_open_archive (zfo->archivename, zfo->perm, zfo->mode, zfo->rw);
 	if (za && zfo && zfo->entry != -1) {

@@ -129,7 +129,7 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 }
 
 R_IPI const char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:

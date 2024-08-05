@@ -7,7 +7,7 @@ static char *getroot(void) {
 }
 
 R_API char *r_arch_platform_unset(RArch *arch, const char *name) {
-	r_return_val_if_fail (arch, NULL);
+	R_RETURN_VAL_IF_FAIL (arch, NULL);
 	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}
@@ -22,7 +22,7 @@ R_API char *r_arch_platform_unset(RArch *arch, const char *name) {
 }
 
 R_API char *r_arch_platform_set(RArch *arch, const char *name) {
-	r_return_val_if_fail (arch, NULL);
+	R_RETURN_VAL_IF_FAIL (arch, NULL);
 	if (R_STR_ISEMPTY (name)) {
 		return NULL;
 	}

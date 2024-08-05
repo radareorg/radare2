@@ -72,7 +72,7 @@ R_API void r_crypto_free(RCrypto *cry) {
 }
 
 R_API RCryptoJob *r_crypto_use(RCrypto *cry, const char *algo) {
-	r_return_val_if_fail (cry && algo, false);
+	R_RETURN_VAL_IF_FAIL (cry && algo, false);
 	RListIter *iter, *iter2;
 	RCryptoPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
@@ -100,7 +100,7 @@ R_API RCryptoJob *r_crypto_use(RCrypto *cry, const char *algo) {
 }
 
 R_API bool r_crypto_job_set_key(RCryptoJob *cj, const ut8* key, int keylen, int mode, int direction) {
-	r_return_val_if_fail (cj, false);
+	R_RETURN_VAL_IF_FAIL (cj, false);
 	if (keylen < 0) {
 		keylen = strlen ((const char *)key);
 	}
@@ -113,7 +113,7 @@ R_API bool r_crypto_job_set_key(RCryptoJob *cj, const ut8* key, int keylen, int 
 }
 
 R_API int r_crypto_job_get_key_size(RCryptoJob *cj) {
-	r_return_val_if_fail (cj, false);
+	R_RETURN_VAL_IF_FAIL (cj, false);
 	return (cj->h && cj->h->get_key_size)?
 		cj->h->get_key_size (cj): 0;
 }

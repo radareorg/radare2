@@ -28,7 +28,7 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
-	r_return_val_if_fail (core && file, NULL);
+	R_RETURN_VAL_IF_FAIL (core && file, NULL);
 	if (!*file) {
 		return NULL;
 	}
@@ -171,7 +171,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
-	r_return_val_if_fail (core && R_STR_ISNOTEMPTY (prjfile), false);
+	R_RETURN_VAL_IF_FAIL (core && R_STR_ISNOTEMPTY (prjfile), false);
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
@@ -293,7 +293,7 @@ typedef struct {
 } ProjectState;
 
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
-	r_return_val_if_fail (core, false);
+	R_RETURN_VAL_IF_FAIL (core, false);
 	if (R_STR_ISEMPTY (prj_name)) {
 		prj_name = r_core_project_name (core, rcpath);
 	}
@@ -365,7 +365,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 }
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
-	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
+	R_RETURN_VAL_IF_FAIL (core && !R_STR_ISEMPTY (prj_path), false);
 	bool interactive = r_config_get_b (core->config, "scr.interactive");
 	bool close_current_session = true;
 	bool ask_for_closing = true;
@@ -642,7 +642,7 @@ static void r_core_project_zip(RCore *core, const char *prj_dir) {
 }
 
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
-	r_return_val_if_fail (R_STR_ISNOTEMPTY (prj_name), false);
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (prj_name), false);
 	bool scr_null = false;
 	bool ret = true;
 	SdbListIter *it;

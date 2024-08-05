@@ -243,7 +243,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static bool __close(RIODesc *fd) {
-	r_return_val_if_fail (fd, false);
+	R_RETURN_VAL_IF_FAIL (fd, false);
 	if (fd->data) {
 		r_io_dsc_object_free ((RIODscObject *) fd->data);
 		fd->data = NULL;
@@ -252,7 +252,7 @@ static bool __close(RIODesc *fd) {
 }
 
 static ut64 __lseek_dsc(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	r_return_val_if_fail (fd && fd->data, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data, UT64_MAX);
 	return r_io_dsc_object_seek (io, (RIODscObject *)fd->data, offset, whence);
 }
 
@@ -499,7 +499,7 @@ static char *__infoSubCache(RIODscObject * dsc, ut64 size, int mode) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
-	r_return_val_if_fail (io && fd && fd->data && command, NULL);
+	R_RETURN_VAL_IF_FAIL (io && fd && fd->data && command, NULL);
 	RIODscObject *dsc = (RIODscObject*) fd->data;
 
 	if (r_str_startswith (command, "iP")) {
@@ -550,7 +550,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 }
 
 static RIODscObject *r_io_dsc_object_new(RIO  *io, const char *filename, int perm, int mode) {
-	r_return_val_if_fail (io && filename, NULL);
+	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 
 	RIODscObject *dsc = R_NEW0 (RIODscObject);
 	if (!dsc) {
@@ -917,7 +917,7 @@ static int r_io_posix_open(const char *file, int perm, int mode, bool nocache) {
 }
 
 static int r_io_dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	r_return_val_if_fail (fd && fd->data && buf, -1);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
 	if (io->off == UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;

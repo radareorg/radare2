@@ -612,7 +612,7 @@ R_API const char *r_str_rstr(const char *base, const char *p) {
 }
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
-	r_return_val_if_fail (base, NULL);
+	R_RETURN_VAL_IF_FAIL (base, NULL);
 	if (!p) {
 		return strrchr (base, ch);
 	}
@@ -816,7 +816,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 }
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
-	r_return_val_if_fail (string, NULL);
+	R_RETURN_VAL_IF_FAIL (string, NULL);
 	char *msg = R_STR_NDUP (string, slen); // only fails for token.c
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
@@ -882,7 +882,7 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val) {
-	r_return_val_if_fail (str && key, NULL);
+	R_RETURN_VAL_IF_FAIL (str && key, NULL);
 	if (strstr (val, key)) {
 		// XXX value cant contain the key otherwise we go into infinite loop
 		R_LOG_ERROR ("RStr.replaceAll() value can't contain key");
@@ -904,7 +904,7 @@ R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val,
 	if (g == 'i') {
 		return r_str_replace_icase (str, key, val, g, true);
 	}
-	r_return_val_if_fail (str && key && val, NULL);
+	R_RETURN_VAL_IF_FAIL (str && key && val, NULL);
 
 	int off, i, slen;
 	char *newstr, *p = str;
@@ -953,7 +953,7 @@ R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val,
 }
 
 R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
-	r_return_val_if_fail (str && key && val, NULL);
+	R_RETURN_VAL_IF_FAIL (str && key && val, NULL);
 	char *newstr, *p = str;
 	size_t off, i;
 	size_t klen = strlen (key);
@@ -1285,7 +1285,7 @@ R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
 static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
@@ -1332,7 +1332,7 @@ out:
 
 /* hex-escape unprintable characters in a raw buffer (null-safe) */
 R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a \xhh escape */
 	char *new_buf = malloc (1 + sz * 4);
@@ -1353,7 +1353,7 @@ R_API char *r_str_escape(const char *buf) {
 }
 
 R_API char *r_str_sanitize_r2(const char *buf) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *new_buf = malloc (1 + strlen (buf) * 2);
 	if (!new_buf) {
 		return NULL;
@@ -1380,14 +1380,14 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 }
 
 R_API char *r_str_escape_sql(const char *buf) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res = r_str_replace (strdup (buf), "'", "\\'", true);
 	return res;
 }
 
 // Return MUST BE surrounded by double-quotes
 R_API char *r_str_escape_sh(const char *buf) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *new_buf = malloc (1 + strlen (buf) * 2);
 	if (!new_buf) {
 		return NULL;
@@ -1540,7 +1540,7 @@ R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciid
 }
 
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	size_t buf_sz = buf_size < 0 ? strlen (buf) : buf_size;
 	char *encoded_str;
 
@@ -1955,12 +1955,12 @@ R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
 #endif
 
 R_API size_t r_str_ansi_len(const char *str) {
-	r_return_val_if_fail (str, 0);
+	R_RETURN_VAL_IF_FAIL (str, 0);
 	return r_str_ansi_nlen (str, 0);
 }
 
 R_API size_t r_str_nlen(const char *str, int n) {
-	r_return_val_if_fail (str && n >= 0, 0);
+	R_RETURN_VAL_IF_FAIL (str && n >= 0, 0);
 	size_t len = 0;
 	while (n > 0 && *str) {
 		len++;
@@ -2313,7 +2313,7 @@ R_API bool r_str_char_fullwidth(const char* s, size_t left) {
  * str - Pointer to buffer
  */
 R_API size_t r_str_utf8_charsize(const char *str) {
-	r_return_val_if_fail (str, 0);
+	R_RETURN_VAL_IF_FAIL (str, 0);
 	size_t size = 0;
 	size_t length = strlen (str);
 	while (size < length && size < 5) {
@@ -2332,7 +2332,7 @@ R_API size_t r_str_utf8_charsize(const char *str) {
  * prev_len - Length in bytes of the buffer until str
  */
 R_API size_t r_str_utf8_charsize_prev(const char *str, int prev_len) {
-	r_return_val_if_fail (str, 0);
+	R_RETURN_VAL_IF_FAIL (str, 0);
 	int pos = 0;
 	size_t size = 0, minsize = R_MIN (5, prev_len);
 	while (size < minsize) {
@@ -2350,7 +2350,7 @@ R_API size_t r_str_utf8_charsize_prev(const char *str, int prev_len) {
  * str - Pointer to buffer
  */
 R_API size_t r_str_utf8_charsize_last(const char *str) {
-	r_return_val_if_fail (str, 0);
+	R_RETURN_VAL_IF_FAIL (str, 0);
 	size_t len = strlen (str);
 	return r_str_utf8_charsize_prev (str + len, len);
 }
@@ -3393,7 +3393,7 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 }
 
 R_API bool r_str_endswith(const char *str, const char *needle) {
-	r_return_val_if_fail (str && needle, false);
+	R_RETURN_VAL_IF_FAIL (str && needle, false);
 	if (!*needle) {
 		return true;
 	}
@@ -3411,7 +3411,7 @@ R_API char *r_str_slice(const char *str, RStringSlice s) {
 }
 
 R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
-	r_return_val_if_fail (str && c, NULL);
+	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	size_t b = 0;
 	// TODO honor 'c' and 'n'. not just split by ' '
 	RVecStringSlice *vs = RVecStringSlice_new ();
@@ -3439,7 +3439,7 @@ R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 // Splits the string <str> by string <c> and returns the result in a list.
 // R2_600 - char *arg must be const!!
 R_API RList *r_str_split_list(char *str, const char *c, int n)  {
-	r_return_val_if_fail (str && c, NULL);
+	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
 	char *aux = str; // R2_600 - XXX should be an strdup
 	int i = 0;
@@ -3472,7 +3472,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 }
 
 R_API RList *r_str_split_duplist(const char *_str, const char *c, bool trim) {
-	r_return_val_if_fail (_str && c, NULL);
+	R_RETURN_VAL_IF_FAIL (_str && c, NULL);
 	RList *lst = r_list_newf (free);
 	char *str = strdup (_str);
 	char *aux = str;
@@ -3725,7 +3725,7 @@ err_r_str_mb_to_wc:
 }
 
 R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res_buf = NULL;
 	bool fail = true;
 
@@ -3842,7 +3842,7 @@ R_API void r_str_stripLine(char *str, const char *key) {
 }
 
 R_API char *r_str_list_join(RList *str, const char *sep) {
-	r_return_val_if_fail (str && sep, NULL);
+	R_RETURN_VAL_IF_FAIL (str && sep, NULL);
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach_iter (str, iter) {
@@ -3974,8 +3974,8 @@ R_API int r_str_distance(const char *a, const char *b) {
 }
 
 R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
-	r_return_val_if_fail (s && word && x && y, NULL);
-	r_return_val_if_fail (word[0] != '\0' && word[0] != '\n', NULL);
+	R_RETURN_VAL_IF_FAIL (s && word && x && y, NULL);
+	R_RETURN_VAL_IF_FAIL (word[0] != '\0' && word[0] != '\n', NULL);
 	const char *src = prev ? prev + 1 : s;
 	const char *d = strstr (src, word);
 	if (!d) {
@@ -4092,7 +4092,7 @@ R_API int r_str_size(const char *s, int *rows) {
 
 #undef r_str_startswith
 R_API bool r_str_startswith(const char *str, const char *needle) {
-	r_return_val_if_fail (str && needle, false);
+	R_RETURN_VAL_IF_FAIL (str && needle, false);
 	if (str == needle) {
 		return true;
 	}

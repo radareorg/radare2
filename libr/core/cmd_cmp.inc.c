@@ -96,7 +96,7 @@ R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
 	RCoreCmpWatcher *cmpw;
 	bool found = false;
-	r_return_val_if_fail (core && cmd && size > 0, false);
+	R_RETURN_VAL_IF_FAIL (core && cmd && size > 0, false);
 
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
@@ -226,7 +226,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 }
 
 static bool update_watcher(RIO *io, RCoreCmpWatcher *w) {
-	r_return_val_if_fail (io && w, false);
+	R_RETURN_VAL_IF_FAIL (io && w, false);
 
 	free (w->odata);
 	w->odata = w->ndata;
@@ -262,7 +262,7 @@ R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr) {
 }
 
 static bool revert_watcher(RCoreCmpWatcher *w) {
-	r_return_val_if_fail (w, false);
+	R_RETURN_VAL_IF_FAIL (w, false);
 	if (w->odata) {
 		free (w->ndata);
 		w->ndata = w->odata;

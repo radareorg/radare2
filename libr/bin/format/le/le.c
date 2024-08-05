@@ -57,7 +57,7 @@ static const char *__get_arch(RBinLEObj *bin) {
 }
 
 static ut64 get_object_base(RBinLEObj * bin, size_t idx) {
-	r_return_val_if_fail (bin && bin->header && idx < bin->header->objcnt, 0);
+	R_RETURN_VAL_IF_FAIL (bin && bin->header && idx < bin->header->objcnt, 0);
 	if (idx < bin->n_bases) {
 		return bin->obj_bases[idx];
 	}

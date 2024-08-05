@@ -82,7 +82,7 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// st
 
 // XXX: ut8* should be RBuffer *
 static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
-	r_return_val_if_fail (bin && bin->cur && buf, false);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur && buf, false);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new (buf, size);

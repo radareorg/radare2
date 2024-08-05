@@ -559,7 +559,7 @@ err_r_sys_get_env:
 }
 
 R_API bool r_sys_getenv_asbool(const char *key) {
-	r_return_val_if_fail (key, false);
+	R_RETURN_VAL_IF_FAIL (key, false);
 	char *env = r_sys_getenv (key);
 	const bool res = env && r_str_is_true (env);
 	free (env);
@@ -567,7 +567,7 @@ R_API bool r_sys_getenv_asbool(const char *key) {
 }
 
 R_API ut64 r_sys_getenv_asut64(const char *key) {
-	r_return_val_if_fail (key, false);
+	R_RETURN_VAL_IF_FAIL (key, false);
 	char *env = r_sys_getenv (key);
 	const ut64 res = env? r_num_math (NULL, env): 0;
 	free (env);
@@ -575,7 +575,7 @@ R_API ut64 r_sys_getenv_asut64(const char *key) {
 }
 
 R_API int r_sys_getenv_asint(const char *key) {
-	r_return_val_if_fail (key, false);
+	R_RETURN_VAL_IF_FAIL (key, false);
 	char *env = r_sys_getenv (key);
 	const int res = env? atoi (env): 0;
 	free (env);
@@ -1002,7 +1002,7 @@ R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
 }
 
 R_API int r_sys_arch_id(const char *arch) {
-	r_return_val_if_fail (arch, 0);
+	R_RETURN_VAL_IF_FAIL (arch, 0);
 	int i;
 	for (i = 0; arch_bit_array[i].name; i++) {
 		if (!strcmp (arch, arch_bit_array[i].name)) {
@@ -1341,7 +1341,7 @@ R_API int r_sys_getpid(void) {
 
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
-	r_return_val_if_fail (txt, false);
+	R_RETURN_VAL_IF_FAIL (txt, false);
 	const char *says[] = {
 		"say", "termux-tts-speak", NULL
 	};

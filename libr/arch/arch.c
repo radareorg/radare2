@@ -103,7 +103,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 // use config as new arch config and use matching decoder as current
 // must return arch->current, and remove that field. and use refcounting
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
-	r_return_val_if_fail (arch, false);
+	R_RETURN_VAL_IF_FAIL (arch, false);
 	if (!config) {
 		config = arch->cfg;
 	}
@@ -171,7 +171,7 @@ R_API bool r_arch_use_encoder(RArch *arch, const char *dname) {
 // This api conflicts with r_arch_config_set_bits
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 	// XXX unused??
-	r_return_val_if_fail (arch && bits, false);
+	R_RETURN_VAL_IF_FAIL (arch && bits, false);
 	if (!arch->cfg) {
 		RArchConfig *cfg = r_arch_config_new ();
 		if (!cfg) {
@@ -192,7 +192,7 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 }
 
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
-	r_return_val_if_fail (arch, false);
+	R_RETURN_VAL_IF_FAIL (arch, false);
 	if (!arch->cfg) {
 		RArchConfig *cfg = r_arch_config_new ();
 		if (!cfg) {
@@ -212,7 +212,7 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 
 R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 	// Rename to _use_arch instead ?
-	r_return_val_if_fail (arch && archname, false);
+	R_RETURN_VAL_IF_FAIL (arch && archname, false);
 	char *_arch = strdup (archname);
 	if (!_arch) {
 		return false;
@@ -254,7 +254,7 @@ R_API RArchPlugin *r_arch_find(RArch *arch, const char *name) {
 }
 
 R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
-	r_return_val_if_fail (a && ap, false);
+	R_RETURN_VAL_IF_FAIL (a && ap, false);
 	if (!ap->meta.name || !ap->arch) {
 		return false;
 	}
@@ -275,7 +275,7 @@ R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {
-	r_return_val_if_fail (arch && arch->plugins && name, false);
+	R_RETURN_VAL_IF_FAIL (arch && arch->plugins && name, false);
 	RArchPlugin *ap = r_arch_find (arch, name);
 	find_bestmatch (arch, NULL, name, false);
 #if 0

@@ -34,11 +34,11 @@ static char *create_type_name_from_offset(ut64 offset) {
  * @return RAnalStructMember* parsed member, NULL if fail
  */
 static RAnalStructMember *parse_member(STypeInfo *type_info, RList *types) {
-	r_return_val_if_fail (type_info && types, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info && types, NULL);
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
 	}
-	r_return_val_if_fail (type_info->get_name &&
+	R_RETURN_VAL_IF_FAIL (type_info->get_name &&
 			type_info->get_print_type && type_info->get_val, NULL);
 	char *name = NULL;
 	char *type = NULL;
@@ -68,8 +68,8 @@ cleanup:
  * @return RAnalEnumCase* parsed enum case, NULL if fail
  */
 static RAnalEnumCase *parse_enumerate(STypeInfo *type_info, RList *types) {
-	r_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
-	r_return_val_if_fail (type_info->get_val && type_info->get_name, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info->get_val && type_info->get_name, NULL);
 
 	char *name = NULL;
 	int value = 0;

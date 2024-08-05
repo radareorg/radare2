@@ -58,7 +58,7 @@ R_API RDebugSession *r_debug_session_new(void) {
 }
 
 R_API bool r_debug_add_checkpoint(RDebug *dbg) {
-	r_return_val_if_fail (dbg->session, false);
+	R_RETURN_VAL_IF_FAIL (dbg->session, false);
 	size_t i;
 	RDebugCheckpoint checkpoint = {0};
 

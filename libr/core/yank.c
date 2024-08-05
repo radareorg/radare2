@@ -398,7 +398,7 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 }
 
 R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
-	r_return_val_if_fail (core, false);
+	R_RETURN_VAL_IF_FAIL (core, false);
 	bool res = false;
 
 	if (!input) {
@@ -440,7 +440,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 }
 
 R_API bool r_core_yank_file_all(RCore *core, const char *input) {
-	r_return_val_if_fail (core && input, false);
+	R_RETURN_VAL_IF_FAIL (core && input, false);
 	ut64 adv = consume_chars (input, ' ');
 	return perform_mapped_file_yank (core, 0, -1, input + adv);
 }

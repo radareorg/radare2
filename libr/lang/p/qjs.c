@@ -104,7 +104,7 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 }
 
 static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RIOPlugin *iop, JSValue func) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
 	if (cp) {
@@ -119,7 +119,7 @@ static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const cha
 }
 
 static QjsParsePlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RParsePlugin *iop, JSValue func) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	QjsParsePlugin *cp = RVecParsePlugin_emplace_back (&pm->parse_plugins);
 	if (cp) {
@@ -147,25 +147,25 @@ static inline int compare_io_plugin_name(const QjsIoPlugin *cp, const void *data
 }
 
 static QjsParsePlugin *plugin_manager_find_parse_plugin(const QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	return RVecParsePlugin_find (&pm->parse_plugins, (void*) name, compare_parse_plugin_name);
 }
 
 static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	return RVecCorePlugin_find (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 }
 
 static QjsIoPlugin *plugin_manager_find_io_plugin(const QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	return RVecIoPlugin_find (&pm->io_plugins, (void*) name, compare_io_plugin_name);
 }
 
 static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	ut64 index = RVecParsePlugin_find_index (&pm->parse_plugins, (void*) name, compare_parse_plugin_name);
 	if (index != UT64_MAX) {
@@ -178,7 +178,7 @@ static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char 
 }
 
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 	if (index != UT64_MAX) {
@@ -210,12 +210,12 @@ static inline int compare_arch_plugin_arch(const QjsArchPlugin *ap, const void *
 }
 
 static QjsArchPlugin *plugin_manager_find_arch_plugin(const QjsPluginManager *pm, const char *arch) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 	return RVecArchPlugin_find (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
 }
 
 static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *arch) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
 	if (index != UT64_MAX) {
@@ -229,7 +229,7 @@ static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *
 }
 
 static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type, const char *plugin_id) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	if (R_STR_ISNOTEMPTY (type)) {
 		if (!strcmp (type, "parse")) {
@@ -821,13 +821,13 @@ static bool eval(JSContext *ctx, const char *code) {
 }
 
 static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
-	r_return_val_if_fail (s && s->plugin_data && code, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data && code, false);
 	QjsPluginManager *pm = s->plugin_data;
 	return eval (pm->default_ctx.ctx, code);
 }
 
 static bool lang_quickjs_file(RLangSession *s, const char *file) {
-	r_return_val_if_fail (s && s->plugin_data && file, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data && file, false);
 
 	QjsPluginManager *pm = s->plugin_data;
 	QjsContext *qctx = &pm->default_ctx;
@@ -895,7 +895,7 @@ static bool init(RLangSession *ls) {
 }
 
 static bool fini(RLangSession *s) {
-	r_return_val_if_fail (s && s->plugin_data, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data, false);
 
 	QjsPluginManager *pm = s->plugin_data;
 

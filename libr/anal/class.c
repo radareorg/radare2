@@ -1339,7 +1339,7 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
  * @return RGraph* NULL if failure
  */
 R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {
-	r_return_val_if_fail (anal, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RGraph *class_graph = r_graph_new ();
 	if (!class_graph) {
 		return NULL;

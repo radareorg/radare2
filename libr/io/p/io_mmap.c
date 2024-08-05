@@ -56,7 +56,7 @@ static void r_io_mmap_free(RIOMMapFileObj *mmo) {
 }
 
 RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
-	r_return_val_if_fail (io && filename, NULL);
+	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;

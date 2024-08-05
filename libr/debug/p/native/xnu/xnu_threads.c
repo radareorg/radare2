@@ -53,7 +53,7 @@ fallback:
 
 // XXX this should work as long as in arm trace bit relies on this
 static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
-	r_return_val_if_fail (dbg && thread, false);
+	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	kern_return_t rc;
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
@@ -97,7 +97,7 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
-	r_return_val_if_fail (dbg && thread, false);
+	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	kern_return_t rc;
 #if __i386__ || __x86_64__
 	x86_debug_state_t *regs = &thread->drx;
@@ -157,7 +157,7 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
-	r_return_val_if_fail (dbg && thread, false);
+	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	kern_return_t rc;
 	R_REG_T *regs = &thread->gpr;
 	if (!regs) {
@@ -231,7 +231,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
-	r_return_val_if_fail (dbg && thread, false);
+	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	R_REG_T *regs = &thread->gpr;
 	if (!regs) {
 		return false;

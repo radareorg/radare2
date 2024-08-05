@@ -577,7 +577,7 @@ static char *r_debug_bochs_reg_profile(RDebug *dbg) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
@@ -591,7 +591,7 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = ds->plugin_data;
 	if (!pd) {

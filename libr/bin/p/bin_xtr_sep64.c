@@ -87,7 +87,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 #define BTW(val, min, max) ((val) > min && (val) < max)
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 
 	const ut64 sz = r_buf_size (b);
 	if (sz < 0x11c0) {
@@ -144,7 +144,7 @@ static int size(RBin *bin) {
 }
 
 static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
-	r_return_val_if_fail (bin && bin->cur, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = sep64_xtr_ctx_new (b);
@@ -340,7 +340,7 @@ beach:
 }
 
 static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
-	r_return_val_if_fail (max_size >= 1024, NULL);
+	R_RETURN_VAL_IF_FAIL (max_size >= 1024, NULL);
 
 	RSepMachoInfo * result = NULL;
 	struct MACH0_(mach_header) *hdr = NULL;

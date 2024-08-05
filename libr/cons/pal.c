@@ -297,7 +297,7 @@ R_API void r_cons_pal_random(void) {
 }
 
 R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
-	r_return_val_if_fail (str, NULL);
+	R_RETURN_VAL_IF_FAIL (str, NULL);
 	RColor rcolor = (RColor) RColor_BLACK;
 	rcolor.id16 = -1;
 	char *attr = NULL;

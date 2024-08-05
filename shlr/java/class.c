@@ -7,7 +7,7 @@
 #define R_BIN_CLASSNAME(x) (x)->name? (x)->name: (x)->oname
 
 static inline RBinName *__bin_name_new(const char *name) {
-	r_return_val_if_fail (name, NULL);
+	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
 	if (bn) {
 		bn->oname = strdup (name);
@@ -1508,7 +1508,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_clone_cp_idx(RBinJavaObj *bin, ut32 idx) {
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_clone_cp_item(RBinJavaCPTypeObj *obj) {
-	r_return_val_if_fail (obj, NULL);
+	R_RETURN_VAL_IF_FAIL (obj, NULL);
 	RBinJavaCPTypeObj *clone_obj = R_NEW0 (RBinJavaCPTypeObj);
 	if (clone_obj) {
 		memcpy (clone_obj, obj, sizeof (RBinJavaCPTypeObj));
@@ -1602,17 +1602,17 @@ R_API RBinJavaInterfaceInfo *r_bin_java_read_next_interface_item(RBinJavaObj *bi
   rvalue: new char* for caller to free.
  */
 R_API char *r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	return r_bin_java_get_utf8_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, 0);
+	R_RETURN_VAL_IF_FAIL (bin, 0);
 	return r_bin_java_get_utf8_len_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
@@ -1623,7 +1623,7 @@ R_API char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 }
 
 R_API char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
@@ -1634,7 +1634,7 @@ R_API char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
@@ -3070,7 +3070,7 @@ R_API void *r_bin_java_free(RBinJavaObj *bin) {
 }
 
 R_API RBinJavaObj *r_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb *kv) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) {
 		return NULL;

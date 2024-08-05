@@ -372,7 +372,7 @@ static RBinSection *getsection(RBin *bin, int sn) {
 	RBinSection *section = NULL;
 	RBinObject *o = R_UNWRAP3 (bin, cur, bo);
 	char const *rclass = R_UNWRAP3 (o, info, rclass);
-	r_return_val_if_fail (sn >= 0 && sn < DWARF_SN_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (sn >= 0 && sn < DWARF_SN_MAX, NULL);
 	if (R_LIKELY (o && o->sections)) {
 		/* XXX: xcoff64 specific hack */
 		const char * const *name_tab = rclass && !strcmp (o->info->rclass, "xcoff64")
@@ -397,7 +397,7 @@ static RBinSection *getsection(RBin *bin, int sn) {
 
 // XXX this is not optimal. we can use rbuf apis everywhere and avoid boundary checks and full section reads
 static ut8 *get_section_bytes(RBin *bin, int sect_name, size_t *len) {
-	r_return_val_if_fail (bin && len, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && len, NULL);
 	RBinSection *section = getsection (bin, sect_name);
 	RBinFile *binfile = bin ? bin->cur: NULL;
 	if (!section || !binfile) {
@@ -885,7 +885,7 @@ beach:
 }
 
 static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, int mode, PrintfCallback print, int debug_line_offset, bool be) {
-	r_return_val_if_fail (hdr && bf && buf, NULL);
+	R_RETURN_VAL_IF_FAIL (hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
 	hdr->unit_length = READ32 (buf);
@@ -1022,7 +1022,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 }
 
 static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs, int mode) {
-	r_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur && obuf && hdr && regs, NULL);
 
 	const bool be = r_bin_is_big_endian (bin);
 	PrintfCallback print = bin->cb_printf;
@@ -1121,7 +1121,7 @@ static const ut8 *parse_spec_opcode(
 	RBinDwarfSMRegisters *regs,
 	ut8 opcode, int mode) {
 
-	r_return_val_if_fail (bin && obuf && hdr && regs, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && obuf && hdr && regs, NULL);
 
 	PrintfCallback print = bin->cb_printf;
 	RBinFile *binfile = bin->cur;
@@ -1160,7 +1160,7 @@ static const ut8 *parse_spec_opcode(
 }
 
 static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs, ut8 opcode, int mode) {
-	r_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur && obuf && hdr && regs, NULL);
 	bool be = r_bin_is_big_endian (bin);
 
 	PrintfCallback print = bin->cb_printf;
@@ -1296,7 +1296,7 @@ static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegister
 
 // Passing bin should be unnecessary (after we stop printing inside bin_dwarf)
 static size_t parse_opcodes(RBin *bin, const ut8 *obuf, size_t len, const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs, int mode) {
-	r_return_val_if_fail (bin && obuf, 0);
+	R_RETURN_VAL_IF_FAIL (bin && obuf, 0);
 	ut8 opcode, ext_opcode;
 
 	if (len < 8) {
@@ -1329,7 +1329,7 @@ static size_t parse_opcodes(RBin *bin, const ut8 *obuf, size_t len, const RBinDw
 }
 
 static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode, bool be) {
-	r_return_val_if_fail (a && obuf, false);
+	R_RETURN_VAL_IF_FAIL (a && obuf, false);
 	PrintfCallback print = a->cb_printf;
 
 	if (mode == R_MODE_PRINT) {
@@ -1866,7 +1866,7 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
  * @return const ut8* Updated buffer
  */
 static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBinDwarfAttrDef *def, RBinDwarfAttrValue *value, const RBinDwarfCompUnitHdr *hdr, bool be) {
-	r_return_val_if_fail (def && value && hdr && obuf, NULL);
+	R_RETURN_VAL_IF_FAIL (def && value && hdr && obuf, NULL);
 
 	value->attr_form = def->attr_form;
 	value->attr_name = def->attr_name;
@@ -2310,7 +2310,7 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 }
 
 static bool expand_info(RBinDwarfDebugInfo *info) {
-	r_return_val_if_fail (info && info->capacity == info->count, -1);
+	R_RETURN_VAL_IF_FAIL (info && info->capacity == info->count, -1);
 	RBinDwarfCompUnit *tmp = realloc (info->comp_units,
 		info->capacity * 2 * sizeof (RBinDwarfCompUnit));
 	if (!tmp) {
@@ -2336,7 +2336,7 @@ static bool expand_info(RBinDwarfDebugInfo *info) {
  * @return R_API* parse_info_raw Parsed information
  */
 static RBinDwarfDebugInfo *parse_info_raw(RBin *bin, Sdb *sdb, RBinDwarfDebugAbbrev *da, const ut8 *obuf, size_t len, bool be) {
-	r_return_val_if_fail (da && sdb && obuf, false);
+	R_RETURN_VAL_IF_FAIL (da && sdb && obuf, false);
 
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
@@ -2474,7 +2474,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
  * @return RBinDwarfDebugInfo* Parsed information, NULL if error
  */
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
-	r_return_val_if_fail (da && bin, NULL);
+	R_RETURN_VAL_IF_FAIL (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
 	RBinSection *section = getsection (bin, DWARF_SN_INFO);
 	RBinFile *binfile = bin->cur;
@@ -2537,7 +2537,7 @@ cleanup:
 }
 
 static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
-	r_return_val_if_fail (file, NULL);
+	R_RETURN_VAL_IF_FAIL (file, NULL);
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
 	if (R_LIKELY (row)) {
 		row->file = strdup (file);
@@ -2557,7 +2557,7 @@ static void row_free(void *p) {
 }
 
 R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	ut8 *buf;
 	RList *list = NULL;
 	int len, ret;
@@ -2759,7 +2759,7 @@ static void parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, cons
  * @return R_API*
  */
 R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int addr_size) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
 	const bool be = r_bin_is_big_endian (bin);

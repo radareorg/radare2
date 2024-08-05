@@ -38,7 +38,7 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 }
 
 static RList *patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin && bf->rbin->iob.io, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io, NULL);
 	struct r_bin_bflt_obj *bin = NULL;
 	RBin *b = bf->rbin;
 	RBinObject *obj = r_bin_cur_object (b);

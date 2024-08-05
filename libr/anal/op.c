@@ -149,7 +149,7 @@ beach:
 
 // R2_590 data and len are contained inside RAnalOp. those args must disapear same for addr.. and then we get r_arch_op xD
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	r_return_val_if_fail (anal && op && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL (anal && op && len > 0, -1);
 	r_anal_op_init (op);
 #if 0
 	if (len > 512) {

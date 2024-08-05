@@ -97,7 +97,7 @@ static registers_t arm32[] = {
 	{"", 0, 0}};
 
 int qnxr_init(libqnxr_t *g) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	memset (g, 0, sizeof (libqnxr_t));
 	g->send_len = 0;
 	g->send_buff = (char *)calloc (DS_DATA_MAX_SIZE * 2, 1);
@@ -132,7 +132,7 @@ int qnxr_set_architecture(libqnxr_t *g, ut8 architecture) {
 }
 
 int qnxr_cleanup(libqnxr_t *g) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	free (g->send_buff);
 	g->send_len = 0;
 	free (g->read_buff);
@@ -196,7 +196,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 }
 
 int qnxr_disconnect(libqnxr_t *g) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 
 	if (g->connected) {
 		nto_send_init (g, DStMsg_disconnect, 0, SET_CHANNEL_DEBUG);
@@ -212,7 +212,7 @@ int qnxr_disconnect(libqnxr_t *g) {
 }
 
 ptid_t qnxr_attach (libqnxr_t *g, pid_t pid) {
-	r_return_val_if_fail (g, null_ptid);
+	R_RETURN_VAL_IF_FAIL (g, null_ptid);
 
 	if (g->inferior_ptid.pid != pid) {
 		qnxr_disconnect (g);
@@ -244,7 +244,7 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 	char **argv, *p;
 	int errors = 0;
 
-	r_return_val_if_fail (g, null_ptid);
+	R_RETURN_VAL_IF_FAIL (g, null_ptid);
 
 	nto_send_init (g, DStMsg_env, DSMSG_ENV_CLEARENV, SET_CHANNEL_DEBUG);
 	nto_send (g, sizeof (DStMsg_env_t), 1);

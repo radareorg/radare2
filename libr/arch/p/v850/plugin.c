@@ -887,7 +887,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 	const char *str = op->mnemonic;
 	if (!strcmp (str, "nop")) {
 		r_anal_op_set_bytes (op, op->addr, (const ut8* const)"\x00\x00", 2);

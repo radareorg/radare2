@@ -309,7 +309,7 @@ static bool __syncDebugMaps(RCore *core) {
 }
 
 R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
-	r_return_val_if_fail (core && core->cons, NULL);
+	R_RETURN_VAL_IF_FAIL (core && core->cons, NULL);
 	r_cons_push ();
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
@@ -2213,7 +2213,7 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 }
 
 R_API int r_core_fgets(char *buf, int len) {
-	r_return_val_if_fail (buf, -1);
+	R_RETURN_VAL_IF_FAIL (buf, -1);
 	RCons *cons = r_cons_singleton ();
 	RLine *rli = cons->line;
 #if R2_590
@@ -2388,7 +2388,7 @@ static char *getvalue(ut64 value, int bits) {
 */
 R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth) {
 	const int bits = core->rasm->config->bits;
-	r_return_val_if_fail (core, NULL);
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	RStrBuf *s = r_strbuf_new (NULL);
 	if (pj) {
 		pj_o (pj);
@@ -4302,7 +4302,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 }
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock) {
-	r_return_val_if_fail (parent && cmd, NULL);
+	R_RETURN_VAL_IF_FAIL (parent && cmd, NULL);
 	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
@@ -4340,7 +4340,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 }
 
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact) {
-	r_return_val_if_fail (parent && cmd, NULL);
+	R_RETURN_VAL_IF_FAIL (parent && cmd, NULL);
 	size_t len = strlen (cmd);
 	int i;
 	for (i = 0; i < parent->n_subcmds; i++) {
@@ -4355,7 +4355,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 }
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd) {
-	r_return_val_if_fail (parent && cmd, false);
+	R_RETURN_VAL_IF_FAIL (parent && cmd, false);
 	int i, j;
 	for (i = 0; i < parent->n_subcmds; i++) {
 		RCoreAutocomplete *ac = parent->subcmds[i];

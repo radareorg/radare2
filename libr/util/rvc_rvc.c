@@ -950,7 +950,7 @@ R_API char *curbranch_rvc(Rvc *rvc) {
 }
 
 R_API bool r_vc_reset(Rvc *rvc) {
-	r_return_val_if_fail (rvc, false);
+	R_RETURN_VAL_IF_FAIL (rvc, false);
 	if (!rvc_repo_exists (rvc->path)) {
 		return false;
 	}
@@ -1074,7 +1074,7 @@ static void close_rvc(Rvc *vc, bool save) {
 }
 
 static bool save_rvc(Rvc *vc) {
-	r_return_val_if_fail (vc, false);
+	R_RETURN_VAL_IF_FAIL (vc, false);
 	if (vc->db) {
 		sdb_sync (vc->db);
 		return true;

@@ -526,7 +526,7 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 }
 
 static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user, RList *col) {
-	r_return_val_if_fail (types && *types != R_SIGN_END, 1);
+	R_RETURN_VAL_IF_FAIL (types && *types != R_SIGN_END, 1);
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	ut64 sz = r_anal_function_realsize (fcn);
 	RSignType t;
@@ -840,7 +840,7 @@ static double get_zb_threshold(RCore *core) {
 }
 
 static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
-	r_return_val_if_fail (input && core, false);
+	R_RETURN_VAL_IF_FAIL (input && core, false);
 
 	char *argv = strdup (input);
 	if (!argv) {
@@ -898,7 +898,7 @@ static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 }
 
 static bool bestmatch_sig(RCore *core, const char *input, bool json) {
-	r_return_val_if_fail (input && core, false);
+	R_RETURN_VAL_IF_FAIL (input && core, false);
 	int count = 5;
 	if (!R_STR_ISEMPTY (input)) {
 		count = atoi (input);
@@ -951,7 +951,7 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 }
 
 static bool bestmatch(void *data, const char *input) {
-	r_return_val_if_fail (data && input, false);
+	R_RETURN_VAL_IF_FAIL (data && input, false);
 	bool json = false;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -1090,7 +1090,7 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 #undef freelines
 
 static bool diff_zig(void *data, const char *input) {
-	r_return_val_if_fail (data && input, false);
+	R_RETURN_VAL_IF_FAIL (data && input, false);
 	RCore *core = (RCore *)data;
 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);

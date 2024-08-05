@@ -830,7 +830,7 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
  * @return int -1 if it can't build the format
  */
 static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *names) {
-	r_return_val_if_fail (type_info && format && names && type_info->type_info, -1);
+	R_RETURN_VAL_IF_FAIL (type_info && format && names && type_info->type_info, -1);
 	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
 	// format is 2 chars tops + null terminator
 

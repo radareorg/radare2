@@ -92,7 +92,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

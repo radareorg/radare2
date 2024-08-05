@@ -780,7 +780,7 @@ static ut8 *get_classes(RCore *c, int *len) {
 }
 
 static ut8 *get_fields(RCore *c, int *len) {
-	r_return_val_if_fail (c, NULL);
+	R_RETURN_VAL_IF_FAIL (c, NULL);
 	const int pref = r_config_get_b (c->config, "asm.demangle")? 'd': 0;
 
 	if (!len) {

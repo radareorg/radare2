@@ -486,7 +486,7 @@ static int _server_handle_qTfV(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *co
 }
 
 int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	int ret = -1;
 	for (;;) {
 		if (read_packet (g, false) < 0) {
