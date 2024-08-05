@@ -474,7 +474,6 @@ struct duplicate_flag_t {
 extern int Gload_index;
 static void __line_hist_list(bool full) {
 	RLineHistory *hist = &r_cons_singleton()->line->history;
-	eprintf ("LOAD INDEX %d\n", Gload_index);
 	if (hist && hist->data) {
 		int i = full? 0: Gload_index;
 		for (; i < hist->size && hist->data[i]; i++) {

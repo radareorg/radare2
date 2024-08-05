@@ -322,7 +322,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	} else {
 		ret = r_core_cmd_file (core, rcpath);
 	}
-	char *prj_path = r_file_dirname(rcpath);
+	char *prj_path = r_file_dirname (rcpath);
 	if (prj_path) {
 		//check if the project uses git
 		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
@@ -330,6 +330,12 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		free (prj_path);
 	} else {
 		R_LOG_ERROR ("Failed to load rvc");
+	}
+	if (r_config_get_b (core->config, "prj.history")) {
+		char *file = r_file_new (prj_path, "history");
+		r_line_hist_free (); // R2_600 - hist_reset ?
+		r_line_hist_load (file);
+		free (file);
 	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
@@ -748,6 +754,12 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			free (script_path);
 			return false;
 		}
+	}
+	if (r_config_get_b (core->config, "prj.history")) {
+		char *history = r_core_cmd_str (core, "!!");
+		char *file = r_file_new (prj_dir, "history");
+		r_file_dump (file, (const ut8*)history, -1, false);
+		free (history);
 	}
 	if (r_config_get_b (core->config, "prj.zip")) {
 		r_core_project_zip (core, prj_dir);

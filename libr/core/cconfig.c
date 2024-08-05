@@ -3842,6 +3842,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.vc", "true", "use your version control system of choice (rvc, git) to manage projects");
 	SETBPREF ("prj.zip", "false", "use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: encrypt project with GnuPGv2");
+	SETBPREF ("prj.history", "false", "per-project command history");
 	SETBPREF ("prj.sandbox", "false", "sandbox r2 while loading project files");
 	SETBPREF ("prj.alwasyprompt", "false", "even when the project is already saved, ask the user to save the project when qutting");
 
