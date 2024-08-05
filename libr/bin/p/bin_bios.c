@@ -4,7 +4,7 @@
 #include "../i/private.h"
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 
 	ut64 sz = r_buf_size (buf);
 	if (sz <= 0xffff) {
@@ -52,7 +52,7 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {
 		ret->file = bf->file? strdup (bf->file): NULL;

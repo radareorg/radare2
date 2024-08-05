@@ -314,7 +314,7 @@ static int blowfish_get_key_size(RCryptoJob *cj) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	r_return_val_if_fail (cj && cj->data && buf, false);
+	R_RETURN_VAL_IF_FAIL (cj && cj->data && buf, false);
 	struct blowfish_state *st = get_st (cj);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {

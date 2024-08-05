@@ -209,7 +209,7 @@ static void cmd_write_fail(RCore *core) {
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
-	r_return_val_if_fail (core && pairs, 0);
+	R_RETURN_VAL_IF_FAIL (core && pairs, 0);
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	if (!buf) {
 		return 0;
@@ -1020,7 +1020,7 @@ static int cmd_w6(void *data, const char *input) {
 }
 
 static int cmd_wh(void *data, const char *input) {
-	r_return_val_if_fail (data && input, -1);
+	R_RETURN_VAL_IF_FAIL (data && input, -1);
 	char *space = strchr (input, ' ');
 	const char *arg = space? r_str_trim_head_ro (space): NULL;
 	if (arg) {

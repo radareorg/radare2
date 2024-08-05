@@ -91,7 +91,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *bi = R_NEW0 (RBinInfo);
 	if (bi) {
 		bi->file = strdup (bf->file);

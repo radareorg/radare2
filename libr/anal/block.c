@@ -7,7 +7,7 @@
 
 // rename to instr_at
 R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
-	r_return_val_if_fail (block, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (block, UT64_MAX);
 	if (pos < 1) {
 		return block->addr;
 	}
@@ -117,7 +117,7 @@ R_API void r_anal_block_reset(RAnal *a) {
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
-	r_return_val_if_fail (anal, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (addr == UT64_MAX || !anal->bb_tree) {
 		return NULL;
 	}
@@ -299,7 +299,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
-	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
+	R_RETURN_VAL_IF_FAIL (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
 		r_anal_block_ref (bbi); // ref to be consistent with splitted return ref-count
 		return bbi;
@@ -754,7 +754,7 @@ beach:
 }
 
 R_API bool r_anal_block_was_modified(RAnalBlock *block) {
-	r_return_val_if_fail (block, false);
+	R_RETURN_VAL_IF_FAIL (block, false);
 	if (!block->bbhash) {
 		return false;
 	}
@@ -848,7 +848,7 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 }
 
 R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
-	r_return_val_if_fail (block, NULL);
+	R_RETURN_VAL_IF_FAIL (block, NULL);
 	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
 		return block;
 	}

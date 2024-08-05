@@ -22,7 +22,7 @@ R_API void r_debug_desc_free(RDebugDesc *p) {
 }
 
 #define BOILERPLATE \
-	r_return_val_if_fail (dbg, -1); \
+	R_RETURN_VAL_IF_FAIL (dbg, -1); \
 	RDebugPlugin *plugin = R_UNWRAP2 (dbg->current, plugin); \
 	if (plugin) if
 
@@ -69,7 +69,7 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 }
 
 R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
-	r_return_val_if_fail (dbg, 0);
+	R_RETURN_VAL_IF_FAIL (dbg, 0);
 	RListIter *iter;
 	RDebugDesc *p;
 	int count = 0;

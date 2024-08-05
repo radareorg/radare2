@@ -55,7 +55,7 @@ static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 }
 
 static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
-	r_return_val_if_fail (st && input && output, false);
+	R_RETURN_VAL_IF_FAIL (st && input && output, false);
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 	//first permutation

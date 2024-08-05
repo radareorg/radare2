@@ -40,7 +40,7 @@ static const char *origColors[] = {
 // static const char colors
 
 R_API char* r_print_json_path(const char* s, int pos) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const char *words[MAX_JSON_INDENT] = { NULL };
 	int lengths[MAX_JSON_INDENT] = {0};
@@ -151,7 +151,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 }
 
 R_API char* r_print_json_human(const char* s) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const char *tab = "  ";
 	const int indentSize = strlen (tab);
@@ -248,7 +248,7 @@ R_API char* r_print_json_human(const char* s) {
 }
 
 R_API char* r_print_json_indent(const char* s, bool color, const char* tab, const char **palette) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int indent = 0;
 	const int indentSize = strlen (tab);
 	int instr = 0;

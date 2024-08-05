@@ -30,7 +30,7 @@ R_API void r_anal_value_free(RArchValue *value) {
 }
 
 R_API RAnalValue *r_anal_value_clone(RAnalValue *ov) {
-	r_return_val_if_fail (ov, NULL);
+	R_RETURN_VAL_IF_FAIL (ov, NULL);
 	return r_mem_dup (ov, sizeof (RAnalValue));
 }
 
@@ -38,7 +38,7 @@ R_API RAnalValue *r_anal_value_clone(RAnalValue *ov) {
 #if 0
 
 R_API RArchValue *r_arch_value_copy(RArchValue *ov) {
-	r_return_val_if_fail (ov, NULL);
+	R_RETURN_VAL_IF_FAIL (ov, NULL);
 
 	RArchValue *v = R_NEW0 (RArchValue);
 	if (!v) {
@@ -81,7 +81,7 @@ R_API ut64 r_arch_value_to_ut64(RArchValue *val, RReg *reg) {
 }
 
 R_API bool r_arch_value_set_ut64(RArchValue *val, RReg *reg, RIOBind *iob, ut64 num) {
-	r_return_val_if_fail (val && (!!val->memref) == (!!iob) && reg, false);
+	R_RETURN_VAL_IF_FAIL (val && (!!val->memref) == (!!iob) && reg, false);
 	if (val->memref) {
 		ut8 data[8];
 		const ut64 addr = r_arch_value_to_ut64 (val, reg);

@@ -139,7 +139,7 @@ R_API void r_run_reset(RRunProfile *p) {
 }
 
 R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
-	r_return_val_if_fail (pf && profile, false);
+	R_RETURN_VAL_IF_FAIL (pf && profile, false);
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
 		return false;
@@ -542,7 +542,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 }
 
 R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
-	r_return_val_if_fail (p && b, false);
+	R_RETURN_VAL_IF_FAIL (p && b, false);
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
 		bool ret = r_run_parse (p, s);
@@ -1196,7 +1196,7 @@ static void time_end(bool chk, ut64 time_begin) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API bool r_run_start(RRunProfile *p) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
 		exit (execv (p->_program, (char* const*)p->_args));

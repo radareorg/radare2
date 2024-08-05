@@ -297,7 +297,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static RList *sections(RBinFile *bf) {
 	RList *res = r_list_newf ((RListFree)r_bin_section_free);
-	r_return_val_if_fail (res && bf->bo && bf->bo->bin_obj, res);
+	R_RETURN_VAL_IF_FAIL (res && bf->bo && bf->bo->bin_obj, res);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
 	if (element->segments) {
@@ -350,7 +350,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
 	HtUU *hash = ht_uu_new0 ();

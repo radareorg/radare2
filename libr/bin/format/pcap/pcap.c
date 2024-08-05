@@ -282,7 +282,7 @@ static bool pcap_obj_init(pcap_obj_t *obj) {
 }
 
 pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 
 	pcap_obj_t *obj = R_NEW0 (pcap_obj_t);
 	if (!obj) {

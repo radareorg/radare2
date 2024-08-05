@@ -30,7 +30,7 @@ typedef struct {
 #define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
 
 static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	r_return_val_if_fail (fd && fd->data, -1);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	if (shm->buf) {
 		(void)memcpy (shm->buf + io->off, buf, count);
@@ -40,7 +40,7 @@ static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	r_return_val_if_fail (fd && fd->data, -1);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	if (io->off + count >= shm->size) {
 		if (io->off > shm->size) {
@@ -56,7 +56,7 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool shm__close(RIODesc *fd) {
-	r_return_val_if_fail (fd && fd->data, -1);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	int ret = (shm->buf)
 		? shmdt (((RIOShm*)(fd->data))->buf)
@@ -66,7 +66,7 @@ static bool shm__close(RIODesc *fd) {
 }
 
 static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	r_return_val_if_fail (fd && fd->data, -1);
+	R_RETURN_VAL_IF_FAIL (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	switch (whence) {
 	case SEEK_SET:

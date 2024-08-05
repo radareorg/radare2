@@ -253,7 +253,7 @@ void __free_window (void *ptr) {
 }
 
 static window *__window_from_handle(HANDLE hwnd) {
-	r_return_val_if_fail (hwnd, NULL);
+	R_RETURN_VAL_IF_FAIL (hwnd, NULL);
 	window *win = R_NEW0 (window);
 	if (!win) {
 		return NULL;
@@ -449,7 +449,7 @@ R_API void r_w32_print_windows(RDebug *dbg) {
 }
 
 R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
-	r_return_val_if_fail (dbg && input, false);
+	R_RETURN_VAL_IF_FAIL (dbg && input, false);
 	char *name = strdup (input);
 	r_str_trim (name);
 	char *window_id = strchr (name, ' ');

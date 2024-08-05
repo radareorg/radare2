@@ -8,7 +8,7 @@
 #define bprintf if (dex->verbose) eprintf
 
 char* r_bin_dex_get_version(RBinDexObj *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	char* version = calloc (1, 8);
 	if (version) {
 		r_buf_read_at (bin->b, 4, (ut8*)version, 3);
@@ -253,7 +253,7 @@ void r_bin_dex_free(RBinDexObj *dex) {
 }
 
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	int i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
 	if (!dex) {

@@ -120,7 +120,7 @@ R_API void r_interval_tree_fini(RIntervalTree *tree) {
 }
 
 R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data) {
-	r_return_val_if_fail (end >= start, false);
+	R_RETURN_VAL_IF_FAIL (end >= start, false);
 	RIntervalNode *node = R_NEW0 (RIntervalNode);
 	if (!node) {
 		return false;
@@ -146,7 +146,7 @@ R_API bool r_interval_tree_delete(RIntervalTree *tree, RIntervalNode *node, bool
 }
 
 R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64 new_start, ut64 new_end) {
-	r_return_val_if_fail (new_end >= new_start, false);
+	R_RETURN_VAL_IF_FAIL (new_end >= new_start, false);
 	if (node->start != new_start) {
 		// Start change means the tree needs a different structure
 		void *data = node->data;
@@ -168,7 +168,7 @@ R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64
 // This must always return the topmost node that matches start!
 // Otherwise r_interval_tree_first_at will break!!!
 R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
-	r_return_val_if_fail (tree, NULL);
+	R_RETURN_VAL_IF_FAIL (tree, NULL);
 	RIntervalNode *node = tree->root;
 	while (node) {
 		if (start < node->start) {
@@ -267,7 +267,7 @@ R_API bool r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_incl
 }
 
 static bool r_interval_node_all_intersect(RIntervalNode *node, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
-	r_return_val_if_fail (end >= start, true);
+	R_RETURN_VAL_IF_FAIL (end >= start, true);
 	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);

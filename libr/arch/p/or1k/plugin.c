@@ -22,7 +22,7 @@ struct or1k_regs {
 };
 
 static bool or1k_init(RArchSession *s) {
-	r_return_val_if_fail (s && !s->data, false);
+	R_RETURN_VAL_IF_FAIL (s && !s->data, false);
 	s->data = R_NEW0 (struct or1k_regs);
 	return s->data? true: false;
 }

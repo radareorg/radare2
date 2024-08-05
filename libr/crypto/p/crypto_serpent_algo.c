@@ -68,7 +68,7 @@ static inline ut8 apply_sbox_inv(int si, ut8 x) {
 }
 
 static inline ut8 get_bit(int i, ut32 input) {
-	r_return_val_if_fail (i < 32, 0);
+	R_RETURN_VAL_IF_FAIL (i < 32, 0);
 	return (input >> i) & 1;
 }
 

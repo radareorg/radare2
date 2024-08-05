@@ -270,7 +270,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 #define PROMPT_PATH_BUFSIZE 1024
 
 R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
-	r_return_val_if_fail (shell && fs, false);
+	R_RETURN_VAL_IF_FAIL (shell && fs, false);
 	if (R_STR_ISNOTEMPTY (root)) {
 		free (shell->cwd);
 		shell->cwd = strdup (root);

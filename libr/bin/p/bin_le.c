@@ -26,7 +26,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (bf && buf, false);
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinLEObj *res = r_bin_le_new_buf (buf);
 	if (res) {
 		bf->bo->bin_obj = res;

@@ -72,7 +72,7 @@ R_API void r_vector_free(RVector *vec) {
 }
 
 static bool vector_clone(RVector *dst, RVector *src) {
-	r_return_val_if_fail (dst && src, false);
+	R_RETURN_VAL_IF_FAIL (dst && src, false);
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
@@ -91,7 +91,7 @@ static bool vector_clone(RVector *dst, RVector *src) {
 }
 
 R_API RVector *r_vector_clone(RVector *vec) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	RVector *ret = R_NEW (RVector);
 	if (!ret) {
 		return NULL;
@@ -104,7 +104,7 @@ R_API RVector *r_vector_clone(RVector *vec) {
 }
 
 R_API bool r_vector_copy(RVector *d, RVector *s) {
-	r_return_val_if_fail (d && s, false);
+	R_RETURN_VAL_IF_FAIL (d && s, false);
 	return vector_clone (d, s);
 }
 
@@ -134,7 +134,7 @@ R_API void r_vector_remove_at(RVector *vec, size_t index, void *into) {
 }
 
 R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
-	r_return_val_if_fail (vec && index <= vec->len, NULL);
+	R_RETURN_VAL_IF_FAIL (vec && index <= vec->len, NULL);
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
@@ -150,7 +150,7 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 }
 
 R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count) {
-	r_return_val_if_fail (vec && index <= vec->len, NULL);
+	R_RETURN_VAL_IF_FAIL (vec && index <= vec->len, NULL);
 	if (count < 1) {
 		return NULL;
 	}
@@ -183,7 +183,7 @@ R_API void r_vector_pop_front(RVector *vec, void *into) {
 }
 
 R_API void *r_vector_push(RVector *vec, void *x) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	if (R_UNLIKELY (vec->len >= vec->capacity)) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
@@ -195,12 +195,12 @@ R_API void *r_vector_push(RVector *vec, void *x) {
 }
 
 R_API void *r_vector_push_front(RVector *vec, void *x) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	return r_vector_insert (vec, 0, x);
 }
 
 R_API void *r_vector_reserve(RVector *vec, size_t capacity) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	if (vec->len == 0 || vec->capacity <= capacity) {
 		RESIZE_OR_RETURN_NULL (capacity);
 	}
@@ -208,7 +208,7 @@ R_API void *r_vector_reserve(RVector *vec, size_t capacity) {
 }
 
 R_API void *r_vector_shrink(RVector *vec) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	if (vec->len < vec->capacity) {
 		RESIZE_OR_RETURN_NULL (vec->len);
 	}
@@ -216,7 +216,7 @@ R_API void *r_vector_shrink(RVector *vec) {
 }
 
 R_API void *r_vector_flush(RVector *vec) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	r_vector_shrink (vec);
 	void *r = vec->a;
 	vec->a = NULL;
@@ -277,7 +277,7 @@ R_API void r_pvector_free(RPVector *vec) {
 }
 
 R_API void **r_pvector_contains(RPVector *vec, void *x) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	size_t i;
 	for (i = 0; i < vec->v.len; i++) {
 		if (((void **)vec->v.a)[i] == x) {
@@ -288,7 +288,7 @@ R_API void **r_pvector_contains(RPVector *vec, void *x) {
 }
 
 R_API void *r_pvector_remove_at(RPVector *vec, size_t index) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	void *r = r_pvector_at (vec, index);
 	r_vector_remove_at (&vec->v, index, NULL);
 	return r;
@@ -303,7 +303,7 @@ R_API void r_pvector_remove_data(RPVector *vec, void *x) {
 }
 
 R_API void *r_pvector_pop(RPVector *vec) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	if (r_pvector_length (vec) < 1) {
 		return NULL;
 	}
@@ -313,7 +313,7 @@ R_API void *r_pvector_pop(RPVector *vec) {
 }
 
 R_API void *r_pvector_pop_front(RPVector *vec) {
-	r_return_val_if_fail (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
 	if (r_pvector_length (vec) < 1) {
 		return NULL;
 	}
@@ -350,7 +350,7 @@ R_API void r_pvector_sort(RPVector *vec, RPVectorComparator cmp) {
 }
 
 R_API int r_pvector_bsearch(RPVector *vec, void *needle, RPVectorComparator cmp) {
-	r_return_val_if_fail (vec && cmp, -1);
+	R_RETURN_VAL_IF_FAIL (vec && cmp, -1);
 	size_t top = 0;
 	size_t end = vec->v.len;
 	void **ar = vec->v.a;

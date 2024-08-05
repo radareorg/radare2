@@ -25,7 +25,7 @@ static inline PTHREAD_ITEM __find_thread(RDebug *dbg, int tid) {
 }
 
 static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}

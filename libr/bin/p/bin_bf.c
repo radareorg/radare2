@@ -39,7 +39,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 // TODO: test with all these programs http://brainfuck.org
 static bool check(RBinFile *bf, RBuffer *buf) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 
 	ut8 tmp[64] = {0};
 	int read_length = r_buf_read_at (buf, 0, tmp, sizeof (tmp) - 1);
@@ -80,7 +80,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);

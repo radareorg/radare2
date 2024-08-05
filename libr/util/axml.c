@@ -317,7 +317,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 }
 
 R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
-	r_return_val_if_fail (data, NULL);
+	R_RETURN_VAL_IF_FAIL (data, NULL);
 	string_pool_t *pool = NULL;
 	namespace_t *namespace = NULL;
 	const ut32 *resource_map = NULL;

@@ -25,7 +25,7 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static inline csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as, 0);
+	R_RETURN_VAL_IF_FAIL (as, 0);
 	CapstonePluginData *cpd = as->data;
 	return cpd->cs_handle;
 }
@@ -218,7 +218,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -243,7 +243,7 @@ static bool init(RArchSession *s) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	PluginData *pd = s->data;
 #if USE_ITER_API
 	cs_free (pd->insn, pd->n);

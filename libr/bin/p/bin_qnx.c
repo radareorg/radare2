@@ -147,7 +147,7 @@ beach:
  * @return RBinInfo file with the info
  */
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -166,7 +166,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	QnxObj *qo = bf->bo->bin_obj;
 	return r_list_clone (qo->fixups, NULL);
 }
@@ -201,7 +201,7 @@ static RList* symbols(RBinFile *bf) {
 
 // Returns the sections
 static RList* sections(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	QnxObj *qo = bf->bo->bin_obj;
 	return r_list_clone (qo->sections, NULL);
 }

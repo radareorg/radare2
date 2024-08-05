@@ -481,7 +481,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 static Sdb *TDB_ = NULL; // HACK
 
 static bool stdifstruct(void *user, const char *k, const char *v) {
-	r_return_val_if_fail (TDB_, false);
+	R_RETURN_VAL_IF_FAIL (TDB_, false);
 	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
 	}
@@ -798,7 +798,7 @@ static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
-	r_return_val_if_fail (p && k, false);
+	R_RETURN_VAL_IF_FAIL (p && k, false);
 	RCore *core = (RCore *)p;
 	if (!v) {
 		v = "";

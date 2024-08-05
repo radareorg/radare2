@@ -240,7 +240,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 #define Fhandled(x) r_strf ("handled.%"PFMT64x, x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
-	r_return_val_if_fail (core && input, false);
+	R_RETURN_VAL_IF_FAIL (core && input, false);
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		R_LOG_ERROR ("No valid offset given to analyze");
 		return false;

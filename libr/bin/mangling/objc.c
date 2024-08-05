@@ -4,7 +4,7 @@
 #include "../i/private.h"
 
 R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
-	r_return_val_if_fail ((!bf || (bf && bf->bo && bf->bo->classes)) && sym, NULL);
+	R_RETURN_VAL_IF_FAIL ((!bf || (bf && bf->bo && bf->bo->classes)) && sym, NULL);
 	char *clas = NULL;
 	char *name = NULL;
 	char *args = NULL;

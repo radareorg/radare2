@@ -33,7 +33,7 @@ static bool checkHeader(RBuffer *b) {
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 	return checkHeader (buf);
 }
 
@@ -93,7 +93,7 @@ static RBinXtrData *extract(RBin* bin, int idx) {
 }
 
 static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
-	r_return_val_if_fail (bin && bin->cur, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_fatmach0_from_buffer_new (b);

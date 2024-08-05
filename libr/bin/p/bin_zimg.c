@@ -7,7 +7,7 @@
 #include "zimg/zimg.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, false);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->bo->bin_obj;
 	return bin? bin->kv: NULL;
 }

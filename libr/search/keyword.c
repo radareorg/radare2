@@ -68,7 +68,7 @@ R_API void r_search_keyword_free(RSearchKeyword *kw) {
 }
 
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, bool ignore_case) {
-	r_return_val_if_fail (kwbuf, NULL);
+	R_RETURN_VAL_IF_FAIL (kwbuf, NULL);
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
 

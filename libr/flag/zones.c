@@ -27,7 +27,7 @@ static RFlagZoneItem *r_flag_zone_get_inrange(RFlag *f, ut64 from, ut64 to) {
 }
 
 R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
-	r_return_val_if_fail (f && name && *name, false);
+	R_RETURN_VAL_IF_FAIL (f && name && *name, false);
 	RFlagZoneItem *zi = r_flag_zone_get (f, name);
 	if (zi) {
 		if (addr < zi->from) {

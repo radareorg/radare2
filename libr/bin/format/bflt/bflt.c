@@ -78,7 +78,7 @@ R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
 }
 
 R_IPI RBinBfltObj *r_bin_bflt_new_buf(RBuffer *buf) {
-	r_return_val_if_fail (buf, NULL);
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	RBinBfltObj *o = R_NEW0 (RBinBfltObj);
 	if (o && r_bin_bflt_init (o, buf)) {
 		return o;

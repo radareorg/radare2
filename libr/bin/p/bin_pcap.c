@@ -8,7 +8,7 @@
 #define CUSTOM_STRINGS 0
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -27,7 +27,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+	R_RETURN_VAL_IF_FAIL (b, false);
 
 	switch (r_buf_read_be32_at (b, 0)) {
 	case PCAP_MAGIC_LE:
@@ -40,13 +40,13 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (bf && buf, false);
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	bf->bo->bin_obj = pcap_obj_new_buf (buf);
 	return bf->bo->bin_obj != NULL;
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinSymbol *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
@@ -90,7 +90,7 @@ static RList *symbols(RBinFile *bf) {
 
 #if CUSTOM_STRINGS
 static RList *strings(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinString *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
@@ -127,7 +127,7 @@ static RList *strings(RBinFile *bf) {
 #endif
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		r_list_append (ret, strdup ("ether"));

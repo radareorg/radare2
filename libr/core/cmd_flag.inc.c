@@ -468,7 +468,7 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 }
 
 static int flag_to_flag(RCore *core, const char *glob) {
-	r_return_val_if_fail (glob, 0);
+	R_RETURN_VAL_IF_FAIL (glob, 0);
 	glob = r_str_trim_head_ro (glob);
 	struct flag_to_flag_t u = { .next = UT64_MAX, .offset = core->offset };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);

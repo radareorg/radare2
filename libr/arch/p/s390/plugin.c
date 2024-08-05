@@ -64,7 +64,7 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -353,7 +353,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (s->data);
@@ -361,7 +361,7 @@ static bool fini(RArchSession *s) {
 }
 
 static RList *preludes(RArchSession *as) {
-	r_return_val_if_fail (as && as->config, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
 	RList *l = r_list_newf (free);
 	r_list_append (l, strdup ("c010000104")); // imports -- some false positives
 	r_list_append (l, strdup ("eb6ff03000")); // stgm

@@ -19,7 +19,7 @@ static void trace_db_init(REsilTraceDB *db) {
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
-	r_return_val_if_fail (esil, NULL);
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	if (!esil->stack_addr || !esil->stack_size) {
 		// R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
@@ -152,7 +152,7 @@ static void update_last_trace_op(REsil *esil) {
 }
 
 static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
-	r_return_val_if_fail (esil && name && res, -1);
+	R_RETURN_VAL_IF_FAIL (esil && name && res, -1);
 	D eprintf ("%d RR %s\n", esil->trace->cur_idx, name);
 	bool ret = false;
 	if (*name == '0') {

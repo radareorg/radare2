@@ -49,7 +49,7 @@ typedef struct {
 static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj);
 
 static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
-	r_return_val_if_fail (num && flags, -1);
+	R_RETURN_VAL_IF_FAIL (num && flags, -1);
 	int rc = 0;
 	if (flags->slurphex) {
 		char buf[1]= {0};

@@ -247,7 +247,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 }
 
 R_API RList *r_w32_dbg_maps(RDebug *dbg) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (dbg->pid == -1) {
 		return NULL;
 	}

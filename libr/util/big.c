@@ -82,7 +82,7 @@ static void r_big_from_unsigned(RNumBig *b, ut64 v) {
 }
 
 R_API st64 r_big_to_int(RNumBig *b) {
-	r_return_val_if_fail (b, 0);
+	R_RETURN_VAL_IF_FAIL (b, 0);
 
 	R_BIG_DTYPE_TMP ret = 0;
 
@@ -151,7 +151,7 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
-	r_return_val_if_fail (b, NULL);
+	R_RETURN_VAL_IF_FAIL (b, NULL);
 
 	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
 	size_t i = 0; /* index into string representation. */
@@ -505,8 +505,8 @@ R_API void r_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 }
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
-	r_return_val_if_fail (a, 0);
-	r_return_val_if_fail (b, 0);
+	R_RETURN_VAL_IF_FAIL (a, 0);
+	R_RETURN_VAL_IF_FAIL (b, 0);
 
 	if (a->sign != b->sign)
 		return a->sign > 0? 1: -1;
@@ -526,7 +526,7 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 }
 
 R_API int r_big_is_zero(RNumBig *a) {
-	r_return_val_if_fail (a, -1);
+	R_RETURN_VAL_IF_FAIL (a, -1);
 
 	int i;
 	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {

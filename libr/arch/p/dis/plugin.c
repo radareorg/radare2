@@ -63,7 +63,7 @@ static char *mnemonic(struct dis_instr *instr) {
 }
 
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 
 	if (op->size < 1) {
 		return false;

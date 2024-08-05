@@ -40,7 +40,7 @@ static bool check_golang(RBinSymbol *sym) {
 }
 
 static inline bool is_cxx_symbol(const char *name) {
-	r_return_val_if_fail (name, false);
+	R_RETURN_VAL_IF_FAIL (name, false);
 	if (*name == '_') {
 		name++;
 		if (*name == '_') {

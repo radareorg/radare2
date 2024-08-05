@@ -784,7 +784,7 @@ static int step_until(RCore *core, ut64 addr) {
 }
 
 static int step_until_esil(RCore *core, const char *esilstr) {
-	r_return_val_if_fail (core && core->dbg && core->dbg->anal && esilstr, false);
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->anal && esilstr, false);
 	if (!core->dbg->anal->esil) {
 		R_LOG_INFO ("esil is not initialized. Run 'aei' first");
 		return false;
@@ -875,7 +875,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 }
 
 static bool step_until_optype(RCore *core, const char *_optypes) {
-	r_return_val_if_fail (core && core->dbg && _optypes, false);
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && _optypes, false);
 	RList *optypes_list = NULL;
 	RListIter *iter;
 	char *optype = NULL;
@@ -5032,7 +5032,7 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_sta
 	char *hexpairs;
 	const char *cmd = ignore_stack? "dxrs": "dxr";
 	int ret = 0;
-	r_return_val_if_fail (core && buf, 1);
+	R_RETURN_VAL_IF_FAIL (core && buf, 1);
 
 	r_buf_seek (buf, 0, R_BUF_SET);
 	raw = r_buf_read_all (buf, &raw_len);

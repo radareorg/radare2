@@ -65,7 +65,7 @@ static const char *chunk_name(int chunk_type) {
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 	if (bf && !r_str_endswith (bf->file, ".tic")) {
 		return false;
 	}

@@ -146,7 +146,7 @@ static bool r_debug_winkd_detach(RDebug *dbg, int pid) {
 }
 
 static char *r_debug_winkd_reg_profile(RDebug *dbg) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
@@ -308,14 +308,14 @@ static RList *r_debug_winkd_modules(RDebug *dbg) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	ds->plugin_data = R_NEW0 (PluginData);
 	return !!ds->plugin_data;
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	if (!ds->plugin_data) {
 		return false;

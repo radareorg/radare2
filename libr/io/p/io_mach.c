@@ -488,7 +488,7 @@ static bool __close(RIODesc *fd) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	r_return_val_if_fail (io && fd, NULL);
+	R_RETURN_VAL_IF_FAIL (io && fd, NULL);
 	if (!cmd || !fd->data) {
 		return NULL;
 	}

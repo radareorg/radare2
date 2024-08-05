@@ -14,7 +14,7 @@
 #define P f->p
 
 R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
-	r_return_val_if_fail (reg && name, NULL);
+	R_RETURN_VAL_IF_FAIL (reg && name, NULL);
 	RListIter *iter;
 	RRegItem *r;
 
@@ -198,7 +198,7 @@ R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
 }
 
 R_API bool r_reg_cond(RReg *r, int type) {
-	r_return_val_if_fail (r, false);
+	R_RETURN_VAL_IF_FAIL (r, false);
 	RRegFlags f = {0};
 	r_reg_cond_retrieve (r, &f);
 	return r_reg_cond_bits (r, type, &f);

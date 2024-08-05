@@ -339,7 +339,7 @@ char *major_minor(const char *s) {
 }
 
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
-	r_return_val_if_fail (lib && file && stru, -1);
+	R_RETURN_VAL_IF_FAIL (lib && file && stru, -1);
 	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
@@ -390,7 +390,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 
 R_API bool r_lib_opendir(RLib *lib, const char *path) {
 #if WANT_DYLINK
-	r_return_val_if_fail (lib && path, false);
+	R_RETURN_VAL_IF_FAIL (lib && path, false);
 #ifdef R2_LIBR_PLUGINS
 	if (!path) {
 		path = R2_LIBR_PLUGINS;
@@ -460,7 +460,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 
 #define LibCB RLibLifeCycleCallback
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, LibCB cb, LibCB dt, void *user) {
-	r_return_val_if_fail (lib && desc, false);
+	R_RETURN_VAL_IF_FAIL (lib && desc, false);
 	// TODO r2_590 resolve using lib->handlers_ht
 	RLibHandler *handler = NULL;
 	if (lib->handlers_bytype[type]) {

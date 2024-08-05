@@ -27,7 +27,7 @@ static const struct {
 static const int MACHINES_MAX = sizeof (_machines) / sizeof (_machines[0]);
 
 static Sdb* get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	return bin->kv;
 }

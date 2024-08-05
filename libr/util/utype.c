@@ -21,7 +21,7 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 }
 
 R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
-	r_return_val_if_fail (TDB && R_STR_ISNOTEMPTY (name), -1);
+	R_RETURN_VAL_IF_FAIL (TDB && R_STR_ISNOTEMPTY (name), -1);
 	const char *type = sdb_const_get (TDB, name, 0);
 	if (!type) {
 		return R_TYPE_INVALID;
@@ -84,7 +84,7 @@ R_API void r_type_enum_free(RTypeEnum *member) {
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
-	r_return_val_if_fail (TDB && name, NULL);
+	R_RETURN_VAL_IF_FAIL (TDB && name, NULL);
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
@@ -690,8 +690,8 @@ static void clean_function_name(char *func_name) {
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	char *str = func_name;
 	char *result = NULL;
-	r_return_val_if_fail (TDB, false);
-	r_return_val_if_fail (func_name, false);
+	R_RETURN_VAL_IF_FAIL (TDB, false);
+	R_RETURN_VAL_IF_FAIL (func_name, false);
 
 	size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {

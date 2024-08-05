@@ -56,7 +56,7 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 	REventCallbackHandle handle = {0};
 	REventCallbackHook hook;
 
-	r_return_val_if_fail (ev, handle);
+	R_RETURN_VAL_IF_FAIL (ev, handle);
 	hook.cb = cb;
 	hook.user = user;
 	hook.handle = ev->next_handle++;
@@ -79,7 +79,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	RVector *cbs = (RVector *)v;
 	REventCallbackHook *hook;
 	size_t i;
-	r_return_val_if_fail (cbs, false);
+	R_RETURN_VAL_IF_FAIL (cbs, false);
 	r_vector_enumerate (cbs, hook, i) {
 		if (hook->handle == handle) {
 			r_vector_remove_at (cbs, i, NULL);

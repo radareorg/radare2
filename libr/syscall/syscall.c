@@ -85,7 +85,7 @@ static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits
 
 // TODO: should be renamed to r_syscall_use();
 R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	bool syscall_changed, sysregs_changed;
 
 	if (!os || !*os) {
@@ -209,7 +209,7 @@ R_API int r_syscall_get_swi(RSyscall *s) {
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
-	r_return_val_if_fail (s && s->db, NULL);
+	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
 	char key[128];
 	swi = getswi (s, swi);
 	if (swi < 16) {
@@ -234,7 +234,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 }
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {
-	r_return_val_if_fail (s && str && s->db, -1);
+	R_RETURN_VAL_IF_FAIL (s && str && s->db, -1);
 	int sn = (int)sdb_array_get_num (s->db, str, 1, NULL);
 	if (sn == 0) {
 		return (int)sdb_array_get_num (s->db, str, 0, NULL);
@@ -243,7 +243,7 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
-	r_return_val_if_fail (s && s->db, NULL);
+	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
 	char foo[32];
 	swi = getswi (s, swi);
 	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
@@ -267,7 +267,7 @@ static bool callback_list(void *u, const char *k, const char *v) {
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {
-	r_return_val_if_fail (s && s->db, NULL);
+	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
 	RList *list = r_list_newf ((RListFree)r_syscall_item_free);
 	if (!list) {
 		return NULL;
@@ -278,7 +278,7 @@ R_API RList *r_syscall_list(RSyscall *s) {
 
 /* io and sysregs */
 R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	int i;
 	const char *name = r_syscall_sysreg (s, "io", ioport);
 	if (name) {
@@ -293,7 +293,7 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 }
 
 R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
-	r_return_val_if_fail (s && s->db, NULL);
+	R_RETURN_VAL_IF_FAIL (s && s->db, NULL);
 	r_strf_var (key, 64, "%s,%"PFMT64d, type, num);
 	return sdb_const_get (s->db, key, 0);
 }

@@ -603,7 +603,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 }
 
 R_API char *r_table_tosql(RTable *t) {
-	r_return_val_if_fail (t, NULL);
+	R_RETURN_VAL_IF_FAIL (t, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
@@ -1199,7 +1199,7 @@ static bool __table_special(RTable *t, const char *columnName) {
 }
 
 R_API bool r_table_query(RTable *t, const char *q) {
-	r_return_val_if_fail (t, false);
+	R_RETURN_VAL_IF_FAIL (t, false);
 	q = r_str_trim_head_ro (q);
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each

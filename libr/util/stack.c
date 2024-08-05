@@ -3,7 +3,7 @@
 #include <r_util.h>
 
 R_API RStack *r_stack_new(ut32 n) {
-	r_return_val_if_fail (n > 0 && n < ST32_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (n > 0 && n < ST32_MAX, NULL);
 	RStack *s = R_NEW0 (RStack);
 	if (!s) {
 		return NULL;
@@ -19,7 +19,7 @@ R_API RStack *r_stack_new(ut32 n) {
 }
 
 R_API RStack *r_stack_newf(ut32 n, RStackFree f) {
-	r_return_val_if_fail (n > 0 && n < ST32_MAX && f, NULL);
+	R_RETURN_VAL_IF_FAIL (n > 0 && n < ST32_MAX && f, NULL);
 	RStack *s = r_stack_new (n);
 	if (s) {
 		s->free = f;
@@ -41,7 +41,7 @@ R_API void r_stack_free(RStack *s) {
 }
 
 R_API bool r_stack_push(RStack *s, void *el) {
-	r_return_val_if_fail (s && el, false);
+	R_RETURN_VAL_IF_FAIL (s && el, false);
 	if (s->top + 1 >= ST32_MAX) {
 		// avoid integer overflow
 		return false;
@@ -64,7 +64,7 @@ R_API bool r_stack_push(RStack *s, void *el) {
 }
 
 R_API void *r_stack_pop(RStack *s) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	if (s->top == -1) {
 		return NULL;
 	}
@@ -74,16 +74,16 @@ R_API void *r_stack_pop(RStack *s) {
 }
 
 R_API bool r_stack_is_empty(RStack *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	return s->top == -1;
 }
 
 R_API size_t r_stack_size(RStack *s) {
-	r_return_val_if_fail (s && s->top >= -1, 0);
+	R_RETURN_VAL_IF_FAIL (s && s->top >= -1, 0);
 	return (size_t)(s->top + 1);
 }
 
 R_API void *r_stack_peek(RStack *s) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	return (s->top >= 0)? s->elems[s->top]: NULL;
 }

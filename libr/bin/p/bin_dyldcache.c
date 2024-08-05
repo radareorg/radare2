@@ -130,7 +130,7 @@ static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_cou
 }
 
 static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
-	r_return_val_if_fail (cache && cache->buf, NULL);
+	R_RETURN_VAL_IF_FAIL (cache && cache->buf, NULL);
 
 	ut32 i;
 	for (i = 0; i < cache->n_hdr; i++) {

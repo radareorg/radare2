@@ -91,7 +91,7 @@ static RRBNode *_find_entry_ci_node(RRBTree *cache_tree, RInterval *itv) {
 }
 
 static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
-	r_return_val_if_fail (b && buf && (len > 0), false);
+	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), false);
 	RBufCache *priv = get_priv_cache_bytes (b);
 	ut64 addr = priv->offset;
 	RInterval itv = (RInterval){addr, len};
@@ -143,7 +143,7 @@ static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 }
 
 static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	r_return_val_if_fail (b && buf && (len > 0), 0);
+	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), 0);
 	RBufCache *priv = get_priv_cache_bytes (b);
 	ut64 addr = priv->offset;
 

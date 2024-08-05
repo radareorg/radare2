@@ -445,7 +445,7 @@ static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_ct
 
 static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *context, ut64 atAddress) {
 	RCore *core = context->anal->coreb.core;
-	r_return_val_if_fail (core, R_TYPEINFO_TYPE_CLASS);
+	R_RETURN_VAL_IF_FAIL (core, R_TYPEINFO_TYPE_CLASS);
 
 	// get the reloc flags
 	const RList *flags = context->anal->flb.get_list (core->flags, atAddress);

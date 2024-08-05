@@ -47,7 +47,7 @@ R_API void r_anal_switch_op_free(RAnalSwitchOp *swop) {
 }
 
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump) {
-	r_return_val_if_fail (swop && addr != UT64_MAX, NULL);
+	R_RETURN_VAL_IF_FAIL (swop && addr != UT64_MAX, NULL);
 	RAnalCaseOp * caseop = r_anal_case_op_new (addr, value, jump);
 	if (caseop) {
 		r_list_append (swop->cases, caseop);

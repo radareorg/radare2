@@ -50,7 +50,7 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -72,7 +72,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);
 	R_FREE (as->data);
@@ -80,7 +80,7 @@ static bool fini(RArchSession *as) {
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -4011,7 +4011,7 @@ In a true 32 bit Windows GS is always zero.
 #endif
 
 static char *get_reg_profile(RArchSession *as) {
-	r_return_val_if_fail (as && as->config, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
 	const char *p = NULL;
 	switch (as->config->bits) {
 	case 16: p =
@@ -4402,7 +4402,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static RList *anal_preludes(RArchSession *as) {
-	r_return_val_if_fail (as && as->config, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
 	RList *l = NULL;
 	switch (as->config->bits) {
 	case 32:
@@ -4427,7 +4427,7 @@ static RList *anal_preludes(RArchSession *as) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }

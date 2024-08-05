@@ -160,7 +160,7 @@ R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
-	r_return_val_if_fail (s && kw, 0);
+	R_RETURN_VAL_IF_FAIL (s && kw, 0);
 	return r_search_hit_sz (s, kw, addr, kw->keyword_length);
 }
 
@@ -527,7 +527,7 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 
 // like r_search_update but uses s->iob, does not need to loop as much
 R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
-	r_return_val_if_fail (s && s->iob.read_at && s->consb.is_breaked, -1);
+	R_RETURN_VAL_IF_FAIL (s && s->iob.read_at && s->consb.is_breaked, -1);
 	switch (s->mode) {
 	case R_SEARCH_PATTERN:
 		return search_pattern (s, from, to);
@@ -548,7 +548,7 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 
 // TODO: show progress
 R_API int r_search_maps(RSearch *s, RList *maps) {
-	r_return_val_if_fail (s && s->consb.is_breaked && maps, -1);
+	R_RETURN_VAL_IF_FAIL (s && s->consb.is_breaked && maps, -1);
 	RListIter *iter;
 	RIOMap *m;
 	ut64 prevto = UT64_MAX;

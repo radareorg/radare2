@@ -10,7 +10,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_return_val_if_fail (bf && buf, false);
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinPEObj *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set (bf->sdb, "info", res->kv);

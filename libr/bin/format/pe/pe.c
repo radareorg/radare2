@@ -89,7 +89,7 @@ static inline bool follow_offset_arm64(struct r_bin_pe_addr_t *entry, RBuffer *b
 }
 
 struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
-	r_return_val_if_fail (pe && pe->b, NULL);
+	R_RETURN_VAL_IF_FAIL (pe && pe->b, NULL);
 	ut8 b[512];
 	size_t n = 0;
 	struct r_bin_pe_addr_t* entry = PE_(r_bin_pe_get_entrypoint) (pe);
@@ -3514,7 +3514,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 }
 
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* pe) {
-	r_return_val_if_fail (pe, NULL);
+	R_RETURN_VAL_IF_FAIL (pe, NULL);
 	struct r_bin_pe_export_t* exp, * exports = NULL;
 	PE_Word function_ordinal = 0;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_rva, name_vaddr, name_paddr;

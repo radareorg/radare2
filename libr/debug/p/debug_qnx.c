@@ -377,14 +377,14 @@ static int r_debug_qnx_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set)
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	ds->plugin_data = R_NEW0 (PluginData);
 	return !!ds->plugin_data;
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds && ds->plugin_data, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds && ds->plugin_data, false);
 
 	PluginData *pd = ds->plugin_data;
 	R_FREE (pd->reg_buf);

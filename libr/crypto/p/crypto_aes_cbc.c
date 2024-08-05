@@ -19,7 +19,7 @@ static bool aes_cbc_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode
 }
 
 static int aes_cbc_get_key_size(RCryptoJob *cj) {
-	r_return_val_if_fail (cj, -1);
+	R_RETURN_VAL_IF_FAIL (cj, -1);
 	return cj->key_len;
 }
 

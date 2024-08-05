@@ -195,7 +195,7 @@ R_API RAsm *r_asm_new(void) {
 
 // TODO must use the internal rparse api when both libraries are merged
 R_API bool r_asm_sub_names_input(RAsm *a, const char *f) {
-	r_return_val_if_fail (a && f, false);
+	R_RETURN_VAL_IF_FAIL (a && f, false);
 	if (!a->ifilter) {
 		a->ifilter = r_parse_new ();
 	}
@@ -209,7 +209,7 @@ R_API bool r_asm_sub_names_input(RAsm *a, const char *f) {
 
 // TODO must use the internal rparse api when both libraries are merged
 R_API bool r_asm_sub_names_output(RAsm *a, const char *f) {
-	r_return_val_if_fail (a && f, false);
+	R_RETURN_VAL_IF_FAIL (a && f, false);
 	if (!a->ofilter) {
 		a->ofilter = r_parse_new ();
 	}
@@ -244,7 +244,7 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 }
 
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, false);
+	R_RETURN_VAL_IF_FAIL (a && name, false);
 	// TODO not implemented
 	return false;
 }
@@ -281,7 +281,7 @@ static void load_asm_descriptions(RAsm *a) {
 }
 
 R_API bool r_asm_use(RAsm *a, const char *name) {
-	r_return_val_if_fail (a, false);
+	R_RETURN_VAL_IF_FAIL (a, false);
 	if (R_STR_ISEMPTY (name)) {
 		// that shouldnt be permitted imho, keep for backward compat
 		return false;
@@ -323,7 +323,7 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a, false);
+	R_RETURN_VAL_IF_FAIL (a, false);
 #if 0
 	if (a->cur) {
 		switch (a->cur->endian) {
@@ -492,7 +492,7 @@ R_API void r_asm_list_directives(void) {
 
 // returns instruction size.. but we have the size in analop and should return bool because thats just a wrapper around analb.encode
 static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
-	r_return_val_if_fail (a && op && buf, 0);
+	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
 	int ret = 0;
 	char *b = strdup (buf);
 	if (!b) {
@@ -524,7 +524,7 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 }
 
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
-	r_return_val_if_fail (a && buf && len >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
 
 	ut64 pc = a->pc;
 	ut64 idx;
@@ -1042,7 +1042,7 @@ R_API const RList* r_asm_get_plugins(RAsm *a) {
 
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
-	r_return_val_if_fail (a && b && l >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (a && b && l >= 0, NULL);
 	r_asm_set_pc (a, addr);
 	RAsmCode *code = r_asm_mdisassemble (a, b, l);
 	if (code) {
@@ -1069,7 +1069,7 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 }
 
 R_API int r_asm_syntax_from_string(const char *name) {
-	r_return_val_if_fail (name, -1);
+	R_RETURN_VAL_IF_FAIL (name, -1);
 	if (!strcmp (name, "regnum")) {
 		return R_ARCH_SYNTAX_REGNUM;
 	}
@@ -1089,7 +1089,7 @@ R_API int r_asm_syntax_from_string(const char *name) {
 }
 
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
-	r_return_val_if_fail (a, NULL);
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	// should use rarch instead!.. but for now ranal.mnemonics is calling arch.mnemonics..
 	if (a->analb.anal && a->analb.mnemonics) {
 		return a->analb.mnemonics (a->analb.anal, id, json);
@@ -1098,7 +1098,7 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 }
 
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, 0);
+	R_RETURN_VAL_IF_FAIL (a && name, 0);
 	int i;
 	for (i = 0; i < 9000; i++) {
 		char *n = r_asm_mnemonics (a, i, false);
@@ -1112,7 +1112,7 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 
 // XXX find better name for this function asm_rasm_assemble wtf
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
-	r_return_val_if_fail (a && buf, NULL);
+	R_RETURN_VAL_IF_FAIL (a && buf, NULL);
 	char *lbuf = strdup (buf);
 	if (!lbuf) {
 		return NULL;
@@ -1137,7 +1137,7 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
-	r_return_val_if_fail (a, NULL);
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	// R2_600 move to r_arch api instead?
 	const char *cpus = R_UNWRAP5 (a, arch, session, plugin, cpus);
 	RList *list = cpus

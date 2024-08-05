@@ -92,7 +92,7 @@ static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
 /// END ///////////////////// esil trace helpers ///////////////////////
 
 static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsilTrace **et) {
-	r_return_val_if_fail (core && core->anal && core->anal->esil, false);
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, false);
 	*dt = core->dbg->trace;
 	*et = core->anal->esil->trace;
 	core->dbg->trace = r_debug_trace_new ();
@@ -122,7 +122,7 @@ static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, REs
 
 static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *rname) {
 	DD eprintf ("regwrite contains %d %s\n", idx, rname);
-	r_return_val_if_fail (etrace && rname, false);
+	R_RETURN_VAL_IF_FAIL (etrace && rname, false);
 	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx); // AAA + 1);
 	if (op && op->start != op->end) {
 		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);

@@ -590,7 +590,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 }
 
 R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
-	r_return_val_if_fail (core && fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (core && fcn, NULL);
 	if (r_config_get_b (core->config, "anal.slow")) {
 		return autoname_slow (core, fcn, mode);
 	}
@@ -1159,7 +1159,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	ut8 buf[32];
 	ut8 *ptr;
 
-	r_return_val_if_fail (core, NULL);
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
@@ -3720,7 +3720,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_core_cmd_help (core, help_msg_aflm);
 		return 0;
 	}
-	r_return_val_if_fail (core && core->anal, 0);
+	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
 		if (*rad == 'j') {
 			r_cons_println ("[]");
@@ -4027,7 +4027,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
-	r_return_val_if_fail (bbs, false);
+	R_RETURN_VAL_IF_FAIL (bbs, false);
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 
 	if (depth < 0) {
@@ -4316,7 +4316,7 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 // TODO(maskray) RAddrInterval API
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
-	r_return_val_if_fail (core, -1);
+	R_RETURN_VAL_IF_FAIL (core, -1);
 	if (!ref) {
 		R_LOG_ERROR ("Null reference search is not supported");
 		return -1;

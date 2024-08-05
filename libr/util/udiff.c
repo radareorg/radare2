@@ -60,7 +60,7 @@ static inline void lev_row_adjust(Levrow *row, ut32 maxdst, ut32 rownum, ut32 bu
 }
 
 static inline Levrow *lev_row_init(Levrow *matrix, ut32 maxdst, ut32 rownum, ut32 buflen, ut32 delta) {
-	r_return_val_if_fail (matrix && !matrix[rownum].changes, false);
+	R_RETURN_VAL_IF_FAIL (matrix && !matrix[rownum].changes, false);
 	Levrow *row = matrix + rownum;
 	lev_row_adjust (row, maxdst, rownum, buflen, delta);
 	if ((row->changes = R_NEWS (ut32, row->end - row->start + 1)) == NULL) {
@@ -79,7 +79,7 @@ static inline ut32 lev_get_val(Levrow *row, ut32 i) {
 // obtains array of operations, in reverse order, to get from column to row of
 // matrix
 static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chgs) {
-	r_return_val_if_fail (len >= 2 && matrix && chgs && !*chgs, -1);
+	R_RETURN_VAL_IF_FAIL (len >= 2 && matrix && chgs && !*chgs, -1);
 	Levrow *row = matrix + len - 1;
 	Levrow *prev_row = row - 1;
 	RLevOp a = LEVADD;
@@ -315,7 +315,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 // Eugene W. Myers O(ND) diff algorithm
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
 R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	r_return_val_if_fail (a && b, false);
+	R_RETURN_VAL_IF_FAIL (a && b, false);
 	const bool verbose = diff? diff->verbose: false;
 	const ut32 length = la + lb;
 	const ut8 *ea = a + la, *eb = b + lb;
@@ -368,7 +368,7 @@ out:
 }
 
 R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	r_return_val_if_fail (a && b, false);
+	R_RETURN_VAL_IF_FAIL (a && b, false);
 	const bool verbose = diff ? diff->verbose : false;
 	const ut32 length = R_MAX (la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;
@@ -438,7 +438,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 // Note that 64KB * 64KB * 2 = 8GB.
 // TODO Discard common prefix and suffix
 R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
-	r_return_val_if_fail (a && b, NULL);
+	R_RETURN_VAL_IF_FAIL (a && b, NULL);
 	RDiffChar *diffchar = R_NEW0 (RDiffChar);
 	if (!diffchar) {
 		return NULL;
@@ -712,8 +712,8 @@ R_API void r_diffchar_free(RDiffChar *diffchar) {
 }
 
 static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, size_t skip, ut32 alen, ut32 blen) {
-	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
-	r_return_val_if_fail (blen >= alen && alen > 0, -1);
+	R_RETURN_VAL_IF_FAIL (bufa && bufb && bufa->buf && bufb->buf, -1);
+	R_RETURN_VAL_IF_FAIL (blen >= alen && alen > 0, -1);
 
 	// max distance is at most length of longer input, or provided by user
 	ut32 origdst = maxdst = R_MIN (maxdst, blen);
@@ -824,8 +824,8 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
  * caller must free *chgs.
  */
 R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs) {
-	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
-	r_return_val_if_fail (!chgs || !*chgs, -1); // if chgs then it must point at NULL
+	R_RETURN_VAL_IF_FAIL (bufa && bufb && bufa->buf && bufb->buf, -1);
+	R_RETURN_VAL_IF_FAIL (!chgs || !*chgs, -1); // if chgs then it must point at NULL
 
 	// force buffer b to be longer, this will invert add/del resulsts
 	bool invert = false;
@@ -835,7 +835,7 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 		bufa = bufb;
 		bufb = x;
 	}
-	r_return_val_if_fail (bufb->len < UT32_MAX, -1);
+	R_RETURN_VAL_IF_FAIL (bufb->len < UT32_MAX, -1);
 	ut32 ldelta = bufb->len - bufa->len;
 	if (ldelta > maxdst) {
 		return ST32_MAX;

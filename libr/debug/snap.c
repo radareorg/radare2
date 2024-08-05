@@ -12,7 +12,7 @@ R_API void r_debug_snap_free(RDebugSnap *snap) {
 }
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
-	r_return_val_if_fail (dbg && map, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg && map, NULL);
 	if (map->size < 1) {
 		R_LOG_ERROR ("Invalid map size");
 		return NULL;

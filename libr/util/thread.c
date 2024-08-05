@@ -291,7 +291,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 
 // enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th) {
-	r_return_val_if_fail (th, false);
+	R_RETURN_VAL_IF_FAIL (th, false);
 	if (!th->running) {
 		// thread already exited, cannot launch
 		return false;

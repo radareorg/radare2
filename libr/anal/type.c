@@ -122,7 +122,7 @@ R_IPI void union_type_member_free(void *e, void *user) {
 }
 
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && sname, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && sname, NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
@@ -172,7 +172,7 @@ error:
 }
 
 static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && sname, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && sname, NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
@@ -234,7 +234,7 @@ error:
 }
 
 static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && sname, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && sname, NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
@@ -285,7 +285,7 @@ error:
 }
 
 static RAnalBaseType *get_typedef_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (sname), NULL);
 
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
@@ -304,7 +304,7 @@ error:
 }
 
 static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
-	r_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (sname), NULL);
 	r_strf_buffer (KSZ);
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (base_type) {
@@ -320,7 +320,7 @@ static RAnalBaseType *get_atomic_type(RAnal *anal, const char *sname) {
 
 // returns NULL if name is not found or any failure happened
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
-	r_return_val_if_fail (anal && name, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
 
 	char *sname = r_str_sanitize_sdb_key (name);
 	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);

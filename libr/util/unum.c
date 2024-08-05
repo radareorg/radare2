@@ -898,7 +898,7 @@ R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
 
 // wont work for 64bit but thats by design
 R_API char *r_num_list_join(RList *str, const char *sep) {
-	r_return_val_if_fail (str && sep, NULL);
+	R_RETURN_VAL_IF_FAIL (str && sep, NULL);
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach_iter (str, iter) {

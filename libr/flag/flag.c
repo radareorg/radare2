@@ -168,7 +168,7 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 }
 
 static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
-	r_return_val_if_fail (f && item && newname, false);
+	R_RETURN_VAL_IF_FAIL (f && item && newname, false);
 	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
@@ -248,7 +248,7 @@ R_API RFlag *r_flag_new(void) {
 }
 
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
-	r_return_val_if_fail (item, NULL);
+	R_RETURN_VAL_IF_FAIL (item, NULL);
 
 	RFlagItem *n = R_NEW0 (RFlagItem);
 	if (!n) {
@@ -476,7 +476,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 }
 
 static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
-	r_return_val_if_fail (f && item, NULL);
+	R_RETURN_VAL_IF_FAIL (f && item, NULL);
 	if (item->alias) {
 		item->offset = r_num_math (f->num, item->alias);
 	}
@@ -486,7 +486,7 @@ static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
 /* return true if flag.* exist at offset. Otherwise, false is returned.
  * For example (f, "sym", 3, 0x1000)*/
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
-	r_return_val_if_fail (f && flag_prefix, false);
+	R_RETURN_VAL_IF_FAIL (f && flag_prefix, false);
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
 	if (f->mask) {
@@ -506,14 +506,14 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 /* return the flag item with name "name" in the RFlag "f", if it exists.
  * Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
-	r_return_val_if_fail (f, NULL);
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	RFlagItem *r = ht_pp_find (f->ht_name, name, NULL);
 	return r? evalFlag (f, r): NULL;
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
-	r_return_val_if_fail (f, NULL);
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -525,7 +525,7 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
  * operands to the function.
  * Pass in the name of each space, in order, followed by a NULL */
 R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
-	r_return_val_if_fail (f, NULL);
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -610,7 +610,7 @@ static bool isFunctionFlag(const char *n) {
 /* returns the last flag item defined before or at the given offset.
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
-	r_return_val_if_fail (f, NULL);
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	R_CRITICAL_ENTER (f);
 	if (f->mask) {
 		off &= f->mask;
@@ -712,7 +712,7 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 // Set a new flag named `name` at offset `off`. If there's already a flag with
 // the same name, slightly change the name by appending ".%d" as suffix
 R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size) {
-	r_return_val_if_fail (f && name, NULL);
+	R_RETURN_VAL_IF_FAIL (f && name, NULL);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -755,7 +755,7 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
-	r_return_val_if_fail (f && name && *name, NULL);
+	R_RETURN_VAL_IF_FAIL (f && name && *name, NULL);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -818,7 +818,7 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 
 /* add/replace/remove the color of a flag item */
 R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
-	r_return_val_if_fail (item, NULL);
+	R_RETURN_VAL_IF_FAIL (item, NULL);
 	free (item->color);
 	item->color = (color && *color) ? strdup (color) : NULL;
 	return item->color;
@@ -842,7 +842,7 @@ R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
  *
  * NOTE: the item is freed. */
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
-	r_return_val_if_fail (f && item, false);
+	R_RETURN_VAL_IF_FAIL (f && item, false);
 	remove_offsetmap (f, item);
 	ht_pp_delete (f->ht_name, item->name);
 	R_DIRTY (f);
@@ -852,7 +852,7 @@ R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
 /* unset the first flag item found at offset off.
  * return true if such a flag is found and unset, false otherwise. */
 R_API bool r_flag_unset_off(RFlag *f, ut64 off) {
-	r_return_val_if_fail (f, false);
+	R_RETURN_VAL_IF_FAIL (f, false);
 	RFlagItem *item = r_flag_get_i (f, off);
 	if (item && r_flag_unset (f, item)) {
 		return true;
@@ -879,7 +879,7 @@ static bool unset_foreach(RFlagItem *fi, void *user) {
  * return the number of unset items. -1 on error */
 // XXX This is O(n^n) because unset_globa iterates all flags and unset too.
 R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
-	r_return_val_if_fail (f, -1);
+	R_RETURN_VAL_IF_FAIL (f, -1);
 
 	struct unset_foreach_t u = { .f = f, .n = 0 };
 	r_flag_foreach_glob (f, glob, unset_foreach, &u);
@@ -890,7 +890,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 /* unset the flag item with the given name.
  * returns true if the item is found and unset, false otherwise. */
 R_API bool r_flag_unset_name(RFlag *f, const char *name) {
-	r_return_val_if_fail (f, false);
+	R_RETURN_VAL_IF_FAIL (f, false);
 	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
 	R_DIRTY (f);
 	return item && r_flag_unset (f, item);
@@ -930,7 +930,7 @@ static bool flag_relocate_foreach(RFlagItem *fi, void *user) {
 }
 
 R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
-	r_return_val_if_fail (f, -1);
+	R_RETURN_VAL_IF_FAIL (f, -1);
 	struct flag_relocate_t u = {
 		.f = f,
 		.off = off,
@@ -944,7 +944,7 @@ R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
 }
 
 R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to) {
-	r_return_val_if_fail (f, false);
+	R_RETURN_VAL_IF_FAIL (f, false);
 	RFlagItem *item = r_flag_get_i (f, at);
 	if (item) {
 		r_flag_set (f, item->name, to, item->size);
@@ -978,7 +978,7 @@ static bool flag_count_foreach(RFlagItem *fi, void *user) {
 
 R_API int r_flag_count(RFlag *f, const char *glob) {
 	int count = 0;
-	r_return_val_if_fail (f, -1);
+	R_RETURN_VAL_IF_FAIL (f, -1);
 	r_flag_foreach_glob (f, glob, flag_count_foreach, &count);
 	return count;
 }

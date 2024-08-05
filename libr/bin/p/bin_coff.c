@@ -502,7 +502,7 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 #define BYTES_PER_IMP_RELOC		8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (!bin->scn_hdrs) {
 		return NULL;
 	}
@@ -680,7 +680,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList *patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin && bf->rbin->iob.io && bf->rbin->iob.io->desc, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io && bf->rbin->iob.io->desc, NULL);
 	RBin *b = bf->rbin;
 	RBinObject *bo = r_bin_cur_object (b);
 	RIO *io = bf->rbin->iob.io;

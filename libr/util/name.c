@@ -198,7 +198,7 @@ R_API char *r_name_filter_dup(const char *name) {
 
 // filter out shell special chars
 R_API char *r_name_filter_shell(const char *s) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	char *a = malloc (strlen (s) + 1);
 	if (!a) {
 		return NULL;
@@ -224,7 +224,7 @@ R_API char *r_name_filter_shell(const char *s) {
 }
 
 R_API char *r_name_filter_quoted_shell(const char *s) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	char *a = malloc (strlen (s) + 1);
 	if (!a) {
 		return NULL;

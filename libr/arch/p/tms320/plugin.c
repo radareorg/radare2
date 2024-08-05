@@ -168,13 +168,13 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static tms320_dasm_t *tms320_engine_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	PluginData *pd = as->data;
 	return &pd->engine;
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -414,7 +414,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static bool tms320_init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -437,7 +437,7 @@ static bool tms320_init(RArchSession *as) {
 }
 
 static bool tms320_fini(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, false);
+	R_RETURN_VAL_IF_FAIL (as && as->data, false);
 
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);

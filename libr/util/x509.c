@@ -39,7 +39,7 @@ static inline bool is_oid_object(RASN1Object *object) {
 }
 
 R_API bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object *object) {
-	r_return_val_if_fail (ai && object, false);
+	R_RETURN_VAL_IF_FAIL (ai && object, false);
 
 	if (object->list.length < 1 || !object->list.objects || !is_oid_object (object)) {
 			return false;
@@ -108,7 +108,7 @@ R_API bool r_x509_parse_name(RX509Name *name, RASN1Object *object) {
 }
 
 R_API bool r_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
-	r_return_val_if_fail (ext && object, false);
+	R_RETURN_VAL_IF_FAIL (ext && object, false);
 	if (object->list.length != 2) {
 		return false;
 	}

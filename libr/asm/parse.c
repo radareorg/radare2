@@ -72,7 +72,7 @@ R_API void r_parse_free(RParse *p) {
 }
 
 R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *foo) {
-	r_return_val_if_fail (p && foo, false);
+	R_RETURN_VAL_IF_FAIL (p && foo, false);
 	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
 		r_list_append (p->parsers, foo);
@@ -94,7 +94,7 @@ static char *predotname(const char *name) {
 }
 
 R_API bool r_parse_use(RParse *p, const char *name) {
-	r_return_val_if_fail (p && name, false);
+	R_RETURN_VAL_IF_FAIL (p && name, false);
 
 	// TODO: remove the alias workarounds because of missing pseudo plugins
 	// TODO: maybe we want to have a generic pseudo parser?
@@ -129,7 +129,7 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 // this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
 // and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
 R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
-	r_return_val_if_fail (p && data && str, false);
+	R_RETURN_VAL_IF_FAIL (p && data && str, false);
 	char *in = strdup (str);
 	bool ret = false;
 	char *s, *o;
@@ -164,7 +164,7 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
 // TODO: refactoring, this should return char * instead
 // like parseHeap()
 R_API char *r_parse_instruction(RParse *p, const char *data) {
-	r_return_val_if_fail (p && data, false);
+	R_RETURN_VAL_IF_FAIL (p && data, false);
 	char *str = malloc (32 + strlen (data) * 2);
 	strcpy (str, data);
 	bool bres = (p && p->cur && p->cur->parse)
@@ -177,7 +177,7 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 }
 
 R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. in R2_590 because r_parse_instruction is better
-	r_return_val_if_fail (p && data && str, false);
+	R_RETURN_VAL_IF_FAIL (p && data && str, false);
 	return (p && data && *data && p->cur && p->cur->parse)
 		? p->cur->parse (p, data, str) : false;
 }
@@ -217,7 +217,7 @@ R_API char *r_parse_immtrim(char *_opstr) {
 }
 
 R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	if (p->cur && p->cur->subvar) {
 		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}

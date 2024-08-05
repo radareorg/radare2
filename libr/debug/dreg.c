@@ -4,7 +4,7 @@
 #include <r_core.h> // just to get the RPrint instance
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
-	r_return_val_if_fail (dbg && dbg->reg, false);
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, false);
 	if (dbg->current == NULL) {
 		return true;
 	}
@@ -82,7 +82,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 }
 
 static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname) {
-	r_return_val_if_fail (item, true);
+	R_RETURN_VAL_IF_FAIL (item, true);
 	// if regname is PC or SP should return false, otherwise return true
 	if (pcname && !strcmp (item->name, pcname)) {
 		return false;
@@ -94,7 +94,7 @@ static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname)
 }
 
 R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
-	r_return_val_if_fail (dbg && dbg->reg, false);
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, false);
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
@@ -104,7 +104,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');
-	r_return_val_if_fail (!isJson || (isJson && pj), false);
+	R_RETURN_VAL_IF_FAIL (!isJson || (isJson && pj), false);
 
 	if (dbg->coreb.core) {
 		pr = ((RCore*)dbg->coreb.core)->print;
@@ -325,7 +325,7 @@ beach:
 }
 
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
-	r_return_val_if_fail (dbg && name, false);
+	R_RETURN_VAL_IF_FAIL (dbg && name, false);
 	int role = r_reg_get_name_idx (name);
 	if (!dbg->reg) {
 		return false;

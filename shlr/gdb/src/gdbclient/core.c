@@ -94,7 +94,7 @@ static void gdbr_break_process(void *arg) {
 }
 
 bool gdbr_lock_tryenter(libgdbr_t *g) {
-	r_return_val_if_fail (g, false);
+	R_RETURN_VAL_IF_FAIL (g, false);
 	if (!r_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
@@ -104,7 +104,7 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
-	r_return_val_if_fail (g, false);
+	R_RETURN_VAL_IF_FAIL (g, false);
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
@@ -1454,7 +1454,7 @@ end:
 }
 
 int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
-	r_return_val_if_fail (g && buf && max_len, -1);
+	R_RETURN_VAL_IF_FAIL (g && buf && max_len, -1);
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;

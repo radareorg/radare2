@@ -346,7 +346,7 @@ static bool is_direct(char const *str) {
  * returns true if the given string denotes an 'r'-register
  */
 static bool is_reg(char const *str) {
-	r_return_val_if_fail (str, false);
+	R_RETURN_VAL_IF_FAIL (str, false);
 	return tolower (str[0]) == 'r' && R_BETWEEN ('0', str[1], '7') && !str[2];
 }
 

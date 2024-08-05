@@ -529,7 +529,7 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 }
 
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
-	r_return_val_if_fail (scheduler && task, -1);
+	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
 	return task_run (task);
 }

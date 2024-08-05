@@ -11,7 +11,7 @@ R_API void r_core_vmark_reset(RCore *core) {
 }
 
 R_API bool r_core_vmark_dump(RCore *core, int mode) {
-	r_return_val_if_fail (core, false);
+	R_RETURN_VAL_IF_FAIL (core, false);
 	size_t i;
 	bool res = false;
 	if (mode == 'v') {

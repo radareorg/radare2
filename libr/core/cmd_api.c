@@ -28,7 +28,7 @@ static void cmd_desc_free(RCmdDesc *cd) {
 }
 
 static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
-	r_return_val_if_fail (cd && !cd->parent, false);
+	R_RETURN_VAL_IF_FAIL (cd && !cd->parent, false);
 	if (parent) {
 		cd->parent = parent;
 		r_pvector_push (&parent->children, cd);
@@ -180,7 +180,7 @@ R_API RCmdDesc *r_cmd_get_root(RCmd *cmd) {
 }
 
 R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
-	r_return_val_if_fail (cmd && cmd_identifier, NULL);
+	R_RETURN_VAL_IF_FAIL (cmd && cmd_identifier, NULL);
 	char *cmdid = strdup (cmd_identifier);
 	char *end_cmdid = cmdid + strlen (cmdid);
 	RCmdDesc *res = NULL;
@@ -361,7 +361,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 }
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
-	r_return_val_if_fail (cmd && cmd->aliases && k, NULL);
+	R_RETURN_VAL_IF_FAIL (cmd && cmd->aliases && k, NULL);
 	return ht_pp_find (cmd->aliases, k, NULL);
 }
 
@@ -482,7 +482,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	int ret = -1;
 	RListIter *iter;
 	RCorePlugin *cp;
-	r_return_val_if_fail (cmd && input, -1);
+	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
 			ret = cmd->nullcallback (cmd->data);
@@ -658,7 +658,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 }
 
 R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
-	r_return_val_if_fail (mac && _name, false);
+	R_RETURN_VAL_IF_FAIL (mac && _name, false);
 	RListIter *iter;
 	RCmdMacroItem *m;
 	char *name = strdup (_name);
@@ -1015,7 +1015,7 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 /* RCmdParsedArgs */
 
 R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args) {
-	r_return_val_if_fail (cmd && n_args >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (cmd && n_args >= 0, NULL);
 	RCmdParsedArgs *res = R_NEW0 (RCmdParsedArgs);
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
@@ -1058,7 +1058,7 @@ static void free_array(char **arr, int n) {
 }
 
 R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], false);
 	char **tmp = R_NEWS0 (char *, n_args + 1);
 	if (!tmp) {
 		return false;
@@ -1081,7 +1081,7 @@ err:
 }
 
 R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *a, const char *cmd) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], false);
 	char *tmp = strdup (cmd);
 	if (!tmp) {
 		return false;
@@ -1102,14 +1102,14 @@ static void parsed_args_iterateargs(RCmdParsedArgs *a, RStrBuf *sb) {
 }
 
 R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *a) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	parsed_args_iterateargs (a, sb);
 	return r_strbuf_drain (sb);
 }
 
 R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
 	RStrBuf *sb = r_strbuf_new (a->argv[0]);
 	if (a->argc > 1 && a->has_space_after_cmd) {
 		r_strbuf_append (sb, " ");
@@ -1119,6 +1119,6 @@ R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
 }
 
 R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
 	return a->argv[0];
 }

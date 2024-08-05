@@ -27,7 +27,7 @@ R_DEPRECATE R_API void r_asm_op_fini(RAnalOp *op) {
 
 // R2_600 - must use RArchOp.getHex()
 R_DEPRECATE R_API char *r_asm_op_get_hex(RAnalOp *op) {
-	r_return_val_if_fail (op && op->bytes, NULL);
+	R_RETURN_VAL_IF_FAIL (op && op->bytes, NULL);
 	const int size = op->size;
 	if (size < 1) {
 		return NULL;
@@ -44,20 +44,20 @@ R_DEPRECATE R_API char *r_asm_op_get_hex(RAnalOp *op) {
 
 // XXX R2_600
 R_DEPRECATE R_API char *r_asm_op_get_asm(RAnalOp *op) {
-	r_return_val_if_fail (op, NULL);
+	R_RETURN_VAL_IF_FAIL (op, NULL);
 	return op->mnemonic;
 }
 
 #if 0
 UNUSED
 R_API ut8 *r_asm_op_get_buf(RAnalOp *op) {
-	r_return_val_if_fail (op, NULL);
+	R_RETURN_VAL_IF_FAIL (op, NULL);
 	return op->bytes;
 }
 #endif
 
 R_API int r_asm_op_get_size(RAnalOp *op) {
-	r_return_val_if_fail (op, 1);
+	R_RETURN_VAL_IF_FAIL (op, 1);
 	const int len = op->size - op->payload;
 	return R_MAX (1, len);
 }
@@ -68,7 +68,7 @@ R_API void r_asm_op_set_asm(RAnalOp *op, const char *str) {
 }
 
 R_API int r_asm_op_set_hex(RAnalOp *op, const char *str) {
-	r_return_val_if_fail (op && str, 0);
+	R_RETURN_VAL_IF_FAIL (op && str, 0);
 	ut8 *bin = (ut8*)strdup (str);
 	if (bin) {
 		int len = r_hex_str2bin (str, bin);
@@ -87,7 +87,7 @@ R_API int r_asm_op_set_hex(RAnalOp *op, const char *str) {
 }
 
 R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len) {
-	r_return_val_if_fail (op && buf && len >= 0, 0);
+	R_RETURN_VAL_IF_FAIL (op && buf && len >= 0, 0);
 	char *hex = malloc (len * 4 + 1);
 	if (hex) {
 		(void)r_hex_bin2str (buf, len, hex);

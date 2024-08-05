@@ -208,14 +208,14 @@ R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
-	r_return_val_if_fail (anal, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
 	RArchPluginMnemonicsCallback am = R_UNWRAP3 (session, plugin, mnemonics);
 	return am? am (session, id, json): NULL;
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
@@ -236,7 +236,7 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 
 // deprecate.. or at least reuse get_reg_profile...
 R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	char *rp = NULL;
 	bool ret = false;
 	if (!p) {
@@ -251,7 +251,7 @@ R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 }
 
 R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE const char *arch, int bits) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
@@ -318,7 +318,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 
 // see 'aobm' command
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
-	r_return_val_if_fail (anal && data && size > 0, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && data && size > 0, NULL);
 	int oplen, idx = 0;
 
 	RAnalOp *op = r_anal_op_new ();
@@ -364,7 +364,7 @@ R_API RList* r_anal_get_fcns(RAnal *anal) {
 }
 
 R_API bool r_anal_op_is_eob(RAnalOp *op) {
-	r_return_val_if_fail (op, false);
+	R_RETURN_VAL_IF_FAIL (op, false);
 	if (op->eob) {
 		return true;
 	}
@@ -411,7 +411,7 @@ static int default_archinfo(int res, int q) {
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
 // XXX this function should NEVER return -1. it should provide all valid values, even if the delegate does not
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) { // R2_590
-	r_return_val_if_fail (anal, -1);
+	R_RETURN_VAL_IF_FAIL (anal, -1);
 	int res = -1;
 	if (anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
@@ -691,7 +691,7 @@ R_API RList *r_anal_preludes(RAnal *anal) {
 }
 
 R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (addr == UT64_MAX) {
 		return false;
 	}

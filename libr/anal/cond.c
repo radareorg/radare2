@@ -95,7 +95,7 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 }
 
 R_API char *r_anal_cond_tostring(RAnalCond *cond) {
-	r_return_val_if_fail (cond, NULL);
+	R_RETURN_VAL_IF_FAIL (cond, NULL);
 	const char *cnd = condstring (cond);
 	char *val0 = r_anal_value_tostring (cond->arg[0]);
 	char *out = NULL;

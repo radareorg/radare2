@@ -187,7 +187,7 @@ static bool init_ehdr(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_phnum)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, 0);
+	R_RETURN_VAL_IF_FAIL (eo, 0);
 
 	if (eo->ehdr.e_phnum == UT16_MAX) {
 		// sh_info member of the initial entry in section header table.
@@ -290,7 +290,7 @@ static bool read_phdr(ELFOBJ *eo) {
 }
 
 static int init_phdr(ELFOBJ *eo) {
-	r_return_val_if_fail (eo && !eo->phdr, false);
+	R_RETURN_VAL_IF_FAIL (eo && !eo->phdr, false);
 
 	if (!eo->ehdr.e_phnum) {
 		return false;
@@ -340,7 +340,7 @@ static int init_phdr(ELFOBJ *eo) {
 }
 
 static int init_shdr(ELFOBJ *eo) {
-	r_return_val_if_fail (eo && !eo->shdr, false);
+	R_RETURN_VAL_IF_FAIL (eo && !eo->shdr, false);
 
 	ut32 shdr_size;
 	if (!UT32_MUL (&shdr_size, eo->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
@@ -409,7 +409,7 @@ static bool is_shidx_valid(ELFOBJ *eo, Elf_(Half) value) {
 }
 
 static bool init_strtab(ELFOBJ *eo) {
-	r_return_val_if_fail (!eo->strtab, false);
+	R_RETURN_VAL_IF_FAIL (!eo->strtab, false);
 
 	if (!eo->shdr) {
 		return false;
@@ -631,7 +631,7 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 static int init_dynamic_section(ELFOBJ *eo) {
 	set_default_value_dynamic_info(eo);
 
-	r_return_val_if_fail (eo, false);
+	R_RETURN_VAL_IF_FAIL (eo, false);
 	if (!eo->phdr || !eo->ehdr.e_phnum) {
 		return false;
 	}
@@ -1453,7 +1453,7 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 }
 
 static bool init_dynstr(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, false);
+	R_RETURN_VAL_IF_FAIL (eo, false);
 	if (!eo->shdr || !eo->shstrtab) {
 		R_LOG_DEBUG ("no section header or sh string tab");
 		return false;
@@ -1944,7 +1944,7 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
 
 /// XXX this is O(n) and can be cached to avoid walking the sections again
 bool Elf_(has_nx)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, 0);
+	R_RETURN_VAL_IF_FAIL (eo, 0);
 
 	if (eo && eo->phdr) {
 		size_t i;
@@ -1958,7 +1958,7 @@ bool Elf_(has_nx)(ELFOBJ *eo) {
 }
 
 int Elf_(has_relro)(ELFOBJ *bin) {
-	r_return_val_if_fail (bin, R_ELF_NO_RELRO);
+	R_RETURN_VAL_IF_FAIL (bin, R_ELF_NO_RELRO);
 	if (bin->phdr) {
 		bool have_bind_now = false;
 		if (bin->dyn_info.dt_bind_now) {
@@ -1985,7 +1985,7 @@ of the maximum page size
 */
 
 ut64 Elf_(get_baddr)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, 0);
+	R_RETURN_VAL_IF_FAIL (eo, 0);
 	ut64 base = UT64_MAX;
 	if (eo->phdr) {
 		size_t i;
@@ -2010,7 +2010,7 @@ ut64 Elf_(get_baddr)(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_boffset)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, 0);
+	R_RETURN_VAL_IF_FAIL (eo, 0);
 
 	if (!eo->phdr) {
 		return 0; // TODO: should return ut64.max
@@ -2031,7 +2031,7 @@ ut64 Elf_(get_boffset)(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 	if (is_intel (eo)) { // push // x86 only
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry == UT64_MAX) {
@@ -2050,7 +2050,7 @@ ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 	if (is_intel (eo)) { // push // x86 only
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry == UT64_MAX) {
@@ -2087,7 +2087,7 @@ static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
 	if (!Elf_(is_executable) (eo)) {
 		return UT64_MAX;
@@ -2115,7 +2115,7 @@ static ut64 lookup_main_symbol_offset(ELFOBJ *eo) {
 }
 
 ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
 	ut64 entry = Elf_(get_entry_offset) (eo);
 	if (entry == UT64_MAX) {
@@ -2315,7 +2315,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo) {
 }
 
 char *Elf_(intrp)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (!eo->phdr) {
 		return NULL;
 	}
@@ -2739,7 +2739,7 @@ char* Elf_(get_machine_name)(ELFOBJ *eo) {
 }
 
 char* Elf_(get_file_type)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	ut64 e_type = (ut64)eo->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
 	switch (e_type) {
@@ -3024,7 +3024,7 @@ int Elf_(is_big_endian)(ELFOBJ *eo) {
 
 /* XXX Init dt_strtab? */
 char *Elf_(get_rpath)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (!eo->phdr || !eo->strtab) {
 		return NULL;
@@ -3311,7 +3311,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 }
 
 const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->relocs_loaded) {
 		return &eo->g_relocs;
 	}
@@ -3323,7 +3323,7 @@ const RVector *Elf_(load_relocs) (ELFOBJ *eo) {
 }
 
 const RVector* Elf_(load_libs)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (eo->libs_loaded) {
 		return &eo->g_libs;
@@ -3371,7 +3371,7 @@ static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut
 }
 
 static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
-	r_return_val_if_fail (eo && eo->phdr, NULL);
+	R_RETURN_VAL_IF_FAIL (eo && eo->phdr, NULL);
 
 	if (!eo->ehdr.e_phnum) {
 		return NULL;
@@ -3419,7 +3419,7 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 }
 
 static const RVector *_load_elf_sections(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (eo->sections_loaded) {
 		return &eo->g_sections;
 	}
@@ -3945,7 +3945,7 @@ static void _fini_bin_section(RBinSection *section, void *user) {
 }
 
 const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo) {
-	r_return_val_if_fail (bf && eo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && eo, NULL);
 	if (!eo->sections_cached) {
 		const RVector *sections = _load_elf_sections (eo);
 		r_vector_init (&eo->cached_sections, sizeof (RBinSection), (RVectorFree) _fini_bin_section, NULL);
@@ -3956,7 +3956,7 @@ const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo) {
 }
 
 static bool is_special_arm_symbol(ELFOBJ *eo, Elf_(Sym) *sym, const char *name) {
-	r_return_val_if_fail (eo && sym && name, false);
+	R_RETURN_VAL_IF_FAIL (eo && sym && name, false);
 	const char ch0 = name[0];
 	const char ch1 = name[1];
 	if (!ch0 || !ch1) {
@@ -4148,7 +4148,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 }
 
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (!eo->phdr || !eo->ehdr.e_phnum) {
 		return NULL;
@@ -4217,7 +4217,7 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 }
 
 static RVecRBinElfSymbol *Elf_(load_phdr_symbols)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (!eo->phdr_symbols_vec) {
 		eo->phdr_symbols_vec = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
@@ -4225,7 +4225,7 @@ static RVecRBinElfSymbol *Elf_(load_phdr_symbols)(ELFOBJ *eo) {
 }
 
 static RVecRBinElfSymbol *Elf_(load_phdr_imports)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (!eo->phdr_imports_vec) {
 		eo->phdr_imports_vec = load_symbols_from_phdr (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
@@ -4782,7 +4782,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
@@ -4857,7 +4857,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 }
 
 bool Elf_(load_symbols)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (!eo->g_symbols_vec) {
 		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
@@ -4865,7 +4865,7 @@ bool Elf_(load_symbols)(ELFOBJ *eo) {
 }
 
 bool Elf_(load_imports)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 	if (!eo->g_imports_vec) {
 		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
@@ -4873,7 +4873,7 @@ bool Elf_(load_imports)(ELFOBJ *eo) {
 }
 
 const RVector* Elf_(load_fields)(ELFOBJ *eo) {
-	r_return_val_if_fail (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (eo->fields_loaded) {
 		return &eo->g_fields;
@@ -5005,7 +5005,7 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 
 // Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now.
 ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
-	r_return_val_if_fail (eo, 0);
+	R_RETURN_VAL_IF_FAIL (eo, 0);
 
 	if (!eo->phdr) {
 		if (is_bin_etrel (eo)) {
@@ -5030,7 +5030,7 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 
 // Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now.
 ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
-	r_return_val_if_fail (eo, 0); // UT64_MAX or vaddr?
+	R_RETURN_VAL_IF_FAIL (eo, 0); // UT64_MAX or vaddr?
 	if (!eo->phdr) {
 		if (is_bin_etrel (eo)) {
 			return vaddr - eo->baddr;
@@ -5054,7 +5054,7 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 /* converts a physical address to the virtual address, looking
  * at the program headers in the binary bin */
 ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
 	if (!eo->phdr) {
 		return is_bin_etrel (eo) ? eo->baddr + paddr : UT64_MAX;
@@ -5074,7 +5074,7 @@ ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
 /* converts a virtual address to the relative physical address, looking
  * at the program headers in the binary bin */
 ut64 Elf_(v2p_new) (ELFOBJ *eo, ut64 vaddr) {
-	r_return_val_if_fail (eo, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
 	if (!eo->phdr) {
 		return is_bin_etrel (eo) ? vaddr - eo->baddr : UT64_MAX;

@@ -330,7 +330,7 @@ static bool objc_find_refs(RCore *core) {
 }
 
 R_API bool cmd_anal_objc(RCore *core, const char *input, bool auto_anal) {
-	r_return_val_if_fail (core && input, 0);
+	R_RETURN_VAL_IF_FAIL (core && input, 0);
 	if (!auto_anal) {
 		objc_analyze (core);
 	}

@@ -547,7 +547,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (r_str_startswith (cmd, "alarm ")) {
 		struct itimerval tmout;
 		int secs = atoi (cmd + 6);
-		r_return_val_if_fail (secs >= 0, NULL);
+		R_RETURN_VAL_IF_FAIL (secs >= 0, NULL);
 
 		tmout.it_value.tv_sec = secs;
 		tmout.it_value.tv_usec = 0;

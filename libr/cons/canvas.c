@@ -364,7 +364,7 @@ R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
 }
 
 R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
-	r_return_val_if_fail (c, NULL);
+	R_RETURN_VAL_IF_FAIL (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
 	bool is_first = true;

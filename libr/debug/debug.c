@@ -11,7 +11,7 @@ R_LIB_VERSION(r_debug);
 #define DBG_BUF_SIZE 512
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (dbg->pid < 0) {
 		return NULL;
 	}
@@ -59,7 +59,7 @@ R_API int r_debug_drx_get(RDebug *dbg, ut64 addr) {
  * r_debug_recoil handles stage 2.
  */
 static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
-	r_return_val_if_fail (dbg && pc_ri && pb, false);
+	R_RETURN_VAL_IF_FAIL (dbg && pc_ri && pb, false);
 	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
 	*pb = NULL;
@@ -453,7 +453,7 @@ R_API void r_debug_free(RDebug *dbg) {
 }
 
 R_API bool r_debug_attach(RDebug *dbg, int pid) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	if (pid < 0) {
 		return false;
 	}
@@ -483,7 +483,7 @@ R_API bool r_debug_stop(RDebug *dbg) {
 }
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
-	r_return_val_if_fail (dbg && arch, false);
+	R_RETURN_VAL_IF_FAIL (dbg && arch, false);
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (!plugin) {
 		return false;
@@ -536,7 +536,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  * XXX: This function will advance your seek to the end of the injected code.
  */
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack) {
-	r_return_val_if_fail (dbg && buf && len > 0, false);
+	R_RETURN_VAL_IF_FAIL (dbg && buf && len > 0, false);
 	ut8 stack_backup[1024];
 
 	if (r_debug_is_dead (dbg)) {
@@ -628,7 +628,7 @@ R_API bool r_debug_start(RDebug *dbg, const char *cmd) {
 }
 
 R_API bool r_debug_detach(RDebug *dbg, int pid) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	bool ret = false;
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && plugin->detach) {
@@ -642,7 +642,7 @@ R_API bool r_debug_detach(RDebug *dbg, int pid) {
 }
 
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	if (pid < 0) {
 		return false;
 	}
@@ -1003,7 +1003,7 @@ R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 }
 
 R_API int r_debug_step(RDebug *dbg, int steps) {
-	r_return_val_if_fail (dbg, 0);
+	R_RETURN_VAL_IF_FAIL (dbg, 0);
 	RBreakpointItem *bp = NULL;
 	int ret, steps_taken = 0;
 
@@ -1377,12 +1377,12 @@ repeat:
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
-	r_return_val_if_fail (dbg, -1);
+	R_RETURN_VAL_IF_FAIL (dbg, -1);
 	return r_debug_continue_kill (dbg, 0);
 }
 
 R_API int r_debug_continue_with_signal(RDebug *dbg) {
-	r_return_val_if_fail (dbg, -1);
+	R_RETURN_VAL_IF_FAIL (dbg, -1);
 #if R2__WINDOWS__
 	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
 #else
@@ -1567,7 +1567,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 
 // continue execution until a syscall is found, then return its syscall number or -1 on error
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
-	r_return_val_if_fail (dbg, false);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	int i, err, reg;
 	if (!dbg->current || r_debug_is_dead (dbg)) {
 		return -1;
