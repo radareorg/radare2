@@ -707,9 +707,10 @@ R_API const char *r_line_hist_get(int n) {
 
 #if R2_USE_NEW_ABI
 R_API int r_line_hist_list(bool full) {
+	int i = 0;
 	inithist ();
 	if (I.history.data) {
-		int i = full? 0: I.history.load_index;
+		i = full? 0: I.history.load_index;
 		for (; i < I.history.size && I.history.data[i]; i++) {
 			const char *pad = r_str_pad (' ', 32 - strlen (I.history.data[i]));
 			r_cons_printf ("%s %s # !%d\n", I.history.data[i], pad, i);
