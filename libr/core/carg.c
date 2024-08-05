@@ -128,7 +128,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 /* This function display list of arg with some colors */
 
 R_API void r_core_print_func_args(RCore *core) {
-	r_return_if_fail (core && core->anal && core->anal->reg);
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->reg);
 
 
 	bool color = r_config_get_i (core->config, "scr.color");

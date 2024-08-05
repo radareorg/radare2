@@ -40,7 +40,7 @@ R_API char *r_arch_platform_set(RArch *arch, const char *name) {
 
 // TODO return list or char *
 R_API void r_arch_platform_list(RArch *arch) {
-	r_return_if_fail (arch);
+	R_RETURN_IF_FAIL (arch);
 	RListIter *iter;
 	char *item;
 	char *root = getroot ();

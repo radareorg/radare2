@@ -466,7 +466,7 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len) {
-	r_return_if_fail (context);
+	R_RETURN_IF_FAIL (context);
 	if (!data || len == 0) {
 		return;
 	}
@@ -504,7 +504,7 @@ R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len)
 }
 
 R_IPI void r_sha256_final(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *context) {
-	r_return_if_fail (context);
+	R_RETURN_IF_FAIL (context);
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
 
@@ -932,7 +932,7 @@ R_IPI char *r_sha512_data(const ut8 *data, size_t len, char digest[R_SHA512_DIGE
 
 /*** SHA-384: *********************************************************/
 R_IPI void r_sha384_init(RSha384Context *context) {
-	r_return_if_fail (context);
+	R_RETURN_IF_FAIL (context);
 	memcpy (context->state, sha384_initial_hash_value, R_SHA512_DIGEST_LENGTH);
 	memset (context->buffer, 0, R_SHA384_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;

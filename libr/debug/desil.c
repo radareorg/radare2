@@ -209,7 +209,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *regname, ut64 *num) {
 }
 
 R_API void r_debug_esil_prestep(RDebug *d, int p) {
-	r_return_if_fail (d);
+	R_RETURN_IF_FAIL (d);
 	prestep = p;
 }
 

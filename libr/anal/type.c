@@ -32,7 +32,7 @@ static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) 
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
-	r_return_if_fail (anal && name);
+	R_RETURN_IF_FAIL (anal && name);
 	Sdb *TDB = anal->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -60,7 +60,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 
 // RENAME TO r_anal_types_save(); // parses the string and imports the types
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
-	r_return_if_fail (anal && parsed);
+	R_RETURN_IF_FAIL (anal && parsed);
 
 	// First, if any parsed types exist, let's remove them.
 	char *type = strdup (parsed);
@@ -352,7 +352,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 }
 
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name
+	R_RETURN_IF_FAIL (anal && type && type->name
 		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
@@ -392,8 +392,8 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 
 static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 	r_strf_buffer (KSZ);
-	r_return_if_fail (anal && type && type->name);
-	r_return_if_fail (type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
+	R_RETURN_IF_FAIL (anal && type && type->name);
+	R_RETURN_IF_FAIL (type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
 	C:
@@ -427,8 +427,8 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name);
-	r_return_if_fail (type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
+	R_RETURN_IF_FAIL (anal && type && type->name);
+	R_RETURN_IF_FAIL (type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
 			enum name {case1 = 1, case2 = 2, caseN = 3};
@@ -469,8 +469,8 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 
 static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	r_strf_buffer (KSZ);
-	r_return_if_fail (anal && type && type->name);
-	r_return_if_fail (type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	R_RETURN_IF_FAIL (anal && type && type->name);
+	R_RETURN_IF_FAIL (type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
 		Sdb:
@@ -492,7 +492,7 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 
 static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 	r_strf_buffer (KSZ);
-	r_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	R_RETURN_IF_FAIL (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
 		typedef char byte;
@@ -511,7 +511,7 @@ static void save_typedef(const RAnal *anal, const RAnalBaseType *type) {
 }
 
 R_API void r_anal_base_type_free(RAnalBaseType *type) {
-	r_return_if_fail (type);
+	R_RETURN_IF_FAIL (type);
 	free (type->name);
 	free (type->type);
 
@@ -563,7 +563,7 @@ R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
  * @param name Name of the type
  */
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
-	r_return_if_fail (anal && type && type->name);
+	R_RETURN_IF_FAIL (anal && type && type->name);
 
 	// TODO, solve collisions, if there are 2 types with the same name and kind
 

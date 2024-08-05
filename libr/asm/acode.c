@@ -16,7 +16,7 @@ R_API void r_asm_code_free(RAsmCode *acode) {
 }
 
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
-	r_return_if_fail (code && key && value);
+	R_RETURN_IF_FAIL (code && key && value);
 	if (!code->equs) {
 		code->equs = ht_pp_new0 ();
 	}

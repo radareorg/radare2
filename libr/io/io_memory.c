@@ -31,7 +31,7 @@ static inline ut64 _io_malloc_off(RIODesc *desc) {
 }
 
 static inline void _io_malloc_set_off(RIODesc *desc, ut64 off) {
-	r_return_if_fail (desc);
+	R_RETURN_IF_FAIL (desc);
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	mal->offset = off;
 }

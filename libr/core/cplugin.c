@@ -8,7 +8,7 @@ static RCorePlugin *cmd_static_plugins[] = {
 };
 
 R_API void r_core_plugin_fini(RCmd *cmd) {
-	r_return_if_fail (cmd);
+	R_RETURN_IF_FAIL (cmd);
 	if (cmd->plist) {
 		RListIter *iter;
 		RCorePlugin *plugin;

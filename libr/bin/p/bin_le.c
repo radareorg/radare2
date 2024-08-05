@@ -40,7 +40,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	r_return_if_fail (bf && bf->rbin && bf->bo && bf->bo->bin_obj);
+	R_RETURN_IF_FAIL (bf && bf->rbin && bf->bo && bf->bo->bin_obj);
 	RBin *rbin = bf->rbin;
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;

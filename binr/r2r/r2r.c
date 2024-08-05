@@ -711,7 +711,7 @@ beach:
 }
 
 static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
-	r_return_if_fail (pj && result);
+	R_RETURN_IF_FAIL (pj && result);
 	pj_o (pj);
 	pj_k (pj, "type");
 	R2RTest *test = result->test;
@@ -1269,7 +1269,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
-	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
@@ -1285,7 +1285,7 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
-	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	ut64 line_begin, line_end;
 	if (test->broken.set) {
@@ -1298,7 +1298,7 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
-	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {
 		return;

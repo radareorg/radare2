@@ -1066,7 +1066,7 @@ R_API bool clone_rvc(const Rvc *rvc, const char *dst) {
 }
 
 static void close_rvc(Rvc *vc, bool save) {
-	r_return_if_fail (vc);
+	R_RETURN_IF_FAIL (vc);
 	if (save) {
 		save_rvc (vc);
 	}

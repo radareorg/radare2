@@ -226,6 +226,6 @@ R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int
 
 /* setters */
 R_API void r_parse_set_user_ptr(RParse *p, void *user) {
-	r_return_if_fail (p && user);
+	R_RETURN_IF_FAIL (p && user);
 	p->user = user;
 }

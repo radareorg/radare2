@@ -408,7 +408,7 @@ static bool cb_analarch(void *user, void *data) {
 }
 
 static void update_archdecoder_options(RCore *core, RConfigNode *node) {
-	r_return_if_fail (core && core->anal && core->anal->arch && node);
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch && node);
 	r_config_node_purge_options (node);
 	RListIter *it;
 	RArchPlugin *ap;
@@ -617,7 +617,7 @@ static bool cb_asmassembler(void *user, void *data) {
 }
 
 static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
-	r_return_if_fail (core && core->rasm && node);
+	R_RETURN_IF_FAIL (core && core->rasm && node);
 	RListIter *iter;
 	r_config_node_purge_options (node);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
@@ -632,7 +632,7 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
-	r_return_if_fail (core && core->rasm);
+	R_RETURN_IF_FAIL (core && core->rasm);
 	const char *arch = r_config_get (core->config, "asm.arch");
 	if (!arch || !*arch) {
 		return;

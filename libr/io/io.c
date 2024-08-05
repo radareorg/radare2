@@ -13,7 +13,7 @@ R_API RIO* r_io_new(void) {
 }
 
 R_API void r_io_init(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	io->addrbytes = 1;
 	io->overlay = true;
 	io->cb_printf = printf;
@@ -174,7 +174,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 #endif
 
 R_API void r_io_close_all(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
@@ -468,7 +468,7 @@ R_API ut64 r_io_v2p(RIO *io, ut64 va) {
 }
 
 R_API void r_io_bind(RIO *io, RIOBind *bnd) {
-	r_return_if_fail (io && bnd);
+	R_RETURN_IF_FAIL (io && bnd);
 
 	bnd->io = io;
 	bnd->init = true;
@@ -571,7 +571,7 @@ static bool drain_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_drain_overlay(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_id_storage_foreach (io->maps, drain_cb, NULL);
 }
 
@@ -654,7 +654,7 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 #endif
 
 R_API void r_io_fini(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_io_bank_fini (io);
 	r_io_map_fini (io);
 	r_io_desc_cache_fini_all (io);

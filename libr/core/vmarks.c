@@ -3,7 +3,7 @@
 #include <r_core.h>
 
 R_API void r_core_vmark_reset(RCore *core) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	size_t i;
 	for (i = 0; i < UT8_MAX; i++) {
 		core->marks[i].addr = UT64_MAX;
@@ -63,7 +63,7 @@ R_API bool r_core_vmark_dump(RCore *core, int mode) {
 }
 
 R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	VisualMark *vm = &core->marks[ch];
 	vm->addr = addr;
 	vm->x = x;
@@ -71,12 +71,12 @@ R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y) {
 }
 
 R_API void r_core_vmark_del(RCore *core, ut8 ch) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	core->marks[ch].addr = UT64_MAX;
 }
 
 R_API void r_core_vmark(RCore *core, ut8 ch) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	if (IS_DIGIT (ch)) {
 		ch += ASCII_MAX + 1;
 	}
@@ -84,7 +84,7 @@ R_API void r_core_vmark(RCore *core, ut8 ch) {
 }
 
 R_API void r_core_vmark_seek(RCore *core, ut8 ch, RAGraph *g) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	VisualMark *vm = &core->marks[ch];
 	if (vm->addr != UT64_MAX) {
 		r_core_seek (core, vm->addr, true);

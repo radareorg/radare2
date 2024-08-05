@@ -1229,7 +1229,7 @@ static GH (RTcache)* GH (tcache_new) (RCore *core) {
 }
 
 static void GH (tcache_free) (GH (RTcache)* tcache) {
-	r_return_if_fail (tcache);
+	R_RETURN_IF_FAIL (tcache);
 	tcache->type == NEW
 		? free (tcache->RHeapTcache.heap_tcache)
 		: free (tcache->RHeapTcache.heap_tcache_pre_230);
@@ -1265,7 +1265,7 @@ static GHT GH (tcache_get_entry) (GH (RTcache)* tcache, int index) {
 }
 
 static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle) {
-	r_return_if_fail (core && tcache);
+	R_RETURN_IF_FAIL (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
@@ -1305,7 +1305,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 }
 
 static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool demangle) {
-	r_return_if_fail (core && core->dbg && core->dbg->maps);
+	R_RETURN_IF_FAIL (core && core->dbg && core->dbg->maps);
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (!tcache || m_arena == GHT_MAX) {
@@ -1373,7 +1373,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
-	r_return_if_fail (core && main_arena);
+	R_RETURN_IF_FAIL (core && main_arena);
 	if (!core->dbg || !core->dbg->maps) {
 		return;
 	}

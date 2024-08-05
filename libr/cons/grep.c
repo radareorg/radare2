@@ -462,7 +462,7 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 }
 
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
-	r_return_if_fail (cmd && quotestr);
+	R_RETURN_IF_FAIL (cmd && quotestr);
 	char *ptr = preprocess_filter_expr (cmd, quotestr);
 	if (ptr) {
 		r_str_trim (cmd);
@@ -1221,7 +1221,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 }
 
 R_API void r_cons_grep(const char *grep) {
-	r_return_if_fail (grep);
+	R_RETURN_IF_FAIL (grep);
 	r_cons_grep_expression (grep);
 	r_cons_grepbuf ();
 }

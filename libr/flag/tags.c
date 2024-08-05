@@ -33,7 +33,7 @@ R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 
 R_API void r_flag_tags_reset(RFlag *f, const char *name) {
 	// TODO: use name
-	r_return_if_fail (f);
+	R_RETURN_IF_FAIL (f);
 	sdb_reset (f->tags);
 }
 

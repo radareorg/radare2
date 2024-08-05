@@ -129,7 +129,7 @@ R_API void r_egg_free(REgg *egg) {
 }
 
 R_API void r_egg_reset(REgg *egg) {
-	r_return_if_fail (egg);
+	R_RETURN_IF_FAIL (egg);
 	r_egg_lang_include_init (egg);
 	// TODO: use r_list_purge instead of free/new here
 	r_buf_free (egg->src);
@@ -223,7 +223,7 @@ R_API bool r_egg_include(REgg *egg, const char *file, int format) {
 }
 
 R_API void r_egg_load(REgg *egg, const char *code, int format) {
-	r_return_if_fail (egg && code);
+	R_RETURN_IF_FAIL (egg && code);
 	switch (format) {
 	case 'a': // assembly
 		r_buf_append_bytes (egg->buf, (const ut8 *)code, strlen (code));
@@ -235,7 +235,7 @@ R_API void r_egg_load(REgg *egg, const char *code, int format) {
 }
 
 R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
-	r_return_if_fail (egg);
+	R_RETURN_IF_FAIL (egg);
 	RSyscallItem *item = r_syscall_get (egg->syscall,
 		r_syscall_get_num (egg->syscall, arg), -1);
 	if (!strcmp (arg, "close")) {
@@ -319,7 +319,7 @@ R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v) {
 }
 
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
-	r_return_if_fail (egg && fmt);
+	R_RETURN_IF_FAIL (egg && fmt);
 	va_list ap;
 	int len;
 	char buf[1024];

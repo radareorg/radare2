@@ -104,7 +104,7 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 }
 
 static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
-	r_return_if_fail (trace && ri);
+	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (!vreg) {
@@ -120,7 +120,7 @@ static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
 }
 
 static void add_mem_change(REsilTrace *trace, ut64 addr, ut8 data) {
-	r_return_if_fail (trace);
+	R_RETURN_IF_FAIL (trace);
 	RVector *vmem = ht_up_find (trace->memory, addr, NULL);
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (REsilMemChange), NULL, NULL);
@@ -290,7 +290,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 }
 
 R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
-	r_return_if_fail (esil && op);
+	R_RETURN_IF_FAIL (esil && op);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (!esil->trace) {
 		esil->trace = r_esil_trace_new (esil);
@@ -435,7 +435,7 @@ static void print_access(PrintfCallback p, int idx, REsilTraceAccess *a, int for
 }
 
 R_API void r_esil_trace_list(REsil *esil, int format) {
-	r_return_if_fail (esil && esil->anal);
+	R_RETURN_IF_FAIL (esil && esil->anal);
 	D {
 		ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
 		int i;

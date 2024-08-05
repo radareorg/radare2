@@ -1929,7 +1929,7 @@ error:
 }
 
 void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RSkipList *relocs, objc_cache_opt_info *oi) {
-	r_return_if_fail (bf && bf->bo && bf->bo->info);
+	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
 
 	struct MACH0_(SCategory) c = {0};
 	const int size = sizeof (struct MACH0_(SCategory));

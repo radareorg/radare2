@@ -624,7 +624,7 @@ typedef enum {
 } R2RPrintDiffMode;
 
 R_API void r_diffchar_print(RDiffChar *diffchar) {
-	r_return_if_fail (diffchar);
+	R_RETURN_IF_FAIL (diffchar);
 	R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
 	R2RCharAlignment cur_align;
 	size_t idx_align = diffchar->start_align;

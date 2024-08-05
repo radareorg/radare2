@@ -30,7 +30,7 @@ static int reloc_cmp(void *incoming, void *in, void *user) {
 }
 
 static void object_delete_items(RBinObject *o) {
-	r_return_if_fail (o);
+	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
 	r_strpool_free (o->pool);
 	ht_up_free (o->addr2klassmethod);
@@ -568,7 +568,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	r_return_if_fail (bo && bo->strings);
+	R_RETURN_IF_FAIL (bo && bo->strings);
 
 	RList *strings = bo->strings;
 	RBinString *ptr;

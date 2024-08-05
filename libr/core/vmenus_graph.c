@@ -180,14 +180,14 @@ static int cmpname(const void *_a, const void *_b) {
 }
 
 static void __sort(RCoreVisualViewGraph *status, RList *list) {
-	r_return_if_fail (status && list);
+	R_RETURN_IF_FAIL (status && list);
 	RListComparator cmp = (status->cur_sort == SORT_ADDRESS)? cmpaddr: cmpname;
 	list->sorted = false;
 	r_list_sort (list, cmp);
 }
 
 static void __toggleSort(RCoreVisualViewGraph *status) {
-	r_return_if_fail (status);
+	R_RETURN_IF_FAIL (status);
 	status->cur_sort = (status->cur_sort == SORT_ADDRESS)? SORT_NAME: SORT_ADDRESS;
 	__sort (status, status->mainCol);
 	__sort (status, status->refsCol);

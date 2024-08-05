@@ -4,7 +4,7 @@
 
 // TODO: simplify this horrible loop
 R_API void r_str_trim_path(char *s) {
-	r_return_if_fail (s);
+	R_RETURN_IF_FAIL (s);
 	char *src, *dst, *p;
 	int i = 0;
 	if (R_STR_ISEMPTY (s)) {
@@ -125,7 +125,7 @@ R_API const char *r_str_trim_head_wp(const char *str) {
 
 // remove in-place spaces from the head of the string.
 R_API void r_str_trim_head(char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	char *p = (char *)r_str_trim_head_ro (str);
 	if (p && p != str) {
 		memmove (str, p, strlen (p) + 1);
@@ -146,7 +146,7 @@ static bool is_escapable(char ch) {
 }
 
 R_API void r_str_trim_args(char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	char q = 0;
 	bool e = false;
 	char *s = str;
@@ -199,7 +199,7 @@ R_API void r_str_trim_args(char *str) {
 // Remove whitespace chars from the tail of the string, replacing them with
 // null bytes. The string is changed in-place.
 R_API void r_str_trim_tail(char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	size_t length = strlen (str);
 	while (length-- > 0) {
 		if (IS_WHITECHAR (str[length])) {
@@ -213,7 +213,7 @@ R_API void r_str_trim_tail(char *str) {
 // Removes spaces from the head of the string, and zeros out whitespaces from
 // the tail of the string. The string is changed in place.
 R_API void r_str_trim(char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	r_str_ntrim (str, strlen (str));
 }
 

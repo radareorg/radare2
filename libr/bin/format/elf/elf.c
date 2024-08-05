@@ -3358,7 +3358,7 @@ const RVector* Elf_(load_libs)(ELFOBJ *eo) {
 }
 
 static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut64 sz) {
-	r_return_if_fail (eo);
+	R_RETURN_IF_FAIL (eo);
 	if (!addr || addr == UT64_MAX) {
 		return;
 	}

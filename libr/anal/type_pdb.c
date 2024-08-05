@@ -96,10 +96,10 @@ cleanup:
  * @param types List of all types
  */
 static void parse_enum(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
-	r_return_if_fail (type_info->get_members &&
+	R_RETURN_IF_FAIL (type_info->get_members &&
 		type_info->get_name &&
 		type_info->get_utype);
 
@@ -160,10 +160,10 @@ cleanup:
  * @param types List of all types
  */
 static void parse_structure(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
-	r_return_if_fail (type_info->get_members &&
+	R_RETURN_IF_FAIL (type_info->get_members &&
 		type_info->is_fwdref &&
 		type_info->get_name &&
 		type_info->get_val);
@@ -223,7 +223,7 @@ cleanup:
  * @param types List of all types
  */
 static void parse_type(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 
 	int is_forward_decl;
 	if (type->type_data.is_fwdref) {
@@ -256,7 +256,7 @@ static void parse_type(const RAnal *anal, SType *type, RList *types) {
  * @param pdb PDB information
  */
 R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb) {
-	r_return_if_fail (anal && pdb);
+	R_RETURN_IF_FAIL (anal && pdb);
 	RList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);

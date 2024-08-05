@@ -2213,7 +2213,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
  * that are 4 chars long. */
 #define append(x, y) if (x && y) { strcat (x, y); x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	if (!str || len < 1) {
 		return;
 	}
@@ -3170,7 +3170,7 @@ static void printraw(RCore *core, int len, int mode) {
 
 static void _handle_call(RCore *core, char *line, char **str) {
 	// XXX: rewrite this function
-	r_return_if_fail (core && line && str);
+	R_RETURN_IF_FAIL (core && line && str);
 	if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "x86")) {
 		*str = strstr (line, "call ");
 	} else if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "arm")) {

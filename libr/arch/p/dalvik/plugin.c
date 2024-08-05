@@ -265,7 +265,7 @@ static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask ma
 }
 
 static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int size) {
-	r_return_val_if_fail  (as && op && buf && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL  (as && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
 	char str[1024], *strasm = NULL;

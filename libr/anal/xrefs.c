@@ -240,7 +240,7 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 }
 
 R_API void r_anal_xrefs_free(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	ref_manager_free (anal->rm);
 }
 
@@ -471,7 +471,7 @@ static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
-	r_return_if_fail (anal && anal->rm);
+	R_RETURN_IF_FAIL (anal && anal->rm);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, UT64_MAX);
 	if (!anal_refs) {

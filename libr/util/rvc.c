@@ -45,7 +45,7 @@ R_API Rvc *rvc_open(const char *path, RvcType type) {
 }
 
 R_API void rvc_close(Rvc *vc, bool save) {
-	r_return_if_fail (vc);
+	R_RETURN_IF_FAIL (vc);
 	RvcPluginClose klose = R_UNWRAP3 (vc, p, close);
 	if (klose) {
 		klose (vc, save);

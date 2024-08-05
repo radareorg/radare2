@@ -205,7 +205,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
  * multiletter shortcut of the form XYWZu and returned (see r_core_get_asmqjmps
  * for more info). Otherwise, the shortcut is the string representation of pos. */
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
-	r_return_if_fail (core && str && pos > 0);
+	R_RETURN_IF_FAIL (core && str && pos > 0);
 	if (core->is_asmqjmps_letter) {
 		int i, j = 0;
 		pos --;
@@ -1179,7 +1179,7 @@ static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, c
 }
 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
-	r_return_if_fail (completion && core && str && path);
+	R_RETURN_IF_FAIL (completion && core && str && path);
 	char *dirname = NULL , *basename = NULL;
 	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
@@ -1520,7 +1520,7 @@ static void autocomplete_default(R_NULLABLE RCore *core, RLineCompletion *comple
 }
 
 static void autocomplete_evals(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	RConfigNode *bt;
 	RListIter *iter;
 	const char *tmp = strrchr (str, ' ');
@@ -1536,7 +1536,7 @@ static void autocomplete_evals(RCore *core, RLineCompletion *completion, const c
 }
 
 static void autocomplete_project(RCore *core, RLineCompletion *completion, const char* str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	char *foo, *projects_path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	RList *list = r_sys_dir (projects_path);
 	RListIter *iter;
@@ -1555,7 +1555,7 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 }
 
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	int length = strlen (str);
 	int i;
 
@@ -1570,7 +1570,7 @@ static void autocomplete_minus(RCore *core, RLineCompletion *completion, const c
 }
 
 static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	RListIter *iter;
 	RBreakpoint *bp = core->dbg->bp;
 	RBreakpointItem *b;
@@ -1591,14 +1591,14 @@ static bool add_argv(RFlagItem *fi, void *user) {
 }
 
 static void autocomplete_flags(RCore *core, RLineCompletion *completion, const char* str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	int n = strlen (str);
 	r_flag_foreach_prefix (core->flags, str, n, add_argv, completion);
 }
 
 // TODO: Should be refactored
 static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (core && completion && str);
+	R_RETURN_IF_FAIL (core && completion && str);
 	char *pipe = strchr (str, '>');
 	Sdb *sdb = core->sdb;
 	char *lpath = NULL, *p1 = NULL, *out = NULL, *p2 = NULL;
@@ -1670,7 +1670,7 @@ static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const cha
 }
 
 static void autocomplete_zignatures(RCore *core, RLineCompletion *completion, const char* msg) {
-	r_return_if_fail (msg);
+	R_RETURN_IF_FAIL (msg);
 	int length = strlen (msg);
 	RSpaces *zs = &core->anal->zign_spaces;
 	RSpace *s;
@@ -1688,7 +1688,7 @@ static void autocomplete_zignatures(RCore *core, RLineCompletion *completion, co
 }
 
 static void autocomplete_flagspaces(RCore *core, RLineCompletion *completion, const char* msg) {
-	r_return_if_fail (msg);
+	R_RETURN_IF_FAIL (msg);
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
 	RSpaceIter *it;
@@ -1705,7 +1705,7 @@ static void autocomplete_flagspaces(RCore *core, RLineCompletion *completion, co
 }
 
 static void autocomplete_functions(RCore *core, RLineCompletion *completion, const char* str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	RListIter *iter;
 	RAnalFunction *fcn;
 	int n = strlen (str);
@@ -1719,7 +1719,7 @@ static void autocomplete_functions(RCore *core, RLineCompletion *completion, con
 }
 
 static void autocomplete_vars(RCore *core, RLineCompletion *completion, const char* str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		return;
@@ -1737,7 +1737,7 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 }
 
 static void autocomplete_macro(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (core && core->rcmd && completion && str);
+	R_RETURN_IF_FAIL (core && core->rcmd && completion && str);
 	RCmdMacroItem *item;
 	RListIter *iter;
 	size_t n = strlen (str);
@@ -1754,7 +1754,7 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 }
 
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
-	r_return_if_fail (completion && str);
+	R_RETURN_IF_FAIL (completion && str);
 	char *pipe = strchr (str, '>');
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
@@ -1764,7 +1764,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 }
 
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	char *pipe = strchr (str, '>');
 	char *path = strdup ((core->rfs->cwd && *core->rfs->cwd) ? (const char *)core->rfs->cwd: "/");
 	if (pipe) {
@@ -1776,7 +1776,7 @@ static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const
 }
 
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	int len = strlen (str);
 	char *name;
 	RListIter *iter;
@@ -1790,7 +1790,7 @@ static void autocomplete_charsets(RCore *core, RLineCompletion *completion, cons
 }
 
 static void autocomplete_theme(RCore *core, RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	int len = strlen (str);
 	char *theme;
 	RListIter *iter;
@@ -2955,7 +2955,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 }
 
 R_API void r_core_autocomplete_reload(RCore *core) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	r_core_autocomplete_free (core->autocomplete);
 	__init_autocomplete (core);
 }

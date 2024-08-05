@@ -179,7 +179,7 @@ static bool vtable_is_addr_vtable_start(RVTableContext *context, RBinSection *se
 	if (context->abi == R_ANAL_CPP_ABI_ITANIUM) {
 		return vtable_is_addr_vtable_start_itanium (context, section, curAddress);
 	}
-	r_return_val_if_reached (false);
+	R_RETURN_VAL_IF_REACHED (false);
 	return false;
 }
 

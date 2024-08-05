@@ -4,7 +4,7 @@
 #include <r_util/r_print.h>
 
 R_API void pj_raw(PJ *j, const char *msg) {
-	r_return_if_fail (j && msg);
+	R_RETURN_IF_FAIL (j && msg);
 	if (*msg) {
 		r_strbuf_append (&j->sb, msg);
 	}
@@ -15,7 +15,7 @@ R_API void pj_kraw(PJ *j) {
 }
 
 static void pj_comma(PJ *j) {
-	r_return_if_fail (j);
+	R_RETURN_IF_FAIL (j);
 	if (!j->is_key && !j->is_first) {
 		pj_raw (j, j->comma);
 		j->comma = ",";
@@ -53,7 +53,7 @@ R_API void pj_free(PJ *pj) {
 }
 
 R_API void pj_reset(PJ *j) {
-	r_return_if_fail (j);
+	R_RETURN_IF_FAIL (j);
 	r_strbuf_set (&j->sb, "");
 	j->level = 0;
 	j->is_first = true;

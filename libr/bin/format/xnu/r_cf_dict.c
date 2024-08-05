@@ -438,7 +438,7 @@ static RCFValueDict *r_cf_value_dict_new(void) {
 }
 
 void r_cf_value_dict_free (RCFValueDict *dict) {
-	r_return_if_fail (dict);
+	R_RETURN_IF_FAIL (dict);
 
 	if (dict->pairs) {
 		r_list_free (dict->pairs);

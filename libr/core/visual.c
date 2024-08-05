@@ -4511,7 +4511,7 @@ static void show_cursor(RCore *core) {
 }
 
 R_IPI void visual_refresh(RCore *core) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	char *cmd_str = NULL;
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;

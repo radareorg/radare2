@@ -1072,7 +1072,7 @@ R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, 
 }
 
 R_API void r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
-	r_return_if_fail (str && key && val);
+	R_RETURN_IF_FAIL (str && key && val);
 	char *heaped = r_str_replace (strdup (str), key, val, g);
 	if (heaped) {
 		if (sz < 0) {
@@ -1223,7 +1223,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 }
 
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
-	r_return_if_fail (p && dst);
+	R_RETURN_IF_FAIL (p && dst);
 	char *q = *dst;
 	switch (*p) {
 	case '\n':

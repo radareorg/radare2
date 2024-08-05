@@ -322,7 +322,7 @@ static inline bool op_set_nfo(HtUP *c, RAnalOp *op) {
 static void set_cf_info(RArchSession *s, RAnalOp *op) {
 	// TODO: check if file has changed
 	HtUP *cache = (HtUP *)s->user;
-	r_return_if_fail (cache);
+	R_RETURN_IF_FAIL (cache);
 
 	if (!op_set_nfo (cache, op)) {
 		if (parse_control_flow (s, op->addr)) {

@@ -793,7 +793,7 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 /* set screen_bounds to addr if the cursor is not visible on the screen anymore.
  * Note: screen_bounds is set only the first time this happens. */
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
-	r_return_if_fail (p);
+	R_RETURN_IF_FAIL (p);
 
 	if (!p->screen_bounds) {
 		return;
@@ -830,7 +830,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 }
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
-	r_return_if_fail (buf && len > 0);
+	R_RETURN_IF_FAIL (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
@@ -1712,7 +1712,7 @@ static R_TH_LOCAL RPrint staticp = {
 };
 
 R_API void r_print_spinbar(RPrint *p, const char *msg) {
-	r_return_if_fail (p);
+	R_RETURN_IF_FAIL (p);
 	p->spinpos++;
 	const char *a[6] = {
 		"/", "-", "\\", "|",
@@ -1978,7 +1978,7 @@ static inline void printHistBlock(RPrint *p, int k, int cols) {
 }
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
-	r_return_if_fail (p && arr);
+	R_RETURN_IF_FAIL (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
 	bool useUtf8 = p->cons->use_utf8;

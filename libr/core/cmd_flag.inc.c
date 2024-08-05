@@ -813,7 +813,7 @@ static void cmd_fd_dot(RCore *core, const char *input) {
 }
 
 static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
-	r_return_if_fail (fcn && (rad != 'j' || pj));
+	R_RETURN_IF_FAIL (fcn && (rad != 'j' || pj));
 	bool json = rad == 'j';
 	if (json) {
 		pj_o (pj);
@@ -826,7 +826,7 @@ static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 }
 
 static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
-	r_return_if_fail (core || fcn);
+	R_RETURN_IF_FAIL (core || fcn);
 	RAnal *anal = core->anal;
 	PJ *pj = NULL;
 	bool json = rad == 'j';

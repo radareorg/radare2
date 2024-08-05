@@ -172,7 +172,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	r_return_if_fail (bf && bf->bo && bf->rbin);
+	R_RETURN_IF_FAIL (bf && bf->bo && bf->rbin);
 	QnxObj *bin = bf->bo->bin_obj;
 	RBin *rbin = bf->rbin;
 	rbin->cb_printf ("QNX file header:\n");

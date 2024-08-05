@@ -424,7 +424,7 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 
 //closes all descs and frees all descs and io->files
 R_IPI void r_io_desc_fini(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (io->files) {
 		r_id_storage_foreach (io->files, desc_fini_cb, io);
 		r_id_storage_free (io->files);

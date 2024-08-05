@@ -63,7 +63,7 @@ R_API void r_codemeta_item_free(RCodeMetaItem *mi) {
 }
 
 R_API void r_codemeta_item_fini(RCodeMetaItem *mi) {
-	r_return_if_fail (mi);
+	R_RETURN_IF_FAIL (mi);
 	switch (mi->type) {
 	case R_CODEMETA_TYPE_FUNCTION_NAME:
 		free (mi->reference.name);
@@ -156,7 +156,7 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 #endif
 
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
-	r_return_if_fail (code && mi);
+	R_RETURN_IF_FAIL (code && mi);
 	r_vector_push (&code->annotations, mi);
 	r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
 }

@@ -242,7 +242,7 @@ static inline void *r_pvector_at(const RPVector *vec, size_t index) {
 }
 
 static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
-	r_return_if_fail (vec && index < vec->v.len);
+	R_RETURN_IF_FAIL (vec && index < vec->v.len);
 	((void **)vec->v.a)[index] = e;
 }
 
