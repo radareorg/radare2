@@ -2789,18 +2789,14 @@ static void visual_add_comment(RCore *core) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	ut64 addr = core->offset;
 	const ut64 orig = core->offset;
+	ut64 addr = core->offset;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 		r_core_seek (core, addr, false);
-		r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 	}
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 	bool use_editor = comment != NULL;
-	if (R_STR_ISEMPTY (r_config_get (core->config, "cfg.editor"))) {
-		use_editor = false;
-	}
 	r_line_set_prompt ("comment: ");
 	bool do_sthg = true;
 	if (use_editor) {

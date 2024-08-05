@@ -105,7 +105,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 			return NULL;
 		}
 	}
-	R_LOG_INFO ("Loaded %d lines. Use ^D to save and quit", r_list_length (G.lines));
+	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (G.lines));
 	I->line->hist_up = up;
 	I->line->hist_down = down;
 	I->line->contents = I->line->buffer.data;
@@ -115,6 +115,9 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		const char *line = r_line_readline ();
 		if (R_STR_ISNOTEMPTY (line)) {
 			r_str_trim ((char *)line);
+			if (!strcmp (line, ".")) {
+				break;
+			}
 			if (r_str_endswith (line, "\\")) {
 				((char *)line)[strlen (line) - 1] = 0;
 				saveline (line);
@@ -140,6 +143,10 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 				emptyline (line);
 			}
 		}
+	}
+	if (!r_cons_yesno ('y', "Save? (Y/n)")) {
+		r_list_free (G.lines);
+		return NULL;
 	}
 	char *s = r_str_list_join (G.lines, "\n");
 	r_str_trim (s);
