@@ -428,7 +428,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			free (oldstr);
 		}
 		r_list_foreach (spargs, iter, var) {
-			st64 delta = var->delta;
+			st64 delta = -var->delta + 8;
 			if (!newstack) {
 				delta = p->get_ptr_at
 					? p->get_ptr_at (f, var->delta, addr)
@@ -436,7 +436,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				if (delta == ST64_MAX && var->field) {
 					delta = var->delta;
 				} else if (delta == ST64_MAX) {
-					continue;
+					delta = -var->delta + 8;
 				}
 			}
 			const char *reg = NULL;
