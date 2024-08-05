@@ -2014,9 +2014,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		op->type = R_ANAL_OP_TYPE_STORE;
 		int size = REGSIZE64 (0);
 		if (insn->id == ARM64_INS_STRB || insn->id == ARM64_INS_STURB) {
-		    size = 1;
+			size = 1;
 		} else if (insn->id == ARM64_INS_STRH || insn->id == ARM64_INS_STURH) {
-		    size = 2;
+			size = 2;
 		}
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
@@ -2059,6 +2059,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 				}
 			}
 			op->refptr = 4;
+			op->disp = MEMDISP64 (1);
 		} else {
 			if (ISREG64 (1)) {
 				if (OPCOUNT64 () == 2) {

@@ -310,7 +310,7 @@ static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const ch
 		? r_str_newf ("%s", var->name)
 		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
 	if (IS_UPPER (*tstr)) {
-		char *space = strrchr (newstr, ' ');
+		char *space = r_str_rchr (newstr, NULL, ' ');
 		if (space) {
 			*space = 0;
 			r_str_case (newstr, true);
