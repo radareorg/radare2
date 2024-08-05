@@ -2093,7 +2093,7 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 }
 
 static void load_table(RCore *core, RTable *t, char *data) {
-	r_return_if_fail (core && t && data);
+	R_RETURN_IF_FAIL (core && t && data);
 	if (*data == '[') {
 		load_table_json (core, t, data);
 	} else {

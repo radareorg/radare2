@@ -208,7 +208,7 @@ R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *idref) {
 }
 
 R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
-	r_return_if_fail (storage);
+	R_RETURN_IF_FAIL (storage);
 	if (storage->size <= id) {
 		return;
 	}
@@ -408,7 +408,7 @@ R_API void r_oids_delete(ROIDStorage *storage, ut32 id) {
 }
 
 R_API void r_oids_odelete(ROIDStorage *st, ut32 od) {
-	r_return_if_fail (st);
+	R_RETURN_IF_FAIL (st);
 	if (!st->permutation || od >= st->ptop) {
 		return;
 	}

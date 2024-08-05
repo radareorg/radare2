@@ -59,7 +59,7 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 }
 
 static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
-	r_return_if_fail (core && tab);
+	R_RETURN_IF_FAIL (core && tab);
 
 	r_core_seek (core, tab->offset, true);
 	core->visual.printidx = tab->printidx;
@@ -88,7 +88,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 }
 
 static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
-	r_return_if_fail (core && tab);
+	R_RETURN_IF_FAIL (core && tab);
 
 	tab->offset = core->offset;
 	tab->printidx = core->visual.printidx;

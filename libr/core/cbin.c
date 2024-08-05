@@ -708,7 +708,7 @@ static void load_types_from(RCore *core, const char *fmt, ...) {
 }
 
 R_API void r_core_anal_type_init(RCore *core) {
-	r_return_if_fail (core && core->anal);
+	R_RETURN_IF_FAIL (core && core->anal);
 	int bits = core->rasm->config->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
@@ -730,7 +730,7 @@ R_API void r_core_anal_type_init(RCore *core) {
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
 	if (anal_arch && !strcmp (anal_arch, "r2ghidra")) {
 		free (anal_arch);

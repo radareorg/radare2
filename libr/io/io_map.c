@@ -103,7 +103,7 @@ static bool _map_free_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_map_init(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (io->maps) {
 		r_id_storage_foreach (io->maps, _map_free_cb, NULL);
 		r_id_storage_free (io->maps);
@@ -259,7 +259,7 @@ R_API void r_io_map_reset(RIO* io) {
 }
 
 R_API void r_io_map_del(RIO *io, ut32 id) {
-	r_return_if_fail (io && io->maps);
+	R_RETURN_IF_FAIL (io && io->maps);
 	RIOMap *map = (RIOMap *)r_id_storage_get (io->maps, id);
 	if (!map) {
 		return;
@@ -329,7 +329,7 @@ R_API bool r_io_map_priorize_for_fd(RIO *io, int fd) {
 
 //may fix some inconsistencies in io->maps
 R_API void r_io_map_cleanup(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	//remove all maps if no descs exist
 	if (!io->files) {
 		r_io_map_fini (io);
@@ -345,7 +345,7 @@ static bool _clear_banks_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_map_fini(RIO* io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (io->banks) {
 		r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
 	}
@@ -357,13 +357,13 @@ R_API void r_io_map_fini(RIO* io) {
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
-	r_return_if_fail (map && name);
+	R_RETURN_IF_FAIL (map && name);
 	free (map->name);
 	map->name = strdup (name);
 }
 
 R_API void r_io_map_del_name(RIOMap* map) {
-	r_return_if_fail (map);
+	R_RETURN_IF_FAIL (map);
 	R_FREE (map->name);
 }
 
@@ -493,7 +493,7 @@ static int _overlay_chunk_find(void *incoming, void *in, void *user) {
 }
 
 R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len) {
-	r_return_if_fail (map && buf);
+	R_RETURN_IF_FAIL (map && buf);
 	if (!map->overlay || len < 1 || addr > r_io_map_to (map)) {
 		return;
 	}
@@ -676,7 +676,7 @@ R_IPI bool io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int 
 }
 
 R_API void r_io_map_drain_overlay(RIOMap *map) {
-	r_return_if_fail (map);
+	R_RETURN_IF_FAIL (map);
 	if (!map->overlay || map->overlay->size < 2) {
 		return;
 	}

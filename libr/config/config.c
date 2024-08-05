@@ -20,7 +20,7 @@ R_API char *r_config_node_tostring(RConfigNode *node) {
 }
 
 R_API void r_config_node_purge_options(RConfigNode *node) {
-	r_return_if_fail (node);
+	R_RETURN_IF_FAIL (node);
 	if (node->options) {
 		r_list_purge (node->options);
 	} else {
@@ -29,7 +29,7 @@ R_API void r_config_node_purge_options(RConfigNode *node) {
 }
 
 R_API void r_config_node_add_option(RConfigNode *node, const char *option) {
-	r_return_if_fail (node && option);
+	R_RETURN_IF_FAIL (node && option);
 	if (!node->options) {
 		node->options = r_list_newf (free);
 	}
@@ -63,7 +63,7 @@ R_API void r_config_node_free(void *n) {
 }
 
 static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
-	r_return_if_fail (cfg && node);
+	R_RETURN_IF_FAIL (cfg && node);
 	const char *val = node->value;
 	if (!val) {
 		val = "0";
@@ -108,7 +108,7 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 }
 
 static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const char *pfx, const char *sfx, bool verbose) {
-	r_return_if_fail (cfg && node && pfx && sfx);
+	R_RETURN_IF_FAIL (cfg && node && pfx && sfx);
 	char *option;
 	RListIter *iter;
 
@@ -164,7 +164,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const cha
 }
 
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
-	r_return_if_fail (cfg);
+	R_RETURN_IF_FAIL (cfg);
 	RConfigNode *node;
 	RListIter *iter;
 	const char *sfx = "";

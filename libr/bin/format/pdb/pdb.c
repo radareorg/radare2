@@ -982,7 +982,7 @@ static char *get_enum_base_type_name(STypeInfo *type_info) {
  * @param printf Print function
  */
 static void print_struct(const char *name, const int size, const RList *members, PrintfCallback printf) {
-	r_return_if_fail (name && printf);
+	R_RETURN_IF_FAIL (name && printf);
 	printf ("struct %s { // size 0x%x\n", name, size);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -1015,7 +1015,7 @@ static void print_struct(const char *name, const int size, const RList *members,
  * @param printf Print function
  */
 static void print_union(const char *name, const int size, const RList *members, PrintfCallback printf) {
-	r_return_if_fail (name && printf);
+	R_RETURN_IF_FAIL (name && printf);
 	printf ("union %s { // size 0x%x\n", name, size);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -1048,7 +1048,7 @@ static void print_union(const char *name, const int size, const RList *members, 
  * @param printf Print function
  */
 static void print_enum(const char *name, const char *type, const RList *members, PrintfCallback printf) {
-	r_return_if_fail (name && printf);
+	R_RETURN_IF_FAIL (name && printf);
 	printf ("enum %s { // type: %s\n", name, type);
 
 	RListIter *member_iter = r_list_iterator (members);
@@ -1074,7 +1074,7 @@ static void print_enum(const char *name, const char *type, const RList *members,
  * @param types List of types
  */
 static void print_types_regular(const RPdb *pdb, const RList *types) {
-	r_return_if_fail (pdb && types);
+	R_RETURN_IF_FAIL (pdb && types);
 	RListIter *it = r_list_iterator (types);
 
 	while (r_list_iter_next (it)) {
@@ -1131,7 +1131,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
  * @param types List of types
  */
 static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
-	r_return_if_fail (pdb && types && pj);
+	R_RETURN_IF_FAIL (pdb && types && pj);
 
 	RListIter *it = r_list_iterator (types);
 
@@ -1250,7 +1250,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
  * @param types List of types
  */
 static void print_types_format(const RPdb *pdb, const RList *types) {
-	r_return_if_fail (pdb && types);
+	R_RETURN_IF_FAIL (pdb && types);
 	RListIter *it = r_list_iterator (types);
 	bool to_free_name = false;
 	while (r_list_iter_next (it)) {

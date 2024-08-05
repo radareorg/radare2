@@ -40,7 +40,7 @@ R_API int r_strbuf_length(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_init(RStrBuf *sb) {
-	r_return_if_fail (sb);
+	R_RETURN_IF_FAIL (sb);
 	memset (sb, 0, sizeof (RStrBuf));
 }
 

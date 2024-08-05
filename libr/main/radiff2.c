@@ -938,7 +938,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
 }
 
 static void __generate_graph(RCore *c, ut64 off) {
-	r_return_if_fail (c);
+	R_RETURN_IF_FAIL (c);
 	char *ptr = get_graph_commands (c, off);
 	char *str = ptr;
 	r_cons_break_push (NULL, NULL);

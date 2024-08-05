@@ -49,7 +49,7 @@ R_API RRBTree *r_crbtree_new(RRBFree freefn) {
 }
 
 R_API void r_crbtree_clear(RRBTree *tree) {
-	r_return_if_fail (tree);
+	R_RETURN_IF_FAIL (tree);
 	RRBNode *iter = tree->root, *save = NULL;
 
 	// Rotate away the left links into a linked list so that

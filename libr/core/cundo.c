@@ -30,13 +30,13 @@ R_API void r_core_undo_free(RCoreUndo *cu) {
 }
 
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu) {
-	r_return_if_fail (core && cu);
+	R_RETURN_IF_FAIL (core && cu);
 	r_list_append (core->undos, cu);
 	core->undoindex ++;
 }
 
 R_API void r_core_undo_pop(RCore *core) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	RCoreUndo *undo = r_list_pop (core->undos);
 	if (undo) {
 		r_core_cmd0 (core, undo->revert);

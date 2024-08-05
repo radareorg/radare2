@@ -15,7 +15,7 @@ static const char debruijn_charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
 // lnp = lyndon prefix
 static void de_bruijn_seq(int pnl_len_t, int lnp_len_p, int order,
 		int maxlen, int size, int* pnl_a, char* sequence, const char* charset) {
-	r_return_if_fail (charset && sequence);
+	R_RETURN_IF_FAIL (charset && sequence);
 	if (strlen (sequence) == maxlen) {
 		return;
 	}

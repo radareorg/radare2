@@ -313,7 +313,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 // R2_600
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	r_return_if_fail (a);
+	R_RETURN_IF_FAIL (a);
 	r_arch_config_set_cpu (a->config, cpu);
 }
 

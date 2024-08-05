@@ -1646,7 +1646,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 }
 
 static void ds_atabs_option(RDisasmState *ds) {
-	r_return_if_fail (ds);
+	R_RETURN_IF_FAIL (ds);
 	int n, i = 0, word = 0;
 	bool comma = false;
 	int brackets = 0;
@@ -4635,7 +4635,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
-	r_return_if_fail (ds);
+	R_RETURN_IF_FAIL (ds);
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	ut64 p = ds->analop.ptr;

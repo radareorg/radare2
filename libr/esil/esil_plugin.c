@@ -10,7 +10,7 @@ static REsilPlugin *esil_static_plugins[] = {
 };
 
 R_API void r_esil_plugins_init(REsil *esil) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	esil->plugins = r_list_new ();
 	esil->active_plugins = r_list_new ();
 	size_t i = 0;
@@ -21,7 +21,7 @@ R_API void r_esil_plugins_init(REsil *esil) {
 }
 
 R_API void r_esil_plugins_fini(REsil *esil) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	if (!esil->plugins || !esil->active_plugins) {
 		return;
 	}
@@ -43,7 +43,7 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 }
 
 R_API void r_esil_plugin_del(REsil *esil, const char *name) {
-	r_return_if_fail (esil && esil->plugins && name);
+	R_RETURN_IF_FAIL (esil && esil->plugins && name);
 	r_esil_plugin_deactivate(esil, name);
 	RListIter *iter;
 	REsilPlugin *ep;
@@ -105,7 +105,7 @@ R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
 }
 
 R_API void r_esil_plugin_deactivate(REsil *esil, const char *name) {
-	r_return_if_fail (esil && esil->active_plugins && name);
+	R_RETURN_IF_FAIL (esil && esil->active_plugins && name);
 	RListIter *iter;
 	REsilActivePlugin *eap;
 	r_list_foreach (esil->active_plugins, iter, eap) {

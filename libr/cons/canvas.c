@@ -171,7 +171,7 @@ static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
 }
 
 R_API void r_cons_canvas_clear(RConsCanvas *c) {
-	r_return_if_fail (c && c->b);
+	R_RETURN_IF_FAIL (c && c->b);
 	int y;
 	for (y = 0; y < c->h; y++) {
 		memset (c->b[y], '\n', c->bsize[y]);

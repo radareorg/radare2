@@ -203,7 +203,7 @@ static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
 }
 
 R_API void r_table_add_row_list(RTable *t, RList *items) {
-	r_return_if_fail (t && items);
+	R_RETURN_IF_FAIL (t && items);
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
@@ -756,7 +756,7 @@ R_API char *r_table_tojson(RTable *t) {
 }
 
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
-	r_return_if_fail (t && un);
+	R_RETURN_IF_FAIL (t && un);
 	RTableRow *row;
 	RListIter *iter, *iter2;
 	ut64 uv = r_num_math (NULL, un);

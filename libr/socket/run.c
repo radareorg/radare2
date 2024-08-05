@@ -109,7 +109,7 @@ R_API RRunProfile *r_run_new(R_NULLABLE const char *str) {
 }
 
 R_API void r_run_reset(RRunProfile *p) {
-	r_return_if_fail (p);
+	R_RETURN_IF_FAIL (p);
 	int i;
 	for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
 		R_FREE (p->_args[i]);

@@ -555,19 +555,19 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin() */
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
-	r_return_if_fail (scheduler);
+	R_RETURN_IF_FAIL (scheduler);
 	task_end (scheduler->main_task);
 }
 
 /* To be called from within a task.
  * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
-	r_return_if_fail (task);
+	R_RETURN_IF_FAIL (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
 }
 
 R_API void r_core_task_sleep_end(RCoreTask *task) {
-	r_return_if_fail (task);
+	R_RETURN_IF_FAIL (task);
 	task_wakeup (task);
 }
 

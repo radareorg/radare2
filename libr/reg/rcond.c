@@ -220,7 +220,7 @@ R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
 }
 
 R_API void r_reg_cond_apply(RReg *r, RRegFlags *f) {
-	r_return_if_fail (r && f);
+	R_RETURN_IF_FAIL (r && f);
 	r_reg_cond_set (r, "sign", f->s);
 	r_reg_cond_set (r, "zero", f->z);
 	r_reg_cond_set (r, "carry", f->c);

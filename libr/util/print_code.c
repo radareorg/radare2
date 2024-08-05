@@ -76,7 +76,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 }
 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w, bool headers) {
-	r_return_if_fail (p && p->cb_printf);
+	R_RETURN_IF_FAIL (p && p->cb_printf);
 	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
@@ -130,7 +130,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
-	r_return_if_fail (p && buf);
+	R_RETURN_IF_FAIL (p && buf);
 	int i, w = (int)(p->cols * 0.7);
 	if (w < 1) {
 		w = 1;

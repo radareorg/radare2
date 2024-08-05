@@ -402,7 +402,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	r_return_if_fail (bf && bf->bo);
+	R_RETURN_IF_FAIL (bf && bf->bo);
 
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	if (!element) {

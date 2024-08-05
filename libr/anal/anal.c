@@ -20,7 +20,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	R_FREE (anal->limit);
 }
 
@@ -273,7 +273,7 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 
 // copypasta from core/cbin.c
 static void sdb_concat_by_path(Sdb *s, const char *path) {
-	r_return_if_fail (s && path);
+	R_RETURN_IF_FAIL (s && path);
 	Sdb *db = sdb_new (0, path, 0);
 	if (db) {
 		sdb_merge (s, db);
@@ -349,7 +349,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 }
 
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
 	if (bb && !bb->traced) {
 		bb->traced = true;
@@ -384,7 +384,7 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 }
 
 R_API void r_anal_purge(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	r_anal_hint_clear (anal);
 	r_interval_tree_fini (&anal->meta);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
@@ -764,7 +764,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	r_list_purge (anal->imports);
 	R_DIRTY (anal);
 }

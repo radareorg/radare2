@@ -270,7 +270,7 @@ R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin) {
 *	TODO: Don't do this
 */
 static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
-	r_return_if_fail (l && bin && sec && page);
+	R_RETURN_IF_FAIL (l && bin && sec && page);
 	LE_image_header *h = bin->header;
 	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
 		// early quit before using an invalid offset

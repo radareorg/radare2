@@ -151,7 +151,7 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 
 // Remove all elements from the list
 R_API void r_skiplist_purge(RSkipList *list) {
-	r_return_if_fail (list);
+	R_RETURN_IF_FAIL (list);
 	RSkipListNode *n = list->head->forward[0];
 	while (n != list->head) {
 		RSkipListNode *x = n;
@@ -281,7 +281,7 @@ R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
 
 // Move all the elements of `l2` in `l1`.
 R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
-	r_return_if_fail (l1 && l2);
+	R_RETURN_IF_FAIL (l1 && l2);
 	RSkipListNode *it;
 	void *data;
 

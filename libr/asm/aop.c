@@ -21,7 +21,7 @@ R_API void r_asm_op_init(RAnalOp *op) {
 }
 
 R_DEPRECATE R_API void r_asm_op_fini(RAnalOp *op) {
-	r_return_if_fail (op);
+	R_RETURN_IF_FAIL (op);
 	r_anal_op_fini (op);
 }
 
@@ -63,7 +63,7 @@ R_API int r_asm_op_get_size(RAnalOp *op) {
 }
 
 R_API void r_asm_op_set_asm(RAnalOp *op, const char *str) {
-	r_return_if_fail (op && str);
+	R_RETURN_IF_FAIL (op && str);
 	r_anal_op_set_mnemonic (op, op->addr, str);
 }
 
@@ -99,6 +99,6 @@ R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len) {
 }
 
 R_DEPRECATE R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *buf, int len) {
-	r_return_if_fail (op && buf && len >= 0);
+	R_RETURN_IF_FAIL (op && buf && len >= 0);
 	r_anal_op_set_bytes (op, op->addr, buf, len);
 }

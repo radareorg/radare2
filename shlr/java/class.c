@@ -677,7 +677,7 @@ R_API char *r_bin_java_get_bin_obj_json(RBinJavaObj *bin) {
 }
 
 R_API void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj) {
-	r_return_if_fail (pj);
+	R_RETURN_IF_FAIL (pj);
 	RList *the_list;
 	RListIter *iter = NULL;
 	char *new_str;
@@ -706,7 +706,7 @@ R_API void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj) {
 
 // XXX this is implemented in rbin already
 R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
-	r_return_if_fail (bin && pj);
+	R_RETURN_IF_FAIL (bin && pj);
 	RList *classes = r_bin_java_get_classes (bin);
 	RBinClass *klass = r_list_get_n (classes, 0);
 
@@ -782,7 +782,7 @@ R_API void r_bin_java_get_interface_json_definitions(RBinJavaObj *bin, PJ *pj) {
 }
 
 R_API void r_bin_java_get_method_json_definitions(RBinJavaObj *bin, PJ *pj) {
-	r_return_if_fail (pj);
+	R_RETURN_IF_FAIL (pj);
 	RListIter *iter;
 	RBinJavaField *fm_type;
 	pj_ka (pj, "methods");
@@ -795,7 +795,7 @@ R_API void r_bin_java_get_method_json_definitions(RBinJavaObj *bin, PJ *pj) {
 }
 
 R_API void r_bin_java_get_field_json_definitions(RBinJavaObj *bin, PJ *pj) {
-	r_return_if_fail (pj);
+	R_RETURN_IF_FAIL (pj);
 	RBinJavaField *fm_type;
 	RListIter *iter;
 	pj_ka (pj, "fields");
@@ -834,7 +834,7 @@ R_API char *r_bin_java_create_field_fq_str(const char *klass, const char *name, 
 }
 
 R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method) {
-	r_return_if_fail (bin && fm_type && pj);
+	R_RETURN_IF_FAIL (bin && fm_type && pj);
 
 
 	pj_o (pj);

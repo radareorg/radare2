@@ -1683,7 +1683,7 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 
 static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print) {
 	size_t i;
-	r_return_if_fail(val);
+	R_RETURN_IF_FAIL (val);
 
 	switch (val->attr_form) {
 	case DW_FORM_block:
@@ -1776,7 +1776,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 	RBinDwarfDie *dies;
 	RBinDwarfAttrValue *values;
 
-	r_return_if_fail (inf);
+	R_RETURN_IF_FAIL (inf);
 
 	for (i = 0; i < inf->count; i++) {
 		print ("\n");
@@ -2800,7 +2800,7 @@ static bool sort_loclists(void *user, const ut64 key, const void *value) {
 }
 
 R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
-	r_return_if_fail (loc_table && print);
+	R_RETURN_IF_FAIL (loc_table && print);
 	print ("\nContents of the .debug_loc section:\n");
 	RList /*<RBinDwarfLocList *>*/ *sort_list = r_list_new ();
 	/* sort the table contents by offset and print sorted

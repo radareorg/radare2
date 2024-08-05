@@ -290,7 +290,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 
 // NOTE: close doesnt free
 R_API void r_fs_close(RFS* fs, RFSFile* file) {
-	r_return_if_fail (fs && file);
+	R_RETURN_IF_FAIL (fs && file);
 	R_FREE (file->data);
 	if (file->p && file->p->close) {
 		file->p->close (file);
@@ -686,7 +686,7 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 }
 
 R_API void r_fs_view(RFS* fs, int view) {
-	r_return_if_fail (fs);
+	R_RETURN_IF_FAIL (fs);
 	fs->view = view;
 }
 

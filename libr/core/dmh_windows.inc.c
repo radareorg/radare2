@@ -245,7 +245,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 }
 
 static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
-	r_return_if_fail (heap);
+	R_RETURN_IF_FAIL (heap);
 	HeapBlock hb;
 	if (GetFirstHeapBlock (heap, &hb)) {
 		do {

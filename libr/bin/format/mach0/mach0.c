@@ -2249,7 +2249,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 }
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
-	r_return_if_fail (options && bf && bf->rbin);
+	R_RETURN_IF_FAIL (options && bf && bf->rbin);
 	options->bf = bf;
 	options->header_at = 0;
 	options->symbols_off = 0;
@@ -3648,7 +3648,7 @@ static bool walk_bind_chains_callback(void * context, RFixupEventDetails * event
 }
 
 static void walk_bind_chains(struct MACH0_(obj_t) *mo, RSkipList *relocs) {
-	r_return_if_fail (mo && mo->fixups_offset);
+	R_RETURN_IF_FAIL (mo && mo->fixups_offset);
 
 	ut8 *imports = NULL;
 

@@ -71,7 +71,7 @@ const ut64 cleanup_masks[] = {
 };
 
 static void pcache_kv_free(HtUPKv *kv) {
-	r_return_if_fail (kv);
+	R_RETURN_IF_FAIL (kv);
 	free (kv->value);
 }
 

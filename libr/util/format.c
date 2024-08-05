@@ -1278,7 +1278,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 }
 
 static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, int dot_nl) {
-	r_return_if_fail (p->strconv_mode);
+	R_RETURN_IF_FAIL (p->strconv_mode);
 	r_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
@@ -1466,7 +1466,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
-	r_return_if_fail (p && fmtname && fieldname);
+	R_RETURN_IF_FAIL (p && fmtname && fieldname);
 	if (size >= 8) {
 		// avoid shift overflow
 	} else {

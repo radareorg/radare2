@@ -113,7 +113,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 }
 
 static void cons_stack_load(RConsStack *data, bool free_current) {
-	r_return_if_fail (data);
+	R_RETURN_IF_FAIL (data);
 	if (free_current) {
 		// double free
 		free (C->buffer);
@@ -1467,7 +1467,7 @@ R_API void r_cons_memset(char ch, int len) {
 }
 
 R_API void r_cons_print(const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	if (!I || I->null) {
 		return;
 	}

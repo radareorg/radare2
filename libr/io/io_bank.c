@@ -31,7 +31,7 @@ R_API RIOBank *r_io_bank_new(const char *name) {
 }
 
 R_API void r_io_bank_clear(RIOBank *bank) {
-	r_return_if_fail (bank);
+	R_RETURN_IF_FAIL (bank);
 	while (!r_queue_is_empty (bank->todo)) {
 		free (r_queue_dequeue (bank->todo));
 	}
@@ -51,7 +51,7 @@ R_API void r_io_bank_free(RIOBank *bank) {
 }
 
 R_API void r_io_bank_init(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_io_bank_fini (io);
 	io->banks = r_id_storage_new (0, UT32_MAX);
 }
@@ -62,7 +62,7 @@ static bool _bank_free_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_bank_fini(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (io->banks) {
 		r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
 		r_id_storage_free (io->banks);
@@ -1057,7 +1057,7 @@ R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
 
 // deletes map with mapid from bank with bankid
 R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	RIOMap *map = r_io_map_get (io, mapid);	//is this needed?
@@ -1078,7 +1078,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 }
 
 R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_id_storage_delete (io->banks, bankid);
 	if (io->bank == bankid) {
 		io->bank = r_io_bank_first (io);
@@ -1087,7 +1087,7 @@ R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
 
 // merges nearby submaps, that have a map ref to the same map, and free unneeded tree nodes
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank || !bank->drain_me) {
 		return;

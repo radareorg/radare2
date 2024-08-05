@@ -1692,7 +1692,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 }
 
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
-	r_return_if_fail (anal && fcn);
+	R_RETURN_IF_FAIL (anal && fcn);
 
 	const char *arch = R_UNWRAP4 (anal, arch, session, name);
 	const bool is_x86 = arch && !strcmp (arch, "x86"); // HACK
@@ -1716,7 +1716,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
-	r_return_if_fail (anal && fcn);
+	R_RETURN_IF_FAIL (anal && fcn);
 
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	if (!refs) {
@@ -2289,7 +2289,7 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
  * and "pop bp" at the end).
  */
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
-	r_return_if_fail (fcn);
+	R_RETURN_IF_FAIL (fcn);
 	RAnal *anal = fcn->anal;
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -2522,7 +2522,7 @@ static void calc_reachable_and_remove_block(RList *fcns, RAnalFunction *fcn, RAn
 }
 
 R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	RListIter *it, *it2, *tmp;
 	RAnalBlock *bb;
 	RAnalFunction *fcn;
@@ -2562,7 +2562,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 }
 
 R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
-	r_return_if_fail (fcn);
+	R_RETURN_IF_FAIL (fcn);
 	RListIter *it, *it2, *tmp, *tmp2;
 	RAnalBlock *bb;
 	RAnalFunction *f;

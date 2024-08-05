@@ -139,7 +139,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 }
 
 static void render_title(int page, int mode, int total) {
-	r_return_if_fail (page >= 0 && mode >= 0 && total >= 0);
+	R_RETURN_IF_FAIL (page >= 0 && mode >= 0 && total >= 0);
 	r_cons_gotoxy (0, 0);
 	r_cons_printf ("%s%s%s\r [r2slides] [%s:%d/%d]",
 			Color_BLACK, Color_BGYELLOW, R_CONS_CLEAR_LINE,
@@ -147,7 +147,7 @@ static void render_title(int page, int mode, int total) {
 }
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
-	r_return_if_fail (core && file);
+	R_RETURN_IF_FAIL (core && file);
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		R_LOG_ERROR ("Requires scr.interactive=true");
 		return;

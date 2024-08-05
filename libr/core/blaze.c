@@ -190,7 +190,7 @@ static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
 }
 
 static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn);
+	R_RETURN_IF_FAIL (core && fcn);
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
 	char *_name = function_name (core, name, fcn->addr);
@@ -204,7 +204,7 @@ static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
 }
 
 static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn);
+	R_RETURN_IF_FAIL (core && fcn);
 
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;

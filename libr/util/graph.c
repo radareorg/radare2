@@ -298,7 +298,7 @@ R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis
 }
 
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis) {
-	r_return_if_fail (g && vis);
+	R_RETURN_IF_FAIL (g && vis);
 	RGraphNode *n;
 	RListIter *it;
 

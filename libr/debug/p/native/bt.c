@@ -9,7 +9,7 @@
 typedef RList* (*RDebugFrameCallback)(RDebug *dbg, ut64 at);
 
 static void prepend_current_pc(RDebug *dbg, RList *list) {
-	r_return_if_fail (dbg);
+	R_RETURN_IF_FAIL (dbg);
 	if (!list) {
 		return;
 	}

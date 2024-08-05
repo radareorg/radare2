@@ -323,7 +323,7 @@ R_API void *r_mem_set(ut8 ch, int l) {
 
 
 R_API void r_mem_reverse(ut8 *b, int l) {
-	r_return_if_fail (b);
+	R_RETURN_IF_FAIL (b);
 	ut8 tmp;
 	int i, end = l / 2;
 	for (i = 0; i < end; i++) {

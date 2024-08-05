@@ -93,7 +93,7 @@ static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt
 }
 
 static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func) {
-	r_return_if_fail (pm);
+	R_RETURN_IF_FAIL (pm);
 
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
@@ -192,7 +192,7 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 
 static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *name,
 	const char *arch, JSContext *ctx, JSValue decode_func) {
-	r_return_if_fail (pm);
+	R_RETURN_IF_FAIL (pm);
 
 	QjsArchPlugin *ap = RVecArchPlugin_emplace_back (&pm->arch_plugins);
 	if (ap) {

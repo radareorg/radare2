@@ -51,14 +51,14 @@ static void _io_cache_item_free(void *data) {
 }
 
 R_API void r_io_cache_init(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	io->cache.layers = r_list_newf (iocache_layer_free);
 	io->cache.mode = R_PERM_R | R_PERM_W;
 	r_io_cache_push (io);
 }
 
 R_API void r_io_cache_fini(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_list_free (io->cache.layers);
 }
 
@@ -77,7 +77,7 @@ R_API bool r_io_cache_empty(RIO *io) {
 }
 
 R_API void r_io_cache_reset(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	ut32 mode = io->cache.mode;
 	r_io_cache_fini (io);
 	r_io_cache_init (io);
@@ -340,7 +340,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 
 // this uses closed boundary input
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
-	r_return_if_fail (io && from <= to);
+	R_RETURN_IF_FAIL (io && from <= to);
 	RListIter *iter;
 	RIOCacheLayer *layer;
 	r_list_foreach (io->cache.layers, iter, layer) {
@@ -427,7 +427,7 @@ static void list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 }
 
 R_API void r_io_cache_list(RIO *io, int rad, bool many) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (r_list_empty (io->cache.layers)) {
 		return;
 	}

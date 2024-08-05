@@ -461,7 +461,7 @@ struct ctxSearchCB {
 };
 
 static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
-	r_return_if_fail (core && fcn && it && it->name);
+	R_RETURN_IF_FAIL (core && fcn && it && it->name);
 	const char *name = it->realname? it->realname: it->name;
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
@@ -639,7 +639,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 
 static void search_add_to_types(RCore *c, RSignSearchMetrics *sm, RSignType t, const char *str, unsigned int *i) {
 	unsigned int count = *i;
-	r_return_if_fail (count < sizeof (sm->stypes) / sizeof (RSignType) - 1);
+	R_RETURN_IF_FAIL (count < sizeof (sm->stypes) / sizeof (RSignType) - 1);
 	if (r_config_get_i (c->config, str)) {
 		sm->stypes[count++] = t;
 		sm->stypes[count] = 0;

@@ -63,7 +63,7 @@ R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
 }
 
 R_API void r_config_hold_restore(RConfigHold *h) {
-	r_return_if_fail (h);
+	R_RETURN_IF_FAIL (h);
 	RListIter *iter;
 	RConfigHolder *hc;
 	RConfig *cfg = h->cfg;

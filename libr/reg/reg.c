@@ -205,7 +205,7 @@ R_API const char *r_reg_get_role(int role) {
 }
 
 R_API void r_reg_free_internal(RReg *reg, bool init) {
-	r_return_if_fail (reg);
+	R_RETURN_IF_FAIL (reg);
 	ut32 i;
 	R_FREE (reg->reg_profile_str);
 	R_FREE (reg->reg_profile_cmt);
@@ -251,7 +251,7 @@ static int regcmp(RRegItem *a, RRegItem *b) {
 }
 
 R_API void r_reg_reindex(RReg *reg) {
-	r_return_if_fail (reg);
+	R_RETURN_IF_FAIL (reg);
 	int i, index;
 	RListIter *iter;
 	RRegItem *r;
@@ -349,7 +349,7 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 
 // TODO rename regset to reggroup . R_API void r_reg_group_copy(RRegGroup *d, RRegGroup *s) ..
 R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
-	r_return_if_fail (d && s);
+	R_RETURN_IF_FAIL (d && s);
 	d->cur = NULL; // TODO. not yet implemented
 	d->arena = r_reg_arena_clone (s->arena);
 	d->maskregstype = s->maskregstype;

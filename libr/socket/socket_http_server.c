@@ -119,7 +119,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 }
 
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
-	r_return_if_fail (rs);
+	R_RETURN_IF_FAIL (rs);
 	const char *strcode = \
 		code==200?"ok":
 		code==301?"Moved permanently":

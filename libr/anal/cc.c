@@ -6,7 +6,7 @@
 #define DB anal->sdb_cc
 
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
-	r_return_if_fail (anal && name);
+	R_RETURN_IF_FAIL (anal && name);
 	size_t i;
 	RStrBuf sb;
 	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
@@ -85,7 +85,7 @@ R_API void r_anal_cc_reset(RAnal *anal) {
 }
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
-	r_return_if_fail (anal && pj && name);
+	R_RETURN_IF_FAIL (anal && pj && name);
 	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
@@ -222,7 +222,7 @@ R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 }
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
-	r_return_if_fail (anal && convention && self);
+	R_RETURN_IF_FAIL (anal && convention && self);
 	if (!r_anal_cc_exist (anal, convention)) {
 		return;
 	}
@@ -242,7 +242,7 @@ R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
-	r_return_if_fail (anal && convention && error);
+	R_RETURN_IF_FAIL (anal && convention && error);
 	if (!r_anal_cc_exist (anal, convention)) {
 		return;
 	}
@@ -285,7 +285,7 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 }
 
 R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
-	r_return_if_fail (anal && cc);
+	R_RETURN_IF_FAIL (anal && cc);
 	sdb_set (DB, "default.cc", cc, 0);
 }
 
@@ -295,7 +295,7 @@ R_API const char *r_anal_syscc_default(RAnal *anal) {
 }
 
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
-	r_return_if_fail (anal && cc);
+	R_RETURN_IF_FAIL (anal && cc);
 	sdb_set (DB, "default.syscc", cc, 0);
 }
 

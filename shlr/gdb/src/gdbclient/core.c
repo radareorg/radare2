@@ -114,7 +114,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
-	r_return_if_fail (g);
+	R_RETURN_IF_FAIL (g);
 	r_cons_break_pop ();
 	if (g->gdbr_lock_depth < 1) {
 		return;

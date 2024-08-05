@@ -475,7 +475,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 	RIO *io = core->io;
 	ut64 off = core->offset;
-	r_return_if_fail (io && print && print->cb_printf);
+	R_RETURN_IF_FAIL (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);

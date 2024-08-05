@@ -237,7 +237,7 @@ R_API const char *r_meta_type_tostring(int type) {
 }
 
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full) {
-	r_return_if_fail (!(rad == 'j' && !pj)); // rad == 'j' => pj
+	R_RETURN_IF_FAIL (!(rad == 'j' && !pj)); // rad == 'j' => pj
 	char *pstr, *base64_str;
 	RCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
@@ -635,6 +635,6 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 }
 
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {
-	r_return_if_fail (wordsz);
+	R_RETURN_IF_FAIL (wordsz);
 	r_meta_set (a, R_META_TYPE_DATA, addr, wordsz, NULL);
 }

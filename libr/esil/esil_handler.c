@@ -22,7 +22,7 @@ static REsilHandler *_get_syscall(REsil *esil, ut32 sysc_num) {
 }
 
 R_API void r_esil_handlers_init(REsil *esil) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	esil->interrupts = dict_new (sizeof (ut32), free);
 	if (!esil->interrupts) {
 		return;
@@ -67,7 +67,7 @@ R_API REsilHandlerCB r_esil_get_interrupt(REsil *esil, ut32 intr_num) {
 }
 
 R_API void r_esil_del_interrupt(REsil *esil, ut32 intr_num) {
-	r_return_if_fail (esil && esil->interrupts);
+	R_RETURN_IF_FAIL (esil && esil->interrupts);
 	if (intr_num == 0) {
 		R_FREE (esil->intr0)
 	} else {
@@ -94,7 +94,7 @@ R_API REsilHandlerCB r_esil_get_syscall(REsil *esil, ut32 sysc_num) {
 }
 
 R_API void r_esil_del_syscall(REsil *esil, ut32 sysc_num) {
-	r_return_if_fail (esil && esil->syscalls);
+	R_RETURN_IF_FAIL (esil && esil->syscalls);
 	if (sysc_num == 0) {
 		R_FREE (esil->sysc0)
 	} else {

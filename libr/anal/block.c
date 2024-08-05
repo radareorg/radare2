@@ -53,7 +53,7 @@ R_API void r_anal_block_ref(RAnalBlock *bb) {
 	// XXX we have R_REF for this
 	if (bb) {
 		// 0-refd must already be freed.
-		r_return_if_fail (bb->ref > 0);
+		R_RETURN_IF_FAIL (bb->ref > 0);
 		bb->ref++;
 	}
 }
@@ -426,14 +426,14 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	if (bb->ref < 1) {
 		return;
 	}
-	r_return_if_fail (bb->ref > 0);
+	R_RETURN_IF_FAIL (bb->ref > 0);
 	bb->ref--;
-	// r_return_if_fail (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
+	// R_RETURN_IF_FAIL (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 		block_free (bb);
-		// r_return_if_fail (r_list_empty (bb->fcns));
+		// R_RETURN_IF_FAIL (r_list_empty (bb->fcns));
 	}
 }
 
@@ -775,7 +775,7 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 }
 
 R_API void r_anal_block_update_hash(RAnalBlock *block) {
-	r_return_if_fail (block);
+	R_RETURN_IF_FAIL (block);
 	if (!block->anal->iob.read_at) {
 		return;
 	}
@@ -983,7 +983,7 @@ static bool automerge_get_predecessors_cb(void *user, ut64 k) {
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
 R_API void r_anal_block_automerge(RList *blocks) {
-	r_return_if_fail (blocks);
+	R_RETURN_IF_FAIL (blocks);
 	AutomergeCtx ctx = {
 		.predecessors = ht_up_new0 (),
 		.visited_blocks = ht_up_new0 (),

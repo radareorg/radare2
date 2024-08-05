@@ -18,7 +18,7 @@ static bool add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 }
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bj) {
-	r_return_if_fail (bj);
+	R_RETURN_IF_FAIL (bj);
 	char *jvcname = r_bin_java_build_obj_key (bj);
 	add_sdb_bin_obj (jvcname, bj);
 	bj->AllJavaBinObjs = bj->kv; // XXX that was a global.. so this must be inside bin->sdb namespace

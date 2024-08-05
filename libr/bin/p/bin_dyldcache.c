@@ -107,7 +107,7 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr, ut64
 }
 
 static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
-	r_return_if_fail (cache && cache->bin_by_pa && entries);
+	R_RETURN_IF_FAIL (cache && cache->bin_by_pa && entries);
 
 	ut32 i;
 	for (i = 0; i < entries_count; i++) {
@@ -867,7 +867,7 @@ error:
 }
 
 static void populate_cache_maps(RDyldCache *cache) {
-	r_return_if_fail (cache && cache->buf);
+	R_RETURN_IF_FAIL (cache && cache->buf);
 
 	ut32 i;
 	size_t n_maps = 0;

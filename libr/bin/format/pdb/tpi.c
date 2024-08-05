@@ -1672,7 +1672,7 @@ static void get_array_print_type(void *type, char **name) {
 
 	SType *t = 0;
 	ti->get_element_type (ti, (void **)&t);
-	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB ?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
@@ -1705,7 +1705,7 @@ static void get_pointer_print_type(void *type, char **name) {
 	int need_to_free = 1;
 
 	ti->get_utype (ti, (void **)&t);
-	r_return_if_fail (t); // t == NULL indicates malformed PDB ?
+	R_RETURN_IF_FAIL (t); // t == NULL indicates malformed PDB ?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
@@ -1830,7 +1830,7 @@ static void get_enum_print_type(void *type, char **name) {
 	int need_to_free = 1;
 
 	ti->get_utype (ti, (void **)&t);
-	r_return_if_fail (t); // This shouldn't happen?, TODO explore this situation
+	R_RETURN_IF_FAIL (t); // This shouldn't happen?, TODO explore this situation
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) { // BaseType
 		need_to_free = 0;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
