@@ -705,6 +705,19 @@ R_API const char *r_line_hist_get(int n) {
 	return NULL;
 }
 
+#if R2_USE_NEW_ABI
+R_API int r_line_hist_list(bool full) {
+	inithist ();
+	if (I.history.data) {
+		int i = full? 0: I.history.load_index;
+		for (; i < I.history.size && I.history.data[i]; i++) {
+			const char *pad = r_str_pad (' ', 32 - strlen (I.history.data[i]));
+			r_cons_printf ("%s %s # !%d\n", I.history.data[i], pad, i);
+		}
+	}
+	return i;
+}
+#else
 R_API int r_line_hist_list(void) {
 	int i = 0;
 	inithist ();
@@ -716,6 +729,7 @@ R_API int r_line_hist_list(void) {
 	}
 	return i;
 }
+#endif
 
 R_API void r_line_hist_free(void) {
 	int i;
@@ -731,7 +745,7 @@ R_API void r_line_hist_free(void) {
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
 R_API bool r_line_hist_load(const char *file) {
-	r_return_val_if_fail (file, false);
+	R_RETURN_VAL_IF_FAIL (file, false);
 	char *buf = calloc (1, R_LINE_BUFSIZE);
 	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
@@ -746,13 +760,16 @@ R_API bool r_line_hist_load(const char *file) {
 		}
 		memset (buf, 0, R_LINE_BUFSIZE);
 	}
+#if R2_USE_NEW_ABI
+	I.history.load_index = I.history.index;
+#endif
 	fclose (fd);
 	free (buf);
 	return true;
 }
 
 R_API bool r_line_hist_save(const char *file) {
-	r_return_val_if_fail (file && *file, false);
+	R_RETURN_VAL_IF_FAIL (file && *file, false);
 	int i;
 	bool ret = false;
 	char *p = (char *) r_str_lastbut (file, R_SYS_DIR[0], NULL);

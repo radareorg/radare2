@@ -1078,6 +1078,9 @@ typedef struct r_line_hist_t {
 	int top;
 	int autosave;
 	bool do_setup_match;
+#if R2_USE_NEW_ABI
+	int load_index;
+#endif
 } RLineHistory;
 
 typedef struct r_line_buffer_t {
@@ -1138,7 +1141,7 @@ struct r_line_t {
 	char *contents;
 	bool zerosep;
 	bool enable_vi_mode; // can be merged with vi_mode
-	int vi_mode;
+	int vi_mode; // TODO bool ?
 	bool prompt_mode;
 	RLinePromptType prompt_type;
 	int offset_hist_index;
@@ -1172,7 +1175,11 @@ R_API int r_line_hist_add(const char *line);
 R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void(*cb)(const char*));
 R_API void r_line_label_show(void);
+#if R2_USE_NEW_ABI
+R_API int r_line_hist_list(bool full);
+#else
 R_API int r_line_hist_list(void);
+#endif
 R_API int r_line_hist_get_size(void);
 R_API void r_line_hist_set_size(int size);
 R_API const char *r_line_hist_get(int n);
