@@ -2425,7 +2425,11 @@ _end:
 
 	// shouldnt be here
 	if (r_str_startswith (I.buffer.data, "!history")) {
+#if R2_USE_NEW_ABI
+		r_line_hist_list (true);
+#else
 		r_line_hist_list ();
+#endif
 		return "";
 	}
 	return I.buffer.data[0] != '\0'? I.buffer.data: "";
