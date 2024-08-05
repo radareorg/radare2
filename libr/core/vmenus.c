@@ -2521,20 +2521,28 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	}
 }
 
-static void show_config_options(RCore *core, const char *opt) {
+static void show_config_options(RCore *core, const char *opt, int row) {
 	RConfigNode *node = r_config_node_get (core->config, opt);
 	if (node && !r_list_empty (node->options)) {
-		int w = 25; // r_cons_get_size (&h);
+		int h, w = 25;
+		r_cons_get_size (&h);
 		const char *item;
 		RListIter *iter;
-		RStrBuf *sb = r_strbuf_new (" Options:\n");
+		RStrBuf *sb = r_strbuf_new ("|\n|\n`--[ Options ]\n");
 		int linelen = 0;
+		h -= (row + 8);
+		int lines = 0;
 		r_list_foreach (node->options, iter, item) {
 			r_strbuf_appendf (sb, " %s", item);
 			linelen += strlen (item);
 			if (linelen > w) {
 				r_strbuf_append (sb, "\n");
 				linelen = 0;
+				lines++;
+			}
+			if (lines > h) {
+				r_strbuf_append (sb, "..");
+				break;
 			}
 #if 0
 			if (r_strbuf_length (sb) + 5 >= w) {
@@ -2546,7 +2554,7 @@ static void show_config_options(RCore *core, const char *opt) {
 #endif
 		}
 		char *s = r_strbuf_drain (sb);
-		r_cons_println (s);
+		r_cons_print (s);
 		free (s);
 	}
 }
@@ -2557,10 +2565,10 @@ R_API void r_core_visual_config(RCore *core) {
 	int option, _option = 0;
 	RListIter *iter;
 	RConfigNode *bt;
-	char old[1024];
+	char old[1024] = {0};
 	int delta = 9;
 	int menu = 0;
-	old[0]='\0';
+	int menuboxh = 0;
 
 	option = 0;
 	for (;;) {
@@ -2573,10 +2581,12 @@ R_API void r_core_visual_config(RCore *core) {
 		case 0: // flag space
 			r_cons_printf ("[hjkl][Eq] Configuration:\n\n.----------------.\n");
 			hit = j = i = 0;
+			menuboxh = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (j > 20) {
 					break;
 				}
+				menuboxh++;
 				if (option == i) {
 					fs = bt->name;
 				}
@@ -2619,13 +2629,12 @@ R_API void r_core_visual_config(RCore *core) {
 				continue;
 			}
 			r_cons_printf ("`----------------'\n");
-			// r_cons_printf ("\n Sel: %s \n\n", fs);
 			break;
 		case 1: // flag selection
 			r_cons_printf ("[hjkl] [Eq] Configuration: %s\n\n.-----------------------------------.\n", fs);
 			hit = 0;
 			j = i = 0;
-			// TODO: cut -d '.' -f 1 | sort | uniq !!!
+			menuboxh = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (!r_str_ccmp (bt->name, fs, '.')) {
 					if (option == i) {
@@ -2637,12 +2646,13 @@ R_API void r_core_visual_config(RCore *core) {
 						char *msg = r_str_newf ("%s = %s", bt->name, bt->value);
 						char *arrow = NULL;
 						const char *arrowstr = "";
+						menuboxh++;
 						if (option == i) {
 							arrow = strdup ("-------------------------------|");
 							size_t n = strlen (msg);
 							arrowstr = arrow + n;
 							arrow[n] = ' ';
-							arrow[n+1] = ']';
+							arrow[n + 1] = ']';
 						} else {
 							arrow = strdup ("                               |");
 							size_t n = strlen (msg);
@@ -2664,17 +2674,17 @@ R_API void r_core_visual_config(RCore *core) {
 		}
 
 		r_cons_visual_flush ();
-			if (menu == 1 && fs2) {
-				// TODO: Break long lines.
-				r_cons_gotoxy (0, 0);
-				r_cons_printf ("[hjkq] %s", desc);
-				r_cons_gotoxy (0, (h / 3) * 2);
-				show_config_options (core, fs2);
-				r_cons_flush ();
-			}
+		if (menu == 1 && fs2) {
+			// TODO: Break long lines.
+			r_cons_gotoxy (0, 0);
+			r_cons_printf ("[hjkq] %s", desc);
+			r_cons_gotoxy (0, menuboxh + 4);
+			show_config_options (core, fs2, menuboxh);
+			r_cons_flush ();
+		}
 		if (menu != 0 && fs && r_str_startswith (fs, "asm.")) {
 			char *s = r_core_cmd_str (core, "pd $r");
-			r_cons_print_at (s, 38, 3, w - 36, h - 1);
+			r_cons_print_at (s, 38, 3, w - 40, h - 2);
 			free (s);
 			r_cons_flush ();
 		}
@@ -2738,6 +2748,8 @@ R_API void r_core_visual_config(RCore *core) {
 			fs2 ? config_visual_hit_i (core, fs2, +1) : 0;
 			continue;
 		case '/':
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+			break;
 		case '-':
 			fs2 ? config_visual_hit_i (core, fs2, -1) : 0;
 			continue;

@@ -4443,7 +4443,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int okey, key;
 	RAnalFunction *fcn = NULL;
 	const char *key_s;
-	RConsCanvas *can, *o_can = NULL;
+	RConsCanvas *o_can = NULL;
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
@@ -4454,7 +4454,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w, h);
+	RConsCanvas *can = r_cons_canvas_new (w, h);
 	if (!can) {
 		w = 80;
 		h = 25;
