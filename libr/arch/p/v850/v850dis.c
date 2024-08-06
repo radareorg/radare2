@@ -300,7 +300,7 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 		while (*esilfmt) {
 			char ch = *esilfmt;
 			if (ch == '#') {
-				int n = esilfmt[1] - '0';
+				const int n = esilfmt[1] - '0';
 				if (n >= 0 && n < 10) {
 					const char *argn = (const char *)r_list_get_n (args, n);
 					r_strbuf_appendf (sb, "%s", argn);

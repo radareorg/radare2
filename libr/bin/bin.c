@@ -1696,7 +1696,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 R_API ut64 r_bin_attr_fromstring(const char *s) {
 	const bool compact = false;
 #endif
-	int i;
+	size_t i;
 	ut64 bits = 0LL;
 	const char *word;
 	RListIter *iter;
@@ -1719,7 +1719,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s) {
 			for (i = 0; i < 64; i++) {
 				const char *bn = attr_bit_name (i, false);
 				if (!strcmp (bn, word)) {
-					bits |= (1 << i);
+					bits |= (1ULL << i);
 					break;
 				}
 			}

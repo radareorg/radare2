@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -98,19 +98,19 @@ R_API bool r_sandbox_disable(bool e) {
 	if (e) {
 #if LIBC_HAVE_PLEDGE
 		if (G_enabled) {
-			eprintf ("sandbox mode couldn't be G_disabled when pledged\n");
+			R_LOG_ERROR ("sandbox mode couldn't be G_disabled when pledged");
 			return G_enabled;
 		}
 #endif
 #if HAVE_CAPSICUM
 		if (G_enabled) {
-			eprintf ("sandbox mode couldn't be G_disabled in capability mode\n");
+			R_LOG_ERROR ("sandbox mode couldn't be G_disabled in capability mode");
 			return G_enabled;
 		}
 #endif
 #if LIBC_HAVE_PRIV_SET
 		if (G_enabled) {
-			eprintf ("sandbox mode couldn't be G_disabled in priv mode\n");
+			R_LOG_ERROR ("sandbox mode couldn't be G_disabled in priv mode");
 			return G_enabled;
 		}
 #endif
@@ -139,7 +139,7 @@ R_API bool r_sandbox_check(int mask) {
 R_API bool r_sandbox_enable(bool e) {
 	if (G_enabled) {
 		if (!e) {
-			// eprintf ("Can't disable sandbox\n");
+			// R_LOG_ERROR ("Can't disable sandbox");
 		}
 		return true;
 	}
@@ -147,7 +147,7 @@ R_API bool r_sandbox_enable(bool e) {
 	G_enabled = e;
 #if LIBC_HAVE_PLEDGE
 	if (G_enabled && pledge ("stdio rpath tty prot_exec inet", NULL) == -1) {
-		eprintf ("sandbox: pledge call failed\n");
+		R_LOG_ERROR ("sandbox: pledge call failed");
 		return false;
 	}
 #endif
@@ -157,33 +157,33 @@ R_API bool r_sandbox_enable(bool e) {
 		cap_rights_t wrt, rdr;
 
 		if (!cap_rights_init (&wrt, CAP_READ, CAP_WRITE)) {
-			eprintf ("sandbox: write descriptor failed\n");
+			R_LOG_ERROR ("sandbox: write descriptor failed");
 			return false;
 		}
 
 		if (!cap_rights_init (&rdr, CAP_READ, CAP_EVENT, CAP_FCNTL)) {
-			eprintf ("sandbox: read descriptor failed\n");
+			R_LOG_ERROR ("sandbox: read descriptor failed");
 			return false;
 		}
 
 		if (cap_rights_limit (STDIN_FILENO, &rdr) == -1) {
-			eprintf ("sandbox: stdin protection failed\n");
+			R_LOG_ERROR ("sandbox: stdin protection failed");
 			return false;
 		}
 
 		if (cap_rights_limit (STDOUT_FILENO, &wrt) == -1) {
-			eprintf ("sandbox: stdout protection failed\n");
+			R_LOG_ERROR ("sandbox: stdout protection failed");
 			return false;
 		}
 
 		if (cap_rights_limit (STDERR_FILENO, &wrt) == -1) {
-			eprintf ("sandbox: stderr protection failed\n");
+			R_LOG_ERROR ("sandbox: stderr protection failed");
 			return false;
 		}
 #endif
 
 		if (cap_enter () != 0) {
-			eprintf ("sandbox: call_enter failed\n");
+			R_LOG_ERROR ("sandbox: call_enter failed");
 			return false;
 		}
 	}
@@ -200,7 +200,7 @@ R_API bool r_sandbox_enable(bool e) {
 
 		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
 		if (!priv) {
-			eprintf ("sandbox: priv_allocset failed\n");
+			R_LOG_ERROR ("sandbox: priv_allocset failed");
 			return false;
 		}
 		priv_basicset (priv);
@@ -208,7 +208,7 @@ R_API bool r_sandbox_enable(bool e) {
 			if (priv_delset (priv, privrules[i]) != 0) {
 				priv_emptyset (priv);
 				priv_freeset (priv);
-				eprintf ("sandbox: priv_delset failed\n");
+				R_LOG_ERROR ("sandbox: priv_delset failed");
 				return false;
 			}
 		}
@@ -219,12 +219,17 @@ R_API bool r_sandbox_enable(bool e) {
 	return G_enabled;
 }
 
+static inline int bytify(int v) {
+	unsigned int uv = (unsigned int)v;
+	return (int) ((uv > 255)? 1: 0);
+}
+
 R_API int r_sandbox_system(const char *x, int n) {
 	R_RETURN_VAL_IF_FAIL (x, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);
 	if (G_enabled) {
-		eprintf ("sandbox: system call disabled\n");
-		return -1;
+		R_LOG_ERROR ("sandbox: system call disabled");
+		return bytify (-1);
 	}
 #if R2__WINDOWS__
 	return system (x);
@@ -241,22 +246,22 @@ R_API int r_sandbox_system(const char *x, int n) {
 			pid_t pid = 0;
 			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
 			if (r != 0) {
-				return -1;
+				return bytify (-1);
 			}
 			int status;
 			int s = waitpid (pid, &status, 0);
-			return WEXITSTATUS (s);
+			return bytify (WEXITSTATUS (s));
 		}
 		int child = fork ();
 		if (child == -1) {
-			return -1;
+			return bytify (-1);
 		}
 		if (child) {
-			return waitpid (child, NULL, 0);
+			return bytify (waitpid (child, NULL, 0));
 		}
 #else
 		// the most common execution path
-		return system (x);
+		return bytify (system (x));
 #endif
 	}
 #else
@@ -269,13 +274,12 @@ R_API int r_sandbox_system(const char *x, int n) {
 		if (isbg) {
 			*isbg = 0;
 		}
-			eprintf ("je\n");
 		argv = r_str_argv (cmd, &argc);
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);
 			if (!argv0) {
 				R_LOG_ERROR ("Cannot find '%s'", argv[0]);
-				return -1;
+				return bytify (-1);
 			}
 			pid = 0;
 			posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
@@ -287,10 +291,10 @@ R_API int r_sandbox_system(const char *x, int n) {
 			}
 			r_str_argv_free (argv);
 			free (argv0);
-			return rc;
+			return bytify (rc);
 		}
 		R_LOG_ERROR ("parsing command arguments");
-		return -1;
+		return bytify (-1);
 	}
 #endif
 	char *bin_sh = r_file_binsh ();
@@ -299,9 +303,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 		r_sys_perror ("execl");
 	}
 	free (bin_sh);
-	exit (rc);
+	exit (bytify (rc));
 #endif
-	return -1;
+	return bytify (-1);
 }
 
 R_API bool r_sandbox_creat(const char *path, int mode) {

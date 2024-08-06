@@ -1323,6 +1323,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		char *cmd = r_strbuf_drain (sb);
 		int res = r_sandbox_system (cmd, 1);
 		free (cmd);
+		if (res > 255) {
+			res = 1;
+		}
 		return res;
 	}
 	if (r2pm.add) {
