@@ -374,10 +374,6 @@ menu nconfig:
 	./sys/menu.sh || true
 
 include mk/meson.mk
-
-shlr/capstone:
-	$(MAKE) -C shlr capstone
-
 include ${MKPLUGINS}
 
 .PHONY: all clean install symstall uninstall deinstall strip

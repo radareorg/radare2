@@ -1,6 +1,8 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
-if not capstone_dep.found() or not get_option('use_sys_capstone')
+if capstone_dep.found() and get_option('use_sys_capstone')
+  message('Use system-provided capstone library')
+else
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
@@ -224,8 +226,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     link_with: libr2capstone,
     include_directories: capstone_includes
   )
-else
-  message('Use system-provided capstone library')
 endif
 
 # handle bochs dependency
