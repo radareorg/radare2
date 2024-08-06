@@ -171,8 +171,8 @@ jobs:
       run: r2pm -i samurai
     - name: Install muon
       run: r2pm -i muon
-    - name: Install muon (native)
-      run: r2pm -i muon
+#    - name: Install muon (native)
+#      run: r2pm -i muon
     - name: Building r2 with muon+samu
       run: |
           r2pm -r muon setup b

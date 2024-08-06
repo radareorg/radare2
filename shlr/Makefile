@@ -219,6 +219,11 @@ install-symlink symstall:
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
+.PHONY: capstone capstone-sync capstone-build capstone-clean capstone-patch capstone-pull
+
+capstone-pull:
+	$(MAKE) CS_RELEASE=1 WITHOUT_PULL=0 USE_CAPSTONE=0 WANT_CAPSTONE=1 capstone
+
 ifeq ($(WANT_CAPSTONE),0)
 capstone:
 
