@@ -220,8 +220,10 @@ R_API bool r_sandbox_enable(bool e) {
 }
 
 static inline int bytify(int v) {
-	unsigned int uv = (unsigned int)v;
-	return (int) ((uv > 255)? 1: 0);
+	if (v == -1 || WIFEXITED (v)) {
+		return WEXITSTATUS (v);
+	}
+	return 1;
 }
 
 R_API int r_sandbox_system(const char *x, int n) {
