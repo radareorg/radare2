@@ -1,9 +1,13 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2008-2024 - pancake, condret */
 
 #include <r_io.h>
 
 static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 	RIOCacheItem *incoming_ci = (RIOCacheItem *)incoming, *in_ci = (RIOCacheItem *)in;
+	if (R_UNLIKELY (!in_ci->tree_itv)) {
+		R_LOG_ERROR ("io cache tree corrupted");
+		r_sys_backtrace ();
+	}
 	if (incoming_ci->tree_itv->addr < in_ci->tree_itv->addr) {
 		return -1;
 	}
@@ -112,10 +116,17 @@ static RRBNode *_find_entry_ci_node(RRBTree *cache_tree, RInterval *itv) {
 // write happens only in the last layer
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
-	RInterval itv = (RInterval){addr, len};
 	if (r_list_empty (io->cache.layers)) {
 		return false;
 	}
+	if ((UT64_MAX - len + 1) < addr) {
+		const int olen = len;
+		len = UT64_MAX - addr + 1;
+		if (!r_io_cache_write_at (io, 0ULL, &buf[len], olen - len)) {
+			return false;
+		}
+	}
+	RInterval itv = (RInterval){addr, len};
 	RIOCacheItem *ci = iocache_item_new (io, &itv);
 	if (!ci) {
 		return false;
@@ -133,7 +144,14 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		}
 		while (_ci && r_itv_include (itv, _ci->tree_itv[0])) {
 			node = r_rbnode_next (node);
-			r_crbtree_delete (layer->tree, _ci, _ci_start_cmp_cb, NULL);
+			RIOCacheItem *tci = (RIOCacheItem *)r_crbtree_take (layer->tree, _ci, _ci_start_cmp_cb, NULL);
+			if (R_UNLIKELY (_ci != tci)) {
+				R_LOG_ERROR ("missmatch: %p != %p", _ci, tci);
+				R_LOG_ERROR ("_ci @ %p: [0x%"PFMT64x" - 0x%"PFMT64x"]",
+					_ci, _ci->tree_itv[0].addr, r_itv_end (_ci->tree_itv[0]) - 1);
+				R_LOG_ERROR ("tci @ %p: [0x%"PFMT64x" - 0x%"PFMT64x"]",
+					tci, tci->tree_itv[0].addr, r_itv_end (tci->tree_itv[0]) - 1);
+			}
 			R_FREE (_ci->tree_itv);
 			_ci = node? (RIOCacheItem *)node->data: NULL;
 		}
@@ -156,6 +174,13 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 #endif
+	if ((UT64_MAX - len + 1) < addr) {
+		const int olen = len;
+		len = UT64_MAX - addr + 1;
+		if (!r_io_cache_read_at (io, 0ULL, &buf[len], olen - len)) {
+			return false;
+		}
+	}
 	RIOCacheLayer *layer;
 	RListIter *iter;
 	RInterval itv = (RInterval){addr, len};
@@ -243,6 +268,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 				if (ci->tree_itv) {
 					invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
 					r_crbtree_delete (layer->tree, ci, _ci_start_cmp_cb, NULL);
+					R_FREE (ci->tree_itv);
 				}
 				r_pvector_remove_data (layer->vec, ci);
 				continue;
@@ -545,6 +571,7 @@ R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 		RPVectorFree free_elem = layer->vec->v.free_user;
 		if (c->tree_itv) {
 			r_crbtree_delete (layer->tree, c, _ci_start_cmp_cb, NULL);
+			R_FREE (c->tree_itv);
 		}
 		free_elem (c);
 		break;
