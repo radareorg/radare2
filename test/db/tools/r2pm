@@ -6,3 +6,12 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=r2pm -r status code
+FILE=-
+CMDS='!!r2pm -r false; echo $?
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
