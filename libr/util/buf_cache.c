@@ -165,10 +165,15 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 			_ci = node? (RIOCacheItem *)node->data: NULL;
 		}
 		while (_ci && r_itv_include (itv, _ci->tree_itv[0])) {
+#if 0
 			node = r_rbnode_next (node);
 			r_crbtree_delete (layer->tree, _ci, _ci_start_cmp_cb, NULL);
 			R_FREE (_ci->tree_itv);
 			_ci = node? (RIOCacheItem *)node->data: NULL;
+#else
+			node = r_rbnode_next (node);
+			_ci = node? (RIOCacheItem *)node->data: NULL;
+#endif
 		}
 		if (_ci && r_itv_contain (itv, _ci->tree_itv->addr)) {
 			_ci->tree_itv->size = r_itv_end (_ci->tree_itv[0]) - r_itv_end (itv);
