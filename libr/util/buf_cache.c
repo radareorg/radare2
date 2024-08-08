@@ -90,10 +90,18 @@ static RRBNode *_find_entry_ci_node(RRBTree *cache_tree, RInterval *itv) {
 	return node;
 }
 
+static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence);
+
 static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), false);
 	RBufCache *priv = get_priv_cache_bytes (b);
 	ut64 addr = priv->offset;
+	if ((UT64_MAX - len + 1) < addr) {
+		st64 ret = buf_cache_read (b, buf, UT64_MAX - addr + 1);
+		len = len - (UT64_MAX - addr + 1);
+		buf_cache_seek (b, 0LL, R_BUF_SET);
+		return ret + buf_cache_read (b, &buf[UT64_MAX - addr + 1], len);
+	}
 	RInterval itv = (RInterval){addr, len};
 	r_buf_read_at (priv->sb, addr, buf, len);
 	RIOCacheLayer *layer = priv->cl; // r_list_last (io->cache.layers);
@@ -147,6 +155,12 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	RBufCache *priv = get_priv_cache_bytes (b);
 	ut64 addr = priv->offset;
 
+	if ((UT64_MAX - len + 1) < addr) {
+		st64 ret = buf_cache_write (b, buf, UT64_MAX - addr + 1);
+		len = len - (UT64_MAX - addr + 1);
+		buf_cache_seek (b, 0LL, R_BUF_SET);
+		return ret + buf_cache_write (b, &buf[UT64_MAX - addr + 1], len);
+	}
 	RInterval itv = (RInterval){addr, len};
 	RIOCacheItem *ci = iocache_item_new (&itv);
 	if (!ci) {
