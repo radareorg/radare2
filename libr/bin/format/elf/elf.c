@@ -3520,6 +3520,8 @@ static bool is_wordable_section(const char *name) {
 		".init_array",
 		".fini_array",
 		".data.rel.ro",
+		".hash",
+		".dynsym",
 		".dynamic",
 		".rel.plt",
 		".got",
