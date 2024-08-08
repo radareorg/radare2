@@ -42,7 +42,7 @@ R_API RCrypto *r_crypto_new(void) {
 	return cry;
 }
 
-R_API void r_crypto_job_free(RCryptoJob *cj) {
+R_API void r_crypto_job_free(R_NULLABLE RCryptoJob *cj) {
 	if (cj) {
 		if (cj->h->fini) {
 			cj->h->fini (cj);
@@ -194,7 +194,8 @@ static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_pri
 	cb_printf ("%c %12s %5s %s %s\n", type, cp->meta.name, license, desc, author);
 }
 
-R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
+R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode) {
+	R_RETURN_IF_FAIL (cry);
 	if (!cb_printf) {
 		cb_printf = (PrintfCallback)printf;
 	}
