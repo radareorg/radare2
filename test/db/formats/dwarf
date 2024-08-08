@@ -721,6 +721,7 @@ colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
+DEBUG: [cbin.c:3375] (section .dynsym) Cd 8[21] @ 0x3d8
 DEBUG: [cbin.c:3375] (section .dynstr) Css 141 @ 0x480
 DEBUG: [cbin.c:3375] (section .rela.dyn) Cd 8[24] @ 0x550
 DEBUG: [cbin.c:3375] (section .rela.plt) Cd 8[3] @ 0x610
@@ -728,6 +729,7 @@ DEBUG: [cbin.c:3375] (section .init_array) Cd 8[1] @ 0x3db8
 DEBUG: [cbin.c:3375] (section .fini_array) Cd 8[1] @ 0x3dc0
 DEBUG: [cbin.c:3375] (section .dynamic) Cd 8[62] @ 0x3dc8
 DEBUG: [cbin.c:3375] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3375] (section .dynsym) Cd 8[21] @ 0x3d8
 DEBUG: [cbin.c:3375] (section .dynstr) Css 141 @ 0x480
 DEBUG: [cbin.c:3375] (section .rela.dyn) Cd 8[24] @ 0x550
 DEBUG: [cbin.c:3375] (section .rela.plt) Cd 8[3] @ 0x610

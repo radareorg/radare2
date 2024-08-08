@@ -79,6 +79,26 @@ EXPECT=<<EOF
 0x08048168 CCu "[03] -r-- section size 36 named .note.gnu.build-id"
 0x0804818c CCu "[04] -r-- section size 32 named .gnu.hash"
 0x080481ac CCu "[05] -r-- section size 80 named .dynsym"
+0x080481ac data Cd 4
+0x080481b0 data Cd 4
+0x080481b4 data Cd 4
+0x080481b8 data Cd 4
+0x080481bc data Cd 4
+0x080481c0 data Cd 4
+0x080481c4 data Cd 4
+0x080481c8 data Cd 4
+0x080481cc data Cd 4
+0x080481d0 data Cd 4
+0x080481d4 data Cd 4
+0x080481d8 data Cd 4
+0x080481dc data Cd 4
+0x080481e0 data Cd 4
+0x080481e4 data Cd 4
+0x080481e8 data Cd 4
+0x080481ec data Cd 4
+0x080481f0 data Cd 4
+0x080481f4 data Cd 4
+0x080481f8 data Cd 4
 0x080481fc CCu "[06] -r-- section size 74 named .dynstr"
 0x080481fd ascii[10] "libc.so.6"
 0x08048207 ascii[15] "_IO_stdin_used"
@@ -189,6 +209,26 @@ CCu base64:WzAyXSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAubm90ZS5BQkktdGFn @ 0x0804
 CCu base64:WzAzXSAtci0tIHNlY3Rpb24gc2l6ZSAzNiBuYW1lZCAubm90ZS5nbnUuYnVpbGQtaWQ= @ 0x08048168
 CCu base64:WzA0XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251Lmhhc2g= @ 0x0804818c
 CCu base64:WzA1XSAtci0tIHNlY3Rpb24gc2l6ZSA4MCBuYW1lZCAuZHluc3lt @ 0x080481ac
+Cd 4 @ 0x080481ac
+Cd 4 @ 0x080481b0
+Cd 4 @ 0x080481b4
+Cd 4 @ 0x080481b8
+Cd 4 @ 0x080481bc
+Cd 4 @ 0x080481c0
+Cd 4 @ 0x080481c4
+Cd 4 @ 0x080481c8
+Cd 4 @ 0x080481cc
+Cd 4 @ 0x080481d0
+Cd 4 @ 0x080481d4
+Cd 4 @ 0x080481d8
+Cd 4 @ 0x080481dc
+Cd 4 @ 0x080481e0
+Cd 4 @ 0x080481e4
+Cd 4 @ 0x080481e8
+Cd 4 @ 0x080481ec
+Cd 4 @ 0x080481f0
+Cd 4 @ 0x080481f4
+Cd 4 @ 0x080481f8
 CCu base64:WzA2XSAtci0tIHNlY3Rpb24gc2l6ZSA3NCBuYW1lZCAuZHluc3Ry @ 0x080481fc
 Cs 10 @ 0x080481fd # libc.so.6
 Cs 15 @ 0x08048207 # _IO_stdin_used
