@@ -220,9 +220,16 @@ R_API bool r_sandbox_enable(bool e) {
 }
 
 static inline int bytify(int v) {
+#if R2__WINDOWS__ || __wasi__
+	// on windows, there are no WEXITSTATUS, the return value is right there
+	unsigned int uv = (unsigned int)v;
+	return (int) ((uv > 255)? 1: 0);
+#else
+	// on unix, return code is (system() >> 8) & 0xff
 	if (v == -1 || WIFEXITED (v)) {
 		return WEXITSTATUS (v);
 	}
+#endif
 	return 1;
 }
 
