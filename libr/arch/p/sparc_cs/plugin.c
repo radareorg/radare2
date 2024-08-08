@@ -157,8 +157,10 @@ performed in big-endian byte order.
 		}
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
-					insn->mnemonic, insn->op_str[0]? " ": "",
+					insn->mnemonic,
+					insn->op_str[0]? " ": "",
 					insn->op_str);
+			op->mnemonic = r_str_replace (op->mnemonic, "+-", "-", true);
 			r_str_replace_char (op->mnemonic, '%', 0);
 		}
 		op->size = insn->size;
