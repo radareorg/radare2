@@ -209,6 +209,7 @@ typedef struct r_hash_seed_t {
 	int len;
 } RHashSeed;
 
+#define R_HASH_SIZE_ELF 4
 #define R_HASH_SIZE_SSDEEP 128
 #define R_HASH_SIZE_CRC8_SMBUS 1
 #if R_HAVE_CRC8_EXTRA

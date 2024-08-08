@@ -227,6 +227,7 @@ h   fletcher16
 h   fletcher32
 h   fletcher64
 h          sip
+h          elf
 EOF
 RUN
 

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 pancake */
+/* radare2 - LGPL - Copyright 2009-2024 pancake */
 
 #include <r_hash.h>
 
@@ -19,6 +19,10 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (algobit & R_HASH_SSDEEP) {
 		r_hash_do_ssdeep (ctx, buf, len);
 		return R_HASH_SIZE_SSDEEP;
+	}
+	if (algobit & R_HASH_ELF) {
+		r_hash_do_elf (ctx, buf, len);
+		return R_HASH_SIZE_ELF;
 	}
 	if (algobit & R_HASH_SIP) {
 		r_hash_do_sip (ctx, buf, len);
