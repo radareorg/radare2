@@ -263,9 +263,9 @@ performed in big-endian byte order.
 			case SPARC_OP_IMM:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->delay = 1;
-				if (INSCC != SPARC_CC_ICC_N) { // never
-					op->jump = INSOP (0).imm;
-				}
+				op->jump = INSOP (0).imm;
+				// this never thing is incorrectly handled in capstone < v5.0.2
+				// if (INSCC != SPARC_CC_ICC_N) { /* never */ }
 				if (INSCC == SPARC_CC_ICC_A) { // always
 					op->type = R_ANAL_OP_TYPE_JMP;
 					op->delay = 0;

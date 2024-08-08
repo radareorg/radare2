@@ -159,41 +159,86 @@ s 0x00018c08
 e anal.fcnprefix=root
 af
 afl
+?e --
+af-*
+afr
+afl
 EOF
 EXPECT=<<EOF
-0x00018c08  344   7244 main
+0x00018c08  357   7304 main
+--
+0x00018c08  357   7304 main
 0x0001b334    7    136 sym.set_program_name
-0x0003fb78    2     12 sym.imp.setlocale
+0x0003fa34    1      8 sym.imp.strrchr
+0x0003fa04    1      8 sym.imp.strncmp
+0x0003fb78    1      8 sym.imp.setlocale
+0x0003f95c    1      4 obj._PROCEDURE_LINKAGE_TABLE_
 0x0003f98c    1      8 sym.imp.atexit
 0x0003fb60    1      8 sym.imp.abort
-0x00022a74    2     24 sym.set_quoting_style
+0x00022a74    3     24 sym.set_quoting_style
 0x0003fb84    1      8 sym.imp.getenv
-0x0001b59c   14    248 sym.argmatch
+0x0001b59c   15    248 sym.argmatch
+0x0003fa70    1      8 sym.imp.strlen
+0x0003fa4c    1      8 sym.imp..umul
+0x0003fc50    1      8 sym.imp.memcmp
 0x00021a50   26    408 sym.human_options
+0x00021a14    1     60 sym.default_block_size
+0x00025e38   14    232 sym.xstrtoumax
 0x0003fb90    1      8 sym.imp.ioctl
 0x00025948   53    796 sym.xstrtoul
+0x0003fe54    1      8 sym.imp.strtoul
+0x0003fbe4    1      8 sym.imp.strchr
+0x0003fa64    1      8 sym.imp.__assert_c99
+0x000258c0    4     76 sym.bkm_scale
+0x0002590c    3     60 sym.bkm_scale_by_power
 0x0001f7c4    1     44 sym.rpl_getopt_long
 0x0001f720    1    116 sym._getopt_internal
-0x0001eb64  181   3004 sym._getopt_internal_r
+0x0001eb64  189   3004 sym._getopt_internal_r
 0x00018954    4    692 sym.usage
 0x0003fb6c    1      8 sym.imp.fprintf
 0x0003f998    1      8 sym.imp.exit
 0x0003f9e0    1      8 sym.imp.printf
 0x0003fb00    1      8 sym.imp.fwrite
 0x0003fa40    1      8 sym.imp..udiv
-0x00022a24    2     56 sym.clone_quoting_options
+0x00022a24    3     56 sym.clone_quoting_options
 0x00025720    1     32 sym.xmemdup
 0x000255f0    3     56 sym.xmalloc
 0x0003fc20    1      8 sym.imp.malloc
 0x0001b558    1     44 sym.xalloc_die
 0x0001bb8c    4    120 sym.error
 0x0003fb0c    1      8 sym.imp.memcpy
-0x00022a5c    2     24 sym.get_quoting_style
-0x00022a8c    2     80 sym.set_char_quoting
-0x0003fa4c    1      8 sym.imp..umul
+0x00022a5c    3     24 sym.get_quoting_style
+0x00022a8c    3     80 sym.set_char_quoting
 0x0001386c    5    180 sym.clear_files
 0x0003f9f8    1      8 sym.imp.free
-0x00015f6c  129   2488 sym.gobble_file
+0x00015f6c  132   2488 sym.gobble_file
+0x0003fa88    1      8 sym.imp.memset
+0x0003fa94    1      8 sym.imp.lstat64
+0x00015ee0    4     80 sym.format_user_or_group_width
+0x00015f30    3     60 sym.format_user_width
+0x00021bf0   12    168 sym.getuser
+0x00025740    1     24 sym.xstrdup
+0x00025628    3     60 sym.xrealloc
+0x0003fe48    1      8 sym.imp.realloc
+0x00013cd8    1     52 sym.file_failure
+0x0002396c    1     20 sym.quotearg_colon
+0x00023950    1     28 sym.quotearg_char
+0x000238c0    1    144 sym.quotearg_char_mem
+0x00023634   15    372 sym.quotearg_n_options
+0x00013ca0    5     56 sym.set_exit_status
+0x0003faa0    1      8 sym.imp.stat64
+0x000254e4    3     88 sym.umaxtostr
+0x0002bcac   61    704 sym.__umoddi3
+0x0002b940   58    680 sym.__udivdi3
+0x0003faac    1      8 sym.imp.__major
+0x0003fab8    1      8 sym.imp.__minor
+0x0001accc   16    252 sym.areadlink_with_size
+0x0003fac4    1      8 sym.imp.strncpy
+0x0003fad0    1      8 sym.imp.strcpy
+0x000137a4    9    132 sym.is_colored
+0x00021db4   12    168 sym.getgroup
+0x0001ac9c    3     48 sym.file_has_acl
+0x0003fc2c    1      8 sym.imp.acl_trivial
 0x00013774    1     16 sym.dev_ino_free
 0x00013784    1     32 sym.free_pending_ent
 0x0003fb9c    1      8 sym.imp.opendir
@@ -201,18 +246,18 @@ EXPECT=<<EOF
 0x0003fba8    1      8 sym.imp.fstat64
 0x0003fbb4    1      8 sym.imp.readdir64
 0x00013d0c    6     72 sym.patterns_match
-0x0001e84c    3     76 sym.gnu_fnmatch
-0x0003fa70    1      8 sym.imp.strlen
-0x0001caf4  198   2720 sym.internal_fnmatch
-0x00013cd8    1     52 sym.file_failure
-0x0002396c    1     20 sym.quotearg_colon
-0x00023950    1     28 sym.quotearg_char
-0x000238c0    1    144 sym.quotearg_char_mem
-0x00023634   15    372 sym.quotearg_n_options
-0x00013ca0    5     56 sym.set_exit_status
+0x0001e84c    4     92 sym.gnu_fnmatch
+0x0001caf4  206   2720 sym.internal_fnmatch
 0x0003fbc0    1      8 sym.imp.closedir
-0x00015c2c   13    364 sym.sort_files
+0x00015c2c   16    396 sym.sort_files
+0x00015be8    4     68 sym.initialize_ordering_vector
+0x0003fa58    1      8 sym.imp.setjmp
+0x00022234    1     28 sym.mpsort
+0x00022030   25    516 sym.mpsort_with_tmp
 0x00016a20   31    512 sym.quote_name
+0x0002348c    3     76 sym.quotearg_buffer
+0x00022b84    3    100 sym.quotearg_buffer_restyled
+0x0001b158   18    240 sym.mbsnwidth
 0x0003f9d4    1      8 sym.imp.fputs
 0x00016da0    1     32 sym.restore_default_color
 0x00016d50    3     80 sym.put_indicator
@@ -234,30 +279,30 @@ EXPECT=<<EOF
 0x0001b528    1     48 sym.version_etc
 0x0001b3e4   16    316 sym.version_etc_va
 0x00013d80   23    352 sym.extract_dirs_from_files
-0x0003fa64    1      8 sym.imp.__assert_c99
+0x00013d5c    1     36 sym.is_directory
+0x0001b894   10    152 sym.last_component
+0x00013c38    5    104 sym.queue_directory
+0x00017b7c    3     56 sym.print_current_files
 0x00022414   23    408 sym._obstack_newchunk
-0x0003faa0    1      8 sym.imp.stat64
 0x0003f9ec    1      8 sym.imp.__flsbuf
 0x0001f998    1      8 sym.hash_get_n_entries
-0x000201f0   22    264 sym.hash_free
+0x000201f0   23    264 sym.hash_free
 0x0001f8d0   10    184 sym.hard_locale
-0x0003fa04    1      8 sym.imp.strncmp
-0x0003fbe4    1      8 sym.imp.strchr
+0x0003fd10    1      8 sym.imp.strdup
+0x0003fa28    1      8 sym.imp.strcmp
 0x00022768    1     28 sym.quote
-0x00017b7c    3     56 sym.print_current_files
-0x000137a4    9    132 sym.is_colored
 0x0003fbf0    1      8 sym.imp.tcgetpgrp
 0x0003fbfc    1      8 sym.imp.sigemptyset
 0x0003fc08    1      8 sym.imp.sigaction
 0x0003fc14    1      8 sym.imp.sigaddset
-0x0001ff34   27    480 sym.hash_initialize
-0x00022250    8    224 sym._obstack_begin
+0x0001ff34   28    480 sym.hash_initialize
+0x0001fe74    9    192 sym.check_tuning
+0x0003fb48    1      8 sym.imp..urem
+0x0003fd1c    1      8 sym.imp.calloc
+0x00022250   10    224 sym._obstack_begin
 0x00013620   12    240 sym.dired_dump_obstack
-0x00013c38    5    104 sym.queue_directory
-0x00025758   11    148 sym.xstrtol_fatal
-0x00025740    1     24 sym.xstrdup
+0x00025758   12    148 sym.xstrtol_fatal
 0x00013948    1     64 sym.get_funky_string
-0x0003fa28    1      8 sym.imp.strcmp
 EOF
 RUN
 
@@ -586,7 +631,7 @@ EXPECT=<<EOF
 0x0001bc98 0x0001bca8 00:0000 16 j 0x0001bcf8 f 0x0001bca8
 0x0001bca8 0x0001bcbc 00:0000 20 j 0x0001bcf8 f 0x0001bcbc
 0x0001bcbc 0x0001bcc4 00:0000 8 j 0x0001bc34 f 0x0001bcc4
-0x0001bcc4 0x0001bcec 00:0000 40 f 0x0001bcec
+0x0001bcc4 0x0001bcec 00:0000 40 j 0x0001bc70 f 0x0001bcec
 0x0001bcec 0x0001bcf8 00:0000 12 j 0x0001bc70 f 0x0001bcf8
 0x0001bcf8 0x0001bd00 00:0000 8
 EOF
