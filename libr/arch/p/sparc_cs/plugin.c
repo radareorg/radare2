@@ -189,11 +189,13 @@ performed in big-endian byte order.
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_UCALL;
 				op->delay = 1;
+				op->fail = addr + 8;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->delay = 1;
 				op->jump = INSOP(0).imm;
+				op->fail = addr + 8;
 				break;
 			}
 			break;
@@ -459,6 +461,7 @@ const RArchPlugin r_arch_plugin_sparc_cs = {
 		.license = "BSD",
 	},
 	.arch = "sparc",
+	.cpus = "v9",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,
