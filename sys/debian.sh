@@ -78,6 +78,11 @@ for a in ${PKGDIR}/usr/lib/radare2/*/* ; do
   strip --strip-unneeded "$a" 2> /dev/null || true
 done
 
+# r2book
+echo "[debian] download latest r2book info..."
+wget -P "${PKGDIR}/usr/share/info/" \
+  "https://github.com/radareorg/radare2-book/releases/latest/download/r2book.info.gz"
+
 # packages
 echo "[debian] building radare2 package..."
 $FAKEROOT make -C dist/debian/radare2 ARCH=${ARCH}
