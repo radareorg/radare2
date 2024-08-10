@@ -61,7 +61,7 @@ static void parse_skip(const char *arg) {
 	}
 }
 
-static void helpvars(void) {
+static void helpvars(int workers_count) {
 	printf (
 		"R2R_SKIP_ARCHOS=0  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=0    # do not run the JSON tests\n"
@@ -72,11 +72,11 @@ static void helpvars(void) {
 		"R2R_JOBS=%d         # maximum parallel jobs\n"
 		"R2R_TIMEOUT=%d   # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=0      # same as passing -u\n"
-		, WORKERS_DEFAULT, TIMEOUT_DEFAULT
+		, workers_count, TIMEOUT_DEFAULT
 	       );
 }
 
-static int help(bool verbose) {
+static int help(bool verbose, int workers_count) {
 	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
@@ -98,7 +98,7 @@ static int help(bool verbose) {
 		" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
 		" -v           show version\n"
 		"\n");
-		helpvars ();
+		helpvars (workers_count);
 		printf ("\n"
 		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
@@ -332,7 +332,7 @@ int main(int argc, char **argv) {
 			r2r_git ();
 			return 0;
 		case 'h':
-			ret = help (true);
+			ret = help (true, workers_count);
 			goto beach;
 		case 'q':
 			quiet = true;
@@ -368,7 +368,7 @@ int main(int argc, char **argv) {
 			workers_count = atoi (opt.arg);
 			if (workers_count <= 0) {
 				R_LOG_ERROR ("Invalid thread count");
-				ret = help (false);
+				ret = help (false, workers_count);
 				goto beach;
 			}
 			break;
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
 			json_test_file = strdup (opt.arg);
 			break;
 		case 'H':
-			helpvars ();
+			helpvars (workers_count);
 			goto beach;
 		case 'u':
 			get_bins = false;
@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
 			output_file = r_file_abspath (opt.arg);
 			break;
 		default:
-			ret = help (false);
+			ret = help (false, workers_count);
 			goto beach;
 		}
 	}
