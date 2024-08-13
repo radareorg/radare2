@@ -4,27 +4,41 @@
 
 #include <r_lib.h>
 #include <r_crypto.h>
+#include <r_crypto/r_ed25519.h>
 #include <r_util/r_log.h>
 #include "../signature/ed25519/ge.h"
 #include "../signature/ed25519/sc.h"
 #include "../hash/sha2.h"
 
-#define ED25519_SIG_LEN 64
+R_API void ed25519_create_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
+	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
+	ge_p3 A;
+
+	r_hash_do_sha512 (ctx, seed, ED25519_SEED_LENGTH);
+	memcpy (privkey, ctx->digest, ED25519_PRIVKEY_LENGTH);
+	r_hash_free (ctx);
+	privkey[0] &= 248;
+	privkey[31] &= 63;
+	privkey[31] |= 64;
+	ge_scalarmult_base (&A, privkey);
+	ge_p3_tobytes (pubkey, &A);
+}
 
 static bool ed25519_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen != 32 && keylen != 64) {
 		return false;
 	}
-	if (keylen == 32) {
+	cj->data = malloc (ED25519_PUBKEY_LENGTH);
+	if (keylen == ED25519_SEED_LENGTH) {
 		// Using a seed
-		RHash *ctx = r_hash_new (true, R_HASH_SHA512);
-		r_hash_do_sha512 (ctx, key, keylen);
-		keylen = 64;
-		cj->key = calloc (1, keylen);
-		memcpy (cj->key, ctx->digest, keylen);
-		r_hash_free (ctx);
-	} else if (keylen == 64) {
+		keylen = ED25519_PRIVKEY_LENGTH;
+		cj->key = malloc (keylen);
+		ed25519_create_keypair (key, cj->key, (ut8 *)cj->data);
+	} else if (keylen == ED25519_PRIVKEY_LENGTH) {
+		ge_p3 A;
 		memcpy (cj->key, key, keylen);
+		ge_scalarmult_base (&A, cj->key);
+		ge_p3_tobytes (cj->data, &A);
 	}
 
 	cj->key_len = keylen;
@@ -44,17 +58,13 @@ static bool ed25519_use(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	ut8 public_key[32] = { 0 };
+	ut8 *public_key = (ut8 *)cj->data;
 	ut8 r[64];
 	ge_p3 R;
-	ge_p3 A;
 	ut8 signature[64] = { 0 };
 
 	// Signature (R, S)
 	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		// Compute public key
-		ge_scalarmult_base(&A, cj->key);
-		ge_p3_tobytes (public_key, &A);
 		// r = H( cj->key[32:64] || buf)
 		RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 		r_sha512_init (&ctx->sha512);
