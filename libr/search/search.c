@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 pancake */
+/* radare - LGPL - Copyright 2008-2024 pancake */
 
 #define R_LOG_ORIGIN "search"
 
@@ -38,7 +38,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->overlap = false;
 	s->pattern_size = 0;
 	s->longest = -1;
-	s->string_max = 255;
+	s->string_max = 640;
 	s->string_min = 3;
 	s->hits = r_list_newf (free);
 	s->maxhits = 0;
@@ -64,12 +64,18 @@ R_API void r_search_free(RSearch *s) {
 	}
 }
 
+// R2_600 - bool
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
-	if (max < min) {
+	R_RETURN_VAL_IF_FAIL (s, false);
+	if (max > 0 && max < min) {
 		return false;
 	}
-	s->string_min = min;
-	s->string_max = max;
+	if (min > 0) {
+		s->string_min = min;
+	}
+	if (max > 0) {
+		s->string_max = max;
+	}
 	return true;
 }
 
