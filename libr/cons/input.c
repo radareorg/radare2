@@ -179,6 +179,10 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 					return 'k';
 				case 65: // wheel down
 					return 'j';
+				case 66: // wheel left
+					return 'h';
+				case 67: // wheel right
+					return 'l';
 				}
 				pos[p++] = 0;
 				y = atoi (pos);

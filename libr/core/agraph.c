@@ -4581,8 +4581,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		if (core->cons->mouse_event) {
 			movspeed = r_config_get_i (core->config, "scr.wheel.speed");
 			switch (key) {
+			case 'h':
 			case 'j':
 			case 'k':
+			case 'l':
 				switch (core->visual.mousemode) {
 				case 0: break;
 				case 1: key = key == 'k'? 'h': 'l'; break;
