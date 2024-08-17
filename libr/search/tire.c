@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2022 bemodtwz */
+/* radare - LGPL - Copyright 2022-2024 bemodtwz */
+
 #include <r_search.h>
 #include "search.h"
 
@@ -157,11 +158,16 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 	int hits = 0;
 	while (true) {
 		ut8 *finger; // point at next possible match
-		for (finger = buf; finger < buf + (blen - maxkey); finger++) {
+		ut8 *finger_end = buf + (blen - maxkey);
+		for (finger = buf; finger < finger_end; finger++) {
 			RTireNode *node = root[*finger];
 
 			ut8 *b = finger + 1; // matching substrings of finger as you walk tire
 			while (node) {
+				size_t remaining = finger_end - finger;
+				if (node->len >= remaining) {
+					break;
+				}
 				if (!memcmp (node->data, b, node->len)) {
 					// matches and it has a kw
 					if (node->kw) {
