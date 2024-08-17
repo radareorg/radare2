@@ -47,10 +47,14 @@ static inline bool r_itv_eq(RInterval itv, RInterval itv2) {
 	return itv.addr == itv2.addr && itv.size == itv2.size;
 }
 
-// Returns true if itv contained addr
+// Returns true if itv contains addr
 static inline bool r_itv_contain(RInterval itv, ut64 addr) {
 	const ut64 end = itv.addr + itv.size;
-	return itv.addr <= addr && (!end || addr < end);
+	if (R_UNLIKELY (end < itv.addr)) {
+		RInterval _itv = {end, itv.addr - end};
+		return !r_itv_contain (_itv, addr);
+	}
+	return itv.addr <= addr && addr < end;
 }
 
 // Returns true if x is a subset of itv
