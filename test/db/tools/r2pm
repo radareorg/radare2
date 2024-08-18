@@ -7,6 +7,24 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm -H R2PM_GITDIR
+FILE=-
+CMDS=%R2PM_GITDIR=test;r2pm -H R2PM_GITDIR
+EXPECT=<<EOF
+test
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -H R2PM_GITDIR
+FILE=-
+CMDS=%R2PM_GITDIR=test;!r2pm -H R2PM_GITDIR
+EXPECT=<<EOF
+test
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -r status code
 FILE=-
 CMDS='!!r2pm -r false; echo $?
