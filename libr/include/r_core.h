@@ -302,6 +302,10 @@ typedef struct {
 	int y;
 } VisualMark;
 
+#if R2_USE_NEW_ABI
+typedef struct RCorePriv RCorePriv;
+#endif
+
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;

@@ -2086,22 +2086,18 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	return true;
 }
 
-#define MYDB 1
-/* R2_590 - this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
-#if MYDB
+/* R2_600 - avoid using globals to resolve symbols and imports without making it expensive */
 R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
 R_DEPRECATE static R_TH_LOCAL RVecRBinSymbol *osymbols = NULL;
 
 R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
 	r_strf_buffer(64);
 	RBinSymbol *symbol, *res = NULL;
-#if 1
 	if (mydb && symbols && symbols != osymbols) {
 		sdb_free (mydb);
 		mydb = NULL;
 		osymbols = symbols;
 	}
-#endif
 	if (mydb) {
 		if (name) {
 			res = (RBinSymbol*)(void*)(size_t)
@@ -2138,25 +2134,6 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, co
 	}
 	return res;
 }
-#else
-static R_TH_LOCAL RList *osymbols = NULL;
-static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
-	RBinSymbol *symbol;
-	RListIter *iter;
-	// XXX this is slow, we should use a hashtable here
-	r_list_foreach (symbols, iter, symbol) {
-		if (name) {
-			if (!strcmp (symbol->name, name))
-				return symbol;
-		} else {
-			if (symbol->vaddr == addr) {
-				return symbol;
-			}
-		}
-	}
-	return NULL;
-}
-#endif
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
@@ -2307,13 +2284,11 @@ static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	}
 
 	r_table_free (table);
-#if MYDB
 	// NOTE: if we comment out this, it will leak.. but it will be faster
 	// because it will keep the cache across multiple RBin calls
 	osymbols = NULL;
 	sdb_free (mydb);
 	mydb = NULL;
-#endif
 	return true;
 }
 
