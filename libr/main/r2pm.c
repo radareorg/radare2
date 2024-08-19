@@ -37,24 +37,25 @@ static const char *helpmsg =
 	" -v                show version\n";
 
 typedef struct r_r2pm_t {
-	bool help;
-	bool envhelp;
+	bool add;
 	bool clean;
+	bool doc;
+	bool edit;
+	bool envhelp;
 	bool force;
 	bool global;
-	bool plugdir; // requires -c/clean
-	bool list;
-	bool add;
-	bool init;
-	bool edit;
-	bool run;
-	bool doc;
-	bool search;
-	bool version;
-	bool quiet;
+	bool help;
 	bool info;
+	bool init;
 	bool install;
+	bool list;
+	bool plugdir; // requires -c/clean
+	bool quiet;
+	bool run;
+	bool search;
 	bool uninstall;
+	bool version;
+
 	int rc;
 	const char *time;
 } R2Pm;
@@ -112,6 +113,11 @@ static char *r2pm_bindir(void) {
 }
 
 static char *r2pm_gitdir(void) {
+	char *e = r_sys_getenv ("R2PM_GITDIR");
+	if (R_STR_ISNOTEMPTY (e)) {
+		return e;
+	}
+	free (e);
 	return r_xdg_datadir ("r2pm/git");
 }
 
@@ -335,7 +341,7 @@ static int r2pm_update(bool force) {
 	return rc;
 }
 
-static void r2pm_setenv(bool global) {
+static void r2pm_setenv(R2Pm *r2pm) {
 	char *gmake = r_file_path ("gmake");
 	if (gmake) {
 		r_sys_setenv ("MAKE", gmake);
@@ -344,7 +350,7 @@ static void r2pm_setenv(bool global) {
 	}
 	free (gmake);
 
-	if (global) {
+	if (r2pm->global) {
 		// the r2pm_plugdir changes when using -g
 		char *r2_plugdir = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
 		r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
@@ -355,15 +361,19 @@ static void r2pm_setenv(bool global) {
 		free (r2_plugdir);
 	}
 
-	char *dbdir = r2pm_dbdir ();
-	r_sys_setenv ("R2PM_DBDIR", dbdir);
-	free (dbdir);
-
+	if (r2pm->time) {
+		// set R2PM_TIME env var
+		r_sys_setenv ("R2PM_TIME", r2pm->time);
+	}
 	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
 
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
 	free (gdir);
+
+	char *dbdir = r2pm_dbdir ();
+	r_sys_setenv ("R2PM_DBDIR", dbdir);
+	free (dbdir);
 
 	char *pd = r_sys_cmd_str ("radare2 -NN -H R2_USER_PLUGINS", NULL, NULL);
 	if (pd) {
@@ -557,7 +567,6 @@ static bool r2pm_have_builddir(const char *pkg) {
 static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
-	r2pm_setenv (global);
 	const bool have_builddir = r2pm_have_builddir (pkg);
 #if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
@@ -782,7 +791,6 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		free (pkgdir);
 	}
 	char *srcdir = r2pm_gitdir ();
-	r2pm_setenv (global);
 	R_LOG_DEBUG ("Entering %s", srcdir);
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
@@ -1068,69 +1076,52 @@ static char *r2pm_search(const char *grep) {
 	return r_strbuf_drain (sb);
 }
 
-static void r2pm_envhelp(bool verbose) {
-	if (verbose) {
-		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
-		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
-		char *r2pm_libdir = r_sys_getenv ("R2PM_LIBDIR");
-		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
-		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
-		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
-		bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
-		char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
-		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"
-			"SUDO=sudo              # path to the SUDO executable\n"
-			"MAKE=make              # path to the GNU MAKE executable\n"
-			"R2PM_OFFLINE=%d         # don't git pull\n"
-			"R2PM_LEGACY=0\n"
-			"R2PM_TIME=YYYY-MM-DD\n"
-			"R2PM_PLUGDIR=%s\n"
-			"R2PM_PLUGDIR=%s\n"
-			"R2PM_PREFIX=%s\n"
-			"R2PM_BINDIR=%s\n"
-			"R2PM_LIBDIR=%s\n"
-			"R2PM_DBDIR=%s\n"
-			"R2PM_GITDIR=%s\n",
-			r2pm_offline,
-			r2pm_plugdir,
-			r2pm_plugdir2,
-			r2pm_prefix,
-			r2pm_bindir,
-			r2pm_libdir,
-			r2pm_dbdir,
-			r2pm_gitdir);
-		free (r2pm_plugdir);
-		free (r2pm_plugdir2);
-		free (r2pm_prefix);
-		free (r2pm_bindir);
-		free (r2pm_dbdir);
-		free (r2pm_gitdir);
-	} else {
-		r_cons_printf ("R2_LOG_LEVEL\n"
-			"R2PM_TIME\n"
-			"R2PM_PLUGDIR\n"
-			"R2PM_BINDIR\n"
-			"R2PM_INCDIR\n"
-			"R2PM_LIBDIR\n"
-			"R2PM_OFFLINE\n"
-			"R2PM_PREFIX\n"
-			"R2PM_LEGACY\n"
-			"R2PM_DBDIR\n"
-			"R2PM_GITDIR\n");
-		r_cons_flush ();
-	}
+static void r2pm_envhelp(void) {
+	int r2pm_log_level = r_sys_getenv_asint ("R2_LOG_LEVEL");
+	char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
+	char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
+	char *r2pm_libdir = r_sys_getenv ("R2PM_LIBDIR");
+	char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
+	char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
+	char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
+	bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
+	char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
+	printf ("R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
+		"SUDO=sudo              # path to the SUDO executable\n"
+		"MAKE=make              # path to the GNU MAKE executable\n"
+		"R2PM_OFFLINE=%d         # don't git pull\n"
+		"R2PM_LEGACY=0\n"
+		"R2PM_TIME=YYYY-MM-DD\n"
+		"R2PM_PLUGDIR=%s\n"
+		"R2PM_PLUGDIR=%s (global)\n"
+		"R2PM_PREFIX=%s\n"
+		"R2PM_BINDIR=%s\n"
+		"R2PM_LIBDIR=%s\n"
+		"R2PM_DBDIR=%s\n"
+		"R2PM_GITDIR=%s\n",
+		r2pm_log_level,
+		r2pm_offline,
+		r2pm_plugdir,
+		r2pm_plugdir2,
+		r2pm_prefix,
+		r2pm_bindir,
+		r2pm_libdir,
+		r2pm_dbdir,
+		r2pm_gitdir);
+	free (r2pm_plugdir);
+	free (r2pm_plugdir2);
+	free (r2pm_prefix);
+	free (r2pm_bindir);
+	free (r2pm_dbdir);
+	free (r2pm_gitdir);
 }
 
 static void r2pm_varprint(const char *name) {
-	if (R_STR_ISEMPTY (name)) {
-		r2pm_envhelp (false);
-	} else {
-		char *v = r_sys_getenv (name);
-		if (R_STR_ISNOTEMPTY (v)) {
-			printf ("%s\n", v);
-		}
-		free (v);
+	char *v = r_sys_getenv (name);
+	if (R_STR_ISNOTEMPTY (v)) {
+		printf ("%s\n", v);
 	}
+	free (v);
 }
 
 R_API int r_main_r2pm(int argc, const char **argv) {
@@ -1160,19 +1151,13 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	char *levelstr = r_str_newf ("%d", level);
 	r_sys_setenv ("R2_LOG_LEVEL", levelstr);
 	free (levelstr);
-	// -H option without argument
-	if (argc == 2 && !strcmp (argv[1], "-H")) {
-		r2pm_varprint (NULL); // argv[opt.ind]);
-		// main_print_var (NULL);
-		return 0;
-	}
+
 	R2Pm r2pm = {
 		0
 	};
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
 	int i, c;
-	r2pm_setenv (false);
 	bool action = false;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -1229,7 +1214,6 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.time = opt.arg;
 			break;
 		case 'r':
-			r_sys_setenv ("R2PM_OFFLINE", "1");
 			r2pm.run = true;
 			action = true;
 			break;
@@ -1237,20 +1221,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.global = true;
 			break;
 		case 'H':
-			r_sys_setenv ("R2PM_OFFLINE", "1");
-			if (!strcmp (opt.arg, "H")) {
-				r2pm_envhelp (true);
-			} else {
-				r2pm_varprint (opt.arg);
-			}
-			return 0;
+			r2pm.envhelp = true;
+			action = true;
+			break;
 		case 'h':
-			r_sys_setenv ("R2PM_OFFLINE", "1");
-			if (r2pm.help) {
-				r2pm.envhelp = true;
-			} else {
-				r2pm.help = true;
-			}
+			r2pm.help = true;
 			action = true;
 			break;
 		case 'v':
@@ -1262,16 +1237,10 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			break;
 		}
 	}
-	r2pm_setenv (r2pm.global);
+	r2pm_setenv (&r2pm);
 	if (!action && opt.ind < argc) {
 		r2pm.help = true;
 		r2pm.rc = 1;
-	}
-	if (r2pm.time) {
-		// set R2PM_TIME env var
-		r_sys_setenv ("R2PM_TIME", r2pm.time);
-	} else {
-		// honor env var if any?
 	}
 	if (r2pm.plugdir) {
 		if (r2pm.clean) {
@@ -1295,11 +1264,16 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 		return r_main_version_print ("r2pm", mode);
 	}
+	if (r2pm.envhelp) {
+		if (!strcmp (opt.arg, "H")) {
+			r2pm_envhelp ();
+		} else {
+			r2pm_varprint (opt.arg);
+		}
+		return r2pm.rc;
+	}
 	if (r2pm.help || argc == 1) {
 		printf ("%s", helpmsg);
-		if (r2pm.envhelp) {
-			r2pm_envhelp (true);
-		}
 		return r2pm.rc;
 	}
 	{
