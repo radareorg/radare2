@@ -156,16 +156,15 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 	}
 
 	int hits = 0;
-	while (true) {
-		ut8 *finger; // point at next possible match
+	while (blen > maxkey) {
+		ut8 *finger = buf; // point at next possible match
 		ut8 *finger_end = buf + (blen - maxkey);
-		for (finger = buf; finger < finger_end; finger++) {
+		for (finger = buf; finger + 1 < finger_end; finger++) {
 			RTireNode *node = root[*finger];
-
 			ut8 *b = finger + 1; // matching substrings of finger as you walk tire
-			while (node) {
-				size_t remaining = finger_end - finger;
-				if (node->len >= remaining) {
+			while (node && b < finger_end) {
+				int remaining = finger_end - b;
+				if (remaining < 1 || node->len >= remaining) {
 					break;
 				}
 				if (!memcmp (node->data, b, node->len)) {
@@ -188,6 +187,9 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 					node = node->next;
 				}
 			}
+		}
+		if (finger == buf) {
+			finger++;
 		}
 
 		//  printf ("finished searching 0x%lx bytes from 0x%lx", finger - buf, addr); // DENNIS
