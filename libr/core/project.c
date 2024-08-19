@@ -332,7 +332,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		R_LOG_ERROR ("Failed to load rvc");
 	}
 	if (r_config_get_b (core->config, "prj.history")) {
-		char *file = r_file_new (prj_path, "history");
+		char *file = r_file_new (prj_path, "history", NULL);
 		r_line_hist_free (); // R2_600 - hist_reset ?
 		r_line_hist_load (file);
 		free (file);
@@ -757,8 +757,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	if (r_config_get_b (core->config, "prj.history")) {
 		char *history = r_core_cmd_str (core, "!!");
-		char *file = r_file_new (prj_dir, "history");
+		char *file = r_file_new (prj_dir, "history", NULL);
 		r_file_dump (file, (const ut8*)history, -1, false);
+		free (file);
 		free (history);
 	}
 	if (r_config_get_b (core->config, "prj.zip")) {
