@@ -4329,6 +4329,10 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		r_debug_esil_watch_reset (core->dbg);
 		break;
 	case 'c': // "dec"
+		if (r_str_startswith (input, "cai")) {
+			R_LOG_ERROR ("r2pm -ci r2ai-decai");
+			break;
+		}
 		if (r_debug_esil_watch_empty (core->dbg)) {
 			R_LOG_ERROR ("no esil watchpoints defined");
 		} else {
