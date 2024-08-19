@@ -2640,6 +2640,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 		silent = true;
 	}
 	const char *where = "bin.sections.x";
+	PJ *pj = param->pj;
 
 	r_list_free (param->boundaries);
 	param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
@@ -2660,6 +2661,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	RStrBuf *sb = r_strbuf_new ("");
 	RStrBuf *rb = r_strbuf_new ("");
 	ut64 lastch = UT64_MAX;
+	const bool json = param->pj != NULL;
 	ut64 firstch = UT64_MAX;
 	int minstr = r_num_math (core->num, input);
 	if (minstr < 1) {
@@ -2667,6 +2669,9 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 		if (minstr < 1) {
 			minstr = 1;
 		}
+	}
+	if (json) {
+		pj_a (pj);
 	}
 
 	r_list_foreach (param->boundaries, iter, map) {
@@ -2752,13 +2757,20 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 						}
 						if (R_STR_ISNOTEMPTY (s)) {
 							char *ss = r_str_trim_dup (s);
-							r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, ss);
-							r_name_filter (ss, -1);
-							RCoreAsmHit cah = {
-								.addr = firstch,
-								.len = lastch - firstch,
-							};
-							search_hit_at (core, param, &cah, ss);
+							if (json) {
+								pj_o (pj);
+								pj_kn (pj, "addr", firstch);
+								pj_ks (pj, "text", ss);
+								pj_end (pj);
+							} else {
+								r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, ss);
+								r_name_filter (ss, -1);
+								RCoreAsmHit cah = {
+									.addr = firstch,
+									.len = lastch - firstch,
+								};
+								search_hit_at (core, param, &cah, ss);
+							}
 							free (ss);
 						}
 					}
@@ -2777,7 +2789,17 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	r_list_free (words);
 	free (word);
 	r_cons_break_pop ();
-	if (silent) {
+	if (json) {
+		r_strbuf_free (rb);
+		pj_end (pj);
+#if 0
+		char *res = pj_drain (pj);
+		if (R_STR_ISNOTEMPTY (res)) {
+			r_cons_println (res);
+		}
+		free (res);
+#endif
+	} else if (silent) {
 		r_strbuf_free (rb);
 	} else {
 		char *res = r_strbuf_drain (rb);
@@ -3917,7 +3939,7 @@ static int cmd_search(void *data, const char *input) {
 		.searchshow = r_config_get_i (core->config, "search.show"),
 		.searchprefix = r_config_get (core->config, "search.prefix"),
 		.count = 0,
-		.c = 0,
+		.c = 0
 	};
 	if (!param.cmd_hit) {
 		param.cmd_hit = "";
@@ -3998,6 +4020,8 @@ static int cmd_search(void *data, const char *input) {
 	// eprintf ("COMMAND (%d) %d (%s)(%s)\n", param.outmode == R_MODE_JSON, param_offset, input, input + param_offset);
 	if (param.outmode == R_MODE_JSON) {
 		param.pj = r_core_pj_new (core);
+	} else {
+		param.pj = NULL;
 	}
 
 reread:
@@ -4295,6 +4319,9 @@ reread:
 				break;
 			case 's': // "/azs"
 				do_analstr_search (core, &param, true, NULL);
+				break;
+			case 'j': // "/azj"
+				do_analstr_search (core, &param, false, NULL);
 				break;
 			case ' ': // "/az [num]"
 				do_analstr_search (core, &param, false, r_str_trim_head_ro (input + 2));
