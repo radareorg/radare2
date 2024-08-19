@@ -636,6 +636,7 @@ static int r2pm_clone(const char *pkg) {
 
 	bool offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	if (offline) {
+		free (srcdir);
 		return 0;
 	}
 	bool git_source = false;
@@ -682,16 +683,18 @@ static int r2pm_clone(const char *pkg) {
 			return 1;
 		}
 	}
+	free (srcdir);
 	char *r2pm_time = r_sys_getenv ("R2PM_TIME");
 	if (r2pm_time) {
 		if (git_source) {
-			char *srcdir = r2pm_gitdir ();
+			char *gitdir = r2pm_gitdir ();
 			R_LOG_INFO ("Going back to %s", r2pm_time);
 			int rc = r_sys_cmdf ("cd %s/%s && git reset --hard && git pull --tags && git reset --hard %s",
-				srcdir, pkg, r2pm_time);
-			free (srcdir);
+				gitdir, pkg, r2pm_time);
+			free (gitdir);
 			if (rc != 0) {
 				R_LOG_ERROR ("Unable to travel back in time");
+				free (r2pm_time);
 				return 1;
 			}
 		} else {
@@ -699,7 +702,6 @@ static int r2pm_clone(const char *pkg) {
 		}
 		free (r2pm_time);
 	}
-	free (srcdir);
 	return 0;
 }
 
