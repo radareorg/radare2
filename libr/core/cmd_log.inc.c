@@ -624,8 +624,12 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_a (pj);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				pj_o (pj);
-				pj_ks (pj, "name", cp->meta.name);
-				pj_ks (pj, "desc", cp->meta.desc);
+				if (cp->meta.name) {
+					pj_ks (pj, "name", cp->meta.name);
+				}
+				if (cp->meta.desc) {
+					pj_ks (pj, "desc", cp->meta.desc);
+				}
 				if (cp->meta.version) {
 					pj_ks (pj, "version", cp->meta.version);
 				}
