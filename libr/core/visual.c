@@ -19,8 +19,8 @@ typedef struct {
 
 static const char *printfmtSingle[NPF] = {
 	"xc",  // HEXDUMP
-	"afs;pd $r",  // ASSEMBLY
-	"pxw 64@r:SP;dr=;drcq;afs;pd $r",  // DEBUGGER
+	"afsq;pd $r",  // ASSEMBLY
+	"pxw 64@r:SP;dr=;drcq;afsq;pd $r",  // DEBUGGER
 	"prc", // OVERVIEW
 	"psb", // PC//  copypasteable views
 };
