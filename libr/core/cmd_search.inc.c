@@ -2419,6 +2419,11 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 		break;
 	}
 	if (param->searchflags) {
+		if (R_STR_ISNOTEMPTY (str)) {
+			char *s = r_str_newf ("string \"%s\"", str);
+			r_core_cmdf (core, "'CC %s", s);
+			free (s);
+		}
 		char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
 			? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
 			: r_str_newf ("%s%d_%d", param->searchprefix, kwidx, param->count);
