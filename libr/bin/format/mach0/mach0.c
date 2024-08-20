@@ -1514,6 +1514,14 @@ static const char *build_version_platform_tostring(ut32 platform) {
 		return "tvOS Simulator";
 	case 9:
 		return "watchOS Simulator";
+	case 10:
+		return "DriverKit";
+	case 11:
+		return "VisionOS";
+	case 12:
+		return "VisionOS Simulator";
+	case 0xffffffff:
+		return "any";
 	default:
 		return "unknown";
 	}
