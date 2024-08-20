@@ -586,6 +586,7 @@ static char *colorword(char *res, const char *k, const char *color) {
 }
 
 static void colorcode(void) {
+	// TODO : dupped from libr/util/print_code.c r_print_code_tocolor
 	RCons *cons = r_cons_singleton ();
 	int i;
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
