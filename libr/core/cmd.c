@@ -163,6 +163,8 @@ static const RCoreHelpMessage help_msg_dash = {
 	"-b", " 32", "same as e or r2 -e",
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
+	"-h", "", "show this help (same as -?)",
+	"-H", " key", "same as r2 -H",
 	"-k", " kernel", "same as r2 -k or e asm.os",
 	"-f", "", "block size = file size (b $s)",
 	"-j", "", "enter the js: repl",
@@ -1878,8 +1880,11 @@ static int cmd_stdin(void *data, const char *input) {
 				r_core_cmd_call (core, "P");
 			}
 			break;
+		case 'H': // "-H"
+			r_core_cmd_callf (core, "r2 -H%s", input + 1);
+			break;
 		case 'D': // "-a"
-			r_core_cmd_callf (core, "iD%s", input+1);
+			r_core_cmd_callf (core, "iD%s", input + 1);
 			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
