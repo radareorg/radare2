@@ -689,6 +689,12 @@ static void colorcode(void) {
 		res = colorword (res, "void ", Color_GREEN);
 		res = colorword (res, "bool ", Color_GREEN);
 		res = colorword (res, "ut64 ", Color_GREEN);
+		res = colorword (res, "uint32_t", Color_GREEN);
+		res = colorword (res, "uint64_t", Color_GREEN);
+		res = colorword (res, "int32_t", Color_GREEN);
+		res = colorword (res, "int64_t", Color_GREEN);
+		res = colorword (res, "int8_t", Color_GREEN);
+		res = colorword (res, "uint8_t", Color_GREEN);
 		res = colorword (res, "int ", Color_GREEN);
 		res = colorword (res, "char ", Color_GREEN);
 		res = colorword (res, "const ", Color_GREEN);
