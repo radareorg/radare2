@@ -1175,17 +1175,15 @@ static int cmd_cmp(void *data, const char *input) {
 					free (v_str);
 				}
 			} else if (*path) {
-				char *apath = r_file_abspath (path);
-				if (r_fs_check (core->fs, apath)) {
-					r_core_cmdf (core, "mg %s", apath);
+				if (r_fs_check (core->fs, path)) {
+					r_core_cmdf (core, "mg %s", path);
 				} else {
-					char *res = r_syscmd_cat (apath);
+					char *res = r_syscmd_cat (path);
 					if (res) {
 						r_cons_print (res);
 						free (res);
 					}
 				}
-				free (apath);
 			} else {
 				r_core_cmd_help_match (core, help_msg_c, "cat");
 			}

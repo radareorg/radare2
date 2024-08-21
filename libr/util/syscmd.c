@@ -506,16 +506,9 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 }
 
 R_API char *r_syscmd_cat(const char *file) {
-	const char *p = NULL;
-	if (file) {
-		if ((p = strchr (file, ' '))) {
-			p = p + 1;
-		} else {
-			p = file;
-		}
-	}
-	if (p && *p) {
-		char *filename = strdup (p);
+	const char *p = r_str_trim_head_ro (file);
+	if (R_STR_ISNOTEMPTY (p)) {
+		char *filename = r_file_abspath (p);
 		r_str_trim (filename);
 		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
@@ -523,9 +516,8 @@ R_API char *r_syscmd_cat(const char *file) {
 		}
 		free (filename);
 		return data;
-	} else {
-		eprintf ("Usage: cat [file]\n");
 	}
+	R_LOG_INFO ("Usage: cat [file]");
 	return NULL;
 }
 
