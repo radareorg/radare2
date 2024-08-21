@@ -1507,6 +1507,10 @@ static bool cb_cmdpdc(void *user, void *data) {
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			if (!strcmp (cp->meta.name, "r2retdec")) {
 				r_cons_printf ("pdz\n");
+			} else if (!strcmp (cp->meta.name, "decai")) {
+				r_cons_printf ("decai\n");
+			} else if (!strcmp (cp->meta.name, "r2jadx")) {
+				r_cons_printf ("r2jadx\n");
 			} else if (!strcmp (cp->meta.name, "r2ghidra")) {
 				r_cons_printf ("pdg\n");
 			}
