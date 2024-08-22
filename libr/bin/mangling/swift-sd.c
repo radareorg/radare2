@@ -70,7 +70,7 @@ static const SwiftType metas [] = {
 	{ NULL, NULL }
 };
 
-static const SwiftType flags [] = {
+static const SwiftType flags[] = {
 	//{ "f", "function" }, // this is not an accessor
 	{ "s", "setter" },
 	{ "g", "getter" },
@@ -356,6 +356,22 @@ static char *my_swift_demangler(const char *s) {
 	// SwiftState ss = { 0 };
 	SwiftCheck is = {0};
 	is.first = true;
+#if 0
+	if (r_str_startswith (s, "$s")) {
+		s += 2;
+	}
+#endif
+	if (r_str_startswith (s, "So") && r_str_endswith (s, "C")) {
+		int len = atoi (s + 2);
+		s += 2;
+		while (isdigit (*s)) {
+			s++;
+		}
+		char *ns = r_str_ndup (s, len);
+		char *fs = r_str_newf ("__C.%s", ns);
+		free (ns);
+		return fs;
+	}
 
 	int i, len;
 	const char *attr = NULL;
@@ -736,8 +752,10 @@ repeat:;
 							}
 							q = Q + n;
 						} else {
-							r_strbuf_appendf (out, "...%s", q);
-							q += strlen (q);
+							if (*q) {
+								r_strbuf_appendf (out, "...%s", q);
+								q += strlen (q);
+							}
 						}
 					}
 					q++;
@@ -824,7 +842,7 @@ repeat:;
 						q = n + 1;
 					} else {
 						n = strchr (q, '_');
-						if (!n) {
+						if (!n && *q) {
 							r_strbuf_appendf (out, "...%s", q);
 							break;
 						}
@@ -995,7 +1013,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	}
 	char *res = my_swift_demangler (s);
 	if (!res && hasdollar) {
-		if (*s == '$' && s[1]) {
+		if (*s == '$' && s[1] && s[2]) {
 			s += 2;
 		}
 		return r_str_newf ("...%s", s);

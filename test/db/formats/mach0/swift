@@ -14,16 +14,16 @@ class SomeClass {
   func 4() {}  // 0x100003d20
   func 5() {}  // 0x100003d24
   func 6() {}  // 0x100003d1d
-  func allocator() {}  // 0x100003d90
+  func allocator....cfCTq() {}  // 0x100003d90
   func 8() {}  // 0x100003d2c
   func 9() {}  // 0x100003d34
 }
 class SuperKlass {
   property superfield : Swift.Int;
-  func superfield.allocator__Swift.Int() {}  // 0x1000028f0
-  func superfield.allocator__Swift.Int() {}  // 0x100002950
-  func superfield.allocator__Swift.Int() {}  // 0x1000029b0
-  func allocator() {}  // 0x100002a10
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vg() {}  // 0x1000028f0
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vs() {}  // 0x100002950
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vM() {}  // 0x1000029b0
+  func allocator....cfC() {}  // 0x100002a10
   func 4() {}  // 0x100003d9c
 }
 @objc
