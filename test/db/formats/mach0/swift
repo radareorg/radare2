@@ -2600,13 +2600,13 @@ EXPECT=<<EOF
     "index": 37,
     "methods": [
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
         "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedEncodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "rawname": "_symbolic _____y_____G s22KeyedEncodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133766
       },
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
         "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedDecodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "rawname": "_symbolic _____y_____G s22KeyedDecodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133780
@@ -2619,13 +2619,13 @@ EXPECT=<<EOF
       },
       {
         "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
-        "flag": "sym.MainTabBarViewController._symbolic_______15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV",
+        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV",
         "addr": 4295133824
       },
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
-        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
+        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133830
       }
