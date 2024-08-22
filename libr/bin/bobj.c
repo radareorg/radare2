@@ -100,6 +100,10 @@ static char *swiftField(const char *dn, const char *cn) {
 
 static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
+	char *tridot = strstr (dname, "...");
+	if (tridot) {
+		*tridot = 0;
+	}
 	if (strstr (dname, "::")) {
 		char *klass = strdup (dname);
 		char *par = strchr (klass, '(');

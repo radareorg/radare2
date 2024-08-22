@@ -941,7 +941,7 @@ NAME=rabin2 -D swift conforms
 FILE=--
 CMDS=!rabin2 -D swift  '_$s16IOSSecuritySuite11FailedCheckOSQAAMc'
 EXPECT=<<EOF
-IOSSecuritySuite.FailedCheck.conformsto.Equatable
+IOSSecuritySuite.FailedCheck.conformsto.Equatable...QAAMc
 EOF
 RUN
 
@@ -957,7 +957,7 @@ NAME=rabin2 -D swift O attribute
 FILE=--
 CMDS=!rabin2 -D swift '_$s16IOSSecuritySuite11FailedCheckO13symbolicLinksyA2CmFWC'
 EXPECT=<<EOF
-IOSSecuritySuite.FailedCheck.symbolicLinks
+IOSSecuritySuite.FailedCheck.symbolicLinks...A2CmFWC
 EOF
 RUN
 
