@@ -420,7 +420,9 @@ static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueCo
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		ret = pm->core->lang->cmdf (pm->core, "%s@e:scr.null=true", n);
+		pm->core->lang->cmdf (pm->core, "e scr.null=true");
+		ret = pm->core->lang->cmdf (pm->core, "%s", n);
+		pm->core->lang->cmdf (pm->core, "e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
