@@ -104,6 +104,16 @@ static const char *numpos(const char* n) {
 	return n;
 }
 
+static const char *hasdigit(const char* n) {
+	while (*n) {
+		if (isdigit (*n)) {
+			return n;
+		}
+		n++;
+	}
+	return NULL;
+}
+
 static const char *getstring(const char *s, int len) {
 	static R_TH_LOCAL char buf[256] = {0};
 	if (len < 0 || len > sizeof (buf) - 1) {
@@ -445,6 +455,9 @@ static char *my_swift_demangler(const char *s) {
 		}
 		/* parse accessors */
 		if (attr) {
+			if (r_str_startswith (q, "sE")) {
+				q++;
+			}
 			int len = 0;
 			const char *name;
 			/* get field name and then type */
@@ -474,7 +487,12 @@ static char *my_swift_demangler(const char *s) {
 			if (*q == '_') {
 				r_strbuf_append (out, " -> ()");
 			}
+			if (arg) {
+				q = arg;
+				goto moreitems;
+			}
 		} else {
+moreitems:
 			/* parse function parameters here */
 			// type len value/
 			for (i = 0; q && q < q_end && q >= q_start; i++) {
@@ -483,6 +501,7 @@ static char *my_swift_demangler(const char *s) {
 				}
 				switch (*q) {
 				case 'A': // skip 'AAC' cases
+
 					if (!isdigit (q[1])) {
 						q += 2;
 						r_strbuf_append (out, ".");
@@ -542,6 +561,9 @@ static char *my_swift_demangler(const char *s) {
 						}
 						continue;
 					}
+				case 'b':
+					r_strbuf_append (out, "bool");
+					break;
 				case 's':
 					{
 						int n = 0;
@@ -646,20 +668,30 @@ static char *my_swift_demangler(const char *s) {
 repeat:;
 						const char *Q = getnum (q + 1, &n);
 						const char *res = getstring (Q, n);
-						if (res) {
+						if (R_STR_ISNOTEMPTY (res)) {
 							r_strbuf_append (out, ".");
 							r_strbuf_append (out, res);
+						} else {
+							r_strbuf_append (out, "...");
+							r_strbuf_append (out, q);
+							q += strlen (q);
 						}
 						q = Q + n;
 						if (q >= q_end) {
 							continue;
 						}
 						if (!isdigit (*q)) {
-							while (*q) {
-								if (isdigit (*q)) {
-									break;
+							if (!hasdigit (q) && *q == 'V') {
+								r_strbuf_append (out, "...");
+								r_strbuf_append (out, q);
+								q += strlen (q);
+							} else {
+								const char *dig = hasdigit (q);
+								if (dig) {
+									q = dig;
+								} else {
+									// eprintf ("NO DIGI\n");
 								}
-								q++;
 							}
 						}
 						if (isdigit (*q)) {
@@ -703,6 +735,9 @@ repeat:;
 								r_strbuf_append (out, res);
 							}
 							q = Q + n;
+						} else {
+							r_strbuf_appendf (out, "...%s", q);
+							q += strlen (q);
 						}
 					}
 					q++;
@@ -790,6 +825,7 @@ repeat:;
 					} else {
 						n = strchr (q, '_');
 						if (!n) {
+							r_strbuf_appendf (out, "...%s", q);
 							break;
 						}
 						q = n + 1;
@@ -847,7 +883,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		return strdup ("Swift._SwiftObject");
 	}
 	const char *os = s;
+	bool hasdollar = *s == '$';
+
 	if (r_str_startswith (s, "_$")) {
+		hasdollar = true;
 		s += 2;
 	}
 #if 0
@@ -875,6 +914,8 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			}
 		}
 	}
+#if 0
+	// uncommenting this causes inconsistencies between rabin2 -D and iD
 	if (!syscmd && !trylib) {
 		if (r_str_startswith (s, "$s")) {
 			s += 2;
@@ -891,6 +932,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			return fs;
 		}
 	}
+#endif
 #if 0
 	if (syscmd || trylib) {
 		if (r_str_startswith (s, "So") && isdigit (s[2])) {
@@ -933,6 +975,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 				s--;
 			}
 			// return NULL;
+		} else {
 		}
 	} else {
 		// TIFF ones found on COFF binaries, swift-unrelated, return early to avoid FP
@@ -950,5 +993,12 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			return res;
 		}
 	}
-	return my_swift_demangler (s);
+	char *res = my_swift_demangler (s);
+	if (!res && hasdollar) {
+		if (*s == '$' && s[1]) {
+			s += 2;
+		}
+		return r_str_newf ("...%s", s);
+	}
+	return res;
 }
