@@ -475,13 +475,12 @@ static char *my_swift_demangler(const char *s) {
 				q++;
 			}
 			int len = 0;
-			const char *name;
 			/* get field name and then type */
 			resolve (types, q, &attr);
 
 			//printf ("Accessor: %s\n", attr);
 			q = getnum (q + 1, &len);
-			name = getstring (q, len);
+			const char *name = getstring (q, len);
 #if 0
 			if (R_STR_ISNOTEMPTY (name)) {
 				printf ("Field Name: %s\n", name);
@@ -685,12 +684,12 @@ repeat:;
 						const char *Q = getnum (q + 1, &n);
 						const char *res = getstring (Q, n);
 						if (R_STR_ISNOTEMPTY (res)) {
-							r_strbuf_append (out, ".");
-							r_strbuf_append (out, res);
+							r_strbuf_appendf (out, ".", res);
 						} else {
-							r_strbuf_append (out, "...");
-							r_strbuf_append (out, q);
-							q += strlen (q);
+							if (*q) {
+								r_strbuf_appendf (out, "...%s", q);
+								q += strlen (q);
+							}
 						}
 						q = Q + n;
 						if (q >= q_end) {
@@ -698,8 +697,7 @@ repeat:;
 						}
 						if (!isdigit (*q)) {
 							if (!hasdigit (q) && *q == 'V') {
-								r_strbuf_append (out, "...");
-								r_strbuf_append (out, q);
+								r_strbuf_appendf (out, "...%s", q);
 								q += strlen (q);
 							} else {
 								const char *dig = hasdigit (q);
