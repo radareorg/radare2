@@ -684,7 +684,7 @@ repeat:;
 						const char *Q = getnum (q + 1, &n);
 						const char *res = getstring (Q, n);
 						if (R_STR_ISNOTEMPTY (res)) {
-							r_strbuf_appendf (out, ".", res);
+							r_strbuf_append (out, ".", res);
 						} else {
 							if (*q) {
 								r_strbuf_appendf (out, "...%s", q);
