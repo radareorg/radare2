@@ -4330,7 +4330,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		break;
 	case 'c': // "dec"
 		if (r_str_startswith (input, "cai")) {
-			R_LOG_ERROR ("r2pm -ci r2ai-decai");
+			R_LOG_ERROR ("r2pm -ci decai");
 			break;
 		}
 		if (r_debug_esil_watch_empty (core->dbg)) {
