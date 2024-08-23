@@ -41,7 +41,6 @@ EXPECT=<<EOF
 0x1000d8a20 POST
 0x1000d8cd4 iGoat
 0x1000d9184 dollar!
-0x1000d922c }}
 0x1000d92ec iGoat
 0x1000d9424 JohnDoe@yap.com
 0x1000d944c YapKeyEmail

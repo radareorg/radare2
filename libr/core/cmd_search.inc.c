@@ -2638,6 +2638,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 	return NULL;
 }
 
+// R2R db/cmd/cmd_search_asm
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	bool silent = false;
@@ -2763,11 +2764,11 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 				} else if (lastch != UT64_MAX) {
 					if (r_strbuf_length (sb) > minstr) { // maybe 2
 						const char *s = r_strbuf_get (sb);
-						// if (quiet) {
+						if (quiet) {
 							if (!check_false_positive (s)) {
 								s = "";
 							}
-						// }
+						}
 						if (R_STR_ISNOTEMPTY (s)) {
 							char *ss = r_str_trim_dup (s);
 							if (*ss && (minstr < 1 || strlen (ss) > minstr)) {
