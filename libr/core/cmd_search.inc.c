@@ -2685,6 +2685,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 		if (!(map->perm & R_PERM_X)) {
 			continue;
 		}
+		bool inmov = false;
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -2704,7 +2705,11 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 				if (hasch > 0) {
 					hasch--;
 				}
-				if (aop.type & R_ANAL_OP_TYPE_MOV) {
+				if (inmov && aop.type == R_ANAL_OP_TYPE_OR) {
+					hasch = 1;
+					lastch = at + 4;
+				} else if (aop.type & R_ANAL_OP_TYPE_MOV) {
+					inmov = true;
 					if (aop.val > 0 && aop.val < UT32_MAX) {
 						if (aop.val < 255) {
 							if (IS_PRINTABLE (aop.val)) {
@@ -2716,7 +2721,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 						} else if (aop.val < UT16_MAX) {
 							char ch0 = aop.val & 0xff;
 							char ch1 = (aop.val >> 8) & 0xff;
-							if ((ut8)ch1 == 0xef) {
+							if ((ut8)ch1 == 0xef || (ut8)ch1 == 0xed) {
 								ch1 = 0;
 							}
 							if (IS_PRINTABLE (ch0) && (!ch1 || IS_PRINTABLE (ch1))) {
@@ -2746,6 +2751,8 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 							}
 						}
 					}
+				} else {
+					inmov = false;
 				}
 				if (hasch) {
 					if (lastch == UT64_MAX) {
