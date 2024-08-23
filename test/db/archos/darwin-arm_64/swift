@@ -5,7 +5,7 @@ CMDS=<<EOF
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
-Swift.test.MyClass.calculate (self) -> (): , ) ()
+test.MyClass.calculate (self) -> (): , ) ()...i
 EOF
 RUN
 
@@ -27,7 +27,7 @@ CMDS=<<EOF
 iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
-Swift.test.MyClass.calculate (self) -> (): , ) ()
+test.MyClass.calculate (self) -> (): , ) ()...i
 EOF
 RUN
 
