@@ -2706,7 +2706,6 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 				}
 				if (aop.type == R_ANAL_OP_TYPE_OR) {
 					hasch = 1;
-					lastch = at;
 				} else if (aop.type & R_ANAL_OP_TYPE_MOV) {
 					if (aop.val > 0 && aop.val < UT32_MAX) {
 						if (aop.val < 255) {
