@@ -24,6 +24,10 @@ typedef struct mcs96_op_t {
 
 #define	MCS96_FE	0x2000	//0xfe extension
 
+#define	MCS96_11B_RELA	0x4000
+#define	MCS96_1B_RELJMP	0x8000
+#define	MCS96_2B_RELJMP	0x10000
+
 
 static const Mcs96Op mcs96_op[] = {
 	{ "skip", MCS96_1B},
@@ -58,22 +62,22 @@ static const Mcs96Op mcs96_op[] = {
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
-	{ "sjmp", MCS96_2B}, // 0x20
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "sjmp", MCS96_2B},
-	{ "scall", MCS96_2B}, // 0x28
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
-	{ "scall", MCS96_2B},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA}, // 0x20
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "sjmp", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA}, // 0x28
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
+	{ "scall", MCS96_2B | MCS96_11B_RELA},
 	{ "jbc", MCS96_3B}, // 0x30
 	{ "jbc", MCS96_3B},
 	{ "jbc", MCS96_3B},
@@ -235,22 +239,22 @@ static const Mcs96Op mcs96_op[] = {
 	{ "invalid", MCS96_1B},
 	{ "pop", MCS96_2B},
 	{ "pop", MCS96_3B_OR_4B}, //0xcf
-	{ "jnst", MCS96_2B},
-	{ "jnh", MCS96_2B},
-	{ "jgt", MCS96_2B},
-	{ "jnc", MCS96_2B},
-	{ "jnvt", MCS96_2B},
-	{ "jnv", MCS96_2B},
-	{ "jge", MCS96_2B},
-	{ "jne", MCS96_2B},
-	{ "jst", MCS96_2B},
-	{ "jh", MCS96_2B},
-	{ "jle", MCS96_2B},
-	{ "jc", MCS96_2B},
-	{ "jvt", MCS96_2B},
-	{ "jv", MCS96_2B},
-	{ "jlt", MCS96_2B},
-	{ "je", MCS96_2B}, //0xdf
+	{ "jnst", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jnh", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jgt", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jnc", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jnvt", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jnv", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jge", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jne", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jst", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jh", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jle", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jc", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jvt", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jv", MCS96_2B | MCS96_1B_RELJMP},
+	{ "jlt", MCS96_2B | MCS96_1B_RELJMP},
+	{ "je", MCS96_2B | MCS96_1B_RELJMP}, //0xdf
 	{ "djnz", MCS96_3B},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
@@ -258,7 +262,7 @@ static const Mcs96Op mcs96_op[] = {
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
-	{ "ljmp", MCS96_3B},
+	{ "ljmp", MCS96_3B | MCS96_2B_RELJMP},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
@@ -266,7 +270,7 @@ static const Mcs96Op mcs96_op[] = {
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
 	{ "invalid", MCS96_1B},
-	{ "lcall", MCS96_3B}, //0xef
+	{ "lcall", MCS96_3B | MCS96_2B_RELJMP}, //0xef
 	{ "ret", MCS96_1B},
 	{ "invalid", MCS96_1B},
 	{ "pushf", MCS96_1B},
