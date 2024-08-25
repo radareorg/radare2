@@ -34,6 +34,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "srlw", "# >>= 1", { 1 } },
 		{ 0, "sraw", "# >>= 1", { 1 } },
 		{ 0, "add", "# += #", { 1, 2 } },
+		{ 0, "ret", "return", { 1, 2 } },
 		{ 0, NULL }
 	};
 	if (!newstr) {
