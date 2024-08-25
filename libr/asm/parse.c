@@ -136,7 +136,6 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 		R_LOG_WARN ("Cannot find asm.parser for %s", name);
 		if (p->cur && p->cur->name) {
 			if (r_str_startswith (p->cur->name, "null")) {
-				eprintf ("im nul already\n");
 				return false;
 			}
 		}
@@ -174,9 +173,7 @@ R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	if (*data && p->cur && p->cur->parse) {
 		return p->cur->parse (p, data, str);
 	}
-	// when the plugin have no parse callback just copy the text
-	// even if returning false to avoid pdc to be empty
-	strcpy (str, data);
+	// causes pdc to be empty, we need that parser to be doing sthg
 	return false;
 }
 
