@@ -172,11 +172,6 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i;
 	size_t len = strlen (data);
 	int sz = 32;
-	eprintf ("((%s))\n", data);
-	if (strstr (data, "invalid")) {
-		strcpy (str, data);
-		return true;
-	}
 	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
