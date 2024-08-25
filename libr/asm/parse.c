@@ -168,10 +168,16 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 	return NULL;
 }
 
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. in R2_600 because r_parse_instruction is better
+// TODO deprecate in R2_600 because r_parse_instruction is better
+R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	R_RETURN_VAL_IF_FAIL (p && data && str, false);
-	return (p && data && *data && p->cur && p->cur->parse)
-		? p->cur->parse (p, data, str) : false;
+	if (*data && p->cur && p->cur->parse) {
+		return p->cur->parse (p, data, str);
+	}
+	// when the plugin have no parse callback just copy the text
+	// even if returning false to avoid pdc to be empty
+	strcpy (str, data);
+	return false;
 }
 
 // R_API char *r_parse_immtrim(const char *_opstr)
