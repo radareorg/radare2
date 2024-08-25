@@ -1,12 +1,5 @@
 /* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_anal.h>
 #include <r_parse.h>
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
@@ -179,6 +172,11 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i;
 	size_t len = strlen (data);
 	int sz = 32;
+	eprintf ("((%s))\n", data);
+	if (strstr (data, "invalid")) {
+		strcpy (str, data);
+		return true;
+	}
 	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
