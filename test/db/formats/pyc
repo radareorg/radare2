@@ -28,7 +28,7 @@ bp = 0x00000000
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -43,7 +43,7 @@ machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -58,7 +58,7 @@ machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -73,7 +73,7 @@ machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -88,7 +88,7 @@ machine  Python 2.7a2 VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -103,7 +103,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -124,7 +124,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -139,7 +139,7 @@ vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -168,7 +168,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -183,7 +183,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -210,7 +210,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 EOF
 RUN
@@ -239,7 +239,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: Cannot find asm.parser for pyc.pseudo
 WARN: select the calling convention with `e anal.cc=?`
 EOF

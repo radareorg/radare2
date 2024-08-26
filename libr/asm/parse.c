@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, maijin */
 
 #include <r_parse.h>
 #include <config.h>
@@ -139,10 +139,11 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 				return false;
 			}
 		}
-		// check if p->cur 
+		// check if p->cur
 		r_list_foreach (p->parsers, iter, h) {
 			if (r_str_startswith (h->name, "null")) {
-				R_LOG_INFO ("Fallback to null from %s", p->cur->name);
+				R_LOG_INFO ("Fallback to null");
+				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
 				p->cur = h;
 				return false;
 			}
