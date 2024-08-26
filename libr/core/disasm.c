@@ -1203,9 +1203,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		if (ds->pseudo) {
-			r_parse_parse (core->parser, ds->opstr, ds->str);
-			free (ds->opstr);
-			ds->opstr = strdup (ds->str);
+			if (r_parse_parse (core->parser, ds->opstr, ds->str)) {
+				free (ds->opstr);
+				ds->opstr = strdup (ds->str);
+			}
 		}
 		if (ds->subjmp) {
 			char *input = strdup (ds->opstr? ds->opstr: ds->str);

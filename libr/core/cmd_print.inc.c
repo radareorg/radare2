@@ -2012,7 +2012,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (home) {
 				files = r_sys_dir (home);
 				r_list_foreach (files, iter, fn) {
-					if (*fn && *fn != '.') {
+					if (*fn != '.') {
 						r_cons_println (fn);
 					}
 				}
@@ -2023,7 +2023,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (path) {
 				files = r_sys_dir (path);
 				r_list_foreach (files, iter, fn) {
-					if (*fn && *fn != '.') {
+					if (*fn != '.') {
 						r_cons_println (fn);
 					}
 				}
@@ -5075,7 +5075,6 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 			char *mnem = op->mnemonic;
 			char *m = malloc ((strlen (mnem) * 2) + 32);
 			strcpy (m, mnem);
-			//r_parse_parse (core->parser, op->mnemonic, m);
 			if (type_print == 'q') {
 				r_cons_printf ("%s\n", m);
 			} else {

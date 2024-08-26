@@ -14,6 +14,7 @@ dalvik.pseudo
 evm.pseudo
 m68k.pseudo
 mips.pseudo
+null.pseudo
 ppc.pseudo
 riscv.pseudo
 sh.pseudo
