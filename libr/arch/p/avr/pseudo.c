@@ -1,13 +1,5 @@
 /* radare - LGPL - Copyright 2017-2019 - wargio */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_parse.h>
 
 static bool replace(int argc, const char *argv[], char *newstr) {
