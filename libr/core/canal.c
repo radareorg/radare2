@@ -4626,7 +4626,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		if (bsz > left) {
 			bsz = left;
 		}
-		(void)r_io_read_at (core->io, at, buf, bsz);
+		if (!r_io_read_at (core->io, at, buf, bsz)) {
+			// TODO: use pread to stop early, io.read never fails
+			break;
+		}
 		if (search_badpages) {
 			memset (block, -1, bsz);
 			if (!memcmp (buf, block, bsz)) {
@@ -4637,6 +4640,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 				}
 				uninit = true;
 				at += bsz;
+				if (!r_io_is_valid_offset (core->io, at, 0)) {
+					R_LOG_ERROR ("invalid memory");
+					break;
+				}
 				continue;
 			}
 			memset (block, 0, bsz);
