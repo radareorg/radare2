@@ -1,4 +1,4 @@
-OBJ_CHIP8PSEUDO+=$(LIBR)/arch/p/pseudo/chip8_pseudo.o
+OBJ_CHIP8PSEUDO+=$(LIBR)/arch/p/chip8/pseudo.o
 
 TARGET_CHIP8PSEUDO=parse_chip8_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_CHIP8PSEUDO}

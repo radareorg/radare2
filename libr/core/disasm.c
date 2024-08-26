@@ -385,7 +385,8 @@ R_API ut64 r_core_pava(RCore *core, ut64 addr) {
 	if (core->print->pava) {
 		RIOMap *map = r_io_map_get_paddr (core->io, addr);
 		if (map) {
-			return addr - map->delta + r_io_map_begin (map);
+			const ut64 base = r_io_map_begin (map);
+			return base + (addr - map->delta);
 		}
 	}
 	return addr;
