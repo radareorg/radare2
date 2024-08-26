@@ -741,7 +741,8 @@ enum r_pdu_condition_t {
 	pdu_opcode
 };
 R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum r_pdu_condition_t pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf);
-R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj, const void *pdu_condition);
+R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
+R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj, const void *pdu_condition);
 R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes);
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode);

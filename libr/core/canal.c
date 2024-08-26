@@ -1846,7 +1846,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				if (is_json_format_disasm) {
 					r_core_print_disasm (core, bbi->addr, buf, bbi->size, bbi->size, 0, NULL, true, true, pj, NULL);
 				} else {
-					r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0, pj, NULL);
+					r_core_print_disasm_json_ipi (core, bbi->addr, buf, bbi->size, 0, pj, NULL);
 				}
 				free (buf);
 			} else {

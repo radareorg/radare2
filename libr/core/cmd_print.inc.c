@@ -1367,7 +1367,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 				return 1;
 			}
 			pj_a (pj);
-			ret = r_core_print_disasm_json (core, addr, buf, len, 0, pj, arg);
+			ret = r_core_print_disasm_json_ipi (core, addr, buf, len, 0, pj, arg);
 			pj_end (pj);
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
@@ -1404,7 +1404,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 	ut8 *buf = malloc (bsize);
 	if (buf) {
 		r_io_read_at (core->io, core->offset, buf, bsize);
-		r_core_print_disasm_json (core, core->offset, buf, bsize, 0, pj, NULL);
+		r_core_print_disasm_json_ipi (core, core->offset, buf, bsize, 0, pj, NULL);
 		free (buf);
 	} else {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
@@ -1421,7 +1421,7 @@ static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 		return;
 	}
 	pj_a (pj);
-	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines, pj, NULL);
+	r_core_print_disasm_json_ipi (core, core->offset, block, core->blocksize, nblines, pj, NULL);
 	pj_end (pj);
 	r_cons_println (pj_string (pj));
 	pj_free (pj);
@@ -5163,7 +5163,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 		}
 	//	r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
 		if (type_print == 'j') {
-			r_core_print_disasm_json (core, addr, buf, sizeof (buf), 1, pj, NULL);
+			r_core_print_disasm_json_ipi (core, addr, buf, sizeof (buf), 1, pj, NULL);
 		} else {
 			r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 		}
@@ -5225,7 +5225,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			ut8 *buf = malloc (b->size);
 			if (buf) {
 				r_io_read_at (core->io, b->addr, buf, b->size);
-				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj, NULL);
+				r_core_print_disasm_json_ipi (core, b->addr, buf, b->size, 0, pj, NULL);
 				free (buf);
 			} else {
 				R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);
@@ -6766,7 +6766,7 @@ static int cmd_print(void *data, const char *input) {
 								break;
 							}
 							pj_a (pj);
-							r_core_print_disasm_json (core, b->addr, block, b->size, 0, pj, NULL);
+							r_core_print_disasm_json_ipi (core, b->addr, block, b->size, 0, pj, NULL);
 							pj_end (pj);
 							r_cons_printf ("%s\n", pj_string (pj));
 							pj_free (pj);
@@ -6844,7 +6844,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
-							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj, NULL);
+							r_core_print_disasm_json_ipi (core, b->addr, buf, b->size, 0, pj, NULL);
 							free (buf);
 						} else {
 							R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);

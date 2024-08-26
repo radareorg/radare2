@@ -6995,8 +6995,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	return ret;
 }
 
+
 /* Disassemble `nb_opcodes` instructions, or bytes if `nb_bytes` is enabled (as JSON) */
-R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj, const void *pdu_condition) {
+R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj, const void *pdu_condition) {
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, k, ret, line;
@@ -7337,6 +7338,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		result = true;
 	}
 	return result;
+}
+
+R_IPI int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+	return r_core_print_disasm_json_ipi (core, addr, buf, nb_bytes, nb_opcodes, pj, NULL);
 }
 
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
@@ -7851,7 +7856,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			if (block_instr) {
 				switch (mode) {
 				case R_MODE_JSON:
-					r_core_print_disasm_json (core, block_start, buf, block_sz, block_instr, pj, NULL);
+					r_core_print_disasm_json_ipi (core, block_start, buf, block_sz, block_instr, pj, NULL);
 					break;
 				case R_MODE_SIMPLE:
 					r_core_disasm_pdi_with_buf (core, block_start, buf, -1, block_sz, 0);
