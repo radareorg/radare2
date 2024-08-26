@@ -1,4 +1,4 @@
-OBJ_SHPSEUDO+=$(LIBR)/arch/p/pseudo/sh_pseudo.o
+OBJ_SHPSEUDO+=$(LIBR)/arch/p/sh/pseudo.o
 
 TARGET_SHPSEUDO=parse_sh_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_SHPSEUDO}

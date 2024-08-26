@@ -1,5 +1,4 @@
-# OBJ_RISCVPSEUDO+=$(LIBR)/arch/p/riscv/pseudo.o
-OBJ_RISCVPSEUDO+=$(LIBR)/arch/p/pseudo/riscv_pseudo.o
+OBJ_RISCVPSEUDO+=$(LIBR)/arch/p/riscv/pseudo.o
 
 TARGET_RISCVPSEUDO=parse_riscv_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_RISCVPSEUDO}

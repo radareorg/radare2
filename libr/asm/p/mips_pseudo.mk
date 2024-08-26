@@ -1,4 +1,4 @@
-OBJ_MIPSPSEUDO+=$(LIBR)/arch/p/pseudo/mips_pseudo.o
+OBJ_MIPSPSEUDO+=$(LIBR)/arch/p/mips/pseudo.o
 
 TARGET_MIPSPSEUDO=parse_mips_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_MIPSPSEUDO}

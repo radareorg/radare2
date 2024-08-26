@@ -1,4 +1,4 @@
-OBJ_V850PSEUDO+=$(LIBR)/arch/p/pseudo/v850_pseudo.o
+OBJ_V850PSEUDO+=$(LIBR)/arch/p/v850/pseudo.o
 
 TARGET_V850PSEUDO=parse_v850_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_V850PSEUDO}

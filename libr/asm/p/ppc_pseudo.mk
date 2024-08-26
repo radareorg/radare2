@@ -1,4 +1,4 @@
-OBJ_PPCPSEUDO+=$(LIBR)/arch/p/pseudo/ppc_pseudo.o
+OBJ_PPCPSEUDO+=$(LIBR)/arch/p/ppc/pseudo.o
 
 TARGET_PPCPSEUDO=parse_ppc_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_PPCPSEUDO}
