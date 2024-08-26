@@ -1,9 +1,5 @@
 /* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
