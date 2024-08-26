@@ -7,7 +7,7 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: r2pm -ci decai
 WARN: Cannot find asm.parser for 8051.pseudo
-INFO: Fallback to null from arm.pseudo
+INFO: Fallback to null
 WARN: using oba to load the syminfo from different mapaddress
 WARN: Cannot find asm.parser for 8051.pseudo
 EOF
