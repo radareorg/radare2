@@ -21,8 +21,7 @@ static const char *helpmsg =
 	" -f                force operation (Use in combination of -U, -i, -u, ..)\n"
 	" -gi <pkg>         global install (system-wide)\n"
 	" -h                display this help message\n"
-	" -H variable       show the value of given internal environment variable (See -HH)\n"
-	" -HH               show all the internal environment variable values\n"
+	" -H ([variable])   list all or selected r2pm environment variables\n"
 	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
 	" -I                information about the repository and installed packages\n"
 	" -l                list installed packages\n"
@@ -1161,6 +1160,12 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
 	int i, c;
 	bool action = false;
+	// -H option without argument
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		r2pm_setenv (&r2pm);
+		r2pm_envhelp ();
+		return 0;
+	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -1267,11 +1272,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		return r_main_version_print ("r2pm", mode);
 	}
 	if (r2pm.envhelp) {
-		if (!strcmp (opt.arg, "H")) {
-			r2pm_envhelp ();
-		} else {
-			r2pm_varprint (opt.arg);
-		}
+		r2pm_varprint (opt.arg);
 		return r2pm.rc;
 	}
 	if (r2pm.help || argc == 1) {
