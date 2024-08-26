@@ -2761,7 +2761,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 						firstch = at;
 					}
 					lastch = at;
-				} else if (lastch != UT64_MAX) {
+				} else if (lastch != UT64_MAX) { //  && firstch != UT64_MAX) {
 					if (r_strbuf_length (sb) > minstr) { // maybe 2
 						const char *s = r_strbuf_get (sb);
 						if (quiet) {

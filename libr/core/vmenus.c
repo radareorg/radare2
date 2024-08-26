@@ -4512,7 +4512,7 @@ onemoretime:
 				r_anal_function_resize (fcn, core->offset - fcn->addr);
 			}
 			r_cons_break_push (NULL, NULL);
-			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
+			r_core_cmdf_at (core, off, "af");
 			r_cons_break_pop ();
 		}
 		break;

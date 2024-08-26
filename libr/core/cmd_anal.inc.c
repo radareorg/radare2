@@ -5562,7 +5562,6 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'q':
 		case ' ': { // "afs"
 			ut64 addr = core->offset;
-			const char *arg = r_str_trim_head_ro (input + 2);
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
 				if (input[2] != 'q') {
@@ -5570,31 +5569,34 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				break;
 			}
-			if (R_STR_ISNOTEMPTY (arg)) {
-				// parse function signature here
-				char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
-				char *save_ptr = NULL;
-				char *fcnname_aux = r_str_tok_r (fcnstr_copy, "(", &save_ptr);
-				r_str_trim_tail (fcnname_aux);
-				const char *ls = r_str_lchr (fcnname_aux, ' ');
-				char *fcnname = strdup (ls? ls: fcnname_aux);
-				if (fcnname) {
-					// TODO: move this into r_anal_str_to_fcn()
-					if (strcmp (f->name, fcnname)) {
-						(void)__setFunctionName (core, addr, fcnname, false);
-						f = r_anal_get_fcn_in (core->anal, addr, -1);
+			if (input[2] == ' ') {
+				const char *arg = r_str_trim_head_ro (input + 2);
+				if (R_STR_ISNOTEMPTY (arg)) {
+					// parse function signature here
+					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
+					char *save_ptr = NULL;
+					char *fcnname_aux = r_str_tok_r (fcnstr_copy, "(", &save_ptr);
+					r_str_trim_tail (fcnname_aux);
+					const char *ls = r_str_lchr (fcnname_aux, ' ');
+					char *fcnname = strdup (ls? ls: fcnname_aux);
+					if (fcnname) {
+						// TODO: move this into r_anal_str_to_fcn()
+						if (strcmp (f->name, fcnname)) {
+							(void)__setFunctionName (core, addr, fcnname, false);
+							f = r_anal_get_fcn_in (core->anal, addr, -1);
+						}
+						r_anal_str_to_fcn (core->anal, f, fcnstr);
 					}
-					r_anal_str_to_fcn (core->anal, f, fcnstr);
+					free (fcnname);
+					free (fcnstr_copy);
+					free (fcnstr);
+					break;
 				}
-				free (fcnname);
-				free (fcnstr_copy);
-				free (fcnstr);
-			} else {
-				char *str = r_anal_function_get_signature (f);
-				if (str) {
-					r_cons_println (str);
-					free (str);
-				}
+			}
+			char *str = r_anal_function_get_signature (f);
+			if (str) {
+				r_cons_println (str);
+				free (str);
 			}
 			break;
 		}
