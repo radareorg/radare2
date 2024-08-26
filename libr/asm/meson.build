@@ -24,7 +24,7 @@ r_asm_sources = [
   '../arch/p/pseudo/6502_pseudo.c',
   '../arch/p/arm/pseudo.c',
   '../arch/p/x86_nz/pseudo.c',
-  '../arch/p/pseudo/avr_pseudo.c',
+  '../arch/p/avr/pseudo.c',
   '../arch/p/pseudo/att2intel.c',
 ]
 

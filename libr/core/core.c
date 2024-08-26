@@ -3446,6 +3446,7 @@ R_API void r_core_fini(RCore *c) {
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}
+	r_lib_free (c->lib);
 	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
@@ -3469,7 +3470,6 @@ R_API void r_core_fini(RCore *c) {
 	r_fs_free (c->fs);
 	c->egg->rasm = NULL;
 	r_egg_free (c->egg);
-	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
 	r_agraph_free (c->graph);
 	free (c->asmqjmps);
