@@ -1,9 +1,5 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_parse.h>
 
 #define MAXARGS 4

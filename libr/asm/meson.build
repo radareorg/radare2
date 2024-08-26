@@ -20,7 +20,7 @@ r_asm_sources = [
   '../arch/p/pseudo/evm_pseudo.c',
   '../arch/p/pseudo/dalvik_pseudo.c',
   '../arch/p/pseudo/chip8_pseudo.c',
-  '../arch/p/pseudo/bpf_pseudo.c',
+  '../arch/p/bpf/pseudo.c',
   '../arch/p/pseudo/6502_pseudo.c',
   '../arch/p/arm/pseudo.c',
   '../arch/p/x86_nz/pseudo.c',
