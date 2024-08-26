@@ -262,11 +262,14 @@ R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
 }
 
 R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
+	R_RETURN_VAL_IF_FAIL (arch && ap, false);
 	RArchPlugin *p;
 	RListIter *iter;
 	r_list_foreach (arch->plugins, iter, p) {
 		if (p == ap) {
-			ap->fini (NULL); // sessions associated will be leaked
+			if (ap->fini) {
+				ap->fini (NULL); // sessions associated will be leaked
+			}
 			r_list_delete (arch->plugins, iter);
 			break;
 		}
