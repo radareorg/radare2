@@ -66,7 +66,7 @@ static RCoreHelpMessage help_msg_op = {
 };
 
 static RCoreHelpMessage help_msg_omn = {
-	"Usage: omn[.i]", "([fd]) [name]", "Define a name for the given map",
+	"Usage: omn[.i]", "([addr]) [name]", "Define a name for the given map",
 	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
 	"omn.", "([-|name])", "show/set/delete name for current map",
 	"omni", " mapid [name]", "set/delete name for map with mapid",
@@ -1095,7 +1095,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			bool use_id = (input[2] == 'i') ? true : false;
-			s = strdup (use_id ? input + 3 : input + 2);
+			s = r_str_trim_dup (input + (use_id ? 3: 2));
 			if (!s) {
 				break;
 			}
