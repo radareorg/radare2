@@ -2707,6 +2707,9 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 				if (hasch > 0) {
 					hasch--;
 				}
+				if (aop.type == R_ANAL_OP_TYPE_ADD || aop.type == R_ANAL_OP_TYPE_SUB) {
+					continue;
+				}
 				if (inmov && aop.type == R_ANAL_OP_TYPE_OR) {
 					hasch = 1;
 					lastch = at + 4;

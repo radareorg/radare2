@@ -114,6 +114,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 09018291
+val: 0x00000020
 size: 4
 sign: false
 type: add
@@ -145,6 +146,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 91a0090c
+val: 0x00000200
 size: 4
 sign: false
 type: add
@@ -162,6 +164,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 91820109
+val: 0x00000020
 size: 4
 sign: false
 type: add
