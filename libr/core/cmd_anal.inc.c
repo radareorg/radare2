@@ -715,7 +715,7 @@ static RCoreHelpMessage help_msg_afn = {
 static RCoreHelpMessage help_msg_afs = {
 	"Usage:", "afs[r]", " Analyze function signatures",
 	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
-	"afsq", "", "same as afs without the error message",
+	"afsq", "", "same as afs without the error message (See afsQ for non-current offset)",
 	"afs!", "", "edit current function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
@@ -5559,12 +5559,13 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afsj (core, input + 2);
 			break;
 		case 0:
-		case 'q':
+		case 'q': // "afsq"
+		case 'Q': // "afsQ"
 		case ' ': { // "afs"
 			ut64 addr = core->offset;
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
-				if (input[2] != 'q') {
+				if (input[2] != 'q' && input[2] != 'Q') {
 					R_LOG_ERROR ("No function defined at 0x%08" PFMT64x, addr);
 				}
 				break;
@@ -5592,6 +5593,9 @@ static int cmd_af(RCore *core, const char *input) {
 					free (fcnstr);
 					break;
 				}
+			}
+			if (input[2] == 'Q' && f->addr == addr) {
+				break;
 			}
 			char *str = r_anal_function_get_signature (f);
 			if (str) {
