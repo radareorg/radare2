@@ -686,7 +686,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 
 	if (!anal->leaddrs) {
 		anal->leaddrs = r_list_newf (free_leaddr_pair);
-		if (!anal->leaddrs) {
+		if (R_UNLIKELY (!anal->leaddrs)) {
 			R_LOG_ERROR ("Cannot create leaddr list");
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
@@ -1020,7 +1020,7 @@ noskip:
 				ut8 buf[4];
 				anal->iob.read_at (anal->iob.io, op->ptr, buf, sizeof (buf));
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
-					leaddr_pair *pair = R_NEW (leaddr_pair);
+					leaddr_pair *pair = R_NEW0 (leaddr_pair);
 					if (!pair) {
 						R_LOG_ERROR ("Cannot create leaddr_pair");
 						gotoBeach (R_ANAL_RET_ERROR);
@@ -1042,7 +1042,7 @@ noskip:
 			}
 #else
 			if (op->ptr != UT64_MAX) {
-				leaddr_pair *pair = R_NEW (leaddr_pair);
+				leaddr_pair *pair = R_NEW0 (leaddr_pair);
 				if (!pair) {
 					R_LOG_ERROR ("Cannot create leaddr_pair");
 					gotoBeach (R_ANAL_RET_ERROR);
@@ -1143,7 +1143,6 @@ noskip:
 					r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 				}
 			}
-			break;
 			break;
 			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
@@ -1360,12 +1359,15 @@ noskip:
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
-			if (is_arm && anal->config->bits == 32 && last_is_mov_lr_pc) {
-				break;
-			} else if (is_arm && anal->config->bits == 32 && last_is_add_lr_pc) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->fail = op->addr + 4;
-				break;
+			if (is_arm && anal->config->bits == 32) {
+				if (last_is_mov_lr_pc) {
+					break;
+				}
+				if (last_is_add_lr_pc) {
+					op->type = R_ANAL_OP_TYPE_CALL;
+					op->fail = op->addr + 4;
+					break;
+				}
 			} else if (is_mips && anal->opt.jmptbl) {
 				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
 				// sll v0, s0, 2   // select the case from the pointer table * 4
@@ -1494,8 +1496,7 @@ noskip:
 								op->addr + 4, 1, table_size, UT64_MAX, ret);
 						// skip inlined jumptable
 						idx += table_size;
-					}
-					if (op->ptrsize == 2) { // LDRH on thumb/arm
+					} else if (op->ptrsize == 2) { // LDRH on thumb/arm
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op->ireg);
 						int tablesize = 1;
 						if (pred_cmpval != UT64_MAX) {
