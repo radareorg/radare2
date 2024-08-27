@@ -3460,6 +3460,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		} else if (REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
+		} else {
+			op->val = IMM64 (2);
 		}
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -3933,6 +3935,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->stackptr = IMM (2);
 			}
 			op->val = op->stackptr;
+		} else {
+			op->val = IMM64 (2);
 		}
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_SUB;
