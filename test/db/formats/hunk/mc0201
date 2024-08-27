@@ -36,7 +36,6 @@ sanitize false
 static   true
 stripped false
 va       true
-[0x00000024]>  # entry0 ();
  .------------------------------.
  |  0x24                        |
  | 76: entry0 ();               |

@@ -1841,8 +1841,10 @@ static int get_edge_number(const RAGraph *g, RANode *src, RANode *dst, bool outg
 	RANode *v;
 
 	if (outgoing && src->is_dummy) {
-		RANode *in = (RANode *) (((RGraphNode *)r_list_first ((src->gnode)->in_nodes))->data);
-		cur_nth = get_edge_number (g, in, src, outgoing);
+		if (src->gnode) {
+			RANode *in = (RANode *) (((RGraphNode *)r_list_first ((src->gnode)->in_nodes))->data);
+			cur_nth = get_edge_number (g, in, src, outgoing);
+		}
 	} else {
 		const RList *neighbours = outgoing
 			? r_graph_get_neighbours (g->graph, src->gnode)
@@ -3042,7 +3044,7 @@ static void agraph_print_edges(RAGraph *g) {
 				tm->layer = a->layer;
 				tm->edgectr = 0;
 				tm->revedgectr = 0;
-				if (g->layout == 0) { //vertical layout
+				if (g->layout == 0) { // vertical layout
 					tm->minx = a->x;
 					tm->maxx = a->x + a->w;
 				} else {
@@ -3261,7 +3263,8 @@ static void agraph_print_edges(RAGraph *g) {
 
 		if (tt) {
 			int arg = (rightlen < leftlen)? maxx + 1: minx - 1;
-			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by, &(temp->style), temp->edgectr, arg, tt->revedgectr, !g->layout);
+			r_cons_canvas_line_back_edge (g->can, temp->ax, temp->ay, temp->bx, temp->by,
+					&(temp->style), temp->edgectr, arg, tt->revedgectr, !g->layout);
 		}
 
 		r_list_foreach (lyr, ito, tl) {
@@ -3469,6 +3472,9 @@ static void agraph_prev_node(RAGraph *g) {
 
 static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 	RANode *a = get_anode (g->curnode);
+	if (!a) {
+		return;
+	}
 	char *sig = r_core_cmd_str (core, "afcf");
 	char *new_title = r_str_newf (
 		"%s[0x%08"PFMT64x "]> %s # %s ",
@@ -4423,16 +4429,17 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	free (gh->old_word);
 	gh->old_word = strdup (word);
 	free (s);
-	if (!a && count == 0) {
-		return;
+	if (a || count > 0) {
+		nextword (core, g, word);
 	}
-	nextword (core, g, word);
 }
 
-R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
+// R2_600 return bool
+R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
+	bool is_interactive = (mode != 0);
 	if (is_interactive && !r_cons_is_interactive ()) {
-		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
-		return 0;
+		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
+		return false;
 	}
 	r_cons_set_raw (true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
@@ -4487,7 +4494,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_hold_free (hc);
 			return false;
 		}
-		g->is_tiny = is_interactive == 2;
+		g->is_tiny = mode == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
 		g->dummy = r_config_get_i (core->config, "graph.dummy");
 		g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
@@ -4546,21 +4553,21 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
 
 	r_cons_break_push (NULL, NULL);
-#if 0
-	// XXX wrong usage or buggy RGraph.domTree()
-	// dominance tree here
-	const RList *l = r_graph_get_nodes (g->graph);
-	RGraphNode *root = r_list_first (l);
-	if (root) {
-		RGraph *dg = r_graph_dom_tree (g->graph, root);
-		if (dg) {
-			g->graph = dg;
-		} else {
-			R_LOG_WARN ("Cannot compute the dominance tree");
-			sleep (1);
+	if (mode == 3) { // XXX wrong usage or buggy RGraph.domTree()
+		// dominance tree here
+		const RList *l = r_graph_get_nodes (g->graph);
+		RGraphNode *root = r_list_first (l);
+		if (root) {
+			RGraph *dg = r_graph_dom_tree (g->graph, root);
+			if (dg) {
+				// XXX double free - r_graph_free (g->graph);
+				g->graph = dg;
+			} else {
+				R_LOG_WARN ("Cannot compute the dominance tree");
+				sleep (1);
+			}
 		}
 	}
-#endif
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
 		w = r_cons_get_size (&h);

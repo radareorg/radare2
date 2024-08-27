@@ -74,7 +74,6 @@ dr?R0
 EOF
 EXPECT=<<EOF
 ret paths
-[0x100007ed8]>  # sym._retbool (int64_t arg_20h);
          .-------------------------------------.
          |  0x100007ed8                        |
          |   ;-- func.100007ed8:               |
