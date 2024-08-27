@@ -35,8 +35,8 @@ func.__stack_chk_fail.ret=void
 func.__stack_chk_fail.cc=amd64
 
 CCAlgorithm=enum
-enum.CCAlgorithm=kCCAlgorithmAES128,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
-enum.CCAlgorithm.kCCAlgorithmAES128=0
+enum.CCAlgorithm=kCCAlgorithmAES,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
+enum.CCAlgorithm.kCCAlgorithmAES=0
 enum.CCAlgorithm.kCCAlgorithmDES=1
 enum.CCAlgorithm.kCCAlgorithm3DES=2
 enum.CCAlgorithm.kCCAlgorithmCAST=3
