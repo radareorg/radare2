@@ -57,7 +57,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	return true;
 }
 
-static const char * const __int_type_from_size(int size) {
+static const char * const int_type(int size) {
 	switch (size) {
 	case 1: return "int8_t";
 	case 2: return "int16_t";
@@ -141,9 +141,9 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
 	if (!type) {
-		type = __int_type_from_size (size);
+		type = int_type (size);
 		if (!type) {
-			type = __int_type_from_size (fcn->anal->config->bits);
+			type = int_type (fcn->anal->config->bits);
 		}
 		if (!type) {
 			type = "int32_t";

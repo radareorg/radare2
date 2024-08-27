@@ -50,6 +50,7 @@ enum.CCAlgorithm.kCCAlgorithm3DES=2
 enum.CCAlgorithm.kCCAlgorithmCAST=3
 enum.CCAlgorithm.kCCAlgorithmRC4=4
 enum.CCAlgorithm.kCCAlgorithmRC2=5
+enum.CCAlgorithm.kCCAlgorithmBlowfish=6
 
 CCOperation=enum
 enum.CCOperation=kCCEncrypt,kCCDecrypt
