@@ -299,6 +299,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal) {
 }
 
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
+	// R_RETURN_VAL_IF_FAIL (p, NULL);
 	RAnalData *ad = R_NEW0 (RAnalData);
 	if (!ad) {
 		return NULL;
@@ -373,6 +374,7 @@ R_API void r_anal_data_free(RAnalData *d) {
 }
 
 R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
+	R_RETURN_VAL_IF_FAIL (anal && buf && size >= 0, NULL);
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->config->bits;
@@ -452,6 +454,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 }
 
 R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
 	int inv = 0;
 	int unk = 0;
 	int str = 0;

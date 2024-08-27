@@ -98,6 +98,27 @@ struct NSString {
   char *str;
   int len;
 };
+enum CCAlgorithm {
+	kCCAlgorithmAES = 0,
+	kCCAlgorithmDES = 1,
+	kCCAlgorithm3DES = 2,
+	kCCAlgorithmCAST = 3,
+	kCCAlgorithmRC4 = 4,
+	kCCAlgorithmRC2 = 5
+};
+enum CCCryptorStatus {
+	kCCSuccess = 0,
+	kCCParamError = 1,
+	kCCBufferTooSmall = 2,
+	kCCMemoryFailure = 3,
+	kCCAlignmentError = 4,
+	kCCDecodeError = 5,
+	kCCUnimplemented = 6
+};
+enum CCOperation {
+	kCCEncrypt = 0,
+	kCCDecrypt = 1
+};
 enum mach0_build_platform {
 	MACOS = 1,
 	IOS = 2,
@@ -351,7 +372,7 @@ struct NSString {
   int len;
 };
 enum CCAlgorithm {
-	kCCAlgorithmAES128 = 0,
+	kCCAlgorithmAES = 0,
 	kCCAlgorithmDES = 1,
 	kCCAlgorithm3DES = 2,
 	kCCAlgorithmCAST = 3,
@@ -624,7 +645,7 @@ struct NSString {
   int len;
 };
 enum CCAlgorithm {
-	kCCAlgorithmAES128 = 0,
+	kCCAlgorithmAES = 0,
 	kCCAlgorithmDES = 1,
 	kCCAlgorithm3DES = 2,
 	kCCAlgorithmCAST = 3,

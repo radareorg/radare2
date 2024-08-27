@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
 #include <r_anal.h>
 
@@ -21,6 +21,7 @@ R_API bool r_anal_tid_kill(RAnal *anal, int tid) {
 	return false;
 }
 
+// XXX deprecate R2_600. its unused and does nothing
 R_API int r_anal_tid_usemap(RAnal *anal, int map) {
 	// TODO
 	return 0;
@@ -68,7 +69,7 @@ R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid) {
 }
 
 R_API void r_anal_thread_free(RAnalThread *t) {
-
+	free (t);
 }
 
 R_API bool r_anal_tid_select(RAnal *anal, int tid) {

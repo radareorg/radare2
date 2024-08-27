@@ -43,13 +43,14 @@ func.sym.imp.err.ret=void
 func.sym.imp.err.cc=amd64
 
 CCAlgorithm=enum
-enum.CCAlgorithm=kCCAlgorithmAES128,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
-enum.CCAlgorithm.kCCAlgorithmAES128=0
+enum.CCAlgorithm=kCCAlgorithmAES,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
+enum.CCAlgorithm.kCCAlgorithmAES=0
 enum.CCAlgorithm.kCCAlgorithmDES=1
 enum.CCAlgorithm.kCCAlgorithm3DES=2
 enum.CCAlgorithm.kCCAlgorithmCAST=3
 enum.CCAlgorithm.kCCAlgorithmRC4=4
 enum.CCAlgorithm.kCCAlgorithmRC2=5
+enum.CCAlgorithm.kCCAlgorithmBlowfish=6
 
 CCOperation=enum
 enum.CCOperation=kCCEncrypt,kCCDecrypt
