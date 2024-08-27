@@ -1156,10 +1156,24 @@ noskip:
 					}
 					R_LOG_DEBUG ("[0x%"PFMT64x"]============= 0x%"PFMT64x, op->addr, v1);
 				}
-			} else if (is_arm && anal->config->bits == 32) {
-				if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
-					// add lr, pc, 0 //
-					last_is_add_lr_pc = true; // TODO: support different values, not just 0
+			} else if (is_arm) {
+				const int bits = anal->config->bits;
+				if (bits == 64) {
+					if (last_is_reg_mov_lea) {
+						// incremement the leaddr
+						leaddr_pair *la;
+						last_is_reg_mov_lea = false;
+						RListIter *iter;
+						r_list_foreach_prev (anal->leaddrs, iter, la) {
+							la->leaddr += op->val;
+							break;
+						}
+					}
+				} else if (bits == 32) {
+					if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
+						// add lr, pc, 0 //
+						last_is_add_lr_pc = true; // TODO: support different values, not just 0
+					}
 				}
 			}
 			if (anal->opt.ijmp) {
@@ -1484,7 +1498,53 @@ noskip:
 					movdisp = UT64_MAX;
 #endif
 				} else if (is_arm) {
-					if (op->ptrsize == 1) { // TBB
+					if (op->ptrsize == 0 && anal->config->bits == 64) {
+						if (op->reg && op->ireg) {
+							// braa x16, x17 (when bra takes 2 args we skip jump tables dont do that
+							goto analopfinish;
+						}
+						int nreg = (op->reg && *op->reg == 'x')? atoi (op->reg + 1): 0xff;
+						if (nreg > 16) {
+							// x17 is used for the imports, ignoring that cases
+							goto analopfinish;
+						}
+						if (lea_cnt < 2) {
+							while (lea_cnt > 0) {
+								r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
+								lea_cnt--;
+							}
+							goto analopfinish;
+						}
+#if 0
+					CODE
+						// swift compiler can use ANY register for BR or ADR
+						adrp x9, sym.func.100004000
+						add x9, x9, 0x114
+						adr x10, 0x100004048  // this is why we use op->addr-12
+						ldrsw x11, [x9, x8, lsl 2]
+						add x10, x10, x11
+						br x10 // x10+x11 taking the delta from x9
+					ALGO
+						x10 = [..4000+0x114]
+#endif
+						leaddr_pair *la;
+						RListIter *iter;
+						ut64 table_addr = UT64_MAX;
+						r_list_foreach (anal->leaddrs, iter, la) {
+							table_addr = la->leaddr;
+							break;
+						}
+						// table_addr = 0x100004114;
+						ret = try_walkthrough_jmptbl (anal,
+								fcn, bb, depth - 1,
+								op->addr - 12, 0,
+								table_addr,
+								op->addr + 4, 4,
+								0, // table size is autodetected
+								UT64_MAX, ret);
+						// skip inlined jumptable
+						// idx += table_size;
+					} else if (op->ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents (anal, fcn, bb, op->ireg);
 						ut64 table_size = 0;
 						if (pred_cmpval != UT64_MAX) {
