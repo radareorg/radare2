@@ -218,7 +218,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break; // XXX
 		default:
-			jmpptr = r_read_le64 (jmptbl + offs);
+			jmpptr = r_read_le32 (jmptbl + offs);
 			break;
 		}
 		if (is_arm && anal->config->bits == 64 && ip > 4096 && jmpptr < 4096 && jmpptr < ip) {
