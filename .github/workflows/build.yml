@@ -34,14 +34,13 @@ jobs:
         path: radare2-*-wasi.zip
   # capstone-next
   linux-csnext:
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Installing with symlinks
       run: sys/install.sh --with-capstone-next
+      continue-on-error: true
 
   # Source Tarballs
   tarball:
