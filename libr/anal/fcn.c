@@ -1530,9 +1530,13 @@ noskip:
 						leaddr_pair *la;
 						RListIter *iter;
 						ut64 table_addr = UT64_MAX;
-						r_list_foreach (anal->leaddrs, iter, la) {
+						int count = 0;
+						r_list_foreach_prev (anal->leaddrs, iter, la) {
 							table_addr = la->leaddr;
-							break;
+							if (count == 1) {
+								break;
+							}
+							count++;
 						}
 						// table_addr = 0x100004114;
 						ret = try_walkthrough_jmptbl (anal,
