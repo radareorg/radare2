@@ -4564,7 +4564,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->graph = dg;
 			} else {
 				R_LOG_WARN ("Cannot compute the dominance tree");
-				sleep (1);
+				r_sys_sleep (1);
 			}
 		}
 	}
