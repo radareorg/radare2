@@ -212,8 +212,7 @@ EXPECT=<<EOF
 / 4: sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov ebx, dword [esp]
 
-[0x08049140]>  # sym.__x86.get_pc_thunk.bx ();
- -----------------------------------------------------------------.
+.-----------------------------------------------------------------.
 |  0x8049140                                                      |
 |   ; CALL XREF from sym._init @ 0x8049008(x)                     |
 |   ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349(x)  |
