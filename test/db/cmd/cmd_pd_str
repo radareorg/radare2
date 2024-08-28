@@ -11,8 +11,8 @@ s..5343
 pd 30~(
 EOF
 EXPECT=<<EOF
- ; int listxattr(-1, ?, -1, -1)
- ; void *reallocf(-1, -1)
+ ; int listxattr(0, 0, 0, 0)
+ ; void *reallocf(-1, 0)
      call sym.imp.getxattr ; sym.imp.getxattr(-1, -1, 0x0, 0x0)
  ; size_t strlen(-1)
 EOF
@@ -49,7 +49,7 @@ EOF
 EXPECT=<<EOF
 ---- test strings in calls
             0x100003b00      940e0094       bl sym.imp.compat_mode
-                                                                       ; bool compat_mode(-1, -1)
+                                                                       ; bool compat_mode(0, 0)
 ---- test strings in stores
             0x100003b58      560000b0       adrp x22, segment.__DATA   ; 0x10000c000
             0x100003b5c      c80200b9       str w8, [x22]              ; U"P.\uc004\x01" segment.__DATA
