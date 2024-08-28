@@ -5389,7 +5389,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 	}
 }
 
-static void print_fcn_arg(RCore *core, const char *type, const char *name,
+static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
 			   const char *fmt, const ut64 addr,
 			   const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
@@ -5407,7 +5407,20 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 		}
 		free (res);
 	} else {
-		r_cons_printf ("-1");
+		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
+		const char *reg = r_anal_cc_arg (core->anal, cc, nth, 0);
+		if (reg) {
+			ut64 rv = r_reg_getv (core->anal->reg, reg);
+			if (rv >> 63) {
+				r_cons_printf ("-1");
+			} else if (rv < 16) {
+				r_cons_printf ("%"PFMT64d, rv);
+			} else {
+				r_cons_printf ("0x%"PFMT64x, rv);
+			}
+		} else {
+			r_cons_printf ("-1");
+		}
 	}
 	r_cons_trim ();
 }
@@ -5519,21 +5532,24 @@ static void ds_comment_call(RDisasmState *ds) {
 	ut64 spv = r_reg_getv (core->anal->reg, sp);
 	r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
 	RList *list = r_core_get_func_args (core, fcn_name);
+	// show function arguments
 	if (!r_list_empty (list)) {
-		bool warning = false;
+		int nth = 0;
+		// bool warning = false;
 		bool on_stack = false;
 		r_list_foreach (list, iter, arg) {
 			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
 				on_stack = true;
 			}
+			nextele = r_list_iter_get_next (iter);
+#if 0
 			if (!arg->size) {
 				if (ds->asm_types == 2) {
 					ds_comment_middle (ds, "%s: unk_size", arg->c_type);
 				}
 				warning = true;
 			}
-			nextele = r_list_iter_get_next (iter);
-			if (!arg->fmt) {
+			if (arg->fmt) {
 				if (ds->asm_types > 1) {
 					if (warning) {
 						ds_comment_middle (ds, "_format");
@@ -5546,9 +5562,14 @@ static void ds_comment_call(RDisasmState *ds) {
 				ds_comment_middle (ds, nextele?", ":")");
 			} else {
 				// TODO: may need ds_comment_esil
-				print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
+				print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
 				ds_comment_middle (ds, nextele?", ":")");
 			}
+#else
+			print_fcn_arg (core, nth, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
+			ds_comment_middle (ds, nextele?", ":")");
+#endif
+			nth++;
 		}
 		ds_comment_end (ds, "");
 		r_list_free (list);
