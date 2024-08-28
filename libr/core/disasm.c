@@ -2331,11 +2331,12 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		item = r_flag_get_i (core->flags, ds->analop.ptr);
 	}
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+	// vartype also contains varname, so we use varname color to display it
 	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
 			R_FREE (ds->comment);
-			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_var_type), ds->cmtoken, vartype);
+			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype);
 		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
 			ds->ocomment = item->comment;
 			R_FREE (ds->comment);
@@ -2343,12 +2344,12 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
-				COLOR_ARG (ds, color_var_type), ds->cmtoken, vartype, Color_RESET,
+				COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, Color_RESET,
 				COLOR (ds, color_usrcmt), ds->cmtoken, comment);
 	} else {
 		ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, comment);
 	}
-	if (!ds->comment || !*ds->comment) {
+	if (R_STR_ISEMPTY (ds->comment)) {
 		R_FREE (ds->comment);
 		return;
 	}
