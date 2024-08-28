@@ -114,3 +114,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=ccccrypt argument values from esil
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+e emu.str=true
+s 0x1000040c0
+aaa
+pd 10
+EOF
+EXPECT=<<EOF
+;-- pc:
+0x1000040c0      mov w0, 0
+0x1000040c4      mov w1, 2
+0x1000040c8      mov w2, 1
+0x1000040cc      mov x3, x23
+0x1000040d0      mov w4, 0x18
+0x1000040d4      mov x5, 0
+0x1000040d8      mov x6, x22
+0x1000040dc      mov x7, x25
+0x1000040e0      bl sym.imp.CCCrypt                                    ; CCCryptorStatus CCCrypt(CCOperation op, CCAlgorithm alg, int32_t options, const void *key, uint32_t keyLength, const void *iv, const void *dataIn, uint32_t dataInLength, void *dataOut, uint32_t dataOutAvailable, uint32_t *dataOutMoved)
+                                                                       ; CCCryptorStatus CCCrypt(0, 2, 1, 0, 0x18, 0, 0, 0, -1, -1, -1)
+0x1000040e4      str w0, [x20]
+EOF
+RUN
+
