@@ -82,6 +82,8 @@ static bool analop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else if (r_str_startswith (text, "j ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addrfrom (text);
+	} else if (r_str_startswith (text, "ji")) {
+		op->type = R_ANAL_OP_TYPE_RJMP;
 	} else if (r_str_startswith (text, "j")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addrfrom (text);

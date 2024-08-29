@@ -8,6 +8,7 @@ r_asm_sources = [
   'filter.c',
   'agperf.c',
   '../arch/p/null/pseudo.c',
+  '../arch/p/tricore/pseudo.c',
   '../arch/p/z80/pseudo.c',
   '../arch/p/wasm/pseudo.c',
   '../arch/p/v850/pseudo.c',
