@@ -468,7 +468,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	ut8 *lbuf = NULL;
 	if (!buf) {
 		RIOBind *iob = &a->iob;
-		if (!iob || !iob->read_at) {
+		if (!iob->read_at) {
 			R_LOG_ERROR ("RAnal.dataKind() requires ioBind");
 			return "error";
 		}
