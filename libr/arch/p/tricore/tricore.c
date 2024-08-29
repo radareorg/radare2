@@ -233,6 +233,7 @@ const RArchPlugin r_arch_plugin_tricore = {
 		.license = "LGPL3",
 	},
 	.arch = "tricore",
+	.cpus = "generic,rider-a,rider-b,v2,pcp,pcp2",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = &archinfo,
 	.decode = &decode,
