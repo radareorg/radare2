@@ -7023,7 +7023,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj, const void *pdu_condition) {
 	RDisasmState *ds;
 	RAnalFunction *f;
-	int i, j, k, ret, line;
+	int i, j, k, line;
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
@@ -7063,7 +7063,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 #if BWRETRY
 				}
 #endif
-				nb_opcodes --;
 			}
 			count = R_MIN (nb_bytes, nbytes);
 			if (count > 0) {
@@ -7132,7 +7131,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		} else if (i >= nb_bytes) {
 			break;
 		}
-		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
+		int ret = r_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			pj_o (pj);
 			pj_kn (pj, "offset", at);
@@ -7182,10 +7181,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
 		if (skip_bytes_flag && ds->midflags > R_MIDFLAGS_SHOW) {
-			ds->oplen = ret = skip_bytes_flag;
+			ds->oplen = skip_bytes_flag;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
-			ds->oplen = ret = skip_bytes_bb;
+			ds->oplen = skip_bytes_bb;
 		}
 		{
 			ut64 killme = UT64_MAX;

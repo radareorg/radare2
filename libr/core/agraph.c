@@ -3479,7 +3479,7 @@ static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 	char *new_title = r_str_newf (
 		"%s[0x%08"PFMT64x "]> %s # %s ",
 		core->visual.graphCursor? "(cursor)": "",
-		fcn->addr, a? a->title: "", sig);
+		fcn->addr, a->title, sig);
 	r_agraph_set_title (g, new_title);
 	free (new_title);
 	free (sig);
