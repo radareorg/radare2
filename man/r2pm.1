@@ -1,4 +1,4 @@
-.Dd March 13, 2024
+.Dd August 29, 2024
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
@@ -26,8 +26,10 @@ Install a package in the system directory
 Uninstall a package
 .It Fl uu Ar pkgname
 Force uninstall a package
-.It Fl U Ar pkgname
+.It Fl U
 Initialize or Update the package database
+.It Fl UU
+Same as -U, but then upgrade all the installed packages
 .It Fl gu Ar pkgname
 Uninstall a package from the system directory
 .It Fl l

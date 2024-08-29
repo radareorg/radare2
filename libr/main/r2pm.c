@@ -32,7 +32,8 @@ static const char *helpmsg =
 	" -u <pkgname>      uninstall package (see -f to force uninstall)\n"
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
-	" -U                initialize/update database and upgrade all outdated packages\n"
+	" -U                download/initialize or update database (-f for a clean clone)\n"
+	" -UU               same as -U but upgrade all the installed r2 plugins\n"
 	" -v                show version\n";
 
 typedef struct r_r2pm_t {
@@ -53,13 +54,14 @@ typedef struct r_r2pm_t {
 	bool run;
 	bool search;
 	bool uninstall;
+	bool upgrade;
 	bool version;
 
 	int rc;
 	const char *time;
 } R2Pm;
 
-static int git_pull(const char *dir, bool reset) {
+static int git_pull(const char *dir, bool verbose, bool reset) {
 	if (strchr (dir, ' ')) {
 		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
 		return -1;
@@ -73,10 +75,11 @@ static int git_pull(const char *dir, bool reset) {
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
+	const char *quiet = verbose? "": "--quiet";
 #if R2__WINDOWS__
-	char *s = r_str_newf ("cd %s && git pull --quiet && git diff", dir);
+	char *s = r_str_newf ("cd %s && git pull %s && git diff", dir, quiet);
 #else
-	char *s = r_str_newf ("cd '%s' && git pull --quiet", dir);
+	char *s = r_str_newf ("cd '%s' && git pull %s", dir, quiet);
 #endif
 	int rc = r_sandbox_system (s, 1);
 	free (s);
@@ -281,14 +284,14 @@ static void r2pm_upgrade(bool force) {
 	RList *list = r_str_split_list (s, "\n", -1);
 	striptrim (list);
 	if (r_list_length (list) < 1) {
-		R_LOG_INFO ("Nothing to upgrade");
+		R_LOG_INFO ("No packages to upgrade");
 	} else {
 		r2pm_install (list, false, true, force, false);
 	}
 	free (s);
 	r_list_free (list);
 #else
-	// R_LOG_INFO ("Auto upgrade feature is not supported on windows");
+	R_LOG_INFO ("Auto upgrade feature is not yet supported on windows");
 #endif
 }
 
@@ -328,7 +331,8 @@ static int r2pm_update(bool force) {
 	}
 	int rc = 0;
 	if (r_file_is_directory (pmpath)) {
-		if (git_pull (pmpath, force) != 0) {
+		R_LOG_INFO ("Running git pull on %s", pmpath);
+		if (git_pull (pmpath, true, force) != 0) {
 			R_LOG_ERROR ("git pull");
 			rc = 1;
 		}
@@ -640,7 +644,7 @@ static int r2pm_clone(const char *pkg) {
 	}
 	bool git_source = false;
 	if (r_file_is_directory (srcdir)) {
-		git_source = git_pull (srcdir, 0);
+		git_source = git_pull (srcdir, true, 0);
 	} else {
 		char *url_list = r2pm_get (pkg, "\nR2PM_GIT ", TT_TEXTLINE_LIST);
 		if (url_list) {
@@ -1206,6 +1210,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.force = true;
 			break;
 		case 'U':
+			if (r2pm.init) {
+				r2pm.upgrade = true;
+			}
 			r2pm.init = true;
 			action = true;
 			break;
@@ -1262,6 +1269,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 	}
 	if (r2pm.init) {
+		r2pm_update (r2pm.force);
+	}
+	if (r2pm.upgrade) {
 		r2pm_upgrade (r2pm.force);
 	}
 	if (r2pm.version) {
@@ -1287,9 +1297,6 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 		free (readme);
 		free (dbdir);
-	}
-	if (r2pm.init) {
-		r2pm_update (r2pm.force);
 	}
 	if (r2pm.run) {
 		int i;
