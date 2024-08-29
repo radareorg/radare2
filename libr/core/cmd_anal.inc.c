@@ -3778,7 +3778,6 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		if (!j) {
 			return;
 		}
-		pj_a (j);
 		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 		if (key) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
@@ -3853,7 +3852,6 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		if (s) {
 			r_cons_printf ("%s\n", s);
 		}
-		pj_free (j);
 	} else {
 		char *sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
 		if (sig) {
