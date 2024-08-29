@@ -3785,6 +3785,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.marks", "true", "show marks before the disassembly");
 
 	// options for the comments in the disassembly
+	SETBPREF ("asm.anos", "true", "show annotations (see ano command)");
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view (see 'e asm.cmt.')");
 	SETBPREF ("asm.cmt.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.cmt.user", "false", "show user comments even if asm.comments is false");

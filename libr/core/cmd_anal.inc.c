@@ -109,6 +109,16 @@ static RCoreHelpMessage help_msg_an = {
 	"an", "[j*]", "show flag/function/symbol name (in json or r2 commands)",
 	"anf", "", "propose name for current function (see anal.slow and 'aan')",
 	"anfl", "", "list all names used in the autonaming guess algorithm",
+	"ano", "[?]", "show or edit annotations for the current function",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_ano = {
+	"Usage:", "ano", "[*] # function anotations",
+	"ano", "", "show or edit annotations for the current function",
+	"anoe", "", "edit annotation",
+	"anos", "", "show annotation",
+	"anol", "", "show first line of function annotation if any",
 	NULL
 };
 
@@ -15036,6 +15046,144 @@ static void cmd_ab(RCore *core, const char *input) {
 	}
 }
 
+static char *anopath(RCore *core, RAnalFunction *f) {
+	R_RETURN_VAL_IF_FAIL (core && f, NULL);
+	char *cd = r_xdg_datadir ("cache");
+	r_sys_mkdirp (cd);
+	char *fn = r_core_cmd_str (core, "o.");
+	r_str_trim (fn);
+	r_str_replace_char (fn, '/', '-');
+	char *res = r_str_newf ("%s/ano.%s.0x%08"PFMT64x".txt", cd, fn, f->addr);
+	free (fn);
+	free (cd);
+	// eprintf ("%s\n", res);
+	return res;
+}
+
+static void cmd_ano(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+	switch (input[2]) {
+	case 'e': // "anoe"
+	case '-':
+		if (fcn) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				// r_sys_cmdf ("vim %s", f);
+				r_cons_editor (f, NULL);
+				free (f);
+			}
+		} else {
+			R_LOG_ERROR ("No function here");
+		}
+		break;
+	case '*': // "ano*"
+		if (fcn) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				if (r_file_exists (f)) {
+					char *s = r_file_slurp (f, NULL);
+					if (R_STR_ISNOTEMPTY (s)) {
+						char *e = sdb_encode ((const ut8*)s, strlen (s));
+						r_cons_printf ("ano=%s @ 0x%08"PFMT64x"\n", e, fcn->addr);
+						free (e);
+					}
+					free (s);
+				}
+				free (f);
+			}
+		}
+		break;
+	case '=': // "ano="
+		if (fcn) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				const char *arg = r_str_trim_head_ro (input + 3);
+				int len;
+				ut8 *data = sdb_decode (arg, &len);
+				if (data) {
+					r_file_dump (f, data, len, false);
+					free (data);
+				} else {
+					R_LOG_ERROR ("Invalid base64 as argument for 'ano=...'");
+				}
+			}
+		}
+		break;
+	case '.':
+	case 0: // "ano"
+		if (fcn) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				if (r_file_exists (f)) {
+					char *s = r_file_slurp (f, NULL);
+					r_str_trim (s);
+					if (R_STR_ISEMPTY (s)) {
+						r_file_rm (f);
+						r_cons_editor (f, NULL);
+					} else {
+						r_cons_printf ("%s\n", s);
+					}
+					free (s);
+				} else {
+					r_cons_editor (f, NULL);
+					// r_sys_cmdf ("vim %s", f);
+				}
+				free (f);
+			}
+		} else {
+			R_LOG_ERROR ("No function here");
+		}
+		break;
+	case 'l': // "anol"
+		if (fcn && fcn->addr == core->offset) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				if (r_file_exists (f)) {
+					char *s = r_file_slurp (f, NULL);
+					r_str_trim (s);
+					char *ss = s;
+					do {
+					repeat:;
+						char *nl = strchr (ss, '\n');
+						if (nl && nl > ss) {
+							if (nl[-1] == '\\') {
+								ss = nl + 1;
+								goto repeat;
+							}
+							*nl = 0;
+						}
+					} while (0);
+					if (R_STR_ISNOTEMPTY (s)) {
+						r_cons_printf ("// anol @ 0x%08"PFMT64x": %s\n", fcn->addr, s);
+					}
+					free (s);
+				}
+				free (f);
+			}
+		}
+		break;
+	case 's': // "anos"
+		if (fcn) {
+			char *f = anopath (core, fcn);
+			if (f) {
+				if (r_file_exists (f)) {
+					char *s = r_file_slurp (f, NULL);
+					r_str_trim (s);
+					if (R_STR_ISNOTEMPTY (s)) {
+						r_cons_printf ("%s\n", s);
+					}
+					free (s);
+				}
+				free (f);
+			}
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_ano);
+		break;
+	}
+}
+
 static void cmd_ap(RCore *core, const char *input) {
 	RListIter *iter;
 	RSearchKeyword *k;
@@ -15144,7 +15292,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "an"
-		if (input[1] == 'f') {
+		if (input[1] == 'o') {
+			cmd_ano (core, input);
+		} else if (input[1] == 'f') {
 			const bool list = input[2] == 'l';
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
