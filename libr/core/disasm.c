@@ -135,6 +135,7 @@ typedef struct r_disasm_state_t {
 	bool pre_emu;
 	bool show_emu_bb;
 	bool show_emu_str;
+	bool show_anos;
 	bool show_emu_stroff;
 	bool show_emu_strinv;
 	bool show_emu_strflag;
@@ -341,6 +342,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color);
 static void ds_print_bytes(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
 static void ds_show_xrefs(RDisasmState *ds);
+static void ds_show_anos(RDisasmState *ds);
 static void ds_atabs_option(RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
 static void ds_control_flow_comments(RDisasmState *ds);
@@ -833,6 +835,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+	ds->show_anos = r_config_get_b (core->config, "asm.anos");
 	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmt.refs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
 	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
@@ -1460,6 +1463,12 @@ static void ds_show_refs(RDisasmState *ds) {
 	RVecAnalRef_free (refs);
 }
 
+static void ds_show_anos(RDisasmState *ds) {
+	if (ds->show_anos) {
+		r_core_cmd_call_at (ds->core, ds->at, "anol");
+	}
+}
+
 static void ds_show_xrefs(RDisasmState *ds) {
 	char xrefs_char[32] = {0}; // no more than 32 xrefs meh
 	int xci = 0;
@@ -1474,7 +1483,6 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (!xrefs) {
 		return;
 	}
-
 	// only show fcnline in xrefs when addr is not the beginning of a function
 	bool fcnlines = (ds->fcn && ds->fcn->addr == ds->at);
 	if (RVecAnalRef_length (xrefs) > ds->maxrefs) {
@@ -6434,6 +6442,7 @@ toro:
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
+		ds_show_anos (ds);
 		if (!ds->show_flag_in_offset) {
 			ds_show_flags (ds, false);
 		}
