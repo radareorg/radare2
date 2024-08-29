@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - curly */
+/* radare - LGPL - Copyright 2020-2024 - curly */
 
 #include <r_lib.h>
 #include <r_asm.h>
@@ -61,6 +61,48 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
+static ut64 addrfrom(const char *s) {
+	const char *ox = strstr (s, "0x");
+	if (ox) {
+		return r_num_get (NULL, ox);
+	}
+	return UT64_MAX;
+}
+
+static bool analop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const char *text = op->mnemonic;
+	if (r_str_startswith (text, "nop")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+	} else if (r_str_startswith (text, "ld")) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->ptr = addrfrom (text);
+	} else if (r_str_startswith (text, "st")) {
+		op->type = R_ANAL_OP_TYPE_STORE;
+		op->ptr = addrfrom (text);
+	} else if (r_str_startswith (text, "j ")) {
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = addrfrom (text);
+	} else if (r_str_startswith (text, "j")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addrfrom (text);
+		op->fail = op->addr + op->size;
+	} else if (r_str_startswith (text, "mov")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (r_str_startswith (text, "lea")) {
+		op->type = R_ANAL_OP_TYPE_LEA;
+	} else if (r_str_startswith (text, "add")) {
+		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (r_str_startswith (text, "call")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = addrfrom (text);
+	} else if (r_str_startswith (text, "rfe")) {
+		op->type = R_ANAL_OP_TYPE_RET;
+	} else if (r_str_startswith (text, "ret")) {
+		op->type = R_ANAL_OP_TYPE_RET;
+	}
+	return true;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
@@ -93,6 +135,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->size = 2;
 	}
 	op->mnemonic = r_strbuf_drain (sb);
+	analop (as, op, mask);
 	return op->size;
 }
 
