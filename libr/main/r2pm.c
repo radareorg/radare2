@@ -32,7 +32,8 @@ static const char *helpmsg =
 	" -u <pkgname>      uninstall package (see -f to force uninstall)\n"
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
-	" -U                initialize/update database and upgrade all outdated packages\n"
+	" -U                download/initialize or update database (-f for a clean clone)\n"
+	" -UU               same as -U but upgrade all the installed r2 plugins\n"
 	" -v                show version\n";
 
 typedef struct r_r2pm_t {
@@ -290,7 +291,7 @@ static void r2pm_upgrade(bool force) {
 	free (s);
 	r_list_free (list);
 #else
-	// R_LOG_INFO ("Auto upgrade feature is not supported on windows");
+	R_LOG_INFO ("Auto upgrade feature is not yet supported on windows");
 #endif
 }
 
