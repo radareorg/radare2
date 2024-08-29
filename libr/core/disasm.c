@@ -5404,7 +5404,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 	if (on_stack == 1 && asm_types > 1) {
 		r_cons_printf ("%s", type);
 	}
-	if (addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
+	if (fmt && addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
 		char *res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
 				(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
 		r_str_trim (res);

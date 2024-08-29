@@ -568,7 +568,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (!sdb_get (db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else {
-						R_LOG_ERROR ("sdb.get fail");
+						R_LOG_ERROR ("pdc: unknown branch from 0x%08"PFMT64x, jump);
 					}
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
