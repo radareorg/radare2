@@ -2,6 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
 

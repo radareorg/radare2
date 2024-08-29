@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2015-2022 - pancake */
 
 #include <r_arch.h>
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0

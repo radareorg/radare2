@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>

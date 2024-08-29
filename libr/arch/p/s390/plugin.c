@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include <r_lib.h>
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
