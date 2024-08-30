@@ -12,7 +12,8 @@ static RGraphNode *r_graph_node_new(void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
 	if (p) {
 		p->data = data;
-		p->free = NULL;
+// R_NEW0 already sets p->free to NULL
+//		p->free = NULL;
 		p->out_nodes = r_list_new ();
 		p->in_nodes = r_list_new ();
 		p->all_neighbours = r_list_new ();

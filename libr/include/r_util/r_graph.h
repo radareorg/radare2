@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 typedef struct r_graph_node_t {
-	unsigned int idx;
+	ut32 idx;
 	void *data;
 	RList *out_nodes;
 	RList *in_nodes;
@@ -19,13 +19,13 @@ typedef struct r_graph_node_t {
 typedef struct r_graph_edge_t {
 	RGraphNode *from;
 	RGraphNode *to;
-	int nth;
+	st32 nth;
 } RGraphEdge;
 
 typedef struct r_graph_t {
-	unsigned int n_nodes;
-	unsigned int n_edges;
-	int last_index;
+	ut32 n_nodes;
+	ut32 n_edges;
+	st32 last_index;
 	RList *nodes; /* RGraphNode */
 } RGraph;
 
