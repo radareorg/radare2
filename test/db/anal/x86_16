@@ -50,7 +50,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "push ()",
+    "pseudo": "push (cpuflags)",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ff",

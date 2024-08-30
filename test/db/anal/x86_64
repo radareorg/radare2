@@ -2367,7 +2367,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "push ()",
+    "pseudo": "push (cpuflags)",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ffff",
@@ -3906,7 +3906,7 @@ EXPECT=<<EOF
 |           ; var int64_t var_bh @ rbp-0xb
 |           ; arg int64_t arg_ch @ rsp+0xc
 |           ; var int64_t var_4h @ rsp+0x4
-|           0x00000000      54             push  (rsp)
+|           0x00000000      54             push (rsp)
 |           0x00000001      4889e5         rbp = rsp
 |           0x00000004      b402           ah = 2
 |           0x00000006      66b83333       ax = 0x3333
