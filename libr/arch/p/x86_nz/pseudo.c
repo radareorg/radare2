@@ -20,22 +20,26 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "adc",  "# += #", {1, 2}},
 		{ "add",  "# += #", {1, 2}},
 		{ "and",  "# &= #", {1, 2}},
+		{ "ret", "return", {0}},
+		{ "iret", "return", {0}},
+		{ "endbr64", "", {0}},
+		{ "endbr", "", {0}},
 		{ "call", "# ()", {1}},
-		{ "cmove", "if (!var) # = #", {1, 2}},
-		{ "cmovl","if (var < 0) # = #", {1, 2}},
-		{ "cmp", "var = # - #", {1, 2}},
-		{ "cmpsq", "var = # - #", {1, 2}},
-		{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }", {0}},
-		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
+		{ "cmove", "if (!v) # = #", {1, 2}},
+		{ "cmovl","if (v < 0) # = #", {1, 2}},
+		{ "cmp", "v = # - #", {1, 2}},
+		{ "cmpsq", "v = # - #", {1, 2}},
+		{ "cmpsb", "while (CX != 0) { v = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!v) break; }", {0}},
+		{ "cmpsw", "while (CX != 0) { v = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!v) break; }", {0}},
 		{ "dec",  "#--", {1}},
 		{ "div",  "# /= #", {1, 2}},
 		{ "fabs",  "abs(#)", {1}},
 		{ "fadd",  "# = # + #", {1, 1, 2}},
-		{ "fcomp",  "var = # - #", {1, 2}},
+		{ "fcomp",  "v = # - #", {1, 2}},
 		{ "fcos",  "# = cos(#)", {1, 1}},
 		{ "fdiv",  "# = # / #", {1, 1, 2}},
 		{ "fiadd",  "# = # / #", {1, 1, 2}},
-		{ "ficom",  "var = # - #", {1, 2}},
+		{ "ficom",  "v = # - #", {1, 2}},
 		{ "fidiv",  "# = # / #", {1, 1, 2}},
 		{ "fidiv",  "# = # * #", {1, 1, 2}},
 		{ "fisub",  "# = # - #", {1, 1, 2}},
@@ -50,15 +54,16 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "imul",  "# = # * #", {1, 2, 3}},
 		{ "in",   "# = io[ # ]", {1, 2}},
 		{ "inc",  "#++", {1}},
-		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
-		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
-		{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
-		{ "je", "if (!var) goto loc_#", {1}},
-		{ "jg", "if (var > 0) goto loc_#", {1}},
-		{ "jge", "if (var >= 0) goto loc_#", {1}},
-		{ "jle", "if (var <= 0) goto loc_#", {1}},
+		{ "ja", "if (((unsigned) v) > 0) goto #", {1}},
+		{ "jb", "if (((unsigned) v) < 0) goto #", {1}},
+		{ "jbe", "if (((unsigned) v) <= 0) goto #", {1}},
+		{ "je", "if (!v) goto loc_#", {1}},
+		{ "jz", "if (!v) goto loc_#", {1}},
+		{ "jg", "if (v > 0) goto loc_#", {1}},
+		{ "jge", "if (v >= 0) goto loc_#", {1}},
+		{ "jle", "if (v <= 0) goto loc_#", {1}},
 		{ "jmp",  "goto loc_#", {1}},
-		{ "jne", "if (var) goto loc_#", {1}},
+		{ "jne", "if (v) goto loc_#", {1}},
 		{ "leav",  ";", {0}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
@@ -92,11 +97,12 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "pop",  "# = pop ()", {1}},
 		{ "pushf", "push (cpuflags)", {0}},
 		{ "push", "push (#)", {1}},
-		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
-		{ "sete",  "# = e", {1}},
-		{ "setne",  "# = ne", {1}},
+		{ "sete",  "# = v == 0", {1}},
+		{ "setz",  "# = v == 0", {1}},
+		{ "setne",  "# = v != 0", {1}},
+		{ "setnz",  "# = v != 0", {1}},
 		{ "shl",  "# <<<= #", {1, 2}},
 		{ "shld",  "# <<<= #", {1, 2}},
 		{ "sbb",  "# = # - #", {1, 1, 2}},
@@ -104,8 +110,8 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "shlr",  "# >>>= #", {1, 2}},
 		//{ "strd",  "# = # - #", {1, 2, 3}},
 		{ "sub",  "# -= #", {1, 2}},
-		{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
-		{ "test", "var = # & #", {1, 2}},
+		{ "swap", "v = #; # = #; # = v", {1, 1, 2, 2}},
+		{ "test", "v = # & #", {1, 2}},
 		{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
 		{ "xadd",  "#,# = #,# + #", {1, 2, 2, 1, 2}},
 		{ "xor",  "# ^= #", {1, 2}},
@@ -203,10 +209,17 @@ static int parse(RParse *p, const char *data, char *str) {
 				break;
 			}
 		}
-		if (par) ptr++;
-		r_str_ncpy (w0, buf, R_MIN (ptr - buf, sizeof (w0)));
-		if (par) ptr--;
-		r_str_ncpy (w1, ptr, R_MIN (end-ptr+1, sizeof (w1)));
+		int delta = 1;
+		if (par) {
+			delta = 0;
+			ptr++;
+		}
+		r_str_ncpy (w0, buf, R_MIN (ptr - buf + delta, sizeof (w0)));
+		r_str_trim (w0);
+		if (par) {
+			ptr--;
+		}
+		r_str_ncpy (w1, ptr, R_MIN (end - ptr + 1, sizeof (w1)));
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {

@@ -169,6 +169,7 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 }
 
 // TODO deprecate in R2_600 because r_parse_instruction is better
+// TODO worst api name ever
 R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	R_RETURN_VAL_IF_FAIL (p && data && str, false);
 	if (*data && p->cur && p->cur->parse) {
