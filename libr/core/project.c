@@ -571,6 +571,8 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		flush (sb);
 		r_core_cmd (core, "fV*", 0);
 		flush (sb);
+		r_core_cmd (core, "ano*@@@F", 0);
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
