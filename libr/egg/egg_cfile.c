@@ -16,18 +16,39 @@ struct cEnv_t {
 	const char *TEXT;
 };
 
-static char *r_egg_cfile_getCompiler(void) {
-	const char *compilers[] = { "llvm-gcc", "clang", "gcc", NULL };
+static char *r_egg_cfile_getCompiler(const char *arch, int bits) {
+	const char *compilers[] = { "llvm-gcc", "gcc", "clang", NULL };
 	const char *compiler = compilers[0];
-	char *env_cc = r_sys_getenv ("CC");
+  	char *compiler_path;
+  	char *env_cc = r_sys_getenv ("CC");
 	int i;
 
 	if (env_cc) {
 		return env_cc;
 	}
 
+  	// Override gcc compilers for arm64 and arm32
+  	// TODO: I don't seem to be able to make clang work with -target
+  	if (!strcmp (arch, "arm") && bits == 64) {
+		compiler = "aarch64-linux-gnu-gcc";
+		compiler_path = r_file_path (compiler);
+		if (compiler_path) {
+			free (compiler_path);
+			return strdup (compiler);
+		}
+  	}
+
+  	if (!strcmp (arch, "arm") && bits == 32) {
+		compiler = "arm-linux-gnueabihf-gcc";
+		compiler_path = r_file_path (compiler);
+		if (compiler_path) {
+			free (compiler_path);
+			return strdup (compiler);
+		}
+  	}
+
 	for (i = 0; (compiler = compilers[i]); i++) {
-		char *compiler_path = r_file_path (compiler);
+		compiler_path = r_file_path (compiler);
 		if (compiler_path) {
 			free (compiler_path);
 			return strdup (compiler);
@@ -77,7 +98,7 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		return NULL;
 	}
 
-	if (!(cEnv->CC = r_egg_cfile_getCompiler())) {
+	if (!(cEnv->CC = r_egg_cfile_getCompiler(arch, bits))) {
 		goto fail;
 	}
 
