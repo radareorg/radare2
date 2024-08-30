@@ -63,11 +63,11 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) (insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
+#define ISIMM64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
-#define ISREG64(x) (insn->detail->arm64.operands[x].type == ARM64_OP_REG)
+#define ISREG64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
-#define ISMEM64(x) (insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
+#define ISMEM64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
 #define EXT64(x) decode_sign_ext (insn->detail->arm64.operands[x].ext)
 
 #if CS_API_MAJOR > 3
@@ -94,8 +94,8 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() (((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ())))
 #define ISWRITEBACK64() (insn->detail->writeback == true)
-#define ISPREINDEX64() (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
-#define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
+#define ISPREINDEX64() (((OPCOUNT64 () == 2) && (ISMEM64 (1)) && (ISWRITEBACK64 ())) || ((OPCOUNT64 () == 3) && (ISMEM64 (2)) && (ISWRITEBACK64 ())))
+#define ISPOSTINDEX64() (((OPCOUNT64 () == 3) && (ISIMM64 (2)) && (ISWRITEBACK64 ())) || ((OPCOUNT64 () == 4) && (ISIMM64 (3)) && (ISWRITEBACK64 ())))
 
 #define BITMASK_BY_WIDTH_COUNT 64
 static const ut64 bitmask_by_width[BITMASK_BY_WIDTH_COUNT] = {
@@ -463,33 +463,33 @@ static int arm64_reg_width(int reg) {
 
 static const char *cc_name64(ARMCC_CondCodes cc) {
 	switch (cc) {
-	case ARM64_CC_EQ: // Equal
+	case ARM64CC_EQ: // Equal
 		return "eq";
-	case ARM64_CC_NE: // Not equal:                 Not equal, or unordered
+	case ARM64CC_NE: // Not equal:                 Not equal, or unordered
 		return "ne";
-	case ARM64_CC_HS: // Unsigned higher or same:   >, ==, or unordered
+	case ARM64CC_HS: // Unsigned higher or same:   >, ==, or unordered
 		return "hs";
-	case ARM64_CC_LO: // Unsigned lower or same:    Less than
+	case ARM64CC_LO: // Unsigned lower or same:    Less than
 		return "lo";
-	case ARM64_CC_MI: // Minus, negative:           Less than
+	case ARM64CC_MI: // Minus, negative:           Less than
 		return "mi";
-	case ARM64_CC_PL: // Plus, positive or zero:    >, ==, or unordered
+	case ARM64CC_PL: // Plus, positive or zero:    >, ==, or unordered
 		return "pl";
-	case ARM64_CC_VS: // Overflow:                  Unordered
+	case ARM64CC_VS: // Overflow:                  Unordered
 		return "vs";
-	case ARM64_CC_VC: // No overflow:               Ordered
+	case ARM64CC_VC: // No overflow:               Ordered
 		return "vc";
-	case ARM64_CC_HI: // Unsigned higher:           Greater than, or unordered
+	case ARM64CC_HI: // Unsigned higher:           Greater than, or unordered
 		return "hi";
-	case ARM64_CC_LS: // Unsigned lower or same:    Less than or equal
+	case ARM64CC_LS: // Unsigned lower or same:    Less than or equal
 		return "ls";
-	case ARM64_CC_GE: // Greater than or equal:     Greater than or equal
+	case ARM64CC_GE: // Greater than or equal:     Greater than or equal
 		return "ge";
-	case ARM64_CC_LT: // Less than:                 Less than, or unordered
+	case ARM64CC_LT: // Less than:                 Less than, or unordered
 		return "lt";
-	case ARM64_CC_GT: // Signed greater than:       Greater than
+	case ARM64CC_GT: // Signed greater than:       Greater than
 		return "gt";
-	case ARM64_CC_LE: // Signed less than or equal: <, ==, or unordered
+	case ARM64CC_LE: // Signed less than or equal: <, ==, or unordered
 		return "le";
 	default:
 		return "";
