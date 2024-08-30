@@ -540,6 +540,31 @@ R_API const char *r_str_lchr(const char *str, char chr) {
 	return NULL;
 }
 
+#if R2_600
+R_API char *r_str_lstr(const char *s, const char *sub) {
+	if (!s || !sub) {
+		return NULL;  // Handle null input
+	}
+
+	const size_t sub_len = strlen (sub);
+	const size_t s_len = strlen (s);
+
+	if (sub_len == 0 || s_len < sub_len) {
+		return NULL;  // No valid substring can be found
+	}
+
+	const char *p = s + s_len - sub_len;
+
+	while (p >= s) {
+		if (strncmp (p, sub, sub_len) == 0) {
+			return (char *)p;
+		}
+		p--;
+	}
+	return NULL;
+}
+#endif
+
 /* find the last char chr in the substring str[start:end] with end not included */
 R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr) {
 	do {

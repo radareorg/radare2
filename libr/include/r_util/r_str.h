@@ -197,6 +197,9 @@ R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_trim_nc(char *str);
 R_API const char *r_str_nstr(const char *from, const char *to, int size);
 R_API const char *r_str_lchr(const char *str, char chr);
+#if R2_600
+R_API char *r_str_lstr(const char *s, const char *sub);
+#endif
 R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr);
 R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);
 R_API char *r_str_ichr(char *str, char chr);
