@@ -375,7 +375,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
 		pj_ki (pj, "cps_flag", x->cps_flag);
 	}
-	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
+	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
 		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	if (x->mem_barrier != ARM_MB_INVALID) {
@@ -461,7 +461,7 @@ static int arm64_reg_width(int reg) {
 	return 64;
 }
 
-static const char *cc_name64(arm64_cc cc) {
+static const char *cc_name64(ARMCC_CondCodes cc) {
 	switch (cc) {
 	case ARM64_CC_EQ: // Equal
 		return "eq";
@@ -519,7 +519,7 @@ static const char *extender_name(arm64_extender extender) {
 	}
 }
 
-static const char *vas_name(arm64_vas vas) {
+static const char *vas_name(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
 	case ARM64_VAS_8B:
 		return "8b";
@@ -556,7 +556,7 @@ static const char *vas_name(arm64_vas vas) {
 	}
 }
 
-static int vas_size(arm64_vas vas) {
+static int vas_size(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
 	case ARM64_VAS_8B:
 	case ARM64_VAS_16B:
@@ -587,7 +587,7 @@ static int vas_size(arm64_vas vas) {
 	}
 }
 
-static int vas_count(arm64_vas vas) {
+static int vas_count(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
 	case ARM64_VAS_16B:
 		return 16;
@@ -916,71 +916,72 @@ static int vector_size(cs_arm64_op *op) {
 }
 
 // return postfix
+// cond_type :ARMCC_CondCodes
 const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "\0";
 	close_cond[1] = ",}\0";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARM_CC_EQ:
+	case ARMCC_EQ:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,?{,");
 		break;
-	case ARM_CC_NE:
+	case ARMCC_NE:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,!,?{,");
 		break;
-	case ARM_CC_HS:
+	case ARMCC_HS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,?{,");
 		break;
-	case ARM_CC_LO:
+	case ARMCC_LO:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,!,?{,");
 		break;
-	case ARM_CC_MI:
+	case ARMCC_MI:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,?{,");
 		break;
-	case ARM_CC_PL:
+	case ARMCC_PL:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,!,?{,");
 		break;
-	case ARM_CC_VS:
+	case ARMCC_VS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "vf,?{,");
 		break;
-	case ARM_CC_VC:
+	case ARMCC_VC:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "vf,!,?{,");
 		break;
-	case ARM_CC_HI:
+	case ARMCC_HI:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARM_CC_LS:
+	case ARMCC_LS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARM_CC_GE:
+	case ARMCC_GE:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARM_CC_LT:
+	case ARMCC_LT:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARM_CC_GT:
+	case ARMCC_GT:
 		// zf == 0 && nf == vf
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARM_CC_LE:
+	case ARMCC_LE:
 		// zf == 1 || nf != vf
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARM_CC_AL:
+	case ARMCC_AL:
 		// always executed
 		break;
 	default:
@@ -3295,24 +3296,24 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 }
 
 static int cond_cs2r2(int cc) {
-	if (cc == ARM_CC_AL || cc < 0) {
+	if (cc == ARMCC_AL || cc < 0) {
 		cc = R_ANAL_COND_AL;
 	} else {
 		switch (cc) {
-		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
-		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
-		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
-		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
-		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
-		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
-		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
-		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
-		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
-		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
-		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
-		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
-		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		case ARMCC_EQ: cc = R_ANAL_COND_EQ; break;
+		case ARMCC_NE: cc = R_ANAL_COND_NE; break;
+		case ARMCC_HS: cc = R_ANAL_COND_HS; break;
+		case ARMCC_LO: cc = R_ANAL_COND_LO; break;
+		case ARMCC_MI: cc = R_ANAL_COND_MI; break;
+		case ARMCC_PL: cc = R_ANAL_COND_PL; break;
+		case ARMCC_VS: cc = R_ANAL_COND_VS; break;
+		case ARMCC_VC: cc = R_ANAL_COND_VC; break;
+		case ARMCC_HI: cc = R_ANAL_COND_HI; break;
+		case ARMCC_LS: cc = R_ANAL_COND_LS; break;
+		case ARMCC_GE: cc = R_ANAL_COND_GE; break;
+		case ARMCC_LT: cc = R_ANAL_COND_LT; break;
+		case ARMCC_GT: cc = R_ANAL_COND_GT; break;
+		case ARMCC_LE: cc = R_ANAL_COND_LE; break;
 		}
 	}
 	return cc;
@@ -3663,7 +3664,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if (insn->detail->arm.cc != ARM_CC_AL) {
+			if (insn->detail->arm.cc != ARMCC_AL) {
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
 		} else {
@@ -3916,7 +3917,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-				if (insn->detail->arm.cc == ARM_CC_AL) {
+				if (insn->detail->arm.cc == ARMCC_AL) {
 					op->type = R_ANAL_OP_TYPE_RET;
 				} else {
 					op->type = R_ANAL_OP_TYPE_CRET;
@@ -3971,7 +3972,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
-			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
+			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
 				op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
@@ -4044,7 +4045,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		break;
 	case ARM_INS_SVC:
-		if (insn->detail->arm.cc == ARM_CC_AL) {
+		if (insn->detail->arm.cc == ARMCC_AL) {
 			op->type = R_ANAL_OP_TYPE_SWI;
 		} else {
 			op->type = R_ANAL_OP_TYPE_CSWI;
@@ -4153,7 +4154,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if (insn->detail->arm.cc != ARM_CC_AL) {
+			if (insn->detail->arm.cc != ARMCC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
@@ -4176,7 +4177,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
-			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
+			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
@@ -4228,10 +4229,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_B:
 		/* b.cc label */
 		op->cycles = 4;
-		if (insn->detail->arm.cc == ARM_CC_INVALID) {
+		if (insn->detail->arm.cc == ARMCC_UNDEF) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->fail = addr+op->size;
-		} else if (insn->detail->arm.cc == ARM_CC_AL) {
+		} else if (insn->detail->arm.cc == ARMCC_AL) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		} else {
