@@ -1876,7 +1876,6 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				size += tabsize * 8;
 			} else {
 				R_LOG_ERROR ("Invalid n format in (%s)", fmt);
-				r_sys_breakpoint ();
 				free (o);
 				free (args);
 				return -2;
