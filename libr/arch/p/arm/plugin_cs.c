@@ -521,34 +521,34 @@ static const char *extender_name(arm64_extender extender) {
 
 static const char *vas_name(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
-	case ARM64_VAS_8B:
+	case AARCH64LAYOUT_VL_8B:
 		return "8b";
-	case ARM64_VAS_16B:
+	case AARCH64LAYOUT_VL_16B:
 		return "16b";
-	case ARM64_VAS_4H:
+	case AARCH64LAYOUT_VL_4H:
 		return "4h";
-	case ARM64_VAS_8H:
+	case AARCH64LAYOUT_VL_8H:
 		return "8h";
-	case ARM64_VAS_2S:
+	case AARCH64LAYOUT_VL_2S:
 		return "2s";
-	case ARM64_VAS_4S:
+	case AARCH64LAYOUT_VL_4S:
 		return "4s";
-	case ARM64_VAS_2D:
+	case AARCH64LAYOUT_VL_2D:
 		return "2d";
-	case ARM64_VAS_1D:
+	case AARCH64LAYOUT_VL_1D:
 		return "1d";
-	case ARM64_VAS_1Q:
+	case AARCH64LAYOUT_VL_1Q:
 		return "1q";
 #if CS_API_MAJOR > 4
-	case ARM64_VAS_1B:
+	case AARCH64LAYOUT_VL_B:
 		return "8b";
-	case ARM64_VAS_4B:
+	case AARCH64LAYOUT_VL_4B:
 		return "8b";
-	case ARM64_VAS_2H:
+	case AARCH64LAYOUT_VL_2H:
 		return "2h";
-	case ARM64_VAS_1H:
+	case AARCH64LAYOUT_VL_H:
 		return "1h";
-	case ARM64_VAS_1S:
+	case AARCH64LAYOUT_VL_1S:
 		return "1s";
 #endif
 	default:
@@ -558,28 +558,28 @@ static const char *vas_name(AArch64Layout_VectorLayout vas) {
 
 static int vas_size(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
-	case ARM64_VAS_8B:
-	case ARM64_VAS_16B:
+	case AARCH64LAYOUT_VL_8B:
+	case AARCH64LAYOUT_VL_16B:
 		return 8;
-	case ARM64_VAS_4H:
-	case ARM64_VAS_8H:
+	case AARCH64LAYOUT_VL_4H:
+	case AARCH64LAYOUT_VL_8H:
 		return 16;
-	case ARM64_VAS_2S:
-	case ARM64_VAS_4S:
+	case AARCH64LAYOUT_VL_2S:
+	case AARCH64LAYOUT_VL_4S:
 		return 32;
-	case ARM64_VAS_2D:
-	case ARM64_VAS_1D:
+	case AARCH64LAYOUT_VL_2D:
+	case AARCH64LAYOUT_VL_1D:
 		return 64;
-	case ARM64_VAS_1Q:
+	case AARCH64LAYOUT_VL_1Q:
 		return 128;
 #if CS_API_MAJOR > 4
-	case ARM64_VAS_1B:
-	case ARM64_VAS_4B:
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_4B:
 		return 8;
-	case ARM64_VAS_2H:
-	case ARM64_VAS_1H:
+	case AARCH64LAYOUT_VL_2H:
+	case AARCH64LAYOUT_VL_H:
 		return 16;
-	case ARM64_VAS_1S:
+	case AARCH64LAYOUT_VL_1S:
 		return 32;
 #endif
 	default:
@@ -589,28 +589,28 @@ static int vas_size(AArch64Layout_VectorLayout vas) {
 
 static int vas_count(AArch64Layout_VectorLayout vas) {
 	switch (vas) {
-	case ARM64_VAS_16B:
+	case AARCH64LAYOUT_VL_16B:
 		return 16;
-	case ARM64_VAS_8B:
-	case ARM64_VAS_8H:
+	case AARCH64LAYOUT_VL_8B:
+	case AARCH64LAYOUT_VL_8H:
 		return 8;
-	case ARM64_VAS_4S:
-	case ARM64_VAS_4H:
+	case AARCH64LAYOUT_VL_4S:
+	case AARCH64LAYOUT_VL_4H:
 		return 4;
-	case ARM64_VAS_2D:
-	case ARM64_VAS_2S:
+	case AARCH64LAYOUT_VL_2D:
+	case AARCH64LAYOUT_VL_2S:
 		return 2;
-	case ARM64_VAS_1D:
-	case ARM64_VAS_1Q:
+	case AARCH64LAYOUT_VL_1D:
+	case AARCH64LAYOUT_VL_1Q:
 		return 1;
 #if CS_API_MAJOR > 4
-	case ARM64_VAS_4B:
+	case AARCH64LAYOUT_VL_4B:
 		return 4;
-	case ARM64_VAS_2H:
+	case AARCH64LAYOUT_VL_2H:
 		return 2;
-	case ARM64_VAS_1B:
-	case ARM64_VAS_1H:
-	case ARM64_VAS_1S:
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_H:
+	case AARCH64LAYOUT_VL_1S:
 		return 1;
 #endif
 	default:
@@ -766,7 +766,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vector_index != -1) {
 			pj_ki (pj, "vector_index", op->vector_index);
 		}
-		if (op->vas != ARM64_VAS_INVALID) {
+		if (op->vas != AARCH64LAYOUT_INVALID) {
 			pj_ks (pj, "vas", vas_name (op->vas));
 		}
 #if CS_API_MAJOR == 4
@@ -783,7 +783,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->writeback) {
 		pj_kb (pj, "writeback", true);
 	}
-	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
+	if (x->cc != ARM64CC_Invalid && x->cc != ARM64CC_AL && x->cc != ARM64CC_NV) {
 		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
 	pj_end (pj);
@@ -3346,10 +3346,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 
 	switch (insn->detail->arm64.cc) {
-	case ARM64_CC_GE:
-	case ARM64_CC_GT:
-	case ARM64_CC_LE:
-	case ARM64_CC_LT:
+	case ARM64CC_GE:
+	case ARM64CC_GT:
+	case ARM64CC_LE:
+	case ARM64CC_LT:
 		op->sign = true;
 		break;
 	default:
