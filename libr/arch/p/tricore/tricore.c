@@ -71,6 +71,12 @@ static ut64 addrfrom(const char *s) {
 
 static bool analop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const char *text = op->mnemonic;
+	if (*text == '.') {
+		free (op->mnemonic);
+		op->mnemonic = strdup ("invalid");
+		op->size = 2;
+		op->type = R_ANAL_OP_TYPE_ILL;
+	}
 	if (r_str_startswith (text, "nop")) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (r_str_startswith (text, "ld")) {
