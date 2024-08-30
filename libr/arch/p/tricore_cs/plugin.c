@@ -244,6 +244,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			break;
 		}
 		cs_free (insn, n);
+		r_str_replace_char (op->mnemonic, '#', 0);
 	}
 	return op->size > 0;
 }

@@ -1221,6 +1221,7 @@ static void print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info) 
   for (i = 0; i < insn->nr_operands; ++i)
     {
       need_comma = (i < (insn->nr_operands - 1));
+	// DPRINT (DFILE, "(%c)", insn->args[i]); // DEBUG format string
       switch (insn->args[i])
         {
 	case 'd':
@@ -1291,7 +1292,14 @@ static void print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info) 
 	case '8':
 	case 'n':
 	case 'M':
-	  DPRINT (DFILE, "%lu", dec_insn.cexp[i]);
+	  {
+		  int v = dec_insn.cexp[i];
+		  if (v < 256) {
+	  		DPRINT (DFILE, "%lu", dec_insn.cexp[i]);
+		  } else {
+	  		DPRINT (DFILE, "0x%lx", dec_insn.cexp[i]);
+		  }
+	  }
 	  break;
 
 	case '4':
@@ -1331,7 +1339,12 @@ static void print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info) 
 		if (dec_insn.cexp[i] & 0x8000) {
 			dec_insn.cexp[i] |= ~0xffff;
 		}
-		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		int v = dec_insn.cexp[i];
+		if (v < 256) {
+			DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		} else {
+			DPRINT (DFILE, "0x%lx", dec_insn.cexp[i]);
+		}
 		if (print_symbolic_address) {
 			DPRINT (DFILE, " <");
 			(*info->print_address_func) (load_addr, info);
@@ -1401,7 +1414,8 @@ static void print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info) 
 		      DPRINT (DFILE, "$0x%04lx (unknown SFR)", dec_insn.cexp[i]);
 	      }
 	  } else {
-		  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		  // DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		  DPRINT (DFILE, "0x%lx", dec_insn.cexp[i]);
 	  }
 	  break;
 
