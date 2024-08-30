@@ -188,6 +188,10 @@ static int parse(RParse *p, const char *data, char *str) {
 		return false;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
+	if (strchr (data, '(')) {
+		// avoid double-pseudo calls
+		return false;
+	}
 	if (*buf) {
 		end = buf + strlen (buf);
 		ptr = strchr (buf, '(');
@@ -226,7 +230,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			*ptr++ = '\0';
 			for (ptr++; ptr < end ; ptr++) {
 				if (*ptr != ')' && *ptr != ' ') {
-					//			ptr++;
+					// ptr++;
 					break;
 				}
 			}
