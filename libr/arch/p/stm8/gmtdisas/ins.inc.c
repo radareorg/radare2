@@ -199,7 +199,7 @@ static const instruction ins_table[] = {
 	{ "or", STM8_REG_A, STM8_IMM_BYTE_2, 2, R_ANAL_OP_TYPE_OR },
 	{ "add", STM8_REG_A, STM8_IMM_BYTE_2, 2, R_ANAL_OP_TYPE_ADD },
 	{ "jpf", EXTMEM_234, 0, 4, R_ANAL_OP_TYPE_JMP },
-	{ "callr", SHORTOFF_2, 0, 2, R_ANAL_OP_TYPE_RCALL },
+	{ "callr", SHORTOFF_2, 0, 2, R_ANAL_OP_TYPE_CALL },
 	{ "ldw", STM8_REG_X, STM8_IMM_WORD_23, 3, R_ANAL_OP_TYPE_LOAD },
 	{ "ldf", STM8_REG_A, EXTOFF_X_234, 4, R_ANAL_OP_TYPE_LOAD },
 	{ "sub", STM8_REG_A, SHORTMEM_2, 2, R_ANAL_OP_TYPE_SUB },

@@ -97,3 +97,5 @@ tnzw=test word for negative or zero
 trap=software interrupt
 wfi=wait for interrupt
 xor=exclusvie or
+rrwa=rotate right word through a
+rlwa=rotate left word through a
