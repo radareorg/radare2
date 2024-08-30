@@ -1866,13 +1866,13 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			break;
 		case 'n':
 		case 'N':
-			if (fmt[i+1] == '1') {
+			if (fmt[i + 1] == '1') {
 				size += tabsize * 1;
-			} else if (fmt[i+1] == '2') {
+			} else if (fmt[i + 1] == '2') {
 				size += tabsize * 2;
-			} else if (fmt[i+1] == '4') {
+			} else if (fmt[i + 1] == '4') {
 				size += tabsize * 4;
-			} else if (fmt[i+1] == '8') {
+			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
 				R_LOG_ERROR ("Invalid n format in (%s)", fmt);
