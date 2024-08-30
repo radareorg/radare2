@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2023 - pancake */
+/* radare2 - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_lib.h>
@@ -13,8 +13,33 @@ const RArchPlugin r_arch_plugin_tricore_cs = {
 #define INSOP(n) insn->detail->sh.operands[n]
 
 #define CSINC TRICORE
-#define CSINC_MODE 0
-	// CS_MODE_BIG_ENDIAN
+#define CSINC_MODE get_capstone_mode(as)
+
+static int get_capstone_mode(RArchSession *as) {
+	int mode = 0;
+	const char *cpu = as->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcmp (cpu, "tc110")) {
+			mode |= CS_MODE_TRICORE_110;
+		} else if (!strcmp (cpu, "tc120")) {
+			mode |= CS_MODE_TRICORE_120;
+		} else if (!strcmp (cpu, "tc130")) {
+			mode |= CS_MODE_TRICORE_130;
+		} else if (!strcmp (cpu, "tc131")) {
+			mode |= CS_MODE_TRICORE_131;
+		} else if (!strcmp (cpu, "tc160")) {
+			mode |= CS_MODE_TRICORE_160;
+		} else if (!strcmp (cpu, "tc161")) {
+			mode |= CS_MODE_TRICORE_161;
+		} else if (!strcmp (cpu, "tc162")) {
+			mode |= CS_MODE_TRICORE_162;
+		}
+	}
+	if (mode == 0) {
+		mode |= CS_MODE_TRICORE_162;
+	}
+	return mode;
+}
 #include "../capstone.inc.c"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
@@ -345,6 +370,7 @@ const RArchPlugin r_arch_plugin_tricore_cs = {
 	},
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "tricore",
+	.cpus = "tc110,tc120,tc130,tc131,tc160,tc161,tc162",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
 	.info = archinfo,
