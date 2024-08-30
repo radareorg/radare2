@@ -179,6 +179,16 @@ getuid=func
 func.getuid.args=0
 func.getuid.ret=uid_t
 
+setuid=func
+func.setuid.args=1
+func.setuid.arg.0=int,uid
+func.setuid.ret=int
+
+setgid=func
+func.setgid.args=1
+func.setgid.arg.0=int,gid
+func.setgid.ret=int
+
 geteuid=func
 func.geteuid.args=0
 func.geteuid.ret=uid_t
