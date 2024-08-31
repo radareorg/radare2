@@ -242,8 +242,11 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	}
 	r_strf_buffer (64);
 	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
+	char *r2file = r_core_cmd_str (core, "o.");
+	r_str_trim (r2file);
+	r_sys_setenv ("R2_FILE", r2file);
+	free (r2file);
 	if (desc && desc->name) {
-		r_sys_setenv ("R2_FILE", desc->name);
 		r_sys_setenv ("R2_SIZE", r_strf ("%"PFMT64d, r_io_desc_size (desc)));
 		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
