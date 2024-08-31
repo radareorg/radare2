@@ -251,6 +251,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 #define R_PRINT_STRING_WRAP 8
 #define R_PRINT_STRING_WIDE32 16
 #define R_PRINT_STRING_ESC_NL 32
+#define R_PRINT_STRING_ONLY_PRINTABLE 64
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 
 // time

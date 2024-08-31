@@ -161,7 +161,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			int outlen = len * 4;
 			ut8 *out = calloc (len, 4);
 			if (out) {
+#if R2_USE_NEW_ABI
+				int res = r_charset_encode_str (ch, out, outlen, buf, len, false);
+#else
 				int res = r_charset_encode_str (ch, out, outlen, buf, len);
+#endif
 				int i;
 				// TODO unknown chars should be translated to null bytes
 				for (i = 0; i < res; i++) {

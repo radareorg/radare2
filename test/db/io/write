@@ -41,7 +41,7 @@ w hello
 ps
 EOF
 EXPECT=<<EOF
-1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
+1
 EOF
 EXPECT_ERR=<<EOF
 DEBUG: (section .dynsym) Cd 4[48] @ 0x1c0
@@ -76,7 +76,7 @@ w hello\x00
 ps
 EOF
 EXPECT=<<EOF
-1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
+1
 hello
 EOF
 EXPECT_ERR=<<EOF

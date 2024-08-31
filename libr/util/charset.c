@@ -206,7 +206,11 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 }
 #endif
 
+#if R2_USE_NEW_ABI
+R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len, bool early_exit) {
+#else
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+#endif
 	if (!rc->loaded) {
 		return in_len;
 	}
@@ -219,6 +223,11 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
+#if R2_USE_NEW_ABI
+		if (!v && early_exit) {
+			break;
+		}
+#endif
 		const char *ret = r_str_get_fail (v, "?");
 		char *res = strdup (ret);
 		if (res) {
