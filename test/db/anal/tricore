@@ -52,7 +52,12 @@ CMDS=drp
 EXPECT=<<EOF
 =PC	pc
 =SP	a10
-=A0	a0
+=BP	a11
+=A0	a4
+=A1	a5
+=A2	a6
+=A3	a7
+=SN	a0
 gpr	p0	.64	0	0
 gpr	a0	.32	0	0
 gpr	a1	.32	4	0
@@ -69,7 +74,8 @@ gpr	p8	.64	32	0
 gpr	a8	.32	32	0
 gpr	a9	.32	36	0
 gpr	p10	.64	40	0
-gpr	a10	.32	40	0
+gpr	sp	.64	40	0
+gpr	a10	.64	40	0
 gpr	a11	.32	44	0
 gpr	p12	.64	48	0
 gpr	a12	.32	48	0
