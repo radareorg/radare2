@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
 
 #ifndef RADARE2_R2R_H
 #define RADARE2_R2R_H
@@ -45,6 +45,8 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord regexp_err;
 	R2RCmdTestStringRecord env;
 	R2RCmdTestBoolRecord broken;
+	R2RCmdTestBoolRecord oldabi;
+	R2RCmdTestBoolRecord newabi;
 	R2RCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
@@ -65,7 +67,9 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("REGEXP_OUT", regexp_out) \
 	macro_str ("REGEXP_ERR", regexp_err) \
 	macro_str ("ENV", env) \
-	macro_bool ("BROKEN", broken)
+	macro_bool ("BROKEN", broken) \
+	macro_bool ("OLDABI", oldabi) \
+	macro_bool ("NEWABI", newabi) \
 
 typedef enum r2r_asm_test_mode_t {
 	R2R_ASM_TEST_MODE_ASSEMBLE = 1,
