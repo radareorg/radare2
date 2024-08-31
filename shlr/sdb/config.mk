@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=2.0.0
+SDBVER=2.0.1
 
 BUILD_MEMCACHE=0
 
