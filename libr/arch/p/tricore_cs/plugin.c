@@ -49,9 +49,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
-#if 0
 	int i;
-	cs_sh *x = &insn->detail->sh;
+	cs_tricore *x = &insn->detail->tricore;
 	for (i = 0; i < x->op_count; i++) {
 		cs_tricore_op *op = x->operands + i;
 		pj_o (pj);
@@ -74,7 +73,6 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		}
 		pj_end (pj); /* o operand */
 	}
-#endif
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
