@@ -518,8 +518,8 @@ static RCoreHelpMessage help_msg_pq = {
 };
 
 static RCoreHelpMessage help_msg_ps = {
-	"Usage:", "ps[abijqpsuwWxz+] [N]", "Print String",
-	"ps", "", "print string",
+	"Usage:", "ps[abijqpsuwWxz+] [len]", "Print String (optionally specify the length)",
+	"ps", "", "print string until a first non-printable character",
 	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
 	"psa", "", "print any type of string (psp/psw/psW/psz/..)",
 	"psb", "", "print strings in current block",
@@ -5552,7 +5552,11 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 			out = calloc (len, 10);
 			if (out) {
 				r_io_read_at (core->io, core->offset, data, len);
+#if R2_USE_NEW_ABI
+				r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
+#else
 				r_charset_encode_str (core->print->charset, out, out_len, data, len);
+#endif
 				free (data);
 			}
 		}
@@ -7361,7 +7365,7 @@ static int cmd_print(void *data, const char *input) {
 			{
 				const char *current_charset = r_config_get (core->config, "cfg.charset");
 				if (R_STR_ISEMPTY (current_charset)) {
-					r_print_string (core->print, core->offset, core->block, len, R_PRINT_STRING_ZEROEND);
+					r_print_string (core->print, core->offset, core->block, len, R_PRINT_STRING_ZEROEND | R_PRINT_STRING_ONLY_PRINTABLE);
 				} else {
 					if (len > 0) {
 						size_t out_len = len * 10;
@@ -7370,7 +7374,11 @@ static int cmd_print(void *data, const char *input) {
 							ut8 *data = malloc (len);
 							if (data) {
 								r_io_read_at (core->io, core->offset, data, len);
+#if R2_USE_NEW_ABI
+								(void)r_charset_encode_str (core->print->charset, out, out_len, data, len, true);
+#else
 								(void)r_charset_encode_str (core->print->charset, out, out_len, data, len);
+#endif
 								r_print_string (core->print, core->offset,
 									out, len, R_PRINT_STRING_ZEROEND);
 								free (data);

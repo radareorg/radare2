@@ -23,7 +23,7 @@ RUN
 NAME=pvXj
 FILE=-
 CMDS=<<EOF
-woe 1
+woe 32 288 1
 pv* 3
 ?e --
 pvj 3~{}
@@ -36,78 +36,78 @@ pv8j 3~{}
 ?e --
 EOF
 EXPECT=<<EOF
-f pval.0x00000000=506097522914230528
-f pval.0x00000008=1084818905618843912
-f pval.0x00000010=1663540288323457296
+f pval.0x00000000=2820983053732684064
+f pval.0x00000008=3399704436437297448
+f pval.0x00000010=3978425819141910832
 --
 [
   {
-    "value": 506097522914230528,
-    "string": "",
+    "value": 2820983053732684064,
+    "string": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 0
   },
   {
-    "value": 1084818905618843912,
-    "string": "\\x09\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 3399704436437297448,
+    "string": "()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 8
   },
   {
-    "value": 1663540288323457296,
-    "string": "\\x11\\x13\\x15\\x17\\x19\\x1b\\x1d\\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 3978425819141910832,
+    "string": "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 16
   }
 ]
 --
 [
   {
-    "value": 256,
-    "string": "",
+    "value": 8480,
+    "string": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 0
   },
   {
-    "value": 770,
-    "string": "\\x03\\x05\\x07\\x09\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 8994,
+    "string": "\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 2
   },
   {
-    "value": 1284,
-    "string": "\\x05\\x07\\x09\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 9508,
+    "string": "$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 4
   }
 ]
 --
 [
   {
-    "value": 0,
-    "string": "",
+    "value": 32,
+    "string": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 0
   },
   {
-    "value": 1,
-    "string": "\\x02\\x04\\x06\\x08\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 33,
+    "string": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 1
   },
   {
-    "value": 2,
-    "string": "\\x03\\x05\\x07\\x09\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 34,
+    "string": "\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 2
   }
 ]
 --
 [
   {
-    "value": 506097522914230528,
-    "string": "",
+    "value": 2820983053732684064,
+    "string": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 0
   },
   {
-    "value": 1084818905618843912,
-    "string": "\\x09\n\\x0c\\x0e\\x10\\x12\\x14\\x16\\x18\\x1a\\x1c\\x1e !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 3399704436437297448,
+    "string": "()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 8
   },
   {
-    "value": 1663540288323457296,
-    "string": "\\x11\\x13\\x15\\x17\\x19\\x1b\\x1d\\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x80\\x82\\x84\\x86\\x88\\x8a\\x8c\\x8e\\x90\\x92\\x94\\x96\\x98\\x9a\\x9c\\x9e\\xa0\\xa2\\xa4\\xa6\\xa8\\xaa\\xac\\xae\\xb0\\xb2\\xb4\\xb6\\xb8\\xba\\xbc\\xbe\\xc0\\xc2\\xc4\\xc6\\xc8\\xca\\xcc\\xce\\xd0\\xd2\\xd4\\xd6\\xd8\\xda\\xdc\\xde\\xe0\\xe2\\xe4\\xe6\\xe8\\xea\\xec\\xee\\xf0\\xf2\\xf4\\xf6\\xf8\\xfa\\xfc\\xfe",
+    "value": 3978425819141910832,
+    "string": "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
     "address": 16
   }
 ]

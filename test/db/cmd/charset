@@ -31,7 +31,7 @@ ARGS=-n
 CMDS=<<EOF
 s 0x19a8
 px 16
-ps
+psx 10
 e cfg.charset=ebcdic37
 px 16
 ps 10
@@ -39,7 +39,7 @@ EOF
 EXPECT=<<EOF
 - offset -  A8A9 AAAB ACAD AEAF B0B1 B2B3 B4B5 B6B7  89ABCDEF01234567
 0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  ....@...........
-\xc8\x96\x93\x81@\x94\xa4\x95\x84\x96\x15
+\xc8\x96\x93\x81@\x94\xa4\x95\x84\x96
 - offset -  A8A9 AAAB ACAD AEAF B0B1 B2B3 B4B5 B6B7  89ABCDEF01234567
 0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  Hola_mundo.?????
 Hola_mundo
@@ -75,7 +75,7 @@ hiragana
 iso8859_1
 katakana
 pokered
-\xa6\xb1\xae\xb4\xad\xa3\x7f\xb3\xae\x7f\xaf\xb1\xae\xb3\xa4\xa2\xb3I\xa8\xb3\xb2\xa4\xab\xa5\x7f\xa5\xb1\xae\xac\x7f\xa8\xb3
+
 ground-to-protect<PAGE>itself-fr
 EOF
 RUN
@@ -161,5 +161,20 @@ pr 9
 EOF
 EXPECT=<<EOF
 ラダレ
+EOF
+RUN
+
+NAME=ps and psz on ascii
+FILE=-
+NEWABI=1
+CMDS=<<EOF
+e cfg.charset=ascii
+wx 41424301
+ps
+psz
+EOF
+EXPECT=<<EOF
+ABC
+ABC?
 EOF
 RUN

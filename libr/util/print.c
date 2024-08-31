@@ -663,6 +663,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool only_printable = (options & R_PRINT_STRING_ONLY_PRINTABLE);
 	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
@@ -699,7 +700,11 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
-				p->cb_printf ("\\x%02x", b);
+				if (only_printable) {
+					break;
+				} else {
+					p->cb_printf ("\\x%02x", b);
+				}
 			}
 		}
 		r_print_cursor (p, i, 1, 0);
@@ -1362,7 +1367,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (p && p->charset && p->charset->loaded) {
 						ut8 input[2] = {ch, 0};
 						ut8 output[32];
+#if R2_USE_NEW_ABI
+						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1, false);
+#else
 						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
+#endif
 						ch = (len > 0)? *output: '?';
 					}
 					r_print_byte (p, addr + j, "%c", j, ch);
