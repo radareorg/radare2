@@ -32,6 +32,18 @@ jobs:
       with:
         name: linux-wasi-api
         path: radare2-*-wasi.zip
+  # capstone-next
+  linux-csnext:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Installing with symlinks
+      run: |
+          cp -f dist/plugins.cs6.cfg plugins.cfg
+          ./configure-plugins
+          sys/install.sh --with-capstone-next
+      continue-on-error: true
 
   # Source Tarballs
   tarball:
