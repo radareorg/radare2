@@ -288,6 +288,8 @@ static void load_process_line(LoadCtx *ctx) {
 
 static inline char unescape_raw_char(char c) {
 	switch (c) {
+	case 's':
+		return ' ';
 	case 'n':
 		return '\n';
 	case 'r':
