@@ -39,7 +39,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Installing with symlinks
-      run: sys/install.sh --with-capstone-next
+      run: |
+          cp -f dist/plugins.cs6.cfg plugins.cfg
+          ./configure-plugins
+          sys/install.sh --with-capstone-next
       continue-on-error: true
 
   # Source Tarballs
