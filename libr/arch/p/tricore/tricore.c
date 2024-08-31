@@ -85,6 +85,10 @@ static bool analop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else if (r_str_startswith (text, "st")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->ptr = addrfrom (text);
+	} else if (r_str_startswith (text, "loop")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addrfrom (text);
+		op->fail = op->addr + op->size;
 	} else if (r_str_startswith (text, "j ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addrfrom (text);
@@ -100,9 +104,12 @@ static bool analop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_LEA;
 	} else if (r_str_startswith (text, "add")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (r_str_startswith (text, "calli")) {
+		op->type = R_ANAL_OP_TYPE_RCALL;
 	} else if (r_str_startswith (text, "call")) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = addrfrom (text);
+		op->fail = op->addr + op->size;
 	} else if (r_str_startswith (text, "rfe")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (r_str_startswith (text, "ret")) {

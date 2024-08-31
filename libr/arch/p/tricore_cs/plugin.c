@@ -131,6 +131,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case TRICORE_INS_LOOP:
 		case TRICORE_INS_LOOPU:
 			op->jump = op->addr + (int)imm (insn, 1);
+			// op->jump = imm (insn, 1);
+			op->fail = op->addr + op->size;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case TRICORE_INS_J:
@@ -138,13 +140,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->jump = imm (insn, 0);
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
+		case TRICORE_INS_JI:
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			break;
 		case TRICORE_INS_JEQ_A:
 		case TRICORE_INS_JEQ:
 		case TRICORE_INS_JGEZ:
 		case TRICORE_INS_JGE_U:
 		case TRICORE_INS_JGE:
 		case TRICORE_INS_JGTZ:
-		case TRICORE_INS_JI:
 		case TRICORE_INS_JLA:
 		case TRICORE_INS_JLEZ:
 		case TRICORE_INS_JLI:
@@ -196,6 +200,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case TRICORE_INS_MADD:
 		case TRICORE_INS_CADD:
 			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
+		case TRICORE_INS_CALL:
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = imm (insn, 0);
+			op->fail = op->addr + op->size;
+			break;
+		case TRICORE_INS_CALLI:
+			op->type = R_ANAL_OP_TYPE_RCALL;
 			break;
 		case TRICORE_INS_SUBS:
 		case TRICORE_INS_SUBX:
