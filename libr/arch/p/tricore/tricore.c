@@ -158,6 +158,7 @@ static char *get_reg_profile(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
+		"=BP	a11\n"
 		"=A0	a4\n"
 		"=A1	a5\n"
 		"=A2	a6\n"
@@ -179,7 +180,8 @@ static char *get_reg_profile(RArchSession *as) {
 		"gpr	a8	.32	32	0\n"
 		"gpr	a9	.32	36	0\n"
 		"gpr	p10	.64	40	0\n"
-		"gpr	a10	.32	40	0\n"
+		"gpr	sp	.64	40	0\n"
+		"gpr	a10	.64	40	0\n"
 		"gpr	a11	.32	44	0\n"
 		"gpr	p12	.64	48	0\n"
 		"gpr	a12	.32	48	0\n"

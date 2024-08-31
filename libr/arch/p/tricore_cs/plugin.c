@@ -65,6 +65,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case TRICORE_OP_MEM:
 			pj_ks (pj, "type", "mem");
+			pj_ki (pj, "base", op->mem.base);
 			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
@@ -108,6 +109,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	op->size = 2;
 	cs_insn *insn;
+	const bool esil = mask & R_ARCH_OP_MASK_ESIL;
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -243,6 +245,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case TRICORE_INS_CMOV:
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			break;
+		case TRICORE_INS_MOVH:
+		case TRICORE_INS_MOVH_A:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				ut64 v = (ut64)arg1->imm;
+				r_strbuf_initf (&op->esil, "16,%"PFMT64d",<<,%s,:=", v, dr);
+			}
+			break;
+		case TRICORE_INS_LEA:
+			op->type = R_ANAL_OP_TYPE_LEA;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				const char *sr = cs_reg_name (handle, arg0->mem.base);
+				ut64 sd = (ut64)arg1->mem.disp;
+				r_strbuf_initf (&op->esil, "%"PFMT64d",%s,+,%s,:=", sd, sr, dr);
+			}
+			break;
 		case TRICORE_INS_MOV:
 		case TRICORE_INS_SWAP_A:
 		case TRICORE_INS_SWAP_W:
@@ -311,6 +337,7 @@ static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
+		"=BP	a11\n"
 		"=A0	a4\n"
 		"=A1	a5\n"
 		"=A2	a6\n"
@@ -331,6 +358,7 @@ static char *regs(RArchSession *as) {
 		"gpr	p8	.64	32	0\n"
 		"gpr	a8	.32	32	0\n"
 		"gpr	a9	.32	36	0\n"
+		"gpr	sp	.64	40	0\n"
 		"gpr	p10	.64	40	0\n"
 		"gpr	a10	.32	40	0\n"
 		"gpr	a11	.32	44	0\n"
