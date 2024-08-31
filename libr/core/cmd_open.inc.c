@@ -1035,6 +1035,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'p':
 		switch (input[2]) {
+		case '?': // "omp?"
+			r_core_cmd_help_contains (core, help_msg_om, "omp");
+			break;
 		case 'd': // "ompf"
 			id = r_num_math (core->num, input + 3);		//mapid
 			if (r_io_map_exists_for_id (core->io, id)) {
