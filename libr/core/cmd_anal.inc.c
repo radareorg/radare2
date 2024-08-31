@@ -15106,6 +15106,7 @@ static void cmd_ano(RCore *core, const char *input) {
 				} else {
 					R_LOG_ERROR ("Invalid base64 as argument for 'ano=...'");
 				}
+				free (f);
 			}
 		}
 		break;
