@@ -1119,7 +1119,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 					addr = r_num_math (core->num, s);
 					map = r_io_map_get_at (core->io, addr);
 				}
-				r_io_map_del_name (map);
+				if (map) {
+					r_io_map_del_name (map);
+				} else {
+					R_LOG_ERROR ("Cannot find map with given id or address");
+				}
 				s = p;
 				break;
 			}
