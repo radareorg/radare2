@@ -48,6 +48,7 @@ vaddr      paddr      type   ntype name
 
 4 relocations
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
+0x100004a4 "Simple PPC program."
 EOF
 RUN
 
