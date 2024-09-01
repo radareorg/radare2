@@ -3279,14 +3279,17 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	//	R_FREE (s);
 		goto restore_conf;
 	}
+	ut64 addr = UT64_MAX;
+	ut64 oaddr = UT64_MAX;
 	for (i = 0; i < count; i++) {
-		ut64 addr = UT64_MAX;
+		addr = UT64_MAX;
 		char *str;
 		ox = strstr (line, "0x");
 		qo = strchr (line, '\"');
 		R_FREE (string);
-		if (ox) {
+		if (ox && ox < line + 20) {
 			addr = r_num_get (NULL, ox);
+			oaddr = addr;
 		}
 		if (qo) {
 			char *qoe = strrchr (qo + 1, '"');
@@ -3345,50 +3348,50 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 		}
+		// eprintf ("--> (%s)\n", line);
 		if (pdsfs) {
 			str = strstr (line, " str.");
-
 		} else {
 #define USE_PREFIXES 1
 #if USE_PREFIXES
-		// XXX leak
-		str = strstr (line, " obj.");
-		if (!str) {
-			str = strstr (line, " str.");
+			// XXX leak
+			str = strstr (line, " obj.");
 			if (!str) {
-				str = strstr (line, " imp.");
+				str = strstr (line, " str.");
 				if (!str) {
-					str = strstr (line, " fcn.");
+					str = strstr (line, " imp.");
 					if (!str) {
-						str = strstr (line, " sub.");
+						str = strstr (line, " fcn.");
+						if (!str) {
+							str = strstr (line, " hit.");
+							if (!str) {
+								str = strstr (line, " sub.");
+							}
+						}
 					}
 				}
 			}
-		}
 #else
-		if (strchr (line, ';')) {
-			const char *dot = r_str_rchr (line, NULL, '.');
-			if (dot) {
-				const char *o = r_str_rchr (line, dot, ' ');
-				if (o) {
-					str = (char*)o;
-				} else {
-					R_LOG_WARN ("missing summary reference: %s", dot);
+			if (strchr (line, ';')) {
+				const char *dot = r_str_rchr (line, NULL, '.');
+				if (dot) {
+					const char *o = r_str_rchr (line, dot, ' ');
+					if (o) {
+						str = (char*)o;
+					} else {
+						R_LOG_WARN ("missing summary reference: %s", dot);
+					}
 				}
 			}
-		}
 #endif
 		}
 		if (str) {
-			char *qoe = NULL;
-			if (!qoe) {
-				qoe = strchr (str + 1, '\x1b');
-			}
+			char *qoe = strchr (str + 1, '\x1b');
 			if (!qoe) {
 				qoe = strchr (str + 1, ';');
-			}
-			if (!qoe) {
-				qoe = strchr (str + 1, ' ');
+				if (!qoe) {
+					qoe = strchr (str + 1, ' ');
+				}
 			}
 			if (qoe) {
 				free (string2);
@@ -3433,6 +3436,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		}
 		if (strstr (line, "XREF")) {
 			addr = UT64_MAX;
+		}
+		if (addr == UT64_MAX) {
+			addr = oaddr;
+			oaddr = UT64_MAX;
 		}
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
