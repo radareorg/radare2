@@ -212,6 +212,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case TRICORE_INS_SUBS:
 		case TRICORE_INS_SUBX:
 			op->type = R_ANAL_OP_TYPE_SUB;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				const char *sr = cs_reg_name (handle, arg1->reg);
+				r_strbuf_initf (&op->esil, "%s,%s,:=", sr, dr);
+			}
 			break;
 		case TRICORE_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -236,6 +244,29 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			break;
 		case TRICORE_INS_ADD:
 			op->type = R_ANAL_OP_TYPE_ADD;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				cs_tricore_op *arg2 = x->operands + 2;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				const char *sr = cs_reg_name (handle, arg1->reg);
+				const char *sR = cs_reg_name (handle, arg2->reg);
+				r_strbuf_initf (&op->esil, "%s,%s,+,%s,:=", sr, sR, dr);
+			}
+			break;
+		case TRICORE_INS_ADDI:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				cs_tricore_op *arg2 = x->operands + 2;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				const char *sr = cs_reg_name (handle, arg1->reg);
+				ut64 v = (ut64)arg2->imm;
+				r_strbuf_initf (&op->esil, "%"PFMT64d",%s,+,%s,:=", v, sr, dr);
+			}
 			break;
 		case TRICORE_INS_XOR:
 		case TRICORE_INS_XOR_NE: // TODO: CXOR
@@ -270,9 +301,20 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			}
 			break;
 		case TRICORE_INS_MOV:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			if (esil) {
+				cs_tricore *x = &insn->detail->tricore;
+				cs_tricore_op *arg0 = x->operands + 0;
+				cs_tricore_op *arg1 = x->operands + 1;
+				const char *dr = cs_reg_name (handle, arg0->reg);
+				ut64 sn = arg1->imm;
+				r_strbuf_initf (&op->esil, "%"PFMT64d",%s,:=", sn, dr);
+			}
+			break;
 		case TRICORE_INS_SWAP_A:
 		case TRICORE_INS_SWAP_W:
 		case TRICORE_INS_MOV_AA:
+		case TRICORE_INS_MOV_U:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case TRICORE_INS_INVALID:
