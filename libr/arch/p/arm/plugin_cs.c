@@ -58,7 +58,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMINDEX(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
-#define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
+#define HASMEMINDEX64(x) ((arm64_reg) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
@@ -82,7 +82,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define OPCOUNT() insn->detail->arm.op_count
 #define OPCOUNT64() insn->detail->arm64.op_count
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
-#define ISSHIFTED64(x) (insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
+#define ISSHIFTED64(x) ((arm64_shifter) insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTTYPEREG(x) (\
 		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
@@ -379,7 +379,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	// XXX: No ARM_MB_INVALID for cs6
-	if (x->mem_barrier) {
+	if (x->mem_barrier /* != ARM_MB_INVALID */) {
 		pj_ki (pj, "mem_barrier", x->mem_barrier - 1);
 	}
 	pj_end (pj);
@@ -691,10 +691,10 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_MEM:
 			pj_ks (pj, "type", "mem");
-			if (op->mem.base != ARM64_REG_INVALID) {
+			if ((arm64_reg) op->mem.base != ARM64_REG_INVALID) {
 				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			if (op->mem.index != ARM64_REG_INVALID) {
+			if ((arm64_reg) op->mem.index != ARM64_REG_INVALID) {
 				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
 			pj_ki (pj, "disp", op->mem.disp);
@@ -739,7 +739,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		if (op->shift.type != ARM64_SFT_INVALID) {
+		if ((arm64_shifter) op->shift.type != ARM64_SFT_INVALID) {
 			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM64_SFT_LSL:
@@ -763,7 +763,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_kn (pj, "value", (ut64)op->shift.value);
 			pj_end (pj);
 		}
-		if (op->ext != ARM64_EXT_INVALID) {
+		if ((arm64_extender) op->ext != ARM64_EXT_INVALID) {
 			pj_ks (pj, "ext", extender_name (op->ext));
 		}
 		if (op->vector_index != -1) {
@@ -786,7 +786,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (insn->detail->writeback) {
 		pj_kb (pj, "writeback", true);
 	}
-	if (x->cc != ARM64CC_Invalid && x->cc != ARM64CC_AL && x->cc != ARM64CC_NV) {
+	if ((ARM64CC_CondCode) x->cc != ARM64CC_Invalid && (ARM64CC_CondCode) x->cc != ARM64CC_AL && (ARM64CC_CondCode) x->cc != ARM64CC_NV) {
 		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
 	pj_end (pj);
@@ -3417,12 +3417,12 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		break;
 	case ARM64_INS_SUB:
-		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
+		if (ISREG64(0) && (arm64_reg) REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			if (ISIMM64(1)) {
 				//sub sp, 0x54
 				op->stackptr = IMM(1);
-			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
+			} else if (ISIMM64(2) && ISREG64(1) && (arm64_reg) REGID64(1) == ARM64_REG_SP) {
 				//sub sp, sp, 0x10
 				op->stackptr = IMM64(2);
 			}
@@ -3455,17 +3455,17 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ADDG:
 #endif
 	case ARM64_INS_ADD:
-		if (ISREG64 (0) && REGID64 (0) == ARM64_REG_SP) {
+		if (ISREG64 (0) && (arm64_reg) REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			if (ISIMM64 (1)) {
 				//add sp, 0x54
 				op->stackptr = -(st64)IMM (1);
-			} else if (ISIMM64 (2) && ISREG64 (1) && REGID64 (1) == ARM64_REG_SP) {
+			} else if (ISIMM64 (2) && ISREG64 (1) && (arm64_reg) REGID64 (1) == ARM64_REG_SP) {
 				//add sp, sp, 0x10
 				op->stackptr = -(st64)IMM64 (2);
 			}
 			op->val = op->stackptr;
-		} else if (REGID64 (0) == ARM64_REG_SP) {
+		} else if ((arm64_reg) REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		} else {
@@ -3495,7 +3495,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 #endif
 	case ARM64_INS_MOV:
-		if (REGID64(0) == ARM64_REG_SP) {
+		if ((arm64_reg) REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		}
@@ -3628,16 +3628,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STXRB:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+		if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (2);
-		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && (arm64_reg) REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (3);
-		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (1);
-		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && (arm64_reg) REGID64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (2);
 		}
@@ -3655,16 +3655,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+		if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (2);
-		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && (arm64_reg) REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (3);
-		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (1);
-		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && (arm64_reg) REGID64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (2);
 		}
@@ -3684,7 +3684,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->sign = true;
 			break;
 		}
-		if (REGBASE64(1) == ARM64_REG_X29) {
+		if ((arm64_reg) REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = MEMDISP64(1);
@@ -3775,7 +3775,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_B:
 		// BX LR == RET
-		if (insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
+		if ((arm64_reg) insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else if (insn->detail->arm64.cc) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
@@ -4533,7 +4533,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		if (count > 2) {
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64 (count - 1);
-				if (arm64op.type == ARM64_OP_IMM) {
+				if ((arm64_op_type) arm64op.type == ARM64_OP_IMM) {
 					count--;
 				}
 			} else {
