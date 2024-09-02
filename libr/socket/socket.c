@@ -421,7 +421,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 		if (!rp) {
-			R_LOG_ERROR ("Could not resolve address '%s' or failed to connect", host);
+			// R_LOG_ERROR ("Could not resolve address '%s' or failed to connect", host);
 			return false;
 		}
 	}
