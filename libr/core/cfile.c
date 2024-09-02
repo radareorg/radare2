@@ -259,6 +259,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		}
 	}
 	r_sys_setenv ("R2PM_LEGACY", "0");
+	r_sys_setenv ("R2_COLOR", r_config_get (core->config, "scr.color"));
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_BADDR", r_strf ("0x%08"PFMT64x, r_config_get_i (core->config, "bin.baddr")));
