@@ -97,6 +97,32 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ISPREINDEX64() (((OPCOUNT64 () == 2) && (ISMEM64 (1)) && (ISWRITEBACK64 ())) || ((OPCOUNT64 () == 3) && (ISMEM64 (2)) && (ISWRITEBACK64 ())))
 #define ISPOSTINDEX64() (((OPCOUNT64 () == 3) && (ISIMM64 (2)) && (ISWRITEBACK64 ())) || ((OPCOUNT64 () == 4) && (ISIMM64 (3)) && (ISWRITEBACK64 ())))
 
+// *********************
+// CS6 compatibility:
+// #define CS_NEXT_VERSION 6
+#if CS_NEXT_VERSION == 6
+typedef enum arm_cc {
+	ARM_CC_EQ = ARMCC_EQ,
+	ARM_CC_NE = ARMCC_NE,
+	ARM_CC_HS = ARMCC_HS,
+	ARM_CC_LO = ARMCC_LO,
+	ARM_CC_MI = ARMCC_MI,
+	ARM_CC_PL = ARMCC_PL,
+	ARM_CC_VS = ARMCC_VS,
+	ARM_CC_VC = ARMCC_VC,
+	ARM_CC_HI = ARMCC_HI,
+	ARM_CC_LS = ARMCC_LS,
+	ARM_CC_GE = ARMCC_GE,
+	ARM_CC_LT = ARMCC_LT,
+	ARM_CC_GT = ARMCC_GT,
+	ARM_CC_LE = ARMCC_LE,
+	ARM_CC_AL = ARMCC_AL,
+
+	ARM_CC_INVALID = ARMCC_UNDEF
+} arm_cc;
+#endif
+// *********************
+
 #define BITMASK_BY_WIDTH_COUNT 64
 static const ut64 bitmask_by_width[BITMASK_BY_WIDTH_COUNT] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
@@ -220,35 +246,35 @@ static const char *vector_data_type_name(arm_vectordata_type type) {
 	}
 }
 
-static const char *cc_name(ARMCC_CondCodes cc) {
+static const char *cc_name(arm_cc cc) {
 	switch (cc) {
-	case ARMCC_EQ: // Equal                      Equal
+	case ARM_CC_EQ: // Equal                      Equal
 		return "eq";
-	case ARMCC_NE: // Not equal                  Not equal, or unordered
+	case ARM_CC_NE: // Not equal                  Not equal, or unordered
 		return "ne";
-	case ARMCC_HS: // Carry set                  >, ==, or unordered
+	case ARM_CC_HS: // Carry set                  >, ==, or unordered
 		return "hs";
-	case ARMCC_LO: // Carry clear                Less than
+	case ARM_CC_LO: // Carry clear                Less than
 		return "lo";
-	case ARMCC_MI: // Minus, negative            Less than
+	case ARM_CC_MI: // Minus, negative            Less than
 		return "mi";
-	case ARMCC_PL: // Plus, positive or zero     >, ==, or unordered
+	case ARM_CC_PL: // Plus, positive or zero     >, ==, or unordered
 		return "pl";
-	case ARMCC_VS: // Overflow                   Unordered
+	case ARM_CC_VS: // Overflow                   Unordered
 		return "vs";
-	case ARMCC_VC: // No overflow                Not unordered
+	case ARM_CC_VC: // No overflow                Not unordered
 		return "vc";
-	case ARMCC_HI: // Unsigned higher            Greater than, or unordered
+	case ARM_CC_HI: // Unsigned higher            Greater than, or unordered
 		return "hi";
-	case ARMCC_LS: // Unsigned lower or same     Less than or equal
+	case ARM_CC_LS: // Unsigned lower or same     Less than or equal
 		return "ls";
-	case ARMCC_GE: // Greater than or equal      Greater than or equal
+	case ARM_CC_GE: // Greater than or equal      Greater than or equal
 		return "ge";
-	case ARMCC_LT: // Less than                  Less than, or unordered
+	case ARM_CC_LT: // Less than                  Less than, or unordered
 		return "lt";
-	case ARMCC_GT: // Greater than               Greater than
+	case ARM_CC_GT: // Greater than               Greater than
 		return "gt";
-	case ARMCC_LE: // Less than or equal         <, ==, or unordered
+	case ARM_CC_LE: // Less than or equal         <, ==, or unordered
 		return "le";
 	default:
 		return "";
@@ -375,7 +401,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
 		pj_ki (pj, "cps_flag", x->cps_flag);
 	}
-	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
+	if ((arm_cc) x->cc != ARM_CC_INVALID && (arm_cc) x->cc != ARM_CC_AL) {
 		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	// XXX: No ARM_MB_INVALID for cs6
@@ -462,7 +488,7 @@ static int arm64_reg_width(int reg) {
 	return 64;
 }
 
-static const char *cc_name64(ARMCC_CondCodes cc) {
+static const char *cc_name64(ARM64CC_CondCode cc) {
 	switch (cc) {
 	case ARM64CC_EQ: // Equal
 		return "eq";
@@ -920,72 +946,71 @@ static int vector_size(cs_arm64_op *op) {
 }
 
 // return postfix
-// cond_type :ARMCC_CondCodes
 const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "\0";
 	close_cond[1] = ",}\0";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARMCC_EQ:
+	case ARM_CC_EQ:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,?{,");
 		break;
-	case ARMCC_NE:
+	case ARM_CC_NE:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,!,?{,");
 		break;
-	case ARMCC_HS:
+	case ARM_CC_HS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,?{,");
 		break;
-	case ARMCC_LO:
+	case ARM_CC_LO:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,!,?{,");
 		break;
-	case ARMCC_MI:
+	case ARM_CC_MI:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,?{,");
 		break;
-	case ARMCC_PL:
+	case ARM_CC_PL:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,!,?{,");
 		break;
-	case ARMCC_VS:
+	case ARM_CC_VS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "vf,?{,");
 		break;
-	case ARMCC_VC:
+	case ARM_CC_VC:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "vf,!,?{,");
 		break;
-	case ARMCC_HI:
+	case ARM_CC_HI:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARMCC_LS:
+	case ARM_CC_LS:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARMCC_GE:
+	case ARM_CC_GE:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARMCC_LT:
+	case ARM_CC_LT:
 		close_type = 1;
 		r_strbuf_append (&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARMCC_GT:
+	case ARM_CC_GT:
 		// zf == 0 && nf == vf
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARMCC_LE:
+	case ARM_CC_LE:
 		// zf == 1 || nf != vf
 		close_type = 1;
 		r_strbuf_append (&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARMCC_AL:
+	case ARM_CC_AL:
 		// always executed
 		break;
 	default:
@@ -3300,24 +3325,24 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 }
 
 static int cond_cs2r2(int cc) {
-	if (cc == ARMCC_AL || cc < 0) {
+	if (cc == ARM_CC_AL || cc < 0) {
 		cc = R_ANAL_COND_AL;
 	} else {
 		switch (cc) {
-		case ARMCC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARMCC_NE: cc = R_ANAL_COND_NE; break;
-		case ARMCC_HS: cc = R_ANAL_COND_HS; break;
-		case ARMCC_LO: cc = R_ANAL_COND_LO; break;
-		case ARMCC_MI: cc = R_ANAL_COND_MI; break;
-		case ARMCC_PL: cc = R_ANAL_COND_PL; break;
-		case ARMCC_VS: cc = R_ANAL_COND_VS; break;
-		case ARMCC_VC: cc = R_ANAL_COND_VC; break;
-		case ARMCC_HI: cc = R_ANAL_COND_HI; break;
-		case ARMCC_LS: cc = R_ANAL_COND_LS; break;
-		case ARMCC_GE: cc = R_ANAL_COND_GE; break;
-		case ARMCC_LT: cc = R_ANAL_COND_LT; break;
-		case ARMCC_GT: cc = R_ANAL_COND_GT; break;
-		case ARMCC_LE: cc = R_ANAL_COND_LE; break;
+		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
+		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
+		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
+		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
+		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
+		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
+		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
+		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
+		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
+		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
+		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
+		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
+		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
+		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
 		}
 	}
 	return cc;
@@ -3670,7 +3695,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if (insn->detail->arm.cc != ARMCC_AL) {
+			if ((arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
 		} else {
@@ -3929,7 +3954,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-				if (insn->detail->arm.cc == ARMCC_AL) {
+				if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
 					op->type = R_ANAL_OP_TYPE_RET;
 				} else {
 					op->type = R_ANAL_OP_TYPE_CRET;
@@ -3984,7 +4009,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
-			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
+			if (REGID(1) == ARM_REG_PC && (arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
 				op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
@@ -4057,7 +4082,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		break;
 	case ARM_INS_SVC:
-		if (insn->detail->arm.cc == ARMCC_AL) {
+		if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
 			op->type = R_ANAL_OP_TYPE_SWI;
 		} else {
 			op->type = R_ANAL_OP_TYPE_CSWI;
@@ -4166,7 +4191,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if (insn->detail->arm.cc != ARMCC_AL) {
+			if ((arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
@@ -4189,7 +4214,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
-			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
+			if (REGID(0) == ARM_REG_PC && (arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
@@ -4241,10 +4266,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_B:
 		/* b.cc label */
 		op->cycles = 4;
-		if (insn->detail->arm.cc == ARMCC_UNDEF) {
+		if ((arm_cc) insn->detail->arm.cc == ARM_CC_INVALID) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->fail = addr+op->size;
-		} else if (insn->detail->arm.cc == ARMCC_AL) {
+		} else if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		} else {
