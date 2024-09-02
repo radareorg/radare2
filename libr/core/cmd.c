@@ -236,6 +236,8 @@ static const RCoreHelpMessage help_msg_equal = {
 	"!=!", "", "enable remote cmd mode",
 	"\nservers:", "", "",
 	// ".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
+	"=l", "", "listen daemon",
+	"=L", "", "List daemon sessions",
 	"=t", "port", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
 	"=r", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
