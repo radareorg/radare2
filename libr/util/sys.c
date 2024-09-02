@@ -724,7 +724,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		}
 		close (sh_err[1]);
 		close (sh_in[0]);
-		if (!inputptr || !*inputptr) {
+		if (R_STR_ISEMPTY (inputptr)) {
 			close (sh_in[1]);
 		}
 		// we should handle broken pipes somehow better

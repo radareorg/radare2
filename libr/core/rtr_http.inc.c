@@ -95,7 +95,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	}
 	s = r_socket_new (false);
 	{
-		if (host && *host) {
+		if (R_STR_ISNOTEMPTY (host)) {
 			if (!strcmp (host, "::1")) {
 				s->local = true;
 			} else if (!strcmp (host, "localhost")) {
@@ -138,9 +138,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			R_LOG_ERROR ("No user list set for HTTP Authentication");
 			return 1;
 		}
-
 		pfile = r_file_slurp (httpauthfile, NULL);
-
 		if (pfile) {
 			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
@@ -148,7 +146,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			R_LOG_ERROR ("Empty list of HTTP users");
 			return 1;
 		}
-
 		so.timeout = r_config_get_i (core->config, "http.timeout");
 		so.accept_timeout = 1;
 	}
@@ -172,8 +169,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		restoreSandbox = true;
 	}
 	eprintf ("Starting http server...\n");
-	eprintf ("open http://%s:%d/\n", host, atoi (port));
-	eprintf ("r2 -C http://%s:%d/cmd/\n", host, atoi (port));
+	eprintf ("open http://%s:%s/\n", host, port);
+	eprintf ("r2 -C http://%s:%s/cmd/\n", host, port);
+	eprintf ("r2 r2web://%s:%s/cmd/\n", host, port);
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -192,7 +190,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
 	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
-	while (!r_cons_is_breaked ()) {
+	while (!r_cons_is_breaked () && core->http_up) {
 		/* restore environment */
 		core->config = origcfg;
 #if WEBCONFIG
@@ -200,7 +198,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
 		r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
 #endif
-		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
 		newoff = core->offset;
 		newblk = core->block;
@@ -216,6 +213,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 		void *bed = r_cons_sleep_begin ();
 		rs = r_socket_http_accept (s, &so);
+		if (!core->http_up) {
+			eprintf ("^C\n");
+			break;
+		}
 		r_cons_sleep_end (bed);
 		if (!rs) {
 			bed = r_cons_sleep_begin ();
@@ -591,6 +592,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	R_LOG_WARN ("Background webserver requires http.sandbox=false to run properly");
 	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
+#if 0
 	if (ret) {
 		int p = r_config_get_i (ht->core->config, "http.port");
 		r_config_set_i (ht->core->config, "http.port",  p + 1);
@@ -598,6 +600,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 			return R_TH_STOP;
 		}
 	}
+#endif
 	return ret ? R_TH_REPEAT : R_TH_STOP;
 }
 #endif

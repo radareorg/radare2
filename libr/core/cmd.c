@@ -1059,6 +1059,64 @@ static void cmd_tcp_server(RCore *core, const char *input) {
 	}
 }
 
+#define MINPORT 2000
+#define MAXPORT 3000
+
+static void session_listen(RCore *core) {
+	if (core->http_up) {
+		R_LOG_ERROR ("Daemon already running");
+		return;
+	}
+	int port = MINPORT + r_num_rand (MAXPORT - MINPORT);
+	r_strf_var (sport, 80, "%d", port);
+	r_config_set (core->config, "http.port", sport);
+	r_config_set_b (core->config, "http.sandbox", false);
+	int pid = r_sys_getpid ();
+	char *tmpdir = r_file_tmpdir ();
+	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
+	r_sys_mkdir (tmpdir_r2);
+	char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
+	char *s = r_str_newf ("r2web://127.0.0.1:%d/cmd", port);
+	if (r_file_dump (fn, (const ut8*)s, strlen (s), false)) {
+		r_core_cmd0 (core, "=h&");
+	} else {
+		R_LOG_ERROR ("Cannot create socket file %s", s);
+	}
+	free (s);
+	free (tmpdir_r2);
+	free (tmpdir);
+	// set random port
+}
+
+static void session_list(RCore *core) {
+	char *tmpdir = r_file_tmpdir ();
+	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
+	char *file;
+	RListIter *iter;
+	RList *files = r_sys_dir (tmpdir_r2);
+	r_list_foreach (files, iter, file) {
+		if (r_str_endswith (file, ".pid")) {
+			char *ffn = r_str_newf ("%s/%s", tmpdir_r2, file);
+			// TODO: curl to get filename or session name via "/cmd/k%20name"
+			char *data = r_file_slurp (ffn, NULL);
+			int fpid = atoi (file);
+			if (data) {
+#if R2__UNIX__
+				if (0 == kill (fpid, 0)) {
+					r_cons_printf ("r2 %s # pid %d\n", data, fpid);
+				} else {
+					r_file_rm (ffn);
+				}
+#else
+				r_cons_printf ("r2 %s # pid %d\n", data, fpid);
+#endif
+			}
+			free (ffn);
+		}
+	}
+	r_list_free (files);
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
@@ -1073,6 +1131,16 @@ static int cmd_rap(void *data, const char *input) {
 		break;
 	case 'R': // "=R"
 		cmd_remote (core, r_str_trim_head_ro (input + 1), true);
+		break;
+	case 'l': // "=l"
+		if (input[1] == ' ') {
+			// set session name here
+			r_core_cmdf (core, "k name=%s", r_str_trim_head_ro (input + 2));
+		}
+		session_listen (core);
+		break;
+	case 'L': // "=L"
+		session_list (core);
 		break;
 	case 'j': // "=j"
 		R_LOG_ERROR ("TODO: list connections in json");
