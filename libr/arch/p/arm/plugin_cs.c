@@ -378,7 +378,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
 		pj_ks (pj, "cc", cc_name (x->cc));
 	}
-	if (x->mem_barrier != ARM_MB_INVALID) {
+	// XXX: No ARM_MB_INVALID for cs6
+	if (x->mem_barrier) {
 		pj_ki (pj, "mem_barrier", x->mem_barrier - 1);
 	}
 	pj_end (pj);
@@ -540,12 +541,14 @@ static const char *vas_name(AArch64Layout_VectorLayout vas) {
 	case AARCH64LAYOUT_VL_1Q:
 		return "1q";
 #if CS_API_MAJOR > 4
+	// XXX: cs6 has no 1B
 	case AARCH64LAYOUT_VL_B:
 		return "8b";
 	case AARCH64LAYOUT_VL_4B:
 		return "8b";
 	case AARCH64LAYOUT_VL_2H:
 		return "2h";
+	// XXX: cs6 has no 1H
 	case AARCH64LAYOUT_VL_H:
 		return "1h";
 	case AARCH64LAYOUT_VL_1S:
@@ -704,25 +707,25 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ks (pj, "type", "cimm");
 			pj_kN (pj, "value", op->imm);
 			break;
-		case ARM64_OP_PSTATE:
+		case ARM64_OP_PSTATEIMM0_15:
 			pj_ks (pj, "type", "pstate");
-			switch (op->pstate) {
-			case ARM64_PSTATE_SPSEL:
+			switch (op->sysop.alias.pstateimm0_15) {
+			case ARM64_PSTATEIMM0_15_SPSEL:
 				pj_ks (pj, "value", "spsel");
 				break;
-			case ARM64_PSTATE_DAIFSET:
+			case ARM64_PSTATEIMM0_15_DAIFSET:
 				pj_ks (pj, "value", "daifset");
 				break;
-			case ARM64_PSTATE_DAIFCLR:
+			case ARM64_PSTATEIMM0_15_DAIFCLR:
 				pj_ks (pj, "value", "daifclr");
 				break;
 			default:
-				pj_ki (pj, "value", op->pstate);
+				pj_ki (pj, "value", op->sysop.alias.pstateimm0_15);
 			}
 			break;
 		case ARM64_OP_SYS:
 			pj_ks (pj, "type", "sys");
-			pj_kn (pj, "value", (ut64)op->sys);
+			pj_kn (pj, "value", (ut64)op->sysop.reg.tlbi);
 			break;
 		case ARM64_OP_PREFETCH:
 			pj_ks (pj, "type", "prefetch");
@@ -780,7 +783,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->update_flags) {
 		pj_kb (pj, "update_flags", true);
 	}
-	if (x->writeback) {
+	if (insn->detail->writeback) {
 		pj_kb (pj, "writeback", true);
 	}
 	if (x->cc != ARM64CC_Invalid && x->cc != ARM64CC_AL && x->cc != ARM64CC_NV) {
