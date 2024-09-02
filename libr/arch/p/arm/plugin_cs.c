@@ -723,17 +723,17 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 				pj_ki (pj, "value", op->sysop.alias.pstateimm0_15);
 			}
 			break;
-		case ARM64_OP_SYS:
+		case ARM64_OP_TLBI:
 			pj_ks (pj, "type", "sys");
 			pj_kn (pj, "value", (ut64)op->sysop.reg.tlbi);
 			break;
-		case ARM64_OP_PREFETCH:
+		case ARM64_OP_PRFM:
 			pj_ks (pj, "type", "prefetch");
-			pj_ki (pj, "value", op->prefetch - 1);
+			pj_ki (pj, "value", op->sysop.alias.prfm - 1);
 			break;
-		case ARM64_OP_BARRIER:
-			pj_ks (pj, "type", "prefetch");
-			pj_ki (pj, "value", op->barrier - 1);
+		case ARM64_OP_DB:
+			pj_ks (pj, "type", "barrier");
+			pj_ki (pj, "value", op->sysop.alias.db - 1);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
