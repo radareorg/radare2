@@ -1103,7 +1103,7 @@ static void session_list(RCore *core) {
 			char *data = r_file_slurp (ffn, NULL);
 			int fpid = atoi (file);
 			if (data) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 				if (0 == kill (fpid, 0)) {
 					r_cons_printf ("r2 %s # pid %d\n", data, fpid);
 				} else {
