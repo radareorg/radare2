@@ -893,7 +893,8 @@ static int regsize64(cs_insn *insn, int n) {
 		return 2;
 	}
 	if ((reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) ||
-		(reg >= ARM64_REG_V0 && reg <= ARM64_REG_V31) ) {
+			// XXX - I am not sure about this:
+		(reg >= ARM64_REG_ZT0 && reg <= ARM64_REG_D30_D31) ) {
 		return 16;
 	}
 	return 8;
@@ -3326,17 +3327,19 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
 	/* grab family */
+	/* XXX - Can't find ARM64 feature crypto in cs6 arm64
 	if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC)) {
+	*/
+	if (cs_insn_group (handle, insn, ARM64_FEATURE_HASCRC )) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 #endif
-	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
+	} else if (cs_insn_group (handle, insn, ARM64_FEATURE_HASNEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
-	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
+	} else if (cs_insn_group (handle, insn, ARM64_FEATURE_HASFPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
@@ -3835,22 +3838,28 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 	}
 	op->cycles = 1;
 	/* grab family */
+		/* XXX - I can't find crypto in cs6
 	if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
+	*/
+	if (cs_insn_group (handle, insn, ARM_FEATURE_HasCRC)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
+		/* XXX - I can't find virtualization in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
 		op->family = R_ANAL_OP_FAMILY_VIRT;
+		*/
 #endif
-	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
+	} else if (cs_insn_group (handle, insn, ARM_FEATURE_HasNEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
-	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
+	} else if (cs_insn_group (handle, insn, ARM_FEATURE_HasFPARMv8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
+		/* XXX - I can't find thumb2dsp in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
+		*/
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
