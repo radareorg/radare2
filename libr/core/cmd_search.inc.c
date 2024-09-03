@@ -117,9 +117,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 	"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
-	"/x", " ff..33", "search for hex string ignoring some nibbles",
-	"/x", " ff0033", "search for hex string",
-	"/x", " ff43:ffd0", "search for hexpair with mask",
+	"/x", "[?] [bytes]", "search for hex string with mask, ignoring some nibbles",
 	"/z", " min max", "search for strings of given size",
 	"/*", " [comment string]", "add multiline comment, end it with '*/'",
 #if 0
@@ -223,13 +221,19 @@ static RCoreHelpMessage help_msg_slash_Rk = {
 };
 
 static RCoreHelpMessage help_msg_slash_x = {
-	"Usage:", "/x [hexpairs]:[binmask]", "search in memory",
+	"Usage:", "/x[v] [hexpairs]:[binmask]", "search in memory",
 	"/x ", "9090cd80", "search for those bytes",
 	"/x ", "ff..33", "search for hex string ignoring some nibbles",
 	"/x ", "9090cd80:ffff7ff0", "search with binary mask",
+	"/xv", "[1|2|4|8] v0 v1 v2 v3 ..", "search for an array of values with given size and endian",
+#if 0
+	"/x", " ff..33", "search for hex string ignoring some nibbles",
+	"/x", " ff0033", "search for hex string",
+	"/x", " ff43:ffd0", "search for hexpair with mask",
+	"/xv", "[1|2|4|8] 1 2 3 4", "search an array of values of given size (honors asm.bits and cfg.bigendian)",
+#endif
 	NULL
 };
-
 
 struct search_parameters {
 	RCore *core;
@@ -3770,6 +3774,63 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 	r_cons_break_pop ();
 }
 
+static void cmd_search_xv(RCore *core, const char *input) {
+	if (strchr (input, '?')) {
+		r_core_cmd_help_match (core, help_msg_slash, "/x");
+		return;
+	}
+	char sizeChar = input[2];
+	bool be = r_config_get_b (core->config, "cfg.bigendian");
+	const char *arg = r_str_trim_head_ro (input + 3);
+	int size = isdigit (sizeChar)? sizeChar - '0': 1;
+	if (size != 1 && size != 2 && size != 4 && size != 8) {
+		R_LOG_ERROR ("Invalid value size. Must be 1, 2, 4 or 8");
+		return;
+	}
+	char *args = strdup (arg);
+	RList *list = r_str_split_list (args, " ", 0);
+	RListIter *iter;
+	const char *str;
+	ut8 b[8];
+	RStrBuf *sb = r_strbuf_new ("");
+	r_list_foreach (list, iter, str) {
+		ut64 v = r_num_math (core->num, str);
+		switch (size) {
+		case 1:
+			if (v > 0xff) {
+				R_LOG_WARN ("Invalid byte value %"PFMT64d, v);
+			}
+			r_strbuf_appendf (sb, "%02x", (ut8)(v & 0xff));
+			break;
+		case 2:
+			r_write_ble16 (b, v, be);
+			if (v > UT16_MAX) {
+				R_LOG_WARN ("Invalid word value %"PFMT64d, v);
+			}
+			r_strbuf_appendf (sb, "%02x%02x", b[0], b[1]);
+			break;
+		case 4:
+			r_write_ble32 (b, v, be);
+			if (v > UT32_MAX) {
+				R_LOG_WARN ("Invalid dword value %"PFMT64d, v);
+			}
+			r_strbuf_appendf (sb, "%02x%02x%02x%02x", b[0], b[1], b[2], b[3]);
+			break;
+		case 8:
+			r_write_ble64 (b, v, be);
+			r_strbuf_appendf (sb, "%02x%02x%02x%02x", b[0], b[1], b[2], b[3]);
+			r_strbuf_appendf (sb, "%02x%02x%02x%02x", b[4], b[5], b[6], b[7]);
+			break;
+		}
+	}
+	free (args);
+	r_list_free (list);
+	char *s = r_strbuf_drain (sb);
+	core->in_search = false;
+	r_core_cmdf (core, "/x %s", s);
+	free (s);
+}
+
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward) {
 	RList *preds = r_anal_preludes (core->anal);
 	int bs = core->blocksize;
@@ -5085,6 +5146,8 @@ reread:
 	case 'x': // "/x" search hex
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_x);
+		} else if (input[1] == 'v') {
+			cmd_search_xv (core, input);
 		} else {
 			RSearchKeyword *kw;
 			char *s, *p = strdup (input + param_offset);
