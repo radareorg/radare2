@@ -134,6 +134,12 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	if (R_STR_ISEMPTY (fcn->name)) {
+		R_LOG_WARN ("Unnamed function at 0x%08"PFMT64x, fcn->addr);
+		// r_sys_breakpoint ();
+		free (fcn->name);
+		fcn->name = r_str_newf ("fcn.%"PFMT64x, fcn->addr);
+	}
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
@@ -215,7 +221,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 }
 
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
-	R_RETURN_VAL_IF_FAIL (fcn && name, false);
+	R_RETURN_VAL_IF_FAIL (fcn && R_STR_ISNOTEMPTY (name), false);
 	RAnal *anal = fcn->anal;
 	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
 	if (existing) {
