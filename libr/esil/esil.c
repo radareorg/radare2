@@ -766,7 +766,7 @@ static bool esil_sf(REsil *esil) {
 
 	char *p_size = r_esil_pop (esil);
 	if (!p_size) {
-		R_LOG_WARN ("$sf cannot pop value");
+		R_LOG_WARN ("$sf cannot pop sign bit value (for example: 31,$s,s,:=)");
 		return false;
 	}
 
