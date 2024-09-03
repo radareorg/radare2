@@ -4231,7 +4231,7 @@ static void visual_title(RCore *core, int color) {
 		bar[12] = 0; // chop cmdfmt
 	} else {
 		const char *cmd = __core_visual_print_command (core);
-		if (cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			r_str_ncpy (bar, cmd, sizeof (bar) - 1);
 			bar[10] = '.'; // chop cmdfmt
 			bar[11] = '.'; // chop cmdfmt
@@ -4516,9 +4516,7 @@ R_IPI void visual_refresh(RCore *core) {
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
 	int notch = r_config_get_i (core->config, "scr.notch");
-
 	int w = visual_responsive (core);
-
 	if (core->visual.autoblocksize) {
 		r_cons_gotoxy (0, 0);
 	} else {

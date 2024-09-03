@@ -86,6 +86,14 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #undef R_INCLUDE_BEGIN
 
+static const RCoreHelpMessage help_msg_equal_l = {
+	"Usage:", "=l", " [..] list, create and destroy r2 sessions",
+	"=l", "", "list all available sessions",
+	"=l", " [name]", "give a name to the current session",
+	"=l", "-", "stop listening in background",
+	"=l", "l", "start a new session: listening for commands in background",
+	NULL
+};
 static const RCoreHelpMessage help_msg_dollar = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
@@ -236,8 +244,7 @@ static const RCoreHelpMessage help_msg_equal = {
 	"!=!", "", "enable remote cmd mode",
 	"\nservers:", "", "",
 	// ".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
-	"=l", "", "listen daemon",
-	"=L", "", "List daemon sessions",
+	"=l", "[?]", "list, create or destroy background session server",
 	"=t", "port", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
 	"=r", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
@@ -1035,41 +1042,52 @@ repeat:
 }
 
 static void cmd_tcp_server(RCore *core, const char *input) {
-	char *ptr;
-	if ((ptr = strchr (input, ' '))) {
-		/* .:port cmd */
-		/* .:host:port cmd */
-		const char *host, *port;
-		char *cmd = ptr + 1;
-		*ptr = 0;
-		char *eol = strchr (input, ':');
-		if (eol) {
-			*eol = 0;
-			host = input;
-			port = eol + 1;
-		} else {
-			host = "localhost";
-			port = input + ((input[0] == ':')? 1: 0);
-		}
-		char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
-		if (rbuf) {
-			r_cons_print (rbuf);
-			free (rbuf);
-		}
-	} else {
+	char *ptr = strchr (input, ' ');
+	if (!ptr) {
 		r_core_rtr_cmds (core, input);
+		return;
+	}
+	/* .:port cmd */
+	/* .:host:port cmd */
+	const char *host, *port;
+	char *cmd = ptr + 1;
+	*ptr = 0;
+	char *eol = strchr (input, ':');
+	if (eol) {
+		*eol = 0;
+		host = input;
+		port = eol + 1;
+	} else {
+		host = "localhost";
+		port = input + ((input[0] == ':')? 1: 0);
+	}
+	char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
+	if (rbuf) {
+		r_cons_print (rbuf);
+		free (rbuf);
 	}
 }
 
-#define MINPORT 2000
-#define MAXPORT 3000
+static void session_stop(RCore *core) {
+	if (core->http_up) {
+		r_core_rtr_http_stop (core);
+	} else {
+		R_LOG_INFO ("Nothing to do");
+	}
+}
 
 static void session_listen(RCore *core) {
 	if (core->http_up) {
 		R_LOG_ERROR ("Daemon already running");
 		return;
 	}
-	int port = MINPORT + r_num_rand (MAXPORT - MINPORT);
+	const int minport = r_config_get_i (core->config, "http.port");
+	const int maxport = r_config_get_i (core->config, "http.maxport");
+	if (minport >= maxport) {
+		R_LOG_ERROR ("minport >= maxport");
+		return;
+	}
+	int port = minport + r_num_rand (maxport - minport);
 	r_strf_var (sport, 80, "%d", port);
 	r_config_set (core->config, "http.port", sport);
 	r_config_set_b (core->config, "http.sandbox", false);
@@ -1135,14 +1153,23 @@ static int cmd_rap(void *data, const char *input) {
 		cmd_remote (core, r_str_trim_head_ro (input + 1), true);
 		break;
 	case 'l': // "=l"
-		if (input[1] == ' ') {
-			// set session name here
+		switch (input[1]) {
+		case ' ': // "=l " - set session name here
 			r_core_cmdf (core, "k name=%s", r_str_trim_head_ro (input + 2));
+			break;
+		case 0: // "=l"
+			session_list (core);
+			break;
+		case 'l': // "=ll"
+			session_listen (core);
+			break;
+		case '-': // "=l-"
+			session_stop (core);
+			break;
+		default: // "=l?"
+			r_core_cmd_help (core, help_msg_equal_l);
+			break;
 		}
-		session_listen (core);
-		break;
-	case 'L': // "=L"
-		session_list (core);
 		break;
 	case 'j': // "=j"
 		R_LOG_ERROR ("TODO: list connections in json");
@@ -3110,9 +3137,11 @@ static int cmd_visual(void *data, const char *input) {
 		r_core_cmd_help_match_spec (core, help_msg_root, "V", 0);
 		return true;
 	}
+#if 0
 	if (core->http_up) {
 		return false;
 	}
+#endif
 	if (!r_cons_is_interactive ()) {
 		R_LOG_ERROR ("Visual mode requires scr.interactive=true");
 		return false;
