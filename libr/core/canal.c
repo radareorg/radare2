@@ -119,7 +119,15 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
-	return flag? strdup (flag->name): NULL;
+	if (flag) {
+		return strdup (flag->name);
+	}
+	R_LOG_WARN ("Unknown name for function at 0x%08" PFMT64x, addr);
+	if (R_STR_ISEMPTY (fcnpfx)) {
+		fcnpfx = "fcn";
+	}
+	return r_str_newf ("%s.%"PFMT64x, fcnpfx, addr);
+	// return NULL;
 }
 
 // XXX: copypaste from anal/data.c
@@ -888,7 +896,7 @@ static bool set_fcn_name_from_flag(RCore *core, RAnalFunction *fcn, RFlagItem *f
 		if (r_str_startswith (fcn->name, "sym.func.") && !r_str_startswith (f->name, "sect")) {
 			char *s = r_core_cmd_strf (core, "fd@0x%08"PFMT64x, fcn->addr);
 			r_str_trim (s);
-			if (!r_str_startswith (s, "sym.func.") && !strstr (s, "sect")) {
+			if (R_STR_ISNOTEMPTY (s) && !r_str_startswith (s, "sym.func.") && !strstr (s, "sect")) {
 				r_anal_function_rename (fcn, s);
 				nameChanged = true;
 			}
@@ -1045,6 +1053,12 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
 			// XXX: this is wrong. See CID 1134565
+#if 0
+			if (R_STR_ISEMPTY (fcn->name)) {
+				free (fcn->name);
+				fcn->name = r_str_newf ("fcn.%"PFMT64x, fcn->addr);
+			}
+#endif
 			r_anal_add_function (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
