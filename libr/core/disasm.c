@@ -1925,34 +1925,103 @@ static void print_var_summary(RDisasmState *ds, RList *list) {
 	if (bp_args) { bp_args_color = numColor; }
 	if (sp_args) { sp_args_color = numColor; }
 	if (rg_args) { rg_args_color = numColor; }
-	if (ds->show_varsum == 3) {
+	if (ds->show_varsum == 4) {
 		ds_begin_line (ds);
 		ds_print_pre (ds, true);
 		int total_args = bp_args + sp_args + rg_args;
 		if (total_args > 0) {
-			r_cons_printf ("args: %d ( ", total_args);
-			if (rg_args) {
-				r_cons_printf ("reg:%d ", rg_args);
+			r_cons_printf ("afv: args(");
+			const char *comma = "";
+			int minsprange = ST32_MAX;
+			int maxsprange = 0;
+			r_list_foreach (list, iter, var) {
+				if (var->isarg) {
+					if (var->kind == 'r') {
+						r_cons_printf ("%s%s", comma, var->regname);
+						comma = ", ";
+					} else {
+						ut64 v = R_ABS (var->delta);
+						if (v > maxsprange) {
+							maxsprange = v;
+						}
+						if (v < minsprange) {
+							minsprange = v;
+						}
+					}
+				}
 			}
-			if (sp_args) {
-				r_cons_printf ("sp:%d ", sp_args);
-			}
-			if (bp_args) {
-				r_cons_printf ("bp:%d ", rg_args);
+			if (maxsprange > 0) {
+				r_cons_printf ("%ssp[0x%x..0x%x]", comma, minsprange, maxsprange);
 			}
 			r_cons_printf (") ");
 		}
 		int total_vars = bp_vars + sp_vars + rg_vars;
 		if (total_vars > 0) {
-			r_cons_printf ("vars: %d ( ", total_vars);
+			if (total_args < 1) {
+				r_cons_printf ("afv: ");
+			}
+			const char *comma = "";
+			r_cons_printf ("vars(");
+			int minsprange = ST32_MAX;
+			int maxsprange = 0;
+			r_list_foreach (list, iter, var) {
+				if (!var->isarg) {
+					if (var->kind == 'r') {
+						r_cons_printf ("%s%s", comma, var->regname);
+						comma = ", ";
+					} else {
+						ut64 v = R_ABS (var->delta);
+						if (v > maxsprange) {
+							maxsprange = v;
+						}
+						if (v < minsprange) {
+							minsprange = v;
+						}
+					}
+				}
+			}
+			if (maxsprange > 0) {
+				r_cons_printf ("%ssp[0x%x..0x%x]", comma, minsprange, maxsprange);
+			}
+			r_cons_printf (")");
+		}
+		ds_newline (ds);
+		return;
+	}
+	if (ds->show_varsum == 3) {
+		ds_begin_line (ds);
+		ds_print_pre (ds, true);
+		int total_args = bp_args + sp_args + rg_args;
+		if (total_args > 0) {
+			r_cons_printf ("afv: args(");
+			const char *comma = "";
+			if (rg_args) {
+				r_cons_printf ("reg:%d", rg_args);
+				comma = ",";
+			}
+			if (sp_args) {
+				r_cons_printf ("%ssp:%d", comma, sp_args);
+			}
+			if (bp_args) {
+				r_cons_printf ("%sbp:%d", comma, rg_args);
+			}
+			r_cons_printf (") ");
+		}
+		int total_vars = bp_vars + sp_vars + rg_vars;
+		if (total_vars > 0) {
+			if (total_args < 1) {
+				r_cons_printf ("afv: ");
+			}
+			const char *comma = "";
+			r_cons_printf ("vars(");
 			if (rg_vars) {
-				r_cons_printf ("reg:%d ", rg_vars);
+				r_cons_printf ("reg:%d", rg_vars);
 			}
 			if (sp_vars) {
-				r_cons_printf ("sp:%d ", sp_vars);
+				r_cons_printf ("%ssp:%d", comma, sp_vars);
 			}
 			if (bp_vars) {
-				r_cons_printf ("bp:%d ", rg_vars);
+				r_cons_printf ("%sbp:%d", comma, rg_vars);
 			}
 			r_cons_printf (")");
 		}

@@ -597,6 +597,19 @@ static bool cb_asmsubsec(void *user, void *data) {
 	return true;
 }
 
+static bool cb_asm_var_summary(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value == '?') {
+		r_cons_printf ("0 # same as afv output\n");
+		r_cons_printf ("1 # simplified args+vars list\n");
+		r_cons_printf ("2 # short summary\n");
+		r_cons_printf ("3 # compact oneliner for args + vars\n");
+		r_cons_printf ("4 # compact oneliner with args+vars regs+mem range\n");
+		return false;
+	}
+	return true;
+}
+
 static bool cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3746,7 +3759,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.var", "true", "show local function variables in disassembly");
 	SETBPREF ("asm.var.access", "false", "show accesses of local variables");
 	SETBPREF ("asm.sub.var", "true", "substitute variables in disassembly");
-	SETI ("asm.var.summary", 0, "show variables summary instead of full list in disasm (0, 1, 2)");
+	SETICB ("asm.var.summary", 0, &cb_asm_var_summary, "show variables summary instead of full list in disasm (0, 1, 2)");
 	SETBPREF ("asm.sub.varonly", "true", "substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF ("asm.sub.reg", "false", "substitute register names with their associated role name (drp~=)");
 	SETBPREF ("asm.sub.rel", "true", "substitute pc relative expressions in disasm");
