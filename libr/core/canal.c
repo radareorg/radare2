@@ -122,12 +122,10 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 	if (flag) {
 		return strdup (flag->name);
 	}
-	R_LOG_WARN ("Unknown name for function at 0x%08" PFMT64x, addr);
 	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
 	}
-	return r_str_newf ("%s.%"PFMT64x, fcnpfx, addr);
-	// return NULL;
+	return r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
 }
 
 // XXX: copypaste from anal/data.c
@@ -961,9 +959,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 	fcn->addr = at;
 	fcn->name = get_function_name (core, fcnpfx, at);
-	if (!fcn->name) {
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
-	}
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
 		goto error;
