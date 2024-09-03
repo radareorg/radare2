@@ -916,9 +916,9 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (r_str_startswith (input, " ")) {
 		r_cons_print (input + 1);
 	} else if (r_str_startswith (input, "f ")) {
-		R_LOG_TODO ("waiting for r2shell");
+		R_LOG_TODO ("printf not implemented. use ?e, echo or print");
 	} else if (r_str_startswith (input, "fln ")) {
-		R_LOG_TODO ("waiting for r2shell");
+		R_LOG_TODO ("printfln not implemented. use ?e, echo or print");
 	} else {
 		r_core_cmd_help_match (core, help_msg_pr, "print");
 	}
