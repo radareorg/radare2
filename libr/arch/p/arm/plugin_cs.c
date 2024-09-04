@@ -136,6 +136,40 @@ typedef enum arm64_vas {
 	ARM64_VAS_1D = ARM64LAYOUT_VL_1D,
 	ARM64_VAS_1Q = ARM64LAYOUT_VL_1Q
 } arm64_vas;
+
+#define ARM_INS_NOP ARM_INS_ALIAS_NOP:
+
+#define ARM64_INS_MNEG ARM64_INS_ALIAS_MNEG
+#define ARM64_INS_NOP ARM64_INS_ALIAS_NOP
+#define ARM64_INS_CMP ARM64_INS_ALIAS_CMP
+#define ARM64_INS_CMN ARM64_INS_ALIAS_CMN
+#define ARM64_INS_TST ARM64_INS_ALIAS_TST
+#define ARM64_INS_CSET ARM64_INS_ALIAS_CSET
+#define ARM64_INS_CINC ARM64_INS_ALIAS_CINC
+#define ARM64_INS_MVN ARM64_INS_ALIAS_MVN
+#define ARM64_INS_BFI ARM64_INS_ALIAS_BFI
+#define ARM64_INS_BFXIL ARM64_INS_ALIAS_BFXIL
+#define ARM64_INS_SBFIZ ARM64_INS_ALIAS_SBFIZ
+#define ARM64_INS_UBFIZ ARM64_INS_ALIAS_UBFIZ
+#define ARM64_INS_SBFX ARM64_INS_ALIAS_SBFX
+#define ARM64_INS_UBFX ARM64_INS_ALIAS_UBFX
+#define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
+#define ARM64_INS_PACIA1716 ARM64_INS_ALIAS_PACIA1716
+#define ARM64_INS_PACIASP ARM64_INS_ALIAS_PACIASP
+#define ARM64_INS_PACIAZ ARM64_INS_ALIAS_PACIAZ
+#define ARM64_INS_PACIB1716 ARM64_INS_ALIAS_PACIB1716
+#define ARM64_INS_PACIBSP ARM64_INS_ALIAS_PACIBSP
+#define ARM64_INS_PACIBZ ARM64_INS_ALIAS_PACIBZ
+#define ARM64_INS_AUTIA1716 ARM64_INS_ALIAS_AUTIA1716
+#define ARM64_INS_AUTIASP ARM64_INS_ALIAS_AUTIASP
+#define ARM64_INS_AUTIAZ ARM64_INS_ALIAS_AUTIAZ
+#define ARM64_INS_AUTIB1716 ARM64_INS_ALIAS_AUTIB1716
+#define ARM64_INS_AUTIBSP ARM64_INS_ALIAS_AUTIBSP
+#define ARM64_INS_AUTIBZ ARM64_INS_ALIAS_AUTIBZ
+#define ARM64_INS_XPACLRI ARM64_INS_ALIAS_XPACLRI
+#define ARM64_INS_IC ARM64_INS_ALIAS_IC
+#define ARM64_INS_DC ARM64_INS_ALIAS_DC
+#define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
 #endif
 // *********************
 
@@ -817,7 +851,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vector_index != -1) {
 			pj_ki (pj, "vector_index", op->vector_index);
 		}
-		if (op->vas != ARM64_VAS_INVALID) {
+		if ((arm64_vas) op->vas != ARM64_VAS_INVALID) {
 			pj_ks (pj, "vas", vas_name (op->vas));
 		}
 #if CS_API_MAJOR == 4
@@ -1400,7 +1434,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
-	case ARM64_INS_ALIAS_MNEG:
+	case ARM64_INS_MNEG:
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
@@ -1531,7 +1565,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ROR:
 		OPCALL (">>>");
 		break;
-	case ARM64_INS_ALIAS_NOP:
+	case ARM64_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
 		break;
 	case ARM64_INS_MOV:
@@ -1976,7 +2010,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_CCMP:
-	case ARM64_INS_ALIAS_CMP: // cmp w8, 0xd
+	case ARM64_INS_CMP: // cmp w8, 0xd
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
 		ARG64_APPEND (&op->esil, 0);
@@ -1989,7 +2023,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
-	case ARM64_INS_ALIAS_CMN:
+	case ARM64_INS_CMN:
 	case ARM64_INS_CCMN:
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
@@ -2003,7 +2037,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
-	case ARM64_INS_ALIAS_TST: // tst w8, 0xd
+	case ARM64_INS_TST: // tst w8, 0xd
 		r_strbuf_append (&op->esil, "0,");
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
@@ -2022,11 +2056,11 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_appendf (&op->esil, "%s,}{,%s,},%s,=", REG64 (1), REG64 (2), REG64 (0));
 		postfix = "";
 		break;
-	case ARM64_INS_ALIAS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
+	case ARM64_INS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
 		r_strbuf_appendf (&op->esil, "1,}{,0,},%s,=", REG64 (0));
 		postfix = "";
 		break;
-	case ARM64_INS_ALIAS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
+	case ARM64_INS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
 		r_strbuf_appendf (&op->esil, "1,%s,+,}{,%s,},%s,=", REG64 (1), REG64 (1), REG64 (0));
 		postfix = "";
 		break;
@@ -2281,7 +2315,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=",
 			REGBITS64 (1)-1, REG64 (1), REGBITS64 (1)-1, REG64 (0));
 		break;
-	case ARM64_INS_ALIAS_MVN:
+	case ARM64_INS_MVN:
 	case ARM64_INS_MOVN:
 	{
 		cs_arm64_op dst = INSOP64 (0);
@@ -2384,8 +2418,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ERET:
 		r_strbuf_set (&op->esil, "lr,pc,:=");
 		break;
-	case ARM64_INS_ALIAS_BFI: // bfi w8, w8, 2, 1
-	case ARM64_INS_ALIAS_BFXIL:
+	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
+	case ARM64_INS_BFXIL:
 	{
 		if (OPCOUNT64 () >= 3 && ISIMM64 (3) && IMM64 (3) > 0) {
 			size_t index = IMM64 (3) - 1;
@@ -2401,7 +2435,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		}
 		break;
 	}
-	case ARM64_INS_ALIAS_SBFIZ:
+	case ARM64_INS_SBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
 			size_t index = IMM64 (3) - 1;
 			if (index >= BITMASK_BY_WIDTH_COUNT) {
@@ -2411,7 +2445,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 					IMM64 (2), IMM64 (3), REG64 (1), (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
-	case ARM64_INS_ALIAS_UBFIZ:
+	case ARM64_INS_UBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
 			size_t index = IMM64 (3) - 1;
 			if (index >= BITMASK_BY_WIDTH_COUNT) {
@@ -2421,7 +2455,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 					IMM64 (2), REG64 (1), (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
-	case ARM64_INS_ALIAS_SBFX:
+	case ARM64_INS_SBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
 			size_t index = IMM64 (3) - 1;
 			if (index >= BITMASK_BY_WIDTH_COUNT) {
@@ -2431,7 +2465,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 				IMM64 (3), IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
-	case ARM64_INS_ALIAS_UBFX:
+	case ARM64_INS_UBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
 			size_t index = IMM64 (3) - 1;
 			if (index >= BITMASK_BY_WIDTH_COUNT) {
@@ -2443,7 +2477,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_NEG:
 #if CS_API_MAJOR > 3
-	case ARM64_INS_ALIAS_NEGS:
+	case ARM64_INS_NEGS:
 #endif
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
@@ -2547,7 +2581,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_BKPT:
 		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
 		break;
-	case ARM_INS_ALIAS_NOP:
+	case ARM_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
 		break;
 	case ARM_INS_BL:
@@ -3420,13 +3454,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_PACDZB:
 	case ARM64_INS_PACGA:
 	case ARM64_INS_PACIA:
-	case ARM64_INS_ALIAS_PACIA1716:
-	case ARM64_INS_ALIAS_PACIASP:
-	case ARM64_INS_ALIAS_PACIAZ:
+	case ARM64_INS_PACIA1716:
+	case ARM64_INS_PACIASP:
+	case ARM64_INS_PACIAZ:
 	case ARM64_INS_PACIB:
-	case ARM64_INS_ALIAS_PACIB1716:
-	case ARM64_INS_ALIAS_PACIBSP:
-	case ARM64_INS_ALIAS_PACIBZ:
+	case ARM64_INS_PACIB1716:
+	case ARM64_INS_PACIBSP:
+	case ARM64_INS_PACIBZ:
 	case ARM64_INS_PACIZA:
 	case ARM64_INS_PACIZB:
 	case ARM64_INS_AUTDA:
@@ -3434,18 +3468,18 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_AUTDZA:
 	case ARM64_INS_AUTDZB:
 	case ARM64_INS_AUTIA:
-	case ARM64_INS_ALIAS_AUTIA1716:
-	case ARM64_INS_ALIAS_AUTIASP:
-	case ARM64_INS_ALIAS_AUTIAZ:
+	case ARM64_INS_AUTIA1716:
+	case ARM64_INS_AUTIASP:
+	case ARM64_INS_AUTIAZ:
 	case ARM64_INS_AUTIB:
-	case ARM64_INS_ALIAS_AUTIB1716:
-	case ARM64_INS_ALIAS_AUTIBSP:
-	case ARM64_INS_ALIAS_AUTIBZ:
+	case ARM64_INS_AUTIB1716:
+	case ARM64_INS_AUTIBSP:
+	case ARM64_INS_AUTIBZ:
 	case ARM64_INS_AUTIZA:
 	case ARM64_INS_AUTIZB:
 	case ARM64_INS_XPACD:
 	case ARM64_INS_XPACI:
-	case ARM64_INS_ALIAS_XPACLRI:
+	case ARM64_INS_XPACLRI:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_SECURITY;
 		break;
@@ -3459,7 +3493,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_LEA;
 		op->ptr = IMM64(1);
 		break;
-	case ARM64_INS_ALIAS_NOP:
+	case ARM64_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
@@ -3531,8 +3565,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_CSEL:
 	case ARM64_INS_FCSEL:
-	case ARM64_INS_ALIAS_CSET:
-	case ARM64_INS_ALIAS_CINC:
+	case ARM64_INS_CSET:
+	case ARM64_INS_CINC:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
 #if 0
@@ -3554,14 +3588,14 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_SMOV:
 	case ARM64_INS_UMOV:
 	case ARM64_INS_FMOV:
-	case ARM64_INS_ALIAS_SBFX:
-	case ARM64_INS_ALIAS_UBFX:
+	case ARM64_INS_SBFX:
+	case ARM64_INS_UBFX:
 	case ARM64_INS_UBFM:
-	case ARM64_INS_ALIAS_BFI:
-	case ARM64_INS_ALIAS_SBFIZ:
-	case ARM64_INS_ALIAS_UBFIZ:
+	case ARM64_INS_BFI:
+	case ARM64_INS_SBFIZ:
+	case ARM64_INS_UBFIZ:
 	case ARM64_INS_BIC:
-	case ARM64_INS_ALIAS_BFXIL:
+	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (ISIMM64 (1)) {
 			op->val = IMM64(1);
@@ -3606,8 +3640,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ISB:
 		op->family = R_ANAL_OP_FAMILY_THREAD;
 		// intentional fallthrough
-	case ARM64_INS_ALIAS_IC: // instruction cache invalidate
-	case ARM64_INS_ALIAS_DC: // data cache invalidate
+	case ARM64_INS_IC: // instruction cache invalidate
+	case ARM64_INS_DC: // data cache invalidate
 		op->type = R_ANAL_OP_TYPE_SYNC; // or cache
 		break;
 	//  XXX unimplemented instructions
@@ -3636,16 +3670,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_NEG:
 #if CS_API_MAJOR > 3
-	case ARM64_INS_ALIAS_NEGS:
+	case ARM64_INS_NEGS:
 #endif
 		op->type = R_ANAL_OP_TYPE_NOT;
 		break;
 	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
-	case ARM64_INS_ALIAS_CMP:
-	case ARM64_INS_ALIAS_CMN:
-	case ARM64_INS_ALIAS_TST:
+	case ARM64_INS_CMP:
+	case ARM64_INS_CMN:
+	case ARM64_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case ARM64_INS_ROR:
@@ -3957,7 +3991,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->cycles = 4;
 		break;
-	case ARM_INS_ALIAS_NOP:
+	case ARM_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
