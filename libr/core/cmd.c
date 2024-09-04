@@ -1103,9 +1103,9 @@ static void session_listen(RCore *core) {
 		R_LOG_ERROR ("Cannot create socket file %s", s);
 	}
 	free (s);
+	free (fn);
 	free (tmpdir_r2);
 	free (tmpdir);
-	// set random port
 }
 
 static void session_list(RCore *core) {
@@ -1135,6 +1135,8 @@ static void session_list(RCore *core) {
 		}
 	}
 	r_list_free (files);
+	free (tmpdir_r2);
+	free (tmpdir);
 }
 
 static int cmd_rap(void *data, const char *input) {
