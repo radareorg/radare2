@@ -4,7 +4,7 @@
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR == 6
+#if CS_NEXT_VERSION == 6
 #define CAPSTONE_VERSION_STRING "v6"
 #elif CS_API_MAJOR == 5
 #define CAPSTONE_VERSION_STRING "v5"
