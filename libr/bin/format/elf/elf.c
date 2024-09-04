@@ -1152,16 +1152,9 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	if (shdr->sh_size < sizeof (Elf_(Verdef)) || shdr->sh_size < sizeof (Elf_(Verdaux))) {
 		return false;
 	}
-#ifdef R_BIN_ELF64
-	// R2_590 delete the else block , this chk must be generic
-	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
+	if (shdr->sh_size > ST32_MAX) {
 		return false;
 	}
-#else
-	if ((int)shdr->sh_size < 1) {
-		return false;
-	}
-#endif
 
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
 	if (!defs) {
