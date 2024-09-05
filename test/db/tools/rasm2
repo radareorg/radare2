@@ -75,7 +75,7 @@ RUN
 
 NAME=rasm2 blx arm/thumb
 FILE=-
-CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
@@ -83,7 +83,7 @@ RUN
 
 NAME=rasm2 blx arm/thumb 2
 FILE=-
-CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
@@ -157,17 +157,17 @@ NAME=rasm2 #1167 3
 FILE=-
 BROKEN=1
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax"
+CMDS=!rasm2 -S att -a x86.as -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
-NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
+NAME=rasm2 -S att -a x86.as -b 64 movq %rdx, %rax
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
+CMDS=!rasm2 -S att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
 4889d0
 EOF
@@ -187,7 +187,7 @@ NAME=rasm2 #1167 5
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
+CMDS=!rasm2 -S att -a x86.as -b 64 "add \$33, %rbx"
 EXPECT=<<EOF
 4883c321
 EOF
@@ -308,15 +308,15 @@ RUN
 
 NAME=rasm2 -s
 FILE=-
-CMDS=!rasm2 -s att -a x86 -b 32 -D "31ed"
+CMDS=!rasm2 -S att -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x00000000   2                     31ed  xorl %ebp, %ebp
 EOF
 RUN
 
-NAME=rasm2 -o
+NAME=rasm2 -s
 FILE=-
-CMDS=!rasm2 -s att -o 0xa -a x86 -b 32 -D "31ed"
+CMDS=!rasm2 -S att -s 0xa -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xorl %ebp, %ebp
 EOF
@@ -324,7 +324,7 @@ RUN
 
 NAME=rasm2 -F pseudo
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
+CMDS=!rasm2 -a x86 -b 32 -s 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
 EOF
@@ -332,15 +332,15 @@ RUN
 
 NAME=rasm2 -F
 FILE=-
-CMDS=!rasm2 -o 0xa -a x86 -b 32 -D 31ed
+CMDS=!rasm2 -s 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
 RUN
 
-NAME=rasm2 -F -o order bug
+NAME=rasm2 -F -s order bug
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -o 0xa -D 31ed
+CMDS=!rasm2 -a x86 -b 32 -s 0xa -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
@@ -373,7 +373,7 @@ RUN
 
 NAME=rasm2  dissassemble ARM32 binary file
 FILE=-
-CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f bins/other/rasm2/testARM32.bin
+CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin
 EXPECT=<<EOF
 0x00000200   4                 4661b0e1  asrs r6, r6, 2
 0x00000204   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
@@ -390,7 +390,7 @@ RUN
 
 NAME=rasm2  dissassemble ARM32 binary file with skip
 FILE=-
-CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f bins/other/rasm2/testARM32.bin -i 4
+CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin -i 4
 EXPECT=<<EOF
 0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
 0x00000204   4                 0040a0e3  mov r4, 0
