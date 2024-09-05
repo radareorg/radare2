@@ -4327,7 +4327,11 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 			int idx = atoi (n);
 			free (n);
 			ut64 sym_tbl_off = pe->nt_headers->file_header.PointerToSymbolTable;
-			int num_symbols = pe->nt_headers->file_header.NumberOfSymbols;
+			const int num_symbols = pe->nt_headers->file_header.NumberOfSymbols;
+
+			if (ST32_MUL_OVFCHK (num_symbols, COFF_SYMBOL_SIZE)) {
+				continue;
+			}
 			st64 off = num_symbols * COFF_SYMBOL_SIZE;
 			if (off > 0 && sym_tbl_off &&
 			    sym_tbl_off + off + idx < pe->size &&
