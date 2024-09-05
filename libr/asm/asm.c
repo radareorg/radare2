@@ -20,7 +20,7 @@ static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
 	return 0;
 }
 
-static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
+static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	int len = strlen (input) - 1;
 	if (len < 1) {
 		return 0;
@@ -32,7 +32,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
 	if (*input == '"') {
 		input++;
 	}
-	len = r_str_unescape (input) + zero;
+	len = r_str_unescape (input) + (zero? 1: 0);
 	r_anal_op_set_mnemonic (op, op->addr, input);
 	r_anal_op_set_bytes (op, op->addr, (const ut8*)input, len + 1);
 	return len;
@@ -641,10 +641,22 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		char *str = r_str_trim_dup (ptr + 8);
 		ret = r_asm_pseudo_string (op, str, 1);
 		free (str);
+	} else if (r_str_startswith (ptr, ".asciiz")) {
+		if (isspace (ptr[7])) {
+			char *str = r_str_trim_dup (ptr + 8);
+			ret = r_asm_pseudo_string (op, ptr + 8, true) ;
+			free (str);
+		} else {
+			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
+		}
 	} else if (r_str_startswith (ptr, ".ascii")) {
-		char *str = r_str_trim_dup (ptr + 6);
-		ret = r_asm_pseudo_string (op, ptr + 6, 1);
-		free (str);
+		if (isspace (ptr[6])) {
+			char *str = r_str_trim_dup (ptr + 7);
+			ret = r_asm_pseudo_string (op, ptr + 7, false);
+			free (str);
+		} else {
+			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
+		}
 	} else if (r_str_startswith (ptr, ".align")) {
 		char *str = r_str_trim_dup (ptr + 6);
 		ret = r_asm_pseudo_align (acode, op, str);
