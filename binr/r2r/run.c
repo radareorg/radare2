@@ -1147,7 +1147,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 	char offset[0x20];
 	if (test->offset) {
 		r_snprintf (offset, sizeof (offset), "0x%"PFMT64x, test->offset);
-		r_pvector_push (&args, "-o");
+		r_pvector_push (&args, "-s");
 		r_pvector_push (&args, offset);
 	}
 

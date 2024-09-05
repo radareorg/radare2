@@ -55,22 +55,18 @@ Input/Output length
 Ignore/skip N bytes from the beginning of the input buffer
 .It Fl L
 List loaded asm plugins
-.It Fl LL
-List loaded anal plugins
-.It Fl LLL
-List loaded arch plugins
-.It Fl o Ar offset
+.It Fl s Ar offset
 Offset of the opcode to assemble (default is 0)
 .It Fl @ Ar offset
-Alias for -o
+Alias for -s
 .It Fl N
 Dont load any plugin, same as R2_NOPLUGINS=1 or r2 -NN
-.It Fl O Ar ofile
+.It Fl o Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl r
 Show output in r2 script
-.It Fl s Ar syntax
-Select syntax output (intel, att)
+.It Fl S Ar syntax
+Select syntax output (intel, att, masm, ...)
 .It Fl w
 Describe opcode (whats op)
 .It Fl x
