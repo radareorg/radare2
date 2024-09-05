@@ -112,7 +112,6 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 
 // *********************
 // CS6 compatibility:
-// #define CS_NEXT_VERSION 6
 #if CS_NEXT_VERSION == 6
 typedef enum arm_cc {
 	ARM_CC_EQ = ARMCC_EQ,
@@ -136,23 +135,23 @@ typedef enum arm_cc {
 
 typedef enum arm64_cc {
 	ARM64_CC_INVALID = ARM64CC_Invalid,
-	ARM64_CC_EQ = ARM64CC_EQ
-	ARM64_CC_NE = ARM64CC_NE
-	ARM64_CC_HS = ARM64CC_HS
-	ARM64_CC_LO = ARM64CC_LO
-	ARM64_CC_MI = ARM64CC_MI
-	ARM64_CC_PL = ARM64CC_PL
-	ARM64_CC_VS = ARM64CC_VS
-	ARM64_CC_VC = ARM64CC_VC
-	ARM64_CC_HI = ARM64CC_HI
-	ARM64_CC_LS = ARM64CC_LS
-	ARM64_CC_GE = ARM64CC_GE
-	ARM64_CC_LT = ARM64CC_LT
-	ARM64_CC_GT = ARM64CC_GT
-	ARM64_CC_LE = ARM64CC_LE
-	ARM64_CC_AL = ARM64CC_AL
+	ARM64_CC_EQ = ARM64CC_EQ,
+	ARM64_CC_NE = ARM64CC_NE,
+	ARM64_CC_HS = ARM64CC_HS,
+	ARM64_CC_LO = ARM64CC_LO,
+	ARM64_CC_MI = ARM64CC_MI,
+	ARM64_CC_PL = ARM64CC_PL,
+	ARM64_CC_VS = ARM64CC_VS,
+	ARM64_CC_VC = ARM64CC_VC,
+	ARM64_CC_HI = ARM64CC_HI,
+	ARM64_CC_LS = ARM64CC_LS,
+	ARM64_CC_GE = ARM64CC_GE,
+	ARM64_CC_LT = ARM64CC_LT,
+	ARM64_CC_GT = ARM64CC_GT,
+	ARM64_CC_LE = ARM64CC_LE,
+	ARM64_CC_AL = ARM64CC_AL,
 	ARM64_CC_NV = ARM64CC_NV
-} arm64_cc
+} arm64_cc;
 
 typedef enum arm64_vas {
 	ARM64_VAS_INVALID = ARM64LAYOUT_INVALID,
@@ -170,7 +169,7 @@ typedef enum arm64_vas {
 	ARM64_VAS_1Q = ARM64LAYOUT_VL_1Q
 } arm64_vas;
 
-#define ARM_INS_NOP ARM_INS_ALIAS_NOP:
+#define ARM_INS_NOP ARM_INS_ALIAS_NOP
 
 #define ARM64_INS_MNEG ARM64_INS_ALIAS_MNEG
 #define ARM64_INS_NOP ARM64_INS_ALIAS_NOP
@@ -904,7 +903,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vector_index != -1) {
 			pj_ki (pj, "vector_index", op->vector_index);
 		}
-		if ((arm64_vas) op->vas != ARM64_VAS_INVALID) {
+		if ((arm64_vas)op->vas != ARM64_VAS_INVALID) {
 			pj_ks (pj, "vas", vas_name (op->vas));
 		}
 #if CS_API_MAJOR == 4
@@ -921,7 +920,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (ISWRITEBACK32 ()) {
 		pj_kb (pj, "writeback", true);
 	}
-	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
+	if ((arm64_cc)x->cc != ARM64_CC_INVALID && (arm64_cc)x->cc != ARM64_CC_AL && (arm64_cc)x->cc != ARM64_CC_NV) {
 		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
 	pj_end (pj);
@@ -3464,13 +3463,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
 	/* grab family */
+	if (cs_insn_group (handle, insn, ARM64_GRP_CRC )) {
+		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #if CS_NEXT_VERSION < 6
 	// XXX - Can't find ARM64 feature crypto in cs6 arm64
-	if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #endif
-	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC )) {
-		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
