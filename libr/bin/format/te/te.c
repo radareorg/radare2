@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 nibble, pancake, xvilka */
+/* radare - LGPL - Copyright 2008-2024 nibble, pancake, xvilka */
 
 #include <r_util.h>
 #include "te_specs.h"
@@ -66,17 +66,14 @@ R_IPI ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
 		R_LOG_ERROR ("read (entry)");
-	} else {
-		if (buf[367] == 0xe8) {
-			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
-			delta += 367 + 5;
-			addr = entry->vaddr;
-			if (delta >= (UT64_MAX - addr)) {
-				free (entry);
-				return UT64_MAX;
-			}
-			addr += delta;
+	} else if (buf[367] == 0xe8) {
+		int delta = r_read_le32 (buf + 368) + 367 + 5;
+		addr = entry->vaddr;
+		if (delta >= (UT64_MAX - addr)) {
+			free (entry);
+			return UT64_MAX;
 		}
+		addr += delta;
 	}
 	free (entry);
 	return addr;
