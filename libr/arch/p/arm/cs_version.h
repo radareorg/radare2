@@ -3,7 +3,9 @@
 
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR == 5
+#if CS_NEXT_VERSION == 6
+#define CAPSTONE_VERSION_STRING "v6"
+#elif CS_API_MAJOR == 5
 #define CAPSTONE_VERSION_STRING "v5"
 #elif CS_API_MAJOR == 4
 #define CAPSTONE_VERSION_STRING "v4"
