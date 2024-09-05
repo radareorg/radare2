@@ -754,7 +754,7 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 			return -1;
 		}
 		chunk = value & 0x7f;
-		if (offset < 64) {
+		if (offset < 63) {
 			result |= (chunk << offset);
 			offset += 7;
 		} else {
