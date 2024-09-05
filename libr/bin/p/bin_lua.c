@@ -40,24 +40,10 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	ut8 *buf = malloc (bf->size);
-	if (!buf) {
-		R_LOG_ERROR ("cannot malloc filesize");
-		return false;
-	}
-	r_buf_read_at (b, 0, buf, bf->size);
-	ParseStruct parseStruct;
-	ut64 parsedbytes = lua53parseHeader (buf, 0, sizeof (buf), &parseStruct);
-	free (buf);
-	// eprintf ("PAr %"PFMT64d"\n", parsedbytes);
-	return true;
-	return parsedbytes != 0;
-#if 0
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	return check_bytes (bytes, sz);
-#endif
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	r_buf_seek (buf, loadaddr, R_BUF_SET);
+	ut64 parsedbytes = r_lua_load_header (buf);
+	return parsedbytes > 0? true: false;
 }
 
 static void addSection(RList *list, const char *name, ut64 addr, ut32 size, bool isFunc) {
