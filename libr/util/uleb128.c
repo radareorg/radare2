@@ -75,7 +75,9 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		c = *(data++) & 0xff;
-		sum |= ((ut64) (c&0x7f) << s);
+		if (s < 64) {
+			sum |= ((ut64) (c&0x7f) << s);
+		}
 		s += 7;
 		l++;
 	} while (c & 0x80);
