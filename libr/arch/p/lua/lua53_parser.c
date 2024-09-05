@@ -163,7 +163,7 @@ static inline bool lua53_check_header_data(RBuffer *buf) {
 	return memcmp (tmp, lua_data, size) == 0;
 }
 
-bool check_header(RBuffer *b) {
+static inline bool check_header(RBuffer *b) {
 	return r_buf_read_be32 (b) == 0x1b4c7561? true: false; // "\x1bLua"
 }
 
