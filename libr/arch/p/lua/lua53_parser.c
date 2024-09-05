@@ -145,7 +145,7 @@ static ut64 parseUpvalues(const ut8 *data, ut64 offset, const ut64 size, ParseSt
 static ut64 parseProtos(const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct);
 static ut64 parseDebug(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 
-static bool is_valid_num_size(int size) {
+static inline bool is_valid_num_size(int size) {
 	switch (size) {
 	case 2:
 	case 4:
