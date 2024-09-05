@@ -176,7 +176,7 @@ bool check_header(RBuffer *b) {
 }
 
 // this function expects buf to be pointing to correct location
-ut64 r_lua_load_header(RBuffer *buf) {
+R_IPI ut64 r_lua_load_header(RBuffer *buf) {
 	ut64 start = r_buf_tell (buf);
 
 	// RLuaHeader *lh = lua_header_new (); // TODO use this when removing global
