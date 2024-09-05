@@ -58,16 +58,16 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMINDEX(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
-#define HASMEMINDEX64(x) ((arm64_reg) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
+#define HASMEMINDEX64(x) ((arm64_reg)insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
+#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
-#define ISREG64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type == ARM64_OP_REG)
+#define ISREG64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
-#define ISMEM64(x) ((arm64_op_type) insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
+#define ISMEM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
 #define EXT64(x) decode_sign_ext (insn->detail->arm64.operands[x].ext)
 
 #if CS_API_MAJOR > 3
@@ -82,7 +82,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define OPCOUNT() insn->detail->arm.op_count
 #define OPCOUNT64() insn->detail->arm64.op_count
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
-#define ISSHIFTED64(x) ((arm64_shifter) insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
+#define ISSHIFTED64(x) ((arm64_shifter)insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTTYPEREG(x) (\
 		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
@@ -93,9 +93,17 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #if CS_NEXT_VERSION < 6
 #define ISWRITEBACK32() (insn->detail->arm.writeback == true)
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#define PSTATE() op->pstate
+#define SYS() (ut64)op->sys
+#define PREFETCH() op->prefetch
+#define BARRIER() op->barrier
 #else
 #define ISWRITEBACK32() (insn->detail->writeback == true)
 #define ISWRITEBACK64() ISWRITEBACK32 ()
+#define PSTATE() op->sysop.alias.pstateimm0_15
+#define SYS() (ut64)op->sysop.reg.tlbi
+#define PREFETCH() op->sysop.alias.prfm
+#define BARRIER() op->sysop.alias.db
 #endif
 #define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() (((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ())))
@@ -175,6 +183,18 @@ typedef enum arm64_vas {
 #define ARM64_INS_IC ARM64_INS_ALIAS_IC
 #define ARM64_INS_DC ARM64_INS_ALIAS_DC
 #define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
+
+// ARM64_OP_*:
+
+#define ARM64_OP_PSTATE ARM64_OP_PSTATEIMM0_15
+#define ARM64_PSTATE_SPSEL ARM64_PSTATEIMM0_15_SPSEL
+#define ARM64_PSTATE_DAIFSET ARM64_PSTATEIMM0_15_DAIFSET
+#define ARM64_PSTATE_DAIFCLR ARM64_PSTATEIMM0_15_DAIFCLR
+
+#define ARM64_OP_SYS ARM64_OP_TLBI
+#define ARM64_OP_PREFETCH ARM64_OP_PRFM
+#define ARM64_OP_BARRIER ARM64_OP_DB
+
 #endif
 // *********************
 
@@ -794,39 +814,39 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ks (pj, "type", "cimm");
 			pj_kN (pj, "value", op->imm);
 			break;
-		case ARM64_OP_PSTATEIMM0_15:
+		case ARM64_OP_PSTATE:
 			pj_ks (pj, "type", "pstate");
-			switch (op->sysop.alias.pstateimm0_15) {
-			case ARM64_PSTATEIMM0_15_SPSEL:
+			switch (PSTATE ()) {
+			case ARM64_PSTATE_SPSEL:
 				pj_ks (pj, "value", "spsel");
 				break;
-			case ARM64_PSTATEIMM0_15_DAIFSET:
+			case ARM64_PSTATE_DAIFSET:
 				pj_ks (pj, "value", "daifset");
 				break;
-			case ARM64_PSTATEIMM0_15_DAIFCLR:
+			case ARM64_PSTATE_DAIFCLR:
 				pj_ks (pj, "value", "daifclr");
 				break;
 			default:
-				pj_ki (pj, "value", op->sysop.alias.pstateimm0_15);
+				pj_ki (pj, "value", PSTATE ());
 			}
 			break;
-		case ARM64_OP_TLBI:
+		case ARM64_OP_SYS:
 			pj_ks (pj, "type", "sys");
-			pj_kn (pj, "value", (ut64)op->sysop.reg.tlbi);
+			pj_kn (pj, "value", SYS ());
 			break;
-		case ARM64_OP_PRFM:
+		case ARM64_OP_PREFETCH:
 			pj_ks (pj, "type", "prefetch");
-			pj_ki (pj, "value", op->sysop.alias.prfm - 1);
+			pj_ki (pj, "value", PREFETCH () - 1);
 			break;
-		case ARM64_OP_DB:
-			pj_ks (pj, "type", "barrier");
-			pj_ki (pj, "value", op->sysop.alias.db - 1);
+		case ARM64_OP_BARRIER:
+			pj_ks (pj, "type", "prefetch");
+			pj_ki (pj, "value", BARRIER () - 1);
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		if ((arm64_shifter) op->shift.type != ARM64_SFT_INVALID) {
+		if ((arm64_shifter)op->shift.type != ARM64_SFT_INVALID) {
 			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM64_SFT_LSL:
