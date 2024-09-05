@@ -1028,8 +1028,11 @@ static int regsize64(cs_insn *insn, int n) {
 		return 2;
 	}
 	if ((reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) ||
-			// XXX - I am not sure about this:
-		(reg >= ARM64_REG_ZT0 && reg <= ARM64_REG_D30_D31) ) {
+#if CS_NEXT_VERSION < 6
+		(reg >= ARM64_REG_V0 && reg <= ARM64_REG_V31) ) {
+#else
+		(false) ) {
+#endif
 		return 16;
 	}
 	return 8;
