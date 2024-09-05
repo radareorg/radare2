@@ -161,13 +161,15 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
-		if (offset < 64) {
+		// result is signed. so max safe shift is 62
+		if (offset < 63) {
 			result |= (chunk << offset);
 		}
 		offset += 7;
 	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0 && offset < 64) {
+		// ULL is unsigned. so max safe shift is 63
 		result |= ~0ULL << offset;
 	}
 	*data = p;
