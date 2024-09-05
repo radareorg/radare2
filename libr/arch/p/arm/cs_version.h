@@ -1,7 +1,6 @@
 #ifndef CS_VERSION_H
 #define CS_VERSION_H
 
-#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 #if CS_NEXT_VERSION == 6

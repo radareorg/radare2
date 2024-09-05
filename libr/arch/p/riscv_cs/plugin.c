@@ -2,7 +2,6 @@
 
 #include <r_arch.h>
 
-#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
 #include <capstone/riscv.h>

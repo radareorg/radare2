@@ -94,7 +94,6 @@ static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const u
 }
 
 // c64x
-#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H
