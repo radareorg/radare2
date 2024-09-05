@@ -134,6 +134,26 @@ typedef enum arm_cc {
 	ARM_CC_INVALID = ARMCC_UNDEF
 } arm_cc;
 
+typedef enum arm64_cc {
+	ARM64_CC_INVALID = ARM64CC_Invalid,
+	ARM64_CC_EQ = ARM64CC_EQ
+	ARM64_CC_NE = ARM64CC_NE
+	ARM64_CC_HS = ARM64CC_HS
+	ARM64_CC_LO = ARM64CC_LO
+	ARM64_CC_MI = ARM64CC_MI
+	ARM64_CC_PL = ARM64CC_PL
+	ARM64_CC_VS = ARM64CC_VS
+	ARM64_CC_VC = ARM64CC_VC
+	ARM64_CC_HI = ARM64CC_HI
+	ARM64_CC_LS = ARM64CC_LS
+	ARM64_CC_GE = ARM64CC_GE
+	ARM64_CC_LT = ARM64CC_LT
+	ARM64_CC_GT = ARM64CC_GT
+	ARM64_CC_LE = ARM64CC_LE
+	ARM64_CC_AL = ARM64CC_AL
+	ARM64_CC_NV = ARM64CC_NV
+} arm64_cc
+
 typedef enum arm64_vas {
 	ARM64_VAS_INVALID = ARM64LAYOUT_INVALID,
 	ARM64_VAS_16B = ARM64LAYOUT_VL_16B,
@@ -195,6 +215,14 @@ typedef enum arm64_vas {
 #define ARM64_OP_PREFETCH ARM64_OP_PRFM
 #define ARM64_OP_BARRIER ARM64_OP_DB
 
+// GRP
+#define ARM64_GRP_CRC ARM64_FEATURE_HASCRC
+#define ARM64_GRP_NEON ARM64_FEATURE_HASNEON
+#define ARM64_GRP_FPARMV8 ARM64_FEATURE_HASFPARMV8
+
+#define ARM_GRP_CRC ARM_FEATURE_HasCRC
+#define ARM_GRP_NEON ARM_FEATURE_HasNEON
+#define ARM_GRP_FPARMV8 ARM_FEATURE_HasFPARMv8
 #endif
 // *********************
 
@@ -476,7 +504,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
 		pj_ki (pj, "cps_flag", x->cps_flag);
 	}
-	if ((arm_cc) x->cc != ARM_CC_INVALID && (arm_cc) x->cc != ARM_CC_AL) {
+	if ((arm_cc)x->cc != ARM_CC_INVALID && (arm_cc)x->cc != ARM_CC_AL) {
 		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	// XXX: No ARM_MB_INVALID for cs6
@@ -563,35 +591,35 @@ static int arm64_reg_width(int reg) {
 	return 64;
 }
 
-static const char *cc_name64(ARM64CC_CondCode cc) {
+static const char *cc_name64(arm64_cc cc) {
 	switch (cc) {
-	case ARM64CC_EQ: // Equal
+	case ARM64_CC_EQ: // Equal
 		return "eq";
-	case ARM64CC_NE: // Not equal:                 Not equal, or unordered
+	case ARM64_CC_NE: // Not equal:                 Not equal, or unordered
 		return "ne";
-	case ARM64CC_HS: // Unsigned higher or same:   >, ==, or unordered
+	case ARM64_CC_HS: // Unsigned higher or same:   >, ==, or unordered
 		return "hs";
-	case ARM64CC_LO: // Unsigned lower or same:    Less than
+	case ARM64_CC_LO: // Unsigned lower or same:    Less than
 		return "lo";
-	case ARM64CC_MI: // Minus, negative:           Less than
+	case ARM64_CC_MI: // Minus, negative:           Less than
 		return "mi";
-	case ARM64CC_PL: // Plus, positive or zero:    >, ==, or unordered
+	case ARM64_CC_PL: // Plus, positive or zero:    >, ==, or unordered
 		return "pl";
-	case ARM64CC_VS: // Overflow:                  Unordered
+	case ARM64_CC_VS: // Overflow:                  Unordered
 		return "vs";
-	case ARM64CC_VC: // No overflow:               Ordered
+	case ARM64_CC_VC: // No overflow:               Ordered
 		return "vc";
-	case ARM64CC_HI: // Unsigned higher:           Greater than, or unordered
+	case ARM64_CC_HI: // Unsigned higher:           Greater than, or unordered
 		return "hi";
-	case ARM64CC_LS: // Unsigned lower or same:    Less than or equal
+	case ARM64_CC_LS: // Unsigned lower or same:    Less than or equal
 		return "ls";
-	case ARM64CC_GE: // Greater than or equal:     Greater than or equal
+	case ARM64_CC_GE: // Greater than or equal:     Greater than or equal
 		return "ge";
-	case ARM64CC_LT: // Less than:                 Less than, or unordered
+	case ARM64_CC_LT: // Less than:                 Less than, or unordered
 		return "lt";
-	case ARM64CC_GT: // Signed greater than:       Greater than
+	case ARM64_CC_GT: // Signed greater than:       Greater than
 		return "gt";
-	case ARM64CC_LE: // Signed less than or equal: <, ==, or unordered
+	case ARM64_CC_LE: // Signed less than or equal: <, ==, or unordered
 		return "le";
 	default:
 		return "";
@@ -893,7 +921,7 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	if (ISWRITEBACK32 ()) {
 		pj_kb (pj, "writeback", true);
 	}
-	if ((ARM64CC_CondCode) x->cc != ARM64CC_Invalid && (ARM64CC_CondCode) x->cc != ARM64CC_AL && (ARM64CC_CondCode) x->cc != ARM64CC_NV) {
+	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
 		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
 	pj_end (pj);
@@ -3433,19 +3461,20 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
 	/* grab family */
-	/* XXX - Can't find ARM64 feature crypto in cs6 arm64
+#if CS_NEXT_VERSION < 6
+	// XXX - Can't find ARM64 feature crypto in cs6 arm64
 	if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-	*/
-	if (cs_insn_group (handle, insn, ARM64_FEATURE_HASCRC )) {
+#endif
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC )) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 #endif
-	} else if (cs_insn_group (handle, insn, ARM64_FEATURE_HASNEON)) {
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
-	} else if (cs_insn_group (handle, insn, ARM64_FEATURE_HASFPARMV8)) {
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
@@ -3458,10 +3487,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 
 	switch (insn->detail->arm64.cc) {
-	case ARM64CC_GE:
-	case ARM64CC_GT:
-	case ARM64CC_LE:
-	case ARM64CC_LT:
+	case ARM64_CC_GE:
+	case ARM64_CC_GT:
+	case ARM64_CC_LE:
+	case ARM64_CC_LT:
 		op->sign = true;
 		break;
 	default:
@@ -3776,7 +3805,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if ((arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
+			if ((arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
 		} else {
@@ -3944,28 +3973,31 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 	}
 	op->cycles = 1;
 	/* grab family */
-		/* XXX - I can't find crypto in cs6
-	if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
+	if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-	*/
-	if (cs_insn_group (handle, insn, ARM_FEATURE_HasCRC)) {
+#if CS_NEXT_VERSION < 6
+	// XXX - I can't find crypto in cs6
+	} else if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+#endif
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
-		/* XXX - I can't find virtualization in cs6
+#if CS_NEXT_VERSION < 6
+	// XXX - I can't find virtualization in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
 		op->family = R_ANAL_OP_FAMILY_VIRT;
-		*/
 #endif
-	} else if (cs_insn_group (handle, insn, ARM_FEATURE_HasNEON)) {
+#endif
+	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
-	} else if (cs_insn_group (handle, insn, ARM_FEATURE_HasFPARMv8)) {
+	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* XXX - I can't find thumb2dsp in cs6
+#if CS_NEXT_VERSION < 6
+	// XXX - I can't find thumb2dsp in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;
-		*/
+#endif
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
@@ -4035,7 +4067,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-				if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
+				if ((arm_cc)insn->detail->arm.cc == ARM_CC_AL) {
 					op->type = R_ANAL_OP_TYPE_RET;
 				} else {
 					op->type = R_ANAL_OP_TYPE_CRET;
@@ -4090,7 +4122,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
-			if (REGID(1) == ARM_REG_PC && (arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
+			if (REGID(1) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
@@ -4163,7 +4195,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		break;
 	case ARM_INS_SVC:
-		if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
+		if ((arm_cc)insn->detail->arm.cc == ARM_CC_AL) {
 			op->type = R_ANAL_OP_TYPE_SWI;
 		} else {
 			op->type = R_ANAL_OP_TYPE_CSWI;
@@ -4272,7 +4304,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_MJMP;
-			if ((arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
+			if ((arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
@@ -4295,7 +4327,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
-			if (REGID(0) == ARM_REG_PC && (arm_cc) insn->detail->arm.cc != ARM_CC_AL) {
+			if (REGID(0) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
@@ -4347,10 +4379,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_B:
 		/* b.cc label */
 		op->cycles = 4;
-		if ((arm_cc) insn->detail->arm.cc == ARM_CC_INVALID) {
+		if ((arm_cc)insn->detail->arm.cc == ARM_CC_INVALID) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->fail = addr+op->size;
-		} else if ((arm_cc) insn->detail->arm.cc == ARM_CC_AL) {
+		} else if ((arm_cc)insn->detail->arm.cc == ARM_CC_AL) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		} else {
