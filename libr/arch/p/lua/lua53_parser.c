@@ -7,7 +7,7 @@
 
 typedef struct lua_data_struct {
 	ut8 ver;
-	bool islittleendian;
+	bool isLe;
 	ut8 format;
 	int intSize;
 	int sizeSize;
@@ -42,7 +42,7 @@ static inline ut64 buf_parse_int(RBuffer *buf, int size, bool le) {
 
 static inline double buf_parse_num(RLuaHeader *lh, RBuffer *buf) {
 	double ret = 0;
-	ut64 num = buf_parse_int (buf, lh->luaNumberSize, lh->islittleendian);
+	ut64 num = buf_parse_int (buf, lh->luaNumberSize, lh->isLe);
 	memcpy (&ret, &num, R_MIN (64, R_MIN (sizeof (double), lh->luaNumberSize)));
 	return ret;
 }
@@ -145,7 +145,7 @@ static ut64 parseUpvalues(const ut8 *data, ut64 offset, const ut64 size, ParseSt
 static ut64 parseProtos(const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct);
 static ut64 parseDebug(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 
-static inline bool is_valid_num_size(int size) {
+static bool is_valid_num_size(int size) {
 	switch (size) {
 	case 2:
 	case 4:
@@ -163,8 +163,8 @@ static inline bool lua53_check_header_data(RBuffer *buf) {
 	return memcmp (tmp, lua_data, size) == 0;
 }
 
-static inline bool check_header(RBuffer *b) {
-	return r_buf_read_be32 (b) == 0x1b4c7561; // "\x1bLua"
+bool check_header(RBuffer *b) {
+	return r_buf_read_be32 (b) == 0x1b4c7561? true: false; // "\x1bLua"
 }
 
 #define GETVALIDSIZE(x) { \
@@ -176,7 +176,7 @@ static inline bool check_header(RBuffer *b) {
 }
 
 // this function expects buf to be pointing to correct location
-R_IPI ut64 r_lua_load_header(RBuffer *buf) {
+ut64 r_lua_load_header(RBuffer *buf) {
 	ut64 start = r_buf_tell (buf);
 
 	// RLuaHeader *lh = lua_header_new (); // TODO use this when removing global
@@ -188,8 +188,8 @@ R_IPI ut64 r_lua_load_header(RBuffer *buf) {
 	// version
 	lh->ver = r_buf_read8 (buf);
 	if (lh->ver != 0x53) {
-		const int mj = lh->ver >> 4;
-		const int mn = lh->ver & 0xf;
+		int mj = lh->ver >> 4;
+		int mn = lh->ver & 0xf;
 		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported", r_buf_tell (buf) - 1, mj, mn, lh->ver);
 		goto bad_header_ret; // TODO support more versions
 	}
@@ -212,11 +212,11 @@ R_IPI ut64 r_lua_load_header(RBuffer *buf) {
 	GETVALIDSIZE (luaNumberSize);
 
 	ut64 where = r_buf_tell (buf);
-	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->islittleendian);
+	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 	if (first_try != 0x5678) {
-		lh->islittleendian = !lh->islittleendian;
+		lh->isLe = !lh->isLe;
 		r_buf_seek (buf, where, R_BUF_SET);
-		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->islittleendian);
+		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 		if (second_try != 0x5678) {
 			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%lx ([0x%lx, 0x%lx != 0x5678])", lh->intSize, first_try, second_try);
 			goto bad_header_ret;
