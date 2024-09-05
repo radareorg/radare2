@@ -5,14 +5,18 @@
 // XXX global
 // R_UNUSED static RList *lua53_function_list = NULL;
 
-struct {
+typedef struct lua_data_struct {
+	ut8 ver;
+	bool isLe;
+	ut8 format;
 	int intSize;
 	int sizeSize;
 	int instructionSize;
 	int luaIntSize;
 	int luaNumberSize;
 	RList *functionList;
-} lua53_data;
+} RLuaHeader;
+RLuaHeader lua53_data;
 
 static ut64 parseNumber(const ut8 *data, ut64 bytesize){
 	int i;
@@ -21,6 +25,26 @@ static ut64 parseNumber(const ut8 *data, ut64 bytesize){
 		res |= ((ut64) data[i]) << (8 * i);
 	}
 	return res;
+}
+
+static inline ut64 buf_parse_int(RBuffer *buf, int size, bool le) {
+	switch (size) {
+	case 2:
+		return le? r_buf_read_le16 (buf): r_buf_read_be16 (buf);
+	case 4:
+		return le? r_buf_read_le32 (buf): r_buf_read_be32 (buf);
+	case 8:
+		return le? r_buf_read_le64 (buf): r_buf_read_be64 (buf);
+	default:
+		return UT64_MAX;
+	}
+}
+
+static inline double buf_parse_num(RLuaHeader *lh, RBuffer *buf) {
+	double ret = 0;
+	ut64 num = buf_parse_int (buf, lh->luaNumberSize, lh->isLe);
+	memcpy (&ret, &num, R_MIN (64, R_MIN (sizeof (double), lh->luaNumberSize)));
+	return ret;
 }
 
 #define parseInt(data) parseNumber (data, lua53_data.intSize)
@@ -109,7 +133,8 @@ static LuaFunction *findLuaFunction(ut64 addr){
 	return NULL;
 }
 
-ut64 lua53parseHeader(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
+ut64 r_lua_load_header(RBuffer *b);
+bool check_header(RBuffer *b);
 ut64 lua53parseFunction(const ut8 *data, ut64 offset, const ut64 size, LuaFunction *parent_func, ParseStruct *parseStruct);
 
 static ut64 parseString(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
@@ -120,49 +145,93 @@ static ut64 parseUpvalues(const ut8 *data, ut64 offset, const ut64 size, ParseSt
 static ut64 parseProtos(const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct);
 static ut64 parseDebug(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 
-ut64 lua53parseHeader(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
-	if (data && offset + 16 <= size && !memcmp (data + offset, "\x1bLua", 4)) {	// check the header
-		offset += 4;
-		if (data[offset + 0] != '\x53') {// check version
-			return 0;
-		}
-		// skip format byte
-		offset += 2;
-		if (memcmp (data + offset, "\x19\x93\r\n\x1a\n", 6)) {	// for version 5.3
-			return 0;
-		}
-		offset += 6;
-		lua53_data.intSize = data[offset + 0];
-		lua53_data.sizeSize = data[offset + 1];
-		lua53_data.instructionSize = data[offset + 2];
-		lua53_data.luaIntSize = data[offset + 3];
-		lua53_data.luaNumberSize = data[offset + 4];
-
-		R_LOG_DEBUG ("Int Size: %i", lua53_data.intSize);
-		R_LOG_DEBUG ("Size Size: %i", lua53_data.sizeSize);
-		R_LOG_DEBUG ("Instruction Size: %i", lua53_data.instructionSize);
-		R_LOG_DEBUG ("Lua Int Size: %i", lua53_data.luaIntSize);
-		R_LOG_DEBUG ("Lua Number Size: %i", lua53_data.luaNumberSize);
-
-		offset += 5;
-		if (offset + lua53_data.luaIntSize + lua53_data.luaNumberSize >= size) {// check again the remainingsize because an int and number is appended to the header
-			return 0;
-		}
-		if (parseLuaInt (data + offset) != 0x5678) {	// check the appended integer
-			return 0;
-		}
-		offset += lua53_data.luaIntSize;
-		ut64 num = parseLuaNumber (data + offset);
-		double d = 0;
-		memcpy (&d, &num, sizeof (double));
-		// if (*((double *) &num) != 370.5) {	// check the appended number
-		if (d != 370.5) {	// check the appended number
-			return 0;
-		}
-		offset += lua53_data.luaNumberSize;
-		R_LOG_DEBUG ("Is a Lua Binary");
-		return offset;
+static bool is_valid_num_size(int size) {
+	switch (size) {
+	case 2:
+	case 4:
+	case 8:
+		return true;
 	}
+	return false;
+}
+
+static inline bool lua53_check_header_data(RBuffer *buf) {
+	ut8 lua_data[] = "\x19\x93\r\n\x1a\n";
+	const size_t size = R_ARRAY_SIZE (lua_data) - 1;
+	ut8 tmp[size];
+	r_buf_read (buf, tmp, size);
+	return memcmp (tmp, lua_data, size) == 0;
+}
+
+bool check_header(RBuffer *b) {
+	return r_buf_read_be32 (b) == 0x1b4c7561? true: false; // "\x1bLua"
+}
+
+#define GETVALIDSIZE(x) { \
+	lh->x = r_buf_read8 (buf); \
+	if (!is_valid_num_size (lh->x)) { \
+		R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%lx", lh->x, r_buf_tell (buf)); \
+		goto bad_header_ret; \
+	} \
+}
+
+// this function expects buf to be pointing to correct location
+ut64 r_lua_load_header(RBuffer *buf) {
+	ut64 start = r_buf_tell (buf);
+
+	// RLuaHeader *lh = lua_header_new (); // TODO use this when removing global
+	RLuaHeader *lh = &lua53_data;
+	if (!lh || !check_header (buf)) {
+		goto bad_header_ret;
+	}
+
+	// version
+	lh->ver = r_buf_read8 (buf);
+	if (lh->ver != 0x53) {
+		int mj = lh->ver >> 4;
+		int mn = lh->ver & 0xf;
+		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported", r_buf_tell (buf) - 1, mj, mn, lh->ver);
+		goto bad_header_ret; // TODO support more versions
+	}
+
+	// format
+	lh->format = r_buf_read8 (buf);
+	if (lh->format != 0) {
+		R_LOG_WARN ("Unexpected Lua format: 0x%x at offset", lh->format, r_buf_tell (buf) - 1);
+	}
+
+	if (!lua53_check_header_data (buf)) {
+		R_LOG_DEBUG ("Bad Lua Data at offset: 0x%lx", r_buf_tell (buf));
+		goto bad_header_ret;
+	}
+
+	GETVALIDSIZE (intSize);
+	GETVALIDSIZE (sizeSize);
+	GETVALIDSIZE (instructionSize);
+	GETVALIDSIZE (luaIntSize);
+	GETVALIDSIZE (luaNumberSize);
+
+	const ut64 where = r_buf_tell (buf);
+	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
+	if (first_try != 0x5678) {
+		lh->isLe = !lh->isLe;
+		r_buf_seek (buf, where, R_BUF_SET);
+		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
+		if (second_try != 0x5678) {
+			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%"PFMT64x" ([0x%"PFMT64x", 0x%"PFMT64x" != 0x5678])", lh->intSize, first_try, second_try);
+			goto bad_header_ret;
+		}
+	}
+
+	double num = buf_parse_num (lh, buf);
+	if (num != 370.5) {
+		R_LOG_DEBUG ("Lua test number offset 0x%"PFMT64x" failed (%lf != 370.5)", r_buf_tell (buf) - lh->luaNumberSize, num);
+		goto bad_header_ret;
+	}
+	return r_buf_tell (buf) - start;
+
+bad_header_ret:
+	// lua_header_free (lh);
 	return 0;
 }
 
