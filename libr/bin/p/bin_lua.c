@@ -42,7 +42,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_buf_seek (buf, loadaddr, R_BUF_SET);
-	ut64 parsedbytes = r_lua_load_header (buf);
+	const ut64 parsedbytes = r_lua_load_header (buf);
 	return parsedbytes > 0? true: false;
 }
 
