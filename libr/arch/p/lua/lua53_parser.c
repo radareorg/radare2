@@ -188,8 +188,9 @@ ut64 r_lua_load_header(RBuffer *buf) {
 	// version
 	lh->ver = r_buf_read8 (buf);
 	if (lh->ver != 0x53) {
-		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported.",
-			r_buf_tell (buf) - 1, (lh->ver & 0xf0) >> 16, lh->ver & 0xf, lh->ver);
+		int mj = lh->ver >> 4;
+		int mn = lh->ver & 0xf;
+		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported", r_buf_tell (buf) - 1, mj, mn, lh->ver);
 		goto bad_header_ret; // TODO support more versions
 	}
 
@@ -211,15 +212,11 @@ ut64 r_lua_load_header(RBuffer *buf) {
 	GETVALIDSIZE (luaNumberSize);
 
 	ut64 where = r_buf_tell (buf);
-	eprintf ("BEFORE PARSE -> 0x%lx\n", r_buf_tell (buf));
 	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->islittleendian);
-	eprintf ("AFTER PARSE -> 0x%lx\n", r_buf_tell (buf));
 	if (first_try != 0x5678) {
 		lh->islittleendian = !lh->islittleendian;
 		r_buf_seek (buf, where, R_BUF_SET);
-		eprintf ("BEFORE PARSE -> 0x%lx\n", r_buf_tell (buf));
 		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->islittleendian);
-		eprintf ("AFTER PARSE -> 0x%lx\n", r_buf_tell (buf));
 		if (second_try != 0x5678) {
 			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%lx ([0x%lx, 0x%lx != 0x5678])", lh->intSize, first_try, second_try);
 			goto bad_header_ret;
