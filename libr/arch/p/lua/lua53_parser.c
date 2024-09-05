@@ -225,7 +225,7 @@ ut64 r_lua_load_header(RBuffer *buf) {
 
 	double num = buf_parse_num (lh, buf);
 	if (num != 370.5) {
-		R_LOG_DEBUG ("Lua test number offset 0x%lx failed (%f != 370.5)", r_buf_tell (buf) - lh->luaNumberSize, num);
+		R_LOG_DEBUG ("Lua test number offset 0x%"PFMT64x" failed (%lf != 370.5)", r_buf_tell (buf) - lh->luaNumberSize, num);
 		goto bad_header_ret;
 	}
 	return r_buf_tell (buf) - start;
