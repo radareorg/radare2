@@ -211,7 +211,7 @@ ut64 r_lua_load_header(RBuffer *buf) {
 	GETVALIDSIZE (luaIntSize);
 	GETVALIDSIZE (luaNumberSize);
 
-	ut64 where = r_buf_tell (buf);
+	const ut64 where = r_buf_tell (buf);
 	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 	if (first_try != 0x5678) {
 		lh->isLe = !lh->isLe;
