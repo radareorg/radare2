@@ -188,7 +188,7 @@ R_IPI ut64 r_lua_load_header(RBuffer *buf) {
 	// version
 	lh->ver = r_buf_read8 (buf);
 	if (lh->ver != 0x53) {
-		int mj = lh->ver >> 4;
+		const int mj = lh->ver >> 4;
 		int mn = lh->ver & 0xf;
 		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported", r_buf_tell (buf) - 1, mj, mn, lh->ver);
 		goto bad_header_ret; // TODO support more versions
