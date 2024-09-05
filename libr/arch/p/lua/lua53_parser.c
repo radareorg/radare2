@@ -218,7 +218,7 @@ ut64 r_lua_load_header(RBuffer *buf) {
 		r_buf_seek (buf, where, R_BUF_SET);
 		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 		if (second_try != 0x5678) {
-			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%lx ([0x%lx, 0x%lx != 0x5678])", lh->intSize, first_try, second_try);
+			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%"PFMT64x" ([0x%"PFMT64x", 0x%"PFMT64x" != 0x5678])", lh->intSize, first_try, second_try);
 			goto bad_header_ret;
 		}
 	}
