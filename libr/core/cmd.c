@@ -1931,11 +1931,11 @@ static int cmd_j(void *data, const char *input) { // "j"
 		pj_end (pj);
 		free (s);
 		s = pj_drain (pj);
-		r_cons_printf ("%s\n", s);
+		r_cons_println (s);
 		free (s);
 		return R_CMD_RC_SUCCESS;
 	}
-	return R_CMD_RC_FAILURE;
+	return R_CMD_RC_FASTQUIT;
 }
 
 static int cmd_plus(void *data, const char *input) {
