@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake, dennis */
 
 #include <r_types.h>
 
@@ -215,7 +215,7 @@ ut64 r_lua_load_header(RBuffer *buf) {
 	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 	if (first_try != 0x5678) {
 		lh->isLe = !lh->isLe;
-		r_buf_seek (buf, where, R_BUF_SET);
+		r_buf_seek (buf, (ut64)where, R_BUF_SET);
 		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
 		if (second_try != 0x5678) {
 			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%"PFMT64x" ([0x%"PFMT64x", 0x%"PFMT64x" != 0x5678])", lh->intSize, first_try, second_try);
