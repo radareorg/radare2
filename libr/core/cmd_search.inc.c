@@ -4512,19 +4512,25 @@ reread:
 			break;
 		case 'd': // "/cd"
 			{
-				RSearchKeyword *kw;
-				if (input[2] == 'j') {
-					param.outmode = R_MODE_JSON;
-				}
-				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
-				r_search_reset (core->search, R_SEARCH_KEYWORD);
-				if (kw) {
-					r_search_kw_add (core->search, kw);
-					r_search_begin (core->search);
-				} else {
-					R_LOG_ERROR ("invalid pointer");
-					dosearch = false;
-				}
+			RSearchKeyword *kw_1, *kw_2, *kw_3;
+			if (input[2] == 'j') {
+				param.outmode = R_MODE_JSON;
+			}
+			// Certificate with version number
+			kw_1 = r_search_keyword_new_hex ("30820000308100A0030201", "ffff0000ffff00ffffffff", NULL);
+			kw_2 = r_search_keyword_new_hex ("3082000030820000A0030201", "ffff0000ffff0000ffffffff", NULL);
+			// Certificate with serial number
+			kw_3 = r_search_keyword_new_hex ("308200003082000002", "ffff0000ffff0000ff", NULL);
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			if (kw_1 && kw_2 && kw_3) {
+				r_search_kw_add (core->search, kw_1);
+				r_search_kw_add (core->search, kw_2);
+				r_search_kw_add (core->search, kw_3);
+				r_search_begin (core->search);
+			} else {
+				R_LOG_ERROR ("invalid pointer");
+				dosearch = false;
+			}
 			}
 			break;
 		case 'g': // "/cg"
