@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2018-2019 - JohnPeng47 */
+/* radare - LGPL - Copyright 2018-2024 - JohnPeng47 */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "pe/pemixed.h"
 
@@ -95,17 +92,18 @@ static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_ty
 		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	if (!metadata) {
-		return NULL;
+	if (R_LIKELY (metadata)) {
+		fill_metadata_info_from_hdr (metadata, pe);
+		return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
 	}
-	fill_metadata_info_from_hdr (metadata, pe);
-	return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
+	return NULL;
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.meta = {
 		.name = "xtr.pemixed",
 		.desc = "Extract sub-binaries in PE files",
+		.license = "LGPL3"
 	},
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,
