@@ -5,45 +5,21 @@
 
 #include "../arch/p/lua/lua53_parser.c"
 
-#if 0
-static int finit(void *user) {
-	if (lua53_data.functionList) {
-		r_list_free (lua53_data.functionList);
-		lua53_data.functionList = 0;
+static inline RLuaHeader *get_lua_header(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	if (!bf->bo->bin_obj && b) {
+		r_buf_seek (b, loadaddr, R_BUF_SET);
+		bf->bo->bin_obj = r_lua_load_header (b);
 	}
-	return 0;
+	return bf->bo->bin_obj;
 }
-
-static bool check_bytes(const ut8 *buf, ut64 length);
-
-static bool check(RBinFile *bf) {
-	Dprintf ("Check\n");
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	return check_bytes (bytes, sz);
-}
-#endif
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	if (r_buf_size (b) > 4) {
-		ut8 buf[4];
-		r_buf_read_at (b, 0, buf, sizeof (buf));
-		if (!memcmp (buf, "\x1b\x4c\x75\x61", 4)) {
-			return true;
-		}
-#if 0
-		ParseStruct parseStruct;
-		ut64 parsedbytes = lua53parseHeader (buf, 0, sizeof (buf), &parseStruct);
-		return parsedbytes != 0;
-#endif
-	}
-	return false;
+	return check_header (b);
 }
 
-static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	r_buf_seek (buf, loadaddr, R_BUF_SET);
-	const ut64 parsedbytes = r_lua_load_header (buf);
-	return parsedbytes > 0? true: false;
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return get_lua_header (bf, b, loadaddr) != NULL;
 }
 
 static void addSection(RList *list, const char *name, ut64 addr, ut32 size, bool isFunc) {
@@ -54,7 +30,7 @@ static void addSection(RList *list, const char *name, ut64 addr, ut32 size, bool
 		bs->size = bs->vsize = size;
 		bs->add = true;
 		bs->is_data = false;
-		bs->bits = isFunc? 8 * lua53_data.instructionSize: 8;
+		bs->bits = isFunc? 8 * lua53_data->instructionSize: 8;
 		if (bs->bits == 0) {
 			bs->bits = 32;
 		}
@@ -169,9 +145,9 @@ static void handleFuncSymbol(LuaFunction *func, ParseStruct *parseStruct){
 	}
 	char sb[R_BIN_SIZEOF_STRINGS + 1];
 	snprintf (sb, sizeof (sb), "lineDefined.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset - 3 - 2 * lua53_data.intSize, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->code_offset - 3 - 2 * lua53_data->intSize, lua53_data->intSize, "NUM");
 	snprintf (sb, sizeof (sb), "lastLineDefined.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset - 3 - lua53_data.intSize, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->code_offset - 3 - lua53_data->intSize, lua53_data->intSize, "NUM");
 	snprintf (sb, sizeof (sb), "numParams.%s", string);
 	addSymbol (parseStruct->data, sb, func->code_offset - 3, 1, "NUM");
 	snprintf (sb, sizeof (sb), "isVarArg.%s", string);
@@ -180,19 +156,19 @@ static void handleFuncSymbol(LuaFunction *func, ParseStruct *parseStruct){
 	addSymbol (parseStruct->data, sb, func->code_offset - 1, 1, "BOOL");
 
 	snprintf (sb, sizeof (sb), "codesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->code_offset, lua53_data->intSize, "NUM");
 
 	snprintf (sb, sizeof (sb), "func.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset + lua53_data.intSize, lua53_data.instructionSize * func->code_size, "FUNC");
+	addSymbol (parseStruct->data, sb, func->code_offset + lua53_data->intSize, lua53_data->instructionSize * func->code_size, "FUNC");
 
 	snprintf (sb, sizeof (sb), "constsize.%s", string);
-	addSymbol (parseStruct->data, sb, func->const_offset, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->const_offset, lua53_data->intSize, "NUM");
 
 	snprintf (sb, sizeof (sb), "upvaluesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->upvalue_offset, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->upvalue_offset, lua53_data->intSize, "NUM");
 
 	snprintf (sb, sizeof (sb), "prototypesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->protos_offset, lua53_data.intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->protos_offset, lua53_data->intSize, "NUM");
 
 	free (string);
 }
@@ -203,7 +179,7 @@ static RList *strings(RBinFile *bf) {
 		r_buf_read_at (bf->buf, 0, bytes, bf->size);
 	}
 
-	ut64 headersize = 4 + 1 + 1 + 6 + 5 + bytes[15] + bytes[16] + 1;// header + version + format + stringterminators + sizes + integer + number + upvalues
+	ut64 headersize = 4 + 1 + 1 + 6 + 5 + bytes[15] + bytes[16] + 1; // header + version + format + stringterminators + sizes + integer + number + upvalues
 
 	ParseStruct parseStruct;
 	memset (&parseStruct, 0, sizeof (parseStruct));
@@ -221,9 +197,6 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	if (!bf) {
-		return NULL;
-	}
 	ut8 *bytes = malloc (bf->size);
 	if (bytes) {
 		r_buf_read_at (bf->buf, 0, bytes, bf->size);
@@ -270,7 +243,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->os = strdup ("any");
 	ret->machine = strdup ("LUA 5.3 VM");
 	ret->arch = strdup ("lua");
-	ret->bits = lua53_data.instructionSize * 8;
+	ret->bits = lua53_data->instructionSize * 8;
 	if (ret->bits < 1) {
 		ret->bits = 32;
 	} else if (ret->bits != 32) {
@@ -285,7 +258,7 @@ static void addEntry(LuaFunction *func, ParseStruct *parseStruct){
 	if (!func->parent_func) {
 		RBinAddr *ptr = NULL;
 		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = ptr->vaddr = func->code_offset + lua53_data.intSize;
+			ptr->paddr = ptr->vaddr = func->code_offset + lua53_data->intSize;
 			r_list_append (parseStruct->data, ptr);
 		}
 	}
@@ -319,6 +292,11 @@ static RList *entries(RBinFile *bf) {
 	return parseStruct.data;
 }
 
+static void destroy(RBinFile *bf) {
+	lua_header_free (bf->bo->bin_obj);
+	bf->bo->bin_obj = NULL;
+}
+
 RBinPlugin r_bin_plugin_lua = {
 	.meta = {
 		.name = "lua",
@@ -333,6 +311,7 @@ RBinPlugin r_bin_plugin_lua = {
 	.strings = &strings,
 	.info = &info,
 	.entries = &entries,
+	.destroy = &destroy,
 };
 
 #ifndef R2_PLUGIN_INCORE
