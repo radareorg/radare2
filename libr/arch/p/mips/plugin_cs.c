@@ -456,6 +456,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					ARG (2), ARG (1), REG (0));
 			}
 			break;
+		case MIPS_INS_MOVN:
 		case MIPS_INS_MOVT:
 			PROTECT_ZERO () {
 				r_strbuf_appendf (&op->esil, "1,%s,==,$z,?{,%s,%s,=,}",
