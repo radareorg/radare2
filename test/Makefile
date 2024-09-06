@@ -49,9 +49,6 @@ dwarf: bins
 vc4: bins
 	${RUNTEST} db/extras/asm/vc4
 
-yara: bins
-	${RUNTEST} db/extras/cmd/yara
-
 clean:
 	$(MAKE) -C unit clean
 	rm -rf tmp
