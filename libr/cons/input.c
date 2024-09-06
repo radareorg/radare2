@@ -63,6 +63,7 @@ static int __parseMouseEvent(void) {
 	return 0;
 }
 
+#if __APPLE__
 static void skipchars(char ech, int nch) {
 	while (nch-- > 0) {
 		if (r_cons_readchar () == ech) {
@@ -70,6 +71,7 @@ static void skipchars(char ech, int nch) {
 		}
 	}
 }
+#endif
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if R2__WINDOWS__
