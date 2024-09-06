@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
@@ -583,7 +583,6 @@ static int arm64_reg_width(int reg) {
 	case ARM64_REG_S30:
 	case ARM64_REG_S31:
 		return 32;
-		break;
 	default:
 		break;
 	}
@@ -4802,6 +4801,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	if (plugin_changed (as)) {
 		fini (as);
 		init (as);
+	}
+	csh *handle = cs_handle_for_session (as);
+	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+	} else {
+		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }
