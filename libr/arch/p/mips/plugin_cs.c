@@ -93,6 +93,44 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
+// * cs6 compatibility *
+#if CS_NEXT_VERSION == 6
+// XXX - There are more options than EQ or QB, need to be tested:
+#define MIPS_INS_CMPU MIPS_INS_CMPU_EQ_QB
+#define MIPS_INS_CMPGU MIPS_INS_CMPGU_EQ_QB
+#define MIPS_INS_CMPGDU MIPS_INS_CMPGDU_EQ_QB
+#define MIPS_INS_SHRAV MIPS_INS_SHRAV_QB
+#define MIPS_INS_SHRAV_R MIPS_INS_SHRAV_R_QB
+#define MIPS_INS_SHRA MIPS_INS_SHRA_QB
+#define MIPS_INS_SHRA_R MIPS_INS_SHRA_R_QB
+#define MIPS_INS_SHRL MIPS_INS_SHRL_QB
+
+// XXX - don't know if there should be _D or _W, went for _D:
+#define MIPS_INS_BZ MIPS_INS_BZ_D
+#define MIPS_INS_MOV MIPS_INS_MOV_D
+#define MIPS_INS_FSUB MIPS_INS_FSUB_D
+#define MIPS_INS_NEGU MIPS_INS_NEG_D
+#define MIPS_INS_LDI MIPS_INS_LDI_D
+#define MIPS_INS_SUBV MIPS_INS_SUBV_D
+#define MIPS_INS_SUBVI MIPS_INS_SUBVI_D
+#define MIPS_INS_FMSUB MIPS_INS_FMSUB_D
+#define MIPS_INS_SUBS_S MIPS_INS_SUBS_S_D
+#define MIPS_INS_SUBS_U MIPS_INS_SUBS_U_D
+#define MIPS_INS_SUBUH MIPS_INS_SUBUH_QB
+#define MIPS_INS_SUBUH_R MIPS_INS_SUBUH_R_QB
+#define MIPS_INS_MULV MIPS_INS_MULV_D
+#define MIPS_INS_MULSA MIPS_INS_MULSA_W_PH
+#define MIPS_INS_FMUL MIPS_INS_FMUL_D
+#define MIPS_INS_FDIV MIPS_INS_FDIV_D
+#define MIPS_INS_DIV_U MIPS_INS_DIV_U_D
+#define MIPS_INS_BNZ MIPS_INS_BNZ_D
+#define MIPS_INS_BNEG MIPS_INS_BNEG_D
+#define MIPS_INS_BNEGI MIPS_INS_BNEGI_D
+
+#define MIPS_REG_25 MIPS_REG_T9
+#endif
+// *********************
+
 static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, int bit) {
 	if (as->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
