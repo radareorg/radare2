@@ -40,7 +40,7 @@ ERR=0
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi-api --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 make -j
 R2V=`./configure -qV`
-D="radare2-$R2V-wasi"
+D="radare2-$R2V-wasi-api"
 mkdir -p $D
 for a in ${TOOLS} ; do
 	make -C binr/$a
