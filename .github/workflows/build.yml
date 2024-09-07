@@ -31,7 +31,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: linux-wasi-api
-        path: radare2-*-wasi.zip
+        path: radare2-*-wasi-api.zip
   # capstone-next
   linux-csnext:
     runs-on: ubuntu-22.04
@@ -670,6 +670,7 @@ jobs:
         dist/artifacts/linux-static/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
+        dist/artifacts/linux-wasi-api/*.zip
         dist/artifacts/w64-static/*.zip
     steps:
       - name: Checkout code
