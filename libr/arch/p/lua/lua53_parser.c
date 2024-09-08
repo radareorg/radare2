@@ -163,7 +163,7 @@ static ut64 parseCode(const ut8 *data, ut64 offset, const ut64 size, ParseStruct
 static ut64 parseConstants(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 static ut64 parseUpvalues(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct);
-static ut64 parseDebug(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
+static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 
 static bool is_valid_num_size(int size) {
 	switch (size) {
@@ -266,7 +266,7 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 		parseProtos (lh, data, function->protos_offset, size, function, parseStruct);
 
 		if (parseStruct != NULL && parseStruct->onString != NULL) {
-			parseDebug (data, function->debug_offset, size, parseStruct);
+			parseDebug (lh, data, function->debug_offset, size, parseStruct);
 		}
 
 		if (parseStruct != NULL && parseStruct->onFunction != NULL) {
@@ -327,7 +327,7 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 			return 0;
 		}
 		function->debug_offset = offset;
-		offset = parseDebug (data, offset, size, parseStruct);
+		offset = parseDebug (lh, data, offset, size, parseStruct);
 		if (offset == 0) {
 			free (function);
 			return 0;
@@ -439,7 +439,7 @@ static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 	}
 	return offset;
 }
-static ut64 parseDebug(const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
+static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct) {
 	if (offset + lua53_data->intSize >= size) {
 		return 0;
 	}
