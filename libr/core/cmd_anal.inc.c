@@ -116,6 +116,8 @@ static RCoreHelpMessage help_msg_an = {
 static RCoreHelpMessage help_msg_ano = {
 	"Usage:", "ano", "[*] # function anotations",
 	"ano", "", "show or edit annotations for the current function",
+	"ano*", "", "dump all annotations in ano= commands",
+	"ano=", "[b64text]", "set anotation text in base64 for current function",
 	"anoe", "", "edit annotation",
 	"anos", "", "show annotation",
 	"anol", "", "show first line of function annotation if any",
