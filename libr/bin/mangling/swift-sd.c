@@ -844,7 +844,11 @@ repeat:;
 							r_strbuf_appendf (out, "...%s", q);
 							break;
 						}
-						q = n + 1;
+						if (n) {
+							q = n + 1;
+						} else {
+							q++;
+						}
 					}
 				}
 			}
