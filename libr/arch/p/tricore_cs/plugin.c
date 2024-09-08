@@ -250,9 +250,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 				cs_tricore_op *arg1 = x->operands + 1;
 				cs_tricore_op *arg2 = x->operands + 2;
 				const char *dr = cs_reg_name (handle, arg0->reg);
-				const char *sr = cs_reg_name (handle, arg1->reg);
-				const char *sR = cs_reg_name (handle, arg2->reg);
-				r_strbuf_initf (&op->esil, "%s,%s,+,%s,:=", sr, sR, dr);
+				if (arg1->type == TRICORE_OP_REG) {
+					if (arg2->type == TRICORE_OP_REG) {
+						const char *sr = cs_reg_name (handle, arg1->reg);
+						const char *sR = cs_reg_name (handle, arg2->reg);
+						r_strbuf_initf (&op->esil, "%s,%s,+,%s,:=", sr, sR, dr);
+					} else {
+						const char *sr = cs_reg_name (handle, arg1->reg);
+						r_strbuf_initf (&op->esil, "%d,%s,+,%s,:=", arg2->imm, sr, dr);
+					}
+				} else {
+					// CAPSTONE BUG https://github.com/capstone-engine/capstone/issues/2474
+				}
 			}
 			break;
 		case TRICORE_INS_ADDI:
