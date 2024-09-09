@@ -315,9 +315,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 				cs_tricore *x = &insn->detail->tricore;
 				cs_tricore_op *arg0 = x->operands + 0;
 				cs_tricore_op *arg1 = x->operands + 1;
-				const char *dr = cs_reg_name (handle, arg0->reg);
-				ut64 sn = arg1->imm;
-				r_strbuf_initf (&op->esil, "%"PFMT64d",%s,:=", sn, dr);
+				if (arg0->type == TRICORE_OP_REG && arg1->type == TRICORE_OP_IMM) {
+					const char *dr = cs_reg_name (handle, arg0->reg);
+					ut64 sn = arg1->imm;
+					r_strbuf_initf (&op->esil, "%"PFMT64d",%s,:=", sn, dr);
+				} else {
+					R_LOG_DEBUG ("Invalid capstone details for a MOV");
+				}
 			}
 			break;
 		case TRICORE_INS_SWAP_A:
