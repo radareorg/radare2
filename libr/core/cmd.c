@@ -2033,7 +2033,11 @@ static int cmd_stdin(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+			if (isdigit (*input)) {
+				r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+			} else {
+				r_core_cmd_help (core, help_msg_dash);
+			}
 			break;
 		}
 		return 0;
