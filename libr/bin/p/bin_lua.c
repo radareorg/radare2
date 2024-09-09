@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include <r_lib.h>
 
+#include "../format/lua/lua.h"
 #include "../arch/p/lua/lua53_parser.c"
 
 static inline RLuaHeader *get_lua_header(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
@@ -90,13 +91,11 @@ static RList *sections(RBinFile *bf) {
 	if (!parseStruct.data) {
 		return NULL;
 	}
-	// header + version + format + stringterminators + sizes + integer + number + upvalues
-	ut64 headersize = 4 + 1 + 1 + 6 + 5 + bytes[15] + bytes[16] + 1;
 
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (lh) {
-		addSection (lh, parseStruct.data, "lua-header", 0, headersize, false);
-		lua53parseFunction (lh, bytes, headersize, sz, 0, &parseStruct);
+		addSection (lh, parseStruct.data, "lua-header", 0, lh->headerSize, false);
+		lua53parseFunction (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
 	}
 	free (bytes);
 #endif
@@ -183,8 +182,6 @@ static RList *strings(RBinFile *bf) {
 		r_buf_read_at (bf->buf, 0, bytes, bf->size);
 	}
 
-	ut64 headersize = 4 + 1 + 1 + 6 + 5 + bytes[15] + bytes[16] + 1; // header + version + format + stringterminators + sizes + integer + number + upvalues
-
 	ParseStruct parseStruct;
 	memset (&parseStruct, 0, sizeof (parseStruct));
 	parseStruct.onString = addString;
@@ -196,7 +193,7 @@ static RList *strings(RBinFile *bf) {
 	}
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (lh) {
-		lua53parseFunction (lh, bytes, headersize, bf->size, 0, &parseStruct);
+		lua53parseFunction (lh, bytes, lh->headerSize, bf->size, 0, &parseStruct);
 	}
 
 	free (bytes);
@@ -204,42 +201,34 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	ut8 *bytes = malloc (bf->size);
-	if (bytes) {
-		r_buf_read_at (bf->buf, 0, bytes, bf->size);
+	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
+	if (!lh) {
+		return NULL;
 	}
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	ut64 headersize = 4 + 1 + 1 + 6 + 5 + bytes[15] + bytes[16] + 1;
-	// header + version + format + stringterminators + sizes + integer + number + upvalues
+	RList *list = r_list_new ();
+	if (!list) {
+		return NULL;
+	}
+	RListIter *iter;
+	RBinSymbol *sym;
+	r_list_foreach (lh->symbols, iter, sym) {
+		r_list_append (list, sym);
+	}
 
 	ParseStruct parseStruct = {0};
 	parseStruct.onFunction = handleFuncSymbol;
 	parseStruct.data = NULL;
-
-	RList *list = r_list_new ();
 	parseStruct.data = list;
-	if (!parseStruct.data) {
-		return NULL;
+
+	ut8 *bytes = malloc (bf->size);
+	if (bytes) {
+		st64 sz = r_buf_read_at (bf->buf, 0, bytes, bf->size);
+		if (sz > 0) {
+			lua53parseFunction (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
+		}
+		free (bytes);
 	}
 
-	addSymbol (list, "lua-header", 0, 4, "NOTYPE");
-	addSymbol (list, "lua-version", 4, 1, "NOTYPE");
-	addSymbol (list, "lua-format", 5, 1, "NOTYPE");
-	addSymbol (list, "stringterminators", 6, 6, "NOTYPE");
-	addSymbol (list, "int-size", 12, 1, "NUM");
-	addSymbol (list, "size-size", 13, 1, "NUM");
-	addSymbol (list, "instruction-size", 14, 1, "NUM");
-	addSymbol (list, "lua-int-size", 15, 1, "NUM");
-	addSymbol (list, "lua-number-size", 16, 1, "NUM");
-	addSymbol (list, "check-int", 17, bytes[15], "NUM");
-	addSymbol (list, "check-number", 17 + bytes[15], bytes[16], "FLOAT");
-	addSymbol (list, "upvalues", 17 + bytes[15] + bytes[16], 1, "NUM");
-
-	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
-	if (lh) {
-		lua53parseFunction (lh, bytes, headersize, sz, 0, &parseStruct);
-	}
-	free (bytes);
 	return list;
 }
 
@@ -287,9 +276,6 @@ static RList *entries(RBinFile *bf) {
 	}
 	r_buf_read_at (bf->buf, 0, buf, bf->size);
 
-	// header + version + format + stringterminators + sizes + integer + number + upvalues
-	ut64 headersize = 4 + 1 + 1 + 6 + 5 + buf[15] + buf[16] + 1;
-
 	ParseStruct parseStruct;
 	memset (&parseStruct, 0, sizeof (parseStruct));
 	parseStruct.onFunction = addEntry;
@@ -298,7 +284,7 @@ static RList *entries(RBinFile *bf) {
 	parseStruct.data = r_list_new ();
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (parseStruct.data && lh) {
-		lua53parseFunction (lh, buf, headersize, bf->size, 0, &parseStruct);
+		lua53parseFunction (lh, buf, lh->headerSize, bf->size, 0, &parseStruct);
 	}
 	free (buf);
 	return parseStruct.data;

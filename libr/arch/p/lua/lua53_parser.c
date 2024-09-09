@@ -1,40 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake, dennis */
 
 #include <r_types.h>
-
-// XXX global
-// R_UNUSED static RList *lua53_function_list = NULL;
-
-typedef struct lua_data_struct {
-	ut8 ver;
-	bool isLe;
-	ut8 format;
-	int intSize;
-	int sizeSize;
-	int instructionSize;
-	int luaIntSize;
-	int luaNumberSize;
-	RList *functionList;
-} RLuaHeader;
-
-static void lua_func_free(void *f) {
-	free (f);
-}
-
-void lua_header_free(RLuaHeader *lhead) {
-	if (lhead) {
-		r_list_free (lhead->functionList);
-		free (lhead);
-	}
-}
-
-RLuaHeader *lua_header_new() {
-	RLuaHeader *lh = R_NEW0 (RLuaHeader);
-	if (lh) {
-		lh->functionList = r_list_newf ((RListFree)lua_func_free);
-	}
-	return lh;
-}
+#include "../../bin/format/lua/lua_spec.h"
 
 static ut64 parseNumber(const ut8 *data, ut64 bytesize) {
 	int i;
@@ -43,26 +10,6 @@ static ut64 parseNumber(const ut8 *data, ut64 bytesize) {
 		res |= ((ut64) data[i]) << (8 * i);
 	}
 	return res;
-}
-
-static inline ut64 buf_parse_int(RBuffer *buf, int size, bool le) {
-	switch (size) {
-	case 2:
-		return le? r_buf_read_le16 (buf): r_buf_read_be16 (buf);
-	case 4:
-		return le? r_buf_read_le32 (buf): r_buf_read_be32 (buf);
-	case 8:
-		return le? r_buf_read_le64 (buf): r_buf_read_be64 (buf);
-	default:
-		return UT64_MAX;
-	}
-}
-
-static inline double buf_parse_num(RLuaHeader *lh, RBuffer *buf) {
-	double ret = 0;
-	ut64 num = buf_parse_int (buf, lh->luaNumberSize, lh->isLe);
-	memcpy (&ret, &num, R_MIN (64, R_MIN (sizeof (double), lh->luaNumberSize)));
-	return ret;
 }
 
 #define parseInt(data) parseNumber (data, lh->intSize)
@@ -145,7 +92,7 @@ static LuaFunction *findLuaFunction(RLuaHeader *lh, ut64 addr) {
 	LuaFunction *function = NULL;
 	RListIter *iter = NULL;
 	r_list_foreach (lh->functionList, iter, function) {
-		R_LOG_DEBUG ("Search 0x%"PFMT64x, function->offset);
+		R_LOG_DEBUG ("Search 0x%" PFMT64x, function->offset);
 		if (function->offset == addr) {
 			return function;
 		}
@@ -153,7 +100,6 @@ static LuaFunction *findLuaFunction(RLuaHeader *lh, ut64 addr) {
 	return NULL;
 }
 
-RLuaHeader *r_lua_load_header(RBuffer *b);
 bool check_header(RBuffer *b);
 ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *parent_func, ParseStruct *parseStruct);
 
@@ -164,93 +110,6 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 static ut64 parseUpvalues(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
 static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *func, ParseStruct *parseStruct);
 static ut64 parseDebug(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, ParseStruct *parseStruct);
-
-static bool is_valid_num_size(int size) {
-	switch (size) {
-	case 2:
-	case 4:
-	case 8:
-		return true;
-	}
-	return false;
-}
-
-static inline bool lua53_check_header_data(RBuffer *buf) {
-	ut8 lua_data[] = "\x19\x93\r\n\x1a\n";
-	const size_t size = R_ARRAY_SIZE (lua_data) - 1;
-	ut8 tmp[size];
-	r_buf_read (buf, tmp, size);
-	return memcmp (tmp, lua_data, size) == 0;
-}
-
-bool check_header(RBuffer *b) {
-	return r_buf_read_be32 (b) == 0x1b4c7561? true: false; // "\x1bLua"
-}
-
-#define GETVALIDSIZE(x) { \
-	lh->x = r_buf_read8 (buf); \
-	if (!is_valid_num_size (lh->x)) { \
-		R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%lx", lh->x, r_buf_tell (buf)); \
-		goto bad_header_ret; \
-	} \
-}
-
-// this function expects buf to be pointing to correct location
-RLuaHeader *r_lua_load_header(RBuffer *buf) {
-	RLuaHeader *lh = lua_header_new (); // TODO use this when removing global
-	if (!lh || !check_header (buf)) {
-		goto bad_header_ret;
-	}
-
-	// version
-	lh->ver = r_buf_read8 (buf);
-	if (lh->ver != 0x53) {
-		int mj = lh->ver >> 4;
-		int mn = lh->ver & 0xf;
-		R_LOG_DEBUG ("Offset 0x%lx: reported lua version  %d.%d (0x%x) not supported", r_buf_tell (buf) - 1, mj, mn, lh->ver);
-		goto bad_header_ret; // TODO support more versions
-	}
-
-	// format
-	lh->format = r_buf_read8 (buf);
-	if (lh->format != 0) {
-		R_LOG_WARN ("Unexpected Lua format: 0x%x at offset", lh->format, r_buf_tell (buf) - 1);
-	}
-
-	if (!lua53_check_header_data (buf)) {
-		R_LOG_DEBUG ("Bad Lua Data at offset: 0x%lx", r_buf_tell (buf));
-		goto bad_header_ret;
-	}
-
-	GETVALIDSIZE (intSize);
-	GETVALIDSIZE (sizeSize);
-	GETVALIDSIZE (instructionSize);
-	GETVALIDSIZE (luaIntSize);
-	GETVALIDSIZE (luaNumberSize);
-
-	const ut64 where = r_buf_tell (buf);
-	ut64 first_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
-	if (first_try != 0x5678) {
-		lh->isLe = !lh->isLe;
-		r_buf_seek (buf, (ut64)where, R_BUF_SET);
-		ut64 second_try = buf_parse_int (buf, lh->luaIntSize, lh->isLe);
-		if (second_try != 0x5678) {
-			R_LOG_DEBUG ("Can't parse lua num of size %u at offset 0x%"PFMT64x" ([0x%"PFMT64x", 0x%"PFMT64x" != 0x5678])", lh->intSize, first_try, second_try);
-			goto bad_header_ret;
-		}
-	}
-
-	double num = buf_parse_num (lh, buf);
-	if (num != 370.5) {
-		R_LOG_DEBUG ("Lua test number offset 0x%"PFMT64x" failed (%lf != 370.5)", r_buf_tell (buf) - lh->luaNumberSize, num);
-		goto bad_header_ret;
-	}
-	return lh;
-
-bad_header_ret:
-	lua_header_free (lh);
-	return 0;
-}
 
 ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *parent_func, ParseStruct *parseStruct) {
 	R_LOG_DEBUG ("Function 0x%"PFMT64x, offset);
