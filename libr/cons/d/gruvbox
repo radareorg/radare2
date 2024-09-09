@@ -1,0 +1,60 @@
+# Inspired by gruvbox
+#https://github.com/morhetz/gruvbox
+ecd
+ec ai.exec rgb:689d6a
+ec ai.read rgb:458588
+ec ai.write rgb:cc241d
+ec args rgb:b8bb26
+ec b0x00 rgb:665c54
+ec b0x7f rgb:504945
+ec b0xff rgb:ebdbb2
+ec btext rgb:8ec07c
+ec comment rgb:928374
+ec creg rgb:fe8019
+ec flag rgb:8ec07c
+ec fline rgb:83a598
+ec flow rgb:928374
+ec flow2 rgb:ebdbb2
+ec fname rgb:8ec07c
+ec graph.traced rgb:b8bb26
+ec graph.box rgb:3c3836
+ec graph.box2 rgb:fe8019
+ec graph.box3 rgb:83a598
+ec graph.box4 rgb:83a598
+ec graph.current rgb:ebdbb2
+ec graph.false rgb:fb4934
+ec graph.true rgb:b8bb26
+ec graph.trufae rgb:83a598
+ec help rgb:b8bb26
+ec input rgb:7c6f64
+ec jmp rgb:b8bb26
+ec label rgb:8ec07c
+ec linehl rgb:3c3836
+ec mov rgb:ebdbb2
+ec nop rgb:928374
+ec num rgb:d3869b
+ec offset rgb:d65d0e
+ec other rgb:7c6f64
+ec prompt rgb:8ec07c
+ec call rgb:fb4934
+ec reg rgb:fabd2f
+ec ret rgb:cc241d
+ec swi rgb:cc241d
+ec trap rgb:cc241d
+ec cmp rgb:8ec07c
+ec math rgb:665c54
+ec bin rgb:665c54
+ec push rgb:8ec07c
+ec pop rgb:8ec07c
+ec cjmp rgb:b8bb26
+ec ucall rgb:83a598
+ec ujmp rgb:b8bb26
+ec usrcmt rgb:fe8019
+
+ec var rgb:83a598
+ec var.type rgb:fabd2f
+ec var.addr rgb:fb4934
+ec var.name rgb:83a598
+
+ec widget.bg rgb:7c6f64 rgb:282828
+ec widget.sel rgb:8ec07c rgb:3c3836
