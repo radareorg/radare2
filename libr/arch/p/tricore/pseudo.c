@@ -8,39 +8,71 @@ static bool replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
+	const char *op0 = argv[0];
+	if (!strcmp (op0, "ret") || !strcmp (op0, "rfe")) {
+		strcpy (newstr, "return");
+		return false;
+	}
 	struct {
 		const char *op;
 		const char *str;
 		int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
 	} ops[] = {
+#if 0
 		{ "ret",  "return;"},
 		{ "rfe",  "return;"},
-		{ "debug",  "debug;"},
+#endif
+		{ "nop",  ""},
+		{ "debug",  "breakpoint"},
+		{ "invalid",  ""},
 		{ "movh.a",  "# = #", {1, 2}},
 		{ "mov.aa",  "# = #", {1, 2}},
 		{ "mov.u",  "# = #", {1, 2}},
+		{ "mov.d",  "# = #", {1, 2}},
+		{ "mov.a",  "# = #", {1, 2}},
+		{ "movh",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
+		{ "sha",  "# = #", {1, 2}},
 		{ "lea",  "# = #", {1, 2}},
+		{ "nop",  ";", {}},
 		{ "jnz.t", "if (#) goto loc_#", {1, 2}},
 		{ "jnz", "if (#) goto loc_#", {1, 2}},
 		{ "jla", "if (la) goto loc_#", {1}},
+		{ "jl.t", "if (la) goto loc_#", {1}},
 		{ "jne", "if (# != #) goto loc_#", {1, 2, 3}},
 		{ "jeq", "if (# == #) goto loc_#", {1, 2, 3}},
+		{ "jgez", "if (# >= #) goto loc_#", {1, 2, 3}},
+		{ "jz.t", "if (# == #) goto loc_#", {1, 2, 3}},
 		{ "jge", "if (# >= #) goto loc_#", {1, 2, 3}},
+		{ "jge.u", "if (# >= #) goto loc_#", {1, 2, 3}},
+		{ "jge.u", "if (# >= #) goto loc_#", {1, 2, 3}},
+		{ "jeq.a", "if (# == #) goto loc_#", {1, 2, 3}},
 		{ "ji", "goto #", {1}},
 		{ "jz.t", "if (!#) goto loc_#", {1, 2}},
 		{ "jz.a", "if (!#) goto loc_#", {1, 2}},
 		{ "jz", "if (!#) goto loc_#", {1, 2}},
+		{ "jnz", "if (#) goto loc_#", {1, 2}},
+		{ "calli", "call # ()", {1}},
 		{ "sub", "# = # - #", {1, 2, 3}},
+		{ "add.a", "# += #", {1, 2, 3}},
 		{ "addsc.a", "# = # + #", {1, 2, 3}},
 		{ "addih", "# = # + #", {1, 2, 3}},
 		{ "add", "# = # + #", {1, 2, 3}},
 		{ "and", "# &= #", {1, 2}},
+		{ "or", "# = # | #", {1, 2, 3}},
+		{ "isync", "", {}},
+		{ "dsync", "", {}},
 		{ "st.w", "# = #", {1, 2}},
+		{ "st.h", "# = #", {1, 2}},
+		{ "st.bu", "# = #", {1, 2}},
+		{ "st.b", "# = #", {1, 2}},
 		{ "st.a", "# = #", {1, 2}},
 		{ "ld.bu", "# = #", {1, 2}},
 		{ "ld.w", "# = #", {1, 2}},
 		{ "ld.a", "# = #", {1, 2}},
+		{ "ld.b", "# = #", {1, 2}},
+		{ "ld.h", "# = #", {1, 2}},
+		{ "ld.hu", "# = #", {1, 2}},
 		{ "sha", "# = sha(#)", {1, 2}},
 		{ "sh", "# = # >> #", {1, 2, 3}},
 		{ NULL }
@@ -125,9 +157,11 @@ static int parse(RParse *p, const char *data, char *str) {
 			}
 		}
 		if (par) ptr++;
-		r_str_ncpy (w0, buf, R_MIN (ptr - buf, sizeof (w0)));
+		r_str_ncpy (w0, buf, R_MIN (ptr - buf, sizeof (w0)) + 1);
+		r_str_trim (w0);
 		if (par) ptr--;
-		r_str_ncpy (w1, ptr, R_MIN (end-ptr+1, sizeof (w1)));
+		r_str_ncpy (w1, ptr, R_MIN (end-ptr+1, sizeof (w1)) + 1);
+		r_str_trim (w1);
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {
@@ -157,47 +191,10 @@ static int parse(RParse *p, const char *data, char *str) {
 			nw++;
 		}
 	}
-	/* TODO: interpretation of memory location fails*/
-	//ensure imul & mul interpretations works
-	if (strstr (w0, "mul")) {
-		if (nw == 2) {
-			r_str_ncpy (wa[3], wa[1], sizeof (w3));
-
-			switch (wa[3][0]) {
-			case 'q':
-			case 'r': //qword, r..
-				r_str_ncpy (wa[1], "rax", sizeof (w1));
-				r_str_ncpy (wa[2], "rax", sizeof (w2));
-				break;
-			case 'd':
-			case 'e': //dword, e..
-				if (strlen (wa[3]) > 2) {
-					r_str_ncpy (wa[1], "eax", sizeof (w1));
-					r_str_ncpy (wa[2], "eax", sizeof (w2));
-					break;
-				}
-			default : // .x, .p, .i or word
-				if (wa[3][1] == 'x' || wa[3][1] == 'p' || \
-					wa[3][1] == 'i' || wa[3][0] == 'w') {
-					r_str_ncpy (wa[1], "ax", sizeof (w1));
-					r_str_ncpy (wa[2], "ax", sizeof (w2));
-				} else { // byte and lowest 8 bit registers
-					r_str_ncpy (wa[1], "al", sizeof (w1));
-					r_str_ncpy (wa[2], "al", sizeof (w2));
-				}
-			}
-		} else if (nw == 3) {
-			r_str_ncpy (wa[3], wa[2], sizeof (w3));
-			r_str_ncpy (wa[2], wa[1], sizeof (w2));
-		}
-		replace (nw, wa, str);
-	} else if (p->retleave_asm) {
-		R_FREE (p->retleave_asm);
-		replace (nw, wa, str);
-	} else {
-		replace (nw, wa, str);
-	}
+#if 0
 	r_str_fixspaces (str);
+#endif
+	replace (nw, wa, str);
 	free (buf);
 	return true;
 }
