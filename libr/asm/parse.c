@@ -36,8 +36,6 @@ R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	}
 	return NULL;
 }
-
-R_API char *r_parse_
 #endif
 
 R_API RParse *r_parse_new(void) {
