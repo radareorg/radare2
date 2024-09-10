@@ -146,8 +146,9 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 				return false;
 			}
 		}
+		return false;
 	}
-	return false;
+	return true;
 }
 
 // data is input disasm, str is output pseudo
