@@ -1208,8 +1208,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 		if (ds->pseudo) {
 			if (r_parse_parse (core->parser, ds->opstr, ds->str)) {
-				free (ds->opstr);
-				ds->opstr = strdup (ds->str);
+				if (R_STR_ISNOTEMPTY (ds->str)) {
+					free (ds->opstr);
+					ds->opstr = strdup (ds->str);
+				}
 			}
 		}
 		if (ds->subjmp) {
