@@ -158,9 +158,8 @@ static void load_scripts(RCore *core) {
 	load_scripts_at (core, homeplugindir);
 	free (homeplugindir);
 
-	char *sysplugindir = r_str_newf ("%s/radare2/%s", R2_LIBDIR, R2_VERSION);
+	const char *sysplugindir = r_config_get (core->config, "dir.plugins");
 	load_scripts_at (core, sysplugindir);
-	free (sysplugindir);
 }
 
 R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
