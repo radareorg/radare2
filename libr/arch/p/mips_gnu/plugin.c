@@ -43,22 +43,25 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 #define ES_H(x) "0xffff," x ",&"
 #define ES_W(x) "0xffffffff," x ",&"
 // call with delay slot
-#define ES_CALL_DR(ra, addr) "pc,4,+," ra ",=," ES_J (addr)
-#define ES_CALL_D(addr)      ES_CALL_DR ("ra", addr)
+#define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J_D(addr)
+#define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
 
 // call without delay slot
-#define ES_CALL_NDR(ra, addr) "pc," ra ",=," ES_J (addr)
-#define ES_CALL_ND(addr)      ES_CALL_NDR ("ra", addr)
+#define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J_ND(addr)
+#define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
 
-#define USE_DS 0
+#define USE_DS 1
 #if USE_DS
 // emit ERR trap if executed in a delay slot
 #define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
-// jump to address
-#define ES_J(addr) addr ",SETJT,1,SETD"
+// Record jump-to-address and set delay slot flag.
+#define ES_J_D(addr) addr",SETJT,1,SETD"
+// Jump to address.
+#define ES_J_ND(addr) addr",pc,:="
 #else
 #define ES_TRAP_DS() ""
-#define ES_J(addr)   addr ",pc,:="
+#define ES_J_D(addr) addr",pc,:="
+#define ES_J_ND(addr) ES_J_D(addr)
 #endif
 
 #define ES_SIGN32_64(arg) es_sign_n_64 (as, op, arg, 32)
@@ -848,28 +851,33 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
-	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), R_REG (rs));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J_ND ("%s"), R_REG (rs));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_JR:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J_D ("%s"), R_REG (rs));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_J:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), J_REG (jump));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J_D ("%s"), J_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 	case MIPS_INS_B:
 		// jump to address with conditional
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), I_REG (jump));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J_D ("%s"), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BNE: // bne $s, $t, offset
 	case MIPS_INS_BNEL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,!,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,!,?{," ES_J_D ("%s") ",}",
 			I_REG (rs), I_REG (rt), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
@@ -877,43 +885,63 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		break;
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BEQL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,?{," ES_J_D ("%s") ",}",
 			I_REG (rs), I_REG (rt), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BEQZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{," ES_J_ND ("%s") ",}",
+			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BZ:
 	case MIPS_INS_BEQZ:
-	case MIPS_INS_BEQZC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{," ES_J_D ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BNEZ:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,!,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,!,?{," ES_J_D ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BLEZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{," ES_J_ND ("%s") ",BREAK,},",
+			I_REG (rs), I_REG (jump));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BLEZ:
-	case MIPS_INS_BLEZC:
 	case MIPS_INS_BLEZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{," ES_J ("%s") ",BREAK,},",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{," ES_J_D ("%s") ",BREAK,},",
 			I_REG (rs), I_REG (jump));
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BGEZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BGEZ:
-	case MIPS_INS_BGEZC:
 	case MIPS_INS_BGEZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
@@ -933,20 +961,33 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
-	case MIPS_INS_BLTZ:
 	case MIPS_INS_BLTZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BLTZ:
 	case MIPS_INS_BLTZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BGTZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", I_REG (rs));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_ND ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
 #endif
 		break;
 	case MIPS_INS_BGTZ:
-	case MIPS_INS_BGTZC:
 	case MIPS_INS_BGTZL:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", I_REG (rs));
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J_D ("%s") ",}",
 			I_REG (rs), I_REG (jump));
 #if USE_DS
 		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
