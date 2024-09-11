@@ -965,6 +965,10 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		r_strbuf_appendf (&op->esil, "0,%s,==,$z,?{,%s,%s,=,}",
 			R_REG (rt), R_REG (rs), R_REG (rd));
 		break;
+	case MIPS_INS_MOVN:
+		r_strbuf_appendf (&op->esil, "0,%s,==,$z,!,?{,%s,%s,=,}",
+			R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
 	case MIPS_INS_MOVT:
 		r_strbuf_appendf (&op->esil, "1,%s,==,$z,?{,%s,%s,=,}",
 			R_REG (rt), R_REG (rs), R_REG (rd));
