@@ -31,10 +31,10 @@ static RCoreHelpMessage help_msg_f = {
 	"f", " name = 33", "alias for 'f name @ 33' or 'f name 1 33'",
 	"f", " name 12 33 [cmt]", "same as above + optional comment",
 	"f-", ".blah@fcn.foo", "delete local label from function at current seek (also f.-)",
+	"f-", "name", "remove flag 'name'",
+	"f-", "@addr", "remove flag at address expression (same as f-$$ or f-0x..)",
 	"f--", "", "delete all flags and flagspaces (deinit)",
 	"f+", "name 12 @ 33", "like above but creates new one if doesnt exist",
-	"f-", "name", "remove flag 'name'",
-	"f-", "@addr", "remove flag at address expression",
 	"f=", " [glob]", "list range bars graphics with flag offsets and sizes",
 	"fa", " [name] [alias]", "alias a flag to evaluate an expression",
 	"fb", " [addr]", "set base address for new flags",
@@ -1255,7 +1255,7 @@ rep:
 		}
 		}
 		break;
-	case '-':
+	case '-': // "f-"
 		if (input[1] == '-') {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
@@ -1263,7 +1263,14 @@ rep:
 			while (*flagname == ' ') {
 				flagname++;
 			}
-			if (*flagname == '.') {
+			if (*flagname == '?') {
+				r_core_cmd_help_contains (core, help_msg_f, "f-");
+			} else if (isdigit (*flagname)) {
+				ut64 addr = r_num_math (core->num, flagname);
+				r_flag_unset_off (core->flags, addr);
+			} else if (!strcmp (flagname, "$$")) {
+				r_flag_unset_off (core->flags, core->offset);
+			} else if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
 					r_anal_function_delete_label_at (fcn, off);
