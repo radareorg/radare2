@@ -3788,11 +3788,13 @@ static void cmd_search_xn(RCore *core, const char *input) {
 		*arg1++ = 0;
 	} else {
 		R_LOG_ERROR ("Usage: /xn [value] [amount]");
+		free (args);
 		return;
 	}
 	int amount = r_num_math (core->num, arg1);
 	if (amount < 1) {
 		R_LOG_ERROR ("Usage: /xn [value] [amount]");
+		free (args);
 		return;
 	}
 	ut8 b[8];
