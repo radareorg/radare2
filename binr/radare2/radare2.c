@@ -44,6 +44,11 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 }
 #else
 
+#include <unistd.h>
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+
 static void r2cmd(int in, int out, const char *cmd) {
 	int cmd_len = strlen (cmd) + 1;
 	if ((int)write (out, cmd, cmd_len) != cmd_len) {
