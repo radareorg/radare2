@@ -2,6 +2,7 @@
 // By Nadia Heninger and J. Alex Halderman
 // Contribution to r2 by @santitox
 // Integrated and refactored by jvoisin and spelissier
+// Updated by Sylvain Pelissier 2024
 
 #include <r_search.h>
 #include <r_crypto/r_ed25519.h>
@@ -68,6 +69,7 @@ static int check_fields(const ut8 *start) {
 // As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
 R_IPI int search_asn1_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (s && buf, -1);
 	int i, k, max, index, t;
 	RListIter *iter;
 	RSearchKeyword *kw;
@@ -120,16 +122,9 @@ R_IPI int search_asn1_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int 
 	return -1;
 }
 
-static inline void hexprint(const ut8 *data, int len) {
-	int i = 0;
-	for (i = 0; i < len; i++) {
-		r_cons_printf ("%02x", data[i]);
-	}
-	r_cons_newline ();
-}
-
 // Finds and return index of a private key matching a given public key.
 R_IPI int search_raw_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (s && buf, -1);
 	int t, i;
 	RSearchKeyword *kw;
 	RListIter *iter;

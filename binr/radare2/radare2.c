@@ -43,38 +43,71 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 	}
 }
 #else
-static void r2cmd(int in, int out, const char *cmd) {
-	size_t cmd_len = strlen (cmd) + 1;
-	if (write (out, cmd, cmd_len) != cmd_len) {
+
+static ssize_t write_all(int fd, const void *buf, size_t count) {
+	size_t total_written = 0;
+	const char *ptr = buf;
+
+	while (total_written < count) {
+		ssize_t written = write (fd, ptr + total_written, count - total_written);
+		if (written <= 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -1;
+		}
+		total_written += written;
+	}
+	return total_written;
+}
+
+static void r2cmd(int in_fd, int out_fd, const char *cmd) {
+	// Send the command followed by a newline to the output file descriptor
+	size_t cmd_len = strlen (cmd);
+	if (write_all (out_fd, cmd, cmd_len) != (ssize_t)cmd_len) {
 		return;
 	}
-	if (write (out, "\n", 1) != 1) {
+	if (write_all (out_fd, "\n", 1) != 1) {
 		return;
 	}
-	int bufsz = (1024 * 64);
-	unsigned char *buf = malloc (bufsz);
-	if (!buf) {
-		return;
-	}
+
+	ut8 *buf = NULL;
+	size_t bufsz = 0;
+	ssize_t bytes_read;
+
 	while (1) {
-		int n = read (in, buf, bufsz);
-		if (n < 1) {
+		// Read data in small chunks to handle any size
+		ut8 small_buf[4096];
+		bytes_read = read (in_fd, small_buf, sizeof(small_buf));
+		if (bytes_read < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			break;
+		} else if (bytes_read == 0) {
 			break;
 		}
-		buf[n] = '\0';
-		buf[bufsz - 1] = '\0';
-		int len = strlen ((const char *)buf);
-		n = len;
-		if (n < 1) {
-			break;
+
+		// Allocate or expand the buffer to hold the new data
+		unsigned char *new_buf = realloc (buf, bufsz + bytes_read);
+		if (!new_buf) {
+			free (buf);
+			return; // Allocation failed
 		}
-		n = write (1, buf, n);
-		if (n != bufsz) {
-			break;
+		buf = new_buf;
+		memcpy (buf + bufsz, small_buf, bytes_read);
+		bufsz += bytes_read;
+	}
+
+	if (bufsz > 0) {
+		if (write_all (STDOUT_FILENO, buf, bufsz) != (ssize_t)bufsz) {
+			free (buf);
+			return;
 		}
 	}
+
 	free (buf);
-	write (1, "\n", 1);
+	write_all (STDOUT_FILENO, "\n", 1);
 }
 
 static int r_main_r2pipe(int argc, const char **argv) {
