@@ -44,113 +44,34 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 }
 #else
 
-
-// Helper function to write all data to a file descriptor
-static ssize_t write_all(int fd, const void *buf, size_t count) {
-    size_t total_written = 0;
-    const char *ptr = buf;
-
-    while (total_written < count) {
-        ssize_t written = write(fd, ptr + total_written, count - total_written);
-        if (written <= 0) {
-            if (errno == EINTR)
-                continue; // Retry if interrupted
-            return -1; // Error occurred
-        }
-        total_written += written;
-    }
-    return total_written;
-}
-
-static void r2cmd(int in_fd, int out_fd, const char *cmd) {
-    // Send the command including the null terminator and newline
-    size_t cmd_len = strlen(cmd) + 1; // Include null terminator
-    if (write_all(out_fd, cmd, cmd_len) != (ssize_t)cmd_len)
-        return;
-    if (write_all(out_fd, "\n", 1) != 1)
-        return;
-
-    // Set the input file descriptor to non-blocking mode
-    int flags = fcntl(in_fd, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl F_GETFL");
-        return;
-    }
-    if (fcntl(in_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        perror("fcntl F_SETFL");
-        return;
-    }
-
-    unsigned char tmp_buf[4096];
-    ssize_t bytes_read;
-    RBuffer *buf = r_buf_new(); // Initialize RBuf
-    if (!buf)
-        return;
-
-    // The response terminator (adjust based on your protocol)
-    const char *response_terminator = "\0"; // Null terminator as an example
-    size_t terminator_len = strlen(response_terminator);
-
-    while (1) {
-        bytes_read = read(in_fd, tmp_buf, sizeof(tmp_buf));
-        if (bytes_read < 0) {
-            if (errno == EINTR)
-                continue; // Retry if interrupted
-            else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // No data available right now
-                // Implement a timeout or sleep if necessary
-                usleep(10000); // Sleep for 10ms
-                continue;
-            } else {
-                perror("read");
-                break; // Error occurred
-            }
-        } else if (bytes_read == 0) {
-            // EOF reached
-            break;
-        }
-
-        // Append data to RBuf
-        if (!r_buf_append_bytes(buf, tmp_buf, bytes_read)) {
-            // Failed to append data
-            r_buf_free(buf);
-            return;
-        }
-
-        // Write data to STDOUT
-        if (write_all(STDOUT_FILENO, tmp_buf, bytes_read) != bytes_read) {
-            // Error occurred during write
-            perror("write");
-            r_buf_free(buf);
-            return;
-        }
-
-        // Check if the response terminator is in the buffer
-        st64 buf_size = r_buf_size(buf);
-        if (buf_size >= (st64)terminator_len) {
-            // Read the last few bytes to check for the terminator
-            ut8 *end_check = malloc(terminator_len);
-            if (!end_check) {
-                perror("malloc");
-                r_buf_free(buf);
-                return;
-            }
-            if (r_buf_read_at(buf, buf_size - terminator_len, end_check, terminator_len) != (st64)terminator_len) {
-                free(end_check);
-                r_buf_free(buf);
-                return;
-            }
-            if (memcmp(end_check, response_terminator, terminator_len) == 0) {
-                // Terminator found, end of response
-                free(end_check);
-                break;
-            }
-            free(end_check);
-        }
-    }
-
-    r_buf_free(buf);
-    write_all(STDOUT_FILENO, "\n", 1);
+static void r2cmd(int in, int out, const char *cmd) {
+	size_t cmd_len = strlen (cmd) + 1;
+	if (write (out, cmd, cmd_len) != (ssize_t)cmd_len) {
+		return;
+	}
+#if 0
+	if (write (out, "\n", 1) != 1) {
+		return;
+	}
+#endif
+	int bufsz = (1024 * 64) - 1;
+	ut8 *buf = malloc (bufsz + 1);
+	if (R_UNLIKELY (!buf)) {
+		return;
+	}
+	int n = read (in, buf, bufsz);
+	if (R_LIKELY (n > 0)) {
+		buf[R_MIN (n, bufsz)] = 0;
+		int len = strlen ((const char *)buf);
+		if (len > 0) {
+			n = write (STDOUT_FILENO, buf, len);
+			if (n != len) {
+				R_LOG_ERROR ("Truncated output");
+			}
+		}
+	}
+	free (buf);
+	write (STDOUT_FILENO, "\n", 1);
 }
 
 static int r_main_r2pipe(int argc, const char **argv) {
