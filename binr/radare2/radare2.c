@@ -45,8 +45,8 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 #else
 
 static void r2cmd(int in, int out, const char *cmd) {
-	size_t cmd_len = strlen (cmd) + 1;
-	if (write (out, cmd, cmd_len) != (ssize_t)cmd_len) {
+	int cmd_len = strlen (cmd) + 1;
+	if ((int)write (out, cmd, cmd_len) != cmd_len) {
 		return;
 	}
 #if 0
