@@ -44,7 +44,6 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 }
 #else
 
-#include <unistd.h>
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1
 #endif
