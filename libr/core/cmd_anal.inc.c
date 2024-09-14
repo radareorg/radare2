@@ -7286,8 +7286,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	addr = r_config_get_i (core->config, "esil.stack.addr");
 
 	if (r_io_map_is_mapped (core->io, addr)) {
-		addr = core->offset;
-		r_io_map_locate (core->io, &addr, size, 0x10000000);
+		const ut64 incretry = 0x10000000;
+		if (r_io_map_locate (core->io, &addr, size, incretry)) {
+			addr += incretry;
+		}
 	}
 	patt = r_config_get (core->config, "esil.stack.pattern");
 	r_str_ncpy (nomalloc, input, 255);
