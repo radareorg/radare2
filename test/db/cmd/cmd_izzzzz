@@ -1,0 +1,117 @@
+# 
+# NAME=izz and bin.str.enc
+# FILE=-
+# CMDS=<<EOF
+# wz k\0i\0abcdefgh
+# (izzenc enc; e bin.str.enc=$0; izz~:3..)
+# .(izzenc guess)
+# .(izzenc ascii)
+# .(izzenc utf8)
+# .(izzenc utf16le)
+# ?e
+# wx 00250025002500250000
+# .(izzenc guess)
+# .(izzenc utf16le)
+# ?e
+# wx 26252625262526250000
+# .(izzenc guess)
+# .(izzenc utf16le)
+# EOF
+# EXPECT=<<EOF
+# 0   0x00000004 0x00000004 8   9            ascii abcdefgh
+# 0   0x00000004 0x00000004 8   9            ascii abcdefgh
+# 0   0x00000004 0x00000004 8   9            ascii abcdefgh
+# 0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧
+# 
+# 0   0x00000001 0x00000001 4   9            utf16le %%%%
+# 0   0x00000000 0x00000000 4   10           utf16le ────
+# 
+# 0   0x00000000 0x00000000 8   9            ascii &%&%&%&%
+# 0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦
+# EOF
+# RUN
+# 
+# NAME=bin.str.enc string reset
+# FILE=--
+# CMDS=<<EOF
+# mkdir .tmp
+# cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
+# o+ .tmp/strenc-bin
+# iz~:3..
+# s 0x080484b0
+# wz k\0i\0abcdefgh
+# (izenc enc; e bin.str.enc=$0; iz~:3..)
+# .(izenc guess)
+# .(izenc utf8)
+# .(izenc utf16le)
+# o-*
+# rm .tmp/strenc-bin
+# EOF
+# EXPECT=<<EOF
+# 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+# 0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+# 0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+# 0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧
+# EOF
+# RUN
+# 
+# NAME=izj unicode blocks
+# FILE=bins/elf/strenc
+# CMDS=<<EOF
+# e bin.str.purge=all,!4202996,!4203007,!4203208
+# izj
+# EOF
+# EXPECT=<<EOF
+# [{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+# EOF
+# RUN
+# 
+# NAME=izzj unicode blocks
+# FILE=bins/elf/strenc-guess-utf32le
+# CMDS=<<EOF
+# e bin.str.purge=all,!4195920
+# izzj
+# EOF
+# EXPECT=<<EOF
+# [{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+# EOF
+# RUN
+# 
+# NAME=iz-
+# FILE=-
+# CMDS=<<EOF
+# iz- @ 0x412420
+# e bin.str.purge
+# iz- @ 0x4028a0
+# e bin.str.purge
+# iz- 0x414fbf
+# e bin.str.purge
+# EOF
+# EXPECT=<<EOF
+# 0x412420
+# 0x412420,0x4028a0
+# 0x412420,0x4028a0,0x414fbf
+# EOF
+# RUN
+# 
+# NAME=regression for #9370
+# FILE=bins/elf/analysis/hello-arm32
+# ARGS=-m 0x10000
+# CMDS=izz~Hello
+# EXPECT=<<EOF
+# 6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
+# EOF
+# RUN
+
+
+
+NAME=izjencoding
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = base64
+izj~{[0].section}
+EOF
+EXPECT=<<EOF
+LnJvZGF0YQ==
+EOF
+RUN
