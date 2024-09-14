@@ -5,7 +5,6 @@
 
 // XXX should be dynlink
 #include "lua53.c"
-#include "lua53_parser.c"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	PluginData *pd = as->data;

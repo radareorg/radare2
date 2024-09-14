@@ -4,7 +4,6 @@
 #include <r_lib.h>
 
 #include "../format/lua/lua.h"
-#include "../arch/p/lua/lua53_parser.c"
 
 static inline RLuaHeader *get_lua_header(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
