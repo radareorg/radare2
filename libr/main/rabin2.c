@@ -631,7 +631,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 #endif
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
-		r_config_set (core.config, "cmd.demangle", tmp);
+		// r_config_set (core.config, "cmd.demangle", tmp);
+		r_config_set (core.config, "bin.demangle.usecmd", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_CHARSET"))) {
