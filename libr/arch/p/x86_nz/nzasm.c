@@ -2223,7 +2223,11 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			}
 			if (op->operands[1].type & OT_QWORD &&
 				op->operands[0].type & OT_QWORD) {
-				data[l++] = 0x48;
+				if (op->operands[0].extended) {
+					data[l++] = 0x4c; // r12, r13, ..
+				} else {
+					data[l++] = 0x48; // rax, rbx, ..
+				}
 			}
 		}
 

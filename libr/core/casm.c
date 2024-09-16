@@ -198,7 +198,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
-				//opsz = analop.size;
+				// opsz = analop.size;
 				opst = strdup (r_strbuf_get (&analop.esil));
 				r_anal_op_fini (&analop);
 			} else {
@@ -208,7 +208,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					      buf + addrbytes * idx,
 					      bs - addrbytes * idx))) {
 					idx = (matchcount)? tidx + 1: idx + 1;
-					eprintf ("FAIL TO ANALOP\n");
+					R_LOG_ERROR ("Failed to disassemble instruction at 0x%08"PFMT64x, op.addr);
 					matchcount = 0;
 					r_asm_op_fini (&op);
 					continue;
