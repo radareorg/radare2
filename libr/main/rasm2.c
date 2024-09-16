@@ -853,7 +853,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 
 	if (cpu) {
-		r_asm_set_cpu (as->a, cpu);
+		r_arch_config_set_cpu (as->a->config, cpu);
 		// not necessary --- r_arch_config_set_cpu (as->a->config, cpu);
 	}
 	if (arch) {
@@ -880,6 +880,15 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	r_asm_set_bits (as->a, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (as->anal, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
 	as->a->syscall = r_syscall_new ();
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		// check if selected cpu is valid
+		const char *cpus = R_UNWRAP4 (as->anal->arch, session, plugin, cpus);
+		if (cpus && !strstr (cpus, cpu)) {
+			R_LOG_WARN ("Invalid CPU. See -a, -b and asm.cpu values (%s)", cpus);
+		} else {
+			R_LOG_WARN ("Ignored -c asm.cpu, provided plugin exposes no CPUs models");
+		}
+	}
 	r_syscall_setup (as->a->syscall, arch, bits, cpu, kernel);
 	{
 		bool canbebig = r_asm_set_big_endian (as->a, isbig);
