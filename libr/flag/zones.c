@@ -160,7 +160,7 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
 			f->cb_printf ("f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
 				zi->to - zi->from, zi->from);
-		} else if (mdoe == 'q') {
+		} else if (mode == 'q') {
 			f->cb_printf ("%s\n", zi->name);
 		} else {
 			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
