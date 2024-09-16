@@ -1678,7 +1678,7 @@ typedef struct {
 static void ri_init(RCore *core, RelocInfo *ri) {
 	ri->core = core;
 	ri->bin_demangle = r_config_get_b (core->config, "bin.demangle");
-	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.libs");
+	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	ri->lang = r_config_get (core->config, "bin.lang");
 	const RBinInfo *info = r_bin_get_info (core->bin);
 	const char *rclass = info->rclass;
@@ -1858,7 +1858,7 @@ static bool warn_if_dbg(RCore *core) {
 
 static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_i (r->config, "bin.demangle.pfxlib");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	RTable *table = r_core_table (r, "relocs");
 	R_RETURN_VAL_IF_FAIL (table, false);
@@ -2165,7 +2165,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
 	RTable *table = r_core_table (r, "imports");
 	R_RETURN_VAL_IF_FAIL (table, false);
 	RBinImport *import;
@@ -2369,7 +2369,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 	sn->demname = NULL;
 	sn->demflag = NULL;
 	if (bin_demangle && sym->paddr) {
-		const bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
+		const bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
