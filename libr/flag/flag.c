@@ -251,35 +251,33 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
 
 	RFlagItem *n = R_NEW0 (RFlagItem);
-	if (!n) {
-		return NULL;
+	if (R_LIKELY (n)) {
+		n->color = STRDUP_OR_NULL (item->color);
+		n->comment = STRDUP_OR_NULL (item->comment);
+		n->alias = STRDUP_OR_NULL (item->alias);
+		n->name = STRDUP_OR_NULL (item->name);
+		n->realname = STRDUP_OR_NULL (item->realname);
+		n->offset = item->offset;
+		n->size = item->size;
+		n->space = item->space;
 	}
-	n->color = STRDUP_OR_NULL (item->color);
-	n->comment = STRDUP_OR_NULL (item->comment);
-	n->alias = STRDUP_OR_NULL (item->alias);
-	n->name = STRDUP_OR_NULL (item->name);
-	n->realname = STRDUP_OR_NULL (item->realname);
-	n->offset = item->offset;
-	n->size = item->size;
-	n->space = item->space;
 	return n;
 }
 
 R_API void r_flag_item_free(RFlagItem *item) {
-	if (!item) {
-		return;
+	if (R_LIKELY (item)) {
+		free (item->color);
+		free (item->comment);
+		free (item->alias);
+		/* release only one of the two pointers if they are the same */
+		free_item_name (item);
+		free (item->realname);
+		free (item);
 	}
-	free (item->color);
-	free (item->comment);
-	free (item->alias);
-	/* release only one of the two pointers if they are the same */
-	free_item_name (item);
-	free (item->realname);
-	free (item);
 }
 
 R_API void r_flag_free(RFlag *f) {
-	if (f) {
+	if (R_LIKELY (f)) {
 		r_th_lock_free (f->lock);
 		f->lock = NULL;
 		r_skiplist_free (f->by_off);
@@ -444,7 +442,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 		break;
 	}
 	default:
-	case 'n': {
+	case 'n':
 		if (!pfx || pfx[0] != 'j') {// show original name
 			struct print_flag_t u = {
 				.f = f,
@@ -471,7 +469,6 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			pj_free (pj);
 		}
 		break;
-	}
 	}
 }
 
@@ -600,11 +597,13 @@ beach:
 }
 
 static bool isFunctionFlag(const char *n) {
-	return (!strncmp (n, "sym.func.", 9)
-	|| !strncmp (n, "method.", 7)
-	|| !strncmp (n, "sym.", 4)
-	|| !strncmp (n, "func.", 5)
-	|| !strncmp (n, "fcn.0", 5));
+	return (0
+	|| r_str_startswith (n, "sym.func.")
+	|| r_str_startswith (n, "method.")
+	|| r_str_startswith (n, "fn.")
+	|| r_str_startswith (n, "sym.")
+	|| r_str_startswith (n, "func.")
+	|| r_str_startswith (n, "fcn.0"));
 }
 
 /* returns the last flag item defined before or at the given offset.
@@ -976,9 +975,9 @@ static bool flag_count_foreach(RFlagItem *fi, void *user) {
 	return true;
 }
 
-R_API int r_flag_count(RFlag *f, const char *glob) {
-	int count = 0;
+R_API int r_flag_count(RFlag *f, R_NULLABLE const char *glob) {
 	R_RETURN_VAL_IF_FAIL (f, -1);
+	int count = 0;
 	r_flag_foreach_glob (f, glob, flag_count_foreach, &count);
 	return count;
 }
