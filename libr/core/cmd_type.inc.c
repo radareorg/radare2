@@ -99,12 +99,13 @@ static RCoreHelpMessage help_msg_te = {
 	"te", " <enum>", "print all values of enum for given name",
 	"te", " <enum> <value>", "show name for given enum number",
 	"te-", "<enum>", "delete enum type definition",
-	"tej", "", "list all loaded enums in json",
-	"tej", " <enum>", "show enum in json",
 	"teb", " <enum> <name>", "show matching enum bitfield for given name",
 	"tec", "", "list all loaded enums in C output format with newlines",
 	"tec", " <name>", "list given loaded enums in C output format with newlines",
 	"ted", "", "list all loaded enums in C output format without newlines",
+	"tej", "", "list all loaded enums in json",
+	"tej", " <enum>", "show enum in json",
+	"test", " [-x,f,d] [path]", "test if executable, file or directory exists",
 	NULL
 };
 
@@ -1092,6 +1093,39 @@ beach:
 	free (buf);
 }
 
+static void test_flag(RCore *core, bool res) {
+	r_core_return_value (core, res? 0: 1);
+}
+
+static int cmd_test(RCore *core, const char *input) {
+	int type = 'f';
+	if (*input == '-') {
+		type = input[1];
+	}
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_head_ro (arg + 1);
+	} else {
+		R_LOG_ERROR ("Missing file argument. Use 'test -fdx [file]'");
+		return 1;
+	}
+	switch (type) {
+	case 'f':
+		test_flag (core, r_file_exists (arg));
+		break;
+	case 'x':
+		test_flag (core, r_file_is_executable (arg));
+		break;
+	case 'd':
+		test_flag (core, r_file_is_directory (arg));
+		break;
+	default:
+		R_LOG_ERROR ("Unknown flag for test. Use -f, -x or -d");
+		return 1;
+	}
+	return 0;
+}
+
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
@@ -1257,6 +1291,9 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	}
 	case 'e': { // "te"
+		if (r_str_startswith (input, "est")) {
+			return cmd_test (core, r_str_trim_head_ro (input + 3));
+		}
 		char *res = NULL, *temp = strchr (input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
 		char *name = temp ? strdup (temp + 1): NULL;
@@ -1397,7 +1434,7 @@ static int cmd_type(void *data, const char *input) {
 		if (res) {
 			r_cons_println (res);
 		} else if (member_name) {
-			eprintf ("Invalid enum member\n");
+			R_LOG_ERROR ("Invalid enum member");
 		}
 		break;
 	}
