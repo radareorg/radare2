@@ -1,6 +1,7 @@
 a "lea rax, [0x1000]" 488d05f90f0000
 d "lea rax, [rip + 0xff9]" 488d05f90f0000
 ad "nop" 90
+ad "mov r11, qword [rbp + 8]" 4c8b5d08
 ad "ret" c3
 a "add al, 0x89" 0489
 a "add al, 0xd9" 04d9
