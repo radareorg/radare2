@@ -58,8 +58,14 @@ extern "C" {
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 
+#if R2_USE_NEW_ABI
+// no limits
+#else
 #define R_CONS_GREP_WORDS 10
 #define R_CONS_GREP_WORD_SIZE 64
+#endif
+
+// R2_600 - remove more limits
 #define R_CONS_GREP_TOKENS 64
 #define R_CONS_GREP_COUNT 10
 
@@ -110,9 +116,22 @@ typedef struct {
 	const char *script;
 } RConsTheme;
 
+#if R2_USE_NEW_ABI
+typedef struct r_cons_grep_word_t {
+	char *str;
+	bool neg;
+	bool begin;
+	bool end;
+} RConsGrepWord;
+#endif
+
 typedef struct r_cons_grep_t {
+#if R2_USE_NEW_ABI
+	RList *strings; // words
+#else
 	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
 	int nstrings;
+#endif
 	char *str;
 	int counter;
 	bool charCounter;
@@ -135,9 +154,12 @@ typedef struct r_cons_grep_t {
 	int amp;
 	int zoom;
 	int zoomy; // if set then its scaled unproportionally
+#if R2_USE_NEW_ABI
+#else
 	int neg[R_CONS_GREP_WORDS];
 	int begin[R_CONS_GREP_WORDS];
 	int end[R_CONS_GREP_WORDS];
+#endif
 	bool xml;
 	bool icase;
 	bool ascart;
