@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2022 - pancake */
+/* radare - LGPL - Copyright 2018-2024 - pancake */
 
 #include <r_flag.h>
 
@@ -9,7 +9,7 @@ R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 	return NULL;
 }
 
-R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
+R_API RList *r_flag_tags_list(RFlag *f, R_NULLABLE const char *name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (name) {
 		r_strf_var (k, 64, "tag.%s", name);
@@ -22,7 +22,7 @@ R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 	SdbKv *kv;
 	ls_foreach (o, iter, kv) {
 		const char *tag = sdbkv_key (kv);
-		if (strlen (tag) < 5) {
+		if (r_str_nlen (tag, 6) < 5) {
 			continue;
 		}
 		r_list_append (res, (void *)strdup (tag + 4));
@@ -31,10 +31,14 @@ R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 	return res;
 }
 
-R_API void r_flag_tags_reset(RFlag *f, const char *name) {
-	// TODO: use name
+R_API void r_flag_tags_reset(RFlag *f, R_NULLABLE const char *name) {
 	R_RETURN_IF_FAIL (f);
-	sdb_reset (f->tags);
+	if (name) {
+		r_strf_var (k, 64, "tag.%s", name);
+		sdb_unset (f->tags, k, 0);
+	} else {
+		sdb_reset (f->tags);
+	}
 }
 
 struct iter_glob_flag_t {
