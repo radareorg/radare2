@@ -2420,16 +2420,19 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 	if (param->searchflags) {
 		if (R_STR_ISNOTEMPTY (str)) {
+			// TODO: use the api instead
 			char *s = r_str_newf ("string \"%s\"", str);
 			r_core_cmdf (core, "'0x%08"PFMT64x"'CC %s", hit->addr, s);
 			free (s);
 		}
-		char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
-			? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
-			: r_str_newf ("%s%d_%d", param->searchprefix, kwidx, param->count);
-		if (flagname) {
-			r_flag_set (core->flags, flagname, hit->addr, hit->len);
-			free (flagname);
+		if (param->outmode != R_MODE_SIMPLE) {
+			char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
+				? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
+				: r_str_newf ("%s%d_%d", param->searchprefix, kwidx, param->count);
+			if (flagname) {
+				r_flag_set (core->flags, flagname, hit->addr, hit->len);
+				free (flagname);
+			}
 		}
 	}
 }
@@ -3027,9 +3030,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 					R_FREE (opstr);
 					if (*input && param->searchflags) {
-						char flag[64];
-						snprintf (flag, sizeof (flag), "%s%d_%d",
-							param->searchprefix, kwidx, count);
+						r_strf_var (flag, 64, "%s%d_%d", param->searchprefix, kwidx, count);
 						r_flag_set (core->flags, flag, at, ret);
 					}
 					if (*param->cmd_hit) {
@@ -3185,7 +3186,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (maxhits && count >= maxhits) {
 			break;
 		}
-		RList *hits; hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
+		RList *hits = r_core_asm_strsearch (core, end_cmd, from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
@@ -4461,9 +4462,11 @@ reread:
 				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
 				break;
 			case 's': // "/azs"
+				param.outmode = R_MODE_SIMPLE;
 				do_analstr_search (core, &param, true, NULL);
 				break;
 			case 'j': // "/azj"
+				param.outmode = R_MODE_JSON;
 				do_analstr_search (core, &param, false, NULL);
 				break;
 			case ' ': // "/az [num]"
