@@ -715,6 +715,9 @@ repeat:;
 								q += strlen (q);
 							}
 						}
+						if (n == 0) {
+							continue;
+						}
 						q = Q + n;
 						if (q >= q_end) {
 							continue;

@@ -6,6 +6,27 @@ swift
 EOF
 RUN
 
+NAME=one longsym
+FILE=--
+CMDS=<<EOF
+iD swift _$s13PasswordCheck11ContentViewV4bodyQrvg7SwiftUI05TupleD0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
+EOF
+EXPECT=<<EOF
+PasswordCheck.ContentView.body.SwiftUI.Tuple...D0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
+EOF
+RUN
+
+NAME=1b34 longsym
+FILE=bins/mach0/PasswordCheck-swift
+CMDS=<<EOF
+is~1b34
+EOF
+EXPECT=<<EOF
+5   0x00001b34 0x100001b34 LOCAL  FUNC 0        _$s13PasswordCheck11ContentViewV4bodyQrvg7SwiftUI05TupleD0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_                                                                                               PasswordCheck.ContentView.body.SwiftUI.Tuple...D0VyAE0D0PAEE7paddingyQrAE4EdgeO3SetV_12CoreGraphics7CGFloatVSgtFQOyAE4TextV_Qo__AiEEAJyQrAN_ARtFQOyAiEE14textFieldStyleyQrqd__AE0oqR0Rd__lFQOyAE06SecureQ0VyATG_AE013RoundedBorderoqR0VQo__Qo_AiEE5alert11isPresented7contentQrAE7BindingVySbG_AE5AlertVyXEtFQOyAE6ButtonVyAiEE12cornerRadius_11antialiasedQrAQ_SbtFQOyAiEE15foregroundColoryQrAE5ColorVSgFQOyAiEE10background_20ignoresSafeAreaEdgesQrqd___ANtAE05ShapeR0Rd__lFQOyAU_A17_Qo__Qo__Qo_G_Qo_tGyXEfU_yycfU_
+378 0x00001b34 0x100001b34 LOCAL  FUNC 0        func.100001b34
+EOF
+RUN
+
 NAME=swift long method
 FILE=--
 CMDS=iD swift s16IOSSecuritySuiteAAC14denySymbolHook_2at10imageSlideySS_SPySo11mach_headerVGSitFZ
@@ -34,7 +55,7 @@ NAME=swift long multiple dupes 2
 FILE=--
 CMDS=iD swift s9CryptoKit8Curve448O7SigningO9PublicKeyV16isValidSignature_3forSbx_q_t10Foundation12DataProtocolRzAjKR_r0_lF
 EXPECT=<<EOF
-CryptoKit.Curve448.Signing.PublicKey.isValidSignature.for.Foundation.DataProtocol...r0_lF...F
+CryptoKit.Curve448.Signing.PublicKey.isValidSignature.for.Foundation.DataProtocol...r0_lF
 EOF
 RUN
 

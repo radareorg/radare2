@@ -16,7 +16,7 @@ CMDS=<<EOF
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
-test.MyClass.calculate(test.MyClass) -> (x: Swift.Int) -> Swift.Int
+test.MyClass.calculate (self) -> (): , ) ()...i
 EOF
 RUN
 
