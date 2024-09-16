@@ -75,19 +75,10 @@ aep test @ 0x5
 "aep strlen=dr R0=`pszl@r:A0`;aexa ret"
 "aep puts=psz@r:A0; aexa ret"
 test
-Usage: te[...]  Type enum commands
-| te                 list all loaded enums
-| te <enum>          print all values of enum for given name
-| te <enum> <value>  show name for given enum number
-| te-<enum>          delete enum type definition
-| tej                list all loaded enums in json
-| tej <enum>         show enum in json
-| teb <enum> <name>  show matching enum bitfield for given name
-| tec                list all loaded enums in C output format with newlines
-| tec <name>         list given loaded enums in C output format with newlines
-| ted                list all loaded enums in C output format without newlines
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: Missing file argument. Use 'test -fdx [file]'
+EOF
 RUN
 
 NAME=emulate imports
