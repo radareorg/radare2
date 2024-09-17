@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -27,6 +27,14 @@ R_LIB_VERSION (r_lang);
 #include "p/nim.c"
 #include "p/dart.c"
 
+static void r_lang_session_free(void *p) {
+	RLangSession *s = (RLangSession*)p;
+	if (s && s->plugin && s->plugin->fini) {
+		s->plugin->fini (s);
+	}
+	free (s);
+}
+
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
@@ -43,7 +51,7 @@ R_API RLang *r_lang_new(void) {
 		r_lang_free (lang);
 		return NULL;
 	}
-	lang->sessions = r_list_newf (free);
+	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
 #if HAVE_SYSTEM
