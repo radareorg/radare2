@@ -1789,7 +1789,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	RList *lart = lart_new ();
 
 	while (*arg && *arg != ' ') {
-		if (IS_DIGIT (*arg)) {
+		if (isdigit (*arg)) {
 			n = atoi (arg);
 			if (n > 64) {
 				R_LOG_ERROR ("Too large. Max is 64");
@@ -1797,7 +1797,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				r_bitmap_free (bm);
 				return;
 			}
-			while (IS_DIGIT (*arg)) {
+			while (isdigit (*arg)) {
 				arg += 1;
 			}
 			arg--;
@@ -5574,7 +5574,7 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	// len is block_len
 	char ch = input[1];
-	if (ch == '+' || ch == '-' || IS_DIGIT (ch)) {
+	if (ch == '+' || ch == '-' || isdigit (ch)) {
 		ch = ' ';
 		l = r_num_math (core->num, input + 1);
 	}
@@ -6582,7 +6582,7 @@ static int cmd_print(void *data, const char *input) {
 		const char *sp = (input[1] == '.' || input[1] == '+')
 			? input + 2: strchr (input + 1, ' ');
 
-		if (IS_DIGIT (input[1])) {
+		if (isdigit (input[1])) {
 			sp = input + 1;
 		} else if (!sp && input[1] == '-') {
 			sp = input + 1;
@@ -8214,7 +8214,7 @@ static int cmd_print(void *data, const char *input) {
 					if (input[1] == '.') {
 						sp = input + 2;
 					}
-					if (IS_DIGIT (input[1])) {
+					if (isdigit (input[1])) {
 						sp = input + 1;
 					}
 					if (sp) {

@@ -1614,7 +1614,7 @@ static int __xterm_get_cur_pos(int *xpos) {
 		(void)r_cons_readchar ();
 		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
 			ch = r_cons_readchar ();
-			if ((!i && !IS_DIGIT (ch)) || // dumps arrow keys etc.
+			if ((!i && !isdigit (ch)) || // dumps arrow keys etc.
 			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
 				is_reply = false;
 				break;

@@ -78,10 +78,10 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 			// extract class information from demangled symbol name
 			char *p = strchr (dn, '.');
 			if (p) {
-				if (IS_UPPER (*dn)) {
+				if (isupper (*dn)) {
 					sym->classname = strdup (dn);
 					sym->classname[p - dn] = 0;
-				} else if (IS_UPPER (p[1])) {
+				} else if (isupper (p[1])) {
 					sym->classname = strdup (p + 1);
 					p = strchr (sym->classname, '.');
 					if (p) {
@@ -158,7 +158,7 @@ static bool false_positive(const char *str) {
 	}
 #endif
 	for (i = 0; str[i]; i++) {
-		if (IS_DIGIT (str[i])) {
+		if (isdigit (str[i])) {
 			nm++;
 		} else if (str[i]>='a' && str[i]<='z') {
 			lo++;
@@ -273,10 +273,10 @@ static bool bin_strfilter(RBin *bin, const char *str) {
 			    (in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
 			}
-			if (ch < 0 || !IS_PRINTABLE (ch) || IS_LOWER (ch)) {
+			if (ch < 0 || !IS_PRINTABLE (ch) || islower (ch)) {
 				return false;
 			}
-			if (IS_UPPER (ch)) {
+			if (isupper (ch)) {
 				got_uppercase = true;
 			}
 loop_end:
@@ -331,7 +331,7 @@ loop_end:
 			bool prevd = false;
 			for (i = 0; str[i]; i++) {
 				char ch = str[i];
-				if (IS_DIGIT (ch)) {
+				if (isdigit (ch)) {
 					segmentsum = segmentsum*10 + (ch - '0');
 					if (segment == 3) {
 						return true;

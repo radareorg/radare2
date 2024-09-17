@@ -29,7 +29,7 @@ R_API bool r_core_file_close_all_but(RCore *core) {
 
 static bool its_a_mips(RCore *core) {
 	RArchConfig *cfg = core->rasm->config;
-	return cfg && cfg->arch && !strcmp (cfg->arch, "mips");
+	return cfg && cfg->arch && r_str_startswith (cfg->arch, "mips");
 }
 
 static void load_gp(RCore *core) {
@@ -38,7 +38,7 @@ static void load_gp(RCore *core) {
 		ut64 e0 = r_num_math (core->num, "entry0");
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
-			r_core_cmd0 (core, "aeim; s entry0;dr PC=entry0");
+			r_core_cmd0 (core, "aeim;s entry0;dr PC=entry0");
 			r_config_set (core->config, "anal.roregs", "zero"); // gp is writable here
 			r_core_cmd0 (core, "10aes");
 			gp = r_reg_getv (core->anal->reg, "gp");

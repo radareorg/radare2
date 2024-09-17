@@ -4,7 +4,7 @@
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
-	if (IS_DIGIT (c)) {
+	if (isdigit (c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
 	} else if (c >= 'A' && c <= 'F') {
 		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
@@ -62,7 +62,7 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 			word++;
 			word = skip_comment_py (word);
 		}
-		if (IS_DIGIT (*word)) {
+		if (isdigit (*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
@@ -188,7 +188,7 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
 			word++;
 			word = skip_comment_c (word);
 		}
-		if (IS_DIGIT (*word)) {
+		if (isdigit (*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];

@@ -89,7 +89,7 @@ static char *findNextNumber(char *op) {
 				if (!*p) {
 					break;
 				}
-				if (!IS_DIGIT (*p)) {
+				if (!isdigit (*p)) {
 					char *t = p;
 					for (; *t && *t != ']'; t++) {
 						;
@@ -104,10 +104,10 @@ static char *findNextNumber(char *op) {
 				}
 			}
 			if (isSpace) {
-				if (IS_DIGIT (*p)) {
+				if (isdigit (*p)) {
 					return p;
 				}
-				if ((*p == '-') && IS_DIGIT (p[1])) {
+				if ((*p == '-') && isdigit (p[1])) {
 					return p + 1;
 				}
 			}
@@ -402,7 +402,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+				if ((is_hex && IS_HEXCHAR (*pnum)) || isdigit (*pnum)) {
 					continue;
 				}
 				break;
@@ -415,7 +415,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					pnum += 2;
 				}
 				for (; *pnum; pnum++) {
-					if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+					if ((is_hex && IS_HEXCHAR (*pnum)) || isdigit (*pnum)) {
 						continue;
 					}
 					break;

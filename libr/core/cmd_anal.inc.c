@@ -2028,7 +2028,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_function_delete_vars_by_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
-			if (IS_DIGIT (str[2])) {
+			if (isdigit (str[2])) {
 				var = r_anal_function_get_var (fcn, type, (int)r_num_math (core->num, str + 1));
 			} else {
 				char *name = r_str_trim_dup (str + 2);
@@ -6714,7 +6714,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				for (j = i; str[++j] && str[j] != ','; );
 				if (j - i + 1 <= sizeof name) {
 					r_str_ncpy (name, str + i, j - i + 1);
-					if (IS_DIGIT (name[0])) { // e.g. ar 32
+					if (isdigit (name[0])) { // e.g. ar 32
 						__anal_reg_list (core, R_REG_TYPE_GPR, atoi (name), '\0');
 					} else if (showreg (core, name) > 0) {
 						// e.g. ar rax
@@ -7464,7 +7464,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		r_list_pop (stats->regread);
 		R_FREE (oldregread)
 	}
-	if (!IS_DIGIT (*name)) {
+	if (!isdigit (*name)) {
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
 		}
@@ -7482,7 +7482,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 
 static bool myregread(REsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
-	if (!IS_DIGIT (*name)) {
+	if (!isdigit (*name)) {
 		if (!contains (stats->inputregs, name)) {
 			if (!contains (stats->regwrite, name)) {
 				r_list_push (stats->inputregs, strdup (name));
@@ -9388,7 +9388,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				free (ops);
 			}
 		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
-			if (input[1] == ' ' && !IS_DIGIT (input[2])) {
+			if (input[1] == ' ' && !isdigit (input[2])) {
 				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->rasm, input + 2));
 			} else {
 				// "aoml"

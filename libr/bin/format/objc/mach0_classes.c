@@ -1095,7 +1095,7 @@ static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cach
 }
 
 static inline const char *skipnum(const char *s) {
-	while (IS_DIGIT (*s)) {
+	while (isdigit (*s)) {
 		s++;
 	}
 	return s;

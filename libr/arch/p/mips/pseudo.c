@@ -259,7 +259,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	if (f && p->varlist) {
 		RList *bpargs = p->varlist (f, 'b');
 		RList *spargs = p->varlist (f, 's');
-		const bool ucase = IS_UPPER (*tstr);
+		const bool ucase = isupper (*tstr);
 		RAnalVarField *var;
 		r_list_foreach (spargs, iter, var) {
 			st64 delta = p->get_ptr_at

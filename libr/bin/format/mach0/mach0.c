@@ -2946,9 +2946,9 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				r_bin_name_demangled (sym->name, demangled);
 				char *p = strchr (demangled, '.');
 				if (p) {
-					if (IS_UPPER (*demangled)) {
+					if (isupper (*demangled)) {
 						sym->classname = r_str_ndup (demangled, (p - demangled));
-					} else if (IS_UPPER (p[1])) {
+					} else if (isupper (p[1])) {
 						sym->classname = strdup (p + 1);
 						p = strchr (sym->classname, '.');
 						if (p) {

@@ -4582,7 +4582,7 @@ onemoretime:
 	case 'Q':
 	case 'q':
 	default:
-		if (IS_DIGIT (ch)) {
+		if (isdigit (ch)) {
 			if (rep < 0) {
 				rep = 0;
 			}

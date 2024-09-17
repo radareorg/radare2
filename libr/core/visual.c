@@ -1682,7 +1682,7 @@ repeat:
 	default:
 		if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
 			ret = follow_ref (core, xrefs, skip, xref);
-		} else if (IS_DIGIT (ch)) {
+		} else if (isdigit (ch)) {
 			ret = follow_ref (core, xrefs, ch - 0x30, xref);
 		} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
 			goto repeat;

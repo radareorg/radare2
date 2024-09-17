@@ -333,7 +333,7 @@ static bool parse_format(RCore *core, const char *fmt, RVecString *vec) {
 	while (ptr) {
 		ptr++;
 		// strip [width] specifier
-		while (IS_DIGIT (*ptr)) {
+		while (isdigit (*ptr)) {
 			ptr++;
 		}
 		r_str_ncpy (arr, ptr, sizeof (arr) - 1);

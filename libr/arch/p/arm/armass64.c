@@ -126,7 +126,7 @@ static int countTrailingZeros(ut64 x) {
 
 R_UNUSED static bool has64reg(const char *str) {
 	char *w = strchr (str, 'x');
-	return (w && IS_DIGIT (w[1]));
+	return (w && isdigit (w[1]));
 }
 
 static int calcNegOffset(int n, int shift) {

@@ -309,7 +309,7 @@ static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const ch
 	char *newstr = p->localvar_only
 		? r_str_newf ("%s", var->name)
 		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
-	if (IS_UPPER (*tstr)) {
+	if (isupper (*tstr)) {
 		char *space = (char *)r_str_rchr (newstr, NULL, ' ');
 		if (space) {
 			*space = 0;
@@ -402,7 +402,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	if (f && p->varlist) {
 		bpargs = p->varlist (f, 'b');
 		spargs = p->varlist (f, 's');
-		bool ucase = IS_UPPER (*tstr);
+		bool ucase = isupper (*tstr);
 		RAnalVarField *var;
 		bool is64 = f->bits == 64;
 		// NOTE: on arm32 bp is fp

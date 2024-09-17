@@ -157,7 +157,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				str = ptr;
 				continue;
-			} else if (IS_DIGIT (ptr[0]) && ptr[1] == ';' && IS_DIGIT (ptr[2])) {
+			} else if (isdigit (ptr[0]) && ptr[1] == ';' && isdigit (ptr[2])) {
 				char *m = strchr (ptr, 'm');
 				if (m) {
 					gethtmlrgb (ptr, background_color, sizeof (background_color));
@@ -166,7 +166,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 					str = ptr + 1;
 					esc = 0;
 				}
-			} else if (IS_DIGIT (ptr[0]) && IS_DIGIT (ptr[1]) && ptr[2] == ';') {
+			} else if (isdigit (ptr[0]) && isdigit (ptr[1]) && ptr[2] == ';') {
 				char *m = strchr (ptr, 'm');
 				if (m) {
 					gethtmlrgb (ptr, text_color, sizeof (text_color));
@@ -191,7 +191,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 					str = ptr + 1;
 				}
 				esc = 0;
-			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && IS_DIGIT (ptr[2])) {
+			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && isdigit (ptr[2])) {
 				// bg color is kind of ignored, but no glitch so far
 				r_cons_gotoxy (0, 0);
 				ptr += 4;

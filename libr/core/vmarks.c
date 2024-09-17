@@ -77,7 +77,7 @@ R_API void r_core_vmark_del(RCore *core, ut8 ch) {
 
 R_API void r_core_vmark(RCore *core, ut8 ch) {
 	R_RETURN_IF_FAIL (core);
-	if (IS_DIGIT (ch)) {
+	if (isdigit (ch)) {
 		ch += ASCII_MAX + 1;
 	}
 	r_core_vmark_set (core, ch, core->offset, 0, 0);

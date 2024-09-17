@@ -3551,12 +3551,12 @@ R_API size_t *r_str_split_lines(char *str, size_t *count) {
 }
 
 R_API bool r_str_isnumber(const char *str) {
-	if (!str || (!IS_DIGIT (*str) && *str != '-')) {
+	if (!str || (!isdigit (*str) && *str != '-')) {
 		return false;
 	}
 	for (str++; *str; str++) {
 		// consider '.' part of the number?
-		if (!IS_DIGIT (*str)) {
+		if (!isdigit (*str)) {
 			return false;
 		}
 	}
