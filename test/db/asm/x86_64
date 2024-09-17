@@ -39,6 +39,10 @@ a "and rsi, 0x12345678" 4881e678563412
 a "and rsi, 0x87654321" 4881e621436587
 a "and si, 0x1234" 6681e63412
 a "and esi, 0x12345678" 81e678563412
+ad "and sil, 0x42" 4080e642
+ad "and dil, 0x42" 4080e742
+ad "and sil, al" 4020c6
+ad "and dil, al" 4020c7
 a "and byte[rax], 0x2a" 80202a
 a "and byte[rsi], 0x2a" 80262a
 aB "and word[rax], 0x1234" 6681203412
@@ -117,8 +121,8 @@ aB "imul word[rax+0x345]" 66f7a845030000
 a "imul dword[rax+0x345]" f728
 a "imul dword[rax+0x1234]" f728
 aB "imul qword[rax+0x1234]" 48f7a834120000
-aB "imul ax, bx" 660fafc3
-aB "imul ax, si" 660fafc6
+ad "imul ax, bx" 660fafc3
+ad "imul ax, si" 660fafc6
 a "imul esi, edx" 0faff2
 a "imul eax, esi" 0fafc6
 aB "imul ax, word[rsi]" 660faf06
@@ -313,6 +317,7 @@ a "xor al, 0x39" 3439
 a "xor al, 0xff" 34ff
 a "xor dl, 0xff" 80f2ff
 a "xor si, 0x7823" 6681f62378
+ad "xor si, si" 6631f6
 a "xor di, 0x7855" 6681f75578
 a "xor esp, 0x98765421" 81f421547698
 a "xor edx, 0x98765421" 81f221547698
