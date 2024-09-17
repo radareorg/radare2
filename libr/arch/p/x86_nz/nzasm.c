@@ -84,6 +84,8 @@ typedef enum register_t {
 	X86R_EAX = 0, X86R_ECX, X86R_EDX, X86R_EBX, X86R_ESP, X86R_EBP, X86R_ESI, X86R_EDI, X86R_EIP,
 	X86R_AX = 0, X86R_CX, X86R_DX, X86R_BX, X86R_SP, X86R_BP, X86R_SI, X86R_DI,
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
+	// r8 with any REX prefix, 0->3 is al->dl
+	X86R_SPL = 4, X86R_BPL, X86R_SIL, X86R_DIL,
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI, X86R_RIP,
 	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS,	// Is this the right order?
@@ -97,6 +99,7 @@ typedef struct operand_t {
 	struct {
 		Register reg;
 		bool extended;
+		bool rex_prefixed;
 	};
 	union {
 		struct {
@@ -149,7 +152,7 @@ static int is_al_reg(const Operand *op) {
 	if (op->type & OT_MEMORY) {
 		return 0;
 	}
-	if (op->reg == X86R_AL && op->type & OT_BYTE) {
+	if (op->reg == X86R_AL && op->type & OT_BYTE && !op->extended) {
 		return 1;
 	}
 	return 0;
@@ -163,6 +166,9 @@ static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, i
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
 	data[l++] = 0x66;
+	if (op->operands[0].extended) {
+		data[l++] = 0x41;
+	}
 	if (op->operands[1].immediate < 128) {
 		data[l++] = 0x83;
 		data[l++] = op->operands[0].reg | (0xc0 + op1 + op->operands[0].reg);
@@ -227,6 +233,9 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 		if ((st64)op->operands[1].immediate > 255) {
 			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
+		}
+		if (op->operands[0].extended) {
+			data[l++] = 0x41;
 		}
 		data[l++] = 0x80;
 	}
@@ -1834,6 +1843,11 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				return -1;
 			}
 			bool imm32in64 = false;
+			if (op->operands[0].type & OT_WORD) {
+				if (bits > 16) {
+					data[l++] = 0x66;
+				}
+			}
 			if (bits == 64 && (op->operands[0].type & OT_QWORD)) {
 				if (op->operands[0].extended) {
 					data[l++] = 0x49;
@@ -1843,12 +1857,10 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			} else if (op->operands[0].extended) {
 				data[l++] = 0x41;
 			}
-			if (op->operands[0].type & OT_WORD) {
-				if (bits > 16) {
-					data[l++] = 0x66;
-				}
-			}
 			if (op->operands[0].type & OT_BYTE) {
+				if (op->operands[0].rex_prefixed) {
+					data[l++] = 0x40;
+				}
 				data[l++] = 0xb0 | op->operands[0].reg;
 				data[l++] = immediate;
 			} else {
@@ -4709,13 +4721,16 @@ static ut64 getnum(RArchSession *a, const char *s, bool *berr) {
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type) {
+static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type, bool *rex_prefixed) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *const regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
 	const char *const regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
 	const char *const regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
+	// const char *const regs8withREX[] = { "al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil", NULL };
+	const char *const regs8ext[] = { "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", NULL };
 	const char *const regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
+	const char *const regs16ext[] = { "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", NULL };
 	const char *const regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
 	const char *const regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *const sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
@@ -4737,6 +4752,19 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
+		}
+	}
+	// General purpose registers: sil, dil
+	if (length == 3 && token[1] == 'i' && token[2] == 'l') {
+		*rex_prefixed = true;
+		if (token[0] == 's') {
+			*type = (OT_GPREG & OT_REG (X86R_SIL)) | OT_BYTE;
+			return X86R_SIL;
+		} else if (token[0] == 'd') {
+			*type = (OT_GPREG & OT_REG (X86R_DIL)) | OT_BYTE;
+			return X86R_DIL;
+		} else {
+			return X86R_UNDEFINED;
 		}
 	}
 	// Control registers
@@ -4804,6 +4832,18 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 				if (a->config->bits < 32) {
 					a->config->bits = 32;
 				}
+				return i + 9;
+			}
+		}
+		for (i = 0; regs16ext[i]; i++) {
+			if (!r_str_ncasecmp (regs16ext[i], token, length)) {
+				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
+				return i + 9;
+			}
+		}
+		for (i = 0; regs8ext[i]; i++) {
+			if (!r_str_ncasecmp (regs8ext[i], token, length)) {
+				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 				return i + 9;
 			}
 		}
@@ -4891,6 +4931,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 	int reg_index = 0;
 	// Reset type
 	op->type = 0;
+	op->rex_prefixed = false;
 	// Consume tokens denoting the operand size
 	while (size_token) {
 		pos = nextpos;
@@ -4985,7 +5026,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
-				reg = parseReg (a, str, &nextpos, &reg_type);
+				reg = parseReg (a, str, &nextpos, &reg_type, &op->rex_prefixed);
 
 				if (first_reg) {
 					op->extended = false;
@@ -5113,7 +5154,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			return nextpos;
 		}
 
-		op->reg = parseReg (a, str, &nextpos, &op->type);
+		op->reg = parseReg (a, str, &nextpos, &op->type, &op->rex_prefixed);
 
 		op->extended = false;
 		if (op->reg > 8) {
