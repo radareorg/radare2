@@ -1727,12 +1727,10 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				// ordinal-1 because we enumerate starting at 0
 				char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);  // uses sdb_get
 				if (symname) {
-					char *s;
+					char *s = symname;
 					if (r->bin->prefix) {
 						s = r_str_newf ("%s.%s", r->bin->prefix, symname);
 						R_FREE (symname);
-					} else {
-						s = symname;
 					}
 					r_bin_name_demangled (reloc->import->name, s);
 					free (s);
@@ -1773,7 +1771,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		R_LOG_DEBUG ("Cannot resolve reloc %s", demname);
 	} else {
 		RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
-		if (demname) {
+		if (fi && demname) {
 			char *realname = (r->bin->prefix)
 				? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
 				: r_str_newf ("%s", demname);
@@ -2334,7 +2332,7 @@ typedef struct {
 	char *methflag;  // methods flag sym.[class].[method]
 } SymName;
 
-static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle) {
+static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle, bool keep_lib) {
 	bin_demangle &= !!lang;
 	if (!r || !sym || !sym->name) {
 		return;
@@ -2369,24 +2367,26 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 	sn->demname = NULL;
 	sn->demflag = NULL;
 	if (bin_demangle && sym->paddr) {
-		const bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
+			// XXX LEAK
 			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
 		}
 	}
 }
 
 static void snFini(SymName *sn) {
-	R_FREE (sn->name);
-	R_FREE (sn->libname);
-	R_FREE (sn->nameflag);
-	R_FREE (sn->demname);
-	R_FREE (sn->demflag);
-	R_FREE (sn->classname);
-	R_FREE (sn->classflag);
-	R_FREE (sn->methname);
-	R_FREE (sn->methflag);
+	if (sn) {
+		R_FREE (sn->name);
+		R_FREE (sn->libname);
+		R_FREE (sn->nameflag);
+		R_FREE (sn->demname);
+		R_FREE (sn->demflag);
+		R_FREE (sn->classname);
+		R_FREE (sn->classflag);
+		R_FREE (sn->methname);
+		R_FREE (sn->methflag);
+	}
 }
 
 static bool its_an_export(RBinSymbol *s) {
@@ -2471,6 +2471,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	int lastfs = 's';
 	RTable *table = r_core_table (r, "symbols");
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
+	const bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
 	if (IS_MODE_JSON (mode)) {
 		if (!printHere) {
 			pj_a (pj);
@@ -2544,7 +2545,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			}
 		}
 		SymName sn = {0};
-		snInit (r, &sn, symbol, lang, bin_demangle);
+		snInit (r, &sn, symbol, lang, bin_demangle, keep_lib);
 		char *r_symbol_name = r_str_escape_utf8 (sn.name, false, true);
 
 		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
