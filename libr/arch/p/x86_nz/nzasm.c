@@ -473,7 +473,10 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 		} else if (op->operands[1].type & OT_REGALL) {
 			if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
 				data[l++] = op1;
-			} else if (op->operands[0].type & OT_DWORD && op->operands[1].type & OT_DWORD) {
+			} else if (op->operands[0].type & (OT_WORD | OT_DWORD) && op->operands[1].type & (OT_WORD | OT_DWORD)) {
+				if (op->operands[0].type & OT_WORD) {
+					data[l++] = 0x66;
+				}
 				data[l++] = op1 + 0x1;
 			}
 			if (bits == 64) {
@@ -1227,12 +1230,11 @@ static int opimul(RArchSession *a, ut8 *data, const Opcode *op) {
 
 	if (op->operands[0].type & OT_QWORD) {
 		data[l++] = 0x48;
+	} else if (op->operands[0].type & OT_WORD) {
+		data[l++] = 0x66;
 	}
 	switch (op->operands_count) {
 	case 1:
-		if (op->operands[0].type & OT_WORD) {
-			data[l++] = 0x66;
-		}
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
 		} else {
