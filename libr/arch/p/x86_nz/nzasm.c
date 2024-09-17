@@ -234,7 +234,9 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
 		}
-		if (op->operands[0].extended) {
+		if (op->operands[0].rex_prefixed) {
+			data[l++] = 0x40;
+		} else if (op->operands[0].extended) {
 			data[l++] = 0x41;
 		}
 		data[l++] = 0x80;
@@ -372,7 +374,9 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	if (!op->operands[1].is_good_flag) {
 		return -1;
 	}
-
+	if (op->operands[0].rex_prefixed) {
+		data[l++] = 0x40;
+	}
 	if (op->operands[0].reg == X86R_AL && op->operands[1].type & OT_CONSTANT) {
 		data[l++] = op1 + 4;
 		data[l++] = op->operands[1].immediate * op->operands[1].sign;
