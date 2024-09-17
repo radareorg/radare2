@@ -4734,8 +4734,8 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 	const char *const regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
 	const char *const regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *const sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
-	const char *const cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
-	const char *const dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
+	// const char *const cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
+	// const char *const dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
 
 	// Get token (especially the length)
 	size_t nextpos, length;
@@ -4769,23 +4769,21 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 	}
 	// Control registers
 	if (length == 3 && token[0] == 'c' && token[1] == 'r') {
-		// FIXME(tesuji): maybe use token[0] - '0' <= 7 ?
-		for (i = 0; cregs[i]; i++) {
-			if (!r_str_ncasecmp (cregs[i], token, length)) {
-				*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
-				return i;
-			}
+		i = token[2] - '0';
+		if (i < 0 || i > 7) {
+			return X86R_UNDEFINED;
 		}
+		*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
+		return i;
 	}
 	// Debug registers
 	if (length == 3 && token[0] == 'd' && token[1] == 'r') {
-		// FIXME(tesuji): maybe use token[0] - '0' <= 7 ?
-		for (i = 0; cregs[i]; i++) {
-			if (!r_str_ncasecmp (dregs[i], token, length)) {
-				*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
-				return i;
-			}
+		i = token[2] - '0';
+		if (i < 0 || i > 7) {
+			return X86R_UNDEFINED;
 		}
+		*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
+		return i;
 	}
 	if (length == 2) {
 		if (token[1] == 'l' || token[1] == 'h') {
