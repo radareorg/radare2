@@ -80,9 +80,9 @@ a "call qword[rax + 0x123456]" ff9056341200
 a "call qword[rax - 0x123456]" ff90aacbedff
 a "call qword[rax + 0x0eadbeef]" ff90efbead0e
 a "call qword[rax - 0x0eadbeef]" ff90114152f1
-a "call qword[rsi]" ff16
-a "call qword[r14]" ff1f
-aB "call qword[r14 - 0x0eadbeef]" 41ff96114152f1
+ad "call qword [rsi]" ff16
+ad "call qword [r14]" 41ff16
+ad "call qword [r14 - 0xeadbeef]" 41ff96114152f1
 a "cdqe" 4898
 a "cmp al, 1" 3c01
 a "cmp al, 0xff" 3cff

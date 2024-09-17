@@ -797,6 +797,9 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].regs[0] == X86R_UNDEFINED) {
 			return -1;
 		}
+		if (a->config->bits == 64 && op->operands[0].extended) {
+			data[l++] = 0x41;
+		}
 		data[l++] = 0xff;
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
 		if (offset) {
@@ -1103,7 +1106,7 @@ static int opdec(RArchSession *a, ut8 *data, const Opcode *op) {
 		} else {
 			rm = op->operands[0].regs[0];
 		}
-		//[epb] alone is illegal, so we need to fake a [ebp+0]
+		//[ebp] alone is illegal, so we need to fake a [ebp+0]
 		if (rm == 5 && mod == 0) {
 			mod = 1;
 		}
@@ -4721,7 +4724,7 @@ static ut64 getnum(RArchSession *a, const char *s, bool *berr) {
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type, bool *rex_prefixed) {
+static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type, bool *extended, bool *rex_prefixed) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *const regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
@@ -4820,8 +4823,8 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->config->bits = 64;
-				// FIXME(tesuji): remove +9 hack by passing &extended to parseReg()
-				return i + 9;
+				*extended = true;
+				return i;
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
@@ -4830,19 +4833,22 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 				if (a->config->bits < 32) {
 					a->config->bits = 32;
 				}
-				return i + 9;
+				*extended = true;
+				return i;
 			}
 		}
 		for (i = 0; regs16ext[i]; i++) {
 			if (!r_str_ncasecmp (regs16ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
-				return i + 9;
+				*extended = true;
+				return i;
 			}
 		}
 		for (i = 0; regs8ext[i]; i++) {
 			if (!r_str_ncasecmp (regs8ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
-				return i + 9;
+				*extended = true;
+				return i;
 			}
 		}
 	}
@@ -4929,7 +4935,6 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 	int reg_index = 0;
 	// Reset type
 	op->type = 0;
-	op->rex_prefixed = false;
 	// Consume tokens denoting the operand size
 	while (size_token) {
 		pos = nextpos;
@@ -5024,19 +5029,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
-				reg = parseReg (a, str, &nextpos, &reg_type, &op->rex_prefixed);
+				reg = parseReg (a, str, &nextpos, &reg_type, &op->extended, &op->rex_prefixed);
 
 				if (first_reg) {
-					op->extended = false;
-					if (reg > 8) {
-						op->extended = true;
-						op->reg = reg - 9;
-					} else {
-						op->reg = reg;
-					}
+					op->reg = reg;
 					first_reg = false;
-				} else if (reg > 8) {
-					op->reg = reg - 9;
 				}
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
 					op->reg = reg;
@@ -5112,11 +5109,6 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 		op->reg = parseReg (a, str, &nextpos, &op->type);
 
-		op->extended = false;
-		if (op->reg > 8) {
-			op->extended = true;
-			op->reg -= 9;
-		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
 			return nextpos;
@@ -5152,13 +5144,8 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			return nextpos;
 		}
 
-		op->reg = parseReg (a, str, &nextpos, &op->type, &op->rex_prefixed);
+		op->reg = parseReg (a, str, &nextpos, &op->type, &op->extended, &op->rex_prefixed);
 
-		op->extended = false;
-		if (op->reg > 8) {
-			op->extended = true;
-			op->reg -= 9;
-		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
 			return nextpos;
@@ -5223,6 +5210,7 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->mnemonic = args? r_str_ndup (op, args - op): strdup (op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;
+	out->operands[0].rex_prefixed = out->operands[1].rex_prefixed = false;
 	out->operands[0].reg = out->operands[0].regs[0] = out->operands[0].regs[1] = X86R_UNDEFINED;
 	out->operands[1].reg = out->operands[1].regs[0] = out->operands[1].regs[1] = X86R_UNDEFINED;
 	out->operands[0].immediate = out->operands[1].immediate = 0;
