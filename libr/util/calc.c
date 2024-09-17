@@ -265,7 +265,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	*n = Nset (v);
 #endif
 
-	if (IS_DIGIT (*str) && strchr (str, '.')) {
+	if (isdigit (*str) && strchr (str, '.')) {
 		if (sscanf (str, "%lf", &d) < 1) {
 			return 0;
 		}

@@ -119,12 +119,12 @@ static inline bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char *
  * lower). Should the original function have a substring of the form "_XX_" we
  * encode it as "_5F_XX_".
  */
-#define WASM_IS_DIGIT(c) (c >= '0' && c <= '9')
-#define WASM_IS_ENC_HEX(c) (WASM_IS_DIGIT (c) || (c >= 'A' && c <= 'F'))
+#define WASM_isdigit(c) (c >= '0' && c <= '9')
+#define WASM_IS_ENC_HEX(c) (WASM_isdigit (c) || (c >= 'A' && c <= 'F'))
 #define WASM_AFTER_U_NOT_HEX(str, i) (!WASM_IS_ENC_HEX (str[i + 1]) || !WASM_IS_ENC_HEX (str[i + 2]))
 #define WASM_AFTER_UNDERSCORE_OK(str, i) (WASM_AFTER_U_NOT_HEX (str, i) || str[i + 3] != '_')
 #define WASM_IS_ALPH(c) ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
-#define WASM_IS_OK_EXCEPT__(loc, c) (WASM_IS_ALPH (c) || (loc != 0 && WASM_IS_DIGIT (c))) // C functions can't start with [0-9]
+#define WASM_IS_OK_EXCEPT__(loc, c) (WASM_IS_ALPH (c) || (loc != 0 && WASM_isdigit (c))) // C functions can't start with [0-9]
 #define WASM_UNDERSCORE_OK(str, i, max) (str[i] == '_' && (max - i < 4 || WASM_AFTER_UNDERSCORE_OK (str, i)))
 #define WASM_IS_OK(str, i, max) (WASM_IS_OK_EXCEPT__ (i, str[i]) || WASM_UNDERSCORE_OK (str, i, max))
 static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {

@@ -870,7 +870,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	int i;
 
-	if (IS_DIGIT (input[0])) {
+	if (isdigit (input[0])) {
 		i = r_num_math (core->num, input);
 		if (i >= 0 && i < RTR_MAX_HOSTS) {
 			r_socket_free (rtr_host[i].fd);

@@ -159,7 +159,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		/* Parse rows. */
 		rows = 0;
 		res = rd (tty);
-		while (IS_DIGIT (res)) {
+		while (isdigit (res)) {
 			rows = 10 * rows + res - '0';
 			res = rd(tty);
 		}
@@ -174,7 +174,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		if (res == -1) {
 			break;
 		}
-		while (IS_DIGIT(res)) {
+		while (isdigit(res)) {
 			cols = 10 * cols + res - '0';
 			res = rd(tty);
 		}

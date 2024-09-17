@@ -863,7 +863,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		case '+': // "omb+ [name]"
 			{
 				const char *name = argv[0] + 2;
-				if (IS_DIGIT (*name)) {
+				if (isdigit (*name)) {
 					// add a map to the current bank
 					// we cant name a bank with a number :?
 					r_io_bank_map_add_top (core->io, core->io->bank, atoi (name));
@@ -885,7 +885,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	}
 	switch (argv[0][1]) {
 	case 'a': // "omba"
-		if (IS_DIGIT (argv[1][0])) {
+		if (isdigit (argv[1][0])) {
 			int mapid = atoi (argv[1]);
 			if (r_io_map_get (core->io, mapid)) {
 				r_io_bank_map_add_top (core->io, core->io->bank, mapid);

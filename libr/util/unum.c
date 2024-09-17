@@ -333,7 +333,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		int chars_read = len_num;
 		bool zero_read = false;
 		lch = str[len > 0 ? len - 1 : 0];
-		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
+		if (*str == '0' && isdigit (*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
 			len_num++;
 		}
@@ -450,7 +450,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str)) {
+			if (!isdigit (*str)) {
 				error (num, "unknown symbol");
 			}
 			break;
@@ -475,7 +475,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 }
 
 R_API int r_num_is_float(RNum *num, const char *str) {
-	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
+	return (isdigit (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
 R_API double r_num_get_double(RNum *num, const char *str) {

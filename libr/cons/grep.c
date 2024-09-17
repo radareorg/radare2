@@ -212,7 +212,7 @@ R_API void r_cons_grep_expression(const char *str) {
 				} else {
 					grep->sort_invert = false;
 				}
-				while (IS_DIGIT (*ptr)) {
+				while (isdigit (*ptr)) {
 					ptr++;
 				}
 				if (*ptr == ':') {
@@ -333,7 +333,7 @@ R_API void r_cons_grep_expression(const char *str) {
 
 		ptr2 = strchr_ns (ptr, ':'); // line number
 		grep->range_line = 2; // there is not :
-		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (IS_DIGIT (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
+		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (isdigit (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
 			end_ptr = end_ptr? R_MIN (end_ptr, ptr2): ptr2;
 			char *p, *token = ptr2 + 1;
 			p = strstr (token, "..");
@@ -497,7 +497,7 @@ static int cmp(const void *a, const void *b) {
 		ca = (colsa > ctx->sorted_column)? r_str_word_get0 (da, ctx->sorted_column): "";
 		cb = (colsb > ctx->sorted_column)? r_str_word_get0 (db, ctx->sorted_column): "";
 	}
-	if (IS_DIGIT (*ca) && IS_DIGIT (*cb)) {
+	if (isdigit (*ca) && isdigit (*cb)) {
 		ut64 na = r_num_get (NULL, ca);
 		ut64 nb = r_num_get (NULL, cb);
 		int ret = (na > nb) - (na < nb);

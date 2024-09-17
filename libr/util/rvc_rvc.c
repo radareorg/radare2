@@ -9,7 +9,7 @@
 #include <rvc.h>
 
 #define FIRST_BRANCH "branches.master"
-#define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
+#define NOT_SPECIAL(c) isdigit (c) || islower (c) || c == '_'
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"

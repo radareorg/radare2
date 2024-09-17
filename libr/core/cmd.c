@@ -3932,7 +3932,7 @@ static bool is_macro_command(const char *ptr) {
 		return false;
 	}
 	ptr = r_str_trim_head_ro (ptr);
-	while (IS_DIGIT (*ptr)) {
+	while (isdigit (*ptr)) {
 		ptr++;
 	}
 	return *ptr == '(';
@@ -4666,7 +4666,7 @@ repeat:;
 				pipecolor = true;
 				*fdnum = 0;
 			} else {
-				if (IS_DIGIT (*fdnum)) {
+				if (isdigit (*fdnum)) {
 					fdn = *fdnum - '0';
 				}
 				*fdnum = 0;

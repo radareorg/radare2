@@ -5,7 +5,7 @@
 /* Validate if char is printable , why not use ISPRINTABLE() ?? */
 R_API bool r_name_validate_print(const char ch) {
 	// TODO: support utf8
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || isdigit (ch)) {
 		return true;
 	}
 	switch (ch) {
@@ -65,7 +65,7 @@ R_API bool r_name_validate_dash(const char ch) {
 }
 
 R_API bool r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || isdigit (ch)) {
 		return true;
 	}
 	return (ch == '.' || ch == ':' || ch == '_');

@@ -6051,7 +6051,7 @@ static char *_find_next_number(char *op) {
 					p++;
 				}
 			}
-			if (IS_DIGIT (*p)) {
+			if (isdigit (*p)) {
 				// we found the start of the next number
 				return p;
 			}

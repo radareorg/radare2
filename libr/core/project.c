@@ -19,7 +19,7 @@ static bool is_valid_project_name(const char *name) {
 	}
 	const char * const extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extention; name++) {
-		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
+		if (isdigit (*name) || islower (*name) || *name == '_') {
 			continue;
 		}
 		return false;

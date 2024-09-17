@@ -277,7 +277,7 @@ static const char *conformsto(char p) {
 }
 
 static bool looks_valid(char p) {
-	if (IS_DIGIT (p)) {
+	if (isdigit (p)) {
 		return true;
 	}
 	switch (p) {
@@ -684,7 +684,7 @@ moreitems:
 				case 'T':
 				case 'I':
 					p = resolve (types, q + 0, &attr); // type
-					if (p && *p && IS_DIGIT (p[1])) {
+					if (p && *p && isdigit (p[1])) {
 						p--;
 					}
 					break;

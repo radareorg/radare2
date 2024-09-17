@@ -106,7 +106,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
 			for (j = k = 0; ops[i].str[j]; j++, k++) {
-				if (IS_DIGIT (ops[i].str[j])) {
+				if (isdigit (ops[i].str[j])) {
 					int index = ops[i].str[j] - '0';
 					if (index >= 0 && index < argc) {
 						const char *w = argv[index];
