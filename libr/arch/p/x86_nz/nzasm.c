@@ -4740,7 +4740,8 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 		}
 	}
 	// Control registers
-	if (length == 3 && token[0] == 'c') {
+	if (length == 3 && token[0] == 'c' && token[1] == 'r') {
+		// FIXME(tesuji): maybe use token[0] - '0' <= 7 ?
 		for (i = 0; cregs[i]; i++) {
 			if (!r_str_ncasecmp (cregs[i], token, length)) {
 				*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
@@ -4749,7 +4750,8 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 		}
 	}
 	// Debug registers
-	if (length == 3 && token[0] == 'd') {
+	if (length == 3 && token[0] == 'd' && token[1] == 'r') {
+		// FIXME(tesuji): maybe use token[0] - '0' <= 7 ?
 		for (i = 0; cregs[i]; i++) {
 			if (!r_str_ncasecmp (dregs[i], token, length)) {
 				*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
@@ -4792,6 +4794,7 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->config->bits = 64;
+				// FIXME(tesuji): remove +9 hack by passing &extended to parseReg()
 				return i + 9;
 			}
 		}
