@@ -140,9 +140,11 @@ R_API void r_cons_grep_expression(const char *str) {
 	ctx->sorted_column = 0;
 	size_t i;
 	for (i = 0; i < ptrs_length; i++) {
+#if R2_USE_NEW_ABI
 		bool gw_begin = false;
 		bool gw_neg = false;
 		bool gw_end = false;
+#endif
 		ptr = ptrs[i];
 		end_ptr = ptr2 = ptr3 = NULL;
 		while (*ptr) {
