@@ -22,6 +22,15 @@ static char *strchr_ns(char *s, const char ch) {
 	return p;
 }
 
+#if R2_USE_NEW_ABI
+static void r_cons_grep_word_free(RConsGrepWord *gw) {
+	if (gw) {
+		free (gw->str);
+		free (gw);
+	}
+}
+#endif
+
 static RCoreHelpMessage help_detail_tilde = {
 	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
 	"modifier:", "", "",
@@ -77,15 +86,18 @@ R_API void r_cons_grep_help(void) {
 	r_cons_cmd_help (help_detail_tilde, true);
 }
 
+// R2_600 remove this limit
 #define R_CONS_GREP_BUFSIZE 4096
 
 R_API void r_cons_grep_expression(const char *str) {
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptrs[R_CONS_GREP_COUNT];
-	int wlen, len, is_range, num_is_parsed, fail = false;
-	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
+	int wlen, is_range, num_is_parsed, fail = false;
+	char *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
-	size_t ptrs_length;
+	size_t ptrs_length = 1;
+	char *ptr = buf;
+	ptrs[0] = ptr;
 
 	if (R_STR_ISEMPTY (str)) {
 		return;
@@ -94,7 +106,7 @@ R_API void r_cons_grep_expression(const char *str) {
 	RConsContext *ctx = cons->context;
 	RConsGrep *grep = &ctx->grep;
 
-	len = strlen (str) - 1;
+	int len = strlen (str) - 1;
 	if (len < 0) {
 		len = 0;
 	}
@@ -110,10 +122,6 @@ R_API void r_cons_grep_expression(const char *str) {
 	} else {
 		r_str_ncpy (buf, str, sizeof (buf) - 1);
 	}
-
-	ptr = buf;
-	ptrs_length = 1;
-	ptrs[0] = ptr;
 
 	// TODO: replace with r_str_split_by ("~");
 	while ((ptrs[ptrs_length] = (strchr (ptr, '~')))) {
@@ -132,6 +140,11 @@ R_API void r_cons_grep_expression(const char *str) {
 	ctx->sorted_column = 0;
 	size_t i;
 	for (i = 0; i < ptrs_length; i++) {
+#if R2_USE_NEW_ABI
+		bool gw_begin = false;
+		bool gw_neg = false;
+		bool gw_end = false;
+#endif
 		ptr = ptrs[i];
 		end_ptr = ptr2 = ptr3 = NULL;
 		while (*ptr) {
@@ -241,6 +254,16 @@ R_API void r_cons_grep_expression(const char *str) {
 					goto while_end;
 				}
 				break;
+#if R2_USE_NEW_ABI
+			case '^':
+				ptr++;
+				gw_begin = true;
+				break;
+			case '!':
+				ptr++;
+				gw_neg = true;
+				break;
+#else
 			case '^':
 				ptr++;
 				grep->begin[grep->nstrings] = true;
@@ -249,6 +272,7 @@ R_API void r_cons_grep_expression(const char *str) {
 				ptr++;
 				grep->neg[grep->nstrings] = true;
 				break;
+#endif
 			case '?':
 				ptr++;
 				grep->counter = 1;
@@ -361,7 +385,16 @@ R_API void r_cons_grep_expression(const char *str) {
 
 		len = strlen (ptr) - 1;
 		if (len > 1 && ptr[len] == '$' && ptr[len - 1] != '\\') {
-			grep->end[i] = 1;
+#if R2_USE_NEW_ABI
+			{
+				RConsGrepWord *word = r_list_last (grep->strings);
+				if (word) {
+					word->end = true;
+				}
+			}
+#else
+			grep->end[i] = true;
+#endif
 			ptr[len] = '\0';
 		}
 
@@ -372,7 +405,6 @@ R_API void r_cons_grep_expression(const char *str) {
 				grep->str = r_str_append (grep->str, ",");
 				grep->str = r_str_append (grep->str, ptr);
 			}
-
 			do {
 				optr = ptr;
 				ptr = strchr (ptr, ','); // grep keywords
@@ -383,6 +415,14 @@ R_API void r_cons_grep_expression(const char *str) {
 				if (!wlen) {
 					continue;
 				}
+#if R2_USE_NEW_ABI
+				RConsGrepWord *gw = R_NEW0 (RConsGrepWord);
+				gw->str = strdup (optr);
+				gw->begin = gw_begin;
+				gw->neg = gw_neg;
+				gw->end = gw_end;
+				r_list_append (grep->strings, gw);
+#else
 				if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
 					R_LOG_ERROR ("grep string too long");
 					continue;
@@ -394,14 +434,25 @@ R_API void r_cons_grep_expression(const char *str) {
 				}
 				r_str_ncpy (grep->strings[grep->nstrings - 1],
 					optr, R_CONS_GREP_WORD_SIZE);
+#endif
 			} while (ptr);
 		}
 	}
+#if R2_USE_NEW_ABI
+	// XXX this is a hack
+	if (!grep->str) {
+		RConsGrepWord *gw = R_NEW0 (RConsGrepWord);
+		gw->str = strdup ("");
+		grep->str = strdup ("");
+		r_list_append (grep->strings, gw);
+	}
+#else
 	if (!grep->str) {
 		grep->str = strdup ("");
 		grep->nstrings++;
 		grep->strings[0][0] = 0;
 	}
+#endif
 }
 
 // Finds and returns next intgrep expression,
@@ -851,6 +902,11 @@ R_API void r_cons_grepbuf(void) {
 			cons->context->grep_color = true;
 			// R2R db/cmd/cmd_iz
 			R_FREE (grep->str);
+#if R2_USE_NEW_ABI
+			cons->context->grep_color = false;
+			RConsGrepWord *gw = r_list_pop_head (grep->strings);
+			r_cons_grep_word_free (gw);
+#else
 			if (grep->nstrings > 0) {
 				cons->context->grep_color = false;
 				// shift them all!!
@@ -860,6 +916,7 @@ R_API void r_cons_grepbuf(void) {
 				}
 				grep->nstrings--;
 			}
+#endif
 #if 1
 			if (grep->hud) {
 				grep->hud = false;
@@ -871,14 +928,17 @@ R_API void r_cons_grepbuf(void) {
 				r_cons_less_str (cons->context->buffer, NULL);
 				return;
 			}
-			if (grep->nstrings < 1) {
-				return;
-			}
 #endif
 		}
+#if R2_USE_NEW_ABI
+		if (r_list_empty (grep->strings)) {
+			return;
+		}
+#else
 		if (grep->nstrings < 1) {
 			return;
 		}
+#endif
 		buf = cons->context->buffer;
 		len = cons->context->buffer_len;
 		grep->range_line = 1;
@@ -983,6 +1043,21 @@ continuation:
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
 					if (cons->context->grep_highlight) {
+#if R2_USE_NEW_ABI
+						RListIter *iter;
+						RConsGrepWord *gw;
+						r_list_foreach (grep->strings, iter, gw) {
+							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, gw->str);
+							if (str && newstr) {
+								if (grep->icase) {
+									str = r_str_replace_icase (str, gw->str, newstr, 1, 1);
+								} else {
+									str = r_str_replace (str, gw->str, newstr, 1);
+								}
+							}
+							free (newstr);
+						}
+#else
 						int i;
 						for (i = 0; i < grep->nstrings; i++) {
 							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
@@ -995,6 +1070,7 @@ continuation:
 							}
 							free (newstr);
 						}
+#endif
 					}
 					if (str) {
 						r_strbuf_append (ob, str);
@@ -1107,12 +1183,47 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		return 0;
 	}
 	memcpy (in, buf, len);
+#if R2_USE_NEW_ABI
+	const bool have_strings = !r_list_empty (grep->strings);
+#else
+	const bool have_strings = grep->nstrings > 0;
+#endif
 
-	if (grep->nstrings > 0) {
+	if (have_strings) {
 		bool all_hits = true;
 		if (grep->icase) {
 			r_str_case (in, false);
 		}
+#if R2_USE_NEW_ABI
+		RListIter *iter;
+		RConsGrepWord *gw;
+		r_list_foreach (grep->strings, iter, gw) {
+			char *str = gw->str;
+			if (grep->icase) {
+				r_str_case (str, false);
+			}
+			const char *p = r_strstr_ansi (in, gw->str);
+			if (!p) {
+				hit = gw->neg;
+				all_hits &= hit;
+				continue;
+			}
+			hit = gw->begin
+				? gw->neg
+					? p != in
+					: p == in
+				: !gw->neg;
+
+			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
+			if (gw->end && (strlen (gw->str) != strlen (p))) {
+				hit = false;
+			}
+			all_hits &= hit;
+			if (!grep->amp) {
+				break;
+			}
+		}
+#else
 		for (i = 0; i < grep->nstrings; i++) {
 			char *str = grep->strings[i];
 			if (grep->icase) {
@@ -1139,6 +1250,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				break;
 			}
 		}
+#endif
 		if (grep->amp) {
 			hit = all_hits;
 		}
