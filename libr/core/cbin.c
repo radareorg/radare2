@@ -3750,8 +3750,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 	char *pn = strdup (cname);
 	char *cn = (char *)r_str_rchr (pn, NULL, '/');
 	if (cn) {
-		*cn = 0;
-		cn++;
+		*cn++ = 0;
 		r_str_replace_char (pn, '/', '.');
 	}
 	char *klassname = cn? cn: pn;
@@ -3770,7 +3769,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 		r_cons_printf (" ");
 	}
 	r_cons_printf ("{\n");
-	free (klassname);
+	free (pn);
 	r_list_foreach (c->fields, iter, f) {
 		if (!f->name) {
 			continue;
