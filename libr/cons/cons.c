@@ -1566,10 +1566,11 @@ R_API bool r_cons_is_tty(void) {
 	if (!win.ws_col || !win.ws_row) {
 		return false;
 	}
-	const char *tty = ttyname (1);
-	if (!tty) {
+	char ttybuf[64];
+	if (ttyname_r (1, ttybuf, sizeof (ttybuf))) {
 		return false;
 	}
+	const char *tty = ttybuf;
 	if (stat (tty, &sb) || !S_ISCHR (sb.st_mode)) {
 		return false;
 	}
@@ -1688,7 +1689,13 @@ R_API int r_cons_get_size(int *rows) {
 	struct winsize win = {0};
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
-			const char *tty = isatty (1)? ttyname (1): NULL;
+			char ttybuf[64];
+			const char *tty = NULL;
+			if (isatty (1)) {
+				if (!ttyname_r (1, ttybuf, sizeof (ttybuf))) {
+					tty = ttybuf;
+				}
+			}
 			int fd = open (r_str_get_fail (tty, "/dev/tty"), O_RDONLY);
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
