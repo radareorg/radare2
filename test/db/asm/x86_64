@@ -46,7 +46,22 @@ a "and dword[rax], 0x1234" 812034120000
 a "and dword[rax], 0x123490" 812090341200
 a "and dword[rax], 0x12349012" 812012903412
 a "and qword[rax], 0x12349012" 48812012903412
-aB "and r15b, 0x2a" ff2a
+ad "and r8b, 0x2a" 4180e02a
+ad "and r9b, 0x2a" 4180e12a
+ad "and r10b, 0x2a" 4180e22a
+ad "and r11b, 0x2a" 4180e32a
+ad "and r12b, 0x2a" 4180e42a
+ad "and r13b, 0x2a" 4180e52a
+ad "and r14b, 0x2a" 4180e62a
+ad "and r15b, 0x2a" 4180e72a
+ad "and r8w, 0x42" 664183e042
+ad "and r9w, 0x42" 664183e142
+ad "and r10w, 0x42" 664183e242
+ad "and r11w, 0x42" 664183e342
+ad "and r12w, 0x42" 664183e442
+ad "and r13w, 0x42" 664183e542
+ad "and r14w, 0x42" 664183e642
+ad "and r15w, 0x42" 664183e742
 a "and ebx, 0x1234" 81e334120000
 a "and byte[rax-0x2a], 12" 8060d60c
 a "and byte[rbx], 99" 802363
@@ -215,8 +230,8 @@ a "mov rax, [rbx + 0xbeef]" 488b83efbe0000
 a "mov rcx, [rbx + 0xbeef]" 488b8befbe0000
 a "mov rbx, [rbp + 0xbeef]" 488b9defbe0000
 a "mov rax, [rip + 0xbeef]" 488b05efbe0000
-aB "mov sil, 0" 40b600
-aB "mov dil, -5" 40b7fb
+ad "mov sil, 0" 40b600
+ad "mov dil, 0x42" 40b742
 aB "mov spl, bpl" 4088ec
 a "neg al" f6d8
 a "neg dh" f6de
