@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2024 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #if R_INCLUDE_BEGIN
 
@@ -1110,13 +1110,16 @@ static int cmd_test(RCore *core, const char *input) {
 		return 1;
 	}
 	switch (type) {
-	case 'f':
+	case 'f': // "test -f"
 		test_flag (core, r_file_exists (arg));
 		break;
-	case 'x':
+	case 'x': // "test -x"
 		test_flag (core, r_file_is_executable (arg));
 		break;
-	case 'd':
+	case 's': // "test -s"
+		test_flag (core, r_file_size (arg) > 0);
+		break;
+	case 'd': // "test -d"
 		test_flag (core, r_file_is_directory (arg));
 		break;
 	default:
