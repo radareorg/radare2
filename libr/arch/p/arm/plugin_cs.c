@@ -1321,7 +1321,11 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	if (isvessas) {
 		VEC64_APPEND (sb, n, i);
 	} else {
-		r_strbuf_append (sb, rn);
+		if (shift) {
+			r_strbuf_appendf (sb, "%d", (int)IMM64 (2));
+		} else {
+			r_strbuf_append (sb, rn);
+		}
 	}
 
 	if (shift) {
