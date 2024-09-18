@@ -8,9 +8,9 @@
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
 downloads. The current git `master` branch is `5.9.5`, next will be `5.9.6`.
 
-* Since r2-5.6.0 all the patch releases are [abi stable](doc/abi.md)
-* Odd patch versions are used in git builds only, releases use even numbers
-* No need to recompile the plugins, bindings or tools if the major and minor version are the same
+* Since 5.6.0, patch releases are [abi stable](doc/abi.md)
+* Even patch numbers used for releases, odd ones for git.
+* .9 patch versions reflect the abi breaking seasson
 
 ### Description
 
@@ -62,6 +62,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
 * [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
 * [keystone](https://github.com/radareorg/radare2-extras/tree/master/keystone) Assembler instructions using the Keystone library
+* [decai](https://github.com/radareorg/r2ai) Decompiler based on AI
 * [r2ai](https://github.com/radareorg/r2ai) Run a Language Model in localhost with Llama inside r2!
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
 * [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s binary diffing engine on top of radare2
