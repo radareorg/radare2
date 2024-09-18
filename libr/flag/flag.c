@@ -509,6 +509,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
+// R2_600 - rename to r_flag_get_at and r_flag_get_in ??
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
