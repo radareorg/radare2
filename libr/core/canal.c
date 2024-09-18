@@ -5826,13 +5826,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		archIsArm = true;
 	}
-	bool is_thumb = arch == R2_ARCH_THUMB;
+	const bool is_thumb = arch == R2_ARCH_THUMB;
 
-	ut64 gp = r_config_get_i (core->config, "anal.gp");
+	const ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
 	if (!strcmp (core->anal->config->arch, "mips")) {
 		gp_reg = "gp";
 		arch = R2_ARCH_MIPS;
+	} else if (arch == R2_ARCH_ARM64) {
+		// Dart binaries only
+		gp_reg = "x27";
 	}
 
 	r_reg_arena_push (core->anal->reg);
