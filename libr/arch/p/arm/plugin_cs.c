@@ -1288,7 +1288,7 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 
 	int size = 64;
 	if (ISREG64 (n)) {
-		size = REGSIZE64 (n)*8;
+		size = REGSIZE64 (n) * 8;
 	}
 
 	if (ISIMM64 (n)) {
@@ -1305,7 +1305,6 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	if (sign && !signext) {
 		signext = size;
 	}
-
 	if (signext) {
 		r_strbuf_appendf (sb, "%d,", signext);
 	}
@@ -1321,8 +1320,8 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	if (isvessas) {
 		VEC64_APPEND (sb, n, i);
 	} else {
-		if (shift) {
-			r_strbuf_appendf (sb, "%d", (int)IMM64 (2));
+		if (ISIMM64 (n)) {
+			r_strbuf_appendf (sb, "%d", (int)IMM64 (n));
 		} else {
 			r_strbuf_append (sb, rn);
 		}
@@ -1361,7 +1360,7 @@ static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 		}
 	} else {
-		VECARG64_APPEND (&op->esil, c+1, -1, sign);
+		VECARG64_APPEND (&op->esil, c + 1, -1, sign);
 		if (negate) {
 			r_strbuf_append (&op->esil, ",-1,^");
 		}
@@ -2940,9 +2939,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							  disp, MEMBASE(1), sign, MEMBASE(1));
 				}
 			}
-			if (HASMEMINDEX(1)) {	// e.g. 'str r2, [r3, r1]'
-				if (ISSHIFTED(1)) { // e.g. 'str r2, [r3, r1, lsl 4]'
-					switch (SHIFTTYPE(1)) {
+			if (HASMEMINDEX (1)) {	// e.g. 'str r2, [r3, r1]'
+				if (ISSHIFTED (1)) { // e.g. 'str r2, [r3, r1, lsl 4]'
+					switch (SHIFTTYPE (1)) {
 					case ARM_SFT_LSL:
 						r_strbuf_appendf (&op->esil, "%s,%s,%d,%s,<<,+,0xffffffff,&,=[%d]",
 								  REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
@@ -2998,8 +2997,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					       REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
 			} else if (str_ldr_bytes != 8) {
 				// if (ISREG(2)) // e.g. 'str r2, [r3], r1
-				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
-					switch (SHIFTTYPE(2)) {
+				if (ISSHIFTED (2)) { // e.g. 'str r2, [r3], r1, lsl 4'
+					switch (SHIFTTYPE (2)) {
 					case ARM_SFT_LSL:
 						r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,<<,+,%s,=",
 							       REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
@@ -3194,8 +3193,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			break;
 		}
 		addr &= ~3LL;
-		if (MEMDISP(1) < 0) {
-			if (REGBASE(1) == ARM_REG_PC) {
+		if (MEMDISP (1) < 0) {
+			if (REGBASE (1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x",>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
@@ -4125,9 +4124,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_ADC:
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(0) == ARM_REG_PC) {
+		if (REGID (0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
-			if (REGID(1) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
+			if (REGID (1) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
