@@ -459,6 +459,9 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 }
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
+	if (!C->is_interactive) {
+		return;
+	}
 	if (r_stack_size (C->break_stack) > 0) {
 		r_cons_break_timeout (I->otimeout);
 	}
@@ -466,6 +469,9 @@ R_API void r_cons_break_push(RConsBreak cb, void *user) {
 }
 
 R_API void r_cons_break_pop(void) {
+	if (!C->is_interactive) {
+		return;
+	}
 	I->timeout = 0;
 	r_cons_context_break_pop (C, true);
 }
@@ -490,6 +496,9 @@ R_API bool r_cons_was_breaked(void) {
 }
 
 R_API bool r_cons_is_breaked(void) {
+	if (!C->is_interactive) {
+		return false;
+	}
 #if WANT_DEBUGSTUFF
 	if (R_UNLIKELY (I->cb_break)) {
 		I->cb_break (I->user);
@@ -571,6 +580,9 @@ R_API void r_cons_break_timeout(int timeout) {
 }
 
 R_API void r_cons_break_end(void) {
+	if (!C->is_interactive) {
+		return;
+	}
 	C->breaked = false;
 	I->timeout = 0;
 #if R2__UNIX__ && !__wasi__
