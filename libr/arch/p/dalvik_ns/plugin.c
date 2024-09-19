@@ -91,9 +91,8 @@ static inline void append_name(RStrBuf *sb, RArch *arch, int type, int idx) {
 
 static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 	const struct dalvik_op_detail *d = &dalvik_opcodes[instr->op];
-	RStrBuf *sb = r_strbuf_newf ("%s", d->name);
+	RStrBuf *sb = r_strbuf_new (d->name);
 
-	ut64 off;
 	switch (d->fmt) {
 	case DALVIK_FMT_12X:
 		r_strbuf_appendf (sb, " v%u, v%u", instr->f12x.a, instr->f12x.b);
@@ -168,7 +167,7 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 		r_strbuf_appendf (sb, " v%u, v%u, %#lx", instr->f22t.a, instr->f22t.b, addr + (ut64)instr->f22t.c * 2);
 		break;
 	case DALVIK_FMT_22S:
-		r_strbuf_appendf (sb, " v%u, v%u, %#lx", instr->f22t.a, instr->f22t.b, instr->f22t.c);
+		r_strbuf_appendf (sb, " v%u, v%u, %#x", instr->f22t.a, instr->f22t.b, instr->f22t.c);
 		break;
 	case DALVIK_FMT_22C:
 		// TODO

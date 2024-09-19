@@ -1037,7 +1037,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	{
 		const char *dbg_profile = r_config_get (r->config, "dbg.profile");
-		if (dbg_profile && *dbg_profile) {
+		if (R_STR_ISNOTEMPTY (dbg_profile)) {
 			char *msg = r_file_slurp (dbg_profile, NULL);
 			if (msg) {
 				char *program = strstr (msg, "program=");
