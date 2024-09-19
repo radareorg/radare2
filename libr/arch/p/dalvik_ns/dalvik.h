@@ -400,7 +400,7 @@ struct dalvik_instr {
 			ut16 b;
 			ut8 f : 4;
 			ut8 e : 4;
-			ut8 d : 4; 
+			ut8 d : 4;
 			ut8 c : 4;
 			ut16 h;
 		} f45cc;
