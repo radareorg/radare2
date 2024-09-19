@@ -4699,39 +4699,48 @@ reread:
 		case 'p': // "/cp"
 			{
 				RSearchKeyword *kw;
+                if (input[2] == 'j') {
+                    param.outmode = R_MODE_JSON;
+                }
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
 					r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
 					goto beach;
-				}
+				} else {
+                    char *p = strchr (arg, ' ');
+                    if (p) {
+                        *p++ = 0;
+                    } else {
+                        r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
+                        goto beach;
+                    }
 
-				char *pubkey = strdup (r_str_trim_head_ro (strchr (arg, ' ')));
-				char *algo = strdup (arg);
-				r_str_split (algo, ' ');
-				if (input[2] == 'j') {
-					param.outmode = R_MODE_JSON;
-				}
-				if (!strcmp (algo, "ed25519")) {
-					r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
-				} else {
-					R_LOG_ERROR ("Unsupported signature: %s", arg);
-					goto beach;
-				}
-				if (strlen (pubkey) == ED25519_PUBKEY_LENGTH) {
-					core->search->data = (void *)pubkey;
-				} else {
-					R_LOG_ERROR ("Wrong key length");
-					goto beach;
-				}
-				kw = r_search_keyword_new_hexmask ("00", NULL);
-				// Private key search is at least 32 bytes
-				kw->keyword_length = RAW_PRIVATE_KEY_SEARCH_LENGTH;
-				r_search_kw_add (search, kw);
-				r_search_begin (core->search);
-				param.key_search = true;
-				free (algo);
-				break;
+                    char *algo = strdup (arg);
+                    char *pubkey = strdup (r_str_trim_head_ro (p));
+    				if (!strcmp (algo, "ed25519")) {
+    					r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
+    				} else {
+    					R_LOG_ERROR ("Unsupported signature: %s", arg);
+    					goto beach;
+    				}
+
+    				if (strlen (pubkey) == ED25519_PUBKEY_LENGTH) {
+    					core->search->data = (void *)pubkey;
+    				} else {
+    					R_LOG_ERROR ("Wrong key length");
+    					goto beach;
+    				}
+
+    				kw = r_search_keyword_new_hexmask ("00", NULL);
+    				// Private key search is at least 32 bytes
+    				kw->keyword_length = RAW_PRIVATE_KEY_SEARCH_LENGTH;
+    				r_search_kw_add (search, kw);
+    				r_search_begin (core->search);
+    				param.key_search = true;
+                    free (algo);
+    				break;
+                }
 			}
 		default: {
 			dosearch = false;
