@@ -3829,12 +3829,12 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->ptr = MEMDISP64(1);
 		} else {
 			if (ISMEM64 (1)) {
-				op->type = R_ANAL_OP_TYPE_LEA;
+				// op->type = R_ANAL_OP_TYPE_LEA;
 				op->disp = MEMDISP64 (1);
 				op->refptr = 8;
 			} else if (ISIMM64 (1)) {
-				op->type = R_ANAL_OP_TYPE_LEA;
-				op->ptr = IMM64(1);
+				// op->type = R_ANAL_OP_TYPE_LEA;
+				op->ptr = IMM64 (1);
 				op->refptr = 8;
 			} else {
 				int d = (int)MEMDISP64(1);
