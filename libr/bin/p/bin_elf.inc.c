@@ -1088,6 +1088,7 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	RVecRBinSymbol* symbols = &bf->bo->symbols_vec;
 	RBinSymbol *symbol;
 	bool is_rust = false;
+	bool is_dart = false;
 	if (symbols) {
 		R_VEC_FOREACH (symbols, symbol) {
 			if (ret->has_canary && is_rust) {
@@ -1105,6 +1106,9 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 			if (!is_rust && !strcmp (oname, "__rust_oom")) {
 				is_rust = true;
 				ret->lang = "rust";
+			} else if (!is_dart && !strcmp (oname, "_kDartVmSnapshotInstructions")) {
+				is_dart = true;
+				ret->lang = "dart";
 			}
 		}
 		// symbols->free = r_bin_symbol_free;
