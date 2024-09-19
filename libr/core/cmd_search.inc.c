@@ -812,7 +812,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	snprintf (bound_from, sizeof (bound_from), "%s.%s", prefix, "from");
 	snprintf (bound_to, sizeof (bound_to), "%s.%s", prefix, "to");
 	const ut64 search_from = r_config_get_i (core->config, bound_from),
-	      search_to = r_config_get_i (core->config, bound_to);
+		  search_to = r_config_get_i (core->config, bound_to);
 	const RInterval search_itv = {search_from, search_to - search_from};
 	if (!mode) {
 		mode = r_config_get (core->config, bound_in);
@@ -1286,7 +1286,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 			r_anal_op_fini (&asmop);
 		}
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
-		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
+			!r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
 			valid = false;
 			goto ret;
 		}
@@ -1635,7 +1635,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			RAnalOp end_gadget = {0};
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i, R_ARCH_OP_MASK_BASIC) < 1) {
+					delta - i, R_ARCH_OP_MASK_BASIC) < 1) {
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
@@ -4141,8 +4141,8 @@ static int cmd_search(void *data, const char *input) {
 	   this introduces a bug until we implement backwards search
 	   for all search types
 	   if (__to < __from) {
-	        eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
-	        return false;
+			eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
+			return false;
 	   }
 	   since the backward search will be implemented soon I'm not gonna stick
 	   checks for every case in switch // jjdredd
@@ -4699,48 +4699,48 @@ reread:
 		case 'p': // "/cp"
 			{
 				RSearchKeyword *kw;
-                if (input[2] == 'j') {
-                    param.outmode = R_MODE_JSON;
-                }
+				if (input[2] == 'j') {
+					param.outmode = R_MODE_JSON;
+				}
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
 					r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
 					goto beach;
 				} else {
-                    char *p = strchr (arg, ' ');
-                    if (p) {
-                        *p++ = 0;
-                    } else {
-                        r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
-                        goto beach;
-                    }
+					char *p = strchr (arg, ' ');
+					if (p) {
+						*p++ = 0;
+					} else {
+						r_core_cmd_help_match (core, help_msg_slash_c, "/cp");
+						goto beach;
+					}
 
-                    char *algo = strdup (arg);
-                    char *pubkey = strdup (r_str_trim_head_ro (p));
-    				if (!strcmp (algo, "ed25519")) {
-    					r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
-    				} else {
-    					R_LOG_ERROR ("Unsupported signature: %s", arg);
-    					goto beach;
-    				}
+					char *algo = strdup (arg);
+					char *pubkey = strdup (r_str_trim_head_ro (p));
+					if (!strcmp (algo, "ed25519")) {
+						r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
+					} else {
+						R_LOG_ERROR ("Unsupported signature: %s", arg);
+						goto beach;
+					}
 
-    				if (strlen (pubkey) == ED25519_PUBKEY_LENGTH) {
-    					core->search->data = (void *)pubkey;
-    				} else {
-    					R_LOG_ERROR ("Wrong key length");
-    					goto beach;
-    				}
+					if (strlen (pubkey) == ED25519_PUBKEY_LENGTH) {
+						core->search->data = (void *)pubkey;
+					} else {
+						R_LOG_ERROR ("Wrong key length");
+						goto beach;
+					}
 
-    				kw = r_search_keyword_new_hexmask ("00", NULL);
-    				// Private key search is at least 32 bytes
-    				kw->keyword_length = RAW_PRIVATE_KEY_SEARCH_LENGTH;
-    				r_search_kw_add (search, kw);
-    				r_search_begin (core->search);
-    				param.key_search = true;
-                    free (algo);
-    				break;
-                }
+					kw = r_search_keyword_new_hexmask ("00", NULL);
+					// Private key search is at least 32 bytes
+					kw->keyword_length = RAW_PRIVATE_KEY_SEARCH_LENGTH;
+					r_search_kw_add (search, kw);
+					r_search_begin (core->search);
+					param.key_search = true;
+					free (algo);
+					break;
+				}
 			}
 		default: {
 			dosearch = false;
