@@ -5,6 +5,7 @@ if get_option('enable_libfuzzer')
     'bin2',
     'fs',
     'dwarf',
+    'dalvik_ns',
     'bin_demangle',
     'ia',
     'cmd',
@@ -24,11 +25,13 @@ if get_option('enable_libfuzzer')
         r_core_dep,
         r_util_dep,
         r_socket_dep,
+        r_io_dep,
+        r_cons_dep,
       ],
       install: false,
       implicit_include_directories: false,
-      c_args : '-fsanitize=fuzzer',
-      link_args : '-fsanitize=fuzzer'
+      c_args : '-fsanitize=fuzzer,address',
+      link_args : '-fsanitize=fuzzer,address'
     )
   endforeach
 endif
