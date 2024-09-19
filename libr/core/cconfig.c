@@ -2603,7 +2603,8 @@ static bool cb_scrint(void *user, void *data) {
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
 	}
-	r_cons_singleton ()->context->is_interactive = node->i_value;
+	r_cons_set_interactive (node->i_value);
+	// r_cons_singleton ()->context->is_interactive = node->i_value;
 	return true;
 }
 
