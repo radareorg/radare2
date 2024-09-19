@@ -8,6 +8,11 @@ echo === Finding Python...
 python --version > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   echo OK
+  pip show setuptools 1> NUL
+  if not errorlevel 1 (
+    echo === Installing setuptools
+    python -m pip install -UI pip setuptools
+  )
 ) else (
   echo ERROR
   echo You need to install Python from the windows store or something
