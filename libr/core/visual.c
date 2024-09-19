@@ -4693,11 +4693,14 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 		}
 		int delta = r_core_visual_prevopsz (core, core->offset);
 		if (f && core->offset - delta == f->addr) {
-			core->skiplines = varcount (core, f);
-			*cols = delta;
-			if (core->skiplines > 0) {
-				core->skiplines--;
+			int nvars = varcount (core, f);
+			if (nvars < 20) {
+				core->skiplines = nvars;
+				if (core->skiplines > 0) {
+					core->skiplines--;
+				}
 			}
+			*cols = delta;
 		} else {
 			*cols = delta;
 			// *cols = 0;
@@ -4758,9 +4761,10 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 		}
 	}
 #if R2_USE_NEW_ABI
-	if (f && f->addr == orig) {
+	int nvars = varcount (core, f);
+	if (f && f->addr == orig && nvars < 20) {
 		// skip line by line here
-		if (varcount (core, f) <= core->skiplines) {
+		if (nvars <= core->skiplines) {
 			*cols = op->size > 1 ? op->size : 1;
 			core->skiplines = 0;
 		} else {
