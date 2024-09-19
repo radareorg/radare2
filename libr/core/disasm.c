@@ -3829,7 +3829,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 				break;
 			}
 			imm = strtol (esil, &end, 10);
-			if (comma && comma == end) {
+			if (comma == end) {
 				divisor = revert_cdiv_magic (imm);
 				if (divisor) {
 					r_cons_printf (" ; CDIV: %"PFMT64d" * 2^n", divisor);
@@ -4408,7 +4408,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		if (ds->emuptr) {
 			if (r_io_is_valid_offset (core->io, ds->emuptr, 0)) {
 				ds_print_shortcut (ds, ds->emuptr, pos);
-				//getPtr (ds, ds->emuptr, pos);
+				// getPtr (ds, ds->emuptr, pos);
 				ds->emuptr = 0;
 				ds->hinted_line = true;
 				gotShortcut = true;
@@ -6712,6 +6712,9 @@ toro:
 				ds_comment (ds, true, "");
 				ds_print_bytes (ds);
 			}
+			if (ds->asm_hint_emu) {
+				ds_print_esil_anal (ds);
+			}
 			if (ds->asm_hint_pos > 0) {
 				ds_print_core_vmode (ds, ds->asm_hint_pos);
 			}
@@ -6734,7 +6737,9 @@ toro:
 				ds_print_demangled (ds);
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
-				ds_print_esil_anal (ds);
+				if (!ds->asm_hint_emu) {
+					ds_print_esil_anal (ds);
+				}
 				ds_show_refs (ds);
 			}
 		}
