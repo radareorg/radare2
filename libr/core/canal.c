@@ -5834,13 +5834,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		gp_reg = "gp";
 		arch = R2_ARCH_MIPS;
 	} else if (arch == R2_ARCH_ARM64) {
-		// Dart binaries only
-		char *s = r_core_cmd_str (core, "i~lang~dart");
-		r_str_trim (s);
-		if (R_STR_ISNOTEMPTY (s)) {
+		RBinInfo *info = r_bin_get_info (core->bin);
+		if (info && info->lang && !strcmp (info->lang, "dart")) {
 			gp_reg = "x27";
 		}
-		free (s);
 	}
 
 	r_reg_arena_push (core->anal->reg);
