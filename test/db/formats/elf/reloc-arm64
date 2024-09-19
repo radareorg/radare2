@@ -22,6 +22,7 @@ EXPECT=<<EOF
 0x00000b64 bl rsym._ZN7_JNIEnv21ReleaseStringUTFCharsEP8_jstringPKc
 ;-- _JNIEnv::GetArrayLength(_jarray*):
 0x00000b98 _JNIEnv::GetArrayLength(_jarray*)
+0x00000bb4 "_cxa_atexit"
 ;-- _JNIEnv::GetObjectArrayElement(_jobjectArray*, int):
 0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
 0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
