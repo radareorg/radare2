@@ -26,9 +26,6 @@ typedef void (*RBufferFreeWholeBuf)(RBuffer *b);
 typedef RList *(*RBufferNonEmptyList)(RBuffer *b);
 
 typedef struct r_buffer_methods_t {
-#if R2_600
-	const char *const name;
-#endif
 	RBufferInit init;
 	RBufferFini fini;
 	RBufferRead read;
