@@ -96,16 +96,19 @@ static char *__io_reg_profile(RDebug *dbg) {
 
 // "dr8" read register state
 static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	r_cons_push ();
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
 		if (R_STR_ISEMPTY (fb)) {
 			R_LOG_ERROR ("Failed to get dr8 from io");
+			r_cons_pop ();
 			return false;
 		}
 		dr8 = strdup (fb);
 		r_cons_reset ();
 	}
+	r_cons_pop ();
 	ut8 *bregs = calloc (1, strlen (dr8));
 	if (!bregs) {
 		free (dr8);
