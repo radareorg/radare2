@@ -982,7 +982,7 @@ static void cmd_fd(RCore *core, const char *input) {
 
 static int cmd_flag(void *data, const char *input);
 
-static bool cmd_flag_add(R_NONNULL RCore *core, R_BORROW char *str) {
+static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 	const char *cstr = r_str_trim_head_ro (str);
 	char* eq = strchr (cstr, '=');
 	char* b64 = strstr (cstr, "base64:");
@@ -991,24 +991,21 @@ static bool cmd_flag_add(R_NONNULL RCore *core, R_BORROW char *str) {
 	char* comment = NULL;
 	bool comment_needs_free = false;
 	RFlagItem *item;
-	ut32 bsze = 1; //core->blocksize;
+	ut32 bsze = 1; // core->blocksize;
 	int eqdir = 0;
-
+#if 0
 	if (eq && eq > cstr) {
-		char *prech = eq - 1;
-		if (*prech == '+') {
+		if (sign > 0) {
 			eqdir = 1;
-			*prech = 0;
-		} else if (*prech == '-') {
+		} else if (sign < 0) {
 			eqdir = -1;
-			*prech = 0;
 		}
 	}
-
+#endif
 	// Get outta here as fast as we can so we can make sure that the comment
 	// buffer used on later code can be freed properly if necessary.
 	if (*cstr == '.') {
-		return cmd_flag(core, str + 1);
+		return cmd_flag (core, str);
 	}
 	ut64 off = core->offset;
 	// Check base64 padding
@@ -1019,12 +1016,15 @@ static bool cmd_flag_add(R_NONNULL RCore *core, R_BORROW char *str) {
 			R_LOG_ERROR ("Invalid eq number (%s)", eq + 1);
 			return 0;
 		}
+		off = arg;
 		RFlagItem *item = r_flag_get (core->flags, cstr);
-		if (eqdir && item) {
+#if 0
+		if (sign && item) {
 			off = item->offset + (arg * eqdir);
 		} else {
 			off = arg;
 		}
+#endif
 	}
 	if (s) {
 		*s = '\0';
@@ -1062,7 +1062,7 @@ static bool cmd_flag_add(R_NONNULL RCore *core, R_BORROW char *str) {
 	}
 
 	bool addFlag = true;
-	if (str[0] == '+') {
+	if (addsign) {
 		if ((item = r_flag_get_at (core->flags, off, false))) {
 			addFlag = false;
 		}
@@ -1271,8 +1271,10 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '+': // "f+'
+		cmd_flag_add (core, str, 1);
+		break;
 	case ' ': // "f "
-		cmd_flag_add (core, str);
+		cmd_flag_add (core, str, 0);
 		break;
 	case '-': // "f-"
 		if (input[1] == '-') {
