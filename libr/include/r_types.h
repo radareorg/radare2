@@ -35,8 +35,13 @@
 #define R_IN /* do not use, implicit */
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
+#if R2_600
+#define R_OWNED /* pointer ownership is transferred */
+#define R_UNOWNED /* pointer ownership is not transferred, it must not be freed by the caller */
+#else
 #define R_OWN /* pointer ownership is transferred */
 #define R_BORROW /* pointer ownership is not transferred, it must not be freed by the caller */
+#endif
 #define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
 

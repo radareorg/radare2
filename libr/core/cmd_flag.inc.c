@@ -20,6 +20,9 @@ static RCoreHelpMessage help_msg_fV = {
 static RCoreHelpMessage help_msg_f = {
 	"Usage: f", "[?] [flagname]", " # Manage offset-name flags",
 	"f", "", "list flags (will only list flags from selected flagspaces)",
+	"f", " name 12 @ 33", "set flag 'name' with length 12 at offset 33",
+	"f", " name = 33", "alias for 'f name @ 33' or 'f name 1 33'",
+	"f", " name 12 33 [cmt]", "same as above + optional comment",
 	"f?", "flagname", "check if flag exists or not, See ?? and ?!",
 	"f.", " [*[*]]", "list local per-function flags (*) as r2 commands",
 	"f.", "blah=$$+12", "set local function label named 'blah' (f.blah@$$+12)",
@@ -27,9 +30,6 @@ static RCoreHelpMessage help_msg_f = {
 	"f.", " fname", "list all local labels for the given function",
 	"f,", "", "table output for flags",
 	"f*", "", "list flags in r commands",
-	"f", " name 12 @ 33", "set flag 'name' with length 12 at offset 33",
-	"f", " name = 33", "alias for 'f name @ 33' or 'f name 1 33'",
-	"f", " name 12 33 [cmt]", "same as above + optional comment",
 	"f-", ".blah@fcn.foo", "delete local label from function at current seek (also f.-)",
 	"f-", "name", "remove flag 'name'",
 	"f-", "@addr", "remove flag at address expression (same as f-$$ or f-0x..)",
@@ -980,20 +980,119 @@ static void cmd_fd(RCore *core, const char *input) {
 	}
 }
 
+static int cmd_flag(void *data, const char *input);
+
+static bool cmd_flag_add(R_NONNULL RCore *core, R_BORROW char *str) {
+	const char *cstr = r_str_trim_head_ro (str);
+	char* eq = strchr (cstr, '=');
+	char* b64 = strstr (cstr, "base64:");
+	char* s = strchr (cstr, ' ');
+	char* s2 = NULL, *s3 = NULL;
+	char* comment = NULL;
+	bool comment_needs_free = false;
+	RFlagItem *item;
+	ut32 bsze = 1; //core->blocksize;
+	int eqdir = 0;
+
+	if (eq && eq > cstr) {
+		char *prech = eq - 1;
+		if (*prech == '+') {
+			eqdir = 1;
+			*prech = 0;
+		} else if (*prech == '-') {
+			eqdir = -1;
+			*prech = 0;
+		}
+	}
+
+	// Get outta here as fast as we can so we can make sure that the comment
+	// buffer used on later code can be freed properly if necessary.
+	if (*cstr == '.') {
+		return cmd_flag(core, str + 1);
+	}
+	ut64 off = core->offset;
+	// Check base64 padding
+	if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
+		*eq = 0;
+		ut64 arg = r_num_math (core->num, eq + 1);
+		if (core->num->nc.errors) {
+			R_LOG_ERROR ("Invalid eq number (%s)", eq + 1);
+			return 0;
+		}
+		RFlagItem *item = r_flag_get (core->flags, cstr);
+		if (eqdir && item) {
+			off = item->offset + (arg * eqdir);
+		} else {
+			off = arg;
+		}
+	}
+	if (s) {
+		*s = '\0';
+		s2 = strchr (s + 1, ' ');
+		if (s2) {
+			*s2 = '\0';
+			if (s2[1] && s2[2]) {
+				const char *arg = r_str_trim_head_ro (s2 + 1);
+				off = r_num_math (core->num, arg);
+				if (core->num->nc.errors) {
+					R_LOG_ERROR ("Invalid s2 number (%s)", arg);
+					return false;
+				}
+			}
+			s3 = strchr (s2 + 1, ' ');
+			if (s3) {
+				*s3 = '\0';
+				if (r_str_startswith (s3 + 1, "base64:")) {
+					comment = (char *) r_base64_decode_dyn (s3 + 8, -1);
+					comment_needs_free = true;
+				} else if (s3[1]) {
+					comment = s3 + 1;
+				}
+			}
+		}
+		if (s[1] == '=') {
+			bsze = 1;
+		} else {
+			bsze = r_num_math (core->num, s + 1);
+			if (core->num->nc.errors) {
+				R_LOG_ERROR ("Invalid number (%s)", s + 1);
+				return false;
+			}
+		}
+	}
+
+	bool addFlag = true;
+	if (str[0] == '+') {
+		if ((item = r_flag_get_at (core->flags, off, false))) {
+			addFlag = false;
+		}
+	}
+	if (addFlag) {
+		if (!r_name_check (cstr)) {
+			R_LOG_ERROR ("Invalid flag name '%s'", cstr);
+			return false;
+		}
+		item = r_flag_set (core->flags, cstr, off, bsze);
+	}
+	if (item && comment) {
+		r_flag_item_set_comment (item, comment);
+		if (comment_needs_free) {
+			free (comment);
+		}
+	}
+	return true;
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
-	char *ptr, *str = NULL;
+	char *ptr;
 	RFlagItem *item;
 	char *name = NULL;
 	st64 base;
 
-	// TODO: off+=cursor
-	if (*input) {
-		str = strdup (input + 1);
-	}
-rep:
+	char *str = (*input)? strdup (input + 1): NULL;
 	switch (*input) {
 	case 'f': // "ff"
 		if (input[1] == '?') { // "ff?"
@@ -1172,88 +1271,8 @@ rep:
 		}
 		break;
 	case '+': // "f+'
-	case ' ': {
-		const char *cstr = r_str_trim_head_ro (str);
-		char* eq = strchr (cstr, '=');
-		char* b64 = strstr (cstr, "base64:");
-		char* s = strchr (cstr, ' ');
-		char* s2 = NULL, *s3 = NULL;
-		char* comment = NULL;
-		bool comment_needs_free = false;
-		ut32 bsze = 1; //core->blocksize;
-		int eqdir = 0;
-
-		if (eq && eq > cstr) {
-			char *prech = eq - 1;
-			if (*prech == '+') {
-				eqdir = 1;
-				*prech = 0;
-			} else if (*prech == '-') {
-				eqdir = -1;
-				*prech = 0;
-			}
-		}
-
-		// Get outta here as fast as we can so we can make sure that the comment
-		// buffer used on later code can be freed properly if necessary.
-		if (*cstr == '.') {
-			input++;
-			goto rep;
-		}
-		// Check base64 padding
-		if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
-			*eq = 0;
-			ut64 arg = r_num_math (core->num, eq + 1);
-			RFlagItem *item = r_flag_get (core->flags, cstr);
-			if (eqdir && item) {
-				off = item->offset + (arg * eqdir);
-			} else {
-				off = arg;
-			}
-		}
-		if (s) {
-			*s = '\0';
-			s2 = strchr (s + 1, ' ');
-			if (s2) {
-				*s2 = '\0';
-				if (s2[1] && s2[2]) {
-					off = r_num_math (core->num, s2 + 1);
-				}
-				s3 = strchr (s2 + 1, ' ');
-				if (s3) {
-					*s3 = '\0';
-					if (!strncmp (s3 + 1, "base64:", 7)) {
-						comment = (char *) r_base64_decode_dyn (s3 + 8, -1);
-						comment_needs_free = true;
-					} else if (s3[1]) {
-						comment = s3 + 1;
-					}
-				}
-			}
-			bsze = (s[1] == '=') ? 1 : r_num_math (core->num, s + 1);
-		}
-
-		bool addFlag = true;
-		if (input[0] == '+') {
-			if ((item = r_flag_get_at (core->flags, off, false))) {
-				addFlag = false;
-			}
-		}
-		if (addFlag) {
-			if (!r_name_check (cstr)) {
-				R_LOG_ERROR ("Invalid flag name '%s'", cstr);
-				free (str);
-				return false;
-			}
-			item = r_flag_set (core->flags, cstr, off, bsze);
-		}
-		if (item && comment) {
-			r_flag_item_set_comment (item, comment);
-			if (comment_needs_free) {
-				free (comment);
-			}
-		}
-		}
+	case ' ': // "f "
+		cmd_flag_add (core, str);
 		break;
 	case '-': // "f-"
 		if (input[1] == '-') {
