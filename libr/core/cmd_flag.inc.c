@@ -992,8 +992,8 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 	bool comment_needs_free = false;
 	RFlagItem *item;
 	ut32 bsze = 1; // core->blocksize;
-	int eqdir = 0;
 #if 0
+	int eqdir = 0;
 	if (eq && eq > cstr) {
 		if (sign > 0) {
 			eqdir = 1;
@@ -1017,8 +1017,8 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 			return 0;
 		}
 		off = arg;
-		RFlagItem *item = r_flag_get (core->flags, cstr);
 #if 0
+		RFlagItem *item = r_flag_get (core->flags, cstr);
 		if (sign && item) {
 			off = item->offset + (arg * eqdir);
 		} else {

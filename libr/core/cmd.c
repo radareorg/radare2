@@ -5248,7 +5248,7 @@ ignore:
 				ut64 n = r_num_math (core->num, offstr);
 				if (core->num->nc.errors) {
 					R_LOG_ERROR ("Invalid tmpseek address '%s'", offstr);
-					return 0;
+					goto fail;
 				}
 				addr = n;
 			}
@@ -5938,7 +5938,10 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 			}
 			r_core_seek (core, addr, true);
 			r_core_cmd (core, cmd, 0);
-			foreach_newline (core);
+			if (!foreach_newline (core)) {
+				r_cons_flush ();
+				break;
+			}
 			r_cons_flush ();
 		}
 		each = nextLine;
