@@ -811,8 +811,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	snprintf (bound_in, sizeof (bound_in), "%s.%s", prefix, "in");
 	snprintf (bound_from, sizeof (bound_from), "%s.%s", prefix, "from");
 	snprintf (bound_to, sizeof (bound_to), "%s.%s", prefix, "to");
-	const ut64 search_from = r_config_get_i (core->config, bound_from),
-		  search_to = r_config_get_i (core->config, bound_to);
+	const ut64 search_from = r_config_get_i (core->config, bound_from);
+	const ut64 search_to = r_config_get_i (core->config, bound_to);
 	const RInterval search_itv = {search_from, search_to - search_from};
 	if (!mode) {
 		mode = r_config_get (core->config, bound_in);
