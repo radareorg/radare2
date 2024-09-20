@@ -73,6 +73,7 @@ abo~?
 ?e --
 abo~?
 afbo~?
+f opcount=0
 "(nops;f opcount=opcount+`abo~?`)"
 .(nops)@@=`afbq`
 afi~nins
