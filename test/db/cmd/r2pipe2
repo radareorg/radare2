@@ -10,7 +10,7 @@ NAME=r2pipe2 invalid
 FILE=--
 CMDS={"cmd":"invalid"}
 EXPECT=<<EOF
-{"res":"","error":false,"value":1,"code":0,"logs":[{"type":"WARN","origin":"cmd_info","message":"Invalid `i` subcommand 'n'"}],"code":0}
+{"res":"","error":false,"value":1,"code":0,"logs":[{"type":"ERROR","origin":"r_core_return_invalid_command","message":"Invalid `n` subcommand, try `i?`"}],"code":0}
 EOF
 RUN
 
@@ -45,77 +45,77 @@ EXPECT=<<EOF
   "code": 0,
   "logs": [
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze all flags starting with sym. and entry0 (aa)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze imports (af@@@i)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze symbols (af@@@s)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze all functions arguments/locals (afva@@@F)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze function calls (aac)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "find and analyze function preludes (aap)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyze len bytes of instructions for references (aar)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Finding and parsing C++ vtables (avrr)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Analyzing methods (af @@ method.*)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Emulate functions to find computed references (aaef)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Recovering local variables (afva@@@F)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Type matching analysis for all functions (aaft)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Propagate noreturn information (aanr)"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "cmd_aaa",
       "message": "Use -AA or aaaa to perform additional experimental analysis"
     },
     {
-      "type": "WARN",
+      "type": "INFO",
       "origin": "logline",
       "message": "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)"
     }

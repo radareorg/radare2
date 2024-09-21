@@ -161,7 +161,6 @@ R_API bool r_log_match(int level, const char *origin) {
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
-	int type = R_LOG_LEVEL_WARN;
 	if (!r_log_init ()) {
 		return;
 	}
@@ -170,7 +169,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		RListIter *iter;
 		RLogCallbackUser *cbu;
 		r_list_foreach (rlog->cbs, iter, cbu) {
-			if (cbu->cb (cbu->user, type, origin, out)) {
+			if (cbu->cb (cbu->user, level, origin, out)) {
 				return;
 			}
 		}
