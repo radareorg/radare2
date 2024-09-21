@@ -1398,7 +1398,7 @@ static int cmd_zign(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_z);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_z);
+		r_core_return_invalid_command (core, "z", *input);
 		return false;
 	}
 

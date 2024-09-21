@@ -6187,8 +6187,10 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case '?': // "d?"
-	default:
 		r_core_cmd_help (core, help_msg_d);
+		break;
+	default:
+		r_core_return_invalid_command (core, "d", *input);
 		break;
 	}
 

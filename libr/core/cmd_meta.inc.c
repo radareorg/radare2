@@ -1473,6 +1473,9 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		}
 		break;
+	default:
+		r_core_return_invalid_command (core, "C", *input);
+		break;
 	}
 	return true;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -281,6 +281,9 @@ static int cmd_egg(void *data, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_g);
+		break;
+	default:
+		r_core_return_invalid_command (core, "g", *input);
 		break;
 	}
 	return true;

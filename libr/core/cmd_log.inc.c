@@ -666,6 +666,9 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		}
 		break;
+	default:
+		r_core_return_invalid_command (core, "L", *input);
+		break;
 	}
 	return 0;
 }
