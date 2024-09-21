@@ -61,7 +61,6 @@ static RCoreHelpMessage help_msg_iz = {
 static RCoreHelpMessage help_msg_iE = { // rename to ise? maybe
 	"Usage: iE", "[][jq*]", "List exported symbols",
 	"iE", "", "exports (global symbols)",
-	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "show export in current address",
 	NULL
@@ -977,7 +976,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 		cmd_ic_sub (core, input);
 		break;
 	case '+': // "ic+"
-		cmd_ic_add (core, input + 2);
+		cmd_ic_add (core, r_str_trim_head_ro (input + 1));
 		break;
 	// commands that iterate
 	case ' ': // "ic "
