@@ -462,6 +462,12 @@ typedef int RCmdReturnCode;
 #define r_core_return_value(core, val) (core)->num->value = (val)
 #define r_core_return_code(core, val) (core)->rc = (val)
 
+// R2_600 - make this api public? add an api to generalize the logic of invalid subcommand
+static inline void r_core_return_invalid_command(RCore *core, const char *basecmd, const char subcmd) {
+	R_LOG_ERROR ("Invalid `%c` subcommand, try `%s?`", subcmd, basecmd);
+	r_core_return_value (core, 1);
+}
+
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);
 R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta);

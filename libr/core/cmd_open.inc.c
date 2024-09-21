@@ -2549,8 +2549,10 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case '?': // "o?"
-	default:
 		r_core_cmd_help (core, help_msg_o);
+		break;
+	default:
+		r_core_return_invalid_command (core, "o", *input);
 		break;
 	}
 	return 0;
