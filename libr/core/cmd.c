@@ -3971,19 +3971,17 @@ static int handle_command_call(RCore *core, const char *cmd) {
 		return -1;
 	}
 	if (R_UNLIKELY (*cmd == '\'')) {
-		if (cmd[1] == '@') {
+		bool isaddr = cmd[1] == '@';
+		if (isaddr) {
 			cmd += 2;
 		} else {
 			cmd++;
 		}
-		if (r_str_startswith (cmd, "0x")) {
+		if (isaddr || r_str_startswith (cmd, "0x")) {
 			int res = 1;
 			char *arg = strdup (cmd);
 			char *end = strstr (arg, "'");
-			if (!end) {
-				R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
-				free (arg);
-			} else {
+			if (end) {
 				*end = 0;
 				cmd = end + 1;
 				ut64 addr = core->offset;
@@ -3991,6 +3989,9 @@ static int handle_command_call(RCore *core, const char *cmd) {
 				r_core_seek (core, at, true);
 				res = r_core_cmd_call (core, cmd);
 				r_core_seek (core, addr, true);
+				free (arg);
+			} else {
+				R_LOG_ERROR ("Invalid syntax, expected \"'@addr'command\"");
 				free (arg);
 			}
 			return res;
