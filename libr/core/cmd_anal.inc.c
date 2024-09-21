@@ -15445,7 +15445,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_a);
+		// r_core_cmd_help (core, help_msg_a);
+		R_LOG_ERROR ("Invalid `a` subcommand '%c', try `a?`", *input);
+		r_core_return_value (core, 1);
 		break;
 	}
 	if (tbs != core->blocksize) {

@@ -2187,8 +2187,7 @@ static int cmd_info(void *data, const char *input) {
 		// do nothing
 		break;
 	default:
-		R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
-		r_core_return_value (core, 1);
+		r_core_return_invalid_command (core, "i", *input);
 		break;
 	}
 	R_FREE (core->table_query);

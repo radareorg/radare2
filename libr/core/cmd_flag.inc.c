@@ -538,7 +538,6 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 	}
 	if (mode == '?') {
 		r_core_cmd_help (core, help_msg_ft);
-
 		free (inp);
 		return;
 	}
@@ -1852,7 +1851,6 @@ static int cmd_flag(void *data, const char *input) {
 		cmd_fd (core, input);
 		break;
 	case '?':
-	default:
 		if (input[1]) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			RFlagItem *fi = r_flag_get (core->flags, arg);
@@ -1860,6 +1858,9 @@ static int cmd_flag(void *data, const char *input) {
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "f", *input);
 		break;
 	}
 	free (str);

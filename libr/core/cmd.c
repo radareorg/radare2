@@ -3033,8 +3033,10 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		return true;
 	case '?': // "r?"
-	default:
 		r_core_cmd_help (core, help_msg_r);
+		return true;
+	default:
+		r_core_return_invalid_command (core, "r", *input);
 		return true;
 	}
 
