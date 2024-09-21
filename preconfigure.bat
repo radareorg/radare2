@@ -8,8 +8,8 @@ echo === Finding Python...
 python --version > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   echo OK
-  pip show setuptools 1> NUL
-  if not errorlevel 1 (
+  pip show setuptools > NUL 1> NUL
+  if errorlevel 1 (
     echo === Installing setuptools
     python -m pip install -UI pip setuptools
   )
