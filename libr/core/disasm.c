@@ -1734,19 +1734,21 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	for (i = 1; i < ds->oplen; i++) {
 		RFlagItem *fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi && fi->name) {
+			const char *finame = fi->name;
 			if (r_anal_get_block_at (core->anal, ds->at)) {
 				ds->midflags = ds->midflags? R_MIDFLAGS_SHOW: R_MIDFLAGS_HIDE;
 			}
-			if (ds->midflags == R_MIDFLAGS_REALIGN && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+			if (ds->midflags == R_MIDFLAGS_REALIGN && ((finame[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
-			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
+			} else if (r_str_startswith (finame, "hit.")) { // use search.prefix ?
 				i = 0;
-			} else if (!strncmp (fi->name, "str.", 4)) {
+			} else if (r_str_startswith (finame, "str.")) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
-			} else if (!strncmp (fi->name, "reloc.", 6)) {
+			} else if (r_str_startswith (finame, "reloc.")) {
 				continue;
-			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
-				if (strncmp (fi->name, "sym.", 4)) {
+			}
+			if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
+				if (!r_str_startswith (finame, "sym.")) {
 					continue;
 				}
 			}
@@ -3571,10 +3573,8 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 		if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
 			ut64 bits = r_config_get_i (core->config, "asm.bits");
 			//adjust address for arm/thumb address
-			if (bits < 64) {
-				if (n & 1) {
-					n--;
-				}
+			if ((bits < 64) && (n & 1)) {
+				n--;
 			}
 		}
 		if (n >= ds->min_ref_addr) {
@@ -4405,15 +4405,12 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		return false;
 	}
 	if (ds->asm_hint_emu) {
-		if (ds->emuptr) {
-			if (r_io_is_valid_offset (core->io, ds->emuptr, 0)) {
-				ds_print_shortcut (ds, ds->emuptr, pos);
-				// getPtr (ds, ds->emuptr, pos);
-				ds->emuptr = 0;
-				ds->hinted_line = true;
-				gotShortcut = true;
-				goto beach;
-			}
+		if (ds->emuptr && r_io_is_valid_offset (core->io, ds->emuptr, 0)) {
+			ds_print_shortcut (ds, ds->emuptr, pos);
+			ds->emuptr = 0;
+			ds->hinted_line = true;
+			gotShortcut = true;
+			goto beach;
 		}
 	}
 	if (ds->asm_hint_lea) {
@@ -4687,7 +4684,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
-			const char *ptr = str, *end = str + str_len;
+			const char *ptr = str;
+			const char *end = str + str_len;
 			for (; ptr < end; ptr++) {
 				if (r_utf8_decode ((ut8 *)ptr, end - ptr, NULL) > 1) {
 					enc = R_STRING_ENC_UTF8;
@@ -4991,6 +4989,13 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
+				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, refaddr);
+				if (R_STR_ISNOTEMPTY (comment)) {
+					ds_begin_nl_comment (ds);
+					ds_begin_comment (ds);
+					ds_comment (ds, true, "%s", comment);
+				}
+
 				ds->printed_flag_addr = refaddr;
 				flag_printed = true;
 			}
@@ -5308,14 +5313,6 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			if (!jump_op && !ignored) {
 				const char *prefix;
 				ut32 len = sizeof (str) -1;
-#if 0
-#define R_DISASM_MAX_STR 512
-				RCore *core = ds->core;
-				ut32 len = core->blocksize + 256;
-				if (len < core->blocksize || len > R_DISASM_MAX_STR) {
-					len = R_DISASM_MAX_STR;
-				}
-#endif
 				ds->emuptr = *val;
 				if (ds->pj) {
 					// "pdJ"
@@ -5354,7 +5351,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		    && (ds->show_emu_strflag || !emu_str_printed)) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
-				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+				msg = r_str_appendf (msg, "%s%s", R_STR_ISNOTEMPTY (msg)? " " : "", fi->name);
 				if (ds->pj) {
 					pj_ks (ds->pj, "flag", fi->name);
 				}
@@ -6134,12 +6131,10 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		} else {
 			if (!set_jump_realname (ds, addr, &kw, &name)) {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, addr);
-				if (flag) {
-					if (strchr (flag->name, '.')) {
-						name = flag->name;
-						if (f->realnames && flag->realname) {
-							name = flag->realname;
-						}
+				if (flag && strchr (flag->name, '.')) {
+					name = flag->name;
+					if (f->realnames && flag->realname) {
+						name = flag->realname;
 					}
 				}
 			}
