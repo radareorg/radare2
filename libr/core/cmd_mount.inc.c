@@ -946,6 +946,9 @@ static int cmd_mount(void *data, const char *_input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_m);
 		break;
+	default:
+		r_core_return_invalid_command (core, "m", *input);
+		break;
 	}
 	free (oinput);
 	return 0;

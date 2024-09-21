@@ -767,7 +767,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
-		eprintf ("Can't find type %s\n", v);
+		R_LOG_ERROR ("Can't find type %s", v);
 		return 1;
 	}
 	r_cons_printf ("(%s)\n", v);
@@ -1218,7 +1218,7 @@ static int cmd_type(void *data, const char *input) {
 				} else if (r_str_startswith (type, "func")) {
 					r_core_cmdf (core, "tfc %s", name);
 				} else {
-					eprintf ("unk\n");
+					R_LOG_ERROR ("unk");
 				}
 			}
 			break;
@@ -1547,7 +1547,7 @@ static int cmd_type(void *data, const char *input) {
 				free (str);
 			}
 		} else {
-			eprintf ("Sandbox: system call disabled\n");
+			R_LOG_ERROR ("Sandbox: system call disabled");
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
@@ -1595,7 +1595,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				r_list_free (uniq);
 			} else {
-				eprintf ("cannot find function at 0x%08"PFMT64x"\n", addr);
+				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, addr);
 			}
 			}
 			break;
@@ -1699,28 +1699,28 @@ static int cmd_type(void *data, const char *input) {
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
-					eprintf ("tl: Address is unvalid\n");
+					R_LOG_ERROR ("tl: Address is invalid");
 					free (type);
 					break;
 				}
 			}
 			r_str_trim (type);
 			char *tmp = sdb_get (TDB, type, 0);
-			if (tmp && *tmp) {
+			if (R_STR_ISNOTEMPTY (tmp)) {
 				r_type_set_link (TDB, type, addr);
 				RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
 				if (r_list_length (fcns) > 1) {
-					eprintf ("Multiple functions found in here.\n");
+					R_LOG_ERROR ("Multiple functions found in here");
 				} else if (r_list_length (fcns) == 1) {
 					RAnalFunction *fcn = r_list_first (fcns);
 					r_core_link_stroff (core, fcn);
 				} else {
-					eprintf ("Cannot find any function here\n");
+					R_LOG_ERROR ("Cannot find any function here");
 				}
 				r_list_free (fcns);
 				free (tmp);
 			} else {
-				eprintf ("unknown type %s\n", type);
+				R_LOG_ERROR ("unknown type %s", type);
 			}
 			free (type);
 			break;
@@ -1801,7 +1801,7 @@ static int cmd_type(void *data, const char *input) {
 				const char *arg = (type_end) ? type_end + 1 : NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
-					eprintf ("Cannot find '%s' type\n", type);
+					R_LOG_ERROR ("Cannot find '%s' type", type);
 					free (tmp);
 					free (type);
 					break;
@@ -1858,7 +1858,7 @@ static int cmd_type(void *data, const char *input) {
 			if (*name) {
 				r_anal_remove_parsed_type (core->anal, name);
 			} else {
-				eprintf ("Invalid use of t- . See t-? for help.\n");
+				R_LOG_ERROR ("Invalid use of t-. See t-? for help");
 			}
 		}
 		break;
@@ -1987,14 +1987,16 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (q);
 		} else {
-			eprintf ("This is not a typedef\n");
+			R_LOG_ERROR ("This is not a typedef");
 		}
 		free (s);
 		break;
 	}
-	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_t);
+		break;
+	default:
+		r_core_return_invalid_command (core, "t", *input);
 		break;
 	}
 	return true;

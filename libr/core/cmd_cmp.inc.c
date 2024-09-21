@@ -1633,7 +1633,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_c);
+		r_core_return_invalid_command (core, "c", *input);
 		break;
 	}
 	if (val != UT64_MAX) {

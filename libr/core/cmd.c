@@ -790,13 +790,15 @@ static int cmd_undo(void *data, const char *input) {
 			r_core_cmd_help (data, help_msg_uname);
 		}
 		return 1;
-	default:
 	case '?': // "u?"
 		if (*input && input[1] == 'j') {
 			r_cons_cmd_help_json (help_msg_u);
 		} else {
 			r_core_cmd_help (data, help_msg_u);
 		}
+		return 1;
+	default:
+		r_core_return_invalid_command (core, "u", *input);
 		return 1;
 	}
 	return 0;
@@ -1401,8 +1403,11 @@ static int cmd_yank(void *data, const char *input) {
 	case '\0': // "y"
 		r_core_yank_dump (core, 0, input[0]);
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_y);
+		break;
+	default:
+		r_core_return_invalid_command (core, "y", *input);
 		break;
 	}
 	return true;
@@ -2736,6 +2741,9 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_k);
+		break;
+	default:
+		r_core_return_invalid_command (core, "f", *input);
 		break;
 	}
 

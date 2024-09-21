@@ -2472,9 +2472,11 @@ static int cmd_write(void *data, const char *input) {
 	case 's': // "ws"
 		cmd_ws (core, input + 1);
 		break;
-	default:
 	case '?': // "w?"
 		r_core_cmd_help (core, help_msg_w);
+		break;
+	default:
+		r_core_return_invalid_command (core, "w", *input);
 		break;
 	}
 	r_core_block_read (core);

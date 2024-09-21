@@ -414,8 +414,11 @@ static int cmd_project(void *data, const char *input) {
 	case 'j': // "Pj"
 		r_core_project_list (core, input[0]);
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_P);
+		break;
+	default:
+		r_core_return_invalid_command (core, "P", *input);
 		break;
 	}
 	free (str);

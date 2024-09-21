@@ -419,12 +419,14 @@ static int cmd_eval(void *data, const char *input) {
 		r_config_list (core->config, NULL, 0);
 		break;
 	case '?': // "e?"
-	default:
 		switch (input[1]) {
 		case '\0': r_core_cmd_help (core, help_msg_e); break;
 		case '?': r_config_list (core->config, input + 2, 2); break;
 		default: r_config_list (core->config, input + 1, 3); break;
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "e", *input);
 		break;
 	case 't': // "et"
 		if (input[1] == 'a') {
