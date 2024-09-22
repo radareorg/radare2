@@ -10,7 +10,12 @@ static RBreakpointArch r_bp_plugin_bf_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_bf = {
-	.name = "bf",
+	.meta = {
+		.name = "bf",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "bf",
 	.nbps = 2,
 	.bps = r_bp_plugin_bf_bps,
