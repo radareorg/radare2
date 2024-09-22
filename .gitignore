@@ -14,6 +14,7 @@ clang-log/
 *.obj
 *.ilk
 *.dSYM
+*.wasm
 supported.*
 config.mk
 plugins.cfg
