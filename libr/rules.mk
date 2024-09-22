@@ -38,6 +38,7 @@ endif
 LINK+=-Wl,-rpath,"${LIBDIR}"
 endif
 
+ifeq (,$(findstring emcc,$(CC)))
 ifeq (${OSTYPE},gnulinux)
 ifeq (${HAVE_LIBVERSION},1)
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}.${LIBVERSION}
@@ -53,6 +54,7 @@ LIBNAME=${LDFLAGS_SONAME}${LIB}.${EXT_SO}
 endif
 else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
+endif
 endif
 endif
 
