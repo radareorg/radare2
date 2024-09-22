@@ -91,7 +91,9 @@ endif
 
 # Output
 ifneq ($(OSTYPE),mingw32)
+ifeq (,$(findstring emcc,$(CC)))
 CFLAGS+=-g
+endif
 endif
 ifeq (${OSTYPE},windows)
 CFLAGS+=-DR2__WINDOWS__=1
