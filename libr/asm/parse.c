@@ -111,7 +111,7 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	RListIter *iter;
 	RParsePlugin *h;
 	r_list_foreach (p->parsers, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!strcmp (h->meta.name, name)) {
 			p->cur = h;
 			return true;
 		}
@@ -120,7 +120,7 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	if (strchr (name, '.')) {
 		char *sname = predotname (name);
 		r_list_foreach (p->parsers, iter, h) {
-			char *shname = predotname (h->name);
+			char *shname = predotname (h->meta.name);
 			found = !strcmp (shname, sname);
 			free (shname);
 			if (found) {
@@ -132,14 +132,14 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	}
 	if (!found) {
 		R_LOG_WARN ("Cannot find asm.parser for %s", name);
-		if (p->cur && p->cur->name) {
-			if (r_str_startswith (p->cur->name, "null")) {
+		if (p->cur && p->cur->meta.name) {
+			if (r_str_startswith (p->cur->meta.name, "null")) {
 				return false;
 			}
 		}
 		// check if p->cur
 		r_list_foreach (p->parsers, iter, h) {
-			if (r_str_startswith (h->name, "null")) {
+			if (r_str_startswith (h->meta.name, "null")) {
 				R_LOG_INFO ("Fallback to null");
 				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
 				p->cur = h;
