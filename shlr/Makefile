@@ -368,7 +368,7 @@ libr_shlr.${EXT_AR}:
 	mkdir .libr
 ifeq ($(CC),emcc)
 	for LIB in ${SHLRS} ; do \
-		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -r -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} -s ERROR_ON_UNDEFINED_SYMBOLS=0 ; fi ; \
 	done
 	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
