@@ -1,7 +1,7 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 EXT_EXE=.wasm
-EXT_SO=.wasm
+EXT_SO=wasm
 EXT_AR=a
 CC=emcc
 AR=emar
