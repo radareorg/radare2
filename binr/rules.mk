@@ -6,9 +6,11 @@ include ../../shlr/sdb.mk
 # despite libs are pic, some systems/compilers dont
 # like relocatable executables, so here we do the magic
 USE_PIE=0
+ifeq (,$(findstring emcc,${CC}))
 ifeq (,$(findstring tcc,${CC}))
 ifeq (,$(findstring vinix,${CC}))
 USE_PIE=1
+endif
 endif
 endif
 
