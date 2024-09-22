@@ -63,6 +63,11 @@ LINK+=$(LIBR)/lang/libr_lang.a
 LINK+=$(LIBR)/config/libr_config.a
 LINK+=$(LIBR)/crypto/libr_crypto.a
 LINK+=$(LIBR)/main/libr_main.a
+else ifeq (${COMPILER},wasm)
+LINK+=$(SHLR)/libr_shlr.a
+LINK+=$(SHLR)/sdb/src/libsdb.a
+include $(SHLR)/capstone.mk
+EXT_EXE=.wasm
 else ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/sdb/src/libsdb.a
@@ -124,11 +129,7 @@ ${BEXE}: ${OBJ} ${SHARED_OBJ}
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
   endif
  else
-  ifeq ($(CC),emcc)
-	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js
-  else
 	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
-  endif
  endif
 else
 
