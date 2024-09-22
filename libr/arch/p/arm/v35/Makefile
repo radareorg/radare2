@@ -1,3 +1,5 @@
+include ../../../../../global.mk
+
 EXT_AR?=a
 
 all: arch-arm64 arch-armv7
