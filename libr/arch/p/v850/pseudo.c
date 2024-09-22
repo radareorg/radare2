@@ -221,8 +221,12 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 }
 
 RParsePlugin r_parse_plugin_v850_pseudo = {
-	.name = "v850.pseudo",
-	.desc = "v850 pseudo syntax",
+	.meta = {
+		.name = "v850.pseudo",
+		.desc = "v850 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse,
 	.subvar = &subvar,
 };

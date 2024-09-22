@@ -217,8 +217,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_riscv_pseudo = {
-	.name = "riscv.pseudo",
-	.desc = "riscv pseudo syntax",
+	.meta = {
+		.name = "riscv.pseudo",
+		.desc = "riscv pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse,
 };
 

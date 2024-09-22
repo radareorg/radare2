@@ -10,7 +10,12 @@ static RBreakpointArch r_bp_plugin_sh_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_sh = {
-	.name = "sh",
+	.meta = {
+		.name = "sh",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.arch = "sh",
 	.nbps = 2,
 	.bps = r_bp_plugin_sh_bps,

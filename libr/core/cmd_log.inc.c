@@ -17,7 +17,7 @@ static RCoreHelpMessage help_msg_L = {
 	"Usage:", "L[acio]", "[-name][ file]",
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
-	"L-", "duk", "unload core plugin by name",
+	"L-", "duk", "unload core plugin by name or file name",
 	"La", "[qj]", "list arch plugins",
 	"LA", "[qj]", "list analysis plugins",
 	"Lb", "[qj]", "list bin plugins",
@@ -634,6 +634,13 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_o (pj);
 				if (cp->meta.name) {
 					pj_ks (pj, "name", cp->meta.name);
+					bool found;
+					RLibPlugin *plugin = ht_pp_find (core->lib->plugins_ht, cp->meta.name, &found);
+					if (found && plugin) {
+						if (plugin->file) {
+							pj_ks (pj, "path", plugin->file);
+						}
+					}
 				}
 				if (cp->meta.desc) {
 					pj_ks (pj, "desc", cp->meta.desc);

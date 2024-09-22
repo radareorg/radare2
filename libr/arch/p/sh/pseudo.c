@@ -265,8 +265,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_sh_pseudo = {
-	.name = "sh.pseudo",
-	.desc = "SH-4 pseudo syntax",
+	.meta = {
+		.name = "sh.pseudo",
+		.desc = "SH-4 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse
 };
 

@@ -1746,8 +1746,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_ppc_pseudo = {
-	.name = "ppc.pseudo",
-	.desc = "PowerPC pseudo syntax",
+	.meta = {
+		.name = "ppc.pseudo",
+		.desc = "PowerPC pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse,
 };
 
