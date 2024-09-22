@@ -36,7 +36,7 @@ endif
 
 ifeq ($(WITH_LIBR),1)
 
-ifeq ($(CC),emcc)
+ifneq (,$(findstring emcc,$(CC)))
 MLFLAGS=
 else
 ifeq ($(OSTYPE),darwin)
