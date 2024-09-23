@@ -1170,7 +1170,7 @@ static void __print_prompt(void) {
 		r_cons_gotoxy (0, cons->rows);
 		r_cons_flush ();
 	}
-	printf ("%s", promptcolor ());
+	// printf ("%s", promptcolor ());
 	r_cons_clear_line (0);
 	if (cons->context->color_mode > 0) {
 		printf ("\r%s%s%s", Color_RESET, promptcolor (), I.prompt);

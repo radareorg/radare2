@@ -1,12 +1,13 @@
 include ../../../../../global.mk
 
-EXT_AR?=a
+EXT_AR=a
 
 all: arch-arm64 arch-armv7
 	$(MAKE) arm64dis.$(EXT_AR)
 	$(MAKE) armv7dis.$(EXT_AR)
 
 V35ARM64_HOME=$(CURDIR)
+
 include deps.mk
 
 CFLAGS+=$(V35ARM64_CFLAGS) -fPIC
