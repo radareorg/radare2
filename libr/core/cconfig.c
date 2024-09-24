@@ -2453,6 +2453,20 @@ static bool cb_scrfgets(void* user, void* data) {
 	return true;
 }
 
+static bool cb_scrcss(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value) {
+		R_LOG_TODO ("Not implemented");
+		return false;
+	}
+	return true;
+}
+
+static bool cb_scrcss_prefix(void *user, void *data) {
+	// do nothing for now
+	return true;
+}
+
 static bool cb_scrhtml(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_context ()->was_html = r_cons_context ()->is_html;
@@ -4328,6 +4342,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.bgfill", "false", &cb_scr_bgfill, "fill background for ascii art when possible");
 	SETI ("scr.feedback", 1, "set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB ("scr.html", "false", &cb_scrhtml, "disassembly uses HTML syntax");
+	SETCB ("scr.css", "false", &cb_scrcss, "make scr.html use css instead of hardcoded colors (TODO)");
+	SETCB ("scr.css.prefix", "", &cb_scrcss_prefix, "hardcoded prefix for the css output (see ecc command)");
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC (n, "select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
