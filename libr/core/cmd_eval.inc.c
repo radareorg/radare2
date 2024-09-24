@@ -497,7 +497,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 		r_cons_pal_list ('j', NULL);
 		break;
 	case 'c': // "ecc"
-		r_cons_pal_list ('c', input + 2);
+		if (input[2]) {
+			r_cons_pal_list ('c', input + 2);
+		} else {
+			r_cons_pal_list ('c', r_config_get (core->config, "scr.css.prefix"));
+		}
 		break;
 	case '\0': // "ec"
 		r_cons_pal_list (0, NULL);
