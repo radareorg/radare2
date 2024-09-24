@@ -831,15 +831,19 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '.': // "e "
 	case ' ': // "e "
-		if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
-			r_config_list (core->config, input + 1, 0);
-		} else if (r_str_endswith (input, ".?")) {
-			char *w = r_str_ndup (input, strlen (input) - 1);
-			r_config_list (core->config, w, 2);
-			free (w);
-		} else {
-			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
+		if (strchr (input, '=')) {
 			r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+		} else {
+			if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
+				r_config_list (core->config, input + 1, 0);
+			} else if (r_str_endswith (input, ".?")) {
+				char *w = r_str_ndup (input, strlen (input) - 1);
+				r_config_list (core->config, w, 2);
+				free (w);
+			} else {
+				// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
+				r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
+			}
 		}
 		break;
 	}
