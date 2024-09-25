@@ -1612,10 +1612,18 @@ static bool cb_color_getter(void *user, RConfigNode *node) {
 }
 
 static bool cb_reloff(void *user, void *data) {
-	// RCore *core = (RCore *) user;
+	const char options[] = "func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n";
 	RConfigNode *node = (RConfigNode *) data;
-	if (strchr (node->value, '?')) {
-		r_cons_printf ("func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n");
+	if (*node->value) {
+		char *pos = strstr (options, node->value);
+		if (pos && pos[strlen (node->value)] == '\n') {
+			return true;
+		}
+		if (strchr (node->value, '?')) {
+			r_cons_printf (options);
+		} else {
+			R_LOG_ERROR ("Invalid value, try `-e asm.offset.relto=?`");
+		}
 		return false;
 	}
 	return true;
