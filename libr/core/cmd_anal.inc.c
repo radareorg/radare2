@@ -14192,15 +14192,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'r': // "aar"
 		switch (input[1]) {
-		case '?':
-			r_core_cmd_help (core, help_msg_aar);
+		case 0:
+		case ' ':
+		case '*':
+		case 'j':
+			(void)r_core_anal_refs (core, input + 1);
 			break;
 		case 'r':
 			anal_aarr (core);
 			break;
-		case ' ':
-		case 0:
-			(void)r_core_anal_refs (core, input + 1);
+		case '?':
+			r_core_cmd_help (core, help_msg_aar);
 			break;
 		default:
 			r_core_return_invalid_command (core, "aar", input[1]);
