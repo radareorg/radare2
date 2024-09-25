@@ -14043,14 +14043,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_aan);
 			break;
 		case 'f': // "aanf" same as "aan" but more friendly
-		default: // "aan"
+		case 0: // "aan"
 			r_core_anal_autoname_all_fcns (core);
+			break;
+		default:
+			r_core_return_invalid_command (core, "aan", input[1]);
 			break;
 		}
 		break;
 	case 'p': // "aap"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_aa, "aap");
+		} else if (input[1]) {
+			r_core_return_invalid_command (core, "aap", input[1]);
 		} else {
 			r_core_search_preludes (core, false);
 		}

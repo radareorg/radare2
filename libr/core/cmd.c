@@ -6069,6 +6069,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			goto out_finish;
 		}
 		break;
+	case 'F': // "@@F" - alias for "@@c:afla"
+		r_core_cmdf (core, "%s @@c:afla", cmd);
+		break;
 	case 'f': // "@@f"
 		if (each[1] == ':') {
 			RAnalFunction *fcn;
