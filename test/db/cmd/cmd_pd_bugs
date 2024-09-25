@@ -34,7 +34,7 @@ NAME=pd+reloff+colors
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 af
-e asm.offset.relto=fun
+e asm.offset.relto=func
 pd 10
 e scr.color=1
 pd 10
