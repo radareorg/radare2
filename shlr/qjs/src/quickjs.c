@@ -6638,7 +6638,8 @@ static void build_backtrace(JSContext *ctx, JSValue error_obj,
             }
         }
         // Clear the csd's we didn't use in case of error.
-        for (int k = j; k < i; k++) {
+        int k;
+        for (k = j; k < i; k++) {
             JS_FreeValue(ctx, csd[k].filename);
             JS_FreeValue(ctx, csd[k].func);
             JS_FreeValue(ctx, csd[k].func_name);
@@ -49652,7 +49653,8 @@ static struct {
 };
 
 static BOOL string_get_tzabbr(const uint8_t *sp, int *pp, int *offset) {
-    for (size_t i = 0; i < countof(js_tzabbr); i++) {
+    size_t i;
+    for (i = 0; i < countof(js_tzabbr); i++) {
         if (string_match(sp, pp, js_tzabbr[i].name)) {
             *offset = js_tzabbr[i].offset;
             return TRUE;
