@@ -34561,7 +34561,7 @@ static JSString *JS_ReadString(BCReaderState *s)
     }
 #ifdef DUMP_READ_OBJECT
     if (check_dump_flag(s->ctx->rt, DUMP_READ_OBJECT)) {
-        bc_read_trace(s, "");  // hex dump and indentation
+        bc_read_trace(s, "%s", "");  // hex dump and indentation
         JS_DumpString(s->ctx->rt, p);
         printf("\n");
     }
@@ -34621,7 +34621,7 @@ static int JS_ReadFunctionBytecode(BCReaderState *s, JSFunctionBytecode *b,
             const uint8_t *save_ptr = s->ptr;
             s->ptr = s->ptr_last + len;
             s->level -= 4;
-            bc_read_trace(s, "");   // hex dump + indent
+            bc_read_trace(s, "%s", "");   // hex dump + indent
             dump_single_byte_code(s->ctx, bc_buf + pos, b,
                                   s->ptr - s->buf_start - len);
             s->level += 4;
