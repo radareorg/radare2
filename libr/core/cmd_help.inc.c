@@ -81,6 +81,7 @@ static RCoreHelpMessage help_msg_at_at = {
 	"x", " @@dbt[abs]", "run 'x' command on every backtrace address, bp or sp",
 	"x", " @@f", "run 'x' on all functions (see aflq)",
 	"x", " @@f:write", "run 'x' on all functions matching write in the name",
+	"x", " @@F", "alias for @@c:afla - inverse recursive function list",
 	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
 	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
 	"x", " @@k sdbquery", "run 'x' on all offsets returned by that sdbquery",
