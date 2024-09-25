@@ -23,15 +23,14 @@ endif
 .PHONY: $(QJS_NAME)
 
 QJS_CFLAGS+=-D QJS_LIBC=$(QJS_LIBC)
-QJS_CFLAGS+=-D CONFIG_STACK_CHECK=y
 QJS_CFLAGS+=-D QJS_NOABORT=1
-QJS_CFLAGS+=-U CONFIG_BIGNUM
 QJS_CFLAGS+=-U DUMP_LEAKS
 QJS_CFLAGS+=-U NDEBUG
 
 QJS_LIBS+=-lr_core -lr_config -lr_cons
 
 #QJS_VERSION=$(shell cat src/VERSION)
+# XXX: Is version needed when there is QJS_VERSION_STRING?
 QJS_VERSION=0.6.1
 
 JS_CFILES:=js_repl.c js_r2papi.c js_require.c

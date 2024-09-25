@@ -785,12 +785,6 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	if (!ctx) {
 		return NULL;
 	}
-#if CONFIG_BIGNUM
-	JS_AddIntrinsicBigFloat (ctx);
-	JS_AddIntrinsicBigDecimal (ctx);
-	JS_AddIntrinsicOperators (ctx);
-	JS_EnableBignumExt (ctx, true);
-#endif
 	return ctx;
 }
 
