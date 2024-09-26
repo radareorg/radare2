@@ -84,13 +84,13 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 #define ISSHIFTED64(x) ((arm64_shifter)insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
+#define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
+
+#if CS_NEXT_VERSION < 6
 #define SHIFTTYPEREG(x) (\
 		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
 		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
 		SHIFTTYPE(x) == ARM_SFT_RRX_REG)
-#define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
-
-#if CS_NEXT_VERSION < 6
 #define ISWRITEBACK32() (insn->detail->arm.writeback == true)
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
 #define PSTATE() op->pstate
@@ -98,13 +98,20 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define PREFETCH() op->prefetch
 #define BARRIER() op->barrier
 #else
+// *********************
+// CS6 compatibility:
+#define SHIFTTYPEREG(x) (\
+		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
+		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG)
 #define ISWRITEBACK32() (insn->detail->writeback == true)
 #define ISWRITEBACK64() ISWRITEBACK32 ()
 #define PSTATE() op->sysop.alias.pstateimm0_15
 #define SYS() (ut64)op->sysop.reg.tlbi
 #define PREFETCH() op->sysop.alias.prfm
 #define BARRIER() op->sysop.alias.db
+// *********************
 #endif
+
 #define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() (((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ())))
 #define ISPREINDEX64() (((OPCOUNT64 () == 2) && (ISMEM64 (1)) && (ISWRITEBACK64 ())) || ((OPCOUNT64 () == 3) && (ISMEM64 (2)) && (ISWRITEBACK64 ())))
@@ -260,8 +267,10 @@ static const char *shift_type_name(arm_shifter type) {
 		return "lsr_reg";
 	case ARM_SFT_ROR_REG:
 		return "ror_reg";
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
 		return "rrx_reg";
+#endif
 	default:
 		return "";
 	}
@@ -464,10 +473,12 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 			case ARM_SFT_RRX_REG:
 				pj_ks (pj, "type", shift_type_name (op->shift.type));
 				pj_ks (pj, "value", cs_reg_name (handle, op->shift.value));
 				break;
+#endif
 			default:
 				break;
 			}
@@ -972,8 +983,10 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR:
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
 		return E_OP_RR;
+#endif
 	default:
 		break;
 	}
