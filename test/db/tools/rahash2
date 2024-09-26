@@ -170,7 +170,7 @@ e       base91   MIT  rakholiyajenish.07
 c     blowfish LGPL3  pancake
 c         cps2  LGPL  pof,esanfelix
 c      des-ecb  LGPL  deroad
-c      ed25519  Zlib  Sylvain Pelissier
+s      ed25519  Zlib  Sylvain Pelissier
 h      entropy   MIT  pancake
 e     punycode  LGPL  pancake
 c          rc2  LGPL  pancake

@@ -200,6 +200,10 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		cb_printf = (PrintfCallback)printf;
 	}
 	PJ *pj = NULL;
+
+	// XXX R2_596 - add a type argument to be clearer but will break ABI.
+	RCryptoType type = (RCryptoType)mode >> 8;
+	mode = mode & 0xff;
 	if (mode == 'J') {
 		pj = pj_new ();
 		pj_a (pj);
@@ -211,6 +215,9 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 	RListIter *iter;
 	RCryptoPlugin *cp;
 	r_list_foreach (cry->plugins, iter, cp) {
+		if (cp->type != type && type != R_CRYPTO_TYPE_ALL) {
+			continue;
+		}
 		switch (mode) {
 		case 'q':
 			cb_printf ("%s\n", cp->meta.name);
@@ -220,18 +227,23 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 			break;
 		case 'j':
 			pj_o (pj);
-			pj_ks (pj, "type", "hash");
 			pj_ks (pj, "name", cp->meta.name);
 			switch (cp->type) {
 			case R_CRYPTO_TYPE_HASHER:
 				pj_ks (pj, "type", "hash");
 				break;
 			case R_CRYPTO_TYPE_ENCRYPT:
-				pj_ks (pj, "type", "crypto");
+				pj_ks (pj, "type", "encryption");
 				break;
 			case R_CRYPTO_TYPE_ENCODER:
 				pj_ks (pj, "type", "encoder");
 				break;
+			case R_CRYPTO_TYPE_SIGNATURE:
+				pj_ks (pj, "type", "signature");
+				break;
+			default:
+				R_LOG_ERROR ("Unknown algorithm type for %s", cp->meta.name);
+				return;
 			}
 			pj_ko (pj, "meta");
 			if (cp->meta.author) {
@@ -252,29 +264,31 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		}
 	}
 	// TODO: R2_592 move all those static hashes into crypto plugins and remove the code below
-	int i;
-	for (i = 0; i < 64; i++) {
-		ut64 bits = ((ut64)1) << i;
-		const char *name = r_hash_name (bits);
-		if R_STR_ISEMPTY (name) {
-			continue;
-		}
-		switch (mode) {
-		case 'J':
-			pj_s (pj, name);
-			break;
-		case 'j':
-			pj_o (pj);
-			pj_ks (pj, "type", "hash");
-			pj_ks (pj, "name", name);
-			pj_end (pj);
-			break;
-		case 'q':
-			cb_printf ("%s\n", name);
-			break;
-		default:
-			cb_printf ("h %12s\n", name);
-			break;
+	if (type == R_CRYPTO_TYPE_HASHER || type == R_CRYPTO_TYPE_ALL) {
+		int i;
+		for (i = 0; i < 64; i++) {
+			ut64 bits = ((ut64)1) << i;
+			const char *name = r_hash_name (bits);
+			if R_STR_ISEMPTY (name) {
+				continue;
+			}
+			switch (mode) {
+			case 'J':
+				pj_s (pj, name);
+				break;
+			case 'j':
+				pj_o (pj);
+				pj_ks (pj, "type", "hash");
+				pj_ks (pj, "name", name);
+				pj_end (pj);
+				break;
+			case 'q':
+				cb_printf ("%s\n", name);
+				break;
+			default:
+				cb_printf ("h %12s\n", name);
+				break;
+			}
 		}
 	}
 	if (mode == 'J') {

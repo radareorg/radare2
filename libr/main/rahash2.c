@@ -348,7 +348,7 @@ static int do_help(int line) {
 
 static void algolist(int mode) {
 	RCrypto *cry = r_crypto_new ();
-	r_crypto_list (cry, NULL, mode);
+	r_crypto_list (cry, NULL, mode | (int)R_CRYPTO_TYPE_ALL << 8);
 	r_crypto_free (cry);
 }
 

@@ -3749,36 +3749,6 @@ restore_conf:
 	}
 }
 
-static void algolist(RCore *core, int mode) {
-	int i;
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = r_core_pj_new (core);
-		pj_a (pj);
-	}
-	for (i = 0; i < R_HASH_NBITS; i++) {
-		ut64 bits = 1ULL << i;
-		const char *name = r_hash_name (bits);
-		if (name && *name) {
-			if (mode == 'j') {
-				pj_s (pj, name);
-			} else if (mode) {
-				r_cons_println (name);
-			} else {
-				r_cons_printf ("%s ", name);
-			}
-		}
-	}
-	if (pj) {
-		pj_end (pj);
-		char *s = pj_drain (pj);
-		r_cons_printf ("%s\n", s);
-		free (s);
-	} else if (!mode) {
-		r_cons_newline ();
-	}
-}
-
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char algo[128];
 	ut32 osize = 0, len = core->blocksize;
@@ -3790,15 +3760,15 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		return true;
 	}
 	if (!i0 || i0 == 'l' || i0 == 'L') {
-		algolist (core, 1);
+		RCrypto *cry = r_crypto_new ();
+		r_crypto_list (cry, NULL, 'q' | (int)R_CRYPTO_TYPE_HASHER << 8);
+		r_crypto_free (cry);
 		return true;
 	}
 	if (i0 == 'j') {
-		algolist (core, 'j');
-		return true;
-	}
-	if (i0 == '=') {
-		algolist (core, 0);
+		RCrypto *cry = r_crypto_new ();
+		r_crypto_list (cry, NULL, 'J' | (int)R_CRYPTO_TYPE_HASHER << 8);
+		r_crypto_free (cry);
 		return true;
 	}
 	if (i0 == ':') {

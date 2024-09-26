@@ -70,6 +70,8 @@ typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
 	R_CRYPTO_TYPE_HASHER = 'h',
 	R_CRYPTO_TYPE_ENCRYPT = 'c', // CIPHER
+	R_CRYPTO_TYPE_SIGNATURE = 's',
+	R_CRYPTO_TYPE_ALL = 'a'
 } RCryptoType;
 
 typedef bool (*RCryptoJobSetIVCallback)(RCryptoJob *ci, const ut8 *iv, int ivlen);
