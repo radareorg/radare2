@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include <r_lib.h>
+#define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
@@ -252,34 +253,36 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		op->fail = addr + op->size;
 		break;
 	case SYSZ_INS_JE:
+#if CS_NEXT_VERSION < 6
 	case SYSZ_INS_JGE:
-	case SYSZ_INS_JHE:
 	case SYSZ_INS_JGHE:
-	case SYSZ_INS_JH:
 	case SYSZ_INS_JGH:
-	case SYSZ_INS_JLE:
 	case SYSZ_INS_JGLE:
-	case SYSZ_INS_JLH:
 	case SYSZ_INS_JGLH:
-	case SYSZ_INS_JL:
 	case SYSZ_INS_JGL:
-	case SYSZ_INS_JNE:
 	case SYSZ_INS_JGNE:
-	case SYSZ_INS_JNHE:
 	case SYSZ_INS_JGNHE:
-	case SYSZ_INS_JNH:
 	case SYSZ_INS_JGNH:
-	case SYSZ_INS_JNLE:
 	case SYSZ_INS_JGNLE:
-	case SYSZ_INS_JNLH:
 	case SYSZ_INS_JGNLH:
-	case SYSZ_INS_JNL:
 	case SYSZ_INS_JGNL:
-	case SYSZ_INS_JNO:
 	case SYSZ_INS_JGNO:
-	case SYSZ_INS_JO:
 	case SYSZ_INS_JGO:
 	case SYSZ_INS_JG:
+#endif
+	case SYSZ_INS_JHE:
+	case SYSZ_INS_JH:
+	case SYSZ_INS_JLE:
+	case SYSZ_INS_JLH:
+	case SYSZ_INS_JL:
+	case SYSZ_INS_JNE:
+	case SYSZ_INS_JNHE:
+	case SYSZ_INS_JNH:
+	case SYSZ_INS_JNLE:
+	case SYSZ_INS_JNLH:
+	case SYSZ_INS_JNL:
+	case SYSZ_INS_JNO:
+	case SYSZ_INS_JO:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = INSOP (0).imm;
 		op->fail = addr + op->size;
