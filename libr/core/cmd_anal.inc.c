@@ -7412,7 +7412,6 @@ static R_TH_LOCAL char *oldregread = NULL;
 static R_TH_LOCAL RList *mymemxsr = NULL;
 static R_TH_LOCAL RList *mymemxsw = NULL;
 
-#define R_NEW_DUP(x) memcpy((void*)malloc (sizeof (x)), &(x), sizeof (x))
 typedef struct {
 	ut64 addr;
 	int size;
@@ -7658,28 +7657,19 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 			}
 		}
 	}
-	if ((mode >> 5) & 1) {
-		RListIter *iter;
-		AeaMemItem *n;
-		int c = 0;
-		r_cons_printf ("f-mem.*\n");
-		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf ("f mem.read.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
-		}
-		c = 0;
-		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf ("f mem.write.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
-		}
-	}
 
 	/* show registers used */
-	if ((mode >> 1) & 1) {
+	switch (mode) {
+	case 'r':
 		showregs (stats.regread);
-	} else if ((mode >> 2) & 1) {
+		break;
+	case 'w':
 		showregs (stats.regwrite);
-	} else if ((mode >> 3) & 1) {
+		break;
+	case 'n':
 		showregs (regnow);
-	} else if ((mode >> 4) & 1) {
+		break;
+	case 'j':
 		pj = r_core_pj_new (core);
 		if (!pj) {
 			free (regnow);
@@ -7714,9 +7704,23 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-	} else if ((mode >> 5) & 1) {
-		// nothing
-	} else {
+		break;
+	case '*':
+		{
+			RListIter *iter;
+			AeaMemItem *n;
+			int c = 0;
+			r_cons_printf ("f-mem.*\n");
+			r_list_foreach (mymemxsr, iter, n) {
+				r_cons_printf ("f mem.read.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
+			}
+			c = 0;
+			r_list_foreach (mymemxsw, iter, n) {
+				r_cons_printf ("f mem.write.%d 0x%08x @ 0x%08"PFMT64x"\n", c++, n->size, n->addr);
+			}
+		}
+		break;
+	default:
 		if (!r_list_empty (stats.inputregs)) {
 			r_cons_printf (" I: ");
 			showregs (stats.inputregs);
@@ -7749,6 +7753,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 			r_cons_printf ("@W:");
 			showmem (mymemxsw);
 		}
+		break;
 	}
 
 	r_list_free (mymemxsr);
@@ -8587,19 +8592,19 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		cmd_aea_stuff (core, 0, core->offset, -1, r_str_trim_head_ro (input + 2), maxbytes);
 		break;
 	case 'r': // "aear"
-		cmd_aea_stuff (core, 1<<1, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, 'r', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'w': // "aeaw"
-		cmd_aea_stuff (core, 1<<2, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, 'w', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'n': // "aean"
-		cmd_aea_stuff (core, 1<<3, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, 'n', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'j': // "aeaj"
-		cmd_aea_stuff (core, 1<<4, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, 'j', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case '*': // "aea*"
-		cmd_aea_stuff (core, 1<<5, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, '*', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'B': // "aeaB"
 		{
@@ -8610,8 +8615,7 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (l, iter, b) {
-				const int mode = json? (1<<4): 1;
-				cmd_aea_stuff (core, mode, b->addr, b->size, NULL, maxbytes);
+				cmd_aea_stuff (core, json? 'j': 0, b->addr, b->size, NULL, maxbytes);
 				break;
 			}
 		}
@@ -8622,10 +8626,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			if (fcn) {
 				switch (input[2]) {
 				case 'j': // "aeafj"
-					cmd_aea_stuff (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 'j', r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
 					break;
 				default:
-					cmd_aea_stuff (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 0, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
 					break;
 				}
 				break;
@@ -8637,10 +8641,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		if (bb) {
 			switch (input[2]) {
 			case 'j': // "aeabj"
-				cmd_aea_stuff (core, 1 | (1<<4), bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 'j', bb->addr, bb->size, NULL, maxbytes);
 				break;
 			default:
-				cmd_aea_stuff (core, 1, bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 0, bb->addr, bb->size, NULL, maxbytes);
 				break;
 			}
 		}
@@ -8655,7 +8659,11 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		}
 		break;
 	default:
-		r_core_return_invalid_command (core, "aea", input[1]);
+		if (maxbytes) {
+			r_core_return_invalid_command (core, "aeA", input[1]);
+		} else {
+			r_core_return_invalid_command (core, "aea", input[1]);
+		}
 		break;
 	}
 	r_reg_setv (reg, "PC", pc);
