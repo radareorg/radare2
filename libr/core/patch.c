@@ -101,6 +101,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	return true;
 }
 
+// R2_600 - return boolean
 R_API int r_core_patch(RCore *core, const char *patch) {
 	char *p, *p0, *str;
 	ut64 noff = 0LL;

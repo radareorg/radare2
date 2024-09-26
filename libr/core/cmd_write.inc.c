@@ -13,7 +13,7 @@ static RCoreHelpMessage help_msg_w = {
 	"waf", " f.asm", "assemble file and write bytes",
 	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"wao", "[?] op", "modify opcode (change conditional of jump. nop, etc) (RArch.patch)",
-	"wA", "[?] r 0", "alter/modify opcode at current seek (see wA?)",
+	//"wA", "[?] r 0", "alter/modify opcode at current seek (see wA?)",
 	"wb", " 011001", "write bits in bit big endian (see pb)",
 	"wB", "[-]0xVALUE", "set or unset bits with given value (also wB-0x2000)",
 	"wc", "[?][jir+-*?]", "write cache list/undo/commit/reset (io.cache)",
