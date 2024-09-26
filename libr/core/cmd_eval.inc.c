@@ -594,6 +594,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 					  color_code ? color_code : r_cons_singleton ()->context->pal.wordhl);
 			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			  r_str_argv_free (argv);
+			  free (color_code);
 			  R_FREE (word);
 			  R_FREE (dup);
 		  }

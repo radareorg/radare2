@@ -7641,9 +7641,6 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 			break;
 		}
 		r_anal_op_fini (&aop);
-		if (len < 1) {
-			len = 1;
-		}
 	}
 	r_cons_break_pop ();
 	esil->nowrite = false;
@@ -7685,6 +7682,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	} else if ((mode >> 4) & 1) {
 		pj = r_core_pj_new (core);
 		if (!pj) {
+			free (regnow);
 			return false;
 		}
 		pj_o (pj);
