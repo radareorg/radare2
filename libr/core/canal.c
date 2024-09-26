@@ -5259,8 +5259,9 @@ static void cccb(void *u) {
 // dup with isValidAddress wtf
 static bool myvalid(RCore *core, ut64 addr) {
 	RIO *io = core->io;
-#if 0
-	if (r_flag_get_i (core->flags, addr)) {
+#if 1
+	RFlagItem *fi = r_flag_get_i (core->flags, addr);
+	if (fi && strchr (fi->name, '.')) {
 		return true;
 	}
 #endif
