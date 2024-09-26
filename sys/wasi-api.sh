@@ -29,7 +29,7 @@ if [ ! -d "$WASI_SDK" ]; then
 	)
 fi
 
-export CFLAGS="-D_WASI_EMULATED_SIGNAL -Os -flto -D__wasi__=1"
+export CFLAGS="-D_WASI_EMULATED_SIGNAL -Os -flto -D__wasi__=1 -pthread"
 export CFLAGS="${CFLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS=1"
 
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg

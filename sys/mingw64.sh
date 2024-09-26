@@ -1,6 +1,8 @@
 #!/bin/sh
 cp -f dist/plugins-cfg/plugins.mingw.cfg plugins.cfg
 export CC=x86_64-w64-mingw32-gcc
+export CFLAGS="-pthread"
+
 ./configure --with-ostype=windows --with-compiler=x86_64-w64-mingw32-gcc --prefix=/ || exit 1
 make -j4 || exit 1
 # install
