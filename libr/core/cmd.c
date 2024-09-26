@@ -179,7 +179,8 @@ static const RCoreHelpMessage help_msg_dash = {
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
 	"-L", "", "same as Lo (or r2 -L)",
-	"-P", " project", "same as 'P [prjname]' to load a project",
+	"-p", " project", "same as 'P [prjname]' to load a project",
+	"-P", " patchfile", "apply given patch file (see doc/rapatch2.md)",
 	"-v", "", "same as -V",
 	"-V", "", "show r2 version, same as ?V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
@@ -1979,6 +1980,21 @@ static int cmd_stdin(void *data, const char *input) {
 			}
 			break;
 		case 'P': // "-P"
+			{
+				const char *patchfile = r_str_trim_head_ro (input + 1);
+				char *data = r_file_slurp (patchfile, NULL);
+				if (data) {
+					int ret = r_core_patch (core, data);
+					if (ret != 0) {
+						R_LOG_ERROR ("Cannot apply patch");
+					}
+					free (data);
+				} else {
+					R_LOG_ERROR ("Cannot open '%s'", patchfile);
+				}
+			}
+			break;
+		case 'p': // "-p"
 			if (input[1]) {
 				r_core_cmd_callf (core, "P %s", r_str_trim_head_ro (input + 1));
 			} else {
@@ -2743,7 +2759,7 @@ static int cmd_kuery(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_k);
 		break;
 	default:
-		r_core_return_invalid_command (core, "f", *input);
+		r_core_return_invalid_command (core, "k", *input);
 		break;
 	}
 
@@ -2839,9 +2855,11 @@ static int cmd_bsize(void *data, const char *input) {
 	case ' ':
 		r_core_block_size (core, r_num_math (core->num, input + 1));
 		break;
-	default:
 	case '?': // "b?"
 		r_core_cmd_help (core, help_msg_b);
+		break;
+	default:
+		r_core_return_invalid_command (core, "b", *input);
 		break;
 	}
 	return 0;
@@ -3235,7 +3253,6 @@ static int cmd_tasks(void *data, const char *input) {
 		}
 		break;
 	case '?': // "&?"
-	default:
 		r_core_cmd_help (core, help_msg_amper);
 		break;
 	case ' ': // "& "
@@ -3253,6 +3270,9 @@ static int cmd_tasks(void *data, const char *input) {
 		r_core_task_enqueue (&core->tasks, task);
 		break;
 	}
+	default:
+		r_core_return_invalid_command (core, "&", *input);
+		break;
 	}
 	return 0;
 }
