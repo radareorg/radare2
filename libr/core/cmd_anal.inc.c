@@ -484,7 +484,7 @@ static RCoreHelpMessage help_msg_aea = {
 	"aeaw", " [ops]", "show regs written in N instructions",
 	"aean", " [ops]", "show regs not written in N instructions",
 	"aeaj", " [ops]", "show aea output in JSON format",
-	"aeA", "  [len]", "show regs used in N bytes (subcommands are the same)",
+	"aeA", "  [len]", "show regs used in N bytes (same subcommands as 'aea')",
 	"Legend:", "", "",
 	"I", "", "input registers (read before being set)",
 	"A", "", "all regs accessed",
@@ -7548,7 +7548,7 @@ static void showmem_json(RList *list, PJ *pj) {
 	pj_end (pj);
 }
 
-static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const char *esilexpr) {
+static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const char *esilexpr, bool maxbytes) {
 	int ptr, ops, ops_end = 0, len, buf_sz;
 	ut64 addr_end;
 	AeaStats stats;
@@ -7563,7 +7563,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	if (maxopsize < 1) {
 		maxopsize = 16;
 	}
-	if (mode & 1) {
+	if (maxbytes) {
 		// number of bytes / length
 		buf_sz = length;
 	} else {
@@ -7592,7 +7592,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 		free (buf);
 		return false;
 	}
-#	define hasNext(x) (x&1) ? (addr < addr_end) : (ops<ops_end)
+#	define hasNext() (maxbytes) ? (addr < addr_end) : (ops < ops_end)
 
 	mymemxsr = r_list_new ();
 	mymemxsw = r_list_new ();
@@ -7603,7 +7603,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	r_cons_break_push (NULL, NULL);
-	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
+	for (ops = ptr = 0; ptr < buf_sz && hasNext (); ops++, ptr += len) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -8569,46 +8569,8 @@ static void cmd_aet(RCore *core, const char *input) {
 	}
 }
 
-// XXX same as aea but with bytes
-static void cmd_aeA(RCore *core, const char *input) {
-	switch (input[1]) {
-	case '?':
-		r_core_cmd_help (core, help_msg_aea);
-		break;
-	case 'r':
-		cmd_aea_stuff (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2), NULL);
-		break;
-	case 'w':
-		cmd_aea_stuff (core, 1 + (1<<2), core->offset, r_num_math (core->num, input+2), NULL);
-		break;
-	case 'n':
-		cmd_aea_stuff (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2), NULL);
-		break;
-	case 'j':
-		cmd_aea_stuff (core, 1 + (1<<4), core->offset, r_num_math (core->num, input+2), NULL);
-		break;
-	case '*':
-		cmd_aea_stuff (core, 1 + (1<<5), core->offset, r_num_math (core->num, input+2), NULL);
-		break;
-	case 'f': {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-		if (fcn) {
-			cmd_aea_stuff (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL);
-		}
-		break;
-		}
-	case 0:
-	case ' ':
-		cmd_aea_stuff (core, 1, core->offset, (int)r_num_math (core->num, input[1]? input + 2:input + 1), NULL);
-		break;
-	default:
-		r_core_return_invalid_command (core, "aeA", input[1]);
-		break;
-	}
-}
-
 // XXX same as aeA but with nops
-static void cmd_aea(RCore *core, const char *input) {
+static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 	RReg *reg = core->anal->reg;
 	ut64 pc = r_reg_getv (reg, "PC");
 	RAnalOp *op = r_core_anal_op (core, pc, 0);
@@ -8622,61 +8584,63 @@ static void cmd_aea(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aea);
 		break;
 	case 'e': // "aeae"
-		cmd_aea_stuff (core, 0, core->offset, -1, r_str_trim_head_ro (input + 2));
+		cmd_aea_stuff (core, 0, core->offset, -1, r_str_trim_head_ro (input + 2), maxbytes);
 		break;
 	case 'r': // "aear"
-		cmd_aea_stuff (core, 1<<1, core->offset, r_num_math (core->num, input + 2), NULL);
+		cmd_aea_stuff (core, 1<<1, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'w': // "aeaw"
-		cmd_aea_stuff (core, 1<<2, core->offset, r_num_math (core->num, input + 2), NULL);
+		cmd_aea_stuff (core, 1<<2, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'n': // "aean"
-		cmd_aea_stuff (core, 1<<3, core->offset, r_num_math (core->num, input + 2), NULL);
+		cmd_aea_stuff (core, 1<<3, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'j': // "aeaj"
-		cmd_aea_stuff (core, 1<<4, core->offset, r_num_math (core->num, input + 2), NULL);
+		cmd_aea_stuff (core, 1<<4, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case '*': // "aea*"
-		cmd_aea_stuff (core, 1<<5, core->offset, r_num_math (core->num, input + 2), NULL);
+		cmd_aea_stuff (core, 1<<5, core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
-	case 'B': { // "aeaB"
-		bool json = input[2] == 'j';
-		int a = json? 3: 2;
-		ut64 addr = (input[a] == ' ')? r_num_math (core->num, input + a): core->offset;
-		RList *l = r_anal_get_blocks_in (core->anal, addr);
-		RAnalBlock *b;
-		RListIter *iter;
-		r_list_foreach (l, iter, b) {
-			const int mode = json? (1<<4): 1;
-			cmd_aea_stuff (core, mode, b->addr, b->size, NULL);
-			break;
-		}
-		break;
-	}
-	case 'f': { // "aeaf"
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-		if (fcn) {
-			switch (input[2]) {
-			case 'j': // "aeafj"
-				cmd_aea_stuff (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL);
-				break;
-			default:
-				cmd_aea_stuff (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL);
+	case 'B': // "aeaB"
+		{
+			bool json = input[2] == 'j';
+			int a = json? 3: 2;
+			ut64 addr = (input[a] == ' ')? r_num_math (core->num, input + a): core->offset;
+			RList *l = r_anal_get_blocks_in (core->anal, addr);
+			RAnalBlock *b;
+			RListIter *iter;
+			r_list_foreach (l, iter, b) {
+				const int mode = json? (1<<4): 1;
+				cmd_aea_stuff (core, mode, b->addr, b->size, NULL, maxbytes);
 				break;
 			}
-			break;
 		}
-	}
+		break;
+	case 'f': // "aeaf"
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			if (fcn) {
+				switch (input[2]) {
+				case 'j': // "aeafj"
+					cmd_aea_stuff (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					break;
+				default:
+					cmd_aea_stuff (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					break;
+				}
+				break;
+			}
+		}
 		break;
 	case 'b': { // "aeab"
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
 			switch (input[2]) {
 			case 'j': // "aeabj"
-				cmd_aea_stuff (core, 1 | (1<<4), bb->addr, bb->size, NULL);
+				cmd_aea_stuff (core, 1 | (1<<4), bb->addr, bb->size, NULL, maxbytes);
 				break;
 			default:
-				cmd_aea_stuff (core, 1, bb->addr, bb->size, NULL);
+				cmd_aea_stuff (core, 1, bb->addr, bb->size, NULL, maxbytes);
 				break;
 			}
 		}
@@ -8687,7 +8651,7 @@ static void cmd_aea(RCore *core, const char *input) {
 		{
 			const char *arg = input[1]? input + 2: "";
 			ut64 len = r_num_math (core->num, arg);
-			cmd_aea_stuff (core, 0, core->offset, len, NULL);
+			cmd_aea_stuff (core, 0, core->offset, len, NULL, maxbytes);
 		}
 		break;
 	default:
@@ -8972,10 +8936,10 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		cmd_aet (core, input);
 		break;
 	case 'A': // "aeA"
-		cmd_aeA (core, input);
+		cmd_aea (core, input, true);
 		break;
 	case 'a': // "aea"
-		cmd_aea (core, input);
+		cmd_aea (core, input, false);
 		break;
 	case 'x':
 		if (input[1] == ' ') { // "aex"

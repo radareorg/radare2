@@ -1082,6 +1082,43 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 	return true;
 }
 
+static void cmd_fR(RCore *core, const char *str) {
+	switch (*str) {
+	case '\0':
+		r_core_cmd_help_match (core, help_msg_f, "fR");
+		R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_fR);
+		break;
+	case ' ':
+		{
+			char *p = strchr (str + 1, ' ');
+			ut64 from, to, mask = 0xffff;
+			int ret;
+			if (p) {
+				char *q = strchr (p + 1, ' ');
+				*p = 0;
+				if (q) {
+					*q++ = 0;
+					mask = r_num_math (core->num, q);
+				}
+				from = r_num_math (core->num, str + 1);
+				to = r_num_math (core->num, p + 1);
+				ret = r_flag_relocate (core->flags, from, mask, to);
+				R_LOG_INFO ("Relocated %d flags", ret);
+			} else {
+				r_core_cmd_help_match (core, help_msg_f, "fR");
+				R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
+			}
+		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "fR", *str);
+		break;
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -1097,7 +1134,7 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[1] == '?') { // "ff?"
 			r_core_cmd_help_contains (core, help_msg_f, "ff");
 		} else if (input[1] == 's') { // "ffs"
-			int delta = flag_to_flag (core, input + 2);
+			const int delta = flag_to_flag (core, input + 2);
 			if (delta > 0) {
 				r_cons_printf ("0x%08"PFMT64x"\n", core->offset + delta);
 			}
@@ -1116,20 +1153,25 @@ static int cmd_flag(void *data, const char *input) {
 		case '-':
 			flagenum = 0;
 			break;
-		default:
+		case '?':
 			r_core_cmd_help_contains (core, help_msg_f, "fe");
+			break;
+		default:
+			r_core_return_invalid_command (core, "fe", input[1]);
 			break;
 		}
 		break;
 	case '=': // "f="
 		switch (input[1]) {
-		case ' ':
-			flagbars (core, input + 2);
-			break;
 		case 0:
 			flagbars (core, NULL);
 			break;
+		case ' ':
+			flagbars (core, input + 2);
+			break;
 		default:
+			r_core_return_invalid_command (core, "f=", input[1]);
+			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_feq);
 			break;
@@ -1213,36 +1255,7 @@ static int cmd_flag(void *data, const char *input) {
 		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
 		break;
 	case 'R': // "fR"
-		switch (*str) {
-		case '\0':
-			r_core_cmd_help_match (core, help_msg_f, "fR");
-			R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
-			break;
-		case '?':
-			r_core_cmd_help (core, help_msg_fR);
-			break;
-		default:
-	    {
-				char *p = strchr (str+1, ' ');
-				ut64 from, to, mask = 0xffff;
-				int ret;
-				if (p) {
-					char *q = strchr (p + 1, ' ');
-					*p = 0;
-					if (q) {
-						*q = 0;
-						mask = r_num_math (core->num, q+1);
-					}
-					from = r_num_math (core->num, str+1);
-					to = r_num_math (core->num, p+1);
-					ret = r_flag_relocate (core->flags, from, mask, to);
-					R_LOG_INFO ("Relocated %d flags", ret);
-				} else {
-					r_core_cmd_help_match (core, help_msg_f, "fR");
-					R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
-				}
-			}
-		}
+		cmd_fR (core, str);
 		break;
 	case 'b': // "fb"
 		switch (input[1]) {
