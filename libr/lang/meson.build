@@ -6,6 +6,7 @@ spp_inc = [platform_inc, include_directories('../../shlr/spp')]
 # qjs_inc = [ include_directories('../../shlr/qjs/src') ]
 qjs_inc = '../../shlr/qjs/src'
 r_lang_sources += '../../shlr/qjs/src/quickjs.c'
+r_lang_sources += '../../shlr/qjs/src/libbf.c'
 r_lang_sources += '../../shlr/qjs/src/cutils.c'
 r_lang_sources += '../../shlr/qjs/src/libregexp.c'
 r_lang_sources += '../../shlr/qjs/src/libunicode.c'
