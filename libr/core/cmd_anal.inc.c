@@ -7788,7 +7788,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	}
 #endif
 	ut8 *buf = malloc (bsize);
-	if (!buf) {
+	if (R_UNLIKELY (!buf)) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		return;
 	}
@@ -7906,8 +7906,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 #endif
 }
 
-static void __core_anal_appcall(RCore *core, const char *input) {
-//	r_reg_arena_push (core->dbg->reg);
+static void cmd_aeC(RCore *core, const char *input) {
 	RListIter *iter;
 	char *arg;
 	char *inp = strdup (input);
@@ -7926,8 +7925,6 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 
 	r_reg_setv (core->anal->reg, "SP", sp);
 	free (inp);
-
-//	r_reg_arena_pop (core->dbg->reg);
 }
 
 static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp) {
@@ -8592,19 +8589,11 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		cmd_aea_stuff (core, 0, core->offset, -1, r_str_trim_head_ro (input + 2), maxbytes);
 		break;
 	case 'r': // "aear"
-		cmd_aea_stuff (core, 'r', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
-		break;
 	case 'w': // "aeaw"
-		cmd_aea_stuff (core, 'w', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
-		break;
 	case 'n': // "aean"
-		cmd_aea_stuff (core, 'n', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
-		break;
 	case 'j': // "aeaj"
-		cmd_aea_stuff (core, 'j', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
-		break;
 	case '*': // "aea*"
-		cmd_aea_stuff (core, '*', core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
+		cmd_aea_stuff (core, input[1], core->offset, r_num_math (core->num, input + 2), NULL, maxbytes);
 		break;
 	case 'B': // "aeaB"
 		{
@@ -8712,7 +8701,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		if (input[1] == '?') { // "aec?"
 			r_core_cmd_help (core, help_msg_aeC);
 		} else {
-			__core_anal_appcall (core, r_str_trim_head_ro (input + 1));
+			cmd_aeC (core, r_str_trim_head_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"
