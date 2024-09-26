@@ -103,6 +103,7 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_rc4 = {
+	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "rc4",
 		.license = "LGPL",

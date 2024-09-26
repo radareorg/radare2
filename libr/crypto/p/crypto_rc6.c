@@ -203,6 +203,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rc6 = {
+	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "rc6",
 		.author = "pancake",

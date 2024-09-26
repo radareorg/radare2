@@ -169,6 +169,7 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_des = {
+	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",
