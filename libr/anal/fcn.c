@@ -1078,10 +1078,10 @@ noskip:
 				}
 			}
 			if (anal->opt.jmptbl) {
-				RAnalOp *jmp_aop = r_anal_op_new ();
+				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
-				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, jmp_aop)) {
+				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					ut64 table_size, default_case = 0;
 					st64 case_shift = 0;
 					// we require both checks here since try_get_jmptbl_info uses
@@ -1090,7 +1090,7 @@ noskip:
 					// try_get_delta_jmptbl_info doesn't work at times where the
 					// lea comes after the cmp/default case cjmp, which can be
 					// handled with try_get_jmptbl_info
-					ut64 addr = jmp_aop->addr;
+					ut64 addr = jmp_aop.addr;
 					bool ready = false;
 					if (try_get_jmptbl_info (anal, fcn, addr, bb, &table_size, &default_case, &case_shift)) {
 						ready = true;
@@ -1107,7 +1107,7 @@ noskip:
 						}
 					}
 				}
-				r_anal_op_free (jmp_aop);
+				r_anal_op_fini (&jmp_aop);
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
