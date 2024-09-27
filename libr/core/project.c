@@ -435,6 +435,10 @@ static char *get_project_name(const char *prj_script) {
 				file = strdup (buf + 14);
 				break;
 			}
+			if (r_str_startswith (buf, "'e prj.name = ")) {
+				file = strdup (buf + strlen ("'e prj.name"));
+				break;
+			}
 		}
 		fclose (fd);
 	} else {

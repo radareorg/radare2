@@ -4018,7 +4018,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 
 			// C struct
-			r_cons_printf ("\"\"td struct %s {", cname);
+			r_cons_printf ("'td struct %s {", cname);
 			if (r_list_empty (c->fields)) {
 				// XXX workaround because we cant register empty structs yet
 				// XXX https://github.com/radareorg/radare2/issues/16342
