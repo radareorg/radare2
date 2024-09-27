@@ -427,7 +427,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				if (errno == EINTR) {
 					continue;
 				}
-				perror ("read");
+				r_sys_perror ("sigchld- read");
 			}
 			break;
 		}
@@ -479,7 +479,7 @@ R_API bool r2r_subprocess_init(void) {
 		return false;
 	}
 	if (pipe (sigchld_pipe) == -1) {
-		perror ("pipe");
+		r_sys_perror ("subprocess-init pipe");
 		r_th_lock_free (subprocs_mutex);
 		return false;
 	}
@@ -541,39 +541,39 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	r_strbuf_init (&proc->err);
 
 	if (pipe (proc->killpipe) == -1) {
-		perror ("pipe");
+		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	if (fcntl (proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
 
 	int stdin_pipe[2] = { -1, -1 };
 	if (pipe (stdin_pipe) == -1) {
-		perror ("pipe");
+		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
 	int stdout_pipe[2] = { -1, -1 };
 	if (pipe (stdout_pipe) == -1) {
-		perror ("pipe");
+		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
 	proc->stdout_fd = stdout_pipe[0];
 
 	int stderr_pipe[2] = { -1, -1 };
 	if (pipe (stderr_pipe) == -1) {
-		perror ("pipe");
+		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
 	proc->stderr_fd = stderr_pipe[0];
@@ -582,19 +582,20 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	if (proc->pid == -1) {
 		// fail
 		r_th_lock_leave (subprocs_mutex);
-		perror ("fork");
+		r_sys_perror ("subproc-start fork");
 		free (proc);
 		free (argv);
 		return NULL;
-	} else if (proc->pid == 0) {
+	}
+	if (proc->pid == 0) {
 		// child
-		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
+		while ((dup2 (stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
 		close (stdin_pipe[0]);
 		close (stdin_pipe[1]);
-		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+		while ((dup2 (stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
 		close (stdout_pipe[1]);
 		close (stdout_pipe[0]);
-		while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+		while ((dup2 (stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
 		close (stderr_pipe[1]);
 		close (stderr_pipe[0]);
 
@@ -603,7 +604,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 			setenv (envvars[i], envvals[i], 1);
 		}
 		execvp (file, argv);
-		perror ("exec");
+		r_sys_perror ("subproc-start exec");
 		r_sys_exit (-1, true);
 	}
 	free (argv);
@@ -708,7 +709,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			char buf[4096];
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
-				perror ("read");
+				r_sys_perror ("sp-wait read");
 			} else if (sz == 0) {
 				stdout_eof = true;
 			} else {
@@ -720,9 +721,10 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			char buf[4096];
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
-				perror ("read");
+				r_sys_perror ("sp-wait read");
 				continue;
-			} else if (sz == 0) {
+			}
+			if (sz == 0) {
 				stderr_eof = true;
 			} else {
 				r_strbuf_append_n (&proc->err, buf, (int)sz);
@@ -737,7 +739,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		}
 	}
 	if (r < 0) {
-		perror ("select");
+		r_sys_perror ("sp-wait select");
 	}
 	return child_dead;
 }
