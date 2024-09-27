@@ -14266,7 +14266,12 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
 	case 'r': // "avrr"
-		r_anal_rtti_recover_all (core->anal);
+		{
+			const bool iov = r_config_get_b (core->config, "io.overlay");
+			r_config_set_b (core->config, "io.overlay", false);
+			r_anal_rtti_recover_all (core->anal);
+			r_config_set_b (core->config, "io.overlay", iov);
+		}
 		break;
 	case 'D': { // "avrD"
 		char *name = r_str_trim_dup (input + 1);
