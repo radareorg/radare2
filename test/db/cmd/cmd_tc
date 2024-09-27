@@ -72,7 +72,7 @@ fs classes
 "f field.Employee.property.firstName = 0x00000000"
 "f field.Employee.property.shortWord = 0x00000000"
 "f field.Employee.property.wideWord = 0x00000000"
-""td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
+'td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
 EOF
 RUN
 
@@ -343,7 +343,7 @@ fs classes
 "f field.Employee.property.firstName = 0x00000000"
 "f field.Employee.property.shortWord = 0x00000000"
 "f field.Employee.property.wideWord = 0x00000000"
-""td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
+'td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
 EOF
 RUN
 
@@ -616,7 +616,7 @@ fs classes
 "f field.Employee.property.firstName = 0x00000000"
 "f field.Employee.property.shortWord = 0x00000000"
 "f field.Employee.property.wideWord = 0x00000000"
-""td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
+'td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};
 EOF
 RUN
 

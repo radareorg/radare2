@@ -16,7 +16,8 @@ Usage: -  open editor and run the r2 commands in the saved document
 | -i [file]       same as . [file], to run a script
 | -s [addr]       same as r2 -e asm.cpu=
 | -L              same as Lo (or r2 -L)
-| -P project      same as 'P [prjname]' to load a project
+| -p project      same as 'P [prjname]' to load a project
+| -P patchfile    apply given patch file (see doc/rapatch2.md)
 | -v              same as -V
 | -V              show r2 version, same as ?V
 | --              seek one block backward. Same as s-- (see `b` command)

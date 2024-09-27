@@ -1172,8 +1172,11 @@ static int cmd_rap(void *data, const char *input) {
 		case '-': // "=l-"
 			session_stop (core);
 			break;
-		default: // "=l?"
+		case '?': // "=l?"
 			r_core_cmd_help (core, help_msg_equal_l);
+			break;
+		default:
+			r_core_return_invalid_command (core, "=l", input[1]);
 			break;
 		}
 		break;
@@ -1341,7 +1344,9 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_cat_string (core, r_num_math (core->num, input + 1));
 		break;
 	case 't': // "yt"
-		if (input[1] == 'f') { // "ytf"
+		switch (input[1]) {
+		case 'f': // "ytf"
+			{
 			ut64 tmpsz;
 			const char *file = r_str_trim_head_ro (input + 2);
 			const ut8 *tmp = r_buf_data (core->yank_buf, &tmpsz);
@@ -1359,10 +1364,17 @@ static int cmd_yank(void *data, const char *input) {
 					R_LOG_ERROR ("Cannot dump to '%s'", file);
 				}
 			}
-		} else if (input[1] == ' ') {
+			}
+			break;
+		case ' ':
 			r_core_yank_to (core, input + 1);
-		} else {
+			break;
+		case '?':
 			r_core_cmd_help_contains (core, help_msg_y, "yt");
+			break;
+		default:
+			r_core_return_invalid_command (core, "yt", input[1]);
+			break;
 		}
 		break;
 	case 'f': // "yf"
@@ -1376,8 +1388,11 @@ static int cmd_yank(void *data, const char *input) {
 		case 'a': // "yfa"
 			r_core_yank_file_all (core, input + 2);
 			break;
-		default:
+		case '?':
 			r_core_cmd_help_contains (core, help_msg_y, "yf");
+			break;
+		default:
+			r_core_return_invalid_command (core, "yf", input[1]);
 			break;
 		}
 		break;
@@ -2899,7 +2914,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	} else if (r_str_startswith (input, "radiff2")) {
 		rc = __runMain (core->r_main_radiff2, input);
 	} else if (r_str_startswith (input, "r2.")) {
-		r_core_cmdf (core, "\"\"js console.log(r2.%s)", input + 3);
+		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
 	} else if (r_str_startswith (input, "r2")) {
 		if (input[2] == ' ' || input[2] == 0) {
 			r_sys_cmdf ("%s", input);
@@ -4055,12 +4070,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (res != -1) {
 		return res;
 	}
-	if (R_UNLIKELY (r_str_startswith (cmd, "?t\"\""))) {
-		char *c = r_str_newf ("?t\"\"%s", cmd + 4);
-		// XXX char *c = r_str_newf ("?t'%s", cmd + 4);
-		int res = r_core_cmd_call (core, c);
-		free (c);
-		return res;
+	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
+		if (r_str_startswith (cmd + 2, "\"\"")) {
+			return r_core_cmd_callf (core, "?t'%s", cmd + 4);
+		} else if (r_str_startswith (cmd + 2, "'")) {
+			return r_core_cmd_callf (core, "?t'%s", cmd + 3);
+		}
 	}
 
 	if (R_UNLIKELY (r_str_startswith (cmd, "GET /cmd/"))) {

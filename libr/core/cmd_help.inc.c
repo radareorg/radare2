@@ -681,11 +681,22 @@ static int cmd_help(void *data, const char *input) {
 			}
 			core->curtab ++;
 			break;
+		case '\'':
+			{
+				struct r_prof_t prof;
+				r_prof_start (&prof);
+				r_core_cmd_call (core, input + 2);
+				r_prof_end (&prof);
+				r_core_return_value (core, (ut64)(int)prof.result);
+				eprintf ("%lf\n", prof.result);
+			}
+			break;
 		case '"':
 			{
 				struct r_prof_t prof;
 				r_prof_start (&prof);
 				if (input[1] == '"') {
+					// R2_600 - deprecate '""'
 					r_core_cmd_call (core, input + 3);
 				} else {
 					r_core_cmd (core, input + 1, 0);
