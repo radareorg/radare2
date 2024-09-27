@@ -363,7 +363,7 @@ jobs:
   w32-mingw:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
