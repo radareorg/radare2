@@ -62,12 +62,12 @@
 #define NO_TM_GMTOFF
 #endif
 
-#if 0
-#if !defined(EMSCRIPTEN) && !defined(__wasi__) && (!defined(_MSC_VER) || _MSC_VER > 1920)
+//#if 0
+#if !defined(EMSCRIPTEN) && !defined(__wasi__) && defined(__STDC_NO_ATOMICS__) && __STDC_NO_ATOMICS__
 #include "quickjs-c-atomics.h"
 #define CONFIG_ATOMICS
 #endif
-#endif
+//#endif
 
 #ifndef __GNUC__
 #define __extension__
