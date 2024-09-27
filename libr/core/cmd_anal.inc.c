@@ -7286,12 +7286,13 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	addr = r_config_get_i (core->config, "esil.stack.addr");
 
 	{
+		ut64 mapinc = r_config_get_i (core->config, "io.mapinc");
 		const ut64 esaddr = addr;
 		if (!r_io_map_locate (core->io, &addr, size, esaddr) || (addr != esaddr)) {
 			addr = esaddr;
-			if (!r_io_map_locate (core->io, &addr, size, 0x10000000)) {
+			if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
 				addr = 0ULL;
-				if (!r_io_map_locate (core->io, &addr, size, 0x10000000)) {
+				if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
 					R_LOG_ERROR ("Couldn't locate suitable address for aeim stack");
 					return;
 				}
