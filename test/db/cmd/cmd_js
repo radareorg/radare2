@@ -10,10 +10,10 @@ EXPECT=<<EOF
 123
 EOF
 EXPECT_ERR=<<EOF
-ERROR: ReferenceError: 'a' is not defined
-ERROR:     at <eval> (-)
+ERROR: ReferenceError: a is not defined
+ERROR:     at <eval> (-:1:1)
 
-ERROR: null
+ERROR: [uninitialized]
 EOF
 RUN
 

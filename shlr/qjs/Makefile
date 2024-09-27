@@ -8,6 +8,11 @@ ifeq ($(QJS_BRANCH),frida)
 	QJS_GITURL=https://github.com/frida/quickjs
 	QJS_CFLAGS+=-DQJS_NAME="\\"$(QJS_NAME)\\""
 	QJS_CFLAGS+=-DQJS_FRIDA=1
+else ifeq ($(QJS_BRANCH),quickjs-ng)
+	QJS_NAME=quickjs-ng
+	QJS_GITURL=https://github.com/quickjs-ng/quickjs
+	QJS_CFLAGS+=-DQJS_NAME="\\"$(QJS_NAME)\\""
+	QJS_CFLAGS+=-DQJS_FRIDA=0
 else
 	QJS_NAME=quickjs-bellard
 	QJS_GITURL=https://github.com/bellard/quickjs
@@ -18,15 +23,15 @@ endif
 .PHONY: $(QJS_NAME)
 
 QJS_CFLAGS+=-D QJS_LIBC=$(QJS_LIBC)
-QJS_CFLAGS+=-D CONFIG_STACK_CHECK=y
 QJS_CFLAGS+=-D QJS_NOABORT=1
-QJS_CFLAGS+=-U CONFIG_BIGNUM
 QJS_CFLAGS+=-U DUMP_LEAKS
 QJS_CFLAGS+=-U NDEBUG
 
 QJS_LIBS+=-lr_core -lr_config -lr_cons
 
-QJS_VERSION=$(shell cat src/VERSION.txt)
+#QJS_VERSION=$(shell cat src/VERSION)
+# XXX: Is version needed when there is QJS_VERSION_STRING?
+QJS_VERSION=0.6.1
 
 JS_CFILES:=js_repl.c js_r2papi.c js_require.c
 
@@ -45,7 +50,8 @@ sync-qjs qjs-sync sync:
 	rm -rf src/.git
 	mkdir -p src2
 	ls src
-	cp $(QJS_FILES) src/*.h src/Makefile src/VERSION.txt src2/
+#	cp $(QJS_FILES) src/*.h src/Makefile src/VERSION src2/
+	cp $(QJS_FILES) src/*.h src/Makefile src2/
 	rm -rf src
 	mv src2 src
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
