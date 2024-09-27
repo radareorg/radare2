@@ -361,9 +361,9 @@ jobs:
         cd prefix\bin
         radare2 -qc "?e Hello" -
   w32-mingw:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
