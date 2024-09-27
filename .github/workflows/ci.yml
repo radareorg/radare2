@@ -361,7 +361,7 @@ jobs:
         cd prefix\bin
         radare2 -qc "?e Hello" -
   w32-mingw:
-#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw
     runs-on: ubuntu-24.04
     steps:
