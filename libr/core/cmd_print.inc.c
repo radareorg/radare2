@@ -286,6 +286,15 @@ static RCoreHelpMessage help_msg_p_minus = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_pdf = {
+	"Usage:", "pdf[sj]", " # disassemble function (needs to be analized with 'af' or so)",
+	"pdf", "", "disassemble function in a linear way (see pdfr)",
+	"pdfj", "", "disassemble function in json (see pdfJ)",
+	"pdfr", "", "disassemble function recursively (alias for pdr)",
+	"pdfs", "", "disassemble function summary (see also pdsf)",
+	NULL,
+};
+
 static RCoreHelpMessage help_msg_pd = {
 	"Usage:", "p[dD][ajbrfils] [[-]len]", " # Print N bytes/instructions bw/forward",
 	"NOTE: ", "len", "parameter can be negative",
@@ -301,8 +310,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdC", "", "show comments found in N instructions",
 	"pde", "[q|qq|j] N", "disassemble N instructions following execution flow from current PC",
 	"pdo", " N", "convert esil expressions of N instructions to C (pdO for bytes)",
-	"pdf", "", "disassemble function",
-	"pdfs", "", "disassemble function summary",
+	"pdf", "[?]", "disassemble function",
 	"pdi", "", "like 'pi', with offset and bytes",
 	"pdj", "", "disassemble to json",
 	"pdJ", "", "formatted disassembly like pd as json",
@@ -6812,7 +6820,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pdf");
+				r_core_cmd_help (core, help_msg_pdf);
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
@@ -6828,63 +6836,67 @@ static int cmd_print(void *data, const char *input) {
 					r_core_seek (core, oseek, SEEK_SET);
 				}
 				processed_cmd = true;
-			} else {
+			} else if (input[2] == 0 || input[2] == 'j' || input[2] == 'r') {
 				ut32 bsz = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
 				if (!f) {
 					f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				}
 				RListIter *locs_it = NULL;
-				if (f && input[2] == 'j') { // "pdfj"
-					RAnalBlock *b;
-					ut32 fcn_size = r_anal_function_realsize (f);
-					const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
-					r_config_set_i (core->config, "asm.bbmiddle", false);
-					pj = r_core_pj_new (core);
-					if (!pj) {
-						break;
-					}
-					pj_o (pj);
-					pj_ks (pj, "name", f->name);
-					pj_kn (pj, "size", fcn_size);
-					pj_kn (pj, "addr", f->addr);
-					pj_k (pj, "ops");
-					pj_a (pj);
-					r_list_sort (f->bbs, bb_cmpaddr);
-					r_list_foreach (f->bbs, locs_it, b) {
-						ut8 *buf = malloc (b->size);
-						if (buf) {
-							r_io_read_at (core->io, b->addr, buf, b->size);
-							r_core_print_disasm_json_ipi (core, b->addr, buf, b->size, 0, pj, NULL);
-							free (buf);
-						} else {
-							R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);
+				if (f) {
+					if (input[2] == 'r') { // "pdfr"
+						r_core_cmd0 (core, "pdr");
+					} else if (input[2] == 'j') { // "pdfj"
+						RAnalBlock *b;
+						ut32 fcn_size = r_anal_function_realsize (f);
+						const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
+						r_config_set_i (core->config, "asm.bbmiddle", false);
+						pj = r_core_pj_new (core);
+						if (!pj) {
+							break;
 						}
-					}
-					pj_end (pj);
-					pj_end (pj);
-					r_cons_printf ("%s\n", pj_string (pj));
-					pj_free (pj);
-					pd_result = false;
-					r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
-				} else if (f) {
-					ut64 linearsz = r_anal_function_linear_size (f);
-					ut64 realsz = r_anal_function_realsize (f);
-					if (realsz + 4096 < linearsz) {
-						R_LOG_ERROR ("Linear size differs too much from the bbsum, please use pdr instead");
+						pj_o (pj);
+						pj_ks (pj, "name", f->name);
+						pj_kn (pj, "size", fcn_size);
+						pj_kn (pj, "addr", f->addr);
+						pj_k (pj, "ops");
+						pj_a (pj);
+						r_list_sort (f->bbs, bb_cmpaddr);
+						r_list_foreach (f->bbs, locs_it, b) {
+							ut8 *buf = malloc (b->size);
+							if (buf) {
+								r_io_read_at (core->io, b->addr, buf, b->size);
+								r_core_print_disasm_json_ipi (core, b->addr, buf, b->size, 0, pj, NULL);
+								free (buf);
+							} else {
+								R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);
+							}
+						}
+						pj_end (pj);
+						pj_end (pj);
+						r_cons_printf ("%s\n", pj_string (pj));
+						pj_free (pj);
+						pd_result = false;
+						r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 					} else {
-						ut64 at = f->addr; // TODO: should be min from r_anal_function_get_range()?
-						ut64 sz = R_MAX (linearsz, realsz);
-						ut8 *buf = calloc (sz, 1);
-						if (buf) {
-							(void)r_io_read_at (core->io, at, buf, sz);
-							int dislen = r_core_print_disasm (core, at, buf, sz, sz, 0, NULL, true, false, NULL, f);
-							r_core_return_value (core, dislen);
-							free (buf);
-							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
+						ut64 linearsz = r_anal_function_linear_size (f);
+						ut64 realsz = r_anal_function_realsize (f);
+						if (realsz + 4096 < linearsz) {
+							R_LOG_ERROR ("Linear size differs too much from the bbsum, please use pdr instead");
+						} else {
+							ut64 at = f->addr; // TODO: should be min from r_anal_function_get_range()?
+							ut64 sz = R_MAX (linearsz, realsz);
+							ut8 *buf = calloc (sz, 1);
+							if (buf) {
+								(void)r_io_read_at (core->io, at, buf, sz);
+								int dislen = r_core_print_disasm (core, at, buf, sz, sz, 0, NULL, true, false, NULL, f);
+								r_core_return_value (core, dislen);
+								free (buf);
+								// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
+							}
 						}
+						pd_result = false;
 					}
-					pd_result = false;
 				} else {
 					R_LOG_ERROR ("pdf: Cannot find function at 0x%08"PFMT64x, core->offset);
 					processed_cmd = true;
@@ -6893,6 +6905,8 @@ static int cmd_print(void *data, const char *input) {
 				if (bsz != core->blocksize) {
 					r_core_block_size (core, bsz);
 				}
+			} else {
+				r_core_return_invalid_command (core, "pdf", input[2]);
 			}
 			l = 0;
 			break;
