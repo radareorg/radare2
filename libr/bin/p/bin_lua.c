@@ -204,20 +204,14 @@ static RList *symbols(RBinFile *bf) {
 	if (!lh) {
 		return NULL;
 	}
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
-	RListIter *iter;
-	RBinSymbol *sym;
-	r_list_foreach (lh->symbols, iter, sym) {
-		r_list_append (list, sym);
-	}
 
 	ParseStruct parseStruct = {0};
 	parseStruct.onFunction = handleFuncSymbol;
 	parseStruct.data = NULL;
-	parseStruct.data = list;
+	parseStruct.data = r_list_clone (lh->symbols, (RListClone)r_bin_symbol_clone);
+	if (!parseStruct.data) {
+		return NULL;
+	}
 
 	ut8 *bytes = malloc (bf->size);
 	if (bytes) {
@@ -228,7 +222,7 @@ static RList *symbols(RBinFile *bf) {
 		free (bytes);
 	}
 
-	return list;
+	return parseStruct.data;
 }
 
 static RBinInfo *info(RBinFile *bf) {
