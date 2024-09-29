@@ -1833,6 +1833,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	const char *fmt = arg;
 	int n = 0;
 	char *names = strchr (fmt, ' ');
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	RList *lnames = NULL;
 	if (names) {
 		names = strdup (names + 1);
@@ -1859,7 +1860,11 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 		for (i = 0; i < maxpos; i++) {
 			bool v = read_val (bm, i, 1);
 			if (v) {
-				bv |= (1 << i);
+				if (be) {
+					bv |= (1 << i);
+				} else {
+					bv |= (1 << (maxpos - i));
+				}
 			}
 		}
 		r_cons_printf ("0x%08"PFMT64x":", bv);
@@ -1961,10 +1966,14 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 			bool v = read_val (bm, i, 1);
 			r_cons_printf ("%d", v? 1: 0);
 			if (v) {
-				bv |= (1 << i);
+				if (be) {
+					bv |= (1 << i);
+				} else {
+					bv |= (1 << (bpos-i - 1));
+				}
 			}
 		}
-		r_cons_printf ("     (big bit endian) 0x%08"PFMT64x"\n", bv);
+		r_cons_printf ("     0x%08"PFMT64x"\n", bv);
 		RLart *la;
 		RListIter *iter;
 		char firstline[1024] = {0};
