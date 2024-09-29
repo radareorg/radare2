@@ -3358,14 +3358,11 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 					r_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
 				} else if (!strcmp (input, "b")) {
 					r_cons_printf ("0x%08"PFMT64x"\n", b->addr);
-				} else if (!strcmp (input, "")) {
-					r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
 				} else if (*input == '?') {
 					r_core_cmd_help (core, help_msg_afbr);
 					return true;
 				} else {
-					r_core_return_invalid_command (core, "afbr", input[0]);
-					return true;
+					r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
 				}
 			}
 			break;
