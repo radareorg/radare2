@@ -2496,8 +2496,7 @@ static int cmd_interpret(void *data, const char *input) {
 		}
 		break;
 	case '!': // ".!"
-		/* from command */
-		r_core_cmd_command (core, input + 1);
+		r_core_cmd_command (core, r_str_trim_head_ro (input + 1));
 		break;
 	case '(': // ".("
 		if (input[1] == '*') {
@@ -6604,15 +6603,15 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 }
 
 R_API int r_core_cmd_command(RCore *core, const char *command) {
-	int ret, len;
-	char *buf, *rcmd, *ptr;
+	R_RETURN_VAL_IF_FAIL (core && command, -1);
 	char *cmd = r_core_sysenv_begin (core, command);
-	rcmd = ptr = buf = r_sys_cmd_str (cmd, 0, &len);
+	int len;
+	char *buf = r_sys_cmd_str (cmd, 0, &len);
 	if (!buf) {
 		free (cmd);
 		return -1;
 	}
-	ret = r_core_cmd (core, rcmd, 0);
+	int ret = r_core_cmd_lines (core, buf);
 	r_core_sysenv_end (core, command);
 	free (buf);
 	return ret;
@@ -6620,6 +6619,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 
 // TODO: Fix disasm loop is mandatory
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	char *cmd, *ret = NULL;
 	cmd = r_str_newf ("pd %i @ 0x%08"PFMT64x, l, addr);
 	if (cmd) {
