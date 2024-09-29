@@ -1,4 +1,5 @@
 OBJ_M68K_CS=p/m68k_cs/plugin.o
+# OBJ_M68K_CS+=p/m68k_cs/m68kass.o
 
 include p/capstone.mk
 

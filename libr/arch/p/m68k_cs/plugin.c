@@ -1,7 +1,8 @@
-/* radare2 - LGPL - Copyright 2015-2022 - pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_arch.h>
 #include <capstone/capstone.h>
+#include "m68kass.c"
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
@@ -910,6 +911,18 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+	R_RETURN_VAL_IF_FAIL (s->data, false);
+	// PluginData *pd = s->data;
+	ut8 data[32] = {0};
+	const int len = m68kass (op->mnemonic, data, sizeof (data));
+	if (len > 0) {
+		r_anal_op_set_bytes (op, op->addr, data, len);
+		return true;
+	}
+	return false;
+}
+
 const RArchPlugin r_arch_plugin_m68k_cs = {
 	.meta = {
 		.name = "m68k",
@@ -922,6 +935,7 @@ const RArchPlugin r_arch_plugin_m68k_cs = {
 	.regs = regs,
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
+	.encode = encode,
 	.mnemonics = mnemonics,
 	.init = init,
 	.fini = fini,
