@@ -589,10 +589,17 @@ static RCoreHelpMessage help_msg_af = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_afbr = {
+	"Usage:", "afbr", " return addresses for current function",
+	"afbr", "", "show addresses of instructions which leave the function",
+	"afbrb", "", "show addresses of leaving basic blocks with no out edges",
+	".afbr*", "", "set breakpoint on every return address of the function",
+	".afbr-*", "", "remove breakpoint on every return address of the function",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_afb = {
 	"Usage:", "afb", " list basic blocks of given function",
-	".afbr-", "", "set breakpoint on every return address of the function",
-	".afbr-*", "", "remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
 	"afb,", "", "show basic blocks of current function in a table",
@@ -604,7 +611,7 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
-	"afbr", "", "show addresses of instructions which leave the function",
+	"afbr", "[?]", "show addresses of instructions which leave the function",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
@@ -3349,8 +3356,16 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
 				} else if (!strcmp (input, "-*")) {
 					r_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
-				} else {
+				} else if (!strcmp (input, "b")) {
+					r_cons_printf ("0x%08"PFMT64x"\n", b->addr);
+				} else if (!strcmp (input, "")) {
 					r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
+				} else if (*input == '?') {
+					r_core_cmd_help (core, help_msg_afbr);
+					return true;
+				} else {
+					r_core_return_invalid_command (core, "afbr", input[0]);
+					return true;
 				}
 			}
 			break;
