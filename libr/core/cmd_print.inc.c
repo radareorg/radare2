@@ -1799,7 +1799,7 @@ static void lart_free(RList *list) {
 
 static int whatbpos(const char *arg) {
 	int bpos = 0;
-	int n;
+	int n = 0;
 	while (*arg && *arg != ' ') {
 		if (isdigit (*arg)) {
 			n = atoi (arg);
