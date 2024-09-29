@@ -360,6 +360,21 @@ static RCoreHelpMessage help_msg_pdu = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_pfb = {
+	"Usage:", "pfb", "print formatted bitfields",
+	"pfb", " [fmt] [fnames]", "print formatted bitfield in ascii art",
+	"pfbc", " [fmt] [fnames]", "same as pfb, but using C syntax",
+	"pfbj", " [fmt] [fnames]", "same as pfb but in json output",
+	"pfbq", " [fmt] [fnames]", "same as pfb, but quieter oneliner",
+	"pfbd", " [fmt] [fnames]", "same as pfb, but for debugging reasons",
+	"Examples:", "", "",
+	" ", "pfb 3b4b foo bar", "2 bitfields, first of 3 bits and second of 4",
+	" ", "pfb 3b+4b foo bar", "same as above, the + sign is ignored",
+	" ", "pfb 3b..4b foo bar", "same as above, but separated by 2 unused bits",
+	" ", "pfb 3b2.4b foo bar", "same as above, you can use digits and dot",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_pf = {
 	"Usage:", PF_USAGE_STR, "",
 	"Commands:", "", "",
@@ -375,7 +390,7 @@ static RCoreHelpMessage help_msg_pf = {
 	"pf.", "fmt_name.field_name[i]", "show element i of array field_name",
 	"pf.", "fmt_name [0|cnt]fmt", "define a new named format",
 	"pf?", "fmt_name", "show the definition of a named format",
-	"pfb", " binfmt", "binary format",
+	"pfb", "[?] bitfmt", "print formatted bitfields",
 	"pfc", " fmt_name|fmt", "show data using (named) format as C string",
 	"pfd.", "fmt_name", "show data using named format as graphviz commands",
 	"pfj ", "fmt_name|fmt", "show data using (named) format in JSON",
@@ -1747,6 +1762,9 @@ static ut64 read_val(RBitmap *bm, int pos, int sz) {
 
 enum {
 	PFB_DBG,
+	PFB_JSN = 'j',
+	PFB_COD = 'c',
+	PFB_QUI = 'q',
 	PFB_ART
 };
 
@@ -1755,15 +1773,17 @@ typedef struct {
 	int pos;
 	ut64 value;
 	const char *name;
+	bool skip;
 } RLart;
 
-static RLart *lart_add(RList *list, const char *name, int pos, int sz, ut64 value) {
+static RLart *lart_add(RList *list, const char *name, int pos, int sz, ut64 value, bool skip) {
 	RLart *la = R_NEW0 (RLart);
 	if (la) {
 		la->sz = sz;
 		la->pos = pos;
 		la->name = name;
 		la->value = value;
+		la->skip = skip;
 		r_list_append (list, la);
 	}
 	return la;
@@ -1777,11 +1797,43 @@ static void lart_free(RList *list) {
 	r_list_free (list);
 }
 
+static int whatbpos(const char *arg) {
+	int bpos = 0;
+	int n = 0;
+	while (*arg && *arg != ' ') {
+		if (isdigit (*arg)) {
+			n = atoi (arg);
+			if (n > 64) {
+				R_LOG_ERROR ("Too large. Max is 64");
+				return bpos;
+			}
+			while (isdigit (*arg)) {
+				arg += 1;
+			}
+			arg--;
+		} else if (*arg == '.') {
+			if (n < 1) {
+				n = 1;
+			}
+			bpos += n;
+			n = 0;
+		} else if (*arg == '+') {
+			// used to separate tokens
+			// for example 3+3:4b  -> [0..3] + [6..10]
+		} else if (*arg == 'b') {
+			bpos += n;
+			n = 0;
+		}
+		arg++;
+	}
+	return bpos;
+}
+
 static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
-	// r_io_read_at (core->io, core->offset, buf, sizeof (buf));
 	const char *fmt = arg;
 	int n = 0;
 	char *names = strchr (fmt, ' ');
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	RList *lnames = NULL;
 	if (names) {
 		names = strdup (names + 1);
@@ -1790,12 +1842,33 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	int i = 0;
 	int bpos = 0;
 	ut64 v = 0;
-	// bigbitendian
-	// r_core_cmd0 (core, "pb 8");
+	PJ *pj = NULL;
+	if (mode == PFB_JSN) {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+
 	RBitmap *bm = r_bitmap_new (core->blocksize * 8);
 	r_bitmap_set_bytes (bm, core->block, core->blocksize);
 	RList *lart = lart_new ();
 
+	if (mode == PFB_COD) {
+		r_cons_printf ("struct bitfield {\n");
+	} else if (mode == PFB_QUI) {
+		ut64 bv = 0;
+		int maxpos = whatbpos (arg);
+		for (i = 0; i < maxpos; i++) {
+			bool v = read_val (bm, i, 1);
+			if (v) {
+				if (be) {
+					bv |= (1 << i);
+				} else {
+					bv |= (1 << (maxpos - i));
+				}
+			}
+		}
+		r_cons_printf ("0x%08"PFMT64x":", bv);
+	}
 	while (*arg && *arg != ' ') {
 		if (isdigit (*arg)) {
 			n = atoi (arg);
@@ -1809,6 +1882,19 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				arg += 1;
 			}
 			arg--;
+		} else if (*arg == '.') {
+			// skip bit
+			if (n < 1) {
+				n = 1;
+			}
+			const char *name = lnames? r_list_get_n (lnames, i): "unused";
+			if (mode == PFB_COD) {
+				r_cons_printf ("    unsigned %s: %d; // 0x%08"PFMT64x"\n", name, n, v);
+			}
+			lart_add (lart, "?", bpos, n, v, true);
+			bpos += n;
+			n = 0;
+			i++;
 		} else if (*arg == '+') {
 			// used to separate tokens
 			// for example 3+3:4b  -> [0..3] + [6..10]
@@ -1819,40 +1905,87 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				r_bitmap_free (bm);
 				return;
 			}
-			char *name = lnames? r_list_get_n (lnames, i): NULL;
+			const char *name = lnames? r_list_get_n (lnames, i): NULL;
 			v = read_val (bm, bpos, n);
 			switch (mode) {
+			case PFB_QUI:
+				if (R_STR_ISNOTEMPTY (name)) {
+					r_cons_printf (" %s[%d..%d]=%"PFMT64d, name, bpos, bpos + n, v);
+				} else {
+					r_cons_printf (" %s[%d..%d]=%"PFMT64d, "unnamed", bpos, bpos + n, v);
+				}
+				break;
+			case PFB_JSN:
+				pj_o (pj);
+				if (name) {
+					pj_ks (pj, "name", name);
+				}
+				pj_kn (pj, "off", bpos);
+				pj_kn (pj, "size", n);
+				pj_kn (pj, "value", v);
+				pj_end (pj);
+				break;
 			case PFB_DBG:
 				r_cons_printf ("field: %d\n", i);
-				if (name) {
+				if (R_STR_ISNOTEMPTY (name)) {
 					r_cons_printf (" name: %s\n", name);
 				}
 				r_cons_printf ("  off: %d\n", bpos);
 				r_cons_printf ("  siz: %d\n", n);
 				r_cons_printf ("  val: %"PFMT64d"\n", v);
 				break;
+			case PFB_COD:
+				if (R_STR_ISNOTEMPTY (name)) {
+					r_cons_printf ("    unsigned %s: %d; // 0x%08"PFMT64x"\n", name, n, v);
+				} else {
+					r_cons_printf ("    unsigned: %d; // 0x%08"PFMT64x"\n", n, v);
+				}
+				break;
 			case PFB_ART:
-				lart_add (lart, name, bpos, n, v);
+				lart_add (lart, name, bpos, n, v, false);
 				break;
 			}
 			i++;
 			bpos += n;
+			n = 0;
 		}
 		arg++;
 	}
-	if (mode == PFB_ART) {
+	if (mode == PFB_COD) {
+		r_cons_printf ("}\n");
+	} else if (mode == PFB_QUI) {
+		r_cons_newline ();
+	} else if (mode == PFB_JSN) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	} else if (mode == PFB_ART) {
+		ut64 bv = 0;
 		for (i = 0; i < bpos; i++) {
 			bool v = read_val (bm, i, 1);
-			r_cons_printf ("%d", v);
+			r_cons_printf ("%d", v? 1: 0);
+			if (v) {
+				if (be) {
+					bv |= (1 << i);
+				} else {
+					bv |= (1 << (bpos-i - 1));
+				}
+			}
 		}
-		r_cons_printf ("     (big bit endian)\n");
+		r_cons_printf ("     0x%08"PFMT64x"\n", bv);
 		RLart *la;
 		RListIter *iter;
 		char firstline[1024] = {0};
 		memset (firstline, ' ', sizeof (firstline) - 1);
 		int padsz = 0;
 		r_list_foreach (lart, iter, la) {
-			if (la->sz == 1) {
+			if (la->skip) {
+				int i;
+				for (i = 0; i < la->sz; i++) {
+					r_cons_printf (" ");
+				}
+			} else if (la->sz == 1) {
 				r_cons_printf ("V");
 			} else {
 				r_cons_printf ("\\");
@@ -1863,7 +1996,9 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("/");
 			}
 			padsz = la->pos - 1 + (la->sz / 2);
-			firstline[padsz + 1] = '|';
+			if (!la->skip) {
+				firstline[padsz + 1] = '|';
+			}
 		}
 		firstline[padsz + 2] = 0;
 		int totalpad = padsz + 4;
@@ -1871,20 +2006,23 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 		r_list_reverse (lart);
 		r_list_foreach (lart, iter, la) {
 			int padsz = la->pos - 1 + (la->sz / 2);
-			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")", la->name?la->name:"", la->value, la->value);
+			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")",
+					la->name? la->name: "", la->value, la->value);
 			char *pad2 = strdup (r_str_pad ('-', totalpad - padsz));
 			char *pad = r_str_ndup (firstline, padsz + 1);
-			if (la->value > 0xffff) {
+			if (la->skip) {
+				// do nothing here
+			} else if (la->value > 0xffff) {
 				r_cons_printf ("%s`-%s %8s = 0x%016"PFMT64x" @ %d + %d\n",
-						pad?pad:"", pad2,
-						la->name?la->name: "",
+						pad? pad: "", pad2,
+						la->name? la->name: "",
 						la->value,
 						la->pos, la->sz
 					      );
 			} else {
 				r_cons_printf ("%s`-%s %8s = %4"PFMT64o"o %5"PFMT64d"   0x%02"PFMT64x" @ %d + %d\n",
-						pad?pad:"", pad2,
-						la->name?la->name: "",
+						pad? pad: "", pad2,
+						la->name? la->name: "",
 						la->value, la->value, la->value,
 						la->pos, la->sz);
 			}
@@ -1990,8 +2128,18 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	case 'b': // "pfb"
 		if (_input[2] == ' ') {
 			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
+		} else if (_input[2] == 'q') { // "pfbq"
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_QUI);
+		} else if (_input[2] == 'j') { // "pfbj"
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_JSN);
+		} else if (_input[2] == 'c') { // "pfbc"
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_COD);
+		} else if (_input[2] == 'd') { // "pfbd"
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_DBG);
+		} else if (_input[2] == '?') {
+			r_core_cmd_help (core, help_msg_pfb);
 		} else {
-			r_core_cmd_help_match (core, help_msg_pf, "pfb");
+			r_core_return_invalid_command (core, "pfb", input[2]);
 		}
 		return;
 	case 'o': // "pfo"
