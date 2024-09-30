@@ -1477,8 +1477,9 @@ repeat:
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd_call (core, "fd");
 
+		int secondColumn = (w > 120)? 80: 0;
 		int maxcount = 9;
-		int rows, cols = r_cons_get_size (&rows);
+		int rows = h; // XXX dupe
 		count = 0;
 		char *dis = NULL;
 		rows -= 4;
@@ -1534,30 +1535,46 @@ repeat:
 				if (idx == skip) {
 					free (dis);
 					curat = refi->addr;
-					char *res = r_core_cmd_strf (core, "pd 4 @ 0x%08"PFMT64x"@e:asm.flags.limit=1", refi->at);
-					// TODO: show disasm with context. not seek addr
-					// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+					char *res = NULL;
+					char *res2 = NULL;
+					if (secondColumn) {
+						res = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x"@e:asm.flags.limit=1@e:asm.lines=0@e:asm.xrefs=0", refi->at);
+						int height = R_MAX (h / 3, h - 13);
+						res2 = r_str_ansi_crop (res, 0, 0, w- secondColumn-2, height);
+						free (res);
+						res = res2;
+					} else {
+						int height = R_MIN (h / 3, 13);
+						res2 = r_str_ansi_crop (res, 0, 0, 0, height);
+						free (res);
+						res = res2;
+					}
 					dis = NULL;
-					res = r_str_append (res, "; ---------------------------\n");
+					r_cons_print_at ("; ----------------------------", 0, 11, secondColumn? secondColumn: w - 1, 2);
+					if (secondColumn) {
+						r_cons_print_at (res, secondColumn, 2, w - secondColumn, 15);
+						free (res);
+						res = strdup ("");
+					}
 					switch (core->visual.printMode) {
 					case 0:
-						dis = r_core_cmd_strf (core, "pd--6 @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "pd--%d @ 0x%08"PFMT64x"@e:asm.lines=0", h/4, refi->addr);
 						break;
 					case 1:
-						dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x"@e:asm.lines=0", refi->addr);
 						break;
 					case 2:
-						dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x"@e:asm.lines=0", refi->addr);
 						break;
 					case 3:
-						dis = r_core_cmd_strf (core, "pxr @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "pxr @ 0x%08"PFMT64x"@e:asm.lines=0", refi->addr);
 						break;
 					}
 					if (dis) {
 						res = r_str_append (res, dis);
 						free (dis);
 					}
-					dis = res;
+ 					dis = res;
 				}
 				if (++count >= rows) {
 					r_cons_printf ("...");
@@ -1581,10 +1598,10 @@ repeat:
 				(void) r_config_set (core->config, "scr.highlight", ats);
 			}
 			/* print disasm */
-			char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
-			if (d) {
-				r_cons_printf ("%s", d);
-				free (d);
+			if (secondColumn) {
+				r_cons_print_at (dis, 0, 13, secondColumn, h - 13);
+			} else {
+				r_cons_print_at (dis, 0, 12, w - 1, h - 13);
 			}
 			/* flush and restore highlight */
 			r_cons_flush ();
