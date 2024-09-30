@@ -11,6 +11,16 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	op->type = R_ANAL_OP_TYPE_ILL;
 	// op->type = R_ANAL_OP_TYPE_NOP;
 	op->mnemonic = stm8_disasm (op->addr, op->bytes, op->size, &op->type, &jump, &len);
+	//if (op->type == R_ANAL_OP_TYPE_MOV) {
+	if (op->mnemonic) {
+		const char *ox = strstr (op->mnemonic, " 0x");
+		if (ox) {
+			ut64 v = r_num_get (NULL, ox);
+			if (v && v != UT64_MAX && v != op->jump) {
+				op->val = v;
+			}
+		}
+	}
 	if (jump != UT64_MAX) {
 		op->jump = jump;
 		op->fail = UT64_MAX;
