@@ -3406,7 +3406,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 			r_cons_print (core->cons->context->pal.prompt);
 		}
 		r_cons_gotoxy (0, 0);
-		r_cons_print (".-- functions -------------------------------------------.");
+		r_cons_print (".-- functions -------------------------------.");
 		r_cons_gotoxy (20, 0);
 		if (selectPanel) {
 			r_cons_printf ("[%s]", printCmds[printMode]);
@@ -3417,11 +3417,11 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 			r_cons_print (Color_RESET);
 		}
 		r_cons_newline ();
-		r_cons_print ("| (a)nalyze   (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
-		r_cons_print ("| (r)ename    (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
-		r_cons_print ("| (d)efine    (v)ars    (?)help  (:)shell    (q) quit    |\n");
-		r_cons_print ("| (s)ignature                                            |\n");
-		r_cons_printf ("'--------------------------------------------------------'");
+		r_cons_print ("| (a)nalyze   (-)delete (xX)refs (jk)scroll  |\n");
+		r_cons_print ("| (r)ename    (c)alls   (d)efine (tab)disasm |\n");
+		r_cons_print ("| (d)efine    (v)ars    (?)help  (:)shell    |\n");
+		r_cons_print ("| (s)ignature (_)hud    (q)quit              |\n");
+		r_cons_printf ("'-------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
