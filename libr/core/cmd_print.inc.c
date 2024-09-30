@@ -1839,7 +1839,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 		names = strdup (names + 1);
 		lnames = r_str_split_list (names, " ", 0);
 	}
-	int i = 0;
+	unsigned int i = 0;
 	int bpos = 0;
 	ut64 v = 0;
 	PJ *pj = NULL;
@@ -1863,7 +1863,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				if (be) {
 					bv |= (1 << i);
 				} else {
-					bv |= (1 << (maxpos - i));
+					bv |= (1 << (maxpos - i - 1));
 				}
 			}
 		}
@@ -1876,6 +1876,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				R_LOG_ERROR ("Too large. Max is 64");
 				lart_free (lart);
 				r_bitmap_free (bm);
+				pj_free (pj);
 				return;
 			}
 			while (isdigit (*arg)) {
@@ -1903,6 +1904,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				R_LOG_ERROR ("Invalid bitformat string");
 				lart_free (lart);
 				r_bitmap_free (bm);
+				pj_free (pj);
 				return;
 			}
 			const char *name = lnames? r_list_get_n (lnames, i): NULL;
@@ -1926,7 +1928,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				pj_end (pj);
 				break;
 			case PFB_DBG:
-				r_cons_printf ("field: %d\n", i);
+				r_cons_printf ("field: %u\n", i);
 				if (R_STR_ISNOTEMPTY (name)) {
 					r_cons_printf (" name: %s\n", name);
 				}
@@ -1969,7 +1971,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				if (be) {
 					bv |= (1 << i);
 				} else {
-					bv |= (1 << (bpos-i - 1));
+					bv |= (1 << (bpos - i - 1));
 				}
 			}
 		}
@@ -2139,7 +2141,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		} else if (_input[2] == '?') {
 			r_core_cmd_help (core, help_msg_pfb);
 		} else {
-			r_core_return_invalid_command (core, "pfb", input[2]);
+			r_core_return_invalid_command (core, "pfb", _input[2]);
 		}
 		return;
 	case 'o': // "pfo"
