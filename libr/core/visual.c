@@ -1535,12 +1535,11 @@ repeat:
 				if (idx == skip) {
 					free (dis);
 					curat = refi->addr;
-					char *res = NULL; // r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x"@e:asm.flags.limit=1@e:asm.lines=0@e:asm.xrefs=0", refi->at);
+					char *res = NULL;
 					char *res2 = NULL;
 					if (secondColumn) {
 						res = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x"@e:asm.flags.limit=1@e:asm.lines=0@e:asm.xrefs=0", refi->at);
 						int height = R_MAX (h / 3, h - 13);
-						// int width = R_MAX (w / 2, 80);
 						res2 = r_str_ansi_crop (res, 0, 0, w- secondColumn-2, height);
 						free (res);
 						res = res2;
@@ -1550,19 +1549,12 @@ repeat:
 						free (res);
 						res = res2;
 					}
-					// TODO: show disasm with context. not seek addr
-					// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
-					// char *res2 = r_str_ansi_crop (res, 0, 0, 80, h - 13);
 					dis = NULL;
-					// res = r_str_append (res, 
 					r_cons_print_at ("; ----------------------------", 0, 11, secondColumn? secondColumn: w - 1, 2);
 					if (secondColumn) {
-						// r_cons_print_at (res, 0, 13, secondColumn, h-13);
 						r_cons_print_at (res, secondColumn, 2, w - secondColumn, 15);
 						free (res);
 						res = strdup ("");
-					} else {
-					//	r_cons_print_at (res, 0, 13, 0, 13);
 					}
 					switch (core->visual.printMode) {
 					case 0:
@@ -1610,13 +1602,6 @@ repeat:
 				r_cons_print_at (dis, 0, 13, secondColumn, h - 13);
 			} else {
 				r_cons_print_at (dis, 0, 12, w - 1, h - 13);
-#if 0
-				char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
-				if (d) {
-					// r_cons_printf ("%s", d);
-					free (d);
-				}
-#endif
 			}
 			/* flush and restore highlight */
 			r_cons_flush ();
