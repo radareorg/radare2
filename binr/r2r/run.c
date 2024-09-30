@@ -709,7 +709,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			char buf[4096];
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
-				r_sys_perror ("sp-wait read");
+				r_sys_perror ("sp-wait read 1");
+				stdout_eof = true;
 			} else if (sz == 0) {
 				stdout_eof = true;
 			} else {
@@ -721,7 +722,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			char buf[4096];
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
-				r_sys_perror ("sp-wait read");
+				r_sys_perror ("sp-wait read 2");
+				stderr_eof = true;
 				continue;
 			}
 			if (sz == 0) {
