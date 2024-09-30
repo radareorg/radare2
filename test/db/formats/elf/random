@@ -2,6 +2,7 @@ NAME=random39855 relocs
 FILE=bins/elf/random_39855/random_39855.oo
 CMDS=<<EOF
 s sym.func_9
+e asm.var.summary=0
 e emu.str=true
 af
 pd 20
@@ -80,6 +81,7 @@ RUN
 NAME=random39855 relocs bin
 FILE=bins/elf/random_39855/random_39855
 CMDS=<<EOF
+e asm.var.summary=0
 e emu.str=true
 s sym.func_9
 af

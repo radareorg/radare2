@@ -1931,11 +1931,14 @@ static void print_var_summary(RDisasmState *ds, RList *list) {
 	if (sp_args) { sp_args_color = numColor; }
 	if (rg_args) { rg_args_color = numColor; }
 	if (ds->show_varsum == 4) {
-		ds_begin_line (ds);
-		ds_print_pre (ds, true);
 		int total_args = bp_args + sp_args + rg_args;
+		int total_vars = bp_vars + sp_vars + rg_vars;
+		if (total_args > 0 || total_vars > 0) {
+			ds_begin_line (ds);
+			ds_print_pre (ds, true);
+		}
 		if (total_args > 0) {
-			r_cons_printf ("afv: args(");
+			r_cons_printf ("`- args(");
 			const char *comma = "";
 			int minsprange = ST32_MAX;
 			int maxsprange = 0;
@@ -1958,9 +1961,12 @@ static void print_var_summary(RDisasmState *ds, RList *list) {
 			if (maxsprange > 0) {
 				r_cons_printf ("%ssp[0x%x..0x%x]", comma, minsprange, maxsprange);
 			}
-			r_cons_printf (") ");
+			if (total_vars > 0) {
+				r_cons_printf (") ");
+			} else {
+				r_cons_printf (")");
+			}
 		}
-		int total_vars = bp_vars + sp_vars + rg_vars;
 		if (total_vars > 0) {
 			if (total_args < 1) {
 				r_cons_printf ("afv: ");
@@ -1986,11 +1992,13 @@ static void print_var_summary(RDisasmState *ds, RList *list) {
 				}
 			}
 			if (maxsprange > 0) {
-				r_cons_printf ("%ssp[0x%x..0x%x]", comma, minsprange, maxsprange);
+				r_cons_printf ("%s%d:sp[0x%x..0x%x]", comma, total_vars, minsprange, maxsprange);
 			}
 			r_cons_printf (")");
 		}
-		ds_newline (ds);
+		if (total_args > 0 || total_vars > 0) {
+			ds_newline (ds);
+		}
 		return;
 	}
 	if (ds->show_varsum == 3) {
@@ -3572,7 +3580,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	if (size == 4 || size == 8) {
 		if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
 			ut64 bits = r_config_get_i (core->config, "asm.bits");
-			//adjust address for arm/thumb address
+			// adjust address for arm/thumb address
 			if ((bits < 64) && (n & 1)) {
 				n--;
 			}

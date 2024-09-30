@@ -146,6 +146,7 @@ RUN
 NAME=pdf
 FILE=bins/elf/test_o
 CMDS=<<EOF
+e asm.var.summary=0
 af
 pdf
 afv
@@ -332,9 +333,7 @@ pd 13
 EOF
 EXPECT=<<EOF
 / 22: fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3);
-|           ; arg int64_t arg1 @ rcx
-|           ; arg int64_t arg2 @ rdx
-|           ; arg int64_t arg3 @ r8
+| `- args(rcx, rdx, r8)
 |           0x00000000      4053           push rbx
 |           0x00000002      4883ec20       sub rsp, 0x20
 |           0x00000006      418bd8         mov ebx, r8d                ; arg3
@@ -347,8 +346,7 @@ EXPECT=<<EOF
             0x00000017      cc             int3
             ; CALL XREF from fcn.00000000 @ 0x9(x)
 / 5: fcn.00000018 (int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ rcx
-|           ; arg int64_t arg2 @ rdx
+| `- args(rcx, rdx)
 |           0x00000018      2bca           sub ecx, edx                ; arg2
 |           0x0000001a      8bc1           mov eax, ecx                ; arg1
 \           0x0000001c      c3             ret
@@ -448,6 +446,7 @@ NAME=Variable access with misc registers (ARM)
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.flags=false
 e asm.comments=false
 e anal.vars.stackname = true
@@ -549,6 +548,7 @@ NAME=Stack Variables
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e asm.var.summary=0
 e anal.vars.newstack=true
 wx 2de9f04fadf54e4da5b088460df1900a0021aaf18007802281463846fff7e0ee4bf2640400214ff448420df5d260fff7d8eec0f2000400214ff48062a4a8fff7
 af
@@ -574,6 +574,7 @@ RUN
 NAME=arm64 stack variables
 FILE=bins/mach0/arm_snippet_1
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.sub.var=true
 af
 pdf

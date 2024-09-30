@@ -250,7 +250,10 @@ RUN
 
 NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
-CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
+CMDS=<<EOF
+e asm.var.summary=0
+aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
+EOF
 EXPECT=<<EOF
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; arg int32_t arg1 @ ecx
@@ -3223,6 +3226,7 @@ NAME=reflines offset
 FILE=malloc://1023
 CMDS=<<EOF
 e asm.cmt.calls=false
+e asm.var.summary=0
 e asm.bits=32
 e asm.cpu=x86
 e asm.arch=x86
@@ -3287,6 +3291,7 @@ NAME=reflines offset (ascii)
 FILE=malloc://1023
 CMDS=<<EOF
 e asm.cmt.calls=false
+e asm.var.summary=0
 e asm.bits=32
 e asm.cpu=x86
 e anal.cpu=x86
@@ -3366,6 +3371,7 @@ NAME=afva for esp based vars
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
+e asm.var.summary=0
 e asm.arch = x86
 e anal.arch = x86
 e anal.vars.stackname=true

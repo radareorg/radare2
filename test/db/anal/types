@@ -2,6 +2,7 @@ NAME=simple type propagation
 FILE=bins/mach0/simple-retype
 CMDS=<<EOF
 af
+e asm.var.summary=0
 aaft
 afv
 ?e ---

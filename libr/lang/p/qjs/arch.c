@@ -90,7 +90,9 @@ static bool r2qjs_arch_init(RArchSession *s) {
 }
 
 static bool r2qjs_arch_fini(RArchSession *s) {
-	R_RETURN_VAL_IF_FAIL (s, false);
+	if (s == NULL) {
+		return false;
+	}
 
 	RCore *core = s->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);

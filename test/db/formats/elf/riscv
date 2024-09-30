@@ -476,6 +476,7 @@ RUN
 NAME=ELF: riscv64: main analysis (1)
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
+e asm.var.summary=0
 e anal.vars.stackname=true
 e asm.cmt.calls=false
 s sym.main
@@ -536,6 +537,7 @@ RUN
 NAME=ELF: riscv64: main analysis (2)
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
+e asm.var.summary=0
 s sym.main
 af
 pdf
@@ -657,6 +659,7 @@ NAME=ELF: riscv64: full analysis
 FILE=bins/elf/analysis/guess-number-riscv64
 ARGS=-e asm.cmt.calls=false -b64
 CMDS=<<EOF
+e asm.var.summary=0
 aeim
 e asm.bits=64
 e asm.arch=riscv

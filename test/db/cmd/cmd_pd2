@@ -156,6 +156,7 @@ NAME=realign after sparse (#11810)
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
 e anal.vars.stackname=true
+e asm.var.summary=0
 e asm.bytes=false
 e asm.comments=false
 s 0x560e67
@@ -349,6 +350,7 @@ NAME=esil func cmts
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 tn- __libc_start_main
+e asm.var.summary=0
 e asm.emu=true
 e emu.write=true
 s 0x8174

@@ -86,3 +86,4 @@ You can use registers in math expressions. For example: 'wx 1234 @ esp - 2'
 For HTTP authentication 'e http.auth = 1', 'e http.authfile = <path>'
 Tip: do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a premium r2 experience
 Use the `:` command To run the io plugin cmd callback, many io plugins provide useful features, find them out!
+Change asm.var.summary variable to 0 to display all local variables and argument types and names

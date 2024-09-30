@@ -139,7 +139,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d(r)
 / 44: int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_4h @ rbp-0x4
+| afv: vars(1:sp[0xc..0xc])
 |           0x0040052d      55             push rbp                    ; dwarftest.c:4
 EOF
 RUN
@@ -171,6 +171,7 @@ NAME="function info integration c++"
 FILE=bins/elf/dwarf3_many_comp_units.elf 
 CMDS=<<EOF
 e asm.dwarf=false
+e asm.var.summary=0
 aaa
 pd 13 @ main
 EOF
@@ -202,6 +203,7 @@ NAME="function info integration 1 rust"
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.dwarf=false
+e asm.var.summary=0
 aaa
 pd 75 @ dbg.main
 EOF
@@ -347,6 +349,7 @@ NAME="function info integration 2 rust"
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.dwarf=false
+e asm.var.summary=0
 aaa
 pd 40 @  dbg.bubble_sort_i32_
 EOF
@@ -431,6 +434,7 @@ NAME="big endian variable info"
 FILE=bins/elf/ppc64_sudoku_dwarf 
 CMDS=<<EOF
 e asm.dwarf=false
+e asm.var.summary=0
 aaa
 pdf @  dbg.init
 EOF
@@ -465,6 +469,7 @@ NAME="function info integration ada"
 FILE=bins/elf/ada_test_dwarf 
 CMDS=<<EOF
 e asm.dwarf=false
+e asm.var.summary=0
 aaa
 pdf @  dbg.main
 EOF
@@ -510,6 +515,7 @@ RUN
 NAME="function info integration freepascal"
 FILE=bins/efi/freepascal_test_dwarf 
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.dwarf=false
 aaa
 pd 20 @  dbg.palya

@@ -54,6 +54,7 @@ NAME=emu paths
 FILE=bins/mach0/ret0ret1restr
 ARGS=-2
 CMDS=<<EOF
+e asm.var.summary=0
 aeim
 ?e ret paths
 s sym._retbool
@@ -170,6 +171,7 @@ FILE=bins/mach0/infloop
 CMDS=<<EOF
 af
 aeim
+e asm.var.summary=0
 e dbg.trace=true
 e asm.trace=true
 e asm.comments=false

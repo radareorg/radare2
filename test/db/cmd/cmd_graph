@@ -406,6 +406,7 @@ NAME=lowaddr lights
 FILE=bins/elf/elf_one_symbol_shdr
 ARGS=-n
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.arch=x86
 e asm.bits=64
 s 0x44b
