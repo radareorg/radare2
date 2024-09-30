@@ -4021,6 +4021,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.usr2", "", "run when SIGUSR2 signal is received");
 #endif
 	SETPREF ("cmd.open", "", "run when file is opened");
+	SETPREF ("cmd.exit", "", "run command before leaving the shell (atexit)");
 	SETPREF ("cmd.load", "", "run when binary is loaded");
 	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
