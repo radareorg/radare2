@@ -67,6 +67,7 @@ RUN
 NAME=afb sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
+e asm.var.summary=0
 s sym.zwrite
 af
 afb

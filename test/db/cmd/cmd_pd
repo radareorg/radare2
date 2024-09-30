@@ -592,9 +592,9 @@ pd 1 @ 0~var
 pd 1 @ 7
 EOF
 EXPECT=<<EOF
-     ; var int64_t var_28h @ rsp+0x40
+afv: vars(1:sp[0x28..0x28])
      mov rax, qword [var_28h]
-     ; var int64_t var_28h @ rsp+0x40
+afv: vars(1:sp[0x28..0x28])
      mov rax, qword [rsp + var_28h]
 EOF
 RUN
@@ -2090,10 +2090,12 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 aa
 pdf
+e asm.var.summary=0
+pd 2
 EOF
 EXPECT=<<EOF
 / 46: entry0 (int64_t arg3);
-|           ; arg int64_t arg3 @ rdx
+| `- args(rdx)
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor ebp, ebp
 |           0x00005ae6      4989d1         mov r9, rdx                 ; arg3
@@ -2106,6 +2108,10 @@ EXPECT=<<EOF
 |           0x00005afa      488d0def0b..   lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5..   lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
 \           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
+/ 46: entry0 (int64_t arg3);
+|           ; arg int64_t arg3 @ rdx
+|           0x00005ae0      f30f1efa       endbr64
+|           0x00005ae4      31ed           xor ebp, ebp
 EOF
 RUN
 

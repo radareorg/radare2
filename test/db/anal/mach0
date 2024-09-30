@@ -51,6 +51,7 @@ NAME=analysis macho test
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e asm.var.summary=0
 aa
 pd 4
 EOF

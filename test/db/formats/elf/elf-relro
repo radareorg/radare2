@@ -344,7 +344,7 @@ EXPECT=<<EOF
             0x00007524      45ca8ce2       add ip, ip, 0x45000
             0x00007528      f0f5bce5       ldr pc, [ip, 0x5f0]!
 / 552: sym.Curl_close (int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+| `- args(r0)
 |           0x0001de5c      70402de9       push {r4, r5, r6, lr}
 |           0x0001de60      0010a0e3       mov r1, 0
 |           0x0001de64      086090e5       ldr r6, [r0, 8]             ; arg1
@@ -530,7 +530,7 @@ EXPECT=<<EOF
             0x00017524      45ca8ce2       add ip, ip, 0x45000
             0x00017528      f0f5bce5       ldr pc, [ip, 0x5f0]!
 / 552: sym.Curl_close (int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+| `- args(r0)
 |           0x0002de5c      70402de9       push {r4, r5, r6, lr}
 |           0x0002de60      0010a0e3       mov r1, 0
 |           0x0002de64      086090e5       ldr r6, [r0, 8]             ; arg1

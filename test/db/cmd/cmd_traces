@@ -2,6 +2,7 @@ NAME=asm.trace
 FILE=bins/mach0/main-loop
 CMDS=<<EOF
 af
+e asm.var.summary=0
 e asm.flags.inline=true
 e asm.comments=false
 e asm.trace=1

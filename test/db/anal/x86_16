@@ -127,8 +127,7 @@ pdf
 EOF:
 EXPECT=<<EOF
 / 11: fcn.00000000 (int16_t arg_6h, int16_t arg_ah);
-|           ; arg int16_t arg_6h @ bp+0x6
-|           ; arg int16_t arg_ah @ bp+0xa
+| `- args(sp[0x4..0x8])
 |           0000:0000     55             push bp
 |           0000:0001     8bec           mov bp, sp
 |           0000:0003     c57606         lds si, [arg_6h]

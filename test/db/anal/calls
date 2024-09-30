@@ -2,6 +2,7 @@ NAME=aac on non executable sections
 # BROKEN=1
 FILE=bins/elf/analysis/calls_x64
 CMDS=<<EOF
+e asm.var.summary=0
 af
 e anal.in=bin.sections.x
 aac
@@ -30,6 +31,7 @@ RUN
 NAME=aac on non executable sections (defaults)
 FILE=bins/elf/analysis/calls_x64
 CMDS=<<EOF
+e asm.var.summary=0
 af
 aac
 pdf
@@ -57,6 +59,7 @@ RUN
 NAME=aac on non executable sections (bug)
 FILE=bins/elf/analysis/calls_x64
 CMDS=<<EOF
+e asm.var.summary=0
 e anal.in=io.maps.x
 af
 aac

@@ -320,7 +320,7 @@ EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 16
 // void fcn.00000000 (int32_t arg2);
-|           ; arg int32_t arg2 @ r1
+| `- args(r1)
 |           0x00000000      021081e0       add r1, r1, r2              ; arg2
 |           0x00000004      1eff2f01       bxeq lr
 |           0x00000008      0020a0e3       mov r2, 0
@@ -666,6 +666,11 @@ NAME=ELF ARM: function arg
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.cmt.calls=false
+e asm.var.summary=0
+afr@main
+afva@sym.call
+pdf@sym.call
+e asm.var.summary=4
 afr@main
 afva@sym.call
 pdf@sym.call
@@ -686,12 +691,27 @@ EXPECT=<<EOF
 |           0x00010440      0300a0e1       mov r0, r3
 |           0x00010444      04d04be2       sub sp, fp, 4
 \           0x00010448      0088bde8       pop {fp, pc}
+            ; CALL XREF from main @ 0x10468(x)
+/ (fcn) sym.call 44
+| `- args(r0) vars(1:sp[0xc..0xc])
+|           0x00010420      00482de9       push {fp, lr}
+|           0x00010424      04b08de2       add fp, sp, 4
+|           0x00010428      08d04de2       sub sp, sp, 8
+|           0x0001042c      08000be5       str r0, [var_8h]            ; 8 ; arg1
+|           0x00010430      14009fe5       ldr r0, [0x0001044c]        ; [0x1044c:4]=0x104f0 "%d"
+|           0x00010434      08101be5       ldr r1, [var_8h]            ; 8
+|           0x00010438      a2ffffeb       bl sym.imp.printf
+|           0x0001043c      0030a0e3       mov r3, 0
+|           0x00010440      0300a0e1       mov r0, r3
+|           0x00010444      04d04be2       sub sp, fp, 4
+\           0x00010448      0088bde8       pop {fp, pc}
 EOF
 RUN
 
 NAME=ELF ARM: function args
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.cmt.calls=false
 af@main
 afva@main
@@ -782,6 +802,7 @@ NAME=ELF ARM: vars
 FILE=bins/elf/analysis/arm-ls
 CMDS=<<EOF
 e asm.cmt.calls=false
+e asm.var.summary=0
 s main
 af
 pd 1~var?
@@ -1174,6 +1195,7 @@ RUN
 NAME=load code refs
 FILE=bins/elf/blah.bin
 CMDS=<<EOF
+e asm.var.summary=0
 af
 pdf
 s main

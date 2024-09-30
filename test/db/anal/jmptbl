@@ -10,19 +10,7 @@ EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ; DATA XREF from sym.func.100004000 @ 0x100004040(r)
 276: sym.func.100004000 (int64_t arg1, int64_t arg2, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, int64_t arg_80h);
-; arg int64_t arg1 @ x0
-; arg int64_t arg2 @ x1
-; arg int64_t arg4 @ x3
-; arg int64_t arg5 @ x4
-; arg int64_t arg6 @ x5
-; arg int64_t arg7 @ x6
-; arg int64_t arg_80h @ sp+0x100
-; var int64_t var_20h @ sp+0x20
-; var int64_t var_30h @ sp+0x30
-; var int64_t var_40h @ sp+0x40
-; var int64_t var_50h @ sp+0x50
-; var int64_t var_60h @ sp+0x60
-; var int64_t var_70h @ sp+0x70
+`- args(x0, x1, x3, x4, x5, x6, sp[0x80..0x80]) vars(6:sp[0x10..0x60])
 0x100004000      sub sp, sp, 0x80                                      ; [00] -r-x section size 13240 named 0.__TEXT.__text
 0x100004004      str x28, [var_20h]
 0x100004008      stp x27, x26, [var_30h]
@@ -152,34 +140,7 @@ pdr
 EOF
 EXPECT=<<EOF
 904: sym.func.100004124 (int64_t arg1, int64_t arg2, int64_t arg_140h);
-; arg int64_t arg1 @ x0
-; arg int64_t arg2 @ x1
-; arg int64_t arg_140h @ sp+0x280
-; var int64_t var_0h @ sp+0x0
-; var int64_t var_8h @ sp+0x8
-; var int64_t var_10h @ sp+0x10
-; var int64_t var_18h @ sp+0x18
-; var int64_t var_20h @ sp+0x20
-; var int64_t var_28h @ sp+0x28
-; var int64_t var_30h @ sp+0x30
-; var int64_t var_38h @ sp+0x38
-; var int64_t var_40h @ sp+0x40
-; var int64_t var_48h @ sp+0x48
-; var int64_t var_50h @ sp+0x50
-; var int64_t var_58h @ sp+0x58
-; var int64_t var_60h @ sp+0x60
-; var int64_t var_68h @ sp+0x68
-; var int64_t var_70h @ sp+0x70
-; var int64_t var_78h @ sp+0x78
-; var int64_t var_80h @ sp+0x80
-; var int64_t var_88h @ sp+0x88
-; var int64_t var_90h @ sp+0x90
-; var int64_t var_e0h @ sp+0xe0
-; var int64_t var_f0h @ sp+0xf0
-; var int64_t var_100h @ sp+0x100
-; var int64_t var_110h @ sp+0x110
-; var int64_t var_120h @ sp+0x120
-; var int64_t var_130h @ sp+0x130
+`- args(x0, x1, sp[0x140..0x140]) vars(25:sp[0x10..0x140])
 0x100004124      sub sp, sp, 0x140
 0x100004128      str x28, [var_e0h]
 0x10000412c      stp x27, x26, [var_f0h]

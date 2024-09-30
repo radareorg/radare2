@@ -1479,9 +1479,7 @@ pdf
 EOF
 EXPECT=<<EOF
 / 76: fcn.00012740 (int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
-|           ; var int64_t var_8h @ rbp-0x8
+| `- args(rdi, rsi) vars(1:sp[0x10..0x10])
 |           0x00012740      push rbp
 |           0x00012741      mov rbp, rsp
 |           0x00012744      sub rsp, 0x1030
@@ -1876,7 +1874,10 @@ s sym.fastcaslled
 afc fastcall
 afc
 afva
+e asm.var.summary=0
 pdf
+e asm.var.summary=4
+pd 1
 EOF
 EXPECT=<<EOF
 fastcall
@@ -1911,12 +1912,17 @@ fastcall
 |           0x08048451      90             nop
 |           0x08048452      c9             leave
 \           0x08048453      c20800         ret 8
+            ; CALL XREF from main @ 0x80484c7(x)
+/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
+| `- args(ecx, edx, sp[0x4..0x8]) vars(4:sp[0x10..0x24])
+|           0x0804841b      55             push ebp
 EOF
 RUN
 
 NAME=afva for cdecl/stdcall with no esp vars
 FILE=bins/elf/analysis/fast
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.cmt.calls=false
 aa
 s sym.nonfastcaslled
@@ -1971,6 +1977,7 @@ RUN
 NAME=anal vars crash 2
 FILE=-
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.bits=64
 e asm.arch = x86
 e anal.arch = x86
@@ -3755,6 +3762,7 @@ RUN
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.comments=0
 e anal.vars.stackname=true
 s 0x140001080
@@ -3849,6 +3857,7 @@ RUN
 NAME=lea pseudo improvements (pseudo disabled)
 FILE=-
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.arch=x86
 e asm.bits=64
 e asm.comments=false
@@ -3890,6 +3899,7 @@ RUN
 NAME=lea pseudo improvements (pseudo enabled)
 FILE=-
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.arch=x86
 e asm.bits=64
 e asm.comments=false
