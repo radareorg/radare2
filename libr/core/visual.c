@@ -1479,7 +1479,7 @@ repeat:
 
 		int secondColumn = (w > 120)? 80: 0;
 		int maxcount = 9;
-		int rows, cols = r_cons_get_size (&rows);
+		int rows = h; // XXX dupe
 		count = 0;
 		char *dis = NULL;
 		rows -= 4;
