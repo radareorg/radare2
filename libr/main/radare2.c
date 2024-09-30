@@ -1883,6 +1883,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 
+				const char *cmd_exit = r_config_get (r->config, "cmd.exit");
+				if (R_STR_ISNOTEMPTY (cmd_exit)) {
+					r_core_cmd0 (r, cmd_exit);
+				}
 				const char *prj = r_config_get (r->config, "prj.name");
 				if (R_STR_ISNOTEMPTY (prj)) {
 					if (r_core_project_is_dirty (r) && !r_config_get_b (r->config, "prj.alwaysprompt")) {
