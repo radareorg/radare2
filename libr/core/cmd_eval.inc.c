@@ -83,19 +83,6 @@ static RCoreHelpMessage help_msg_eco = {
 	NULL
 };
 
-static bool load_theme(RCore *core, const char *path) {
-	if (!r_file_exists (path)) {
-		return false;
-	}
-	core->cmdfilter = "ec ";
-	bool res = r_core_cmd_file (core, path);
-	if (res) {
-		r_cons_pal_update_event ();
-	}
-	core->cmdfilter = NULL;
-	return res;
-}
-
 static void cmd_eval_table(RCore *core, const char *input) {
 	const char fmt = *input;
 	const char *q = input;
@@ -164,12 +151,47 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	return true;
 }
 
-static bool cmd_load_theme(RCore *core, const char *_arg) {
-	bool failed = false;
-	char *path;
-	if (R_STR_ISEMPTY (_arg)) {
-		return false;
+static char *get_theme_path(RCore *core, const char *theme_name) {
+	// check home directory
+	char *home = r_xdg_datadir ("cons");
+	char *theme_path = r_file_new (home, theme_name, NULL);
+	if (r_file_exists (theme_path)) {
+		// TODO read this one
+		return theme_path;
 	}
+	free (theme_path);
+	// check system directory
+	const char *r2pfx = r_sys_prefix (NULL);
+	theme_path = r_file_new (r2pfx, R2_THEMES, theme_name, NULL);
+	if (r_file_exists (theme_path)) {
+		return theme_path;
+	}
+	free (theme_path);
+	return NULL;
+}
+
+static char *get_theme_script(RCore *core, const char *theme_name) {
+	if (!strcmp (theme_name, "default")) {
+		// reserved name
+		return NULL;
+	}
+	char *theme_path = get_theme_path (core, theme_name);
+	if (theme_path) {
+		return r_file_slurp (theme_path, NULL);
+	}
+#if WITH_STATIC_THEMES
+	const RConsTheme *theme = r_cons_themes ();
+	while (theme && theme->name) {
+		if (!strcmp (theme->name, theme_name)) {
+			return strdup (theme->script);
+		}
+		theme++;
+	}
+#endif
+	return NULL;
+}
+
+static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (!strcmp (_arg, "default")) {
 		if (_arg != core->theme) {
 			free (core->theme);
@@ -178,64 +200,19 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
-	char *arg = strdup (_arg);
-
-	// system themes directory
-	char *home = r_xdg_datadir ("cons");
-
-	// system themes directory
-	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
-	path = tmp ? r_str_r2_prefix (tmp) : NULL;
-	free (tmp);
-
-	if (load_theme (core, home)) {
-		free (core->theme);
-		core->theme = strdup (arg);
-		free (core->themepath);
-		core->themepath = home;
-		home = NULL;
+	bool ret = false;
+	char *theme_script = get_theme_script (core, _arg);
+	if (R_STR_ISNOTEMPTY (theme_script)) {
+		core->cmdfilter = "ec ";
+		r_core_cmd_lines (core, theme_script);
+		r_cons_pal_update_event ();
+		core->cmdfilter = NULL;
+		ret = true; // maybe the script fails?
 	} else {
-		if (load_theme (core, path)) {
-			free (core->theme);
-			core->theme = strdup (arg);
-			free (core->themepath);
-			core->themepath = path;
-			path = NULL;
-		} else {
-			if (load_theme (core, arg)) {
-				free (core->theme);
-				core->theme = strdup (arg);
-				free (core->themepath);
-				core->themepath = arg;
-				arg = NULL;
-			} else {
-				failed = true;
-			}
-		}
+		R_LOG_ERROR ("Cannot open '%s' colors theme", _arg);
 	}
-	if (failed) {
-#if WITH_STATIC_THEMES
-		const RConsTheme *theme = r_cons_themes ();
-		while (theme && theme->name) {
-			if (!strcmp (theme->name, arg)) {
-				r_core_cmd0 (core, theme->script);
-				R_FREE (arg);
-				failed = false;
-				break;
-			}
-			theme++;
-		}
-		if (failed) {
-			R_LOG_ERROR ("cannot open '%s' colorscheme", arg);
-		}
-#else
-		R_LOG_ERROR ("cannot open '%s' colorscheme", arg);
-#endif
-	}
-	free (home);
-	free (path);
-	free (arg);
-	return !failed;
+	free (theme_script);
+	return ret;
 }
 
 static void list_themes_in_path(RList *list, const char *path) {
@@ -422,11 +399,27 @@ static bool cmd_ec(RCore *core, const char *input) {
 		break;
 	case 'o': // "eco"
 		switch (input[2]) {
-		case 'j':
-			nextpal (core, 'j');
+		case 'j': // "ecoj"
+			if (input[3]) {
+				r_core_return_invalid_command (core, "ecoj", input[3]);
+			} else {
+				nextpal (core, 'j');
+			}
 			break;
-		case '*':
-			r_core_cmd_callf (core, "cat %s", core->themepath);
+		case '*': // "eco*"
+			{
+				const char *theme_name = core->theme;
+				if (input[3]) {
+					theme_name = r_str_trim_head_ro (input + 3);
+				}
+				char *theme_script = get_theme_script (core, theme_name);
+				if (R_STR_ISNOTEMPTY (theme_script)) {
+					r_cons_printf ("%s\n", theme_script);
+				} else {
+					R_LOG_ERROR ("Cannot find theme '%s'", theme_name);
+				}
+				free (theme_script);
+			}
 			break;
 		case '!':
 			free (r_core_editor (core, core->themepath, NULL));
