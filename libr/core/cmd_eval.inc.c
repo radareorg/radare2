@@ -83,21 +83,6 @@ static RCoreHelpMessage help_msg_eco = {
 	NULL
 };
 
-#if 0
-static bool load_theme(RCore *core, const char *path) {
-	if (!r_file_exists (path)) {
-		return false;
-	}
-	core->cmdfilter = "ec ";
-	bool res = r_core_cmd_file (core, path);
-	if (res) {
-		r_cons_pal_update_event ();
-	}
-	core->cmdfilter = NULL;
-	return res;
-}
-#endif
-
 static void cmd_eval_table(RCore *core, const char *input) {
 	const char fmt = *input;
 	const char *q = input;
