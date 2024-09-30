@@ -10,7 +10,11 @@
 
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (anal && var, false);
-	char *fmt = r_type_format (anal->sdb_types, var->type);
+	const char *type = var->type;
+	if (r_str_startswith (var->type, "signed ")) {
+		type = var->type + 7;
+	}
+	char *fmt = r_type_format (anal->sdb_types, type);
 	RRegItem *ri;
 	if (!fmt) {
 		R_LOG_ERROR ("type:%s doesn't exist", var->type);
