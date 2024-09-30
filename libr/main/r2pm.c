@@ -98,7 +98,7 @@ static int git_clone(const char *dir, const char *url) {
 	}
 	free (git);
 
-	char *cmd = r_str_newf ("git clone --depth=10 --recursive %s %s", url, dir);
+	char *cmd = r_str_newf ("git clone --depth=1 --recursive %s %s", url, dir);
 	R_LOG_INFO ("%s", cmd);
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
