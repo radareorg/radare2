@@ -150,6 +150,7 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 			p = skip_spaces (p);
 			if (r_str_startswith (p, "///")) {
 				p = parse_attributes (p + 3, attrs);
+				p = skip_spaces (p);
 			}
 			char *member_name = NULL;
 			char *member_type = NULL;
@@ -169,7 +170,7 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 			}
 			char array_info[256] = "";
 			char full_scope[512];
-			snprintf(full_scope, sizeof(full_scope), "%s.%s", struct_name, member_name);
+			snprintf (full_scope, sizeof (full_scope), "%s.%s", struct_name, member_name);
 			if (dimensions) {
 				r_strbuf_appendf (sb, "%s.%s=%s,0,%s\n", type, full_scope, member_type, dimensions? dimensions:"");
 			} else {
@@ -265,7 +266,7 @@ static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 		if (attrs->count > 0) {
 			apply_attributes (sb, "enum", enum_name, attrs);
 		}
-		r_strbuf_appendf(sb, "%s=enum\n", enum_name);
+		r_strbuf_appendf (sb, "%s=enum\n", enum_name);
 	}
 	return p;
 }
