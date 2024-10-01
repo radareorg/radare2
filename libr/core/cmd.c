@@ -530,6 +530,8 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		recursive_help (core, detail, "=");
 		recursive_help (core, detail, "??");
 		recursive_help (core, detail, "~");
+		recursive_help (core, detail, "$?");
+		recursive_help (core, detail, "?$?");
 	}
 	if (strchr (cmd_prefix, '[')) {
 		R_LOG_WARN ("Invalid char in command, help message must be fixed: %s", cmd_prefix);

@@ -3250,6 +3250,17 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	ut64 addr, bbaddr = UT64_MAX;
 	PJ *pj = NULL;
 
+	if (r_str_startswith (input, "r?")) {
+		r_core_cmd_help (core, help_msg_afbr);
+		return true;
+	}
+	if (*input && input[1] == '?') {
+		char c[5] = "afbr";
+		c[3] = *input;
+		r_core_cmd_help_contains (core, help_msg_afb, c);
+		return true;
+	}
+
 	if (*input == '.') {
 		one = true;
 		input++;
