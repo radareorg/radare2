@@ -177,7 +177,9 @@ static char *get_theme_script(RCore *core, const char *theme_name) {
 	}
 	char *theme_path = get_theme_path (core, theme_name);
 	if (theme_path) {
-		return r_file_slurp (theme_path, NULL);
+		char *theme_script = r_file_slurp (theme_path, NULL);
+		free (theme_path);
+		return theme_script;
 	}
 #if WITH_STATIC_THEMES
 	const RConsTheme *theme = r_cons_themes ();

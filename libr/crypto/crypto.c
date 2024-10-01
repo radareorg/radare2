@@ -243,6 +243,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 				break;
 			default:
 				R_LOG_ERROR ("Unknown algorithm type for %s", cp->meta.name);
+				pj_free (pj);
 				return;
 			}
 			pj_ko (pj, "meta");

@@ -239,7 +239,8 @@ static int assemble_clr(char tokens[][256], int num_tokens, ut8* buf, int size) 
 
 static int assemble_bchg(char tokens[][256], int num_tokens, ut8* buf, int size) {
 	if (size < 2 || num_tokens != 3) {
-	}return 0;
+		return 0;
+	}
 
 	// tokens[0] = "BCHG"
 	// tokens[1] = "D<src>"
