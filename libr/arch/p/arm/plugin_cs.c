@@ -2654,24 +2654,29 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
 		break;
-	case ARM_INS_BL:
 	case ARM_INS_BLX:
+        r_strbuf_appendf (&op->esil, "1,%s,&,tf,:=", ARG (0));
+	case ARM_INS_BL:
 		r_strbuf_append (&op->esil, "pc,lr,:=,");
 		/* fallthrough */
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 	case ARM_INS_B:
-		if (ISREG (0) && REGID (0) == ARM_REG_PC) {
-			r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",pc,:=",
-				(ut64)((addr & ~3LL) + pcdelta));
-		} else {
-			if (ISIMM (0)) {
-				r_strbuf_appendf (&op->esil, "%s,pc,:=", ARG (0));
-			} else {
-				r_strbuf_appendf (&op->esil, "%d,%s,-,pc,:=", thumb, ARG (0));
-			}
-		}
-		break;
+        if (ISREG (0) && REGID (0) == ARM_REG_PC) {
+            r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",pc,:=",
+                (ut64)((addr & ~3LL) + pcdelta));
+        } else {
+            if (ISIMM (0)) {
+                r_strbuf_appendf (&op->esil, "%s,pc,:=", ARG (0));
+            } else {
+                if (ISIMM (0)) {
+                    r_strbuf_appendf (&op->esil, "%s,pc,:=", ARG (0));
+                } else {
+                    r_strbuf_appendf (&op->esil, "tf,%s,-,pc,:=", ARG (0));
+                }
+            }
+        }
+        break;
 	case ARM_INS_UDF:
 		r_strbuf_setf (&op->esil, "%s,TRAP", ARG (0));
 		break;

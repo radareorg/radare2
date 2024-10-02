@@ -4572,6 +4572,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
+    int numop = 0;
 	int bsz = 4 * 4096;
 	RAnalOp op = {0};
 
@@ -4669,8 +4670,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			uninit = false;
 		}
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+        numop = 0;
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
 			r_anal_op_fini (&op);
+            numop++;
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (ret < 1) {
 				R_LOG_DEBUG ("aar invalid op %llx %d", at + i, codealign);
@@ -4697,9 +4700,15 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
-					count++;
-				}
+                if (numop == 1) {
+                    if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA|R_ANAL_REF_TYPE_WRITE, pj, rad, cfg_debug, cfg_anal_strings)) {
+                        count++;
+                    }
+                } else {
+                    if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA|R_ANAL_REF_TYPE_READ, pj, rad, cfg_debug, cfg_anal_strings)) {
+                        count++;
+                    }
+                }
 			} else {
 				// check for using reg+disp, which shouldnt be valid if op.ptr is set
 				if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
