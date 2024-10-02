@@ -4697,7 +4697,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA|(op.direction<<8), pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			} else {
