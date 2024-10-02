@@ -42,27 +42,23 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 #define ES_B(x) "0xff," x ",&"
 #define ES_H(x) "0xffff," x ",&"
 #define ES_W(x) "0xffffffff," x ",&"
-// call with delay slot
+
+// Call with delay slot.
 #define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J_D(addr)
 #define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
 
-// call without delay slot
+// Call without delay slot.
 #define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J_ND(addr)
 #define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
 
-#define USE_DS 1
-#if USE_DS
-// emit ERR trap if executed in a delay slot
-#define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
-// Record jump-to-address and set delay slot flag.
+// Trap if executed in a delay slot.
+#define ES_TRAP_DS(addr) "$ds,!,!,?{," addr ",1,TRAP,BREAK,},"
+// Record address in $jt and set $ds.
 #define ES_J_D(addr) addr",SETJT,1,SETD"
 // Jump to address.
 #define ES_J_ND(addr) addr",pc,:="
-#else
-#define ES_TRAP_DS() ""
-#define ES_J_D(addr) addr",pc,:="
-#define ES_J_ND(addr) ES_J_D(addr)
-#endif
+// Skips the next instruction.
+#define ES_SKIP_NXT() "pc,4,+,pc,:="
 
 #define ES_SIGN32_64(arg) es_sign_n_64 (as, op, arg, 32)
 #define ES_SIGN16_64(arg) es_sign_n_64 (as, op, arg, 16)
