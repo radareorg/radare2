@@ -1102,10 +1102,10 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	}
 
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		esil_i8051_init (as, esil);
 		break;
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		esil_i8051_fini (as, esil);
 		break;
 	default:
@@ -1116,22 +1116,22 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 3;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
 	}
 	return 0;
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
@@ -1143,7 +1143,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

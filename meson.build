@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50', version : '5.8.9')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50', version : '5.9.5')
 
 py3_exe = import('python').find_installation('python3')
 gen_py = '@0@/libr/syscall/d/gen.py'.format(meson.current_source_dir())
@@ -176,6 +176,7 @@ if host_machine.system() == 'windows'
   r2_sdb = join_paths(r2_datdir)
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_themes = join_paths(r2_datdir, 'cons')
+  r2_platform = join_paths(r2_datdir, 'platform')
   r2_fortunes = join_paths(r2_datdir, 'doc')
   r2_flags = join_paths(r2_datdir, 'flag')
   r2_hud = join_paths(r2_datdir, 'hud')
@@ -183,6 +184,7 @@ if host_machine.system() == 'windows'
   opts2 = [
     'r2_wwwroot',
     'r2_sdb',
+    'r2_platform',
     'r2_zigns',
     'r2_themes',
     'r2_fortunes',
@@ -219,6 +221,7 @@ else
   r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
   r2_sdb = join_paths(r2_datdir_r2, r2_version)
   r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
+  r2_platform = join_paths(r2_datdir_r2, r2_version, 'platform')
   r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
   r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
   r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
@@ -226,6 +229,10 @@ else
   r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
   r2_extras = join_paths(r2_libdir, 'radare2-extras', r2_version)
   r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
+endif
+
+if host_machine.system() == 'aix'
+  library_cflags += ['-D_LINUX_SOURCE_COMPAT']
 endif
 
 r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
@@ -322,8 +329,20 @@ else
   message('Not using libuv, thus using fallback server implementations')
 endif
 
+use_libsqsh = false
+if get_option('use_libsqsh')
+  libsqsh_dep = dependency('libsqsh', version: '>=1.4.0', required: false)
+  use_libsqsh = libsqsh_dep.found()
+  if not libsqsh_dep.found()
+    use_libsqsh = false
+    warning('use_libsqsh option was set to true, but libsqsh was not found.')
+  endif
+else
+  use_libsqsh = false
+endif
+
 has_debugger = get_option('debugger')
-have_ptrace = not ['haiku', 'windows', 'cygwin', 'sunos'].contains(host_machine.system())
+have_ptrace = not ['haiku', 'windows', 'cygwin', 'sunos', 'aix'].contains(host_machine.system())
 can_ptrace_wrap = ['linux'].contains(host_machine.system())
 
 have_ptrace = have_ptrace and has_debugger
@@ -353,6 +372,7 @@ userconf.set10('HAVE_LINUX_CAN_H', false)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('ETCDIR', join_paths(r2_prefix, 'etc'))
 userconf.set('PREFIX', r2_prefix)
+userconf.set('BINDIR', join_paths(r2_prefix, 'bin'))
 if host_machine.system() == 'windows'
   userconf.set('LIBDIR', r2_libdir)
   userconf.set('INCLUDEDIR', r2_incdir)
@@ -369,6 +389,7 @@ userconf.set('WITH_STATIC_THEMES', get_option('static_themes'))
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
+userconf.set('PLATFORM', r2_platform)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
 userconf.set('FORTUNES', r2_fortunes)
@@ -378,6 +399,7 @@ userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set('R2_BUILDSYSTEM', 'meson')
+userconf.set10('USE_SQSH', use_libsqsh)
 capstone_version = get_option('use_capstone_version')
 userconf.set10('USE_CS4', capstone_version == 'v4')
 userconf.set10('USE_CSNEXT', capstone_version == 'v6')
@@ -389,7 +411,9 @@ userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
 userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
+userconf.set10('USE_NEW_ABI', get_option('use_new_abi'))
 userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set10('WANT_DEBUGSTUFF', get_option('debugstuff'))
 userconf.set('R_CRITICAL_ENABLED', r2_critical_enabled)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', not get_option('nogpl'))
@@ -461,7 +485,6 @@ subdir('shlr/zip')
 sdb_files = [
   'shlr/sdb/src/array.c',
   'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
   'shlr/sdb/src/set.c',
   'shlr/sdb/src/cdb.c',
   'shlr/sdb/src/cdb_make.c',
@@ -521,6 +544,10 @@ sdb_inc_files = [
   'shlr/sdb/include/sdb/set.h',
   'shlr/sdb/include/sdb/types.h',
   'shlr/sdb/include/sdb/version.h',
+  'shlr/sdb/include/sdb/asserts.h',
+  'shlr/sdb/include/sdb/cwisstable.h',
+  'shlr/sdb/include/sdb/gcc_stdatomic.h',
+  'shlr/sdb/include/sdb/msvc_stdatomic.h',
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
@@ -680,6 +707,12 @@ install_data(
   'doc/fortunes.fun',
   'doc/fortunes.tips',
   install_dir: r2_fortunes
+)
+
+install_data(
+  'libr/arch/d/nes-init.r2',
+  'libr/arch/d/nes-fini.r2',
+  install_dir: r2_platform
 )
 
 if cli_enabled

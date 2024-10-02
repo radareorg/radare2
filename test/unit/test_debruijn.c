@@ -18,7 +18,7 @@ bool test_r_debruijn_offset(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_debruijn_pattern);
 	mu_run_test(test_r_debruijn_offset);
 	return tests_passed != tests_run;

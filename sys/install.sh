@@ -1,14 +1,29 @@
 #!/bin/sh
 
+# find
+cd "$(dirname $0)"/..
+pwd
+export PAGER=cat
+unset LINK
+
+if [ "${SHELL}" = "/data/data/com.termux/files/usr/bin/bash" ]; then
+    echo "Termux environment detected. Installing necessary packages"  
+    pkg update -y && pkg install git build-essential binutils pkg-config -y
+    ${PWD}/sys/termux.sh
+    exit $?
+fi
+
 if [ "$(uname)" = "Haiku" ]; then
 	gcc-x86 --version > /dev/null 2>&1
 	if [ $? = 0 ]; then
 		export CC=gcc-x86
 		export HOST_CC=gcc-x86
+		export USERCC=gcc-x86
 	else
 		echo "If compilation fails, install gcc-x86 from depot"
 	fi
-	export PREFIX=/system
+	export PREFIX="${PWD}/prefix"
+
 else
 	if [ "$(id -u)" = 0 ]; then
 		echo "[WW] Do not run this script as root!"
@@ -21,8 +36,8 @@ fi
 
 echo "$PWD" | grep -q " "
 if [ $? = 0 ]; then
-	echo "You can't build radare from a directory with spaces with make" > /dev/stderr
-	echo "To solve this you must 'meson' instead" > /dev/stderr
+	echo "You can't build radare from a directory with spaces with make" >&2
+	echo "To solve this you must 'meson' instead" >&2
 	exit 1
 fi
 
@@ -50,6 +65,10 @@ while : ; do
 	"--without-pull")
 		export WITHOUT_PULL=1
 		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
+		ARGS="${ARGS} $1"
+		;;
 	-*)
 		# just for the penguin face case
 		ARGS="${ARGS} $1"
@@ -62,22 +81,19 @@ while : ; do
 	shift
 done
 
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
-${MAKE} --help 2>&1 | grep -q gnu
-if [ $? != 0 ]; then
-	echo "You need GNU Make to build me"
-	exit 1
+if [ -z "${MAKE}" ]; then
+	MAKE=make
+	gmake --help >/dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
+	${MAKE} --help 2>&1 | grep -q gnu
+	if [ $? != 0 ]; then
+		echo "You need GNU Make to build me"
+		exit 1
+	fi
+	export MAKE="$MAKE"
 fi
 
-export MAKE="$MAKE"
-
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
-
-# find
-cd "$(dirname $0)"/..
-pwd
 
 # update
 if [ -z "$WITHOUT_PULL" ]; then
@@ -112,19 +128,21 @@ else
 	[ -n "${NOSUDO}" ] && SUDO=
 fi
 
-if [ "$(id -u)" = 0 ]; then
-	SUDO=""
-else
-	if [ -d /system/bin ]; then
-		# This is an android
+if [ "${NOSUDO}" != 1 ]; then
+	if [ "$(id -u)" = 0 ]; then
 		SUDO=""
 	else
-		[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+		if [ -d /system/bin ]; then
+			# This is an android
+			SUDO=""
+		else
+			[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+		fi
 	fi
-fi
 
-if [ "${USE_SU}" = 1 ]; then
-	SUDO="/bin/su -m root -c"
+	if [ "${USE_SU}" = 1 ]; then
+		SUDO="/bin/su -m root -c"
+	fi
 fi
 
 ${SHELL} --help 2> /dev/null | grep -q fish
@@ -167,6 +185,12 @@ if [ $? = 0 ]; then
 	fi
 else
 	echo "Warning: Cannot find system wide capstone"
+fi
+
+if [ "$NEED_CAPSTONE" = 1 ]; then
+	if [ ! -d shlr/capstone/.git -a ! -d .git ]; then
+		NEED_CAPSTONE=0
+	fi
 fi
 
 if [ "$NEED_CAPSTONE" = 1 ]; then

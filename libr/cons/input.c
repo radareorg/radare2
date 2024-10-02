@@ -4,25 +4,6 @@
 
 #define I r_cons_singleton ()
 
-#if 0
-//R2__UNIX__
-#include <poll.h>
-static int __is_fd_ready(int fd) {
-	fd_set rfds;
-	struct timeval tv;
-	if (fd==-1)
-		return 0;
-	FD_ZERO (&rfds);
-	FD_SET (fd, &rfds);
-	tv.tv_sec = 0;
-	tv.tv_usec = 1;
-	if (select (1, &rfds, NULL, NULL, &tv) == -1)
-		return 0;
-	return 1;
-	return !FD_ISSET (0, &rfds);
-}
-#endif
-
 R_API int r_cons_controlz(int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
@@ -82,6 +63,16 @@ static int __parseMouseEvent(void) {
 	return 0;
 }
 
+#if __APPLE__
+static void skipchars(char ech, int nch) {
+	while (nch-- > 0) {
+		if (r_cons_readchar () == ech) {
+			break;
+		}
+	}
+}
+#endif
+
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if R2__WINDOWS__
 	if (I->vtmode != 2) {
@@ -113,12 +104,12 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
-	case 0xc3: r_cons_readchar (); ch='K'; break; // emacs repag (alt + v)
-	case 0x16: ch='J'; break; // emacs avpag (ctrl + v)
-	case 0x10: ch='k'; break; // emacs up (ctrl + p)
-	case 0x0e: ch='j'; break; // emacs down (ctrl + n)
-	case 0x06: ch='l'; break; // emacs right (ctrl + f)
-	case 0x02: ch='h'; break; // emacs left (ctrl + b)
+	case 0xc3: r_cons_readchar (); ch = 'K'; break; // emacs repag (alt + v)
+	case 0x16: ch = 'J'; break; // emacs avpag (ctrl + v)
+	case 0x10: ch = 'k'; break; // emacs up (ctrl + p)
+	case 0x0e: ch = 'j'; break; // emacs down (ctrl + n)
+	case 0x06: ch = 'l'; break; // emacs right (ctrl + f)
+	case 0x02: ch = 'h'; break; // emacs left (ctrl + b)
 	}
 	if (ch != 0x1b) {
 		return ch;
@@ -145,7 +136,13 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			ch = r_cons_readchar ();
 		}
 #else
-		ch = 0xf1 + (ch & 0xf);
+		switch (ch) { // Arrow keys
+		case 'A': ch = 'k'; break;
+		case 'B': ch = 'j'; break;
+		case 'C': ch = 'l'; break;
+		case 'D': ch = 'h'; break;
+		default: ch = 0xf1 + (ch & 0xf); break;
+		}
 		break;
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
@@ -192,6 +189,14 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 					return 'k';
 				case 65: // wheel down
 					return 'j';
+				case 66: // wheel left
+					return 'h';
+				case 67: // wheel right
+					return 'l';
+				case 80: // control+wheel up // VTE only
+					return 'h';
+				case 81: // control+wheel down // VTE only
+					return 'l';
 				}
 				pos[p++] = 0;
 				y = atoi (pos);
@@ -252,6 +257,20 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			break;
 		case '1':
 			ch = r_cons_readchar ();
+#if __APPLE__
+			if (ch == '1') {
+				// horizontal scroll on macOS (works on Therm and Terminal apps)
+				ch = r_cons_readchar ();
+				if (ch == '2') {
+					skipchars ('M', 12);
+					return 'l';
+				}
+				if (ch == '3') {
+					skipchars ('M', 12);
+					return 'h';
+				}
+			}
+#endif
 			switch (ch) {
 			case '1': ch = R_CONS_KEY_F1; break;
 			case '2': ch = R_CONS_KEY_F2; break;

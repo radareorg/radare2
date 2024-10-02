@@ -32,7 +32,6 @@ entry0
 
 Disassembly of entry0:
             ;-- section..text:
-            ;-- .text:
             ;-- _start():
 / 16: entry0 (); // noreturn
 |           0x08049020      55             push ebp                    ; [10] -r-x section size 16 named .text
@@ -42,5 +41,30 @@ Disassembly of entry0:
 |           0x08049029      6a2a           push 0x2a                   ; '*' ; 42
 \           0x0804902b      e8e0ffffff     call sym.imp._Exit          ; void _Exit(int status)
 
+EOF
+RUN
+
+NAME=double redirect into an alias
+FILE=--
+CMDS=<<EOF
+echo hello > $a
+echo world > $a
+cat $a
+EOF
+EXPECT=<<EOF
+world
+EOF
+RUN
+
+# XXX note that theres a missing newline here
+NAME=double redirect into an alias append
+FILE=--
+CMDS=<<EOF
+echo hello > $a
+echo world >> $a
+cat $a
+EOF
+EXPECT=<<EOF
+helloworld
 EOF
 RUN

@@ -1,4 +1,4 @@
-.Dd Jun 31, 2022
+.Dd Mar 17, 2024
 .Dt R2R 1
 .Sh NAME
 .Nm r2r
@@ -6,6 +6,7 @@
 .Sh SYNOPSIS
 .Nm r2r
 .Op Fl h
+.Op Fl H
 .Op Fl i
 .Op Fl n
 .Op Fl L
@@ -28,6 +29,8 @@ You need radare2 to be available in $PATH.
 .Bl -tag -width Fl
 .It Fl h
 Show the help/usage message
+.It Fl H
+Display the list of environment variables and their default values
 .It Fl i
 Interactive mode
 .It Fl n
@@ -64,6 +67,9 @@ Use the -n flag to not run any test. Just load them.
   $ r2r -n
   [r2r] Loading tests...
 .Pp
+Run the tests contained in a directory interactively, if any of those tests fail to run, prompt the user to autofix, edit the commands, etc.
+.Pp
+  $ r2r -i test/db/cmd/cmd_pdf
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

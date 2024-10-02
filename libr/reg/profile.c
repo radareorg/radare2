@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
 #include <r_lib.h>
@@ -122,7 +122,8 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
-	if (!reg->regset[type2].regs) {
+	if (!reg->regset[type2].regs || reg->regset[type2].regs->length == 0) {
+		r_list_free(reg->regset[type2].regs);
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	r_ref (item);
@@ -144,7 +145,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
-	r_return_val_if_fail (reg && str, false);
+	R_RETURN_VAL_IF_FAIL (reg && str, false);
 //	eprintf ("@SET PROFIL strin%c", 10);
 //	r_sys_backtrace ();
 	char *tok[PARSER_MAX_TOKENS];
@@ -164,13 +165,20 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		return true;
 	}
 	// eprintf ("OLD (%s) NEW (%s)\n", reg->reg_profile_str, str);
-
+// remove all arenas
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
 	// Purge the old registers
 	r_reg_free_internal (reg, true);
 	r_reg_arena_shrink (reg);
-
+#if 0
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegSet *rs = &reg->regset[i];
+		if (rs && rs->arena) {
+			rs->arena->size = 64;
+		}
+	}
+#endif
 	// Cache the profile string
 	reg->reg_profile_str = strdup (str);
 
@@ -195,7 +203,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		j = 0;
 		// For every word
 		while (*p) {
-			// Skip the whitespace
+			// Skip whitespace
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
@@ -225,43 +233,61 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Save the token
 			tok[j++] = strdup (tmp);
 		}
-		// Empty line, eww
 		if (j) {
 			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
-			if (!strncmp (first, "=RS", 3)) {
+			if (r_str_startswith (first, "=RS")) {
 				reg->bits_default = atoi (tok[1]);
-				// Clean up
-				for (i = 0; i < j; i++) {
-					free (tok[i]);
-				}
 			} else {
-				const char *r = (*first == '=')
-					? parse_alias (reg, tok, j)
-					: parse_def (reg, tok, j);
-				if (!strncmp (first, "=A0", 3)) {
-					have_a0 = true;
+				const char *r = NULL;
+				if (*first == '^') {
+					int endian = R_SYS_ENDIAN;
+					switch (first[1]) {
+					case 'l':
+						endian = R_SYS_ENDIAN_LITTLE;
+						break;
+					case 'b':
+						endian = R_SYS_ENDIAN_BIG;
+						break;
+					case 'm':
+						endian = R_SYS_ENDIAN_MIDDLE;
+						break;
+					}
+					if (reg->config) {
+						reg->config->endian = endian;
+					} else {
+						R_LOG_WARN ("Cannot force reg profile endianness");
+					}
+				} else if (*first == '=') {
+					r = parse_alias (reg, tok, j);
+					if (!have_a0 && r_str_startswith (first + 1, "A0")) {
+						have_a0 = true;
+					}
+				} else {
+					r = parse_def (reg, tok, j);
 				}
-				// Clean up
-				for (i = 0; i < j; i++) {
-					free (tok[i]);
-				}
-				// Warn the user if something went wrong
 				if (r) {
 					R_LOG_ERROR ("Parse error @ line %d (%s)", l, r);
 					// Clean up
 					r_reg_free_internal (reg, false);
 					r_reg_init (reg);
+					for (i = 0; i < j; i++) {
+						free (tok[i]);
+					}
 					return false;
 				}
+			}
+			// Clean up
+			for (i = 0; i < j; i++) {
+				free (tok[i]);
 			}
 		}
 	} while (*p++);
 	if (!have_a0) {
 		R_LOG_ERROR ("=A0 is not defined");
-		//r_reg_free_internal (reg, false);
-		///return false;
+		// r_reg_free_internal (reg, false);
+		// return false;
 	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -287,7 +313,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 // read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	// eprintf ("@SET PROFIL%c", 10);
-	r_return_val_if_fail (reg && profile, false);
+	R_RETURN_VAL_IF_FAIL (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		char *base = r_sys_getenv (R_LIB_ENV);
@@ -307,7 +333,7 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 }
 
 static char *gdb_to_r2_profile(const char *gdb) {
-	r_return_val_if_fail (gdb, NULL);
+	R_RETURN_VAL_IF_FAIL (gdb, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
 		return NULL;
@@ -343,9 +369,8 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			r_strbuf_free (sb);
 			return false;
 		}
-		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
-			&offset, &size, type, groups);
-		// Groups is optional, others not
+		ret = r_str_scanf (ptr, "%.s %d %d %d %d %.s %.s", sizeof (name), name, &number, &rel, &offset, &size, sizeof (type), type, sizeof (groups), groups);
+		// Groups is optional, others are not
 		if (ret < 6) {
 			if (*ptr != '*') {
 				R_LOG_WARN ("Could not parse line: %s", ptr);
@@ -432,8 +457,8 @@ static char *gdb_to_r2_profile(const char *gdb) {
 }
 
 R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
-	char *str = NULL;
-	if (!(str = r_file_slurp (profile_file, NULL))) {
+	char *str = r_file_slurp (profile_file, NULL);
+	if (!str) {
 		char *base = r_sys_getenv (R_LIB_ENV);
 		if (base) {
 			char *file = r_str_appendf (base, R_SYS_DIR "%s", profile_file);

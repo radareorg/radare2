@@ -36,7 +36,7 @@ endif
 
 ifeq ($(WITH_LIBR),1)
 
-ifeq ($(CC),emcc)
+ifneq (,$(findstring emcc,$(CC)))
 MLFLAGS=
 else
 ifeq ($(OSTYPE),darwin)
@@ -93,7 +93,7 @@ ifeq (1,1)
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
-ifeq ($(shell uname),Darwin)
+ifeq ($(OSTYPE),darwin)
 WHOLEFLAG=-all_load
 else
 WHOLEFLAG=-Wl,--whole-archive

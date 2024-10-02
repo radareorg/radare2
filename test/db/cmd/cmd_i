@@ -46,134 +46,6 @@ vaddr      name
 EOF
 RUN
 
-NAME=ib
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e bin.baddr=0
-e asm.calls=false
-ib
-op 3
-e io.va=0
-s entry0
-pi 1
-?p
-EOF
-EXPECT=<<EOF
-xor ebp, ebp
-0x00000410
-EOF
-RUN
-
-NAME=ibib
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-?e works
-ib;ib
-EOF
-EXPECT=<<EOF
-works
-EOF
-RUN
-
-NAME=ibib2
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-ib;ib
-?e works
-EOF
-EXPECT=<<EOF
-works
-EOF
-RUN
-
-NAME=ih (file x86)
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ihq
-EXPECT=<<EOF
-[Header fields]
-0x00000000 0x00000000 ELF; 0x464c457f
-0x00000010 0x00000010 Type; 0x00000002
-0x00000012 0x00000012 Machine; 0x00000003
-0x00000014 0x00000014 Version; 0x00000001
-0x00000018 0x00000018 Entry point; 0x08048300
-0x0000001c 0x0000001c PhOff; 0x00000034
-0x00000020 0x00000020 ShOff; 0x000007cc
-0x00000024 0x00000024 Flags; 0x00000000
-0x00000028 0x00000028 EhSize; 0x00000034
-0x0000002a 0x0000002a PhentSize; 0x00000020
-0x0000002c 0x0000002c PhNum; 0x00000008
-0x0000002e 0x0000002e ShentSize; 0x00000028
-0x00000030 0x00000030 ShNum; 0x0000001e
-0x00000032 0x00000032 ShrStrndx; 0x0000001b
-
-14 fields
-EOF
-RUN
-
-NAME=ih* (file x86)
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ih*
-EXPECT=<<EOF
-fs header
-"f header.ELF 1 0x00000000"
-CCu MHg0NjRjNDU3Zg== @ 0x0
-Cf 4 x @ 0x0
-pf.ELF x
-"f header.Type 1 0x00000010"
-CCu MHgwMDAwMDAwMg== @ 0x10
-Cf 2 x @ 0x10
-pf.Type x
-"f header.Machine 1 0x00000012"
-CCu MHgwMDAwMDAwMw== @ 0x12
-Cf 2 x @ 0x12
-pf.Machine x
-"f header.Version 1 0x00000014"
-CCu MHgwMDAwMDAwMQ== @ 0x14
-Cf 4 x @ 0x14
-pf.Version x
-"f header.Entrypoint 1 0x00000018"
-CCu MHgwODA0ODMwMA== @ 0x18
-Cf 4 x @ 0x18
-pf.Entrypoint x
-"f header.PhOff 1 0x0000001c"
-CCu MHgwMDAwMDAzNA== @ 0x1c
-Cf 4 x @ 0x1c
-pf.PhOff x
-"f header.ShOff 1 0x00000020"
-CCu MHgwMDAwMDdjYw== @ 0x20
-Cf 4 x @ 0x20
-pf.ShOff x
-"f header.Flags 1 0x00000024"
-CCu MHgwMDAwMDAwMA== @ 0x24
-Cf 4 x @ 0x24
-pf.Flags x
-"f header.EhSize 1 0x00000028"
-CCu MHgwMDAwMDAzNA== @ 0x28
-Cf 2 x @ 0x28
-pf.EhSize x
-"f header.PhentSize 1 0x0000002a"
-CCu MHgwMDAwMDAyMA== @ 0x2a
-Cf 2 x @ 0x2a
-pf.PhentSize x
-"f header.PhNum 1 0x0000002c"
-CCu MHgwMDAwMDAwOA== @ 0x2c
-Cf 2 x @ 0x2c
-pf.PhNum x
-"f header.ShentSize 1 0x0000002e"
-CCu MHgwMDAwMDAyOA== @ 0x2e
-Cf 2 x @ 0x2e
-pf.ShentSize x
-"f header.ShNum 1 0x00000030"
-CCu MHgwMDAwMDAxZQ== @ 0x30
-Cf 2 x @ 0x30
-pf.ShNum x
-"f header.ShrStrndx 1 0x00000032"
-CCu MHgwMDAwMDAxYg== @ 0x32
-Cf 2 x @ 0x32
-pf.ShrStrndx x
-EOF
-RUN
-
 NAME=iZ
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iZ
@@ -195,8 +67,6 @@ FILE=malloc://1025
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 i
-ia
-ia*
 ii
 ii*
 ie
@@ -217,27 +87,6 @@ mode     rwx
 format   any
 iorw     true
 block    0x100
-binsz    1025
-bits     64
-canary   false
-injprot  false
-crypto   false
-endian   little
-havecode false
-[Imports]
-nth vaddr bind type lib name
-----------------------------
-
-[Exports]
-nth paddr vaddr bind type size lib name demangled
--------------------------------------------------
-e cfg.bigendian=false
-e asm.bits=64
-e asm.dwarf=false
-e asm.codealign=1
-fs imports
-fs symbols
-fs exports
 [Imports]
 nth vaddr bind type lib name
 ----------------------------
@@ -246,7 +95,6 @@ fs imports
 [Entrypoints]
 
 0 entrypoints
-fs symbols
 [Symbols]
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
@@ -260,6 +108,21 @@ fs sections
 EOF
 RUN
 
+NAME=i (all) (imports output for malloc)
+FILE=malloc://1025
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ii
+ii*
+EOF
+EXPECT=<<EOF
+[Imports]
+nth vaddr bind type lib name
+----------------------------
+
+fs imports
+EOF
+RUN
 NAME=i (all) (malloc) iI*
 FILE=malloc://1024
 ARGS=-a x86 -b 64
@@ -293,6 +156,34 @@ e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
 e asm.codealign=1
+EOF
+RUN
+
+NAME=i (all) (malloc entrypoint symbols and sections)
+FILE=malloc://1025
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ie
+ie*
+is
+is*
+iS
+iS*
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+
+0 entrypoints
+[Symbols]
+nth paddr vaddr bind type size lib name demangled
+-------------------------------------------------
+fs symbols
+[Sections]
+
+nth paddr  size vaddr  vsize perm type name
+-------------------------------------------
+
+fs sections
 EOF
 RUN
 
@@ -371,1032 +262,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ib java class file
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.calls=false
-e asm.comments=false
-e asm.cmt.flgrefs=false
-e scr.color=false
-e asm.lines.jmp=false
-e asm.xrefs=false
-wx cafebabe00000032003a070002010014546573745661726961626c6553776974636855700700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100164c546573745661726961626c6553776974636855703b010014546573744d756c7469706c655661726961626c650a001000120700110100116a6176612f6c616e672f496e74656765720c0013001401000776616c75654f660100162849294c6a6176612f6c616e672f496e74656765723b0800160100067472796f6e65090018001a0700190100106a6176612f6c616e672f53797374656d0c001b001c0100036f75740100154c6a6176612f696f2f5072696e7453747265616d3b07001e0100176a6176612f6c616e672f537472696e674275696c646572080020010011417474656d7074696e67207072696e74200a001d00220c00050023010015284c6a6176612f6c616e672f537472696e673b29560a001d00250c00260027010006617070656e6401002d284c6a6176612f6c616e672f537472696e673b294c6a6176612f6c616e672f537472696e674275696c6465723b0a001d00290c002a002b010008746f537472696e6701001428294c6a6176612f6c616e672f537472696e673b0a002d002f07002e0100136a6176612f696f2f5072696e7453747265616d0c003000230100057072696e74010001690100134c6a6176612f6c616e672f496e74656765723b01000170010001490100016b0100124c6a6176612f6c616e672f537472696e673b0100016a01000a536f7572636546696c65010019546573745661726961626c6553776974636855702e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000002000b0000000c000100000005000c000d00000008000e0006000100070000008100040004000000251064b8000f4b10643c12154d033eb20017bb001d59121fb700212cb60024b60028b6002cb100000002000a0000001a0006000000040006000500090006000c0007000e000800240009000b0000002a00040006001f0031003200000009001c003300340001000c0019003500360002000e001700370034000300010038000000020039
-ib
-i
-af
-pdf
-EOF
-EXPECT=<<EOF
-fd       3
-file     malloc://1024
-size     0x400
-humansz  1K
-mode     rwx
-format   java
-iorw     true
-block    0x100
-type     JAVA CLASS
-arch     java
-baddr    0x0
-binsz    1024
-bintype  class
-bits     32
-canary   false
-injprot  false
-retguard false
-class    0x3200 0x0000
-crypto   false
-endian   little
-havecode true
-laddr    0x0
-lang     java 6
-linenum  true
-lsyms    true
-machine  jvm
-nx       false
-os       any
-pic      false
-relocs   false
-sanitize false
-static   false
-stripped false
-subsys   any
-va       false
-  ;-- entry1:
-  ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
-/ (fcn) method.TestVariableSwitchUp.TestMultipleVariable 37
-| 0x000002fd      1064           bipush 100
-| 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
-| 0x00000302      4b             astore_0
-| 0x00000303      1064           bipush 100
-| 0x00000305      3c             istore_1
-| 0x00000306      1215           ldc "tryone"
-| 0x00000308      4d             astore_2
-| 0x00000309      03             iconst_0
-| 0x0000030a      3e             istore_3
-| 0x0000030b      b20017         getstatic java/lang/System/out Ljava/io/PrintStream;
-| 0x0000030e      bb001d         new java/lang/StringBuilder
-| 0x00000311      59             dup
-| 0x00000312      121f           ldc "Attempting print "
-| 0x00000314      b70021         invokespecial java/lang/StringBuilder/<init>(Ljava/lang/String;)V
-| 0x00000317      2c             aload_2
-| 0x00000318      b60024         invokevirtual java/lang/StringBuilder/append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-| 0x0000031b      b60028         invokevirtual java/lang/StringBuilder/toString()Ljava/lang/String;
-| 0x0000031e      b6002c         invokevirtual java/io/PrintStream/print(Ljava/lang/String;)V
-\ 0x00000321      b1             return
-EOF
-
-RUN
-
-NAME=ic cpp classes
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-ic~_JNIEnv
-ic~FindClass
-EOF
-EXPECT=<<EOF
-0x00000000 [0x00006060 - 0x0000697c]   2332 jni class 0 _JNIEnv
-0x000074f8 jni method 0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x0000699c jni method 1      findBaseDexClassloader(_JNIEnv*, _jobject*)
-0x00006a2c jni method 2      getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
-0x00006abc jni method 3      getPathList(_JNIEnv*, _jobject*)
-0x00006af4 jni method 4      getDexElements(_JNIEnv*, _jobject*)
-0x00006b1c jni method 5      setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
-0x00006bb0 jni method 6      combineArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006d00 jni method 7      injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006e5c jni method 8      appendArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006f68 jni method 9      injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x0000720c jni method 10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006060 jni method 0      FindClass(char const*)
-EOF
-RUN
-
-NAME=ic?
-BROKEN=1
-FILE=bins/elf/libmagic.so
-CMDS=ic?~?Usage
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=icg
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-icg
-?e
-icg _JNIEnv
-?e
-icg System
-EOF
-EXPECT=<<EOF
-agn _JNIEnv
-agn SystemClassLoaderInjector
-agn std
-agn std::exception
-agn std::bad_exception
-agn __cxxabiv1::__forced_unwind
-agn __cxxabiv1::__foreign_exception
-agn __eh_globals_init
-agn __cxxabiv1
-agn __cxxabiv1::__fundamental_type_info
-agn std::type_info
-agn __cxxabiv1::__pointer_type_info
-agn __cxxabiv1::__pbase_type_info
-agn __cxxabiv1::__si_class_type_info
-agn __cxxabiv1::__class_type_info
-agn __gnu_cxx
-agn __gnu_cxx::__concurrence_lock_error
-agn __gnu_cxx::__concurrence_unlock_error
-agn std::bad_cast
-agn std::bad_typeid
-
-agn _JNIEnv
-
-agn SystemClassLoaderInjector
-EOF
-RUN
-
-NAME=icl
-FILE=bins/elf/libmagic.so
-CMDS=icl
-EXPECT=<<EOF
-0x24672 0x24682 0x24692 0x24718 0x24728 0x24740 0x24768 0x24796 0x24810 0x26974 0x27004
-0x29944 0x27036 0x27180 0x27324 0x27380 0x27420 0x27568 0x27904 0x28252 0x28520 0x29196
-0x38000 0x34924 0x38036 0x38060 0x38088
-0x34948 0x35060
-0x34972 0x35076
-0x35012
-0x35036
-0x35204
-0x37948 0x38024
-0x38116
-0x38844 0x38868 0x38876 0x38996 0x38884 0x38920
-0x38184 0x38192 0x38260
-0x40432 0x40500 0x40400
-0x38388 0x38456 0x38556 0x38780
-0x39128 0x39196 0x39240 0x39016 0x39108 0x39308
-0x40644 0x75648 0x75720
-0x75440 0x75512
-0x75456 0x75472
-0x76760 0x76744
-0x76844 0x76828
-EOF
-RUN
-
-NAME=icj
-FILE=bins/elf/libmagic.so
-CMDS=icj~{}
-EXPECT=<<EOF
-[
-  {
-    "classname": "_JNIEnv",
-    "addr": 0,
-    "lang": "jni",
-    "index": 0,
-    "methods": [
-      {
-        "name": "FindClass(char const*)",
-        "flag": "method._JNIEnv.FindClass_char_const_",
-        "realname": "_ZN7_JNIEnv9FindClassEPKc",
-        "addr": 24672
-      },
-      {
-        "name": "DeleteLocalRef(_jobject*)",
-        "flag": "method._JNIEnv.DeleteLocalRef__jobject_",
-        "realname": "_ZN7_JNIEnv14DeleteLocalRefEP8_jobject",
-        "addr": 24682
-      },
-      {
-        "name": "NewObject(_jclass*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.NewObject__jclass___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv9NewObjectEP7_jclassP10_jmethodIDz",
-        "addr": 24692
-      },
-      {
-        "name": "GetObjectClass(_jobject*)",
-        "flag": "method._JNIEnv.GetObjectClass__jobject_",
-        "realname": "_ZN7_JNIEnv14GetObjectClassEP8_jobject",
-        "addr": 24718
-      },
-      {
-        "name": "GetMethodID(_jclass*, char const*, char const*)",
-        "flag": "method._JNIEnv.GetMethodID__jclass__char_const__char_const_",
-        "realname": "_ZN7_JNIEnv11GetMethodIDEP7_jclassPKcS3_",
-        "addr": 24728
-      },
-      {
-        "name": "CallObjectMethod(_jobject*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.CallObjectMethod__jobject___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz",
-        "addr": 24740
-      },
-      {
-        "name": "CallVoidMethod(_jobject*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.CallVoidMethod__jobject___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv14CallVoidMethodEP8_jobjectP10_jmethodIDz",
-        "addr": 24768
-      },
-      {
-        "name": "GetStaticMethodID(_jclass*, char const*, char const*)",
-        "flag": "method._JNIEnv.GetStaticMethodID__jclass__char_const__char_const_",
-        "realname": "_ZN7_JNIEnv17GetStaticMethodIDEP7_jclassPKcS3_",
-        "addr": 24796
-      },
-      {
-        "name": "CallStaticObjectMethod(_jclass*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.CallStaticObjectMethod__jclass___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv22CallStaticObjectMethodEP7_jclassP10_jmethodIDz",
-        "addr": 24810
-      },
-      {
-        "name": "CallStaticIntMethod(_jclass*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.CallStaticIntMethod__jclass___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv19CallStaticIntMethodEP7_jclassP10_jmethodIDz",
-        "addr": 26974
-      },
-      {
-        "name": "CallStaticVoidMethod(_jclass*, _jmethodID*, ...)",
-        "flag": "method._JNIEnv.CallStaticVoidMethod__jclass___jmethodID__..._",
-        "realname": "_ZN7_JNIEnv20CallStaticVoidMethodEP7_jclassP10_jmethodIDz",
-        "addr": 27004
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "SystemClassLoaderInjector",
-    "addr": 0,
-    "lang": "jni",
-    "index": 1,
-    "methods": [
-      {
-        "name": "inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.inject__JNIEnv___jobject___jstring___jstring_",
-        "realname": "_ZN25SystemClassLoaderInjector6injectEP7_JNIEnvP8_jobjectP8_jstringS5_",
-        "addr": 29944
-      },
-      {
-        "name": "findBaseDexClassloader(_JNIEnv*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector22findBaseDexClassloaderEP7_JNIEnvP8_jobject",
-        "addr": 27036
-      },
-      {
-        "name": "getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.getField__JNIEnv___jobject___jobject___jstring_",
-        "realname": "_ZN25SystemClassLoaderInjector8getFieldEP7_JNIEnvP8_jobjectS3_P8_jstring",
-        "addr": 27180
-      },
-      {
-        "name": "getPathList(_JNIEnv*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.getPathList__JNIEnv___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector11getPathListEP7_JNIEnvP8_jobject",
-        "addr": 27324
-      },
-      {
-        "name": "getDexElements(_JNIEnv*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.getDexElements__JNIEnv___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector14getDexElementsEP7_JNIEnvP8_jobject",
-        "addr": 27380
-      },
-      {
-        "name": "setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.setField__JNIEnv___jobject___jobject___jstring___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector8setFieldEP7_JNIEnvP8_jobjectS3_P8_jstringS3_",
-        "addr": 27420
-      },
-      {
-        "name": "combineArray(_JNIEnv*, _jobject*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.combineArray__JNIEnv___jobject___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector12combineArrayEP7_JNIEnvP8_jobjectS3_",
-        "addr": 27568
-      },
-      {
-        "name": "injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv___jobject___jstring___jstring_",
-        "realname": "_ZN25SystemClassLoaderInjector26injectAboveEqualApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_",
-        "addr": 27904
-      },
-      {
-        "name": "appendArray(_JNIEnv*, _jobject*, _jobject*)",
-        "flag": "method.SystemClassLoaderInjector.appendArray__JNIEnv___jobject___jobject_",
-        "realname": "_ZN25SystemClassLoaderInjector11appendArrayEP7_JNIEnvP8_jobjectS3_",
-        "addr": 28252
-      },
-      {
-        "name": "injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv___jobject___jstring___jstring_",
-        "realname": "_ZN25SystemClassLoaderInjector16injectInAliyunOsEP7_JNIEnvP8_jobjectP8_jstringS5_",
-        "addr": 28520
-      },
-      {
-        "name": "injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)",
-        "flag": "method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv___jobject___jstring___jstring_",
-        "realname": "_ZN25SystemClassLoaderInjector21injectBelowApiLevel14EP7_JNIEnvP8_jobjectP8_jstringS5_",
-        "addr": 29196
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std",
-    "addr": 0,
-    "lang": "c++",
-    "index": 2,
-    "methods": [
-      {
-        "name": "terminate()",
-        "flag": "method.std.terminate__",
-        "realname": "_ZSt9terminatev",
-        "addr": 38000
-      },
-      {
-        "name": "uncaught_exception()",
-        "flag": "method.std.uncaught_exception__",
-        "realname": "_ZSt18uncaught_exceptionv",
-        "addr": 34924
-      },
-      {
-        "name": "unexpected()",
-        "flag": "method.std.unexpected__",
-        "realname": "_ZSt10unexpectedv",
-        "addr": 38036
-      },
-      {
-        "name": "set_terminate(void (*)())",
-        "flag": "method.std.set_terminate_void______",
-        "realname": "_ZSt13set_terminatePFvvE",
-        "addr": 38060
-      },
-      {
-        "name": "set_unexpected(void (*)())",
-        "flag": "method.std.set_unexpected_void______",
-        "realname": "_ZSt14set_unexpectedPFvvE",
-        "addr": 38088
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std::exception",
-    "addr": 0,
-    "lang": "c++",
-    "index": 3,
-    "methods": [
-      {
-        "name": "~exception()",
-        "flag": "method.std::exception.exception__",
-        "realname": "_ZNSt9exceptionD2Ev",
-        "addr": 34948
-      },
-      {
-        "name": "what() const",
-        "flag": "method.std::exception.what___const",
-        "realname": "_ZNKSt9exception4whatEv",
-        "addr": 35060
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std::bad_exception",
-    "addr": 0,
-    "lang": "c++",
-    "index": 4,
-    "methods": [
-      {
-        "name": "~bad_exception()",
-        "flag": "method.std::bad_exception.bad_exception__",
-        "realname": "_ZNSt13bad_exceptionD2Ev",
-        "addr": 34972
-      },
-      {
-        "name": "what() const",
-        "flag": "method.std::bad_exception.what___const",
-        "realname": "_ZNKSt13bad_exception4whatEv",
-        "addr": 35076
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__forced_unwind",
-    "addr": 0,
-    "lang": "c++",
-    "index": 5,
-    "methods": [
-      {
-        "name": "~__forced_unwind()",
-        "flag": "method.__cxxabiv1::__forced_unwind.__forced_unwind__",
-        "realname": "_ZN10__cxxabiv115__forced_unwindD2Ev",
-        "addr": 35012
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__foreign_exception",
-    "addr": 0,
-    "lang": "c++",
-    "index": 6,
-    "methods": [
-      {
-        "name": "~__foreign_exception()",
-        "flag": "method.__cxxabiv1::__foreign_exception.__foreign_exception__",
-        "realname": "_ZN10__cxxabiv119__foreign_exceptionD2Ev",
-        "addr": 35036
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__eh_globals_init",
-    "addr": 0,
-    "lang": "c++",
-    "index": 7,
-    "methods": [
-      {
-        "name": "~__eh_globals_init()",
-        "flag": "method.__eh_globals_init.__eh_globals_init__",
-        "realname": "_ZN17__eh_globals_initD2Ev",
-        "addr": 35204
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1",
-    "addr": 0,
-    "lang": "c++",
-    "index": 8,
-    "methods": [
-      {
-        "name": "__terminate(void (*)())",
-        "flag": "method.__cxxabiv1.__terminate_void______",
-        "realname": "_ZN10__cxxabiv111__terminateEPFvvE",
-        "addr": 37948
-      },
-      {
-        "name": "__unexpected(void (*)())",
-        "flag": "method.__cxxabiv1.__unexpected_void______",
-        "realname": "_ZN10__cxxabiv112__unexpectedEPFvvE",
-        "addr": 38024
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__fundamental_type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 9,
-    "methods": [
-      {
-        "name": "~__fundamental_type_info()",
-        "flag": "method.__cxxabiv1::__fundamental_type_info.__fundamental_type_info__",
-        "realname": "_ZN10__cxxabiv123__fundamental_type_infoD2Ev",
-        "addr": 38116
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std::type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 10,
-    "methods": [
-      {
-        "name": "~type_info()",
-        "flag": "method.std::type_info.type_info__",
-        "realname": "_ZNSt9type_infoD2Ev",
-        "addr": 38844
-      },
-      {
-        "name": "__is_pointer_p() const",
-        "flag": "method.std::type_info.__is_pointer_p___const",
-        "realname": "_ZNKSt9type_info14__is_pointer_pEv",
-        "addr": 38868
-      },
-      {
-        "name": "__is_function_p() const",
-        "flag": "method.std::type_info.__is_function_p___const",
-        "realname": "_ZNKSt9type_info15__is_function_pEv",
-        "addr": 38876
-      },
-      {
-        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.std::type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
-        "realname": "_ZNKSt9type_info10__do_catchEPKS_PPvj",
-        "addr": 38996
-      },
-      {
-        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
-        "flag": "method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
-        "realname": "_ZNKSt9type_info11__do_upcastEPKN10__cxxabiv117__class_type_infoEPPv",
-        "addr": 38884
-      },
-      {
-        "name": "operator==(std::type_info const&) const",
-        "flag": "method.std::type_info.operator_std::type_info_const__const",
-        "realname": "_ZNKSt9type_infoeqERKS_",
-        "addr": 38920
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__pointer_type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 11,
-    "methods": [
-      {
-        "name": "__is_pointer_p() const",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const",
-        "realname": "_ZNK10__cxxabiv119__pointer_type_info14__is_pointer_pEv",
-        "addr": 38184
-      },
-      {
-        "name": "~__pointer_type_info()",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_type_info__",
-        "realname": "_ZN10__cxxabiv119__pointer_type_infoD2Ev",
-        "addr": 38192
-      },
-      {
-        "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
-        "realname": "_ZNK10__cxxabiv119__pointer_type_info15__pointer_catchEPKNS_17__pbase_type_infoEPPvj",
-        "addr": 38260
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__pbase_type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 12,
-    "methods": [
-      {
-        "name": "~__pbase_type_info()",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__pbase_type_info__",
-        "realname": "_ZN10__cxxabiv117__pbase_type_infoD2Ev",
-        "addr": 40432
-      },
-      {
-        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
-        "realname": "_ZNK10__cxxabiv117__pbase_type_info10__do_catchEPKSt9type_infoPPvj",
-        "addr": 40500
-      },
-      {
-        "name": "__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const",
-        "realname": "_ZNK10__cxxabiv117__pbase_type_info15__pointer_catchEPKS0_PPvj",
-        "addr": 40400
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__si_class_type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 13,
-    "methods": [
-      {
-        "name": "~__si_class_type_info()",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__si_class_type_info__",
-        "realname": "_ZN10__cxxabiv120__si_class_type_infoD2Ev",
-        "addr": 38388
-      },
-      {
-        "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
-        "realname": "_ZNK10__cxxabiv120__si_class_type_info20__do_find_public_srcEiPKvPKNS_17__class_type_infoES2_",
-        "addr": 38456
-      },
-      {
-        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__co",
-        "realname": "_ZNK10__cxxabiv120__si_class_type_info12__do_dyncastEiNS_17__class_type_info10__sub_kindEPKS1_PKvS4_S6_RNS1_16__dyncast_resultE",
-        "addr": 38556
-      },
-      {
-        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
-        "flag": "method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
-        "realname": "_ZNK10__cxxabiv120__si_class_type_info11__do_upcastEPKNS_17__class_type_infoEPKvRNS1_15__upcast_resultE",
-        "addr": 38780
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__cxxabiv1::__class_type_info",
-    "addr": 0,
-    "lang": "c++",
-    "index": 14,
-    "methods": [
-      {
-        "name": "~__class_type_info()",
-        "flag": "method.__cxxabiv1::__class_type_info.__class_type_info__",
-        "realname": "_ZN10__cxxabiv117__class_type_infoD2Ev",
-        "addr": 39128
-      },
-      {
-        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const",
-        "realname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PKvRNS0_15__upcast_resultE",
-        "addr": 39196
-      },
-      {
-        "name": "__do_catch(std::type_info const*, void**, unsigned int) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const__void__unsigned_int__const",
-        "realname": "_ZNK10__cxxabiv117__class_type_info10__do_catchEPKSt9type_infoPPvj",
-        "addr": 39240
-      },
-      {
-        "name": "__do_upcast(__cxxabiv1::__class_type_info const*, void**) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const__void__const",
-        "realname": "_ZNK10__cxxabiv117__class_type_info11__do_upcastEPKS0_PPv",
-        "addr": 39016
-      },
-      {
-        "name": "__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const",
-        "realname": "_ZNK10__cxxabiv117__class_type_info20__do_find_public_srcEiPKvPKS0_S2_",
-        "addr": 39108
-      },
-      {
-        "name": "__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const",
-        "flag": "method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const",
-        "realname": "_ZNK10__cxxabiv117__class_type_info12__do_dyncastEiNS0_10__sub_kindEPKS0_PKvS3_S5_RNS0_16__dyncast_resultE",
-        "addr": 39308
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__gnu_cxx",
-    "addr": 0,
-    "lang": "c++",
-    "index": 15,
-    "methods": [
-      {
-        "name": "__verbose_terminate_handler()",
-        "flag": "method.__gnu_cxx.__verbose_terminate_handler__",
-        "realname": "_ZN9__gnu_cxx27__verbose_terminate_handlerEv",
-        "addr": 40644
-      },
-      {
-        "name": "__throw_concurrence_lock_error()",
-        "flag": "method.__gnu_cxx.__throw_concurrence_lock_error__",
-        "realname": "_ZN9__gnu_cxx30__throw_concurrence_lock_errorEv",
-        "addr": 75648
-      },
-      {
-        "name": "__throw_concurrence_unlock_error()",
-        "flag": "method.__gnu_cxx.__throw_concurrence_unlock_error__",
-        "realname": "_ZN9__gnu_cxx32__throw_concurrence_unlock_errorEv",
-        "addr": 75720
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__gnu_cxx::__concurrence_lock_error",
-    "addr": 0,
-    "lang": "c++",
-    "index": 16,
-    "methods": [
-      {
-        "name": "what() const",
-        "flag": "method.__gnu_cxx::__concurrence_lock_error.what___const",
-        "realname": "_ZNK9__gnu_cxx24__concurrence_lock_error4whatEv",
-        "addr": 75440
-      },
-      {
-        "name": "~__concurrence_lock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_lock_error.__concurrence_lock_error__",
-        "realname": "_ZN9__gnu_cxx24__concurrence_lock_errorD2Ev",
-        "addr": 75512
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "__gnu_cxx::__concurrence_unlock_error",
-    "addr": 0,
-    "lang": "c++",
-    "index": 17,
-    "methods": [
-      {
-        "name": "what() const",
-        "flag": "method.__gnu_cxx::__concurrence_unlock_error.what___const",
-        "realname": "_ZNK9__gnu_cxx26__concurrence_unlock_error4whatEv",
-        "addr": 75456
-      },
-      {
-        "name": "~__concurrence_unlock_error()",
-        "flag": "method.__gnu_cxx::__concurrence_unlock_error.__concurrence_unlock_error__",
-        "realname": "_ZN9__gnu_cxx26__concurrence_unlock_errorD2Ev",
-        "addr": 75472
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std::bad_cast",
-    "addr": 0,
-    "lang": "c++",
-    "index": 18,
-    "methods": [
-      {
-        "name": "~bad_cast()",
-        "flag": "method.std::bad_cast.bad_cast__",
-        "realname": "_ZNSt8bad_castD1Ev",
-        "addr": 76760
-      },
-      {
-        "name": "what() const",
-        "flag": "method.std::bad_cast.what___const",
-        "realname": "_ZNKSt8bad_cast4whatEv",
-        "addr": 76744
-      }
-    ],
-    "fields": [
-      
-    ]
-  },
-  {
-    "classname": "std::bad_typeid",
-    "addr": 0,
-    "lang": "c++",
-    "index": 19,
-    "methods": [
-      {
-        "name": "~bad_typeid()",
-        "flag": "method.std::bad_typeid.bad_typeid__",
-        "realname": "_ZNSt10bad_typeidD1Ev",
-        "addr": 76844
-      },
-      {
-        "name": "what() const",
-        "flag": "method.std::bad_typeid.what___const",
-        "realname": "_ZNKSt10bad_typeid4whatEv",
-        "addr": 76828
-      }
-    ],
-    "fields": [
-      
-    ]
-  }
-]
-EOF
-RUN
-
-NAME=ic*
-FILE=bins/elf/libmagic.so
-CMDS=ic*
-EXPECT=<<EOF
-fs classes
-"f class._JNIEnv = 0x6060"
-"f method._JNIEnv.FindClass(char_const*) = 0x6060"
-"f method._JNIEnv.DeleteLocalRef(_jobject*) = 0x606a"
-"f method._JNIEnv.NewObject(_jclass*,__jmethodID*,_...) = 0x6074"
-"f method._JNIEnv.GetObjectClass(_jobject*) = 0x608e"
-"f method._JNIEnv.GetMethodID(_jclass*,_char_const*,_char_const*) = 0x6098"
-"f method._JNIEnv.CallObjectMethod(_jobject*,__jmethodID*,_...) = 0x60a4"
-"f method._JNIEnv.CallVoidMethod(_jobject*,__jmethodID*,_...) = 0x60c0"
-"f method._JNIEnv.GetStaticMethodID(_jclass*,_char_const*,_char_const*) = 0x60dc"
-"f method._JNIEnv.CallStaticObjectMethod(_jclass*,__jmethodID*,_...) = 0x60ea"
-"f method._JNIEnv.CallStaticIntMethod(_jclass*,__jmethodID*,_...) = 0x695e"
-"f method._JNIEnv.CallStaticVoidMethod(_jclass*,__jmethodID*,_...) = 0x697c"
-""td struct _JNIEnv { char empty[0];};
-"f class.SystemClassLoaderInjector = 0x699c"
-"f method.SystemClassLoaderInjector.inject(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x74f8"
-"f method.SystemClassLoaderInjector.findBaseDexClassloader(_JNIEnv*,__jobject*) = 0x699c"
-"f method.SystemClassLoaderInjector.getField(_JNIEnv*,__jobject*,__jobject*,__jstring*) = 0x6a2c"
-"f method.SystemClassLoaderInjector.getPathList(_JNIEnv*,__jobject*) = 0x6abc"
-"f method.SystemClassLoaderInjector.getDexElements(_JNIEnv*,__jobject*) = 0x6af4"
-"f method.SystemClassLoaderInjector.setField(_JNIEnv*,__jobject*,__jobject*,__jstring*,__jobject*) = 0x6b1c"
-"f method.SystemClassLoaderInjector.combineArray(_JNIEnv*,__jobject*,__jobject*) = 0x6bb0"
-"f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6d00"
-"f method.SystemClassLoaderInjector.appendArray(_JNIEnv*,__jobject*,__jobject*) = 0x6e5c"
-"f method.SystemClassLoaderInjector.injectInAliyunOs(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6f68"
-"f method.SystemClassLoaderInjector.injectBelowApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x720c"
-""td struct SystemClassLoaderInjector { char empty[0];};
-"f class.std = 0x886c"
-"f method.std.terminate() = 0x9470"
-"f method.std.uncaught_exception() = 0x886c"
-"f method.std.unexpected() = 0x9494"
-"f method.std.set_terminate(void_(*)()) = 0x94ac"
-"f method.std.set_unexpected(void_(*)()) = 0x94c8"
-""td struct std { char empty[0];};
-"f class.std::exception = 0x8884"
-"f method.std::exception.~exception() = 0x8884"
-"f method.std::exception.what()_const = 0x88f4"
-""td struct std::exception { char empty[0];};
-"f class.std::bad_exception = 0x889c"
-"f method.std::bad_exception.~bad_exception() = 0x889c"
-"f method.std::bad_exception.what()_const = 0x8904"
-""td struct std::bad_exception { char empty[0];};
-"f class.__cxxabiv1::__forced_unwind = 0x88c4"
-"f method.__cxxabiv1::__forced_unwind.~__forced_unwind() = 0x88c4"
-""td struct __cxxabiv1::__forced_unwind { char empty[0];};
-"f class.__cxxabiv1::__foreign_exception = 0x88dc"
-"f method.__cxxabiv1::__foreign_exception.~__foreign_exception() = 0x88dc"
-""td struct __cxxabiv1::__foreign_exception { char empty[0];};
-"f class.__eh_globals_init = 0x8984"
-"f method.__eh_globals_init.~__eh_globals_init() = 0x8984"
-""td struct __eh_globals_init { char empty[0];};
-"f class.__cxxabiv1 = 0x943c"
-"f method.__cxxabiv1.__terminate(void_(*)()) = 0x943c"
-"f method.__cxxabiv1.__unexpected(void_(*)()) = 0x9488"
-""td struct __cxxabiv1 { char empty[0];};
-"f class.__cxxabiv1::__fundamental_type_info = 0x94e4"
-"f method.__cxxabiv1::__fundamental_type_info.~__fundamental_type_info() = 0x94e4"
-""td struct __cxxabiv1::__fundamental_type_info { char empty[0];};
-"f class.std::type_info = 0x97bc"
-"f method.std::type_info.~type_info() = 0x97bc"
-"f method.std::type_info.__is_pointer_p()_const = 0x97d4"
-"f method.std::type_info.__is_function_p()_const = 0x97dc"
-"f method.std::type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9854"
-"f method.std::type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4"
-"f method.std::type_info.operator==(std::type_info_const&)_const = 0x9808"
-""td struct std::type_info { char empty[0];};
-"f class.__cxxabiv1::__pointer_type_info = 0x9528"
-"f method.__cxxabiv1::__pointer_type_info.__is_pointer_p()_const = 0x9528"
-"f method.__cxxabiv1::__pointer_type_info.~__pointer_type_info() = 0x9530"
-"f method.__cxxabiv1::__pointer_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574"
-""td struct __cxxabiv1::__pointer_type_info { char empty[0];};
-"f class.__cxxabiv1::__pbase_type_info = 0x9dd0"
-"f method.__cxxabiv1::__pbase_type_info.~__pbase_type_info() = 0x9df0"
-"f method.__cxxabiv1::__pbase_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34"
-"f method.__cxxabiv1::__pbase_type_info.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0"
-""td struct __cxxabiv1::__pbase_type_info { char empty[0];};
-"f class.__cxxabiv1::__si_class_type_info = 0x95f4"
-"f method.__cxxabiv1::__si_class_type_info.~__si_class_type_info() = 0x95f4"
-"f method.__cxxabiv1::__si_class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638"
-"f method.__cxxabiv1::__si_class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c"
-"f method.__cxxabiv1::__si_class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c"
-""td struct __cxxabiv1::__si_class_type_info { char empty[0];};
-"f class.__cxxabiv1::__class_type_info = 0x9868"
-"f method.__cxxabiv1::__class_type_info.~__class_type_info() = 0x98d8"
-"f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c"
-"f method.__cxxabiv1::__class_type_info.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948"
-"f method.__cxxabiv1::__class_type_info.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868"
-"f method.__cxxabiv1::__class_type_info.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4"
-"f method.__cxxabiv1::__class_type_info.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c"
-""td struct __cxxabiv1::__class_type_info { char empty[0];};
-"f class.__gnu_cxx = 0x9ec4"
-"f method.__gnu_cxx.__verbose_terminate_handler() = 0x9ec4"
-"f method.__gnu_cxx.__throw_concurrence_lock_error() = 0x12780"
-"f method.__gnu_cxx.__throw_concurrence_unlock_error() = 0x127c8"
-""td struct __gnu_cxx { char empty[0];};
-"f class.__gnu_cxx::__concurrence_lock_error = 0x126b0"
-"f method.__gnu_cxx::__concurrence_lock_error.what()_const = 0x126b0"
-"f method.__gnu_cxx::__concurrence_lock_error.~__concurrence_lock_error() = 0x126f8"
-""td struct __gnu_cxx::__concurrence_lock_error { char empty[0];};
-"f class.__gnu_cxx::__concurrence_unlock_error = 0x126c0"
-"f method.__gnu_cxx::__concurrence_unlock_error.what()_const = 0x126c0"
-"f method.__gnu_cxx::__concurrence_unlock_error.~__concurrence_unlock_error() = 0x126d0"
-""td struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};
-"f class.std::bad_cast = 0x12bc8"
-"f method.std::bad_cast.~bad_cast() = 0x12bd8"
-"f method.std::bad_cast.what()_const = 0x12bc8"
-""td struct std::bad_cast { char empty[0];};
-"f class.std::bad_typeid = 0x12c1c"
-"f method.std::bad_typeid.~bad_typeid() = 0x12c2c"
-"f method.std::bad_typeid.what()_const = 0x12c1c"
-""td struct std::bad_typeid { char empty[0];};
-EOF
-RUN
-
-NAME=icc
-FILE=bins/elf/libmagic.so
-CMDS=icc
-EXPECT=<<EOF
-@interface _JNIEnv
-{
-}
-@end
-@interface SystemClassLoaderInjector
-{
-}
-@end
-@interface std
-{
-}
-@end
-@interface std::exception
-{
-}
-@end
-@interface std::bad_exception
-{
-}
-@end
-@interface __cxxabiv1::__forced_unwind
-{
-}
-@end
-@interface __cxxabiv1::__foreign_exception
-{
-}
-@end
-@interface __eh_globals_init
-{
-}
-@end
-@interface __cxxabiv1
-{
-}
-@end
-@interface __cxxabiv1::__fundamental_type_info
-{
-}
-@end
-@interface std::type_info
-{
-}
-@end
-@interface __cxxabiv1::__pointer_type_info
-{
-}
-@end
-@interface __cxxabiv1::__pbase_type_info
-{
-}
-@end
-@interface __cxxabiv1::__si_class_type_info
-{
-}
-@end
-@interface __cxxabiv1::__class_type_info
-{
-}
-@end
-@interface __gnu_cxx
-{
-}
-@end
-@interface __gnu_cxx::__concurrence_lock_error
-{
-}
-@end
-@interface __gnu_cxx::__concurrence_unlock_error
-{
-}
-@end
-@interface std::bad_cast
-{
-}
-@end
-@interface std::bad_typeid
-{
-}
-@end
-EOF
-RUN
 
 NAME=iq
 FILE=bins/elf/libmagic.so
@@ -1404,7 +269,7 @@ CMDS=iq
 EXPECT=<<EOF
 arch arm
 bits 16
-os linux
+os android
 endian little
 EOF
 RUN
@@ -1415,7 +280,7 @@ CMDS=iaq
 EXPECT=<<EOF
 arch arm
 bits 16
-os linux
+os android
 endian little
 __cxa_finalize
 __cxa_atexit
@@ -1656,6 +521,658 @@ pthread_mutex_unlock
 0x00012c2c 40 std::bad_typeid::~bad_typeid()
 0x00012c54 28 std::bad_typeid::~bad_typeid()
 0x00014b58 15 typeinfo name for std::bad_typeid
+0x00000000 [0x00006060 - 0x0000697c] jni _JNIEnv
+0x00000000 [0x0000699c - 0x000074f8] jni SystemClassLoaderInjector
+0x00000000 [0x0000886c - 0x000094c8] c++ std
+0x00000000 [0x00008884 - 0x000088f4] c++ std::exception
+0x00000000 [0x0000889c - 0x00008904] c++ std::bad_exception
+0x00000000 [0x000088c4 - 0x000088c4] c++ __cxxabiv1::__forced_unwind
+0x00000000 [0x000088dc - 0x000088dc] c++ __cxxabiv1::__foreign_exception
+0x00000000 [0x00008984 - 0x00008984] c++ __eh_globals_init
+0x00000000 [0x0000943c - 0x00009488] c++ __cxxabiv1
+0x00000000 [0x000094e4 - 0x000094e4] c++ __cxxabiv1::__fundamental_type_info
+0x00000000 [0x000097bc - 0x00009854] c++ std::type_info
+0x00000000 [0x00009528 - 0x00009574] c++ __cxxabiv1::__pointer_type_info
+0x00000000 [0x00009dd0 - 0x00009e34] c++ __cxxabiv1::__pbase_type_info
+0x00000000 [0x000095f4 - 0x0000977c] c++ __cxxabiv1::__si_class_type_info
+0x00000000 [0x00009868 - 0x0000998c] c++ __cxxabiv1::__class_type_info
+0x00000000 [0x00009ec4 - 0x000127c8] c++ __gnu_cxx
+0x00000000 [0x000126b0 - 0x000126f8] c++ __gnu_cxx::__concurrence_lock_error
+0x00000000 [0x000126c0 - 0x000126d0] c++ __gnu_cxx::__concurrence_unlock_error
+0x00000000 [0x00012bc8 - 0x00012bd8] c++ std::bad_cast
+0x00000000 [0x00012c1c - 0x00012c2c] c++ std::bad_typeid
+0x00006060 10 _JNIEnv::FindClass(char const*)
+0x00007c7a 10 __aeabi_unwind_cpp_pr1
+0x0000606a 10 _JNIEnv::DeleteLocalRef(_jobject*)
+0x00006074 26 _JNIEnv::NewObject(_jclass*, _jmethodID*, ::)
+0x0000608e 10 _JNIEnv::GetObjectClass(_jobject*)
+0x00006098 12 _JNIEnv::GetMethodID(_jclass*, char const*, char const*)
+0x00007c70 10 __aeabi_unwind_cpp_pr0
+0x000060a4 28 _JNIEnv::CallObjectMethod(_jobject*, _jmethodID*, ::)
+0x000060c0 28 _JNIEnv::CallVoidMethod(_jobject*, _jmethodID*, ::)
+0x000060dc 14 _JNIEnv::GetStaticMethodID(_jclass*, char const*, char const*)
+0x000060ea 30 _JNIEnv::CallStaticObjectMethod(_jclass*, _jmethodID*, ::)
+0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
+0x00006138 164 JstringToString(_JNIEnv*, _jstring*)
+0x000061dc 136 CharTojstring(_JNIEnv*, char const*)
+0x00006264 196 invokeStaticMethodss(_JNIEnv*, _jstring*, _jstring*)
+0x00006328 148 getFieldOjbectEx(_JNIEnv*, _jclass*, _jobject*, _jstring*)
+0x000063bc 84 getFieldOjbect(_JNIEnv*, _jstring*, _jobject*, _jstring*)
+0x00006410 152 setFieldOjbectEx(_JNIEnv*, _jclass*, _jstring*, _jobject*, _jobject*)
+0x000064a8 92 setFieldOjbect(_JNIEnv*, _jstring*, _jstring*, _jobject*, _jobject*)
+0x00006504 34 checkException(_JNIEnv*)
+0x00006528 76 forName(_JNIEnv*, _jstring*)
+0x00006574 32 GetFileName(char*)
+0x00006594 216 replaceAll(char const*, char const*, char const*)
+0x0000666c 152 decode(_JNIEnv*, _jstring*, _jstring*)
+0x00006704 12 sub_444(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jstring*)
+0x00006710 476 sub_333(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jstring*)
+0x000074f8 100 SystemClassLoaderInjector::inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x000068ec 42 registerNativeMethods(_JNIEnv*, char const*, JNINativeMethod*, int)
+0x00006918 28 register_ndk_load(_JNIEnv*)
+0x00006934 40 JNI_OnLoad
+0x0000695c 2 decodeFile()
+0x0000695e 30 _JNIEnv::CallStaticIntMethod(_jclass*, _jmethodID*, ::)
+0x0000697c 30 _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ::)
+0x0000699c 144 SystemClassLoaderInjector::findBaseDexClassloader(_JNIEnv*, _jobject*)
+0x00006a2c 144 SystemClassLoaderInjector::getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
+0x00006abc 56 SystemClassLoaderInjector::getPathList(_JNIEnv*, _jobject*)
+0x00006af4 40 SystemClassLoaderInjector::getDexElements(_JNIEnv*, _jobject*)
+0x00006b1c 148 SystemClassLoaderInjector::setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
+0x00006bb0 336 SystemClassLoaderInjector::combineArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006d00 348 SystemClassLoaderInjector::injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00008dd4 1640 __gxx_personality_v0
+0x000083f0 0 __cxa_end_cleanup
+0x000086b4 224 __cxa_begin_catch
+0x00008794 216 __cxa_end_catch
+0x00016b00 16 typeinfo for char*
+0x00006e5c 268 SystemClassLoaderInjector::appendArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006f68 676 SystemClassLoaderInjector::injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000720c 748 SystemClassLoaderInjector::injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00007c84 10 __aeabi_unwind_cpp_pr2
+0x00007f00 0 __gnu_Unwind_Restore_VFP_D
+0x00007ef0 0 __gnu_Unwind_Restore_VFP
+0x00007f10 0 __gnu_Unwind_Restore_VFP_D_16_to_31
+0x00007f20 0 __gnu_Unwind_Restore_WMMXD
+0x00007fa8 0 __gnu_Unwind_Restore_WMMXC
+0x00007edc 20 restore_core_regs
+0x00007814 4 _Unwind_GetCFA
+0x00007818 78 __gnu_Unwind_RaiseException
+0x00007866 20 __gnu_Unwind_ForcedUnwind
+0x0000787a 68 __gnu_Unwind_Resume
+0x000078be 26 __gnu_Unwind_Resume_or_Rethrow
+0x000078d8 2 _Unwind_Complete
+0x000078da 16 _Unwind_DeleteException
+0x000078ea 52 _Unwind_VRS_Get
+0x000083dc 18 __gnu_thumb1_case_uqi
+0x00007934 52 _Unwind_VRS_Set
+0x00007980 112 __gnu_Unwind_Backtrace
+0x00008544 180 __cxa_begin_cleanup
+0x00008400 324 __cxa_type_match
+0x000080fc 656 __gnu_unwind_execute
+0x00009a78 436 __cxa_call_unexpected
+0x00007c8e 590 _Unwind_VRS_Pop
+0x00007f64 0 __gnu_Unwind_Save_WMMXD
+0x00007fbc 0 __gnu_Unwind_Save_WMMXC
+0x00007f08 0 __gnu_Unwind_Save_VFP_D
+0x00007ef8 0 __gnu_Unwind_Save_VFP
+0x00007f18 0 __gnu_Unwind_Save_VFP_D_16_to_31
+0x00007edc 20 __restore_core_regs
+0x00007fd0 42 ___Unwind_RaiseException
+0x00007fd0 42 _Unwind_RaiseException
+0x00007ffc 42 ___Unwind_Resume
+0x00007ffc 42 _Unwind_Resume
+0x00008028 42 ___Unwind_Resume_or_Rethrow
+0x00008028 42 _Unwind_Resume_or_Rethrow
+0x00008054 42 ___Unwind_ForcedUnwind
+0x00008054 42 _Unwind_ForcedUnwind
+0x00008080 42 ___Unwind_Backtrace
+0x00008080 42 _Unwind_Backtrace
+0x0000838c 38 __gnu_unwind_frame
+0x000083b2 10 _Unwind_GetRegionStart
+0x000083bc 20 _Unwind_GetLanguageSpecificData
+0x000083d0 6 _Unwind_GetDataRelBase
+0x000083d6 6 _Unwind_GetTextRelBase
+0x00017024 0 _edata
+0x00017024 0 __bss_start
+0x0001bf58 0 _end
+0x000085f8 180 __gnu_end_cleanup
+0x000167f4 8 typeinfo for __cxxabiv1::__foreign_exception
+0x000167c0 8 typeinfo for __cxxabiv1::__forced_unwind
+0x00008a3c 144 __cxa_get_globals
+0x00009470 24 std::terminate()
+0x000086ac 8 __cxa_get_exception_ptr
+0x000089f4 72 __cxa_get_globals_fast
+0x0000886c 24 std::uncaught_exception()
+0x00008884 24 std::exception::~exception()
+0x00016830 20 vtable for std::exception
+0x00008884 24 std::exception::~exception()
+0x0000889c 40 std::bad_exception::~bad_exception()
+0x000167d0 20 vtable for std::bad_exception
+0x0000889c 40 std::bad_exception::~bad_exception()
+0x000088c4 24 __cxxabiv1::__forced_unwind::~__forced_unwind()
+0x00016800 20 vtable for __cxxabiv1::__forced_unwind
+0x000088c4 24 __cxxabiv1::__forced_unwind::~__forced_unwind()
+0x000088dc 24 __cxxabiv1::__foreign_exception::~__foreign_exception()
+0x00016818 20 vtable for __cxxabiv1::__foreign_exception
+0x000088dc 24 __cxxabiv1::__foreign_exception::~__foreign_exception()
+0x000088f4 16 std::exception::what() const
+0x00008904 16 std::bad_exception::what() const
+0x00008914 28 std::exception::~exception()
+0x00008930 28 std::bad_exception::~bad_exception()
+0x0000894c 28 __cxxabiv1::__forced_unwind::~__forced_unwind()
+0x00008968 28 __cxxabiv1::__foreign_exception::~__foreign_exception()
+0x000148dc 13 typeinfo name for std::exception
+0x000167c8 8 typeinfo for std::exception
+0x000148ec 18 typeinfo name for std::bad_exception
+0x000167e8 12 typeinfo for std::bad_exception
+0x00013f34 32 typeinfo name for __cxxabiv1::__forced_unwind
+0x00013f54 36 typeinfo name for __cxxabiv1::__foreign_exception
+0x00016ca8 44 vtable for __cxxabiv1::__class_type_info
+0x00016c40 44 vtable for __cxxabiv1::__si_class_type_info
+0x00008984 52 __eh_globals_init::~__eh_globals_init()
+0x00008984 52 __eh_globals_init::~__eh_globals_init()
+0x00009858 16 __aeabi_atexit
+0x000099fc 124 __cxa_call_terminate
+0x00009494 24 std::unexpected()
+0x0000943c 52 __cxxabiv1::__terminate(void (*)())
+0x00017020 4 __cxxabiv1::__terminate_handler
+0x00009488 12 __cxxabiv1::__unexpected(void (*)())
+0x0001701c 4 __cxxabiv1::__unexpected_handler
+0x000094ac 28 std::set_terminate(void (*)())
+0x000094c8 28 std::set_unexpected(void (*)())
+0x000094e4 40 __cxxabiv1::__fundamental_type_info::~__fundamental_type_info()
+0x000097bc 24 std::type_info::~type_info()
+0x00016be0 32 vtable for __cxxabiv1::__fundamental_type_info
+0x000094e4 40 __cxxabiv1::__fundamental_type_info::~__fundamental_type_info()
+0x0000950c 28 __cxxabiv1::__fundamental_type_info::~__fundamental_type_info()
+0x00014a2c 40 typeinfo name for __cxxabiv1::__fundamental_type_info
+0x00016c00 12 typeinfo for __cxxabiv1::__fundamental_type_info
+0x00014900 2 typeinfo name for void
+0x00014904 3 typeinfo name for void*
+0x00014908 4 typeinfo name for void const*
+0x0001490c 2 typeinfo name for bool
+0x00014910 3 typeinfo name for bool*
+0x00014914 4 typeinfo name for bool const*
+0x00014918 2 typeinfo name for wchar_t
+0x0001491c 3 typeinfo name for wchar_t*
+0x00014920 4 typeinfo name for wchar_t const*
+0x00014924 3 typeinfo name for char16_t
+0x00014928 4 typeinfo name for char16_t*
+0x0001492c 5 typeinfo name for char16_t const*
+0x00014934 3 typeinfo name for char32_t
+0x00014938 4 typeinfo name for char32_t*
+0x0001493c 5 typeinfo name for char32_t const*
+0x00014944 2 typeinfo name for char
+0x00014948 3 typeinfo name for char*
+0x0001494c 4 typeinfo name for char const*
+0x00014950 2 typeinfo name for signed char
+0x00014954 3 typeinfo name for signed char*
+0x00014958 4 typeinfo name for signed char const*
+0x0001495c 2 typeinfo name for unsigned char
+0x00014960 3 typeinfo name for unsigned char*
+0x00014964 4 typeinfo name for unsigned char const*
+0x00014968 2 typeinfo name for short
+0x0001496c 3 typeinfo name for short*
+0x00014970 4 typeinfo name for short const*
+0x00014974 2 typeinfo name for unsigned short
+0x00014978 3 typeinfo name for unsigned short*
+0x0001497c 4 typeinfo name for unsigned short const*
+0x00014980 2 typeinfo name for int
+0x00014984 3 typeinfo name for int*
+0x00014988 4 typeinfo name for int const*
+0x0001498c 2 typeinfo name for unsigned int
+0x00014990 3 typeinfo name for unsigned int*
+0x00014994 4 typeinfo name for unsigned int const*
+0x00014998 2 typeinfo name for long
+0x0001499c 3 typeinfo name for long*
+0x000149a0 4 typeinfo name for long const*
+0x000149a4 2 typeinfo name for unsigned long
+0x000149a8 3 typeinfo name for unsigned long*
+0x000149ac 4 typeinfo name for unsigned long const*
+0x000149b0 2 typeinfo name for long long
+0x000149b4 3 typeinfo name for long long*
+0x000149b8 4 typeinfo name for long long const*
+0x000149bc 2 typeinfo name for unsigned long long
+0x000149c0 3 typeinfo name for unsigned long long*
+0x000149c4 4 typeinfo name for unsigned long long const*
+0x000149c8 2 typeinfo name for float
+0x000149cc 3 typeinfo name for float*
+0x000149d0 4 typeinfo name for float const*
+0x000149d4 2 typeinfo name for double
+0x000149d8 3 typeinfo name for double*
+0x000149dc 4 typeinfo name for double const*
+0x000149e0 2 typeinfo name for long double
+0x000149e4 3 typeinfo name for long double*
+0x000149e8 4 typeinfo name for long double const*
+0x000149ec 3 typeinfo name for decimal32
+0x000149f0 4 typeinfo name for decimal32*
+0x000149f4 5 typeinfo name for decimal32 const*
+0x000149fc 3 typeinfo name for decimal64
+0x00014a00 4 typeinfo name for decimal64*
+0x00014a04 5 typeinfo name for decimal64 const*
+0x00014a0c 3 typeinfo name for decimal128
+0x00014a10 4 typeinfo name for decimal128*
+0x00014a14 5 typeinfo name for decimal128 const*
+0x00014a1c 3 typeinfo name for decltype(nullptr)
+0x00014a20 4 typeinfo name for decltype(nullptr)*
+0x00014a24 5 typeinfo name for decltype(nullptr) const*
+0x00016848 16 typeinfo for decltype(nullptr) const*
+0x00016c18 36 vtable for __cxxabiv1::__pointer_type_info
+0x00016868 8 typeinfo for decltype(nullptr)
+0x00016858 16 typeinfo for decltype(nullptr)*
+0x00016870 16 typeinfo for decimal128 const*
+0x00016890 8 typeinfo for decimal128
+0x00016880 16 typeinfo for decimal128*
+0x00016898 16 typeinfo for decimal64 const*
+0x000168b8 8 typeinfo for decimal64
+0x000168a8 16 typeinfo for decimal64*
+0x000168c0 16 typeinfo for decimal32 const*
+0x000168e0 8 typeinfo for decimal32
+0x000168d0 16 typeinfo for decimal32*
+0x000168e8 16 typeinfo for long double const*
+0x00016908 8 typeinfo for long double
+0x000168f8 16 typeinfo for long double*
+0x00016910 16 typeinfo for double const*
+0x00016930 8 typeinfo for double
+0x00016920 16 typeinfo for double*
+0x00016938 16 typeinfo for float const*
+0x00016958 8 typeinfo for float
+0x00016948 16 typeinfo for float*
+0x00016960 16 typeinfo for unsigned long long const*
+0x00016980 8 typeinfo for unsigned long long
+0x00016970 16 typeinfo for unsigned long long*
+0x00016988 16 typeinfo for long long const*
+0x000169a8 8 typeinfo for long long
+0x00016998 16 typeinfo for long long*
+0x000169b0 16 typeinfo for unsigned long const*
+0x000169d0 8 typeinfo for unsigned long
+0x000169c0 16 typeinfo for unsigned long*
+0x000169d8 16 typeinfo for long const*
+0x000169f8 8 typeinfo for long
+0x000169e8 16 typeinfo for long*
+0x00016a00 16 typeinfo for unsigned int const*
+0x00016a20 8 typeinfo for unsigned int
+0x00016a10 16 typeinfo for unsigned int*
+0x00016a28 16 typeinfo for int const*
+0x00016a48 8 typeinfo for int
+0x00016a38 16 typeinfo for int*
+0x00016a50 16 typeinfo for unsigned short const*
+0x00016a70 8 typeinfo for unsigned short
+0x00016a60 16 typeinfo for unsigned short*
+0x00016a78 16 typeinfo for short const*
+0x00016a98 8 typeinfo for short
+0x00016a88 16 typeinfo for short*
+0x00016aa0 16 typeinfo for unsigned char const*
+0x00016ac0 8 typeinfo for unsigned char
+0x00016ab0 16 typeinfo for unsigned char*
+0x00016ac8 16 typeinfo for signed char const*
+0x00016ae8 8 typeinfo for signed char
+0x00016ad8 16 typeinfo for signed char*
+0x00016af0 16 typeinfo for char const*
+0x00016b10 8 typeinfo for char
+0x00016b18 16 typeinfo for char32_t const*
+0x00016b38 8 typeinfo for char32_t
+0x00016b28 16 typeinfo for char32_t*
+0x00016b40 16 typeinfo for char16_t const*
+0x00016b60 8 typeinfo for char16_t
+0x00016b50 16 typeinfo for char16_t*
+0x00016b68 16 typeinfo for wchar_t const*
+0x00016b88 8 typeinfo for wchar_t
+0x00016b78 16 typeinfo for wchar_t*
+0x00016b90 16 typeinfo for bool const*
+0x00016bb0 8 typeinfo for bool
+0x00016ba0 16 typeinfo for bool*
+0x00016bb8 16 typeinfo for void const*
+0x00016bd8 8 typeinfo for void
+0x00016bc8 16 typeinfo for void*
+0x000097d4 8 std::type_info::__is_pointer_p() const
+0x000097dc 8 std::type_info::__is_function_p() const
+0x00009854 4 std::type_info::__do_catch(std::type_info const*, void**, unsigned int) const
+0x000097e4 8 std::type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x00016ca0 8 typeinfo for std::type_info
+0x00009528 8 __cxxabiv1::__pointer_type_info::__is_pointer_p() const
+0x00009530 40 __cxxabiv1::__pointer_type_info::~__pointer_type_info()
+0x00009df0 40 __cxxabiv1::__pbase_type_info::~__pbase_type_info()
+0x00009530 40 __cxxabiv1::__pointer_type_info::~__pointer_type_info()
+0x00009558 28 __cxxabiv1::__pointer_type_info::~__pointer_type_info()
+0x00009574 128 __cxxabiv1::__pointer_type_info::__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x00009808 76 std::type_info::operator==(std::type_info const&) const
+0x00014a54 36 typeinfo name for __cxxabiv1::__pointer_type_info
+0x00016c0c 12 typeinfo for __cxxabiv1::__pointer_type_info
+0x00016d10 12 typeinfo for __cxxabiv1::__pbase_type_info
+0x00009e34 144 __cxxabiv1::__pbase_type_info::__do_catch(std::type_info const*, void**, unsigned int) const
+0x000095f4 40 __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+0x000098d8 40 __cxxabiv1::__class_type_info::~__class_type_info()
+0x000095f4 40 __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+0x0000961c 28 __cxxabiv1::__si_class_type_info::~__si_class_type_info()
+0x00009638 100 __cxxabiv1::__si_class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x0000969c 224 __cxxabiv1::__si_class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x0000977c 64 __cxxabiv1::__si_class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x0000991c 44 __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x00014a78 37 typeinfo name for __cxxabiv1::__si_class_type_info
+0x00016c70 12 typeinfo for __cxxabiv1::__si_class_type_info
+0x00009948 68 __cxxabiv1::__class_type_info::__do_catch(std::type_info const*, void**, unsigned int) const
+0x00009868 92 __cxxabiv1::__class_type_info::__do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x00016cd8 12 typeinfo for __cxxabiv1::__class_type_info
+0x00016c80 32 vtable for std::type_info
+0x000097bc 24 std::type_info::~type_info()
+0x000097ec 28 std::type_info::~type_info()
+0x00014aa0 13 typeinfo name for std::type_info
+0x000098c4 20 __cxxabiv1::__class_type_info::__do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x000098d8 40 __cxxabiv1::__class_type_info::~__class_type_info()
+0x00009900 28 __cxxabiv1::__class_type_info::~__class_type_info()
+0x0000998c 112 __cxxabiv1::__class_type_info::__do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x00014ab0 34 typeinfo name for __cxxabiv1::__class_type_info
+0x00012810 224 __cxa_allocate_exception
+0x00009c64 188 __cxa_throw
+0x00009d20 176 __cxa_rethrow
+0x00009ec4 436 __gnu_cxx::__verbose_terminate_handler()
+0x000128f0 160 __cxa_free_exception
+0x00009dd0 32 __cxxabiv1::__pbase_type_info::__pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x00016ce8 36 vtable for __cxxabiv1::__pbase_type_info
+0x00009df0 40 __cxxabiv1::__pbase_type_info::~__pbase_type_info()
+0x00009e18 28 __cxxabiv1::__pbase_type_info::~__pbase_type_info()
+0x00012b54 72 __cxa_bad_typeid
+0x00014ad4 34 typeinfo name for __cxxabiv1::__pbase_type_info
+0x00012b9c 44 __cxa_current_exception_type
+0x00012538 332 __cxa_demangle
+0x00012684 44 __gcclibcxx_demangle_callback
+0x000126b0 16 __gnu_cxx::__concurrence_lock_error::what() const
+0x000126c0 16 __gnu_cxx::__concurrence_unlock_error::what() const
+0x000126d0 40 __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+0x00016d50 20 vtable for __gnu_cxx::__concurrence_unlock_error
+0x000126d0 40 __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+0x000126f8 40 __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0x00016d38 20 vtable for __gnu_cxx::__concurrence_lock_error
+0x000126f8 40 __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0x00012720 48 __gnu_cxx::__concurrence_unlock_error::~__concurrence_unlock_error()
+0x00012750 48 __gnu_cxx::__concurrence_lock_error::~__concurrence_lock_error()
+0x00012780 72 __gnu_cxx::__throw_concurrence_lock_error()
+0x00016d1c 12 typeinfo for __gnu_cxx::__concurrence_lock_error
+0x000127c8 72 __gnu_cxx::__throw_concurrence_unlock_error()
+0x00016d28 12 typeinfo for __gnu_cxx::__concurrence_unlock_error
+0x00012990 212 __cxa_allocate_dependent_exception
+0x00012a64 168 __cxa_free_dependent_exception
+0x00014af8 39 typeinfo name for __gnu_cxx::__concurrence_lock_error
+0x00014b20 41 typeinfo name for __gnu_cxx::__concurrence_unlock_error
+0x00012b0c 72 __cxa_bad_cast
+0x00016d78 20 vtable for std::bad_cast
+0x00016d68 12 typeinfo for std::bad_cast
+0x00012bd8 40 std::bad_cast::~bad_cast()
+0x00016d90 20 vtable for std::bad_typeid
+0x00016da8 12 typeinfo for std::bad_typeid
+0x00012c2c 40 std::bad_typeid::~bad_typeid()
+0x00012bc8 16 std::bad_cast::what() const
+0x00012bd8 40 std::bad_cast::~bad_cast()
+0x00012c00 28 std::bad_cast::~bad_cast()
+0x00014b4c 12 typeinfo name for std::bad_cast
+0x00012c1c 16 std::bad_typeid::what() const
+0x00012c2c 40 std::bad_typeid::~bad_typeid()
+0x00012c54 28 std::bad_typeid::~bad_typeid()
+0x00014b58 15 typeinfo name for std::bad_typeid
+0x00005e04 16 imp.__cxa_finalize
+0x00005df8 16 imp.__cxa_atexit
+0x00005e10 16 imp.malloc
+0x00005e1c 16 imp.memcpy
+0x00005e28 16 imp.strlen
+0x00005e34 16 imp.strdup
+0x00005e40 16 imp.strstr
+0x00005e4c 16 imp.free
+0x00005e58 16 imp.fopen
+0x00005e64 16 imp.fread
+0x00005e70 16 imp.fwrite
+0x00005e7c 16 imp.fflush
+0x00005e88 16 imp.fclose
+0x00005e94 16 imp.strrchr
+0x00005ea0 16 imp.memset
+0x00005eac 16 imp.strcat
+0x00005eb8 16 imp.strncpy
+0x00005ec4 16 imp.remove
+0x00005ed0 16 imp.__stack_chk_fail
+0xffffffffffffffff 16 imp.__stack_chk_guard
+0x00005edc 16 imp.__gnu_Unwind_Find_exidx
+0x00005ee8 16 imp.abort
+0x00005ef4 16 operator delete(void*)
+0x00005f00 16 imp.__cxa_pure_virtual
+0x00005f0c 16 imp.pthread_key_delete
+0x00005f18 16 imp.pthread_getspecific
+0x00005f24 16 imp.pthread_setspecific
+0x00005f30 16 imp.pthread_key_create
+0x00005f3c 16 imp.strcmp
+0x00005f48 16 imp.fputs
+0x00005f54 16 imp.fputc
+0xffffffffffffffff 16 imp.__sF
+0x00005f60 16 imp.memcmp
+0x00005f6c 16 imp.realloc
+0x00005f78 16 imp.sprintf
+0x00005f84 16 imp.strncmp
+0x00005f90 16 imp.pthread_mutex_lock
+0x00005f9c 16 imp.pthread_mutex_unlock
+0x00000000 0x00000000 ---- 
+0x00000154 0x00000167 -r-- .interp
+0x00000168 0x0000018c -r-- .note.gnu.build-id
+0x0000018c 0x00001b1c -r-- .dynsym
+0x00001b1c 0x000040ec -r-- .dynstr
+0x000040ec 0x00004b74 -r-- .hash
+0x00004b74 0x00005cc4 -r-- .rel.dyn
+0x00005cc4 0x00005de4 -r-- .rel.plt
+0x00005de4 0x00005fa8 -r-x .plt
+0x00005fa8 0x00012f30 -r-x .text
+0x00012f30 0x00013334 -r-- .ARM.extab
+0x00013334 0x000139ac -r-- .ARM.exidx
+0x000139ac 0x00014b68 -r-- .rodata
+0x00016080 0x000167b8 -rw- .data.rel.ro.local
+0x000167b8 0x000167c0 -rw- .fini_array
+0x000167c0 0x00016db4 -rw- .data.rel.ro
+0x00016db4 0x00016dc0 -rw- .init_array
+0x00016dc0 0x00016ec0 -rw- .dynamic
+0x00016ec0 0x00017000 -rw- .got
+0x00017000 0x00017024 -rw- .data
+0x00017028 0x00017028 -rw- .bss
+0x00000000 0x00000010 ---- .comment
+0x00000000 0x0000001c ---- .note.gnu.gold-version
+0x00000000 0x0000002b ---- .ARM.attributes
+0x00000000 0x000000f3 ---- .shstrtab
+[Memory]
+
+0x139ac 15 14 getPackageName
+0x139bb 21 20 ()Ljava/lang/String;
+0x139d0 17 16 java/lang/String
+0x139e1 6 5 utf-8
+0x139e7 9 8 getBytes
+0x139f0 23 22 (Ljava/lang/String;)[B
+0x13a07 7 6 GB2312
+0x13a0e 7 6 <init>
+0x13a15 24 23 ([BLjava/lang/String;)V
+0x13a2d 16 15 java/lang/Class
+0x13a3d 8 7 forName
+0x13a45 38 37 (Ljava/lang/String;)Ljava/lang/Class;
+0x13a6b 10 9 getMethod
+0x13a75 65 64 (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+0x13ab6 7 6 invoke
+0x13abd 58 57 (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
+0x13af7 17 16 getDeclaredField
+0x13b08 46 45 (Ljava/lang/String;)Ljava/lang/reflect/Field;
+0x13b36 14 13 setAccessible
+0x13b44 5 4 (Z)V
+0x13b4d 39 38 (Ljava/lang/Object;)Ljava/lang/Object;
+0x13b78 40 39 (Ljava/lang/Object;Ljava/lang/Object;)V
+0x13ba5 8 7 decode_
+0x13bad 18 17 getFileStreamPath
+0x13bbf 35 34 (Ljava/lang/String;)Ljava/io/File;
+0x13be6 16 15 getAbsolutePath
+0x13bf6 5 4 .dex
+0x13bfd 30 29 com/la/magic/sdk/so/MagicLoad
+0x13c1b 13 12 MagicLoadDex
+0x13c28 82 81 (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+0x13c7a 7 6 Decode
+0x13c81 65 64 (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Z
+0x13cc2 15 14 getClassLoader
+0x13cd1 26 25 ()Ljava/lang/ClassLoader;
+0x13ceb 33 32 dalvik/system/BaseDexClassLoader
+0x13d0c 10 9 getParent
+0x13d16 33 32 dalvik.system.BaseDexClassLoader
+0x13d37 9 8 pathList
+0x13d40 12 11 dexElements
+0x13d4c 9 8 getClass
+0x13d55 20 19 ()Ljava/lang/Class;
+0x13d69 17 16 getComponentType
+0x13d7a 24 23 java/lang/reflect/Array
+0x13d92 10 9 getLength
+0x13d9c 22 21 (Ljava/lang/Object;)I
+0x13db2 12 11 newInstance
+0x13dbe 39 38 (Ljava/lang/Class;I)Ljava/lang/Object;
+0x13de5 40 39 (Ljava/lang/Object;I)Ljava/lang/Object;
+0x13e0d 41 40 (Ljava/lang/Object;ILjava/lang/Object;)V
+0x13e36 29 28 dalvik/system/DexClassLoader
+0x13e53 81 80 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;)V
+0x13ea4 21 20 (V)Ljava/lang/Class;
+0x13eb9 15 14 \\.[a-zA-Z0-9]+
+0x13ec8 5 4 .lex
+0x13ecd 29 28 dalvik/system/LexClassLoader
+0x13eea 30 29 dalvik/system/PathClassLoader
+0x13f08 7 6 mPaths
+0x13f0f 12 11 mRawDexPath
+0x13f1b 7 6 mFiles
+0x13f22 6 5 mZips
+0x13f28 6 5 mLexs
+0x13f2e 6 5 mDexs
+0x13f34 32 31 N10__cxxabiv115__forced_unwindE
+0x13f54 36 35 N10__cxxabiv119__foreign_exceptionE
+0x13f78 15 14 std::exception
+0x13f88 19 18 std::bad_exception
+0x13f9c 30 29 terminate called recursively\n
+0x13fbc 49 48 terminate called after throwing an instance of '
+0x13ff4 46 45 terminate called without an active exception\n
+0x14024 12 11   what():
+0x14030 9 8 _GLOBAL_
+0x1403c 22 21 (anonymous namespace)
+0x14054 15 14 string literal
+0x14068 5 4 auto
+0x14088 6 5 [abi:
+0x14094 14 13 {default arg#
+0x140ac 7 6 JArray
+0x140b8 12 11 vtable for
+0x140c4 9 8 VTT for
+0x140d0 25 24 construction vtable for
+0x140ec 5 4 -in-
+0x140f4 14 13 typeinfo for
+0x14104 19 18 typeinfo name for
+0x14118 17 16 typeinfo fn for
+0x1412c 22 21 non-virtual thunk to
+0x14144 18 17 virtual thunk to
+0x14158 27 26 covariant return thunk to
+0x14174 16 15 java Class for
+0x14184 20 19 guard variable for
+0x14198 23 22 TLS init function for
+0x141b0 26 25 TLS wrapper function for
+0x141cc 22 21 reference temporary #
+0x141e4 6 5  for
+0x141ec 18 17 hidden alias for
+0x14200 23 22 transaction clone for
+0x14218 27 26 non-transaction clone for
+0x14234 6 5 _Sat
+0x1423c 7 6 _Accum
+0x14244 7 6 _Fract
+0x14250 9 8 operator
+0x1425c 10 9 operator
+0x14278 5 4 new
+0x1428c 6 5 false
+0x14294 5 4 true
+0x1429c 15 14 java resource
+0x142ac 11 10 decltype (
+0x142bc 5 4 this
+0x142c4 7 6 {parm#
+0x142cc 30 29 global constructors keyed to
+0x142ec 29 28 global destructors keyed to
+0x1430c 9 8 {lambda(
+0x1431c 15 14 {unnamed type#
+0x1432c 9 8  [clone
+0x1433c 10 9  restrict
+0x14348 10 9  volatile
+0x14354 7 6  const
+0x14360 9 8 complex
+0x1436c 11 10 imaginary
+0x1437c 11 10  __vector(
+0x1438c 15 14 std::allocator
+0x1439c 10 9 allocator
+0x143a8 18 17 std::basic_string
+0x143bc 13 12 basic_string
+0x143cc 12 11 std::string
+0x143d8 71 70 std::basic_string<char, std::char_traits<char>, std::allocator<char> >
+0x14420 13 12 std::istream
+0x14430 50 49 std::basic_istream<char, std::char_traits<char> >
+0x14464 14 13 basic_istream
+0x14474 13 12 std::ostream
+0x14484 50 49 std::basic_ostream<char, std::char_traits<char> >
+0x144b8 14 13 basic_ostream
+0x144c8 14 13 std::iostream
+0x144d8 51 50 std::basic_iostream<char, std::char_traits<char> >
+0x1450c 15 14 basic_iostream
+0x1453c 9 8 alignof
+0x14550 11 10 const_cast
+0x1457c 10 9 delete[]
+0x1458c 13 12 dynamic_cast
+0x145a8 8 7 delete
+0x145fc 12 11 operator""
+0x14640 6 5 new[]
+0x146bc 17 16 reinterpret_cast
+0x146e4 12 11 static_cast
+0x146f0 8 7 sizeof
+0x14700 6 5 throw
+0x1470c 7 6 throw
+0x14714 12 11 signed char
+0x14720 5 4 bool
+0x14728 8 7 boolean
+0x14730 5 4 char
+0x14738 5 4 byte
+0x14740 7 6 double
+0x14748 12 11 long double
+0x14754 6 5 float
+0x1475c 11 10 __float128
+0x14768 14 13 unsigned char
+0x1477c 13 12 unsigned int
+0x1478c 9 8 unsigned
+0x14798 5 4 long
+0x147a0 14 13 unsigned long
+0x147b0 9 8 __int128
+0x147bc 18 17 unsigned __int128
+0x147d0 6 5 short
+0x147d8 15 14 unsigned short
+0x147e8 5 4 void
+0x147f0 8 7 wchar_t
+0x147f8 10 9 long long
+0x14804 19 18 unsigned long long
+0x14818 10 9 decimal32
+0x14824 10 9 decimal64
+0x14830 11 10 decimal128
+0x1483c 5 4 half
+0x14844 9 8 char16_t
+0x14850 9 8 char32_t
+0x1485c 18 17 decltype(nullptr)
+0x14870 36 35 __gnu_cxx::__concurrence_lock_error
+0x14894 38 37 __gnu_cxx::__concurrence_unlock_error
+0x148bc 14 13 std::bad_cast
+0x148cc 16 15 std::bad_typeid
+0x148dc 13 12 St9exception
+0x148ec 18 17 St13bad_exception
+0x1492c 5 4 PKDs
+0x1493c 5 4 PKDi
+0x149f4 5 4 PKDf
+0x14a04 5 4 PKDd
+0x14a14 5 4 PKDe
+0x14a24 5 4 PKDn
+0x14a2c 40 39 N10__cxxabiv123__fundamental_type_infoE
+0x14a54 36 35 N10__cxxabiv119__pointer_type_infoE
+0x14a78 37 36 N10__cxxabiv120__si_class_type_infoE
+0x14aa0 13 12 St9type_info
+0x14ab0 34 33 N10__cxxabiv117__class_type_infoE
+0x14ad4 34 33 N10__cxxabiv117__pbase_type_infoE
+0x14af8 39 38 N9__gnu_cxx24__concurrence_lock_errorE
+0x14b20 41 40 N9__gnu_cxx26__concurrence_unlock_errorE
+0x14b4c 12 11 St8bad_cast
+0x14b58 15 14 St10bad_typeid
 EOF
 RUN
 
@@ -1664,6 +1181,14 @@ FILE=bins/elf/libmagic.so
 CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
 Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
+EOF
+RUN
+
+NAME=iDj
+FILE=bins/elf/libmagic.so
+CMDS=iDj swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+EXPECT=<<EOF
+{"lang":"swift","mangled":"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS","demangled":"Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String"}
 EOF
 RUN
 
@@ -3003,7 +2528,6 @@ EOF
 EXPECT=<<EOF
             ;-- section..dynamic:
             ;-- segment.DYNAMIC:
-            ;-- .dynamic:
             ;-- _DYNAMIC:
             0x080495a8      .dword 0x00000001                          ; [21] -rw- section size 232 named .dynamic
 EOF
@@ -3014,7 +2538,6 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=pd 3 @ section..bss
 EXPECT=<<EOF
             ;-- section..bss:
-            ;-- .bss:
             ;-- completed.5979:
             ;-- _edata:
             ;-- __bss_start:
@@ -3051,12 +2574,12 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x08049690 0x00000690 SET_32 __gmon_start__
-0x080496a0 0x000006a0 SET_32 puts
-0x080496a4 0x000006a4 SET_32 __gmon_start__
-0x080496a8 0x000006a8 SET_32 __libc_start_main
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x08049690 0x00000690 SET_32 6     __gmon_start__
+0x080496a0 0x000006a0 SET_32 7     puts
+0x080496a4 0x000006a4 SET_32 7     __gmon_start__
+0x080496a8 0x000006a8 SET_32 7     __libc_start_main
 
 
 4 relocations
@@ -3229,24 +2752,27 @@ vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=progra
 EOF
 RUN
 
-NAME=iH (file x86_64)
+NAME=ih (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=iH
+CMDS=ih
 EXPECT=<<EOF
-0x00000000  ELF64       0x464c457f
-0x00000010  Type        0x0002
-0x00000012  Machine     0x003e
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x00400410
-0x00000020  PhOff       0x00000040
-0x00000028  ShOff       0x00000a30
-0x00000030  Flags       0x00000000
-0x00000034  EhSize      64
-0x00000036  PhentSize   56
-0x00000038  PhNum       8
-0x0000003a  ShentSize   64
-0x0000003c  ShNum       30
-0x0000003e  ShrStrndx   27
+[Header fields]
+0x00000000 0x00000000 0x464c457f ELF
+0x00000010 0x00000010 0x00000002 Type
+0x00000012 0x00000012 0x0000003e Machine
+0x00000014 0x00000014 0x00000001 Version
+0x00000018 0x00000018 0x00400410 EntryPoint
+0x00000020 0x00000020 0x00000040 PhOff
+0x00000028 0x00000028 0x00000a30 ShOff
+0x00000030 0x00000030 0x00000000 Flags
+0x00000034 0x00000034 0x00000040 EhSize
+0x00000036 0x00000036 0x00000038 PhentSize
+0x00000038 0x00000038 0x00000008 PhNum
+0x0000003a 0x0000003a 0x00000040 ShentSize
+0x0000003c 0x0000003c 0x0000001e ShNum
+0x0000003e 0x0000003e 0x0000001b ShrStrndx
+
+14 fields
 EOF
 RUN
 
@@ -3380,12 +2906,12 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x006008c8 0x000008c8 SET_64 __gmon_start__
-0x006008e8 0x000008e8 SET_64 puts
-0x006008f0 0x000008f0 SET_64 __libc_start_main
-0x006008f8 0x000008f8 SET_64 __gmon_start__
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x006008c8 0x000008c8 SET_64 6     __gmon_start__
+0x006008e8 0x000008e8 SET_64 7     puts
+0x006008f0 0x000008f0 SET_64 7     __libc_start_main
+0x006008f8 0x000008f8 SET_64 7     __gmon_start__
 
 
 4 relocations
@@ -3398,18 +2924,18 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
-0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
-0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
-0x006b17e8 0x000b17e8 SET_64 ifunc_418a50 0x00418a50 (ifunc)
-0x006b17f0 0x000b17f0 SET_64 ifunc_418de0 0x00418de0 (ifunc)
-0x006b17f8 0x000b17f8 SET_64 ifunc_419ad0 0x00419ad0 (ifunc)
-0x006b1800 0x000b1800 SET_64 ifunc_4193f0 0x004193f0 (ifunc)
-0x006b1808 0x000b1808 SET_64 ifunc_414300 0x00414300 (ifunc)
-0x006b1810 0x000b1810 SET_64 ifunc_479800 0x00479800 (ifunc)
-0x006b1818 0x000b1818 SET_64 ifunc_4140b0 0x004140b0 (ifunc)
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x006b17d0 0x000b17d0 SET_64 37    ifunc_416530 0x00416530 (ifunc)
+0x006b17d8 0x000b17d8 SET_64 37    ifunc_4193a0 0x004193a0 (ifunc)
+0x006b17e0 0x000b17e0 SET_64 37    ifunc_4199b0 0x004199b0 (ifunc)
+0x006b17e8 0x000b17e8 SET_64 37    ifunc_418a50 0x00418a50 (ifunc)
+0x006b17f0 0x000b17f0 SET_64 37    ifunc_418de0 0x00418de0 (ifunc)
+0x006b17f8 0x000b17f8 SET_64 37    ifunc_419ad0 0x00419ad0 (ifunc)
+0x006b1800 0x000b1800 SET_64 37    ifunc_4193f0 0x004193f0 (ifunc)
+0x006b1808 0x000b1808 SET_64 37    ifunc_414300 0x00414300 (ifunc)
+0x006b1810 0x000b1810 SET_64 37    ifunc_479800 0x00479800 (ifunc)
+0x006b1818 0x000b1818 SET_64 37    ifunc_4140b0 0x004140b0 (ifunc)
 
 
 10 relocations
@@ -3552,7 +3078,10 @@ RUN
 
 NAME=ibk use after free
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ibk info/*~?elf.relro
+CMDS=<<EOF
+ib
+ik info/*~?elf.relro
+EOF
 EXPECT=<<EOF
 1
 EOF
@@ -3680,19 +3209,19 @@ nth paddr      vaddr      bind   type   size lib name                           
 relocs
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x00001eec 0x00000eec SET_32
-0x00001ef0 0x00000ef0 SET_32
-0x00001fe8 0x00000fe8 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 SET_32
-0x00001ff8 0x00000ff8 SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc SET_32 _ITM_registerTMCloneTable
-0x0000200c 0x0000100c SET_32 puts
-0x00002010 0x00001010 SET_32 __libc_start_main
-0x00002018 0x00001018 SET_32
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00001eec 0x00000eec SET_32 8
+0x00001ef0 0x00000ef0 SET_32 8
+0x00001fe8 0x00000fe8 SET_32 6     _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec SET_32 6     __cxa_finalize
+0x00001ff0 0x00000ff0 SET_32 6     __gmon_start__
+0x00001ff4 0x00000ff4 SET_32 8
+0x00001ff8 0x00000ff8 SET_32 6     _Jv_RegisterClasses
+0x00001ffc 0x00000ffc SET_32 6     _ITM_registerTMCloneTable
+0x0000200c 0x0000100c SET_32 7     puts
+0x00002010 0x00001010 SET_32 7     __libc_start_main
+0x00002018 0x00001018 SET_32 8
 
 
 11 relocations
@@ -3739,43 +3268,66 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ieeej
+NAME=ilj twofiles
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ieeej~{}
+CMDS=<<EOF
+o bins/elf/ls.odd
+?e one
+ilj
+?e all
+ob *
+ilj
+EOF
 EXPECT=<<EOF
-{
-  "initfini": [
-    {
-      "vaddr": 134513616,
-      "paddr": 976,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518172,
-      "hpaddr": 1436,
-      "type": "init"
-    },
-    {
-      "vaddr": 134513584,
-      "paddr": 944,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134518176,
-      "hpaddr": 1440,
-      "type": "fini"
-    }
-  ],
-  "entries": [
-    {
-      "vaddr": 134513408,
-      "paddr": 768,
-      "baddr": 134512640,
-      "laddr": 0,
-      "hvaddr": 134512664,
-      "haddr": 24,
-      "type": "program"
-    }
-  ]
-}
+one
+["libc.so.6"]
+all
+[{"id":0,"filename":"bins/elf/analysis/x86-helloworld-gcc","data":["libc.so.6"]},{"id":1,"filename":"bins/elf/ls.odd","data":["libc.so.6"]}]
+EOF
+RUN
+
+NAME=iej+ieej
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+?e entries
+iej~{}
+?e constructors
+ieej~{}
+EOF
+EXPECT=<<EOF
+entries
+[
+  {
+    "vaddr": 134513408,
+    "paddr": 768,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134512664,
+    "haddr": 24,
+    "type": "program"
+  }
+]
+constructors
+[
+  {
+    "vaddr": 134513616,
+    "paddr": 976,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518172,
+    "hpaddr": 1436,
+    "type": "init"
+  },
+  {
+    "vaddr": 134513584,
+    "paddr": 944,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518176,
+    "hpaddr": 1440,
+    "type": "fini"
+  }
+]
 EOF
 RUN
 
@@ -3792,14 +3344,12 @@ EXPECT=<<EOF
             ;-- section..preinit_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
-            ;-- .preinit_array:
             ;-- __preinit:
             0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
             ;-- __preinit2:
             0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; sym.preinit2
 
             ;-- section..init_array:
-            ;-- .init_array:
             ;-- __frame_dummy_init_array_entry:
             ;-- __init_array_start:
             0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [19] -rw- section size 20 named .init_array
@@ -3811,7 +3361,6 @@ EXPECT=<<EOF
             0x08049eec      .dword 0x08048503 ; entry.init4 ; sym.constructor2
 
             ;-- section..fini_array:
-            ;-- .fini_array:
             ;-- __do_global_dtors_aux_fini_array_entry:
             ;-- __init_array_end:
             0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [20] -rw- section size 20 named .fini_array
@@ -3846,6 +3395,7 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
+DEBUG: (section .dynsym) Cd 8[399] @ 0x2f8
 DEBUG: (section .dynstr) Css 1477 @ 0xf70
 DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
 DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
@@ -3854,6 +3404,7 @@ DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
 DEBUG: (section .got) Cd 8[124] @ 0x21cc08
+DEBUG: (section .dynsym) Cd 8[399] @ 0x2f8
 DEBUG: (section .dynstr) Css 1477 @ 0xf70
 DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
 DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
@@ -3862,6 +3413,7 @@ DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
 DEBUG: (section .got) Cd 8[124] @ 0x21cc08
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: Cannot resolve symbol address __progname
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address stdout
@@ -4140,6 +3692,7 @@ om
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 INFO: File has been modified
 EOF
 EXPECT=<<EOF
@@ -4176,117 +3729,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ic?~ (match all)
-FILE=malloc://512
-CMDS=ic?~List
-EXPECT=<<EOF
-| ic                 List classes, methods and fields (icj for json)
-| icc                List classes, methods and fields in Header Format
-| icg [str]          List classes as agn/age commands to create class hierarchy graphs (matches str if provided)
-| icq                List classes, in quiet mode (just the classname)
-| icqq               List classes, in quieter mode (only show non-system classnames)
-EOF
-RUN
-
-NAME=ic?~ (match one)
-FILE=malloc://512
-CMDS=ic?~Header
-EXPECT=<<EOF
-| icc                List classes, methods and fields in Header Format
-EOF
-RUN
-
-NAME=ic?~ (match none)
-FILE=malloc://512
-CMDS=ic?~Guess
-EXPECT=<<EOF
-EOF
-RUN
-
-
-NAME=ic (file Java)
-FILE=bins/java/Hello.class
-CMDS=ic
-EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa]    127 java class 0 Hello :: java/lang/Object
-0x0000022b java method 0      <init>
-0x00000263 java method 1      say
-0x000002aa java method 2      main
-EOF
-RUN
-
-NAME=ic (file Java)
-FILE=bins/java/Hello.class
-CMDS=<<EOF
-icg
-icg Hello
-icg no_match
-EOF
-EXPECT=<<EOF
-agn Hello
-agn java/lang/Object
-age java/lang/Object Hello
-agn Hello
-EOF
-RUN
-
-NAME=icq (file Java)
-FILE=bins/java/Hello.class
-CMDS=icq
-EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
-EOF
-RUN
-
-NAME=icqq (file Java)
-FILE=bins/java/Hello.class
-CMDS=icqq
-EXPECT=<<EOF
-Hello
-EOF
-RUN
-
-NAME=icqq (file x86)
-FILE=bins/elf/ls
-CMDS=icqq
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=iqqc (file Java)
-BROKEN=1
-FILE=bins/java/Hello.class
-CMDS=iqqc
-EXPECT=<<EOF
-Hello
-EOF
-RUN
-
-NAME=iqqc (file x86)
-BROKEN=1
-FILE=bins/elf/ls
-CMDS=iqqc
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=iqcq (file Java)
-BROKEN=1
-FILE=bins/java/Hello.class
-CMDS=iqcq
-EXPECT=<<EOF
-Hello
-EOF
-RUN
-
-NAME=iqcq (file x86)
-BROKEN=1
-FILE=bins/elf/ls
-CMDS=iqcq
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=macho-ghost-symbols
 FILE=bins/mach0/libr_flag.dylib
 CMDS=<<EOF
@@ -4317,5 +3759,62 @@ f str.Hello_world_ 13 0x080484b0
 Cs 13 @ 0x080484b0
 3
 163
+EOF
+RUN
+
+NAME=isqq bug
+FILE=bins/mach0/WheresMyBrowser
+CMDS=<<EOF
+is.@0x100023b68
+EOF
+EXPECT=<<EOF
+nth  paddr      vaddr       bind  type size lib name       demangled
+--------------------------------------------------------------------
+1503 0x00023b68 0x100023b68 LOCAL FUNC 0        imp.memcpy
+EOF
+RUN
+
+NAME=iS sha1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+iS sha1,crc32
+EOF
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr         vsize perm sha1, crc32                                       type             name
+-----------------------------------------------------------------------------------------------------------------------
+0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 597dd9392a6e194e98d21b2ca4ddebb298f09575 f0140c0d REGULAR          0.__TEXT.__text
+1   0x00007440   0x520 0x100007440   0x520 -r-x 50d3d6842dcc27779e36328bd63f5f81e3fedc43 3b2e9755 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+2   0x00007960    0xdc 0x100007960    0xdc -r-x 5e1360a742e0a5f6353d85b7384154fdf71638a4 66f4beca REGULAR          2.__TEXT.__const
+3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x b2d3430179b36eb6d6d4f40567200fca6eb55dd2 509843f1 CSTRINGS         3.__TEXT.__cstring
+4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 5a2314eb29ff90684dcdd86a6925564862e5c594 b0ded58b REGULAR          4.__TEXT.__unwind_info
+5   0x00008000   0x290 0x100008000   0x290 -rw- ee3f452cb100d6d1fcbf672412c3e8461e7e53f2 aae96e37 NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
+6   0x00008290    0x30 0x100008290    0x30 -rw- 0e15d630f62b65d21110a4ba17ce0f8211c6ca8b e6402175 NONLAZY_POINTERS 6.__DATA_CONST.__got
+7   0x000082c0   0x268 0x1000082c0   0x268 -rw- be33657ad47139b81533a6212659ae955b02cdac de20cceb REGULAR          7.__DATA_CONST.__const
+8   0x0000c000    0x20 0x10000c000    0x20 -rw- de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
+9   0x00000000     0x0 0x10000c020    0xb0 -rw-                                                   ZEROFILL         9.__DATA.__common
+10  0x00000000     0x0 0x10000c0d0   0x150 -rw-                                                   ZEROFILL         10.__DATA.__bss
+
+EOF
+RUN
+
+NAME=iSS sha1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+iSS sha1,crc32
+EOF
+EXPECT=<<EOF
+[Segments]
+
+nth paddr         size vaddr         vsize perm sha1, crc32                                       type name
+-----------------------------------------------------------------------------------------------------------
+0   0x00018000  0x8000 0x100000000  0x8000 -r-x 62f28c2d31aeeafc99420eebdaaf9976175c4553 b46855f0 MAP  __TEXT
+1   0x00020000  0x4000 0x100008000  0x4000 -rw- 62f2f64918ef72b1bf82ae39e986d9ddf5e42181 979dd9de MAP  __DATA_CONST
+2   0x00024000  0x4000 0x10000c000  0x4000 -rw- 869518459b4db2174417ed9a87668b47acf04bf7 d0361e49 MAP  __DATA
+3   0x00028000  0x8000 0x100010000  0x8000 -r--                                                   MAP  __LINKEDIT
+
 EOF
 RUN

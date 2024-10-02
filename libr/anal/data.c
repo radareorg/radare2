@@ -1,22 +1,20 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_anal.h>
 
 // TODO: integrate this code in a better way.. maybe reftype as name?
 R_API int r_anal_data_type(RAnal *anal, ut64 da) {
+	RIO *io = anal->iob.io;
+	if (!anal->iob.is_valid_offset (io, da, R_PERM_R)) {
+		return R_ANAL_REF_TYPE_ERROR;
+	}
 	ut8 buf[64] = {0};
-	if (!anal->iob.read_at (anal->iob.io, da, buf, sizeof (buf))) {
-		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, da);
-		return 0;
+	// check if valid address
+	if (!anal->iob.read_at (io, da, buf, sizeof (buf))) {
+		// R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
+		return R_ANAL_REF_TYPE_ERROR;
 	}
-#if 0
-	if (buf[0] == 0x10 && buf[1] == 0x48) {
-		return R_ANAL_REF_TYPE_CODE;
-	}
-	return 0;
-#endif
-#if 1
-	int k = 0;
+	int k = R_ANAL_REF_TYPE_NULL;
 	RAnalOp op = {0};
 	int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
 	if (oplen > 2) {
@@ -30,7 +28,6 @@ R_API int r_anal_data_type(RAnal *anal, ut64 da) {
 	}
 	r_anal_op_fini (&op);
 	return k;
-#endif
 #if 0
 	const char *kind = r_anal_data_kind (anal, da, buf, sizeof (buf));
 	if (!kind) {
@@ -302,6 +299,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal) {
 }
 
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
+	// R_RETURN_VAL_IF_FAIL (p, NULL);
 	RAnalData *ad = R_NEW0 (RAnalData);
 	if (!ad) {
 		return NULL;
@@ -376,6 +374,7 @@ R_API void r_anal_data_free(RAnalData *d) {
 }
 
 R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
+	R_RETURN_VAL_IF_FAIL (anal && buf && size >= 0, NULL);
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->config->bits;
@@ -387,7 +386,9 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 #if 0
 	if (!buf) {
 		int type = r_anal_data_type (anal, addr);
-		switch (R_ANAL_REF_TYPE_MASK (type)) {
+		if (type == R_ANAL_REF_TYPE_ERROR) {
+			return NULL;
+		} else switch (R_ANAL_REF_TYPE_MASK (type)) {
 		case R_ANAL_REF_TYPE_CODE:
 		case R_ANAL_REF_TYPE_DATA:
 			break;
@@ -453,6 +454,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 }
 
 R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
 	int inv = 0;
 	int unk = 0;
 	int str = 0;
@@ -466,7 +468,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	ut8 *lbuf = NULL;
 	if (!buf) {
 		RIOBind *iob = &a->iob;
-		if (!iob || !iob->read_at) {
+		if (!iob->read_at) {
 			R_LOG_ERROR ("RAnal.dataKind() requires ioBind");
 			return "error";
 		}

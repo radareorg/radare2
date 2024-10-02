@@ -84,3 +84,15 @@ EXPECT=<<EOF
 0x00000062 0 hit0_1 End of Zip archive
 EOF
 RUN
+
+NAME=/m for crc32
+FILE=bins/elf/mtk-su
+CMDS=<<EOF
+e search.align=4
+/m ../libr/magic/d/default/crc
+EOF
+EXPECT=<<EOF
+0x0000be00 0 hit0_0 CRC32 polynomial table, little endian
+0x0000ce00 0 hit0_1 CRC32 polynomial table, big endian
+EOF
+RUN

@@ -15,7 +15,7 @@ fi
 cd "$(dirname "$0")" ; cd ..
 
 export WITHOUT_PULL=0
-ROOT=
+PREFIX="${HOME}/.local"
 
 abspath() {
 	echo "$1" | grep -q ^/
@@ -36,8 +36,8 @@ do
 		"--install-path")
 			shift
 			if [ -n "$1" ]; then
-				ROOT="`abspath $1`"
-				BINDIR="$ROOT/bin"
+				PREFIX="`abspath $1`"
+				BINDIR="$PREFIX/bin"
 			else
 				echo "ERROR: install-path must not be empty"
 				exit 1
@@ -48,6 +48,8 @@ do
 	esac
 	shift
 done
+
+ARGS="${ARGS} --with-rpath"
 
 # update
 if [ $WITHOUT_PULL -eq 0 ]; then
@@ -66,7 +68,7 @@ if [ $WITHOUT_PULL -eq 0 ]; then
 	fi
 fi
 
-if [ -z "${ROOT}" ]; then
+if [ -z "${PREFIX}" ]; then
 	if [ -z "${HOME}" ]; then
 		echo "HOME not set"
 		exit 1
@@ -76,26 +78,31 @@ if [ -z "${ROOT}" ]; then
 		echo "HOME is not a directory"
 		exit 1
 	fi
-	ROOT="${HOME}/bin/prefix/radare2"
-	BINDIR="${HOME}/bin"
+	PREFIX="${HOME}/.local"
+	# PREFIX="${PREFIX}/bin/prefix/radare2"
 fi
 
-mkdir -p "${ROOT}/lib"
+if [ -z "${BINDIR}" ]; then
+	BINDIR="${PREFIX}/bin"
+fi
+
+mkdir -p "${PREFIX}/lib"
 
 if [ "${M32}" = 1 ]; then
-	./sys/build-m32.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
+	./sys/build-m32.sh "${PREFIX}" ${ARGS} && ${MAKE} symstall
 elif [ "${HARDEN}" = 1 ]; then
-	./sys/build-harden.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
+	./sys/build-harden.sh "${PREFIX}" ${ARGS} && ${MAKE} symstall
 else
-	./sys/build.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
+	./sys/build.sh "${PREFIX}" ${ARGS} && ${MAKE} symstall
 fi
 if [ $? != 0 ]; then
 	echo "Oops"
 	exit 1
 fi
-${MAKE} user-install
+${MAKE} symstall
+S='$'
 echo
-echo "radare2 is now installed in ${BINDIR}"
+echo "radare2 is now installed in ${PREFIX}"
 echo
-echo "Now add ${BINDIR} to your PATH"
+echo "export PATH=${BINDIR}:${S}PATH"
 echo

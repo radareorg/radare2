@@ -113,7 +113,7 @@ static snes_op_t snes_op[] = {
 { "eor (0x%02x),y",	SNES_OP_16BIT},
 { "eor (0x%02x)",	SNES_OP_16BIT},
 { "eor (0x%02x,s),y",	SNES_OP_16BIT},
-{ "mvn 0x%02x,0x%02x",	SNES_OP_16BIT},
+{ "mvn 0x%02x,0x%02x",	SNES_OP_24BIT},
 { "eor 0x%02x,x",	SNES_OP_16BIT},
 { "lsr 0x%02x,x",	SNES_OP_16BIT},
 { "eor [0x%02x],y",	SNES_OP_16BIT},

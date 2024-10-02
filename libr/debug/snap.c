@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2024 - pancake, rkx1209 */
 
 #include <r_debug.h>
 #include <r_hash.h>
@@ -7,12 +7,12 @@ R_API void r_debug_snap_free(RDebugSnap *snap) {
 	if (snap) {
 		free (snap->name);
 		free (snap->data);
-		R_FREE (snap);
+		free (snap);
 	}
 }
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
-	r_return_val_if_fail (dbg && map, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg && map, NULL);
 	if (map->size < 1) {
 		R_LOG_ERROR ("Invalid map size");
 		return NULL;

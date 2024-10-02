@@ -7,17 +7,17 @@ bool test_r_bitmap_set(void) {
 	const ut32 values [] = { 1, 2, 3, 4, 8, 34, 543, 2343 };
 	const int len = sizeof (values) / sizeof (ut32);
 	RBitmap *bitmap = r_bitmap_new (max_value);
-	for (i=0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		r_bitmap_set (bitmap, values[i]);
 	}
-	for (i=0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		mu_assert_eq (r_bitmap_test(bitmap, values[i]), true,
 				"Bit should be set.");
 	}
-	for (i=0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		r_bitmap_unset (bitmap, values[i]);
 	}
-	for (i=0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		mu_assert_eq (r_bitmap_test (bitmap, values[i]), false,
 				"Bit should not be set.");
 	}
@@ -25,7 +25,7 @@ bool test_r_bitmap_set(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_bitmap_set);
 	return tests_passed != tests_run;
 }

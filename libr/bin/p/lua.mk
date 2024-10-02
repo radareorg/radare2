@@ -1,4 +1,4 @@
-OBJ_LUA=bin_lua.o
+OBJ_LUA=bin_lua.o ../format/lua/lua.o
 
 STATIC_OBJ+=${OBJ_LUA}
 TARGET_LUA=bin_lua.${EXT_SO}

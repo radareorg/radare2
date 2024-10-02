@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2013-2022 - pancake */
+/* sdb - MIT - Copyright 2013-2024 - pancake */
 
 #include <fcntl.h>
 #include <errno.h>
@@ -9,7 +9,7 @@
 
 #if UNICODE
 
-static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
+static wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 	if (!cstring || !len || len < -1) {
 		return NULL;
 	}
@@ -129,7 +129,7 @@ SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val) {
 }
 
 #define IFRET(x) if (x) ret = 0
-SDB_API bool sdb_disk_finish (Sdb* s) {
+SDB_API bool sdb_disk_finish(Sdb* s) {
 	bool reopen = false, ret = true;
 	IFRET (!cdb_make_finish (&s->m));
 #if USE_MMAN
@@ -171,6 +171,6 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 	return ret;
 }
 
-SDB_API bool sdb_disk_unlink (Sdb *s) {
+SDB_API bool sdb_disk_unlink(Sdb *s) {
 	return (s->dir && *(s->dir) && unlink (s->dir) != -1);
 }

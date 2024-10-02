@@ -61,6 +61,11 @@ if [ ! -x /work ]; then
 	else
 		#[ -z "${SDK}" ] && SDK="${HOME}/Downloads/android-sdk-${OS}"
 		if [ -z "${NDK}" ]; then
+			if [ -d /usr/lib/android-ndk ]; then
+				NDK="/usr/lib/android-ndk" # ubuntu
+			fi
+		fi
+		if [ -z "${NDK}" ]; then
 			# Checking if Android NDK is installed with macOS's brew
 			D=/usr/local/Caskroom/android-ndk/
 			if [ -d "${D}" ]; then

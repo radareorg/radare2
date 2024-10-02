@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, maijin */
 
 #include <r_parse.h>
 #include <config.h>
@@ -36,8 +36,6 @@ R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	}
 	return NULL;
 }
-
-R_API char *r_parse_
 #endif
 
 R_API RParse *r_parse_new(void) {
@@ -72,7 +70,7 @@ R_API void r_parse_free(RParse *p) {
 }
 
 R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *foo) {
-	r_return_val_if_fail (p && foo, false);
+	R_RETURN_VAL_IF_FAIL (p && foo, false);
 	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
 		r_list_append (p->parsers, foo);
@@ -94,13 +92,21 @@ static char *predotname(const char *name) {
 }
 
 R_API bool r_parse_use(RParse *p, const char *name) {
-	r_return_val_if_fail (p && name, false);
+	R_RETURN_VAL_IF_FAIL (p && name, false);
 
+	if (r_str_startswith (name, "r2ghidra")) {
+		// This plugin uses asm.cpu as a hack, ignoring
+		return false;
+	}
 	// TODO: remove the alias workarounds because of missing pseudo plugins
-	// TODO: maybe we want to have a generic pseudo parser?
 	if (r_str_startswith (name, "s390.")) {
 		name = "x86.pseudo";
 	}
+#if 0
+	if (r_str_startswith (name, "blackfin")) {
+		name = "arm.pseudo";
+	}
+#endif
 
 	RListIter *iter;
 	RParsePlugin *h;
@@ -110,61 +116,46 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 			return true;
 		}
 	}
-	char *sname = predotname (name);
 	bool found = false;
-	r_list_foreach (p->parsers, iter, h) {
-		char *shname = predotname (h->name);
-		found = !strcmp (shname, sname);
-		free (shname);
-		if (found) {
-			p->cur = h;
-			break;
-		}
-	}
-	free (sname);
-	return false;
-}
-
-#if 0
-// this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
-// and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
-R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
-	r_return_val_if_fail (p && data && str, false);
-	char *in = strdup (str);
-	bool ret = false;
-	char *s, *o;
-
-	data[0] = '\0';
-	if (p->cur && p->cur->assemble) {
-		o = data + strlen (data);
-		do {
-			s = strchr (str, ';');
-			if (s) {
-				*s = '\0';
-			}
-			ret = p->cur->assemble (p, o, str);
-			if (!ret) {
+	if (strchr (name, '.')) {
+		char *sname = predotname (name);
+		r_list_foreach (p->parsers, iter, h) {
+			char *shname = predotname (h->name);
+			found = !strcmp (shname, sname);
+			free (shname);
+			if (found) {
+				p->cur = h;
 				break;
 			}
-			if (s) {
-				str = s + 1;
-				o += strlen (data);
-				o[0] = '\n';
-				o[1] = '\0';
-				o++;
-			}
-		} while (s);
+		}
+		free (sname);
 	}
-	free (in);
-	return ret;
+	if (!found) {
+		R_LOG_WARN ("Cannot find asm.parser for %s", name);
+		if (p->cur && p->cur->name) {
+			if (r_str_startswith (p->cur->name, "null")) {
+				return false;
+			}
+		}
+		// check if p->cur
+		r_list_foreach (p->parsers, iter, h) {
+			if (r_str_startswith (h->name, "null")) {
+				R_LOG_INFO ("Fallback to null");
+				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
+				p->cur = h;
+				return false;
+			}
+		}
+		return false;
+	}
+	return true;
 }
-#endif
 
 // data is input disasm, str is output pseudo
 // TODO: refactoring, this should return char * instead
 // like parseHeap()
 R_API char *r_parse_instruction(RParse *p, const char *data) {
-	r_return_val_if_fail (p && data, false);
+	R_RETURN_VAL_IF_FAIL (p && data, false);
 	char *str = malloc (32 + strlen (data) * 2);
 	strcpy (str, data);
 	bool bres = (p && p->cur && p->cur->parse)
@@ -176,14 +167,19 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 	return NULL;
 }
 
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. in R2_590 because r_parse_instruction is better
-	r_return_val_if_fail (p && data && str, false);
-	return (p && data && *data && p->cur && p->cur->parse)
-		? p->cur->parse (p, data, str) : false;
+// TODO deprecate in R2_600 because r_parse_instruction is better
+// TODO worst api name ever
+R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
+	R_RETURN_VAL_IF_FAIL (p && data && str, false);
+	if (*data && p->cur && p->cur->parse) {
+		return p->cur->parse (p, data, str);
+	}
+	// causes pdc to be empty, we need that parser to be doing sthg
+	return false;
 }
 
+// R_API char *r_parse_immtrim(const char *_opstr)
 R_API char *r_parse_immtrim(char *_opstr) {
-// R_API char *r_parse_immtrim(const char *_opstr) {
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
@@ -217,7 +213,7 @@ R_API char *r_parse_immtrim(char *_opstr) {
 }
 
 R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	if (p->cur && p->cur->subvar) {
 		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}
@@ -226,6 +222,6 @@ R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int
 
 /* setters */
 R_API void r_parse_set_user_ptr(RParse *p, void *user) {
-	r_return_if_fail (p && user);
+	R_RETURN_IF_FAIL (p && user);
 	p->user = user;
 }

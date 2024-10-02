@@ -21,7 +21,7 @@ struct parse_ctx {
 };
 
 static bool append(libgdbr_t *g, const char ch) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	if (g->data_len == g->data_max - 1) {
 		int newsize = g->data_max * 2;
 		if (newsize < 1) {
@@ -41,7 +41,7 @@ static bool append(libgdbr_t *g, const char ch) {
 }
 
 static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	int i = 0;
 	int j = 0;
 	bool first = true;
@@ -141,7 +141,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 }
 
 int read_packet(libgdbr_t *g, bool vcont) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	struct parse_ctx ctx = {0};
 	int ret, i;
 	g->data_len = 0;
@@ -184,7 +184,7 @@ int read_packet(libgdbr_t *g, bool vcont) {
 }
 
 int send_packet(libgdbr_t *g) {
-	r_return_val_if_fail (g, -1);
+	R_RETURN_VAL_IF_FAIL (g, -1);
 	g->send_buff[g->send_len] = '\0';
 	R_LOG_DEBUG ("putpkt (\"%s\");  %s", g->send_buff,
 			g->no_ack ? "[noack mode]" : "[looking for ack]");
@@ -192,7 +192,7 @@ int send_packet(libgdbr_t *g) {
 }
 
 int pack(libgdbr_t *g, const char *msg) {
-	r_return_val_if_fail (g && msg, -1);
+	R_RETURN_VAL_IF_FAIL (g && msg, -1);
 	int run_len;
 	size_t msg_len;
 	const char *src;

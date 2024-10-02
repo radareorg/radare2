@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2022 - pancake */
+/* radare2 - LGPL - Copyright 2021-2023 - pancake */
 
 #define R_LOG_ORIGIN "esil.dummy"
 
@@ -46,9 +46,12 @@ static void r_esil_dummy_fini(REsil *esil, void *user) {
 }
 
 REsilPlugin r_esil_plugin_dummy = {
-	.name = "dummy",
-	.desc = "dummy esil plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "dummy",
+		.desc = "dummy esil plugin",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.init = r_esil_dummy_init,
 	.fini = r_esil_dummy_fini
 };

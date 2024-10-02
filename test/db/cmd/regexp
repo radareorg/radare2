@@ -50,3 +50,14 @@ CMDS=<<EOF
 EOF
 REGEXP_OUT=wor
 RUN
+
+NAME=/ej json
+FILE=malloc://1024
+CMDS=<<EOF
+w HELLO WORLD
+/ej /[A-Z]*/
+EOF
+EXPECT=<<EOF
+{"offset":0,"type":"string","data":"HELLO WORLD"}
+EOF
+RUN

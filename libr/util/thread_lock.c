@@ -7,7 +7,7 @@
 #include <r_util/r_log.h>
 
 /* locks/mutex/sems */
-static bool lock_init(RThreadLock *thl, bool recursive) {
+static bool _lock_init(RThreadLock *thl, bool recursive) {
 #if HAVE_PTHREAD
 	if (recursive) {
 		pthread_mutexattr_t attr;
@@ -36,7 +36,7 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	return atomic_exchange_explicit (data, v, memory_order_acquire);
-#elif __GNUC__ && !__TINYC__
+#elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int orig = 0;
 	int conv = (int)v;
 	__atomic_exchange (data, &conv, &orig, __ATOMIC_ACQUIRE);
@@ -54,7 +54,7 @@ R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	atomic_store_explicit (data, v, memory_order_release);
-#elif __GNUC__ && !__TINYC__
+#elif __GNUC__ && !__TINYC__ && !(__APPLE__ && __ppc__)
 	int conv = (int)v;
 	__atomic_store (data, &conv, __ATOMIC_RELEASE);
 #elif _MSC_VER
@@ -70,7 +70,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 	R_LOG_DEBUG ("r_th_lock_new");
 	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (thl) {
-		if (lock_init (thl, recursive)) {
+		if (_lock_init (thl, recursive)) {
 			thl->type = R_TH_LOCK_TYPE_HEAP;
 			thl->active = true;
 			thl->activating = false;
@@ -82,7 +82,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 }
 
 R_API bool r_th_lock_wait(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_wait");
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
@@ -91,7 +91,10 @@ R_API bool r_th_lock_wait(RThreadLock *thl) {
 
 #if WANT_THREADS
 R_API bool r_th_lock_enter(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	if (!thl) {
+		return false;
+	}
+//	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_enter");
 
 	// initialize static locks on acquisition
@@ -100,23 +103,23 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 			// spinning
 		}
 		if (!thl->active) {
-			lock_init (thl, false);
+			_lock_init (thl, false);
 			thl->active = true;
 		}
 		// finish spinning
 		r_atomic_store (&thl->activating, false);
 	}
 #if HAVE_PTHREAD
-	return pthread_mutex_lock (&thl->lock);
+	return pthread_mutex_lock (&thl->lock) == 0;
 #elif R2__WINDOWS__
 	EnterCriticalSection (&thl->lock);
-	return 0;
+	return true;
 #else
-	return 0;
+	return true;
 #endif
 }
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_tryenter");
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
@@ -126,8 +129,12 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	return false;
 #endif
 }
+
 R_API bool r_th_lock_leave(RThreadLock *thl) {
-	r_return_val_if_fail (thl, false);
+	if (!thl) {
+		return false;
+	}
+	//R_RETURN_VAL_IF_FAIL (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;

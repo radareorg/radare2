@@ -20,8 +20,7 @@ R_LIB_VERSION_HEADER(r_egg);
 #define R_EGG_PLUGIN_ENCODER 1
 
 typedef struct r_egg_plugin_t {
-	const char *name;
-	const char *desc;
+	RPluginMeta meta;
 	int type;
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
@@ -96,7 +95,6 @@ typedef struct r_egg_t {
 	RBuffer *bin; // input binary data
 	RList *list;
 	RAsm *rasm;
-	RAnal *anal;/// XXX this is temporary hack until asm can use arch
 	RSyscall *syscall;
 	REggLang lang;
 	Sdb *db;

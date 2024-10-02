@@ -1,0 +1,434 @@
+NAME=jump table for swift on arm64
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+0x100004000;af
+pdr
+EOF
+EXPECT=<<EOF
+  ;-- section.0.__TEXT.__text:
+  ; DATA XREF from sym.func.100004000 @ 0x100004040(r)
+276: sym.func.100004000 (int64_t arg1, int64_t arg2, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, int64_t arg_80h);
+`- args(x0, x1, x3, x4, x5, x6, sp[0x80..0x80]) vars(6:sp[0x10..0x60])
+0x100004000      sub sp, sp, 0x80                                      ; [00] -r-x section size 13240 named 0.__TEXT.__text
+0x100004004      str x28, [var_20h]
+0x100004008      stp x27, x26, [var_30h]
+0x10000400c      stp x25, x24, [var_40h]
+0x100004010      stp x23, x22, [var_50h]
+0x100004014      stp x20, x19, [var_60h]
+0x100004018      stp x29, x30, [var_70h]
+0x10000401c      add x29, sp, 0x70
+0x100004020      mov x20, x8
+0x100004024      lsr x8, x4, 0x3e                                      ; arg5
+0x100004028      mov x19, x21
+0x10000402c      mov x24, x6                                           ; arg7
+0x100004030      mov x26, x5                                           ; arg6
+0x100004034      mov x22, x1                                           ; arg2
+0x100004038      mov x23, x0                                           ; arg1
+0x10000403c      mov x25, 0
+0x100004040      adrp x9, sym.func.100004000                           ; 0x100004000
+0x100004044      add x9, x9, 0x114
+;-- switch:
+0x100004048      adr x10, switch.0x100004048                           ; switch table (4 cases) at 0x100004114
+0x10000404c      ldrsw x11, [x9, x8, lsl 2]
+0x100004050      add x10, x10, x11
+0x100004054      br x10
+
+;-- case 0:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+0x100004058      ubfx x25, x4, 0x30, 8                                 ; arg5
+0x10000405c      b case.0x100004048.3
+| // true: 0x100004080
+;-- case 1:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+0x100004060      lsr x8, x3, 0x20                                      ; arg4
+0x100004064      subs w8, w8, w3
+0x100004068      b.vs 0x10000410c
+| // true: 0x10000410c  false: 0x10000406c
+0x10000406c      sxtw x25, w8
+0x100004070      b case.0x100004048.3
+| // true: 0x100004080
+;-- case 2:                                                            ; from 0x100004048
+; CODE XREF from sym.func.100004000 @ 0x100004048(x)
+0x100004074      ldp x9, x8, [x3, 0x10]                                ; arg4
+0x100004078      subs x25, x8, x9
+0x10000407c      b.vs 0x100004110
+| // true: 0x100004110  false: 0x100004080
+;-- case 3:                                                            ; from 0x100004048
+; CODE XREFS from sym.func.100004000 @ 0x100004048(x), 0x10000405c(x), 0x100004070(x)
+0x100004080      ldr x28, [x26]
+0x100004084      ldr x27, [x28, 0x10]
+0x100004088      mov x0, x28
+0x10000408c      bl sym.imp.swift_isUniquelyReferenced_nonNull_native
+0x100004090      str x28, [x26]
+0x100004094      tbnz w0, 0, 0x1000040b0
+| // true: 0x1000040b0  false: 0x100004098
+0x100004098      mov w0, 0
+0x10000409c      mov x1, x27
+0x1000040a0      mov w2, 0
+0x1000040a4      mov x3, x28
+0x1000040a8      bl sym.func.1000045dc
+0x1000040ac      mov x28, x0
+| // true: 0x1000040b0
+0x1000040b0      str x28, [x26]
+0x1000040b4      add x8, x28, 0x20
+0x1000040b8      stp x27, x24, [sp, 8]
+0x1000040bc      str x8, [sp]
+0x1000040c0      mov w0, 0
+0x1000040c4      mov w1, 2
+0x1000040c8      mov w2, 1
+0x1000040cc      mov x3, x23
+0x1000040d0      mov w4, 0x18
+0x1000040d4      mov x5, 0
+0x1000040d8      mov x6, x22
+0x1000040dc      mov x7, x25
+0x1000040e0      bl sym.imp.CCCrypt
+0x1000040e4      str w0, [x20]
+0x1000040e8      mov x21, x19
+0x1000040ec      ldp x29, x30, [var_70h]
+0x1000040f0      ldp x20, x19, [var_60h]
+0x1000040f4      ldp x23, x22, [var_50h]
+0x1000040f8      ldp x25, x24, [var_40h]
+0x1000040fc      ldp x27, x26, [var_30h]
+0x100004100      ldr x28, [var_20h]
+0x100004104      add sp, sp, 0x80
+0x100004108      ret
+
+0x10000410c      brk 1
+
+0x100004110      brk 1
+
+EOF
+RUN
+
+
+NAME=ccccrypt argument values from esil
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+e emu.str=true
+s 0x1000040c0
+aaa
+pd 10
+EOF
+EXPECT=<<EOF
+;-- pc:
+0x1000040c0      mov w0, 0
+0x1000040c4      mov w1, 2
+0x1000040c8      mov w2, 1
+0x1000040cc      mov x3, x23
+0x1000040d0      mov w4, 0x18
+0x1000040d4      mov x5, 0
+0x1000040d8      mov x6, x22
+0x1000040dc      mov x7, x25
+0x1000040e0      bl sym.imp.CCCrypt                                    ; CCCryptorStatus CCCrypt(CCOperation op, CCAlgorithm alg, int32_t options, const void *key, uint32_t keyLength, const void *iv, const void *dataIn, uint32_t dataInLength, void *dataOut, uint32_t dataOutAvailable, uint32_t *dataOutMoved)
+                                                                       ; CCCryptorStatus CCCrypt(0, 2, 1, 0, 0x18, 0, 0, 0, -1, -1, -1)
+0x1000040e4      str w0, [x20]
+EOF
+RUN
+
+NAME=jump table for swift on arm64 again
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+0x100004124 
+af
+pdr
+EOF
+EXPECT=<<EOF
+904: sym.func.100004124 (int64_t arg1, int64_t arg2, int64_t arg_140h);
+`- args(x0, x1, sp[0x140..0x140]) vars(25:sp[0x10..0x140])
+0x100004124      sub sp, sp, 0x140
+0x100004128      str x28, [var_e0h]
+0x10000412c      stp x27, x26, [var_f0h]
+0x100004130      stp x25, x24, [var_100h]
+0x100004134      stp x23, x22, [var_110h]
+0x100004138      stp x20, x19, [var_120h]
+0x10000413c      stp x29, x30, [var_130h]
+0x100004140      add x29, sp, 0x130
+0x100004144      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x100004148      ldr x8, [x8, 0x390]
+0x10000414c      ldr x8, [x8]
+0x100004150      stur x8, [x29, -0x60]
+0x100004154      str x1, [var_80h]                                     ; arg2
+0x100004158      lsr x25, x1, 0x3e                                     ; arg2
+0x10000415c      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x100004160      ldr x24, [x24, 0x398]
+0x100004164      mov x19, x21
+0x100004168      adrp x8, sym.func.100004000                           ; 0x100004000
+0x10000416c      add x8, x8, 0x4ac
+;-- switch:
+0x100004170      adr x9, switch.0x100004170                            ; switch table (4 cases) at 0x1000044ac
+0x100004174      ldrsw x10, [x8, x25, lsl 2]
+0x100004178      add x9, x9, x10
+0x10000417c      br x9
+
+;-- case 0:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
+0x100004180      ldr x8, [var_80h]
+0x100004184      ubfx x26, x8, 0x30, 8
+0x100004188      b 0x1000041ac
+| // true: 0x1000041ac
+;-- case 1:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
+0x10000418c      lsr x8, x0, 0x20                                      ; arg1
+0x100004190      subs w8, w8, w0
+0x100004194      b.vs 0x100004498
+| // true: 0x100004498  false: 0x100004198
+0x100004198      sxtw x26, w8
+0x10000419c      b 0x1000041ac
+| // true: 0x1000041ac
+;-- case 2:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
+0x1000041a0      ldp x9, x8, [x0, 0x10]                                ; arg1
+0x1000041a4      subs x26, x8, x9
+0x1000041a8      b.vs 0x10000449c
+| // true: 0x10000449c  false: 0x1000041ac
+; CODE XREFS from sym.func.100004124 @ 0x100004188(x), 0x10000419c(x)
+0x1000041ac      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000041b0      ldr x24, [x24, 0x398]
+0x1000041b4      cbz x26, case.0x100004170.3
+| // true: 0x100004438  false: 0x1000041b8
+0x1000041b8      stur x24, [x29, -0x68]
+0x1000041bc      cmp x26, 0
+0x1000041c0      csel x1, x26, xzr, gt
+0x1000041c4      str x0, [arg_140hx88]                                 ; arg1
+0x1000041c8      sub x20, x29, 0x68
+0x1000041cc      mov w0, 0
+0x1000041d0      mov w2, 0
+0x1000041d4      bl sym.func.1000044bc
+0x1000041d8      ldr x22, [arg_140hx88]
+0x1000041dc      sxtw x8, w22
+0x1000041e0      str x8, [arg_140hx78]
+0x1000041e4      str x19, [sp]
+0x1000041e8      cbz w25, 0x1000041fc
+| // true: 0x1000041fc  false: 0x1000041ec
+0x1000041ec      cmp w25, 1
+0x1000041f0      b.ne 0x100004204
+| // true: 0x100004204  false: 0x1000041f4
+0x1000041f4      ldr x23, [arg_140hx78]
+0x1000041f8      b 0x100004208
+| // true: 0x100004208
+0x1000041fc      mov w23, w25
+0x100004200      b 0x100004208
+| // true: 0x100004208
+0x100004204      ldr x23, [x22, 0x10]
+| // true: 0x100004208
+; CODE XREFS from sym.func.100004124 @ 0x1000041f8(x), 0x100004200(x)
+0x100004208      tbnz x26, 0x3f, 0x100004494
+| // true: 0x100004494  false: 0x10000420c
+0x10000420c      ldur x24, [x29, -0x68]
+0x100004210      asr x10, x22, 0x20
+0x100004214      ldr x9, [var_80h]
+0x100004218      and x20, x9, 0x3fffffffffffffff
+0x10000421c      ubfx x8, x9, 0x30, 8
+0x100004220      stp x10, x8, [arg_140hx68]
+0x100004224      lsr x10, x22, 8
+0x100004228      lsr x8, x22, 0x10
+0x10000422c      stp x8, x10, [arg_140hx58]
+0x100004230      lsr x10, x22, 0x18
+0x100004234      lsr x8, x22, 0x20
+0x100004238      stp x8, x10, [arg_140hx48]
+0x10000423c      lsr x10, x22, 0x28
+0x100004240      lsr x8, x22, 0x30
+0x100004244      stp x8, x10, [arg_140hx38]
+0x100004248      lsr x10, x22, 0x38
+0x10000424c      lsr x8, x9, 8
+0x100004250      stp x8, x10, [arg_140hx28]
+0x100004254      lsr x8, x9, 0x10
+0x100004258      str x8, [arg_140hx20]
+0x10000425c      adrp x8, 0x100007000
+0x100004260      ldr q0, [x8, 0x800]
+0x100004264      str q0, [arg_140hx90]
+0x100004268      lsr x10, x9, 0x18
+0x10000426c      lsr x8, x9, 0x20
+0x100004270      stp x8, x10, [arg_140hx10]
+0x100004274      lsr x8, x9, 0x28
+0x100004278      str x8, [var_8h]
+0x10000427c      stp x25, x20, [x29, -0x88]
+| // true: 0x100004280
+0x100004280      cbz x26, 0x100004478
+| // true: 0x100004478  false: 0x100004284
+0x100004284      cbz w25, 0x1000042c4
+| // true: 0x1000042c4  false: 0x100004288
+0x100004288      cmp w25, 1
+0x10000428c      b.ne 0x100004348
+| // true: 0x100004348  false: 0x100004290
+0x100004290      ldr x8, [arg_140hx78]
+0x100004294      cmp x23, x8
+0x100004298      b.lt 0x10000447c
+| // true: 0x10000447c  false: 0x10000429c
+0x10000429c      ldr x8, [arg_140hx68]
+0x1000042a0      cmp x23, x8
+0x1000042a4      b.ge 0x10000447c
+| // true: 0x10000447c  false: 0x1000042a8
+0x1000042a8      bl sym Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg ; sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg
+0x1000042ac      cbz x0, 0x1000044a0
+| // true: 0x1000044a0  false: 0x1000042b0
+0x1000042b0      mov x19, x0
+0x1000042b4      bl sym getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg ; sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg
+0x1000042b8      subs x8, x23, x0
+0x1000042bc      b.vc 0x100004378
+| // true: 0x100004378  false: 0x1000042c0
+0x1000042c0      b 0x100004488
+| // true: 0x100004488
+0x1000042c4      ldr x8, [arg_140hx70]
+0x1000042c8      cmp x23, x8
+0x1000042cc      b.ge 0x100004480
+| // true: 0x100004480  false: 0x1000042d0
+0x1000042d0      sturb w22, [x29, -0x78]
+0x1000042d4      ldr x8, [arg_140hx60]
+0x1000042d8      sturb w8, [x29, -0x77]
+0x1000042dc      ldr x8, [arg_140hx58]
+0x1000042e0      sturb w8, [x29, -0x76]
+0x1000042e4      ldr x8, [arg_140hx50]
+0x1000042e8      sturb w8, [x29, -0x75]
+0x1000042ec      ldr x8, [arg_140hx48]
+0x1000042f0      sturb w8, [x29, -0x74]
+0x1000042f4      ldr x8, [arg_140hx40]
+0x1000042f8      sturb w8, [x29, -0x73]
+0x1000042fc      ldr x8, [arg_140hx38]
+0x100004300      sturb w8, [x29, -0x72]
+0x100004304      ldr x8, [arg_140hx30]
+0x100004308      sturb w8, [x29, -0x71]
+0x10000430c      ldr x8, [var_80h]
+0x100004310      sturb w8, [x29, -0x70]
+0x100004314      ldr x8, [arg_140hx28]
+0x100004318      sturb w8, [x29, -0x6f]
+0x10000431c      ldr x8, [arg_140hx20]
+0x100004320      sturb w8, [x29, -0x6e]
+0x100004324      ldr x8, [arg_140hx18]
+0x100004328      sturb w8, [x29, -0x6d]
+0x10000432c      ldr x8, [arg_140hx10]
+0x100004330      sturb w8, [x29, -0x6c]
+0x100004334      ldr x8, [var_8h]
+0x100004338      sturb w8, [x29, -0x6b]
+0x10000433c      sub x8, x29, 0x78
+0x100004340      ldrb w19, [x8, x23]
+0x100004344      b 0x100004380
+| // true: 0x100004380
+0x100004348      ldr x8, [x22, 0x10]
+0x10000434c      cmp x23, x8
+0x100004350      b.lt 0x100004484
+| // true: 0x100004484  false: 0x100004354
+0x100004354      ldr x8, [x22, 0x18]
+0x100004358      cmp x23, x8
+0x10000435c      b.ge 0x10000448c
+| // true: 0x10000448c  false: 0x100004360
+0x100004360      bl sym Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg ; sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg
+0x100004364      cbz x0, 0x1000044a4
+| // true: 0x1000044a4  false: 0x100004368
+0x100004368      mov x19, x0
+0x10000436c      bl sym getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg ; sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg
+0x100004370      subs x8, x23, x0
+0x100004374      b.vs 0x100004490
+| // true: 0x100004490  false: 0x100004378
+0x100004378      ldrb w19, [x19, x8]
+0x10000437c      ldr x22, [arg_140hx88]
+| // true: 0x100004380
+; CODE XREF from sym.func.100004124 @ 0x100004344(x)
+0x100004380      adrp x0, segment.__DATA                               ; 0x100010000
+0x100004384      add x0, x0, 0xc0
+0x100004388      bl sym.func.10000524c
+0x10000438c      mov w1, 0x48                                          ; 'H'
+0x100004390      mov w2, 7
+0x100004394      bl sym.imp.swift_allocObject
+0x100004398      mov x2, x0
+0x10000439c      ldr q0, [arg_140hx90]
+0x1000043a0      str q0, [x0, 0x10]
+0x1000043a4      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000043a8      ldr x8, [x8, 0x360]
+0x1000043ac      str x8, [x0, 0x38]
+0x1000043b0      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000043b4      ldr x8, [x8, 0x368]
+0x1000043b8      str x8, [x0, 0x40]
+0x1000043bc      strb w19, [x0, 0x20]
+0x1000043c0      mov x0, 0x3025                                        ; '%0'
+0x1000043c4      movk x0, 0x6832, lsl 16                               ; '2h'
+0x1000043c8      movk x0, 0x7868, lsl 32                               ; 'hx'
+0x1000043cc      mov x1, -0x1a00000000000000
+0x1000043d0      bl sym FoundationCVarArg...dtcfC                      ; sym.imp.FoundationCVarArg...dtcfC
+0x1000043d4      mov x27, x0
+0x1000043d8      mov x28, x1
+0x1000043dc      stur x24, [x29, -0x68]
+0x1000043e0      ldp x25, x8, [x24, 0x10]
+0x1000043e4      add x19, x25, 1
+0x1000043e8      cmp x25, x8, lsr 1
+0x1000043ec      b.hs 0x100004410
+| // true: 0x100004410  false: 0x1000043f0
+; CODE XREF from sym.func.100004124 @ 0x100004430(x)
+0x1000043f0      str x19, [x24, 0x10]
+0x1000043f4      add x8, x24, x25, lsl 4
+0x1000043f8      stp x27, x28, [x8, 0x20]
+0x1000043fc      add x23, x23, 1
+0x100004400      subs x26, x26, 1
+0x100004404      ldp x25, x20, [x29, -0x88]
+0x100004408      b.ne 0x100004280
+| // true: 0x100004280  false: 0x10000440c
+0x10000440c      b 0x100004434
+| // true: 0x100004434
+0x100004410      cmp x8, 1
+0x100004414      cset w0, hi
+0x100004418      sub x20, x29, 0x68
+0x10000441c      mov x1, x19
+0x100004420      mov w2, 1
+0x100004424      bl sym.func.1000044bc
+0x100004428      ldr x22, [arg_140hx88]
+0x10000442c      ldur x24, [x29, -0x68]
+0x100004430      b 0x1000043f0
+| // true: 0x1000043f0
+; CODE XREF from sym.func.100004124 @ 0x10000440c(x)
+0x100004434      ldr x19, [sp]
+| // true: 0x100004438
+;-- case 3:                                                            ; from 0x100004170
+; CODE XREF from sym.func.100004124 @ 0x100004170(x)
+0x100004438      ldur x8, [x29, -0x60]
+0x10000443c      adrp x9, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x100004440      ldr x9, [x9, 0x390]
+0x100004444      ldr x9, [x9]
+0x100004448      cmp x9, x8
+0x10000444c      b.ne 0x1000044a8
+| // true: 0x1000044a8  false: 0x100004450
+0x100004450      mov x0, x24
+0x100004454      mov x21, x19
+0x100004458      ldp x29, x30, [var_130h]
+0x10000445c      ldp x20, x19, [var_120h]
+0x100004460      ldp x23, x22, [var_110h]
+0x100004464      ldp x25, x24, [var_100h]
+0x100004468      ldp x27, x26, [var_f0h]
+0x10000446c      ldr x28, [var_e0h]
+0x100004470      add sp, sp, 0x140
+0x100004474      ret
+
+0x100004478      brk 1
+
+0x10000447c      brk 1
+
+0x100004480      brk 1
+
+0x100004484      brk 1
+
+; CODE XREF from sym.func.100004124 @ 0x1000042c0(x)
+0x100004488      brk 1
+
+0x10000448c      brk 1
+
+0x100004490      brk 1
+
+0x100004494      brk 1
+
+0x100004498      brk 1
+
+0x10000449c      brk 1
+
+0x1000044a0      brk 1
+
+0x1000044a4      brk 1
+
+0x1000044a8      bl sym.imp.__stack_chk_fail
+
+EOF
+RUN

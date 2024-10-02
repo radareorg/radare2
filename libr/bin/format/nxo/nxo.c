@@ -67,7 +67,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 				free (symName);
 				break;
 			}
-			imp->name  = symName;
+			imp->name = r_bin_name_new_from (symName);
 			if (!imp->name) {
 				goto out_walk_symbol;
 			}
@@ -82,7 +82,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 			imp->ordinal = bin->imports_list->length;
 			r_list_append (bin->imports_list, imp);
 			sym->is_imported = true;
-			sym->name = strdup (symName);
+			sym->name = r_bin_name_new (symName);
 			if (!sym->name) {
 				goto out_walk_symbol;
 			}
@@ -90,7 +90,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 			sym->vaddr = sym->paddr + baddr;
 			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
-			sym->name = symName;
+			sym->name = r_bin_name_new_from (symName);
 			if (!sym->name) {
 				R_FREE (sym);
 				break;

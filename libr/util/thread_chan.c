@@ -68,12 +68,16 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 	while (true) {
 		RListIter *iter;
 		RThreadChannelMessage *res;
-		r_th_lock_enter (promise->tc->lock);
-		r_list_foreach (promise->tc->responses, iter, res) {
-			if (res->id == promise->id) {
-				r_list_split_iter (promise->tc->responses, iter);
-				r_th_lock_leave (promise->tc->lock);
-				return res;
+		if (!r_th_lock_enter (promise->tc->lock)) {
+			break;
+		}
+		if (promise->tc->responses) {
+			r_list_foreach (promise->tc->responses, iter, res) {
+				if (res->id == promise->id) {
+					r_list_split_iter (promise->tc->responses, iter);
+					r_th_lock_leave (promise->tc->lock);
+					return res;
+				}
 			}
 		}
 		r_th_lock_leave (promise->tc->lock);
@@ -109,7 +113,7 @@ R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChann
 // push a message to the stack
 R_API RThreadChannelMessage *r_th_channel_write(RThreadChannel *tc, RThreadChannelMessage *cm) {
 	R_LOG_DEBUG ("r_th_channel_write");
-	r_return_val_if_fail (tc && cm, NULL);
+	R_RETURN_VAL_IF_FAIL (tc && cm, NULL);
 	r_th_lock_enter (cm->lock);
 		r_th_lock_enter (tc->lock);
 		r_list_push (tc->stack, cm);

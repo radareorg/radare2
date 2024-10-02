@@ -1,6 +1,8 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
-if not capstone_dep.found() or not get_option('use_sys_capstone')
+if capstone_dep.found() and get_option('use_sys_capstone')
+  message('Use system-provided capstone library')
+else
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
@@ -19,13 +21,13 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'next'
-      CS_TIP = 'a4df92eda647e739432860682be638da1b8b901a'
+      CS_TIP = 'a34901e919157c4b0f52e3b93bd977023a97d6b7'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
       ]
     elif capstone_version == 'v5'
-      CS_TIP = 'e1af2e249ab85c70594a8c975f27d072278257fb'
+      CS_TIP = '36a9619b7372c34459d100f1c6fd6eb27326efbc'
       CS_BRA = 'v5'
       patches_files = [
         'fix-x86-16.patch'
@@ -224,8 +226,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     link_with: libr2capstone,
     include_directories: capstone_includes
   )
-else
-  message('Use system-provided capstone library')
 endif
 
 # handle bochs dependency

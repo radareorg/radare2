@@ -244,7 +244,7 @@ static inline bool cache_offsets(HtUP *cache, RList *keep) {
 }
 
 static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
-	r_return_val_if_fail (s && s->arch, false);
+	R_RETURN_VAL_IF_FAIL (s && s->arch, false);
 	RArch *a = s->arch;
 	RBin *bin = R_UNWRAP2 (a, binb.bin);
 	if (!bin || !bin->iob.read_at) {
@@ -322,7 +322,7 @@ static inline bool op_set_nfo(HtUP *c, RAnalOp *op) {
 static void set_cf_info(RArchSession *s, RAnalOp *op) {
 	// TODO: check if file has changed
 	HtUP *cache = (HtUP *)s->user;
-	r_return_if_fail (cache);
+	R_RETURN_IF_FAIL (cache);
 
 	if (!op_set_nfo (cache, op)) {
 		if (parse_control_flow (s, op->addr)) {
@@ -354,7 +354,7 @@ static bool wasm_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 
 // analyzes the wasm opcode.
 static bool wasm_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 	WasmOp wop = {{0}};
 	const bool txt = mask & R_ARCH_OP_MASK_DISASM;
 	int ret = wasm_dis (&wop, op->bytes, op->size, txt);
@@ -630,7 +630,7 @@ static void _kv_free(HtUPKv *kv) {
 }
 
 static bool cache_new(RArchSession *s) {
-	r_return_val_if_fail (!s->user, false);
+	R_RETURN_VAL_IF_FAIL (!s->user, false);
 	s->user = ht_up_new (NULL, _kv_free, NULL);
 	return s->user? true: false;
 }

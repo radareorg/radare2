@@ -3,7 +3,7 @@
 #include <r_io.h>
 
 R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref) {
-	r_return_val_if_fail (io && mapref, NULL);
+	R_RETURN_VAL_IF_FAIL (io && mapref, NULL);
 	RIOMap *map = r_io_map_get_by_ref (io, mapref);
 	if (!map) {
 		return NULL;
@@ -17,7 +17,7 @@ R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref) {
 }
 
 R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from) {
-	r_return_val_if_fail (sm, false);
+	R_RETURN_VAL_IF_FAIL (sm, false);
 	if (r_io_submap_to (sm) < from) {
 		return false;
 	}
@@ -27,7 +27,7 @@ R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from) {
 }
 
 R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to) {
-	r_return_val_if_fail (sm, false);
+	R_RETURN_VAL_IF_FAIL (sm, false);
 	if (r_io_submap_from (sm) > to) {
 		return false;
 	}

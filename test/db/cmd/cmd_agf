@@ -43,6 +43,16 @@ digraph code {
 	graph [fontsize=8 fontname="Courier" bgcolor=azure splines="ortho"];
 	node [fillcolor=white style=filled shape=box];
 	edge [arrowhead="normal"];
+	"0x00000010" [URL="fcn.00000010/0x00000010", fontcolor="#767676", fontname="Courier"]
+	"0x0000008a" [URL="fcn.00000010/0x0000008a", fontcolor="#767676", fontname="Courier"]
+	"0x00000034" [URL="fcn.00000010/0x00000034", fontcolor="#767676", fontname="Courier"]
+	"0x00000042" [URL="fcn.00000010/0x00000042", fontcolor="#767676", fontname="Courier"]
+	"0x00000091" [URL="fcn.00000010/0x00000091", fontcolor="#767676", fontname="Courier"]
+	"0x0000004e" [URL="fcn.00000010/0x0000004e", fontcolor="#767676", fontname="Courier"]
+	"0x0000005a" [URL="fcn.00000010/0x0000005a", fontcolor="#767676", fontname="Courier"]
+	"0x00000066" [URL="fcn.00000010/0x00000066", fontcolor="#767676", fontname="Courier"]
+	"0x00000072" [URL="fcn.00000010/0x00000072", fontcolor="#767676", fontname="Courier"]
+	"0x0000007e" [URL="fcn.00000010/0x0000007e", fontcolor="#767676", fontname="Courier"]
         "0x00000010" -> "0x0000008a" [color="#13a10e"];
         "0x00000010" -> "0x00000034" [color="#c50f1f"];
         "0x0000008a" -> "0x00000091" [color="#3a96dd"];
@@ -79,13 +89,6 @@ stateDiagram-v2
   state "[0x15d7e]" as _0x15d7e
   state "[0x15da0]" as _0x15da0
   state "[0x15db5]" as _0x15db5
-  state "[0x15dc9]" as _0x15dc9
-  state "[0x15dd0]" as _0x15dd0
-  state "[0x15dd5]" as _0x15dd5
-  state "[0x15dda]" as _0x15dda
-  state "[0x15de3]" as _0x15de3
-  state "[0x15df0]" as _0x15df0
-  state "[0x15df6]" as _0x15df6
   _0x15cc0 --> _0x15db5: true
   _0x15cc0 --> _0x15d06: false
   _0x15d06 --> _0x15db5: true
@@ -97,15 +100,6 @@ stateDiagram-v2
   _0x15d67 --> _0x15da0: true
   _0x15d67 --> _0x15d7e: false
   _0x15da0 --> _0x15d7e
-  _0x15db5 --> _0x15df6: true
-  _0x15db5 --> _0x15dc9: false
-  _0x15dc9 --> _0x15dd0
-  _0x15dd0 --> _0x15dda: true
-  _0x15dd0 --> _0x15dd5: false
-  _0x15dd5 --> _0x15df0: true
-  _0x15dd5 --> _0x15dda: false
-  _0x15dda --> _0x15dd0: true
-  _0x15dda --> _0x15de3: false
 EOF
 RUN
 
@@ -125,14 +119,7 @@ stateDiagram-v2
   state "[0x15d67]\nmov rax, qword [r12 + 0x30]\nlea rdx, [rbp + rax + 0x10]\nnot rax\nand rax, rdx\ncmp qword [r12 + 0x10], rax\nje 0x15da0\n" as _0x15d67
   state "[0x15d7e]\nadd r13, rbx\nmov qword [r12 + 0x10], rbx\nmov qword [r12 + 0x18], r13\nand byte [r12 + 0x50], 0xfd\npop rbx\npop rbp\npop r12\npop r13\npop r14\nret\n" as _0x15d7e
   state "[0x15da0]\nmov rax, qword [rbp + 8]\nmov rsi, rbp\nmov rdi, r12\nmov qword [r14 + 8], rax\ncall 0x15bd0\njmp 0x15d7e\n" as _0x15da0
-  state "[0x15db5]\ncall qword [rip + 0xc4a5]\nnop dword [rax + rax]\nmov rax, qword [rdi + 8]\ntest rax, rax\nje 0x15df6\n" as _0x15db5
-  state "[0x15dc9]\nnop dword [rax]\n" as _0x15dc9
-  state "[0x15dd0]\ncmp rsi, rax\njbe 0x15dda\n" as _0x15dd0
-  state "[0x15dd5]\ncmp qword [rax], rsi\njae 0x15df0\n" as _0x15dd5
-  state "[0x15dda]\nmov rax, qword [rax + 8]\ntest rax, rax\njne 0x15dd0\n" as _0x15dda
-  state "[0x15de3]\nxor eax, eax\nret\n" as _0x15de3
-  state "[0x15df0]\nmov eax, 1\nret\n" as _0x15df0
-  state "[0x15df6]\nret\n" as _0x15df6
+  state "[0x15db5]\ncall qword [rip + 0xc4a5]\nnop dword [rax + rax]\n" as _0x15db5
   _0x15cc0 --> _0x15db5: true
   _0x15cc0 --> _0x15d06: false
   _0x15d06 --> _0x15db5: true
@@ -144,15 +131,6 @@ stateDiagram-v2
   _0x15d67 --> _0x15da0: true
   _0x15d67 --> _0x15d7e: false
   _0x15da0 --> _0x15d7e
-  _0x15db5 --> _0x15df6: true
-  _0x15db5 --> _0x15dc9: false
-  _0x15dc9 --> _0x15dd0
-  _0x15dd0 --> _0x15dda: true
-  _0x15dd0 --> _0x15dd5: false
-  _0x15dd5 --> _0x15df0: true
-  _0x15dd5 --> _0x15dda: false
-  _0x15dda --> _0x15dd0: true
-  _0x15dda --> _0x15de3: false
 EOF
 RUN
 

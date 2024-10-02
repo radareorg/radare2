@@ -22,7 +22,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[2] = {0};
 	if (!bf) {
 		// not eligible for carving
@@ -56,8 +56,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -89,7 +89,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup (r_str_get (name));
+	ptr->name = r_bin_name_new (r_str_get (name));
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
@@ -211,12 +211,14 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_msx = {
-	.name = "msx",
-	.desc = "MSX rom/bin parser",
-	.license = "LGPL3",
-	.author = "Jose Antonio Romero",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "msx",
+		.desc = "MSX rom/bin parser",
+		.license = "LGPL3",
+		.author = "Jose Antonio Romero",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

@@ -1,0 +1,15 @@
+[package]
+name = "pancake/ragg2"
+version = "5.9.5"
+description = "Unix-Like Reverse Engineering Framework"
+license = "LGPL3"
+readme = "README.md"
+
+[[module]]
+name = "ragg2"
+source = "ragg2.wasm"
+abi = "wasi"
+
+[[command]]
+name = "ragg2"
+module = "ragg2"

@@ -1,6 +1,5 @@
 all:
-	cd ../.. && dist/macos/build-pkg.sh
-	cp -f ../../sys/osx-pkg/*.pkg .
+	cd ../.. && sys/osx-pkg.sh
 
 install:
 	installer -pkg *.pkg -target /

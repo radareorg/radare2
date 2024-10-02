@@ -26,20 +26,23 @@ Running commands
 Currently, the radare2 commands can be invoked with the following names:
 
 - `radare2` or `radare2.r2` or `radare2.radare2`: The `r2`/`radare2` command.
+- `radare2.r2` : The `r2` command.
+- `radare2.r2agent` : The `r2agent` command.
+- `radare2.r2frida-compile` : The `r2frida-compile` command.
 - `radare2.r2p` : The `r2p` command.
 - `radare2.r2pm` : The `r2pm` command.
 - `radare2.r2r` : The `r2r` command.
-- `radare2.r2agent` : The `r2agent` command.
-- `radare2.rafind2` : The `rafind2` command.
-- `radare2.rahash2` : The `rahash2` command.
-- `radare2.rasm2` : The `rasm2` command.
 - `radare2.rabin2` : The `rabin2` command.
 - `radare2.radiff2` : The `radiff2` command.
+- `radare2.rafind2` : The `rafind2` command.
 - `radare2.ragg2` : The `ragg2` command.
+- `radare2.rahash2` : The `rahash2` command.
 - `radare2.rarun2` : The `rarun2` command.
+- `radare2.rasign2` : The `rasign2` command.
+- `radare2.rasm2` : The `rasm2` command.
 - `radare2.ravc2` : The `ravc2` command.
 - `radare2.rax2` : The `rax2` command.
-- `radare2.rasign2` : The `rasign2` command.
+- `radare2.sleighc` : The `sleighc` command.
 
 Getting info about the radare2 snap package
 -------------------------------------------
@@ -90,7 +93,7 @@ Updating radare2
 ----------------
 
 The snap packages are updated automatically when the installed version is not in _devmode_.
-If you installed radare2 snap in the past when it was only avaiable as _devmode_ and you wish to update, you can switch to the new stable channel and get the updates by running this command:
+If you installed radare2 snap in the past when it was only available as _devmode_ and you wish to update, you can switch to the new stable channel and get the updates by running this command:
 
     $ sudo snap refresh radare2 --stable --classic
 
@@ -109,6 +112,10 @@ The radare2 snap package is currently available for the following architectures:
 1. `amd64`
 1. `arm64`
 1. `armhf`
+1. `i386`
+1. `ppc64el`
+1. `riscv64`
+1. `s390x`
 
 Troubleshooting
 ---------------

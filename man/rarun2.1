@@ -1,4 +1,4 @@
-.Dd Feb 3, 2017
+.Dd Aug 18, 2023
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
@@ -160,6 +160,8 @@ You can also use the -- flag to specify program and arguments in a more natural 
 Run a library function
 .Pp
   $ rarun2 runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
+.Sh ENVIRONMENT
+ RARUN2_ARGS     useful to just run "rarun2" but parse arguments from environment var
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

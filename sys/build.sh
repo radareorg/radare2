@@ -1,6 +1,7 @@
 #!/bin/sh
 
 OSNAME=$(uname)
+unset LINK
 
 . `dirname $0`/make-jobs.inc.sh
 
@@ -36,6 +37,9 @@ for a in $* ; do
 		;;
 	'')
 		:
+		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
 		;;
 	--**|-)
 		shift

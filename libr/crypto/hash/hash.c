@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2022 pancake */
+/* radare2 - LGPL - Copyright 2007-2024 pancake */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -19,6 +19,7 @@ static const struct {
 	{ "xorpair", R_HASH_XORPAIR },
 	{ "md4", R_HASH_MD4 },
 	{ "md5", R_HASH_MD5 },
+	{ "elf", R_HASH_ELF },
 	{ "sha1", R_HASH_SHA1 },
 	{ "sha256", R_HASH_SHA256 },
 	{ "sha384", R_HASH_SHA384 },
@@ -205,6 +206,7 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (FLETCHER64);
 	ALGOBIT (MD4);
 	ALGOBIT (MD5);
+	ALGOBIT (ELF);
 	ALGOBIT (SHA1);
 	ALGOBIT (SHA256);
 	ALGOBIT (SHA384);
@@ -333,7 +335,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 }
 
 R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSeed *seed) {
-	r_return_if_fail (ctx);
+	R_RETURN_IF_FAIL (ctx);
 	int i, len, hlen = r_hash_size (algo);
 	size_t buf_len = hlen + (seed? seed->len: 0);
 	ut8 *buf = calloc (1, buf_len);
@@ -360,11 +362,10 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 }
 
 R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
-	r_return_val_if_fail (name && len >= 0 && data, NULL);
+	R_RETURN_VAL_IF_FAIL (name && len >= 0 && data, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
-	int i, digest_size;
 	if (!algo) {
 		return NULL;
 	}
@@ -372,7 +373,7 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 		myctx = ctx = r_hash_new (true, algo);
 	}
 	r_hash_do_begin (ctx, algo);
-	digest_size = r_hash_calculate (ctx, algo, data, len);
+	int digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
 	size_t digest_hex_size = 0;
 	if (digest_size == 0) {
@@ -386,6 +387,7 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 			digest_hex_size = (digest_size * 2) + 1;
 			digest_hex = malloc (digest_hex_size);
 			if (digest_hex) {
+				int i;
 				for (i = 0; i < digest_size; i++) {
 					size_t id = (i * 2);
 					snprintf (digest_hex + id, digest_hex_size - id, "%02x", ctx->digest[i]);

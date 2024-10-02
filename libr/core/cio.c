@@ -159,9 +159,11 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			len = xlen;
 		} else {  // use clipboard as key
 			const ut8 *tmp = r_buf_data (core->yank_buf, &len);
-			str = r_mem_dup (tmp, len);
-			if (!str) {
-				goto beach;
+			if (tmp && len > 0) {
+				str = r_mem_dup (tmp, len);
+				if (!str) {
+					goto beach;
+				}
 			}
 		}
 	} else {
@@ -305,22 +307,24 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				len = numsize;
 			}
 		}
-		for (i = j = 0; i < core->blocksize; i++) {
-			switch (op) {
-			case 'x': buf[i] ^= str[j]; break;
-			case 'a': buf[i] += str[j]; break;
-			case 's': buf[i] -= str[j]; break;
-			case 'm': buf[i] *= str[j]; break;
-			case 'w': buf[i] = str[j]; break;
-			case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
-			case 'r': buf[i] >>= str[j]; break;
-			case 'l': buf[i] <<= str[j]; break;
-			case 'o': buf[i] |= str[j]; break;
-			case 'A': buf[i] &= str[j]; break;
-			}
-			j++;
-			if (j >= len) {
-				j = 0; /* cyclic key */
+		if (str) {
+			for (i = j = 0; i < core->blocksize; i++) {
+				switch (op) {
+				case 'x': buf[i] ^= str[j]; break;
+				case 'a': buf[i] += str[j]; break;
+				case 's': buf[i] -= str[j]; break;
+				case 'm': buf[i] *= str[j]; break;
+				case 'w': buf[i] = str[j]; break;
+				case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
+				case 'r': buf[i] >>= str[j]; break;
+				case 'l': buf[i] <<= str[j]; break;
+				case 'o': buf[i] |= str[j]; break;
+				case 'A': buf[i] &= str[j]; break;
+				}
+				j++;
+				if (j >= len) {
+					j = 0; /* cyclic key */
+				}
 			}
 		}
 	}
@@ -349,19 +353,21 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 	int bitsval = 0;
 	const char *archval = NULL;
 	RBinObject *o = r_bin_cur_object (core->bin);
-	RBinSection *s = o ? r_bin_get_section_at (o, addr, core->io->va) : NULL;
-	if (s) {
-		if (!core->fixedarch) {
-			archval = s->arch;
-		}
-		if (!core->fixedbits && s->bits) {
-			// only enforce if there's one bits set
-			switch (s->bits) {
-			case R_SYS_BITS_16:
-			case R_SYS_BITS_32:
-			case R_SYS_BITS_64:
-				bitsval = s->bits * 8;
-				break;
+	if (!core->fixedarch || !core->fixedbits) {
+		RBinSection *s = o ? r_bin_get_section_at (o, addr, core->io->va) : NULL;
+		if (s) {
+			if (!core->fixedarch) {
+				archval = s->arch;
+			}
+			if (!core->fixedbits && s->bits) {
+				// only enforce if there's one bits set
+				switch (s->bits) {
+				case R_SYS_BITS_16:
+				case R_SYS_BITS_32:
+				case R_SYS_BITS_64:
+					bitsval = s->bits * 8;
+					break;
+				}
 			}
 		}
 	}
@@ -435,21 +441,37 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return r_core_seek (core, addr, true);
 }
 
-// TODO: kill this wrapper
+// TODO: R2_600 deprecate this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	r_return_val_if_fail (core && buf && addr != UT64_MAX, false);
+	R_RETURN_VAL_IF_FAIL (core && buf && addr != UT64_MAX, false);
 	if (size < 1) {
 		return false;
 	}
-	bool ret = r_io_write_at (core->io, addr, buf, size);
+#if 1
+	int ret = r_io_write_at (core->io, addr, buf, size);
+	if (ret > 0) {
+		// ensure a little because we can't use bank_write_to_submap_at
+		ut8 word[4];
+		r_io_read_at (core->io, addr, word, sizeof (word));
+		ret = !memcmp (word, buf, R_MIN (size, sizeof (word)));
+	}
+#else
+	int ret = r_io_bank_write_to_submap_at (core->io, core->io->bank, addr, buf, size);
+	if (r_config_get_b (core->config, "io.cache")) {
+		ret = r_io_write_at (core->io, addr, buf, size);
+	} else {
+		ret = r_io_bank_write_to_submap_at (core->io, core->io->bank, addr, buf, size) > 0;
+	}
+	// bool ret = r_io_write_at (core->io, addr, buf, size);
+#endif
 	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		r_core_block_read (core);
 	}
-	return ret;
+	return ret > 0;
 }
 
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
-	r_return_val_if_fail (core && core->io, false);
+	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	if (!core->io->desc || size < 1 || addr == UT64_MAX) {
 		return false;
 	}

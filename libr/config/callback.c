@@ -27,7 +27,7 @@ static bool r_config_setter_s(void *data) {
 }
 
 R_API bool r_config_set_setter_q(RConfig *cfg, const char *name, ut64 *ptr) {
-	r_return_val_if_fail (cfg && name, false);
+	R_RETURN_VAL_IF_FAIL (cfg && name, false);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_q = ptr;
@@ -38,7 +38,7 @@ R_API bool r_config_set_setter_q(RConfig *cfg, const char *name, ut64 *ptr) {
 }
 
 R_API bool r_config_set_setter_i(RConfig *cfg, const char *name, int *ptr) {
-	r_return_val_if_fail (cfg && name, false);
+	R_RETURN_VAL_IF_FAIL (cfg && name, false);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_i = ptr;
@@ -49,7 +49,7 @@ R_API bool r_config_set_setter_i(RConfig *cfg, const char *name, int *ptr) {
 }
 
 R_API bool r_config_set_setter_s(RConfig *cfg, const char *name, char **ptr) {
-	r_return_val_if_fail (cfg && name, false);
+	R_RETURN_VAL_IF_FAIL (cfg && name, false);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_s = ptr;
@@ -60,7 +60,7 @@ R_API bool r_config_set_setter_s(RConfig *cfg, const char *name, char **ptr) {
 }
 
 R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb) {
-	r_return_val_if_fail (cfg && key, false);
+	R_RETURN_VAL_IF_FAIL (cfg && key, false);
 	RConfigNode *node = r_config_node_get (cfg, key);
 	if (node) {
 		node->getter = cb;
@@ -70,7 +70,7 @@ R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb
 }
 
 R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb) {
-	r_return_val_if_fail (cfg && key, false);
+	R_RETURN_VAL_IF_FAIL (cfg && key, false);
 	RConfigNode *node = r_config_node_get (cfg, key);
 	if (node) {
 		node->setter = cb;

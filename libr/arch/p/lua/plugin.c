@@ -1,11 +1,10 @@
-/* radare2 - BSD - Copyright 2017-2022 - pancake */
+/* radare2 - BSD - Copyright 2017-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_lib.h>
 
 // XXX should be dynlink
 #include "lua53.c"
-#include "lua53_parser.c"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	PluginData *pd = as->data;
@@ -233,6 +232,9 @@ static int finit(void *user) {
 
 #endif
 static int archinfo(RArchSession *cfg, ut32 q) {
+	if (q == R_ARCH_INFO_ISVM) {
+		return R_ARCH_INFO_ISVM;
+	}
 	return 4;
 }
 
@@ -255,7 +257,7 @@ static char *regs(RArchSession *s) {
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -266,7 +268,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

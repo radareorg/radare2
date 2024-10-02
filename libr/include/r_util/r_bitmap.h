@@ -1,12 +1,23 @@
 #ifndef R_BITMAP_H
 #define R_BITMAP_H
 
+#if R_SYS_ENDIAN
+
+// using ut32/ut64 words in rbitmap makes it not endian-safe, better use byte words for now
+// this is an abi breakage, so we must apply it only on big endian hosts where we dont check for abi yet
+#define BITWORD_BITS_SHIFT 3
+#define RBitword ut8
+
+#else
+
 #if R_SYS_BITS == 4
 #define BITWORD_BITS_SHIFT 5
 #define RBitword ut32
 #else
 #define BITWORD_BITS_SHIFT 6
 #define RBitword ut64
+#endif
+
 #endif
 
 #ifdef __cplusplus

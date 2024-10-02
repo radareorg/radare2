@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015-2022 - a0rtega */
+/* radare - LGPL - 2015-2023 - a0rtega */
 
 #include <r_lib.h>
 #include <r_bin.h>
@@ -7,7 +7,7 @@
 
 static R_TH_LOCAL struct nds_hdr loaded_header = {0};
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 ninlogohead[6];
 	if (r_buf_read_at (b, 0xc0, ninlogohead, sizeof (ninlogohead)) == 6) {
 		/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
@@ -22,18 +22,14 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
-	*bin_obj = &loaded_header;
-	return (*bin_obj);
+	bf->bo->bin_obj = &loaded_header;
+	return bf->bo->bin_obj != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return (ut64) loaded_header.arm9_ram_address;
-}
-
-static ut64 boffset(RBinFile *bf) {
-	return 0LL;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -107,7 +103,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->buf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {
 		char *filepath = r_str_newf ("%.12s - %.4s",
@@ -124,13 +120,14 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ninds = {
-	.name = "ninds",
-	.desc = "Nintendo DS format r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "ninds",
+		.desc = "Nintendo DS format r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

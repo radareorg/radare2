@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2023 - pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - pancake */
 
 #ifndef R2_BIND_H
 #define R2_BIND_H
@@ -13,10 +13,11 @@ typedef const char * const RCoreHelpMessage[];
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
+typedef char *(*RCoreCallAt)(void *user, ut64 addr, const char *cmd);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
-typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage *help);
+typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage help);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
@@ -34,6 +35,7 @@ typedef struct r_core_bind_t {
 	void *core;
 	RCoreCmd cmd;
 	RCoreCmdF cmdf;
+	RCoreCallAt callat;
 	RCoreCmdStr cmdstr; // should be cmdStr if we care about snake
 	RCoreCmdStrF cmdstrf;
 	RCoreBindHelp help;
@@ -44,7 +46,8 @@ typedef struct r_core_bind_t {
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;
 	RCoreSeekArchBits archbits;
-	RCoreConfigGetI cfggeti; // inconsistent flat vs snake below
+	// R2_600 cfgGetB for booleans
+	RCoreConfigGetI cfggeti; // R2_600 inconsistent flat vs snake below
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;

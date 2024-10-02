@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2023 - pancake */
+
+#if R_INCLUDE_BEGIN
 
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR 1
@@ -9,7 +11,6 @@ static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 	}
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
-
 	case R_ANAL_STACK_RESET:
 		ds->stackptr = 0;
 		break;
@@ -98,11 +99,10 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (ds->core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, fcn, ds->at);
-		if (bb) {
-			return bb->stackptr;
-		} else {
+		if (!bb) {
 			r_warn_if_reached ();
 		}
+		return bb->stackptr;
 	}
 	return 0;
 #else
@@ -126,3 +126,5 @@ static void ds_print_stackptr(RDisasmState *ds) {
 		ds_update_stackptr (ds, &ds->analop);
 	}
 }
+
+#endif

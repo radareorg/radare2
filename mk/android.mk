@@ -45,9 +45,16 @@ all::
 	exit 1
 endif
 
+ifeq ($(shell type llvm-ar > /dev/null && echo ok),ok)
+AR=llvm-ar
+RANLIB=llvm-ranlib
+CC_AR=llvm-ar -r ${LIBAR}
+else
 RANLIB=${CROSS}ranlib
 AR=${CROSS}ar
 CC_AR=${CROSS}ar -r ${LIBAR}
+endif
+
 PARTIALLD=${CROSS}ld -r
 # -all_load
 ONELIB=0

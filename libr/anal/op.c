@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2024 - pancake, nibble */
 
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_list.h>
 
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {
@@ -90,9 +88,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		}
 		r_anal_op_set_mnemonic (op, addr, s);
 		if (!r_arch_encode (anal->arch, op, 0)) {
-			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			int ret = r_arch_info (anal->arch, R_ARCH_INFO_INVOP_SIZE);
 			if (ret < 1) {
-				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
+				ret = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 				if (ret < 1) {
 					ret = 1;
 				}
@@ -151,9 +149,13 @@ beach:
 
 // R2_590 data and len are contained inside RAnalOp. those args must disapear same for addr.. and then we get r_arch_op xD
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	r_return_val_if_fail (anal && op && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL (anal && op && len > 0, -1);
 	r_anal_op_init (op);
-
+#if 0
+	if (len > 512) {
+		eprintf ("%d\n", len);
+	}
+#endif
 	// use core binding to set asm.bits correctly based on the addr
 	// this is because of the hassle of arm/thumb
 	// this causes the reg profile to be invalidated
@@ -185,7 +187,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		r_anal_op_set_bytes (op, addr, data, len);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 			}
@@ -198,7 +200,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// ret = anal->arch->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 			}
@@ -213,7 +215,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
 				ret = -1;
@@ -248,7 +250,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (ret == -1) {
 		free (op->mnemonic);
 		op->mnemonic = strdup ("invalid");
-		int minop = r_arch_info (anal->arch, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		int minop = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
 		op->size = minop;
 		ut64 nextpc = op->addr + op->size;
 		if (codealign > 1) {
@@ -326,6 +328,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MOD, "mod" },
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_NOR, "nor" },
 	{ R_ANAL_OP_TYPE_CAST, "cast" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
 	{ R_ANAL_OP_TYPE_DIV, "div" },
@@ -549,6 +552,9 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CMP:
 		memcpy (ret, ";", 2);
+		break;
+	case R_ANAL_OP_TYPE_NOR: // NOT + OR
+		memcpy (ret, "nor", 4);
 		break;
 	case R_ANAL_OP_TYPE_NOP:
 		memcpy (ret, "nop", 4);

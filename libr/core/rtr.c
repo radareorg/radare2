@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2021 - pancake, nibble */
+/* radare - Copyright 2009-2024 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -48,6 +48,11 @@ typedef struct {
 
 R_API void r_core_wait(RCore *core) {
 	r_cons_context ()->breaked = true;
+#if R2__UNIX__
+	if (core->http_up) {
+		r_core_rtr_http_stop (core);
+	}
+#endif
 	r_th_kill (httpthread, true);
 	r_th_kill (rapthread, true);
 	r_th_wait (httpthread);
@@ -176,18 +181,19 @@ beach:
 R_API int r_core_rtr_http_stop(RCore *u) {
 	RCore *core = (RCore*)u;
 	const int timeout = 1; // 1 second
-	const char *port;
-	RSocket* sock;
 
 #if R2__WINDOWS__
 	r_socket_http_server_set_breaked (&r_cons_context ()->breaked);
 #endif
+	core->http_up = false;
 	if (((size_t)u) > 0xff) {
-		port = listenport? listenport: r_config_get (
-			core->config, "http.port");
-		sock = r_socket_new (0);
-		(void)r_socket_connect (sock, "localhost",
-			port, R_SOCKET_PROTO_TCP, timeout);
+		const char *port = listenport? listenport: r_config_get (core->config, "http.port");
+		char *sport = r_str_startswith (port, "0x")
+			? r_str_newf ("%d", (int)r_num_get (NULL, port))
+			: strdup (port);
+		RSocket* sock = r_socket_new (0);
+		(void)r_socket_connect (sock, "127.0.0.1", sport, R_SOCKET_PROTO_TCP, timeout);
+		free (sport);
 		r_socket_free (sock);
 	}
 	r_socket_free (s);
@@ -232,8 +238,8 @@ static void activateDieTime(RCore *core) {
 	}
 }
 
-#include "rtr_http.c"
-#include "rtr_shell.c"
+#include "rtr_http.inc.c"
+#include "rtr_shell.inc.c"
 
 static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendian) {
 	if (!bigendian) {
@@ -389,26 +395,29 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			case 't':
 				switch (cmd[3]) {
 				case '\0': // dpt
-					if (!core->dbg->current->plugin.threads) {
-						return -1;
-					}
-					if (!(list = core->dbg->current->plugin.threads(core->dbg, core->dbg->pid))) {
-						return -1;
-					}
-					memset (out_buf, 0, max_len);
-					out_buf[0] = 'm';
-					ret = 1;
-					r_list_foreach (list, iter, dbgpid) {
-						// Max length of a hex pid = 8?
-						if (ret >= max_len - 9) {
-							break;
+					{
+						RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+						if (!plugin || !plugin->threads) {
+							return -1;
 						}
-						snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
-						ret = strlen (out_buf);
-					}
-					if (ret > 1) {
-						ret--;
-						out_buf[ret] = '\0';
+						if (!(list = plugin->threads (core->dbg, core->dbg->pid))) {
+							return -1;
+						}
+						memset (out_buf, 0, max_len);
+						out_buf[0] = 'm';
+						ret = 1;
+						r_list_foreach (list, iter, dbgpid) {
+							// Max length of a hex pid = 8?
+							if (ret >= max_len - 9) {
+								break;
+							}
+							snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
+							ret = strlen (out_buf);
+						}
+						if (ret > 1) {
+							ret--;
+							out_buf[ret] = '\0';
+						}
 					}
 					return 0;
 				case 'r': // dptr -> return current tid as int
@@ -861,7 +870,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	int i;
 
-	if (IS_DIGIT (input[0])) {
+	if (isdigit (input[0])) {
 		i = r_num_math (core->num, input);
 		if (i >= 0 && i < RTR_MAX_HOSTS) {
 			r_socket_free (rtr_host[i].fd);
@@ -999,7 +1008,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				r_th_setaffinity (rapthread, cpuaff);
 #endif
 				r_th_setname (rapthread, "rapthread");
-				r_th_start (rapthread, false);
+				r_th_start (rapthread);
 				R_LOG_INFO ("Background rap server started");
 			}
 		}

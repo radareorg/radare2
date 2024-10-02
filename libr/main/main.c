@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_main.h>
 
@@ -40,15 +40,47 @@ R_API void r_main_free(RMain *m) {
 }
 
 R_API int r_main_run(RMain *m, int argc, const char **argv) {
-	r_return_val_if_fail (m && m->main, -1);
+	R_RETURN_VAL_IF_FAIL (m && m->main, -1);
 	return m->main (argc, argv);
 }
 
-R_API int r_main_version_print(const char *progname) {
-	char *s = r_str_version (progname);
-	if (s) {
+R_API int r_main_version_print(const char *progname, int mode) {
+	PJ *pj;
+	switch (mode) {
+	case 'j':
+	case 'J':
+		pj = pj_new ();
+		pj_o (pj);
+		pj_ks (pj, "name", progname);
+		pj_ks (pj, "version", R2_VERSION);
+		pj_ks (pj, "birth", R2_BIRTH);
+		pj_ks (pj, "commit", R2_GITTIP);
+		pj_ki (pj, "commits", R2_VERSION_COMMIT);
+		pj_ks (pj, "license", "LGPLv3");
+		pj_ks (pj, "tap", R2_GITTAP);
+		pj_ko (pj, "semver");
+		pj_ki (pj, "major", R2_VERSION_MAJOR);
+		pj_ki (pj, "minor", R2_VERSION_MINOR);
+		pj_ki (pj, "patch", R2_VERSION_MINOR);
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
 		printf ("%s\n", s);
 		free (s);
+		break;
+	case 'q':
+		printf ("%s\n", R2_VERSION);
+		// mainr2_fini (&mr);
+		break;
+	default:
+		{
+			char *s = r_str_version (progname);
+			if (s) {
+				printf ("%s\n", s);
+				free (s);
+			}
+		}
+		break;
 	}
 	return 0;
 }

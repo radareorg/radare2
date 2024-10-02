@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2017-2021 - javierptd, pancake */
 
+#if R_INCLUDE_BEGIN
+
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1
@@ -41,7 +43,8 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
  	}
 	RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
 	R_VEC_FOREACH (syms, s) {
- 		if (!strcmp (s->name, sym_name)) {
+		const char *sname = r_bin_name_tostring (s->name);
+		if (!strcmp (sname, sym_name)) {
  			vaddr = s->vaddr;
  			break;
 		}
@@ -482,7 +485,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 #endif
 
 static int GH(dmh_jemalloc)(RCore *core, const char *input) {
-	RCoreHelpMessage help_msg = {
+	const RCoreHelpMessage help_msg_jemalloc = {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmha", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
 		"dmhb", "[arena_t]", "show all bins created for given arena",
@@ -493,7 +496,7 @@ static int GH(dmh_jemalloc)(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_jemalloc);
 		break;
 	case 'a': //dmha
 		GH(jemalloc_print_narenas) (core, input + 1);
@@ -515,3 +518,5 @@ static int GH(dmh_jemalloc)(RCore *core, const char *input) {
 	}
 	return 0;
 }
+
+#endif

@@ -16,12 +16,12 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		if (q) {
 			*q = 0;
 		}
-		r_core_cmdf (core, "\"\"s %s", str);
-		r_core_cmdf (core, "\"\"w %s", p+1);
+		r_core_cmdf (core, "'s %s", str);
+		r_core_cmdf (core, "'w %s", p+1);
 		break;
 	case ':':
-		r_core_cmdf (core, "\"\"s %s", str);
-		r_core_cmdf (core, "\"\"wa %s", p);
+		r_core_cmdf (core, "'s %s", str);
+		r_core_cmdf (core, "'wa %s", p);
 		break;
 	case 'v':
 		q = strchr (p + 1, ' ');
@@ -31,12 +31,12 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		} else {
 			return 0;
 		}
-		r_core_cmdf (core, "\"\"s %s", str);
-		r_core_cmdf (core, "\"\"wv%s %s", p + 1, q);
+		r_core_cmdf (core, "'s %s", str);
+		r_core_cmdf (core, "'wv%s %s", p + 1, q);
 		break;
 	default:
-		r_core_cmdf (core, "\"\"s %s", str);
-		r_core_cmdf (core, "\"\"wx %s", p);
+		r_core_cmdf (core, "'s %s", str);
+		r_core_cmdf (core, "'wx %s", p);
 		break;
 	}
 	return true;
@@ -101,6 +101,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	return true;
 }
 
+// R2_600 - return boolean
 R_API int r_core_patch(RCore *core, const char *patch) {
 	char *p, *p0, *str;
 	ut64 noff = 0LL;

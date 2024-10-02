@@ -23,7 +23,6 @@ pd 20
 EOF
 EXPECT=<<EOF
         :   ;-- section..text:
-        :   ;-- .text:
         :   ;-- entry0:
         :   ;-- _start:
         :   0x08048360      31ed5e         ld sp, 0x5eed               ; [13] -r-x section size 484 named .text
@@ -47,7 +46,6 @@ EXPECT=<<EOF
             0x08048377      68             ld l, b
             0x08048378      14             inc d
         :   ;-- section..text:
-        :   ;-- .text:
         :   ;-- entry0:
         :   ;-- _start:
         :   0x08048360      31ed5e         sp = 0x5eed                 ; [13] -r-x section size 484 named .text

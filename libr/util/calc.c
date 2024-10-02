@@ -265,7 +265,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	*n = Nset (v);
 #endif
 
-	if (IS_DIGIT (*str) && strchr (str, '.')) {
+	if (isdigit (*str) && strchr (str, '.')) {
 		if (sscanf (str, "%lf", &d) < 1) {
 			return 0;
 		}
@@ -358,11 +358,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	default:
 		{
 			int i = 0;
-#define stringValueAppend(x) { \
-	const size_t max = sizeof (nc->string_value) - 1; \
-	if (i < max) { nc->string_value[i++] = x; } \
-	else { nc->string_value[max] = 0; } \
-}
+#define stringValueAppend(x) { const size_t max = sizeof (nc->string_value) - 1; if (i < max) { nc->string_value[i++] = x; } else { nc->string_value[max] = 0; } }
 			stringValueAppend (ch);
 			if (ch == '[') {
 				while (cin_get (num, nc, &ch) && ch != ']') {

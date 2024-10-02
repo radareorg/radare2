@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -20,17 +20,20 @@ static bool base91_check(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	r_return_val_if_fail (cj && buf && len > 0, false);
+	R_RETURN_VAL_IF_FAIL (cj && buf && len > 0, false);
 
 	int olen = INSIZE;
 	ut8 *obuf = calloc (1, olen);
 	if (!obuf) {
 		return false;
 	}
-	if (cj->dir == 0) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
-	} else if (cj->dir == 1) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		olen = r_base91_decode (obuf, (const char *)buf, len);
+		break;
 	}
 	r_crypto_job_append (cj, obuf, olen);
 	free (obuf);
@@ -38,9 +41,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_base91 = {
-	.name = "base91",
+	.meta = {
+		.name = "base91",
+		.author = "rakholiyajenish.07",
+		.license = "MIT",
+	},
 	.implements = "base91",
-	.author = "pancake",
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,

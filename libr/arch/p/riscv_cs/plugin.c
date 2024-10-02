@@ -259,7 +259,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
-#define CSINC_MODE (as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
+#define CSINC_MODE (CS_MODE_RISCVC | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
 #include "../capstone.inc.c"
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
@@ -413,6 +413,8 @@ beach:
 #endif
 
 static char *regs(RArchSession *as) {
+	// https://www.ocf.berkeley.edu/~qmn/linux/riscv.html
+	// https://popolon.org/gblog3/?p=1049&lang=en
 	const char *p = NULL;
 	switch (as->config->bits) {
 	case 32: p =
@@ -421,7 +423,9 @@ static char *regs(RArchSession *as) {
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
 		"=A0	a0\n"
+		"=SN	a7\n"
 		"=A1	a1\n"
+		"=TR	tp\n" // ABI: thread pointer
 
 		"gpr	pc	.32	0	0\n"
 		// RV32I regs (ABI names)
@@ -430,7 +434,7 @@ static char *regs(RArchSession *as) {
 		"gpr	ra	.32	4	0\n" // =x1
 		"gpr	sp	.32	8	0\n" // =x2
 		"gpr	gp	.32	12	0\n" // =x3
-		"gpr	tp	.32	16	0\n" // =x4
+		"gpr	tp	.32	16	0\n" // =x4 // thread pointer
 		"gpr	t0	.32	20	0\n" // =x5
 		"gpr	t1	.32	24	0\n" // =x6
 		"gpr	t2	.32	28	0\n" // =x7
@@ -507,6 +511,7 @@ static char *regs(RArchSession *as) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
+		"=SN	a7\n" // should be x2 but this is sp wtf
 		"=A0	a0\n"
 		"=A1	a1\n"
 
@@ -594,20 +599,20 @@ static char *regs(RArchSession *as) {
 
 static int archinfo(RArchSession *s, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 2;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
 	}
 	return 0;
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -623,7 +628,7 @@ static bool init(RArchSession *s) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (s->data);

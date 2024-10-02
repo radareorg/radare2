@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake */
+/* radare - LGPL - Copyright 2014-2023 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -212,7 +212,9 @@ static int update_self_regions(RIO *io, int pid) {
 		}
 		path[0]='\0';
 		strcpy (region, "0x");
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
+		if (r_str_scanf (line, "%.s %.s %*s %*s %*s %.[^\n]", sizeof (region) - 2, region + 2, sizeof (perms), perms, sizeof (path), path) < 6) {
+			return false;
+		}
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
@@ -245,11 +247,11 @@ static int update_self_regions(RIO *io, int pid) {
 	return bsd_proc_vmmaps(io, pid);
 #elif __HAIKU__
 	image_info ii;
-	int32_t cookie = 0;
+	int32 cookie = 0;
 
 	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
-		self_sections[self_sections_count].from = (ut64)ii.text;
-		self_sections[self_sections_count].to = (ut64)((char*)ii.text + ii.text_size);
+		self_sections[self_sections_count].from = (ut64)(size_t)ii.text;
+		self_sections[self_sections_count].to = (ut64)(size_t)((char*)ii.text + ii.text_size);
 		self_sections[self_sections_count].name = strdup (ii.name);
 		self_sections[self_sections_count].perm = 0;
 		self_sections_count++;
@@ -390,6 +392,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			return newlen;
 		}
 	}
+	memset (buf, 0xff, len);
 	return 0;
 }
 
@@ -410,9 +413,20 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX;
+	case SEEK_SET:
+		io->off = offset;
+		return offset;
+	case SEEK_CUR:
+		io->off += offset;
+		return io->off;
+	case SEEK_END:
+		if (sizeof (void*) == 8) {
+			io->off = UT64_MAX;
+		} else {
+			io->off = UT32_MAX;
+		}
+		// UT64_MAX means error
+		return UT64_MAX - 1;
 	}
 	return offset;
 }
@@ -533,7 +547,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (r_str_startswith (cmd, "alarm ")) {
 		struct itimerval tmout;
 		int secs = atoi (cmd + 6);
-		r_return_val_if_fail (secs >= 0, NULL);
+		R_RETURN_VAL_IF_FAIL (secs >= 0, NULL);
 
 		tmout.it_value.tv_sec = secs;
 		tmout.it_value.tv_usec = 0;

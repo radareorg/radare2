@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2024 - pancake, defragger */
 
 #include <r_core.h>
 #include <libgdbr.h>
@@ -185,7 +185,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 	ut64 buflen = 0;
 	ut8 *buf = (ut8*) read_remote_maps (dbg, &buflen);
 	if (!buf) {
-		R_LOG_ERROR ("Cannot read /proc/pid/maps");
+		// makes no sense on non-linux targets
+		R_LOG_DEBUG ("Cannot read /proc/pid/maps");
 		return NULL;
 	}
 
@@ -235,12 +236,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		// We assume Linux target, for now, so -
-		// 7ffff7dda000-7ffff7dfd000 r-xp 00000000 08:05 265428 /usr/lib/ld-2.25.so
-		// Android
-		// "12c00000-12c40000 rw-p 00000000 00:00 0                                  [anon:dalvik-main space (region space)]";
-		ret = sscanf (ptr, "%s %s %"PFMT64x" %*s %*s %[^\n]", &region1[2],
-			      perms, &offset, name);
+		ret = r_str_scanf (ptr, "%.s %.s %Lx %*s %*s %.[^\n]",
+			sizeof (region1) - 2, region1 + 2, sizeof (perms), perms, offset, sizeof (name), name);
 #endif
 		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {
@@ -272,7 +269,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		map_start = r_num_get (NULL, region1);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			R_LOG_WARN ("%s: ignoring invalid map size: %s - %s", region1, region2);
+			R_LOG_WARN ("ignoring invalid map size: %s - %s", region1, region2);
 			ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 			continue;
 		}
@@ -646,7 +643,7 @@ static RList* r_debug_gdb_frames(RDebug *dbg, ut64 at) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
@@ -660,7 +657,7 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = ds->plugin_data;
 	if (!pd) {

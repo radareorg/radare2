@@ -521,7 +521,7 @@ static void own(struct state *s)
 		}
 
 		if (s->s_nop) {
-			r_return_if_fail (!s->s_nopd);
+			R_RETURN_IF_FAIL (!s->s_nopd);
 			s->s_nopd = d;
 		} else {
 			last->d_next = d;
@@ -561,7 +561,7 @@ static void own(struct state *s)
 	}
 	if (l) {
 		print_label(s, l);
-		r_return_if_fail (!l->l_next);
+		R_RETURN_IF_FAIL (!l->l_next);
 	}
 
 	output(s, "\n\tENDMOD\n");

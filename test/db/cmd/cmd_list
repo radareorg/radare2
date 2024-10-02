@@ -14,10 +14,13 @@ dalvik.pseudo
 evm.pseudo
 m68k.pseudo
 mips.pseudo
+null.pseudo
 ppc.pseudo
 riscv.pseudo
 sh.pseudo
+stm8.pseudo
 tms320.pseudo
+tricore.pseudo
 v850.pseudo
 wasm.pseudo
 x86.pseudo

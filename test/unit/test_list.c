@@ -225,7 +225,7 @@ static int pintcmp(int* a, int* b) {
 	return (int)(*a > *b) - (int)(*b > *a);
 }
 
-bool test_r_list_mergesort_pint() {
+bool test_r_list_mergesort_pint(void) {
 	// 47 items
 	int data[] = {-440, -468, -444, -80, -568, -564, -396, -404, -436, -420,
 		-428, -388, -356, -324, -292, -464, -260, -252, -204, -196, -212, -76,
@@ -463,26 +463,26 @@ bool test_r_list_clone(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_r_list_size);
-	mu_run_test(test_r_list_values);
-	mu_run_test(test_r_list_join);
-	mu_run_test(test_r_list_free);
-	mu_run_test(test_r_list_del_n);
-	mu_run_test(test_r_list_sort);
-	mu_run_test(test_r_list_sort2);
-	mu_run_test(test_r_list_sort3);
-	mu_run_test(test_r_list_sort4);
-	mu_run_test(test_r_list_sort5);
-	mu_run_test(test_r_list_mergesort_pint);
-	mu_run_test(test_r_list_length);
-	mu_run_test(test_r_list_append_prepend);
-	mu_run_test(test_r_list_set_get);
-	mu_run_test(test_r_list_reverse);
-	mu_run_test(test_r_list_clone);
+int all_tests(void) {
+	mu_run_test (test_r_list_size);
+	mu_run_test (test_r_list_values);
+	mu_run_test (test_r_list_join);
+	mu_run_test (test_r_list_free);
+	mu_run_test (test_r_list_del_n);
+	mu_run_test (test_r_list_sort);
+	mu_run_test (test_r_list_sort2);
+	mu_run_test (test_r_list_sort3);
+	mu_run_test (test_r_list_sort4);
+	mu_run_test (test_r_list_sort5);
+	mu_run_test (test_r_list_mergesort_pint);
+	mu_run_test (test_r_list_length);
+	mu_run_test (test_r_list_append_prepend);
+	mu_run_test (test_r_list_set_get);
+	mu_run_test (test_r_list_reverse);
+	mu_run_test (test_r_list_clone);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }

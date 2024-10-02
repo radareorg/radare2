@@ -33,3 +33,26 @@ nth paddr         size vaddr        vsize perm type   name
 
 EOF
 RUN
+
+NAME=xcoff64 dwarf line numbers
+FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
+CMDS=CL
+EXPECT=<<EOF
+file: .//hello.c
+line: 7
+colu: 0
+addr: 0x100006cc
+file: .//hello.c
+line: 7
+colu: 0
+addr: 0x10000700
+file: .//hello.c
+line: 6
+colu: 0
+addr: 0x100006c0
+file: .//hello.c
+line: 5
+colu: 0
+addr: 0x100006a0
+EOF
+RUN

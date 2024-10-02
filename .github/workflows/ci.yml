@@ -148,6 +148,10 @@ jobs:
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
+    - uses: actions/upload-artifact@v3
+      with:
+        name: results.json
+        path: test/results.json
   linux-static-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
@@ -170,7 +174,7 @@ jobs:
         meson -Dnogpl=true build-nogpl
         ninja -C build-nogpl
   macos-test:
-    runs-on: macos-11
+    runs-on: macos-12
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -206,7 +210,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: macos-rpath
     continue-on-error: true
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -265,21 +269,24 @@ jobs:
     - name: Building Radare2
       run: |
         pip install r2pipe
+        sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         export SANITIZE=address
         sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
     - name: Running tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
+        export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        r2r test/db/cmd
+        r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
+        export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
   linux-asan-fuzz:
@@ -292,19 +299,22 @@ jobs:
     - name: Building Radare2
       run: |
         pip install r2pipe
+        sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
     - name: Running tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
+        export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make tests
     - name: Run fuzz tests
       run: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
+        export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
@@ -344,10 +354,16 @@ jobs:
       run: |
         cd prefix\bin
         radare2 -v
+    - name: Test executable again
+      # continue-on-error: true
+      shell: cmd
+      run: |
+        cd prefix\bin
+        radare2 -qc "?e Hello" -
   w32-mingw:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3

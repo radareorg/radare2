@@ -30,3 +30,17 @@ p9=cc
 cc.p9.arg0=x0
 cc.p9.argn=stack
 cc.p9.ret=x0
+
+dlang=cc
+cc.dlang.arg0=x0
+cc.dlang.arg1=x1
+cc.dlang.arg2=x2
+cc.dlang.arg3=x3
+cc.dlang.arg4=x4
+cc.dlang.arg5=x5
+cc.dlang.arg6=x6
+cc.dlang.arg7=x7
+cc.dlang.argn=stack
+cc.dlang.self=x20
+cc.dlang.error=x21
+cc.dlang.ret=x0

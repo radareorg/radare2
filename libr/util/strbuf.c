@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2023 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_util.h>
 
@@ -11,7 +11,7 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 }
 
 R_API RStrBuf *r_strbuf_newf(const char *fmt, ...) {
-	r_return_val_if_fail (fmt, NULL);
+	R_RETURN_VAL_IF_FAIL (fmt, NULL);
 	RStrBuf *sb = R_NEW0 (RStrBuf);
 	if (sb) {
 		va_list ap;
@@ -23,7 +23,7 @@ R_API RStrBuf *r_strbuf_newf(const char *fmt, ...) {
 }
 
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
-	r_return_val_if_fail (sa && sb, false);
+	R_RETURN_VAL_IF_FAIL (sa && sb, false);
 	if (sa->len != sb->len) {
 		return false;
 	}
@@ -35,17 +35,17 @@ R_API bool r_strbuf_is_empty(RStrBuf *sb) {
 }
 
 R_API int r_strbuf_length(RStrBuf *sb) {
-	r_return_val_if_fail (sb, 0);
+	R_RETURN_VAL_IF_FAIL (sb, 0);
 	return sb->len;
 }
 
 R_API void r_strbuf_init(RStrBuf *sb) {
-	r_return_if_fail (sb);
+	R_RETURN_IF_FAIL (sb);
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
 R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
-	r_return_val_if_fail (sb && fmt, NULL);
+	R_RETURN_VAL_IF_FAIL (sb && fmt, NULL);
 	r_strbuf_init (sb);
 	va_list ap;
 	va_start (ap, fmt);
@@ -55,7 +55,7 @@ R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
-	r_return_val_if_fail (dst && src, false);
+	R_RETURN_VAL_IF_FAIL (dst && src, false);
 	if (src->ptr) {
 		char *p = malloc (src->ptrlen);
 		if (!p) {
@@ -74,7 +74,7 @@ R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 }
 
 R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
-	r_return_val_if_fail (sb, false);
+	R_RETURN_VAL_IF_FAIL (sb, false);
 
 	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
 		return true;
@@ -92,7 +92,7 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
 }
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
 	if (l > ST32_MAX) {
 		return false;
 	}
@@ -123,14 +123,14 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 
 // TODO: there's room for optimizations here
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
-	r_return_val_if_fail (sb && from >= 0 && len >= 0, false);
+	R_RETURN_VAL_IF_FAIL (sb && from >= 0 && len >= 0, false);
 	if (from < 1 && len >= sb->len) {
 		return false;
 	}
 	const char *s = r_strbuf_get (sb);
 	const char *fr = r_str_ansi_chrn (s, from + 1);
 	const char *to = r_str_ansi_chrn (s, from + len + 1);
-	char *r = r_str_newlen (fr, to - fr);
+	char *r = R_STR_NDUP (fr, to - fr);
 	r_strbuf_fini (sb);
 	r_strbuf_init (sb);
 	if (from >= len) {
@@ -144,7 +144,7 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 }
 
 R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
-	r_return_val_if_fail (sb, false);
+	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (len < 0) {
 		sb->len = strlen (s);
 		sb->ptrlen = sb->len + 1;
@@ -158,7 +158,7 @@ R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 }
 
 R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	if (!s) {
 		r_strbuf_init (sb);
 		return r_strbuf_get (sb);
@@ -172,7 +172,7 @@ R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
 }
 
 R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
-	r_return_val_if_fail (sb && fmt, false);
+	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
 	va_list ap;
 	va_start (ap, fmt);
@@ -182,7 +182,7 @@ R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
-	r_return_val_if_fail (sb && fmt, false);
+	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
 	const char *ret = NULL;
 	va_list ap2;
@@ -206,7 +206,7 @@ done:
 }
 
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
 	int l = strlen (s);
 	// fast path if no chars to append
 	if (l == 0) {
@@ -227,14 +227,18 @@ R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 }
 
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
 
-	int l = strlen (s);
+	size_t l = strlen (s);
 	return r_strbuf_append_n (sb, s, l);
 }
 
 R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
-	r_return_val_if_fail (sb && s, false);
+	R_RETURN_VAL_IF_FAIL (sb && s, false);
+	if (l > ST32_MAX) {
+		R_LOG_WARN ("Negative length used in r_strbuf_append_n");
+		return false;
+	}
 
 	if (sb->weakref) {
 		return false;
@@ -283,7 +287,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
-	r_return_val_if_fail (sb && fmt, false);
+	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
 	va_start (ap, fmt);
 	const bool ret = r_strbuf_vappendf (sb, fmt, ap);
@@ -295,7 +299,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
 
-	r_return_val_if_fail (sb && fmt, false);
+	R_RETURN_VAL_IF_FAIL (sb && fmt, false);
 
 	if (sb->weakref) {
 		return false;
@@ -322,12 +326,12 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 }
 
 R_API char *r_strbuf_get(RStrBuf *sb) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
 R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	if (len) {
 		*len = sb->len;
 	}
@@ -343,19 +347,19 @@ static inline char *drain(RStrBuf *sb) {
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	char *ret = drain (sb);
 	free (sb);
 	return ret;
 }
 
 R_API char *r_strbuf_tostring(RStrBuf *sb) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	return drain (sb);
 }
 
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
-	r_return_val_if_fail (sb, NULL);
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	char *ret = drain (sb);
 	sb->ptr = NULL;
 	sb->len = 0;
@@ -364,7 +368,7 @@ R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 }
 
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
-	r_return_val_if_fail (sb && key && val, false);
+	R_RETURN_VAL_IF_FAIL (sb && key && val, false);
 	char *tmp = r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0);
 	if (!tmp) {
 		return false;
@@ -374,7 +378,7 @@ R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
 }
 
 R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) {
-	r_return_val_if_fail (sb && key && fmt, false);
+	R_RETURN_VAL_IF_FAIL (sb && key && fmt, false);
 	RStrBuf *sb_tmp = r_strbuf_new (NULL);
 	if (!sb_tmp) {
 		return false;
@@ -415,4 +419,10 @@ R_API void r_strbuf_fini(RStrBuf *sb) {
 		sb->len = 0;
 		sb->buf[0] = '\0';
 	}
+}
+
+R_API void r_strbuf_trim(RStrBuf *sb) {
+	char *s = strdup (r_strbuf_get (sb));
+	r_str_trim (s);
+	r_strbuf_set (sb, s);
 }

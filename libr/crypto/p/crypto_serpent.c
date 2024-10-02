@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake */
+/* radare - LGPL - Copyright 2017-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -74,18 +74,21 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		free (tmp);
 		return false;
 	}
-	if (cj->dir == 0) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_encrypt (st, ibuf + delta, tmp + delta);
 		}
-	} else if (cj->dir > 0) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_decrypt (st, ibuf + delta, tmp + delta);
 		}
+		break;
 	}
 
 	// Construct ut32 blocks from byte stream
@@ -110,7 +113,12 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_serpent = {
-	.name = "serpent-ecb",
+	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.meta = {
+		.name = "serpent-ecb",
+		.license = "LGPL",
+		.author = "pancake",
+	},
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
 	.check = serpent_check,

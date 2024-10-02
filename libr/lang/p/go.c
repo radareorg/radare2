@@ -169,12 +169,14 @@ static bool lang_go_run(RLangSession *session, const char *code, int len) {
 	"}\n"
 
 static RLangPlugin r_lang_plugin_go = {
-	.name = "go",
+	.meta = {
+		.name = "go",
+		.author = "pancake",
+		.desc = "GO language extension",
+		.license = "MIT",
+	},
 	.ext = "go",
-	.author = "pancake",
 	.example = r_lang_go_example,
-	.desc = "GO language extension",
-	.license = "MIT",
 	.init = lang_go_init,
 	.run = lang_go_run,
 	.run_file = (void*)lang_go_file,

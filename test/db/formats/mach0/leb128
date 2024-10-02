@@ -12,5 +12,6 @@ id.compat=0.0.1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: malformed uleb128
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN

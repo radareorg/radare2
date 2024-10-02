@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -25,17 +25,11 @@ typedef struct r_asm_code_t {
 	// imho this asmcode should contain multiple archops
 	RAnalOp op; // we have those fields already inside RAnalOp
 #endif
-	RList *equs; // TODO: must be a hash
+	HtPP *equs;
 	ut64 code_offset;
 	ut64 data_offset;
 	int code_align;
 } RAsmCode;
-
-// TODO: use a hashtable instead of an rlist
-typedef struct {
-	char *key;
-	char *value;
-} RAsmEqu;
 
 typedef struct r_asm_t {
 	RArch *arch;
@@ -100,11 +94,10 @@ R_API RList *r_asm_cpus(RAsm *a);
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);
 R_API void r_asm_code_free(RAsmCode *acode);
-R_API void r_asm_equ_item_free(RAsmEqu *equ);
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
-R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
+R_API R_MUSTUSE char *r_asm_code_equ_replace(RAsmCode *code, const char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
-R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key);
+R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key);
 
 /* op.c XXX Deprecate the use of all those apis and just use RArchOp */
 R_API RAnalOp *r_asm_op_new(void);

@@ -69,7 +69,7 @@ oon
 o
 EOF
 EXPECT=<<EOF
- 4 * r-- 0x00009730 bins/mach0/mac-ls2
+ 5 * r-- 0x00009730 bins/mach0/mac-ls2
 EOF
 RUN
 
@@ -127,7 +127,7 @@ o bins/mach0/mac-ls
 s
 obo 3
 s
-obo 4
+obo 5
 s
 EOF
 EXPECT=<<EOF
@@ -439,6 +439,7 @@ EXPECT=<<EOF
     "iofd": 3,
     "bfid": 0,
     "size": 512,
+    "addr": -1,
     "obj": {
       "arch": "x86",
       "bits": 64,
@@ -652,6 +653,7 @@ stripped false
 subsys   darwin
 va       true
 -- o
+ 4 - r-- 0x00003f14 null://16148
 -- ob
 - 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/mach0/test-arm32
 * 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/mach0/test-arm32

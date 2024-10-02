@@ -5,7 +5,7 @@
 #include "sfc/sfc_specs.h"
 #include <r_endian.h>
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut16 cksum1, cksum2;
 	ut64 length = r_buf_size (b);
 	// FIXME: this was commented out because it always evaluates to false.
@@ -31,8 +31,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -264,11 +264,13 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 }
 
 RBinPlugin r_bin_plugin_sfc = {
-	.name = "sfc",
-	.desc = "Super NES / Super Famicom ROM file",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "sfc",
+		.desc = "Super NES / Super Famicom ROM file",
+		.license = "LGPL3",
+	},
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

@@ -114,6 +114,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 09018291
+val: 0x00000020
 size: 4
 sign: false
 type: add
@@ -145,6 +146,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 91a0090c
+val: 0x00000200
 size: 4
 sign: false
 type: add
@@ -162,6 +164,7 @@ description: add with tag
 mask: ffffffff
 id: 7
 bytes: 91820109
+val: 0x00000020
 size: 4
 sign: false
 type: add
@@ -56083,6 +56086,30 @@ ARGS=-a arm -b 64
 FILE=bins/mach0/TestApp.ios
 CMDS=<<EOF
 aae
+axt 0x100009394~[1]
+EOF
+EXPECT=<<EOF
+0x100005eb4
+0x100006078
+0x1000060e0
+EOF
+RUN
+
+NAME=aaex honors given size
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+aaex 0x7c @ 0x10000f5dc
+axt str.setWindow:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=aaex plus axt find mem reads xrefs
+ARGS=-a arm -b 64
+FILE=bins/mach0/TestApp.ios
+CMDS=<<EOF
+aaex
 axt 0x100009394~[1]
 EOF
 EXPECT=<<EOF

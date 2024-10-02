@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_bin.h>
 #include <r_fs.h>
@@ -39,16 +39,16 @@ static char *fsname(RBuffer *b) {
 	return NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+static bool check(RBinFile *bf, RBuffer *b) {
+	R_RETURN_VAL_IF_FAIL (b, false);
 	char *p = fsname (b);
 	bool hasFs = p;
 	free (p);
 	return hasFs;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static void destroy(RBinFile *bf) {
@@ -61,37 +61,36 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!bf) {
-		return NULL;
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (ret) {
+		ret->file = bf->file? strdup (bf->file): NULL;
+		ret->type = strdup ("fs");
+		ret->bclass = fsname (bf->buf);
+		ret->rclass = strdup ("fs");
+		ret->os = strdup ("any");
+		ret->subsystem = strdup ("unknown");
+		ret->machine = strdup ("any");
+		// ret->arch = strdup ("any");
+		ret->has_va = 0;
+		ret->bits = 32;
+		ret->big_endian = 0;
+		ret->dbg_info = 0;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = strdup ("fs");
-	ret->bclass = fsname (bf->buf);
-	ret->rclass = strdup ("fs");
-	ret->os = strdup ("any");
-	ret->subsystem = strdup ("unknown");
-	ret->machine = strdup ("any");
-	// ret->arch = strdup ("any");
-	ret->has_va = 0;
-	ret->bits = 32;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 
 RBinPlugin r_bin_plugin_fs = {
-	.name = "fs",
-	.desc = "filesystem bin plugin",
-	.author = "pancake",
-	.version = "1.0",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "fs",
+		.desc = "filesystem bin plugin",
+		.author = "pancake",
+		.version = "1.0",
+		.license = "LGPL3",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.strings = &strings,
 	.info = &info,
 };

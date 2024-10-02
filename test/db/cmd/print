@@ -113,9 +113,9 @@ pd 20~7f
 EOF
 EXPECT=<<EOF
         ,=< 0x100001083      7f05           jg 0x10000108a
-        `-> 0x10000108a      488d357f3a00.  lea rsi, [0x100004b10]     ; section.4.__TEXT.__cstring
+        `-> 0x10000108a      488d357f3a..   lea rsi, [0x100004b10]     ; section.4.__TEXT.__cstring
         ,=< 0x100001083      7f05           jg jeje.lolo
-        `-> 0x10000108a      488d357f3a00.  lea rsi, section.4.__TEXT.__cstring ; 0x100004b10
+        `-> 0x10000108a      488d357f3a..   lea rsi, section.4.__TEXT.__cstring ; 0x100004b10
 EOF
 RUN
 
@@ -133,55 +133,74 @@ EXPECT=<<EOF
 0x100001085 call sym.func.100004401
 0x100001093 call sym.imp.setlocale
 0x1000010a3 call sym.imp.isatty
-0x1000054e0 [10] -rw- section size 40 named 10.__DATA.__data
 0x1000010b6 str.COLUMNS
 0x1000010bd call sym.imp.getenv
+0x1000010bd "COLUMNS"
 0x1000010cf call sym.imp.atoi
 0x1000010e6 call sym.imp.ioctl
 0x10000110d str.COLUMNS
 0x100001114 call sym.imp.getenv
+0x100001114 "COLUMNS"
 0x100001121 call sym.imp.atoi
 0x10000112c call sym.imp.getuid
-0x1000011b5 switch table (72 cases) at 0x10000192c
 ;-- default:                                                         ; from 0x1000011b5
 0x10000116e call sym.func.100004401
 0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
 0x100001186 call sym.imp.getopt
+0x100001186 "1@ABCFGHLOPRSTUWabcdefghik"
 ;-- switch:
+0x1000011b5 switch table (72 cases) at 0x10000192c
 0x100001233 str.CLICOLOR
 0x100001246 call sym.imp.setenv
+0x100001246 "CLICOLOR", ""
 0x100001253 str.bin_ls
 0x10000125a str.Unix2003
 0x100001261 call sym.imp.compat_mode
+0x100001261 "bin/ls", "Unix2003"
 0x10000128c str.bin_ls
 0x100001293 str.Unix2003
 0x10000129a call sym.imp.compat_mode
+0x10000129a "bin/ls", "Unix2003"
 0x1000013a2 str.bin_ls
 0x1000013a9 str.Unix2003
 0x1000013b0 call sym.imp.compat_mode
+0x1000013b0 "bin/ls", "Unix2003"
 0x1000013d3 str.bin_ls
 0x1000013da str.Unix2003
 0x1000013e1 call sym.imp.compat_mode
+0x1000013e1 "bin/ls", "Unix2003"
 0x10000143a str.bin_ls
 0x100001441 str.Unix2003
 0x100001448 call sym.imp.compat_mode
+0x100001448 "bin/ls", "Unix2003"
 0x10000145a str.bin_ls
 0x100001461 str.Unix2003
 0x100001468 call sym.imp.compat_mode
+0x100001468 "bin/ls", "Unix2003"
 0x1000015b4 str.CLICOLOR
 0x1000015bb call sym.imp.getenv
+0x1000015bb "CLICOLOR"
 0x1000015ce call sym.imp.isatty
 0x1000015d7 str.CLICOLOR_FORCE
 0x1000015de call sym.imp.getenv
+0x1000015de "CLICOLOR_FORCE"
 0x1000015ec str.TERM
 0x1000015f3 call sym.imp.getenv
+0x1000015f3 "TERM"
 0x100001602 call sym.imp.tgetent
+0x100001602 "", ""
 0x100001621 call sym.imp.tgetstr
+0x100001621 "AF", ""
 0x100001637 call sym.imp.tgetstr
+0x100001637 "AB", ""
 0x10000164d call sym.imp.tgetstr
+0x10000164d "me", ""
 0x100001663 call sym.imp.tgetstr
+0x100001663 "md", ""
 0x100001679 call sym.imp.tgetstr
+0x100001679 "op", ""
 0x100001698 call sym.imp.tgetstr
+0x100001698 "oc", ""
 0x1000016e1 sym.func.100003b48
 0x1000016ed sym.func.100003b48
 0x1000016f0 call sym.imp.signal
@@ -189,6 +208,7 @@ EXPECT=<<EOF
 0x1000016fd call sym.imp.signal
 0x100001702 str.LSCOLORS
 0x100001709 call sym.imp.getenv
+0x100001709 "LSCOLORS"
 0x100001711 call sym.func.1000039b6
 0x1000017a2 call sym.imp.getbsize
 0x1000017e6 sym.func.100000f58

@@ -875,19 +875,19 @@ static RList *preludes(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 2;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
 	}
 	return 0;
 }
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 	const char *str = op->mnemonic;
 	if (!strcmp (str, "nop")) {
 		r_anal_op_set_bytes (op, op->addr, (const ut8* const)"\x00\x00", 2);

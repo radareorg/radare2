@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_lib.h>
 #include <sdb/ht_pp.h>
 
 #if R2__UNIX__ && WANT_DYLINK

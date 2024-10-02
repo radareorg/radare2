@@ -37,7 +37,7 @@ static RConfigHolder *node_to_holder(RConfigNode *node) {
 }
 
 R_API bool r_config_hold(RConfigHold *h, ...) {
-	r_return_val_if_fail (h, false);
+	R_RETURN_VAL_IF_FAIL (h, false);
 	va_list ap;
 	char *key;
 	va_start (ap, h);
@@ -52,7 +52,7 @@ R_API bool r_config_hold(RConfigHold *h, ...) {
 }
 
 R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
-	r_return_val_if_fail (cfg, NULL);
+	R_RETURN_VAL_IF_FAIL (cfg, NULL);
 	RConfigHold *hold = R_NEW0 (RConfigHold);
 	if (hold) {
 		hold->list = r_list_newf ((RListFree)r_config_holder_free);
@@ -63,7 +63,7 @@ R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
 }
 
 R_API void r_config_hold_restore(RConfigHold *h) {
-	r_return_if_fail (h);
+	R_RETURN_IF_FAIL (h);
 	RListIter *iter;
 	RConfigHolder *hc;
 	RConfig *cfg = h->cfg;

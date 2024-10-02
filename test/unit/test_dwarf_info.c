@@ -417,7 +417,7 @@ bool test_dwarf2_big_endian(void) {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_dwarf3_c);
 	mu_run_test (test_dwarf4_cpp_multiple_modules);
 	mu_run_test (test_dwarf2_big_endian);

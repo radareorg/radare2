@@ -1,0 +1,15 @@
+[package]
+name = "pancake/rafind2"
+version = "5.9.5"
+description = "Unix-Like Reverse Engineering Framework"
+license = "LGPL3"
+readme = "README.md"
+
+[[module]]
+name = "rafind2"
+source = "rafind2.wasm"
+abi = "wasi"
+
+[[command]]
+name = "rafind2"
+module = "rafind2"

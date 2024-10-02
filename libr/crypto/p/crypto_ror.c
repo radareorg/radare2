@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2016-2024 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -49,7 +51,7 @@ static bool ror_check(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	if (cj->flag) {
+	if (cj->flag != R_CRYPTO_DIR_ENCRYPT) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
@@ -69,7 +71,11 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_ror = {
-	.name = NAME,
+	.meta = {
+		.name = NAME,
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.check = ror_check,

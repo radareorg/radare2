@@ -1,0 +1,51 @@
+NAME=maps and emustack
+FILE=malloc://1024
+CMDS=<<EOF
+o malloc://512 0x00100000
+o malloc://256 0x10000000
+o malloc://128 0x20000000
+w hello @ 0
+w world @ 0x00100000
+w buzzs @ 0x10000000
+w cowsa @ 0x20000000
+e esil.stack.addr
+# e esil.stack.addr=0
+o
+om
+?e --
+aeim
+o
+om
+psz @ 0
+psz @ 0x00100000
+psz @ 0x10000000
+psz @ 0x20000000
+EOF
+EXPECT=<<EOF
+0x00100000
+ 3 - rwx 0x00000400 malloc://1024
+ 4 - rwx 0x00000200 malloc://512
+ 5 - rwx 0x00000100 malloc://256
+ 6 * rwx 0x00000080 malloc://128
+- 4 fd: 6 +0x00000000 0x20000000 - 0x2000007f rw-
+- 3 fd: 5 +0x00000000 0x10000000 - 0x100000ff rw-
+- 2 fd: 4 +0x00000000 0x00100000 - 0x001001ff rw-
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
+--
+ 3 - rwx 0x00000400 malloc://1024
+ 4 - rwx 0x00000200 malloc://512
+ 5 - rwx 0x00000100 malloc://256
+ 6 * rwx 0x00000080 malloc://128
+ 7 - rw- 0x000f0000 malloc://983040
+- 5 fd: 7 +0x00000000 0x30000000 - 0x300effff rw- mem.0x30000000_0xf0000
+- 4 fd: 6 +0x00000000 0x20000000 - 0x2000007f rw-
+- 3 fd: 5 +0x00000000 0x10000000 - 0x100000ff rw-
+- 2 fd: 4 +0x00000000 0x00100000 - 0x001001ff rw-
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
+hello
+world
+buzzs
+cowsa
+EOF
+RUN
+

@@ -1,6 +1,6 @@
-dlopen
-dlsym
-dlclose
-mmap
-LoadLibrary
-GetProcAddress
+*.dlopen
+*.dlsym
+*.dlclose
+*.mmap
+*.LoadLibrary
+*.GetProcAddress

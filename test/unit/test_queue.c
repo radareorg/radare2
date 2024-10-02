@@ -31,7 +31,7 @@ bool test_r_queue_zero_size(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_queue_add_remove);
 	mu_run_test(test_r_queue_zero_size);
 	return tests_passed != tests_run;

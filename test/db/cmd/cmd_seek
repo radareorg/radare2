@@ -432,6 +432,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=relative large seek
+FILE=-
+CMDS=<<EOF
+s
+s+0x1000000000
+s
+EOF
+EXPECT=<<EOF
+0x0
+0x1000000000
+EOF
+RUN
+
 NAME=seek to bb start (sb)
 FILE=bins/elf/vim
 CMDS=<<EOF

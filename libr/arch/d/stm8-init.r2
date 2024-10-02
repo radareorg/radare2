@@ -1,0 +1,389 @@
+# Port A
+f ioreg.PA_ODR=0x5000
+f ioreg.PA_IDR=0x5001
+f ioreg.PA_DDR=0x5002
+f ioreg.PA_CR1=0x5003
+f ioreg.PA_CR2=0x5004
+
+# Port B
+f ioreg.PB_ODR=0x5005
+f ioreg.PB_IDR=0x5006
+f ioreg.PB_DDR=0x5007
+f ioreg.PB_CR1=0x5008
+f ioreg.PB_CR2=0x5009
+
+# Port C
+f ioreg.PC_ODR=0x500A
+f ioreg.PC_IDR=0x500B
+f ioreg.PC_DDR=0x500C
+f ioreg.PC_CR1=0x500D
+f ioreg.PC_CR2=0x500E
+
+# Port D
+f ioreg.PD_ODR=0x500F
+f ioreg.PD_IDR=0x5010
+f ioreg.PD_DDR=0x5011
+f ioreg.PD_CR1=0x5012
+f ioreg.PD_CR2=0x5013
+
+# Port E
+f ioreg.PE_ODR=0x5014
+f ioreg.PE_IDR=0x5015
+f ioreg.PE_DDR=0x5016
+f ioreg.PE_CR1=0x5017
+f ioreg.PE_CR2=0x5018
+
+# Port F
+f ioreg.PF_ODR=0x5019
+f ioreg.PF_IDR=0x501A
+f ioreg.PF_DDR=0x501B
+f ioreg.PF_CR1=0x501C
+f ioreg.PF_CR2=0x501D
+
+# Flash
+f ioreg.FLASH_CR1=0x5050
+f ioreg.FLASH_CR2=0x5051
+f ioreg.FLASH_PUKR=0x5052
+f ioreg.FLASH_DUKR=0x5053
+f ioreg.FLASH_IAPSR=0x5054
+
+# DMA1
+f ioreg.DMA1_GCSR=0x5070
+f ioreg.DMA1_GIR1=0x5071
+f ioreg.DMA1_C0CR=0x5075
+f ioreg.DMA1_C0SPR=0x5076
+f ioreg.DMA1_C0NDTR=0x5077
+f ioreg.DMA1_C0PARH=0x5078
+f ioreg.DMA1_C0PARL=0x5079
+f ioreg.DMA1_C0M0ARH=0x507B
+f ioreg.DMA1_C0M0ARL=0x507C
+f ioreg.DMA1_C1CR=0x507F
+f ioreg.DMA1_C1SPR=0x5080
+f ioreg.DMA1_C1NDTR=0x5081
+f ioreg.DMA1_C1PARH=0x5082
+f ioreg.DMA1_C1PARL=0x5083
+f ioreg.DMA1_C1M0ARH=0x5085
+f ioreg.DMA1_C1M0ARL=0x5086
+f ioreg.DMA1_C2CR=0x5089
+f ioreg.DMA1_C2SPR=0x508A
+f ioreg.DMA1_C2NDTR=0x508B
+f ioreg.DMA1_C2PARH=0x508C
+f ioreg.DMA1_C2PARL=0x508D
+f ioreg.DMA1_C2M0ARH=0x508F
+f ioreg.DMA1_C2M0ARL=0x5090
+f ioreg.DMA1_C3CR=0x5093
+f ioreg.DMA1_C3SPR=0x5094
+f ioreg.DMA1_C3NDTR=0x5095
+f ioreg.DMA1_C3PARH_C3M1ARH=0x5096
+f ioreg.DMA1_C3PARL_C3M1ARL=0x5097
+f ioreg.DMA_C3M0EAR=0x5098
+f ioreg.DMA1_C3M0ARH=0x5099
+f ioreg.DMA1_C3M0ARL=0x509A
+
+# SYS_CFG
+f ioreg.SYSCFG_RMPCR3=0x509D
+f ioreg.SYSCFG_RMPCR1=0x509E
+f ioreg.SYSCFG_RMPCR2=0x509F
+
+# ITC_EXTI
+f ioreg.EXTI_CR1=0x50A0
+f ioreg.EXTI_CR2=0x50A1
+f ioreg.EXTI_CR3=0x50A2
+f ioreg.EXTI_SR1=0x50A3
+f ioreg.EXTI_SR2=0x50A4
+f ioreg.EXTI_CONF1=0x50A5
+
+#WFE
+f ioreg.WFE_CR1=0x50A6
+f ioreg.WFE_CR2=0x50A7
+f ioreg.WFE_CR3=0x50A8
+f ioreg.WFE_CR4=0x50A9
+
+# ITC_EXTI
+f ioreg.EXTI_CR4=0x50AA
+f ioreg.EXTI_CONF2=0x50AB
+
+# RST
+f ioreg.RST_CR=0x50B0
+f ioreg.RST_SR=0x50B1
+
+# PWR
+f ioreg.PWR_CSR1=0x50B2
+f ioreg.PWR_CSR2=0x50B3
+
+# CLK
+f ioreg.CLK_CKDIVR=0x50C0
+f ioreg.CLK_CRTCR=0x50C1
+f ioreg.CLK_ICKCR=0x50C2
+f ioreg.CLK_PCKENR1=0x50C3
+f ioreg.CLK_PCKENR2=0x50C4
+f ioreg.CLK_CCOR=0x50C5
+f ioreg.CLK_ECKCR=0x50C6
+f ioreg.CLK_SCSR=0x50C7
+f ioreg.CLK_SWR=0x50C8
+f ioreg.CLK_SWCR=0x50C9
+f ioreg.CLK_CSSR=0x50CA
+f ioreg.CLK_CBEEPR=0x50CB
+f ioreg.CLK_HSICALR=0x50CC
+f ioreg.CLK_HSITRIMR=0x50CD
+f ioreg.CLK_HSIUNLCKR=0x50CE
+f ioreg.CLK_REGCSR=0x50CF
+f ioreg.CLK_PCKENR3=0x50D0
+
+# WWDG
+f ioreg.WWDG_CR=0x50D3
+f ioreg.WWDG_WR=0x50D4
+
+# IWDG
+f ioreg.IWDG_KR=0x50E0
+f ioreg.IWDG_PR=0x50E1
+f ioreg.IWDG_RLR=0x50E2
+
+# BEEP
+f ioreg.BEEP_CSR1=0x50F0
+f ioreg.BEEP_CSR2=0x50F3
+
+# RTC
+f ioreg.RTC_TR1=0x5140
+f ioreg.RTC_TR2=0x5141
+f ioreg.RTC_TR3=0x5142
+f ioreg.RTC_DR1=0x5144
+f ioreg.RTC_DR2=0x5145
+f ioreg.RTC_DR3=0x5146
+f ioreg.RTC_CR1=0x5148
+f ioreg.RTC_CR2=0x5149
+f ioreg.RTC_CR3=0x514A
+f ioreg.RTC_ISR1=0x514C
+f ioreg.RTC_ISR2=0x514D
+f ioreg.RTC_SPRERH=0x5150
+f ioreg.RTC_SPRERL=0x5151
+f ioreg.RTC_APRER=0x5152
+f ioreg.RTC_WUTRH=0x5154
+f ioreg.RTC_WUTRL=0x5155
+
+f ioreg.RTC_SSRH=0x5157
+f ioreg.RTC_SSRL=0x5158
+f ioreg.RTC_WPR=0x5159
+f ioreg.RTC_SHIFTRH=0x515A
+f ioreg.RTC_SHIFTRL=0x515B
+f ioreg.RTC_ALRMAR1=0x515C
+f ioreg.RTC_ALRMAR2=0x515D
+f ioreg.RTC_ALRMAR3=0x515E
+f ioreg.RTC_ALRMAR4=0x515F
+f ioreg.RTC_ALRMASSRH=0x5164
+f ioreg.RTC_ALRMASSRL=0x5165
+f ioreg.RTC_ALRMASSMSKR=0x5166
+f ioreg.RTC_CALRH=0x516A
+f ioreg.RTC_CALRL=0x516B
+f ioreg.RTC_TCR1=0x516C
+f ioreg.RTC_TCR2=0x516D
+
+# CSS
+f ioreg.CSSLSE_CSR=0x5190
+
+# SPI1
+f ioreg.SPI1_CR1=0x5200
+f ioreg.SPI1_CR2=0x5201
+f ioreg.SPI1_ICR=0x5202
+f ioreg.SPI1_SR=0x5203
+f ioreg.SPI1_DR=0x5204
+f ioreg.SPI1_CRCPR=0x5205
+f ioreg.SPI1_RXCRCR=0x5206
+f ioreg.SPI1_TXCRCR=0x5207
+
+# I2C
+f ioreg.I2C1_CR1=0x5210
+f ioreg.I2C1_CR2=0x5211
+f ioreg.I2C1_FREQR=0x5212
+f ioreg.I2C1_OARL=0x5213
+f ioreg.I2C1_OARH=0x5214
+f ioreg.I2C1_OAR2=0X5215
+f ioreg.I2C1_DR=0x5216
+f ioreg.I2C1_SR1=0x5217
+f ioreg.I2C1_SR2=0x5218
+f ioreg.I2C1_SR3=0x5219
+f ioreg.I2C1_ITR=0x521A
+f ioreg.I2C1_CCRL=0x521B
+f ioreg.I2C1_CCRH=0x521C
+f ioreg.I2C1_TRISER=0x521D
+f ioreg.I2C1_PECR=0x521E
+
+# USART
+f ioreg.USART1_SR=0x5230
+f ioreg.USART1_DR=0x5231
+f ioreg.USART1_BRR1=0x5232
+f ioreg.USART1_BRR2=0x5233
+f ioreg.USART1_CR1=0x5234
+f ioreg.USART1_CR2=0x5235
+f ioreg.USART1_CR3=0x5236
+f ioreg.USART1_CR4=0x5237
+f ioreg.USART1_CR5=0x5238
+f ioreg.USART1_GTR=0x5239
+f ioreg.USART1_PSCR=0x523A
+
+# TIM2
+f ioreg.TIM2_CR1=0x5250
+f ioreg.TIM2_CR2=0x5251
+f ioreg.TIM2_SMCR=0x5252
+f ioreg.TIM2_ETR=0x5253
+f ioreg.TIM2_DER=0x5254
+f ioreg.TIM2_IER=0x5255
+f ioreg.TIM2_SR1=0x5256
+f ioreg.TIM2_SR2=0x5257
+f ioreg.TIM2_EGR=0x5258
+f ioreg.TIM2_CCMR1=0x5259
+f ioreg.TIM2_CCMR2=0x525A
+f ioreg.TIM2_CCER1=0x525B
+f ioreg.TIM2_CNTRH=0x525C
+f ioreg.TIM2_CNTRL=0x525D
+f ioreg.TIM2_PSCR=0x525E
+f ioreg.TIM2_ARRH=0x525F
+f ioreg.TIM2_ARRL=0x5260
+f ioreg.TIM2_CCR1H=0x5261
+f ioreg.TIM2_CCR1L=0x5262
+f ioreg.TIM2_CCR2H=0x5263
+f ioreg.TIM2_CCR2L=0x5264
+f ioreg.TIM2_BKR=0x5265
+f ioreg.TIM2_OISR=0x5266
+
+# TIM3
+f ioreg.TIM3_CR1=0x5280
+f ioreg.TIM3_CR2=0x5281
+f ioreg.TIM3_SMCR=0x5282
+f ioreg.TIM3_ETR=0x5283
+f ioreg.TIM3_DER=0x5284
+f ioreg.TIM3_IER=0x5285
+f ioreg.TIM3_SR1=0x5286
+f ioreg.TIM3_SR2=0x5287
+f ioreg.TIM3_EGR=0x5288
+f ioreg.TIM3_CCMR1=0x5289
+f ioreg.TIM3_CCMR2=0x528A
+f ioreg.TIM3_CCER1=0x528B
+f ioreg.TIM3_CNTRH=0x528C
+f ioreg.TIM3_CNTRL=0x528D
+f ioreg.TIM3_PSCR=0x528E
+f ioreg.TIM3_ARRH=0x528F
+f ioreg.TIM3_ARRL=0x5290
+f ioreg.TIM3_CCR1H=0x5291
+f ioreg.TIM3_CCR1L=0x5292
+f ioreg.TIM3_CCR2H=0x5293
+f ioreg.TIM3_CCR2L=0x5294
+f ioreg.TIM3_BKR=0x5295
+f ioreg.TIM3_OISR=0x5296
+
+# TIM4
+f ioreg.TIM4_CR1=0x52E0
+f ioreg.TIM4_CR2=0x52E1
+f ioreg.TIM4_SMCR=0x52E2
+f ioreg.TIM4_DER=0x52E3
+f ioreg.TIM4_IER=0x52E4
+f ioreg.TIM4_SR=0x52E5
+f ioreg.TIM4_EGR=0x52E6
+f ioreg.TIM4_CNTR=0x52E7
+f ioreg.TIM4_PSCR=0x52E8
+f ioreg.TIM4_ARR=0x52E9
+
+# IRTIM
+f ioreg.IR_CR=0x52FF
+
+# COMP
+f ioreg.COMP_CR=0x5300
+f ioreg.COMP_CSR=0x5301
+f ioreg.COMP_CCS=0x5302
+
+# ADC1
+f ioreg.ADC1_CR1=0x5340
+f ioreg.ADC1_CR2=0x5341
+f ioreg.ADC1_CR3=0x5342
+f ioreg.ADC1_SR=0x5343
+f ioreg.ADC1_DRH=0x5344
+f ioreg.ADC1_DRL=0x5345
+f ioreg.ADC1_HTRH=0x5346
+f ioreg.ADC1_HTRL=0x5347
+f ioreg.ADC1_LTRH=0x5348
+f ioreg.ADC1_LTRL=0x5349
+f ioreg.ADC1_SQR1=0x534A
+f ioreg.ADC1_SQR2=0x534B
+f ioreg.ADC1_SQR3=0x534C
+f ioreg.ADC1_SQR4=0x534D
+f ioreg.ADC1_TRIGR1=0x534E
+f ioreg.ADC1_TRIGR2=0x534F
+f ioreg.ADC1_TRIGR3=0x5350
+f ioreg.ADC1_TRIGR4=0x5351
+
+#RI
+f ioreg.RI_ICR1=0x5431
+f ioreg.RI_ICR2=0x5432
+f ioreg.RI_IOIR1=0x5433
+f ioreg.RI_IOIR2=0x5434
+f ioreg.RI_IOIR3=0x5435
+f ioreg.RI_IOCMR1=0x5436
+f ioreg.RI_IOCMR2=0x5437
+f ioreg.RI_IOCMR3=0x5438
+f ioreg.RI_IOSR1=0x5439
+f ioreg.RI_IOSR2=0x543A
+f ioreg.RI_IOSR3=0x543B
+f ioreg.RI_IOGCR=0x543C
+f ioreg.RI_ASCR1=0x543D
+f ioreg.RI_ASCR2=0x543E
+f ioreg.RI_RCR=0x543F
+
+#COMP1/2
+f ioreg.COMP_CSR1=0x5440
+f ioreg.COMP_CSR2=0x5441
+f ioreg.COMP_CSR3=0x5442
+f ioreg.COMP_CSR4=0x5443
+f ioreg.COMP_CSR5=0x5444
+
+#RI - continuare!
+f ioreg.RI_CR=0x5450
+f ioreg.RI_MASKR1=0x5451
+f ioreg.RI_MASKR2=0x5452
+f ioreg.RI_MASKR3=0x5453
+f ioreg.RI_MASKR4=0x5454
+f ioreg.RI_IOIR4=0x5455
+f ioreg.RI_IOCMR4=0x5456
+f ioreg.RI_IOSR4=0x5457
+
+#CPU
+f ioreg.A=0x7F00
+f ioreg.PCE=0x7F01
+f ioreg.PCH=0x7F02
+f ioreg.PCL=0x7F03
+f ioreg.XH=0x7F04
+f ioreg.XL=0x7F05
+f ioreg.YH=0x7F06
+f ioreg.YL=0x7F07
+f ioreg.SPH=0x7F08
+f ioreg.SPL=0x7F09
+f ioreg.CCR=0x7F0A
+
+#CFG
+f ioreg.CFG_GCR=0x7F60
+
+#ITC-SPR
+f ioreg.ITC_SPR1=0x7F70
+f ioreg.ITC_SPR2=0x7F71
+f ioreg.ITC_SPR3=0x7F72
+f ioreg.ITC_SPR4=0x7F73
+f ioreg.ITC_SPR5=0x7F74
+f ioreg.ITC_SPR6=0x7F75
+f ioreg.ITC_SPR7=0x7F76
+f ioreg.ITC_SPR8=0x7F77
+
+# SWIM
+f ioreg.SWIM_CSR=0x7F80
+
+# DM
+f ioreg.DM_BK1RE=0x7F90
+f ioreg.DM_BK1RH=0x7F91
+f ioreg.DM_BK1RL=0x7F92
+f ioreg.DM_BK2RE=0x7F93
+f ioreg.DM_BK2RH=0x7F94
+f ioreg.DM_BK2RL=0x7F95
+f ioreg.DM_CR1=0x7F96
+f ioreg.DM_CR2=0x7F97
+f ioreg.DM_CSR1=0x7F98
+f ioreg.DM_CSR2=0x7F99
+f ioreg.DM_ENFCTR=0x7F9A
+

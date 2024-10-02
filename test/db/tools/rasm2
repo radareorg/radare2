@@ -1,3 +1,13 @@
+NAME=test ascii and asciiz
+FILE=--
+CMDS=<<EOF
+rasm2 -f bins/src/asciistr.asm
+EOF
+EXPECT=<<EOF
+488d3d0c00000048b8d07bc8f7ff7f0000ffd0c32f686f6d652f6e6974616e6d617263656c2f7368656c6c2f6578616d706c652f6c696268656c6c6f2e736f2f686f6d652f6e6974616e6d617263656c2f7368656c6c2f6578616d706c652f6c696268656c6c6f2e736f00
+EOF
+RUN
+
 NAME=test 8051 reassembly
 FILE=--
 CMDS=!scripts/test-8051-reassembly.sh
@@ -5,7 +15,10 @@ EXPECT=<<EOF
 Reassembling 8051... OK
 EOF
 EXPECT_ERR=<<EOF
+WARN: Cannot find asm.parser for 8051.pseudo
+INFO: Fallback to null
 WARN: using oba to load the syminfo from different mapaddress
+WARN: Cannot find asm.parser for 8051.pseudo
 EOF
 RUN
 
@@ -62,7 +75,7 @@ RUN
 
 NAME=rasm2 blx arm/thumb
 FILE=-
-CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
@@ -70,7 +83,7 @@ RUN
 
 NAME=rasm2 blx arm/thumb 2
 FILE=-
-CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
@@ -144,17 +157,17 @@ NAME=rasm2 #1167 3
 FILE=-
 BROKEN=1
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax"
+CMDS=!rasm2 -S att -a x86.as -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
-NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
+NAME=rasm2 -S att -a x86.as -b 64 movq %rdx, %rax
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
+CMDS=!rasm2 -S att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
 4889d0
 EOF
@@ -174,7 +187,7 @@ NAME=rasm2 #1167 5
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
+CMDS=!rasm2 -S att -a x86.as -b 64 "add \$33, %rbx"
 EXPECT=<<EOF
 4883c321
 EOF
@@ -209,7 +222,7 @@ FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov hello, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov hello, eax' at line 3
+ERROR: Cannot assemble 'mov hello, eax' at line 1
 EOF
 RUN
 
@@ -218,7 +231,7 @@ FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov 33, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov 33, eax' at line 3
+ERROR: Cannot assemble 'mov 33, eax' at line 1
 EOF
 RUN
 
@@ -227,7 +240,7 @@ FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, hello"
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov eax, hello' at line 3
+ERROR: Cannot assemble 'mov eax, hello' at line 1
 EOF
 RUN
 
@@ -236,7 +249,7 @@ FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
+ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 1
 EOF
 RUN
 
@@ -248,8 +261,8 @@ CMDS=<<EOF
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
-ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
+ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 1
+ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 1
 EOF
 RUN
 
@@ -295,15 +308,15 @@ RUN
 
 NAME=rasm2 -s
 FILE=-
-CMDS=!rasm2 -s att -a x86 -b 32 -D "31ed"
+CMDS=!rasm2 -S att -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x00000000   2                     31ed  xorl %ebp, %ebp
 EOF
 RUN
 
-NAME=rasm2 -o
+NAME=rasm2 -s
 FILE=-
-CMDS=!rasm2 -s att -o 0xa -a x86 -b 32 -D "31ed"
+CMDS=!rasm2 -S att -s 0xa -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xorl %ebp, %ebp
 EOF
@@ -311,7 +324,7 @@ RUN
 
 NAME=rasm2 -F pseudo
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
+CMDS=!rasm2 -a x86 -b 32 -s 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
 EOF
@@ -319,15 +332,15 @@ RUN
 
 NAME=rasm2 -F
 FILE=-
-CMDS=!rasm2 -o 0xa -a x86 -b 32 -D 31ed
+CMDS=!rasm2 -s 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
 RUN
 
-NAME=rasm2 -F -o order bug
+NAME=rasm2 -F -s order bug
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -o 0xa -D 31ed
+CMDS=!rasm2 -a x86 -b 32 -s 0xa -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
@@ -360,7 +373,7 @@ RUN
 
 NAME=rasm2  dissassemble ARM32 binary file
 FILE=-
-CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f bins/other/rasm2/testARM32.bin
+CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin
 EXPECT=<<EOF
 0x00000200   4                 4661b0e1  asrs r6, r6, 2
 0x00000204   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
@@ -377,7 +390,7 @@ RUN
 
 NAME=rasm2  dissassemble ARM32 binary file with skip
 FILE=-
-CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f bins/other/rasm2/testARM32.bin -i 4
+CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin -i 4
 EXPECT=<<EOF
 0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
 0x00000204   4                 0040a0e3  mov r4, 0
@@ -431,7 +444,7 @@ NAME=rasm2 x86.asm.32
 FILE=-
 CMDS=!rasm2 -f bins/elf/analysis/hello.asm
 EXPECT=<<EOF
-ba0e000000b91d000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
+ba0e000000b917000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
 EOF
 RUN
 
@@ -530,7 +543,7 @@ CMDS=<<EOF
 !!rasm2 -L~arm.gnu?
 EOF
 EXPECT=<<EOF
-17
+18
 1
 EOF
 RUN
@@ -701,5 +714,45 @@ BROKEN=1
 CMDS=!rasm2 -a arm.as -b 64 "sub sp, sp, 16"
 EXPECT=<<EOF
 ff4300d1
+EOF
+RUN
+
+NAME=rasm2 -a x86 -b 64 -f equ.asm
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 -f bins/src/equ.asm
+EXPECT=<<EOF
+48c7c003000000
+EOF
+RUN
+
+NAME=rasm2 -a x86 -b 64 -D PCHINT
+FILE=-
+CMDS=<<EOF
+'!rasm2 -a x86 -b 64 -D '8b 5f 50 48 85 db 0f 84 c2 00 00 00 e8 93 bc c4 f1 48 c7 c1 38 14 56 c1 48 89 da 48 c7 c7 aa c2 57 c1 48 89 c6 e8 6a 2c 1c f1 <0f> 0b 5b 41 5c 41 5d 41 5e 5d 31 c0 31 d2 31 c9 31 f6 31 ff 45 31'
+EOF
+EXPECT=<<EOF
+0x00000000   3                   8b5f50  mov ebx, dword [rdi + 0x50]
+0x00000003   3                   4885db  test rbx, rbx
+0x00000006   6             0f84c2000000  je 0xce
+0x0000000c   5               e893bcc4f1  call 0xfffffffff1c4bca4
+0x00000011   7           48c7c1381456c1  mov rcx, 0xffffffffc1561438
+0x00000018   3                   4889da  mov rdx, rbx
+0x0000001b   7           48c7c7aac257c1  mov rdi, 0xffffffffc157c2aa
+0x00000022   3                   4889c6  mov rsi, rax
+0x00000025   5               e86a2c1cf1  call 0xfffffffff11c2c94
+=PC:
+0x0000002a   2                     0f0b  ud2
+0x0000002c   1                       5b  pop rbx
+0x0000002d   2                     415c  pop r12
+0x0000002f   2                     415d  pop r13
+0x00000031   2                     415e  pop r14
+0x00000033   1                       5d  pop rbp
+0x00000034   2                     31c0  xor eax, eax
+0x00000036   2                     31d2  xor edx, edx
+0x00000038   2                     31c9  xor ecx, ecx
+0x0000003a   2                     31f6  xor esi, esi
+0x0000003c   2                     31ff  xor edi, edi
+0x0000003e   1                       45  invalid
+0x0000003f   1                       31  invalid
 EOF
 RUN

@@ -63,7 +63,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0 ();
@@ -73,8 +73,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		}
 		ao->buf = r_buf_ref (buf);
 		art_header_load (ao, ao->kv);
-		sdb_ns_set (sdb, "info", ao->kv);
-		*bin_obj = ao;
+		sdb_ns_set (bf->sdb, "info", ao->kv);
+		bf->bo->bin_obj = ao;
 		return true;
 	}
 	return false;
@@ -92,7 +92,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -120,7 +120,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	char tmp[4];
 	int r = r_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
 	return r == 4 && !strncmp (tmp, "art\n", 4);
@@ -200,13 +200,15 @@ static RList *sections(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_art = {
-	.name = "art",
-	.desc = "Android Runtime",
-	.license = "LGPL3",
+	.meta = {
+		.name = "art",
+		.desc = "Android Runtime",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "radiff2"
 
@@ -62,6 +62,7 @@ typedef struct {
 	RList *evals;
 	PJ *pj;
 	ut64 baddr;
+	bool thready;
 } RadiffOptions;
 
 static RCore *opencore(RadiffOptions *ro, const char *f) {
@@ -102,8 +103,10 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		if (ro->anal_all) {
 			const char *cmd = "aac";
 			switch (ro->anal_all) {
-			case 1: cmd = "aaa"; break;
-			case 2: cmd = "aaaa"; break;
+			case 1: cmd = "aa"; break;
+			case 2: cmd = "aaa"; break;
+			case 3: cmd = "aaaa"; break;
+			case 4: cmd = "aaaaa"; break;
 			}
 			r_core_cmd0 (c, cmd);
 		}
@@ -130,7 +133,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 	while (*s == '\n') {
 		s++;
 	}
-	strncpy (s, (char *) buf, last);
+	r_str_ncpy (s, (char *) buf, last);
 }
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
@@ -454,10 +457,11 @@ static int show_help(int v) {
 			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
 			"  -r         output in radare commands\n"
-			"  -s         compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm)\n"
+			"  -s         compute edit distance (no substitution, Eugene W. Myers O(ND) diff algorithm)\n"
 			"  -ss        compute Levenshtein edit distance (substitution is allowed, O(N^2))\n"
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
+			"  -T         analyze files in threads (EXPERIMENTAL, 30%% faster and crashy)\n"
 			"  -x         show two column hexdump diffing\n"
 			"  -X         show two column hexII diffing\n"
 			"  -u         unified output (---+++)\n"
@@ -749,7 +753,9 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 }
 
 static int import_cmp(const RBinImport *a, const RBinImport *b) {
-	return strcmp (a->name, b->name);
+	const char *aname = r_bin_name_tostring (a->name);
+	const char *bname = r_bin_name_tostring (b->name);
+	return strcmp (aname, bname);
 }
 
 static ut8 *get_classes(RCore *c, int *len) {
@@ -763,7 +769,8 @@ static ut8 *get_classes(RCore *c, int *len) {
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
-		r_list_append (reslist, strdup (klass->name));
+		const char *kname = r_bin_name_tostring (klass->name);
+		r_list_append (reslist, strdup (kname));
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
 	char *buf = r_str_list_join (reslist, "\n");
@@ -773,19 +780,24 @@ static ut8 *get_classes(RCore *c, int *len) {
 }
 
 static ut8 *get_fields(RCore *c, int *len) {
-	RListIter *iter, *iter2;
+	R_RETURN_VAL_IF_FAIL (c, NULL);
+	const int pref = r_config_get_b (c->config, "asm.demangle")? 'd': 0;
 
-	if (!c || !len) {
+	if (!len) {
+		// uh?
 		return NULL;
 	}
 
 	RBinClass *klass;
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
+	RListIter *iter, *iter2;
 	r_list_foreach (list, iter, klass) {
+		const char *kname = r_bin_name_tostring (klass->name);
 		RBinField *field;
 		r_list_foreach (klass->fields, iter2, field) {
-			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, field->name));
+			const char *fname = r_bin_name_tostring2 (field->name, pref);
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, fname));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
@@ -807,8 +819,10 @@ static ut8 *get_methods(RCore *c, int *len) {
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
+		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_foreach (klass->methods, iter2, sym) {
-			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, sym->name));
+			const char *name = r_bin_name_tostring (sym->name);
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, name));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
@@ -829,7 +843,8 @@ static ut8 *get_symbols(RCore *c, int *len) {
 	const RList *list = r_bin_get_symbols (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, sym) {
-		r_list_append (reslist, strdup (sym->name));
+		const char *name = r_bin_name_tostring (sym->name);
+		r_list_append (reslist, strdup (name));
 	}
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
@@ -840,7 +855,6 @@ static ut8 *get_symbols(RCore *c, int *len) {
 static ut8 *get_imports(RCore *c, int *len) {
 	RListIter *iter;
 	RBinImport *str, *old = NULL;
-	ut8 *buf, *ptr;
 
 	if (!c || !len) {
 		return NULL;
@@ -852,33 +866,18 @@ static ut8 *get_imports(RCore *c, int *len) {
 
 	*len = 0;
 
-	r_list_foreach (list, iter, str) {
-		if (!old || (old && import_cmp (old, str) != 0)) {
-			*len += strlen (str->name) + 1;
-			old = str;
-		}
-	}
-	ptr = buf = malloc (*len + 1);
-	if (!ptr) {
-		return NULL;
-	}
-
-	old = NULL;
-
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (list, iter, str) {
 		if (old && !import_cmp (old, str)) {
 			continue;
 		}
-		int namelen = strlen (str->name);
-		memcpy (ptr, str->name, namelen);
-		ptr += namelen;
-		*ptr++ = '\n';
+		const char *symname = r_bin_name_tostring (str->name);
+		r_strbuf_appendf (sb, "%s\n", symname);
 		old = str;
 	}
-	*ptr = 0;
 
-	*len = strlen ((const char *) buf);
-	return buf;
+	*len = r_strbuf_length (sb);
+	return (ut8*)r_strbuf_drain (sb);
 }
 
 static int bs_cmp(const RBinString *a, const RBinString *b) {
@@ -939,7 +938,7 @@ static char *get_graph_commands(RCore *c, ut64 off) {
 }
 
 static void __generate_graph(RCore *c, ut64 off) {
-	r_return_if_fail (c);
+	R_RETURN_IF_FAIL (c);
 	char *ptr = get_graph_commands (c, off);
 	char *str = ptr;
 	r_cons_break_push (NULL, NULL);
@@ -1043,6 +1042,19 @@ static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size
 	pj_end (pj);
 }
 
+typedef struct {
+	RCore **core;
+	const char *file;
+	RadiffOptions *ro;
+} ThreadData;
+
+static RThreadFunctionRet thready_core(RThread *th) {
+	ThreadData *td = (ThreadData*)th->user;
+	*td->core = NULL;
+	*td->core = opencore (td->ro, td->file);
+	return false;
+}
+
 R_API int r_main_radiff2(int argc, const char **argv) {
 	RadiffOptions ro;
 	const char *columnSort = NULL;
@@ -1057,7 +1069,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:zqZ");
+	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1143,6 +1155,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'O':
 			ro.diffops = 1;
 			break;
+		case 'T': // imho `t <=> T`
+			ro.thready = true;
+			// printf ("%s\n", opt.arg);
+			break;
 		case 't':
 			ro.threshold = atoi (opt.arg);
 			// printf ("%s\n", opt.arg);
@@ -1184,7 +1200,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.diffmode = 'U';
 			break;
 		case 'v':
-			return r_main_version_print ("radiff2");
+			return r_main_version_print ("radiff2", 0);
 		case 'q':
 			ro.quiet = true;
 			break;
@@ -1226,13 +1242,29 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_FIELDS:
 	case MODE_DIFF_SYMBOLS:
 	case MODE_DIFF_IMPORTS:
-		c = opencore (&ro, ro.file);
-		if (!c) {
-			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
-		}
-		c2 = opencore (&ro, ro.file2);
-		if (!c2) {
-			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
+		if (ro.thready) {
+			// spawn 1st thread
+			ThreadData t0d = { .core = &c, .file = ro.file, .ro = &ro };
+			RThread *t0 = r_th_new (thready_core, &t0d, false);
+			r_th_start (t0);
+			// spawn 2nd thread
+			ThreadData t1d = { .core = &c2, .file = ro.file2, .ro = &ro };
+			RThread *t1 = r_th_new (thready_core, &t1d, false);
+			r_th_start (t1);
+			// sync
+			r_th_wait (t0);
+			r_th_wait (t1);
+		} else {
+			c = opencore (&ro, ro.file);
+			if (!c) {
+				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
+				return 1;
+			}
+			c2 = opencore (&ro, ro.file2);
+			if (!c2) {
+				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
+				return 1;
+			}
 		}
 		if (!c || !c2) {
 			return 1;
@@ -1256,11 +1288,27 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		r_config_set_i (c2->config, "diff.bare", ro.showbare);
 		r_anal_diff_setup_i (c->anal, ro.diffops, ro.threshold, ro.threshold);
 		r_anal_diff_setup_i (c2->anal, ro.diffops, ro.threshold, ro.threshold);
-		if (ro.pdc) {
-			if (!addr) {
-				//addr = "entry0";
-				addr = "main";
+		if (addr) {
+			bool err = false;
+			if (r_num_math (c->num, addr) == 0) {
+				err = true;
+			} else if (r_num_math (c2->num, addr) == 0) {
+				err = true;
 			}
+			if (err) {
+				R_LOG_ERROR ("Unknown symbol name '%s'", addr);
+				return -1;
+			}
+		} else {
+			if (r_num_math (c->num, "main")) {
+				addr = "main";
+			} else if (r_num_math (c->num, "entry0")) {
+				addr = "entry0";
+			} else {
+				R_LOG_WARN ("Cannot find entrypoint");
+			}
+		}
+		if (ro.pdc) {
 			/* should be in mode not in bool pdc */
 			r_config_set_i (c->config, "scr.color", COLOR_MODE_DISABLED);
 			r_config_set_i (c2->config, "scr.color", COLOR_MODE_DISABLED);

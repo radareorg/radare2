@@ -283,3 +283,71 @@ a "ble 0xc" 010000da
 a "cmn r0, 8" 080070e3
 a "teq r6, 4" 040036e3
 a "tst r2, 1" 010012e3
+a "adc r0, r0, r0, lsl 2" 0001a0e0
+a "adc r0, r0, r0, lsl 0" 0000a0e0
+a "adc r0, r0, r0, lsr 2" 2001a0e0
+a "adc r0, r0, r0, asr 2" 4001a0e0
+a "adc r0, r0, r0, lsr 32" 2000a0e0
+a "adc r0, r0, r0, asr 32" 4000a0e0
+a "adc r0, r0, r0, ror 0" 0000a0e0
+a "adc r0, r0, r0, ror 2" 6001a0e0
+a "adc r0, r0, r0, rrx" 6000a0e0
+a "adc r0, r0, r0, lsl r0" 1000a0e0
+a "adc r0, r0, r0, lsr r0" 3000a0e0
+a "adc r0, r0, r0, asr r0" 5000a0e0
+a "adc r0, r0, r0, ror r0" 7000a0e0
+a "ldr r1, [r0, r0, lsl 2]" 001190e7
+a "ldr r1, [r0, r0, lsl 0]" 001090e7
+a "ldr r1, [r0, r0, lsr 2]" 201190e7
+a "ldr r1, [r0, r0, asr 2]" 401190e7
+a "ldr r1, [r0, r0, lsr 32]" 201090e7
+a "ldr r1, [r0, r0, asr 32]" 401090e7
+a "ldr r1, [r0, r0, ror 0]" 001090e7
+a "ldr r1, [r0, r0, ror 2]" 601190e7
+a "ldr r1, [r0, r0, rrx]" 601090e7
+a "ldr r1, [r0, r0, lsl 2]!" 0011b0e7
+a "ldr r1, [r0, r0, lsl 0]!" 0010b0e7
+a "ldr r1, [r0, r0, lsr 2]!" 2011b0e7
+a "ldr r1, [r0, r0, asr 2]!" 4011b0e7
+a "ldr r1, [r0, r0, lsr 32]!" 2010b0e7
+a "ldr r1, [r0, r0, asr 32]!" 4010b0e7
+a "ldr r1, [r0, r0, ror 0]!" 0010b0e7
+a "ldr r1, [r0, r0, ror 2]!" 6011b0e7
+a "ldr r1, [r0, r0, rrx]!" 6010b0e7
+a "ldr r1, [r0], r0, lsl 2" 001190e6
+a "ldr r1, [r0], r0, lsl 0" 001090e6
+a "ldr r1, [r0], r0, lsr 2" 201190e6
+a "ldr r1, [r0], r0, asr 2" 401190e6
+a "ldr r1, [r0], r0, lsr 32" 201090e6
+a "ldr r1, [r0], r0, asr 32" 401090e6
+a "ldr r1, [r0], r0, ror 0" 001090e6
+a "ldr r1, [r0], r0, ror 2" 601190e6
+a "ldr r1, [r0], r0, rrx" 601090e6
+a "mvn r0, r0, lsl 0" 0000e0e1
+a "mvn r0, r0, lsl 2" 0001e0e1
+a "mvn r0, r0, lsr 2" 2001e0e1
+a "mvn r0, r0, asr 2" 4001e0e1
+a "mvn r0, r0, lsr 32" 2000e0e1
+a "mvn r0, r0, asr 32" 4000e0e1
+a "mvn r0, r0, ror 0" 0000e0e1
+a "mvn r0, r0, ror 2" 6001e0e1
+a "mvn r0, r0, rrx" 6000e0e1
+a "mvn r0, r0, lsl r0" 1000e0e1
+a "mvn r0, r0, lsr r0" 3000e0e1
+a "mvn r0, r0, asr r0" 5000e0e1
+a "mvn r0, r0, ror r0" 7000e0e1
+a "cmp r0, r0, lsl 0" 000050e1
+a "cmp r0, r0, lsl 2" 000150e1
+a "cmp r0, r0, lsr 2" 200150e1
+a "cmp r0, r0, asr 2" 400150e1
+a "cmp r0, r0, lsr 32" 200050e1
+a "cmp r0, r0, asr 32" 400050e1
+a "cmp r0, r0, ror 0" 000050e1
+a "cmp r0, r0, ror 2" 600150e1
+a "cmp r0, r0, rrx" 600050e1
+a "cmp r0, r0, lsl r0" 100050e1
+a "cmp r0, r0, lsr r0" 300050e1
+a "cmp r0, r0, asr r0" 500050e1
+a "cmp r0, r0, ror r0" 700050e1
+a "ldr r0, [r1, r2]!" 0200b1e7
+a "ldr r0, [r1, 0x42]!" 4200b1e5

@@ -1,3 +1,22 @@
+NAME=flutter refs
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 71334091314640f9
+f str.CTF_is_awesome=0xc088
+e asm.emu=true
+pd 2
+e asm.esil=true
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      71334091       add x17, x27, 0xc, lsl 12   ; x17=0xc000
+            0x00000004      314640f9       ldr x17, [x17, 0x88]        ; tmp=0xc088 str.CTF_is_awesome ; x17=0xffffffffffffffff -> 0x403371ff
+            0x00000000      71334091       12,12,<<,x27,+,x17,=        ; x17=0xc000
+            0x00000004      314640f9       136,x17,+,DUP,tmp,=,[8],x17,= ; tmp=0xc088 str.CTF_is_awesome ; x17=0xffffffffffffffff -> 0x403371ff
+EOF
+RUN
+
 NAME=/re in calls
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b 64
@@ -1166,3 +1185,22 @@ pc = 0x00000000
 pstate = 0x00000000
 EOF
 RUN
+
+NAME=invalid instruction skip
+FILE=malloc://0x2048
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 00000000100000d01002019100021fd6
+f sym.something 8 @ 0x2040
+aaex 16
+axt 0x2040
+aaex 12@4
+axt 0x2040
+EOF
+EXPECT=<<EOF
+(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
+(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
+EOF
+RUN
+

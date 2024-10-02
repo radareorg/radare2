@@ -65,7 +65,7 @@ static inline ut32 qjs_get_ut32(JSContext *ctx, JSValue obj, const char *key) {
 }
 
 static bool r2qjs_arch_init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 
 	QjsArchPluginData *pd = R_NEW0 (QjsArchPluginData);
 	if (!pd) {
@@ -90,7 +90,9 @@ static bool r2qjs_arch_init(RArchSession *s) {
 }
 
 static bool r2qjs_arch_fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	if (s == NULL) {
+		return false;
+	}
 
 	RCore *core = s->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
@@ -106,7 +108,7 @@ static bool r2qjs_arch_fini(RArchSession *s) {
 }
 
 static bool r2qjs_arch_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 
 	QjsArchPluginData *pd = s->data;
 	JSContext *ctx = pd->ctx;

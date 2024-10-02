@@ -1,4 +1,4 @@
-OBJ_ATTINTEL+=$(LIBR)/arch/p/pseudo/att2intel.o
+OBJ_ATTINTEL+=$(LIBR)/arch/p/x86_nz/att2intel.o
 
 TARGET_ATTINTEL=parse_att2intel.${EXT_SO}
 STATIC_OBJ+=${OBJ_ATTINTEL}

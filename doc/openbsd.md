@@ -1,5 +1,4 @@
-OpenBSD build instructions
-==========================
+# r2 4 OpenBSD
 
 This document aims to explain the steps needed to build r2 and r2b-python on OpenBSD.
 
@@ -8,17 +7,15 @@ This document aims to explain the steps needed to build r2 and r2b-python on Ope
 * clang (or gcc) is named cc and clang++ (or g++) is c++
 * valabind is not packaged in the ports
 
-Radare2 Dependencies:
----------------------
+## Radare2 Dependencies:
 
-	doas pkg_add git gcc gmake pkgconf
+Install: pkg_add git gcc gmake pkgconf
 
 	git clone https://github.com/radareorg/radare2
 	cd radare2
 	sys/install.sh /usr/local
 
-Python Swig Bindings Dependencies:
-----------------------------------
+## Python Swig Bindings Dependencies:
 
 	doas pkg_add pkgconf vala
 
@@ -27,8 +24,7 @@ Python Swig Bindings Dependencies:
 	gmake
 	doas gmake install PREFIX=/usr/local
 
-Building Python Swig Bindings:
-------------------------------
+## Building Python Swig Bindings:
 
 	git clone https://github.com/radareorg/radare2-bindings
 	cd radare2-bindings

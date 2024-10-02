@@ -172,7 +172,7 @@ RUN
 
 NAME=ragg2 debruijn sequence 1
 FILE=-
-CMDS=!ragg2 -r -P 2; ?e
+CMDS=!ragg2 -a x86 -r -P 2; ?e
 EXPECT=<<EOF
 AA
 EOF
@@ -180,7 +180,7 @@ RUN
 
 NAME=ragg2 debruijn sequence 2
 FILE=-
-CMDS=!ragg2 -P 2 -r; ?e
+CMDS=!ragg2 -a x86 -P 2 -r; ?e
 EXPECT=<<EOF
 AA
 EOF

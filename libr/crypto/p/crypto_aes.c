@@ -54,12 +54,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	st.columns = (st.key_size / 4);
 	memcpy (st.key, cj->key, st.key_size);
 
-	if (cj->dir == 0) {
+	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
 			aes_encrypt (&st, ibuf + delta, obuf + delta);
 		}
-	} else if (cj->dir > 0) {
+	} else {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
 			aes_decrypt (&st, ibuf + delta, obuf + delta);
@@ -78,9 +78,11 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_aes = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
-	.name = "aes-ecb",
-	.author = "pancake",
-	.license = "MIT",
+	.meta = {
+		.name = "aes-ecb",
+		.author = "pancake",
+		.license = "MIT",
+	},
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
 	.check = aes_check,

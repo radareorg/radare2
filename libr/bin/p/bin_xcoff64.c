@@ -1,15 +1,12 @@
 /* radare - LGPL - Copyright 2023 - terorie */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-
 #include "coff/xcoff64.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
-	return *bin_obj;
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	bf->bo->bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
+	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {
@@ -38,7 +35,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, int idx,
 	if (!coffname) {
 		return false;
 	}
-	ptr->name = coffname;
+	ptr->name = r_bin_name_new_from (coffname);
 	ptr->forwarder = "NONE";
 	ptr->bind = R_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;
@@ -225,19 +222,21 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 tmp[24];
 	int r = r_buf_read_at (b, 0, tmp, sizeof (tmp));
 	return r >= 24 && r_xcoff64_supported_arch (tmp);
 }
 
 RBinPlugin r_bin_plugin_xcoff64 = {
-	.name = "xcoff64",
-	.desc = "xcoff64 r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "xcoff64",
+		.desc = "xcoff64 r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

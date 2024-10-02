@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_arch.h>
 #include "opcode.h"
@@ -10,7 +10,6 @@ static inline ut64 _anal_get_offset(RArch *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_offset) {
 		return a->binb.get_offset (a->binb.bin, type, idx);
 	}
-
 	return UT64_MAX;
 }
 
@@ -266,7 +265,7 @@ static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask ma
 }
 
 static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int size) {
-	r_return_val_if_fail  (as && op && buf && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL  (as && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
 	char str[1024], *strasm = NULL;
@@ -302,12 +301,14 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			// ushort size
 			// int[size] keys
 			// int[size] relative offsets
-			{
+			if (len > 3) {
 				ut16 array_size = buf[2] | (buf[3] << 8);
 				op->mnemonic = r_str_newf ("sparse-switch-payload %d", array_size);
 				size = 4;
 				payload = 2 * (array_size * 4);
 				len = 0;
+			} else {
+				return -1;
 			}
 			break;
 		case 0x03: /* fill-array-data-payload */
@@ -319,9 +320,11 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | ((ut32)buf[7] << 24);
 				op->mnemonic = r_str_newf ("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
+				size = 8;
+				len = 0;
+			} else {
+				return -1;
 			}
-			size = 8;
-			len = 0;
 			break;
 		default:
 			/* nop */
@@ -758,9 +761,9 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			R_FREE (strasm);
 			size = 2;
 		}
-		op->mnemonic = r_str_new (r_str_get_fail (strasm, "invalid"));
+		op->mnemonic = strdup (r_str_get_fail (strasm, "invalid"));
 	} else if (len > 0) {
-		op->mnemonic = r_str_new ("invalid");
+		op->mnemonic = strdup ("invalid");
 		size = len;
 	}
 
@@ -786,12 +789,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *data = op->bytes;
 	const int len = op->size;
-	r_return_val_if_fail (as && op && data && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL (as && op && data && len > 0, -1);
 
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz > len) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = r_str_new ("invalid");
+			op->mnemonic = strdup ("invalid");
 		}
 		return false;
 	}
@@ -1689,13 +1692,25 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	// XXX
-	return 0;
+	switch (q) {
+	case R_ARCH_INFO_CODE_ALIGN:
+		return 1;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 6;
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 2;
+	case R_ARCH_INFO_MINOP_SIZE:
+		return 2;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
+	}
+	return -1;
 }
 
 const RArchPlugin r_arch_plugin_dalvik = {
 	.meta = {
 		.name = "dalvik",
+		.author = "pancake",
 		.desc = "Dalvik (Android VM) bytecode analysis plugin",
 		.license = "LGPL3",
 	},

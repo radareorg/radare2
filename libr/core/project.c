@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, rhl */
+/* radare - LGPL - Copyright 2010-2024 - pancake, rhl */
 
 #define PROJECT_EXPERIMENTAL 0
+
+// R2R db/cmd/projects
 
 #include <r_core.h>
 #include <rvc.h>
@@ -17,7 +19,7 @@ static bool is_valid_project_name(const char *name) {
 	}
 	const char * const extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extention; name++) {
-		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
+		if (isdigit (*name) || islower (*name) || *name == '_') {
 			continue;
 		}
 		return false;
@@ -26,7 +28,7 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
-	r_return_val_if_fail (core && file, NULL);
+	R_RETURN_VAL_IF_FAIL (core && file, NULL);
 	if (!*file) {
 		return NULL;
 	}
@@ -110,7 +112,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	RList *list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			break;
 		}
@@ -169,7 +171,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
-	r_return_val_if_fail (core && R_STR_ISNOTEMPTY (prjfile), false);
+	R_RETURN_VAL_IF_FAIL (core && R_STR_ISNOTEMPTY (prjfile), false);
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
@@ -263,7 +265,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *str = r_core_project_notes_file (core, prjfile);
 	char *data = r_file_slurp (str, NULL);
 	free (str);
-	r_return_if_fail (data);
+	R_RETURN_IF_FAIL (data);
 	Output out;
 	out.fout = NULL;
 	out.cout = r_strbuf_new (NULL);
@@ -291,7 +293,7 @@ typedef struct {
 } ProjectState;
 
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
-	r_return_val_if_fail (core, false);
+	R_RETURN_VAL_IF_FAIL (core, false);
 	if (R_STR_ISEMPTY (prj_name)) {
 		prj_name = r_core_project_name (core, rcpath);
 	}
@@ -320,7 +322,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	} else {
 		ret = r_core_cmd_file (core, rcpath);
 	}
-	char *prj_path = r_file_dirname(rcpath);
+	char *prj_path = r_file_dirname (rcpath);
 	if (prj_path) {
 		//check if the project uses git
 		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
@@ -328,6 +330,12 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		free (prj_path);
 	} else {
 		R_LOG_ERROR ("Failed to load rvc");
+	}
+	if (r_config_get_b (core->config, "prj.history")) {
+		char *file = r_file_new (prj_path, "history", NULL);
+		r_line_hist_free (); // R2_600 - hist_reset ?
+		r_line_hist_load (file);
+		free (file);
 	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
@@ -353,7 +361,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 	ps->rc_path = strdup (rc_path);
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
-		r_th_start (th, false);
+		r_th_start (th);
 		char thname[32] = {0};
 		size_t thlen = R_MIN (strlen (prj_name), sizeof (thname) - 1);
 		r_str_ncpy (thname, prj_name, thlen);
@@ -363,7 +371,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 }
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
-	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
+	R_RETURN_VAL_IF_FAIL (core && !R_STR_ISEMPTY (prj_path), false);
 	bool interactive = r_config_get_b (core->config, "scr.interactive");
 	bool close_current_session = true;
 	bool ask_for_closing = true;
@@ -427,6 +435,10 @@ static char *get_project_name(const char *prj_script) {
 				file = strdup (buf + 14);
 				break;
 			}
+			if (r_str_startswith (buf, "'e prj.name = ")) {
+				file = strdup (buf + strlen ("'e prj.name"));
+				break;
+			}
 		}
 		fclose (fd);
 	} else {
@@ -468,7 +480,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 }
 
 #if PROJECT_EXPERIMENTAL
-static int fdc; // TODO: move into a struct passed to the foreach instead of global
+static R_TH_LOCAL int fdc; // TODO: move into a struct passed to the foreach instead of global
 
 static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	RList *maps = NULL;
@@ -563,6 +575,8 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		flush (sb);
 		r_core_cmd (core, "fV*", 0);
 		flush (sb);
+		r_core_cmd (core, "ano*@@@F", 0);
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
@@ -640,11 +654,11 @@ static void r_core_project_zip(RCore *core, const char *prj_dir) {
 }
 
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (prj_name), false);
 	bool scr_null = false;
 	bool ret = true;
 	SdbListIter *it;
 	SdbNs *ns;
-	r_return_val_if_fail (prj_name && *prj_name, false);
 
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		R_LOG_ERROR ("radare2 does not support projects on debugged bins");
@@ -746,6 +760,13 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			free (script_path);
 			return false;
 		}
+	}
+	if (r_config_get_b (core->config, "prj.history")) {
+		char *history = r_core_cmd_str (core, "!!");
+		char *file = r_file_new (prj_dir, "history", NULL);
+		r_file_dump (file, (const ut8*)history, -1, false);
+		free (file);
+		free (history);
 	}
 	if (r_config_get_b (core->config, "prj.zip")) {
 		r_core_project_zip (core, prj_dir);

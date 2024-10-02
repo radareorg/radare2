@@ -3,6 +3,7 @@
 BUILD=1
 FLAGS=""
 PREFIX="/data/data/org.radare.radare2installer/radare2"
+export PAGER=cat
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -59,7 +60,7 @@ x64-static|static-x64)
 	NDK_ARCH=x86
 	STATIC_BUILD=1
 	;;
-arm64-static|static-arm64)
+aarch64-static|static-aarch64|arm64-static|static-arm64)
 	NDK_ARCH=aarch64
 	STATIC_BUILD=1
 	;;
@@ -127,7 +128,7 @@ if [ "${BUILD}" = 1 ]; then
 		echo ./configure --with-compiler=android \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS}
-		cp -f plugins.android.cfg plugins.cfg
+		cp -f dist/plugins-cfg/plugins.android.cfg plugins.cfg
 		./configure --with-compiler=android --with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
 		${MAKE} -s -j 4 || exit 1
@@ -159,7 +160,6 @@ rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
 
 # use busybox style symlinkz
 cd binr/blob
-#${MAKE} || exit 1
 #CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
 ${MAKE} -j4 || exit 1
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1

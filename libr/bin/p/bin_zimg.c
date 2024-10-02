@@ -7,21 +7,21 @@
 #include "zimg/zimg.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, false);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->bo->bin_obj;
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_zimg_new_buf (b);
-	return *bin_obj;
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	bf->bo->bin_obj = r_bin_zimg_new_buf (b);
+	return bf->bo->bin_obj != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 zimghdr[8];
 	if (r_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel
@@ -54,12 +54,14 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_zimg = {
-	.name = "zimg",
-	.desc = "zimg format bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "zimg",
+		.desc = "zimg format bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.info = &info,
 };

@@ -5,7 +5,7 @@
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	return (io->va && r_io_map_get_at (io, vaddr));
 }
 
@@ -14,7 +14,7 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 // check for the current desc permissions and size.
 // when io.va is false it only checks for the desc
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
 		// io.cache must be set to true for this codeblock to be executed
 		ut8 word[4] = { 0xff, 0xff, 0xff, 0xff};
@@ -53,7 +53,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 // this is wrong, there is more than big and little endian
 R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
-	r_return_val_if_fail (io && val, false);
+	R_RETURN_VAL_IF_FAIL (io && val, false);
 	size = R_DIM (size, 1, 8);
 	if (!r_io_read_at (io, addr, buf, size)) {
 		return false;
@@ -65,7 +65,7 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 
 R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
-	r_return_val_if_fail (io && val, false);
+	R_RETURN_VAL_IF_FAIL (io && val, false);
 	size = R_DIM (size, 1, 8);
 	//size says the number of bytes to read transform to bits for r_read_ble
 	r_write_ble (buf, *val, endian, size * 8);

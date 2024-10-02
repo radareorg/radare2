@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
-#include <r_types.h>
 #include <r_core.h>
-#include <r_asm.h>
 
 #define IFDBG if (0)
 
@@ -64,11 +62,8 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 
 // TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
-	RCoreAsmHit *hit;
-	RList *hits;
 	ut64 at, toff = core->offset;
-	ut8 *buf;
-	int align = core->search->align;
+	const int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	char *save_ptr = NULL;
@@ -76,9 +71,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
-	 ut64 first_match_addr = 0;
+	ut64 first_match_addr = 0;
 
-	if (!input || !*input) {
+	if (R_STR_ISEMPTY (input)) {
 		return NULL;
 	}
 
@@ -94,18 +89,26 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 
-	if (core->blocksize < 8) {
+	const int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	size_t bs = core->blocksize;
+	if (bs < minopsz) {
 		R_LOG_ERROR ("block size too small");
 		return NULL;
 	}
-	if (!(buf = (ut8 *)calloc (core->blocksize, 1))) {
+	if (bs < 0x1000) {
+		bs = 0x1000;
+		R_LOG_DEBUG ("Readjusting blocksize");
+	}
+	ut8 *buf = (ut8 *)calloc (bs , 1);
+	if (!buf) {
 		return NULL;
 	}
 	if (!(ptr = strdup (input))) {
 		free (buf);
 		return NULL;
 	}
-	if (!(hits = r_core_asm_hit_list_new ())) {
+	RList *hits = r_core_asm_hit_list_new ();
+	if (!hits) {
 		free (buf);
 		free (ptr);
 		return NULL;
@@ -122,25 +125,34 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
 	char *opst = NULL;
-	for (at = from; at < to; at += core->blocksize) {
+	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
-		(void)r_io_read_at (core->io, at, buf, core->blocksize);
+		memset (buf, 0x00, bs);
+		int res = r_io_read_at (core->io, at, buf, bs);
+		if (res < 1) {
+			R_LOG_ERROR ("Reading at 0x%08"PFMT64x, at);
+			break;
+		}
 		idx = 0, matchcount = 0;
-		while (addrbytes * (idx + 1) <= core->blocksize) {
+		while (addrbytes * (idx + 1) <= bs) {
 			ut64 addr = at + idx;
 			if (addr >= to) {
+				break;
+			}
+			if (r_cons_is_breaked ()) {
 				break;
 			}
 			r_asm_set_pc (core->rasm, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				ut64 len = R_MIN (15, core->blocksize - idx);
-				if (r_anal_op (core->anal, &analop, addr, buf + idx, len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM) < 1) {
+				ut64 len = R_MIN (15, bs - idx);
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, len,
+						R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
@@ -156,7 +168,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				}
 				if (match) {
 					RAnalOp op;
-					if (!(hit = r_core_asm_hit_new ())) {
+					RCoreAsmHit *hit = r_core_asm_hit_new ();
+					if (!hit) {
 						r_list_purge (hits);
 						R_FREE (hits);
 						goto beach;
@@ -168,7 +181,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						goto beach;
 					}
 					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
-					      core->blocksize - addrbytes * idx);
+					      bs - addrbytes * idx);
 					hit->code = strdup (op.mnemonic);
 					r_asm_op_fini (&op);
 					idx = (matchcount)? tidx + 1: idx + 1;
@@ -185,7 +198,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
-				//opsz = analop.size;
+				// opsz = analop.size;
 				opst = strdup (r_strbuf_get (&analop.esil));
 				r_anal_op_fini (&analop);
 			} else {
@@ -193,14 +206,20 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (!(len = r_asm_disassemble (
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
-					      core->blocksize - addrbytes * idx))) {
+					      bs - addrbytes * idx))) {
 					idx = (matchcount)? tidx + 1: idx + 1;
+					R_LOG_ERROR ("Failed to disassemble instruction at 0x%08"PFMT64x, op.addr);
 					matchcount = 0;
 					r_asm_op_fini (&op);
 					continue;
 				}
-				//opsz = op.size;
-				opst = strdup (op.mnemonic);
+				if (op.mnemonic) {
+					//opsz = op.size;
+					opst = strdup (op.mnemonic);
+				} else {
+					eprintf ("FAIL TO ANALOP2\n");
+					R_LOG_DEBUG ("Cannot disassemble at 0x%08"PFMT64x, addr);
+				}
 				r_asm_op_fini (&op);
 			}
 			if (opst) {
@@ -210,7 +229,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
-					matches = !!strstr (opst, tokens[matchcount]);
+					const char *curtok = tokens[matchcount];
+					if (strchr (curtok, '$') || strchr (curtok, '*') || strchr (curtok, '^')) {
+						matches = r_str_glob (opst, curtok);
+					} else {
+						matches = !!strstr (opst, tokens[matchcount]);
+					}
 				} else {
 					rx = r_regex_new (tokens[matchcount], "es");
 					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
@@ -231,7 +255,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (tokcount == 1) {
 						tidx = idx;
 					}
-					if (!(hit = r_core_asm_hit_new ())) {
+					RCoreAsmHit *hit = r_core_asm_hit_new ();
+					if (!hit) {
 						r_list_purge (hits);
 						R_FREE (hits);
 						goto beach;
@@ -251,7 +276,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
-							//R_LOG_ERROR ("search.maxhits reached");
+							// R_LOG_ERROR ("search.maxhits reached");
 							goto beach;
 						}
 					}
@@ -487,7 +512,6 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	// if (n > core->blocksize) n = core->blocksize;
-	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
 	const int addrbytes = core->io->addrbytes;
@@ -496,8 +520,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	if (!hits) {
 		return NULL;
 	}
-
-	len = R_MIN (len - len % addrbytes, addrbytes * addr);
+	len = R_MIN (len - (len % addrbytes), addrbytes * addr);
 	if (len < 1) {
 		r_list_free (hits);
 		return NULL;
@@ -511,7 +534,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		free (buf);
 		return NULL;
 	}
-	if (!r_io_read_at (core->io, addr - len / addrbytes, buf, len)) {
+	if (!r_io_read_at (core->io, addr - (len / addrbytes), buf, len)) {
 		r_list_free (hits);
 		free (buf);
 		return NULL;
@@ -538,7 +561,9 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 			break;
 		}
 	}
-	at = addr - idx / addrbytes;
+
+	ut64 at = addr - idx / addrbytes;
+
 	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
 		RAnalOp op;

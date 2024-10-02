@@ -19,7 +19,7 @@ static void trace_db_init(REsilTraceDB *db) {
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
-	r_return_val_if_fail (esil, NULL);
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	if (!esil->stack_addr || !esil->stack_size) {
 		// R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
@@ -104,7 +104,7 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 }
 
 static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
-	r_return_if_fail (trace && ri);
+	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (!vreg) {
@@ -120,7 +120,7 @@ static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
 }
 
 static void add_mem_change(REsilTrace *trace, ut64 addr, ut8 data) {
-	r_return_if_fail (trace);
+	R_RETURN_IF_FAIL (trace);
 	RVector *vmem = ht_up_find (trace->memory, addr, NULL);
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (REsilMemChange), NULL, NULL);
@@ -152,7 +152,7 @@ static void update_last_trace_op(REsil *esil) {
 }
 
 static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
-	r_return_val_if_fail (esil && name && res, -1);
+	R_RETURN_VAL_IF_FAIL (esil && name && res, -1);
 	D eprintf ("%d RR %s\n", esil->trace->cur_idx, name);
 	bool ret = false;
 	if (*name == '0') {
@@ -290,7 +290,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 }
 
 R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
-	r_return_if_fail (esil && op);
+	R_RETURN_IF_FAIL (esil && op);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (!esil->trace) {
 		esil->trace = r_esil_trace_new (esil);
@@ -435,7 +435,7 @@ static void print_access(PrintfCallback p, int idx, REsilTraceAccess *a, int for
 }
 
 R_API void r_esil_trace_list(REsil *esil, int format) {
-	r_return_if_fail (esil && esil->anal);
+	R_RETURN_IF_FAIL (esil && esil->anal);
 	D {
 		ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
 		int i;

@@ -91,7 +91,9 @@ endif
 
 # Output
 ifneq ($(OSTYPE),mingw32)
+ifeq (,$(findstring emcc,$(CC)))
 CFLAGS+=-g
+endif
 endif
 ifeq (${OSTYPE},windows)
 CFLAGS+=-DR2__WINDOWS__=1
@@ -157,6 +159,13 @@ EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},serenityos)
+CFLAGS+=-DR2__UNIX__=1
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+TH_LIBS=
+endif
+ifeq (${OSTYPE},aix)
 CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so

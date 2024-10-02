@@ -1,0 +1,9 @@
+OBJ_ESIL_FORTH=esil_forth.o
+
+STATIC_OBJ+=${OBJ_ESIL_FORTH}
+TARGET_ESIL_FORTH=esil_forth.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_ESIL_FORTH}
+
+${TARGET_ESIL_FORTH}: ${OBJ_ESIL_FORTH}
+	${CC} $(call libname,esil_forth) ${LDFLAGS} ${CFLAGS} -o esil_forth.${EXT_SO} ${OBJ_ESIL_FORTH}

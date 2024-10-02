@@ -292,7 +292,7 @@ R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cm
 }
 
 R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
-	// r_return_val_if_fail (x && data, NULL);
+	// R_RETURN_VAL_IF_FAIL (x && data, NULL);
 	while (x) {
 		const int direction = cmp (data, x, user);
 		if (direction < 0) {

@@ -204,7 +204,7 @@ static int _rv_ins_cmp(void *incoming, void *in, void *user) {
 }
 
 static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
-	r_return_val_if_fail (dfg && !dfg->malloc_failed && reg, false);
+	R_RETURN_VAL_IF_FAIL (dfg && !dfg->malloc_failed && reg, false);
 	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		//no assert to prevent memleaks
@@ -247,7 +247,7 @@ static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 }
 
 static bool _edf_mem_set(RAnalEsilDFG *dfg, ut64 addr, ut32 size, RGraphNode *node) {
-	r_return_val_if_fail (dfg && !dfg->malloc_failed && size, false);
+	R_RETURN_VAL_IF_FAIL (dfg && !dfg->malloc_failed && size, false);
 	EsilDFGVar *mv = R_NEW0 (EsilDFGVar);
 	if (!mv) {
 		return false;
@@ -376,7 +376,7 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 }
 
 static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
-	r_return_val_if_fail (dfg && reg, NULL);
+	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
 	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
@@ -401,7 +401,7 @@ static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 }
 
 static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
-	r_return_val_if_fail (dfg && reg, NULL);
+	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
 	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
@@ -507,7 +507,7 @@ beach:
 }
 
 static RGraphNode *_edf_uninitialized_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32 size) {
-	r_return_val_if_fail (dfg && size, NULL);
+	R_RETURN_VAL_IF_FAIL (dfg && size, NULL);
 	char *content = r_str_newf ("[%d]@0x%"PFMT64x, size, addr);
 	RGraphNode *orig_mem_gnode = r_graph_add_node (dfg->flow, r_anal_esil_dfg_node_new (dfg, content));
 	free (content);
@@ -528,7 +528,7 @@ static RGraphNode *_edf_uninitialized_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32
 }
 
 static RGraphNode *_edf_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32 size) {
-	r_return_val_if_fail (dfg && size, NULL);
+	R_RETURN_VAL_IF_FAIL (dfg && size, NULL);
 	EsilDFGVar *mv = R_NEW0 (EsilDFGVar);
 	if (!mv) {
 		return NULL;
@@ -641,7 +641,7 @@ static RGraphNode *_edf_const_get(RAnalEsilDFG *dfg, char *const_value) {
 }
 
 static bool _edf_var_set(RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
-	r_return_val_if_fail (dfg && var, false);
+	R_RETURN_VAL_IF_FAIL (dfg && var, false);
 	char *_var = r_str_newf ("var.%s", var);
 	const bool ret = !sdb_ptr_set (dfg->regs, _var, node, 0);
 	free (_var);
@@ -649,7 +649,7 @@ static bool _edf_var_set(RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
 }
 
 static RGraphNode *_edf_var_get(RAnalEsilDFG *dfg, const char *var) {
-	r_return_val_if_fail (dfg && var, NULL);
+	R_RETURN_VAL_IF_FAIL (dfg && var, NULL);
 	char *k = r_str_newf ("var.%s", var);
 	RGraphNode *ret = sdb_ptr_get (dfg->regs, k, NULL);
 	free (k);
@@ -1532,7 +1532,7 @@ static bool _dfg_mem_write (REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal, bool use_map_info, bool use_maps) {
-	r_return_val_if_fail (anal && anal->reg, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->reg, NULL);
 	RAnalEsilDFG *dfg = R_NEW0 (RAnalEsilDFG);
 	if (!dfg) {
 		return NULL;
@@ -2095,7 +2095,7 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 }
 
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg) {
-	r_return_val_if_fail (dfg && reg, false);
+	R_RETURN_VAL_IF_FAIL (dfg && reg, false);
 	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		// reg is actually not part of the current reg-profile

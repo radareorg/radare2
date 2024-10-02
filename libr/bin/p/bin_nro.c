@@ -30,7 +30,7 @@ static ut64 baddr(RBinFile *bf) {
 	return bf? r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
 		return fileType (magic);
@@ -38,7 +38,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	// XX bf->buf vs b :D this load_b
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
@@ -48,7 +48,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		bin->classes_list = r_list_newf ((RListFree)free);
 		ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
 		parseMod (b, bin, mod0, ba);
-		*bin_obj = bin;
+		bf->bo->bin_obj = bin;
 	}
 	return true;
 }
@@ -253,11 +253,13 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_NRO
 
 RBinPlugin r_bin_plugin_nro = {
-	.name = "nro",
-	.desc = "Nintendo Switch NRO0 binaries",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "nro",
+		.desc = "Nintendo Switch NRO0 binaries",
+		.license = "MIT",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

@@ -156,6 +156,7 @@ NAME=realign after sparse (#11810)
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
 e anal.vars.stackname=true
+e asm.var.summary=0
 e asm.bytes=false
 e asm.comments=false
 s 0x560e67
@@ -349,6 +350,7 @@ NAME=esil func cmts
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 tn- __libc_start_main
+e asm.var.summary=0
 e asm.emu=true
 e emu.write=true
 s 0x8174
@@ -366,7 +368,7 @@ EXPECT=<<EOF
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
 |           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
-|                                                                      ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)
+|                                                                      ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
 \           0x00008178      a40200eb       bl sym.abort                ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
@@ -375,28 +377,27 @@ EXPECT=<<EOF
 |           ; arg int argc @ r1
 |              ; lr=0x8178 -> 0xeb0002a4
 |              ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main
-|              ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)
+|              ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1)
 |           0x00008174      b80000eb       bl sym.__libc_start_main
 |              ; lr=0x817c -> 0xe92d4030
 |              ; pc=0x8c10 -> 0xe59f62a0 sym.abort
 |              ; void abort(void)
 \           0x00008178      a40200eb       bl sym.abort
 
-[0x00008174]>  # fcn.00008174 (func main, int argc);
- ----------------------------------------------------.
-|  0x8174                                            |
-| 8: fcn.00008174 (func main, int argc);             |
-| ; arg func main @ r0                               |
-| ; arg int argc @ r1                                |
-|    ; lr=0x8178 -> 0xeb0002a4                       |
-|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main |
-|    ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)  |
-| bl sym.__libc_start_main;[oa]                      |
-|    ; lr=0x817c -> 0xe92d4030                       |
-|    ; pc=0x8c10 -> 0xe59f62a0 sym.abort             |
-|    ; void abort(void)                              |
-| bl sym.abort;[ob]                                  |
-`----------------------------------------------------'
+.------------------------------------------------------.
+|  0x8174                                              |
+| 8: fcn.00008174 (func main, int argc);               |
+| ; arg func main @ r0                                 |
+| ; arg int argc @ r1                                  |
+|    ; lr=0x8178 -> 0xeb0002a4                         |
+|    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main   |
+|    ; int __libc_start_main(0, 0, -1, -1, -1, -1, -1) |
+| bl sym.__libc_start_main;[oa]                        |
+|    ; lr=0x817c -> 0xe92d4030                         |
+|    ; pc=0x8c10 -> 0xe59f62a0 sym.abort               |
+|    ; void abort(void)                                |
+| bl sym.abort;[ob]                                    |
+`------------------------------------------------------'
 EOF
 RUN
 
@@ -413,8 +414,8 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jge 0x5b0e                  ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jg 0x5b0e                   ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp 0x5b08                  ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 -> 0x4c457fff ; rip=0x0
-       ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size-1, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
+      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 -> 0x4c457fff ; [0xfffffffffffffff8:8] = 0x5b0e ; rip=0x0
+       ||                                                              ; int __libc_start_main(0, 0, 0, 0, 0, 0, 0)
 EOF
 RUN
 
@@ -805,8 +806,8 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00005e6e      488d3d339b01.  lea rdi, section..fini_array ; 0x1f9a8
-            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m01[32m.  [36mlea[36m rdi[0m,[36m[36m section..fini_array[0m[0m[31m [31m; 0x1f9a8[0m
+            0x00005e6e      488d3d339b..   lea rdi, section..fini_array ; 0x1f9a8
+            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m..   [36mlea[36m rdi[0m,[36m[36m section..fini_array[0m[0m[31m [31m; 0x1f9a8[0m
 EOF
 RUN
 

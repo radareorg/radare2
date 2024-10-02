@@ -23,7 +23,7 @@ bool test_r_bin(void) {
 }
 
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	return tests_passed != tests_run;
 }

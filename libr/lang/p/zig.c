@@ -102,11 +102,13 @@ static bool lang_zig_run(RLangSession *s, const char *code, int len) {
 }
 
 static RLangPlugin r_lang_plugin_zig = {
-	.name = "zig",
+	.meta = {
+		.name = "zig",
+		.author = "pancake",
+		.license = "MIT",
+		.desc = "Zig language extension",
+	},
 	.ext = "zig",
-	.author = "pancake",
-	.license = "MIT",
-	.desc = "Zig language extension",
 	.run = lang_zig_run,
 	.init = (void*)lang_zig_init,
 	.run_file = (void*)lang_zig_file,

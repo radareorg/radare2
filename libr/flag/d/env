@@ -1,7 +1,7 @@
-getenv
-putenv
-unsetenv
-setenv
-GetEnvironmentVariable
-SetEnvironmentVariable
-ExpandEnvironmentStrings
+*.getenv
+*.putenv
+*.unsetenv
+*.setenv
+*.GetEnvironmentVariable
+*.SetEnvironmentVariable
+*.ExpandEnvironmentStrings

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_anal.h>
@@ -7,7 +7,6 @@
 #include <capstone/x86.h>
 
 #define r_anal_value_new() R_NEW0 (RAnalValue)
-#define ARCH_HAVE_ESILCB 0
 #define ARCH_HAVE_READ 1
 
 #if 0
@@ -51,7 +50,7 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -73,7 +72,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);
 	R_FREE (as->data);
@@ -81,7 +80,7 @@ static bool fini(RArchSession *as) {
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -1325,7 +1324,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							break;
 						}
 					} else {
-						R_LOG_ERROR ("Missing read callback");
+						R_LOG_DEBUG ("Missing read callback required for a POP");
 					}
 				}
 				// dont break;
@@ -1488,12 +1487,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			if (bits != 16) {
 				ut8 thunk[4] = {0};
 #if ARCH_HAVE_READ
-#if 0
-				if (a->read_at (as, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-#else
 				RBin *bin = as->arch->binb.bin;
 				if (bin && bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-#endif
 					/* Handle CALL ebx_pc (callpop)
 					   8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
@@ -1505,20 +1500,23 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size, reg32_to_name (reg));
 						break;
 					}
+				} else {
+					R_LOG_DEBUG ("Missing read callback for CALLPOP");
 				}
 			}
 			if (bits == 32) {
 				ut8 b[4] = {0};
-				ut64 at = addr + op->size;
+				const ut64 at = addr + op->size;
 				ut64 n = r_num_get (NULL, arg0);
 				if (n == at) {
 					RBin *bin = as->arch->binb.bin;
 					if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, at, b, sizeof (b))) {
-					// if (a->read_at (as, at, b, sizeof (b))) {
 						if (b[0] == 0x5b) { // pop ebx
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
 							break;
 						}
+					} else {
+						R_LOG_DEBUG ("Missing read callback for CALLPOP");
 					}
 				}
 			}
@@ -3997,8 +3995,23 @@ static int esil_x86_cs_intr(REsil *esil, int intr) {
 }
 #endif
 
+#if 0
+On 32 bit Windows GS is reserved for future use.
+The FS segment points to the Thread information block.
+
+In x64 mode the FS and GS segment registers have been swapped around.
+
+In x86 mode FS:[0] points to the start of the TIB, in X64 its GS:[0].
+The reason Win64 uses GS is that there the FS register is used in the 32 bit compatibility layer (confusingly called Wow64).
+Because 32-bit apps use FS the bookkeeping for Win64 is simplified.
+32 bit applications never cause GS to be altered and 64 bit applications never cause FS to be altered.
+
+Note that the fact that GS is non-zero in Win64 and Wow64 can be used to detect if a 32-bit application is running in 64-bit Windows.
+In a true 32 bit Windows GS is always zero.
+#endif
+
 static char *get_reg_profile(RArchSession *as) {
-	r_return_val_if_fail (as && as->config, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
 	const char *p = NULL;
 	switch (as->config->bits) {
 	case 16: p =
@@ -4013,6 +4026,7 @@ static char *get_reg_profile(RArchSession *as) {
 		"=A4	si\n"
 		"=A5	di\n"
 		"=SN	ah\n"
+		"=TR	fs\n" // can be %gs too, but well thats can be overriden with the cc abi scripts
 		"gpr	ip	.16	48	0\n"
 		"gpr	ax	.16	24	0\n"
 		"gpr	ah	.8	25	0\n"
@@ -4374,21 +4388,21 @@ static char *get_reg_profile(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 16;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return 0;
 }
 
 static RList *anal_preludes(RArchSession *as) {
-	r_return_val_if_fail (as && as->config, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
 	RList *l = NULL;
 	switch (as->config->bits) {
 	case 32:
@@ -4413,25 +4427,51 @@ static RList *anal_preludes(RArchSession *as) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
+#include <r_core.h>
 
-// esilcb
-#if ARCH_HAVE_ESILCB
-static int esil_x86_cs_init(REsil *esil) {
-	// not implemented
-	if (!esil) {
+static bool tls_begin(REsil *esil) {
+	// R_LOG_DEBUG ("tls:begin");
+	RCoreBind *coreb = &esil->anal->coreb;
+	coreb->cmdf (coreb->core, "omb fs");
+	return true;
+}
+
+static bool tls_end(REsil *esil) {
+	// R_LOG_DEBUG ("tls:end");
+	RCoreBind *coreb = &esil->anal->coreb;
+	coreb->cmdf (coreb->core, "omb default");
+	return true;
+}
+
+static bool esilcb(RArchSession *as, RArchEsilAction action) {
+	// R_LOG_DEBUG ("x86.cs.esil.action %d", action);
+	RBin *bin = as->arch->binb.bin;
+	if (!bin) {
 		return false;
 	}
+	RIO *io = bin->iob.io;
+	RCore *core = io->coreb.core;
+	RAnal *anal = core->anal;
+	REsil *esil = anal->esil;
+	// not implemented
+	if (!esil) {
+		R_LOG_ERROR ("Failed to find an esil instance");
+		return false;
+	}
+	r_esil_set_op (esil, "TLS_BEGIN", tls_begin,
+		0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "TLS_END", tls_end,
+		0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	// XXX. this depends on kernel
 	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	/* disable by default */
 //	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
 	return true;
 }
-#endif
 
 const RArchPlugin r_arch_plugin_x86_cs = {
 	.meta = {
@@ -4447,12 +4487,7 @@ const RArchPlugin r_arch_plugin_x86_cs = {
 	.fini = fini,
 	.info = archinfo,
 	.regs = &get_reg_profile,
-	// .esilcb = esilcb,
-#if 0
-	.esil_init = esil_x86_cs_init,
-	.esil_fini = esil_x86_cs_fini,
-//	.esil_intr = esil_x86_cs_intr,
-#endif
+	.esilcb = esilcb,
 	.mnemonics = mnemonics,
 };
 

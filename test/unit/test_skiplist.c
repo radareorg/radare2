@@ -155,8 +155,8 @@ bool test_bench(void) {
 	int i;
 	for (i = 0; i < R2R_NTH; i++) {
 		th[i] = r_th_new (bench_skiplist, NULL, 0);
-		r_th_start (th[i], false);
-		// r_th_start (th[i], true);
+		r_th_start (th[i]);
+		// r_th_start (th[i]);
 	}
 	for (i = 0; i < R2R_NTH; i++) {
 		r_th_wait (th[i]);
@@ -189,7 +189,7 @@ bool test_join(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_empty);
 	mu_run_test(test_oneelement);
 	mu_run_test(test_insert);

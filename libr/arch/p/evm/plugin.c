@@ -86,7 +86,7 @@ static bool encode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
-	r_return_val_if_fail (s && op && s->data, false);
+	R_RETURN_VAL_IF_FAIL (s && op && s->data, false);
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
@@ -345,7 +345,7 @@ static char *regs(RArchSession *as) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -362,7 +362,7 @@ static bool init(RArchSession *s) {
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	EvmPluginData *epd = (EvmPluginData*)s->data;
 	sdb_free (epd->pushs_db);
 	cs_close (&epd->cs_handle);
@@ -372,11 +372,11 @@ static bool fini(RArchSession *s) {
 
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
-	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
-	case R_ARCH_INFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 33;
-	case R_ARCH_INFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return 0;

@@ -13,7 +13,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d libr/arch/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -146,6 +146,8 @@ windist:
 	cp -f libr/sysregs/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/sysregs"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/platform"
+	cp -f libr/arch/d/*.r2 "${WINDIST}/share/radare2/${VERSION}/platform"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/flag"
@@ -183,14 +185,13 @@ clean:
 	rm -rf libr/.libr
 	-rm -f `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
-	-rm -f `find . -type f -name '*.d'`
-	rm -f `find . -type f -name '*.o'`
+	rm -f `find . -type f -name '*.d'` || for a in `find . -type f -name '*.d'` ; do rm -f "$$a" ; done
+	rm -f `find . -type f -name '*.o'` || for a in `find . -type f -name '*.o'` ; do rm -f "$$a" ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
 distclean mrproper: clean
-	rm -f `find . -type f -iname '*.d'`
 	rm -rf libr/arch/p/arm/v35/arch-arm*
 	rm -rf shlr/capstone
 
@@ -296,6 +297,7 @@ deinstall uninstall:
 	cd libr/util/d && ${MAKE} uninstall
 	cd libr/syscall/d && ${MAKE} uninstall
 	cd libr/anal/d && ${MAKE} uninstall
+	cd libr/arch/d && ${MAKE} uninstall
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo
@@ -308,16 +310,6 @@ purge-doc:
 user-wrap=echo "\#!/bin/sh" > ~/bin/"$1" \
 ; echo "${PWD}/env.sh '${PREFIX}' '$1' \"\$$@\"" >> ~/bin/"$1" \
 ; chmod +x ~/bin/"$1" ;
-
-user-install:
-	mkdir -p ~/bin
-	$(foreach mod,$(R2BINS),$(call user-wrap,$(mod)))
-	cd ~/bin ; ln -fs radare2 r2
-
-user-uninstall:
-	$(foreach mod,$(R2BINS),rm -f ~/bin/"$(mod)")
-	rm -f ~/bin/r2
-	-rmdir ~/bin
 
 purge-dev:
 	rm -f "${DESTDIR}${LIBDIR}/libr_"*".${EXT_AR}"
@@ -349,6 +341,9 @@ purge: purge-doc purge-dev uninstall user-uninstall
 system-purge: purge
 	sys/purge.sh
 
+user-purge:
+	rm -rf $(HOME)/.local/share/radare2
+
 dist:
 	$(MAKE) -C dist/tarball
 	cp -f dist/tarball/*.$(TAREXT) .
@@ -379,10 +374,6 @@ menu nconfig:
 	./sys/menu.sh || true
 
 include mk/meson.mk
-
-shlr/capstone:
-	$(MAKE) -C shlr capstone
-
 include ${MKPLUGINS}
 
 .PHONY: all clean install symstall uninstall deinstall strip

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2021 - gustavo */
+/* radare - LGPL - Copyright 2019-2024 - gustavo */
 
 #include "windows_maps.h"
 #include "../windows/windows_debug.h"
@@ -236,7 +236,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 	if (!f_name) {
 		return;
 	}
-	DWORD len = 0; // r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	DWORD len = r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
 		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);
@@ -247,7 +247,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 }
 
 R_API RList *r_w32_dbg_maps(RDebug *dbg) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (dbg->pid == -1) {
 		return NULL;
 	}
@@ -261,7 +261,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	GetSystemInfo (&si);
 	cur_addr = si.lpMinimumApplicationAddress;
 	/* get process modules list */
-	RList *mod_list = NULL; // r_w32_dbg_modules (dbg);
+	RList *mod_list = r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (wrap->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {

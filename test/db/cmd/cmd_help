@@ -301,3 +301,14 @@ ok
 ok
 EOF
 RUN
+
+NAME=?d help
+CMDS=<<EOF
+-a x86; -b 64
+?d 0x90
+EOF
+EXPECT=<<EOF
+bedec   nop
+ledec   add byte [rax], al
+EOF
+RUN

@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2023 pancake, defragger */
+/* radare - Copyright 2014-2024 pancake, defragger */
 
 #define R_LOG_ORIGIN "a2f"
 
@@ -101,7 +101,7 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	return 0;
 }
 
-void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
+static void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	r_strf_buffer (64);
 	if (sdb_num_get (db, Fhandled (addr), NULL)) {
 		// already set
@@ -433,7 +433,7 @@ static bool analcall(RAnal *anal, const char *input) {
 		switch (input[2]) {
 		case 'f':
 			if (input[3] == '?') {
-				anal->coreb.help (core, &help_msg_a2f);
+				anal->coreb.help (core, help_msg_a2f);
 				return true;
 			}
 
@@ -442,7 +442,7 @@ static bool analcall(RAnal *anal, const char *input) {
 			}
 			break;
 		default:
-			anal->coreb.help (core, &help_msg_a2f);
+			anal->coreb.help (core, help_msg_a2f);
 			break;
 		}
 		return true;

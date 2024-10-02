@@ -20,7 +20,7 @@ static void space_free(void *data) {
 }
 
 R_API bool r_spaces_init(RSpaces *sp, const char *name) {
-	r_return_val_if_fail (sp && name, false);
+	R_RETURN_VAL_IF_FAIL (sp && name, false);
 	sp->name = strdup (name);
 	if (!sp->name) {
 		goto fail;
@@ -90,7 +90,7 @@ static int space_cmp(void *incoming, void *in, void *user) {
 }
 
 R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
-	r_return_val_if_fail (sp, NULL);
+	R_RETURN_VAL_IF_FAIL (sp, NULL);
 	if (!name || !*name || *name == '*') {
 		return NULL;
 	}
@@ -171,7 +171,7 @@ R_API int r_spaces_count(RSpaces *sp, const char *name) {
 }
 
 R_API bool r_spaces_push(RSpaces *sp, const char *name) {
-	r_return_val_if_fail (sp, false);
+	R_RETURN_VAL_IF_FAIL (sp, false);
 
 	r_list_push (sp->spacestack, sp->current? sp->current->name: "*");
 	r_spaces_set (sp, name);

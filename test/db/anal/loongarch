@@ -18,7 +18,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-400
+206
 EOF
 RUN
 
@@ -29,7 +29,7 @@ aae @entry0
 axt sym.imp.signal
 EOF
 EXPECT=<<EOF
-sym.imp.open 0x9acc [CALL:--x] jirl  zero, t3, 0
+sym.imp.__fprintf_chk 0x9acc [CALL:--x] jirl  zero, t3, 0
 (nofunc) 0x9f98 [CALL:--x] bl  -sym.imp.signal #
 EOF
 RUN

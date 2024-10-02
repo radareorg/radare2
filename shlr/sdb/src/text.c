@@ -288,6 +288,8 @@ static void load_process_line(LoadCtx *ctx) {
 
 static inline char unescape_raw_char(char c) {
 	switch (c) {
+	case 's':
+		return ' ';
 	case 'n':
 		return '\n';
 	case 'r':
@@ -478,9 +480,6 @@ SDB_API bool sdb_text_check(Sdb *s, const char *file) {
 		if (*p == '=') {
 			has_eq = true;
 		} else if (*p == '\n') {
-			if (!has_eq) {
-				break;
-			}
 			has_nl = true;
 		} else if (!has_eq) {
 			if (*p < 10 || *p > '~') {

@@ -50,7 +50,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x8000000;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 0x20) {
 		ut8 magic[4];
 		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
@@ -74,7 +74,7 @@ static RBinNXOObj *nso_new(void) {
 // 512MB
 #define MAX_UNCOMPRESSED_SIZE (1024*1024*512)
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr) {
 	RBin *rbin = bf->rbin;
 	ut32 toff = r_buf_read_le32_at (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = r_buf_read_le32_at (bf->buf, NSO_OFF (text_size));
@@ -112,7 +112,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	if (decompress (buf + rooff, tmp, doff - rooff, rosize) != rosize) {
-		eprintf ("decompression2 failure\n");
+		R_LOG_ERROR ("decompression2 failure");
 		goto fail;
 	}
 	r_buf_write_at (newbuf, tsize, tmp, rosize);
@@ -123,7 +123,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	if (decompress (buf + doff, tmp, r_buf_size (bf->buf) - doff, dsize) != dsize) {
-		eprintf ("decompression3 failure\n");
+		R_LOG_ERROR ("decompression3 failure");
 		goto fail;
 	}
 	r_buf_write_at (newbuf, tsize + rosize, tmp, dsize);
@@ -134,24 +134,23 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	r_io_write_at (rbin->iob.io, ba, tmpbuf, total_size);
 	ut32 modoff = r_buf_read_le32_at (newbuf, NSO_OFFSET_MODMEMOFF);
 	RBinNXOObj *bin = nso_new ();
-	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
+	R_LOG_INFO ("MOD Offset = 0x%"PFMT64x, (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
-	*bin_obj = bin;
+	bf->bo->bin_obj = bin;
 	return true;
 fail:
 	free (tmp);
 	r_buf_free (newbuf);
-	*bin_obj = NULL;
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && buf, false);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = r_buf_data (buf, &sz);
-	return load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
+	return load_bytes (bf, bytes, sz, la);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
@@ -289,11 +288,13 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_NSO
 
 RBinPlugin r_bin_plugin_nso = {
-	.name = "nso",
-	.desc = "Nintendo Switch NSO0 binaries",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "nso",
+		.desc = "Nintendo Switch NSO0 binaries",
+		.license = "MIT",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

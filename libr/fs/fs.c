@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2022 - pancake */
+/* radare2 - LGPL - Copyright 2011-2024 - pancake */
 
 #define R_LOG_ORIGIN "fs"
 
@@ -73,11 +73,11 @@ R_API R_MUSTUSE RFS* r_fs_new(void) {
 }
 
 R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
-	r_return_val_if_fail (fs && name, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
 	RListIter* iter;
 	RFSPlugin* p;
 	r_list_foreach (fs->plugins, iter, p) {
-		if (!strcmp (p->name, name)) {
+		if (!strcmp (p->meta.name, name)) {
 			return p;
 		}
 	}
@@ -96,7 +96,7 @@ R_API void r_fs_free(RFS* fs) {
 
 /* plugins */
 R_API bool r_fs_plugin_add(RFS* fs, RFSPlugin* p) {
-	r_return_val_if_fail (fs && p, false);
+	R_RETURN_VAL_IF_FAIL (fs && p, false);
 	if (p->init) {
 		p->init ();
 	}
@@ -120,7 +120,7 @@ R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
 
 /* mountpoint */
 R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 delta) {
-	r_return_val_if_fail (fs && fstype && path, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && fstype && path, NULL);
 	RFSPlugin* p;
 	RFSRoot* root;
 	RListIter* iter;
@@ -208,7 +208,7 @@ static inline bool r_fs_match(const char* root, const char* path, int len) {
 }
 
 R_API bool r_fs_umount(RFS* fs, const char* path) {
-	r_return_val_if_fail (fs && path, false);
+	R_RETURN_VAL_IF_FAIL (fs && path, false);
 	RFSRoot* root;
 	RListIter* iter, * riter = NULL;
 
@@ -226,7 +226,7 @@ R_API bool r_fs_umount(RFS* fs, const char* path) {
 }
 
 R_API RList* r_fs_root(RFS* fs, const char* p) {
-	r_return_val_if_fail (fs && p, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RFSRoot* root;
 	RListIter* iter;
 	int len, olen;
@@ -253,7 +253,7 @@ R_API RList* r_fs_root(RFS* fs, const char* p) {
 
 /* filez */
 R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
-	r_return_val_if_fail (fs && p, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RFSRoot* root;
 	RListIter* iter;
 	RFSFile* f = NULL;
@@ -290,7 +290,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 
 // NOTE: close doesnt free
 R_API void r_fs_close(RFS* fs, RFSFile* file) {
-	r_return_if_fail (fs && file);
+	R_RETURN_IF_FAIL (fs && file);
 	R_FREE (file->data);
 	if (file->p && file->p->close) {
 		file->p->close (file);
@@ -298,7 +298,7 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 }
 
 R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (fs && file && data && len >= 0, -1);
+	R_RETURN_VAL_IF_FAIL (fs && file && data && len >= 0, -1);
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer
 		if (file->p && file->p->write) {
@@ -310,7 +310,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 }
 
 R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
-	r_return_val_if_fail (fs && file && len > 0, -1);
+	R_RETURN_VAL_IF_FAIL (fs && file && len > 0, -1);
 	if (file->p && file->p->read) {
 		if (!file->data) {
 			free (file->data);
@@ -323,7 +323,7 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 }
 
 R_API RList* r_fs_dir(RFS* fs, const char* p) {
-	r_return_val_if_fail (fs && p, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RList *ret = NULL;
 	RFSRoot* root;
 	RListIter* iter;
@@ -349,7 +349,7 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 }
 
 R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
-	r_return_val_if_fail (fs && path && name, false);
+	R_RETURN_VAL_IF_FAIL (fs && path && name, false);
 	RListIter* iter;
 	RFSFile *file, *item;
 
@@ -476,7 +476,7 @@ static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RLis
 }
 
 R_API RList* r_fs_find_name(RFS* fs, const char* name, const char* glob) {
-	r_return_val_if_fail (fs && name && glob, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && name && glob, NULL);
 	RList* list = r_list_newf (free);
 	if (list) {
 		r_fs_find_name_aux (fs, name, glob, list);
@@ -485,7 +485,7 @@ R_API RList* r_fs_find_name(RFS* fs, const char* name, const char* glob) {
 }
 
 R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
-	r_return_val_if_fail (fs && path, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
 	RFSFile* file = NULL;
 	RFSRoot* root;
 	RList* roots = r_fs_root (fs, path);
@@ -566,7 +566,7 @@ R_API const char* r_fs_partition_type_get(int n) {
 }
 
 R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
-	r_return_val_if_fail (fs && ptype, NULL);
+	R_RETURN_VAL_IF_FAIL (fs && ptype, NULL);
 	int i, cur = -1;
 	for (i = 0; partitions[i].name; i++) {
 		if (!strcmp (ptype, partitions[i].name)) {
@@ -658,7 +658,7 @@ R_API const char* r_fs_partition_type(const char* part, int type) {
 }
 
 R_API char* r_fs_name(RFS* fs, ut64 offset) {
-	r_return_val_if_fail (fs, NULL);
+	R_RETURN_VAL_IF_FAIL (fs, NULL);
 	ut8 buf[1024];
 	int i, j, len, ret = false;
 
@@ -686,12 +686,12 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 }
 
 R_API void r_fs_view(RFS* fs, int view) {
-	r_return_if_fail (fs);
+	R_RETURN_IF_FAIL (fs);
 	fs->view = view;
 }
 
 R_API bool r_fs_check(RFS *fs, const char *p) {
-	r_return_val_if_fail (fs && p, false);
+	R_RETURN_VAL_IF_FAIL (fs && p, false);
 	RFSRoot *root;
 	RListIter *iter;
 	char *path = strdup (p);

@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2023 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - Apache 2.0 - Copyright 2010-2024 - pancake and dso */
 
 #include <r_arch.h>
 
@@ -23,13 +23,13 @@ static int java_switch_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *d
 		if (pos + 8 + 8 > len) {
 			return op->size;
 		}
-		const int min_val = (ut32)(UINT (data, pos + 4));
-		const int max_val = (ut32)(UINT (data, pos + 8));
+		const ut32 min_val = (ut32)(UINT (data, pos + 4));
+		const ut32 max_val = (ut32)(UINT (data, pos + 8));
 
 		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
 		op->switch_op = r_anal_switch_op_new (addr, min_val, max_val, default_loc);
 		pos += 12;
-		if (max_val > min_val && ((max_val - min_val)<(UT16_MAX/4))) {
+		if (max_val > min_val && ((max_val - min_val) < (UT16_MAX / 4))) {
 			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
 				//ut32 value = (ut32)(UINT (data, pos));
@@ -203,8 +203,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		RBin *bin = as->arch->binb.bin;
 		RBinPlugin *plugin = bin && bin->cur && bin->cur->bo ?
 			bin->cur->bo->plugin : NULL;
-		if (plugin && plugin->name) {
-			if (!strcmp (plugin->name, "java")) { // XXX slow
+		if (plugin && plugin->meta.name) {
+			if (!strcmp (plugin->meta.name, "java")) { // XXX slow
 				obj = bin->cur->bo->bin_obj; //o;
 				//eprintf("Handling: %s disasm.\n", b->cur.file);
 			}
@@ -347,13 +347,31 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 }
 #endif
 
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_CODE_ALIGN:
+		return 1;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 6;
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 1;
+	case R_ARCH_INFO_MINOP_SIZE:
+		return 1;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
+	}
+	return 1;
+}
+
 const RArchPlugin r_arch_plugin_java = {
 	.meta = {
 		.name = "java",
 		.desc = "Java bytecode analysis plugin",
+		.author = "dso",
 		.license = "Apache",
 	},
 	.arch = "java",
+	.info = archinfo,
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
 	.encode = encode,

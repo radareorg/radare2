@@ -135,7 +135,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case SEEK_SET: return offset;
 	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX;
+	case SEEK_END: return UT64_MAX - 1;
 	}
 	return offset;
 }
@@ -154,7 +154,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *msg) {
-	r_return_val_if_fail (io && fd && msg, NULL);
+	R_RETURN_VAL_IF_FAIL (io && fd && msg, NULL);
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	pj_ks (pj, "op", "system");

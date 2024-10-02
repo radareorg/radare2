@@ -4,7 +4,7 @@
 
 static bool load(RBin *bin) {
 	if (!bin || !bin->cur) {
-	    return false;
+		return false;
 	}
 	if (!bin->file) {
 	   	bin->file = bin->cur->file;
@@ -14,9 +14,11 @@ static bool load(RBin *bin) {
 
 
 RBinLdrPlugin r_bin_ldr_plugin_ldr_linux = {
-	.name = "ldr.linux",
-	.desc = "Linux loader plugin for RBin",
-	.license = "MIT",
+	.meta = {
+		.name = "ldr.linux",
+		.desc = "Linux loader plugin for RBin",
+		.license = "MIT",
+	},
 	.load = &load,
 };
 

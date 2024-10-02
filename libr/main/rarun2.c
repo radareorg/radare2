@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2022 - pancake */
+/* radare2 - Copyleft 2011-2023 - pancake */
 
 #define R_LOG_ORIGIN "rarun2"
 
@@ -24,6 +24,7 @@ static void rarun2_tty(void) {
 
 R_API int r_main_rarun2(int argc, const char **argv) {
 	RRunProfile *p;
+	// setvbuf (stdout, NULL, _IONBF, 0);
 	int i;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
 		printf ("Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
@@ -31,7 +32,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {
-		return r_main_version_print ("rarun2");
+		return r_main_version_print ("rarun2", 0);
 	}
 	const char *file = argv[1];
 	if (!strcmp (file, "-t")) {
@@ -74,6 +75,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 		R_LOG_ERROR ("cannot setup the environment");
 		return 1;
 	}
+	// setvbuf (stdout, NULL, _IONBF, 0);
 	bool ret = r_run_start (p);
 	r_run_free (p);
 	return ret? 0: 1;

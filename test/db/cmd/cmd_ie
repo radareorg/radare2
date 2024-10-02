@@ -9,7 +9,9 @@ EXPECT=<<EOF
 
 0 entrypoints
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
 RUN
 
 NAME=iee preinit
@@ -33,7 +35,7 @@ NAME=iee* preinit
 FILE=bins/elf/before-after-main
 CMDS=iee*
 EXPECT=<<EOF
-fs symbols
+fs+symbols
 "f entry.preinit0 1 0x08048486"
 "f entry.preinit0_hpaddr 1 0x00000ed4"
 "s entry.preinit0"
@@ -70,6 +72,7 @@ fs symbols
 "f entry.fini4 1 0x080485e7"
 "f entry.fini4_hpaddr 1 0x00000f00"
 "s entry.fini4"
+fs-
 EOF
 RUN
 
@@ -85,7 +88,9 @@ vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=progra
 
 1 entrypoints
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
 RUN
 
 NAME=auto entry (log.level test)
@@ -107,6 +112,10 @@ EOF
 EXPECT_ERR=<<EOF
 DEBUG: RCoreCmd: =!
 DEBUG: Dynamic tag 16 not handled
+DEBUG: Reloc type 23 not used for imports
+DEBUG: Reloc type 23 not used for imports
+DEBUG: Reloc type 23 not used for imports
+DEBUG: Reloc type 23 not used for imports
 DEBUG: bin object have no information
 DEBUG: add dt.dyn.entry tag=3 value=0x0002fde8
 DEBUG: add dt.dyn.entry tag=2 value=0x00000188
@@ -127,32 +136,45 @@ DEBUG: add dt.dyn.entry tag=1 value=0x00000298
 DEBUG: add dt.dyn.entry tag=16 value=0x00000000
 DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
+DEBUG: (section .dynsym) Cd 4[244] @ 0xb4
+DEBUG: RCoreCallAt(0x000000b4): Cd 4[244]
+DEBUG: (cannot find opening [) in (244])
 DEBUG: (section .dynstr) Css 674 @ 0x484
-DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCallAt(0x00000484): Css 674
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
+DEBUG: (section .hash) Cd 4[100] @ 0x728
+DEBUG: RCoreCallAt(0x00000728): Cd 4[100]
+DEBUG: (cannot find opening [) in (100])
 DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
-DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: RCoreCallAt(0x00000940): Cd 4[98]
 DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
-DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
+DEBUG: RCoreCallAt(0x00012000): Cd 4[48]
 DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
-DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
+DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
+DEBUG: (section .dynsym) Cd 4[244] @ 0xb4
+DEBUG: RCoreCallAt(0x000000b4): Cd 4[244]
+DEBUG: (cannot find opening [) in (244])
 DEBUG: (section .dynstr) Css 674 @ 0x484
-DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCallAt(0x00000484): Css 674
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
+DEBUG: (section .hash) Cd 4[100] @ 0x728
+DEBUG: RCoreCallAt(0x00000728): Cd 4[100]
+DEBUG: (cannot find opening [) in (100])
 DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
-DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: RCoreCallAt(0x00000940): Cd 4[98]
 DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
-DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
+DEBUG: RCoreCallAt(0x00012000): Cd 4[48]
 DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
-DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
+DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
@@ -174,6 +196,7 @@ vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=progra
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot determine entrypoint, using 0x00000d28
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
 

@@ -69,7 +69,7 @@ static ut64 baddr(RBinFile *bf) {
 	return (ut64) r_read_be32(&n64_header.BootAddress);
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_size (b) < N64_ROM_START) {
 		return false;
@@ -78,11 +78,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	if (check_buffer (bf, b)) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	if (check (bf, b)) {
 		ut8 buf[sizeof (N64Header)] = {0};
 		r_buf_read_at (b, 0, buf, sizeof (buf));
-		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
+		bf->bo->bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
 	}
 	return false;
@@ -123,10 +123,6 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 boffset(RBinFile *bf) {
-	return 0LL;
-}
-
 static RBinInfo *info(RBinFile *bf) {
 	char GameName[21] = {0};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -148,13 +144,14 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_Z64
 
 RBinPlugin r_bin_plugin_z64 = {
-	.name = "z64",
-	.desc = "Nintendo 64 binaries big endian r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "z64",
+		.desc = "Nintendo 64 binaries big endian r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = baddr,
-	.boffset = &boffset,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info

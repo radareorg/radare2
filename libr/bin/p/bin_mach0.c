@@ -44,14 +44,15 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.parse_start_symbols = true;
 
 	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (buf, &opts);
 	if (mo) {
+		bf->bo->bin_obj = mo;
 		if (mo->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
 			RBuffer *nb = swizzle_io_read (bf, mo, io);
@@ -60,8 +61,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			}
 			bf->buf = nb;
 		}
-		sdb_ns_set (sdb, "info", mo->kv);
-		*bin_obj = mo;
+		sdb_ns_set (bf->sdb, "info", mo->kv);
 		return true;
 	}
 	return false;
@@ -72,7 +72,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, UT64_MAX);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return MACH0_(get_baddr)(mo);
 }
@@ -91,8 +91,9 @@ static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
+			// TODO add hint about thumb entrypoint
 			ptr->paddr--;
 			ptr->vaddr--;
 		}
@@ -146,7 +147,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 
 	RBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
@@ -222,7 +223,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = strdup (name);
+	ptr->name = r_bin_name_new (name);
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 
@@ -252,13 +253,11 @@ static RList *imports(RBinFile *bf) {
 }
 
 static void _r_bin_reloc_free(RBinReloc *reloc) {
-	if (!reloc) {
-		return;
+	if (reloc) {
+		// XXX also need to free or unref RBinSymbol?
+		r_bin_import_free (reloc->import);
+		free (reloc);
 	}
-
-	// XXX also need to free RBinSymbol?
-	r_bin_import_free (reloc->import);
-	free (reloc);
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -280,11 +279,12 @@ static RList *relocs(RBinFile *bf) {
 		if (reloc->external) {
 			continue;
 		}
-		RBinReloc *ptr = NULL;
-		if (!(ptr = R_NEW0 (RBinReloc))) {
+		RBinReloc *ptr = R_NEW0 (RBinReloc);
+		if (!ptr) {
 			break;
 		}
 		ptr->type = reloc->type;
+		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
 		if (reloc->name[0]) {
 			RBinImport *imp;
@@ -327,7 +327,7 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -433,7 +433,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t 
 }
 
 static RList* patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 
 	RList *ret = NULL;
 	RIOMap *g = NULL;
@@ -466,13 +466,27 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		r_pvector_push (&ext_relocs, reloc);
 	}
-	if (mo->reloc_fixups && r_list_length (mo->reloc_fixups) > 0) {
+	int relocs_count = 0;
+	if (mo->reloc_fixups != NULL) {
+		relocs_count = r_list_length (mo->reloc_fixups);
+	}
+	if (mo->reloc_fixups && relocs_count > 0) {
+		ut8 buf[8], obuf[8];
 		RBinReloc *r;
 		RListIter *iter2;
 
+		int count = relocs_count;
+		if (mo->limit > 0) {
+			if (relocs_count > mo->limit) {
+				R_LOG_WARN ("mo.limit for relocs");
+			}
+			count = mo->limit;
+		}
 		r_list_foreach (mo->reloc_fixups, iter2, r) {
+			if (count-- < 0) {
+				break;
+			}
 			ut64 paddr = r->paddr + mo->baddr;
-			ut8 buf[8], obuf[8];
 			r_write_ble64 (buf, r->vaddr, false);
 			b->iob.read_at (b->iob.io, paddr, obuf, 8);
 			if (memcmp (buf, obuf, 8)) {
@@ -571,9 +585,13 @@ beach:
 }
 
 static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
-	r_return_val_if_fail (io && io->desc && io->desc->plugin, NULL);
+	R_RETURN_VAL_IF_FAIL (io && io->desc && io->desc->plugin, NULL);
 	RFixupRebaseContext ctx = {0};
+#if R2_USE_NEW_ABI
+	RBuffer *nb = r_buf_new_with_cache (obj->b, false);
+#else
 	RBuffer *nb = r_buf_new_with_buf (obj->b);
+#endif
 	RBuffer *ob = obj->b;
 	obj->b = nb;
 	ut64 count = r_buf_size (obj->b);
@@ -644,7 +662,7 @@ static RList *classes(RBinFile *bf) {
 
 #if !R_BIN_MACH064
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 4) {
 		ut8 buf[4] = {0};
 		if (r_buf_read_at (b, 0, buf, 4)) {
@@ -670,7 +688,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
 
-	r_return_val_if_fail (bin && opt, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && opt, NULL);
 
 	bool is_arm = strstr (opt->arch, "arm");
 	RBuffer *buf = r_buf_new ();
@@ -901,7 +919,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	filesize = magiclen + cmdsize + clen + dlen;
 	// TEXT SEGMENT should span the whole file //
 	W (p_codefsz, &filesize, 4);
-	W (p_codefsz-8, &filesize, 4); // vmsize = filesize
+	W (p_codefsz - 8, &filesize, 4); // vmsize = filesize
 	W (p_codeva, &codeva, 4);
 	// clen = 4096;
 	W (p_codesz, &clen, 4);
@@ -961,13 +979,15 @@ static ut64 size(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_mach0 = {
-	.name = "mach0",
-	.desc = "mach0 bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "mach0",
+		.desc = "mach0 bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

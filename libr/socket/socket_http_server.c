@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
 
-static bool *breaked = NULL;
+static R_TH_LOCAL bool *breaked = NULL;
 
 R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
@@ -119,7 +119,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 }
 
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
-	r_return_if_fail (rs);
+	R_RETURN_IF_FAIL (rs);
 	const char *strcode = \
 		code==200?"ok":
 		code==301?"Moved permanently":
@@ -216,20 +216,26 @@ int main() {
 	}
 	for (;;) {
 		RSocketHTTPRequest *rs = r_socket_http_accept (s, 0);
-		if (!rs) continue;
+		if (!rs) {
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			r_socket_http_response (rs, 200,
 			"<html><body><form method=post action=/>"
 			"<input name=a /><input type=button></form></body>");
 		} else if (!strcmp (rs->method, "POST")) {
-			char *buf = malloc (rs->data_length+ 50);
-			strcpy (buf, "<html><body><h2>XSS test</h2>\n");
-			r_str_unescape (rs->data);
-			strcat (buf, rs->data);
-			r_socket_http_response (rs, 200, buf);
-			free (buf);
+			char *buf = malloc (rs->data_length + 50);
+			if (buf) {
+				strcpy (buf, "<html><body><h2>XSS test</h2>\n");
+				r_str_unescape (rs->data);
+				strcat (buf, rs->data);
+				r_socket_http_response (rs, 200, buf);
+				free (buf);
+			} else {
+				R_LOG_ERROR ("Cannot allocate %d bytes", rs->data_length + 50);
+			}
 		} else if (!strcmp (rs->method, "OPTIONS")) {
-			r_socket_http_response (rs, 200,"");
+			r_socket_http_response (rs, 200, "");
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol");
 		}

@@ -37,7 +37,7 @@ WGET?=curl -o
 endif
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=5.0
+CS_VER=5.0.3
 CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
@@ -49,14 +49,14 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(USE_CSNEXT),1)
-CS_TIP=a4df92eda647e739432860682be638da1b8b901a
+CS_TIP=a34901e919157c4b0f52e3b93bd977023a97d6b7
 CS_BRA=next
 else
 ifeq ($(USE_CS4),1)
 CS_TIP=0efa3cc530ea188c0e03c945ab884ee19dd16342
 CS_BRA=v4
 else
-CS_TIP=e1af2e249ab85c70594a8c975f27d072278257fb
+CS_TIP=36a9619b7372c34459d100f1c6fd6eb27326efbc
 CS_BRA=v5
 endif
 endif
@@ -219,6 +219,11 @@ install-symlink symstall:
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
+.PHONY: capstone capstone-sync capstone-build capstone-clean capstone-patch capstone-pull
+
+capstone-pull:
+	$(MAKE) CS_RELEASE=1 WITHOUT_PULL=0 USE_CAPSTONE=0 WANT_CAPSTONE=1 capstone
+
 ifeq ($(WANT_CAPSTONE),0)
 capstone:
 
@@ -268,6 +273,7 @@ else
 
 capstone: capstone-sync
 
+patch-capstone capstone-patch:
 
 capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
@@ -360,19 +366,11 @@ SHLRS+=zip/librz.a
 libr_shlr.${EXT_AR}:
 	rm -rf .libr
 	mkdir .libr
-ifeq ($(CC),emcc)
-	for LIB in ${SHLRS} ; do \
-		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
-	done
-	${AR} rs $@ .libr/*.o
-	$(RANLIB) $@
-else
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
 	${AR} rs $@ .libr/*.o
 	$(RANLIB) $@
-endif
 
 .PHONY: spp
 

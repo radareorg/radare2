@@ -170,6 +170,7 @@ struct Elf_(obj_t) {
 	bool fields_loaded;
 	RVector g_fields;  // RBinElfField
 	int limit;
+	char *osabi;
 };
 
 int Elf_(has_va)(struct Elf_(obj_t) *bin);
@@ -224,6 +225,6 @@ bool Elf_(has_nx)(struct Elf_(obj_t) *bin);
 bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
-RBinSymbol *Elf_(convert_symbol)(struct Elf_(obj_t) *bin, RBinElfSymbol *symbol, const char *namefmt);
+RBinSymbol *Elf_(convert_symbol)(struct Elf_(obj_t) *bin, RBinElfSymbol *symbol);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif

@@ -75,7 +75,9 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		c = *(data++) & 0xff;
-		sum |= ((ut64) (c&0x7f) << s);
+		if (s < 64) {
+			sum |= ((ut64) (c&0x7f) << s);
+		}
 		s += 7;
 		l++;
 	} while (c & 0x80);
@@ -161,13 +163,15 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
-		if (offset < 64) {
+		// result is signed. so max safe shift is 62
+		if (offset < 63) {
 			result |= (chunk << offset);
 		}
 		offset += 7;
 	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0 && offset < 64) {
+		// ULL is unsigned. so max safe shift is 63
 		result |= ~0ULL << offset;
 	}
 	*data = p;

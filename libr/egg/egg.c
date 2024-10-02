@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_egg.h>
 #include <config.h>
@@ -85,15 +85,15 @@ beach:
 }
 
 R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
-	r_return_val_if_fail (a && foo, false);
+	R_RETURN_VAL_IF_FAIL (a && foo, false);
 	RListIter *iter;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->name) {
+	if (!foo->meta.name) {
 		return false;
 	}
 	REggPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, foo->name)) {
+		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -107,7 +107,7 @@ R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
 }
 
 R_API char *r_egg_tostring(REgg *egg) {
-	r_return_val_if_fail (egg, NULL);
+	R_RETURN_VAL_IF_FAIL (egg, NULL);
 	return r_buf_tostring (egg->buf);
 }
 
@@ -129,7 +129,7 @@ R_API void r_egg_free(REgg *egg) {
 }
 
 R_API void r_egg_reset(REgg *egg) {
-	r_return_if_fail (egg);
+	R_RETURN_IF_FAIL (egg);
 	r_egg_lang_include_init (egg);
 	// TODO: use r_list_purge instead of free/new here
 	r_buf_free (egg->src);
@@ -143,7 +143,7 @@ R_API void r_egg_reset(REgg *egg) {
 
 // TODO: use RArchConfig instead
 R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
-	r_return_val_if_fail (egg && arch, false);
+	R_RETURN_VAL_IF_FAIL (egg && arch, false);
 	const char *asmcpu = NULL; // TODO
 	egg->remit = NULL;
 
@@ -200,7 +200,7 @@ R_API bool r_egg_include_str(REgg *egg, const char *arg) {
 }
 
 R_API bool r_egg_include(REgg *egg, const char *file, int format) {
-	r_return_val_if_fail (egg && file, false);
+	R_RETURN_VAL_IF_FAIL (egg && file, false);
 	size_t sz;
 	const ut8 *foo = (const ut8 *)r_file_slurp (file, &sz);
 	if (!foo) {
@@ -223,7 +223,7 @@ R_API bool r_egg_include(REgg *egg, const char *file, int format) {
 }
 
 R_API void r_egg_load(REgg *egg, const char *code, int format) {
-	r_return_if_fail (egg && code);
+	R_RETURN_IF_FAIL (egg && code);
 	switch (format) {
 	case 'a': // assembly
 		r_buf_append_bytes (egg->buf, (const ut8 *)code, strlen (code));
@@ -235,7 +235,7 @@ R_API void r_egg_load(REgg *egg, const char *code, int format) {
 }
 
 R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
-	r_return_if_fail (egg);
+	R_RETURN_IF_FAIL (egg);
 	RSyscallItem *item = r_syscall_get (egg->syscall,
 		r_syscall_get_num (egg->syscall, arg), -1);
 	if (!strcmp (arg, "close")) {
@@ -262,7 +262,7 @@ R_API void r_egg_math(REgg *egg) { //, char eq, const char *vs, char type, const
 }
 
 R_API bool r_egg_raw(REgg *egg, const ut8 *b, int len) {
-	r_return_val_if_fail (egg && b, false);
+	R_RETURN_VAL_IF_FAIL (egg && b, false);
 	int outlen = len * 2; // two hexadecimal digits per byte
 	char *out = malloc (outlen + 1);
 	if (!out) {
@@ -277,7 +277,7 @@ R_API bool r_egg_raw(REgg *egg, const ut8 *b, int len) {
 }
 
 static bool r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
-	r_return_val_if_fail (egg && b, false);
+	R_RETURN_VAL_IF_FAIL (egg && b, false);
 	int outlen = len * 2; // two hexadecimal digits per byte
 	char *out = malloc (outlen + 1);
 	if (!out) {
@@ -292,7 +292,7 @@ static bool r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
 }
 
 static bool r_egg_prepend_bytes(REgg *egg, const ut8 *b, int len) {
-	r_return_val_if_fail (egg && b, false);
+	R_RETURN_VAL_IF_FAIL (egg && b, false);
 	if (!r_egg_raw_prepend (egg, b, len)) {
 		return false;
 	}
@@ -303,7 +303,7 @@ static bool r_egg_prepend_bytes(REgg *egg, const ut8 *b, int len) {
 }
 
 static bool r_egg_append_bytes(REgg *egg, const ut8 *b, int len) {
-	r_return_val_if_fail (egg && b, false);
+	R_RETURN_VAL_IF_FAIL (egg && b, false);
 	if (!r_egg_raw (egg, b, len)) {
 		return false;
 	}
@@ -319,7 +319,7 @@ R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v) {
 }
 
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
-	r_return_if_fail (egg && fmt);
+	R_RETURN_IF_FAIL (egg && fmt);
 	va_list ap;
 	int len;
 	char buf[1024];
@@ -386,7 +386,7 @@ R_API bool r_egg_assemble(REgg *egg) {
 }
 
 R_API bool r_egg_compile(REgg *egg) {
-	r_return_val_if_fail (egg, false);
+	R_RETURN_VAL_IF_FAIL (egg, false);
 	r_buf_seek (egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -435,7 +435,7 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	r_return_val_if_fail (egg, -1);
+	R_RETURN_VAL_IF_FAIL (egg, -1);
 	ut64 tmpsz;
 	const ut8 *tmp = r_buf_data (egg->bin, &tmpsz);
 	return r_sys_run (tmp, tmpsz);
@@ -528,15 +528,16 @@ R_API char *r_egg_option_get(REgg *egg, const char *key) {
 }
 
 R_API bool r_egg_shellcode(REgg *egg, const char *name) {
-	r_return_val_if_fail (egg && name, false);
+	R_RETURN_VAL_IF_FAIL (egg && name, false);
 	REggPlugin *p;
 	RListIter *iter;
 	RBuffer *b;
 	r_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
+		const char *p_name = p->meta.name;
+		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
 			b = p->build (egg);
 			if (!b) {
-				R_LOG_ERROR ("%s Shellcode has failed", p->name);
+				R_LOG_ERROR ("%s Shellcode has failed", p_name);
 				return false;
 			}
 			ut64 tmpsz;
@@ -552,7 +553,7 @@ R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
 	r_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
+		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {
 				r_buf_free (egg->bin);

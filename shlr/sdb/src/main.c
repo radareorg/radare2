@@ -280,6 +280,16 @@ static char *escape(const char *b, int ch) {
 			*c++ = '\\';
 			*c++ = 'n';
 			break;
+		case '\t':
+			*c++ = '\\';
+			*c++ = 't';
+			break;
+#if 0
+		case ' ':
+			*c++ = '\\';
+			*c++ = 's';
+			break;
+#endif
 		default:
 			*c = *b;
 			break;

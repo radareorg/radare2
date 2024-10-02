@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
@@ -10,7 +10,7 @@ typedef struct rabin2_state_t {
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang mangledsymbol] file\n");
+		"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -74,24 +74,30 @@ static int rabin_show_help(int v) {
 	}
 	if (v) {
 		printf ("Environment:\n"
-		" R2_NOPLUGINS:     1|0|               # do not load shared plugins (speedup loading)\n"
-		" RABIN2_CHARSET:   e cfg.charset      # set default value charset for -z strings\n"
-		" RABIN2_DEBASE64:  e bin.str.debase64 # try to debase64 all strings\n"
-		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
-		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
-		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
-		" RABIN2_MAXSTRBUF: e bin.str.maxbuf   # specify maximum buffer size\n"
-		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
-		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
-		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qc 'e bin.str.filter=?" "?' -\n"
-		" RABIN2_MACHO_NOFUNCSTART:           # if set it will ignore the FUNCSTART information\n"
-		" RABIN2_MACHO_NOSWIFT\n"
-		" RABIN2_MACHO_SKIPFIXUPS\n"
-		" RABIN2_CODESIGN_VERBOSE\n"
-		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
-		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
-		" RABIN2_VERBOSE:   e bin.verbose      # show debugging messages from the parser\n"
+		" R2_NOPLUGINS:                                  # same as r2 -N. Dont load shared plugins\n"
+		" RABIN2_ARGS:                                   # ignore cli and use these program arguments\n"
+		" RABIN2_CHARSET:          e cfg.charset         # set default value charset for -z strings\n"
+		" RABIN2_CODESIGN_VERBOSE:                       # show codesign details at parse time\n"
+		// TODO RABIN2_MACHO_CODESIGN
+		" RABIN2_DEBASE64:         e bin.str.debase64    # try to debase64 all strings\n"
+		" RABIN2_DEMANGLE:         e bin.demangle        # dont demangle symbols if value is 0\n"
+		" RABIN2_DEMANGLE_CMD:     e bin.demangle.cmd    # try to purge false positives\n"
+		" RABIN2_DEMANGLE_TRYLIB:  e bin.demangle.trylib # load Swift libs to demangle (default: false)\n"
+		// " RABIN2_DEMAN_PFXLIB:  e bin.demangle.pfxlib # prefix symbols with library name\n"
+		// " RABIN2_DEMAN_NAT: e bin.demangle.native # load Swift libs to demangle (default: true)\n"
+		" RABIN2_LANG:             e bin.lang            # assume lang for demangling\n"
+		" RABIN2_MACHO_NOFUNCSTARTS                      # if set it will ignore the FUNCSTART information\n"
+		" RABIN2_MACHO_NOSWIFT                           # avoid parsing the swift metadata\n"
+		" RABIN2_MACHO_SKIPFIXUPS                        # do not parse the mach-o chained fixups\n"
+		" RABIN2_MAXSTRBUF:        e bin.str.maxbuf      # specify maximum buffer size\n"
+		" RABIN2_PDBSERVER:        e pdb.server          # use alternative PDB server\n"
+		" RABIN2_PREFIX:           e bin.prefix          # prefix symbols/sections/relocs with a specific string\n"
+		" RABIN2_STRFILTER:        e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' -\n"
+		" RABIN2_STRPURGE:         e bin.str.purge       # try to purge false positives\n"
+		// " RABIN2_STR_FILTER: e bin.str.filter   # r2 -qc 'e bin.str.filter=?" "?' -\n"
+		// " RABIN2_STR_PURGE:  e bin.str.purge    # try to purge false positives\n"
+		" RABIN2_SYMSTORE:         e pdb.symstore        # path to downstream symbol store\n"
+		" RABIN2_VERBOSE:          e bin.verbose         # show debugging messages from the parser\n"
 		);
 	}
 	return 1;
@@ -256,7 +262,8 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 		}
 		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
 			r_hex_bin2str (buf, len, ret);
-			printf ("%s %s\n", symbol->name, ret);
+			const char *name = r_bin_name_tostring (symbol->name);
+			printf ("%s %s\n", name, ret);
 		} else {
 			R_LOG_ERROR ("Cannot read from buffer");
 		}
@@ -438,8 +445,11 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	case 'p':
 		{
 			int perms = (int)r_num_math (NULL, ptr2);
-			if (!perms) {
+			if (perms < 1) {
 				perms = r_str_rwx (ptr2);
+				if (perms < 0) {
+					R_LOG_ERROR ("Invalid permissions string (%s)", ptr2);
+				}
 			}
 			r_bin_wr_scn_perms (bin, ptr, perms);
 			rc = r_bin_wr_output (bin, output);
@@ -509,19 +519,6 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static void setup_trylib_from_environment(RBin *bin, int type) {
-	bool trylib = false;
-	if (type == R_BIN_LANG_SWIFT) {
-		trylib = true;
-		char *swiftlib = r_sys_getenv ("RABIN2_TRYLIB");
-		if (swiftlib) {
-			trylib = r_str_is_true (swiftlib);
-			free (swiftlib);
-		}
-	}
-	bin->demangle_trylib = trylib;
-}
-
 static char *__demangleAs(RBin *bin, int type, const char *file) {
 	bool syscmd = bin->demangle_usecmd;
 	char *res = NULL;
@@ -551,7 +548,6 @@ static void __listPlugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
 
 R_API int r_main_rabin2(int argc, const char **argv) {
 	Rabin2State state = {0};
-	RBin *bin = NULL;
 	const char *name = NULL;
 	const char *file = NULL;
 	const char *output = NULL;
@@ -577,7 +573,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	ut64 at = UT64_MAX;
 
 	r_core_init (&core);
-	bin = core.bin;
+	RBin *bin = core.bin;
 
 	state.stdin_buf = malloc (STDIN_BUF_SIZE);
 	if (!state.stdin_buf) {
@@ -625,8 +621,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 #endif
-	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
-		r_config_set (core.config, "cmd.demangle", tmp);
+	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE_CMD"))) {
+		// r_config_set (core.config, "cmd.demangle", tmp);
+		r_config_set (core.config, "bin.demangle.usecmd", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_CHARSET"))) {
@@ -640,10 +637,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (r_sys_getenv_asbool ("RABIN2_VERBOSE")) {
 		r_config_set_b (core.config, "bin.verbose", true);
 	}
-	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE"))) {
-		r_config_set (core.config, "bin.demangle", tmp);
-		free (tmp);
-	}
+	r_config_set_b (core.config, "bin.demangle.trylib", r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
+	r_config_set_b (core.config, "bin.demangle", r_sys_getenv_asbool ("RABIN2_DEMANGLE"));
 	if ((tmp = r_sys_getenv ("RABIN2_MAXSTRBUF"))) {
 		r_config_set (core.config, "bin.str.maxbuf", tmp);
 		free (tmp);
@@ -827,7 +822,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'v':
 			r_core_fini (&core);
 			free (state.stdin_buf);
-			return r_main_version_print ("rabin2");
+			return r_main_version_print ("rabin2", 0);
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
@@ -900,7 +895,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			return rabin_show_help (0);
 		}
 		int type = r_bin_demangle_type (do_demangle);
-		setup_trylib_from_environment (bin, type);
+		bin->demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
 		file = argv[opt.ind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
@@ -915,7 +910,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 					free (state.stdin_buf);
 					return 1;
 				}
-				if (res && *res) {
+				if (R_STR_ISNOTEMPTY (res)) {
 					printf ("%s\n", res);
 				} else if (file && *file) {
 					printf ("%s\n", file);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 // needed for spp
 #define USE_R2 1
@@ -20,7 +20,7 @@ static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
 	return 0;
 }
 
-static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
+static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	int len = strlen (input) - 1;
 	if (len < 1) {
 		return 0;
@@ -32,7 +32,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
 	if (*input == '"') {
 		input++;
 	}
-	len = r_str_unescape (input) + zero;
+	len = r_str_unescape (input) + (zero? 1: 0);
 	r_anal_op_set_mnemonic (op, op->addr, input);
 	r_anal_op_set_bytes (op, op->addr, (const ut8*)input, len + 1);
 	return len;
@@ -195,7 +195,7 @@ R_API RAsm *r_asm_new(void) {
 
 // TODO must use the internal rparse api when both libraries are merged
 R_API bool r_asm_sub_names_input(RAsm *a, const char *f) {
-	r_return_val_if_fail (a && f, false);
+	R_RETURN_VAL_IF_FAIL (a && f, false);
 	if (!a->ifilter) {
 		a->ifilter = r_parse_new ();
 	}
@@ -209,7 +209,7 @@ R_API bool r_asm_sub_names_input(RAsm *a, const char *f) {
 
 // TODO must use the internal rparse api when both libraries are merged
 R_API bool r_asm_sub_names_output(RAsm *a, const char *f) {
-	r_return_val_if_fail (a && f, false);
+	R_RETURN_VAL_IF_FAIL (a && f, false);
 	if (!a->ofilter) {
 		a->ofilter = r_parse_new ();
 	}
@@ -244,7 +244,7 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 }
 
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, false);
+	R_RETURN_VAL_IF_FAIL (a && name, false);
 	// TODO not implemented
 	return false;
 }
@@ -281,7 +281,7 @@ static void load_asm_descriptions(RAsm *a) {
 }
 
 R_API bool r_asm_use(RAsm *a, const char *name) {
-	r_return_val_if_fail (a, false);
+	R_RETURN_VAL_IF_FAIL (a, false);
 	if (R_STR_ISEMPTY (name)) {
 		// that shouldnt be permitted imho, keep for backward compat
 		return false;
@@ -302,7 +302,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			// a->acur = NULL;
 			return true;
 		}
-		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L or -LL", name);
+		R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
 	}
 	if (strcmp (name, "null")) {
 		return r_asm_use (a, "null");
@@ -310,9 +310,10 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
+// R2_600
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	r_return_if_fail (a);
+	R_RETURN_IF_FAIL (a);
 	r_arch_config_set_cpu (a->config, cpu);
 }
 
@@ -322,7 +323,7 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a, false);
+	R_RETURN_VAL_IF_FAIL (a, false);
 #if 0
 	if (a->cur) {
 		switch (a->cur->endian) {
@@ -366,8 +367,8 @@ static bool is_invalid(RAnalOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
 	r_asm_op_init (op);
-	r_return_val_if_fail (a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
@@ -489,9 +490,9 @@ R_API void r_asm_list_directives(void) {
 	}
 }
 
-// returns instruction size
+// returns instruction size.. but we have the size in analop and should return bool because thats just a wrapper around analb.encode
 static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
-	r_return_val_if_fail (a && op && buf, 0);
+	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
 	int ret = 0;
 	char *b = strdup (buf);
 	if (!b) {
@@ -509,6 +510,9 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 		if (ret > 0) {
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
 		}
+	} else {
+		R_LOG_ERROR ("Cannot assemble because there are no anal binds into the asm instance %p", a);
+		ret = -1;
 #if 0
 	} else if (ase) {
 		/* find callback if no assembler support in current plugin */
@@ -520,7 +524,7 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 }
 
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
-	r_return_val_if_fail (a && buf && len >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
 
 	ut64 pc = a->pc;
 	ut64 idx;
@@ -637,10 +641,22 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		char *str = r_str_trim_dup (ptr + 8);
 		ret = r_asm_pseudo_string (op, str, 1);
 		free (str);
+	} else if (r_str_startswith (ptr, ".asciiz")) {
+		if (isspace (ptr[7])) {
+			char *str = r_str_trim_dup (ptr + 8);
+			ret = r_asm_pseudo_string (op, ptr + 8, true) ;
+			free (str);
+		} else {
+			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
+		}
 	} else if (r_str_startswith (ptr, ".ascii")) {
-		char *str = r_str_trim_dup (ptr + 6);
-		ret = r_asm_pseudo_string (op, ptr + 6, 1);
-		free (str);
+		if (isspace (ptr[6])) {
+			char *str = r_str_trim_dup (ptr + 7);
+			ret = r_asm_pseudo_string (op, ptr + 7, false);
+			free (str);
+		} else {
+			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
+		}
 	} else if (r_str_startswith (ptr, ".align")) {
 		char *str = r_str_trim_dup (ptr + 6);
 		ret = r_asm_pseudo_align (acode, op, str);
@@ -680,7 +696,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".int32 ")) {
 		ret = r_asm_pseudo_int32 (a, op, ptr + 7);
 	} else if (r_str_startswith (ptr, ".int64 ")) {
-		char *str = r_asm_code_equ_replace (acode, strdup (ptr + 7));
+		char *str = r_asm_code_equ_replace (acode, ptr + 7);
 		ret = r_asm_pseudo_int64 (a, op, str); // ptr + 7);
 		free (str);
 	} else if (r_str_startswith (ptr, ".size")) {
@@ -694,19 +710,21 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		R_LOG_DEBUG (".global directive does nothing for now");
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".equ ")) {
-		ptr2 = strchr (ptr + 5, ',');
+		char *arg = (char *)r_str_trim_head_ro (ptr + 5);
+		ptr2 = strchr (arg, ',');
 		if (!ptr2) {
-			ptr2 = strchr (ptr + 5, '=');
+			ptr2 = strchr (arg, '=');
 		}
 		if (!ptr2) {
-			ptr2 = strchr (ptr + 5, ' ');
+			ptr2 = strchr (arg, ' ');
 		}
 		if (ptr2) {
 			*ptr2 = '\0';
-			r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
+			r_asm_code_set_equ (acode, arg, ptr2 + 1);
+			*ptr2 = ' ';
 			ret = 0;
 		} else {
-			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word> <word>'");
+			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
 		if (r_asm_pseudo_org (a, ptr + 5)) {
@@ -751,8 +769,7 @@ static inline char *next_token(const char *tok) {
 
 R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
-	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL;
-	RAsmCode *acode = NULL;
+	char *ptr = NULL, *ptr_start = NULL;
 	RAnalOp op = {0};
 	ut64 off, pc;
 
@@ -771,13 +788,15 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		free (tokens);
 		return NULL;
 	}
-	if (!(acode = r_asm_code_new ())) {
+	RAsmCode *acode = r_asm_code_new ();
+	if (!acode) {
 		free (tokens);
 		return NULL;
 	}
 	acode->assembly = strdup (assembly);
 	acode->bytes = calloc (1, 64);
-	lbuf = strdup (assembly);
+
+	char *lbuf = strdup (assembly);
 	acode->code_align = 0;
 
 	/* consider ,, an alias for a newline */
@@ -856,6 +875,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		}
 		inComment = false;
 		r_asm_set_pc (a, pc);
+		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++, idx += ret) {
 			buf_token = tokens[i];
 			if (!buf_token) {
@@ -973,7 +993,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					if (!*ptr_start) {
 						continue;
 					}
-					ret = r_asm_assemble (a, &op, ptr_start);
+					ret = r_asm_assemble (a, &op, strdup (ptr_start));
 				}
 			}
 			if (stage == STAGES - 1) {
@@ -1034,7 +1054,7 @@ R_API const RList* r_asm_get_plugins(RAsm *a) {
 
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
-	r_return_val_if_fail (a && b && l >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (a && b && l >= 0, NULL);
 	r_asm_set_pc (a, addr);
 	RAsmCode *code = r_asm_mdisassemble (a, b, l);
 	if (code) {
@@ -1061,7 +1081,7 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 }
 
 R_API int r_asm_syntax_from_string(const char *name) {
-	r_return_val_if_fail (name, -1);
+	R_RETURN_VAL_IF_FAIL (name, -1);
 	if (!strcmp (name, "regnum")) {
 		return R_ARCH_SYNTAX_REGNUM;
 	}
@@ -1081,7 +1101,7 @@ R_API int r_asm_syntax_from_string(const char *name) {
 }
 
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
-	r_return_val_if_fail (a, NULL);
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	// should use rarch instead!.. but for now ranal.mnemonics is calling arch.mnemonics..
 	if (a->analb.anal && a->analb.mnemonics) {
 		return a->analb.mnemonics (a->analb.anal, id, json);
@@ -1090,7 +1110,7 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 }
 
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, 0);
+	R_RETURN_VAL_IF_FAIL (a && name, 0);
 	int i;
 	for (i = 0; i < 9000; i++) {
 		char *n = r_asm_mnemonics (a, i, false);
@@ -1102,16 +1122,18 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 	return 0;
 }
 
+// XXX find better name for this function asm_rasm_assemble wtf
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
-	r_return_val_if_fail (a && buf, NULL);
+	R_RETURN_VAL_IF_FAIL (a && buf, NULL);
 	char *lbuf = strdup (buf);
 	if (!lbuf) {
 		return NULL;
 	}
 	if (use_spp) {
-		Output out;
-		out.fout = NULL;
-		out.cout = r_strbuf_new ("");
+		Output out = {
+			.fout = NULL,
+			.cout = r_strbuf_new ("")
+		};
 		r_strbuf_init (out.cout);
 		struct Proc proc;
 		spp_proc_set (&proc, "spp", 1);
@@ -1127,6 +1149,7 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	// R2_600 move to r_arch api instead?
 	const char *cpus = R_UNWRAP5 (a, arch, session, plugin, cpus);
 	RList *list = cpus

@@ -98,8 +98,7 @@ static void remove_second_operand(struct msp430_cmd *cmd) {
 }
 
 /* TODO: This is ugly as hell */
-static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
-{
+static int decode_emulation(ut16 instr, struct msp430_cmd *cmd) {
 	int ret = -1;
 	ut8 as, ad, src, dst, bw, opcode;
 
@@ -193,16 +192,13 @@ static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 /* return #byte of instruction */
 static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd *cmd) {
 	int ret = 0, srcOperInCodeWord = 0;
-	ut8 as, ad, src, dst;
 	ut16 op;
-	char dstbuf[16];
+	char dstbuf[16] = {0};
 
-	memset (dstbuf, 0, sizeof (dstbuf));
-
-	as = get_as(instr);
-	ad = get_ad(instr);
-	src = get_src(instr);
-	dst = get_dst(instr);
+	ut8 as = get_as(instr);
+	ut8 ad = get_ad(instr);
+	ut8 src = get_src(instr);
+	ut8 dst = get_dst(instr);
 
 	/* addressing mode of source operand */
 	switch (as) {
@@ -298,7 +294,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 
 	size_t n = strlen (cmd->operands);
 	snprintf (cmd->operands + n, sizeof (cmd->operands) - n, "%s", dstbuf);
-	decode_emulation(instr, cmd);
+	decode_emulation (instr, cmd);
 	return ret;
 }
 
@@ -321,11 +317,9 @@ static inline ut8 get_jmp_cond(ut16 instr) {
 }
 
 static void decode_jmp(ut16 instr, struct msp430_cmd *cmd) {
-	ut16 addr;
-
 	snprintf (cmd->instr, sizeof (cmd->instr), "%s", jmp_instrs[get_jmp_cond(instr)]);
 
-	addr = instr & 0x3FF;
+	ut16 addr = instr & 0x3FF;
 
 	cmd->jmp_addr = addr >= 0x300 ? (st16)((0xFE00 | addr) * 2 + 2) : (addr & 0x1FF) * 2 + 2;
 	snprintf (cmd->operands, sizeof (cmd->operands), "$%c0x%04x", addr >= 0x300 ? '-' : '+',

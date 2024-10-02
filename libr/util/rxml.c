@@ -221,7 +221,7 @@ static inline RXmlRet r_xml_refcontent(RXml *x, ut8 ch) { return r_xml_refend (x
 static inline RXmlRet r_xml_refattrval(RXml *x, ut8 ch) { return r_xml_refend (x, R_XML_ATTRVAL); }
 
 R_API void r_xml_init(RXml *x, void *stack, size_t stacksize) {
-	r_return_if_fail (x);
+	R_RETURN_IF_FAIL (x);
 	memset (x, 0, sizeof (*x)); // probably unnecessary
 	x->line = 1;
 	x->stack = (ut8*)stack;

@@ -80,7 +80,7 @@ bool check(RBNode *tree) {
 	return check1 (tree, 0, 0, true);
 }
 
-bool test_r_rbtree_bound_iterate() {
+bool test_r_rbtree_bound_iterate(void) {
 	struct Node key = {0};
 	RBIter it;
 	RBNode *tree = NULL;
@@ -137,7 +137,7 @@ bool test_r_rbtree_bound_iterate() {
 	mu_end;
 }
 
-bool test_r_rbtree_bound() {
+bool test_r_rbtree_bound(void) {
 	struct Node key = {0};
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -299,7 +299,7 @@ bool test_r_rbtree_traverse(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_rbtree_bound);
 	mu_run_test (test_r_rbtree_bound_iterate);
 	mu_run_test (test_r_rbtree_insert_delete);

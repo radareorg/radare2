@@ -1,4 +1,4 @@
-/* V850 disassembler inspired by the GNU binutils one -- 2021-2022 - pancake */
+/* V850 disassembler inspired by the GNU binutils one -- 2021-2024 - pancake */
 
 #include "v850dis.h"
 #include "opc.inc.c"
@@ -113,7 +113,7 @@ static const char *get_v850_reg_name(size_t reg) {
 		"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
 		"r24", "r25", "r26", "r27", "r28", "r29", "ep", "lp"
 	};
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_reg_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_reg_names), NULL);
 	return v850_reg_names[reg];
 }
 
@@ -124,7 +124,7 @@ static const char *get_v850_vreg_name(unsigned int reg) {
 		"vr19", "vr20", "vr21", "vr22", "vr23", "vr24", "vr25", "vr26", "vr27",
 		"vr28", "vr29", "vr30", "vr31"
 	};
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_vreg_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_vreg_names), NULL);
 	return v850_vreg_names[reg];
 }
 
@@ -133,7 +133,7 @@ static const char *get_v850_cc_name(unsigned int reg) {
 		"v", "c/l", "z", "nh", "s/n", "t", "lt", "le",
 		"nv", "nc/nl", "nz", "h", "ns/p", "sa", "ge", "gt"
 	};
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_cc_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_cc_names), NULL);
 	return v850_cc_names[reg];
 }
 
@@ -142,7 +142,7 @@ static const char *get_v850_float_cc_name(unsigned int reg) {
 		"f/t", "un/or", "eq/neq", "ueq/ogl", "olt/uge", "ult/oge", "ole/ugt", "ule/ogt",
 		"sf/st", "ngle/gle", "seq/sne", "ngl/gl", "lt/nlt", "nge/ge", "le/nle", "ngt/gt"
 	};
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_float_cc_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_float_cc_names), NULL);
 	return v850_float_cc_names[reg];
 }
 
@@ -151,13 +151,13 @@ static const char *get_v850_cacheop_name(size_t reg) {
 		"chbii", "cibii", "cfali", "cisti", "cildi", "chbid", "chbiwbd",
 		"chbwbd", "cibid", "cibiwbd", "cibwbd", "cfald", "cistd", "cildd"
 	};
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_cacheop_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_cacheop_names), NULL);
 	return v850_cacheop_names[reg];
 }
 
 static const char *get_v850_prefop_name(size_t reg) {
 	static const char *const v850_prefop_names[] = { "prefi", "prefd" };
-	r_return_val_if_fail (reg < R_ARRAY_SIZE (v850_prefop_names), NULL);
+	R_RETURN_VAL_IF_FAIL (reg < R_ARRAY_SIZE (v850_prefop_names), NULL);
 	return v850_prefop_names[reg];
 }
 
@@ -296,20 +296,23 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 		}
 		p++;
 	}
-	while (*esilfmt) {
-		char ch = *esilfmt;
-		if (ch == '#') {
-			int n = esilfmt[1] - '0';
-			if (n >= 0 && n < 10) {
-				r_strbuf_appendf (sb, "%s", (const char *)r_list_get_n (args, n));
-				esilfmt += 2;
-				continue;
+	if (args) {
+		while (*esilfmt) {
+			char ch = *esilfmt;
+			if (ch == '#') {
+				const int n = esilfmt[1] - '0';
+				if (n >= 0 && n < 10) {
+					const char *argn = (const char *)r_list_get_n (args, n);
+					r_strbuf_appendf (sb, "%s", argn);
+					esilfmt += 2;
+					continue;
+				}
 			}
+			r_strbuf_append_n (sb, &ch, 1);
+			esilfmt++;
 		}
-		r_strbuf_append_n (sb, &ch, 1);
-		esilfmt++;
+		r_list_free (args);
 	}
-	r_list_free (args);
 	char *res = r_strbuf_drain (sb);
 	if (r_str_startswith (res, "DISPOSE,")) {
 		RList *regs = r_str_split_list (res + 8, ",", 0);

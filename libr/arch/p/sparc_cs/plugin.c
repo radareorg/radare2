@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2023 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -116,7 +116,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -136,7 +136,11 @@ performed in big-endian byte order.
 	if (op->size < 4) {
 		return false;
 	}
+#if R_SYS_ENDIAN
+	ut32 lbuf = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#else
 	ut32 lbuf = r_read_ble32 (op->bytes, !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+#endif
 
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)&lbuf, sizeof (lbuf), addr, 1, &insn);
@@ -153,8 +157,10 @@ performed in big-endian byte order.
 		}
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
-					insn->mnemonic, insn->op_str[0]? " ": "",
+					insn->mnemonic,
+					insn->op_str[0]? " ": "",
 					insn->op_str);
+			op->mnemonic = r_str_replace (op->mnemonic, "+-", "-", true);
 			r_str_replace_char (op->mnemonic, '%', 0);
 		}
 		op->size = insn->size;
@@ -173,7 +179,7 @@ performed in big-endian byte order.
 			op->delay = 1;
 			break;
 		case SPARC_INS_UNIMP:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
 		case SPARC_INS_CALL:
 			switch (INSOP(0).type) {
@@ -183,11 +189,13 @@ performed in big-endian byte order.
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_UCALL;
 				op->delay = 1;
+				op->fail = addr + 8;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->delay = 1;
 				op->jump = INSOP(0).imm;
+				op->fail = addr + 8;
 				break;
 			}
 			break;
@@ -255,9 +263,9 @@ performed in big-endian byte order.
 			case SPARC_OP_IMM:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->delay = 1;
-				if (INSCC != SPARC_CC_ICC_N) { // never
-					op->jump = INSOP (0).imm;
-				}
+				op->jump = INSOP (0).imm;
+				// this never thing is incorrectly handled in capstone < v5.0.2
+				// if (INSCC != SPARC_CC_ICC_N) { /* never */ }
 				if (INSCC == SPARC_CC_ICC_A) { // always
 					op->type = R_ANAL_OP_TYPE_JMP;
 					op->delay = 0;
@@ -417,7 +425,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -433,7 +441,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);
 	R_FREE (as->data);
@@ -441,7 +449,7 @@ static bool fini(RArchSession *as) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
@@ -453,6 +461,7 @@ const RArchPlugin r_arch_plugin_sparc_cs = {
 		.license = "BSD",
 	},
 	.arch = "sparc",
+	.cpus = "v9",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,

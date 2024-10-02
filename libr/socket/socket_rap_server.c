@@ -4,7 +4,7 @@
 #include <r_util.h>
 
 R_API RSocketRapServer *r_socket_rap_server_new(bool use_ssl, const char *port) {
-	r_return_val_if_fail (port, NULL);
+	R_RETURN_VAL_IF_FAIL (port, NULL);
 	RSocketRapServer *s = R_NEW0 (RSocketRapServer);
 	if (s) {
 		s->port = strdup (port);
@@ -19,7 +19,7 @@ R_API RSocketRapServer *r_socket_rap_server_new(bool use_ssl, const char *port) 
 }
 
 R_API RSocketRapServer *r_socket_rap_server_create(const char *pathname) {
-	r_return_val_if_fail (pathname, NULL);
+	R_RETURN_VAL_IF_FAIL (pathname, NULL);
 	if (strlen (pathname) < 11) {
 		return NULL;
 	}
@@ -39,17 +39,17 @@ R_API void r_socket_rap_server_free(RSocketRapServer *s) {
 }
 
 R_API bool r_socket_rap_server_listen(RSocketRapServer *s, const char *certfile) {
-	r_return_val_if_fail (s && s->port && *s->port, false);
+	R_RETURN_VAL_IF_FAIL (s && s->port && *s->port, false);
 	return r_socket_listen (s->fd, s->port, certfile);
 }
 
 R_API RSocket* r_socket_rap_server_accept(RSocketRapServer *s) {
-	r_return_val_if_fail (s && s->fd, NULL);
+	R_RETURN_VAL_IF_FAIL (s && s->fd, NULL);
 	return r_socket_accept (s->fd);
 }
 
 R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
-	r_return_val_if_fail (s && s->fd, false);
+	R_RETURN_VAL_IF_FAIL (s && s->fd, false);
 
 	int i;
 	char *ptr = NULL;

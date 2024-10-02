@@ -1,10 +1,13 @@
+/* radare - LGPL - Copyright 2008-2024 - pancake */
+
 #ifndef R2_CRYPTO_H
 #define R2_CRYPTO_H
 
 #include <r_types.h>
-#include <r_list.h>
 #include <r_th.h>
 #include <r_crypto/r_des.h>
+#include <r_hash.h>
+#include <r_lib.h>
 #include <r_crypto/r_sm4.h>
 
 #ifdef __cplusplus
@@ -20,9 +23,12 @@ enum {
 	R_CRYPTO_MODE_CFB,
 };
 
+// TODO: use encode/decode wordings?
 enum {
-	R_CRYPTO_DIR_CIPHER,
-	R_CRYPTO_DIR_DECIPHER,
+	R_CRYPTO_DIR_NONE = -1,
+	R_CRYPTO_DIR_HASH = 0,
+	R_CRYPTO_DIR_DECRYPT = 1,
+	R_CRYPTO_DIR_ENCRYPT = 2,
 };
 
 typedef struct r_crypto_t {
@@ -36,6 +42,7 @@ typedef struct r_crypto_t {
 	int output_size;
 	int dir;
 #endif
+	bool bigendian;
 	void *user;
 	RList *plugins;
 } RCrypto;
@@ -61,38 +68,33 @@ typedef struct r_crypto_job_t {
 
 typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
-	R_CRYPTO_TYPE_HASH = 'h',
-	R_CRYPTO_TYPE_ENCRYPT = 'c',
+	R_CRYPTO_TYPE_HASHER = 'h',
+	R_CRYPTO_TYPE_ENCRYPT = 'c', // CIPHER
+	R_CRYPTO_TYPE_SIGNATURE = 's',
+	R_CRYPTO_TYPE_ALL = 'a'
 } RCryptoType;
 
+typedef bool (*RCryptoJobSetIVCallback)(RCryptoJob *ci, const ut8 *iv, int ivlen);
+typedef bool (*RCryptoJobUpdateCallback)(RCryptoJob *ci, const ut8 *buf, int len);
+
 typedef struct r_crypto_plugin_t {
-	const char *name;
-	const char *author;
-	const char *license;
-	const char *desc;
+	RPluginMeta meta;
 	const char *implements;
 	RCryptoType type;
 	bool (*check)(const char *algo); // must be deprecated
 
 	int (*get_key_size)(RCryptoJob *cry);
-	bool (*set_iv)(RCryptoJob *ci, const ut8 *iv, int ivlen);
+	RCryptoJobSetIVCallback set_iv;
 	bool (*set_key)(RCryptoJob *ci, const ut8 *key, int keylen, int mode, int direction);
 
 	RCryptoJob* (*begin)(RCrypto *cry);
-	bool (*update)(RCryptoJob *ci, const ut8 *buf, int len);
+	RCryptoJobUpdateCallback update;
 	bool (*end)(RCryptoJob *ci, const ut8 *buf, int len);
-
 #if 0
 	bool (*init)(RCrypto *cry, struct r_crypto_plugin_t *cp);
 #endif
 	bool (*fini)(RCryptoJob *cj);
 } RCryptoPlugin;
-
-typedef struct r_hash_plugin_t {
-	const char *name;
-	const char *author;
-	const char *license;
-} RHashPlugin;
 
 typedef ut64 RCryptoSelector;
 
@@ -102,6 +104,8 @@ R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
 R_API void r_crypto_free(RCrypto *cry);
 R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode);
+
+// R_API RCryptoHash *r_crypto_hash(RCrypto *cry, bool rst, const char *name);
 
 R_API RCryptoJob *r_crypto_use(RCrypto *cry, const char *algo);
 R_API bool r_crypto_job_set_key(RCryptoJob *cry, const ut8* key, int keylen, int mode, int direction);
@@ -118,6 +122,7 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cry, int *size);
 #endif
 
 /* plugin pointers */
+extern RCryptoPlugin r_crypto_plugin_strhash;
 extern RCryptoPlugin r_crypto_plugin_aes;
 extern RCryptoPlugin r_crypto_plugin_des;
 extern RCryptoPlugin r_crypto_plugin_rc4;
@@ -136,6 +141,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 extern RCryptoPlugin r_crypto_plugin_serpent;
 extern RCryptoPlugin r_crypto_plugin_sm4;
 extern RCryptoPlugin r_crypto_plugin_aes_wrap;
+extern RCryptoPlugin r_crypto_plugin_ed25519;
 extern RCryptoPlugin r_crypto_plugin_entropy;
 
 #define R_CRYPTO_NONE 0ULL

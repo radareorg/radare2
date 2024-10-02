@@ -159,6 +159,9 @@ grub_sfs_read_extent (struct grub_sfs_data *data, unsigned int block,
     return 0;
 
   treeblock = grub_malloc (data->blocksize);
+  if(!treeblock){
+    return grub_error(GRUB_ERR_OUT_OF_MEMORY, "Failed to allocate memory for treeblock");
+  }
 
   next = grub_be_to_cpu32 (data->rblock.btree);
   tree = (struct grub_sfs_btree *) treeblock;

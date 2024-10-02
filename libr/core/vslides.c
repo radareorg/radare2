@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - pancake */
+/* radare - LGPL - Copyright 2021-2024 - pancake */
 
 #include <r_core.h>
 
@@ -53,10 +53,16 @@ static int count_pages(RList *list) {
 	return pages;
 }
 
-static void render(SlidesState *state, RCore *core, RList *list, int mode, int page) {
+static void render(SlidesState *state, RCore *core, RList *list, int mode, int page, int sx, int sy) {
 	char *s;
 	if (page < 0) {
 		page = 0;
+	}
+	if (sx < 0) {
+		sx = 0;
+	}
+	if (sy < 0) {
+		sy = 0;
 	}
 	int count = 0;
 	int notch = r_config_get_i (core->config, "scr.notch");
@@ -117,7 +123,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	int h, w = r_cons_get_size (&h);
 	if (mode == 2) {
 		w /= 2;
-		char *o2 = r_str_ansi_crop (o, 0, 0, w, h);
+		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);
 		const char *prefix = r_str_pad (' ', w);
 		char *no = r_str_prefix_all (o2, prefix);
 		free (o);
@@ -125,7 +131,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		o = no;
 		r_cons_print (o);
 	} else {
-		char *no = r_str_ansi_crop (o, 0, 0, w, h);
+		char *no = r_str_ansi_crop (o, sx, sy, w, h);
 		r_cons_print (no);
 		free (no);
 	}
@@ -133,7 +139,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 }
 
 static void render_title(int page, int mode, int total) {
-	r_return_if_fail (page >= 0 && mode >= 0 && total >= 0);
+	R_RETURN_IF_FAIL (page >= 0 && mode >= 0 && total >= 0);
 	r_cons_gotoxy (0, 0);
 	r_cons_printf ("%s%s%s\r [r2slides] [%s:%d/%d]",
 			Color_BLACK, Color_BGYELLOW, R_CONS_CLEAR_LINE,
@@ -141,7 +147,7 @@ static void render_title(int page, int mode, int total) {
 }
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
-	r_return_if_fail (core && file);
+	R_RETURN_IF_FAIL (core && file);
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		R_LOG_ERROR ("Requires scr.interactive=true");
 		return;
@@ -161,6 +167,8 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int ch;
 	int page = 1;
 	int mode = 1;
+	int sx = 0;
+	int sy = 0;
 	r_cons_set_raw (1);
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
@@ -173,16 +181,34 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		clearkeys (&state);
 		r_cons_clear00 ();
 		if (mode == 2) {
-			render (&state, core, list, 2, page + 1);
+			render (&state, core, list, 2, page + 1, sx, sy);
 		}
 		r_cons_gotoxy (0, 0);
-		render (&state, core, list, 1, page);
+		render (&state, core, list, 1, page, sx, sy);
 		render_title (page, mode, total_pages);
 		r_cons_flush ();
 		r_cons_set_raw (true);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
+		case 'j':
+			sy++;
+			break;
+		case 'k':
+			sy--;
+			if (sy < 0) {
+				sy = 0;
+			}
+			break;
+		case 'l':
+			sx++;
+			break;
+		case 'h':
+			sx--;
+			if (sy < 0) {
+				sx = 0;
+			}
+			break;
 		case '1':
 			mode = 1;
 			break;
@@ -196,9 +222,11 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case 'n':
 		case 'P':
 			page += mode;
+			sx = sy = 0;
 			break;
 		case 'p':
 		case 'N':
+			sx = sy = 0;
 			page -= mode;
 			if (page < 1) {
 				page = 1;
@@ -206,11 +234,12 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		case '?':
 			eprintf ("Keys:\n");
-			eprintf (" np = next/prev slide\n");
-			eprintf (" q  = quit the slides\n");
-			eprintf (" e  = open vim to edit the current slide\n");
-			eprintf (" 12 = show 1 or two pages\n");
-			eprintf (" :  = enter command\n");
+			eprintf (" np   = next/prev slide\n");
+			eprintf (" hjkl = scroll current slide left/down/up/right\n");
+			eprintf (" q    = quit the slides\n");
+			eprintf (" e    = open vim to edit the current slide\n");
+			eprintf (" 12   = show 1 or two pages\n");
+			eprintf (" :    = enter command\n");
 			r_cons_any_key (NULL);
 			break;
 		case 'e':

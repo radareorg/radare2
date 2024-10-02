@@ -11,14 +11,14 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_p9;
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
-	RSysArch arch;
+static bool check(RBinFile *bf, RBuffer *buf) {
+	const char *arch;
 	int bits, big_endian;
 	return r_bin_p9_get_arch (buf, &arch, &bits, &big_endian);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	if (!check_buffer (bf, b)) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	if (!check (bf, b)) {
 		return false;
 	}
 
@@ -67,10 +67,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		break;
 	}
 
-	if (bin_obj) {
-		*bin_obj = o;
-	}
-
+	bf->bo->bin_obj = o;
 	return true;
 }
 
@@ -110,7 +107,7 @@ static ut64 baddr(RBinFile *bf) {
 		return 0x1000ULL;
 	}
 
-	// unreachable because check_buffer only supports the above architectures
+	// unreachable because check only supports the above architectures
 	return 0;
 }
 
@@ -179,6 +176,10 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("text");
 	ptr->size = o->header.text;
+	// for regular applications: header is included in the text segment
+	if (!o->is_kernel) {
+		ptr->size += o->header_size;
+	}
 	ptr->vsize = P9_ALIGN (o->header.text, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf);
@@ -187,11 +188,6 @@ static RList *sections(RBinFile *bf) {
 	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
-
-	// for regular applications: header is included in the text segment
-	if (!o->is_kernel) {
-		phys += o->header_size;
-	}
 
 	// switch back to 4k page size
 	align = 0x1000;
@@ -490,7 +486,21 @@ static RList *symbols(RBinFile *bf) {
 		case 'b':
 			break;
 		// TODO: source file line offset
-		case 'Z':
+		case 'Z': {
+			ut64 fin = (o->header.syms > offset)? o->header.syms - offset: 0;
+			for (i = 0; i < fin; i += sizeof (ut16)) {
+				ut16 index = r_buf_read_be16_at (bf->buf, syms + offset + i);
+				if (index == UT16_MAX) {
+					goto error;
+				}
+
+				// read indices until a zero index
+				if (index == 0) {
+					offset += i + sizeof (ut16);
+					break;
+				}
+			}
+		}
 			// fallthrough
 		default:
 			sym_fini (&sym, NULL);
@@ -502,7 +512,7 @@ static RList *symbols(RBinFile *bf) {
 			goto error;
 		}
 
-		bin_sym->name = sym.name;
+		bin_sym->name = r_bin_name_new (sym.name);
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped
 		if (o->is_kernel) {
@@ -535,8 +545,9 @@ static RList *symbols(RBinFile *bf) {
 
 		ut64 prev = line;
 
-		const ut8 b = r_buf_read8_at (bf->buf, pcs + offset);
-		if (b == UT8_MAX) {
+		ut8 b;
+		st64 r = r_buf_read_at (bf->buf, pcs + offset, &b, sizeof (b));
+		if (r != sizeof (b)) {
 			goto error;
 		}
 		offset += sizeof (ut8);
@@ -587,7 +598,7 @@ static RList *libs(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	RSysArch arch;
+	const char *arch;
 	int bits, big_endian;
 	struct plan9_exec header;
 
@@ -608,7 +619,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("p9");
 	ret->os = strdup ("Plan9");
 	ret->default_cc = strdup ("p9");
-	ret->arch = strdup (r_sys_arch_str (arch));
+	ret->arch = strdup (arch);
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("plan9");
 	ret->type = strdup ("EXEC (executable file)");
@@ -683,13 +694,15 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_p9 = {
-	.name = "p9",
-	.desc = "Plan 9 bin plugin",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "p9",
+		.desc = "Plan 9 bin plugin",
+		.license = "MIT",
+	},
+	.load = &load,
 	.size = &size,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

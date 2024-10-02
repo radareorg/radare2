@@ -4,7 +4,7 @@
 
 #include <r_util.h>
 
-#define IS_NAME(x) (IS_LOWER(x) || IS_DIGIT(x) || (x) == '_')
+#define IS_NAME(x) (islower(x) || isdigit(x) || (x) == '_')
 
 static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t mangled_len) {
 	char *next = mangled;
@@ -75,7 +75,11 @@ static void demangle_freepascal_unit(RStrBuf *ds, char *mangled, size_t mangled_
 				r_strbuf_append_n (ds, mangled, end - mangled);
 			}
 		} else {
-			r_strbuf_append_n (ds, mangled, end - mangled);
+			if (end > mangled) {
+				r_strbuf_append_n (ds, mangled, end - mangled);
+			} else {
+				// should never happen
+			}
 		}
 	} else {
 		r_strbuf_append_n (ds, mangled, mangled_len);

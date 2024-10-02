@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2023 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2024 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -15,7 +15,7 @@ static R_TH_LOCAL RCons *r_cons_instance = NULL;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
-#define C (getctx())
+#define C (getctx ())
 
 static inline void cons_input_state_init(InputState *state) {
 	state->readbuffer = NULL;
@@ -58,10 +58,23 @@ typedef struct {
 	void *event_interrupt_data;
 } RConsBreakStack;
 
+#if R2_USE_NEW_ABI
+static void r_cons_grep_word_free(RConsGrepWord *gw) {
+	if (gw) {
+		free (gw->str);
+		free (gw);
+	}
+}
+#endif
+
 static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
 		R_FREE (grep->str);
 		ZERO_FILL (*grep);
+#if R2_USE_NEW_ABI
+		r_list_free (grep->strings);
+		grep->strings = r_list_newf ((RListFree)r_cons_grep_word_free);
+#endif
 		grep->line = -1;
 		grep->sort = -1;
 		grep->sort_invert = false;
@@ -100,7 +113,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 		}
 		if (recreate && C->buffer_sz > 0) {
 			C->buffer = malloc (C->buffer_sz);
-			if (!C->buffer) {
+			if (R_UNLIKELY (!C->buffer)) {
 				C->buffer = data->buf;
 				free (data);
 				return NULL;
@@ -113,7 +126,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 }
 
 static void cons_stack_load(RConsStack *data, bool free_current) {
-	r_return_if_fail (data);
+	R_RETURN_IF_FAIL (data);
 	if (free_current) {
 		// double free
 		free (C->buffer);
@@ -131,7 +144,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	context->breaked = false;
-	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
+	// context->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
@@ -389,6 +402,7 @@ R_API void r_cons_break_clear(void) {
 }
 
 R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
+#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -414,9 +428,11 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
+#endif
 }
 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
+#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -439,30 +455,18 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		C->was_breaked = C->breaked;
 		context->breaked = false;
 	}
+#endif
 }
-
-#if RADARE2_5_7_X
-
-// ABI break
-R_API void r_cons_break_push(void) {
-	r_cons_context_break_push (C, NULL, NULL, true);
-}
-
-R_API void r_cons_break_popa(void) {
-	while (!r_stack_is_empty (C->break_stack)) {
-		r_cons_context_break_pop ();
-	}
-}
-
-#else
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
+	if (r_stack_size (C->break_stack) > 0) {
+		r_cons_break_timeout (I->otimeout);
+	}
 	r_cons_context_break_push (C, cb, user, true);
 }
 
-#endif
-
 R_API void r_cons_break_pop(void) {
+	I->timeout = 0;
 	r_cons_context_break_pop (C, true);
 }
 
@@ -475,28 +479,37 @@ R_API bool r_cons_default_context_is_interactive(void) {
 }
 
 R_API bool r_cons_was_breaked(void) {
+#if WANT_DEBUGSTUFF
 	const bool res = r_cons_is_breaked () || C->was_breaked;
 	C->breaked = false;
 	C->was_breaked = false;
 	return res;
+#else
+	return false;
+#endif
 }
 
 R_API bool r_cons_is_breaked(void) {
+#if WANT_DEBUGSTUFF
 	if (R_UNLIKELY (I->cb_break)) {
 		I->cb_break (I->user);
 	}
 	if (R_UNLIKELY (I->timeout)) {
-		if (r_time_now_mono () > I->timeout) {
-			C->breaked = true;
-			C->was_breaked = true;
-			eprintf ("\nTimeout!\n");
-			I->timeout = 0;
+		if (r_stack_size (C->break_stack) > 0) {
+			if (r_time_now_mono () > I->timeout) {
+				C->breaked = true;
+				C->was_breaked = true;
+				r_cons_break_timeout (I->otimeout);
+			}
 		}
 	}
 	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
 	}
 	return R_UNLIKELY (C && C->breaked);
+#else
+	return false;
+#endif
 }
 
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
@@ -544,8 +557,17 @@ R_API int r_cons_get_cur_line(void) {
 }
 
 R_API void r_cons_break_timeout(int timeout) {
+	if (timeout > 0) {
+		I->timeout = r_time_now_mono () + (timeout * 1000);
+		I->otimeout = timeout;
+	} else {
+		I->otimeout = 0;
+		I->timeout = 0;
+	}
+#if 0
 	I->timeout = (timeout && !I->timeout)
 		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
+#endif
 }
 
 R_API void r_cons_break_end(void) {
@@ -633,43 +655,35 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
-	if ((I->mouse && enable) || (!I->mouse && !enable)) {
-		return I->mouse;
-	}
+	bool enabled = I->mouse;
 #if R2__WINDOWS__
+	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
+	DWORD mode = 0;
+	GetConsoleMode (h, &mode);
+	mode |= ENABLE_EXTENDED_FLAGS;
+	mode |= enable
+		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
+		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
+	if (SetConsoleMode (h, mode)) {
+		I->mouse = enable;
+	}
+#else
 	if (I->vtmode == 2) {
-#endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
 			// : "\x1b[?1001r\x1b[?1000l";
 		// : "\x1b[?1000;1006;1015l";
 		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
-		bool enabled = I->mouse;
 		const size_t click_len = strlen (click);
 		if (write (2, click, click_len) != click_len) {
-			return false;
+			enabled = false;
+		} else {
+			I->mouse = enable;
 		}
-		I->mouse = enable;
-		return enabled;
-#if R2__WINDOWS__
 	}
-	DWORD mode;
-	HANDLE h;
-	bool enabled = I->mouse;
-	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &mode);
-	mode |= ENABLE_EXTENDED_FLAGS;
-	mode = enable
-		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
-		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
-	if (SetConsoleMode (h, mode)) {
-		I->mouse = enable;
-	}
-	return enabled;
-#else
-	return false;
 #endif
+	return enabled;
 }
 
 R_API RCons *r_cons_new(void) {
@@ -697,8 +711,7 @@ R_API RCons *r_cons_new(void) {
 	I->teefile = NULL;
 	I->fix_columns = 0;
 	I->fix_rows = 0;
-	I->backup_fd = -1;
-	I->backup_fdn = -1;
+	RVecFdPairs_init (&I->fds);
 	I->mouse_event = 0;
 	I->force_rows = 0;
 	I->force_columns = 0;
@@ -776,12 +789,12 @@ R_API RCons *r_cons_free(void) {
 	R_FREE (C->lastOutput);
 	C->lastLength = 0;
 	R_FREE (I->pager);
+	RVecFdPairs_fini (&I->fds);
 	return NULL;
 }
 
 #define MOAR (4096 * 8)
 static bool palloc(int moar) {
-	void *temp;
 	if (moar <= 0) {
 		return false;
 	}
@@ -790,7 +803,7 @@ static bool palloc(int moar) {
 			return false;
 		}
 		size_t new_sz = moar + MOAR;
-		temp = calloc (1, new_sz);
+		void *temp = calloc (1, new_sz);
 		if (temp) {
 			C->buffer_sz = new_sz;
 			C->buffer = temp;
@@ -910,10 +923,17 @@ R_API int r_cons_get_buffer_len(void) {
 
 R_API void r_cons_filter(void) {
 	/* grep */
+#if R2_USE_NEW_ABI
+	if (C->filter || r_list_length (C->grep.strings) > 0 || C->grep.tokens_used || C->grep.less || C->grep.json) {
+		(void)r_cons_grepbuf ();
+		C->filter = false;
+	}
+#else
 	if (C->filter || C->grep.nstrings > 0 || C->grep.tokens_used || C->grep.less || C->grep.json) {
 		(void)r_cons_grepbuf ();
 		C->filter = false;
 	}
+#endif
 	/* html */
 	if (C->is_html) {
 		int newlen = 0;
@@ -1018,10 +1038,14 @@ R_API void r_cons_last(void) {
 }
 
 static bool lastMatters(void) {
-	return (C->buffer_len > 0) \
-		&& (C->lastEnabled && !C->filter && C->grep.nstrings < 1 && \
-		!C->grep.tokens_used && !C->grep.less && \
-		!C->grep.json && !C->is_html);
+	return (C->buffer_len > 0 &&
+#if R2_USE_NEW_ABI
+		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings))
+#else
+		(C->lastEnabled && !C->filter && C->grep.nstrings < 1)
+#endif
+		&& !C->grep.tokens_used && !C->grep.less \
+		&& !C->grep.json && !C->is_html);
 }
 
 R_API void r_cons_echo(const char *msg) {
@@ -1425,7 +1449,7 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
-	r_return_val_if_fail (str && len >= 0, -1);
+	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
 	if (len < 1) {
 		return 0;
 	}
@@ -1467,7 +1491,7 @@ R_API void r_cons_memset(char ch, int len) {
 }
 
 R_API void r_cons_print(const char *str) {
-	r_return_if_fail (str);
+	R_RETURN_IF_FAIL (str);
 	if (!I || I->null) {
 		return;
 	}
@@ -1500,6 +1524,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 // XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
 	// This implementation is very slow
+	if (rows) {
+		*rows = 0;
+	}
 	return 0;
 #if 0
 	RConsContext *c = C;
@@ -1563,10 +1590,11 @@ R_API bool r_cons_is_tty(void) {
 	if (!win.ws_col || !win.ws_row) {
 		return false;
 	}
-	const char *tty = ttyname (1);
-	if (!tty) {
+	char ttybuf[64];
+	if (ttyname_r (1, ttybuf, sizeof (ttybuf))) {
 		return false;
 	}
+	const char *tty = ttybuf;
 	if (stat (tty, &sb) || !S_ISCHR (sb.st_mode)) {
 		return false;
 	}
@@ -1611,7 +1639,7 @@ static int __xterm_get_cur_pos(int *xpos) {
 		(void)r_cons_readchar ();
 		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
 			ch = r_cons_readchar ();
-			if ((!i && !IS_DIGIT (ch)) || // dumps arrow keys etc.
+			if ((!i && !isdigit (ch)) || // dumps arrow keys etc.
 			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
 				is_reply = false;
 				break;
@@ -1685,7 +1713,13 @@ R_API int r_cons_get_size(int *rows) {
 	struct winsize win = {0};
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
-			const char *tty = isatty (1)? ttyname (1): NULL;
+			char ttybuf[64];
+			const char *tty = NULL;
+			if (isatty (1)) {
+				if (!ttyname_r (1, ttybuf, sizeof (ttybuf))) {
+					tty = ttybuf;
+				}
+			}
 			int fd = open (r_str_get_fail (tty, "/dev/tty"), O_RDONLY);
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
@@ -2151,7 +2185,7 @@ R_API bool r_cons_drop(int n) {
 	return true;
 }
 
-R_API void r_cons_chop(void) {
+R_API void r_cons_trim(void) {
 	RConsContext *c = C;
 	while (c->buffer_len > 0) {
 		char ch = c->buffer[c->buffer_len - 1];
@@ -2249,7 +2283,7 @@ R_API void r_cons_mark(ut64 addr, const char *name) {
 	if (mark) {
 		RConsContext *ctx = getctx ();
 		mark->addr = addr;
-		int row, col = r_cons_get_cursor (&row);
+		int row = 0, col = r_cons_get_cursor (&row);
 		mark->name = strdup (name); // TODO. use a const pool
 		mark->pos = ctx->buffer_len;
 		mark->col = col;

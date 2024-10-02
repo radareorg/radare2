@@ -8,7 +8,7 @@
 #define CUSTOM_STRINGS 0
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -26,8 +26,8 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+static bool check(RBinFile *bf, RBuffer *b) {
+	R_RETURN_VAL_IF_FAIL (b, false);
 
 	switch (r_buf_read_be32_at (b, 0)) {
 	case PCAP_MAGIC_LE:
@@ -39,19 +39,14 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
-
-	pcap_obj_t *obj = pcap_obj_new_buf (buf);
-	if (obj) {
-		*bin_obj = obj;
-		return true;
-	}
-	return false;
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
+	bf->bo->bin_obj = pcap_obj_new_buf (buf);
+	return bf->bo->bin_obj != NULL;
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinSymbol *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
@@ -70,10 +65,11 @@ static RList *symbols(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	ptr->name = r_str_newf ("tcpdump capture file - version %d.%d (%s, "
-	  "capture length %"PFMT32u ")", obj->header->version_major,
-	obj->header->version_minor, pcap_network_string (obj->header->network),
-	obj->header->max_pkt_len);
+	ptr->name = r_bin_name_new_from (
+		r_str_newf ("tcpdump capture file - version %d.%d (%s, capture length %"PFMT32u ")", obj->header->version_major,
+			obj->header->version_minor, pcap_network_string (obj->header->network),
+			obj->header->max_pkt_len)
+		);
 	ptr->paddr = ptr->vaddr = 0;
 	r_list_append (ret, ptr);
 
@@ -94,7 +90,7 @@ static RList *symbols(RBinFile *bf) {
 
 #if CUSTOM_STRINGS
 static RList *strings(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinString *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
@@ -131,7 +127,7 @@ static RList *strings(RBinFile *bf) {
 #endif
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		r_list_append (ret, strdup ("ether"));
@@ -147,10 +143,12 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pcap = {
-	.name = "pcap",
-	.desc = "libpcap/.pcap format",
-	.license = "LGPL3",
-	.author = "srimanta,pancake",
+	.meta = {
+		.name = "pcap",
+		.desc = "libpcap/.pcap format",
+		.license = "LGPL3",
+		.author = "srimanta,pancake",
+	},
 	.info = info,
 	.libs = libs,
 	.baddr = baddr,
@@ -159,8 +157,8 @@ RBinPlugin r_bin_plugin_pcap = {
 	.strings = strings,
 #endif
 	.symbols = symbols,
-	.load_buffer= load_buffer,
-	.check_buffer = check_buffer,
+	.load= load,
+	.check = check,
 };
 
 #ifndef R2_PLUGIN_INCORE

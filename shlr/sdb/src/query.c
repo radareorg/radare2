@@ -172,7 +172,7 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 		return NULL;
 	}
 	StrBuf *out = strbuf_new ();
-	if ((int)len < 1 || !buf) {
+	if ((int)len < 1 || !buf || !out) {
 		bufset = true;
 		len = 64;
 		buf = (char *)sdb_gh_calloc (1, len);
@@ -891,7 +891,10 @@ static char *slurp(const char *file) {
 		close (fd);
 		return NULL;
 	}
-	lseek (fd, 0, SEEK_SET);
+	if (lseek (fd, 0, SEEK_SET) == (off_t)-1) {
+		close (fd);
+		return NULL;
+	}
 	char *text = (char *)sdb_gh_malloc (sz + 1);
 	if (!text) {
 		close (fd);

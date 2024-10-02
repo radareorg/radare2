@@ -47,6 +47,9 @@ minbound: 0x00004438
 maxbound: 0x00004476
 is-lineal: true
 end-bbs: 0
+maxbbins: 9
+midbbins: 3.80
+ratbbins: 2.37
 noreturn: false
 in-degree: 0
 out-degree: 6

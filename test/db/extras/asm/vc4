@@ -1,2 +1,7 @@
-d "mov r0,#0x0" 00600000
-d "ld r0,0x0(r1)" 10200000
+d "mov r1,#0x0" 0160
+d "ld r4,0x0(r1)" 1420
+d "st r0,0x8(r1)" 1032
+d "bne 0xfffffffffffffff8" fc18
+d "add r2,#0x1" 1262
+d "mov r3,#0x10000" 03e800000100
+   

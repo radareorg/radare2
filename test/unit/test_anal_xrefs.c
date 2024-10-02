@@ -1,7 +1,7 @@
 #include <r_anal.h>
 #include "minunit.h"
 
-bool test_r_anal_xrefs_count() {
+bool test_r_anal_xrefs_count(void) {
 	RAnal *anal = r_anal_new ();
 
 	mu_assert_eq (r_anal_xrefs_count (anal), 0, "xrefs count");
@@ -18,7 +18,7 @@ bool test_r_anal_xrefs_count() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_anal_xrefs_count);
 	return tests_passed != tests_run;
 }

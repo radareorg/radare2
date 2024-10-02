@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2022 bemodtwz */
+/* radare - LGPL - Copyright 2022-2024 bemodtwz */
+
 #include <r_search.h>
 #include "search.h"
 
@@ -35,7 +36,7 @@ static inline RTireNode *new_node(void) {
 }
 
 static inline RTireNode *new_leaf(RSearchKeyword *kw, ut8 *data, ut32 len) {
-	r_return_val_if_fail (data, NULL);
+	R_RETURN_VAL_IF_FAIL (data, NULL);
 	RTireNode *t = new_node ();
 	if (t) {
 		t->data = data;
@@ -47,8 +48,8 @@ static inline RTireNode *new_leaf(RSearchKeyword *kw, ut8 *data, ut32 len) {
 
 // traverse *node and add kw to it
 static inline bool add_node(RTireNode **root, RSearchKeyword *kw) {
-	r_return_val_if_fail (kw && kw->keyword_length >= 1, false);
-	r_return_val_if_fail (!kw->bin_binmask, false); // remove when binmake is supported
+	R_RETURN_VAL_IF_FAIL (kw && kw->keyword_length >= 1, false);
+	R_RETURN_VAL_IF_FAIL (!kw->bin_binmask, false); // remove when binmake is supported
 
 	ut8 *data = kw->bin_keyword;
 	RTireNode **writeto = &root[*data];
@@ -57,7 +58,7 @@ static inline bool add_node(RTireNode **root, RSearchKeyword *kw) {
 
 	while (*writeto) { // loop through nodes
 		RTireNode *node = *writeto;
-		r_return_val_if_fail (node->data, false); // sanity
+		R_RETURN_VAL_IF_FAIL (node->data, false); // sanity
 
 		// get number of bytes in common
 		ut32 comm, max = R_MIN (len, node->len);
@@ -133,7 +134,7 @@ static inline int build_tire(RSearch *srch, RTireNode **root) {
 }
 
 R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
-	r_return_val_if_fail (r_list_length (srch->kws) > 0, -1);
+	R_RETURN_VAL_IF_FAIL (r_list_length (srch->kws) > 0, -1);
 
 	RTireNode *_root[256] = { 0 };
 	RTireNode **root = _root;
@@ -155,13 +156,17 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 	}
 
 	int hits = 0;
-	while (true) {
-		ut8 *finger; // point at next possible match
-		for (finger = buf; finger < buf + (blen - maxkey); finger++) {
+	while (blen > maxkey) {
+		ut8 *finger = buf; // point at next possible match
+		ut8 *finger_end = buf + (blen - maxkey);
+		for (finger = buf; finger + 1 < finger_end; finger++) {
 			RTireNode *node = root[*finger];
-
 			ut8 *b = finger + 1; // matching substrings of finger as you walk tire
-			while (node) {
+			while (node && b < finger_end) {
+				int remaining = finger_end - b;
+				if (remaining < 1 || node->len >= remaining) {
+					break;
+				}
 				if (!memcmp (node->data, b, node->len)) {
 					// matches and it has a kw
 					if (node->kw) {
@@ -182,6 +187,9 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 					node = node->next;
 				}
 			}
+		}
+		if (finger == buf) {
+			finger++;
 		}
 
 		//  printf ("finished searching 0x%lx bytes from 0x%lx", finger - buf, addr); // DENNIS

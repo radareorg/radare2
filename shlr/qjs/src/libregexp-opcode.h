@@ -1,6 +1,6 @@
 /*
  * Regular Expression Engine
- * 
+ *
  * Copyright (c) 2017-2018 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,7 +25,8 @@
 #ifdef DEF
 
 DEF(invalid, 1) /* never used */
-DEF(char, 3)
+DEF(char8, 2) /* 7 bits in fact */
+DEF(char16, 3)
 DEF(char32, 5)
 DEF(dot, 1)
 DEF(any, 1) /* same as dot but match any character including line terminator */
@@ -50,8 +51,7 @@ DEF(range32, 3) /* variable length */
 DEF(lookahead, 5)
 DEF(negative_lookahead, 5)
 DEF(push_char_pos, 1) /* push the character position on the stack */
-DEF(bne_char_pos, 5) /* pop one stack element and jump if equal to the character
- position */
+DEF(check_advance, 1) /* pop one stack element and check that it is different from the character position */
 DEF(prev, 1) /* go to the previous char */
 DEF(simple_greedy_quant, 17)
 

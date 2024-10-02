@@ -1,0 +1,75 @@
+NAME=Mach0 - List symbols demangled
+FILE=bins/mach0/ClassCpp.out
+ARGS=-e bin.demangle=true
+CMDS=<<EOF
+is~My
+f~My
+EOF
+EXPECT=<<EOF
+7   0x00002a20 0x100002a20 LOCAL  FUNC 0        __ZN7MyClassC1Ev                                                                                                                                   MyClass::MyClass()
+11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev                                                                                                                                   MyClass::~MyClass()
+13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev                                                                                                                                   MyClass::MyClass()
+41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev                                                                                                                                   MyClass::~MyClass()
+0x00000000 1 class.MyClass
+0x100002b0c 1 method.MyClass.MyClass__
+0x100003150 0 sym.MyClass::MyClass__
+EOF
+RUN
+
+NAME=Mach0 - List symbols mangled
+FILE=bins/mach0/ClassCpp.out
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+is~My
+f~My
+EOF
+EXPECT=<<EOF
+7   0x00002a20 0x100002a20 LOCAL  FUNC 0        __ZN7MyClassC1Ev
+11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev
+13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev
+41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev
+0x00000000 1 class.MyClass
+0x100002a20 0 sym.__ZN7MyClassC1Ev
+0x100002b0c 0 sym.__ZN7MyClassD1Ev
+0x100002b0c 1 method.MyClass.MyClass__
+0x100002b44 0 sym.__ZN7MyClassC2Ev
+0x100003150 0 sym.__ZN7MyClassD2Ev
+EOF
+RUN
+
+NAME=ELF - List symbols demangled
+FILE=bins/elf/ClassCpp.out
+ARGS=-e bin.demangle=true
+CMDS=<<EOF
+is~My
+f~My
+EOF
+EXPECT=<<EOF
+52  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD1Ev                                                                                         MyClass::~MyClass()
+67  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC2Ev                                                                                         MyClass::MyClass()
+69  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC1Ev                                                                                         MyClass::MyClass()
+70  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD2Ev                                                                                         MyClass::~MyClass()
+0x00000000 1 class.MyClass
+0x000013bc 1 method.MyClass.MyClass__
+0x000013e0 35 sym.MyClass::MyClass__
+EOF
+RUN
+
+NAME=ELF - List symbols mangled
+FILE=bins/elf/ClassCpp.out
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+is~My
+f~My
+EOF
+EXPECT=<<EOF
+52  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD1Ev
+67  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC2Ev
+69  0x000013bc 0x000013bc WEAK   FUNC   35       _ZN7MyClassC1Ev
+70  0x000013e0 0x000013e0 WEAK   FUNC   35       _ZN7MyClassD2Ev
+0x000013bc 35 sym._ZN7MyClassC2Ev
+0x000013bc 35 sym._ZN7MyClassC1Ev
+0x000013e0 35 sym._ZN7MyClassD1Ev
+0x000013e0 35 sym._ZN7MyClassD2Ev
+EOF
+RUN

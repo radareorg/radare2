@@ -1,0 +1,23 @@
+NAME=jump table for swift on arm64
+FILE=bins/mach0/MASTestApp-2
+CMDS=<<EOF
+f hit.key.base 1 0x1000100a8
+f hit.key.bytes 1 0x1000100c8
+f hit.key.lastQword 1 0x1000100e0
+f sym.generatePrivateKey 720 0x1000086dc
+f sym.calledFromGeneratePrivKey 64 0x100008ab8
+e emu.str=true
+e asm.var.summary=1
+Cd 4[16] @ hit.key.base
+CCu base64:WzI0XSAtcnctIHNlY3Rpb24gc2l6ZSAyNzIgbmFtZWQgMjQuX19EQVRBLl9fYnNz @ 0x100010300
+s 0x100008710
+af
+pdsf~key
+EOF
+EXPECT=<<EOF
+0x10000871c hit.key.lastQword
+0x100008758 hit.key.base
+0x10000888c "Failed to create private key."
+0x1000088c8 "Failed to create private key."
+EOF
+RUN

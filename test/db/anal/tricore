@@ -50,67 +50,81 @@ NAME=TriCore return_0.elf
 FILE=bins/tricore/return_0.elf
 CMDS=drp
 EXPECT=<<EOF
-=PC	pc
-=SP	a10
-=A0	a0
-gpr	p0	.64	0	0
-gpr	a0	.32	0	0
-gpr	a1	.32	4	0
-gpr	p2	.64	8	0
-gpr	a2	.32	8	0
-gpr	a3	.32	12	0
-gpr	p4	.64	16	0
-gpr	a4	.32	16	0
-gpr	a5	.32	20	0
-gpr	p6	.64	24	0
-gpr	a6	.32	24	0
-gpr	a7	.32	28	0
-gpr	p8	.64	32	0
-gpr	a8	.32	32	0
-gpr	a9	.32	36	0
-gpr	p10	.64	40	0
-gpr	a10	.32	40	0
-gpr	a11	.32	44	0
-gpr	p12	.64	48	0
-gpr	a12	.32	48	0
-gpr	a13	.32	52	0
-gpr	p14	.64	56	0
-gpr	a14	.32	56	0
-gpr	a15	.32	60	0
-gpr	e0	.64	64	0
-gpr	d0	.32	64	0
-gpr	d1	.32	68	0
-gpr	e2	.64	72	0
-gpr	d2	.32	72	0
-gpr	d3	.32	76	0
-gpr	e4	.64	80	0
-gpr	d4	.32	80	0
-gpr	d5	.32	84	0
-gpr	e6	.64	88	0
-gpr	d6	.32	88	0
-gpr	d7	.32	92	0
-gpr	e8	.64	96	0
-gpr	d8	.32	96	0
-gpr	d9	.32	100	0
-gpr	e10	.64	104	0
-gpr	d10	.32	104	0
-gpr	d11	.32	108	0
-gpr	e12	.64	112	0
-gpr	d12	.32	112	0
-gpr	d13	.32	114	0
-gpr	e14	.64	118	0
-gpr	d14	.32	118	0
-gpr	d15	.32	120	0
-gpr	PSW	.32	124	0
-gpr	PCXI	.32	128	0
-gpr	FCX	.32	132	0
-gpr	LCX	.32	136	0
-gpr	ISP	.32	140	0
-gpr	ICR	.32	144	0
-gpr	PIPN	.32	148	0
-gpr	BIV	.32	152	0
-gpr	BTV	.32	156	0
-gpr	pc	.32	160	0
+=PC     pc
+=SP     a10
+=BP     a11
+=A0     a4
+=A1     a5
+=A2     a6
+=A3     a7
+=SN     a0
+# General-Purpose Address Registers (A0 - A15)
+gpr     a0      .32     0       0
+gpr     a1      .32     4       0
+gpr     a2      .32     8       0
+gpr     a3      .32     12      0
+gpr     a4      .32     16      0
+gpr     a5      .32     20      0
+gpr     a6      .32     24      0
+gpr     a7      .32     28      0
+gpr     a8      .32     32      0
+gpr     a9      .32     36      0
+gpr     sp      .32     40      0
+gpr     a10     .32     40      0
+gpr     a11     .32     44      0
+gpr     a12     .32     48      0
+gpr     a13     .32     52      0
+gpr     a14     .32     56      0
+gpr     a15     .32     60      0
+# General-Purpose Data Registers (D0 - D15)
+gpr     e0      .64     64      0
+gpr     d0      .32     64      0
+gpr     d1      .32     68      0
+gpr     e2      .64     72      0
+gpr     d2      .32     72      0
+gpr     d3      .32     76      0
+gpr     e4      .64     80      0
+gpr     d4      .32     80      0
+gpr     d5      .32     84      0
+gpr     e6      .64     88      0
+gpr     d6      .32     88      0
+gpr     d7      .32     92      0
+gpr     e8      .64     96      0
+gpr     d8      .32     96      0
+gpr     d9      .32     100     0
+gpr     e10     .64     104     0
+gpr     d10     .32     104     0
+gpr     d11     .32     108     0
+gpr     e12     .64     112     0
+gpr     d12     .32     112     0
+gpr     d13     .32     116     0
+gpr     e14     .64     120     0
+gpr     d14     .32     120     0
+gpr     d15     .32     124     0
+# Special-Purpose Registers
+gpr     PSW     .32     128     0   # Program Status Word
+gpr     PCXI    .32     132     0   # Previous Context Information
+gpr     FCX     .32     136     0   # Free Context List Pointer
+gpr     LCX     .32     140     0   # Last Context Save Pointer
+gpr     ISP     .32     144     0   # Interrupt Stack Pointer
+gpr     ICR     .32     148     0   # Interrupt Control Register
+gpr     PIPN    .32     152     0   # Pending Interrupt Priority Number
+gpr     BIV     .32     156     0   # Base Interrupt Vector
+gpr     BTV     .32     160     0   # Base Trap Vector
+gpr     pc      .32     164     0   # Program Counter
+# System Control and Configuration Registers
+gpr     SYSCON  .32     168     0   # System Configuration Register
+gpr     DCON2   .32     172     0   # Debug Control Register 2
+gpr     CSP     .32     176     0   # Context Save Pointer
+gpr     MMUCON  .32     180     0   # Memory Management Unit Control
+gpr     CPU_ID  .32     184     0   # CPU Identification Register
+gpr     PSWEN   .32     188     0   # Program Status Word Enable Register
+gpr     CCUDR   .32     192     0   # Cache Control Unit Debug Register
+gpr     IECON   .32     196     0   # Interrupt Enable Configuration Register
+gpr     TRAPV   .32     200     0   # Trap Vector Register
+gpr     BBR     .32     204     0   # Base Boundary Register (Optional, depending on use)
+gpr     DBGSR   .32     208     0   # Debug Status Register (Optional, depending on use)
+gpr     PCON    .32     212     0   # Peripheral Control Register (Optional, depending on use)
 
 EOF
 RUN
@@ -132,26 +146,26 @@ EXPECT=<<EOF
             0x80000010      8c80           ld.h d15, [a8]0             ; load half word
             0x80000012      0000           nop                         ; nop operation
             0x80000014      85f12000       ld.w d1, 0xf0000020         ; load word
-            0x80000018      6f010400       jz.t d1, 0, 0x80000020      ; jump if zero bit
-            0x8000001c      5d006800       jl 0x800000ec               ; jump and link
-            0x80000020      910000ad       movh.a sp, 53248            ; move high to address
-            0x80000024      d9aa6000       lea sp, [sp]1056            ; load effective address
-            0x80000028      7b00000d       movh d0, 53248              ; move high
-            0x8000002c      1b008200       addi d0, d0, 2080           ; add immediate
-            0x80000030      cd80e20f       mtcr #0xfe28, d0            ; move to core register
-            0x80000034      0d00c004       isync                       ; synchronize instructions
-            0x80000038      7b000008       movh d0, 32768              ; move high
-            0x8000003c      1b003000       addi d0, d0, 768            ; add immediate
-            0x80000040      cd40e20f       mtcr #0xfe24, d0            ; move to core register
-            0x80000044      0d00c004       isync                       ; synchronize instructions
-            0x80000048      4d40e00f       mfcr d0, #0xfe04            ; move from core register
-            0x8000004c      8ff04701       or d0, d0, 127              ; bitwise or
-            0x80000050      8f00c801       andn d0, d0, 128
-            0x80000054      cd40e00f       mtcr #0xfe04, d0            ; move to core register
-            0x80000058      0d00c004       isync                       ; synchronize instructions
-            0x8000005c      4d40e00f       mfcr d0, #0xfe04            ; move from core register
-            0x80000060      8f005001       or d0, d0, 256              ; bitwise or
-            0x80000064      cd40e00f       mtcr #0xfe04, d0            ; move to core register
-            0x80000068      0d00c004       isync                       ; synchronize instructions
+        ,=< 0x80000018      6f010400       jz.t d1, 0, 0x80000020      ; jump if zero bit
+       ,==< 0x8000001c      5d006800       jl 0x800000ec               ; jump and link
+       |`-> 0x80000020      910000ad       movh.a sp, 0xd000           ; move high to address
+       |    0x80000024      d9aa6000       lea sp, [sp]0x420           ; load effective address
+       |    0x80000028      7b00000d       movh d0, 0xd000             ; move high
+       |    0x8000002c      1b008200       addi d0, d0, 0x820          ; add immediate
+       |    0x80000030      cd80e20f       mtcr #0xfe28, d0            ; move to core register
+       |    0x80000034      0d00c004       isync                       ; synchronize instructions
+       |    0x80000038      7b000008       movh d0, 0x8000             ; move high
+       |    0x8000003c      1b003000       addi d0, d0, 0x300          ; add immediate
+       |    0x80000040      cd40e20f       mtcr #0xfe24, d0            ; move to core register
+       |    0x80000044      0d00c004       isync                       ; synchronize instructions
+       |    0x80000048      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+       |    0x8000004c      8ff04701       or d0, d0, 127              ; bitwise or
+       |    0x80000050      8f00c801       andn d0, d0, 128
+       |    0x80000054      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+       |    0x80000058      0d00c004       isync                       ; synchronize instructions
+       |    0x8000005c      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+       |    0x80000060      8f005001       or d0, d0, 0x100            ; bitwise or
+       |    0x80000064      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+       |    0x80000068      0d00c004       isync                       ; synchronize instructions
 EOF
 RUN

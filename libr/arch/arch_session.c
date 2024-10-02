@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2023 - pancake */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake */
 
 #include <r_arch.h>
 

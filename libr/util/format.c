@@ -1278,7 +1278,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 }
 
 static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, int dot_nl) {
-	r_return_if_fail (p->strconv_mode);
+	R_RETURN_IF_FAIL (p->strconv_mode);
 	r_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
@@ -1466,7 +1466,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
-	r_return_if_fail (p && fmtname && fieldname);
+	R_RETURN_IF_FAIL (p && fmtname && fieldname);
 	if (size >= 8) {
 		// avoid shift overflow
 	} else {
@@ -1866,13 +1866,13 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			break;
 		case 'n':
 		case 'N':
-			if (fmt[i+1] == '1') {
+			if (fmt[i + 1] == '1') {
 				size += tabsize * 1;
-			} else if (fmt[i+1] == '2') {
+			} else if (fmt[i + 1] == '2') {
 				size += tabsize * 2;
-			} else if (fmt[i+1] == '4') {
+			} else if (fmt[i + 1] == '4') {
 				size += tabsize * 4;
-			} else if (fmt[i+1] == '8') {
+			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
 				R_LOG_ERROR ("Invalid n format in (%s)", fmt);
@@ -2096,7 +2096,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0) {
-		while (IS_DIGIT(*arg)) {
+		while (isdigit(*arg)) {
 			arg++;
 		}
 	}

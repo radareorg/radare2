@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include <r_lib.h>
+#define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
@@ -64,7 +65,7 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 static bool init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -111,6 +112,12 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	op->size = insn->size;
+	if (op->size > 1 && !memcmp (buf, "\x07\x07", 2)) {
+		// bcr 0, r7 -> used for padding
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 2;
+		return false;
+	}
 	switch (insn->id) {
 #if CS_API_MAJOR >= 5
 	case SYSZ_INS_SVC:
@@ -135,6 +142,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BRCL:
 	case SYSZ_INS_BRASL:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = INSOP (1).imm;
 		break;
 	case SYSZ_INS_LDR:
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -149,6 +157,63 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case SYSZ_INS_BR:
 		op->type = R_ANAL_OP_TYPE_RJMP;
+		break;
+	case SYSZ_INS_NGR:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case SYSZ_INS_AGR:
+	case SYSZ_INS_AGHI:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case SYSZ_INS_SGR:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case SYSZ_INS_SRAG:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		break;
+	case SYSZ_INS_SRLG:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
+	case SYSZ_INS_XC:
+	case SYSZ_INS_XG:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case SYSZ_INS_STMG:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case SYSZ_INS_BCR:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		break;
+	case SYSZ_INS_LARL: // absolute
+	case SYSZ_INS_LGRL: // relative
+		// Load Address Relative Long
+		op->type = R_ANAL_OP_TYPE_LEA;
+		op->ptr = INSOP (1).imm;
+		break;
+#if CS_VERSION_MAJOR >= 5
+	case SYSZ_INS_LAT: // lai
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
+#endif
+	case SYSZ_INS_CLI:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case SYSZ_INS_LHI:
+	case SYSZ_INS_LMG:
+	case SYSZ_INS_MVI:
+	case SYSZ_INS_LPGR:
+	case SYSZ_INS_LLCR:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+#if CS_VERSION_MAJOR >= 5
+	case SYSZ_INS_RISBGN:
+#endif
+	case SYSZ_INS_RISBG:
+		op->type = R_ANAL_OP_TYPE_ROR;
+		break;
+	case SYSZ_INS_ICY:
+	case SYSZ_INS_STC:
+		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
 	case SYSZ_INS_BRC:
 	case SYSZ_INS_BER:
@@ -170,35 +235,54 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case SYSZ_INS_BRCTG:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		break;
+	case SYSZ_INS_CLRJLE:
+	// case SYSZ_INS_CLRJGE:
+	case SYSZ_INS_CLRJE:
+	case SYSZ_INS_CLRJNE:
+	case SYSZ_INS_CLRJNLE:
+	case SYSZ_INS_CLRJNLH:
+	case SYSZ_INS_CLRJHE:
+	case SYSZ_INS_CLRJL:
+	case SYSZ_INS_CLRJLH:
+	case SYSZ_INS_CLGIJLE:
+	case SYSZ_INS_CLGIJH:
+	case SYSZ_INS_CGIJE:
+	case SYSZ_INS_CGRJE:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = INSOP (2).imm;
+		op->fail = addr + op->size;
+		break;
 	case SYSZ_INS_JE:
+#if CS_NEXT_VERSION < 6
 	case SYSZ_INS_JGE:
-	case SYSZ_INS_JHE:
 	case SYSZ_INS_JGHE:
-	case SYSZ_INS_JH:
 	case SYSZ_INS_JGH:
-	case SYSZ_INS_JLE:
 	case SYSZ_INS_JGLE:
-	case SYSZ_INS_JLH:
 	case SYSZ_INS_JGLH:
-	case SYSZ_INS_JL:
 	case SYSZ_INS_JGL:
-	case SYSZ_INS_JNE:
 	case SYSZ_INS_JGNE:
-	case SYSZ_INS_JNHE:
 	case SYSZ_INS_JGNHE:
-	case SYSZ_INS_JNH:
 	case SYSZ_INS_JGNH:
-	case SYSZ_INS_JNLE:
 	case SYSZ_INS_JGNLE:
-	case SYSZ_INS_JNLH:
 	case SYSZ_INS_JGNLH:
-	case SYSZ_INS_JNL:
 	case SYSZ_INS_JGNL:
-	case SYSZ_INS_JNO:
 	case SYSZ_INS_JGNO:
-	case SYSZ_INS_JO:
 	case SYSZ_INS_JGO:
 	case SYSZ_INS_JG:
+#endif
+	case SYSZ_INS_JHE:
+	case SYSZ_INS_JH:
+	case SYSZ_INS_JLE:
+	case SYSZ_INS_JLH:
+	case SYSZ_INS_JL:
+	case SYSZ_INS_JNE:
+	case SYSZ_INS_JNHE:
+	case SYSZ_INS_JNH:
+	case SYSZ_INS_JNLE:
+	case SYSZ_INS_JNLH:
+	case SYSZ_INS_JNL:
+	case SYSZ_INS_JNO:
+	case SYSZ_INS_JO:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = INSOP (0).imm;
 		op->fail = addr + op->size;
@@ -260,25 +344,32 @@ static char *regs(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 6;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
 	}
 	return 2;
 }
 
 static bool fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (s->data);
 	return true;
 }
 
+static RList *preludes(RArchSession *as) {
+	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
+	RList *l = r_list_newf (free);
+	r_list_append (l, strdup ("c010000104")); // imports -- some false positives
+	r_list_append (l, strdup ("eb6ff03000")); // stgm
+	return l;
+}
 const RArchPlugin r_arch_plugin_s390_cs = {
 	.meta = {
 		.name = "s390",
@@ -288,9 +379,10 @@ const RArchPlugin r_arch_plugin_s390_cs = {
 	},
 	.arch = "s390",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
-	.decode = &decode,
+	.decode = decode,
 	.info = archinfo,
-	.regs = &regs,
+	.regs = regs,
+	.preludes = preludes,
 	.mnemonics = mnemonics,
 	.init = init,
 	.fini = fini

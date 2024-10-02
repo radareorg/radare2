@@ -1,0 +1,137 @@
+NAME=random39855 relocs
+FILE=bins/elf/random_39855/random_39855.oo
+CMDS=<<EOF
+s sym.func_9
+e asm.var.summary=0
+e emu.str=true
+af
+pd 20
+EOF
+EXPECT=<<EOF
+/ 628: sym.func_9 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg_120h);
+|           ; arg int64_t arg1 @ x0
+|           ; arg int64_t arg2 @ x1
+|           ; arg int64_t arg3 @ x2
+|           ; arg int64_t arg4 @ x3
+|           ; arg int64_t arg5 @ x4
+|           ; arg int64_t arg_120h @ sp+0x240
+|           ; var int64_t var_ch @ sp+0xc
+|           ; var int64_t var_10h @ sp+0x10
+|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_1ch @ sp+0x1c
+|           ; var int64_t var_20h @ sp+0x20
+|           ; var int64_t var_28h @ sp+0x28
+|           ; var int64_t var_40h @ sp+0x40
+|           ; var int64_t var_4fh @ sp+0x4f
+|           ; var int64_t var_50h @ sp+0x50
+|           ; var int64_t var_5ch @ sp+0x5c
+|           ; var int64_t var_90h @ sp+0x90
+|           ; var int64_t var_100h @ sp+0x100
+|           ; var int64_t var_110h @ sp+0x110
+|           0x08000800      ff8304d1       sub sp, sp, 0x120
+|           0x08000804      fd7b10a9       stp x29, x30, [var_100h]
+|           0x08000808      fc8b00f9       str x28, [var_110h]
+|           0x0800080c      fd030491       add x29, sp, 0x100
+|           0x08000810      a92301d1       sub x9, x29, 0x48
+|           0x08000814      e91300f9       str x9, [var_20h]
+|           0x08000818      e90308aa       mov x9, x8
+|           0x0800081c      e81340f9       ldr x8, [var_20h]
+|           0x08000820      e21700f9       str x2, [var_28h]           ; arg3
+|           0x08000824      002100f9       str x0, [x8, 0x40]          ; arg1
+|           0x08000828      011d00f9       str x1, [x8, 0x38]          ; arg2
+|           0x0800082c      031900f9       str x3, [x8, 0x30]          ; arg4
+|           0x08000830      041500f9       str x4, [x8, 0x28]          ; arg5
+|           0x08000834      08000090       adrp x8, segment.ehdr       ; 0x8000000; RELOC 32 .rodata @ 0x080057f8 + 0x18
+|           0x08000838      08010091       add x8, x8, 0               ; RELOC 32 .rodata @ 0x080057f8 + 0x18 ; segment.ehdr
+|           0x0800083c      0001c03d       ldr q0, [x8]                ; segment.ehdr
+|           0x08000840      2001803d       str q0, [x9]
+|           0x08000844      080940f9       ldr x8, [x8, 0x10]
+|           0x08000848      280900f9       str x8, [x9, 0x10]
+|           0x0800084c      5f0000b9       str wzr, [x2]               ; arg3
+EOF
+EXPECT_ERR=<<EOF
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000074
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080000a0
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000168
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000200
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000750
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000834
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000874
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000ae4
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08000b00
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001568
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001574
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001bec
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08001c0c
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002254
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002274
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002298
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080022bc
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08002830
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x0800283c
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08003444
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080037dc
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x08003974
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080039a4
+WARN: Poorly supported AARCH64 instruction reloc type 275 at 0x080039d8
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
+RUN
+
+NAME=random39855 relocs bin
+FILE=bins/elf/random_39855/random_39855
+CMDS=<<EOF
+e asm.var.summary=0
+e emu.str=true
+s sym.func_9
+af
+pd 20
+pxq 8 @ str.O_n_
+EOF
+EXPECT=<<EOF
+/ 628: sym.func_9 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg_120h);
+|           ; arg int64_t arg1 @ x0
+|           ; arg int64_t arg2 @ x1
+|           ; arg int64_t arg3 @ x2
+|           ; arg int64_t arg4 @ x3
+|           ; arg int64_t arg5 @ x4
+|           ; arg int64_t arg_120h @ sp+0x240
+|           ; var int64_t var_ch @ sp+0xc
+|           ; var int64_t var_10h @ sp+0x10
+|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_1ch @ sp+0x1c
+|           ; var int64_t var_20h @ sp+0x20
+|           ; var int64_t var_28h @ sp+0x28
+|           ; var int64_t var_40h @ sp+0x40
+|           ; var int64_t var_4fh @ sp+0x4f
+|           ; var int64_t var_50h @ sp+0x50
+|           ; var int64_t var_5ch @ sp+0x5c
+|           ; var int64_t var_90h @ sp+0x90
+|           ; var int64_t var_100h @ sp+0x100
+|           ; var int64_t var_110h @ sp+0x110
+|           0x00000f94      ff8304d1       sub sp, sp, 0x120
+|           0x00000f98      fd7b10a9       stp x29, x30, [var_100h]
+|           0x00000f9c      fc8b00f9       str x28, [var_110h]
+|           0x00000fa0      fd030491       add x29, sp, 0x100
+|           0x00000fa4      a92301d1       sub x9, x29, 0x48
+|           0x00000fa8      e91300f9       str x9, [var_20h]
+|           0x00000fac      e90308aa       mov x9, x8
+|           0x00000fb0      e81340f9       ldr x8, [var_20h]
+|           0x00000fb4      e21700f9       str x2, [var_28h]           ; arg3
+|           0x00000fb8      002100f9       str x0, [x8, 0x40]          ; arg1
+|           0x00000fbc      011d00f9       str x1, [x8, 0x38]          ; arg2
+|           0x00000fc0      031900f9       str x3, [x8, 0x30]          ; arg4
+|           0x00000fc4      041500f9       str x4, [x8, 0x28]          ; arg5
+|           0x00000fc8      280000b0       adrp x8, 0x5000
+|           0x00000fcc      08e13e91       add x8, x8, 0xfb8           ; str.O_n_
+|           0x00000fd0      0001c03d       ldr q0, [x8]                ; str.O_n_
+|           0x00000fd4      2001803d       str q0, [x9]
+|           0x00000fd8      080940f9       ldr x8, [x8, 0x10]
+|           0x00000fdc      280900f9       str x8, [x9, 0x10]
+|           0x00000fe0      5f0000b9       str wzr, [x2]               ; arg3
+0x00005fb8  0x5a8a51be3e7c0a4f                       O.|>.Q.Z
+EOF
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
+RUN

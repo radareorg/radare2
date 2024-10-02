@@ -42,6 +42,7 @@ all:
 		| grep -v bindings \
 		| grep -v tests \
 		| sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
+	rm -rf $(R2V)/.git ; \
 	rm -rf $(R2V)/shlr/capstone/.[a-z]* ; \
 	${TAR} "radare2-${VERSION}.tar" $${V64_FILS} $${V32_FILS} $${R2_FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
 	${CZ} "radare2-${VERSION}.tar"

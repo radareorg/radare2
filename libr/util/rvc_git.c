@@ -23,7 +23,7 @@ static Rvc *open_git(const char *path) {
 	if (!vc) {
 		return NULL;
 	}
-	vc->path = r_str_new (path);
+	vc->path = strdup (path);
 	if (!vc->path) {
 		free (vc);
 		return NULL;
@@ -138,12 +138,12 @@ static bool commit_git(Rvc *vc, const char *_message, const char *author, const 
 
 #if 0
 R_API RList *rvc_git_get_branches(Rvc *rvc) {
-	r_return_val_if_fail (rvc, NULL);
+	R_RETURN_VAL_IF_FAIL (rvc, NULL);
 	return rvc->p->get_branches (rvc);
 }
 
 static bool XXX_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
-	r_return_val_if_fail (rvc && message && author && files, false);
+	R_RETURN_VAL_IF_FAIL (rvc && message && author && files, false);
 	if (rvc->p->type == RVC_TYPE_RVC) {
 #if 0
 		author = author? author : r_config_get (core->config, "cfg.user");
@@ -182,7 +182,7 @@ R_API RList *branches_git(Rvc *rvc) {
 			char *name;
 			r_list_foreach (ret, iter, name) {
 				if (*(char *)iter->data == '*') {
-					iter->data = r_str_new (name + 2);
+					iter->data = strdup (name + 2);
 					free (name);
 				}
 

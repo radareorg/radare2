@@ -110,8 +110,16 @@ loongarch_decode_imm (const char *bit_field, insn_t insn, int si)
 
   if (si)
     {
-      ret <<= sizeof (ret) * 8 - len;
-      ret >>= sizeof (ret) * 8 - len;
+      int sv0 = sizeof (ret) * 8;
+      if (sv0 > len) {
+        sv0 -= len;
+        uint32_t temp = (uint32_t) ret;
+        uint32_t mask = UT32_MAX >> sv0;
+        temp = temp & mask;
+        uint32_t shifted = temp << sv0;
+        int32_t result = (int32_t)shifted;
+        ret = result >> sv0;
+      }
     }
   return ret;
 }

@@ -1,13 +1,10 @@
-/* radare - LGPL - Copyright 2015-2018 - Dax89, pancake */
+/* radare - LGPL - Copyright 2015-2023 - Dax89, pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[PSXEXE_ID_LEN];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == PSXEXE_ID_LEN) {
 		return !memcmp (magic, PSXEXE_ID, PSXEXE_ID_LEN);
@@ -15,8 +12,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static RBinInfo* info(RBinFile* bf) {
@@ -113,11 +110,13 @@ static RList* strings(RBinFile* bf) {
 }
 
 RBinPlugin r_bin_plugin_psxexe = {
-	.name = "psxexe",
-	.desc = "Sony PlayStation 1 Executable",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "psxexe",
+		.desc = "Sony PlayStation 1 Executable",
+		.license = "LGPL3",
+	},
+	.load = &load,
+	.check = &check,
 	.info = &info,
 	.sections = &sections,
 	.entries = &entries,

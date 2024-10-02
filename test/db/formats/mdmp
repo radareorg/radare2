@@ -203,7 +203,7 @@ NAME=: 32bit - relocs resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ir~__dllonexit
 EXPECT=<<EOF
-0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
+0x00406160 0x0009dd32 SET_32 0     msvcrt.dll___dllonexit
 EOF
 RUN
 
@@ -231,7 +231,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10261
+10229
 EOF
 RUN
 
@@ -336,7 +336,7 @@ NAME=: 64bit - relocs resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ir~KERNEL32.dll_DeleteCriticalSection
 EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
+0x004081fc    0x0009ae8b SET_64 0     KERNEL32.dll_DeleteCriticalSection
 EOF
 RUN
 
@@ -349,7 +349,7 @@ EXPECT=<<EOF
             0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
             0x7fefdb0a1ad      4c8bc2         mov r8, rdx
             0x7fefdb0a1b0      488bd1         mov rdx, rcx
-            0x7fefdb0a1b3      488d0dea7ffa.  lea rcx, [0x7fefdab21a4]
+            0x7fefdb0a1b3      488d0dea7f..   lea rcx, [0x7fefdab21a4]
             0x7fefdb0a1ba      4533c9         xor r9d, r9d
             0x7fefdb0a1bd      e87efdffff     call 0x7fefdb09f40
             0x7fefdb0a1c2      4883c438       add rsp, 0x38
@@ -599,7 +599,7 @@ RUN
 NAME=: reload file
 FILE=bins/mdmp/calc.dmp
 CMDS=<<EOF
-ib
+ooi
 ?e ok
 EOF
 EXPECT=<<EOF

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #define R_LOG_ORIGIN "util.num"
 
@@ -33,9 +33,9 @@ R_API size_t r_num_bit_clz32(ut32 val) { // CLZ
 }
 
 R_API size_t r_num_bit_clz64(ut64 val) { // CLZ
-	val = val - ((val >> 1) & 0x5555555555555555);
-	val = (val & 0x3333333333333333) + ((val >> 2) & 0x3333333333333333);
-	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 24;
+	val = val - ((val >> 1) & 0x5555555555555555ULL);
+	val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
+	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0FULL) * 0x0101010101010101ULL) >> 24;
 }
 
 R_API size_t r_num_bit_count(ut32 val) { // CLZ
@@ -163,6 +163,7 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 }
 
 R_API const char *r_num_get_name(RNum *num, ut64 n) {
+	R_RETURN_VAL_IF_FAIL (num, NULL);
 	if (num->cb_from_value) {
 		int ok = 0;
 		const char *msg = num->cb_from_value (num, n, &ok);
@@ -176,7 +177,7 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
-static void error(RNum *num, const char *err_str) {
+static void error(R_NULLABLE RNum *num, const char *err_str) {
 	if (num) {
 		if (err_str) {
 			num->nc.errors++;
@@ -233,7 +234,7 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-R_API ut64 r_num_get(RNum *num, const char *str) {
+R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 	int i, j, ok;
 	char lch, len;
 	ut64 ret = 0LL;
@@ -333,7 +334,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		int chars_read = len_num;
 		bool zero_read = false;
 		lch = str[len > 0 ? len - 1 : 0];
-		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
+		if (*str == '0' && isdigit (*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
 			len_num++;
 		}
@@ -450,7 +451,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str)) {
+			if (!isdigit (*str)) {
 				error (num, "unknown symbol");
 			}
 			break;
@@ -475,10 +476,10 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 }
 
 R_API int r_num_is_float(RNum *num, const char *str) {
-	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
+	return (isdigit (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
-R_API double r_num_get_float(RNum *num, const char *str) {
+R_API double r_num_get_double(RNum *num, const char *str) {
 	double d = 0.0f;
 	(void) sscanf (str, "%lf", &d);
 	return d;
@@ -545,7 +546,7 @@ R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize) {
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
-R_API int r_num_conditional(RNum *num, const char *str) {
+R_API int r_num_conditional(R_NULLABLE RNum *num, const char *str) {
 	char *lgt, *t, *p, *s = strdup (str);
 	int res = 0;
 	ut64 n, a, b;
@@ -623,7 +624,7 @@ R_API int r_num_is_valid_input(RNum *num, const char *input_value) {
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
-R_API ut64 r_num_get_input_value(RNum *num, const char *input_value) {
+R_API ut64 r_num_get_input_value(R_NULLABLE RNum *num, const char *input_value) {
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return value;
 }
@@ -636,7 +637,8 @@ static int escape_char(char* dst, char byte) {
 		*(dst++) = escape_map [byte - 7];
 		*dst = 0;
 		return 2;
-	} else if (byte) {
+	}
+	if (byte) {
 		*(dst++) = '\\';
 		*(dst++) = 'x';
 		*(dst++) = NIBBLE_TO_HEX (byte >> 4);
@@ -677,7 +679,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	return NULL;
 }
 
-R_API bool r_is_valid_input_num_value(RNum *num, const char *input_value) {
+R_API bool r_is_valid_input_num_value(R_NULLABLE RNum *num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}
@@ -898,7 +900,7 @@ R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
 
 // wont work for 64bit but thats by design
 R_API char *r_num_list_join(RList *str, const char *sep) {
-	r_return_val_if_fail (str && sep, NULL);
+	R_RETURN_VAL_IF_FAIL (str && sep, NULL);
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach_iter (str, iter) {

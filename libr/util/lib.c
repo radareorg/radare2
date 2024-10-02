@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
@@ -35,7 +35,11 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if R2__UNIX__
 	if (libname) {
 #if __linux__
-		ret = dlopen (libname, RTLD_NOW);
+		if (strstr (libname, "python")) {
+			ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+		} else {
+			ret = dlopen (libname, RTLD_NOW);
+		}
 #endif
 		if (!ret) {
 			ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
@@ -160,7 +164,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	if (lib) {
 		// __has_debug = r_sys_getenv_asbool ("R2_DEBUG"); /// XXX just use loglevel
 		if (r_sys_getenv_asbool ("R2_DEBUG")) {
-			r_log_set_level (R_LOGLVL_DEBUG);
+			r_log_set_level (R_LOG_LEVEL_DEBUG);
 		}
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
@@ -181,6 +185,7 @@ R_API void r_lib_free(RLib *lib) {
 		r_lib_close (lib, NULL);
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
+		ht_pp_free(lib->plugins_ht);
 		free (lib->symname);
 		free (lib->symnamefunc);
 		free (lib);
@@ -193,12 +198,15 @@ static bool __lib_dl_check_filename(const char *file) {
 
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
-	if (h && h->constructor) {
-		R_LOG_DEBUG ("PLUGIN LOADED %p fcn %p", h, h->constructor);
-		return h->constructor (plugin, h->user, symbol->data);
+	if (h) {
+		if (h->constructor) {
+			R_LOG_DEBUG ("PLUGIN %s LOADED %p fcn %p", h->desc, h, h->constructor);
+			return h->constructor (plugin, h->user, symbol->data);
+		}
+		R_LOG_DEBUG ("Cannot find plugin constructor");
+		return -1;
 	}
-	R_LOG_DEBUG ("Cannot find plugin constructor");
-	return -1;
+	return 0;
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
@@ -331,7 +339,7 @@ char *major_minor(const char *s) {
 }
 
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
-	r_return_val_if_fail (lib && file && stru, -1);
+	R_RETURN_VAL_IF_FAIL (lib && file && stru, -1);
 	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
@@ -363,9 +371,10 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
+	// TODO: this should be bool
 	int ret = r_lib_run_handler (lib, p, stru);
 	if (ret == -1) {
-		R_LOG_ERROR ("Library handler has failed for '%s'", file);
+		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
@@ -373,7 +382,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		r_list_append (lib->plugins, p);
 		const char *fileName = r_str_rstr (file, R_SYS_DIR);
 		if (fileName) {
-			ht_pp_insert (lib->plugins_ht, strdup (fileName), p);
+			ht_pp_insert (lib->plugins_ht, strdup (fileName + 1), p);
 		}
 	}
 	return ret;
@@ -381,7 +390,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 
 R_API bool r_lib_opendir(RLib *lib, const char *path) {
 #if WANT_DYLINK
-	r_return_val_if_fail (lib && path, false);
+	R_RETURN_VAL_IF_FAIL (lib && path, false);
 #ifdef R2_LIBR_PLUGINS
 	if (!path) {
 		path = R2_LIBR_PLUGINS;
@@ -440,7 +449,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
-			R_LOG_DEBUG ("Cannot open %s", file);
+			R_LOG_DEBUG ("Skip/Ignore %s", file);
 		}
 	}
 	closedir (dh);
@@ -451,7 +460,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 
 #define LibCB RLibLifeCycleCallback
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, LibCB cb, LibCB dt, void *user) {
-	r_return_val_if_fail (lib && desc, false);
+	R_RETURN_VAL_IF_FAIL (lib && desc, false);
 	// TODO r2_590 resolve using lib->handlers_ht
 	RLibHandler *handler = NULL;
 	if (lib->handlers_bytype[type]) {

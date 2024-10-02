@@ -11,8 +11,8 @@ s..5343
 pd 30~(
 EOF
 EXPECT=<<EOF
-     call sym.imp.listxattr ; sym.imp.listxattr(0x0, 0x0, 0x0, 0x0)
- ; void *reallocf(-1, -1)
+ ; int listxattr(0, 0, 0, 0)
+ ; void *reallocf(-1, 0)
      call sym.imp.getxattr ; sym.imp.getxattr(-1, -1, 0x0, 0x0)
  ; size_t strlen(-1)
 EOF
@@ -29,8 +29,8 @@ wx 48ba306c5f666c34670a
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      48b974686973.  movabs rcx, 0x3030635f73696874 ; 'this_c00'
-            0x00000000      48ba306c5f66.  movabs rdx, 0xa67346c665f6c30 ; '0l_fl4g\n'
+            0x00000000      48b9746869..   movabs rcx, 0x3030635f73696874 ; 'this_c00'
+            0x00000000      48ba306c5f..   movabs rdx, 0xa67346c665f6c30 ; '0l_fl4g\n'
 EOF
 RUN
 
@@ -49,7 +49,7 @@ EOF
 EXPECT=<<EOF
 ---- test strings in calls
             0x100003b00      940e0094       bl sym.imp.compat_mode
-                                                                       ; bool compat_mode(-1, -1)
+                                                                       ; bool compat_mode(0, 0)
 ---- test strings in stores
             0x100003b58      560000b0       adrp x22, segment.__DATA   ; 0x10000c000
             0x100003b5c      c80200b9       str w8, [x22]              ; U"P.\uc004\x01" segment.__DATA
@@ -66,15 +66,15 @@ ir~61e8
 EOF
 EXPECT=<<EOF
             0x100016c40      81000090       adrp x1, 0x100026000
-            0x100016c44      217c40f9       ldr x1, [x1, 0xf8]         ; 0xdb ; 219 ; str.firstObject
+            0x100016c44      217c40f9       ldr x1, [x1, 0xf8]         ; (pstr 0x10001bf52) "firstObject" ; str.firstObject
             0x100016c48      510000d0       adrp x17, reloc.CFDictionaryGetTypeID ; 0x100020000
             0x100016c4c      31020791       add x17, x17, 0x1c0        ; reloc.objc_msgSend
-            0x100016c50      300240f9       ldr x16, [x17]             ; 0xeb ; 235 ; reloc.objc_msgSend
+            0x100016c50      300240f9       ldr x16, [x17]             ; reloc.objc_msgSend
             0x100016c54      110a1fd7       braa x16, x17
             0x100016c58      200020d4       brk 1
             0x100016c5c      200020d4       brk 1
             0x100016c60      81000090       adrp x1, 0x100026000
-            0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; 0xdb ; 219 ; str.generalPasteboard
+            0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; (pstr 0x10001bc6c) "generalPasteboard" ; str.generalPasteboard
 0x000000010001c6e8
 EOF
 RUN
@@ -90,15 +90,15 @@ ir~61e8
 EOF
 EXPECT=<<EOF
             0x100016c40      81000090       adrp x1, 0x100026000
-            0x100016c44      217c40f9       ldr x1, [x1, 0xf8]         ; 0xdb ; 219
+            0x100016c44      217c40f9       ldr x1, [x1, 0xf8]
             0x100016c48      510000d0       adrp x17, reloc.CFDictionaryGetTypeID ; 0x100020000
             0x100016c4c      31020791       add x17, x17, 0x1c0        ; "8" reloc.objc_msgSend
-            0x100016c50      300240f9       ldr x16, [x17]             ; 0xeb ; 235 ; reloc.objc_msgSend
+            0x100016c50      300240f9       ldr x16, [x17]             ; "8" reloc.objc_msgSend
             0x100016c54      110a1fd7       braa x16, x17
             0x100016c58      200020d4       brk 1
             0x100016c5c      200020d4       brk 1
             0x100016c60      81000090       adrp x1, 0x100026000
-            0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; 0xdb ; 219
+            0x100016c64      218040f9       ldr x1, [x1, 0x100]
 0x000800010001c6e8
 EOF
 RUN

@@ -1,15 +1,17 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, DennisGoodlett */
+/* radare - LGPL - Copyright 2009-2024 - pancake, DennisGoodlett */
 
 #define R_LOG_ORIGIN "rasign2"
 
 #include <r_main.h>
 #include <r_core.h>
 
-struct rasignconf {
-	const char *ofile, *space;
+typedef struct {
+	const char *ofile;
+	const char *space;
+	const char *script;
 	size_t a_cnt;
-	bool merge, sdb, ar, rad, quiet, json, flirt, collision;
-};
+	bool merge, sdb, ar, rad, quiet, json, flirt, collision, show_version;
+} RasignOptions;
 
 static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
@@ -18,6 +20,7 @@ static void rasign_show_help(void) {
 		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
 		" -h               help menu\n"
 		" -j               show signatures in json\n"
+		" -i script.r2     execute this script in the \n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
 		" -q               quiet mode\n"
 		" -r               show output in radare commands\n"
@@ -71,16 +74,20 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
-static int inline output(RAnal *anal, struct rasignconf *conf) {
+static int inline output(RCore *core, RasignOptions *conf) {
+	RAnal *anal = core->anal;
 	if (conf->collision) {
 		r_sign_resolve_collisions (anal);
 	}
+	ut64 oaddr = core->offset; // R2_600 - r_sign_list should take addr as arg
+	core->offset = UT64_MAX;
 	if (conf->rad) {
 		r_sign_list (anal, '*');
 	}
 	if (conf->json) {
 		r_sign_list (anal, 'j');
 	}
+	core->offset = oaddr;
 	// write sigs to file
 	if (conf->ofile && !r_sign_save (anal, conf->ofile)) {
 		R_LOG_ERROR ("Failed to write file");
@@ -90,7 +97,7 @@ static int inline output(RAnal *anal, struct rasignconf *conf) {
 	return 0;
 }
 
-static int handle_sdb(const char *fname, struct rasignconf *conf) {
+static int handle_sdb(const char *fname, RasignOptions *conf) {
 	int ret = -1;
 	// can't use RAnal here because JSON output requires core, in a sneaky way
 	RCore *core = r_core_new ();
@@ -105,13 +112,13 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
-		ret = output (core->anal, conf);
+		ret = output (core, conf);
 	}
 	r_core_free (core);
 	return ret;
 }
 
-static int signs_from_file(const char *fname, struct rasignconf *conf) {
+static int signs_from_file(const char *fname, RasignOptions *conf) {
 	RCore *core = opencore (fname);
 	if (!core) {
 		R_LOG_ERROR ("Could not get core");
@@ -124,22 +131,28 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 	if (conf->space) {
 		r_spaces_set (&core->anal->zign_spaces, conf->space);
 	}
-	if (conf->ofile && r_file_exists (conf->ofile)) {
-		r_sign_load (core->anal, conf->ofile, true);
+	if (conf->ofile) {
+		if (r_file_exists (conf->ofile)) {
+			r_sign_load (core->anal, conf->ofile, true);
+		} else {
+			R_LOG_ERROR ("Cannot load signature file %s", conf->ofile);
+		}
 	}
-
+	if (conf->script) {
+		r_core_run_script (core, conf->script);
+	}
 	// run analysis to find functions
 	find_functions (core, conf->a_cnt);
 	// create zignatures
 	r_sign_all_functions (core->anal, conf->merge);
 
-	int ret = output (core->anal, conf);
+	int ret = output (core, conf);
 	r_core_free (core);
 	return ret;
 }
 
 static RList *get_ar_file_uris(const char *fname) {
-	r_return_val_if_fail (fname, NULL);
+	R_RETURN_VAL_IF_FAIL (fname, NULL);
 	RIO *io = r_io_new ();
 	// core is only used to to list uri's in archive, then it's free'd
 	if (!io) {
@@ -187,7 +200,7 @@ static int dump_flirt(const char *ifile) {
 	return 0;
 }
 
-static int handle_archive_files(const char *fname, struct rasignconf *conf) {
+static int handle_archive_files(const char *fname, RasignOptions *conf) {
 	RList *uris = get_ar_file_uris (fname);
 	if (!uris) {
 		return -1;
@@ -235,13 +248,16 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 R_API int r_main_rasign2(int argc, const char **argv) {
 	int c;
 	RGetopt opt;
-	struct rasignconf conf = {0};
+	RasignOptions conf = {0};
 
-	r_getopt_init (&opt, argc, argv, "Aafhjmo:qrSs:cv");
+	r_getopt_init (&opt, argc, argv, "Aafhjmo:qrSs:cvi:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			conf.ar = true;
+			break;
+		case 'i':
+			conf.script = opt.arg;
 			break;
 		case 'A':
 			conf.a_cnt++;
@@ -274,7 +290,8 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			conf.flirt = true;
 			break;
 		case 'v':
-			return r_main_version_print ("rasign2");
+			conf.show_version = true;
+			break;
 		case 'h':
 			rasign_show_help ();
 			return 0;
@@ -282,6 +299,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			rasign_show_help ();
 			return -1;
 		}
+	}
+	if (conf.show_version) {
+		int mode = conf.quiet? 'q': 0;
+		return r_main_version_print ("rasign2", mode);
 	}
 
 	if (conf.a_cnt > 2) {

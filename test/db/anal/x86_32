@@ -250,7 +250,10 @@ RUN
 
 NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
-CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
+CMDS=<<EOF
+e asm.var.summary=0
+aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
+EOF
 EXPECT=<<EOF
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; arg int32_t arg1 @ ecx
@@ -476,7 +479,7 @@ s 0x00402ade
 pd 4~printf
 EOF
 EXPECT=<<EOF
-  0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
+  0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; [0x00177ff8:4] = 0x402aee ; eip=0x2d08 reloc.msvcrt.dll_printf
                     ; int printf("  - RT_MANIFEST resource located\n")
 EOF
 RUN
@@ -1487,7 +1490,7 @@ RUN
 
 NAME=resolve reloc symbols 2
 FILE=bins/elf/libc.so.6
-CMDS=ir~0x[3]
+CMDS=ir~0x[4]
 EXPECT=<<EOF
 0x001bf3c0
 _res
@@ -2652,6 +2655,16 @@ ifunc_89210
 ifunc_8a9d0
 ifunc_89840
 ifunc_8a6c0
+0x00000038
+0x00000030
+0x00000050
+0x00000040
+0x00000048
+0x00000058
+0x00000060
+0x00000078
+0x00000080
+0x00000088
 stderr
 error_one_per_line
 realloc
@@ -2664,6 +2677,7 @@ __ctype32_tolower
 _rtld_global
 __progname
 argp_err_exit_status
+0x00000028
 mallwatch
 __rcmd_errstr
 __libc_enable_secure
@@ -2677,9 +2691,11 @@ __timezone
 ifunc_a4800
 memalign
 _dl_exception_create
+0x00000074
 _rtld_global_ro
 __malloc_initialize_hook
 ifunc_90b10
+0x00000010
 optarg
 __ctype_tolower
 __ctype_toupper
@@ -2697,6 +2713,7 @@ ifunc_a5f90
 ifunc_8ab70
 __daylight
 __memalign_hook
+0x00000020
 __malloc_hook
 __free_hook
 _nl_domain_bindings
@@ -2706,6 +2723,7 @@ _dl_find_dso_for_object
 argp_program_bug_address
 __key_decryptsession_pk_LOCAL
 h_errlist
+0x00000018
 program_invocation_short_name
 calloc
 optind
@@ -2731,6 +2749,7 @@ opterr
 __ctype32_toupper
 __realloc_hook
 _dl_argv
+0x00000008
 0x00183fe9
 0x00183f44
 0x00183f54
@@ -3047,8 +3066,7 @@ afF
 agf
 EOF
 EXPECT=<<EOF
-[0x00000000]>  # test ();
- --------------------------.
+.--------------------------.
 |  0x0                     |
 | / (fcn) test             |
 | (6 byte folded function) |
@@ -3171,7 +3189,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "push ()",
+    "pseudo": "push (cpuflags)",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ffff",
@@ -3207,7 +3225,8 @@ RUN
 NAME=reflines offset
 FILE=malloc://1023
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
+e asm.var.summary=0
 e asm.bits=32
 e asm.cpu=x86
 e asm.arch=x86
@@ -3271,7 +3290,8 @@ RUN
 NAME=reflines offset (ascii)
 FILE=malloc://1023
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
+e asm.var.summary=0
 e asm.bits=32
 e asm.cpu=x86
 e anal.cpu=x86
@@ -3351,10 +3371,11 @@ NAME=afva for esp based vars
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
+e asm.var.summary=0
 e asm.arch = x86
 e anal.arch = x86
 e anal.vars.stackname=true
-e asm.calls=false
+e asm.cmt.calls=false
 wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
 e asm.bits=32
 e asm.comments=false
@@ -3417,12 +3438,11 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-16
+15
 address: 0x0
 opcode: nop
 esilcost: 0
 disasm: nop
-pseudo: no
 mnemonic: nop
 description: no operation
 mask: ff
@@ -3561,6 +3581,7 @@ EXPECT=<<EOF
 |           0x08048056      xor eax, eax
 |           0x08048058      inc eax
 |           ;-- syscall.exit:
+|           ;-- syscall.exit.0:
 \           0x08048059      int 0x80
 EOF
 RUN
@@ -3593,7 +3614,7 @@ e asm.bits=32
 e io.cache=true
 $orig_end=?e `om,va_end/cols~[0]:3`
 omr 1 `om,size/cols~[0]:3`+2
-s `$orig_end`
+s `$orig_end`+1
 wa jmp entry0
 aF
 aae
@@ -3602,8 +3623,7 @@ agf
 afl
 EOF
 EXPECT=<<EOF
-[0x0804805b]>  # fcn.0804805b ();
- ----.
+.----.
 |    |
 |.----------------------------------------------.
 ||  0x8048054                                   |

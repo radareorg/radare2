@@ -67,14 +67,14 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 				nerd = ptr;
 				str = ptr + 1;
 			}
-			if (nerd && *nerd) {
+			if (R_STR_ISNOTEMPTY (nerd)) {
 				*nerd = 0;
 				if (bf) {
 					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);
 					if (sym) {
 						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
 							if (bf && bf->rbin && bf->rbin->verbose) {
-								eprintf ("Dupped method found: %s\n", sym->name);
+								R_LOG_WARN ("Dupped method found: %s", r_bin_name_tostring (sym->name));
 							}
 						}
 						if (sym->vaddr == 0) {

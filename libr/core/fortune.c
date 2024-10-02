@@ -1,18 +1,17 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake, condret */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake, condret */
 
 #include <r_core.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
+	r_strf_var (fname, 64, "fortunes.%s", type);
 	char *fortunedir = r_xdg_datadir ("fortunes");
-	char *path = r_str_newf (R_JOIN_2_PATHS ("%s", "fortunes.%s"),
-		fortunedir, type);
+	char *path = r_file_new (fortunedir, fname, NULL);
 	free (fortunedir);
 	if (path && r_file_exists (path)) {
 		return path;
 	}
 	free (path);
-	path = r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
-		r_sys_prefix (NULL), type);
+	path = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, fname, NULL);
 	if (path && r_file_exists (path)) {
 		return path;
 	}
@@ -29,19 +28,19 @@ static bool _push_types(RList *type_list, char *fortune_dir) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_push (type_list, r_str_new (file + 9));
+			r_list_push (type_list, strdup (file + 9));
 		}
 	}
 	r_list_free (files);
 	return true;
 }
 
-R_IPI RList *r_core_fortune_types(void) {	// R_API 5.8
+R_IPI RList *r_core_fortune_types(void) {
 	RList *types = r_list_newf (free);
 	if (!types) {
 		return NULL;
 	}
-	char *fortune_dir = r_str_newf (R_JOIN_2_PATHS ("%s", R2_FORTUNES), r_sys_prefix (NULL));
+	char *fortune_dir = r_file_new (r_sys_prefix (NULL), R2_FORTUNES, NULL);
 	if (!fortune_dir) {
 		r_list_free (types);
 		return NULL;
@@ -69,6 +68,7 @@ R_API void r_core_fortune_list_types(void) {
 }
 
 R_API void r_core_fortune_list(RCore *core) {
+	R_RETURN_IF_FAIL (core);
 	// TODO: use file.fortunes // can be dangerous in sandbox mode
 	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
 
@@ -102,7 +102,7 @@ static char *getrandomline(RCore *core) {
 		return NULL;
 	}
 	const char *file = (const char *)r_list_get_n (types, r_num_rand (r_list_length (types)));
-	char *type = r_str_new (file);
+	char *type = R_STR_DUP (file);
 	r_list_free (types);
 	if (!type) {
 		return NULL;
@@ -135,6 +135,7 @@ static char *getrandomline(RCore *core) {
 }
 
 R_API void r_core_fortune_print_random(RCore *core) {
+	R_RETURN_IF_FAIL (core);
 	// TODO: use file.fortunes // can be dangerous in sandbox mode
 	char *line = getrandomline (core);
 	if (!line) {

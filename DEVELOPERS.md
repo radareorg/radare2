@@ -55,7 +55,7 @@ with features.
 * `sys/sanitize.sh`: Compile with ASan, the address sanitizer. Provides
   detailed backtraces for memory errors.
 * `R2_DEBUG_ASSERT=1`: Provides a backtrace when a debug assert (typically a
-  `r_return_` macro) fails.
+  `R_RETURN_` macro) fails.
 * `R2_DEBUG=1`: Show error messages and crash signal. Used for debugging plugin
   loading issues.
 
@@ -195,7 +195,7 @@ if (a == b) {
   example of a good name could be `out_buffer:` if the `goto` frees `buffer`.
   Avoid using GW-BASIC names like `err1:` and `err2:`.
 
-* Use `r_return_*` macros to check for conditions that are caused by
+* Use `R_RETURN_*` macros to check for conditions that are caused by
   programming errors or bugs; i.e.: conditions that should **never** happen. Do
   not use them when checking for runtime error conditions, such as a `NULL`
   value being returned from `malloc()`. Use a standard if statement for these
@@ -204,8 +204,8 @@ if (a == b) {
 ```c
 int check(RCore *c, int a, int b) {
         /* check for programming errors */
-        r_return_val_if_fail (c, false);
-        r_return_val_if_fail (a >= 0, b >= 1, false);
+        R_RETURN_VAL_IF_FAIL (c, false);
+        R_RETURN_VAL_IF_FAIL (a >= 0, b >= 1, false);
 
         /* check for runtime errors */
         ut8 *buf = calloc (b, sizeof (a));
@@ -563,6 +563,18 @@ export CC="ccache gcc"
 
 This will automatically detect when files do not need to recompiled and avoid
 unnecessary work.
+
+It is not necessary to recompile the whole project everytime. Just run make in
+the directory you are working on to compile these parts only by using:
+
+```sh
+make
+```
+
+while inside a modified module (eg: `libr/core`).
+
+Note that if you have radare2 already installed, you don't have to reinstall it
+again after recompilation, as the compiled libraries are connected through the symlinks.
 
 ## Repeated installation
 

@@ -1,7 +1,16 @@
-/* radare - Copyright 2021-2022 - pancake */
+/* radare - Copyright 2021-2023 - pancake */
 // inspired by https://www.csl.cornell.edu/courses/ece5745/handouts/ece5745-tinyrv-isa.txt
 
 #include <r_util.h>
+
+#if 0
+// hello world writing into the serial console. that should compile
+addi a0, x0, 0x68
+li a1, 0x10000000
+sb a0, (a1) # 'h'
+loop:
+j loop
+#endif
 
 static const char *const regs[33] = {
 	"x0",
@@ -84,8 +93,10 @@ static struct {
 	int n;
 	int x;
 } ops[] = {
+	{ 0x1, "c.nop", 'N', 0, 0, 0 }, // c.nop
 	{ 0x13, "nop", 'N', 0, 0, 0 }, // addi x0, x0, 0 // 13010100 (mov sp, sp)
 	{ 0x37, "lui", 'I', 2, 0, 0 }, // lui x0, 33
+	// TODO { 0x37, "li", 'I', 2, 0, 0 }, // lui x0, 33
 	{ 0x13, "addi", 'I', 3, 0, 0 }, // addi x1, x3, 33
 	{ 0x7013, "andi", 'I', 3, 0, 0 }, // andi x1, x3, 33
 	{ 0x6013, "ori", 'I', 3, 0, 0 }, // ori x1, x3, 33
@@ -171,6 +182,12 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 	*w3 = 0;
 	sscanf (s, "%31s", w0);
 	if (*w0) {
+		// alias for 'j $$' which is an alias for 'addi pc, pc, -2
+		if (!strcmp (w0, "jinf")) {
+			out[0] = 0x01;
+			out[1] = 0xa0;
+			return 2;
+		}
 		for (i = 0; ops[i].name; i++) {
 			if (strcmp (ops[i].name, w0)) {
 				continue;
@@ -214,6 +231,9 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 				memset (out, 0, 4);
 				out[0] = ops[i].op;
 				free (s);
+				if (r_str_startswith (ops[i].name, "c.")) {
+					return 2;
+				}
 				return 4;
 			default:
 				R_LOG_ERROR ("Unknown type");

@@ -11,6 +11,7 @@ r_bin_sources = [
   'bfile.c',
   'bobj.c',
 # plugins
+  'p/bin_io.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',

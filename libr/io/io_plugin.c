@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_io.h>
 #include "config.h"
@@ -8,7 +8,7 @@ static RIOPlugin *io_static_plugins[] = {
 };
 
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	r_return_val_if_fail (io && plugin && io->plugins, false);
+	R_RETURN_VAL_IF_FAIL (io && plugin && io->plugins, false);
 	if (!plugin->meta.name) {
 		return false;
 	}
@@ -122,6 +122,9 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		}
 		if (plugin->meta.license) {
 			pj_ks (pj, "license", plugin->meta.license);
+		}
+		if (plugin->meta.version) {
+			pj_ks (pj, "version", plugin->meta.version);
 		}
 		if (plugin->uris) {
 			char *uri;

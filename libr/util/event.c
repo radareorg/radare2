@@ -56,7 +56,7 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 	REventCallbackHandle handle = {0};
 	REventCallbackHook hook;
 
-	r_return_val_if_fail (ev, handle);
+	R_RETURN_VAL_IF_FAIL (ev, handle);
 	hook.cb = cb;
 	hook.user = user;
 	hook.handle = ev->next_handle++;
@@ -79,7 +79,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	RVector *cbs = (RVector *)v;
 	REventCallbackHook *hook;
 	size_t i;
-	r_return_val_if_fail (cbs, false);
+	R_RETURN_VAL_IF_FAIL (cbs, false);
 	r_vector_enumerate (cbs, hook, i) {
 		if (hook->handle == handle) {
 			r_vector_remove_at (cbs, i, NULL);
@@ -90,7 +90,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 }
 
 R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
-	r_return_if_fail (ev);
+	R_RETURN_IF_FAIL (ev);
 	if (handle.type == R_EVENT_ALL) {
 		// try to delete it both from each list of callbacks and from
 		// the "all_callbacks" vector
@@ -98,14 +98,14 @@ R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
 		del_hook (&handle.handle, 0, &ev->all_callbacks);
 	} else {
 		RVector *cbs = ht_up_find (ev->callbacks, (ut64)handle.type, NULL);
-		r_return_if_fail (cbs);
+		R_RETURN_IF_FAIL (cbs);
 		del_hook (&handle.handle, 0, cbs);
 	}
 }
 
 R_API void r_event_send(REvent *ev, int type, void *data) {
 	REventCallbackHook *hook;
-	r_return_if_fail (ev && !ev->incall);
+	R_RETURN_IF_FAIL (ev && !ev->incall);
 
 	// send to both the per-type callbacks and to the all_callbacks
 	ev->incall = true;

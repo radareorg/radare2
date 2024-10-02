@@ -149,11 +149,13 @@ static bool lang_s_run(RLangSession *s, const char *code, int len) {
 	""
 
 static RLangPlugin r_lang_plugin_s = {
-	.name = "s",
+	.meta = {
+		.name = "s",
+		.desc = "GNU Assembler Source",
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.ext = "s",
-	.desc = "GNU Assembler Source",
-	.author = "pancake",
-	.license = "LGPL",
 	.example = r_lang_s_example,
 	.run = lang_s_run,
 	.run_file = (void*)lang_s_file,

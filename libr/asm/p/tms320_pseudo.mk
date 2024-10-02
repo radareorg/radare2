@@ -1,4 +1,4 @@
-OBJ_TMS320PSEUDO+=$(LIBR)/arch/p/pseudo/tms320_pseudo.o
+OBJ_TMS320PSEUDO+=$(LIBR)/arch/p/tms320/pseudo.o
 
 TARGET_TMS320PSEUDO=parse_tms320_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_TMS320PSEUDO}

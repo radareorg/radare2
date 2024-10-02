@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_list.h>
-#include <r_io.h>
 #include <config.h>
 #include "../config.h"
 
@@ -23,7 +20,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	R_FREE (anal->limit);
 }
 
@@ -101,6 +98,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->lock = r_th_lock_new (true);
+	r_anal_backtrace_init (anal);
 	r_spaces_init (&anal->meta_spaces, "CS");
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
@@ -193,27 +191,12 @@ R_API void r_anal_free(RAnal *a) {
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
+	r_anal_backtrace_fini (a);
 	free (a);
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
-}
-
-R_API bool r_esil_use(RAnal *anal, const char *name) {
-	RListIter *it;
-	REsilPlugin *h;
-
-	if (anal) {
-		r_list_foreach (anal->esil->plugins, it, h) {
-			if (!h->name || strcmp (h->name, name)) {
-				continue;
-			}
-			anal->esil_cur = h;
-			return true;
-		}
-	}
-	return false;
 }
 
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
@@ -225,14 +208,14 @@ R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
-	r_return_val_if_fail (anal, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
 	RArchPluginMnemonicsCallback am = R_UNWRAP3 (session, plugin, mnemonics);
 	return am? am (session, id, json): NULL;
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
@@ -253,7 +236,7 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 
 // deprecate.. or at least reuse get_reg_profile...
 R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	char *rp = NULL;
 	bool ret = false;
 	if (!p) {
@@ -268,7 +251,7 @@ R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 }
 
 R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE const char *arch, int bits) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
@@ -290,7 +273,7 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 
 // copypasta from core/cbin.c
 static void sdb_concat_by_path(Sdb *s, const char *path) {
-	r_return_if_fail (s && path);
+	R_RETURN_IF_FAIL (s && path);
 	Sdb *db = sdb_new (0, path, 0);
 	if (db) {
 		sdb_merge (s, db);
@@ -313,8 +296,9 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
 	// char *ff = r_str_newf ("types-%s.sdb", os);
-	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff);
-	char *dbpath = r_str_newf ("%s/%s/types-%s.sdb", dir_prefix, R2_SDB_FCNSIGN, os);
+	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff, NULL);
+	char *dbpath = r_str_newf ("%s%s%s%stypes-%s.sdb",
+		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -334,7 +318,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 
 // see 'aobm' command
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
-	r_return_val_if_fail (anal && data && size > 0, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && data && size > 0, NULL);
 	int oplen, idx = 0;
 
 	RAnalOp *op = r_anal_op_new ();
@@ -365,7 +349,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 }
 
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
 	if (bb && !bb->traced) {
 		bb->traced = true;
@@ -380,7 +364,7 @@ R_API RList* r_anal_get_fcns(RAnal *anal) {
 }
 
 R_API bool r_anal_op_is_eob(RAnalOp *op) {
-	r_return_val_if_fail (op, false);
+	R_RETURN_VAL_IF_FAIL (op, false);
 	if (op->eob) {
 		return true;
 	}
@@ -400,7 +384,7 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 }
 
 R_API void r_anal_purge(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	r_anal_hint_clear (anal);
 	r_interval_tree_fini (&anal->meta);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
@@ -427,7 +411,7 @@ static int default_archinfo(int res, int q) {
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
 // XXX this function should NEVER return -1. it should provide all valid values, even if the delegate does not
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) { // R2_590
-	r_return_val_if_fail (anal, -1);
+	R_RETURN_VAL_IF_FAIL (anal, -1);
 	int res = -1;
 	if (anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
@@ -440,7 +424,7 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) { // R2_590
 }
 
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
-	const int align = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	const int align = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
 	return align <= 1 || !(addr % align);
 }
 
@@ -707,7 +691,7 @@ R_API RList *r_anal_preludes(RAnal *anal) {
 }
 
 R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (addr == UT64_MAX) {
 		return false;
 	}
@@ -725,9 +709,9 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 		}
 	}
 	if (!data) {
-		const int maxis = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		const int maxis = r_anal_archinfo (anal, R_ARCH_INFO_MAXOP_SIZE);
 		owned = malloc (maxis);
-		if (!data) {
+		if (!owned) {
 			return false;
 		}
 		data = owned;
@@ -780,7 +764,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	r_list_purge (anal->imports);
 	R_DIRTY (anal);
 }

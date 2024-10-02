@@ -313,11 +313,12 @@ RUN
 
 NAME=mach0 aot
 FILE=bins/mach0/libswiftCoreImage.dylib.aot
-CMDS=ih
+CMDS=iH
 EXPECT_ERR=<<EOF
 INFO: AOT: Image path offset: 0x00000970
 INFO: AOT: Image path length: 0x00000089
 INFO: AOT: X64- code section: 0x00005a70
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 EXPECT=<<EOF
 pf.mach0_header @ 0x00000000

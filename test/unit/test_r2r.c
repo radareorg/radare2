@@ -63,6 +63,10 @@ bool test_r2r_fix(void) {
 
 	R2RTestResultInfo *result0 = R_NEW0 (R2RTestResultInfo);
 	r_pvector_push (results, result0);
+	if (r_pvector_length (&db->tests) == 0) {
+		eprintf ("Empty tests database. Please run this binary from the test/ directory.\n");
+		return false;
+	}
 	result0->test = r_pvector_at (&db->tests, 0);
 	result0->result = R2R_TEST_RESULT_FAILED;
 	result0->proc_out = R_NEW0 (R2RProcessOutput);
@@ -181,7 +185,7 @@ bool test_r2r_fix(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
 	return tests_passed != tests_run;

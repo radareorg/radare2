@@ -6,7 +6,7 @@ PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
 ASANOPTS=address undefined signed-integer-overflow
 LEAKOPTS=leak
-CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS))
+CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS)) $(CFLAGS)
 CFLAGS_LEAK=$(addprefix -fsanitize=,$(LEAKOPTS))
 MKDIR=mkdir
 
@@ -50,6 +50,7 @@ heap:
 asan:
 	$(MAKE) include/sdb/version.h
 	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
+
 asantest:
 	export ASAN_OPTIONS=detect_leaks=0 ; \
 	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C test
@@ -67,7 +68,7 @@ pkgconfig:
 include/sdb/version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > include/sdb/version.h
 
-CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
+CFILES=cdb.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
@@ -107,7 +108,7 @@ install-dirs:
 
 INCFLS=sdb.h version.h cdb.h ht_uu.h ht_up.h ht_pp.h types.h heap.h
 INCFLS+=ls.h cdb_make.h buffer.h config.h ht.h dict.h set.h ht_inc.h
-INCFLS+=rangstr.h
+INCFLS+=rangstr.h asserts.h cwisstable.h gcc_stdatomic.h msvc_stdatomic.h
 INCFILES=$(addprefix include/sdb/,$(INCFLS))
 
 install: pkgconfig install-dirs

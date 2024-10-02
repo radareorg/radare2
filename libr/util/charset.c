@@ -84,12 +84,12 @@ R_API void r_charset_free(RCharset *c) {
 }
 
 R_API void r_charset_close(RCharset *c) {
-	r_return_if_fail (c);
+	R_RETURN_IF_FAIL (c);
 	c->loaded = false;
 }
 
 R_API bool r_charset_use(RCharset *c, const char *cf) {
-	r_return_val_if_fail (c && cf, false);
+	R_RETURN_VAL_IF_FAIL (c && cf, false);
 	bool rc = false;
 	SdbGperf *gp = r_charset_get_gperf (cf);
 	if (gp) {
@@ -118,7 +118,7 @@ R_API bool r_charset_use(RCharset *c, const char *cf) {
 }
 
 R_API bool r_charset_open(RCharset *c, const char *cs) {
-	r_return_val_if_fail (c, false);
+	R_RETURN_VAL_IF_FAIL (c, false);
 	if (cs) {
 		sdb_reset (c->db);
 		sdb_open (c->db, cs);
@@ -153,7 +153,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 
 // rune
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx) {
-	r_return_val_if_fail (ch && hx, NULL);
+	R_RETURN_VAL_IF_FAIL (ch && hx, NULL);
 	RCharsetRune* c = R_NEW0 (RCharsetRune);
 	if (!c) {
 		return NULL;
@@ -206,19 +206,28 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 }
 #endif
 
+#if R2_USE_NEW_ABI
+R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len, bool early_exit) {
+#else
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+#endif
 	if (!rc->loaded) {
 		return in_len;
 	}
 	char k[32];
 	char *o = (char*)out;
-	size_t i;
+	size_t i, oi;
 	char *o_end = o + out_len;
 	bool fine = false;
-	for (i = 0; i < in_len && o < o_end; i++) {
+	for (i = oi = 0; i < in_len && o < o_end; i++) {
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
+#if R2_USE_NEW_ABI
+		if (!v && early_exit) {
+			break;
+		}
+#endif
 		const char *ret = r_str_get_fail (v, "?");
 		char *res = strdup (ret);
 		if (res) {
@@ -229,10 +238,12 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			fine = true;
 			r_str_unescape (res);
 		//	memcpy (o, res, out_len - i);
-			r_str_ncpy (o, res, out_len - i);
+			r_str_ncpy (o, res, out_len - oi);
 			free (res);
 		}
-		o += strlen (o);
+		size_t di = strlen (o);
+		oi += di;
+		o += di;
 	}
 	if (!fine) {
 		return 0;

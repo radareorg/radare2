@@ -73,8 +73,8 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+static bool check(RBinFile *bf, RBuffer *b) {
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 b_size = r_buf_size (b);
 	if (b_size <= 0x3d) {
 		return false;
@@ -104,11 +104,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	struct r_bin_mz_obj_t *mz_obj = r_bin_mz_new_buf (buf);
 	if (mz_obj) {
-		sdb_ns_set (sdb, "info", mz_obj->kv);
-		*bin_obj = mz_obj;
+		sdb_ns_set (bf->sdb, "info", mz_obj->kv);
+		bf->bo->bin_obj = mz_obj;
 		return true;
 	}
 	return false;
@@ -234,13 +234,15 @@ static RList *relocs(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_mz = {
-	.name = "mz",
-	.desc = "MZ bin plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "mz",
+		.desc = "MZ bin plugin",
+		.license = "MIT",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

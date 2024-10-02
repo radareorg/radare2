@@ -1,16 +1,16 @@
-/* radare - LGPL - Copyright 2018-2022 - pancake */
+/* radare - LGPL - Copyright 2018-2024 - pancake */
 
 #include <r_flag.h>
 
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
-	r_return_val_if_fail (f && name && words, NULL);
+	R_RETURN_VAL_IF_FAIL (f && name && words, NULL);
 	r_strf_var (k, 64, "tag.%s", name);
 	sdb_set (f->tags, k, words, -1);
 	return NULL;
 }
 
-R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
-	r_return_val_if_fail (f, NULL);
+R_API RList *r_flag_tags_list(RFlag *f, R_NULLABLE const char *name) {
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (name) {
 		r_strf_var (k, 64, "tag.%s", name);
 		char *words = sdb_get (f->tags, k, NULL);
@@ -22,7 +22,7 @@ R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 	SdbKv *kv;
 	ls_foreach (o, iter, kv) {
 		const char *tag = sdbkv_key (kv);
-		if (strlen (tag) < 5) {
+		if (r_str_nlen (tag, 6) < 5) {
 			continue;
 		}
 		r_list_append (res, (void *)strdup (tag + 4));
@@ -31,10 +31,14 @@ R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 	return res;
 }
 
-R_API void r_flag_tags_reset(RFlag *f, const char *name) {
-	// TODO: use name
-	r_return_if_fail (f);
-	sdb_reset (f->tags);
+R_API void r_flag_tags_reset(RFlag *f, R_NULLABLE const char *name) {
+	R_RETURN_IF_FAIL (f);
+	if (name) {
+		r_strf_var (k, 64, "tag.%s", name);
+		sdb_unset (f->tags, k, 0);
+	} else {
+		sdb_reset (f->tags);
+	}
 }
 
 struct iter_glob_flag_t {
@@ -56,7 +60,7 @@ static bool iter_glob_flag(RFlagItem *fi, void *user) {
 }
 
 R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
-	r_return_val_if_fail (f && name, NULL);
+	R_RETURN_VAL_IF_FAIL (f && name, NULL);
 	r_strf_var (k, 64, "tag.%s", name);
 	RList *res = r_list_newf (NULL);
 	char *words = sdb_get (f->tags, k, NULL);

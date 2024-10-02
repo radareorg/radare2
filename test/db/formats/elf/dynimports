@@ -14,7 +14,6 @@ pd 10
 EOF
 EXPECT=<<EOF
             ;-- section..dynstr:
-            ;-- .dynstr:
             0x00011b20 (1 bytes hidden)                                ; [04] -r-- section size 3037 named .dynstr
             0x00011b21     .string "xrealloc" ; len=9
             0x00011b2a     .string "nstrftime" ; len=10

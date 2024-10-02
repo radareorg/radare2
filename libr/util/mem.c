@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <r_util.h>
 #if R2__UNIX__
@@ -302,9 +302,13 @@ R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 }
 
 R_API void *r_mem_dup(const void *s, int l) {
-	void *d = malloc (l);
-	if (d) {
-		memcpy (d, s, l);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
+	void *d = NULL;
+	if (l > 0) {
+		d = malloc (l);
+		if (d != NULL) {
+			memcpy (d, s, l);
+		}
 	}
 	return d;
 }
@@ -319,6 +323,7 @@ R_API void *r_mem_set(ut8 ch, int l) {
 
 
 R_API void r_mem_reverse(ut8 *b, int l) {
+	R_RETURN_IF_FAIL (b);
 	ut8 tmp;
 	int i, end = l / 2;
 	for (i = 0; i < end; i++) {
@@ -393,4 +398,58 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	m->len = newsize;
 	r_file_mmap_arch (m, m->filename, m->fd);
 	return m->buf;
+}
+
+R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
+	int i, j, k, ret;
+	str = r_str_trim_head_ro (str);
+
+	int str_len = strlen (str);
+	ut8 *b = buf;
+	ut8 *e = buf + len;
+	for (i = 0; i < str_len && b < e; i += 8) {
+		ret = 0;
+		str = r_str_trim_head_ro (str);
+		if (i + 7 >= str_len) {
+			b[0] = 0; // null terminate if possible
+			// missing bytes
+			return -1;
+		}
+		for (k = 0, j = i + 7; j >= i; j--, k++) {
+			if (str[j] == ' ') {
+				continue;
+			}
+			if (str[j] == '1') {
+				ret |= (1 << k);
+			} else if (str[j] != '0') {
+				b[0] = 0; // null terminate if possible
+				return -1;
+			}
+		}
+		*b++ = ret;
+	}
+	b[0] = 0;
+	return b - buf;
+}
+
+R_API char *r_mem_to_binstring(const ut8* str, int len) {
+	if (len < 0) {
+		len = strlen ((const char *)str);
+	}
+	RStrBuf *buf = r_strbuf_new (NULL);
+	int i = 0;
+
+	for (i = 0; i < len; i++) {
+		ut8 ch = str[i];
+		r_strbuf_appendf (buf, "%c", ch & 128? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 64? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 32? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 16? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 8? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 4? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 2? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 1? '1': '0');
+	}
+
+	return r_strbuf_drain (buf);
 }

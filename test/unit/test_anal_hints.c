@@ -58,7 +58,7 @@ bool hint_equals(const RAnalHint *a, const RAnalHint *b) {
 		mu_assert ("hint", hint_equals (actual, expected)); \
 } while (0)
 
-bool test_r_anal_addr_hints() {
+bool test_r_anal_addr_hints(void) {
 	RAnal *anal = r_anal_new ();
 	RAnalHint *hint = r_anal_hint_get (anal, 0x1337);
 	assert_hint_eq (hint, &empty_hint);
@@ -217,7 +217,7 @@ bool test_r_anal_addr_hints() {
 }
 
 #define RANGED_TEST(name, val, resetval, assert_val) \
-bool test_r_anal_hints_##name() { \
+bool test_r_anal_hints_##name(void) { \
 	RAnal *anal = r_anal_new (); \
 	\
 	ut64 hint_addr = 0xdead; \
@@ -330,16 +330,16 @@ bool test_r_anal_hints_##name() { \
 	mu_end; \
 }
 
-RANGED_TEST(arch, "6502", NULL, mu_assert_nullable_streq)
-RANGED_TEST(bits, 16, 0, mu_assert_eq)
+RANGED_TEST (arch, "6502", NULL, mu_assert_nullable_streq)
+RANGED_TEST (bits, 16, 0, mu_assert_eq)
 
-bool all_tests() {
-	mu_run_test(test_r_anal_addr_hints);
-	mu_run_test(test_r_anal_hints_arch);
-	mu_run_test(test_r_anal_hints_bits);
+bool all_tests(void) {
+	mu_run_test (test_r_anal_addr_hints);
+	mu_run_test (test_r_anal_hints_arch);
+	mu_run_test (test_r_anal_hints_bits);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }

@@ -71,7 +71,7 @@ bool test_r_id_storage_take1(void) {
 }
 
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_id_storage_add0);
 	mu_run_test (test_r_id_storage_add1);
 	mu_run_test (test_r_id_storage_set);

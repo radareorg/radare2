@@ -7,8 +7,6 @@
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
 
-#define R_REG_USE_VEC 1
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,6 +70,8 @@ typedef enum {
 	R_REG_NAME_SF,
 	R_REG_NAME_CF,
 	R_REG_NAME_OF,
+	/* thread register */
+	R_REG_NAME_TR,
 	/* syscall number (orig_eax,rax,r0,x0) */
 	R_REG_NAME_SN,
 	R_REG_NAME_LAST,

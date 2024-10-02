@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2023 - nibble, pancake */
 
 #define R_LOG_ORIGIN "anal.diff"
 
@@ -185,7 +185,7 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 }
 
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
-	r_return_val_if_fail (anal && fcns, false);
+	R_RETURN_VAL_IF_FAIL (anal && fcns, false);
 	RAnalFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
 	ut64 maxsize, minsize;
@@ -318,15 +318,15 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				minsize = fcn_size;
 			}
 			if (maxsize * anal->diff_thfcn > minsize) {
-				R_LOG_WARN ("Exceeded anal threshold while diffing %s and %s", fcn->name, fcn2->name);
+				R_LOG_DEBUG ("Exceeded anal threshold while diffing %s and %s", fcn->name, fcn2->name);
 				continue;
 			}
 			if (fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL) {
-				R_LOG_WARN ("Function %s already diffed", fcn2->name);
+				R_LOG_DEBUG ("Function %s already diffed", fcn2->name);
 				continue;
 			}
 			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM)) {
-				R_LOG_WARN ("Function %s type not supported", fcn2->name);
+				R_LOG_DEBUG ("Function %s type not supported", fcn2->name);
 				continue;
 			}
 			if (fcn->fingerprint && fcn2->fingerprint) {

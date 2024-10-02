@@ -25,7 +25,7 @@ static inline PTHREAD_ITEM __find_thread(RDebug *dbg, int tid) {
 }
 
 static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
-	r_return_val_if_fail (dbg, NULL);
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}
@@ -216,7 +216,9 @@ static void __printwincontext(HANDLE th, CONTEXT *ctx) {
 	ut64 mm[8];
 	ut16 top = 0;
 	int x, nxmm = 0, nymm = 0;
-#if _WIN64
+#if _M_ARM64
+	/* pass */
+#elif _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08lx TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
 	eprintf ("ErrorOffset   = %08lx DataOffset   = %08lx\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
@@ -327,6 +329,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
+	#ifndef _M_ARM64
 	CONTEXT cur_ctx;
 	if (w32_reg_read (dbg, R_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
@@ -334,6 +337,7 @@ static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
 		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
 		*new_ctx = cur_ctx;
 	}
+	#endif
 }
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -748,7 +752,9 @@ static const char *get_exception_name(DWORD ExceptionCode) {
 	EXCEPTION_STR (EXCEPTION_SINGLE_STEP);
 	EXCEPTION_STR (EXCEPTION_STACK_OVERFLOW);
 	EXCEPTION_STR (STATUS_UNWIND_CONSOLIDATE);
+	#ifndef _M_ARM64
 	EXCEPTION_STR (EXCEPTION_POSSIBLE_DEADLOCK);
+	#endif
 	EXCEPTION_STR (DBG_CONTROL_BREAK);
 	EXCEPTION_STR (CONTROL_C_EXIT);
 	case 0x6ba: return "FILE_DIALOG_EXCEPTION";
@@ -998,10 +1004,12 @@ bool w32_step(RDebug *dbg) {
 	if (!w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
 		return false;
 	}
+	#ifndef _M_ARM64
 	ctx.EFlags |= 0x100;
 	if (!w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
 		return false;
 	}
+	#endif
 	// (void)r_debug_handle_signals (dbg);
 	return w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 }
@@ -1132,7 +1140,9 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 					dbg->tid = te.th32ThreadID;
 					w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
 					// TODO: is needed check context for x32 and x64??
-#if _WIN64
+#if _M_ARM64
+					pc = ctx.Pc;
+#elif _WIN64
 					pc = ctx.Rip;
 #else
 					pc = ctx.Eip;

@@ -2,13 +2,17 @@
 // By Nadia Heninger and J. Alex Halderman
 // Contribution to r2 by @santitox
 // Integrated and refactored by jvoisin and spelissier
+// Updated by Sylvain Pelissier 2024
 
 #include <r_search.h>
+#include <r_crypto/r_ed25519.h>
 
 /* The minimal length to perform a search is the sizes of
 the sequence tag, the minimal length of the sequence,
 the version marker and the minimal key length. */
 #define PRIVKEY_SEARCH_MIN_LENGTH (1 + 1 + 4 + 1)
+
+#define ED25519_SEARCH_MIN_LENGTH ED25519_PRIVKEY_LENGTH
 
 /*Baby BER parser, just good enough for private keys.
 
@@ -64,7 +68,8 @@ static int check_fields(const ut8 *start) {
 // Finds and return index of a private key:
 // As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
-R_IPI int search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_asn1_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (s && buf, -1);
 	int i, k, max, index, t;
 	RListIter *iter;
 	RSearchKeyword *kw;
@@ -110,6 +115,37 @@ R_IPI int search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) 
 				if (t > 1) {
 						return s->nhits - old_nhits;
 
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+// Finds and return index of a private key matching a given public key.
+R_IPI int search_raw_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (s && buf, -1);
+	int t, i;
+	RSearchKeyword *kw;
+	RListIter *iter;
+	const size_t old_nhits = s->nhits;
+	ut8 public_key[ED25519_PUBKEY_LENGTH] = { 0 };
+	ut8 private_key[ED25519_PRIVKEY_LENGTH] = { 0 };
+	ut8 public_key_target[ED25519_PUBKEY_LENGTH] = { 0 };
+
+	if (len < ED25519_SEARCH_MIN_LENGTH) {
+		return -1;
+	}
+
+	r_hex_str2bin ((char *)s->data, public_key_target);
+
+	r_list_foreach (s->kws, iter, kw) {
+		for (i = 0; i < len - ED25519_SEARCH_MIN_LENGTH; i++) {
+			ed25519_create_keypair (buf + i, private_key, public_key);
+			if (!memcmp (public_key, public_key_target, ED25519_PUBKEY_LENGTH)) {
+				t = r_search_hit_new (s, kw, from + i);
+				if (t > 1) {
+					return s->nhits - old_nhits;
 				}
 			}
 		}

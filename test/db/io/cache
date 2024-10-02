@@ -93,7 +93,7 @@ p8
 wcr
 wci
 p8
-# File was correctly writen.
+# File was correctly written.
 cat .empty.tmp
 ?e
 EOF

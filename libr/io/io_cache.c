@@ -1,9 +1,13 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2008-2024 - pancake, condret */
 
 #include <r_io.h>
 
 static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 	RIOCacheItem *incoming_ci = (RIOCacheItem *)incoming, *in_ci = (RIOCacheItem *)in;
+	if (R_UNLIKELY (!in_ci->tree_itv)) {
+		R_LOG_ERROR ("io cache tree corrupted");
+		r_sys_backtrace ();
+	}
 	if (incoming_ci->tree_itv->addr < in_ci->tree_itv->addr) {
 		return -1;
 	}
@@ -51,14 +55,14 @@ static void _io_cache_item_free(void *data) {
 }
 
 R_API void r_io_cache_init(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	io->cache.layers = r_list_newf (iocache_layer_free);
 	io->cache.mode = R_PERM_R | R_PERM_W;
 	r_io_cache_push (io);
 }
 
 R_API void r_io_cache_fini(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_list_free (io->cache.layers);
 }
 
@@ -77,7 +81,7 @@ R_API bool r_io_cache_empty(RIO *io) {
 }
 
 R_API void r_io_cache_reset(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	ut32 mode = io->cache.mode;
 	r_io_cache_fini (io);
 	r_io_cache_init (io);
@@ -111,11 +115,18 @@ static RRBNode *_find_entry_ci_node(RRBTree *cache_tree, RInterval *itv) {
 
 // write happens only in the last layer
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && (len > 0), false);
-	RInterval itv = (RInterval){addr, len};
+	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
 	if (r_list_empty (io->cache.layers)) {
 		return false;
 	}
+	if ((UT64_MAX - len + 1) < addr) {
+		const int olen = len;
+		len = UT64_MAX - addr + 1;
+		if (!r_io_cache_write_at (io, 0ULL, &buf[len], olen - len)) {
+			return false;
+		}
+	}
+	RInterval itv = (RInterval){addr, len};
 	RIOCacheItem *ci = iocache_item_new (io, &itv);
 	if (!ci) {
 		return false;
@@ -133,7 +144,14 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		}
 		while (_ci && r_itv_include (itv, _ci->tree_itv[0])) {
 			node = r_rbnode_next (node);
-			r_crbtree_delete (layer->tree, _ci, _ci_start_cmp_cb, NULL);
+			RIOCacheItem *tci = (RIOCacheItem *)r_crbtree_take (layer->tree, _ci, _ci_start_cmp_cb, NULL);
+			if (R_UNLIKELY (_ci != tci)) {
+				R_LOG_ERROR ("missmatch: %p != %p", _ci, tci);
+				R_LOG_ERROR ("_ci @ %p: [0x%"PFMT64x" - 0x%"PFMT64x"]",
+					_ci, _ci->tree_itv[0].addr, r_itv_end (_ci->tree_itv[0]) - 1);
+				R_LOG_ERROR ("tci @ %p: [0x%"PFMT64x" - 0x%"PFMT64x"]",
+					tci, tci->tree_itv[0].addr, r_itv_end (tci->tree_itv[0]) - 1);
+			}
 			R_FREE (_ci->tree_itv);
 			_ci = node? (RIOCacheItem *)node->data: NULL;
 		}
@@ -149,13 +167,20 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 // read happens by iterating over all the layers
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && (len > 0), false);
+	R_RETURN_VAL_IF_FAIL (io && buf && (len > 0), false);
 #if 0
 	// X perm is the io.cache.. this is disabled by bin.cache.. so many tests fail because of this
 	if (!(io->cache.mode & R_PERM_X)) {
 		return false;
 	}
 #endif
+	if ((UT64_MAX - len + 1) < addr) {
+		const int olen = len;
+		len = UT64_MAX - addr + 1;
+		if (!r_io_cache_read_at (io, 0ULL, &buf[len], olen - len)) {
+			return false;
+		}
+	}
 	RIOCacheLayer *layer;
 	RListIter *iter;
 	RInterval itv = (RInterval){addr, len};
@@ -212,7 +237,7 @@ R_API bool r_io_cache_readable(RIO *io) {
 
 // used only by the testsuite
 R_API bool r_io_cache_at(RIO *io, ut64 addr) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RInterval itv = (RInterval){addr, 0};
 	RIOCacheLayer *layer;
 	RListIter *liter;
@@ -226,7 +251,7 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 
 // this uses closed boundary input
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
-	r_return_val_if_fail (io && from <= to, 0);
+	R_RETURN_VAL_IF_FAIL (io && from <= to, 0);
 	RInterval itv = (RInterval){from, (to + 1) - from};
 	void **iter;
 	ut32 invalidated_cache_bytes = 0;
@@ -243,6 +268,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 				if (ci->tree_itv) {
 					invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
 					r_crbtree_delete (layer->tree, ci, _ci_start_cmp_cb, NULL);
+					R_FREE (ci->tree_itv);
 				}
 				r_pvector_remove_data (layer->vec, ci);
 				continue;
@@ -340,7 +366,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 
 // this uses closed boundary input
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
-	r_return_if_fail (io && from <= to);
+	R_RETURN_IF_FAIL (io && from <= to);
 	RListIter *iter;
 	RIOCacheLayer *layer;
 	r_list_foreach (io->cache.layers, iter, layer) {
@@ -427,7 +453,7 @@ static void list(RIO *io, RIOCacheLayer *layer, PJ *pj, int rad) {
 }
 
 R_API void r_io_cache_list(RIO *io, int rad, bool many) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (r_list_empty (io->cache.layers)) {
 		return;
 	}
@@ -485,7 +511,7 @@ static RIOCacheItem *_clone_ci(RIOCacheItem *ci) {
 
 // why?
 R_API RIOCache *r_io_cache_clone(RIO *io) {
-	r_return_val_if_fail (io, NULL);
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	if (!io->cache) {
 		return NULL;
 	}
@@ -527,7 +553,7 @@ R_API bool r_io_cache_pop(RIO *io) {
 }
 
 R_API bool r_io_cache_undo(RIO *io) { // "wcu"
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	if (r_list_empty (io->cache.layers)) {
 		return false;
 	}
@@ -545,6 +571,7 @@ R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 		RPVectorFree free_elem = layer->vec->v.free_user;
 		if (c->tree_itv) {
 			r_crbtree_delete (layer->tree, c, _ci_start_cmp_cb, NULL);
+			R_FREE (c->tree_itv);
 		}
 		free_elem (c);
 		break;

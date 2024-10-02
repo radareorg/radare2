@@ -161,7 +161,8 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			} else {
-				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+				const int num = (len > 2)? USHORT (bytes, 1): bytes[1];
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, num);
 			}
 			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
@@ -206,9 +207,9 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xa6: // if_acmpne
 	case 0xa7: // goto
 	case 0xa8: // jsr
-		if (len > 1) {
-			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name,
-					(addr + (short)USHORT (bytes, 1)));
+		if (len > 2) {
+			const short delta = USHORT (bytes, 1);
+			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name, addr + delta);
 			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
@@ -303,7 +304,7 @@ R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
-	r_return_val_if_fail (bytes && output && outlen > 0, -1);
+	R_RETURN_VAL_IF_FAIL (bytes && output && outlen > 0, -1);
 	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
 	if (len > 0) {
 		return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);

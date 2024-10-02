@@ -3,6 +3,7 @@ FILE=-
 CMDS=<<EOF
 e scr.null =true
 ibbbbbbbk
+ooi
 EOF
 EXPECT=<<EOF
 EOF

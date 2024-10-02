@@ -180,7 +180,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	int tid = __get_pid (fd);
 	task_t task = pid_to_task (fd, tid);
 	ut64 lower = addr;
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __arm64e__
 	size = osize = 16384; // acording to frida
 #else
 	size = osize = 4096;
@@ -488,7 +488,7 @@ static bool __close(RIODesc *fd) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	r_return_val_if_fail (io && fd, NULL);
+	R_RETURN_VAL_IF_FAIL (io && fd, NULL);
 	if (!cmd || !fd->data) {
 		return NULL;
 	}
@@ -501,12 +501,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "perm")) {
 		int perm = r_str_rwx (cmd + 4);
-		if (perm) {
+		if (perm >= 0) {
 			int pagesize = tsk_pagesize (fd);
 			task_t task = pid_to_task (fd, iodd->tid);
 			tsk_setperm (io, task, io->off, pagesize, perm);
 		} else {
-			eprintf ("Usage: :perm [rwx]\n");
+			R_LOG_ERROR ("Usage: :perm [rwx]");
 		}
 		return NULL;
 	}

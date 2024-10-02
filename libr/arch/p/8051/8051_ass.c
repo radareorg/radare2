@@ -286,8 +286,7 @@ static bool pattern_match(char const*str, char const*pattern) {
 		if (tolower ((unsigned char)pattern[ti]) == tolower ((unsigned char)str[si])) {
 			si += 1;
 			ti += 1;
-		}
-		else {
+		} else {
 			return false;
 		}
 	}
@@ -300,8 +299,7 @@ static parse_mnem_args match_prefix_f(int*args, char const*str, ftable const tbl
 		if (pattern_match (str, tbl[row].pattern)) {
 			*args = tbl[row].args;
 			return tbl[row].res;
-		}
-		else {
+		} else {
 			row += 1;
 		}
 	}
@@ -348,7 +346,7 @@ static bool is_direct(char const *str) {
  * returns true if the given string denotes an 'r'-register
  */
 static bool is_reg(char const *str) {
-	r_return_val_if_fail (str, false);
+	R_RETURN_VAL_IF_FAIL (str, false);
 	return tolower (str[0]) == 'r' && R_BETWEEN ('0', str[1], '7') && !str[2];
 }
 
@@ -361,8 +359,7 @@ static bool relative_address(ut16 pc, ut16 address, ut8 *out)
 	st16 diff = address - (pc + 2);
 	if (diff < INT8_MIN || INT8_MAX < diff) {
 		return false;
-	}
-	else {
+	} else {
 		*out = diff;
 		return true;
 	}
@@ -882,7 +879,7 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
-		R_LOG_ERROR ("address bit not found");
+		R_LOG_DEBUG ("address bit not found");
 		return false;
 	}
 
@@ -1193,18 +1190,15 @@ static bool mnem_jmp(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 reladdr;
 	if (pc < address ) {
 		reladdr = address - pc;
-	}
-	else {
+	} else {
 		reladdr = pc - address;
 	}
 
 	if (reladdr < 0x100 ) {
 		return mnem_sjmp (arg, pc, out);
-	}
-	else if (reladdr < 0x08FF ) {
+	} else if (reladdr < 0x08FF ) {
 		return mnem_ajmp (arg, pc, out);
-	}
-	else {
+	} else {
 		return mnem_ljmp (arg, pc, out);
 	}
 }

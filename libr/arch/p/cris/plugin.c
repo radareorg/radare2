@@ -327,15 +327,15 @@ static char *get_reg_profile(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
 	}
 	return 4;

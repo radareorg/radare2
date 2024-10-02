@@ -57,9 +57,10 @@ wx f3 @ 0x00005ae1
 EOF
 RUN
 
-NAME=cmd_c4
+NAME=cmd_c4 le
 FILE=bins/elf/ls
 CMDS=<<EOF
+e cfg.bigendian=false
 c4 0xfa1e0ff2
 ?e ---
 c4* 0xfa1e0ff2
@@ -68,6 +69,27 @@ EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
 ---
 wx f2 @ 0x00005ae0
+EOF
+RUN
+
+NAME=cmd_c4 be
+FILE=bins/elf/ls
+CMDS=<<EOF
+e cfg.bigendian=true
+c4 0xfa1e0ff2
+?e ---
+c4* 0xfa1e0ff2
+EOF
+EXPECT=<<EOF
+0x00005ae0 (byte=01)   f3 ' '  ->  fa ' '
+0x00005ae1 (byte=02)   0f ' '  ->  1e ' '
+0x00005ae2 (byte=03)   1e ' '  ->  0f ' '
+0x00005ae3 (byte=04)   fa ' '  ->  f2 ' '
+---
+wx fa @ 0x00005ae0
+wx 1e @ 0x00005ae1
+wx 0f @ 0x00005ae2
+wx f2 @ 0x00005ae3
 EOF
 RUN
 

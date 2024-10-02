@@ -42,11 +42,13 @@ static bool lang_spp_file(RLangSession *lang, const char *file) {
 #define r_lang_spp_example "Hello {{{r2 ?E Hello world}}}"
 
 static RLangPlugin r_lang_plugin_spp = {
-	.name = "spp",
+	.meta = {
+		.name = "spp",
+		.license = "MIT",
+		.author = "pancake",
+		.desc = "SPP template programs",
+	},
 	.ext = "spp",
-	.license = "MIT",
-	.author = "pancake",
-	.desc = "SPP template programs",
 	.example = r_lang_spp_example,
 	.run = lang_spp_run,
 	.run_file = (void*)lang_spp_file,

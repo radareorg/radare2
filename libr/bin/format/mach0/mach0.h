@@ -61,6 +61,7 @@ struct reloc_t {
 	ut64 addr;
 	st64 addend;
 	ut8 type;
+	ut64 ntype;
 	int ord;
 	char name[256];
 	bool external;
@@ -156,7 +157,7 @@ struct MACH0_(obj_t) {
 	bool libs_loaded;
 	RPVector libs_cache;
 	int nlibs;
-	int size;
+	ut64 size;
 	ut64 baddr;
 	ut64 entry;
 	bool big_endian;
@@ -164,7 +165,7 @@ struct MACH0_(obj_t) {
 	RBuffer *b;
 	int os;
 	Sdb *kv;
-	int has_crypto;
+	bool has_crypto;
 	int has_canary;
 	int has_retguard;
 	int has_sanitizers;
@@ -197,6 +198,10 @@ struct MACH0_(obj_t) {
 	int internal_buffer_size;
 	int limit; // user defined
 	bool nofuncstarts;
+	ut64 exports_trie_off;
+	ut32 exports_trie_size;
+	RInterval lastrange;
+	ut64 lastrange_pa;
 };
 
 typedef struct {

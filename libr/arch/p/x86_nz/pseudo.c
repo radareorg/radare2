@@ -1,12 +1,5 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_anal.h>
 #include <r_parse.h>
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
@@ -15,7 +8,7 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static int replace(int argc, char *argv[], char *newstr) {
+static bool replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -27,22 +20,26 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "adc",  "# += #", {1, 2}},
 		{ "add",  "# += #", {1, 2}},
 		{ "and",  "# &= #", {1, 2}},
+		{ "ret", "return", {0}},
+		{ "iret", "return", {0}},
+		{ "endbr64", "", {0}},
+		{ "endbr", "", {0}},
 		{ "call", "# ()", {1}},
-		{ "cmove", "if (!var) # = #", {1, 2}},
-		{ "cmovl","if (var < 0) # = #", {1, 2}},
-		{ "cmp", "var = # - #", {1, 2}},
-		{ "cmpsq", "var = # - #", {1, 2}},
-		{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }", {0}},
-		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
+		{ "cmove", "if (!v) # = #", {1, 2}},
+		{ "cmovl","if (v < 0) # = #", {1, 2}},
+		{ "cmp", "v = # - #", {1, 2}},
+		{ "cmpsq", "v = # - #", {1, 2}},
+		{ "cmpsb", "while (CX != 0) { v = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!v) break; }", {0}},
+		{ "cmpsw", "while (CX != 0) { v = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!v) break; }", {0}},
 		{ "dec",  "#--", {1}},
 		{ "div",  "# /= #", {1, 2}},
 		{ "fabs",  "abs(#)", {1}},
 		{ "fadd",  "# = # + #", {1, 1, 2}},
-		{ "fcomp",  "var = # - #", {1, 2}},
+		{ "fcomp",  "v = # - #", {1, 2}},
 		{ "fcos",  "# = cos(#)", {1, 1}},
 		{ "fdiv",  "# = # / #", {1, 1, 2}},
 		{ "fiadd",  "# = # / #", {1, 1, 2}},
-		{ "ficom",  "var = # - #", {1, 2}},
+		{ "ficom",  "v = # - #", {1, 2}},
 		{ "fidiv",  "# = # / #", {1, 1, 2}},
 		{ "fidiv",  "# = # * #", {1, 1, 2}},
 		{ "fisub",  "# = # - #", {1, 1, 2}},
@@ -57,15 +54,17 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "imul",  "# = # * #", {1, 2, 3}},
 		{ "in",   "# = io[ # ]", {1, 2}},
 		{ "inc",  "#++", {1}},
-		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
-		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
-		{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
-		{ "je", "if (!var) goto loc_#", {1}},
-		{ "jg", "if (var > 0) goto loc_#", {1}},
-		{ "jge", "if (var >= 0) goto loc_#", {1}},
-		{ "jle", "if (var <= 0) goto loc_#", {1}},
+		{ "ja", "if (((unsigned) v) > 0) goto #", {1}},
+		{ "jb", "if (((unsigned) v) < 0) goto #", {1}},
+		{ "jbe", "if (((unsigned) v) <= 0) goto #", {1}},
+		{ "je", "if (!v) goto loc_#", {1}},
+		{ "jz", "if (!v) goto loc_#", {1}},
+		{ "jg", "if (v > 0) goto loc_#", {1}},
+		{ "jge", "if (v >= 0) goto loc_#", {1}},
+		{ "jle", "if (v <= 0) goto loc_#", {1}},
 		{ "jmp",  "goto loc_#", {1}},
-		{ "jne", "if (var) goto loc_#", {1}},
+		{ "jne", "if (v) goto loc_#", {1}},
+		{ "leav",  ";", {0}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
 		{ "movabs", "# = #", {1, 2}},
@@ -98,11 +97,12 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "pop",  "# = pop ()", {1}},
 		{ "pushf", "push (cpuflags)", {0}},
 		{ "push", "push (#)", {1}},
-		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
-		{ "sete",  "# = e", {1}},
-		{ "setne",  "# = ne", {1}},
+		{ "sete",  "# = v == 0", {1}},
+		{ "setz",  "# = v == 0", {1}},
+		{ "setne",  "# = v != 0", {1}},
+		{ "setnz",  "# = v != 0", {1}},
 		{ "shl",  "# <<<= #", {1, 2}},
 		{ "shld",  "# <<<= #", {1, 2}},
 		{ "sbb",  "# = # - #", {1, 1, 2}},
@@ -110,13 +110,19 @@ static int replace(int argc, char *argv[], char *newstr) {
 		{ "shlr",  "# >>>= #", {1, 2}},
 		//{ "strd",  "# = # - #", {1, 2, 3}},
 		{ "sub",  "# -= #", {1, 2}},
-		{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
-		{ "test", "var = # & #", {1, 2}},
+		{ "swap", "v = #; # = #; # = v", {1, 1, 2, 2}},
+		{ "test", "v = # & #", {1, 2}},
 		{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
 		{ "xadd",  "#,# = #,# + #", {1, 2, 2, 1, 2}},
 		{ "xor",  "# ^= #", {1, 2}},
 		{ NULL }
 	};
+	if (argc == 1) {
+		if (argv[0][0] && !argv[0][1]) {
+			*newstr = 0;
+			return true;
+		}
+	}
 
 	if (argc > 2 && !strcmp (argv[0], "xor")) {
 		if (!strcmp (argv[1], argv[2])) {
@@ -125,37 +131,35 @@ static int replace(int argc, char *argv[], char *newstr) {
 		}
 	}
 	for (i = 0; ops[i].op; i++) {
-		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				d = 0;
-				j = 0;
-				ch = ops[i].str[j];
-				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
-					if (ch == '#') {
-						if (d >= MAXPSEUDOOPS) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						int idx = ops[i].args[d];
-						d++;
-						if (idx <= 0) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						const char *w = argv[idx];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ch;
-					}
-				}
-				newstr[k] = '\0';
-			}
-			return true;
+		if (strcmp (ops[i].op, argv[0])) {
+			continue;
 		}
+		d = 0;
+		j = 0;
+		ch = ops[i].str[j];
+		for (j = 0, k = 0; ch != '\0'; j++, k++) {
+			ch = ops[i].str[j];
+			if (ch == '#') {
+				if (d >= MAXPSEUDOOPS) {
+					// XXX Shouldn't ever happen...
+					continue;
+				}
+				int idx = ops[i].args[d++];
+				if (idx <= 0) {
+					// XXX Shouldn't ever happen...
+					continue;
+				}
+				const char *w = argv[idx];
+				if (w) {
+					strcpy (newstr + k, w);
+					k += strlen (w) - 1;
+				}
+			} else {
+				newstr[k] = ch;
+			}
+		}
+		newstr[k] = '\0';
+		return true;
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
@@ -174,15 +178,20 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i;
 	size_t len = strlen (data);
 	int sz = 32;
-	char *buf, *ptr, *optr, *end;
+	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
 		return false;
 	}
 	// strdup can be slow here :?
-	if (!(buf = strdup (data))) {
+	char *buf = strdup (data);
+	if (!buf) {
 		return false;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
+	if (strchr (data, '(')) {
+		// avoid double-pseudo calls
+		return false;
+	}
 	if (*buf) {
 		end = buf + strlen (buf);
 		ptr = strchr (buf, '(');
@@ -204,17 +213,24 @@ static int parse(RParse *p, const char *data, char *str) {
 				break;
 			}
 		}
-		if (par) ptr++;
-		r_str_ncpy (w0, buf, R_MIN (ptr - buf, sizeof (w0)));
-		if (par) ptr--;
-		r_str_ncpy (w1, ptr, R_MIN (end-ptr+1, sizeof (w1)));
+		int delta = 1;
+		if (par) {
+			delta = 0;
+			ptr++;
+		}
+		r_str_ncpy (w0, buf, R_MIN (ptr - buf + delta, sizeof (w0)));
+		r_str_trim (w0);
+		if (par) {
+			ptr--;
+		}
+		r_str_ncpy (w1, ptr, R_MIN (end - ptr + 1, sizeof (w1)));
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {
 			*ptr++ = '\0';
 			for (ptr++; ptr < end ; ptr++) {
 				if (*ptr != ')' && *ptr != ' ') {
-					//			ptr++;
+					// ptr++;
 					break;
 				}
 			}
@@ -224,9 +240,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (ptr++; *ptr == ' '; ptr++) {
-					;
-				}
+				ptr = (char *)r_str_trim_head_ro (ptr + 1);
 				r_str_ncpy (w2, optr, sizeof (w2));
 				r_str_ncpy (w3, ptr, sizeof (w3));
 			}
@@ -283,12 +297,6 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
-#if 0
-	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
-		r_str_ncpy (wa[0], " ", 2);
-		r_str_ncpy (wa[1], " ", 2);
-		replace (nw, wa, str);
-#endif
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
 		R_FREE (p->retleave_asm);

@@ -1,4 +1,4 @@
-OBJ_DALVIKPSEUDO+=$(LIBR)/arch/p/pseudo/dalvik_pseudo.o
+OBJ_DALVIKPSEUDO+=$(LIBR)/arch/p/dalvik/pseudo.o
 
 TARGET_DALVIKPSEUDO=parse_dalvik_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_DALVIKPSEUDO}

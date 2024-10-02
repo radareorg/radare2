@@ -1,14 +1,14 @@
-/* radare - LGPL3 - 2019 - thestr4ng3r */
+/* radare - LGPL3 - 2019-2023 - thestr4ng3r */
 
 #include <r_bin.h>
 #include <r_lib.h>
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	// no magic
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 }
 
@@ -72,12 +72,14 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_prg = {
-	.name = "prg",
-	.desc = "C64 PRG",
-	.license = "LGPL3",
-	.load_buffer = load_buffer,
+	.meta = {
+		.name = "prg",
+		.desc = "C64 PRG",
+		.license = "LGPL3",
+	},
+	.load = load,
 	.baddr = baddr,
-	.check_buffer = check_buffer,
+	.check = check,
 	.entries = entries,
 	.sections = sections,
 	.info = info,

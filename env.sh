@@ -25,10 +25,11 @@ fi
 new_env='
 R2_ENV_IS_SET=1
 R2_LIBR_PLUGINS=${pfx}/lib/radare2
-PATH=$pfx/bin:${PATH}
-LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
-DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
-PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
+PATH=$pfx/bin${PATH:+:${PATH}}
+LIBRARY_PATH=$pfx/lib${LIBRARY_PATH:+:${LIBRARY_PATH}}
+LD_LIBRARY_PATH=$pfx/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+DYLD_LIBRARY_PATH=$pfx/lib${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
+PKG_CONFIG_PATH=$pfx/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}
 '
 
 shift
@@ -53,7 +54,7 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	if [ "$#" -gt 1 ]; then
+	if [ $# -gt 1 ]; then
 		par=""
 		p=0
 		while : ; do

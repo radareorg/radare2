@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2010-2024 - pancake, condret */
 
 #include <r_arch.h>
 #include <r_io.h>
@@ -30,23 +30,15 @@ R_API void r_anal_value_free(RArchValue *value) {
 }
 
 R_API RAnalValue *r_anal_value_clone(RAnalValue *ov) {
-	r_return_val_if_fail (ov, NULL);
-
-	RAnalValue *v = R_NEW0 (RAnalValue);
-	if (!v) {
-		return NULL;
-	}
-
-	memcpy (v, ov, sizeof (RAnalValue));
-	// reference to reg and regdelta should be kept
-	return v;
+	R_RETURN_VAL_IF_FAIL (ov, NULL);
+	return r_mem_dup (ov, sizeof (RAnalValue));
 }
 
 
 #if 0
 
 R_API RArchValue *r_arch_value_copy(RArchValue *ov) {
-	r_return_val_if_fail (ov, NULL);
+	R_RETURN_VAL_IF_FAIL (ov, NULL);
 
 	RArchValue *v = R_NEW0 (RArchValue);
 	if (!v) {
@@ -89,7 +81,7 @@ R_API ut64 r_arch_value_to_ut64(RArchValue *val, RReg *reg) {
 }
 
 R_API bool r_arch_value_set_ut64(RArchValue *val, RReg *reg, RIOBind *iob, ut64 num) {
-	r_return_val_if_fail (val && (!!val->memref) == (!!iob) && reg, false);
+	R_RETURN_VAL_IF_FAIL (val && (!!val->memref) == (!!iob) && reg, false);
 	if (val->memref) {
 		ut8 data[8];
 		const ut64 addr = r_arch_value_to_ut64 (val, reg);
@@ -108,7 +100,7 @@ R_API bool r_arch_value_set_ut64(RArchValue *val, RReg *reg, RIOBind *iob, ut64 
 R_API char *r_arch_value_tostring(RArchValue *value) {
 	char *out = NULL;
 	if (value) {
-		out = r_str_new ("");
+		out = strdup ("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL) {
 				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);

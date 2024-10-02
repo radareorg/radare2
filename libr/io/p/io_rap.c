@@ -1,4 +1,6 @@
-/* radare - MIT - Copyright 2011-2020 - pancake */
+/* radare - MIT - Copyright 2011-2023 - pancake */
+
+#define R_LOG_ORIGIN "io.rap"
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -29,29 +31,42 @@ static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return r_socket_rap_client_read (s, buf, count);
 }
 
-static bool __rap_close(RIODesc *fd) {
-	int ret = false;
-	if (RIORAP_IS_VALID (fd)) {
-		if (RIORAP_FD (fd)) {
-			RIORap *r = fd->data;
-			if (r && fd->fd != -1) {
-				if (r->fd) {
-					(void)r_socket_close (r->fd);
+static bool __rap_close(RIODesc *desc) {
+	bool ret = false;
+	if (RIORAP_IS_VALID (desc)) {
+		if (RIORAP_FD (desc)) {
+			RIORap *rap = desc->data;
+			if (rap && desc->fd != -1) {
+				if (rap->fd) {
+					r_socket_close (rap->fd);
 				}
-				if (r->client) {
-					ret = r_socket_close (r->client) != -1;
+				if (rap->client) {
+					r_socket_close (rap->client);
 				}
-				R_FREE (r);
+				free (rap);
 			}
 		}
 	} else {
-		R_LOG_ERROR ("__rap_close: fdesc is not a r_io_rap plugin");
+		R_LOG_ERROR ("fdesc is not a r_io_rap plugin");
 	}
 	return ret;
 }
 
 static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RSocket *s = RIORAP_FD (fd);
+	if (RIORAP_IS_LISTEN (fd)) {
+		switch (whence) {
+		case R_IO_SEEK_SET:
+			io->off = offset;
+			break;
+		case R_IO_SEEK_CUR:
+			io->off += offset;
+			break;
+		case R_IO_SEEK_END:
+			io->off = UT64_MAX;
+		}
+		return io->off;
+	}
 	return r_socket_rap_client_seek (s, offset, whence);
 }
 
@@ -60,8 +75,8 @@ static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
-	int i, p, listenmode;
-	char *file, *port;
+	int i;
+	char *port;
 
 	if (!__rap_plugin_open (io, pathname, 0)) {
 		return NULL;
@@ -72,27 +87,24 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		R_LOG_ERROR ("rap: wrong uri");
 		return NULL;
 	}
-	listenmode = (*host == ':');
+	int listenmode = (*host == ':');
 	*port++ = 0;
 	if (!*port) {
 		return NULL;
 	}
-	p = atoi (port);
-	if ((file = strchr (port + 1, '/'))) {
-		*file = 0;
-		file++;
-	}
+	int p = atoi (port);
+	char *file = r_str_after (port + 1, '/');
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("sandbox: Cannot use network");
 		return NULL;
 	}
 	if (listenmode) {
 		if (p <= 0) {
-			R_LOG_ERROR ("rap: cannot listen here. Try rap://:9999");
+			R_LOG_ERROR ("cannot listen. Try rap://:9999");
 			return NULL;
 		}
-		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		R_LOG_INFO ("rap: listening at port %s ssl %s", port, is_ssl? "on": "off");
+		// TODO: Handle ^C signal (SIGINT, exit); // ???
+		R_LOG_INFO ("listening at port %s ssl %s", port, is_ssl? "on": "off");
 		RIORap *rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
@@ -101,7 +113,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		if (is_ssl) {
-			if (file && *file) {
+			if (R_STR_ISNOTEMPTY (file)) {
 				if (!r_socket_listen (rior->fd, port, file)) {
 					r_socket_free (rior->fd);
 					free (rior);
@@ -140,7 +152,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	rior->listener = false;
 	rior->client = rior->fd = s;
-	if (file && *file) {
+	if (R_STR_ISNOTEMPTY (file)) {
 		i = r_socket_rap_client_open (s, file, rw);
 		if (i == -1) {
 			free (rior);
@@ -269,7 +281,6 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 	}
 #endif
 #endif
-
 	return NULL;
 }
 

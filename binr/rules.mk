@@ -6,9 +6,11 @@ include ../../shlr/sdb.mk
 # despite libs are pic, some systems/compilers dont
 # like relocatable executables, so here we do the magic
 USE_PIE=0
+ifeq (,$(findstring emcc,${CC}))
 ifeq (,$(findstring tcc,${CC}))
 ifeq (,$(findstring vinix,${CC}))
 USE_PIE=1
+endif
 endif
 endif
 
@@ -18,6 +20,7 @@ endif
 CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
+CFLAGS+=-lm
 LDFLAGS+=-lm
 else
 ifneq (${OSTYPE},linux)
@@ -60,6 +63,11 @@ LINK+=$(LIBR)/lang/libr_lang.a
 LINK+=$(LIBR)/config/libr_config.a
 LINK+=$(LIBR)/crypto/libr_crypto.a
 LINK+=$(LIBR)/main/libr_main.a
+else ifeq (${COMPILER},wasm)
+LINK+=$(SHLR)/libr_shlr.a
+LINK+=$(SHLR)/sdb/src/libsdb.a
+include $(SHLR)/capstone.mk
+EXT_EXE=.wasm
 else ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/sdb/src/libsdb.a
@@ -114,15 +122,15 @@ ${BINS}: ${OBJS}
 	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
-ifeq ($(COMPILER),wasi)
+ ifeq ($(COMPILER),wasi)
+  ifeq ($(OSTYPE),wasi-api)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS) -Wl,--no-entry -Wl,--export-all -mexec-model=reactor
+  else
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
-else
-ifeq ($(CC),emcc)
-	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js
-else
+  endif
+ else
 	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
-endif
-endif
+ endif
 else
 
 ${BINS}: ${OBJS}
@@ -131,8 +139,10 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} $(LINK) -o $@
 
-# -static fails because -ldl -lpthread static-gcc ...
+include ../../config-user.mk
+
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+# -static fails because -ldl -lpthread static-gcc ...
 ifneq ($(SILENT),)
 	@echo LD $@
 endif

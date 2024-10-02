@@ -184,7 +184,7 @@ static bool __rv32ima_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int __rv32ima_stop(RDebug *dbg) {
+static bool __rv32ima_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
 	return true;
 }
@@ -228,14 +228,14 @@ static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds && !ds->plugin_data, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds && !ds->plugin_data, false);
 
 	ds->plugin_data = R_NEW0 (PluginData);
 	return !!ds->plugin_data;
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds && ds->plugin_data, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds && ds->plugin_data, false);
 
 	R_FREE (ds->plugin_data);
 	return true;

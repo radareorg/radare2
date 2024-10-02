@@ -31,7 +31,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 }
 
@@ -40,10 +40,12 @@ static void fini(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_any = {
-	.name = "any",
-	.desc = "Dummy format r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = load_buffer,
+	.meta = {
+		.name = "any",
+		.desc = "Dummy format r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = load,
 	.destroy = fini,
 	.info = info,
 	.minstrlen = 0,

@@ -198,12 +198,27 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 		return false;
 	}
 	bin->dos_header = mz;
-	// TODO: read field by field to avoid endian and alignment issues
-	if (r_buf_read_at (bin->b, 0, (ut8 *)mz, sizeof (*mz)) == -1) {
+
+	ut8 raw[sizeof (*mz)];
+	if (r_buf_read_at (bin->b, 0, raw, sizeof (raw)) == -1) {
 		R_LOG_ERROR ("read (MZ_image_dos_header)");
 		return false;
 	}
-	// dos_header is not endian safe here in this point
+	mz->signature = r_read_le16 (&raw[0]);
+	mz->bytes_in_last_block = r_read_le16 (&raw[2]);
+	mz->blocks_in_file = r_read_le16 (&raw[4]);
+	mz->num_relocs = r_read_le16 (&raw[6]);
+	mz->header_paragraphs = r_read_le16 (&raw[8]);
+	mz->min_extra_paragraphs = r_read_le16 (&raw[10]);
+	mz->max_extra_paragraphs = r_read_le16 (&raw[12]);
+	mz->ss = r_read_le16 (&raw[14]);
+	mz->sp = r_read_le16 (&raw[16]);
+	mz->checksum = r_read_le16 (&raw[18]);
+	mz->ip = r_read_le16 (&raw[20]);
+	mz->cs = r_read_le16 (&raw[22]);
+	mz->reloc_table_offset = r_read_le16 (&raw[24]);
+	mz->overlay_number = r_read_le16 (&raw[26]);
+
 	if (mz->blocks_in_file < 1) {
 		return false;
 	}

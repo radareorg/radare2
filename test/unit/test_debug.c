@@ -52,7 +52,7 @@ bool test_r_debug_reg_offset(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;

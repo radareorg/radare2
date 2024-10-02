@@ -520,7 +520,7 @@ foobar:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  realname: foobar
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
@@ -543,7 +543,7 @@ foobar:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  realname: foobar
   types: int main (int argc, char **argv)
   refs: sym.print
   xrefs: entry0
@@ -952,7 +952,6 @@ za sym.bcopy b f30f1efa4887fee92479f9ff:ffffffffffffffff00000000
 za sym.bcopy g cc=1 nbbs=2 edges=1 ebbs=1 bbsum=23
 za sym.bcopy o 0x0008a900
 za sym.bcopy t void sym.bcopy (int64_t arg1)
-za sym.bcopy r sym..plt.sec
 za sym.bcopy v tr83:arg1:int64_t
 za sym.bcopy h 7549556f94a4c26907f0304da9892c797a73e6c44907dc2030389392a9df8f69
 EOF
@@ -1016,10 +1015,10 @@ s 0x00001120
 e zign.maxsz = 32
 af
 zaf
-z* ~za sym.__do_global_dtors_aux b
+z* ~za entry.fini0 b
 EOF
 EXPECT=<<EOF
-za sym.__do_global_dtors_aux b f30f1efb5589e553e853ffffff81c3d32e000083ec0480bb180000000075288b:ffffffffffffffffff00000000ff0000000000ffffffffffffffffffffff00ff
+za entry.fini0 b f30f1efb5589e553e853ffffff81c3d32e000083ec0480bb180000000075288b:ffffffffffffffffff00000000ff0000000000ffffffffffffffffffffff00ff
 EOF
 RUN
 
@@ -1033,7 +1032,7 @@ z*
 EOF
 EXPECT=<<EOF
 zs *
-za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc001004810008008088218f9980180320f809000000008fbc00102404ffff100000142403000910a000412404007f24a5ffff2ca20013104000088f83805c0005108024638d00004310218c420000005c102100400008000000008f9980180320f809000000008fbc00102404ffff240300161000002eac4300001000002c240400ff8f9980180320f809000000008fbc00100220202127a500188f998224004080210320f8098c510000044100088fbc00108e030000240200591462001c2404ffff240400ff10000019ae110000100000178fa40040100000152404100010000013000020218f9980f0022020210320f80927a500600440000c8fbc00108fa200743043f0003402800010620003240260001462000500000000100000042404000110000002240400202404ffff8fbf01008fb100fc8fb000f80080102103e0000827bd0108:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ff000000ffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffff000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff
+za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc001004810008008088218f9980180320f809000000008fbc00102404ffff100000142403000910a000412404007f24a5ffff2ca20013104000088f83805c0005108024638d00004310218c420000005c102100400008000000008f9980180320f809000000008fbc00102404ffff240300161000002eac4300001000002c240400ff8f9980180320f809000000008fbc00100220202127a500188f998224004080210320f8098c510000044100088fbc00108e030000240200591462001c2404ffff240400ff10000019ae110000100000178fa40040100000152404100010000013000020218f9980f0022020210320f80927a500600440000c8fbc00108fa200743043f0003402800010620003240260001462000500000000100000042404000110000002240400202404ffff8fbf01008fb100fc8fb000f80080102103e0000827bd0108:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffffffffffff000000ffffffffff000000ffffffffffffffffffffffffff000000ff000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffffffffffffffffffffffffffff000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff
 za sym.fpathconf g cc=5 nbbs=8 edges=9 ebbs=2 bbsum=176
 za sym.fpathconf o 0x00051490
 za sym.fpathconf t void sym.fpathconf (int32_t arg1, int32_t arg2)
@@ -1098,6 +1097,8 @@ RUN
 
 NAME=PowerPC function with jumpback
 FILE=bins/elf/busybox-powerpc
+# it's broken because (git)capstone-v5 vs (release)capstone-5.0 differ and break the testsuite
+BROKEN=1
 CMDS=<<EOF
 s 0x10002d70
 af
@@ -1110,7 +1111,7 @@ za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=3 nbbs=8 edges=9 ebbs=1 bbsum=232
 za fcn.10002d70 o 0x10002d70
 za fcn.10002d70 t void fcn.10002d70 (int32_t arg1, int32_t arg2, int32_t arg_1030h, int32_t arg_1034h)
-za fcn.10002d70 v fs-4136:var_8h:int32_t, ts4:arg_1034h:int32_t, fs-36:var_100ch:int32_t, ts0:arg_1030h:int32_t, tr5:arg1:int32_t, tr6:arg2:int32_t
+za fcn.10002d70 v fs-4136:var_8h:int32_t, ts4:arg_1034h:int32_t, fs-36:var_100ch:int32_t, ts0:arg_1030h:int32_t, fb-4096:var_1000h:int32_t, tr5:arg1:int32_t, tr6:arg2:int32_t
 za fcn.10002d70 h 5f59f157d9e3548e81fed794bff828e7fc6ab90932a879b643d6d2a30c20c3b0
 EOF
 RUN
@@ -1224,7 +1225,7 @@ zaf
 z* ~za sym._vfprintf_r b
 EOF
 EXPECT=<<EOF
-za sym._vfprintf_r b ff0314d1fd7b00a9fd030091f35301a9f30302aaf55b02a9f76303a9f70300aaf80303aaf96b04a9fa0301aafb7305a9e827066d6a170094000040f9e06700f989efff97e05700f9020180d2e0a3059101008052a4ecff97b70000b4e052:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ff000000ffffffffff000000ffffffffffffffffffffffffffffffffff000000ff000000ffff
+za sym._vfprintf_r b ff0314d1fd7b00a9fd030091f35301a9f30302aaf55b02a9f76303a9f70300aaf80303aaf96b04a9fa0301aafb7305a9e827066d6a170094000040f9e06700f989efff97e05700f9020180d2e0a3059101008052a4ecff97b70000b4e052:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffff000000ffffffffffffffffffffffffffffffffff000000ff000000ffff
 EOF
 RUN
 
@@ -1305,7 +1306,7 @@ za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:
 zbrj sym.exact 1
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00410210","similarity":1.000000,"byte similarity":1.000000,"graph similarity":1.000000}]
+[{"name":"fcn.00410210","similarity":1.000,"byte similarity":1.000,"graph similarity":1.000}]
 EOF
 RUN
 
@@ -1756,14 +1757,87 @@ zg
 z*~N
 EOF
 EXPECT=<<EOF
-za __Z3fooi N __Z3fooii
-za __Z3foov N __Z3fooi
-za _main N imp.atoi
-za __Z3fooii N _main
---
 za sym.foo_int__int_ N main
 za sym.foo__ N sym.foo_int_
 za main N sym.imp.atoi
 za sym.foo_int_ N sym.foo_int__int_
+--
+za foo__ N foo(int)
+za foo_int__int_ N main
+za foo_int_ N foo(int, int)
+za main N sym.imp.atoi
+EOF
+RUN
+
+NAME=Saves and loads sdb zignatures without sdb extension
+FILE=-
+CMDS=<<EOF
+rm .tmp_file
+za s1 x xref1
+za s2 r ref1
+za s3 n sym1
+za s4 n sym2
+zos .tmp_file
+z-*
+zo .tmp_file
+z~s1
+z~s2
+z~s3
+z~s4
+rm .tmp_file
+EOF
+EXPECT=<<EOF
+s1:
+s2:
+s3:
+s4:
+EOF
+RUN
+
+NAME=Saves and loads r2 zignatures without r2 extension
+FILE=-
+CMDS=<<EOF
+rm .tmp_file2
+za s1 x xref1
+za s2 r ref1
+za s3 n sym1
+za s4 n sym2
+z* > .tmp_file2
+z-*
+zo .tmp_file2
+z~s1
+z~s2
+z~s3
+z~s4
+rm .tmp_file2
+EOF
+EXPECT=<<EOF
+s1:
+s2:
+s3:
+s4:
+EOF
+RUN
+
+NAME=Generate zignature and show only one
+FILE=bins/elf/arg
+CMDS=<<EOF
+aa
+zg
+z $$
+aflc
+EOF
+EXPECT=<<EOF
+entry0:
+  bytes: 31ed4989d15e4889e24883e4f050544c8d053a020000488d0dc3010000488d3d5a010000ff1516092000
+  mask: ffffffffffffffffffffffffffffffff000000000000ff000000000000ff000000000000ff0000000000
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=42
+  addr: 0x000006a0
+  next: sym.deregister_tm_clones
+  types: void entry0 (int64_t arg3)
+  refs: sym.__libc_csu_fini, sym.__libc_csu_init, sym.main
+  vars: tr73:arg3:int64_t
+  bbhash: 77ece050bbc234ae3b587a8ef8da536b640f0b000414d63490214c47b18021d2
+18
 EOF
 RUN

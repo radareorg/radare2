@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2023 - FXTi, pancake */
+/* radare - LGPL3 - Copyright 2016-2024 - FXTi, pancake */
 
 #include <r_arch.h>
 #include "pyc_dis.h"
@@ -27,7 +27,7 @@ static int pyversion_toi(const char *version) {
 static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int pyversion) {
 	RBin *bin = s->arch->binb.bin;
 	RBinPlugin *plugin = bin && bin->cur && bin->cur->bo? bin->cur->bo->plugin: NULL;
-	RList *shared = (plugin && !strcmp (plugin->name, "pyc"))?
+	RList *shared = (plugin && !strcmp (plugin->meta.name, "pyc"))?
 		bin->cur->bo->bin_obj: NULL;
 	RList *cobjs = NULL;
 	RList *interned_table = NULL;
@@ -54,19 +54,21 @@ static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int 
 
 static int archinfo(RArchSession *as, ut32 query) {
 	switch (query) {
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		{
 			int pyversion = pyversion_toi (as->config->cpu);
 			return (pyversion < 370)? 1: 2;
 		}
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		{
 			int pyversion = pyversion_toi (as->config->cpu);
 			return (pyversion < 370)? 3: 2;
 		}
 	default:
 		return -1;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
 	}
 }
 
@@ -95,7 +97,7 @@ static char *regs(RArchSession *as) {
 static RList *get_pyc_code_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
-	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
+	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
 	return is_pyc? b->cur->bo->bin_obj: NULL;
 }
 
@@ -173,7 +175,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			//op->fail = addr + ((is_python36)? 2: 3);
+			// op->fail = addr + ((is_python36)? 2: 3);
 		}
 	} else if (op_obj->type & HASCOMPARE) {
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -195,6 +197,7 @@ static bool finish(RArchSession *s) {
 const RArchPlugin r_arch_plugin_pyc = {
 	.meta = {
 		.name = "pyc",
+		.author = "fxti",
 		.desc = "Python bytecode analysis plugin",
 		.license = "LGPL3",
 	},

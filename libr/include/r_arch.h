@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2023 - pancake, condret */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -24,8 +24,15 @@ typedef enum {
 #define R_ARCH_INFO_DATA2_ALIGN 16
 #define R_ARCH_INFO_DATA4_ALIGN 32
 #define R_ARCH_INFO_DATA8_ALIGN 64
-// R2_590 - deprecated but compatible types
+#define R_ARCH_INFO_JMPMID 128
+#define R_ARCH_INFO_ISVM 256
+
 #if 1
+// R2_600 - Old and Deprecated Names. keeping it for compat until 6.0
+#define R_ARCH_INFO_MIN_OP_SIZE	0
+#define R_ARCH_INFO_MAX_OP_SIZE	1
+#define R_ARCH_INFO_INV_OP_SIZE	2
+#define R_ARCH_INFO_ALIGN	4
 #define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
 #define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
 #define R_ANAL_ARCHINFO_INV_OP_SIZE 2
@@ -99,13 +106,6 @@ typedef struct r_arch_config_t {
 
 #define	R_ARCH_CONFIG_IS_BIG_ENDIAN(cfg_) (((cfg_)->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG)
 
-#define R_ARCH_INFO_MIN_OP_SIZE	0
-#define R_ARCH_INFO_MAX_OP_SIZE	1
-#define R_ARCH_INFO_INV_OP_SIZE	2
-#define R_ARCH_INFO_ALIGN	4
-#define R_ARCH_INFO_DATA_ALIGN	8
-#define R_ARCH_INFO_JMPMID	16
-
 typedef enum {
 	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
 	R_ARCH_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
@@ -123,6 +123,7 @@ typedef struct r_arch_t {
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg; // global / default config
+	char *platform;
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -138,11 +139,11 @@ typedef struct r_arch_session_t {
 } RArchSession;
 
 typedef enum {
-	R_ARCH_ESIL_INIT,
-	R_ARCH_ESIL_MAPS,
+	R_ARCH_ESIL_ACTION_INIT,
+	R_ARCH_ESIL_ACTION_MAPS,
 	// R_ARCH_ESIL_EVAL,
-	R_ARCH_ESIL_RESET,
-	R_ARCH_ESIL_FINI,
+	R_ARCH_ESIL_ACTION_RESET,
+	R_ARCH_ESIL_ACTION_FINI,
 } RArchEsilAction;
 
 typedef ut32 RArchDecodeMask;
@@ -183,6 +184,10 @@ typedef struct r_arch_plugin_t {
 	const RArchPluginEsilCallback esilcb;
 } RArchPlugin;
 
+R_API char *r_arch_platform_unset(RArch *arch, const char *name);
+R_API char *r_arch_platform_set(RArch *arch, const char *name);
+R_API void r_arch_platform_list(RArch *arch);
+
 // decoder.c
 //dname is name of decoder to use, NULL if current
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
@@ -193,6 +198,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, int query);
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
+R_API bool r_arch_esilcb(RArch *a, RArchEsilAction action);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, REsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, REsil *esil);
 
@@ -205,6 +211,7 @@ R_API RList *r_arch_session_preludes(RArchSession *as);
 
 // arch.c
 R_API RArch *r_arch_new(void);
+R_API RArchPlugin *r_arch_find(RArch *arch, const char *name);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 
 // arch plugins management apis
@@ -283,6 +290,7 @@ extern const RArchPlugin r_arch_plugin_dalvik;
 extern const RArchPlugin r_arch_plugin_dis;
 extern const RArchPlugin r_arch_plugin_ebc;
 extern const RArchPlugin r_arch_plugin_evm;
+extern const RArchPlugin r_arch_plugin_fslsp;
 extern const RArchPlugin r_arch_plugin_gb;
 extern const RArchPlugin r_arch_plugin_h8300;
 extern const RArchPlugin r_arch_plugin_hppa_gnu;
@@ -304,6 +312,7 @@ extern const RArchPlugin r_arch_plugin_mcs96;
 extern const RArchPlugin r_arch_plugin_mips_cs;
 extern const RArchPlugin r_arch_plugin_mips_gnu;
 extern const RArchPlugin r_arch_plugin_msp430;
+extern const RArchPlugin r_arch_plugin_nds32;
 extern const RArchPlugin r_arch_plugin_nios2;
 extern const RArchPlugin r_arch_plugin_null;
 extern const RArchPlugin r_arch_plugin_or1k;
@@ -325,9 +334,11 @@ extern const RArchPlugin r_arch_plugin_sm5xx;
 extern const RArchPlugin r_arch_plugin_snes;
 extern const RArchPlugin r_arch_plugin_sparc_cs;
 extern const RArchPlugin r_arch_plugin_sparc_gnu;
+extern const RArchPlugin r_arch_plugin_stm8;
 extern const RArchPlugin r_arch_plugin_tms320;
 extern const RArchPlugin r_arch_plugin_tricore;
 extern const RArchPlugin r_arch_plugin_tricore_cs;
+extern const RArchPlugin r_arch_plugin_uxn;
 extern const RArchPlugin r_arch_plugin_v810;
 extern const RArchPlugin r_arch_plugin_v850;
 extern const RArchPlugin r_arch_plugin_vax;

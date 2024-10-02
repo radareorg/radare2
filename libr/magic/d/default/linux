@@ -146,7 +146,7 @@
 # 0	lelong&0xFF00FFFF 0x17000301	ld86 SPARC executable
 
 # SYSLINUX boot logo files (from 'ppmtolss16' sources)
-# http://syslinux.zytor.com/
+# https://syslinux.zytor.com/
 #
 0	lelong	=0x1413f33d		SYSLINUX' LSS16 image data
 >4	leshort	x			\b, width %d
@@ -205,7 +205,7 @@
 >24	lelong	x			%d symbols
 >28	lelong	x			%d ocons
 
-# LUKS: Linux Unified Key Setup, On-Disk Format, http://luks.endorphin.org/spec
+# LUKS: Linux Unified Key Setup, On-Disk Format, https://luks.endorphin.org/spec
 # Anthon van der Neut (anthon@mnt.org)
 0	string	LUKS\xba\xbe	LUKS encrypted file,
 >6	beshort x		ver %d

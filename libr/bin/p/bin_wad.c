@@ -1,11 +1,11 @@
-/* radare - LGPL3 - 2021 - murphy */
+/* radare - LGPL3 - 2023 - murphy */
 
 #include <r_bin.h>
 #include <r_lib.h>
 #include "wad/wad.h"
 
 typedef struct {
-	Sdb *kv;
+	Sdb *kv; // we can just use bf->sdb
 	WADHeader hdr;
 	RBuffer *buf;
 } WadObj;
@@ -32,8 +32,8 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return wo? wo->kv: NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+static bool check(RBinFile *bf, RBuffer *b) {
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut8 sig[4];
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
 		return false;
@@ -44,23 +44,26 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	WadObj *wo = R_NEW0 (WadObj);
-	r_return_val_if_fail (wo, false);
+	R_RETURN_VAL_IF_FAIL (wo, false);
+#if 0
+	// we can just use bf->sdb in here
+	wad_header_load (wo, bf->sdb);
+#else
 	wo->kv = sdb_new0 ();
-	if (!wo->kv) {
-		free (wo);
-		return false;
+	if (wo->kv) {
+		wad_header_load (wo, wo->kv);
+		sdb_ns_set (bf->sdb, "info", wo->kv);
 	}
+#endif
 	wo->buf = r_buf_ref (buf);
-	wad_header_load (wo, wo->kv);
-	sdb_ns_set (sdb, "info", wo->kv);
-	*bin_obj = wo;
+	bf->bo->bin_obj = wo;
 	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -84,7 +87,7 @@ static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 	if (!ptr) {
 		return;
 	}
-	ptr->name = name;
+	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
@@ -123,9 +126,8 @@ static RList *wad_fields(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 addr = 0;
-	r_strf_buffer (32);
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
 	addr += siz;
 	ut32 magic = r_buf_read_le32 (bf->buf);
 	ut32 numlumps = r_buf_read_le32 (bf->buf);
@@ -143,16 +145,16 @@ static void destroy(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_wad = {
-	.name = "wad",
-	.desc = "DOOM WAD format r_bin plugin",
-	.license = "LGPL3",
-	.author = "murphy",
+	.meta = {
+		.name = "wad",
+		.desc = "DOOM WAD format r_bin plugin",
+		.license = "LGPL3",
+		.author = "murphy",
+	},
 	.get_sdb = &get_sdb,
-	.entries = NULL,
-	.sections = NULL,
 	.symbols = &symbols,
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.check = &check,
+	.load = &load,
 	.baddr = &baddr,
 	.info = &info,
 	.header = &wad_header_fields,

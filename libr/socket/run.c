@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake */
+/* radare - LGPL - Copyright 2014-2024 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -109,7 +109,7 @@ R_API RRunProfile *r_run_new(R_NULLABLE const char *str) {
 }
 
 R_API void r_run_reset(RRunProfile *p) {
-	r_return_if_fail (p);
+	R_RETURN_IF_FAIL (p);
 	int i;
 	for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
 		R_FREE (p->_args[i]);
@@ -139,7 +139,7 @@ R_API void r_run_reset(RRunProfile *p) {
 }
 
 R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
-	r_return_val_if_fail (pf && profile, false);
+	R_RETURN_VAL_IF_FAIL (pf && profile, false);
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
 		return false;
@@ -478,7 +478,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		R_LOG_ERROR ("Cannot create pipe");
 #elif R2__UNIX__
 		if (in) {
-			int pipes[2];
+			int pipes[2] = { -1, -1 };
 			if (pipe (pipes) != -1) {
 				size_t cmdl = strlen (cmd)-2;
 				if (write (pipes[1], cmd + 1, cmdl) != cmdl) {
@@ -542,7 +542,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 }
 
 R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
-	r_return_val_if_fail (p && b, false);
+	R_RETURN_VAL_IF_FAIL (p && b, false);
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
 		bool ret = r_run_parse (p, s);
@@ -985,7 +985,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 				if (p->_dofork) {
 					pid_t child_pid = r_sys_fork ();
 					if (child_pid == -1) {
-						R_LOG_ERROR ("cannot fork");
+						R_LOG_ERROR ("Cannot fork");
 						r_socket_free (child);
 						r_socket_free (fd);
 						return false;
@@ -1001,7 +1001,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 
 				if (is_child) {
 					r_socket_close_fd (fd);
-					R_LOG_ERROR ("connected");
+					R_LOG_INFO ("connected");
 					if (p->_pty) {
 						if (!redirect_socket_to_pty (child)) {
 							R_LOG_ERROR ("socket redirection failed");
@@ -1094,7 +1094,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_input) {
 		char *inp;
-		int f2[2];
+		int f2[2] = { -1, -1 };
 		if (pipe (f2) != -1) {
 			close (0);
 #if !__wasi__
@@ -1196,7 +1196,7 @@ static void time_end(bool chk, ut64 time_begin) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API bool r_run_start(RRunProfile *p) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
 		exit (execv (p->_program, (char* const*)p->_args));
@@ -1261,7 +1261,7 @@ R_API bool r_run_start(RRunProfile *p) {
 	if (p->_system) {
 		int rc = 0;
 		if (p->_pid) {
-			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");
 		}
 		if (p->_daemon) {
 #if R2__WINDOWS__
@@ -1277,20 +1277,21 @@ R_API bool r_run_start(RRunProfile *p) {
 					R_LOG_INFO ("pid = %d", child);
 				}
 				if (p->_pidfile) {
-					char pidstr[32];
-					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
-					r_file_dump (p->_pidfile,
-							(const ut8*)pidstr,
-							strlen (pidstr), 0);
+					r_strf_var (pidstr, 32, "%d\n", (int)child);
+					r_file_dump (p->_pidfile, (const ut8*)pidstr,
+						strlen (pidstr), 0);
 				}
 				exit (0);
 			}
 #if !__wasi__
 			setsid ();
 #endif
+			// setvbuf (stdout, NULL, _IONBF, 0);
 			if (p->_timeout) {
 #if R2__UNIX__
+#if !__wasi__
 				int mypid = r_sys_getpid ();
+#endif
 				if (!r_sys_fork ()) {
 					int use_signal = p->_timeout_sig;
 					if (use_signal < 1) {
@@ -1397,7 +1398,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			if (child) {
 				if (p->_pidfile) {
 					char pidstr[32];
-					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
+					snprintf (pidstr, sizeof (pidstr), "%d\n", (int)child);
 					r_file_dump (p->_pidfile,
 							(const ut8*)pidstr,
 							strlen (pidstr), 0);

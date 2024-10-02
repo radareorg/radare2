@@ -62,45 +62,65 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		R_LOG_WARN ("file does not exist");
 		return false;
 	}
+	bool use_node = true;
+	if (r_sys_getenv_asbool ("R2_TSR2JS")) {
+		use_node = false;
+	}
 	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
-	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".qjs", 0);
+	char *qjs_ofile = NULL;
+	if (use_node) {
+		qjs_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
+	} else {
+		qjs_ofile = r_str_replace (strdup (file), ".ts", ".r2.js", 0);
+	}
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
-		char *name = strdup (file);
-		char *dot = strchr (name, '.');
-		if (dot) {
-			*dot = 0;
-		}
-		// TODO: compile to stdout and remove the need of another tmp file
-		rc = r_sys_cmdf ("tsc --target es2020 --allowJs --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
-		if (rc == 0) {
-			char *js_ifile = r_file_slurp (js_ofile, NULL);
-			RStrBuf *sb = r_strbuf_new ("");
-			char *js_ifile_orig = strdup (js_ifile);
-			// r_strbuf_append (sb, js_require_qjs);
-			js_ifile = patch_entrypoint (js_ifile, name);
-			if (js_ifile) {
-				r_strbuf_append (sb, "var Gmain;");
-				r_strbuf_append (sb, js_ifile);
-				r_strbuf_append (sb, js_entrypoint_qjs);
-			} else {
-				R_LOG_DEBUG ("Cannot find Gmain entrypoint");
-				r_strbuf_append (sb, js_ifile_orig);
+		if (use_node) {
+			rc = r_sys_cmdf ("tsc %s", file);
+		} else {
+			char *name = strdup (file);
+			char *dot = strchr (name, '.');
+			if (dot) {
+				*dot = 0;
 			}
-			char *s = r_strbuf_drain (sb);
-			free (js_ifile_orig);
-			r_file_dump (qjs_ofile, (const ut8*)s, -1, 0);
-			free (s);
-			r_file_rm (js_ofile);
+			// TODO: compile to stdout and remove the need of another tmp file
+			rc = r_sys_cmdf ("tsc --target es2020 --allowJs --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
+			if (rc == 0) {
+				char *js_ifile = r_file_slurp (js_ofile, NULL);
+				RStrBuf *sb = r_strbuf_new ("");
+				char *js_ifile_orig = strdup (js_ifile);
+				// r_strbuf_append (sb, js_require_qjs);
+				js_ifile = patch_entrypoint (js_ifile, name);
+				if (js_ifile) {
+					r_strbuf_append (sb, "var Gmain;");
+					r_strbuf_append (sb, js_ifile);
+					r_strbuf_append (sb, js_entrypoint_qjs);
+				} else {
+					R_LOG_DEBUG ("Cannot find Gmain entrypoint");
+					r_strbuf_append (sb, js_ifile_orig);
+				}
+				char *s = r_strbuf_drain (sb);
+				free (js_ifile_orig);
+				r_file_dump (qjs_ofile, (const ut8*)s, -1, 0);
+				free (s);
+				r_file_rm (js_ofile);
+			}
 		}
 	} else {
 		R_LOG_DEBUG ("no need to compile");
 	}
 	// TODO: use r_lang_run_string() and avoid the need of the intermediate qjs file
 	if (rc == 0) {
-		r_lang_use (s->lang, "qjs");
-		rc = r_lang_run_file (s->lang, qjs_ofile)? 0: -1;
+		if (use_node) {
+			r_lang_use (s->lang, "pipe");
+			char *f = r_str_newf ("node %s", qjs_ofile);
+			rc = r_lang_run_file (s->lang, f)? 0: -1;
+			free (f);
+		} else {
+			r_lang_use (s->lang, "qjs");
+			rc = r_lang_run_file (s->lang, qjs_ofile)? 0: -1;
+		}
 	}
 	free (js_ofile);
 	free (qjs_ofile);
@@ -118,7 +138,7 @@ static bool lang_tsc_run(RLangSession *s, const char *code, int len) {
 }
 
 static bool lang_tsc_init(RLangSession *ls) {
-	bool found = false;
+	bool found = true;
 	if (ls == NULL) {
 		char *tsc = r_file_path ("tsc");
 		free (tsc);
@@ -128,20 +148,14 @@ static bool lang_tsc_init(RLangSession *ls) {
 }
 
 static RLangPlugin r_lang_plugin_tsc = {
-#if 0
 	// use RLibMeta for RLangPlugin too
 	.meta = {
-		.name = "tsc"
+		.name = "tsc",
 		.author = "pancake",
 		.license = "LGPL",
 		.desc = "Use #!tsc script.ts",
 	},
-#endif
-	.name = "tsc",
 	.ext = "ts",
-	.author = "pancake",
-	.license = "LGPL",
-	.desc = "Use #!tsc script.ts",
 	.init = lang_tsc_init,
 	.run = lang_tsc_run,
 	.run_file = (void*)lang_tsc_file,

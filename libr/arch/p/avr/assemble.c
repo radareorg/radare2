@@ -128,8 +128,11 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 	}
 
 	// copying result to radare struct
-	if (len > 0) {
-		memcpy (outbuf, (const ut8*)&coded, len);
+	switch (len) {
+	case 4:	outbuf[3] = (ut8)(coded >> 24);  // fallthrough
+	case 3: outbuf[2] = (ut8)(coded >> 16);
+	case 2: outbuf[1] = (ut8)(coded >> 8);
+	case 1: outbuf[0] = (ut8)coded;
 	}
 
 	return len;

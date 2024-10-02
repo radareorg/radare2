@@ -6,7 +6,6 @@ BINS=r2blob
 
 SOURCES= r2blob.c
 
-include ../../config-user.mk
 include ../rules.mk
 
 SHLR=../../shlr

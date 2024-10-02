@@ -1,4 +1,4 @@
-/* radare2 - MIT - 2021 - pancake */
+/* radare2 - MIT - 2021-2023 - pancake */
 // https://en.wikipedia.org/wiki/OS/360_Object_File_Format
 
 #include <r_bin.h>
@@ -8,8 +8,8 @@ typedef struct {
 	RBuffer *buf;
 } OffObj;
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
-	r_return_val_if_fail (b, false);
+static bool check(RBinFile *bf, RBuffer *b) {
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut8 sig[4];
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
 		return false;
@@ -20,15 +20,14 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	OffObj *wo = R_NEW0 (OffObj);
-	r_return_val_if_fail (wo, false);
-	*bin_obj = wo;
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
+	bf->bo->bin_obj = R_NEW0 (OffObj);
 	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -61,10 +60,9 @@ static RList *off_fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	r_strf_buffer (32);
 	ut64 addr = 0;
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
 	addr += siz;
 	ut32 magic = r_buf_read_le32 (bf->buf);
 	ut32 numlumps = r_buf_read_le32 (bf->buf);
@@ -94,13 +92,15 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_off = {
-	.name = "off",
-	.desc = "OS/360 Object File Format",
-	.license = "MIT",
-	.author = "pancake",
+	.meta = {
+		.name = "off",
+		.desc = "OS/360 Object File Format",
+		.license = "MIT",
+		.author = "pancake",
+	},
 	.entries = entries,
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.check = &check,
+	.load = &load,
 	.baddr = &baddr,
 	.info = &info,
 	.header = &off_header_fields,

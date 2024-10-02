@@ -4,11 +4,17 @@
 
 #define JMPTBL_MAXSZ 512
 
-static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
-	r_meta_set_data_at (anal, case_addr_loc, offset_sz);
-	r_anal_hint_set_immbase (anal, case_addr_loc, 10);
+	/*
+	 * In the case of ARM-style jump table (as in walkthrough_arm_jmptbl_style)
+	 * Do not treat the case as data, since it is in fact, instruction.
+	 */
+	if (!case_is_insn) {
+		r_meta_set_data_at (anal, case_addr_loc, offset_sz);
+		r_anal_hint_set_immbase (anal, case_addr_loc, 10);
+	}
 	r_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 	if (block) {
 		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
@@ -58,9 +64,8 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
-				} else {
-					R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 				}
+				R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 			} else {
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;
@@ -145,7 +150,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		r_anal_hint_set_immbase (anal, jmpptr_idx_off, 10);
 
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz);
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -161,6 +166,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	return ret;
 }
 
+// TODO R2_600 - this api name must start with `r_anal_jmptbl`
 R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	// jmptbl_size can not always be determined
@@ -188,10 +194,12 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	const char *sarch = R_UNWRAP3 (anal, config, arch);
 	if (!sarch) {
 		R_LOG_DEBUG ("Cannot find any valid arch");
+		free (jmptbl);
 		return false;
 	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
+	bool is_mips = !is_arm && !is_x86 && r_str_startswith (sarch, "mips");
 	const bool is_v850 = !is_arm && !is_x86 && ((sarch && r_str_startswith (sarch, "v850")) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
@@ -210,7 +218,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break; // XXX
 		default:
-			jmpptr = r_read_le64 (jmptbl + offs);
+			jmpptr = r_read_le32 (jmptbl + offs);
 			break;
 		}
 		if (is_arm && anal->config->bits == 64 && ip > 4096 && jmpptr < 4096 && jmpptr < ip) {
@@ -239,17 +247,30 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			// jump tables where sign extended movs are used
 			jmpptr = jmptbl_off + jmpdelta;
 		}
+		if (is_mips) {
+			jmpptr += (ip & 0xfffff);
+			// R2_600 - get the baddr from binbind
+			// ut64 baddr = r_anal_get_bbaddr (anal, ip);
+			// eprintf ("base address = %llx %llx\n", ip, baddr);
+			// const ut64 baddr = 0x400000; // hardcoded baddr
+			// jmpptr -= baddr;
+		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
 			}
 		}
-		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
+		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, false);
 		//(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs);
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
+	}
+	if (is_mips) {
+		// default case for mips is right after the 'jr v0' instruction
+		apply_case (anal, block, ip, sz, ip + 8, -1, jmptbl_loc + offs, false);
+		analyze_new_case (anal, fcn, block, ip, ip + 8, depth);
 	}
 
 	if (offs > 0) {
@@ -412,7 +433,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
 		jmpptr = jmptbl_loc + offs;
-		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
+		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, true);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 

@@ -1,0 +1,126 @@
+NAME=r2pipe2 error
+FILE=--
+CMDS={
+EXPECT=<<EOF
+{"res":"","error":true,"value":0,"code":0}
+EOF
+RUN
+
+NAME=r2pipe2 invalid
+FILE=--
+CMDS={"cmd":"invalid"}
+EXPECT=<<EOF
+{"res":"","error":false,"value":1,"code":0,"logs":[{"type":"ERROR","origin":"r_core_return_invalid_command","message":"Invalid `n` subcommand, try `i?`"}],"code":0}
+EOF
+RUN
+
+NAME=r2pipe2 echo
+FILE=--
+CMDS={"cmd":"?e hello"}
+EXPECT=<<EOF
+{"res":"hello\n","error":false,"value":0,"code":0,"code":0}
+EOF
+RUN
+
+NAME=r2pipe2 json
+FILE=-
+CMDS={"cmd":"ij", "json":true}
+EXPECT=<<EOF
+{"res":{"core":{"type":"","file":"malloc://512","fd":3,"size":512,"humansz":"512","iorw":true,"mode":"rwx","block":256,"format":"any"}},"error":false,"value":0,"code":0,"code":0}
+EOF
+RUN
+
+NAME=r2pipe2 logs
+FILE=--
+CMDS=<<EOF
+-a arm
+-b 64
+{"cmd":"aaa", "json":true}~{}
+EOF
+EXPECT=<<EOF
+{
+  "res": ,
+  "error": false,
+  "value": 0,
+  "code": 0,
+  "logs": [
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze all flags starting with sym. and entry0 (aa)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze imports (af@@@i)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze symbols (af@@@s)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze all functions arguments/locals (afva@@@F)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze function calls (aac)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "find and analyze function preludes (aap)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyze len bytes of instructions for references (aar)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Finding and parsing C++ vtables (avrr)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Analyzing methods (af @@ method.*)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Emulate functions to find computed references (aaef)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Recovering local variables (afva@@@F)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Type matching analysis for all functions (aaft)"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Propagate noreturn information (aanr)"
+    },
+    {
+      "type": "INFO",
+      "origin": "cmd_aaa",
+      "message": "Use -AA or aaaa to perform additional experimental analysis"
+    },
+    {
+      "type": "INFO",
+      "origin": "logline",
+      "message": "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)"
+    }
+  ],
+  "code": 0
+}
+EOF
+RUN

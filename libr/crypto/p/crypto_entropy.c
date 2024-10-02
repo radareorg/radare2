@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2024 - pancake */
 
 #include <math.h>
 #include <r_lib.h>
@@ -48,10 +48,12 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_entropy = {
-	.type = R_CRYPTO_TYPE_HASH,
-	.name = "entropy",
-	.author = "pancake",
-	.license = "MIT",
+	.meta = {
+		.name = "entropy",
+		.author = "pancake",
+		.license = "MIT",
+	},
+	.type = R_CRYPTO_TYPE_HASHER,
 	.update = update,
 	.end = end
 };

@@ -2,7 +2,7 @@
 
 const char * const package_marker = "📦\n";
 const char * const delimiter_marker = "\n✄\n";
-const char * const alias_marker = "\n↻ ";
+const char * const alias_marker = "↻ ";
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
 
@@ -159,9 +159,7 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		if (!nl) {
 			break;
 		}
-		if (r_str_nstr (ptr, alias_marker, nl-ptr)) {
-			// skip line
-			// R_LOG_INFO ("ALIAS %s", ptr);
+		if (r_str_nstr (ptr, alias_marker, nl - ptr)) {
 			ptr = nl + 1;
 			continue;
 		}

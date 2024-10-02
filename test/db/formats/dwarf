@@ -721,25 +721,28 @@ colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: [cbin.c:3237] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3237] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3237] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3237] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3237] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3237] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3237] (section .got) Cd 8[9] @ 0x3fb8
-DEBUG: [cbin.c:3237] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3237] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3237] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3237] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3237] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3237] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3237] (section .got) Cd 8[9] @ 0x3fb8
-DEBUG: [cbin.c:2505] Cannot resolve symbol address __libc_start_main
-DEBUG: [cbin.c:2505] Cannot resolve symbol address _ITM_deregisterTMCloneTable
-DEBUG: [cbin.c:2505] Cannot resolve symbol address __gmon_start__
-DEBUG: [cbin.c:2505] Cannot resolve symbol address _ITM_registerTMCloneTable
-DEBUG: [cbin.c:2505] Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:3351] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3351] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3351] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3351] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3351] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3351] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3351] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3351] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3351] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3351] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3351] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3351] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3351] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3351] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3351] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3351] (section .got) Cd 8[9] @ 0x3fb8
+WARN: [cbin.c:1902] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+DEBUG: [cbin.c:2596] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2596] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2596] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2596] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2596] Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 
@@ -759,5 +762,96 @@ EXPECT=<<EOF
 0x00001160  	printf ("How Are You?\n");
 0x00001174  }
 0x00001149  int main() {
+EOF
+RUN
+
+NAME=test baddr
+FILE=bins/elf/bfile_o
+CMDS=<<EOF
+?e --
+CLf
+?e --
+EOF
+EXPECT=<<EOF
+--
+bin
+--
+EOF
+RUN
+
+NAME=test baddr cfile
+FILE=bins/elf/cfile_o
+CMDS=<<EOF
+?e --
+CL
+?e --
+EOF
+EXPECT=<<EOF
+--
+file: cfile.c
+line: 260
+colu: 5
+addr: 0x08000014
+file: cfile.c
+line: 261
+colu: 10
+addr: 0x08000022
+file: cfile.c
+line: 260
+colu: 11
+addr: 0x0800001b
+file: cfile.c
+line: 273
+colu: 9
+addr: 0x0800009e
+file: cfile.c
+line: 271
+colu: 10
+addr: 0x0800008e
+file: cfile.c
+line: 271
+colu: 7
+addr: 0x0800009a
+file: cfile.c
+line: 266
+colu: 10
+addr: 0x0800003a
+file: cfile.c
+line: 270
+colu: 5
+addr: 0x0800008a
+file: cfile.c
+line: 263
+colu: 5
+addr: 0x08000029
+file: cfile.c
+line: 259
+colu: 83
+addr: 0x08000000
+file: cfile.c
+line: 269
+colu: 84
+addr: 0x08000063
+file: cfile.c
+line: 270
+colu: 6
+addr: 0x08000077
+file: cfile.c
+line: 267
+colu: 1
+addr: 0x08000061
+file: cfile.c
+line: 266
+colu: 9
+addr: 0x0800005c
+file: cfile.c
+line: 274
+colu: 1
+addr: 0x080000a2
+file: cfile.c
+line: 264
+colu: 10
+addr: 0x08000033
+--
 EOF
 RUN

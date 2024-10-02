@@ -3,7 +3,7 @@
 #include <r_io.h>
 
 R_API RIOBank *r_io_bank_new(const char *name) {
-	r_return_val_if_fail (name, NULL);
+	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RIOBank *bank = R_NEW0 (RIOBank);
 	if (!bank) {
 		return NULL;
@@ -31,7 +31,7 @@ R_API RIOBank *r_io_bank_new(const char *name) {
 }
 
 R_API void r_io_bank_clear(RIOBank *bank) {
-	r_return_if_fail (bank);
+	R_RETURN_IF_FAIL (bank);
 	while (!r_queue_is_empty (bank->todo)) {
 		free (r_queue_dequeue (bank->todo));
 	}
@@ -51,7 +51,7 @@ R_API void r_io_bank_free(RIOBank *bank) {
 }
 
 R_API void r_io_bank_init(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_io_bank_fini (io);
 	io->banks = r_id_storage_new (0, UT32_MAX);
 }
@@ -62,7 +62,7 @@ static bool _bank_free_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_io_bank_fini(RIO *io) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	if (io->banks) {
 		r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
 		r_id_storage_free (io->banks);
@@ -71,19 +71,43 @@ R_API void r_io_bank_fini(RIO *io) {
 }
 
 R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid) {
-	r_return_val_if_fail (io && io->banks, NULL);
+	R_RETURN_VAL_IF_FAIL (io && io->banks, NULL);
 	return (RIOBank *)r_id_storage_get (io->banks, bankid);
 }
 
+typedef struct {
+	RIO *io;
+	RIOBank *bank;
+	const char *name;
+} Boring;
+
+static bool find_bank(void *data, void *user, ut32 id) {
+	RIOBank *bank = (RIOBank *)user;
+	Boring *boo = (Boring *)data;
+	if (!strcmp (bank->name, boo->name)) {
+		boo->bank = bank;
+		return false;
+	}
+	return true;
+}
+
+R_API RIOBank *r_io_bank_get_byname(RIO *io, const char *bankname) {
+	R_RETURN_VAL_IF_FAIL (io && io->banks && bankname, NULL);
+	Boring boo = { .io = io, .name = bankname, .bank = NULL };
+	eprintf ("ooME (%s)\n", boo.name);
+	r_id_storage_foreach (io->banks, &find_bank, &boo);
+	return boo.bank;
+}
+
 R_API ut32 r_io_bank_first(RIO *io) {
-	r_return_val_if_fail (io, UT32_MAX);
+	R_RETURN_VAL_IF_FAIL (io, UT32_MAX);
 	ut32 bankid = -1;
 	r_id_storage_get_lowest (io->banks, &bankid);
 	return bankid;
 }
 
 R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (bank) {
 		io->bank = bankid;
@@ -93,7 +117,7 @@ R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
 }
 
 R_API bool r_io_bank_add(RIO *io, RIOBank *bank) {
-	r_return_val_if_fail (io && io->banks && bank, false);
+	R_RETURN_VAL_IF_FAIL (io && io->banks && bank, false);
 	return r_id_storage_add (io->banks, bank, &bank->id);
 }
 
@@ -110,12 +134,10 @@ static RIOMapRef *_mapref_from_map(RIOMap *map) {
 // cb for finding sm by lower boundary vaddr
 static int _find_sm_by_from_vaddr_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
-	ut64 a = r_io_submap_from (bd);
-	ut64 b = r_io_submap_from (sm);
-	if (a < b) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 		return -1;
 	}
-	if (a > b) {
+	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 		return 1;
 	}
 	return 0;
@@ -159,7 +181,7 @@ static RRBNode *_find_entry_submap_node(RIOBank *bank, RIOSubMap *sm) {
 }
 
 R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -253,7 +275,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 }
 
 R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -303,7 +325,7 @@ R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid
 }
 
 R_API bool r_io_bank_map_priorize(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -478,7 +500,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 }
 
 R_API bool r_io_bank_map_depriorize(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -531,7 +553,7 @@ static int _mapref_priority_cmp(RIOBank *bank, RIOMapRef *mr0, RIOMapRef *mr1) {
 }
 
 R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -711,12 +733,12 @@ found:
 
 // locates next available address for a map with given size and alignment starting at *addr
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 size, ut64 load_align) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
 	}
-	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
+	R_RETURN_VAL_IF_FAIL (io && bank && bank->submaps && addr && size, false);
 	if (load_align == 0LL) {
 		load_align = 1;
 	}
@@ -756,7 +778,7 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 }
 
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -780,15 +802,18 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			// mapref doesn't belong to map
 			return false;
 		}
-		if (map->perm & R_PERM_R) {
-			const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
-			const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
-						     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-			ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
-			if (io->overlay) {
-				r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
-			}
+		if (!(map->perm & R_PERM_R)) {
+			node = r_rbnode_next (node);
+			sm = node ? (RIOSubMap *)node->data : NULL;
+			continue;
+		}
+		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
+		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
+					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
+		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+		ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
+		if (io->overlay) {
+			r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
 		}
 		// check return value here?
 		node = r_rbnode_next (node);
@@ -798,7 +823,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 }
 
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		R_LOG_WARN ("Tfw no bank(id %u) in the io", bankid);
@@ -868,7 +893,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 }
 
 R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		R_LOG_WARN ("Tfw no bank(id: %u) in io", bankid);
@@ -905,7 +930,7 @@ R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, 
 // reads only from single submap at addr and returns amount of bytes read.
 // if no submap is mapped at addr, fcn returns 0. returns -1 on error
 R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io, -1);
+	R_RETURN_VAL_IF_FAIL (io, -1);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return 0;
@@ -943,7 +968,7 @@ R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, u
 // writes only to single submap at addr and returns amount of bytes written.
 // if no submap is mapped at addr, fcn returns 0. returns -1 on error
 R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io, 0);
+	R_RETURN_VAL_IF_FAIL (io, 0);
 	if (len < 1) {
 		return 0;
 	}
@@ -1014,7 +1039,7 @@ R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, co
 }
 
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
-	r_return_val_if_fail (io, NULL);
+	R_RETURN_VAL_IF_FAIL (io, NULL);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return NULL;
@@ -1032,10 +1057,10 @@ R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
 
 // deletes map with mapid from bank with bankid
 R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	RIOMap *map = r_io_map_get (io, mapid);	// is this needed?
+	RIOMap *map = r_io_map_get (io, mapid);	//is this needed?
 	if (!bank || !map) {
 		return;
 	}
@@ -1053,7 +1078,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 }
 
 R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	r_id_storage_delete (io->banks, bankid);
 	if (io->bank == bankid) {
 		io->bank = r_io_bank_first (io);
@@ -1062,7 +1087,7 @@ R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
 
 // merges nearby submaps, that have a map ref to the same map, and free unneeded tree nodes
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
-	r_return_if_fail (io);
+	R_RETURN_IF_FAIL (io);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank || !bank->drain_me) {
 		return;
@@ -1087,7 +1112,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 }
 
 R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region, ut64 addr) {
-	r_return_val_if_fail (io && region, false);
+	R_RETURN_VAL_IF_FAIL (io && region, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;
@@ -1109,7 +1134,7 @@ R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region
 }
 
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
-	r_return_val_if_fail (io, false);
+	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		return false;

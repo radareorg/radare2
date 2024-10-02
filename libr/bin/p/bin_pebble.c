@@ -35,7 +35,7 @@ typedef struct  {
 	ut8 uuid[16];
 }) PebbleAppInfo;
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[8];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) != sizeof (magic)) {
 		return false;
@@ -43,8 +43,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return !memcmp (magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -192,11 +192,13 @@ static RList* entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pebble = {
-	.name = "pebble",
-	.desc = "Pebble Watch App",
-	.license = "LGPL",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "pebble",
+		.desc = "Pebble Watch App",
+		.license = "LGPL",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = entries,
 	.sections = sections,

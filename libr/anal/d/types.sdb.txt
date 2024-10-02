@@ -14,9 +14,21 @@ short=type
 type.short=w
 type.short.size=16
 
+FILE=type
+type.FILE=p
+type.FILE.size=8
+
 int=type
 type.int=d
 type.int.size=32
+
+pid_t=type
+type.pid_t=d
+type.pid_t.size=32
+
+size_t=type
+type.size_t=d
+type.size_t.size=32
 
 long=type
 type.long=x
@@ -167,6 +179,16 @@ getuid=func
 func.getuid.args=0
 func.getuid.ret=uid_t
 
+setuid=func
+func.setuid.args=1
+func.setuid.arg.0=int,uid
+func.setuid.ret=int
+
+setgid=func
+func.setgid.args=1
+func.setgid.arg.0=int,gid
+func.setgid.ret=int
+
 geteuid=func
 func.geteuid.args=0
 func.geteuid.ret=uid_t
@@ -175,6 +197,14 @@ atoi=func
 func.atoi.args=1
 func.atoi.arg.0=const char *,str
 func.atoi.ret=int
+
+strtonum=func
+func.strtonum.args=4
+func.strtonum.arg.0=const char *,str
+func.strtonum.arg.1=long long,minval
+func.strtonum.arg.2=long long,maxval
+func.strtonum.arg.3=const char **,errstr
+func.strtonum.ret=long long
 
 ioctl=func
 func.ioctl.args=2
@@ -2582,22 +2612,6 @@ func.printf.args=1
 func.printf.arg.0=const char *,format
 func.printf.ret=int
 
-warn=func
-func.warn.args=1
-func.warn.arg.0=const char *,format
-func.warn.ret=void
-
-warnx=func
-func.warnx.args=1
-func.warnx.arg.0=const char *,format
-func.warnx.ret=void
-
-warnc=func
-func.warnc.args=2
-func.warnc.arg.1=int,opt
-func.warnc.arg.0=const char *,format
-func.warnc.ret=void
-
 lstat=func
 func.lstat.args=2
 func.lstat.arg.0=const char *,path
@@ -3067,3 +3081,144 @@ func.swift_beginAccess.arg.1=void *
 func.swift_beginAccess.arg.2=void *
 func.swift_beginAccess.arg.3=void *
 func.swift_beginAccess.ret=void
+
+err=func
+func.err.noreturn=true
+func.err.args=2
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.ret=void
+
+errx=func
+func.errx.noreturn=true
+func.errx.args=2
+func.errx.arg.0=int,eval
+func.errx.arg.1=const char *,fmt
+func.errx.ret=void
+
+errc=func
+func.errc.noreturn=true
+func.errc.args=3
+func.errc.arg.0=int,eval
+func.errc.arg.1=int,code
+func.errc.arg.2=const char *,fmt
+func.errc.ret=void
+
+warn=func
+func.warn.args=2
+func.warn.arg.0=int,eval
+func.warn.arg.1=const char *,fmt
+func.warn.ret=void
+
+warnx=func
+func.warnx.args=2
+func.warnx.arg.0=int,eval
+func.warnx.arg.1=const char *,fmt
+func.warnx.ret=void
+
+warnc=func
+func.warnc.args=3
+func.warnc.arg.0=int,eval
+func.warnc.arg.1=int,code
+func.warnc.arg.2=const char *,fmt
+func.warnc.ret=void
+
+sysctlbyname=func
+func.sysctlbyname.args=5
+func.sysctlbyname.arg.0=const char *,name
+func.sysctlbyname.arg.1=void *,oldp
+func.sysctlbyname.arg.2=size_t *,oldlenp
+func.sysctlbyname.arg.3=void *,newp
+func.sysctlbyname.arg.4=size_t,newlen
+func.sysctlbyname.ret=int
+
+sysctl=func
+func.sysctl.args=6
+func.sysctl.arg.0=const char *,name
+func.sysctl.arg.1=int,namelen
+func.sysctl.arg.2=void *,oldp
+func.sysctl.arg.3=size_t *,oldlenp
+func.sysctl.arg.4=void *,newp
+func.sysctl.arg.5=size_t,newlen
+func.sysctl.ret=int
+
+sysctlnametomib=func
+func.sysctlnametomib.args=3
+func.sysctlnametomib.arg.0=const char *,name
+func.sysctlnametomib.arg.1=int *,mib
+func.sysctlnametomib.arg.2=size_t *,sizep
+func.sysctlnametomib.ret=int
+
+tgetent=func
+func.tgetent.args=2
+func.tgetent.arg.0=const char *,bp
+func.tgetent.arg.1=const char *,name
+func.tgetent.ret=int
+
+tgetflag=func
+func.tgetflag.args=1
+func.tgetflag.arg.0=const char *,id
+func.tgetflag.ret=int
+
+tgetstr=func
+func.tgetstr.args=2
+func.tgetstr.arg.0=char *,id
+func.tgetstr.arg.1=char **,area
+func.tgetstr.ret=char*
+
+tgetnum=func
+func.tgetnum.args=1
+func.tgetnum.arg.0=char *,id
+func.tgetnum.ret=int
+
+readlink=func
+func.readlink.args=3
+func.readlink.arg.0=const char *,path
+func.readlink.arg.1=char *,buf
+func.readlink.arg.2=int,bufsize
+func.readlink.ret=int
+
+listxattr=func
+func.listxattr.args=4
+func.listxattr.arg.0=const char *,path
+func.listxattr.arg.1=char*,namebuf
+func.listxattr.arg.2=int,fsize
+func.listxattr.arg.3=int,options
+func.listxattr.ret=int
+
+getopt_long=func
+func.getopt_long.args=5
+func.getopt_long.arg.0=int,argc
+func.getopt_long.arg.1=char **,argv
+func.getopt_long.arg.2=const char*,optstring
+func.getopt_long.arg.3=void *,longopts
+func.getopt_long.arg.4=int,longidx
+func.getopt_long.ret=int
+
+getbsize=func
+func.getbsize.args=2
+func.getbsize.arg.0=int *,hdrlenp
+func.getbsize.arg.1=int *,bsizep
+func.getbsize.ret=char *
+
+fflagtostr=func
+func.fflagtostr.args=1
+func.fflagtostr.arg.0=int,flags
+func.fflagtostr.ret=char*
+
+tcgetpgrp=func
+func.tcgetpgrp.args=1
+func.tcgetpgrp.arg.0=int,fd
+func.tcgetpgrp.ret=pid_t
+
+sigprocmask=func
+func.sigprocmask.args=3
+func.sigprocmask.arg.0=int,how
+func.sigprocmask.arg.1=void *,set
+func.sigprocmask.arg.2=void *,oldset
+func.sigprocmask.ret=pid_t
+
+fflush_unlocked=func
+func.fflush_unlocked.args=1
+func.fflush_unlocked.arg.0=FILE *,stream
+func.fflush_unlocked.ret=int

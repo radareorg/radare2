@@ -14,10 +14,10 @@ EOF
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x8000011c 0x00000248 SET_32 kernel32_FindAtomW
-0x800004f4 0x00000234 SET_32 msvcrt_Ordinal_1268
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x8000011c 0x00000248 SET_32 3     kernel32_FindAtomW
+0x800004f4 0x00000234 SET_32 3     msvcrt_Ordinal_1268
 
 
 2 relocations

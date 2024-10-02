@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2024 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_util/r_log.h>
@@ -19,7 +19,7 @@ static bool aes_cbc_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode
 }
 
 static int aes_cbc_get_key_size(RCryptoJob *cj) {
-	r_return_val_if_fail (cj, -1);
+	R_RETURN_VAL_IF_FAIL (cj, -1);
 	return cj->key_len;
 }
 
@@ -73,7 +73,8 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	memcpy (st.key, cj->key, st.key_size);
 
 	int i, j;
-	if (cj->dir == 0) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
 				ibuf[i * BLOCK_SIZE + j] ^= cj->iv[j];
@@ -81,7 +82,8 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			memcpy (cj->iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
-	} else if (cj->dir == 1) {
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			for (j = 0; j < BLOCK_SIZE; j++) {
@@ -89,6 +91,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 			}
 			memcpy (cj->iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
+		break;
 	}
 
 	r_crypto_job_append (cj, obuf, size);
@@ -98,7 +101,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_aes_cbc = {
-	.name = "aes-cbc",
+	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.meta = {
+		.name = "aes-cbc",
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,
 	.set_iv = aes_cbc_set_iv,

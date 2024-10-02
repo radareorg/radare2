@@ -6,9 +6,11 @@
 #include "vsf/vsf_specs.h"
 
 static const char VICE_MAGIC[] = "VICE Snapshot File\032";
+static const char VICE_VERSION[] = "VICE Version\032";
 #define VICE_MAGIC_LEN sizeof (VICE_MAGIC) - 1
 static const char VICE_MAINCPU[] = "MAINCPU";
 static const char VICE_C64MEM[] = "C64MEM";
+static const char VICE_C64MEMHACKS[] = "C64MEMHACKS";
 static const char VICE_C64ROM[] = "C64ROM";
 static const char VICE_C128MEM[] = "C128MEM";
 static const char VICE_C128ROM[] = "C128ROM";
@@ -25,12 +27,12 @@ static const struct {
 static const int MACHINES_MAX = sizeof (_machines) / sizeof (_machines[0]);
 
 static Sdb* get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	return bin->kv;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[VICE_MAGIC_LEN];
 	if (r_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
 		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
@@ -39,15 +41,15 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
-	if (check_buffer (bf, bf->buf)) {
+	if (check (bf, bf->buf)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return false;
 		}
-		offset = r_offsetof(struct vsf_hdr, machine);
+		offset = r_offsetof (struct vsf_hdr, machine);
 		if (offset > bf->size) {
 			free (res);
 			return false;
@@ -63,18 +65,24 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 				free (res);
 				return false;
 			}
-			if (!strncmp (machine, _machines[i].name, strlen (_machines[i].name))) {
+			if (r_str_startswith (machine, _machines[i].name)) {
 				res->machine_idx = i;
 				break;
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf ("Unsupported machine type\n");
+			R_LOG_WARN ("Unsupported machine type");
 			free (res);
 			return false;
 		}
 		// read all VSF modules
 		offset = sizeof (struct vsf_hdr);
+		ut8 vice_version[sizeof (VICE_VERSION)];
+		if (r_buf_read_at (bf->buf, offset, vice_version, sizeof (VICE_VERSION)) == sizeof (VICE_VERSION)) {
+			if (!memcmp (vice_version, VICE_VERSION, sizeof (VICE_VERSION) - 1)) {
+				offset += sizeof (VICE_VERSION) + 7;
+			}
+		}
 		ut64 sz = r_buf_size (bf->buf);
 		while (offset < sz) {
 			struct vsf_module module;
@@ -85,7 +93,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 				return false;
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
-			if (!CMP_MODULE (VICE_C64MEM) && !module.major) {
+			if (!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS) && !module.major) {
 				res->mem = offset + read;
 			} else if (!CMP_MODULE (VICE_C64ROM) && !module.major) {
 				res->rom = offset + read;
@@ -96,20 +104,24 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
 				res->maincpu = R_NEW (struct vsf_maincpu);
 				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
+			} else {
+				char safe_name[sizeof (module.module_name) + 1];
+				r_str_ncpy (safe_name, module.module_name, sizeof (safe_name));
+				R_LOG_TODO ("Ignoring unsupported module: %s", safe_name);
 			}
 #undef CMP_MODULE
 			offset += module.length;
 			if (module.length == 0) {
-				eprintf ("Malformed VSF module with length 0\n");
+				R_LOG_ERROR ("Malformed VSF module with length 0");
 				break;
 			}
 		}
 	}
 	if (res) {
 		res->kv = sdb_new0 ();
-		sdb_ns_set (sdb, "info", res->kv);
+		sdb_ns_set (bf->sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	bf->bo->bin_obj = res;
 	return true;
 }
 
@@ -494,7 +506,8 @@ static RList* symbols(RBinFile *bf) {
 		if (!ptr->name) {
 			ptr->name = calloc(1, R_BIN_SIZEOF_STRINGS);
 		}
-		strncpy (ptr->name, _symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
+		char *name = r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = r_bin_name_new_from (name);
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
@@ -543,12 +556,14 @@ static RList* entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_vsf = {
-	.name = "vsf",
-	.desc = "VICE Snapshot File",
-	.license = "LGPL3",
+	.meta = {
+		.name = "vsf",
+		.desc = "VICE Snapshot File",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

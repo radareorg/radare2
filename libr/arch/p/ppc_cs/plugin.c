@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_arch.h>
 #include <r_esil.h>
@@ -27,6 +27,104 @@ struct Getarg {
 #ifndef PFMT32x
 #define PFMT32x "lx"
 #endif
+
+// * cs6 - compatibility *
+#if CS_NEXT_VERSION != 6
+#define BC() insn->detail->ppc.bc
+#else
+#define BC() insn->detail->ppc.bc.pred_cr
+
+#define PPC_INS_CMP PPC_INS_ALIAS_CMP
+#define PPC_INS_CMPI PPC_INS_ALIAS_CMPI
+#define PPC_INS_MR PPC_INS_ALIAS_MR
+#define PPC_INS_LI PPC_INS_ALIAS_LI
+#define PPC_INS_LIS PPC_INS_ALIAS_LIS
+#define PPC_INS_CLRLWI PPC_INS_ALIAS_CLRLWI
+#define PPC_INS_LWSYNC PPC_INS_ALIAS_LWSYNC
+#define PPC_INS_PTESYNC PPC_INS_ALIAS_PTESYNC
+#define PPC_INS_SUB PPC_INS_ALIAS_SUB
+#define PPC_INS_SUBC PPC_INS_ALIAS_SUBC
+#define PPC_INS_CRCLR PPC_INS_ALIAS_CRCLR
+#define PPC_INS_CRSET PPC_INS_ALIAS_CRSET
+#define PPC_INS_CRMOVE PPC_INS_ALIAS_CRMOVE
+#define PPC_INS_CRNOT PPC_INS_ALIAS_CRNOT
+#define PPC_INS_BNE PPC_INS_ALIAS_BNE
+#define PPC_INS_BNEA PPC_INS_ALIAS_BNEA
+#define PPC_INS_BNECTR PPC_INS_ALIAS_BNECTR
+#define PPC_INS_BNECTRL PPC_INS_ALIAS_BNECTRL
+#define PPC_INS_BNEL PPC_INS_ALIAS_BNEL
+#define PPC_INS_BNELA PPC_INS_ALIAS_BNELA
+#define PPC_INS_BNELR PPC_INS_ALIAS_BNELR
+#define PPC_INS_BNELRL PPC_INS_ALIAS_BNELRL
+#define PPC_INS_BNG PPC_INS_ALIAS_BNG
+#define PPC_INS_BNGA PPC_INS_ALIAS_BNGA
+#define PPC_INS_BNGCTR PPC_INS_ALIAS_BNGCTR
+#define PPC_INS_BNGCTRL PPC_INS_ALIAS_BNGCTRL
+#define PPC_INS_BNGL PPC_INS_ALIAS_BNGL
+#define PPC_INS_BNGLA PPC_INS_ALIAS_BNGLA
+#define PPC_INS_BNGLR PPC_INS_ALIAS_BNGLR
+#define PPC_INS_BNGLRL PPC_INS_ALIAS_BNGLRL
+#define PPC_INS_BNL PPC_INS_ALIAS_BNL
+#define PPC_INS_BNLA PPC_INS_ALIAS_BNLA
+#define PPC_INS_BNLCTR PPC_INS_ALIAS_BNLCTR
+#define PPC_INS_BNLCTRL PPC_INS_ALIAS_BNLCTRL
+#define PPC_INS_BNLL PPC_INS_ALIAS_BNLL
+#define PPC_INS_BNLLA PPC_INS_ALIAS_BNLLA
+#define PPC_INS_BNLLR PPC_INS_ALIAS_BNLLR
+#define PPC_INS_BNLLRL PPC_INS_ALIAS_BNLLRL
+#define PPC_INS_BNS PPC_INS_ALIAS_BNS
+#define PPC_INS_BNSA PPC_INS_ALIAS_BNSA
+#define PPC_INS_BNSCTR PPC_INS_ALIAS_BNSCTR
+#define PPC_INS_BNSCTRL PPC_INS_ALIAS_BNSCTRL
+#define PPC_INS_BNSL PPC_INS_ALIAS_BNSL
+#define PPC_INS_BNSLA PPC_INS_ALIAS_BNSLA
+#define PPC_INS_BNSLR PPC_INS_ALIAS_BNSLR
+#define PPC_INS_BNSLRL PPC_INS_ALIAS_BNSLRL
+#define PPC_INS_BNU PPC_INS_ALIAS_BNU
+#define PPC_INS_BNUA PPC_INS_ALIAS_BNUA
+#define PPC_INS_BNUCTR PPC_INS_ALIAS_BNUCTR
+#define PPC_INS_BNUCTRL PPC_INS_ALIAS_BNUCTRL
+#define PPC_INS_BNUL PPC_INS_ALIAS_BNUL
+#define PPC_INS_BNULA PPC_INS_ALIAS_BNULA
+#define PPC_INS_BNULR PPC_INS_ALIAS_BNULR
+#define PPC_INS_BNULR PPC_INS_ALIAS_BNULR
+#define PPC_INS_BNULRL PPC_INS_ALIAS_BNULRL
+#define PPC_INS_BT PPC_INS_ALIAS_BT
+#define PPC_INS_BF PPC_INS_ALIAS_BF
+#define PPC_INS_BDNZ PPC_INS_ALIAS_BDNZ
+#define PPC_INS_BDNZA PPC_INS_ALIAS_BDNZA
+#define PPC_INS_BDNZL PPC_INS_ALIAS_BDNZL
+#define PPC_INS_BDNZLA PPC_INS_ALIAS_BDNZLA
+#define PPC_INS_BDNZLR PPC_INS_ALIAS_BDNZLR
+#define PPC_INS_BDZ PPC_INS_ALIAS_BDZ
+#define PPC_INS_BDZA PPC_INS_ALIAS_BDZA
+#define PPC_INS_BDZL PPC_INS_ALIAS_BDZL
+#define PPC_INS_BDZLA PPC_INS_ALIAS_BDZLA
+#define PPC_INS_BDZLR PPC_INS_ALIAS_BDZLR
+#define PPC_INS_BDZLRL PPC_INS_ALIAS_BDZLRL
+#define PPC_INS_BDZLRL PPC_INS_ALIAS_BDZLRL
+#define PPC_INS_MFPVR PPC_INS_ALIAS_MFPVR
+#define PPC_INS_MFDCCR PPC_INS_ALIAS_MFDCCR
+#define PPC_INS_MFICCR PPC_INS_ALIAS_MFICCR
+#define PPC_INS_MFDEAR PPC_INS_ALIAS_MFDEAR
+#define PPC_INS_MTDCCR PPC_INS_ALIAS_MTDCCR
+#define PPC_INS_MTICCR PPC_INS_ALIAS_MTICCR
+#define PPC_INS_MTDEAR PPC_INS_ALIAS_MTDEAR
+#define PPC_INS_CLRLDI PPC_INS_ALIAS_CLRLDI
+#define PPC_INS_ROTLDI PPC_INS_ALIAS_ROTLDI
+#define PPC_INS_BDNZLRL PPC_INS_ALIAS_BDNZLRL
+
+#define PPC_BC_LT PPC_PRED_LT
+#define PPC_BC_LE PPC_PRED_LE
+#define PPC_BC_EQ PPC_PRED_EQ
+#define PPC_BC_GE PPC_PRED_GE
+#define PPC_BC_GT PPC_PRED_GT
+#define PPC_BC_NE PPC_PRED_NE
+#define PPC_BC_INVALID PPC_PRED_INVALID
+#define PPC_BC_NS PPC_PRED_NS
+#define PPC_BC_SO PPC_PRED_SO
+#endif
+// ***********************
 
 typedef struct plugin_data_t PluginData;
 static const char* getspr(PluginData *pd, struct Getarg *gop, int n);
@@ -87,9 +185,11 @@ static ut64 getarg(struct Getarg *gop, int n) {
 	case PPC_OP_MEM:
 		value = op.mem.disp + op.mem.base;
 		break;
+#if CS_NEXT_VERSION != 6
 	case PPC_OP_CRX: // Condition Register field
 		value = (ut64) op.imm;
 		break;
+#endif
 	}
 	return value;
 }
@@ -249,6 +349,7 @@ static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r1\n"
+		"=BP	r31\n"
 		"=SR	srr1\n" // status register ??
 		"=SN	r0\n" // also for ret
 		"=R0	r3\n" // ret
@@ -523,6 +624,7 @@ static char *shrink(char *op) {
 	return op;
 }
 
+#undef PPC
 #define CSINC PPC
 #if 0
 #define CSINC_MODE \
@@ -594,10 +696,12 @@ static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *sets
 				(ut64) op.mem.disp,
 				cs_reg_name (handle, op.mem.base), setstr);
 		break;
+#if CS_NEXT_VERSION != 6
 	case PPC_OP_CRX: // Condition Register field
 		snprintf (pd->words[n], sizeof (pd->words[n]),
 				"%"PFMT64d"%s", (ut64) op.imm, setstr);
 		break;
+#endif
 	}
 	return pd->words[n];
 }
@@ -642,7 +746,7 @@ static int decompile_ps(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -809,7 +913,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case PPC_INS_SYNC:
 		case PPC_INS_ISYNC:
 		case PPC_INS_LWSYNC:
+#if CS_NEXT_VERSION != 6
 		case PPC_INS_MSYNC:
+#endif
 		case PPC_INS_PTESYNC:
 		case PPC_INS_TLBSYNC:
 		case PPC_INS_SLBIA:
@@ -879,10 +985,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
 			break;
-		case PPC_INS_LBZ:
-#if CS_API_MAJOR >= 4
-		case PPC_INS_LBZCIX:
-#endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -892,6 +994,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			}
 			esilprintf (op, "%s,[1],%s,=,%s=", op1, ARG (0), op1);
 			break;
+		case PPC_INS_LBZ:
+#if CS_API_MAJOR >= 4
+		case PPC_INS_LBZCIX:
+#endif
 		case PPC_INS_LBZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[1]"), ARG (0));
@@ -1085,7 +1191,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
 			op->fail = addr + op->size;
-			switch (insn->detail->ppc.bc) {
+			switch (BC ()) {
 			case PPC_BC_LT:
 				if (ARG (1)[0] == '\0') {
 					esilprintf (op, "0x80,cr0,&,!,!,?{,%s,pc,=,},", ARG (0));
@@ -1131,8 +1237,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			case PPC_BC_INVALID:
 				op->type = R_ANAL_OP_TYPE_JMP;
 				esilprintf (op, "%s,pc,=", ARG (0));
-			case PPC_BC_UN: // unordered
-			case PPC_BC_NU: // not unordered
+#if CS_NEXT_VERSION != 6
+			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
+			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
+#endif
 			case PPC_BC_SO: // summary overflow
 			case PPC_BC_NS: // not summary overflow
 			default:
@@ -1142,10 +1250,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case PPC_INS_BT:
 		case PPC_INS_BF:
 			switch (insn->detail->ppc.operands[0].type) {
+#if CS_NEXT_VERSION != 6
 			case PPC_OP_CRX:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->fail = addr + op->size;
 				break;
+#endif
 			case PPC_OP_REG:
 				if (op->type == R_ANAL_OP_TYPE_CJMP) {
 					op->type = R_ANAL_OP_TYPE_UCJMP;
@@ -1165,11 +1275,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->fail = addr + op->size;
 			esilprintf (op, "1,ctr,-=,$z,!,?{,%s,pc,=,}", ARG (0));
 			break;
+#if CS_NEXT_VERSION != 6
 		case PPC_INS_BDNZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
+#endif
 		case PPC_INS_BDNZL:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
@@ -1195,11 +1307,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->fail = addr + op->size;
 			esilprintf (op, "1,ctr,-=,$z,?{,%s,pc,=,}", ARG (0));
 			break;
+#if CS_NEXT_VERSION != 6
 		case PPC_INS_BDZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
 			op->fail = addr + op->size;
 			break;
+#endif
 		case PPC_INS_BDZL:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
@@ -1225,7 +1339,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case PPC_INS_BCLRL:
 			op->type = R_ANAL_OP_TYPE_CRET;		//I'm a condret
 			op->fail = addr + op->size;
-			switch (insn->detail->ppc.bc) {
+			switch (BC ()) {
 			case PPC_BC_INVALID:
 				op->type = R_ANAL_OP_TYPE_RET;
 				esilprintf (op, "lr,pc,=");
@@ -1272,8 +1386,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 					esilprintf (op, "%s,!,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
-			case PPC_BC_UN: // unordered
-			case PPC_BC_NU: // not unordered
+#if CS_NEXT_VERSION != 6
+			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
+			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
+#endif
 			case PPC_BC_SO: // summary overflow
 			case PPC_BC_NS: // not summary overflow
 			default:
@@ -1438,7 +1554,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -1454,7 +1570,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	CapstonePluginData *cpd = as->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (as->data);

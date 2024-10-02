@@ -8,6 +8,7 @@ EOF
 EXPECT=<<EOF
 amd64
 amd64syscall
+dlang
 ms
 p9
 reg
@@ -21,6 +22,7 @@ CMDS=tcc
 EXPECT=<<EOF
 amd64
 amd64syscall
+dlang
 ms
 p9
 reg
@@ -36,15 +38,17 @@ tccl
 tcc*
 EOF
 EXPECT=<<EOF
-{"amd64":{"ret":"rax","signature":"rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"]},"amd64syscall":{"ret":"rax","signature":"rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);","args":["rdi","rsi","rdx","r10","r8","r9"]},"ms":{"ret":"rax","signature":"rax ms (rcx, rdx, r8, r9, stack);","args":["rcx","rdx","r8","r9"],"argn":"stack"},"p9":{"ret":"rax","signature":"rax p9 (rbp, stack);","args":["rbp"],"argn":"stack"},"reg":{"ret":"rax","signature":"rax reg (rdi, rsi, rdx, rcx);","args":["rdi","rsi","rdx","rcx"]},"swift":{"ret":"rax","signature":"rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"error":"r12"}}
+{"amd64":{"ret":"rax","signature":"rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"]},"amd64syscall":{"ret":"rax","signature":"rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);","args":["rdi","rsi","rdx","r10","r8","r9"]},"dlang":{"ret":"rax","ret2":"rdx","signature":"rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);","args":["rdi","rsi","rdx","rcx","r8d","r9d"],"argn":"stack"},"ms":{"ret":"rax","signature":"rax ms (rcx, rdx, r8, r9, stack);","args":["rcx","rdx","r8","r9"],"argn":"stack"},"p9":{"ret":"rax","signature":"rax p9 (rbp, stack);","args":["rbp"],"argn":"stack"},"reg":{"ret":"rax","signature":"rax reg (rdi, rsi, rdx, rcx);","args":["rdi","rsi","rdx","rcx"]},"swift":{"ret":"rax","signature":"rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"error":"r12"}}
 rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
 rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
+rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);
 rax ms (rcx, rdx, r8, r9, stack);
 rax p9 (rbp, stack);
 rax reg (rdi, rsi, rdx, rcx);
 rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;
 tcc rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
 tcc rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
+tcc rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);
 tcc rax ms (rcx, rdx, r8, r9, stack);
 tcc rax p9 (rbp, stack);
 tcc rax reg (rdi, rsi, rdx, rcx);

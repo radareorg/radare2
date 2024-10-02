@@ -439,7 +439,7 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
-	r_return_val_if_fail (fmt, -1);
+	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
 	ret = r_cons_win_vhprintf (STD_OUTPUT_HANDLE, vmode, fmt, ap);
@@ -450,7 +450,7 @@ R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
 R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
-	r_return_val_if_fail (fmt, -1);
+	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
 	ret = r_cons_win_vhprintf (STD_ERROR_HANDLE, vmode, fmt, ap);

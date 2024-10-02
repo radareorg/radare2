@@ -11,14 +11,18 @@ cd "$(dirname $0)"/..
 # Bad: static void foo() {
 # Good: static void foo(void) {
 # NAME=use void on functions without parameters
+(git grep sscanf libr| grep '%s' ) && exit 1
 (git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
 (git grep 'R_NEW0(' libr | grep c:) && exit 1
 (git grep "=='" libr | grep -v '===') && exit 1
 (git grep '|Usage' libr) && exit 1
 # (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
 # TODO  : also check for '{0x'
+#
 (git grep '\t{"' libr | grep -v strcmp | grep -v format | grep -v '{",' | grep -v esil | grep c:) && exit 1
-(git grep -e "\telse" libr | grep c:) && exit 1
+
+# TODO: this check is good but suddently after updating xcode its failing everywhere
+# (git grep -e "\telse" libr | grep c:) && exit 1
 (git grep '"},' libr | grep -v strcmp | grep -v format | grep -v '"},' | grep -v '"}{' | grep -v esil | grep -v anal/p | grep c:) && exit 1
 (git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep c:) && exit 1
 (git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
@@ -26,10 +30,12 @@ cd "$(dirname $0)"/..
 # find calls without (
 #(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
 # validated and ready to go lintings
+(git grep -e '0x%"PFMT64d' -e '0x%d' libr | grep c:) && exit 1
 (git grep -e 'R_MIN(' -e 'R_MAX(' libr | grep c:) && exit 1
-(git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
+(git grep -n 'cmp(' libr | grep -v "R_API" | grep -v "R_IPI" |grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
+(git grep r_file_new | grep -v ", NULL" | grep '"')
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1
 (git grep -n 'for (' libr | grep "; ++" | grep -v arch ) && exit 1
 (git grep -n 'for (int' | grep -v sys/) && exit 1
@@ -39,14 +45,17 @@ cd "$(dirname $0)"/..
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
 (git grep -n -e '	$' | grep libr/ | grep c:) && exit 1
+
 (git grep 'eprintf ("|' libr ) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep "`printf '\tfree('`" libr | grep c: ) && exit 1
 (git grep cfg.debug libr| grep get_i) && exit 1
 (git grep -e 'asm.bytes"' -e 'asm.xrefs"' -e 'asm.functions"' -e 'asm.emu"' -e 'emu.str"' libr| grep get_i) && exit 1
+(git grep -n " strndup (" | grep -v sys/) && exit 1
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
+# TODO (git grep cons_printf libr | grep '"' | grep -v '%') && exit 1
 (git grep appendf libr | grep '"' | grep -v '%') && exit 1
 (git grep strbuf_setf libr | grep '"' | grep -v '%') && exit 1
 (git grep 'strbuf_append (' libr | grep '"' | grep '%') && exit 1
@@ -81,6 +90,7 @@ cd "$(dirname $0)"/..
     | grep -v -e ^libr/core/cmd -e ^libr/main/ -e ^libr/util/syscmd \
     | grep -v -e r_cons_eprintf -e alloc) && exit 1
 (git grep R_LIB_TYPE_ANAL libr/arch/p) && exit 1
+# (git grep r_cons_pal_parse |grep -v =) && exit 1
 
 (
  # ensure c++ compat

@@ -6,6 +6,7 @@ EXPECT=<<EOF
 0x401126
 EOF
 EXPECT_ERR=<<EOF
+DEBUG: [core.bin] (section .dynsym) Cd 8[12] @ 0x400328
 DEBUG: [core.bin] (section .dynstr) Css 63 @ 0x400388
 DEBUG: [core.bin] (section .rela.dyn) Cd 8[6] @ 0x4003f0
 DEBUG: [core.bin] (section .rela.plt) Cd 8[3] @ 0x400420
@@ -13,6 +14,7 @@ DEBUG: [core.bin] (section .init_array) Cd 8[1] @ 0x403e10
 DEBUG: [core.bin] (section .fini_array) Cd 8[1] @ 0x403e18
 DEBUG: [core.bin] (section .dynamic) Cd 8[58] @ 0x403e20
 DEBUG: [core.bin] (section .got) Cd 8[2] @ 0x403ff0
+DEBUG: [core.bin] (section .dynsym) Cd 8[12] @ 0x400328
 DEBUG: [core.bin] (section .dynstr) Css 63 @ 0x400388
 DEBUG: [core.bin] (section .rela.dyn) Cd 8[6] @ 0x4003f0
 DEBUG: [core.bin] (section .rela.plt) Cd 8[3] @ 0x400420
@@ -20,6 +22,7 @@ DEBUG: [core.bin] (section .init_array) Cd 8[1] @ 0x403e10
 DEBUG: [core.bin] (section .fini_array) Cd 8[1] @ 0x403e18
 DEBUG: [core.bin] (section .dynamic) Cd 8[58] @ 0x403e20
 DEBUG: [core.bin] (section .got) Cd 8[2] @ 0x403ff0
+WARN: [core.bin] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: [core.bin] Cannot resolve symbol address __libc_start_main
 DEBUG: [core.bin] Cannot resolve symbol address __gmon_start__
 EOF

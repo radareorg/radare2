@@ -1,16 +1,13 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
 
 #if DEBUGGER
 #include <r_debug.h>
 #include <r_asm.h>
-#include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
-#include <signal.h>
 #include <sys/uio.h>
-#include <errno.h>
 #include "linux_debug.h"
 #include "../procfs.h"
 
@@ -62,7 +59,11 @@ char *linux_reg_profile (RDebug *dbg) {
 #		include "reg/linux-ppc64.h"
 	}
 #elif __s390x__
-#	include "reg/linux-s390x.h"
+	if (dbg->bits & R_SYS_BITS_32) {
+#		include "reg/linux-s390x.h"
+	} else {
+#		include "reg/linux-zarch.h"
+	}
 #else
 #	error "Unsupported Linux CPU"
 	return NULL;
@@ -171,8 +172,6 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 // Used to remove breakpoints before detaching from a fork, without it the child
 // will die upon hitting a breakpoint while not being traced
 static void linux_remove_fork_bps(RDebug *dbg) {
-	RListIter *iter;
-	RBreakpointItem *b;
 	int prev_pid = dbg->pid;
 	int prev_tid = dbg->tid;
 
@@ -180,14 +179,16 @@ static void linux_remove_fork_bps(RDebug *dbg) {
 	dbg->pid = dbg->forked_pid;
 	dbg->tid = dbg->forked_pid;
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
-
+#if __i386__ || __x86_64__
+	RListIter *iter;
+	RBreakpointItem *b;
 	// Unset all hw breakpoints in the child process
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
 	r_list_foreach (dbg->bp->bps, iter, b) {
 		r_debug_drx_unset (dbg, r_bp_get_index_at (dbg->bp, b->addr));
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
-
+#endif
 	// Unset software breakpoints in the child process
 	r_debug_bp_update (dbg);
 	r_bp_restore (dbg->bp, false);
@@ -684,7 +685,7 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 
 static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	RList *list = r_list_new ();
-	if (list) {
+	if (R_LIKELY (list)) {
 		list = linux_thread_list (dbg, main_pid, list);
 		dbg->main_pid = main_pid;
 	}
@@ -853,12 +854,18 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	char *ptr, buf[PATH_MAX];
 	RDebugPid *pid_info = NULL;
 	ut64 pc = 0;
-	int prev_tid = dbg->tid;
-
-	if (!pid) {
+	if (pid < 1) {
 		r_list_free (list);
 		return NULL;
 	}
+	if (dbg->tid < 1) {
+		dbg->tid = pid;
+		dbg->pid = pid;
+	}
+	int prev_pid = dbg->pid;
+	int prev_tid = dbg->tid;
+	dbg->pid = pid;
+	dbg->tid = pid;
 
 	list->free = (RListFree)&r_debug_pid_free;
 	/* if this process has a task directory, use that */
@@ -867,6 +874,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
 		// Update the process' memory maps to set correct paths
+		dbg->pid = pid;
 		dbg->coreb.syncDebugMaps (dbg->coreb.core);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
@@ -912,7 +920,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		closedir (dh);
 		// Return to the original thread
 		linux_attach_single_pid (dbg, prev_tid);
-		dbg->pid = pid;
+		dbg->pid = prev_pid;
 		dbg->tid = prev_tid;
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	} else {

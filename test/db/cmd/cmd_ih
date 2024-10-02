@@ -1,0 +1,331 @@
+NAME=ih (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=ih
+EXPECT=<<EOF
+[Header fields]
+0x00000000 0x00000000 0x464c457f ELF
+0x00000010 0x00000010 0x00000002 Type
+0x00000012 0x00000012 0x00000003 Machine
+0x00000014 0x00000014 0x00000001 Version
+0x00000018 0x00000018 0x08048300 EntryPoint
+0x0000001c 0x0000001c 0x00000034 PhOff
+0x00000020 0x00000020 0x000007cc ShOff
+0x00000024 0x00000024 0x00000000 Flags
+0x00000028 0x00000028 0x00000034 EhSize
+0x0000002a 0x0000002a 0x00000020 PhentSize
+0x0000002c 0x0000002c 0x00000008 PhNum
+0x0000002e 0x0000002e 0x00000028 ShentSize
+0x00000030 0x00000030 0x0000001e ShNum
+0x00000032 0x00000032 0x0000001b ShrStrndx
+
+14 fields
+EOF
+RUN
+
+NAME=ihq (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=ihq
+EXPECT=<<EOF
+0x00000000 0x464c457f ELF
+0x00000010 0x00000002 Type
+0x00000012 0x00000003 Machine
+0x00000014 0x00000001 Version
+0x00000018 0x08048300 EntryPoint
+0x0000001c 0x00000034 PhOff
+0x00000020 0x000007cc ShOff
+0x00000024 0x00000000 Flags
+0x00000028 0x00000034 EhSize
+0x0000002a 0x00000020 PhentSize
+0x0000002c 0x00000008 PhNum
+0x0000002e 0x00000028 ShentSize
+0x00000030 0x0000001e ShNum
+0x00000032 0x0000001b ShrStrndx
+EOF
+RUN
+
+NAME=ih* (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=ih*
+EXPECT=<<EOF
+fs+header
+'f header.ELF 1 0x00000000
+'f header.ELF.value 1 0x464c457f
+pf.ELF x
+'f header.Type 1 0x00000010
+'f header.Type.value 1 0x00000002
+pf.Type w
+'f header.Machine 1 0x00000012
+'f header.Machine.value 1 0x00000003
+pf.Machine w
+'f header.Version 1 0x00000014
+'f header.Version.value 1 0x00000001
+pf.Version x
+'f header.EntryPoint 1 0x00000018
+'f header.EntryPoint.value 1 0x08048300
+pf.EntryPoint x
+'f header.PhOff 1 0x0000001c
+'f header.PhOff.value 1 0x00000034
+pf.PhOff x
+'f header.ShOff 1 0x00000020
+'f header.ShOff.value 1 0x000007cc
+pf.ShOff x
+'f header.Flags 1 0x00000024
+pf.Flags x
+'f header.EhSize 1 0x00000028
+'f header.EhSize.value 1 0x00000034
+pf.EhSize w
+'f header.PhentSize 1 0x0000002a
+'f header.PhentSize.value 1 0x00000020
+pf.PhentSize w
+'f header.PhNum 1 0x0000002c
+'f header.PhNum.value 1 0x00000008
+pf.PhNum w
+'f header.ShentSize 1 0x0000002e
+'f header.ShentSize.value 1 0x00000028
+pf.ShentSize w
+'f header.ShNum 1 0x00000030
+'f header.ShNum.value 1 0x0000001e
+pf.ShNum w
+'f header.ShrStrndx 1 0x00000032
+'f header.ShrStrndx.value 1 0x0000001b
+pf.ShrStrndx w
+fs-
+EOF
+RUN
+
+NAME=ihj (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=ihj~{}
+EXPECT=<<EOF
+[
+  {
+    "name": "ELF",
+    "vaddr": 0,
+    "paddr": 0,
+    "value": 1179403647,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 0,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "Type",
+    "vaddr": 16,
+    "paddr": 16,
+    "value": 2,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 16,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "Machine",
+    "vaddr": 18,
+    "paddr": 18,
+    "value": 3,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 18,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "Version",
+    "vaddr": 20,
+    "paddr": 20,
+    "value": 1,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 20,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "EntryPoint",
+    "vaddr": 24,
+    "paddr": 24,
+    "value": 134513408,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 24,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "PhOff",
+    "vaddr": 28,
+    "paddr": 28,
+    "value": 52,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 28,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "ShOff",
+    "vaddr": 32,
+    "paddr": 32,
+    "value": 1996,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 32,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "Flags",
+    "vaddr": 36,
+    "paddr": 36,
+    "format": "x",
+    "pf": [
+      {
+        "type": "x",
+        "offset": 36,
+        "value": 4294967295
+      }
+    ]
+  },
+  {
+    "name": "EhSize",
+    "vaddr": 40,
+    "paddr": 40,
+    "value": 52,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 40,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "PhentSize",
+    "vaddr": 42,
+    "paddr": 42,
+    "value": 32,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 42,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "PhNum",
+    "vaddr": 44,
+    "paddr": 44,
+    "value": 8,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 44,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "ShentSize",
+    "vaddr": 46,
+    "paddr": 46,
+    "value": 40,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 46,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "ShNum",
+    "vaddr": 48,
+    "paddr": 48,
+    "value": 30,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 48,
+        "value": 65535
+      }
+    ]
+  },
+  {
+    "name": "ShrStrndx",
+    "vaddr": 50,
+    "paddr": 50,
+    "value": 27,
+    "format": "w",
+    "pf": [
+      {
+        "type": "w",
+        "offset": 50,
+        "value": 65535
+      }
+    ]
+  }
+]
+EOF
+RUN
+
+NAME=iH (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=iH
+EXPECT=<<EOF
+0x00000000  ELF MAGIC   0x464c457f
+0x00000010  Type        0x0002
+0x00000012  Machine     0x0003
+0x00000014  Version     0x00000001
+0x00000018  Entrypoint  0x08048300
+0x0000001c  PhOff       0x00000034
+0x00000020  ShOff       0x000007cc
+0x00000024  Flags       0x00000000
+0x00000028  EhSize      52
+0x0000002a  PhentSize   32
+0x0000002c  PhNum       8
+0x0000002e  ShentSize   40
+0x00000030  ShNum       30
+0x00000032  ShrStrndx   27
+EOF
+RUN
+
+NAME=ig and igh
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ig
+igh
+EOF
+EXPECT=<<EOF
+0x00001323
+4.8K
+EOF
+RUN

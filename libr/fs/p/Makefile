@@ -12,8 +12,13 @@ all:
 #FILESYSTEMS=hfs.mk iso9660.mk jfs.mk
 #FILESYSTEMS=hfsplus.mk
 FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk
+FILESYSTEMS+=squashfs.mk
 include $(FILESYSTEMS)
 
+ifeq ($(R2_USE_SQSH),1)
+CFLAGS+=$(SQSH_CFLAGS)
+LDFLAGS+=$(SQSH_LDFLAGS)
+endif
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 

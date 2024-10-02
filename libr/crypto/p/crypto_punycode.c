@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -18,12 +17,15 @@ static bool punycode_check(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	char *obuf;
-	int olen;
-	if (cj->flag) {
+	char *obuf = NULL;
+	int olen = 0;
+	switch (cj->flag) {
+	case R_CRYPTO_DIR_DECRYPT:
 		obuf = r_punycode_decode ((const char *)buf, len, &olen);
-	} else {
+		break;
+	case R_CRYPTO_DIR_ENCRYPT:
 		obuf = r_punycode_encode (buf, len, &olen);
+		break;
 	}
 	r_crypto_job_append (cj, (ut8*)obuf, olen);
 	free (obuf);
@@ -31,7 +33,11 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_punycode = {
-	.name = "punycode",
+	.meta = {
+		.name = "punycode",
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,

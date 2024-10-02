@@ -94,7 +94,7 @@ typedef struct ebc_index {
 } ebc_index_t;
 
 static int decode_index16(const ut8 *data, ebc_index_t *index) {
-	ut16 tmp = *(ut16*)data;
+	ut16 tmp = r_read_le16 (data);
 	index->type = EBC_INDEX16;
 	index->sign = tmp & 0x8000 ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
 	index->a_width = ((tmp >> 12) & EBC_N_BIT_MASK(2)) * 2;
@@ -104,7 +104,7 @@ static int decode_index16(const ut8 *data, ebc_index_t *index) {
 }
 
 static int decode_index32(const ut8 *data, ebc_index_t *index) {
-	ut32 tmp = *(ut32*)data;
+	ut32 tmp = r_read_le32 (data);
 	index->type = EBC_INDEX32;
 	index->sign = tmp & EBC_NTH_BIT(31) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
 	index->a_width = ((tmp >> 28) & EBC_N_BIT_MASK(2)) * 4;
@@ -114,7 +114,7 @@ static int decode_index32(const ut8 *data, ebc_index_t *index) {
 }
 
 static int decode_index64(const ut8 *data, ebc_index_t *index) {
-	ut64 tmp = *(ut64*)data;
+	ut64 tmp = r_read_le64 (data);
 	index->type = EBC_INDEX64;
 	index->sign = tmp & EBC_NTH_BIT(63) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
 	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 8;
@@ -143,7 +143,7 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 			TEST_BIT(bytes[1], 7) ? TEST_BIT(bytes[1], 6) ? "cs" : "cc" : "");
 
 	if (TEST_BIT(bytes[0], 6)) {
-		immed = *(ut64*)(bytes + 2);
+		immed = r_read_le64 (bytes + 2);
 		bits = 64;
 		ret = 10;
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
@@ -163,7 +163,7 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 					"%s(%c%u, %c%u)",
 					op1, sign, idx32.n, sign, idx32.c);
 			} else {
-				immed32 = *(int32_t *)(bytes + 2);
+				immed32 = (st32)r_read_le32 (bytes + 2);
 				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
 					"%s0x%x", op1, immed32);
 			}
@@ -221,7 +221,7 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 			//operand 1 direct
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data present
-				i1 = *(ut32 *)(bytes + 2);
+				i1 = r_read_le32 (bytes + 2);
 				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
 					"r%d(0x%x)", op1, i1);
 				ret = 6;
@@ -234,7 +234,7 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 	} else {
 		bits = 64;
 		ret = 10;
-		i2 = *(ut64 *)&bytes[2];
+		i2 = r_read_le64 (bytes + 2);
 		CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", i2);
 	}
 	CHK_SNPRINTF (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s%s",
@@ -270,7 +270,7 @@ static int decode_cmp(const ut8 *bytes, ebc_command_t *cmd) {
 				"r%d, @r%d (%c%d, %c%d)",
 				op1, op2, sign, idx.n, sign, idx.c);
 		} else {
-			immed = *(ut16 *)&bytes[2];
+			immed = r_read_le16 (bytes + 2);
 			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
 				"r%d, r%d %d", op1, op2, immed);
 		}
@@ -340,7 +340,7 @@ static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
 					idx.sign ? '+' : '-', idx.n,
 					idx.sign ? '+' : '-', idx.c);
 		} else {
-			immed = *(ut16*)&bytes[2];
+			immed = r_read_le16 (bytes + 2);
 			snprintf(index, 32, "(%u)", immed);
 		}
 	}
@@ -381,7 +381,7 @@ static int decode_add(const ut8 *bytes, ebc_command_t *cmd) {
 			snprintf(index, sizeof (index),
 				" (%c%d, %c%d)", sign, idx.n, sign, idx.c);
 		} else {
-			immed = *(ut16*)&bytes[2];
+			immed = r_read_le16 (bytes + 2);
 			snprintf (index, sizeof (index), "(%u)", immed);
 		}
 	}
@@ -614,7 +614,7 @@ static int decode_push_pop(const ut8 *bytes, ebc_command_t *cmd) {
 			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s (%c%d, %c%d)",
 				op1c, sign, idx.n, sign, idx.c);
 		} else {
-			ut16 immed = *(ut16 *)(bytes + 2);
+			ut16 immed = r_read_le16 (bytes + 2);
 
 			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s %u",
 				op1c, immed);
@@ -658,11 +658,11 @@ static int decode_cmpi(const ut8 *bytes, ebc_command_t *cmd) {
 	}
 
 	if (TEST_BIT(bytes[0], 7)) {
-		ut32 im = *(ut32*)(bytes + ret);
+		ut32 im = r_read_le32 (bytes + ret);
 		snprintf (immed, sizeof (immed), "%u", im);
 		ret += 4;
 	} else {
-		ut16 im = *(ut16*)(bytes + ret);
+		ut16 im = r_read_le16 (bytes + ret);
 		snprintf (immed, sizeof (immed), "%u", im);
 		ret += 2;
 	}
@@ -764,17 +764,17 @@ static int decode_movi(const ut8 *bytes, ebc_command_t *cmd) {
 	ut32 i2;
 	ut64 i3;
 	case 'w':
-		i1 = *(ut16*)(bytes + ret);
+		i1 = r_read_le16 (bytes + ret);
 		immed = (unsigned long)i1;
 		ret += 2;
 		break;
 	case 'd':
-		i2 = *(ut32*)(bytes + ret);
+		i2 = r_read_le32 (bytes + ret);
 		immed = (unsigned long)i2;
 		ret += 4;
 		break;
 	case 'q':
-		i3 = *(ut64*)(bytes + ret);
+		i3 = r_read_le64 (bytes + ret);
 		immed = i3;
 		ret += 8;
 		break;
@@ -894,17 +894,17 @@ static int decode_movrel(const ut8 *bytes, ebc_command_t *cmd) {
 	ut64 v64;
 	switch (p1) {
 	case 'w':
-		v16 = *(ut16 *)(bytes + 2);
+		v16 = r_read_le16 (bytes + 2);
 		immed = v16;
 		ret += 2;
 		break;
 	case 'd':
-		v32 = *(ut32 *)(bytes + 2);
+		v32 = r_read_le32 (bytes + 2);
 		immed = v32;
 		ret += 4;
 		break;
 	case 'q':
-		v64 = *(ut64 *)(bytes + 2);
+		v64 = r_read_le64 (bytes + 2);
 		immed = v64;
 		ret += 8;
 		break;

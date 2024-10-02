@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake */
+/* radare - LGPL - Copyright 2017-2023 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -53,7 +53,7 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 }
 
 static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	char *res = root->cob.cmdstr (root->cob.core, cmd);
 	if (res) {
 		RList *list = r_list_newf (free);
@@ -76,7 +76,7 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 }
 
 static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	int i;
 	for (i = 0; routes[i].path; i++) {
 		const char *cwd = routes[i].path;
@@ -90,7 +90,7 @@ static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
 }
 
 static int fs_r2_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (file, -1);
+	R_RETURN_VAL_IF_FAIL (file, -1);
 	int i;
 	const char *path = file->path;
 	const char *name = file->name;
@@ -108,7 +108,7 @@ static int fs_r2_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 }
 
 static int fs_r2_read(RFSFile *file, ut64 addr, int len) {
-	r_return_val_if_fail (file, -1);
+	R_RETURN_VAL_IF_FAIL (file, -1);
 	size_t i;
 	const char *path = file->name;
 	for (i = 0; routes[i].path; i++) {
@@ -124,7 +124,7 @@ static void fs_r2_close(RFSFile *file) {
 }
 
 static int __version(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && file && path, -1);
+	R_RETURN_VAL_IF_FAIL (root && file && path, -1);
 	char *res = root->cob.cmdstrf (root->cob.core, "?V");
 	file->ptr = NULL;
 	free (file->data);
@@ -135,7 +135,7 @@ static int __version(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && file && path, -1);
+	R_RETURN_VAL_IF_FAIL (root && file && path, -1);
 	const char *last = r_str_rchr (path, NULL, '/');
 	if (last) {
 		last++;
@@ -151,7 +151,7 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static int __bsize_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (file, -1);
+	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
 	char *res = file->root->cob.cmdstrf (core, "b %s", data);
 	free (res);
@@ -159,7 +159,7 @@ static int __bsize_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 }
 
 static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && file, -1);
+	R_RETURN_VAL_IF_FAIL (root && file, -1);
 	char *res = root->cob.cmdstrf (root->cob.core, "b");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
@@ -169,7 +169,7 @@ static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static int __seek_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (file, -1);
+	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
 	char *res = file->root->cob.cmdstrf (core, "s %s", data);
 	free (res);
@@ -177,7 +177,7 @@ static int __seek_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 }
 
 static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && file, -1);
+	R_RETURN_VAL_IF_FAIL (root && file, -1);
 	char *res = root->cob.cmdstrf (root->cob.core, "s");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
@@ -187,7 +187,7 @@ static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static int __cfg_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (file, -1);
+	R_RETURN_VAL_IF_FAIL (file, -1);
 	const char *a = file->name;
 	void *core = file->root->cob.core;
 	char *prefix = strdup (file->path + strlen ("/cfg/"));
@@ -198,7 +198,7 @@ static int __cfg_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 }
 
 static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && file, -1);
+	R_RETURN_VAL_IF_FAIL (root && file, -1);
 	if (strlen (path) < 6) {
 		return -1;
 	}
@@ -213,7 +213,7 @@ static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static RList *__flags(RFSRoot *root, const char *path) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	const char *prefix = NULL;
 	if (!strncmp (path, "/flags/", 7)) {
 		prefix = path + 7;
@@ -227,7 +227,7 @@ static RList *__flags(RFSRoot *root, const char *path) {
 }
 
 static RList *__cfg(RFSRoot *root, const char *path) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	const char *prefix = NULL;
 	if (!strncmp (path, "/cfg/", 5)) {
 		prefix = path + 5;
@@ -259,7 +259,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 }
 
 static RList *__root(RFSRoot *root, const char *path) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	RList *list = r_list_newf (NULL);
 	if (!list) {
 		return NULL;
@@ -273,7 +273,7 @@ static RList *__root(RFSRoot *root, const char *path) {
 }
 
 static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
-	r_return_val_if_fail (root, NULL);
+	R_RETURN_VAL_IF_FAIL (root, NULL);
 	size_t i;
 	for (i = 0; routes[i].path; i++) {
 		if (routes[i].dir && !strncmp (path, routes[i].path, strlen (routes[i].path))) {
@@ -293,9 +293,11 @@ static void fs_r2_umount(RFSRoot *root) {
 }
 
 RFSPlugin r_fs_plugin_r2 = {
-	.name = "r2",
-	.desc = "r2-based filesystem",
-	.license = "MIT",
+	.meta = {
+		.name = "r2",
+		.desc = "r2-based filesystem",
+		.license = "MIT",
+	},
 	.open = fs_r2_open, // open == read
 	.read = fs_r2_read, // read == open
 	.write = fs_r2_write,

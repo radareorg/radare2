@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, maijin */
 
 #define R_LOG_ORIGIN "rasm2"
 
@@ -178,14 +178,13 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
-	const char *feat;
 	PJ *pj = NULL;
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
 	r_list_foreach (as->anal->arch->plugins, iter, h) {
-		feat = "___";
+		const char *feat = "___";
 		if (h->encode) {
 			feat = h->decode? "ade": "a__";
 		} else {
@@ -243,8 +242,8 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
-		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
+		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
+			"   [-f file] [-o file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
 	}
 	if (v != 1) {
 		printf (" -a [arch]    set architecture to assemble/disassemble (see -L)\n"
@@ -257,22 +256,20 @@ static int rasm_show_help(int v) {
 			" -e           use big endian instead of little endian\n"
 			" -E           display ESIL expression (same input as in -d)\n"
 			" -f [file]    read data from file\n"
-			" -F [in:out]  specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
+			" -F [in:out]  specify input and/or output filters (att2intel, x86.pseudo, ..)\n"
 			" -h, -hh      show this help, -hh for long\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
 			" -j           output in json format\n"
-			" -k [kernel]  select operating system (linux, windows, darwin, ..)\n"
+			" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
 			" -l [len]     input/Output length\n"
-			" -L           list RAsm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-			" -LL          list RAnal plugins (see anal.arch=?) combines with -j\n"
-			" -LLL         list RArch plugins (see arch.arch=?) combines with -j\n"
-			" -o,-@ [addr] set start address for code (default 0)\n"
-			" -O [file]    output file name (rasm2 -Bf a.asm -O a)\n"
-			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n"
+			" -L           list RArch plugins: (a=asm, d=disasm, e=esil)\n"
+			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n" // -n ?
+			" -o [file]    output file name (rasm2 -Bf a.asm -o a)\n"
 			" -p           run SPP over input for assembly\n"
 			" -q           quiet mode\n"
 			" -r           output in radare commands\n"
-			" -s [syntax]  select syntax (intel, att)\n"
+			" -s,-@ [addr] define initial start/seek address (default 0)\n"
+			" -S [syntax]  select syntax (intel, att)\n"
 			" -v           show version information\n"
 			" -x           use hex dwords instead of hex pairs when assembling.\n"
 			" -w           what's this instruction for? describe opcode\n"
@@ -367,11 +364,34 @@ static int is_binary(const char *s) {
 	return 0;
 }
 
+static ut64 pcpos(const char* buf) {
+	ut64 pos = 0;
+	int pair = 0;
+	while (*buf) {
+		const char ch = *buf;
+		if (IS_HEXCHAR (ch)) {
+			pair++;
+			if (pair == 2) {
+				pos++;
+				pair = 0;
+			}
+		} else if (ch == '<') {
+			return pos;
+		} else if (IS_WHITESPACE (ch)) {
+			// ignore
+		} else {
+			// invalid hexpair string
+			return UT64_MAX;
+		}
+		buf++;
+	}
+	return UT64_MAX;
+}
+
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
-	RAsmCode *acode;
 	ut8 *data = NULL;
 	int ret = 0;
-	ut64 clen = 0;
+	st64 clen = 0;
 	if (bits == 1) {
 		len /= 8;
 	}
@@ -399,6 +419,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			len = 4;
 		}
 	}
+	ut64 pcaddr = UT64_MAX;
 	if (bin) {
 		if (len < 0) {
 			return false;
@@ -406,14 +427,29 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {
-		clen = r_hex_str2bin (buf, NULL);
-		if ((int)clen < 1 || !(data = malloc (clen))) {
+		pcaddr = pcpos (buf);
+		char *nbuf = (char *)buf;
+		if (pcaddr != UT64_MAX) {
+			nbuf = strdup (buf);
+			r_str_replace_char (nbuf, '<', ' ');
+			r_str_replace_char (nbuf, '>', ' ');
+		}
+		clen = r_hex_str2bin (nbuf, NULL);
+		if (clen > 0) {
+			data = malloc (clen);
+			if (data) {
+				r_hex_str2bin (nbuf, data);
+				len = clen;
+			}
+		}
+		if (nbuf != buf) {
+			free (nbuf);
+		}
+		if (clen < 1) {
 			R_LOG_WARN ("Invalid hexpair string");
 			ret = 0;
 			goto beach;
 		}
-		r_hex_str2bin (buf, data);
-		len = clen;
 	}
 
 	if (!len || clen <= len) {
@@ -423,6 +459,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	if (hex == 2) {
 		RAnalOp aop = {0};
 		while (ret < len) {
+			if (ret == pcaddr) {
+				printf ("=PC:\n");
+			}
 			aop.size = 0;
 			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ARCH_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
@@ -448,6 +487,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			if (!op.mnemonic) {
 				r_asm_op_set_asm (&op, "unaligned");
 			}
+			if (ret == pcaddr) {
+				printf ("=PC:\n");
+			}
 			char *op_hex = r_asm_op_get_hex (&op);
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
 				as->a->pc, op.size, op_hex,
@@ -458,20 +500,24 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			r_anal_op_fini (&op);
 		}
 	} else {
+		if (addr == 0 && pcaddr != UT64_MAX) {
+			R_LOG_WARN ("The provided hexpair contains PC information, display it with -D instead of -d");
+			addr = pcaddr;
+		}
 		r_asm_set_pc (as->a, addr);
-		if (!(acode = r_asm_mdisassemble (as->a, data, len))) {
-			goto beach;
+		RAsmCode *acode = r_asm_mdisassemble (as->a, data, len);
+		if (acode) {
+			if (as->oneliner) {
+				r_str_replace_char (acode->assembly, '\n', ';');
+				printf ("%s\"\n", acode->assembly);
+			} else if (acode->assembly[0]) {
+				printf ("%s", acode->assembly);
+			} else {
+				printf ("empty\n");
+			}
+			ret = acode->len;
+			r_asm_code_free (acode);
 		}
-		if (as->oneliner) {
-			r_str_replace_char (acode->assembly, '\n', ';');
-			printf ("%s\"\n", acode->assembly);
-		} else if (acode->assembly[0]) {
-			printf ("%s", acode->assembly);
-		} else {
-			printf ("empty\n");
-		}
-		ret = acode->len;
-		r_asm_code_free (acode);
 	}
 beach:
 	if (data && data != (ut8 *)buf) {
@@ -561,6 +607,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 /* arch callback */
+// TODO: this should be bool
 static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
 	RArchPlugin *hand = (RArchPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
@@ -617,11 +664,10 @@ static void __load_plugins(RAsmState *as) {
 }
 
 static char *io_slurp(const char *file, size_t *len) {
-	RIODesc *des = NULL;
 	ut8 *ret = NULL;
 	RIO *io = r_io_new ();
 	if (io) {
-		des = r_io_open_nomap (io, file, R_PERM_R, 0);
+		RIODesc *des = r_io_open_nomap (io, file, R_PERM_R, 0);
 		if (des) {
 			ut64 size = r_io_desc_size (des);
 			ret = (ut8*)malloc (size + 1);
@@ -631,10 +677,10 @@ static char *io_slurp(const char *file, size_t *len) {
 				*len = size;
 				ret[size] = '\0';
 			}
+			r_io_desc_free (des);
 		}
+		r_io_free (io);
 	}
-	r_io_desc_free (des);
-	r_io_free (io);
 	return (char *)ret;
 }
 
@@ -684,7 +730,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:S:pqrs:vwx");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -741,10 +787,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			list_plugins = true;
 			break;
 		case '@':
-		case 'o':
+		case 's':
 			offset = r_num_math (NULL, opt.arg);
 			break;
-		case 'O':
+		case 'o':
 			fd = open (opt.arg, O_TRUNC | O_RDWR | O_CREAT, 0644);
 #ifndef __wasi__
 			if (fd != -1) {
@@ -761,7 +807,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		case 'r':
 			rad = true;
 			break;
-		case 's':
+		case 'S':
 			if (*opt.arg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
 				__as_free (as);
@@ -776,10 +822,12 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			break;
 		case 'v':
-			if (as->quiet) {
-				printf ("%s\n", R2_VERSION);
-			} else {
-				ret = r_main_version_print ("rasm2");
+			{
+				int mode = 0;
+				if (as->quiet) {
+					mode = 'q';
+				}
+				ret = r_main_version_print ("rasm2", mode);
 			}
 			goto beach;
 		case 'w':
@@ -805,7 +853,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 
 	if (cpu) {
-		r_asm_set_cpu (as->a, cpu);
+		r_arch_config_set_cpu (as->a->config, cpu);
 		// not necessary --- r_arch_config_set_cpu (as->a->config, cpu);
 	}
 	if (arch) {
@@ -832,6 +880,15 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	r_asm_set_bits (as->a, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (as->anal, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
 	as->a->syscall = r_syscall_new ();
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		// check if selected cpu is valid
+		const char *cpus = R_UNWRAP4 (as->anal->arch, session, plugin, cpus);
+		if (cpus && !strstr (cpus, cpu)) {
+			R_LOG_WARN ("Invalid CPU. See -a, -b and asm.cpu values (%s)", cpus);
+		} else {
+			R_LOG_WARN ("Ignored -c asm.cpu, provided plugin exposes no CPUs models");
+		}
+	}
 	r_syscall_setup (as->a->syscall, arch, bits, cpu, kernel);
 	{
 		bool canbebig = r_asm_set_big_endian (as->a, isbig);

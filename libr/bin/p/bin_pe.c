@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, alvarofe */
 
 #include "bin_pe.inc.c"
 
 extern struct r_bin_write_t r_bin_write_pe;
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -104,7 +104,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static char *signature(RBinFile *bf, bool json) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinPEObj *pe = PE_(get)(bf);
 	if (json) {
 		PJ *pj = r_pkcs7_cms_json (pe->cms);
@@ -122,9 +122,8 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer (16);
 	#define ROWL(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
 
 	RBinPEObj *pe = PE_(get)(bf);
 	ut64 addr = pe->rich_header_offset ? pe->rich_header_offset : 128;
@@ -132,7 +131,7 @@ static RList *fields(RBinFile *bf) {
 	RListIter *it;
 	Pe_image_rich_entry *rich;
 	r_list_foreach (pe->rich_entries, it, rich) {
-		r_list_append (ret, r_bin_field_new (addr, addr, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
+		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
 		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
 		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
 		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;
@@ -435,13 +434,15 @@ static void header(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pe = {
-	.name = "pe",
-	.desc = "PE bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "pe",
+		.desc = "PE bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

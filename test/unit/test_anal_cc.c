@@ -3,7 +3,7 @@
 #include "minunit.h"
 #include "test_sdb.h"
 
-static Sdb *ref_db() {
+static Sdb *ref_db(void) {
 	Sdb *db = sdb_new0 ();
 	sdb_set (db, "cc.sectarian.ret", "rax", 0);
 	sdb_set (db, "cc.sectarian.arg1", "rcx", 0);
@@ -13,7 +13,7 @@ static Sdb *ref_db() {
 	return db;
 }
 
-static Sdb *ref_db_self_err() {
+static Sdb *ref_db_self_err(void) {
 	Sdb *db = sdb_new0 ();
 	sdb_set (db, "cc.sectarian.ret", "rax", 0);
 	sdb_set (db, "cc.sectarian.self", "rsi", 0);
@@ -25,13 +25,13 @@ static Sdb *ref_db_self_err() {
 	return db;
 }
 
-static RAnal *ref_anal() {
+static RAnal *ref_anal(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_cc_set (anal, "rax sectarian(rdx, rcx, stack)");
 	return anal;
 }
 
-static RAnal *ref_anal_self_err() {
+static RAnal *ref_anal_self_err(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_cc_set (anal, "rax sectarian(rdx, rcx, stack)");
 	r_anal_cc_set_self (anal, "sectarian", "rsi");
@@ -39,7 +39,7 @@ static RAnal *ref_anal_self_err() {
 	return anal;
 }
 
-bool test_r_anal_cc_set() {
+bool test_r_anal_cc_set(void) {
 	RAnal *anal = ref_anal ();
 
 	Sdb *ref = ref_db ();
@@ -50,7 +50,7 @@ bool test_r_anal_cc_set() {
 	mu_end;
 }
 
-bool test_r_anal_cc_set_self_err() {
+bool test_r_anal_cc_set_self_err(void) {
 	RAnal *anal = ref_anal_self_err ();
 
 	Sdb *ref = ref_db_self_err ();
@@ -61,7 +61,7 @@ bool test_r_anal_cc_set_self_err() {
 	mu_end;
 }
 
-bool test_r_anal_cc_get() {
+bool test_r_anal_cc_get(void) {
 	RAnal *anal = ref_anal ();
 	char *v = r_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax sectarian (rdx, rcx, stack);", "get cc");
@@ -74,7 +74,7 @@ bool test_r_anal_cc_get() {
 	mu_end;
 }
 
-bool test_r_anal_cc_get_self_err() {
+bool test_r_anal_cc_get_self_err(void) {
 	RAnal *anal = ref_anal_self_err ();
 	char *v = r_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax rsi.sectarian (rdx, rcx, stack) rdi;", "get cc");
@@ -87,7 +87,7 @@ bool test_r_anal_cc_get_self_err() {
 	mu_end;
 }
 
-bool test_r_anal_cc_del() {
+bool test_r_anal_cc_del(void) {
 	RAnal *anal = ref_anal ();
 	r_anal_cc_del (anal, "sectarian");
 	Sdb *ref = sdb_new0 ();
@@ -97,7 +97,7 @@ bool test_r_anal_cc_del() {
 	mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
 	mu_run_test (test_r_anal_cc_get);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
@@ -171,7 +171,7 @@ static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
 }
 
 R_API void r_cons_canvas_clear(RConsCanvas *c) {
-	r_return_if_fail (c && c->b);
+	R_RETURN_IF_FAIL (c && c->b);
 	int y;
 	for (y = 0; y < c->h; y++) {
 		memset (c->b[y], '\n', c->bsize[y]);
@@ -351,6 +351,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	free (os);
 }
 
+R_API void r_cons_canvas_write_at(RConsCanvas *c, const char *s, int x, int y) {
+	r_cons_canvas_gotoxy (c, x, y);
+	r_cons_canvas_write (c, s);
+}
+
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
 	if (color) {
 		free (c->bgcolor);
@@ -359,7 +364,7 @@ R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
 }
 
 R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
-	r_return_val_if_fail (c, NULL);
+	R_RETURN_VAL_IF_FAIL (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
 	bool is_first = true;
@@ -478,15 +483,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
-			size_t j;
-			for (j = 0; j <= i; j++) {
-				free (c->b[i]);
-			}
-			ht_up_free (c->attrs);
-			free (c->blen);
-			free (c->bsize);
-			free (c->b);
-			free (c);
+			r_cons_canvas_free (c);
 			return false;
 		}
 		c->b[i] = newline;

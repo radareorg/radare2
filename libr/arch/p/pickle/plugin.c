@@ -184,7 +184,7 @@ static inline bool handle_int(RAnalOp *op, const char *name, int sz) {
 }
 
 static inline int handle_long(RArch *a, RAnalOp *op, int sz) {
-	r_return_val_if_fail (sz == 1 || sz == 4, -1);
+	R_RETURN_VAL_IF_FAIL (sz == 1 || sz == 4, -1);
 	op->sign = true;
 
 	// process how long the numer is is
@@ -289,7 +289,7 @@ static inline void max_oplen_set(RArchSession *s, RAnalOp *op) {
 }
 
 static inline bool handle_n_lines(RArchSession *s, RAnalOp *op, const char *name, int n) {
-	r_return_val_if_fail (op->size >= 2 && name && n < 3 && n > 0, -1);
+	R_RETURN_VAL_IF_FAIL (op->size >= 2 && name && n < 3 && n > 0, -1);
 	// TODO: use an alternative func for INT, FLOAT, LONG ops that gets the
 	// value from arg str
 	const ut8 *buf = op->bytes + 1;
@@ -374,7 +374,7 @@ static bool cnt_str(RArchSession *s, RAnalOp *op, const char *name, int sz) {
 }
 
 static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
-	r_return_val_if_fail (s && op, false);
+	R_RETURN_VAL_IF_FAIL (s && op, false);
 	if (op->size < 1 || !op->bytes) {
 		return false;
 	}
@@ -675,7 +675,7 @@ static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
 	}
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (num) {
-		*((double *)outbuf) = r_num_get_float (num, str);
+		*((double *)outbuf) = r_num_get_double (num, str);
 		r_mem_swap (outbuf, sizeof (double));
 		r_num_free (num);
 		return sizeof (double);
@@ -710,7 +710,7 @@ static int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outsz) {
 }
 
 static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz, bool q) {
-	r_return_val_if_fail (cnt <= 2, -2);
+	R_RETURN_VAL_IF_FAIL (cnt <= 2, -2);
 	st64 len = str_valid_arg (str);
 	if (len < 0) {
 		return len;
@@ -767,7 +767,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	}
 	ut8 *outbuf = _outbuf;
 
-	r_return_val_if_fail (str && *str && outsz > 0 && outbuf, -1);
+	R_RETURN_VAL_IF_FAIL (str && *str && outsz > 0 && outbuf, -1);
 	int wlen = 0;
 	char *opstr = strdup (str); // get a non-const str to manipulate
 	if (!opstr) {
@@ -903,7 +903,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	free (opstr);
 
 	if (wlen > 0) {
-		r_return_val_if_fail (wlen <= outsz, false);
+		R_RETURN_VAL_IF_FAIL (wlen <= outsz, false);
 		free (op->bytes);
 		op->bytes = realloc (_outbuf, wlen);
 		if (op->bytes) {
@@ -918,17 +918,17 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 
 static int pickle_info(RArchSession *s, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		// some ops accept newline terminated strings of arbitrary len...
 		if (s->data) {
 			return *(int *)s->data;
 		}
 		return MAXSTRLEN;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return 0;
@@ -972,7 +972,7 @@ static char *pickle_mnemonics(RArchSession *s, int id, bool json) {
 }
 
 static bool pickle_init(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	s->data = R_NEW (int);
 	if (s->data) {
 		*((int *)s->data) = MAXSTRLEN;
@@ -982,7 +982,7 @@ static bool pickle_init(RArchSession *s) {
 }
 
 static bool pickle_fini(RArchSession *s) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	free (s->data);
 	s->data = NULL;
 	return true;

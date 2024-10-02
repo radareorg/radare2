@@ -1,19 +1,18 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
 #include "i/private.h"
 
-static char *__hashify(const char *s, ut64 vaddr) {
-	r_return_val_if_fail (s, NULL);
-
+static char *hashify(const char *s, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
 				return r_str_newf ("_%" PFMT64d, vaddr);
 			}
-			ut32 hash = sdb_hash (s);
+			const ut32 hash = sdb_hash (s);
 			return r_str_newf ("%x", hash);
 		}
 		s++;
@@ -22,7 +21,7 @@ static char *__hashify(const char *s, ut64 vaddr) {
 }
 
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *name) {
-	r_return_val_if_fail (db && name, NULL);
+	R_RETURN_VAL_IF_FAIL (db && name, NULL);
 
 	int count = 0;
 
@@ -50,7 +49,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 	char *resname = NULL;
 	if (vaddr) {
-		resname = __hashify (name, vaddr);
+		resname = hashify (name, vaddr);
 	}
 	if (count > 1) {
 		resname = r_str_appendf (resname, "_%d", count - 1);
@@ -66,26 +65,23 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 	return resname;
 }
 
+// R2_600 - return bool for success or not
 R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
-	r_return_if_fail (ht && sym && sym->name);
-	const char *name = sym->name;
-	// if (!strncmp (sym->name, "imp.", 4)) {
-	// demangle symbol name depending on the language specs if any
+	R_RETURN_IF_FAIL (ht && sym && sym->name);
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+#if 1
 	if (bf && bf->bo && bf->bo->lang) {
 		const char *lang = r_bin_lang_tostring (bf->bo->lang);
-		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr, false);
-		if (dn && *dn) {
-			sym->dname = dn;
-			// XXX this is wrong but is required for this test to pass
-			// pmb:new pancake$ bin/r2r.js db/formats/mangling/swift
-			sym->name = dn;
+		char *dn = r_bin_demangle (bf, lang, name, sym->vaddr, false);
+		if (R_STR_ISNOTEMPTY (dn)) {
+			r_bin_name_demangled (sym->name, dn);
 			// extract class information from demangled symbol name
 			char *p = strchr (dn, '.');
 			if (p) {
-				if (IS_UPPER (*dn)) {
+				if (isupper (*dn)) {
 					sym->classname = strdup (dn);
 					sym->classname[p - dn] = 0;
-				} else if (IS_UPPER (p[1])) {
+				} else if (isupper (p[1])) {
 					sym->classname = strdup (p + 1);
 					p = strchr (sym->classname, '.');
 					if (p) {
@@ -94,8 +90,9 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 				}
 			}
 		}
+		free (dn);
 	}
-
+#endif
 	r_strf_var (uname, 256, "%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
 	if (!res) {
@@ -118,18 +115,14 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 	HtPP *ht = ht_pp_new0 ();
-	if (!ht) {
-		return;
-	}
-
-	RListIter *iter;
-	RBinSymbol *sym;
-	r_list_foreach (list, iter, sym) {
-		if (sym && R_STR_ISNOTEMPTY (sym->name)) {
+	if (R_LIKELY (ht)) {
+		RListIter *iter;
+		RBinSymbol *sym;
+		r_list_foreach (list, iter, sym) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}
+		ht_pp_free (ht);
 	}
-	ht_pp_free (ht);
 }
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
@@ -137,6 +130,9 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	HtSU *db = ht_su_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
+		if (!sec->name) {
+			continue;
+		}
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);
@@ -148,21 +144,21 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 
 static bool false_positive(const char *str) {
 	int i;
-//	ut8 bo[0x100];
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
-	// int di = 0;
 	int ln = 0;
-	// int sp = 0;
 	int nm = 0;
 #if 0
+	// int di = 0;
+	// int sp = 0;
+//	ut8 bo[0x100];
 	for (i = 0; i < 0x100; i++) {
 		bo[i] = 0;
 	}
 #endif
 	for (i = 0; str[i]; i++) {
-		if (IS_DIGIT (str[i])) {
+		if (isdigit (str[i])) {
 			nm++;
 		} else if (str[i]>='a' && str[i]<='z') {
 			lo++;
@@ -204,6 +200,7 @@ static bool false_positive(const char *str) {
 }
 
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	bool purge = false;
 	if (bin->strpurge) {
 		char *addrs = strdup (bin->strpurge);
@@ -252,7 +249,7 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 	return purge;
 }
 
-static int get_char_ratio(char ch, const char *str) {
+static int get_char_ratio(const char ch, const char *str) {
 	int i;
 	int ch_count = 0;
 	for (i = 0; str[i]; i++) {
@@ -276,10 +273,10 @@ static bool bin_strfilter(RBin *bin, const char *str) {
 			    (in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
 			}
-			if (ch < 0 || !IS_PRINTABLE (ch) || IS_LOWER (ch)) {
+			if (ch < 0 || !IS_PRINTABLE (ch) || islower (ch)) {
 				return false;
 			}
-			if (IS_UPPER (ch)) {
+			if (isupper (ch)) {
 				got_uppercase = true;
 			}
 loop_end:
@@ -304,23 +301,21 @@ loop_end:
 		}
 		break;
 	case 'e': // emails
-		if (str && *str) {
-			if (!strchr (str + 1, '@')) {
-				return false;
-			}
-			if (!strchr (str + 1, '.')) {
-				return false;
-			}
-		} else {
+		if (R_STR_ISEMPTY (str)) {
+			return false;
+		}
+		if (!strchr (str + 1, '@')) {
+			return false;
+		}
+		if (!strchr (str + 1, '.')) {
 			return false;
 		}
 		break;
 	case 'f': // format-string
-		if (str && *str) {
-			if (!strchr (str + 1, '%')) {
-				return false;
-			}
-		} else {
+		if (R_STR_ISEMPTY (str)) {
+			return false;
+		}
+		if (!strchr (str + 1, '%')) {
 			return false;
 		}
 		break;
@@ -336,7 +331,7 @@ loop_end:
 			bool prevd = false;
 			for (i = 0; str[i]; i++) {
 				char ch = str[i];
-				if (IS_DIGIT (ch)) {
+				if (isdigit (ch)) {
 					segmentsum = segmentsum*10 + (ch - '0');
 					if (segment == 3) {
 						return true;
@@ -377,6 +372,7 @@ loop_end:
 }
 
 R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
 		return false;
 	}

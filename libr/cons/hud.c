@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -467,7 +467,37 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	return tmp;
 }
 
+static char *r_cons_message_multiline(const char *msg) {
+	char *s = strdup (msg);
+	RList *lines = r_str_split_list (s, "\n", 0);
+	RListIter *iter;
+	const char *line;
+	int longest = 0;
+	r_list_foreach (lines, iter, line) {
+		int linelen = strlen (line);
+		if (linelen > longest) {
+			longest = linelen;
+		}
+	}
+	int rows, cols = r_cons_get_size (&rows);
+	const char *pad = r_str_pad (' ', (cols-longest) / 2);
+	char *newmsg = r_str_prefix_all (msg, pad);
+	r_cons_clear ();
+	r_cons_gotoxy (0, (rows / 2) - (r_list_length (lines) / 2));
+	r_cons_println (newmsg);
+	r_cons_flush ();
+	r_cons_gotoxy (0, rows - 2);
+	r_cons_any_key (NULL);
+	r_list_free (lines);
+	free (s);
+	free (newmsg);
+	return NULL;
+}
+
 R_API char *r_cons_message(const char *msg) {
+	if (strchr (msg, '\n')) {
+		return r_cons_message_multiline (msg);
+	}
 	int len = strlen (msg);
 	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();

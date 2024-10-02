@@ -610,20 +610,20 @@ static char *set_reg_profile(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == R_ARCH_INFO_CODE_ALIGN) {
 		return (as && as->config->bits == 16)? 2: 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == R_ARCH_INFO_MAXOP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_MINOP_SIZE) {
 		return (as && as->config->bits == 16)? 2: 4;
 	}
 	return 4; // XXX
 }
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -634,7 +634,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

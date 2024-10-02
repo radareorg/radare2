@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2022 - pancake */
+/* sdb - MIT - Copyright 2011-2023 - pancake */
 
 #include <fcntl.h>
 #include <errno.h>

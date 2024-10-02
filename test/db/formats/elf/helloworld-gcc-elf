@@ -13,6 +13,7 @@ RUN
 NAME=armr - functions bits
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
+e anal.emu=true
 aaa
 pid 1@@f
 EOF
@@ -47,7 +48,7 @@ EXPECT=<<EOF
 0x0000050c                 80b5  push {r7, lr}
 0x000003a0   sym._init:
 0x000003a0             08402de9  push {r3, lr}
-0x000003ac   sym..plt:
+0x000003ac   fcn.000003ac:
 0x000003ac             04e02de5  str lr, [sp, -4]!
 EOF
 RUN
@@ -78,6 +79,26 @@ EXPECT=<<EOF
 0x08048168 CCu "[03] -r-- section size 36 named .note.gnu.build-id"
 0x0804818c CCu "[04] -r-- section size 32 named .gnu.hash"
 0x080481ac CCu "[05] -r-- section size 80 named .dynsym"
+0x080481ac data Cd 4
+0x080481b0 data Cd 4
+0x080481b4 data Cd 4
+0x080481b8 data Cd 4
+0x080481bc data Cd 4
+0x080481c0 data Cd 4
+0x080481c4 data Cd 4
+0x080481c8 data Cd 4
+0x080481cc data Cd 4
+0x080481d0 data Cd 4
+0x080481d4 data Cd 4
+0x080481d8 data Cd 4
+0x080481dc data Cd 4
+0x080481e0 data Cd 4
+0x080481e4 data Cd 4
+0x080481e8 data Cd 4
+0x080481ec data Cd 4
+0x080481f0 data Cd 4
+0x080481f4 data Cd 4
+0x080481f8 data Cd 4
 0x080481fc CCu "[06] -r-- section size 74 named .dynstr"
 0x080481fd ascii[10] "libc.so.6"
 0x08048207 ascii[15] "_IO_stdin_used"
@@ -188,6 +209,26 @@ CCu base64:WzAyXSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAubm90ZS5BQkktdGFn @ 0x0804
 CCu base64:WzAzXSAtci0tIHNlY3Rpb24gc2l6ZSAzNiBuYW1lZCAubm90ZS5nbnUuYnVpbGQtaWQ= @ 0x08048168
 CCu base64:WzA0XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251Lmhhc2g= @ 0x0804818c
 CCu base64:WzA1XSAtci0tIHNlY3Rpb24gc2l6ZSA4MCBuYW1lZCAuZHluc3lt @ 0x080481ac
+Cd 4 @ 0x080481ac
+Cd 4 @ 0x080481b0
+Cd 4 @ 0x080481b4
+Cd 4 @ 0x080481b8
+Cd 4 @ 0x080481bc
+Cd 4 @ 0x080481c0
+Cd 4 @ 0x080481c4
+Cd 4 @ 0x080481c8
+Cd 4 @ 0x080481cc
+Cd 4 @ 0x080481d0
+Cd 4 @ 0x080481d4
+Cd 4 @ 0x080481d8
+Cd 4 @ 0x080481dc
+Cd 4 @ 0x080481e0
+Cd 4 @ 0x080481e4
+Cd 4 @ 0x080481e8
+Cd 4 @ 0x080481ec
+Cd 4 @ 0x080481f0
+Cd 4 @ 0x080481f4
+Cd 4 @ 0x080481f8
 CCu base64:WzA2XSAtci0tIHNlY3Rpb24gc2l6ZSA3NCBuYW1lZCAuZHluc3Ry @ 0x080481fc
 Cs 10 @ 0x080481fd # libc.so.6
 Cs 15 @ 0x08048207 # _IO_stdin_used
@@ -303,7 +344,6 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
-   26 * symbols.sections
 EOF
 RUN
 
@@ -324,7 +364,6 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
-   26 * symbols.sections
 14
 EOF
 RUN
@@ -345,7 +384,6 @@ EXPECT=<<EOF
     9 * segments
     1 * strings
    34 * symbols
-   26 * symbols.sections
 EOF
 RUN
 
@@ -468,7 +506,7 @@ CMDS=<<EOF
 f~?
 EOF
 EXPECT=<<EOF
-111
+85
 EOF
 RUN
 
@@ -485,7 +523,6 @@ EXPECT=<<EOF
 0x00000000 1104 section..symtab
 0x00000000 599 section..strtab
 0x00000000 0 segment.GNU_STACK
-0x00000000 0 sym..comment
 0x00000000 52 elf_header
 0x00000034 32 elf_phdr
 0x000001fc 74 elf_strtab
@@ -496,37 +533,24 @@ EXPECT=<<EOF
 0x08048034 256 segment.PHDR
 0x08048134 19 section..interp
 0x08048134 19 segment.INTERP
-0x08048134 0 sym..interp
 0x08048148 32 section..note.ABI_tag
 0x08048148 68 segment.NOTE
-0x08048148 0 sym..note.ABI_tag
 0x08048168 36 section..note.gnu.build_id
-0x08048168 0 sym..note.gnu.build_id
 0x0804818c 32 section..gnu.hash
-0x0804818c 0 sym..gnu.hash
 0x080481ac 80 section..dynsym
-0x080481ac 0 sym..dynsym
 0x080481fc 74 section..dynstr
-0x080481fc 0 sym..dynstr
 0x08048246 10 section..gnu.version
-0x08048246 0 sym..gnu.version
 0x08048250 32 section..gnu.version_r
-0x08048250 0 sym..gnu.version_r
 0x08048270 8 section..rel.dyn
-0x08048270 0 sym..rel.dyn
 0x08048278 24 section..rel.plt
-0x08048278 0 sym..rel.plt
 0x08048290 35 section..init
-0x08048290 0 sym..init
 0x08048290 0 sym._init
 0x080482c0 64 section..plt
-0x080482c0 0 sym..plt
 0x080482d0 16 sym.imp.puts
 0x080482e0 16 loc.imp.__gmon_start__
 0x080482f0 16 sym.imp.__libc_start_main
 0x08048300 1 entry0
 0x08048300 404 section..text
-0x08048300 0 sym..text
 0x08048300 0 sym._start
 0x08048330 4 sym.__x86.get_pc_thunk.bx
 0x08048340 0 sym.deregister_tm_clones
@@ -540,51 +564,39 @@ EXPECT=<<EOF
 0x08048420 97 sym.__libc_csu_init
 0x08048490 2 sym.__libc_csu_fini
 0x08048494 20 section..fini
-0x08048494 0 sym..fini
 0x08048494 0 sym._fini
 0x080484a8 21 section..rodata
-0x080484a8 0 sym..rodata
 0x080484a8 4 obj._fp_hw
 0x080484ac 4 obj._IO_stdin_used
 0x080484b0 13 str.Hello_world_
 0x080484c0 44 section..eh_frame_hdr
 0x080484c0 44 segment.GNU_EH_FRAME
-0x080484c0 0 sym..eh_frame_hdr
 0x080484ec 176 section..eh_frame
-0x080484ec 0 sym..eh_frame
 0x08048598 0 obj.__FRAME_END__
 0x0804959c 4 section..init_array
 0x0804959c 284 segment.LOAD1
-0x0804959c 0 sym..init_array
 0x0804959c 0 obj.__frame_dummy_init_array_entry
 0x0804959c 0 loc.__init_array_start
 0x080495a0 4 section..fini_array
-0x080495a0 0 sym..fini_array
 0x080495a0 0 obj.__do_global_dtors_aux_fini_array_entry
 0x080495a0 0 loc.__init_array_end
 0x080495a4 4 section..jcr
-0x080495a4 0 sym..jcr
 0x080495a4 0 obj.__JCR_LIST__
 0x080495a4 0 obj.__JCR_END__
 0x080495a8 232 section..dynamic
 0x080495a8 232 segment.DYNAMIC
-0x080495a8 0 sym..dynamic
 0x080495a8 0 obj._DYNAMIC
 0x08049690 4 section..got
-0x08049690 0 sym..got
 0x08049694 24 section..got.plt
-0x08049694 0 sym..got.plt
 0x08049694 0 obj._GLOBAL_OFFSET_TABLE_
 0x080496a0 4 reloc.puts
 0x080496a4 4 reloc.__gmon_start__
 0x080496a8 4 reloc.__libc_start_main
 0x080496ac 8 section..data
-0x080496ac 0 sym..data
 0x080496ac 0 loc.data_start
 0x080496ac 0 loc.__data_start
 0x080496b0 0 obj.__dso_handle
 0x080496b4 4 section..bss
-0x080496b4 0 sym..bss
 0x080496b4 1 obj.completed.5979
 0x080496b4 0 loc._edata
 0x080496b4 0 loc.__bss_start
@@ -619,7 +631,6 @@ EXPECT=<<EOF
     "flags": [
       "entry0",
       "section..text",
-      "sym..text",
       "sym._start"
     ],
     "comment": "WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ="

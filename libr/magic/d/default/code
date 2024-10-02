@@ -1,5 +1,5 @@
 0	string	#include C source code
-0	string	import java.	JAVA source code
+0	string	import\  java.	JAVA source code
 0	string	#!/usr/bin/env python	Python script
 0	string	#!/usr/bin/python	Python script
 0	string	#!/usr/bin/perl	PERL script

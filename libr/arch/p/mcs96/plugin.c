@@ -86,8 +86,38 @@ static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 	}
 	if (ret <= len) {
 		const char *opstr = mcs96_op[buf[0]].ins;
-		if ((mcs96_op[buf[0]].type & (MCS96_2OP | MCS96_REG_8)) == (MCS96_2OP | MCS96_REG_8) && buf[1] > 0x19 && buf[2] > 0x19) {
+		if (buf[0] == 0xf0) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->mnemonic = strdup (opstr);
+		} else if ((mcs96_op[buf[0]].type & (MCS96_2OP | MCS96_REG_8)) == (MCS96_2OP | MCS96_REG_8) &&
+				buf[1] > 0x19 && buf[2] > 0x19) {
 			op->mnemonic = r_str_newf ("%s rb%02x, rb%02x", opstr, buf[1] - 0x1a, buf[2] - 0x1a);
+		} else if (mcs96_op[buf[0]].type & MCS96_2B) {
+			if (mcs96_op[buf[0]].type & MCS96_11B_RELA) {
+				ut16 rela = ((buf[0] & 0x7) << 8) | buf[1];
+				ut64 dst = op->addr + 2 - (rela & 0x400) + (rela & 0x3ff);
+				op->mnemonic = r_str_newf ("%s 0x%04"PFMT64x, opstr, dst);
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = dst;
+			} else if (mcs96_op[buf[0]].type & MCS96_1B_RELJMP) {
+				ut64 dst = op->addr + 2 - (buf[1] & 0x80) + (buf[1] & 0x7f);
+				op->mnemonic = r_str_newf ("%s 0x%04"PFMT64x, opstr, dst);
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = dst;
+				op->fail = op->addr + 2;
+			} else {
+				op->mnemonic = strdup (opstr);
+			}
+		} else if (mcs96_op[buf[0]].type & MCS96_3B) {
+			if (mcs96_op[buf[0]].type & MCS96_2B_RELJMP) {
+				ut16 rela = (buf[2]<< 8) | buf[1];
+				ut64 dst = op->addr + 3 - (rela & 0x8000) + (rela & 0x7fff);
+				op->mnemonic = r_str_newf ("%s 0x%04"PFMT64x, opstr, dst);
+				op->type = (buf[0] == 0xef)? R_ANAL_OP_TYPE_CALL: R_ANAL_OP_TYPE_JMP;
+				op->jump = dst;
+			} else {
+				op->mnemonic = strdup (opstr);
+			}
 		} else {
 			op->mnemonic = strdup (opstr);
 		}
@@ -98,9 +128,6 @@ static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 }
 
 static int disassemble(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
-	if (len > 1 && !memcmp (buf, "\xff\xff", 2)) {
-		return -1;
-	}
 	op->size = mcs96_len (buf, len, op);
 	return op->size;
 }
@@ -119,11 +146,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 // WORDs must be aligned at even byte boundaries in the address space
 static int archinfo(RArchSession *as, ut32 q) {
-	// R2_590
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 2; // data alignment depends on word size used
 #if 0
 	case R_ARCH_INFO_DATA4_ALIGN:
@@ -131,9 +157,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_DATA8_ALIGN:
 		return 8;
 #endif
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 5;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return 0;

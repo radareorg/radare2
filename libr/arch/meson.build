@@ -1,7 +1,10 @@
+subdir('d')
+
 r_arch_sources = [
   'arch.c',
   'arch_op.c',
   'arch_config.c',
+  'arch_platform.c',
   'arch_switch.c',
   'arch_session.c',
   'arch_cond.c',
@@ -21,6 +24,7 @@ r_arch_sources = [
   'p/ppc/gnu/ppc-dis.c',
   'p/ppc/gnu/ppc-opc.c',
   'p/ppc/libvle/vle.c',
+  'p/stm8/plugin.c',
   'p/ppc/libps/libps.c',
   'p/ppc_cs/plugin.c',
   'p/null/plugin.c',
@@ -41,7 +45,9 @@ r_arch_sources = [
   'p/m68k_gnu/m68k-dis.c',
   'p/m68k_gnu/m68k-opc.c',
   'p/m68k_cs/plugin.c',
+# 'p/m68k_cs/m68kass.c',
   'p/m680x_cs/plugin.c',
+  'p/nds32/plugin.c',
   'p/arm/gnu/floatformat.c',
   'p/tms320/plugin.c',
   'p/tms320/tms320_dasm.c',
@@ -162,6 +168,8 @@ r_arch_sources = [
   'p/avr/assemble.c',
   'p/8051/plugin.c',
   'p/dalvik/plugin.c',
+  'p/dalvik_ns/plugin.c',
+  'p/fslsp/plugin.c',
 ]
 
 if arch_plugins.contains('x86_nz')

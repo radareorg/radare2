@@ -441,7 +441,7 @@ static bool r_bplist_check(const ut8 *plist_data, ut32 length) {
 }
 
 R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
-	r_return_val_if_fail (data && data_len > 0, false);
+	R_RETURN_VAL_IF_FAIL (data && data_len > 0, false);
 	if (!r_bplist_check (data, data_len)) {
 		return false;
 	}

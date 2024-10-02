@@ -1,4 +1,4 @@
-OBJ_AVRPSEUDO+=$(LIBR)/arch/p/pseudo/avr_pseudo.o
+OBJ_AVRPSEUDO+=$(LIBR)/arch/p/avr/pseudo.o
 
 TARGET_AVRPSEUDO=parse_avr_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_AVRPSEUDO}

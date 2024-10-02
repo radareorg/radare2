@@ -22,16 +22,32 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define R_FUNCTION ((const char*) ("???"))
 #endif
 
+// R2_600 - deprecate lowercase macros
 #define r_warn_if_reached() \
 	do { \
-		r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached", \
+		r_assert_log (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached", \
 			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
+// R2_600 - deprecate lowercase macros
 #define r_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)", \
+			r_assert_log (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)", \
+				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
+		} \
+	} while (0)
+
+#define R_WARN_IF_REACHED() \
+	do { \
+		r_assert_log (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached", \
+			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
+	} while (0)
+
+#define R_WARN_IF_FAIL(expr) \
+	do { \
+		if (!(expr)) { \
+			r_assert_log (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)", \
 				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
@@ -84,7 +100,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define r_return_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOG_LEVEL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
 	} while (0)
@@ -92,20 +108,20 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define r_return_val_if_fail(expr, val) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOG_LEVEL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return (val); \
 		} \
 	} while (0)
 
 #define r_return_if_reached() \
 	do { \
-		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
+		H_LOG_ (R_LOG_LEVEL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return; \
 	} while (0)
 
 #define r_return_val_if_reached(val) \
 	do { \
-		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
+		H_LOG_ (R_LOG_LEVEL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return (val); \
 	} while (0)
 
@@ -123,5 +139,10 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #ifdef __cplusplus
 }
 #endif
+
+#define R_RETURN_IF_FAIL(x) r_return_if_fail (x)
+#define R_RETURN_VAL_IF_FAIL(x,y) r_return_val_if_fail (x,y)
+#define R_RETURN_IF_REACHED() r_return_if_reached ()
+#define R_RETURN_VAL_IF_REACHED(x) r_return_val_if_reached (x)
 
 #endif

@@ -159,24 +159,25 @@ static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail,
 	return true;
 }
 
+#if 0
 static void dump_block(bb_t *block) {
 	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x" t: %d\n"
 			, block->start, block->end, block->jump, block->fail, block->type);
 }
 
-void dump_blocks(RList* list) {
+static void dump_blocks(RList* list) {
 	RListIter *iter;
 	bb_t *block = NULL;
 	r_list_foreach (list, iter, block) {
-		dump_block(block);
+		dump_block (block);
 	}
 }
+#endif
 
 static bool checkFunction(fcn_t *fcn) {
 	if (fcn && fcn->ends > 0 && fcn->size > 0) {
 		return true;
 	}
-
 	return false;
 }
 
@@ -189,7 +190,7 @@ static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
 }
 
 static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn);
+	R_RETURN_IF_FAIL (core && fcn);
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
 	char *_name = function_name (core, name, fcn->addr);
@@ -203,7 +204,7 @@ static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
 }
 
 static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn);
+	R_RETURN_IF_FAIL (core && fcn);
 
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
@@ -239,7 +240,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 
 #define Fhandled(x) r_strf ("handled.%"PFMT64x, x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
-	r_return_val_if_fail (core && input, false);
+	R_RETURN_VAL_IF_FAIL (core && input, false);
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		R_LOG_ERROR ("No valid offset given to analyze");
 		return false;
@@ -650,8 +651,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 					}
 					r_anal_op_free (op);
 					op = NULL;
-				}
-				else {
+				} else {
 					// we have this offset into previous analyzed block, exit from this path flow.
 					break;
 				}

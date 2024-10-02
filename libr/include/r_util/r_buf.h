@@ -38,6 +38,18 @@ typedef struct r_buffer_methods_t {
 	RBufferNonEmptyList nonempty_list;
 } RBufferMethods;
 
+#if R2_USE_NEW_ABI
+typedef enum {
+	R_BUFFER_FILE,
+	R_BUFFER_IO,
+	R_BUFFER_BYTES,
+	R_BUFFER_MMAP,
+	R_BUFFER_SPARSE,
+	R_BUFFER_REF,
+	R_BUFFER_CACHE,
+} RBufferType;
+#endif
+
 struct r_buf_t {
 	const RBufferMethods *methods;
 	void *priv;
@@ -45,7 +57,10 @@ struct r_buf_t {
 	bool readonly;
 	ut8 Oxff_priv;
 	int refctr;
-	// 580 R_REF_TYPE instead of refcnt;
+	// R2_600 R_REF_TYPE instead of refcnt;
+#if R2_USE_NEW_ABI
+	RBufferType type;
+#endif
 };
 
 // XXX: this should not be public
@@ -70,6 +85,10 @@ R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size);
 R_API RBuffer *r_buf_new_empty(ut64 len);
 R_API RBuffer *r_buf_new_mmap(const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff);
+#if R2_USE_NEW_ABI
+R_API char *r_buf_describe(RBuffer *b);
+R_API RBuffer *r_buf_new_with_cache(RBuffer *b, bool steal);
+#endif
 
 /* methods */
 R_API bool r_buf_dump(RBuffer *buf, const char *file);

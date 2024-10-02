@@ -171,7 +171,7 @@ static const bool config_cache_oblivious =
  * visual code flow, read the header files in multiple passes, with one of the
  * following cpp variables defined during each pass:
  *
- *   JEMALLOC_H_TYPES   : Preprocessor-defined constants and psuedo-opaque data
+ *   JEMALLOC_H_TYPES   : Preprocessor-defined constants and pseudo-opaque data
  *                        types.
  *   JEMALLOC_H_STRUCTS : Data structures.
  *   JEMALLOC_H_EXTERNS : Extern data declarations and function prototypes.

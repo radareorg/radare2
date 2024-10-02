@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2022 - pancake */
+/* radare - LGPL - Copyright 2006-2024 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>
@@ -32,14 +32,13 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	return -1;
 }
-R_API int r_socket_close_fd(RSocket *s) {
-	return -1;
+R_API bool r_socket_close_fd(RSocket *s) {
+	return false;
 }
-R_API int r_socket_close(RSocket *s) {
-	return -1;
+R_API bool r_socket_close(RSocket *s) {
+	return false;
 }
-R_API int r_socket_free(RSocket *s) {
-	return -1;
+R_API void r_socket_free(RSocket *s) {
 }
 R_API int r_socket_port_by_name(const char *name) {
 	return -1;
@@ -229,19 +228,19 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 		R_LOG_ERROR ("r_socket_spawn: %s is dead", cmd);
 		exit (0);
 	}
-	r_sys_sleep (1);
+	r_sys_sleep (1); // wait for the process to start listening.. <- thats a bottleneck
 	r_sys_usleep (timeout);
 
-	char aport[32];
-	snprintf (aport, sizeof (aport), "%d", port);
+	r_strf_var (aport, 32, "%d", port);
 	// redirect stdin/stdout/stderr
 	bool sock = r_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
 	if (!sock) {
 		return false;
 	}
 #if R2__UNIX__
-	r_sys_sleep (4);
-	r_sys_usleep (timeout);
+	// unnecessary naps
+	// r_sys_sleep (2);
+	// r_sys_usleep (timeout);
 
 	int status = 0;
 	int ret = waitpid (childPid, &status, WNOHANG | WUNTRACED);
@@ -254,7 +253,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 }
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
-	r_return_val_if_fail (s, false);
+	R_RETURN_VAL_IF_FAIL (s, false);
 #if R2__WINDOWS__
 #define gai_strerror gai_strerrorA
 	WSADATA wsadata;
@@ -422,7 +421,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 		if (!rp) {
-			R_LOG_ERROR ("Could not resolve address '%s' or failed to connect", host);
+			// R_LOG_ERROR ("Could not resolve address '%s' or failed to connect", host);
 			return false;
 		}
 	}
@@ -470,7 +469,7 @@ success:
 }
 
 /* close the file descriptor associated with the RSocket s */
-R_API int r_socket_close_fd(RSocket *s) {
+R_API bool r_socket_close_fd(RSocket *s) {
 #ifdef _MSC_VER
 	return s->fd != INVALID_SOCKET ? closesocket (s->fd) : false;
 #else
@@ -479,7 +478,7 @@ R_API int r_socket_close_fd(RSocket *s) {
 }
 
 /* shutdown the socket and close the file descriptor */
-R_API int r_socket_close(RSocket *s) {
+R_API bool r_socket_close(RSocket *s) {
 	int ret = false;
 	if (!s) {
 		return false;
@@ -513,8 +512,8 @@ R_API int r_socket_close(RSocket *s) {
 }
 
 /* shutdown the socket, close the file descriptor and free the RSocket */
-R_API int r_socket_free(RSocket *s) {
-	int res = r_socket_close (s);
+R_API void r_socket_free(RSocket *s) {
+	(void)r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s && s->is_ssl) {
 		if (s->sfd) {
@@ -526,7 +525,6 @@ R_API int r_socket_free(RSocket *s) {
 	}
 #endif
 	free (s);
-	return res;
 }
 
 R_API int r_socket_port_by_name(const char *name) {
@@ -654,10 +652,11 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	if (!sock) {
 		return NULL;
 	}
-	//signal (SIGPIPE, SIG_DFL);
+	// signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == R_INVALID_SOCKET) {
-		if (errno != EWOULDBLOCK) {
+		// EINTR Is received when the terminal is resized
+		if (errno != EWOULDBLOCK && errno != EINTR) {
 			// not just a timeout
 			r_sys_perror ("accept");
 		}

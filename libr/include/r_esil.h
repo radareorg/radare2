@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2023 - pancake */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake */
 
 #ifndef R_ESIL_H
 #define R_ESIL_H
@@ -106,7 +106,6 @@ static inline void fini_access(REsilTraceAccess *access) {
 	if (access->is_reg) {
 		return;
 	}
-
 	free (access->mem.data);
 }
 
@@ -185,6 +184,7 @@ typedef struct r_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
+	struct r_esil_plugin_t *curplug; // ???
 	char *current_opstr;
 	SdbMini *interrupts;
 	SdbMini *syscalls;
@@ -305,12 +305,8 @@ typedef struct r_anal_reil_t {
 #endif
 
 typedef struct r_esil_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
+	RPluginMeta meta;
 	char *arch;
-	char *author;
-	char *version;
 	void *(*init)(REsil *esil);			// can allocate stuff and return that
 	void (*fini)(REsil *esil, void *user);	// deallocates allocated things from init
 } REsilPlugin;
@@ -351,6 +347,16 @@ typedef struct r_esil_operation_t {
 	ut32 type;
 } REsilOp;
 
+// esil2c
+typedef struct {
+	REsil *esil;
+	RStrBuf *sb;
+	void *anal; // RAnal*
+} REsilC;
+R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, int bits);
+R_API void r_esil_toc_free(REsilC *ec);
+R_API char *r_esil_toc(REsilC *esil, const char *expr);
+
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type);
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op);
 R_API void r_esil_del_op(REsil *esil, const char *op);
@@ -370,6 +376,22 @@ R_API void r_esil_del_syscall(REsil *esil, ut32 sysc_num);
 R_API int r_esil_fire_interrupt(REsil *esil, ut32 intr_num);
 R_API int r_esil_do_syscall(REsil *esil, ut32 sysc_num);
 R_API void r_esil_handlers_fini(REsil *esil);
+
+// esil_compiler.c
+
+typedef struct {
+	REsil *esil;
+	char *str;
+	void *priv;
+} REsilCompiler;
+
+R_API REsilCompiler *r_esil_compiler_new(void);
+R_API void r_esil_compiler_reset(REsilCompiler *ec);
+R_API void r_esil_compiler_free(REsilCompiler *ec);
+R_API char *r_esil_compiler_tostring(REsilCompiler *ec);
+R_API bool r_esil_compiler_parse(REsilCompiler *ec, const char *expr);
+R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr);
+R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
 
 // esil_plugin.c
 R_API void r_esil_plugins_init(REsil *esil);
@@ -393,7 +415,9 @@ R_API void r_esil_trace_restore(REsil *esil, int idx);
 R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
 R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
+extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;
+extern REsilPlugin r_esil_plugin_forth;
 
 #ifdef __cplusplus
 }

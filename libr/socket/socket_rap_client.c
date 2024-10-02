@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -176,23 +176,29 @@ R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count) {
 	return count;
 }
 
-R_API int r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence) {
+R_API ut64 r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence) {
+	R_RETURN_VAL_IF_FAIL (s, UT64_MAX);
 	ut8 tmp[10];
 	tmp[0] = RAP_PACKET_SEEK;
 	tmp[1] = (ut8)whence;
 	r_write_be64 (tmp + 2, offset);
-	(void)r_socket_write (s, &tmp, 10);
+	int ret = r_socket_write (s, &tmp, 10);
+	if (ret != 10) {
+		R_LOG_ERROR ("Truncated socket write %d vs %d", ret, 10);
+		r_sys_backtrace ();
+		return UT64_MAX;
+	}
 	r_socket_flush (s);
-	int ret = r_socket_read_block (s, (ut8*)&tmp, 9);
+	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret != 9) {
-		R_LOG_ERROR ("Truncated socket read");
-		return -1;
+		R_LOG_ERROR ("Truncated socket read %d vs %d", ret, 9);
+		return UT64_MAX;
 	}
 	if (tmp[0] != (RAP_PACKET_SEEK | RAP_PACKET_REPLY)) {
 		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
 		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
 		R_LOG_WARN ("Unexpected seek reply (%02x -> %02x)", tmp[0], (RAP_PACKET_SEEK | RAP_PACKET_REPLY));
-		return -1;
+		return UT64_MAX;
 	}
 	return r_read_at_be64 (tmp, 1);
 }

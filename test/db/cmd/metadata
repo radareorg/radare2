@@ -788,3 +788,24 @@ EXPECT=<<EOF
             0x00000004      00000000       .dword 0x00000000
 EOF
 RUN
+
+NAME=Cb test
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+s main
+Cb 0x100003aa0
+pd 6
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- entry0:
+            ;-- func.100003a90:
+        ,=< 0x100003a90 [1]     7f2303d5       pacibsp
+        !   0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+        !   0x100003a98      fa6701a9       stp x26, x25, [sp, 0x10]
+        !   0x100003a9c      f85f02a9       stp x24, x23, [sp, 0x20]
+        `-> 0x100003aa0      f65703a9       stp x22, x21, [sp, 0x30]
+            0x100003aa4      f44f04a9       stp x20, x19, [sp, 0x40]
+EOF
+RUN

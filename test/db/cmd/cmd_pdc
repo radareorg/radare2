@@ -8,9 +8,8 @@ pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
         dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
-        // int strcmp("", "250382")
-        sym.imp.strcmp  ()
-        // int strcmp("", "250382")
+        sym.imp.strcmp () // int strcmp("", "250382")
+        sym.imp.strcmp () // int strcmp("", "250382")
 EOF
 RUN
 
@@ -26,36 +25,36 @@ EOF
 EXPECT=<<EOF
 / 109: entry0 ();
 |           0x0040200f      66be0300       si = 3
-|           0x00402013      e8e8ffffff     fcn.00402000  ()
-|       .-> 0x00402018      6a00           push  (0)
-|       :   0x0040201a      680e104000     push  ("LABEL")             ; 0x40100e
-|       :   0x0040201f      6800104000     push  ("Hello, World!")     ; section..data
+|           0x00402013      e8e8ffffff     fcn.00402000 ()
+|       .-> 0x00402018      6a00           push (0)
+|       :   0x0040201a      680e104000     push ("LABEL")              ; 0x40100e
+|       :   0x0040201f      6800104000     push ("Hello, World!")      ; section..data
 |       :                                                              ; 0x401000
-|       :   0x00402024      6a00           push  (0)
-|       :   0x00402026      ff15b8304000   dword [MessageBoxA]  ()     ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
-|       :   0x0040202c      680e104000     push  ("LABEL")             ; 0x40100e
-|       :   0x00402031      ff15dc304000   dword [puts]  ()            ; 0x4030dc ; int puts(const char *s)
+|       :   0x00402024      6a00           push (0)
+|       :   0x00402026      ff15b8304000   dword [MessageBoxA] ()      ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+|       :   0x0040202c      680e104000     push ("LABEL")              ; 0x40100e
+|       :   0x00402031      ff15dc304000   dword [puts] ()             ; 0x4030dc ; int puts(const char *s)
 |       :   0x00402037      83c404         esp += 4
-|       :   0x0040203a      664e           si-
-|       :   0x0040203c      6683fe00       var = si - 0
-|       `=< 0x00402040      7fd6           if  (var > 0) goto loc_0x402018
+|       :   0x0040203a      664e           si--
+|       :   0x0040203c      6683fe00       v = si - 0
+|       `=< 0x00402040      7fd6           if (v > 0) goto loc_0x402018
 |           0x00402042      a1dc304000     eax = dword [puts]          ; [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts
-|           0x00402047      6800104000     push  ("Hello, World!")     ; section..data
+|           0x00402047      6800104000     push ("Hello, World!")      ; section..data
 |                                                                      ; 0x401000
-|           0x0040204c      ffd0           eax  ()
-|           0x0040204e      ff1588304000   dword [GetProcessHeap]  ()  ; 0x403088 ; HANDLE GetProcessHeap(void)
-|           0x00402054      50             push  (eax)
-|           0x00402055      6814104000     push  (">%p\\n")            ; 0x401014
-|           0x0040205a      ff15e0304000   dword [printf]  ()          ; 0x4030e0 ; int printf(const char *format)
-|           0x00402060      6a00           push  (0)
-|           0x00402062      6800104000     push  ("Hello, World!")     ; section..data
+|           0x0040204c      ffd0           eax ()
+|           0x0040204e      ff1588304000   dword [GetProcessHeap] ()   ; 0x403088 ; HANDLE GetProcessHeap(void)
+|           0x00402054      50             push (eax)
+|           0x00402055      6814104000     push (">%p\\n")             ; 0x401014
+|           0x0040205a      ff15e0304000   dword [printf] ()           ; 0x4030e0 ; int printf(const char *format)
+|           0x00402060      6a00           push (0)
+|           0x00402062      6800104000     push ("Hello, World!")      ; section..data
 |                                                                      ; 0x401000
-|           0x00402067      6800104000     push  ("Hello, World!")     ; section..data
+|           0x00402067      6800104000     push ("Hello, World!")      ; section..data
 |                                                                      ; 0x401000
-|           0x0040206c      6a00           push  (0)
-|           0x0040206e      ff15b8304000   dword [MessageBoxA]  ()     ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
-|           0x00402074      6a00           push  (0)
-\           0x00402076      ff1584304000   dword [ExitProcess]  ()     ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
+|           0x0040206c      6a00           push (0)
+|           0x0040206e      ff15b8304000   dword [MessageBoxA] ()      ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+|           0x00402074      6a00           push (0)
+\           0x00402076      ff1584304000   dword [ExitProcess] ()      ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 EOF
 RUN
 
@@ -102,55 +101,40 @@ EXPECT=<<EOF
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 int entry0 (int stack, int stack) {
-    loc_0x40200f:
+    loc_0x0040200f:
         si = 3
-        fcn.00402000  ()
-        goto loc_0x402018
-        do {
-    loc_0x402018:
-        push  (0)
-        push  ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
-        push  ("Hello, World!") // section..data
-        // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        push  (0)
-        dword [MessageBoxA]  () // 0x4030b8 // reloc.user32.dll_MessageBoxA
-        // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
-        push  ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
-        dword [puts]  () // 0x4030dc // reloc.crtdll.dll_puts
-        // int puts("LABEL")
+        fcn.00402000 ()
+        
+    loc_0x00402018:
+        push (0)
+        push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
+        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+        push (0)
+        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+        push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
+        dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
         esp += 4
-        si-
-        var = si - 0
-        if  (var > 0) goto loc_0x402018 // unlikely
-        goto loc_0x402042
-         // } while (?);
-        goto loc_0x402042
-        }
+        si--
+        v = si - 0
+        if (v > 0) goto loc_0x402018 // unlikely
+        goto loc_0x00402042;
+        goto loc_0x00402042;
         return eax;
-    loc_0x402042:
+    loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
-        push  ("Hello, World!") // section..data
-        // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        eax  ()       // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts
-        // int puts("Hello, World!")
-        dword [GetProcessHeap]  () // 0x403088 // reloc.kernel32.dll_GetProcessHeap
-        // HANDLE GetProcessHeap(void)
-        push  (eax)
-        push  (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-        dword [printf]  () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf
-        // int printf(">%p\n")
-        push  (0)
-        push  ("Hello, World!") // section..data
-        // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        push  ("Hello, World!") // section..data
-        // 0x401000 // (pstr 0x00401000) "Hello, World!"
-        push  (0)
-        dword [MessageBoxA]  () // 0x4030b8 // reloc.user32.dll_MessageBoxA
-        // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
-        push  (0)
-        dword [ExitProcess]  () // 0x403084 // reloc.kernel32.dll_ExitProcess
-        // VOID ExitProcess(NULL)
-        }
+        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+        eax ()        // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_puts // int puts("Hello, World!")
+        dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+        push (eax)
+        push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
+        dword [printf] () // 0x4030e0 // (pstr 0x0040100e) "LABEL" // reloc.crtdll.dll_printf // int printf(">%p\n")
+        push (0)
+        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+        push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
+        push (0)
+        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
+        push (0)
+        dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
         return eax;
 }
 
@@ -168,27 +152,47 @@ EOF
 EXPECT=<<EOF
 int sym.func.100003a54 (int x0, int x1) {
     loc_0x100003a54:
-        x8 = [x0 + 0x60] // 0xda // 218 // arg1
-        x8 = [x8 + 0x60] // 0xe2 // 226
-        x9 = [x1 + 0x60] // 0xdb // 219 // arg2
-        x9 = [x9 + 0x60] // 0xe3 // 227
-        if (x8 == x9)
-        goto ifle 0x100003a74 // likely
-        goto loc_0x100003a6c
+        x8 = [x0 + 0x60] // arg1
+        x8 = [x8 + 0x60]
+        x9 = [x1 + 0x60] // arg2
+        x9 = [x9 + 0x60]
+        (a, b) = compare (x8, x9)
+        if (a <= b) goto 0x100003a74 // likely
+        goto loc_0x100003a6c;
     loc_0x100003a74:
-        b.ge 0x100003a80 // likely
-        goto loc_0x100003a78
+        if (a >= b) goto 0x100003a80 // likely
+        goto loc_0x100003a78;
     loc_0x100003a80:
         x8 = x1 + 0x68 // arg2
         x1 = x0 + 0x68 // arg1
         x0 = x8
-        goto sym.imp.strcoll
-        // int strcoll("", "")
-         // } else {
-        }
+        goto sym.imp.strcoll // int strcoll("", "")
+        return x0;
+    loc_0x100003a6c: // orphan
+         w0 = 1
+
         return x0;
 }
 
 EOF
 RUN
 
+NAME=movk pseudo
+FILE=-
+CMDS=<<EOF
+-a arm
+-b 64
+wx 018d8e520101a872
+pd 2
+?e --
+e asm.pseudo=true
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      018d8e52       mov w1, 0x7468              ; 'ht'
+            0x00000004      0101a872       movk w1, 0x4008, lsl 16
+--
+            0x00000000      018d8e52       w1 = 0x7468                 ; 'ht'
+            0x00000004      0101a872       w1 = 0x4008 << 16
+EOF
+RUN

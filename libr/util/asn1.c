@@ -102,7 +102,7 @@ out_error:
 }
 
 static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
-	r_return_val_if_fail (buffer, 0);
+	R_RETURN_VAL_IF_FAIL (buffer, 0);
 	if (!length) {
 		return 0;
 	}

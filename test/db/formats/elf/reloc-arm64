@@ -1,0 +1,402 @@
+NAME=arm64 relocs for android
+FILE=bins/elf/libtool-checker.so
+CMDS=<<EOF
+s..ad4
+af
+pds
+?e imports
+ii
+?e relocs
+ir
+EOF
+EXPECT=<<EOF
+0x00000ae0 arg1
+0x00000ae4 arg2
+0x00000ae8 arg3
+0x00000aec arg1
+0x00000af8 bl rsym._ZN7_JNIEnv14GetArrayLengthEP7_jarray
+0x00000b00 sym.Java_com_scottyab_rootbeer_RootBeerNative_checkForRoot @ 0xb74(x)
+0x00000b24 bl rsym._ZN7_JNIEnv21GetObjectArrayElementEP13_jobjectArrayi
+0x00000b3c bl rsym._ZN7_JNIEnv17GetStringUTFCharsEP8_jstringPh
+0x00000b48 bl rsym._Z6existsPKc
+0x00000b64 bl rsym._ZN7_JNIEnv21ReleaseStringUTFCharsEP8_jstringPKc
+;-- _JNIEnv::GetArrayLength(_jarray*):
+0x00000b98 _JNIEnv::GetArrayLength(_jarray*)
+0x00000bb4 "_cxa_atexit"
+;-- _JNIEnv::GetObjectArrayElement(_jobjectArray*, int):
+0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+imports
+[Imports]
+nth vaddr      bind   type lib name
+-----------------------------------
+3   0x000008f0 GLOBAL FUNC     __cxa_finalize
+4   0x00000920 GLOBAL FUNC     fclose
+5   0x00000940 GLOBAL FUNC     __android_log_print
+6   0x00000970 GLOBAL FUNC     fopen
+7   0x00000980 GLOBAL FUNC     __cxa_atexit
+
+relocs
+[Relocations]
+
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00002d78 0x00001d78 ADD_64 1027   0x000009a0
+0x00002d80 0x00001d80 ADD_64 1027   0x00000990
+0x00002d88 0x00001d88 ADD_64 1027   0x00002d88
+0x00002fa8 0x00001fa8 SET_64 1026  __cxa_finalize
+0x00002fb0 0x00001fb0 SET_64 1026  exists(char const*)
+0x00002fb8 0x00001fb8 SET_64 1026  _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
+0x00002fc0 0x00001fc0 SET_64 1026  fclose
+0x00002fc8 0x00001fc8 SET_64 1026  _JNIEnv::GetStringUTFChars(_jstring*, unsigned char*)
+0x00002fd0 0x00001fd0 SET_64 1026  __android_log_print
+0x00002fd8 0x00001fd8 SET_64 1026  _JNIEnv::GetArrayLength(_jarray*)
+0x00002fe0 0x00001fe0 SET_64 1026  _JNIEnv::ReleaseStringUTFChars(_jstring*, char const*)
+0x00002fe8 0x00001fe8 SET_64 1026  fopen
+0x00002ff0 0x00001ff0 SET_64 1026  __cxa_atexit
+
+
+13 relocations
+EOF
+RUN
+
+NAME=arm64 problematic toybox relocs
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+ir
+EOF
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
+EXPECT=<<EOF
+[Relocations]
+
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x0007b480 0x0007b480 SET_64 1026  __libc_init
+0x0007b488 0x0007b488 SET_64 1026  __strchr_chk
+0x0007b490 0x0007b490 SET_64 1026  strtol
+0x0007b498 0x0007b498 SET_64 1026  strtod
+0x0007b4a0 0x0007b4a0 SET_64 1026  free
+0x0007b4a8 0x0007b4a8 SET_64 1026  __vsprintf_chk
+0x0007b4b0 0x0007b4b0 SET_64 1026  strlen
+0x0007b4b8 0x0007b4b8 SET_64 1026  strchr
+0x0007b4c0 0x0007b4c0 SET_64 1026  strncmp
+0x0007b4c8 0x0007b4c8 SET_64 1026  memmove
+0x0007b4d0 0x0007b4d0 SET_64 1026  fstatat
+0x0007b4d8 0x0007b4d8 SET_64 1026  __errno
+0x0007b4e0 0x0007b4e0 SET_64 1026  readlinkat
+0x0007b4e8 0x0007b4e8 SET_64 1026  memset
+0x0007b4f0 0x0007b4f0 SET_64 1026  strcpy
+0x0007b4f8 0x0007b4f8 SET_64 1026  memcpy
+0x0007b500 0x0007b500 SET_64 1026  opendir
+0x0007b508 0x0007b508 SET_64 1026  fdopendir
+0x0007b510 0x0007b510 SET_64 1026  closedir
+0x0007b518 0x0007b518 SET_64 1026  readdir
+0x0007b520 0x0007b520 SET_64 1026  __openat_2
+0x0007b528 0x0007b528 SET_64 1026  close
+0x0007b530 0x0007b530 SET_64 1026  getenv
+0x0007b538 0x0007b538 SET_64 1026  chdir
+0x0007b540 0x0007b540 SET_64 1026  setenv
+0x0007b548 0x0007b548 SET_64 1026  fprintf
+0x0007b550 0x0007b550 SET_64 1026  putc
+0x0007b558 0x0007b558 SET_64 1026  vfprintf
+0x0007b560 0x0007b560 SET_64 1026  strerror
+0x0007b568 0x0007b568 SET_64 1026  __read_chk
+0x0007b570 0x0007b570 SET_64 1026  __write_chk
+0x0007b578 0x0007b578 SET_64 1026  lseek
+0x0007b580 0x0007b580 SET_64 1026  mkdirat
+0x0007b588 0x0007b588 SET_64 1026  stat
+0x0007b590 0x0007b590 SET_64 1026  strtoll
+0x0007b598 0x0007b598 SET_64 1026  __ctype_get_mb_cur_max
+0x0007b5a0 0x0007b5a0 SET_64 1026  towlower
+0x0007b5a8 0x0007b5a8 SET_64 1026  wcrtomb
+0x0007b5b0 0x0007b5b0 SET_64 1026  strstr
+0x0007b5b8 0x0007b5b8 SET_64 1026  sscanf
+0x0007b5c0 0x0007b5c0 SET_64 1026  strcmp
+0x0007b5c8 0x0007b5c8 SET_64 1026  strncasecmp
+0x0007b5d0 0x0007b5d0 SET_64 1026  fstat
+0x0007b5d8 0x0007b5d8 SET_64 1026  read
+0x0007b5e0 0x0007b5e0 SET_64 1026  nanosleep
+0x0007b5e8 0x0007b5e8 SET_64 1026  open
+0x0007b5f0 0x0007b5f0 SET_64 1026  fchmodat
+0x0007b5f8 0x0007b5f8 SET_64 1026  fchmod
+0x0007b600 0x0007b600 SET_64 1026  fchown
+0x0007b608 0x0007b608 SET_64 1026  unlink
+0x0007b610 0x0007b610 SET_64 1026  fflush
+0x0007b618 0x0007b618 SET_64 1026  fread
+0x0007b620 0x0007b620 SET_64 1026  sigfillset
+0x0007b628 0x0007b628 SET_64 1026  sigprocmask
+0x0007b630 0x0007b630 SET_64 1026  printf
+0x0007b638 0x0007b638 SET_64 1026  putchar
+0x0007b640 0x0007b640 SET_64 1026  __umask_chk
+0x0007b648 0x0007b648 SET_64 1026  strrchr
+0x0007b650 0x0007b650 SET_64 1026  atoi
+0x0007b658 0x0007b658 SET_64 1026  __vsnprintf_chk
+0x0007b660 0x0007b660 SET_64 1026  getpwnam_r
+0x0007b668 0x0007b668 SET_64 1026  getpwuid_r
+0x0007b670 0x0007b670 SET_64 1026  getgrnam_r
+0x0007b678 0x0007b678 SET_64 1026  getgrgid_r
+0x0007b680 0x0007b680 SET_64 1026  __readlinkat_chk
+0x0007b688 0x0007b688 SET_64 1026  regexec
+0x0007b690 0x0007b690 SET_64 1026  getdelim
+0x0007b698 0x0007b698 SET_64 1026  fclose
+0x0007b6a0 0x0007b6a0 SET_64 1026  clock_gettime
+0x0007b6a8 0x0007b6a8 SET_64 1026  localtime
+0x0007b6b0 0x0007b6b0 SET_64 1026  strftime
+0x0007b6b8 0x0007b6b8 SET_64 1026  isatty
+0x0007b6c0 0x0007b6c0 SET_64 1026  openlog
+0x0007b6c8 0x0007b6c8 SET_64 1026  closelog
+0x0007b6d0 0x0007b6d0 SET_64 1026  socket
+0x0007b6d8 0x0007b6d8 SET_64 1026  fcntl
+0x0007b6e0 0x0007b6e0 SET_64 1026  setsockopt
+0x0007b6e8 0x0007b6e8 SET_64 1026  getaddrinfo
+0x0007b6f0 0x0007b6f0 SET_64 1026  gai_strerror
+0x0007b6f8 0x0007b6f8 SET_64 1026  bind
+0x0007b700 0x0007b700 SET_64 1026  connect
+0x0007b708 0x0007b708 SET_64 1026  freeaddrinfo
+0x0007b710 0x0007b710 SET_64 1026  poll
+0x0007b718 0x0007b718 SET_64 1026  shutdown
+0x0007b720 0x0007b720 SET_64 1026  inet_ntop
+0x0007b728 0x0007b728 SET_64 1026  sendto
+0x0007b730 0x0007b730 SET_64 1026  recvfrom
+0x0007b738 0x0007b738 SET_64 1026  fork
+0x0007b740 0x0007b740 SET_64 1026  getentropy
+0x0007b748 0x0007b748 SET_64 1026  setmntent
+0x0007b750 0x0007b750 SET_64 1026  getmntent
+0x0007b758 0x0007b758 SET_64 1026  statvfs
+0x0007b760 0x0007b760 SET_64 1026  stpcpy
+0x0007b768 0x0007b768 SET_64 1026  endmntent
+0x0007b770 0x0007b770 SET_64 1026  inotify_init
+0x0007b778 0x0007b778 SET_64 1026  inotify_add_watch
+0x0007b780 0x0007b780 SET_64 1026  getxattr
+0x0007b788 0x0007b788 SET_64 1026  lgetxattr
+0x0007b790 0x0007b790 SET_64 1026  fgetxattr
+0x0007b798 0x0007b798 SET_64 1026  flistxattr
+0x0007b7a0 0x0007b7a0 SET_64 1026  fsetxattr
+0x0007b7a8 0x0007b7a8 SET_64 1026  strcasecmp
+0x0007b7b0 0x0007b7b0 SET_64 1026  __libc_current_sigrtmin
+0x0007b7b8 0x0007b7b8 SET_64 1026  __libc_current_sigrtmax
+0x0007b7c0 0x0007b7c0 SET_64 1026  ioctl
+0x0007b7c8 0x0007b7c8 SET_64 1026  __open_2
+0x0007b7d0 0x0007b7d0 SET_64 1026  cfsetspeed
+0x0007b7d8 0x0007b7d8 SET_64 1026  tcgetattr
+0x0007b7e0 0x0007b7e0 SET_64 1026  cfmakeraw
+0x0007b7e8 0x0007b7e8 SET_64 1026  tcsetattr
+0x0007b7f0 0x0007b7f0 SET_64 1026  _exit
+0x0007b7f8 0x0007b7f8 SET_64 1026  wcwidth
+0x0007b800 0x0007b800 SET_64 1026  fwrite
+0x0007b808 0x0007b808 SET_64 1026  fputs
+0x0007b810 0x0007b810 SET_64 1026  siglongjmp
+0x0007b818 0x0007b818 SET_64 1026  ferror
+0x0007b820 0x0007b820 SET_64 1026  mmap
+0x0007b828 0x0007b828 SET_64 1026  malloc
+0x0007b830 0x0007b830 SET_64 1026  realloc
+0x0007b838 0x0007b838 SET_64 1026  strndup
+0x0007b840 0x0007b840 SET_64 1026  vsnprintf
+0x0007b848 0x0007b848 SET_64 1026  vprintf
+0x0007b850 0x0007b850 SET_64 1026  puts
+0x0007b858 0x0007b858 SET_64 1026  fputc
+0x0007b860 0x0007b860 SET_64 1026  setsid
+0x0007b868 0x0007b868 SET_64 1026  dup2
+0x0007b870 0x0007b870 SET_64 1026  execvp
+0x0007b878 0x0007b878 SET_64 1026  pipe
+0x0007b880 0x0007b880 SET_64 1026  dup
+0x0007b888 0x0007b888 SET_64 1026  waitpid
+0x0007b890 0x0007b890 SET_64 1026  access
+0x0007b898 0x0007b898 SET_64 1026  rename
+0x0007b8a0 0x0007b8a0 SET_64 1026  mkstemp
+0x0007b8a8 0x0007b8a8 SET_64 1026  fdopen
+0x0007b8b0 0x0007b8b0 SET_64 1026  fopen
+0x0007b8b8 0x0007b8b8 SET_64 1026  getcwd
+0x0007b8c0 0x0007b8c0 SET_64 1026  chroot
+0x0007b8c8 0x0007b8c8 SET_64 1026  getpwuid
+0x0007b8d0 0x0007b8d0 SET_64 1026  getgrgid
+0x0007b8d8 0x0007b8d8 SET_64 1026  getpwnam
+0x0007b8e0 0x0007b8e0 SET_64 1026  getgrnam
+0x0007b8e8 0x0007b8e8 SET_64 1026  kill
+0x0007b8f0 0x0007b8f0 SET_64 1026  getpid
+0x0007b8f8 0x0007b8f8 SET_64 1026  strtoul
+0x0007b900 0x0007b900 SET_64 1026  regcomp
+0x0007b908 0x0007b908 SET_64 1026  regerror
+0x0007b910 0x0007b910 SET_64 1026  tzset
+0x0007b918 0x0007b918 SET_64 1026  unsetenv
+0x0007b920 0x0007b920 SET_64 1026  sigaction
+0x0007b928 0x0007b928 SET_64 1026  mktime
+0x0007b930 0x0007b930 SET_64 1026  localtime_r
+0x0007b938 0x0007b938 SET_64 1026  strptime
+0x0007b940 0x0007b940 SET_64 1026  getline
+0x0007b948 0x0007b948 SET_64 1026  basename
+0x0007b950 0x0007b950 SET_64 1026  readlink
+0x0007b958 0x0007b958 SET_64 1026  setlocale
+0x0007b960 0x0007b960 SET_64 1026  nl_langinfo
+0x0007b968 0x0007b968 SET_64 1026  newlocale
+0x0007b970 0x0007b970 SET_64 1026  uselocale
+0x0007b978 0x0007b978 SET_64 1026  setvbuf
+0x0007b980 0x0007b980 SET_64 1026  signal
+0x0007b988 0x0007b988 SET_64 1026  gzdopen
+0x0007b990 0x0007b990 SET_64 1026  gzwrite
+0x0007b998 0x0007b998 SET_64 1026  gzdirect
+0x0007b9a0 0x0007b9a0 SET_64 1026  gzread
+0x0007b9a8 0x0007b9a8 SET_64 1026  gzerror
+0x0007b9b0 0x0007b9b0 SET_64 1026  gzclose
+0x0007b9b8 0x0007b9b8 SET_64 1026  utimensat
+0x0007b9c0 0x0007b9c0 SET_64 1026  chmod
+0x0007b9c8 0x0007b9c8 SET_64 1026  gethostname
+0x0007b9d0 0x0007b9d0 SET_64 1026  sethostname
+0x0007b9d8 0x0007b9d8 SET_64 1026  gethostbyname
+0x0007b9e0 0x0007b9e0 SET_64 1026  strcspn
+0x0007b9e8 0x0007b9e8 SET_64 1026  __get_h_errno
+0x0007b9f0 0x0007b9f0 SET_64 1026  hstrerror
+0x0007b9f8 0x0007b9f8 SET_64 1026  mkdtemp
+0x0007ba00 0x0007ba00 SET_64 1026  tcsendbreak
+0x0007ba08 0x0007ba08 SET_64 1026  setpgid
+0x0007ba10 0x0007ba10 SET_64 1026  vfork
+0x0007ba18 0x0007ba18 SET_64 1026  tcsetpgrp
+0x0007ba20 0x0007ba20 SET_64 1026  statfs
+0x0007ba28 0x0007ba28 SET_64 1026  lstat
+0x0007ba30 0x0007ba30 SET_64 1026  pathconf
+0x0007ba38 0x0007ba38 SET_64 1026  getfilecon
+0x0007ba40 0x0007ba40 SET_64 1026  sigsetjmp
+0x0007ba48 0x0007ba48 SET_64 1026  ftruncate
+0x0007ba50 0x0007ba50 SET_64 1026  feof
+0x0007ba58 0x0007ba58 SET_64 1026  fscanf
+0x0007ba60 0x0007ba60 SET_64 1026  fseek
+0x0007ba68 0x0007ba68 SET_64 1026  fgetc
+0x0007ba70 0x0007ba70 SET_64 1026  ungetc
+0x0007ba78 0x0007ba78 SET_64 1026  fsync
+0x0007ba80 0x0007ba80 SET_64 1026  exit
+0x0007ba88 0x0007ba88 SET_64 1026  qsort
+0x0007ba90 0x0007ba90 SET_64 1026  bsearch
+0x0007ba98 0x0007ba98 SET_64 1026  regfree
+0x0007baa0 0x0007baa0 SET_64 1026  memchr
+0x0007baa8 0x0007baa8 SET_64 1026  fchownat
+0x0007bab0 0x0007bab0 SET_64 1026  faccessat
+0x0007bab8 0x0007bab8 SET_64 1026  openat
+0x0007bac0 0x0007bac0 SET_64 1026  linkat
+0x0007bac8 0x0007bac8 SET_64 1026  symlinkat
+0x0007bad0 0x0007bad0 SET_64 1026  unlinkat
+0x0007bad8 0x0007bad8 SET_64 1026  mknodat
+0x0007bae0 0x0007bae0 SET_64 1026  geteuid
+0x0007bae8 0x0007bae8 SET_64 1026  futimens
+0x0007baf0 0x0007baf0 SET_64 1026  lchown
+0x0007baf8 0x0007baf8 SET_64 1026  mkdir
+0x0007bb00 0x0007bb00 SET_64 1026  rmdir
+0x0007bb08 0x0007bb08 SET_64 1026  __memmove_chk
+0x0007bb10 0x0007bb10 SET_64 1026  symlink
+0x0007bb18 0x0007bb18 SET_64 1026  mknod
+0x0007bb20 0x0007bb20 SET_64 1026  dprintf
+0x0007bb28 0x0007bb28 SET_64 1026  settimeofday
+0x0007bb30 0x0007bb30 SET_64 1026  time
+0x0007bb38 0x0007bb38 SET_64 1026  dirname
+0x0007bb40 0x0007bb40 SET_64 1026  execve
+0x0007bb48 0x0007bb48 SET_64 1026  munmap
+0x0007bb50 0x0007bb50 SET_64 1026  sysconf
+0x0007bb58 0x0007bb58 SET_64 1026  __memcpy_chk
+0x0007bb60 0x0007bb60 SET_64 1026  fnmatch
+0x0007bb68 0x0007bb68 SET_64 1026  fchdir
+0x0007bb70 0x0007bb70 SET_64 1026  getuid
+0x0007bb78 0x0007bb78 SET_64 1026  getgid
+0x0007bb80 0x0007bb80 SET_64 1026  getegid
+0x0007bb88 0x0007bb88 SET_64 1026  getgrouplist
+0x0007bb90 0x0007bb90 SET_64 1026  getgroups
+0x0007bb98 0x0007bb98 SET_64 1026  is_selinux_enabled
+0x0007bba0 0x0007bba0 SET_64 1026  getcon
+0x0007bba8 0x0007bba8 SET_64 1026  strdup
+0x0007bbb0 0x0007bbb0 SET_64 1026  link
+0x0007bbb8 0x0007bbb8 SET_64 1026  __strlen_chk
+0x0007bbc0 0x0007bbc0 SET_64 1026  __strcat_chk
+0x0007bbc8 0x0007bbc8 SET_64 1026  __fwrite_chk
+0x0007bbd0 0x0007bbd0 SET_64 1026  lgetfilecon
+0x0007bbd8 0x0007bbd8 SET_64 1026  setfscreatecon
+0x0007bbe0 0x0007bbe0 SET_64 1026  strtold
+0x0007bbe8 0x0007bbe8 SET_64 1026  atoll
+0x0007bbf0 0x0007bbf0 SET_64 1026  strnlen
+0x0007bbf8 0x0007bbf8 SET_64 1026  write
+0x0007bc00 0x0007bc00 SET_64 1026  strncpy
+0x0007bc08 0x0007bc08 SET_64 1026  uname
+0x0007bc10 0x0007bc10 SET_64 1026  iswspace
+0x0007bc18 0x0007bc18 SET_64 1026  wait
+0x0007bc20 0x0007bc20 SET_64 1026  getsid
+0x0007bc28 0x0007bc28 SET_64 1026  atol
+0x0007bc30 0x0007bc30 SET_64 1026  sysinfo
+0x0007bc38 0x0007bc38 SET_64 1026  get_sched_policy
+0x0007bc40 0x0007bc40 SET_64 1026  get_sched_policy_name
+0x0007bc48 0x0007bc48 SET_64 1026  memccpy
+0x0007bc50 0x0007bc50 SET_64 1026  setbuffer
+0x0007bc58 0x0007bc58 SET_64 1026  syscall
+0x0007bc60 0x0007bc60 SET_64 1026  security_getenforce
+0x0007bc68 0x0007bc68 SET_64 1026  security_load_policy
+0x0007bc70 0x0007bc70 SET_64 1026  __android_log_write
+0x0007bc78 0x0007bc78 SET_64 1026  selinux_android_restorecon
+0x0007bc80 0x0007bc80 SET_64 1026  setexeccon
+0x0007bc88 0x0007bc88 SET_64 1026  security_setenforce
+0x0007bc90 0x0007bc90 SET_64 1026  klogctl
+0x0007bc98 0x0007bc98 SET_64 1026  ctime
+0x0007bca0 0x0007bca0 SET_64 1026  sleep
+0x0007bca8 0x0007bca8 SET_64 1026  mount
+0x0007bcb0 0x0007bcb0 SET_64 1026  sync
+0x0007bcb8 0x0007bcb8 SET_64 1026  umount2
+0x0007bcc0 0x0007bcc0 SET_64 1026  fgets
+0x0007bcc8 0x0007bcc8 SET_64 1026  strsep
+0x0007bcd0 0x0007bcd0 SET_64 1026  inet_ntoa
+0x0007bcd8 0x0007bcd8 SET_64 1026  __strrchr_chk
+0x0007bce0 0x0007bce0 SET_64 1026  inet_pton
+0x0007bce8 0x0007bce8 SET_64 1026  alarm
+0x0007bcf0 0x0007bcf0 SET_64 1026  listen
+0x0007bcf8 0x0007bcf8 SET_64 1026  getsockname
+0x0007bd00 0x0007bd00 SET_64 1026  accept
+0x0007bd08 0x0007bd08 SET_64 1026  __strcpy_chk
+0x0007bd10 0x0007bd10 SET_64 1026  getnameinfo
+0x0007bd18 0x0007bd18 SET_64 1026  getservbyport
+0x0007bd20 0x0007bd20 SET_64 1026  getifaddrs
+0x0007bd28 0x0007bd28 SET_64 1026  recvmsg
+0x0007bd30 0x0007bd30 SET_64 1026  __cmsg_nxthdr
+0x0007bd38 0x0007bd38 SET_64 1026  sched_get_priority_min
+0x0007bd40 0x0007bd40 SET_64 1026  sched_get_priority_max
+0x0007bd48 0x0007bd48 SET_64 1026  sched_setscheduler
+0x0007bd50 0x0007bd50 SET_64 1026  sched_getscheduler
+0x0007bd58 0x0007bd58 SET_64 1026  sched_getparam
+0x0007bd60 0x0007bd60 SET_64 1026  posix_fallocate
+0x0007bd68 0x0007bd68 SET_64 1026  flock
+0x0007bd70 0x0007bd70 SET_64 1026  fdatasync
+0x0007bd78 0x0007bd78 SET_64 1026  gettimeofday
+0x0007bd80 0x0007bd80 SET_64 1026  inotify_rm_watch
+0x0007bd88 0x0007bd88 SET_64 1026  strtok
+0x0007bd90 0x0007bd90 SET_64 1026  strspn
+0x0007bd98 0x0007bd98 SET_64 1026  chown
+0x0007bda0 0x0007bda0 SET_64 1026  memmem
+0x0007bda8 0x0007bda8 SET_64 1026  mlockall
+0x0007bdb0 0x0007bdb0 SET_64 1026  swapoff
+0x0007bdb8 0x0007bdb8 SET_64 1026  swapon
+0x0007bdc0 0x0007bdc0 SET_64 1026  setutent
+0x0007bdc8 0x0007bdc8 SET_64 1026  getutent
+0x0007bdd0 0x0007bdd0 SET_64 1026  endutent
+0x0007bdd8 0x0007bdd8 SET_64 1026  if_indextoname
+0x0007bde0 0x0007bde0 SET_64 1026  if_nametoindex
+0x0007bde8 0x0007bde8 SET_64 1026  fileno
+0x0007bdf0 0x0007bdf0 SET_64 1026  getc
+0x0007bdf8 0x0007bdf8 SET_64 1026  ftell
+0x0007be00 0x0007be00 SET_64 1026  raise
+0x0007be08 0x0007be08 SET_64 1026  cfsetispeed
+0x0007be10 0x0007be10 SET_64 1026  cfsetospeed
+0x0007be18 0x0007be18 SET_64 1026  memcmp
+0x0007be20 0x0007be20 SET_64 1026  cfgetispeed
+0x0007be28 0x0007be28 SET_64 1026  cfgetospeed
+0x0007be30 0x0007be30 SET_64 1026  inet_aton
+0x0007be38 0x0007be38 SET_64 1026  iconv_open
+0x0007be40 0x0007be40 SET_64 1026  iconv
+0x0007be48 0x0007be48 SET_64 1026  syslog
+0x0007be50 0x0007be50 SET_64 1026  nice
+0x0007be58 0x0007be58 SET_64 1026  getpriority
+0x0007be60 0x0007be60 SET_64 1026  setpriority
+0x0007be68 0x0007be68 SET_64 1026  wait4
+0x0007be70 0x0007be70 SET_64 1026  ttyname
+0x0007be78 0x0007be78 SET_64 1026  getppid
+0x0007be80 0x0007be80 SET_64 1026  prlimit
+
+
+321 relocations
+EOF
+RUN

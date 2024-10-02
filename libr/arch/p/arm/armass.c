@@ -45,14 +45,21 @@ enum {
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
 	TYPE_REV = 20,
-	TYPE_NEG = 21
+	TYPE_NEG = 21,
+	TYPE_MVN = 22
 };
 
 static int strcmpnull(const char *a, const char *b) {
 	return (a && b) ? strcmp (a, b) : -1;
 }
 
-// static const char *const arm_shift[] = { "lsl", "lsr", "asr", "ror" };
+enum {
+	ARM_SHIFT_LSL = 0,
+	ARM_SHIFT_LSR = 1,
+	ARM_SHIFT_ASR = 2,
+	ARM_SHIFT_ROR = 3,
+	ARM_SHIFT_RRX = 4
+};
 
 static ArmOp ops[] = {
 	{ "adc", 0xa000, TYPE_ARI },
@@ -107,7 +114,7 @@ static ArmOp ops[] = {
 	{ "movw", 0x3, TYPE_MOVW },
 	{ "movt", 0x4003, TYPE_MOVT },
 	{ "mov", 0xa001, TYPE_MOV },
-	{ "mvn", 0xe000, TYPE_MOV },
+	{ "mvn", 0xe001, TYPE_MVN },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
 
@@ -598,8 +605,9 @@ static char *getrange(char *s) {
 			p = s + 1;
 			*p = 0;
 		}
-		if (*s == '[' || *s == ']') {
+		if (*s == '[' || *s == ']' || *s == '!') {
 			memmove (s, s + 1, strlen (s + 1) + 1);
+			continue;
 		}
 		if (*s == '}') {
 			*s = 0;
@@ -1093,62 +1101,133 @@ static ut64 thumb_selector(ArmOpcode *ao) {
 	return res;
 }
 
-static ut32 getshift(const char *str) {
-	char type[128];
-	char arg[128];
-	char *space;
-	ut32 i = 0, shift = 0;
-	const char *shifts[] = {
-		"LSL", "LSR", "ASR", "ROR", 0, "RRX" // alias for ROR #0
-	};
+static ut32 arm_immshift(ut32 shift_type, ut32 imm) {
+	ut32 ret = 0;
 
-	strncpy (type, str, sizeof (type) - 1);
-	// XXX strcaecmp is probably unportable
-	if (!r_str_casecmp (type, shifts[5])) {
-		// handle RRX alias case
-		shift = 6;
-	} else { // all other shift types
-		space = strchr (type, ' ');
-		if (!space) {
-			return 0;
-		}
-		*space = 0;
-		strncpy (arg, ++space, sizeof (arg) - 1);
+	/* rrx has no real encoded value */
+	if (shift_type == ARM_SHIFT_RRX) {
+		shift_type = ARM_SHIFT_ROR;
+		imm = 0;
+		goto encode;
+	}
 
-		for (i = 0; shifts[i]; i++) {
-			if (!r_str_casecmp (type, shifts[i])) {
-				shift = 1;
-				break;
-			}
-		}
-		if (!shift) {
-			return 0;
-		}
-		shift = i * 2;
-		if ((i = getreg (arg)) != -1) {
-			i <<= 8; // set reg
-//			i|=1; // use reg
-			i |= (1 << 4); // bitshift
-			i |= shift << 4; // set shift mode
-			if (shift == 6) {
-				i |= (1 << 20);
-			}
+	if (shift_type > ARM_SHIFT_ROR || imm > 32) {
+		return -1;
+	}
+
+	/* Anything other than rrx defaults to lsl 0 (no shift) when imm == 0 */
+	if (imm == 0) {
+		shift_type = ARM_SHIFT_LSL;
+		imm = 0;
+		goto encode;
+	}
+
+	if (imm == 32) {
+		/* These two can have imm == 32 by setting the relevant bits to zero */
+		if (shift_type == ARM_SHIFT_LSR || shift_type == ARM_SHIFT_ASR) {
+			imm = 0;
 		} else {
-			char *bracket = strchr (arg, ']');
-			if (bracket) {
-				*bracket = '\0';
-			}
-			// ensure only the bottom 5 bits are used
-			i &= 0x1f;
-			if (!i) {
-				i = 32;
-			}
-			i = (i * 8);
-			i |= shift; // lsl, ror, ...
-			i = i << 4;
+			return -1;
 		}
 	}
-	return i;
+
+encode:
+#if 0
+	ret |= shift_type << 5;
+	ret |= imm << 7;
+#else
+	ret |= shift_type << 29;
+	ret |= (imm & 1) << 31;
+	ret |= (imm >> 1) << 16;
+#endif
+
+	return ret;
+}
+
+/* Register-based shift */
+static ut32 arm_regshift(ut32 shift_type, ut32 reg) {
+	ut32 ret = 0;
+
+	if (reg > 15 || shift_type > 3) {
+		return -1;
+	}
+
+#if 0
+	ret |= 1 << 4;
+	ret |= shift_type << 5;
+	ret |= reg << 8;
+#else
+	ret |= 1 << 28; /* Enable register-based shift */
+	ret |= shift_type << 29;
+	ret |= reg << 16;
+#endif
+
+	return ret;
+}
+
+static ut32 arm_getshift(const char *str, bool allow_regshift) {
+	char buf[128];
+	char *type_str, *arg, *bracket, *space;
+	ut32 i, type, imm, reg;
+
+	const char *typ_shifts[] = {
+		[ARM_SHIFT_LSL] = "lsl",
+		[ARM_SHIFT_LSR] = "lsr",
+		[ARM_SHIFT_ASR] = "asr",
+		[ARM_SHIFT_ROR] = "ror",
+		0
+	};
+
+	strncpy (buf, str, sizeof (buf) - 1);
+
+	bracket = strchr (buf, ']');
+	if (bracket) {
+		*bracket = '\0';
+	}
+
+	r_str_trim (buf);
+
+	space = strchr (buf, ' ');
+	if (space) {
+		*space = '\0';
+	}
+	type_str = buf;
+
+	if (!r_str_casecmp (type_str, "rrx")) {
+		type = ARM_SHIFT_RRX;
+		imm = 0;
+		return arm_immshift (type, imm);
+	}
+
+	if (!space) {
+		/* Not rrx and no extra argument */
+		return -1;
+	}
+
+	arg = space + 1;
+	while (*arg == ' ') {
+		arg++;
+	}
+
+	for (i = 0; typ_shifts[i]; i++) {
+		if (!r_str_casecmp (type_str, typ_shifts[i])) {
+			type = i;
+
+			reg = getreg (arg);
+			if (reg == -1) {
+				imm = getnum (arg);
+				return arm_immshift (type, imm);
+			} else {
+				/* Load/Store instruction doesn't allow for register-based shift */
+				if (!allow_regshift) {
+					return -1;
+				}
+				return arm_regshift (type, reg);
+			}
+		}
+	}
+
+	return -1;
 }
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
@@ -5985,15 +6064,21 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							ao->o |= 1;
 							ao->o |= (ret & 0x0f) << 8;
 						} else {
-							ao->o |= (strstr (str, "],")) ? 6 : 7;
+							if (strstr (str, "],")) {
+								ao->o |= 6;
+							} else if (strstr (str, "]!")) {
+								ao->o |= 0x2007;
+							} else {
+								ao->o |= 7;
+							}
 							ao->o |= (ret & 0x0f) << 24;
 						}
 						if (ao->a[3]) {
-							shift = getshift (ao->a[3]);
-							low = shift & 0xFF;
-							high = shift & 0xFF00;
-							ao->o |= low << 24;
-							ao->o |= high << 8;
+							shift = arm_getshift (ao->a[3], false);
+							if (shift == -1) {
+								return 0;
+							}
+							ao->o |= shift;
 						}
 					} else {
 						int num = getnum (ao->a[2]) & 0xfff;
@@ -6003,7 +6088,13 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						if (rex) {
 							ao->o |= 1;
 						} else {
-							ao->o |= (strstr (str, "],")) ? 4 : 5;
+							if (strstr (str, "],")) {
+								ao->o |= 4;
+							} else if (strstr (str, "]!")) {
+								ao->o |= 0x2005;
+							} else {
+								ao->o |= 5;
+							}
 						}
 						ao->o |= 1;
 						ao->o |= (num & 0xff) << 24;
@@ -6132,7 +6223,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= reg << 24;
 				}
 				if (ao->a[3]) {
-					ao->o |= getshift(ao->a[3]);
+					shift = arm_getshift (ao->a[3], true);
+					if (shift == -1) {
+						return 0;
+					}
+					ao->o |= shift;
 				}
 				break;
 			case TYPE_SWP:
@@ -6153,6 +6248,15 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				}
 				break;
+			case TYPE_MVN:
+				if (ao->a[2]) {
+					shift = arm_getshift (ao->a[2], true);
+					if (shift == -1) {
+						return 0;
+					}
+					ao->o |= shift;
+				}
+				/* Fallthrough */
 			case TYPE_MOV:
 				if (!strcmpnull (ao->op, "movs")) {
 					ao->o = 0xb0e1;
@@ -6257,7 +6361,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= (a << 8);
 					ao->o |= (b << 24);
 					if (ao->a[2]) {
-						ao->o |= getshift (ao->a[2]);
+						shift = arm_getshift (ao->a[2], true);
+						if (shift == -1) {
+							return 0;
+						}
+						ao->o |= shift;
 					}
 				}
 				if (ao->a[2]) {

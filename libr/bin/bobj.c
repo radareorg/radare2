@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.obj"
 
@@ -30,7 +30,7 @@ static int reloc_cmp(void *incoming, void *in, void *user) {
 }
 
 static void object_delete_items(RBinObject *o) {
-	r_return_if_fail (o);
+	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
 	r_strpool_free (o->pool);
 	ht_up_free (o->addr2klassmethod);
@@ -98,36 +98,91 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
+static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
+	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
+	char *tridot = strstr (dname, "...");
+	if (tridot) {
+		*tridot = 0;
+	}
+	if (strstr (dname, "::")) {
+		char *klass = strdup (dname);
+		char *par = strchr (klass, '(');
+		char *method = strstr (klass, "::");
+		bool check = (*klass != '(' && par && method > par);
+		if (check) {
+#if 1
+			char *method2 = strstr (method + 2, "::");
+			if (method2 && (par && method2 < par)) {
+				*method2 = 0;
+				method = method2 + 2;
+			} else {
+				*method = 0;
+				method += 2;
+			}
+#else
+			*method = 0;
+			method += 2;
+#endif
+			// eprintf ("(%s) = (%s)\n", klass, method);
+			RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
+			if (c) {
+				RBinSymbol *bs = r_bin_symbol_clone (sym);
+				if (c->addr == 0) {
+					c->addr = sym->vaddr;
+				}
+				r_bin_name_demangled (bs->name, method);
+				r_list_append (c->methods, bs);
+			}
+			free (klass);
+			return;
+		}
+		free (klass);
+	}
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	if (!oname || oname[0] != '_') {
+		return;
+	}
+	const char *cn = sym->classname;
+	if (!cn) {
+		return;
+	}
+	// swift specific
+	char *dn = r_bin_name_tostring2 (sym->name, 'd');
+	char *fn = swiftField (dn, cn);
+	if (fn) {
+		RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
+		if (f) {
+			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
+			if (c) {
+				r_list_append (c->fields, f);
+			}
+		}
+		free (fn);
+	} else {
+		char *mn = strstr (dn, "..");
+		if (!mn) {
+			mn = strstr (dn, cn);
+			if (mn && mn[strlen (cn)] == '.') {
+				RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
+				if (c) {
+					r_list_append (c->methods, r_bin_symbol_clone (sym));
+				}
+			}
+		}
+	}
+}
+
 static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
-	r_list_foreach (bf->bo->symbols, iter, sym) {
-		if (!sym->name || sym->name[0] != '_') {
-			continue;
+	// TODO: Use rvec here
+	if (bf->bo->symbols) {
+		r_list_foreach (bf->bo->symbols, iter, sym) {
+			classes_from_symbols2 (bf, sym);
 		}
-		const char *cn = sym->classname;
-		if (cn) {
-			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
-			if (!c) {
-				continue;
-			}
-			// swift specific
-			char *dn = sym->dname;
-			char *fn = swiftField (dn, cn);
-			if (fn) {
-				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
-				r_list_append (c->fields, f);
-				free (fn);
-			} else {
-				char *mn = strstr (dn, "..");
-				if (!mn) {
-					mn = strstr (dn, cn);
-					if (mn && mn[strlen (cn)] == '.') {
-						RBinSymbol *dsym = r_bin_symbol_clone (sym);
-						r_list_append (c->methods, dsym);
-					}
-				}
-			}
+	} else {
+		R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
+			classes_from_symbols2 (bf, sym);
 		}
 	}
 	return bf->bo->classes;
@@ -135,7 +190,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
 R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
-	r_return_val_if_fail (bf && plugin, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && plugin, NULL);
 	ut64 bytes_sz = r_buf_size (bf->buf);
 	RBinObject *bo = R_NEW0 (RBinObject);
 	if (!bo) {
@@ -157,17 +212,16 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->pool = r_strpool_new (0);
 	bf->bo = bo;
 
-	Sdb *sdb = bf->sdb; // should be bo->kv ?
-	if (plugin && plugin->load_buffer) {
-		if (!plugin->load_buffer (bf, &bo->bin_obj, bf->buf, loadaddr, sdb)) {
-			R_LOG_DEBUG ("load_buffer failed for %s plugin", plugin->name);
+	if (plugin && plugin->load) {
+		if (!plugin->load (bf, bf->buf, loadaddr)) {
+			R_LOG_DEBUG ("load failed for %s plugin", plugin->meta.name);
 			sdb_free (bo->kv);
 			free (bo);
 			bf->bo = NULL;
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load_buffer method", plugin->name);
+		R_LOG_WARN ("Plugin %s should implement load method", plugin->meta.name);
 		sdb_free (bo->kv);
 		free (bo);
 		bf->bo = NULL;
@@ -208,37 +262,36 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	return bo;
 }
 
-static void filter_classes(RBinFile *bf, RList *list) {
+static bool filter_classes(RBinFile *bf, RList *list) {
+	bool rc = true;
 	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
 	RBinSymbol *sym;
 	r_list_foreach (list, iter, cls) {
-		if (!cls->name) {
-			continue;
+		const char *kname = r_bin_name_tostring (cls->name);
+		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
+		if (R_STR_ISEMPTY (fname)) {
+			R_LOG_INFO ("Corrupted class storage with nameless classes");
+			rc = false;
+			free (fname);
+			break;
 		}
-		int namepad_len = strlen (cls->name) + 32;
-		char *namepad = malloc (namepad_len + 1);
-		if (namepad) {
-			char *p;
-			strcpy (namepad, cls->name);
-			p = r_bin_filter_name (bf, db, cls->index, namepad);
-			if (p) {
-				free (namepad);
-				namepad = p;
-			}
-			free (cls->name);
-			cls->name = namepad;
-			r_list_foreach (cls->methods, iter2, sym) {
-				if (sym->name) {
-					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
-				}
+		r_bin_name_update (cls->name, fname);
+		free (fname);
+		r_list_foreach (cls->methods, iter2, sym) {
+			if (R_LIKELY (sym->name)) {
+				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+			} else {
+				R_LOG_INFO ("Unnamed method. Assuming corrupted storage");
+				break;
 			}
 		}
 	}
 	ht_su_free (db);
 	ht_pp_free (ht);
+	return rc;
 }
 
 static RRBTree *list2rbtree(RList *relocs) {
@@ -266,9 +319,10 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	r_list_foreach (bo->classes, it, klass) {
 		if (klass->name) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
-
 			r_list_foreach (klass->methods, it2, method) {
-				char *name = r_str_newf ("%s::%s", klass->name, method->name);
+				const char *klass_name = r_bin_name_tostring (klass->name);
+				const char *method_name = r_bin_name_tostring (method->name);
+				char *name = r_str_newf ("%s::%s", klass_name, method_name);
 				ht_pp_insert (bo->methods_ht, name, method);
 				free (name);
 			}
@@ -277,7 +331,7 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 }
 
 R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
-	r_return_val_if_fail (bf && bo && bo->plugin, false);
+	R_RETURN_VAL_IF_FAIL (bf && bo && bo->plugin, false);
 
 	int i;
 	bool isSwift = false;
@@ -286,9 +340,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
 	bf->bo = bo;
 
-	if (p->file_type) {
-		int type = p->file_type (bf);
-		if (type == R_BIN_TYPE_CORE) {
+	bo->info = p->info? p->info (bf): NULL;
+	if (bo->info && bo->info->type) {
+		if (strstr (bo->info->type, "CORE")) {
 			if (p->regstate) {
 				bo->regstate = p->regstate (bf);
 			}
@@ -296,10 +350,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				bo->maps = p->maps (bf);
 			}
 		}
-	}
-
-	if (p->boffset) {
-		bo->boffset = p->boffset (bf);
 	}
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential
@@ -336,13 +386,15 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
-		RBinSymbol *sym;
-		HtPP *ht = ht_pp_new0 ();
-		if (ht) {
-			R_VEC_FOREACH (&bo->symbols_vec, sym) {
-				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+		if (bin->filter) {
+			RBinSymbol *sym;
+			HtPP *ht = ht_pp_new0 ();
+			if (ht) {
+				R_VEC_FOREACH (&bo->symbols_vec, sym) {
+					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+				}
+				ht_pp_free (ht);
 			}
-			ht_pp_free (ht);
 		}
 	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s
@@ -370,12 +422,12 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
-			RList *l = p->relocs (bf);
+			const RList *l = p->relocs (bf); // XXX this is an internal list (should be a vector), and shouldnt be freed by the caller
 			if (l) {
 				REBASE_PADDR (bo, l, RBinReloc);
-				bo->relocs = list2rbtree (l);
-				l->free = NULL;
-				r_list_free (l);
+				bo->relocs = list2rbtree ((RList*)l);
+				// l->free = NULL;
+				// r_list_free (l);
 			}
 		}
 	}
@@ -411,6 +463,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			filter_classes (bf, bo->classes);
 		}
 		// cache addr=class+method
+#if 0
+		// moved into libr/core/canal.c
+		// XXX SLOW on large binaries. only used when needed by getFunctionName from canal.c
 		if (bo->classes) {
 			RList *klasses = bo->classes;
 			RListIter *iter, *iter2;
@@ -426,6 +481,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				}
 			}
 		}
+#endif
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
@@ -440,6 +496,22 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->mem)  {
 		bo->mem = p->mem (bf);
 	}
+#if 0
+	r_bin_info_free (bo->info);
+	// call it twice, otherwise the info is not propagated
+	bo->info = p->info? p->info (bf): NULL;
+#endif
+	// bo->info = p->info? p->info (bf): NULL;
+	if (bo->info && bo->info->type) {
+		if (strstr (bo->info->type, "CORE")) {
+			if (p->regstate) {
+				bo->regstate = p->regstate (bf);
+			}
+			if (p->maps) {
+				bo->maps = p->maps (bf);
+			}
+		}
+	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
@@ -447,7 +519,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 }
 
 R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
-	r_return_val_if_fail (bf && bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bo, NULL);
 
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bf);
@@ -464,12 +536,12 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 }
 
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
-	r_return_val_if_fail (bin && bin->cur, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur, NULL);
 	return bin->cur->bo;
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bf && arch && name, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && arch && name, NULL);
 	if (bf->bo) {
 		RBinInfo *info = bf->bo->info;
 		if (info && info->arch && info->file &&
@@ -483,7 +555,7 @@ R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch,
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 
 	bool res = false;
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
@@ -500,7 +572,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	r_return_if_fail (bo && bo->strings);
+	R_RETURN_IF_FAIL (bo && bo->strings);
 
 	RList *strings = bo->strings;
 	RBinString *ptr;

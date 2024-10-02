@@ -1,5 +1,6 @@
 // 64-bit ARM
 #include <r_arch.h>
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 

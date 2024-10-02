@@ -55,7 +55,7 @@ static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 }
 
 static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
-	r_return_val_if_fail (st && input && output, false);
+	R_RETURN_VAL_IF_FAIL (st && input && output, false);
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 	//first permutation
@@ -143,16 +143,19 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	//  }
 
 	int i;
-	if (cj->dir) {
-		for (i = 0; i < blocks; i++) {
-			ut32 next = (DES_BLOCK_SIZE * i);
-			des_decrypt (st, ibuf + next, obuf + next);
-		}
-	} else {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_encrypt (st, ibuf + next, obuf + next);
 		}
+		break;
+	case R_CRYPTO_DIR_DECRYPT:
+		for (i = 0; i < blocks; i++) {
+			ut32 next = (DES_BLOCK_SIZE * i);
+			des_decrypt (st, ibuf + next, obuf + next);
+		}
+		break;
 	}
 
 	r_crypto_job_append (cj, obuf, size);
@@ -166,9 +169,12 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_des = {
-	.name = "des-ecb",
-	.author = "deroad",
-	.license = "LGPL",
+	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.meta = {
+		.name = "des-ecb",
+		.author = "deroad",
+		.license = "LGPL",
+	},
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
 	.check = des_check,

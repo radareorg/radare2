@@ -16,7 +16,7 @@ typedef struct {
 R_API RStrpool* r_strpool_new(int sz);
 R_API char *r_strpool_alloc(RStrpool *p, int l);
 R_API int r_strpool_memcat(RStrpool *p, const char *s, int len);
-R_API int r_strpool_ansi_chop(RStrpool *p, int n);
+R_API int r_strpool_ansi_trim(RStrpool *p, int n);
 R_API int r_strpool_append(RStrpool *p, const char *s);
 R_API void r_strpool_free(RStrpool *p);
 R_API int r_strpool_fit(RStrpool *p);

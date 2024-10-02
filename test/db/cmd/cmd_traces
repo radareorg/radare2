@@ -1,0 +1,33 @@
+NAME=asm.trace
+FILE=bins/mach0/main-loop
+CMDS=<<EOF
+af
+e asm.var.summary=0
+e asm.flags.inline=true
+e asm.comments=false
+e asm.trace=1
+e dbg.trace=1
+aeim
+e asm.bytes=0
+s main
+30ds
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.0.__TEXT.__text, entry0, sym._main, sym.func.100003f84:
+/ 36: int main (int argc);
+|           ; arg int argc @ x0
+|           ; var int64_t var_8h @ sp+0x8
+|           0x100003f84 01:0001        sub sp, sp, 0x10
+|           0x100003f88 01:0002        str wzr, [sp, 0xc]
+|           0x100003f8c 01:0003        mov w8, 3
+|           0x100003f90 01:0004        str w8, [var_8h]
+|       ,=< 0x100003f94 01:0005        b 0x100003f98
+|      .`-> 0x100003f98 07:001e        ldr w8, [var_8h]
+|      :    ;-- pc:
+|      :    0x100003f9c 06:001b        add w8, w8, 1
+|      :    0x100003fa0 06:001c        str w8, [var_8h]
+\      `==< 0x100003fa4 06:001d        b 0x100003f98
+EOF
+RUN
+

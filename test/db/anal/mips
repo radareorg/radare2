@@ -17,7 +17,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-421
+427
 EOF
 RUN
 
@@ -198,7 +198,7 @@ RUN
 NAME=mips LE correct relative jump reference if not mapped from command line.
 FILE=malloc://40
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e anal.nopskip=false
@@ -230,7 +230,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.lines.bb=false
@@ -266,7 +266,7 @@ FILE=malloc://20
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
@@ -288,7 +288,7 @@ RUN
 NAME=mips branch delay function sizing.
 FILE=malloc://20
 CMDS=<<EOF
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
@@ -309,7 +309,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
@@ -340,7 +340,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
@@ -372,7 +372,7 @@ FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
@@ -403,7 +403,7 @@ FILE=malloc://56
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
@@ -437,7 +437,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=0
@@ -456,8 +456,7 @@ EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
 (fcn) fcn.8060b500 80
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b500      002e0500   sll a1, a1, 0x18
 0x8060b504      032e0500   sra a1, a1, 0x18
 0x8060b508      0f008010   beqz a0, 0x8060b548
@@ -479,8 +478,7 @@ EXPECT=<<EOF
 0x8060b548      0800e003   jr ra
 0x8060b54c      00000000   nop
 (fcn) fcn.8060b550 36
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b550      0000a290   lbu v0, (a1)
 0x8060b554      05004010   beqz v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
@@ -492,8 +490,7 @@ EXPECT=<<EOF
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop
@@ -573,7 +570,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e anal.in=io.maps
 e asm.bits=32
 e asm.arch=mips
@@ -593,8 +590,7 @@ EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
 (fcn) fcn.8060b500 80
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b500      002e0500   sll a1, a1, 0x18
 0x8060b504      032e0500   sra a1, a1, 0x18
 0x8060b508      0f008010   beqz a0, 0x8060b548
@@ -616,8 +612,7 @@ EXPECT=<<EOF
 0x8060b548      0800e003   jr ra
 0x8060b54c      00000000   nop
 (fcn) fcn.8060b550 36
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b550      0000a290   lbu v0, (a1)
 0x8060b554      05004010   beqz v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
@@ -629,8 +624,7 @@ EXPECT=<<EOF
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+`- args(a0, a1)
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop
@@ -645,7 +639,7 @@ FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
+e asm.cmt.calls=false
 e asm.bits=32
 e anal.in=io.maps
 e asm.arch=mips
@@ -665,8 +659,7 @@ EXPECT=<<EOF
   0x8060b4f8      00000000   nop
   0x8060b4fc      00000000   nop
 / (fcn) fcn.8060b500 80
-| ; arg int32_t arg1 @ a0
-| ; arg int32_t arg2 @ a1
+| `- args(a0, a1)
 | 0x8060b500      002e0500   sll a1, a1, 0x18
 | 0x8060b504      032e0500   sra a1, a1, 0x18
 | 0x8060b508      0f008010   beqz a0, 0x8060b548
@@ -688,8 +681,7 @@ EXPECT=<<EOF
 | 0x8060b548      0800e003   jr ra
 \ 0x8060b54c      00000000   nop
 / (fcn) fcn.8060b550 36
-| ; arg int32_t arg1 @ a0
-| ; arg int32_t arg2 @ a1
+| `- args(a0, a1)
 | 0x8060b550      0000a290   lbu v0, (a1)
 | 0x8060b554      05004010   beqz v0, 0x8060b56c
 | 0x8060b558      0100a524   addiu a1, a1, 1
@@ -701,8 +693,7 @@ EXPECT=<<EOF
 \ 0x8060b570      000080a0   sb zero, (a0)
   0x8060b574      00000000   nop
 / (fcn) fcn.8060b578 20
-| ; arg int32_t arg1 @ a0
-| ; arg int32_t arg2 @ a1
+| `- args(a0, a1)
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal fcn.8060b550
 | 0x8060b580      00000000   nop
@@ -778,6 +769,21 @@ pd 1 @ 0x00463508~?dword
 EOF
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=jmptbl
+FILE=bins/elf/mips-ncc
+CMDS=<<EOF
+s 0x004ee1a4
+af
+s 0x004ee230
+pdsf~case
+abj~{[0].switch_op.cases}
+EOF
+EXPECT=<<EOF
+0x004ee230 switch table (5 cases) at 0x5a74b4
+[{"addr":5238184,"jump":5238184,"value":0},{"addr":5238044,"jump":5238044,"value":1},{"addr":5238184,"jump":5238184,"value":2},{"addr":5239196,"jump":5239196,"value":3},{"addr":5239252,"jump":5239252,"value":4},{"addr":5169720,"jump":5169720,"value":18446744073709551615}]
 EOF
 RUN
 

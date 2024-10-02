@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2024 - pancake, unlogic, emvivre */
 
 #include <r_arch.h>
 
@@ -84,6 +84,8 @@ typedef enum register_t {
 	X86R_EAX = 0, X86R_ECX, X86R_EDX, X86R_EBX, X86R_ESP, X86R_EBP, X86R_ESI, X86R_EDI, X86R_EIP,
 	X86R_AX = 0, X86R_CX, X86R_DX, X86R_BX, X86R_SP, X86R_BP, X86R_SI, X86R_DI,
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
+	// r8 with any REX prefix, 0->3 is al->dl
+	X86R_SPL = 4, X86R_BPL, X86R_SIL, X86R_DIL,
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI, X86R_RIP,
 	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS,	// Is this the right order?
@@ -97,6 +99,7 @@ typedef struct operand_t {
 	struct {
 		Register reg;
 		bool extended;
+		bool rex_prefixed;
 	};
 	union {
 		struct {
@@ -149,7 +152,7 @@ static int is_al_reg(const Operand *op) {
 	if (op->type & OT_MEMORY) {
 		return 0;
 	}
-	if (op->reg == X86R_AL && op->type & OT_BYTE) {
+	if (op->reg == X86R_AL && op->type & OT_BYTE && !op->extended) {
 		return 1;
 	}
 	return 0;
@@ -163,6 +166,9 @@ static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, i
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
 	data[l++] = 0x66;
+	if (op->operands[0].extended) {
+		data[l++] = 0x41;
+	}
 	if (op->operands[1].immediate < 128) {
 		data[l++] = 0x83;
 		data[l++] = op->operands[0].reg | (0xc0 + op1 + op->operands[0].reg);
@@ -195,7 +201,7 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->config->bits == 64 && op->operands[0].type & OT_QWORD) {
-		data[l++] = 0x48;
+		data[l++] = (op->operands[0].extended)? 0x49: 0x48;
 	}
 	if (!strcmp (op->mnemonic, "adc")) {
 		modrm = 2;
@@ -227,6 +233,11 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 		if ((st64)op->operands[1].immediate > 255) {
 			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
+		}
+		if (op->operands[0].rex_prefixed) {
+			data[l++] = 0x40;
+		} else if (op->operands[0].extended) {
+			data[l++] = 0x41;
 		}
 		data[l++] = 0x80;
 	}
@@ -323,7 +334,7 @@ static int process_group_2(RArchSession *a, ut8 *data, const Opcode *op) {
 		if (o->regs[0] != -1 && o->regs[1] != -1) {
 			data[l++] = 0xc0;
 			data[l++] = 0x44;
-			data[l++] = o->regs[0]| (o->regs[1]<<3);
+			data[l++] = o->regs[0] | (o->regs[1]<<3);
 			data[l++] = (ut8)((o->offset*o->offset_sign) & 0xff);
 			data[l++] = immediate;
 			return l;
@@ -363,7 +374,9 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	if (!op->operands[1].is_good_flag) {
 		return -1;
 	}
-
+	if (op->operands[0].rex_prefixed) {
+		data[l++] = 0x40;
+	}
 	if (op->operands[0].reg == X86R_AL && op->operands[1].type & OT_CONSTANT) {
 		data[l++] = op1 + 4;
 		data[l++] = op->operands[1].immediate * op->operands[1].sign;
@@ -460,7 +473,10 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 		} else if (op->operands[1].type & OT_REGALL) {
 			if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
 				data[l++] = op1;
-			} else if (op->operands[0].type & OT_DWORD && op->operands[1].type & OT_DWORD) {
+			} else if (op->operands[0].type & (OT_WORD | OT_DWORD) && op->operands[1].type & (OT_WORD | OT_DWORD)) {
+				if (op->operands[0].type & OT_WORD) {
+					data[l++] = 0x66;
+				}
 				data[l++] = op1 + 0x1;
 			}
 			if (bits == 64) {
@@ -788,6 +804,9 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].regs[0] == X86R_UNDEFINED) {
 			return -1;
 		}
+		if (a->config->bits == 64 && op->operands[0].extended) {
+			data[l++] = 0x41;
+		}
 		data[l++] = 0xff;
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
 		if (offset) {
@@ -1094,7 +1113,7 @@ static int opdec(RArchSession *a, ut8 *data, const Opcode *op) {
 		} else {
 			rm = op->operands[0].regs[0];
 		}
-		//[epb] alone is illegal, so we need to fake a [ebp+0]
+		//[ebp] alone is illegal, so we need to fake a [ebp+0]
 		if (rm == 5 && mod == 0) {
 			mod = 1;
 		}
@@ -1211,12 +1230,11 @@ static int opimul(RArchSession *a, ut8 *data, const Opcode *op) {
 
 	if (op->operands[0].type & OT_QWORD) {
 		data[l++] = 0x48;
+	} else if (op->operands[0].type & OT_WORD) {
+		data[l++] = 0x66;
 	}
 	switch (op->operands_count) {
 	case 1:
-		if (op->operands[0].type & OT_WORD) {
-			data[l++] = 0x66;
-		}
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
 		} else {
@@ -1834,6 +1852,11 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				return -1;
 			}
 			bool imm32in64 = false;
+			if (op->operands[0].type & OT_WORD) {
+				if (bits > 16) {
+					data[l++] = 0x66;
+				}
+			}
 			if (bits == 64 && (op->operands[0].type & OT_QWORD)) {
 				if (op->operands[0].extended) {
 					data[l++] = 0x49;
@@ -1843,12 +1866,10 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			} else if (op->operands[0].extended) {
 				data[l++] = 0x41;
 			}
-			if (op->operands[0].type & OT_WORD) {
-				if (bits > 16) {
-					data[l++] = 0x66;
-				}
-			}
 			if (op->operands[0].type & OT_BYTE) {
+				if (op->operands[0].rex_prefixed) {
+					data[l++] = 0x40;
+				}
 				data[l++] = 0xb0 | op->operands[0].reg;
 				data[l++] = immediate;
 			} else {
@@ -2090,7 +2111,7 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x20;
 			}
 		} else {
-			if (op->operands[0].type & OT_WORD) {
+			if (a->config->bits > 16 && op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
 			}
 			data[l++] = (op->operands[0].type & OT_BYTE) ? 0x88 : 0x89;
@@ -2223,7 +2244,11 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			}
 			if (op->operands[1].type & OT_QWORD &&
 				op->operands[0].type & OT_QWORD) {
-				data[l++] = 0x48;
+				if (op->operands[0].extended) {
+					data[l++] = 0x4c; // r12, r13, ..
+				} else {
+					data[l++] = 0x48; // rax, rbx, ..
+				}
 			}
 		}
 
@@ -4705,18 +4730,21 @@ static ut64 getnum(RArchSession *a, const char *s, bool *berr) {
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type) {
+static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type, bool *extended, bool *rex_prefixed) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *const regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
 	const char *const regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
 	const char *const regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
+	// const char *const regs8withREX[] = { "al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil", NULL };
+	const char *const regs8ext[] = { "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", NULL };
 	const char *const regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
+	const char *const regs16ext[] = { "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", NULL };
 	const char *const regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
 	const char *const regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *const sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
-	const char *const cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
-	const char *const dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
+	// const char *const cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
+	// const char *const dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
 
 	// Get token (especially the length)
 	size_t nextpos, length;
@@ -4735,23 +4763,36 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			}
 		}
 	}
-	// Control registers
-	if (length == 3 && token[0] == 'c') {
-		for (i = 0; cregs[i]; i++) {
-			if (!r_str_ncasecmp (cregs[i], token, length)) {
-				*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
-				return i;
-			}
+	// General purpose registers: sil, dil
+	if (length == 3 && token[1] == 'i' && token[2] == 'l') {
+		*rex_prefixed = true;
+		if (token[0] == 's') {
+			*type = (OT_GPREG & OT_REG (X86R_SIL)) | OT_BYTE;
+			return X86R_SIL;
+		} else if (token[0] == 'd') {
+			*type = (OT_GPREG & OT_REG (X86R_DIL)) | OT_BYTE;
+			return X86R_DIL;
+		} else {
+			return X86R_UNDEFINED;
 		}
 	}
-	// Debug registers
-	if (length == 3 && token[0] == 'd') {
-		for (i = 0; cregs[i]; i++) {
-			if (!r_str_ncasecmp (dregs[i], token, length)) {
-				*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
-				return i;
-			}
+	// Control registers
+	if (length == 3 && token[0] == 'c' && token[1] == 'r') {
+		i = token[2] - '0';
+		if (i < 0 || i > 7) {
+			return X86R_UNDEFINED;
 		}
+		*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
+		return i;
+	}
+	// Debug registers
+	if (length == 3 && token[0] == 'd' && token[1] == 'r') {
+		i = token[2] - '0';
+		if (i < 0 || i > 7) {
+			return X86R_UNDEFINED;
+		}
+		*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
+		return i;
 	}
 	if (length == 2) {
 		if (token[1] == 'l' || token[1] == 'h') {
@@ -4788,7 +4829,8 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->config->bits = 64;
-				return i + 9;
+				*extended = true;
+				return i;
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
@@ -4797,7 +4839,22 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 				if (a->config->bits < 32) {
 					a->config->bits = 32;
 				}
-				return i + 9;
+				*extended = true;
+				return i;
+			}
+		}
+		for (i = 0; regs16ext[i]; i++) {
+			if (!r_str_ncasecmp (regs16ext[i], token, length)) {
+				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
+				*extended = true;
+				return i;
+			}
+		}
+		for (i = 0; regs8ext[i]; i++) {
+			if (!r_str_ncasecmp (regs8ext[i], token, length)) {
+				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
+				*extended = true;
+				return i;
 			}
 		}
 	}
@@ -4978,19 +5035,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
-				reg = parseReg (a, str, &nextpos, &reg_type);
+				reg = parseReg (a, str, &nextpos, &reg_type, &op->extended, &op->rex_prefixed);
 
 				if (first_reg) {
-					op->extended = false;
-					if (reg > 8) {
-						op->extended = true;
-						op->reg = reg - 9;
-					} else {
-						op->reg = reg;
-					}
+					op->reg = reg;
 					first_reg = false;
-				} else if (reg > 8) {
-					op->reg = reg - 9;
 				}
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
 					op->reg = reg;
@@ -5066,11 +5115,6 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 		op->reg = parseReg (a, str, &nextpos, &op->type);
 
-		op->extended = false;
-		if (op->reg > 8) {
-			op->extended = true;
-			op->reg -= 9;
-		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
 			return nextpos;
@@ -5106,13 +5150,8 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			return nextpos;
 		}
 
-		op->reg = parseReg (a, str, &nextpos, &op->type);
+		op->reg = parseReg (a, str, &nextpos, &op->type, &op->extended, &op->rex_prefixed);
 
-		op->extended = false;
-		if (op->reg > 8) {
-			op->extended = true;
-			op->reg -= 9;
-		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
 			return nextpos;
@@ -5177,6 +5216,7 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->mnemonic = args? r_str_ndup (op, args - op): strdup (op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;
+	out->operands[0].rex_prefixed = out->operands[1].rex_prefixed = false;
 	out->operands[0].reg = out->operands[0].regs[0] = out->operands[0].regs[1] = X86R_UNDEFINED;
 	out->operands[1].reg = out->operands[1].regs[0] = out->operands[1].regs[1] = X86R_UNDEFINED;
 	out->operands[0].immediate = out->operands[1].immediate = 0;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - ret2libc */
+/* radare - LGPL - Copyright 2009-2024 - ret2libc */
 
 #include <r_util.h>
 
@@ -35,14 +35,26 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 		priv->buf = (ut8 *)u->data_steal;
 		priv->is_bufowner = u->steal;
 	} else {
-		priv->buf = malloc (priv->length);
+#if 0
+		size_t length = priv->length > 0? priv->length: 1;
+		priv->buf = malloc (length);
 		if (!priv->buf) {
 			free (priv);
 			return false;
 		}
-		if (priv->length) {
+		if (priv->length > 0) {
 			memmove (priv->buf, u->data, priv->length);
 		}
+#else
+		if (priv->length > 0) {
+			priv->buf = malloc (priv->length);
+			if (!priv->buf) {
+				free (priv);
+				return false;
+			}
+			memmove (priv->buf, u->data, priv->length);
+		}
+#endif
 		priv->is_bufowner = true;
 	}
 	b->priv = priv;
@@ -103,8 +115,14 @@ static ut64 buf_bytes_get_size(RBuffer *b) {
 
 static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	if (addr < 0 && (-addr) > (st64)priv->offset) {
-		return -1;
+	if (addr < 0) {
+		if (addr > -UT48_MAX) {
+	       		if (-addr > (st64)priv->offset) {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
 	}
 	if (R_LIKELY (whence == R_BUF_SET)) {
 		// 50%

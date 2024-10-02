@@ -297,8 +297,9 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	if (len < 2) {
 		return NULL;
 	}
-	insn_t word = {0};
-	memcpy (&word, buf, R_MIN (sizeof (word), len));
+	ut8 word_bytes[8] = {0};
+	memcpy (word_bytes, buf, R_MIN (8, len));
+	insn_t word = r_read_le64 (word_bytes);
 	int xlen = s->config->bits;
 	int ilen = riscv_insn_length (word);
 	if (len < ilen) {
@@ -715,7 +716,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_OR;
 	} else if (is_any ("not")) {
 		op->type = R_ANAL_OP_TYPE_NOT;
-	} else if (is_any ("c.nop")) {
+	} else if (is_any ("c.nop", "nop", "cnop")) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
 		op->type = R_ANAL_OP_TYPE_MUL;
@@ -793,6 +794,7 @@ static char *get_reg_profile(RArchSession *s) {
 				 "=A5	a5\n"
 				 "=A6	a6\n"
 				 "=A7	a7\n"
+				 "=TR	tp\n"
 				 "=R0	a0\n"
 				 "=R1	a1\n"
 				 "=SP	sp\n" // ABI: stack pointer
@@ -900,7 +902,7 @@ static char *get_reg_profile(RArchSession *s) {
 				 "gpr	ra	.64	8	0\n" // =x1
 				 "gpr	sp	.64	16	0\n" // =x2
 				 "gpr	gp	.64	24	0\n" // =x3
-				 "gpr	tp	.64	32	0\n" // =x4
+				 "gpr	tp	.64	32	0\n" // =x4 // thread pointer register
 				 "gpr	t0	.64	40	0\n" // =x5
 				 "gpr	t1	.64	48	0\n" // =x6
 				 "gpr	t2	.64	56	0\n" // =x7
@@ -977,20 +979,20 @@ static char *get_reg_profile(RArchSession *s) {
 
 static int info(RArchSession *s, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 2;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 2;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 2;
 	}
 	return 0;
 }
 
 static bool _init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
@@ -1001,7 +1003,7 @@ static bool _init(RArchSession *as) {
 }
 
 static bool _fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	R_FREE (as->data);
 	return true;
 }

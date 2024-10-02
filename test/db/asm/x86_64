@@ -1,6 +1,7 @@
 a "lea rax, [0x1000]" 488d05f90f0000
 d "lea rax, [rip + 0xff9]" 488d05f90f0000
 ad "nop" 90
+ad "mov r11, qword [rbp + 8]" 4c8b5d08
 ad "ret" c3
 a "add al, 0x89" 0489
 a "add al, 0xd9" 04d9
@@ -38,6 +39,10 @@ a "and rsi, 0x12345678" 4881e678563412
 a "and rsi, 0x87654321" 4881e621436587
 a "and si, 0x1234" 6681e63412
 a "and esi, 0x12345678" 81e678563412
+ad "and sil, 0x42" 4080e642
+ad "and dil, 0x42" 4080e742
+ad "and sil, al" 4020c6
+ad "and dil, al" 4020c7
 a "and byte[rax], 0x2a" 80202a
 a "and byte[rsi], 0x2a" 80262a
 aB "and word[rax], 0x1234" 6681203412
@@ -45,7 +50,22 @@ a "and dword[rax], 0x1234" 812034120000
 a "and dword[rax], 0x123490" 812090341200
 a "and dword[rax], 0x12349012" 812012903412
 a "and qword[rax], 0x12349012" 48812012903412
-aB "and r15b, 0x2a" ff2a
+ad "and r8b, 0x2a" 4180e02a
+ad "and r9b, 0x2a" 4180e12a
+ad "and r10b, 0x2a" 4180e22a
+ad "and r11b, 0x2a" 4180e32a
+ad "and r12b, 0x2a" 4180e42a
+ad "and r13b, 0x2a" 4180e52a
+ad "and r14b, 0x2a" 4180e62a
+ad "and r15b, 0x2a" 4180e72a
+ad "and r8w, 0x42" 664183e042
+ad "and r9w, 0x42" 664183e142
+ad "and r10w, 0x42" 664183e242
+ad "and r11w, 0x42" 664183e342
+ad "and r12w, 0x42" 664183e442
+ad "and r13w, 0x42" 664183e542
+ad "and r14w, 0x42" 664183e642
+ad "and r15w, 0x42" 664183e742
 a "and ebx, 0x1234" 81e334120000
 a "and byte[rax-0x2a], 12" 8060d60c
 a "and byte[rbx], 99" 802363
@@ -64,9 +84,9 @@ a "call qword[rax + 0x123456]" ff9056341200
 a "call qword[rax - 0x123456]" ff90aacbedff
 a "call qword[rax + 0x0eadbeef]" ff90efbead0e
 a "call qword[rax - 0x0eadbeef]" ff90114152f1
-a "call qword[rsi]" ff16
-a "call qword[r14]" ff1f
-aB "call qword[r14 - 0x0eadbeef]" 41ff96114152f1
+ad "call qword [rsi]" ff16
+ad "call qword [r14]" 41ff16
+ad "call qword [r14 - 0xeadbeef]" 41ff96114152f1
 a "cdqe" 4898
 a "cmp al, 1" 3c01
 a "cmp al, 0xff" 3cff
@@ -101,8 +121,8 @@ aB "imul word[rax+0x345]" 66f7a845030000
 a "imul dword[rax+0x345]" f728
 a "imul dword[rax+0x1234]" f728
 aB "imul qword[rax+0x1234]" 48f7a834120000
-aB "imul ax, bx" 660fafc3
-aB "imul ax, si" 660fafc6
+ad "imul ax, bx" 660fafc3
+ad "imul ax, si" 660fafc6
 a "imul esi, edx" 0faff2
 a "imul eax, esi" 0fafc6
 aB "imul ax, word[rsi]" 660faf06
@@ -214,8 +234,8 @@ a "mov rax, [rbx + 0xbeef]" 488b83efbe0000
 a "mov rcx, [rbx + 0xbeef]" 488b8befbe0000
 a "mov rbx, [rbp + 0xbeef]" 488b9defbe0000
 a "mov rax, [rip + 0xbeef]" 488b05efbe0000
-aB "mov sil, 0" 40b600
-aB "mov dil, -5" 40b7fb
+ad "mov sil, 0" 40b600
+ad "mov dil, 0x42" 40b742
 aB "mov spl, bpl" 4088ec
 a "neg al" f6d8
 a "neg dh" f6de
@@ -297,6 +317,7 @@ a "xor al, 0x39" 3439
 a "xor al, 0xff" 34ff
 a "xor dl, 0xff" 80f2ff
 a "xor si, 0x7823" 6681f62378
+ad "xor si, si" 6631f6
 a "xor di, 0x7855" 6681f75578
 a "xor esp, 0x98765421" 81f421547698
 a "xor edx, 0x98765421" 81f221547698
@@ -1296,6 +1317,7 @@ aB "ror byte[rax], 0x2a" c048d62a
 aB "ror byte[r15-0x2a], 1" 41d04fd6
 ad "call qword [rip + 8]" ff1508000000
 ad "call qword [rip - 8]" ff15f8ffffff
-
+ad "add r8, 3" 4983c003
+ad "add r10, 4" 4983c204
 ad "mov rax, qword [rip + 0x17792]" 488b0592770100
 a "mov rdx, [0x17792+rip]" 488b0592770100

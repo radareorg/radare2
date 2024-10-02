@@ -1,13 +1,8 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
-#include <r_debug.h>
 #include <r_drx.h>
-#include <r_asm.h>
 #include <r_core.h>
-#include <r_reg.h>
-#include <r_lib.h>
-#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -207,7 +202,7 @@ static void interrupt_process(RDebug *dbg) {
 }
 #endif
 
-static int r_debug_native_stop(RDebug *dbg) {
+static bool r_debug_native_stop(RDebug *dbg) {
 #if __linux__
 	// Stop all running threads except the thread reported by waitpid
 	return linux_stop_threads (dbg, dbg->reason.tid);
@@ -539,7 +534,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-#if __OpenBSD__ || __NetBSD__
+#if R2__BSD__
 			reason = R_DEBUG_REASON_BREAKPOINT;
 #else
 			if (r_debug_handle_signals (dbg) != 0) {
@@ -624,7 +619,6 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
-		eprintf ("No list?\n");
 		return NULL;
 	}
 #if __APPLE__
@@ -1009,12 +1003,11 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 
 #if !R2__WINDOWS__ && !__APPLE__
 static void _map_free(RDebugMap *map) {
-	if (!map) {
-		return;
+	if (map) {
+		free (map->name);
+		free (map->file);
+		free (map);
 	}
-	free (map->name);
-	free (map->file);
-	free (map);
 }
 #endif
 
@@ -1042,7 +1035,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		// R_LOG_ERROR ("r_debug_native_map_get: No selected pid (-1)");
 		return NULL;
 	}
 	/* prepend 0x prefix */
@@ -1097,10 +1090,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
-				&region[2], &region2[2], &ign, &ign,
-				unkstr, perms, &ign, &ign) != 8) {
-			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+		if (r_str_scanf (line, "%.s %.s %*d %*d %*s %.s %*d %*d",
+			sizeof (region)-2, &region[2], sizeof (region2)-2, &region2[2], sizeof (perms), perms) != 3) {
+			R_LOG_ERROR ("%s: Unable to parse \"%s\"", __func__, path);
 			r_list_free (list);
 			return NULL;
 		}
@@ -1115,12 +1107,16 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #else
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
+		i = r_str_scanf (line, "%.s %.s %Lx %*s %*s %.[^\n]",
+			sizeof (region) - 2, &region[2],
+			sizeof (perms), perms,
+			&offset,
+			sizeof (name), name);
 		if (i == 3) {
 			name[0] = '\0';
 		} else if (i != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
-			eprintf ("%s: problematic line: %s\n", __func__, line);
+			R_LOG_ERROR ("Unable to parse \"%s\" %d vs 4", path, i);
+			R_LOG_ERROR ("Line: %s", line);
 			r_list_free (list);
 			return NULL;
 		}
@@ -1149,7 +1145,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		map_start = r_num_get (NULL, region);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
+			R_LOG_ERROR ("ignoring invalid map size: %s - %s", region, region2);
 			continue;
 		}
 		map = r_debug_map_new (name, map_start, map_end, perm, 0);
@@ -1161,6 +1157,17 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		map->shared = map_is_shared;
 #endif
 		map->file = strdup (name);
+#if 0
+		// TODO: this breaks 'dcu main' on linux, guess it's about bad use of map.file vs map.name
+		if (!strcmp (map->file, map->name)) {
+			const char *last_slash = r_str_lchr (map->file, '/');
+			if (last_slash) {
+				char *new_name = strdup (last_slash + 1);
+				free (map->name);
+				map->name = new_name;
+			}
+		}
+#endif
 		r_list_append (list, map);
 	}
 	fclose (fd);
@@ -1170,6 +1177,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 }
 
 static RList *r_debug_native_modules_get(RDebug *dbg) {
+R_LOG_INFO ("modules.get");
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
@@ -1223,7 +1231,7 @@ static RList *r_debug_native_modules_get(RDebug *dbg) {
 
 static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
-	if (pid == 0) {
+	if (pid < 1) {
 		pid = dbg->pid;
 	}
 #if R2__WINDOWS__
@@ -1256,7 +1264,7 @@ static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static bool r_debug_native_init(RDebug *dbg) {
-	dbg->current->plugin.desc = r_debug_desc_plugin_native;
+	dbg->current->plugin->desc = r_debug_desc_plugin_native;
 #if R2__WINDOWS__
 	r_w32_init ();
 	if (!dbg->user && dbg->iob.io->dbgwrap) {
@@ -1270,7 +1278,7 @@ static bool r_debug_native_init(RDebug *dbg) {
 static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
 
@@ -1294,7 +1302,7 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
 
@@ -1311,10 +1319,12 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
 	int retval = false;
+#if NUM_DRX_REGISTERS > 0
 	drxt regs[NUM_DRX_REGISTERS] = {0};
-	// sync drx regs
 	sync_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
-
+#else
+	drxt regs[1] = {0};
+#endif
 	switch (api_type) {
 	case DRX_API_LIST:
 		drx_list (regs);
@@ -1336,7 +1346,7 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 		break;
 	default:
 		/* this should not happen, someone misused the API */
-		eprintf ("drx: Unsupported api type in r_debug_native_drx\n");
+		R_LOG_ERROR ("drx: Unsupported api type in r_debug_native_drx");
 		retval = false;
 	}
 
@@ -1344,7 +1354,7 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 
 	return retval;
 #else
-	eprintf ("drx: registers only available on x86. Use dbH for native hardware breakpoints and watchpoints.\n");
+	R_LOG_ERROR ("drx: registers only available on x86. Use dbH for native hardware breakpoints and watchpoints");
 #endif
 	return false;
 }
@@ -1465,6 +1475,7 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
+// TODO should return bool
 static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
@@ -1472,7 +1483,7 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
-#elif (__arm64__ || __aarch64__) && __linux__
+#elif (__arm64__ || __arm64e__ || __aarch64__) && __linux__
 		RDebug *dbg = bp->user;
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
@@ -1486,7 +1497,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		// no hw bps afaik
 		return false;
 #else
+#ifdef _MSC_VER
+#pragma message ( "r_debug_native_bp not implemented for this platform" )
+#else
 #warning r_debug_native_bp not implemented for this platform
+#endif
 #endif
 	}
 	return false;
@@ -1608,20 +1623,6 @@ static int r_debug_desc_native_open(const char *path) {
 	return 0;
 }
 
-#if 0
-static int r_debug_setup_ownership(int fd, RDebug *dbg) {
-	RDebugInfo *info = r_debug_info (dbg, NULL);
-
-	if (!info) {
-		R_LOG_ERROR ("getting debug info");
-		return -1;
-	}
-	fchown (fd, info->uid, info->gid);
-	r_debug_info_free (info);
-  	return 0;
-}
-#endif
-
 static bool r_debug_gcore(RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
@@ -1652,11 +1653,19 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32,
 	.arch = "x86",
 	.canstep = true,
+#elif __s390x__ || __s390__
+	.bits = R_SYS_BITS_64,
+	.arch = "s390",
+	.canstep = true,
+#elif __riscv || __riscv__ || __riscv64__
+	.bits = R_SYS_BITS_64,
+	.arch = "riscv",
+	.canstep = false,
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
 	.canstep = true, // XXX it's 1 on some platforms...
-#elif __aarch64__ || __arm64__
+#elif __aarch64__ || __arm64__ || __arm64e__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
 #if __APPLE__

@@ -3,6 +3,7 @@ r_magic_sources = [
   'ascmagic.c',
   'fsmagic.c',
   'funcs.c',
+  'mdump.c',
   'is_tar.c',
   'magic.c',
   # XXX not used? 'print.c',

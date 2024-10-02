@@ -4,7 +4,7 @@
 #include "bin_elf.inc.c"
 
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[5] = {0};
 	if (r_buf_size (b) > 4) {
 		r_buf_read_at (b, 0, buf, sizeof (buf));
@@ -15,7 +15,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
+// extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
 static ut64 get_elf_vaddr64(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
@@ -124,15 +124,16 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_elf64 = {
-	.name = "elf64",
-	.desc = "elf64 bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "elf64",
+		.desc = "elf64 bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.check = &check,
+	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 #if R2_590
@@ -150,11 +151,10 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.dbginfo = &r_bin_dbginfo_elf64,
+//	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,
-	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
 };

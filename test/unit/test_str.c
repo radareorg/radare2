@@ -81,14 +81,12 @@ bool test_r_str_rwx(void) {
 	mu_assert_eq (rwx, 7, "rwx");
 	mu_assert_eq (rw, 6, "rw");
 	mu_assert_eq (rx, 5, "rx");
-	mu_assert_eq (none, 0, "no permissions");
+	mu_assert_eq (none, -1, "no permissions");
 	mu_assert_eq (number, 0, "large input number string");
 	mu_assert_eq (rx_number, 5, "rx number");
 	mu_assert_eq (rwx_number, 7, "rwx number");
 	mu_end;
 }
-
-//TODO test r_str_binstr2bin
 
 bool test_r_str_rwx_i(void) {
 	const char* rwx = r_str_rwx_i (7);
@@ -634,7 +632,55 @@ bool test_r_str_tok_r (void) {
 	mu_end;
 }
 
-bool all_tests () {
+bool test_r_mem_from_binstring(void) {
+	int rc;
+	ut8 res[256];
+	const char *one = (const char*)res;
+
+	rc = r_mem_from_binstring ("0100100001100101011011000110110001101111001000000111010001101000011001010111001001100101", res, sizeof (res));
+	mu_assert_eq (rc, 11, "rc one");
+	mu_assert_streq (one, "Hello there", "one");
+
+	rc = r_mem_from_binstring ("011100110111010101110000011001010111001000100000011000110110111101101111011011000010000001101101011001010111001101110011011000010110011101100101", res, sizeof (res));
+	mu_assert_streq (one, "super cool message", "two");
+
+	rc = r_mem_from_binstring ("          00100000001000000010000000100000001000000111001101110100011000010111001001110100011100110010000001110111011010010111010001101000001000000111001101110000011000010110001101100101", res, sizeof (res));
+	mu_assert_streq (one, "     starts with space", "three");
+	rc = r_mem_from_binstring ("           00100000001000000010000000100000001000000111001101110100011000010111001001110100011100110010000001110111011010010111010001101000001000000111001101110000011000010110001101100101", res, sizeof (res));
+	mu_assert_streq (one, "     starts with space", "three");
+
+	rc = r_mem_from_binstring ("01100110011010010110111001100100011100110010000001101110011011110111010000100000011000100110100101101110abcdef", res, sizeof (res));
+	mu_assert_streq (one, "finds not bin", "four");
+	mu_end;
+	return true;
+}
+
+bool test_r_mem_to_binstring(void) {
+	char *one = r_mem_to_binstring ((const ut8*)"Hello there", -1);
+	char *two = r_mem_to_binstring ((const ut8*)"super cool message", -1);
+	char *three = r_mem_to_binstring ((const ut8*)"     starts with space", -1);
+	char *four = r_mem_to_binstring ((const ut8*)"super secret!?", -1);
+	mu_assert_streq (one, "0100100001100101011011000110110001101111001000000111010001101000011001010111001001100101", "one");
+	mu_assert_streq (two, "011100110111010101110000011001010111001000100000011000110110111101101111011011000010000001101101011001010111001101110011011000010110011101100101", "two");
+	mu_assert_streq (three, "00100000001000000010000000100000001000000111001101110100011000010111001001110100011100110010000001110111011010010111010001101000001000000111001101110000011000010110001101100101", "three");
+	mu_assert_streq (four, "0111001101110101011100000110010101110010001000000111001101100101011000110111001001100101011101000010000100111111", "four");
+	free (one);
+	free (two);
+	free (three);
+	free (four);
+	mu_end;
+}
+
+bool test_r_str_ndup_zero_len (void) {
+	char str[] = "deadbeef";
+
+	mu_assert_null (R_STR_NDUP (str, 0), "uppercase yields NULL");
+	mu_assert_streq (r_str_ndup (str, 0), "", "lowercase yields empty string");
+
+	mu_end;
+}
+
+bool all_tests(void) {
 	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
@@ -668,6 +714,9 @@ bool all_tests () {
 	mu_run_test (test_r_str_str_xy);
 	mu_run_test (test_r_str_encoded_json);
 	mu_run_test (test_r_str_tok_r);
+	mu_run_test (test_r_mem_from_binstring);
+	mu_run_test (test_r_mem_to_binstring);
+	mu_run_test (test_r_str_ndup_zero_len);
 	return tests_passed != tests_run;
 }
 

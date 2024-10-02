@@ -40,7 +40,7 @@ bool test_r_diff_buffers_distance(void) {
 		mu_assert_eq (distance, tests[i].dis_distance, msg);
 	}
 
-	// Eugene W. Myers' O(ND) diff algorithm, deletion/insertion edit distance
+	// Eugene W. Myers O(ND) diff algorithm, deletion/insertion edit distance
 	diff->type = 'm';
 	for (i = 0; tests[i].a; i++) {
 		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
@@ -53,7 +53,7 @@ bool test_r_diff_buffers_distance(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test(test_r_diff_buffers_distance);
 	return tests_passed != tests_run;
 }

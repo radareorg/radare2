@@ -121,11 +121,12 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 	if (!js) {
 		const int v_len = strlen (v);
 		const int p_len = strlen (p);
-		b = (char *)sdb_gh_malloc (p_len + v_len + 8);
+		const size_t blen = p_len + v_len + 8;
+		b = (char *)sdb_gh_malloc (blen);
 		if (b) {
 			int is_str = isstring (v);
 			const char *q = is_str? "\"": "";
-			sprintf (b, "{\"%s\":%s%s%s}", p, q, v, q);
+			snprintf (b, blen, "{\"%s\":%s%s%s}", p, q, v, q);
 #if 0
 			/* disabled because it memleaks */
 			sdb_set_owned (s, k, b, cas);
@@ -155,7 +156,7 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 			if (js[0] && js[1] != '}') {
 				comma = ",";
 			}
-			curlen = sprintf (buf, "{\"%s\":%s%s%s%s",
+			curlen = snprintf (buf, buf_len, "{\"%s\":%s%s%s%s",
 				p, quote, v, quote, comma);
 			strcpy (buf + curlen, js + 1);
 			// transfer ownership

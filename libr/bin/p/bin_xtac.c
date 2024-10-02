@@ -96,9 +96,8 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer (128);
 #define ROWL(nam, siz, val, fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
 	RBinXtacObj *bin = bf->bo->bin_obj;
 
 	ut64 addr = 0;
@@ -113,13 +112,13 @@ static RList *fields(RBinFile *bf) {
 	ROWL ("num_of_addr_pairs", 4, bin->header->num_of_addr_pairs, "x");
 	addr += 4;
 
-	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_mod_name, bin->header->ptr_to_mod_name, 0, "mod_name", strdup (bin->mod_name_u8), "s", false));
+	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_mod_name, bin->header->ptr_to_mod_name, 0, 0, "mod_name", strdup (bin->mod_name_u8), "s", false));
 	ROWL ("ptr_to_mod_name", 4, bin->header->ptr_to_mod_name, "x");
 	addr += 4;
 	ROWL ("size_of_mod_name", 4, bin->header->size_of_mod_name, "x");
 	addr += 4;
 
-	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_nt_pname, bin->header->ptr_to_nt_pname, 0, "nt_pname", strdup (bin->nt_path_name_u8), "s", false));
+	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_nt_pname, bin->header->ptr_to_nt_pname, 0, 0, "nt_pname", strdup (bin->nt_path_name_u8), "s", false));
 	ROWL ("ptr_to_nt_pname", 4, bin->header->ptr_to_nt_pname, "x");
 	addr += 4;
 	ROWL ("size_of_nt_pname", 4, bin->header->size_of_nt_pname, "x");
@@ -515,11 +514,11 @@ static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 	return bin;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->verbose);
 	if (res) {
-		*bin_obj = res;
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;
@@ -557,7 +556,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *file, RBuffer *b) {
+static bool check(RBinFile *file, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= sizeof (RBinXtacHeader)) {
 		return false;
@@ -590,7 +589,7 @@ static RList *symbols(RBinFile *bf) {
 		if (arm_vaddr == UT32_MAX || x86_vaddr == UT32_MAX) {
 			continue;
 		}
-		ptr->name = r_str_newf ("x86.%08x", x86_vaddr);
+		ptr->name = r_bin_name_new_from (r_str_newf ("x86.%08x", x86_vaddr));
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->size = 0;
@@ -604,12 +603,14 @@ static RList *symbols(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_xtac = {
-	.name = "xtac",
-	.desc = "XTAC format r2 plugin",
-	.license = "Apache License 2.0",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "xtac",
+		.desc = "XTAC format r2 plugin",
+		.license = "Apache License 2.0",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.minstrlen = 6,
 	.info = &info,

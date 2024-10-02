@@ -47,11 +47,17 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			sscanf (str, "0x%"PFMT64x" - 0x%"PFMT64x" %s %s",
-				&map_start, &map_end, perm, name);
+			if (r_str_scanf (str, "0x%Lx - 0x%Lx %.s %.s", &map_start, &map_end, sizeof (perm), perm, sizeof (name), name) > 4) {
+				break;
+			}
 			if (map_end != 0LL) {
-				RDebugMap *map = r_debug_map_new (name, map_start, map_end, r_str_rwx (perm), 0);
-				r_list_append (list, map);
+				int sperm = r_str_rwx (perm);
+				if (sperm >= 0) {
+					RDebugMap *map = r_debug_map_new (name, map_start, map_end, sperm, 0);
+					r_list_append (list, map);
+				} else {
+					R_LOG_WARN ("Invalid permission string (%s)", perm);
+				}
 			}
 			str = nl + 1;
 		} else {
@@ -90,16 +96,19 @@ static char *__io_reg_profile(RDebug *dbg) {
 
 // "dr8" read register state
 static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	r_cons_push ();
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
 		if (R_STR_ISEMPTY (fb)) {
 			R_LOG_ERROR ("Failed to get dr8 from io");
+			r_cons_pop ();
 			return false;
 		}
 		dr8 = strdup (fb);
 		r_cons_reset ();
 	}
+	r_cons_pop ();
 	ut8 *bregs = calloc (1, strlen (dr8));
 	if (!bregs) {
 		free (dr8);

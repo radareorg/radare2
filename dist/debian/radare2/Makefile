@@ -1,6 +1,5 @@
 PACKAGE_DIR=$(shell pwd)
 include ./CONFIG
-DEPENDS=
 
 SUDO=fakeroot
 SUDO=sudo

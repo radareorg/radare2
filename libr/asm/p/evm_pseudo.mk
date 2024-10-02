@@ -1,4 +1,4 @@
-OBJ_EVM_PSEUDO+=$(LIBR)/arch/p/pseudo/evm_pseudo.o
+OBJ_EVM_PSEUDO+=$(LIBR)/arch/p/evm/pseudo.o
 
 TARGET_EVM_PSEUDO=parse_evm_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_EVM_PSEUDO}

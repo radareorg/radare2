@@ -9,7 +9,7 @@
 #include <rvc.h>
 
 #define FIRST_BRANCH "branches.master"
-#define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
+#define NOT_SPECIAL(c) isdigit (c) || islower (c) || c == '_'
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
@@ -66,7 +66,7 @@ static Rvc *rvc_rvc_new(const char *path) {
 		R_LOG_ERROR ("Failed to create repo");
 		return NULL;
 	}
-	rvc->path = r_str_new (path);
+	rvc->path = strdup (path);
 	if (!rvc->path) {
 		free (rvc);
 		return NULL;
@@ -183,15 +183,15 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
 		}
-		blob->fhash = r_str_new (nh->tail->data);
+		blob->fhash = R_STR_DUP (nh->tail->data);
 		return (bool) blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
 	if (!blob) {
 		return false;
 	}
-	blob->fhash = r_str_new (nh->tail->data);
-	blob->fname = r_str_new (nh->head->data);
+	blob->fhash = R_STR_DUP (nh->tail->data);
+	blob->fname = R_STR_DUP (nh->head->data);
 	if (!blob->fhash || !blob->fname) {
 		goto fail_ret;
 	}
@@ -325,7 +325,7 @@ static char *absp2rp(Rvc *rvc, const char *absp) {
 		free (arp);
 		return NULL;
 	}
-	char *p = r_str_new (absp + r_str_len_utf8 (arp));
+	char *p = strdup (absp + r_str_len_utf8 (arp));
 	free (arp);
 	if (!p) {
 		return NULL;
@@ -352,7 +352,7 @@ static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 		return NULL;
 	}
 	if (!r_file_exists (absp)) {
-		ret->fhash = r_str_new (NULLVAL);
+		ret->fhash = strdup (NULLVAL);
 		if (!ret->fhash) {
 			goto fail_ret;
 		}
@@ -574,8 +574,7 @@ static RList *get_blobs(Rvc *rvc, RList *ignore) {
 	RListIter *i;
 	char *hash;
 	r_list_foreach (commits, i, hash) {
-		char *commit_path = r_file_new (rvc->path, ".rvc", "commits",
-				hash, NULL);
+		char *commit_path = r_file_new (rvc->path, ".rvc", "commits", hash, NULL);
 		if (!commit_path) {
 			goto fail_ret;
 		}
@@ -643,7 +642,7 @@ static char *find_blob_hash(Rvc *rvc, const char *fname) {
 		RvcBlob *b;
 		r_list_foreach_prev (blobs, i, b) {
 			if (!strcmp (b->fname, fname)) {
-				char *bhash = r_str_new (b->fhash);
+				char *bhash = strdup (b->fhash);
 				free_blobs (blobs);
 				return bhash;
 			}
@@ -717,7 +716,7 @@ R_API RList *branches_rvc(Rvc *rvc) {
 		if (!r_str_startswith ((char *)kv->base.key, BPREFIX)) {
 			continue;
 		}
-		if (!r_list_append (ret, r_str_new ((char *)kv->base.key + bplen))
+		if (!r_list_append (ret, strdup ((char *)kv->base.key + bplen))
 				&& !ret->head->data) {
 			r_list_free (ret);
 			ret = NULL;
@@ -945,13 +944,13 @@ R_API char *curbranch_rvc(Rvc *rvc) {
 	if (!rvc->db) {
 		return NULL;
 	}
-	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0)
+	char *ret = R_STR_DUP (sdb_const_get (rvc->db, CURRENTB, 0)
 			+ r_str_len_utf8 (BPREFIX));
 	return ret;
 }
 
 R_API bool r_vc_reset(Rvc *rvc) {
-	r_return_val_if_fail (rvc, false);
+	R_RETURN_VAL_IF_FAIL (rvc, false);
 	if (!rvc_repo_exists (rvc->path)) {
 		return false;
 	}
@@ -1067,7 +1066,7 @@ R_API bool clone_rvc(const Rvc *rvc, const char *dst) {
 }
 
 static void close_rvc(Rvc *vc, bool save) {
-	r_return_if_fail (vc);
+	R_RETURN_IF_FAIL (vc);
 	if (save) {
 		save_rvc (vc);
 	}
@@ -1075,7 +1074,7 @@ static void close_rvc(Rvc *vc, bool save) {
 }
 
 static bool save_rvc(Rvc *vc) {
-	r_return_val_if_fail (vc, false);
+	R_RETURN_VAL_IF_FAIL (vc, false);
 	if (vc->db) {
 		sdb_sync (vc->db);
 		return true;
@@ -1163,7 +1162,7 @@ static RList *uncommited_rvc(Rvc *rvc) {
 			continue;
 		}
 		free (rfp);
-		char *append = r_str_new (file);
+		char *append = R_STR_DUP (file);
 		if (!append) {
 			goto fail_ret;
 		}

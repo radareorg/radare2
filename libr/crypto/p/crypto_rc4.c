@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - pancake */
+/* radare - LGPL - Copyright 2016-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -18,11 +18,7 @@ static __inline void swap_bytes(ut8 *a, ut8 *b) {
 	}
 }
 
-/*
- * Initialize an RC4 state buffer using the supplied key,
- * which can have arbitrary length.
- */
-
+// Initialize an RC4 state buffer using the supplied arbitrary length key,
 static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) {
 	ut8 j;
 	int i;
@@ -107,7 +103,12 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_rc4 = {
-	.name = "rc4",
+	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.meta = {
+		.name = "rc4",
+		.license = "LGPL",
+		.author = "pancake",
+	},
 	.implements = "rc4",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,

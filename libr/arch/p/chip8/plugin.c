@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2017-2023 - maijin, pancake */
+/* radare - LGPL3 - Copyright 2017-2024 - maijin, pancake */
 
 #include <r_arch.h>
 
@@ -214,6 +214,18 @@ static bool chip8_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	return true;
 }
 
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 2;
+	case R_ARCH_INFO_MINOP_SIZE:
+		return 2;
+	case R_ARCH_INFO_ISVM:
+		return R_ARCH_INFO_ISVM;
+	}
+	return 1; /* :D */
+}
+
 const RArchPlugin r_arch_plugin_chip8 = {
 	.meta = {
 		.name = "chip8",
@@ -222,6 +234,7 @@ const RArchPlugin r_arch_plugin_chip8 = {
 		.license = "LGPL3",
 	},
 	.arch = "chip8",
+	.info = archinfo,
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = &chip8_anop,
 };

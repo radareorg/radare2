@@ -1,0 +1,91 @@
+NAME=noreturn errno
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+s sym.imp.SCNetworkReachabilityGetFlags
+/rc $$
+axt
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100011204 [CALL:--x] bl sym.imp.SCNetworkReachabilityGetFlags
+EOF
+RUN
+
+NAME=ab cases
+FILE=bins/mach0/ls-m1
+ARGS=-a arm
+CMDS=<<EOF
+af
+0x100003c38
+ab
+?e ---
+0x100003c44
+ab
+EOF
+EXPECT=<<EOF
+jump: 0x1000040f0
+fail: 0x100003c44
+opaddr: 0x100003c38
+addr: 0x100003c20
+size: 36
+inputs: 40
+outputs: 2
+ninstr: 9
+traced: 0x0
+---
+opaddr: 0x100003c44
+addr: 0x100003c44
+size: 32
+inputs: 1
+outputs: 46
+ninstr: 8
+traced: 0x0
+cases: 46
+switch_at: 0x100003c60
+case.0: 0x100003c6c
+case.1: 0x100004100
+case.7: 0x100003ecc
+case.12: 0x100003edc
+case.27: 0x100003e2c
+case.28: 0x100003ea4
+case.29: 0x100003ef0
+case.30: 0x100003fb8
+case.31: 0x100003fd0
+case.33: 0x100003e3c
+case.34: 0x100003fe8
+case.35: 0x100003e54
+case.36: 0x100003f04
+case.39: 0x100003f14
+case.42: 0x100003e1c
+case.43: 0x10000400c
+case.45: 0x100004028
+case.46: 0x10000408c
+case.47: 0x100004038
+case.48: 0x100003dc8
+case.50: 0x100003f3c
+case.60: 0x100003ea0
+case.61: 0x100003de8
+case.62: 0x100003f4c
+case.63: 0x100003e7c
+case.64: 0x100003f6c
+case.65: 0x100003e94
+case.66: 0x100003ca4
+case.67: 0x1000040c0
+case.68: 0x100003eb4
+case.70: 0x100003f7c
+case.71: 0x100004048
+case.72: 0x100003f94
+case.73: 0x100003c8c
+case.74: 0x100003e04
+case.75: 0x100004064
+case.76: 0x1000040d0
+case.77: 0x100003cbc
+case.78: 0x10000407c
+case.79: 0x100003ccc
+case.80: 0x100003ce4
+case.81: 0x100003ec4
+case.82: 0x100003fb0
+case.83: 0x1000040a4
+case.84: 0x100003c7c
+case.91: 0x100003cfc
+EOF
+RUN

@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2023 - pancake */
+/* radare - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_util.h>
 
 static const char cb36[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 R_API void b36_fromnum(char *s, ut64 n) {
-	const int amount = n? (log ((double)n) / log ((double)36)): 0;
+	const int amount = n? (int)(log ((double)n) / log ((double)36)): 0;
 	char *p = s;
 	*p++ = '0';
 	*p++ = '_';
@@ -21,9 +21,9 @@ R_API void b36_fromnum(char *s, ut64 n) {
 
 static const ut64 pow36[36] = {
 	1, 36, 1296, 46656, 1679616, 60466176,
-	2176782336, 78364164096, 2821109907456,
-	101559956668416, 3656158440062976,
-	131621703842267136, 4738381338321616896,
+	2176782336ULL, 78364164096ULL, 2821109907456ULL,
+	101559956668416ULL, 3656158440062976ULL,
+	131621703842267136ULL, 4738381338321616896ULL,
 	9223372036854775808ULL,
 };
 

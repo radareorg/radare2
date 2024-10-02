@@ -24,7 +24,6 @@ if not user_plugins.contains('nogrub') and not get_option('nogpl')
     'p/fs_ext2.c',
     'p/fs_fat.c',
     'p/fs_fb.c',
-    #'p/fs_grub_base.c',
     'p/fs_hfs.c',
     'p/fs_hfsplus.c',
     'p/fs_iso9660.c',
@@ -47,6 +46,19 @@ else
   r_fs_cflags += [
     '-DUSE_GRUB=0'
   ]
+endif
+
+if get_option('use_libsqsh')
+  libsqsh_dep = dependency('libsqsh', version: '>=1.4.0', required: false)
+  if libsqsh_dep.found()
+    r_fs_sources += [
+      'p/fs_squashfs.c'
+    ]
+    r_fs_deps += [ libsqsh_dep ]
+    if get_option('blob')
+      r_fs_static_deps += [ libsqsh_static_dep ]
+    endif
+  endif
 endif
 
 r_fs = library('r_fs', r_fs_sources,

@@ -10,6 +10,7 @@ pwd
 popd
 popd
 popd
+popd
 pwd
 EOF
 EXPECT=<<EOF

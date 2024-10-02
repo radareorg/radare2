@@ -11,7 +11,7 @@ static bool lang_nim_file(RLangSession *s, const char *file) {
 		R_LOG_WARN ("file does not exist");
 		return false;
 	}
-	char *js_ofile = r_str_replace (strdup (file), ".nim", ".qjs", 0);
+	char *js_ofile = r_str_replace (strdup (file), ".nim", ".r2.js", 0);
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (js_ofile, file)) {
@@ -55,12 +55,14 @@ static bool lang_nim_init(RLangSession *s) {
 }
 
 static RLangPlugin r_lang_plugin_nim = {
-	.name = "nim",
-	.ext = "ts",
-	.author = "pancake",
-	.license = "LGPL",
+	.meta = {
+		.name = "nim",
+		.author = "pancake",
+		.license = "LGPL",
+		.desc = "Use #!nim script.nim",
+	},
+	.ext = "nim",
 	.init = lang_nim_init,
-	.desc = "Use #!nim script.nim",
 	.run = lang_nim_run,
 	.run_file = (void*)lang_nim_file,
 };

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "r2r.load"
@@ -89,9 +89,8 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			r_strbuf_append (buf, line);
 			if (end) {
 				return r_strbuf_drain (buf);
-			} else {
-				r_strbuf_append (buf, "\n");
 			}
+			r_strbuf_append (buf, "\n");
 		} while ((line = *nextline));
 		R_LOG_ERROR ("Missing closing end token %s", endtoken);
 		r_strbuf_free (buf);
@@ -140,6 +139,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		}
 
 		// RUN is the only cmd without value
+		if (!strcmp (line, "NORUN")) {
+			// dont run this test, like if it was commented out
+			continue;
+		}
 		if (!strcmp (line, "RUN")) {
 			test->run_line = linenum;
 			if (!test->cmds.value) {
@@ -261,12 +264,11 @@ R_API R2RAsmTest *r2r_asm_test_new(void) {
 }
 
 R_API void r2r_asm_test_free(R2RAsmTest *test) {
-	if (!test) {
-		return;
+	if (test != NULL) {
+		free (test->disasm);
+		free (test->bytes);
+		free (test);
 	}
-	free (test->disasm);
-	free (test->bytes);
-	free (test);
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
@@ -618,7 +620,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
 			if (is_archos_folder && (skip_archos || strcmp (subname, R2R_ARCH_OS))) {
-				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform", path, subname);
+				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, R2R_ARCH_OS);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);

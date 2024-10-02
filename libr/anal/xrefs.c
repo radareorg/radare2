@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, defragger, ret2libc */
 
 // R2R db/cmd/cmd_aflxj db/cmd/cmd_aflxv db/cmd/cmd_ax
 
@@ -122,7 +122,7 @@ static void ref_manager_remove_entry(RefManager *rm, ut64 from, ut64 to) {
 }
 
 static ut64 ref_manager_count_xrefs(RefManager *rm) {
-	r_return_val_if_fail (rm, 0);
+	R_RETURN_VAL_IF_FAIL (rm, 0);
 
 	ut64 count = 0;
 
@@ -135,7 +135,7 @@ static ut64 ref_manager_count_xrefs(RefManager *rm) {
 }
 
 static ut64 ref_manager_count_xrefs_at(RefManager *rm, ut64 to) {
-	r_return_val_if_fail (rm, 0);
+	R_RETURN_VAL_IF_FAIL (rm, 0);
 
 	AdjacencyList_CIter iter = AdjacencyList_cfind (&rm->xrefs, &to);
 	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
@@ -222,17 +222,17 @@ static RVecAnalRef *_collect_refs(RefManager *rm, const AdjacencyList *adj_list,
 }
 
 static inline RVecAnalRef *ref_manager_get_refs(RefManager *rm, ut64 from) {
-	r_return_val_if_fail (rm, NULL);
+	R_RETURN_VAL_IF_FAIL (rm, NULL);
 	return _collect_refs (rm, &rm->refs, from);
 }
 
 static inline RVecAnalRef *ref_manager_get_xrefs(RefManager *rm, ut64 to) {
-	r_return_val_if_fail (rm, NULL);
+	R_RETURN_VAL_IF_FAIL (rm, NULL);
 	return _collect_refs (rm, &rm->xrefs, to);
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 
 	r_anal_xrefs_free (anal);
 	anal->rm = ref_manager_new ();
@@ -240,13 +240,13 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 }
 
 R_API void r_anal_xrefs_free(RAnal *anal) {
-	r_return_if_fail (anal);
+	R_RETURN_IF_FAIL (anal);
 	ref_manager_free (anal->rm);
 }
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType _type) {
-	r_return_val_if_fail (anal && anal->rm, false);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
 		return false;
@@ -281,14 +281,14 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 }
 
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	ref_manager_remove_entry (anal->rm, from, to);
 	R_DIRTY (anal);
 	return true;
 }
 
 R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
-	r_return_val_if_fail (anal && anal->rm, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, from);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
@@ -301,7 +301,7 @@ R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
 }
 
 R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
-	r_return_val_if_fail (anal && anal->rm, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
 
 	RVecAnalRef *anal_refs = ref_manager_get_xrefs (anal->rm, to);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
@@ -314,7 +314,7 @@ R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 }
 
 R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
-	r_return_val_if_fail (anal && anal->rm, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, to);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
@@ -327,7 +327,7 @@ R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 }
 
 R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
-	r_return_val_if_fail (anal && anal->rm, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
 
 	AdjacencyList_CIter iter = AdjacencyList_cfind (&anal->rm->xrefs, &at);
 	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
@@ -344,11 +344,11 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 		if (!t) {
 			t = ' ';
 		}
-
 		char *fromname = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 		char *toname = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-		r_table_add_rowf (table, "ddssss",
+		r_table_add_rowf (table, "xxnssss",
 				ref->at, ref->addr,
+				r_anal_ref_size (ref),
 				r_anal_ref_type_tostring (t),
 				r_anal_ref_perm_tostring (ref),
 				toname, fromname
@@ -471,7 +471,7 @@ static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
-	r_return_if_fail (anal && anal->rm);
+	R_RETURN_IF_FAIL (anal && anal->rm);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, UT64_MAX);
 	if (!anal_refs) {
@@ -505,17 +505,17 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
 }
 
 R_API ut64 r_anal_xrefs_count(RAnal *anal) {
-	r_return_val_if_fail (anal && anal->rm, 0);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, 0);
 	return ref_manager_count_xrefs (anal->rm);
 }
 
 R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to) {
-	r_return_val_if_fail (anal && anal->rm, 0);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, 0);
 	return ref_manager_count_xrefs_at (anal->rm, to);
 }
 
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 
 	RefManager *rm = fcn->anal->rm;
 	// XXX assume first basic block is the entrypoint
@@ -555,12 +555,12 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 
 // XXX rename to r_anal_function_get_all_refs?
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_refs);
 }
 
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
-	r_return_val_if_fail (fcn, NULL);
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_xrefs);
 }
 
@@ -595,6 +595,20 @@ R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref) {
 		}
 	}
 	return r_str_rwx_i (perm);
+}
+
+R_API int r_anal_ref_size(RAnalRef *ref) {
+	int size = R_ANAL_REF_TYPE_SIZE (ref->type);
+	if (size) {
+		return size;
+	}
+	switch (R_ANAL_REF_TYPE_MASK (ref->type)) {
+	case R_ANAL_REF_TYPE_ICOD:
+		return 4; // or 8?
+	case R_ANAL_REF_TYPE_DATA:
+		return 4; // or 8?
+	}
+	return 0;
 }
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {

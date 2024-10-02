@@ -89,7 +89,7 @@ static char *findNextNumber(char *op) {
 				if (!*p) {
 					break;
 				}
-				if (!IS_DIGIT (*p)) {
+				if (!isdigit (*p)) {
 					char *t = p;
 					for (; *t && *t != ']'; t++) {
 						;
@@ -104,10 +104,10 @@ static char *findNextNumber(char *op) {
 				}
 			}
 			if (isSpace) {
-				if (IS_DIGIT (*p)) {
+				if (isdigit (*p)) {
 					return p;
 				}
-				if ((*p == '-') && IS_DIGIT (p[1])) {
+				if ((*p == '-') && isdigit (p[1])) {
 					return p + 1;
 				}
 			}
@@ -402,7 +402,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+				if ((is_hex && IS_HEXCHAR (*pnum)) || isdigit (*pnum)) {
 					continue;
 				}
 				break;
@@ -415,7 +415,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					pnum += 2;
 				}
 				for (; *pnum; pnum++) {
-					if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+					if ((is_hex && IS_HEXCHAR (*pnum)) || isdigit (*pnum)) {
 						continue;
 					}
 					break;
@@ -530,10 +530,12 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			case 11:
 				snprintf (num, sizeof (num), "%"PFMT64u, off);
 				break;
+			case 31: // small integer
+				snprintf (num, sizeof (num), "0x%x", (ut32)(off >> 1));
+				break;
 			case 32:
 				{
-					ut32 ip32 = off;
-					ut8 *ip = (ut8*)&ip32;
+					ut8 ip[4] = { off & 0xff, (off >> 8) & 0xff, (off >> 16) & 0xff, (off >> 24) & 0xff };
 					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 				}
 				break;

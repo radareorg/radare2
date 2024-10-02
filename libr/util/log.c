@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2010-2024 - pancake, ret2libc */
 
 #define R_LOG_ORIGIN "util.log"
 
@@ -6,21 +6,47 @@
 #include <stdarg.h>
 
 static R_TH_LOCAL RLog *rlog = NULL;
+typedef struct r_log_cbuser_t {
+	void *user;
+	RLogCallback cb;
+} RLogCallbackUser;
 
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_FATAL]     = "FATAL",
-	[R_LOGLVL_ERROR]     = "ERROR",
-	[R_LOGLVL_INFO]      = "INFO",
-	[R_LOGLVL_WARN]      = "WARN",
-	[R_LOGLVL_TODO]      = "TODO",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
+	[R_LOG_LEVEL_FATAL]     = "FATAL",
+	[R_LOG_LEVEL_ERROR]     = "ERROR",
+	[R_LOG_LEVEL_INFO]      = "INFO",
+	[R_LOG_LEVEL_WARN]      = "WARN",
+	[R_LOG_LEVEL_TODO]      = "TODO",
+	[R_LOG_LEVEL_DEBUG]     = "DEBUG",
 };
 
-static const char *level_name(int i) {
-	if (i >= 0 && i < R_LOGLVL_LAST) {
+R_API const char *r_log_level_tostring(int i) {
+	if (i >= 0 && i < R_LOG_LEVEL_LAST) {
 		return level_tags[i];
 	}
 	return "UNKN";
+}
+
+R_API const char *r_log_level_tocolor(int level) {
+	const char *k = Color_YELLOW;
+	switch (level) {
+	case R_LOG_LEVEL_FATAL:
+	case R_LOG_LEVEL_ERROR:
+		k = Color_RED;
+		break;
+	case R_LOG_LEVEL_INFO:
+		k = Color_YELLOW;
+		break;
+	case R_LOG_LEVEL_WARN:
+		k = Color_MAGENTA;
+		break;
+	case R_LOG_LEVEL_DEBUG:
+		k = Color_GREEN;
+		break;
+	default:
+		break;
+	}
+	return k;
 }
 
 // shouldnt be necessary as global thread-local instance
@@ -30,7 +56,7 @@ R_API bool r_log_init(void) {
 		if (!rlog) {
 			return false;
 		}
-		rlog->level = R_LOGLVL_DEFAULT;
+		rlog->level = R_LOG_LEVEL_DEFAULT;
 	}
 	return true;
 }
@@ -57,7 +83,7 @@ R_API RLogLevel r_log_get_level(void) {
 }
 
 R_API RLogLevel r_log_get_traplevel(void) {
-	return rlog? rlog->traplevel: R_LOGLVL_FATAL;
+	return rlog? rlog->traplevel: R_LOG_LEVEL_FATAL;
 }
 
 R_API void r_log_set_level(RLogLevel level) {
@@ -123,9 +149,9 @@ R_API bool r_log_match(int level, const char *origin) {
 	}
 	if (rlog->cbs) {
 		RListIter *iter;
-		RLogCallback cb;
-		r_list_foreach (rlog->cbs, iter, cb) {
-			if (cb (rlog->user, level, origin, NULL)) {
+		RLogCallbackUser *cbu;
+		r_list_foreach (rlog->cbs, iter, cbu) {
+			if (cbu->cb (cbu->user, level, origin, NULL)) {
 				return true;
 			}
 		}
@@ -135,16 +161,17 @@ R_API bool r_log_match(int level, const char *origin) {
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
-	int type = 3;
 	if (!r_log_init ()) {
 		return;
 	}
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
 		RListIter *iter;
-		RLogCallback cb;
-		r_list_foreach (rlog->cbs, iter, cb) {
-			cb (rlog->user, type, NULL, out);
+		RLogCallbackUser *cbu;
+		r_list_foreach (rlog->cbs, iter, cbu) {
+			if (cbu->cb (cbu->user, level, origin, out)) {
+				return;
+			}
 		}
 	}
 	RStrBuf *sb = r_strbuf_new ("");
@@ -152,25 +179,8 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		func += 2;
 	}
 	if (rlog->color) {
-		const char *k = Color_YELLOW;
-		switch (level) {
-		case R_LOGLVL_FATAL:
-		case R_LOGLVL_ERROR:
-			k = Color_RED;
-			break;
-		case R_LOGLVL_INFO:
-			k = Color_YELLOW;
-			break;
-		case R_LOGLVL_WARN:
-			k = Color_MAGENTA;
-			break;
-		case R_LOGLVL_DEBUG:
-			k = Color_GREEN;
-			break;
-		default:
-			break;
-		}
-		r_strbuf_appendf (sb, "%s%s:", k, level_name (level));
+		const char *k = r_log_level_tocolor (level);
+		r_strbuf_appendf (sb, "%s%s:", k, r_log_level_tostring (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, " "Color_YELLOW "[%s]" Color_RESET, origin);
 		} else {
@@ -180,7 +190,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	} else {
-		r_strbuf_appendf (sb, "%s:", level_name (level));
+		r_strbuf_appendf (sb, "%s:", r_log_level_tostring (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, " [%s]", origin);
 		}
@@ -203,11 +213,14 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	if (!rlog->quiet) {
 		eprintf ("%s", s);
 	}
+	if (rlog->cb_printf) {
+		rlog->cb_printf ("%s", s);
+	}
 	if (R_STR_ISNOTEMPTY (rlog->file)) {
 		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);
 	}
 	free (s);
-	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOGLVL_FATAL)) {
+	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOG_LEVEL_FATAL)) {
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}
@@ -225,19 +238,29 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 		return;
 	}
 	if (!rlog->cbs) {
-		rlog->cbs = r_list_new ();
+		rlog->cbs = r_list_newf (free);
 	}
+#if !R2_USE_NEW_ABI
 	if (user) {
 		rlog->user = user;
 	}
-	if (!r_list_contains (rlog->cbs, cb)) {
-		r_list_append (rlog->cbs, cb);
-	}
+#endif
+	RLogCallbackUser *cbu = R_NEW (RLogCallbackUser);
+	cbu->cb = cb;
+	cbu->user = user;
+	r_list_append (rlog->cbs, cbu);
 }
 
 R_API void r_log_del_callback(RLogCallback cb) {
 	if (r_log_init ()) {
-		r_list_delete_data (rlog->cbs, cb);
+		RLogCallbackUser *p;
+		RListIter *iter;
+		r_list_foreach (rlog->cbs, iter, p) {
+			if (cb == p->cb) {
+				r_list_delete (rlog->cbs, iter);
+				return;
+			}
+		}
 	}
 }
 

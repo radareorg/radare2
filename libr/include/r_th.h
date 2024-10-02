@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #ifndef WANT_THREADS
 #define WANT_THREADS 1
 #endif
@@ -19,12 +20,17 @@
 #if !WANT_THREADS
 # define HAVE_TH_LOCAL 0
 # define R_TH_LOCAL
-
 # define HAVE_STDATOMIC_H 0
 # define R_ATOMIC_BOOL int
+
+#elif defined(__APPLE__) && (defined(__ppc__) || defined (__powerpc__))
+# define HAVE_TH_LOCAL 0
+# define R_TH_LOCAL
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+
 #elif defined (__GNUC__) && !__TINYC__
 # define R_TH_LOCAL __thread
-
 # define HAVE_STDATOMIC_H 0
 # define R_ATOMIC_BOOL int
 
@@ -78,7 +84,11 @@
 #if __linux__ && __GLIBC_MINOR < 12
 #define HAVE_PTHREAD_NP 0
 #else
+#if __APPLE__ && __ppc__
+#define HAVE_PTHREAD_NP 0
+#else
 #define HAVE_PTHREAD_NP 1
+#endif
 #endif
 #if __APPLE__
 #include <pthread.h>
@@ -111,7 +121,8 @@ extern "C" {
 typedef enum {
 	R_TH_FREED = -1,
 	R_TH_STOP = 0,
-	R_TH_REPEAT = 1
+	R_TH_REPEAT = 1,
+	R_TH_PAUSE = 2
 } RThreadFunctionRet;
 
 struct r_th_t;
@@ -154,7 +165,7 @@ typedef struct r_th_t {
 	void *user;    // user pointer
 	bool running;
 	int breaked;   // thread aims to be interrupted
-	int delay;     // delay the startup of the thread N seconds
+	ut32 delay;    // delay the startup of the thread for at least N seconds
 	int ready;     // thread is properly setup
 } RThread;
 
@@ -202,8 +213,8 @@ R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc);
 R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *promise);
 R_API void r_th_channel_promise_free(RThreadChannelPromise *cp);
 
-R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay);
-R_API bool r_th_start(RThread *th, int enable);
+R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay);
+R_API bool r_th_start(RThread *th);
 R_API int r_th_wait(RThread *th);
 R_API int r_th_wait_async(RThread *th);
 R_API void r_th_break(RThread *th);

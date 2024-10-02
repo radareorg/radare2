@@ -22,7 +22,7 @@ R_API RStrpool* r_strpool_new(int sz) {
 }
 
 R_API char *r_strpool_empty(RStrpool *p) {
-	r_return_val_if_fail (p, NULL);
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	p->len = 0;
 	p->str[0] = 0;
 	p->str[1] = 0;
@@ -31,7 +31,7 @@ R_API char *r_strpool_empty(RStrpool *p) {
 
 // must be internal imho
 R_API char *r_strpool_alloc(RStrpool *p, int l) {
-	r_return_val_if_fail (p, NULL);
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	char *ret = p->str + p->len;
 	if ((p->len + l) >= p->size) {
 		ut64 osize = p->size;
@@ -72,8 +72,7 @@ R_API int r_strpool_append(RStrpool *p, const char *s) {
 	return r_strpool_memcat (p, s, l);
 }
 
-// R2_590 Rename to ansi_trim() not chop
-R_API int r_strpool_ansi_chop(RStrpool *p, int n) {
+R_API int r_strpool_ansi_trim(RStrpool *p, int n) {
 	/* p->str need not be a c-string */
 	int i = r_str_ansi_trim (p->str, p->len, n);
 	p->len = i;
@@ -102,7 +101,7 @@ R_API int r_strpool_fit(RStrpool *p) {
 }
 
 R_API char *r_strpool_get(RStrpool *p, int index) {
-	r_return_val_if_fail (p && p->str && index >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (p && p->str && index >= 0, NULL);
 	return (index < 0 || index >= p->len) ? NULL : p->str + index;
 }
 
@@ -141,7 +140,7 @@ R_API char *r_strpool_next(RStrpool *p, int index) {
 
 // suboptimal and shouldnt be used
 R_API char *r_strpool_slice(RStrpool *p, int index) {
-	r_return_val_if_fail (p && index >= 0, NULL);
+	R_RETURN_VAL_IF_FAIL (p && index >= 0, NULL);
 	char *x = r_strpool_get_i (p, index + 1);
 	if (!x) {
 		return NULL;

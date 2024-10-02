@@ -39,7 +39,7 @@ pa out 256,AL
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'out 256,AL' at line 3
+ERROR: Cannot assemble 'out 256,AL' at line 1
 EOF
 RUN
 
@@ -52,7 +52,7 @@ pa push 0x3311223311222222
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'push 0x3311223311222222' at line 3
+ERROR: Cannot assemble 'push 0x3311223311222222' at line 1
 EOF
 RUN
 
@@ -65,6 +65,6 @@ pa mov eax, 0x3311223311222222
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov eax, 0x3311223311222222' at line 3
+ERROR: Cannot assemble 'mov eax, 0x3311223311222222' at line 1
 EOF
 RUN

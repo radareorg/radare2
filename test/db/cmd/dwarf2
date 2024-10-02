@@ -1,8 +1,6 @@
 NAME=mach0 function dwarf
 FILE=bins/mach0/twocall
 CMDS=<<EOF
-CLL
-?e --
 e dir.source=./bins/mach0
 CLL
 ?e --
@@ -12,9 +10,10 @@ af
 CLLf
 ?e --
 CL
+?e --
+CLf
 EOF
 EXPECT=<<EOF
---
 0x100003f64  main() {
 --
 0x100003f64  main() {
@@ -48,6 +47,8 @@ file: /Users/pancake/prg/radare2/test/bins/mach0/twocall.c
 line: 0
 colu: 0
 addr: 0x100003f70
+--
+twocall.c
 EOF
 RUN
 

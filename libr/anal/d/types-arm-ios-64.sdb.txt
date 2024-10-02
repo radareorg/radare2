@@ -15,27 +15,6 @@ func._exit.noreturn=true
 func._exit.ret=void
 func._exit.cc=amd64
 
-err=func
-func.err.args=1
-func.err.arg.0=int,eval
-func.err.arg.1=const char *,fmt
-func.err.noreturn=true
-func.err.ret=void
-
-errc=func
-func.errc.args=1
-func.errc.arg.0=int,eval
-func.errc.arg.1=int,code
-func.errc.arg.2=const char *,fmt
-func.errc.noreturn=true
-func.errc.ret=void
-
-errx=func
-func.errx.args=1
-func.errx.arg.0=int,eval
-func.errx.arg.1=const char *,fmt
-func.errx.noreturn=true
-func.errx.ret=void
 abort=func
 func.abort.args=0
 func.abort.noreturn=true
@@ -62,3 +41,44 @@ func.sym.imp.err.arg.1=const char *,msg
 func.sym.imp.err.noreturn=true
 func.sym.imp.err.ret=void
 func.sym.imp.err.cc=amd64
+
+CCAlgorithm=enum
+enum.CCAlgorithm=kCCAlgorithmAES,kCCAlgorithmDES,kCCAlgorithm3DES,kCCAlgorithmCAST,kCCAlgorithmRC4,kCCAlgorithmRC2
+enum.CCAlgorithm.kCCAlgorithmAES=0
+enum.CCAlgorithm.kCCAlgorithmDES=1
+enum.CCAlgorithm.kCCAlgorithm3DES=2
+enum.CCAlgorithm.kCCAlgorithmCAST=3
+enum.CCAlgorithm.kCCAlgorithmRC4=4
+enum.CCAlgorithm.kCCAlgorithmRC2=5
+enum.CCAlgorithm.kCCAlgorithmBlowfish=6
+
+CCOperation=enum
+enum.CCOperation=kCCEncrypt,kCCDecrypt
+enum.CCOperation.kCCEncrypt=0
+enum.CCOperation.kCCDecrypt=1
+
+CCCryptorStatus=enum
+enum.CCCryptorStatus=kCCSuccess,kCCParamError,kCCBufferTooSmall,kCCMemoryFailure,kCCAlignmentError,kCCDecodeError,kCCUnimplemented
+enum.CCCryptorStatus.kCCSuccess=0
+enum.CCCryptorStatus.kCCParamError=1
+enum.CCCryptorStatus.kCCBufferTooSmall=2
+enum.CCCryptorStatus.kCCMemoryFailure=3
+enum.CCCryptorStatus.kCCAlignmentError=4
+enum.CCCryptorStatus.kCCDecodeError=5
+enum.CCCryptorStatus.kCCUnimplemented=6
+
+CCCrypt=func
+func.CCCrypt.arg.0=CCOperation,op
+func.CCCrypt.arg.1=CCAlgorithm,alg
+func.CCCrypt.arg.10=uint32_t *,dataOutMoved
+func.CCCrypt.arg.2=int32_t,options
+func.CCCrypt.arg.3=const void *,key
+func.CCCrypt.arg.4=uint32_t,keyLength
+func.CCCrypt.arg.5=const void *,iv
+func.CCCrypt.arg.6=const void *,dataIn
+func.CCCrypt.arg.7=uint32_t,dataInLength
+func.CCCrypt.arg.8=void *,dataOut
+func.CCCrypt.arg.9=uint32_t,dataOutAvailable
+func.CCCrypt.args=11
+func.CCCrypt.cc=cdecl
+func.CCCrypt.ret=CCCryptorStatus

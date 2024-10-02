@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -31,7 +31,7 @@ static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections);
 
 static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirections) {
-	r_return_val_if_fail (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *p;
 	int ret, len = 0, delta = 0;
 	char *dn = NULL;
@@ -95,13 +95,16 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	} else {
 		len = olen - (dn - buf);
 	}
+	if (len == 0) {
+		R_LOG_DEBUG ("LEN = 0");
+	}
 	if (len > 0) {
 		if (len > olen) {
 			res = malloc (len + 2);
 			if (!res) {
 				goto exit;
 			}
-			olen -= dn - buf;
+			olen -= (dn - buf);
 			memcpy (res, dn + delta, olen);
 			do {
 				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
@@ -302,16 +305,16 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	}
 	host += 3;
 	char *port = strchr (host, ':');
-	if (!port) {
-		port = (ssl)? "443": "80";
-	} else {
-		*port++ = 0;
-	}
 	char *path = strchr (host, '/');
-	if (!path) {
-		path = "";
+	if (port && (!path || (path && port < path))) {
+		*port++ = 0;
 	} else {
+		port = ssl? "443": "80";
+	}
+	if (path) {
 		*path++ = 0;
+	} else {
+		path = "";
 	}
 	s = r_socket_new (ssl);
 	if (!s) {
@@ -330,10 +333,10 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 			"POST /%s HTTP/1.0\r\n"
 			"User-Agent: radare2 "R2_VERSION"\r\n"
 			"Accept: */*\r\n"
-			"Host: %s\r\n"
+			"Host: %s:%d\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, (int)strlen (data));
+			"\r\n", path, host, atoi (port), (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, code, rlen, 0);
@@ -342,7 +345,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 #if TEST
 void main () {
 	int ret;
-	char *p = r_socket_http_post ("http://www.radare.org/y/index.php", "a=b", &ret);
+	char *p = r_socket_http_post ("https://www.radare.org/y/index.php", "a=b", &ret);
 	printf ("%s\n", p);
 }
 #endif

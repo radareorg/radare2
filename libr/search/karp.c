@@ -119,7 +119,7 @@ static inline int rk_many(RSearch *srch, ut64 from, ut64 to) {
 
 R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 	int cnt = r_list_length (srch->kws);
-	r_return_val_if_fail (cnt > 0, -1);
+	R_RETURN_VAL_IF_FAIL (cnt > 0, -1);
 
 	if (cnt > 1) {
 		return rk_many (srch, from, to);

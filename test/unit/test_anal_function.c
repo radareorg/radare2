@@ -44,7 +44,7 @@ static bool function_check_invariants(RAnal *anal) {
 #define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
 #define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
 
-bool test_r_anal_function_relocate() {
+bool test_r_anal_function_relocate(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
 
@@ -70,7 +70,7 @@ bool test_r_anal_function_relocate() {
 	mu_end;
 }
 
-bool test_r_anal_function_labels() {
+bool test_r_anal_function_labels(void) {
 	RAnal *anal = r_anal_new ();
 
 	RAnalFunction *f = r_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
@@ -124,7 +124,7 @@ bool test_r_anal_function_labels() {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
 	return tests_passed != tests_run;

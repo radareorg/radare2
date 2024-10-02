@@ -76,14 +76,18 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	}
 #else
 	if (*cs_handle) {
-		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
+		switch (as->config->syntax) {
+		case R_ARCH_SYNTAX_ATT:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+			break;
 #if CS_API_MAJOR >= 4
-		} else if (as->config->syntax == R_ARCH_SYNTAX_MASM) {
+		case R_ARCH_SYNTAX_MASM:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+			break;
 #endif
-		} else {
+		default:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+			break;
 		}
 	}
 #endif

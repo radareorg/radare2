@@ -1,4 +1,4 @@
-OBJ_M68KPSEUDO+=$(LIBR)/arch/p/pseudo/m68k_pseudo.o
+OBJ_M68KPSEUDO+=$(LIBR)/arch/p/m68k_cs/pseudo.o
 
 TARGET_M68KPSEUDO=parse_m68k_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_M68KPSEUDO}

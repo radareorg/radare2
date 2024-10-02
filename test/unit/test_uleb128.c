@@ -86,7 +86,7 @@ bool test_leb128_correctness(void) {
 	mu_end;
 }
 
-int all_tests() {
+int all_tests(void) {
 	mu_run_test (test_uleb128_small);
 	mu_run_test (test_sleb128_small);
 	mu_run_test (test_uleb128_big);

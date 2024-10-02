@@ -2,37 +2,37 @@
 /ad/j push rbp
 /adj push rbp
 /j l
-/Oj
-/oj
-/Rj
-/wj
+# /Oj
+# /oj
+# /Rj
+# /wj
 ?j 0x10
 ?Vj
 aaij
 aarj
-abj
-abpj
-abtj
-aeafj
+# abj
+# abpj
+# abtj
+# aeafj
 aeaj
 aerj
-afbij
+# afbij
 afbj
-afcrj
+# afcrj
 afij
 afisaj
 aflj
-aflqj
-aflmj
-afnsj @ sym.main
-afvbj @ sym.main
-afvj @ sym.main
-afvrj @ sym.main
-afvsj @ sym.main
-agcj @ sym.main
+# aflqj
+# aflmj
+# afnsj @ sym.main
+# afvbj @ sym.main
+# afvj @ sym.main
+# afvrj @ sym.main
+# afvsj @ sym.main
+# agcj @ sym.main
 aggj
-agJ
-agj
+# agJ
+# agj
 aij
 anj
-aOj
+# aOj

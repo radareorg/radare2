@@ -300,7 +300,7 @@ static const char *type_tostring(RTypeInfoType type) {
 	case R_TYPEINFO_TYPE_VMI_CLASS:
 		return VMI_CLASS_TYPE_INFO_NAME;
 	default:
-		r_return_val_if_reached (CLASS_TYPE_INFO_NAME);
+		R_RETURN_VAL_IF_REACHED (CLASS_TYPE_INFO_NAME);
 	}
 	return NULL;
 }
@@ -445,7 +445,7 @@ static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_ct
 
 static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *context, ut64 atAddress) {
 	RCore *core = context->anal->coreb.core;
-	r_return_val_if_fail (core, R_TYPEINFO_TYPE_CLASS);
+	R_RETURN_VAL_IF_FAIL (core, R_TYPEINFO_TYPE_CLASS);
 
 	// get the reloc flags
 	const RList *flags = context->anal->flb.get_list (core->flags, atAddress);
@@ -668,7 +668,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	case R_TYPEINFO_TYPE_CLASS:
 		return rtti_itanium_class_type_info_new (context, rtti_addr, vtable_addr);
 	default:
-		r_return_val_if_reached (NULL);
+		R_RETURN_VAL_IF_REACHED (NULL);
 	}
 	return false;
 }
@@ -690,7 +690,7 @@ static void rtti_itanium_type_info_free(void *info) {
 		rtti_itanium_class_type_info_free (cti);
 		return;
 	default:
-		r_return_if_reached ();
+		R_RETURN_IF_REACHED ();
 	}
 }
 
@@ -733,7 +733,7 @@ R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 		return true;
 	default:
 		rtti_itanium_class_type_info_free (cti);
-		r_return_val_if_reached (false);
+		R_RETURN_VAL_IF_REACHED (false);
 	}
 	return false;
 }

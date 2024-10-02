@@ -1,14 +1,14 @@
 /* radare - LGPL - Copyright 2019-2022 - condret, riq, pancake */
 
-/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
+/* 6502 info taken from https://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
- *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	https://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  *	(archive)
- *	1 https://web.archive.org/web/20160406122905/http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	1 https://web.archive.org/web/20160406122905/https://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  *	2 https://github.com/csBlueChip/6502_Programming_Guide
  * and:
- *	http://vice-emu.sourceforge.net/
+ *	https://vice-emu.sourceforge.net/
  */
 
 #include <string.h>
@@ -966,15 +966,15 @@ static int esil_6502_fini(REsil *esil) {
 
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 3;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
 	}
 	return 0;

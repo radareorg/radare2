@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -418,12 +418,10 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	// Before calling the platform implementation, append arguments to the command if they have been provided
 	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup(cmd);
-	int r = 0;
-
 #if __APPLE__ && !__POWERPC__
-	r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
+	int r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
 #else
-	r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
+	int r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
 #endif
 	free (_eff_cmd);
 	return r;
@@ -446,11 +444,12 @@ static int get_pid_of(RIO *io, const char *procname) {
 		return -1;
 	}
 	// check sandbox
-	if (c && c->dbg && c->dbg->current) {
+	RDebugPlugin *plugin = R_UNWRAP4 (c, dbg, current, plugin);
+	if (plugin) {
 		RListIter *iter;
 		RDebugPid *proc;
 		RDebug *d = c->dbg;
-		RList *pids = d->current->plugin.pids (d, 0);
+		RList *pids = plugin->pids (d, 0);
 		r_list_foreach (pids, iter, proc) {
 			if (strstr (proc->path, procname)) {
 				R_LOG_INFO ("Matching PID %d %s", proc->pid, proc->path);

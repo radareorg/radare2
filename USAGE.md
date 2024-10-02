@@ -17,7 +17,7 @@ flags.
 
 ### radare2
 
-```
+```sh
 r2 -       # same as r2 malloc://4096; "the playground"
 r2 /bin/ls # standard way to run r2
 r2 -w ls   # open in read-write
@@ -26,7 +26,7 @@ r2 -d ls   # start debugging the ls in PATH
 
 ### rasm2
 
-```
+```sh
 rasm2 -L                 # list all supported assembler/disassembler/emulator plugins
 rasm2 -a arm -b 64 'nop' # assemble a nop in 64-bit ARM
 rasm2 -d 90              # disassemble 0x90; nop, if you're using x86
@@ -34,13 +34,20 @@ rasm2 -d 90              # disassemble 0x90; nop, if you're using x86
 
 ### rabin2
 
-```
+```sh
 rabin2 -s /bin/ls # list symbols in a binary
 rabin2 -z /bin/ls # find strings
 ```
 
-### rax2
+### rafind2
+
+```sh
+rafind2 -s lib /bin/ls # search for strings matching 'lib' in /bin/ls
 ```
+
+### rax2
+
+```sh
 rax2 '10+0x20' # compute the result
 rax2 -k 10+32  # keep the same base as input (10)
 rax2 -h        # convert between (hex, octal, decimal.. bases)

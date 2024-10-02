@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #define R_LOG_ORIGIN "ragg2"
 
@@ -11,6 +11,7 @@
 typedef struct {
 	RLib *l;
 	REgg *e;
+	RAnal *a;
 	// TODO flags
 	// bool oneliner;
 	// bool coutput;
@@ -58,8 +59,8 @@ static REggState *__es_new(bool load_plugins) {
 	if (es) {
 		es->l = r_lib_new (NULL, NULL);
 		es->e = r_egg_new ();
-		es->e->anal = r_anal_new ();
-		r_anal_bind (es->e->anal, &es->e->rasm->analb);
+		es->a = r_anal_new ();
+		r_anal_bind (es->a, &es->e->rasm->analb);
 		if (load_plugins) {
 			__load_plugins (es);
 		}
@@ -126,13 +127,13 @@ static void list(REgg *egg) {
 	printf ("shellcodes:\n");
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
-			printf ("%10s : %s\n", p->name, p->desc);
+			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 	printf ("encoders:\n");
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
-			printf ("%10s : %s\n", p->name, p->desc);
+			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 }
@@ -300,8 +301,10 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				*p = ':';
-				// TODO: honor endianness here
-				r_egg_patch (es->e, off, (const ut8 *)&n, 4);
+				ut8 word[4];
+				r_write_le32 (word, (ut32)n);
+				// TODO: support big endian
+				r_egg_patch (es->e, off, word, sizeof (word));
 			} else {
 				R_LOG_ERROR ("Missing colon in -d");
 			}
@@ -314,7 +317,9 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				ut64 n, off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
-				r_egg_patch (es->e, off, (const ut8 *)&n, 8);
+				ut8 word[8];
+				r_write_le64 (word, n);
+				r_egg_patch (es->e, off, word, sizeof (word));
 			} else {
 				R_LOG_ERROR ("Missing colon in -d");
 			}
@@ -403,7 +408,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'v':
 			free (sequence);
 			__es_free (es);
-			return r_main_version_print ("ragg2");
+			return r_main_version_print ("ragg2", 0);
 		case 'z':
 			show_str = 1;
 			break;

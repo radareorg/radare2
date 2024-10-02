@@ -4,7 +4,7 @@
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
-	if (IS_DIGIT (c)) {
+	if (isdigit (c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
 	} else if (c >= 'A' && c <= 'F') {
 		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
@@ -62,7 +62,7 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 			word++;
 			word = skip_comment_py (word);
 		}
-		if (IS_DIGIT (*word)) {
+		if (isdigit (*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
@@ -188,7 +188,7 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
 			word++;
 			word = skip_comment_c (word);
 		}
-		if (IS_DIGIT (*word)) {
+		if (isdigit (*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
@@ -364,11 +364,11 @@ R_API int r_hex_pair2bin(const char *arg) {
 }
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
-	int i, idx;
-	char tmp[8];
-	if (len < 0) {
+	if (!in || len < 0) {
 		return 0;
 	}
+	int i, idx;
+	char tmp[8];
 	for (idx = i = 0; i < len; i++, idx += 2)  {
 		r_hex_from_byte (tmp, in[i]);
 		memcpy (out + idx, tmp, 2);
@@ -400,7 +400,7 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 }
 
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
-	r_return_val_if_fail (in, 0);
+	R_RETURN_VAL_IF_FAIL (in, 0);
 	long nibbles = 0;
 
 	while (in && *in) {
@@ -449,7 +449,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 // get the hex chars from start of string, until first non-hex char, as a heap
 // allocated ut8* buffer
 R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
-	// r_return_val_if_fail (in && out, -1);
+	// R_RETURN_VAL_IF_FAIL (in && out, -1);
 	if (!in || !out) {
 		return -1;
 	}

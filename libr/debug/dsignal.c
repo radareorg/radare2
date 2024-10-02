@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake */
+/* radare - LGPL - Copyright 2014-2023 - pancake */
 
 #include <r_debug.h>
 
@@ -154,8 +154,8 @@ R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr) {
 
 /* TODO rename to _kill_ -> _signal_ */
 R_API RList *r_debug_kill_list(RDebug *dbg) {
-	if (dbg->current->plugin.kill_list) {
-		return dbg->current->plugin.kill_list (dbg);
+	if (dbg->current->plugin->kill_list) {
+		return dbg->current->plugin->kill_list (dbg);
 	}
 	return NULL;
 }

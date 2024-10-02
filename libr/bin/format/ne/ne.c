@@ -141,7 +141,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		if (!sym) {
 			break;
 		}
-		sym->name = name;
+		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
@@ -166,7 +166,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 			if (!sym) {
 				break;
 			}
-			sym->name = r_str_newf ("entry%d", i - 1);
+			sym->name = r_bin_name_new_from (r_str_newf ("entry%d", i - 1));
 			sym->paddr = en->paddr;
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
@@ -283,7 +283,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 		if (!res->entry) {
 			break;
 		}
-		r_buf_read_at (bin->buf, off, (ut8 *)&ti, sizeof (ti));
+		r_buf_fread_at (bin->buf, off, (ut8 *)&ti, "2si", 1);
 		if (!ti.rtTypeID) {
 			break;
 		} else if (ti.rtTypeID & 0x8000) {
@@ -300,7 +300,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			if (!ren) {
 				break;
 			}
-			r_buf_read_at (bin->buf, off, (ut8 *)&ni, sizeof (NE_image_nameinfo_entry));
+			r_buf_fread_at (bin->buf, off, (ut8 *)&ni, "6s", 1);
 			ren->offset = ni.rnOffset << alignment;
 			ren->size = ni.rnLength;
 			if (ni.rnID & 0x8000) {
@@ -341,7 +341,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		}
 		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
-		imp->name = name;
+		imp->name = r_bin_name_new_from (name);
 		imp->ordinal = i + 1;
 		r_list_append (imports, imp);
 		off += sz;
@@ -454,7 +454,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 	if (!modref) {
 		return NULL;
 	}
-	r_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof (ut16));
+	r_buf_fread_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, "s", bin->ne_header->ModRefs);
 
 	RList *relocs = r_list_newf (free);
 	if (!relocs) {
@@ -481,7 +481,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 		while (off < start + length * sizeof (NE_image_reloc_item)) {
 			// && off + sizeof (NE_image_reloc_item) < buf_size)
 			NE_image_reloc_item rel = {0};
-			if (r_buf_read_at (bin->buf, off, (ut8 *)&rel, sizeof (rel)) < 1) {
+			if (r_buf_fread_at (bin->buf, off, (ut8 *)&rel, "2c3s", 1) < 1) {
 				return NULL;
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
@@ -489,6 +489,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			reloc->paddr = seg->paddr + rel.offset;
+			reloc->ntype = rel.type;
 			switch (rel.type) {
 			case LOBYTE:
 				reloc->type = R_BIN_RELOC_8;
@@ -523,12 +524,12 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
 					char *fname = __func_name_from_ord (name, rel.func_ord);
-					imp->name = r_str_newf ("%s.%s", name, fname);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, fname));
 					free (fname);
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = __read_nonnull_str_at (bin->buf, offset);
-					imp->name = r_str_newf ("%s.%s", name, func);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, func));
 					free (func);
 				}
 				free (name);
@@ -600,8 +601,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 		return;
 	}
 	bin->buf = buf;
-	// XXX this is endian unsafe
-	if (r_buf_read_at (buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof (NE_image_header)) < 1) {
+	if (r_buf_fread_at (buf, bin->header_offset, (ut8 *)bin->ne_header, "4c2si4c4si8si3s2c3s2c", 1) < 1) {
 		R_FREE (bin->ne_header);
 		return;
 	}
@@ -634,7 +634,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	if (!bin->segment_entries) {
 		return;
 	}
-	r_buf_read_at (buf, offset, (ut8 *)bin->segment_entries, size);
+	r_buf_fread_at (buf, offset, (ut8 *)bin->segment_entries, "4s", bin->ne_header->SegCount);
 	bin->entry_table = calloc (4, bin->ne_header->EntryTableLength);
 	if (!bin->entry_table) {
 		R_FREE (bin->segment_entries);

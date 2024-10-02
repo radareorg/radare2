@@ -36,7 +36,7 @@ CMDS=<<EOF
 @@@?~?
 EOF
 EXPECT=<<EOF
-16
+17
 21
 EOF
 RUN

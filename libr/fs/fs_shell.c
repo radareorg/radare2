@@ -32,8 +32,11 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 
 static char *fs_abspath(RFSShell *shell, const char *input) {
 	char *path = strdup (shell->cwd);
+	if (path == NULL) {
+		return NULL;
+	}
 	if (!strcmp (input, "..")) {
-		char* p = (char*) r_str_lchr (path, '/');
+		char *p = (char*) r_str_lchr (path, '/');
 		if (p) {
 			p[(p == path)? 1: 0] = 0;
 		}
@@ -167,7 +170,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			RFSPlugin *plug;
 			eprintf ("Usage: mount [fstype] [path]\nfstypes:");
 			r_list_foreach (fs->plugins, iter, plug) {
-				eprintf (" %s", plug->name);
+				eprintf (" %s", plug->meta.name);
 			}
 			eprintf ("\n");
 		}
@@ -175,7 +178,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
 		r_list_foreach (fs->roots, iter, r) {
-			cb_printf ("%s %s\n", r->path, r->p->name);
+			cb_printf ("%s %s\n", r->path, r->p->meta.name);
 		}
 	} else if (r_str_startswith (buf, "cat ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
@@ -267,7 +270,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 #define PROMPT_PATH_BUFSIZE 1024
 
 R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
-	r_return_val_if_fail (shell && fs, false);
+	R_RETURN_VAL_IF_FAIL (shell && fs, false);
 	if (R_STR_ISNOTEMPTY (root)) {
 		free (shell->cwd);
 		shell->cwd = strdup (root);

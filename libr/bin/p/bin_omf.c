@@ -1,17 +1,16 @@
-/* radare - LGPL - Copyright 2015-2019 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2023 - ampotos, pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && b, false);
 	ut64 size;
 	const ut8 *buf = r_buf_data (b, &size);
-	r_return_val_if_fail (buf, false);
-	*bin_obj = r_bin_internal_omf_load (buf, size);
-	return *bin_obj;
+	R_RETURN_VAL_IF_FAIL (buf, false);
+	bf->bo->bin_obj = r_bin_internal_omf_load (buf, size);
+	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {
@@ -19,7 +18,7 @@ static void destroy(RBinFile *bf) {
 	bf->bo->bin_obj = NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	int i;
 	ut8 ch;
 	if (r_buf_read_at (b, 0, &ch, 1) != 1) {
@@ -50,7 +49,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		return r_bin_checksum_omf_ok (buf, sizeof (buf));
 	}
-	r_return_val_if_fail (buf, false);
+	R_RETURN_VAL_IF_FAIL (buf, false);
 	return r_bin_checksum_omf_ok (buf, length);
 }
 
@@ -118,7 +117,7 @@ static RList *symbols(RBinFile *bf) {
 			return ret;
 		}
 		sym_omf = ((r_bin_omf_obj *) bf->bo->bin_obj)->symbols[ct_sym++];
-		sym->name = strdup (sym_omf->name);
+		sym->name = r_bin_name_new (sym_omf->name);
 		sym->forwarder = "NONE";
 		sym->paddr = r_bin_omf_get_paddr_sym (bf->bo->bin_obj, sym_omf);
 		sym->vaddr = r_bin_omf_get_vaddr_sym (bf->bo->bin_obj, sym_omf);
@@ -157,12 +156,14 @@ static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 RBinPlugin r_bin_plugin_omf = {
-	.name = "omf",
-	.desc = "omf bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "omf",
+		.desc = "omf bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

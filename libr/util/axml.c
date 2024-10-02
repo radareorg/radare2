@@ -196,7 +196,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 		resource_value_t *value) {
 	switch (value->type) {
 	case RESOURCE_NULL:
-		return r_str_new ("");
+		return strdup ("");
 	case RESOURCE_REFERENCE:
 		return r_str_newf ("@0x%x", value->data.d);
 	case RESOURCE_STRING:
@@ -213,7 +213,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 		R_LOG_WARN ("Resource type is not recognized: %#x", value->type);
 		break;
 	}
-	return r_str_new ("null");
+	return strdup ("null");
 }
 
 static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *namespace,
@@ -317,7 +317,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 }
 
 R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
-	r_return_val_if_fail (data, NULL);
+	R_RETURN_VAL_IF_FAIL (data, NULL);
 	string_pool_t *pool = NULL;
 	namespace_t *namespace = NULL;
 	const ut32 *resource_map = NULL;

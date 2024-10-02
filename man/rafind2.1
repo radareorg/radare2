@@ -1,76 +1,117 @@
-.Dd Jun 24, 2021
+.Dd Mar 16, 2024
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
 .Nd advanced command-line byte pattern search in files
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl cijzZXLnrhqv
+.Op Fl a Ar align
 .Op Fl b Ar size
+.Op Fl c
+.Op Fl e Ar regex
 .Op Fl f Ar from
 .Op Fl F Ar file
+.Op Fl h
+.Op Fl i
+.Op Fl j
+.Op Fl L
+.Op Fl m
+.Op Fl M Ar mask
+.Op Fl n
+.Op Fl q
+.Op Fl r
+.Op Fl s Ar str
+.Op Fl S Ar str
 .Op Fl t Ar to
-.Op Fl [m|s|e] Ar str
-.Op Fl V Ar s:val
+.Op Fl v
+.Op Fl V Ar s:num
 .Op Fl x Ar hex
-.Ar file|dir
+.Op Fl X
+.Op Fl z
+.Op Fl Z
+.Ar file|dir ..
 .Sh DESCRIPTION
-rafind2 is a program to find byte patterns in files
+.Nm rafind2
+is a versatile program designed to find byte patterns in files.
 .Pp
-The options are:
+The following options are available:
 .Bl -tag -width Fl
-.It Fl c
-Disable colorful output (for -X and such)
-.It Fl z
-Search for zero-terminated strings
-.It Fl j
-Output in JSON format
 .It Fl a Ar align
-Only accept aligned hits
-.It Fl s Ar str
-Search for a specific string
-.It Fl S Ar str
-Search for a specific wide string
-.It Fl V Ar size:value
-Search for a little-endian value of given size. For example -V 4:123
-.It Fl e Ar regex
-Search for regular expression string matches
-.It Fl x Ar hex
-Search for an hexpair string
-.It Fl i
-Identify file type (like file, uses r2 -qcpm)
-.It Fl L
-List available IO plugins
-.It Fl m
-Carve for known file types using the r_magic signatures
-.It Fl M Ar mask
-Set binary mask to be applied
-.It Fl f Ar from
-Specify the source address
-.It Fl F Ar file
-Read the keyword to search from the contents of the given file
-.It Fl t Ar to
-Specify the target address
-.It Fl X
-Display hexdump of search results
-.It Fl Z
-Display zero-terminated strings results
-.It Fl n
-Do not stop the search when a read error occurs
-.It Fl r
-Show output in radare commands
+Only accept aligned search results.
 .It Fl b Ar size
-Define block size
-.It Fl q
-Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
+Define the block size for searching. Depending on the cpu cache, memory and storage different sizes may affect the performance.
+.It Fl c
+Disable colorful output, primarily useful for non-interactive or batch use-cases.
+.It Fl e Ar regex
+Search for matches using regular expressions. Multiple expressions can be provided.
+.It Fl f Ar from
+Specify the starting address for the search. (See -t)
+.It Fl F Ar file
+Read keywords from the specified file for searching.
 .It Fl h
-Show help message
+Display the help message.
+.It Fl i
+Identify the filetype using similar techniques as the 'file' command.
+.It Fl j
+Output results in JSON format.
+.It Fl L
+List all available I/O plugins.
+.It Fl m
+Perform magic search to identify file types based on signatures.
+.It Fl M Ar mask
+Apply a binary mask to the keywords before searching.
+.It Fl n
+Continue searching even if read errors occur.
+.It Fl q
+Quiet mode: suppress headings or filenames in the output.
+.It Fl r
+Print results using radare commands.
+.It Fl s Ar str
+Search for the specified string(s) in the file(s).
+.It Fl S Ar str
+Search for wide strings (Unicode) in the file(s).
+.It Fl t Ar to
+Specify the ending address for the search. (See -f)
 .It Fl v
-Print version and exit
+Display the version of rafind2 and exit.
+.It Fl V Ar s:num
+Search for the given value using little-endian notation (e.g., -V 4:123).
+.It Fl x Ar hex
+Search for the specified hex pattern(s) in the file(s).
+.It Fl X
+Display the hexdump of search results.
+.It Fl z
+Search for zero-terminated strings.
+.It Fl Z
+Display strings found on each search hit.
 .El
+.Sh EXAMPLES
+.Pp
+Search for a specific string in a file:
+.Bd -literal -offset indent
+$ rafind2 -s "search_string" file.txt
+.Ed
+.Pp
+Search for a hex pattern in all the files from directory:
+.Bd -literal -offset indent
+$ rafind2 -x "909090" directory_path
+.Ed
+.Pp
+Identify the file type using the magic database:
+.Bd -literal -offset indent
+$ rafind2 -i binary_file
+.Ed
+.Pp
+Search for the little endian 123 stored in a 4 byte word inside a file:
+.Bd -literal -offset indent
+$ rafind2 -V 4:123 file.bin
+.Ed
 .Sh SEE ALSO
 .Pp
-.Xr radare2(1)
+.Xr radare2 1
+.Sh WWW
+.Pp
+https://www.radare.org/
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>

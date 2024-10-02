@@ -76,6 +76,14 @@ NAME=radiff2 -AC (elf files)
 FILE=-
 CMDS=!!radiff2 -AC bins/other/radiff2/true bins/other/radiff2/false~?\(1.000000\)
 EXPECT=<<EOF
+50
+EOF
+RUN
+
+NAME=radiff2 -AAC (elf files)
+FILE=-
+CMDS=!!radiff2 -AAC bins/other/radiff2/true bins/other/radiff2/false~?\(1.000000\)
+EXPECT=<<EOF
 54
 EOF
 RUN
@@ -84,7 +92,7 @@ NAME=radiff2 -AC (mach0 fat files)
 FILE=-
 CMDS=!!radiff2 -AC bins/other/radiff2/hellocxx-osx-fat-intel_1 bins/other/radiff2/hellocxx-osx-fat-intel_2~?\(1.000000\)
 EXPECT=<<EOF
-17
+16
 EOF
 RUN
 

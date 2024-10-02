@@ -1,3 +1,4 @@
+ad "mov ax, bx" 89d8
 d "call 0" e8fdff
 ad "jcxz 0" e3fe
 a "jmp 0x0" ebfe

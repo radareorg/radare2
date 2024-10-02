@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - jfrankowski, pancake */
+/* radare - LGPL - Copyright 2014-2024 - jfrankowski, pancake */
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
 /* thanks LemonBoy for the improved research on rheax original work */
@@ -231,6 +231,7 @@ They appear as "(REF XXXX: NAME)" in dumpsig output
 #define IDASIG__FUNCTION__LOCAL                     0x02 // describes a static function
 #define IDASIG__FUNCTION__UNRESOLVED_COLLISION      0x08 // describes a collision that wasn't resolved
 
+R_PACKED(
 typedef struct idasig_v5_t {
 /* newer header only add fields, that's why we'll always read a v5 header first */
 	ut8 magic[6];  /* should be set to IDASGN */
@@ -245,19 +246,22 @@ typedef struct idasig_v5_t {
 	ut8 ctype[12];  // XXX: how to use it
 	ut8 library_name_len;
 	ut16 ctypes_crc16;
-} idasig_v5_t;
+}) idasig_v5_t;
 
+R_PACKED(
 typedef struct idasig_v6_v7_t {
 	ut32 n_functions;
-} idasig_v6_v7_t;
+}) idasig_v6_v7_t;
 
+R_PACKED(
 typedef struct idasig_v8_v9_t {
 	ut16 pattern_size;
-} idasig_v8_v9_t;
+}) idasig_v8_v9_t;
 
+R_PACKED(
 typedef struct idasig_v10_t {
 	ut16 unknown;
-} idasig_v10_t;
+}) idasig_v10_t;
 
 /* newer header only add fields, that's why we'll always read a v5 header first */
 #if 0
@@ -380,7 +384,7 @@ static ut32 read_word(RFlirt *f) {
 }
 
 static ut16 read_max_2_bytes(RFlirt *f) {
-	ut16 r = read_byte (f);
+	const ut16 r = read_byte (f);
 	return (r & 0x80) ? ((r & 0x7f) << 8) + read_byte (f) : r;
 }
 
@@ -1179,62 +1183,33 @@ static idasig_v5_t *parse_header(RFlirt *f) {
 		return NULL;
 	}
 	RBuffer *buf = f->b;
-	if (r_buf_read (buf, header->magic, sizeof (header->magic)) != sizeof (header->magic)) {
-		goto err;
+	if (r_buf_fread (buf, (ut8 *)header, "8ci5s13cs", 1) != sizeof (idasig_v5_t)) {
+		free (header);
+		return NULL;
 	}
-	if (r_buf_read (buf, &header->version, sizeof (header->version)) != sizeof (header->version)) {
-		goto err;
-	}
-	if (r_buf_read (buf, &header->arch, sizeof (header->arch)) != sizeof (header->arch)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->file_types, sizeof (header->file_types)) != sizeof (header->file_types)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->os_types, sizeof (header->os_types)) != sizeof (header->os_types)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->app_types, sizeof (header->app_types)) != sizeof (header->app_types)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->features, sizeof (header->features)) != sizeof (header->features)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->old_n_functions, sizeof (header->old_n_functions)) != sizeof (header->old_n_functions)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->crc16, sizeof (header->crc16)) != sizeof (header->crc16)) {
-		goto err;
-	}
-	if (r_buf_read (buf, header->ctype, sizeof (header->ctype)) != sizeof (header->ctype)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->library_name_len, sizeof (header->library_name_len)) != sizeof (header->library_name_len)) {
-		goto err;
-	}
-	if (r_buf_read (buf, (ut8 *)&header->ctypes_crc16, sizeof (header->ctypes_crc16)) != sizeof (header->ctypes_crc16)) {
-		goto err;
-	}
-
 	return header;
-err:
-	free (header);
-	return NULL;
 }
 
 static idasig_v6_v7_t *parse_v6_v7_header(RFlirt *f) {
 	idasig_v6_v7_t *header = R_NEW0 (idasig_v6_v7_t);
-	if (!header || r_buf_read (f->b, (ut8 *)&header->n_functions, sizeof (header->n_functions)) != sizeof (header->n_functions)) {
+	if (!header) {
+		return NULL;
+	}
+	RBuffer *buf = f->b;
+	if (r_buf_fread (buf, (ut8 *)header, "i", 1) != sizeof (idasig_v6_v7_t)) {
 		free (header);
 		return NULL;
 	}
-
 	return header;
 }
 
 static idasig_v8_v9_t *parse_v8_v9_header(RFlirt *f) {
 	idasig_v8_v9_t *header = R_NEW0 (idasig_v8_v9_t);
-	if (!header || r_buf_read (f->b, (ut8 *)&header->pattern_size, sizeof (header->pattern_size)) != sizeof (header->pattern_size)) {
+	if (!header) {
+		return NULL;
+	}
+	RBuffer *buf = f->b;
+	if (r_buf_fread (buf, (ut8 *)header, "s", 1) != sizeof (idasig_v8_v9_t)) {
 		free (header);
 		return NULL;
 	}
@@ -1243,7 +1218,11 @@ static idasig_v8_v9_t *parse_v8_v9_header(RFlirt *f) {
 
 static idasig_v10_t *parse_v10_header(RFlirt *f) {
 	idasig_v10_t *header = R_NEW0 (idasig_v10_t);
-	if (!header || r_buf_read (f->b, (ut8 *)&header->unknown, sizeof (header->unknown)) != sizeof (header->unknown)) {
+	if (!header) {
+		return NULL;
+	}
+	RBuffer *buf = f->b;
+	if (r_buf_fread (buf, (ut8 *)header, "s", 1) != sizeof (idasig_v10_t)) {
 		free (header);
 		return NULL;
 	}

@@ -209,12 +209,12 @@ static bool esilbreak_reg_write(REsil *esil, const char *regname, ut64 *num) {
 }
 
 R_API void r_debug_esil_prestep(RDebug *d, int p) {
-	r_return_if_fail (d);
+	R_RETURN_IF_FAIL (d);
 	prestep = p;
 }
 
 R_API bool r_debug_esil_stepi(RDebug *d) {
-	r_return_val_if_fail (d, false);
+	R_RETURN_VAL_IF_FAIL (d, false);
 	RAnalOp op;
 	ut8 obuf[64];
 	int ret = 1;
@@ -277,7 +277,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 }
 
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
-	r_return_val_if_fail (dbg, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (dbg, UT64_MAX);
 	count++;
 	has_match = false;
 	r_cons_break_push (NULL, NULL);

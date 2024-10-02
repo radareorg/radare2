@@ -59,7 +59,7 @@ R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, 
 	}
 	for (i = from; i < to; i++) {
 		pager_color_line (line + index[i], p, mla[i]);
-		r_strpool_ansi_chop (p, w);
+		r_strpool_ansi_trim (p, w);
 		r_cons_reset_colors ();
 		if (i + 1 == to) {
 			r_cons_print (p->str);

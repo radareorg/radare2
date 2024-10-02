@@ -68,6 +68,7 @@ typedef struct r_ascii_graph_t {
 	bool is_interactive;
 	int zoom;
 	int movspeed;
+	int discroll;
 	bool hints;
 
 	RANode *update_seek_on;
@@ -83,6 +84,7 @@ typedef struct r_ascii_graph_t {
 	bool show_node_titles;
 	bool show_node_body;
 	bool show_node_bubble;
+	int bb_maxwidth;
 
 	int x, y;
 	int w, h;
@@ -98,8 +100,8 @@ typedef struct r_ascii_graph_t {
 } RAGraph;
 
 typedef struct r_ascii_graph_transition_callbacks_t {
-	char *(*get_title)(void *data);
-	char *(*get_body)(void *data);
+	char *(*get_title)(void *data, void *user);
+	char *(*get_body)(void *data, void *user);
 } RAGraphTransitionCBs;
 
 #ifdef R_API
@@ -120,7 +122,7 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
-R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs);
+R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs, void *user);
 #endif
 
 #ifdef __cplusplus

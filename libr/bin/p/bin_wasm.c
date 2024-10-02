@@ -18,7 +18,7 @@ static inline void *vector_at(RPVector *vec, ut64 n) {
 	return NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
+static bool check(RBinFile *bf, RBuffer *rbuf) {
 	ut8 buf[4] = {0};
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
@@ -50,11 +50,11 @@ static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32
 	return n >= 0? vector_at (exports, n): NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
-	if (check_buffer (bf, buf)) {
-		*bin_obj = r_bin_wasm_init (bf, buf);
+	if (check (bf, buf)) {
+		bf->bo->bin_obj = r_bin_wasm_init (bf, buf);
 		return true;
 	}
 	return false;
@@ -73,7 +73,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = (RBinWasmObj *)bf->bo->bin_obj;
 	// TODO
 	ut64 addr = (ut64)r_bin_wasm_get_entrypoint (bin);
@@ -177,7 +177,7 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 			}
 			sym->ordinal = ordinal++;
 			sym->type = type;
-			sym->name = strdup (imp->field_str);
+			sym->name = r_bin_name_new (imp->field_str);
 			sym->libname = strdup (imp->module_str);
 			sym->is_imported = true;
 			sym->forwarder = "NONE";
@@ -198,8 +198,9 @@ static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
 }
 
 static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
-	sym->name = name_from_export (bin, type, sym->ordinal);
-	if (sym->name) {
+	char *s = name_from_export (bin, type, sym->ordinal);
+	if (s) {
+		sym->name = r_bin_name_new_from (s);
 		sym->bind = R_BIN_BIND_GLOBAL_STR;
 	} else {
 		const char *typestr = NULL;
@@ -213,7 +214,8 @@ static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
 			typestr = "global";
 			break;
 		}
-		sym->name = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
+		char *s = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
+		sym->name = r_bin_name_new_from (s);
 	}
 }
 
@@ -309,7 +311,7 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
@@ -340,7 +342,7 @@ bad_alloc:
 }
 
 static RList *get_imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
@@ -362,7 +364,7 @@ static RList *get_imports(RBinFile *bf) {
 			if (!ptr) {
 				goto bad_alloc;
 			}
-			ptr->name = strdup (import->field_str);
+			ptr->name = r_bin_name_new (import->field_str);
 			ptr->classname = strdup (import->module_str);
 			ptr->type = type;
 			ptr->bind = "NONE";
@@ -485,13 +487,15 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 }
 
 RBinPlugin r_bin_plugin_wasm = {
-	.name = "wasm",
-	.desc = "WebAssembly bin plugin",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "wasm",
+		.desc = "WebAssembly bin plugin",
+		.license = "MIT",
+	},
+	.load = &load,
 	.size = &size,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

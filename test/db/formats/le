@@ -1,6 +1,6 @@
 NAME=Open LE cdogs.exe
 FILE=bins/le/cdogs.exe
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LE
 EOF
@@ -20,69 +20,70 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm type name
---------------------------------------------------------
-0   0x0000d200  0x1000 0x00010000  0x1000 -r-x ---- obj.1.page.0
-1   0x0000e200  0x1000 0x00011000  0x1000 -r-x ---- obj.1.page.1
-2   0x0000f200  0x1000 0x00012000  0x1000 -r-x ---- obj.1.page.2
-3   0x00010200  0x1000 0x00013000  0x1000 -r-x ---- obj.1.page.3
-4   0x00011200  0x1000 0x00014000  0x1000 -r-x ---- obj.1.page.4
-5   0x00012200  0x1000 0x00015000  0x1000 -r-x ---- obj.1.page.5
-6   0x00013200  0x1000 0x00016000  0x1000 -r-x ---- obj.1.page.6
-7   0x00014200  0x1000 0x00017000  0x1000 -r-x ---- obj.1.page.7
-8   0x00015200  0x1000 0x00018000  0x1000 -r-x ---- obj.1.page.8
-9   0x00016200  0x1000 0x00019000  0x1000 -r-x ---- obj.1.page.9
-10  0x00017200  0x1000 0x0001a000  0x1000 -r-x ---- obj.1.page.10
-11  0x00018200  0x1000 0x0001b000  0x1000 -r-x ---- obj.1.page.11
-12  0x00019200  0x1000 0x0001c000  0x1000 -r-x ---- obj.1.page.12
-13  0x0001a200  0x1000 0x0001d000  0x1000 -r-x ---- obj.1.page.13
-14  0x0001b200  0x1000 0x0001e000  0x1000 -r-x ---- obj.1.page.14
-15  0x0001c200  0x1000 0x0001f000  0x1000 -r-x ---- obj.1.page.15
-16  0x0001d200  0x1000 0x00020000  0x1000 -r-x ---- obj.1.page.16
-17  0x0001e200  0x1000 0x00021000  0x1000 -r-x ---- obj.1.page.17
-18  0x0001f200  0x1000 0x00022000  0x1000 -r-x ---- obj.1.page.18
-19  0x00020200  0x1000 0x00023000  0x1000 -r-x ---- obj.1.page.19
-20  0x00021200  0x1000 0x00024000  0x1000 -r-x ---- obj.1.page.20
-21  0x00022200  0x1000 0x00025000  0x1000 -r-x ---- obj.1.page.21
-22  0x00023200  0x1000 0x00026000  0x1000 -r-x ---- obj.1.page.22
-23  0x00024200  0x1000 0x00027000  0x1000 -r-x ---- obj.1.page.23
-24  0x00025200  0x1000 0x00028000  0x1000 -r-x ---- obj.1.page.24
-25  0x00026200  0x1000 0x00029000  0x1000 -r-x ---- obj.1.page.25
-26  0x00027200  0x1000 0x0002a000  0x1000 -r-x ---- obj.1.page.26
-27  0x00028200  0x1000 0x0002b000  0x1000 -r-x ---- obj.1.page.27
-28  0x00029200  0x1000 0x0002c000  0x1000 -r-x ---- obj.1.page.28
-29  0x0002a200  0x1000 0x0002d000  0x1000 -r-x ---- obj.1.page.29
-30  0x0002b200  0x1000 0x0002e000  0x1000 -r-x ---- obj.1.page.30
-31  0x0002c200  0x1000 0x0002f000  0x1000 -r-x ---- obj.1.page.31
-32  0x0002d200  0x1000 0x00030000  0x1000 -r-x ---- obj.1.page.32
-33  0x0002e200  0x1000 0x00031000  0x1000 -r-x ---- obj.1.page.33
-34  0x0002f200  0x1000 0x00032000  0x1000 -r-x ---- obj.1.page.34
-35  0x00030200  0x1000 0x00033000  0x1000 -r-x ---- obj.1.page.35
-36  0x00031200  0x1000 0x00034000  0x1000 -r-x ---- obj.1.page.36
-37  0x00032200  0x1000 0x00035000  0x1000 -r-x ---- obj.1.page.37
-38  0x00033200  0x1000 0x00036000  0x1000 -r-x ---- obj.1.page.38
-39  0x00034200  0x1000 0x00037000  0x1000 -r-x ---- obj.1.page.39
-40  0x00035200  0x1000 0x00038000  0x1000 -r-x ---- obj.1.page.40
-41  0x00036200  0x1000 0x00039000  0x1000 -r-x ---- obj.1.page.41
-42  0x00037200  0x1000 0x0003a000  0x1000 -r-x ---- obj.1.page.42
-43  0x00038200  0x1000 0x0003b000  0x1000 -r-x ---- obj.1.page.43
-44  0x00039200  0x1000 0x0003c000  0x1000 -r-x ---- obj.1.page.44
-45  0x0003a200  0x1000 0x00040000  0x1000 -rw- ---- obj.2.page.0
-46  0x0003b200  0x1000 0x00041000  0x1000 -rw- ---- obj.2.page.1
-47  0x0003c200  0x1000 0x00042000  0x1000 -rw- ---- obj.2.page.2
-48  0x0003d200  0x1000 0x00043000  0x1000 -rw- ---- obj.2.page.3
-49  0x0003e200  0x1000 0x00044000  0x1000 -rw- ---- obj.2.page.4
-50  0x0003f200  0x1000 0x00045000  0x1000 -rw- ---- obj.2.page.5
-51  0x00040200  0x1000 0x00046000  0x1000 -rw- ---- obj.2.page.6
-52  0x00041200  0x1000 0x00047000  0x1000 -rw- ---- obj.2.page.7
-53  0x00042200  0x1000 0x00048000  0x1000 -rw- ---- obj.2.page.8
-54  0x00043200  0x1000 0x00049000  0x1000 -rw- ---- obj.2.page.9
-55  0x00044200  0x1000 0x0004a000  0x1000 -rw- ---- obj.2.page.10
-56  0x00045200  0x1000 0x0004b000  0x1000 -rw- ---- obj.2.page.11
-57  0x00046200  0x1000 0x0004c000  0x1000 -rw- ---- obj.2.page.12
-58  0x00047200  0x1000 0x0004d000  0x1000 -rw- ---- obj.2.page.13
-59  0x00048200  0x1000 0x0004e000  0x1000 -rw- ---- obj.2.page.14
-60  0x00049200   0xd8c 0x0004f000  0x1000 -rw- ---- obj.2.page.15
+nth paddr         size vaddr         vsize perm type name
+---------------------------------------------------------
+0   0x0000d200  0x1000 0x00010000   0x1000 -r-x ---- obj.1.page.0
+1   0x0000e200  0x1000 0x00011000   0x1000 -r-x ---- obj.1.page.1
+2   0x0000f200  0x1000 0x00012000   0x1000 -r-x ---- obj.1.page.2
+3   0x00010200  0x1000 0x00013000   0x1000 -r-x ---- obj.1.page.3
+4   0x00011200  0x1000 0x00014000   0x1000 -r-x ---- obj.1.page.4
+5   0x00012200  0x1000 0x00015000   0x1000 -r-x ---- obj.1.page.5
+6   0x00013200  0x1000 0x00016000   0x1000 -r-x ---- obj.1.page.6
+7   0x00014200  0x1000 0x00017000   0x1000 -r-x ---- obj.1.page.7
+8   0x00015200  0x1000 0x00018000   0x1000 -r-x ---- obj.1.page.8
+9   0x00016200  0x1000 0x00019000   0x1000 -r-x ---- obj.1.page.9
+10  0x00017200  0x1000 0x0001a000   0x1000 -r-x ---- obj.1.page.10
+11  0x00018200  0x1000 0x0001b000   0x1000 -r-x ---- obj.1.page.11
+12  0x00019200  0x1000 0x0001c000   0x1000 -r-x ---- obj.1.page.12
+13  0x0001a200  0x1000 0x0001d000   0x1000 -r-x ---- obj.1.page.13
+14  0x0001b200  0x1000 0x0001e000   0x1000 -r-x ---- obj.1.page.14
+15  0x0001c200  0x1000 0x0001f000   0x1000 -r-x ---- obj.1.page.15
+16  0x0001d200  0x1000 0x00020000   0x1000 -r-x ---- obj.1.page.16
+17  0x0001e200  0x1000 0x00021000   0x1000 -r-x ---- obj.1.page.17
+18  0x0001f200  0x1000 0x00022000   0x1000 -r-x ---- obj.1.page.18
+19  0x00020200  0x1000 0x00023000   0x1000 -r-x ---- obj.1.page.19
+20  0x00021200  0x1000 0x00024000   0x1000 -r-x ---- obj.1.page.20
+21  0x00022200  0x1000 0x00025000   0x1000 -r-x ---- obj.1.page.21
+22  0x00023200  0x1000 0x00026000   0x1000 -r-x ---- obj.1.page.22
+23  0x00024200  0x1000 0x00027000   0x1000 -r-x ---- obj.1.page.23
+24  0x00025200  0x1000 0x00028000   0x1000 -r-x ---- obj.1.page.24
+25  0x00026200  0x1000 0x00029000   0x1000 -r-x ---- obj.1.page.25
+26  0x00027200  0x1000 0x0002a000   0x1000 -r-x ---- obj.1.page.26
+27  0x00028200  0x1000 0x0002b000   0x1000 -r-x ---- obj.1.page.27
+28  0x00029200  0x1000 0x0002c000   0x1000 -r-x ---- obj.1.page.28
+29  0x0002a200  0x1000 0x0002d000   0x1000 -r-x ---- obj.1.page.29
+30  0x0002b200  0x1000 0x0002e000   0x1000 -r-x ---- obj.1.page.30
+31  0x0002c200  0x1000 0x0002f000   0x1000 -r-x ---- obj.1.page.31
+32  0x0002d200  0x1000 0x00030000   0x1000 -r-x ---- obj.1.page.32
+33  0x0002e200  0x1000 0x00031000   0x1000 -r-x ---- obj.1.page.33
+34  0x0002f200  0x1000 0x00032000   0x1000 -r-x ---- obj.1.page.34
+35  0x00030200  0x1000 0x00033000   0x1000 -r-x ---- obj.1.page.35
+36  0x00031200  0x1000 0x00034000   0x1000 -r-x ---- obj.1.page.36
+37  0x00032200  0x1000 0x00035000   0x1000 -r-x ---- obj.1.page.37
+38  0x00033200  0x1000 0x00036000   0x1000 -r-x ---- obj.1.page.38
+39  0x00034200  0x1000 0x00037000   0x1000 -r-x ---- obj.1.page.39
+40  0x00035200  0x1000 0x00038000   0x1000 -r-x ---- obj.1.page.40
+41  0x00036200  0x1000 0x00039000   0x1000 -r-x ---- obj.1.page.41
+42  0x00037200  0x1000 0x0003a000   0x1000 -r-x ---- obj.1.page.42
+43  0x00038200  0x1000 0x0003b000   0x1000 -r-x ---- obj.1.page.43
+44  0x00039200   0x2ef 0x0003c000    0x2ef -r-x ---- obj.1.page.44
+45  0x0003a200  0x1000 0x00040000   0x1000 -rw- ---- obj.2.page.0
+46  0x0003b200  0x1000 0x00041000   0x1000 -rw- ---- obj.2.page.1
+47  0x0003c200  0x1000 0x00042000   0x1000 -rw- ---- obj.2.page.2
+48  0x0003d200  0x1000 0x00043000   0x1000 -rw- ---- obj.2.page.3
+49  0x0003e200  0x1000 0x00044000   0x1000 -rw- ---- obj.2.page.4
+50  0x0003f200  0x1000 0x00045000   0x1000 -rw- ---- obj.2.page.5
+51  0x00040200  0x1000 0x00046000   0x1000 -rw- ---- obj.2.page.6
+52  0x00041200  0x1000 0x00047000   0x1000 -rw- ---- obj.2.page.7
+53  0x00042200  0x1000 0x00048000   0x1000 -rw- ---- obj.2.page.8
+54  0x00043200  0x1000 0x00049000   0x1000 -rw- ---- obj.2.page.9
+55  0x00044200  0x1000 0x0004a000   0x1000 -rw- ---- obj.2.page.10
+56  0x00045200  0x1000 0x0004b000   0x1000 -rw- ---- obj.2.page.11
+57  0x00046200  0x1000 0x0004c000   0x1000 -rw- ---- obj.2.page.12
+58  0x00047200  0x1000 0x0004d000   0x1000 -rw- ---- obj.2.page.13
+59  0x00048200  0x1000 0x0004e000   0x1000 -rw- ---- obj.2.page.14
+60  0x00049200   0xd8c 0x0004f000   0x1000 -rw- ---- obj.2.page.15
+61  0x00000000     0x0 0x00050000  0x16030 -rw- ---- obj.2.page.zerofill
 
 EOF
 RUN
@@ -158,7 +159,7 @@ cat $relocs~0x0004e~?
 cat $relocs~0x0004f~?
 EOF
 EXPECT=<<EOF
-5241
+5239
 151
 160
 102
@@ -202,9 +203,9 @@ EXPECT=<<EOF
 179
 103
 128
-158
+157
 128
-9
+8
 0
 0
 282
@@ -215,20 +216,20 @@ EXPECT=<<EOF
 0
 0
 95
-82
+81
 45
-7
+6
 0
 0
 381
 561
-590
+588
 EOF
 RUN
 
 NAME=Open LX GCC.EXE
 FILE=bins/le/GCC.EXE
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LX
 EOF
@@ -266,8 +267,9 @@ nth paddr         size vaddr           vsize perm type name
 13  0x0000e000  0x1000 0x0001d000     0x1000 -r-x ---- obj.1.page.13
 14  0x0000f000  0x1000 0x0001e000     0x1000 -r-x ---- obj.1.page.14
 15  0x00010000  0x1000 0x00020000     0x1000 -rw- ---- obj.2.page.0
-16  0x00000000     0x0 0x00030000  0x2000000 -rw- ---- obj.3
-17  0x00000000     0x0 0x02030000   0x800000 -rw- ---- obj.4
+16  0x00000000     0x0 0x00021000     0x1804 -rw- ---- obj.2.page.zerofill
+17  0x00000000     0x0 0x00030000  0x2000000 -rw- ---- obj.3
+18  0x00000000     0x0 0x02030000   0x800000 -rw- ---- obj.4
 
 EOF
 RUN
@@ -278,19 +280,19 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
-0x00010006 0x00001006 SET_32 emx.1
-0x0001000d 0x0000100d SET_32 emx.2
-0x0001d210 0x0000e210 SET_32 doscalls.273
-0x0001d234 0x0000e234 SET_32 doscalls.253
-0x0001d266 0x0000e266 SET_32 doscalls.283
-0x0001d282 0x0000e282 SET_32 doscalls.229
-0x0001d2f2 0x0000e2f2 SET_32 doscalls.257
-0x0001d389 0x0000e389 SET_32 doscalls.282
-0x0001d39f 0x0000e39f SET_32 doscalls.257
-0x0001d3d9 0x0000e3d9 SET_32 doscalls.281
-0x0001d3f4 0x0000e3f4 SET_32 doscalls.257
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00010006 0x00001006 SET_32 8     emx.1
+0x0001000d 0x0000100d SET_32 8     emx.2
+0x0001d210 0x0000e210 SET_32 8     doscalls.273
+0x0001d234 0x0000e234 SET_32 8     doscalls.253
+0x0001d266 0x0000e266 SET_32 8     doscalls.283
+0x0001d282 0x0000e282 SET_32 8     doscalls.229
+0x0001d2f2 0x0000e2f2 SET_32 8     doscalls.257
+0x0001d389 0x0000e389 SET_32 8     doscalls.282
+0x0001d39f 0x0000e39f SET_32 8     doscalls.257
+0x0001d3d9 0x0000e3d9 SET_32 8     doscalls.281
+0x0001d3f4 0x0000e3f4 SET_32 8     doscalls.257
 
 
 11 relocations
@@ -311,7 +313,7 @@ RUN
 
 NAME=Open LX GNUGREP.DLL
 FILE=bins/le/GNUGREP.DLL
-CMDS=ih~Signature[1]
+CMDS=iH~Signature[1]
 EXPECT=<<EOF
 LX
 EOF
@@ -351,10 +353,10 @@ nth paddr         size vaddr        vsize perm type name
 4   0x00005600  0x1000 0x00014000  0x1000 -r-x ---- obj.1.page.4
 5   0x00006600  0x1000 0x00015000  0x1000 -r-x ---- obj.1.page.5
 6   0x00007600  0x1000 0x00016000  0x1000 -r-x ---- obj.1.page.6
-7   0x00008600   0xe00 0x00017000  0x1000 -r-x ---- obj.1.page.7
-8   0x00009400   0x200 0x00020000  0x1000 -r-x ---- obj.2.page.0
-9   0x00009600   0x200 0x00030000  0x1000 -r-x ---- obj.3.page.0
-10  0x00001400   0x200 0x00040000  0x1000 -rw- ---- obj.4.page.0
+7   0x00008600   0xc10 0x00017000   0xc10 -r-x ---- obj.1.page.7
+8   0x00009400     0x8 0x00020000     0x8 -r-x ---- obj.2.page.0
+9   0x00009600     0x8 0x00030000     0x8 -r-x ---- obj.3.page.0
+10  0x00001400   0x200 0x00040000   0x824 -rw- ---- obj.4.page.0
 
 EOF
 RUN
@@ -385,6 +387,71 @@ EXPECT=<<EOF
 1170
 8
 183
+1
+EOF
+RUN
+
+NAME=DOOM.LE iS. by vaddr
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+?v $$
+iS.~obj.1.page.45
+EOF
+EXPECT=<<EOF
+0x3dde0
+0   0x00041148  0x1000 0x0003d000  0x1000 -r-x ---- obj.1.page.45
+EOF
+RUN
+
+NAME=DOOM.LE patched relocs
+ARGS=-e bin.relocs.apply=true
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+s 0x0001ef2d
+pd~debug~?
+pd 6~w~?
+pi 1 @ 0x0003b144
+pi 1 @ 0x0003b175
+pxwj 4@0xbc518
+pxwj 4@0xbc534
+iS.@0xbc518~obj.2.page.zerofill~?
+iS.@0xbc534~obj.2.page.zerofill~?
+EOF
+EXPECT=<<EOF
+1
+1
+mov ecx, dword [0xbc518]
+mov ecx, dword [0xbc534]
+[0]
+[0]
+1
+1
+EOF
+RUN
+
+NAME=DOOM.LE object bases
+ENV=RABIN2_LE_BASES=0x1db000:0x27f000
+ARGS=-e bin.relocs.apply=true
+FILE=bins/le/DOOM.LE
+CMDS=<<EOF
+s 0x0001e9f2d
+pd~debug~?
+pd 6~w~?
+pi 1 @ 0x206144
+pi 1 @ 0x206175
+pxwj 4@0x2eb518
+pxwj 4@0x2eb534
+iS.@0x2eb518~obj.2.page.zerofill~?
+iS.@0x2eb534~obj.2.page.zerofill~?
+EOF
+EXPECT=<<EOF
+1
+1
+mov ecx, dword [0x2eb518]
+mov ecx, dword [0x2eb534]
+[0]
+[0]
+1
 1
 EOF
 RUN

@@ -3,6 +3,7 @@
 WASI_ROOT=${HOME}/Downloads/wasi
 WASI_MAJOR=20
 WASI_VERSION=${WASI_MAJOR}.0
+TOOLS="rax2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
 
 export WASI_SDK=${WASI_ROOT}/wasi-sdk-${WASI_VERSION}
 export WASI_SYSROOT=${WASI_ROOT}/wasi-sysroot-${WASI_VERSION}
@@ -28,7 +29,7 @@ if [ ! -d "$WASI_SDK" ]; then
 	)
 fi
 
-export CFLAGS="-D_WASI_EMULATED_SIGNAL -O2 -D__wasi__=1"
+export CFLAGS="-D_WASI_EMULATED_SIGNAL -Os -flto -D__wasi__=1"
 export CFLAGS="${CFLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS=1"
 
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
@@ -44,7 +45,7 @@ make -j
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
-for a in rax2 radare2 rasm2 rabin2 rafind2 ; do
+for a in ${TOOLS} ; do
 	make -C binr/$a
 	cp -f binr/$a/$a.wasm $D || ERR=1
 done

@@ -1158,12 +1158,12 @@ static int archinfo(RArchSession *as, ut32 query) {
 		return -1;
 	}
 	switch (query) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 2;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		/* all ops are at least 1 word long */
 		return 2;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 8;
 	default:
 		return -1;

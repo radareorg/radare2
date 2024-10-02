@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2023 pancake */
 
 #define FSP(x) fb_##x
 #define FSS(x) x##_fb
@@ -7,4 +7,4 @@
 #define FSPRFX fb
 #define FSIPTR grub_fb_fs
 
-#include "fs_grub_base.c"
+#include "fs_grub_base.inc.c"

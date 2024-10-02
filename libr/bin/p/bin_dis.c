@@ -7,7 +7,7 @@
 #include "../../arch/p/dis/dis.h"
 #include "../../arch/p/dis/dis.c"
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut64 pos = r_buf_tell (buf);
 	r_buf_seek (buf, 0, R_BUF_SET);
 	st32 magic;
@@ -20,10 +20,10 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return (magic == XMAGIC || magic == SMAGIC) && r_buf_size (buf) > 12;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 i;
 
-	if (!check_buffer (bf, buf)) {
+	if (!check (bf, buf)) {
 		return false;
 	}
 
@@ -153,10 +153,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		}
 	}
 	o->link_size = r_buf_tell (buf) - addr;
-
-	if (bin_obj) {
-		*bin_obj = o;
-	}
+	bf->bo->bin_obj = o;
 
 	return true;
 invalid:
@@ -288,12 +285,14 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_dis = {
-	.name = "dis",
-	.desc = "Inferno Dis VM bin plugin",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "dis",
+		.desc = "Inferno Dis VM bin plugin",
+		.license = "MIT",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

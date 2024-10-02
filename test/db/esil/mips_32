@@ -1768,19 +1768,24 @@ NAME=asm.emu with meta
 FILE=bins/elf/analysis/crackmips
 CMDS=<<EOF
 s 0x00400820
+e anal.hasnext=true
 af
 e asm.emu=true
 e emu.write=true
-e anal.gpfixed=false
+e anal.fixed.gp=false
 e asm.lines.bb=false
 e asm.lines.fcn=false
 e asm.imm.str=false
 aei
 aeim
 pdf~0x00400828[7]
+?e ---
+s 0x00400828
+pdf~0x00400828[7]
 EOF
 EXPECT=<<EOF
-0x415424
+---
+0x422884
 EOF
 RUN
 

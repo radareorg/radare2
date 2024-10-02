@@ -4,9 +4,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_bflt_new_buf (buf);
-	return *bin_obj;
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	bf->bo->bin_obj = r_bin_bflt_new_buf (buf);
+	return bf->bo->bin_obj != NULL;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -38,7 +38,7 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 }
 
 static RList *patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin && bf->rbin->iob.io, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io, NULL);
 	struct r_bin_bflt_obj *bin = NULL;
 	RBin *b = bf->rbin;
 	RBinObject *obj = r_bin_cur_object (b);
@@ -249,7 +249,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[4] = {0};
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
@@ -260,12 +260,15 @@ static void destroy(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_bflt = {
-	.name = "bflt",
-	.desc = "bFLT format r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "bflt",
+		.author = "Oscar Salvador",
+		.desc = "bFLT format r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = &entries,
 	.info = &info,
 	.relocs = &relocs,

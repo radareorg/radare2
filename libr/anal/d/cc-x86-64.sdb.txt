@@ -51,3 +51,14 @@ p9=cc
 cc.p9.arg0=rbp
 cc.p9.argn=stack
 cc.p9.ret=rax
+
+dlang=cc
+cc.dlang.ret=rax
+cc.dlang.ret2=rdx
+cc.dlang.arg0=rdi
+cc.dlang.arg1=rsi
+cc.dlang.arg2=rdx
+cc.dlang.arg3=rcx
+cc.dlang.arg4=r8d
+cc.dlang.arg5=r9d
+cc.dlang.argn=stack

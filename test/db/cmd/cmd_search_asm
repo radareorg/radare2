@@ -41,7 +41,6 @@ EXPECT=<<EOF
 0x1000d8a20 POST
 0x1000d8cd4 iGoat
 0x1000d9184 dollar!
-0x1000d922c }}
 0x1000d92ec iGoat
 0x1000d9424 JohnDoe@yap.com
 0x1000d944c YapKeyEmail
@@ -416,6 +415,67 @@ e cfg.json.num=hex
 EOF
 EXPECT=<<EOF
 [{"offset":"0x100007e8c","len":8,"code":"add sp, sp, 0x40; ret"},{"offset":"0x100007ee4","len":8,"code":"add sp, sp, 0x30; ret"}]
+EOF
+RUN
+
+NAME=glob search with /ad
+ARGS=-a arm -b64
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+/ad ret~?
+/ad ret$~?
+EOF
+EXPECT=<<EOF
+40
+18
+EOF
+RUN
+
+NAME=/azj
+FILE=bins/mach0/PasswordCheck-swift
+CMDS=<<EOF
+/az
+/azj~{}
+EOF
+EXPECT=<<EOF
+0x100001634 Enter Password
+0x100001704 Password
+0x100001b4c 123
+0x100001b58 password
+0x100001bc0 password123
+0x100001c38 123
+0x100001d40 Submit
+0x100002004 Success
+0x10000201c Error
+0x100002114 OK
+0x100002f10 forp
+
+[
+  {
+    "addr": 4294972980,
+    "text": "Enter Password"
+  },
+  {
+    "addr": 4294973188,
+    "text": "Password"
+  },
+  {
+    "addr": 4294974296,
+    "text": "password"
+  },
+  {
+    "addr": 4294974400,
+    "text": "password123"
+  },
+  {
+    "addr": 4294974784,
+    "text": "Submit"
+  },
+  {
+    "addr": 4294975492,
+    "text": "Success"
+  }
+]
 EOF
 RUN
 

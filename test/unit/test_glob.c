@@ -16,6 +16,12 @@ bool test_r_glob(void) {
 	mu_assert_eq (r_str_glob ("foo.c", "^f*"), 1, "foo.c -> ^f* -> 1");
 	mu_assert_eq (r_str_glob ("foo.c", "foo.c$"), 1, "foo.c -> foo.c$ -> 1");
 	mu_assert_eq (r_str_glob ("foo.c", "fooooooo"), 0, "foo.c -> fooooooo -> 0");
+
+	mu_assert_eq (r_str_glob ("mydate", "*date$"), 1, "mydate -> date$-> 1");
+	mu_assert_eq (r_str_glob ("mydate", "date$"), 0, "mydate -> date$-> 1");
+	mu_assert_eq (r_str_glob ("date",   "^date$"), 1, "mydate -> date$-> 1");
+	mu_assert_eq (r_str_glob ("mydate", "^date$"), 0, "mydate -> date$-> 1");
+
 	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.baz"), 1, "foo.bar.baz -> *.baz -> 1");
 	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.bar"), 0, "foo.bar.baz -> *.bar -> 0");
 	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.bar.*"), 1, "foo.bar.baz -> *.bar.* -> 1");
@@ -24,8 +30,8 @@ bool test_r_glob(void) {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test(test_r_glob);
+int all_tests(void) {
+	mu_run_test (test_r_glob);
 	return tests_passed != tests_run;
 }
 

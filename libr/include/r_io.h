@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2023 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2024 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -197,7 +197,6 @@ typedef struct r_io_plugin_t {
 	const char *uris;
 	int (*listener)(RIODesc *io);
 	bool (*init)(void);
-	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	char *(*system)(RIO *io, RIODesc *fd, const char *); // Rename to call? or cmd? unify with anal and core
@@ -216,11 +215,14 @@ typedef struct r_io_plugin_t {
 	bool (*getbase)(RIODesc *desc, ut64 *base);
 	///
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
-	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
+	bool (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
+
+#define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
+#define	R_IO_MAP_TIE_FLG_FORTH	(1 << 1)	//ties a map so that the desc resizes when the map resizes
 
 typedef struct r_io_map_t {
 	int fd;
@@ -231,6 +233,7 @@ typedef struct r_io_map_t {
 	ut64 delta; // paddr = vaddr - itv.addr + delta
 	RRBTree *overlay;
 	char *name;
+	ut32 tie_flags;
 } RIOMap;
 
 typedef struct r_io_map_ref_t {
@@ -369,6 +372,7 @@ R_API bool r_io_map_is_in_range(RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name(RIOMap *map, const char *name);
 R_API void r_io_map_del_name(RIOMap *map);
 R_API RList* r_io_map_get_by_fd(RIO *io, int fd);
+R_IPI bool io_map_resize(RIO *io, ut32 id, ut64 newsize);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int len);
@@ -398,6 +402,7 @@ R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_init(RIO *io);
 R_API void r_io_bank_fini(RIO *io);
 R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid);
+R_API RIOBank *r_io_bank_get_byname(RIO *io, const char *bankname);
 R_API bool r_io_bank_use(RIO *io, ut32 bankid);
 R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid);
@@ -440,7 +445,7 @@ R_API ut64 r_io_size(RIO *io);
 R_API bool r_io_is_listener(RIO *io);
 R_API char *r_io_system(RIO *io, const char* cmd);
 R_API bool r_io_resize(RIO *io, ut64 newsize);
-R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size);
+R_API bool r_io_extend_at(RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask(RIO *io, const ut8 *mask, int len);
 R_API void r_io_bind(RIO *io, RIOBind *bnd);
 R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
@@ -548,7 +553,7 @@ R_API void r_io_desc_cache_cleanup(RIODesc *desc);
 R_API void r_io_desc_cache_fini(RIODesc *desc);
 R_API void r_io_desc_cache_fini_all(RIO *io);
 R_API RList *r_io_desc_cache_list(RIODesc *desc);
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size);
+R_API bool r_io_desc_extend(RIODesc *desc, ut64 size);
 
 /* io/fd.c */
 R_API int r_io_fd_open(RIO *io, const char *uri, int flags, int mode);
@@ -608,6 +613,7 @@ extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
 extern RIOPlugin r_io_plugin_default;
+extern RIOPlugin r_io_plugin_dsc;
 extern RIOPlugin r_io_plugin_ihex;
 extern RIOPlugin r_io_plugin_self;
 extern RIOPlugin r_io_plugin_gzip;
@@ -630,7 +636,10 @@ extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
 extern RIOPlugin r_io_plugin_reg;
 extern RIOPlugin r_io_plugin_treebuf;
+extern RIOPlugin r_io_plugin_sysgdb;
 extern RIOPlugin r_io_plugin_serial;
+extern RIOPlugin r_io_plugin_cyclic;
+extern RIOPlugin r_io_plugin_uf2;
 
 #if __cplusplus
 }

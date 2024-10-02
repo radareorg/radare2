@@ -623,3 +623,47 @@ EXPECT=<<EOF
     "format": "any"
 EOF
 RUN
+
+NAME=xml indent
+FILE=malloc://128
+CMDS=<<EOF
+'w <html><body>heh</body><a>bold</a></html>
+psz~<>
+EOF
+EXPECT=<<EOF
+
+<html>
+
+  <body>
+  heh
+  </body>
+
+  <a>
+  bold
+  </a>
+
+</html>
+
+EOF
+RUN
+
+NAME=sort + uniq
+FILE=--
+CMDS=<<EOF
+cat bins/src/sortuniq.txt
+?e --
+cat bins/src/sortuniq.txt~$$
+psz~<>
+EOF
+EXPECT=<<EOF
+hello
+world
+hello
+heheh
+world
+--
+heheh
+hello
+world
+EOF
+RUN

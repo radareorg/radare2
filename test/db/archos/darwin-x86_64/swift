@@ -1,0 +1,43 @@
+NAME=swift demangling trylib false
+FILE=-
+CMDS=<<EOF
+%RABIN2_SWIFTLIB=0
+!!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
+EOF
+EXPECT=<<EOF
+test.MyClass.calculate (self) -> (): , ) ()...i
+EOF
+RUN
+
+NAME=swift demangling trylib true
+FILE=-
+CMDS=<<EOF
+%RABIN2_SWIFTLIB=1
+!!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
+EOF
+EXPECT=<<EOF
+test.MyClass.calculate (self) -> (): , ) ()...i
+EOF
+RUN
+
+NAME=swift demangling config var internal
+FILE=-
+CMDS=<<EOF
+-e bin.demangle.trylib=false
+iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
+EOF
+EXPECT=<<EOF
+test.MyClass.calculate (self) -> (): , ) ()...i
+EOF
+RUN
+
+NAME=swift demangling config var system library
+FILE=-
+CMDS=<<EOF
+-e bin.demangle.trylib=true
+iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
+EOF
+EXPECT=<<EOF
+test.MyClass.calculate(test.MyClass) -> (x: Swift.Int) -> Swift.Int
+EOF
+RUN

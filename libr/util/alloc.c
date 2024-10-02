@@ -18,7 +18,7 @@ R_API RRealloc *r_realloc = realloc;
 R_API RFree *r_free = free;
 
 R_API void r_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f) {
-	r_return_if_fail (m && c && r && f);
+	R_RETURN_IF_FAIL (m && c && r && f);
 	r_malloc = m;
 	r_calloc = c;
 	r_realloc = r;
@@ -33,7 +33,7 @@ static RRealloc *_r_realloc = realloc;
 static RFree *_r_free = free;
 
 R_API void r_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f) {
-	r_return_if_fail (m && c && r && f);
+	R_RETURN_IF_FAIL (m && c && r && f);
 	_r_malloc = m;
 	_r_calloc = c;
 	_r_realloc = r;

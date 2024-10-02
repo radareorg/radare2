@@ -22,20 +22,20 @@ char *format_CALL_FUNCTION_KW_36(ut32 oparg) {
 }
 
 char *format_CALL_FUNCTION_EX_36(ut32 oparg) {
-	return r_str_new ((oparg & 0x01)? "keyword args": "");
+	return strdup ((oparg & 0x01)? "keyword args": "");
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
 
 char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 	size_t i;
-	char *ret = r_str_new (" ");
+	char *ret = strdup (" ");
 	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
 		if (oparg & 0x1) {
 			ret = r_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		} else {
 			free (ret);
-			ret = r_str_new (MAKE_FUNCTION_FLAGS[i]);
+			ret = R_STR_DUP (MAKE_FUNCTION_FLAGS[i]);
 		}
 		oparg >>= 1;
 	}
@@ -60,7 +60,7 @@ char *format_value_flags_36(ut32 oparg) {
 		// empty fmt_spec.
 		ret = "";
 	}
-	return r_str_new (ret);
+	return R_STR_DUP (ret);
 }
 
 char *format_extended_arg_36(ut32 oparg) {

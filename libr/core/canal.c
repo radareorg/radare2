@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #define R_LOG_ORIGIN "core.anal"
 
@@ -8,10 +8,11 @@
 
 HEAPTYPE (ut64);
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-static R_TH_LOCAL RCore *mycore = NULL;
+#if !R2_USE_NEW_ABI
 static R_TH_LOCAL bool esil_anal_stop = false;
+#endif
 
 // used to speedup strcmp with rconfig.get in loops
 enum {
@@ -90,16 +91,41 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
-static char *get_function_name(RCore *core, ut64 addr) {
+static void init_addr2klass(RCore *core, RBinObject *bo) {
+	if (bo->addr2klassmethod) {
+		return;
+	}
+	RList *klasses = bo->classes;
+	RListIter *iter, *iter2;
+	RBinClass *klass;
+	RBinSymbol *method;
+	// this is slow. must be optimized, but at least its cached
+	bo->addr2klassmethod = ht_up_new0 ();
+	r_list_foreach (klasses, iter, klass) {
+		r_list_foreach (klass->methods, iter2, method) {
+			ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
+		}
+	}
+}
+
+static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->bo) {
+		init_addr2klass (core, bf->bo);
 		RBinSymbol *sym = ht_up_find (bf->bo->addr2klassmethod, addr, NULL);
 		if (sym && sym->classname && sym->name) {
-			return r_str_newf ("method.%s.%s", sym->classname, sym->name);
+			const char *sym_name = r_bin_name_tostring (sym->name);
+			return r_str_newf ("method.%s.%s", sym->classname, sym_name);
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
-	return (flag && flag->name) ? strdup (flag->name) : NULL;
+	if (flag) {
+		return strdup (flag->name);
+	}
+	if (R_STR_ISEMPTY (fcnpfx)) {
+		fcnpfx = "fcn";
+	}
+	return r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
 }
 
 // XXX: copypaste from anal/data.c
@@ -349,7 +375,22 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 }
 
 static bool blacklisted_word(const char* name) {
+	if (!*name) {
+		return true;
+	}
+	if (*name == ';') {
+		return true;
+	}
+	if (r_str_startswith (name, "arg")) {
+		return true;
+	}
 	const char * list[] = {
+		"0x",
+		"*",
+		"func.",
+		"\\",
+		"fcn.0",
+		"assert",
 		"__stack_chk_guard",
 		"__stderrp",
 		"__stdinp",
@@ -358,96 +399,171 @@ static bool blacklisted_word(const char* name) {
 	};
 	int i;
 	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
-		if (strstr (name, list[i])) { return true; }
+		if (strstr (name, list[i])) {
+			return true;
+		}
 	}
 	return false;
 }
 
-static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mode) {
-	int use_getopt = 0;
-	int use_isatty = 0;
+static inline ut64 cmpstrings(const void *a) {
+	return r_str_hash64 (a);
+}
+
+static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
+	RList *names = r_list_newf (free);
 	PJ *pj = NULL;
-	char *do_call = NULL;
-	RAnalRef *ref;
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
-
+	RAnalRef *ref;
+	bool dump = false;
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	if (refs) {
 		R_VEC_FOREACH (refs, ref) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
-			if (f) {
-				// If dump is true, print all strings referenced by the function
-				if (dump) {
-					// take only strings flags
-					if (!strncmp (f->name, "str.", 4)) {
-						if (mode == 'j') {
-							// add new json item
-							pj_o (pj);
-							pj_kn (pj, "addr", ref->at);
-							pj_kn (pj, "ref", ref->addr);
-							pj_ks (pj, "flag", f->name);
-							pj_end (pj);
-						} else {
-							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
-						}
-					}
-				} else if (do_call) { // break if a proper autoname found and not in dump mode
-					break;
-				}
-				// enter only if a candidate name hasn't found yet
-				if (!do_call) {
-					const char *name = f->name;
-					if (blacklisted_word (name)) {
-						continue;
-					}
-					if (*name == '.') {
-						if (strstr (name, ".isatty")) {
-							use_isatty = 1;
-						}
-						// XXX else if
-						if (strstr (name, ".getopt")) {
-							use_getopt = 1;
-						}
-					}
-					if (!strncmp (name, "method.", 7)) {
-						free (do_call);
-						do_call = strdup (name + 7);
-						continue;
-					}
-					if (!strncmp (name, "str.", 4)) {
-						free (do_call);
-						do_call = strdup (name + 4);
-						continue;
-					}
-					if (!strncmp (name, "dbg.", 4)) {
-						free (do_call);
-						do_call = strdup (name + 4);
-						continue;
-					}
-					if (!strncmp (name, "rsym.", 5)) {
-						free (do_call);
-						do_call = strdup (name + 5);
-						continue;
-					}
-					if (!strncmp (name, "sym.imp.", 8)) {
-						free (do_call);
-						do_call = strdup (name + 8);
-						continue;
-					}
-					if (!strncmp (name, "reloc.", 6)) {
-						free (do_call);
-						do_call = strdup (name + 6);
-						continue;
+			if (!f) {
+				continue;
+			}
+			const int type = ref->type & R_ANAL_REF_TYPE_MASK;
+			switch (type) {
+			case R_ANAL_REF_TYPE_CODE:
+			case R_ANAL_REF_TYPE_CALL:
+			case R_ANAL_REF_TYPE_ICOD:
+			case R_ANAL_REF_TYPE_JUMP:
+				break;
+			default:
+				continue;
+			}
+			// If dump is true, print all strings referenced by the function
+			if (dump) {
+				// take only strings flags
+				if (!strncmp (f->name, "str.", 4)) {
+					if (mode == 'j') {
+						// add new json item
+						pj_o (pj);
+						pj_kn (pj, "addr", ref->at);
+						pj_kn (pj, "ref", ref->addr);
+						pj_ks (pj, "flag", f->name);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 					}
 				}
 			}
+			const char *name = f->name;
+			if (blacklisted_word (name)) {
+				continue;
+			}
+			const char *last_dot = r_str_rchr (name, NULL, '.');
+			if (last_dot) {
+				r_list_append (names, r_str_newf ("auto.sub.%s", last_dot + 1));
+			} else {
+				r_list_append (names, r_str_newf ("auto.sub.%s", name));
+			}
 		}
 	}
+	if (!blacklisted_word (fcn->name)) {
+		r_list_append (names, strdup (fcn->name));
+	}
+
 	RVecAnalRef_free (refs);
+	RListIter *iter;
+	char *n;
+	char *final_name = NULL;
+	r_list_uniq_inplace (names, cmpstrings);
+	if (mode == 'l') {
+		r_list_foreach (names, iter, n) {
+			r_cons_printf ("%s\n", n);
+		}
+	} else {
+		r_list_foreach (names, iter, n) {
+			/// XXX: improve guessing here
+			final_name = strdup (n);
+			break;
+		}
+	}
+	r_list_free (names);
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+	return final_name;
+}
+
+// uses emulation to resolve more strings to get better names
+static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
+	RList *names = r_list_newf (free);
+	if (!blacklisted_word (fcn->name)) {
+		r_list_append (names, strdup (fcn->name));
+	}
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		// start a new JSON object
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+	// TODO: check if import, if its in plt, by name, by rbin...
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", 0);
+	char *pdsfq = r_core_cmd_strf (core, "pdsfq @ 0x%08"PFMT64x, fcn->addr);
+	r_config_set_i (core->config, "scr.color", scr_color);
+	RList *strings = r_str_split_list (pdsfq, "\n", 0);
+	char *name;
+	RListIter *iter;
+	r_list_foreach (strings, iter, name) {
+		r_str_trim (name);
+		if (blacklisted_word (name)) {
+			continue;
+		}
+		char *dot = strchr (name, '.');
+		if (dot) {
+			name = dot + 1;
+		}
+		if (*name == '"') {
+			r_str_replace_char (name, '"', '_');
+		}
+		r_str_replace_char (name, ';', '_');
+		char *sp = strchr (name, ' ');
+		if (sp) {
+			name = sp + 1;
+			char *sp2 = strchr (name, ' ');
+			if (sp2) {
+				*sp2 = 0;
+			}
+		}
+		r_list_append (names, strdup (name));
+	}
+	free (pdsfq);
+	char *bestname = NULL;
+	bool use_getopt = false;
+	r_list_uniq_inplace (names, cmpstrings);
+	r_list_foreach (names, iter, name) {
+		if (mode == 'l') {
+			r_cons_printf ("%s\n", name);
+		}
+		if (strstr (name, "getopt") || strstr (name, "optind")) {
+			use_getopt = true;
+		} else if (r_str_startswith (name, "sym.imp.")) {
+			name += 4; // 8?
+		} else if (r_str_startswith (name, "sym.")) {
+			name += 4;
+		} else if (r_str_startswith (name, "imp.")) {
+			name += 4;
+		}
+		if (!bestname) {
+			bestname = strdup (name);
+		}
+		if (mode == 's') {
+			r_cons_printf ("%s\n", name);
+		} else if (pj) {
+			pj_s (pj, name);
+		}
+	}
+	r_list_free (names);
 
 	if (mode ==  'j') {
 		pj_end (pj);
@@ -458,37 +574,45 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	}
 	// TODO: append counter if name already exists
 	if (use_getopt) {
-		RFlagItem *item = r_flag_get (core->flags, "main");
-		free (do_call);
-		// if referenced from entrypoint. this should be main
-		if (item && item->offset == fcn->addr) {
-			return strdup ("main"); // main?
+		if (!strcmp (bestname, "main")) {
+			free (bestname);
+			return strdup ("main");
 		}
-		return strdup ("parse_args"); // main?
+		free (bestname);
+		return strdup ("main_args");
 	}
-	if (use_isatty) {
-		char *ret = r_str_newf ("sub.setup_tty_%s_%"PFMT64x, do_call, fcn->addr);
-		free (do_call);
+	if (bestname) {
+		if (r_str_startswith (bestname, "imp.")) {
+			char *bn = r_str_newf ("sym.%s", bestname);
+			free (bestname);
+			return bn;
+		}
+		char *ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		free (bestname);
 		return ret;
 	}
-	if (do_call) {
-		char *ret = r_str_newf ("sub.%s_%"PFMT64x, do_call, fcn->addr);
-		free (do_call);
-		return ret;
-	}
+	free (bestname);
 	return NULL;
 }
 
-/*this only autoname those function that start with fcn.* or sym.func.* */
+R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
+	R_RETURN_VAL_IF_FAIL (core && fcn, NULL);
+	if (r_config_get_b (core->config, "anal.slow")) {
+		return autoname_slow (core, fcn, mode);
+	}
+	return autoname_basic (core, fcn, mode);
+}
+
+/* this only autoname those function that start with fcn.* or sym.func.* */
 R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
+		if (r_str_startswith (fcn->name, "fcn.") || r_str_startswith (fcn->name, "sym.func.")) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
-				char *name = anal_fcn_autoname (core, fcn, 0, 0);
+				char *name = r_core_anal_fcn_autoname (core, fcn, 0);
 				if (name) {
 					r_flag_rename (core->flags, item, name);
 					free (fcn->name);
@@ -568,14 +692,8 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	}
 }
 
-/* suggest a name for the function at the address 'addr'.
- * If dump is true, every strings associated with the function is printed */
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump, int mode) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-	return fcn? anal_fcn_autoname (core, fcn, dump, mode): NULL;
-}
-
 static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
+	// TODO: use rlist or rvector. but not this crap
 	ut64 *tmp_next = realloc (next, sizeof (ut64) * (1 + *nexti));
 	if (!tmp_next) {
 		return NULL;
@@ -706,8 +824,15 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 		case R_ANAL_REF_TYPE_ICOD:
 			// check if its used as data or code.. or at least check what's in the destination
 			{
-				const int t = r_anal_data_type (core->anal, ref->addr);
-				switch (R_ANAL_REF_TYPE_MASK (t)) {
+				const RAnalRefType t = r_anal_data_type (core->anal, ref->addr);
+				if (t == R_ANAL_REF_TYPE_ERROR) {
+					R_LOG_WARN ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
+					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+					if (baddr == 0) {
+						R_LOG_WARN ("Try running the analysis with -B 0x800000");
+					}
+
+				} else switch (R_ANAL_REF_TYPE_MASK (t)) {
 				case R_ANAL_REF_TYPE_ICOD:
 				case R_ANAL_REF_TYPE_CODE:
 					r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth - 1);
@@ -730,22 +855,16 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 }
 
 static void function_rename(RFlag *flags, RAnalFunction *fcn) {
-	const char *locname = "loc.";
-	const size_t locsize = strlen (locname);
-	char *fcnname = fcn->name;
-
-	if (strncmp (fcn->name, locname, locsize) == 0) {
-		const char *fcnpfx, *restofname;
-		RFlagItem *f;
-
+	if (r_str_startswith (fcn->name, "loc.")) {
+		char *fcnname = fcn->name;
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
-		fcnpfx = r_anal_functiontype_tostring (fcn->type);
-		restofname = fcn->name + locsize;
+		const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
+		const char *restofname = fcn->name + strlen ("loc.");
 		fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
-
-		f = r_flag_get_i (flags, fcn->addr);
-		r_flag_rename (flags, f, fcn->name);
-
+		RFlagItem *f = r_flag_get_i (flags, fcn->addr);
+		if (f) {
+			r_flag_rename (flags, f, fcn->name);
+		}
 		free (fcnname);
 	}
 }
@@ -769,22 +888,33 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
-static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
+static bool set_fcn_name_from_flag(RCore *core, RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
 	bool nameChanged = false;
 	if (f && f->name) {
-		if (!strncmp (fcn->name, "loc.", 4) || !strncmp (fcn->name, "fcn.", 4)) {
+		if (r_str_startswith (fcn->name, "sym.func.") && !r_str_startswith (f->name, "sect")) {
+			char *s = r_core_cmd_strf (core, "fd@0x%08"PFMT64x, fcn->addr);
+			r_str_trim (s);
+			if (R_STR_ISNOTEMPTY (s) && !r_str_startswith (s, "sym.func.") && !strstr (s, "sect")) {
+				r_anal_function_rename (fcn, s);
+				nameChanged = true;
+			}
+			free (s);
+		} else if (r_str_startswith (fcn->name, "loc.") || r_str_startswith (fcn->name, "fcn.")) {
 			r_anal_function_rename (fcn, f->name);
 			nameChanged = true;
-		} else if (strncmp (f->name, "sect", 4)) {
+		} else if (!r_str_startswith (f->name, "sect")) {
 			r_anal_function_rename (fcn, f->name);
 			nameChanged = true;
 		}
 	}
+#if 0
 	if (!nameChanged) {
 		char *nn = r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr);
 		r_anal_function_rename (fcn, nn);
 		free (nn);
 	}
+#endif
+	return nameChanged;
 }
 
 static bool is_entry_flag(RFlagItem *f) {
@@ -801,26 +931,26 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	const char *sarch = r_config_get (core->config, "asm.arch");
 	const bool is_x86 = (sarch && r_str_startswith (sarch, "x86"));
 	bool has_next = r_config_get_b (core->config, "anal.hasnext");
-	RAnalHint *hint = NULL;
 	int i, nexti = 0;
 	ut64 *next = NULL;
 	int fcnlen = 0;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	r_warn_if_fail (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-	if (!fcnpfx) {
+	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
 	}
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		if (r_anal_cc_once (core->anal)) {
-			R_LOG_WARN ("set your favourite calling convention in `e anal.cc=?`");
+			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
 	r_warn_if_fail (fcn->cc);
-	hint = r_anal_hint_get (core->anal, at);
+
+	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
 		fcn->bits = 16;
@@ -828,11 +958,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		fcn->bits = core->anal->config->bits;
 	}
 	fcn->addr = at;
-	fcn->name = get_function_name (core, at);
-
-	if (!fcn->name) {
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
-	}
+	fcn->name = get_function_name (core, fcnpfx, at);
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
 		goto error;
@@ -872,7 +998,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			}
 		}
 		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-		set_fcn_name_from_flag (fcn, f, fcnpfx);
+		bool renamed = set_fcn_name_from_flag (core, fcn, f, fcnpfx);
 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && !r_anal_function_realsize (fcn))) { /* Error analyzing function */
@@ -880,36 +1006,40 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				r_anal_analyze_fcn_refs (core, fcn, depth);
 			}
 			goto error;
-		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				char *new_name = strdup (f->name);
-				if (is_entry_flag (f)) {
-					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-					RBinSymbol *sym;
-					RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
-					R_VEC_FOREACH (syms, sym) {
-						if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
-							free (new_name);
-							new_name = r_str_newf ("sym.%s", sym->name);
-							break;
+		}
+		if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
+			if (!renamed) {
+				f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+				if (f && f->name && !r_str_startswith (f->name, "sect")) { /* Check if it's already flagged */
+					char *new_name = strdup (f->name);
+					if (is_entry_flag (f)) {
+						ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+						RBinSymbol *sym;
+						RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
+						R_VEC_FOREACH (syms, sym) {
+							if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
+								free (new_name);
+								const char *sym_name = r_bin_name_tostring2 (sym->name, 'f');
+								new_name = r_str_newf ("sym.%s", sym_name);
+								break;
+							}
 						}
 					}
+					free (fcn->name);
+					fcn->name = new_name;
+				} else {
+					R_FREE (fcn->name);
+					const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
+					if (R_STR_ISEMPTY (fcnpfx) || !strcmp (fcnpfx, "fcn")) {
+						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+					}
+					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+					autoname_imp_trampoline (core, fcn);
+					/* Add flag */
+					r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
+					r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_function_linear_size (fcn));
+					r_flag_space_pop (core->flags);
 				}
-				free (fcn->name);
-				fcn->name = new_name;
-			} else {
-				R_FREE (fcn->name);
-				const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
-				if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
-					fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-				}
-				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
-				autoname_imp_trampoline (core, fcn);
-				/* Add flag */
-				r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
-				r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_function_linear_size (fcn));
-				r_flag_space_pop (core->flags);
 			}
 
 			/* New function: Add initial xref */
@@ -918,6 +1048,12 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
 			// XXX: this is wrong. See CID 1134565
+#if 0
+			if (R_STR_ISEMPTY (fcn->name)) {
+				free (fcn->name);
+				fcn->name = r_str_newf ("fcn.%"PFMT64x, fcn->addr);
+			}
+#endif
 			r_anal_add_function (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
@@ -1002,10 +1138,11 @@ error:
 			if (!map || (map && (map->perm & R_PERM_X))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
-					if (!next[i]) {
+					ut64 addr = next[i];
+					if (!addr) {
 						continue;
 					}
-					r_core_anal_fcn (core, next[i], next[i], 0, depth - 1);
+					r_core_anal_fcn (core, addr, addr, 0, depth - 1);
 				}
 				free (next);
 			}
@@ -1031,7 +1168,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	ut8 buf[32];
 	ut8 *ptr;
 
-	r_return_val_if_fail (core, NULL);
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
@@ -1039,7 +1176,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op) {
 		return NULL;
 	}
-	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (sizeof (buf) < maxopsz) {
 		maxopsz = sizeof (buf);
 	}
@@ -1334,7 +1471,8 @@ static int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user
 	ut64 ta = container_of (in_tree, const HintNode, rb)->addr;
 	if (ia < ta) {
 		return -1;
-	} else if (ia > ta) {
+	}
+	if (ia > ta) {
 		return 1;
 	}
 	return 0;
@@ -1354,26 +1492,26 @@ static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRec
 
 static bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
+	if (node) {
+		node->addr = addr;
+		node->type = HINT_NODE_ARCH;
+		node->arch = arch;
+		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+		return true;
 	}
-	node->addr = addr;
-	node->type = HINT_NODE_ARCH;
-	node->arch = arch;
-	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-	return true;
+	return false;
 }
 
 static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
+	if (node) {
+		node->addr = addr;
+		node->type = HINT_NODE_BITS;
+		node->bits = bits;
+		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+		return true;
 	}
-	node->addr = addr;
-	node->type = HINT_NODE_BITS;
-	node->bits = bits;
-	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-	return true;
+	return false;
 }
 
 static void print_hint_tree(RBTree tree, int mode) {
@@ -1444,53 +1582,45 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
-	int is_html = r_cons_context ()->is_html;
-	int is_json = opts & R_CORE_ANAL_JSON;
+	const bool is_html = r_cons_context ()->is_html;
+	const bool is_json = opts & R_CORE_ANAL_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
-	int line = 0, oline = 0, colu = 0, idx = 0;
+	int line = 0, oline = 0, colu = 0;
 	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
-		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
+		RStrBuf *sb = r_strbuf_new ("");
+		const ut64 bb_end = bb->addr + bb->size;
+		for (at = bb->addr; at < bb_end; at += 2) {
 			r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
-					int flen = strlen (filestr);
-					if (idx < 0 || ST32_ADD_OVFCHK (idx, flen + 8)) {
-						R_LOG_WARN ("integer overflow detected");
-						break;
-					}
-					cmdstr = realloc (cmdstr, idx + flen + 8);
-					memcpy (cmdstr + idx, filestr, flen);
-					idx += flen;
+					r_strbuf_append (sb, filestr);
 					if (is_json) {
-						strcpy (cmdstr + idx, "\\n");
-						idx += 2;
+						r_strbuf_append (sb, "\\n");
 					} else if (is_html) {
-						strcpy (cmdstr + idx, "<br />");
-						idx += 6;
+						r_strbuf_append (sb, "<br />");
 					} else {
-						strcpy (cmdstr + idx, "\\l");
-						idx += 2;
+						r_strbuf_append (sb, "\\l");
 					}
 					free (filestr);
 				}
 			}
 			oline = line;
 		}
+		cmdstr = r_strbuf_drain (sb);
 	} else if (opts & R_CORE_ANAL_STAR) {
-		snprintf (cmd, sizeof (cmd), "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
-		str = r_core_cmd_str (core, cmd);
+		str = r_core_cmd_strf (core, "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
-		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
+		const bool scrUtf8 = r_config_get_b (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set_b (core->config, "scr.utf8", false);
 		snprintf (cmd, sizeof (cmd), "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
-		r_config_set_i (core->config, "scr.utf8", scrUtf8);
+		r_config_set_b (core->config, "scr.utf8", scrUtf8);
 	}
 	if (cmdstr) {
 		str = r_str_escape_dot (cmdstr);
@@ -1725,7 +1855,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				if (is_json_format_disasm) {
 					r_core_print_disasm (core, bbi->addr, buf, bbi->size, bbi->size, 0, NULL, true, true, pj, NULL);
 				} else {
-					r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0, pj);
+					r_core_print_disasm_json_ipi (core, bbi->addr, buf, bbi->size, 0, pj, NULL);
 				}
 				free (buf);
 			} else {
@@ -1838,15 +1968,15 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				}
 			} else {
 				if (is_html) {
-						nodes++;
-						r_cons_printf ("<p class=\"block draggable\" style=\""
-												"top: %dpx; left: %dpx; width: 400px;\" id=\""
-												"_0x%08"PFMT64x"\">\n%s</p>\n",
-												top, left, bbi->addr, str);
-						left = left? 0: 600;
-						if (!left) {
-							top += 250;
-						}
+					nodes++;
+					r_cons_printf ("<p class=\"block draggable\" style=\""
+							"top: %dpx; left: %dpx; width: 400px;\" id=\""
+							"_0x%08"PFMT64x"\">\n%s</p>\n",
+							top, left, bbi->addr, str);
+					left = left? 0: 600;
+					if (!left) {
+						top += 250;
+					}
 				} else if (!is_json && !is_keva) {
 					bool current = r_anal_block_contains (bbi, core->offset);
 					const char *label_color = bbi->traced
@@ -1858,14 +1988,14 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 					if ((current && color_current) || label_color == pal_traced) {
 						fill_color = r_str_newf ("fillcolor=\"%s\", ", pal_traced);
 					} else {
-						fill_color = r_str_newf ("fontcolor=\"%s\"", label_color);
+						fill_color = r_str_newf ("fontcolor=\"%s\", ", label_color);
 					}
 					nodes++;
 					if (is_star) {
 						char *title = get_title (bbi->addr);
 						char *body_b64 = r_base64_encode_dyn (str, -1);
 						int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
-						if (!title  || !body_b64) {
+						if (!title || !body_b64) {
 								free (body_b64);
 								free (title);
 								return false;
@@ -1875,12 +2005,20 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						free (body_b64);
 						free (title);
 					} else {
+						if (R_STR_ISEMPTY (str)) {
 						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
-								"%sfontname=\"%s\","
+								"%sfontname=\"%s\"]\n",
+								bbi->addr, fcn->name, bbi->addr,
+								fill_color, font);
+						} else {
+						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
+								"URL=\"%s/0x%08"PFMT64x"\", "
+								"%sfontname=\"%s\", "
 								"label=\"%s\"]\n",
 								bbi->addr, fcn->name, bbi->addr,
 								fill_color, font, str);
+						}
 					}
 					free (fill_color);
 				}
@@ -1892,8 +2030,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 }
 
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *pj) {
-	int is_json = opts & R_CORE_ANAL_JSON;
-	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
+	const bool is_json = opts & R_CORE_ANAL_JSON;
+	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
 	char *pal_jump = palColorFor ("graph.true");
@@ -1903,13 +2041,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	char *pal_traced = palColorFor ("graph.traced");
 	char *pal_box4 = palColorFor ("graph.box4");
 	if (!fcn || !fcn->bbs) {
-		free (pal_jump);
-		free (pal_fail);
-		free (pal_trfa);
-		free (pal_curr);
-		free (pal_traced);
-		free (pal_box4);
-		return -1;
+		nodes = -1;
+		goto fin;
 	}
 
 	if (is_keva) {
@@ -1952,6 +2085,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_end (pj);
 		pj_end (pj);
 	}
+fin:
 	free (pal_jump);
 	free (pal_fail);
 	free (pal_trfa);
@@ -2179,7 +2313,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
-#define USE_ID 1
+// R2_600 - return bool
 R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
@@ -2195,19 +2329,12 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
 		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
 		// TODO char *str = r_str_escape_dot (msg);
-#if USE_ID
 		ht_uu_insert (ht, bb->addr, id);
 		r_cons_printf ("  node [\n"
 				"    id  %d\n"
 				"    label  \"%s\"\n"
 				"  ]\n", id, msg);
 		id++;
-#else
-		r_cons_printf ("  node [\n"
-				"    id  %"PFMT64d"\n"
-				"    label  \"%s\"\n"
-				"  ]\n", bb->addr, msg);
-#endif
 		free (msg);
 	}
 
@@ -2215,7 +2342,6 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-#if USE_ID
 		if (bb->jump != UT64_MAX) {
 			bool found;
 			int i = ht_uu_find (ht, bb->addr, &found);
@@ -2259,33 +2385,6 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 				}
 			}
 		}
-#else
-		if (bb->jump != UT64_MAX) {
-			r_cons_printf ("  edge [\n"
-				"    source  %"PFMT64d"\n"
-				"    target  %"PFMT64d"\n"
-				"  ]\n", bb->addr, bb->jump
-				);
-		}
-		if (bb->fail != UT64_MAX) {
-			r_cons_printf ("  edge [\n"
-				"    source  %"PFMT64d"\n"
-				"    target  %"PFMT64d"\n"
-				"  ]\n", bb->addr, bb->fail
-				);
-		}
-		if (bb->switch_op) {
-			RListIter *it;
-			RAnalCaseOp *cop;
-			r_list_foreach (bb->switch_op->cases, it, cop) {
-				r_cons_printf ("  edge [\n"
-					"    source  %"PFMT64d"\n"
-					"    target  %"PFMT64d"\n"
-					"  ]\n", bb->addr, cop->addr
-					);
-			}
-		}
-#endif
 	}
 	r_cons_printf ("]\n");
 	ht_uu_free (ht);
@@ -2356,13 +2455,13 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
+	R_RETURN_IF_FAIL (graph);
 	if (addr == UT64_MAX) {
 		return;
 	}
-	r_return_if_fail (graph);
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
-		? r_str_new (f->name)
+		? strdup (f->name)
 		: r_str_newf ("0x%" PFMT64x, addr);
 
 	RGraphNode *curr_node = r_graph_add_node_info (graph, me, NULL, addr);
@@ -2382,7 +2481,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 			continue;
 		}
 		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-		char *src = item? r_str_new (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
+		char *src = item? strdup (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
 		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
 		free (src);
 		r_graph_add_edge (graph, reference_from, curr_node);
@@ -2406,11 +2505,12 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 		return NULL;
 	}
 	r_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
+		const char *imp_name = r_bin_name_tostring (imp->name);
+		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp_name): 0;
 		if (addr) {
 			add_single_addr_xrefs (core, addr, graph);
 		} else {
-			r_graph_add_node_info (graph, imp->name, NULL, 0);
+			r_graph_add_node_info (graph, imp_name, NULL, 0);
 		}
 	}
 	return graph;
@@ -2637,6 +2737,8 @@ repeat:
 	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
+		r_cons_printf ("]\n");
+		break;
 	case R_GRAPH_FORMAT_JSON:
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
@@ -2711,9 +2813,9 @@ static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 }
 
 R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
-	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool demangle = r_config_get_b (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
-	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	char *name = strdup (r_str_get (fcn->name));
 	if (demangle) {
 		char *tmp = r_bin_demangle (core->bin->cur, lang, name, fcn->addr, keep_lib);
@@ -2820,32 +2922,25 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	return 0;
 }
 
-static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
+static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
-		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
+		r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
 	} else {
-#if 1
+		const bool use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
-		r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
-				fcn->addr, r_list_length (fcn->bbs), realsize, name);
-		free (name);
-#else
-		// R2_590 -- trace color functionlisting
-		char *name = r_core_anal_fcn_name (core, fcn);
-		ut64 realsize = r_anal_function_realsize (fcn);
-		RAnalBlock *firstBlock = r_list_first (fcn->bbs);
-		char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): "";
-		int coverage = r_anal_function_coverage (fcn);
-		if (firstBlock->traced) {
-			color = strdup (Color_RED);
+		if (use_colors) {
+			RAnalBlock *firstBlock = r_list_first (fcn->bbs);
+			char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): strdup ("");
+			r_cons_printf ("%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
+					color, fcn->addr, r_list_length (fcn->bbs),
+					realsize, name, Color_RESET);
+			free (color);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
+					fcn->addr, r_list_length (fcn->bbs), realsize, name);
 		}
-		r_cons_printf ("%s0x%08"PFMT64x" %4d cov=%d%% %6"PFMT64d" %s%s\n",
-				color, fcn->addr, r_list_length (fcn->bbs),
-				coverage, realsize, name, Color_RESET);
-		free (color);
 		free (name);
-#endif
 	}
 }
 
@@ -2853,10 +2948,7 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		__fcn_print_default (core, fcn, quiet);
-		if (quiet) {
-			r_cons_newline ();
-		}
+		fcn_print (core, fcn, quiet);
 	}
 	return 0;
 }
@@ -2913,6 +3005,31 @@ static int RAnalRef_compare_by_addr(const RAnalRef *ref1, const RAnalRef *ref2) 
 		return 1;
 	}
 	return 0;
+}
+
+static double midbbins(RAnalFunction *fcn) {
+	if (r_list_empty (fcn->bbs)) {
+		return 0.0;
+	}
+	int bbins = 0;
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		bbins += bb->ninstr;
+	}
+	return (double)bbins / r_list_length (fcn->bbs);
+}
+
+static int maxbbins(RAnalFunction *fcn) {
+	int bbins = 0;
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->ninstr > bbins) {
+			bbins = bb->ninstr;
+		}
+	}
+	return bbins;
 }
 
 // Lists function names and their calls (uniqified)
@@ -3008,6 +3125,22 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	return 0;
 }
 
+static char *filename(RCore *core, ut64 addr) {
+	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
+	// char *fn = r_core_cmd_strf (core, "CLf @@@b@0x%"PFMT64x, addr);
+	// ignore return code
+	r_core_return_code (core, 0);
+	if (fn) {
+		r_str_trim (fn);
+		r_str_after (fn, '\n');
+		if (*fn) {
+			return fn;
+		}
+		free (fn);
+	}
+	return NULL;
+}
+
 static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
 	if (!pj) {
 		return -1;
@@ -3030,6 +3163,11 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
 	pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
 	pj_ki (pj, "bits", fcn->bits);
+	char *fn = filename (core, fcn->addr);
+	if (fn) {
+		pj_ks (pj, "file", fn);
+		free (fn);
+	}
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
 	pj_ki (pj, "tracecov", r_anal_function_coverage(fcn));
@@ -3048,7 +3186,14 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	}
 	pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
 	pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
-
+	{
+		int _maxbbins = maxbbins (fcn);
+		double _midbbins = midbbins (fcn);
+		double _ratbbins = _maxbbins / _midbbins;
+		pj_kn (pj, "maxbbins", _maxbbins);
+		pj_kd (pj, "midbbins", _midbbins);
+		pj_kd (pj, "ratbbins", _ratbbins);
+	}
 	int outdegree = 0;
 	int indegree = 0;
 	if (dorefs) {
@@ -3166,12 +3311,15 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		pj_ki (pj, "nlocals", r_anal_var_count_locals (fcn));
 		pj_ki (pj, "nargs", r_anal_var_count_args (fcn));
+#if 0
+		// we have afvj for this no need to dupe in afij
 		pj_k (pj, "bpvars");
 		r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
 		pj_k (pj, "spvars");
 		r_anal_var_list_show (core->anal, fcn, 's', 'j', pj);
 		pj_k (pj, "regvars");
 		r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
+#endif
 
 		pj_ks (pj, "difftype", fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
@@ -3307,6 +3455,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	if (fcn->cc) {
 		r_cons_printf ("\ncall-convention: %s", fcn->cc);
 	}
+	char *fn = filename (core, fcn->addr);
+	if (fn) {
+		r_cons_printf ("\nfile: %s", fn);
+		free (fn);
+	}
 	r_cons_printf ("\ncyclomatic-cost: %d", r_anal_function_cost (fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_function_complexity (fcn));
 	r_cons_printf ("\nbits: %d", fcn->bits);
@@ -3414,6 +3567,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 		}
 		RVecAnalRef_free (refs);
 	}
+	int a = maxbbins (fcn);
+	double b = midbbins (fcn);
+	r_cons_printf ("\nmaxbbins: %d", a);
+	r_cons_printf ("\nmidbbins: %.02f", b);
+	r_cons_printf ("\nratbbins: %.02f", ((double)a / b));
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
@@ -3421,9 +3579,12 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	const int args_count = r_anal_var_count_args (fcn);
 	const int var_count = r_anal_var_count_locals (fcn);
 	r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
+#if 0
+	// we have `afv` for this, no need to show this info here too
 	r_anal_var_list_show (core->anal, fcn, 'b', 0, NULL);
 	r_anal_var_list_show (core->anal, fcn, 's', 0, NULL);
 	r_anal_var_list_show (core->anal, fcn, 'r', 0, NULL);
+#endif
 
 	if (fcn->diff->addr != UT64_MAX) {
 		if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
@@ -3461,6 +3622,9 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RTable *t = r_core_table (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
+#if 0 && R2_USE_NEW_ABI
+	RTableColumnType *typeFloat = r_table_type ("float");
+#endif
 	r_table_add_column (t, typeNumber, "addr", 0);
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
@@ -3471,7 +3635,13 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
+#if 0 && R2_USE_NEW_ABI
+	r_table_add_column (t, typeFloat, "maxbi", 0);
+	r_table_add_column (t, typeFloat, "midbi", 0);
+	r_table_add_column (t, typeFloat, "ratbi", 0);
+#endif
 	r_table_add_column (t, typeNumber, "cc", 0);
+	r_table_add_column (t, typeNumber, "file", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_strf_var (fcnAddr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
@@ -3491,7 +3661,6 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		xrefs = r_anal_function_get_all_xrefs (fcn);
 		snprintf (axref, sizeof (axref), "%"PFMT64u, xrefs ? RVecAnalRef_length (xrefs) : 0);
 		RVecAnalRef_free (xrefs);
-
 		RVecAnalRef *calls = r_core_anal_fcn_get_calls (core, fcn);
 		if (calls) {
 			RVecAnalRef_sort (calls, RAnalRef_compare_by_addr);
@@ -3501,10 +3670,25 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		} else {
 			snprintf (castr, sizeof (castr), "%d", 0);
 		}
-
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
-
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, axref, castr, ccstr, NULL);
+		char *file = filename (core, fcn->addr);
+		if (!file) {
+			file = strdup ("");
+		}
+#if 0 && R2_USE_NEW_ABI
+		double _maxbbins = maxbbins (fcn);
+		double _midbbins = midbbins (fcn);
+		double _ratbbins = _maxbbins / _midbbins;
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+				nins, refs, xref, axref, castr,
+				_maxbbins, _midbbins, _ratbbins,
+				ccstr, file, NULL);
+#else
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+				nins, refs, xref, axref, castr,
+				ccstr, file, NULL);
+#endif
+		free (file);
 	}
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')
@@ -3545,7 +3729,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_core_cmd_help (core, help_msg_aflm);
 		return 0;
 	}
-	r_return_val_if_fail (core && core->anal, 0);
+	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
 		if (*rad == 'j') {
 			r_cons_println ("[]");
@@ -3772,6 +3956,10 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int pos;
 	int i = 0;
 	for (i = 0; i < bb->ninstr; i++) {
+		if (i >= bb->op_pos_size) {
+			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+			break;
+		}
 		pos = i? bb->op_pos[i - 1]: 0;
 		ut64 addr = bb->addr + pos;
 		if (addr != opaddr) {
@@ -3823,7 +4011,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 
 // TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	r_return_if_fail (core && core->anal && fcn);
+	R_RETURN_IF_FAIL (core && core->anal && fcn);
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
@@ -3848,7 +4036,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
-	r_return_val_if_fail (bbs, false);
+	R_RETURN_VAL_IF_FAIL (bbs, false);
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 
 	if (depth < 0) {
@@ -4098,19 +4286,24 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 	switch (arch) {
 	case R2_ARCH_ARM64:
 		aop->size = 4;
-		//addr should be aligned by 4 in aarch64
+		// addr should be aligned by 4 in aarch64
 		if (addr % 4) {
 			char diff = addr % 4;
 			addr = addr - diff;
 			buf = buf - diff;
 		}
-		//if is not bl do not analyze
-		if (buf[3] == 0x94) {
-			if (r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
-				r_anal_op_fini (aop);
+		// if is not bl do not analyze
+		if (buf[3] == 0x94 && r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
+			ut32 ot = aop->type;
+			int os = aop->size;
+			r_anal_op_fini (aop);
+			aop->type = ot;
+			aop->size = os;
+			switch (ot & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CCALL:
 				return true;
 			}
-			r_anal_op_fini (aop);
 		}
 		break;
 	default:
@@ -4132,6 +4325,11 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 // TODO(maskray) RAddrInterval API
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
+	R_RETURN_VAL_IF_FAIL (core, -1);
+	if (!ref) {
+		R_LOG_ERROR ("Null reference search is not supported");
+		return -1;
+	}
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return -1;
@@ -4154,11 +4352,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (!ref) {
-		R_LOG_ERROR ("Null reference search is not supported");
-		free (buf);
-		return -1;
-	}
 	r_cons_break_push (NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
@@ -4172,28 +4365,30 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			at = from;
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
-			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"] ", at, to);
+			R_LOG_DEBUG ("[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			size_t left = R_MIN (to - at, core->blocksize);
 			// TODO: this can be probably enhanced
-			if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
-				R_LOG_ERROR ("Failed to read at 0x%08" PFMT64x, at);
+			if (!r_io_read_at (core->io, at, buf, left)) {
+				R_LOG_ERROR ("Failed to read %d bytes at 0x%08" PFMT64x, left, at);
 				break;
+			}
+			if (left < core->blocksize) {
+				memset (buf + left, 0, core->blocksize - left);
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
 				 (!bckwrds && i < core->blocksize - OPSZ) ||
-				 (bckwrds && i > 0);
-				 bckwrds ? i-- : i++) {
+				 (bckwrds && i > 0); bckwrds ? i-- : i++) {
 				// TODO: honor anal.align
 				if (r_cons_is_breaked ()) {
 					break;
 				}
 				switch (mode) {
 				case 'c':
-					(void)opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch);
-					if (op.size < 1) {
-						op.size = 1;
+					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
+						continue;
 					}
 					break;
 				case 'r':
@@ -4224,7 +4419,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_CCALL:
 					if (op.jump != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.jump, ref, true, 0)) {
-						count ++;
+						count++;
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCJMP:
@@ -4235,7 +4430,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_MJMP:
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_JUMP, at + i, op.ptr, ref, true ,1)) {
-						count ++;
+						count++;
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCALL:
@@ -4245,7 +4440,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.ptr, ref, true ,1)) {
-						count ++;
+						count++;
 					}
 					break;
 				default:
@@ -4258,7 +4453,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					}
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'd', at + i, op.ptr, ref, false, ptrdepth)) {
-						count ++;
+						count++;
 					}
 					break;
 				}
@@ -4408,8 +4603,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
-	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	if (maxopsz < 1) {
 		maxopsz = 4;
@@ -4440,7 +4635,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		if (bsz > left) {
 			bsz = left;
 		}
-		(void)r_io_read_at (core->io, at, buf, bsz);
+		if (!r_io_read_at (core->io, at, buf, bsz)) {
+			// TODO: use pread to stop early, io.read never fails
+			break;
+		}
 		if (search_badpages) {
 			memset (block, -1, bsz);
 			if (!memcmp (buf, block, bsz)) {
@@ -4451,6 +4649,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 				}
 				uninit = true;
 				at += bsz;
+				if (!r_io_is_valid_offset (core->io, at, 0)) {
+					R_LOG_ERROR ("invalid memory");
+					break;
+				}
 				continue;
 			}
 			memset (block, 0, bsz);
@@ -4562,116 +4764,6 @@ beach:
 	return count;
 }
 
-static bool isValidSymbol(RBinSymbol *symbol) {
-	if (symbol && symbol->type) {
-		const char *type = symbol->type;
-		return (symbol->paddr != UT64_MAX) && (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_HIOS_STR) || !strcmp (type, R_BIN_TYPE_LOOS_STR) || !strcmp (type, R_BIN_TYPE_METH_STR) || !strcmp (type , R_BIN_TYPE_STATIC_STR));
-	}
-	return false;
-}
-
-static bool isSkippable(RBinSymbol *s) {
-	if (s && s->name && s->bind) {
-		if (r_str_startswith (s->name, "radr://")) {
-			return true;
-		}
-		if (!strcmp (s->name, "__mh_execute_header")) {
-			return true;
-		}
-		if (!strcmp (s->bind, "NONE")) {
-			if (s->is_imported && s->libname && strstr(s->libname, ".dll")) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-R_API int r_core_anal_all(RCore *core) {
-	const RList *list;
-	RListIter *iter;
-	RAnalFunction *fcni;
-	RBinAddr *binmain;
-	RBinAddr *entry;
-	RBinSymbol *symbol;
-	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
-	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
-
-	// required for noreturn
-	if (r_config_get_b (core->config, "anal.imports")) {
-		R_LOG_INFO ("Analyze imports (af@@@i)");
-		r_core_cmd0 (core, "af@@@i");
-	}
-
-	/* Analyze Functions */
-	/* Entries */
-	RFlagItem *item = r_flag_get (core->flags, "entry0");
-	if (item) {
-		r_core_af (core, item->offset, "entry0", anal_calls);
-	} else {
-		r_core_af (core, core->offset, NULL, anal_calls);
-	}
-
-	r_core_task_yield (&core->tasks);
-
-	r_cons_break_push (NULL, NULL);
-
-	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
-	if (v) {
-		R_VEC_FOREACH (v, symbol) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			// Stop analyzing PE imports further
-			if (isSkippable (symbol)) {
-				continue;
-			}
-			if (isValidSymbol (symbol)) {
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
-				r_core_af (core, addr, NULL, anal_calls);
-			}
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	/* Main */
-	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {
-		if (binmain->paddr != UT64_MAX) {
-			ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
-			r_core_af (core, addr, "main", anal_calls);
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	if ((list = r_bin_get_entries (core->bin))) {
-		r_list_foreach (list, iter, entry) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			if (entry->paddr == UT64_MAX) {
-				continue;
-			}
-			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
-			r_core_af (core, addr, NULL, anal_calls);
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	if (anal_vars) {
-		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			r_core_recover_vars (core, fcni, true);
-			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "rsym.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
-				fcni->type = R_ANAL_FCN_TYPE_SYM;
-			}
-		}
-	}
-	r_cons_break_pop ();
-	return true;
-}
-
 R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wordsize) {
 	RAnalData *d;
 	ut64 dstaddr = 0LL;
@@ -4717,7 +4809,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 				i += word;
 				break;
 			case R_ANAL_DATA_TYPE_STRING:
-				buf[len-1] = 0;
+				buf[len - 1] = 0;
 				i += strlen ((const char*)buf + i) + 1;
 				break;
 			default:
@@ -5154,7 +5246,12 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 }
 
 static void cccb(void *u) {
+#if R2_USE_NEW_ABI
+	RCore *core = (RCore *)u;
+	core->esil_anal_stop = false;
+#else
 	esil_anal_stop = true;
+#endif
 	r_cons_context_break (NULL);
 	eprintf ("^C\n");
 }
@@ -5180,10 +5277,12 @@ typedef struct {
 	ut64 initial_sp;
 } EsilBreakCtx;
 
-static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
+typedef int RPerm;
+
+static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->reg;
 		}
@@ -5193,11 +5292,11 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 	return NULL;
 }
 
-static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
+static ut64 delta_for_access(RAnalOp *op, RPerm type) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
-	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+	if (type == R_PERM_W) {
 		if (dst) {
 			return dst->imm + dst->delta;
 		}
@@ -5212,10 +5311,8 @@ static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	return 0;
 }
 
-static void handle_var_stack_access(REsil *esil, ut64 addr, RAnalVarAccessType type, int len) {
-	if (!esil || !esil->user) {
-		return;
-	}
+static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len) {
+	R_RETURN_IF_FAIL (esil && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	const char *regname = reg_name_for_access (ctx->op, type);
 	if (ctx->fcn && regname) {
@@ -5254,14 +5351,15 @@ static bool is_stack(RIO *io, ut64 addr) {
 }
 
 static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
+	RCore *core = esil->anal->coreb.core;
+	handle_var_stack_access (esil, addr, R_PERM_W, len);
 	// ignore writes in stack
-	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-		if (!is_stack (mycore->io, addr)) {
-			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+		if (!is_stack (core->io, addr)) {
+			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			/** resolve ptr */
 			//if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-	//			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA);
+	//			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA);
 			//}
 		}
 	}
@@ -5275,12 +5373,13 @@ static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
+	RCore *core = esil->anal->coreb.core;
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
 	}
-	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_READ, len);
-	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
+	handle_var_stack_access (esil, addr, R_PERM_R, len);
+	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
 		switch (len) {
@@ -5298,27 +5397,27 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			break;
 		default:
 			trace = false;
-			r_io_read_at (mycore->io, addr, (ut8*)buf, len);
+			r_io_read_at (core->io, addr, (ut8*)buf, len);
 			break;
 		}
 		// TODO incorrect
-		if (trace && myvalid (mycore->io, refptr)) {
+		if (trace && myvalid (core->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
 				str[0] = 0;
-				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
+				if (r_io_read_at (core->io, refptr, str, sizeof (str)) < 1) {
 					//eprintf ("Invalid read\n");
 					str[0] = 0;
 				} else {
-					r_anal_xrefs_set (mycore->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+					r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 					str[sizeof (str) - 1] = 0;
-					add_string_ref (mycore, esil->addr, refptr);
+					add_string_ref (core, esil->addr, refptr);
 					esilbreak_last_data = UT64_MAX;
 				}
 			}
 		}
-		if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
-			if (!is_stack (mycore->io, addr)) {
-				r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+		if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+			if (!is_stack (core->io, addr)) {
+				r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 			}
 		}
 	}
@@ -5326,14 +5425,12 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
-	if (!esil || !esil->anal || !esil->user) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->config->bits / 8);
+	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8);
 	const bool is_arm = !strcmp (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
@@ -5576,7 +5673,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
-	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
+	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	REsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
@@ -5591,16 +5688,25 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ut64 start = core->offset;
 	ut64 end = 0LL;
 	ut64 cur;
+#if R2_USE_NEW_ABI
+	core->esil_anal_stop = false;
+#else
 	esil_anal_stop = false;
+#endif
 	// R_LOG_INFO ("start is %llx", addr);
 
-	mycore = core;
 	if (!strcmp (str, "?")) {
 		R_LOG_INFO ("should never happen");
 		return;
 	}
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
-	if (target) {
+	bool xrefs_only = false;
+	if (target && !strcmp (target, "+x")) {
+		xrefs_only = true;
+		ntarget = core->offset;
+		refptr = 0LL;
+		target = NULL;
+	} else if (target) {
 		const char *expr = r_str_trim_head_ro (target);
 		if (*expr) {
 			ntarget = r_num_math (core->num, expr);
@@ -5665,7 +5771,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		R_LOG_WARN ("Not going to analyze 0x%08"PFMT64x" bytes", (ut64)iend);
 		return;
 	}
-	buf = malloc ((size_t)iend + 2);
+	buf = calloc ((size_t)iend + 2, 1);
 	if (!buf) {
 		r_sys_perror ("malloc");
 		return;
@@ -5704,7 +5810,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 	pcname = strdup (kpcname);
+#if R2_USE_NEW_ABI
+	core->esil_anal_stop = false;
+#else
 	esil_anal_stop = false;
+#endif
 	r_cons_break_push (cccb, core);
 
 	int arch = -1;
@@ -5716,13 +5826,18 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		archIsArm = true;
 	}
-	bool is_thumb = arch == R2_ARCH_THUMB;
+	const bool is_thumb = arch == R2_ARCH_THUMB;
 
-	ut64 gp = r_config_get_i (core->config, "anal.gp");
+	const ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
 	if (!strcmp (core->anal->config->arch, "mips")) {
 		gp_reg = "gp";
 		arch = R2_ARCH_MIPS;
+	} else if (arch == R2_ARCH_ARM64) {
+		RBinInfo *info = r_bin_get_info (core->bin);
+		if (info && info->lang && !strcmp (info->lang, "dart")) {
+			gp_reg = "x27";
+		}
 	}
 
 	r_reg_arena_push (core->anal->reg);
@@ -5737,9 +5852,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = addr - start;
 	size_t i_old = 0;
 	do {
+#if R2_USE_NEW_ABI
+		if (core->esil_anal_stop || r_cons_is_breaked ()) {
+			break;
+		}
+#else
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
+#endif
 		cur = start + i;
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
@@ -5808,9 +5929,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
 			if (is_thumb) {
 				i++; // codelalign is not always the best option to catch unaligned instructions
+				r_anal_op_fini (&op);
+				goto repeat;
 			}
-			r_anal_op_fini (&op);
-			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i += minopsize - 1
@@ -5943,7 +6064,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					break;
 				}
 				if ((target && dst == ntarget) || !target) {
-					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (mycore->io, dst)) {
+					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core->io, dst)) {
 						RFlagItem *f;
 						char *str;
 						if (CHECKREF (dst) || CHECKREF (cur)) {
@@ -5953,7 +6074,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-							} else if ((str = is_string_at (mycore, dst, NULL))) {
+							} else if ((str = is_string_at (core, dst, NULL))) {
 								char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
@@ -5979,7 +6100,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = esilbreak_last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (mycore->io, dst)) {
+					if (myvalid (core->io, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -5988,7 +6109,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 				dst = esilbreak_last_data;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (mycore->io, dst)) {
+					if (myvalid (core->io, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -6037,7 +6158,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
 						r_anal_xrefs_set (core->anal, cur, dst, ref | R_ANAL_REF_TYPE_EXEC);
-						r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+						if (!xrefs_only) {
+							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+						}
 // analyze function here
 #if 0
 						if (op.type == R_ANAL_OP_TYPE_UCALL || op.type == R_ANAL_OP_TYPE_RCALL) {
@@ -6127,7 +6250,6 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	if (relative) {
 		align = 4;
 	}
-	mycore = core;
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
@@ -6241,7 +6363,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				if (isValidMatch) {
 					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
-						add_string_ref (mycore, addr, value);
+						add_string_ref (core, addr, value);
 					}
 					hitctr++;
 				}
@@ -6355,7 +6477,7 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 }
 
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	PJ *pj = NULL;
@@ -6419,7 +6541,7 @@ static int __addrs_cmp(void *_a, void *_b) {
 }
 
 R_API void r_core_anal_inflags(RCore *core, R_NULLABLE const char *glob) {
-	r_return_if_fail (core);
+	R_RETURN_IF_FAIL (core);
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
 	const bool a2f = r_config_get_b (core->config, "anal.a2f");

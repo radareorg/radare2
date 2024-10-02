@@ -239,7 +239,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 		if (!task->cons_context) {
 			goto hell;
 		}
-		task->cons_context->cmd_depth = core->max_cmd_depth;
+		core->cur_cmd_depth = core->max_cmd_depth;
 	}
 
 	task->id = core->tasks.task_id_next++;
@@ -499,6 +499,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	}
 	r_list_append (scheduler->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
+	r_th_start (task->thread);
 
 	tasks_lock_leave (scheduler, &old_sigset);
 }
@@ -528,7 +529,7 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 }
 
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
-	r_return_val_if_fail (scheduler && task, -1);
+	R_RETURN_VAL_IF_FAIL (scheduler && task, -1);
 	task->thread = NULL;
 	return task_run (task);
 }
@@ -554,19 +555,19 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin() */
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
-	r_return_if_fail (scheduler);
+	R_RETURN_IF_FAIL (scheduler);
 	task_end (scheduler->main_task);
 }
 
 /* To be called from within a task.
  * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
-	r_return_if_fail (task);
+	R_RETURN_IF_FAIL (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
 }
 
 R_API void r_core_task_sleep_end(RCoreTask *task) {
-	r_return_if_fail (task);
+	R_RETURN_IF_FAIL (task);
 	task_wakeup (task);
 }
 

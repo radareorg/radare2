@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -18,6 +18,9 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 	}
 	state->key_size = keylen;
 	state->key = malloc (keylen);
+	if (state->key == NULL) {
+		return false;
+	}
 	memcpy (state->key, key, keylen);
 	return true;
 }
@@ -27,7 +30,7 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
  */
 
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;//index for input
+	int i;
 	for (i = 0; i < buflen; i++) {
 		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}
@@ -52,7 +55,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_xor = {
-	.name = "xor",
+	.type = R_CRYPTO_TYPE_ENCRYPT,
+	.meta = {
+		.name = "xor",
+		.author = "pancake",
+		.license = "MIT",
+	},
 	.implements = "xor",
 	.set_key = xor_set_key,
 	.get_key_size = xor_get_key_size,

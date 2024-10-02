@@ -221,7 +221,6 @@ pd 10
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- main:
             ;-- entry0:
             ;-- _ftext:
@@ -236,7 +235,6 @@ EXPECT=<<EOF
             0x004000ea      45d9           jalr t9
             0x004000ec      30800005       addiu a0, zero, 5
             ;-- section..text:
-            ;-- .text:
             ;-- main:
             ;-- entry0:
             ;-- _ftext:

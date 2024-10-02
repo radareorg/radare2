@@ -449,13 +449,13 @@ static char *v810_regs(RArchSession *s) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 2;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 4;
 	}
 	return 0;

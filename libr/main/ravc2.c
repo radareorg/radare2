@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake, rhl120 */
+/* radare - LGPL - Copyright 2022-2024 - pancake, rhl120 */
 
 #define R_LOG_ORIGIN "ravc"
 
@@ -17,6 +17,7 @@ static void help(void) {
 		" -q       quiet mode\n"
 		" -v       show version\n"
 		" -h       display this help message\n"
+		" -j       json output\n"
 		"Actions:\n"
 		" init     [git | rvc]          initialize a repository with the given vc\n"
 		" branch   [name]               if a name is provided, create a branch with that name otherwise list branches\n"
@@ -51,11 +52,16 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	if (!r_cons_is_initialized ()) {
 		r_cons_new ();
 	}
-	r_getopt_init (&opt, argc, argv, "gqvh");
+	int rad = 0;
+	r_getopt_init (&opt, argc, argv, "gqvhj");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q':
 			quiet = true;
+			rad = 'q';
+			break;
+		case 'j':
+			rad = 'j';
 			break;
 		case 'v':
 			version = true;
@@ -74,7 +80,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			printf ("%s\n", R2_VERSION);
 			return 0;
 		}
-		return r_main_version_print ("ravc2");
+		return r_main_version_print ("ravc2", rad);
 	}
 	if (opt.ind >= argc) {
 		R_LOG_ERROR ("Try ravc2 -h");
@@ -133,13 +139,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return 1;
 		}
-		char *message = r_str_new (opt.argv[opt.ind + 1]);
+		char *message = R_STR_DUP (opt.argv[opt.ind + 1]);
 		if (message) {
 			RList *files = r_list_new();
 			if (files) {
 				size_t i;
 				for (i = 2; i < argc - 1; i++) {
-					char *file = r_str_new(argv[opt.ind + i]);
+					char *file = strdup (argv[opt.ind + i]);
 					if (!file || !r_list_append (files, file)) {
 						free (message);
 						r_list_free (files);

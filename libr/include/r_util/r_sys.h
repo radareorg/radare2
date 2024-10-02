@@ -68,7 +68,7 @@ R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
 R_API int r_sys_run_rop(const ut8 *buf, int len);
 R_API int r_sys_getpid(void);
-R_API int r_sys_crash_handler(const char *cmd);
+R_API bool r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
 R_API bool r_sys_arch_match(const char *archstr, const char *arch);
@@ -89,6 +89,7 @@ R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
 R_API bool r_sys_getenv_asbool(const char *key);
 R_API int r_sys_getenv_asint(const char *key);
+R_API ut64 r_sys_getenv_asut64(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
@@ -128,6 +129,8 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
+#define R_DUMP(x) __builtin_dump_struct(x, &printf)
+
 #if R2__WINDOWS__
 #  define r_sys_breakpoint() { __debugbreak  (); }
 #else
@@ -135,7 +138,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #  define r_sys_breakpoint() __builtin_trap()
 #elif __i386__ || __x86_64__
 #   define r_sys_breakpoint() __asm__ volatile ("int3");
-#elif __arm64__ || __aarch64__
+#elif __arm64__ || __aarch64__ || __arm64e__
 #  define r_sys_breakpoint() __asm__ volatile ("brk 0");
 // #define r_sys_breakpoint() __asm__ volatile ("brk #1");
 #elif (__arm__ || __thumb__)

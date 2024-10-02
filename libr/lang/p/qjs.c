@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 pancake */
+/* radare - LGPL - Copyright 2020-2024 pancake */
 
 #include <r_lib.h>
 #include <r_core.h>
@@ -9,11 +9,13 @@
 #include "quickjs.h"
 #include "../js_require.c"
 #include "../js_r2papi.c"
+#define QJS_STRING(x) JS_NewString(ctx, x)
 
 typedef struct {
 	R_BORROW JSContext *ctx;
 	JSValue call_func;
 } QjsContext;
+#define QJS_CORE_MAGIC 0x07534617
 
 typedef struct qjs_core_plugin {
 	char *name;
@@ -29,6 +31,14 @@ typedef struct qjs_arch_plugin_t {
 	// JSValue encode_func;
 } QjsArchPlugin;
 
+typedef struct qjs_parse_plugin_t {
+	char *name;
+	RParsePlugin *iop;
+	R_BORROW JSContext *ctx;
+	JSValue fn_parse_js;
+	// JSValue encode_func;
+} QjsParsePlugin;
+
 typedef struct qjs_io_plugin_t {
 	char *name;
 	RIOPlugin *iop;
@@ -42,6 +52,10 @@ typedef struct qjs_io_plugin_t {
 	// JSValue encode_func;
 } QjsIoPlugin;
 
+static void parse_plugin_fini(QjsParsePlugin *cp) {
+	free (cp->name);
+}
+
 static void core_plugin_fini(QjsCorePlugin *cp) {
 	free (cp->name);
 }
@@ -51,30 +65,35 @@ static void arch_plugin_fini(QjsArchPlugin *ap) {
 	free (ap->arch);
 }
 
+R_VEC_TYPE_WITH_FINI (RVecParsePlugin, QjsParsePlugin, parse_plugin_fini);
 R_VEC_TYPE_WITH_FINI (RVecCorePlugin, QjsCorePlugin, core_plugin_fini);
 R_VEC_TYPE_WITH_FINI (RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
 R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
 
 typedef struct qjs_plugin_manager_t {
+	ut32 magic;
 	R_BORROW RCore *core;
 	R_BORROW JSRuntime *rt;
 	QjsContext default_ctx; // context for running normal JS code
 	RVecCorePlugin core_plugins;
 	RVecArchPlugin arch_plugins;
 	RVecIoPlugin io_plugins;
+	RVecParsePlugin parse_plugins;
 } QjsPluginManager;
 
+static QjsPluginManager *Gpm = NULL;
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
 	RVecCorePlugin_init (&pm->core_plugins);
 	RVecArchPlugin_init (&pm->arch_plugins);
 	RVecIoPlugin_init (&pm->io_plugins);
+	RVecParsePlugin_init (&pm->parse_plugins);
 	return true;
 }
 
 static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func) {
-	r_return_if_fail (pm);
+	R_RETURN_IF_FAIL (pm);
 
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
@@ -85,7 +104,7 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 }
 
 static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RIOPlugin *iop, JSValue func) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
 	if (cp) {
@@ -99,7 +118,25 @@ static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const cha
 	return cp;
 }
 
+static QjsParsePlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RParsePlugin *iop, JSValue func) {
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
+
+	QjsParsePlugin *cp = RVecParsePlugin_emplace_back (&pm->parse_plugins);
+	if (cp) {
+		cp->name = name? strdup (name): NULL;
+		cp->ctx = ctx;
+		cp->iop = iop;
+		cp->fn_parse_js = func;
+	}
+	return cp;
+}
+
 static inline int compare_core_plugin_name(const QjsCorePlugin *cp, const void *data) {
+	const char *name = data;
+	return strcmp (cp->name, name);
+}
+
+static inline int compare_parse_plugin_name(const QjsParsePlugin *cp, const void *data) {
 	const char *name = data;
 	return strcmp (cp->name, name);
 }
@@ -109,20 +146,39 @@ static inline int compare_io_plugin_name(const QjsIoPlugin *cp, const void *data
 	return strcmp (cp->name, name);
 }
 
+static QjsParsePlugin *plugin_manager_find_parse_plugin(const QjsPluginManager *pm, const char *name) {
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
+
+	return RVecParsePlugin_find (&pm->parse_plugins, (void*) name, compare_parse_plugin_name);
+}
+
 static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	return RVecCorePlugin_find (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 }
 
 static QjsIoPlugin *plugin_manager_find_io_plugin(const QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	return RVecIoPlugin_find (&pm->io_plugins, (void*) name, compare_io_plugin_name);
 }
 
+static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char *name) {
+	R_RETURN_VAL_IF_FAIL (pm, false);
+
+	ut64 index = RVecParsePlugin_find_index (&pm->parse_plugins, (void*) name, compare_parse_plugin_name);
+	if (index != UT64_MAX) {
+		pm->core->lang->cmdf (pm->core, "Lp-%s", name);
+		RVecParsePlugin_remove (&pm->parse_plugins, index);
+		return true;
+	}
+
+	return false;
+}
+
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 	if (index != UT64_MAX) {
@@ -136,7 +192,7 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 
 static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *name,
 	const char *arch, JSContext *ctx, JSValue decode_func) {
-	r_return_if_fail (pm);
+	R_RETURN_IF_FAIL (pm);
 
 	QjsArchPlugin *ap = RVecArchPlugin_emplace_back (&pm->arch_plugins);
 	if (ap) {
@@ -154,12 +210,12 @@ static inline int compare_arch_plugin_arch(const QjsArchPlugin *ap, const void *
 }
 
 static QjsArchPlugin *plugin_manager_find_arch_plugin(const QjsPluginManager *pm, const char *arch) {
-	r_return_val_if_fail (pm, NULL);
+	R_RETURN_VAL_IF_FAIL (pm, NULL);
 	return RVecArchPlugin_find (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
 }
 
 static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *arch) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
 	if (index != UT64_MAX) {
@@ -173,13 +229,15 @@ static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *
 }
 
 static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type, const char *plugin_id) {
-	r_return_val_if_fail (pm, false);
+	R_RETURN_VAL_IF_FAIL (pm, false);
 
 	if (R_STR_ISNOTEMPTY (type)) {
+		if (!strcmp (type, "parse")) {
+			return plugin_manager_remove_parse_plugin (pm, plugin_id);
+		}
 		if (!strcmp (type, "core")) {
 			return plugin_manager_remove_core_plugin (pm, plugin_id);
 		}
-
 		if (!strcmp (type, "arch")) {
 			return plugin_manager_remove_arch_plugin (pm, plugin_id);
 		}
@@ -195,6 +253,7 @@ static void plugin_manager_fini (QjsPluginManager *pm) {
 	RVecCorePlugin_fini (&pm->core_plugins);
 	RVecArchPlugin_fini (&pm->arch_plugins);
 	RVecIoPlugin_fini (&pm->io_plugins);
+	RVecParsePlugin_fini (&pm->parse_plugins);
 	// XXX leaks, but calling it causes crash because not all JS objects are freed
 	// JS_FreeRuntime (pm->rt);
 	pm->rt = NULL;
@@ -203,6 +262,7 @@ static void plugin_manager_fini (QjsPluginManager *pm) {
 #include "qjs/loader.c"
 #include "qjs/arch.c"
 #include "qjs/core.c"
+#include "qjs/parse.c"
 #include "qjs/io.c"
 
 ///////////////////////////////////////////////////////////
@@ -299,6 +359,8 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 			return r2plugin_core_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "arch")) {
 			return r2plugin_arch_load (ctx, this_val, argc, argv);
+		} else if (!strcmp (n, "parse")) {
+			return r2plugin_parse_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "io")) {
 			return r2plugin_io (ctx, this_val, argc, argv);
 #if 0
@@ -307,7 +369,7 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 #endif
 		} else {
 			// invalid throw exception here
-			return JS_ThrowRangeError(ctx, "invalid r2plugin type");
+			return JS_ThrowRangeError (ctx, "invalid r2plugin type");
 		}
 	}
 	return JS_NewBool (ctx, false);
@@ -358,7 +420,9 @@ static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueCo
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		ret = pm->core->lang->cmdf (pm->core, "%s@e:scr.null=true", n);
+		pm->core->lang->cmdf (pm->core, "e scr.null=true");
+		ret = pm->core->lang->cmdf (pm->core, "%s", n);
+		pm->core->lang->cmdf (pm->core, "e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -372,9 +436,9 @@ static JSValue r2call0(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		pm->core->lang->cmdf (pm->core, "\"\"e scr.null=true");
-		ret = pm->core->lang->cmdf (pm->core, "\"\"%s", n);
-		pm->core->lang->cmdf (pm->core, "\"\"e scr.null=false");
+		pm->core->lang->cmdf (pm->core, "'e scr.null=true");
+		ret = pm->core->lang->cmdf (pm->core, "'%s", n);
+		pm->core->lang->cmdf (pm->core, "'e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -392,6 +456,25 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewString (ctx, r_str_get (ret));
 }
+
+static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 2 || !JS_IsString (argv[0]) || (!JS_IsString (argv[1]) && !JS_IsNumber (argv[1]))) {
+		return JS_ThrowRangeError (ctx, "r2.callAt takes two strings");
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	size_t plen;
+	const char *c = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[1], false);
+	char *ret = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ut64 at = r_num_math (pm->core->num, n);
+		ret = pm->core->lang->call_at (pm->core, at, c);
+	}
+	// JS_FreeValue (ctx, argv[0]);
+	return JS_NewString (ctx, r_str_get (ret));
+}
+
 
 static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	int i;
@@ -496,6 +579,7 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("cmd0", 1, r2cmd0),
 	// implemented in js JS_CFUNC_DEF ("call", 1, r2call);
 	JS_CFUNC_DEF ("call0", 1, r2call0),
+	JS_CFUNC_DEF ("callAt", 2, r2callAt),
 	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
 	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
 };
@@ -508,11 +592,121 @@ static JSModuleDef *js_init_module_r2(JSContext *ctx) {
 	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
 	if (m) {
 		JSValue global_obj = JS_GetGlobalObject (ctx);
-		JSValue name = JS_NewString(ctx, "r2");
-		JSValue v = JS_NewObjectProtoClass(ctx, name, 0);
+		JSValue name = JS_NewString (ctx, "r2");
+		JSValue v = JS_NewObjectProtoClass (ctx, name, 0);
 		JS_SetPropertyStr (ctx, global_obj, "r2", v);
-		JS_SetPropertyFunctionList(ctx, v, js_r2_funcs, countof(js_r2_funcs));
+		JS_SetPropertyFunctionList (ctx, v, js_r2_funcs, countof (js_r2_funcs));
 		// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof(js_r2_funcs));
+	}
+	return m;
+}
+
+// r2pipe
+static JSValue qjs_r2pipe_instance_cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 1) {
+		return JS_ThrowRangeError (ctx, "Only one argument permitted");
+	}
+	R2Pipe *r2p = JS_GetOpaque (this_val, 0);
+	size_t plen;
+	if (r2p) {
+		const char *cmd = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+		char *s = r2pipe_cmd (r2p, cmd);
+		if (s) {
+			return QJS_STRING (s);
+		}
+		return JS_ThrowRangeError (ctx, "Empty command returns undefined");
+	}
+	return JS_ThrowRangeError (ctx, "Only one argument permitted");
+}
+
+static JSValue qjs_r2pipe_instance_cmdj(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	JSValue arg0 = qjs_r2pipe_instance_cmd (ctx, this_val, argc, argv);
+	const char jp[] = "JSON.parse";
+	JSValue json_parse = JS_Eval (ctx, jp, strlen (jp), "-", JS_EVAL_TYPE_GLOBAL);
+	JSValue args = JS_NewArray (ctx);
+	JS_SetPropertyUint32 (ctx, args, 0, arg0);
+	return JS_Call (ctx, json_parse, this_val, 1, &args);
+}
+
+static JSValue qjs_r2pipe_instance_quit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	R2Pipe *r2p = JS_GetOpaque (this_val, 0);
+	if (r2p) {
+		r2pipe_close (r2p);
+		JS_SetOpaque (this_val, NULL);
+		return JS_NewBool (ctx, false);
+	}
+	return JS_NewBool (ctx, false);
+}
+
+static const JSCFunctionListEntry js_r2pipe_instance_funcs[] = {
+	JS_CFUNC_DEF ("cmd", 2, qjs_r2pipe_instance_cmd),
+	JS_CFUNC_DEF ("cmdj", 2, qjs_r2pipe_instance_cmdj),
+	JS_CFUNC_DEF ("quit", 2, qjs_r2pipe_instance_quit)
+};
+
+static JSValue qjs_r2pipe_open(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	// JSRuntime *rt = JS_GetRuntime (ctx);
+	// QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	if (argc == 0) {
+		// return the same current global instance of the r2
+		return JS_Eval (ctx, "r2", 2, "-", JS_EVAL_TYPE_GLOBAL);
+	}
+	if (argc > 2) {
+		return JS_ThrowRangeError (ctx, "Too many arguments");
+	}
+	char *args = strdup ("");
+	if (argc == 2) {
+		if (JS_IsArray (ctx, argv[1])) {
+			int i;
+			RStrBuf *sb = r_strbuf_new ("");
+			JSValue array = argv[1];
+			ut32 array_length;
+			JSValue v = JS_GetPropertyStr (ctx, array, "length");
+			JS_ToUint32 (ctx, &array_length, v);
+			for (i = 0; i < array_length; i++) {
+				v = JS_GetPropertyUint32 (ctx, array, i);
+				size_t plen;
+				const char *n = JS_ToCStringLen2 (ctx, &plen, v, false);
+				r_strbuf_append (sb, n);
+				r_strbuf_append (sb, " ");
+			}
+			r_strbuf_append (sb, " ");
+			free (args);
+			args = r_strbuf_drain (sb);
+		} else {
+			return JS_ThrowRangeError (ctx, "Second argument must be an array");
+		}
+	}
+	size_t plen;
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	char *c = r_str_newf ("radare2 %s-q0 %s", args, n);
+	R2Pipe *pipe = r2pipe_open (c);
+	free (c);
+	JSValue v = JS_NewObjectProtoClass (ctx, QJS_STRING ("r2pipeInstance"), 0);
+	// char *r2p = r_str_newf ("%p", pipe);
+	// JS_SetPropertyStr (ctx, v, "_r2p_", QJS_STRING (r2p));
+	JS_SetOpaque (v, pipe);
+	// free (r2p);
+	JS_SetPropertyFunctionList (ctx, v, js_r2pipe_instance_funcs, countof (js_r2pipe_instance_funcs));
+	return v;
+}
+
+static const JSCFunctionListEntry js_r2pipe_funcs[] = {
+	JS_CFUNC_DEF ("open", 2, qjs_r2pipe_open)
+	// JS_CFUNC_DEF ("openCore", 2, qjs_r2pipe_opencore) // r2pipe_open_corebind()
+};
+
+static int js_r2pipe_init(JSContext *ctx, JSModuleDef *m) {
+	return JS_SetModuleExportList (ctx, m, js_r2pipe_funcs, countof (js_r2pipe_funcs));
+}
+
+static JSModuleDef *js_init_module_r2pipe(JSContext *ctx) {
+	JSModuleDef *m = JS_NewCModule (ctx, "r2pipe", js_r2pipe_init);
+	if (m) {
+		JSValue global = JS_GetGlobalObject (ctx);
+		JSValue v = JS_NewObjectProtoClass (ctx, QJS_STRING ("r2pipe"), 0);
+		JS_SetPropertyStr (ctx, global, "r2pipe", v);
+		JS_SetPropertyFunctionList (ctx, v, js_r2pipe_funcs, countof (js_r2pipe_funcs));
 	}
 	return m;
 }
@@ -522,18 +716,11 @@ static void register_helpers(JSContext *ctx) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	js_std_set_worker_new_context_func (JS_NewCustomContext);
 	js_std_init_handlers (rt);
-
 	JS_SetModuleLoaderFunc (rt, NULL, js_module_loader, NULL);
 #endif
-	/*
-	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
-	if (!m) {
-		return;
-	}
-	js_r2_init (ctx, m);
-	*/
 	js_init_module_os (ctx);
 	js_init_module_r2 (ctx);
+	js_init_module_r2pipe (ctx);
 	r2qjs_modules (ctx);
 	// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 	JSValue global_obj = JS_GetGlobalObject (ctx);
@@ -541,6 +728,7 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "b64", JS_NewCFunction (ctx, b64, "b64", 1));
 	// r2cmd deprecate . we have r2.cmd already same for r2log
 	JS_SetPropertyStr (ctx, global_obj, "r2cmd", JS_NewCFunction (ctx, r2cmd, "r2cmd", 1));
+	JS_SetPropertyStr (ctx, global_obj, "r2call", JS_NewCFunction (ctx, r2callAt, "r2call", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2log", JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
@@ -552,35 +740,51 @@ static void register_helpers(JSContext *ctx) {
 		"{console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));}"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
+	eval (ctx, "r2.cmd2 = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\"}`));");
+	eval (ctx, "r2.cmd2j = (x) => JSON.parse(r2.cmd(`'{\"cmd\":\"${x}\",\"json\":true}`));");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
+	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(x + ' @ ' + a);");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
-	eval (ctx, "r2.callj = (x)=> JSON.parse(r2.call(x));");
+	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
-	eval (ctx, "var exports = {};");
-	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
+	eval (ctx, "require = function(x) { if (x == 'r2papi') { return new R2Papi(r2); } ; return requirejs(x); }");
+	eval (ctx, "var exports = G;");
+	// eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
-	if (!r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
-		eval (ctx, js_r2papi_qjs);
-		eval (ctx, "R=G.R=new R2Papi(r2);");
-	} else {
+	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
 		eval (ctx, "R=r2;");
+	} else {
+		char *custom_papi = r_sys_getenv ("R2_PAPI_SCRIPT");
+		if (R_STR_ISNOTEMPTY (custom_papi)) {
+			char *script = r_file_slurp (custom_papi, NULL);
+			if (script) {
+				eval (ctx, script);
+				free (script);
+			} else {
+				R_LOG_ERROR ("Cannot find %s. Loading default r2papi", custom_papi);
+				eval (ctx, js_r2papi_qjs);
+			}
+		} else {
+			eval (ctx, js_r2papi_qjs);
+			// r_file_dump ("rapi.qjs", js_r2papi_qjs, strlen (js_r2papi_qjs), 0);
+		}
+		free (custom_papi);
+		eval (ctx, "R=G.R=new R2Papi(r2);");
+		eval (ctx, "G.Process = new ProcessClass(r2);");
+		eval (ctx, "G.Module = new ModuleClass(r2);");
+		eval (ctx, "G.Thread = new ThreadClass(r2);");
+		eval (ctx, "function ptr(x) { return new NativePointer(x); }");
+		eval (ctx, "G.NULL = ptr(0);");
 	}
+	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };"); // calling r2.cmd requires a delayed initialization
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	JSContext *ctx = JS_NewContext (rt);
-	// JSContext *ctx = JS_NewContextRaw (rt);
 	if (!ctx) {
 		return NULL;
 	}
-#if CONFIG_BIGNUM
-	JS_AddIntrinsicBigFloat (ctx);
-	JS_AddIntrinsicBigDecimal (ctx);
-	JS_AddIntrinsicOperators (ctx);
-	JS_EnableBignumExt (ctx, true);
-#endif
-	register_helpers (ctx);
 	return ctx;
 }
 
@@ -613,13 +817,13 @@ static bool eval(JSContext *ctx, const char *code) {
 }
 
 static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
-	r_return_val_if_fail (s && s->plugin_data && code, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data && code, false);
 	QjsPluginManager *pm = s->plugin_data;
 	return eval (pm->default_ctx.ctx, code);
 }
 
 static bool lang_quickjs_file(RLangSession *s, const char *file) {
-	r_return_val_if_fail (s && s->plugin_data && file, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data && file, false);
 
 	QjsPluginManager *pm = s->plugin_data;
 	QjsContext *qctx = &pm->default_ctx;
@@ -657,20 +861,19 @@ static bool init(RLangSession *ls) {
 	if (!rt) {
 		return false;
 	}
-
 	JSContext *ctx = JS_NewCustomContext (rt);
 	if (!ctx) {
 		JS_FreeRuntime (rt);
 		return false;
 	}
-
 	QjsPluginManager *pm = R_NEW0 (QjsPluginManager);
 	if (!pm) {
 		JS_FreeContext (ctx);
 		JS_FreeRuntime (rt);
 		return false;
 	}
-
+	Gpm = pm;
+	pm->magic = QJS_CORE_MAGIC;
 	RCore *core = ls->lang->user;
 	plugin_manager_init (pm, core, rt);
 
@@ -680,13 +883,15 @@ static bool init(RLangSession *ls) {
 	qc->call_func = func;
 	r2qjs_modules (ctx);
 	JS_SetRuntimeOpaque (rt, pm);  // expose pm to all qjs native functions in R2
-
 	ls->plugin_data = pm;
+
+	// requires pm to be set in the plugin_data
+	register_helpers (ctx);
 	return true;
 }
 
 static bool fini(RLangSession *s) {
-	r_return_val_if_fail (s && s->plugin_data, false);
+	R_RETURN_VAL_IF_FAIL (s && s->plugin_data, false);
 
 	QjsPluginManager *pm = s->plugin_data;
 
@@ -702,10 +907,12 @@ static bool fini(RLangSession *s) {
 }
 
 static RLangPlugin r_lang_plugin_qjs = {
-	.name = "qjs",
+	.meta = {
+		.name = "qjs",
+		.license = "MIT",
+		.desc = "JavaScript extension language using QuickJS",
+	},
 	.ext = "qjs",
-	.license = "MIT",
-	.desc = "JavaScript extension language using QuickJS",
 	.run = lang_quickjs_run,
 	.run_file = lang_quickjs_file,
 	.init = init,

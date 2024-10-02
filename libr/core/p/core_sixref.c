@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2022 - Siguza, pancake, hot3eed */
+/* radare - LGPL - Copyright 2021-2024 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 
@@ -22,17 +22,15 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 			ut32 reg = v & 0x1f;
 			bool is_adrp = (v & 0x80000000) != 0;
 			int64_t base = is_adrp ? (addr & 0xfffffffffffff000) : addr;
-			int64_t off  = ((int64_t)((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp ? 31 : 43);
+			int64_t off  = (int64_t)((uint64_t)((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp ? 31 : 43);
 			ut64 target = base + off;
 			if (search == 0) {
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s\n", target, addr, is_adrp? "adrp": "adr");
 				addref (core, addr, target, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
 			} else if (target == search) {
 				r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"\n", addr, is_adrp ? "adrp" : "adr", reg, target);
-			}
-			// More complicated cases - up to 3 instr
-			else
-			{
+			} else {
+				// More complicated cases - up to 3 instr
 				ut32 *q = p + 1;
 				while (q < e && *q == 0xd503201f) // nop
 				{
@@ -97,56 +95,48 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 								{
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
 									if (target + aoff + uoff == search) {
-										if (aoff) // Have add
-										{
+										if (aoff) { // Have add
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, uoff);
-										}
-										else // Have no add
-										{
+										} else { // Have no add
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, uoff);
 										}
 									}
 								} else if ((v & 0x00200000) == 0) {
-									int64_t soff = ((int64_t)((v >> 12) & 0x1ff) << 55) >> 55;
+									int64_t soff = (int64_t)((uint64_t)((v >> 12) & 0x1ff) << 55) >> 55;
 									const char *sign = soff < 0 ? "-" : "";
 									if (target + aoff + soff == search) {
 										if ((v & 0x400) == 0) {
 											if ((v & 0x800) == 0) // unscaled
 											{
-												switch((opc << 4) | size)
-												{
-													case 0x00:            inst = "sturb";  break;
-													case 0x01:            inst = "sturh";  break;
-													case 0x02: case 0x03: inst = "stur";   break;
-													case 0x10:            inst = "ldurb";  break;
-													case 0x11:            inst = "ldurh";  break;
-													case 0x12: case 0x13: inst = "ldur";   break;
-													case 0x20: case 0x30: inst = "ldursb"; break;
-													case 0x21: case 0x31: inst = "ldursh"; break;
-													case 0x22:            inst = "ldursw"; break;
+												switch((opc << 4) | size) {
+												case 0x00:            inst = "sturb";  break;
+												case 0x01:            inst = "sturh";  break;
+												case 0x02: case 0x03: inst = "stur";   break;
+												case 0x10:            inst = "ldurb";  break;
+												case 0x11:            inst = "ldurh";  break;
+												case 0x12: case 0x13: inst = "ldur";   break;
+												case 0x20: case 0x30: inst = "ldursb"; break;
+												case 0x21: case 0x31: inst = "ldursh"; break;
+												case 0x22:            inst = "ldursw"; break;
 												}
-											}
-											else // unprivileged
-											{
-												switch((opc << 4) | size)
-												{
-													case 0x00:            inst = "sttrb";  break;
-													case 0x01:            inst = "sttrh";  break;
-													case 0x02: case 0x03: inst = "sttr";   break;
-													case 0x10:            inst = "ldtrb";  break;
-													case 0x11:            inst = "ldtrh";  break;
-													case 0x12: case 0x13: inst = "ldtr";   break;
-													case 0x20: case 0x30: inst = "ldtrsb"; break;
-													case 0x21: case 0x31: inst = "ldtrsh"; break;
-													case 0x22:            inst = "ldtrsw"; break;
+											} else { // unprivileged
+												switch((opc << 4) | size) {
+												case 0x00:            inst = "sttrb";  break;
+												case 0x01:            inst = "sttrh";  break;
+												case 0x02: case 0x03: inst = "sttr";   break;
+												case 0x10:            inst = "ldtrb";  break;
+												case 0x11:            inst = "ldtrh";  break;
+												case 0x12: case 0x13: inst = "ldtr";   break;
+												case 0x20: case 0x30: inst = "ldtrsb"; break;
+												case 0x21: case 0x31: inst = "ldtrsh"; break;
+												case 0x22:            inst = "ldtrsw"; break;
 												}
 											}
 											if (aoff) // Have add
 											{
 												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]\n",
 													addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-											}
-											else // Have no add
+											} else // Have no add
 											{
 												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%"PFMT64d"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
 											}
@@ -187,7 +177,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 		}
 		else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) // ldr and ldrsw literal
 		{
-			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
+			int64_t off = (int64_t)((uint64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
@@ -200,7 +190,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 		}
 		else if ((v & 0x7c000000) == 0x14000000) // b and bl
 		{
-			int64_t off = ((int64_t)(v & 0x3ffffff) << 38) >> 36;
+			int64_t off = (int64_t)((uint64_t)(v & 0x3ffffff) << 38) >> 36;
 			bool is_bl = (v & 0x80000000) != 0;
 			if (!search) {
 				// r_cons_printf("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s %#"PFMT64x"\n", addr + off, addr, is_bl ? "bl" : "b", addr + off);
@@ -211,7 +201,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 		}
 		else if ((v & 0xff000010) == 0x54000000) // b.cond
 		{
-			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
+			int64_t off = (int64_t)((uint64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
@@ -241,7 +231,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 		}
 		else if ((v & 0x7e000000) == 0x34000000) // cbz and cbnz
 		{
-			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
+			int64_t off = (int64_t)((uint64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
@@ -311,6 +301,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	input = r_str_trim_head_ro (input + strlen ("sixref"));
 
 	RCore *core = (RCore *)user;
+	const ut64 oaddr = core->offset;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 
@@ -375,6 +366,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 
 done:
+	r_core_seek (core, oaddr, true);
 	return true;
 }
 

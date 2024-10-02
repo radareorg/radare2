@@ -1,8 +1,98 @@
-/* radare - LGPL - Copyright 2018 - pancake, r00tus3r */
+/* radare - LGPL - Copyright 2018-2024 - pancake, r00tus3r */
 
-#include <r_util.h>
+#include <r_types.h>
 
-static const char *ascii_table =
+// R2_600 - rename to chartable.c
+#if R2_USE_NEW_ABI
+// TODO. use the charset api to generate this
+static const char printable_ebcdic_table[] =
+"The following table contains the 128 printable EBCDIC characters.\n"
+"Dec   Hex      v1   v2            Dec    Hex    v1     v2\n"
+"────────────────────────────────────────────────────────────────────────\n"
+" 0    00      NUL                 126    7E      =      =      \n"
+" 1    01      SOH                 127    7F      "      "      \n"
+" 2    02      STX                 128    80             0\n"
+" 3    03      ETX                 129    81      a      a\n"
+" 4    04      PF                  130    82      b      b\n"
+" 5    05      HT                  131    83      c      c\n"
+" 6    06      LC                  132    84      d      d\n"
+" 7    07      DEL                 133    85      e      e\n"
+" 8    08      GE                  134    86      f      f\n"
+" 9    09      RLF                 135    87      g      g\n"
+" 10   0A      SMM                 136    88      h      h\n"
+" 11   0B      VT                  137    89      i      i\n"
+" 12   0C      FF                  145    91      j      j\n"
+" 13   0D      CR                  146    92      k      k\n"
+" 14   0E      SO                  147    93      l      l\n"
+" 15   0F      SI                  148    94      m      m\n"
+" 16   10      DLE                 149    95      n      n\n"
+" 17   11      DC1                 150    96      o      o\n"
+" 18   12      DC2                 151    97      p      p\n"
+" 19   13      TM                  152    98      q      q\n"
+" 20   14      RES                 153    99      r      r\n"
+" 21   15      NL                  162    A2      s      s\n"
+" 22   16      BS                  163    A3      t      t\n"
+" 23   17      IL                  164    A4      u      u\n"
+" 24   18      CAN                 165    A5      v      v\n"
+" 25   19      EM                  166    A6      w      w\n"
+" 26   1A      CC                  167    A7      x      x\n"
+" 27   1B      CU1                 168    A8      y      y\n"
+" 28   1C      IFS                 169    A9      z      z\n"
+" 29   1D      IGS                 175    AF             ⌐\n"
+" 30   1E      IRS                 176    B0             ╜\n"
+" 31   1F      IUS                 181    B5             ⌡\n"
+" 32   20      DS                  182    B6             ⌠\n"
+" 33   21      SOS                 186    BA             ¬\n"
+" 34   22      FS                  187    BB             |\n"
+" 36   24      BYP                 188    BC             .\n"
+" 37   25      LF                  189    BD             \"\n"
+" 38   26      ETB                 190    BE             '\n"
+" 39   27      ESC                 191    BF             =\n"
+" 42   2A      SM                  192    C0      {      {\n"
+" 43   2B      CU2                 193    C1      A      A\n"
+" 45   2D      ENQ                 194    C2      B      B\n"
+" 46   2E      ACK                 195    C3      C      C\n"
+" 47   2F      BEL                 196    C4      D      D\n"
+" 50   32      SYN                 197    C5      E      E\n"
+" 52   34      PN                  198    C6      F      F\n"
+" 53   35      RS                  199    C7      G      G\n"
+" 54   36      UC                  200    C8      H      H\n"
+" 55   37      EOT                 201    C9      I      I\n"
+" 59   3B      CU3                 208    D0      }      }\n"
+" 60   3C      DC4                 209    D1      J      J\n"
+" 61   3D      NAK                 210    D2      K      K\n"
+" 63   3F      SUB                 211    D3      L      L\n"
+" 64   40      Sp                  212    D4      M      M\n"
+" 74   4A      ╜                   213    D5      N      N\n"
+" 76   4C      <      <            214    D6      O      O\n"
+" 77   4D      (      (            215    D7      P      P\n"
+" 78   4E      +      +            216    D8      Q      Q\n"
+" 79   4F      |                   217    D9      R      R\n"
+" 80   50      &      &            226    E2      S      S\n"
+" 90   5A      !                   227    E3      T      T\n"
+" 91   5B      $      $            228    E4      U      U\n"
+" 92   5C      *                   229    E5      V      V\n"
+" 93   5D      )      )            230    E6      W      W\n"
+" 94   5E      ;      ;            231    E7      X      X\n"
+" 95   5F      ¬                   232    E8      Y      Y\n"
+" 96   60      -                   233    E9      Z      Z\n"
+" 97   61      /                   240    F0      0      0\n"
+"106   6A      !                   241    F1      1      1\n"
+"107   6B      ,      ,            242    F2      2      2\n"
+"108   6C      %      %            243    F3      3      3\n"
+"109   6D      _      _            244    F4      4      4\n"
+"110   6E      >      >            245    F5      5      5\n"
+"111   6F      ?      ?            246    F6      6      6\n"
+"122   7A      :      :            247    F7      7      7\n"
+"123   7B      #      #            248    F8      8      8\n"
+"124   7C      @      @            249    F9      9      9\n"
+"125   7D      '      '            255    FF      EO\n"
+
+;
+
+#endif
+
+static const char ascii_table[] =
 "The following table contains the 128 ASCII characters.\n"
 "\n"
 "Oct   Dec   Hex   Char                        Oct   Dec   Hex   Char\n"
@@ -74,6 +164,16 @@ static const char *ascii_table =
 "077   63    3F    ?                           177   127   7F    DEL\n"
 ;
 
-R_API const char *ret_ascii_table(void) {
+#if R2_USE_NEW_ABI
+R_API const char *r_str_chartable(int t) {
+	if (t == 'e') {
+		return printable_ebcdic_table;
+		// return ebcdic_table;
+	}
+	return ascii_table;
+}
+#endif
+
+R_API const char *r_str_asciitable(void) {
 	return ascii_table;
 }

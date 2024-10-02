@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2023 - pancake */
+/* radare2 - LGPL - Copyright 2018-2024 - pancake */
 
 #include <r_bin.h>
 
@@ -12,69 +12,74 @@ typedef struct {
 } Langs;
 
 static inline bool check_rust(RBinSymbol *sym) {
-	return sym->name && strstr (sym->name, "_$LT$");
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	return oname && strstr (oname, "_$LT$");
 }
 
 static inline bool check_objc(RBinSymbol *sym) {
-	if (sym->name && !strncmp (sym->name, "_OBJC_", 6)) {
-		// free (r_bin_demangle_objc (binfile, sym->name));
-		return true;
-	}
-	return false;
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return (sym_name && r_str_startswith (sym_name, "_OBJC_"));
 }
 
 static bool check_dlang(RBinSymbol *sym) {
-	if (r_str_startswith (sym->name, "_D2")) {
-		return true;
-	}
-	if (r_str_startswith (sym->name, "_D4")) {
-		return true;
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	if (r_str_startswith (name, "_D")) {
+		return isdigit (name[2]);
 	}
 	return false;
 }
 
 static bool check_swift(RBinSymbol *sym) {
-	return (sym->name && strstr (sym->name, "swift_once"));
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return (sym_name && strstr (sym_name, "swift_once"));
 }
 
 static bool check_golang(RBinSymbol *sym) {
-	return !strncmp (sym->name, "go.", 3);
+	const char *sym_name = r_bin_name_tostring (sym->name);
+	return r_str_startswith (sym_name, "go.");
 }
 
 static inline bool is_cxx_symbol(const char *name) {
-	r_return_val_if_fail (name, false);
-	if (r_str_startswith (name, "_Z")) {
-		return true;
-	}
-	if (r_str_startswith (name, "__Z")) {
-		return true;
+	R_RETURN_VAL_IF_FAIL (name, false);
+	if (*name == '_') {
+		name++;
+		if (*name == '_') {
+			name++;
+		}
+		return *name == 'Z';
 	}
 	return false;
 }
 
 static bool check_cxx(RBinSymbol *sym) {
-	return is_cxx_symbol (sym->name);
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return is_cxx_symbol (sym_name);
 }
 
 static bool check_msvc(RBinSymbol *sym) {
-	return *sym->name == '?';
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	return *oname == '?';
 }
 
 static inline bool check_kotlin(RBinSymbol *sym) {
-	return sym->name && strstr (sym->name, "kotlin_");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return name && strstr (name, "kotlin_");
 }
 static inline bool check_groovy(RBinSymbol *sym) {
-	return strstr (sym->name, "_groovy");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return strstr (name, "_groovy");
 }
 static inline bool check_dart(RBinSymbol *sym) {
-	return strstr (sym->name, "io_flutter_");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return strstr (name, "io_flutter_");
 }
 
 static inline bool check_pascal(RBinSymbol *sym) {
-	if (strstr (sym->name, "$_$")) {
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	if (strstr (name, "$_$")) {
 		return true;
 	}
-	return strstr (sym->name, "_$$_");
+	return strstr (name, "_$$_");
 }
 
 typedef struct {
@@ -133,7 +138,8 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 				}
 				if (strstr (lib, "msvcp")) {
 					info->lang = "msvc";
-					return R_BIN_LANG_MSVC;
+					*type = R_BIN_LANG_MSVC;
+					return false;
 				}
 			}
 			lc->cxxIsChecked = true;
@@ -199,13 +205,11 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 	return true;
 }
 
-/* This is about 10% of the loading time, optimize if possible */
+/* This is about 10% of the loading time, optimize checking when registering the symbols */
 R_API int r_bin_load_languages(RBinFile *bf) {
-	r_return_val_if_fail (bf, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->bo, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->bo->info, R_BIN_LANG_NONE);
-	RBinObject *o = bf->bo;
-	RBinInfo *info = o->info;
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->info, R_BIN_LANG_NONE);
+	RBinObject *bo = bf->bo;
+	RBinInfo *info = bo->info;
 	RBinSymbol *sym = NULL;
 	RListIter *iter;
 	LangCheck lc = {0};
@@ -218,29 +222,39 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 	if (unknownType || !(isMacho || isElf || isPe)) {
 		return R_BIN_LANG_NONE;
 	}
-#if R2_590
-	R_VEC_FOREACH (&o->imports_vec, sym) {
-#else
-	r_list_foreach (o->imports, iter, sym) {
-#endif
-		const char *name = sym->name;
-		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
-			lc.isBlocks = true;
-		} else if (r_str_startswith (name, "objc_")) {
-			lc.isObjC = true;
-			lc.cantbe.objc = true;
+	RBinImport *imp;
+	if (bo->imports) {
+		// R2_600 deprecate when all plugins use the imports vec
+		r_list_foreach (bo->imports, iter, imp) {
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
+			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+				lc.isBlocks = true;
+			} else if (r_str_startswith (name, "objc_")) {
+				lc.isObjC = true;
+				lc.cantbe.objc = true;
+			}
+		}
+	} else {
+		R_VEC_FOREACH (&bo->imports_vec, imp) {
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
+			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+				lc.isBlocks = true;
+			} else if (r_str_startswith (name, "objc_")) {
+				lc.isObjC = true;
+				lc.cantbe.objc = true;
+			}
 		}
 	}
 	int type = -1;
-	if (o->symbols) {
+	if (bo->symbols) {
 		// deprecate
-		r_list_foreach (o->symbols, iter, sym) {
+		r_list_foreach (bo->symbols, iter, sym) {
 			if (!check_symbol_lang (bf, &lc, sym, &type)) {
 				break;
 			}
 		}
 	} else {
-		R_VEC_FOREACH (&o->symbols_vec, sym) {
+		R_VEC_FOREACH (&bo->symbols_vec, sym) {
 			if (!check_symbol_lang (bf, &lc, sym, &type)) {
 				break;
 			}
@@ -262,7 +276,7 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 }
 
 // if its ipi no need to be prefixed with r_
-R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
+R_IPI int r_bin_lang_type(R_NULLABLE RBinFile *bf, R_NULLABLE const char *def, R_NULLABLE const char *sym) {
 	int type = R_BIN_LANG_NONE;
 	if (sym) {
 		if (r_str_startswith (sym, "__")) {
@@ -278,11 +292,13 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 			return type;
 		}
 	}
-	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
-	if (def && plugin && plugin->demangle_type) {
-		type = plugin->demangle_type (def);
-	} else if (binfile && binfile->bo && binfile->bo->info) {
-		type = r_bin_demangle_type (binfile->bo->info->lang);
+	if (bf) {
+		RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+		if (def && plugin && plugin->demangle_type) {
+			type = plugin->demangle_type (def);
+		} else if (bf->bo && bf->bo->info) {
+			type = r_bin_demangle_type (bf->bo->info->lang);
+		}
 	}
 	if (def && type == R_BIN_LANG_NONE) {
 		type = r_bin_demangle_type (def);

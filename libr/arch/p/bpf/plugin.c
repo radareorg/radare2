@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2023 - mrmacete, pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - mrmacete, pancake */
 
 #include <r_arch.h>
 #include <r_anal/op.h>
@@ -8,7 +8,12 @@
 static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
 	const ut64 pc = r_op->addr;
 	const char *op, *fmt;
-	RBpfSockFilter *f = (RBpfSockFilter *)buf;
+	RBpfSockFilter f[1] = {{
+		r_read_le16 (buf),
+		buf[2],
+		buf[3],
+		r_read_le32 (buf + 4)
+	}};
 	int val = f->k;
 	char vbuf[256];
 
@@ -613,7 +618,7 @@ static bool parse_alu(RBpfSockFilter *f, const char *m, int opc, const bpf_token
 static bool parse_instruction(RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
 	const char *mnemonic_tok = token_next (p);
 	PARSE_NEED_TOKEN (mnemonic_tok);
-	int mlen = strnlen (mnemonic_tok, 5);
+	int mlen = r_str_nlen (mnemonic_tok, 5);
 	if (mlen < 2 || mlen > 4) {
 		R_LOG_ERROR ("invalid mnemonic");
 	}
@@ -688,7 +693,12 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	bool ret = parse_instruction (&f, &p, op->addr);
 	token_fini (&p);
 	if (ret) {
-		r_anal_op_set_bytes (op, op->addr, (const ut8*)&f, 8);
+		ut8 encoded[8];
+		r_write_le16 (encoded, f.code);
+		encoded[2] = f.jt;
+		encoded[3] = f.jf;
+		r_write_le32 (encoded + 4, f.k);
+		r_anal_op_set_bytes (op, op->addr, encoded, 8);
 		op->size = 8;
 		return true;
 	}
@@ -1163,16 +1173,19 @@ static char *regs(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 8;
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 8;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 1;
+	case R_ARCH_INFO_ISVM:
+		// dont run aav in aaa
+		return R_ARCH_INFO_ISVM;
 	}
 	return 0;
 }
@@ -1198,10 +1211,10 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 	}
 	const int syscall_number = 0;
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		r_esil_set_interrupt (esil, syscall_number, &bpf_int_exit, as);
 		break;
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		r_esil_del_interrupt (esil, 0);
 		break;
 	default:
@@ -1215,6 +1228,7 @@ const RArchPlugin r_arch_plugin_bpf = {
 		.name = "bpf.mr",
 		.desc = "Classic BPF analysis plugin",
 		.license = "LGPLv3",
+		.author = "mrmacete"
 	},
 	.arch = "bpf",
 	.bits = 32,

@@ -1,11 +1,8 @@
-/* radare - LGPL - 2022 - terorie */
+/* radare - LGPL - 2022-2024 - terorie */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_io.h>
-#include <string.h>
 
 #define MAX_SECTION_COUNT 128
 #define MAX_IMP_COUNT 128
@@ -211,7 +208,7 @@ static LoadedRel *load_rel_header(RBinFile *bf) {
 	return rel;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	if (!file_has_rel_ext (bf)) {
 		return false;
 	}
@@ -227,7 +224,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 // RBinPlugin method setting up sections and fixing up PIC.
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RelSection *sections = NULL;
 	int i;
 	int num_imps;
@@ -301,7 +298,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		rel->libname = "";
 	}
 
-	*bin_obj = rel;
+	bf->bo->bin_obj = rel;
 	return true;
 
 beach:
@@ -394,15 +391,14 @@ static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, 
 		return;
 	}
 	RBinSymbol *ret = R_NEW0 (RBinSymbol);
-	if (!ret) {
-		return;
+	if (R_LIKELY (ret)) {
+		ret->type = R_BIN_TYPE_FUNC_STR;
+		ret->libname = strdup (rel->libname);
+		ret->name = r_bin_name_new (name);
+		ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
+		ret->vaddr = bf->bo->baddr + ret->paddr;
+		r_list_append (syms, ret);
 	}
-	ret->type = R_BIN_TYPE_FUNC_STR;
-	ret->libname = strdup (rel->libname);
-	ret->name = strdup (name);
-	ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
-	ret->vaddr = bf->bo->baddr + ret->paddr;
-	r_list_append (syms, ret);
 }
 
 static RList *symbols(RBinFile *bf) {
@@ -508,7 +504,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	}
 	// clang-format on
 
-	if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN) && b->iob.overlay_write_at != _overlay_write_at_hack) {
+	if (r_log_match (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN) && b->iob.overlay_write_at != _overlay_write_at_hack) {
 		assert (size > 0 && size <= 8);
 		char value_old_hex[9], value_new_hex[9];
 		char fmt[] = "%08x";
@@ -593,7 +589,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->buf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -611,12 +607,14 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_rel = {
-	.name = "rel",
-	.desc = "Nintendo Wii REL format",
-	.license = "LGPL3",
-	.author = "terorie",
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.meta = {
+		.name = "rel",
+		.desc = "Nintendo Wii REL format",
+		.license = "LGPL3",
+		.author = "terorie",
+	},
+	.check = &check,
+	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
 	.sections = &sections,

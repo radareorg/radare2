@@ -20,7 +20,7 @@ static ut8 gb_op_calljump(RArchSession *a, RAnalOp *op, const ut8 *data, ut64 ad
 		return false;
 	}
 	if (!GB_IS_VBANK_DST (data[1], data[2])) {
-		op->jump = GB_SOFTCAST(data[1], data[2]);
+		op->jump = GB_SOFTCAST (data[1], data[2]);
 	} else {
 		op->jump = GB_IB_DST (data[1], data[2], addr);
 	}
@@ -1493,7 +1493,7 @@ static char* regs(RArchSession *as) {
 }
 
 static int esil_gb_init(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 
 	// XXX esil-init shouldnt touch the registers or write into memory or antyhing like dat
 	GBUser *user = R_NEW0 (GBUser);
@@ -1519,7 +1519,7 @@ static int esil_gb_init(REsil *esil) {
 }
 
 static int esil_gb_fini(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 
 	R_FREE (esil->cb.user);
 	return true;
@@ -1527,13 +1527,13 @@ static int esil_gb_fini(REsil *esil) {
 
 static int info(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 3;
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 1;
 	}
 	return -1;
@@ -1545,10 +1545,10 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 		return false;
 	}
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		esil_gb_init (esil);
 		break;
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		esil_gb_fini (esil);
 		break;
 	default:

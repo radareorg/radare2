@@ -1,5 +1,6 @@
-/* radare2 - LGPL - Copyright 2016-2023 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2024 - n4x0r, soez, pancake */
 
+#if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea
 // https://github.com/bminor/glibc/blob/glibc-2.28/malloc/malloc.c#L1658
 #ifndef INCLUDE_HEAP_GLIBC_C
@@ -49,7 +50,8 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name
 		RVecRBinSymbol *syms = r_bin_get_symbols_vec (bin);
 		RBinSymbol *s;
 		R_VEC_FOREACH (syms, s) {
-			if (!strcmp (s->name, sym_name)) {
+			const char *sname = r_bin_name_tostring (s->name);
+			if (!strcmp (sname, sym_name)) {
 				vaddr = s->vaddr;
 				break;
 			}
@@ -69,58 +71,225 @@ static inline GHT GH(get_next_pointer)(RCore *core, GHT pos, GHT next) {
 	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR (pos, next);
 }
 
-static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
-	r_return_val_if_fail (core && map, GHT_MAX);
-	GHT base_addr = map->addr;
-	r_return_val_if_fail (base_addr != GHT_MAX, GHT_MAX);
-
-	GHT main_arena = GHT_MAX;
+static GHT GH(get_main_arena_offset_with_symbol)(RCore *core, const char *libc_filename) {
 	GHT vaddr = GHT_MAX;
-	char *path = strdup (map->name);
-	if (path && r_file_exists (path)) {
-		vaddr = GH (get_va_symbol) (core, path, "main_arena");
+	if (libc_filename && r_file_exists (libc_filename)) {
+		vaddr = GH (get_va_symbol)(core, libc_filename, "main_arena");
 		if (vaddr != GHT_MAX) {
-			main_arena = base_addr + vaddr;
-		} else {
-			vaddr = GH (get_va_symbol) (core, path, "__malloc_hook");
-			if (vaddr == GHT_MAX) {
-				return main_arena;
-			}
-			RBinInfo *info = r_bin_get_info (core->bin);
-			if (!strcmp (info->arch, "x86")) {
-				main_arena = GH (align_address_to_size) (vaddr + base_addr + sizeof (GHT), 0x20);
-			} else if (!strcmp (info->arch, "arm")) {
-				main_arena = vaddr + base_addr - sizeof (GHT) * 2 - sizeof (MallocState);
-			}
+			R_LOG_INFO("Found main_arena with symbol");
 		}
 	}
-	free (path);
-	return main_arena;
+	return vaddr;
+}
+
+static GH(section_content) GH(get_section_content)(RCore *core, const char *path, const char *section_name) {
+	RBin *bin = core->bin;
+	RBinFile *bf = r_bin_cur (bin);
+	bool found_section = false;
+	GHT paddr;
+	GH(section_content) content = {.size = GHT_MAX, .buf = NULL};
+
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	if (!r_bin_open (bin, path, &opt)) {
+		R_LOG_ERROR ("get_section_content: r_bin_open failed on path %s", path);
+		return content;
+	}
+
+	RBinFile *libc_bf = r_bin_cur (bin);
+	RList *sections = r_bin_get_sections (bin);
+	RBinSection *section;
+	RListIter *iter;
+
+	r_list_foreach (sections, iter, section) {
+		if (!strcmp (section->name, section_name)) {
+			found_section = true;
+			paddr = section->paddr;
+			content.size = section->size;
+			break;
+		}
+	}
+
+	if (!found_section) {
+		R_LOG_WARN ("get_section_content: section %s not found", section_name);
+		goto cleanup_exit;
+	}
+
+	// eprintf ("get_section_bytes: section found: %s content.size: %#08x  paddr: %#08x\n", section_name, content.size, paddr);
+	content.buf = calloc (content.size, 1);
+	if (!content.buf) {
+		R_LOG_ERROR ("get_section_content: calloc failed");
+		goto cleanup_exit;
+	}
+
+	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
+
+	if (read_size != content.size) {
+		R_LOG_ERROR ("get_section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		free (content.buf);
+		content.buf = NULL;
+	}
+
+cleanup_exit:
+	r_bin_file_delete (bin, libc_bf->id);
+	if (bf) {
+		r_bin_file_set_cur_binfile (bin, bf);
+	}
+	return content;
+}
+
+R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
+	double version = 0.0;
+
+	// First see if there is a "__libc_version" symbol
+	// If yes read version from there
+	GHT version_symbol = GH (get_va_symbol) (core, libc_path, "__libc_version");
+	if (version_symbol != GHT_MAX) {
+		FILE *libc_file = fopen (libc_path, "rb");
+		if (libc_file == NULL) {
+			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", libc_path);
+			return false;
+		}
+		// TODO: futureproof this
+		char version_buffer[5] = {0};
+		fseek (libc_file, version_symbol, SEEK_SET);
+		if (fread (version_buffer, 1, 4, libc_file) != 4)	{
+			R_LOG_WARN ("resolve_glibc_version: Failed to read 4 bytes of version symbol");
+			return false;
+		};
+
+		fclose (libc_file);
+		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
+			return false;
+		}
+		version = strtod (version_buffer, NULL);
+		R_LOG_INFO ("libc version %.2f identified from symbol", version);
+		return version;
+	}
+
+	// Next up we try to read version from banner in .rodata section
+	// also inspired by pwndbg
+	GH(section_content)  rodata = GH (get_section_content) (core, libc_path, ".rodata");
+
+	const ut8 *banner_start = NULL;
+	if (rodata.buf != NULL) {
+		banner_start = r_mem_mem (rodata.buf, rodata.size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
+	}
+	if (banner_start != NULL) {
+		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
+		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
+		// We only care about the first match
+		const char *first_match = r_list_first (matches);
+		if (first_match)	{
+			const char *version_start = first_match + strlen ("release version ");
+			version = strtod (version_start, NULL);
+		}
+		r_list_free (matches);
+		r_regex_free (rx);
+	}
+	free (rodata.buf);
+	if (version != 0) {
+		R_LOG_INFO ("libc version %.2f identified from .rodata banner", version);
+		return version;
+	}
+
+	R_LOG_WARN ("get_glibc_version failed");
+	return version;
+}
+
+static const char* GH(get_libc_filename_from_maps)(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->maps && core->bin && core->bin->file, NULL);
+	RListIter *iter;
+	RDebugMap *map = NULL;
+
+	r_debug_map_sync (core->dbg);
+
+	// Search for binary in memory maps named *libc-* or *libc.*  *libc6_* or similiar
+	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (!map->name || r_str_startswith (core->bin->file, map->name)) {
+			continue;
+		}
+		if (r_regex_match (".*libc6?[-_\\.]", "e", map->name)) {
+			r_config_set (core->config, "dbg.glibc.path", map->file);
+			return map->file;
+		}
+	}
+	return NULL;
+}
+
+// TODO: more options to get libc filename
+static const char* GH(get_libc_filename)(RCore *core) {
+	const char *dbg_glibc_path = r_config_get (core->config, "dbg.glibc.path");
+	if (!R_STR_ISEMPTY (dbg_glibc_path)) {
+		return dbg_glibc_path;
+	}
+	return GH(get_libc_filename_from_maps) (core);
+}
+
+static bool GH(resolve_glibc_version)(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->maps, false);
+
+	double version = 0;
+
+	if (core->dbg->glibc_version_resolved) {
+		return true;
+	}
+
+	const char *dbg_glibc_version = r_config_get (core->config, "dbg.glibc.version");
+	if (R_STR_ISEMPTY (dbg_glibc_version)) {
+		dbg_glibc_version = NULL;
+	}
+
+	if (dbg_glibc_version)	{
+		// TODO: use ^ and $ which appear to be broken
+		if (!r_regex_match ("\\d.\\d\\d", "e", dbg_glibc_version)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
+						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
+		} else {
+			version = strtod (dbg_glibc_version, NULL);
+			core->dbg->glibc_version = (int) round ((version * 100));
+			core->dbg->glibc_version_d = version;
+			core->dbg->glibc_version_resolved = true;
+			R_LOG_INFO ("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
+			return true;
+		}
+	}
+
+	const char *libc_filename = GH(get_libc_filename_from_maps) (core);
+
+	if (!libc_filename) {
+		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
+		return false;
+	}
+	// At this point we found a map in memory that _should_ be libc
+	version = GH (get_glibc_version) (core, libc_filename);
+	if (version != 0)	{
+		core->dbg->glibc_version = (int) round ((version * 100));
+		core->dbg->glibc_version_d = version;
+		core->dbg->glibc_version_resolved = true;
+		char version_buffer[315] = {0};
+		// TODO: better way snprintf to 4 chars warns
+		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
+		snprintf (version_buffer, sizeof (version_buffer)-1, "%.2f", version);
+		r_config_set (core->config, "dbg.glibc.version", version_buffer);
+		return true;
+	}
+
+	R_LOG_WARN ("Could not determine libc version");
+	return false;
 }
 
 static bool GH(is_tcache)(RCore *core) {
-	double v = 0;
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return r_config_get_b (core->config, "dbg.glibc.tcache");
 	}
-	RDebugMap *map;
-	RListIter *iter;
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		// In case the binary is named *libc-* or *libc.*
-		if (strncmp (map->name, core->bin->file, strlen (map->name)) != 0) {
-			char *fp = strstr (map->name, "libc-");
-			if (fp) {
-				break;
-			}
-			fp = strstr (map->name, "libc.");
-			if (fp) {
-				v = r_num_get_float (core->num, fp + 5);
-				core->dbg->glibc_version = (int) round((v * 100));
-				return (v > 2.25);
-			}
-		}
+
+	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
+		return core->dbg->glibc_version_d > 2.25;
 	}
+	R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
 	return false;
 }
 
@@ -133,7 +302,7 @@ static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
 	return 0;
 }
 
-static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_with_tc)(GH(RHeap_MallocState_227) *cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -156,7 +325,7 @@ static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, 
 	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
 }
 
-static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, MallocState *main_arena) {
+static void GH(update_arena_without_tc)(GH(RHeap_MallocState_223) *cmain_arena, MallocState *main_arena) {
 	size_t i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
@@ -181,18 +350,24 @@ static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, Mall
 static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena) {
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (tcache) {
-		GH(RHeap_MallocState_tcache) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_tcache));
+		GH(RHeap_MallocState_227) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_227));
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_tcache)));
+		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_227)))) {
+			R_LOG_ERROR ("Cannot read");
+			return false;
+		}
 		GH(update_arena_with_tc)(cmain_arena, main_arena);
 	} else {
-		GH(RHeap_MallocState) *cmain_arena = R_NEW0 (GH(RHeap_MallocState));
+		GH(RHeap_MallocState_223) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_223));
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState)));
+		if (!r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_223)))) {
+			R_LOG_ERROR ("Cannot read");
+			return false;
+		}
 		GH(update_arena_without_tc)(cmain_arena, main_arena);
 	}
 	return true;
@@ -381,38 +556,171 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("}\n\n");
 }
 
+typedef struct GH(expected_arenas) {
+	GH(RHeap_MallocState_227) expected_227;
+	GH(RHeap_MallocState_223) expected_223;
+	GH(RHeap_MallocState_212) expected_212;
+} GH(expected_arenas_s);
+
+static GH(expected_arenas_s) GH (get_expected_main_arena_structures ) (RCore *core, GHT addend) {
+	GH(expected_arenas_s) expected_arenas = {
+			.expected_227 = {.next = addend, .attached_threads = 1},
+			.expected_223 = {.next = addend, .attached_threads = 1},
+			.expected_212 = {.next = addend}
+	};
+	return expected_arenas;
+}
+
+static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc_path) {
+	RBin *bin = core->bin;
+	RBinFile *bf = r_bin_cur (bin);
+	GHT main_arena = GHT_MAX;
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	if (!r_bin_open (bin, libc_path, &opt)) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to open libc %s", libc_path);
+		return GHT_MAX;
+	}
+	RRBTree *relocs = r_bin_get_relocs (bin);
+	if (!relocs) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to get relocs from libc %s", libc_path);
+		return GHT_MAX;
+	}
+
+	// Get .data section to limit search
+	RList *section_list = r_bin_get_sections (bin);
+	RListIter *iter;
+	RBinSection *section;
+	RBinSection *data_section = NULL;
+	r_list_foreach (section_list, iter, section) {
+		if (!strcmp (section->name, ".data")) {
+			data_section = section;
+			break;
+		}
+	}
+	if (!data_section) {
+		R_LOG_WARN ("get_main_arena_with_relocs: Failed to find .data section in %s", libc_path);
+		return GHT_MAX;
+	}
+	GH(section_content) libc_data = GH (get_section_content)(core, libc_path, ".data");
+
+	if (!core->dbg->glibc_version_resolved && !GH (resolve_glibc_version)(core)) {
+		R_LOG_WARN("get_main_arena_offset_with_relocs: glibc_version could not be resolved");
+		return GHT_MAX;
+	}
+	GHT next_field_offset = GHT_MAX;
+	GHT malloc_state_size = GHT_MAX;
+
+	if (core->dbg->glibc_version_d >= 2.27) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_227), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_227));
+	} else if (core->dbg->glibc_version_d >= 2.23) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_223), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_223));
+	} else if (core->dbg->glibc_version_d >= 2.12) {
+		next_field_offset = offsetof (GH(RHeap_MallocState_212), next);
+		malloc_state_size = sizeof (GH(RHeap_MallocState_212));
+	} else  {
+		R_LOG_WARN ("get_main_arena_offset_with_relocs: cannot handle glibc version %.2f", core->dbg->glibc_version_d);
+		return GHT_MAX;
+	}
+
+	// Iterate over relocations and look for malloc_state structure
+	RRBNode *node;
+	RBinReloc *reloc;
+
+	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
+		// We only care about relocations in .data section
+		if (reloc->vaddr - next_field_offset < data_section->vaddr ||
+			reloc->vaddr > data_section->vaddr + data_section->size)
+			continue;
+		// If reloc->addend is the offset of main_arena, then reloc->vaddr should be the offset of main_arena.next
+		if (reloc->vaddr - next_field_offset == reloc->addend)	{
+			// Candidate found, to be sure compare data with expected malloc_state
+			GHT search_start = reloc->addend - data_section->vaddr;
+			GH(expected_arenas_s) expected_arenas = GH(get_expected_main_arena_structures) (core, reloc->addend);
+			void *expected_p = NULL;
+
+			if (core->dbg->glibc_version_d >= 2.27) {
+				expected_p = (void *)&expected_arenas.expected_227;
+			} else if (core->dbg->glibc_version_d >= 2.23) {
+				expected_p = (void *)&expected_arenas.expected_223;
+			} else if (core->dbg->glibc_version_d >= 2.12) {
+				expected_p = (void *)&expected_arenas.expected_212;
+			} // else checked above
+			if (!memcmp (libc_data.buf + search_start, expected_p, malloc_state_size)) {
+				R_LOG_WARN ("Found main_arena offset with relocations");
+				main_arena = reloc->addend - data_section->vaddr;
+				break;
+			} else {
+				R_LOG_WARN ("get_main_arena_offset_with_relocs: main_arena candidate did not match");
+			}
+		}
+	}
+
+	RBinFile *libc_bf = r_bin_cur (bin);
+	r_bin_file_delete (bin, libc_bf->id);
+	r_bin_file_set_cur_binfile (bin, bf);
+
+	return main_arena;
+}
+
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
-	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->maps, false);
 
 	if (core->dbg->main_arena_resolved) {
+		GHT dbg_glibc_main_arena = r_config_get_i (core->config, "dbg.glibc.main_arena");
+		if (!dbg_glibc_main_arena) {
+			R_LOG_ERROR ("core->dbg->main_arena_resolved is true but dbg.glibc.main_arena is NULL");
+			return false;
+		}
+		*m_arena = dbg_glibc_main_arena;
 		return true;
+	}
+
+	if (!GH (resolve_glibc_version) (core)) {
+		R_LOG_WARN ("r_resolve_main_arena: Could not resolve main glibc version!");
+		return false;
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
-	GHT main_arena_sym = GHT_MAX;
+	GHT main_arena_addr = GHT_MAX;
+	GHT main_arena_offset = GHT_MAX;
+
 	const bool in_debugger = r_config_get_b (core->config, "cfg.debug");
-	bool first_libc = true;
 
 	if (in_debugger) {
+		const char *libc_filename = GH(get_libc_filename) (core);
+		if (!libc_filename)	{
+			R_LOG_WARN ("r_resolve_main_arena: Could not resolve libc filename");
+			return false;
+		}
+
+		main_arena_offset = GH (get_main_arena_offset_with_symbol) (core, libc_filename);
+		if (main_arena_offset == GHT_MAX) {
+			main_arena_offset = GH (get_main_arena_offset_with_relocs) (core, libc_filename);
+		}
+		if (main_arena_offset == GHT_MAX) {
+			R_LOG_WARN ("Could not find main_arena via symbol or relocations");
+			// in this case fall back to bruteforce below
+		}
+
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			/* Try to find the main arena address using the glibc's symbols. */
-			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
-					&& first_libc && main_arena_sym == GHT_MAX) {
-				first_libc = false;
-				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
-			}
-			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
-					&& map->perm == R_PERM_RW) {
+			if (map->perm == R_PERM_RW && strstr (map->name, libc_filename)) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
+				if (main_arena_offset != GHT_MAX) {
+					main_arena_addr = map->addr + main_arena_offset;
+				}
 				break;
 			}
 		}
 	} else {
+		// TODO: this is never hit unless libc version is set manually since it is resolved using `dm`
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		if (!bank) {
 			return false;
@@ -448,10 +756,11 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return false;
 	}
 
-	if (main_arena_sym != GHT_MAX) {
-		GH (update_main_arena) (core, main_arena_sym, ta);
-		*m_arena = main_arena_sym;
+	if (main_arena_addr != GHT_MAX) {
+		GH (update_main_arena) (core, main_arena_addr, ta);
+		*m_arena = main_arena_addr;
 		core->dbg->main_arena_resolved = true;
+		r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
 		free (ta);
 		return true;
 	}
@@ -464,11 +773,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (in_debugger) {
 				core->dbg->main_arena_resolved = true;
 			}
+			r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
+			R_LOG_WARN ("Found main_arena offset with pattern matching");
 			return true;
 		}
 		addr_srch += sizeof (GHT);
 	}
-	R_LOG_WARN ("Can't find main_arena in `dm`");
+	R_LOG_WARN ("Cannot find main_arena");
 	free (ta);
 	return false;
 }
@@ -661,7 +972,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 }
 
 static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
-	r_return_val_if_fail (core && core->dbg, -1);
+	R_RETURN_VAL_IF_FAIL (core && core->dbg, -1);
 	if (!core->dbg->maps) {
 		return -1;
 	}
@@ -769,7 +1080,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 
 // TODO. return bool
 static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
-	r_return_val_if_fail (core && core->dbg, -1);
+	R_RETURN_VAL_IF_FAIL (core && core->dbg, -1);
 	if (!core->dbg->maps) {
 		return -1;
 	}
@@ -902,7 +1213,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 }
 
 static GH (RTcache)* GH (tcache_new) (RCore *core) {
-	r_return_val_if_fail (core, NULL);
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	GH (RTcache) *tcache = R_NEW0 (GH (RTcache));
 	if (R_UNLIKELY (!tcache)) {
 		return NULL;
@@ -918,7 +1229,7 @@ static GH (RTcache)* GH (tcache_new) (RCore *core) {
 }
 
 static void GH (tcache_free) (GH (RTcache)* tcache) {
-	r_return_if_fail (tcache);
+	R_RETURN_IF_FAIL (tcache);
 	tcache->type == NEW
 		? free (tcache->RHeapTcache.heap_tcache)
 		: free (tcache->RHeapTcache.heap_tcache_pre_230);
@@ -926,28 +1237,35 @@ static void GH (tcache_free) (GH (RTcache)* tcache) {
 }
 
 static bool GH (tcache_read) (RCore *core, GHT tcache_start, GH (RTcache)* tcache) {
-	r_return_val_if_fail (core && tcache, false);
+	R_RETURN_VAL_IF_FAIL (core && tcache, false);
+	if ((st64)(tcache_start | UT16_MAX) <1) {
+		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, (ut64)tcache_start);
+		return false;
+	}
+	if (!r_io_is_valid_offset (core->io, tcache_start, R_PERM_R)) {
+		return false;
+	}
 	return tcache->type == NEW
 		? r_io_read_at (core->io, tcache_start, (ut8 *)tcache->RHeapTcache.heap_tcache, sizeof (GH (RHeapTcache)))
 		: r_io_read_at (core->io, tcache_start, (ut8 *)tcache->RHeapTcache.heap_tcache_pre_230, sizeof (GH (RHeapTcachePre230)));
 }
 
 static int GH (tcache_get_count) (GH (RTcache)* tcache, int index) {
-	r_return_val_if_fail (tcache, 0);
+	R_RETURN_VAL_IF_FAIL (tcache, 0);
 	return tcache->type == NEW
 		? tcache->RHeapTcache.heap_tcache->counts[index]
 		: tcache->RHeapTcache.heap_tcache_pre_230->counts[index];
 }
 
 static GHT GH (tcache_get_entry) (GH (RTcache)* tcache, int index) {
-	r_return_val_if_fail (tcache, 0);
+	R_RETURN_VAL_IF_FAIL (tcache, 0);
 	return tcache->type == NEW
 		? tcache->RHeapTcache.heap_tcache->entries[index]
 		: tcache->RHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
 static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle) {
-	r_return_if_fail (core && tcache);
+	R_RETURN_IF_FAIL (core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
@@ -987,7 +1305,7 @@ static void GH (tcache_print) (RCore *core, GH (RTcache)* tcache, bool demangle)
 }
 
 static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *main_arena, bool demangle) {
-	r_return_if_fail (core && core->dbg && core->dbg->maps);
+	R_RETURN_IF_FAIL (core && core->dbg && core->dbg->maps);
 
 	const bool tcache = r_config_get_b (core->config, "dbg.glibc.tcache");
 	if (!tcache || m_arena == GHT_MAX) {
@@ -1031,7 +1349,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 			PRINT_YA ("Tcache thread arena @ ");
 			PRINTF_BA (" 0x%"PFMT64x, (ut64)ta->GH (next));
 			mmap_start = ((ta->GH (next) >> 16) << 16);
-			tcache_start = mmap_start + sizeof (GH (RHeapInfo)) + sizeof (GH (RHeap_MallocState_tcache)) + GH (MMAP_ALIGN);
+			tcache_start = mmap_start + sizeof (GH (RHeapInfo)) + sizeof (GH (RHeap_MallocState_227)) + GH (MMAP_ALIGN);
 
 			if (!GH (update_main_arena) (core, ta->GH (next), ta)) {
 				free (ta);
@@ -1041,7 +1359,9 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 			if (ta->attached_threads) {
 				PRINT_BA ("\n");
-				GH (tcache_read) (core, tcache_start, r_tcache);
+				if (!GH (tcache_read) (core, tcache_start, r_tcache)) {
+					break;
+				}
 				GH (tcache_print) (core, r_tcache, demangle);
 			} else {
 				PRINT_GA (" free\n");
@@ -1053,7 +1373,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 
 static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
-	r_return_if_fail (core && main_arena);
+	R_RETURN_IF_FAIL (core && main_arena);
 	if (!core->dbg || !core->dbg->maps) {
 		return;
 	}
@@ -1085,10 +1405,10 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		brk_start = ((m_state >> 16) << 16) ;
 		brk_end = brk_start + main_arena->GH(system_mem);
 		if (tcache) {
-			tcache_initial_brk = brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
+			tcache_initial_brk = brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_227)) + GH(MMAP_ALIGN);
 			initial_brk =  tcache_initial_brk + offset;
 		} else {
-			initial_brk =  brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState)) + MMAP_OFFSET;
+			initial_brk =  brk_start + sizeof (GH(RHeapInfo)) + sizeof (GH(RHeap_MallocState_223)) + MMAP_OFFSET;
 		}
 	}
 
@@ -1272,7 +1592,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				free (cnk_next);
 				return;
 			}
-			GH (tcache_read) (core, tcache_initial_brk, tcache_heap);
+			if (!GH (tcache_read) (core, tcache_initial_brk, tcache_heap)) {
+				break;
+			}
 			size_t i;
 			for (i = 0; i < TCACHE_MAX_BINS; i++) {
 				int count = GH (tcache_get_count) (tcache_heap, i);
@@ -1532,7 +1854,7 @@ static const char* GH(help_msg)[] = {
 	"dmha", "", "List all malloc_state instances in application",
 	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
 	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
-	"dmhbg"," [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
+	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
 	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
 	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
 	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
@@ -1727,3 +2049,5 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
+
+#endif

@@ -1,12 +1,5 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -19,11 +12,17 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
+		{ 2, "uxtb", "# = #", { 1, 2 } },
 		{ 0, "abs", "# = abs(#)", { 1, 1 } },
 		{ 0, "adc", "# = # + #", { 1, 2, 3 } },
 		{ 3, "add", "# = # + #", { 1, 2, 3 } },
+		{ 0, "fcvtzs", "# = #", { 1, 2 } },
+		{ 0, "scvtf", "# = #", { 1, 2 } },
 		{ 2, "add", "# += #", { 1, 2 } },
 		{ 2, "adds", "# += #", { 1, 2 } },
+		{ 4, "madd", "# = (# * #) + #", { 1, 2, 3, 4 } },
+		{ 4, "msub", "# = (# * #) - #", { 1, 2, 3, 4 } },
+		{ 3, "mneg ", "# = -(# * #)", { 1, 2, 3 } },
 		{ 3, "adds", "# = # + #", { 1, 2, 3 } },
 		{ 3, "addw", "# = # + #", { 1, 2, 3 } },
 		{ 3, "add.w", "# = # + #", { 1, 2, 3 } },
@@ -37,25 +36,34 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "asrs", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "asr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "b", "goto #", { 1 } },
-		{ 0, "cbz", "if !# goto #", { 1, 2 } },
-		{ 0, "cbnz", "if # goto #", { 1, 2 } },
+		{ 0, "cbz", "if (!#) goto #", { 1, 2 } },
+		{ 0, "cbnz", "if (#) goto #", { 1, 2 } },
 		{ 0, "b.w", "goto #", { 1 } },
-		{ 0, "b.gt", "goto ifgt #", { 1 } },
-		{ 0, "b.le", "goto ifle #", { 1 } },
+		{ 0, "b.gt", "if (a > b) goto #", { 1 } },
+		{ 0, "b.le", "if (a <= b) goto #", { 1 } },
+		{ 0, "b.lt", "if (a < b) goto #", { 1 } },
+		{ 0, "b.ls", "if (a < b) goto #", { 1 } },
+		{ 0, "b.ge", "if (a >= b) goto #", { 1 } },
 		{ 0, "beq lr", "ifeq ret", {0} },
 		{ 0, "beq", "je #", { 1 } },
 		{ 0, "call", "# ()", { 1 } },
 		{ 0, "bl", "# ()", { 1 } },
 		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", {0} },
+		{ 1, "br", "switch #", { 1 } },
 		{ 0, "bxeq", "je #", { 1 } },
 		{ 0, "b.eq", "if (eq) goto #", { 1 } },
 		{ 0, "b.ne", "if (eq) goto #", { 1 } },
+		{ 0, "b.hi", "goto ifgt #", { 1 } },
+		{ 0, "b.lo", "goto iflt #", { 1 } },
 		{ 0, "cmf", "if (# == #)", { 1, 2 } },
 		{ 0, "cmn", "if (# != #)", { 1, 2 } },
-		{ 0, "cmp", "if (# == #)", { 1, 2 } },
-		{ 0, "fcmp", "if (# == #)", { 1, 2 } },
-		{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
+		{ 0, "cmp", "(a, b) = compare (#, #)", { 1, 2 } },
+		{ 0, "fcmp", "(a, b) = compare (#, #)", { 1, 2 } },
+		{ 0, "tst", "(a, b) = compare (#, #)", { 1, 2 } },
+		// { 0, "cmp", "if (# == #)", { 1, 2 } },
+		// { 0, "fcmp", "if (# == #)", { 1, 2 } },
+		//{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
 		{ 4, "csel", "# = (#)? # : #", { 1, 4, 2, 3 } },
 		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
@@ -68,27 +76,33 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "sxth", "# = (short) #", { 1, 2 } },
 		{ 0, "fdv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "fml", "# = # * #", { 1, 2, 3 } },
+		{ 3, "ldurb", "# = (byte) # #", { 1, 2, 3 } },
+		{ 3, "ldur", "# = # #", { 1, 2, 3 } },
+		{ 3, "ldursw", "# = # #", { 1, 2, 3 } },
 		{ 2, "ldr", "# = #", { 1, 2 } },
 		{ 2, "ldrh", "# = (word) #", { 1, 2 } },
 		{ 3, "ldrh", "# = (word) # + #", { 1, 2, 3 } },
+		{ 3, "ldruh", "# = (uword) # + #", { 1, 2, 3 } },
 		{ 2, "ldrb", "# = (byte) #", { 1, 2 } },
 		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 2, "ldrsb", "# = (byte) #", { 1, 2 } },
 		{ 2, "ldr.w", "# = #", { 1, 2 } },
+		{ 4, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
+		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
+		{ 2, "ldrsb", "# = (byte) #", { 1, 2 } },
 		{ 2, "ldrsw", "# = #", { 1, 2 } },
+		{ 4, "ldrsw", "# = # + # #", { 1, 2, 3, 4 } },
+		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldr", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
 		{ 3, "ldr.w", "# = # + #", { 1, 2, 3 } },
-		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
 		{ 0, "mov", "# = #", { 1, 2 } },
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
-		{ 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
-		{ 0, "movk", "# = #", { 1, 2 } },
+		// { 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
+		{ 3, "movk", "# = # #", { 1, 2, 3 } },
 		{ 0, "movn", "# = ~#", { 1, 2 } },
-		{ 0, "neg", "# = !#", { 1, 2 } },
+		{ 0, "neg", "# = -#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },
 		{ 0, "stur", "# # = #", { 2, 3, 1 } },
 		{ 4, "stp", "# + # = (#, 2)", { 3, 4, 1 } },
@@ -97,8 +111,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
 		{ 0, "mul", "# = # * #", { 1, 2, 3 } },
 		{ 0, "fmul", "# = # * #", { 1, 2, 3 } },
+		{ 0, "smul", "# = # * #", { 1, 2, 3 } },
 		{ 0, "muls", "# = # * #", { 1, 2, 3 } },
 		{ 0, "div", "# = # / #", { 1, 2, 3 } },
+		{ 0, "sdiv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "fdiv", "# = # / #", { 1, 2, 3 } },
 		{ 0, "udiv", "# = (unsigned) # / #", { 1, 2, 3 } },
 		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
@@ -275,6 +291,8 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 	char *s = strdup (str);
 	if (s) {
+		s = r_str_replace (s, "xzr", "0", 1);
+		s = r_str_replace (s, "wzr", "0", 1);
 		s = r_str_replace (s, " lsl ", " << ", 1);
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
@@ -291,8 +309,8 @@ static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const ch
 	char *newstr = p->localvar_only
 		? r_str_newf ("%s", var->name)
 		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
-	if (IS_UPPER (*tstr)) {
-		char *space = strrchr (newstr, ' ');
+	if (isupper (*tstr)) {
+		char *space = (char *)r_str_rchr (newstr, NULL, ' ');
 		if (space) {
 			*space = 0;
 			r_str_case (newstr, true);
@@ -323,6 +341,7 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 	} else {
 		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
 		oldstr = r_str_newf (tmplt, reg, -delta);
+		// oldstr = r_str_newf ("%d", -delta); // tmplt, reg, -delta);
 	}
 	if (ucase) {
 		char *comma = strchr (oldstr, ',');
@@ -336,7 +355,7 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 }
 
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	r_return_val_if_fail (p, false);
+	R_RETURN_VAL_IF_FAIL (p, false);
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
@@ -383,58 +402,72 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	if (f && p->varlist) {
 		bpargs = p->varlist (f, 'b');
 		spargs = p->varlist (f, 's');
-		bool ucase = IS_UPPER (*tstr);
+		bool ucase = isupper (*tstr);
 		RAnalVarField *var;
-		r_list_foreach (bpargs, iter, var) {
-			st64 delta = p->get_ptr_at
-				? p->get_ptr_at (f, var->delta, addr)
-				: ST64_MAX;
-			if (delta == ST64_MAX && var->field) {
-				delta = var->delta + f->bp_off;
-			} else if (delta == ST64_MAX) {
-				continue;
-			}
-			const char *reg = NULL;
-			if (p->get_reg_at) {
-				reg = p->get_reg_at (f, var->delta, addr);
-			}
-			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_BP];
-			}
-			oldstr = mount_oldstr (p, reg, delta, ucase);
-			if (strstr (tstr, oldstr)) {
-				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
-				free (oldstr);
-				break;
-			}
-			free (oldstr);
-		}
-		r_list_foreach (spargs, iter, var) {
-			st64 delta = var->delta;
-			if (!newstack) {
-				delta = p->get_ptr_at
+		bool is64 = f->bits == 64;
+		// NOTE: on arm32 bp is fp
+		if ((is64 && strstr (tstr, "[bp")) || !is64) {
+			r_list_foreach (bpargs, iter, var) {
+				st64 delta = p->get_ptr_at
 					? p->get_ptr_at (f, var->delta, addr)
 					: ST64_MAX;
 				if (delta == ST64_MAX && var->field) {
-					delta = var->delta;
+					delta = var->delta + f->bp_off;
 				} else if (delta == ST64_MAX) {
 					continue;
 				}
-			}
-			const char *reg = NULL;
-			if (p->get_reg_at) {
-				reg = p->get_reg_at (f, var->delta, addr);
-			}
-			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_SP];
-			}
-			oldstr = mount_oldstr (p, reg, delta, ucase);
-			if (strstr (tstr, oldstr)) {
-				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+				const char *reg = NULL;
+				if (p->get_reg_at) {
+					reg = p->get_reg_at (f, var->delta, addr);
+				}
+				if (!reg) {
+					reg = anal->reg->name[R_REG_NAME_BP];
+				}
+				oldstr = mount_oldstr (p, reg, delta, ucase);
+				if (strstr (tstr, oldstr)) {
+					tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+					free (oldstr);
+					break;
+				}
 				free (oldstr);
-				break;
 			}
-			free (oldstr);
+		}
+		if ((is64 && strstr (tstr, "[sp")) || !is64) {
+			r_list_foreach (spargs, iter, var) {
+				st64 delta;
+				if (is64) {
+					const int maxstack = f->maxstack;
+					// st64 delta = -var->delta + 8;
+					delta = maxstack - R_ABS (var->delta);
+				} else {
+					delta = var->delta;
+					if (!newstack) {
+						delta = p->get_ptr_at
+							? p->get_ptr_at (f, var->delta, addr)
+							: ST64_MAX;
+						if (delta == ST64_MAX && var->field) {
+							delta = var->delta;
+						} else if (delta == ST64_MAX) {
+							// delta = -var->delta + 8;
+							continue;
+						}
+					}
+				}
+				const char *reg = NULL;
+				if (p->get_reg_at) {
+					reg = p->get_reg_at (f, delta, addr);
+				}
+				if (!reg) {
+					reg = anal->reg->name[R_REG_NAME_SP];
+				}
+				oldstr = mount_oldstr (p, reg, delta, ucase);
+				if (strstr (tstr, oldstr)) {
+					tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+					free (oldstr);
+					break;
+				}
+				free (oldstr);
+			}
 		}
 		r_list_free (bpargs);
 		r_list_free (spargs);

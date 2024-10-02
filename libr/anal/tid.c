@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
 #include <r_anal.h>
 
 R_API bool r_anal_tid_kill(RAnal *anal, int tid) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	RListIter *iter;
 	RAnalThread *th;
 	r_list_foreach (anal->threads, iter, th) {
@@ -21,13 +21,14 @@ R_API bool r_anal_tid_kill(RAnal *anal, int tid) {
 	return false;
 }
 
+// XXX deprecate R2_600. its unused and does nothing
 R_API int r_anal_tid_usemap(RAnal *anal, int map) {
 	// TODO
 	return 0;
 }
 
 R_API int r_anal_tid_add(RAnal *anal, int map) {
-	r_return_val_if_fail (anal, -1);
+	R_RETURN_VAL_IF_FAIL (anal, -1);
 	if (map < 1) {
 		// return -1;
 	}
@@ -53,7 +54,7 @@ R_API int r_anal_tid_add(RAnal *anal, int map) {
 }
 
 R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid) {
-	r_return_val_if_fail (anal, NULL);
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (tid < 1) {
 		return NULL;
 	}
@@ -68,11 +69,11 @@ R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid) {
 }
 
 R_API void r_anal_thread_free(RAnalThread *t) {
-
+	free (t);
 }
 
 R_API bool r_anal_tid_select(RAnal *anal, int tid) {
-	r_return_val_if_fail (anal, false);
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (tid < 1) {
 		return false;
 	}

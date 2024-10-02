@@ -5,7 +5,7 @@
 function parseLogs() {
 	const logFiles = r2.cmd('ls -q')
 		.trim().split(/\n/g)
-		.filter((x) => !x.startsWith('.'))
+		.filter((x) => !x.startsWith('.') && x.endsWith('.json'))
 		.sort();
 
 	const o = {};
@@ -27,8 +27,7 @@ function parseLogs() {
 					o[count].tests[name].push(test);
 				}
 			} else {
-				o[count] = { commit:commit, count: count };
-				o[count].tests = {};
+				o[count] = { commit: commit, count: count, tests: {} };
 				o[count].tests[name] = [test];
 			}
 			// console.log(test.time_elapsed, '\t', test.name);
@@ -98,7 +97,6 @@ function getdata(log, two, log2) {
 	if (!log) {
 		return [];
 	}
-	// const keys = (log && log.tests)? Object.keys(log.tests) : []; // segfault
 	const keys = Object.keys(log.tests).sort();
 	const ret = [];
 	const o = {};
@@ -128,6 +126,10 @@ function getdata(log, two, log2) {
 	}
 	return ret;
 }
+
+function getName(d) {
+	return logs[d].commit;
+}
 const res = {};
 for (const kount of Object.keys(logs)) {
 	const log = logs[kount];
@@ -136,7 +138,7 @@ for (const kount of Object.keys(logs)) {
 		if (res[d]) {
 			res[d].data.push(data[d]);
 		} else {
-			res[d] = {name: d, data : [data[d]]};
+			res[d] = {name: getName(kount), data : [data[d]]};
 		}
 	}
 }
@@ -164,10 +166,10 @@ for (const are of ares) {
 }
 const msg = `
 <script>
-const xValues = ${xvalues}; // [50,60,70,80,90,100,110,120,130,140,150];
+const xValues = ${xvalues};
 // const yValues = [7,8,8,9,9,9,10,11,14,14,15];
-const yValues = ${yvalues}; // [7,8,8,9,9,9,10,11,14,14,15];
-const aValues = ${avalues}; // [7,8,8,9,9,9,10,11,14,14,15];
+const yValues = ${yvalues};
+const aValues = ${avalues};
   new Chart("myChart", {
   type: "line",
   data: {
@@ -202,6 +204,7 @@ console.log(msg);
 
 console.log("<table style='background-color:#a0a0a0;color:black' border=1>");
 let line = "<tr style='background-color:#404040;color:white'>\n  ";
+line += "<td>label</td>";
 line += "<td>count</td>";
 // line += "<td>commit</td>";
 line += "<td>diff</td>";
@@ -222,6 +225,8 @@ for (let n = 0; n < logKeys.length; n++) {
 	// console.log(JSON.stringify(log, null, 2));
 	let line = "<tr>";
 	// line += "<td>"+log.count+"</td>";
+	const label = log.commit.length < 10? log.commit: log.count;
+	line += "<td>"+label + "</td>";
 	line += "<td><a href='https://github.com/radareorg/radare2/commit/"+log.commit+"'>"+log.count+"</a></td>";
 	var bg = log.diff > 10? "#ff8080": "#80ff80";
 	line += "<td style='background-color:"+bg+"'>"+log.diff+"</td>";

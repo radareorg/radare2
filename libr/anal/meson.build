@@ -7,6 +7,7 @@ r_anal_sources = [
   'block.c',
   'function.c',
   'jmptbl.c',
+  'btrace.c',
   'cc.c',
   'class.c',
   'tid.c',

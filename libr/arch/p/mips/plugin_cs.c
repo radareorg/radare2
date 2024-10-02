@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -92,6 +92,44 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
+
+// * cs6 compatibility *
+#if CS_NEXT_VERSION == 6
+// XXX - There are more options than EQ or QB, need to be tested:
+#define MIPS_INS_CMPU MIPS_INS_CMPU_EQ_QB
+#define MIPS_INS_CMPGU MIPS_INS_CMPGU_EQ_QB
+#define MIPS_INS_CMPGDU MIPS_INS_CMPGDU_EQ_QB
+#define MIPS_INS_SHRAV MIPS_INS_SHRAV_QB
+#define MIPS_INS_SHRAV_R MIPS_INS_SHRAV_R_QB
+#define MIPS_INS_SHRA MIPS_INS_SHRA_QB
+#define MIPS_INS_SHRA_R MIPS_INS_SHRA_R_QB
+#define MIPS_INS_SHRL MIPS_INS_SHRL_QB
+
+// XXX - don't know if there should be _D or _W, went for _D:
+#define MIPS_INS_BZ MIPS_INS_BZ_D
+#define MIPS_INS_MOV MIPS_INS_MOV_D
+#define MIPS_INS_FSUB MIPS_INS_FSUB_D
+#define MIPS_INS_NEGU MIPS_INS_NEG_D
+#define MIPS_INS_LDI MIPS_INS_LDI_D
+#define MIPS_INS_SUBV MIPS_INS_SUBV_D
+#define MIPS_INS_SUBVI MIPS_INS_SUBVI_D
+#define MIPS_INS_FMSUB MIPS_INS_FMSUB_D
+#define MIPS_INS_SUBS_S MIPS_INS_SUBS_S_D
+#define MIPS_INS_SUBS_U MIPS_INS_SUBS_U_D
+#define MIPS_INS_SUBUH MIPS_INS_SUBUH_QB
+#define MIPS_INS_SUBUH_R MIPS_INS_SUBUH_R_QB
+#define MIPS_INS_MULV MIPS_INS_MULV_D
+#define MIPS_INS_MULSA MIPS_INS_MULSA_W_PH
+#define MIPS_INS_FMUL MIPS_INS_FMUL_D
+#define MIPS_INS_FDIV MIPS_INS_FDIV_D
+#define MIPS_INS_DIV_U MIPS_INS_DIV_U_D
+#define MIPS_INS_BNZ MIPS_INS_BNZ_D
+#define MIPS_INS_BNEG MIPS_INS_BNEG_D
+#define MIPS_INS_BNEGI MIPS_INS_BNEGI_D
+
+#define MIPS_REG_25 MIPS_REG_T9
+#endif
+// *********************
 
 static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, int bit) {
 	if (as->config->bits == 64) {
@@ -456,6 +494,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					ARG (2), ARG (1), REG (0));
 			}
 			break;
+		case MIPS_INS_MOVN:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "0,%s,==,$z,!,?{,%s,%s,=,}",
+					ARG (2), ARG (1), REG (0));
+			}
+			break;
 		case MIPS_INS_MOVT:
 			PROTECT_ZERO () {
 				r_strbuf_appendf (&op->esil, "1,%s,==,$z,?{,%s,%s,=,}",
@@ -811,7 +855,7 @@ typedef struct plugin_data_t {
 
 
 static bool init(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
@@ -837,7 +881,7 @@ static bool init(RArchSession *as) {
 }
 
 static bool fini(RArchSession *as) {
-	r_return_val_if_fail (as, false);
+	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	R_FREE (pd->cpu);
 	cs_close (&pd->cpd.cs_handle);
@@ -846,7 +890,7 @@ static bool fini(RArchSession *as) {
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
-	r_return_val_if_fail (as && as->data, 0);
+	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
 	return pd->cs_handle;
 }
@@ -889,10 +933,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	op->size = 4;
+	if (op->mnemonic) {
+		*op->mnemonic = 0;
+	}
 	n = cs_disasm (handle, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
+			op->type = R_ANAL_OP_TYPE_ILL;
 			opsize = 4;
 		}
 		goto beach;
@@ -904,6 +952,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			insn->op_str);
 		if (op->mnemonic) {
 			r_str_replace_char (op->mnemonic, '$', 0);
+		}
+		if (R_STR_ISEMPTY (op->mnemonic)) {
+			insn->id = MIPS_INS_INVALID;
 		}
 	}
 	op->id = insn->id;
@@ -942,10 +993,20 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case MIPS_OP_MEM:
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
 				op->ptr = as->config->gp + OPERAND(1).mem.disp;
-				if (REGID(0) == MIPS_REG_T9) {
+#if 0
+				if (REGID (0) == MIPS_REG_T9) {
 					pd->t9_pre = op->ptr;
+					// read pointer again
+					ut32 na = 0;
+					RBin *bin = as->arch->binb.bin;
+					if (bin && bin->iob.read_at (bin->iob.io, op->ptr, &na, sizeof (na))) {
+						pd->t9_pre = na; // UT64_MAX;
+					}
+
+					// eprintf ("SET PRE9 0x%llx\n", op->ptr);
 				}
-			} else if (REGID(0) == MIPS_REG_T9) {
+#endif
+			} else if (REGID (0) == MIPS_REG_T9) {
 				pd->t9_pre = UT64_MAX;
 			}
 			break;
@@ -983,10 +1044,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case MIPS_INS_JALR:
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
-		if (REGID(0) == MIPS_REG_25) {
+		if (REGID (0) == MIPS_REG_25) {
+			op->type = R_ANAL_OP_TYPE_RCALL;
 			op->jump = pd->t9_pre;
 			pd->t9_pre = UT64_MAX;
-			op->type = R_ANAL_OP_TYPE_RCALL;
 		}
 		break;
 	case MIPS_INS_JAL:
@@ -1177,11 +1238,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->type = R_ANAL_OP_TYPE_RET;
 			pd->t9_pre = UT64_MAX;
 		}
-		if (REGID(0) == MIPS_REG_25) {
-				op->jump = pd->t9_pre;
-				pd->t9_pre = UT64_MAX;
+		if (REGID (0) == MIPS_REG_25) {
+			op->jump = pd->t9_pre;
+			pd->t9_pre = UT64_MAX;
 		}
-
 		break;
 	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
@@ -1333,8 +1393,7 @@ static char *get_reg_profile(RArchSession * as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	// R2_590 - R_ARCH_INFO_ALIGN instead of R_ANAL_ARCHINF..
-	if (q == R_ANAL_ARCHINFO_ALIGN || q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ARCH_INFO_CODE_ALIGN || q == R_ARCH_INFO_MINOP_SIZE) {
 		const char *cpu = as->config->cpu;
 		if (cpu && !strcmp (cpu, "micro")) {
 			return 2; // (anal->bits == 16) ? 2: 4;
@@ -1344,7 +1403,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	r_return_val_if_fail (as && as->data, NULL);
+	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }

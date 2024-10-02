@@ -187,7 +187,9 @@ size: 11
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
 RUN
 
 NAME=Adding basic blocks with with wrong size (afb+)
@@ -305,15 +307,14 @@ minbound: 0x00001119
 maxbound: 0x00001133
 is-lineal: true
 end-bbs: 1
+maxbbins: 8
+midbbins: 8.00
+ratbbins: 1.00
 noreturn: false
 in-degree: 1
 out-degree: 0
 locals: 2
 args: 2
-var int64_t var_4h @ rbp-0x4
-var int64_t var_8h @ rbp-0x8
-arg int64_t arg7 @ xmm0
-arg int64_t arg8 @ xmm1
 
 EOF
 RUN
@@ -433,7 +434,28 @@ afl
 EOF
 EXPECT=<<EOF
 0x0001f8b8    2     20 sym.fstatat
-0x00021484    1      8 sym.__errno
 0x0001f7cc    1     48 sym.__syscall_error
+0x00021484    1      8 sym.__errno
+EOF
+RUN
+
+NAME=af with custom sym.il name
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+sn
+sn
+s
+f sym.il.piltrafilla
+af
+pd 2
+EOF
+EXPECT=<<EOF
+0x1000047a8
+            ;-- func.1000047a8:
+/ 688: sym.il.piltrafilla (int64_t arg1, int64_t arg2, int64_t arg3);
+| `- args(x0, x1, x2) vars(5:sp[0x10..0x50])
+|           0x1000047a8      7f2303d5       pacibsp
+|           0x1000047ac      fc6fbaa9       stp x28, x27, [sp, -0x60]!
 EOF
 RUN

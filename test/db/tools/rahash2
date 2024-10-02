@@ -78,7 +78,7 @@ NAME=rahash2 -h
 FILE=-
 CMDS=!rahash2~Usage
 EXPECT=<<EOF
-Usage: rahash2 [-BhjkLqrv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+Usage: rahash2 [-BehjkLqrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
 EOF
 RUN
 
@@ -163,24 +163,26 @@ FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
 c      aes-ecb   MIT  pancake
-c      aes-cbc  LGPL  
+c      aes-cbc  LGPL  pancake
 c     aes-wrap  LGPL  Sylvain Pelissier
 e       base64  LGPL  rakholiyajenish.07
-e       base91  LGPL  pancake
-c     blowfish LGPL3  
+e       base91   MIT  rakholiyajenish.07
+c     blowfish LGPL3  pancake
 c         cps2  LGPL  pof,esanfelix
 c      des-ecb  LGPL  deroad
+s      ed25519  Zlib  Sylvain Pelissier
 h      entropy   MIT  pancake
-e     punycode  LGPL  
-c          rc2  LGPL  
-c          rc4  LGPL  
+e     punycode  LGPL  pancake
+c          rc2  LGPL  pancake
+c          rc4  LGPL  pancake
 c          rc6  LGPL  pancake
 c          rol  LGPL  pancake
-c          ror  LGPL  
+c          ror  LGPL  pancake
 c          rot   MIT  pancake
-c  serpent-ecb  LGPL  
+c  serpent-ecb  LGPL  pancake
 c      sm4-ecb LGPL3  Sylvain Pelissier
-c          xor  LGPL  
+h      strhash   MIT  pancake
+c          xor   MIT  pancake
 h          md5
 h         sha1
 h       sha256
@@ -225,6 +227,7 @@ h   fletcher16
 h   fletcher32
 h   fletcher64
 h          sip
+h          elf
 EOF
 RUN
 
@@ -361,6 +364,20 @@ FILE=bins/other/admin.txt
 CMDS=!rahash2 -f0x1 -t0x5 -qq -a md5 bins/other/admin.txt
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
+EOF
+RUN
+
+NAME=rahash2 -Bb 1 -a md5 admin.txt
+FILE=bins/other/admin.txt
+CMDS=!rahash2 -Bb 1 -a md5 bins/other/admin.txt
+EXPECT=<<EOF
+0x00000000-0x00000000 md5: 0cc175b9c0f1b6a831c399e269772661
+0x00000001-0x00000001 md5: 0cc175b9c0f1b6a831c399e269772661
+0x00000002-0x00000002 md5: 8277e0910d750195b448797616e091ad
+0x00000003-0x00000003 md5: 6f8f57715090da2632453988d9a1501b
+0x00000004-0x00000004 md5: 865c0c0b4ab0e063e5caa3387c1a8741
+0x00000005-0x00000005 md5: 7b8b965ad4bca0e41ab51de7b31363a1
+0x00000006-0x00000006 md5: 0cc175b9c0f1b6a831c399e269772661
 EOF
 RUN
 

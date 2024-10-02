@@ -58,7 +58,7 @@ EXPECT=<<EOF
 0x00000008 = 0x55f48949
             0x0000000c      53             push rbx
             0x0000000d      89fd           mov ebp, edi
-            0x0000000f      4881eca80300.  sub rsp, 0x3a8
+            0x0000000f      4881eca803..   sub rsp, 0x3a8
 EOF
 RUN
 
@@ -129,6 +129,7 @@ CMDS=<<EOF
 e anal.vars.stackname=true
 e asm.lines.bb = false
 e asm.lines.jmp = false
+e asm.var.summary=0
 e io.cache=false
 e io.cache.read=false
 wc-*
@@ -810,10 +811,10 @@ pdf
 EOF
 EXPECT=<<EOF
 / 33: fcn.00000000 ();
-|           0x00000000      48c7c0000100.  mov rax, 0x100
+|           0x00000000      48c7c00001..   mov rax, 0x100
 |           0x00000007      488b5008       mov rdx, qword [rax + foo.c]
 |           0x0000000b      488b4804       mov rcx, qword [rax + foo.b]
-|           0x0000000f      48c7c0000200.  mov rax, 0x200
+|           0x0000000f      48c7c00002..   mov rax, 0x200
 |           0x00000016      488b5008       mov rdx, qword [rax + bar.z]
 |           0x0000001a      488b4804       mov rcx, qword [rax + bar.y]
 |           0x0000001e      90             nop
@@ -825,6 +826,7 @@ RUN
 NAME=Comments and var in struct offset propagation
 FILE=bins/elf/struct_sample
 CMDS=<<EOF
+e asm.var.summary=0
 aa
 s main
 "td struct Books {char  title[50];char  author[50]; char  subject[100];};"
@@ -835,11 +837,11 @@ EOF
 EXPECT=<<EOF
 
 |           ; var struct Books @ rbp-0xe0
-|           0x00000684      488d8520ffff.  lea rax, [Books]
+|           0x00000684      488d8520ff..   lea rax, [Books]
 |           0x00000695      488910         mov qword [rax], rdx        ; Books.title
-|           0x00000698      488d8520ffff.  lea rax, [Books]
+|           0x00000698      488d8520ff..   lea rax, [Books]
 |           0x000006ad      488908         mov qword [rax], rcx        ; Books.author
-|           0x000006b0      488d8520ffff.  lea rax, [Books]
+|           0x000006b0      488d8520ff..   lea rax, [Books]
 |           0x000006c5      488930         mov qword [rax], rsi        ; Books.subject
 |           0x000006d5      b800000000     mov eax, 0                  ; Books.subject
 EOF
@@ -861,7 +863,7 @@ EXPECT=<<EOF
 
 |           0x000005a8      c70206000000   mov dword [edx], 6          ; Test.a
 |           0x000005ae      8b55f4         mov edx, dword [Test]       ; Test.a
-|           0x000005b1      c74204070000.  mov dword [edx + Test.b], 7
+|           0x000005b1      c742040700..   mov dword [edx + Test.b], 7
 EOF
 RUN
 
@@ -1175,6 +1177,7 @@ RUN
 NAME=Caller to callee propgation (64 bits)
 FILE=bins/elf/arg_down_prop
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.lines = false
 e asm.xrefs = false
 aa
@@ -1195,6 +1198,7 @@ RUN
 NAME=Caller to caller propgation (32 bits)
 FILE=bins/elf/arg_down_32
 CMDS=<<EOF
+e asm.var.summary=0
 e asm.lines = false
 e asm.xrefs = false
 aa
@@ -1443,6 +1447,7 @@ NAME=constrained type
 FILE=bins/elf/constr_type
 CMDS=<<EOF
 e anal.types.constraint = true
+e asm.var.summary=0
 aaa
 s sym.single_cond
 pd 1~4h
@@ -1605,19 +1610,25 @@ tn-*
 tn
 EOF
 EXPECT=<<EOF
+err
+errc
 RtlRaiseException
 FreeLibraryAndExitThread
 ExitProcess
 FatalExit
 RaiseException
+errx
 ExitThread
 8
 0x8
+err
+errc
 RtlRaiseException
 FreeLibraryAndExitThread
 ExitProcess
 FatalExit
 RaiseException
+errx
 ExitThread
 EOF
 RUN
@@ -1738,7 +1749,7 @@ foo3.bar
 foo4.bar
 foo5.bar
 =
-            0x00000000      c74004000000.  mov dword [rax + foo.bar], 0
+            0x00000000      c740040000..   mov dword [rax + foo.bar], 0
 EOF
 RUN
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - 2017 - condret@runas-racer.com */
+/* radare - LGPL - 2013-2023 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 lict[sizeof (lic)];
 	if (r_buf_read_at (b, 0x104, lict, sizeof (lict)) == sizeof (lict)) {
 		return !memcmp (lict, lic, sizeof (lict));
@@ -15,8 +15,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -24,34 +24,30 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
-	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
+	if (type == R_BIN_SYM_MAIN) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
-		if (!ret) {
-			return NULL;
+		if (ret) {
+			r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
+			if (init_jmp[1] == 0xc3) {
+				ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
+				return ret;
+			}
+			free (ret);
 		}
-		r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
-		if (init_jmp[1] == 0xc3) {
-			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
-			return ret;
-		}
-		free (ret);
 	}
 	return NULL;
 }
 
 static RList* entries(RBinFile *bf) {
-	RList *ret = r_list_new ();
-	RBinAddr *ptr = NULL;
-
-	if (bf && bf->buf) {
-		if (!ret) {
-			return NULL;
-		}
-		ret->free = free;
-		if (!(ptr = R_NEW0 (RBinAddr))) {
-			return ret;
-		}
+	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (ptr) {
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
 		r_list_append (ret, ptr);
 	}
@@ -131,7 +127,7 @@ static RList* symbols(RBinFile *bf) {
 			ret->free (ret);
 			return NULL;
 		}
-		ptr[i]->name = r_str_newf ("rst_%i", i*8);
+		ptr[i]->name = r_bin_name_new_from (r_str_newf ("rst_%i", i * 8));
 		ptr[i]->paddr = ptr[i]->vaddr = i*8;
 		ptr[i]->size = 1;
 		ptr[i]->ordinal = i;
@@ -142,7 +138,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 
-	ptr[8]->name = strdup ("Interrupt_Vblank");
+	ptr[8]->name = r_bin_name_new ("Interrupt_Vblank");
 	ptr[8]->paddr = ptr[8]->vaddr = 64;
 	ptr[8]->size = 1;
 	ptr[8]->ordinal = 8;
@@ -152,7 +148,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 
-	ptr[9]->name = strdup ("Interrupt_LCDC-Status");
+	ptr[9]->name = r_bin_name_new ("Interrupt_LCDC-Status");
 	ptr[9]->paddr = ptr[9]->vaddr = 72;
 	ptr[9]->size = 1;
 	ptr[9]->ordinal = 9;
@@ -162,7 +158,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 
-	ptr[10]->name = strdup ("Interrupt_Timer-Overflow");
+	ptr[10]->name = r_bin_name_new ("Interrupt_Timer-Overflow");
 	ptr[10]->paddr = ptr[10]->vaddr = 80;
 	ptr[10]->size = 1;
 	ptr[10]->ordinal = 10;
@@ -172,7 +168,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 
-	ptr[11]->name = strdup ("Interrupt_Serial-Transfere");
+	ptr[11]->name = r_bin_name_new ("Interrupt_Serial-Transfere");
 	ptr[11]->paddr = ptr[11]->vaddr = 88;
 	ptr[11]->size = 1;
 	ptr[11]->ordinal = 11;
@@ -182,7 +178,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 
-	ptr[12]->name = strdup ("Interrupt_Joypad");
+	ptr[12]->name = r_bin_name_new ("Interrupt_Joypad");
 	ptr[12]->paddr = ptr[12]->vaddr = 96;
 	ptr[12]->size = 1;
 	ptr[12]->ordinal = 12;
@@ -284,11 +280,13 @@ RList *mem (RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ningb = {
-	.name = "ningb",
-	.desc = "Gameboy format r_bin plugin",
-	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "ningb",
+		.desc = "Gameboy format r_bin plugin",
+		.license = "LGPL3",
+	},
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

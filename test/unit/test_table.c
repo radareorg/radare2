@@ -31,7 +31,7 @@ bool test_r_table(void) {
 	mu_end;
 }
 
-RTable *__table_test_data1() {
+RTable *__table_test_data1(void) {
 	RTable *t = r_table_new ("test2");
 
 	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
@@ -246,7 +246,7 @@ bool test_r_table_group (void) {
 	mu_end;
 }
 
-bool test_r_table_columns () {
+bool test_r_table_columns (void) {
 	RTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	r_table_free (t);                                              \
@@ -310,7 +310,7 @@ bool test_r_table_columns () {
 #undef CREATE_TABLE
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
 	mu_run_test(test_r_table_tostring);

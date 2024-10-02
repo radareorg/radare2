@@ -80,24 +80,24 @@ int main(int argc, char *argv[]) {
 	check_int(0, r_str_ansi_len(dst), "r_str_ansi_len 3");
 
 	strcpy(dst, "Hello");
-	check_int(5, r_str_ansi_chop(dst, -1, 5), "r_str_ansi_chop (normal string)");
-	check("Hello", dst, "r_str_ansi_chop (normal string)(str)");
+	check_int(5, r_str_ansi_trim(dst, -1, 5), "r_str_ansi_trim (normal string)");
+	check("Hello", dst, "r_str_ansi_trim (normal string)(str)");
 	strcpy(dst, "Hello");
-	check_int(2, r_str_ansi_chop(dst, -1, 2), "r_str_ansi_chop 2 (normal string)");
-	check("He", dst, "r_str_ansi_chop 2 (normal string)(str)");
+	check_int(2, r_str_ansi_trim(dst, -1, 2), "r_str_ansi_trim 2 (normal string)");
+	check("He", dst, "r_str_ansi_trim 2 (normal string)(str)");
 	strcpy(dst, "Hello");
-	check_int(0, r_str_ansi_chop(dst, -1, 0), "r_str_ansi_chop 3 (normal string)");
-	check("", dst, "r_str_ansi_chop 3 (normal string)(str)");
+	check_int(0, r_str_ansi_trim(dst, -1, 0), "r_str_ansi_trim 3 (normal string)");
+	check("", dst, "r_str_ansi_trim 3 (normal string)(str)");
 
 	strcpy(dst, "\x1b[30mHel\x1b[29mlo");
-	check_int(0, r_str_ansi_chop(dst, -1, 0), "r_str_ansi_chop 1");
-	check("", dst, "r_str_ansi_chop 1 (str)");
+	check_int(0, r_str_ansi_trim(dst, -1, 0), "r_str_ansi_trim 1");
+	check("", dst, "r_str_ansi_trim 1 (str)");
 	strcpy(dst, "\x1b[30mHel\x1b[29mlo");
-	check_int(7, r_str_ansi_chop(dst, -1, 2), "r_str_ansi_chop 2");
-	check("\x1b[30mHe", dst, "r_str_ansi_chop 2 (str)");
+	check_int(7, r_str_ansi_trim(dst, -1, 2), "r_str_ansi_trim 2");
+	check("\x1b[30mHe", dst, "r_str_ansi_trim 2 (str)");
 	strcpy(dst, "\x1b[30mHel\x1b[29mlo");
-	check_int(8, r_str_ansi_chop(dst, -1, 3), "r_str_ansi_chop 3");
-	check("\x1b[30mHel", dst, "r_str_ansi_chop 3 (str)");
+	check_int(8, r_str_ansi_trim(dst, -1, 3), "r_str_ansi_trim 3");
+	check("\x1b[30mHel", dst, "r_str_ansi_trim 3 (str)");
 
 	char *orig;
 	int *cpos;

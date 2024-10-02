@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_core.h>
 
@@ -8,9 +8,25 @@
  */
 
 static bool r_core_hack_riscv(RCore *core, const char *op, const RAnalOp *analop) {
+	// TODO honor analop->size
 	if (!strcmp (op, "nop")) {
-		// TODO honor analop->size
-		r_core_cmdf (core, "wx 13000000");
+		if (analop->size < 2) {
+			R_LOG_ERROR ("Can't nop <4 byte instructions");
+			return false;
+		}
+		if (analop->size < 4) {
+			r_core_cmd0 (core, "wx 0100");
+		} else {
+			r_core_cmd0 (core, "wx 13000000");
+		}
+		return true;
+	}
+	if (!strcmp (op, "jinf")) {
+		if (analop->size < 2) {
+			R_LOG_ERROR ("Minimum jinf is 2 byte");
+			return false;
+		}
+		r_core_cmd0 (core, "wx 01a0");
 		return true;
 	}
 	R_LOG_ERROR ("Unsupported operation '%s'", op);
@@ -70,6 +86,12 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 			break;
 		default:
 			switch (buf[3]) {
+			case 0x36: // tbz
+				r_core_cmdf (core, "wx 37 @ $$+3");
+				break;
+			case 0x37: // tbnz
+				r_core_cmdf (core, "wx 36 @ $$+3");
+				break;
 			case 0x34: // cbz
 			case 0xb4: // cbz
 				r_core_cmdf (core, "wx 35 @ $$+3");
@@ -281,7 +303,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 }
 
 R_API bool r_core_hack(RCore *core, const char *op) {
-	r_return_val_if_fail (core && op, false);
+	R_RETURN_VAL_IF_FAIL (core && op, false);
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
 	const int asmbits = core->rasm->config->bits;
@@ -296,7 +318,7 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 	if (core->blocksize < 4) {
 		return false;
 	}
-#if R2_580
+#if R2_600
 	// R2_590 TODO: call RArch.patch() if available, otherwise just do this hack until all anal plugs are moved to arch
 	// r_arch_patch (aop, 0);
 	RArchSession *acur = R_UNWRAP3 (core, rasm, acur);
@@ -331,14 +353,15 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 		R_LOG_WARN ("Write hacks are only implemented for x86, arm32, arm64 and dalvik");
 	}
 	if (hack) {
-		RAnalOp aop = {0};
-		aop.addr = core->offset;
+		RAnalOp aop = { .addr = core->offset };
 		r_anal_op_set_bytes (&aop, core->offset, core->block, 4);
 		// TODO: use r_arch_decode
 		if (!r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("anal op fail");
+			r_anal_op_fini (&aop);
 			return false;
 		}
+		r_anal_op_fini (&aop);
 		bool res = hack (core, op, &aop);
 		if (doseek) {
 			r_core_seek (core, core->offset + aop.size, 1);

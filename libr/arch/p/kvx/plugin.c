@@ -231,7 +231,7 @@ static const char *kvx_reg_profile = ""
  */
 
 static bool kvx_init(RArchSession *s) {
-	r_return_val_if_fail (s && !s->data, false);
+	R_RETURN_VAL_IF_FAIL (s && !s->data, false);
 	s->data = R_NEW0 (bundle_t);
 	return s->data? true: false;
 }
@@ -247,7 +247,7 @@ static bool kvx_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const size_t len = op->size;
 	const ut8 *data = op->bytes;
 	char strasm[64];
-	r_return_val_if_fail (a && op, false);
+	R_RETURN_VAL_IF_FAIL (a && op, false);
 
 	if (addr % 4) {
 		return false; /* unaligned */
@@ -292,11 +292,11 @@ static bool kvx_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 
 static int kvx_info(RArchSession *a, ut32 query) {
 	switch (query) {
-	case R_ARCH_INFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MINOP_SIZE:
 		return 4;
-	case R_ARCH_INFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
 		return 12;
-	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_CODE_ALIGN:
 		return 4;
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;

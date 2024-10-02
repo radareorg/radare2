@@ -1,10 +1,8 @@
-/* radare - Copyright 2014-2022 pancake, defragger */
+/* radare - Copyright 2014-2023 pancake, defragger */
 
 #define R_LOG_ORIGIN "a2f"
 
-#include <r_types.h>
 #include <r_core.h>
-#include <r_io.h>
 
 #define MAXFCNSIZE 4096
 
@@ -428,6 +426,7 @@ RCorePlugin r_core_plugin_a2f = {
 	.meta = {
 		.name = "a2f",
 		.desc = "The reworked analysis from scratch thing",
+		.author = "pancake",
 		.license = "LGPL3",
 	},
 	.call = r_cmd_anal_call,

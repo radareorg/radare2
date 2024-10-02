@@ -476,8 +476,9 @@ RUN
 NAME=ELF: riscv64: main analysis (1)
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
+e asm.var.summary=0
 e anal.vars.stackname=true
-e asm.calls=false
+e asm.cmt.calls=false
 s sym.main
 af
 pdf
@@ -536,6 +537,7 @@ RUN
 NAME=ELF: riscv64: main analysis (2)
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
+e asm.var.summary=0
 s sym.main
 af
 pdf
@@ -593,7 +595,7 @@ RUN
 NAME=ELF: riscv64: full analysis
 FILE=bins/elf/analysis/guess-number-riscv64
 BROKEN=1
-ARGS=-e asm.calls=false -b64 -A
+ARGS=-e asm.cmt.calls=false -b64 -A
 CMDS=<<EOF
 s sym.main
 e emu.str=true
@@ -655,8 +657,9 @@ RUN
 
 NAME=ELF: riscv64: full analysis
 FILE=bins/elf/analysis/guess-number-riscv64
-ARGS=-e asm.calls=false -b64
+ARGS=-e asm.cmt.calls=false -b64
 CMDS=<<EOF
+e asm.var.summary=0
 aeim
 e asm.bits=64
 e asm.arch=riscv
@@ -672,16 +675,16 @@ EXPECT=<<EOF
 |           ; var int64_t var_18h @ s0-0x18
 |           ; arg int64_t argv @ sp+0x20
 |           0x00010150      130101fe       addi sp, sp, -32            ; sp=0x177fe0
-|           0x00010154      233c1100       sd ra, 24(sp)
-|           0x00010158      23388100       sd s0, 16(sp)
+|           0x00010154      233c1100       sd ra, 24(sp)               ; [0x00177ff8:8] = 0x0
+|           0x00010158      23388100       sd s0, 16(sp)               ; [0x00177ff0:8] = 0x178000
 |           0x0001015c      13040102       addi s0, sp, 32             ; s0=0x178000
 |           0x00010160      9307b007       li a5, 123                  ; a5=0x7b
-|           0x00010164      2326f4fe       sw a5, -20(s0)
+|           0x00010164      2326f4fe       sw a5, -20(s0)              ; [0x00177fec:4] = 0x7b
 |           0x00010168      9307f0ff       li a5, -1                   ; a5=0xffffffffffffffff
-|           0x0001016c      2324f4fe       sw a5, -24(s0)
+|           0x0001016c      2324f4fe       sw a5, -24(s0)              ; [0x00177fe8:4] = 0xffffffff
 |           ; CODE XREFS from main @ 0x101c8(x), 0x101d8(x)
 |      ..-> 0x00010170      b7170200       lui a5, 0x21                ; a5=0x21000
-|      ::   0x00010174      1385874f       addi a0, a5, 1272           ; a0=0x214f8 "Enter your guess : " sym..rodata
+|      ::   0x00010174      1385874f       addi a0, a5, 1272           ; a0=0x214f8 "Enter your guess : " section..rodata
 |      ::   0x00010178      ef00c01f       jal ra, sym.printf          ; ra=0x1017c -> 0xfe840793 ; pc=0x10374 -> 0x8101b283
 |      ::                                                              ; int printf("Enter your guess : ")
 |      ::   0x0001017c      930784fe       addi a5, s0, -24            ; a5=0x177fe8

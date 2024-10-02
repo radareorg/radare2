@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2022 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -20,14 +20,14 @@ static int usage(int v) {
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
-	"  -u        enable http Authorization access\n"
+	"  -u        enable http authorization access\n"
 	"  -t        user:password authentication file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
 
 static int showversion(void) {
-	return r_main_version_print ("r2agent");
+	return r_main_version_print ("r2agent", 0);
 }
 
 R_API int r_main_r2agent(int argc, const char **argv) {

@@ -3,7 +3,8 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "windows.heap"
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
+
 #include <tlhelp32.h>
 #include "heap/r_windows.h"
 #include "../debug/p/native/maps/windows_maps.h"
@@ -155,7 +156,7 @@ static bool is_segment_heap(HANDLE h_proc, PVOID heapBase) {
 
 // These functions are basically Heap32First and Heap32Next but faster
 static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
-	r_return_val_if_fail (heapInfo && hb, false);
+	R_RETURN_VAL_IF_FAIL (heapInfo && hb, false);
 	PHeapBlockBasicInfo block;
 
 	hb->index = 0;
@@ -195,7 +196,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 }
 
 static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
-	r_return_val_if_fail (heapInfo && hb, false);
+	R_RETURN_VAL_IF_FAIL (heapInfo && hb, false);
 	PHeapBlockBasicInfo block;
 
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
@@ -244,7 +245,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 }
 
 static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
-	r_return_if_fail (heap);
+	R_RETURN_IF_FAIL (heap);
 	HeapBlock hb;
 	if (GetFirstHeapBlock (heap, &hb)) {
 		do {
@@ -330,7 +331,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 }
 
 static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
-	r_return_val_if_fail (dbg, 0);
+	R_RETURN_VAL_IF_FAIL (dbg, 0);
 	WPARAM lfhKeyLocation;
 
 	if (!GetHeapGlobalsOffset (dbg, h_proc)) {
@@ -353,7 +354,7 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 }
 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
-	r_return_val_if_fail (heap && entry, false);
+	R_RETURN_VAL_IF_FAIL (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
@@ -367,7 +368,7 @@ static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 }
 
 static bool DecodeLFHEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
-	r_return_val_if_fail (heap && entry, false);
+	R_RETURN_VAL_IF_FAIL (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
@@ -578,7 +579,7 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 }
 
 static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHeapBlockBasicInfo *blocks, ut64 *count, SIZE_T *allocated) {
-	r_return_val_if_fail (h_proc && blocks && count && allocated, false);
+	R_RETURN_VAL_IF_FAIL (h_proc && blocks && count && allocated, false);
 	WPARAM bytesRead;
 	SEGMENT_HEAP segheapHeader;
 	ReadProcessMemory (h_proc, heapBase, &segheapHeader, sizeof (SEGMENT_HEAP), &bytesRead);
@@ -1201,7 +1202,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Commited", -1);
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
@@ -1255,7 +1256,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
 	RTable *tbl = __new_heapblock_tbl ();
-	PJ *pj = pj_new ();
+	PJ *pj = r_core_pj_new (core);
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		bool go = true;
@@ -1355,7 +1356,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			if (!type) {
 				type = "";
 			}
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			RTable *tbl = __new_heapblock_tbl ();
 			ut64 headerAddr = off - granularity;
 			switch (input[0]) {
@@ -1415,3 +1416,5 @@ static int dmh_windows(RCore *core, const char *input) {
 	}
 	return true;
 }
+
+#endif

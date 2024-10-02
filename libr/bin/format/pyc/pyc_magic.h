@@ -7,14 +7,13 @@
 
 struct pyc_version {
 	ut32 magic;
-	char *version;
-	char *revision;
+	const char *version;
+	const char *revision;
 };
 
 struct pyc_version get_pyc_version(ut32 magic);
 
-double version2double(const char *version);
-
-bool magic_int_within(ut32 target_magic, ut32 lower, ut32 uppper, bool *error);
+R_IPI int py_version_cmp(const char *va, const char *vb, bool *err);
+R_IPI bool magic_int_within(const char *ver, const char *lower, const char *uppper, bool *error);
 
 #endif

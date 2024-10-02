@@ -1,0 +1,733 @@
+NAME=di on SIGABRT
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=6 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 6 aka SIGABRT received 0 (Abort)
+type=signal
+signal=SIGABRT
+signum=6
+sigstr=Abort
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGALRM
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=14 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 14 aka SIGALRM received 0 (Alarm Clock)
+type=signal
+signal=SIGALRM
+signum=14
+sigstr=Alarm Clock
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGBUS
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=7 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 7 aka SIGBUS received 0 (Bus Error)
+type=signal
+signal=SIGBUS
+signum=7
+sigstr=Bus Error
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGCHLD
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=17 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 17 aka SIGCHLD received 0 (Child)
+type=signal
+signal=SIGCHLD
+signum=17
+sigstr=Child
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGCONT
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=18 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 18 aka SIGCONT received 0 (Continue Execution)
+type=signal
+signal=SIGCONT
+signum=18
+sigstr=Continue Execution
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGFPE
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=8 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 8 aka SIGFPE received 0 (Floating Point Exception)
+type=signal
+signal=SIGFPE
+signum=8
+sigstr=Floating Point Exception
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGHUP
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=1 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 1 aka SIGHUP received 0 (Hangup)
+type=signal
+signal=SIGHUP
+signum=1
+sigstr=Hangup
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGILL
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=4 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 4 aka SIGILL received 0 (Illegal instruction)
+type=signal
+signal=SIGILL
+signum=4
+sigstr=Illegal instruction
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGPWR
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=30 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 30 aka SIGPWR received 0 (Power Failure)
+type=signal
+signal=SIGPWR
+signum=30
+sigstr=Power Failure
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGINT
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=2 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=suspended-by-user
+signal=none
+signum=2
+sigstr=unhandled
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGIO
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=29 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 29 aka SIGIO received 0 (Pollable Event (Same as SIGIO))
+type=signal
+signal=SIGIO
+signum=29
+sigstr=Pollable Event (Same as SIGIO)
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGKILL
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=9 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=exit-pid
+signal=none
+signum=0
+sigstr=unhandled
+stopreason=stopped
+EOF
+RUN
+
+
+NAME=di on SIGPIPE
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=13 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 13 aka SIGPIPE received 0 (Broken pipe)
+type=signal
+signal=SIGPIPE
+signum=13
+sigstr=Broken pipe
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGPROF
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=27 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 27 aka SIGPROF received 0 (Profiling Timer Expired)
+type=signal
+signal=SIGPROF
+signum=27
+sigstr=Profiling Timer Expired
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGQUIT
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=3 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 3 aka SIGQUIT received 0 (Quit)
+type=signal
+signal=SIGQUIT
+signum=3
+sigstr=Quit
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSEGV
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=11 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=segfault
+signal=SIGSEGV
+signum=11
+sigstr=Segmentation fault
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+# this signal should never be raised because if stack is gone nothing works
+#NAME=di on SIGSTKFLT
+#FILE=bins/elf/signals/signal-input
+#ARGS=-e cfg.fortunes=false -e dbg.args=16 -d
+#CMDS=<<EOF
+#dc
+#di~type
+#di~^signal
+#di~^signum
+#di~^sigstr
+#di~stopreason
+#EOF
+#EXPECT=<<EOF
+#[+] signal 16 aka SIGSTKFLT received 0 (Stack fault)
+#type=signal
+#signal=SIGSTKFLT
+#signum=16
+#sigstr=Stack fault
+#stopreason=stopped
+#Hello, World!
+#EOF
+#RUN
+
+
+NAME=di on SIGSTOP
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=19 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=stopped
+signal=SIGSTOP
+signum=19
+sigstr=Stopped
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSYS
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=31 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 31 aka SIGSYS received 0 (Bad system call)
+type=signal
+signal=SIGSYS
+signum=31
+sigstr=Bad system call
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTERM
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=15 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=unhandled
+signal=SIGTERM
+signum=15
+sigstr=Terminated
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+NAME=di on SIGTRAP
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=5 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=breakpoint
+signal=SIGTRAP
+signum=5
+sigstr=unhandled
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTSTP
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=20 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 20 aka SIGTSTP received 0 (Stopped)
+type=signal
+signal=SIGTSTP
+signum=20
+sigstr=Stopped
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTTIN
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=21 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 21 aka SIGTTIN received 0 (Stopped)
+type=signal
+signal=SIGTTIN
+signum=21
+sigstr=Stopped
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTTOU
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=22 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 22 aka SIGTTOU received 0 (Stopped)
+type=signal
+signal=SIGTTOU
+signum=22
+sigstr=Stopped
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGURG
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=23 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 23 aka SIGURG received 0 (Urgent)
+type=signal
+signal=SIGURG
+signum=23
+sigstr=Urgent
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGUSR1
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=10 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 10 aka SIGUSR1 received 0 (User Defined Signal 1)
+type=signal
+signal=SIGUSR1
+signum=10
+sigstr=User Defined Signal 1
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+NAME=di on SIGUSR2
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=12 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 12 aka SIGUSR2 received 0 (User Defined Signal 2)
+type=signal
+signal=SIGUSR2
+signum=12
+sigstr=User Defined Signal 2
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGVTALRM
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=26 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 26 aka SIGVTALRM received 0 (Virtual Timer Expired)
+type=signal
+signal=SIGVTALRM
+signum=26
+sigstr=Virtual Timer Expired
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGWINCH
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=28 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 28 aka SIGWINCH received 0 (Window Changed Size)
+type=signal
+signal=SIGWINCH
+signum=28
+sigstr=Window Changed Size
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGXCPU
+BROKEN=1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=24 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 24 aka SIGXCPU received 0 (CPU time limit exceeded)
+type=signal
+signal=SIGXCPU
+signum=24
+sigstr=CPU time limit exceeded
+stopreason=stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGXFSZ
+BROKEN=1
+FILE=1
+ARGS=-e cfg.fortunes=false -e dbg.args=25 -d
+CMDS=<<EOF
+dc
+di~type
+di~^signal
+di~^signum
+di~^sigstr
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 25 aka SIGXFSZ received 0 (File size limit exceeded)
+type=signal
+signal=SIGXFSZ
+signum=25
+sigstr=File size limit exceeded
+stopreason=stopped
+Hello, World!
+EOF
+RUN

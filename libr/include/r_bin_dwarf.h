@@ -656,12 +656,16 @@ typedef struct {
 	int end_sequence;
 } RBinDwarfState;
 
+// TODO: Rename to RBinDbgItem
 typedef struct {
-	ut64 address;
-	char *file;
+	ut64 address; // RENAME addr
+	char *file; // RENAME filename
 	unsigned int line;
 	unsigned int column;
 } RBinDwarfRow;
+
+// R2_600 - rename this struct
+#define RBinDbgItem RBinDwarfRow
 
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {
@@ -770,8 +774,8 @@ typedef struct {
 	RBinDwarfDie *dies;
 } RBinDwarfCompUnit;
 
-#define COMP_UNIT_CAPACITY	8
-#define DEBUG_INFO_CAPACITY	8
+#define COMP_UNIT_CAPACITY 8
+#define DEBUG_INFO_CAPACITY 8
 typedef struct {
 	size_t count;
 	size_t capacity;
@@ -779,7 +783,7 @@ typedef struct {
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
 } RBinDwarfDebugInfo;
 
-#define	ABBREV_DECL_CAP		8
+#define	ABBREV_DECL_CAP 8
 
 typedef struct {
 	ut64 code;
@@ -799,20 +803,17 @@ typedef struct {
 	RBinDwarfAbbrevDecl *decls;
 } RBinDwarfDebugAbbrev;
 
-#define		DWARF_FALSE	0
-#define		DWARF_TRUE	1
-
 typedef struct {
 	ut64 address;
 	ut64 op_index;
 	ut64 file;
 	ut64 line;
 	ut64 column;
-	ut8 is_stmt;
-	ut8 basic_block;
-	ut8 end_sequence;
-	ut8 prologue_end;
-	ut8 epilogue_begin;
+	bool is_stmt;
+	bool basic_block;
+	bool end_sequence;
+	bool prologue_end;
+	bool epilogue_begin;
 	ut64 isa;
 	ut64 discriminator;
 } RBinDwarfSMRegisters;

@@ -34,11 +34,11 @@ static char *create_type_name_from_offset(ut64 offset) {
  * @return RAnalStructMember* parsed member, NULL if fail
  */
 static RAnalStructMember *parse_member(STypeInfo *type_info, RList *types) {
-	r_return_val_if_fail (type_info && types, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info && types, NULL);
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
 	}
-	r_return_val_if_fail (type_info->get_name &&
+	R_RETURN_VAL_IF_FAIL (type_info->get_name &&
 			type_info->get_print_type && type_info->get_val, NULL);
 	char *name = NULL;
 	char *type = NULL;
@@ -68,8 +68,8 @@ cleanup:
  * @return RAnalEnumCase* parsed enum case, NULL if fail
  */
 static RAnalEnumCase *parse_enumerate(STypeInfo *type_info, RList *types) {
-	r_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
-	r_return_val_if_fail (type_info->get_val && type_info->get_name, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
+	R_RETURN_VAL_IF_FAIL (type_info->get_val && type_info->get_name, NULL);
 
 	char *name = NULL;
 	int value = 0;
@@ -96,10 +96,10 @@ cleanup:
  * @param types List of all types
  */
 static void parse_enum(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
-	r_return_if_fail (type_info->get_members &&
+	R_RETURN_IF_FAIL (type_info->get_members &&
 		type_info->get_name &&
 		type_info->get_utype);
 
@@ -160,10 +160,10 @@ cleanup:
  * @param types List of all types
  */
 static void parse_structure(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
-	r_return_if_fail (type_info->get_members &&
+	R_RETURN_IF_FAIL (type_info->get_members &&
 		type_info->is_fwdref &&
 		type_info->get_name &&
 		type_info->get_val);
@@ -223,7 +223,7 @@ cleanup:
  * @param types List of all types
  */
 static void parse_type(const RAnal *anal, SType *type, RList *types) {
-	r_return_if_fail (anal && type && types);
+	R_RETURN_IF_FAIL (anal && type && types);
 
 	int is_forward_decl;
 	if (type->type_data.is_fwdref) {
@@ -256,7 +256,7 @@ static void parse_type(const RAnal *anal, SType *type, RList *types) {
  * @param pdb PDB information
  */
 R_API void r_parse_pdb_types(const RAnal *anal, const RPdb *pdb) {
-	r_return_if_fail (anal && pdb);
+	R_RETURN_IF_FAIL (anal && pdb);
 	RList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);

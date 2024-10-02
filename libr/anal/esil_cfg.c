@@ -71,7 +71,7 @@ static char *condrets_strtok(char *str, const char tok) {
 }
 
 REsilOp *esil_get_op (REsil *esil, const char *op) {
-	r_return_val_if_fail (R_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
+	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
 	return ht_pp_find (esil->ops, op, NULL);
 }
 
@@ -538,7 +538,7 @@ R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
-	r_return_val_if_fail (cfg && anal, NULL);
+	R_RETURN_VAL_IF_FAIL (expr && anal, NULL);
 	if (!anal->esil) {
 		return NULL;
 	}

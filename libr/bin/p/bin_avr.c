@@ -8,17 +8,20 @@
 		!instr ((b), (size)) ||   \
 		!instr ((b), (size)*2) || \
 		!instr ((b), (size)*3)) { \
-		return false;             \
+		return UT64_MAX;             \
 	}
 
 #define CHECK3INSTR(b, instr, size)       \
 	if (!instr ((b), (size)) ||       \
 		!instr ((b), (size)*2) || \
 		!instr ((b), (size)*3)) { \
-		return false;             \
+		return UT64_MAX;             \
 	}
 
-static R_TH_LOCAL ut64 tmp_entry = UT64_MAX;
+typedef struct {
+	ut64 tmp_entry;
+	RBuffer *b;
+} AvrPriv;
 
 static bool rjmp(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 1) & 0xf0) == 0xc0;
@@ -38,47 +41,57 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 2) + (r_buf_read8_at (b, addr + 3) << 8)) * 2;
 }
 
-static bool check_buffer_rjmp(RBuffer *b) {
+static ut64 check_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > r_buf_size (b)) {
-		return false;
+		return UT64_MAX;
 	}
-	tmp_entry = dst;
-	return true;
+	return dst;
 }
 
-
-static bool check_buffer_jmp(RBuffer *b) {
+static ut64 check_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
 	if (dst < 1 || dst > r_buf_size (b)) {
-		return false;
+		return UT64_MAX;
 	}
-	tmp_entry = dst;
-	return true;
+	return dst;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check_or_load(RBinFile *bf, RBuffer *buf, bool doload) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
-	if (!rjmp (buf, 0)) {
-		return check_buffer_jmp (buf);
+	ut64 res = rjmp (buf, 0) ? check_rjmp (buf) : check_jmp (buf);
+	if (doload) {
+		if (res != UT64_MAX) {
+			AvrPriv *ap = R_NEW0 (AvrPriv);
+			ap->b = buf; // add a reference imho we dont own that pointer and its ugly
+			ap->tmp_entry = res;
+			bf->bo->bin_obj = ap;
+			return true;
+		}
 	}
-	return check_buffer_rjmp (buf);
+	return res != UT64_MAX;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, buf);
+static bool check(RBinFile *bf, RBuffer *buf) {
+	return check_or_load (bf, buf, false);
+}
+
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check_or_load (bf, buf, true);
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->bo->bin_obj);
+	AvrPriv *ap = (AvrPriv*)(bf->bo->bin_obj);
+	// r_buf_free (ap->b); // this is freed by RBinFile.free()
+	free (ap);
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *bi = R_NEW0 (RBinInfo);
 	if (bi) {
 		bi->file = strdup (bf->file);
@@ -96,7 +109,8 @@ static RBinInfo* info(RBinFile *bf) {
 static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	if (tmp_entry == UT64_MAX) {
+	AvrPriv *ap = bf->bo->bin_obj;
+	if (ap->tmp_entry == UT64_MAX) {
 		return false;
 	}
 	if (!(ret = r_list_new ())) {
@@ -104,7 +118,7 @@ static RList* entries(RBinFile *bf) {
 	}
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ut64 addr = tmp_entry;
+		ut64 addr = ap->tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
 		r_list_append (ret, ptr);
 	}
@@ -112,9 +126,10 @@ static RList* entries(RBinFile *bf) {
 }
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
+	R_RETURN_IF_FAIL (ret && name);
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (ptr) {
-		ptr->name = strdup (r_str_get (name));
+	if (R_LIKELY (ptr)) {
+		ptr->name = r_bin_name_new (name);
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = 0;
 		ptr->ordinal = 0;
@@ -135,19 +150,20 @@ static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
 }
 
 static RList *symbols(RBinFile *bf) {
+	AvrPriv *ap = bf->bo->bin_obj;
 	RList *ret = NULL;
-	RBuffer *obj = bf->bo->bin_obj;
+	RBuffer *b = ap->b;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	/* atmega8 */
-	addptr (ret, "int0", 2, obj);
-	addptr (ret, "int1", 4, obj);
-	addptr (ret, "timer2cmp", 6, obj);
-	addptr (ret, "timer2ovf", 8, obj);
-	addptr (ret, "timer1capt", 10, obj);
-	addptr (ret, "timer1cmpa", 12, obj);
+	addptr (ret, "int0", 2, b);
+	addptr (ret, "int1", 4, b);
+	addptr (ret, "timer2cmp", 6, b);
+	addptr (ret, "timer2ovf", 8, b);
+	addptr (ret, "timer1capt", 10, b);
+	addptr (ret, "timer1cmpa", 12, b);
 	return ret;
 }
 
@@ -157,15 +173,17 @@ static RList *strings(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_avr = {
-	.name = "avr",
-	.desc = "ATmel AVR MCUs",
-	.license = "LGPL3",
-	.load_buffer = load_buffer,
+	.meta = {
+		.name = "avr",
+		.desc = "ATmel AVR MCUs",
+		.license = "LGPL3",
+	},
+	.load = load,
 	.destroy = destroy,
 	.entries = entries,
 	.strings = strings,
 	.symbols = symbols,
-	.check_buffer = check_buffer,
+	.check = check,
 	.info = info,
 };
 

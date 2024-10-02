@@ -348,7 +348,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	return R_DEBUG_REASON_NONE;
 }
 
-static int r_debug_bochs_stop(RDebug *dbg) {
+static bool r_debug_bochs_stop(RDebug *dbg) {
 	//eprintf("bochs_stop:\n");
 	//RIOBdescbg *o = dbg->iob.io->desc->data;
 	//BfvmCPU *c = o->bfvm;
@@ -577,7 +577,7 @@ static char *r_debug_bochs_reg_profile(RDebug *dbg) {
 }
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
@@ -591,7 +591,7 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 }
 
 static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
-	r_return_val_if_fail (dbg && ds, false);
+	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = ds->plugin_data;
 	if (!pd) {

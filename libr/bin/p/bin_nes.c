@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "nes/nes_specs.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
 		if (r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf)) {
@@ -13,8 +13,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -40,7 +40,7 @@ static RBinInfo *info(RBinFile *bf) {
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (R_LIKELY (ptr)) {
-		ptr->name = strdup (r_str_get (name));
+		ptr->name = r_bin_name_new (r_str_get (name));
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = size;
 		ptr->ordinal = 0;
@@ -206,11 +206,13 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 }
 
 RBinPlugin r_bin_plugin_nes = {
-	.name = "nes",
-	.desc = "NES",
-	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.meta = {
+		.name = "nes",
+		.desc = "NES",
+		.license = "MIT",
+	},
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

@@ -1,3 +1,4 @@
+#include <r_core.h>
 #include <r_anal.h>
 #include <r_sign.h>
 
@@ -116,8 +117,32 @@ static bool test_anal_sign_get_set(void) {
 	mu_end;
 }
 
+bool test_anal_sign_avoid_dup_functions(void) {
+	RCore *core = r_core_new ();
+
+	RAnalFunction *fcn1 = r_anal_create_function (core->anal, "fcn1", 0x2137, 0, NULL);
+	RAnalBlock *first_block = r_anal_create_block (core->anal, 0x2137, 13);
+	r_anal_function_add_block (fcn1, first_block);
+
+	RAnalFunction *fcn2 = r_anal_create_function (core->anal, "fcn2", 0xdeadbeef, 0, NULL);
+	RAnalBlock *second_block = r_anal_create_block (core->anal, 0xdeadbeef, 31);
+	r_anal_function_add_block (fcn2, second_block);
+
+	r_core_cmd0 (core, "aF"); // find functions
+
+	int count = r_sign_all_functions (core->anal, false); // "zg"
+	mu_assert_eq (count, 2, "Should create 2 new zignatures for the unseen functions");
+
+	count = r_sign_all_functions (core->anal, false);
+	mu_assert_eq (count, 0, "Should not create new zignatures for the same functions");
+
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_sign_get_set);
+	mu_run_test (test_anal_sign_avoid_dup_functions);
 	return tests_passed != tests_run;
 }
 
