@@ -517,7 +517,7 @@ static RCoreHelpMessage help_msg_pif = {
 };
 
 static RCoreHelpMessage help_msg_po = {
-	"Usage:", "po[24aAdlmorsx]", " [hexpairs] @ addr[!bsize] (see also `poke`)",
+	"Usage:", "po[24aAdlmorsxS]", " [hexpairs] @ addr[!bsize] (see also `poke`)",
 	"po[24aAdlmorsx]", "", "without hexpair values, clipboard is used",
 	"po2", " [val]", "2=  2 byte endian swap",
 	"po4", " [val]", "4=  4 byte endian swap",
@@ -530,6 +530,7 @@ static RCoreHelpMessage help_msg_po = {
 	"por", " [val]", ">>= shift right",
 	"pos", " [val]", "-=  substraction",
 	"pox", " [val]", "^=  xor  (f.ex: pox 0x90)",
+	"poS", " [algo] [key]", "Compute and print block signature",
 	NULL
 };
 
@@ -3310,6 +3311,40 @@ static void cmd_print_op(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_po);
 		}
 		break;
+	case 'S': { // "poS"
+		char *cmd = strdup (input);
+		RList *args = r_str_split_list (cmd, " ", 0);
+		char *algo = r_list_get_n (args, 1);
+		if (!args || !algo) {
+			r_crypto_list (core->crypto, r_cons_printf, 0 | (int)R_CRYPTO_TYPE_SIGNATURE << 8);
+			r_core_cmd_help_match (core, help_msg_po, "poS");
+			break;
+		}
+		RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+		if (cj && cj->h->type == R_CRYPTO_TYPE_SIGNATURE) {
+			char *key = r_list_get_n (args, 2);
+			ut8 *binkey = (ut8 *)strdup (key);
+			int keylen = r_hex_str2bin (key, binkey);
+			if (!keylen) {
+				R_LOG_ERROR ("Invalid key");
+				break;
+			}
+			if (!r_crypto_job_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+				break;
+			}
+			r_crypto_job_update (cj, (const ut8 *)core->block, core->blocksize);
+
+			int result_size = 0;
+			ut8 *result = r_crypto_job_get_output (cj, &result_size);
+			if (result) {
+				r_print_bytes (core->print, result, result_size, "%02x");
+				free (result);
+			}
+		} else {
+			R_LOG_ERROR ("Unsupported signature algorithm: %s", algo);
+		}
+		break;
+	}
 	case '\0':
 	case '?':
 	default:
