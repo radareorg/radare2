@@ -2165,10 +2165,11 @@ static int cmd_wb(void *data, const char *input) {
 	if (uil > 8) {
 		R_LOG_ERROR ("wb only operates on bytes");
 	} else if (uil > 0) {
-		int shift = 8 - uil;
-		b <<= shift;
-		b >>= shift;
-		b |= (n << shift);
+		// Shift left and right to zero uil most significant bits
+		b <<= uil;
+		b >>= uil;
+		// Overwrite uil most significant bits and keep the rest
+		b |= (n << (8 - uil));
 		r_io_write_at (core->io, core->offset, &b, 1);
 	} else {
 		r_core_cmd_help_match (core, help_msg_w, "wb");
