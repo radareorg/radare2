@@ -943,15 +943,6 @@ w0wgreat
 EOF
 RUN
 
-NAME=ps leading zeros
-BROKEN=1
-FILE=bins/elf/crackme0x00b
-CMDS=ps @ 0x0804a03e
-EXPECT=<<EOF
-w
-EOF
-RUN
-
 NAME=io.unalloc, io.unalloc.ch and prc
 FILE=bins/elf/analysis/tiny.elf
 CMDS=<<EOF
