@@ -543,12 +543,11 @@ static RCoreHelpMessage help_msg_pq = {
 
 static RCoreHelpMessage help_msg_ps = {
 	"Usage:", "ps[abijqpsuwWxz+] [len]", "Print String (optionally specify the length)",
-	"ps", "", "print string until a first non-printable character",
+	"ps", "[j]", "print string until a first non-printable character",
 	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
 	"psa", "", "print any type of string (psp/psw/psW/psz/..)",
 	"psb", "", "print strings in current block",
 	"psi", "", "print string inside curseek",
-	"psj", "", "print string in JSON format",
 	"psn", "[l] [len]", "print string until newline",
 	"psp", "[?][j]", "print pascal string",
 	"psq", "", "alias for pqs",
