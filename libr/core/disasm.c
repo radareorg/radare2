@@ -7389,7 +7389,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			pj_end (pj);
 		}
 		if (ds->analop.jump != UT64_MAX ) {
-			pj_kN (pj, "jump", ds->analop.jump);
+			pj_kn (pj, "jump", ds->analop.jump);
 			if (ds->analop.fail != UT64_MAX) {
 				pj_kn (pj, "fail", ds->analop.fail);
 			}
