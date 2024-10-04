@@ -3313,7 +3313,10 @@ static void cmd_print_op(RCore *core, const char *input) {
 	case 'S': { // "poS"
 		char *cmd = strdup (input);
 		RList *args = r_str_split_list (cmd, " ", 0);
-		char *algo = r_list_get_n (args, 1);
+		char *algo = NULL;
+		if (args) {
+			algo = r_list_get_n (args, 1);
+		}
 		if (!args || !algo) {
 			r_crypto_list (core->crypto, r_cons_printf, 0 | (int)R_CRYPTO_TYPE_SIGNATURE << 8);
 			r_core_cmd_help_match (core, help_msg_po, "poS");
