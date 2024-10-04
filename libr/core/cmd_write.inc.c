@@ -287,8 +287,6 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 				R_LOG_INFO ("Written %d byte(s)", result_size);
 				free (result);
 			}
-		} else {
-			R_LOG_ERROR ("Invalid key");
 		}
 		free (binkey);
 		return 0;

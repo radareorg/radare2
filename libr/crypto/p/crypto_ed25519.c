@@ -26,6 +26,7 @@ R_API void ed25519_create_keypair(const ut8 *seed, ut8 *privkey, ut8 *pubkey) {
 
 static bool ed25519_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen != 32 && keylen != 64) {
+		R_LOG_ERROR ("Invalid key length");
 		return false;
 	}
 	cj->data = malloc (ED25519_PUBKEY_LENGTH);
