@@ -249,8 +249,8 @@ static const RCoreHelpMessage help_msg_equal = {
 	"=t", "port", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
 	"=r", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
-	"=h", "[?]", "start the http webserver",
-	"=H", "[?]", "start the http webserver (and launch the web browser)",
+	"=h", " port", "start the http webserver on 'port'",
+	"=H", " port", "start the http webserver on 'port' (launch browser)",
 	"\nother:", "", "",
 	"=&", ":port", "start rap server in background (same as '&_=h')",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
@@ -270,9 +270,9 @@ static const RCoreHelpMessage help_msg_equalh = {
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
+	"=h&", " port", "start http server on 'port' in background",
+	"=H", " port", "listen for http on 'port' (launch browser)",
+	"=H&", " port", "listen for http on 'port' in background (launch browser)",
 	NULL
 };
 
