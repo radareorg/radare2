@@ -2439,7 +2439,7 @@ aaa
 axt@0x0804a01c
 EOF
 EXPECT=<<EOF
-main 0x80483ee [DATA:r--] mov dword [obj.a], 0x1337
+main 0x80483ee [DATA:-w-] mov dword [obj.a], 0x1337
 EOF
 RUN
 

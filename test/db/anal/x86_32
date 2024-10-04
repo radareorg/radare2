@@ -1473,7 +1473,7 @@ aar
 axt @ str.john
 EOF
 EXPECT=<<EOF
-main 0x804831a [DATA:r--] mov dword [var_ch], str.john
+main 0x804831a [DATA:-w-] mov dword [var_ch], str.john
 EOF
 RUN
 
