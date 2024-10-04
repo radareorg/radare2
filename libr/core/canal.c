@@ -4566,12 +4566,12 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 	return true;
 }
 
-ut64 r_anal_direction_to_reftype(int perm) {
-    ut64 refType = 0;
-    if (perm & 1) refType |= R_ANAL_REF_TYPE_READ;
-    if (perm & 2) refType |= R_ANAL_REF_TYPE_WRITE;
-    if (perm & 4) refType |= R_ANAL_REF_TYPE_EXEC;
-    return refType;
+ut64 r_anal_perm_to_reftype(int perm) {
+	ut64 refType = 0;
+	if (perm & 1) refType |= R_ANAL_REF_TYPE_READ;
+	if (perm & 2) refType |= R_ANAL_REF_TYPE_WRITE;
+	if (perm & 4) refType |= R_ANAL_REF_TYPE_EXEC;
+	return refType;
 }
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
@@ -4705,8 +4705,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-                const ut64 perm = op.direction &= (~R_ANAL_OP_DIR_REF);
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA | r_anal_direction_to_reftype(perm), pj, rad, cfg_debug, cfg_anal_strings)) {
+				const ut64 perm = op.direction &= (~R_ANAL_OP_DIR_REF);
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA | r_anal_perm_to_reftype(perm), pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			} else {
