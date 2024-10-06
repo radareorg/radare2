@@ -255,7 +255,7 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		return;
 	}
 	if (keylen < 1) {
-		const char *mode = (!direction)? "Encryption": "Decryption";
+		const char *mode = (direction == R_CRYPTO_DIR_ENCRYPT)? "Encryption": "Decryption";
 		R_LOG_ERROR ("%s key not defined. Use -S [key]", mode);
 		free (binkey);
 		return;
@@ -290,7 +290,7 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	} else {
-		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_CRYPTO_DIR_ENCRYPT)? "encryption": "decryption"), algo);
 	}
 	return;
 }
@@ -309,7 +309,7 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		return;
 	}
 	if (keylen < 1) {
-		R_LOG_ERROR ("Private key not defined. Use -S [key]");
+		R_LOG_ERROR ("Private key not defined");
 		free (binkey);
 		return;
 	}
