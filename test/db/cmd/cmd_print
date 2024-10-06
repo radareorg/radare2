@@ -1300,3 +1300,27 @@ EXPECT=<<EOF
 6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a
 EOF
 RUN
+
+NAME=poE blowfish (Test vectors)
+FILE=-
+CMDS=<<EOF
+b 8
+wx 0123456789abcdef @ 131
+poE blowfish fedcba9876543210 @ 131
+EOF
+EXPECT=<<EOF
+0aceab0fc6a0a28d
+EOF
+RUN
+
+NAME=poD blowfish (Test vectors)
+FILE=-
+CMDS=<<EOF
+b 8
+wx 0aceab0fc6a0a28d @ 27
+poD blowfish fedcba9876543210 @ 27
+EOF
+EXPECT=<<EOF
+0123456789abcdef
+EOF
+RUN
