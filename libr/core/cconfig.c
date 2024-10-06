@@ -4452,6 +4452,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "disable ASLR for spawn and such");
 	SETCB ("io.va", "true", &cb_iova, "use virtual address layout");
+	SETBPREF ("io.voidwrites", "true",
+		"handle writes to fully unmapped areas as valid operations (requires io.va to be set)");
 	SETI ("io.mapinc", 0x10000000, "increment map address when overlap with r_io_map_locate");
 	SETCB ("io.pava", "false", &cb_io_pava, "use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "change fd when opening a new file");
