@@ -24,7 +24,7 @@
 .Op Fl S Ar str
 .Op Fl t Ar to
 .Op Fl v
-.Op Fl V Ar s:num
+.Op Fl V Ar s:num | s:num1,num2
 .Op Fl x Ar hex
 .Op Fl X
 .Op Fl z
@@ -74,8 +74,8 @@ Search for wide strings (Unicode) in the file(s).
 Specify the ending address for the search. (See -f)
 .It Fl v
 Display the version of rafind2 and exit.
-.It Fl V Ar s:num
-Search for the given value using little-endian notation (e.g., -V 4:123).
+.It Fl V Ar s:num | s:num1,num2
+Search for the given value using little-endian notation. A single value can be specified (e.g., -V 4:123) or a range of values can be searched by providing two values separated by a comma (e.g., -V 4:100,200).
 .It Fl x Ar hex
 Search for the specified hex pattern(s) in the file(s).
 .It Fl X
