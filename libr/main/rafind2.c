@@ -189,7 +189,7 @@ static int show_help(const char *argv0, int line) {
 	" -t [to]    stop search at address 'to'\n"
 	" -q         quiet: fewer output do not show headings or filenames.\n"
 	" -v         print version and exit\n"
-	" -V [s:num] search for given value in given endian (-V 4:123)\n"
+	" -V [s:num | s:num1,num2] search for a value or range in the specified endian (-V 4:123 or -V 4:100,200)\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -X         show hexdump of search results\n"
 	" -z         search for zero-terminated strings\n"
@@ -498,44 +498,60 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			{
 				char *arg = strdup (opt.arg);
 				char *colon = strchr (arg, ':');
+				char *comma = NULL;
 				ut8 buf[8] = {0};
 				int size = (R_SYS_BITS & R_SYS_BITS_64)? 8: 4;
-				ut64 value = 0;
+				ut64 value, min_value = 0, max_value = 0;
+
 				if (colon) {
 					*colon++ = 0;
 					size = atoi (arg);
 					size = R_MIN (8, size);
 					size = R_MAX (1, size);
-					value = r_num_math (NULL, colon);
+					comma = strchr (colon, ',');
+
+					if (comma) {
+						*comma++ = 0;
+						min_value = r_num_math (NULL, colon);
+						max_value = r_num_math (NULL, comma);
+					} else {
+						min_value = r_num_math (NULL, colon);
+						max_value = min_value;
+					}
 				} else {
-					value = r_num_math (NULL, arg);
+					min_value = r_num_math (NULL, arg);
+					max_value = min_value;
 				}
-				switch (size) {
-				case 1:
-					buf[0] = value;
-					break;
-				case 2:
-					r_write_ble16 (buf, value, ro.bigendian);
-					break;
-				case 4:
-					r_write_ble32 (buf, value, ro.bigendian);
-					break;
-				case 8:
-					r_write_ble64 (buf, value, ro.bigendian);
-					break;
-				default:
-					R_LOG_ERROR ("Invalid value size. Must be 1, 2, 4 or 8");
-					rafind_options_fini (&ro);
-					return 1;
+				for (value = min_value; value <= max_value; value++) {
+					switch (size) {
+					case 1:
+						buf[0] = value;
+						break;
+					case 2:
+						r_write_ble16 (buf, value, ro.bigendian);
+						break;
+					case 4:
+						r_write_ble32 (buf, value, ro.bigendian);
+						break;
+					case 8:
+						r_write_ble64 (buf, value, ro.bigendian);
+						break;
+					default:
+						R_LOG_ERROR ("Invalid value size. Must be 1, 2, 4 or 8");
+						rafind_options_fini (&ro);
+						free (arg);
+						return 1;
+					}
+					char *hexdata = r_hex_bin2strdup ((ut8*)buf, size);
+					if (hexdata) {
+						ro.align = size;
+						ro.mode = R_SEARCH_KEYWORD;
+						ro.hexstr = true;
+						ro.widestr = false;
+						r_list_append (ro.keywords, (void*)hexdata);
+					}
 				}
-				char *hexdata = r_hex_bin2strdup ((ut8*)buf, size);
-				if (hexdata) {
-					ro.align = size;
-					ro.mode = R_SEARCH_KEYWORD;
-					ro.hexstr = true;
-					ro.widestr = false;
-					r_list_append (ro.keywords, (void*)hexdata);
-				}
+				free (arg);
 			}
 			break;
 		case 'v':
