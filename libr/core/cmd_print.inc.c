@@ -524,6 +524,8 @@ static RCoreHelpMessage help_msg_po = {
 	"poa", " [val]", "+=  addition (f.ex: poa 0102)",
 	"poA", " [val]", "&=  and",
 	"pod", " [val]", "/=  divide",
+	"poD", " [algo] [key] [iv]", "Print block decryption",
+	"poE", " [algo] [key] [iv]", "Print block encryption",
 	"pol", " [val]", "<<= shift left",
 	"pom", " [val]", "*=  multiply",
 	"poo", " [val]", "|=  or",
@@ -3277,6 +3279,57 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	return true;
 }
 
+static void print_encrypted_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
+	int keylen = 0;
+	ut8 *binkey = NULL;
+	if (!strncmp (key, "s:", 2)) {
+		binkey = (ut8 *)strdup (key + 2);
+		keylen = strlen (key + 2);
+	} else {
+		binkey = (ut8 *)strdup (key);
+		keylen = r_hex_str2bin (key, binkey);
+	}
+	if (!binkey) {
+		return;
+	}
+	if (keylen < 1) {
+		const char *mode = (!direction)? "Encryption": "Decryption";
+		R_LOG_ERROR ("%s key not defined", mode);
+		free (binkey);
+		return;
+	}
+	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	if (cj && cj->h->type == R_CRYPTO_TYPE_ENCRYPT) {
+		if (r_crypto_job_set_key (cj, binkey, keylen, 0, direction)) {
+			if (iv) {
+				ut8 *biniv = malloc (strlen (iv) + 1);
+				int ivlen = r_hex_str2bin (iv, biniv);
+				if (ivlen < 1) {
+					ivlen = strlen (iv);
+					strcpy ((char *)biniv, iv);
+				}
+				if (!r_crypto_job_set_iv (cj, biniv, ivlen)) {
+					R_LOG_ERROR ("Invalid IV");
+					return;
+				}
+			}
+			r_crypto_job_update (cj, (const ut8 *)core->block, core->blocksize);
+
+			int result_size = 0;
+			ut8 *result = r_crypto_job_get_output (cj, &result_size);
+			if (result) {
+				r_print_bytes (core->print, result, result_size, "%02x");
+				free (result);
+			}
+		}
+		free (binkey);
+		return;
+	} else {
+		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+	}
+	return;
+}
+
 static void cmd_print_op(RCore *core, const char *input) {
 	ut8 *buf = NULL;
 	if (!input[0]) {
@@ -3345,6 +3398,30 @@ static void cmd_print_op(RCore *core, const char *input) {
 		} else {
 			R_LOG_ERROR ("Unsupported signature algorithm: %s", algo);
 		}
+		break;
+	}
+	case 'D': // "poD"
+	case 'E': { // "poE"
+		int direction = (input[1] == 'E')? R_CRYPTO_DIR_ENCRYPT: R_CRYPTO_DIR_DECRYPT;
+		char *cmd = strdup (input);
+		RList *args = r_str_split_list (cmd, " ", 0);
+		char *algo = NULL;
+		if (args) {
+			algo = r_list_get_n (args, 1);
+		}
+		if (!args || !algo) {
+			r_crypto_list (core->crypto, r_cons_printf, 0 | (int)R_CRYPTO_TYPE_ENCRYPT << 8);
+			r_core_cmd_help_match_spec (core, help_msg_po, "po", input[1]);
+			break;
+		}
+		char *key = r_list_get_n (args, 2);
+		if (!key) {
+			const char *mode = (direction == R_CRYPTO_DIR_ENCRYPT)? "Encryption": "Decryption";
+			R_LOG_ERROR ("%s key not defined", mode);
+			return;
+		}
+		char *iv = r_list_get_n (args, 3);
+		print_encrypted_block (core, algo, key, direction, iv);
 		break;
 	}
 	case '\0':
