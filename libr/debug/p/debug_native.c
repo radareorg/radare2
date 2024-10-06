@@ -660,7 +660,6 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 #endif
 		return true;
 		break;
-	
 	case R_REG_TYPE_FPU:
 	case R_REG_TYPE_VEC64: // MMX
 	   ret = ptrace (PT_GETFPREGS, pid, (caddr_t)buf, sizeof (struct fpreg));
