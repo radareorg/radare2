@@ -2,6 +2,7 @@ NAME=write nofile error
 FILE=--
 ARGS=-w
 CMDS=<<EOF
+e io.voidwrites = false
 w hello
 x 32
 EOF
