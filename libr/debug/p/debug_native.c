@@ -673,7 +673,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
                
                if (info.xsave_len != 0)
                {
-                ret = ptrace(PT_GETXSTATE, pid,  (caddr_t)buf, info.xsave_len);
+                ret = ptrace (PT_GETXSTATE, pid,  (caddr_t)buf, info.xsave_len);
                }
               #endif
                break;
