@@ -271,8 +271,8 @@ static const RCoreHelpMessage help_msg_equalh = {
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
 	"=h&", " port", "start http server on 'port' in background",
-	"=H", " port", "listen for http on 'port' (launch browser)",
-	"=H&", " port", "listen for http on 'port' in background (launch browser)",
+	"=H", " port", "start http server on 'port' (launch browser)",
+	"=H&", " port", "start http server on 'port' in background (launch browser)",
 	NULL
 };
 
