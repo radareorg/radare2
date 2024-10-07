@@ -2214,22 +2214,73 @@ repeat:
 
 static int cmd_wb(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	ut8 b = core->block[0];
-	char *ui = r_str_newf ("%sb", r_str_trim_head_ro (input));
-	int uil = strlen (ui) - 1;
-	int n = r_num_get (NULL, ui);
-	free (ui);
-	if (uil > 8) {
-		R_LOG_ERROR ("wb only operates on bytes");
-	} else if (uil > 0) {
-		// Shift left and right to zero uil most significant bits
-		b <<= uil;
-		b >>= uil;
-		// Overwrite uil most significant bits and keep the rest
-		b |= (n << (8 - uil));
-		r_io_write_at (core->io, core->offset, &b, 1);
-	} else {
+	int uil = strlen (input);
+	char c;
+	int i;
+
+	// Check that user provided some input
+	if (uil == 0) {
 		r_core_cmd_help_match (core, help_msg_w, "wb");
+		return 0;
+	}
+
+	// Check that user input only contains binary data
+	for (i = 0; i < uil; i++) {
+		c = input[i];
+		// Ignore whitespaces
+		if (isspace(c)) {
+			continue;
+		}
+		// Check that user input only contains ones and zeros
+		if (c != '0' && c != '1') {
+			R_LOG_ERROR ("wb operates only on binary data");
+			return 0;
+		}
+	}
+
+	// Iterate user input bitwise and write output every 8 bits
+	int bits_read = 0;
+	int block_offset = 0;
+	ut8 byte = 0;
+	for (i = 0; i < uil; i++) {
+		// Read a bit
+		c = input[i];
+
+		// Ignore whitespaces
+		if (isspace(c)) {
+			continue;
+		}
+
+		if (c == '1') {
+			// Bits are read and bytes constructed from most to
+			// least significant.
+			byte |= (1 << (7 - bits_read));
+		}
+		bits_read++;
+
+		// Write a byte if we've read 8 bits
+		if (bits_read % 8 == 0) {
+			r_io_write_at (
+				core->io,
+				core->offset + block_offset,
+				&byte,
+				1
+			);
+			block_offset++;
+			bits_read = 0;
+			byte = 0;
+		}
+	}
+
+	// Write any possible remaining ui bits
+	if (bits_read != 0) {
+		ut8 b = core->block[block_offset];
+		// Shift left and right to zero bits_read most significant bits
+		b <<= bits_read;
+		b >>= bits_read;
+		// Overwrite bits_read most significant bits and keep the rest
+		b |= byte;
+		r_io_write_at (core->io, core->offset + block_offset, &b, 1);
 	}
 
 	return 0;
