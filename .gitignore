@@ -1,6 +1,7 @@
 clang-log/
 .clang_complete
 .tmp-format
+
 .#*
 *._d
 *._o
@@ -103,6 +104,7 @@ tags
 .kdev4/*
 *.kdev4
 radare2-*.zip
+
 # Ignore meson related files
 ./bin
 ninja.exe
@@ -115,23 +117,29 @@ binr/rasign2/rasign2
 binr/rasign2/rasign2.exe
 compile_commands.json
 libr/flag/d/tags.r2
+
 # CLion
 .idea/
+
 # VSCode
 .vscode/
 CMakeLists.txt
 *.cmake
 cmake-build-*
+
 # Snap packaging
 /parts
 /prime
 /stage
 /snap
 /*.snap
+
 # doxygen autogen
 doc/doxygen/html
+
 # Python
 __pycache__
+
 # Dynamic docker building folder to minimize docker context
 .docker_alpine
 .ccls-cache/
