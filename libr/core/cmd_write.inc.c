@@ -287,11 +287,11 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 				free (result);
 			}
 		}
-		free (binkey);
-		return;
+		free (cj);
 	} else {
 		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_CRYPTO_DIR_ENCRYPT)? "encryption": "decryption"), algo);
 	}
+	free (binkey);
 	return;
 }
 
