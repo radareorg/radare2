@@ -89,7 +89,7 @@ static inline bool del_hook(RVecREventHook *hooks, const ut64 k, REventCallback 
 	return false;
 }
 
-R_API void r_event_unhook(R_NULLABLE REvent *ev, ut32 event_type, REventCallback cb) {
+R_API bool r_event_unhook(R_NULLABLE REvent *ev, ut32 event_type, REventCallback cb) {
 	bool res = false;
 	if (!ev) {
 		return res;
