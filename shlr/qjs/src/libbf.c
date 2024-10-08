@@ -1710,6 +1710,13 @@ static int __bf_div(bf_t *r, const bf_t *a, const bf_t *b, limb_t prec,
         slimb_t d;
 
         na = n + nb;
+
+#if LIMB_LOG2_BITS == 6
+        if (na >= (SIZE_MAX / sizeof(limb_t)) - 1) {
+            return BF_ST_MEM_ERROR;  /* Return memory error status */
+        }
+#endif
+
         taba = bf_malloc(s, (na + 1) * sizeof(limb_t));
         if (!taba)
             goto fail;
