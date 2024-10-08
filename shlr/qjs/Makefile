@@ -1,5 +1,6 @@
 include deps.mk
 
+QJS_BRANCH?=quickjs-ng
 USE_MINIFY=0
 USE_UGLIFY=0
 
