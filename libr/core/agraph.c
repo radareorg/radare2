@@ -970,7 +970,7 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
 			const RANode *anext = get_anode (next);
 			const RANode *acur = get_anode (cur);
-			int found = false;
+			bool found = false;
 
 			if (g->dists) {
 				d.from = cur;
@@ -2468,29 +2468,29 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 		bool hl = sdb_exists (core->sdb, key);
 		r_agraph_add_edge (g, u, v, hl);
 	} else {
-		R_LOG_WARN ("Failed to add child node 0x%" PFMT64x " to %s, child not found", jump, u->title);
+		R_LOG_WARN ("Failed to add child node 0x%" PFMT64x " to %s, child not found", jump, u? u->title: "?");
 	}
 	free (title);
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	if (!fcn) {
+		return false;
+	}
 	RAnalBlock *bb;
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
-	bool emu = r_config_get_b (core->config, "asm.emu");
-	bool few = r_config_get_b (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	int saved_arena_size = 0;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->anal->stackptr;
 	core->keep_asmqjmps = false;
+	const int saved_stackptr = core->anal->stackptr;
+	const bool few = r_config_get_b (core->config, "graph.few");
 
-	if (!fcn) {
-		return false;
-	}
+	const bool emu = r_config_get_b (core->config, "asm.emu");
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
@@ -4259,7 +4259,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		r_cons_set_raw (true);
 		char ch = r_cons_readchar ();
 		obuf[i++] = ch;
-		r_cons_printf ("%c", ch);
+		r_cons_write (&ch, 1);
 		cont = isalpha ((ut8) ch) && !islower ((ut8) ch);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	r_cons_flush ();
