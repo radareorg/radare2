@@ -2509,7 +2509,15 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 
 	core->keep_asmqjmps = false;
+	const bool breakable = r_list_length (fcn->bbs) > 1024;
+	if (breakable) {
+		r_cons_set_raw (false);
+		r_cons_break_push (NULL, NULL);
+	}
 	r_list_foreach (fcn->bbs, iter, bb) {
+		if (breakable && r_cons_is_breaked ()) {
+			goto interrupted;
+		}
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2561,6 +2569,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				add_child (core, g, u, cop->addr);
 			}
 		}
+	}
+interrupted:
+	if (breakable) {
+		r_cons_break_end ();
+		r_cons_set_raw (true);
 	}
 
 	delete_dup_edges (g);
