@@ -2243,6 +2243,9 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
+#if 1
+	return r_anal_get_block_at (anal, addr);
+#else
 	RListIter *iter;
 	RAnalBlock *bb;
 	const bool aligned = r_anal_is_aligned (anal, addr);
@@ -2255,6 +2258,7 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 			// return bb;
 		}
 	}
+#endif
 	return NULL;
 }
 
