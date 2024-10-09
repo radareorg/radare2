@@ -664,7 +664,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		if (!existing_in_fcn && existing_bb) {
 			if (existing_bb->addr == fcn->addr) {
-				if (anal->opt.slow) {
+				if (0&&anal->opt.slow) {
 					// XXX this call causes an infinite loop if not commented
 					// our function starts directly there, so we steal what is ours!
 					fcn_takeover_block_recursive (fcn, existing_bb);
