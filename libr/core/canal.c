@@ -5188,7 +5188,7 @@ bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
 
 /* Adds BB to function */
 bool fcn_merge_add_cb(RAnalBlock *block, RAnalFunction *fcn) {
-	r_anal_function_add_block(fcn, block);
+	r_anal_function_add_block (fcn, block);
 	return true;
 }
 
