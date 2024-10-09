@@ -970,7 +970,7 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
 			const RANode *anext = get_anode (next);
 			const RANode *acur = get_anode (cur);
-			int found = false;
+			bool found = false;
 
 			if (g->dists) {
 				d.from = cur;
@@ -2468,29 +2468,29 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 		bool hl = sdb_exists (core->sdb, key);
 		r_agraph_add_edge (g, u, v, hl);
 	} else {
-		R_LOG_WARN ("Failed to add child node 0x%" PFMT64x " to %s, child not found", jump, u->title);
+		R_LOG_WARN ("Failed to add child node 0x%" PFMT64x " to %s, child not found", jump, u? u->title: "?");
 	}
 	free (title);
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	if (!fcn) {
+		return false;
+	}
 	RAnalBlock *bb;
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
-	bool emu = r_config_get_b (core->config, "asm.emu");
-	bool few = r_config_get_b (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	int saved_arena_size = 0;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->anal->stackptr;
 	core->keep_asmqjmps = false;
+	const int saved_stackptr = core->anal->stackptr;
+	const bool few = r_config_get_b (core->config, "graph.few");
 
-	if (!fcn) {
-		return false;
-	}
+	const bool emu = r_config_get_b (core->config, "asm.emu");
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
@@ -2509,7 +2509,15 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 
 	core->keep_asmqjmps = false;
+	const bool breakable = r_list_length (fcn->bbs) > 1024;
+	if (breakable) {
+		r_cons_set_raw (false);
+		r_cons_break_push (NULL, NULL);
+	}
 	r_list_foreach (fcn->bbs, iter, bb) {
+		if (breakable && r_cons_is_breaked ()) {
+			goto interrupted;
+		}
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2561,6 +2569,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				add_child (core, g, u, cop->addr);
 			}
 		}
+	}
+interrupted:
+	if (breakable) {
+		r_cons_break_end ();
+		r_cons_set_raw (true);
 	}
 
 	delete_dup_edges (g);
@@ -3576,7 +3589,6 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	if (!r_cons_canvas_resize (g->can, w, h)) {
 		return false;
 	}
-	// r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
 		g->can->sy = -g->y - 1;
@@ -3608,23 +3620,24 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
-	if (!g->is_tiny) {
-		int color = core? r_config_get_i (core->config, "scr.color"): 0;
-		if (color > 0) {
-			const char *kolor = core->cons->context->pal.prompt;
-			r_cons_gotoxy (0, 0);
-			r_cons_print (kolor?kolor: Color_WHITE);
-			r_cons_print (g->title);
-			r_cons_print (Color_RESET"\r");
-		} else {
-			W (g->title); // canvas write is always black/white
-		// 	r_cons_print (g->title);
+	if (g->title) {
+		if (!g->is_tiny) {
+			int color = core? r_config_get_i (core->config, "scr.color"): 0;
+			if (color > 0) {
+				const char *kolor = core->cons->context->pal.prompt;
+				r_cons_gotoxy (0, 0);
+				r_cons_print (kolor?kolor: Color_WHITE);
+				r_cons_print (g->title);
+				r_cons_print (Color_RESET"\r");
+			} else {
+				W (g->title); // canvas write is always black/white
+			}
 		}
-	}
-	if (is_interactive && g->title) {
-		int title_len = strlen (g->title);
-		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
-			w - title_len, 1, ' ');
+		if (is_interactive) {
+			const int title_len = strlen (g->title);
+			r_cons_canvas_fill (g->can, -g->can->sx + title_len,
+				-g->can->sy, w - title_len, 1, ' ');
+		}
 	}
 
 	r_cons_canvas_print_region (g->can);
@@ -4259,7 +4272,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		r_cons_set_raw (true);
 		char ch = r_cons_readchar ();
 		obuf[i++] = ch;
-		r_cons_printf ("%c", ch);
+		r_cons_write (&ch, 1);
 		cont = isalpha ((ut8) ch) && !islower ((ut8) ch);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	r_cons_flush ();
