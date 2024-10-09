@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2023 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2024 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_hash.h>
