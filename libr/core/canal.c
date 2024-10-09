@@ -5266,7 +5266,14 @@ static void cccb(void *u) {
 }
 
 // dup with isValidAddress wtf
-static bool myvalid(RIO *io, ut64 addr) {
+static bool myvalid(RCore *core, ut64 addr) {
+	RIO *io = core->io;
+#if 1
+	RFlagItem *fi = r_flag_get_i (core->flags, addr);
+	if (fi && strchr (fi->name, '.')) {
+		return true;
+	}
+#endif
 	if (addr < 0x100) {
 		return false;
 	}
@@ -5363,7 +5370,7 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 	RCore *core = esil->anal->coreb.core;
 	handle_var_stack_access (esil, addr, R_PERM_W, len);
 	// ignore writes in stack
-	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		if (!is_stack (core->io, addr)) {
 			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			/** resolve ptr */
@@ -5388,7 +5395,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		esilbreak_last_read = addr;
 	}
 	handle_var_stack_access (esil, addr, R_PERM_R, len);
-	if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
 		switch (len) {
@@ -5410,7 +5417,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			break;
 		}
 		// TODO incorrect
-		if (trace && myvalid (core->io, refptr)) {
+		if (trace && myvalid (core, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
 				str[0] = 0;
 				if (r_io_read_at (core->io, refptr, str, sizeof (str)) < 1) {
@@ -5424,7 +5431,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 				}
 			}
 		}
-		if (myvalid (core->io, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+		if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 			if (!is_stack (core->io, addr)) {
 				r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 			}
@@ -6024,6 +6031,37 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if (CHECKREF (ESIL->cur)) {
 					r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 				}
+#if 0
+				ut64 dst = esilbreak_last_read;
+				if (dst != UT64_MAX && CHECKREF (dst)) {
+					if (myvalid (core, dst)) {
+						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+						if (cfg_anal_strings) {
+							add_string_ref (core, op.addr, dst);
+						}
+					}
+				}
+#if 0
+				dst = r_reg_getv (core->anal->reg, "tmp");
+				if (dst != UT64_MAX && CHECKREF (dst)) {
+					if (myvalid (core, dst)) {
+						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+						if (cfg_anal_strings) {
+							add_string_ref (core, op.addr, dst);
+						}
+					}
+				}
+#endif
+				dst = esilbreak_last_data;
+				if (dst != UT64_MAX && CHECKREF (dst)) {
+					if (myvalid (core, dst)) {
+						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+						if (cfg_anal_strings) {
+							add_string_ref (core, op.addr, dst);
+						}
+					}
+				}
+#endif
 			} else if ((target && op.ptr == ntarget) || !target) {
 				if (CHECKREF (ESIL->cur)) {
 					if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !core->anal->opt.noncode)) {
@@ -6073,7 +6111,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					break;
 				}
 				if ((target && dst == ntarget) || !target) {
-					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core->io, dst)) {
+					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core, dst)) {
 						RFlagItem *f;
 						char *str;
 						if (CHECKREF (dst) || CHECKREF (cur)) {
@@ -6109,7 +6147,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = esilbreak_last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (core->io, dst)) {
+					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -6118,7 +6156,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 				dst = esilbreak_last_data;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (core->io, dst)) {
+					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
@@ -6131,7 +6169,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = op.jump;
 				if (CHECKREF (dst)) {
-					if (myvalid (core->io, dst)) {
+					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 					}
 				}
@@ -6141,7 +6179,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = op.jump;
 				if (CHECKREF (dst) || (target && dst == ntarget)) {
-					if (myvalid (core->io, dst)) {
+					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					}
 					ESIL->old = cur + op.size;
@@ -6161,7 +6199,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					dst = r_reg_getv (core->anal->reg, pcname);
 				}
 				if (CHECKREF (dst)) {
-					if (myvalid (core->io, dst)) {
+					if (myvalid (core, dst)) {
 						RAnalRefType ref =
 							(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
 							? R_ANAL_REF_TYPE_CALL
