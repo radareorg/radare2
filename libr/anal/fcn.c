@@ -664,16 +664,16 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		if (!existing_in_fcn && existing_bb) {
 			if (existing_bb->addr == fcn->addr) {
-#if 1
-				r_list_delete_data (fcn->bbs, existing_bb);
-				r_anal_block_unref (existing_bb);
-				R_LOG_INFO ("Basic block collides with function 0x%08"PFMT64x, fcn->addr);
-				// our function starts directly there, so we steal what is ours!
-				return R_ANAL_RET_END; // MUST BE NOT FOUND
-#else
-				// XXX this call causes an infinite loop if not commented
-				fcn_takeover_block_recursive (fcn, existing_bb);
-#endif
+				if (anal->opt.slow) {
+					// XXX this call causes an infinite loop if not commented
+					fcn_takeover_block_recursive (fcn, existing_bb);
+				} else {
+					r_list_delete_data (fcn->bbs, existing_bb);
+					r_anal_block_unref (existing_bb);
+					R_LOG_INFO ("Basic block collides with function 0x%08"PFMT64x, fcn->addr);
+					// our function starts directly there, so we steal what is ours!
+					return R_ANAL_RET_END; // MUST BE NOT FOUND
+				}
 			}
 		}
 		// r_unref (existing_bb);
