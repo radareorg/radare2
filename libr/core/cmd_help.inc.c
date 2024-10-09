@@ -93,7 +93,7 @@ static RCoreHelpMessage help_msg_at_at = {
 
 static RCoreHelpMessage help_msg_single_quote = {
 	"'", "# run a command without evaluating any special character", "",
-	"'", "?e hello @ world", "print the given string, including the @ sign and the rest (r2.call)",
+	"'", "?e hello @ world", "print everything after `?e` (r2.call)",
 	"'", "0x123'?v $$", "run the '?v $$' command in the 0x123 offset (same as r2.callAt)",
 	"'", "@entry0'?v $$", "same as '0x but supports non numeric offsets",
 	NULL
