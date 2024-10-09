@@ -3576,7 +3576,6 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	if (!r_cons_canvas_resize (g->can, w, h)) {
 		return false;
 	}
-	// r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
 		g->can->sy = -g->y - 1;
@@ -3608,23 +3607,24 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
-	if (!g->is_tiny) {
-		int color = core? r_config_get_i (core->config, "scr.color"): 0;
-		if (color > 0) {
-			const char *kolor = core->cons->context->pal.prompt;
-			r_cons_gotoxy (0, 0);
-			r_cons_print (kolor?kolor: Color_WHITE);
-			r_cons_print (g->title);
-			r_cons_print (Color_RESET"\r");
-		} else {
-			W (g->title); // canvas write is always black/white
-		// 	r_cons_print (g->title);
+	if (g->title) {
+		if (!g->is_tiny) {
+			int color = core? r_config_get_i (core->config, "scr.color"): 0;
+			if (color > 0) {
+				const char *kolor = core->cons->context->pal.prompt;
+				r_cons_gotoxy (0, 0);
+				r_cons_print (kolor?kolor: Color_WHITE);
+				r_cons_print (g->title);
+				r_cons_print (Color_RESET"\r");
+			} else {
+				W (g->title); // canvas write is always black/white
+			}
 		}
-	}
-	if (is_interactive && g->title) {
-		int title_len = strlen (g->title);
-		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
-			w - title_len, 1, ' ');
+		if (is_interactive) {
+			const int title_len = strlen (g->title);
+			r_cons_canvas_fill (g->can, -g->can->sx + title_len,
+				-g->can->sy, w - title_len, 1, ' ');
+		}
 	}
 
 	r_cons_canvas_print_region (g->can);
