@@ -2243,6 +2243,7 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
+	const bool aligned = r_anal_is_aligned (anal, addr);
 	RAnalBlock *bb;
 	RListIter *iter;
 #if 0
@@ -2260,13 +2261,15 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 		RAnalFunction *f;
 		r_list_foreach (bb->fcns, iter2, f) {
 			if (f == fcn) {
-				return bb;
+				if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
+					return bb;
+				}
 			}
 		}
 	}
 #endif
-	// fallback
-	const bool aligned = r_anal_is_aligned (anal, addr);
+#if 0
+	// original implementation -- fallback
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (r_anal_block_contains (bb, addr)) {
 			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
@@ -2276,6 +2279,7 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 			// return bb;
 		}
 	}
+#endif
 	return NULL;
 }
 
