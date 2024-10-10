@@ -2243,11 +2243,11 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-#if 1
-	return r_anal_get_block_at (anal, addr);
-#else
+	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
+	if (bb) {
+		return bb;
+	}
 	RListIter *iter;
-	RAnalBlock *bb;
 	const bool aligned = r_anal_is_aligned (anal, addr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (r_anal_block_contains (bb, addr)) {
@@ -2258,7 +2258,6 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 			// return bb;
 		}
 	}
-#endif
 	return NULL;
 }
 
