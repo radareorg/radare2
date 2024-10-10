@@ -5227,6 +5227,7 @@ static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 
 static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char **prefix) {
 	char *escstr = NULL;
+	*prefix = "";
 	const char *strconv = r_config_get (ds->core->config, "scr.strconv");
 	if (R_STR_ISNOTEMPTY (strconv)) {
 		if (strstr (strconv, "esc")) {
@@ -5235,7 +5236,7 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 			int slen = str[0]; // TODO: support pascal16, pascal32, ..
 			escstr = r_str_ndup (str + 1, slen);
 		} else if (strstr (strconv, "dot")) {
-			escstr = r_str_ndup (str, len);
+			escstr = ds_esc_str (ds, str, (int)len, prefix, false);
 			int i;
 			for (i = 0; i < len ; i++) {
 				if (!escstr[i]) {
@@ -5248,11 +5249,11 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 		} else {
 			// raw string (null terminated) - works for chinese/russian/..
 			escstr = r_str_ndup (str, len);
+			r_str_trim (escstr);
 		}
 	} else {
 		escstr = strdup (str); // r_str_ndup (str, len);
 	}
-	r_str_trim (escstr);
 	return escstr;
 }
 static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
