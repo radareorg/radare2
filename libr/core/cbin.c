@@ -2433,8 +2433,12 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 		if (vaddr & 1) {
 			force_bits = 16;
 		} else {
-			force_bits = 32;
-//			return;
+			RAnalHint *hint = r_anal_hint_get (core->anal, vaddr);
+			if (hint && hint->bits == 32) {
+				force_bits = 32;
+			} else {
+				return;
+			}
 		}
 #endif
 	} else if (!(paddr & 1) && bits == 32) {
