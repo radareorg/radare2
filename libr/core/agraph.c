@@ -1,7 +1,6 @@
 /* Copyright radare2 - 2014-2024 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_vec.h>
 
 R_IPI void visual_refresh(RCore *core);
 
@@ -4957,7 +4956,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				char buf[256];
 				r_line_set_prompt ("[comment]> ");
 				if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
-					r_core_cmdf (core, "\"CC %s\"", buf);
+					r_core_cmdf (core, "'CC %s", buf);
 				}
 				g->need_reload_nodes = true;
 				showcursor (core, false);

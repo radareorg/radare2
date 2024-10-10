@@ -916,7 +916,7 @@ R_API int r_core_visual_types(RCore *core) {
 			 {
 				char *file = prompt ("Filename: ", NULL);
 				if (file) {
-					r_core_cmdf (core, "\"to %s\"", file);
+					r_core_cmdf (core, "'to %s", file);
 					free (file);
 				}
 			 }
@@ -969,7 +969,7 @@ R_API int r_core_visual_types(RCore *core) {
 			{
 				txt = prompt ("add C type: ", NULL);
 				if (txt) {
-					r_core_cmdf (core, "\"td %s\"", txt);
+					r_core_cmdf (core, "'td %s", txt);
 					free (txt);
 				}
 			}

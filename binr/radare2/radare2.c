@@ -30,7 +30,7 @@ char *r2_asmjs_cmd(void *kore, const char *cmd) {
 }
 
 static void wget_cb(const char *f) {
-	r_core_cmdf (core, "\"o %s\"", f);
+	r_core_cmdf (core, "'o %s", f);
 }
 
 void r2_asmjs_openurl(void *kore, const char *url) {

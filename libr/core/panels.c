@@ -2763,13 +2763,13 @@ static void __handleComment(RCore *core) {
 			char *arg = filter_arg (strdup (buf));
 			switch (buf[0]) {
 			case '-':
-				cmd = r_str_newf ("\"CC-%s\"", arg);
+				cmd = r_str_newf ("'CC-%s", arg);
 				break;
 			case '!':
 				cmd = strdup ("CC!");
 				break;
 			default:
-				cmd = r_str_newf ("\"CC %s\"", arg);
+				cmd = r_str_newf ("'CC %s", arg);
 				break;
 			}
 			free (arg);
@@ -5302,7 +5302,7 @@ static int __clear_layout_cb(void *user) {
 
 static int __copy_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "How many bytes? ", "\"y %s\"");
+	__add_cmdf_panel (core, "How many bytes? ", "'y %s");
 	return 0;
 }
 
@@ -5314,13 +5314,13 @@ static int __paste_cb(void *user) {
 
 static int __write_str_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "insert string: ", "\"w %s\"");
+	__add_cmdf_panel (core, "insert string: ", "'w %s");
 	return 0;
 }
 
 static int __write_hex_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "insert hexpairs: ", "\"wx %s\"");
+	__add_cmdf_panel (core, "insert hexpairs: ", "'wx %s");
 	return 0;
 }
 
@@ -5479,19 +5479,19 @@ static int __string_data_sec_cb(void *user) {
 
 static int __rop_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "rop grep: ", "\"/R %s\"");
+	__add_cmdf_panel (core, "rop grep: ", "'/R %s");
 	return 0;
 }
 
 static int __code_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "search code: ", "\"/c %s\"");
+	__add_cmdf_panel (core, "search code: ", "'/c %s");
 	return 0;
 }
 
 static int __hexpairs_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__add_cmdf_panel (core, "search hexpairs: ", "\"/x %s\"");
+	__add_cmdf_panel (core, "search hexpairs: ", "'/x %s");
 	return 0;
 }
 
@@ -5683,7 +5683,7 @@ static int __writeValueCb(void *user) {
 	RCore *core = (RCore *)user;
 	char *res = __show_status_input (core, "insert number: ");
 	if (res) {
-		r_core_cmdf (core, "\"wv %s\"", res);
+		r_core_cmdf (core, "'wv %s", res);
 		free (res);
 	}
 	return 0;

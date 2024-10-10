@@ -509,7 +509,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		if (acode) {
 			if (as->oneliner) {
 				r_str_replace_char (acode->assembly, '\n', ';');
-				printf ("%s\"\n", acode->assembly);
+				printf ("%s\n", acode->assembly);
 			} else if (acode->assembly[0]) {
 				printf ("%s", acode->assembly);
 			} else {
@@ -1056,7 +1056,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				as->oneliner = true;
 				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
 				printf ("e asm.bits=%d\n", bits);
-				printf ("\"wa ");
+				printf ("'wa ");
 			}
 			ret = rasm_disasm (as, offset, (char *)usrstr, len,
 					as->a->config->bits, bin, dis - 1);

@@ -1259,13 +1259,10 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 
 				pj_end (pj);
 			} else {
-				r_cons_printf ("CL %s:%d 0x%08" PFMT64x "\n",
-					       file, (int)row->line,
-					       row->address);
-				r_cons_printf ("\"CC %s:%d %s\"@0x%" PFMT64x
-					       "\n",
-					       file, row->line,
-					       r_str_get (line), row->address);
+				r_cons_printf ("'@0x%08"PFMT64x"'CL %s:%d\n",
+					row->address, file, (int)row->line);
+				r_cons_printf ("'@0x%08"PFMT64x"'CC %s:%d %s\n",
+					row->address, file, row->line, r_str_get (line));
 			}
 			free (file);
 			free (line);
@@ -1545,9 +1542,9 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 				name = r_str_newf ("entry%i", i);
 			}
 			char *n = r_name_filter_quoted_shell (name);
-			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", n, at);
-			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", n, hpaddr_key, hpaddr);
-			r_cons_printf ("\"s %s\"\n", n);
+			r_cons_printf ("'f %s 1 0x%08"PFMT64x"\n", n, at);
+			r_cons_printf ("'f %s_%s 1 0x%08"PFMT64x"\n", n, hpaddr_key, hpaddr);
+			r_cons_printf ("'s %s\n", n);
 			free (n);
 			free (name);
 		} else {
@@ -1959,7 +1956,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				}
 				int reloc_size = 4;
 				char *n = r_name_filter_quoted_shell (name);
-				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
+				r_cons_printf ("'f %s%s%s %d 0x%08"PFMT64x"\n",
 					r_str_get_fail (r->bin->prefix, "reloc."),
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
 				add_metadata (r, reloc, addr, mode);
@@ -1969,7 +1966,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				if (reloc->symbol && reloc->symbol->vaddr != addr) {
 					// ut64 saddr = reloc->symbol->vaddr;
 					ut64 saddr = rva (r->bin, reloc->symbol->paddr, reloc->symbol->vaddr, va);
-					r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
+					r_cons_printf ("'f %s%s%s %d 0x%08"PFMT64x"\n",
 						r_str_get_fail (r->bin->prefix, "rsym."),
 						r->bin->prefix ? "." : "", n, reloc_size, saddr);
 				}
@@ -2675,7 +2672,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				if (!flagname) {
 					goto next;
 				}
-				r_cons_printf ("\"f %s%s%s %u 0x%08" PFMT64x "\"\n",
+				r_cons_printf ("'f %s%s%s %u 0x%08" PFMT64x "\n",
 					r_str_get (r->bin->prefix), r->bin->prefix ? "." : "",
 					flagname, symbol->size, addr);
 				free (flagname);
@@ -2691,10 +2688,10 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 						char *m = r_name_filter_shell (module);
 						*p = 0;
 						if (r->bin->prefix) {
-							r_cons_printf ("\"k bin/pe/%s/%d=%s.%s\"\n",
+							r_cons_printf ("'k bin/pe/%s/%d=%s.%s\n",
 								module, symbol->ordinal, r->bin->prefix, symname);
 						} else {
-							r_cons_printf ("\"k bin/pe/%s/%d=%s\"\n",
+							r_cons_printf ("'k bin/pe/%s/%d=%s\n",
 								module, symbol->ordinal, symname);
 						}
 						free (symname);
@@ -3152,7 +3149,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (IS_MODE_RAD (mode)) {
 			char *fname = r_str_newf ("%s.%s", type, section->name);
 			r_name_filter (fname, -1);
-			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", fname, section->vaddr);
+			r_cons_printf ("'f %s 1 0x%08"PFMT64x"\n", fname, section->vaddr);
 			free (fname);
 		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
@@ -3969,7 +3966,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 		} else if (IS_MODE_RAD (mode)) {
 			char *n = r_name_filter_shell (name);
-			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
+			r_cons_printf ("'f class.%s = 0x%"PFMT64x"\n", n, at_min);
 			if (c->super) {
 				const char *cn = cname;
 				RListIter *iter;
@@ -3977,7 +3974,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_list_foreach (c->super, iter, bn) {
 					char *fsk = strdup (r_bin_name_tostring2 (bn, pref));
 					r_name_filter (fsk, -1);
-					r_cons_printf ("\"f super.%s.%s = %d\"\n", cn, fsk, c->index);
+					r_cons_printf ("'f super.%s.%s = %d\n", cn, fsk, c->index);
 					free (fsk);
 				}
 			}
@@ -3987,8 +3984,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				const char *n = cname; //  r_name_filter_shell (cname);
 				char *sn = r_bin_name_tostring (sym->name); //r_name_filter_shell (sym->name); // symbol contains classname
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
-				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
-				char *cmd = r_str_newf ("\"f method.%s%s%s.%s = 0x%"PFMT64x"\"\n", n, predot, mflags, sn, sym->vaddr);
+				char *cmd = r_str_newf ("'f method.%s%s%s.%s = 0x%"PFMT64x"\n", n, predot, mflags, sn, sym->vaddr);
 				// free (n);
 				// free (sn);
 				if (cmd) {
@@ -4013,7 +4009,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				char *fn = r_str_newf ("field.%s.%s.%s", cname, kind, fname);
 				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
+				r_cons_printf ("'f %s = 0x%08"PFMT64x"\n", fn, at);
 				free (fn);
 			}
 
@@ -4231,7 +4227,7 @@ static bool bin_libs(RCore *r, PJ *pj, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("\"CCa entry0 %s\"\n", lib);
+			r_cons_printf ("'CCa entry0 %s\n", lib);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_s (pj, lib);
 		} else {
