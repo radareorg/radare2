@@ -2428,7 +2428,9 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 	if (paddr & 1 || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
+		// ignore this case, which causes false positives on half-arm-thumb binaries
 		force_bits = 32;
+		return;
 	} else if (!(paddr & 1) && bits == 32) {
 		force_bits = 32;
 	}
