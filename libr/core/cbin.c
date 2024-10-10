@@ -2402,7 +2402,7 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
 	if (!strcmp (oname, "$a")) {
-		// r_anal_hint_set_bits (core->anal, addr, 32);
+		r_anal_hint_set_bits (core->anal, addr, 32);
 	} else if (!strcmp (oname, "$x")) {
 		r_anal_hint_set_bits (core->anal, addr, 64);
 	} else if (!strcmp (oname, "$t")) {
