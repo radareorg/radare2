@@ -2563,13 +2563,11 @@ static bool cb_scrstrconv(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for scr.strconv:\n"
-				"  asciiesc  convert to ascii with non-ascii chars escaped\n"
-				"  asciidot  convert to ascii with non-ascii chars turned into a dot (except control chars stated below)\n"
-				"\n"
-				"Ascii chars are in the range 0x20-0x7e. Always escaped control chars are alert (\\a),\n"
-				"backspace (\\b), formfeed (\\f), newline (\\n), carriage return (\\r), horizontal tab (\\t)\n"
-				"and vertical tab (\\v). Also, double quotes (\\\") are always escaped, but backslashes (\\\\)\n"
-				"are only escaped if str.escbslash = true.\n");
+				"  asciiesc  convert to ascii with non-ascii chars escaped (see str.escbslash)\n"
+				"  asciidot  non-printable chars are represented with a dot\n"
+				"  pascal    takes the first byte as the length for the string\n"
+				"  raw       perform no conversion from non-ascii chars\n"
+			);
 		} else {
 			print_node_options (node);
 		}
@@ -4379,7 +4377,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.color.args", "true", "colorize arguments and variables of functions");
 	SETBPREF ("scr.color.bytes", "true", "colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "show no output");
-	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "show UTF-8 characters instead of ANSI");
+	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8 ()), &cb_utf8, "show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "show curved UTF-8 corners (requires scr.utf8)");
 	SETCB ("scr.demo", "false", &cb_scr_demo, "use demoscene effects if available");
 	SETPREF ("scr.analbar", "false", "show progressbar for aaa instead of logging what its doing");
@@ -4390,15 +4388,15 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETBPREF ("scr.hist.save", "true", "always save history on exit");
 #endif
-	SETICB("scr.hist.size", R_LINE_HISTSIZE, &cb_scr_histsize, "set input lines history size");
-	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
+	SETICB ("scr.hist.size", R_LINE_HISTSIZE, &cb_scr_histsize, "set input lines history size");
+	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv); // TODO: move this into asm. or sthg else?
 	SETDESC (n, "convert string before display");
-	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
+	SETOPTIONS (n, "asciiesc", "asciidot", "raw", "pascal", NULL); // TODO: add ebcdic here and other charset plugins here!!
 	SETBPREF ("scr.confirmquit", "false", "Confirm on quit");
 	SETBPREF ("scr.progressbar", "false", "display a progress bar when running scripts.");
 
 	/* str */
-	SETCB ("str.escbslash", "false", &cb_str_escbslash, "escape the backslash");
+	SETCB ("str.escbslash", "false", &cb_str_escbslash, "escape the backslash"); // XXX this is the only var starting with 'str.'
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "accept contiguous/adjacent search hits");

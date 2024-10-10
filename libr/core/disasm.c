@@ -340,6 +340,7 @@ static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore *core);
 static void ds_build_op_str(RDisasmState *ds, bool print_color);
 static void ds_print_bytes(RDisasmState *ds);
+static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char **prefix);
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
 static void ds_show_xrefs(RDisasmState *ds);
 static void ds_show_anos(RDisasmState *ds);
@@ -1272,7 +1273,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			free (ds->opstr);
 			ds->opstr = asm_str;
 			r_str_ncpy (ds->str, asm_str, sizeof (ds->str));
-// strcpy (ds->str, asm_str);
 		}
 	} else {
 		r_str_trim (ds->opstr); // trim before coloring git
@@ -3660,7 +3660,6 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 		case R_META_TYPE_STRING:
 		if (mi->str) {
 			bool esc_bslash = core->print->esc_bslash;
-
 			switch (mi->subtype) {
 			case R_STRING_ENC_UTF8:
 				out = r_str_escape_utf8 (mi->str, false, esc_bslash);
@@ -4632,11 +4631,12 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 }
 
 /* Do not use this function for escaping JSON! */
+// XXX overseeded by ds_getstring()
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment) {
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
-	bool esc_bslash = ds->core->print->esc_bslash;
+	const bool esc_bslash = ds->core->print->esc_bslash;
 	RStrEnc strenc = ds->strenc;
 	if (strenc == R_STRING_ENC_GUESS) {
 		strenc = r_utf_bom_encoding ((ut8 *)str, len);
@@ -4725,8 +4725,8 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 			return;
 		}
 	}
-	const char *prefix;
-	char *escstr = ds_esc_str (ds, str, len, &prefix, false);
+	const char *prefix = "";
+	char *escstr = ds_getstring (ds, str, len, &prefix);
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
@@ -5225,6 +5225,37 @@ static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 	return false;
 }
 
+static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char **prefix) {
+	char *escstr = NULL;
+	*prefix = "";
+	const char *strconv = r_config_get (ds->core->config, "scr.strconv");
+	if (R_STR_ISNOTEMPTY (strconv)) {
+		if (strstr (strconv, "esc")) {
+			escstr = ds_esc_str (ds, str, (int)len, prefix, false);
+		} else if (strstr (strconv, "pascal")) {
+			int slen = str[0]; // TODO: support pascal16, pascal32, ..
+			escstr = r_str_ndup (str + 1, slen);
+		} else if (strstr (strconv, "dot")) {
+			escstr = ds_esc_str (ds, str, (int)len, prefix, false);
+			int i;
+			for (i = 0; i < len ; i++) {
+				if (!escstr[i]) {
+					break;
+				}
+				if (!IS_PRINTABLE (escstr[i])) {
+					escstr[i] = '.';
+				}
+			}
+		} else {
+			// raw string (null terminated) - works for chinese/russian/..
+			escstr = r_str_ndup (str, len);
+			r_str_trim (escstr);
+		}
+	} else {
+		escstr = strdup (str); // r_str_ndup (str, len);
+	}
+	return escstr;
+}
 static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
@@ -5319,14 +5350,14 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				break;
 			}
 			if (!jump_op && !ignored) {
-				const char *prefix;
 				ut32 len = sizeof (str) -1;
 				ds->emuptr = *val;
 				if (ds->pj) {
 					// "pdJ"
 					pj_ks (ds->pj, "str", str);
 				}
-				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
+				const char *prefix = "";
+				char *escstr = ds_getstring (ds, str, len, &prefix);
 				if (escstr) {
 					char *m;
 					if (ds->show_color) {
@@ -5516,8 +5547,32 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		r_cons_printf ("%s", type);
 	}
 	if (fmt && addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
-		char *res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
-				(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
+		char *res = NULL;
+		if (!strcmp (fmt, "z")) {
+			const char *strconv = r_config_get (core->config, "scr.strconv");
+			if (strconv && strstr (strconv, "raw")) { // TODO. raw or none?
+				// dupe from ds_getstring
+				char *s = r_core_cmd_strf (core, "prz@0x%08"PFMT64x, addr);
+				r_str_trim (s);
+				res = r_str_newf ("\"%s\"", s);
+				free (s);
+			} else {
+				res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
+						(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
+			}
+			if (strconv && strstr (strconv, "dot")) {
+				int i;
+				size_t len = strlen (res);
+				for (i = 0; i < len ; i++) {
+					if (!IS_PRINTABLE (res[i])) {
+						res[i] = '.';
+					}
+				}
+			}
+		} else {
+			res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
+					(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
+		}
 		r_str_trim (res);
 		if (r_str_startswith (res, "\"\\xff\\xff")) {
 			// r_cons_printf ("0x%08"PFMT64x, addr);
@@ -6176,7 +6231,6 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr-ptr);
 					if (numstr) {
-						// eprintf ("ithiis(%s,%s)", numstr, kwname);
 						str = r_str_replace (str, numstr, kwname, 0);
 						free (numstr);
 					}
