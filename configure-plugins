@@ -53,12 +53,6 @@ load () {
   fi
 }
 
-save () {
-  cp $cfg plugins.cfg
- # echo "STATIC=\"$STATIC\"" > $cfg
- # echo "SHARED=\"$SHARED\"" >>$cfg
-}
-
 generate_configh () {
   plugins=""
   oldlib=""
@@ -267,6 +261,5 @@ check_conflicts || exit 1
 echo SHARED: ${SHARED}
 echo STATIC: ${STATIC}
 
-save
 
 exit 0
