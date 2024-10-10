@@ -202,6 +202,7 @@ static RCoreHelpMessage help_msg_root = {
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 	",", "[?] [/jhr]", "create and query or filter a table with data from file",
 	":", "cmd", "run an io command (same as =!)",
+	"-", "[?]", "open editor and run the r2 commands in the saved document",
 	"_", "[?]", "Print last output",
 	"=", "[?] [cmd]", "submit or listen to remote commands",
 	"<", "[str]", "feed stdin with given escaped string",
