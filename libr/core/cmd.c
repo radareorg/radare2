@@ -168,6 +168,7 @@ static const RCoreHelpMessage help_msg_dash = {
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
 	"-a", " x86", "same as r2 -a x86 or e asm.arch=x86",
+	"-A", "[?]", "same as r2 -A or aaa",
 	"-b", " 32", "same as e or r2 -e",
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
@@ -2069,6 +2070,21 @@ static int cmd_stdin(void *data, const char *input) {
 				r_core_cmd_call (core, "e");
 			} else {
 				r_core_cmdf (core, "e %s", arg);
+			}
+			break;
+		case 'A': // -A
+			if (*arg == '?') {
+				r_core_cmd_call (core, "aaa?");
+			} else {
+				if (R_STR_ISEMPTY (arg)) {
+					r_core_cmd_call (core, "aaa");
+				} else if (!strcmp (arg, "A")) {
+					r_core_cmd_call (core, "aaaa");
+				} else if (!strcmp (arg, "AA")) {
+					r_core_cmd_call (core, "aaaaa");
+				} else {
+					r_core_cmd_call (core, "aaa?");
+				}
 			}
 			break;
 		default:

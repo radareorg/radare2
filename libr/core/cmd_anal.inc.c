@@ -169,9 +169,7 @@ static RCoreHelpMessage help_msg_aaf = {
 };
 
 static RCoreHelpMessage help_msg_aaa = {
-	"Usage:", "aa[a[a[a]]]", " # automatically analyze the whole program",
-	"a", " ", "show code analysis statistics",
-	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'",
+	"Usage:", "aaa[a[a]]", " # automatically analyze the whole program",
 	"aaa", "", "perform deeper analysis, most common use",
 	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
 	"aaaaa", "", "refine the analysis to find more functions after aaaa",
