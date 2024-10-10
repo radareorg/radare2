@@ -1808,7 +1808,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 
 	int scr_h, scr_w = r_cons_get_size (&scr_h);
 
-	if (!line || !*line) {
+	if (R_STR_ISEMPTY (line)) {
 		return false;
 	}
 	// maybe store in RCore, so we can save it in project and use it outside visual
@@ -1986,9 +1986,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			{
 				r_line_set_prompt ("comment: ");
 				const char *line = r_line_readline ();
-				if (line && *line) {
-					// XXX code injection bug here
-					r_core_cmdf (core, "CC %s @ 0x%08"PFMT64x, line, addr + delta);
+				if (R_STR_ISNOTEMPTY (line)) {
+					r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr + delta, line);
 				}
 			}
 			break;
@@ -1996,7 +1995,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				char *line = r_core_cmd_strf (core, "piuq@0x%08"PFMT64x, addr + delta);
+				char *line = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'piuq", addr + delta);
 				r_str_replace_char (line, '\n', ';');
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
@@ -2412,10 +2411,10 @@ R_API int r_core_visual_comments(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'a':
-			//TODO
+			// TODO
 			break;
 		case 'e':
-			//TODO
+			// TODO
 			break;
 		case 'd':
 			if (p) {
@@ -4156,7 +4155,7 @@ onemoretime:
 			r_line_set_prompt ("format: ");
 			strcpy (cmd, "Cf 0 ");
 			if (r_cons_fgets (cmd + 5, sizeof (cmd) - 5, 0, NULL) > 0) {
-				r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, off);
+				r_core_cmdf (core, "'@0x%08"PFMT64x"'%s", off, cmd);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 			}
@@ -4172,7 +4171,7 @@ onemoretime:
 			r_cons_show_cursor (true);
 			r_line_set_prompt (ch == 't'? "type: ": "opstr: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "ah%c %s @ 0x%"PFMT64x, ch, str, off);
+				r_core_cmdf (core, "'@0x%08"PFMT64x"'ah%c %s", off, ch, str);
 			}
 		}
 		break;
@@ -4185,7 +4184,7 @@ onemoretime:
 			r_cons_show_cursor (true);
 			r_line_set_prompt ("immbase: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "ahi %s @ 0x%"PFMT64x, str, off);
+				r_core_cmdf (core, "'@0x%08"PFMT64x"'ahi %s", off, str);
 			}
 		}
 		break;
@@ -4195,7 +4194,7 @@ onemoretime:
 			r_cons_show_cursor (true);
 			r_line_set_prompt ("immbase: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "ahi1 %s @ 0x%"PFMT64x, str, off);
+				r_core_cmdf (core, "'@0x%08"PFMT64x"'ahi1 %s", off, str);
 			}
 		}
 		break;

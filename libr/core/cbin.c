@@ -1413,7 +1413,7 @@ static bool bin_main(RCore *r, PJ *pj, int mode, int va) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 		r_flag_set (r->flags, "main", addr, r->blocksize);
 		if (isthumb) {
-			r_core_cmdf (r, "ahb 16 @ 0x%08"PFMT64x, addr);
+			r_core_cmd_call_at (r, addr, "ahb 16");
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64d, addr);
@@ -1421,7 +1421,7 @@ static bool bin_main(RCore *r, PJ *pj, int mode, int va) {
 		r_cons_printf ("fs symbols\n");
 		r_cons_printf ("f main @ 0x%08"PFMT64x"\n", addr);
 		if (isthumb) {
-			r_cons_printf ("ahb 16 @ 0x%08"PFMT64x"\n", addr);
+			r_cons_printf ("'@0x%08"PFMT64x"'ahb 16\n", addr);
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		pj_o (pj);
