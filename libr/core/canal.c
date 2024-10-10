@@ -1364,7 +1364,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 					HINTCMD_ADDR (node, "ahe %s", record->esil); // TODO: escape for newcmd
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_HIGH:
-					r_cons_printf ("ahh @ 0x%"PFMT64x"\n", node->addr);
+					r_cons_printf ("'@0x0x%"PFMT64x"'ahh\n", node->addr);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_VAL:
 					// no command for this
@@ -1546,7 +1546,7 @@ static void print_hint_tree(RBTree tree, int mode) {
 	}
 	if (pj) {
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
 #undef END_ADDR
@@ -1584,7 +1584,7 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	const bool is_html = r_cons_context ()->is_html;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
-	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
+	char file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int line = 0, oline = 0, colu = 0;
 	ut64 at;
 
@@ -1611,14 +1611,13 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		}
 		cmdstr = r_strbuf_drain (sb);
 	} else if (opts & R_CORE_ANAL_STAR) {
-		str = r_core_cmd_strf (core, "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
+		str = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pdb %"PFMT64u, bb->addr, bb->size);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get_b (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set_b (core->config, "scr.utf8", false);
-		snprintf (cmd, sizeof (cmd), "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
-		cmdstr = r_core_cmd_str (core, cmd);
+		cmdstr = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pD %"PFMT64u, bb->addr, bb->size);
 		r_config_set_i (core->config, "scr.color", scrColor);
 		r_config_set_b (core->config, "scr.utf8", scrUtf8);
 	}
@@ -3381,7 +3380,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	// FIXME: this command prints something annoying. Does it have important side-effects?
 	fcn_list_bbs (fcn);
 	if (fcn->bits != 0) {
-		r_cons_printf ("afB %d @ 0x%08"PFMT64x"\n", fcn->bits, fcn->addr);
+		r_cons_printf ("'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
 	// FIXME command injection vuln here
 	if (fcn->cc || defaultCC) {
