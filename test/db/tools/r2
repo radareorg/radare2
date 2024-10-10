@@ -125,3 +125,59 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open empty rapatch path
 EOF
 RUN
+
+NAME=radare2 aaa
+FILE=malloc://123
+ARGS=-a x86
+CMDS=<<EOF
+-A
+?ee --
+aaa
+?ee --
+r2 -e scr.color=0 -a x86 -qA malloc://123
+EOF
+EXPECT_ERR=<<EOF
+INFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze symbols (af@@@s)
+INFO: Analyze all functions arguments/locals (afva@@@F)
+[2KINFO: Analyze function calls (aac)
+INFO: find and analyze function preludes (aap)
+INFO: Analyze len bytes of instructions for references (aar)
+INFO: Finding and parsing C++ vtables (avrr)
+INFO: Analyzing methods (af @@ method.*)
+INFO: Recovering local variables (afva@@@F)
+INFO: Type matching analysis for all functions (aaft)
+INFO: Propagate noreturn information (aanr)
+INFO: Use -AA or aaaa to perform additional experimental analysis
+--
+INFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze symbols (af@@@s)
+INFO: Analyze all functions arguments/locals (afva@@@F)
+[2KINFO: Analyze function calls (aac)
+INFO: find and analyze function preludes (aap)
+INFO: Analyze len bytes of instructions for references (aar)
+INFO: Finding and parsing C++ vtables (avrr)
+INFO: Analyzing methods (af @@ method.*)
+INFO: Recovering local variables (afva@@@F)
+INFO: Type matching analysis for all functions (aaft)
+INFO: Propagate noreturn information (aanr)
+INFO: Use -AA or aaaa to perform additional experimental analysis
+--
+INFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze symbols (af@@@s)
+INFO: Analyze all functions arguments/locals (afva@@@F)
+[2KINFO: Analyze function calls (aac)
+INFO: find and analyze function preludes (aap)
+INFO: Analyze len bytes of instructions for references (aar)
+INFO: Finding and parsing C++ vtables (avrr)
+INFO: Analyzing methods (af @@ method.*)
+INFO: Recovering local variables (afva@@@F)
+INFO: Type matching analysis for all functions (aaft)
+INFO: Propagate noreturn information (aanr)
+INFO: Use -AA or aaaa to perform additional experimental analysis
+EOF
+EXPECT=
+RUN
