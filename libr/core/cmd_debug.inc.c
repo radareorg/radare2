@@ -4125,7 +4125,7 @@ static void trace_traverse(RTree *t) {
 	RTreeVisitor vis = {0};
 
 	/* clear the line on stderr, because somebody has written there */
-	fprintf (stderr, "\x1b[2K\r");
+	eprintf (R_CONS_CLEAR_LINE"\r");
 	fflush (stderr);
 	vis.pre_visit = (RTreeNodeVisitCb)trace_traverse_pre;
 	r_tree_dfs (t, &vis);
