@@ -2402,7 +2402,7 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
 	if (!strcmp (oname, "$a")) {
-		r_anal_hint_set_bits (core->anal, addr, 32);
+		// r_anal_hint_set_bits (core->anal, addr, 32);
 	} else if (!strcmp (oname, "$x")) {
 		r_anal_hint_set_bits (core->anal, addr, 64);
 	} else if (!strcmp (oname, "$t")) {
@@ -2428,9 +2428,15 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 	if (paddr & 1 || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
+#if 1
 		// ignore this case, which causes false positives on half-arm-thumb binaries
-		force_bits = 32;
-		return;
+		if (vaddr & 1) {
+			force_bits = 16;
+		} else {
+			force_bits = 32;
+//			return;
+		}
+#endif
 	} else if (!(paddr & 1) && bits == 32) {
 		force_bits = 32;
 	}

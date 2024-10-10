@@ -290,3 +290,47 @@ ahb 0 @ 0x84
  0x00000084 => bits=RESET
 EOF
 RUN
+
+NAME=arm thumb hints32
+FILE=bins/elf/r2pay-arm32.so
+CMDS=<<EOF
+ahb.
+0x00004560
+ahb.
+?e ---
+-e asm.bytes=1
+-e asm.lines=0
+s entry0
+pd 20
+EOF
+EXPECT=<<EOF
+32
+16
+---
+;-- section..text:
+;-- entry0:
+;-- entry.fini0:
+0x00004524      04009fe5       ldr r0, [0x00004530]                    ; [0x4530:4]=0xb1ad0 ; [12] -r-x section size 714606 named .text
+0x00004528      00008fe0       add r0, pc, r0
+0x0000452c      85feffea       b sym.imp.__cxa_finalize
+0x00004530      d01a0b00       ldrdeq r1, r2, [fp], -r0
+0x00004534      000050e3       cmp r0, 0
+0x00004538      1eff2f01       bxeq lr
+0x0000453c      10ff2fe1       bx r0
+0x00004540      0010a0e1       mov r1, r0
+0x00004544      0c209fe5       ldr r2, [0x00004558]                    ; [0x4558:4]=0xb1aac
+0x00004548      0c009fe5       ldr r0, [0x0000455c]                    ; [0x455c:4]=0xffffffdc
+0x0000454c      02208fe0       add r2, pc, r2
+0x00004550      00008fe0       add r0, pc, r0
+0x00004554      78feffea       b sym.imp.__cxa_atexit
+0x00004558      ac1a0b00       andeq r1, fp, ip, lsr 21
+0x0000455c      dcffffff       invalid
+;-- .datadiv_decode1794556967687044894:
+0x00004560      7047           bx lr
+0x00004562      0000           movs r0, r0
+;-- d7a068d43e39e826:
+0x00004564      0148           ldr r0, [0x0000456c]                    ; [0x456c:4]=0xb161a
+0x00004566      7844           add r0, pc
+0x00004568      0068           ldr r0, [r0]
+EOF
+RUN
