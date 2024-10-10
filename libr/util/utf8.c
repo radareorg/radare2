@@ -766,11 +766,92 @@ R_API int r_utf_block_idx(RRune ch) {
 	return R_UTF_BLOCKS_COUNT - 1; /* index for "No_Block" */
 }
 
-/* str must be UTF8-encoded */
-R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
-	if (!str) {
-		return NULL;
+#if R2_USE_NEW_ABI
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
+	R_RETURN_VAL_IF_FAIL (len >= 0, 0);
+	// list must be sizeof (int) * len + 1 at least
+	if (!str || len < 1) {
+		return 0;
 	}
+#if 0
+	int *block_list = r_utf_block_list (str, len, &freq_list);
+	int j;
+	int num_blocks = 0;
+	for (j = 0; block_list[j] != -1; j++) {
+		list[j] = block_list[j];
+		num_blocks++;
+	}
+	free (block_list);
+//	printf ("%d\n", num_blocks);
+	return num_blocks;
+#else
+	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
+	int num_blocks = 0;
+	int *list_ptr = list;
+	const ut8 *str_ptr = str;
+	const ut8 *str_end = str + len;
+	RRune ch;
+	bool eos = false;
+	// FAIL
+	while (str_ptr < str_end) {
+		int block_idx;
+		int runesize = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
+		if (runesize == 0) {
+			*list_ptr++ = R_UTF_BLOCKS_COUNT - 1;
+			num_blocks++;
+			break;
+		}
+		if (runesize > 0) {
+			block_idx = r_utf_block_idx (ch);
+			if (!block_freq[block_idx]) {
+				*list_ptr++ = block_idx;
+				num_blocks++;
+#if 0
+				if (block_idx == -1) {
+					eos = true;
+				}
+				if (!eos) {
+					num_blocks--;
+				}
+#endif
+			}
+			block_freq[block_idx]++;
+			str_ptr += runesize;
+		} else {
+			str_ptr++;
+			break;
+		}
+	}
+	*list_ptr = -1;
+	int i;
+	if (freq_list) {
+		int *p = freq_list;
+		for (i = 0; i < num_blocks; i++) {
+			*p++ = block_freq[list[i]];
+		}
+		*p = -1;
+	}
+	//printf ("%d\n", num_blocks);
+	return num_blocks;
+#endif
+}
+#else
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list) {
+	int *block_list = r_utf_block_list (str, len, &freq_list);
+	int j;
+	int num_blocks = 0;
+	for (j = 0; block_list[j] != -1; j++) {
+		list[j] = block_list[j];
+		num_blocks++;
+	}
+	free (block_list);
+	return num_blocks;
+}
+#endif
+
+/* str must be UTF8-encoded */
+// R2_600 DEPRECATE THIS
+R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
