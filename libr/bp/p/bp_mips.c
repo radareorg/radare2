@@ -12,7 +12,12 @@ static RBreakpointArch r_bp_plugin_mips_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_mips = {
-	.name = "mips",
+	.meta = {
+		.name = "mips",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "mips",
 	.nbps = 4,
 	.bps = r_bp_plugin_mips_bps,

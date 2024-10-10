@@ -7,7 +7,7 @@ R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	RBreakpointPlugin *h;
 	if (name && *name) {
 		r_list_foreach (bp->plugins, iter, h) {
-			if (!strcmp (h->name, name)) {
+			if (!strcmp (h->meta.name, name)) {
 				if (bp->cur == h) {
 					bp->cur = NULL;
 				}
@@ -29,7 +29,7 @@ R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	}
 	/* avoid dupped plugins */
 	r_list_foreach (bp->bps, iter, h) {
-		if (!strcmp (h->name, foo->name)) {
+		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -48,7 +48,7 @@ R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	bp->bits = bits;
 	RBreakpointPlugin *h;
 	r_list_foreach (bp->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!strcmp (h->meta.name, name)) {
 			bp->cur = h;
 			return true;
 		}
@@ -62,7 +62,7 @@ R_API void r_bp_plugin_list(RBreakpoint *bp) {
 	RBreakpointPlugin *b;
 	r_list_foreach (bp->plugins, iter, b) {
 		bp->cb_printf ("bp %c %s\n",
-			(bp->cur && !strcmp (bp->cur->name, b->name))? '*': '-',
-			b->name);
+			(bp->cur && !strcmp (bp->cur->meta.name, b->meta.name))? '*': '-',
+			b->meta.name);
 	}
 }

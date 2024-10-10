@@ -626,6 +626,13 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_o (pj);
 				if (cp->meta.name) {
 					pj_ks (pj, "name", cp->meta.name);
+					bool found;
+					RLibPlugin *plugin = ht_pp_find (core->lib->plugins_ht, cp->meta.name, &found);
+					if (found && plugin) {
+						if (plugin->file) {
+							pj_ks (pj, "path", plugin->file);
+						}
+					}
 				}
 				if (cp->meta.desc) {
 					pj_ks (pj, "desc", cp->meta.desc);

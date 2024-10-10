@@ -11,7 +11,12 @@ static RBreakpointArch r_bp_plugin_ppc_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_ppc = {
-	.name = "ppc",
+	.meta = {
+		.name = "ppc",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "ppc",
 	.nbps = 2,
 	.bps = r_bp_plugin_ppc_bps,

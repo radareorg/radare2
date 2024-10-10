@@ -165,8 +165,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_att2intel = {
-	.name = "att2intel",
-	.desc = "X86 att 2 intel plugin",
+	.meta = {
+		.name = "att2intel",
+		.desc = "X86 att 2 intel plugin",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.parse = &parse,
 };
 

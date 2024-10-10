@@ -11,7 +11,12 @@ static RBreakpointArch r_bp_plugin_s390x_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_s390x = {
-	.name = "s390",
+	.meta = {
+		.name = "s390",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "s390",
 	.nbps = 3,
 	.bps = r_bp_plugin_s390x_bps,
