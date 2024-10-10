@@ -9467,8 +9467,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		r_config_set_b (core->config, "asm.lines", false);
 		r_config_set_b (core->config, "asm.xrefs", false);
 
-		hooks = r_core_anal_cycles (core, ccl); //analyse
-		r_cons_clear_line (1);
+		hooks = r_core_anal_cycles (core, ccl); // analyse
+		// r_cons_clear_line (1);
 		r_list_foreach (hooks, iter, hook) {
 			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
 			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
@@ -13678,7 +13678,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_cons_is_breaked ()) {
 		goto jacuzzi;
 	}
-	r_cons_clear_line (1);
+//	r_cons_clear_line (1);
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	if (*input == 'a') { // "aaa" .. which is checked just in the case above
 		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
