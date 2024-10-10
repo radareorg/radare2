@@ -10081,7 +10081,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
 			//if (sdb_add (db, arg, "1", 0)) {
-				r_cons_printf ("%s0x%08"PFMT64x"\n", pre+2, addr);
+				r_cons_printf ("%s0x%08"PFMT64x"\n", pre + 2, addr);
 			//}
 			}
 		}
@@ -10938,6 +10938,10 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'b': // "ahb" set bits
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_ahb);
+		} else if (input[1] == '*') { // "ahb*"
+			char *s = r_core_cmd_str (core, "ah*~ahb");
+			r_cons_print (s);
+			free (s);
 		} else if (input[1] == ' ') {
 			char *ptr = r_str_trim_dup (input + 2);
 			int bits;
@@ -10948,11 +10952,11 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_anal_hint_set_bits (core->anal, core->offset, bits);
 			free (ptr);
-		}  else if (input[1] == '-') {
+		} else if (input[1] == '-') { // "ahb-"
 			if (!strcmp (input + 2, "*")) {
 				r_anal_hint_unset_bits (core->anal, UT64_MAX);
 			} else {
-				ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
+				const ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
 				r_anal_hint_unset_bits (core->anal, off);
 			}
 		} else {
@@ -11049,7 +11053,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			if (input[2] == '*') {
 				R_LOG_INFO ("Not implemented");
-				// R2_590 - take arg to specify type of hint to remove .. r_anal_hint_clear (core->anal, );
+				// R2_600 - take arg to specify type of hint to remove .. r_anal_hint_clear (core->anal, );
 				// r_anal_hint_unset_size (core->anal, UT64_MAX);
 				// r_anal_hint_clear (core->anal);
 			} else if (input[2]) {
@@ -11061,7 +11065,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				r_anal_hint_unset_size (core->anal, core->offset);
 			}
 		} else if (input[1] == 0) {
-			r_core_cmd0 (core, "ah~size=");
+			char *s = r_core_cmd_str (core, "ah~size=");
+			r_cons_print (s);
+			free (s);
 		} else {
 			r_core_cmd_help (core, help_msg_ahs);
 		}
@@ -13279,7 +13285,7 @@ static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be
 				if (!buf[i] && !buf[i + 1]) {
 					return false;
 				}
-				if (buf[i] || !IS_PRINTABLE (buf[i+1])) {
+				if (buf[i] || !IS_PRINTABLE (buf[i + 1])) {
 					return false;
 				}
 			}
