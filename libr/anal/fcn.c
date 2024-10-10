@@ -2256,7 +2256,13 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	// works fine
 	RList *bbs = r_anal_get_blocks_in (anal, addr);
 	r_list_foreach (bbs, iter, bb) {
-		return bb;
+		RListIter *iter2;
+		RAnalFunction *f;
+		r_list_foreach (bb->fcns, iter2, f) {
+			if (f == fcn) {
+				return bb;
+			}
+		}
 	}
 #endif
 	// fallback
