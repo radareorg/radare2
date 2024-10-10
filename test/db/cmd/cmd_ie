@@ -36,42 +36,42 @@ FILE=bins/elf/before-after-main
 CMDS=iee*
 EXPECT=<<EOF
 fs+symbols
-"f entry.preinit0 1 0x08048486"
-"f entry.preinit0_hpaddr 1 0x00000ed4"
-"s entry.preinit0"
-"f entry.preinit1 1 0x0804849f"
-"f entry.preinit1_hpaddr 1 0x00000ed8"
-"s entry.preinit1"
-"f entry.init0 1 0x08048480"
-"f entry.init0_hpaddr 1 0x00000edc"
-"s entry.init0"
-"f entry.init1 1 0x080484b8"
-"f entry.init1_hpaddr 1 0x00000ee0"
-"s entry.init1"
-"f entry.init2 1 0x080484d1"
-"f entry.init2_hpaddr 1 0x00000ee4"
-"s entry.init2"
-"f entry.init3 1 0x080484ea"
-"f entry.init3_hpaddr 1 0x00000ee8"
-"s entry.init3"
-"f entry.init4 1 0x08048503"
-"f entry.init4_hpaddr 1 0x00000eec"
-"s entry.init4"
-"f entry.fini0 1 0x08048450"
-"f entry.fini0_hpaddr 1 0x00000ef0"
-"s entry.fini0"
-"f entry.fini1 1 0x0804859c"
-"f entry.fini1_hpaddr 1 0x00000ef4"
-"s entry.fini1"
-"f entry.fini2 1 0x080485b5"
-"f entry.fini2_hpaddr 1 0x00000ef8"
-"s entry.fini2"
-"f entry.fini3 1 0x080485ce"
-"f entry.fini3_hpaddr 1 0x00000efc"
-"s entry.fini3"
-"f entry.fini4 1 0x080485e7"
-"f entry.fini4_hpaddr 1 0x00000f00"
-"s entry.fini4"
+'f entry.preinit0 1 0x08048486
+'f entry.preinit0_hpaddr 1 0x00000ed4
+'s entry.preinit0
+'f entry.preinit1 1 0x0804849f
+'f entry.preinit1_hpaddr 1 0x00000ed8
+'s entry.preinit1
+'f entry.init0 1 0x08048480
+'f entry.init0_hpaddr 1 0x00000edc
+'s entry.init0
+'f entry.init1 1 0x080484b8
+'f entry.init1_hpaddr 1 0x00000ee0
+'s entry.init1
+'f entry.init2 1 0x080484d1
+'f entry.init2_hpaddr 1 0x00000ee4
+'s entry.init2
+'f entry.init3 1 0x080484ea
+'f entry.init3_hpaddr 1 0x00000ee8
+'s entry.init3
+'f entry.init4 1 0x08048503
+'f entry.init4_hpaddr 1 0x00000eec
+'s entry.init4
+'f entry.fini0 1 0x08048450
+'f entry.fini0_hpaddr 1 0x00000ef0
+'s entry.fini0
+'f entry.fini1 1 0x0804859c
+'f entry.fini1_hpaddr 1 0x00000ef4
+'s entry.fini1
+'f entry.fini2 1 0x080485b5
+'f entry.fini2_hpaddr 1 0x00000ef8
+'s entry.fini2
+'f entry.fini3 1 0x080485ce
+'f entry.fini3_hpaddr 1 0x00000efc
+'s entry.fini3
+'f entry.fini4 1 0x080485e7
+'f entry.fini4_hpaddr 1 0x00000f00
+'s entry.fini4
 fs-
 EOF
 RUN

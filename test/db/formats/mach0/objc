@@ -45,7 +45,7 @@ NAME=objc method flags (ic*)
 FILE=bins/mach0/TestMethods
 CMDS=ic*~thisIsAClassMethod
 EXPECT=<<EOF
-"f method.ViewController.class.thisIsAClassMethod = 0x1000067bc"
+'f method.ViewController.class.thisIsAClassMethod = 0x1000067bc
 EOF
 RUN
 

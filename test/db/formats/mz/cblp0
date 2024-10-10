@@ -21,6 +21,6 @@ vaddr=0x00000000 paddr=0x00000200 haddr=-1 type=program
 1 entrypoints
 xor al, al
 fs sections
-"f section.seg_000 1 0x00000000"
+'f section.seg_000 1 0x00000000
 EOF
 RUN

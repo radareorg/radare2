@@ -220,35 +220,35 @@ CMDS=<<EOF
 is*~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514"
-"f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518"
-"f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c"
-"f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520"
-"f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524"
-"f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528"
-"f sym.__SceneDelegate_window_ 16 0x10000652c"
-"f sym.__SceneDelegate_setWindow:_ 20 0x10000653c"
-"f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550"
-"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
-"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
-"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
-"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
-"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
-"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
-"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
-"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
-"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
-"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
-"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
-"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
-"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
-"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
-"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
-"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+'f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514
+'f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518
+'f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c
+'f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520
+'f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524
+'f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528
+'f sym.__SceneDelegate_window_ 16 0x10000652c
+'f sym.__SceneDelegate_setWindow:_ 20 0x10000653c
+'f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550
+'f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0
+'f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8
+'f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090
+'f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108
+'f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0
+'f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8
+'f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0
+'f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228
+'f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308
+'f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330
+'f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388
+'f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408
+'f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0
+'f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8
+'f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8
+'f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628
 EOF
 RUN
 
@@ -258,35 +258,35 @@ CMDS=<<EOF
 is*~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514"
-"f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518"
-"f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c"
-"f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520"
-"f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524"
-"f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528"
-"f sym.__SceneDelegate_window_ 16 0x10000652c"
-"f sym.__SceneDelegate_setWindow:_ 20 0x10000653c"
-"f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550"
-"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
-"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
-"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
-"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
-"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
-"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
-"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
-"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
-"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
-"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
-"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
-"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
-"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
-"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
-"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
-"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+'f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514
+'f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518
+'f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c
+'f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520
+'f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524
+'f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528
+'f sym.__SceneDelegate_window_ 16 0x10000652c
+'f sym.__SceneDelegate_setWindow:_ 20 0x10000653c
+'f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550
+'f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0
+'f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8
+'f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090
+'f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108
+'f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0
+'f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8
+'f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0
+'f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228
+'f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308
+'f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330
+'f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388
+'f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408
+'f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0
+'f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8
+'f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8
+'f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628
 EOF
 RUN
 
@@ -296,35 +296,35 @@ CMDS=<<EOF
 is*~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 152 0x1000060b0"
-"f sym.__SceneDelegate_sceneDidDisconnect:_ 80 0x100006148"
-"f sym.__SceneDelegate_sceneDidBecomeActive:_ 80 0x100006198"
-"f sym.__SceneDelegate_sceneWillResignActive:_ 80 0x1000061e8"
-"f sym.__SceneDelegate_sceneWillEnterForeground:_ 80 0x100006238"
-"f sym.__SceneDelegate_sceneDidEnterBackground:_ 80 0x100006288"
-"f sym.__SceneDelegate_window_ 36 0x1000062d8"
-"f sym.__SceneDelegate_setWindow:_ 64 0x1000062fc"
-"f sym.__SceneDelegate_.cxx_destruct_ 60 0x10000633c"
-"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 116 0x100006490"
-"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x100008438"
-"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x100008440"
-"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x10000ce58"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 320 0x10000ce70"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 104 0x10000cfb0"
-"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x10000d018"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x10000d030"
-"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x10000d0b0"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x10000d0c8"
-"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x10000d0f0"
-"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x10000d108"
-"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x10000d150"
-"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x10000d178"
-"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x10000d1d0"
-"f sym._OBJC_IVAR___SceneDelegate._window 4 0x10000d2b0"
-"f sym._OBJC_METACLASS___SceneDelegate 40 0x10000d358"
-"f sym._OBJC_CLASS___SceneDelegate 40 0x10000d380"
-"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x10000d468"
-"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x10000d4c8"
+'f sym.__SceneDelegate_scene:willConnectToSession:options:_ 152 0x1000060b0
+'f sym.__SceneDelegate_sceneDidDisconnect:_ 80 0x100006148
+'f sym.__SceneDelegate_sceneDidBecomeActive:_ 80 0x100006198
+'f sym.__SceneDelegate_sceneWillResignActive:_ 80 0x1000061e8
+'f sym.__SceneDelegate_sceneWillEnterForeground:_ 80 0x100006238
+'f sym.__SceneDelegate_sceneDidEnterBackground:_ 80 0x100006288
+'f sym.__SceneDelegate_window_ 36 0x1000062d8
+'f sym.__SceneDelegate_setWindow:_ 64 0x1000062fc
+'f sym.__SceneDelegate_.cxx_destruct_ 60 0x10000633c
+'f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 116 0x100006490
+'f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x100008438
+'f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x100008440
+'f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x10000ce58
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 320 0x10000ce70
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 104 0x10000cfb0
+'f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x10000d018
+'f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x10000d030
+'f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x10000d0b0
+'f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x10000d0c8
+'f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x10000d0f0
+'f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x10000d108
+'f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x10000d150
+'f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x10000d178
+'f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x10000d1d0
+'f sym._OBJC_IVAR___SceneDelegate._window 4 0x10000d2b0
+'f sym._OBJC_METACLASS___SceneDelegate 40 0x10000d358
+'f sym._OBJC_CLASS___SceneDelegate 40 0x10000d380
+'f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x10000d468
+'f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x10000d4c8
 EOF
 RUN
 
