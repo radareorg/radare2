@@ -70,7 +70,7 @@ static RCoreHelpMessage help_msg_wa = {
 	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
 	"wa+", " nop", "write a nop and seek after it (use 7wa+nop to write 7 consecutive nops)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
-	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
+	"'wa nop;nop", "" , "assemble more than one instruction (note the single quote)",
 	"waf", " f.asm" , "assemble file and write bytes",
 	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"waF*", " f.asm", "assemble file and show 'wx' op with hexpair bytes of assembled code",

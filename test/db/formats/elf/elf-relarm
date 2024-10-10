@@ -7,14 +7,14 @@ EOF
 EXPECT=<<EOF
 11
 fs relocs
-"f reloc.r0 4 0x08000034"
-"f reloc.r2 4 0x0800003c"
-"f reloc.r3 4 0x08000040"
-"f reloc.r4 4 0x08000044"
-"f reloc.r0 4 0x0800004c"
-"f reloc.r2 4 0x08000054"
-"f reloc.r3 4 0x08000058"
-"f reloc.r4 4 0x0800005c"
+'f reloc.r0 4 0x08000034
+'f reloc.r2 4 0x0800003c
+'f reloc.r3 4 0x08000040
+'f reloc.r4 4 0x08000044
+'f reloc.r0 4 0x0800004c
+'f reloc.r2 4 0x08000054
+'f reloc.r3 4 0x08000058
+'f reloc.r4 4 0x0800005c
 wv8 0xffffffffffffffff @ 0x8000060
 EOF
 RUN

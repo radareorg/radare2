@@ -22,15 +22,15 @@ FILE=bins/pe/Lab05-01.dll
 CMDS=iE*
 EXPECT=<<EOF
 fs exports
-"f sym.xdll.dll_InstallRT 0 0x1000d847"
-"f sym.xdll.dll_InstallSA 0 0x1000dec1"
-"f sym.xdll.dll_InstallSB 0 0x1000e892"
-"f sym.xdll.dll_PSLIST 0 0x10007025"
-"f sym.xdll.dll_ServiceMain 0 0x1000cf30"
-"f sym.xdll.dll_StartEXS 0 0x10007ecb"
-"f sym.xdll.dll_UninstallRT 0 0x1000f405"
-"f sym.xdll.dll_UninstallSA 0 0x1000ea05"
-"f sym.xdll.dll_UninstallSB 0 0x1000f138"
+'f sym.xdll.dll_InstallRT 0 0x1000d847
+'f sym.xdll.dll_InstallSA 0 0x1000dec1
+'f sym.xdll.dll_InstallSB 0 0x1000e892
+'f sym.xdll.dll_PSLIST 0 0x10007025
+'f sym.xdll.dll_ServiceMain 0 0x1000cf30
+'f sym.xdll.dll_StartEXS 0 0x10007ecb
+'f sym.xdll.dll_UninstallRT 0 0x1000f405
+'f sym.xdll.dll_UninstallSA 0 0x1000ea05
+'f sym.xdll.dll_UninstallSB 0 0x1000f138
 EOF
 RUN
 

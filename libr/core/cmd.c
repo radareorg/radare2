@@ -3632,7 +3632,7 @@ static int cmd_system(void *data, const char *input) {
 			cmd_help_exclamation (core);
 		} else if (input[1] == '*') {
 			char *cmd = r_str_trim_dup (input + 1);
-			(void)r_core_cmdf (core, "\"#!pipe %s\"", cmd);
+			(void)r_core_cmdf (core, "'#!pipe %s", cmd);
 			free (cmd);
 		} else {
 			if (input[1]) {
@@ -3678,7 +3678,7 @@ static int cmd_system(void *data, const char *input) {
 			cmd = r_str_replace (cmd, " ", "\\ ", true);
 			cmd = r_str_replace (cmd, "\\ ", " ", false);
 			cmd = r_str_replace (cmd, "\"", "'", false);
-			ret = r_core_cmdf (core, "\"#!pipe %s\"", cmd);
+			ret = r_core_cmdf (core, "'#!pipe %s", cmd);
 			free (cmd);
 		}
 		break;

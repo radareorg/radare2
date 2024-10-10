@@ -3369,9 +3369,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		*paren = '\0';
 	}
 	char *fname = r_name_filter_dup (name);
-	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
+	r_cons_printf ("'f %s %"PFMT64u" 0x%08"PFMT64x"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
 	free (fname);
-	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
+	r_cons_printf ("'af+ 0x%08"PFMT64x" %s %c %c\n",
 			fcn->addr, name, //r_anal_function_size (fcn), name,
 			fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
 			fcn->type == R_ANAL_FCN_TYPE_SYM?'s':
@@ -3386,7 +3386,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	// FIXME command injection vuln here
 	if (fcn->cc || defaultCC) {
 		r_cons_printf ("s 0x%"PFMT64x"\n", fcn->addr);
-		r_cons_printf ("\"afc %s\"\n", fcn->cc? fcn->cc: defaultCC);
+		r_cons_printf ("'afc %s\n", fcn->cc? fcn->cc: defaultCC);
 		r_cons_println ("s-");
 	}
 	if (fcn->folded) {

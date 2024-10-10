@@ -9,6 +9,6 @@ NAME=PE: corkami tinygui.exe - libs
 FILE=bins/pe/tinygui.exe
 CMDS=il*
 EXPECT=<<EOF
-"CCa entry0 user32.dll"
+'CCa entry0 user32.dll
 EOF
 RUN
