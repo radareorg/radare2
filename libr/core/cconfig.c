@@ -4364,6 +4364,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.prompt.tabhelp", "true", "show command help when pressing the TAB key");
 	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "set prompt color based on vi mode");
 	SETBPREF ("scr.prompt.file", "false", "show user prompt file (used by r2 -q)");
+	SETBPREF ("scr.prompt.prj", "false", "show currently used project in prompt");
 	SETBPREF ("scr.prompt.flag", "false", "show flag name in the prompt");
 	SETBPREF ("scr.prompt.sect", "false", "show section name in the prompt");
 	SETBPREF ("scr.tts", "false", "use tts if available by a command (see ic)");

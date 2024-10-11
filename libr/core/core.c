@@ -3574,10 +3574,14 @@ static void set_prompt(RCore *r) {
 		r_core_cmd (r, cmdprompt, 0);
 	}
 
-	if (r_config_get_b (r->config, "scr.prompt.file")) {
+	if (r_config_get_b (r->config, "scr.prompt.prj")) {
+		free (filename);
+		const char *pn = r_config_get (r->config, "prj.name");
+		filename = r_str_newf ("<%s>", pn);
+	} else if (r_config_get_b (r->config, "scr.prompt.file")) {
 		free (filename);
 		const char *fn = r->io->desc ? r_file_basename (r->io->desc->name) : "";
-		filename = r_str_newf ("\"%s\"", fn);
+		filename = r_str_newf ("<%s>", fn);
 	}
 	if (r->cmdremote) {
 		char *s = r_core_cmd_str (r, "s");
