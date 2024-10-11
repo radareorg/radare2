@@ -82,8 +82,7 @@ static RCoreHelpMessage help_msg_i = {
 #if R2_USE_NEW_ABI
 	"i:", "[?]", "run rbinplugin specific commands",
 #endif
-	"ia", "", "show all info (imports, exports, sections..)",
-	"iA", "", "list archs found in current binary",
+	"ia", "", "list archs found in current binary (same as rabin2 -A)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "[?]", "List classes, methods and fields (icj for json)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
@@ -1883,40 +1882,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 		input = input + strlen (input) - 1;
 		break;
-	case 'a': // "ia"
-		if (r_bin_cur_object (core->bin)) {
-			int narg = 0;
-			switch (mode) {
-			case R_MODE_RADARE: narg = '*'; break;
-			case R_MODE_SIMPLE: narg = 'q'; break;
-			case R_MODE_JSON: // "iaj"
-				r_cons_printf ("{\"info\":");
-				narg = 'j';
-				break;
-			}
-			char cmd[8];
-			cmd[0] = narg;
-			cmd[1] = 0;
-			cmd_info (core, cmd);
-			cmd[1] = narg;
-			cmd[2] = 0;
-			const char *subcmds = "ieEcsSmz"; // TODO: deprecate
-			while (*subcmds) {
-				cmd[0] = *subcmds;
-				if (mode == R_MODE_JSON) {
-					r_cons_printf (",\"i%c\":", *subcmds);
-				}
-				cmd_info (core, cmd);
-				subcmds++;
-			}
-			if (mode == R_MODE_JSON) {
-				r_cons_print ("}");
-			}
-		} else {
-			r_cons_print ("{}");
-		}
-		break;
-	case 'A': // "iA"
+	case 'a': // "iA"
 		if (input[1] == 'j') {
 			pj_o (pj); // weird
 			r_bin_list_archs (core->bin, pj, 'j');
