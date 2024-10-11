@@ -86,7 +86,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 #define SHIFTTYPEREG(x) (\
 		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
 		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
@@ -119,7 +119,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 
 // *********************
 // CS6 compatibility:
-#if CS_NEXT_VERSION == 6
+#if CS_API_MAJOR == 6
 typedef enum arm_cc {
 	ARM_CC_EQ = ARMCC_EQ,
 	ARM_CC_NE = ARMCC_NE,
@@ -267,7 +267,7 @@ static const char *shift_type_name(arm_shifter type) {
 		return "lsr_reg";
 	case ARM_SFT_ROR_REG:
 		return "ror_reg";
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	case ARM_SFT_RRX_REG:
 		return "rrx_reg";
 #endif
@@ -473,7 +473,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 			case ARM_SFT_RRX_REG:
 				pj_ks (pj, "type", shift_type_name (op->shift.type));
 				pj_ks (pj, "value", cs_reg_name (handle, op->shift.value));
@@ -685,7 +685,7 @@ static const char *vas_name(arm64_vas vas) {
 		return "2h";
 	case ARM64_VAS_1S:
 		return "1s";
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 		return "8b";
 	case ARM64_VAS_1H:
@@ -720,7 +720,7 @@ static int vas_size(arm64_vas vas) {
 		return 16;
 	case ARM64_VAS_1S:
 		return 32;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 		return 8;
 	case ARM64_VAS_1H:
@@ -753,7 +753,7 @@ static int vas_count(arm64_vas vas) {
 		return 4;
 	case ARM64_VAS_2H:
 		return 2;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 	case ARM64_VAS_1H:
 #endif
@@ -983,7 +983,7 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR:
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	case ARM_SFT_RRX_REG:
 		return E_OP_RR;
 #endif
@@ -1039,7 +1039,7 @@ static int regsize64(cs_insn *insn, int n) {
 		return 2;
 	}
 	if ((reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) ||
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 		(reg >= ARM64_REG_V0 && reg <= ARM64_REG_V31) ) {
 #else
 		(false) ) {
@@ -3480,7 +3480,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	/* grab family */
 	if (cs_insn_group (handle, insn, ARM64_GRP_CRC )) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	// XXX - Can't find ARM64 feature crypto in cs6 arm64
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
@@ -3992,7 +3992,7 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 	/* grab family */
 	if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	// XXX - I can't find crypto in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
@@ -4000,7 +4000,7 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	// XXX - I can't find virtualization in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
 		op->family = R_ANAL_OP_FAMILY_VIRT;
@@ -4010,7 +4010,7 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
-#if CS_NEXT_VERSION < 6
+#if CS_API_MAJOR < 6
 	// XXX - I can't find thumb2dsp in cs6
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
 		op->family = R_ANAL_OP_FAMILY_VEC;

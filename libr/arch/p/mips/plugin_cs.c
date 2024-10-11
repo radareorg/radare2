@@ -94,7 +94,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
 // * cs6 compatibility *
-#if CS_NEXT_VERSION == 6
+#if CS_API_MAJOR == 6
 // XXX - There are more options than EQ or QB, need to be tested:
 #define MIPS_INS_CMPU MIPS_INS_CMPU_EQ_QB
 #define MIPS_INS_CMPGU MIPS_INS_CMPGU_EQ_QB
