@@ -116,6 +116,8 @@ static RCoreHelpMessage help_msg_an = {
 static RCoreHelpMessage help_msg_ano = {
 	"Usage:", "ano", "[*] # function anotations",
 	"ano", "", "show or edit annotations for the current function",
+	"ano-", "*", "remove all annotations for current file",
+	"ano-", "$$", "remove annotations for current function",
 	"ano*", "", "dump all annotations in ano= commands",
 	"ano=", "[base64:]text", "set anotation text in base64 for current function",
 	"anoe", "", "edit annotation using cfg.editor",
@@ -15119,10 +15121,12 @@ static void anorm(RCore *core) {
 	char *cd = r_xdg_datadir ("cache");
 	RList *files = r_sys_dir (cd);
 	if (files) {
+		char *fn = r_core_cmd_str (core, "o.");
 		const char *file;
 		RListIter *iter;
+		char *pfx = r_str_newf ("ano.%s.0x", fn);
 		r_list_foreach (files, iter, file) {
-			if (r_str_startswith (file, "ano.")) {
+			if (r_str_startswith (file, pfx)) {
 				if (r_str_endswith (file, ".txt")) {
 					char *ffn = r_str_newf ("%s/%s", cd, file);
 					r_file_rm (ffn);
@@ -15130,6 +15134,8 @@ static void anorm(RCore *core) {
 				}
 			}
 		}
+		free (fn);
+		free (pfx);
 	}
 	free (cd);
 }
