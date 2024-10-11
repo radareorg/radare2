@@ -24,7 +24,7 @@ fi
 ./configure-plugins
 bash ./configure --with-compiler=termux --prefix=${PREFIX} || exit 1
 make libr/include/r_version.h
-touch -t 19700101 libr/include/r_version.h
+touch -t 197001010000 libr/include/r_version.h
 rm -f "${PREFIX}/lib/"libr_*
 make -j2 || exit 1
 make symstall
