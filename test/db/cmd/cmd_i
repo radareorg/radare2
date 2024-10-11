@@ -230,11 +230,11 @@ va       true
 EOF
 RUN
 
-NAME=iA (file mips I)
+NAME=ia (file mips I)
 FILE=bins/elf/mips-mozi
 CMDS=<<EOF
-iA
-iAj
+ia
+iaj
 EOF
 EXPECT=<<EOF
 0   0x00000000 266108 mips_32 cpu=mips1 abi=o32 machine=MIPS R3000
@@ -242,11 +242,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=iA (file mips 64r2)
+NAME=ia (file mips 64r2)
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
-iA
-iAj
+ia
+iaj
 EOF
 EXPECT=<<EOF
 0   0x00000000 1039368 mips_64 cpu=mips64r2 abi=n64 machine=MIPS R3000
@@ -256,7 +256,7 @@ RUN
 
 NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=iA
+CMDS=ia
 EXPECT=<<EOF
 0   0x00000000 4899 x86_32 machine=Intel 80386
 EOF
@@ -276,12 +276,35 @@ RUN
 
 NAME=iaq
 FILE=bins/elf/libmagic.so
-CMDS=iaq
+CMDS=<<EOF
+iaq
+?e --
+iq
+?e --
+iiq
+?e --
+ieq
+?e --
+iEq
+?e --
+icq
+?e --
+isq
+?e --
+iSq
+?e --
+imq
+?e --
+izq
+EOF
 EXPECT=<<EOF
+0   0x00000000 91480 arm_16 abi=eabi5 machine=ARM
+--
 arch arm
 bits 16
 os android
 endian little
+--
 __cxa_finalize
 __cxa_atexit
 malloc
@@ -320,7 +343,9 @@ sprintf
 strncmp
 pthread_mutex_lock
 pthread_mutex_unlock
+--
 0x00005fa8
+--
 0x00007c70 10 __aeabi_unwind_cpp_pr0
 0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
 0x00006138 164 JstringToString(_JNIEnv*, _jstring*)
@@ -521,6 +546,7 @@ pthread_mutex_unlock
 0x00012c2c 40 std::bad_typeid::~bad_typeid()
 0x00012c54 28 std::bad_typeid::~bad_typeid()
 0x00014b58 15 typeinfo name for std::bad_typeid
+--
 0x00000000 [0x00006060 - 0x0000697c] jni _JNIEnv
 0x00000000 [0x0000699c - 0x000074f8] jni SystemClassLoaderInjector
 0x00000000 [0x0000886c - 0x000094c8] c++ std
@@ -541,6 +567,7 @@ pthread_mutex_unlock
 0x00000000 [0x000126c0 - 0x000126d0] c++ __gnu_cxx::__concurrence_unlock_error
 0x00000000 [0x00012bc8 - 0x00012bd8] c++ std::bad_cast
 0x00000000 [0x00012c1c - 0x00012c2c] c++ std::bad_typeid
+--
 0x00006060 10 _JNIEnv::FindClass(char const*)
 0x00007c7a 10 __aeabi_unwind_cpp_pr1
 0x0000606a 10 _JNIEnv::DeleteLocalRef(_jobject*)
@@ -949,6 +976,7 @@ pthread_mutex_unlock
 0x00005f84 16 imp.strncmp
 0x00005f90 16 imp.pthread_mutex_lock
 0x00005f9c 16 imp.pthread_mutex_unlock
+--
 0x00000000 0x00000000 ---- 
 0x00000154 0x00000167 -r-- .interp
 0x00000168 0x0000018c -r-- .note.gnu.build-id
@@ -974,8 +1002,10 @@ pthread_mutex_unlock
 0x00000000 0x0000001c ---- .note.gnu.gold-version
 0x00000000 0x0000002b ---- .ARM.attributes
 0x00000000 0x000000f3 ---- .shstrtab
+--
 [Memory]
 
+--
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -2735,7 +2765,7 @@ RUN
 
 NAME=iA (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=iA
+CMDS=ia
 EXPECT=<<EOF
 0   0x00000000 6710 x86_64 machine=AMD x86-64 architecture
 EOF

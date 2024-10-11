@@ -440,7 +440,7 @@ RUN
 
 NAME=EFI bootloader rv64
 FILE=bins/efi/haiku_loader_riscv64.efi
-CMDS=ia~machine
+CMDS=i~machine
 EXPECT=<<EOF
 machine  RISC-V 64-bit
 EOF
@@ -448,7 +448,7 @@ RUN
 
 NAME=EFI bootloader x86_64
 FILE=bins/efi/haiku_loader_amd64.efi
-CMDS=ia~machine
+CMDS=i~machine
 EXPECT=<<EOF
 machine  AMD 64
 EOF

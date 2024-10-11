@@ -204,11 +204,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 archs iA iAj
+NAME=fatmach0 archs ia iaj
 FILE=bins/mach0/fatmach0-3true
 CMDS=<<EOF
-iA
-iAj
+ia
+iaj
 EOF
 EXPECT=<<EOF
 000 0x00001000 13792 x86_64 x86 64 all
