@@ -39,11 +39,10 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 				off = ehdr->e_shoff + (i * sizeof (Elf_(Shdr)));
 				r_buf_write_at (bf->buf, off, (ut8*)shdrp, sizeof (Elf_(Shdr)));
 				return 0;
-			} else {
-				delta = rsz_size - shdrp->sh_size;
-				rsz_offset = (ut64)shdrp->sh_offset;
-				rsz_osize = (ut64)shdrp->sh_size;
 			}
+			delta = rsz_size - shdrp->sh_size;
+			rsz_offset = (ut64)shdrp->sh_offset;
+			rsz_osize = (ut64)shdrp->sh_size;
 			break;
 		}
 	}
@@ -83,7 +82,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					relp->r_offset += delta;
 					off = shdrp->sh_offset + j;
 					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1) {
-						r_sys_perror("write (imports)");
+						r_sys_perror ("write (imports)");
 					}
 				}
 			}
@@ -93,11 +92,11 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			Elf_(Rela) *rel, *relp;
 			rel = (Elf_(Rela) *)malloc (shdrp->sh_size + 1);
 			if (!rel) {
-				r_sys_perror("malloc");
+				r_sys_perror ("malloc");
 				return 0;
 			}
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
-				r_sys_perror("read (rel)");
+				r_sys_perror ("read (rel)");
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof (Elf_(Rela)), relp++) {
 				/* rewrite relp->r_offset */
@@ -105,7 +104,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					off = shdrp->sh_offset + j;
 					relp->r_offset += delta;
 					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1) {
-						r_sys_perror("write (imports)");
+						r_sys_perror ("write (imports)");
 					}
 				}
 			}
@@ -119,8 +118,10 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		off = ehdr->e_shoff + (i * sizeof (Elf_(Shdr)));
 		if (!done && !strncmp (name, strtab + shdrp->sh_name, ELF_STRING_LENGTH)) {
 			R_LOG_INFO ("patching the virtual section size from %d to %d", shdrp->sh_size, rsz_size);
-			shdrp->sh_size = rsz_size;
-			r_buf_write_at (bf->buf, off + i, (ut8*)&shdrp, sizeof (Elf_(Shdr)));
+			Elf_(Shdr) *es = (Elf_(Shdr)*)shdrp;
+			es->sh_size = rsz_size; // XXX this is tied to endian
+			// r_write_le64 (&es->sh_size, rsz_size);
+			r_buf_write_at (bf->buf, off , (ut8*)shdrp, sizeof (Elf_(Shdr)));
 			done = true;
 		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
 			shdrp->sh_offset += delta;
@@ -128,6 +129,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 				shdrp->sh_addr += delta;
 			}
 		}
+#if 1
 		R_LOG_INFO ("patching write");
 #if 0
 		r_buf_write_at (bf->buf, off, (ut8*)&shdrp, sizeof (Elf_(Shdr)));
@@ -136,6 +138,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1) {
 			r_sys_perror ("write (shdr)");
 		}
+#endif
 #endif
 		R_LOG_DEBUG ("-> elf section (%s)", strtab + shdrp->sh_name);
 	}
