@@ -29,7 +29,7 @@ struct Getarg {
 #endif
 
 // * cs6 - compatibility *
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 #define BC() insn->detail->ppc.bc
 #else
 #define BC() insn->detail->ppc.bc.pred_cr
@@ -185,7 +185,7 @@ static ut64 getarg(struct Getarg *gop, int n) {
 	case PPC_OP_MEM:
 		value = op.mem.disp + op.mem.base;
 		break;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 	case PPC_OP_CRX: // Condition Register field
 		value = (ut64) op.imm;
 		break;
@@ -696,7 +696,7 @@ static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *sets
 				(ut64) op.mem.disp,
 				cs_reg_name (handle, op.mem.base), setstr);
 		break;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 	case PPC_OP_CRX: // Condition Register field
 		snprintf (pd->words[n], sizeof (pd->words[n]),
 				"%"PFMT64d"%s", (ut64) op.imm, setstr);
@@ -913,7 +913,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case PPC_INS_SYNC:
 		case PPC_INS_ISYNC:
 		case PPC_INS_LWSYNC:
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 		case PPC_INS_MSYNC:
 #endif
 		case PPC_INS_PTESYNC:
@@ -1237,7 +1237,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			case PPC_BC_INVALID:
 				op->type = R_ANAL_OP_TYPE_JMP;
 				esilprintf (op, "%s,pc,=", ARG (0));
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
 			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
 #endif
@@ -1250,7 +1250,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		case PPC_INS_BT:
 		case PPC_INS_BF:
 			switch (insn->detail->ppc.operands[0].type) {
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 			case PPC_OP_CRX:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->fail = addr + op->size;
@@ -1275,7 +1275,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->fail = addr + op->size;
 			esilprintf (op, "1,ctr,-=,$z,!,?{,%s,pc,=,}", ARG (0));
 			break;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 		case PPC_INS_BDNZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
@@ -1307,7 +1307,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->fail = addr + op->size;
 			esilprintf (op, "1,ctr,-=,$z,?{,%s,pc,=,}", ARG (0));
 			break;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 		case PPC_INS_BDZA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM (0);
@@ -1386,7 +1386,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 					esilprintf (op, "%s,!,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
-#if CS_NEXT_VERSION != 6
+#if CS_API_MAJOR < 6
 			case PPC_BC_UN: // unordered (cs6 - same as *_SO)
 			case PPC_BC_NU: // not unordered (cs6 - same as *_NS)
 #endif
