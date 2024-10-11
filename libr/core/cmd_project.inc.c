@@ -84,7 +84,10 @@ static void r_core_project_zip_export(RCore *core, const char *prjname, const ch
 			char *zipfile = r_str_newf ("%s/%s.zrp", cwd, prj_name);
 			r_file_rm (zipfile);
 			// XXX use the ZIP api instead!
-			r_sys_cmdf ("zip -r %s/%s %s", cwd, outzip? outzip: zipfile, prj_name);
+			const char *ofn = outzip? outzip: zipfile;
+			char *out = (*ofn == '/')? strdup (ofn): r_str_newf ("%s/%s", cwd, ofn);
+			r_sys_cmdf ("zip -r %s %s", out, prj_name);
+			free (out);
 			free (zipfile);
 		} else {
 			R_LOG_WARN ("Command injection attempt?");
