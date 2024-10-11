@@ -116,11 +116,13 @@ static RCoreHelpMessage help_msg_an = {
 static RCoreHelpMessage help_msg_ano = {
 	"Usage:", "ano", "[*] # function anotations",
 	"ano", "", "show or edit annotations for the current function",
+	"ano-", "*", "remove all annotations for current file",
+	"ano-", "$$", "remove annotations for current function",
 	"ano*", "", "dump all annotations in ano= commands",
-	"ano=", "[b64text]", "set anotation text in base64 for current function",
-	"anoe", "", "edit annotation",
-	"anos", "", "show annotation",
-	"anol", "", "show first line of function annotation if any",
+	"ano=", "[base64:]text", "set anotation text in base64 for current function",
+	"anoe", "", "edit annotation using cfg.editor",
+	"anos", "", "show current function annotation",
+	"anol", "", "display first line of function annotation if any",
 	NULL
 };
 
@@ -15114,11 +15116,47 @@ static char *anopath(RCore *core, RAnalFunction *f) {
 	return res;
 }
 
+static void anorm(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	char *cd = r_xdg_datadir ("cache");
+	RList *files = r_sys_dir (cd);
+	if (files) {
+		char *fn = r_core_cmd_str (core, "o.");
+		const char *file;
+		RListIter *iter;
+		char *pfx = r_str_newf ("ano.%s.0x", fn);
+		r_list_foreach (files, iter, file) {
+			if (r_str_startswith (file, pfx)) {
+				if (r_str_endswith (file, ".txt")) {
+					char *ffn = r_str_newf ("%s/%s", cd, file);
+					r_file_rm (ffn);
+					free (ffn);
+				}
+			}
+		}
+		free (fn);
+		free (pfx);
+	}
+	free (cd);
+}
+
 static void cmd_ano(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
 	switch (input[2]) {
-	case 'e': // "anoe"
 	case '-':
+		if (input[3] == '*') {
+			anorm (core);
+		} else if (fcn) {
+			char *f = anopath (core, fcn);
+			if (R_LIKELY (f)) {
+				r_file_rm (f);
+				free (f);
+			}
+		} else {
+			R_LOG_WARN ("No annotation to delete here");
+		}
+		break;
+	case 'e': // "anoe"
 		if (fcn) {
 			char *f = anopath (core, fcn);
 			if (f) {
@@ -15138,7 +15176,7 @@ static void cmd_ano(RCore *core, const char *input) {
 					char *s = r_file_slurp (f, NULL);
 					if (R_STR_ISNOTEMPTY (s)) {
 						char *e = sdb_encode ((const ut8*)s, strlen (s));
-						r_cons_printf ("ano=%s @ 0x%08"PFMT64x"\n", e, fcn->addr);
+						r_cons_printf ("ano=base64:%s @ 0x%08"PFMT64x"\n", e, fcn->addr);
 						free (e);
 					}
 					free (s);
@@ -15153,12 +15191,17 @@ static void cmd_ano(RCore *core, const char *input) {
 			if (f) {
 				const char *arg = r_str_trim_head_ro (input + 3);
 				int len;
-				ut8 *data = sdb_decode (arg, &len);
-				if (data) {
-					r_file_dump (f, data, len, false);
-					free (data);
+				if (r_str_startswith (arg, "base64:")) {
+					arg += 7;
+					ut8 *data = sdb_decode (arg, &len);
+					if (data) {
+						r_file_dump (f, data, len, false);
+						free (data);
+					} else {
+						R_LOG_ERROR ("Invalid base64 as argument for 'ano=...'");
+					}
 				} else {
-					R_LOG_ERROR ("Invalid base64 as argument for 'ano=...'");
+					r_file_dump (f, (const ut8*)arg, strlen (arg), false);
 				}
 				free (f);
 			}
