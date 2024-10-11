@@ -709,7 +709,7 @@ static void load_types_from(RCore *core, const char *fmt, ...) {
 
 R_API void r_core_anal_type_init(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal);
-	int bits = core->rasm->config->bits;
+	const int bits = core->rasm->config->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
@@ -2418,30 +2418,36 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	}
 }
 
-static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
-	if (info->bits > 32) { // we look at 16 or 32 bit only
+static void handle_arm_hint(RCore *core, RBinInfo *bi, ut64 paddr, ut64 vaddr, int sym_bits, int va) {
+	if (bi->bits > 32) { // we look at 16 or 32 bit only
 		return;
 	}
 
 	int force_bits = 0;
 	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
-	if (paddr & 1 || bits == 16) {
+	if (paddr & 1 || sym_bits == 16) {
 		force_bits = 16;
-	} else if (info->bits == 16 && bits == 32) {
+	} else if (bi->bits == 16 && sym_bits == 32) {
 #if 1
 		// ignore this case, which causes false positives on half-arm-thumb binaries
 		if (vaddr & 1) {
 			force_bits = 16;
 		} else {
-			RAnalHint *hint = r_anal_hint_get (core->anal, vaddr);
+			// XXX ruseli fails
+			force_bits = 32;
+#if 0
+			RAnalHint *hint = r_anal_hint_get (core->anal, addr);
 			if (hint && hint->bits == 32) {
 				force_bits = 32;
 			} else {
-				return;
+				force_bits = 32;
+				//return;
+	//			force_bits = 0;
 			}
+#endif
 		}
 #endif
-	} else if (!(paddr & 1) && bits == 32) {
+	} else if (!(paddr & 1) && sym_bits == 32) {
 		force_bits = 32;
 	}
 	if (force_bits) {
@@ -2753,8 +2759,8 @@ next:
 
 	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
-		r_list_foreach (entries, iter, entry) {
-			if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode)) {
+			r_list_foreach (entries, iter, entry) {
 				handle_arm_entry (r, entry, info, va);
 			}
 		}
