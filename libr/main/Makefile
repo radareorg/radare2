@@ -16,6 +16,7 @@ OBJS+=rasign2.o
 OBJS+=rafind2.o
 OBJS+=r2agent.o
 OBJS+=radiff2.o
+OBJS+=rapatch2.o
 OBJS+=radare2.o
 OBJS+=rahash2.o
 
