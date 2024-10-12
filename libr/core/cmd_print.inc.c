@@ -1313,6 +1313,9 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
+	if (!sep) {
+		sep = strstr (input, "..");
+	}
 	const char *arg = sep? r_str_trim_head_ro (sep): NULL;
 
 	ut64 addr = core->offset;
@@ -1332,8 +1335,14 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua");
 			break;
 		}
-		ut64 to = r_num_math (core->num, arg);
-		if (!to) {
+		ut64 to = 0;
+		if (r_str_startswith (arg, "..")) {
+			to = r_num_tail (core->num, core->offset, arg + 2);
+			to++; // one more
+		} else {
+			to = r_num_math (core->num, arg);
+		}
+		if (!to || r_num_failed (core->num)) {
 			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;
 			break;
