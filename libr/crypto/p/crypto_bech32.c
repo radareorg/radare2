@@ -19,12 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include <r_lib.h>
+#include <r_crypto.h>
+#include <r_util.h>
+
 #include <assert.h>
 #include <stdint.h>
-
-#include "crypto_bech32.h"
-
-#if R2_USE_NEW_ABI
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
 	uint8_t b = pre >> 25;
@@ -59,7 +60,20 @@ static const int8_t charset_rev[128] = {
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
 
-R_API int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
+static bool bech32_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->dir = direction;
+	return true;
+}
+
+static int bech32_get_key_size(RCryptoJob *cj) {
+	return 0;
+}
+
+static bool bech32_check(const char *algo) {
+	return !strcmp (algo, "bech32");
+}
+
+int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;
 	size_t i = 0;
 	while (hrp[i] != 0) {
@@ -101,7 +115,7 @@ R_API int bech32_encode(char *output, const char *hrp, const uint8_t *data, size
 	return 1;
 }
 
-R_API bech32_encoding bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input) {
+bech32_encoding bech32_decode (char *hrp, uint8_t *data, size_t *data_len, const char *input) {
 	uint32_t chk = 1;
 	size_t i;
 	size_t input_len = strlen (input);
@@ -164,5 +178,39 @@ R_API bech32_encoding bech32_decode(char *hrp, uint8_t *data, size_t *data_len, 
 		}
 		return BECH32_ENCODING_NONE;
 	}
+}
 
+static bool update(RCryptoJob *cj, char *hrp, uint8_t *data, size_t *data_len, const char *in_out) {
+	switch (cj->dir) {
+	case R_CRYPTO_DIR_ENCRYPT:
+		bech32_encode (in_out, hrp, data, data_len, enc);
+	case R_CRYPTO_DIR_DECRYPT:
+		bech32_decode (hrp, data, data_len, in_out);
+	}
+	return true;
+}
+
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, hrp, data, data_len, in_out, enc);
+}
+
+RCryptoPlugin r_crypto_plugin_bech32 = {
+	.meta = {
+		.name = "bech32",
+		.author = "W0nda",
+	},
+	.type = R_CRYPTO_TYPE_ENCODER,
+	.set_key = bech32_set_key,
+	.get_key_size = bech32_get_key_size,
+	.check = bech32_check,
+	.update = update,
+	.end = end
+};
+
+#ifndef R2_PLUGIN_INCORE
+R_API RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_CRYPTO,
+	.data = &r_crypto_plugin_bech32,
+	.version = R2_VERSION
+};
 #endif
