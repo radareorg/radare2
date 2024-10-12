@@ -364,7 +364,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 }
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
-	if (!in || len < 0) {
+	if (!in || len < 1) {
 		return 0;
 	}
 	int i, idx;
