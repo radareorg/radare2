@@ -716,14 +716,18 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (r_config_get_b (core->config, "prj.files")) {
 		char *bin_file = r_core_project_name (core, prj_name);
 		const char *bin_filename = r_file_basename (bin_file);
+		char *cur_filename = r_core_cmd_str (core, "o.");
+		r_str_trim (cur_filename);
+		const char *cur_filename2 = r_file_basename (cur_filename);
 		char *prj_bin_dir = r_str_newf ("%s" R_SYS_DIR "bin", prj_dir);
-		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, bin_filename);
+		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, cur_filename2);
 		r_sys_mkdirp (prj_bin_dir);
-		if (!r_file_copy (bin_file, prj_bin_file)) {
-			R_LOG_WARN ("Cannot copy '%s' into '%s'", bin_file, prj_bin_file);
+		if (!r_file_copy (cur_filename, prj_bin_file)) {
+			R_LOG_WARN ("prj.files: Cannot copy '%s' into '%s'", cur_filename, prj_bin_file);
 		}
 		free (prj_bin_file);
 		free (prj_bin_dir);
+		free (cur_filename);
 		free (bin_file);
 	}
 	if (core->prj->rvc || r_config_get_b (core->config, "prj.vc")) {
