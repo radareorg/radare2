@@ -159,6 +159,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		}
 		bool must_rm = true;
 		if (r_config_get_b (core->config, "scr.interactive")) {
+			R_LOG_INFO ("Removing: %s", prj_dir);
 			must_rm = r_cons_yesno ('y', "Confirm project deletion? (Y/n)");
 		}
 		if (must_rm) {
