@@ -6,7 +6,7 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Discord](https://badgen.net/discord/members/YBey7CR9jf)](https://discord.gg/YBey7CR9jf)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-downloads. The current git `master` branch is `5.9.5`, next will be `5.9.6`.
+downloads. The current git `master` branch is `5.9.7`, next will be `5.9.8`.
 
 * Since 5.6.0, patch releases are [abi stable](doc/abi.md)
 * Even patch numbers used for releases, odd ones for git.

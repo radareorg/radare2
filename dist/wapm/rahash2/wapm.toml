@@ -1,6 +1,6 @@
 [package]
 name = "pancake/rahash2"
-version = "5.9.5"
+version = "5.9.6"
 description = "Unix-Like Reverse Engineering Framework"
 license = "LGPL3"
 readme = "README.md"
