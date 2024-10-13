@@ -715,7 +715,6 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 
 	if (r_config_get_b (core->config, "prj.files")) {
 		char *bin_file = r_core_project_name (core, prj_name);
-		const char *bin_filename = r_file_basename (bin_file);
 		char *cur_filename = r_core_cmd_str (core, "o.");
 		r_str_trim (cur_filename);
 		const char *cur_filename2 = r_file_basename (cur_filename);

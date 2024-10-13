@@ -1619,7 +1619,14 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
 	if (bf) {
-		p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+		if (r_config_get_b (core->config, "prj.files") && *r_config_get (core->config, "prj.name")) {
+			const char *buri = strstr (desc->uri, "://")? desc->uri: r_file_basename (desc->uri);
+			p->cb_printf ("pushd %s/%s\n", r_config_get (core->config, "dir.projects"), r_config_get (core->config, "prj.name"));
+			p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", buri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			p->cb_printf ("popd\n");
+		} else {
+			p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+		}
 	} else {
 		p->cb_printf ("onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
