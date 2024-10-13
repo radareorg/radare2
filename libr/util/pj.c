@@ -154,14 +154,26 @@ R_API PJ *pj_kN(PJ *j, const char *k, st64 n) {
 R_API PJ *pj_kd(PJ *j, const char *k, double d) {
 	R_RETURN_VAL_IF_FAIL (j && k, j);
 	pj_k (j, k);
-	pj_d (j, d);
+	if (isinf (d)) {
+		pj_s (j, signbit (d)? "-Infinity": "Infinity");
+	} else if (isnan (d)) {
+		pj_s (j, signbit (d)? "-NaN": "NaN");
+	} else {
+		pj_d (j, d);
+	}
 	return j;
 }
 
 R_API PJ *pj_kf(PJ *j, const char *k, float d) {
 	R_RETURN_VAL_IF_FAIL (j && k, j);
 	pj_k (j, k);
-	pj_f (j, d);
+	if (isinf (d)) {
+		pj_s (j, signbit (d)? "-Infinity": "Infinity");
+	} else if (isnan (d)) {
+		pj_s (j, signbit (d)? "-NaN": "NaN");
+	} else {
+		pj_f (j, d);
+	}
 	return j;
 }
 R_API PJ *pj_ki(PJ *j, const char *k, int i) {
