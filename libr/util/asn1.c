@@ -95,6 +95,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		R_LOG_DEBUG ("Truncated object");
 		goto out_error;
 	}
+	obj->h_len = obj->sector - buffer;
 	return obj;
 out_error:
 	free (obj);
@@ -500,7 +501,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		string = asn1str->string;
 	}
 	switch (fmtmode) {
-	case 'q':
+	case 'q': // pFaq
 		// QUIET MODE
 		asn1_printkv (sb, obj, depth, name, string);
 		if (obj->list.objects) {
@@ -515,7 +516,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 	case 'r':
 		// TODO: add comments
 		break;
-	case 'j':
+	case 'j': // pFaj
 		// return pj_drain (pj);
 		pj_o (pj);
 		pj_kn (pj, "offset", obj->offset);
@@ -535,11 +536,66 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		}
 		pj_end (pj);
 		break;
+	case 't': // pFat
+		if (root) {
+			r_strbuf_append (sb, ".\n");
+		} else {
+			for (i = 0; i < depth; i++) {
+				r_strbuf_append (sb, "│ ");
+			}
+		}
+
+		if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET) {
+			r_strbuf_append (sb, "├─┬ ");
+		} else {
+			if (obj->list.objects) {
+				r_strbuf_append (sb, "├── ");
+			} else {
+				r_strbuf_append (sb, "└── ");
+			}
+		}
+		r_strbuf_appendf (sb, " [@ 0x%lx](0x%lx bytes)", obj->offset, obj->h_len + obj->length);
+		if (R_STR_ISNOTEMPTY (string)) {
+			if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
+				asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
+				if (strlen (temp_name) > 100) {
+					r_strbuf_appendf (sb, " - %s...\n", r_str_newlen (temp_name, 100));
+				} else {
+					r_strbuf_appendf (sb, " - %s\n", temp_name);
+				}
+			} else {
+				r_strbuf_appendf (sb, " - %s\n", string);
+			}
+		} else {
+			r_strbuf_append (sb, "\n");
+		}
+
+		if (obj->list.objects) {
+			for (i = 0; i < obj->list.length; i++) {
+				r_asn1_object_tostring (obj->list.objects[i], depth + 1, sb, pj, fmtmode);
+			}
+		}
+		break;
 	case 0: // verbose default
 	default:
-		r_strbuf_appendf (sb, "%4"PFMT64d"  ", obj->offset);
-		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s", obj->length,
-			depth, obj->form? "cons": "prim", name, string);
+		if (root) {
+			r_strbuf_append (sb, "  OFFSET   LENGTH DEPTH FORM NAME                : VALUE\n");
+		}
+		r_strbuf_appendf (sb, "%#8lx", obj->offset);
+		r_strbuf_appendf (sb, " %#8lx  %4d %4s %-20s: ", obj->h_len + obj->length,
+			depth, obj->form? "cons": "prim", name);
+
+		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
+			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
+			if (strlen (temp_name) > 100) {
+				r_strbuf_appendf (sb, "%s...", r_str_newlen (temp_name, 100));
+			} else {
+				r_strbuf_appendf (sb, "%s", temp_name);
+			}
+		} else {
+			r_strbuf_appendf (sb, "%s", string);
+		}
+
 		// We may have a bit length diffrent than the length
 		if (obj->length * 8 != obj->bitlength) {
 			r_strbuf_appendf (sb, " (%u bits)\n", obj->bitlength);
