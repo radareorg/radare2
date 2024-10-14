@@ -121,7 +121,7 @@ static RCoreHelpMessage help_msg_p6 = {
 
 static RCoreHelpMessage help_msg_pF = {
 	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
-	"pFa", "[jq] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
+	"pFa", "[jqt] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFA", "[j] [len]", "decode Android Binary XML from current block",
 	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
