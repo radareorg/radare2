@@ -1,2 +1,2 @@
 #!/bin/sh
-git grep -C1 R_API | awk '/R_API/ {getline nextLine; if (nextLine !~ /R_RETURN/) print $0}'
+git grep -C1 R_API libr | awk '/R_API/ {getline nextLine; if (nextLine !~ /R_RETURN/) print $0}' | grep 'c:'
