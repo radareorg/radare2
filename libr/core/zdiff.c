@@ -37,7 +37,9 @@ static bool is_import(const char *name) {
 	return r_str_startswith (name, "imp.") || r_str_startswith (name, "sym.imp.");
 }
 
+// R2_600 - bool
 R_API int r_core_zdiff(RCore *c, RCore *c2) {
+	R_RETURN_VAL_IF_FAIL (c && c2, false);
 	if (!c || !c2) {
 		return false;
 	}
