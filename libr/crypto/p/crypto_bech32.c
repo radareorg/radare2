@@ -22,7 +22,7 @@
 
 #include <r_lib.h>
 #include <r_crypto.h>
-#include <r_util.h>
+#include <r_crypto/r_bech32.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -59,19 +59,6 @@ static const int8_t charset_rev[128] = {
 	-1, 29, -1, 24, 13, 25, 9, 8, 23, -1, 18, 22, 31, 27, 19, -1,
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
-
-static bool bech32_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->dir = direction;
-	return true;
-}
-
-static int bech32_get_key_size(RCryptoJob *cj) {
-	return 0;
-}
-
-static bool bech32_check(const char *algo) {
-	return !strcmp (algo, "bech32");
-}
 
 int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;
@@ -180,7 +167,22 @@ bech32_encoding bech32_decode (char *hrp, uint8_t *data, size_t *data_len, const
 	}
 }
 
-static bool update(RCryptoJob *cj, char *hrp, uint8_t *data, size_t *data_len, const char *in_out) {
+static bool bech32_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->dir = direction;
+	return true;
+}
+
+static int bech32_get_key_size(RCryptoJob *cj) {
+	return 0;
+}
+
+static bool bech32_check(const char *algo) {
+	return !strcmp (algo, "bech32");
+}
+
+static bool update(RCryptoJob *cj, const ut8 *buf, size_t *len) {
+	char *in_out, hrp, data;
+	size_t data_len;
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
 		bech32_encode (in_out, hrp, data, data_len, enc);
