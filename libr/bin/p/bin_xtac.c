@@ -606,7 +606,7 @@ RBinPlugin r_bin_plugin_xtac = {
 	.meta = {
 		.name = "xtac",
 		.desc = "XTAC format r2 plugin",
-		.license = "Apache License 2.0",
+		.license = "Apache-2.0",
 	},
 	.load = &load,
 	.destroy = &destroy,

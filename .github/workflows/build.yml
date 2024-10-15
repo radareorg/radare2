@@ -337,9 +337,8 @@ jobs:
         python-version: '3.10'
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
-        pip install ninja r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -385,9 +384,8 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
-        pip install ninja r2pipe wget r2env
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -439,9 +437,8 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
-        pip install ninja r2pipe wget r2env
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -490,9 +487,8 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
-        pip install ninja r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT

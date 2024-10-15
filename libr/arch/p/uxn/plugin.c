@@ -1,4 +1,4 @@
-/* radare2 - PD - Copyright 2024 - pancake */
+/* radare2 - MIT - Copyright 2024 - pancake */
 
 #include <r_arch.h>
 #include "uxndisass.inc.c"
@@ -25,7 +25,7 @@ const RArchPlugin r_arch_plugin_uxn = {
 	.meta = {
 		.name = "uxn",
 		.desc = "UXN",
-		.license = "PD",
+		.license = "MIT",
 	},
 	.bits = 32,
 	.arch = "uxn",
