@@ -648,6 +648,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		toggle = R_IO_MAP_TIE_FLG_FORTH;
 		break;
 	default:
+		r_core_cmd_help_contains (core, help_msg_om, "omt");
 		return;
 	}
 	int argc;
