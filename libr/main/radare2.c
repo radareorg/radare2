@@ -20,13 +20,25 @@ static char* get_file_in_cur_dir(const char *filepath) {
 }
 
 static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
-	char *lcj = r_core_cmd_str (core, cmd);
-	r_str_trim (lcj);
-	if (*lcj == '[') {
+	char *res = r_core_cmd_str (core, cmd);
+	r_str_trim (res);
+	if (*res == '[') {
 		pj_k (pj, name);
-		pj_raw (pj, lcj);
+		pj_raw (pj, res);
+	} else if (*res == '{') {
+		char *arr = strchr (res, '[');
+		char *l = (char *)r_str_lchr (arr, ']');
+		if (l) {
+			l++;
+			*l = 0;
+		}
+		pj_k (pj, name);
+		pj_raw (pj, arr);
+		pj_end (pj);
+	} else {
+		R_LOG_ERROR ("Invalid JSON? (%s)", res);
 	}
-	free (lcj);
+	free (res);
 }
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
@@ -145,7 +157,8 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			json_plugins (core, pj, "debug", "Ldj");
 			json_plugins (core, pj, "egg", "Lgj");
 			json_plugins (core, pj, "fs", "Lmj");
-			json_plugins (core, pj, "asm", "LAj");
+			json_plugins (core, pj, "parse", "Lpj");
+		//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed
 		}
 		pj_end (pj);
 		pj_end (pj);
