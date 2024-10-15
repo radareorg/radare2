@@ -20,6 +20,10 @@ As long as r2pipe, or webui access is done via a textual interface which require
 
 If you have any other question about how to use, build, link and distribute r2 with your own tools drop me an email (pancake@nopcode.org) or just talk to the Free Software Foundation in order to clarify that.
 
+## licenses script
+
+Check `scripts/licenses.r2.js` to check all the licenses used by your current r2 build and update the doc/licenses directory
+
 ## Plugins license
 
 The radare2 plugins expose the licensing information in the definition structure:
