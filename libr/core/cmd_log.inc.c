@@ -6,7 +6,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt);
 
 static RCoreHelpMessage help_msg_La = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
-	"La",  "", "List asm/anal pluginsh (See rasm2 -L)",
+	"La",  "", "List asm/anal plugins (See rasm2 -L)",
 	"Laq",  "", "Only list the plugin name",
 	"Laj",  "", "Full list, but in JSON format",
 	NULL
@@ -420,8 +420,12 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "Lb"
-		if (input[1] == 'j') {
-			r_bin_list (core->bin, NULL, 'j');
+		if (input[1] == 'j') { // "Lbj"
+			PJ *pj = r_core_pj_new (core);
+			r_bin_list (core->bin, pj, 'j');
+			char *s = pj_drain (pj);
+			r_cons_println (s);
+			free (s);
 		} else {
 			r_bin_list (core->bin, NULL, 0);
 		}
@@ -543,7 +547,11 @@ static int cmd_plugins(void *data, const char *input) {
 				PJ *pj = r_core_pj_new (core);
 				pj_a (pj);
 				r_list_foreach (node->options, iter, opt) {
-					pj_s (pj, opt);
+					pj_o (pj);
+					pj_ks (pj, "name", opt);
+					// TODO: parse plugin must use the meta struct
+					// pj_ks (pj, "description", opt);
+					pj_end (pj);
 				}
 				pj_end (pj);
 				char *s = pj_drain (pj);
@@ -616,7 +624,7 @@ static int cmd_plugins(void *data, const char *input) {
 		RListIter *iter;
 		RCorePlugin *cp;
 		switch (input[1]) {
-		case 'j': {
+		case 'j': { // "Lcj"
 			PJ *pj = r_core_pj_new (core);
 			if (!pj) {
 				return 1;
