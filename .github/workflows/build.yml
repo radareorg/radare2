@@ -270,7 +270,7 @@ jobs:
       run: |
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip
-        pip3 install --user meson ninja
+        sudo pip3 install --user meson ninja --break-system-packages
     - name: Compile with acr
       run: |
         sys/android-ndk-install.sh "${{ matrix.api }}" "${{ matrix.arch }}"
@@ -298,7 +298,7 @@ jobs:
       run: |
         sudo apt-get --assume-yes update
         sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip
-        pip3 install --user meson ninja
+        sudo pip3 install --user meson ninja --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
