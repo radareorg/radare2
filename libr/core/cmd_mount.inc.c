@@ -632,13 +632,21 @@ static int cmd_mount(void *data, const char *_input) {
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				r_cons_printf ("%s\n", plug->meta.name);
 			}
-		} else if (input[1] == 'j') {
+		} else if (input[1] == 'j') { // "mLj"
 			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				pj_o (pj);
 				pj_ks (pj, "name", plug->meta.name);
-				pj_ks (pj, "description", plug->meta.desc);
+				if (plug->meta.desc) {
+					pj_ks (pj, "description", plug->meta.desc);
+				}
+				if (plug->meta.license) {
+					pj_ks (pj, "license", plug->meta.license);
+				}
+				if (plug->meta.author) {
+					pj_ks (pj, "author", plug->meta.author);
+				}
 				pj_end (pj);
 			}
 			pj_end (pj);

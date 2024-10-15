@@ -1463,6 +1463,7 @@ static char *langFromHashbang(RCore *core, const char *file) {
 }
 
 R_API bool r_core_run_script(RCore *core, const char *file) {
+	R_RETURN_VAL_IF_FAIL (core && file, false);
 	bool ret = false;
 	RListIter *iter;
 	RLangPlugin *p;
@@ -1505,11 +1506,11 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		const char *dir = r_config_get (core->config, "dir.types");
 		char *out = r_anal_cparse_file (core->anal, file, dir, NULL);
 		if (out) {
+			ret = true;
 			r_cons_print (out);
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
-		ret = out;
 	} else {
 		p = r_lang_get_by_extension (core->lang, file);
 		if (p) {
@@ -1538,7 +1539,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						r_lang_use (core->lang, "pipe");
 						lang_run_file (core, core->lang, cmd);
 						free (cmd);
-						ret = 1;
+						ret = true;
 					}
 				} else if (!strcmp (ext, "exe")) {
 #if R2__WINDOWS__
@@ -1549,57 +1550,57 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "rexx")) {
 					r_lang_use (core->lang, "pipe");
 					char *cmd = cmdstr ("rexx");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "zig")) {
 					char *cmd = cmdstr ("zig run");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "d")) {
 					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "lsp")) {
 					char *cmd = cmdstr ("newlisp -n");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "go")) {
 					char *cmd = cmdstr ("go run");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "es6")) {
 					char *cmd = cmdstr ("babel-node");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "rb")) {
 					char *cmd = cmdstr ("ruby");
 					r_lang_use (core->lang, "pipe");
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "nim")) {
 					r_lang_use (core->lang, "nim");
 					lang_run_file (core, core->lang, file);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "vala")) {
 					r_lang_use (core->lang, "vala");
 					lang_run_file (core, core->lang, file);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "sh")) {
 					char *shell = r_sys_getenv ("SHELL");
 					if (!shell) {
@@ -1614,10 +1615,10 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						}
 						free (shell);
 					}
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "r2s")) {
 					r_core_visual_slides (core, file);
-					ret = 1;
+					ret = true;
 				} else if (!strcmp (ext, "qjs")) {
 					if (r_lang_use (core->lang, "qjs")) {
 						ret = r_lang_run_file (core->lang, file);
@@ -1693,11 +1694,11 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					lang_run_file (core, core->lang, cmd);
 					free (lang);
 					free (cmd);
-					ret = 1;
+					ret = true;
 				} else {
 					if (r_file_is_executable (file)) {
 						r_core_cmdf (core, "#!pipe %s%s", (*file == '/')?"":"./", file);
-						ret = 1;
+						ret = true;
 					}
 				}
 			}
@@ -6536,9 +6537,11 @@ beach:
 	return ret;
 }
 
+// R2_600 return bool
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
+	R_RETURN_VAL_IF_FAIL (core && lines, false);
 	int r, ret = true;
-	char *nl, *data, *odata;
+	char *data, *odata;
 
 	if (R_STR_ISEMPTY (lines)) {
 		return true;
@@ -6547,12 +6550,13 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
-	size_t line_count = r_str_char_count(lines, '\n');
-
+	size_t line_count = r_str_char_count (lines, '\n');
 	const bool istty = r_cons_is_tty ();
-	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_b (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && istty;
+	const bool show_progress_bar = core->print->enable_progressbar \
+		&& r_config_get_b (core->config, "scr.interactive") \
+		&& r_config_get_b (core->config, "scr.progressbar") && istty;
 	size_t current_line = 0;
-	nl = strchr (odata, '\n');
+	char *nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break_push (NULL, NULL);
 		do {

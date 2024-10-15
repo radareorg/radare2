@@ -175,7 +175,7 @@ cat .tmp/testexp/rc.r2 | grep base64
 rm -rf .tmp/testexp
 EOF
 EXPECT=<<EOF
-"e bin.str.debase64 = false"
+'e bin.str.debase64 = false
 CCu base64:IlNvbWUgb3RoZXIgdGVzdCI= @ 0x00404890
 EOF
 RUN

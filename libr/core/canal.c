@@ -3016,7 +3016,7 @@ static double midbbins(RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		bbins += bb->ninstr;
 	}
-	return (double)bbins / r_list_length (fcn->bbs);
+	return ((double)bbins) / r_list_length (fcn->bbs);
 }
 
 static int maxbbins(RAnalFunction *fcn) {
@@ -3188,7 +3188,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	{
 		int _maxbbins = maxbbins (fcn);
 		double _midbbins = midbbins (fcn);
-		double _ratbbins = _maxbbins / _midbbins;
+		double _ratbbins = _midbbins? (_maxbbins / _midbbins): 0;
 		pj_kn (pj, "maxbbins", _maxbbins);
 		pj_kd (pj, "midbbins", _midbbins);
 		pj_kd (pj, "ratbbins", _ratbbins);
@@ -3570,7 +3570,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	double b = midbbins (fcn);
 	r_cons_printf ("\nmaxbbins: %d", a);
 	r_cons_printf ("\nmidbbins: %.02f", b);
-	r_cons_printf ("\nratbbins: %.02f", ((double)a / b));
+	double ratbins = b? ((double)a / b): 0;
+	r_cons_printf ("\nratbbins: %.02f", ratbins);
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);

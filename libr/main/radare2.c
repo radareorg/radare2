@@ -20,13 +20,25 @@ static char* get_file_in_cur_dir(const char *filepath) {
 }
 
 static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
-	char *lcj = r_core_cmd_str (core, cmd);
-	r_str_trim (lcj);
-	if (*lcj == '[') {
+	char *res = r_core_cmd_str (core, cmd);
+	r_str_trim (res);
+	if (*res == '[') {
 		pj_k (pj, name);
-		pj_raw (pj, lcj);
+		pj_raw (pj, res);
+	} else if (*res == '{') {
+		// XXX this happens only when listing the rbin plugins, so must be fixed there for consistency
+		char *arr = strchr (res, '[');
+		char *l = (char *)r_str_lchr (arr, ']');
+		if (l) {
+			l++;
+			*l = 0;
+		}
+		pj_k (pj, name);
+		pj_raw (pj, arr);
+	} else {
+		R_LOG_ERROR ("Invalid JSON? (%s)", res);
 	}
-	free (lcj);
+	free (res);
 }
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
@@ -107,6 +119,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				pj_ks (pj, "destdir", "shlr/capstone");
 				pj_ks (pj, "git", "https://github.com/capstone-engine/capstone");
 				pj_ks (pj, "branch", "v5");
+				pj_ks (pj, "license", "BSD-3-Clause");
 				pj_ks (pj, "commit", "097c04d9413c59a58b00d4d1c8d5dc0ac158ffaa");
 				pj_end (pj);
 			}
@@ -115,6 +128,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				pj_ks (pj, "destdir", "shlr/sdb");
 				pj_ks (pj, "git", "https://github.com/radareorg/sdb");
 				pj_ks (pj, "branch", "master");
+				pj_ks (pj, "license", "MIT");
 				pj_ks (pj, "commit", "c4db2b24dacd25403ecb084c9b8e7840889ca236");
 				pj_end (pj);
 			}
@@ -122,6 +136,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				pj_ko (pj, "arm64v35");
 				pj_ks (pj, "destdir", "libr/arch/p/arm/v35/arch-arm64");
 				pj_ks (pj, "git", "https://github.com/radareorg/vector35-arch-arm64");
+				pj_ks (pj, "license", "Apache-2.0");
 				pj_ks (pj, "commit", "55d73c6bbb94448a5c615933179e73ac618cf876");
 				pj_ks (pj, "branch", "master");
 				pj_end (pj);
@@ -131,6 +146,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				pj_ks (pj, "destdir", "libr/arch/p/arm/v35/arch-armv7");
 				pj_ks (pj, "git", "https://github.com/radareorg/vector35-arch-armv7");
 				pj_ks (pj, "commit", "f270a6cc99644cb8e76055b6fa632b25abd26024");
+				pj_ks (pj, "license", "Apache-2.0");
 				pj_ks (pj, "branch", "master");
 				pj_end (pj);
 			}
@@ -145,7 +161,8 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			json_plugins (core, pj, "debug", "Ldj");
 			json_plugins (core, pj, "egg", "Lgj");
 			json_plugins (core, pj, "fs", "Lmj");
-			json_plugins (core, pj, "asm", "LAj");
+			json_plugins (core, pj, "parse", "Lpj");
+		//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed
 		}
 		pj_end (pj);
 		pj_end (pj);

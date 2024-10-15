@@ -196,8 +196,8 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 
 	switch (rad) {
 	case 1:
-		pfx = "\"e ";
-		sfx = "\"";
+		pfx = "'e ";
+		sfx = "";
 	/* fallthrou */
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
@@ -215,7 +215,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 				if (r_str_startswith (node->name, "dir.")) {
 					continue;
 				}
-				config_print_node (cfg, node, NULL, "\"e ", "\"", verbose);
+				config_print_node (cfg, node, NULL, "'e ", "", verbose);
 			}
 		}
 		break;

@@ -612,7 +612,7 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf ("%s\n", bx->meta.name);
 		}
-	} else if (format) {
+	} else if (pj) {
 		pj_o (pj);
 		pj_ka (pj, "bin");
 		r_list_foreach (bin->plugins, it, bp) {

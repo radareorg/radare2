@@ -794,7 +794,7 @@ static bool stdiftype(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
-	r_cons_printf ("\"tk %s=%s\"\n", k, v);
+	r_cons_printf ("'tk %s=%s\n", k, v);
 	return true;
 }
 
