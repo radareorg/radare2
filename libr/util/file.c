@@ -67,10 +67,14 @@ R_API char *r_file_new(const char *root, ...) {
 	} else {
 		r_strbuf_append (sb, root);
 	}
-	r_strbuf_append (sb, R_SYS_DIR);
+	if (!r_str_endswith (r_strbuf_get (sb), R_SYS_DIR)) {
+		r_strbuf_append (sb, R_SYS_DIR);
+	}
 	const char *arg = va_arg (ap, char *);
 	while (arg) {
-		r_strbuf_append (sb, R_SYS_DIR);
+		if (!r_str_endswith (r_strbuf_get (sb), R_SYS_DIR)) {
+			r_strbuf_append (sb, R_SYS_DIR);
+		}
 		r_strbuf_append (sb, arg);
 		arg = va_arg (ap, char *);
 	}

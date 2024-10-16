@@ -1,8 +1,10 @@
-/* radare2 - LGPL - Copyright 2022 - pancake */
+/* radare2 - LGPL - Copyright 2022-2024 - pancake */
 
 // move into file.c ?
 #include <r_util.h>
 #if 0
+Linux:
+* ~/.local/share/radare2/
 macOS:
 *  ~/Library/radare2?
 Windows
