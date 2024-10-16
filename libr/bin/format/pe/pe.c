@@ -440,10 +440,6 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(RBinPEObj *pe) {
 R_API PE_DWord PE_(va2pa)(RBinPEObj* pe, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
-	ut32 image_base = pe->nt_headers->optional_header.ImageBase;
-	if (rva > image_base) {
-		rva -= image_base;
-	}
 	for (i = 0; i < pe->num_sections; i++) {
 		section_base = pe->sections[i].vaddr;
 		section_size = pe->sections[i].vsize;
