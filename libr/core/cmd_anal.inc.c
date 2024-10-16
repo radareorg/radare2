@@ -15104,21 +15104,20 @@ static void cmd_ab(RCore *core, const char *input) {
 
 static char *anopath(RCore *core, RAnalFunction *f) {
 	R_RETURN_VAL_IF_FAIL (core && f, NULL);
-	char *cd = r_xdg_datadir ("cache");
+	const char *cd = r_config_get (core->config, "dir.cache");
 	r_sys_mkdirp (cd);
 	char *fn = r_core_cmd_str (core, "o.");
 	r_str_trim (fn);
-	r_str_replace_char (fn, '/', '-');
+	r_str_replace_char (fn, R_SYS_DIR, '_');
 	char *res = r_str_newf ("%s/ano.%s.0x%08"PFMT64x".txt", cd, fn, f->addr);
 	free (fn);
-	free (cd);
 	// eprintf ("%s\n", res);
 	return res;
 }
 
 static void anorm(RCore *core) {
 	R_RETURN_IF_FAIL (core);
-	char *cd = r_xdg_datadir ("cache");
+	const char *cd = r_config_get (core->config, "dir.cache");
 	RList *files = r_sys_dir (cd);
 	if (files) {
 		char *fn = r_core_cmd_str (core, "o.");
@@ -15137,7 +15136,6 @@ static void anorm(RCore *core) {
 		free (fn);
 		free (pfx);
 	}
-	free (cd);
 }
 
 static void cmd_ano(RCore *core, const char *input) {
@@ -15176,8 +15174,10 @@ static void cmd_ano(RCore *core, const char *input) {
 					char *s = r_file_slurp (f, NULL);
 					if (R_STR_ISNOTEMPTY (s)) {
 						char *e = sdb_encode ((const ut8*)s, strlen (s));
-						r_cons_printf ("ano=base64:%s @ 0x%08"PFMT64x"\n", e, fcn->addr);
-						free (e);
+						if (R_LIKELY (e)) {
+							r_cons_printf ("ano=base64:%s @ 0x%08"PFMT64x"\n", e, fcn->addr);
+							free (e);
+						}
 					}
 					free (s);
 				}

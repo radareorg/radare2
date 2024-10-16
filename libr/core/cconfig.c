@@ -1384,6 +1384,14 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dir_cache(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
+		r_sys_setenv ("XDG_CACHE_HOME", node->value);
+	}
+	return true;
+}
+
 static bool cb_dir_projects(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
@@ -3992,6 +4000,9 @@ R_API int r_core_config_init(RCore *core) {
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "path of the tmp directory");
 	free (p);
+	char *cd = r_xdg_cachedir ("ano");
+	SETCB ("dir.cache", cd, &cb_dir_cache, "override default cache directory (XDG_CACHE_HOME)");
+	free (cd);
 	char *prjdir = r_xdg_datadir ("projects");
 	SETCB ("dir.projects", prjdir, &cb_dir_projects, "default path for projects");
 	free (prjdir);
