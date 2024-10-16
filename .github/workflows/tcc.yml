@@ -9,7 +9,7 @@ on:
 jobs:
   newabi:
     name: ubuntu-tcc-newabi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout TinyCC repository
       run: |
@@ -52,7 +52,7 @@ jobs:
         make -j -C test
   build:
     name: ubuntu-tcc-test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout TinyCC repository
       run: |
@@ -95,7 +95,7 @@ jobs:
         make -j -C test
   nodbg:
     name: ubuntu-tcc-nodbg
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout TinyCC repository
       run: |
@@ -135,7 +135,7 @@ jobs:
         make -j -C test
   r2pm:
     name: r2pm-tcc
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout TinyCC repository
       run: |
@@ -177,7 +177,7 @@ jobs:
 
   syslibs:
     name: ubuntu-tcc-syslibs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout TinyCC repository
       run: |
