@@ -1048,7 +1048,7 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	if (core && node && core->parser && core->parser->parsers) {
 		r_config_node_purge_options (node);
 		r_list_foreach (core->parser->parsers, iter, parser) {
-			SETOPTIONS (node, parser->name, NULL);
+			SETOPTIONS (node, parser->meta.name, NULL);
 		}
 	}
 }

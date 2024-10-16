@@ -31,7 +31,12 @@ static RBreakpointArch r_bp_plugin_arm_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_arm = {
-	.name = "arm",
+	.meta = {
+		.name = "arm",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "arm",
 	.nbps = 10,
 	.bps = r_bp_plugin_arm_bps,

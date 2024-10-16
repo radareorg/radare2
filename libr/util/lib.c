@@ -275,12 +275,12 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	return -1;
 }
 
-static bool already_loaded(RLib *lib, const char *file) {
-	const char *fileName = r_str_rstr (file, R_SYS_DIR);
-	if (fileName) {
+static bool already_loaded(RLib *lib, const char *name) {
+	if (name) {
 		bool found;
-		RLibPlugin *p = ht_pp_find (lib->plugins_ht, fileName + 1, &found);
+		RLibPlugin *p = ht_pp_find (lib->plugins_ht, name, &found);
 		if (found && p) {
+			R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", p->file);
 			return true;
 		}
 	}
@@ -294,32 +294,33 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return -1;
 	}
 
-	if (already_loaded (lib, file)) {
-		R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", file);
-		return -1;
-	}
-
-	void *handler = r_lib_dl_open (file);
-	if (!handler) {
+	void *handle = r_lib_dl_open (file);
+	if (!handle) {
 		R_LOG_DEBUG ("Cannot open library: '%s'", file);
 		return -1;
 	}
 
-	RLibStructFunc strf = (RLibStructFunc) r_lib_dl_sym (handler, lib->symnamefunc);
+	RLibStructFunc strf = (RLibStructFunc)r_lib_dl_sym (handle, lib->symnamefunc);
 	RLibStruct *stru = NULL;
 	if (strf) {
 		stru = strf ();
 	}
 	if (!stru) {
-		stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
+		stru = (RLibStruct *)r_lib_dl_sym (handle, lib->symname);
 	}
 	if (!stru) {
 		R_LOG_DEBUG ("Cannot find symbol '%s' in library '%s'", lib->symname, file);
-		r_lib_dl_close (handler);
+		r_lib_dl_close (handle);
 		return -1;
 	}
 
-	int res = r_lib_open_ptr (lib, file, handler, stru);
+	RPluginMeta *meta = (RPluginMeta *)(stru->data);
+	if (already_loaded (lib, meta->name)) {
+		r_lib_dl_close (handle);
+		return -1;
+	}
+
+	int res = r_lib_open_ptr (lib, file, handle, stru);
 	if (strf) {
 		free (stru);
 	}
@@ -338,7 +339,7 @@ char *major_minor(const char *s) {
 	return a;
 }
 
-R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
+R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct *stru) {
 	R_RETURN_VAL_IF_FAIL (lib && file && stru, -1);
 	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
@@ -367,7 +368,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup (file);
-	p->dl_handler = handler;
+	p->dl_handler = handle;
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
@@ -376,13 +377,15 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	if (ret == -1) {
 		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
 		free (p->file);
+		if (p->name) {
+			free (p->name);
+		}
 		free (p);
-		r_lib_dl_close (handler);
+		r_lib_dl_close (handle);
 	} else {
 		r_list_append (lib->plugins, p);
-		const char *fileName = r_str_rstr (file, R_SYS_DIR);
-		if (fileName) {
-			ht_pp_insert (lib->plugins_ht, strdup (fileName + 1), p);
+		if (p->name) {
+			ht_pp_insert (lib->plugins_ht, strdup (p->name), p);
 		}
 	}
 	return ret;
@@ -458,7 +461,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 	return true;
 }
 
-#define LibCB RLibLifeCycleCallback
+#define LibCB RLibCallback
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, LibCB cb, LibCB dt, void *user) {
 	R_RETURN_VAL_IF_FAIL (lib && desc, false);
 	// TODO r2_590 resolve using lib->handlers_ht
