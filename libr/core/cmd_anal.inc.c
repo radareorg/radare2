@@ -15108,7 +15108,7 @@ static char *anopath(RCore *core, RAnalFunction *f) {
 	r_sys_mkdirp (cd);
 	char *fn = r_core_cmd_str (core, "o.");
 	r_str_trim (fn);
-	r_str_replace_char (fn, R_SYS_DIR, '_');
+	r_str_replace_char (fn, *R_SYS_DIR, '_');
 	char *res = r_str_newf ("%s/ano.%s.0x%08"PFMT64x".txt", cd, fn, f->addr);
 	free (fn);
 	// eprintf ("%s\n", res);
