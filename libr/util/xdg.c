@@ -24,16 +24,16 @@ static char *xdg(const char *env, const char *a, const char *s) {
 }
 
 // XDG_CONFIG_HOME	User-specific configuration files	~/.var/app/<app-id>/config
-R_API char *r_xdg_configdir(const char *s) {
+R_API char *r_xdg_configdir(R_NULLABLE const char *s) {
 	return xdg ("XDG_CONFIG_HOME", ".config", s);
 }
 
 // XDG_DATA_HOME	User-specific data	~/.var/app/<app-id>/data
-R_API char *r_xdg_datadir(const char *s) {
+R_API char *r_xdg_datadir(R_NULLABLE const char *s) {
 	return xdg ("XDG_DATA_HOME", ".local" R_SYS_DIR "share", s);
 }
 
 // XDG_CACHE_HOME	Non-essential user-specific data	~/.var/app/<app-id>/cache
-R_API char *r_xdg_cachedir(const char *s) {
+R_API char *r_xdg_cachedir(R_NULLABLE const char *s) {
 	return xdg ("XDG_CACHE_HOME", ".cache", s);
 }
