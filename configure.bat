@@ -1,7 +1,7 @@
 @echo off
 REM call preconfigure.bat
 
-set MESON_FLAGS=-Dsdb_cgen=false
+set MESON_FLAGS=-Dsdb_cgen=false -Dc_std=c11
 
 if "%*" == "asan" (
   set MESON_FLAGS=%MESON_FLAGS% -Dwasan=true

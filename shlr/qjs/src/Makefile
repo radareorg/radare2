@@ -100,7 +100,7 @@ test262-fast: $(QJS)
 	$(RUN262) -m -c test262.conf -c test262-fast.conf -a
 
 test262-update: $(QJS)
-	$(RUN262) -u -c test262.conf -a
+	$(RUN262) -u -c test262.conf -a -t 1
 
 test262-check: $(QJS)
 	$(RUN262) -m -c test262.conf -E -a

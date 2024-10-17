@@ -87,10 +87,6 @@ enum {
     /* any larger tag is FLOAT64 if JS_NAN_BOXING */
 };
 
-typedef struct JSRefCountHeader {
-    int ref_count;
-} JSRefCountHeader;
-
 #define JS_FLOAT64_NAN NAN
 #define JSValueConst JSValue /* For backwards compatibility. */
 
@@ -291,6 +287,11 @@ typedef struct JSMallocFunctions {
     size_t (*js_malloc_usable_size)(const void *ptr);
 } JSMallocFunctions;
 
+// Finalizers run in LIFO order at the very end of JS_FreeRuntime.
+// Intended for cleanup of associated resources; the runtime itself
+// is no longer usable.
+typedef void JSRuntimeFinalizer(JSRuntime *rt, void *arg);
+
 typedef struct JSGCObjectHeader JSGCObjectHeader;
 
 JS_EXTERN JSRuntime *JS_NewRuntime(void);
@@ -310,6 +311,8 @@ JS_EXTERN JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque);
 JS_EXTERN void JS_FreeRuntime(JSRuntime *rt);
 JS_EXTERN void *JS_GetRuntimeOpaque(JSRuntime *rt);
 JS_EXTERN void JS_SetRuntimeOpaque(JSRuntime *rt, void *opaque);
+JS_EXTERN int JS_AddRuntimeFinalizer(JSRuntime *rt,
+                                     JSRuntimeFinalizer *finalizer, void *arg);
 typedef void JS_MarkFunc(JSRuntime *rt, JSGCObjectHeader *gp);
 JS_EXTERN void JS_MarkValue(JSRuntime *rt, JSValue val, JS_MarkFunc *mark_func);
 JS_EXTERN void JS_RunGC(JSRuntime *rt);
@@ -589,46 +592,10 @@ JS_EXTERN JSValue __js_printf_like(2, 3) JS_ThrowReferenceError(JSContext *ctx, 
 JS_EXTERN JSValue __js_printf_like(2, 3) JS_ThrowRangeError(JSContext *ctx, const char *fmt, ...);
 JS_EXTERN JSValue __js_printf_like(2, 3) JS_ThrowInternalError(JSContext *ctx, const char *fmt, ...);
 JS_EXTERN JSValue JS_ThrowOutOfMemory(JSContext *ctx);
-
-JS_EXTERN void __JS_FreeValue(JSContext *ctx, JSValue v);
-static inline void JS_FreeValue(JSContext *ctx, JSValue v)
-{
-    if (JS_VALUE_HAS_REF_COUNT(v)) {
-        JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
-        if (--p->ref_count <= 0) {
-            __JS_FreeValue(ctx, v);
-        }
-    }
-}
-JS_EXTERN void __JS_FreeValueRT(JSRuntime *rt, JSValue v);
-static inline void JS_FreeValueRT(JSRuntime *rt, JSValue v)
-{
-    if (JS_VALUE_HAS_REF_COUNT(v)) {
-        JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
-        if (--p->ref_count <= 0) {
-            __JS_FreeValueRT(rt, v);
-        }
-    }
-}
-
-static inline JSValue JS_DupValue(JSContext *ctx, JSValue v)
-{
-    if (JS_VALUE_HAS_REF_COUNT(v)) {
-        JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
-        p->ref_count++;
-    }
-    return v;
-}
-
-static inline JSValue JS_DupValueRT(JSRuntime *rt, JSValue v)
-{
-    if (JS_VALUE_HAS_REF_COUNT(v)) {
-        JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
-        p->ref_count++;
-    }
-    return v;
-}
-
+JS_EXTERN void JS_FreeValue(JSContext *ctx, JSValue v);
+JS_EXTERN void JS_FreeValueRT(JSRuntime *rt, JSValue v);
+JS_EXTERN JSValue JS_DupValue(JSContext *ctx, JSValue v);
+JS_EXTERN JSValue JS_DupValueRT(JSRuntime *rt, JSValue v);
 JS_EXTERN int JS_ToBool(JSContext *ctx, JSValue val); /* return -1 for JS_EXCEPTION */
 JS_EXTERN int JS_ToInt32(JSContext *ctx, int32_t *pres, JSValue val);
 static inline int JS_ToUint32(JSContext *ctx, uint32_t *pres, JSValue val)
