@@ -1,0 +1,25 @@
+struct.Foo.@.pack=2
+struct.Foo.@.align=4
+struct.Foo.a=int
+struct.Foo.name=char,0,20
+struct.Foo.var=float
+struct.Foo.var.@.author=pancake
+struct.Foo=a,name,var
+Foo=struct
+func.foo.age=double
+func.foo.name=char *
+func.foo.return=int
+func.foo.@.noreturn=true
+func.foo=age,name
+foo=func
+struct.Bar.name=ut64
+struct.Bar.ptr=void *
+struct.Bar=name,ptr
+Bar=struct
+enum.Enum.@.type=ut64
+enum.Enum.FOO=1
+enum.Enum.BAR=2
+enum.Enum.COW=3
+enum.Enum.LOW=-1
+Enum=enum
+
