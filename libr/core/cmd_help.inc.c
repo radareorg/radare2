@@ -1631,7 +1631,7 @@ static RCoreHelpMessage help_msg_h = {
 	NULL
 };
 
-static int cmd_head(void *data, const char *_input) { // "head"
+static void cmd_head(void *data, const char *_input) { // "head"
 	RCore *core = (RCore *)data;
 	int lines = 5;
 	char *input = strdup (_input);
@@ -1667,18 +1667,18 @@ static int cmd_head(void *data, const char *_input) { // "head"
 		break;
 	}
 	free (input);
-	return 0;
 }
 
 static int cmd_h(void *data, const char *_input) { // "head"
 	if (r_str_startswith (_input, "ead")) {
-		return cmd_head (data, _input);
+		cmd_head (data, _input);
+		return 0;
 	}
 	if (r_str_startswith (_input, "elp")) {
 		r_cons_printf ("%s\n", help_message);
 		return 0;
 	}
 	r_core_cmd_help ((RCore*)data, help_msg_h);
-	return -1; // invalid command
+	return 0; // invalid command
 }
 #endif
