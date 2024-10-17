@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
-#include <r_asm.h>
 #include <r_debug.h>
 #undef R_API
 #define R_API static inline
@@ -232,7 +231,7 @@ RDebugPlugin r_debug_plugin_bf = {
 		.name = "bf",
 		.author = "pancake",
 		.desc = "BF debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "bf",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

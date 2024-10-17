@@ -676,7 +676,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 		.name = "gdb",
 		.author = "pancake, defragger",
 		.desc = "gdb debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	/* TODO: Add support for more architectures here */
 	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",

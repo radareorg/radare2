@@ -72,7 +72,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			}
 			free (p);
 		} else {
-			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", plugin->meta.name); //dbg->current->plugin.meta.name);
+			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", plugin->meta.name);
 		}
 	}
 	return dbg->current;
@@ -80,10 +80,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
-	char spaces2[16];
 	char spaces[16];
-	memset (spaces, ' ', 15);
-	spaces[15] = 0;
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = dbg->pj;
@@ -99,9 +96,6 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 		int sp = 8 - strlen (meta.name);
 		memset (spaces, ' ', sp);
 		spaces[sp] = 0;
-		int sp2 = 6 - strlen (meta.license);
-		memset (spaces2, ' ', sp2);
-		spaces2[sp2] = 0;
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", meta.name);
 		} else if (mode == 'j') {
@@ -115,11 +109,9 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 			}
 			pj_end (pj);
 		} else {
-			dbg->cb_printf ("%s %s %s%s %s%s\n",
+			dbg->cb_printf ("%s %s %s%s\n",
 				(ds == dbg->current)? "o": "-",
-				meta.name,
-				spaces, meta.license,
-				spaces2, meta.desc);
+				meta.name, spaces, meta.desc);
 		}
 		spaces[sp] = ' ';
 	}

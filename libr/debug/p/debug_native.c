@@ -1654,7 +1654,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.meta = {
 		.name = "native",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.desc = "native debug plugin",
 	},
 #if __i386__

@@ -330,7 +330,7 @@ RDebugPlugin r_debug_plugin_winkd = {
 		.name = "winkd",
 		.author = "The Lemon Man",
 		.desc = "winkd debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
