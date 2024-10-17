@@ -670,6 +670,7 @@ static RCoreHelpMessage help_msg_afl = {
 	"afl.", "", "display function in current offset (see afi.)",
 	"afl,", " [query]", "list functions in table format",
 	"afl+", "", "display sum all function sizes",
+	"afl*", "", "reconstruct all functions in r2 commands",
 	"afl=", "", "display ascii-art bars with function ranges",
 	"afla", "", "reverse call order (useful for afna and noret, also see afba)",
 	"aflc", "", "count of functions",
@@ -677,6 +678,7 @@ static RCoreHelpMessage help_msg_afl = {
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "[?]", "list functions in makefile style (af@@=`aflm~0x`)",
+	"afln", "[?]", "list all function names",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
@@ -5522,6 +5524,7 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case 'm': // "aflm"
+		case 'n': // "afln"
 		case '+': // "afl+"
 		case '=': // "afl="
 		case '*': // "afl*"
