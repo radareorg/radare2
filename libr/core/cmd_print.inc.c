@@ -121,7 +121,7 @@ static RCoreHelpMessage help_msg_p6 = {
 
 static RCoreHelpMessage help_msg_pF = {
 	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
-	"pFa", "[jq] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
+	"pFa", "[jqt] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFA", "[j] [len]", "decode Android Binary XML from current block",
 	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
@@ -1491,6 +1491,11 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	case 'a': // "pFa" // DER/ASN1 encoding
 		{
 			int fmt = input[1];
+
+			if (fmt == 't' && !r_config_get_b (core->config, "scr.utf8")) {
+				R_LOG_ERROR ("Tree view requires utf8 support");
+				break;
+			}
 			RAsn1 *a = r_asn1_new (data, size, fmt);
 			// RASN1Object *asn1 = r_asn1_object_parse (data, data, size, fmt);
 			if (a) {
