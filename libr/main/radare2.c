@@ -879,7 +879,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'm':
 			r_config_set_i (r->config, "io.va", 1);
 			mr.mapaddr = r_num_math (r->num, opt.arg);
-			mr.s_seek = strdup (opt.arg);
 			break;
 		case 'M':
 			r_config_set_b (r->config, "bin.demangle", false);
@@ -1692,6 +1691,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
 #endif
+		if (mr.mapaddr != r->offset) {
+			mr.s_seek = r_str_newf ("0x%08"PFMT64x, mr.mapaddr);
+		}
 		if (mr.s_seek) {
 			mr.seek = r_num_math (r->num, mr.s_seek);
 			if (mr.seek != UT64_MAX) {
