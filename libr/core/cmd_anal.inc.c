@@ -13097,7 +13097,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_abt);
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_abt);
+		r_core_return_invalid_command (core, "abt", input[0]);
 		break;
 	}
 }
@@ -13227,24 +13227,23 @@ static bool is_valid_code(RCore *core, ut64 addr, int n) {
 	int i;
 	for (i = 0; i < n; i++) {
 		RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
-		if (op) {
-			switch (op->type & R_ANAL_OP_TYPE_MASK) {
-			case R_ANAL_OP_TYPE_NULL:
-			case R_ANAL_OP_TYPE_TRAP:
-			case R_ANAL_OP_TYPE_ILL:
-			case R_ANAL_OP_TYPE_UNK:
-				r_anal_op_free (op);
-				return false;
-			}
-			if (op->size < 1) {
-				r_anal_op_free (op);
-				return false;
-			}
-			addr += op->size;
-			r_anal_op_free (op);
-		} else {
+		if (R_UNLIKELY (!op)) {
 			return false;
 		}
+		switch (op->type & R_ANAL_OP_TYPE_MASK) {
+		case R_ANAL_OP_TYPE_NULL:
+		case R_ANAL_OP_TYPE_TRAP:
+		case R_ANAL_OP_TYPE_ILL:
+		case R_ANAL_OP_TYPE_UNK:
+			r_anal_op_free (op);
+			return false;
+		}
+		if (op->size < 1) {
+			r_anal_op_free (op);
+			return false;
+		}
+		addr += op->size;
+		r_anal_op_free (op);
 	}
 	return true;
 }
@@ -13267,10 +13266,8 @@ static bool is_executable(RCore *core, ut64 addr) {
 		}
 	}
 	RIOMap *map = r_io_map_get_at (core->io, addr);
-	if (map) {
-		if (map->perm & R_PERM_X) {
-			return true;
-		}
+	if (map && map->perm & R_PERM_X) {
+		return true;
 	}
 	return false;
 }
@@ -14217,7 +14214,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_return_invalid_command (core, "aa", input[0]);
 		break;
 	}
-
 	return true;
 }
 
@@ -14300,18 +14296,22 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	case 'r': // "avrr"
 		r_anal_rtti_recover_all (core->anal);
 		break;
-	case 'D': { // "avrD"
-		char *name = r_str_trim_dup (input + 1);
-		char *demangled = r_anal_rtti_demangle_class_name (core->anal, name);
-		free (name);
-		if (demangled) {
-			r_cons_println (demangled);
-			free (demangled);
+	case 'D': // "avrD"
+		{
+			char *name = r_str_trim_dup (input + 1);
+			char *demangled = r_anal_rtti_demangle_class_name (core->anal, name);
+			free (name);
+			if (demangled) {
+				r_cons_println (demangled);
+				free (demangled);
+			}
 		}
 		break;
-	}
-	default :
+	case '?':
 		r_core_cmd_help (core, help_msg_av);
+		break;
+	default:
+		r_core_return_invalid_command (core, "avr", input[0]);
 		break;
 	}
 }
@@ -14340,34 +14340,40 @@ static void cmd_avg(RCore *core, const char* input) {
 	case '\0': // "avg"
 		r_core_cmd0 (core, "fs+globals;f;fs-");
 		break;
-	default :
+	case '?':
 		r_core_cmd_help (core, help_msg_avg);
+		break;
+	default:
+		r_core_return_invalid_command (core, "avg", input[0]);
 		break;
 	}
 }
 
 static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	switch (input[0]) {
-	case 'g':
-		cmd_avg (core, input + 1);
-		break;
 	case '\0': // "av"
 	case '*': // "av*"
 	case 'j': // "avj"
 		r_anal_list_vtables (core->anal, input[0]);
 		break;
+	case 'g': // "avg"
+		cmd_avg (core, input + 1);
+		break;
 	case 'r': // "avr"
 		cmd_anal_rtti (core, input + 1);
 		break;
-	default :
+	case '?': // "av?"
 		r_core_cmd_help (core, help_msg_av);
+		break;
+	default:
+		r_core_return_invalid_command (core, "av", input[0]);
 		break;
 	}
 }
 
 static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
-	char c = input[0];
+	const char c = input[0];
 	switch (c) {
 	case ' ': // "acm"
 	case '-': // "acm-"
@@ -14434,8 +14440,11 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		free (cstr);
 		break;
 	}
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_ac);
+		break;
+	default:
+		r_core_return_invalid_command (core, "acm", input[0]);
 		break;
 	}
 
@@ -14471,8 +14480,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 			*end = '\0';
 			end++;
 		}
-
-		if (!end || *end == '\0') {
+		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
 				r_anal_class_list_bases (core->anal, cstr);
 			} else /*if (c == '-')*/ {
@@ -14707,8 +14715,11 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		r_core_graph_print (core, graph, -1, false, input + 1);
 		r_graph_free (graph);
 	} break;
-	default: // "ac?"
+	case '?': // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ac", input[0]);
 		break;
 	}
 }
@@ -14872,7 +14883,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	if (is_aCer) {
 		char *u = r_base64_encode_dyn (s, -1);
 		if (u) {
-			r_cons_printf ("CCu base64:%s\n", u);
+			r_cons_printf ("'CCu base64:%s\n", u);
 			free (u);
 		}
 	} else {
@@ -15001,6 +15012,9 @@ static int cmd_apt(RCore *core, const char *input) {
 			}
 		}
 		break;
+	default:
+		r_core_return_invalid_command (core, "apt", input[0]);
+		break;
 	}
 	return 0;
 }
@@ -15112,9 +15126,9 @@ static char *anopath(RCore *core, RAnalFunction *f) {
 	char *fn = r_core_cmd_str (core, "o.");
 	r_str_trim (fn);
 	r_str_replace_char (fn, *R_SYS_DIR, '_');
-	char *res = r_str_newf ("%s/ano.%s.0x%08"PFMT64x".txt", cd, fn, f->addr);
+	char *res = r_str_newf ("%s%sano.%s.0x%08"PFMT64x".txt",
+		cd, R_SYS_DIR, fn, f->addr);
 	free (fn);
-	// eprintf ("%s\n", res);
 	return res;
 }
 
@@ -15128,9 +15142,9 @@ static void anorm(RCore *core) {
 		RListIter *iter;
 		char *pfx = r_str_newf ("ano.%s.0x", fn);
 		r_list_foreach (files, iter, file) {
-			if (r_str_startswith (file, pfx)) {
-				if (r_str_endswith (file, ".txt")) {
-					char *ffn = r_str_newf ("%s/%s", cd, file);
+			if (r_str_startswith (file, pfx) && r_str_endswith (file, ".txt")) {
+				char *ffn = r_str_newf ("%s/%s", cd, file);
+				if (R_LIKELY (ffn)) {
 					r_file_rm (ffn);
 					free (ffn);
 				}
@@ -15279,8 +15293,11 @@ static void cmd_ano(RCore *core, const char *input) {
 			}
 		}
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_ano);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ano", input[2]);
 		break;
 	}
 }
@@ -15290,14 +15307,13 @@ static void cmd_ap(RCore *core, const char *input) {
 	RSearchKeyword *k;
 	RList *list;
 	switch (input[1]) {
-	case 'l': // "apl"
-		// list function preludes
+	case 'l': // "apl" - list function preludes
 		list = r_anal_preludes (core->anal);
 		r_list_foreach (list, iter, k) {
 			char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
 			char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
 			// XXX must add an align field
-			r_cons_printf ("ap+ %s %s\n", hex0, hex1);
+			r_cons_printf ("'ap+ %s %s\n", hex0, hex1);
 			free (hex0);
 			free (hex1);
 		}
@@ -15310,8 +15326,10 @@ static void cmd_ap(RCore *core, const char *input) {
 	case 0:
 		match_prelude (core, r_str_trim_head_ro (input));
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_ap);
+	default:
+		r_core_return_invalid_command (core, "ap", input[1]);
 		break;
 	}
 }
@@ -15321,6 +15339,9 @@ static int cmd_anal(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
+	case 0: // "a"
+		r_core_cmd_call (core, "aai");
+		break;
 	case 'p': // "ap"
 		cmd_ap (core, input);
 		break;
@@ -15331,7 +15352,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		ut8 *buf = malloc (strlen (input) + 1);
 		if (buf) {
-			int len = r_hex_str2bin (input + 1, buf);
+			const int len = r_hex_str2bin (input + 1, buf);
 			if (len > 0) {
 				core_anal_bytes (core, buf, len, 0, input[1]);
 			}
@@ -15363,9 +15384,12 @@ static int cmd_anal(void *data, const char *input) {
 		case 0:
 			ranal2_list (core, NULL, input[1]);
 			break;
-		default:
+		case '?':
 			// help
 			r_core_cmd_help (core, help_msg_La);
+			break;
+		default:
+			r_core_return_invalid_command (core, "aL", input[1]);
 			break;
 		}
 		break;
@@ -15484,21 +15508,21 @@ static int cmd_anal(void *data, const char *input) {
 			cmd_anal_trampoline (core, input + 2);
 			break;
 		case '.': // "ad."
-		case ' ': { // "ad" // asm describe maybe? see aod instead
-			const int default_depth = 1;
-			const char *p;
-			int a, b;
-			a = r_num_math (core->num, input + 2);
-			p = strchr (input + 2, ' ');
-			b = p? r_num_math (core->num, p + 1): default_depth;
-			if (a < 1) {
-				a = 1;
+		case ' ': // "ad" // asm describe maybe? see aod instead
+			{
+				const int default_depth = 1;
+				int a = (int)r_num_math (core->num, input + 2);
+				const char *p = strchr (input + 2, ' ');
+				int b = p? r_num_math (core->num, p + 1): default_depth;
+				if (a < 1) {
+					a = 1;
+				}
+				if (b < 1) {
+					b = 1;
+				}
+				r_core_anal_data (core, core->offset, a, b, 0);
 			}
-			if (b < 1) {
-				b = 1;
-			}
-			r_core_anal_data (core, core->offset, a, b, 0);
-		} break;
+			break;
 		case 'k': // "adk"
 			r = r_anal_data_kind (core->anal, core->offset, core->block, core->blocksize);
 			r_cons_println (r);
@@ -15512,8 +15536,11 @@ static int cmd_anal(void *data, const char *input) {
 		case '8': // "ad8"
 			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1, 8);
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_ad);
+			break;
+		default:
+			r_core_return_invalid_command (core, "ad", input[1]);
 			break;
 		}
 		break;
@@ -15536,9 +15563,6 @@ static int cmd_anal(void *data, const char *input) {
 	case 'j': // "aj"
 		r_core_cmd_call (core, "aflj");
 		break;
-	case 0: // "a"
-		r_core_cmd_call (core, "aai");
-		break;
 	case '?':
 		if (input[1] == 'j') {
 			r_cons_cmd_help_json (help_msg_a);
@@ -15547,9 +15571,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	default:
-		// r_core_cmd_help (core, help_msg_a);
-		R_LOG_ERROR ("Invalid `a` subcommand '%c', try `a?`", *input);
-		r_core_return_value (core, 1);
+		r_core_return_invalid_command (core, "a", *input);
 		break;
 	}
 	if (tbs != core->blocksize) {
