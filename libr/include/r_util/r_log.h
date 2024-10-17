@@ -27,13 +27,18 @@ extern "C" {
 #define R_LOG_LEVEL_DEFAULT R_LOG_LEVEL_TODO
 
 typedef enum r_log_level {
-	R_LOG_LEVEL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOG_LEVEL_FATAL = 0, // May this trap?
 	R_LOG_LEVEL_ERROR = 1,
 	R_LOG_LEVEL_INFO = 2,
 	R_LOG_LEVEL_WARN = 3,
 	R_LOG_LEVEL_TODO = 4,
 	R_LOG_LEVEL_DEBUG = 5,
+#if R2_600
+	R_LOG_LEVEL_TRACE = 6,
+	R_LOG_LEVEL_LAST = 7,
+#else
 	R_LOG_LEVEL_LAST = 6,
+#endif
 } RLogLevel;
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
