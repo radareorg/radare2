@@ -41,10 +41,9 @@ R_API R_MUSTUSE const RFSType* r_fs_type_index(int i) {
 }
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
-	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
-	if (fs) {
+	if (R_LIKELY (fs)) {
 		fs->view = R_FS_VIEW_NORMAL;
 		fs->roots = r_list_new ();
 		if (!fs->roots) {
