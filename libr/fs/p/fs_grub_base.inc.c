@@ -49,12 +49,10 @@ static int dirhook(const char *filename, const struct grub_dirhook_info *info, v
 }
 
 static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
-	GrubFS *gfs;
-
-	if (!root)
+	if (!root) {
 		return NULL;
-
-	gfs = root->ptr;
+	}
+	GrubFS *gfs = root->ptr;
 	list = r_list_new ();
 	//gfs->file->device->data = &root->iob;
 	grubfs_bind_io (&root->iob, root->delta);
@@ -77,6 +75,7 @@ static bool FSP(_mount)(RFSRoot *root) {
 }
 
 static void FSP(_umount)(RFSRoot *root) {
+	R_RETURN_IF_FAIL (root);
 	grubfs_free (root->ptr);
 	root->ptr = NULL;
 }

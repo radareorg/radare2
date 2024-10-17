@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2023 pancake, defragger */
+/* radare - Copyright 2014-2024 pancake, defragger */
 
 #define R_LOG_ORIGIN "a2f"
 
@@ -12,24 +12,22 @@
 
 static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 	r_strf_buffer (64);
-	ut64 block_start, block_end;
 	ut64 nearest_start = UT64_MAX;
 	const char *s = sdb_const_get (db, key, NULL);
-	const char *next = NULL;
-	const char *ptr = NULL;
 	if (!s) {
 		return UT64_MAX;
 	}
-	ptr = s;
+	const char *ptr = s;
+	const char *next = NULL;
 	do {
 		next = sdb_const_anext (ptr);
-		block_start = sdb_atoi (ptr);
+		const ut64 block_start = sdb_atoi (ptr);
 
 		if (start == block_start) { // case 5
 			return start;
 		}
 
-		block_end = sdb_num_get (db, Fbb (block_start), NULL);
+		const ut64 block_end = sdb_num_get (db, Fbb (block_start), NULL);
 		if (block_end) {
 			if (start > block_start && start < block_end) { // case 2
 				// start is inside the block
@@ -150,12 +148,12 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		while (!block_end && cur < maxfcnsize) {
 			op = r_core_anal_op (core, addr + cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
-				R_LOG_DEBUG ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
+				R_LOG_DEBUG ("Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
 			if (op->mnemonic[0] == '?') {
-				R_LOG_DEBUG ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
+				R_LOG_DEBUG ("Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
@@ -239,7 +237,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				break;
 			case R_ANAL_OP_TYPE_UNK:
 			case R_ANAL_OP_TYPE_ILL:
-				R_LOG_DEBUG ("a2f: Invalid instruction");
+				R_LOG_DEBUG ("Invalid instruction");
 				block_end = true;
 				break;
 			default:
@@ -393,23 +391,23 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	return true;
 }
 
+static RCoreHelpMessage help_msg_a2f = {
+	"Usage:", "a2f", "Experimental function analysis",
+	"a2f", "", "like af, but with an experimental engine. see anal.a2f",
+	NULL
+};
+
 static int r_cmd_anal_call(void *user, const char *input) {
 	RCore *core = (RCore *) user;
-	static RCoreHelpMessage help_msg_a2f = {
-		"Usage:", "a2f", "Experimental function analysis",
-		"a2f", "", "like af, but with an experimental engine. see anal.a2f",
-		NULL
-	};
-	if (!strncmp (input, "a2", 2)) {
+	if (r_str_startswith (input, "a2")) {
 		switch (input[2]) {
 		case 'f':
 			if (input[3] == '?') {
 				r_core_cmd_help (core, help_msg_a2f);
 				return true;
 			}
-
 			if (!analyzeFunction (core, core->offset)) {
-				R_LOG_DEBUG ("a2f: Failed to analyze function at 0x%08"PFMT64x, core->offset);
+				R_LOG_DEBUG ("Failed to analyze function at 0x%08"PFMT64x, core->offset);
 			}
 			break;
 		default:
