@@ -1567,13 +1567,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 			}
-			if (mr.mapaddr) { // XXX use UT64_MAX?
-				if (r_config_get_b (r->config, "file.info")) {
-					R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
-					// load symbols when using r2 -m 0x1000 /bin/ls
-					r_core_cmdf (r, "oba 0 0x%"PFMT64x, mr.mapaddr);
-					r_core_cmd0 (r, ".ies*");
-				}
+			// XXX use UT64_MAX?
+			if (mr.mapaddr && r_config_get_b (r->config, "file.info")) {
+				R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
+				// load symbols when using r2 -m 0x1000 /bin/ls
+				r_core_cmdf (r, "oba 0 0x%"PFMT64x, mr.mapaddr);
+				r_core_cmd0 (r, ".ies*");
 			}
 		} else if (mr.pfile) {
 			RIODesc *f = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
@@ -1691,7 +1690,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
 #endif
-		if (mr.mapaddr != r->offset) {
+		if (!mr.s_seek && mr.mapaddr && mr.mapaddr != r->offset) {
 			mr.s_seek = r_str_newf ("0x%08"PFMT64x, mr.mapaddr);
 		}
 		if (mr.s_seek) {
