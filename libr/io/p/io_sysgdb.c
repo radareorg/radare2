@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2023 - pancake */
+/* radare - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_io.h>
-#include <r_lib.h>
 
 #if 0
 on macOS:
@@ -764,6 +763,7 @@ RIOPlugin r_io_plugin_sysgdb = {
 	.meta = {
 		.name = "sysgdb",
 		.desc = "spawn gdb/lldb and use the program instead of the protocol",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.uris = "sysgdb://",

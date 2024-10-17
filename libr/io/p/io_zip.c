@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - dso, pancake */
+/* radare - LGPL - Copyright 2012-2024 - dso, pancake */
 
 // TODO: wrap with r_sandbox api
 
@@ -611,9 +611,10 @@ static bool r_io_zip_close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_zip = {
 	.meta = {
+		.author = "pancake",
 		.name = "zip",
 		.desc = "Open zip files",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.uris = "zip://,apk://,ipa://,jar://,zip0://,zipall://,apkall://,ipaall://,jarall://",
 	.open = r_io_zip_open,

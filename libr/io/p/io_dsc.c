@@ -1904,7 +1904,7 @@ RIOPlugin r_io_plugin_dsc = {
 	.meta = {
 		.name = "dsc",
 		.desc = "Open dyld shared library caches",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = URL_SCHEME,
 	.open = __open,

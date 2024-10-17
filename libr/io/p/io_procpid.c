@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_userconf.h>
 
@@ -127,8 +127,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_procpid = {
 	.meta = {
 		.name = "procpid",
+		.author = "pancake",
 		.desc = "Open /proc/[pid]/mem io",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "procpid://",
 	.open = __open,

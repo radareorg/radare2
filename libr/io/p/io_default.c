@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -93,7 +93,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	return mmo->fd != -1;
 }
 
-static void r_io_def_mmap_free(RIOMMapFileObj *mmo) {
+static void r_io_def_mmap_free(R_NULLABLE RIOMMapFileObj *mmo) {
 	if (mmo) {
 		free (mmo->filename);
 		r_buf_free (mmo->buf);
@@ -102,10 +102,10 @@ static void r_io_def_mmap_free(RIOMMapFileObj *mmo) {
 	}
 }
 
-RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int perm, int mode) {
+static RIOMMapFileObj *create_mmap(RIO  *io, const char *filename, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
-	if (!mmo) {
+	if (R_UNLIKELY (!mmo)) {
 		return NULL;
 	}
 	if (r_str_startswith (filename, "file://")) {
@@ -146,7 +146,7 @@ static bool r_io_def_mmap_check_default(const char *filename) {
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
 	}
-	const char * peekaboo = r_str_startswith (filename, "nocache://")
+	const char *peekaboo = r_str_startswith (filename, "nocache://")
 		? NULL : strstr (filename, "://");
 	return (!peekaboo || (peekaboo - filename) > 10);
 }
@@ -231,7 +231,7 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 	free (uri);
 	return d;
 #else
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, perm, mode);
+	RIOMMapFileObj *mmo = create_mmap (io, file, perm, mode);
 	if (!mmo) {
 		return NULL;
 	}
@@ -251,10 +251,10 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	bool res = r_file_truncate (mmo->filename, size);
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
-		R_LOG_ERROR ("r_io_def_mmap_truncate: Can't refresh the def_mmap'ed file");
+		R_LOG_ERROR ("Can't refresh the def_mmap'ed file");
 		res = false;
 	} else if (!res) {
-		R_LOG_ERROR ("r_io_def_mmap_truncate: Error trying to resize the file");
+		R_LOG_ERROR ("Error trying to resize the file");
 	}
 	return res;
 }
@@ -318,7 +318,7 @@ RIOPlugin r_io_plugin_default = {
 	.meta = {
 		.name = "default",
 		.desc = "Open local files",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "file://,nocache://",
 	.open = __open_default,

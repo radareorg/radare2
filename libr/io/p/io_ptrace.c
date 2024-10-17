@@ -347,8 +347,9 @@ static int __getpid(RIODesc *fd) {
 RIOPlugin r_io_plugin_ptrace = {
 	.meta = {
 		.name = "ptrace",
+		.author = "pancake",
 		.desc = "Ptrace and /proc/pid/mem (if available) io plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "ptrace://,attach://",
 	.open = __open,
@@ -363,7 +364,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.isdbg = true
 };
 #else
-struct r_io_plugin_t r_io_plugin_ptrace = {
+RIOPlugin r_io_plugin_ptrace = {
 	.meta = {
 		.name = NULL
 	},

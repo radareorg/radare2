@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -557,7 +557,7 @@ RIOPlugin r_io_plugin_debug = {
 	.meta = {
 		.name = "debug",
 		.desc = "Attach to native debugger instance",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.uris = "dbg://,pidof://,waitfor://",

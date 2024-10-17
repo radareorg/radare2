@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 pancake */
+/* radare - LGPL - Copyright 2010-2024 pancake, defragger */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -399,7 +399,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_gdb = {
 	.meta = {
 		.name = "gdb",
-		.license = "LGPL3",
+		.author = "defragger",
+		.license = "LGPL-3.0-only",
 		.desc = "Attach to gdbserver instance",
 	},
 	//void *plugin;

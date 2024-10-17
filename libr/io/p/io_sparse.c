@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include <r_io.h>
 
 typedef struct {
 	int fd;
@@ -98,8 +93,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_sparse = {
 	.meta = {
 		.name = "sparse",
+		.author = "pancake",
 		.desc = "Sparse buffer allocation plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "sparse://",
 	.open = __open,

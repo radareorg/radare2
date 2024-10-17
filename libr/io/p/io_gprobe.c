@@ -361,7 +361,6 @@ static int sp_open(struct gport *port) {
 #else
 	tty.c_cflag &= ~020000000000;
 #endif
-
 	if (tcsetattr (port->fd, TCSANOW, &tty) != 0) {
 		return -1;
 	}
@@ -639,24 +638,19 @@ static int sp_blocking_write(struct gport *port, const void *buf,
 static ut8 gprobe_checksum(const ut8 *p, unsigned int size) {
 	ut8 res = 0;
 	unsigned int k;
-
 	for (k = 0; k < size; k++) {
 		res += p[k];
 	}
-
-	res = ~res + 1;
-
-	return res;
+	return ~res + 1;
 }
 
 static void gprobe_frame_sp(RBuffer *frame) {
-	ut64 size;
+	ut64 size = 0;
 	const ut8 *tmp = r_buf_data (frame, &size);
 	size += 2;
-	ut8 checksum;
 
 	r_buf_prepend_bytes (frame, (const ut8 *)&size, 1);
-	checksum = gprobe_checksum (tmp, size - 1);
+	ut8 checksum = gprobe_checksum (tmp, size - 1);
 
 	r_buf_append_bytes (frame, &checksum, 1);
 }
@@ -679,8 +673,8 @@ static int gprobe_get_reply_sp(struct gport *port, RBuffer *reply) {
 		return -1;
 	}
 
-	if (gprobe_checksum(buf, count - 1) != buf[count - 1]) {
-		printf("### CHECKSUM FAILED\n");
+	if (gprobe_checksum (buf, count - 1) != buf[count - 1]) {
+		R_LOG_ERROR ("CHECKSUM FAILED");
 	}
 
 	r_buf_append_bytes (reply, buf + 2, count - 3);
@@ -718,21 +712,21 @@ static void gprobe_print(RBuffer *buf) {
 
 static int get_reply(struct gport *port, ut8 cmd, RBuffer **reply_ret) {
 	RBuffer *reply = NULL;
-	while (1) {
+	while (true) {
 		reply = r_buf_new ();
 		int res = port->get_reply (port, reply);
-		if (res < 0)
+		if (res < 0) {
 			return res;
-
-		if (res == cmd)
+		}
+		if (res == cmd) {
 			break;
-
-		if (res == GPROBE_NACK)
+		}
+		if (res == GPROBE_NACK) {
 			return -1;
-
-		if (res == GPROBE_PRINT)
+		}
+		if (res == GPROBE_PRINT) {
 			gprobe_print (reply);
-
+		}
 		r_buf_free (reply);
 	}
 
@@ -991,17 +985,14 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 
 	while (1) {
 		RBuffer *reply = NULL;
-
 		int res = get_reply (port, GPROBE_ACK, &reply);
-
-		if (reply)
-			r_buf_free (reply);
-
-		if (!res)
+		r_buf_free (reply);
+		if (!res) {
 			break;
-
-		if (r_cons_is_breaked ())
+		}
+		if (r_cons_is_breaked ()) {
 			break;
+		}
 	}
 
 	r_buf_free (request);
@@ -1317,41 +1308,32 @@ static int gprobe_listen(struct gport *port) {
 	}
 
 	r_cons_break_push (NULL, NULL);
-
-	while (1) {
+	while (true) {
 		RBuffer *reply = NULL;
-
 		get_reply (port, GPROBE_RESET, &reply);
-
-		if (reply)
-			r_buf_free (reply);
-
-		if (r_cons_is_breaked ())
+		r_buf_free (reply);
+		if (r_cons_is_breaked ()) {
 			break;
+		}
 	}
-
 	r_cons_break_pop ();
 
 	return 0;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	RIOGprobe *gprobe;
-	int res;
-	int has_written = 0;
-
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
 
-	gprobe = (RIOGprobe *)fd->data;
-
+	RIOGprobe *gprobe = (RIOGprobe *)fd->data;
 	if ((gprobe->offset + count) > GPROBE_SIZE) {
 		count = GPROBE_SIZE - gprobe->offset;
 	}
 
+	int has_written = 0;
 	while (has_written < count) {
-		res = gprobe_write (&gprobe->gport, gprobe->offset, buf + has_written, count - has_written);
+		int res = gprobe_write (&gprobe->gport, gprobe->offset, buf + has_written, count - has_written);
 		if (res <= 0) {
 			return -1;
 		}
@@ -1423,7 +1405,8 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return pathname && r_str_startswith (pathname, "gprobe://") && strlen (pathname + strlen ("gprobe://"));
+	return pathname && r_str_startswith (pathname, "gprobe://") \
+		&& pathname[strlen ("gprobe://")];
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -1492,59 +1475,45 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	if (r_str_startswith (cmd, "reset") && (strlen (cmd) > 6)) {
 		ut32 code = (ut32)strtoul (cmd + 6, NULL, 10);
-
 		gprobe_reset (&gprobe->gport, code);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "debugon")) {
 		gprobe_debugon (&gprobe->gport);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "debugoff")) {
 		gprobe_debugoff (&gprobe->gport);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "runcode") && (strlen (cmd) > 8)) {
 		ut32 address = (ut32)strtoul (cmd + 8, NULL, 0);
-
 		gprobe_runcode (&gprobe->gport, address);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "flasherase") && (strlen (cmd) > 10)) {
 		ut32 sector = (ut32)strtoul (cmd + 10, NULL, 0);
-
 		gprobe_flasherase (&gprobe->gport, sector);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "flashid")) {
 		gprobe_flashid (&gprobe->gport);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "flashcrc") && (strlen (cmd) > 8)) {
 		char *endptr;
 		ut32 address = (ut32)strtoul (cmd + 8, &endptr, 0);
-		ut32 count;
-
-		if (endptr) {
-			count = (ut32)strtoul (endptr, NULL, 0);
-		} else {
+		if (!endptr) {
 			return NULL;
 		}
-
+		ut32 count = (ut32)strtoul (endptr, NULL, 0);
 		gprobe_flashcrc (&gprobe->gport, address, count);
-
 		return NULL;
 	}
 
@@ -1571,26 +1540,25 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	if (r_str_startswith (cmd, "getinformation")) {
 		gprobe_getinformation (&gprobe->gport);
-
 		return NULL;
 	}
 
 	if (r_str_startswith (cmd, "listen")) {
 		gprobe_listen (&gprobe->gport);
-
 		return NULL;
 	}
 
 	printf ("Try: ':?'\n");
-
 	return NULL;
 }
 
 RIOPlugin r_io_plugin_gprobe = {
 	.meta = {
 		.name = "gprobe",
+		.author = "pancake",
+		.author = "Dirk Eibach, Guntermann, Drunck GmbH",
 		.desc = "Open gprobe connection",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "gprobe://",
 	.open = __open,

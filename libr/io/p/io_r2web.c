@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include <r_io.h>
+#include <r_lib.h>
 
 typedef struct {
 	int fd;
@@ -16,22 +13,21 @@ typedef struct {
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	int code, rlen;
-	char *out, *url, *hexbuf;
 	if (!fd || !fd->data) {
 		return -1;
 	}
 	if (count * 3 < count) {
 		return -1;
 	}
-	hexbuf = malloc (count * 3);
+	char *hexbuf = malloc (count * 3);
 	if (!hexbuf) {
 		return -1;
 	}
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
-	url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
-		rURL(fd), hexbuf, io->off);
-	out = r_socket_http_get (url, &code, &rlen);
+	char *url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
+		rURL (fd), hexbuf, io->off);
+	char *out = r_socket_http_get (url, &code, &rlen);
 	free (out);
 	free (url);
 	free (hexbuf);
@@ -40,14 +36,13 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	int code, rlen;
-	char *out, *url;
 	int ret = 0;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
+	char *url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
 		rURL(fd), count, io->off);
-	out = r_socket_http_get (url, &code, &rlen);
+	char *out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
 		ut8 *tmp = calloc (1, rlen+1);
 		if (!tmp) {
@@ -60,7 +55,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			ret = -ret;
 		}
 	}
-
 beach:
 	free (out);
 	free (url);
@@ -153,8 +147,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 RIOPlugin r_io_plugin_r2web = {
 	.meta = {
 		.name = "r2web",
+		.author = "pancake",
 		.desc = "r2web io client plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "r2web://",
 	.open = __open,

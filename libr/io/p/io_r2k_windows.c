@@ -167,7 +167,7 @@ int WriteKernelMemory(ut64 address, const ut8 *buf, int len) {
 	return ret;
 }
 
-int Init (const char * driverPath) {
+int Init(const char * driverPath) {
 	BOOL ret = FALSE;
 	if (InitDriver () == FALSE) {
 		if (R_STR_ISNOTEMPTY (driverPath)) {

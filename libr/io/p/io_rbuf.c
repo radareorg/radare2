@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - pancake, condret */
+/* radare2 - LGPL - Copyright 2017-2024 - pancake, condret */
 
 #include <r_io.h>
 
@@ -49,7 +49,7 @@ RIOPlugin r_io_plugin_rbuf = {
 		.name = "rbuf",
 		.desc = "Unsafe RBuffer IO plugin",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "rbuf://",
 	.open = __open,

@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_cons.h>
 #include "ar.h"
 
@@ -147,7 +146,7 @@ RIOPlugin r_io_plugin_ar = {
 	.meta = {
 		.name = "ar",
 		.desc = "Open ar/lib files",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "ar://,lib://,arall://,liball://",
 	.open = r_io_ar_open,

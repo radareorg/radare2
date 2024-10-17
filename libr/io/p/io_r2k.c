@@ -1,4 +1,4 @@
-/* io_r2k - radare2 - LGPL - Copyright 2016-2021 - SkUaTeR + panda */
+/* io_r2k - radare2 - LGPL - Copyright 2016-2024 - SkUaTeR + panda */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -138,7 +138,8 @@ RIOPlugin r_io_plugin_r2k = {
 	.meta = {
 		.name = "r2k",
 		.desc = "Kernel access API io",
-		.license = "LGPL3",
+		.author = "skuater,panda",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "r2k://",
 	.open = r2k__open,

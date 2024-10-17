@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
 #include <r_userconf.h>
 
@@ -102,8 +102,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_reg = {
 	.meta = {
 		.name = "reg",
+		.author = "pancake",
 		.desc = "read and write the register arena",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "reg://",
 	.open = __open,

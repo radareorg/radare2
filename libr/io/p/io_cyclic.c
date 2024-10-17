@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2023 - pancake */
+/* radare - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -20,7 +20,7 @@ static bool cyclic_check(RIO *io, const char *pathname, bool many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (cyclic_check (io, pathname, 0)) {
-		int cycle = (int)r_num_math (NULL, pathname + 9);
+		const int cycle = (int)r_num_math (NULL, pathname + 9);
 		if (cycle < 1) {
 			R_LOG_ERROR ("Cannot allocate (%s) 0 bytes", pathname + 9);
 			return NULL;
@@ -42,8 +42,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 static int cyclic_read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
-	int i;
 	const int bs = R_MIN (mal->cycle, count);
+	int i;
 	for (i = 0; i < count; i += bs) {
 		const int left = R_MIN (count - i, bs);
 		(void) io_memory_lseek (io, desc, mal->offset % mal->cycle, 0);
@@ -55,8 +55,9 @@ static int cyclic_read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 RIOPlugin r_io_plugin_cyclic = {
 	.meta = {
 		.name = "cyclic",
+		.author = "pancake",
 		.desc = "Cyclic memory, infinite file containing the given size in loop",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "cyclic://",
 	.open = __open,

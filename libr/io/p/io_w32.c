@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2008-2022 pancake */
+/* radare - LGPL - Copyright 2008-2024 pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
+#include <r_io.h>
 
 #if R2__WINDOWS__
 #include <sys/types.h>
@@ -77,7 +76,7 @@ RIOPlugin r_io_plugin_w32 = {
 		.name = "w32",
 		.desc = "w32 API io",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "w32://",
 	.open = w32__open,
