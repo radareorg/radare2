@@ -420,19 +420,26 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	RAnalValue *dst = r_vector_at (&op->dsts, 0);
-	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
-	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
-	char *r0 = r_anal_value_tostring (dst);
-	char *a0 = r_anal_value_tostring (src0);
-	char *a1 = r_anal_value_tostring (src1);
-	if (!r0) {
+	char *r0, *a0, *a1;
+	if (op->dsts.len || op->srcs.len) {
+		RAnalValue *dst = r_vector_at (&op->dsts, 0);
+		RAnalValue *src0 = r_vector_at (&op->srcs, 0);
+		RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+		r0 = r_anal_value_tostring (dst);
+		a0 = r_anal_value_tostring (src0);
+		a1 = r_anal_value_tostring (src1);
+		if (!r0) {
+			r0 = strdup ("?");
+		}
+		if (!a0) {
+			a0 = strdup ("?");
+		}
+		if (!a1) {
+			a1 = strdup ("?");
+		}
+	} else {
 		r0 = strdup ("?");
-	}
-	if (!a0) {
 		a0 = strdup ("?");
-	}
-	if (!a1) {
 		a1 = strdup ("?");
 	}
 
