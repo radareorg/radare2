@@ -235,7 +235,7 @@ static RList* r_debug_evm_frames(RDebug *dbg, ut64 at) {
 RDebugPlugin r_debug_plugin_evm = {
 	.meta = {
 		.name = "evm",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "montekki",
 		.desc = "evm debugger backend",
 	},

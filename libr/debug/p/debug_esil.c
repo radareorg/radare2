@@ -1,17 +1,6 @@
-/* radare - LGPL - Copyright 2013-2023 pancake */
+/* radare - LGPL - Copyright 2013-2024 pancake */
 
-#include <r_asm.h>
 #include <r_debug.h>
-
-#if 0
-static bool is_io_esil(RDebug *dbg) {
-	RIODesc *d = dbg->iob.io->desc;
-	if (d && d->plugin && d->plugin->name)
-		if (!strcmp ("esil", d->plugin->name))
-			return true;
-	return false;
-}
-#endif
 
 static bool __esil_step_over(RDebug *dbg) {
 	R_LOG_TODO ("ESIL STEP OVER");
@@ -140,7 +129,7 @@ RDebugPlugin r_debug_plugin_esil = {
 		.name = "esil",
 		.author = "pancake",
 		.desc = "esil debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

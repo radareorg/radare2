@@ -609,7 +609,7 @@ RList *windbg_pids(RDebug *dbg, int pid) {
 RDebugPlugin r_debug_plugin_windbg = {
 	.meta = {
 		.name = "windbg",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake",
 		.desc = "comunicate with a windbg",
 	},

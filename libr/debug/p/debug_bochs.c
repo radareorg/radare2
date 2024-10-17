@@ -1,6 +1,5 @@
-/* debugbochs  - LGPL - Copyright 2016-2023 - SkUaTeR */
+/* debugbochs  - LGPL - Copyright 2016-2024 - SkUaTeR */
 
-#include <r_asm.h>
 #include <r_debug.h>
 #include <libbochs.h>
 
@@ -609,7 +608,7 @@ RDebugPlugin r_debug_plugin_bochs = {
 		.name = "bochs",
 		.author = "SkUaTeR",
 		.desc = "bochs debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,

@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
-#include <r_asm.h>
-#include <r_cons.h>
 #include <r_debug.h>
 
 static bool __rap_step(RDebug *dbg) {
@@ -70,7 +68,7 @@ RDebugPlugin r_debug_plugin_rap = {
 		.name = "rap",
 		.author = "pancake",
 		.desc = "rap debug plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "any",
 	.bits = R_SYS_BITS_32,
