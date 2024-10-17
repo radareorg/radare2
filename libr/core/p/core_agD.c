@@ -1,10 +1,6 @@
-/* radare - LGPL3 - Copyright 2023 - condret */
+/* radare - LGPL3 - Copyright 2023-2024 - condret */
 
 #include <r_core.h>
-#include <r_config.h>
-#include <r_cons.h>
-#include <r_anal.h>
-#include <r_util.h>
 
 static char *_get_title(void *data, void *user) {
 	return r_str_newf ("0x%"PFMT64x,
@@ -17,6 +13,7 @@ static char *_get_body(void *data, void *user) {
 	return r_core_cmd_strf (core, "pD 0x%"PFMT64x" @ 0x%"PFMT64x, bb->size, bb->addr);
 }
 
+// int vs bool
 static int r_cmd_agD_call(void *user, const char *input) {
 	RCore *core = (RCore *)user;
 	if (!core) {
@@ -58,19 +55,12 @@ static int r_cmd_agD_call(void *user, const char *input) {
 }
 
 RCorePlugin r_core_plugin_agD = {
-#if R2_VERSION_NUMBER > 50808
 	.meta = {
 		.name = "agD",
 		.desc = "agD core plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},
-#else
-	.name = "agD",
-	.desc = "agD core plugin",
-	.license = "LGPL3",
-	.author = "condret",
-#endif
 	.call = r_cmd_agD_call,
 };
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env r2 -j
+#!/usr/bin/env -S r2 -j
 (function() {
 	// TODO: get rid of theses aliases 
 	const compat = {
@@ -21,6 +21,13 @@
 		const aliasedName = compat[name]? compat[name]: name;
 		if (cache[aliasedName]) {
 			return cache[aliasedName];
+		}
+		if (aliasedName != name) {
+			console.log("\x1b[33mALIASED\x1b[0m " + name);
+		}
+		const found = r2.cmd("test -f doc/licenses/" + aliasedName + ".txt;?v $?").trim() == 0;
+		if (found) {
+			return r2.cmd("cat doc/licenses/" + aliasedName + ".txt");
 		}
 		const response = r2.syscmds("curl -s https://spdx.org/licenses/"+aliasedName+".json");
 		try {

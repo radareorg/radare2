@@ -374,6 +374,7 @@ RCorePlugin r_core_plugin_sixref = {
 	.meta = {
 		.name = "sixref",
 		.desc = "quickly find xrefs in arm64 buffer",
+		.author = "Siguza",
 		.license = "MIT",
 	},
 	.call = r_cmdsixref_call,

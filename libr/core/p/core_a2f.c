@@ -427,7 +427,7 @@ RCorePlugin r_core_plugin_a2f = {
 		.name = "a2f",
 		.desc = "The reworked analysis from scratch thing",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "MIT",
 	},
 	.call = r_cmd_anal_call,
 };
