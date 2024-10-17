@@ -263,7 +263,7 @@ jobs:
         include: # Force API 16 only for ARM (32 bits)
           - arch: arm
             api: 16
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
@@ -284,7 +284,7 @@ jobs:
   # disabled because the ndk link is broken for a while
   android-meson:
     if: contains(github.ref, 'android')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -559,7 +559,7 @@ jobs:
   check_abi_compatibility:
     needs:
       - linux-static
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -629,7 +629,7 @@ jobs:
       - w64-meson
       - w64-static
 #      - freebsd
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -650,7 +650,7 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.check_release.outputs.is_release == 'yes' }}
     needs:
       - check_release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ASSET_FILES: |
         dist/artifacts/tarball/*.tar.xz
