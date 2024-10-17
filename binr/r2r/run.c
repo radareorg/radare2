@@ -517,9 +517,21 @@ R_API void r2r_subprocess_fini(void) {
 	r_th_lock_free (subprocs_mutex);
 }
 
+static inline void dup_retry(int fds[2], int n, int b) {
+	while ((dup2 (fds[n], b) == -1) && (errno == EINTR)) {
+		;
+	}
+	close (fds[0]);
+	close (fds[1]);
+}
+
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
+	int stdin_pipe[2] = { -1, -1 };
+	int stdout_pipe[2] = { -1, -1 };
+	int stderr_pipe[2] = { -1, -1 };
+
 	char **argv = calloc (args_size + 2, sizeof (char *));
 	if (!argv) {
 		return NULL;
@@ -549,30 +561,27 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		goto error;
 	}
 
-	int stdin_pipe[2] = { -1, -1 };
 	if (pipe (stdin_pipe) == -1) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
-	int stdout_pipe[2] = { -1, -1 };
 	if (pipe (stdout_pipe) == -1) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
-	if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+	if (fcntl (stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
 	proc->stdout_fd = stdout_pipe[0];
 
-	int stderr_pipe[2] = { -1, -1 };
 	if (pipe (stderr_pipe) == -1) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
-	if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+	if (fcntl (stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
@@ -588,17 +597,9 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		return NULL;
 	}
 	if (proc->pid == 0) {
-		// child
-		while ((dup2 (stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
-		close (stdin_pipe[0]);
-		close (stdin_pipe[1]);
-		while ((dup2 (stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-		close (stdout_pipe[1]);
-		close (stdout_pipe[0]);
-		while ((dup2 (stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
-		close (stderr_pipe[1]);
-		close (stderr_pipe[0]);
-
+		dup_retry (stdin_pipe, 0, STDIN_FILENO);
+		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
+		dup_retry (stderr_pipe, 1, STDERR_FILENO);
 		size_t i;
 		for (i = 0; i < env_size; i++) {
 			setenv (envvars[i], envvals[i], 1);
@@ -1177,7 +1178,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		if (!bytes) {
 			goto rip;
 		}
-		int byteslen = r_hex_str2bin (hex, bytes);
+		const int byteslen = r_hex_str2bin (hex, bytes);
 		if (byteslen <= 0) {
 			free (bytes);
 			goto rip;
