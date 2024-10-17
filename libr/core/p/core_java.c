@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2022 - dso, pancake */
+/* radare2 - Apache - Copyright 2014-2024 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -1943,12 +1943,12 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	return true;
 }
 
-// PLUGIN Definition Info
 RCorePlugin r_core_plugin_java = {
 	.meta = {
 		.name = "java",
+		.author = "dso",
 		.desc = "Suite of java commands, java help for more info",
-		.license = "Apache",
+		.license = "Apache-2.0",
 	},
 	.call = r_cmd_java_call,
 };
