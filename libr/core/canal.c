@@ -3605,6 +3605,16 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	return 0;
 }
 
+static int fcn_list_names(RCore *core, RList *fcns) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (fcns, iter, fcn) {
+		r_cons_printf ("'@0x%08"PFMT64x"'afn %s\n", fcn->addr, fcn->name);
+	}
+	r_cons_newline ();
+	return 0;
+}
+
 static int fcn_list_detail(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -3837,6 +3847,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	case '*':
 		fcn_list_detail (core, fcns);
+		break;
+	case 'n':
+		fcn_list_names (core, fcns);
 		break;
 	case 'm': // "aflm"
 		{
