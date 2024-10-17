@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2024 - nibble, pancake */
 
 #define R_LOG_ORIGIN "anal.diff"
 
@@ -23,8 +23,8 @@ R_API void r_anal_diff_free(RAnalDiff *diff) {
 	}
 }
 
-/* 0-1 */
 R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn) {
+	R_RETURN_IF_FAIL (anal);
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
@@ -32,8 +32,8 @@ R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn) 
 	anal->diff_thfcn = (thfcn >= 0)? thfcn: R_ANAL_THRESHOLDFCN;
 }
 
-/* 0-100 */
 R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn) {
+	R_RETURN_IF_FAIL (anal);
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
@@ -48,17 +48,17 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	int oplen, idx = 0;
 
 	if (!anal) {
-		return false;
+		return 0;
 	}
 	if (anal->cur && anal->cur->fingerprint_bb) {
 		return (anal->cur->fingerprint_bb (anal, bb));
 	}
 	if (!(bb->fingerprint = malloc (1 + bb->size))) {
-		return false;
+		return 0;
 	}
 	if (!(buf = malloc (bb->size + 1))) {
 		free (bb->fingerprint);
-		return false;
+		return 0;
 	}
 	if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size)) {
 		memcpy (bb->fingerprint, buf, bb->size);
@@ -66,7 +66,7 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 			if (!(op = r_anal_op_new ())) {
 				free (bb->fingerprint);
 				free (buf);
-				return false;
+				return 0;
 			}
 			while (idx < bb->size) {
 				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx, R_ARCH_OP_MASK_BASIC)) < 1) {
@@ -85,12 +85,12 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 }
 
 static int bb_sort_by_addr(const void *x, const void *y) {
-	RAnalBlock *a = (RAnalBlock *)x;
-	RAnalBlock *b = (RAnalBlock *)y;
-	if (a->addr > b->addr) {
+	ut64 a_addr = ((RAnalBlock *)x)->addr;
+	ut64 b_addr = ((RAnalBlock *)y)->addr;
+	if (a_addr > b_addr) {
 		return 1;
 	}
-	if (a->addr < b->addr) {
+	if (a_addr < b_addr) {
 		return -1;
 	}
 	return 0;
@@ -189,7 +189,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	RAnalFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
 	ut64 maxsize, minsize;
-	double t, ot;
+	double t = 0, ot = 0;
 	if (!fcns2) {
 		fcns2 = fcns;
 	}

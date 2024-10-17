@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_anal.h>
 
@@ -13,23 +13,30 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 
 // mul*value+regbase+regidx+delta
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
-	ut64 num;
-	if (!val) {
-		return 0LL;
-	}
-	num = val->base + (val->delta * (val->mul ? val->mul : 1));
+	R_RETURN_VAL_IF_FAIL (anal && val, 0LL);
+	ut64 num = val->base + (val->delta * (val->mul ? val->mul : 1));
 	if (val->reg) {
-		num += r_reg_getv (anal->reg, val->reg);
+		st64 n = (st64)r_reg_getv (anal->reg, val->reg);
+		if (ST64_ADD_OVFCHK (num, n)) {
+			num = UT64_MAX;
+		} else {
+			num += n;
+		}
 	}
 	if (val->regdelta) {
-		num += r_reg_getv (anal->reg, val->regdelta);
+		st64 n = (st64)r_reg_getv (anal->reg, val->regdelta);
+		if (ST64_ADD_OVFCHK (num, n)) {
+			num = UT64_MAX;
+		} else {
+			num += n;
+		}
 	}
 	switch (val->memref) {
 	case 1:
 	case 2:
 	case 4:
 	case 8:
-		//anal->bio ...
+		// anal->bio ...
 		R_LOG_INFO ("memref for to_ut64 is not supported");
 		break;
 	}
@@ -37,24 +44,25 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 }
 
 R_API bool r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
+	R_RETURN_VAL_IF_FAIL (anal && val, false);
 	if (val->memref) {
-		if (anal->iob.io) {
+		if (R_LIKELY (anal->iob.io)) {
 			ut8 data[8];
 			ut64 addr = r_anal_value_to_ut64 (anal, val);
 			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
-		} else {
-			R_LOG_ERROR ("No IO binded to r_anal");
+			return true;
 		}
-	} else {
-		if (val->reg) {
-			r_reg_setv (anal->reg, val->reg, num);
-		}
+		R_LOG_ERROR ("No IO binded to r_anal");
+		return false;
 	}
-	return false; // is this necessary?
+	return (val->reg)
+		? r_reg_setv (anal->reg, val->reg, num)
+		: false;
 }
 
 R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
+	R_RETURN_VAL_IF_FAIL (value, NULL);
 	switch (value->type) {
 	case R_ANAL_VAL_REG: return "reg";
 	case R_ANAL_VAL_MEM: return "mem";
@@ -64,6 +72,7 @@ R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
 }
 
 R_API char *r_anal_value_tostring(RAnalValue *value) {
+	R_RETURN_VAL_IF_FAIL (value, NULL);
 	char *out = NULL;
 	if (value) {
 		out = strdup ("");
