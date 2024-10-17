@@ -58,7 +58,11 @@ R_API R_MUSTUSE RFS* r_fs_new(void) {
 		}
 		fs->plugins->free = free;
 		// XXX fs->roots->free = r_fs_plugin_free;
+		size_t i;
 		for (i = 0; fs_static_plugins[i]; i++) {
+			if (!fs_static_plugins[i]->meta.name) {
+				continue;
+			}
 			static_plugin = R_NEW (RFSPlugin);
 			if (!static_plugin) {
 				continue;
