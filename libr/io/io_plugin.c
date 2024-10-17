@@ -84,8 +84,9 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[1] = plugin->write ? 'w' : '_';
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
-		io->cb_printf ("%s  %-8s %-6s %s.", str,
-			r_str_get (plugin->meta.name), r_str_get (plugin->meta.license), r_str_get (plugin->meta.desc));
+		io->cb_printf ("%s  %-8s %s.", str,
+			r_str_get (plugin->meta.name),
+			r_str_get (plugin->meta.desc));
 		if (plugin->uris) {
 			io->cb_printf (" %s", plugin->uris);
 		}

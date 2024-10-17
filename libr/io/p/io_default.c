@@ -254,7 +254,7 @@ static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 		R_LOG_ERROR ("Can't refresh the def_mmap'ed file");
 		res = false;
 	} else if (!res) {
-		R_LOG_ERROR ("Error trying to resize the file");
+		R_LOG_ERROR ("Trying to resize the file");
 	}
 	return res;
 }

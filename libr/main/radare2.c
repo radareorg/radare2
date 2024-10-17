@@ -85,7 +85,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			pj_ks (pj, "birth", R2_BIRTH);
 			pj_ks (pj, "commit", R2_GITTIP);
 			pj_ki (pj, "commits", R2_VERSION_COMMIT);
-			pj_ks (pj, "license", "LGPLv3");
+			pj_ks (pj, "license", "LGPL-3.0-only");
 			pj_ks (pj, "tap", R2_GITTAP);
 			pj_ko (pj, "semver");
 			pj_ki (pj, "major", R2_VERSION_MAJOR);
