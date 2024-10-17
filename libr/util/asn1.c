@@ -427,9 +427,11 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			break;
 		case TAG_SEQUENCE:
 			name = "SEQUENCE";
+			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			break;
 		case TAG_SET:
 			name = "SET";
+			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			break;
 		case TAG_NUMERICSTRING:
 			name = "NumericString";
@@ -566,6 +568,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			} else {
 				r_strbuf_appendf (sb, " - %s\n", string);
 			}
+		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET || obj->klass == CLASS_CONTEXT) {
+			r_strbuf_appendf (sb, " - %02x\n", obj->sector[0]);
 		} else {
 			r_strbuf_append (sb, "\n");
 		}
@@ -592,6 +596,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			} else {
 				r_strbuf_appendf (sb, "%s", temp_name);
 			}
+		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET || obj->klass == CLASS_CONTEXT) {
+			r_strbuf_appendf (sb, "%02x", obj->sector[0]);
 		} else {
 			r_strbuf_appendf (sb, "%s", string);
 		}
