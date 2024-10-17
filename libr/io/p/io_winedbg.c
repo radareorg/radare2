@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake */
+/* radare - LGPL - Copyright 2017-2024 - pancake */
 
-#include "r_types_base.h"
-#include "r_io.h"
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include <r_io.h>
 
 static R_TH_LOCAL RSocket *gs = NULL;
 
@@ -369,6 +364,7 @@ const char *msg =
 RIOPlugin r_io_plugin_winedbg = {
 	.meta = {
 		.name = "winedbg",
+		.author = "pancake",
 		.desc = "Wine-dbg io and debug.io plugin",
 		.license = "MIT",
 	},

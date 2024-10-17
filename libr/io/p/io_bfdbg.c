@@ -1,12 +1,6 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2024 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#undef R_API
-#define R_API static inline
+#include <r_io.h>
 #include "../debug/p/bfvm.h"
 #include "../debug/p/bfvm.c"
 
@@ -155,7 +149,6 @@ static inline int getmalfd(RIOBfdbg *mal) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	char *out;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
 		if (!mal) {
@@ -170,15 +163,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		size_t rlen;
-		out = r_file_slurp (pathname+8, &rlen);
+		char *out = r_file_slurp (pathname + 8, &rlen);
 		if (!out || rlen < 1) {
 			free (mal);
 			free (out);
 			return NULL;
 		}
 		mal->size = (ut32)rlen;
-		mal->buf = malloc (mal->size+1);
-		if (mal->buf) {
+		mal->buf = malloc (mal->size + 1);
+		if (R_LIKELY (mal->buf)) {
 			memcpy (mal->buf, out, rlen);
 			free (out);
 			return r_io_desc_new (io, &r_io_plugin_bfdbg,
@@ -195,8 +188,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_bfdbg = {
 	.meta = {
 		.name = "bfdbg",
-		.desc = "Attach to brainFuck Debugger instance",
-		.license = "LGPL3",
+		.author = "pancake",
+		.desc = "Attach to brainfuck debugger instance",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "bfdbg://",
 	.open = __open,

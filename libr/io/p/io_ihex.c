@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2023 - pancake, fenugrec */
+/* radare - LGPL - Copyright 2013-2024 - pancake, fenugrec */
 
 /*
 *** .hex format description : every line follows this pattern
@@ -538,7 +538,7 @@ RIOPlugin r_io_plugin_ihex = {
 		.name = "ihex",
 		.desc = "Open intel HEX file (R2_IHEX_IGNORE_CKSUM=1)",
 		.author = "pancake,fenugrec",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "ihex://",
 	.open = __open,

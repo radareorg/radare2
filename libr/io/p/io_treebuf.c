@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2022 - condret */
+/* radare - LGPL - Copyright 2022-2024 - condret */
 
 #include <r_io.h>
-#include <r_lib.h>
-#include <r_util.h>
 
 typedef struct io_treebuf_t {
 	RRBTree *tree;
@@ -215,8 +213,9 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 RIOPlugin r_io_plugin_treebuf = {
 	.meta = {
 		.name = "treebuf",
+		.author = "condret",
 		.desc = "Dynamic sparse like buffer without size restriction",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "treebuf://",
 	.system = __system,

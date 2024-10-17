@@ -120,7 +120,7 @@ RIOPlugin r_io_plugin_xattr = {
 		.name = "xattr",
 		.desc = "access extended file attribute",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "xattr://",
 	.open = __open,
@@ -137,8 +137,9 @@ RIOPlugin r_io_plugin_xattr = {
 RIOPlugin r_io_plugin_xattr = {
 	.meta = {
 		.name = "xattr",
+		.author = "pancake",
 		.desc = "access extended file attribute (not supported)",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "xattr://",
 };

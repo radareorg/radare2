@@ -430,7 +430,7 @@ RIOPlugin r_io_plugin_uf2 = {
 	.meta = {
 		.name = "uf2",
 		.desc = "Open UF2 files",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "aviciano"
 	},
 	.uris = "uf2://",

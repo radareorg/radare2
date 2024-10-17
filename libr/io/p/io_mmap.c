@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -187,8 +187,9 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 RIOPlugin r_io_plugin_mmap = {
 	.meta = {
 		.name = "mmap",
+		.author = "pancake",
 		.desc = "Open files using mmap",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "mmap://",
 	.open = __open,

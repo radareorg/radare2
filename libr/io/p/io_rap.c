@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2011-2023 - pancake */
+/* radare - MIT - Copyright 2011-2024 - pancake */
 
 #define R_LOG_ORIGIN "io.rap"
 
@@ -287,6 +287,7 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 RIOPlugin r_io_plugin_rap = {
 	.meta = {
 		.name = "rap",
+		.author = "pancake",
 		.desc = "Remote binary protocol plugin",
 		.license = "MIT",
 	},

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2008-2024 - pancake, condret */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -129,7 +129,8 @@ RIOPlugin r_io_plugin_malloc = {
 	.meta = {
 		.name = "malloc",
 		.desc = "Memory allocation plugin",
-		.license = "LGPL3",
+		.author = "condret",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "malloc://,hex://,slurp://,stdin://",
 	.open = __open,

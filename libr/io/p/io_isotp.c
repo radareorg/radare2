@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - pancake */
+/* radare - LGPL - Copyright 2021-2024 - pancake */
 
 #include <r_io.h>
 
@@ -133,6 +133,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_isotp = {
 	.meta = {
 		.name = "isotp",
+		.author = "pancake",
 		.desc = "Connect using the ISOTP protocol (isotp://interface/srcid/dstid)",
 		.license = "MIT",
 	},
@@ -149,6 +150,7 @@ RIOPlugin r_io_plugin_isotp = {
 RIOPlugin r_io_plugin_isotp = {
 	.meta = {
 		.name = "isotp",
+		.author = "pancake",
 		.license = "MIT",
 		.desc = "shared memory resources (not for this platform)",
 	},

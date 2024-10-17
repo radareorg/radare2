@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <r_lib.h>
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
@@ -44,6 +42,7 @@ RIOPlugin r_io_plugin_xalz = {
 	.meta = {
 		.name = "xalz",
 		.desc = "XAmarin LZ4 assemblies",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.uris = "xalz://",

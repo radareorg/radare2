@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2024 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
@@ -34,7 +32,8 @@ RIOPlugin r_io_plugin_http = {
 	.meta = {
 		.name = "http",
 		.desc = "Make http get requests",
-		.license = "LGPL3",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "http://",
 	.open = __open,

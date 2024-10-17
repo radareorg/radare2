@@ -674,8 +674,9 @@ static char *windbg_system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_windbg = {
 	.meta = {
 		.name = "windbg",
+		.author = "GustavoLCR",
 		.desc = "WinDBG (DbgEng.dll) based io plugin for Windows",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = WINDBGURI,
 	.isdbg = true,

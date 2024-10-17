@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2023 - pancake */
+/* radare - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -604,7 +604,8 @@ RIOPlugin r_io_plugin_self = {
 	.meta = {
 		.name = "self",
 		.desc = "Read memory from self",
-		.license = "LGPL3",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "self://",
 	.open = __open,

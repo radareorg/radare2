@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2023 - condret, pancake */
+/* radare - LGPL - Copyright 2017-2024 - condret, pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -104,7 +104,8 @@ RIOPlugin r_io_plugin_null = {
 	.meta = {
 		.name = "null",
 		.desc = "Null plugin",
-		.license = "LGPL3",
+		.author = "condret",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "null://",
 	.open = __open,
