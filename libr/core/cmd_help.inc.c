@@ -974,8 +974,8 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "ternary", r_strf ("0t%s", out));
 				} else {
 					r_cons_printf ("fvalue  %.1lf\n", core->num->fvalue);
-					r_cons_printf ("float   %ff\n", f);
-					r_cons_printf ("double  %lf\n", d);
+					r_cons_printf ("float   %.15ff\n", f);
+					r_cons_printf ("double  %.15lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
 					char b36str[16];
 					b36_fromnum (b36str, n);
