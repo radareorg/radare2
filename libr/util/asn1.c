@@ -42,12 +42,8 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	obj->head = buffer[0];
 	obj->offset = buffer_base? (buffer - buffer_base): 0;
 	obj->klass = obj->head & ASN1_CLASS;
-	if (obj->klass & 0x80) {
-		obj->tag = 0x10;
-	} else {
-		obj->tag = obj->head & ASN1_TAG;
-	}
 	obj->form = obj->head & ASN1_FORM;
+	obj->tag = obj->head & ASN1_TAG;
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
@@ -559,19 +555,21 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			}
 		}
 		r_strbuf_appendf (sb, " [@ 0x%lx](0x%lx bytes)", obj->offset, obj->h_len + obj->length);
-		if (R_STR_ISNOTEMPTY (string)) {
-			if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
-				asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
-				if (strlen (temp_name) > 100) {
-					r_strbuf_appendf (sb, " - %s...", r_str_newlen (temp_name, 100));
-				} else {
-					r_strbuf_appendf (sb, " - %s", temp_name);
-				}
+		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
+			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
+			if (strlen (temp_name) > 100) {
+				r_strbuf_appendf (sb, " - %s...", r_str_newlen (temp_name, 100));
 			} else {
-				r_strbuf_appendf (sb, " - %s", string);
+				r_strbuf_appendf (sb, " - %s", temp_name);
 			}
 		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET) {
 			r_strbuf_appendf (sb, " - %02x", obj->head);
+		} else {
+			if (strlen (string) > 100) {
+				r_strbuf_appendf (sb, " - %s...", r_str_newlen (string, 100));
+			} else {
+				r_strbuf_appendf (sb, " - %s", string);
+			}
 		}
 		r_strbuf_append (sb, "\n");
 
@@ -593,14 +591,18 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			if (strlen (temp_name) > 100) {
-				r_strbuf_appendf (sb, "%s", r_str_newlen (temp_name, 100));
+				r_strbuf_appendf (sb, "%s...", r_str_newlen (temp_name, 100));
 			} else {
 				r_strbuf_appendf (sb, "%s", temp_name);
 			}
 		} else if (obj->tag == TAG_SEQUENCE || obj->tag == TAG_SET) {
 			r_strbuf_appendf (sb, "%02x", obj->head);
 		} else {
-			r_strbuf_appendf (sb, "%s", string);
+			if (strlen (string) > 100) {
+				r_strbuf_appendf (sb, "%s...", r_str_newlen (string, 100));
+			} else {
+				r_strbuf_appendf (sb, "%s", string);
+			}
 		}
 
 		// We may have a bit length diffrent than the length
