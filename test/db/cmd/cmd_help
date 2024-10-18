@@ -153,8 +153,8 @@ unit    1
 segment 0000:0001
 string  "\x01"
 fvalue  1.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b00000001
 base36  0_1
 ternary 0t1
@@ -174,8 +174,8 @@ unit    0
 segment 0000:0000
 string  "\0"
 fvalue  0.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b00000000
 base36  0_0
 ternary 0t0
@@ -215,8 +215,8 @@ unit    2
 segment 0000:0002
 string  "\x02"
 fvalue  3.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b00000010
 base36  0_2
 ternary 0t2
