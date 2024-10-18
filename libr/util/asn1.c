@@ -502,9 +502,9 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	for (int i = 0; i < 4; i++) {
-		if ( len & 0xFF) {
-			hlen ++;
+	for (i = 0; i < 4; i++) {
+		if (len & 0xFF) {
+			hlen++;
 		}
 		len >>= 8;
 	}
