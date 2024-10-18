@@ -1,6 +1,8 @@
 #ifndef R_X509_INTERNAL_H
 #define R_X509_INTERNAL_H
 
+// R2_600 review this and r_x509.h
+
 R_API bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object *object);
 R_API void r_x509_free_algorithmidentifier(RX509AlgorithmIdentifier *ai);
 
