@@ -138,6 +138,7 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_io = {
 	.meta = {
 		.name = "io",
+		.author = "pancake",
 		.desc = "bin plugin using the io interface",
 		.license = "MIT",
 	},

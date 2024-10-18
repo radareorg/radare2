@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2024 - pancake */
 
 // https://github.com/nesbox/TIC-80/wiki/tic-File-Format
 
@@ -291,6 +291,7 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_tic = {
 	.meta = {
 		.name = "tic",
+		.author = "pancake",
 		.desc = "TIC-80 cartridge parser",
 		.license = "MIT",
 	},

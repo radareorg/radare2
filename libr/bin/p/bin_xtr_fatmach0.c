@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/fatmach0.h"
 #include "mach0/mach0.h"
@@ -150,8 +147,9 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 	.meta = {
 		.name = "xtr.fatmach0",
+		.author = "nibble,pancake",
 		.desc = "fat mach0 bin extractor plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.size = &size,

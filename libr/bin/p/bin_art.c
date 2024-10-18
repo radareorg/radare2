@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_bin.h>
 
@@ -202,8 +202,9 @@ static RList *sections(RBinFile *bf) {
 RBinPlugin r_bin_plugin_art = {
 	.meta = {
 		.name = "art",
+		.author = "pancake",
 		.desc = "Android Runtime",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

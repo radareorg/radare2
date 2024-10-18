@@ -171,8 +171,9 @@ static ut64 baddr(RBinFile *bf) {
 RBinPlugin r_bin_plugin_dol = {
 	.meta = {
 		.name = "dol",
+		.author = "pancake",
 		.desc = "Nintendo Dolphin binary format",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.load = &load,
 	.baddr = &baddr,

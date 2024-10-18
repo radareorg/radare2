@@ -111,7 +111,7 @@ RBinPlugin r_bin_plugin_ne = {
 		.name = "ne",
 		.desc = "NE format r2 plugin",
 		.author = "GustavoLCR",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.check = &check,
 	.load = &load,

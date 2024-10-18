@@ -973,8 +973,9 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 RBinPlugin r_bin_plugin_coff = {
 	.meta = {
 		.name = "coff",
+		.author = "Fedor Sakharov",
 		.desc = "COFF format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

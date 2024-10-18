@@ -356,8 +356,9 @@ static ut64 baddr(RBinFile *bf) {
 RBinPlugin r_bin_plugin_xbe = {
 	.meta = {
 		.name = "xbe",
+		.author = "TheLemonMan",
 		.desc = "Microsoft Xbox xbe format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

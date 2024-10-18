@@ -1,7 +1,6 @@
-/* radare - MIT - 2021 - pancake */
+/* radare - MIT - 2021-2024 - pancake */
 
 #include <r_bin.h>
-#include <r_lib.h>
 
 #if 0
 https://es.wikipedia.org/wiki/Amiga_Hunk
@@ -88,6 +87,8 @@ static RList* entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_hunk = {
 	.meta = {
 		.name = "hunk",
+		.version = "1.0",
+		.author = "pancake",
 		.desc = "AmigaOS Hunk executable binary",
 		.license = "MIT",
 	},

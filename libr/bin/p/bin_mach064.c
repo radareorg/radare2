@@ -287,7 +287,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.meta = {
 		.name = "mach064",
 		.desc = "mach064 bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

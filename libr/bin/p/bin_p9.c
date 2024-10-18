@@ -697,6 +697,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.meta = {
 		.name = "p9",
 		.desc = "Plan 9 bin plugin",
+		.author = "keegan",
 		.license = "MIT",
 	},
 	.load = &load,

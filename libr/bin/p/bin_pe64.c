@@ -454,7 +454,8 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.meta = {
 		.name = "pe64",
 		.desc = "PE64 (PE32+) bin plugin",
-		.license = "LGPL3",
+		.author = "nibble,pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

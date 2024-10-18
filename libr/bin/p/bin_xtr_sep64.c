@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
+/* radare - LGPLv3 - Copyright 2009-2024 - pancake */
 
 #include <r_bin.h>
 
@@ -474,8 +474,9 @@ static ut32 read_arm64_ins(RBuffer *b, int idx) {
 RBinXtrPlugin r_bin_xtr_plugin_xtr_sep64 = {
 	.meta = {
 		.name = "xtr.sep64",
+		.author = "pancake",
 		.desc = "64-bit SEP bin extractor plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.check = check,
 	.load = &load,

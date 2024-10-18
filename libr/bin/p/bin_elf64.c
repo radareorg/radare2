@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.inc.c"
-
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[5] = {0};
@@ -127,7 +126,8 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.meta = {
 		.name = "elf64",
 		.desc = "elf64 bin plugin",
-		.license = "LGPL3",
+		.author = "nibble",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.check = &check,

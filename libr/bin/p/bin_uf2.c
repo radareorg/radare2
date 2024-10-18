@@ -35,6 +35,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_uf2 = {
 	.meta = {
 		.name = "uf2",
+		.author = "pancake",
 		.desc = "Microsoft Unified Firmware v2",
 		.license = "MIT",
 	},

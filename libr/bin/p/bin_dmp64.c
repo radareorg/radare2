@@ -44,8 +44,8 @@ static void header(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) {
 		return NULL;
 	}
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
@@ -75,6 +75,7 @@ static RBinInfo *info(RBinFile *bf) {
 		break;
 	default:
 		ret->os = strdup ("Unknown");
+		break;
 	}
 
 	return ret;
@@ -82,29 +83,22 @@ static RBinInfo *info(RBinFile *bf) {
 
 static RList *sections(RBinFile *bf) {
 	dmp_page_desc *page;
-	RList *ret;
 	RListIter *it;
-	RBinSection *ptr;
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
-
+	RList *ret = r_list_newf (free);
 	r_list_foreach (obj->pages, it, page) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
+		RBinSection *ptr = R_NEW0 (RBinSection);
+		if (R_LIKELY (ptr)) {
+			ptr->name = strdup ("Memory_Section");
+			ptr->paddr = page->file_offset;
+			ptr->size = DMP_PAGE_SIZE;
+			ptr->vaddr = page->start;
+			ptr->vsize = DMP_PAGE_SIZE;
+			ptr->add = true;
+			ptr->perm = R_PERM_R;
+			r_list_append (ret, ptr);
 		}
-
-		ptr->name = strdup ("Memory_Section");
-		ptr->paddr = page->file_offset;
-		ptr->size = DMP_PAGE_SIZE;
-		ptr->vaddr = page->start;
-		ptr->vsize = DMP_PAGE_SIZE;
-		ptr->add = true;
-		ptr->perm = R_PERM_R;
-
-		r_list_append (ret, ptr);
 	}
 	return ret;
 }
@@ -131,8 +125,9 @@ static bool check(RBinFile *bf, RBuffer *b) {
 RBinPlugin r_bin_plugin_dmp64 = {
 	.meta = {
 		.name = "dmp64",
+		.author = "abcSup",
 		.desc = "Windows Crash Dump x64 r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,

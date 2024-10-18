@@ -236,6 +236,7 @@ static RList *relocs(RBinFile *bf) {
 RBinPlugin r_bin_plugin_mz = {
 	.meta = {
 		.name = "mz",
+		.author = "pancake",
 		.desc = "MZ bin plugin",
 		.license = "MIT",
 	},

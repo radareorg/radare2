@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2019 - pancake */
+/* radare2 - LGPL - Copyright 2016-2024 - pancake */
 
 #include <r_bin.h>
 
@@ -204,7 +204,8 @@ RBinPlugin r_bin_plugin_menuet = {
 	.meta = {
 		.name = "menuet",
 		.desc = "Menuet/KolibriOS bin plugin",
-		.license = "LGPL3",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.size = &size,

@@ -451,7 +451,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 		.name = "mdmp",
 		.author = "Davis,Alex Kornitzer",
 		.desc = "Minidump format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,
 	.entries = entries,

@@ -146,8 +146,9 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_z64 = {
 	.meta = {
 		.name = "z64",
+		.author = "pancake",
 		.desc = "Nintendo 64 binaries big endian r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.check = &check,

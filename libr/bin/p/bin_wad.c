@@ -148,7 +148,7 @@ RBinPlugin r_bin_plugin_wad = {
 	.meta = {
 		.name = "wad",
 		.desc = "DOOM WAD format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "murphy",
 	},
 	.get_sdb = &get_sdb,

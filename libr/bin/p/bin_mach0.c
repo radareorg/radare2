@@ -982,7 +982,8 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.meta = {
 		.name = "mach0",
 		.desc = "mach0 bin plugin",
-		.license = "LGPL3",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

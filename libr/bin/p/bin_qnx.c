@@ -267,7 +267,7 @@ RBinPlugin r_bin_plugin_qnx = {
 		.name = "qnx",
 		.author = "deepakchethan",
 		.desc = "QNX executable file support",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,
