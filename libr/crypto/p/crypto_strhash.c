@@ -17,6 +17,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_strhash = {
 	.meta = {
 		.name = "strhash",
+		.desc = "String lash using SDB",
 		.author = "pancake",
 		.license = "MIT",
 	},

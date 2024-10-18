@@ -162,27 +162,27 @@ NAME=rahash2 -L
 FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
-c      aes-ecb   MIT  pancake
-c      aes-cbc  LGPL  pancake
-c     aes-wrap  LGPL  Sylvain Pelissier
-e       base64  LGPL  rakholiyajenish.07
-e       base91   MIT  rakholiyajenish.07
-c     blowfish LGPL3  pancake
-c         cps2  LGPL  pof,esanfelix
-c      des-ecb  LGPL  deroad
-s      ed25519  Zlib  Sylvain Pelissier
-h      entropy   MIT  pancake
-e     punycode  LGPL  pancake
-c          rc2  LGPL  pancake
-c          rc4  LGPL  pancake
-c          rc6  LGPL  pancake
-c          rol  LGPL  pancake
-c          ror  LGPL  pancake
-c          rot   MIT  pancake
-c  serpent-ecb  LGPL  pancake
-c      sm4-ecb LGPL3  Sylvain Pelissier
-h      strhash   MIT  pancake
-c          xor   MIT  pancake
+c      aes-ecb  Block Cipher Mode for Rijndael Encryption
+c      aes-cbc  Cipher Block Chaining Mode for Rijndael Encryption
+c     aes-wrap  Advanced Encryption Standard
+e       base64  Binary to text encoding scheme using 64 ascii characters
+e       base91  Binary to text encoding scheme using 91 ascii characters
+c     blowfish  Bruce Schneier's symetric-key block cipher
+c         cps2  Capcom Play System 2
+c      des-ecb  Simplest and weakest Electronic Code Book for DES
+s      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
+h      entropy  Collected randomness by a syustem
+e     punycode  Unicoded represented in plain ascii
+c          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
+c          rc4  Rivest Cipher 4
+c          rc6  Rivest's Cipher 6
+e          rol  Rotate Left N bits
+e          ror  Rotate Right N bits
+e          rot  
+c  serpent-ecb  
+c      sm4-ecb  
+h      strhash  
+c          xor  Byte level Exclusive Or Encryption
 h          md5
 h         sha1
 h       sha256
