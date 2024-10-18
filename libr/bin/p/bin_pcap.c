@@ -146,7 +146,7 @@ RBinPlugin r_bin_plugin_pcap = {
 	.meta = {
 		.name = "pcap",
 		.desc = "libpcap/.pcap format",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "srimanta,pancake",
 	},
 	.info = info,

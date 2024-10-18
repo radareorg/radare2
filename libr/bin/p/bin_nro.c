@@ -255,6 +255,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_nro = {
 	.meta = {
 		.name = "nro",
+		.author = "pancake",
 		.desc = "Nintendo Switch NRO0 binaries",
 		.license = "MIT",
 	},

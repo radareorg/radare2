@@ -558,8 +558,9 @@ static RList* entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_vsf = {
 	.meta = {
 		.name = "vsf",
+		.author = "riq",
 		.desc = "VICE Snapshot File",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

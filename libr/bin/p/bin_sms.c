@@ -104,8 +104,9 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_sms = {
 	.meta = {
 		.name = "sms",
+		.author = "pancake",
 		.desc = "SEGA MasterSystem/GameGear",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.check = &check,

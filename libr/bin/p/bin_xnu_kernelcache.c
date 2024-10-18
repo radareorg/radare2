@@ -2277,7 +2277,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 		.name = "kernelcache",
 		.desc = "iOS/macOS kernelcache parser",
 		.author = "mrmacete",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.destroy = &destroy,
 	.load = &load,

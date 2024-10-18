@@ -1669,7 +1669,8 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.meta = {
 		.name = "dyldcache",
 		.desc = "dyldcache bin plugin",
-		.license = "LGPL3",
+		.author = "mrmacete",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.entries = &entries,

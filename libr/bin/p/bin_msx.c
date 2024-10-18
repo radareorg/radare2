@@ -214,7 +214,7 @@ RBinPlugin r_bin_plugin_msx = {
 	.meta = {
 		.name = "msx",
 		.desc = "MSX rom/bin parser",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "Jose Antonio Romero",
 	},
 	.load = &load,

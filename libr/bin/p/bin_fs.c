@@ -86,7 +86,7 @@ RBinPlugin r_bin_plugin_fs = {
 		.desc = "filesystem bin plugin",
 		.author = "pancake",
 		.version = "1.0",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

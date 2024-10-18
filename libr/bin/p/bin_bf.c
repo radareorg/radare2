@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2023 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_bin.h>
 
@@ -95,8 +95,9 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_bf = {
 	.meta = {
 		.name = "bf",
+		.author = "pancake",
 		.desc = "brainfuck",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

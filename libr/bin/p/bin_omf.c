@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2015-2023 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2024 - ampotos, pancake */
 
-#include <r_lib.h>
 #include <r_bin.h>
 #include "omf/omf.h"
 
@@ -159,7 +158,8 @@ RBinPlugin r_bin_plugin_omf = {
 	.meta = {
 		.name = "omf",
 		.desc = "omf bin plugin",
-		.license = "LGPL3",
+		.author = "ampotos",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

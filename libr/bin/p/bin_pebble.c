@@ -195,7 +195,8 @@ RBinPlugin r_bin_plugin_pebble = {
 	.meta = {
 		.name = "pebble",
 		.desc = "Pebble Watch App",
-		.license = "LGPL",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.check = &check,

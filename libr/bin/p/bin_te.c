@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2013-2019 - xvilka */
+/* radare - LGPL - Copyright 2013-2024 - xvilka */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "te/te_specs.h"
 #include "te/te.h"
@@ -152,8 +149,9 @@ static bool check(RBinFile *bf, RBuffer *b) {
 RBinPlugin r_bin_plugin_te = {
 	.meta = {
 		.name = "te",
-		.desc = "TE bin plugin", // Terse Executable format
-		.license = "LGPL3",
+		.author = "xvilka",
+		.desc = "Terse Executable format",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

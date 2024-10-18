@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2023 pancake */
+/* radare - LGPL - Copyright 2018-2024 pancake */
 
 #include <r_bin.h>
 
@@ -16,6 +16,7 @@ static bool load(RBin *bin) {
 RBinLdrPlugin r_bin_ldr_plugin_ldr_linux = {
 	.meta = {
 		.name = "ldr.linux",
+		.author = "pancake",
 		.desc = "Linux loader plugin for RBin",
 		.license = "MIT",
 	},

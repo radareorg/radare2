@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2023 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -125,8 +125,9 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_bios = {
 	.meta = {
 		.name = "bios",
+		.author = "pancake",
 		.desc = "BIOS bin plugin",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

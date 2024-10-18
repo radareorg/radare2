@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2018-2022 - pancake */
+/* radare - LGPL - Copyright 2018-2024 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
 #include "../i/private.h"
@@ -442,6 +439,7 @@ static void header(RBinFile *bf) {
 RBinPlugin r_bin_plugin_symbols = {
 	.meta = {
 		.name = "symbols",
+		.author = "pancake",
 		.desc = "Apple Symbols file",
 		.license = "MIT",
 	},

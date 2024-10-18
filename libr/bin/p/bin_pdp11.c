@@ -225,6 +225,7 @@ RBinPlugin r_bin_plugin_pdp11 = {
 	.meta = {
 		.name = "pdp11",
 		.desc = "PDP11",
+		.author = "pancake",
 		.license = "MIT",
 	},
 	.load = &load,

@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2019 nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 nibble, pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/dyldcache.h"
 #include "mach0/mach0.h"
@@ -168,8 +165,9 @@ static RList *oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
 	.meta = {
 		.name = "xtr.dyldcache",
+		.author = "pancake,nibble",
 		.desc = "dyld cache bin extractor plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.extract = &extract,

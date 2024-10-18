@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2023 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2024 - Oscar Salvador */
 
 #include <r_bin.h>
 #include <r_io.h>
@@ -264,7 +264,7 @@ RBinPlugin r_bin_plugin_bflt = {
 		.name = "bflt",
 		.author = "Oscar Salvador",
 		.desc = "bFLT format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.destroy = &destroy,

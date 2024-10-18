@@ -290,6 +290,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_nso = {
 	.meta = {
 		.name = "nso",
+		.author = "rkx1209",
 		.desc = "Nintendo Switch NSO0 binaries",
 		.license = "MIT",
 	},

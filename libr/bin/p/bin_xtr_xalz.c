@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_bin.h>
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -62,6 +61,7 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 RBinXtrPlugin r_bin_xtr_plugin_xtr_xalz = {
 	.meta = {
 		.name = "xtr.xalz",
+		.author = "pancake",
 		.desc = "XAmarin LZ4 assemblies",
 		.license = "MIT",
 	},

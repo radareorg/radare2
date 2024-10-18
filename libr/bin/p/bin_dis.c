@@ -1,4 +1,4 @@
-/* radare2 - MIT - Copyright 2023 - keegan */
+/* radare2 - MIT - Copyright 2023-2024 - keegan */
 
 #define R_LOG_ORIGIN "bin.dis"
 
@@ -264,12 +264,10 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) {
 		return NULL;
 	}
-
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("program");
 	ret->rclass = strdup ("dis");
@@ -287,6 +285,7 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_dis = {
 	.meta = {
 		.name = "dis",
+		.author = "keegan",
 		.desc = "Inferno Dis VM bin plugin",
 		.license = "MIT",
 	},

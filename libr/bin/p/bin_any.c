@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #include <r_bin.h>
 #include <r_magic.h>
@@ -43,7 +43,7 @@ RBinPlugin r_bin_plugin_any = {
 	.meta = {
 		.name = "any",
 		.desc = "Dummy format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = load,
 	.destroy = fini,

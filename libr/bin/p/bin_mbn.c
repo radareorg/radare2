@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2019 - pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -181,7 +181,8 @@ RBinPlugin r_bin_plugin_mbn = {
 	.meta = {
 		.name = "mbn",
 		.desc = "MBN/SBL bootloader things",
-		.license = "LGPL3",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.minstrlen = 10,
 	.load = &load,

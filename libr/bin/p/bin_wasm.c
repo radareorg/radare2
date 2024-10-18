@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2021 - pancake, cgvwzq */
+/* radare2 - MIT - Copyright 2017-2021 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -489,6 +489,7 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 RBinPlugin r_bin_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
+		.author = "cgvwzq",
 		.desc = "WebAssembly bin plugin",
 		.license = "MIT",
 	},

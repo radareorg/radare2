@@ -610,7 +610,7 @@ RBinPlugin r_bin_plugin_rel = {
 	.meta = {
 		.name = "rel",
 		.desc = "Nintendo Wii REL format",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "terorie",
 	},
 	.check = &check,

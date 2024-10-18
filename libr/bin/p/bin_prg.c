@@ -1,7 +1,6 @@
-/* radare - LGPL3 - 2019-2023 - thestr4ng3r */
+/* radare - LGPL3 - 2019-2024 - thestr4ng3r */
 
 #include <r_bin.h>
-#include <r_lib.h>
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	// no magic
@@ -74,8 +73,9 @@ static RList *entries(RBinFile *bf) {
 RBinPlugin r_bin_plugin_prg = {
 	.meta = {
 		.name = "prg",
+		.author = "thestr4ng3r",
 		.desc = "C64 PRG",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = load,
 	.baddr = baddr,

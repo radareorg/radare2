@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2024 - GustavoLCR */
 
 #include <r_bin.h>
 #include "../format/le/le.h"
@@ -229,7 +229,7 @@ RBinPlugin r_bin_plugin_le = {
 		.name = "le",
 		.desc = "LE/LX format r2 plugin",
 		.author = "GustavoLCR",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.check = &check,
 	.load = &load,

@@ -210,6 +210,7 @@ RBinPlugin r_bin_plugin_nes = {
 		.name = "nes",
 		.desc = "NES",
 		.license = "MIT",
+		.author = "pancake",
 	},
 	.load = &load,
 	.check = &check,

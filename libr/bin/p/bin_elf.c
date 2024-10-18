@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
 
 #include "bin_elf.inc.c"
 
@@ -117,7 +117,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B (code, codelen);
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
 		R_LOG_WARN ("DATA section not support for ELF yet");
 		B (data, datalen);
 	}
@@ -127,8 +126,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 RBinPlugin r_bin_plugin_elf = {
 	.meta = {
 		.name = "elf",
-		.desc = "ELF format r2 plugin",
-		.license = "LGPL3",
+		.author = "nibble",
+		.desc = "ELF format parser",
+		.license = "LGPL-3.0-only",
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,

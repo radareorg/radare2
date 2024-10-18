@@ -122,8 +122,9 @@ static RBinInfo *info(RBinFile *bf) {
 RBinPlugin r_bin_plugin_ninds = {
 	.meta = {
 		.name = "ninds",
+		.author = "pancake",
 		.desc = "Nintendo DS format r_bin plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.load = &load,
 	.check = &check,

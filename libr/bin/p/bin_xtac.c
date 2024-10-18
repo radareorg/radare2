@@ -605,6 +605,7 @@ static RList *symbols(RBinFile *bf) {
 RBinPlugin r_bin_plugin_xtac = {
 	.meta = {
 		.name = "xtac",
+		.author = "FFRI Security",
 		.desc = "XTAC format r2 plugin",
 		.license = "Apache-2.0",
 	},
