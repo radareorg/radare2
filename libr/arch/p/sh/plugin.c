@@ -1323,8 +1323,9 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_sh = {
 	.meta = {
 		.name = "sh",
+		.author = "Eloi Sanfelix",
 		.desc = "SH-4 code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "sh",

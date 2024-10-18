@@ -674,7 +674,7 @@ const RArchPlugin r_arch_plugin_bpf_cs = {
 	.meta = {
 		.name = "bpf",
 		.desc = "Capstone BPF plugin",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 		.author = "terorie,aemmitt",
 	},
 	.arch = "bpf",

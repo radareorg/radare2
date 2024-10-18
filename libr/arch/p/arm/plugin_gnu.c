@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_arch.h>
 #include <r_anal.h>
 
@@ -642,7 +641,7 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_arm_gnu = {
 	.meta = {
 		.name = "arm.gnu",
-		.license = "LGPL3",
+		.license = "GPL-3.0-only",
 		.desc = "ARM code analysis plugin (asm.cpu=wd for winedbg disassembler)",
 	},
 	.arch = "arm",

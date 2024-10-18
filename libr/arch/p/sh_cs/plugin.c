@@ -417,7 +417,7 @@ const RArchPlugin r_arch_plugin_sh_cs = {
 	.meta = {
 		.name = "sh.cs",
 		.desc = "Capstone SH analysis",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "sh",
 	.bits = R_SYS_BITS_PACK1 (32),

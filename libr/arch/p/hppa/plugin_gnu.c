@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_asm.h>
 #include "../../include/disas-asm.h"
@@ -158,7 +158,8 @@ static int info(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_hppa_gnu = {
 	.meta = {
 		.name = "hppa",
-		.license = "GPL3",
+		.author = "pancake",
+		.license = "GPL-3.0-only",
 		.desc = "HP PA-RISC",
 	},
 	.arch = "hppa",

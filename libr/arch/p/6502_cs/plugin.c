@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2018-2022 - pancake, Sylvain Pelissier */
+/* radare - LGPL - Copyright 2018-2024 - pancake, Sylvain Pelissier */
 
-#include <string.h>
 #include <r_arch.h>
 #include <capstone/capstone.h>
 
@@ -257,7 +256,8 @@ const RArchPlugin r_arch_plugin_6502_cs = {
 	.meta = {
 		.name = "6502.cs",
 		.desc = "Capstone mos65xx analysis plugin",
-		.license = "LGPL3",
+		.author = "pancake,Sylvain Pelissier",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),
@@ -280,8 +280,9 @@ R_API RLibStruct radare_plugin = {
 const RArchPlugin r_arch_plugin_6502_cs = {
 	.meta = {
 		.name = "6502.cs",
+		.author = "pancake,Sylvain Pelissier",
 		.desc = "Capstone mos65xx analysis plugin (not supported)",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),

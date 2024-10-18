@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -133,8 +133,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_s390_gnu = {
 	.meta = {
 		.name = "s390.gnu",
+		.author = "pancake",
 		.desc = "SystemZ S390 from binutils",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.arch = "s390",
 	.cpus = "esa,zarch",

@@ -1,7 +1,6 @@
-/* radare2 - LGPL - Copyright 2014-2023 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_arch.h>
-#include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/xcore.h>
 
@@ -168,7 +167,7 @@ const RArchPlugin r_arch_plugin_xcore_cs = {
 	.meta = {
 		.name = "xcore",
 		.desc = "Capstone XCORE analysis",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "xcore",
 	.bits = R_SYS_BITS_PACK1 (32),

@@ -5096,7 +5096,7 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	.meta = {
 		.name = "arm",
 		.desc = "Capstone ARM analyzer",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "arm",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

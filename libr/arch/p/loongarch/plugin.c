@@ -1408,8 +1408,9 @@ static bool fini(RArchSession *s) {
 const RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.meta = {
 		.name = "loongarch",
+		.author = "junchao82,zhaojunchao",
 		.desc = "loongson loongarch code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "loongarch",
 	.bits = 64,

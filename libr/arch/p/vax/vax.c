@@ -1,6 +1,5 @@
 /* radare - GPL - Copyright 2015-2023 - pancake, condret */
 
-#include <r_lib.h>
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
 #include "vax.h"
@@ -257,8 +256,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_vax = {
 	.meta = {
 		.name = "vax",
+		.author = "pancake,condret",
 		.desc = "VAX code analysis plugin",
-		.license = "GPL",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "vax",
 	.bits = R_SYS_BITS_PACK1 (32),

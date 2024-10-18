@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake, dkreuter, astuder  */
+/* radare - LGPL - Copyright 2013-2024 - pancake, dkreuter, astuder  */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 
@@ -1151,8 +1148,9 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_8051 = {
 	.meta = {
 		.name = "8051",
+		.author = "pancake,dkreuter,astuder",
 		.desc = "8051 CPU code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "8051",
 	.bits = R_SYS_BITS_PACK2 (8, 16),

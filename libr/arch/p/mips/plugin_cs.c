@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_asm.h>
-#include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
 
@@ -1437,8 +1436,9 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 const RArchPlugin r_arch_plugin_mips_cs = {
 	.meta = {
 		.name = "mips",
+		.author = "pancake",
 		.desc = "Capstone MIPS analyzer",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "mips",
 	.cpus = "mips32/64,micro,r6,v3,v2",

@@ -375,7 +375,7 @@ const RArchPlugin r_arch_plugin_s390_cs = {
 		.name = "s390",
 		.desc = "Capstone SystemZ microanalysis",
 		.author = "pancake",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "s390",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31

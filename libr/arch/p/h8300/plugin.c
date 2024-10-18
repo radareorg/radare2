@@ -744,8 +744,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_h8300 = {
 	.meta = {
 		.name = "h8300",
+		.author = "pancake,Fedor Sakharov,Bhootravi",
 		.desc = "H8300 code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "h8300",
 	.bits = R_SYS_BITS_PACK1 (16),

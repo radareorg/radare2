@@ -145,7 +145,7 @@ const RArchPlugin r_arch_plugin_ws = {
 	.meta = {
 		.name = "ws",
 		.desc = "Space, tab and linefeed analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake"
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

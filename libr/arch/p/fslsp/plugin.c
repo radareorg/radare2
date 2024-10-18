@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2023 - eibachd, pancake */
+/* radare - LGPL-3.0-only - Copyright 2023 - eibachd, pancake */
 
 /*
  * QorIQ platform's trust architecture 3.0 Service processor (SP) provides
@@ -247,7 +247,7 @@ const RArchPlugin r_arch_plugin_fslsp = {
 		.name = "fslsp",
 		.author = "eibachd",
 		.desc = "Freescale QorIQ service processor analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "fslsp",
 	.bits = R_SYS_BITS_PACK1 (32),

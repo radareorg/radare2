@@ -277,8 +277,9 @@ static int archinfo(RArchSession *a, ut32 q) {
 const RArchPlugin r_arch_plugin_or1k = {
 	.meta = {
 		.name = "or1k",
+		.author = "v3l0c1r4pt0r",
 		.desc = "OpenRISC 1000",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.bits = 32,
 	.arch = "or1k",

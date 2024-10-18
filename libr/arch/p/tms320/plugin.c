@@ -472,7 +472,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_tms320 = {
 	.meta = {
 		.name = "tms320",
-		.license = "LGPLv3",
+		.license = "LGPL-3.0-only",
 #if CAPSTONE_HAS_TMS320C64X
 		.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
 #else

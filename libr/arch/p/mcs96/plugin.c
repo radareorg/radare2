@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright - 2015-2023 - condret */
+/* radare - LGPL - Copyright - 2015-2024 - condret */
 
 #include <r_asm.h>
 #include "mcs96.h"
@@ -189,7 +189,7 @@ const RArchPlugin r_arch_plugin_mcs96 = {
 	.meta = {
 		.name = "mcs96",
 		.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "condret",
 	},
 	.arch = "mcs96",

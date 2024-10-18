@@ -1,7 +1,6 @@
-/* radare - LGPL3 - Copyright 2021-2022 - condret, slowhand99 */
+/* radare - LGPL-3.0-only - Copyright 2021-2024 - condret, slowhand99 */
 
 #include <r_anal.h>
-#include <r_lib.h>
 #include "./jdh8dis.c"
 
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
@@ -21,8 +20,9 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_jdh8 = {
 	.meta = {
 		.name = "jdh8",
+		.author = "slowhand99,condret",
 		.desc = "jdh-8 toy architecture",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "jdh8",
 	.bits = R_SYS_BITS_PACK1 (16),

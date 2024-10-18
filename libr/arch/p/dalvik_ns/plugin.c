@@ -617,6 +617,7 @@ static char *regs (RArchSession *as) {
 const RArchPlugin r_arch_plugin_dalvik_ns = {
 	.meta = {
 		.name = "dalvik.ns",
+		.author = "keegan",
 		.desc = "Android Dalvik VM disassembler",
 		.license = "MIT",
 	},

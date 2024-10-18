@@ -1580,8 +1580,9 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_ppc_cs = {
 	.meta = {
 		.name = "ppc",
+		.author = "pancake,deroad",
 		.desc = "Capstone (+vle+ps) PowerPC disassembler",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "ppc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),

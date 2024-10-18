@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 -- pancake */
+/* radare - LGPL - Copyright 2011-2024 -- pancake */
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
@@ -683,8 +683,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_sparc_gnu = {
 	.meta = {
 		.name = "sparc.gnu",
+		.author = "pancake",
 		.desc = "Scalable Processor Architecture",
-		.license = "GPL3",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "sparc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),

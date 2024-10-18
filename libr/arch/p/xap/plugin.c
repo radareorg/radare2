@@ -216,7 +216,7 @@ const RArchPlugin r_arch_plugin_xap = {
 	.meta = {
 		.name = "xap",
 		.desc = "XAP code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.arch = "xap",

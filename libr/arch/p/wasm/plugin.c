@@ -644,8 +644,9 @@ static bool cache_clean(RArchSession *s) {
 const RArchPlugin r_arch_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
+		.author = "pancake,xvilka,condret",
 		.desc = "WebAssembly analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "wasm",
 	.bits = R_SYS_BITS_PACK1 (64),

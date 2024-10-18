@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2023 - pancake */
+/* radare - LGPL - Copyright 2016-2024 - pancake */
 
 #include <r_arch.h>
 #include "../../include/opcode/m68k.h"
@@ -117,7 +117,7 @@ const RArchPlugin r_arch_plugin_m68k_gnu = {
 	.meta = {
 		.name = "m68k.gnu",
 		.author = "pancake",
-		.license = "GPL3",
+		.license = "GPL-3.0-only",
 		.desc = "Binutils 2.36 based m68k disassembler",
 	},
 	.arch = "m68k",

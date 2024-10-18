@@ -393,6 +393,7 @@ static char *regs(RArchSession *as) {
 const RArchPlugin r_arch_plugin_dis = {
 	.meta = {
 		.name = "dis",
+		.author = "keegan",
 		.desc = "Inferno Dis VM disassembler",
 		.license = "MIT",
 	},

@@ -1,7 +1,6 @@
 /* radare2 - BSD - Copyright 2013-2024 - pancake, condret */
 
 #include <r_arch.h>
-#include <r_lib.h>
 
 #define CPU_29000 "29000"
 #define CPU_29050 "29050"
@@ -699,8 +698,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_amd29k = {
 	.meta = {
 		.name = "amd29k",
+		.author = "condret",
 		.desc = "AMD 29k decoder",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.arch = "amd29k",
 	.bits = R_SYS_BITS_PACK1 (32),

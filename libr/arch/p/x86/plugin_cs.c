@@ -4477,7 +4477,7 @@ const RArchPlugin r_arch_plugin_x86_cs = {
 	.meta = {
 		.name = "x86",
 		.desc = "Capstone X86 analysis",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),

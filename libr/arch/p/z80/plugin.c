@@ -1,7 +1,5 @@
-/* radare - GPL - Copyright 2002-2023 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
+/* radare - GPL - Copyright 2002-2024 - pancake, condret, unlogic, Bas Wijnen <wijnen@debian.org>, Jan Wilmans <jw@dds.nl> */
 
-#include <string.h>
-#include <stdio.h>
 #include <r_arch.h>
 #include "z80_tab.h"
 
@@ -2839,8 +2837,9 @@ static bool fini(RArchSession *s) {
 const RArchPlugin r_arch_plugin_z80 = {
 	.meta = {
 		.name = "z80",
+		.author = "pancake,condret,unlogic,Bas Wijnen,Jan Wilmans",
 		.desc = "Z80 CPU code analysis plugin",
-		.license = "GPL",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "z80",
 	.bits = R_SYS_BITS_PACK (16),

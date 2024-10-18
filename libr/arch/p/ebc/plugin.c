@@ -165,7 +165,7 @@ const RArchPlugin r_arch_plugin_ebc = {
 	.meta = {
 		.name = "ebc",
 		.desc = "EFI Bytecode architecture",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "Fedor Sakharov",
 	},
 	.info = archinfo,
