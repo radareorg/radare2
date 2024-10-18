@@ -275,8 +275,8 @@ unit    8
 segment 0000:0008
 string  "\b"
 fvalue  8.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b00001000
 base36  0_8
 ternary 0t22
@@ -289,8 +289,8 @@ unit    0
 segment 0000:0000
 string  "\0"
 fvalue  0.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b00000000
 base36  0_0
 ternary 0t0
@@ -350,8 +350,8 @@ unit    123
 segment 0000:007b
 string  "{"
 fvalue  123.0
-float   0.000000f
-double  0.000000
+float   0.000000000000000f
+double  0.000000000000000
 binary  0b01111011
 base36  0_3f
 ternary 0t11120
