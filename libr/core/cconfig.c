@@ -4000,7 +4000,7 @@ R_API int r_core_config_init(RCore *core) {
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "path of the tmp directory");
 	free (p);
-	char *cd = r_xdg_cachedir ("ano");
+	char *cd = r_xdg_cachedir (NULL);
 	SETCB ("dir.cache", cd, &cb_dir_cache, "override default cache directory (XDG_CACHE_HOME)");
 	free (cd);
 	char *prjdir = r_xdg_datadir ("projects");
