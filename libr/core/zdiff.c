@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2023 - nibble, pancake */
+/* radare - LGPL - Copyright 2019-2024 - nibble, pancake */
 
 #include <r_core.h>
 
@@ -40,10 +40,7 @@ static bool is_import(const char *name) {
 // R2_600 - bool
 R_API int r_core_zdiff(RCore *c, RCore *c2) {
 	R_RETURN_VAL_IF_FAIL (c && c2, false);
-	if (!c || !c2) {
-		return false;
-	}
-	////////// moove this into anal/sign
+	// TODO move this into anal/sign
 	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);
 	SdbList *b = sdb_foreach_list (c2->anal->sdb_zigns, false);
 
@@ -70,7 +67,7 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 			r_sign_item_free (it);
 		}
 	}
-	//////////
+	// --------------8<----------------
 	RListIter *itr;
 	RListIter *itr2;
 	RSignItem *si;

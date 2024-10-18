@@ -993,7 +993,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					if (!*ptr_start) {
 						continue;
 					}
-					ret = r_asm_assemble (a, &op, strdup (ptr_start));
+					char *arg = strdup (ptr_start);
+					ret = r_asm_assemble (a, &op, arg);
+					free (arg);
 				}
 			}
 			if (stage == STAGES - 1) {
