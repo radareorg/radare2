@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -58,7 +58,7 @@ static bool rot_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, in
 }
 
 static int rot_get_key_size(RCryptoJob *cj) {
-	//Returning number of bytes occupied by ut8
+	// Returning number of bytes occupied by ut8
 	return 1;
 }
 
@@ -81,8 +81,10 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rot = {
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.meta = {
 		.name = "rot",
+		.desc = "Rotate Encryption",
 		.author = "pancake",
 		.license = "MIT",
 	},

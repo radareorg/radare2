@@ -3,7 +3,7 @@
 #include <r_crypto.h>
 #include <r_hash.h>
 #include <config.h>
-#include "r_util/r_assert.h"
+#include <r_util/r_assert.h>
 
 R_LIB_VERSION (r_crypto);
 
@@ -188,10 +188,8 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
 
 static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_printf) {
 	const char type = cp->type? cp->type: 'c';
-	const char *license = cp->meta.license? cp->meta.license: "LGPL";
 	const char *desc = r_str_get (cp->meta.desc);
-	const char *author = r_str_get (cp->meta.author);
-	cb_printf ("%c %12s %5s %s %s\n", type, cp->meta.name, license, desc, author);
+	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
 }
 
 R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode) {
@@ -201,7 +199,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 	}
 	PJ *pj = NULL;
 
-	// XXX R2_596 - add a type argument to be clearer but will break ABI.
+	// XXX R2_600 - add a type argument to be clearer but will break ABI.
 	RCryptoType type = (RCryptoType)mode >> 8;
 	mode = mode & 0xff;
 	if (mode == 'J') {
@@ -209,8 +207,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		pj_a (pj);
 	} else if (mode == 'j') {
 		pj = pj_new ();
-		pj_o (pj);
-		pj_ka (pj, "plugins");
+		pj_a (pj);
 	}
 	RListIter *iter;
 	RCryptoPlugin *cp;
@@ -246,7 +243,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 				pj_free (pj);
 				return;
 			}
-			pj_ko (pj, "meta");
+			// pj_ko (pj, "meta");
 			if (cp->meta.author) {
 				pj_ks (pj, "author", cp->meta.author);
 			}
@@ -256,7 +253,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 			if (cp->meta.license) {
 				pj_ks (pj, "license", cp->meta.license);
 			}
-			pj_end (pj);
+			// pj_end (pj);
 			pj_end (pj);
 			break;
 		default:
@@ -299,7 +296,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		free (s);
 	} else if (mode == 'j') {
 		pj_end (pj);
-		pj_end (pj);
+	//	pj_end (pj);
 		char *s = pj_drain (pj);
 		cb_printf ("%s\n", s);
 		free (s);

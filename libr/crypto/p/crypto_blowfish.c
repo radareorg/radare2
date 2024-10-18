@@ -340,8 +340,9 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "blowfish",
-		.license = "LGPL3",
-		.author = "pancake"
+		.license = "LGPL-3.0-only",
+		.author = "pancake",
+		.desc = "Bruce Schneier's symetric-key block cipher",
 	},
 	.implements = "blowfish",
 	.set_key = blowfish_set_key,

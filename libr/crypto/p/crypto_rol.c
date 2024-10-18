@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2016-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_crypto.h>
-#include <r_util/r_log.h>
 
 #define NAME "rol"
 
@@ -68,10 +66,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rol = {
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.meta = {
 		.name = NAME,
+		.desc = "Rotate Left N bits",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.implements = NAME,
 	.set_key = rol_set_key,
