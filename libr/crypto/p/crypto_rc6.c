@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - pancake */
-
-// Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
+/* radare - LGPL - Copyright 2016-2024 - pancake */
 
 #include <r_crypto.h>
 
@@ -205,6 +203,7 @@ RCryptoPlugin r_crypto_plugin_rc6 = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "rc6",
+		.desc = "Rivest's Cipher 6",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

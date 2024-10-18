@@ -55,6 +55,7 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_base64 = {
 	.meta = {
 		.name = "base64",
+		.desc = "Binary to text encoding scheme using 64 ascii characters",
 		.author = "rakholiyajenish.07",
 		.license = "LGPL-3.0-only"
 	},

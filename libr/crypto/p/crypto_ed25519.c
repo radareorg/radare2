@@ -99,6 +99,7 @@ RCryptoPlugin r_crypto_plugin_ed25519 = {
 	.type = R_CRYPTO_TYPE_SIGNATURE,
 	.meta = {
 		.name = "ed25519",
+		.desc = "Elliptic curve pubkey cryptographic algorithm used for signing and verification",
 		.author = "Sylvain Pelissier",
 		.license = "Zlib",
 	},

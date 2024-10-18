@@ -58,6 +58,7 @@ RCryptoPlugin r_crypto_plugin_xor = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "xor",
+		.desc = "Byte level Exclusive Or Encryption",
 		.author = "pancake",
 		.license = "MIT",
 	},

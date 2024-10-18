@@ -3,7 +3,7 @@
 #include <r_crypto.h>
 #include <r_hash.h>
 #include <config.h>
-#include "r_util/r_assert.h"
+#include <r_util/r_assert.h>
 
 R_LIB_VERSION (r_crypto);
 
@@ -188,10 +188,8 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
 
 static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_printf) {
 	const char type = cp->type? cp->type: 'c';
-	const char *license = cp->meta.license? cp->meta.license: "LGPL";
 	const char *desc = r_str_get (cp->meta.desc);
-	const char *author = r_str_get (cp->meta.author);
-	cb_printf ("%c %12s %5s %s %s\n", type, cp->meta.name, license, desc, author);
+	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
 }
 
 R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode) {

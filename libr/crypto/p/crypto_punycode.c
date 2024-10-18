@@ -35,6 +35,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_punycode = {
 	.meta = {
 		.name = "punycode",
+		.desc = "Unicoded represented in plain ascii",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

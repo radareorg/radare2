@@ -245,6 +245,7 @@ RCryptoPlugin r_crypto_plugin_rc2 = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "rc2",
+		.desc = "Ron Rivest's Code symmetric key encryption also known as ARC2",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
