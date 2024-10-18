@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2022 - pancake */
+/* radare2 - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_arch.h>
 #include <capstone/capstone.h>
@@ -680,7 +680,7 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x",
 		.desc = "Capstone M680X analysis plugin",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "m680x",
 	.cpus = "6800,6801,6805,6808,6809,6811,6301,6309,cpu12,hcs08",
@@ -697,7 +697,7 @@ const RArchPlugin r_anal_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x (unsupported)",
 		.desc = "Capstone M680X analyzer (unsupported)",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "m680x",
 	.bits = R_SYS_BITS_PACK1 (32),

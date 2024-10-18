@@ -83,7 +83,7 @@ const RArchPlugin r_arch_plugin_any_as = {
 		.name = "any.as",
 		.desc = "Uses system gnu/clang 'as' assembler",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	// TODO: add the "any" architecture to support any, instead of using null
 	.arch = "any", // on purpose because that's a multi-arch plugin

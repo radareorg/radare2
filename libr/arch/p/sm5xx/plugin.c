@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2023 - pancake */
+/* radare2 - LGPL - Copyright 2023-2024 - pancake */
 
 #include <r_arch.h>
 #include "sm5xx.h"
@@ -69,8 +69,9 @@ static int archinfo(RArchSession *a, ut32 q) {
 const RArchPlugin r_arch_plugin_sm5xx = {
 	.meta = {
 		.name = "sm5xx",
+		.author = "pancake",
 		.desc = "Sharp SM 5XX family MCUs",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.bits = R_SYS_BITS_PACK1 (4),
 	.regs = regs,

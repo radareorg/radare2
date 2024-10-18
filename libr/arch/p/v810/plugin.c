@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - danielps, pancake */
+/* radare - LGPL - Copyright 2015-2024 - danielps, pancake */
 
 #include <r_arch.h>
 #include "./v810_disas.h"
@@ -464,8 +464,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_v810 = {
 	.meta = {
 		.name = "v810",
+		.author = "danielps,pancake",
 		.desc = "V810 code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "v810",
 	.bits = R_SYS_BITS_PACK1 (32),

@@ -36,7 +36,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 		pj_k (pj, name);
 		pj_raw (pj, arr);
 	} else {
-		R_LOG_ERROR ("Invalid JSON? (%s)", res);
+		R_LOG_ERROR ("Invalid JSON for (%s) (%s)", cmd, res);
 	}
 	free (res);
 }
@@ -164,7 +164,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			json_plugins (core, pj, "io", "Loj");
 
 			// json_plugins (core, pj, "parse", "Lpj");
-			json_plugins (core, pj, "anal", "LAj");
+			// json_plugins (core, pj, "anal", "LAj");
 			// json_plugins (core, pj, "crypto", "LCj");
 			// json_plugins (core, pj, "lang", "Llj");
 		//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed

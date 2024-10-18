@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_asm.h>
 
 static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
@@ -56,7 +55,7 @@ const RArchPlugin r_arch_plugin_x86_nasm = {
 	.meta = {
 		.name = "x86.nasm",
 		.desc = "X86 nasm assembler",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
 	// NOTE: 64bits is not supported on OSX's nasm :(

@@ -1712,7 +1712,7 @@ const RArchPlugin r_arch_plugin_dalvik = {
 		.name = "dalvik",
 		.author = "pancake",
 		.desc = "Dalvik (Android VM) bytecode analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "dalvik",
 	.bits = R_SYS_BITS_PACK1 (32),

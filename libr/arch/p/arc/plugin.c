@@ -1229,7 +1229,7 @@ const RArchPlugin r_arch_plugin_arc = {
 	.meta = {
 		.name = "arc",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.desc = "ARC code analysis plugin",
 	},
 	.arch = "arc",

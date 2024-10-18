@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2020-2024 - curly */
 
-#include <r_lib.h>
 #include <r_asm.h>
 #include <r_arch.h>
 
@@ -255,8 +254,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_tricore = {
 	.meta = {
 		.name = "tricore",
+		.author = "curly",
 		.desc = "TRICORE analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "tricore",
 	.cpus = "generic,rider-a,rider-b,v2,pcp,pcp2",

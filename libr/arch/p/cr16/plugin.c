@@ -128,8 +128,9 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_cr16 = {
 	.meta = {
 		.name = "cr16",
+		.author = "Fedor Sakharov,pancake",
 		.desc = "Compact RISC processor",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "cr16",

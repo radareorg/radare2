@@ -15328,6 +15328,7 @@ static void cmd_ap(RCore *core, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_ap);
+		break;
 	default:
 		r_core_return_invalid_command (core, "ap", input[1]);
 		break;

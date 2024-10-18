@@ -155,8 +155,9 @@ static int info(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_msp430 = {
 	.meta = {
 		.name = "msp430",
+		.author = "Fedor Sakharov,pancake",
 		.desc = "TI MSP430 code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "msp430",
 	.bits = R_SYS_BITS_PACK1 (16),

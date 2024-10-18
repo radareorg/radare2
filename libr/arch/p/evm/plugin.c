@@ -390,8 +390,9 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 const RArchPlugin r_arch_plugin_evm = {
 	.meta = {
 		.name = "evm",
+		.author = "pancake,Sylvain Pelissier",
 		.desc = "EthereumVM plugin",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.arch = "evm",
 	.regs = regs,

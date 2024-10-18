@@ -2401,8 +2401,9 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_avr = {
 	.meta = {
 		.name = "avr",
+		.author = "pancake,rvalles,condret,killabyte",
 		.desc = "AVR code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "avr",
 	.info = info,

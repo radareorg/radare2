@@ -368,7 +368,7 @@ const RArchPlugin r_arch_plugin_java = {
 		.name = "java",
 		.desc = "Java bytecode analysis plugin",
 		.author = "dso",
-		.license = "Apache",
+		.license = "Apache-2.0",
 	},
 	.arch = "java",
 	.info = archinfo,

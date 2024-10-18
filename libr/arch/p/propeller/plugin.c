@@ -127,8 +127,9 @@ static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_propeller = {
 	.meta = {
 		.name = "propeller",
+		.author = "Fedor Sakharov,pancake",
 		.desc = "Parallax propeller code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "propeller",
 	.bits = 32,

@@ -338,8 +338,8 @@ const RArchPlugin r_arch_plugin_snes = {
 	.meta = {
 		.name = "snes",
 		.desc = "SNES analysis plugin",
-		.license = "LGPL3",
-		.author = "pancake",
+		.license = "LGPL-3.0-only",
+		.author = "condret",
 	},
 	.arch = "snes", // modified 6502 ?
 	.bits = R_SYS_BITS_PACK2 (8, 16),

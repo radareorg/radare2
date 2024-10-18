@@ -1,11 +1,8 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 // This file is based on the Z80 analyser and modified for
 // the Intel 8080 disassembler by Alexander Demin, 2012.
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_arch.h>
 #include "i8080.h"
 
@@ -64,8 +61,9 @@ static int archinfo (RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_i8080 = {
 	.meta = {
 		.name = "i8080",
+		.author = "pancake",
 		.desc = "I8080 CPU code arch plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "i8080",
 	.bits = R_SYS_BITS_PACK1 (16),

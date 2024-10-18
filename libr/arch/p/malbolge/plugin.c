@@ -64,10 +64,13 @@ static bool mal_decode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 const RArchPlugin r_arch_plugin_malbolge = {
-	.name = "malbolge",
-	.desc = "Malbolge analysis plugin",
+	.meta = {
+		.name = "malbolge",
+		.author = "pancake",
+		.desc = "Malbolge analysis plugin",
+		.license = "LGPL-3.0-only",
+	},
 	.arch = "malbolge",
-	.license = "LGPL3",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = &mal_decode,
 };

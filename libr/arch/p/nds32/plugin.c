@@ -1,4 +1,5 @@
-/* radare - MIT - Copyright 2023 - pancake, decaduto */
+/* radare - MIT - Copyright 2023-2024 - pancake, decaduto */
+
 #include <r_arch.h>
 #include <r_lib.h>
 
@@ -329,8 +330,8 @@ static char *regs(RArchSession *as) {
 const RArchPlugin r_arch_plugin_nds32 = {
 	.meta = {
 		.name = "nds32",
-		.author = "Edoardo Mantovani",
-		.license = "GPL3",
+		.author = "decaduto,pancake",
+		.license = "GPL-3.0-only",
 		.desc = "Binutils based nds32 disassembler",
 	},
 	.arch = "nds32",

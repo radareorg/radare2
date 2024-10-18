@@ -1,7 +1,6 @@
-/* radare2 - LGPL - Copyright 2022 - bemodtwz */
+/* radare2 - LGPL - Copyright 2022-2024 - bemodtwz */
 
 #include <r_anal.h>
-#include <r_lib.h>
 
 #define MAXSTRLEN 128
 
@@ -991,8 +990,9 @@ static bool pickle_fini(RArchSession *s) {
 const RArchPlugin r_arch_plugin_pickle = {
 	.meta = {
 		.name = "pickle",
+		.author = "bemodtwz",
 		.desc = "Python Pickle Machine Disassembler",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.arch = "pickle",
 	.bits = R_SYS_BITS_PACK1 (8), // not sure

@@ -927,7 +927,7 @@ const RArchPlugin r_arch_plugin_m68k_cs = {
 	.meta = {
 		.name = "m68k",
 		.desc = "Capstone M68K analyzer",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.cpus = "68000,68010,68020,68030,68040,68060",
 	.arch = "m68k",
@@ -942,11 +942,11 @@ const RArchPlugin r_arch_plugin_m68k_cs = {
 };
 #else
 const RArchPlugin r_arch_plugin_m68k_cs = {
-	.name = "m68k (unsupported)",
-	.desc = "Capstone M68K analyzer (unsupported)",
-	.license = "BSD",
-	.arch = "m68k",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.meta = {
+		.name = "m68k (unsupported)",
+		.desc = "Capstone M68K analyzer",
+		.license = "BSD-3-Clause",
+	},
 };
 #endif
 

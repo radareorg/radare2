@@ -3362,8 +3362,9 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 const RArchPlugin r_arch_plugin_arm_v35 = {
 	.meta = {
 		.name = "arm.v35",
+		.author = "aemitt,pancake,Vector35",
 		.desc = "Vector35 ARM analyzer",
-		.license = "BSD",
+		.license = "BSD-3-Clause",
 	},
 	.arch = "arm",
 	.info = archinfo,

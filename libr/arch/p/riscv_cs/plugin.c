@@ -643,8 +643,9 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 const RArchPlugin r_arch_plugin_riscv_cs = {
 	.meta = {
 		.name = "riscv.cs",
+		.author = "pancake",
 		.desc = "RISC-V analysis plugin",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

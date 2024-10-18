@@ -473,7 +473,7 @@ const RArchPlugin r_arch_plugin_tricore_cs = {
 	.meta = {
 		.name = "tricore.cs",
 		.desc = "Capstone TriCore analysis",
-		.license = "BSD",
+		.license = "Apache-2.0",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "tricore",

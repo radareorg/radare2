@@ -1012,8 +1012,8 @@ const RArchPlugin r_arch_plugin_riscv = {
 	.meta = {
 		.name = "riscv",
 		.desc = "RISC-V analysis plugin",
-		.author = "pancake",
-		.license = "GPL",
+		.author = "pancake,qnix",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

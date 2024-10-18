@@ -782,8 +782,9 @@ static int archinfo(RArchSession *s, ut32 q) {
 const RArchPlugin r_arch_plugin_rsp = {
 	.meta = {
 		.name = "rsp",
+		.author = "bobby.smiles32,condret",
 		.desc = "RSP code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "rsp",
 	.bits = R_SYS_BITS_PACK (32),

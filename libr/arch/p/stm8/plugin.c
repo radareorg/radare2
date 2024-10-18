@@ -73,7 +73,7 @@ const RArchPlugin r_arch_plugin_stm8 = {
 		.name = "stm8",
 		.desc = "STM8 microprocessor",
 		.author = "pancake",
-		.license = "GPL3",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "stm8",
 	.cpus = NULL,

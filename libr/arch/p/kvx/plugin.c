@@ -312,6 +312,7 @@ static char *kvx_regs(RArchSession *a) {
 const RArchPlugin r_arch_plugin_kvx = {
 	.meta = {
 		.name = "kvx",
+		.author = "jmaselbas",
 		.desc = "Kalray VLIW core",
 		.license = "LGPL-3.0-only"
 	},

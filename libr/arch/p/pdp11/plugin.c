@@ -119,7 +119,7 @@ const RArchPlugin r_arch_plugin_pdp11 = {
 	.meta = {
 		.name = "pdp11",
 		.author = "pancake",
-		.license = "GPL3",
+		.license = "GPL-3.0-only",
 		.desc = "PDP-11",
 	},
 	.arch = "pdp11",

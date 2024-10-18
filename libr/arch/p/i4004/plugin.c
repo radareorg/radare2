@@ -356,9 +356,9 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 const RArchPlugin r_arch_plugin_i4004 = {
 	.meta = {
 		.name = "i4004",
-		.author = "pancake, condret",
+		.author = "pancake,condret",
 		.desc = "i4004 decoder plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "i4004",
 	.endian = R_SYS_ENDIAN_BIG,

@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
 #include <r_asm.h>
-#include <r_lib.h>
 #include "../../include/disas-asm.h"
+
 #if 0
 
 Documentation
@@ -345,7 +345,7 @@ const RArchPlugin r_arch_plugin_cris = {
 	.meta = {
 		.name = "cris",
 		.desc = "Axis Communications 32-bit embedded processor",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "cris",
 	.bits = R_SYS_BITS_PACK1 (32),

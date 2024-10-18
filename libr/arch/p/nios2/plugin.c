@@ -1,6 +1,5 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake */
+/* radare2 - LGPL - Copyright 2014-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../../include/disas-asm.h"
@@ -222,7 +221,7 @@ const RArchPlugin r_arch_plugin_nios2 = {
 	.meta = {
 		.name = "nios2",
 		.desc = "NIOS II code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "nios2",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

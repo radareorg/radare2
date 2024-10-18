@@ -983,8 +983,9 @@ static int archinfo(RArchSession *a, ut32 q) {
 const RArchPlugin r_arch_plugin_6502 = {
 	.meta = {
 		.name = "6502",
+		.author = "condret,riq,pancake",
 		.desc = "6502/NES analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),

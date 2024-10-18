@@ -145,7 +145,7 @@ const RArchPlugin r_arch_plugin_arm = {
 		.name = "arm.nz",
 		.desc = "custom thumb, arm32 and arm64 assembler",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "arm",
 	.info = archinfo,

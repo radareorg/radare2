@@ -24,6 +24,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 const RArchPlugin r_arch_plugin_uxn = {
 	.meta = {
 		.name = "uxn",
+		.author = "pancake",
 		.desc = "UXN",
 		.license = "MIT",
 	},

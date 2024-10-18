@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2012-2024 - pancake, condret */
 
 #include <r_arch.h>
 #include "./gbdis.c"
@@ -1560,8 +1560,9 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 const RArchPlugin r_arch_plugin_gb = {
 	.meta = {
 		.name = "gb",
+		.author = "condret",
 		.desc = "Gameboy CPU code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "z80",
 	.info = info,

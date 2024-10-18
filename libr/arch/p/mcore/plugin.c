@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2018-2023 - deroad */
+/* radare - LGPL-3.0-only - Copyright 2018-2024 - deroad */
 
 #include <r_anal.h>
 #include "mcore.h"
@@ -122,8 +122,9 @@ static int archinfo(RArchSession *s, ut32 q) {
 const RArchPlugin r_arch_plugin_mcore = {
 	.meta = {
 		.name = "mcore",
+		.author = "deroad",
 		.desc = "MCore analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "mcore",
 	.bits = 32,

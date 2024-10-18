@@ -48,6 +48,8 @@ typedef struct r_plugin_meta_t {
 	char *author;
 	char *version;
 	char *license;
+// char *contact // email/mastodon/addr
+// char *copyright // 2024-2025 ..?
 	RPluginStatus status;
 } RPluginMeta;
 // rename to RLibPluginMeta ?

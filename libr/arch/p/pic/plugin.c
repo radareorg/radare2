@@ -1186,9 +1186,10 @@ static int info(RArchSession *as, ut32 q) {
 
 const RArchPlugin r_arch_plugin_pic = {
 	.meta = {
+		.author = "oddcoder,thestr4ng3r,courk",
 		.name = "pic",
 		.desc = "PIC analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cpus = "baseline,midrange,pic18",
 	.arch = "pic",

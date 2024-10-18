@@ -20,7 +20,7 @@ const RArchPlugin r_arch_plugin_null = {
 	.meta = {
 		.name = "null",
 		.desc = "Fallback/Null arch plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "none",
 	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64),

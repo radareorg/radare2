@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2017-2024 - maijin, pancake */
+/* radare - LGPL-3.0-only - Copyright 2017-2024 - maijin, pancake */
 
 #include <r_arch.h>
 
@@ -231,7 +231,7 @@ const RArchPlugin r_arch_plugin_chip8 = {
 		.name = "chip8",
 		.author = "maijin",
 		.desc = "CHIP8 analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.arch = "chip8",
 	.info = archinfo,

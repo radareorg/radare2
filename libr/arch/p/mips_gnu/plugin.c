@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
@@ -1958,8 +1958,9 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_mips_gnu = {
 	.meta = {
 		.name = "mips.gnu",
+		.author = "pancake",
 		.desc = "MIPS code analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",

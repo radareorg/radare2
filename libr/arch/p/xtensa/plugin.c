@@ -2122,7 +2122,7 @@ const RArchPlugin r_arch_plugin_xtensa = {
 	.meta = {
 		.name = "xtensa",
 		.desc = "Xtensa disassembler",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,

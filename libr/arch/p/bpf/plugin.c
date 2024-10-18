@@ -1227,7 +1227,7 @@ const RArchPlugin r_arch_plugin_bpf = {
 	.meta = {
 		.name = "bpf.mr",
 		.desc = "Classic BPF analysis plugin",
-		.license = "LGPLv3",
+		.license = "LGPL-3.0-only",
 		.author = "mrmacete"
 	},
 	.arch = "bpf",

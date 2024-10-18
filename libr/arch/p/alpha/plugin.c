@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_asm.h>
 
 #define BUFSZ 8
@@ -142,7 +141,7 @@ const RArchPlugin r_arch_plugin_alpha = {
 	.meta = {
 		.name = "alpha",
 		.desc = "ALPHA architecture plugin",
-		.license = "GPL",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "alpha",
 	.bits = R_SYS_BITS_PACK1 (64),
