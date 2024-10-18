@@ -178,10 +178,10 @@ c          rc4  Rivest Cipher 4
 c          rc6  Rivest's Cipher 6
 e          rol  Rotate Left N bits
 e          ror  Rotate Right N bits
-e          rot  
-c  serpent-ecb  
-c      sm4-ecb  
-h      strhash  
+e          rot  Rotate Encryption
+c  serpent-ecb  Bouncy Castle Cryptography
+c      sm4-ecb  ShāngMì4 block cipher
+h      strhash  String lash using SDB
 c          xor  Byte level Exclusive Or Encryption
 h          md5
 h         sha1
