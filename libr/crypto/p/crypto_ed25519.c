@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2024 - Sylvain Pelissier
+/* radare - ZLib - Copyright 2024 - Sylvain Pelissier
  * Implementation of Ed25519 signature algorithm (RFC 8032)
  * Based on Orson Peters implementation: https://github.com/orlp/ed25519 */
 
-#include <r_lib.h>
 #include <r_crypto.h>
 #include <r_crypto/r_ed25519.h>
-#include <r_util/r_log.h>
 #include "../signature/ed25519/ge.h"
 #include "../signature/ed25519/sc.h"
 #include "../hash/sha2.h"
@@ -101,6 +99,7 @@ RCryptoPlugin r_crypto_plugin_ed25519 = {
 	.type = R_CRYPTO_TYPE_SIGNATURE,
 	.meta = {
 		.name = "ed25519",
+		.desc = "Elliptic curve pubkey cryptographic algorithm used for signing and verification",
 		.author = "Sylvain Pelissier",
 		.license = "Zlib",
 	},

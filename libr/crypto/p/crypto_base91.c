@@ -42,6 +42,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_base91 = {
 	.meta = {
+		.desc = "Binary to text encoding scheme using 91 ascii characters",
 		.name = "base91",
 		.author = "rakholiyajenish.07",
 		.license = "MIT",

@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2017 - deroad */
+/* radare - LGPL - Copyright 2017-2024 - deroad */
 
-#include <r_lib.h>
 #include <r_crypto.h>
-#include <r_util.h>
 
 struct des_state {
 	ut32 keylo[16]; // round key low
@@ -173,7 +171,8 @@ RCryptoPlugin r_crypto_plugin_des = {
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",
-		.license = "LGPL",
+		.desc = "Simplest and weakest Electronic Code Book for DES",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,

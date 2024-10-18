@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2016-2024 - pancake */
 
-#include <r_lib.h>
 #include <r_crypto.h>
 
 #define NAME "ror"
@@ -71,10 +70,12 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_ror = {
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.meta = {
 		.name = NAME,
+		.desc = "Rotate Right N bits",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,

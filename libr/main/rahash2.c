@@ -23,7 +23,7 @@ typedef struct {
 } RahashOptions;
 
 static void compare_hashes(const RHash *ctx, RahashOptions *ro, const ut8 *compare, int length, int *ret, int rad) {
-	if (compare) {
+	if (R_LIKELY (compare)) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
 			if (rad != 'q') {
@@ -825,7 +825,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	io = r_io_new ();
 	for (_ret = 0, i = opt.ind; i < argc; i++) {
 		file = argv[i];
-
 		if (file && !*file) {
 			R_LOG_ERROR ("Cannot open empty path");
 			ret (1);
