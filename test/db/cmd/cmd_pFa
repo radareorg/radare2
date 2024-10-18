@@ -4,18 +4,11 @@ CMDS=<<EOF
 pFa
 EOF
 EXPECT=<<EOF
-   0   159: 0: cons SEQUENCE            : 
-   3    13: 1: cons SEQUENCE            : 
-   5     9: 2: prim OBJECT_IDENTIFIER   : rsaEncryption
-  18   140: 1: prim BIT_STRING          : 30 81 89 02 81 81 00 cc 61 f9 ef 5a d0 bc 21 de |0.......a..Z..!.|
-                                        : 5b 3c a6 9e e7 25 d2 c5 04 ed f9 9a 6e 97 a0 27 |[<...%......n..'|
-                                        : 9d 95 9f 23 64 ed 21 aa ef 8c 70 45 52 d5 d1 a3 |...#d.!...pER...|
-                                        : de b2 ee 1a 0b e1 55 8e 3c a1 82 b1 1a 8c 14 39 |......U.<......9|
-                                        : 2b 6d e5 23 46 bc 7c 88 bf 75 e3 fb 2b 9f 27 fa |+m.#F.|..u..+.'.|
-                                        : b2 1f 5c f1 99 34 e3 11 0e a4 ad 72 a6 f0 73 f8 |..\..4.....r..s.|
-                                        : ab 38 b9 93 9b b6 39 e7 8a d7 f4 34 11 9d 8c c2 |.8....9....4....|
-                                        : b1 bd e4 ea f9 51 3b 05 65 08 c9 08 ed 43 c9 9b |.....Q;.e....C..|
-                                        : 0c eb 22 2c bb e1 ef 02 03 01 00 01             |..",........    |
+  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
+       0     0xa2     0 cons SEQUENCE            : 30
+     0x3     0x10     1 cons SEQUENCE            : 30
+     0x5      0xb     2 prim OBJECT_IDENTIFIER   : rsaEncryption
+    0x12     0x8e     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2...
 
 EOF
 RUN
@@ -66,7 +59,8 @@ wx 030801016e500dc00000
 pFa
 EOF
 EXPECT=<<EOF
-   0     7: 0: prim BIT_STRING          : 016e500dc00000 (55 bits)
+  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
+       0      0x9     0 prim BIT_STRING          : 016e500dc00000 (55 bits)
 
 EOF
 RUN
@@ -78,7 +72,8 @@ wx 06032b6570
 pFa
 EOF
 EXPECT=<<EOF
-   0     3: 0: prim OBJECT_IDENTIFIER   : id-Ed25519
+  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
+       0      0x5     0 prim OBJECT_IDENTIFIER   : id-Ed25519
 
 EOF
 RUN
@@ -90,9 +85,10 @@ wx 3009040265210403650065
 pFa
 EOF
 EXPECT=<<EOF
-   0     9: 0: cons SEQUENCE            : 
-   2     2: 1: prim OCTET_STRING        : e!
-   6     3: 1: prim OCTET_STRING        : 650065
+  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
+       0      0xc     0 cons SEQUENCE            : 30
+     0x2      0x4     1 prim OCTET_STRING        : e!
+     0x6      0x5     1 prim OCTET_STRING        : 650065
 
 EOF
 RUN
