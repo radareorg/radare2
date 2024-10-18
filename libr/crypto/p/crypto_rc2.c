@@ -246,7 +246,7 @@ RCryptoPlugin r_crypto_plugin_rc2 = {
 	.meta = {
 		.name = "rc2",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,

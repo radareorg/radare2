@@ -36,7 +36,7 @@ RCryptoPlugin r_crypto_plugin_punycode = {
 	.meta = {
 		.name = "punycode",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = punycode_set_key,

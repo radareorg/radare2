@@ -767,7 +767,7 @@ RCryptoPlugin r_crypto_plugin_cps2 = {
 	.meta = {
 		.name = "cps2",
 		.author = "pof,esanfelix",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = set_key,
 	.get_key_size = get_key_size,

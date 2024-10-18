@@ -141,7 +141,7 @@ RCryptoPlugin r_crypto_plugin_aes_wrap = {
 	.meta = {
 		.name = "aes-wrap",
 		.author = "Sylvain Pelissier",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = aes_wrap_set_key,
 	.get_key_size = aes_wrap_get_key_size,

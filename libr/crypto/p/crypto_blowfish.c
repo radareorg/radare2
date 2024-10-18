@@ -340,7 +340,7 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "blowfish",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake"
 	},
 	.implements = "blowfish",

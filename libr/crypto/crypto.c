@@ -201,7 +201,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 	}
 	PJ *pj = NULL;
 
-	// XXX R2_596 - add a type argument to be clearer but will break ABI.
+	// XXX R2_600 - add a type argument to be clearer but will break ABI.
 	RCryptoType type = (RCryptoType)mode >> 8;
 	mode = mode & 0xff;
 	if (mode == 'J') {
@@ -209,8 +209,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		pj_a (pj);
 	} else if (mode == 'j') {
 		pj = pj_new ();
-		pj_o (pj);
-		pj_ka (pj, "plugins");
+		pj_a (pj);
 	}
 	RListIter *iter;
 	RCryptoPlugin *cp;
@@ -246,7 +245,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 				pj_free (pj);
 				return;
 			}
-			pj_ko (pj, "meta");
+			// pj_ko (pj, "meta");
 			if (cp->meta.author) {
 				pj_ks (pj, "author", cp->meta.author);
 			}
@@ -256,7 +255,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 			if (cp->meta.license) {
 				pj_ks (pj, "license", cp->meta.license);
 			}
-			pj_end (pj);
+			// pj_end (pj);
 			pj_end (pj);
 			break;
 		default:
@@ -299,7 +298,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		free (s);
 	} else if (mode == 'j') {
 		pj_end (pj);
-		pj_end (pj);
+	//	pj_end (pj);
 		char *s = pj_drain (pj);
 		cb_printf ("%s\n", s);
 		free (s);

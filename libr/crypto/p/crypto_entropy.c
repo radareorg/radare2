@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - MIT - Copyright 2024 - pancake */
 
-#include <math.h>
-#include <r_lib.h>
 #include <r_crypto.h>
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {

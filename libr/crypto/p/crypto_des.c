@@ -173,7 +173,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,

@@ -158,6 +158,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			json_plugins (core, pj, "core", "Lcj");
 			json_plugins (core, pj, "bin", "Lbj");
 			json_plugins (core, pj, "arch", "Laj");
+			json_plugins (core, pj, "crypto", "Lhj");
 			json_plugins (core, pj, "debug", "Ldj");
 			json_plugins (core, pj, "egg", "Lgj");
 			json_plugins (core, pj, "fs", "Lmj");
@@ -165,7 +166,6 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 
 			// json_plugins (core, pj, "parse", "Lpj");
 			// json_plugins (core, pj, "anal", "LAj");
-			// json_plugins (core, pj, "crypto", "LCj");
 			// json_plugins (core, pj, "lang", "Llj");
 		//	json_plugins (core, pj, "asm", "LAj"); // should be psuedo but its not listed
 		}

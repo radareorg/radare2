@@ -3890,9 +3890,15 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		r_crypto_free (cry);
 		return true;
 	}
-	if (i0 == 'j') {
+	if (i0 == 'j') { // "phj"
 		RCrypto *cry = r_crypto_new ();
-		r_crypto_list (cry, NULL, 'J' | (int)R_CRYPTO_TYPE_HASHER << 8);
+		r_crypto_list (cry, r_cons_printf, 'j' | (int)R_CRYPTO_TYPE_ALL << 8);
+		r_crypto_free (cry);
+		return true;
+	}
+	if (i0 == 'J') { // "phJ"
+		RCrypto *cry = r_crypto_new ();
+		r_crypto_list (cry, r_cons_printf, 'J' | (int)R_CRYPTO_TYPE_HASHER << 8);
 		r_crypto_free (cry);
 		return true;
 	}

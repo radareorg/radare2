@@ -47,7 +47,7 @@ RCryptoPlugin r_crypto_plugin_sm4 = {
 	.meta = {
 		.name = "sm4-ecb",
 		.author = "Sylvain Pelissier",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.implements = "sm4-ecb",
 	.set_key = sm4_set_key,

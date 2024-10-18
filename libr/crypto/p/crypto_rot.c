@@ -81,6 +81,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rot = {
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.meta = {
 		.name = "rot",
 		.author = "pancake",
