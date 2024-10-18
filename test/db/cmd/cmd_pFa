@@ -6,9 +6,9 @@ EOF
 EXPECT=<<EOF
   OFFSET   LENGTH DEPTH FORM NAME                : VALUE
        0     0xa2     0 cons SEQUENCE            : 30
-     0x3      0xf     1 cons SEQUENCE            : 30
+     0x3     0x10     1 cons SEQUENCE            : 30
      0x5      0xb     2 prim OBJECT_IDENTIFIER   : rsaEncryption
-    0x12     0x90     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2...
+    0x12     0x8e     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2...
 
 EOF
 RUN
@@ -60,7 +60,7 @@ pFa
 EOF
 EXPECT=<<EOF
   OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0      0xa     0 prim BIT_STRING          : 016e500dc00000 (55 bits)
+       0      0x9     0 prim BIT_STRING          : 016e500dc00000 (55 bits)
 
 EOF
 RUN
@@ -86,7 +86,7 @@ pFa
 EOF
 EXPECT=<<EOF
   OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0      0xb     0 cons SEQUENCE            : 30
+       0      0xc     0 cons SEQUENCE            : 30
      0x2      0x4     1 prim OCTET_STRING        : e!
      0x6      0x5     1 prim OCTET_STRING        : 650065
 

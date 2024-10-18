@@ -77,12 +77,10 @@ typedef struct r_asn1_bin_t {
 } RASN1Binary;
 
 typedef struct r_asn1_object_t {
-	ut8 head; /* object head*/
 	ut8 klass; /* class type */
 	ut8 form; /* defines if contains data or objects */
 	ut8 tag; /* tag type */
 	const ut8 *sector; /* Sector containing data */
-	ut64 h_len; /* Object Header Length */
 	ut32 length; /* Sector Length */
 	ut32 bitlength; /* Sector length in bits */
 	ut64 offset; /* Object offset */
