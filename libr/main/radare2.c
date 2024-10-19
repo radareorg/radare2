@@ -1110,7 +1110,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_io_plugin_list (r->io);
 		}
-		r_cons_newline ();
 		r_cons_flush ();
 		mainr2_fini (&mr);
 		return 0;
