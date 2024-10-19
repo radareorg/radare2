@@ -164,7 +164,7 @@ CMDS=!rahash2 -L
 EXPECT=<<EOF
 c      aes-ecb  Block Cipher Mode for Rijndael Encryption
 c      aes-cbc  Cipher Block Chaining Mode for Rijndael Encryption
-c     aes-wrap  Advanced Encryption Standard
+c     aes-wrap  Advanced Encryption Standard Key Wrap Algorithm (RFC 3394)
 e       base64  Binary to text encoding scheme using 64 ascii characters
 e       base91  Binary to text encoding scheme using 91 ascii characters
 c     blowfish  Bruce Schneier's symetric-key block cipher
@@ -181,7 +181,7 @@ e          ror  Rotate Right N bits
 e          rot  Rotate Encryption
 c  serpent-ecb  Bouncy Castle Cryptography
 c      sm4-ecb  ShāngMì4 block cipher
-h      strhash  String lash using SDB
+h      strhash  String hash using SDB
 c          xor  Byte level Exclusive Or Encryption
 h          md5
 h         sha1
