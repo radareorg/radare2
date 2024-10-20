@@ -4320,6 +4320,7 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 	RBinSymbol *sym = *symp;
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	int len = strlen (name);
+	sym->bits = bin_bits;
 	if (name[0] == '$' && (len >= 2 && !name[2])) {
 		switch (name[1]) {
 		case 'a' : // arm
@@ -4334,14 +4335,16 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 				sym->paddr--;
 			}
 			return;
+#if 0
 		case 'd': // data
+			sym->bits = 32;
 			return;
+#endif
 		default:
 			break;
 		}
 	}
-	sym->bits = bin_bits;
-	if (bin_bits != 64) {
+	if (sym->bits != 64) {
 		sym->bits = 32;
 		if (sym->paddr != UT64_MAX) {
 			if (sym->vaddr & 1) {
