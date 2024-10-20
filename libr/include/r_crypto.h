@@ -9,6 +9,7 @@
 #include <r_hash.h>
 #include <r_lib.h>
 #include <r_crypto/r_sm4.h>
+#include <r_crypto/r_bech32.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,6 +144,7 @@ extern RCryptoPlugin r_crypto_plugin_sm4;
 extern RCryptoPlugin r_crypto_plugin_aes_wrap;
 extern RCryptoPlugin r_crypto_plugin_ed25519;
 extern RCryptoPlugin r_crypto_plugin_entropy;
+extern RCryptoPlugin r_crypto_plugin_bech32;
 
 #define R_CRYPTO_NONE 0ULL
 #define R_CRYPTO_RC2 1ULL
@@ -160,6 +162,7 @@ extern RCryptoPlugin r_crypto_plugin_entropy;
 #define R_CRYPTO_XOR 1ULL<<12
 #define R_CRYPTO_SERPENT 1ULL<<13
 #define R_CRYPTO_SM4_ECB  1ULL << 14
+#define R_CRYPTO_BECH32   1ULL << 15
 #define R_CRYPTO_ALL 0xFFFF
 
 #define R_CODEC_NONE 0ULL
