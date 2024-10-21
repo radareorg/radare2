@@ -150,6 +150,8 @@ windist:
 	cp -f libr/arch/d/*.r2 "${WINDIST}/share/radare2/${VERSION}/platform"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/scripts"
+	cp -f scripts/*.js scripts/*.py "${WINDIST}/share/radare2/${VERSION}/scripts"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/flag"
 	cp -f libr/flag/d/*.r2 "${WINDIST}/share/radare2/${VERSION}/flag"
 	mkdir -p "${WINDIST}/share/doc/radare2"
@@ -235,6 +237,9 @@ install: install-doc install-man install-www install-pkgconfig
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
+	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
+	cp -rf scripts/*.js scripts/*.py "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
@@ -280,6 +285,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd shlr && ${MAKE} install-symlink
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
+	ln -fs scripts "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag"

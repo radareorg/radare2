@@ -602,10 +602,10 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					include_dir = pinclude_dir = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir_key = get_compilation_directory_key (debug_line_offset);
-						if (!comp_dir_key) {
-							comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-						} else {
+						if (comp_dir_key) {
 							comp_dir = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
+						} else {
+							comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						}
 						if (comp_dir) {
 							include_dir = r_str_newf ("%s/%s/", comp_dir, include_dir);
@@ -613,10 +613,10 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					}
 				} else {
 					comp_dir_key = get_compilation_directory_key (debug_line_offset);
-					if (!comp_dir_key) {
-						include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-					} else {
+					if (comp_dir_key) {
 						include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
+					} else {
+						include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 					}
 					if (!include_dir) {
 						include_dir = "./";

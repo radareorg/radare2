@@ -873,6 +873,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 beach:
 	if (r_config_get_b (r->config, "bin.dbginfo") && R_STR_ISNOTEMPTY (filenameuri)) {
+		// TODO only for macho
 		// load companion dwarf files
 		const char *basename = r_file_basename (filenameuri);
 		char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", filenameuri, basename);
