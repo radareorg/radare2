@@ -237,9 +237,10 @@ install: install-doc install-man install-www install-pkgconfig
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
-	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
 	cp -rf scripts/*.js scripts/*.py "${DESTDIR}${DATADIR}/radare2/${VERSION}/scripts"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
 	#${INSTALL_SCRIPT} "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
