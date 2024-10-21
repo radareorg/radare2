@@ -175,6 +175,7 @@ if host_machine.system() == 'windows'
   r2_wwwroot = join_paths(r2_datdir, 'www')
   r2_sdb = join_paths(r2_datdir)
   r2_zigns = join_paths(r2_datdir, 'zigns')
+  r2_scripts = join_paths(r2_datdir, 'scripts')
   r2_themes = join_paths(r2_datdir, 'cons')
   r2_platform = join_paths(r2_datdir, 'platform')
   r2_fortunes = join_paths(r2_datdir, 'doc')
@@ -220,6 +221,7 @@ else
   r2_datdir_r2 = join_paths(r2_datdir, 'radare2')
   r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
   r2_sdb = join_paths(r2_datdir_r2, r2_version)
+  r2_scripts = join_paths(r2_datdir_r2, r2_version, 'scripts')
   r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
   r2_platform = join_paths(r2_datdir_r2, r2_version, 'platform')
   r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
@@ -550,6 +552,19 @@ sdb_inc_files = [
   'shlr/sdb/include/sdb/msvc_stdatomic.h',
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
+
+script_files = [
+  'scripts/il2cpp.r2.js',
+  'scripts/ipsw-kernel-symbolicate.r2.js',
+  'scripts/licenses.r2.js',
+  'scripts/parseplug.r2.js',
+  'scripts/pro.r2.js',
+  'scripts/r2sptrace.py',
+  'scripts/tags.r2.js',
+  'scripts/unzip.r2.js',
+  'scripts/vsmap.r2.js',
+]
+install_data(script_files, install_dir: r2_scripts)
 
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,

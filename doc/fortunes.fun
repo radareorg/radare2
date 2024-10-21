@@ -8,7 +8,6 @@ radare2 contributes to the One Byte Per Child foundation.
 3nl4r9e y0\/r r4d4r3
 I did it for the pwnz.
 If you send the program you are debugging to 15 friends in 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
-To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
 radare2 is for lulzhats
 Microloft Visual Radare.NET 2008. Now OOXML Powered!
