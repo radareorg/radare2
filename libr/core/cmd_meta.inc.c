@@ -931,7 +931,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					const int maxstr = r_config_get_i (core->config, "bin.str.max");
 					r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
 					// maps are not yet set
-					r_core_cmd0 (core, "o;om"); // wtf?
+					free (r_core_cmd_str (core, "o;om")); // wtf?
 					if (!r_io_read_at (core->io, addr, buf, range)) {
 						R_LOG_ERROR ("Cannot read %d", range);
 					}
@@ -1243,14 +1243,15 @@ static void cmd_Cv(RCore *core, const char *input) {
 			if (var->kind != kind || !var->comment) {
 				continue;
 			}
-			if (!input[1]) {
-				r_cons_printf ("%s : %s\n", var->name, var->comment);
-			} else {
+			if (input[1]) {
 				char *b64 = sdb_encode ((const ut8 *)var->comment, strlen (var->comment));
 				if (!b64) {
 					continue;
 				}
-				r_cons_printf ("\"Cv%c %s base64:%s @ 0x%08"PFMT64x"\"\n", kind, var->name, b64, fcn->addr);
+				r_cons_printf ("'@0x%08"PFMT64x"'Cv%c %s base64:%s\n", fcn->addr, kind, var->name, b64);
+				free (b64);
+			} else {
+				r_cons_printf ("%s : %s\n", var->name, var->comment);
 			}
 		}
 		}
