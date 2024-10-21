@@ -38,30 +38,23 @@
 
 #include <stdio.h>  // stdin/stdout/stderr, fopen, ...
 #include <stdlib.h> // exit()
+#include <stdbool.h> // true/false
 #include <string.h> // memcpy
 
-#ifndef FALSE
-#define FALSE 0
-#define TRUE  1
-#endif
-
 /// error handler
-static void unlz4error(const char* msg)
-{
+static void unlz4error(const char* msg) {
 	// smaller static binary than fprintf(stderr, "ERROR: %s\n", msg);
 	fputs ("ERROR: ", stderr);
 	fputs (msg, stderr);
 	fputc ('\n', stderr);
 }
 
-
 // ==================== I/O INTERFACE ====================
-
 
 // read one byte from input, see getByteFromIn()  for a basic implementation
 typedef unsigned char (*GET_BYTE)  (void* userPtr);
 // write several bytes,      see sendBytesToOut() for a basic implementation
-typedef void          (*SEND_BYTES)(const unsigned char*, unsigned int, void* userPtr);
+typedef void (*SEND_BYTES)(const unsigned char*, unsigned int, void* userPtr);
 
 int unlz4Block_userPtr (GET_BYTE getByte, SEND_BYTES sendBytes, void *userPtr, unsigned int blockSize, unsigned int *position, unsigned char *hist);
 
@@ -126,10 +119,10 @@ int unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary
 		return -1;
 	}
 
-	unsigned char hasBlockChecksum = FALSE;
-	unsigned char hasContentSize = FALSE;
-	unsigned char hasContentChecksum = FALSE;
-	unsigned char hasDictionaryID = FALSE;
+	unsigned char hasBlockChecksum = false;
+	unsigned char hasContentSize = false;
+	unsigned char hasContentChecksum = false;
+	unsigned char hasDictionaryID = false;
 	if (isModern) {
 		// flags
 		unsigned char flags = getByte (userPtr);

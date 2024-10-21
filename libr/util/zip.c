@@ -107,7 +107,7 @@ static ut8 *inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int
 	inflateEnd (&stream);
 	return dst;
 
-	err_exit:
+err_exit:
 	inflateEnd (&stream);
 	free (dst);
 	return NULL;
