@@ -30,8 +30,12 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 }
 
 RParsePlugin r_parse_plugin_wasm_pseudo = {
-	.name = "wasm.pseudo",
-	.desc = "WASM pseudo syntax",
+	.meta = {
+		.name = "wasm.pseudo",
+		.desc = "WASM pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.subvar = &subvar,
 };
 

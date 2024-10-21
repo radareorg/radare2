@@ -15,7 +15,6 @@ R_LIB_VERSION_HEADER(r_bp);
 #define R_BP_MAXPIDS 10
 #define R_BP_CONT_NORMAL 0
 #define R_BP_CONT_NORMAL 0
-
 typedef struct r_bp_arch_t {
 	int bits;
 	int length;
@@ -32,7 +31,7 @@ enum {
 };
 
 typedef struct r_bp_plugin_t {
-	char *name;
+	RPluginMeta meta;
 	char *arch;
 	int type; // R_BP_TYPE_SW
 	int nbps;

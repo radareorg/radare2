@@ -10,7 +10,12 @@ static RBreakpointArch r_bp_plugin_riscv_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_riscv = {
-	.name = "riscv",
+	.meta = {
+		.name = "riscv",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.arch = "riscv",
 	.nbps = 2,
 	.bps = r_bp_plugin_riscv_bps,

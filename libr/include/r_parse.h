@@ -42,8 +42,7 @@ typedef struct r_parse_t {
 
 typedef struct r_parse_plugin_t {
 	// TODO R2_600 Use RPluginMeta instead
-	char *name;
-	char *desc;
+	RPluginMeta meta;
 	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
 	int (*fini)(RParse *p, void *user); // receives the asmparsestate
 

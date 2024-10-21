@@ -83,8 +83,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_bpf_pseudo = {
-	.name = "bpf.pseudo",
-	.desc = "bpf pseudo syntax",
+	.meta = {
+		.name = "bpf.pseudo",
+		.desc = "bpf pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse,
 };
 
