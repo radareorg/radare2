@@ -76,13 +76,13 @@ typedef struct {
 
 static const char *entry_type_tostring(int a) {
 	switch (a) {
-	case RPRJ_INFO: return "RPRJ_INFO";
-	case RPRJ_MAPS: return "RPRJ_MAPS";
-	case RPRJ_CMDS: return "RPRJ_CMDS";
-	case RPRJ_FLAG: return "RPRJ_FLAG";
-	case RPRJ_MODS: return "RPRJ_MODS";
-	case RPRJ_BLOB: return "RPRJ_BLOB";
-	case RPRJ_STRS: return "RPRJ_STRS";
+	case RPRJ_INFO: return "Info";
+	case RPRJ_MAPS: return "Maps";
+	case RPRJ_CMDS: return "Cmds";
+	case RPRJ_FLAG: return "Flags";
+	case RPRJ_MODS: return "Mods";
+	case RPRJ_BLOB: return "Blob";
+	case RPRJ_STRS: return "Strings";
 	}
 	return "UNKNOWN";
 }
@@ -102,7 +102,7 @@ static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
 	const size_t slen = strlen (s) + 1;
 	const size_t newsize = st->size + slen;
 	if (newsize > st->capacity) {
-		size_t new_capacity = newsize + 1024;
+		const size_t new_capacity = newsize + 1024;
 		ut8 *nb = realloc (st->data, new_capacity);
 		if (!nb) {
 			return UT32_MAX;
@@ -178,8 +178,8 @@ static bool rprj_header_read(RBuffer *b, R2ProjectHeader *hdr) {
 	if (r_buf_read (b, buf, sizeof (buf)) < 1) {
 		return false;
 	}
-	hdr->magic = r_read_le32 (buf);
-	hdr->version = r_read_le32 (buf + 4);
+	hdr->magic = r_read_le32 (buf + r_offsetof (R2ProjectHeader, magic));
+	hdr->version = r_read_le32 (buf + r_offsetof (R2ProjectHeader, version));
 	return hdr->magic == RPRJ_MAGIC;
 }
 
@@ -456,6 +456,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 	R2ProjectHeader hdr;
 	if (!rprj_header_read (b, &hdr)) {
 		R_LOG_ERROR ("Invalid file type");
+		return;
 	}
 	if (mode & MODE_LOG) {
 		r_cons_printf ("Project {\n");
