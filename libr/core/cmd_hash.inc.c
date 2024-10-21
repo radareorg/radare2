@@ -12,6 +12,7 @@ static RCoreHelpMessage help_msg_hash = {
 	"#!?q", "", "list all available lang plugin names (See Ll?)",
 	"#!<lang>?", "", "show help for <lang> (v, python, mujs, ..)",
 	"#!<lang>", " [file]", "interpret the given file with lang plugin",
+	"#!<lang>", " -e [oneliner]", "run the given expression with lang plugin",
 	"#!<lang>", "", "enter interactive prompt for given language plugin",
 	"#!pipe", " node -e 'console.log(123)''", "run program with arguments inside an r2pipe environment",
 	NULL
@@ -25,7 +26,7 @@ typedef struct {
 } RHashHashHandlers;
 
 static inline void hexprint(const ut8 *data, int len) {
-	int i = 0;
+	int i;
 	for (i = 0; i < len; i++) {
 		r_cons_printf ("%02x", data[i]);
 	}
@@ -391,9 +392,9 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 			}
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
-					char *run_str = strstr (input + 2, "-e") + 2;
+					char *run_str = r_str_trim_head_ro (strstr (input + 2, "-e") + 2);
 					if (run_str) {
-						r_lang_run_file (core->lang, run_str);
+						r_lang_run_string (core->lang, run_str);
 					} else {
 						R_LOG_ERROR ("Invalid file name");
 					}
