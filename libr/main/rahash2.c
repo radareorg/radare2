@@ -403,7 +403,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding.
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		RCryptoJob *cj = r_crypto_use (cry, algo);
@@ -444,7 +444,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding. aka crypto vs encoder plugins after moving all those hash algos to crypto plugins
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo) || !strcmp ("bech32", algo);
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		RCryptoJob *cj = r_crypto_use (cry, algo);
