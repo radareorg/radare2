@@ -14,12 +14,12 @@
 
 #define MIN_MATCH 4
 
-#define EXCESS (16+(BLOCK_SIZE/255))
+#define EXCESS (16 + (BLOCK_SIZE / 255))
 
-#define LOAD_16(p) *(ut16*)&g_buf[p]
-#define LOAD_32(p) *(ut32*)&g_buf[p]
-#define STORE_16(p, x) *(ut16*)&g_buf[p] = x
-#define COPY_32(d, s)  *(ut32*)&g_buf[d] = LOAD_32(s)
+#define LOAD_16(p) *(ut16*)&g_buf[(p)]
+#define LOAD_32(p) *(ut32*)&g_buf[(p)]
+#define STORE_16(p, x) *(ut16*)&g_buf[(p)] = (x)
+#define COPY_32(d, s) *(ut32*)&g_buf[(d)] = LOAD_32((s))
 
 #define HASH_BITS 12
 #define HASH_SIZE (1 << HASH_BITS)
@@ -28,10 +28,9 @@
 #define HASH_32(p) ((LOAD_32(p)*0x9E3779B9)>>(32-HASH_BITS))
 
 /* Change endianness */
-#define SWAP16(i) ((i>>8)|(i<<8)) 
-#define SWAP32(i) ( (((i) >> 24) & 0x000000FF) | (((i) >>  8) & 0x0000FF00) | \
-	                  (((i) <<  8) & 0x00FF0000) | (((i) << 24) & 0xFF000000) )
-
+#define SWAP16(i) (((i) >> 8) | ((i) << 8)) 
+#define SWAP32(i) ( (((i) >> 24) & 0x000000FF) | (((i) >> 8) & 0x0000FF00) | \
+	(((i) << 8) & 0x00FF0000) | (((i) << 24) & 0xFF000000) )
 
 static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	int i, dist, limit, run, j;
@@ -130,7 +129,7 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	if (pp != p) {
 		run = p-pp;
 		if (run >= 15) {
-			g_buf[op++] = 15<<4;
+			g_buf[op++] = 15 << 4;
 			j = run-15;
 			for (; j >= 255; j-=255) {
 				g_buf[op++] = 255;
@@ -141,22 +140,20 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 		}
 
 		COPY_32(op, pp);
-		COPY_32(op+4, pp+4);
-		for (i = 8; i<run; i+=8) {
-			COPY_32(op+i, pp+i);
-			COPY_32(op+4+i, pp+4+i);
+		COPY_32(op + 4, pp + 4);
+		for (i = 8; i < run; i += 8) {
+			COPY_32 (op + i, pp + i);
+			COPY_32 (op + i + 4, pp + i + 4);
 		}
 		op += run;
 	}
-
-	return op-BLOCK_SIZE;
+	return op - BLOCK_SIZE;
 }
 
 static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
 	int i, s, len, error, run, p = 0;
-
 	int ip = BLOCK_SIZE;
-	int ip_end = ip +comp_len;
+	int ip_end = ip + comp_len;
 
 	for (;;) {
 		const int token = g_buf[ip++];
