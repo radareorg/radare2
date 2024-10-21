@@ -12,7 +12,7 @@ static RCoreHelpMessage help_msg_hash = {
 	"#!?q", "", "list all available lang plugin names (See Ll?)",
 	"#!<lang>?", "", "show help for <lang> (v, python, mujs, ..)",
 	"#!<lang>", " [file]", "interpret the given file with lang plugin",
-	"#!<lang>", " -e [oneliner]", "run the given expression with lang plugin",
+	"#!<lang>", " -e [expr|base64:..]", "run the given expression with lang plugin",
 	"#!<lang>", "", "enter interactive prompt for given language plugin",
 	"#!pipe", " node -e 'console.log(123)''", "run program with arguments inside an r2pipe environment",
 	NULL
@@ -392,9 +392,20 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 			}
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
-					char *run_str = r_str_trim_head_ro (strstr (input + 2, "-e") + 2);
+					const char *run_str = r_str_trim_head_ro (strstr (input + 2, "-e") + 2);
 					if (run_str) {
-						r_lang_run_string (core->lang, run_str);
+						if (r_str_startswith (run_str, "base64:")) {
+							int len = 0;
+							char *o = (char *)sdb_decode (run_str + 7, &len);
+							if (o) {
+								r_lang_run_string (core->lang, o);
+							} else {
+								R_LOG_ERROR ("Invalid base64");
+								return 0;
+							}
+						} else {
+							r_lang_run_string (core->lang, run_str);
+						}
 					} else {
 						R_LOG_ERROR ("Invalid file name");
 					}
