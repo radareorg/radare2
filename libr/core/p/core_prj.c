@@ -306,7 +306,6 @@ static RIOMap *coremod(Cursor *cur, R2ProjectMod *mod) {
 		at += sizeof (R2ProjectMod);
 		r_buf_seek (b, at, SEEK_SET);
 	} while (r_id_storage_get_next (maps, &mapid));
-	// TODO: add huge map?	
 	return NULL;
 }
 
@@ -343,7 +342,6 @@ static void rprj_mods_write(Cursor *cur) {
 		at += sizeof (R2ProjectMod);
 		r_buf_seek (b, at, SEEK_SET);
 	} while (r_id_storage_get_next (maps, &mapid));
-	// TODO: add huge map?	
 }
 
 static void rprj_info_read(RBuffer *b, R2ProjectInfo *info) {
