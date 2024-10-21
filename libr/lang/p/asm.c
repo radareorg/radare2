@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2022 pancake */
+/* radare - LGPL - Copyright 2022-2024 pancake */
 
-#include <r_lib.h>
 #include <r_core.h>
-#include <r_lang.h>
 
 #if R2__UNIX__ && !__wasi__
 static bool lang_asm_run(RLangSession *s, const char *code, int len) {
@@ -40,7 +38,7 @@ static RLangPlugin r_lang_plugin_asm = {
 		.name = "asm",
 		.desc = "rasm2 assembly language extension",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.ext = "asm",
 	.example = r_lang_asm_example,

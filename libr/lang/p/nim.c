@@ -58,7 +58,7 @@ static RLangPlugin r_lang_plugin_nim = {
 	.meta = {
 		.name = "nim",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "MIT",
 		.desc = "Use #!nim script.nim",
 	},
 	.ext = "nim",

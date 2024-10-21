@@ -152,7 +152,7 @@ static RLangPlugin r_lang_plugin_tsc = {
 	.meta = {
 		.name = "tsc",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "MIT",
 		.desc = "Use #!tsc script.ts",
 	},
 	.ext = "ts",

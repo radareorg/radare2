@@ -132,7 +132,7 @@ static RLangPlugin r_lang_plugin_vala = {
 	.meta = {
 		.name = "vala",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 		.desc = "Vala language extension",
 	},
 	.ext = "vala",

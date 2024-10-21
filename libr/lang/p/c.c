@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2011-2017 pancake */
+/* radare - LGPL - Copyright 2011-2024 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_lang.h"
+#include <r_core.h>
 
 #if R2__UNIX__ && !__wasi__
 static R_TH_LOCAL int ac = 0;
@@ -127,7 +125,7 @@ static RLangPlugin r_lang_plugin_c = {
 		.name = "c",
 		.desc = "C language extension",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.ext = "c",
 	.example = r_lang_c_example,

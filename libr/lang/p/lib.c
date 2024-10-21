@@ -41,7 +41,7 @@ static RLangPlugin r_lang_plugin_lib = {
 		.name = "lib",
 		.author = "pancake",
 		.desc = "Load libs directly into r2",
-		.license = "LGPL",
+		.license = "MIT",
 	},
 	.ext = R_LIB_EXT,
 	.run_file = lang_lib_file_run,

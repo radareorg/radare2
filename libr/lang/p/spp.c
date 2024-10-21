@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2020-2023 pancake */
+/* radare - LGPL - Copyright 2020-2024 pancake */
 
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_lang.h"
+#include <r_core.h>
 #define USE_R2 1
 
 // XXX remove this global, but we need to improve spp to have context

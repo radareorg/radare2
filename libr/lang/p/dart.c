@@ -80,7 +80,7 @@ static RLangPlugin r_lang_plugin_dart = {
 	.meta = {
 		.name = "dart",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 		.desc = "Use #!dart script.dart",
 	},
 	.ext = "dart",

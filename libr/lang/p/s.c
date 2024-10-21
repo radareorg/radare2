@@ -153,7 +153,7 @@ static RLangPlugin r_lang_plugin_s = {
 		.name = "s",
 		.desc = "GNU Assembler Source",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.ext = "s",
 	.example = r_lang_s_example,
