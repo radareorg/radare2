@@ -593,9 +593,9 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	case '3':
 	case 'C':
 		{
-			char *space = strchr (msg, ' ');
+			const char *space = strchr (msg, ' ');
 			if (!space) {
-				return;
+				space = msg;
 			}
 			type = (*msg == '+')? R_AVATAR_ORANGG: (*msg == 'C')? R_AVATAR_CROCO: R_AVATAR_CYBCAT;
 			msg = space + 1;
@@ -1271,7 +1271,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (core, r_str_trim_head_ro (input + 1));
+		r_core_clippy (core, input + 1);
 		break;
 	case 'e': // "?e" echo
 		if (input[1] == ' ' && (input[2] == '"' || input[2] == '\'')) {
