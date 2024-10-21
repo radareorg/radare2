@@ -594,7 +594,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
 		char *path = r_sys_getenv (R_LIB_ENV);
-		if (path && *path) {
+		if (R_STR_ISNOTEMPTY (path)) {
 			r_lib_opendir (l, path);
 		}
 		r_lib_opendir (l, homeplugindir);

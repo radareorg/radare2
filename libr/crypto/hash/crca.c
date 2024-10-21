@@ -12,7 +12,7 @@ void crc_init (R_CRC_CTX *ctx, utcrc crc, ut32 size, int reflect, utcrc poly, ut
 	ctx->xout = xout;
 }
 
-void crc_update (R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
+void crc_update(R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
 	utcrc crc, d;
 	int i, j;
 
