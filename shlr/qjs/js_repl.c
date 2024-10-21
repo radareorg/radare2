@@ -212,7 +212,7 @@ static const char *const js_repl_qjs = "" \
   "\"+e.toString()+\")\":e.toString()}function bigint_to_string(e,r"\
   "){let t;return 16===r?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString"\
   "(16)):t=e.toString(),\"std\"===eval_mode&&(t+=\"n\"),t}function p"\
-  "rint(e){const r=[];!function e(t){let n,o,i,s,c;var a=typeof "\
+  "rint(e){return console.log(e);const r=[];!function e(t){let n,o,i,s,c;var a=typeof "\
   "t;if(\"object\"==a)if(null===t)write(t);else if(0<=r.indexOf(t)"\
   ")write(\"[circular]\");else if(has_jscalc&&(t instanceof Fracti"\
   "on||t instanceof Complex||t instanceof Mod||t instanceof Poly"\
