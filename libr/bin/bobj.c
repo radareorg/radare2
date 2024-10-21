@@ -270,7 +270,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 }
 
 static void filter_classes(RBinFile *bf) {
-	bool rc = true;
 	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RBinClass *cls;
@@ -287,7 +286,6 @@ static void filter_classes(RBinFile *bf) {
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
 		if (R_STR_ISEMPTY (fname)) {
 			R_LOG_INFO ("Corrupted class storage with nameless classes");
-			rc = false;
 			free (fname);
 			break;
 		}
@@ -304,7 +302,6 @@ static void filter_classes(RBinFile *bf) {
 	}
 	ht_su_free (db);
 	ht_pp_free (ht);
-	return rc;
 }
 
 static RRBTree *list2rbtree(RList *relocs) {
@@ -511,6 +508,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 #else
 		// cache addr=class+method
+#endif
 #if 0
 		// moved into libr/core/canal.c
 		// XXX SLOW on large binaries. only used when needed by getFunctionName from canal.c
