@@ -414,250 +414,277 @@ static const char *const js_r2papi_qjs = "" \
   "{\n return this.toString();\n }\n /**\n * Get the base address us"\
   "ed by the current loaded binary\n *\n * @returns {NativePointer"\
   "} address of the base of the binary\n */\n getBaseAddress() {\n "\
-  "return new NativePointer(this.cmd(\"e bin.baddr\"));\n }\n jsonTo"\
-  "Typescript(name, a) {\n let str = `interface ${name} {\\n`;\n if"\
-  " (a.length && a.length > 0) {\n a = a[0];\n }\n for (const k of "\
-  "Object.keys(a)) {\n const typ = typeof a[k];\n const nam = k;\n "\
-  "str += ` ${nam}: ${typ};\\n`;\n }\n return `${str}}\\n`;\n }\n /**\n"\
-  " * Get the general purpose register size of the targize archi"\
-  "tecture in bits\n *\n * @returns {number} the regsize\n */\n getB"\
-  "its() {\n return +this.cmd(\"-b\");\n }\n /**\n * Get the name of t"\
-  "he arch plugin selected, which tends to be the same target ar"\
-  "chitecture.\n * Note that on some situations, this info will b"\
-  "e stored protected bby the AirForce.\n * When using the r2ghid"\
-  "ra arch plugin the underlying arch is in `asm.cpu`:\n *\n * @re"\
-  "turns {string} the name of the target architecture.\n */\n getA"\
-  "rch() {\n return this.cmdTrim(\"-a\");\n }\n callTrim(x) {\n const "\
-  "res = this.call(x);\n return res.trim();\n }\n cmdTrim(x) {\n con"\
-  "st res = this.cmd(x);\n return res.trim();\n }\n /**\n * Get the "\
-  "name of the selected CPU for the current selected architectur"\
-  "e.\n *\n * @returns {string} the value of asm.cpu\n */\n getCpu()"\
-  " {\n // return this.cmd('-c');\n return this.cmdTrim(\"-e asm.cp"\
-  "u\"); // use arch.cpu\n }\n // TODO: setEndian, setCpu, ...\n set"\
-  "Arch(arch, bits) {\n this.cmd(\"-a \" + arch);\n if (bits !== und"\
-  "efined) {\n this.cmd(\"-b \" + bits);\n }\n }\n setFlagSpace(name) "\
-  "{\n this.cmd(\"fs \" + name);\n }\n demangleSymbol(lang, mangledNa"\
-  "me) {\n return this.cmdTrim(\"iD \" + lang + \" \" + mangledName);"\
-  "\n }\n setLogLevel(level) {\n this.cmd(\"e log.level=\" + level);\n"\
-  " }\n /**\n * should return the id for the new map using the giv"\
-  "en file descriptor\n */\n // rename to createMap or mapFile?\n n"\
-  "ewMap(fd, vaddr, size, paddr, perm, name = \"\") {\n this.cmd(`o"\
-  "m ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);\n }\n at(a"\
-  ") {\n return new NativePointer(a);\n }\n getShell() {\n return ne"\
-  "w shell_js_1.R2Shell(this);\n }\n // Radare/Frida\n version() {\n"\
-  " const v = this.r2.cmd(\"?Vq\");\n return v.trim();\n }\n // Proce"\
-  "ss\n platform() {\n const output = this.r2.cmd(\"uname\");\n retur"\
-  "n output.trim();\n }\n arch() {\n const output = this.r2.cmd(\"un"\
-  "ame -a\");\n return output.trim();\n }\n bits() {\n const output ="\
-  " this.r2.cmd(\"uname -b\");\n return output.trim();\n }\n id() {\n "\
-  "// getpid();\n return +this.r2.cmd(\"?vi:$p\");\n }\n // Other stu"\
-  "ff\n printAt(msg, x, y) {\n // see pg, but pg is obrken :D\n }\n "\
-  "clearScreen() {\n this.r2.cmd(\"!clear\");\n return this;\n }\n get"\
-  "Config(key) {\n if (key === \"\") {\n return new Error(\"Empty key"\
-  "\");\n }\n const exist = this.r2.cmd(`e~^${key} =`);\n if (exist."\
-  "trim() === \"\") {\n return new Error(\"Config key does not exist"\
-  "\");\n }\n const value = this.r2.call(\"e \" + key);\n return value"\
-  ".trim();\n }\n setConfig(key, val) {\n this.r2.call(\"e \" + key +"\
-  " \"=\" + val);\n return this;\n }\n getRegisterStateForEsil() {\n c"\
-  "onst dre = this.cmdj(\"dre\");\n return this.cmdj(\"dre\");\n }\n ge"\
-  "tRegisters() {\n // this.r2.log(\"winrar\" + JSON.stringify(JSON"\
-  ".parse(this.r2.cmd(\"drj\")),null, 2) );\n return this.cmdj(\"drj"\
-  "\");\n }\n resizeFile(newSize) {\n this.cmd(`r ${newSize}`);\n ret"\
-  "urn this;\n }\n insertNullBytes(newSize, at) {\n if (at === unde"\
-  "fined) {\n at = \"$$\";\n }\n this.cmd(`r+${newSize}@${at}`);\n ret"\
-  "urn this;\n }\n removeBytes(newSize, at) {\n if (at === undefine"\
-  "d) {\n at = \"$$\";\n }\n this.cmd(`r-${newSize}@${at}`);\n return "\
-  "this;\n }\n seek(addr) {\n this.cmd(`s ${addr}`);\n return this;\n"\
-  " }\n currentSeek() {\n return new NativePointer(\"$$\");\n }\n seek"\
-  "ToRelativeOpcode(nth) {\n this.cmd(`so ${nth}`);\n return this."\
-  "currentSeek();\n }\n getBlockSize() {\n return +this.cmd(\"b\");\n "\
-  "}\n setBlockSize(a) {\n this.cmd(`b ${a}`);\n return this;\n }\n c"\
-  "ountFlags() {\n return Number(this.cmd(\"f~?\"));\n }\n countFunct"\
-  "ions() {\n return Number(this.cmd(\"aflc\"));\n }\n analyzeFunctio"\
-  "nsWithEsil(depth) {\n this.cmd(\"aaef\");\n }\n analyzeProgramWith"\
-  "Esil(depth) {\n this.cmd(\"aae\");\n }\n analyzeProgram(depth) {\n "\
-  "if (depth === undefined) {\n depth = 0;\n }\n switch (depth) {\n "\
-  "case 0:\n this.cmd(\"aa\");\n break;\n case 1:\n this.cmd(\"aaa\");\n "\
-  "break;\n case 2:\n this.cmd(\"aaaa\");\n break;\n case 3:\n this.cmd"\
-  "(\"aaaaa\");\n break;\n }\n return this;\n }\n enumerateThreads() {\n"\
-  " // TODO: use apt/dpt to list threads at iterate over them to"\
-  " get the registers\n const regs0 = this.cmdj(\"drj\");\n const th"\
-  "read0 = {\n context: regs0,\n id: 0,\n state: \"waiting\",\n select"\
-  "ed: true\n };\n return [thread0];\n }\n currentThreadId() {\n if ("\
-  "+this.cmd(\"e cfg.debug\")) {\n return +this.cmd(\"dpt.\");\n }\n re"\
-  "turn this.id();\n }\n setRegisters(obj) {\n for (const r of Obje"\
-  "ct.keys(obj)) {\n const v = obj[r];\n this.r2.cmd(\"dr \" + r + \""\
-  "=\" + v);\n }\n }\n hex(s) {\n const output = this.r2.cmd(\"?v \" + "\
-  "s);\n return output.trim();\n }\n step() {\n this.r2.cmd(\"ds\");\n "\
-  "return this;\n }\n stepOver() {\n this.r2.cmd(\"dso\");\n return th"\
-  "is;\n }\n math(expr) {\n return +this.r2.cmd(\"?v \" + expr);\n }\n "\
-  "stepUntil(dst) {\n this.cmd(`dsu ${dst}`);\n }\n enumerateXrefsT"\
-  "o(s) {\n const output = this.call(\"axtq \" + s);\n return output"\
-  ".trim().split(/\\n/);\n }\n // TODO: rename to searchXrefsTo ?\n "\
-  "findXrefsTo(s, use_esil) {\n if (use_esil) {\n this.call(\"/r \" "\
-  "+ s);\n }\n else {\n this.call(\"/re \" + s);\n }\n }\n analyzeFuncti"\
-  "onsFromCalls() {\n this.call(\"aac\");\n return this;\n }\n autonam"\
-  "eAllFunctions() {\n this.call(\"aan\");\n return this;\n }\n analyz"\
-  "eFunctionsWithPreludes() {\n this.call(\"aap\");\n return this;\n "\
-  "}\n analyzeObjCReferences() {\n this.cmd(\"aao\");\n return this;\n"\
-  " }\n analyzeImports() {\n this.cmd(\"af @ sym.imp.*\");\n return t"\
-  "his;\n }\n searchDisasm(s) {\n const res = this.callj(\"/ad \" + s"\
-  ");\n return res;\n }\n searchString(s) {\n const res = this.cmdj("\
-  "\"/j \" + s);\n return res;\n }\n searchBytes(data) {\n function nu"\
-  "m2hex(data) {\n return (data & 0xff).toString(16);\n }\n const s"\
-  " = data.map(num2hex).join(\"\");\n const res = this.cmdj(\"/xj \" "\
-  "+ s);\n return res;\n }\n binInfo() {\n try {\n return this.cmdj(\""\
-  "ij~{bin}\");\n }\n catch (e) {\n return {};\n }\n }\n // TODO: take "\
-  "a BinFile as argument instead of number\n selectBinary(id) {\n "\
-  "this.call(`ob ${id}`);\n }\n openFile(name) {\n const ofd = this"\
-  ".call(\"oqq\");\n this.call(`o ${name}`);\n const nfd = this.call"\
-  "(\"oqq\");\n if (ofd.trim() === nfd.trim()) {\n return new Error("\
-  "\"Cannot open file\");\n }\n return parseInt(nfd);\n }\n openFileNo"\
-  "map(name) {\n const ofd = this.call(\"oqq\");\n this.call(`of ${n"\
-  "ame}`);\n const nfd = this.call(\"oqq\");\n if (ofd.trim() === nf"\
-  "d.trim()) {\n return new Error(\"Cannot open file\");\n }\n return"\
-  " parseInt(nfd);\n }\n currentFile(name) {\n return (this.call(\"o"\
-  ".\")).trim();\n }\n enumeratePlugins(type) {\n switch (type) {\n c"\
-  "ase \"bin\":\n return this.callj(\"Lij\");\n case \"io\":\n return thi"\
-  "s.callj(\"Loj\");\n case \"core\":\n return this.callj(\"Lcj\");\n cas"\
-  "e \"arch\":\n return this.callj(\"LAj\");\n case \"anal\":\n return th"\
-  "is.callj(\"Laj\");\n case \"lang\":\n return this.callj(\"Llj\");\n }\n"\
-  " return [];\n }\n enumerateModules() {\n return this.callj(\"dmmj"\
-  "\");\n }\n enumerateFiles() {\n return this.callj(\"oj\");\n }\n enum"\
-  "erateBinaries() {\n return this.callj(\"obj\");\n }\n enumerateMap"\
-  "s() {\n return this.callj(\"omj\");\n }\n enumerateClasses() {\n re"\
-  "turn this.callj(\"icj\");\n }\n enumerateSymbols() {\n return this"\
-  ".callj(\"isj\");\n }\n enumerateExports() {\n return this.callj(\"i"\
-  "Ej\");\n }\n enumerateImports() {\n return this.callj(\"iij\");\n }\n"\
-  " enumerateLibraries() {\n return this.callj(\"ilj\");\n }\n enumer"\
-  "ateSections() {\n return this.callj(\"iSj\");\n }\n enumerateSegme"\
-  "nts() {\n return this.callj(\"iSSj\");\n }\n enumerateEntrypoints("\
-  ") {\n return this.callj(\"iej\");\n }\n enumerateRelocations() {\n "\
-  "return this.callj(\"irj\");\n }\n enumerateFunctions() {\n return "\
-  "this.cmdj(\"aflj\");\n }\n enumerateFlags() {\n return this.cmdj(\""\
-  "fj\");\n }\n skip() {\n this.r2.cmd(\"dss\");\n }\n ptr(s) {\n return "\
-  "new NativePointer(s, this);\n }\n call(s) {\n return this.r2.cal"\
-  "l(s);\n }\n callj(s) {\n return JSON.parse(this.call(s));\n }\n cm"\
-  "d(s) {\n return this.r2.cmd(s);\n }\n cmdj(s) {\n return JSON.par"\
-  "se(this.cmd(s));\n }\n log(s) {\n return this.r2.log(s);\n }\n cli"\
-  "ppy(msg) {\n this.r2.log(this.r2.cmd(\"?E \" + msg));\n }\n ascii("\
-  "msg) {\n this.r2.log(this.r2.cmd(\"?ea \" + msg));\n }\n}\nexports."\
-  "R2PapiSync = R2PapiSync;\n// useful to call functions via dxc "\
-  "and to define and describe function signatures\nclass NativeFu"\
-  "nction {\n constructor() { }\n}\nexports.NativeFunction = Native"\
-  "Function;\n// uhm not sure how to map this into r2 yet\nclass N"\
-  "ativeCallback {\n constructor() { }\n}\nexports.NativeCallback ="\
-  " NativeCallback;\n/**\n * Class providing a way to work with 64"\
-  "bit pointers from Javascript, this API mimics the same\n * wel"\
-  "l-known promitive available in Frida, but it's baked by the c"\
-  "urrent session of r2.\n *\n * It is also possible to use this c"\
-  "lass via the global `ptr` function.\n *\n * @typedef NativePoin"\
-  "ter\n */\nclass NativePointer {\n constructor(s, api) {\n this.ap"\
-  "i = api ?? exports.R;\n this.addr = (\"\" + s).trim();\n }\n /**\n "\
-  "* Filter a string to be used as a valid flag name\n *\n * @para"\
-  "m {string} name of the symbol name\n * @returns {string} filte"\
-  "red name to be used as a flag\n */\n filterFlag(name) {\n return"\
-  " this.api.call(`fD ${name}`);\n }\n /**\n * Set a flag (name) at"\
-  " the offset pointed\n *\n * @param {string} name of the flag to"\
-  " set\n * @returns {string} base64 decoded string\n */\n setFlag("\
-  "name) {\n this.api.call(`f ${name}=${this.addr}`);\n }\n /**\n * "\
-  "Remove the flag in the current offset\n *\n */\n unsetFlag() {\n "\
-  "this.api.call(`f-${this.addr}`);\n }\n /**\n * Render an hexadec"\
-  "imal dump of the bytes contained in the range starting\n * in "\
-  "the current pointer and given length.\n *\n * @param {number} l"\
-  "ength optional amount of bytes to dump, using blocksize\n * @r"\
-  "eturns {string} string containing the hexadecimal dump of mem"\
-  "ory\n */\n hexdump(length) {\n const len = length === undefined "\
-  "? \"\" : \"\" + length;\n return this.api.cmd(`x${len}@${this.addr"\
-  "}`);\n }\n functionGraph(format) {\n if (format === \"dot\") {\n re"\
-  "turn this.api.cmd(`agfd@ ${this.addr}`);\n }\n if (format === \""\
-  "json\") {\n return this.api.cmd(`agfj@${this.addr}`);\n }\n if (f"\
-  "ormat === \"mermaid\") {\n return this.api.cmd(`agfm@${this.addr"\
-  "}`);\n }\n return this.api.cmd(`agf@${this.addr}`);\n }\n readByt"\
-  "eArray(len) {\n return JSON.parse(this.api.cmd(`p8j ${len}@${t"\
-  "his.addr}`));\n }\n readHexString(len) {\n return (this.api.cmd("\
-  "`p8 ${len}@${this.addr}`)).trim();\n }\n and(a) {\n const addr ="\
-  " this.api.call(`?v ${this.addr} & ${a}`);\n return new NativeP"\
-  "ointer(addr.trim());\n }\n or(a) {\n const addr = this.api.call("\
-  "`?v ${this.addr} | ${a}`);\n return new NativePointer(addr.tri"\
-  "m());\n }\n add(a) {\n const addr = this.api.call(`?v ${this.add"\
-  "r}+${a}`);\n return new NativePointer(addr);\n }\n sub(a) {\n con"\
-  "st addr = this.api.call(`?v ${this.addr}-${a}`);\n return new "\
-  "NativePointer(addr);\n }\n writeByteArray(data) {\n this.api.cmd"\
-  "(\"wx \" + data.join(\"\"));\n return this;\n }\n writeAssembly(inst"\
-  "ruction) {\n this.api.cmd(`wa ${instruction} @ ${this.addr}`);"\
-  "\n return this;\n }\n writeCString(s) {\n this.api.call(\"w \" + s)"\
-  ";\n return this;\n }\n writeWideString(s) {\n this.api.call(\"ww \""\
-  " + s);\n return this;\n }\n /**\n * Check if it's a pointer to th"\
-  "e address zero. Also known as null pointer.\n *\n * @returns {b"\
-  "oolean} true if null\n */\n isNull() {\n return (this.toNumber()"\
-  ") == 0;\n }\n /**\n * Compare current pointer with the passed on"\
-  "e, and return -1, 0 or 1.\n *\n * * if (this < arg) return -1;\n"\
-  " * * if (this > arg) return 1;\n * * if (this == arg) return 0"\
-  ";\n *\n * @returns {number} returns -1, 0 or 1 depending on the"\
-  " comparison of the pointers\n */\n compare(a) {\n const bv = typ"\
-  "eof a === \"string\" || typeof a === \"number\"\n ? new NativePoin"\
-  "ter(a)\n : a;\n const dist = r2pipe_js_1.r2.call(`?vi ${this.ad"\
-  "dr} - ${bv.addr}`);\n if (dist[0] === \"-\") {\n return -1;\n }\n i"\
-  "f (dist[0] === \"0\") {\n return 0;\n }\n return 1;\n }\n /**\n * Che"\
-  "ck if it's a pointer to the address zero. Also known as null "\
-  "pointer.\n *\n * @returns {boolean} true if null\n */\n pointsToN"\
-  "ull() {\n const value = this.readPointer();\n return (value.com"\
-  "pare(0)) == 0;\n }\n toJSON() {\n const output = this.api.cmd(\"?"\
-  "vi \" + this.addr.trim());\n return output.trim();\n }\n toString"\
-  "() {\n return (this.api.cmd(\"?v \" + this.addr.trim())).trim();"\
-  "\n }\n toNumber() {\n return parseInt(this.toString());\n }\n writ"\
-  "ePointer(p) {\n }\n readRelativePointer() {\n return this.add(th"\
-  "is.readS32());\n }\n readPointer() {\n const address = this.api."\
-  "call(\"pvp@\" + this.addr);\n return new NativePointer(address);"\
-  "\n }\n readS8() {\n return parseInt(this.api.cmd(`pv1d@${this.ad"\
-  "dr}`));\n }\n readU8() {\n return parseInt(this.api.cmd(`pv1u@${"\
-  "this.addr}`));\n }\n readU16() {\n return parseInt(this.api.cmd("\
-  "`pv2d@${this.addr}`));\n }\n readU16le() {\n }\n readU16be() {\n }"\
-  "\n readS16() {\n }\n readS16le() {\n }\n readS16be() {\n }\n readS32"\
-  "() {\n // same as readInt32()\n }\n readU32() {\n }\n readU32le() "\
-  "{\n }\n readU32be() {\n }\n readU64() {\n // XXX: use bignum or st"\
-  "ring here\n return parseInt(this.api.cmd(`pv8u@${this.addr}`))"\
-  ";\n }\n readU64le() {\n }\n readU64be() {\n }\n writeInt(n) {\n retu"\
-  "rn this.writeU32(n);\n }\n /**\n * Write a byte in the current o"\
-  "ffset, the value must be between 0 and 255\n *\n * @param {stri"\
-  "ng} n number to write in the pointed byte in the current addr"\
-  "ess\n * @returns {boolean} false if the operation failed\n */\n "\
-  "writeU8(n) {\n this.api.cmd(`wv1 ${n}@${this.addr}`);\n return "\
-  "true;\n }\n writeU16(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}`"\
-  ");\n return true;\n }\n writeU16be(n) {\n this.api.cmd(`wv2 ${n}@"\
-  "${this.addr}@e:cfg.bigendian=true`);\n return true;\n }\n writeU"\
-  "16le(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendia"\
-  "n=false`);\n return true;\n }\n writeU32(n) {\n this.api.cmd(`wv4"\
-  " ${n}@${this.addr}`);\n return true;\n }\n writeU32be(n) {\n this"\
-  ".api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=true`);\n retu"\
-  "rn true;\n }\n writeU32le(n) {\n this.api.cmd(`wv4 ${n}@${this.a"\
-  "ddr}@e:cfg.bigendian=false`);\n return true;\n }\n writeU64(n) {"\
-  "\n this.api.cmd(`wv8 ${n}@${this.addr}`);\n return true;\n }\n wr"\
-  "iteU64be(n) {\n this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bige"\
-  "ndian=true`);\n return true;\n }\n writeU64le(n) {\n this.api.cmd"\
-  "(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false`);\n return true"\
-  ";\n }\n readInt32() {\n return this.readU32();\n }\n readCString()"\
-  " {\n const output = this.api.cmd(`pszj@${this.addr}`);\n return"\
-  " JSON.parse(output).string;\n }\n readWideString() {\n const out"\
-  "put = this.api.cmd(`pswj@${this.addr}`);\n return JSON.parse(o"\
-  "utput).string;\n }\n readPascalString() {\n const output = this."\
-  "api.cmd(`pspj@${this.addr}`);\n return JSON.parse(output).stri"\
-  "ng;\n }\n instruction() {\n const output = this.api.cmdj(`aoj@${"\
-  "this.addr}`);\n return output[0];\n }\n disassemble(length) {\n c"\
-  "onst len = length === undefined ? \"\" : \"\" + length;\n return t"\
-  "his.api.cmd(`pd ${len}@${this.addr}`);\n }\n analyzeFunction() "\
-  "{\n this.api.cmd(\"af@\" + this.addr);\n return this;\n }\n analyze"\
-  "FunctionRecursively() {\n this.api.cmd(\"afr@\" + this.addr);\n r"\
-  "eturn this;\n }\n name() {\n return (this.api.cmd(\"fd \" + this.a"\
-  "ddr)).trim();\n }\n methodName() {\n // TODO: @ should be option"\
-  "al here, as addr should be passable as argument imho\n return "\
-  "(this.api.cmd(\"ic.@\" + this.addr)).trim();\n }\n symbolName() {"\
-  "\n // TODO: @ should be optional here, as addr should be passa"\
-  "ble as argument imho\n const name = this.api.cmd(\"isj.@\" + thi"\
-  "s.addr);\n return name.trim();\n }\n getFunction() {\n return thi"\
-  "s.api.cmdj(\"afij@\" + this.addr);\n }\n basicBlock() {\n return t"\
-  "his.api.cmdj(\"abj@\" + this.addr);\n }\n functionBasicBlocks() {"\
-  "\n return this.api.cmdj(\"afbj@\" + this.addr);\n }\n xrefs() {\n r"\
-  "eturn this.api.cmdj(\"axtj@\" + this.addr);\n }\n}\nexports.Native"\
-  "Pointer = NativePointer;\nvar R2Papi=R2PapiSync;\n";
+  "const v = this.cmd(\"e bin.baddr\");\n return new NativePointer("\
+  "v);\n }\n jsonToTypescript(name, a) {\n let str = `interface ${n"\
+  "ame} {\\n`;\n if (a.length && a.length > 0) {\n a = a[0];\n }\n fo"\
+  "r (const k of Object.keys(a)) {\n const typ = typeof a[k];\n co"\
+  "nst nam = k;\n str += ` ${nam}: ${typ};\\n`;\n }\n return `${str}"\
+  "}\\n`;\n }\n /**\n * Get the general purpose register size of the"\
+  " targize architecture in bits\n *\n * @returns {number} the reg"\
+  "size\n */\n getBits() {\n return +this.cmd(\"-b\");\n }\n /**\n * Get"\
+  " the name of the arch plugin selected, which tends to be the "\
+  "same target architecture.\n * Note that on some situations, th"\
+  "is info will be stored protected bby the AirForce.\n * When us"\
+  "ing the r2ghidra arch plugin the underlying arch is in `asm.c"\
+  "pu`:\n *\n * @returns {string} the name of the target architect"\
+  "ure.\n */\n getArch() {\n return this.cmdTrim(\"-a\");\n }\n callTri"\
+  "m(x) {\n const res = this.call(x);\n return res.trim();\n }\n cmd"\
+  "Trim(x) {\n const res = this.cmd(x);\n return res.trim();\n }\n /"\
+  "**\n * Get the name of the selected CPU for the current select"\
+  "ed architecture.\n *\n * @returns {string} the value of asm.cpu"\
+  "\n */\n getCpu() {\n // return this.cmd('-c');\n return this.cmdT"\
+  "rim(\"-e asm.cpu\"); // use arch.cpu\n }\n // TODO: setEndian, se"\
+  "tCpu, ...\n setArch(arch, bits) {\n this.cmd(\"-a \" + arch);\n if"\
+  " (bits !== undefined) {\n this.cmd(\"-b \" + bits);\n }\n }\n setFl"\
+  "agSpace(name) {\n this.cmd(\"fs \" + name);\n }\n demangleSymbol(l"\
+  "ang, mangledName) {\n return this.cmdTrim(\"iD \" + lang + \" \" +"\
+  " mangledName);\n }\n setLogLevel(level) {\n this.cmd(\"e log.leve"\
+  "l=\" + level);\n }\n /**\n * should return the id for the new map"\
+  " using the given file descriptor\n */\n // rename to createMap "\
+  "or mapFile?\n newMap(fd, vaddr, size, paddr, perm, name = \"\") "\
+  "{\n this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${nam"\
+  "e}`);\n }\n at(a) {\n return new NativePointer(a);\n }\n getShell("\
+  ") {\n return new shell_js_1.R2Shell(this);\n }\n // Radare/Frida"\
+  "\n version() {\n const v = this.r2.cmd(\"?Vq\");\n return v.trim()"\
+  ";\n }\n // Process\n platform() {\n const output = this.r2.cmd(\"u"\
+  "name\");\n return output.trim();\n }\n arch() {\n const output = t"\
+  "his.r2.cmd(\"uname -a\");\n return output.trim();\n }\n bits() {\n "\
+  "const output = this.r2.cmd(\"uname -b\");\n return output.trim()"\
+  ";\n }\n id() {\n // getpid();\n return +this.r2.cmd(\"?vi:$p\");\n }"\
+  "\n // Other stuff\n printAt(msg, x, y) {\n // see pg, but pg is "\
+  "obrken :D\n }\n clearScreen() {\n this.r2.cmd(\"!clear\");\n return"\
+  " this;\n }\n getConfig(key) {\n if (key === \"\") {\n return new Er"\
+  "ror(\"Empty key\");\n }\n const exist = this.r2.cmd(`e~^${key} =`"\
+  ");\n if (exist.trim() === \"\") {\n return new Error(\"Config key "\
+  "does not exist\");\n }\n const value = this.r2.call(\"e \" + key);"\
+  "\n return value.trim();\n }\n setConfig(key, val) {\n this.r2.cal"\
+  "l(\"e \" + key + \"=\" + val);\n return this;\n }\n getRegisterState"\
+  "ForEsil() {\n const dre = this.cmdj(\"dre\");\n return this.cmdj("\
+  "\"dre\");\n }\n getRegisters() {\n // this.r2.log(\"winrar\" + JSON."\
+  "stringify(JSON.parse(this.r2.cmd(\"drj\")),null, 2) );\n return "\
+  "this.cmdj(\"drj\");\n }\n resizeFile(newSize) {\n this.cmd(`r ${ne"\
+  "wSize}`);\n return this;\n }\n insertNullBytes(newSize, at) {\n i"\
+  "f (at === undefined) {\n at = \"$$\";\n }\n this.cmd(`r+${newSize}"\
+  "@${at}`);\n return this;\n }\n removeBytes(newSize, at) {\n if (a"\
+  "t === undefined) {\n at = \"$$\";\n }\n this.cmd(`r-${newSize}@${a"\
+  "t}`);\n return this;\n }\n seek(addr) {\n this.cmd(`s ${addr}`);\n"\
+  " return this;\n }\n currentSeek() {\n return new NativePointer(\""\
+  "$$\");\n }\n seekToRelativeOpcode(nth) {\n this.cmd(`so ${nth}`);"\
+  "\n return this.currentSeek();\n }\n getBlockSize() {\n return +th"\
+  "is.cmd(\"b\");\n }\n setBlockSize(a) {\n this.cmd(`b ${a}`);\n retu"\
+  "rn this;\n }\n countFlags() {\n return Number(this.cmd(\"f~?\"));\n"\
+  " }\n countFunctions() {\n return Number(this.cmd(\"aflc\"));\n }\n "\
+  "analyzeFunctionsWithEsil(depth) {\n this.cmd(\"aaef\");\n }\n anal"\
+  "yzeProgramWithEsil(depth) {\n this.cmd(\"aae\");\n }\n analyzeProg"\
+  "ram(depth) {\n if (depth === undefined) {\n depth = 0;\n }\n swit"\
+  "ch (depth) {\n case 0:\n this.cmd(\"aa\");\n break;\n case 1:\n this"\
+  ".cmd(\"aaa\");\n break;\n case 2:\n this.cmd(\"aaaa\");\n break;\n cas"\
+  "e 3:\n this.cmd(\"aaaaa\");\n break;\n }\n return this;\n }\n enumera"\
+  "teThreads() {\n // TODO: use apt/dpt to list threads at iterat"\
+  "e over them to get the registers\n const regs0 = this.cmdj(\"dr"\
+  "j\");\n const thread0 = {\n context: regs0,\n id: 0,\n state: \"wai"\
+  "ting\",\n selected: true\n };\n return [thread0];\n }\n currentThre"\
+  "adId() {\n if (+this.cmd(\"e cfg.debug\")) {\n return +this.cmd(\""\
+  "dpt.\");\n }\n return this.id();\n }\n setRegisters(obj) {\n for (c"\
+  "onst r of Object.keys(obj)) {\n const v = obj[r];\n this.r2.cmd"\
+  "(\"dr \" + r + \"=\" + v);\n }\n }\n hex(s) {\n const output = this.r"\
+  "2.cmd(\"?v \" + s);\n return output.trim();\n }\n step() {\n this.r"\
+  "2.cmd(\"ds\");\n return this;\n }\n stepOver() {\n this.r2.cmd(\"dso"\
+  "\");\n return this;\n }\n math(expr) {\n return +this.r2.cmd(\"?v \""\
+  " + expr);\n }\n stepUntil(dst) {\n this.cmd(`dsu ${dst}`);\n }\n e"\
+  "numerateXrefsTo(s) {\n const output = this.call(\"axtq \" + s);\n"\
+  " return output.trim().split(/\\n/);\n }\n // TODO: rename to sea"\
+  "rchXrefsTo ?\n findXrefsTo(s, use_esil) {\n if (use_esil) {\n th"\
+  "is.call(\"/r \" + s);\n }\n else {\n this.call(\"/re \" + s);\n }\n }\n"\
+  " analyzeFunctionsFromCalls() {\n this.call(\"aac\");\n return thi"\
+  "s;\n }\n autonameAllFunctions() {\n this.call(\"aan\");\n return th"\
+  "is;\n }\n analyzeFunctionsWithPreludes() {\n this.call(\"aap\");\n "\
+  "return this;\n }\n analyzeObjCReferences() {\n this.cmd(\"aao\");\n"\
+  " return this;\n }\n analyzeImports() {\n this.cmd(\"af @ sym.imp."\
+  "*\");\n return this;\n }\n searchDisasm(s) {\n const res = this.ca"\
+  "llj(\"/ad \" + s);\n return res;\n }\n searchString(s) {\n const re"\
+  "s = this.cmdj(\"/j \" + s);\n return res;\n }\n searchBytes(data) "\
+  "{\n function num2hex(data) {\n return (data & 0xff).toString(16"\
+  ");\n }\n const s = data.map(num2hex).join(\"\");\n const res = thi"\
+  "s.cmdj(\"/xj \" + s);\n return res;\n }\n binInfo() {\n try {\n retu"\
+  "rn this.cmdj(\"ij~{bin}\");\n }\n catch (e) {\n return {};\n }\n }\n "\
+  "// TODO: take a BinFile as argument instead of number\n select"\
+  "Binary(id) {\n this.call(`ob ${id}`);\n }\n openFile(name) {\n co"\
+  "nst ofd = this.call(\"oqq\");\n this.call(`o ${name}`);\n const n"\
+  "fd = this.call(\"oqq\");\n if (ofd.trim() === nfd.trim()) {\n ret"\
+  "urn new Error(\"Cannot open file\");\n }\n return parseInt(nfd);\n"\
+  " }\n openFileNomap(name) {\n const ofd = this.call(\"oqq\");\n thi"\
+  "s.call(`of ${name}`);\n const nfd = this.call(\"oqq\");\n if (ofd"\
+  ".trim() === nfd.trim()) {\n return new Error(\"Cannot open file"\
+  "\");\n }\n return parseInt(nfd);\n }\n currentFile(name) {\n const "\
+  "v = this.call(\"o.\");\n return v.trim();\n }\n enumeratePlugins(t"\
+  "ype) {\n switch (type) {\n case \"bin\":\n return this.callj(\"Lij\""\
+  ");\n case \"io\":\n return this.callj(\"Loj\");\n case \"core\":\n retu"\
+  "rn this.callj(\"Lcj\");\n case \"arch\":\n return this.callj(\"LAj\")"\
+  ";\n case \"anal\":\n return this.callj(\"Laj\");\n case \"lang\":\n ret"\
+  "urn this.callj(\"Llj\");\n }\n return [];\n }\n enumerateModules() "\
+  "{\n return this.callj(\"dmmj\");\n }\n enumerateFiles() {\n return "\
+  "this.callj(\"oj\");\n }\n enumerateBinaries() {\n return this.call"\
+  "j(\"obj\");\n }\n enumerateMaps() {\n return this.callj(\"omj\");\n }"\
+  "\n enumerateClasses() {\n return this.callj(\"icj\");\n }\n enumera"\
+  "teSymbols() {\n return this.callj(\"isj\");\n }\n enumerateExports"\
+  "() {\n return this.callj(\"iEj\");\n }\n enumerateImports() {\n ret"\
+  "urn this.callj(\"iij\");\n }\n enumerateLibraries() {\n return thi"\
+  "s.callj(\"ilj\");\n }\n enumerateSections() {\n return this.callj("\
+  "\"iSj\");\n }\n enumerateSegments() {\n return this.callj(\"iSSj\");"\
+  "\n }\n enumerateEntrypoints() {\n return this.callj(\"iej\");\n }\n "\
+  "enumerateRelocations() {\n return this.callj(\"irj\");\n }\n enume"\
+  "rateFunctions() {\n return this.cmdj(\"aflj\");\n }\n enumerateFla"\
+  "gs() {\n return this.cmdj(\"fj\");\n }\n skip() {\n this.r2.cmd(\"ds"\
+  "s\");\n }\n ptr(s) {\n return new NativePointer(s, this);\n }\n cal"\
+  "l(s) {\n return this.r2.call(s);\n }\n callj(s) {\n const v = thi"\
+  "s.call(s);\n return JSON.parse(v);\n }\n cmd(s) {\n return this.r"\
+  "2.cmd(s);\n }\n cmdj(s) {\n const v = this.cmd(s);\n return JSON."\
+  "parse(v);\n }\n log(s) {\n return this.r2.log(s);\n }\n clippy(msg"\
+  ") {\n const v = this.r2.cmd(\"?E \" + msg);\n this.r2.log(v);\n }\n"\
+  " ascii(msg) {\n const v = this.r2.cmd(\"?ea \" + msg);\n this.r2."\
+  "log(v);\n }\n}\nexports.R2PapiSync = R2PapiSync;\n// useful to ca"\
+  "ll functions via dxc and to define and describe function sign"\
+  "atures\nclass NativeFunction {\n constructor() { }\n}\nexports.Na"\
+  "tiveFunction = NativeFunction;\n// uhm not sure how to map thi"\
+  "s into r2 yet\nclass NativeCallback {\n constructor() { }\n}\nexp"\
+  "orts.NativeCallback = NativeCallback;\n/**\n * Class providing "\
+  "a way to work with 64bit pointers from Javascript, this API m"\
+  "imics the same\n * well-known promitive available in Frida, bu"\
+  "t it's baked by the current session of r2.\n *\n * It is also p"\
+  "ossible to use this class via the global `ptr` function.\n *\n "\
+  "* @typedef NativePointer\n */\nclass NativePointer {\n construct"\
+  "or(s, api) {\n this.api = api ?? exports.R;\n this.addr = (s =="\
+  " undefined) ? \"$$\" : (\"\" + s).trim();\n }\n /**\n * Copy N bytes"\
+  " from current pointer to the destination\n *\n * @param {string"\
+  "|NativePointer|number} destination address\n * @param {string|"\
+  "number} amount of bytes\n */\n copyTo(addr, size) {\n this.api.c"\
+  "all(`wf ${this.addr} ${size} @ ${addr}`);\n }\n /**\n * Copy N b"\
+  "ytes from given address to the current destination\n *\n * @par"\
+  "am {string|NativePointer|number} source address\n * @param {st"\
+  "ring|number} amount of bytes\n */\n copyFrom(addr, size) {\n thi"\
+  "s.api.call(`wf ${addr} ${size} @ ${this.addr}`);\n }\n /**\n * F"\
+  "ill N bytes in this address with zero\n *\n * @param {string|nu"\
+  "mber} amount of bytes\n */\n zeroFill(size) {\n this.api.call(`w"\
+  "0 ${size} @ ${this.addr}`);\n }\n /**\n * Filter a string to be "\
+  "used as a valid flag name\n *\n * @param {string} name of the s"\
+  "ymbol name\n * @returns {string} filtered name to be used as a"\
+  " flag\n */\n filterFlag(name) {\n return this.api.call(`fD ${nam"\
+  "e}`);\n }\n /**\n * Set a flag (name) at the offset pointed\n *\n "\
+  "* @param {string} name of the flag to set\n * @returns {string"\
+  "} base64 decoded string\n */\n setFlag(name) {\n this.api.call(`"\
+  "f ${name}=${this.addr}`);\n }\n /**\n * Remove the flag in the c"\
+  "urrent offset\n *\n */\n unsetFlag() {\n this.api.call(`f-${this."\
+  "addr}`);\n }\n /**\n * Render an hexadecimal dump of the bytes c"\
+  "ontained in the range starting\n * in the current pointer and "\
+  "given length.\n *\n * @param {number} length optional amount of"\
+  " bytes to dump, using blocksize\n * @returns {string} string c"\
+  "ontaining the hexadecimal dump of memory\n */\n hexdump(length)"\
+  " {\n const len = length === undefined ? \"\" : \"\" + length;\n ret"\
+  "urn this.api.cmd(`x${len}@${this.addr}`);\n }\n functionGraph(f"\
+  "ormat) {\n if (format === \"dot\") {\n return this.api.cmd(`agfd@"\
+  " ${this.addr}`);\n }\n if (format === \"json\") {\n return this.ap"\
+  "i.cmd(`agfj@${this.addr}`);\n }\n if (format === \"mermaid\") {\n "\
+  "return this.api.cmd(`agfm@${this.addr}`);\n }\n return this.api"\
+  ".cmd(`agf@${this.addr}`);\n }\n readByteArray(len) {\n const v ="\
+  " this.api.cmd(`p8j ${len}@${this.addr}`);\n return JSON.parse("\
+  "v);\n }\n readHexString(len) {\n const v = this.api.cmd(`p8 ${le"\
+  "n}@${this.addr}`);\n return v.trim();\n }\n and(a) {\n const addr"\
+  " = this.api.call(`?v ${this.addr} & ${a}`);\n return new Nativ"\
+  "ePointer(addr.trim());\n }\n or(a) {\n const addr = this.api.cal"\
+  "l(`?v ${this.addr} | ${a}`);\n return new NativePointer(addr.t"\
+  "rim());\n }\n add(a) {\n const addr = this.api.call(`?v ${this.a"\
+  "ddr}+${a}`);\n return new NativePointer(addr);\n }\n sub(a) {\n c"\
+  "onst addr = this.api.call(`?v ${this.addr}-${a}`);\n return ne"\
+  "w NativePointer(addr);\n }\n writeByteArray(data) {\n this.api.c"\
+  "md(\"wx \" + data.join(\"\"));\n return this;\n }\n writeAssembly(in"\
+  "struction) {\n this.api.cmd(`wa ${instruction} @ ${this.addr}`"\
+  ");\n return this;\n }\n writeCString(s) {\n this.api.call(\"w \" + "\
+  "s);\n return this;\n }\n writeWideString(s) {\n this.api.call(\"ww"\
+  " \" + s);\n return this;\n }\n /**\n * Check if it's a pointer to "\
+  "the address zero. Also known as null pointer.\n *\n * @returns "\
+  "{boolean} true if null\n */\n isNull() {\n const v = this.toNumb"\
+  "er();\n return v === 0;\n }\n /**\n * Compare current pointer wit"\
+  "h the passed one, and return -1, 0 or 1.\n *\n * * if (this < a"\
+  "rg) return -1;\n * * if (this > arg) return 1;\n * * if (this ="\
+  "= arg) return 0;\n *\n * @returns {number} returns -1, 0 or 1 d"\
+  "epending on the comparison of the pointers\n */\n compare(a) {\n"\
+  " const bv = typeof a === \"string\" || typeof a === \"number\"\n ?"\
+  " new NativePointer(a)\n : a;\n const dist = r2pipe_js_1.r2.call"\
+  "(`?vi ${this.addr} - ${bv.addr}`);\n if (dist[0] === \"-\") {\n r"\
+  "eturn -1;\n }\n if (dist[0] === \"0\") {\n return 0;\n }\n return 1;"\
+  "\n }\n /**\n * Check if it's a pointer to the address zero. Also"\
+  " known as null pointer.\n *\n * @returns {boolean} true if null"\
+  "\n */\n pointsToNull() {\n const value = this.readPointer();\n co"\
+  "nst v = value.compare(0);\n return v == 0;\n }\n toJSON() {\n con"\
+  "st output = this.api.cmd(\"?vi \" + this.addr.trim());\n return "\
+  "output.trim();\n }\n toString() {\n const v = this.api.cmd(\"?v \""\
+  " + this.addr.trim());\n return v.trim();\n }\n toNumber() {\n con"\
+  "st v = this.toString();\n return parseInt(v);\n }\n writePointer"\
+  "(p) {\n }\n readRelativePointer() {\n const v = this.readS32();\n"\
+  " return this.add(v);\n }\n readPointer() {\n const address = thi"\
+  "s.api.call(\"pvp@\" + this.addr);\n return new NativePointer(add"\
+  "ress);\n }\n readS8() {\n const v = this.api.cmd(`pv1d@${this.ad"\
+  "dr}`);\n return parseInt(v);\n }\n readU8() {\n const v = this.ap"\
+  "i.cmd(`pv1u@${this.addr}`);\n return parseInt(v);\n }\n readU16("\
+  ") {\n const v = this.api.cmd(`pv2d@${this.addr}`);\n return par"\
+  "seInt(v);\n }\n readU16le() {\n const v = this.api.cmd(`pv2d@${t"\
+  "his.addr}@e:cfg.bigendian=false`);\n }\n readU16be() {\n const v"\
+  " = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`);\n }"\
+  "\n readS16() {\n return parseInt(v);\n }\n readS16le() {\n const v"\
+  " = this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=false`);\n "\
+  "}\n readS16be() {\n const v = this.api.cmd(`pv2d@${this.addr}@e"\
+  ":cfg.bigendian=true`);\n }\n readS32() {\n const v = this.api.cm"\
+  "d(`pv4d@${this.addr}`);\n return parseInt(v);\n }\n readU32() {\n"\
+  " const v = this.api.cmd(`pv4u@${this.addr}`);\n return parseIn"\
+  "t(v);\n }\n readU32le() {\n const v = this.api.cmd(`pv4u@${this."\
+  "addr}@e:cfg.bigendian=false`);\n }\n readU32be() {\n const v = t"\
+  "his.api.cmd(`pv4u@${this.addr}@e:cfg.bigendian=true`);\n }\n re"\
+  "adU64() {\n // XXX: use bignum or string here\n const v = this."\
+  "api.cmd(`pv8u@${this.addr}`);\n return parseInt(v);\n }\n readU6"\
+  "4le() {\n const v = this.api.cmd(`pv8u@${this.addr}@e:cfg.bige"\
+  "ndian=false`);\n }\n readU64be() {\n const v = this.api.cmd(`pv8"\
+  "u@${this.addr}@e:cfg.bigendian=true`);\n }\n writeInt(n) {\n ret"\
+  "urn this.writeU32(n);\n }\n /**\n * Write a byte in the current "\
+  "offset, the value must be between 0 and 255\n *\n * @param {str"\
+  "ing} n number to write in the pointed byte in the current add"\
+  "ress\n * @returns {boolean} false if the operation failed\n */\n"\
+  " writeU8(n) {\n this.api.cmd(`wv1 ${n}@${this.addr}`);\n return"\
+  " true;\n }\n writeU16(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}"\
+  "`);\n return true;\n }\n writeU16be(n) {\n this.api.cmd(`wv2 ${n}"\
+  "@${this.addr}@e:cfg.bigendian=true`);\n return true;\n }\n write"\
+  "U16le(n) {\n this.api.cmd(`wv2 ${n}@${this.addr}@e:cfg.bigendi"\
+  "an=false`);\n return true;\n }\n writeU32(n) {\n this.api.cmd(`wv"\
+  "4 ${n}@${this.addr}`);\n return true;\n }\n writeU32be(n) {\n thi"\
+  "s.api.cmd(`wv4 ${n}@${this.addr}@e:cfg.bigendian=true`);\n ret"\
+  "urn true;\n }\n writeU32le(n) {\n this.api.cmd(`wv4 ${n}@${this."\
+  "addr}@e:cfg.bigendian=false`);\n return true;\n }\n writeU64(n) "\
+  "{\n this.api.cmd(`wv8 ${n}@${this.addr}`);\n return true;\n }\n w"\
+  "riteU64be(n) {\n this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.big"\
+  "endian=true`);\n return true;\n }\n writeU64le(n) {\n this.api.cm"\
+  "d(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false`);\n return tru"\
+  "e;\n }\n readInt32() {\n return this.readU32();\n }\n readCString("\
+  ") {\n const output = this.api.cmd(`pszj@${this.addr}`);\n retur"\
+  "n JSON.parse(output).string;\n }\n readWideString() {\n const ou"\
+  "tput = this.api.cmd(`pswj@${this.addr}`);\n return JSON.parse("\
+  "output).string;\n }\n readPascalString() {\n const output = this"\
+  ".api.cmd(`pspj@${this.addr}`);\n return JSON.parse(output).str"\
+  "ing;\n }\n instruction() {\n const output = this.api.cmdj(`aoj@$"\
+  "{this.addr}`);\n return output[0];\n }\n disassemble(length) {\n "\
+  "const len = length === undefined ? \"\" : \"\" + length;\n return "\
+  "this.api.cmd(`pd ${len}@${this.addr}`);\n }\n analyzeFunction()"\
+  " {\n this.api.cmd(\"af@\" + this.addr);\n return this;\n }\n analyz"\
+  "eFunctionRecursively() {\n this.api.cmd(\"afr@\" + this.addr);\n "\
+  "return this;\n }\n name() {\n const v = this.api.cmd(\"fd \" + thi"\
+  "s.addr);\n return v.trim();\n }\n methodName() {\n // TODO: @ sho"\
+  "uld be optional here, as addr should be passable as argument "\
+  "imho\n const v = this.api.cmd(\"ic.@\" + this.addr);\n return v.t"\
+  "rim();\n }\n symbolName() {\n // TODO: @ should be optional here"\
+  ", as addr should be passable as argument imho\n const name = t"\
+  "his.api.cmd(\"isj.@\" + this.addr);\n return name.trim();\n }\n ge"\
+  "tFunction() {\n return this.api.cmdj(\"afij@\" + this.addr);\n }\n"\
+  " basicBlock() {\n return this.api.cmdj(\"abj@\" + this.addr);\n }"\
+  "\n functionBasicBlocks() {\n return this.api.cmdj(\"afbj@\" + thi"\
+  "s.addr);\n }\n xrefs() {\n return this.api.cmdj(\"axtj@\" + this.a"\
+  "ddr);\n }\n}\nexports.NativePointer = NativePointer;\nvar R2Papi="\
+  "R2PapiSync;\n";
