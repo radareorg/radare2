@@ -464,7 +464,7 @@ typedef int RCmdReturnCode;
 
 // R2_600 - make this api public? add an api to generalize the logic of invalid subcommand
 static inline void r_core_return_invalid_command(RCore *core, const char *basecmd, const char subcmd) {
-	R_LOG_ERROR ("Invalid `%c` subcommand, try `%s?`", subcmd, basecmd);
+	R_LOG_ERROR ("Invalid `%c` subcommand, try `%s?`", subcmd? subcmd: ' ', basecmd);
 	r_core_return_value (core, 1);
 }
 

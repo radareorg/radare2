@@ -6504,7 +6504,8 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 		r_core_block_read (core);
 	}
-	switch (*input) {
+	const char ch0 = *input;
+	switch (ch0) {
 	case 'w': // "pw"
 		if (input[1] == 'n') {
 			cmd_print_pwn (core);
@@ -8919,7 +8920,7 @@ static int cmd_print(void *data, const char *input) {
 		if (*input && input[1] == 'j') {
 			r_cons_cmd_help_json (help_msg_p);
 		} else {
-			r_core_return_invalid_command (core, "p", *input);
+			r_core_return_invalid_command (core, "p", ch0); // *input);
 		}
 		break;
 	}
