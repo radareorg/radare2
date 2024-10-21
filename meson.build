@@ -558,7 +558,6 @@ script_files = [
   'scripts/ipsw-kernel-symbolicate.r2.js',
   'scripts/licenses.r2.js',
   'scripts/parseplug.r2.js',
-  'scripts/pro.r2.js',
   'scripts/r2sptrace.py',
   'scripts/tags.r2.js',
   'scripts/unzip.r2.js',
