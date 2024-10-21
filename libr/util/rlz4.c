@@ -5,6 +5,7 @@
 #include <r_util.h>
 
 #if R2_USE_NEW_ABI
+// R2_600 - replace shlr/smallz4 with this code which also supports compressing
 
 #define BLOCK_SIZE (1024*8) /* 8K */
 #define PADDING_LITERALS 5
@@ -28,7 +29,7 @@
 #define HASH_32(p) ((LOAD_32(p)*0x9E3779B9)>>(32-HASH_BITS))
 
 /* Change endianness */
-#define SWAP16(i) (((i) >> 8) | ((i) << 8)) 
+#define SWAP16(i) (((i) >> 8) | ((i) << 8))
 #define SWAP32(i) ( (((i) >> 24) & 0x000000FF) | (((i) >> 8) & 0x0000FF00) | \
 	(((i) << 8) & 0x00FF0000) | (((i) << 24) & 0xFF000000) )
 
