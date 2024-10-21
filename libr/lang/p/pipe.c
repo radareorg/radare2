@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2023 pancake */
+/* radare2 - LGPL - Copyright 2015-2024 pancake */
 
 #include <r_core.h>
 #if R2__WINDOWS__
@@ -309,7 +309,7 @@ static RLangPlugin r_lang_plugin_pipe = {
 	.meta = {
 		.name = "pipe",
 		.author = "pancake",
-		.license = "LGPL",
+		.license = "MIT",
 		.desc = "Use #!pipe node script.js",
 	},
 	.ext = "pipe",
