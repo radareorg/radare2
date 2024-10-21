@@ -38,6 +38,7 @@
 
 #include <stdio.h>  // stdin/stdout/stderr, fopen, ...
 #include <stdlib.h> // exit()
+#include <stdbool.h> // true/false
 #include <string.h> // memcpy
 
 /// error handler
