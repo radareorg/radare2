@@ -321,7 +321,6 @@ jobs:
 
   # Windows
   w32-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
