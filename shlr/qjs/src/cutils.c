@@ -246,7 +246,7 @@ size_t utf8_encode_len(uint32_t c)
    No null byte is stored after the encoded bytes.
    Return value is in range 1..4
  */
-size_t utf8_encode(uint8_t *buf, uint32_t c)
+size_t utf8_encode(uint8_t buf[minimum_length(UTF8_CHAR_LEN_MAX)], uint32_t c)
 {
     if (c < 0x80) {
         buf[0] = c;
@@ -1129,7 +1129,7 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
 
 /*---- Portable time functions ----*/
 
-#if defined(_MSC_VER)
+#ifdef _WIN32
  // From: https://stackoverflow.com/a/26085827
 static int gettimeofday_msvc(struct timeval *tp, struct timezone *tzp)
 {
@@ -1184,7 +1184,7 @@ uint64_t js__hrtime_ns(void) {
 
 int64_t js__gettimeofday_us(void) {
     struct timeval tv;
-#if defined(_MSC_VER)
+#ifdef _WIN32
     gettimeofday_msvc(&tv, NULL);
 #else
     gettimeofday(&tv, NULL);

@@ -326,6 +326,7 @@ JS_EXTERN void JS_SetContextOpaque(JSContext *ctx, void *opaque);
 JS_EXTERN JSRuntime *JS_GetRuntime(JSContext *ctx);
 JS_EXTERN void JS_SetClassProto(JSContext *ctx, JSClassID class_id, JSValue obj);
 JS_EXTERN JSValue JS_GetClassProto(JSContext *ctx, JSClassID class_id);
+JS_EXTERN JSValue JS_GetFunctionProto(JSContext *ctx);
 
 /* the following functions are used to select the intrinsic object to
    save memory */
@@ -692,6 +693,12 @@ JS_EXTERN JSValue JS_CallConstructor(JSContext *ctx, JSValue func_obj,
 JS_EXTERN JSValue JS_CallConstructor2(JSContext *ctx, JSValue func_obj,
                                       JSValue new_target,
                                       int argc, JSValue *argv);
+/* Try to detect if the input is a module. Returns TRUE if parsing the input
+ * as a module produces no syntax errors. It's a naive approach that is not
+ * wholly infallible: non-strict classic scripts may _parse_ okay as a module
+ * but not _execute_ as one (different runtime semantics.) Use with caution.
+ * |input| can be either ASCII or UTF-8 encoded source code.
+ */
 JS_EXTERN JS_BOOL JS_DetectModule(const char *input, size_t input_len);
 /* 'input' must be zero terminated i.e. input[input_len] = '\0'. */
 JS_EXTERN JSValue JS_Eval(JSContext *ctx, const char *input, size_t input_len,
