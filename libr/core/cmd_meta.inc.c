@@ -6,10 +6,13 @@
 
 char *getcommapath(RCore *core);
 
-static R_TH_LOCAL ut64 filter_offset = UT64_MAX;
-static R_TH_LOCAL int filter_format = 0;
-static R_TH_LOCAL size_t filter_count = 0;
-static R_TH_LOCAL Sdb *fscache = NULL;
+typedef struct {
+	ut64 filter_offset;
+	int filter_format;
+	size_t filter_count;
+	PJ *pj;
+	Sdb *fscache;
+} FilterStruct;
 
 static RCoreHelpMessage help_msg_C = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
@@ -212,6 +215,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 }
 
 static bool print_addrinfo_json(void *user, const char *k, const char *v) {
+	FilterStruct *fs = (FilterStruct *)user;
 	ut64 offset = sdb_atoi (k);
 	if (!offset || offset == UT64_MAX) {
 		return true;
@@ -224,34 +228,34 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 	if (!colonpos) {
 		r_cons_printf ("%s\n", subst);
 	}
-	if (colonpos && (filter_offset == UT64_MAX || filter_offset == offset)) {
-		if (filter_format) {
+	if (colonpos && (fs->filter_offset == UT64_MAX || fs->filter_offset == offset)) {
+		if (fs->filter_format) {
 			*colonpos = ':';
 	//		r_cons_printf ("CL %s %s\n", k, subst);
 		} else {
 			*colonpos = 0;
 	//		r_cons_printf ("file: %s\nline: %s\naddr: 0x%08"PFMT64x"\n", subst, colonpos + 1, offset);
 		}
-		filter_count++;
+		fs->filter_count++;
 	}
 	const char *file = subst;
 	int line = atoi (colonpos + 1);
 	ut64 addr = offset;
-	PJ *pj = (PJ*)user;
+	PJ *pj = fs->pj;
 	if (pj) {
 		pj_o (pj);
 		pj_ks (pj, "file", file);
 		pj_kn (pj, "line", line);
 		pj_kn (pj, "addr", addr);
-		const char *cached_existance = sdb_const_get (fscache, file, NULL);
+		const char *cached_existance = sdb_const_get (fs->fscache, file, NULL);
 		bool file_exists = false;
 		if (cached_existance) {
 			file_exists = !strcmp (cached_existance, "1");
 		} else {
 			if (r_file_exists (file)) {
-				sdb_set (fscache, file, "1", 0);
+				sdb_set (fs->fscache, file, "1", 0);
 			} else {
-				sdb_set (fscache, file, "0", 0);
+				sdb_set (fs->fscache, file, "0", 0);
 			}
 		}
 		if (file_exists) {
@@ -266,6 +270,7 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 }
 
 static bool print_addrinfo(void *user, const char *k, const char *v) {
+	FilterStruct *fs = (FilterStruct*)user;
 	ut64 offset = sdb_atoi (k);
 	if (!offset || offset == UT64_MAX) {
 		return true;
@@ -277,8 +282,8 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 	}
 	if (!colonpos) {
 		r_cons_printf ("%s\n", subst);
-	} else if (filter_offset == UT64_MAX || filter_offset == offset) {
-		if (filter_format) {
+	} else if (fs->filter_offset == UT64_MAX || fs->filter_offset == offset) {
+		if (fs->filter_format) {
 			*colonpos = ':';
 			r_cons_printf ("'CL %s %s\n", k, subst);
 		} else {
@@ -293,7 +298,7 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 			r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
 				subst, line, colu, offset);
 		}
-		filter_count++;
+		fs->filter_count++;
 	}
 	free (subst);
 
@@ -323,6 +328,8 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int all = false;
 	const char *p = input;
 	char *file_line = NULL;
+
+	FilterStruct fs = { UT64_MAX, 0, 0, NULL };
 
 	if (*p == '?') {
 		r_core_cmd_help (core, help_msg_CL);
@@ -401,16 +408,15 @@ retry:
 	} else if (*p == '*') {
 		p++;
 		all = true;
-		filter_format = '*';
+		fs.filter_format = '*';
 	} else {
-		filter_format = 0;
+		fs.filter_format = 0;
 	}
-
 	if (all && core->bin->cur) {
 		if (remove) {
 			sdb_reset (core->bin->cur->sdb_addrinfo);
 		} else {
-			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, &fs);
 		}
 		return 0;
 	}
@@ -452,23 +458,24 @@ retry:
 		remove_meta_offset (core, offset);
 	} else {
 		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
-		filter_offset = offset;
-		filter_count = 0;
-		fscache = sdb_new0 ();
+		fs.filter_offset = offset;
+		fs.filter_count = 0;
+		fs.fscache = sdb_new0 ();
 		PJ *pj = NULL;
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (use_json) {
 			pj = r_core_pj_new (core);
+			fs.pj = pj;
 			pj_a (pj);
 			if (bf && bf->sdb_addrinfo) {
-				sdb_foreach (bf->sdb_addrinfo, print_addrinfo_json, pj);
+				sdb_foreach (bf->sdb_addrinfo, print_addrinfo_json, &fs);
 			}
 		} else {
 			if (bf && bf->sdb_addrinfo) {
-				sdb_foreach (bf->sdb_addrinfo, print_addrinfo, NULL);
+				sdb_foreach (bf->sdb_addrinfo, print_addrinfo, &fs);
 			}
 		}
-		if (filter_count == 0) {
+		if (fs.filter_count == 0) {
 			print_meta_offset (core, offset, pj);
 		}
 		if (use_json) {
@@ -479,7 +486,7 @@ retry:
 				free (s);
 			}
 		}
-		sdb_free (fscache);
+		sdb_free (fs.fscache);
 	}
 	return 0;
 }
