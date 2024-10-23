@@ -154,6 +154,7 @@ static RList* sections(RBinFile *bf) {
 		sec->vaddr = sections[i].vaddr + ba;
 		sec->add = true;
 		sec->perm = 0;
+        sec->flags = sections[i].flags;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
 			sec->perm |= R_PERM_X;
 			sec->perm |= R_PERM_R; // implicit
