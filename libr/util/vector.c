@@ -24,7 +24,7 @@
 	} while (0)
 
 R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void *free_user) {
-	R_RETURN_IF_FAIL (vec);
+	R_RETURN_IF_FAIL (vec && free && free_user);
 	vec->a = NULL;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
@@ -33,6 +33,7 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 }
 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user) {
+	R_RETURN_VAL_IF_FAIL (free && free_user, NULL);
 	RVector *vec = R_NEW (RVector);
 	if (R_LIKELY (vec)) {
 		r_vector_init (vec, elem_size, free, free_user);
@@ -48,6 +49,7 @@ R_API void r_vector_fini(RVector *vec) {
 }
 
 static inline void vector_free_elems(RVector *vec) {
+	R_RETURN_IF_FAIL (vec);
 	if (vec->free) {
 		while (vec->len > 0) {
 			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
@@ -65,10 +67,9 @@ R_API void r_vector_clear(RVector *vec) {
 }
 
 R_API void r_vector_free(RVector *vec) {
-	if (vec) {
-		r_vector_fini (vec);
-		free (vec);
-	}
+	R_RETURN_IF_FAIL (vec);
+	r_vector_fini (vec);
+	free (vec);
 }
 
 static bool vector_clone(RVector *dst, RVector *src) {
@@ -114,10 +115,9 @@ R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 }
 
 R_API void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
+	R_RETURN_VAL_IF_FAIL (vec && elem, NULL);
 	void *p = r_vector_index_ptr (vec, index);
-	if (elem) {
-		r_vector_assign (vec, p, elem);
-	}
+	r_vector_assign (vec, p, elem);
 	return p;
 }
 
@@ -227,16 +227,19 @@ R_API void *r_vector_flush(RVector *vec) {
 // pvector
 
 static void pvector_free_elem(void *e, void *user) {
+	R_RETURN_IF_FAIL (e && user);
 	void *p = *((void **)e);
 	RPVectorFree elem_free = (RPVectorFree)user;
 	elem_free (p);
 }
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
+	R_RETURN_IF_FAIL (vec);
 	r_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
 }
 
 R_API RPVector *r_pvector_new(RPVectorFree free) {
+	R_RETURN_VAL_IF_FAIL (free, NULL);
 	RPVector *v = R_NEW (RPVector);
 	if (R_LIKELY (v)) {
 		r_pvector_init (v, free);
@@ -245,15 +248,9 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 }
 
 R_API RPVector *r_pvector_new_with_len(RPVectorFree free, size_t length) {
+	R_RETURN_VAL_IF_FAIL (free, NULL);
 	RPVector *v = r_pvector_new (free);
-	if (!v) {
-		return NULL;
-	}
 	void** p = r_pvector_reserve (v, length);
-	if (!p) {
-		r_pvector_free (v);
-		return NULL;
-	}
 	memset (p, 0, v->v.elem_size * v->v.capacity);
 	v->v.len = length;
 	return v;
@@ -270,14 +267,13 @@ R_API void r_pvector_fini(RPVector *vec) {
 }
 
 R_API void r_pvector_free(RPVector *vec) {
-	if (R_LIKELY (vec)) {
-		r_vector_fini (&vec->v);
-		free (vec);
-	}
+	R_RETURN_IF_FAIL (vec);
+	r_vector_fini (&vec->v);
+	free (vec);
 }
 
 R_API void **r_pvector_contains(RPVector *vec, void *x) {
-	R_RETURN_VAL_IF_FAIL (vec, NULL);
+	R_RETURN_VAL_IF_FAIL (vec && x, NULL);
 	size_t i;
 	for (i = 0; i < vec->v.len; i++) {
 		if (((void **)vec->v.a)[i] == x) {
@@ -295,6 +291,7 @@ R_API void *r_pvector_remove_at(RPVector *vec, size_t index) {
 }
 
 R_API void r_pvector_remove_data(RPVector *vec, void *x) {
+	R_RETURN_IF_FAIL (vec && x);
 	void **el = r_pvector_contains (vec, x);
 	if (R_LIKELY (el)) {
 		size_t index = el - (void **)vec->v.a;
