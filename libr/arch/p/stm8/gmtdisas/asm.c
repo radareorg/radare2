@@ -148,11 +148,11 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				break;
 			case LONGMEM_34:
 				// ioreg
-				r_strbuf_appendf (sb, " 0x%02x%02x", oc[3], oc[4]);
+				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[3], oc[4]);
 				break;
 			case LONGMEM_45:
 				// ioreg
-				r_strbuf_appendf (sb, " 0x%02x%02x", oc[4], oc[5]);
+				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[4], oc[5]);
 				break;
 			case EXTMEM_234:
 				r_strbuf_appendf (sb, " 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
@@ -273,7 +273,7 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", 0x%02x", oc[2]);
 				break;
 			case SHORTMEM_3:
-				r_strbuf_appendf (sb, ", 0x%02x", oc[3]);
+				r_strbuf_appendf (sb, ", [0x%02x]", oc[3]);
 				break;
 			case LONGMEM_23:
 				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);

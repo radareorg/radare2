@@ -1275,14 +1275,14 @@ static void cmd_Cv(RCore *core, const char *input) {
 		}
 		if (var) {
 			if (var->comment) {
-				if (comment && *comment) {
+				if (R_STR_ISNOTEMPTY (comment)) {
 					char *text = r_str_newf ("%s\n%s", var->comment, comment);
 					free (var->comment);
 					var->comment = text;
 				} else {
 					r_cons_println (var->comment);
 				}
-			} else {
+			} else if (R_STR_ISNOTEMPTY (comment)) {
 				var->comment = strdup (comment);
 			}
 		} else {

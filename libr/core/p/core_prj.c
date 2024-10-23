@@ -214,9 +214,12 @@ static void rprj_entry_end(RBuffer *b, ut64 at) {
 }
 
 static bool rprj_string_read(RBuffer *b, char **s) {
-	ut8 buf[sizeof (ut32)];
+	ut8 buf[sizeof (ut32)] = {0};
 	r_buf_read (b, buf, sizeof (buf));
-	size_t len = r_read_le32 (buf);
+	int len = r_read_le32 (buf);
+	if (len < 1) {
+		return false;
+	}
 	ut8 *data = malloc (len + 1);
 	*s = NULL;
 	if (R_LIKELY (data)) {
@@ -268,6 +271,9 @@ static bool rprj_mods_read(RBuffer *b, R2ProjectMod *mod) {
 static void rprj_mods_write_one(RBuffer *b, R2ProjectMod *mod) {
 	ut8 buf[sizeof (R2ProjectMod)];
 	ut64 at = r_buf_at (b);
+	if (at > UT32_MAX) {
+		return;
+	}
 	r_write_le32 (buf + r_offsetof (R2ProjectMod, name), mod->name);
 	r_write_le32 (buf + r_offsetof (R2ProjectMod, file), mod->file);
 	r_write_le64 (buf + r_offsetof (R2ProjectMod, pmin), mod->pmin);
@@ -427,9 +433,13 @@ static ut8 *rprj_find(RBuffer *b, ut32 type, ut32 *size) {
 	ut64 at = r_buf_at (b);
 	*size = 0;
 	while (r_buf_at (b) < last) {
-		R2ProjectEntry entry;
+		R2ProjectEntry entry = {0};
 		if (!rprj_entry_read (b, &entry)) {
 			R_LOG_ERROR ("find: Cannot read entry");
+			break;
+		}
+		if (entry.size > ST32_MAX) {
+			R_LOG_ERROR ("invalid size");
 			break;
 		}
 		if (entry.type == type) {
