@@ -3228,7 +3228,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				pj_ks (pj, "type", section->type);
 			}
 			pj_ks (pj, "perm", perms);
-            pj_kN (pj, "flags", section->flags);
+			pj_kN (pj, "flags", section->flags);
 			if (hashtypes && (int)section->size > 0) {
 				int datalen = section->size;
 				if (datalen > 0 && datalen < plimit) {

@@ -4377,7 +4377,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 				}
 			}
 		}
-        sections[j].flags = shdr[i].Characteristics;
+		sections[j].flags = shdr[i].Characteristics;
 		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;
