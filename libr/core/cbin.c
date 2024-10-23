@@ -3062,11 +3062,11 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (hashtypes) {
-			r_table_set_columnsf (table, "dXxXxssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "type", "name");
+			r_table_set_columnsf (table, "dXxXxssssx",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "type", "name", "flags");
 		} else {
-			r_table_set_columnsf (table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name");
+			r_table_set_columnsf (table, "dXxXxsssx",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name", "flags");
 		}
 		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
 		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
@@ -3243,6 +3243,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				pj_ks (pj, "type", section->type);
 			}
 			pj_ks (pj, "perm", perms);
+            pj_kN (pj, "flags", section->flags);
 			if (hashtypes && (int)section->size > 0) {
 				int datalen = section->size;
 				if (datalen > 0 && datalen < plimit) {
@@ -3302,15 +3303,15 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				stype = print_segments? "MAP": "----";
 			}
 			if (hashtypes) {
-				r_table_add_rowf (table, "dXxXxssss", i,
+				r_table_add_rowf (table, "dXxXxssssx", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, r_str_get (hashstr), stype, section_name);
+					perms, r_str_get (hashstr), stype, section_name, section->flags);
 			} else {
-				r_table_add_rowf (table, "dXxXxsss", i,
+				r_table_add_rowf (table, "dXxXxsssx", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, stype, section_name);
+					perms, stype, section_name, section->flags);
 			}
 			free (hashstr);
 		}
