@@ -10,7 +10,12 @@ static RBreakpointArch r_bp_plugin_x86_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_x86 = {
-	.name = "x86",
+	.meta = {
+		.name = "x86",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.arch = "x86",
 	.nbps = 2,
 	.bps = r_bp_plugin_x86_bps,

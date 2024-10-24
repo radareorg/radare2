@@ -175,8 +175,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_tms320_pseudo = {
-	.name = "tms320.pseudo",
-	.desc = "tms320 pseudo syntax",
+	.meta = {
+		.name = "tms320.pseudo",
+		.desc = "tms320 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse,
 };
 

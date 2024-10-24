@@ -3,8 +3,12 @@
 #include <r_parse.h>
 
 RParsePlugin r_parse_plugin_null_pseudo = {
-	.name = "null.pseudo",
-	.desc = "pseudo nothing",
+	.meta = {
+		.name = "null.pseudo",
+		.desc = "pseudo nothing",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 };
 
 #ifndef R2_PLUGIN_INCORE

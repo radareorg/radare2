@@ -79,8 +79,12 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_z80_pseudo = {
-	.name = "z80.pseudo",
-	.desc = "z80 pseudo syntax",
+	.meta = {
+		.name = "z80.pseudo",
+		.desc = "z80 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.parse = parse, // parse actually converts the string into asm.pseudo
 };
 

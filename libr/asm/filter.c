@@ -148,7 +148,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	const int seggrn = p->analb.anal->config->seggrn;
 	bool x86 = false;
 	bool arm = false;
-	const char *pname = (p && p->cur && p->cur->name) ? p->cur->name: NULL;
+	const char *pname = (p && p->cur && p->cur->meta.name)? p->cur->meta.name: NULL;
 	if (pname) {
 		if (r_str_startswith (pname, "x86")) {
 			x86 = true;

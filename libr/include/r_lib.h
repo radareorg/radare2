@@ -62,9 +62,7 @@ typedef struct r_lib_plugin_t {
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
 	void (*free)(void *data);
-#if 0
-	RPluginMeta meta;
-#endif
+	char *name; // From the RPluginMeta's name
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */
@@ -111,7 +109,6 @@ enum {
 	R_LIB_TYPE_LAST
 };
 
-typedef int (*RLibLifeCycleCallback)(RLibPlugin *, void *, void *);
 
 typedef struct r_lib_t {
 	/* linked list with all the plugin handler */
