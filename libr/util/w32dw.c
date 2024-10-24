@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2019-2021 - gustavo, pancake */
+/* radare - LGPL - Copyright 2019-2024 - gustavo, pancake */
 
 #include <r_types.h>
 
 #if R2__WINDOWS__
 #include <windows.h>
+#include <r_util/r_assert.h>
 #include <r_util/r_w32dw.h>
 
 static DWORD WINAPI __w32dbg_thread(LPVOID param) {
@@ -48,8 +49,8 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 }
 
 R_API RW32Dw *r_w32dw_new(void) {
-	RW32Dw *inst = calloc (1, sizeof (RW32Dw));
-	if (inst) {
+	RW32Dw *inst = R_NEW0 (RW32Dw);
+	if (R_LIKELY (inst)) {
 		inst->request_sem = CreateSemaphore (NULL, 0, 1, NULL);
 		inst->result_sem = CreateSemaphore (NULL, 0, 1, NULL);
 		inst->debugThread = CreateThread (NULL, 0, __w32dbg_thread, inst, 0, NULL);
@@ -58,14 +59,17 @@ R_API RW32Dw *r_w32dw_new(void) {
 }
 
 R_API void r_w32dw_free(RW32Dw *inst) {
-	inst->params.type = W32_STOP;
-	ReleaseSemaphore (inst->request_sem, 1, NULL);
-	CloseHandle (inst->request_sem);
-	CloseHandle (inst->result_sem);
-	free (inst);
+	if (inst) {
+		inst->params.type = W32_STOP;
+		ReleaseSemaphore (inst->request_sem, 1, NULL);
+		CloseHandle (inst->request_sem);
+		CloseHandle (inst->result_sem);
+		free (inst);
+	}
 }
 
 R_API int r_w32dw_waitret(RW32Dw *inst) {
+	R_RETURN_VAL_IF_FAIL (inst, -1);
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	WaitForSingleObject (inst->result_sem, INFINITE);
 	return r_w32dw_ret (inst);
