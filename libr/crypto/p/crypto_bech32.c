@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
 	uint8_t b = pre >> 25;
@@ -182,12 +183,13 @@ static bool bech32_check(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, size_t *len) {
 	char *in_out, hrp, data;
-	size_t data_len;
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
-		bech32_encode (in_out, hrp, data, data_len, enc);
+		bech32_encode (in_out, hrp, data, len, enc);
 	case R_CRYPTO_DIR_DECRYPT:
-		bech32_decode (hrp, data, data_len, in_out);
+		bech32_decode (hrp, data, len, in_out);
+	default:
+		printf ("Choose decrypt or encrypt\n");
 	}
 	return true;
 }
