@@ -145,7 +145,7 @@ int my_strncasecmp (const char *s1, const char *s2, size_t n) {
 	return 0;
 }
 
-void test_crypto_bech32_encode (void) {
+static void test_crypto_bech32_encode(void) {
 	uint8_t data[82];
 	char rebuild[92];
 	char hrp[84];
