@@ -232,12 +232,19 @@ ttyname=global
 twalk=global
 # network
 connect=network
+sendmsg=network
 send=network
 recv=network
 listen=network
 accept=network
 select=network
 setsockopt=network
+inet_ntop=network
+getsockname=network
+bind=network
+inet_aton=network
+getifaddrs=network
+freeifaddrs=network
 # threads
 pthread_create=thread
 fork=thread
@@ -280,3 +287,19 @@ realloc=heap
 # string
 strstr=string
 strchr=string
+# console
+stdin=console
+stdout=console
+stderr=console
+fflush=console
+printf=console
+isatty=console
+puts=console
+# process
+exit=process
+kill=process
+getuid=process
+setuid=process
+# signal
+signal=signal
+sigaction=signal

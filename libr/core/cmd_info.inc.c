@@ -348,21 +348,25 @@ static void cmd_iic(RCore *r, int mode) {
 				char *fname = r_str_newf ("sym.imp.%s", name);
 				RFlagItem *item = r_flag_get (r->flags, fname);
 				free (fname);
-				RVecAnalRef *xrefs = r_anal_xrefs_get (r->anal, item->offset);
-				if (xrefs) {
-					RAnalRef *xref;
-					R_VEC_FOREACH (xrefs, xref) {
-						RList *funcs = r_anal_get_functions_in (r->anal, xref->addr);
-						RAnalFunction *f = r_list_pop (funcs);
-						if (f) {
-							r_cons_printf ("|  |  |- %s\n", f->name);
-						} else {
-							r_cons_printf ("|  |  |- 0x%08"PFMT64x"\n", xref->addr);
+				if (item) {
+					RVecAnalRef *xrefs = r_anal_xrefs_get (r->anal, item->offset);
+					if (xrefs) {
+						RAnalRef *xref;
+						R_VEC_FOREACH (xrefs, xref) {
+							RList *funcs = r_anal_get_functions_in (r->anal, xref->addr);
+							RAnalFunction *f = r_list_pop (funcs);
+							if (f) {
+								r_cons_printf ("|  |  |- %s\n", f->name);
+							} else {
+								r_cons_printf ("|  |  |- 0x%08"PFMT64x"\n", xref->addr);
+							}
+							r_list_free (funcs);
 						}
-						r_list_free (funcs);
 					}
+					RVecAnalRef_free (xrefs);
+				} else {
+					R_LOG_WARN ("cant resolve %s", name);
 				}
-				RVecAnalRef_free (xrefs);
 				// list xrefs now
 			}
 		}
