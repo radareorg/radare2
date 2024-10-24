@@ -17,6 +17,7 @@ if cli_enabled
     subdir('ragg2')
     subdir('r2agent')
     subdir('radiff2')
+    subdir('rapatch2')
     subdir('rafind2')
     subdir('rasign2')
     subdir('ravc2')
