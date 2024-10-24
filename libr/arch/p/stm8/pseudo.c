@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
 #include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
 #include <r_anal.h>
 #include <r_parse.h>
 
@@ -18,12 +16,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	} ops[] = {
 		// { 0, "ldw", "# = [#]", { 1, 2 } },
 		{ 0, "ldf", "# = #", { 1, 2 } },
-		{ 2, "ldw", "# = [#]", { 2, 1 } }, // ldw 0x00, x | x = [0x00]
-		{ 2, "ld", "# = [#]", { 1, 2 } },  // ld a, 0x86  | a = [0x86]
-		{ 3, "ld", "# = [# + #]", { 3, 2, 1 } },
+		{ 2, "ldw", "# = #", { 1, 2 } }, // ldw 0x00, x | x = [0x00]
+		{ 2, "ld", "# = #", { 1, 2 } },  // ld a, 0x86  | a = [0x86]
+		{ 3, "ld", "# = # + #", { 3, 2, 1 } },
 		{ 0, "decw", "# --", { 1 } },
 		// { 1, "clr 0x", "[0x#] = 0", { 1 } },
-		{ 1, "clr", "[#] = 0", { 1 } },
+		{ 0, "clrw", "# = 0", { 1 } },
+		{ 1, "clr", "# = 0", { 1 } },
 		{ 0, "dec", "[#] --", { 1 } },
 		{ 0, "ret", "return;", {}},
 		{ 0, "iret", "return;", {}},
@@ -37,10 +36,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 1, "cpl", "complement (#)", { 1, 1 } },
 		{ 2, "and", "# |= #", { 1, 2 } },
 		// { 2, "dec", "# -= #", { 1, 2 } },
-		{ 1, "popw", "# = [sp] ; sp += 2", { 1 } },
-		{ 1, "pop", "# = [sp] ; sp += 1", { 1 } },
-		{ 1, "pushw", "sp -= 2; # = [sp]", { 1 } },
-		{ 1, "push", "sp -= 1; # = [sp]", { 1 } },
+		{ 1, "popw", "# = [sp] , sp += 2", { 1 } },
+		{ 1, "pop", "# = [sp] , sp += 1", { 1 } },
+		{ 1, "pushw", "sp -= 2, # = [sp]", { 1 } },
+		{ 1, "push", "sp -= 1, # = [sp]", { 1 } },
 		{ 1, "incw", "# ++", { 1 } },
 		{ 1, "inc", "[#] ++", { 1 } },
 		{ 0, "subw", "# -= #", { 1, 2 } },
@@ -69,7 +68,6 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 1, "jrult", "if (res < 0) goto #", { 1 } }, // TODO: support signed vs unsigned
 		{ 3, "btjt", "if (# & (1 << #)) goto #", { 1, 2, 3 } },
 		{ 3, "btjf", "if (!(# & (1 << #))) goto #", { 1, 2, 3 } },
-		{ 0, "clrw", "# = 0", { 1 } },
 		{ 0, "sllw", "# <<= 1", { 1 } },
 		{ 0, "slaw", "# <<= 1", { 1 } },
 		{ 1, "jrule", "if (res <= 0) goto #", { 1 } },
@@ -168,9 +166,6 @@ static int parse(RParse *p, const char *data, char *str) {
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr) {
-			ptr = strchr (buf, '\t');
-		}
 		if (ptr) {
 			*ptr = '\0';
 			ptr = (char *)r_str_trim_head_ro (ptr + 1);
@@ -179,9 +174,6 @@ static int parse(RParse *p, const char *data, char *str) {
 			optr = ptr;
 			if (ptr && *ptr == '[') {
 				ptr = strchr (ptr + 1, ']');
-			}
-			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr + 1, '}');
 			}
 			if (!ptr) {
 				R_LOG_ERROR ("Unbalanced bracket");
@@ -223,18 +215,6 @@ static int parse(RParse *p, const char *data, char *str) {
 			replace (nw, wa, str);
 		}
 	}
-#if 0
-	char *s = strdup (str);
-	if (s) {
-		s = r_str_replace (s, "wzr", "0", 1);
-		s = r_str_replace (s, " lsl ", " << ", 1);
-		s = r_str_replace (s, " lsr ", " >> ", 1);
-		s = r_str_replace (s, "+ -", "- ", 1);
-		s = r_str_replace (s, "- -", "+ ", 1);
-		strcpy (str, s);
-		free (s);
-	}
-#endif
 	free (buf);
 	r_str_fixspaces (str);
 	return true;
