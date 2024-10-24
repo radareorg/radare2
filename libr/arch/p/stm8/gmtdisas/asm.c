@@ -264,10 +264,10 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
 				break;
 			case STM8_PTR_X:
-				r_strbuf_append (sb, ", (x)");
+				r_strbuf_append (sb, ", [x]");
 				break;
 			case STM8_PTR_Y:
-				r_strbuf_append (sb, ", (y)");
+				r_strbuf_append (sb, ", [y]");
 				break;
 			case SHORTMEM_2:
 				r_strbuf_appendf (sb, ", 0x%02x", oc[2]);
