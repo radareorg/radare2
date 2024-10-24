@@ -21,12 +21,11 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 	};
 	datablock *block = &_block;
 	RStrBuf *sb = r_strbuf_new ("");
-	int cnt, n, add, err;
+	int n, err, oc[6];
 	instruction ins;
-	int oc[6];
 
-	cnt = 0;
-	add = block->start_add;
+	int cnt = 0;
+	int add = block->start_add;
 
 	while (cnt < block->size) {
 		oc[0] = *(block->data + cnt);
@@ -86,14 +85,19 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 
 			if (n == 1) {
 				for (; n < ins.size; n++) {
-					oc[n+1] = *(block->data + cnt + n);
+					oc[n + 1] = *(block->data + cnt + n);
 				}
 			} else {
 				for (; n < ins.size; n++) {
 					oc[n] = *(block->data + cnt + n);
 				}
 			}
-			switch (ins.des) {
+			const bool noderef = ins.des & NODEREF;
+			int des = ins.des;
+			if (noderef) {
+				des &= 0xff;
+			}
+			switch (des) {
 			case STM8_NONE:
 				break;
 			case STM8_REG_A:
@@ -136,50 +140,59 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_append (sb, " [y]");
 				break;
 			case SHORTMEM_2:
-				r_strbuf_appendf (sb, " 0x%02x", oc[2]);
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x", oc[2]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x]", oc[2]);
+				}
 				break;
 			case SHORTMEM_3:
-				r_strbuf_appendf (sb, " 0x%02x", oc[3]);
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x", oc[3]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x]", oc[3]);
+				}
 				break;
-			case LONGMEM_23:
-				// ioreg
-				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
+			case LONGMEM_23: // ioreg
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x%02x]", oc[2], oc[3]);
+				}
 				*jump = (oc[2] <<8) | oc[3];
 				break;
-			case LONGMEM_34:
-				// ioreg
-				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[3], oc[4]);
+			case LONGMEM_34: // ioreg
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x%02x", oc[3], oc[4]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x%02x]", oc[3], oc[4]);
+				}
 				break;
-			case LONGMEM_45:
-				// ioreg
-				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[4], oc[5]);
+			case LONGMEM_45: // ioreg
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x%02x", oc[4], oc[5]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x%02x]", oc[4], oc[5]);
+				}
 				break;
 			case EXTMEM_234:
-				r_strbuf_appendf (sb, " 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, " [0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				if (*type == R_ANAL_OP_TYPE_SWI) {
 					*jump = (oc[2] <<16) | oc[3]<<8 | oc[4];
 				}
 				break;
 			case SHORTOFF_2:
 				(oc[2] & 0x80) ? (n = oc[2] - 0x100) : (n = oc[2]);
-#if 0
-				r_strbuf_appendf (sb, " .%+-4i ;(0x%06X)",
-						(prog_mode & PROG_MODE_REL0) ? (n+ins.size) : n,
-						add + ins.size + n);
-#else
-				r_strbuf_appendf (sb, " 0x%08x", add + ins.size + n);
-#endif
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%08x", add + ins.size + n);
+				} else {
+					r_strbuf_appendf (sb, " [0x%08x]", add + ins.size + n);
+				}
 				*jump = add + ins.size + n;
 				break;
 			case SHORTOFF_4:
 				(oc[4] & 0x80) ? (n = oc[4] - 0x100) : (n = oc[4]);
-#if 0
-				r_strbuf_appendf (sb, " .%+-4i ;(0x%06X)",
-						(prog_mode & PROG_MODE_REL0) ? (n+ins.size) : n,
-						add + ins.size + n);
-#else
-				r_strbuf_appendf (sb, " 0x%08x", add + ins.size + n);
-#endif
+				r_strbuf_appendf (sb, " [0x%08x]", add + ins.size + n);
 				*jump = add + ins.size + n;
 				break;
 			case SHORTOFF_X_2:
@@ -204,7 +217,11 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, " [y + 0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case SHORTPTR_2:
-				r_strbuf_appendf (sb, " [0x%02x]", oc[2]);
+				if (noderef) {
+					r_strbuf_appendf (sb, " 0x%02x", oc[2]);
+				} else {
+					r_strbuf_appendf (sb, " [0x%02x]", oc[2]);
+				}
 				break;
 			case LONGPTR_23:
 				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[2], oc[3]);
@@ -223,11 +240,15 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				break;
 			case LONGMEM_BIT_123:
 				// ioreg
-				r_strbuf_appendf (sb, " 0x%02x%02x", oc[2], oc[3]);
+				r_strbuf_appendf (sb, " [0x%02x%02x]", oc[2], oc[3]);
 				r_strbuf_appendf (sb, ", %d", (oc[1] & 0x0F)>>1);
 				break;
 			}
-			switch (ins.src) {
+			int src = ins.src;
+			if (src & NODEREF) {
+				src &= 0xff;
+			}
+			switch (src) {
 			case STM8_NONE:
 				break;
 			case STM8_REG_A:
@@ -270,34 +291,28 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_append (sb, ", [y]");
 				break;
 			case SHORTMEM_2:
-				r_strbuf_appendf (sb, ", 0x%02x", oc[2]);
+				r_strbuf_appendf (sb, ", [0x%02x]", oc[2]);
 				break;
 			case SHORTMEM_3:
 				r_strbuf_appendf (sb, ", [0x%02x]", oc[3]);
 				break;
 			case LONGMEM_23:
-				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
+				r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[2], oc[3]);
 				break;
 			case LONGMEM_34:
 				// ioreg
-				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[3], oc[4]);
+				r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[3], oc[4]);
 				break;
 			case LONGMEM_45:
 				// ioreg
-				r_strbuf_appendf (sb, ", 0x%02x%02x", oc[4], oc[5]);
+				r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[4], oc[5]);
 				break;
 			case EXTMEM_234:
-				r_strbuf_appendf (sb, ", 0x%02x%02x%02x", oc[2], oc[3], oc[4]);
+				r_strbuf_appendf (sb, ", [0x%02x%02x%02x]", oc[2], oc[3], oc[4]);
 				break;
 			case SHORTOFF_2:
 				(oc[2] & 0x80) ? (n = oc[2] - 0x100) : (n = oc[2]);
-#if 0
-				r_strbuf_appendf (sb, ", .%+-4i ;(0x%06X)",
-						(prog_mode & PROG_MODE_REL0) ? (n+ins.size) : n,
-						add + ins.size + n);
-#else
 				r_strbuf_appendf (sb, ", 0x%08x", add + ins.size + n);
-#endif
 				*jump = add + ins.size + n;
 				break;
 			case SHORTOFF_4:
@@ -336,16 +351,20 @@ char *stm8_disasm(ut64 pc, const ut8 *data, int size, unsigned int *type, ut64 *
 				r_strbuf_appendf (sb, ", [0x%02x]", oc[2]);
 				break;
 			case LONGPTR_23:
-				r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[2], oc[3]);
+				if (noderef) {
+					r_strbuf_appendf (sb, ", 0x%02x%02x", oc[2], oc[3]);
+				} else {
+					r_strbuf_appendf (sb, ", [0x%02x%02x]", oc[2], oc[3]);
+				}
 				break;
 			case SHORTPTR_OFF_X_2:
 				r_strbuf_appendf (sb, ", [0x%02x] + x", oc[2]);
 				break;
 			case SHORTPTR_OFF_Y_2:
-				r_strbuf_appendf (sb, ", ([0x%02x], y)", oc[2]);
+				r_strbuf_appendf (sb, ", ([0x%02x] + y]", oc[2]);
 				break;
 			case LONGPTR_OFF_X_23:
-				r_strbuf_appendf (sb, ", ([0x%02x%02x], x)", oc[2], oc[3]);
+				r_strbuf_appendf (sb, ", [0x%02x%02x] + x]", oc[2], oc[3]);
 				break;
 			case LONGPTR_OFF_Y_23:
 				r_strbuf_appendf (sb, ", ([0x%02x%02x], y)", oc[2], oc[3]);
