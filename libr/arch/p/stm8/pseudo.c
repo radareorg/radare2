@@ -74,6 +74,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "srlw", "# >>= 1", { 1 } },
 		{ 0, "callr", "# ()", { 1 } },
 		{ 0, "callf", "# ()", { 1 } },
+		{ 0, "rvf", "res.overflow = 0", { 1 } },
 		{ 0, "sraw", "# >>= 1", { 1 } },
 		{ 2, "add", "# += #", { 1, 2 } },
 		{ 2, "sub", "# -= #", { 1, 2 } },
