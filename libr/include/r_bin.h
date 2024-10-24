@@ -303,6 +303,7 @@ typedef struct r_bin_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 perm;
+	ut32 flags;
 	const char *type;
 	const char *arch;
 	char *format;

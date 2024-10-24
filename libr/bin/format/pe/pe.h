@@ -24,6 +24,7 @@ struct r_bin_pe_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 perm;
+	ut32 flags;
 	int last;
 };
 
