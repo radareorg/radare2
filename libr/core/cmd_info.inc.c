@@ -76,6 +76,17 @@ static RCoreHelpMessage help_msg_iS = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_iic = {
+	"Usage: iic", "[jkq*]", "List sections and segments",
+	"iic", " [type]", "show all imports matching a class",
+	"iic", "", "list imports grouped by class",
+	"iic?", "", "show this help",
+	"iic?", "[symname]", "show kind of given symbol name",
+	"iicj", "", "list grouped imports in json",
+	"iick", "", "group imports by class, listed in key/value format",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"i", "[*jq]", "show info of current file (in JSON)",
@@ -93,8 +104,8 @@ static RCoreHelpMessage help_msg_i = {
 	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
 	"ih", "[?]", "show binary headers (see iH)",
 	"iH", "[?]", "show binary headers fields",
-	"ii", "[?][j*,]", "list the symbols imported from other libraries",
-	"iic", "", "classify imports",
+	"ii", "[?][c,j*,]", "list the symbols imported from other libraries",
+	"iic", "[?][jqk*] ([type])", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
 	"ik", " [query]", "key-value database from RBinObject",
 	"il", "", "libraries",
@@ -316,44 +327,127 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	}
 }
 
-static void cmd_iic(RCore *r, int mode) {
-	int i;
-	const char *type[] = {
-		"heap",
-		"string",
-		"format",
-		"buffer",
-		"network",
-		"privilege",
-		"thread",
-		"file",
-		NULL
-	};
-	const RList *imports = r_bin_get_imports (r->bin);
-	RListIter *iter;
+static void cmd_iic2(RCore *core, int mode, const char *symname) {
+	if (symname) {
+		const char *un = r_bin_symbol_unsafe (core->bin, symname);
+		if (R_STR_ISNOTEMPTY (un)) {
+			r_cons_println (un);
+		}
+		return;
+	}
+	const RList *imports = r_bin_get_imports (core->bin);
+	RListIter *iter, *iter2;
 	RBinSymbol *imp;
-	bool first;
-	for (i = 0; type[i]; i++) {
-		first = true;
-		const char *typ = type[i];
-		r_list_foreach (imports, iter, imp) {
-			const char *name = r_bin_name_tostring2 (imp->name, 'o');
-			const char *un = r_bin_symbol_unsafe (r->bin, name);
-			if (un && !strcmp (un, typ)) {
-				if (first) {
-					r_cons_printf ("|- %s:\n", typ);
-					first = false;
-				}
-				r_cons_printf ("|  |- %s\n", name);
-				char *fname = r_str_newf ("sym.imp.%s", name);
-				RFlagItem *item = r_flag_get (r->flags, fname);
+	Sdb *db = sdb_new0 ();
+	r_list_foreach (imports, iter, imp) {
+		const char *name = r_bin_name_tostring2 (imp->name, 'o');
+		const char *un = r_bin_symbol_unsafe (core->bin, name);
+		if (!un) {
+			R_LOG_DEBUG ("Symbol not classified %s", name);
+			continue;
+		}
+		char *a = strdup (un);
+		const char *key;
+		RList *keys = r_str_split_list (a, ",", 0);
+		r_list_foreach (keys, iter2, key) {
+			sdb_array_append (db, key, name, 0);
+		}
+		free (a);
+		r_list_free (keys);
+	}
+	if (mode == '?') {
+		char *s = sdb_querys (db, NULL, 0, symname);
+		r_cons_print (s);
+		free (s);
+	} else if (mode == '*') {
+		SdbKv *kv;
+		SdbListIter *it;
+		SdbList *keys = sdb_foreach_list (db, true);
+		ls_foreach (keys, it, kv) {
+			const char *k = sdbkv_key (kv);
+			char *v = strdup (sdbkv_value (kv));
+			const char *value;
+			RList *values = r_str_split_list (v, ",", 0);
+			r_list_foreach (values, iter2, value) {
+				char *vn = r_str_newf ("sym.imp.%s", value);
+				ut64 at = r_num_math (core->num, vn);
+				r_cons_printf ("'@0x%08"PFMT64x"'CC kind(%s)\n", at, k);
+				free (vn);
+			}
+			free (v);
+			r_list_free (values);
+		}
+	} else if (mode == 'k') {
+		char *s = sdb_querys (db, NULL, 0, "*");
+		r_cons_print (s);
+		free (s);
+	} else if (mode == 'j') {
+		PJ *pj = r_core_pj_new (core);
+		pj_o (pj);
+		SdbKv *kv;
+		SdbListIter *it;
+		SdbList *keys = sdb_foreach_list (db, true);
+		ls_foreach (keys, it, kv) {
+			const char *k = sdbkv_key (kv);
+			char *v = strdup (sdbkv_value (kv));
+			pj_ko (pj, k);
+			const char *value;
+			RList *values = r_str_split_list (v, ",", 0);
+			r_list_foreach (values, iter2, value) {
+				pj_ka (pj, value);
+				char *fname = r_str_newf ("sym.imp.%s", value);
+				RFlagItem *item = r_flag_get (core->flags, fname);
 				free (fname);
 				if (item) {
-					RVecAnalRef *xrefs = r_anal_xrefs_get (r->anal, item->offset);
+					RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, item->offset);
 					if (xrefs) {
 						RAnalRef *xref;
 						R_VEC_FOREACH (xrefs, xref) {
-							RList *funcs = r_anal_get_functions_in (r->anal, xref->addr);
+							RList *funcs = r_anal_get_functions_in (core->anal, xref->addr);
+							RAnalFunction *f = r_list_pop (funcs);
+							if (f) {
+								pj_s (pj, f->name);
+							} else {
+								pj_n (pj, xref->addr);
+							}
+							r_list_free (funcs);
+						}
+					}
+					RVecAnalRef_free (xrefs);
+				} else {
+					R_LOG_WARN ("cant resolve %s", value);
+				}
+				pj_end (pj);
+			}
+			pj_end (pj);
+			free (v);
+			r_list_free (values);
+		}
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_print (s);
+		free (s);
+	} else {
+		SdbKv *kv;
+		SdbListIter *it;
+		SdbList *keys = sdb_foreach_list (db, true);
+		ls_foreach (keys, it, kv) {
+			const char *k = sdbkv_key (kv);
+			char *v = strdup (sdbkv_value (kv));
+			r_cons_printf ("|- %s:\n", k);
+			const char *value;
+			RList *values = r_str_split_list (v, ",", 0);
+			r_list_foreach (values, iter2, value) {
+				r_cons_printf ("|  |- %s\n", value);
+				char *fname = r_str_newf ("sym.imp.%s", value);
+				RFlagItem *item = r_flag_get (core->flags, fname);
+				free (fname);
+				if (item) {
+					RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, item->offset);
+					if (xrefs) {
+						RAnalRef *xref;
+						R_VEC_FOREACH (xrefs, xref) {
+							RList *funcs = r_anal_get_functions_in (core->anal, xref->addr);
 							RAnalFunction *f = r_list_pop (funcs);
 							if (f) {
 								r_cons_printf ("|  |  |- %s\n", f->name);
@@ -365,26 +459,40 @@ static void cmd_iic(RCore *r, int mode) {
 					}
 					RVecAnalRef_free (xrefs);
 				} else {
-					R_LOG_WARN ("cant resolve %s", name);
+					R_LOG_WARN ("Cannot resolve %s", value);
 				}
-				// list xrefs now
 			}
+			free (v);
+			r_list_free (values);
 		}
 	}
-#if 0
-	first = true;
-	r_list_foreach (imports, iter, imp) {
-		const char *name = r_bin_name_tostring2 (imp->name, 'o');
-		const char *un = r_bin_symbol_unsafe (r->bin, name);
-		if (!un) {
-			if (first) {
-				r_cons_printf ("unclassified:\n");
-				first = false;
-			}
-			r_cons_printf (" + %s\n", name);
+	sdb_free (db);
+}
+
+static int cmd_iic(RCore *core, const char *input) {
+	switch (input[2]) {
+	case 'j':
+	case 'q':
+	case 'k':
+	case '*':
+	case 0:
+		cmd_iic2 (core, input[2], NULL);
+		break;
+	case ' ':
+		cmd_iic2 (core, ' ', input + 3);
+		break;
+	case '?':
+		if (input[3]) {
+			cmd_iic2 (core, '?', input + 3);
+		} else {
+			r_core_cmd_help (core, help_msg_iic);
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "iic", input[2]);
+		break;
 	}
-#endif
+	return 0;
 }
 
 static void r_core_file_info(RCore *core, PJ *pj, int mode) {
@@ -1754,7 +1862,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
-			cmd_iic (core, 0); // TODO: support json, etc
+			return cmd_iic (core, input);
 		} else {
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;

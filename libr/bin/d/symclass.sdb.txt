@@ -275,6 +275,7 @@ fts_close=file
 printf=format
 sscanf=format
 sprintf=format
+snprintf=format
 # priv
 setuid=privilege
 setgid=privilege
