@@ -94,7 +94,7 @@ static RCoreHelpMessage help_msg_i = {
 	"ih", "[?]", "show binary headers (see iH)",
 	"iH", "[?]", "show binary headers fields",
 	"ii", "[?][j*,]", "list the symbols imported from other libraries",
-	"iic", "", "classify imports",
+	"iic", " [type]", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
 	"ik", " [query]", "key-value database from RBinObject",
 	"il", "", "libraries",
@@ -316,13 +316,34 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	}
 }
 
-static void cmd_iic(RCore *r, int mode) {
+static void cmd_iic(RCore *r, int mode, const char *symname) {
+	if (symname) {
+		const char *un = r_bin_symbol_unsafe (r->bin, name);
+		if (R_STR_ISNOTEMPTY (un)) {
+			r_cons_println (un);
+		}
+		return;
+	}
 	int i;
+	const RList *imports = r_bin_get_imports (r->bin);
+	RListIter *iter;
+	RBinSymbol *imp;
+	Sdb *db = sdb_new0 ();
+	r_list_foreach (imports, iter, imp) {
+		const char *name = r_bin_name_tostring2 (imp->name, 'o');
+		const char *un = r_bin_symbol_unsafe (r->bin, name);
+		eprintf ("%s %s\n", name, un);
+		sdb_set
+		r_list_append (types, un);
+	}
+#if 0
 	const char *type[] = {
 		"heap",
 		"string",
 		"format",
 		"buffer",
+		"memory",
+		"dir",
 		"network",
 		"privilege",
 		"thread",
@@ -339,6 +360,9 @@ static void cmd_iic(RCore *r, int mode) {
 		r_list_foreach (imports, iter, imp) {
 			const char *name = r_bin_name_tostring2 (imp->name, 'o');
 			const char *un = r_bin_symbol_unsafe (r->bin, name);
+			if (!un) {
+				R_LOG_DEBUG ("Unknown symbol %s", name);
+			}
 			if (un && !strcmp (un, typ)) {
 				if (first) {
 					r_cons_printf ("|- %s:\n", typ);
@@ -371,6 +395,7 @@ static void cmd_iic(RCore *r, int mode) {
 			}
 		}
 	}
+#endif
 #if 0
 	first = true;
 	r_list_foreach (imports, iter, imp) {
@@ -1754,7 +1779,23 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
-			cmd_iic (core, 0); // TODO: support json, etc
+			switch (input[2]) {
+			case 'j':
+			case 'q':
+			case '*':
+			case 0:
+				cmd_iic (core, input[2], NULL);
+				break;
+			case ' ':
+				cmd_iic (core, ' ', input + 3);
+				break;
+			case '?':
+				r_core_cmd_help_contains (core, help_msg_i, "iic");
+				break;
+			default:
+				r_core_return_invalid_command (core, "iic", input[2]);
+				break;
+			}
 		} else {
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
