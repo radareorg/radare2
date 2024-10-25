@@ -198,7 +198,6 @@ getspnam=global
 getutent=global
 getutid=global
 getutline=global
-gmtime=global
 hcreate=global
 hdestroy=global
 hsearch=global
@@ -255,6 +254,7 @@ pthread_cleanup_push=thread
 pthread_exit=thread
 pthread_join=thread
 # file
+fileno=file
 open=file
 fseek=file
 fread=file
@@ -295,11 +295,31 @@ fflush=console
 printf=console
 isatty=console
 puts=console
+putc=console
 # process
 exit=process
 kill=process
 getuid=process
 setuid=process
+# environment
+getenv=environment
+environ=environment
+setenv=environment
 # signal
 signal=signal
 sigaction=signal
+# error
+abort=error
+assert=error
+perror=error
+# time
+gmtime=time
+sleep=time
+nanosleep=time
+# dir
+getcwd=dir
+opendir=dir
+closedir=dir
+# memory
+mmap=memory
+munmap=memory
