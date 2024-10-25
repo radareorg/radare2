@@ -48,7 +48,7 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 	assert (0);
 }
 
-static const char *charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+static const char charset[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
 static const int8_t charset_rev[128] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -61,7 +61,7 @@ static const int8_t charset_rev[128] = {
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
 
-int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
+static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;
 	size_t i = 0;
 	while (hrp[i] != 0) {
@@ -69,7 +69,6 @@ int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t da
 		if (ch < 33 || ch > 126) {
 			return 0;
 		}
-
 		if (ch >= 'A' && ch <= 'Z') {
 			return 0;
 		}
@@ -103,24 +102,22 @@ int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t da
 	return 1;
 }
 
-bech32_encoding bech32_decode (char *hrp, uint8_t *data, size_t *data_len, const char *input) {
+static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, const char *input) {
 	uint32_t chk = 1;
-	size_t i;
-	size_t input_len = strlen (input);
-	size_t hrp_len;
+	size_t i, input_len = strlen (input);
 	int have_lower = 0, have_upper = 0;
 	if (input_len < 8 || input_len > 90) {
 		return BECH32_ENCODING_NONE;
 	}
-	*data_len = 0;
-	while (*data_len < input_len && input[(input_len - 1) - *data_len] != '1') {
-		(*data_len)++;
+	data_len = 0;
+	while (data_len < input_len && input[(input_len - 1) - data_len] != '1') {
+		(data_len)++;
 	}
-	hrp_len = input_len - (1 + *data_len);
-	if (1 + *data_len >= input_len || *data_len < 6) {
+	size_t hrp_len = input_len - (1 + data_len);
+	if (1 + data_len >= input_len || data_len < 6) {
 		return BECH32_ENCODING_NONE;
 	}
-	*(data_len) -= 6;
+	data_len -= 6;
 	for (i = 0; i < hrp_len; i++) {
 		int ch = input[i];
 		if (ch < 33 || ch > 126) {
@@ -160,12 +157,13 @@ bech32_encoding bech32_decode (char *hrp, uint8_t *data, size_t *data_len, const
 		return BECH32_ENCODING_NONE;
 	}
 	if (chk == bech32_final_constant (BECH32_ENCODING_BECH32)) {
-		return BECH32_ENCODING_BECH32;
+		return BECH32_ENCODING_BECH32; // wtf?
 		if (chk == bech32_final_constant (BECH32_ENCODING_BECH32M)) {
 			return BECH32_ENCODING_BECH32M;
 		}
 		return BECH32_ENCODING_NONE;
 	}
+	return BECH32_ENCODING_NONE;
 }
 
 static bool bech32_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
@@ -181,27 +179,34 @@ static bool bech32_check(const char *algo) {
 	return !strcmp (algo, "bech32");
 }
 
-static bool update(RCryptoJob *cj, const ut8 *buf, size_t *len) {
-	char *in_out, hrp, data;
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
+	const int enc = BECH32_ENCODING_BECH32;
+	char *hrp = NULL; // needs to be alocated
+	char *in_out = r_str_ndup ((const char *)buf, len);
+	char *data = r_str_ndup ((const char *)buf, len);
 	switch (cj->dir) {
 	case R_CRYPTO_DIR_ENCRYPT:
-		bech32_encode (in_out, hrp, data, len, enc);
+		bech32_encode (in_out, hrp, buf, len, enc);
+		break;
 	case R_CRYPTO_DIR_DECRYPT:
-		bech32_decode (hrp, data, len, in_out);
+		bech32_decode (hrp, (ut8*)data, len, in_out);
+		break;
 	default:
-		printf ("Choose decrypt or encrypt\n");
+		R_LOG_ERROR ("Choose decrypt or encrypt");
+		break;
 	}
 	return true;
 }
 
 static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
-	return update (cj, hrp, data, data_len, in_out, enc);
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_bech32 = {
 	.meta = {
 		.name = "bech32",
 		.author = "W0nda",
+		.license = "BSD-3-Clause", // sure?
 	},
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = bech32_set_key,
