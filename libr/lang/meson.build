@@ -13,7 +13,7 @@ r_lang_sources += '../../shlr/qjs/src/libunicode.c'
 
 r_lang = library('r_lang', r_lang_sources,
   include_directories: [platform_inc, spp_inc, qjs_inc],
-  c_args: library_cflags,
+  c_args: library_cflags + '-fvisibility=hidden',
   dependencies: [
     r_util_dep,
     r_io_dep,
@@ -35,7 +35,7 @@ r_lang_dep = declare_dependency(link_with: r_lang, include_directories: [platfor
 if get_option('blob')
 r_lang_static = static_library('r_lang_static', r_lang_sources,
   include_directories: [platform_inc, spp_inc, qjs_inc],
-  c_args: library_cflags,
+  c_args: library_cflags + '-fvisibility=hidden',
   dependencies: [
     r_util_static_dep,
     r_asm_static_dep,
