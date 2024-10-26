@@ -183,18 +183,6 @@ static void d_init_info(const char *, int, size_t, struct d_info *);
 /* See if the compiler supports dynamic arrays.  */
 // CP_STATIC_IF_GLIBCPP_V3 struct demangle_component * cplus_demangle_type(struct d_info *di);
 
-#ifdef __GNUC__
-#define CP_DYNAMIC_ARRAYS
-#else
-#ifdef __STDC__
-#ifdef __STDC_VERSION__
-#if __STDC_VERSION__ >= 199901L
-#define CP_DYNAMIC_ARRAYS
-#endif /* __STDC__VERSION >= 199901L */
-#endif /* defined (__STDC_VERSION__) */
-#endif /* defined (__STDC__) */
-#endif /* ! defined (__GNUC__) */
-
 /* We avoid pulling in the ctype tables, to prevent pulling in
    additional unresolved symbols when this code is used in a library.
    FIXME: Is this really a valid reason?  This comes from the original
@@ -4300,25 +4288,13 @@ cplus_demangle_print_callback (int options,
   d_print_init (&dpi, callback, opaque, dc);
 
   {
-#ifdef CP_DYNAMIC_ARRAYS
-    /* Avoid zero-length VLAs, which are prohibited by the C99 standard
-       and flagged as errors by Address Sanitizer.  */
-    __extension__ struct d_saved_scope scopes[(dpi.num_saved_scopes > 0)
-                                              ? dpi.num_saved_scopes : 1];
-    __extension__ struct d_print_template temps[(dpi.num_copy_templates > 0)
-                                                ? dpi.num_copy_templates : 1];
-
-    dpi.saved_scopes = scopes;
-    dpi.copy_templates = temps;
-#else
-    dpi.saved_scopes = alloca (dpi.num_saved_scopes
-			       * sizeof (*dpi.saved_scopes));
-    dpi.copy_templates = alloca (dpi.num_copy_templates
-				 * sizeof (*dpi.copy_templates));
-#endif
+    dpi.saved_scopes = calloc (dpi.num_saved_scopes, sizeof (*dpi.saved_scopes));
+    dpi.copy_templates = calloc (dpi.num_copy_templates, sizeof (*dpi.copy_templates));
     dpi.depth = 4096;
 
     d_print_comp (&dpi, options, dc);
+    free (dpi.saved_scopes);
+    free (dpi.copy_templates);
   }
 
   d_print_flush (&dpi);
@@ -6250,16 +6226,8 @@ d_demangle_callback (const char *mangled, int options,
   cplus_demangle_init_info (mangled, options, strlen (mangled), &di);
 
   {
-#ifdef CP_DYNAMIC_ARRAYS
-    __extension__ struct demangle_component comps[di.num_comps];
-    __extension__ struct demangle_component *subs[di.num_subs];
-
-    di.comps = comps;
-    di.subs = subs;
-#else
-    di.comps = alloca (di.num_comps * sizeof (*di.comps));
-    di.subs = alloca (di.num_subs * sizeof (*di.subs));
-#endif
+    di.comps = calloc (di.num_comps, sizeof (*di.comps));
+    di.subs = calloc (di.num_subs, sizeof (*di.subs));
 
     switch (type)
       {
@@ -6281,7 +6249,8 @@ d_demangle_callback (const char *mangled, int options,
 	d_advance (&di, strlen (d_str (&di)));
 	break;
       default:
-	abort (); /* We have listed all the cases.  */
+	fprintf (stderr, "Invalid DCT type\n");
+	// abort (); /* We have listed all the cases.  */
       }
 
     /* If DMGL_PARAMS is set, then if we didn't consume the entire
@@ -6298,6 +6267,8 @@ d_demangle_callback (const char *mangled, int options,
     status = (dc)
              ? cplus_demangle_print_callback (options, dc, callback, opaque)
              : 0;
+    free (di.comps);
+    free (di.subs);
   }
 
   return status;
@@ -6531,16 +6502,8 @@ is_ctor_or_dtor (const char *mangled,
   cplus_demangle_init_info (mangled, DMGL_GNU_V3, strlen (mangled), &di);
 
   {
-#ifdef CP_DYNAMIC_ARRAYS
-    __extension__ struct demangle_component comps[di.num_comps];
-    __extension__ struct demangle_component *subs[di.num_subs];
-
-    di.comps = comps;
-    di.subs = subs;
-#else
-    di.comps = alloca (di.num_comps * sizeof (*di.comps));
-    di.subs = alloca (di.num_subs * sizeof (*di.subs));
-#endif
+    di.comps = calloc (di.num_comps, sizeof (*di.comps));
+    di.subs = calloc (di.num_subs, sizeof (*di.subs));
 
     dc = cplus_demangle_mangled_name (&di, 1);
 
@@ -6581,6 +6544,8 @@ is_ctor_or_dtor (const char *mangled,
 	    break;
 	  }
       }
+    free (di.comps);
+    free (di.subs);
   }
 
   return ret;
