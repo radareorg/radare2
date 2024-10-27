@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#include <r_hash.h>
 #include <r_util.h>
 #include <sdb/sdb.h>
 
@@ -90,4 +91,4 @@ R_API RList *rvc_git_get_branches(Rvc *rvc);
 }
 #endif
 
-#endif
+#endif /* R_RVC_H */

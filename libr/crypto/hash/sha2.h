@@ -42,11 +42,6 @@ extern "C" {
 #include <r_util/r_assert.h>
 #include <r_types.h>
 
-#if R_CRYPTO_INTERNAL
-#undef R_IPI
-#define R_IPI R_UNUSED static
-#endif
-
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 #define R_SHA256_BLOCK_LENGTH		64
 #define R_SHA256_DIGEST_LENGTH		32

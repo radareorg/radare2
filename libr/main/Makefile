@@ -21,5 +21,4 @@ OBJS+=rahash2.o
 
 # See MAIN_LINK_ALL
 include deps.mk
-
 include ../rules.mk

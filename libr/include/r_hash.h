@@ -58,6 +58,7 @@ typedef struct {
 } RHashShaContext;
 
 #define SHA256_BLOCK_LENGTH 64
+#define SHA256_DIGEST_LENGTH 32
 typedef struct _SHA256_CTX {
 	ut32 state[8];
 	ut64 bitcount;

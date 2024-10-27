@@ -38,6 +38,9 @@ endif
 OBJS+=big_gmp.o
 OBJS+=big_ssl.o
 OBJS+=big.o
+OBJS+=../crypto/hash/sha2.o ../crypto/hash/md5.o ../crypto/hash/sha1.o
+OBJS+=../crypto/hash/sip.o ../crypto/hash/md4.o ../crypto/hash/ssdeep.o
+OBJS+=../crypto/hash/state.o 
 
 CWD=$(shell pwd)
 
@@ -56,6 +59,7 @@ include ../rules.mk
 include deps.mk
 include sdb.mk
 include spp.mk
+
 
 f fast:
 	rm -f sasa.c ; cat $(shell ls *.c| grep -v buf_| grep -v sasa) > sasa.c

@@ -2,10 +2,6 @@
 
 #define R_LOG_ORIGIN "vc.rvc"
 
-// XXX support git too!
-#define R_CRYPTO_INTERNAL 1
-#include "../crypto/hash/sha2.c"
-
 #include <rvc.h>
 
 #define FIRST_BRANCH "branches.master"
@@ -208,11 +204,11 @@ fail_ret:
 }
 
 static char *compute_hash(const ut8 *data, size_t len) {
-	RSha256Context ctx;
-	r_sha256_init (&ctx);
-	r_sha256_update (&ctx, data, len);
-	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
-	r_sha256_end (&ctx, textdigest);
+	// Digest value in hexadecimal
+	char textdigest[2 * SHA256_DIGEST_LENGTH + 1] = { 0 };
+	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	r_hash_do_sha256 (ctx, data, len);
+	r_hex_bin2str (ctx->digest, SHA256_DIGEST_LENGTH, textdigest);
 	return strdup (textdigest);
 }
 
@@ -226,6 +222,7 @@ static inline char *sha256_file(const char *fname) {
 	}
 	return NULL;
 }
+
 static bool traverse_files(RList *dst, const char *dir) {
 	char *name;
 	RListIter *iter;
