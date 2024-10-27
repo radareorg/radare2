@@ -181,8 +181,9 @@ typedef struct r_disasm_state_t {
 	Sdb *ssa;
 	int cmtcol;
 	bool show_calls;
-	bool show_cmtflgrefs;
-	bool show_cmtesil;
+	bool show_cmt_flgrefs;
+	bool show_cmt_esil;
+	bool show_cmt_pseudo;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -831,8 +832,9 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_calls = r_config_get_i (core->config, "asm.cmt.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
-	ds->show_cmtesil = r_config_get_i (core->config, "asm.cmt.esil");
-	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmt.flgrefs");
+	ds->show_cmt_esil = r_config_get_b (core->config, "asm.cmt.esil");
+	ds->show_cmt_pseudo = r_config_get_b (core->config, "asm.cmt.pseudo");
+	ds->show_cmt_flgrefs = r_config_get_b (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_b (core->config, "asm.xrefs");
@@ -3087,7 +3089,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 }
 
 static void ds_control_flow_comments(RDisasmState *ds) {
-	if (ds->show_comments && ds->show_cmtflgrefs) {
+	if (ds->show_comments && ds->show_cmt_flgrefs) {
 		RFlagItem *item;
 		if (ds->asm_anal) {
 			switch (ds->analop.type) {
@@ -6482,7 +6484,14 @@ toro:
 			continue;
 		}
 		if (!ds->show_cmt_right) {
-			if (ds->show_cmtesil) {
+			if (ds->show_cmt_pseudo) {
+				char *opstr = malloc (32 + strlen (ds->analop.mnemonic));
+				strcpy (opstr, ds->analop.mnemonic);
+				r_parse_parse (core->parser, opstr, opstr);
+				ds_comment (ds, true, "%s", opstr);
+				free (opstr);
+			}
+			if (ds->show_cmt_esil) {
 				const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 				ds_pre_line (ds);
 				ds_setup_print_pre (ds, false, false);
@@ -6779,7 +6788,14 @@ toro:
 
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_cmt_user) && ds->show_cmt_right) {
-				if (ds->show_cmtesil) {
+				if (ds->show_cmt_pseudo) {
+					char *opstr = malloc (32 + strlen (ds->analop.mnemonic));
+					strcpy (opstr, ds->analop.mnemonic);
+					r_parse_parse (core->parser, opstr, opstr);
+					ds_comment (ds, true, "%s", opstr);
+					free (opstr);
+				}
+				if (ds->show_cmt_esil) {
 					const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 					if (ds->show_color) {
 						ds_comment (ds, true, "%s %s%s%s", ds->cmtoken,
