@@ -3830,6 +3830,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view (see 'e asm.cmt.')");
 	SETBPREF ("asm.cmt.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.cmt.user", "false", "show user comments even if asm.comments is false");
+	SETBPREF ("asm.cmt.pseudo", "false", "show pseudo disasm as comments (see asm.pseudo)");
 	SETBPREF ("asm.cmt.refs", "false", "show flag and comments from refs in disasm");
 	SETBPREF ("asm.cmt.patch", "false", "show patch comments in disasm");
 	SETBPREF ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
