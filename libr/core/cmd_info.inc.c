@@ -349,10 +349,9 @@ static int cmpstr(const void *_a, const void *_b) {
 	return (int)strcmp (a, b);
 }
 static RList *uniqrefs_for(RCore *core, ut64 addr) {
-	RList *res = NULL;
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (xrefs) {
-		res = r_list_newf (free);
+		RList *res = r_list_newf (free);
 		RAnalRef *xref;
 		R_VEC_FOREACH (xrefs, xref) {
 			RList *funcs = r_anal_get_functions_in (core->anal, xref->addr);
@@ -364,13 +363,14 @@ static RList *uniqrefs_for(RCore *core, ut64 addr) {
 			}
 			r_list_free (funcs);
 		}
+		RVecAnalRef_free (xrefs);
+		r_list_sort (res, cmpstr);
+		RList *nres = r_list_uniq (res, valstr);
+		res->free = NULL;
+		r_list_free (res);
+		return nres;
 	}
-	r_list_sort (res, cmpstr);
-	RList *nres = r_list_uniq (res, valstr);
-	res->free = NULL;
-	r_list_free (res);
-	RVecAnalRef_free (xrefs);
-	return nres;
+	return NULL;
 }
 
 static void cmd_iic2(RCore *core, int mode, const char *symname) {
