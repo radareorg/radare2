@@ -1,5 +1,5 @@
 /* Copyright (c) 2017, 2021 Pieter Wuille
- *  Updated by W0nda in 2024
+ *  Adapted by W0nda in 2024
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

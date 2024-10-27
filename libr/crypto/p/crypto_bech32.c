@@ -1,5 +1,5 @@
 /* Copyright (c) 2017, 2021 Pieter Wuille
- *  Updated by W0nda in 2024
+ *  Adapted by W0nda in 2024
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <cstdio>
 #include <r_lib.h>
 #include <r_crypto.h>
 #include <r_crypto/r_bech32.h>
@@ -27,6 +28,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
 	uint8_t b = pre >> 25;
@@ -60,6 +62,17 @@ static const int8_t charset_rev[128] = {
 	-1, 29, -1, 24, 13, 25, 9, 8, 23, -1, 18, 22, 31, 27, 19, -1,
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
+
+int hrplength (const char *bech32_checksum, const unsigned char size) {
+	int i = size;
+	while (i > 0 && bech32_checksum[i] != '1') {
+		i--;
+	}
+	if (i == 0) {
+		return -1;
+	}
+	return i;
+}
 
 static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;
@@ -167,12 +180,14 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 }
 
 static bool bech32_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->key_len = keylen;
+	memcpy (cj->key, key, keylen);
 	cj->dir = direction;
 	return true;
 }
 
 static int bech32_get_key_size(RCryptoJob *cj) {
-	return 0;
+	return cj->key_len;
 }
 
 static bool bech32_check(const char *algo) {
@@ -181,7 +196,10 @@ static bool bech32_check(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
-	char *hrp = NULL; // needs to be alocated
+	int hrp_size = hrplength (buf, len);
+	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
+	hrp[cj->key_len] = 0;
+	memcpy (hrp, cj->key, cj->key_len);
 	char *in_out = r_str_ndup ((const char *)buf, len);
 	char *data = r_str_ndup ((const char *)buf, len);
 	switch (cj->dir) {
