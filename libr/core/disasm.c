@@ -6659,13 +6659,22 @@ toro:
 				int off = 0;
 				while (ds->comment) {
 					char *c = r_str_ndup (ds->comment + off, maxcols);
-					r_cons_printf ("%s%s\n", off?"; ": "", c);
+					char *nl = strchr (c, '\n');
+					if (nl) {
+						*nl = 0;
+					}
 					size_t clen = strlen (c);
-					if (clen <= maxcols) {
+					r_str_trim (c);
+					if (clen > 1) {
+						r_cons_printf ("%s%s\n", off? "; ": "", c);
+						off += clen;
+					} else {
+						off++;
+					}
+					free (c);
+					if (clen < maxcols && !nl) {
 						R_FREE (ds->comment);
 					}
-					off += clen;
-					free (c);
 				}
 			}
 		}
