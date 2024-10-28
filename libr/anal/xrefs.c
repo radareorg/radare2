@@ -165,7 +165,6 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 				RVecAnalRef_free (result);
 				return false;
 			}
-
 			ref->at = entry->key;
 			ref->addr = edge_entry->key;
 			ref->type = edge_entry->val;

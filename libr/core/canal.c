@@ -2198,7 +2198,6 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			if (r_anal_xrefs_has_xrefs_at (core->anal, from)) {
 				return true;
 			}
-
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
 				RAnalRefType ref_type = reftype == UT64_MAX ? R_ANAL_REF_TYPE_CODE : reftype;
