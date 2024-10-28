@@ -1356,6 +1356,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 #else
 						r_list_foreach (obj->classes, iter, cls)
 #endif
+						{
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
 								r_cons_printf ("%s0x%"PFMT64x, comma,
