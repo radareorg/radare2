@@ -381,17 +381,30 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			n_bb, (int)r_anal_function_realsize (fcn));
 		NEWLINE (fcn->addr, indent);
 		const char *S0 = "esp";
-		PRINTF ("static inline void push (int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
+		PRINTF ("static inline void push(int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
 		PRINTF ("static inline int pop() {int r = stack[%s]; %s += %d; return r; }\n", S0, S0, (int)sizeof (int));
 		PRINTF ("\n");
 	}
 
 	char *fs = r_core_cmd_strf (core, "afs@0x%08"PFMT64x, fcn->addr);
+	{
+		char *cc = r_core_cmd_strf (core, "afci@0x%08"PFMT64x, fcn->addr);
+		r_str_trim (cc);
+		if (R_STR_ISNOTEMPTY (cc)) {
+			PRINTF ("// callconv: %s\n", cc);
+		}
+		free (cc);
+	}
 	if (R_STR_ISEMPTY (fs) || (r_str_startswith (fs, "void") && strstr (fs, "()"))) {
-		PRINTF ("int %s (int %s, int %s) {", fcn->name, a0, a1);
+		if (!strcmp (a0, a1)) {
+			PRINTF ("int %s (int %s) {", fcn->name, a0);
+		} else {
+			PRINTF ("int %s (int %s, int %s) {", fcn->name, a0, a1);
+		}
 	} else {
-		r_str_replace_char (fs, ';', '{');
-		PRINTF ("%s", fs);
+		r_str_replace_char (fs, ';', ' ');
+		r_str_trim (fs);
+		PRINTF ("%s {", fs);
 	}
 	free (fs);
 	indent++;
