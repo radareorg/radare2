@@ -733,7 +733,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 
 	RAnalRef *ref;
 	R_VEC_FOREACH (refs, ref) {
-		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		const ut32 rt = R_ANAL_REF_TYPE_MASK (ref->type);
 		if (rt == R_ANAL_REF_TYPE_DATA && check_string_at (core, ref->addr)) {
 			r_anal_xrefs_set (core->anal, ref->at, ref->addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 		}
@@ -4274,6 +4274,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 }
 
 static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, bool code, int depth) {
+	// anal.followptr
 	// SLOW Operation try to reduce as much as possible
 	if (!ptr) {
 		return false;
@@ -4286,7 +4287,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	if (depth < 0) {
 		return false;
 	}
-	int wordsize = (int)(core->anal->config->bits / 8);
+	const ut32 wordsize = (int)(core->anal->config->bits / 8);
 	ut64 dataptr;
 	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
 		// eprintf ("core_anal_followptr: Cannot read word at destination\n");

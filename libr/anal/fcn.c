@@ -1118,10 +1118,21 @@ noskip:
 				r_anal_op_fini (&jmp_aop);
 			}
 			break;
-		case R_ANAL_OP_TYPE_LOAD:
+		case R_ANAL_OP_TYPE_LOAD: ;
 			// R2R db/anal/arm db/esil/apple
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
-			if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
+			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
+			bool want_icods = true;
+#if R2_USE_NEW_ABI
+			// want_icods = anal->opt.icods;
+#endif
+			{
+				const char *arch = R_UNWRAP3 (anal, config, arch);
+				if (r_str_startswith (arch, "stm8")) {
+					want_icods = false;
+				}
+			}
+			if (want_icods && anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
 				(void)anal->iob.read_at (anal->iob.io, op->ptr, (ut8 *) dd, sizeof (dd));
@@ -1138,6 +1149,7 @@ noskip:
 						}
 					}
 					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+					// Register an indirect code pointer reference
 					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
 				} else {
 					R_LOG_DEBUG ("Invalid refs 0x%08"PFMT64x" .. 0x%08"PFMT64x" .. 0x%08"PFMT64x" not adding", op->addr, op->ptr, da);
