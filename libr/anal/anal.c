@@ -145,6 +145,7 @@ R_API RAnal *r_anal_new(void) {
 }
 
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (anal && plugin, false);
 	// XXX TODO
 	return true;
 }
@@ -200,6 +201,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 }
 
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
+	R_RETURN_VAL_IF_FAIL (anal && foo, -1);
 	if (foo->init) {
 		foo->init (anal->user);
 	}
@@ -229,11 +231,13 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
 	RArchPluginRegistersCallback regs = R_UNWRAP3 (session, plugin, regs);
 	return regs? regs (session): NULL;
 }
 
+// R2_600 review this:
 // deprecate.. or at least reuse get_reg_profile...
 R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
@@ -283,6 +287,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 }
 
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
+	R_RETURN_VAL_IF_FAIL (anal && os, false);
 	Sdb *types = anal->sdb_types;
 	const char *dir_prefix = r_sys_prefix (NULL);
 	SdbGperf *gp = r_anal_get_gperf_types (os);
@@ -307,6 +312,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	int obits = anal->config->bits;
 	r_arch_config_set_bits (anal->config, bits);
 	r_arch_set_bits (anal->arch, bits);
@@ -358,6 +364,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 }
 
 R_API RList* r_anal_get_fcns(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
 	return anal->fcns;
@@ -424,6 +431,7 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) { // R2_590
 }
 
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	const int align = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
 	return align <= 1 || !(addr % align);
 }
@@ -485,7 +493,8 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 #define K_NORET_ADDR(x) r_strf ("addr.%"PFMT64x".noreturn", x)
 #define K_NORET_FUNC(x) r_strf ("func.%s.noreturn", x)
 
-R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
+R_API bool r_anal_noreturn_add(RAnal *anal, R_NULLABLE const char *name, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	r_strf_buffer (128);
 	const char *tmp_name = NULL;
 	Sdb *TDB = anal->sdb_types;
@@ -538,6 +547,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 }
 
 R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
+	R_RETURN_VAL_IF_FAIL (anal && expr, false);
 	r_strf_buffer (64);
 	Sdb *TDB = anal->sdb_types;
 	const char *fcnname = r_str_trim_head_ro (expr);
@@ -569,6 +579,7 @@ R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 }
 
 static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
+	R_RETURN_VAL_IF_FAIL (anal && name, false);
 	r_strf_buffer (128);
 	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (name), NULL)) {
 		return true;
@@ -588,6 +599,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
 	r_strf_buffer (64);
 	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR (addr), NULL);
 }
@@ -632,7 +644,8 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
-	if (!addr || addr == UT64_MAX) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
+	if (addr == UT64_MAX) {
 		return false;
 	}
 	if (r_anal_noreturn_at_addr (anal, addr)) {
@@ -672,6 +685,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 }
 
 R_API RList *r_anal_preludes(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
 		const char *const b = anal->config->arch;
@@ -770,6 +784,7 @@ R_API void r_anal_purge_imports(RAnal *anal) {
 }
 
 R_API bool r_anal_cmd(RAnal *anal, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
 	RListIter *iter;
 	RAnalPlugin *ap;
 	r_list_foreach (anal->plugins, iter, ap) {
