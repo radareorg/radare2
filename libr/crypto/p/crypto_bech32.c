@@ -1,9 +1,12 @@
 /* radare - BSD-3-Clause - Copyright (c) 2017, 2021, 2024 - Pieter Wuille, W0nda */
 
-#include <r_lib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include <r_crypto.h>
+
+typedef enum {
+	BECH32_ENCODING_NONE,
+	BECH32_ENCODING_BECH32,
+	BECH32_ENCODING_BECH32M
+} bech32_encoding;
 
 static uint32_t bech32_polymod_step(ut32 pre) {
 	uint8_t b = pre >> 25;
@@ -16,6 +19,7 @@ static uint32_t bech32_polymod_step(ut32 pre) {
 }
 
 static uint32_t bech32_final_constant(bech32_encoding enc) {
+	R_RETURN_VAL_IF_FAIL (enc == BECH32_ENCODING_BECH32 || enc == BECH32_ENCODING_BECH32M, 1);
 	if (enc == BECH32_ENCODING_BECH32) {
 		return 1;
 	}
@@ -172,6 +176,9 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
 	int hrp_size = hrplength (buf, len);
 	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
+	if (!hrp) {
+		return false;
+	}
 	hrp[cj->key_len] = 0;
 	memcpy (hrp, cj->key, cj->key_len);
 	char *in_out = r_str_ndup ((const char *)buf, len);
