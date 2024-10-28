@@ -18,6 +18,24 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			if (v && v != UT64_MAX && v != op->jump) {
 				op->val = v;
 			}
+		} else {
+			ox = strstr (op->mnemonic, "[0x");
+			if (ox) {
+				ut64 v = r_num_get (NULL, ox + 1);
+				if (v && v != UT64_MAX && v != op->jump) {
+					// we need to use op->ptr.. but disable icod refs for stm8 only
+					op->ptr = v;
+					if (strstr (op->mnemonic, "],")) {
+						// ld [0x8], a
+						op->direction = R_ANAL_OP_DIR_WRITE;
+					} else if (strchr (op->mnemonic, ',')) {
+						// inc, dec, clr
+						op->direction = R_ANAL_OP_DIR_WRITE;
+					} else {
+						op->direction = R_ANAL_OP_DIR_READ;
+					}
+				}
+			}
 		}
 	}
 	if (jump != UT64_MAX) {
