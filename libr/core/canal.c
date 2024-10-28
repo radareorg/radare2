@@ -3031,7 +3031,7 @@ static int maxbbins(RAnalFunction *fcn) {
 }
 
 // Lists function names and their calls (uniqified)
-static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique) {
+static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique, bool recursive) {
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	PJ *pj = NULL;
@@ -3066,6 +3066,25 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique)
 
 		// don't enter for functions with 0 refs
 		if (refs && !RVecAnalRef_empty (refs)) {
+			RAnalRef *refi;
+			if (recursive) {
+				bool found = false;
+				ut64 at = fcn->addr;
+				R_VEC_FOREACH (refs, refi) {
+					if (at == refi->addr) {
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					if (mode == 'q') {
+						r_cons_printf ("0x%08"PFMT64x"\n", at);
+					} else {
+						r_cons_printf ("%s\n", fcn->name);
+					}
+				}
+				continue;
+			}
 			if (mode == '.') {
 				if (fcn->addr != cur_fcn_addr) {
 					continue;
@@ -3087,11 +3106,10 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique)
 				r_cons_printf (" -> ");
 			}
 			// Iterate over all refs from a function
-			RAnalRef *refi;
 			Sdb *uniq = unique ? sdb_new0 (): NULL;
 			R_VEC_FOREACH (refs, refi) {
 				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
-				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+				char *dst = f? strdup (f->name): r_str_newf ("0x%08"PFMT64x, refi->addr);
 				if (unique) {
 					if (sdb_const_get (uniq, dst, NULL)) {
 						continue;
@@ -3115,7 +3133,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique)
 				pj_end (pj); // close list of calls
 				pj_end (pj); // close function item
 			} else {
-				r_cons_newline();
+				r_cons_newline ();
 			}
 		}
 		RVecAnalRef_free (refs);
@@ -3735,6 +3753,7 @@ static RCoreHelpMessage help_msg_aflm = {
 	"aflmq", "", "list functions with its calls in quiet mode",
 	"aflmj", "", "same as above but in json format",
 	"aflmu", "[jq.]", "same as aflm, but listing calls once (uniq filter)",
+	"aflmr", "[jq.]", "list all recursive functions (functions calling themselves)",
 	NULL
 };
 
@@ -3863,11 +3882,16 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case 'm': // "aflm"
 		{
 			bool uniq = false;
+			bool recursive = false;
 			char mode = 'm';
 			if (rad[1] == 'u') { // "aflmu" // for unique
 				uniq = true;
 				rad++;
+			} else if (rad[1] == 'r') {
+				recursive = true;
+				rad++;
 			}
+
 			if (rad[1] != 0) {
 				switch (rad[1]) {
 				case '.': // "aflm."
@@ -3877,7 +3901,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 					break;
 				}
 			}
-			fcn_print_makestyle (core, fcns, mode, uniq);
+			fcn_print_makestyle (core, fcns, mode, uniq, recursive);
 			break;
 		}
 	case 1:
