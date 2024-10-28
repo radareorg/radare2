@@ -9,6 +9,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #define PIDX (R_ABS (core->visual.printidx % NPF))
 
 R_IPI void visual_refresh(RCore *core);
+R_IPI void visual_add_comment(RCore *core, ut64 at);
 
 typedef struct {
 	int x;
@@ -2798,55 +2799,6 @@ static int process_get_click(RCore *core, int ch) {
 	return ch;
 }
 
-static void visual_add_comment(RCore *core) {
-	char buf[1024];
-	r_cons_enable_mouse (false);
-	r_cons_gotoxy (0, 0);
-	r_cons_printf ("Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
-	r_core_visual_showcursor (core, true);
-	r_cons_flush ();
-	r_cons_set_raw (false);
-	const ut64 orig = core->offset;
-	ut64 addr = core->offset;
-	if (core->print->cur_enabled) {
-		addr += core->print->cur;
-		r_core_seek (core, addr, false);
-	}
-	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-	bool use_editor = comment != NULL;
-	r_line_set_prompt ("comment: ");
-	bool do_sthg = true;
-	if (use_editor) {
-		strcpy (buf, "!");
-	} else {
-		do_sthg = r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0;
-	}
-	if (do_sthg) {
-		const char *command = "CC ";
-		const char *argument = NULL;
-		switch (buf[0]) {
-		case '-':
-			command = "CC-";
-			argument = r_str_trim_head_ro (buf + 1);
-			break;
-		case '!':
-			command = "CC!";
-			argument = r_str_trim_head_ro (buf + 1);
-			break;
-		default:
-			command = "CC ";
-			argument = r_str_trim_head_ro (buf);
-			break;
-		}
-		r_core_cmdf (core, "'%s%s", command, argument);
-	}
-	if (core->print->cur_enabled) {
-		r_core_seek (core, orig, true);
-	}
-	r_cons_set_raw (true);
-	r_core_visual_showcursor (core, false);
-}
-
 static void handle_space_key(RCore *core, int force) {
 	if (force == 0) {
 		switch (core->visual.printidx) {
@@ -4060,7 +4012,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_hudstuff (core);
 			break;
 		case ';': // "V;"
-			visual_add_comment (core);
+			visual_add_comment (core, UT64_MAX);
 			break;
 		case 'b':
 			r_core_visual_browse (core, arg + 1);

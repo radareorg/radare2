@@ -36,6 +36,59 @@ static int copyuntilch(char *dst, char *src, int ch) {
 	return i;
 }
 
+R_IPI void visual_add_comment(RCore *core, ut64 at) {
+	char buf[1024];
+	r_cons_enable_mouse (false);
+	r_cons_gotoxy (0, 0);
+	r_cons_printf ("Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
+	r_core_visual_showcursor (core, true);
+	r_cons_flush ();
+	r_cons_set_raw (false);
+	const ut64 orig = core->offset;
+	if (at == UT64_MAX) {
+		at = core->offset;
+		if (core->print->cur_enabled) {
+			at += core->print->cur;
+		}
+	}
+	if (at != orig) {
+		r_core_seek (core, at, false);
+	}
+	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
+	bool use_editor = comment != NULL;
+	r_line_set_prompt ("comment: ");
+	bool do_sthg = true;
+	if (use_editor) {
+		strcpy (buf, "!");
+	} else {
+		do_sthg = r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0;
+	}
+	if (do_sthg) {
+		const char *command = "CC ";
+		const char *argument = NULL;
+		switch (buf[0]) {
+		case '-':
+			command = "CC-";
+			argument = r_str_trim_head_ro (buf + 1);
+			break;
+		case '!':
+			command = "CC!";
+			argument = r_str_trim_head_ro (buf + 1);
+			break;
+		default:
+			command = "CC ";
+			argument = r_str_trim_head_ro (buf);
+			break;
+		}
+		r_core_cmdf (core, "'%s%s", command, argument);
+	}
+	if (core->print->cur_enabled) {
+		r_core_seek (core, orig, true);
+	}
+	r_cons_set_raw (true);
+	r_core_visual_showcursor (core, false);
+}
+
 // TODO: move this helper into r_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -329,7 +382,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'o':
 			{
 				char *s = r_cons_input ("offset: ");
-				r_core_cmdf (core, "s %s", s);
+				r_core_cmd_callf (core, "s %s", s);
 				free (s);
 			}
 			break;
@@ -3380,6 +3433,7 @@ static RCoreHelpMessage help_visual_anal_keys = {
 	NULL
 };
 
+R_TH_LOCAL static int coldelta = 0;
 static ut64 r_core_visual_anal_refresh(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
 	ut64 addr;
@@ -3388,8 +3442,9 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	int h, cols = r_cons_get_size (&h);
 	addr = core->offset;
 	cols -= 50;
-	if (cols > 60) {
-		cols = 60;
+	int maxcols = 60 + coldelta;
+	if (cols > maxcols) {
+		cols = maxcols;
 	}
 
 	r_cons_clear00 ();
@@ -3419,7 +3474,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		r_cons_print ("| (a)nalyze   (-)delete (xX)refs (jk)scroll  |\n");
 		r_cons_print ("| (r)ename    (c)alls   (d)efine (tab)disasm |\n");
 		r_cons_print ("| (d)efine    (v)ars    (?)help  (:)shell    |\n");
-		r_cons_print ("| (s)ignature (_)hud    (q)quit              |\n");
+		r_cons_print ("| (s)ignature (_)hud    (q)quit  (;)comment  |\n");
 		r_cons_printf ("'-------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
@@ -3517,7 +3572,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		}
 		if (ch == 4 || (int)ch == -1) {
 			if (level == 0) {
-				goto beach;
+				return;
 			}
 			level--;
 			continue;
@@ -3534,8 +3589,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			}
 			break;
 		case 'q': // "vbdq"
-			goto beach;
-			break;
+			return;
 		case ']': // "vbd]"
 			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
 			break;
@@ -3568,8 +3622,6 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			break;
 		}
 	}
-beach:
-	;
 }
 
 static char *__prompt(const char *msg, void *p) {
@@ -3611,7 +3663,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_oneshot;
 
 	level = 0;
-
+	coldelta = 0;
 	bool asmbytes = r_config_get_b (core->config, "asm.bytes");
 	r_config_set_b (core->config, "asm.bytes", false);
 	for (;;) {
@@ -3634,10 +3686,15 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '[':
-			r_cons_singleton ()->show_vals = true;
+			coldelta--;
+			// r_cons_singleton ()->show_vals = true;
 			break;
 		case ']':
+			coldelta++;
 			r_cons_singleton ()->show_vals = false;
+			break;
+		case ';':
+			visual_add_comment (core, addr);
 			break;
 		case '?':
 			r_cons_clear00 ();
@@ -3704,7 +3761,6 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 					r_line_set_prompt ("New name: ");
 					if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
 						if (*old) {
-							//old[strlen (old)-1] = 0;
 							variable_rename (core, addr, variable_option, old);
 						}
 					}
@@ -3713,7 +3769,6 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 					r_line_set_prompt ("New name: ");
 					if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
 						if (*old) {
-							//old[strlen (old)-1] = 0;
 							function_rename (core, addr, old);
 						}
 					}
@@ -3733,7 +3788,6 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				r_line_set_prompt ("New type: ");
 				if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
 					if (*old) {
-						//old[strlen (old)-1] = 0;
 						variable_set_type (core, addr, variable_option, old);
 					}
 				}
@@ -3758,10 +3812,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_visual_define (core, "", 0);
 			break;
 		case '-': // "Vv-"
-			switch (level) {
-			case 0:
+			if (level == 0) {
 				r_core_cmdf (core, "af-0x%"PFMT64x, addr);
-				break;
 			}
 			break;
 		case 'x': // "Vvx"
@@ -3808,16 +3860,13 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				delta += 16;
 			} else {
 				delta = 0;
-				switch (level) {
-				case 1:
+				if (level == 1) {
 					variable_option++;
-					break;
-				default:
+				} else {
 					option++;
 					if (option >= nfcns) {
 						option--;
 					}
-					break;
 				}
 			}
 			break;
