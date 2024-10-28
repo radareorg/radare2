@@ -3031,7 +3031,7 @@ static int maxbbins(RAnalFunction *fcn) {
 }
 
 // Lists function names and their calls (uniqified)
-static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
+static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique) {
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	PJ *pj = NULL;
@@ -3088,9 +3088,16 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 			}
 			// Iterate over all refs from a function
 			RAnalRef *refi;
+			Sdb *uniq = unique ? sdb_new0 (): NULL;
 			R_VEC_FOREACH (refs, refi) {
 				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
 				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+				if (unique) {
+					if (sdb_const_get (uniq, dst, NULL)) {
+						continue;
+					}
+					sdb_set (uniq, dst, "1", 0);
+				}
 				if (pj) { // Append calee json item
 					pj_o (pj);
 					pj_ks (pj, "name", dst);
@@ -3103,6 +3110,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				}
 				free (dst);
 			}
+			sdb_free (uniq);
 			if (pj) {
 				pj_end (pj); // close list of calls
 				pj_end (pj); // close function item
@@ -3721,10 +3729,12 @@ static int fcn_list_legacy(RCore *core, RList *fcns, bool dorefs) {
 }
 
 static RCoreHelpMessage help_msg_aflm = {
-	"Usage:", "aflm", "[q.j] List functions in verbose mode",
+	"Usage:", "aflm", "[q.j] List functions in makefile style (func -> calls)",
 	"aflm", "", "list functions and what they call in makefile-like format",
 	"aflm.", "", "only print the summary for the current function (see pds)",
+	"aflmq", "", "list functions with its calls in quiet mode",
 	"aflmj", "", "same as above but in json format",
+	"aflmu", "[jq.]", "same as aflm, but listing calls once (uniq filter)",
 	NULL
 };
 
@@ -3852,17 +3862,22 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	case 'm': // "aflm"
 		{
+			bool uniq = false;
 			char mode = 'm';
+			if (rad[1] == 'u') { // "aflmu" // for unique
+				uniq = true;
+				rad++;
+			}
 			if (rad[1] != 0) {
 				switch (rad[1]) {
-				case '.':
-				case 'j':
-				case 'q':
+				case '.': // "aflm."
+				case 'j': // "aflmj"
+				case 'q': // "aflmq"
 					mode = rad[1];
 					break;
 				}
 			}
-			fcn_print_makestyle (core, fcns, mode);
+			fcn_print_makestyle (core, fcns, mode, uniq);
 			break;
 		}
 	case 1:
