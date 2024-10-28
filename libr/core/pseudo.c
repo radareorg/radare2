@@ -682,12 +682,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			r_config_set_b (core->config, "scr.html", true);
 		}
 		s = r_str_replace (s, ";", "//", true);
+#if 0
 		char *lastgoto = strstr (s, "goto ");
 		if (lastgoto) {
 			if (!strchr (lastgoto, '\n')) {
 				*s = 0;
 			}
 		}
+#endif
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
 		if (show_addr) {
