@@ -44,6 +44,8 @@ for a in $SANITIZE ; do
 	export CFLAGS="${CFLAGS} -fsanitize=$a"
 	if [ "$a" = leak ]; then
 		HAVE_LEAKS=0
+	elif [ "$a" = address ]; then
+		export CFLAGS="${CFLAGS} -D__ASAN__=1"
 	fi
 done
 if [ "${HAVE_LEAKS}" = 0 ]; then
