@@ -412,7 +412,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		code[len - 1] = 0; // chop last newline
 		find_and_change (code, len);
 		if (!sdb_const_get (db, K_MARK (bb->addr), 0)) {
-			bool mustprint = !queuegoto || queuegoto != bb->addr;
+			bool mustprint = !queuegoto || queuegoto != bb->addr || bb->jump == bb->addr;
 			if (mustprint) {
 				if (queuegoto && queuegoto != UT64_MAX) {
 					// NEWLINE (bb->addr, indent);
@@ -508,7 +508,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
 				if (r_list_contains (visited, nbb)) {
 					nbb = r_anal_bb_from_offset (core->anal, bb->jump);
-					if (r_list_contains (visited, nbb)) {
+					if (bb->jump == bb->addr) {
+						R_LOG_DEBUG ("Basic block loop found at 0x%08"PFMT64x, bb->jump);
+						if (r_list_contains (visited, nbb)) {
+							break;
+						}
+						r_list_append (visited, nbb);
+					} else if (r_list_contains (visited, nbb)) {
 						nbb = NULL;
 					}
 				}
