@@ -12,6 +12,7 @@ F+= types-arm-ios-16
 F+= types-arm-ios-32
 F+= types-arm-ios-64
 F+= spec
+F+= cc-stm8-16
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-x86-16

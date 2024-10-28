@@ -57,15 +57,15 @@ static char *regs(RArchSession *as) {
 	"=PC	pc\n"
 	"=SP	sp\n"
 	"=SN	x\n"
-	"=BP	r31\n"
 	"=A0	x\n"
 	"=A1	y\n"
 	"=A2	a\n"
-	"gpr	pc	.64	0	0\n" // 24bit
-	"gpr	sp	.64	8	0\n" // 16bit
-	"gpr	x	.16	16	0\n" // 16
-	"gpr	y	.16	18	0\n" // 16
-	"gpr	a	.8	20	0\n" // 8
+	"=R0	a\n"
+	"gpr	pc	.64	0	0\n"
+	"gpr	sp	.64	8	0\n"
+	"gpr	x	.16	16	0\n"
+	"gpr	y	.16	18	0\n"
+	"gpr	a	.8	20	0\n"
 	"gpr	xh	.8	16	0\n"
 	"gpr	xl	.8	17	0\n"
 	"gpr	yh	.8	18	0\n"
@@ -95,7 +95,7 @@ const RArchPlugin r_arch_plugin_stm8 = {
 	.arch = "stm8",
 	.cpus = NULL,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_SYS_BITS_PACK (8, 16),
 	.info = archinfo,
 	.decode = &stm8_op,
 	.regs = &regs,

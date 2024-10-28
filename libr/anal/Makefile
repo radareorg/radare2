@@ -42,6 +42,7 @@ OBJS+=d/cc-arm-16.o
 OBJS+=d/cc-arm-32.o
 OBJS+=d/cc-arm-64.o
 OBJS+=d/cc-avr-8.o
+OBJS+=d/cc-stm8-16.o
 OBJS+=d/cc-hexagon-32.o
 OBJS+=d/cc-m68k-32.o
 OBJS+=d/cc-mips-32.o
