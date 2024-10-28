@@ -24,7 +24,7 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 		return 1;
 	}
 	if (enc == BECH32_ENCODING_BECH32M) {
-		return 0x2bc830a3;
+		return 1;
 	}
 }
 
