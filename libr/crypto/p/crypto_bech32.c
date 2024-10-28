@@ -1,36 +1,11 @@
-/* Copyright (c) 2017, 2021 Pieter Wuille
- *  Adapted by W0nda in 2024
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+/* radare - BSD-3-Clause - Copyright (c) 2017, 2021, 2024 - Pieter Wuille, W0nda */
 
-#include <cstdio>
 #include <r_lib.h>
-#include <r_crypto.h>
-#include <r_crypto/r_bech32.h>
-
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-static uint32_t bech32_polymod_step(uint32_t pre) {
+static uint32_t bech32_polymod_step(ut32 pre) {
 	uint8_t b = pre >> 25;
 	return ((pre & 0x1FFFFFF) << 5) ^
 		(-((b >> 0) & 1) & 0x3b6a57b2UL) ^
@@ -47,7 +22,6 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 	if (enc == BECH32_ENCODING_BECH32M) {
 		return 0x2bc830a3;
 	}
-	assert (0);
 }
 
 static const char charset[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -63,7 +37,7 @@ static const int8_t charset_rev[128] = {
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
 
-int hrplength (const char *bech32_checksum, const unsigned char size) {
+static int hrplength(const char *bech32_checksum, const unsigned char size) {
 	int i = size;
 	while (i > 0 && bech32_checksum[i] != '1') {
 		i--;
@@ -224,7 +198,7 @@ RCryptoPlugin r_crypto_plugin_bech32 = {
 	.meta = {
 		.name = "bech32",
 		.author = "W0nda",
-		.license = "BSD-3-Clause", // sure?
+		.license = "BSD-3-Clause",
 	},
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = bech32_set_key,
