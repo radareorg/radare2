@@ -3433,7 +3433,7 @@ static RCoreHelpMessage help_visual_anal_keys = {
 	NULL
 };
 
-R_TH_LOCAL static int coldelta = 0;
+static R_TH_LOCAL int coldelta = 0;
 static ut64 r_core_visual_anal_refresh(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
 	ut64 addr;

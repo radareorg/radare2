@@ -4,8 +4,6 @@
 #include "r_util/r_str_util.h"
 #include <r_cons.h>
 #include <r_core.h>
-#include <string.h>
-#include <stdlib.h>
 
 #if R2__WINDOWS__
 #include <windows.h>
@@ -747,7 +745,11 @@ R_API void r_line_hist_free(void) {
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
 R_API bool r_line_hist_load(const char *file) {
 	R_RETURN_VAL_IF_FAIL (file, false);
+	// R_LOG_DEBUG ("LOAD %s", file);
 	char *buf = calloc (1, R_LINE_BUFSIZE);
+	if (!buf) {
+		return false;
+	}
 	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
 		free (buf);
@@ -771,6 +773,7 @@ R_API bool r_line_hist_load(const char *file) {
 
 R_API bool r_line_hist_save(const char *file) {
 	R_RETURN_VAL_IF_FAIL (file && *file, false);
+	// R_LOG_DEBUG ("SAVE %s", file);
 	int i;
 	bool ret = false;
 	char *p = (char *) r_str_lastbut (file, R_SYS_DIR[0], NULL);
