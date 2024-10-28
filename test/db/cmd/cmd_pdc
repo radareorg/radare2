@@ -100,7 +100,8 @@ EXPECT=<<EOF
 |           0x0040206e      ff15b8304000   call dword [MessageBoxA]    ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
-int entry0 (int stack, int stack) {
+// callconv: eax cdecl (stack);
+int entry0 (int stack) {
     loc_0x0040200f:
         si = 3
         fcn.00402000 ()
@@ -150,7 +151,8 @@ af
 pdc
 EOF
 EXPECT=<<EOF
-int sym.func.100003a54 (int x0, int x1) {
+// callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
     loc_0x100003a54:
         x8 = [x0 + 0x60] // arg1
         x8 = [x8 + 0x60]
