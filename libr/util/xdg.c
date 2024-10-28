@@ -18,9 +18,12 @@ static char *xdg(const char *env, const char *a, const char *s) {
 		free (dir);
 		dir = r_file_home (a);
 	}
-	char *res = r_file_new (dir, "radare2", s, NULL);
-	free (dir);
-	return res;
+	if (s) {
+		char *res = r_file_new (dir, "radare2", s, NULL);
+		free (dir);
+		return res;
+	}
+	return dir;
 }
 
 // XDG_CONFIG_HOME	User-specific configuration files	~/.var/app/<app-id>/config

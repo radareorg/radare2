@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2024 - pancake */
 
-#include <r_util.h>
+#define R_LOG_ORIGIN "line"
+
 #include <r_cons.h>
 
 static R_TH_LOCAL RLine r_line_instance;
@@ -104,5 +105,6 @@ R_API void r_line_completion_clear(RLineCompletion *completion) {
 	completion->quit = false;
 	r_pvector_clear (&completion->args);
 }
+
 
 #include "dietline.c"
