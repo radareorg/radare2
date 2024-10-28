@@ -1111,7 +1111,7 @@ static RCoreHelpMessage help_msg_ax = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_axl= {
+static RCoreHelpMessage help_msg_axl = {
 	"Usage:", "axl[jcq]", "show global xrefs",
 	"axl", "", "list all xrefs",
 	"axlj", "", "list xrefs in json format",
@@ -1120,14 +1120,14 @@ static RCoreHelpMessage help_msg_axl= {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_axv= {
+static RCoreHelpMessage help_msg_axv = {
 	"Usage:", "axv[?j]", "show xrefs to local variables in current function",
 	"axv", " ([addr])", "optionally you can specify address instead of current seek",
 	"axvj", " ([addr])", "show in json",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_axt= {
+static RCoreHelpMessage help_msg_axt = {
 	"Usage:", "axt[?gq*]", "find data/code references to this address",
 	"axtj", " ([addr])", "find data/code references to this address and print in json format",
 	"axtg", " ([addr])", "display commands to generate graphs according to the xrefs",
@@ -1137,7 +1137,7 @@ static RCoreHelpMessage help_msg_axt= {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_axf= {
+static RCoreHelpMessage help_msg_axf = {
 	"Usage:", "axf[?gq*]", "find data/code references from this address",
 	"axfj", " [addr]", "find data/code references to this address and print in json format",
 	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
