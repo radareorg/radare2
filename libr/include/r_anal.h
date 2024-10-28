@@ -390,7 +390,8 @@ typedef struct r_anal_options_t {
 	bool slow;
 #if R2_USE_NEW_ABI
 	bool flagends;
-	bool zigndups; // R2_600 -  not used yet..
+	bool zigndups;
+	bool icods; // R2_600 -- add anal.icods or anal.xrefs.indirect references. needed for stm8 at least
 	// R2_600 - add zign_dups field for "zign.dups" config
 #endif
 } RAnalOptions;
