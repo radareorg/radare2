@@ -203,6 +203,7 @@ typedef struct r_disasm_state_t {
 	int show_cmt_right;
 	int pre;
 	char *ocomment;
+	bool cmt_wrap;
 	int linesopts;
 	int lastfail;
 	int ocols;
@@ -721,8 +722,9 @@ static RDisasmState *ds_init(RCore *core) {
 	core->parser->subreg = r_config_get_b (core->config, "asm.sub.reg");
 	core->parser->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
-	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
-	ds->show_vars = r_config_get_i (core->config, "asm.var");
+	ds->show_fcnsig = r_config_get_b (core->config, "asm.fcnsig");
+	ds->show_vars = r_config_get_b (core->config, "asm.var");
+	ds->cmt_wrap = r_config_get_b (core->config, "asm.cmt.wrap");
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
@@ -6506,7 +6508,6 @@ toro:
 				}
 			}
 		}
-		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->folded && r_anal_function_contains (f, ds->at)) {
 			int delta = (ds->at <= f->addr)? (ds->at - r_anal_function_max_addr (f)): 0;
@@ -6649,7 +6650,25 @@ toro:
 		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions (ds);
-
+		if (ds->cmt_wrap && ds->comment) {
+			const int maxcols = 70; // XXX maybe configurable?
+			size_t clen = strlen (ds->comment);
+			if (clen > maxcols) {
+				r_str_ansi_strip (ds->comment);
+				r_str_trim (ds->comment);
+				int off = 0;
+				while (ds->comment) {
+					char *c = r_str_ndup (ds->comment + off, maxcols);
+					r_cons_printf ("%s%s\n", off?"; ": "", c);
+					size_t clen = strlen (c);
+					if (clen <= maxcols) {
+						R_FREE (ds->comment);
+					}
+					off += clen;
+					free (c);
+				}
+			}
+		}
 		if (ds->show_comments && !ds->show_cmt_right) {
 			ds_show_refs (ds);
 			ds_build_op_str (ds, false);
