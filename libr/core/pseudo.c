@@ -386,7 +386,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		PRINTF ("\n");
 	}
 
-	PRINTF ("int %s (int %s, int %s) {", fcn->name, a0, a1);
+	char *fs = r_core_cmd_strf (core, "afs@0x%08"PFMT64x, fcn->addr);
+	if (R_STR_ISEMPTY (fs) || (r_str_startswith (fs, "void") && strstr (fs, "()"))) {
+		PRINTF ("int %s (int %s, int %s) {", fcn->name, a0, a1);
+	} else {
+		r_str_replace_char (fs, ';', '{');
+		PRINTF ("%s", fs);
+	}
+	free (fs);
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = fcn->addr;
