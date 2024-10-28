@@ -76,6 +76,7 @@ static const SdbGperf *gperfs_types[] = {
 };
 
 R_API SdbGperf *r_anal_get_gperf_cc(const char *k) {
+	R_RETURN_VAL_IF_FAIL (k, NULL);
 	SdbGperf **gp = (SdbGperf**)gperfs_cc;
 	char *kk = strdup (k);
 	r_str_replace_char (kk, '_', '-');
@@ -92,6 +93,7 @@ R_API SdbGperf *r_anal_get_gperf_cc(const char *k) {
 }
 
 R_API SdbGperf *r_anal_get_gperf_types(const char *k) {
+	R_RETURN_VAL_IF_FAIL (k, NULL);
 	SdbGperf **gp = (SdbGperf**)gperfs_types;
 	char *s = strdup (k);
 	r_str_replace_char (s, '-', '_');
@@ -107,11 +109,11 @@ R_API SdbGperf *r_anal_get_gperf_types(const char *k) {
 	return NULL;
 }
 #else
-R_API SdbGperf *r_anal_get_gperf_cc(const char *k) {
+R_API SdbGperf *r_anal_get_gperf_cc(R_NULLABLE const char *k) {
 	return NULL;
 }
 
-R_API SdbGperf *r_anal_get_gperf_types(const char *k) {
+R_API SdbGperf *r_anal_get_gperf_types(R_NULLABLE const char *k) {
 	return NULL;
 }
 #endif
