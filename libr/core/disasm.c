@@ -4814,7 +4814,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (canHaveChar && (char)v > 0 && v >= (int)'!' && v <= (int)'~') {
 				ds_begin_comment (ds);
 				aligned = true;
-				ds_comment (ds, true, "%s 1'%c'", ds->cmtoken, (char)v);
+				if (v != ds->analop.ptr) {
+					ds_comment (ds, true, "%s '%c'", ds->cmtoken, (char)v);
+				}
 			}
 		}
 	}
@@ -5019,7 +5021,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				int ch = refaddr;
 				if (ch != ds->chref && canHaveChar) {
 					ds_begin_comment (ds);
-					ds_comment (ds, true, "%s 2'%c'", ds->cmtoken, ch);
+					if (ch != ds->analop.ptr) {
+						ds_comment (ds, true, "%s '%c'", ds->cmtoken, (char)ch);
+					}
 				}
 			} else if (refaddr > 10) {
 				if ((st64)refaddr < 0) {
