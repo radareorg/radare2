@@ -3151,7 +3151,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 
 static char *filename(RCore *core, ut64 addr) {
 	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
-	// char *fn = r_core_cmd_strf (core, "CLf @@@b@0x%"PFMT64x, addr);
 	// ignore return code
 	r_core_return_code (core, 0);
 	if (fn) {
@@ -3163,6 +3162,20 @@ static char *filename(RCore *core, ut64 addr) {
 		free (fn);
 	}
 	return NULL;
+}
+
+static bool is_recursive(RCore *core, RAnalFunction *fcn) {
+	RVecAnalRef *refs = r_core_anal_fcn_get_calls (core, fcn);
+	if (refs && !RVecAnalRef_empty (refs)) {
+		RAnalRef *refi;
+		ut64 at = fcn->addr;
+		R_VEC_FOREACH (refs, refi) {
+			if (at == refi->addr) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
@@ -3180,6 +3193,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
+	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	if (fcn->cc) {
 		pj_ks (pj, "calltype", fcn->cc); // calling conventions
@@ -3598,6 +3612,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	double ratbins = b? ((double)a / b): 0;
 	r_cons_printf ("\nratbbins: %.02f", ratbins);
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
+	r_cons_printf ("\nrecursive: %s", r_str_bool (is_recursive (core, fcn)));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
 

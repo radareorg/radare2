@@ -51,6 +51,7 @@ maxbbins: 9
 midbbins: 3.80
 ratbbins: 2.37
 noreturn: false
+recursive: false
 in-degree: 0
 out-degree: 6
 locals: 0
