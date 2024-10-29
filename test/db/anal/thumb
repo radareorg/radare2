@@ -71,3 +71,45 @@ svc 0x42
 svc 0xb6
 EOF
 RUN
+
+NAME=arm/thumb imports
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+pd 10
+?en ahb32=
+ahb*~b 32?
+?en ahb16=
+ahb*~b 16?
+0x00005e34
+ahb.
+-b asm.lines=0
+pd 4
+EOF
+EXPECT=<<EOF
+        :   ;-- section..text:
+        :   ;-- entry0:
+        :   ;-- entry.fini0:
+        :   0x00005fa8      04009fe5       ldr r0, [0x00005fb4]        ; [0x5fb4:4]=0x1104c ; [09] -r-x section size 53128 named .text
+        :   0x00005fac      00008fe0       add r0, pc, r0
+        `=< 0x00005fb0      93ffffea       b sym.imp.__cxa_finalize
+            0x00005fb4      4c100100       andeq r1, r1, ip, asr 32
+            ;-- entry.init0:
+            0x00005fb8      10402de9       push {r4, lr}
+            0x00005fbc      40409fe5       ldr r4, [0x00006004]        ; [0x6004:4]=0x11064
+            0x00005fc0      40109fe5       ldr r1, [0x00006008]        ; [0x6008:4]=0x29e0 "xxabiv115__forced_unwindD2Ev"
+            0x00005fc4      04408fe0       add r4, pc, r4
+            0x00005fc8      0030a0e3       mov r3, 0
+            0x00005fcc      0400a0e1       mov r0, r4
+ahb32=323
+ahb16=65
+32
+            ;-- rsym.strdup:
+            ;-- strdup:
+            0x00005e34      00c68fe2       add ip, pc, 0, 12
+            0x00005e38      11ca8ce2       add ip, ip, 0x11000
+            0x00005e3c      48f1bce5       ldr pc, [ip, 0x148]!
+            ;-- rsym.strstr:
+            ;-- strstr:
+            0x00005e40      00c68fe2       add ip, pc, 0, 12
+EOF
+RUN
