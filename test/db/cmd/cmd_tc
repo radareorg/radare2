@@ -824,3 +824,14 @@ EXPECT=<<EOF
 typedef char * string;
 EOF
 RUN
+
+NAME=dwarf declaration dont overwrite type
+FILE=bins/elf/dwarf_typedecl
+CMDS=tsc
+EXPECT=<<EOF
+struct Foo {
+  int bar;
+  int baz;
+};
+EOF
+RUN
