@@ -385,7 +385,13 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 	}
 	// struct.name=param1,param2,paramN
 	char *key = r_str_newf ("%s.%s", kind, sname);
-	sdb_set_owned (anal->sdb_types, key, r_strbuf_drain (arglist), 0);
+	if (sdb_exists (anal->sdb_types, key)) {
+		R_LOG_WARN ("Ignoring overwrite of type '%s' in sdb_types", key);
+		r_strbuf_free (arglist);
+	} else {
+		sdb_set_owned (anal->sdb_types, key, r_strbuf_drain (arglist), 0);
+	}
+
 	free (key);
 	free (sname);
 }
