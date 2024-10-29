@@ -4852,7 +4852,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 }
 
 bool Elf_(load_symbols)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, false);
 	if (!eo->g_symbols_vec) {
 		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
@@ -4860,7 +4860,7 @@ bool Elf_(load_symbols)(ELFOBJ *eo) {
 }
 
 bool Elf_(load_imports)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	R_RETURN_VAL_IF_FAIL (eo, false);
 	if (!eo->g_imports_vec) {
 		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}

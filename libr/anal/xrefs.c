@@ -326,7 +326,7 @@ R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 }
 
 R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
 
 	AdjacencyList_CIter iter = AdjacencyList_cfind (&anal->rm->xrefs, &at);
 	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);

@@ -645,7 +645,7 @@ static bool validate_item(RSignItem *it) {
 }
 
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
-	R_RETURN_VAL_IF_FAIL (a && it, NULL);
+	R_RETURN_VAL_IF_FAIL (a && it, false);
 	r_name_filter (it->name, -1);
 	if (!validate_item (it)) {
 		return false;
