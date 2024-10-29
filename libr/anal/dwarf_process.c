@@ -516,6 +516,10 @@ cleanup:
 static void parse_structure_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
+	if (find_attr_idx (die, DW_AT_declaration) != -1) {
+		return;
+	}
+
 	RAnalBaseTypeKind kind;
 	if (die->tag == DW_TAG_union_type) {
 		kind = R_ANAL_BASE_TYPE_KIND_UNION;
