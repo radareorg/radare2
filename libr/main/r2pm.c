@@ -812,10 +812,10 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
 		int res = 0;
+#if R2__UNIX__ && !defined(__wasi__)
 		const char *const argv[5] = {
 			"radare2", "-j", "-e", qjs_script, NULL
 		};
-#if R2__UNIX__ && !defined(__wasi__)
 		int child = fork ();
 		if (child == -1) {
 			R_LOG_ERROR ("Cannot find radare2 in PATH");

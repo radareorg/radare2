@@ -206,6 +206,7 @@ static int main_help(int line) {
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -=           perform !=! command to run all commands remotely\n"
 		" -0           print \\x00 after init and every command\n"
+		" -1           redirect stderr to stdout\n"
 		" -2           close stderr file descriptor (silent warning messages)\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aaa' command to analyze all referenced code\n"
@@ -636,6 +637,7 @@ typedef struct {
 	char *project_name;
 	char *qjs_script;
 	bool noStderr;
+	bool stderrToStdout;
 } RMainRadare2;
 
 static void mainr2_init(RMainRadare2 *mr) {
@@ -752,7 +754,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	set_color_default (r);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=02AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
+	r_getopt_init (&opt, argc, argv, "=012AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
@@ -761,6 +763,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case '=':
 			R_FREE (r->cmdremote);
 			r->cmdremote = strdup ("");
+			break;
+		case '1':
+			mr.stderrToStdout = true;
 			break;
 		case '2':
 			mr.noStderr = true;
@@ -1026,6 +1031,17 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return res;
 		}
 		return 0;
+	}
+	if (mr.stderrToStdout) {
+#if __wasi__
+		R_LOG_ERROR ("Redirect stderr to stdout is not supported for this platform");
+#else
+		if (dup2 (1, 2) == -1) {
+			R_LOG_ERROR ("Cannot redirect stderr to stdout");
+			mainr2_fini (&mr);
+			return 1;
+		}
+#endif
 	}
 	if (mr.noStderr) {
 		if (close (2) == -1) {
