@@ -1033,11 +1033,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return 0;
 	}
 	if (mr.stderrToStdout) {
+#if __wasi__
+		R_LOG_ERROR ("Redirect stderr to stdout is not supported for this platform");
+#else
 		if (dup2 (1, 2) == -1) {
 			R_LOG_ERROR ("Cannot redirect stderr to stdout");
 			mainr2_fini (&mr);
 			return 1;
 		}
+#endif
 	}
 	if (mr.noStderr) {
 		if (close (2) == -1) {
