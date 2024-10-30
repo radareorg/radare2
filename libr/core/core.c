@@ -513,6 +513,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 }
 
 static ut64 numvar_instruction(RCore *core, const char *input) {
+	RAnalOp op;
 	ut64 addr = core->offset;
 	// N forward instructions
 	ut8 data[32];
@@ -528,7 +529,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	}
 	for (i = 0; i < n; i++) {
 		r_io_read_at (core->io, val, data, sizeof (data));
-		RAnalOp op = {0};
+		r_anal_op_init (&op);
 		int ret = r_anal_op (core->anal, &op, val, data,
 			sizeof (data), R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
@@ -541,14 +542,23 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 
 }
 
+static ut64 invalid_numvar(RCore *core, const char *str) {
+	R_LOG_ERROR ("Invalid variable '%s'", str);
+	core->num->nc.errors ++;
+	core->num->nc.calc_err = NULL;
+	// core->num->nc.calc_err = "Invalid $numvar";
+	return 0;
+}
+
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	RBinSection *s;
-	RAnalOp op;
 	ut64 ret = 0;
+
+	RAnalOp op;
 	r_anal_op_init (&op);
 
 	if (ok) {
@@ -740,12 +750,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				free (bptr);
 				return 0; // UT64_MAX;
-			} else {
-				int rows;
-				(void)r_cons_get_size (&rows);
-				return rows;
 			}
-			break;
+			int rows;
+			(void)r_cons_get_size (&rows);
+			return rows;
 		case 'e': // $e
 			if (str[2] == '{') { // $e{flag} flag off + size
 				char *flagName = strdup (str + 3);
@@ -804,7 +812,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return op.val;
 		case 'l': // $l opcode length
 			return op.size;
-		case 'b': // $b
+		case 'b': // "$b" block size
 			return core->blocksize;
 		case 's': // $s file size
 			if (str[2] == '{') { // $s{flag} flag size
@@ -853,16 +861,27 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': // $?
 			return core->num->value; // rc;
 		case '$': // $$ offset
-			return str[2] == '$' ? core->prompt_offset : core->offset;
-		case 'o': { // $o
-			RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
-			return s ? core->offset - s->vaddr + s->paddr : core->offset;
-		}
-		case 'O': // $O
-			if (core->print->cur_enabled) {
-				return core->offset + core->print->cur;
+			if (!strcmp (str, "$$")) {
+				return core->offset;
+			} else if (!strcmp (str, "$$c")) {
+				if (core->print->cur_enabled) {
+					return core->offset + core->print->cur;
+				}
+				return core->offset;
+			} else if (!strcmp (str, "$$$")) {
+				return core->prompt_offset;
+			} else if (!strcmp (str, "$$$c")) {
+				if (core->print->cur_enabled) {
+					return core->prompt_offset + core->print->cur;
+				}
+				return core->prompt_offset;
 			}
-			return core->offset;
+			return invalid_numvar (core, str);
+		case 'o': // $o
+			{
+				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
+				return s ? core->offset - s->vaddr + s->paddr : core->offset;
+			}
 		case 'C': // $C nth call
 			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': // $J nth jump
@@ -890,8 +909,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		default:
-			R_LOG_ERROR ("Invalid variable '%s'", str);
-			return 0;
+			return invalid_numvar (core, str);
 		}
 		break;
 	default:

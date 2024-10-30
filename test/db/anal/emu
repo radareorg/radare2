@@ -19,9 +19,9 @@ RUN
 
 NAME=emu ret0
 FILE=bins/mach0/ret0ret1restr
-ARGS=-2
+ARGS=-1
 CMDS=<<EOF
-aaa
+aaa 2> /dev/null
 aeim
 ?e ret0
 s sym._ret0
@@ -39,6 +39,7 @@ aeb
 psz@R0
 EOF
 EXPECT=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret0
 0x00000000
 ---
@@ -52,7 +53,7 @@ RUN
 
 NAME=emu paths
 FILE=bins/mach0/ret0ret1restr
-ARGS=-2
+ARGS=-1
 CMDS=<<EOF
 e asm.var.summary=0
 aeim
@@ -61,7 +62,7 @@ s sym._retbool
 af
 agf
 ?e path
-abp $$ 0x100007f1c
+abp 0x100007f1c
 ?e fromblocks
 f final.block=0x100007f1c
 abf final.block
@@ -74,6 +75,7 @@ afbe $$ 0x100007f10;aeb 0x100007f10;aeb final.block
 dr?R0
 EOF
 EXPECT=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret paths
          .-------------------------------------.
          |  0x100007ed8                        |
@@ -121,6 +123,8 @@ ret paths
    `------------------------------------------------'
 path
 0x100007ed8
+0x100007f10
+0x100007f1c
 fromblocks
 0x100007f00
 0x100007f10
@@ -133,14 +137,14 @@ RUN
 
 NAME=emu paths with a macro
 FILE=bins/mach0/ret0ret1restr
-ARGS=-2
+ARGS=-1
 CMDS=<<EOF
 aeim
 ?e ret paths
 s sym._retbool
 af
 ?e path
-abp $$ 0x100007f1c
+abp 0x100007f1c
 ?e fromblocks
 f final.block=0x100007f1c
 abf final.block
@@ -153,9 +157,12 @@ dr?R0
 dr?R0
 EOF
 EXPECT=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ret paths
 path
 0x100007ed8
+0x100007f10
+0x100007f1c
 fromblocks
 0x100007f10
 0x100007f00

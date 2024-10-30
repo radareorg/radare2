@@ -1,0 +1,49 @@
+NAME=num vars blocksize
+FILE=malloc://0x4000
+CMDS=<<EOF
+b
+?vi $b
+b 32
+?vi $b
+?e must be zero
+?vi $b-`b`
+EOF
+EXPECT=<<EOF
+0x100
+256
+32
+must be zero
+0
+EOF
+RUN
+
+NAME=num vars here
+FILE=malloc://0x4000
+CMDS=<<EOF
+?vi $$
+s 32
+?vi $$
+?vi $$ @ 64
+?vi $$$ @ 64
+EOF
+EXPECT=<<EOF
+0
+32
+64
+32
+EOF
+RUN
+
+NAME=num vars invalid
+FILE=malloc://0x4000
+ARGS=-1
+CMDS=<<EOF
+?vi $$rrr
+EOF
+EXPECT=<<EOF
+ERROR: Invalid variable '$$rrr'
+ERROR: RNum.error
+0
+EOF
+RUN
+

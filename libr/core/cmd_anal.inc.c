@@ -262,7 +262,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
-	"abp", "[?] [addr] [num]", "follow basic blocks paths from current offset to addr",
+	"abp", "[?] [addr]", "follow basic blocks paths from $$ to `addr`",
 	"abt", "[tag] ([color])", "no args = show current trace tag, otherwise set the color",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	NULL
@@ -13125,6 +13125,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_abp);
 			return;
 		}
+		*p = 0;
 		ut64 addr = r_num_math (core->num, p + 1);
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
