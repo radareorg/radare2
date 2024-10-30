@@ -422,10 +422,13 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 				RFlagItem *item = get_flag_for_import (core, value);
 				if (item) {
 					RList *refs = uniqrefs_for (core, item->offset);
-					if (!rrrr) {
+					if (refs && rrrr) {
+						r_list_join (rrrr, refs);
+					} else if (refs && !rrrr) {
+						rrrr = refs;
+					} else if (!rrrr) {
 						rrrr = r_list_newf (free);
 					}
-					r_list_join (rrrr, refs);
 				} else {
 					R_LOG_WARN ("Cannot resolve %s", value);
 				}
