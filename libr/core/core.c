@@ -109,15 +109,16 @@ static int getreloc_tree(void *incoming, void *in, void *user) {
 }
 
 R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
 	RRBTree *relocs = r_bin_get_relocs (core->bin);
-	if (!relocs) {
-		return NULL;
+	if (R_LIKELY (relocs)) {
+		struct getreloc_t gr = { .vaddr = addr, .size = size };
+		return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
 	}
-	struct getreloc_t gr = { .vaddr = addr, .size = size };
-	return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
+	return NULL;
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
@@ -126,6 +127,7 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
  * lowercase one. If is_asmqjmps_letter is false, the string should be a number
  * between 1 and 9 included. */
 R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
+	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
 	if (!core->asmqjmps) {
 		return UT64_MAX;
 	}
@@ -161,6 +163,7 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
  * The returned buffer needs to be freed
  */
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	bool found = false;
 	if (!core->asmqjmps) {
 		return NULL;
@@ -280,10 +283,8 @@ static ut64 numget(RCore *core, const char *k) {
 
 static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		// RList *maps = core->dbg->maps;
-		RDebugMap *map = NULL;
-		RListIter *iter = NULL;
-
+		RDebugMap *map;
+		RListIter *iter;
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				if (perm > 0) {
@@ -297,7 +298,6 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 		}
 		return false;
 	}
-
 	return r_io_map_is_mapped (core->io, addr);
 }
 
@@ -333,7 +333,9 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	return retstr;
 }
 
+// R2_600 - return void
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
+	R_RETURN_VAL_IF_FAIL (core && bnd, false);
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
@@ -543,11 +545,44 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 }
 
 static ut64 invalid_numvar(RCore *core, const char *str) {
-	R_LOG_ERROR ("Invalid variable '%s'", str);
 	core->num->nc.errors ++;
-	core->num->nc.calc_err = NULL;
-	// core->num->nc.calc_err = "Invalid $numvar";
+	core->num->nc.calc_err = str;
 	return 0;
+}
+
+static ut64 numvar_k(RCore *core, const char *str, int *ok) {
+	if (!str[2]) {
+		return invalid_numvar (core, "Usage: $k:key or $k{key}");
+	}
+	char *bptr = strdup (str + 3);
+	if (str[2] == ':') {
+		// do nothing
+	} else if (str[2] == '{') {
+		char *ptr = strchr (bptr, '}');
+		if (!ptr) {
+			free (bptr);
+			return invalid_numvar (core, "missing closing brace");
+		}
+		*ptr = '\0';
+	} else {
+		free (bptr);
+		return invalid_numvar (core, "Expected '{' or ':' after 'k'");
+	}
+	char *out = sdb_querys (core->sdb, NULL, 0, bptr);
+	if (R_STR_ISNOTEMPTY (out)) {
+		if (strstr (out, "$k{")) {
+			free (bptr);
+			free (out);
+			return invalid_numvar (core, "Recursivity is not permitted here");
+		}
+		if (ok) {
+			*ok = true;
+		}
+		return r_num_math (core->num, out);
+	}
+	free (bptr);
+	free (out);
+	return invalid_numvar (core, "unknown $k{key}");
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
@@ -678,31 +713,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return numvar_instruction_backward (core, str + 2);
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
-		case 'k': // $k{kv}
-			if (str[2] != '{') {
-				R_LOG_ERROR ("Expected '{' after 'k'");
-				break;
-			}
-			bptr = strdup (str + 3);
-			ptr = strchr (bptr, '}');
-			if (!ptr) {
-				// invalid json
-				free (bptr);
-				break;
-			}
-			*ptr = '\0';
-			ret = 0LL;
-			out = sdb_querys (core->sdb, NULL, 0, bptr);
-			if (out && *out) {
-				if (strstr (out, "$k{")) {
-					R_LOG_ERROR ("Recursivity is not permitted here");
-				} else {
-					ret = r_num_math (core->num, out);
-				}
-			}
-			free (bptr);
-			free (out);
-			return ret;
+		case 'k': // "$k{ey}" "$k:ey"
+			return numvar_k (core, str, ok);
 		case '{': // ${ev} eval var
 			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');

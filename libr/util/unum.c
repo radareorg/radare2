@@ -236,7 +236,7 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 /* old get_offset */
 R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 	int i, j, ok;
-	char lch, len;
+	char lch;
 	ut64 ret = 0LL;
 	ut32 s, a;
 
@@ -247,7 +247,7 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 	if (R_STR_ISEMPTY (str)) {
 		return 0;
 	}
-	if (!strncmp (str, "1u", 2)) { // '1' is captured by op :(
+	if (r_str_startswith (str, "1u")) { // '1' is captured by op :(
 		if (num && num->value == UT64_MAX) {
 			num->value = 0;
 		}
@@ -273,7 +273,7 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 		}
 	}
 
-	len = strlen (str);
+	size_t len = strlen (str);
 	if (len > 3 && str[4] == ':') {
 		if (sscanf (str, "%04x", &s) == 1) {
 			if (sscanf (str + 5, "%04x", &a) == 1) {
