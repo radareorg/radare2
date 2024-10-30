@@ -163,7 +163,7 @@ CMDS=<<EOF
 wx e9010f
 e asm.arch=x86
 e asm.bits=16
-?vi $l
+?vi $is
 pi 1
 ao 1~size[1]
 EOF

@@ -338,6 +338,16 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$?", "", "last comparison value",
 	"$alias", "=value", "alias commands (simple macros)",
 	"$b", "", "block size (see b command and the @! operator)",
+	"$k", "{kv}", "get value of an sdb query value",
+
+	"$in", ":{n}", "address of nth instruction forward",
+	"$ip", ":{n}", "address of nth instruction backward (s $I1@$Fe) #last instr in bb",
+	"$is", "[:{n}]", "N instruction size",
+	"$ij", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
+	"$if", "", "jump fail address (e.g. jz 0x10 => next instruction)",
+	"$ir", "", "instruction reference pointer value (e.g. lea rax, 0x8010 => 0x8010)",
+	"$iv", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
+
 	"$B", "", "base address (aligned lowest map address)",
 	"$c", "", "get terminal width in character columns",
 	"$Cn", "", "get nth call of function",
@@ -347,7 +357,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$Dn", "", "get nth data reference in function",
 	"$e", "", "1 if end of block, else 0",
 	"$e", "{flag}", "end of flag (flag->offset + flag->size)",
-	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
 	"$F", "", "same as $FB",
 	"$Fb", "", "begin of basic block",
 	"$FB", "", "begin of function",
@@ -357,18 +366,13 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$Fi", "", "basic block instructions",
 	"$FI", "", "function instructions",
 	"$Fj", "", "function jump destination",
-	"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)",
+	"$fl", "", "flag length (size) at current address (fla; pD $is @ entry0)",
 	"$FS", "", "function size (linear length)",
 	"$Fs", "", "size of the current basic block",
 	"$FSS", "", "function size (sum bb sizes)",
-	"$i", "{n}", "address of nth instruction forward",
-	"$I", "{n}", "address of nth instruction backward (s $I1@$Fe) #last instr in bb",
-	"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
+
 	"$Ja", "", "get nth jump of function",
-	"$k", "{kv}", "get value of an sdb query value",
-	"$l", "", "opcode length",
 	"$M", "", "map address (lowest map address)",
-	"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
 	"$MM", "", "map size (lowest map address)",
 	"$o", "", "here (current disk io offset)",
 	"$p", "", "getpid()",
@@ -379,7 +383,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$S", "", "section offset",
 	"$SS", "", "section size",
 	"$s", "{flag}", "get size of flag",
-	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"$Xn", "", "get nth xref of function",
 	"RNum", "", "$variables usable in math expressions",
@@ -1160,9 +1163,10 @@ static int cmd_help(void *data, const char *input) {
 			int i = 0;
 			const char *vars[] = {
 				"$$", "$$c", "$$$", "$$$c", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
+				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
 				"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-				"$fl", "$FS", "$Fs", "$FSS", "$i", "$j", "$Ja", "$l", "$M", "$m", "$MM",
-				"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
+				"$fl", "$FS", "$Fs", "$FSS", "$Ja", "$M", "$MM",
+				"$o", "$p", "$P", "$s", "$S", "$SS", "$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
