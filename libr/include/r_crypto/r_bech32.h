@@ -1,4 +1,4 @@
-#ifndef R_BECH32_H
+#ifndef R_BECH32_H // is this file still useful ?
 #define R_BECH32_H
 
 #include <r_util.h>
@@ -8,12 +8,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum {
-	BECH32_ENCODING_NONE,
-	BECH32_ENCODING_BECH32,
-	BECH32_ENCODING_BECH32M
-} bech32_encoding;
 
 // int bech32_encode (char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc);
 // bech32_encoding bech32_decode (char *hrp, uint8_t *data, size_t *data_len, const char *input);
