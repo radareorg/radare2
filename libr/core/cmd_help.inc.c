@@ -330,12 +330,15 @@ static RCoreHelpMessage help_msg_question_v = {
 	"Usage: ?v [$.]", "", "",
 	"flag", "", "offset of flag",
 	"$", "{ev}", "get value of eval config variable",
+	"$", "[addr:size]", "get value of eval config variable",
 	"$$", "", "here (current virtual seek)",
+	"$$c", "", "cursor position relative to current offset (previously $O)",
 	"$$$", "", "current non-temporary virtual seek",
+	"$$$c", "", "cursor + current non-temporary virtual seek",
 	"$?", "", "last comparison value",
 	"$alias", "=value", "alias commands (simple macros)",
+	"$b", "", "block size (see b command and the @! operator)",
 	"$B", "", "base address (aligned lowest map address)",
-	"$b", "", "block size",
 	"$c", "", "get terminal width in character columns",
 	"$Cn", "", "get nth call of function",
 	"$D", "", "current debug map base address ?v $D @ rsp",
@@ -367,7 +370,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$M", "", "map address (lowest map address)",
 	"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
 	"$MM", "", "map size (lowest map address)",
-	"$O", "", "cursor here (current offset pointed by the cursor)",
 	"$o", "", "here (current disk io offset)",
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
@@ -1153,9 +1155,9 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			int i = 0;
 			const char *vars[] = {
-				"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
+				"$$", "$$c", "$$$", "$$$c", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 				"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-				"$fl", "$FS", "$Fs", "$FSS", "$i", "$j", "$Ja", "$l", "$M", "$m", "$MM", "$O",
+				"$fl", "$FS", "$Fs", "$FSS", "$i", "$j", "$Ja", "$l", "$M", "$m", "$MM",
 				"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
