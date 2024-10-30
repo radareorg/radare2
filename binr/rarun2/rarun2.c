@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2023 - pancake */
+/* radare2 - Copyleft 2011-2024 - pancake */
 
 #include <r_main.h>
 

@@ -258,6 +258,9 @@ typedef struct r_run_profile_t {
 	int _timeout;
 	int _timeout_sig;
 	int _nice;
+#if R2_USE_NEW_ABI
+	bool _stderrout;
+#endif
 } RRunProfile;
 
 R_API RRunProfile *r_run_new(R_NULLABLE const char *str);
