@@ -147,3 +147,20 @@ mov33
 EOF
 RUN
 
+NAME=num vars flags
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+s main
+?vi $f:main
+?vi $fs:main
+s+1
+?vi $fd:main
+?vi $fe{main}
+EOF
+EXPECT=<<EOF
+73360
+256
+1
+73616
+EOF
+RUN
