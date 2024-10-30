@@ -764,7 +764,7 @@ static RCoreHelpMessage help_msg_afv = {
 	"afvr", "[?]", "manipulate register based arguments",
 	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
 	"afvs", "[?]", "manipulate sp based arguments/locals",
-	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvt", " [name] ([type])", "display or change type for given local variable/argument",
 	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
 	NULL
@@ -1973,18 +1973,20 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 
 			char *type = strchr (p, ' ');
-			if (!type) {
-				free (ostr);
-				return false;
+			if (type) {
+				*type++ = 0;
 			}
-			*type++ = 0;
 			v1 = r_anal_function_get_var_byname (fcn, p);
 			if (!v1) {
-				R_LOG_ERROR ("Cant find get by name %s", p);
+				R_LOG_ERROR ("Cant find variable named %s", p);
 				free (ostr);
 				return false;
 			}
-			r_anal_var_set_type (v1, type);
+			if (type) {
+				r_anal_var_set_type (v1, type);
+			} else {
+				r_cons_printf ("%s\n", v1->type);
+			}
 			free (ostr);
 			return true;
 		} else {

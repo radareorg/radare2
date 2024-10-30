@@ -1,3 +1,20 @@
+NAME=afvt args
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afvt argc
+afvt argv
+afvt argc int64_t
+afvt argc
+EOF
+EXPECT=<<EOF
+int
+char **
+int64_t
+EOF
+RUN
+
 NAME=pdf
 FILE=bins/elf/ls
 CMDS=<<EOF
