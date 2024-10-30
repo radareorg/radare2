@@ -1026,7 +1026,11 @@ static int cmd_help(void *data, const char *input) {
 				n = r_num_math (core->num, "$?");
 			}
 			if (core->num->nc.errors > 0) {
-				R_LOG_ERROR (core->num->nc.calc_err);
+				if (core->num->nc.calc_err) {
+					R_LOG_ERROR ("%s", core->num->nc.calc_err);
+				} else {
+					R_LOG_ERROR ("RNum.error");
+				}
 			}
 			if (core->num->dbz) {
 				R_LOG_ERROR ("Division by Zero");

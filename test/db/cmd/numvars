@@ -34,3 +34,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=num vars invalid
+FILE=malloc://0x4000
+ARGS=-1
+CMDS=<<EOF
+?vi $$rrr
+EOF
+EXPECT=<<EOF
+ERROR: Invalid variable '$$rrr'
+ERROR: RNum.error
+0
+EOF
+RUN
+

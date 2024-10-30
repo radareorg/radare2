@@ -513,6 +513,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 }
 
 static ut64 numvar_instruction(RCore *core, const char *input) {
+	RAnalOp op;
 	ut64 addr = core->offset;
 	// N forward instructions
 	ut8 data[32];
@@ -528,7 +529,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	}
 	for (i = 0; i < n; i++) {
 		r_io_read_at (core->io, val, data, sizeof (data));
-		RAnalOp op = {0};
+		r_anal_op_init (&op);
 		int ret = r_anal_op (core->anal, &op, val, data,
 			sizeof (data), R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
@@ -539,6 +540,14 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	}
 	return val;
 
+}
+
+static ut64 invalid_numvar(RCore *core, const char *str) {
+	R_LOG_ERROR ("Invalid variable '%s'", str);
+	core->num->nc.errors ++;
+	core->num->nc.calc_err = NULL;
+	// core->num->nc.calc_err = "Invalid $numvar";
+	return 0;
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
@@ -852,22 +861,22 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': // $?
 			return core->num->value; // rc;
 		case '$': // $$ offset
-			if (str[2] == '$') { // "$$$"
-				if (str[3] == 'c') { // "$$$c"
-					if (core->print->cur_enabled) {
-						return core->prompt_offset + core->print->cur;
-					}
-				}
-				return core->prompt_offset;
-			} else if (str[2] == 'c') { // "$$c"
+			if (!strcmp (str, "$$")) {
+				return core->offset;
+			} else if (!strcmp (str, "$$c")) {
 				if (core->print->cur_enabled) {
 					return core->offset + core->print->cur;
 				}
 				return core->offset;
+			} else if (!strcmp (str, "$$$")) {
+				return core->prompt_offset;
+			} else if (!strcmp (str, "$$$c")) {
+				if (core->print->cur_enabled) {
+					return core->prompt_offset + core->print->cur;
+				}
+				return core->prompt_offset;
 			}
-			// TODO: handle error here
-			// temporal offset
-			return core->offset;
+			return invalid_numvar (core, str);
 		case 'o': // $o
 			{
 				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
@@ -900,9 +909,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		default:
-			R_LOG_ERROR ("Invalid variable '%s'", str);
-			core->num->nc.errors ++;
-			return 0;
+			return invalid_numvar (core, str);
 		}
 		break;
 	default:
