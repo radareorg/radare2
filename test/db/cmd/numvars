@@ -101,3 +101,49 @@ plus one
 EOF
 RUN
 
+NAME=num instruction vars
+FILE=malloc://0x4000
+ARGS=-1 -a x86 -b32
+CMDS=<<EOF
+'wa call 32;nop;mov eax,33;int 0x33;ret
+?e jump call 32
+?vi $ij
+?e fail call 32
+?vi $if
+?e instr pos 1 2 3
+?vi $in
+?vi $in:1
+?vi $in:2
+?vi $in:3
+?e instr size 1 2 3
+?vi $is
+?vi $is{-1}
+?vi $is:1
+?vi $is:2
+?vi $is:3
+2so
+?e mov33
+?vi $iv
+EOF
+EXPECT=<<EOF
+INFO: Written 14 byte(s) (call 32;nop;mov eax,33;int 0x33;ret) = wx e81b00000090b821000000cd33c3 @ 0x00000000
+jump call 32
+32
+fail call 32
+5
+instr pos 1 2 3
+5
+5
+6
+11
+instr size 1 2 3
+5
+-1
+5
+6
+11
+mov33
+33
+EOF
+RUN
+
