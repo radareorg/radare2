@@ -41,9 +41,64 @@ CMDS=<<EOF
 ?vi $$rrr
 EOF
 EXPECT=<<EOF
-ERROR: Invalid variable '$$rrr'
-ERROR: RNum.error
+ERROR: $$rrr
 0
+EOF
+RUN
+
+NAME=num vars keys
+FILE=malloc://0x4000
+ARGS=-1
+CMDS=<<EOF
+?e unknown foo key
+?vi $k{foo}
+?vi $k:foo
+?e foo five
+k foo=5
+?vi $k{foo}
+?vi $k:foo
+?e plus one
+?vi 1+$k{foo}
+?vi 1+$k:foo
+?e invalid $k
+?vi $kaka
+EOF
+EXPECT=<<EOF
+unknown foo key
+ERROR: unknown $k{key}
+0
+ERROR: unknown $k{key}
+0
+foo five
+5
+5
+plus one
+6
+6
+invalid 0x0
+ERROR: Expected '{' or ':' after 'k'
+0
+EOF
+RUN
+
+NAME=num vars keys error
+FILE=malloc://0x4000
+BROKEN=1
+ARGS=-1
+CMDS=<<EOF
+k foo=5
+?vi $k{foo}
+?vi $k:foo
+?e plus one
+?vi $k{foo}+1
+?vi $k:foo+1
+EOF
+EXPECT=<<EOF
+5
+5
+plus one
+6
+6
 EOF
 RUN
 
