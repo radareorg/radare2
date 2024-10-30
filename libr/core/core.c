@@ -556,7 +556,7 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 	}
 	char *bptr = strdup (str + 3);
 	if (str[2] == ':') {
-		// 
+		// do nothing
 	} else if (str[2] == '{') {
 		char *ptr = strchr (bptr, '}');
 		if (!ptr) {
