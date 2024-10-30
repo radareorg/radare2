@@ -2009,7 +2009,7 @@ static int cmd_open(void *data, const char *input) {
 						} else if (r_file_exists ("/usr/bin/open")) {
 							r_sys_cmdf ("open %s", sp + 1);
 						} else {
-							eprintf ("Unknown open tool. Cannot find xdg-open\n");
+							R_LOG_ERROR ("Unknown open tool. Cannot find xdg-open");
 						}
 #endif
 					} else {

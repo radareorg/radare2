@@ -2886,9 +2886,13 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	// if there is some part of the section that needs to be zeroed by the loader
 	// we add a null map that takes care of it
 	if (sec->vsize > psize) {
+		int oldfd = r_io_fd_get_current (core->io);
 		size = psize;
 		if (!io_create_mem_map (core->io, sec, addr + psize, sec->vsize - psize) || !size) {
 			return;
+		}
+		if (oldfd != r_io_fd_get_current (core->io)) {
+			r_io_use_fd (core->io, oldfd);
 		}
 	}
 	// then we map the part of the section that comes from the physical file
