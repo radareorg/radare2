@@ -17,7 +17,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
 wx 9a34002001
-?v $j
+?v $ij
 EOF
 EXPECT=<<EOF
 0x1234
@@ -30,7 +30,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
 wx ea34002001
-?v $j
+?v $ij
 EOF
 EXPECT=<<EOF
 0x1234

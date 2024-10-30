@@ -25,7 +25,7 @@ NAME=ljmp follow
 FILE=bins/firmware/bios_64k.bin
 CMDS=<<EOF
 e asm.bits
-s $j
+s $ij
 ? $$
 e anal.cs=0xfff0
 ? $$~segm
