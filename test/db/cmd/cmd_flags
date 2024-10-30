@@ -23,7 +23,9 @@ ERROR: Invalid flag name '$foo'
 0x7b
 0x141
 0x7b
+ERROR: cant find flag
 0x0
+ERROR: cant find flag
 0x0
 EOF
 EXPECT_ERR=

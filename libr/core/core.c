@@ -644,6 +644,82 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $k{key}");
 }
 
+static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
+#if 0
+* `$f` -> address of closest flag
+  * `$fs` -> flag size
+  * `$fd` -> distance to closest flag (delta offset)
+  * `$fe` -> end of flag
+* `$f{sym.main}` -> address of sym.main flag. same as `sym.main`
+  * `$fs{sym.main}` -> size of sym.main
+  * `$fd{sym.puts}` -> sym.puts-$$
+  * `$fe{sym.main}` -> address where sym.main flag ends
+#endif
+	char ch0 = *str;
+	char *name = NULL;
+	if (ch0) {
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $f");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $f");
+			}
+			// invalid
+		}
+	}
+	RFlagItem *fi = NULL;
+	ut64 addr = core->offset;
+	if (name) {
+		fi = r_flag_get (core->flags, name);
+		if (!fi) {
+			// XXX RNum.math is not reentrant, so we hack this to fix breaking expression
+			RNum nn = {0};
+			memcpy (&nn, core->num, sizeof (RNum));
+			addr = r_num_math (&nn, name);
+		}
+		free (name);
+	}
+	if (!fi) {
+		fi = r_flag_get_i (core->flags, addr);
+		if (!fi) {
+			fi = r_flag_get_at (core->flags, core->offset, true);
+		}
+	}
+	if (!fi) {
+		return invalid_numvar (core, "cant find flag");
+	}
+	switch (ch0) {
+	case 0: // "$f"
+		return core->offset;
+	case 's': // "$fs"
+		return fi->size;
+	case 'd': // "$fd"
+		return core->offset - fi->offset;
+	case 'e': // "$fe"
+		return fi->offset + fi->size;
+	}
+	return invalid_numvar (core, "unknown $f subvar");
+}
+
 static ut64 numvar_dollar(RCore *core, const char *str, int *ok) {
 	if (!strcmp (str, "$$")) {
 		return core->offset;
@@ -862,13 +938,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'P': // $P
 			return core->dbg->pid > 0 ? core->dbg->pid : 0;
 		case 'f': // $f jump fail address
-			{
-				RFlagItem *fi = r_flag_get_i (core->flags, core->offset);
-				if (fi) {
-					return fi->size;
-				}
-				return 0;
-			}
+			return numvar_flag (core, str + 2, ok);
 		case 'B': // $B base address
 		case 'M': { // $M map address
 				ut64 lower = UT64_MAX;

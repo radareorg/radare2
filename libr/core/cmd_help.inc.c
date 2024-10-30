@@ -348,6 +348,11 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$ir", "", "instruction reference pointer value (e.g. lea rax, 0x8010 => 0x8010)",
 	"$iv", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 
+	"$f", "[:{name}]", "flag address for current address or given name",
+	"$fs", "[:{name}]", "flag size",
+	"$fe", "[:{name}]", "flag end (addr + size)",
+	"$fd", "[:{name}]", "flag delta (addr - current_address)",
+
 	"$B", "", "base address (aligned lowest map address)",
 	"$c", "", "get terminal width in character columns",
 	"$Cn", "", "get nth call of function",
@@ -366,7 +371,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$Fi", "", "basic block instructions",
 	"$FI", "", "function instructions",
 	"$Fj", "", "function jump destination",
-	"$fl", "", "flag length (size) at current address (fla; pD $is @ entry0)",
 	"$FS", "", "function size (linear length)",
 	"$Fs", "", "size of the current basic block",
 	"$FSS", "", "function size (sum bb sizes)",
