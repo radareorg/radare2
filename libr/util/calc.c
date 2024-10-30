@@ -151,8 +151,11 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		}
 #endif
 		get_token (num, nc);
-		if (nc->curr_tok  == RNCASSIGN) {
+		if (nc->curr_tok == RNCASSIGN) {
 			v = expr (num, nc, 1);
+		}
+		if (nc->curr_tok == RNCPLUS) {
+			Naddi (v, 1);
 		}
 		if (nc->curr_tok == RNCINC) {
 			Naddi (v, 1);
@@ -291,21 +294,19 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case ';':
 	case '\n':
 		return nc->curr_tok = RNCEND;
-	case '+':    // added for ++name and name++
+	case '+': // added for ++name and name++
 		if (cin_get (num, nc, &c) && c == '+') {
 			return nc->curr_tok = RNCINC;
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
-	// negate hack
-	case '~':
+	case '~': // negate hack
 		if (cin_get (num, nc, &c) && c == '-') {
 			return nc->curr_tok = RNCNEG;
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
-	// negative number
-	case '-':
+	case '-': // negative number
 		if (cin_get (num, nc, &c) && c == '-') {
 			return nc->curr_tok = RNCDEC;
 		}

@@ -83,7 +83,6 @@ RUN
 
 NAME=num vars keys error
 FILE=malloc://0x4000
-BROKEN=1
 ARGS=-1
 CMDS=<<EOF
 k foo=5

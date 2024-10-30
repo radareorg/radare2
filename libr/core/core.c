@@ -578,7 +578,10 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 		if (ok) {
 			*ok = true;
 		}
-		return r_num_math (core->num, out);
+		// XXX RNum.math is not reentrant, so we hack this to fix breaking expression
+		RNum nn = {0};
+		memcpy (&nn, core->num, sizeof (RNum));
+		return r_num_math (&nn, out);
 	}
 	free (bptr);
 	free (out);
