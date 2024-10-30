@@ -26,6 +26,7 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 	if (enc == BECH32_ENCODING_BECH32M) {
 		return 1;
 	}
+	return -1;
 }
 
 static const char charset[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -174,7 +175,6 @@ static bool bech32_check(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
-	int hrp_size = hrplength (buf, len);
 	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
 	if (!hrp) {
 		return false;

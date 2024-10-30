@@ -9,7 +9,6 @@
 #include <r_hash.h>
 #include <r_lib.h>
 #include <r_crypto/r_sm4.h>
-#include <r_crypto/r_bech32.h>
 
 #ifdef __cplusplus
 extern "C" {
