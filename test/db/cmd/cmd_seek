@@ -57,10 +57,10 @@ FILE=bins//mach0/ired-arm64
 CMDS=<<EOF
 afr
 ?v $Fe
-s $I1@$Fe
+s $ip:1@$Fe
 pi 1
 ?v $Fb
-s $i1
+s $in:1
 pi 1
 ?v $Fb
 EOF

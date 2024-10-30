@@ -7920,7 +7920,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
 		r_core_cmd_call (core, "aeso");
 		r_core_seek (core, at, true);
-		int delta = r_num_get (core->num, "$l");
+		int delta = r_num_get (core->num, "$is");
 		if (delta < 1) {
 			break;
 		}

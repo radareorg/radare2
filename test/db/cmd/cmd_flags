@@ -1,5 +1,6 @@
 NAME=f_123
 FILE=-
+ARGS=-1
 CMDS=<<EOF
 f _foo=123
 f _123=_foo
@@ -15,18 +16,17 @@ f $foo=456
 ?v $foo
 EOF
 EXPECT=<<EOF
+ERROR: Invalid flag name '123'
+ERROR: Invalid flag name '$123'
+ERROR: Invalid flag name '$foo'
 0x7b
 0x7b
 0x141
 0x7b
-0xffffffffffffffff
-0xffffffffffffffff
+0x0
+0x0
 EOF
-EXPECT_ERR=<<EOF
-ERROR: Invalid flag name '123'
-ERROR: Invalid flag name '$123'
-ERROR: Invalid flag name '$foo'
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=f?flag

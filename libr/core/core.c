@@ -644,7 +644,7 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $k{key}");
 }
 
-static int numvar_dollar(RCore *core, const char *str, int *ok) {
+static ut64 numvar_dollar(RCore *core, const char *str, int *ok) {
 	if (!strcmp (str, "$$")) {
 		return core->offset;
 	}
@@ -766,14 +766,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = true;
 		}
-#if 0
+		// must be deprecated
 		switch (str[1]) {
 		case 'e':
+#if 0
 		case 'j':
 		case 'f':
 		case 'm':
 		case 'v':
 		case 'l':
+#endif
 			r_anal_op_init (&op);
 			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
 			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
@@ -781,7 +783,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		default:
 			break;
 		}
-#endif
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and r_anal_op_is_eob()
 		switch (str[1]) {
 		case 'i': // "$i"

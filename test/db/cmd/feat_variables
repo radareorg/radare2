@@ -145,18 +145,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=$j (malloc)
+NAME=$ij (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
 e anal.arch = x86
 wa jmp 0x30
-?v $j
+?v $ij
 wa jz 0x01
-?v $j
+?v $ij
 wa xor eax, eax
-?v $j
+?v $ij
 ?e
 EOF
 EXPECT=<<EOF
@@ -167,18 +167,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=$f (malloc)
+NAME=$if (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
 e anal.arch = x86
 wx eb2e
-?v $f
+?v $if
 wx 0f84fbffffff
-?v $f
+?v $if
 wx 31c0
-?v $f
+?v $if
 EOF
 EXPECT=<<EOF
 0xffffffffffffffff
@@ -187,15 +187,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=$m (malloc)
+NAME=$ir (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 wa mov eax, [0x500]
-?v $m
+?v $ir
 wa mov eax, ebx
-?v $m
+?v $ir
 ?e
 EOF
 EXPECT=<<EOF
@@ -205,18 +205,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=$l (malloc)
+NAME=$is (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
 e anal.arch = x86
 wa xor eax, eax
-?v $l
+?v $is
 wa mov esp, 0x1
-?v $l
+?v $is
 wx c3
-?v $l
+?v $is
 EOF
 EXPECT=<<EOF
 0x2

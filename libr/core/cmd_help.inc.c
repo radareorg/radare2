@@ -366,7 +366,7 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$Fi", "", "basic block instructions",
 	"$FI", "", "function instructions",
 	"$Fj", "", "function jump destination",
-	"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)",
+	"$fl", "", "flag length (size) at current address (fla; pD $is @ entry0)",
 	"$FS", "", "function size (linear length)",
 	"$Fs", "", "size of the current basic block",
 	"$FSS", "", "function size (sum bb sizes)",
@@ -1163,9 +1163,10 @@ static int cmd_help(void *data, const char *input) {
 			int i = 0;
 			const char *vars[] = {
 				"$$", "$$c", "$$$", "$$$c", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
+				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
 				"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-				"$fl", "$FS", "$Fs", "$FSS", "$i", "$j", "$Ja", "$l", "$M", "$m", "$MM",
-				"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
+				"$fl", "$FS", "$Fs", "$FSS", "$Ja", "$M", "$MM",
+				"$o", "$p", "$P", "$s", "$S", "$SS", "$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
