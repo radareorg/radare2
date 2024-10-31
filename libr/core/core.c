@@ -768,6 +768,112 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $B subvar");
 }
 
+typedef struct {
+	const char *name;
+	RIOMap *map;
+} MapLoopData;
+
+static bool mapscb(void *user, void *data, ut32 id) {
+	MapLoopData *mld = (void *)user;
+	RIOMap *map = (RIOMap *)mld;
+	if (map) {
+		if (!strcmp (mld->name, map->name)) {
+			mld->map = map;
+			return false;
+		}
+	}
+	return true;
+}
+static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
+	char ch0 = *str;
+	char *name = NULL;
+	if (ch0) {
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $F");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $F");
+			}
+			// invalid
+		}
+		R_FREE (name);
+	}
+	RIOMap *map = NULL;
+	if (name) {
+		ut64 at = r_num_get (NULL, name);
+		// TODO check numerrors
+		if (at && at != UT64_MAX) {
+			map = r_io_map_get_at (core->io, at);
+		} else {
+			MapLoopData mld = { .name = name };
+			r_id_storage_foreach (core->io->maps, mapscb, &mld);
+			map = mld.map;
+		}
+		R_FREE (name);
+	} else {
+		map = r_io_map_get_at (core->io, core->offset);
+	}
+	if (!map) {
+		return invalid_numvar (core, "cant find a map");
+	}
+	if (ok) {
+		*ok = true;
+	}
+	switch (ch0) {
+	case 0:
+	case 'b':
+	case 'B': return r_io_map_begin (map);
+	case 'd':
+	case 'D': return core->offset - r_io_map_begin (map);
+	case 'e':
+	case 'E': return r_io_map_end (map);
+	case 'S': return r_io_map_size (map);
+	case 'A':
+		  {
+			  ut64 lower = r_io_map_begin (map);
+			  const int clear_bits = 16;
+			  lower >>= clear_bits;
+			  lower <<= clear_bits;
+			  return lower;
+		  }
+	}
+			{
+				ut64 lower = UT64_MAX;
+				ut64 size = 0LL;
+				if (map) {
+					lower = r_io_map_begin (map);
+					size = r_io_map_size (map);
+				}
+				if (str[1] == 'B') {
+					/* clear lower bits of the lowest map address to define the base address */
+				}
+				if (str[2] == 'M') {
+					return size;
+				}
+				return (lower == UT64_MAX)? 0LL: lower;
+			}
+	return invalid_numvar (core, "unknown $F subvar");
+}
+
 static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	char ch0 = *str;
 	char *name = NULL;
@@ -1157,25 +1263,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'f': // $f flags
 			return numvar_flag (core, str + 2, ok);
 		case 'M': // $M map address
-			{
-				ut64 lower = UT64_MAX;
-				ut64 size = 0LL;
-				RIOMap *map = r_io_map_get_at (core->io, core->offset);
-				if (map) {
-					lower = r_io_map_begin (map);
-					size = r_io_map_size (map);
-				}
-				if (str[1] == 'B') {
-					/* clear lower bits of the lowest map address to define the base address */
-					const int clear_bits = 16;
-					lower >>= clear_bits;
-					lower <<= clear_bits;
-				}
-				if (str[2] == 'M') {
-					return size;
-				}
-				return (lower == UT64_MAX)? 0LL: lower;
-			}
+			return numvar_maps (core, str + 2, ok);
 			break;
 		case 'b': // "$b" block size
 			return core->blocksize;
@@ -3236,24 +3324,17 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	char *str = r_base64_encode_dyn (rems->string, -1);
 	switch (event_type) {
 	case R_EVENT_META_SET:
-		switch (rems->type) {
-		case 'C':
+		if (rems->type == 'C') {
 			pstr = r_str_newf (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, r_str_get (str));
 			r_core_log_add (ev->user, pstr);
 			free (pstr);
-			break;
-		default:
-			break;
 		}
 		break;
 	case R_EVENT_META_DEL:
-		switch (rems->type) {
-		case 'C':
+		if (rems->type == 'C') {
 			r_core_log_add (ev->user, r_strf (":del-comment 0x%08"PFMT64x, rems->addr));
-			break;
-		default:
+		} else {
 			r_core_log_add (ev->user, r_strf (":del-comment 0x%08"PFMT64x, rems->addr));
-			break;
 		}
 		break;
 	case R_EVENT_META_CLEAR:
@@ -3687,10 +3768,8 @@ R_API bool r_core_init(RCore *core) {
 #endif
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		r_config_set_i (core->config, "asm.bits", 64);
-	} else {
-		if (R_SYS_BITS & R_SYS_BITS_32) {
-			r_config_set_i (core->config, "asm.bits", 32);
-		}
+	} else if (R_SYS_BITS & R_SYS_BITS_32) {
+		r_config_set_i (core->config, "asm.bits", 32);
 	}
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->config->bits);
