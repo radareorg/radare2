@@ -659,14 +659,14 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 	return timeDateStamp_string;
 }
 
-static bool is_executable(RBinObject *obj) {
+static bool is_executable(RBinObject *bo) {
 	RListIter *it;
 	RBinSection* sec;
-	R_RETURN_VAL_IF_FAIL (obj, false);
-	if (obj->info && obj->info->arch) {
+	R_RETURN_VAL_IF_FAIL (bo, false);
+	if (bo->info && bo->info->arch) {
 		return true;
 	}
-	r_list_foreach (obj->sections, it, sec) {
+	r_list_foreach (bo->sections, it, sec) {
 		if (sec->perm & R_PERM_X) {
 			return true;
 		}
