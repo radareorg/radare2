@@ -384,11 +384,11 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$FI", "", "function instructions",
 	"$Fs", "", "linear function size",
 	"$FS", "", "bbsum function size",
-#if 0
-	"$Ff", "", "function false destination",
-	"$Fj", "", "function jump destination",
-#endif
-	"$Ja", "", "get nth jump of function",
+	"$Fc", ":nth", "nth call",
+	"$Fj", ":nth", "nth jump",
+	"$Fx", ":nth", "nth xref",
+
+//	"$Ja", "", "get nth jump of function",
 	"$M", "", "map address (lowest map address)",
 	"$MM", "", "map size (lowest map address)",
 	"$o", "", "here (current disk io offset)",

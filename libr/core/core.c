@@ -369,7 +369,9 @@ static ut64 getref(RCore *core, int n, char t, int type) {
 	if (!fcn) {
 		return UT64_MAX;
 	}
-
+	if (n < 0) {
+		n = 0;
+	}
 	RVecAnalRef *anal_refs = (t == 'r')
 		? r_anal_function_get_refs (fcn)
 		: r_anal_function_get_xrefs (fcn);
@@ -695,7 +697,7 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 				*ch = 0;
 			} else {
 				free (name);
-				return invalid_numvar (core, "missing } in $F");
+				return invalid_numvar (core, "missing } in $B");
 			}
 		} else if (ch1 == '{') {
 			name = strdup (str + 2);
@@ -704,7 +706,7 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 				*ch = 0;
 			} else {
 				free (name);
-				return invalid_numvar (core, "missing } in $F");
+				return invalid_numvar (core, "missing } in $B");
 			}
 			// invalid
 		}
@@ -763,12 +765,13 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 		  return 0;
 	//	  return invalid_numvar (core, "no switch case in this block");
 	}
-	return invalid_numvar (core, "unknown $S subvar");
+	return invalid_numvar (core, "unknown $B subvar");
 }
 
 static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	char ch0 = *str;
 	char *name = NULL;
+	int nth = -1;
 	if (ch0) {
 		const char ch1 = str[1];
 		if (ch0 == ':') {
@@ -796,6 +799,10 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 				return invalid_numvar (core, "missing } in $F");
 			}
 			// invalid
+		}
+		if (isdigit (*name)) {
+			nth = atoi (name);
+			R_FREE (name);
 		}
 	}
 	RAnalFunction *fcn = NULL;
@@ -830,8 +837,27 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	case 'S': return r_anal_function_realsize (fcn);
 	case 'i': return fcn->ninstr;
 	case 'I': return fcn->ninstr;
+// refs/xrefs
+	case 'c':
+	case 'C': // $FC nth call
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FC");
+		}
+		return getref (core, nth, 'r', R_ANAL_REF_TYPE_CALL);
+	case 'j':
+	case 'J': // $FJ nth jump
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FJ");
+		}
+		return getref (core, nth, 'r', R_ANAL_REF_TYPE_CODE);
+	case 'x':
+	case 'X': // $FX nth xref
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FX");
+		}
+		return getref (core, nth, 'x', R_ANAL_REF_TYPE_CALL);
 	}
-	return invalid_numvar (core, "unknown $S subvar");
+	return invalid_numvar (core, "unknown $F subvar");
 }
 
 static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
@@ -1191,13 +1217,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
 				return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			}
-		case 'C': // $C nth call
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': // $J nth jump
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'X': // $X nth xref
-			return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
-		case 'F': // $F function size
+		case 'F': // $F function
 			return numvar_function (core, str + 2, ok);
 		case 'B': // $B basic blocks
 			return numvar_bb (core, str + 2, ok);
