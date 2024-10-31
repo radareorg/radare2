@@ -353,6 +353,12 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$fe", "[:{name}]", "flag end (addr + size)",
 	"$fd", "[:{name}]", "flag delta (addr - current_address)",
 
+	"$S", "[:{name}]", "section offset (alias for $SB)",
+	"$SS", "[:{name}]", "section size",
+	"$SB", "[:{name}]", "section begin",
+	"$SD", "[:{name}]", "distance between current offset and section start",
+	"$SE", "[:{name}]", "section end address",
+
 	"$B", "", "base address (aligned lowest map address)",
 	"$c", "", "get terminal width in character columns",
 	"$Cn", "", "get nth call of function",
@@ -384,8 +390,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$r", "", "get console height (in rows, see $c for columns)",
 	"$r", "{reg}", "get value of named register ($r{PC} and $r:PC syntax is supported)",
 	"$s", "", "file size",
-	"$S", "", "section offset",
-	"$SS", "", "section size",
 	"$s", "{flag}", "get size of flag",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"$Xn", "", "get nth xref of function",

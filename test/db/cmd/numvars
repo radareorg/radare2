@@ -164,3 +164,42 @@ EXPECT=<<EOF
 73616
 EOF
 RUN
+
+NAME=num vars sections
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+?v $S
+?v $SS
+?v $SE
+?e distance
+?v $SD
+s+32
+?v $SD
+?e invalid name
+?v $S{const}
+?e byname
+?v $S{rodata}
+?v $SE{rodata}
+s $S{rodata}
+iS.
+EOF
+EXPECT=<<EOF
+0x11e90
+0x10728
+0x225b8
+distance
+0x24b8
+0x24d8
+invalid name
+0x0
+byname
+0x225c0
+0x26ba0
+Current section
+
+nth paddr         size vaddr        vsize perm type     name
+------------------------------------------------------------
+0   0x000125c0  0x45e0 0x000225c0  0x45e0 -r-- PROGBITS .rodata
+
+EOF
+RUN

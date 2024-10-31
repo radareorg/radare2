@@ -644,6 +644,95 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $k{key}");
 }
 
+static ut64 numvar_section(RCore *core, const char *str, int *ok) {
+	char ch0 = *str;
+	char *name = NULL;
+	if (ch0) {
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $S");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $S");
+			}
+			// invalid
+		}
+	}
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	if (!bo) {
+		return invalid_numvar (core, "cant reference sections without a bin object");
+	}
+	RBinSection *s = NULL;
+	ut64 addr = core->offset;
+	if (name) {
+		ut64 at = r_num_get (NULL, name);
+		// TODO check numerrors
+		if (at && at != UT64_MAX) {
+			addr = at;
+		} else {
+			// resolve section by name
+			RListIter *it;
+			RBinSection *sec;
+			r_list_foreach (bo->sections, it, sec) {
+				if (!strcmp (sec->name, name)) {
+					s = sec;
+					break;
+				}
+			}
+			if (!s) {
+				r_list_foreach (bo->sections, it, sec) {
+					if (strstr (sec->name, name)) {
+						s = sec;
+						break;
+					}
+				}
+			}
+		}
+		R_FREE (name);
+	} else {
+		s = r_bin_get_section_at (bo, addr, true);
+	}
+	if (!s) {
+		return invalid_numvar (core, "cant find section");
+	}
+	if (ok) {
+		*ok = true;
+	}
+	switch (ch0) {
+	case 0: // "$S"
+	case 'B': // "$SB"
+		return s->vaddr;
+	case 'S': // "$SS"
+	case 's': // "$SS"
+		return s->size;
+	case 'D': // "$SD"
+	case 'd': // "$SD"
+		return core->offset - s->vaddr;
+	case 'E': // "$SE"
+	case 'e': // "$SE"
+		return s->vaddr + s->size;
+	}
+	return invalid_numvar (core, "unknown $S subvar");
+}
+
 static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
 #if 0
 * `$f` -> address of closest flag
@@ -709,6 +798,7 @@ static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
 	}
 	switch (ch0) {
 	case 0: // "$f"
+	case 'b': // "$fb"
 		return core->offset;
 	case 's': // "$fs"
 		return fi->size;
@@ -747,7 +837,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RAnalFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
-	RBinSection *s;
 	ut64 ret = 0;
 
 	RAnalOp op;
@@ -845,13 +934,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		// must be deprecated
 		switch (str[1]) {
 		case 'e':
-#if 0
-		case 'j':
-		case 'f':
-		case 'm':
-		case 'v':
-		case 'l':
-#endif
 			r_anal_op_init (&op);
 			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
 			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
@@ -985,13 +1067,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'w': // $w word size
 			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S': // $S section offset
-			{
-				RBinObject *bo = r_bin_cur_object (core->bin);
-				if (bo && (s = r_bin_get_section_at (bo, core->offset, true))) {
-					return (str[2] == 'S'? s->size: s->vaddr);
-				}
-			}
-			return 0LL;
+			return numvar_section (core, str + 2, ok);
 		case 'D': // $D
 			if (str[2] == 'B') { // $DD
 				return r_debug_get_baddr (core->dbg, NULL);
