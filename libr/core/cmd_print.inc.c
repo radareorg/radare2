@@ -1873,6 +1873,10 @@ static void pfb(RCore *core, const char *arg, int mode) {
 	} else if (mode == PFB_QUI) {
 		ut64 bv = 0;
 		int maxpos = whatbpos (arg);
+		if (maxpos < 0 || maxpos > 63) {
+			R_LOG_ERROR ("invalid bit position");
+			return;
+		}
 		for (i = 0; i < maxpos; i++) {
 			bool v = read_val (bm, i, 1);
 			if (v) {
@@ -1887,6 +1891,9 @@ static void pfb(RCore *core, const char *arg, int mode) {
 	}
 	if (!strchr (arg, 'b')) {
 		R_LOG_ERROR ("pfb format requires at least one 'b'");
+		r_list_free (lart);
+		r_bitmap_free (bm);
+		pj_free (pj);
 		return;
 	}
 	while (*arg && *arg != ' ') {
