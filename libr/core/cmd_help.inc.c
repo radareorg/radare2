@@ -368,19 +368,26 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$Dn", "", "get nth data reference in function",
 	"$e", "", "1 if end of block, else 0",
 	"$e", "{flag}", "end of flag (flag->offset + flag->size)",
-	"$F", "", "same as $FB",
-	"$Fb", "", "begin of basic block",
-	"$FB", "", "begin of function",
-	"$Fe", "", "end of basic block",
-	"$FE", "", "end of function",
-	"$Ff", "", "function false destination",
-	"$Fi", "", "basic block instructions",
-	"$FI", "", "function instructions",
-	"$Fj", "", "function jump destination",
-	"$FS", "", "function size (linear length)",
-	"$Fs", "", "size of the current basic block",
-	"$FSS", "", "function size (sum bb sizes)",
 
+	"$BB", "", "begin of basic block",
+	"$BE", "", "end of basic block",
+	"$Bj", "", "jump out address from basic block",
+	"$Bf", "", "fail/fall out address from basic block",
+	"$Bi", "", "basic block instructions",
+	"$BS", "", "basic block size",
+	"$BC", "", "cases count for this block",
+	"$BC", ":#", "address of the nth case",
+
+	"$F", "", "same as $FB",
+	"$FB", "", "begin of function",
+	"$FE", "", "end of function",
+	"$FI", "", "function instructions",
+	"$Fs", "", "linear function size",
+	"$FS", "", "bbsum function size",
+#if 0
+	"$Ff", "", "function false destination",
+	"$Fj", "", "function jump destination",
+#endif
 	"$Ja", "", "get nth jump of function",
 	"$M", "", "map address (lowest map address)",
 	"$MM", "", "map size (lowest map address)",
@@ -390,7 +397,6 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$r", "", "get console height (in rows, see $c for columns)",
 	"$r", "{reg}", "get value of named register ($r{PC} and $r:PC syntax is supported)",
 	"$s", "", "file size",
-	"$s", "{flag}", "get size of flag",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"$Xn", "", "get nth xref of function",
 	"RNum", "", "$variables usable in math expressions",
@@ -1170,12 +1176,15 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			int i = 0;
 			const char *vars[] = {
-				"$$", "$$c", "$$$", "$$$c", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
+				"$$", "$$c", "$$$", "$$$c", "$?", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
-				"$f", "$fs", "$fd", "$fe",
-				"$e", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-				"$fl", "$FS", "$Fs", "$FSS", "$Ja", "$M", "$MM",
-				"$o", "$p", "$P", "$s", "$S", "$SS", "$SB", "$SD", "$SE",
+				"$fb", "$fs", "$fd", "$fe", "$f",
+				"$e",
+				"$BB", "$BI", "$BS", "$BE", "$BD", "$BC", "$B", "$BJ", "$Bj", "$BF", "$Bf",
+				"$FB", "$FI", "$FS", "$FE", "$Fs", "$FD", "$F",
+				"$Ja", "$M", "$MM",
+				"$o", "$p", "$P", "$s",
+				"$S", "$SS", "$SB", "$SD", "$SE",
 				"$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
