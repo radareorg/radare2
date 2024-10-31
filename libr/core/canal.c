@@ -3165,17 +3165,20 @@ static char *filename(RCore *core, ut64 addr) {
 }
 
 static bool is_recursive(RCore *core, RAnalFunction *fcn) {
+	bool res = false;
 	RVecAnalRef *refs = r_core_anal_fcn_get_calls (core, fcn);
 	if (refs && !RVecAnalRef_empty (refs)) {
 		RAnalRef *refi;
 		ut64 at = fcn->addr;
 		R_VEC_FOREACH (refs, refi) {
 			if (at == refi->addr) {
-				return true;
+				res = true;
+				break;
 			}
 		}
 	}
-	return false;
+	RVecAnalRef_free (refs);
+	return res;
 }
 
 static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
