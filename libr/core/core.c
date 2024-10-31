@@ -800,7 +800,7 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 			}
 			// invalid
 		}
-		if (isdigit (*name)) {
+		if (name && isdigit (*name)) {
 			nth = atoi (name);
 			R_FREE (name);
 		}
