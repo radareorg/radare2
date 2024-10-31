@@ -233,13 +233,13 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 wa inc eax
-?v $e
+?v $ie
 wa jmp 0x01
-?v $e
+?v $ie
 wa ret
-?v $e
+?v $ie
 wa call 0x01
-?v $e
+?v $ie
 EOF
 EXPECT=<<EOF
 0x0

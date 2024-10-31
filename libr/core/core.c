@@ -544,6 +544,8 @@ static ut64 numvar_instruction(RCore *core, const char *str, int *ok) {
 	case 'v': // "$iv" instruction value
 		ret = op.val;
 		break;
+	case 'e':
+		return r_anal_op_is_eob (&op);
 	default:
 		if (ok) {
 			*ok = false;
@@ -768,6 +770,96 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $B subvar");
 }
 
+static ut64 numvar_debug(RCore *core, const char *str, int *ok) {
+	char ch0 = *str;
+	char *name = NULL;
+	if (ch0) {
+		if (ch0 == 'A') {
+			return r_debug_get_baddr (core->dbg, NULL);
+		}
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $S");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $S");
+			}
+			// invalid
+		}
+	}
+	RDebugMap *dmap = NULL;
+	RDebugMap *map;
+	RListIter *iter;
+	r_debug_map_sync (core->dbg);
+	if (name) {
+		ut64 at = r_num_get (NULL, name);
+		// TODO check numerrors
+		if (at && at != UT64_MAX) {
+			r_list_foreach (core->dbg->maps, iter, map) {
+				if (at >= map->addr && at < map->addr_end) {
+					dmap = map;
+					break;
+				}
+			}
+		} else {
+			r_list_foreach (core->dbg->maps, iter, map) {
+				if (at >= map->addr && at < map->addr_end) {
+					dmap = map;
+					break;
+				}
+			}
+		}
+		R_FREE (name);
+	} else {
+		const ut64 at = core->offset;
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (at >= map->addr && at < map->addr_end) {
+				dmap = map;
+				break;
+			}
+		}
+	}
+	if (!dmap) {
+		return invalid_numvar (core, "cant find debug map");
+	}
+	if (ok) {
+		*ok = true;
+	}
+	switch (ch0) {
+	case 0: // "$S"
+	case 'B': // "$SB"
+		return dmap->addr;
+	case 'S': // "$SS"
+	case 's': // "$SS"
+		return dmap->size;
+	case 'D': // "$SD"
+	case 'd': // "$SD"
+		return core->offset - dmap->addr;
+	case 'E': // "$SE"
+	case 'e': // "$SE"
+		return dmap->addr + dmap->size;
+	}
+	return invalid_numvar (core, "unknown $S subvar");
+}
+
 typedef struct {
 	const char *name;
 	RIOMap *map;
@@ -802,7 +894,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 				*ch = 0;
 			} else {
 				free (name);
-				return invalid_numvar (core, "missing } in $F");
+				return invalid_numvar (core, "missing } in $M");
 			}
 		} else if (ch1 == '{') {
 			name = strdup (str + 2);
@@ -811,7 +903,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 				*ch = 0;
 			} else {
 				free (name);
-				return invalid_numvar (core, "missing } in $F");
+				return invalid_numvar (core, "missing } in $M");
 			}
 			// invalid
 		}
@@ -847,7 +939,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 	case 'e':
 	case 'E': return r_io_map_end (map);
 	case 'S': return r_io_map_size (map);
-	case 'A':
+	case 'M':
 		  {
 			  ut64 lower = r_io_map_begin (map);
 			  const int clear_bits = 16;
@@ -856,22 +948,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 			  return lower;
 		  }
 	}
-			{
-				ut64 lower = UT64_MAX;
-				ut64 size = 0LL;
-				if (map) {
-					lower = r_io_map_begin (map);
-					size = r_io_map_size (map);
-				}
-				if (str[1] == 'B') {
-					/* clear lower bits of the lowest map address to define the base address */
-				}
-				if (str[2] == 'M') {
-					return size;
-				}
-				return (lower == UT64_MAX)? 0LL: lower;
-			}
-	return invalid_numvar (core, "unknown $F subvar");
+	return invalid_numvar (core, "unknown $M subvar");
 }
 
 static ut64 numvar_function(RCore *core, const char *str, int *ok) {
@@ -952,13 +1029,19 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	case 'S': return r_anal_function_realsize (fcn);
 	case 'i': return fcn->ninstr;
 	case 'I': return fcn->ninstr;
-// refs/xrefs
+	// refs/xrefs
 	case 'c':
 	case 'C': // $FC nth call
 		if (nth < 0) {
 			return invalid_numvar (core, "missing or invalid nth index for $FC");
 		}
 		return getref (core, nth, 'r', R_ANAL_REF_TYPE_CALL);
+	case 'r':
+	case 'R':
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FR");
+		}
+		return getref (core, nth, 'r', R_ANAL_REF_TYPE_DATA);
 	case 'j':
 	case 'J': // $FJ nth jump
 		if (nth < 0) {
@@ -1127,24 +1210,23 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			str = p;
 		}
 		// push state
-		if (str[0] && str[1]) {
-			const char *q;
-			char *o = strdup (str + 1);
-			if (o) {
-				q = r_num_calc_index (core->num, NULL);
-				if (q) {
-					if (r_str_replace_char (o, ']', 0)>0) {
-						n = r_num_math (core->num, o);
-						if (core->num->nc.errors) {
-							return 0;
-						}
-						r_num_calc_index (core->num, q);
-					}
-				}
-				free (o);
-			}
-		} else {
+		if (!str[0] || !str[1]) {
 			return 0;
+		}
+		const char *q;
+		char *o = strdup (str + 1);
+		if (o) {
+			q = r_num_calc_index (core->num, NULL);
+			if (q) {
+				if (r_str_replace_char (o, ']', 0)>0) {
+					n = r_num_math (core->num, o);
+					if (core->num->nc.errors) {
+						return 0;
+					}
+					r_num_calc_index (core->num, q);
+				}
+			}
+			free (o);
 		}
 		// pop state
 		if (ok) {
@@ -1172,17 +1254,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = true;
 		}
-		// must be deprecated
-		switch (str[1]) {
-		case 'e':
-			r_anal_op_init (&op);
-			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
-			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
-			break;
-		default:
-			break;
-		}
-		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and r_anal_op_is_eob()
 		switch (str[1]) {
 		case 'i': // "$i"
 			return numvar_instruction (core, str + 2, ok);
@@ -1198,9 +1269,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				ut64 ret = r_config_get_i (core->config, bptr);
 				free (bptr);
 				return ret;
+			} else {
+				free (bptr);
+				return invalid_numvar (core, "missing } in ${}");
 			}
-			// take flag here
-			free (bptr);
 			break;
 		case 'c': // $c console width
 			return r_cons_get_size (NULL);
@@ -1241,21 +1313,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			int rows;
 			(void)r_cons_get_size (&rows);
 			return rows;
-		case 'e': // $e
-			if (str[2] == '{') { // $e{flag} flag off + size
-				char *flagName = strdup (str + 3);
-				int flagLength = strlen (flagName);
-				if (flagLength > 0) {
-					flagName[flagLength - 1] = 0;
-				}
-				RFlagItem *flag = r_flag_get (core->flags, flagName);
-				free (flagName);
-				if (flag) {
-					return flag->offset + flag->size;
-				}
-				return UT64_MAX;
-			}
-			return r_anal_op_is_eob (&op);
 		case 'p': // $p
 			return r_sys_getpid ();
 		case 'P': // $P
@@ -1264,7 +1321,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return numvar_flag (core, str + 2, ok);
 		case 'M': // $M map address
 			return numvar_maps (core, str + 2, ok);
-			break;
 		case 'b': // "$b" block size
 			return core->blocksize;
 		case 's': // $s file size
@@ -1291,20 +1347,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'S': // $S section offset
 			return numvar_section (core, str + 2, ok);
 		case 'D': // $D
-			if (str[2] == 'B') { // $DD
-				return r_debug_get_baddr (core->dbg, NULL);
-			} else if (isdigit (str[2])) {
-				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
-			} else {
-				RDebugMap *map;
-				RListIter *iter;
-				r_list_foreach (core->dbg->maps, iter, map) {
-					if (core->offset >= map->addr && core->offset < map->addr_end) {
-						return (str[2] == 'D')? map->size: map->addr;
-					}
-				}
-			}
-			return 0LL; // maybe // return UT64_MAX;
+			return numvar_debug (core, str + 2, ok);
 		case '?': // $?
 			return core->num->value; // rc;
 		case '$': // $$ offset
