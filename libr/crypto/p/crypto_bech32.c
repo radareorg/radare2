@@ -42,17 +42,6 @@ static const int8_t charset_rev[128] = {
 	1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1
 };
 
-static int hrplength(const unsigned char *bech32_checksum, const unsigned char size) {
-	int i = size;
-	while (i > 0 && bech32_checksum[i] != '1') {
-		i--;
-	}
-	if (i == 0) {
-		return -1;
-	}
-	return i;
-}
-
 static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, bech32_encoding enc) {
 	uint32_t chk = 1;
 	size_t i = 0;
