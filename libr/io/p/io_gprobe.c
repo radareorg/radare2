@@ -1555,7 +1555,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_gprobe = {
 	.meta = {
 		.name = "gprobe",
-		.author = "pancake",
 		.author = "Dirk Eibach, Guntermann, Drunck GmbH",
 		.desc = "Open gprobe connection",
 		.license = "LGPL-3.0-only",
