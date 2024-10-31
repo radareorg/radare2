@@ -834,7 +834,6 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	if (ok) {
 		*ok = true;
 	}
-	eprintf ("%s\n", fcn->name);
 	switch (ch0) {
 	case 0:
 	case 'b':
