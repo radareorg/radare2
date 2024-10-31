@@ -3301,6 +3301,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				showreg (core, str + 1);
 			}
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "dr", str[0]);
+		break;
 	}
 }
 
