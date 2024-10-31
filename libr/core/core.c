@@ -754,7 +754,7 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 	case 'C': // cases
 		  if (bb->switch_op) {
 			  if (nth != -1) {
-				  RAnalCaseOp *op = (RAnalCaseOp *)r_list_get_nth (bb->switch_op->cases, nth);
+				  RAnalCaseOp *op = (RAnalCaseOp *)r_list_get_n (bb->switch_op->cases, nth);
 				  if (op) {
 					  return op->addr;
 				  }
@@ -810,14 +810,23 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 		ut64 at = r_num_get (NULL, name);
 		// TODO check numerrors
 		if (at && at != UT64_MAX) {
-			fcn = r_anal_get_function_at (core->anal, at);
+			RList *fcns = r_anal_get_functions_in (core->anal, at);
+			if (fcns && r_list_length (fcns) > 0) {
+				fcn = r_list_get_n (fcns, 0);
+			}
+			r_list_free (fcns);
+//			fcn = r_anal_get_function_in (core->anal, at);
 		} else {
 			fcn = r_anal_get_function_byname (core->anal, name);
 			R_FREE (name);
 		}
 		R_FREE (name);
 	} else {
-		fcn = r_anal_get_function_at (core->anal, core->offset);
+		RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+		if (fcns && r_list_length (fcns) > 0) {
+			fcn = r_list_get_n (fcns, 0);
+		}
+		r_list_free (fcns);
 	}
 	if (!fcn) {
 		return invalid_numvar (core, "cant find function");
@@ -825,6 +834,7 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	if (ok) {
 		*ok = true;
 	}
+	eprintf ("%s\n", fcn->name);
 	switch (ch0) {
 	case 0:
 	case 'b':

@@ -25,8 +25,10 @@ RUN
 
 NAME=$FB (fcn-begin)
 FILE=malloc://1024
+ARGS=-1
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bits=32
 s 42
 af
 s 44

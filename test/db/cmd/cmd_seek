@@ -56,13 +56,13 @@ NAME=seekinstr
 FILE=bins//mach0/ired-arm64
 CMDS=<<EOF
 afr
-?v $Fe
-s $ip:1@$Fe
+?v $BE
+s $ip:1@$BE
 pi 1
-?v $Fb
+?v $BB
 s $in:1
 pi 1
-?v $Fb
+?v $BB
 EOF
 EXPECT=<<EOF
 0x1000058e4
