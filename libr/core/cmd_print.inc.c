@@ -1845,8 +1845,8 @@ static int whatbpos(const char *arg) {
 	return bpos;
 }
 
-static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
-	const char *fmt = arg;
+static void pfb(RCore *core, const char *arg, int mode) {
+	const char *fmt = r_str_trim_head_ro (arg);
 	int n = 0;
 	char *names = strchr (fmt, ' ');
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
@@ -1884,6 +1884,10 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 			}
 		}
 		r_cons_printf ("0x%08"PFMT64x":", bv);
+	}
+	if (!strchr (arg, 'b')) {
+		R_LOG_ERROR ("pfb format requires at least one 'b'");
+		return;
 	}
 	while (*arg && *arg != ' ') {
 		if (isdigit (*arg)) {
@@ -2054,6 +2058,35 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	r_list_free (lnames);
 }
 
+static void cmd_pfb(RCore *core, const char *_input) {
+	switch (_input[2]) {
+	case ' ':
+		pfb (core, r_str_trim_head_ro (_input + 2), PFB_ART);
+		break;
+	case 'q': // "pfbq"
+		pfb (core, r_str_trim_head_ro (_input + 3), PFB_QUI);
+		break;
+	case 'j': // "pfbj"
+		pfb (core, r_str_trim_head_ro (_input + 3), PFB_JSN);
+		break;
+	case 'c': // "pfbc"
+		pfb (core, r_str_trim_head_ro (_input + 3), PFB_COD);
+		break;
+	case 'd': // "pfbd"
+		pfb (core, r_str_trim_head_ro (_input + 3), PFB_DBG);
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_pfb);
+		break;
+	case 0:
+		R_LOG_ERROR ("pfb requires an argument. Check pfb? for help");
+		break;
+	default:
+		r_core_return_invalid_command (core, "pfb", _input[2]);
+		break;
+	}
+}
+
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	bool v2 = false;
@@ -2144,21 +2177,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 		return;
 	case 'b': // "pfb"
-		if (_input[2] == ' ') {
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
-		} else if (_input[2] == 'q') { // "pfbq"
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_QUI);
-		} else if (_input[2] == 'j') { // "pfbj"
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_JSN);
-		} else if (_input[2] == 'c') { // "pfbc"
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_COD);
-		} else if (_input[2] == 'd') { // "pfbd"
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 3), PFB_DBG);
-		} else if (_input[2] == '?') {
-			r_core_cmd_help (core, help_msg_pfb);
-		} else {
-			r_core_return_invalid_command (core, "pfb", _input[2]);
-		}
+		cmd_pfb (core, _input);
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
@@ -7796,17 +7815,17 @@ static int cmd_print(void *data, const char *input) {
 				// TODO: replace pz? help text with "See also"
 				r_core_cmd_help (core, help_msg_prc);
 				break;
-			case '=':
+			case '=': // "prc="
 				if (input[3] == '?') {
 					r_core_cmd_help (core, help_msg_p_equal);
 				} else {
 					cmd_prc_zoom (core, input + 2);
 				}
 				break;
-			case 'b':
+			case 'b': // "prcb"
 				cmd_prcn (core, block, len, true);
 				break;
-			case 'n':
+			case 'n': // "prcn"
 				cmd_prcn (core, block, len, false);
 				break;
 			default:
