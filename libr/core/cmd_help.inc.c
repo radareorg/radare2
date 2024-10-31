@@ -1168,7 +1168,8 @@ static int cmd_help(void *data, const char *input) {
 			const char *vars[] = {
 				"$$", "$$c", "$$$", "$$$c", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
-				"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
+				"$f", "$fs", "$fd", "$fe",
+				"$e", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
 				"$fl", "$FS", "$Fs", "$FSS", "$Ja", "$M", "$MM",
 				"$o", "$p", "$P", "$s", "$S", "$SS", "$w", "$Xn", NULL
 			};
