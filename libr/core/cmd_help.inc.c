@@ -1175,7 +1175,8 @@ static int cmd_help(void *data, const char *input) {
 				"$f", "$fs", "$fd", "$fe",
 				"$e", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
 				"$fl", "$FS", "$Fs", "$FSS", "$Ja", "$M", "$MM",
-				"$o", "$p", "$P", "$s", "$S", "$SS", "$w", "$Xn", NULL
+				"$o", "$p", "$P", "$s", "$S", "$SS", "$SB", "$SD", "$SE",
+				"$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
