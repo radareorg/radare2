@@ -304,11 +304,13 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 }
 
 R_API ut64 r_anal_function_linear_size(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	ensure_fcn_range (fcn);
 	return fcn->meta._max - fcn->meta._min;
 }
 
 R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	ensure_fcn_range (fcn);
 	return fcn->meta._min;
 }

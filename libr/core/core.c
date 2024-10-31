@@ -369,7 +369,9 @@ static ut64 getref(RCore *core, int n, char t, int type) {
 	if (!fcn) {
 		return UT64_MAX;
 	}
-
+	if (n < 0) {
+		n = 0;
+	}
 	RVecAnalRef *anal_refs = (t == 'r')
 		? r_anal_function_get_refs (fcn)
 		: r_anal_function_get_xrefs (fcn);
@@ -389,61 +391,6 @@ static ut64 getref(RCore *core, int n, char t, int type) {
 	}
 	RVecAnalRef_free (anal_refs);
 	return UT64_MAX;
-}
-
-static ut64 bbInstructions(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->ninstr;
-		}
-	}
-	return UT64_MAX;
-}
-
-static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->addr;
-		}
-	}
-	return UT64_MAX;
-}
-
-static ut64 bbJump(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->jump;
-		}
-	}
-	return UT64_MAX;
-}
-
-static ut64 bbFail(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->fail;
-		}
-	}
-	return UT64_MAX;
-}
-
-static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
-			return bb->size;
-		}
-	}
-	return 0;
 }
 
 static const char *str_callback(RNum *user, ut64 off, int *ok) {
@@ -681,12 +628,11 @@ static ut64 numvar_section(RCore *core, const char *str, int *ok) {
 		return invalid_numvar (core, "cant reference sections without a bin object");
 	}
 	RBinSection *s = NULL;
-	ut64 addr = core->offset;
 	if (name) {
 		ut64 at = r_num_get (NULL, name);
 		// TODO check numerrors
 		if (at && at != UT64_MAX) {
-			addr = at;
+			s = r_bin_get_section_at (bo, at, true);
 		} else {
 			// resolve section by name
 			RListIter *it;
@@ -708,7 +654,7 @@ static ut64 numvar_section(RCore *core, const char *str, int *ok) {
 		}
 		R_FREE (name);
 	} else {
-		s = r_bin_get_section_at (bo, addr, true);
+		s = r_bin_get_section_at (bo, core->offset, true);
 	}
 	if (!s) {
 		return invalid_numvar (core, "cant find section");
@@ -731,6 +677,196 @@ static ut64 numvar_section(RCore *core, const char *str, int *ok) {
 		return s->vaddr + s->size;
 	}
 	return invalid_numvar (core, "unknown $S subvar");
+}
+
+static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
+	char ch0 = *str;
+	char *name = NULL;
+	if (ch0) {
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $B");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $B");
+			}
+			// invalid
+		}
+	}
+	int nth = -1;
+	RAnalBlock *bb = NULL;
+	if (name) {
+		if (ch0 == 'C') {
+			// index cases $BC:0 $BC:1 ...
+			nth = atoi (name);
+		} else {
+			RNum nn = {0};
+			memcpy (&nn, core->num, sizeof (RNum));
+			ut64 at = r_num_get (&nn, name);
+			R_FREE (name);
+			// TODO check numerrors
+			if (at && at != UT64_MAX) {
+				bb = r_anal_get_block_at (core->anal, at);
+			} else {
+				return invalid_numvar (core, "cant find basic block");
+			}
+		}
+		R_FREE (name);
+	} else {
+		bb = r_anal_get_block_at (core->anal, core->offset);
+	}
+	if (!bb) {
+		return invalid_numvar (core, "cant find basic block");
+	}
+	if (ok) {
+		*ok = true;
+	}
+	switch (ch0) {
+	/* function bounds (uppercase) */
+	case 0:
+	case 'B': return bb->addr;
+	case 'D': return core->offset - bb->addr;
+	case 'E': return bb->addr + bb->size;
+	case 'S': return bb->size;
+	case 'I': return bb->ninstr;
+	case 'J':
+	case 'j': return bb->jump;
+	case 'F':
+	case 'f': return bb->fail;
+	case 'C': // cases
+		  if (bb->switch_op) {
+			  if (nth != -1) {
+				  RAnalCaseOp *op = (RAnalCaseOp *)r_list_get_n (bb->switch_op->cases, nth);
+				  if (op) {
+					  return op->addr;
+				  }
+			  } else {
+				  return r_list_length (bb->switch_op->cases);
+			  }
+		  }
+		  return 0;
+	//	  return invalid_numvar (core, "no switch case in this block");
+	}
+	return invalid_numvar (core, "unknown $B subvar");
+}
+
+static ut64 numvar_function(RCore *core, const char *str, int *ok) {
+	char ch0 = *str;
+	char *name = NULL;
+	int nth = -1;
+	if (ch0) {
+		const char ch1 = str[1];
+		if (ch0 == ':') {
+			name = strdup (str + 1);
+			ch0 = 0;
+		} else if (ch1 == ':') {
+			name = strdup (str + 2);
+		} else if (ch0 == '{') {
+			ch0 = 0;
+			name = strdup (str + 1);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $F");
+			}
+		} else if (ch1 == '{') {
+			name = strdup (str + 2);
+			char *ch = strchr (name, '}');
+			if (ch) {
+				*ch = 0;
+			} else {
+				free (name);
+				return invalid_numvar (core, "missing } in $F");
+			}
+			// invalid
+		}
+		if (name && isdigit (*name)) {
+			nth = atoi (name);
+			R_FREE (name);
+		}
+	}
+	RAnalFunction *fcn = NULL;
+	if (name) {
+		ut64 at = r_num_get (NULL, name);
+		// TODO check numerrors
+		if (at && at != UT64_MAX) {
+			RList *fcns = r_anal_get_functions_in (core->anal, at);
+			if (fcns && r_list_length (fcns) > 0) {
+				fcn = r_list_get_n (fcns, 0);
+			}
+			r_list_free (fcns);
+//			fcn = r_anal_get_function_in (core->anal, at);
+		} else {
+			fcn = r_anal_get_function_byname (core->anal, name);
+			R_FREE (name);
+		}
+		R_FREE (name);
+	} else {
+		RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+		if (fcns && r_list_length (fcns) > 0) {
+			fcn = r_list_get_n (fcns, 0);
+		}
+		r_list_free (fcns);
+	}
+	if (!fcn) {
+		return invalid_numvar (core, "cant find function");
+	}
+	if (ok) {
+		*ok = true;
+	}
+	switch (ch0) {
+	case 0:
+	case 'b':
+	case 'B': return fcn->addr; // begin
+	case 'd':
+	case 'D': return core->offset - fcn->addr; // begin
+	case 'e':
+	case 'E': return r_anal_function_max_addr (fcn); // end
+	case 's': return r_anal_function_linear_size (fcn);
+	case 'S': return r_anal_function_realsize (fcn);
+	case 'i': return fcn->ninstr;
+	case 'I': return fcn->ninstr;
+// refs/xrefs
+	case 'c':
+	case 'C': // $FC nth call
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FC");
+		}
+		return getref (core, nth, 'r', R_ANAL_REF_TYPE_CALL);
+	case 'j':
+	case 'J': // $FJ nth jump
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FJ");
+		}
+		return getref (core, nth, 'r', R_ANAL_REF_TYPE_CODE);
+	case 'x':
+	case 'X': // $FX nth xref
+		if (nth < 0) {
+			return invalid_numvar (core, "missing or invalid nth index for $FX");
+		}
+		return getref (core, nth, 'x', R_ANAL_REF_TYPE_CALL);
+	}
+	return invalid_numvar (core, "unknown $F subvar");
 }
 
 static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
@@ -834,7 +970,6 @@ static ut64 numvar_dollar(RCore *core, const char *str, int *ok) {
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
-	RAnalFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	ut64 ret = 0;
@@ -1019,10 +1154,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return r_sys_getpid ();
 		case 'P': // $P
 			return core->dbg->pid > 0 ? core->dbg->pid : 0;
-		case 'f': // $f jump fail address
+		case 'f': // $f flags
 			return numvar_flag (core, str + 2, ok);
-		case 'B': // $B base address
-		case 'M': { // $M map address
+		case 'M': // $M map address
+			{
 				ut64 lower = UT64_MAX;
 				ut64 size = 0LL;
 				RIOMap *map = r_io_map_get_at (core->io, core->offset);
@@ -1030,7 +1165,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					lower = r_io_map_begin (map);
 					size = r_io_map_size (map);
 				}
-
 				if (str[1] == 'B') {
 					/* clear lower bits of the lowest map address to define the base address */
 					const int clear_bits = 16;
@@ -1092,32 +1226,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
 				return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			}
-		case 'C': // $C nth call
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': // $J nth jump
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'X': // $X nth xref
-			return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
-		case 'F': // $F function size
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) {
-				switch (str[2]) {
-				/* function bounds (uppercase) */
-				case 'B': return fcn->addr; // begin
-				case 'E': return r_anal_function_max_addr (fcn); // end
-				case 'S': return (str[3] == 'S') ? r_anal_function_realsize (fcn) : r_anal_function_linear_size (fcn);
-				case 'I': return fcn->ninstr;
-				/* basic blocks (lowercase) */
-				case 'b': return bbBegin (fcn, core->offset);
-				case 'e': return bbBegin (fcn, core->offset) + bbSize (fcn, core->offset);
-				case 'i': return bbInstructions (fcn, core->offset);
-				case 's': return bbSize (fcn, core->offset);
-				case 'j': return bbJump (fcn, core->offset); // jump
-				case 'f': return bbFail (fcn, core->offset); // fail
-				}
-				return fcn->addr;
-			}
-			return 0;
+		case 'F': // $F function
+			return numvar_function (core, str + 2, ok);
+		case 'B': // $B basic blocks
+			return numvar_bb (core, str + 2, ok);
 		default:
 			return invalid_numvar (core, str);
 		}

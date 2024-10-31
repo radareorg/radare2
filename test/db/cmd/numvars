@@ -203,3 +203,29 @@ nth paddr         size vaddr        vsize perm type     name
 
 EOF
 RUN
+
+NAME=num vars fcn bbs
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+s main
+af
+afl
+?vi $Fs
+?vi $FS
+?vi $FE-$FB
+?e bbs
+?vi $BS
+?vi $Bj
+?vi $BF
+EOF
+EXPECT=<<EOF
+0x00011e90  285   7152 main
+9320
+7152
+9320
+bbs
+148
+76628
+73508
+EOF
+RUN
