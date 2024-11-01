@@ -1164,7 +1164,7 @@ static const ut8 *parse_spec_opcode(
 					regs->line, regs->column, mode, print);
 		}
 	}
-	regs->basic_block = false; // XXX cant we just use true and false here??
+	regs->basic_block = false;
 	regs->prologue_end = false;
 	regs->epilogue_begin = false;
 	regs->discriminator = 0;
