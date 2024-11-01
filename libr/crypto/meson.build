@@ -5,6 +5,7 @@ r_crypto_sources = files(
   'p/crypto_aes_algo.c',
   'p/crypto_aes_cbc.c',
   'p/crypto_aes_wrap.c',
+  'p/crypto_bech32.c',
   'p/crypto_base64.c',
   'p/crypto_base91.c',
   'p/crypto_blowfish.c',

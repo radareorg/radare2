@@ -167,6 +167,7 @@ c      aes-cbc  Cipher Block Chaining Mode for Rijndael Encryption
 c     aes-wrap  Advanced Encryption Standard Key Wrap Algorithm (RFC 3394)
 e       base64  Binary to text encoding scheme using 64 ascii characters
 e       base91  Binary to text encoding scheme using 91 ascii characters
+e       bech32  
 c     blowfish  Bruce Schneier's symetric-key block cipher
 c         cps2  Capcom Play System 2
 c      des-ecb  Simplest and weakest Electronic Code Book for DES
