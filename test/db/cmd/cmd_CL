@@ -1,0 +1,139 @@
+NAME=CL address
+FILE=bins/elf/dwarf3_line
+CMDS=CL~$$addr
+EXPECT=<<EOF
+
+addr: 0x00001139
+addr: 0x00001141
+addr: 0x0000114a
+addr: 0x00001165
+addr: 0x00001168
+addr: 0x00001170
+addr: 0x00001179
+addr: 0x00001194
+addr: 0x00001197
+addr: 0x0000119b
+addr: 0x000011a0
+addr: 0x000011a2
+addr: 0x000011a6
+addr: 0x000011ab
+addr: 0x000011ad
+addr: 0x000011bc
+addr: 0x000011be
+addr: 0x000011d7
+addr: 0x000011e0
+addr: 0x000011e4
+addr: 0x000011ee
+addr: 0x000011f8
+addr: 0x000011fd
+addr: 0x000011ff
+EOF
+RUN
+
+NAME=CL dwarf5 address
+FILE=bins/elf/dwarf5_line
+CMDS=CL~$$addr
+EXPECT=<<EOF
+
+addr: 0x00001139
+addr: 0x00001141
+addr: 0x0000114a
+addr: 0x00001165
+addr: 0x00001168
+addr: 0x00001170
+addr: 0x00001179
+addr: 0x00001194
+addr: 0x00001197
+addr: 0x0000119b
+addr: 0x000011a0
+addr: 0x000011a2
+addr: 0x000011a6
+addr: 0x000011ab
+addr: 0x000011ad
+addr: 0x000011bc
+addr: 0x000011be
+addr: 0x000011d7
+addr: 0x000011e0
+addr: 0x000011e4
+addr: 0x000011ee
+addr: 0x000011f8
+addr: 0x000011fd
+addr: 0x000011ff
+EOF
+RUN
+
+NAME=CL clang address
+FILE=bins/elf/dwarf3_line_cl
+CMDS=CL~$$addr
+EXPECT=<<EOF
+
+addr: 0x00001140
+addr: 0x00001148
+addr: 0x0000114d
+addr: 0x00001151
+addr: 0x00001155
+addr: 0x00001163
+addr: 0x00001170
+addr: 0x00001174
+addr: 0x00001176
+addr: 0x00001180
+addr: 0x00001188
+addr: 0x0000118d
+addr: 0x00001191
+addr: 0x00001195
+addr: 0x000011a3
+addr: 0x000011b0
+addr: 0x000011b4
+addr: 0x000011b6
+addr: 0x000011c0
+addr: 0x000011d6
+addr: 0x000011e1
+addr: 0x000011e4
+addr: 0x000011ea
+addr: 0x000011ed
+addr: 0x000011fb
+addr: 0x00001200
+addr: 0x00001205
+addr: 0x0000120a
+addr: 0x0000120c
+addr: 0x00001212
+EOF
+RUN
+
+NAME=CL dwarf5 clang address
+FILE=bins/elf/dwarf5_line_cl
+CMDS=CL~$$addr
+EXPECT=<<EOF
+
+addr: 0x00001140
+addr: 0x00001148
+addr: 0x0000114d
+addr: 0x00001151
+addr: 0x00001155
+addr: 0x00001163
+addr: 0x00001170
+addr: 0x00001174
+addr: 0x00001176
+addr: 0x00001180
+addr: 0x00001188
+addr: 0x0000118d
+addr: 0x00001191
+addr: 0x00001195
+addr: 0x000011a3
+addr: 0x000011b0
+addr: 0x000011b4
+addr: 0x000011b6
+addr: 0x000011c0
+addr: 0x000011d6
+addr: 0x000011e1
+addr: 0x000011e4
+addr: 0x000011ea
+addr: 0x000011ed
+addr: 0x000011fb
+addr: 0x00001200
+addr: 0x00001205
+addr: 0x0000120a
+addr: 0x0000120c
+addr: 0x00001212
+EOF
+RUN

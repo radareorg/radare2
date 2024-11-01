@@ -748,6 +748,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 			for (entry_format_index = 0; buf && entry_format_index < entry_format_count; entry_format_index++) {
 				ut64 content_type_code, form_code;
 				char *name = NULL;
+				ut8 sum[16] = {0};
 				ut64 data = 0;
 
 				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
@@ -802,7 +803,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					data = READ64 (buf);
 					break;
 				case DW_FORM_data16:
-					// TODO: We only get here if it's an MD5 hash
+					if (buf && buf+16 < buf_end) {
+						memcpy (&sum, buf, 16);
+						buf += 16;
+					}
 					break;
 				case DW_FORM_udata:
 					buf = r_uleb128 (buf, buf_end - buf, &data, NULL);
@@ -847,7 +851,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					}
 					break;
 				case DW_LNCT_MD5:
-					// TODO Save the hash of the file.
+					if (hdr->file_names) {
+						hdr->file_names[count].has_checksum = true;
+						memcpy (hdr->file_names[count].md5sum, sum, sizeof sum);
+					}
 					break;
 				}
 			}
@@ -860,6 +867,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					break;
 				case FILES:
 					if (hdr->file_names) {
+						// TODO: print md5 checksum if available
 						print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
 							index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
 							hdr->file_names[count].file_len, hdr->file_names[count].name);
