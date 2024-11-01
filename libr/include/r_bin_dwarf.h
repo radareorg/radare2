@@ -821,6 +821,8 @@ typedef struct {
 typedef struct {
 	char *name;
 	ut32 id_idx, mod_time, file_len;
+	bool has_checksum;
+	ut8 md5sum[16];
 } file_entry;
 
 typedef struct {
