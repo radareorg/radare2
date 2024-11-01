@@ -6,9 +6,10 @@ ifeq ($(WANT_SSL_CRYPTO),1)
 CFLAGS+=${SSL_CFLAGS}
 LDFLAGS+=${SSL_LDFLAGS}
 LINK+=${SSL_LDFLAGS}
-else
-OBJS+=hash/md4.o hash/md5.o hash/sha1.o hash/sha2.o
+#else
+# OBJS+=hash/md4.o hash/md5.o hash/sha1.o hash/sha2.o
 endif
+OBJS+=hash/md4.o hash/md5.o hash/sha1.o hash/sha2.o
 
 ifeq ($(USE_LIB_XXHASH),1)
 LDFLAGS+=${LIB_XXHASH}
