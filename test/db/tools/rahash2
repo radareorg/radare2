@@ -182,7 +182,7 @@ e          ror  Rotate Right N bits
 e          rot  Rotate Encryption
 c  serpent-ecb  Bouncy Castle Cryptography
 c      sm4-ecb  ShāngMì4 block cipher
-h      strhash  String hash using SDB
+h      strhash  String hash using a modified DJB2 xor
 c          xor  Byte level Exclusive Or Encryption
 h          md5
 h         sha1

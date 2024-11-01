@@ -5,19 +5,19 @@
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	char *s = r_str_ndup ((const char *)buf, len);
+	ut8 obuf[4];
 	int n = r_str_hash (s);
 	free (s);
-	cj->output = malloc (4);
-	r_write_ble32 (cj->output, n, cj->c->bigendian);
-	eprintf ("0x%x\n", n);
-	cj->output_len = 4;
+	cj->output = malloc (cj->output_size);
+	r_write_ble32 (obuf, n, cj->c->bigendian);
+	r_crypto_job_append (cj, obuf, 4);
 	return true;
 }
 
 RCryptoPlugin r_crypto_plugin_strhash = {
 	.meta = {
 		.name = "strhash",
-		.desc = "String hash using SDB",
+		.desc = "String hash using a modified DJB2 xor",
 		.author = "pancake",
 		.license = "MIT",
 	},

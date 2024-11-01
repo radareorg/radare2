@@ -248,7 +248,9 @@ R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
 	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
 }
 
-// Compute a 64 bit DJB hash of a string.
+// Compute a modified 64 bit DJB hash of a string
+// The fisrt addition is replaced by a xor for speed
+// See the XOR version in http://www.cse.yorku.ca/~oz/hash.html
 R_API ut64 r_str_hash64(const char *s) {
 	ut64 len, h = 5381;
 	if (!s) {
@@ -260,7 +262,7 @@ R_API ut64 r_str_hash64(const char *s) {
 	return h;
 }
 
-// Compute a 32bit DJB hash of a string.
+// Compute a modified 32bit DJB hash of a string.
 R_API ut32 r_str_hash(const char *s) {
 	return (ut32) r_str_hash64 (s);
 }
