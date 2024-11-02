@@ -164,6 +164,7 @@ static bool block_list_cb(RAnalBlock *block, void *user) {
 }
 
 R_API RList *r_anal_get_blocks_in(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
 	if (list) {
 		r_anal_blocks_foreach_in (anal, addr, block_list_cb, list);
@@ -196,6 +197,7 @@ R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RA
 }
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
 	if (R_LIKELY (list)) {
 		r_anal_blocks_foreach_intersect (anal, addr, size, block_list_cb, list);
@@ -204,6 +206,7 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 }
 
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
@@ -256,6 +259,7 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 }
 
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
+	R_RETURN_VAL_IF_FAIL (block, false);
 	if (block->addr == addr) {
 		r_anal_block_set_size (block, size);
 		r_anal_block_update_hash (block);
@@ -298,6 +302,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 }
 
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bbi, NULL);
 	RAnal *anal = bbi->anal;
 	R_RETURN_VAL_IF_FAIL (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
@@ -363,6 +368,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 }
 
 R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
+	R_RETURN_VAL_IF_FAIL (a && b, false);
 	if (!r_anal_block_is_contiguous (a, b)) {
 		return false;
 	}
@@ -619,6 +625,7 @@ static bool recurse_list_cb(RAnalBlock *block, void *user) {
 }
 
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
+	R_RETURN_VAL_IF_FAIL (block, NULL);
 	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
 	if (ret) {
 		r_anal_block_recurse (block, recurse_list_cb, ret);
@@ -634,6 +641,7 @@ R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut6
 }
 
 R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bb, false);
 	if (!r_anal_block_contains (bb, addr)) {
 		return false;
 	}
