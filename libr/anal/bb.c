@@ -10,27 +10,28 @@ typedef struct {
 	RAnalBlock *ret;
 } BBFromOffsetJmpmidCtx;
 
-static bool bb_from_offset_jmpmid_cb(RAnalBlock *block, void *user) {
+static bool bb_from_offset_jmpmid_cb(RAnalBlock *bb, void *user) {
 	BBFromOffsetJmpmidCtx *ctx = user;
-	// If an instruction starts exactly at the search addr, return that block immediately
-	if (r_anal_block_op_starts_at (block, ctx->addr)) {
-		ctx->ret = block;
+	// If an instruction starts exactly at the search addr, return that basicblock immediately
+	if (r_anal_block_op_starts_at (bb, ctx->addr)) {
+		ctx->ret = bb;
 		return false;
 	}
 	// else search the closest one
-	if (!ctx->ret || ctx->ret->addr < block->addr) {
-		ctx->ret = block;
+	if (!ctx->ret || ctx->ret->addr < bb->addr) {
+		ctx->ret = bb;
 	}
 	return true;
 }
 
-static bool bb_from_offset_first_cb(RAnalBlock *block, void *user) {
+static bool bb_from_offset_first_cb(RAnalBlock *bb, void *user) {
 	RAnalBlock **ret = user;
-	*ret = block;
+	*ret = bb;
 	return false;
 }
 
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	if (anal->opt.jmpmid && r_anal_is_aligned (anal, off)) {
 		BBFromOffsetJmpmidCtx ctx = { off, NULL };
 		r_anal_blocks_foreach_in (anal, off, bb_from_offset_jmpmid_cb, &ctx);
@@ -45,6 +46,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 /* returns the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(const RAnalBlock *bb, int i) {
+	R_RETURN_VAL_IF_FAIL (bb, UT16_MAX);
 	if (i < 0 || i >= bb->ninstr) {
 		return UT16_MAX;
 	}
@@ -54,6 +56,7 @@ R_API ut16 r_anal_bb_offset_inst(const RAnalBlock *bb, int i) {
 /* returns the address of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT64_MAX */
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
+	R_RETURN_VAL_IF_FAIL (bb, UT64_MAX);
 	ut16 offset = r_anal_bb_offset_inst (bb, i);
 	if (offset == UT16_MAX) {
 		return UT64_MAX;
@@ -63,6 +66,7 @@ R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
 
 /* set the offset of the i-th instruction in the basicblock bb */
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
+	R_RETURN_VAL_IF_FAIL (bb, false);
 	// the offset 0 of the instruction 0 is not stored because always 0
 	if (i > 0 && v > 0) {
 		if (i >= bb->op_pos_size) {
@@ -94,6 +98,7 @@ R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 /* returns the address of the instruction that occupies a given offset.
  * If the offset is not part of the given basicblock, UT64_MAX is returned. */
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
+	R_RETURN_VAL_IF_FAIL (bb, UT64_MAX);
 	ut16 delta, delta_off, last_delta;
 	int i;
 
@@ -114,6 +119,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 
 // returns the size of the i-th instruction in a basicblock
 R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
+	R_RETURN_VAL_IF_FAIL (bb, UT64_MAX);
 	if (i < 0 || i >= bb->ninstr) {
 		return UT64_MAX;
 	}
@@ -125,6 +131,7 @@ R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
 /* returns the address of the basicblock that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal, UT64_MAX);
 	RAnalBlock *bb = r_anal_bb_from_offset (anal, addr);
 	return bb? bb->addr: UT64_MAX;
 }
