@@ -1110,7 +1110,7 @@ RUN
 
 NAME=rabin2 -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rabin2 -d ${R2_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!rabin2 -d ${R2_FILE} | grep -c "0x00400535	/tmp/r2-regressions/./dwarftest.c"
 EXPECT=<<EOF
 1
 EOF
