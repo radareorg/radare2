@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2024 - RHL120, pancake */
 
 #define R_LOG_ORIGIN "vc.rvc"
 
@@ -21,6 +21,26 @@
 static RList *uncommited_rvc(Rvc *rvc);
 static bool save_rvc(Rvc *vc);
 extern const RvcPlugin r_vc_plugin_rvc;
+
+static char *sha256_data(const ut8 *data, size_t len) {
+	RSha256Context ctx;
+	R_SHA2_API (r_sha256_init) (&ctx);
+	R_SHA2_API (r_sha256_update) (&ctx, data, len);
+	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
+	R_SHA2_API (r_sha256_end) (&ctx, textdigest);
+	return strdup (textdigest);
+}
+
+static inline char *sha256_file(const char *fname) {
+	size_t content_length = 0;
+	char *content = r_file_slurp (fname, &content_length);
+	if (content) {
+		char *res = sha256_data ((const ut8 *)content, content_length);
+		free (content);
+		return res;
+	}
+	return NULL;
+}
 
 static void free_blobs(RList *blobs) {
 	if (blobs) {
@@ -115,25 +135,22 @@ static Rvc *rvc_rvc_new(const char *path) {
 	return rvc_save (rvc)? rvc : NULL;
 }
 
-
 static inline void rvc_warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
 }
 
+// removes the double slash
 static char *strip_sys_dir(const char *path) {
 	char *res = strdup (path);
 	char *ptr = res;
+	const char *dds = (*R_SYS_DIR == '/')? "//": "\\\\";
 	while (*ptr) {
-		if (*ptr == *R_SYS_DIR) {
-			if (ptr[1] == *R_SYS_DIR) {
-				char *ptr2 = ptr + 1;
-				while (*ptr2 == *R_SYS_DIR) {
-					ptr2++;
-				}
-				memmove (ptr + 1, ptr2, strlen (ptr2) + 1);
-			}
+		char *ss = strstr (ptr, dds);
+		if (!ss) {
+			break;
 		}
-		ptr++;
+		memmove (ss, ss + 1, strlen (ss));
+		ptr = ss;
 	}
 	return res;
 }
@@ -168,7 +185,6 @@ static bool in_rvc_ignore(const RList *ignore, const char *rpf) {
 			}
 			free (stripped);
 		}
-
 	}
 	return ret;
 }
@@ -204,28 +220,8 @@ fail_ret:
 	free (blob->fname);
 	free (blob);
 	return false;
-
 }
 
-static char *compute_hash(const ut8 *data, size_t len) {
-	RSha256Context ctx;
-	r_sha256_init (&ctx);
-	r_sha256_update (&ctx, data, len);
-	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
-	r_sha256_end (&ctx, textdigest);
-	return strdup (textdigest);
-}
-
-static inline char *sha256_file(const char *fname) {
-	size_t content_length = 0;
-	char *content = r_file_slurp (fname, &content_length);
-	if (content) {
-		char *res = compute_hash ((const ut8 *)content, content_length);
-		free (content);
-		return res;
-	}
-	return NULL;
-}
 static bool traverse_files(RList *dst, const char *dir) {
 	char *name;
 	RListIter *iter;
@@ -661,7 +657,7 @@ static char *write_commit(Rvc *rvc, const char *message, const char *author, RLi
 	}
 	size_t len = r_strbuf_length (sb);
 	char *content = r_strbuf_drain (sb);
-	char *commit_hash = compute_hash ((const ut8*)content, len);
+	char *commit_hash = sha256_data ((const ut8*)content, len);
 	if (commit_hash) {
 		char *commit_path = r_file_new (rvc->path, ".rvc", "commits", commit_hash, NULL);
 		if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
@@ -791,7 +787,7 @@ R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 		return false;
 	}
 	r_list_free (uncommitted);
-	//Must set to NULL to avoid double r_list_free on fail_ret
+	// Must set to NULL to avoid double r_list_free on fail_ret
 	uncommitted = NULL;
 	const char *oldb;
 	{
@@ -936,6 +932,8 @@ static bool log_rvc(Rvc *rvc) {
 	r_list_free (commits);
 	return ret;
 }
+
+// XXX must be static
 R_API char *curbranch_rvc(Rvc *rvc) {
 	if (!rvc_repo_exists (rvc->path)) {
 		R_LOG_ERROR ("No valid repo in %s", rvc->path);
@@ -1196,4 +1194,3 @@ const RvcPlugin r_vc_plugin_rvc = {
 	.save = save_rvc,
 	.open = open_rvc,
 };
-

@@ -268,11 +268,10 @@ static const ut64 sha512_initial_hash_value[8] = {
  * Constant used by SHA256/384/512_End() functions for converting the
  * digest to a readable hexadecimal character string:
  */
-static const char * const sha2_hex_digits = "0123456789abcdef";
+static const char sha2_hex_digits[] = "0123456789abcdef";
 
 
-/*** SHA-256: *********************************************************/
-R_IPI void r_sha256_init(RSha256Context *context) {
+R_IPI void R_SHA2_API(r_sha256_init)(RSha256Context *context) {
 	if (context == (RSha256Context *) 0) {
 		return;
 	}
@@ -465,7 +464,7 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len) {
+R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context *context, const ut8 *data, size_t len) {
 	R_RETURN_IF_FAIL (context);
 	if (!data || len == 0) {
 		return;
@@ -503,7 +502,7 @@ R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len)
 	}
 }
 
-R_IPI void r_sha256_final(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *context) {
+R_IPI void R_SHA2_API(r_sha256_final)(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *context) {
 	R_RETURN_IF_FAIL (context);
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
@@ -570,7 +569,7 @@ R_IPI void r_sha256_final(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *co
 	usedspace = 0;
 }
 
-R_IPI char *r_sha256_end(RSha256Context *context, char buffer[R_SHA256_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha256_end)(RSha256Context *context, char buffer[R_SHA256_DIGEST_STRING_LENGTH]) {
 	ut8 digest[R_SHA256_DIGEST_LENGTH], *d = digest;
 	int i;
 
@@ -579,7 +578,7 @@ R_IPI char *r_sha256_end(RSha256Context *context, char buffer[R_SHA256_DIGEST_ST
 	}
 
 	if (buffer) {
-		r_sha256_final (digest, context);
+		R_SHA2_API (r_sha256_final) (digest, context);
 		for (i = 0; i < R_SHA256_DIGEST_LENGTH; i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];
@@ -593,15 +592,15 @@ R_IPI char *r_sha256_end(RSha256Context *context, char buffer[R_SHA256_DIGEST_ST
 	return buffer;
 }
 
-R_IPI char *r_sha256_data(const ut8 *data, size_t len, char digest[R_SHA256_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha256_data)(const ut8 *data, size_t len, char digest[R_SHA256_DIGEST_STRING_LENGTH]) {
 	RSha256Context context;
-	r_sha256_init (&context);
-	r_sha256_update (&context, data, len);
-	return r_sha256_end (&context, digest);
+	R_SHA2_API (r_sha256_init) (&context);
+	R_SHA2_API (r_sha256_update) (&context, data, len);
+	return R_SHA2_API (r_sha256_end) (&context, digest);
 }
 
 /*** SHA-512: *********************************************************/
-R_IPI void r_sha512_init(RSha512Context *context) {
+R_IPI void R_SHA2_API(r_sha512_init)(RSha512Context *context) {
 	if (context == (RSha512Context *) 0) {
 		return;
 	}
@@ -778,7 +777,7 @@ static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-R_IPI void r_sha512_update(RSha512Context *context, const ut8 *data, size_t len) {
+R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context *context, const ut8 *data, size_t len) {
 	if (!context || !data || len < 1) {
 		return;
 	}
@@ -867,7 +866,7 @@ static void SHA512_Last(RSha512Context *context) {
 	SHA512_Transform (context, (ut64 *) context->buffer);
 }
 
-R_IPI void r_sha512_final(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *context) {
+R_IPI void R_SHA2_API(r_sha512_final)(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -898,7 +897,7 @@ R_IPI void r_sha512_final(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *co
 	r_mem_zero (context, sizeof (*context));
 }
 
-R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha512_end)(RSha512Context *context, char buffer[R_SHA512_DIGEST_STRING_LENGTH]) {
 	ut8 digest[R_SHA512_DIGEST_LENGTH];
 	ut8 *d = digest;
 	int i;
@@ -909,7 +908,7 @@ R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_ST
 	}
 
 	if (buffer) {
-		r_sha512_final (digest, context);
+		R_SHA2_API (r_sha512_final) (digest, context);
 		for (i = 0; i < R_SHA512_DIGEST_LENGTH; i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];
@@ -923,27 +922,27 @@ R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_ST
 	return buffer;
 }
 
-R_IPI char *r_sha512_data(const ut8 *data, size_t len, char digest[R_SHA512_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha512_data)(const ut8 *data, size_t len, char digest[R_SHA512_DIGEST_STRING_LENGTH]) {
 	RSha512Context context;
-	r_sha512_init (&context);
-	r_sha512_update (&context, data, len);
-	return r_sha512_end (&context, digest);
+	R_SHA2_API (r_sha512_init) (&context);
+	R_SHA2_API (r_sha512_update) (&context, data, len);
+	return R_SHA2_API (r_sha512_end) (&context, digest);
 }
 
 /*** SHA-384: *********************************************************/
-R_IPI void r_sha384_init(RSha384Context *context) {
+R_IPI void R_SHA2_API(r_sha384_init)(RSha384Context *context) {
 	R_RETURN_IF_FAIL (context);
 	memcpy (context->state, sha384_initial_hash_value, R_SHA512_DIGEST_LENGTH);
 	memset (context->buffer, 0, R_SHA384_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;
 }
 
-R_IPI void r_sha384_update(RSha384Context *context, const ut8 *data, size_t len) {
+R_IPI void R_SHA2_API(r_sha384_update)(RSha384Context *context, const ut8 *data, size_t len) {
 	// wat :D 512 is not 384 looks like a bad function name to me
-	r_sha512_update ((RSha512Context *) context, data, len);
+	R_SHA2_API (r_sha512_update) ((RSha512Context *) context, data, len);
 }
 
-R_IPI void r_sha384_final(ut8 digest[R_SHA384_DIGEST_LENGTH], RSha384Context *context) {
+R_IPI void R_SHA2_API(r_sha384_final)(ut8 digest[R_SHA384_DIGEST_LENGTH], RSha384Context *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -974,7 +973,7 @@ R_IPI void r_sha384_final(ut8 digest[R_SHA384_DIGEST_LENGTH], RSha384Context *co
 	memset (context, 0, sizeof (*context));
 }
 
-R_IPI char *r_sha384_end(RSha384Context *context, char buffer[R_SHA384_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha384_end)(RSha384Context *context, char buffer[R_SHA384_DIGEST_STRING_LENGTH]) {
 	ut8 digest[R_SHA384_DIGEST_LENGTH], *d = digest;
 	int i;
 
@@ -984,7 +983,7 @@ R_IPI char *r_sha384_end(RSha384Context *context, char buffer[R_SHA384_DIGEST_ST
 	}
 
 	if (buffer) {
-		r_sha384_final (digest, context);
+		R_SHA2_API (r_sha384_final) (digest, context);
 
 		for (i = 0; i < sizeof (digest); i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -999,9 +998,9 @@ R_IPI char *r_sha384_end(RSha384Context *context, char buffer[R_SHA384_DIGEST_ST
 	return buffer;
 }
 
-R_IPI char *r_sha384_data(const ut8 *data, size_t len, char digest[R_SHA384_DIGEST_STRING_LENGTH]) {
+R_IPI char *R_SHA2_API(r_sha384_data)(const ut8 *data, size_t len, char digest[R_SHA384_DIGEST_STRING_LENGTH]) {
 	RSha384Context context;
-	r_sha384_init (&context);
-	r_sha384_update (&context, data, len);
-	return r_sha384_end (&context, digest);
+	R_SHA2_API (r_sha384_init) (&context);
+	R_SHA2_API (r_sha384_update) (&context, data, len);
+	return R_SHA2_API (r_sha384_end) (&context, digest);
 }

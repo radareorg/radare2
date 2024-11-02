@@ -18,13 +18,15 @@ R_API void rvc_free(Rvc *vc) {
 }
 
 R_API RvcType rvc_repo_type(const char *path) {
+	R_RETURN_VAL_IF_FAIL (path, RVC_TYPE_INV);
 	const char *paths[] = {".git", ".rvc"};
-	const RvcType types[] = {RVC_TYPE_GIT, RVC_TYPE_RVC};
+	const RvcType types[] = { RVC_TYPE_GIT, RVC_TYPE_RVC };
 	size_t i = 0;
 	for (; i < sizeof (paths) / sizeof (char *)
 			&& i < sizeof (types) / sizeof (RvcType); i++) {
 		char *p = r_file_new (path, paths[i], NULL);
 		if (r_file_is_directory (p)) {
+			free (p);
 			return types[i];
 		}
 		free (p);
