@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2024 - RHL120, pancake */
 
 #ifndef R_RVC_H
 #define R_RVC_H 1
@@ -42,7 +42,10 @@ typedef bool (*RvcPluginClone)(const struct r_vc_t *rvc, const char *dst);
 typedef bool (*RvcPluginSave)(struct r_vc_t *vc);
 typedef Rvc *(*RvcPluginOpen)(const char *path);
 
+// R2_600 typedef char *(*RvcPluginHash)(const ut8 *data, size_t len);
+
 typedef struct rvc_plugin_t {
+	// TODO: R2_600 - Use RPluginMeta
 	const char *const name;
 	const char *const author;
 	const char *const desc;
@@ -60,6 +63,7 @@ typedef struct rvc_plugin_t {
 	RvcPluginClose close;
 	RvcPluginSave save;
 	RvcPluginOpen open;
+	// R2_600 RvcPluginHash hash;
 } RvcPlugin;
 
 R_API Rvc *rvc_open(const char *rp, RvcType type);

@@ -45,6 +45,10 @@ extern "C" {
 #if R_CRYPTO_INTERNAL
 #undef R_IPI
 #define R_IPI R_UNUSED static
+#define IPI static
+#define R_SHA2_API(x) __sha2_##x
+#else
+#define R_SHA2_API(x) x
 #endif
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
@@ -60,23 +64,23 @@ extern "C" {
 
 /*** SHA-256/384/512 Function Prototypes ******************************/
 
-R_IPI void r_sha256_init(RSha256Context *);
-R_IPI void r_sha256_update(RSha256Context*, const ut8*, size_t);
-R_IPI void r_sha256_final(ut8[R_SHA256_DIGEST_LENGTH], RSha256Context*);
-R_IPI char* r_sha256_end(RSha256Context*, char[R_SHA256_DIGEST_STRING_LENGTH]);
-R_IPI char* r_sha256_data(const ut8*, size_t, char[R_SHA256_DIGEST_STRING_LENGTH]);
+R_IPI void R_SHA2_API(r_sha256_init)(RSha256Context *);
+R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context*, const ut8*, size_t);
+R_IPI void R_SHA2_API(r_sha256_final)(ut8[R_SHA256_DIGEST_LENGTH], RSha256Context*);
+R_IPI char* R_SHA2_API(r_sha256_end)(RSha256Context*, char[R_SHA256_DIGEST_STRING_LENGTH]);
+R_IPI char* R_SHA2_API(r_sha256_data)(const ut8*, size_t, char[R_SHA256_DIGEST_STRING_LENGTH]);
 
-R_IPI void r_sha384_init(RSha384Context*);
-R_IPI void r_sha384_update(RSha384Context*, const ut8*, size_t);
-R_IPI void r_sha384_final(ut8[R_SHA384_DIGEST_LENGTH], RSha384Context*);
-R_IPI char* r_sha384_end(RSha384Context*, char[R_SHA384_DIGEST_STRING_LENGTH]);
-R_IPI char* r_sha384_data(const ut8*, size_t, char[R_SHA384_DIGEST_STRING_LENGTH]);
+R_IPI void R_SHA2_API(r_sha384_init)(RSha384Context*);
+R_IPI void R_SHA2_API(r_sha384_update)(RSha384Context*, const ut8*, size_t);
+R_IPI void R_SHA2_API(r_sha384_final)(ut8[R_SHA384_DIGEST_LENGTH], RSha384Context*);
+R_IPI char* R_SHA2_API(r_sha384_end)(RSha384Context*, char[R_SHA384_DIGEST_STRING_LENGTH]);
+R_IPI char* R_SHA2_API(r_sha384_data)(const ut8*, size_t, char[R_SHA384_DIGEST_STRING_LENGTH]);
 
-R_IPI void r_sha512_init(RSha512Context*);
-R_IPI void r_sha512_update(RSha512Context*, const ut8*, size_t);
-R_IPI void r_sha512_final(ut8[R_SHA512_DIGEST_LENGTH], RSha512Context*);
-R_IPI char* r_sha512_end(RSha512Context*, char[R_SHA512_DIGEST_STRING_LENGTH]);
-R_IPI char* r_sha512_data(const ut8*, size_t, char[R_SHA512_DIGEST_STRING_LENGTH]);
+R_IPI void R_SHA2_API(r_sha512_init)(RSha512Context*);
+R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context*, const ut8*, size_t);
+R_IPI void R_SHA2_API(r_sha512_final)(ut8[R_SHA512_DIGEST_LENGTH], RSha512Context*);
+R_IPI char* R_SHA2_API(r_sha512_end)(RSha512Context*, char[R_SHA512_DIGEST_STRING_LENGTH]);
+R_IPI char* R_SHA2_API(r_sha512_data)(const ut8*, size_t, char[R_SHA512_DIGEST_STRING_LENGTH]);
 
 #ifdef	__cplusplus
 }
