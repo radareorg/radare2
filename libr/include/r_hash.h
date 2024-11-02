@@ -29,7 +29,9 @@ typedef struct r_hash_plugin_t {
 } RHashPlugin;
 #endif
 
-#if WANT_SSL_CRYPTO
+// WANT_SSL_CRYPTO
+#if 0
+// XXX breaks the build because openssl code is not portable, just force those plugins to always be native
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 typedef MD5_CTX RHashMD5Context;
@@ -41,7 +43,7 @@ typedef SHA512_CTX RSha512Context;
 #define SHA384_BLOCK_LENGTH SHA384_CBLOCK
 #define SHA512_BLOCK_LENGTH SHA512_CBLOCK
 #else
-#define MD5_CTX RHashMD5Context
+// #define MD5_CTX RHashMD5Context
 
 /* hashing */
 typedef struct {
@@ -74,7 +76,6 @@ typedef struct _SHA512_CTX {
 
 typedef RSha512Context RSha384Context;
 #endif
-
 
 /*
  * Since we have not enough space in bitmask, you may do fine
