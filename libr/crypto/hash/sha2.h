@@ -44,7 +44,7 @@ extern "C" {
 
 #if R_CRYPTO_INTERNAL
 #undef R_IPI
-#define R_IPI R_UNUSED R_HIDDEN static
+#define R_IPI R_UNUSED static
 #define IPI static
 #define R_SHA2_API(x) __sha2_##x
 #else
