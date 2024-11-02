@@ -137,3 +137,91 @@ addr: 0x0000120c
 addr: 0x00001212
 EOF
 RUN
+
+NAME=CL file
+FILE=bins/elf/dwarf3_line
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
+EOF
+RUN
+
+NAME=CL dwarf5 file
+FILE=bins/elf/dwarf5_line
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
+EOF
+RUN
+
+NAME=CL rel file
+FILE=bins/elf/dwarf3_line_rel
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
+EOF
+RUN
+
+NAME=CL dwarf5 rel file
+FILE=bins/elf/dwarf5_line_rel
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
+EOF
+RUN
+
+NAME=CL clang file
+FILE=bins/elf/dwarf3_line_cl
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+EOF
+RUN
+
+NAME=CL dwarf5 clang file
+FILE=bins/elf/dwarf5_line_cl
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+EOF
+RUN
+
+NAME=CL rel clang file
+FILE=bins/elf/dwarf3_line_rel_cl
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c
+EOF
+RUN
+
+NAME=CL dwarf5 rel clang file
+FILE=bins/elf/dwarf5_line_rel_cl
+CMDS=CL~$$file
+EXPECT=<<EOF
+
+file: /tmp/dwarf-line-foo.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
+file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c
+EOF
+RUN
