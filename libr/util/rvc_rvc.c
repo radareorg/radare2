@@ -149,7 +149,7 @@ static char *strip_sys_dir(const char *path) {
 		if (!ss) {
 			break;
 		}
-		memmove (ss + 1, ss, strlen (ss));
+		memmove (ss, ss + 1, strlen (ss));
 		ptr = ss;
 	}
 	return res;
