@@ -73,3 +73,50 @@ EXPECT=<<EOF
 0x000013e0 35 sym._ZN7MyClassD2Ev
 EOF
 RUN
+
+NAME=MACHO - realname c++
+FILE=bins/mach0/swift-main3
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+s 4295000064
+isj.~{}
+EOF
+EXPECT=<<EOF
+{
+  "name": "_$ss23_ContiguousArrayStorageCyypGMD",
+  "flagname": "sym.__ss23_ContiguousArrayStorageCyypGMD",
+  "realname": "_$ss23_ContiguousArrayStorageCyypGMD",
+  "ordinal": 5,
+  "bind": "LOCAL",
+  "size": 0,
+  "type": "FUNC",
+  "vaddr": 4295000064,
+  "paddr": 32768,
+  "is_imported": false
+}
+EOF
+RUN
+
+NAME=MACHO - realname c++ with demangle
+FILE=bins/mach0/swift-main3
+ARGS=-e bin.demangle=true
+CMDS=<<EOF
+s 4295000064
+isj.~{}
+EOF
+EXPECT=<<EOF
+{
+  "name": "_$ss23_ContiguousArrayStorageCyypGMD",
+  "demname": "...ss23_ContiguousArrayStorageCyypGMD",
+  "flagname": "sym....ss23_ContiguousArrayStorageCyypGMD",
+  "realname": "_$ss23_ContiguousArrayStorageCyypGMD",
+  "ordinal": 5,
+  "bind": "LOCAL",
+  "size": 0,
+  "type": "FUNC",
+  "vaddr": 4295000064,
+  "paddr": 32768,
+  "is_imported": false
+}
+EOF
+RUN
