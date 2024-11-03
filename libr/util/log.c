@@ -20,6 +20,12 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOG_LEVEL_DEBUG]     = "DEBUG",
 };
 
+#if R2_600
+R_API const char *r_log_level_fromstring(int i) {
+	// TODO. see libr/core/cconfig.c:3340
+}
+#endif
+
 R_API const char *r_log_level_tostring(int i) {
 	if (i >= 0 && i < R_LOG_LEVEL_LAST) {
 		return level_tags[i];
