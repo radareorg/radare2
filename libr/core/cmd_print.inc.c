@@ -3906,7 +3906,7 @@ restore_conf:
 }
 
 static bool cmd_print_ph(RCore *core, const char *input) {
-	char algo[128];
+	char *algo = NULL;
 	ut32 osize = 0, len = core->blocksize;
 	int pos = 0, handled_cmd = false;
 
@@ -3937,35 +3937,47 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		input++;
 	}
 	input = r_str_trim_head_ro (input);
-	const char *ptr = strchr (input, ' ');
-	r_str_ncpy (algo, input, sizeof (algo) - 1);
-	if (ptr && ptr[1]) { // && r_num_is_valid_input (core->num, ptr + 1)) {
-		int nlen = r_num_math (core->num, ptr + 1);
-		if (nlen > 0) {
-			len = nlen;
-		}
+	char *cmd = strdup (input);
+	RList *args = r_str_split_list (cmd, " ", 0);
+	if (args) {
+		algo = r_list_get_n (args, 0);
+	}
+	char *len_str = r_list_get_n (args, 1);
+	if (len_str) {
+		len = r_num_math (core->num, len_str);
 		osize = core->blocksize;
-		if (nlen > core->blocksize) {
-			r_core_block_size (core, nlen);
-			if (nlen != core->blocksize) {
+		if (len > core->blocksize) {
+			r_core_block_size (core, len);
+			if (len != core->blocksize) {
 				R_LOG_ERROR ("Invalid block size");
 				r_core_block_size (core, osize);
 				return false;
 			}
 			r_core_block_read (core);
 		}
-	} else if (!ptr || !*(ptr + 1)) {
+	} else {
 		osize = len;
 	}
-	/* TODO: Simplify this spaguetti monster */
-	while (osize > 0 && hash_handlers[pos].name) {
-		if (!r_str_ccmp (hash_handlers[pos].name, input, ' ')) {
-			hash_handlers[pos].handler (core->block, len);
-			handled_cmd = true;
-			break;
+	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	if (cj && cj->h->type == R_CRYPTO_TYPE_HASHER) {
+		r_crypto_job_update (cj, (const ut8 *)core->block, len);
+		int result_size = 0;
+		ut8 *result = r_crypto_job_get_output (cj, &result_size);
+		if (result) {
+			hexprint (result, result_size);
 		}
-		pos++;
+	} else {
+		/* TODO: Simplify this spaguetti monster */
+		while (osize > 0 && hash_handlers[pos].name) {
+			if (!r_str_ccmp (hash_handlers[pos].name, input, ' ')) {
+				hash_handlers[pos].handler (core->block, len);
+				handled_cmd = true;
+				break;
+			}
+			pos++;
+		}
 	}
+
 	if (osize) {
 		r_core_block_size (core, osize);
 	}
