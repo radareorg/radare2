@@ -8,10 +8,12 @@
 #include "dalvik.h"
 #include "dalvik.c"
 
+#if 0
 static inline ut64 get_offset(RArch *arch, int type, int idx) {
 	R_RETURN_VAL_IF_FAIL (arch && arch->binb.bin && arch->binb.get_offset, UT64_MAX);
 	return arch->binb.get_offset (arch->binb.bin, type, idx);
 }
+
 static inline void append_offset(RStrBuf *sb, RArch *arch, int type, int idx) {
 	ut64 off = get_offset (arch, type, idx);
 	switch (type) {
@@ -41,10 +43,13 @@ static inline void append_offset(RStrBuf *sb, RArch *arch, int type, int idx) {
 		break;
 	}
 }
+#endif
+
 static inline char *get_name(RArch *arch, int type, int idx) {
 	R_RETURN_VAL_IF_FAIL (arch && arch->binb.bin && arch->binb.get_name, NULL);
 	return (char *)arch->binb.get_name (arch->binb.bin, type, idx, false);
 }
+
 static inline void append_name(RStrBuf *sb, RArch *arch, int type, int idx) {
 	char *flag = get_name (arch, 'c', idx);
 	switch (idx) {
@@ -104,10 +109,10 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 		r_strbuf_appendf (sb, " v%u", instr->f11x.a);
 		break;
 	case DALVIK_FMT_10T:
-		r_strbuf_appendf (sb, " %#lx", addr + (ut64)instr->f11x.a * 2);
+		r_strbuf_appendf (sb, " 0x%"PFMT64x, addr + (ut64)instr->f11x.a * 2);
 		break;
 	case DALVIK_FMT_20T:
-		r_strbuf_appendf (sb, " %#lx", addr + (ut64)instr->f20t.a * 2);
+		r_strbuf_appendf (sb, " 0x%"PFMT64x, addr + (ut64)instr->f20t.a * 2);
 		break;
 	case DALVIK_FMT_22X:
 		r_strbuf_appendf (sb, " v%u, v%u", instr->f22x.a, instr->f22x.b);
@@ -119,10 +124,10 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 	case DALVIK_FMT_21H:
 		switch (instr->op) {
 		case DALVIK_OP_CONST_HIGH16:
-			r_strbuf_appendf (sb, " v%u, %#lx", instr->f22x.a, (ut64)instr->f22x.b << 16);
+			r_strbuf_appendf (sb, " v%u, 0x%"PFMT64x, instr->f22x.a, (ut64)instr->f22x.b << 16);
 			break;
 		case DALVIK_OP_CONST_WIDE_HIGH16:
-			r_strbuf_appendf (sb, " v%u, %#lx", instr->f22x.a, (ut64)instr->f22x.b << 48);
+			r_strbuf_appendf (sb, " v%u, 0x%"PFMT64x, instr->f22x.a, (ut64)instr->f22x.b << 48);
 			break;
 		default:
 			// unreachable
@@ -164,7 +169,7 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 		r_strbuf_appendf (sb, " v%u, v%u, %#x", instr->f23x.a, instr->f23x.b, instr->f23x.c);
 		break;
 	case DALVIK_FMT_22T:
-		r_strbuf_appendf (sb, " v%u, v%u, %#lx", instr->f22t.a, instr->f22t.b, addr + (ut64)instr->f22t.c * 2);
+		r_strbuf_appendf (sb, " v%u, v%u, 0x%"PFMT64x, instr->f22t.a, instr->f22t.b, addr + (ut64)instr->f22t.c * 2);
 		break;
 	case DALVIK_FMT_22S:
 		r_strbuf_appendf (sb, " v%u, v%u, %#x", instr->f22t.a, instr->f22t.b, instr->f22t.c);
@@ -176,7 +181,7 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 		r_strbuf_appendf (sb, " v%u, v%u", instr->f32x.a, instr->f32x.b);
 		break;
 	case DALVIK_FMT_30T:
-		r_strbuf_appendf (sb, " %#lx", addr + (ut64)instr->f30t.a * 2);
+		r_strbuf_appendf (sb, " 0x%"PFMT64x, addr + (ut64)instr->f30t.a * 2);
 		break;
 	case DALVIK_FMT_31T:
 		// TODO: packed-switch/sparse-switch/fill-array-data
