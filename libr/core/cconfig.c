@@ -3336,6 +3336,15 @@ static bool cb_config_log_level(void *coreptr, void *nodeptr) {
 		r_cons_printf ("5 - debug\n");
 		return false;
 	}
+	int i;
+	const char *uvalue = node->value;
+	for (i = 0; i < R_LOG_LEVEL_LAST; i++) {
+		const char *m = r_log_level_tostring (i);
+		if (r_str_casecmp (m, uvalue) == 0) {
+			r_log_set_level (i);
+			return true;
+		}
+	}
 	r_log_set_level (node->i_value);
 	return true;
 }
