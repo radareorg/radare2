@@ -4,11 +4,11 @@ CMDS=<<EOF
 pFa
 EOF
 EXPECT=<<EOF
-  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0     0xa2     0 cons SEQUENCE            : 30
-     0x3     0x10     1 cons SEQUENCE            : 30
-     0x5      0xb     2 prim OBJECT_IDENTIFIER   : rsaEncryption
-    0x12     0x8e     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2...
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x3 +   0x9f     0 cons SEQUENCE            : 30
+     0x3  0x2 +    0xd     1 cons SEQUENCE            : 30
+     0x5  0x2 +    0x9     2 prim OBJECT_IDENTIFIER   : rsaEncryption
+    0x12  0x3 +   0x8d     1 prim BIT_STRING          : 30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2... (1120 bits)
 
 EOF
 RUN
@@ -42,7 +42,7 @@ EXPECT=<<EOF
     },
     {
       "offset": 18,
-      "length": 140,
+      "length": 141,
       "form": "prim",
       "name": "BIT_STRING",
       "value": "30818902818100cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2ee1a0be1558e3ca182b11a8c14392b6de52346bc7c88bf75e3fb2b9f27fab21f5cf19934e3110ea4ad72a6f073f8ab38b9939bb639e78ad7f434119d8cc2b1bde4eaf9513b056508c908ed43c99b0ceb222cbbe1ef0203010001"
@@ -59,8 +59,8 @@ wx 030801016e500dc00000
 pFa
 EOF
 EXPECT=<<EOF
-  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0      0x9     0 prim BIT_STRING          : 016e500dc00000 (55 bits)
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x2 +    0x8     0 prim BIT_STRING          : 016e500dc0000000 (55 bits)
 
 EOF
 RUN
@@ -72,8 +72,8 @@ wx 06032b6570
 pFa
 EOF
 EXPECT=<<EOF
-  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0      0x5     0 prim OBJECT_IDENTIFIER   : id-Ed25519
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x2 +    0x3     0 prim OBJECT_IDENTIFIER   : id-Ed25519
 
 EOF
 RUN
@@ -85,10 +85,10 @@ wx 3009040265210403650065
 pFa
 EOF
 EXPECT=<<EOF
-  OFFSET   LENGTH DEPTH FORM NAME                : VALUE
-       0      0xc     0 cons SEQUENCE            : 30
-     0x2      0x4     1 prim OCTET_STRING        : e!
-     0x6      0x5     1 prim OCTET_STRING        : 650065
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x2 +    0x9     0 cons SEQUENCE            : 30
+     0x2  0x2 +    0x2     1 prim OCTET_STRING        : e!
+     0x6  0x2 +    0x3     1 prim OCTET_STRING        : 650065
 
 EOF
 RUN
