@@ -346,11 +346,10 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 			ut64 at = r_num_get (&nn, name);
 			R_FREE (name);
 			// TODO check numerrors
-			if (at && at != UT64_MAX) {
-				bb = r_anal_get_block_at (core->anal, at);
-			} else {
+			if (!at || at == UT64_MAX) {
 				return invalid_numvar (core, "cant find basic block");
 			}
+			bb = r_anal_get_block_at (core->anal, at);
 		}
 		R_FREE (name);
 	} else {
@@ -528,7 +527,6 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 			}
 			// invalid
 		}
-		R_FREE (name);
 	}
 	RIOMap *map = NULL;
 	if (name) {

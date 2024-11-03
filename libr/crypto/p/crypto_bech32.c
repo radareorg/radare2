@@ -26,7 +26,7 @@ static uint32_t bech32_final_constant(bech32_encoding enc) {
 	if (enc == BECH32_ENCODING_BECH32M) {
 		return 1;
 	}
-	return -1;
+	return 0;
 }
 
 static const char charset[] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -138,11 +138,10 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 		return BECH32_ENCODING_NONE;
 	}
 	if (chk == bech32_final_constant (BECH32_ENCODING_BECH32)) {
-		return BECH32_ENCODING_BECH32; // wtf?
 		if (chk == bech32_final_constant (BECH32_ENCODING_BECH32M)) {
 			return BECH32_ENCODING_BECH32M;
 		}
-		return BECH32_ENCODING_NONE;
+		return BECH32_ENCODING_BECH32; // wtf?
 	}
 	return BECH32_ENCODING_NONE;
 }
@@ -183,6 +182,9 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		R_LOG_ERROR ("Choose decrypt or encrypt");
 		break;
 	}
+	free (hrp);
+	free (data);
+	free (in_out);
 	return true;
 }
 
