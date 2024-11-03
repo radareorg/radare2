@@ -27,7 +27,7 @@ else
         'fix-x86-16.patch',
       ]
     elif capstone_version == 'v5'
-      CS_TIP = '36a9619b7372c34459d100f1c6fd6eb27326efbc'
+      CS_TIP = '8455b3c5a53b02e524494c7e72a3946a32518170'
       CS_BRA = 'v5'
       patches_files = [
         'fix-x86-16.patch'
