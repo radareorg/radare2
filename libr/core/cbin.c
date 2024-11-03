@@ -2617,7 +2617,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				pj_ks (pj, "demname", sn.demname);
 			}
 			pj_ks (pj, "flagname", (bin_demangle && sn.demflag) ? sn.demflag : sn.nameflag);
-			pj_ks (pj, "realname", (bin_demangle && sn.demname) ? sn.demname : name);
+			pj_ks (pj, "realname", r_symbol_name); // (bin_demangle && sn.demname) ? sn.demname : r_symbol_name);
 			if (rawname) {
 				pj_ks (pj, "rawname", rawname);
 			}
