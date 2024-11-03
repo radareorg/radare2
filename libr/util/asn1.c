@@ -44,11 +44,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	obj->klass = head & ASN1_CLASS;
 	obj->form = head & ASN1_FORM;
 	obj->tag = head & ASN1_TAG;
-	if (obj->klass & 0x80) {
-		obj->tag = 0x10;
-	} else {
-		obj->tag = head & ASN1_TAG;
-	}
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
