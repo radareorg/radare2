@@ -1456,7 +1456,10 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 
 static bool cmd_dmh(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
-	if (m && !strcmp ("glibc", m)) {
+	if (!m || R_STR_ISEMPTY (input)) {
+		return false;
+	}
+	if (!strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 		if (core->rasm->config->bits == 64) {
 			dmh_glibc_64 (core, input + 1);
@@ -1467,7 +1470,7 @@ static bool cmd_dmh(RCore *core, const char *input) {
 		R_LOG_WARN ("glibc is not supported for this platform");
 #endif
 #if HAVE_JEMALLOC
-	} else if (m && !strcmp ("jemalloc", m)) {
+	} else if (!strcmp ("jemalloc", m)) {
 		if (core->rasm->config->bits == 64) {
 			dmh_jemalloc_64 (core, input + 1);
 		} else {

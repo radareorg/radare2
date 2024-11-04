@@ -244,10 +244,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 
 	if (dbg_glibc_version)	{
 		// TODO: use ^ and $ which appear to be broken
-		if (!r_regex_match ("\\d.\\d\\d", "e", dbg_glibc_version)) {
-			R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
-						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
-		} else {
+		if (r_regex_match ("\\d.\\d\\d", "e", dbg_glibc_version)) {
 			version = strtod (dbg_glibc_version, NULL);
 			core->dbg->glibc_version = (int) round ((version * 100));
 			core->dbg->glibc_version_d = version;
@@ -255,29 +252,28 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 			R_LOG_INFO ("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
 			return true;
 		}
+		R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
+			" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
 	}
 
 	const char *libc_filename = GH(get_libc_filename_from_maps) (core);
-
 	if (!libc_filename) {
-		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
+		R_LOG_WARN ("resolve_glibc_version: no libc found in maps (static binary?)");
 		return false;
 	}
 	// At this point we found a map in memory that _should_ be libc
 	version = GH (get_glibc_version) (core, libc_filename);
-	if (version != 0)	{
+	if (version != 0) {
 		core->dbg->glibc_version = (int) round ((version * 100));
 		core->dbg->glibc_version_d = version;
 		core->dbg->glibc_version_resolved = true;
-		char version_buffer[315] = {0};
-		// TODO: better way snprintf to 4 chars warns
-		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
-		snprintf (version_buffer, sizeof (version_buffer)-1, "%.2f", version);
-		r_config_set (core->config, "dbg.glibc.version", version_buffer);
+		char *s = r_str_newf ("%.2f", version);
+		r_config_set (core->config, "dbg.glibc.version", s);
+		free (s);
 		return true;
 	}
 
-	R_LOG_WARN ("Could not determine libc version");
+	R_LOG_WARN ("Unknown version of libc");
 	return false;
 }
 
@@ -285,7 +281,6 @@ static bool GH(is_tcache)(RCore *core) {
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return r_config_get_b (core->config, "dbg.glibc.tcache");
 	}
-
 	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
 		return core->dbg->glibc_version_d > 2.25;
 	}
@@ -665,7 +660,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	return main_arena;
 }
 
-static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
+static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->maps, false);
 
 	if (core->dbg->main_arena_resolved) {
@@ -679,7 +674,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (!GH (resolve_glibc_version) (core)) {
-		R_LOG_WARN ("r_resolve_main_arena: Could not resolve main glibc version!");
+		R_LOG_WARN ("resolve_main_arena: Could not resolve main glibc version!");
 		return false;
 	}
 
@@ -693,7 +688,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (in_debugger) {
 		const char *libc_filename = GH(get_libc_filename) (core);
 		if (!libc_filename)	{
-			R_LOG_WARN ("r_resolve_main_arena: Could not resolve libc filename");
+			R_LOG_WARN ("resolve_main_arena: Could not resolve libc filename");
 			return false;
 		}
 
@@ -925,7 +920,6 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1));
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
-	RANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
@@ -940,12 +934,12 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	snprintf (title, sizeof (title) - 1, "bin @ 0x%"PFMT64x"\n", (ut64)bin);
 	snprintf (chunk, sizeof (chunk) - 1, "fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n",
 		(ut64)cnk->fd, (ut64)cnk->bk);
-	bin_node = r_agraph_add_node (g, title, chunk, NULL);
-	prev_node = bin_node;
+	RANode *bin_node = r_agraph_add_node (g, title, chunk, NULL);
+	RANode *prev_node = bin_node;
 
 	while (cnk->bk != bin) {
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->GH (top)) {
 			PRINT_RA ("Double linked list corrupted\n");
 			free (cnk);
 			free (g);
@@ -953,15 +947,18 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 		}
 
 		r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-		snprintf (title, sizeof (title) - 1, "Chunk @ 0x%"PFMT64x"\n", (ut64)next);
-		snprintf (chunk, sizeof (chunk) - 1, "fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n",
-			(ut64)cnk->fd, (ut64)cnk->bk);
-		next_node = r_agraph_add_node (g, title, chunk, NULL);
+		char *title = r_str_newf ("Chunk @ 0x%"PFMT64x"\n", (ut64)next);
+		char *chunk = r_str_newf ("fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n", (ut64)cnk->fd, (ut64)cnk->bk);
+		RANode *next_node = r_agraph_add_node (g, title, chunk, NULL);
+		free (title);
+		free (chunk);
+		if (!next_node) {
+			break;
+		}
 		r_agraph_add_edge (g, prev_node, next_node, false);
 		r_agraph_add_edge (g, next_node, prev_node, false);
 		prev_node = next_node;
 	}
-
 	r_agraph_add_edge (g, prev_node, bin_node, false);
 	r_agraph_add_edge (g, bin_node, prev_node, false);
 	r_agraph_print (g);
@@ -1818,7 +1815,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 static void GH(dmhg)(RCore *core, const char *input, MallocState *main_arena, GHT global_max_fast, int format) {
 	GHT m_state = GHT_MAX;
 	GHT m_arena = GHT_MAX;
-	if (!GH(r_resolve_main_arena) (core, &m_arena)) {
+	if (!GH(resolve_main_arena) (core, &m_arena)) {
 		R_LOG_ERROR ("Cannot find the main arena");
 		return;
 	}
@@ -1857,7 +1854,7 @@ static const char* GH(help_msg)[] = {
 	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under developemnt]",
 	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
 	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
-	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
+	"dmhf", " [fastbin_num(:malloc_state)]", "Display single linked list in fastbinY instance from a particular arena",
 	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
 	"dmhg", "", "Display heap graph of heap segment",
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
@@ -1876,18 +1873,20 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		return false;
 	}
 
-	r_config_set_b (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
-
 	int format = 'c';
 	bool get_state = false;
 
+	if (input[0] != '?') {
+		// fixes d?* glitch
+		r_config_set_b (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
+	}
 	switch (input[0]) {
 	case ' ' : // dmh [malloc_state]
 		m_state = r_num_get (core->num, input);
 		get_state = true;
 		// pass through
 	case '\0': // dmh
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			if (core->offset != core->prompt_offset) {
 				m_state = core->offset;
 			} else {
@@ -1908,7 +1907,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // dmha
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
@@ -1916,7 +1915,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'i': // dmhi
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
@@ -1932,7 +1931,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "dmhm"
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			switch (input[1]) {
 			case '*':
 				format = '*';
@@ -1965,7 +1964,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "dmhb"
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
 				char *sep = strchr (arg, ':');
@@ -1994,12 +1993,12 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "dmhc"
-		if (GH(r_resolve_main_arena)(core, &m_arena)) {
+		if (GH(resolve_main_arena)(core, &m_arena)) {
 			GH(print_heap_chunk) (core);
 		}
 		break;
 	case 'f': // "dmhf"
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			const bool demangle = r_config_get_b (core->config, "dbg.glibc.demangle"); // XXX reuse bin.demangle
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
@@ -2034,7 +2033,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		GH (dmhg) (core, input, main_arena, global_max_fast, input[0]);
 		break;
 	case 't':
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		if (GH(resolve_main_arena) (core, &m_arena)) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}
