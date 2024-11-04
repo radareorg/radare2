@@ -2525,10 +2525,10 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 }
 
 static void cmd_debug_reg(RCore *core, const char *str) {
-	char *arg;
-	struct r_reg_item_t *r;
-	const char *name, *use_color;
 	size_t i;
+	char *arg;
+	RRegItem *r;
+	const char *name;
 	int size, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
@@ -2536,13 +2536,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	if (newbits > 0) {
 		bits = newbits;
 	}
-	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
-		use_color = ConsP(creg): Color_BWHITE;
-	} else {
-		use_color = NULL;
-	}
+	const char *use_color = use_colors? (ConsP(creg): Color_BWHITE): NULL;
 	if (!str) {
 		str = "";
 	}
@@ -2582,6 +2578,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 			}
 		}
+		break;
+	case 'a':
+		r_core_cmdf (core, "ara%s", str + 1);
 		break;
 	case '-': // "dr-"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '-', 0);

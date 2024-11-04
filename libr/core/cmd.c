@@ -4128,7 +4128,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	r_str_trim_tail (cmd);
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
-	if (R_UNLIKELY (!*cmd)) {
+	if (R_STR_ISEMPTY (cmd)) {
 		if (core->cmdrepeat > 0) {
 			lastcmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
