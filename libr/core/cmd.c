@@ -1300,7 +1300,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 'l': // "yl"
 		r_core_return_value (core, r_buf_size (core->yank_buf));
 		break;
-	case 'r':
+	case 'r': // "yr"
 		R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2yara");
 		r_core_return_code (core, 1);
 		break;
@@ -4282,11 +4282,6 @@ static char *find_eoq(char *p) {
 	return p;
 }
 
-static char* findSeparator(char *p) {
-	char *q = strchr (p, '+');
-	return q? q: strchr (p, '-');
-}
-
 static void tmpenvs_free(void *item) {
 	if (item) {
 		r_sys_setenv (item, NULL);
@@ -4342,6 +4337,21 @@ static char *r_core_cmd_find_subcmd_begin(char *cmd) {
 
 static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
 	return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
+}
+
+static char *getarg(char *ptr) {
+	if (*ptr == '{') {
+		char *mander = strdup (ptr + 1);
+		char *brace = strchr (mander, '}');
+		if (brace) {
+			*brace = 0;
+		}
+		return mander;
+	}
+	if (*ptr == ':') {
+		return strdup (ptr + 1);
+	}
+	return NULL;
 }
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
@@ -4994,6 +5004,19 @@ repeat_arroba:
 					r_sys_setenv (k, v);
 					r_list_append (tmpenvs, k);
 				}
+			} else {
+				char *n = r_sys_getenv (ptr + 2);
+				if (R_STR_ISNOTEMPTY (n)) {
+					ut64 v = r_num_math (core->num, n);
+					if (core->num->nc.errors == 0) {
+						r_core_seek (core, v, true);
+						cmd_tmpseek = core->tmpseek = true;
+						goto fuji;
+					}
+				} else {
+					R_LOG_ERROR ("Unknown envvar @%");
+				}
+				free (n);
 			}
 			free (k);
 		} else if (ptr[1] == '.') { // "@."
@@ -5012,7 +5035,8 @@ repeat_arroba:
 				// WAT DU
 				R_LOG_TODO ("what do you expect for @. import offset from file maybe?");
 			}
-		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
+		} else if (ptr[0] && ptr[1] && ptr[2]) {
+			// TODO: getarg(ptr);
 			// TODO move into a separate function
 			switch (ptr[0]) {
 			case 'F': // "@F:" // temporary flag space
@@ -5032,7 +5056,7 @@ repeat_arroba:
 							r_core_seek (core, bb->addr + inst_off, true);
 							cmd_tmpseek = core->tmpseek = true;
 						} else {
-							R_LOG_INFO ("The current basic block has %d instructions", bb->ninstr);
+							R_LOG_INFO ("Current basic block has %d instructions", bb->ninstr);
 						}
 					} else {
 						R_LOG_ERROR ("Can't find a basic block for 0x%08"PFMT64x, core->offset);
@@ -5061,51 +5085,39 @@ repeat_arroba:
 					R_LOG_ERROR ("cannot open '%s'", ptr + 3);
 				}
 				break;
-			case 'r': // "@r:" // regname
-				if (ptr[1] == '{') { // @r{PC}
-					ut64 regval;
-					char *mander = strdup (ptr + 2);
-					char *brace = strchr (mander, '}');
-					if (brace) {
-						*brace = 0;
-					}
-					char *sep = findSeparator (mander);
-					if (sep) {
-						char ch = *sep;
-						*sep = 0;
-						regval = r_debug_reg_get (core->dbg, mander);
-						*sep = ch;
-						char *numexpr = r_str_newf ("0x%"PFMT64x"%s", regval, sep);
-						regval = r_num_math (core->num, numexpr);
-						free (numexpr);
+			case 'r': // "@r:" "@r{}" // regname
+				{
+					char *arg = getarg (ptr + 1);
+					if (arg) {
+						int err = 0;
+						ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
+						free (arg);
+						if (err) {
+							R_LOG_ERROR ("Invalid register name for @r");
+							core->num->nc.errors ++;
+						} else {
+							r_core_seek (core, v, true);
+							cmd_tmpseek = core->tmpseek = true;
+						}
 					} else {
-						regval = r_debug_reg_get (core->dbg, ptr + 2);
+						R_LOG_ERROR ("Invalid register name for @r");
+						core->num->nc.errors ++;
 					}
-					r_core_seek (core, regval, true);
-					cmd_tmpseek = core->tmpseek = true;
-					free (mander);
-				} else if (ptr[1] == ':') { // @r:PC
-					ut64 regval;
-					char *mander = strdup (ptr + 2);
-					char *sep = findSeparator (mander);
-					if (sep) {
-						char ch = *sep;
-						*sep = 0;
-						regval = r_debug_reg_get (core->dbg, mander);
-						*sep = ch;
-						char *numexpr = r_str_newf ("0x%"PFMT64x"%s", regval, sep);
-						regval = r_num_math (core->num, numexpr);
-						free (numexpr);
-					} else {
-						regval = r_debug_reg_get (core->dbg, ptr + 2);
-					}
-					r_core_seek (core, regval, true);
-					cmd_tmpseek = core->tmpseek = true;
-					free (mander);
 				}
 				break;
 			case 'b': // "@b:" // bits
-				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &cmd_ignbithints);
+				{
+					char *arg = getarg (ptr + 1);
+					if (arg) {
+						ut64 v = r_num_math (core->num, arg);
+						if (core->num->nc.errors == 0) {
+							is_bits_set = set_tmp_bits (core, v, &tmpbits, &cmd_ignbithints);
+						}
+					} else {
+						R_LOG_ERROR ("Invalid block size @b");
+						core->num->nc.errors ++;
+					}
+				}
 				break;
 			case 'i': // "@i:"
 				{
@@ -5132,11 +5144,11 @@ repeat_arroba:
 			case 'e': // "@e:"
 				{
 					char *cmd = parse_tmp_evals (core, ptr + 2);
-					if (!tmpeval) {
-						tmpeval = cmd;
-					} else {
+					if (tmpeval) {
 						tmpeval = r_str_prepend (tmpeval, cmd);
 						free (cmd);
+					} else {
+						tmpeval = cmd;
 					}
 				}
 				break;
@@ -5226,7 +5238,7 @@ repeat_arroba:
 					char *q = strchr (ptr + 2, ':');
 					if (q) {
 						*q++ = 0;
-						int bits = r_num_math (core->num, q);
+						const int bits = r_num_math (core->num, q);
 						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
 					}
 					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);

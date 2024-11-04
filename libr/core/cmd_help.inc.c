@@ -41,6 +41,8 @@ static RCoreHelpMessage help_msg_at = {
 	"@..", "addr", "temporary partial address seek (see s..)",
 	"@!", "blocksize", "temporary change the block size (p8@3!3)",
 	"@{", "from to}", "temporary set from and to for commands supporting ranges",
+	"@%", "env[=value]", "use value stored in env var as tmpseek address",
+	// "@$", "file", "use memory file contents as tmpseek address",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
 	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)", // XXX rename to @n:
