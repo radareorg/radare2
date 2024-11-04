@@ -181,6 +181,7 @@ e          rol  Rotate Left N bits
 e          ror  Rotate Right N bits
 e          rot  Rotate Encryption
 c  serpent-ecb  Bouncy Castle Cryptography
+h          sip  SipHash
 c      sm4-ecb  ShāngMì4 block cipher
 h      strhash  String hash using a modified DJB2 xor
 c          xor  Byte level Exclusive Or Encryption
@@ -227,7 +228,6 @@ h    fletcher8
 h   fletcher16
 h   fletcher32
 h   fletcher64
-h          sip
 h          elf
 EOF
 RUN
