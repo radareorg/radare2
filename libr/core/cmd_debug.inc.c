@@ -1462,10 +1462,9 @@ static bool cmd_dmh(RCore *core, const char *input) {
 	if (!strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 		if (core->rasm->config->bits == 64) {
-			dmh_glibc_64 (core, input + 1);
-		} else {
-			dmh_glibc_32 (core, input + 1);
+			return dmh_glibc_64 (core, input + 1);
 		}
+		return dmh_glibc_32 (core, input + 1);
 #else
 		R_LOG_WARN ("glibc is not supported for this platform");
 #endif
