@@ -716,8 +716,17 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 
 		ut64 total_entries = 0;
 		for (j = 0; j < entry_format_count; j++) {
-			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
-			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
+			const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
+			if (buf == nbuf) {
+				R_LOG_WARN ("Invalid uleb128 for dwarf entry0");
+				nbuf++;
+			}
+			nbuf = r_uleb128 (nbuf, buf_end - buf, NULL, NULL);
+			if (buf == nbuf) {
+				R_LOG_WARN ("Invalid uleb128 for dwarf entry1");
+				nbuf++;
+			}
+			buf = nbuf;
 		}
 
 		buf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
@@ -752,7 +761,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				case DW_FORM_string:
 					// TODO: find a way to test this case.
 					if (buf && buf <= buf_end) {
-						int mylen = R_MIN (maxlen, (buf_end - buf));
+						const int mylen = R_MIN (maxlen, (buf_end - buf));
 						if (mylen > 0) {
 							name = r_str_ndup ((const char *)buf, mylen);
 							buf += mylen + 1;
@@ -798,13 +807,21 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					data = READ64 (buf);
 					break;
 				case DW_FORM_data16:
-					if (buf && buf+16 < buf_end) {
+					if (buf && buf + 16 < buf_end) {
 						memcpy (&sum, buf, 16);
 						buf += 16;
 					}
 					break;
 				case DW_FORM_udata:
-					buf = r_uleb128 (buf, buf_end - buf, &data, NULL);
+					{
+						const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &data, NULL);
+						if (nbuf == buf) {
+							R_LOG_WARN ("Invalid uleb128 for dwarf udata");
+							buf++;
+						} else {
+							buf = nbuf;
+						}
+					}
 					break;
 				}
 
