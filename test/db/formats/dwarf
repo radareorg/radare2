@@ -1,3 +1,12 @@
+NAME=test dwarf dos
+FILE=bins/elf/dwarf/dos
+CMDS=idx
+EXPECT=<<EOF
+[Source file]
+/var/tmp/portage/sys-libs/glibc-2.40-r5/work/glibc-2.40/csu
+EOF
+RUN
+
 NAME=test dwarf2
 FILE=bins/elf/dwarf/hello-dwarf2
 CMDS=<<EOF
