@@ -5091,15 +5091,14 @@ repeat_arroba:
 					if (arg) {
 						int err = 0;
 						ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
+						free (arg);
 						if (err) {
 							R_LOG_ERROR ("Invalid register name for @r");
 							core->num->nc.errors ++;
 						} else {
-							r_core_seek (core, v , true);
+							r_core_seek (core, v, true);
 							cmd_tmpseek = core->tmpseek = true;
-							free (arg);
 						}
-						free (arg);
 					} else {
 						R_LOG_ERROR ("Invalid register name for @r");
 						core->num->nc.errors ++;
