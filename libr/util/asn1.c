@@ -96,7 +96,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		goto out_error;
 	}
 #if R2_600
-	obj->headerlenght = obj->sector - buffer;
+	obj->headerlength = obj->sector - buffer;
 #endif
 	return obj;
 out_error:
