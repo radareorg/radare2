@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2023 - wargio, pancake */
+/* radare2 - LGPL - Copyright 2017-2024 - wargio, pancake */
 
 #define R_LOG_ORIGIN "asn1"
 
@@ -596,7 +596,9 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			if (strlen (temp_name) > 100) {
-				r_strbuf_appendf (sb, " - %s...", r_str_newlen (temp_name, 100));
+				r_strbuf_append (sb, " - ");
+				r_strbuf_append_n (sb, temp_name, 100);
+				r_strbuf_append (sb, "...");
 			} else {
 				r_strbuf_appendf (sb, " - %s", temp_name);
 			}
@@ -604,6 +606,9 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			r_strbuf_appendf (sb, " - %02x", obj->tag | 0x20);
 		} else {
 			if (strlen (string) > 100) {
+				r_strbuf_append (sb, " - ");
+				r_strbuf_append_n (sb, string, 100);
+				r_strbuf_append (sb, "...");
 				r_strbuf_appendf (sb, " - %s...", r_str_newlen (string, 100));
 			} else {
 				r_strbuf_appendf (sb, " - %s", string);
@@ -629,7 +634,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			if (strlen (temp_name) > 100) {
-				r_strbuf_appendf (sb, "%s...", r_str_newlen (temp_name, 100));
+				r_strbuf_append_n (sb, temp_name, 100);
+				r_strbuf_append (sb, "...");
 			} else {
 				r_strbuf_appendf (sb, "%s", temp_name);
 			}
@@ -637,7 +643,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			r_strbuf_appendf (sb, "%02x", obj->tag | 0x20);
 		} else {
 			if (strlen (string) > 100) {
-				r_strbuf_appendf (sb, "%s...", r_str_newlen (string, 100));
+				r_strbuf_append_n (sb, string, 100);
+				r_strbuf_append (sb, "...");
 			} else {
 				r_strbuf_appendf (sb, "%s", string);
 			}
