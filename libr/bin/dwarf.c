@@ -399,16 +399,16 @@ static RBinSection *getsection(RBin *bin, int sn) {
 static ut8 *get_section_bytes(RBin *bin, int sect_name, size_t *len) {
 	R_RETURN_VAL_IF_FAIL (bin && len, NULL);
 	RBinSection *section = getsection (bin, sect_name);
-	RBinFile *binfile = bin ? bin->cur: NULL;
-	if (!section || !binfile) {
+	if (!section || !bin->cur) {
 		return NULL;
 	}
+	RBinFile *binfile = bin->cur;
 	if (section->size > binfile->size) {
 		return NULL;
 	}
 	*len = section->size;
 	ut8 *buf = calloc (1, *len);
-	if (buf) {
+	if (R_LIKELY (buf)) {
 		r_buf_read_at (binfile->buf, section->paddr, buf, *len);
 	}
 	return buf;
@@ -517,12 +517,7 @@ static char *get_compilation_directory_key(int debug_line_offset) {
 	if (debug_line_offset < 0) {
 		return NULL;
 	}
-	const char *comp_dir_attribute_name = "DW_AT_comp_dir";
-	size_t debug_line_offset_len = snprintf (NULL, 0, "%d", debug_line_offset);
-	size_t bufsz = strlen (comp_dir_attribute_name) + debug_line_offset_len + 1;
-	char *key = malloc (sizeof (char) * bufsz);
-	snprintf (key, bufsz, "%s%d", comp_dir_attribute_name, debug_line_offset);
-	return key;
+	return r_str_newf ("DW_AT_comp_dir%d", debug_line_offset);
 }
 
 // Parses source file header of DWARF version <= 4
@@ -744,7 +739,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 		}
 
 		ut64 index;
-		int count = 0;
+		size_t count = 0;
 		for (index = 0; buf && index < total_entries; index++) {
 			const ut8 *format = entry_format;
 
@@ -815,12 +810,11 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				case DW_FORM_udata:
 					{
 						const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &data, NULL);
-						if (nbuf == buf) {
+						if (!nbuf || nbuf == buf) {
 							R_LOG_WARN ("Invalid uleb128 for dwarf udata");
-							buf++;
-						} else {
-							buf = nbuf;
+							goto beach;
 						}
+						buf = nbuf;
 					}
 					break;
 				}
@@ -899,7 +893,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					break;
 				}
 			}
-
 			count++;
 		}
 	}
@@ -910,7 +903,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 
 beach:
 	sdb_free (sdb);
-
 	return buf;
 }
 
