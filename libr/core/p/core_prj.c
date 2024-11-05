@@ -40,8 +40,6 @@ typedef struct {
 typedef struct {
 	ut32 size;
 	ut32 type;
-	ut32 version;
-	ut32 unk;
 } R2ProjectEntry;
 
 typedef struct {
@@ -66,6 +64,13 @@ typedef struct {
 	ut64 delta;
 	ut64 size;
 } R2ProjectFlag;
+
+typedef struct {
+	ut32 text;
+	ut32 mod;
+	ut64 delta;
+	ut64 size;
+} R2ProjectComment;
 
 typedef struct {
 	RCore *core;
@@ -157,6 +162,44 @@ static void rprj_flag_write(Cursor *cur) {
 	r_flag_foreach (cur->core->flags, flag_foreach_cb, cur);
 }
 
+static void rprj_cmnt_write_one(Cursor *cur, RIntervalNode *node, RAnalMetaItem *mi) {
+	R2ProjectComment cmnt;
+	ut64 va = node->start;
+	ut32 text = rprj_st_append (cur->st, mi->str);
+	ut32 mid = UT32_MAX;
+	R2ProjectMod *mod = find_mod (cur, va, &mid);
+	r_write_le32 (&cmnt.text, text);
+	if (mod) {
+		r_write_le32 (&cmnt.mod, mid);
+		r_write_le64 (&cmnt.delta, va - mod->vmin);
+	} else {
+		r_write_le32 (&cmnt.mod, UT32_MAX);
+		r_write_le64 (&cmnt.delta, va);
+	}
+	const int size = r_meta_node_size (node);
+	r_write_le32 (&cmnt.size, size);
+	r_buf_write (cur->b, (ut8*)&cmnt, sizeof (cmnt));
+}
+
+static void rprj_cmnt_write(Cursor *cur) {
+	RIntervalTreeIter it;
+	RAnalMetaItem *item;
+	r_interval_tree_foreach (&cur->core->anal->meta, it, item) {
+		RIntervalNode *node = r_interval_tree_iter_get (&it);
+		if (item->type == R_META_TYPE_COMMENT) {
+			rprj_cmnt_write_one (cur, node, item);
+		}
+	}
+}
+
+static void rprj_cmnt_read(RBuffer *b, R2ProjectComment *cmnt) {
+	ut8 buf[sizeof (R2ProjectFlag)];
+	r_buf_read (b, buf, sizeof (buf));
+	cmnt->text = r_read_le32 (buf + r_offsetof (R2ProjectComment, text));
+	cmnt->mod = r_read_le32 (buf + r_offsetof (R2ProjectComment, mod));
+	cmnt->delta = r_read_le64 (buf + r_offsetof (R2ProjectComment, delta));
+	cmnt->size = r_read_le64 (buf + r_offsetof (R2ProjectComment, size));
+}
 static void rprj_flag_read(RBuffer *b, R2ProjectFlag *flag) {
 	ut8 buf[sizeof (R2ProjectFlag)];
 	r_buf_read (b, buf, sizeof (buf));
@@ -191,7 +234,6 @@ static bool rprj_entry_read(RBuffer *b, R2ProjectEntry *entry) {
 	}
 	entry->size = r_read_le32 (buf);
 	entry->type = r_read_le32 (buf + 4);
-	entry->version = r_read_le32 (buf + 8);
 	R_LOG_DEBUG ("entry at 0x%08"PFMT64x" with type=%d(%s) and size=%d",
 		r_buf_at (b), entry->type, entry_type_tostring (entry->type), entry->size);
 	return true;
@@ -202,7 +244,6 @@ static bool rprj_entry_begin(RBuffer *b, ut64 *at, ut32 type, ut32 version) {
 	ut8 buf[sizeof (R2ProjectEntry)] = {0};
 	r_write_le32 (buf + r_offsetof (R2ProjectEntry, size), -1);
 	r_write_le32 (buf + r_offsetof (R2ProjectEntry, type), type);
-	r_write_le32 (buf + r_offsetof (R2ProjectEntry, version), version);
 	r_buf_write (b, buf, sizeof (buf));
 	return true;
 }
@@ -400,6 +441,10 @@ static void prj_save(RCore *core, const char *file) {
 		rprj_flag_write (&cur);
 		rprj_entry_end (b, at);
 	}
+	if (rprj_entry_begin (b, &at, RPRJ_CMNT, 1)) {
+		rprj_cmnt_write (&cur);
+		rprj_entry_end (b, at);
+	}
 	rprj_st_append (&st, "one string");
 	rprj_st_append (&st, "another one");
 #if 0
@@ -521,7 +566,6 @@ static void prj_load(RCore *core, const char *file, int mode) {
 			r_cons_printf ("  Entry<%s> {\n", entry_type_tostring (entry.type));
 			r_cons_printf ("    type = 0x%02x\n", entry.type);
 			r_cons_printf ("    size = %d\n", entry.size);
-			r_cons_printf ("    version = %d\n", entry.version);
 		}
 		if (mode & MODE_SCRIPT) {
 			r_cons_printf ("'f entry%d.%s=0x%08"PFMT64x"\n", n, entry_type_tostring (entry.type), r_buf_at (b));
@@ -589,6 +633,30 @@ static void prj_load(RCore *core, const char *file, int mode) {
 					r_cons_printf ("      User: %s\n", user);
 					//r_cons_printf ("      Date: %s\n", r_time_usecs_tostring (cmds.time));
 					r_cons_printf ("    }\n");
+				}
+			}
+			break;
+		case RPRJ_CMNT:
+			{
+				ut64 at = r_buf_at (b);
+				ut64 last = at + entry.size - 16;
+				while (at < last) {
+					R2ProjectComment cmnt;
+					rprj_cmnt_read (b, &cmnt);
+					const char *cmnt_text = rprj_st_get (&st, cmnt.text);
+					R2ProjectMod *mod = r_list_get_n (cur.mods, cmnt.mod);
+					if (mod) {
+						ut64 va = mod->vmin + cmnt.delta;
+						if (mode & MODE_SCRIPT) {
+							eprintf ("'@0x%08"PFMT64x"'CCu %s\n", va, cmnt_text);
+						}
+						if (mode & MODE_LOAD) {
+							r_core_cmdf (core, "'@0x%08"PFMT64x"'CCu %s", va, cmnt_text);
+						}
+					} else {
+						R_LOG_WARN ("Cant find map for %s", cmnt_text);
+					}
+					at += sizeof (cmnt);
 				}
 			}
 			break;
