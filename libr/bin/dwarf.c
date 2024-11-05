@@ -712,24 +712,30 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 		ut64 total_entries = 0;
 		for (j = 0; j < entry_format_count; j++) {
 			const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
-			if (buf == nbuf) {
+			if (!nbuf || buf == nbuf) {
 				R_LOG_WARN ("Invalid uleb128 for dwarf entry0");
-				nbuf++;
+				break;
 			}
-			nbuf = r_uleb128 (nbuf, buf_end - buf, NULL, NULL);
-			if (buf == nbuf) {
+			buf = nbuf;
+			nbuf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
+			if (!nbuf || buf == nbuf) {
 				R_LOG_WARN ("Invalid uleb128 for dwarf entry1");
-				nbuf++;
+				break;
 			}
 			buf = nbuf;
 		}
 
-		buf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
+		const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
+		if (!nbuf || nbuf == buf) {
+			R_LOG_WARN ("Invalid uleb128 for dwarf entry1");
+			buf = NULL;
+			break;
+		}
+		buf = nbuf;
 		if (i == FILES) {
 			if (total_entries > 0) {
 				hdr->file_names = calloc (sizeof (file_entry), total_entries);
 				if (!hdr->file_names) {
-					buf = NULL;
 					goto beach;
 				}
 			} else {
@@ -750,8 +756,18 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				ut8 sum[16] = {0};
 				ut64 data = 0;
 
-				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
-				format = r_uleb128 (format, buf_end - format, &form_code, NULL);
+				const ut8 *nbuf = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
+				if (!nbuf || nbuf == format) {
+					R_LOG_WARN ("Invalid uleb128 for dwarf entry2");
+					goto beach;
+				}
+				format = nbuf;
+				nbuf = r_uleb128 (format, buf_end - format, &form_code, NULL);
+				if (!nbuf || nbuf == format) {
+					R_LOG_WARN ("Invalid uleb128 for dwarf entry3");
+					goto beach;
+				}
+				format = nbuf;
 				switch (form_code) {
 				case DW_FORM_string:
 					// TODO: find a way to test this case.
