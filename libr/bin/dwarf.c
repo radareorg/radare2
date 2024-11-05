@@ -571,65 +571,59 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 			}
 			buf += len + 1;
 			if (buf >= buf_end) {
-				buf = NULL;
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &id_idx, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
+			const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &id_idx, NULL);
+			if (!buf || buf == nbuf || nbuf >= buf_end) {
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &mod_time, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
+			buf = nbuf;
+			nbuf = r_uleb128 (buf, buf_end - buf, &mod_time, NULL);
+			if (!buf || buf == nbuf || nbuf >= buf_end) {
 				goto beach;
 			}
-			buf = r_uleb128 (buf, buf_end - buf, &file_len, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
+			buf = nbuf;
+			nbuf = r_uleb128 (buf, buf_end - buf, &file_len, NULL);
+			if (!buf || buf == nbuf || nbuf >= buf_end) {
 				goto beach;
 			}
+			buf = nbuf;
 
 			if (i) {
-				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL, *comp_dir_key = NULL;
+				char *include_dir = NULL;
 				if (id_idx > 0) {
-					include_dir = pinclude_dir = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
+					include_dir = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
 					if (include_dir && include_dir[0] != '/') {
-						comp_dir_key = get_compilation_directory_key (debug_line_offset);
-						if (comp_dir_key) {
-							comp_dir = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
-						} else {
-							comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-						}
+						char *comp_dir_key = get_compilation_directory_key (debug_line_offset);
+						const char *k = comp_dir_key? comp_dir_key: "DW_AT_comp_dir";
+						const char *comp_dir = sdb_const_get (bf->sdb_addrinfo, k, 0);
 						if (comp_dir) {
 							include_dir = r_str_newf ("%s/%s", comp_dir, include_dir);
 						}
+						free (comp_dir_key);
+					} else {
+						// XXX
 					}
 				} else {
-					comp_dir_key = get_compilation_directory_key (debug_line_offset);
+					char *comp_dir_key = get_compilation_directory_key (debug_line_offset);
 					if (comp_dir_key) {
-						include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
+						include_dir = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
 					} else {
-						include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+						include_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 					}
 					if (!include_dir) {
-						include_dir = "./";
+						include_dir = strdup ("./");
 					}
+					free (comp_dir_key);
 				}
 
-				free (comp_dir_key);
-
 				if (hdr->file_names) {
-					hdr->file_names[count].name = r_str_newf("%s/%s", r_str_get (include_dir), fn);
+					hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (include_dir), fn);
 					hdr->file_names[count].id_idx = id_idx;
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
 				}
-				if (comp_dir) {
-					R_FREE (include_dir);
-					R_FREE (comp_dir);
-				}
-				R_FREE (pinclude_dir);
+				R_FREE (include_dir);
 			}
 			count++;
 			if (mode == R_MODE_PRINT && i) {
