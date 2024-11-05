@@ -338,9 +338,9 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 	return as;
 }
 #if R2_600
-	// Remove if adding header_len to RASN1Object and adapting asn1_parse_header() 
-# else
-ut8 asn1_compute_header_length(ut8 klass, ut8 form, ut8 tag, ut32 content_length) {
+/* Remove if adding header_len to RASN1Object and adapting asn1_parse_header() */
+#else
+ut8 asn1_compute_header_length (ut8 klass, ut8 form, ut8 tag, ut32 content_length) {
 	ut8 identifier_length;
 	if (tag < 31) {
 		identifier_length = 1;
@@ -608,7 +608,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, obj->headerlength, obj->length);
 #else
 		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, obj->length);
-#endif		
+#endif
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			if (strlen (temp_name) > 100) {
@@ -647,9 +647,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", obj->headerlength, obj->length, depth, obj->form? "cons": "prim", name);
 #else
 		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, obj->length, depth, obj->form? "cons": "prim", name);
-#endif		
-		
-
+#endif
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 			if (strlen (temp_name) > 100) {
