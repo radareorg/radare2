@@ -752,7 +752,9 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (main_arena_addr != GHT_MAX) {
-		GH (update_main_arena) (core, main_arena_addr, ta);
+		if (!GH (update_main_arena) (core, main_arena_addr, ta)) {
+			return false;
+		}
 		*m_arena = main_arena_addr;
 		core->dbg->main_arena_resolved = true;
 		r_config_set_i (core->config, "dbg.glibc.main_arena", *m_arena);
@@ -760,7 +762,9 @@ static bool GH(resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return true;
 	}
 	while (addr_srch < libc_addr_end) {
-		GH (update_main_arena) (core, addr_srch, ta);
+		if (!GH (update_main_arena) (core, addr_srch, ta)) {
+			break;
+		}
 		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
 			*m_arena = addr_srch;
