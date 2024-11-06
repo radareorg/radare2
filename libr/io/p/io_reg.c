@@ -73,15 +73,15 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	}
 	const int size = arena->size;
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		if (offset >= size) {
 			return size;
 		} else {
 			return offset;
 		}
-	case SEEK_CUR:
+	case R_IO_SEEK_CUR:
 		return io->off + offset;
-	case SEEK_END:
+	case R_IO_SEEK_END:
 		return size;
 	}
 	return io->off;

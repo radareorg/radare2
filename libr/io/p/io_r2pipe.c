@@ -126,9 +126,9 @@ static bool __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX - 1;
+	case R_IO_SEEK_SET: return offset;
+	case R_IO_SEEK_CUR: return io->off + offset;
+	case R_IO_SEEK_END: return UT64_MAX - 1;
 	}
 	return offset;
 }
