@@ -396,6 +396,7 @@ static RCoreHelpMessage help_msg_question_v = {
 	"$MB", "", "alias for $M",
 	"$MD", "", "map distance comparing current offset and map.addr",
 	"$MM", "", "map base address",
+	"$MS", "", "map size",
 
 	"$o", "", "here (current disk io offset)",
 	"$p", "", "getpid()",
