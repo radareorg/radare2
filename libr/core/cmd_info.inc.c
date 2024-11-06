@@ -51,6 +51,7 @@ static RCoreHelpMessage help_msg_ic = {
 static RCoreHelpMessage help_msg_iz = {
 	"Usage: iz", "[][jq*]", "List strings",
 	"iz", "", "strings in data sections (in JSON/Base64)",
+	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " [addr]", "purge string via bin.str.purge",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izz", "", "search for Strings in the whole binary",
@@ -1419,12 +1420,16 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		// "iz"
 		bool validcmd = true;
 		switch (input[1]) {
-		case 'J':
+		case ',': // "iz,"
+			R_FREE (core->table_query);
+			core->table_query = strdup (input + 2);
+			break;
+		case 'J': // "izJ"
 			validcmd = false;
 			break;
-		case '*':
-		case 'j':
-		case 0:
+		case '*': // "iz*"
+		case 'j': // "izj"
+		case 0: // "iz"
 			validcmd = true;
 			break;
 		case 'q':
