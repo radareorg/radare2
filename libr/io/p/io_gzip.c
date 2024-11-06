@@ -139,13 +139,13 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	}
 	ut32 mallocsz = _io_malloc_sz (fd);
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		r_offset = (offset <= mallocsz) ? offset : mallocsz;
 		break;
-	case SEEK_CUR:
+	case R_IO_SEEK_CUR:
 		r_offset = (_io_malloc_off (fd) + offset <= mallocsz ) ? _io_malloc_off (fd) + offset : mallocsz;
 		break;
-	case SEEK_END:
+	case R_IO_SEEK_END:
 		r_offset = _io_malloc_sz (fd);
 		break;
 	}

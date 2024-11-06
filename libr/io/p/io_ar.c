@@ -112,13 +112,13 @@ static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RArFp *arf = (RArFp *) fd->data;
 	ut64 size = arf->end - arf->start;
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		io->off = R_MIN (size, offset);
 		break;
-	case SEEK_CUR:
+	case R_IO_SEEK_CUR:
 		io->off = R_MIN (size, io->off + offset);
 		break;
-	case SEEK_END:
+	case R_IO_SEEK_END:
 		io->off = size;
 		break;
 	default:

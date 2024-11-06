@@ -69,22 +69,22 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case SEEK_CUR:
+	case R_IO_SEEK_CUR:
 		if (io->off + offset > shm->size) {
-			io->off = shm->size;
+			io->off = shm->size;			//XXX
 		} else {
-			io->off += offset;
+			io->off += offset;			//XXX
 		}
 		break;
-	case SEEK_END:
+	case R_IO_SEEK_END:
 		if ((int)shm->size > 0) {
-			io->off = shm->size + (int)offset;
+			io->off = shm->size + (int)offset;	//XXX
 		} else {
 			// UT64_MAX means error
-			io->off = UT64_MAX - 1;
+			io->off = UT64_MAX - 1;			//XXX
 		}
 		break;
 	}

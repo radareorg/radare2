@@ -413,13 +413,13 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		io->off = offset;
 		return offset;
-	case SEEK_CUR:
+	case R_IO_SEEK_CUR:
 		io->off += offset;
 		return io->off;
-	case SEEK_END:
+	case R_IO_SEEK_END:
 		if (sizeof (void*) == 8) {
 			io->off = UT64_MAX;
 		} else {
