@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2012-2024 - pancake, Fedor Sakharov */
 
 #include <r_core.h>
+#include "format/elf/elf.h"
 
 #define READ8(buf)                                                \
 	(((buf) + sizeof (ut8) < buf_end) ? ((ut8 *)buf)[0] : 0); \
@@ -384,6 +385,12 @@ static RBinSection *getsection(RBin *bin, int sn) {
 		}
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, name_str)) {
+#if R2_USE_NEW_ABI
+				if (r_str_startswith (section->name, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags))  {
+					R_LOG_WARN ("Compressed dwarf sections not yet supported");
+					return NULL;
+				}
+#endif
 				if (strstr (section->name, "zdebug")) {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;

@@ -303,6 +303,9 @@ typedef struct r_bin_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 perm;
+#if R2_USE_NEW_ABI
+	ut32 flags;
+#endif
 	const char *type;
 	const char *arch;
 	char *format;
