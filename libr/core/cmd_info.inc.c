@@ -72,7 +72,7 @@ static RCoreHelpMessage help_msg_iS = {
 	"iS.", "", "current section",
 	"iS,", "[table-query]", "list sections in table using given expression",
 	"iS=", "", "show ascii-art color bars with the section ranges",
-	"iSS", "", "list memory segments (maps with om)",
+	"iSS", "[,tablequery]", "list memory segments (maps with om)",
 	NULL
 };
 
@@ -105,7 +105,7 @@ static RCoreHelpMessage help_msg_i = {
 	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
 	"ih", "[?]", "show binary headers (see iH)",
 	"iH", "[?]", "show binary headers fields",
-	"ii", "[?][c,j*,]", "list the symbols imported from other libraries",
+	"ii", "[?][cj*,]", "list the symbols imported from other libraries",
 	"iic", "[?][jqk*] ([type])", "classify imports",
 	"iI", "", "binary info", // deprecate imho, may confuse with il and its already in `i`
 	"ik", " [query]", "key-value database from RBinObject",
@@ -1474,6 +1474,10 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 		if (input[1] == 'S') {
 			name = "segments";
 			input++;
+			if (input[1] == ',') {
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+			}
 			action = R_CORE_BIN_ACC_SEGMENTS;
 		}
 		switch (input[1]) {
@@ -1951,6 +1955,10 @@ static int cmd_info(void *data, const char *input) {
 			RListIter *iter;
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
+			if (input[1] == ',') {
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+			}
 			if (!r_list_empty (objs)) {
 				r_list_foreach (objs, iter, bf) {
 					RBinObject *obj = bf->bo;
