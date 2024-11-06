@@ -3,6 +3,9 @@
 #include <r_core.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return NULL;
+	}
 	r_strf_var (fname, 64, "fortunes.%s", type);
 	char *fortunedir = r_xdg_datadir ("fortunes");
 	char *path = r_file_new (fortunedir, fname, NULL);
@@ -36,6 +39,9 @@ static bool _push_types(RList *type_list, char *fortune_dir) {
 }
 
 R_IPI RList *r_core_fortune_types(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return NULL;
+	}
 	RList *types = r_list_newf (free);
 	if (!types) {
 		return NULL;
@@ -61,15 +67,21 @@ R_IPI RList *r_core_fortune_types(void) {
 
 R_API void r_core_fortune_list_types(void) {
 	RList *types = r_core_fortune_types ();
-	char *fts = r_str_list_join (types, "\n");
-	r_list_free (types);
-	r_cons_println (fts);
-	free (fts);
+	if (types) {
+		char *fts = r_str_list_join (types, "\n");
+		if (fts) {
+			r_cons_println (fts);
+			free (fts);
+		}
+		r_list_free (types);
+	}
 }
 
 R_API void r_core_fortune_list(RCore *core) {
 	R_RETURN_IF_FAIL (core);
-	// TODO: use file.fortunes // can be dangerous in sandbox mode
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return;
+	}
 	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
 
 	RList *ftypes = r_core_fortune_types ();
@@ -136,7 +148,9 @@ static char *getrandomline(RCore *core) {
 
 R_API void r_core_fortune_print_random(RCore *core) {
 	R_RETURN_IF_FAIL (core);
-	// TODO: use file.fortunes // can be dangerous in sandbox mode
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
+		return;
+	}
 	char *line = getrandomline (core);
 	if (!line) {
 		line = getrandomline (core);
