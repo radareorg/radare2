@@ -381,6 +381,7 @@
 #define SHF_OS_NONCONFORMING (1 << 8)	/* OS specific processing required */
 #define SHF_GROUP	(1 << 9)	/* Member of a section group */
 #define SHF_TLS		(1 << 10)	/* Thread local storage section */
+#define SHF_COMPRESSED	     (1 << 11)	/* Section with compressed data. */
 
 /* #define SHF_MASKOS	0x0F000000    *//* OS-specific semantics */
 #define SHF_MASKOS	0x0FF00000	/* New value, Oct 4, 1999 Draft */
