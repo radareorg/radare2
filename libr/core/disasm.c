@@ -7578,6 +7578,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	}
 	r_cons_break_pop ();
 	r_anal_op_fini (&ds->analop);
+	core->offset = old_offset;
 	ds_free (ds);
 	if (!result) {
 		pj_o (pj);
