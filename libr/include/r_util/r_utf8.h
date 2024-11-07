@@ -22,7 +22,10 @@ R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len);
 R_API const char *r_utf_block_name(int idx);
 R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len);
 R_API int r_utf_block_idx(RRune ch);
-R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list);
+R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list); // XXX deprecate
+#if R2_USE_NEW_ABI
+R_API int r_utf_block_list2(const ut8 *str, int len, int *list, int *freq_list);
+#endif
 R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen);
 #define r_utf16_to_utf8(wc) r_utf16_to_utf8_l ((wchar_t *)wc, -1)
 #define r_utf8_to_utf16(cstring) r_utf8_to_utf16_l ((char *)cstring, -1)
