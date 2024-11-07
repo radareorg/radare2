@@ -349,11 +349,13 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 			if (!at || at == UT64_MAX) {
 				return invalid_numvar (core, "cant find basic block");
 			}
-			bb = r_anal_get_block_at (core->anal, at);
+			// bb = r_anal_get_block_at (core->anal, at); // only works at the bb addr
+			bb = r_anal_bb_from_offset (core->anal, at);
 		}
 		R_FREE (name);
 	} else {
-		bb = r_anal_get_block_at (core->anal, core->offset);
+		bb = r_anal_bb_from_offset (core->anal, core->offset);
+		// bb = r_anal_get_block_at (core->anal, core->offset);
 	}
 	if (!bb) {
 		return invalid_numvar (core, "cant find basic block");
