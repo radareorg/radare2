@@ -558,7 +558,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 	case 'e':
 	case 'E': return r_io_map_end (map);
 	case 'S': return r_io_map_size (map);
-	case 'M':
+	case 'M': // "MM"
 		  {
 			  ut64 lower = r_io_map_begin (map);
 			  const int clear_bits = 16;

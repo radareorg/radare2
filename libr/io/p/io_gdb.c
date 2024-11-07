@@ -140,7 +140,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	ut64 addr = io->off;
+	const ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;
 	}
@@ -156,7 +156,8 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		io->off += offset;
 		break;
 	case R_IO_SEEK_END:
-		io->off = ST64_MAX;
+		io->off = UT64_MAX;
+		break;
 	}
 	return io->off;
 }
