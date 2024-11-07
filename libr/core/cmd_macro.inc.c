@@ -83,6 +83,10 @@ static int cmd_macro(void *data, const char *_input) {
 		int i, mustcall = 0;
 		buf = strdup (input);
 
+		if (r_str_endswith (buf, ")()")) {
+			mustcall = buf + strlen (buf) - 2;
+		}
+#if 0
 		for (i = 0; buf[i]; i++) {
 			switch (buf[i]) {
 			case '(':
@@ -95,10 +99,11 @@ static int cmd_macro(void *data, const char *_input) {
 				break;
 			}
 		}
+#endif
 		buf[strlen (buf) - 1] = 0;
 		char *comma = strchr (buf, ' '); // haveargs
 		if (!comma) {
-			comma = strchr (buf, ';');
+			comma = strchr (buf, '(');
 		}
 		if (comma) {
 			r_cmd_macro_add (&core->rcmd->macro, buf);
