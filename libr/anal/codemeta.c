@@ -30,6 +30,7 @@ R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 }
 
 R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMeta *r = r_codemeta_new (code->code);
 	if (r) {
 		RCodeMetaItem *mi;
@@ -41,10 +42,11 @@ R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 }
 
 R_API RCodeMeta *r_codemeta_new(const char *code) {
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
 	if (r) {
 		r->tree = r_crbtree_new (NULL);
-		r->code = code? strdup (code): NULL;
+		r->code = strdup (code);
 		r_vector_init (&r->annotations, sizeof (RCodeMetaItem),
 				(RVectorFree)r_codemeta_item_fini, NULL);
 	}
@@ -162,6 +164,7 @@ R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 }
 
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	return r_codemeta_in (code, offset, offset + 1);
 }
 
