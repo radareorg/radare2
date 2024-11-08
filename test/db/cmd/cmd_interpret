@@ -8,6 +8,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=interpret dollar file
+FILE=-
+CMDS=<<EOF
+?e ?e hello > $cmd
+. $cmd
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
 NAME=.?e ?e
 FILE=--
 CMDS=<<EOF

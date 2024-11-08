@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020-2023 - nimmumanoj, pancake */
+/* radare2 - LGPL - Copyright 2020-2024 - nimmumanoj, pancake */
 
 #include <r_core.h>
 #include <r_codemeta.h>
@@ -42,7 +42,9 @@ R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 }
 
 R_API RCodeMeta *r_codemeta_new(const char *code) {
+#if R2_600
 	R_RETURN_VAL_IF_FAIL (code, NULL);
+#endif
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
 	if (r) {
 		r->tree = r_crbtree_new (NULL);
