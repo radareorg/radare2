@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export PAGER=cat
+
 cd "$(dirname $0)"/..
 
 # NAME=no preincrement/predecrement in 3rd part of for statement
