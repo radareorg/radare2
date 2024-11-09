@@ -1287,11 +1287,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				int classes_length = r_list_length (obj->classes);
 				RListIter *iter, *iter2;
 #endif
-#if R2_USE_NEW_ABI
-				if (!obj || !obj->classes || classes_length == 0)
-#else
-				if (!obj || !obj->classes || r_list_empty (obj->classes))
-#endif
+				if (!obj || classes_length == 0)
 				{
 					if (r_str_startswith (input, "lc")) { // "iclc"
 						r_cons_printf ("0\n");

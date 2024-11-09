@@ -1773,6 +1773,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 #if R2_USE_NEW_ABI
 	RListIter *iter;
+	const char *klass;
 	r_list_foreach (ret, iter, klass) {
 		RVecRBinClass_push_back (&bo->classes, klass);
 	}

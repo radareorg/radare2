@@ -331,7 +331,6 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	RBinClass *klass;
 	RBinSymbol *method;
 #if R2_USE_NEW_ABI
-	int klass_idx = 0;
 	R_VEC_FOREACH (&bo->classes, klass)
 #else
 	r_list_foreach (bo->classes, it, klass)

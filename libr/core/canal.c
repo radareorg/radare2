@@ -95,13 +95,18 @@ static void init_addr2klass(RCore *core, RBinObject *bo) {
 	if (bo->addr2klassmethod) {
 		return;
 	}
-	RList *klasses = bo->classes;
-	RListIter *iter, *iter2;
+
+	RListIter *iter, *iter2; // R2_600 - new_abi needs only one iter
 	RBinClass *klass;
 	RBinSymbol *method;
 	// this is slow. must be optimized, but at least its cached
 	bo->addr2klassmethod = ht_up_new0 ();
-	r_list_foreach (klasses, iter, klass) {
+#if R2_USE_NEW_ABI
+	R_VEC_FOREACH (&bo->classes, klass)
+#else
+	r_list_foreach (bo->classes, iter, klass)
+#endif
+	{
 		r_list_foreach (klass->methods, iter2, method) {
 			ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
 		}
