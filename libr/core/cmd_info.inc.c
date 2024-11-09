@@ -1324,7 +1324,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				tts_say (core, "classes", classes_length);
 				switch (cmd) {
 				case 'g':
-					cmd_icg (core, bo, arg);
+					cmd_icg (core, obj, arg);
 					break;
 				case 's': // "ics"
 #if R2_USE_NEW_ABI
@@ -1345,11 +1345,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					}
 					break;
 				case 'k': // "ick"
-					classdump_keys (core, bo);
+					classdump_keys (core, obj);
 					break;
 				case 'l': // "icl"
 					if (r_str_startswith (input, "lc")) {
-						cmd_ic0 (core, bo, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
+						cmd_ic0 (core, obj, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					} else {
 #if R2_USE_NEW_ABI
 						R_VEC_FOREACH (&obj->classes, cls)
@@ -1411,7 +1411,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					if (mode == '*') {
 						mode |= R_MODE_RADARE;
 					} else if (mode == 'k') { // "icck"
-						classdump_keys (core, bo);
+						classdump_keys (core, obj);
 						return;
 					}
 					const char *lang = strchr (input, ' ');
@@ -1436,7 +1436,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					break;
 				case ' ': // "ic"
 				case 0: // "ic"
-					cmd_ic0 (core, bo, mode, pj, is_array, va, idx, cls_name, &count, is_doublerad);
+					cmd_ic0 (core, obj, mode, pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					break;
 				default:
 					r_core_return_invalid_command (core, "ic", mode);
