@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2023 - condret */
+/* radare2 - LGPL - Copyright 2021-2024 - condret */
 
 #include <r_io.h>
 
@@ -735,17 +735,14 @@ found:
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 size, ut64 load_align) {
 	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	if (!bank) {
-		return false;
-	}
-	R_RETURN_VAL_IF_FAIL (io && bank && bank->submaps && addr && size, false);
+	R_RETURN_VAL_IF_FAIL (bank && bank->submaps && addr && size, false);
 	if (load_align == 0LL) {
 		load_align = 1;
 	}
 	RIOSubMap fake_sm;
-	memset (&fake_sm, 0x00, sizeof (RIOSubMap));
 	fake_sm.itv.addr = *addr + (load_align - *addr % load_align) % load_align;
 	fake_sm.itv.size = size;
+	fake_sm.mapref = (const RIOMapRef) {0};
 	RRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
 	if (!entry) {
 		// no submaps in this bank
@@ -783,9 +780,10 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	if (!bank) {
 		return false;
 	}
-	RIOSubMap fake_sm = {{0}};
+	RIOSubMap fake_sm;
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
+	fake_sm.mapref = (const RIOMapRef) {0};
 	RRBNode *node;
 	if (R_LIKELY (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr))) {
 		node = bank->last_used;
@@ -829,9 +827,10 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 		R_LOG_WARN ("Tfw no bank(id %u) in the io", bankid);
 		return false;
 	}
-	RIOSubMap fake_sm = {{0}};
+	RIOSubMap fake_sm;
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
+	fake_sm.mapref = (const RIOMapRef) {0};
 	RRBNode *node;
 	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
 		node = bank->last_used;
@@ -899,9 +898,10 @@ R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, 
 		R_LOG_WARN ("Tfw no bank(id: %u) in io", bankid);
 		return false;
 	}
-	RIOSubMap fake_sm = {{0}};
+	RIOSubMap fake_sm;
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
+	fake_sm.mapref = (const RIOMapRef) {0};
 	RRBNode *node;
 	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
 		node = bank->last_used;
