@@ -140,7 +140,7 @@ RCryptoPlugin r_crypto_plugin_aes_wrap = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "aes-wrap",
-		.desc = "Advanced Encryption Standard Key Wrap Algorithm (RFC 3394)",
+		.desc = "Rijndael block cipher with Key Wrap Algorithm (RFC 3394)",
 		.author = "Sylvain Pelissier",
 		.license = "LGPL-3.0-only",
 	},

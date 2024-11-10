@@ -171,7 +171,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 	.meta = {
 		.name = "des-ecb",
 		.author = "deroad",
-		.desc = "Simplest and weakest Electronic Code Book for DES",
+		.desc = "DES with with Electronic Code Book mode",
 		.license = "LGPL-3.0-only",
 	},
 	.set_key = des_set_key,

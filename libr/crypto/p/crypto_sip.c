@@ -15,7 +15,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_sip = {
 	.meta = {
 		.name = "sip",
-		.desc = "SipHash",
+		.desc = "SipHash-2-4",
 		.author = "pancake",
 		.license = "MIT",
 	},
