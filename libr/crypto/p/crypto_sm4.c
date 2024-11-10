@@ -46,7 +46,7 @@ RCryptoPlugin r_crypto_plugin_sm4 = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "sm4-ecb",
-		.desc = "ShāngMì4 block cipher",
+		.desc = "ShāngMì4 block cipher with Electronic Code Book mode",
 		.author = "Sylvain Pelissier",
 		.license = "LGPL-3.0-only",
 	},

@@ -19,10 +19,17 @@
 	} while (0)
 
 R_API ut64 r_hash_sip(const ut8 *in, ut64 inlen) {
+	/* 	SipHash-2-4 using the key:
+		0xb5d4c9eb79104a796fec8b1b428781d4 (big-endian)
+	*/
 	const ut8 *end;
+	// v0 = k0 ^ 0x736f6d6570736575
 	ut64 v0 = 0x0a257d1c9bbab1c0ULL;
+	// v1 = k1 ^ 0x646f72616e646f6d
 	ut64 v1 = 0xb0eef52375ef8302ULL;
+	// v2 = k0 ^ 0x6c7967656e657261
 	ut64 v2 = 0x1533771c85aca6d4ULL;
+	// v3 = k1 ^ 0x7465646279746573
 	ut64 v3 = 0xa0e4e32062ff891cULL;
 	for (end = in + (inlen & ~7ULL); in != end; in += 8) {
 		ut64 m = ((ut64)in[7] << 56)

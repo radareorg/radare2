@@ -115,7 +115,7 @@ RCryptoPlugin r_crypto_plugin_serpent = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "serpent-ecb",
-		.desc = "Bouncy Castle Cryptography",
+		.desc = "Serpent block cipher with Electronic Code Book mode",
 		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},

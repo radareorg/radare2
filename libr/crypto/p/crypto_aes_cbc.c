@@ -104,7 +104,7 @@ RCryptoPlugin r_crypto_plugin_aes_cbc = {
 	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.meta = {
 		.name = "aes-cbc",
-		.desc = "Cipher Block Chaining Mode for Rijndael Encryption",
+		.desc = "Rijndael block cipher with Cipher Block Chaining mode",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
