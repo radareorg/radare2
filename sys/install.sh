@@ -2,7 +2,54 @@
 
 # find
 cd "$(dirname $0)"/..
-pwd
+CWD="`pwd`"
+
+sudosetup() {
+	export NOSUDO
+
+	if [ -w "${PREFIX}" ]; then
+		NOSUDO=1
+	fi
+	if [ -n "${NOSUDO}" ]; then
+		SUDO=""
+	else
+		type sudo > /dev/null 2>&1 || NOSUDO=1
+		SUDO=sudo
+		[ -n "${NOSUDO}" ] && SUDO=
+	fi
+
+	if [ "${NOSUDO}" != 1 ]; then
+		if [ "$(id -u)" = 0 ]; then
+			SUDO=""
+		else
+			if [ -d /system/bin ]; then
+				# This is an android
+				SUDO=""
+			else
+				[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+			fi
+		fi
+
+		if [ "${USE_SU}" = 1 ]; then
+			SUDO="/bin/su -m root -c"
+		fi
+	fi
+}
+
+sudosetup
+
+echo "$CWD" | grep -q ' '
+if [ $? = 0 ]; then
+	USEMESON=1
+fi
+if [ $USEMESON = 1 ]; then
+	rm -rf b
+	meson b
+	ninja -C b
+	${SUDO} make symstall PWD="$PWD/b" BTOP="$PWD/b/binr"
+	exit $RV
+fi
+
 export PAGER=cat
 unset LINK
 
@@ -115,35 +162,6 @@ fi
 
 umask 0002
 
-export NOSUDO
-
-if [ -w "${PREFIX}" ]; then
-	NOSUDO=1
-fi
-if [ -n "${NOSUDO}" ]; then
-	SUDO=""
-else
-	type sudo > /dev/null 2>&1 || NOSUDO=1
-	SUDO=sudo
-	[ -n "${NOSUDO}" ] && SUDO=
-fi
-
-if [ "${NOSUDO}" != 1 ]; then
-	if [ "$(id -u)" = 0 ]; then
-		SUDO=""
-	else
-		if [ -d /system/bin ]; then
-			# This is an android
-			SUDO=""
-		else
-			[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
-		fi
-	fi
-
-	if [ "${USE_SU}" = 1 ]; then
-		SUDO="/bin/su -m root -c"
-	fi
-fi
 
 ${SHELL} --help 2> /dev/null | grep -q fish
 if [ $? = 0 ]; then
