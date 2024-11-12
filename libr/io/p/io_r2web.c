@@ -4,15 +4,15 @@
 #include <r_lib.h>
 
 typedef struct {
-	int fd;
 	char *url;
+	ut64 addr;
+	int fd;
 } RIOR2Web;
 
 #define rFD(x) (((RIOR2Web*)(x)->data)->fd)
 #define rURL(x) (((RIOR2Web*)(x)->data)->url)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	int code, rlen;
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -25,9 +25,12 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
+	RIOR2Web *r2w= fd->data;
 	char *url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
-		rURL (fd), hexbuf, io->off);
+		rURL (fd), hexbuf, r2w->addr);
+	int code, rlen;
 	char *out = r_socket_http_get (url, &code, &rlen);
+	r2w->addr += count;
 	free (out);
 	free (url);
 	free (hexbuf);
@@ -35,13 +38,14 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	int code, rlen;
 	int ret = 0;
 	if (!fd || !fd->data) {
 		return -1;
 	}
+	RIOR2Web *r2w= fd->data;
 	char *url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
-		rURL(fd), count, io->off);
+		rURL(fd), count, r2w->addr);
+	int code, rlen;
 	char *out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
 		ut8 *tmp = calloc (1, rlen+1);
@@ -54,6 +58,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (ret < 0) {
 			ret = -ret;
 		}
+		r2w->addr += ret;
 	}
 beach:
 	free (out);
@@ -72,12 +77,19 @@ static bool __close(RIODesc *fd) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	RIOR2Web *r2w = fd->data;
 	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX - 1;
+	case R_IO_SEEK_SET:
+		r2w->addr = offset;
+		return offset;
+	case R_IO_SEEK_CUR:
+		r2w->addr += offset;
+		return r2w->addr;
+	case R_IO_SEEK_END:
+		r2w->addr = UT64_MAX - 1;
+		return UT64_MAX - 1;
 	}
-	return offset;
+	return r2w->addr;
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
