@@ -13,11 +13,11 @@ sdb_files = [
   'hebrew_iso',
   'hebrew_windows',
   'hiragana',
-  'iso8859_1'
+  'iso8859_1',
   'iso_646',
   'katakana',
   'macintosh',
-  'pokered',
+  'pokered'
 ]
 
 r_util_d_sources = []
