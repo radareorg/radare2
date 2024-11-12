@@ -1,10 +1,23 @@
 sdb_files = [
-  'pokered',
-  'ebcdic37',
+  'arabic_iso',
+  'arabic_windows',
   'ascii',
-  'katakana',
+  'ascii_ansi',
+  'ascii_oem',
+  'big5',
+  'cyrillic_iso',
+  'cyrillic_windows',
+  'ebcdic37',
+  'greek_iso',
+  'greek_windows',
+  'hebrew_iso',
+  'hebrew_windows',
   'hiragana',
-  'iso8859_1'
+  'iso8859_1',
+  'iso_646',
+  'katakana',
+  'macintosh',
+  'pokered'
 ]
 
 r_util_d_sources = []

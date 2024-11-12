@@ -19,6 +19,19 @@ OBJS+=rvc.o rvc_git.o rvc_rvc.o bscanf.o rprintf.o base32.o
 
 ifeq (${HAVE_GPERF},1)
 OBJS+=d/ascii.o
+OBJS+=d/ascii_oem.o
+OBJS+=d/ascii_ansi.o
+OBJS+=d/arabic_iso.o
+OBJS+=d/arabic_windows.o
+OBJS+=d/iso_646.o
+OBJS+=d/cyrillic_iso.o
+OBJS+=d/cyrillic_windows.o
+OBJS+=d/greek_iso.o
+OBJS+=d/greek_windows.o
+OBJS+=d/hebrew_iso.o
+OBJS+=d/hebrew_windows.o
+OBJS+=d/macintosh.o
+OBJS+=d/big5.o
 OBJS+=d/pokered.o
 OBJS+=d/katakana.o
 OBJS+=d/hiragana.o
