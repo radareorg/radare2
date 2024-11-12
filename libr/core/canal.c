@@ -4728,7 +4728,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 				uninit = true;
 				at += bsz;
 				if (!r_io_is_valid_offset (core->io, at, 0)) {
-					R_LOG_ERROR ("invalid memory");
+					R_LOG_ERROR ("invalid memory at 0x%08"PFMT64x, at);
 					break;
 				}
 				continue;

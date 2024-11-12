@@ -426,7 +426,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_clear00 ();
 			r_cons_printf (
 			"VdE?: Visual Esil Debugger Help (aev):\n\n"
-			" q     - quit the bit editor\n"
+			" q     - quit the esil debugger\n"
 			" h/r   - reset / go back (reinitialize esil state)\n"
 			" s     - esil step in\n"
 			" S     - esil step over\n"
@@ -435,6 +435,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			" j/k   - next/prev instruction\n"
 			" n/p   - go next/prev instruction\n"
 			" =     - enter cmd.vprompt command\n"
+			" !     - toggle all bits\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
@@ -666,6 +667,12 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				free (op_hex);
 			}
 			return false;
+		case '!':
+			{
+				const int nbyte = x / 8;
+				*(buf + nbyte) = ~*(buf + nbyte);
+			}
+			break;
 		case 'H':
 			{
 				const int y = R_MAX (x - 8, 0);
@@ -705,7 +712,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		case '>':
-			buf[x/8] = rotate_nibble (buf [(x / 8)], -1);
+			buf[x / 8] = rotate_nibble (buf [(x / 8)], -1);
 			break;
 		case '<':
 			buf[x / 8] = rotate_nibble (buf [(x / 8)], 1);
@@ -770,6 +777,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			" </>   - rotate left/right byte value\n"
 			" i     - insert numeric value of byte\n"
 			" =     - set cmd.vprompt command\n"
+			" !     - toggle all the bits\n"
 			" :     - run r2 command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);

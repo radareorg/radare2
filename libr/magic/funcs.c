@@ -164,7 +164,7 @@ void __magic_file_badread(RMagic *ms) {
 	__magic_file_error (ms, errno, "error reading");
 }
 
-int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
+R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
 	int mime, m = 0;
 	if (!ms) {
 		return -1;
