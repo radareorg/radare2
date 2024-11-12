@@ -13594,7 +13594,9 @@ static bool cmd_aa(RCore *core, bool aaa) {
 				continue;
 			}
 			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
-			r_core_af (core, addr, NULL, anal_calls);
+			if (addr != UT64_MAX) {
+				r_core_af (core, addr, NULL, anal_calls);
+			}
 		}
 	}
 	r_core_task_yield (&core->tasks);
@@ -13717,7 +13719,12 @@ static void cmd_aaa(RCore *core, const char *input) {
 		// XXX do not override user settings!
 		// int c = r_config_get_i (core->config, "anal.calls");
 		// r_config_set_b (core->config, "anal.calls", true);
-		r_core_cmd_call (core, "s $S");
+		const ut64 section_addr = r_num_get (core->num, "$S");
+		if (section_addr && section_addr != UT64_MAX) {
+			if (!r_core_seek (core, section_addr, true)) {
+				R_LOG_WARN ("Cannot seek to 0x%08"PFMT64x, section_addr);
+			}
+		}
 		if (r_cons_is_breaked ()) {
 			goto jacuzzi;
 		}
@@ -14288,7 +14295,6 @@ static bool anal_fcn_data_gaps(RCore *core, const char *input) {
 					r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", wordsize, end + i);
 				}
 				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", range - i, end + i);
-				//r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", range, end);
 			}
 		}
 		end = fcn->addr + r_anal_function_size_from_entry (fcn);
@@ -14472,7 +14478,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_anal_class_base(RCore *core, const char *input) {
+static void cmd_acb(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
@@ -14507,29 +14513,27 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-
 		if (c == '-') {
 			err = r_anal_class_base_delete (core->anal, cstr, base_str);
 			free (cstr);
 			break;
 		}
-
-		RAnalBaseClass base;
-		base.id = NULL;
-		base.offset = 0;
-		base.class_name = base_str;
-
+		RAnalBaseClass base = {
+			.class_name = base_str
+		};
 		if (end) {
 			base.offset = r_num_get (core->num, end + 1);
 		}
-
 		err = r_anal_class_base_set (core->anal, cstr, &base);
 		free (base.id);
 		free (cstr);
 		break;
 	}
+	case '?':
+		r_core_cmd_help_match (core, help_msg_ac, "acb");
+		break;
 	default:
-		r_core_cmd_help (core, help_msg_ac);
+		r_core_return_invalid_command (core, "acb", c);
 		break;
 	}
 
@@ -14589,7 +14593,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			end++;
 		}
 
-		if (!end || *end == '\0') {
+		if (R_STR_ISEMPTY (end)) {
 			if (c == ' ') {
 				r_anal_class_list_vtables (core->anal, cstr);
 			} else /*if (c == '-')*/ {
@@ -14713,7 +14717,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_vtable (core, input + 1);
 		break;
 	case 'b': // "acb"
-		cmd_anal_class_base (core, input + 1);
+		cmd_acb (core, input + 1);
 		break;
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
