@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 - gogo, pancake */
+/* radare - LGPL - Copyright 2020-2024 - gogo, pancake */
 
 #include <r_util.h>
 #include <config.h>
