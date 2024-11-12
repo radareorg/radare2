@@ -42,7 +42,7 @@ echo "$CWD" | grep -q ' '
 if [ $? = 0 ]; then
 	USEMESON=1
 fi
-if [ $USEMESON = 1 ]; then
+if [ "$USEMESON" = 1 ]; then
 	rm -rf b
 	meson b
 	ninja -C b

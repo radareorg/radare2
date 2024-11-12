@@ -8,7 +8,7 @@ e cfg.charset=ebcdic37
 EOF
 EXPECT=<<EOF
 ebcdic37
-Hola_mundo\n
+Hola mundo\n
 EOF
 RUN
 
@@ -21,7 +21,7 @@ e cfg.charset=ebcdic37
 ps
 EOF
 EXPECT=<<EOF
-Hola_mundo
+Hola mundo
 EOF
 RUN
 
@@ -41,8 +41,8 @@ EXPECT=<<EOF
 0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  ....@...........
 \xc8\x96\x93\x81@\x94\xa4\x95\x84\x96
 - offset -  A8A9 AAAB ACAD AEAF B0B1 B2B3 B4B5 B6B7  89ABCDEF01234567
-0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  Hola_mundo.?????
-Hola_mundo
+0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  Hola mundo.?????
+Hola mundo
 EOF
 RUN
 
@@ -70,11 +70,18 @@ ps
 EOF
 EXPECT=<<EOF
 arabic_iso
+arabic_windows
 ascii
 ascii_ansi
 ascii_oem
 big5
+cyrillic_iso
+cyrillic_windows
 ebcdic37
+greek_iso
+greek_windows
+hebrew_iso
+hebrew_windows
 hiragana
 iso8859_1
 iso_646
@@ -102,11 +109,18 @@ psz
 EOF
 EXPECT=<<EOF
 arabic_iso
+arabic_windows
 ascii
 ascii_ansi
 ascii_oem
 big5
+cyrillic_iso
+cyrillic_windows
 ebcdic37
+greek_iso
+greek_windows
+hebrew_iso
+hebrew_windows
 hiragana
 iso8859_1
 iso_646
@@ -117,11 +131,18 @@ pokered
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 arabic_iso
+arabic_windows
 ascii
 ascii_ansi
 ascii_oem
 big5
+cyrillic_iso
+cyrillic_windows
 ebcdic37
+greek_iso
+greek_windows
+hebrew_iso
+hebrew_windows
 hiragana
 iso8859_1
 iso_646
