@@ -2,7 +2,12 @@ sdb_files = [
   'pokered',
   'ebcdic37',
   'ascii',
+  'ascii_oem',
+  'ascii_ansi',
   'arabic_iso',
+  'iso_646',
+  'big5',
+  'macintosh',
   'katakana',
   'hiragana',
   'iso8859_1'

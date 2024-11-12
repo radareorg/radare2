@@ -1,6 +1,6 @@
 FILES=pokered ascii ebcdic37 iso8859_1 katakana hiragana
 # from imhex
-FILES+=arabic_iso
+FILES+=arabic_iso macintosh ascii_oem ascii_ansi big5 iso_646
 F_SDB=$(addsuffix .sdb,$(FILES))
 SDB=../../../shlr/sdb/sdb
 
