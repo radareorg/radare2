@@ -487,6 +487,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	if (core->print->cur != -1) {
 		cur = core->print->cur;
 	}
+	int wordsize = 1;
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
 		r_anal_op_init (&analop);
@@ -495,14 +496,36 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		r_anal_op_set_bytes (&analop, core->offset + cur, buf, sizeof (ut64));
 		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
-		r_cons_printf ("r2's bit editor: (=pfb 3b4b formatting)\n\n");
-		r_cons_printf ("adr: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
+		{
+			ut8 *o = core->block;
+			int bs = core->blocksize;
+			core->block = buf;
+			int stride = r_config_get_i (core->config, "hex.stride");
+			r_config_set_i (core->config, "hex.stride", 1);
+			core->blocksize = sizeof (buf);
+			char *s = r_core_cmd_str (core, "pri1");
+			core->block = o;
+			r_config_set_i (core->config, "hex.stride", stride);
+			core->blocksize = bs;
+			r_cons_print_at (s, 60, 1, 20, 12);
+			free (s);
+		}
+		r_cons_printf ("[0x08%"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", core->offset + cur);
 		if (analop.bytes) {
 			char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 			char *res = r_print_hexpair (core->print, op_hex, -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
 			free (op_hex);
+		}
+		{
+			if (analop.size <= 4) {
+				r_cons_printf ("nle: %d\n", r_read_le32 (buf));
+				r_cons_printf ("nbe: %d\n", r_read_be32 (buf));
+			} else {
+				r_cons_printf ("nle: %"PFMT64d"\n", r_read_le64 (buf));
+				r_cons_printf ("nbe: %"PFMT64d"\n", r_read_be64 (buf));
+			}
 		}
 		r_cons_printf ("len: %d\n", analop.size);
 		{
@@ -520,7 +543,25 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 		}
 		r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
-		r_cons_printf ("chr:");
+		r_cons_printf ("[w]:");
+		int nbyte = (x / 8);
+		char first = '/';
+		for (i = 0; i < 8; i++) {
+			if (i == 4) {
+				if (i < nbyte + 1) {
+					r_cons_printf ("  ");
+				} else if (i < nbyte + wordsize) {
+					r_cons_printf ("==");
+				}
+			}
+			if (i < nbyte) {
+				r_cons_printf ("         ");
+			} else if (i < nbyte + wordsize) {
+				r_cons_printf ("%c========", first);
+				first = '=';
+			}
+		}
+		r_cons_printf ("\\ word=%d\nchr:", wordsize);
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			char ch = IS_PRINTABLE (*byte)? *byte: '?';
@@ -633,19 +674,8 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_core_cmd0 (core, vi);
 		}
 		r_cons_newline ();
-		{
-			ut8 *o = core->block;
-			int bs = core->blocksize;
-			core->block = buf;
-			int stride = r_config_get_i (core->config, "hex.stride");
-			r_config_set_i (core->config, "hex.stride", 1);
-			core->blocksize = sizeof (buf);
-			r_core_cmd_call (core, "pri1");
-			core->block = o;
-			r_config_set_i (core->config, "hex.stride", stride);
-			core->blocksize = bs;
-		}
-		r_cons_visual_flush ();
+		//r_cons_visual_flush ();
+		r_cons_flush ();
 
 		int ch = r_cons_readchar ();
 		if (ch == -1 || ch == 4) {
@@ -657,6 +687,18 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		// input
 		r_cons_newline ();
 		switch (ch) {
+		case 'w':
+			wordsize += 1;
+			if (wordsize > 8) {
+				wordsize = 1;
+			}
+			break;
+		case 'W':
+			wordsize -= 1;
+			if (wordsize < 1) {
+				wordsize = 1;
+			}
+			break;
 		case 'Q':
 		case 'q':
 			if (analop.bytes) {
@@ -670,7 +712,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case '!':
 			{
 				const int nbyte = x / 8;
-				*(buf + nbyte) = ~*(buf + nbyte);
+				const int last = R_MIN (nbyte + wordsize, 8);
+				int i;
+				for (i = nbyte; i < last; i++) {
+					*(buf + i) = ~*(buf + i);
+				}
 			}
 			break;
 		case 'H':
@@ -679,8 +725,15 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				x = y - y % 8;
 			}
 			break;
+		case 'Z':
+			{
+				const int y = R_MAX (x - 8, 0);
+				x = y - y % 8;
+			}
+			break;
+			break;
 		case 'L':
-		case 9:
+		case 9: // TAB
 			{
 				const int y = R_MIN (x + 8, nbits - 8);
 				x = y - y % 8;
@@ -712,10 +765,25 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		case '>':
-			buf[x / 8] = rotate_nibble (buf [(x / 8)], -1);
+			{
+				// buf[x / 8] = rotate_nibble (buf [(x / 8)], -1);
+				const int nbyte = x / 8;
+				int last = R_MIN (nbyte + wordsize, 8);
+				for (i = nbyte; i < last; i++) {
+					buf[i] = rotate_nibble (buf [i], -1);
+				}
+			}
 			break;
 		case '<':
-			buf[x / 8] = rotate_nibble (buf [(x / 8)], 1);
+			// buf[x / 8] = rotate_nibble (buf [(x / 8)], 1);
+			{
+				// buf[x / 8] = rotate_nibble (buf [(x / 8)], -1);
+				const int nbyte = x / 8;
+				int last = R_MIN (nbyte + wordsize, 8);
+				for (i = nbyte; i < last; i++) {
+					buf[i] = rotate_nibble (buf [i], 1);
+				}
+			}
 			break;
 		case 'i':
 			{
@@ -773,6 +841,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			" j/k   - toggle bit value (same as space key)\n"
 			" J/K   - next/prev instruction (so+1,so-1)\n"
 			" h/l   - select next/previous bit\n"
+			" w/W   - increment 2 or 4 the wordsize\n"
 			" +/-   - increment or decrement byte value\n"
 			" </>   - rotate left/right byte value\n"
 			" i     - insert numeric value of byte\n"
@@ -787,7 +856,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			char cmd[1024];
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0]='\0';
+			cmd[0] = '\0';
 			r_line_set_prompt (":> ");
 			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
