@@ -1,8 +1,10 @@
-/* radare - LGPL - Copyright 2010-2023 - pancake */
+/* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_anal.h>
 
+// R2_600 rename
 R_API const char *r_anal_cond_type_tostring(int cc) {
+	R_RETURN_VAL_IF_FAIL (cc >= 0, NULL);
 	switch (cc) {
 	case R_ANAL_COND_EQ: return "eq";
 	case R_ANAL_COND_NV: return "nv";
@@ -47,6 +49,7 @@ R_API void r_anal_cond_free(RAnalCond *c) {
 
 // XXX?
 R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
+	R_RETURN_VAL_IF_FAIL (cond, NULL);
 	RAnalCond *c = R_NEW (RAnalCond);
 	if (!c) {
 		return NULL;
@@ -69,6 +72,7 @@ static inline const char *condstring(RAnalCond *cond) {
 }
 
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
+	R_RETURN_VAL_IF_FAIL (anal && cond, false);
 	// XXX: sign issue here?
 	st64 arg0 = (st64) r_anal_value_to_ut64 (anal, cond->arg[0]);
 	if (cond->arg[1]) {
@@ -115,6 +119,7 @@ R_API char *r_anal_cond_tostring(RAnalCond *cond) {
 }
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
+	R_RETURN_VAL_IF_FAIL (op, NULL);
 	RAnalCond *cond = r_anal_cond_new ();
 	if (!cond) {
 		return NULL;
@@ -132,6 +137,7 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 }
 
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
 	RAnalCond *cond = R_NEW0 (RAnalCond);
 	// TODO: find '<','=','>','!'...
 	return cond;
