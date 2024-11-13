@@ -535,9 +535,10 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char *r_anal_datatype_tostring(RAnalDataType t) {
-	R_RETURN_VAL_IF_FAIL (t == R_ANAL_DATATYPE_NULL, NULL);
+R_API R_NULLABLE const char *r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
+	case R_ANAL_DATATYPE_NULL:
+		return "null";
 	case R_ANAL_DATATYPE_ARRAY:
 		return "array";
 	case R_ANAL_DATATYPE_OBJECT: // instance
@@ -556,8 +557,6 @@ R_API const char *r_anal_datatype_tostring(RAnalDataType t) {
 		return "int64";
 	case R_ANAL_DATATYPE_FLOAT:
 		return "float";
-	default:
-		break;
 	}
 	return NULL;
 }
