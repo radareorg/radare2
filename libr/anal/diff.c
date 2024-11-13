@@ -365,6 +365,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	return true;
 }
 
+// R2_600 UNUSED
 R_API int r_anal_diff_eval(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (anal->cur && anal->cur->diff_eval) {
