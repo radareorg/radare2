@@ -1643,7 +1643,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	}
 #if R2_USE_NEW_ABI
 //		eprintf ("PPP %s\n", r_bin_name_tostring (klass->name));
-	klass->index = RVecRBinClass_length (&bf->bo->classes) + r_list_length (list);
+	klass->index = RVecRBinClass_length (&bf->bo->classes);
 	RVecRBinClass_push_back (&bf->bo->classes, klass);
 	free (klass);
 	klass = RVecRBinClass_last (&bf->bo->classes);
@@ -1869,7 +1869,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			num_of_unnamed_class++;
 		}
 #if R2_USE_NEW_ABI
-		klass->index = RVecRBinClass_length (&bf->bo->classes) + r_list_length (ret);
+		klass->index = RVecRBinClass_length (&bf->bo->classes);
 		RVecRBinClass_push_back (&bo->classes, klass);
 		free (klass);
 #else
@@ -1897,8 +1897,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 	}
 #if R2_USE_NEW_ABI
 	RBinObject *bo = bf->bo;
-	//RList *ret = NULL;
-	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
+	RList *ret = NULL;
 #else
 	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
 	if (!ret || !relocs) {
@@ -1947,7 +1946,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		}
 #if R2_USE_NEW_ABI
 		// eprintf ("PPP %s\n", r_bin_name_tostring (klass->name));
-		klass->index = RVecRBinClass_length (&bf->bo->classes) + r_list_length (ret);
+		klass->index = RVecRBinClass_length (&bf->bo->classes);
 		RVecRBinClass_push_back (&bo->classes, klass);
 #else
 		klass->index = r_list_length (bf->bo->classes) + r_list_length (ret);
