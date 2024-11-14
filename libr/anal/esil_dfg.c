@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2023 - condret */
+/* radare - LGPL - Copyright 2019-2024 - condret */
 
 #include <r_anal.h>
 
@@ -30,7 +30,8 @@ typedef struct r_anal_esil_dfg_const_reducer_t {
 
 // TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
 
-R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, R_NULLABLE const char *c) {
+	R_RETURN_VAL_IF_FAIL (edf, NULL);
 	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
 	ret->content = r_strbuf_new (c);
 	ret->idx = edf->idx++;
@@ -1640,10 +1641,9 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 	}
 }
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr, bool use_map_info, bool use_maps) {
-	if (!expr) {
-		return NULL;
-	}
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, R_NULLABLE RAnalEsilDFG *dfg, const char *expr,
+	bool use_map_info, bool use_maps) {
+	R_RETURN_VAL_IF_FAIL (anal && expr, NULL);
 	REsil *esil = r_esil_new (4096, 0, 1);
 	if (!esil) {
 		return NULL;
@@ -2073,18 +2073,14 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 }
 
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg) {
-	if (!dfg || !reg) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
 	RGraphNode *resolve_me = _edf_reg_get (dfg, reg);
 	return resolve_me? filter_gnode_expr (dfg, resolve_me): NULL;
 }
 
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg,
 	bool use_map_info, bool use_maps) {
-	if (!reg) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && expr && reg, NULL);
 	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (anal, NULL, expr, use_map_info, use_maps);
 	if (!dfg) {
 		return NULL;

@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2019 - condret */
+/* radare2 - LGPL - Copyright 2019 - 2024 - condret */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_anal.h>
 
-/*	shared internal state of the subgraph generating functions	*/
+/* shared internal state of the subgraph generating functions */
 
 typedef struct esil_cfg_generator_t {
 	REsil *esil;
@@ -52,7 +52,7 @@ typedef struct esil_value_t {
 	EsilValType type;
 } EsilVal;
 
-/*	HELPERS 	*/
+/* HELPERS */
 
 // r_str_tok () ?
 static char *condrets_strtok(char *str, const char tok) {
@@ -157,7 +157,7 @@ void _handle_if_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = R_NEW0 (EsilCfgScopeCookie);
 
 	// get current bb
-	//	REsilBB *bb = (REsilBB *)gen->cur->data;
+	// REsilBB *bb = (REsilBB *)gen->cur->data;
 
 	// create if-enter-bb
 	REsilBB *entered_bb = R_NEW0 (REsilBB);
@@ -571,8 +571,9 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 	return ret;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
-	if (!op || !anal || !anal->reg || !anal->esil) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_op(R_NULLABLE RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
+	R_RETURN_VAL_IF_FAIL (anal && op, NULL);
+	if (!anal->reg || !anal->esil) {
 		return NULL;
 	}
 	REsilBB *glue_bb = R_NEW0 (REsilBB);
