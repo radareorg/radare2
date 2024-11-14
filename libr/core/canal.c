@@ -732,6 +732,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 		R_VEC_FOREACH (refs, ref) {
 			const ut32 rt = R_ANAL_REF_TYPE_MASK (ref->type);
 			if (rt == R_ANAL_REF_TYPE_DATA && check_string_at (core, ref->addr)) {
+				// const int type = core_type_by_addr (core, ref->addr);
 				r_anal_xrefs_set (core->anal, ref->at, ref->addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 			}
 		}
@@ -4661,7 +4662,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	}
 
 	const bool search_badpages = r_config_get_b (core->config, "search.badpages");
-
 	if (core->blocksize <= OPSZ) {
 		R_LOG_ERROR ("block size too small");
 		return -1;
@@ -4717,7 +4717,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			break;
 		}
 		if (search_badpages) {
-			memset (block, -1, bsz);
+			memset (block, 0xff, bsz);
 			if (!memcmp (buf, block, bsz)) {
 				if (!uninit) {
 					if (bsz != left) {
@@ -4745,9 +4745,25 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			uninit = false;
 		}
+		// check if meta tells its code
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
 			r_anal_op_fini (&op);
+			{
+				ut64 size;
+				RAnalMetaItem *mi = r_meta_get_at (core->anal, at + i, R_META_TYPE_ANY, &size);
+				if (mi) {
+					switch (mi->type) {
+					case R_META_TYPE_FORMAT:
+					case R_META_TYPE_DATA:
+					case R_META_TYPE_STRING:
+						i += size;
+						continue;
+					default:
+						break;
+					}
+				}
+			}
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (ret < 1) {
 				R_LOG_DEBUG ("aar invalid op %llx %d", at + i, codealign);
@@ -6158,7 +6174,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
 					if (CHECKREF (dst)) {
-						int type = core_type_by_addr (core, dst);
+						const int type = core_type_by_addr (core, dst);
 						RAnalRefType ref_type = (type == -1)? R_ANAL_REF_TYPE_CODE : type;
 						ref_type |= R_ANAL_REF_TYPE_READ; // maybe ICOD instead of CODE
 						r_anal_xrefs_set (core->anal, cur, dst, ref_type);
