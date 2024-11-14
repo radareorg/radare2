@@ -8043,11 +8043,11 @@ R_IPI void cmd_aei(RCore *core) {
 }
 
 R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
-	const RList *list = r_flag_get_list (core->flags, addr);
 	RListIter *iter;
 	RFlagItem *item;
 	bool has_flag = false;
 	int type = R_ANAL_REF_TYPE_DATA;
+	const RList *list = r_flag_get_list (core->flags, addr);
 	r_list_foreach (list, iter, item) {
 		if (strchr (item->name, '.')) {
 			has_flag = true;
@@ -8064,8 +8064,9 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 		}
 	}
 	if (!has_flag) {
+		// if we return anything but _DATA here, the `aao` and `avr` references stop working
 		// XXX assume TYPE_CODE Or TYPE_ICOD or mayb NULL if invalid address?
-		return R_ANAL_REF_TYPE_NULL; // -1 ?
+		return type; // R_ANAL_REF_TYPE_NULL; // -1 ?
 	}
 	return type;
 }

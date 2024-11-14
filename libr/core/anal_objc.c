@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2022 - pancake */
+/* radare2 - LGPL - Copyright 2019-2024 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
@@ -303,6 +303,7 @@ static bool objc_find_refs(RCore *core) {
 			if (xrefs) {
 				RAnalRef *ref;
 				R_VEC_FOREACH (xrefs, ref) {
+					// maybe ICOD?
 					r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
 					total_xrefs++;
 				}
