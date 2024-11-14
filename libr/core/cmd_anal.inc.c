@@ -8054,12 +8054,18 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 			if (r_str_startswith (item->name, "str")) {
 				type = R_ANAL_REF_TYPE_STRN;
 				break;
+			} else if (r_str_startswith (item->name, "sym.")) {
+				type = R_ANAL_REF_TYPE_ICOD;
+				break;
+			} else if (r_str_startswith (item->name, "reloc.")) {
+				type = R_ANAL_REF_TYPE_ICOD;
+				break;
 			}
 		}
 	}
 	if (!has_flag) {
 		// XXX assume TYPE_CODE Or TYPE_ICOD or mayb NULL if invalid address?
-		return -1;
+		return R_ANAL_REF_TYPE_NULL; // -1 ?
 	}
 	return type;
 }
