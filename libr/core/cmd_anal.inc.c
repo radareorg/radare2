@@ -8057,6 +8057,7 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 		}
 	}
 	if (!has_flag) {
+		// XXX assume TYPE_CODE Or TYPE_ICOD or mayb NULL if invalid address?
 		return -1;
 	}
 	return type;
