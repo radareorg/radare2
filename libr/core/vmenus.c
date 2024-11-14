@@ -817,10 +817,23 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		}
 		break;
 		case '+':
-			buf[(x/8)]++;
+			{
+				const int nbyte = x / 8;
+				int last = R_MIN (nbyte + wordsize, 8);
+				for (i = nbyte; i < last; i++) {
+					buf[i]++;
+				}
+			}
 			break;
 		case '-':
-			buf[(x / 8)]--;
+			//buf[(x / 8)]--;
+			{
+				const int nbyte = x / 8;
+				int last = R_MIN (nbyte + wordsize, 8);
+				for (i = nbyte; i < last; i++) {
+					buf[i]--;
+				}
+			}
 			break;
 		case 'h':
 			x = R_MAX (x - 1, 0);
