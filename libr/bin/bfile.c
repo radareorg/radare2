@@ -1197,6 +1197,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->bo->methods_ht, name, sym);
 #if R2_USE_NEW_ABI
+			r_list_append (c->methods, sym);
 #else
 			// RBinSymbol *dsym = r_bin_symbol_clone (sym);
 			r_list_append (c->methods, sym);
