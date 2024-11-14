@@ -538,7 +538,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 R_API R_NULLABLE const char *r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
-		return "null";
+		return NULL;
 	case R_ANAL_DATATYPE_ARRAY:
 		return "array";
 	case R_ANAL_DATATYPE_OBJECT: // instance
