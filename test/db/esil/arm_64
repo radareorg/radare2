@@ -1199,8 +1199,8 @@ aaex 12@4
 axt 0x2040
 EOF
 EXPECT=<<EOF
-(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
-(nofunc) 0x8 [DATA:-w-] add x16, x16, 0x40
+(nofunc) 0x8 [ICOD:r--] add x16, x16, 0x40
+(nofunc) 0x8 [ICOD:r--] add x16, x16, 0x40
 EOF
 RUN
 

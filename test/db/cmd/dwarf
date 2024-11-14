@@ -209,7 +209,7 @@ pd 13 @ main
 EOF
 EXPECT=<<EOF
             ;-- main:
-            ; DATA XREF from entry0 @ 0x10c1(r)
+            ; ICOD XREF from entry0 @ 0x10c1(r)
 / 139: int dbg.main (int argc, char **argv, char **envp);
 |           ; var Mammal *m @ rbp-0x18
 |           ; var Bird *b @ rbp-0x20
@@ -241,7 +241,7 @@ pd 75 @ dbg.main
 EOF
 EXPECT=<<EOF
             ;-- rust::main::h523dcf5432fcfd88:
-            ; DATA XREF from main @ 0x5b0d(r)
+            ; ICOD XREF from main @ 0x5b0d(r)
 / 940: int dbg.main (int argc, char **argv);
 |           ; var int64_t var_8h @ rsp+0x8
 |           ; var int64_t var_10h @ rsp+0x10
@@ -508,7 +508,7 @@ pdf @  dbg.main
 EOF
 EXPECT=<<EOF
             ;-- main:
-            ; DATA XREF from entry0 @ 0x2271(r)
+            ; ICOD XREF from entry0 @ 0x2271(r)
 / 101: int dbg.main (int argc, char **argv, char **envp);
 |           ; arg int argc @ rdi
 |           ; arg char **argv @ rsi
@@ -557,7 +557,7 @@ pdf @  dbg.main
 EOF
 EXPECT=<<EOF
             ;-- main:
-            ; DATA XREF from entry0 @ 0x2271(r)
+            ; ICOD XREF from entry0 @ 0x2271(r)
 / 101: int dbg.main (int argc, char **argv, char **envp);
 |           ; arg int argc @ rdi
 |           ; arg char **argv @ rsi

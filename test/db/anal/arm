@@ -1103,7 +1103,7 @@ aae
 axt str.helloradareworld_n
 EOF
 EXPECT=<<EOF
-main 0xbf9c [STRN:-w-] add r0, pc
+main 0xbf9c [STRN:r--] add r0, pc
 EOF
 RUN
 

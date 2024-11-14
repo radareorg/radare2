@@ -1,3 +1,266 @@
+NAME=write string ref x64
+FILE=bins/mach0/mac-ls
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aae
+aar
+ax~STRN?
+axt 0x100004b48
+EOF
+EXPECT=<<EOF
+94
+(nofunc) 0x10000125a [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001293 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x1000013a9 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x1000013da [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001441 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001461 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001b61 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001baf [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x100001c50 [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x10000281a [STRN:r--] lea rsi, str.Unix2003
+(nofunc) 0x10000336b [STRN:r--] lea rsi, str.Unix2003
+EOF
+RUN
+
+NAME=write string ref arm64
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aae
+aar
+ax~STRN?
+s str.Unix2003
+axt
+EOF
+EXPECT=<<EOF
+80
+(nofunc) 0x100003af8 [STRN:r--] adr x1, str.Unix2003
+EOF
+RUN
+
+NAME=write string ref arm64
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aae
+s str.Unix2003
+axt
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100003af8 [STRN:r--] adr x1, str.Unix2003
+EOF
+RUN
+
+NAME=write string ref 2
+FILE=bins/mach0/ls-sequoia
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aar
+aae
+ax~STRN
+axt 0x100008000
+EOF
+EXPECT=<<EOF
+                                main+100 0x100003abc > STRN:r-- > 0x100007a16 str.bin_ls
+                                main+108 0x100003ac4 > STRN:r-- > 0x100007a1d str.Unix2003
+                                main+156 0x100003af4 > STRN:r-- > 0x100007a26 str.COLUMNS
+                                main+212 0x100003b2c > STRN:r-- > 0x100007a26 str.COLUMNS
+                                main+328 0x100003ba0 > STRN:r-- > 0x100007a2e str.LS_SAMESORT
+                                main+356 0x100003bbc > STRN:r-- > 0x100007a3a str.CLICOLOR
+                                main+388 0x100003bdc > STRN:r-- > 0x100007a43 str._1ABCD:FGHILOPRSTUWXabcdefghiklmnopqrstuvwxy__
+                               main+1088 0x100003e98 > STRN:r-- > 0x100007b29 str.always
+                               main+1128 0x100003ec0 > STRN:r-- > 0x100007b34 str.force
+                               main+1148 0x100003ed4 > STRN:r-- > 0x100007b3a str.auto
+                               main+1188 0x100003efc > STRN:r-- > 0x100007b43 str.if_tty
+                               main+1208 0x100003f10 > STRN:r-- > 0x100007b4a str.never
+                               main+1248 0x100003f38 > STRN:r-- > 0x100007b53 str.none
+                               main+1316 0x100003f7c > STRN:r-- > 0x100007a3a str.CLICOLOR
+                               main+1744 0x100004128 > STRN:r-- > 0x100007a3a str.CLICOLOR
+                               main+1760 0x100004138 > STRN:r-- > 0x100007b58 str.COLORTERM
+                               main+1796 0x10000415c > STRN:r-- > 0x100007b62 str.CLICOLOR_FORCE
+                               main+1812 0x10000416c > STRN:r-- > 0x100007ab3 str.TERM
+                               main+2136 0x1000042b0 > STRN:r-- > 0x100007aca str.LSCOLORS
+                               main+2856 0x100004580 > STRN:r-- > 0x100007ad3 str.vfs.nspace.prevent_materialization
+                               main+2888 0x1000045a0 > STRN:r-- > 0x100007af6 str.prevent_materialization_sysctl_failed
+                               main+3008 0x100004618 > STRN:r-- > 0x100007b1c str.stdout
+                               main+3028 0x10000462c > STRN:r-- > 0x100007a73 str.unsupported___color_value__s__must_be_always__auto__or_never_
+                  sym.func.100004b44+132 0x100004bc8 > STRN:r-- > 0x100007ba9 str.LS_COLWIDTHS
+                 sym.func.100004b44+1216 0x100005004 > STRN:r-- > 0x100007beb str._s__s
+                 sym.func.100004b44+1848 0x10000527c > STRN:r-- > 0x100007bf6 str._llu
+                  sym.func.100005400+132 0x100005484 > STRN:r-- > 0x100007c15 str.total__qu_n
+                   sym.func.1000054d4+68 0x100005518 > STRN:r-- > 0x100007c20 str._ju
+                  sym.func.100005638+144 0x1000056c8 > STRN:r-- > 0x100007c15 str.total__qu_n
+                  sym.func.100005638+224 0x100005718 > STRN:r-- > 0x100007c20 str._ju
+                  sym.func.100005638+412 0x1000057d4 > STRN:r-- > 0x100007c2d str._s_s__ju
+                  sym.func.100005638+452 0x1000057fc > STRN:r-- > 0x100007c3a str._s_s__ju___s
+                  sym.func.100005638+492 0x100005824 > STRN:r-- > 0x100007c62 str.__s
+                  sym.func.100005638+536 0x100005850 > STRN:r-- > 0x100007e19 str._jx
+                  sym.func.100005638+664 0x1000058d0 > STRN:r-- > 0x100007c4b str._s_s__ju___s____s
+                  sym.func.100005638+816 0x100005968 > STRN:r-- > 0x100007beb str._s__s
+                  sym.func.100005638+912 0x1000059c8 > STRN:r-- > 0x100007e9a str._nls:__s:__s_n
+                  sym.func.100005638+936 0x1000059e0 > STRN:r-- > 0x100007ea7 str.___
+                 sym.func.100005638+1328 0x100005b68 > STRN:r-- > 0x100007d05 str.unknown
+                 sym.func.100005638+1336 0x100005b70 > STRN:r-- > 0x100007d00 str.deny
+                 sym.func.100005638+1352 0x100005b80 > STRN:r-- > 0x100007cfa str.allow
+                 sym.func.100005638+1380 0x100005b9c > STRN:r-- > 0x100007d1b str._inherited
+                 sym.func.100005638+1408 0x100005bb8 > STRN:r-- > 0x100007d0d str.__d:__s_s__s
+                 sym.func.100005638+1512 0x100005c20 > STRN:r-- > 0x100007d26 str._s_s
+                 sym.func.100005638+1620 0x100005c8c > STRN:r-- > 0x100007d26 str._s_s
+                 sym.func.100005638+1712 0x100005ce8 > STRN:r-- > 0x100007d38 str.group
+                 sym.func.100005638+1720 0x100005cf0 > STRN:r-- > 0x100007d33 str.user
+                 sym.func.100005638+1752 0x100005d10 > STRN:r-- > 0x100007d2d str._s:_s
+                   sym.func.100005d64+84 0x100005db8 > STRN:r-- > 0x100007eac str._s
+                  sym.func.100005d64+116 0x100005dd8 > STRN:r-- > 0x100007eb1 str._lld
+                  sym.func.100005e00+156 0x100005e9c > STRN:r-- > 0x100007e20 str._e__b__T__Y
+                  sym.func.100005e00+164 0x100005ea4 > STRN:r-- > 0x100007e2c str._b__e__T__Y
+                  sym.func.100005e00+232 0x100005ee8 > STRN:r-- > 0x100007e38 str._e__b__R
+                  sym.func.100005e00+240 0x100005ef0 > STRN:r-- > 0x100007e41 str._b__e__R
+                  sym.func.100005e00+256 0x100005f00 > STRN:r-- > 0x100007e4a str._e__b___Y
+                  sym.func.100005e00+264 0x100005f08 > STRN:r-- > 0x100007e54 str._b__e___Y
+                  sym.func.100005e00+672 0x1000060a0 > STRN:r-- > 0x100007e61 str._.s_s_s_s
+                  sym.func.1000062d8+116 0x10000634c > STRN:r-- > 0x1000079cc str._________
+                  sym.func.10000644c+496 0x10000663c > STRN:r-- > 0x100007c15 str.total__qu_n
+                  sym.func.100006780+128 0x100006800 > STRN:r-- > 0x100007e7e str.exfxcxdxbxegedabagacadah
+                  sym.func.100006780+284 0x10000689c > STRN:r-- > 0x100007c87 str.LSCOLORS_should_use_characters_a_h_instead_of_0_9__see_the_manual_page_
+                  sym.func.100006780+304 0x1000068b0 > STRN:r-- > 0x100007ccf str.invalid_character__c_in_LSCOLORS_env_var
+                  sym.func.1000069ac+104 0x100006a14 > STRN:r-- > 0x100007e74 str._3_d
+                  sym.func.1000069ac+132 0x100006a30 > STRN:r-- > 0x100007e79 str._4_d
+                  sym.func.100006f18+132 0x100006f9c > STRN:r-- > 0x100007a02 str.___aa_bb_ff_nn_rr_tt_vv
+                   sym.func.100007174+28 0x100007190 > STRN:r-- > 0x100007eb9 str.usage:_ls____ABCFGHILOPRSTUWXabcdefghiklmnopqrstuvwxy1________colorwhen____D_format___file_...__n
+                   sym.func.1000071a0+16 0x1000071b0 > STRN:r-- > 0x100007b71 str.fts_open
+                   sym.func.1000071bc+16 0x1000071cc > STRN:r-- > 0x100007ba0 str.fts_read
+                   sym.func.1000071d8+28 0x1000071f4 > STRN:r-- > 0x100007b7a str._s:_directory_causes_a_cycle
+                   sym.func.100007218+40 0x100007240 > STRN:r-- > 0x100007b97 str._s:__s
+                   sym.func.10000725c+52 0x100007290 > STRN:r-- > 0x100007b97 str._s:__s
+                   sym.func.1000072ac+16 0x1000072bc > STRN:r-- > 0x100007bb9 str.user_from_uid
+                   sym.func.1000072c8+16 0x1000072d8 > STRN:r-- > 0x100007bc7 str.group_from_gid
+                   sym.func.1000072e4+16 0x1000072f4 > STRN:r-- > 0x100007be4 str.malloc
+                   sym.func.100007300+16 0x100007310 > STRN:r-- > 0x100007bd8 str.fflagstostr
+                   sym.func.10000731c+44 0x100007348 > STRN:r-- > 0x100007b97 str._s:__s
+                   sym.func.100007370+16 0x100007380 > STRN:r-- > 0x100007c00 str.printscol
+                   sym.func.100007370+24 0x100007388 > STRN:r-- > 0x100007c0a str.print.c
+                   sym.func.10000739c+16 0x1000073ac > STRN:r-- > 0x100007c6b str.printcol
+                   sym.func.10000739c+24 0x1000073b4 > STRN:r-- > 0x100007c0a str.print.c
+                   sym.func.10000739c+32 0x1000073bc > STRN:r-- > 0x100007c74 str.base___dp__entries
+(nofunc) 0x100003be0 [ICOD:--x] adrp x22, reloc.__assert_rtn
+(nofunc) 0x100003e10 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100003e84 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x1000040dc [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x1000045e8 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100004b70 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100004bf4 [ICOD:--x] adrp x24, reloc.__assert_rtn
+(nofunc) 0x1000053a8 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100005660 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x1000059a0 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100005bd0 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100005c3c [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100005d28 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100005e28 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x1000060c8 [ICOD:--x] adrp x19, reloc.__assert_rtn
+(nofunc) 0x1000060ec [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100006b60 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100006b88 [ICOD:--x] adrp x22, reloc.__assert_rtn
+(nofunc) 0x100006c54 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100006cac [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100006cd4 [ICOD:--x] adrp x22, reloc.__assert_rtn
+(nofunc) 0x100006db0 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100006e00 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100006e38 [ICOD:--x] adrp x23, reloc.__assert_rtn
+(nofunc) 0x100006ee4 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100006f40 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc) 0x100006f88 [ICOD:--x] adrp x24, reloc.__assert_rtn
+(nofunc) 0x100007138 [ICOD:--x] adrp x9, reloc.__assert_rtn
+(nofunc) 0x100007180 [ICOD:--x] adrp x8, reloc.__assert_rtn
+(nofunc); [01] -r-x section size 1344 named 1.__TEXT.__auth_stubs 0x1000073c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000073cc [ICOD:r--] add x17, x17, 0
+(nofunc) 0x1000073d0 [DATA:r--] ldr x16, [x17]
+(nofunc) 0x1000073d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000073e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000073f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007408 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007418 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007428 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007438 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007448 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007458 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007468 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007478 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007488 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007498 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074a8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074b8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000074f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007508 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007518 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007528 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007538 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007548 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007558 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007568 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007578 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007588 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007598 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075a8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075b8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000075f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007608 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007618 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007628 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007638 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007648 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007658 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007668 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007678 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007688 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007698 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076a8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076b8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000076f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007708 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007718 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007728 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007738 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007748 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007758 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007768 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007778 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007788 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007798 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077a8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077b8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000077f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007808 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007818 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007828 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007838 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007848 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007858 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007868 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007878 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007888 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x100007898 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078a8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078b8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078c8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078d8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078e8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+(nofunc) 0x1000078f8 [ICOD:--x] adrp x17, reloc.__assert_rtn
+EOF
+RUN
+
 NAME=noreturn errno
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
