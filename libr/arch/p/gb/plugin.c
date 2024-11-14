@@ -1223,12 +1223,21 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		gb_anal_jmp_hl (op);
 		break;
 	case 0x76:
+#if 0
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->eob = true;			//halt might wait for interrupts
 		op->fail = addr + ilen;
 		if (len > 1) {
 			op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;
 		}
+#else
+		//so the above is only semi correct, the exact behaviour of the halt instruction
+		//cannot be expressed as op->type or a in a simple esil expression
+		//see https://github.com/nitro2k01/little-things-gb/tree/main/double-halt-cancel
+		op->type = R_ANAL_OP_TYPE_NULL;
+		op->cycles = 4;
+		r_strbuf_set (&op->esil, "halt");
+#endif
 		break;
 	case 0xcd:
 		if (gb_op_calljump (as, op, data, addr)) {
@@ -1339,7 +1348,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		break;
 	case 0x10:				//stop
 		op->type = R_ANAL_OP_TYPE_NULL;
-		r_strbuf_set (&op->esil, "TODO,stop");
+		op->cycles = 4;
+		r_strbuf_set (&op->esil, "stop");
 		break;
 	case 0xcb:
 		op->nopcode = 2;
@@ -1497,6 +1507,9 @@ static int esil_gb_init(REsil *esil) {
 
 	// XXX esil-init shouldnt touch the registers or write into memory or antyhing like dat
 	GBUser *user = R_NEW0 (GBUser);
+	REsilOp *op = r_esil_get_op (esil, "}{");
+	r_esil_set_op (esil, "halt", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "stop", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
 		if (esil->anal) {
