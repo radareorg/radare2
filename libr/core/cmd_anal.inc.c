@@ -8041,6 +8041,7 @@ R_IPI void cmd_aei(RCore *core) {
 		}
 	}
 }
+
 R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	const RList *list = r_flag_get_list (core->flags, addr);
 	RListIter *iter;
