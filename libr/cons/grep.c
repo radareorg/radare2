@@ -1114,17 +1114,18 @@ continuation:
 	}
 
 	if (grep->sort != -1 || grep->sort_invert) {
-#define INSERT_LINES(list)\
-		if (list) {\
-			r_list_foreach (list, iter, str) {\
-				int slen = strlen (str);\
+#define INSERT_LINES(list) \
+		if (list) { \
+			*ptr = 0; \
+			r_list_foreach (list, iter, str) { \
+				int slen = strlen (str); \
 				if (slen > 0) { \
-					memcpy (ptr, str, slen);\
-					memcpy (ptr + slen, "\n", 2);\
-					ptr += slen + 1;\
+					memcpy (ptr, str, slen); \
+					memcpy (ptr + slen, "\n", 2); \
+					ptr += slen + 1; \
 				} \
-				nl++;\
-			}\
+				nl++; \
+			} \
 		}
 		RListIter *iter;
 		int nl = 0;
