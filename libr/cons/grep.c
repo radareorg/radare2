@@ -815,11 +815,13 @@ R_API void r_cons_grepbuf(void) {
 	}
 	if (grep->zoom) {
 		char *sin = calloc (cons->context->buffer_len + 2, 4);
+#if 0
 		if (R_UNLIKELY (!sin)) {
 			grep->zoom = 0;
 			grep->zoomy = 0;
 			return;
 		}
+#endif
 		strcpy (sin, cons->context->buffer);
 		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
 		if (out) {
