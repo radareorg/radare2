@@ -806,8 +806,8 @@ R_API void r_cons_grepbuf(void) {
 		char *sbuf = strdup (cons->context->buffer);
 		r_str_ansi_filter (sbuf, NULL, NULL, -1);
 		char *out = r_str_ss (sbuf, NULL, 0);
-		free (cons->context->buffer);
 		free (sbuf);
+		free (cons->context->buffer);
 		cons->context->buffer = out;
 		cons->context->buffer_len = strlen (out);
 		cons->context->buffer_sz = cons->context->buffer_len;
@@ -815,13 +815,11 @@ R_API void r_cons_grepbuf(void) {
 	}
 	if (grep->zoom) {
 		char *sin = calloc (cons->context->buffer_len + 2, 4);
-#if 0
 		if (R_UNLIKELY (!sin)) {
 			grep->zoom = 0;
 			grep->zoomy = 0;
 			return;
 		}
-#endif
 		strcpy (sin, cons->context->buffer);
 		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
 		if (out) {
