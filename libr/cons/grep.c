@@ -378,12 +378,7 @@ R_API void r_cons_grep_expression(const char *str) {
 		len = strlen (ptr) - 1;
 		if (len > 1 && ptr[len] == '$' && ptr[len - 1] != '\\') {
 #if R2_USE_NEW_ABI
-			{
-				RConsGrepWord *word = r_list_last (grep->strings);
-				if (word) {
-					word->end = true;
-				}
-			}
+			gw_end = true;
 #else
 			grep->end[i] = true;
 #endif
@@ -413,6 +408,7 @@ R_API void r_cons_grep_expression(const char *str) {
 				gw->begin = gw_begin;
 				gw->neg = gw_neg;
 				gw->end = gw_end;
+				gw_end = false;
 				r_list_append (grep->strings, gw);
 #else
 				if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
