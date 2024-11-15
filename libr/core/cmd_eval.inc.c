@@ -627,6 +627,72 @@ static bool cmd_ec(RCore *core, const char *input) {
 	return true;
 }
 
+static void r2rc_set(RCore *core, R_NULLABLE const char *k, R_NULLABLE const char *v) {
+	char *rcfile = r_file_home (".radare2rc");
+	char *rcdata = r_file_slurp (rcfile, NULL);
+	if (k) {
+		char *line;
+		RListIter *iter;
+		RList *lines = r_str_split_list (rcdata, "\n", 0);
+		RStrBuf *sb = r_strbuf_new ("");
+		bool found = false;
+		char *kk = r_str_newf ("e %s", k);
+		r_list_foreach (lines, iter, line) {
+			const char *oline = line;
+			if (*oline == '\'') {
+				oline++;
+			}
+			if (r_str_startswith (oline, kk)) {
+				if (v) {
+					if (!found && *v) {
+						r_strbuf_appendf (sb, "'e %s=%s\n", k, v);
+					}
+				} else {
+					r_cons_println (line);
+				}
+				found = true;
+			} else {
+				r_strbuf_appendf (sb, "%s\n", line);
+			}
+		}
+		free (kk);
+		if (v) {
+			if (!found && *v) {
+				r_strbuf_appendf (sb, "'e %s=%s\n", k, v);
+			}
+			char *out = r_strbuf_drain (sb);
+			r_list_free (lines);
+			r_str_trim (out);
+			r_file_dump (rcfile, (const ut8*)out, -1, false);
+			free (out);
+		}
+	} else {
+		r_cons_println (rcdata);
+	}
+	free (rcdata);
+	free (rcfile);
+}
+
+static void cmd_eplus(RCore *core, const char *input) {
+	char *s = r_str_trim_dup (input);
+	char *eq = strchr (s, '=');
+	if (*s) {
+		if (eq) {
+			r_str_trim (s);
+			*eq++ = 0;
+			r_str_trim (eq);
+			const char *k = s;
+			const char *v = eq;
+			r2rc_set (core, k, v);
+		} else {
+			r2rc_set (core, s, NULL);
+		}
+	} else {
+		r2rc_set (core, NULL, NULL);
+	}
+	free (s);
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -639,9 +705,6 @@ static int cmd_eval(void *data, const char *input) {
 		case '?': r_config_list (core->config, input + 2, 2); break;
 		default: r_config_list (core->config, input + 1, 3); break;
 		}
-		break;
-	default:
-		r_core_return_invalid_command (core, "e", *input);
 		break;
 	case 't': // "et"
 		if (input[1] == 'a') {
@@ -774,6 +837,9 @@ static int cmd_eval(void *data, const char *input) {
 			free (file);
 		}
 		break;
+	case '+': // "e+"
+		cmd_eplus (core, input + 1);
+		break;
 	case 'e': // "ee"
 		if (input[1] == ' ') {
 			char *p;
@@ -841,6 +907,9 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
 			}
 		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "e", *input);
 		break;
 	}
 	return 0;
