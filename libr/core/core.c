@@ -494,7 +494,7 @@ static const char *radare_argv[] = {
 	"dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt",
 	"dw",
 	"dx?", "dx", "dxa", "dxe", "dxr", "dxs",
-	"e?", "e", "-e", "-i", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
+	"e?", "e", "e+", "-e", "-i", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
 	"ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn",
 	"ecH?", "ecH", "ecHi", "ecHw", "ecH-",
 	"f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fd", "fe-", "fe",
@@ -2212,7 +2212,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
 	};
 	const char *evals[] = {
-		"-e", "e", "ee", "et", "e?", "e!", "ev", "evj", NULL
+		"-e", "e", "e+", "ee", "et", "e?", "e!", "ev", "evj", NULL
 	};
 	const char *breaks[] = {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
