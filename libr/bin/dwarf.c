@@ -844,8 +844,12 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 							hdr->file_names[count].name = name;
 						}
 					} else {
-						add_sdb_include_dir (sdb, name, index);
-						free (name);
+						if (name) {
+							add_sdb_include_dir (sdb, name, index);
+							free (name);
+						} else {
+							buf = NULL;
+						}
 					}
 					name = NULL;
 					break;
