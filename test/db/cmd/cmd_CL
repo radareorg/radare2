@@ -2,7 +2,6 @@ NAME=CL address
 FILE=bins/elf/dwarf3_line
 CMDS=CL~$$addr
 EXPECT=<<EOF
-
 addr: 0x00001139
 addr: 0x00001141
 addr: 0x0000114a
@@ -34,7 +33,6 @@ NAME=CL dwarf5 address
 FILE=bins/elf/dwarf5_line
 CMDS=CL~$$addr
 EXPECT=<<EOF
-
 addr: 0x00001139
 addr: 0x00001141
 addr: 0x0000114a
@@ -66,7 +64,6 @@ NAME=CL clang address
 FILE=bins/elf/dwarf3_line_cl
 CMDS=CL~$$addr
 EXPECT=<<EOF
-
 addr: 0x00001140
 addr: 0x00001148
 addr: 0x0000114d
@@ -104,7 +101,6 @@ NAME=CL dwarf5 clang address
 FILE=bins/elf/dwarf5_line_cl
 CMDS=CL~$$addr
 EXPECT=<<EOF
-
 addr: 0x00001140
 addr: 0x00001148
 addr: 0x0000114d
@@ -142,7 +138,6 @@ NAME=CL file
 FILE=bins/elf/dwarf3_line
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
@@ -153,7 +148,6 @@ NAME=CL dwarf5 file
 FILE=bins/elf/dwarf5_line
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
@@ -164,7 +158,6 @@ NAME=CL rel file
 FILE=bins/elf/dwarf3_line_rel
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
@@ -175,7 +168,6 @@ NAME=CL dwarf5 rel file
 FILE=bins/elf/dwarf5_line_rel
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line//bar.c
@@ -186,7 +178,6 @@ NAME=CL clang file
 FILE=bins/elf/dwarf3_line_cl
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
@@ -197,7 +188,6 @@ NAME=CL dwarf5 clang file
 FILE=bins/elf/dwarf5_line_cl
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
@@ -208,7 +198,6 @@ NAME=CL rel clang file
 FILE=bins/elf/dwarf3_line_rel_cl
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c
@@ -219,7 +208,6 @@ NAME=CL dwarf5 rel clang file
 FILE=bins/elf/dwarf5_line_rel_cl
 CMDS=CL~$$file
 EXPECT=<<EOF
-
 file: /tmp/dwarf-line-foo.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line.c
 file: /usr/w/g/radare2/test/bins/src/dwarf-line/bar.c

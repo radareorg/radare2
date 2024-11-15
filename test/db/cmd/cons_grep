@@ -667,3 +667,25 @@ hello
 world
 EOF
 RUN
+
+NAME=grep $foo
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
+CMDS=<<EOF
+pd~78
+?e ----
+pd~78$
+?e ----
+pd~$call
+?e ----
+pd~$foo
+EOF
+EXPECT=<<EOF
+      ||,=< 0x100003b6c      600000b4       cbz x0, 0x100003b78
+     |||`-> 0x100003b78      a88301d1       sub x8, x29, 0x60
+----
+      ||,=< 0x100003b6c      600000b4       cbz x0, 0x100003b78
+----
+----
+EOF
+RUN
