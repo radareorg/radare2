@@ -4,6 +4,7 @@
 
 // TODO: integrate this code in a better way.. maybe reftype as name?
 R_API int r_anal_data_type(RAnal *anal, ut64 da) {
+	R_RETURN_VAL_IF_FAIL (anal, R_ANAL_REF_TYPE_NULL);
 	RIO *io = anal->iob.io;
 	if (!anal->iob.is_valid_offset (io, da, R_PERM_R)) {
 		return R_ANAL_REF_TYPE_ERROR;
@@ -198,13 +199,10 @@ static bool is_bin(const ut8 *buf, int size) {
 }
 
 // TODO: add is_flag, is comment?
-R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal) {
+R_API char *r_anal_data_tostring(RAnalData *d, R_NULLABLE RConsPrintablePalette *pal) {
+	R_RETURN_VAL_IF_FAIL (d, NULL);
 	int i, len, mallocsz = 1024;
 	ut32 n32;
-
-	if (!d) {
-		return NULL;
-	}
 
 	RStrBuf *sb = r_strbuf_new (NULL);
 	if (!sb || !r_strbuf_reserve (sb, mallocsz)) {
@@ -334,6 +332,7 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 }
 
 R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	RAnalData *ad = R_NEW0 (RAnalData);
 	int l = R_MIN (len, 8);
 	if (!ad) {
@@ -536,7 +535,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char *r_anal_datatype_tostring(RAnalDataType t) {
+R_API R_NULLABLE const char *r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
 		return NULL;
