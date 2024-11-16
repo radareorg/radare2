@@ -3,6 +3,7 @@ include deps.mk
 QJS_BRANCH?=quickjs-ng
 USE_MINIFY=0
 USE_UGLIFY=0
+QJS_COMMIT=e1a0f4f1cf7548ddb1d2b97220d3346f7fa44091
 
 ifeq ($(QJS_BRANCH),frida)
 	QJS_NAME=quickjs-frida
@@ -178,6 +179,9 @@ lang_qjs.${EXT_SO}: src js_repl.c js_require.c
 
 $(QJS_NAME):
 	git clone $(QJS_GITURL) $(QJS_NAME)
+ifeq ($(QJS_BRANCH),quickjs-ng)
+	cd $(QJS_NAME) && git reset --hard $(QJS_COMMIT)
+endif
 
 o:
 	make clean && make && make user-install

@@ -107,6 +107,7 @@ int cr_regexp_canonicalize(CharRange *cr, BOOL is_unicode);
 
 LRE_BOOL lre_is_id_start(uint32_t c);
 LRE_BOOL lre_is_id_continue(uint32_t c);
+LRE_BOOL lre_is_white_space(uint32_t c);
 
 int unicode_normalize(uint32_t **pdst, const uint32_t *src, int src_len,
                       UnicodeNormalizationEnum n_type,

@@ -61,9 +61,11 @@ typedef uint32_t JSAtom;
    - string contents is either pure ASCII or is UTF-8 encoded.
  */
 
+/* Overridable purely for testing purposes; don't touch. */
+#ifndef JS_NAN_BOXING
 #if INTPTR_MAX < INT64_MAX
-/* Use NAN boxing for 32bit builds. */
-#define JS_NAN_BOXING
+#define JS_NAN_BOXING 1 /* Use NAN boxing for 32bit builds. */
+#endif
 #endif
 
 enum {
@@ -90,7 +92,7 @@ enum {
 #define JS_FLOAT64_NAN NAN
 #define JSValueConst JSValue /* For backwards compatibility. */
 
-#if defined(JS_NAN_BOXING)
+#if defined(JS_NAN_BOXING) && JS_NAN_BOXING
 
 typedef uint64_t JSValue;
 
@@ -174,12 +176,40 @@ typedef struct JSValue {
 #define JS_VALUE_GET_FLOAT64(v) ((v).u.float64)
 #define JS_VALUE_GET_PTR(v) ((v).u.ptr)
 
+/* msvc doesn't understand designated initializers without /std:c++20 */
+#ifdef __cplusplus
+static inline JSValue JS_MKPTR(int64_t tag, void *ptr)
+{
+    JSValue v;
+    v.u.ptr = ptr;
+    v.tag = tag;
+    return v;
+}
+static inline JSValue JS_MKVAL(int64_t tag, int32_t int32)
+{
+    JSValue v;
+    v.u.int32 = int32;
+    v.tag = tag;
+    return v;
+}
+static inline JSValue JS_MKNAN(void)
+{
+    JSValue v;
+    v.u.float64 = JS_FLOAT64_NAN;
+    v.tag = JS_TAG_FLOAT64;
+    return v;
+}
+/* provide as macros for consistency and backward compat reasons */
+#define JS_MKPTR(tag, ptr) JS_MKPTR(tag, ptr)
+#define JS_MKVAL(tag, val) JS_MKVAL(tag, val)
+#define JS_NAN             JS_MKNAN() /* alas, not a constant expression */
+#else
+#define JS_MKPTR(tag, p)   (JSValue){ (JSValueUnion){ .ptr = p }, tag }
 #define JS_MKVAL(tag, val) (JSValue){ (JSValueUnion){ .int32 = val }, tag }
-#define JS_MKPTR(tag, p) (JSValue){ (JSValueUnion){ .ptr = p }, tag }
+#define JS_NAN             (JSValue){ (JSValueUnion){ .float64 = JS_FLOAT64_NAN }, JS_TAG_FLOAT64 }
+#endif
 
 #define JS_TAG_IS_FLOAT64(tag) ((unsigned)(tag) == JS_TAG_FLOAT64)
-
-#define JS_NAN (JSValue){ (JSValueUnion){ .float64 = JS_FLOAT64_NAN }, JS_TAG_FLOAT64 }
 
 static inline JSValue __JS_NewFloat64(double d)
 {
@@ -484,21 +514,25 @@ JS_EXTERN int JS_IsRegisteredClass(JSRuntime *rt, JSClassID class_id);
 
 static js_force_inline JSValue JS_NewBool(JSContext *ctx, JS_BOOL val)
 {
+    (void)&ctx;
     return JS_MKVAL(JS_TAG_BOOL, (val != 0));
 }
 
 static js_force_inline JSValue JS_NewInt32(JSContext *ctx, int32_t val)
 {
+    (void)&ctx;
     return JS_MKVAL(JS_TAG_INT, val);
 }
 
 static js_force_inline JSValue JS_NewFloat64(JSContext *ctx, double val)
 {
+    (void)&ctx;
     return __JS_NewFloat64(val);
 }
 
 static js_force_inline JSValue JS_NewCatchOffset(JSContext *ctx, int32_t val)
 {
+    (void)&ctx;
     return JS_MKVAL(JS_TAG_CATCH_OFFSET, val);
 }
 
@@ -536,8 +570,8 @@ static inline JS_BOOL JS_IsNumber(JSValue v)
 
 static inline JS_BOOL JS_IsBigInt(JSContext *ctx, JSValue v)
 {
-    int tag = JS_VALUE_GET_TAG(v);
-    return tag == JS_TAG_BIG_INT;
+    (void)&ctx;
+    return JS_VALUE_GET_TAG(v) == JS_TAG_BIG_INT;
 }
 
 static inline JS_BOOL JS_IsBool(JSValue v)
@@ -721,7 +755,8 @@ JS_EXTERN int JS_DefinePropertyValueStr(JSContext *ctx, JSValue this_obj,
 JS_EXTERN int JS_DefinePropertyGetSet(JSContext *ctx, JSValue this_obj,
                                       JSAtom prop, JSValue getter, JSValue setter,
                                       int flags);
-JS_EXTERN void JS_SetOpaque(JSValue obj, void *opaque);
+/* Only supported for custom classes, returns 0 on success < 0 otherwise. */
+JS_EXTERN int JS_SetOpaque(JSValue obj, void *opaque);
 JS_EXTERN void *JS_GetOpaque(JSValue obj, JSClassID class_id);
 JS_EXTERN void *JS_GetOpaque2(JSContext *ctx, JSValue obj, JSClassID class_id);
 JS_EXTERN void *JS_GetAnyOpaque(JSValue obj, JSClassID *class_id);
@@ -900,7 +935,8 @@ static inline JSValue JS_NewCFunctionMagic(JSContext *ctx, JSCFunctionMagic *fun
                                            int length, JSCFunctionEnum cproto, int magic)
 {
     /* Used to squelch a -Wcast-function-type warning. */
-    JSCFunctionType ft = { .generic_magic = func };
+    JSCFunctionType ft;
+    ft.generic_magic = func;
     return JS_NewCFunction2(ctx, ft.generic, name, length, cproto, magic);
 }
 JS_EXTERN void JS_SetConstructor(JSContext *ctx, JSValue func_obj,
@@ -990,11 +1026,14 @@ JS_EXTERN int JS_SetModuleExportList(JSContext *ctx, JSModuleDef *m,
 /* Version */
 
 #define QJS_VERSION_MAJOR 0
-#define QJS_VERSION_MINOR 6
-#define QJS_VERSION_PATCH 1
+#define QJS_VERSION_MINOR 7
+#define QJS_VERSION_PATCH 0
 #define QJS_VERSION_SUFFIX ""
 
 JS_EXTERN const char* JS_GetVersion(void);
+
+/* Integration point for quickjs-libc.c, not for public use. */
+JS_EXTERN uintptr_t js_std_cmd(int cmd, ...);
 
 #undef JS_EXTERN
 #undef js_force_inline
