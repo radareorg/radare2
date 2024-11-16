@@ -1147,11 +1147,12 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	}
 #if R2_USE_NEW_ABI
 	c = R_NEW0 (RBinClass);
-	r_bin_class_init (c, name, super, attr);
-	c->index = RVecRBinClass_length (&bf->bo->classes);
-	RVecRBinClass_push_back (&bf->bo->classes, c);
-	ht_pp_insert (bf->bo->classes_ht, name, c);
-	R_LOG_INFO ("XD - %d", c->index);
+	if (c) {
+		r_bin_class_init (c, name, super, attr);
+		c->index = RVecRBinClass_length (&bf->bo->classes);
+		RVecRBinClass_push_back (&bf->bo->classes, c);
+		ht_pp_insert (bf->bo->classes_ht, name, c);
+	}
 	// free (c);
 	// const int htidx = bc.index + 1;
  	// c = RVecRBinClass_last (&bf->bo->classes);

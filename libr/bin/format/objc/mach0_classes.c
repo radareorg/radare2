@@ -1643,7 +1643,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	}
 #if R2_USE_NEW_ABI
 //		eprintf ("PPP %s\n", r_bin_name_tostring (klass->name));
-	klass->index = RVecRBinClass_length (&bf->bo->classes);
+	klass->index = RVecRBinClass_length (&bf->bo->classes) + r_list_length (list);
 #else
 	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 #endif
