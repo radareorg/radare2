@@ -873,6 +873,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					break;
 				default:
 					R_LOG_WARN ("Invalid form code %d", form_code);
+					buf = NULL;
 					break;
 				}
 
@@ -935,7 +936,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					break;
 				default:
 					buf = NULL;
-					R_LOG_ERROR ("Invalid ior unsupported DW line number content type %d", content_type_code);
+					R_LOG_ERROR ("Invalid or unsupported DW line number content type %d", content_type_code);
 					break;
 				}
 			}
