@@ -367,8 +367,17 @@ static const char *dwarf_sn_xcoff64[DWARF_SN_MAX] = {
 	[DWARF_SN_PUBTYPES] = "dwpbtyp"
 };
 
+
 static R_TH_LOCAL RBinObject *lastObject = NULL;
 static R_TH_LOCAL RBinSection *lastSection[DWARF_SN_MAX] = {NULL};
+
+static void dwarf_cache_reset(void) {
+	lastObject = NULL;
+	int i;
+	for (i = 0; i < DWARF_SN_MAX; i++) {
+		lastSection[i] = NULL;
+	}
+}
 
 // 1 of 20s spent in this non-mnemonized function
 static RBinSection *getsection(RBin *bin, int sn) {
@@ -377,11 +386,8 @@ static RBinSection *getsection(RBin *bin, int sn) {
 	RBinSection *section = NULL;
 	RBinObject *o = R_UNWRAP3 (bin, cur, bo);
 	if (o != lastObject) {
+		dwarf_cache_reset ();
 		lastObject = o;
-		int i;
-		for (i = 0; i < DWARF_SN_MAX; i++) {
-			lastSection[i] = NULL;
-		}
 	}
 	char const *rclass = R_UNWRAP3 (o, info, rclass);
 	if (R_LIKELY (o && o->sections)) {
@@ -2632,22 +2638,21 @@ static void row_free(void *p) {
 
 R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	ut8 *buf;
 	RList *list = NULL;
-	int len, ret;
+	dwarf_cache_reset ();
 	const bool be = r_bin_is_big_endian (bin);
 	RBinSection *section = getsection (bin, DWARF_SN_LINE);
 	RBinFile *bf = bin->cur;
 	if (bf && section) {
-		len = section->size;
+		int len = section->size;
 		if (len < 1) {
 			return NULL;
 		}
-		buf = calloc (1, len + 1);
+		ut8 *buf = calloc (1, len + 1);
 		if (!buf) {
 			return NULL;
 		}
-		ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
+		int ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
 		if (ret != len) {
 			free (buf);
 			return NULL;
