@@ -779,7 +779,8 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 							buf += mylen + 1;
 						} else {
 							name = NULL;
-							buf++;
+							buf = NULL;
+							// buf++;
 						}
 					}
 					break;
@@ -790,16 +791,18 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				case DW_FORM_strp:
 				case DW_FORM_line_strp:
 					{
-					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-					RBinSection *section = (form_code == DW_FORM_strp)
-						? getsection (bin, DWARF_SN_STR)
-						: getsection (bin, DWARF_SN_LINE_STR);
-					name = get_section_string (bin, section, section_offset);
-					if (name) {
-						r_str_ansi_strip (name);
-						r_str_replace_ch (name, '\n', 0, true);
-						r_str_replace_ch (name, '\t', 0, true);
-					}
+						ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
+						RBinSection *section = (form_code == DW_FORM_strp)
+							? getsection (bin, DWARF_SN_STR)
+							: getsection (bin, DWARF_SN_LINE_STR);
+						name = get_section_string (bin, section, section_offset);
+						if (name) {
+							r_str_ansi_strip (name);
+							r_str_replace_ch (name, '\n', 0, true);
+							r_str_replace_ch (name, '\t', 0, true);
+						} else {
+							buf = NULL;
+						}
 					}
 					break;
 				case DW_FORM_data1:
