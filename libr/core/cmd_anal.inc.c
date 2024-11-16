@@ -9191,7 +9191,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			if (word_change < 0) {
 				r_strbuf_append (sb, "x");
 				if (pj) {
-					pj_n (pj, word_change);
+					pj_i (pj, word_change);
 					// r_list_append (args[word_change], (void *)(size_t)((i * 8) + 7 - j));
 				}
 			} else {
@@ -9199,7 +9199,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				numbers[word_change] |= bit;
 				r_strbuf_appendf (sb, "%d", word_change);
 				if (pj) {
-					pj_n (pj, word_change);
+					pj_i (pj, word_change);
 					r_list_append (args[word_change], (void *)(size_t)((i * 8) + 7 - j));
 				}
 			}
@@ -9225,7 +9225,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			r_list_sort (args[j], intsort);
 			r_list_foreach (args[j], iter, n) {
 				int nn = (int)((size_t)n & ST32_MAX);
-				pj_n (pj, nn);
+				pj_i (pj, nn);
 			}
 			pj_end (pj);
 		}
