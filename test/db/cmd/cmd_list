@@ -12,6 +12,7 @@ bpf.pseudo
 chip8.pseudo
 dalvik.pseudo
 evm.pseudo
+gb.pseudo
 m68k.pseudo
 mips.pseudo
 null.pseudo

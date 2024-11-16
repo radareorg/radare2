@@ -409,6 +409,7 @@ EXPECT=<<EOF
   {
     "opcode": "adc 0xed",
     "disasm": "adc 0xed",
+    "pseudo": "0xed = 0xed + ",
     "description": "add with carry register pair",
     "srcs": [
       {

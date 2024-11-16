@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - jvoisin */
+/* radare - LGPL - Copyright 2015-2024 - jvoisin */
 
 #include <r_lib.h>
 #include <r_flag.h>
@@ -78,11 +78,19 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_z80_pseudo = {
-	.name = "z80.pseudo",
-	.desc = "z80 pseudo syntax",
+#if Z80_IS_GB
+RParsePlugin r_parse_plugin_gb_pseudo = {
+	.name = "gb.pseudo",
+	.desc = "GameBoy pseudo syntax",
 	.parse = parse, // parse actually converts the string into asm.pseudo
 };
+#else
+RParsePlugin r_parse_plugin_z80_pseudo = {
+	.name = "z80.pseudo",
+	.desc = "Z80 pseudo syntax",
+	.parse = parse, // parse actually converts the string into asm.pseudo
+};
+#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
