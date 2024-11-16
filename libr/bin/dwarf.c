@@ -781,7 +781,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 
 		ut64 index;
 		size_t count = 0;
-		for (index = 0; buf && index < total_entries; index++) {
+		for (index = 0; buf && buf < buf_end && index < total_entries; index++) {
 			const ut8 *format = entry_format;
 
 			ut8 entry_format_index;
@@ -871,6 +871,9 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 						buf = nbuf;
 					}
 					break;
+				default:
+					R_LOG_WARN ("Invalid form code %d", form_code);
+					break;
 				}
 
 				switch (content_type_code) {
@@ -930,6 +933,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 						memcpy (hdr->file_names[count].md5sum, sum, sizeof sum);
 					}
 					break;
+				default:
+					buf = NULL;
+					R_LOG_ERROR ("Invalid ior unsupported DW line number content type %d", content_type_code);
+					break;
 				}
 			}
 
@@ -947,6 +954,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 							hdr->file_names[count].file_len, hdr->file_names[count].name);
 					} else {
 						R_LOG_WARN ("file_names is null");
+						buf = NULL;
 					}
 					break;
 				}
