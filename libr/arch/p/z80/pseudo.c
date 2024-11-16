@@ -86,8 +86,8 @@ RParsePlugin r_parse_plugin_gb_pseudo = {
 };
 #else
 RParsePlugin r_parse_plugin_z80_pseudo = {
-	.name = "gb.pseudo",
-	.desc = "GameBoy pseudo syntax",
+	.name = "z80.pseudo",
+	.desc = "Z80 pseudo syntax",
 	.parse = parse, // parse actually converts the string into asm.pseudo
 };
 #endif
