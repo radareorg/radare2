@@ -10,13 +10,7 @@
 
 static RBinClass *get_class(RBinFile *bf, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->classes_ht && name, NULL);
-#if R2_USE_NEW_ABI
-	void *htidxptr = ht_pp_find (bf->bo->classes_ht, name, NULL);
-	int htidx = (int)(size_t)htidxptr;
-	return RVecRBinClass_at (&bf->bo->classes, htidx - 1);
-#else
 	return ht_pp_find (bf->bo->classes_ht, name, NULL);
-#endif
 }
 
 static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *method) {
@@ -1152,16 +1146,15 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 		return c;
 	}
 #if R2_USE_NEW_ABI
-	RBinClass bc = {0};
-	r_bin_class_init (&bc, name, super, attr);
-	bc.index = RVecRBinClass_length (&bf->bo->classes);
-	RVecRBinClass_push_back (&bf->bo->classes, &bc);
+	c = R_NEW0 (RBinClass);
+	r_bin_class_init (c, name, super, attr);
+	c->index = RVecRBinClass_length (&bf->bo->classes);
+	RVecRBinClass_push_back (&bf->bo->classes, c);
+	ht_pp_insert (bf->bo->classes_ht, name, c);
+	R_LOG_INFO ("XD - %d", c->index);
 	// free (c);
 	// const int htidx = bc.index + 1;
-	const int htidx = RVecRBinClass_length (&bf->bo->classes); // bc.index + 1;
-	ht_pp_update (bf->bo->classes_ht, name, (void*)(size_t)htidx);
-	// eprintf ("0-> %s (%s)\n", r_bin_name_tostring (c->name), name);
- 	c = RVecRBinClass_last (&bf->bo->classes);
+ 	// c = RVecRBinClass_last (&bf->bo->classes);
 	// eprintf ("1-> %s (%s)\n", r_bin_name_tostring (c->name), name);
 	// free (c);
 	// c = RVecRBinClass_at (&bf->bo->classes, 0);
@@ -1196,12 +1189,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->bo->methods_ht, name, sym);
-#if R2_USE_NEW_ABI
 			r_list_append (c->methods, sym);
-#else
-			// RBinSymbol *dsym = r_bin_symbol_clone (sym);
-			r_list_append (c->methods, sym);
-#endif
 			free (name);
 		}
 	}

@@ -460,16 +460,21 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (p->classes) {
-#if R2_USE_NEW_ABI
-			p->classes (bf);
-#else
 			RList *classes = p->classes (bf);
 			if (classes) {
 				// XXX we should probably merge them instead
+#if R2_USE_NEW_ABI
+				RListIter *iter;
+				RBinClass *klass;
+				RVecRBinClass_fini (&bo->classes);
+				r_list_foreach (classes, iter, klass) {
+					RVecRBinClass_push_back (&bo->classes, klass);
+				}
+#else
 				r_list_free (bo->classes);
 				bo->classes = classes;
-			}
 #endif
+			}
 			r_bin_object_rebuild_classes_ht (bo);
 			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
