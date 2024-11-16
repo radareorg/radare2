@@ -367,13 +367,29 @@ static const char *dwarf_sn_xcoff64[DWARF_SN_MAX] = {
 	[DWARF_SN_PUBTYPES] = "dwpbtyp"
 };
 
+
+static R_TH_LOCAL RBinObject *lastObject = NULL;
+static R_TH_LOCAL RBinSection *lastSection[DWARF_SN_MAX] = {NULL};
+
+static void dwarf_cache_reset(void) {
+	lastObject = NULL;
+	int i;
+	for (i = 0; i < DWARF_SN_MAX; i++) {
+		lastSection[i] = NULL;
+	}
+}
+
 // 1 of 20s spent in this non-mnemonized function
 static RBinSection *getsection(RBin *bin, int sn) {
+	R_RETURN_VAL_IF_FAIL (sn >= 0 && sn < DWARF_SN_MAX, NULL);
 	RListIter *iter;
 	RBinSection *section = NULL;
 	RBinObject *o = R_UNWRAP3 (bin, cur, bo);
+	if (o != lastObject) {
+		dwarf_cache_reset ();
+		lastObject = o;
+	}
 	char const *rclass = R_UNWRAP3 (o, info, rclass);
-	R_RETURN_VAL_IF_FAIL (sn >= 0 && sn < DWARF_SN_MAX, NULL);
 	if (R_LIKELY (o && o->sections)) {
 		/* XXX: xcoff64 specific hack */
 		const char * const *name_tab = rclass && !strcmp (o->info->rclass, "xcoff64")
@@ -382,6 +398,23 @@ static RBinSection *getsection(RBin *bin, int sn) {
 		const char *name_str = name_tab[sn];
 		if (!name_str) {
 			return NULL;
+		}
+		if (lastSection[sn]) {
+			RBinSection *ls = lastSection[sn];
+			const char *lsn = ls->name;
+			if (strstr (lsn , name_str)) {
+#if R2_USE_NEW_ABI
+				if (r_str_startswith (lsn, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (ls->flags))  {
+					R_LOG_WARN ("Compressed dwarf sections not yet supported");
+					return NULL;
+				}
+#endif
+				if (strstr (lsn, "zdebug")) {
+					R_LOG_WARN ("Compressed dwarf sections not yet supported");
+					return NULL;
+				}
+				return ls;
+			}
 		}
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, name_str)) {
@@ -395,6 +428,7 @@ static RBinSection *getsection(RBin *bin, int sn) {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
 				}
+				lastSection[sn] = section;
 				return section;
 			}
 		}
@@ -2604,22 +2638,21 @@ static void row_free(void *p) {
 
 R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	ut8 *buf;
 	RList *list = NULL;
-	int len, ret;
+	dwarf_cache_reset ();
 	const bool be = r_bin_is_big_endian (bin);
 	RBinSection *section = getsection (bin, DWARF_SN_LINE);
 	RBinFile *bf = bin->cur;
 	if (bf && section) {
-		len = section->size;
+		int len = section->size;
 		if (len < 1) {
 			return NULL;
 		}
-		buf = calloc (1, len + 1);
+		ut8 *buf = calloc (1, len + 1);
 		if (!buf) {
 			return NULL;
 		}
-		ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
+		int ret = r_buf_read_at (bf->buf, section->paddr, buf, len);
 		if (ret != len) {
 			free (buf);
 			return NULL;
