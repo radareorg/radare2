@@ -16,6 +16,7 @@ gb.pseudo
 m68k.pseudo
 mips.pseudo
 null.pseudo
+pickle.pseudo
 ppc.pseudo
 riscv.pseudo
 sh.pseudo
