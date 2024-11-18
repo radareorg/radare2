@@ -454,7 +454,7 @@ R_API void r_io_drain_overlay(RIO *io);
 R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr);
 R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
-#define r_io_bind_init(x) memset (&(x), 0, sizeof (x))
+#define r_io_bind_init(x) (x) = (const RIOBind){0}
 
 R_API bool r_io_plugin_init(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
