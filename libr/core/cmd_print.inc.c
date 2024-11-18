@@ -3908,7 +3908,7 @@ restore_conf:
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char *algo = NULL;
 	ut32 osize = 0, len = core->blocksize;
-	int pos = 0, handled_cmd = false;
+	int handled_cmd = false;
 
 	const char i0 = input[0];
 	if (i0 == '?') {
@@ -3958,29 +3958,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	} else {
 		osize = len;
 	}
-	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
-	if (cj && cj->h->type == R_CRYPTO_TYPE_HASHER) {
-		r_crypto_job_update (cj, (const ut8 *)core->block, len);
-		int result_size = 0;
-		ut8 *result = r_crypto_job_get_output (cj, &result_size);
-		if (result) {
-			hexprint (result, result_size);
-		}
-	} else {
-		/* TODO: Simplify this spaguetti monster */
-		while (osize > 0 && hash_handlers[pos].name) {
-			if (!r_str_ccmp (hash_handlers[pos].name, input, ' ')) {
-				hash_handlers[pos].handler (core->block, len);
-				handled_cmd = true;
-				break;
-			}
-			pos++;
-		}
-	}
-
-	if (osize) {
-		r_core_block_size (core, osize);
-	}
+	r_cons_printf ("%s\n", r_hash_tostring (NULL, algo, core->block, len));
 	return handled_cmd;
 }
 

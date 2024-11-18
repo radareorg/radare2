@@ -48,7 +48,7 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_entropy = {
 	.meta = {
 		.name = "entropy",
-		.desc = "Collected randomness by a syustem",
+		.desc = "Shannon entropy",
 		.author = "pancake",
 		.license = "MIT",
 	},
