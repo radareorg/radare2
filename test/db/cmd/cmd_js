@@ -11,7 +11,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ReferenceError: a is not defined
-ERROR:     at <eval> (-:1:1)
+ERROR:     at <eval> (-:1:4)
 
 ERROR: [uninitialized]
 EOF

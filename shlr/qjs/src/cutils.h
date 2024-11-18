@@ -54,6 +54,14 @@ extern "C" {
 #include <pthread.h>
 #endif
 
+#if defined(__SANITIZE_ADDRESS__)
+# define __ASAN__ 1
+#elif defined(__has_feature)
+# if __has_feature(address_sanitizer)
+#  define __ASAN__ 1
+# endif
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #  define likely(x)       (x)
 #  define unlikely(x)     (x)
