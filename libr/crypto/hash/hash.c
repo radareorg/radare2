@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2007-2024 pancake */
 
+#include <r_crypto.h>
 #include <r_hash.h>
 #include <r_util.h>
 #if USE_LIB_XXHASH
@@ -360,19 +361,34 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 
 R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (name && len >= 0 && data, NULL);
-	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
-	RHash *myctx = NULL;
-	if (!algo) {
-		return NULL;
-	}
-	if (!ctx) {
-		myctx = ctx = r_hash_new (true, algo);
-	}
-	r_hash_do_begin (ctx, algo);
-	int digest_size = r_hash_calculate (ctx, algo, data, len);
-	r_hash_do_end (ctx, algo);
+	int digest_size = 0;
 	size_t digest_hex_size = 0;
+
+	RCrypto *cry = r_crypto_new ();
+	RCryptoJob *cj = r_crypto_use (cry, name);
+
+	ut64 algo = r_hash_name_to_bits (name);
+	if (!ctx) {
+		ctx = r_hash_new (true, algo);
+	}
+
+	if (cj && cj->h->type == R_CRYPTO_TYPE_HASHER) {
+		r_crypto_job_update (cj, data, len);
+		ut8 *result = r_crypto_job_get_output (cj, &digest_size);
+		memcpy (ctx->digest, result, digest_size);
+		free (result);
+	} else {
+		if (!algo) {
+			R_LOG_ERROR ("Hash algorithm %s not found", name);
+			return NULL;
+		}
+		r_hash_do_begin (ctx, algo);
+		digest_size = r_hash_calculate (ctx, algo, data, len);
+		r_hash_do_end (ctx, algo);
+	}
+	r_crypto_job_free (cj);
+	r_crypto_free (cry);
 	if (digest_size == 0) {
 		digest_hex_size = 16;
 		digest_hex = calloc (digest_hex_size, 1);
@@ -393,6 +409,5 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 			}
 		}
 	}
-	r_hash_free (myctx);
 	return digest_hex;
 }

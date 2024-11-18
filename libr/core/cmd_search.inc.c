@@ -84,7 +84,7 @@ static RCoreHelpMessage help_msg_slash_magic = {
 
 static RCoreHelpMessage help_msg_slash = {
 	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
-	"Use io.va for searching in non virtual addressing spaces",
+				  "Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
 	"/!", " ff", "search for first occurrence not matching, command modifier",
@@ -101,7 +101,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
-	"/h", "[?][algorithm] [digest] [size]", "find block of size bytes having this digest. See ph",
+	"/h", "[?*] [algorithm] [digest] [size]", "find block of size bytes having this digest. See ph",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
@@ -252,6 +252,19 @@ struct endlist_pair {
 	int delay_size;
 };
 
+static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+	if ((++param->c % 64) || (param->outmode == R_MODE_JSON)) {
+		return;
+	}
+	if (r_cons_singleton ()->columns < 50) {
+		eprintf ("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+			at, n, (param->c % 2)? "[ #]": "[# ]");
+	} else {
+		eprintf ("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+			at, to, n, (param->c % 2)? "[ #]": "[# ]");
+	}
+}
+
 static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
 	RIOMap *map;
 	ut8 *buf;
@@ -288,25 +301,29 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			}
 			R_LOG_INFO ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x, from, to);
 			int blocks = (int) (to - from - len);
-			R_LOG_INFO ("Carving %d blocks:", blocks);
+			R_LOG_INFO ("Carving %d blocks", blocks);
 			(void) r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from + i + len) < to; i++) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
 				char *s = r_hash_tostring (NULL, hashname, buf + i, len);
-				if (!(i % 5)) {
-					eprintf ("%d\r", i);
-				}
+				print_search_progress (i, to, 0, param);
 				if (!s) {
 					R_LOG_ERROR ("Hash fail");
 					break;
 				}
-				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
 				if (!strcmp (s, hashstr)) {
-					R_LOG_INFO ("Found at 0x%"PFMT64x, from + i);
-					r_cons_printf ("f hash.%s.%s = 0x%"PFMT64x "\n",
-						hashname, hashstr, from + i);
+					if (param->searchflags) {
+						char hash_short[9];
+						r_str_ncpy (hash_short, hashstr, sizeof (hash_short));
+						r_strf_var (flag, 256, "%s.%s", hashname, hash_short);
+						r_cons_printf ("0x%" PFMT64x ": %s : %s\n", from + i, flag, hashstr);
+						r_flag_set (core->flags, flag, from + i, len);
+					} else {
+						r_cons_printf ("f hash.%s.%s = 0x%" PFMT64x "\n", hashname, hashstr, from + i);
+					}
+
 					free (s);
 					free (buf);
 					return 1;
@@ -738,19 +755,6 @@ static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
 		kw_used = kw;
 	}
 	return _cb_hit_sz (kw_used, klen, user, addr);
-}
-
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
-	if ((++param->c % 64) || (param->outmode == R_MODE_JSON)) {
-		return;
-	}
-	if (r_cons_singleton ()->columns < 50) {
-		eprintf ("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
-			at, n, (param->c % 2)? "[ #]": "[# ]");
-	} else {
-		eprintf ("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
-			at, to, n, (param->c % 2)? "[ #]": "[# ]");
-	}
 }
 
 static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, ut64 size, int perms) {
@@ -5118,10 +5122,17 @@ reread:
 		break;
 	case 'h': // "/h"
 	{
+
 		char *p, *arg = r_str_trim_dup (input + 1);
 		if (*arg == '?') {
 			r_core_cmd_help_match (core, help_msg_slash, "/h");
 			break;
+		}
+		// "/h*" we do not add a flag for the search hit.
+		if (*arg == '*') {
+			param.searchflags = 0;
+			free (arg);
+			arg = r_str_trim_dup (input + 2);
 		}
 		p = strchr (arg, ' ');
 		if (p) {
