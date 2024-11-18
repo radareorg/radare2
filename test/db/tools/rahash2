@@ -172,7 +172,7 @@ c     blowfish  Bruce Schneier's symetric-key block cipher
 c         cps2  Capcom Play System 2
 c      des-ecb  DES with with Electronic Code Book mode
 s      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
-h      entropy  Collected randomness by a syustem
+h      entropy  Shannon entropy
 e     punycode  Unicoded represented in plain ascii
 c          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
 c          rc4  Rivest Cipher 4
