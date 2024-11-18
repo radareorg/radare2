@@ -3,7 +3,7 @@ include deps.mk
 QJS_BRANCH?=quickjs-ng
 USE_MINIFY=0
 USE_UGLIFY=0
-QJS_COMMIT=e1a0f4f1cf7548ddb1d2b97220d3346f7fa44091
+QJS_COMMIT=55b67a6591071b2ada8895a7000e0fec5f348016
 
 ifeq ($(QJS_BRANCH),frida)
 	QJS_NAME=quickjs-frida
