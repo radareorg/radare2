@@ -380,6 +380,7 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 		free (result);
 	} else {
 		if (!algo) {
+			r_crypto_job_free (cj);
 			R_LOG_ERROR ("Hash algorithm %s not found", name);
 			return NULL;
 		}

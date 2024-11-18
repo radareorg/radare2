@@ -665,6 +665,8 @@ static void r2rc_set(RCore *core, R_NULLABLE const char *k, R_NULLABLE const cha
 			r_str_trim (out);
 			r_file_dump (rcfile, (const ut8*)out, -1, false);
 			free (out);
+		} else {
+			r_strbuf_free (sb);
 		}
 	} else {
 		r_cons_println (rcdata);
