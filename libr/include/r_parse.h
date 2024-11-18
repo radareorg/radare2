@@ -98,6 +98,7 @@ extern RParsePlugin r_parse_plugin_stm8_pseudo;
 extern RParsePlugin r_parse_plugin_evm_pseudo;
 extern RParsePlugin r_parse_plugin_null_pseudo;
 extern RParsePlugin r_parse_plugin_gb_pseudo;
+extern RParsePlugin r_parse_plugin_pickle_pseudo;
 extern RParsePlugin r_parse_plugin_tricore_pseudo;
 #endif
 
