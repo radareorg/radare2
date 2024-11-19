@@ -1649,7 +1649,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->info && r->bin->cur->bo->info->rclass && !strcmp ("fs", r->bin->cur->bo->info->rclass)) {
 			const char *fstype = r->bin->cur->bo->info->bclass;
-			r_core_cmdf (r, "m /root %s @ 0", fstype);
+			r_fs_mount (r->fs, fstype, "/root", 0);
 		}
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
 		mr.iod = r->io ? r_io_desc_get (r->io, mr.fh->fd) : NULL;

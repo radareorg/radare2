@@ -140,7 +140,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		fstype = (const char *)heapFsType;
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
-		R_LOG_ERROR ("Invalid filesystem type");
+		R_LOG_ERROR ("Invalid filesystem type '%s'", fstype);
 		free (heapFsType);
 		return NULL;
 	}
