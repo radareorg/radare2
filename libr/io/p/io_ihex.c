@@ -121,7 +121,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	RBufferSparse *rbs;
+	RBufferSparseItem *rbsi;
 	RListIter *iter;
 
 	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
@@ -146,12 +146,12 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	/* disk write : process each sparse chunk */
 	// TODO: sort addresses + check overlap?
 	RList *nonempty = r_buf_nonempty_list (rih->rbuf);
-	r_list_foreach (nonempty, iter, rbs) {
-		ut16 addl0 = rbs->from & 0xffff;
-		ut16 addh0 = rbs->from >> 16;
-		ut16 addh1 = rbs->to >> 16;
+	r_list_foreach (nonempty, iter, rbsi) {
+		ut16 addl0 = rbsi->from & 0xffff;
+		ut16 addh0 = rbsi->from >> 16;
+		ut16 addh1 = rbsi->to >> 16;
 		ut16 tsiz = 0;
-		if (rbs->size == 0) {
+		if (rbsi->size == 0) {
 			continue;
 		}
 
@@ -167,7 +167,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			// 00 records (data)
 			tsiz = -addl0;
 			addl0 = 0;
-			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
+			if (fwblock (out, rbsi->data, rbsi->from, tsiz)) {
 				R_LOG_ERROR ("ihex:fwblock error");
 				r_list_free (nonempty);
 				fclose (out);
@@ -182,7 +182,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			return -1;
 		}
 		// 00 records (remaining data)
-		if (fwblock (out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
+		if (fwblock (out, rbsi->data + tsiz, (addh1 << 16) | addl0, rbsi->size - tsiz)) {
 			R_LOG_ERROR ("ihex:fwblock error");
 			r_list_free (nonempty);
 			fclose (out);

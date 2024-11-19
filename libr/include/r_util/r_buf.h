@@ -1,6 +1,7 @@
 #ifndef R_BUF_H
 #define R_BUF_H
 #include <r_util/r_mem.h>
+//#include <r_io.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,6 @@ typedef struct r_buffer_methods_t {
 	RBufferNonEmptyList nonempty_list;
 } RBufferMethods;
 
-#if R2_USE_NEW_ABI
 typedef enum {
 	R_BUFFER_FILE,
 	R_BUFFER_IO,
@@ -48,29 +48,78 @@ typedef enum {
 	R_BUFFER_REF,
 	R_BUFFER_CACHE,
 } RBufferType;
-#endif
 
-struct r_buf_t {
-	const RBufferMethods *methods;
-	void *priv;
-	ut8 *whole_buf;
-	bool readonly;
-	ut8 Oxff_priv;
-	int refctr;
-	// R2_600 R_REF_TYPE instead of refcnt;
-#if R2_USE_NEW_ABI
-	RBufferType type;
-#endif
-};
+typedef struct r_buf_file_t {
+	int fd;
+	ut8 tmp[8];
+} RBufferFile;
 
-// XXX: this should not be public
-typedef struct r_buf_cache_t {
+typedef struct r_buf_io_t {
+	struct r_io_bind_t *iob;
+	int fd;
+} RBufferIO;
+
+typedef struct r_buf_bytes_t {
+	ut8 *buf;
+	ut64 length;
+	ut64 offset;
+	bool is_bufowner;
+} RBufferBytes;
+
+typedef struct r_buf_mmap_t {
+	// NOTE: this needs to be first, so that bytes operations will work without changes
+	RBufferBytes bytes;
+	RMmap *mmap;
+} RBufferMmap;
+
+typedef struct r_buf_sparse_item_t {
 	ut64 from;
 	ut64 to;
 	int size;
 	ut8 *data;
 	int written;
+} RBufferSparseItem;
+
+typedef struct r_buf_sparse_t {
+	RList *sparse;
+	ut64 offset;
 } RBufferSparse;
+
+typedef struct r_buf_ref_t {
+	RBuffer *parent;
+	ut64 cur;
+	ut64 base;
+	ut64 size;
+} RBufferRef;
+
+typedef struct r_buf_cache_t {
+	// init
+	RBuffer *sb; // source/parent buffer
+	bool is_bufowner;
+	ut64 length;
+	// internal
+	struct r_io_cache_layer_t *cl;
+	ut64 offset;
+	ut8 *buf;
+} RBufferCache;
+
+struct r_buf_t {
+	const RBufferMethods *methods;
+	union {
+		RBufferFile *rb_file;
+		RBufferIO *rb_io;
+		RBufferBytes *rb_bytes;
+		RBufferMmap *rb_mmap;
+		RBufferSparse *rb_sparse;
+		RBufferRef *rb_ref;
+		RBufferCache *rb_cache;
+	};
+	ut8 *whole_buf;
+	bool readonly;
+	ut8 Oxff_priv;
+	int refctr;
+	RBufferType type;
+};
 
 /* constructors */
 R_API RBuffer *r_buf_new(void);
@@ -85,10 +134,8 @@ R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size);
 R_API RBuffer *r_buf_new_empty(ut64 len);
 R_API RBuffer *r_buf_new_mmap(const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff);
-#if R2_USE_NEW_ABI
 R_API char *r_buf_describe(RBuffer *b);
 R_API RBuffer *r_buf_new_with_cache(RBuffer *b, bool steal);
-#endif
 
 /* methods */
 R_API bool r_buf_dump(RBuffer *buf, const char *file);

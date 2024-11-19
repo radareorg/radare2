@@ -3,44 +3,25 @@
 #include <r_util.h>
 #include <r_io.h>
 
-struct buf_io_user {
-	RIOBind *iob;
-	int fd;
-};
-
-struct buf_io_priv {
-	RIOBind *iob;
-	int fd;
-};
-
-static inline struct buf_io_priv *get_priv_io(RBuffer *b) {
-	struct buf_io_priv *priv = (struct buf_io_priv *)b->priv;
-	r_warn_if_fail (priv);
-	return priv;
-}
-
 static bool buf_io_init(RBuffer *b, const void *user) {
-	const struct buf_io_user *u = (const struct buf_io_user *)user;
-	struct buf_io_priv *priv = R_NEW0 (struct buf_io_priv);
-	if (!priv) {
+	const RBufferIO *rb_io = user;
+	b->rb_io = R_NEW (RBufferIO);
+	if (!b->rb_io) {
 		return false;
 	}
-	priv->iob = u->iob;
-	priv->fd = u->fd;
-	b->priv = priv;
+	b->rb_io[0] = rb_io[0];
 	return true;
 }
 
 static bool buf_io_fini(RBuffer *b) {
-	//struct buf_io_priv *priv = get_priv_io (b);
-	R_FREE (b->priv);
+	R_FREE (b->rb_io);
 	return true;
 }
 
 static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
-	struct buf_io_priv *priv = get_priv_io (b);
 	int io_whence;
 
+	r_warn_if_fail (b->rb_io);
 	switch (whence) {
 	default:
 		r_warn_if_reached ();
@@ -54,27 +35,27 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 		io_whence = R_IO_SEEK_CUR;
 		break;
 	}
-	return priv->iob->fd_seek (priv->iob->io, priv->fd, addr, io_whence);
+	return b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, addr, io_whence);
 }
 
 static ut64 buf_io_get_size(RBuffer *b) {
-	struct buf_io_priv *priv = get_priv_io (b);
-	return priv->iob->fd_size (priv->iob->io, priv->fd);
+	r_warn_if_fail (b->rb_io);
+	return b->rb_io->iob->fd_size (b->rb_io->iob->io, b->rb_io->fd);
 }
 
 static bool buf_io_resize(RBuffer *b, ut64 newsize) {
-	struct buf_io_priv *priv = get_priv_io (b);
-	return priv->iob->fd_resize (priv->iob->io, priv->fd, newsize);
+	r_warn_if_fail (b->rb_io);
+	return b->rb_io->iob->fd_resize (b->rb_io->iob->io, b->rb_io->fd, newsize);
 }
 
 static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
-	struct buf_io_priv *priv = get_priv_io (b);
-	return priv->iob->fd_read (priv->iob->io, priv->fd, buf, len);
+	r_warn_if_fail (b->rb_io);
+	return b->rb_io->iob->fd_read (b->rb_io->iob->io, b->rb_io->fd, buf, len);
 }
 
 static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	struct buf_io_priv *priv = get_priv_io (b);
-	return priv->iob->fd_write (priv->iob->io, priv->fd, buf, len);
+	r_warn_if_fail (b->rb_io);
+	return b->rb_io->iob->fd_write (b->rb_io->iob->io, b->rb_io->fd, buf, len);
 }
 
 static const RBufferMethods buffer_io_methods = {
