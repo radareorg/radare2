@@ -1647,9 +1647,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->info && r->bin->cur->bo->info->rclass && !strcmp ("fs", r->bin->cur->bo->info->rclass)) {
+		RBinInfo *bi = R_UNWRAP5 (r, bin, cur, bo, info);
+		if (bi && bi->rclass && !strcmp ("fs", bi->rclass)) {
 			const char *fstype = r->bin->cur->bo->info->bclass;
-			r_fs_mount (r->fs, fstype, "/root", 0);
+			if (!r_fs_mount (r->fs, fstype, "/root", 0)) {
+				R_LOG_ERROR ("Cannot mount /root");
+			}
 		}
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
 		mr.iod = r->io ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
