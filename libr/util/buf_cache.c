@@ -1,28 +1,10 @@
 /* radare2 - LGPL - Copyright 2024 - pancake */
 
 #include <r_util.h>
-
-#if R2_USE_NEW_ABI
-
-typedef struct buf_cache_priv {
-	// init
-	RBuffer *sb; // source/parent buffer
-	bool is_bufowner;
-	ut64 length;
-	// internal
-	RIOCacheLayer *cl;
-	ut64 offset;
-	ut8 *buf;
-} RBufCache;
-
-static inline RBufCache *get_priv_cache_bytes(RBuffer *b) {
-	RBufCache *priv = (RBufCache*)b->priv;
-	r_warn_if_fail (priv);
-	return priv;
-}
+#include <r_io.h>
 
 static void iocache_item_free(void *data) {
-	RIOCacheItem *ci = (RIOCacheItem *)data;
+	RIOCacheItem *ci = data;
 	if (ci) {
 		free (ci->tree_itv);
 		free (ci->data);
@@ -94,8 +76,8 @@ static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence);
 
 static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), false);
-	RBufCache *priv = get_priv_cache_bytes (b);
-	ut64 addr = priv->offset;
+	r_warn_if_fail (b->rb_cache);
+	ut64 addr = b->rb_cache->offset;
 	if ((UT64_MAX - len + 1) < addr) {
 		st64 ret = buf_cache_read (b, buf, UT64_MAX - addr + 1);
 		len = len - (UT64_MAX - addr + 1);
@@ -103,8 +85,8 @@ static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 		return ret + buf_cache_read (b, &buf[UT64_MAX - addr + 1], len);
 	}
 	RInterval itv = (RInterval){addr, len};
-	r_buf_read_at (priv->sb, addr, buf, len);
-	RIOCacheLayer *layer = priv->cl; // r_list_last (io->cache.layers);
+	r_buf_read_at (b->rb_cache->sb, addr, buf, len);
+	RIOCacheLayer *layer = b->rb_cache->cl; // r_list_last (io->cache.layers);
 	RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
 	if (!node) {
 		return len;
@@ -152,8 +134,8 @@ static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 
 static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), 0);
-	RBufCache *priv = get_priv_cache_bytes (b);
-	ut64 addr = priv->offset;
+	r_warn_if_fail (b->rb_cache);
+	ut64 addr = b->rb_cache->offset;
 
 	if ((UT64_MAX - len + 1) < addr) {
 		st64 ret = buf_cache_write (b, buf, UT64_MAX - addr + 1);
@@ -166,10 +148,10 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	if (!ci) {
 		return false;
 	}
-	r_buf_read_at (priv->sb, addr, ci->odata, len);
+	r_buf_read_at (b->rb_cache->sb, addr, ci->odata, len);
 	// (void)r_io_read_at (io, addr, ci->odata, len); // ignore failed reads?
 	memcpy (ci->data, buf, len);
-	RIOCacheLayer *layer = priv->cl; // r_list_last (io->cache.layers);
+	RIOCacheLayer *layer = b->rb_cache->cl; // r_list_last (io->cache.layers);
 	RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
 	if (node) {
 		RIOCacheItem *_ci = (RIOCacheItem *)node->data;
@@ -198,48 +180,44 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 
 static bool buf_cache_init(RBuffer *b, const void *user) {
 	// TODO take sb and owned from user instead of setting it in with_cache() after init
-	RBufCache *priv = R_NEW0 (RBufCache);
-	if (!priv) {
+	b->rb_cache = R_NEW0 (RBufferCache);
+	if (!b->rb_cache) {
 		return false;
 	}
-	priv->cl = iocache_layer_new ();
-	priv->length = 0;
-	priv->offset = 0;
-	priv->is_bufowner = false;
-	b->priv = priv;
+	b->rb_cache->cl = iocache_layer_new ();
 	return true;
 }
 
 static bool buf_cache_fini(RBuffer *b) {
-	RBufCache *priv = get_priv_cache_bytes (b);
-	if (priv->is_bufowner) {
-		r_buf_free (priv->sb);
+	r_warn_if_fail (b->rb_cache);
+	if (b->rb_cache->is_bufowner) {
+		r_buf_free (b->rb_cache->sb);
 	}
-	iocache_layer_free (priv->cl);
-	R_FREE (priv->buf);
-	R_FREE (b->priv);
+	iocache_layer_free (b->rb_cache->cl);
+	R_FREE (b->rb_cache->buf);
+	R_FREE (b->rb_cache);
 	return true;
 }
 
 static bool buf_cache_resize(RBuffer *b, ut64 newsize) {
-	RBufCache *priv = get_priv_cache_bytes (b);
-	if (newsize > priv->length) {
+	r_warn_if_fail (b->rb_cache);
+	if (newsize > b->rb_cache->length) {
 		r_buf_resize (b, newsize);
 	}
-	priv->length = newsize;
+	b->rb_cache->length = newsize;
 	return true;
 }
 
 static ut64 buf_cache_get_size(RBuffer *b) {
-	RBufCache *priv = get_priv_cache_bytes (b);
-	return priv->length;
+	r_warn_if_fail (b->rb_cache);
+	return b->rb_cache->length;
 }
 
 static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence) {
-	RBufCache *priv = get_priv_cache_bytes (b);
+	r_warn_if_fail (b->rb_cache);
 	if (addr < 0) {
 		if (addr > -UT48_MAX) {
-	       		if (-addr > (st64)priv->offset) {
+			if (-addr > (st64)b->rb_cache->offset) {
 				return -1;
 			}
 		} else {
@@ -248,31 +226,31 @@ static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence) {
 	}
 	if (R_LIKELY (whence == R_BUF_SET)) {
 		// 50%
-		priv->offset = addr;
+		b->rb_cache->offset = addr;
 	} else if (whence == R_BUF_CUR) {
 		// 20%
-		priv->offset += addr;
+		b->rb_cache->offset += addr;
 	} else {
 		// 5%
-		priv->offset = priv->length + addr;
+		b->rb_cache->offset = b->rb_cache->length + addr;
 	}
-	return priv->offset;
+	return b->rb_cache->offset;
 }
 
 static ut8 *buf_cache_get_whole_buf(RBuffer *b, ut64 *sz) {
-	RBufCache *priv = get_priv_cache_bytes (b);
+	r_warn_if_fail (b->rb_cache);
 	if (sz) {
-		*sz = priv->length;
+		*sz = b->rb_cache->length;
 	}
-	if (priv->buf) {
-		R_FREE (priv->buf);
+	if (b->rb_cache->buf) {
+		R_FREE (b->rb_cache->buf);
 	}
-	ut8 *nbuf = malloc (priv->length);
+	ut8 *nbuf = malloc (b->rb_cache->length);
 	if (nbuf) {
-		r_buf_read_at (b, 0, nbuf, priv->length);
-		priv->buf = nbuf;
+		r_buf_read_at (b, 0, nbuf, b->rb_cache->length);
+		b->rb_cache->buf = nbuf;
 	}
-	return priv->buf;
+	return b->rb_cache->buf;
 }
 
 static const RBufferMethods buffer_cache_methods = {
@@ -285,4 +263,3 @@ static const RBufferMethods buffer_cache_methods = {
 	.seek = buf_cache_seek,
 	.get_whole_buf = buf_cache_get_whole_buf
 };
-#endif

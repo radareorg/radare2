@@ -7,55 +7,41 @@ struct buf_mmap_user {
 	int perm;
 };
 
-// "subclass"" of buf_bytes_priv
-struct buf_mmap_priv {
-	// NOTE: this needs to be first, so that bytes operations will work without changes
-	struct buf_bytes_priv bytes_priv;
-	RMmap *mmap;
-};
-
-static inline struct buf_mmap_priv *get_priv_mmap(RBuffer *b) {
-	struct buf_mmap_priv *priv = (struct buf_mmap_priv *)b->priv;
-	r_warn_if_fail (priv);
-	return priv;
-}
-
 static bool buf_mmap_init(RBuffer *b, const void *user) {
-	const struct buf_mmap_user *u = (const struct buf_mmap_user *)user;
-	struct buf_mmap_priv *priv = R_NEW0 (struct buf_mmap_priv);
-	if (!priv) {
+	const struct buf_mmap_user *u = user;
+	b->rb_mmap = R_NEW0 (RBufferMmap);
+	if (!b->rb_mmap) {
 		return false;
 	}
 
-	priv->mmap = r_file_mmap (u->filename, u->perm & R_PERM_W, 0);
-	if (!priv->mmap) {
-		free (priv);
+	b->rb_mmap->mmap = r_file_mmap (u->filename, u->perm & R_PERM_W, 0);
+	if (!b->rb_mmap->mmap) {
+		free (b->rb_mmap);
 		return false;
 	}
-	priv->bytes_priv.buf = priv->mmap->buf;
-	priv->bytes_priv.length = priv->mmap->len;
-	priv->bytes_priv.offset = 0;
-	b->priv = priv;
+	b->rb_mmap->bytes.buf = b->rb_mmap->mmap->buf;
+	b->rb_mmap->bytes.length = b->rb_mmap->mmap->len;
+	b->rb_mmap->bytes.offset = 0;
 	return true;
 }
 
 static bool buf_mmap_fini(RBuffer *b) {
-	struct buf_mmap_priv *priv = get_priv_mmap (b);
-	r_file_mmap_free (priv->mmap);
-	R_FREE (b->priv);
+	r_warn_if_fail (b->rb_mmap);
+	r_file_mmap_free (b->rb_mmap->mmap);
+	R_FREE (b->rb_mmap);
 	return true;
 }
 
 static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
-	struct buf_mmap_priv *priv = get_priv_mmap (b);
-	if (newsize > priv->mmap->len) {
-		ut8 *t = r_mem_mmap_resize (priv->mmap, newsize);
+	r_warn_if_fail (b->rb_mmap);
+	if (newsize > b->rb_mmap->mmap->len) {
+		ut8 *t = r_mem_mmap_resize (b->rb_mmap->mmap, newsize);
 		if (!t) {
 			return false;
 		}
-		priv->bytes_priv.buf = t;
+		b->rb_mmap->bytes.buf = t;
 	}
-	priv->bytes_priv.length = newsize;
+	b->rb_mmap->bytes.length = newsize;
 	return true;
 }
 

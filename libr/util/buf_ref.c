@@ -8,23 +8,10 @@ struct buf_ref_user {
 	ut64 size;
 };
 
-struct buf_ref_priv {
-	RBuffer *parent;
-	ut64 cur;
-	ut64 base;
-	ut64 size;
-};
-
-static inline struct buf_ref_priv *get_priv_ref(RBuffer *b) {
-	struct buf_ref_priv *priv = (struct buf_ref_priv *)b->priv;
-	r_warn_if_fail (priv);
-	return priv;
-}
-
 static bool buf_ref_init(RBuffer *b, const void *user) {
-	const struct buf_ref_user *u = (const struct buf_ref_user *)user;
-	struct buf_ref_priv *priv = R_NEW0 (struct buf_ref_priv);
-	if (!priv) {
+	const struct buf_ref_user *u = user;
+	b->rb_ref = R_NEW0 (RBufferRef);
+	if (!b->rb_ref) {
 		return false;
 	}
 
@@ -33,63 +20,62 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 	// referencer. Copy-on-write? Write to the buffer underneath?
 	ut64 parent_sz = r_buf_size (u->parent);
 	b->readonly = true;
-	priv->parent = r_buf_ref (u->parent);
-	priv->base = R_MIN (u->offset, parent_sz);
-	priv->size = R_MIN (parent_sz - priv->base, u->size);
-	b->priv = priv;
+	b->rb_ref->parent = r_buf_ref (u->parent);
+	b->rb_ref->base = R_MIN (u->offset, parent_sz);
+	b->rb_ref->size = R_MIN (parent_sz - b->rb_ref->base, u->size);
 	return true;
 }
 
 static bool buf_ref_fini(RBuffer *b) {
-	struct buf_ref_priv *priv = get_priv_ref (b);
-	r_buf_free (priv->parent);
-	R_FREE (b->priv);
+	r_warn_if_fail (b->rb_ref);
+	r_buf_free (b->rb_ref->parent);
+	R_FREE (b->rb_ref);
 	return true;
 }
 
 static bool buf_ref_resize(RBuffer *b, ut64 newsize) {
-	struct buf_ref_priv *priv = get_priv_ref (b);
-	ut64 parent_sz = r_buf_size (priv->parent);
-	priv->size = R_MIN (parent_sz - priv->base, newsize);
+	r_warn_if_fail (b->rb_ref);
+	const ut64 parent_sz = r_buf_size (b->rb_ref->parent);
+	b->rb_ref->size = R_MIN (parent_sz - b->rb_ref->base, newsize);
 	return true;
 }
 
 static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
-	struct buf_ref_priv *priv = get_priv_ref (b);
-	if (priv->size < priv->cur) {
+	r_warn_if_fail (b->rb_ref);
+	if (b->rb_ref->size < b->rb_ref->cur) {
 		return -1;
 	}
-	len = R_MIN (len, priv->size - priv->cur);
-	st64 r = r_buf_read_at (priv->parent, priv->base + priv->cur, buf, len);
+	len = R_MIN (len, b->rb_ref->size - b->rb_ref->cur);
+	st64 r = r_buf_read_at (b->rb_ref->parent, b->rb_ref->base + b->rb_ref->cur, buf, len);
 	if (r < 0) {
 		return r;
 	}
-	priv->cur += r;
+	b->rb_ref->cur += r;
 	return r;
 }
 
 static ut64 buf_ref_get_size(RBuffer *b) {
-	struct buf_ref_priv *priv = get_priv_ref (b);
-	return priv->size;
+	r_warn_if_fail (b->rb_ref);
+	return b->rb_ref->size;
 }
 
 static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
-	struct buf_ref_priv *priv = get_priv_ref (b);
+	r_warn_if_fail (b->rb_ref);
 	switch (whence) {
 	case R_BUF_CUR:
-		priv->cur += addr;
+		b->rb_ref->cur += addr;
 		break;
 	case R_BUF_SET:
-		priv->cur = addr;
+		b->rb_ref->cur = addr;
 		break;
 	case R_BUF_END:
-		priv->cur = priv->size + addr;
+		b->rb_ref->cur = b->rb_ref->size + addr;
 		break;
 	default:
 		r_warn_if_reached ();
 		return -1;
 	}
-	return priv->cur;
+	return b->rb_ref->cur;
 }
 
 static const RBufferMethods buffer_ref_methods = {
