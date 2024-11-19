@@ -20,7 +20,7 @@ RCryptoPlugin r_crypto_plugin_strhash = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASHER,
+	.type = R_CRYPTO_TYPE_HASH,
 	.implements = "strhash",
 	.update = update,
 	.end = update

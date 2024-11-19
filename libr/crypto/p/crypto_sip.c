@@ -19,7 +19,7 @@ RCryptoPlugin r_crypto_plugin_sip = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASHER,
+	.type = R_CRYPTO_TYPE_HASH,
 	.implements = "sip",
 	.update = update,
 	.end = update

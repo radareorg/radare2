@@ -192,16 +192,13 @@ static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_pri
 	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
 }
 
-R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode) {
+R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode, RCryptoType type) {
 	R_RETURN_IF_FAIL (cry);
 	if (!cb_printf) {
 		cb_printf = (PrintfCallback)printf;
 	}
 	PJ *pj = NULL;
 
-	// XXX R2_600 - add a type argument to be clearer but will break ABI.
-	RCryptoType type = (RCryptoType)mode >> 8;
-	mode = mode & 0xff;
 	if (mode == 'J') {
 		pj = pj_new ();
 		pj_a (pj);
@@ -226,7 +223,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 			pj_o (pj);
 			pj_ks (pj, "name", cp->meta.name);
 			switch (cp->type) {
-			case R_CRYPTO_TYPE_HASHER:
+			case R_CRYPTO_TYPE_HASH:
 				pj_ks (pj, "type", "hash");
 				break;
 			case R_CRYPTO_TYPE_ENCRYPT:
@@ -262,7 +259,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		}
 	}
 	// TODO: R2_592 move all those static hashes into crypto plugins and remove the code below
-	if (type == R_CRYPTO_TYPE_HASHER || type == R_CRYPTO_TYPE_ALL) {
+	if (type == R_CRYPTO_TYPE_HASH || type == R_CRYPTO_TYPE_ALL) {
 		int i;
 		for (i = 0; i < 64; i++) {
 			ut64 bits = ((ut64)1) << i;
