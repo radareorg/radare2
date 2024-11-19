@@ -1472,12 +1472,6 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	}
 	if (!input[1]) {
 		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
-	} else if (input[1] == ',' || input[1] == ' ') {
-		R_FREE (core->table_query);
-		core->table_query = strdup (input + 2);
-		RBinObject *obj = r_bin_cur_object (core->bin);
-		int count = (obj && obj->sections)? r_list_length (obj->sections): 0;
-		RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1, count);
 	} else if (input[1] == 'S' && !input[2]) { // "iSS"
 		RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
 	} else { // iS/iSS entropy,sha1
@@ -1487,13 +1481,18 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 		if (input[1] == 'S') {
 			name = "segments";
 			input++;
-			if (input[1] == ',') {
-				R_FREE (core->table_query);
-				core->table_query = strdup (input + 2);
-			}
 			action = R_CORE_BIN_ACC_SEGMENTS;
 		}
-		switch (input[1]) {
+		char input0 = input[1];
+		if (*input == ' ') {
+			input ++;
+		}
+		const char *comma = strchr (input, ',');
+		if (comma) {
+			R_FREE (core->table_query);
+			core->table_query = strdup (comma + 1);
+		}
+		switch (input0) {
 		case '=': // "iS="
 			mode = R_MODE_EQUAL;
 			break;

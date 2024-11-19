@@ -3062,6 +3062,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	} else if (IS_MODE_RAD (mode) && at == UT64_MAX) {
 		r_cons_printf ("fs %ss\n", type);
 	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
+		// R2_600 - remove this [Sections] header
 		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
 		r_cons_printf ("Current section\n");
