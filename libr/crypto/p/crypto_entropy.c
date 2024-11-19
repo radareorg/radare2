@@ -52,7 +52,7 @@ RCryptoPlugin r_crypto_plugin_entropy = {
 		.author = "pancake",
 		.license = "MIT",
 	},
-	.type = R_CRYPTO_TYPE_HASHER,
+	.type = R_CRYPTO_TYPE_HASH,
 	.update = update,
 	.end = end
 };

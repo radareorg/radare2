@@ -373,7 +373,7 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 		ctx = r_hash_new (true, algo);
 	}
 
-	if (cj && cj->h->type == R_CRYPTO_TYPE_HASHER) {
+	if (cj && cj->h->type == R_CRYPTO_TYPE_HASH) {
 		r_crypto_job_update (cj, data, len);
 		ut8 *result = r_crypto_job_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);

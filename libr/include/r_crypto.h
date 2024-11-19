@@ -68,7 +68,7 @@ typedef struct r_crypto_job_t {
 
 typedef enum {
 	R_CRYPTO_TYPE_ENCODER = 'e',
-	R_CRYPTO_TYPE_HASHER = 'h',
+	R_CRYPTO_TYPE_HASH = 'h',
 	R_CRYPTO_TYPE_ENCRYPT = 'c', // CIPHER
 	R_CRYPTO_TYPE_SIGNATURE = 's',
 	R_CRYPTO_TYPE_ALL = 'a'
@@ -103,7 +103,7 @@ R_API void r_crypto_init(RCrypto *cry);
 R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
 R_API void r_crypto_free(RCrypto *cry);
-R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode);
+R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode, RCryptoType type);
 
 // R_API RCryptoHash *r_crypto_hash(RCrypto *cry, bool rst, const char *name);
 
