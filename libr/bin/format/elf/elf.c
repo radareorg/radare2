@@ -1640,6 +1640,9 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 	const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 
 	switch (rel->type) {
+	case R_ARM_CALL:
+		// never reached
+		break;
 	case R_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
 		if (plt_addr & 1) {
@@ -5270,6 +5273,8 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 	GotPltBounds ri = {0};
 	RBinElfSection *s;
 
+	ut64 di0 = UT64_MAX;
+	ut64 di1 = UT64_MAX;
 	// find got/plt section bounadries
 	r_vector_foreach (&eo->g_sections, s) {
 		if (!strcmp (s->name, ".got")) {
@@ -5277,8 +5282,14 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 			ri.got_min = s->offset;
 			ri.got_max = s->offset + s->size;
 			ri.got_va = s->rva;
-		}
-		if (!strcmp (s->name, ".plt")) {
+#if 1
+		} else if (!strcmp (s->name, ".debug_info")) {
+		//	di0 = s->rva;
+		//	di1 = s->rva + s->size;
+			di0 = s->offset;
+			di1 = s->offset + s->size;
+#endif
+		} else if (!strcmp (s->name, ".plt")) {
 			ri.plt_min = s->offset;
 			ri.plt_max = s->offset + s->size;
 			ri.plt_va = s->rva;
@@ -5289,7 +5300,9 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 		}
 	}
 	if (!ri.got || !ri.plt) {
-		return false;
+		if (di0 == UT64_MAX) {
+			return false;
+		}
 	}
 	ut64 baddr = eo->user_baddr; // 0x10000;
 	if (baddr == UT64_MAX) {
@@ -5299,13 +5312,22 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 	// resolve got and plt
 	r_vector_foreach (&eo->g_relocs, reloc) {
 		const ut64 raddr = reloc->offset;
+		if (!ri.got && !ri.plt) {
+			index++;
+			ut64 ra = baddr + di0 + (index * 4);
+			ra += 685182;
+			reloc->addend = 0; // index;
+			// reloc->rva = ra + baddr; // address to patch
+			reloc->laddr = ra;
+			continue;
+		}
 		if (raddr < ri.got_min || raddr >= ri.got_max) {
 			continue;
 		}
 		ut64 rvaddr = reloc->offset; // rva (eo, reloc->offset, reloc->rva);
 		ut64 pltptr = 0; // relocated buf tells the section to look at
 #if R_BIN_ELF64
-		r_buf_read_at (eo->b, rvaddr, (ut8*)&pltptr, 8);
+  		r_buf_read_at (eo->b, rvaddr, (ut8*)&pltptr, 8);
 #else
 		ut32 n32 = 0;
 		r_buf_read_at (eo->b, rvaddr, (ut8*)&n32, 4);
@@ -5329,7 +5351,6 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 #else
 				index++;
 #endif
-				// TODO: if (reloc->type == 22) { // on arm!  // extra check of bounds
 				ut64 naddr = baddr + pltptr + (index * 12) + 0x20;
 				if (reloc->type == 1026) {
 					naddr = baddr + pltptr + (index * 16) + 64 - 16;
@@ -5340,6 +5361,10 @@ static bool reloc_fill_local_address(ELFOBJ *eo) {
 				} else {
 					R_LOG_DEBUG ("Cannot resolve reloc reference");
 				}
+			} else {
+				index++;
+				ut64 naddr = baddr + (index * 12) + 0x20;
+				reloc->laddr = naddr;
 			}
 		}
 	}
