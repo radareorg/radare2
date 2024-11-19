@@ -1,6 +1,6 @@
 NAME=iS query
 FILE=bins/elf/analysis/main
-CMDS=iS size/sort,vaddr/cols/name
+CMDS=iS,size/sort,vaddr/cols/name
 EXPECT=<<EOF
 [Sections]
 
