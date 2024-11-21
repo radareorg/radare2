@@ -3,6 +3,8 @@
 #define R_LOG_ORIGIN "esil"
 
 #include <r_anal.h>
+#include <r_io.h>
+#include <r_reg.h>
 
 #if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
@@ -110,6 +112,95 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	r_esil_stats (esil, stats);
 	r_esil_setup_ops (esil);
 	return esil;
+}
+
+R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if) {
+	R_RETURN_VAL_IF_FAIL (reg_if && reg_if->is_reg && reg_if->reg_read &&
+		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
+		mem_if->mem_write && (stacksize > 2), NULL);
+	//do not check for mem_switch, as that is optional
+	REsil *esil = R_NEW0 (REsil);
+	if (R_UNLIKELY (!esil)) {
+		return NULL;
+	}
+	esil->stack = calloc (sizeof (char *), stacksize);
+	if (R_UNLIKELY (!esil->stack)) {
+		goto stack_fail;
+	}
+	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
+	if (R_UNLIKELY (!esil->ops)) {
+		goto ops_fail;
+	}
+	if (R_UNLIKELY (!r_esil_setup_ops (esil) || !r_esil_handlers_init (esil))) {
+		goto ops_setup_fail;
+	}
+	if (R_UNLIKELY (!r_esil_plugins_init (esil))) {
+		goto plugins_fail;
+	}
+	//not initializing stats here, it needs get reworked and should live in anal
+	//same goes for trace, probably
+	esil->stacksize = stacksize;
+	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
+	esil->iotrap = iotrap;
+	esil->addrmask = genmask (addrsize - 1);
+	esil->reg_if = *reg_if;
+	esil->mem_if = *mem_if;
+	return esil;
+plugins_fail:
+	r_esil_handlers_fini (esil);
+ops_setup_fail:
+	ht_pp_free (esil->ops);
+ops_fail:
+	free (esil->stack);
+stack_fail:
+	free (esil);
+	return NULL;
+}
+
+static bool default_is_reg (void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	r_unref (ri);
+	return true;
+}
+
+static bool default_reg_read (void *reg, const char *name, ut64 *res, int *size) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	*res = r_reg_get_value ((RReg *)reg, ri);
+	*size = ri->size;
+	r_unref (ri);
+	return true;
+}
+
+static ut32 default_reg_size (void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	r_unref (ri);
+	return ri->size;
+}
+
+static REsilRegInterface simple_reg_if = {
+	.is_reg = default_is_reg,
+	.reg_read = default_reg_read,
+	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_size = default_reg_size
+};
+
+R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
+	RIOBind *bnd = iob;
+	R_RETURN_VAL_IF_FAIL (reg && iob && bnd->io, NULL);
+	simple_reg_if.reg = reg;
+	REsilMemInterface simple_mem_if = {bnd->io, (REsilMemSwitch)bnd->bank_use,
+		(REsilMemRead)bnd->read_at, (REsilMemWrite)bnd->write_at};
+	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if);
 }
 
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type) {
@@ -300,12 +391,9 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (!ret && esil->cb.mem_read) {
-		ret = esil->cb.mem_read (esil, addr, buf, len);
-		if (ret != len && ret != 1) { // !ret
-			if (esil->iotrap) {
-				esil->trap = R_ANAL_TRAP_READ_ERR;
-				esil->trap_code = addr;
-			}
+		if (ret = esil->cb.mem_read (esil, addr, buf, len), (!ret && esil->iotrap)) {
+			esil->trap = R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
 		}
 	}
 	IFDBG {
@@ -1137,16 +1225,15 @@ static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, u
 	if (ri) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 		r_unref (ri);
-	} else {
-		ri = r_reg_get (reg, src, -1);
-		if (ri) {
-			esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			r_unref (ri);
-		} else {
-			// default size is set to 64 as internally operands are ut64
-			esil->lastsz = 64;
-		}
+		return;
 	}
+	if (ri = r_reg_get (reg, src, -1), ri) {
+		esil->lastsz = esil_internal_sizeof_reg (esil, src);
+		r_unref (ri);
+		return;
+	}
+	// default size is set to 64 as internally operands are ut64
+	esil->lastsz = 64;
 }
 
 // This function also sets internal vars which is used in flag calculations.
@@ -3803,163 +3890,163 @@ R_API void r_esil_setup_macros(REsil *esil) {
 #endif
 }
 
-R_API void r_esil_setup_ops(REsil *esil) {
-	R_RETURN_IF_FAIL (esil);
-	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
-	OP ("#!", esil_cmd, 0, 1, OT_UNK); // hm, type seems a bit wrong
-	OP ("()", esil_syscall, 0, 1, OT_UNK); // same as trap?
-	OP ("$z", esil_zf, 1, 0, OT_UNK); // add OT_FLAG
-	OP ("$c", esil_cf, 1, 1, OT_UNK);
-	OP ("$b", esil_bf, 1, 1, OT_UNK);
-	OP ("$p", esil_pf, 1, 0, OT_UNK);
-	OP ("$s", esil_sf, 1, 1, OT_UNK);
-	OP ("$o", esil_of, 1, 1, OT_UNK);
-	OP ("$ds", esil_ds, 1, 0, OT_UNK);
-	OP ("$jt", esil_jt, 1, 0, OT_UNK);
-	OP ("$js", esil_js, 1, 0, OT_UNK);
+R_API bool r_esil_setup_ops(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	bool ret = OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
+	ret &= OP ("#!", esil_cmd, 0, 1, OT_UNK); // hm, type seems a bit wrong
+	ret &= OP ("()", esil_syscall, 0, 1, OT_UNK);
+	ret &= OP ("$z", esil_zf, 1, 0, OT_UNK); // add OT_FLAG
+	ret &= OP ("$c", esil_cf, 1, 1, OT_UNK);
+	ret &= OP ("$b", esil_bf, 1, 1, OT_UNK);
+	ret &= OP ("$p", esil_pf, 1, 0, OT_UNK);
+	ret &= OP ("$s", esil_sf, 1, 1, OT_UNK);
+	ret &= OP ("$o", esil_of, 1, 1, OT_UNK);
+	ret &= OP ("$ds", esil_ds, 1, 0, OT_UNK);
+	ret &= OP ("$jt", esil_jt, 1, 0, OT_UNK);
+	ret &= OP ("$js", esil_js, 1, 0, OT_UNK);
 	//OP ("$r", esil_rs, 1, 0, OT_UNK); // R_DEPRECATE
-	OP ("$$", esil_address, 1, 0, OT_UNK);
-	OP ("~", esil_signext, 1, 2, OT_MATH);
-	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
-	OP ("==", esil_cmp, 0, 2, OT_MATH);
-	OP ("<", esil_smaller, 1, 2, OT_MATH);
-	OP (">", esil_bigger, 1, 2, OT_MATH);
-	OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);
-	OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
-	OP ("?{", esil_if, 0, 1, OT_CTR);
-	OP ("<<", esil_lsl, 1, 2, OT_MATH);
-	OP ("<<=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
-	OP (">>", esil_lsr, 1, 2, OT_MATH);
-	OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
-	OP (">>>>", esil_asr, 1, 2, OT_MATH);
-	OP (">>>>=", esil_asreq, 0, 2, OT_MATH | OT_REGW);
-	OP (">>>", esil_ror, 1, 2, OT_MATH);
-	OP ("<<<", esil_rol, 1, 2, OT_MATH);
-	OP ("&", esil_and, 1, 2, OT_MATH);
-	OP ("&=", esil_andeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
-	OP ("}{", esil_nop, 0, 0, OT_CTR);
-	OP ("|", esil_or, 1, 2, OT_MATH);
-	OP ("|=", esil_oreq, 0, 2, OT_MATH | OT_REGW);
-	OP ("!", esil_neg, 1, 1, OT_MATH);
-	OP ("!=", esil_negeq, 0, 1, OT_MATH | OT_REGW);
-	OP ("=", esil_eq, 0, 2, OT_REGW);
-	OP (":=", esil_weak_eq, 0, 2, OT_REGW);
-	OP (":= ", esil_weak_eq, 0, 2, OT_REGW);
-	OP ("L*", esil_long_mul, 2, 2, OT_MATH);
-	OP ("*", esil_mul, 1, 2, OT_MATH);
-	OP ("*=", esil_muleq, 0, 2, OT_MATH | OT_REGW);
-	OP ("^", esil_xor, 1, 2, OT_MATH);
-	OP ("^=", esil_xoreq, 0, 2, OT_MATH | OT_REGW);
-	OP ("+", esil_add, 1, 2, OT_MATH);
-	OP ("-", esil_sub, 1, 2, OT_MATH);
-	OP ("--", esil_dec, 1, 1, OT_MATH);
-	OP ("--=", esil_deceq, 0, 1, OT_MATH | OT_REGW);
-	OP ("/", esil_div, 1, 2, OT_MATH);
-	OP ("~/", esil_signed_div, 1, 2, OT_MATH);
-	OP ("/=", esil_diveq, 0, 2, OT_MATH | OT_REGW);
-	OP ("%", esil_mod, 1, 2, OT_MATH);
-	OP ("~%", esil_signed_mod, 1, 2, OT_MATH);
-	OP ("%=", esil_modeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("=[1]", esil_poke1, 0, 2, OT_MEMW);
-	OP ("=[2]", esil_poke2, 0, 2, OT_MEMW);
-	OP ("=[3]", esil_poke3, 0, 2, OT_MEMW);
-	OP ("=[4]", esil_poke4, 0, 2, OT_MEMW);
-	OP ("=[8]", esil_poke8, 0, 2, OT_MEMW);
-	OP ("=[16]", esil_poke16, 0, 2, OT_MEMW);
-	OP ("|=[1]", esil_mem_oreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("|=[2]", esil_mem_oreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("|=[4]", esil_mem_oreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("|=[8]", esil_mem_oreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("^=[1]", esil_mem_xoreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("^=[2]", esil_mem_xoreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("^=[4]", esil_mem_xoreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("^=[8]", esil_mem_xoreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("&=[1]", esil_mem_andeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("&=[2]", esil_mem_andeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("&=[4]", esil_mem_andeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("&=[8]", esil_mem_andeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("+=[1]", esil_mem_addeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("+=[2]", esil_mem_addeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("+=[4]", esil_mem_addeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("+=[8]", esil_mem_addeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("-=[1]", esil_mem_subeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("-=[2]", esil_mem_subeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("-=[4]", esil_mem_subeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("-=[8]", esil_mem_subeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("%=[1]", esil_mem_modeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("%=[2]", esil_mem_modeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("%=[4]", esil_mem_modeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("%=[8]", esil_mem_modeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("/=[1]", esil_mem_diveq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("/=[2]", esil_mem_diveq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("/=[4]", esil_mem_diveq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("/=[8]", esil_mem_diveq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("*=[1]", esil_mem_muleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("*=[2]", esil_mem_muleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("*=[4]", esil_mem_muleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("*=[8]", esil_mem_muleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("++=[1]", esil_mem_inceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("++=[2]", esil_mem_inceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("++=[4]", esil_mem_inceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("++=[8]", esil_mem_inceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("--=[1]", esil_mem_deceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("--=[2]", esil_mem_deceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("--=[4]", esil_mem_deceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("--=[8]", esil_mem_deceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("<<=[1]", esil_mem_lsleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("<<=[2]", esil_mem_lsleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("<<=[4]", esil_mem_lsleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("<<=[8]", esil_mem_lsleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP (">>=[1]", esil_mem_lsreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP (">>=[2]", esil_mem_lsreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP (">>=[4]", esil_mem_lsreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP (">>=[8]", esil_mem_lsreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("[*]", esil_peek_some, 0, 0, OT_MEMR);
-	OP ("=[*]", esil_poke_some, 0, 0, OT_MEMW);
-	OP ("[1]", esil_peek1, 1, 1, OT_MEMR);
-	OP ("[2]", esil_peek2, 1, 1, OT_MEMR);
-	OP ("[3]", esil_peek3, 1, 1, OT_MEMR);
-	OP ("[4]", esil_peek4, 1, 1, OT_MEMR);
-	OP ("[8]", esil_peek8, 1, 1, OT_MEMR);
-	OP ("[16]", esil_peek16, 1, 1, OT_MEMR);
-	OP ("STACK", r_esil_dumpstack, 0, 0, OT_UNK);
-	OP ("POP", esil_pop, 0, 1, OT_UNK);
-	OP ("TODO", esil_todo, 0, 0, OT_UNK);
-	OP ("GOTO", esil_goto, 0, 1, OT_CTR);
-	OP ("BREAK", esil_break, 0, 0, OT_CTR);
-	OP ("CLEAR", esil_clear, 0, 0, OT_UNK);
-	OP ("DUP", esil_dup, 2, 1, OT_UNK);
-	OP ("NUM", esil_num, 1, 1, OT_UNK);
-	OP ("SWAP", esil_swap, 2, 2, OT_UNK);
-	OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
-	OP ("BITS", esil_bits, 1, 0, OT_UNK);
-	OP ("SETJT", esil_set_jump_target, 0, 1, OT_UNK);
-	OP ("SETJTS", esil_set_jump_target_set, 0, 1, OT_UNK);
-	OP ("SETD", esil_set_delay_slot, 0, 1, OT_UNK);
+	ret &= OP ("$$", esil_address, 1, 0, OT_UNK);
+	ret &= OP ("~", esil_signext, 1, 2, OT_MATH);
+	ret &= OP ("~=", esil_signexteq, 0, 2, OT_MATH);
+	ret &= OP ("==", esil_cmp, 0, 2, OT_MATH);
+	ret &= OP ("<", esil_smaller, 1, 2, OT_MATH);
+	ret &= OP (">", esil_bigger, 1, 2, OT_MATH);
+	ret &= OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);
+	ret &= OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
+	ret &= OP ("?{", esil_if, 0, 1, OT_CTR);
+	ret &= OP ("<<", esil_lsl, 1, 2, OT_MATH);
+	ret &= OP ("<<=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP (">>", esil_lsr, 1, 2, OT_MATH);
+	ret &= OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP (">>>>", esil_asr, 1, 2, OT_MATH);
+	ret &= OP (">>>>=", esil_asreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP (">>>", esil_ror, 1, 2, OT_MATH);
+	ret &= OP ("<<<", esil_rol, 1, 2, OT_MATH);
+	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
+	ret &= OP ("&=", esil_andeq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
+	ret &= OP ("}{", esil_nop, 0, 0, OT_CTR);
+	ret &= OP ("|", esil_or, 1, 2, OT_MATH);
+	ret &= OP ("|=", esil_oreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("!", esil_neg, 1, 1, OT_MATH);
+	ret &= OP ("!=", esil_negeq, 0, 1, OT_MATH | OT_REGW);
+	ret &= OP ("=", esil_eq, 0, 2, OT_REGW);
+	ret &= OP (":=", esil_weak_eq, 0, 2, OT_REGW);
+	ret &= OP (":= ", esil_weak_eq, 0, 2, OT_REGW);
+	ret &= OP ("L*", esil_long_mul, 2, 2, OT_MATH);
+	ret &= OP ("*", esil_mul, 1, 2, OT_MATH);
+	ret &= OP ("*=", esil_muleq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("^", esil_xor, 1, 2, OT_MATH);
+	ret &= OP ("^=", esil_xoreq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("+", esil_add, 1, 2, OT_MATH);
+	ret &= OP ("-", esil_sub, 1, 2, OT_MATH);
+	ret &= OP ("--", esil_dec, 1, 1, OT_MATH);
+	ret &= OP ("--=", esil_deceq, 0, 1, OT_MATH | OT_REGW);
+	ret &= OP ("/", esil_div, 1, 2, OT_MATH);
+	ret &= OP ("~/", esil_signed_div, 1, 2, OT_MATH);
+	ret &= OP ("/=", esil_diveq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("%", esil_mod, 1, 2, OT_MATH);
+	ret &= OP ("~%", esil_signed_mod, 1, 2, OT_MATH);
+	ret &= OP ("%=", esil_modeq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("=[1]", esil_poke1, 0, 2, OT_MEMW);
+	ret &= OP ("=[2]", esil_poke2, 0, 2, OT_MEMW);
+	ret &= OP ("=[3]", esil_poke3, 0, 2, OT_MEMW);
+	ret &= OP ("=[4]", esil_poke4, 0, 2, OT_MEMW);
+	ret &= OP ("=[8]", esil_poke8, 0, 2, OT_MEMW);
+	ret &= OP ("=[16]", esil_poke16, 0, 2, OT_MEMW);
+	ret &= OP ("|=[1]", esil_mem_oreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("|=[2]", esil_mem_oreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("|=[4]", esil_mem_oreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("|=[8]", esil_mem_oreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("^=[1]", esil_mem_xoreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("^=[2]", esil_mem_xoreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("^=[4]", esil_mem_xoreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("^=[8]", esil_mem_xoreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("&=[1]", esil_mem_andeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("&=[2]", esil_mem_andeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("&=[4]", esil_mem_andeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("&=[8]", esil_mem_andeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("+=[1]", esil_mem_addeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("+=[2]", esil_mem_addeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("+=[4]", esil_mem_addeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("+=[8]", esil_mem_addeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("-=[1]", esil_mem_subeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("-=[2]", esil_mem_subeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("-=[4]", esil_mem_subeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("-=[8]", esil_mem_subeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("%=[1]", esil_mem_modeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("%=[2]", esil_mem_modeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("%=[4]", esil_mem_modeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("%=[8]", esil_mem_modeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("/=[1]", esil_mem_diveq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("/=[2]", esil_mem_diveq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("/=[4]", esil_mem_diveq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("/=[8]", esil_mem_diveq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("*=[1]", esil_mem_muleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("*=[2]", esil_mem_muleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("*=[4]", esil_mem_muleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("*=[8]", esil_mem_muleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("++=[1]", esil_mem_inceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("++=[2]", esil_mem_inceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("++=[4]", esil_mem_inceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("++=[8]", esil_mem_inceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("--=[1]", esil_mem_deceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("--=[2]", esil_mem_deceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("--=[4]", esil_mem_deceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("--=[8]", esil_mem_deceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("<<=[1]", esil_mem_lsleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("<<=[2]", esil_mem_lsleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("<<=[4]", esil_mem_lsleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("<<=[8]", esil_mem_lsleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP (">>=[1]", esil_mem_lsreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP (">>=[2]", esil_mem_lsreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP (">>=[4]", esil_mem_lsreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP (">>=[8]", esil_mem_lsreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
+	ret &= OP ("[*]", esil_peek_some, 0, 0, OT_MEMR);
+	ret &= OP ("=[*]", esil_poke_some, 0, 0, OT_MEMW);
+	ret &= OP ("[1]", esil_peek1, 1, 1, OT_MEMR);
+	ret &= OP ("[2]", esil_peek2, 1, 1, OT_MEMR);
+	ret &= OP ("[3]", esil_peek3, 1, 1, OT_MEMR);
+	ret &= OP ("[4]", esil_peek4, 1, 1, OT_MEMR);
+	ret &= OP ("[8]", esil_peek8, 1, 1, OT_MEMR);
+	ret &= OP ("[16]", esil_peek16, 1, 1, OT_MEMR);
+	ret &= OP ("STACK", r_esil_dumpstack, 0, 0, OT_UNK);
+	ret &= OP ("POP", esil_pop, 0, 1, OT_UNK);
+	ret &= OP ("TODO", esil_todo, 0, 0, OT_UNK);
+	ret &= OP ("GOTO", esil_goto, 0, 1, OT_CTR);
+	ret &= OP ("BREAK", esil_break, 0, 0, OT_CTR);
+	ret &= OP ("CLEAR", esil_clear, 0, 0, OT_UNK);
+	ret &= OP ("DUP", esil_dup, 2, 1, OT_UNK);
+	ret &= OP ("NUM", esil_num, 1, 1, OT_UNK);
+	ret &= OP ("SWAP", esil_swap, 2, 2, OT_UNK);
+	ret &= OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
+	ret &= OP ("BITS", esil_bits, 1, 0, OT_UNK);
+	ret &= OP ("SETJT", esil_set_jump_target, 0, 1, OT_UNK);
+	ret &= OP ("SETJTS", esil_set_jump_target_set, 0, 1, OT_UNK);
+	ret &= OP ("SETD", esil_set_delay_slot, 0, 1, OT_UNK);
 
 	/* we all float down here */
-	OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
+	ret &= OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
 	// XXX I2D and S2D do the same, kill one
-	OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
+	ret &= OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
 	// OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH); R_DEPRECATE
-	OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
-	OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
-	OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
-	OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
-	OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
-	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH); // DEPRECATE
-	OP ("F<", esil_float_less, 1, 2, OT_MATH);
-	OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
-	OP ("F+", esil_float_add, 1, 2, OT_MATH);
-	OP ("F-", esil_float_sub, 1, 2, OT_MATH);
-	OP ("F*", esil_float_mul, 1, 2, OT_MATH);
-	OP ("F/", esil_float_div, 1, 2, OT_MATH);
-	OP ("-F", esil_float_neg, 1, 1, OT_MATH);
-	OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
-	OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
-	OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
-	OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
+	ret &= OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
+	ret &= OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
+	ret &= OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
+	ret &= OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
+	ret &= OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
+	ret &= OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH); // DEPRECATE
+	ret &= OP ("F<", esil_float_less, 1, 2, OT_MATH);
+	ret &= OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
+	ret &= OP ("F+", esil_float_add, 1, 2, OT_MATH);
+	ret &= OP ("F-", esil_float_sub, 1, 2, OT_MATH);
+	ret &= OP ("F*", esil_float_mul, 1, 2, OT_MATH);
+	ret &= OP ("F/", esil_float_div, 1, 2, OT_MATH);
+	ret &= OP ("-F", esil_float_neg, 1, 1, OT_MATH);
+	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
+	ret &= OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
+	ret &= OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
+	return ret & OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
 }
 
 /* register callbacks using this anal module. */

@@ -128,6 +128,31 @@ typedef struct r_esil_callbacks_t {
 	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } REsilCallbacks;
 
+typedef bool (*REsilMemSwitch)(void *mem, ut32 idx);
+typedef bool (*REsilMemRead)(void *mem, ut64 addr, ut8 *buf, int len);
+typedef bool (*REsilMemWrite)(void *mem, ut64 addr, const ut8 *buf, int len);
+
+typedef struct r_esil_memory_interface_t {
+	void *mem;
+	REsilMemSwitch mem_switch;
+	REsilMemRead mem_read;
+	REsilMemWrite mem_write;
+} REsilMemInterface;
+
+//check if name is a valid register identifier
+typedef bool (*REsilIsReg)(void *reg, const char *name);
+typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *res, int *size);
+typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
+typedef ut32 (*REsilRegSize)(void *reg, const char *name);
+
+typedef struct r_esil_register_interface_t {
+	void *reg;
+	REsilIsReg is_reg;
+	REsilRegRead reg_read;
+	REsilRegWrite reg_write;
+	REsilRegSize reg_size;
+} REsilRegInterface;
+
 typedef struct r_esil_options_t {
 	int nowrite;
 	int iotrap;
@@ -176,6 +201,8 @@ typedef struct r_esil_t {
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	REsilTrace *trace;
+	REsilRegInterface reg_if;
+	REsilMemInterface mem_if;
 	REsilCallbacks cb;
 	REsilCallbacks ocb;
 	bool ocb_set;
@@ -224,11 +251,16 @@ typedef struct r_esil_active_plugin_t {
 } REsilActivePlugin;
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
+R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if);
+//this should replace existing r_esil_new
+R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
+//R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
 R_API void r_esil_reset(REsil *esil);
 R_API void r_esil_set_pc(REsil *esil, ut64 addr);
 R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, bool romem, bool stats, bool nonull);
 R_API void r_esil_setup_macros(REsil *esil);
-R_API void r_esil_setup_ops(REsil *esil);
+R_API bool r_esil_setup_ops(REsil *esil);
 R_API void r_esil_free(REsil *esil);
 R_API bool r_esil_runword(REsil *esil, const char *word);
 R_API bool r_esil_parse(REsil *esil, const char *str);
@@ -272,7 +304,7 @@ R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num);
 R_API int r_esil_condition(REsil *esil, const char *str);
 
 // esil_handler.c
-R_API void r_esil_handlers_init(REsil *esil);
+R_API bool r_esil_handlers_init(REsil *esil);
 R_API bool r_esil_set_interrupt(REsil *esil, ut32 intr_num, REsilHandlerCB cb, void *user);
 R_API REsilHandlerCB r_esil_get_interrupt(REsil *esil, ut32 intr_num);
 R_API void r_esil_del_interrupt(REsil *esil, ut32 intr_num);
@@ -300,7 +332,7 @@ R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr);
 R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
 
 // esil_plugin.c
-R_API void r_esil_plugins_init(REsil *esil);
+R_API bool r_esil_plugins_init(REsil *esil);
 R_API void r_esil_plugins_fini(REsil *esil);
 R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin);
 R_API void r_esil_plugin_del(REsil *esil, const char *name);

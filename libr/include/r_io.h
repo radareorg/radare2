@@ -296,6 +296,7 @@ typedef RList *(*RIOFdGetMap)(RIO *io, int fd);
 typedef bool (*RIOFdRemap)(RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff)(RIO *io, ut64 addr, int hasperm);
 typedef RIOBank *(*RIOBankGet)(RIO *io, ut32 bankid);
+typedef bool (*RIOBankUse)(RIO *io, ut32 bankid);
 typedef RIOMap *(*RIOMapGet)(RIO *io, ut32 id);
 typedef RIOMap *(*RIOMapGetAt)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapGetPaddr)(RIO *io, ut64 paddr);
@@ -335,6 +336,7 @@ typedef struct r_io_bind_t {
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
 	RIOBankGet bank_get;
+	RIOBankUse bank_use;
 	RIOMapGet map_get;
 	RIOMapGetAt map_get_at;
 	RIOMapGetPaddr map_get_paddr;
