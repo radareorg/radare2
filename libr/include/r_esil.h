@@ -148,6 +148,18 @@ typedef struct r_esil_callbacks_t {
 	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } REsilCallbacks;
 
+//check if name is a valid register identifier
+typedef bool (*REsilIsReg)(void *reg, const char *name);
+typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *res, int *size);
+typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
+
+typedef struct r_esil_register_interface_t {
+	void *reg;
+	REsilIsReg is_reg;
+	REsilRegRead reg_read;
+	REsilRegWrite reg_write;
+} REsilRegInterface;
+
 typedef struct r_esil_options_t {
 	int nowrite;
 	int iotrap;
@@ -196,6 +208,7 @@ typedef struct r_esil_t {
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	REsilTrace *trace;
+	REsilRegInterface reg_if;
 	REsilCallbacks cb;
 	REsilCallbacks ocb;
 	bool ocb_set;
