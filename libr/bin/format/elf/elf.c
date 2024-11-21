@@ -3747,9 +3747,7 @@ static void _store_bin_sections(ELFOBJ *eo, const RVector *elf_bin_sections) {
 		ptr->type = elf_section_type_tostring (section->type);
 		ptr->add = !eo->phdr; // Load sections if there is no PHDR
 		ptr->perm = elf_flags_to_section_perms (section->flags);
-#if R2_USE_NEW_ABI
 		ptr->flags = section->flags;
-#endif
 #if 0
 TODO: ptr->flags = elf_flags_tostring (section->flags);
 #define SHF_WRITE	     (1 << 0)	/* Writable */

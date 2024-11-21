@@ -403,12 +403,10 @@ static RBinSection *getsection(RBin *bin, int sn) {
 			RBinSection *ls = lastSection[sn];
 			const char *lsn = ls->name;
 			if (strstr (lsn , name_str)) {
-#if R2_USE_NEW_ABI
 				if (r_str_startswith (lsn, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (ls->flags))  {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
 				}
-#endif
 				if (strstr (lsn, "zdebug")) {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
@@ -418,12 +416,10 @@ static RBinSection *getsection(RBin *bin, int sn) {
 		}
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, name_str)) {
-#if R2_USE_NEW_ABI
 				if (r_str_startswith (section->name, ".debug_") && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags))  {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
 				}
-#endif
 				if (strstr (section->name, "zdebug")) {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
