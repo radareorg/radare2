@@ -1728,7 +1728,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s) {
 	return bits;
 }
 
-#if R2_USE_NEW_ABI
+// TODO: Must be a RBinFile.cmd() instead
 R_API bool r_bin_command(RBin *bin, const char *input) {
 	RBinFile *a = r_bin_cur (bin);
 	if (a) {
@@ -1739,4 +1739,3 @@ R_API bool r_bin_command(RBin *bin, const char *input) {
 	}
 	return false;
 }
-#endif
