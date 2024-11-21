@@ -9,15 +9,26 @@ static REsilPlugin *esil_static_plugins[] = {
 	R_ESIL_STATIC_PLUGINS
 };
 
-R_API void r_esil_plugins_init(REsil *esil) {
-	R_RETURN_IF_FAIL (esil);
+R_API bool r_esil_plugins_init(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	esil->plugins = r_list_new ();
+	if (R_UNLIKELY (!esil->plugins)) {
+		return false;
+	}
 	esil->active_plugins = r_list_new ();
+	if (R_UNLIKELY (!esil->active_plugins)) {
+		r_list_free (esil->plugins);
+		return false;
+	}
 	size_t i = 0;
 	while (esil_static_plugins[i]) {
-		r_esil_plugin_add (esil, esil_static_plugins[i]);
+		if (!r_esil_plugin_add (esil, esil_static_plugins[i])) {
+			R_LOG_WARN ("Failed to add static esil plugin %s",
+				esil_static_plugins[i]->meta.name);
+		}
 		i++;
 	}
+	return true;
 }
 
 R_API void r_esil_plugins_fini(REsil *esil) {

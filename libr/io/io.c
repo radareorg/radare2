@@ -500,6 +500,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->bank_get = r_io_bank_get;
+	bnd->bank_use = r_io_bank_use;
 	bnd->map_get = r_io_map_get;
 	bnd->map_get_at = r_io_map_get_at;
 	bnd->map_get_paddr = r_io_map_get_paddr;
