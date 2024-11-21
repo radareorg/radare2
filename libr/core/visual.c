@@ -4624,7 +4624,6 @@ static void visual_refresh_oneshot(RCore *core) {
 	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) visual_refresh, core);
 }
 
-#if R2_USE_NEW_ABI
 static int varcount(RCore *core, RAnalFunction *f) {
 	RAnalFcnVarsCache vars_cache;
 	if (!f) {
@@ -4639,7 +4638,6 @@ static int varcount(RCore *core, RAnalFunction *f) {
 	len += r_list_length (vars_cache.svars);
 	return len;
 }
-#endif
 
 R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -4649,7 +4647,6 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
-#if R2_USE_NEW_ABI
 		if (f && core->offset == f->addr) {
 			if (core->skiplines > 0) {
 				core->skiplines--;
@@ -4674,9 +4671,6 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = delta;
 			// *cols = 0;
 		}
-#else
-		*cols = r_core_visual_prevopsz (core, core->offset);
-#endif
 	}
 }
 
@@ -4729,7 +4723,6 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 			}
 		}
 	}
-#if R2_USE_NEW_ABI
 	int nvars = varcount (core, f);
 	if (f && f->addr == orig && nvars < 20) {
 		// skip line by line here
@@ -4743,11 +4736,6 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	} else if (*cols < 1) {
 		*cols = op->size > 1 ? op->size : 1;
 	}
-#else
-	if (*cols < 1) {
-		*cols = op->size > 1 ? op->size : 1;
-	}
-#endif
 }
 
 #ifdef R2__WINDOWS__

@@ -13648,15 +13648,6 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	return true;
 }
 
-#if R2_USE_NEW_ABI
-// deprecated call
-#else
-R_API int r_core_anal_all(RCore *core) {
-	cmd_aa (core, true);
-	return true;
-}
-#endif
-
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
 		r_core_cmd_help (core, help_msg_aaa);

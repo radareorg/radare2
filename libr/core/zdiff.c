@@ -37,8 +37,7 @@ static bool is_import(const char *name) {
 	return r_str_startswith (name, "imp.") || r_str_startswith (name, "sym.imp.");
 }
 
-// R2_600 - bool
-R_API int r_core_zdiff(RCore *c, RCore *c2) {
+R_API bool r_core_zdiff(RCore *c, RCore *c2) {
 	R_RETURN_VAL_IF_FAIL (c && c2, false);
 	// TODO move this into anal/sign
 	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);

@@ -416,11 +416,9 @@ struct r_core_t {
 	int (*r_main_ragg2)(int argc, const char **argv);
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
-#if R2_USE_NEW_ABI
 	int skiplines; // used only for disasm
 	void *priv;
 	bool esil_anal_stop;
-#endif
 };
 
 // maybe move into RAnal
@@ -704,14 +702,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
 R_API int r_core_anal_ref_list(RCore *core, int rad);
-#if !R2_USE_NEW_ABI
-R_API int r_core_anal_all(RCore *core);
-#endif
 R_API RList* r_core_anal_cycles(RCore *core, int ccl);
 typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
 R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn); // get all calls from a function
 
-/*tp.c*/
+/* tp.c */
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
 
 /* asm.c */
@@ -780,7 +775,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 R_API int r_core_pseudo_code(RCore *core, const char *input);
 
 /* gdiff.c */
-R_API int r_core_zdiff(RCore *c, RCore *c2);
+R_API bool r_core_zdiff(RCore *c, RCore *c2);
 R_API bool r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 

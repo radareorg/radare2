@@ -10,10 +10,6 @@ HEAPTYPE (ut64);
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-#if !R2_USE_NEW_ABI
-static R_TH_LOCAL bool esil_anal_stop = false;
-#endif
-
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -5361,12 +5357,8 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 }
 
 static void cccb(void *u) {
-#if R2_USE_NEW_ABI
 	RCore *core = (RCore *)u;
 	core->esil_anal_stop = false;
-#else
-	esil_anal_stop = true;
-#endif
 	r_cons_context_break (NULL);
 	eprintf ("^C\n");
 }
@@ -5810,11 +5802,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ut64 start = core->offset;
 	ut64 end = 0LL;
 	ut64 cur;
-#if R2_USE_NEW_ABI
 	core->esil_anal_stop = false;
-#else
-	esil_anal_stop = false;
-#endif
 	// R_LOG_INFO ("start is %llx", addr);
 
 	if (!strcmp (str, "?")) {
@@ -5932,11 +5920,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 	pcname = strdup (kpcname);
-#if R2_USE_NEW_ABI
 	core->esil_anal_stop = false;
-#else
-	esil_anal_stop = false;
-#endif
 	r_cons_break_push (cccb, core);
 
 	int arch = -1;
@@ -5974,15 +5958,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = addr - start;
 	size_t i_old = 0;
 	do {
-#if R2_USE_NEW_ABI
 		if (core->esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
-#else
-		if (esil_anal_stop || r_cons_is_breaked ()) {
-			break;
-		}
-#endif
 		cur = start + i;
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;

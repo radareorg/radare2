@@ -5837,11 +5837,7 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 			out = calloc (len, 10);
 			if (out) {
 				r_io_read_at (core->io, core->offset, data, len);
-#if R2_USE_NEW_ABI
 				r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
-#else
-				r_charset_encode_str (core->print->charset, out, out_len, data, len);
-#endif
 				free (data);
 			}
 		}
@@ -7666,11 +7662,7 @@ static int cmd_print(void *data, const char *input) {
 							ut8 *data = malloc (len);
 							if (data) {
 								r_io_read_at (core->io, core->offset, data, len);
-#if R2_USE_NEW_ABI
 								(void)r_charset_encode_str (core->print->charset, out, out_len, data, len, true);
-#else
-								(void)r_charset_encode_str (core->print->charset, out, out_len, data, len);
-#endif
 								r_print_string (core->print, core->offset,
 									out, len, R_PRINT_STRING_ZEROEND);
 								free (data);
