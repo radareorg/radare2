@@ -35,7 +35,6 @@ FILE=bins/pe/96emptysections.exe
 ARGS=-n
 CMDS=!rabin2 -pS bins/pe/96emptysections.exe
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------

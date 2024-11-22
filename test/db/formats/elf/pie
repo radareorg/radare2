@@ -23,7 +23,7 @@ NAME=ELF: rabin2 entrypoint with baddr
 FILE=-
 CMDS=<<EOF
 !rabin2 -I -B 0x300000 bins/elf/analysis/pie | grep baddr
-!rabin2 -e -B 0x300000 bins/elf/analysis/pie | sed -n '2 p'
+!rabin2 -e -B 0x300000 bins/elf/analysis/pie
 EOF
 EXPECT=<<EOF
 baddr    0x300000

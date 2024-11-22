@@ -18,7 +18,6 @@ NAME=xcoff sections
 FILE=bins/xcoff/file-xcoff-aix51
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr         size vaddr        vsize perm type   name
 ----------------------------------------------------------
@@ -57,10 +56,7 @@ NAME=xcoff entrypoint
 FILE=bins/xcoff/file-xcoff-aix51
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x10000128 paddr=0x00000000 haddr=-1 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -68,7 +64,6 @@ NAME=xcoff imports
 FILE=bins/xcoff/file-xcoff-aix51
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   ---------- NONE UNK      errno
@@ -109,7 +104,6 @@ NAME=xcoff imports 2
 FILE=bins/xcoff/gcc-ppc32-aix-dwarf2-exec
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   ---------- NONE UNK      errno

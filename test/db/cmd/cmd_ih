@@ -2,7 +2,6 @@ NAME=ih (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ih
 EXPECT=<<EOF
-[Header fields]
 0x00000000 0x00000000 0x464c457f ELF
 0x00000010 0x00000010 0x00000002 Type
 0x00000012 0x00000012 0x00000003 Machine

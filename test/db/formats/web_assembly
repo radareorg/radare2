@@ -68,7 +68,6 @@ NAME=WASM: Wasm - sections
 FILE=bins/wasm/binary.wasm
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
@@ -111,7 +110,6 @@ NAME=WASM Export functions with custom section
 FILE=bins/wasm/sections.wasm
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
 nth paddr      vaddr      bind   type size lib name                      demangled
 ----------------------------------------------------------------------------------
 8   0x000003f1 0x000003f1 GLOBAL FUNC 16       _start
@@ -130,7 +128,6 @@ NAME=WASM Export functions w/o custom section
 FILE=bins/wasm/unary.wasm
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
 nth paddr      vaddr      bind   type size lib name                demangled
 ----------------------------------------------------------------------------
 2   0x000001d2 0x000001d2 GLOBAL FUNC 5        i32_eqz_100
@@ -181,7 +178,6 @@ CMDS=<<EOF
 is
 EOF
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type size lib                    name                         demangled
 --------------------------------------------------------------------------------------------------------
 0   ---------- ---------- NONE   FUNC 0    env                    imp.emscripten_asm_const_int

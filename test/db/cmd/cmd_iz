@@ -17,7 +17,6 @@ NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iz
 EXPECT=<<EOF
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
@@ -50,36 +49,29 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- geq 12 --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- geq 13 --
-[Strings]
 nth paddr vaddr len size section type string
 --------------------------------------------
 -- geq 0 --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- leq 12 --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  12   .rodata ascii Hello world!
 -- leq 11 --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 11  11   .rodata ascii Hello world
 -- no limit --
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
@@ -90,7 +82,6 @@ NAME=iz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iz
 EXPECT=<<EOF
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
@@ -291,12 +282,10 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
 
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\]^_R
 
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\\]^_R
@@ -307,7 +296,7 @@ NAME=izz and bin.str.enc
 FILE=-
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=$0; izz~:3..)
+(izzenc enc; e bin.str.enc=$0; izz~:2..)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -341,10 +330,10 @@ CMDS=<<EOF
 mkdir .tmp
 cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
 o+ .tmp/strenc-bin
-iz~:3..
+iz~:2..
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=$0; iz~:3..)
+(izenc enc; e bin.str.enc=$0; iz~:2..)
 .(izenc guess)
 .(izenc utf8)
 .(izenc utf16le)

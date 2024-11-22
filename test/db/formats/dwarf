@@ -2,7 +2,6 @@ NAME=test dwarf dos
 FILE=bins/elf/dwarf/dos
 CMDS=idx
 EXPECT=<<EOF
-[Source file]
 /var/tmp/portage/sys-libs/glibc-2.40-r5/work/glibc-2.40/csu
 EOF
 RUN
@@ -730,28 +729,28 @@ colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: [cbin.c:3353] (section .dynsym) Cd 8[21] @ 0x3d8
-DEBUG: [cbin.c:3353] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3353] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3353] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3353] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3353] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3353] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3353] (section .got) Cd 8[9] @ 0x3fb8
-DEBUG: [cbin.c:3353] (section .dynsym) Cd 8[21] @ 0x3d8
-DEBUG: [cbin.c:3353] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3353] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3353] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3353] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3353] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3353] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3353] (section .got) Cd 8[9] @ 0x3fb8
-WARN: [cbin.c:1899] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-DEBUG: [cbin.c:2593] Cannot resolve symbol address __libc_start_main
-DEBUG: [cbin.c:2593] Cannot resolve symbol address _ITM_deregisterTMCloneTable
-DEBUG: [cbin.c:2593] Cannot resolve symbol address __gmon_start__
-DEBUG: [cbin.c:2593] Cannot resolve symbol address _ITM_registerTMCloneTable
-DEBUG: [cbin.c:2593] Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:3333] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3333] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3333] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3333] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3333] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3333] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3333] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3333] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3333] (section .dynsym) Cd 8[21] @ 0x3d8
+DEBUG: [cbin.c:3333] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3333] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3333] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3333] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3333] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3333] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3333] (section .got) Cd 8[9] @ 0x3fb8
+WARN: [cbin.c:1888] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+DEBUG: [cbin.c:2576] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2576] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2576] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2576] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2576] Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 

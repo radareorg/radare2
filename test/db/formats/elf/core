@@ -2,7 +2,7 @@ NAME=ELF: core segments
 FILE=bins/elf/analysis/core.1159
 CMDS=iSS~?
 EXPECT=<<EOF
-21
+20
 EOF
 RUN
 

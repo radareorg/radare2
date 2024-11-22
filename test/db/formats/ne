@@ -16,7 +16,6 @@ NAME=NE Symbols
 FILE=bins/ne/anim8.exe
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type size lib name       demangled
 -------------------------------------------------------------------
 0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
@@ -30,7 +29,6 @@ NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
 EXPECT=<<EOF
-[Segments]
 
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
@@ -44,7 +42,6 @@ NAME=NE Module imports
 FILE=bins/ne/anim8.exe
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 1   0x00000000 NONE NONE     KERNEL
@@ -79,7 +76,6 @@ EXPECT=<<EOF
 0x000056a0 0x000056a0 ADD_16 5     WIN87EM.0
 0x000056b3 0x000056b3 ADD_16 5     WIN87EM.0
 0x00005891 0x00005891 ADD_16 5     WIN87EM.0
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -90,5 +86,6 @@ vaddr      paddr      type   ntype name
 0x00000a74 0x00000a74 SET_32 3     KERNEL.GETWINFLAGS
 0x00000ad0 0x00000ad0 SET_32 3     KERNEL.UNLOCKSEGMENT
 0x00000f5e 0x00000f5e SET_32 3     USER.SETTIMER
+0x00000f4d 0x00000f4d SET_32 3     USER.KILLTIMER
 EOF
 RUN

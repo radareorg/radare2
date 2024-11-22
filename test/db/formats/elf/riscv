@@ -2,10 +2,7 @@ NAME=riscv entrypoint
 FILE=bins/elf/ip-riscv
 CMDS=ie;ii~str
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x0000d344 paddr=0x0000d344 haddr=0x00000018 hvaddr=0x00000018 type=program
-
-1 entrypoints
 2   0x0000a960 GLOBAL FUNC       strncpy
 15  0x0000aa10 GLOBAL FUNC       strspn
 19  0x0000aa50 GLOBAL FUNC       strdup
@@ -37,10 +34,7 @@ NAME=ELF: riscv64: entrypoint
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00010000 paddr=0x00001000 haddr=0x00000018 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -48,7 +42,6 @@ NAME=ELF: riscv64: symbols
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                                   demangled
 -------------------------------------------------------------------------------------------------
 1   0x00001000 0x00010000 LOCAL  SECT   0        .text

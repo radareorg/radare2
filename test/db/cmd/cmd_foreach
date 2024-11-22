@@ -76,7 +76,7 @@ ii~?
 EOF
 EXPECT=<<EOF
 hello
-87
+86
 73
 73
 world
@@ -97,7 +97,7 @@ EXPECT=<<EOF
 hello
 0
 0
-315
+314
 311
 world
 EOF

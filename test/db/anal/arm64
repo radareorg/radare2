@@ -54,7 +54,6 @@ ii
 iE
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind   type   lib name
 -------------------------------------
 3   0x00020060 GLOBAL NOTYPE     _bss_end__
@@ -73,7 +72,6 @@ nth vaddr      bind   type   lib name
 17  0x00000710 GLOBAL FUNC       free
 18  0x00000720 GLOBAL FUNC       __cxa_atexit
 
-[Exports]
 nth paddr      vaddr      bind   type size lib name            demangled
 ------------------------------------------------------------------------
 6   0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e

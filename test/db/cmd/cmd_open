@@ -11,10 +11,7 @@ EXPECT=<<EOF
             ;-- func.100003c0c:
             0x100003c0c      55             push rbp
             0x100003c0d      4889e5         mov rbp, rsp
-[Entrypoints]
 vaddr=0x100003c0c paddr=0x00007c0c haddr=0x00000658 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -31,10 +28,7 @@ EXPECT=<<EOF
             ;-- func.100003a90:
             0x100003a90      7f2303d5       pacibsp
             0x100003a94      fc6fbaa9       stp x28, x27, [sp,  -0x60]!
-[Entrypoints]
 vaddr=0x100003a90 paddr=0x0001ba90 haddr=0x00000600 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -595,13 +589,13 @@ ob 1
 is~?
 EOF
 EXPECT=<<EOF
-133
-139
+132
+138
 --
-272
+270
 --
-133
-139
+132
+138
 EOF
 RUN
 
@@ -622,9 +616,9 @@ o
 ob
 EOF
 EXPECT=<<EOF
-8
-138
-8
+7
+137
+7
 arch     arm
 baddr    0x4000
 binsz    65536

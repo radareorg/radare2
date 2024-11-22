@@ -135,7 +135,6 @@ e bin.str.filter=U
 izz
 EOF
 EXPECT=<<EOF
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x00000100 0x00000100 160 161          ascii SEGA GENESIS    (C)SEGA 1995.MARCART. BRADESCO                                  CART. BRADESCO                                  GM 00000001-00W`J

@@ -31,7 +31,6 @@ ii
 is
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib                               name
 ---------------------------------------------------------------
 1   0x00403054 NONE FUNC VCRUNTIME140.dll                  __current_exception_context
@@ -90,7 +89,6 @@ nth vaddr      bind type lib                               name
 3   0x00404038 NONE FUNC wlanapi.dll                       WFDCloseSession
 1   0x00404028 NONE FUNC winbio.dll                        WinBioAcquireFocus
 
-[Symbols]
 nth paddr      vaddr      bind type size lib                               name                                           demangled
 -----------------------------------------------------------------------------------------------------------------------------------
 1   0x00001854 0x00403054 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
@@ -158,7 +156,6 @@ ii
 is
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr       bind type lib                               name
 ----------------------------------------------------------------
 1   0x1400030c0 NONE FUNC VCRUNTIME140.dll                  __current_exception
@@ -219,7 +216,6 @@ nth vaddr       bind type lib                               name
 3   0x140005080 NONE FUNC wlanapi.dll                       WFDCloseSession
 1   0x140005060 NONE FUNC winbio.dll                        WinBioAcquireFocus
 
-[Symbols]
 nth paddr      vaddr       bind type size lib                               name                                           demangled
 ------------------------------------------------------------------------------------------------------------------------------------
 1   0x00001ac0 0x1400030c0 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
