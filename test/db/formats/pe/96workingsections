@@ -27,7 +27,6 @@ FILE=bins/pe/96workingsections.exe
 ARGS=-n
 CMDS=!rabin2 -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
-
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------
 0   0x00001200  0x200 0x00402000  0x1000 -rwx ---- sect_0
@@ -126,7 +125,6 @@ nth paddr        size vaddr        vsize perm type name
 93  0x0000cc00  0x200 0x0045f000  0x1000 -rwx ---- sect_93
 94  0x0000ce00  0x200 0x00460000  0x1000 -rwx ---- sect_94
 95  0x0000d000  0x200 0x00461000  0x1000 -rwx ---- sect_95
-
 EOF
 RUN
 
@@ -135,7 +133,6 @@ FILE=bins/pe/96workingsections.exe
 ARGS=-n
 CMDS=!rabin2 -uS bins/pe/96workingsections.exe
 EXPECT=<<EOF
-
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------
 0   0x00001200  0x200 0x00402000  0x1000 -rwx ---- sect_0
@@ -234,6 +231,5 @@ nth paddr        size vaddr        vsize perm type name
 93  0x0000cc00  0x200 0x0045f000  0x1000 -rwx ---- sect_93
 94  0x0000ce00  0x200 0x00460000  0x1000 -rwx ---- sect_94
 95  0x0000d000  0x200 0x00461000  0x1000 -rwx ---- sect_95
-
 EOF
 RUN

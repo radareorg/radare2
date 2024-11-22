@@ -20,7 +20,5 @@ CMDS=il
 EXPECT=<<EOF
 kernel32.dll
 msvcrt.dll
-
-2 libraries
 EOF
 RUN

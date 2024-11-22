@@ -81,7 +81,6 @@ NAME=rabin2 -K md5 -S file
 FILE=bins/pe/a.exe
 CMDS=!rabin2 -K md5 -S ${R2_FILE}
 EXPECT=<<EOF
-
 nth paddr        size vaddr        vsize perm md5                              type name
 ----------------------------------------------------------------------------------------
 0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 ---- .text
@@ -89,7 +88,6 @@ nth paddr        size vaddr        vsize perm md5                              t
 2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 ---- .rdata
 3   0x00000000    0x0 0x00404000  0x1000 -rw-                                  ---- .bss
 4   0x00001200  0x400 0x00405000  0x1000 -rw- 963212dc58a74f32e0f6ffce84dcf7ea ---- .idata
-
 EOF
 RUN
 
@@ -120,7 +118,6 @@ EOF
 EXPECT=<<EOF
 32
 11
-
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- NULL        prixfixe.
@@ -153,8 +150,6 @@ nth paddr        size vaddr       vsize perm type        name
 27  0x000006c5  0x106 0x00000000  0x106 ---- STRTAB      prixfixe..shstrtab
 28  0x00000c7c  0x450 0x00000000  0x450 ---- SYMTAB      prixfixe..symtab
 29  0x000010cc  0x257 0x00000000  0x257 ---- STRTAB      prixfixe..strtab
-
-
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x MAP  prixfixe.PHDR
@@ -166,7 +161,6 @@ nth paddr        size vaddr       vsize perm type name
 6   0x000004c0   0x2c 0x080484c0   0x2c -r-- MAP  prixfixe.GNU_EH_FRAME
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  prixfixe.GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- MAP  prixfixe.ehdr
-
 EOF
 RUN
 
@@ -335,12 +329,10 @@ nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   ---------- NONE FUNC     dyld_stub_binder
-
 nth vaddr       bind type lib name
 ----------------------------------
 0   0x100000f40 NONE FUNC     exit
 1   ----------  NONE FUNC     dyld_stub_binder
-
 [{"ordinal":0,"bind":"NONE","type":"FUNC","name":"exit","plt":4294971200},{"ordinal":1,"bind":"NONE","type":"FUNC","name":"dyld_stub_binder"}]
 EOF
 RUN
@@ -353,7 +345,6 @@ nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   ---------- NONE FUNC     dyld_stub_binder
-
 EOF
 RUN
 
@@ -410,7 +401,6 @@ rm .tmp/rabin2testpe1.exe
 EOF
 EXPECT=<<EOF
 wx e0000040 @ 0x244
-
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
 0   0x00000400  0x8a00 0x00401000  0x9000 -r-x ---- .text
@@ -418,7 +408,6 @@ nth paddr         size vaddr        vsize perm type name
 2   0x0000b200  0x1000 0x0040d000  0x3000 -rwx ---- .data
 3   0x0000c200   0x200 0x00410000  0x1000 -r-- ---- .rsrc
 4   0x0000c400   0xe00 0x00411000  0x1000 -r-- ---- .reloc
-
 EOF
 RUN
 
@@ -433,11 +422,9 @@ rm .tmp/rabin2testpe2.exe
 EOF
 EXPECT=<<EOF
 wx 10000000 @ 0x16c
-
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------
 0   0x00000200  0x200 0x00401000  0x1000 s--- ---- sect_0
-
 EOF
 RUN
 
@@ -483,7 +470,6 @@ NAME=rabin2 -g
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -g ${R2_FILE}
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- NULL
@@ -516,8 +502,6 @@ nth paddr        size vaddr       vsize perm type        name
 27  0x000006c5  0x106 0x00000000  0x106 ---- STRTAB      .shstrtab
 28  0x00000c7c  0x450 0x00000000  0x450 ---- SYMTAB      .symtab
 29  0x000010cc  0x257 0x00000000  0x257 ---- STRTAB      .strtab
-
-
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x MAP  PHDR
@@ -529,7 +513,6 @@ nth paddr        size vaddr       vsize perm type name
 6   0x000004c0   0x2c 0x080484c0   0x2c -r-- MAP  GNU_EH_FRAME
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- MAP  ehdr
-
 vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
 vaddr=0x080483d0 paddr=0x000003d0 hvaddr=0x0804959c hpaddr=0x0000059c type=init
 vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
@@ -539,7 +522,6 @@ nth vaddr      bind   type   lib name
 1   0x080482d0 GLOBAL FUNC       puts
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
-
 nth paddr      vaddr      bind   type   size lib name                                   demangled
 -------------------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
@@ -654,21 +636,13 @@ va       true
 0x0000002e 0x0000002e 0x00000028 ShentSize
 0x00000030 0x00000030 0x0000001e ShNum
 0x00000032 0x00000032 0x0000001b ShrStrndx
-
-14 fields
 libc.so.6
-
-1 library
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x08049690 0x00000690 SET_32 6     __gmon_start__
 0x080496a0 0x000006a0 SET_32 7     puts
 0x080496a4 0x000006a4 SET_32 7     __gmon_start__
 0x080496a8 0x000006a8 SET_32 7     __libc_start_main
-
-
-4 relocations
 4899
 Version symbols section '.gnu.version' contains 5 entries:
  Addr: 0x08048246  Offset: 0x00000246  Link: 5 (.dynsym)
@@ -695,7 +669,6 @@ NOTE         .note.ABI-tag .note.gnu.build-id
 GNU_EH_FRAME .eh_frame_hdr 
 GNU_STACK
 ehdr
-
 EOF
 RUN
 

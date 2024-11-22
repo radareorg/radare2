@@ -28,12 +28,10 @@ NAME=sections 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000073  0x13 0x00001000   0x13 -rwx ---- text_1
 1   0x00000095   0xe 0x00001013    0xe -rwx ---- data_1
-
 EOF
 RUN
 
@@ -86,12 +84,10 @@ NAME=sections 32 bits omf
 FILE=bins/omf/hello_world32
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000074  0x1d 0x00001000   0x1d -rwx ---- .text_1
 1   0x000000a3   0xe 0x0000101d    0xe -rwx ---- .data_1
-
 EOF
 RUN
 

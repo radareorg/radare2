@@ -38,7 +38,6 @@ NAME=pe relocs [rabin2 a.exe]
 FILE=bins/pe/a.exe
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x000050fc 0x000012a0 SET_32 3     KERNEL32.dll_AddAtomA
@@ -61,9 +60,6 @@ vaddr      paddr      type   ntype name
 0x000051dc 0x000012ec SET_32 3     msvcrt.dll_malloc
 0x000051e6 0x000012f0 SET_32 3     msvcrt.dll_printf
 0x000051f0 0x000012f4 SET_32 3     msvcrt.dll_signal
-
-
-20 relocations
 EOF
 RUN
 
@@ -71,7 +67,6 @@ NAME=pe relocs [rabin2 b.exe]
 FILE=bins/pe/b.exe
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x000050fc 0x000012a0 SET_32 3     KERNEL32.dll_AddAtomA
@@ -94,9 +89,6 @@ vaddr      paddr      type   ntype name
 0x000051dc 0x000012ec SET_32 3     msvcrt.dll_malloc
 0x000051e6 0x000012f0 SET_32 3     msvcrt.dll_printf
 0x000051f0 0x000012f4 SET_32 3     msvcrt.dll_signal
-
-
-20 relocations
 EOF
 RUN
 
@@ -126,8 +118,6 @@ pstorec.dll
 rasapi32.dll
 shell32.dll
 crypt32.dll
-
-9 libraries
 EOF
 RUN
 
@@ -263,7 +253,6 @@ nth vaddr      bind type lib          name
 4   0x004123ac NONE FUNC advapi32.dll CryptGetHashParam
 5   0x004123b0 NONE FUNC advapi32.dll CryptReleaseContext
 6   0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
-
 EOF
 RUN
 
@@ -271,7 +260,6 @@ NAME=pe32 imported relocations (ir)
 FILE=bins/pe/imports_1210.exe
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x000123ca 0x0000097c SET_32 3     kernel32.dll_DeleteCriticalSection
@@ -400,9 +388,6 @@ vaddr      paddr      type   ntype name
 0x00012d14 0x00000bac SET_32 3     advapi32.dll_CryptGetHashParam
 0x00012d28 0x00000bb0 SET_32 3     advapi32.dll_CryptReleaseContext
 0x00012d3e 0x00000bb4 SET_32 3     advapi32.dll_CryptAcquireContextA
-
-
-126 relocations
 EOF
 RUN
 
@@ -411,8 +396,6 @@ FILE=bins/pe/single_import.exe
 CMDS=il
 EXPECT=<<EOF
 comctl32.dll
-
-1 library
 EOF
 RUN
 

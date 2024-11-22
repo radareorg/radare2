@@ -97,7 +97,7 @@ EXPECT=<<EOF
 hello
 0
 0
-314
+313
 311
 world
 EOF

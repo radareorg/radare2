@@ -7,12 +7,10 @@ pd 3
 om
 EOF
 EXPECT=<<EOF
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000200   0x0 0x00000000    0x0 -rwx ---- seg_000
 1   0x00000200   0x1 0x00000000    0x1 -rwx ---- seg_001
-
             ;-- section.seg_000:
             ;-- section.seg_001:
             ;-- mz.dos_header:

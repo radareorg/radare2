@@ -18,7 +18,6 @@ NAME=cdogs.exe sections
 FILE=bins/le/cdogs.exe
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr         size vaddr         vsize perm type name
 ---------------------------------------------------------
 0   0x0000d200  0x1000 0x00010000   0x1000 -r-x ---- obj.1.page.0
@@ -83,7 +82,6 @@ nth paddr         size vaddr         vsize perm type name
 59  0x00048200  0x1000 0x0004e000   0x1000 -rw- ---- obj.2.page.14
 60  0x00049200   0xd8c 0x0004f000   0x1000 -rw- ---- obj.2.page.15
 61  0x00000000     0x0 0x00050000  0x16030 -rw- ---- obj.2.page.zerofill
-
 EOF
 RUN
 
@@ -158,7 +156,7 @@ cat $relocs~0x0004e~?
 cat $relocs~0x0004f~?
 EOF
 EXPECT=<<EOF
-5238
+5237
 151
 160
 102
@@ -246,7 +244,6 @@ NAME=GCC.EXE sections
 FILE=bins/le/GCC.EXE
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr         size vaddr           vsize perm type name
 -----------------------------------------------------------
 0   0x00001000  0x1000 0x00010000     0x1000 -r-x ---- obj.1.page.0
@@ -268,7 +265,6 @@ nth paddr         size vaddr           vsize perm type name
 16  0x00000000     0x0 0x00021000     0x1804 -rw- ---- obj.2.page.zerofill
 17  0x00000000     0x0 0x00030000  0x2000000 -rw- ---- obj.3
 18  0x00000000     0x0 0x02030000   0x800000 -rw- ---- obj.4
-
 EOF
 RUN
 
@@ -276,7 +272,6 @@ NAME=GCC.EXE relocations
 FILE=bins/le/GCC.EXE
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00010006 0x00001006 SET_32 8     emx.1
@@ -290,9 +285,6 @@ vaddr      paddr      type   ntype name
 0x0001d39f 0x0000e39f SET_32 8     doscalls.257
 0x0001d3d9 0x0000e3d9 SET_32 8     doscalls.281
 0x0001d3f4 0x0000e3f4 SET_32 8     doscalls.257
-
-
-11 relocations
 EOF
 RUN
 
@@ -302,8 +294,6 @@ CMDS=il
 EXPECT=<<EOF
 emx
 doscalls
-
-2 libraries
 EOF
 RUN
 
@@ -337,7 +327,6 @@ NAME=GNUGREP.DLL sections
 FILE=bins/le/GNUGREP.DLL
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
 0   0x00001600  0x1000 0x00010000  0x1000 -r-x ---- obj.1.page.0
@@ -351,7 +340,6 @@ nth paddr         size vaddr        vsize perm type name
 8   0x00009400     0x8 0x00020000     0x8 -r-x ---- obj.2.page.0
 9   0x00009600     0x8 0x00030000     0x8 -r-x ---- obj.3.page.0
 10  0x00001400   0x200 0x00040000   0x824 -rw- ---- obj.4.page.0
-
 EOF
 RUN
 
@@ -362,8 +350,6 @@ EXPECT=<<EOF
 GNUREGEX
 EMXLIBC
 emx
-
-3 libraries
 EOF
 RUN
 
@@ -377,7 +363,7 @@ cat $relocs~EMXLIBC~?
 cat $relocs~emx~?
 EOF
 EXPECT=<<EOF
-1169
+1168
 8
 183
 1

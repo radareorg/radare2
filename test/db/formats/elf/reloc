@@ -2,7 +2,6 @@ NAME=ELF: dynamic p_offset
 FILE=bins/elf/analysis/dynamic-poffset
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00600988 0x00000988 SET_64 6     __gmon_start__
@@ -10,9 +9,6 @@ vaddr      paddr      type   ntype name
 0x006009b0 0x000009b0 SET_64 7     close
 0x006009b8 0x000009b8 SET_64 7     __libc_start_main
 0x006009c0 0x000009c0 SET_64 7     open
-
-
-5 relocations
 EOF
 RUN
 
@@ -228,7 +224,6 @@ e asm.bytes=false
 pd 40
 EOF
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x0003f94c 0x0001f94c ADD_32 20    _Jv_RegisterClasses
@@ -353,9 +348,6 @@ vaddr      paddr      type   ntype name
 0x000406c0 0x000406c0 ADD_32 19    __ctype
 0x000408d8 0x000408d8 ADD_32 19    tzname
 0x000408e8 0x000408e8 ADD_32 19    _environ
-
-
-122 relocations
 ;-- section..plt:
 ;-- _PROCEDURE_LINKAGE_TABLE_:
 0x0003f95c      unimp 0                                                ; [17] -rwx section size 1420 named .plt
@@ -428,7 +420,6 @@ e asm.bytes=false
 pd 40
 EOF
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x000ec004 0x000cc004 ADD_32 20    __gmon_start__
@@ -637,9 +628,6 @@ vaddr      paddr      type   ntype name
 0x000f0c70 0x000f0c70 ADD_32 19    stdin
 0x000f0c74 0x000f0c74 ADD_32 19    BC
 0x000f0c78 0x000f0c78 ADD_32 19    stdout
-
-
-206 relocations
 ;-- section..plt:
 0x000ec014      unimp 0                                                ; [23] -rwx section size 2428 named .plt
 0x000ec018      unimp 0

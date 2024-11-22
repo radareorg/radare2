@@ -96,9 +96,9 @@ RUN
 
 NAME=: 32bit - libraries count
 FILE=bins/mdmp/hello.dmp
-CMDS=il~libraries
+CMDS=il~?
 EXPECT=<<EOF
-57 libraries
+57
 EOF
 RUN
 
@@ -188,9 +188,9 @@ RUN
 
 NAME=: 32bit - relocs count
 FILE=bins/mdmp/hello.dmp
-CMDS=ir~relocations
+CMDS=ir~?
 EXPECT=<<EOF
-2028 relocations
+2030
 EOF
 RUN
 
@@ -232,9 +232,9 @@ RUN
 
 NAME=: 64bit - libraries count
 FILE=bins/mdmp/hello64.dmp
-CMDS=il~libraries
+CMDS=il~?
 EXPECT=<<EOF
-49 libraries
+49
 EOF
 RUN
 
@@ -320,9 +320,9 @@ RUN
 
 NAME=: 64bit - relocs count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ir~relocations
+CMDS=ir~?
 EXPECT=<<EOF
-1509 relocations
+1511
 EOF
 RUN
 

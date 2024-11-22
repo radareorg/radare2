@@ -213,7 +213,6 @@ nth vaddr      bind type lib name
 4   0x000001d0 NONE FUNC     Ljava/lang/StringBuilder.method.<init>()V
 5   0x000001d8 NONE FUNC     Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 6   0x000001e0 NONE FUNC     Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
-
 EOF
 RUN
 

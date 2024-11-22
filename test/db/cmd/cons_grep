@@ -6,7 +6,6 @@ iS
 iS~$!!
 EOF
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- NULL
@@ -40,7 +39,6 @@ nth paddr        size vaddr       vsize perm type        name
 28  0x00000b3c   0xfe 0x00000000   0xfe ---- STRTAB      .shstrtab
 29  0x00001400  0x6a8 0x00000000  0x6a8 ---- SYMTAB      .symtab
 30  0x00001aa8  0x269 0x00000000  0x269 ---- STRTAB      .strtab
-
 --
 30  0x00001aa8  0x269 0x00000000  0x269 ---- STRTAB      .strtab
 29  0x00001400  0x6a8 0x00000000  0x6a8 ---- SYMTAB      .symtab

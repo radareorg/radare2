@@ -29,12 +29,10 @@ NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
 EXPECT=<<EOF
-
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
 0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MAP  MOVEABLE.2560
 1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MAP  MOVEABLE.30208
-
 EOF
 RUN
 
@@ -48,7 +46,6 @@ nth vaddr      bind type lib name
 2   0x00000000 NONE NONE     USER
 3   0x00000000 NONE NONE     GDI
 4   0x00000000 NONE NONE     WIN87EM
-
 EOF
 RUN
 
@@ -76,7 +73,6 @@ EXPECT=<<EOF
 0x000056a0 0x000056a0 ADD_16 5     WIN87EM.0
 0x000056b3 0x000056b3 ADD_16 5     WIN87EM.0
 0x00005891 0x00005891 ADD_16 5     WIN87EM.0
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00000a01 0x00000a01 SET_32 3     KERNEL.INITTASK
@@ -87,5 +83,6 @@ vaddr      paddr      type   ntype name
 0x00000ad0 0x00000ad0 SET_32 3     KERNEL.UNLOCKSEGMENT
 0x00000f5e 0x00000f5e SET_32 3     USER.SETTIMER
 0x00000f4d 0x00000f4d SET_32 3     USER.KILLTIMER
+0x00000f13 0x00000f13 SET_32 3     USER.SETTIMER
 EOF
 RUN

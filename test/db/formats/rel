@@ -14,7 +14,6 @@ FILE=bins/rel/d_profileNP.rel
 ARGS=-e bin.relocs.apply=true -B 0x80500000
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x000000d0  0xa0 0x805000d0   0xa0 -rwx ---- text_1
@@ -22,7 +21,6 @@ nth paddr       size vaddr       vsize perm type name
 2   0x00000174   0x4 0x80500174    0x4 -rw- ---- data_3
 3   0x00000178  0x34 0x80500178   0x34 -rw- ---- data_4
 4   0x00000000   0x4 0x80500380    0x4 -rw- ---- bss
-
 EOF
 RUN
 
