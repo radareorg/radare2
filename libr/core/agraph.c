@@ -4446,8 +4446,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	}
 }
 
-// R2_600 return bool
-R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
+R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
 	bool is_interactive = (mode != 0);
 	if (is_interactive && !r_cons_is_interactive ()) {
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
@@ -5339,7 +5338,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	if (must_update_seek) {
-		return -1;
+		return true; // -1
 	}
 	return !is_error;
 }

@@ -101,14 +101,13 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	return true;
 }
 
-// R2_600 - return boolean
-R_API int r_core_patch(RCore *core, const char *patch) {
+R_API bool r_core_patch(RCore *core, const char *patch) {
 	char *p, *p0, *str;
 	ut64 noff = 0LL;
 
 	p = p0 = str = strdup (patch);
 	if (!p) {
-		return 0;
+		return false;
 	}
 	for (; *p; p++) {
 		/* read until newline */
@@ -144,5 +143,6 @@ R_API int r_core_patch(RCore *core, const char *patch) {
 		str = p;
 	}
 	free (p0);
-	return 0;
+	// TODO do some minimum error checking
+	return true;
 }

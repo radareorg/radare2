@@ -225,34 +225,35 @@ static bool get_keys(void *keylist_in, const void *k, const void *v) {
 }
 
 R_API const char **r_cmd_alias_keys(RCmd *cmd) {
-	AliasKeylist keylist;
-
-	keylist.keys = R_NEWS (const char *, cmd->aliases->count);
+	AliasKeylist keylist = {
+		.current_key = 0,
+		.keys = R_NEWS (const char *, cmd->aliases->count)
+	};
 	if (!keylist.keys) {
 		return NULL;
 	}
-
-	keylist.current_key = 0;
 	ht_pp_foreach (cmd->aliases, get_keys, &keylist);
-
 	// We don't need to return a count - it's already in cmd->aliases.
 	return keylist.keys;
 }
 
 R_API void r_cmd_alias_free(RCmd *cmd) {
+	R_RETURN_IF_FAIL (cmd);
 	ht_pp_free (cmd->aliases);
 	cmd->aliases = NULL;
 }
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k) {
-	return ht_pp_delete(cmd->aliases, k);
+	R_RETURN_VAL_IF_FAIL (cmd && k, false);
+	return ht_pp_delete (cmd->aliases, k);
 }
 
-R_API int r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
+R_API bool r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
+	R_RETURN_VAL_IF_FAIL (cmd && k && v, false);
 	RCmdAliasVal val;
 	val.data = (ut8 *)v;
 	if (!val.data) {
-		return 1;
+		return true;
 	}
 	val.sz = strlen (v) + 1;
 	val.is_str = true;
@@ -388,32 +389,31 @@ static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const
 	return out;
 }
 
-R_API int r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
+R_API bool r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
 	R_RETURN_VAL_IF_FAIL (cmd && k && a, 1);
 	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
 	if (v_old) {
 		if (!v_old->is_data) {
-			return 1;
+			return true;
 		}
 		int new_len = 0;
 		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
 		if (!new) {
-			return 1;
+			return true;
 		}
 		r_cmd_alias_set_raw (cmd, k, new, new_len);
 		free (new);
 	} else {
 		r_cmd_alias_set_str (cmd, k, a);
 	}
-	return 0;
+	return false;
 }
 
-// R2_600 - return bool instead
-R_API int r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
+R_API bool r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
 	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
 	if (v_old) {
 		if (!v_old->is_data) {
-			return 0;
+			return false;
 		}
 		int new_len = 0;
 		ut8 *new = alias_append_internal (&new_len, v_old, a, sz);

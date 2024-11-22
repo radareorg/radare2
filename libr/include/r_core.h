@@ -437,8 +437,7 @@ typedef struct r_core_item_t {
 
 R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr);
 R_API void r_core_item_free(RCoreItem *ci);
-
-R_API int r_core_bind(RCore *core, RCoreBind *bnd);
+R_API void r_core_bind(RCore *core, RCoreBind *bnd);
 
 typedef struct r_core_cmpwatch_t {
 	ut64 addr;
@@ -549,7 +548,7 @@ R_API int r_core_visual_anal_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API void r_core_visual_find(RCore *core, RAGraph *g);
-R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode);
+R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode);
 R_API void r_core_visual_browse(RCore *core, const char *arg);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation(RCore *core, ut64 addr);
@@ -697,7 +696,6 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr);
 R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn);
-R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn);
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
@@ -884,7 +882,7 @@ R_API int r_core_search_preludes(RCore *core, bool log);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, const char *prefix);
 
-R_API int r_core_patch(RCore *core, const char *patch);
+R_API bool r_core_patch(RCore *core, const char *patch);
 
 R_API bool r_core_hack(RCore *core, const char *op);
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
