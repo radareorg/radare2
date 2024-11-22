@@ -140,6 +140,5 @@ nth vaddr      bind   type   lib name
 4   ---------- WEAK   NOTYPE     __gmon_start__
 5   ---------- WEAK   NOTYPE     _ITM_registerTMCloneTable
 6   ---------- WEAK   FUNC       __cxa_finalize
-
 EOF
 RUN
