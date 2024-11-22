@@ -11,11 +11,7 @@ FILE=bins/pe/tls_noEP.exe
 CMDS=ie;iee
 EXPECT=<<EOF
 vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
-
-1 entrypoints
 vaddr=0x00401000 paddr=0x00000200 hpaddr=0x00000384 type=tls
-
-1 entrypoints
 EOF
 RUN
 

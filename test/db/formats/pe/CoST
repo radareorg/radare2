@@ -11,8 +11,6 @@ FILE=bins/pe/CoST.exe
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x7efd0000 paddr=0x00000000 haddr=0x0000506c type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -21,8 +19,6 @@ FILE=bins/pe/CoST.exe
 CMDS=iee
 EXPECT=<<EOF
 vaddr=0x7efd0148 paddr=0x00000148 hpaddr=0x000001cc type=tls
-
-1 entrypoints
 EOF
 RUN
 

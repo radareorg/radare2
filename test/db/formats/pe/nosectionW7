@@ -18,8 +18,6 @@ FILE=bins/pe/nosectionW7.exe
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x00400138 paddr=0x00000138 haddr=0x00000068 type=program
-
-1 entrypoints
 EOF
 RUN
 
