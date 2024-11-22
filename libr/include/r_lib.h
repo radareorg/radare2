@@ -48,11 +48,11 @@ typedef struct r_plugin_meta_t {
 	char *author;
 	char *version;
 	char *license;
-// char *contact // email/mastodon/addr
-// char *copyright // 2024-2025 ..?
+	char *contact; // email/mastodon/addr
+	char *copyright; // 2024-2025 ..?
 	RPluginStatus status;
 } RPluginMeta;
-// rename to RLibPluginMeta ?
+// R2_600 discuss rename to RLibPluginMeta ?
 
 /* store list of loaded plugins */
 typedef struct r_lib_plugin_t {
@@ -151,6 +151,9 @@ R_API int r_lib_close(RLib *lib, const char *file);
 
 R_API const char *r_lib_types_get(int idx);
 R_API int r_lib_types_get_i(const char *str);
+
+#include <r_util/pj.h>
+R_API void r_lib_meta_pj(PJ *pj, RPluginMeta *meta);
 #endif
 
 #ifdef __cplusplus

@@ -483,17 +483,7 @@ static int cmd_plugins(void *data, const char *input) {
 				switch (mode) {
 				case 'j':
 					pj_o (pj);
-					pj_ks (pj, "name", item->meta.name);
-					pj_ks (pj, "desc", item->meta.desc);
-					if (item->meta.author) {
-						pj_ks (pj, "author", item->meta.author);
-					}
-					if (item->meta.version) {
-						pj_ks (pj, "version", item->meta.version);
-					}
-					if (item->meta.license) {
-						pj_ks (pj, "license", item->meta.license);
-					}
+					r_lib_meta_pj (pj, &item->meta);
 					if (item->arch) {
 						pj_ks (pj, "arch", item->arch);
 					}
@@ -632,19 +622,7 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_a (pj);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				pj_o (pj);
-				if (cp->meta.name) {
-					pj_ks (pj, "name", cp->meta.name);
-				}
-				if (cp->meta.desc) {
-					pj_ks (pj, "desc", cp->meta.desc);
-				}
-				if (cp->meta.version) {
-					pj_ks (pj, "version", cp->meta.version);
-				}
-				pj_ks (pj, "license", cp->meta.license? cp->meta.license: "???");
-				if (cp->meta.author) {
-					pj_ks (pj, "author", cp->meta.author);
-				}
+				r_lib_meta_pj (pj, &cp->meta);
 				pj_end (pj);
 			}
 			pj_end (pj);
