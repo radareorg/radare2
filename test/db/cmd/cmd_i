@@ -2,7 +2,6 @@ NAME=iS query
 FILE=bins/elf/analysis/main
 CMDS=iS,size/sort,vaddr/cols/name
 EXPECT=<<EOF
-
 vaddr      name
 ---------------
 0x00000000
@@ -41,7 +40,6 @@ vaddr      name
 0x006006f8 .dynamic
 0x00000000 .strtab
 0x00000000 .symtab
-
 EOF
 RUN
 
@@ -88,15 +86,12 @@ iorw     true
 block    0x100
 nth vaddr bind type lib name
 ----------------------------
-
 fs imports
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
 fs symbols
-
 nth paddr  size vaddr  vsize perm type name
 -------------------------------------------
-
 fs sections
 EOF
 RUN
@@ -111,7 +106,6 @@ EOF
 EXPECT=<<EOF
 nth vaddr bind type lib name
 ----------------------------
-
 fs imports
 EOF
 RUN
@@ -166,10 +160,8 @@ EXPECT=<<EOF
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
 fs symbols
-
 nth paddr  size vaddr  vsize perm type name
 -------------------------------------------
-
 fs sections
 EOF
 RUN
@@ -1232,7 +1224,6 @@ nth vaddr      bind   type   lib name
 1   0x080482d0 GLOBAL FUNC       puts
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
-
 EOF
 RUN
 
@@ -2389,7 +2380,6 @@ NAME=iS (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- NULL
@@ -2422,7 +2412,6 @@ nth paddr        size vaddr       vsize perm type        name
 27  0x000006c5  0x106 0x00000000  0x106 ---- STRTAB      .shstrtab
 28  0x00000c7c  0x450 0x00000000  0x450 ---- SYMTAB      .symtab
 29  0x000010cc  0x257 0x00000000  0x257 ---- STRTAB      .strtab
-
 EOF
 RUN
 
@@ -2430,7 +2419,6 @@ NAME=iSS (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSS
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x MAP  PHDR
@@ -2442,7 +2430,6 @@ nth paddr        size vaddr       vsize perm type name
 6   0x000004c0   0x2c 0x080484c0   0x2c -r-- MAP  GNU_EH_FRAME
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- MAP  ehdr
-
 EOF
 RUN
 
@@ -2561,8 +2548,6 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=il
 EXPECT=<<EOF
 libc.so.6
-
-1 library
 EOF
 RUN
 
@@ -2578,16 +2563,12 @@ NAME=ir (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x08049690 0x00000690 SET_32 6     __gmon_start__
 0x080496a0 0x000006a0 SET_32 7     puts
 0x080496a4 0x000006a4 SET_32 7     __gmon_start__
 0x080496a8 0x000006a8 SET_32 7     __libc_start_main
-
-
-4 relocations
 EOF
 RUN
 
@@ -2771,8 +2752,6 @@ EXPECT=<<EOF
 0x0000003a 0x0000003a 0x00000040 ShentSize
 0x0000003c 0x0000003c 0x0000001e ShNum
 0x0000003e 0x0000003e 0x0000001b ShrStrndx
-
-14 fields
 EOF
 RUN
 
@@ -2785,7 +2764,6 @@ nth vaddr      bind   type   lib name
 1   0x004003e0 GLOBAL FUNC       puts
 2   0x004003f0 GLOBAL FUNC       __libc_start_main
 3   0x00400400 WEAK   NOTYPE     __gmon_start__
-
 EOF
 RUN
 
@@ -2829,7 +2807,6 @@ NAME=iS (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- NULL
@@ -2862,7 +2839,6 @@ nth paddr        size vaddr       vsize perm type        name
 27  0x00000921  0x108 0x00000000  0x108 ---- STRTAB      .shstrtab
 28  0x000011b0  0x648 0x00000000  0x648 ---- SYMTAB      .symtab
 29  0x000017f8  0x23e 0x00000000  0x23e ---- STRTAB      .strtab
-
 EOF
 RUN
 
@@ -2870,7 +2846,6 @@ NAME=iSS (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iSS
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
 0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x MAP  PHDR
@@ -2882,7 +2857,6 @@ nth paddr        size vaddr       vsize perm type name
 6   0x000005d0   0x34 0x004005d0   0x34 -r-- MAP  GNU_EH_FRAME
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  GNU_STACK
 8   0x00000000   0x40 0x00400000   0x40 -rw- MAP  ehdr
-
 EOF
 RUN
 
@@ -2891,8 +2865,6 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=il
 EXPECT=<<EOF
 libc.so.6
-
-1 library
 EOF
 RUN
 
@@ -2900,16 +2872,12 @@ NAME=ir (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x006008c8 0x000008c8 SET_64 6     __gmon_start__
 0x006008e8 0x000008e8 SET_64 7     puts
 0x006008f0 0x000008f0 SET_64 7     __libc_start_main
 0x006008f8 0x000008f8 SET_64 7     __gmon_start__
-
-
-4 relocations
 EOF
 RUN
 
@@ -2917,7 +2885,6 @@ NAME=ir (file x86_64, ifunc)
 FILE=bins/elf/ifunc_rel64
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x006b17d0 0x000b17d0 SET_64 37    ifunc_416530 0x00416530 (ifunc)
@@ -2930,9 +2897,6 @@ vaddr      paddr      type   ntype name
 0x006b1808 0x000b1808 SET_64 37    ifunc_414300 0x00414300 (ifunc)
 0x006b1810 0x000b1810 SET_64 37    ifunc_479800 0x00479800 (ifunc)
 0x006b1818 0x000b1818 SET_64 37    ifunc_4140b0 0x004140b0 (ifunc)
-
-
-10 relocations
 EOF
 RUN
 
@@ -3123,7 +3087,6 @@ NAME=iS entropy and iSS entropy
 FILE=bins/elf/crackme0x05
 CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm entropy    type        name
 ------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----            NULL
@@ -3155,8 +3118,6 @@ nth paddr        size vaddr       vsize perm entropy    type        name
 26  0x000011dd   0xdb 0x00000000   0xdb ---- 4.21638420 STRTAB      .shstrtab
 27  0x00001740  0x460 0x00000000  0x460 ---- 3.06854806 SYMTAB      .symtab
 28  0x00001ba0  0x248 0x00000000  0x248 ---- 4.85613827 STRTAB      .strtab
-
-
 nth paddr        size vaddr       vsize perm entropy    type name
 -----------------------------------------------------------------
 0   0x00000034  0x120 0x08048034  0x120 -r-x 2.77947373 MAP  PHDR
@@ -3169,7 +3130,6 @@ nth paddr        size vaddr       vsize perm entropy    type name
 7   0x00000f0c   0xf4 0x08049f0c   0xf4 -r-- 2.71815661 MAP  GNU_RELRO
 8   0x00000000    0x0 0x00000000    0x0 ----            MAP  NONE
 9   0x00000000   0x34 0x08048000   0x34 -rw- 2.79887339 MAP  ehdr
-
 EOF
 RUN
 
@@ -3196,7 +3156,6 @@ nth paddr      vaddr      bind   type   size lib name                           
 6   ---------- ---------- WEAK   NOTYPE 16       imp._Jv_RegisterClasses
 7   ---------- ---------- WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 relocs
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00001eec 0x00000eec SET_32 8
@@ -3210,9 +3169,6 @@ vaddr      paddr      type   ntype name
 0x0000200c 0x0000100c SET_32 7     puts
 0x00002010 0x00001010 SET_32 7     __libc_start_main
 0x00002018 0x00001018 SET_32 8
-
-
-11 relocations
 flags
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
@@ -3481,7 +3437,6 @@ nth vaddr      bind   type   lib name
 -------------------------------------
 1   ---------- GLOBAL FUNC       __libc_start_main
 2   ---------- WEAK   NOTYPE     __gmon_start__
-
 EOF
 RUN
 
@@ -3540,7 +3495,6 @@ NAME=iS=
 FILE=bins/mach0/fatmach0-3true
 CMDS=iS=
 EXPECT=<<EOF
-
 0*  0x100000ef8 ######------------------------ 0x100000f3f r-x   71    0.__TEXT.__text
 1   0x100000f40 ------#----------------------- 0x100000f46 r-x   6     1.__TEXT.__symbol_stub1
 2   0x100000f46 ------###--------------------- 0x100000f60 r-x   26    2.__TEXT.__stub_helper
@@ -3551,7 +3505,6 @@ EXPECT=<<EOF
 7   0x100001020 ------------------------####-- 0x100001048 rw-   40    7.__DATA.__program_vars
 8   0x100001048 ----------------------------## 0x100001068 rw-   32    8.__DATA.__data
 =>  0x100000ef8 ------------------------------ 0x100000ef7
-
 EOF
 RUN
 
@@ -3766,7 +3719,6 @@ CMDS=<<EOF
 iS sha1,crc32
 EOF
 EXPECT=<<EOF
-
 nth paddr         size vaddr         vsize perm sha1, crc32                                       type             name
 -----------------------------------------------------------------------------------------------------------------------
 0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 597dd9392a6e194e98d21b2ca4ddebb298f09575 f0140c0d REGULAR          0.__TEXT.__text
@@ -3780,7 +3732,6 @@ nth paddr         size vaddr         vsize perm sha1, crc32                     
 8   0x0000c000    0x20 0x10000c000    0x20 -rw- de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
 9   0x00000000     0x0 0x10000c020    0xb0 -rw-                                                   ZEROFILL         9.__DATA.__common
 10  0x00000000     0x0 0x10000c0d0   0x150 -rw-                                                   ZEROFILL         10.__DATA.__bss
-
 EOF
 RUN
 
@@ -3791,13 +3742,11 @@ CMDS=<<EOF
 iSS sha1,crc32
 EOF
 EXPECT=<<EOF
-
 nth paddr         size vaddr         vsize perm sha1, crc32                                       type name
 -----------------------------------------------------------------------------------------------------------
 0   0x00018000  0x8000 0x100000000  0x8000 -r-x 62f28c2d31aeeafc99420eebdaaf9976175c4553 b46855f0 MAP  __TEXT
 1   0x00020000  0x4000 0x100008000  0x4000 -rw- 62f2f64918ef72b1bf82ae39e986d9ddf5e42181 979dd9de MAP  __DATA_CONST
 2   0x00024000  0x4000 0x10000c000  0x4000 -rw- 869518459b4db2174417ed9a87668b47acf04bf7 d0361e49 MAP  __DATA
 3   0x00028000  0x8000 0x100010000  0x8000 -r--                                                   MAP  __LINKEDIT
-
 EOF
 RUN

@@ -1848,7 +1848,6 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	R_RETURN_VAL_IF_FAIL (table, false);
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
-	int i = 0;
 
 	R_TIME_PROFILE_BEGIN;
 
@@ -2042,7 +2041,6 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				bin_reloc_type_name (reloc), reloc->ntype, res);
 			free (res);
 		}
-		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
@@ -3353,7 +3351,6 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	RListIter *iter;
 	RBinField *field;
-	int i = 0;
 	RBin *bin = r->bin;
 	RBinObject *o = r_bin_cur_object (bin);
 	if (!o) {
@@ -3441,7 +3438,6 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
 				field->vaddr, v, r_bin_name_tostring2 (field->name, pref));
 		}
-		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
@@ -4183,7 +4179,6 @@ static bool bin_size(RCore *r, PJ *pj, int mode) {
 static bool bin_libs(RCore *r, PJ *pj, int mode) {
 	RListIter *iter;
 	char* lib;
-	int i = 0;
 
 	RList *libs = r_bin_get_libs (r->bin);
 	if (IS_MODE_JSON (mode)) {
@@ -4205,7 +4200,6 @@ static bool bin_libs(RCore *r, PJ *pj, int mode) {
 			// simple and normal print mode
 			r_cons_println (lib);
 		}
-		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
