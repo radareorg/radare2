@@ -35,7 +35,6 @@ nth vaddr      bind   type   lib name
 2   ---------- WEAK   NOTYPE     __gmon_start__
 3   ---------- GLOBAL FUNC       __libc_start_main
 
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x10020008 0x00010008 ADD_32 20    __gmon_start__

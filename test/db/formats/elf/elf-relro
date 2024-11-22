@@ -57,7 +57,6 @@ nth vaddr      bind   type lib name
 13  0x0000b840 GLOBAL FUNC     malloc
 14  0x0000b8a0 GLOBAL FUNC     memcpy
 15  0x0000b8b0 GLOBAL FUNC     memset
-
 EOF
 RUN
 
@@ -298,7 +297,6 @@ nth vaddr      bind   type   lib name
 209 0x000525b0 GLOBAL FUNC       iconv_open
 210 0x000525b8 GLOBAL FUNC       __sprintf_chk
 211 0x000525c0 GLOBAL FUNC       socket
-
 EOF
 RUN
 

@@ -96,7 +96,6 @@ nth vaddr      bind type lib name
 27  ---------- NONE UNK      optind
 28  ---------- NONE FUNC     getline
 29  ---------- NONE UNK      optarg
-
 EOF
 RUN
 
@@ -113,6 +112,5 @@ nth vaddr      bind type lib name
 4   ---------- NONE FUNC     fflush
 5   ---------- NONE FUNC     puts
 6   ---------- NONE UNK      __crt0v
-
 EOF
 RUN

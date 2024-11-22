@@ -188,9 +188,9 @@ RUN
 
 NAME=: 32bit - relocs count
 FILE=bins/mdmp/hello.dmp
-CMDS=ir~relocations
+CMDS=ir~?
 EXPECT=<<EOF
-2028 relocations
+2031
 EOF
 RUN
 
@@ -320,9 +320,9 @@ RUN
 
 NAME=: 64bit - relocs count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ir~relocations
+CMDS=ir~?
 EXPECT=<<EOF
-1509 relocations
+1512
 EOF
 RUN
 

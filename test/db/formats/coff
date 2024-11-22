@@ -59,7 +59,6 @@ nth vaddr      bind type lib name
 24  ---------- NONE FUNC     __TIFFCheckMalloc
 25  ---------- NONE UNK      __fltused
 
-
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
 0   0x000001cc    0x2f 0x00000000    0x2f ---- MAP  .drectve-0

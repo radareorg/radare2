@@ -263,7 +263,6 @@ nth vaddr      bind type lib          name
 4   0x004123ac NONE FUNC advapi32.dll CryptGetHashParam
 5   0x004123b0 NONE FUNC advapi32.dll CryptReleaseContext
 6   0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
-
 EOF
 RUN
 

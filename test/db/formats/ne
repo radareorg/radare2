@@ -48,7 +48,6 @@ nth vaddr      bind type lib name
 2   0x00000000 NONE NONE     USER
 3   0x00000000 NONE NONE     GDI
 4   0x00000000 NONE NONE     WIN87EM
-
 EOF
 RUN
 

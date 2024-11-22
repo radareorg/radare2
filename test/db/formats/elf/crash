@@ -22,7 +22,6 @@ EOF
 EXPECT=<<EOF
 nth vaddr bind type lib name
 ----------------------------
-
 []
 EOF
 RUN

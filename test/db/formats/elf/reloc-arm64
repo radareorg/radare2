@@ -34,7 +34,6 @@ nth vaddr      bind   type lib name
 5   0x00000940 GLOBAL FUNC     __android_log_print
 6   0x00000970 GLOBAL FUNC     fopen
 7   0x00000980 GLOBAL FUNC     __cxa_atexit
-
 relocs
 
 vaddr      paddr      type   ntype name
