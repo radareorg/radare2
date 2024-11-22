@@ -90,8 +90,6 @@ nth vaddr bind type lib name
 ----------------------------
 
 fs imports
-
-0 entrypoints
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
 fs symbols
@@ -165,8 +163,6 @@ iS
 iS*
 EOF
 EXPECT=<<EOF
-
-0 entrypoints
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
 fs symbols
@@ -1216,8 +1212,6 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -2756,8 +2750,6 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
-
-1 entrypoints
 EOF
 RUN
 

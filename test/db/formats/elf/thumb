@@ -3,8 +3,6 @@ FILE=bins/elf/arm-init
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x000002e4 paddr=0x000002e4 haddr=0x00000018 hvaddr=0x00000018 type=program
-
-1 entrypoints
 EOF
 RUN
 
@@ -14,8 +12,6 @@ CMDS=iee
 EXPECT=<<EOF
 vaddr=0x000002e4 paddr=0x000002e4 hvaddr=0x00001ed0 hpaddr=0x00000ed0 type=fini
 vaddr=0x00000344 paddr=0x00000344 hvaddr=0x00001ed8 hpaddr=0x00000ed8 type=init
-
-2 entrypoints
 EOF
 RUN
 

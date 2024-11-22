@@ -50,10 +50,7 @@ RUN
 NAME=: entrypoints nomem .dmp
 FILE=bins/mdmp/calc.dmp
 CMDS=ie
-EXPECT=<<EOF
-
-0 entrypoints
-EOF
+EXPECT=
 RUN
 
 NAME=: resolve vaddr to paddr
@@ -116,12 +113,12 @@ RUN
 NAME=: 32bit - entrypoints count
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
-ie~entrypoints
-iee~entrypoints
+ie~?
+iee~?
 EOF
 EXPECT=<<EOF
-9 entrypoints
-2 entrypoints
+9
+2
 EOF
 RUN
 
@@ -251,9 +248,9 @@ RUN
 
 NAME=: 64bit - entrypoints count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ie~entrypoints
+CMDS=ie~?
 EXPECT=<<EOF
-5 entrypoints
+5
 EOF
 RUN
 

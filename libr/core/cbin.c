@@ -1573,8 +1573,6 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		r_cons_printf ("fs-\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%i entrypoints\n", init_i + fini_i + preinit_i + i);
 	}
 	return true;
 }

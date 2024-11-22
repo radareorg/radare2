@@ -4,10 +4,7 @@ FILE=bins/elf/analysis/test.obj
 CMDS=<<EOF
 ie
 EOF
-EXPECT=<<EOF
-
-0 entrypoints
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
@@ -83,8 +80,6 @@ ie
 EOF
 EXPECT=<<EOF
 vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=program
-
-1 entrypoints
 EOF
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
@@ -100,8 +95,6 @@ i~elf
 EOF
 EXPECT=<<EOF
 vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
-
-1 entrypoints
 file     bins/elf/libexploit.so
 format   elf
 bintype  elf
@@ -187,8 +180,6 @@ ie
 EOF
 EXPECT=<<EOF
 vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
-
-1 entrypoints
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot determine entrypoint, using 0x00000d28
@@ -205,7 +196,5 @@ EXPECT=<<EOF
 vaddr=0x00000740 paddr=0x00000740 hvaddr=0x0024dd88 hpaddr=0x0004dd88 type=init
 vaddr=0x00000700 paddr=0x00000700 hvaddr=0x0024dd90 hpaddr=0x0004dd90 type=fini
 vaddr=0x0000074a paddr=0x0000074a hvaddr=0x0004dd80 hpaddr=0x0004dd80 type=preinit
-
-3 entrypoints
 EOF
 RUN

@@ -1,10 +1,7 @@
 NAME=entrypoint on object
 FILE=bins/elf/pngrutil_o
 CMDS=ie
-EXPECT=<<EOF
-
-0 entrypoints
-EOF
+EXPECT=
 RUN
 
 
