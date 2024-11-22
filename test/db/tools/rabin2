@@ -55,7 +55,6 @@ NAME=laddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -G 0 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
 
 1 entrypoints
@@ -66,7 +65,6 @@ NAME=laddr 0 && baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -G 0 -B 0 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00000018 type=program
 
 1 entrypoints
@@ -87,7 +85,6 @@ NAME=rabin2 -K md5 -S file
 FILE=bins/pe/a.exe
 CMDS=!rabin2 -K md5 -S ${R2_FILE}
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr        vsize perm md5                              type name
 ----------------------------------------------------------------------------------------
@@ -104,7 +101,7 @@ NAME=rabin2 -s file pe
 FILE=bins/pe/a.exe
 CMDS=!!rabin2 -s ${R2_FILE}~?
 EXPECT=<<EOF
-23
+22
 EOF
 RUN
 
@@ -112,7 +109,7 @@ NAME=rabin2 -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -s ${R2_FILE}~?
 EXPECT=<<EOF
-69
+68
 EOF
 RUN
 
@@ -125,9 +122,8 @@ CMDS=<<EOF
 !env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE}
 EOF
 EXPECT=<<EOF
-33
-12
-[Sections]
+32
+11
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
@@ -162,7 +158,6 @@ nth paddr        size vaddr       vsize perm type        name
 28  0x00000c7c  0x450 0x00000000  0x450 ---- SYMTAB      prixfixe..symtab
 29  0x000010cc  0x257 0x00000000  0x257 ---- STRTAB      prixfixe..strtab
 
-[Segments]
 
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
@@ -191,7 +186,7 @@ NAME=rabin2 -z pe
 FILE=bins/pe/a.exe
 CMDS=!!rabin2 -z ${R2_FILE}~?
 EXPECT=<<EOF
-7
+6
 EOF
 RUN
 
@@ -247,7 +242,7 @@ NAME=rabin2 -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -z ${R2_FILE}~?
 EXPECT=<<EOF
-4
+3
 EOF
 RUN
 
@@ -271,7 +266,6 @@ NAME=rabin2 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
@@ -294,7 +288,6 @@ NAME=rabin2 -G 0x5000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
 
 1 entrypoints
@@ -317,7 +310,6 @@ NAME=rabin2 -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
@@ -337,7 +329,6 @@ NAME=rabin2 -B 0x2000000 -e arm64
 FILE=bins/mach0/hello-ios-arm64
 CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
 
 1 entrypoints
@@ -352,13 +343,11 @@ ii
 iij
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   ---------- NONE FUNC     dyld_stub_binder
 
-[Imports]
 nth vaddr       bind type lib name
 ----------------------------------
 0   0x100000f40 NONE FUNC     exit
@@ -372,7 +361,6 @@ NAME=rabin2 -G 0x5000 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -i ${R2_FILE}
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
@@ -434,7 +422,6 @@ rm .tmp/rabin2testpe1.exe
 EOF
 EXPECT=<<EOF
 wx e0000040 @ 0x244
-[Sections]
 
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
@@ -458,7 +445,6 @@ rm .tmp/rabin2testpe2.exe
 EOF
 EXPECT=<<EOF
 wx 10000000 @ 0x16c
-[Sections]
 
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------
@@ -500,7 +486,6 @@ NAME=-ee baddr 0
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -ee -B 0 ${R2_FILE}
 EXPECT=<<EOF
-[Constructors]
 vaddr=0x000003d0 paddr=0x000003d0 hvaddr=0x0000159c hpaddr=0x0000059c type=init
 vaddr=0x000003b0 paddr=0x000003b0 hvaddr=0x000015a0 hpaddr=0x000005a0 type=fini
 
@@ -512,7 +497,6 @@ NAME=rabin2 -g
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -g ${R2_FILE}
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
@@ -547,7 +531,6 @@ nth paddr        size vaddr       vsize perm type        name
 28  0x00000c7c  0x450 0x00000000  0x450 ---- SYMTAB      .symtab
 29  0x000010cc  0x257 0x00000000  0x257 ---- STRTAB      .strtab
 
-[Segments]
 
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
@@ -561,25 +544,20 @@ nth paddr        size vaddr       vsize perm type name
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- MAP  ehdr
 
-[Entrypoints]
 vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
 
 1 entrypoints
-[Constructors]
 vaddr=0x080483d0 paddr=0x000003d0 hvaddr=0x0804959c hpaddr=0x0000059c type=init
 vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
 
 2 entrypoints
-[Main]
 vaddr=0x08048400 paddr=0x00000400
-[Imports]
 nth vaddr      bind   type   lib name
 -------------------------------------
 1   0x080482d0 GLOBAL FUNC       puts
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                                   demangled
 -------------------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
@@ -648,7 +626,6 @@ nth paddr      vaddr      bind   type   size lib name                           
 1   0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
 2   0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
 3   0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
-[Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
@@ -681,7 +658,6 @@ static   false
 stripped false
 subsys   linux
 va       true
-[Header fields]
 0x00000000 0x00000000 0x464c457f ELF
 0x00000010 0x00000010 0x00000002 Type
 0x00000012 0x00000012 0x00000003 Machine
@@ -698,11 +674,9 @@ va       true
 0x00000032 0x00000032 0x0000001b ShrStrndx
 
 14 fields
-[Linked libraries]
 libc.so.6
 
 1 library
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -1061,7 +1035,6 @@ NAME=rabin2 -E
 FILE=bins/pe/dll.dll
 CMDS=!rabin2 -E ${R2_FILE}
 EXPECT=<<EOF
-[Exports]
 nth paddr      vaddr      bind   type size lib     name   demangled
 -------------------------------------------------------------------
 0   0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export

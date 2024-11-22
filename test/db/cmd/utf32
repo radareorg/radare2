@@ -2,7 +2,6 @@ NAME=t/utf32
 FILE=bins/elf/crackme0x00b
 CMDS=iz
 EXPECT=<<EOF
-[Strings]
 nth paddr      vaddr      len size section type    string
 ---------------------------------------------------------
 0   0x000005d0 0x080485d0 16  17   .rodata ascii   Enter password:

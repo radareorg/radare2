@@ -130,7 +130,6 @@ NAME=is
 FILE=bins/bpf/memo_v2.solana.so
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name         demangled
 -----------------------------------------------------------------------
 3   0x00000c48 0x00000c48 GLOBAL FUNC   328      custom_panic
