@@ -18,7 +18,6 @@ NAME=PE: corkami winver.exe - linked libraries
 FILE=bins/pe/winver.exe
 CMDS=il
 EXPECT=<<EOF
-[Linked libraries]
 kernel32.dll
 msvcrt.dll
 

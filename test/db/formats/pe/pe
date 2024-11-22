@@ -38,7 +38,6 @@ NAME=pe relocs [rabin2 a.exe]
 FILE=bins/pe/a.exe
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -72,7 +71,6 @@ NAME=pe relocs [rabin2 b.exe]
 FILE=bins/pe/b.exe
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -119,7 +117,6 @@ NAME=pe32 imported libs (il)
 FILE=bins/pe/imports_1210.exe
 CMDS=il
 EXPECT=<<EOF
-[Linked libraries]
 kernel32.dll
 user32.dll
 advapi32.dll
@@ -138,7 +135,6 @@ NAME=pe32 imported functions (ii)
 FILE=bins/pe/imports_1210.exe
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib          name
 ------------------------------------------
 1   0x0041217c NONE FUNC kernel32.dll DeleteCriticalSection
@@ -275,7 +271,6 @@ NAME=pe32 imported relocations (ir)
 FILE=bins/pe/imports_1210.exe
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -415,7 +410,6 @@ NAME=pe32 imported libs (il)
 FILE=bins/pe/single_import.exe
 CMDS=il
 EXPECT=<<EOF
-[Linked libraries]
 comctl32.dll
 
 1 library

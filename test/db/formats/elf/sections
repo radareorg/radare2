@@ -2,7 +2,6 @@ NAME=sections list
 FILE=bins/elf/analysis/main_wrong_sect
 CMDS=iS;iSS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
@@ -43,7 +42,6 @@ nth paddr        size vaddr       vsize perm type        name
 34  0x000018c8  0x6d8 0x00000000  0x6d8 ---- SYMTAB      .symtab
 35  0x00001fa0  0x23a 0x00000000  0x23a ---- STRTAB      .strtab
 
-[Segments]
 
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------

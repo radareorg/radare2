@@ -257,7 +257,6 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b32 -B 0x90000000
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type size lib name                demangled
 ----------------------------------------------------------------------------
 0   0x00005000 0x90000000 GLOBAL FUNC 0        __mh_execute_header

@@ -19,7 +19,6 @@ NAME=sections of qnx
 FILE=bins/qnx/test.x
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------

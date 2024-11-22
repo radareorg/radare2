@@ -8,11 +8,9 @@ iS
 is
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 
 0 entrypoints
 --
-[Sections]
 
 nth paddr       size vaddr        vsize perm type name
 ------------------------------------------------------
@@ -21,7 +19,6 @@ nth paddr       size vaddr        vsize perm type name
 2   0x0000a518   0x0 0x0000a518  0x1518 -r-x ---- trans_code_0
 
 --
-[Symbols]
 nth paddr      vaddr      bind type size lib name         demangled
 -------------------------------------------------------------------
 0   0x0000a518 0x0000a518 NONE FUNC 0        x86.000011df

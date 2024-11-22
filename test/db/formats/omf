@@ -18,7 +18,6 @@ NAME=symbols 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind type size lib name   demangled
 -------------------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start
@@ -29,7 +28,6 @@ NAME=sections 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
@@ -78,7 +76,6 @@ NAME=symbols 32 bits omf
 FILE=bins/omf/hello_world32
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind type size lib name   demangled
 -------------------------------------------------------------
 1   0x00000074 0x00001000 NONE NONE 0        _start
@@ -89,7 +86,6 @@ NAME=sections 32 bits omf
 FILE=bins/omf/hello_world32
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
@@ -111,7 +107,6 @@ NAME=multiple symbols omf
 FILE=bins/omf/multi_pubdef
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind type size lib name          demangled
 --------------------------------------------------------------------
 1   0x00000084 0x00001000 NONE NONE 0        _start
@@ -123,7 +118,6 @@ NAME=null checksum omf
 FILE=bins/omf/null_checks
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind type size lib name   demangled
 -------------------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start

@@ -2,7 +2,6 @@ NAME=ELF: dynamic p_offset
 FILE=bins/elf/analysis/dynamic-poffset
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -229,7 +228,6 @@ e asm.bytes=false
 pd 40
 EOF
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -430,7 +428,6 @@ e asm.bytes=false
 pd 40
 EOF
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------

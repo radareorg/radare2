@@ -69,7 +69,7 @@ NAME=: DMP BMP Page sections
 FILE=bins/dmp/bmp.dmp
 CMDS=iS~?
 EXPECT=<<EOF
-21582
+21581
 EOF
 RUN
 

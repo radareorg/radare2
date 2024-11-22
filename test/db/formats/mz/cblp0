@@ -15,7 +15,6 @@ pi 1
 iS*
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000000 paddr=0x00000200 haddr=-1 type=program
 
 1 entrypoints

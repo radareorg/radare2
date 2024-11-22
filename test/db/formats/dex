@@ -43,7 +43,6 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00001378 paddr=0x00001378 haddr=-1 type=program
 
 1 entrypoints
@@ -207,7 +206,6 @@ NAME=DEX HelloWorld.dex imports (ii command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x000001b0 NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
@@ -225,7 +223,6 @@ NAME=DEX HelloWorld.dex exports (iE command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
 nth paddr      vaddr      bind   type size lib name                                     demangled
 -------------------------------------------------------------------------------------------------
 2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V

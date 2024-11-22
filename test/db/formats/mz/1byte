@@ -7,7 +7,6 @@ pd 3
 om
 EOF
 EXPECT=<<EOF
-[Sections]
 
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------

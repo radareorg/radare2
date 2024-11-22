@@ -2,7 +2,6 @@ NAME=entrypoint on object
 FILE=bins/elf/pngrutil_o
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 
 0 entrypoints
 EOF
@@ -13,7 +12,6 @@ NAME=symbols non common LD script
 FILE=bins/elf/analysis/custom_ldscript
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                  demangled
 --------------------------------------------------------------------------------
 1   0x00000200 0x00400200 LOCAL  SECT   0        .interp
@@ -71,7 +69,6 @@ NAME=symbols with no sections header information
 FILE=bins/elf/analysis/main_nosect
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                  demangled
 --------------------------------------------------------------------------------
 1   0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
@@ -84,7 +81,6 @@ NAME=symbols with no sections header information 2
 FILE=bins/elf/analysis/clark
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                  demangled
 --------------------------------------------------------------------------------
 8   0x000007dc 0x080487dc GLOBAL OBJ    4        _IO_stdin_used
@@ -102,7 +98,6 @@ NAME=symbols with no sections header information 3
 FILE=bins/elf/libmemalloc-dump-mem
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
 nth paddr      vaddr      bind   type   size lib name                                                                demangled
 ------------------------------------------------------------------------------------------------------------------------------
 3   0x00002dd0 0x00003dd0 WEAK   OBJ    36       _ZTVN7gralloc9IMemAllocE                                            vtable for gralloc::IMemAlloc

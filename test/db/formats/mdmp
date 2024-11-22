@@ -51,7 +51,6 @@ NAME=: entrypoints nomem .dmp
 FILE=bins/mdmp/calc.dmp
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 
 0 entrypoints
 EOF
@@ -102,7 +101,6 @@ NAME=: 32bit - libraries count
 FILE=bins/mdmp/hello.dmp
 CMDS=il~libraries
 EXPECT=<<EOF
-[Linked libraries]
 57 libraries
 EOF
 RUN
@@ -139,7 +137,7 @@ NAME=: 32bit - symbols count
 FILE=bins/mdmp/hello.dmp
 CMDS=is~?
 EXPECT=<<EOF
-7469
+7468
 EOF
 RUN
 
@@ -163,7 +161,7 @@ NAME=: 32bit - imports count
 FILE=bins/mdmp/hello.dmp
 CMDS=ii~?
 EXPECT=<<EOF
-2031
+2030
 EOF
 RUN
 
@@ -179,7 +177,7 @@ NAME=: 32bit - exports count
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~?
 EXPECT=<<EOF
-5441
+5440
 EOF
 RUN
 
@@ -231,7 +229,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10229
+10228
 EOF
 RUN
 
@@ -239,7 +237,6 @@ NAME=: 64bit - libraries count
 FILE=bins/mdmp/hello64.dmp
 CMDS=il~libraries
 EXPECT=<<EOF
-[Linked libraries]
 49 libraries
 EOF
 RUN
@@ -272,7 +269,7 @@ NAME=: 64bit - symbols count
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~?
 EXPECT=<<EOF
-6827
+6826
 EOF
 RUN
 
@@ -296,7 +293,7 @@ NAME=: 64bit - imports count
 FILE=bins/mdmp/hello64.dmp
 CMDS=ii~?
 EXPECT=<<EOF
-1512
+1511
 EOF
 RUN
 
@@ -312,7 +309,7 @@ NAME=: 64bit - exports count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~?
 EXPECT=<<EOF
-5318
+5317
 EOF
 RUN
 
@@ -365,7 +362,7 @@ izq~Alpc
 izq~Timer
 EOF
 EXPECT=<<EOF
-22884
+22883
 0x77820352 10 4 Alpc
 0x77825ffd 41 40 AlpcAdjustCompletionListConcurrencyCount
 0x77826026 30 29 AlpcFreeCompletionListMessage

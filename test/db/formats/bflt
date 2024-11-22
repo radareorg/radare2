@@ -2,7 +2,6 @@ NAME=bflt
 FILE=bins/bflt/bin.bflt
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------

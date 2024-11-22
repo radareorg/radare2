@@ -29,14 +29,12 @@ af
 pdsf
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind   type   lib name
 -------------------------------------
 1   ---------- GLOBAL FUNC       printf
 2   ---------- WEAK   NOTYPE     __gmon_start__
 3   ---------- GLOBAL FUNC       __libc_start_main
 
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------

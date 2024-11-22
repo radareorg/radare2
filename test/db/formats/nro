@@ -12,7 +12,6 @@ FILE=bins/nro/appstore.nro
 ARGS=-e io.cache=true
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr           size vaddr          vsize perm type name
 ------------------------------------------------------------
@@ -30,7 +29,6 @@ FILE=bins/nro/appstore.nro
 ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
 
 1 entrypoints

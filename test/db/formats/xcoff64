@@ -16,7 +16,6 @@ NAME=xcoff64 sections
 FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
 
 nth paddr         size vaddr        vsize perm type   name
 ----------------------------------------------------------

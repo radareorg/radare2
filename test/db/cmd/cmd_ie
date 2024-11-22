@@ -5,7 +5,6 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 
 0 entrypoints
 EOF
@@ -83,7 +82,6 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=program
 
 1 entrypoints
@@ -101,7 +99,6 @@ ie
 i~elf
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
 
 1 entrypoints
@@ -189,7 +186,6 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-[Entrypoints]
 vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
 
 1 entrypoints
@@ -206,7 +202,6 @@ CMDS=<<EOF
 iee
 EOF
 EXPECT=<<EOF
-[Constructors]
 vaddr=0x00000740 paddr=0x00000740 hvaddr=0x0024dd88 hpaddr=0x0004dd88 type=init
 vaddr=0x00000700 paddr=0x00000700 hvaddr=0x0024dd90 hpaddr=0x0004dd90 type=fini
 vaddr=0x0000074a paddr=0x0000074a hvaddr=0x0004dd80 hpaddr=0x0004dd80 type=preinit

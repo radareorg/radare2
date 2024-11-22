@@ -27,7 +27,6 @@ FILE=bins/pe/96workingsections.exe
 ARGS=-n
 CMDS=!rabin2 -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------
@@ -136,7 +135,6 @@ FILE=bins/pe/96workingsections.exe
 ARGS=-n
 CMDS=!rabin2 -uS bins/pe/96workingsections.exe
 EXPECT=<<EOF
-[Sections]
 
 nth paddr        size vaddr        vsize perm type name
 -------------------------------------------------------

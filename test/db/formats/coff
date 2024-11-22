@@ -30,7 +30,6 @@ ii
 iS
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   ---------- NONE FUNC     __TIFFmalloc
@@ -60,7 +59,6 @@ nth vaddr      bind type lib name
 24  ---------- NONE FUNC     __TIFFCheckMalloc
 25  ---------- NONE UNK      __fltused
 
-[Sections]
 
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
@@ -85,7 +83,6 @@ CMDS=om;is;ir
 EXPECT=<<EOF
 * 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x fmap..text_0
 - 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data_1
-[Symbols]
 nth paddr      vaddr      bind   type size lib name            demangled
 ------------------------------------------------------------------------
 0   ---------- ---------- NONE   UNK  4        imp.MessageBoxA
@@ -93,7 +90,6 @@ nth paddr      vaddr      bind   type size lib name            demangled
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
 0   0x00000064 0x00000000 GLOBAL FUNC 4        main
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------

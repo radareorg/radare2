@@ -27,7 +27,6 @@ EXPECT=<<EOF
 0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
 0x00000bd0 _JNIEnv::GetObjectArrayElement(_jobjectArray*, int)
 imports
-[Imports]
 nth vaddr      bind   type lib name
 -----------------------------------
 3   0x000008f0 GLOBAL FUNC     __cxa_finalize
@@ -37,7 +36,6 @@ nth vaddr      bind   type lib name
 7   0x00000980 GLOBAL FUNC     __cxa_atexit
 
 relocs
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
@@ -70,7 +68,6 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 EXPECT=<<EOF
-[Relocations]
 
 vaddr      paddr      type   ntype name
 ---------------------------------------
