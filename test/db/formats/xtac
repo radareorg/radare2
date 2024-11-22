@@ -8,8 +8,6 @@ iS
 is
 EOF
 EXPECT=<<EOF
-
-0 entrypoints
 --
 
 nth paddr       size vaddr        vsize perm type name

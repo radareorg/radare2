@@ -29,8 +29,6 @@ ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x08000000 paddr=0x00000100 haddr=-1 type=program
-
-1 entrypoints
 EOF
 RUN
 

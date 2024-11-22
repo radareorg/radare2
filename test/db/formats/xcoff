@@ -57,8 +57,6 @@ FILE=bins/xcoff/file-xcoff-aix51
 CMDS=ie
 EXPECT=<<EOF
 vaddr=0x10000128 paddr=0x00000000 haddr=-1 type=program
-
-1 entrypoints
 EOF
 RUN
 
