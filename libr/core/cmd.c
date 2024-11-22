@@ -456,20 +456,6 @@ struct duplicate_flag_t {
 	const char *word;
 };
 
-#if !R2_USE_NEW_ABI
-extern int Gload_index;
-static void __line_hist_list(bool full) {
-	RLineHistory *hist = &r_cons_singleton()->line->history;
-	if (hist && hist->data) {
-		int i = full? 0: Gload_index;
-		for (; i < hist->size && hist->data[i]; i++) {
-			const char *pad = r_str_pad (' ', 32 - strlen (hist->data[i]));
-			r_cons_printf ("%s %s # !%d\n", hist->data[i], pad, i);
-		}
-	}
-}
-#endif
-
 static bool duplicate_flag(RFlagItem *flag, void *u) {
 	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
 	/* filter per flag spaces */
@@ -3492,20 +3478,12 @@ static int cmd_system(void *data, const char *input) {
 					free (cmd);
 				}
 			} else {
-#if R2_USE_NEW_ABI
 				r_line_hist_list (false);
-#else
-				__line_hist_list (false);
-#endif
 			}
 		}
 		break;
 	case '\0':
-#if R2_USE_NEW_ABI
 		r_line_hist_list (true);
-#else
-		r_line_hist_list ();
-#endif
 		break;
 	case '?': // "!?"
 		cmd_help_exclamation (core);

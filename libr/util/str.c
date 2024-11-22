@@ -4201,20 +4201,17 @@ R_API char *r_str_md2txt(const char *page, bool usecolor) {
 	int col = 0;
 	const int maxcol = 75;
 	bool codeblock = false;
-	bool contline = false;
 	bool title = false;
 	bool codeblockline = false;
 	while (*b) {
 		int ch = *b;
 repeat:
 		switch (ch) {
-		case 10:
+		case 10: // '\n'
 			if (codeblock || title) {
 				const int j = title? maxcol + 2: maxcol - 4;
 				if (usecolor) {
-					if (!contline) {
-						fill_line (sb, j - col);
-					}
+					fill_line (sb, j - col);
 					if (title) {
 						r_strbuf_append (sb, Color_BLACK);
 						r_strbuf_append (sb, Color_BGBLUE);
@@ -4223,11 +4220,7 @@ repeat:
 				}
 				title = false;
 			}
-			if (contline) {
-				contline = false;
-			} else {
-				col = 0;
-			}
+			col = 0;
 			if (usecolor) {
 				r_strbuf_append (sb, Color_RESET);
 			}
@@ -4262,13 +4255,6 @@ repeat:
 					} else {
 						r_strbuf_append (sb, "-");
 					}
-#if 0
-					contline = true;
-					if (codeblock) {
-						r_strbuf_append (sb, "\n");
-						col = 0;
-					}
-#endif
 				}
 				b--;
 				goto repeat;
@@ -4283,7 +4269,8 @@ repeat:
 						r_strbuf_append (sb, Color_RESET_BG);
 					}
 					continue;
-				} else if (!codeblock && r_str_startswith (b, "###")) {
+				}
+				if (!codeblock && r_str_startswith (b, "###")) {
 					if (usecolor) {
 						r_strbuf_append (sb, Color_BLACK);
 						r_strbuf_append (sb, Color_BGBLUE);
