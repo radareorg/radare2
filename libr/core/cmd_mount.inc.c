@@ -444,16 +444,7 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				pj_o (pj);
-				pj_ks (pj, "name", plug->meta.name);
-				if (plug->meta.desc) {
-					pj_ks (pj, "description", plug->meta.desc);
-				}
-				if (plug->meta.license) {
-					pj_ks (pj, "license", plug->meta.license);
-				}
-				if (plug->meta.author) {
-					pj_ks (pj, "author", plug->meta.author);
-				}
+				pj_lib_meta_pj (pj, &plug->meta);
 				pj_end (pj);
 			}
 			pj_end (pj);

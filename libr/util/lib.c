@@ -210,21 +210,10 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
-#if 1
 	if (type < 0 || type >= R_LIB_TYPE_LAST) {
 		return NULL;
 	}
 	return lib->handlers_bytype[type];
-#else
-	RListIter *iter;
-	RLibHandler *h;
-	r_list_foreach (lib->handlers, iter, h) {
-		if (h->type == type) {
-			return h;
-		}
-	}
-#endif
-	return NULL;
 }
 
 R_API int r_lib_close(RLib *lib, const char *file) {
@@ -253,14 +242,14 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	}
 	// delete similar plugin name
 	r_list_foreach (lib->plugins, iter, p) {
-		eprintf("similar p->file: %s\n", p->file);
+		R_LOG_DEBUG ("similar p->file: %s", p->file);
 		if (strstr (p->file, file)) {
 			int ret = 0;
 			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor (p,
 					p->handler->user, p->data);
 			}
-			eprintf("similar deleting: %s\n", p->file);
+			R_LOG_DEBUG ("similar deleting: %s", p->file);
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
 			{
@@ -493,7 +482,7 @@ R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, LibCB cb, Li
 R_API bool r_lib_del_handler(RLib *lib, int type) {
 	RLibHandler *h = NULL;
 	RListIter *iter;
-#if R2_590
+#if R2_600
 	// XXX slow - delete plugin by name, by filename or by type >? wtf this function is broken
 	{
 		bool found;
@@ -524,5 +513,31 @@ R_API void r_lib_list(RLib *lib) {
 	r_list_foreach (lib->plugins, iter, p) {
 		printf (" %5s %p %s \n", __lib_types_get (p->type),
 			p->dl_handler, p->file);
+	}
+}
+
+// TODO: pj_o should be inside rlibmetapj
+R_API void r_lib_meta_pj(PJ *pj, RPluginMeta *meta) {
+	R_RETURN_IF_FAIL (pj && meta);
+	if (meta->name) {
+		pj_ks (pj, "name", meta->name);
+	}
+	if (meta->desc) {
+		pj_ks (pj, "desc", meta->desc);
+	}
+	if (meta->copyright) {
+		pj_ks (pj, "copyright", meta->copyright);
+	}
+	if (meta->contact) {
+		pj_ks (pj, "contact", meta->contact);
+	}
+	if (meta->author) {
+		pj_ks (pj, "author", meta->author);
+	}
+	if (meta->version) {
+		pj_ks (pj, "version", meta->version);
+	}
+	if (meta->license) {
+		pj_ks (pj, "license", meta->license);
 	}
 }
