@@ -444,7 +444,7 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				pj_o (pj);
-				pj_lib_meta_pj (pj, &plug->meta);
+				r_lib_meta_pj (pj, &plug->meta);
 				pj_end (pj);
 			}
 			pj_end (pj);
