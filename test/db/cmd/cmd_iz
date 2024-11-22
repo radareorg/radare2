@@ -296,7 +296,7 @@ NAME=izz and bin.str.enc
 FILE=-
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=$0; izz~:3..)
+(izzenc enc; e bin.str.enc=$0; izz~:2..)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -330,10 +330,10 @@ CMDS=<<EOF
 mkdir .tmp
 cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
 o+ .tmp/strenc-bin
-iz~:3..
+iz~:2..
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=$0; iz~:3..)
+(izenc enc; e bin.str.enc=$0; iz~:2..)
 .(izenc guess)
 .(izenc utf8)
 .(izenc utf16le)
