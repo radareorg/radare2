@@ -110,8 +110,8 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 	};
 	memcpy ((void*)&ap->meta, &meta, sizeof (RPluginMeta));
 #else
-	ap->name = strdup (nameptr);
-	ap->desc = descptr ? strdup (descptr) : NULL;
+	ap->meta.name = strdup (nameptr);
+	ap->meta.desc = descptr ? strdup (descptr) : NULL;
 	// ap->license = strdup (licenseptr);
 #endif
 
@@ -129,6 +129,6 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 	lib->type = R_LIB_TYPE_PARSE;
 	lib->data = ap;
 	lib->version = R2_VERSION;
-	int ret = r_lib_open_ptr (pm->core->lib, ap->name, NULL, lib);
+	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);
 	return JS_NewBool (ctx, ret == 1);
 }
