@@ -7,6 +7,17 @@ EOF
 EXPECT=
 RUN
 
+NAME=search dij
+FILE=malloc://1024
+CMDS=<<EOF
+w foo-di-dij-bar
+/ dij
+EOF
+EXPECT=<<EOF
+0x00000007 hit0_0 "foo-di-dij-bar"
+EOF
+RUN
+
 NAME=search esil
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
