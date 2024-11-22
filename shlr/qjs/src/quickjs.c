@@ -11311,6 +11311,8 @@ static int js_ecvt(double d, int n_digits,
                    char dest[minimum_length(JS_ECVT_BUF_SIZE)],
                    size_t size, int *decpt)
 {
+    int i;
+
     if (n_digits == 0) {
         /* find the minimum number of digits (XXX: inefficient but simple) */
         // TODO(chqrlie) use direct method from quickjs-printf
@@ -11360,7 +11362,7 @@ static int js_ecvt(double d, int n_digits,
                 return n_digits;    /* truncate the 2 extra digits */
         }
         /* round up in the string */
-        for(int i = n_digits;; i--) {
+        for(i = n_digits;; i--) {
             /* ignore the locale specific decimal point */
             if (is_digit(dest[i])) {
                 if (dest[i]++ < '9')
