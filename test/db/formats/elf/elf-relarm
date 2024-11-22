@@ -34,16 +34,12 @@ nth vaddr      bind   type   lib name
 1   ---------- GLOBAL FUNC       printf
 2   ---------- WEAK   NOTYPE     __gmon_start__
 3   ---------- GLOBAL FUNC       __libc_start_main
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x10020008 0x00010008 ADD_32 20    __gmon_start__
 0x10020064 0x10020064 ADD_32 21    printf
 0x1002006c 0x1002006c ADD_32 21    __gmon_start__
 0x10020074 0x10020074 ADD_32 21    __libc_start_main
-
-
-4 relocations
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
 0x100004a4 "Simple PPC program."
 EOF

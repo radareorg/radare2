@@ -58,7 +58,6 @@ nth vaddr      bind type lib name
 23  ---------- NONE FUNC     __TIFFDataSize
 24  ---------- NONE FUNC     __TIFFCheckMalloc
 25  ---------- NONE UNK      __fltused
-
 nth paddr         size vaddr        vsize perm type name
 --------------------------------------------------------
 0   0x000001cc    0x2f 0x00000000    0x2f ---- MAP  .drectve-0
@@ -72,7 +71,6 @@ nth paddr         size vaddr        vsize perm type name
 8   0x0000e96f     0x4 0x0000b660     0x4 -r-- DATA .rdata-8
 9   0x0000e973     0x8 0x0000b670     0x8 -r-- DATA .rdata-9
 10  0x0000e97b     0x4 0x0000b680     0x4 -r-- DATA .rdata-10
-
 EOF
 RUN
 
@@ -89,16 +87,12 @@ nth paddr      vaddr      bind   type size lib name            demangled
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
 0   0x00000064 0x00000000 GLOBAL FUNC 4        main
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00000009 0x0000006d ADD_32 4     .data
 0x00000010 0x00000074 ADD_32 4     .data
 0x0000001c 0x00000080 ADD_32 4     MessageBoxA
 0x00000023 0x00000087 ADD_32 4     ExitProcess
-
-
-4 relocations
 EOF
 RUN
 
@@ -248,23 +242,17 @@ iE.
 EOF
 EXPECT=<<EOF
 Current section
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000000   0x4 0x00001180    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa277-280
-
 Current section
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000000   0x4 0x00138820    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa79999-80002
-
 Current section
-
 nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000000   0x4 0x00000100    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
-
 nth paddr      vaddr      bind  type size lib name          demangled
 ---------------------------------------------------------------------
 0   0x0030d4d8 0x00138830 LOCAL UNK  4        .llvm_addrsig

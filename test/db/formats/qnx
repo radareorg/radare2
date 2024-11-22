@@ -19,12 +19,10 @@ NAME=sections of qnx
 FILE=bins/qnx/test.x
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr        size vaddr       vsize perm type name
 ------------------------------------------------------
 0   0x00000044   0xf6 0x00000044   0xf6 ---- ---- LMF_LOAD
 1   0x00000152  0x6c3 0x00000152  0x6c3 ---- ---- LMF_LOAD
-
 EOF
 RUN
 

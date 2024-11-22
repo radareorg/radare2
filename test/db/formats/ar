@@ -2,7 +2,7 @@ NAME=ar file sections
 FILE=ar://bins/ar/libgdbr.a//responses.o
 CMDS=iS~:5
 EXPECT=<<EOF
-2   0x00007578   0xf00 0x08007578   0xf00 ---- RELA     .rela.text
+3   0x000014be     0x0 0x080014be     0x0 -rw- PROGBITS .data
 EOF
 RUN
 

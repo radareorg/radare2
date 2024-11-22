@@ -16,7 +16,6 @@ NAME=xcoff64 sections
 FILE=bins/xcoff/gcc-ppc64-aix-dwarf2-exec
 CMDS=iS
 EXPECT=<<EOF
-
 nth paddr         size vaddr        vsize perm type   name
 ----------------------------------------------------------
 0   0x00000480   0xafd 0x20001300   0xafd -r-x TEXT   .text
@@ -29,7 +28,6 @@ nth paddr         size vaddr        vsize perm type   name
 7   0x00001c7a    0x40 0x20002830    0x40 ---- DWARF  .dwarnge
 8   0x00001cba    0x62 0x20002870    0x62 ---- DWARF  .dwloc
 9   0x00001d1c  0x6605 0x200028e0  0x6605 ---- DEBUG  .debug
-
 EOF
 RUN
 

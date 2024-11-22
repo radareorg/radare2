@@ -10,7 +10,6 @@ NAME=ELF: arm64 relocs crashing
 FILE=bins/elf/librsjni_androix.so
 CMDS=ir
 EXPECT=<<EOF
-
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x0000e210 0x0000e210 SET_64 1026  __cxa_finalize
@@ -30,9 +29,6 @@ vaddr      paddr      type   ntype name
 0x0000e280 0x0000e280 SET_64 1026  memcpy
 0x0000e288 0x0000e288 SET_64 1026  memset
 0x0000e290 0x0000e290 SET_64 1026  dlsym
-
-
-17 relocations
 EOF
 RUN
 
