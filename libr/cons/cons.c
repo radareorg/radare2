@@ -9,7 +9,7 @@
 R_LIB_VERSION (r_cons);
 
 static R_TH_LOCAL int oldraw = -1;
-static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
+static R_TH_LOCAL RConsContext r_cons_context_default = {0};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
