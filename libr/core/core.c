@@ -330,9 +330,8 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	return retstr;
 }
 
-// R2_600 - return void
-R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
-	R_RETURN_VAL_IF_FAIL (core && bnd, false);
+R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
+	R_RETURN_IF_FAIL (core && bnd);
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
@@ -353,7 +352,6 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;
 	bnd->pjWithEncoding = (RCorePJWithEncoding)r_core_pj_new;
-	return true;
 }
 
 R_API RCore *r_core_ncast(ut64 p) {

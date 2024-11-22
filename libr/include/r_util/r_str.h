@@ -183,6 +183,7 @@ R_API char *r_str_word_get_first(const char *string);
 R_API void r_str_trim(char *str);
 R_API void r_str_trim_emptylines(char *str);
 R_API int r_str_ntrim(char *str, int n);
+R_API char *r_str_md2txt(const char *page, bool usecolor);
 R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
 R_API char *r_str_trim_ndup(const char *str, size_t n);

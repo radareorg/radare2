@@ -12204,6 +12204,83 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	}
 }
 
+static bool r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	if (!fcn) {
+		return false;
+	}
+	int id = 0;
+	HtUU *ht = ht_uu_new0 ();
+
+	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
+		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
+		// TODO char *str = r_str_escape_dot (msg);
+		ht_uu_insert (ht, bb->addr, id);
+		r_cons_printf ("  node [\n"
+				"    id  %d\n"
+				"    label  \"%s\"\n"
+				"  ]\n", id, msg);
+		id++;
+		free (msg);
+	}
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+		if (bb->jump != UT64_MAX) {
+			bool found;
+			int i = ht_uu_find (ht, bb->addr, &found);
+			if (found) {
+				int i2 = ht_uu_find (ht, bb->jump, &found);
+				if (found) {
+					r_cons_printf ("  edge [\n"
+							"    source  %d\n"
+							"    target  %d\n"
+							"  ]\n", i, i2);
+				}
+			}
+		}
+		if (bb->fail != UT64_MAX) {
+			bool found;
+			int i = ht_uu_find (ht, bb->addr, &found);
+			if (found) {
+				int i2 = ht_uu_find (ht, bb->fail, &found);
+				if (found) {
+					r_cons_printf ("  edge [\n"
+						"    source  %d\n"
+						"    target  %d\n"
+						"  ]\n", i, i2);
+				}
+			}
+		}
+		if (bb->switch_op) {
+			RListIter *it;
+			RAnalCaseOp *cop;
+			r_list_foreach (bb->switch_op->cases, it, cop) {
+				bool found;
+				int i = ht_uu_find (ht, bb->addr, &found);
+				if (found) {
+					int i2 = ht_uu_find (ht, cop->addr, &found);
+					if (found) {
+						r_cons_printf ("  edge [\n"
+								"    source  %d\n"
+								"    target  %d\n"
+								"  ]\n", i, i2);
+					}
+				}
+			}
+		}
+	}
+	r_cons_printf ("]\n");
+	ht_uu_free (ht);
+	return true;
+}
+
 static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes) {
 	ut8 *bb_buf = calloc (1, bb->size);
 	if (!bb_buf) {
