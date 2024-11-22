@@ -58,13 +58,6 @@ extern "C" {
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 
-#if R2_USE_NEW_ABI
-// no limits
-#else
-#define R_CONS_GREP_WORDS 10
-#define R_CONS_GREP_WORD_SIZE 64
-#endif
-
 // R2_600 - remove more limits
 #define R_CONS_GREP_TOKENS 64
 #define R_CONS_GREP_COUNT 10
@@ -116,22 +109,15 @@ typedef struct {
 	const char *script;
 } RConsTheme;
 
-#if R2_USE_NEW_ABI
 typedef struct r_cons_grep_word_t {
 	char *str;
 	bool neg;
 	bool begin;
 	bool end;
 } RConsGrepWord;
-#endif
 
 typedef struct r_cons_grep_t {
-#if R2_USE_NEW_ABI
 	RList *strings; // words
-#else
-	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
-	int nstrings;
-#endif
 	char *str;
 	int counter;
 	bool charCounter;
@@ -154,12 +140,6 @@ typedef struct r_cons_grep_t {
 	int amp;
 	int zoom;
 	int zoomy; // if set then its scaled unproportionally
-#if R2_USE_NEW_ABI
-#else
-	int neg[R_CONS_GREP_WORDS];
-	int begin[R_CONS_GREP_WORDS];
-	int end[R_CONS_GREP_WORDS];
-#endif
 	bool xml;
 	bool icase;
 	bool ascart;
@@ -1100,9 +1080,7 @@ typedef struct r_line_hist_t {
 	int top;
 	int autosave;
 	bool do_setup_match;
-#if R2_USE_NEW_ABI
 	int load_index;
-#endif
 } RLineHistory;
 
 typedef struct r_line_buffer_t {
@@ -1197,11 +1175,7 @@ R_API int r_line_hist_add(const char *line);
 R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void(*cb)(const char*));
 R_API void r_line_label_show(void);
-#if R2_USE_NEW_ABI
 R_API int r_line_hist_list(bool full);
-#else
-R_API int r_line_hist_list(void);
-#endif
 R_API int r_line_hist_get_size(void);
 R_API void r_line_hist_set_size(int size);
 R_API const char *r_line_hist_get(int n);

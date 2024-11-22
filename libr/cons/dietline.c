@@ -703,7 +703,6 @@ R_API const char *r_line_hist_get(int n) {
 	return NULL;
 }
 
-#if R2_USE_NEW_ABI
 R_API int r_line_hist_list(bool full) {
 	int i = 0;
 	inithist ();
@@ -716,19 +715,6 @@ R_API int r_line_hist_list(bool full) {
 	}
 	return i;
 }
-#else
-R_API int r_line_hist_list(void) {
-	int i = 0;
-	inithist ();
-	if (I.history.data) {
-		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
-			const char *pad = r_str_pad (' ', 32 - strlen (I.history.data[i]));
-			r_cons_printf ("%s %s # !%d\n", I.history.data[i], pad, i);
-		}
-	}
-	return i;
-}
-#endif
 
 R_API void r_line_hist_free(void) {
 	int i;
@@ -763,9 +749,7 @@ R_API bool r_line_hist_load(const char *file) {
 		}
 		memset (buf, 0, R_LINE_BUFSIZE);
 	}
-#if R2_USE_NEW_ABI
 	I.history.load_index = I.history.index;
-#endif
 	fclose (fd);
 	free (buf);
 	return true;
@@ -2428,11 +2412,7 @@ _end:
 
 	// shouldnt be here
 	if (r_str_startswith (I.buffer.data, "!history")) {
-#if R2_USE_NEW_ABI
 		r_line_hist_list (true);
-#else
-		r_line_hist_list ();
-#endif
 		return "";
 	}
 	return I.buffer.data[0] != '\0'? I.buffer.data: "";
