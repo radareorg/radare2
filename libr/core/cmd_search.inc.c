@@ -4058,18 +4058,22 @@ static int chatoi(const char *arg) {
 
 static bool is_json_command(const char *input, int *param_offset) {
 	const char *lastch = strchr (input, ' ');
-	if (lastch && lastch > input) {
-		lastch--;
-		const char *nextch = r_str_trim_head_ro (lastch);
-		if (param_offset) {
-			if (*lastch && lastch[1]) {
-				int delta = 2 + (nextch - input);
-				*param_offset = delta;
+	if (lastch) {
+		if (lastch > input) {
+			lastch--;
+			const char *nextch = r_str_trim_head_ro (lastch);
+			if (param_offset) {
+				if (*lastch && lastch[1]) {
+					int delta = 2 + (nextch - input);
+					*param_offset = delta;
+				}
 			}
+			return (*lastch == 'j');
 		}
-		return (*lastch == 'j');
+		return false;
 	}
-	return false;
+	lastch = input + strlen (input) - 1;
+	return (*lastch == 'j');
 }
 
 static int cmd_search(void *data, const char *input) {
