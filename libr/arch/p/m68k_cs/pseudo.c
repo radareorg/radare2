@@ -193,8 +193,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_m68k_pseudo = {
-	.name = "m68k.pseudo",
-	.desc = "M68K pseudo syntax",
+	.meta = {
+		.name = "m68k.pseudo",
+		.desc = "M68K pseudo syntax",
+	},
 	.parse = parse,
 };
 

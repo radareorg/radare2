@@ -484,8 +484,10 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 }
 
 RParsePlugin r_parse_plugin_arm_pseudo = {
-	.name = "arm.pseudo",
-	.desc = "ARM/ARM64 pseudo syntax",
+	.meta = {
+		.name = "arm.pseudo",
+		.desc = "ARM/ARM64 pseudo syntax",
+	},
 	.parse = parse,
 	.subvar = &subvar,
 };

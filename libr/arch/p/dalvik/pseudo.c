@@ -357,10 +357,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_dalvik_pseudo = {
-	.name = "dalvik.pseudo",
-	.desc = "DALVIK pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
+	.meta = {
+		.name = "dalvik.pseudo",
+		.desc = "DALVIK pseudo syntax",
+	},
 	.parse = parse,
 };
 

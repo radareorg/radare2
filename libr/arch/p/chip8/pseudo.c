@@ -105,8 +105,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_chip8_pseudo = {
-	.name = "chip8.pseudo",
-	.desc = "chip8 pseudo syntax",
+	.meta = {
+		.name = "chip8.pseudo",
+		.desc = "chip8 pseudo syntax",
+	},
 	.parse = parse,
 };
 

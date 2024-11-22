@@ -40,10 +40,9 @@ typedef struct r_parse_t {
 	RAnalLabelAt label_get;
 } RParse; // TODO rename to RAsmParseState
 
+// TODO Rename to asm plugins?
 typedef struct r_parse_plugin_t {
-	// TODO R2_600 Use RPluginMeta instead
-	char *name;
-	char *desc;
+	RPluginMeta meta;
 	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
 	int (*fini)(RParse *p, void *user); // receives the asmparsestate
 

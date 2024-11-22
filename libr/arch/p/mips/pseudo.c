@@ -365,10 +365,10 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 }
 
 RParsePlugin r_parse_plugin_mips_pseudo = {
-	.name = "mips.pseudo",
-	.desc = "MIPS pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
+	.meta = {
+		.name = "mips.pseudo",
+		.desc = "MIPS pseudo syntax",
+	},
 	.parse = parse,
 	.subvar = subvar,
 };
