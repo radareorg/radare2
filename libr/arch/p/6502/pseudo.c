@@ -1,12 +1,6 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake, qnix */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2015-2024 - pancake, qnix */
 
 #include <r_lib.h>
-#include <r_util.h>
-#include <r_flag.h>
 #include <r_anal.h>
 #include <r_parse.h>
 
@@ -183,8 +177,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_6502_pseudo = {
-	.name = "6502.pseudo",
-	.desc = "6502 pseudo syntax",
+	.meta = {
+		.name = "6502.pseudo",
+		.desc = "6502 pseudo syntax",
+	},
 	.parse = parse,
 };
 

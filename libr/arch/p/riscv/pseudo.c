@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2020 - Aswin C (officialcjunior) */
+/* radare - LGPL - Copyright 2020-2024 - Aswin C (officialcjunior) */
 
 #include <r_lib.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -217,8 +215,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_riscv_pseudo = {
-	.name = "riscv.pseudo",
-	.desc = "riscv pseudo syntax",
+	.meta = {
+		.name = "riscv.pseudo",
+		.desc = "riscv pseudo syntax",
+	},
 	.parse = parse,
 };
 

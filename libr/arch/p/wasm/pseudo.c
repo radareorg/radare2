@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2019 - deroad */
+/* radare - LGPL - Copyright 2019-2024 - deroad */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>
@@ -30,8 +27,10 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 }
 
 RParsePlugin r_parse_plugin_wasm_pseudo = {
-	.name = "wasm.pseudo",
-	.desc = "WASM pseudo syntax",
+	.meta = {
+		.name = "wasm.pseudo",
+		.desc = "WASM pseudo syntax",
+	},
 	.subvar = &subvar,
 };
 

@@ -574,8 +574,10 @@ static int fini(RParse *p, void *usr) {
 }
 
 RParsePlugin r_parse_plugin_x86_pseudo = {
-	.name = "x86.pseudo",
-	.desc = "X86 pseudo syntax",
+	.meta = {
+		.name = "x86.pseudo",
+		.desc = "X86 pseudo syntax",
+	},
 	.parse = &parse,
 	.subvar = &subvar,
 	.fini = &fini,

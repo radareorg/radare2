@@ -209,8 +209,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_avr_pseudo = {
-	.name = "avr.pseudo",
-	.desc = "AVR pseudo syntax",
+	.meta = {
+		.name = "avr.pseudo",
+		.desc = "AVR pseudo syntax",
+	},
 	.parse = parse
 };
 

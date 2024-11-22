@@ -87,8 +87,10 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 RParsePlugin r_parse_plugin_evm_pseudo = {
-	.name = "evm.pseudo",
-	.desc = "evm pseudo syntax",
+	.meta = {
+		.name = "evm.pseudo",
+		.desc = "evm pseudo syntax",
+	},
 	.parse = parse,
 };
 

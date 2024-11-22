@@ -462,8 +462,10 @@ static int fini(RParse *p, void *usr) {
 }
 
 RParsePlugin r_parse_plugin_tricore_pseudo = {
-	.name = "tricore.pseudo",
-	.desc = "TriCore pseudo syntax",
+	.meta = {
+		.name = "tricore.pseudo",
+		.desc = "TriCore pseudo syntax",
+	},
 	.parse = &parse,
 	.subvar = &subvar,
 	.fini = &fini,
