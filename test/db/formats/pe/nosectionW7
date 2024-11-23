@@ -17,7 +17,9 @@ NAME=2: PE: nosectionW7 - entrypoint
 FILE=bins/pe/nosectionW7.exe
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00400138 paddr=0x00000138 haddr=0x00000068 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000138 0x00400138 0x00000068 ---------- program
 EOF
 RUN
 

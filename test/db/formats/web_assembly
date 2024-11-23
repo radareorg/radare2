@@ -58,9 +58,9 @@ RUN
 
 NAME=WASM: Wasm - entrypoint
 FILE=bins/wasm/start.wasm
-CMDS=ie~vaddr
+CMDS=ie=~vaddr
 EXPECT=<<EOF
-vaddr=0x0000002d paddr=0x0000002d haddr=-1 type=program
+paddr=0x0000002d vaddr=0x0000002d haddr=-1 type=program
 EOF
 RUN
 

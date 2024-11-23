@@ -7,9 +7,11 @@ RUN
 
 NAME=entrypoint decoding [64k]
 FILE=bins/firmware/bios_64k.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000000 0x000ffff0 ---------- ---------- program
 EOF
 RUN
 
@@ -58,9 +60,9 @@ RUN
 
 NAME=entrypoint decoding [128k]
 FILE=bins/firmware/bios_128k.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -81,9 +83,9 @@ RUN
 
 NAME=entrypoint decoding [256k]
 FILE=bins/firmware/bios_256k.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -104,9 +106,9 @@ RUN
 
 NAME=entrypoint decoding [512k]
 FILE=bins/firmware/bios_512k.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -127,9 +129,9 @@ RUN
 
 NAME=entrypoint decoding [1M]
 FILE=bins/firmware/bios_1M.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -150,9 +152,9 @@ RUN
 
 NAME=entrypoint decoding [2M]
 FILE=bins/firmware/bios_2M.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -173,9 +175,9 @@ RUN
 
 NAME=entrypoint decoding [4M]
 FILE=bins/firmware/bios_4M.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 
@@ -196,9 +198,9 @@ RUN
 
 NAME=entrypoint decoding [8M]
 FILE=bins/firmware/bios_8M.bin
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+paddr=0x00000000 vaddr=0x000ffff0 haddr=-1 type=program
 EOF
 RUN
 

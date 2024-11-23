@@ -10,7 +10,9 @@ NAME=PE: corkami CoST.exe - entrypoint VA
 FILE=bins/pe/CoST.exe
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x7efd0000 paddr=0x00000000 haddr=0x0000506c type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000000 0x7efd0000 0x0000506c ---------- program
 EOF
 RUN
 
@@ -18,7 +20,9 @@ NAME=PE: corkami CoST.exe - tls VA
 FILE=bins/pe/CoST.exe
 CMDS=iee
 EXPECT=<<EOF
-vaddr=0x7efd0148 paddr=0x00000148 hpaddr=0x000001cc type=tls
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000148 0x7efd0148 0x000001cc ---------- tls
 EOF
 RUN
 

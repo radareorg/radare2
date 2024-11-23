@@ -117,8 +117,8 @@ ie~?
 iee~?
 EOF
 EXPECT=<<EOF
-9
-2
+11
+4
 EOF
 RUN
 
@@ -126,7 +126,7 @@ NAME=: 32bit - entrypoints resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ie~0x004014e0
 EXPECT=<<EOF
-vaddr=0x004014e0 paddr=0x000990b2 haddr=0x00097c7a type=program
+0x000990b2 0x004014e0 0x00097c7a ---------- program
 EOF
 RUN
 
@@ -250,15 +250,15 @@ NAME=: 64bit - entrypoints count
 FILE=bins/mdmp/hello64.dmp
 CMDS=ie~?
 EXPECT=<<EOF
-5
+7
 EOF
 RUN
 
 NAME=: 64bit - entrypoints resolving
 FILE=bins/mdmp/hello64.dmp
-CMDS=ie~0x00401500
+CMDS=ie=~0x00401500
 EXPECT=<<EOF
-vaddr=0x00401500 paddr=0x0009418f haddr=0x00092d37 type=program
+paddr=0x0009418f vaddr=0x00401500 haddr=0x00092d37 type=program
 EOF
 RUN
 

@@ -3,8 +3,12 @@ FILE=bins/pe/tls.exe
 ARGS=-A
 CMDS=ie;iee
 EXPECT=<<EOF
-vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
-vaddr=0x00401020 paddr=0x00000220 hpaddr=0x00000384 type=tls
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000200 0x00401000 0x00000068 ---------- program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000220 0x00401020 0x00000384 ---------- tls
 EOF
 RUN
 
@@ -13,8 +17,12 @@ FILE=bins/pe/tls_hello.exe
 ARGS=-A
 CMDS=ie;iee
 EXPECT=<<EOF
-vaddr=0x004014c8 paddr=0x000008c8 haddr=0x00000098 type=program
-vaddr=0x00401618 paddr=0x00000a18 hpaddr=0x00007fb0 type=tls
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x000008c8 0x004014c8 0x00000098 ---------- program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000a18 0x00401618 0x00007fb0 ---------- tls
 EOF
 RUN
 
@@ -23,7 +31,9 @@ FILE=bins/pe/tls_obfuscation.exe
 ARGS=-A
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000200 0x00401000 0x00000068 ---------- program
 EOF
 RUN
 
@@ -32,10 +42,12 @@ FILE=bins/pe/tls_obfuscation.exe
 ARGS=-A
 CMDS=iee
 EXPECT=<<EOF
-vaddr=0x00401016 paddr=0x00000216 hpaddr=0x00000330 type=tls
-vaddr=0x00401001 paddr=0x00000201 hpaddr=0x00000334 type=tls
-vaddr=0x00401006 paddr=0x00000206 hpaddr=0x00000338 type=tls
-vaddr=0x0040100f paddr=0x0000020f hpaddr=0x0000033c type=tls
-vaddr=0x00401011 paddr=0x00000211 hpaddr=0x00000340 type=tls
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000216 0x00401016 0x00000330 ---------- tls
+0x00000201 0x00401001 0x00000334 ---------- tls
+0x00000206 0x00401006 0x00000338 ---------- tls
+0x0000020f 0x0040100f 0x0000033c ---------- tls
+0x00000211 0x00401011 0x00000340 ---------- tls
 EOF
 RUN

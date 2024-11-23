@@ -8,9 +8,11 @@ RUN
 
 NAME=entry point 16 bits omf
 FILE=bins/omf/hello_world
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00001000 paddr=0x00000073 haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000073 0x00001000 ---------- ---------- program
 EOF
 RUN
 
@@ -64,9 +66,11 @@ RUN
 
 NAME=entry point 32 bits omf
 FILE=bins/omf/hello_world32
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00001000 paddr=0x00000074 haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000074 0x00001000 ---------- ---------- program
 EOF
 RUN
 

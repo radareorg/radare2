@@ -55,7 +55,9 @@ NAME=laddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -G 0 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000410 0x00400410 0x00000018 0x00400018 program
 EOF
 RUN
 
@@ -63,7 +65,9 @@ NAME=laddr 0 && baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -G 0 -B 0 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x00000410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00000018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000410 0x00000410 0x00000018 0x00000018 program
 EOF
 RUN
 
@@ -256,7 +260,9 @@ NAME=rabin2 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
+paddr      vaddr       phaddr     vhaddr     type
+-------------------------------------------------
+0x00001ef8 0x100000ef8 0x00000570 ---------- program
 EOF
 RUN
 
@@ -276,7 +282,9 @@ NAME=rabin2 -G 0x5000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
 EOF
 RUN
 
@@ -296,7 +304,9 @@ NAME=rabin2 -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00001ef8 0x02000ef8 0x00000570 ---------- program
 EOF
 RUN
 
@@ -313,7 +323,9 @@ NAME=rabin2 -B 0x2000000 -e arm64
 FILE=bins/mach0/hello-ios-arm64
 CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00007f34 0x02007f34 0x00000468 ---------- program
 EOF
 RUN
 
@@ -435,8 +447,8 @@ EXPECT=<<EOF
 {
   "initfini": [
     {
-      "vaddr": 134513616,
       "paddr": 976,
+      "vaddr": 134513616,
       "baddr": 134512640,
       "laddr": 0,
       "hvaddr": 134518172,
@@ -444,8 +456,8 @@ EXPECT=<<EOF
       "type": "init"
     },
     {
-      "vaddr": 134513584,
       "paddr": 944,
+      "vaddr": 134513584,
       "baddr": 134512640,
       "laddr": 0,
       "hvaddr": 134518176,
@@ -461,8 +473,10 @@ NAME=-ee baddr 0
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -ee -B 0 ${R2_FILE}
 EXPECT=<<EOF
-vaddr=0x000003d0 paddr=0x000003d0 hvaddr=0x0000159c hpaddr=0x0000059c type=init
-vaddr=0x000003b0 paddr=0x000003b0 hvaddr=0x000015a0 hpaddr=0x000005a0 type=fini
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x000003d0 0x000003d0 0x0000059c 0x0000159c init
+0x000003b0 0x000003b0 0x000005a0 0x000015a0 fini
 EOF
 RUN
 
@@ -513,9 +527,13 @@ nth paddr        size vaddr       vsize perm type name
 6   0x000004c0   0x2c 0x080484c0   0x2c -r-- MAP  GNU_EH_FRAME
 7   0x00000000    0x0 0x00000000    0x0 -rw- MAP  GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- MAP  ehdr
-vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
-vaddr=0x080483d0 paddr=0x000003d0 hvaddr=0x0804959c hpaddr=0x0000059c type=init
-vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000300 0x08048300 0x00000018 0x08048018 program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x000003d0 0x080483d0 0x0000059c 0x0804959c init
+0x000003b0 0x080483b0 0x000005a0 0x080495a0 fini
 vaddr=0x08048400 paddr=0x00000400
 nth vaddr      bind   type   lib name
 -------------------------------------

@@ -1856,7 +1856,7 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 	}
 	if (i1 == '?') {
 		r_core_cmd_help (core, help_msg_ie);
-	} else if (i1 == ' ' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
+	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
 		RBinFile *bf;

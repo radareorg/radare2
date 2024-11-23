@@ -43,7 +43,9 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00001378 paddr=0x00001378 haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00001378 0x00001378 ---------- ---------- program
 EOF
 RUN
 

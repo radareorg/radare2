@@ -13,13 +13,13 @@ RUN
 NAME=iee preinit
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
-iee~type=preinit
+iee=~type=preinit
 e asm.bytes=false
 pd 1 @ 0x0804849f
 EOF
 EXPECT=<<EOF
-vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
-vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
+paddr=0x00000486 vaddr=0x08048486 hpaddr=0x00000ed4 vhaddr=0x08049ed4 type=preinit
+paddr=0x0000049f vaddr=0x0804849f hpaddr=0x00000ed8 vhaddr=0x08049ed8 type=preinit
             ;-- entry.preinit1:
             ;-- preinit2:
             0x0804849f      push ebp
@@ -75,11 +75,9 @@ RUN
 NAME=auto entry (lib)
 ARGS=-e io.cache=true
 FILE=bins/elf/libverifyPass.so
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie=
 EXPECT=<<EOF
-vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=program
+paddr=0x00000f50 vaddr=0x00000f50 haddr=0x00000018 vhaddr=0x00000018 type=program
 EOF
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
@@ -94,7 +92,9 @@ ie
 i~elf
 EOF
 EXPECT=<<EOF
-vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000d28 0x00000d28 0x00000018 0x00000018 program
 file     bins/elf/libexploit.so
 format   elf
 bintype  elf
@@ -179,7 +179,9 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000d28 0x00000d28 0x00000018 0x00000018 program
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot determine entrypoint, using 0x00000d28
@@ -193,8 +195,10 @@ CMDS=<<EOF
 iee
 EOF
 EXPECT=<<EOF
-vaddr=0x00000740 paddr=0x00000740 hvaddr=0x0024dd88 hpaddr=0x0004dd88 type=init
-vaddr=0x00000700 paddr=0x00000700 hvaddr=0x0024dd90 hpaddr=0x0004dd90 type=fini
-vaddr=0x0000074a paddr=0x0000074a hvaddr=0x0004dd80 hpaddr=0x0004dd80 type=preinit
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000740 0x00000740 0x0004dd88 0x0024dd88 init
+0x00000700 0x00000700 0x0004dd90 0x0024dd90 fini
+0x0000074a 0x0000074a 0x0004dd80 0x0004dd80 preinit
 EOF
 RUN

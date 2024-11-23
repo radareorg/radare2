@@ -11,7 +11,9 @@ EXPECT=<<EOF
             ;-- func.100003c0c:
             0x100003c0c      55             push rbp
             0x100003c0d      4889e5         mov rbp, rsp
-vaddr=0x100003c0c paddr=0x00007c0c haddr=0x00000658 type=program
+vaddr      paddr       haddr      type
+--------------------------------------
+0x00007c0c 0x100003c0c 0x00000658 program
 EOF
 RUN
 
@@ -28,7 +30,9 @@ EXPECT=<<EOF
             ;-- func.100003a90:
             0x100003a90      7f2303d5       pacibsp
             0x100003a94      fc6fbaa9       stp x28, x27, [sp,  -0x60]!
-vaddr=0x100003a90 paddr=0x0001ba90 haddr=0x00000600 type=program
+vaddr      paddr       haddr      type
+--------------------------------------
+0x0001ba90 0x100003a90 0x00000600 program
 EOF
 RUN
 
@@ -240,9 +244,10 @@ e bin.baddr = 0xf00000
 k old_v=`ieq`
 oob
 iI~baddr[1]
-ie~vaddr[1]
+ie=~vaddr[1]
 p8 10 @ entry0
 p8 10 @ `k old_v`
+ie,:quiet
 EOF
 EXPECT=<<EOF
 0xf00000

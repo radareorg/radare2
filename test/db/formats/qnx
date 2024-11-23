@@ -8,9 +8,9 @@ RUN
 
 NAME=entry point of qnx
 FILE=bins/qnx/test.x
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x0000021c paddr=0x0000021c haddr=-1 type=program
+paddr=0x0000021c vaddr=0x0000021c haddr=-1 type=program
 EOF
 RUN
 
