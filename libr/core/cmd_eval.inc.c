@@ -26,7 +26,6 @@ static RCoreHelpMessage help_msg_e = {
 #endif
 	"e.", "a=b", "same as 'e a=b' but without using a space",
 	"e,", "[table-query]", "show the output in table format",
-	"e/", "asm", "filter configuration variables by name",
 	"e:", "k=v:k=v:k=v", "comma or colon separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
