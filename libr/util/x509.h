@@ -4,22 +4,13 @@
 R_IPI bool r_x509_algorithmidentifier_parse(RX509AlgorithmIdentifier *ai, RASN1Object *object);
 R_IPI void r_x509_algorithmidentifier_fini(RX509AlgorithmIdentifier *ai);
 
-R_IPI bool r_x509_subjectpublickeyinfo_parse(RX509SubjectPublicKeyInfo *spki, RASN1Object *object);
 R_IPI void r_x509_subjectpublickeyinfo_fini(RX509SubjectPublicKeyInfo *spki);
 
 R_IPI bool r_x509_name_parse(RX509Name *name, RASN1Object *object);
 R_IPI void r_x509_name_fini(RX509Name *name);
 
-R_IPI bool r_x509_extension_parse(RX509Extension *ext, RASN1Object *object);
 R_IPI void r_x509_extension_fini(RX509Extension *ex);
 
-R_IPI bool r_x509_extensions_parse(RX509Extensions *ext, RASN1Object *object);
-R_IPI void r_x509_extensions_fini(RX509Extensions* ex);
-
-R_IPI bool r_x509_tbscertificate_parse(RX509TBSCertificate *tbsc, RASN1Object *object);
-R_IPI void r_x509_tbscertificate_fini(RX509TBSCertificate *tbsc);
-
-R_IPI RX509CRLEntry *r_x509_crlentry_parse(RASN1Object *object);
 R_IPI void r_x509_crl_free(R_NULLABLE RX509CertificateRevocationList *crl);
 R_IPI void r_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
 R_IPI void r_x509_name_json(PJ *pj, RX509Name *name);
