@@ -743,7 +743,8 @@ static const ut8 *parse_line_entryv5(const ut8 *buf, const ut8 *buf_end, entry_f
 		return NULL;
 	}
 	ent->ndesc = 0;
-	for (int i = 0; i < nform; i++) {
+	int i;
+	for (i = 0; i < nform; i++) {
 		entry_descriptor *e = &ent->descs[i];
 		const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &e->type, NULL);
 		if (!nbuf || buf == nbuf) {
