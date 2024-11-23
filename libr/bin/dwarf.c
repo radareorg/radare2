@@ -961,7 +961,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, con
 	}
 	hdr->file_names_count = nfile_entry;
 
-	ut64 i, j;
 	for (i = 0; i < nfile_entry; i++) {
 		file_entry *file = &hdr->file_names[i];
 		for (j = 0; j < file_form.ndesc; j++) {
