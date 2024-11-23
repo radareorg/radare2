@@ -719,244 +719,330 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 	return res;
 }
 
+typedef struct entry_descriptor {
+	ut64 type;
+	ut64 form;
+} entry_descriptor;
+
+#define MAX_V5_DESCRIPTORS 7
+
+typedef struct entry_formatv5 {
+	int ndesc;
+	entry_descriptor descs[MAX_V5_DESCRIPTORS];
+} entry_formatv5;
+
+// Parse v5 directory/file content description into ent.
+static const ut8 *parse_line_entryv5(const ut8 *buf, const ut8 *buf_end, entry_formatv5 *ent) {
+	if (ent == NULL) {
+		return NULL;
+	}
+
+	ut8 nform = READ8 (buf);
+	if (nform >= MAX_V5_DESCRIPTORS) {
+		R_LOG_WARN ("Too many entry formats: %d >= %d", nform, MAX_V5_DESCRIPTORS);
+		return NULL;
+	}
+	ent->ndesc = 0;
+	int i;
+	for (i = 0; i < nform; i++) {
+		entry_descriptor *e = &ent->descs[i];
+		const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &e->type, NULL);
+		if (!nbuf || buf == nbuf) {
+			return NULL;
+		}
+
+		buf = nbuf;
+		nbuf = r_uleb128 (buf, buf_end - buf, &e->form, NULL);
+		if (!nbuf || buf == nbuf) {
+			return NULL;
+		}
+		buf = nbuf;
+		ent->ndesc++;
+	}
+	return buf;
+};
+
+static const ut8 *ut64_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut64 *val, bool be) {
+	const ut8 *nbuf = NULL;
+	ut64 data = 0;
+
+	switch (desc.form) {
+	case DW_FORM_udata:
+		nbuf = r_uleb128 (buf, buf_end - buf, &data, NULL);
+		if (!nbuf || nbuf == buf) {
+			return NULL;
+		}
+		*val = data;
+		return nbuf;
+	case DW_FORM_data1:
+		if (buf + 1 >= buf_end) {
+			return NULL;
+		}
+		*val = buf[0];
+		buf += 1;
+		return buf;
+	case DW_FORM_data2:
+		if (buf + 2 >= buf_end) {
+			return NULL;
+		}
+		*val = r_read_ble16 (buf, be);
+		buf += 2;
+		return buf;
+	case DW_FORM_data4:
+		if (buf + 4 >= buf_end) {
+			return NULL;
+		}
+		*val = r_read_ble32 (buf, be);
+		buf += 4;
+		return buf;
+	case DW_FORM_data8:
+		if (buf + 8 >= buf_end) {
+			return NULL;
+		}
+		*val = r_read_ble64 (buf, be);
+		buf += 8;
+		return buf;
+	default:
+		R_LOG_DEBUG ("Expected data form but got: %#x", desc.form);
+		return NULL;
+	}
+}
+
+static const ut8 *str_form_value(entry_descriptor desc, RBin *bin, const ut8 *buf, const ut8 *buf_end, char **v, bool be, bool is_64bit) {
+	const size_t maxlen = 0xfff;
+	char *name = NULL;
+	ut64 section_offset = 0;
+	RBinSection *section = NULL;
+
+	switch (desc.form) {
+	case DW_FORM_line_strp:
+		section_offset = dwarf_read_offset (is_64bit, &buf, buf_end, be);
+		section = getsection (bin, DWARF_SN_LINE_STR);
+		name = get_section_string (bin, section, section_offset);
+		if (name == NULL) {
+			return NULL;
+		}
+		r_str_ansi_strip (name);
+		r_str_replace_ch (name, '\n', 0, true);
+		r_str_replace_ch (name, '\t', 0, true);
+		*v = name;
+		return buf;
+	case DW_FORM_strp:
+		section_offset = dwarf_read_offset (is_64bit, &buf, buf_end, be);
+		section = getsection (bin, DWARF_SN_STR);
+		name = get_section_string (bin, section, section_offset);
+		if (name == NULL) {
+			return NULL;
+		}
+		r_str_ansi_strip (name);
+		r_str_replace_ch (name, '\n', 0, true);
+		r_str_replace_ch (name, '\t', 0, true);
+		*v = name;
+		return buf;
+	case DW_FORM_strp_sup:
+		// TODO: handle this properly
+		dwarf_read_offset (is_64bit, &buf, buf_end, be);
+		return buf;
+	case DW_FORM_string:
+		// TODO: find a way to test this case.
+		if (buf == NULL || buf >= buf_end) {
+			return NULL;
+		}
+		const int len = R_MIN (maxlen, (buf_end - buf));
+		if (len < 0) {
+			return NULL;
+		}
+		*v = r_str_ndup ((const char *)buf, len);
+		buf += len + 1;
+		return buf;
+	default:
+		R_LOG_DEBUG ("Expected form type string but got: %#x", desc.form);
+		return NULL;
+	}
+};
+
+static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut8 val[16]) {
+	if (desc.form != DW_FORM_data16) {
+		R_LOG_DEBUG ("Expected form type data16 but got: %#x", desc.form);
+		return NULL;
+	}
+	if (buf + 16 >= buf_end) {
+		return NULL;
+	}
+
+	memcpy (val, buf, 16);
+	buf += 16;
+	return buf;
+}
+
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print, bool be) {
-	enum type { DIRECTORIES, FILES };
-	const size_t maxlen = 0xfff;
-	int i, j;
+static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *s, int mode, PrintfCallback print, bool be) {
+	if (mode == R_MODE_PRINT) {
+		print (" The Directory Table:\n");
+	}
 
-	for (i = DIRECTORIES; buf && i <= FILES; i++) {
-		if (mode == R_MODE_PRINT && i == DIRECTORIES) {
-			print (" The Directory Table:\n");
-		} else if (mode == R_MODE_PRINT && i == FILES) {
-			print ("\n");
-			print (" The File Name Table:\n");
-			print ("  Entry Dir     Time      Size       Name\n");
-		}
+	entry_formatv5 dir_form = {0};
+	buf = parse_line_entryv5 (buf, buf_end, &dir_form);
+	if (buf == NULL) {
+		R_LOG_WARN ("Invalid uleb128 for dwarf directory entry format");
+		return NULL;
+	}
+	if (dir_form.ndesc <= 0) {
+		R_LOG_WARN ("Invalid number of descriptors for directory table");
+		return NULL;
+	}
 
-		ut8 entry_format_count = READ8 (buf);
-		const ut8 *entry_format = buf;
+	ut64 ndir_entry = 0;
+	const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &ndir_entry, NULL);
+	if (!nbuf || nbuf == buf) {
+		R_LOG_WARN ("Invalid uleb128 for dwarf directory count");
+		return NULL;
+	}
+	buf = nbuf;
 
-		ut64 total_entries = 0;
-		for (j = 0; j < entry_format_count; j++) {
-			const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
-			if (!nbuf || buf == nbuf) {
-				R_LOG_WARN ("Invalid uleb128 for dwarf entry0");
+	ut64 i, j;
+	for (i = 0; i < ndir_entry; i++) {
+		for (j = 0; j < dir_form.ndesc; j++) {
+			entry_descriptor desc = dir_form.descs[j];
+			char *name = NULL;
+
+			switch (desc.type) {
+			case DW_LNCT_path:
+				buf = str_form_value (desc, bin, buf, buf_end, &name, be, hdr->is_64bit);
+				if (buf == NULL || name == NULL) {
+					R_LOG_WARN ("Invalid description (%#x) for directory", desc.form);
+					return NULL;
+				}
+				add_sdb_include_dir (s, name, i);
+				free (name);
 				break;
+			default:
+				R_LOG_WARN ("Invalid description (%#x) for directory", desc.type);
+				// TODO: Skip this value instead of failing?
+				return NULL;
 			}
-			buf = nbuf;
-			nbuf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
-			if (!nbuf || buf == nbuf) {
-				R_LOG_WARN ("Invalid uleb128 for dwarf entry1");
+		}
+		if (mode == R_MODE_PRINT) {
+			print ("  %" PFMT64u "     %s\n", i, sdb_array_get (s, "includedirs", i, 0));
+		}
+	}
+
+	if (mode == R_MODE_PRINT) {
+		print ("\n");
+		print (" The File Name Table:\n");
+		print ("  Entry Dir     Time      Size       Name\n");
+	}
+
+	entry_formatv5 file_form = {0};
+	buf = parse_line_entryv5 (buf, buf_end, &file_form);
+	if (buf == NULL) {
+		R_LOG_WARN ("Invalid uleb128 for dwarf file entry format");
+		return NULL;
+	}
+	if (file_form.ndesc <= 0) {
+			R_LOG_WARN ("Invalid number of descriptors for file table");
+			return NULL;
+	}
+
+	ut64 nfile_entry = 0;
+	nbuf = r_uleb128 (buf, buf_end - buf, &nfile_entry, NULL);
+	if (!nbuf || nbuf == buf) {
+		R_LOG_WARN ("Invalid uleb128 for dwarf file count");
+		return NULL;
+	}
+	buf = nbuf;
+
+	hdr->file_names = calloc (sizeof (file_entry), nfile_entry);
+	if (hdr->file_names == NULL) {
+		return NULL;
+	}
+	hdr->file_names_count = nfile_entry;
+
+	for (i = 0; i < nfile_entry; i++) {
+		file_entry *file = &hdr->file_names[i];
+		for (j = 0; j < file_form.ndesc; j++) {
+			entry_descriptor desc = file_form.descs[j];
+			char *name = NULL;
+			ut64 data = 0;
+
+			switch (desc.type) {
+			case DW_LNCT_path:
+				buf = str_form_value (desc, bin, buf, buf_end, &name, be, hdr->is_64bit);
+				if (buf == NULL || name == NULL) {
+					R_LOG_WARN ("Invalid description (%#x) for file path", desc.form);
+					return NULL;
+				}
+				file->name = name;
 				break;
+			case DW_LNCT_timestamp:
+				buf = ut64_form_value (desc, buf, buf_end, &data, be);
+				if (buf == NULL) {
+					R_LOG_WARN ("Invalid description (%#x,%#x) for file timestamp", desc.type, desc.form);
+					return NULL;
+				}
+				file->mod_time = data;
+				break;
+			case DW_LNCT_directory_index:
+				buf = ut64_form_value (desc, buf, buf_end, &data, be);
+				if (buf == NULL) {
+					R_LOG_WARN ("Invalid description (%#x,%#x) for file dir index", desc.type, desc.form);
+					return NULL;
+				}
+				if (file->name == NULL) {
+					break;
+				}
+				file->id_idx = data;
+
+				// prepend directory to the file name
+				char *dir = sdb_array_get (s, "includedirs", file->id_idx, 0);
+				char *filename = file->name;
+				if (dir == NULL || !strcmp (filename, dir)) {
+					break;
+				}
+
+				bool isabs = r_file_is_abspath (dir);
+				if (file->id_idx == 0 || isabs) {
+					file->name = r_str_newf ("%s/%s", dir, filename);
+					free (filename);
+				} else {
+					char *comp_unit_dir = sdb_array_get (s, "includedirs", 0, 0);
+					if (comp_unit_dir == NULL || !strcmp (filename, comp_unit_dir)) {
+						break;
+					}
+					char *tmp = r_str_newf ("%s/%s/%s",
+								comp_unit_dir, dir, filename);
+					file->name = tmp;
+					free (filename);
+				}
+				break;
+			case DW_LNCT_size:
+				buf = ut64_form_value (desc, buf, buf_end, &data, be);
+				if (buf == NULL) {
+					R_LOG_WARN ("Invalid description (%#x,%#x) for file size", desc.type, desc.form);
+					return NULL;
+				}
+				file->file_len = data;
+				break;
+			case DW_LNCT_MD5:
+				buf = data16_form_value (desc, buf, buf_end, file->md5sum);
+				if (buf == NULL) {
+					R_LOG_WARN ("Invalid description (%#x,%#x) for file checksum", desc.type, desc.form);
+					return NULL;
+				}
+				file->has_checksum = true;
+				break;
+			default:
+				R_LOG_ERROR ("Invalid or unsupported DW line number content type %#x", desc.type);
+				return NULL;
 			}
-			buf = nbuf;
 		}
-
-		const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
-		if (!nbuf || nbuf == buf) {
-			R_LOG_WARN ("Invalid uleb128 for dwarf entry1");
-			buf = NULL;
-			break;
-		}
-		buf = nbuf;
-		if (i == FILES) {
-			if (total_entries > 0) {
-				hdr->file_names = calloc (sizeof (file_entry), total_entries);
-				if (!hdr->file_names) {
-					goto beach;
-				}
-			} else {
-				hdr->file_names = NULL;
-			}
-			hdr->file_names_count = total_entries;
-		}
-
-		ut64 index;
-		size_t count = 0;
-		for (index = 0; buf && buf < buf_end && index < total_entries; index++) {
-			const ut8 *format = entry_format;
-
-			ut8 entry_format_index;
-			for (entry_format_index = 0; buf && entry_format_index < entry_format_count; entry_format_index++) {
-				ut64 content_type_code, form_code;
-				char *name = NULL;
-				ut8 sum[16] = {0};
-				ut64 data = 0;
-
-				const ut8 *nbuf = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
-				if (!nbuf || nbuf == format) {
-					R_LOG_WARN ("Invalid uleb128 for dwarf entry2");
-					goto beach;
-				}
-				format = nbuf;
-				nbuf = r_uleb128 (format, buf_end - format, &form_code, NULL);
-				if (!nbuf || nbuf == format) {
-					R_LOG_WARN ("Invalid uleb128 for dwarf entry3");
-					goto beach;
-				}
-				format = nbuf;
-				switch (form_code) {
-				case DW_FORM_string:
-					// TODO: find a way to test this case.
-					if (buf && buf <= buf_end) {
-						const int mylen = R_MIN (maxlen, (buf_end - buf));
-						if (mylen > 0) {
-							name = r_str_ndup ((const char *)buf, mylen);
-							buf += mylen + 1;
-						} else {
-							name = NULL;
-							buf = NULL;
-							// buf++;
-						}
-					}
-					break;
-				case DW_FORM_strp_sup:
-					// TODO: handle this properly
-					dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-					break;
-				case DW_FORM_strp:
-				case DW_FORM_line_strp:
-					{
-						ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-						RBinSection *section = (form_code == DW_FORM_strp)
-							? getsection (bin, DWARF_SN_STR)
-							: getsection (bin, DWARF_SN_LINE_STR);
-						name = get_section_string (bin, section, section_offset);
-						if (name) {
-							r_str_ansi_strip (name);
-							r_str_replace_ch (name, '\n', 0, true);
-							r_str_replace_ch (name, '\t', 0, true);
-						} else {
-							buf = NULL;
-						}
-					}
-					break;
-				case DW_FORM_data1:
-					if (buf) {
-						data = READ8 (buf);
-					}
-					break;
-				case DW_FORM_data2:
-					if (buf && buf + 2 < buf_end) {
-						data = READ16 (buf);
-					}
-					break;
-				case DW_FORM_data4:
-					data = READ32 (buf);
-					break;
-				case DW_FORM_data8:
-					data = READ64 (buf);
-					break;
-				case DW_FORM_data16:
-					if (buf && buf + 16 < buf_end) {
-						memcpy (&sum, buf, 16);
-						buf += 16;
-					}
-					break;
-				case DW_FORM_udata:
-					{
-						const ut8 *nbuf = r_uleb128 (buf, buf_end - buf, &data, NULL);
-						if (!nbuf || nbuf == buf) {
-							R_LOG_WARN ("Invalid uleb128 for dwarf udata");
-							goto beach;
-						}
-						buf = nbuf;
-					}
-					break;
-				default:
-					R_LOG_WARN ("Invalid form code %d", form_code);
-					buf = NULL;
-					break;
-				}
-
-				switch (content_type_code) {
-				case DW_LNCT_path:
-					if (i == FILES) {
-						// For now just save the filename. Prepend the directory once we have it.
-						if (hdr->file_names) {
-							hdr->file_names[count].name = name;
-						}
-					} else {
-						if (name) {
-							add_sdb_include_dir (sdb, name, index);
-							free (name);
-						} else {
-							buf = NULL;
-						}
-					}
-					name = NULL;
-					break;
-				case DW_LNCT_directory_index:
-					if (hdr->file_names) {
-						hdr->file_names[count].id_idx = data;
-						// prepend directory to the file name
-						if (hdr->file_names[count].name) {
-							char *dir = sdb_array_get (sdb, "includedirs", hdr->file_names[count].id_idx, 0);
-							char *filename = hdr->file_names[count].name;
-							if (dir && strcmp (filename, dir)) {
-								if (hdr->file_names[count].id_idx == 0 || r_file_is_abspath (dir)) {
-									hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
-									free (filename);
-								} else {
-									char *comp_unit_dir = sdb_array_get (sdb, "includedirs", 0, 0);
-									if (comp_unit_dir && strcmp (filename, comp_unit_dir)) {
-										char *tmp = r_str_newf ("%s/%s/%s",
-											r_str_get (comp_unit_dir), r_str_get (dir), filename);
-										hdr->file_names[count].name = tmp;
-										free (filename);
-									}
-								}
-							}
-						}
-					}
-					break;
-				case DW_LNCT_timestamp:
-					if (hdr->file_names) {
-						hdr->file_names[count].mod_time = data;
-					}
-					break;
-				case DW_LNCT_size:
-					if (hdr->file_names) {
-						hdr->file_names[count].file_len = data;
-					}
-					break;
-				case DW_LNCT_MD5:
-					if (hdr->file_names) {
-						hdr->file_names[count].has_checksum = true;
-						memcpy (hdr->file_names[count].md5sum, sum, sizeof sum);
-					}
-					break;
-				default:
-					buf = NULL;
-					R_LOG_ERROR ("Invalid or unsupported DW line number content type %d", content_type_code);
-					break;
-				}
-			}
-
-			if (mode == R_MODE_PRINT) {
-				switch (i) {
-				case DIRECTORIES:
-					// Keep directories 0 indexed?
-					print ("  %" PFMT64u "     %s\n", index, sdb_array_get (sdb, "includedirs", index, 0));
-					break;
-				case FILES:
-					if (hdr->file_names) {
-						// TODO: print md5 checksum if available
-						print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
-							index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
-							hdr->file_names[count].file_len, hdr->file_names[count].name);
-					} else {
-						R_LOG_WARN ("file_names is null");
-						buf = NULL;
-					}
-					break;
-				}
-			}
-			count++;
+		if (mode == R_MODE_PRINT) {
+			// TODO: print md5 checksum if available
+			print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
+			       i + 1, file->id_idx, file->mod_time, file->file_len, file->name);
 		}
 	}
 
@@ -964,8 +1050,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 		print ("\n");
 	}
 
-beach:
-	sdb_free (sdb);
+	sdb_free (s);
 	return buf;
 }
 
@@ -1050,7 +1135,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print, debug_line_offset);
 	} else {
-		buf = parse_line_header_source_dwarf5 (bin, bf, buf, buf_end, hdr, sdb, mode, print, be);
+		buf = parse_line_header_source_dwarf5 (bin, buf, buf_end, hdr, sdb, mode, print, be);
 	}
 
 	return buf;
