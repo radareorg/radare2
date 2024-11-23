@@ -1456,7 +1456,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		if (r_list_empty (entries)) {
 			return true;
 		}
-		r_cons_printf ("fs+symbols\n");
+		r_cons_println ("'fs+symbols");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
@@ -1584,7 +1584,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			r_core_seek (r, at, false);
 		}
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs-\n");
+		r_cons_println ("'fs-");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	}
@@ -3387,7 +3387,7 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		r_core_bin_export_info (r, R_MODE_SET);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_println ("fs+header");
+		r_cons_println ("'fs+header");
 	}
 	r_list_foreach (fields, iter, field) {
 		const bool haveComment = R_STR_ISNOTEMPTY (field->comment);
@@ -3456,7 +3456,7 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_println ("fs-");
+		r_cons_println ("'fs-");
 	}
 
 	return true;

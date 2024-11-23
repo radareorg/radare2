@@ -297,7 +297,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RBinFileOptions opt;
 				r_bin_file_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
-				r_core_cmd0 (core, ".ies*");
+				r_core_cmd0 (core, ".ie*");
 				break;
 			}
 			r_list_free (files);
