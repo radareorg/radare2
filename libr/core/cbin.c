@@ -1460,6 +1460,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
+	RTable *table = NULL;
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
@@ -1488,8 +1489,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			type = "unknown";
 		}
 		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM)
-			? "haddr"
-			: "hpaddr";
+			? "haddr": "hpaddr";
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
@@ -1538,7 +1538,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			r_cons_printf ("'s %s\n", n);
 			free (n);
 			free (name);
-		} else {
+		} else if (IS_MODE_EQUAL (mode)) {
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x, at, paddr);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
@@ -1553,6 +1553,14 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
 			r_cons_printf (" type=%s\n", type);
+		} else {
+			if (!table) {
+				table = r_core_table (r, "entrypoints");
+				r_table_set_columnsf (table, "XXXs", "vaddr", "paddr", "haddr", "type");
+			}
+			ut64 vaddr = at;
+			ut64 haddr = hpaddr;
+			r_table_add_rowf (table, "XXXs", paddr, vaddr, haddr, type);
 		}
 		if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
 			init_i++;
@@ -1564,7 +1572,15 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			i++;
 		}
 	}
-	if (IS_MODE_SET (mode)) {
+	if (table) {
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_print (s);
+		free (s);
+		r_table_free (table);
+	} else if (IS_MODE_SET (mode)) {
 		if (entry) {
 			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
 			r_core_seek (r, at, false);
@@ -4732,16 +4748,8 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}
-	// XXX this makes r2dec very slow (25s vs 80s)
-	// r_core_bin_export_info (core, R_MODE_SET);
-
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
-#if 0
-	if (r_config_get_i (core->config, "anal.strings")) {
-		r_core_cmd0 (core, "aar");
-	}
-#endif
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
 		ret &= bin_raw_strings (core, pj, mode, va);
 	} else if ((action & R_CORE_BIN_ACC_STRINGS)) {
