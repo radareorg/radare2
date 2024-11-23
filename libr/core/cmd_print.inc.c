@@ -1529,7 +1529,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				R_LOG_ERROR ("cannot parse asn1 object");
 				break;
 			}
-			RX509Certificate* x509 = r_x509_parse_certificate (obj);
+			RX509Certificate* x509 = r_x509_certificate_parse (obj);
 			if (x509) {
 				if (input[1] == 'j') { // "pFxj"
 					PJ *pj = r_core_pj_new (core);
@@ -1548,7 +1548,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 						free (res);
 					}
 				}
-				r_x509_free_certificate (x509);
+				r_x509_certificate_free (x509);
 			} else {
 				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
@@ -1570,7 +1570,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'p': // "pFp"
 		{
-			RCMS *cms = r_pkcs7_parse_cms (data, size);
+			RCMS *cms = r_pkcs7_cms_parse (data, size);
 			if (cms) {
 				if (input[1] == 'j') {
 					PJ *pj = r_pkcs7_cms_json (cms);
@@ -1586,7 +1586,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 						free (res);
 					}
 				}
-				r_pkcs7_free_cms (cms);
+				r_pkcs7_cms_free (cms);
 			} else {
 				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
