@@ -44,7 +44,7 @@ NAME=ih* (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ih*
 EXPECT=<<EOF
-fs+header
+'fs+header
 'f header.ELF 1 0x00000000
 'f header.ELF.value 1 0x464c457f
 pf.ELF x
@@ -86,7 +86,7 @@ pf.ShNum w
 'f header.ShrStrndx 1 0x00000032
 'f header.ShrStrndx.value 1 0x0000001b
 pf.ShrStrndx w
-fs-
+'fs-
 EOF
 RUN
 

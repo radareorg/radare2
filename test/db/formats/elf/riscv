@@ -2,7 +2,9 @@ NAME=riscv entrypoint
 FILE=bins/elf/ip-riscv
 CMDS=ie;ii~str
 EXPECT=<<EOF
-vaddr=0x0000d344 paddr=0x0000d344 haddr=0x00000018 hvaddr=0x00000018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x0000d344 0x0000d344 0x00000018 0x00000018 program
 2   0x0000a960 GLOBAL FUNC       strncpy
 15  0x0000aa10 GLOBAL FUNC       strspn
 19  0x0000aa50 GLOBAL FUNC       strdup
@@ -34,7 +36,9 @@ NAME=ELF: riscv64: entrypoint
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00010000 paddr=0x00001000 haddr=0x00000018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00001000 0x00010000 0x00000018 ---------- program
 EOF
 RUN
 

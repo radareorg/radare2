@@ -27,7 +27,9 @@ FILE=bins/nro/appstore.nro
 ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000080 0x00000080 ---------- ---------- program
 EOF
 RUN
 

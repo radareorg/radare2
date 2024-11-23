@@ -131,11 +131,11 @@ RUN
 
 NAME=pyc entry
 FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-ie~program
-EOF
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x0000002a 0x0000002a ---------- ---------- program
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find asm.parser for pyc.pseudo

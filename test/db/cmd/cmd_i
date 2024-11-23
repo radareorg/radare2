@@ -1203,7 +1203,9 @@ NAME=ie (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000300 0x08048300 0x00000018 0x08048018 program
 EOF
 RUN
 
@@ -1211,7 +1213,7 @@ NAME=iej (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iej
 EXPECT=<<EOF
-[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
+[{"paddr":768,"vaddr":134513408,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
 EOF
 RUN
 
@@ -2730,7 +2732,9 @@ NAME=ie (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000410 0x00400410 0x00000018 0x00400018 program
 EOF
 RUN
 
@@ -3208,7 +3212,7 @@ NAME=ieej
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ieej
 EXPECT=<<EOF
-[{"vaddr":134513616,"paddr":976,"baddr":134512640,"laddr":0,"hvaddr":134518172,"hpaddr":1436,"type":"init"},{"vaddr":134513584,"paddr":944,"baddr":134512640,"laddr":0,"hvaddr":134518176,"hpaddr":1440,"type":"fini"}]
+[{"paddr":976,"vaddr":134513616,"baddr":134512640,"laddr":0,"hvaddr":134518172,"hpaddr":1436,"type":"init"},{"paddr":944,"vaddr":134513584,"baddr":134512640,"laddr":0,"hvaddr":134518176,"hpaddr":1440,"type":"fini"}]
 EOF
 RUN
 
@@ -3242,8 +3246,8 @@ EXPECT=<<EOF
 entries
 [
   {
-    "vaddr": 134513408,
     "paddr": 768,
+    "vaddr": 134513408,
     "baddr": 134512640,
     "laddr": 0,
     "hvaddr": 134512664,
@@ -3254,8 +3258,8 @@ entries
 constructors
 [
   {
-    "vaddr": 134513616,
     "paddr": 976,
+    "vaddr": 134513616,
     "baddr": 134512640,
     "laddr": 0,
     "hvaddr": 134518172,
@@ -3263,8 +3267,8 @@ constructors
     "type": "init"
   },
   {
-    "vaddr": 134513584,
     "paddr": 944,
+    "vaddr": 134513584,
     "baddr": 134512640,
     "laddr": 0,
     "hvaddr": 134518176,

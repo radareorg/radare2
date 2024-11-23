@@ -90,6 +90,13 @@ static RCoreHelpMessage help_msg_iic = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_ie = {
+	"Usage: ie", "[qj=]", "Show entrypoints and constructors",
+	"ie", "", "show entrypointsie=entrypoint",
+	"iee", "", "list constructors and destructors",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"i", "[*jq]", "show info of current file (in JSON)",
@@ -1840,6 +1847,67 @@ static bool fdof_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_array, int va) {
+	char i1 = input[1];
+	if (i1 == ',') {
+		i1 = 0;
+		R_FREE (core->table_query);
+		core->table_query = strdup (input + 2);
+	}
+	if (i1 == '?') {
+		r_core_cmd_help (core, help_msg_ie);
+	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
+		RList *objs = r_core_bin_files (core);
+		RListIter *iter;
+		RBinFile *bf;
+		RBinFile *cur = core->bin->cur;
+		// ie = show entries
+		// iee = show constructors
+		bool show_constructors = r_str_startswith (input, "ee"); // "iee"
+		if (r_list_empty (objs)) {
+			if (mode & R_MODE_JSON) {
+				r_cons_print ("[]");
+			}
+		} else {
+			if (r_list_length (objs) == 1) {
+				if (show_constructors) {
+					RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				} else {
+					RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+				}
+			} else {
+				if (mode & R_MODE_JSON) {
+					pj_a (pj);
+				}
+				r_list_foreach (objs, iter, bf) {
+					if (mode & R_MODE_JSON) {
+						pj_o (pj);
+						pj_kn (pj, "id", bf->id);
+						pj_ks (pj, "filename", bf->file);
+						pj_k (pj, "data");
+					}
+					core->bin->cur = bf;
+					if (show_constructors) {
+						RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+					} else {
+						RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+					}
+					if (mode & R_MODE_JSON) {
+						pj_end (pj);
+					}
+				}
+				if (mode & R_MODE_JSON) {
+					pj_end (pj);
+				}
+			}
+		}
+		core->bin->cur = cur;
+		r_list_free (objs);
+	} else {
+		r_core_return_invalid_command (core, "ie", input[1]);
+	}
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int fd = r_io_fd_get_current (core->io);
@@ -1864,6 +1932,7 @@ static int cmd_info(void *data, const char *input) {
 		switch (input[i - 1]) {
 		case '*': mode = R_MODE_RADARE; break;
 		case 'j': mode = R_MODE_JSON; break;
+		case '=': mode = R_MODE_EQUAL; break;
 		case 'k': mode = R_MODE_KV; break;
 		case 'q':
 			if (i > 1 && input[i - 2] == 'q') {
@@ -1889,7 +1958,7 @@ static int cmd_info(void *data, const char *input) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
-			is_array = 1;
+			is_array = true;
 		}
 		if (r_str_startswith (input, "zzz")) {
 			is_izzzj = true;
@@ -2105,55 +2174,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 	case 'e': // "ie"
-		{
-			RList *objs = r_core_bin_files (core);
-			RListIter *iter;
-			RBinFile *bf;
-			RBinFile *cur = core->bin->cur;
-			// ie = show entries
-			// iee = show constructors
-			// ieee = show entries and constructors (DREPRECATED)
-			bool show_constructors = r_str_startswith (input, "ee"); // "iee"
-			if (r_list_empty (objs)) {
-				if (mode & R_MODE_JSON) {
-					r_cons_print ("[]");
-				}
-			} else {
-				if (r_list_length (objs) == 1) {
-					if (show_constructors) {
-						RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-					} else {
-						RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-					}
-				} else {
-					if (mode & R_MODE_JSON) {
-						pj_a (pj);
-					}
-					r_list_foreach (objs, iter, bf) {
-						if (mode & R_MODE_JSON) {
-							pj_o (pj);
-							pj_kn (pj, "id", bf->id);
-							pj_ks (pj, "filename", bf->file);
-							pj_k (pj, "data");
-						}
-						core->bin->cur = bf;
-						if (show_constructors) {
-							RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-						} else {
-							RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-						}
-						if (mode & R_MODE_JSON) {
-							pj_end (pj);
-						}
-					}
-					if (mode & R_MODE_JSON) {
-						pj_end (pj);
-					}
-				}
-			}
-			core->bin->cur = cur;
-			r_list_free (objs);
-		}
+		cmd_ie (core, input, pj, mode, is_array, va);
 		break;
 	case 'k': // "ik"
 		cmd_ik (core, input);

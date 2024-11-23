@@ -8,9 +8,9 @@ RUN
 
 NAME=mach0 thumb entrypoint info
 FILE=bins/mach0/thumb-test
-CMDS=ie~vaddr
+CMDS=ie=~vaddr
 EXPECT=<<EOF
-vaddr=0x0000bfa4 paddr=0x00007fa4 haddr=0x00000344 type=program
+paddr=0x00007fa4 vaddr=0x0000bfa4 haddr=0x00000344 type=program
 EOF
 RUN
 

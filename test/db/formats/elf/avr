@@ -2,7 +2,7 @@ NAME=avr entrypoint
 FILE=bins/elf/analysis/bugurtos-avr.elf
 CMDS=ie~program
 EXPECT=<<EOF
-vaddr=0x00000000 paddr=0x00000074 haddr=0x00000018 type=program
+0x00000074 0x00000000 0x00000018 ---------- program
 EOF
 RUN
 

@@ -1,8 +1,10 @@
 NAME=pe entrypoint
 FILE=bins/pe/base.exe
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00401280 paddr=0x00000680 haddr=0x000000a8 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000680 0x00401280 0x000000a8 ---------- program
 EOF
 RUN
 

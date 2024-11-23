@@ -223,9 +223,9 @@ RUN
 
 NAME=mach0 entrypoint
 FILE=bins/mach0/hello-osx-i386
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x00001f14 paddr=0x00000f14 haddr=0x00000464 type=program
+paddr=0x00000f14 vaddr=0x00001f14 haddr=0x00000464 type=program
 EOF
 RUN
 
@@ -239,25 +239,25 @@ RUN
 
 NAME=mach0 entrypoint i386 LC_MAIN
 FILE=bins/mach0/mach0-i386
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x00001f80 paddr=0x00000f80 haddr=0x00000240 type=program
+paddr=0x00000f80 vaddr=0x00001f80 haddr=0x00000240 type=program
 EOF
 RUN
 
 NAME=mach0 entrypoint x86_64 LC_MAIN
 FILE=bins/mach0/mach0_2-x86_64
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x100000f70 paddr=0x00000f70 haddr=0x000002e0 type=program
+paddr=0x00000f70 vaddr=0x100000f70 haddr=0x000002e0 type=program
 EOF
 RUN
 
 NAME=osx mach0 entrypoint
 FILE=bins/mach0/ls-osx-x86_64
-CMDS=ie~addr
+CMDS=ie=~addr
 EXPECT=<<EOF
-vaddr=0x1000013d8 paddr=0x000013d8 haddr=0x00000648 type=program
+paddr=0x000013d8 vaddr=0x1000013d8 haddr=0x00000648 type=program
 EOF
 RUN
 

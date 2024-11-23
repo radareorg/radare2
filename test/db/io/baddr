@@ -27,13 +27,17 @@ RUN
 NAME=io.baddr entry0 data
 FILE=bins/elf/analysis/pie
 CMDS=<<EOF
-ie~paddr[3]
-ie~vaddr[1]
+ie
+ie
 p8 10 @ 0x00000450
 EOF
 EXPECT=<<EOF
-0x00000450
-0x00000450
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000450 0x00000450 0x00000018 0x00000018 program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000450 0x00000450 0x00000018 0x00000018 program
 31ed5e89e183e4f05054
 EOF
 RUN
@@ -51,14 +55,18 @@ NAME=io.baddr -x86_32 entry0 data
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32 -e io.basemap=true
 CMDS=<<EOF
-ie~paddr[3]
-ie~vaddr[1]
+ie
+ie
 p8 10 @ 0x00001f44
 p8 10 @ 0x00005f44
 EOF
 EXPECT=<<EOF
-0x00005f44
-0x00001f44
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
 6a0089e583e4f083ec10
 6a0089e583e4f083ec10
 EOF
@@ -68,14 +76,18 @@ NAME=io.baddr -x86_32 entry0 data nobasemap
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32 -e io.basemap=false
 CMDS=<<EOF
-ie~paddr[3]
-ie~vaddr[1]
+ie
+ie
 p8 10 @ 0x00001f44
 p8 10 @ 0x00005f44
 EOF
 EXPECT=<<EOF
-0x00005f44
-0x00001f44
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
 6a0089e583e4f083ec10
 ffffffffffffffffffff
 EOF

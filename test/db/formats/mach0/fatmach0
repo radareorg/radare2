@@ -180,9 +180,11 @@ RUN
 NAME=fatmach0 entry1 rabin2 (2)
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rabin2 -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
+CMDS=!rabin2 -a x86 -b 32 -e bins/mach0/fatmach0-3true
 EXPECT=<<EOF
-vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00005f44 0x00001f44 0x00000420 ---------- program
 EOF
 RUN
 
