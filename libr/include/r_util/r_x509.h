@@ -100,18 +100,17 @@ typedef struct r_x509_certificaterevocationlist {
 	RX509CRLEntry **revokedCertificates;
 } RX509CertificateRevocationList;
 
-R_API RX509CertificateRevocationList* r_x509_parse_crl(RASN1Object *object);
+R_API RX509CertificateRevocationList* r_x509_crl_parse(RASN1Object *object);
 // R_API void r_x509_free_crl(RX509CertificateRevocationList *crl);
 // R_API void r_x509_crl_dump(RX509CertificateRevocationList *crl, const char* pad);
 R_API char *r_x509_crl_tostring(RX509CertificateRevocationList *crl, const char* pad);
 R_API void r_x509_crl_json(PJ* pj, RX509CertificateRevocationList *crl);
 
-R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object);
-R_API void r_x509_free_certificate(RX509Certificate* certificate);
+R_API RX509Certificate *r_x509_certificate_parse(RASN1Object *object);
+R_API void r_x509_certificate_free(RX509Certificate* certificate);
 R_API char *r_x509_certificate_tostring(RX509Certificate* certificate, const char* pad);
 R_API void r_x509_certificate_json(PJ* pj, RX509Certificate *certificate);
 R_API void r_x509_certificate_dump(RX509Certificate* cert, const char* pad, RStrBuf *sb);
-
 
 #ifdef __cplusplus
 }

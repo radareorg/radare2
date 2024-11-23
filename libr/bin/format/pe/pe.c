@@ -3301,9 +3301,9 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		r_buf_read_at (pe->b, offset + 8, cert->bCertificate, cert->dwLength - 6);
 
 		if (!pe->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
-			pe->cms = r_pkcs7_parse_cms (cert->bCertificate, cert->dwLength - 6);
+			pe->cms = r_pkcs7_cms_parse (cert->bCertificate, cert->dwLength - 6);
 			if (pe->cms) {
-				pe->spcinfo = r_pkcs7_parse_spcinfo (pe->cms);
+				pe->spcinfo = r_pkcs7_spcinfo_parse (pe->cms);
 			}
 		}
 
@@ -4498,8 +4498,8 @@ void* PE_(r_bin_pe_free)(RBinPEObj* pe) {
 	free (pe->authentihash);
 	r_list_free (pe->rich_entries);
 	r_list_free (pe->resources);
-	r_pkcs7_free_cms (pe->cms);
-	r_pkcs7_free_spcinfo (pe->spcinfo);
+	r_pkcs7_cms_free (pe->cms);
+	r_pkcs7_spcinfo_free (pe->spcinfo);
 	r_buf_free (pe->b);
 	pe->b = NULL;
 	free (pe);
