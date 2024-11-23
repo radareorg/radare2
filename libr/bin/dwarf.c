@@ -903,8 +903,9 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, con
 	}
 	buf = nbuf;
 
-	for (ut64 i = 0; i < ndir_entry; i++) {
-		for (ut64 j = 0; j < dir_form.ndesc; j++) {
+	ut64 i, j;
+	for (i = 0; i < ndir_entry; i++) {
+		for (j = 0; j < dir_form.ndesc; j++) {
 			entry_descriptor desc = dir_form.descs[j];
 			char *name = NULL;
 
@@ -960,9 +961,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, con
 	}
 	hdr->file_names_count = nfile_entry;
 
-	for (ut64 i = 0; i < nfile_entry; i++) {
+	ut64 i, j;
+	for (i = 0; i < nfile_entry; i++) {
 		file_entry *file = &hdr->file_names[i];
-		for (ut64 j = 0; j < file_form.ndesc; j++) {
+		for (j = 0; j < file_form.ndesc; j++) {
 			entry_descriptor desc = file_form.descs[j];
 			char *name = NULL;
 			ut64 data = 0;
