@@ -115,9 +115,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char *r_str_slice(const char *str, RStringSlice s);
 R_API const char *r_str_asciitable(void);
-#if R2_USE_NEW_ABI
 R_API const char *r_str_chartable(int c);
-#endif
 
 R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n);
 R_API RList *r_str_split_list(char *str, const char *c, int n);
@@ -127,7 +125,6 @@ R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val,
 R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val);
 R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 R_API void r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
-R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen, const char *key, const char *val, int g);
 R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen, const char *key, const char *val, int g);
 #define r_str_cpy(x,y) memmove ((x), (y), strlen (y) + 1);
 #define r_str_cat(x,y) memmove ((x) + strlen (x), (y), strlen (y) + 1);
