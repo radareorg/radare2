@@ -757,25 +757,25 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 	for (i = 0; i < n; i += 1) {
 		RAnalVarConstraint *constr = r_vector_at (&var->constraints, i);
 		switch (constr->cond) {
-		case R_ANAL_COND_LE:
+		case R_ANAL_CONDTYPE_LE:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
 			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
-		case R_ANAL_COND_LT:
+		case R_ANAL_CONDTYPE_LT:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
 			r_strbuf_appendf (&sb, "< 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
-		case R_ANAL_COND_GE:
+		case R_ANAL_CONDTYPE_GE:
 			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
-		case R_ANAL_COND_GT:
+		case R_ANAL_CONDTYPE_GT:
 			r_strbuf_appendf (&sb, "> 0x%"PFMT64x, constr->val);
 			high = true;
 			break;

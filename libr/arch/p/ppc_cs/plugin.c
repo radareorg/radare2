@@ -476,7 +476,7 @@ static int analop_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			op->fail = addr + op->size;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			op->cond = instr->cond; //R_ANAL_COND_NE;
+			op->cond = instr->cond; //R_ANAL_CONDTYPE_NE;
 			op->eob = true;
 			op->jump = addr + instr->fields[instr->n - 1].value;
 			op->fail = addr + op->size;

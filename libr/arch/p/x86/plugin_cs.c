@@ -373,20 +373,20 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 static int cond_x862r2(int id) {
 	switch (id) {
 	case X86_INS_JE:
-		return R_ANAL_COND_EQ;
+		return R_ANAL_CONDTYPE_EQ;
 	case X86_INS_JNE:
-		return R_ANAL_COND_NE;
+		return R_ANAL_CONDTYPE_NE;
 	case X86_INS_JB:
 	case X86_INS_JL:
-		return R_ANAL_COND_LT;
+		return R_ANAL_CONDTYPE_LT;
 	case X86_INS_JBE:
 	case X86_INS_JLE:
-		return R_ANAL_COND_LE;
+		return R_ANAL_CONDTYPE_LE;
 	case X86_INS_JG:
 	case X86_INS_JA:
-		return R_ANAL_COND_GT;
+		return R_ANAL_CONDTYPE_GT;
 	case X86_INS_JAE:
-		return R_ANAL_COND_GE;
+		return R_ANAL_CONDTYPE_GE;
 	case X86_INS_JS:
 	case X86_INS_JNS:
 	case X86_INS_JO:

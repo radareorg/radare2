@@ -140,14 +140,14 @@ static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *de
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ANAL_CONDTYPE_NE;
 		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;

@@ -156,45 +156,45 @@ enum {
  * the existing R_ANAL_COND* ones and need to be handled in a
  * special way. */
 enum {
-	R_ANAL_COND_ALWAYS = -1,
-	R_ANAL_COND_NEVER = -2,
-	R_ANAL_COND_UNKNOWN = -3,
+	R_ANAL_CONDTYPE_ALWAYS = -1,
+	R_ANAL_CONDTYPE_NEVER = -2,
+	R_ANAL_CONDTYPE_UNKNOWN = -3,
 };
 
 static int icc_to_r_cond(const int cond) {
 	/* we treat signed and unsigned the same here */
 	switch (cond) {
-	case ICC_A: return R_ANAL_COND_ALWAYS;
-	case ICC_CC: return R_ANAL_COND_GE;
-	case ICC_CS: return R_ANAL_COND_LT;
-	case ICC_E: return R_ANAL_COND_EQ;
-	case ICC_G: return R_ANAL_COND_GT;
-	case ICC_GE: return R_ANAL_COND_GE;
-	case ICC_GU: return R_ANAL_COND_GT;
-	case ICC_L: return R_ANAL_COND_LT;
-	case ICC_LE: return R_ANAL_COND_LE;
-	case ICC_LEU: return R_ANAL_COND_LE;
-	case ICC_N: return R_ANAL_COND_NEVER;
-	case ICC_NE: return R_ANAL_COND_NE;
+	case ICC_A: return R_ANAL_CONDTYPE_ALWAYS;
+	case ICC_CC: return R_ANAL_CONDTYPE_GE;
+	case ICC_CS: return R_ANAL_CONDTYPE_LT;
+	case ICC_E: return R_ANAL_CONDTYPE_EQ;
+	case ICC_G: return R_ANAL_CONDTYPE_GT;
+	case ICC_GE: return R_ANAL_CONDTYPE_GE;
+	case ICC_GU: return R_ANAL_CONDTYPE_GT;
+	case ICC_L: return R_ANAL_CONDTYPE_LT;
+	case ICC_LE: return R_ANAL_CONDTYPE_LE;
+	case ICC_LEU: return R_ANAL_CONDTYPE_LE;
+	case ICC_N: return R_ANAL_CONDTYPE_NEVER;
+	case ICC_NE: return R_ANAL_CONDTYPE_NE;
 	case ICC_NEG:
 	case ICC_POS:
 	case ICC_VC:
 	case ICC_VS:
-	default: return R_ANAL_COND_UNKNOWN;
+	default: return R_ANAL_CONDTYPE_UNKNOWN;
 	}
 }
 
 static int fcc_to_r_cond(const int cond) {
 	switch (cond) {
-	case FCC_A: return R_ANAL_COND_ALWAYS;
-	case FCC_E: return R_ANAL_COND_EQ;
-	case FCC_G: return R_ANAL_COND_GT;
-	case FCC_GE: return R_ANAL_COND_GE;
-	case FCC_L: return R_ANAL_COND_LT;
-	case FCC_LE: return R_ANAL_COND_LE;
-	case FCC_LG: return R_ANAL_COND_NE;
-	case FCC_N: return R_ANAL_COND_NEVER;
-	case FCC_NE: return R_ANAL_COND_NE;
+	case FCC_A: return R_ANAL_CONDTYPE_ALWAYS;
+	case FCC_E: return R_ANAL_CONDTYPE_EQ;
+	case FCC_G: return R_ANAL_CONDTYPE_GT;
+	case FCC_GE: return R_ANAL_CONDTYPE_GE;
+	case FCC_L: return R_ANAL_CONDTYPE_LT;
+	case FCC_LE: return R_ANAL_CONDTYPE_LE;
+	case FCC_LG: return R_ANAL_CONDTYPE_NE;
+	case FCC_N: return R_ANAL_CONDTYPE_NEVER;
+	case FCC_NE: return R_ANAL_CONDTYPE_NE;
 	case FCC_O:
 	case FCC_U:
 	case FCC_UE:
@@ -203,7 +203,7 @@ static int fcc_to_r_cond(const int cond) {
 	case FCC_UL:
 	case FCC_ULE:
 	default:
-		return R_ANAL_COND_UNKNOWN;
+		return R_ANAL_CONDTYPE_UNKNOWN;
 	}
 }
 
@@ -418,12 +418,12 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	} else if (X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
 		r_cond = fcc_to_r_cond (X_COND(insn));
 	} else if (X_OP2(insn) == OP2_BPr) {
-		r_cond = R_ANAL_COND_UNKNOWN;
+		r_cond = R_ANAL_CONDTYPE_UNKNOWN;
 	}
 
-	if (r_cond == R_ANAL_COND_ALWAYS) {
+	if (r_cond == R_ANAL_CONDTYPE_ALWAYS) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (r_cond == R_ANAL_COND_NEVER) {
+	} else if (r_cond == R_ANAL_CONDTYPE_NEVER) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
 	}

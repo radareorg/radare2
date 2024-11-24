@@ -139,28 +139,28 @@ static int sex(int bits, int imm) {
 
 static int map_cond2radare(ut8 cond) {
 	switch (cond) {
-	case 0: return R_ANAL_COND_AL;
-	case 1: return R_ANAL_COND_EQ;
-	case 2: return R_ANAL_COND_NE;
-	case 3: return R_ANAL_COND_PL;
-	case 4: return R_ANAL_COND_MI;
-	case 7: return R_ANAL_COND_VS;
-	case 8: return R_ANAL_COND_VC;
-	case 9: return R_ANAL_COND_GT;
-	case 0xa: return R_ANAL_COND_GE;
-	case 0xb: return R_ANAL_COND_LT;
-	case 0xc: return R_ANAL_COND_LE;
-	case 0xd: return R_ANAL_COND_HI;
-	case 0xe: return R_ANAL_COND_LS;
+	case 0: return R_ANAL_CONDTYPE_AL;
+	case 1: return R_ANAL_CONDTYPE_EQ;
+	case 2: return R_ANAL_CONDTYPE_NE;
+	case 3: return R_ANAL_CONDTYPE_PL;
+	case 4: return R_ANAL_CONDTYPE_MI;
+	case 7: return R_ANAL_CONDTYPE_VS;
+	case 8: return R_ANAL_CONDTYPE_VC;
+	case 9: return R_ANAL_CONDTYPE_GT;
+	case 0xa: return R_ANAL_CONDTYPE_GE;
+	case 0xb: return R_ANAL_CONDTYPE_LT;
+	case 0xc: return R_ANAL_CONDTYPE_LE;
+	case 0xd: return R_ANAL_CONDTYPE_HI;
+	case 0xe: return R_ANAL_CONDTYPE_LS;
 #if 0
 	/* TODO: */
-	/* - radare defines R_ANAL_COND_LO as carry clear and _HS as carry set */
+	/* - radare defines R_ANAL_CONDTYPE_LO as carry clear and _HS as carry set */
 	/*   which appears different to the ARC definitions. */
 	/*   Need to do some math and double check the details */
-	case 5: return R_ANAL_COND_?? - CS,C,LO - Carry set & LO
-	case 6: return R_ANAL_COND_?? - CC,NC,HS - Carry clear & HS
+	case 5: return R_ANAL_CONDTYPE_?? - CS,C,LO - Carry set & LO
+	case 6: return R_ANAL_CONDTYPE_?? - CC,NC,HS - Carry clear & HS
 	/* - Positive non-zero doesnt map to any Radare cond code.  Perhaps just add it? */
-	case 0xf: return R_ANAL_COND_?? - PNZ - Positive non-zero
+	case 0xf: return R_ANAL_CONDTYPE_?? - PNZ - Positive non-zero
 #endif
 	}
 	return -1;
@@ -809,7 +809,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 				op->type = R_ANAL_OP_TYPE_ILL;
 				break;
 			case 6: /* SUB_S.NE [b] */
-				op->cond = R_ANAL_COND_NE;
+				op->cond = R_ANAL_CONDTYPE_NE;
 				op->type = R_ANAL_OP_TYPE_SUB;
 				break;
 			case 7: /* Zero Operand Instructions, 0x0F, [0x00, 0x07, 0x00 - 0x07] */
@@ -824,11 +824,11 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 					op->type = R_ANAL_OP_TYPE_ILL;
 					break;
 				case 4: /* JEQ_S [blink] */
-					op->cond = R_ANAL_COND_EQ;
+					op->cond = R_ANAL_CONDTYPE_EQ;
 					op->type = R_ANAL_OP_TYPE_CRET;
 					break;
 				case 5: /* JNE_S [blink] */
-					op->cond = R_ANAL_COND_NE;
+					op->cond = R_ANAL_CONDTYPE_NE;
 					op->type = R_ANAL_OP_TYPE_CRET;
 					break;
 				case 7: /* J_S.D [blink] */
@@ -1061,11 +1061,11 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case 1: /* BEQ_S */
-			op->cond = R_ANAL_COND_EQ;
+			op->cond = R_ANAL_CONDTYPE_EQ;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case 2: /* BNE_S */
-			op->cond = R_ANAL_COND_NE;
+			op->cond = R_ANAL_CONDTYPE_NE;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case 3: /* Bcc_S */

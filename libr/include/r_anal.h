@@ -527,7 +527,7 @@ typedef struct r_anal_var_access_t {
 } RAnalVarAccess;
 
 typedef struct r_anal_var_constraint_t {
-	_RAnalCond cond;
+	RAnalCondType cond;
 	ut64 val;
 } RAnalVarConstraint;
 
@@ -594,7 +594,7 @@ typedef struct r_anal_bind_t {
 	RAnalUse use;
 } RAnalBind;
 
-#define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
+#define R_ANAL_CONDTYPE_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
 
 typedef struct r_anal_cond_t {
 	int type; // filled by CJMP opcode
@@ -1199,6 +1199,7 @@ R_API char *r_anal_cond_tostring(RAnalCond *cond);
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 R_API const char *r_anal_cond_type_tostring(int cc);
+R_API const char *r_anal_cond_typeexpr_tostring(int cc);
 
 /* jmptbl */
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);

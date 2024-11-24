@@ -44,7 +44,7 @@ typedef enum {
 typedef struct r_arch_value_t {
 	RArchValueType type;
 	int access; // rename to `perm` and use R_PERM_R | _W | _X
-	int absolute; // if true, unsigned cast is used
+	bool absolute; // if true, unsigned cast is used
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
 	st64 delta; // numeric delta

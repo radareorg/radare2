@@ -810,7 +810,7 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 	}
 
 	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
-	if (op->cond == R_ANAL_COND_NV) {
+	if (op->cond == R_ANAL_CONDTYPE_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
 	}*/

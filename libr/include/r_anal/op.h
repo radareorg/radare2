@@ -163,23 +163,25 @@ typedef enum {
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
-	R_ANAL_COND_AL = 0,        // Always executed (no condition)
-	R_ANAL_COND_EQ,            // Equal
-	R_ANAL_COND_NE,            // Not equal
-	R_ANAL_COND_GE,            // Greater or equal
-	R_ANAL_COND_GT,            // Greater than
-	R_ANAL_COND_LE,            // Less or equal
-	R_ANAL_COND_LT,            // Less than
-	R_ANAL_COND_NV,            // Never executed             must be a nop? :D
-	R_ANAL_COND_HS,            // Carry set                  >, ==, or unordered
-	R_ANAL_COND_LO,            // Carry clear                Less than
-	R_ANAL_COND_MI,            // Minus, negative            Less than
-	R_ANAL_COND_PL,            // Plus, positive or zero     >, ==, or unordered
-	R_ANAL_COND_VS,            // Overflow                   Unordered
-	R_ANAL_COND_VC,            // No overflow                Not unordered
-	R_ANAL_COND_HI,            // Unsigned higher            Greater than, or unordered
-	R_ANAL_COND_LS             // Unsigned lower or same     Less than or equal
-} _RAnalCond;
+	R_ANAL_CONDTYPE_AL = 0,        // Always executed (no condition)
+	R_ANAL_CONDTYPE_EQ,            // Equal
+	R_ANAL_CONDTYPE_NE,            // Not equal
+	R_ANAL_CONDTYPE_GE,            // Greater or equal
+	R_ANAL_CONDTYPE_GT,            // Greater than
+	R_ANAL_CONDTYPE_LE,            // Less or equal
+	R_ANAL_CONDTYPE_LT,            // Less than
+	R_ANAL_CONDTYPE_NV,            // Never executed             must be a nop? :D
+	R_ANAL_CONDTYPE_HS,            // Carry set                  >, ==, or unordered
+	R_ANAL_CONDTYPE_LO,            // Carry clear                Less than
+	R_ANAL_CONDTYPE_MI,            // Minus, negative            Less than
+	R_ANAL_CONDTYPE_PL,            // Plus, positive or zero     >, ==, or unordered
+	R_ANAL_CONDTYPE_VS,            // Overflow                   Unordered
+	R_ANAL_CONDTYPE_VC,            // No overflow                Not unordered
+	R_ANAL_CONDTYPE_HI,            // Unsigned higher            Greater than, or unordered
+	R_ANAL_CONDTYPE_LS,            // Unsigned lower or same     Less than or equal
+	R_ANAL_CONDTYPE_LAST,          // Amount of elements of the enum
+	R_ANAL_CONDTYPE_ERR = -1       // Invalid type
+} RAnalCondType;
 
 enum {
 	R_ANAL_REFLINE_TYPE_UTF8 = 1,
@@ -231,7 +233,7 @@ typedef struct r_anal_op_t {
 	RAnalOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
 	ut32 type2;	/* used by java */
 	RAnalStackOp stackop; /* operation on stack? */
-	_RAnalCond cond; /* condition type */
+	RAnalCondType cond; /* condition type */
 	bool weakbytes;
 	ut8 *bytes;     /* can be null, but is used for encoding and decoding, malloc of `size` */
 #if R2_USE_NEW_ABI

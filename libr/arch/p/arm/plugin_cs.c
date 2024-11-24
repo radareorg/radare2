@@ -3452,23 +3452,23 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 
 static int cond_cs2r2(int cc) {
 	if (cc == ARM_CC_AL || cc < 0) {
-		cc = R_ANAL_COND_AL;
+		cc = R_ANAL_CONDTYPE_AL;
 	} else {
 		switch (cc) {
-		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
-		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
-		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
-		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
-		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
-		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
-		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
-		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
-		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
-		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
-		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
-		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
-		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		case ARM_CC_EQ: cc = R_ANAL_CONDTYPE_EQ; break;
+		case ARM_CC_NE: cc = R_ANAL_CONDTYPE_NE; break;
+		case ARM_CC_HS: cc = R_ANAL_CONDTYPE_HS; break;
+		case ARM_CC_LO: cc = R_ANAL_CONDTYPE_LO; break;
+		case ARM_CC_MI: cc = R_ANAL_CONDTYPE_MI; break;
+		case ARM_CC_PL: cc = R_ANAL_CONDTYPE_PL; break;
+		case ARM_CC_VS: cc = R_ANAL_CONDTYPE_VS; break;
+		case ARM_CC_VC: cc = R_ANAL_CONDTYPE_VC; break;
+		case ARM_CC_HI: cc = R_ANAL_CONDTYPE_HI; break;
+		case ARM_CC_LS: cc = R_ANAL_CONDTYPE_LS; break;
+		case ARM_CC_GE: cc = R_ANAL_CONDTYPE_GE; break;
+		case ARM_CC_LT: cc = R_ANAL_CONDTYPE_LT; break;
+		case ARM_CC_GT: cc = R_ANAL_CONDTYPE_GT; break;
+		case ARM_CC_LE: cc = R_ANAL_CONDTYPE_LE; break;
 		}
 	}
 	return cc;
@@ -3498,7 +3498,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 
 	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
-	if (op->cond == R_ANAL_COND_NV) {
+	if (op->cond == R_ANAL_CONDTYPE_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
 	}
@@ -3984,7 +3984,7 @@ static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, boo
 	int i;
 
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
-	if (op->cond == R_ANAL_COND_NV) {
+	if (op->cond == R_ANAL_CONDTYPE_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
 	}
@@ -4179,12 +4179,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_MOV:
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
-				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
+				op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
 			} else {
-				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_RJMP : R_ANAL_OP_TYPE_RCJMP;
+				op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_RJMP : R_ANAL_OP_TYPE_RCJMP;
 			}
 		} else {
-			op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_MOV : R_ANAL_OP_TYPE_CMOV;
+			op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_MOV : R_ANAL_OP_TYPE_CMOV;
 		}
 		if (ISIMM(1)) {
 			op->val = IMM(1);

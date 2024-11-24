@@ -158,8 +158,8 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 "hi", "ls", "ge", "lt", "gt", "le", "al", "nv",
 #endif
 static const int iconds[] = {
-	R_ANAL_COND_EQ,
-	R_ANAL_COND_NE,
+	R_ANAL_CONDTYPE_EQ,
+	R_ANAL_CONDTYPE_NE,
 	0, // cs
 	0, // cc
 	0, // mi
@@ -168,12 +168,12 @@ static const int iconds[] = {
 	0, // vc
 	0, // hi
 	0, // ls
-	R_ANAL_COND_GE,
-	R_ANAL_COND_LT,
-	R_ANAL_COND_GT,
-	R_ANAL_COND_LE,
-	R_ANAL_COND_AL,
-	R_ANAL_COND_NV,
+	R_ANAL_CONDTYPE_GE,
+	R_ANAL_CONDTYPE_LT,
+	R_ANAL_CONDTYPE_GT,
+	R_ANAL_CONDTYPE_LE,
+	R_ANAL_CONDTYPE_AL,
+	R_ANAL_CONDTYPE_NV,
 };
 
 static int op_cond(const ut8 *data) {

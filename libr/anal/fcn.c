@@ -301,7 +301,7 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
 				if (tmp_bb->cond) {
-					if (tmp_bb->cond->type == R_ANAL_COND_HI || tmp_bb->cond->type == R_ANAL_COND_GT) {
+					if (tmp_bb->cond->type == R_ANAL_CONDTYPE_HI || tmp_bb->cond->type == R_ANAL_CONDTYPE_GT) {
 						return tmp_bb->cmpval + 1;
 					}
 				}
