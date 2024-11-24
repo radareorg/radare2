@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - kazarmy */
+/* radare2 - LGPL - Copyright 2017-2024 - kazarmy */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -58,6 +58,27 @@ R_API int r_utf16le_encode(ut8 *ptr, RRune ch) {
 		ptr[1] = high >> 8 & 0xff;
 		ptr[2] = low & 0xff;
 		ptr[3] = low >> 8 & 0xff;
+		return 4;
+	}
+	return 0;
+}
+
+/* Convert a unicode RRune into a UTF-16BE buf */
+R_API int r_utf16be_encode(ut8 *ptr, RRune ch) {
+	if (ch < 0x10000) {
+		ptr[1] = ch & 0xff;
+		ptr[0] = ch >> 8 & 0xff;
+		return 2;
+	}
+	if (ch < 0x110000) {
+		RRune high, low;
+		ch -= 0x10000;
+		high = 0xd800 + (ch >> 10 & 0x3ff);
+		low = 0xdc00 + (ch & 0x3ff);
+		ptr[3] = high & 0xff;
+		ptr[2] = high >> 8 & 0xff;
+		ptr[1] = low & 0xff;
+		ptr[0] = low >> 8 & 0xff;
 		return 4;
 	}
 	return 0;
