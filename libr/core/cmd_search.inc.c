@@ -5003,10 +5003,11 @@ reread:
 			shift++;
 		}
 		size_t strstart = shift + 1;
+		const bool be = r_config_get_b (core->config, "cfg.bigendian");
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		RSearchKeyword *skw = r_search_keyword_new_wide (input + strstart, NULL, NULL, ignorecase);
+		RSearchKeyword *skw = r_search_keyword_new_wide (input + strstart, NULL, NULL, ignorecase, be);
 		if (skw) {
 			r_search_kw_add (core->search, skw);
 			r_search_begin (core->search);

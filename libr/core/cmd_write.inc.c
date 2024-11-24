@@ -1951,10 +1951,15 @@ static int cmd_ww(void *data, const char *input) {
 	str++;
 	len = (len - 1) << 1;
 	char *tmp = (len > 0) ? malloc (len + 1) : NULL;
+	bool be = r_config_get_b (core->config, "cfg.bigendian");
 	if (tmp) {
 		int i;
 		for (i = 0; i < len; i++) {
-			if (i % 2) {
+			bool match = i % 2;
+			if (be) {
+				match = !match;
+			}
+			if (match) {
 				tmp[i] = 0;
 			} else {
 				tmp[i] = str[i >> 1];
