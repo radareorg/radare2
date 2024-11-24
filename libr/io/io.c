@@ -449,13 +449,14 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	return true;
 }
 
-R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
-	R_RETURN_VAL_IF_FAIL (io, 0);
-	RIOMap *map = r_io_map_get_paddr (io, pa);
-	if (map) {
-		return pa - map->delta + r_io_map_begin (map);
+R_API bool r_io_p2v(RIO *io, ut64 p, ut64 *v) {
+	R_RETURN_VAL_IF_FAIL (io && v, false);
+	RIOMap *map = r_io_map_get_paddr (io, p);
+	if (!map) {
+		return false;
 	}
-	return UT64_MAX;
+	*v = p - map->delta + r_io_map_begin (map);
+	return true;
 }
 
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {

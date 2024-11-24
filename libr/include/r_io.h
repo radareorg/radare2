@@ -284,7 +284,7 @@ typedef bool (*RIOFdClose)(RIO *io, int fd);
 typedef ut64 (*RIOFdSeek)(RIO *io, int fd, ut64 addr, int whence);
 typedef ut64 (*RIOFdSize)(RIO *io, int fd);
 typedef bool (*RIOFdResize)(RIO *io, int fd, ut64 newsize);
-typedef ut64 (*RIOP2V)(RIO *io, ut64 pa);
+typedef bool (*RIOP2V)(RIO *io, ut64 p, ut64 *v);
 typedef ut64 (*RIOV2P)(RIO *io, ut64 va);
 typedef int (*RIOFdRead)(RIO *io, int fd, ut8 *buf, int len);
 typedef int (*RIOFdWrite)(RIO *io, int fd, const ut8 *buf, int len);
@@ -384,7 +384,7 @@ R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align
 
 // p2v/v2p
 
-R_API ut64 r_io_p2v(RIO *io, ut64 pa);
+R_API bool r_io_p2v(RIO *io, ut64 p, ut64 *v);
 R_API ut64 r_io_v2p(RIO *io, ut64 va);
 
 //io_submap.c
