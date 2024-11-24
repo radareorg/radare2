@@ -335,7 +335,7 @@ R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
 
 static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const char *arg) {
 	RTable *table = r_table_new ("xrefs");
-	r_table_set_columnsf (table, "ddssss", "from", "to", "type", "perm", "fromname", "toname");
+	r_table_set_columnsf (table, "dddssss", "from", "to", "size", "type", "perm", "fromname", "toname");
 
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
