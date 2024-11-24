@@ -288,7 +288,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 					k = r_search_keyword_new_hexmask (kw, NULL);
 				}
 			} else if (ro->widestr) {
-				k = r_search_keyword_new_wide (kw, ro->mask, NULL, 0);
+				k = r_search_keyword_new_wide (kw, ro->mask, NULL, 0, ro->bigendian);
 			} else {
 				k = r_search_keyword_new_str (kw, ro->mask, NULL, 0);
 			}
