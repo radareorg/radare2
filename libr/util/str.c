@@ -542,7 +542,6 @@ R_API const char *r_str_lchr(const char *str, char chr) {
 	return NULL;
 }
 
-#if R2_600
 R_API char *r_str_lstr(const char *s, const char *sub) {
 	if (!s || !sub) {
 		return NULL;  // Handle null input
@@ -565,7 +564,6 @@ R_API char *r_str_lstr(const char *s, const char *sub) {
 	}
 	return NULL;
 }
-#endif
 
 /* find the last char chr in the substring str[start:end] with end not included */
 R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr) {

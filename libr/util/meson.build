@@ -1,7 +1,7 @@
 subdir('d')
 
 r_util_sources = [
-  'ascii_table.c',
+  'chartable.c',
   'assert.c',
   'w32.c',
   'rlz4.c',

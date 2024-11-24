@@ -2,8 +2,6 @@
 
 #include <r_types.h>
 
-// R2_600 - rename to chartable.c
-#if R2_USE_NEW_ABI
 // TODO. use the charset api to generate this
 static const char printable_ebcdic_table[] =
 "The following table contains the 128 printable EBCDIC characters.\n"
@@ -90,8 +88,6 @@ static const char printable_ebcdic_table[] =
 
 ;
 
-#endif
-
 static const char ascii_table[] =
 "The following table contains the 128 ASCII characters.\n"
 "\n"
@@ -164,7 +160,6 @@ static const char ascii_table[] =
 "077   63    3F    ?                           177   127   7F    DEL\n"
 ;
 
-#if R2_USE_NEW_ABI
 R_API const char *r_str_chartable(int t) {
 	if (t == 'e') {
 		return printable_ebcdic_table;
@@ -172,7 +167,6 @@ R_API const char *r_str_chartable(int t) {
 	}
 	return ascii_table;
 }
-#endif
 
 R_API const char *r_str_asciitable(void) {
 	return ascii_table;
