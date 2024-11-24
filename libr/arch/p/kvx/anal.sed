@@ -31,12 +31,12 @@
 /"l[bhw][sz]/	{s/.type =/& R_ANAL_OP_TYPE_LOAD |/};
 /"loopdo/	{s/.type =/& R_ANAL_OP_TYPE_REP |/};
 
-/\.[dw]\?eqz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_EQ |/};
-/\.[dw]\?nez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_NE |/};
-/\.[dw]\?gez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_GE |/};
-/\.[dw]\?gtz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_GT |/};
-/\.[dw]\?lez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_LE |/};
-/\.[dw]\?ltz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_COND_LT |/};
+/\.[dw]\?eqz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_EQ |/};
+/\.[dw]\?nez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_NE |/};
+/\.[dw]\?gez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_GE |/};
+/\.[dw]\?gtz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_GT |/};
+/\.[dw]\?lez"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_LE |/};
+/\.[dw]\?ltz"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/;s/.cond =/& R_ANAL_CONDTYPE_LT |/};
 /\.even"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/};
 /\.odd"/	{s/.type =/& R_ANAL_OP_TYPE_COND |/};
 

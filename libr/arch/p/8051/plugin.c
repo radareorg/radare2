@@ -928,20 +928,20 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ANAL_CONDTYPE_NE;
 		break;
 	case OP_JNB:
 	case OP_JZ:
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 		break;
 	case OP_JC:
-		op->cond = R_ANAL_COND_HS;
+		op->cond = R_ANAL_CONDTYPE_HS;
 		break;
 	case OP_JNC:
-		op->cond = R_ANAL_COND_LO;
+		op->cond = R_ANAL_CONDTYPE_LO;
 		break;
 	default:
-		op->cond = R_ANAL_COND_AL;
+		op->cond = R_ANAL_CONDTYPE_AL;
 		break;
 	}
 

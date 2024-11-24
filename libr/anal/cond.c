@@ -2,28 +2,45 @@
 
 #include <r_anal.h>
 
-// R2_600 rename
+/* Both contdypestr and condtypestr_expr should be in the same order,
+   depending on the values defined at RAnalCondType */
+static const char *condtypestr[] = {
+	"al", "eq", "ne", "ge", "gt", "le", "lt", "nv",
+	"hs", "lo", "mi", "pl", "vs", "vc", "hi", "ls"
+};
+
+static const char *condtypestr_expr[] = {
+	".any", "==", "!=", ">=", ">", "<=", "<", ".never",
+	".carry", ".carryclr", "-", "+", ".ovf", ".novf", ".uhi", ".ulo"
+};
+
 R_API const char *r_anal_cond_type_tostring(int cc) {
 	R_RETURN_VAL_IF_FAIL (cc >= 0, NULL);
-	switch (cc) {
-	case R_ANAL_COND_EQ: return "eq";
-	case R_ANAL_COND_NV: return "nv";
-	case R_ANAL_COND_NE: return "ne";
-	case R_ANAL_COND_HS: return "hs";
-	case R_ANAL_COND_LO: return "lo";
-	case R_ANAL_COND_MI: return "mi";
-	case R_ANAL_COND_PL: return "pl";
-	case R_ANAL_COND_VS: return "vs";
-	case R_ANAL_COND_VC: return "vc";
-	case R_ANAL_COND_HI: return "hi";
-	case R_ANAL_COND_LS: return "ls";
-	case R_ANAL_COND_GE: return "ge";
-	case R_ANAL_COND_LT: return "lt";
-	case R_ANAL_COND_GT: return "gt";
-	case R_ANAL_COND_LE: return "le";
-	case R_ANAL_COND_AL: return "al";
+	if (cc < R_ANAL_CONDTYPE_LAST) {
+		return condtypestr[cc];
 	}
 	return "??";
+}
+
+R_API const char *r_anal_cond_typeexpr_tostring(int cc) {
+	R_RETURN_VAL_IF_FAIL (cc >= 0, NULL);
+	if (cc < R_ANAL_CONDTYPE_LAST) {
+		return condtypestr_expr[cc];
+	}
+	return "??";
+}
+
+R_API RAnalCondType r_anal_cond_type_fromstring(const char *type) {
+	int i;
+	for (i = 0; i < R_ANAL_CONDTYPE_LAST; i++) {
+		if (!strcmp (type, condtypestr[i])) {
+			return i;
+		}
+		if (!strcmp (type, condtypestr_expr[i])) {
+			return i;
+		}
+	}
+	return R_ANAL_CONDTYPE_ERR;
 }
 
 R_API RAnalCond *r_anal_cond_new(void) {
@@ -31,44 +48,29 @@ R_API RAnalCond *r_anal_cond_new(void) {
 }
 
 R_API void r_anal_cond_fini(RAnalCond *c) {
-	if (!c) {
-		return;
-	}
+	R_RETURN_IF_FAIL (c);
 	r_anal_value_free (c->arg[0]);
 	r_anal_value_free (c->arg[1]);
 	c->arg[0] = c->arg[1] = NULL;
 }
 
-R_API void r_anal_cond_free(RAnalCond *c) {
-	if (!c) {
-		return;
+R_API void r_anal_cond_free(R_NULLABLE RAnalCond *c) {
+	if (c) {
+		r_anal_cond_fini (c);
+		free (c);
 	}
-	r_anal_cond_fini (c);
-	free (c);
 }
 
-// XXX?
 R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	R_RETURN_VAL_IF_FAIL (cond, NULL);
 	RAnalCond *c = R_NEW (RAnalCond);
-	if (!c) {
-		return NULL;
+	if (R_LIKELY (c)) {
+		c->type = cond->type;
+		c->arg[0] = r_anal_value_clone (cond->arg[0]);
+		c->arg[1] = r_anal_value_clone (cond->arg[1]);
+		return c;
 	}
-	memcpy (c, cond, sizeof (RAnalCond));
-	return c;
-}
-
-static inline const char *condstring(RAnalCond *cond) {
-	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
-	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
-	if (cond) {
-		if (cond->arg[1]) {
-			return condstr[cond->type % 6];
-		} else {
-			return condstr_single[cond->type % 6];
-		}
-	}
-	return "";
+	return NULL;
 }
 
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
@@ -78,21 +80,21 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	if (cond->arg[1]) {
 		st64 arg1 = (st64) r_anal_value_to_ut64 (anal, cond->arg[1]);
 		switch (cond->type) {
-		case R_ANAL_COND_EQ: return arg0 == arg1;
-		case R_ANAL_COND_NE: return arg0 != arg1;
-		case R_ANAL_COND_GE: return arg0 >= arg1;
-		case R_ANAL_COND_GT: return arg0 > arg1;
-		case R_ANAL_COND_LE: return arg0 <= arg1;
-		case R_ANAL_COND_LT: return arg0 < arg1;
+		case R_ANAL_CONDTYPE_EQ: return arg0 == arg1;
+		case R_ANAL_CONDTYPE_NE: return arg0 != arg1;
+		case R_ANAL_CONDTYPE_GE: return arg0 >= arg1;
+		case R_ANAL_CONDTYPE_GT: return arg0 > arg1;
+		case R_ANAL_CONDTYPE_LE: return arg0 <= arg1;
+		case R_ANAL_CONDTYPE_LT: return arg0 < arg1;
 		}
 	} else {
 		switch (cond->type) {
-		case R_ANAL_COND_EQ: return !arg0;
-		case R_ANAL_COND_NE: return arg0;
-		case R_ANAL_COND_GT: return arg0 > 0;
-		case R_ANAL_COND_GE: return arg0 >= 0;
-		case R_ANAL_COND_LT: return arg0 < 0;
-		case R_ANAL_COND_LE: return arg0 <= 0;
+		case R_ANAL_CONDTYPE_EQ: return !arg0;
+		case R_ANAL_CONDTYPE_NE: return arg0;
+		case R_ANAL_CONDTYPE_GT: return arg0 > 0;
+		case R_ANAL_CONDTYPE_GE: return arg0 >= 0;
+		case R_ANAL_CONDTYPE_LT: return arg0 < 0;
+		case R_ANAL_CONDTYPE_LE: return arg0 <= 0;
 		}
 	}
 	return false;
@@ -100,11 +102,11 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 
 R_API char *r_anal_cond_tostring(RAnalCond *cond) {
 	R_RETURN_VAL_IF_FAIL (cond, NULL);
-	const char *cnd = condstring (cond);
+	const char *cnd = r_anal_cond_typeexpr_tostring (cond->type);
 	char *val0 = r_anal_value_tostring (cond->arg[0]);
 	char *out = NULL;
 	if (val0) {
-		if (R_ANAL_COND_SINGLE (cond)) {
+		if (R_ANAL_CONDTYPE_SINGLE (cond)) {
 			out = r_str_newf ("%s%s", cnd, val0);
 		} else {
 			char *val1 = r_anal_value_tostring (cond->arg[1]);
@@ -139,6 +141,24 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
 	RAnalCond *cond = R_NEW0 (RAnalCond);
-	// TODO: find '<','=','>','!'...
+	int i, type = -1;
+	char *substr = NULL;
+	for (i = 0; i < R_ANAL_CONDTYPE_LAST; i++) {
+		substr = strstr(str, condtypestr_expr[i]);
+		if (substr) {
+			type = i;
+			break;
+		}
+	}
+	if (type < 0) {
+		return NULL;
+	}
+	cond->type = r_anal_cond_type_fromstring (condtypestr_expr[i]);
+	char *left = strndup (substr, substr - str);
+	char *right = strdup (substr + strlen (condtypestr_expr[i]));
+	cond->arg[0] = r_anal_value_new_from_string (left);
+	cond->arg[1] = r_anal_value_new_from_string (right);
+	free (left);
+	free (right);
 	return cond;
 }

@@ -269,7 +269,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	case RSP_OP_SLTI:
 	case RSP_OP_SLTIU:
 		op->type = R_ANAL_OP_TYPE_CMOV;
-		op->cond = R_ANAL_COND_LT;
+		op->cond = R_ANAL_CONDTYPE_LT;
 		r_vector_push (&op->dsts, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_vector_push (&op->srcs, parsed_operands[2].value);
@@ -304,7 +304,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BEQ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -313,7 +313,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BNE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ANAL_CONDTYPE_NE;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -322,7 +322,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BLEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_LE;
+		op->cond = R_ANAL_CONDTYPE_LE;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -332,7 +332,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BGTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_GT;
+		op->cond = R_ANAL_CONDTYPE_GT;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -342,7 +342,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BLTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_LT;
+		op->cond = R_ANAL_CONDTYPE_LT;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -352,7 +352,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BGEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->cond = R_ANAL_COND_GE;
+		op->cond = R_ANAL_CONDTYPE_GE;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -362,7 +362,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->cond = R_ANAL_COND_LT;
+		op->cond = R_ANAL_CONDTYPE_LT;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -371,7 +371,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_BGEZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->cond = R_ANAL_COND_GE;
+		op->cond = R_ANAL_CONDTYPE_GE;
 		tmpval = r_vector_push (&op->dsts, NULL);
 		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
@@ -528,19 +528,19 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case RSP_OP_VLT:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cond = R_ANAL_COND_LT;
+		op->cond = R_ANAL_CONDTYPE_LT;
 		break;
 	case RSP_OP_VEQ:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 		break;
 	case RSP_OP_VNE:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ANAL_CONDTYPE_NE;
 		break;
 	case RSP_OP_VGE:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cond = R_ANAL_COND_GE;
+		op->cond = R_ANAL_CONDTYPE_GE;
 		break;
 	case RSP_OP_VCL:
 		op->type = R_ANAL_OP_TYPE_UNK;

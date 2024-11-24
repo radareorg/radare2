@@ -742,7 +742,7 @@ static bool _6502_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		op->fail = addr + op->size;
 		// FIXME: add a type of conditional
-		// op->cond = R_ANAL_COND_LE;
+		// op->cond = R_ANAL_CONDTYPE_LE;
 		_6502_anal_esil_ccall (op, data[0]);
 		break;
 	// JSR

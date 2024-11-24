@@ -57,7 +57,7 @@ static inline void gb_anal_esil_ccall(RAnalOp *op, const ut8 data) {
 		cond = 'C';
 		break;
 	}
-	if (op->cond == R_ANAL_COND_EQ) {
+	if (op->cond == R_ANAL_CONDTYPE_EQ) {
 		r_strbuf_setf (&op->esil, "%c,?{,2,sp,-=,pc,sp,=[2],%"PFMT64d",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		r_strbuf_setf (&op->esil, "%c,!,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
@@ -75,7 +75,7 @@ static inline void gb_anal_esil_cret(RAnalOp *op, const ut8 data) {
 	} else {
 		cond = 'Z';
 	}
-	if (op->cond == R_ANAL_COND_EQ) {
+	if (op->cond == R_ANAL_CONDTYPE_EQ) {
 		r_strbuf_setf (&op->esil, "%c,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
 	} else {
 		r_strbuf_setf (&op->esil, "%c,!,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
@@ -94,7 +94,7 @@ static inline void gb_anal_esil_cjmp(RAnalOp *op, const ut8 data) {
 		default:
 			cond = 'C';
 	}
-	if (op->cond == R_ANAL_COND_EQ) {
+	if (op->cond == R_ANAL_CONDTYPE_EQ) {
 		r_strbuf_setf (&op->esil, "%c,?{,0x%"PFMT64x",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		r_strbuf_setf (&op->esil, "%c,!,?{,0x%"PFMT64x",pc,:=,}", cond, (op->jump & 0xffff));
@@ -271,9 +271,9 @@ static inline void gb_anal_cond(RAnalOp *op, const ut8 data) {
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	if (data & 0x8) {
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 	} else {
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ANAL_CONDTYPE_NE;
 	}
 	switch (data) {
 	case 0x20:

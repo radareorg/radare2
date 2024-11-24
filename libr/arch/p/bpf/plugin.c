@@ -936,7 +936,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case BPF_JMP_JGT | BPF_X:
 	case BPF_JMP_JGT | BPF_K:
 		EMIT_CJMP (op, op->addr, f);
-		op->cond = R_ANAL_COND_GT;
+		op->cond = R_ANAL_CONDTYPE_GT;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -953,7 +953,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case BPF_JMP_JGE | BPF_X:
 	case BPF_JMP_JGE | BPF_K:
 		EMIT_CJMP (op, op->addr, f);
-		op->cond = R_ANAL_COND_GE;
+		op->cond = R_ANAL_CONDTYPE_GE;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -968,7 +968,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	case BPF_JMP_JEQ | BPF_X:
 	case BPF_JMP_JEQ | BPF_K:
 		EMIT_CJMP (op, op->addr, f);
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ANAL_CONDTYPE_EQ;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,

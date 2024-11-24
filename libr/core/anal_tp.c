@@ -291,24 +291,24 @@ static ut64 get_addr(REsilTrace *etrace, const char *regname, int idx) {
 	return etrace_regread_value (etrace, idx, regname);
 }
 
-static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
+static RAnalCondType cond_invert(RAnal *anal, RAnalCondType cond) {
 	switch (cond) {
-	case R_ANAL_COND_LE:
-		return R_ANAL_COND_GT;
-	case R_ANAL_COND_LT:
-		return R_ANAL_COND_GE;
-	case R_ANAL_COND_GE:
-		return R_ANAL_COND_LT;
-	case R_ANAL_COND_GT:
-		return R_ANAL_COND_LE;
-	case R_ANAL_COND_AL:
-		return R_ANAL_COND_NV;
-	case R_ANAL_COND_NV:
-		return R_ANAL_COND_AL;
-	case R_ANAL_COND_EQ:
-		return R_ANAL_COND_NE;
-	case R_ANAL_COND_NE:
-		return R_ANAL_COND_EQ;
+	case R_ANAL_CONDTYPE_LE:
+		return R_ANAL_CONDTYPE_GT;
+	case R_ANAL_CONDTYPE_LT:
+		return R_ANAL_CONDTYPE_GE;
+	case R_ANAL_CONDTYPE_GE:
+		return R_ANAL_CONDTYPE_LT;
+	case R_ANAL_CONDTYPE_GT:
+		return R_ANAL_CONDTYPE_LE;
+	case R_ANAL_CONDTYPE_AL:
+		return R_ANAL_CONDTYPE_NV;
+	case R_ANAL_CONDTYPE_NV:
+		return R_ANAL_CONDTYPE_AL;
+	case R_ANAL_CONDTYPE_EQ:
+		return R_ANAL_CONDTYPE_NE;
+	case R_ANAL_CONDTYPE_NE:
+		return R_ANAL_CONDTYPE_EQ;
 	default:
 		R_LOG_WARN ("unhandled condition for swapping %d", cond);
 		break;
