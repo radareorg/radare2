@@ -246,11 +246,6 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 	if (!rlog->cbs) {
 		rlog->cbs = r_list_newf (free);
 	}
-#if !R2_USE_NEW_ABI
-	if (user) {
-		rlog->user = user;
-	}
-#endif
 	RLogCallbackUser *cbu = R_NEW (RLogCallbackUser);
 	cbu->cb = cb;
 	cbu->user = user;

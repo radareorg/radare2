@@ -100,7 +100,6 @@ bool test_buf(RBuffer *b) {
 	return MU_PASSED;
 }
 
-#if R2_USE_NEW_ABI
 bool test_r_buf_cache(void) {
 	const char bytes[] = "ABCDEFGHIJKLMNOP";
 	RBuffer *b0 = r_buf_new_with_bytes ((const ut8*)bytes, sizeof (bytes));
@@ -118,7 +117,6 @@ bool test_r_buf_cache(void) {
 	r_buf_free (b1);
 	mu_end;
 }
-#endif
 
 bool test_r_buf_file(void) {
 	RBuffer *b;
@@ -425,9 +423,7 @@ bool test_r_buf_slice_too_big(void) {
 }
 
 int all_tests(void) {
-#if R2_USE_NEW_ABI
 	mu_run_test (test_r_buf_cache);
-#endif
 	mu_run_test (test_r_buf_file);
 	mu_run_test (test_r_buf_bytes);
 	mu_run_test (test_r_buf_mmap);

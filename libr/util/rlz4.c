@@ -4,7 +4,6 @@
 
 #include <r_util.h>
 
-#if R2_USE_NEW_ABI
 // R2_600 - replace shlr/smallz4 with this code which also supports compressing
 
 #define BLOCK_SIZE (1024*8) /* 8K */
@@ -152,7 +151,7 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 }
 
 static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
-	int i, s, len, error, run, p = 0;
+	int i, s, len, run, p = 0;
 	int ip = BLOCK_SIZE;
 	int ip_end = ip + comp_len;
 
@@ -246,17 +245,13 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 		input += comp_len;
 	}
 	*output_size = r_buf_size (b);
-	return r_buf_tostring (b);
+	return (ut8*)r_buf_tostring (b);
 }
 
 R_API int r_lz4_compress(ut8 *obuf, ut8 *buf, size_t buf_size, const int max_chain) {
-	int i, n;
+	int i;
 	ut8 *obuf0 = obuf;
-
-	int ipos = 0;
-	int opos = 0;
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
-
 	for (i = 0; i < buf_size; i += BLOCK_SIZE) {
 		int n = R_MIN (BLOCK_SIZE, buf_size - i);
 		memcpy (g_buf, buf + i, n);
@@ -293,6 +288,4 @@ int main() {
 	write (1, out, output_size);
 #endif
 }
-#endif
-
 #endif

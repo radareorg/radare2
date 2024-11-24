@@ -2164,8 +2164,10 @@ static int cmd_info(void *data, const char *input) {
 		}
 		input = input + strlen (input) - 1;
 		break;
-	case 'a': // "iA"
-		if (input[1] == 'j') {
+	case 'a': // "ia"
+		if (r_str_startswith (input, "iaito")) {
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2iaito");
+		} else if (input[1] == 'j') {
 			pj_o (pj); // weird
 			r_bin_list_archs (core->bin, pj, 'j');
 			pj_end (pj);

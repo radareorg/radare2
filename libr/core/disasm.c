@@ -2235,22 +2235,18 @@ static void ds_show_functions(RDisasmState *ds) {
 			RAnalVar *var;
 			RListIter *iter;
 
-#if R2_USE_NEW_ABI
 			int skipped = 0;
 			if (f->addr == core->offset) {
 				skipped = core->skiplines;
 			}
-#endif
 			RList *all_vars = vars_cache.rvars;
 			r_list_join (all_vars, vars_cache.bvars);
 			r_list_join (all_vars, vars_cache.svars);
 			r_list_foreach (all_vars, iter, var) {
-#if R2_USE_NEW_ABI
 				if (skipped > 0) {
 					skipped--;
 					continue;
 				}
-#endif
 				ds_begin_line (ds);
 				int idx;
 				RAnal *anal = ds->core->anal;

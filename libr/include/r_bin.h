@@ -463,9 +463,7 @@ struct r_bin_t {
 	char strfilter; // string filtering
 	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
-#if R2_USE_NEW_ABI
 	char *srcdir_base; // dir.source.base
-#endif
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
@@ -603,14 +601,9 @@ typedef struct r_bin_class_t {
 	int index; // should be unsigned?
 	ut64 addr;
 	char *ns; // namespace // maybe RBinName?
-#if R2_USE_NEW_ABI
-	// Use RVec here
+	// R2_600 - Use RVec here
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
-#else
-	RList *methods; // <RBinSymbol>
-	RList *fields; // <RBinField>
-#endif
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
 	ut64 lang;
@@ -914,11 +907,7 @@ R_API void r_bin_name_filtered(RBinName *bn, const char *fname);
 R_API void r_bin_name_free(RBinName *bn);
 
 R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar);
-#if R2_USE_NEW_ABI
 R_API ut64 r_bin_attr_fromstring(const char *s, bool compact);
-#else
-R_API ut64 r_bin_attr_fromstring(const char *s);
-#endif
 
 /* filter.c */
 typedef struct HtSU_t HtSU;

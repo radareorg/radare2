@@ -302,9 +302,7 @@ typedef struct {
 	int y;
 } VisualMark;
 
-#if R2_USE_NEW_ABI
 typedef struct RCorePriv RCorePriv;
-#endif
 
 struct r_core_t {
 	RBin *bin;
@@ -514,9 +512,9 @@ R_API R_MUSTUSE char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINT
 R_API R_MUSTUSE char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API R_MUSTUSE char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API R_MUSTUSE RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
-R_API int r_core_cmd_file(RCore *core, const char *file);
-R_API int r_core_cmd_lines(RCore *core, const char *lines);
-R_API int r_core_cmd_command(RCore *core, const char *command);
+R_API bool r_core_cmd_file(RCore *core, const char *file);
+R_API bool r_core_cmd_lines(RCore *core, const char *lines);
+R_API bool r_core_cmd_command(RCore *core, const char *command);
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls);
 R_API bool r_core_run_script(RCore *core, const char *file);
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb);

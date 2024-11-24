@@ -240,11 +240,16 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 }
 
 static bool cb_anal_flagends(void *user, void *data) {
-#if R2_USE_NEW_ABI
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.flagends = node->i_value;
-#endif
+	return true;
+}
+
+static bool cb_anal_icods(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.icods = node->i_value;
 	return true;
 }
 
@@ -1422,7 +1427,6 @@ static bool cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
-#if R2_USE_NEW_ABI
 static bool cb_dirsrc_base(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore *)user;
@@ -1434,7 +1438,6 @@ static bool cb_dirsrc_base(void *user, void *data) {
 	}
 	return true;
 }
-#endif
 
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
@@ -3552,6 +3555,7 @@ R_API int r_core_config_init(RCore *core) {
 	NULL);
 	SETI ("anal.timeout", 0, "stop analyzing after a couple of seconds");
 	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function when a flag is found");
+	SETCB ("anal.icods", "true", &cb_anal_icods, "analyze indirect code references");
 	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "analyze retpolines, may be slower if not needed");
 	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");
 	SETICB ("anal.jmp.tailcall.delta", 0, &cb_anal_jmptailcall_delta, "consume a branch as a call if delta is big");
@@ -3995,9 +3999,7 @@ R_API int r_core_config_init(RCore *core) {
 		SETPREF ("dir.plugins", path, "path to plugin files to be loaded at startup");
 		free (path);
 	}
-#if R2_USE_NEW_ABI
 	SETCB ("dir.source.base", "", &cb_dirsrc_base, "path to trim out from the one in dwarf");
-#endif
 	SETCB ("dir.source", "", &cb_dirsrc, "path to find source files");
 	SETPREF ("dir.types", "/usr/include", "default colon-separated list of paths to find C headers to cparse types");
 	SETPREF ("dir.libs", "", "specify path to find libraries to load when bin.libs=true");

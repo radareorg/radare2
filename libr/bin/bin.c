@@ -1687,13 +1687,7 @@ R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar) {
 	return r_strbuf_drain (sb);
 }
 
-// TODO : not implemented yet
-#if R2_USE_NEW_ABI
 R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
-#else
-R_API ut64 r_bin_attr_fromstring(const char *s) {
-	const bool compact = false;
-#endif
 	size_t i;
 	ut64 bits = 0LL;
 	const char *word;

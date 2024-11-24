@@ -645,13 +645,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_seteuid = strdup (e);
 	} else if (!strcmp (b, "setgid")) {
 		p->_setgid = strdup (e);
-#if R2_USE_NEW_ABI
 	} else if (!strcmp (b, "stderrout")) {
 		p->_stderrout = r_str_is_true (e);
-#else
-	} else if (!strcmp (b, "stderrout")) {
-		R_LOG_ERROR ("stderrout directive is only supported in the new abi");
-#endif
 	} else if (!strcmp (b, "setegid")) {
 		p->_setegid = strdup (e);
 	} else if (!strcmp (b, "nice")) {
@@ -1090,7 +1085,6 @@ R_API bool r_run_config_env(RRunProfile *p) {
 			return false;
 		}
 	}
-#if R2_USE_NEW_ABI
 	if (p->_stderrout) {
 #if __wasi__
 		R_LOG_WARN ("Directive 'stderrout' not supported in wasm");
@@ -1100,7 +1094,6 @@ R_API bool r_run_config_env(RRunProfile *p) {
 		}
 #endif
 	}
-#endif
 	if (p->_setgid) {
 #if __wasi__
 		R_LOG_WARN ("Directive 'setgid' not supported in wasm");
