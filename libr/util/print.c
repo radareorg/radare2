@@ -444,10 +444,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		ch = '|';
 	}
 	if (p && p->pava) {
-		ut64 va = p->iob.p2v (p->iob.io, addr);
-		if (va != UT64_MAX) {
-			addr = va;
-		}
+		p->iob.p2v (p->iob.io, addr, &addr);
 	}
 	if (use_segoff) {
 		ut32 s, a;

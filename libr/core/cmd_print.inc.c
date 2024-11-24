@@ -2532,10 +2532,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		echars = chars;
 		ut64 ea = addr;
 		if (core->print->pava) {
-			ut64 va = r_io_p2v (core->io, addr);
-			if (va != UT64_MAX) {
-				ea = va;
-			}
+			r_io_p2v (core->io, addr, &ea);
 		}
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
@@ -6163,10 +6160,7 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 		if (c == 0) {
 			ut64 ea = core->offset + i;
 			if (core->print->pava) {
-				ut64 va = r_io_p2v (core->io, ea);
-				if (va != UT64_MAX) {
-					ea = va;
-				}
+				r_io_p2v (core->io, ea, &ea);
 			}
 			r_print_section (core->print, ea);
 			r_print_offset (core->print, ea, 0, 0, NULL);
