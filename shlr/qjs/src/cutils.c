@@ -1131,7 +1131,7 @@ void rqsort(void *base, size_t nmemb, size_t size, cmp_f cmp, void *opaque)
 
 #ifdef _WIN32
  // From: https://stackoverflow.com/a/26085827
-static int gettimeofday_msvc(struct timeval *tp, struct timezone *tzp)
+static int gettimeofday_msvc(struct timeval *tp)
 {
   static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 
@@ -1185,7 +1185,7 @@ uint64_t js__hrtime_ns(void) {
 int64_t js__gettimeofday_us(void) {
     struct timeval tv;
 #ifdef _WIN32
-    gettimeofday_msvc(&tv, NULL);
+    gettimeofday_msvc(&tv);
 #else
     gettimeofday(&tv, NULL);
 #endif

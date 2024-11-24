@@ -3,7 +3,7 @@ include deps.mk
 QJS_BRANCH?=quickjs-ng
 USE_MINIFY=0
 USE_UGLIFY=0
-QJS_COMMIT=55b67a6591071b2ada8895a7000e0fec5f348016
+QJS_COMMIT=df44d662912c8999ae4cf6926500b33e03b53589
 
 ifeq ($(QJS_BRANCH),frida)
 	QJS_NAME=quickjs-frida
@@ -59,6 +59,7 @@ sync-qjs qjs-sync sync:
 	mv src2 src
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
 	git add src
+	git rm -f src/quickjs.c-e
 
 NM=node_modules
 
