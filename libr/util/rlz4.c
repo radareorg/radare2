@@ -4,7 +4,6 @@
 
 #include <r_util.h>
 
-#if R2_USE_NEW_ABI
 // R2_600 - replace shlr/smallz4 with this code which also supports compressing
 
 #define BLOCK_SIZE (1024*8) /* 8K */
@@ -293,6 +292,4 @@ int main() {
 	write (1, out, output_size);
 #endif
 }
-#endif
-
 #endif

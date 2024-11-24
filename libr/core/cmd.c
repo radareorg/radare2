@@ -6349,10 +6349,9 @@ beach:
 	return ret;
 }
 
-// R2_600 return bool
-R_API int r_core_cmd_lines(RCore *core, const char *lines) {
+R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	R_RETURN_VAL_IF_FAIL (core && lines, false);
-	int r, ret = true;
+	int r;
 	char *data, *odata;
 
 	if (R_STR_ISEMPTY (lines)) {
@@ -6362,6 +6361,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
+	bool ret = true;
 	size_t line_count = r_str_char_count (lines, '\n');
 	const bool istty = r_cons_is_tty ();
 	const bool show_progress_bar = core->print->enable_progressbar \
@@ -6384,13 +6384,13 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			r = r_core_cmd (core, data, 0);
 			if (r < 0) {
 				data = nl + 1;
-				ret = -1;
+				ret = true; // -1;
 				break;
 			}
 			r_cons_flush ();
 			if (data[0] == 'q') {
 				if (data[1] == '!') {
-					ret = -1;
+					ret = true; // -1;
 				} else {
 					R_LOG_WARN ("'q': quit ignored. Use 'q!'");
 				}
@@ -6406,7 +6406,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			r_cons_newline ();
 		}
 	}
-	if (ret >= 0 && R_STR_ISNOTEMPTY (data)) {
+	if (ret && R_STR_ISNOTEMPTY (data)) {
 		r_core_cmd (core, data, 0);
 		r_cons_flush ();
 		r_core_task_yield (&core->tasks);
@@ -6415,8 +6415,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	return ret;
 }
 
-// R2_600 - return bool
-R_API int r_core_cmd_file(RCore *core, const char *file) {
+R_API bool r_core_cmd_file(RCore *core, const char *file) {
 	R_RETURN_VAL_IF_FAIL (core && file, false);
 	char *data = r_file_abspath (file);
 	if (!data) {
@@ -6436,16 +6435,16 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 	return true;
 }
 
-R_API int r_core_cmd_command(RCore *core, const char *command) {
+R_API bool r_core_cmd_command(RCore *core, const char *command) {
 	R_RETURN_VAL_IF_FAIL (core && command, -1);
 	char *cmd = r_core_sysenv_begin (core, command);
 	int len;
 	char *buf = r_sys_cmd_str (cmd, 0, &len);
 	if (!buf) {
 		free (cmd);
-		return -1;
+		return false;
 	}
-	int ret = r_core_cmd_lines (core, buf);
+	bool ret = r_core_cmd_lines (core, buf);
 	r_core_sysenv_end (core, command);
 	free (buf);
 	return ret;

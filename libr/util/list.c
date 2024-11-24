@@ -343,18 +343,6 @@ R_API int r_list_del_n(RList *list, int n) {
 	return false;
 }
 
-R_DEPRECATE R_API void *r_list_get_top(const RList *list) {
-	R_RETURN_VAL_IF_FAIL (list, NULL);
-
-	return list->tail ? list->tail->data : NULL;
-}
-
-R_DEPRECATE R_API void *r_list_get_bottom(const RList *list) {
-	R_RETURN_VAL_IF_FAIL (list, NULL);
-
-	return list->head ? list->head->data : NULL;
-}
-
 // Moves an iter to the top(tail) of the list
 // There is an underlying assumption here, that iter is an RListIter of this RList
 R_API void r_list_iter_to_top(RList *list, RListIter *iter) {
@@ -463,7 +451,6 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	return false;
 }
 
-#if R2_USE_NEW_ABI
 R_API RListIter *r_list_get_nth(const RList *list, int n) {
 	R_RETURN_VAL_IF_FAIL (list, NULL);
 	RListIter *it;
@@ -475,7 +462,6 @@ R_API RListIter *r_list_get_nth(const RList *list, int n) {
 	}
 	return NULL;
 }
-#endif
 
 R_API void *r_list_get_n(const RList *list, int n) {
 	RListIter *it = r_list_get_nth (list, n);

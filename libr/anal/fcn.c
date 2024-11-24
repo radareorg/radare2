@@ -624,11 +624,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	bool arch_destroys_dst = does_arch_destroys_dst (arch);
-#if R2_USE_NEW_ABI
 	const bool flagends = anal->opt.flagends;
-#else
-	const bool flagends = anal->coreb.cfggeti (anal->coreb.core, "anal.flagends");
-#endif
 	const bool is_arm = r_str_startswith (arch, "arm");
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
 	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
@@ -1122,10 +1118,7 @@ noskip:
 			// R2R db/anal/arm db/esil/apple
 			//v1 = UT64_MAX; // reset v1 jmptable pointer value for mips only
 			// on stm8 this must be disabled.. but maybe we need a global option to disable icod refs
-			bool want_icods = true;
-#if R2_USE_NEW_ABI
-			// want_icods = anal->opt.icods;
-#endif
+			bool want_icods = anal->opt.icods;
 			{
 				const char *arch = R_UNWRAP3 (anal, config, arch);
 				if (r_str_startswith (arch, "stm8")) {

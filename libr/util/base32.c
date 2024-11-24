@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
+#include <r_util.h>
 #include <r_util/r_base32.h>
 
-#if R2_USE_NEW_ABI
 static const char base32_alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 static const char base32_padding = '=';
 
@@ -119,5 +119,3 @@ R_API ut64 base32_decode_ut64(const char *input) {
 	}
 	return decoded_value;
 }
-
-#endif

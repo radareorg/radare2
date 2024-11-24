@@ -130,13 +130,11 @@ R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	}
 	char *res = NULL;
 	char *filename = strdup (di->file);
-#if R2_USE_NEW_ABI
 	if (R_STR_ISNOTEMPTY (bin->srcdir_base) && r_str_startswith (filename, bin->srcdir_base)) {
 		char *fn = strdup (filename + strlen (bin->srcdir_base));
 		free (filename);
 		filename = fn;
 	}
-#endif
 	char *basename = strdup (r_file_basename (di->file));
 #if __APPLE__
 	// early optimization because mac's home is slow

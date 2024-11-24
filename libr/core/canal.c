@@ -6,6 +6,9 @@
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
+// 128M
+#define MAX_SCAN_SIZE 0x7ffffff
+
 HEAPTYPE (ut64);
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
@@ -17,8 +20,6 @@ enum {
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
 };
-// 128M
-#define MAX_SCAN_SIZE 0x7ffffff
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
