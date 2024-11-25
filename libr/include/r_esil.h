@@ -36,26 +36,6 @@ enum {
 	R_ESIL_OP_TYPE_TRAP = 0x100 // syscall, interrupts, breakpoints, ...
 };
 
-// this is 80-bit offsets so we can address every piece of esil in an instruction
-typedef struct r_esil_expr_offset_t {
-	ut64 off;
-	ut16 idx;
-} REsilEOffset;
-
-typedef enum {
-	R_ESIL_BLOCK_ENTER_NORMAL = 0,
-	R_ESIL_BLOCK_ENTER_TRUE,
-	R_ESIL_BLOCK_ENTER_FALSE,
-	R_ESIL_BLOCK_ENTER_GLUE,
-} REsilBlockEnterType;
-
-typedef struct r_esil_basic_block_t {
-	REsilEOffset first;
-	REsilEOffset last;
-	char *expr;	//synthesized esil-expression for this block
-	REsilBlockEnterType enter;	//maybe more type is needed here
-} REsilBB;
-
 typedef struct r_esil_t ESIL;
 
 typedef bool (*REsilHandlerCB)(ESIL *esil, ut32 h, void *user);
