@@ -145,9 +145,9 @@ typedef struct r_io_t {
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
 	ut64 mts; // map "timestamps", this sucks somehow
-	RIDStorage *files; // RIODescs accessible by their fd
-	RIDStorage *maps;  // RIOMaps accessible by their id
-	RIDStorage *banks; // RIOBanks accessible by their id
+	RIDStorage files; // RIODescs accessible by their fd
+	RIDStorage maps;  // RIOMaps accessible by their id
+	RIDStorage banks; // RIOBanks accessible by their id
 	RIOCache cache;
 	ut8 *write_mask;
 	int write_mask_len;

@@ -23,7 +23,7 @@ static bool close_but_cb(void *user, void *data, ut32 id) {
 
 // TODO: move to IO as a helper?
 R_API bool r_core_file_close_all_but(RCore *core) {
-	r_id_storage_foreach (core->io->files, close_but_cb, core);
+	r_id_storage_foreach (&core->io->files, close_but_cb, core);
 	return true;
 }
 
@@ -616,7 +616,7 @@ static bool filecb(void *user, void *data, ut32 id) {
 
 static bool file_is_loaded(RCore *core, const char *lib) {
 	MyFileData filedata = {lib, false};
-	r_id_storage_foreach (core->io->files, filecb, &filedata);
+	r_id_storage_foreach (&core->io->files, filecb, &filedata);
 	return filedata.found;
 }
 
@@ -797,7 +797,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			const char *imp_name = r_bin_name_tostring2 (imp->name, 'o');
 			eprintf ("Resolving %s... ", imp_name);
 			RCoreLinkData linkdata = {imp_name, UT64_MAX, r->bin};
-			r_id_storage_foreach (r->io->files, linkcb, &linkdata);
+			r_id_storage_foreach (&r->io->files, linkcb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
 				eprintf ("0x%08"PFMT64x, linkdata.addr);
 				ut64 a = linkdata.addr;

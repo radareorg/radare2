@@ -5003,7 +5003,7 @@ static void __set_pcb(RPanel *p) {
 
 static int __file_history_up(RLine *line) {
 	RCore *core = line->user;
-	RList *files = r_id_storage_list (core->io->files);
+	RList *files = r_id_storage_list (&core->io->files);
 	int num_files = r_list_length (files);
 	if (line->file_hist_index >= num_files || line->file_hist_index < 0) {
 		return false;
@@ -5020,7 +5020,7 @@ static int __file_history_up(RLine *line) {
 
 static int __file_history_down(RLine *line) {
 	RCore *core = line->user;
-	RList *files = r_id_storage_list (core->io->files);
+	RList *files = r_id_storage_list (&core->io->files);
 	int num_files = r_list_length (files);
 	if (line->file_hist_index <= 0 || line->file_hist_index > num_files) {
 		return false;
