@@ -329,7 +329,7 @@ static void rprj_mods_write_one(RBuffer *b, R2ProjectMod *mod) {
 static RIOMap *coremod(Cursor *cur, R2ProjectMod *mod) {
 	// iterate over current maps and write
 	RBuffer *b = cur->b;
-	RIDStorage *maps = cur->core->io->maps;
+	RIDStorage *maps = &cur->core->io->maps;
 	ut32 mapid;
 	r_id_storage_get_lowest (maps, &mapid);
 	ut64 at = r_buf_at (b);
@@ -359,7 +359,7 @@ static RIOMap *coremod(Cursor *cur, R2ProjectMod *mod) {
 static void rprj_mods_write(Cursor *cur) {
 	// iterate over current maps and write
 	RBuffer *b = cur->b;
-	RIDStorage *maps = cur->core->io->maps;
+	RIDStorage *maps = &cur->core->io->maps;
 	ut32 mapid;
 	r_id_storage_get_lowest (maps, &mapid);
 	ut64 at = r_buf_at (b);

@@ -560,9 +560,9 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		flush (sb);
 	}
 #if PROJECT_EXPERIMENTAL
-	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
+	if (opts & R_CORE_PRJ_IO_MAPS && core->io) {
 		fdc = 3;
-		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
+		r_id_storage_foreach (&core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
 		flush (sb);
 	}
 #endif

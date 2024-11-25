@@ -2189,14 +2189,14 @@ static int cmd_info(void *data, const char *input) {
 			const char *fn = (input[1] == ' ')
 				? r_str_trim_head_ro (input + 2): desc->name;
 			struct fdof_t fof = { core, fn, -1 };
-			r_id_storage_foreach (core->io->files, fdof_cb, &fof);
+			r_id_storage_foreach (&core->io->files, fdof_cb, &fof);
 			if (fof.fd != -1) {
 				oldfd = fof.fd;
 			}
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 			fof.fd = -1;
 			r_core_bin_load (core, fn, baddr);
-			r_id_storage_foreach (core->io->files, fdof_cb, &fof);
+			r_id_storage_foreach (&core->io->files, fdof_cb, &fof);
 			if (fof.fd != oldfd) {
 				r_core_cmdf (core, "o-%d", fof.fd);
 			}

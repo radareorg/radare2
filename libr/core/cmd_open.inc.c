@@ -283,7 +283,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			free (arg);
 		} else {
-			RList *ofiles = r_id_storage_list (core->io->files);
+			RList *ofiles = r_id_storage_list (&core->io->files);
 			RIODesc *desc;
 			RListIter *iter;
 			RList *files = r_list_newf (NULL);
@@ -573,7 +573,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 		return;
 	}
 	ut32 mapid;
-	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
+	if (!r_id_storage_get_lowest (&core->io->maps, &mapid)) {
 		ut32 fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
 		if (desc) {
@@ -586,19 +586,19 @@ static void cmd_omfg(RCore *core, const char *input) {
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm |= perm;
-		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	case '-':
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm &= ~perm;
-		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	default:
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm = perm;
-		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	}
 }
@@ -670,9 +670,9 @@ static void r_core_cmd_om_tab(RCore *core, const char *arg) {
 	}
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 	ut32 mapid = 0;
-	r_id_storage_get_lowest (core->io->maps, &mapid);
+	r_id_storage_get_lowest (&core->io->maps, &mapid);
 	do {
-		RIOMap *m = r_id_storage_get (core->io->maps, mapid);
+		RIOMap *m = r_id_storage_get (&core->io->maps, mapid);
 		if (!m) {
 			R_LOG_WARN ("Cannot find mapid %d", mapid);
 			break;
@@ -686,7 +686,7 @@ static void r_core_cmd_om_tab(RCore *core, const char *arg) {
 		r_table_add_rowf (t, "ddxxxxxss",
 			m->id, m->fd, pa, pa_end, pa_size,
 			va, va_end, r_str_rwx_i (m->perm), name);
-	} while (r_id_storage_get_next (core->io->maps, &mapid));
+	} while (r_id_storage_get_next (&core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
 		char *ts = strchr (arg, ':')? r_table_tostring (t) : r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
@@ -831,11 +831,11 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		case 'g': // "ombg"
 			{
 				ut32 mapid;
-				r_id_storage_get_lowest (core->io->maps, &mapid);
+				r_id_storage_get_lowest (&core->io->maps, &mapid);
 				do {
-					RIOMap *map = r_id_storage_get (core->io->maps, mapid);
+					RIOMap *map = r_id_storage_get (&core->io->maps, mapid);
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-				} while (r_id_storage_get_next (core->io->maps, &mapid));
+				} while (r_id_storage_get_next (&core->io->maps, &mapid));
 			}
 			break;
 		case 'q': // "ombq"
@@ -844,11 +844,11 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		case 0: // "omb"
 			{
 				ut32 bank_id = 0;
-				if (!r_id_storage_get_lowest (core->io->banks, &bank_id)) {
+				if (!r_id_storage_get_lowest (&core->io->banks, &bank_id)) {
 					break;
 				}
 				do {
-					RIOBank *bank = r_id_storage_get (core->io->banks, bank_id);
+					RIOBank *bank = r_id_storage_get (&core->io->banks, bank_id);
 					const char ch = core->io->bank == bank_id? '*': '-';
 					r_cons_printf ("%c %d %s [", ch, bank->id, bank->name);
 					RIOMapRef *mapref;
@@ -858,7 +858,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 					}
 					r_cons_printf (" ]\n");
 					// list all the associated maps
-				} while (r_id_storage_get_next (core->io->banks, &bank_id));
+				} while (r_id_storage_get_next (&core->io->banks, &bank_id));
 			}
 			break;
 		case '+': // "omb+ [name]"
@@ -1318,8 +1318,8 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 }
 
 R_API void r_core_file_reopen_in_malloc(RCore *core) {
-	if (core && core->io && core->io->files) {
-		r_id_storage_foreach (core->io->files, reopen_in_malloc_cb, core->io);
+	if (core && core->io) {
+		r_id_storage_foreach (&core->io->files, reopen_in_malloc_cb, core->io);
 	}
 }
 
@@ -1788,7 +1788,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 	ut64 addr = 0LL;
 	// check if file is opened already
 	if (r_str_startswith (input, "nnu")) {
-		r_id_storage_foreach (core->io->files, find_desc_by_name, &on);
+		r_id_storage_foreach (&core->io->files, find_desc_by_name, &on);
 		if (on.desc) {
 			core->io->desc = on.desc;
 			return true;
@@ -2159,8 +2159,8 @@ static int cmd_open(void *data, const char *input) {
 			}
 		} else { // "o="
 			fdsz = 0;
-			r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
-			r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
+			r_id_storage_foreach (&core->io->files, init_desc_list_visual_cb, core->print);
+			r_id_storage_foreach (&core->io->files, desc_list_visual_cb, core->print);
 		}
 		break;
 	case 'q': // "oq"
@@ -2170,21 +2170,21 @@ static int cmd_open(void *data, const char *input) {
 				r_cons_printf ("%d\n", fd);
 			}
 		} else if (input[1] == '.') { // "oq."
-			r_id_storage_foreach (core->io->files, desc_list_quiet2_cb, core->print);
+			r_id_storage_foreach (&core->io->files, desc_list_quiet2_cb, core->print);
 		} else {
-			r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
+			r_id_storage_foreach (&core->io->files, desc_list_quiet_cb, core->print);
 		}
 		break;
 	case '\0': // "o"
-		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
+		r_id_storage_foreach (&core->io->files, desc_list_cb, core->print);
 		break;
 	case '*': // "o*"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_o, "o*");
 		} else if (input[1] == '*') {
-			r_id_storage_foreach (core->io->files, desc_list_cmds_cb2, core);
+			r_id_storage_foreach (&core->io->files, desc_list_cmds_cb2, core);
 		} else {
-			r_id_storage_foreach (core->io->files, desc_list_cmds_cb, core);
+			r_id_storage_foreach (&core->io->files, desc_list_cmds_cb, core);
 		}
 		break;
 	case 'j': // "oj"
@@ -2194,7 +2194,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		PJ *pj = r_core_pj_new (core);
 		pj_a (pj);
-		r_id_storage_foreach (core->io->files, desc_list_json_cb, pj);
+		r_id_storage_foreach (&core->io->files, desc_list_json_cb, pj);
 		pj_end (pj);
 		core->print->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);

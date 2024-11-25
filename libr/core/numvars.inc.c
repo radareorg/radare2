@@ -538,7 +538,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 			map = r_io_map_get_at (core->io, at);
 		} else {
 			MapLoopData mld = { .name = name };
-			r_id_storage_foreach (core->io->maps, mapscb, &mld);
+			r_id_storage_foreach (&core->io->maps, mapscb, &mld);
 			map = mld.map;
 		}
 		R_FREE (name);
