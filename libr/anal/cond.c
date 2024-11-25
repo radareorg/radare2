@@ -2,8 +2,8 @@
 
 #include <r_anal.h>
 
-/* Both contdypestr and condtypestr_expr should be in the same order,
-   depending on the values defined at RAnalCondType */
+// Both contdypestr and condtypestr_expr should be in the same order,
+// depending on the values defined at RAnalCondType
 static const char *condtypestr[] = {
 	"al", "eq", "ne", "ge", "gt", "le", "lt", "nv",
 	"hs", "lo", "mi", "pl", "vs", "vc", "hi", "ls"
@@ -49,9 +49,9 @@ R_API RAnalCond *r_anal_cond_new(void) {
 
 R_API void r_anal_cond_fini(RAnalCond *c) {
 	R_RETURN_IF_FAIL (c);
-	r_anal_value_free (c->arg[0]);
-	r_anal_value_free (c->arg[1]);
-	c->arg[0] = c->arg[1] = NULL;
+	r_anal_value_free (c->left);
+	r_anal_value_free (c->right);
+	c->left = c->right = NULL;
 }
 
 R_API void r_anal_cond_free(R_NULLABLE RAnalCond *c) {
@@ -66,8 +66,8 @@ R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	RAnalCond *c = R_NEW (RAnalCond);
 	if (R_LIKELY (c)) {
 		c->type = cond->type;
-		c->arg[0] = r_anal_value_clone (cond->arg[0]);
-		c->arg[1] = r_anal_value_clone (cond->arg[1]);
+		c->left = r_anal_value_clone (cond->left);
+		c->right = r_anal_value_clone (cond->right);
 		return c;
 	}
 	return NULL;
@@ -76,9 +76,9 @@ R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	R_RETURN_VAL_IF_FAIL (anal && cond, false);
 	// XXX: sign issue here?
-	st64 arg0 = (st64) r_anal_value_to_ut64 (anal, cond->arg[0]);
-	if (cond->arg[1]) {
-		st64 arg1 = (st64) r_anal_value_to_ut64 (anal, cond->arg[1]);
+	st64 arg0 = (st64) r_anal_value_to_ut64 (anal, cond->left);
+	if (cond->right) {
+		st64 arg1 = (st64) r_anal_value_to_ut64 (anal, cond->right);
 		switch (cond->type) {
 		case R_ANAL_CONDTYPE_EQ: return arg0 == arg1;
 		case R_ANAL_CONDTYPE_NE: return arg0 != arg1;
@@ -103,13 +103,13 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 R_API char *r_anal_cond_tostring(RAnalCond *cond) {
 	R_RETURN_VAL_IF_FAIL (cond, NULL);
 	const char *cnd = r_anal_cond_typeexpr_tostring (cond->type);
-	char *val0 = r_anal_value_tostring (cond->arg[0]);
+	char *val0 = r_anal_value_tostring (cond->left);
 	char *out = NULL;
 	if (val0) {
 		if (R_ANAL_CONDTYPE_SINGLE (cond)) {
 			out = r_str_newf ("%s%s", cnd, val0);
 		} else {
-			char *val1 = r_anal_value_tostring (cond->arg[1]);
+			char *val1 = r_anal_value_tostring (cond->right);
 			if (val1) {
 				out = r_str_newf ("%s %s %s", val0, cnd, val1);
 				free (val1);
@@ -133,8 +133,8 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 		return NULL;
 	}
 	// TODO: use r_ref
-	cond->arg[0] = r_anal_value_clone (src0);
-	cond->arg[1] = r_anal_value_clone (src1);
+	cond->left = r_anal_value_clone (src0);
+	cond->right = r_anal_value_clone (src1);
 	return cond;
 }
 
@@ -154,10 +154,10 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 		return NULL;
 	}
 	cond->type = r_anal_cond_type_fromstring (condtypestr_expr[i]);
-	char *left = strndup (substr, substr - str);
+	char *left = r_str_ndup (substr, substr - str);
 	char *right = strdup (substr + strlen (condtypestr_expr[i]));
-	cond->arg[0] = r_anal_value_new_from_string (left);
-	cond->arg[1] = r_anal_value_new_from_string (right);
+	cond->left = r_anal_value_new_from_string (left);
+	cond->right = r_anal_value_new_from_string (right);
 	free (left);
 	free (right);
 	return cond;

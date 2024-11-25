@@ -594,11 +594,12 @@ typedef struct r_anal_bind_t {
 	RAnalUse use;
 } RAnalBind;
 
-#define R_ANAL_CONDTYPE_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
+#define R_ANAL_CONDTYPE_SINGLE(x) (!x->right || x->left==x->right)
 
 typedef struct r_anal_cond_t {
 	int type; // filled by CJMP opcode
-	RArchValue *arg[2]; // filled by CMP opcode
+	RArchValue *left; // filled by CMP left opcode
+	RArchValue *right; // filled by CMP right opcode
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
