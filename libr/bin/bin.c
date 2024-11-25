@@ -1044,7 +1044,7 @@ static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
 	return r_strbuf_drain (sb);
 }
 
-R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
+R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 	R_RETURN_IF_FAIL (bin);
 
 	char unk[128];
@@ -1072,7 +1072,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	if (!nbinfile) {
 		return;
 	}
-	RTable *table = r_table_new ("bins");
+	RTable *table = t? t: r_table_new ("bins");
 	const char *fmt = "dXnss";
 	if (mode == 'j') {
 		pj_ka (pj, "bins");

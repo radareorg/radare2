@@ -4,6 +4,7 @@ r_core_sources = [
   'casm.c',
   'cproject.c',
   'blaze.c',
+  'clist.c',
   'citem.c',
   'canal.c',
   'carg.c',

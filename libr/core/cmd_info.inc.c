@@ -2168,11 +2168,13 @@ static int cmd_info(void *data, const char *input) {
 		if (r_str_startswith (input, "iaito")) {
 			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2iaito");
 		} else if (input[1] == 'j') {
+			RTable *t = r_core_table_new (core, "archs");
 			pj_o (pj); // weird
-			r_bin_list_archs (core->bin, pj, 'j');
+			r_bin_list_archs (core->bin, pj, t, 'j');
 			pj_end (pj);
 		} else {
-			r_bin_list_archs (core->bin, NULL, 1);
+			RTable *t = r_core_table_new (core, "archs");
+			r_bin_list_archs (core->bin, NULL, t, 1);
 		}
 		break;
 	case 'e': // "ie"

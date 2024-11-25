@@ -5444,19 +5444,19 @@ static int cmd_debug(void *data, const char *input) {
 		// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
 		switch (input[1]) {
 		case '\0': // "dt"
-			r_debug_trace_list (core->dbg, 0, core->offset);
-			break;
 		case '=': // "dt="
-			r_debug_trace_list (core->dbg, '=', core->offset);
-			break;
 		case 'q': // "dtq"
-			r_debug_trace_list (core->dbg, 'q', core->offset);
-			break;
 		case 'j': // "dtj"
-			r_debug_trace_list (core->dbg, 'j', core->offset);
+			r_debug_trace_list (core->dbg, input[1], core->offset, NULL);
 			break;
 		case '*': // "dt*"
-			r_debug_trace_list (core->dbg, 1, core->offset);
+			r_debug_trace_list (core->dbg, 1, core->offset, NULL);
+			break;
+		case ',': // "dt,"
+			{
+				RTable *t = r_core_table_new (core, "traces");
+				r_debug_trace_list (core->dbg, ',', core->offset, t);
+			}
 			break;
 		case ' ': // "dt [addr]"
 			if ((t = r_debug_trace_get (core->dbg,

@@ -1129,7 +1129,7 @@ R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from);
 R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at);
 R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to);
-R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg);
+R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t);
 R_API ut64 r_anal_xrefs_count(RAnal *anal);
 R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
@@ -1349,10 +1349,10 @@ R_API void r_meta_rebase(RAnal *anal, ut64 diff);
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 
 R_API const char *r_meta_type_tostring(int type);
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq);
-R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq);
-R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq);
+R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, RTable *t, bool show_full);
+R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq, RTable *t);
+R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RTable *t);
+R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t);
 
 /* hints */
 
