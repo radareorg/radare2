@@ -3590,7 +3590,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	char xref[128], axref[128], refs[128], ccstr[128], castr[128];
 	RAnalFunction *fcn;
 	RListIter *iter;
-	RTable *t = r_core_table (core, "fcns");
+	RTable *t = r_core_table_new (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 #if 0 && R2_USE_NEW_ABI
@@ -3773,7 +3773,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core, "functions");
+		RTable *table = r_core_table_new (core, "functions");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);

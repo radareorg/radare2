@@ -85,7 +85,7 @@ static RCoreHelpMessage help_msg_eco = {
 static void cmd_eval_table(RCore *core, const char *input) {
 	const char fmt = *input;
 	const char *q = input;
-	RTable *t = r_core_table (core, "eval");
+	RTable *t = r_core_table_new (core, "eval");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeBoolean = r_table_type ("bool");
 	r_table_add_column (t, typeBoolean, "ro", 0);

@@ -824,7 +824,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	RListIter *objs_iter;
 	RBinFile *bf;
 	RBinFile *cur = core->bin->cur;
-	RTable *t = r_core_table (core, "flags");
+	RTable *t = r_core_table_new (core, "flags");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	r_table_add_column (t, typeNumber, "addr", 0);
@@ -1097,7 +1097,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			} else {
 				r_cons_printf ("class %s\n", kname);
 				r_list_foreach (cls->methods, iter2, sym) {
-					char *flags = r_core_bin_attr_tostring (sym->attr, true);
+					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 					const char *name = r_bin_name_tostring (sym->name);
 					r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 							iova? sym->vaddr: sym->paddr,
@@ -1117,7 +1117,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		default:
 			r_cons_printf ("class %s\n", kname);
 			r_list_foreach (cls->methods, iter2, sym) {
-				char *flags = r_core_bin_attr_tostring (sym->attr, true);
+				char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 				const char *name = r_bin_name_tostring (sym->name);
 				r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 						iova? sym->vaddr: sym->paddr,

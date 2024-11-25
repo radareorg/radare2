@@ -1334,7 +1334,7 @@ static bool listCB(RSignItem *it, void *user) {
 }
 
 static int csvZignatures(RCore *core, const char *arg) {
-	RTable *t = r_table_new ("pxr");
+	RTable *t = r_core_table_new (core, "pxr");
 	RTableColumnType *n = r_table_type ("number");
 	RTableColumnType *s = r_table_type ("string");
 	r_table_add_column (t, n, "addr", 0);

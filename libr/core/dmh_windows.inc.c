@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2024 - GustavoLCR */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "windows.heap"

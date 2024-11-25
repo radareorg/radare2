@@ -1494,7 +1494,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 				}
 			}
 
-			char *mflags = r_core_bin_attr_tostring (m->attr, false);
+			char *mflags = r_core_bin_attr_tostring (core, m->attr, false);
 			if (show_color) {
 				if (r_str_startswith (name, _cname)) {
 					name += strlen (_cname);
