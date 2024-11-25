@@ -1099,7 +1099,7 @@ static RCoreHelpMessage help_msg_ax = {
 	// "axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
 	// "axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axi", " addr [at]", "add indirect code reference (see ax?)",
-	"axj", "", "add jmp reference", // list refs in json format",
+	"axj", "", "add jmp reference", // list refs in json format", // R2_600 XXX this is wrong. axj must be listing xrefs with json
 	"axl", "[jcq]", "list xrefs (axlc = count, axlq = quiet, axlj = json)",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axq", "", "list refs in quiet/human-readable format",
@@ -10490,7 +10490,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_axl);
 			break;
 		case 'j': // "axlj"
-			r_core_cmd_call (core, "axj");
+			// XXX axj != axlj r_core_cmd_call (core, "axj");
+			r_anal_xrefs_list (core->anal, 'j', 0, NULL);
 			break;
 		case 'c': // "axlc"
 			{
