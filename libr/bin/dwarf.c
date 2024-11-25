@@ -933,7 +933,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, con
 	if (mode == R_MODE_PRINT) {
 		print ("\n");
 		print (" The File Name Table:\n");
-		print ("  Entry Dir     Time      Size       Name\n");
+		print ("  Entry Dir     Time      Size       MD5                              Name\n");
 	}
 
 	entry_formatv5 file_form = {0};
@@ -1040,9 +1040,24 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, const ut8 *buf, con
 			}
 		}
 		if (mode == R_MODE_PRINT) {
-			// TODO: print md5 checksum if available
-			print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
-			       i + 1, file->id_idx, file->mod_time, file->file_len, file->name);
+			// number of hexes chars in a md5 checksum plus NULL
+			char sumstr[33];
+
+			memset (sumstr, ' ', sizeof (sumstr));
+			sumstr[32] = '\0';
+
+			if (file->has_checksum) {
+				int i;
+				ut8 *p = &file->md5sum[0];
+				static const char *hex = "0123456789abcdef";
+
+				for (i = 0; i < 16; i++) {
+					sumstr[i * 2] = hex[(p[i] >> 4) & 0x0f];
+					sumstr[i * 2 + 1] = hex[p[i] & 0x0f];
+				}
+			}
+			print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s %s\n",
+			       i + 1, file->id_idx, file->mod_time, file->file_len, sumstr, file->name);
 		}
 	}
 

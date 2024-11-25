@@ -685,9 +685,9 @@ Raw dump of debug contents of section .debug_line:
   0     /home/pancake/prg/radare2/test/bins/elf/dwarf
 
  The File Name Table:
-  Entry Dir     Time      Size       Name
-  1     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-  2     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+  Entry Dir     Time      Size       MD5                              Name
+  1     0       0         0                                           /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+  2     0       0         0                                           /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 
  Line Number Statements:
   Set column to 12
@@ -751,6 +751,391 @@ DEBUG: [cbin.c:2587] Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: [cbin.c:2587] Cannot resolve symbol address __gmon_start__
 DEBUG: [cbin.c:2587] Cannot resolve symbol address _ITM_registerTMCloneTable
 DEBUG: [cbin.c:2587] Cannot resolve symbol address __cxa_finalize
+EOF
+RUN
+
+NAME=test dwarf5 md5
+FILE=bins/elf/dwarf5_line_cl
+CMDS=id
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strx1                 
+    DW_AT_language                 DW_FORM_data2                 
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_str_offsets_base         DW_FORM_sec_offset            
+    DW_AT_stmt_list                DW_FORM_sec_offset            
+    DW_AT_comp_dir                 DW_FORM_strx1                 
+    DW_AT_low_pc                   DW_FORM_addrx                 
+    DW_AT_high_pc                  DW_FORM_data4                 
+    DW_AT_addr_base                DW_FORM_sec_offset            
+   2      DW_TAG_variable           [no children] (0x17)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_location                 DW_FORM_exprloc               
+   3      DW_TAG_array_type         [has children] (0x24)
+    DW_AT_type                     DW_FORM_ref4                  
+   4      DW_TAG_subrange_type      [no children] (0x2b)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_count                    DW_FORM_data1                 
+   5      DW_TAG_base_type          [no children] (0x34)
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_byte_size                DW_FORM_data1                 
+   6      DW_TAG_base_type          [no children] (0x3f)
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+   7      DW_TAG_subprogram         [has children] (0x4a)
+    DW_AT_low_pc                   DW_FORM_addrx                 
+    DW_AT_high_pc                  DW_FORM_data4                 
+    DW_AT_frame_base               DW_FORM_exprloc               
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_external                 DW_FORM_flag_present          
+   8      DW_TAG_variable           [no children] (0x5d)
+    DW_AT_location                 DW_FORM_exprloc               
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+   9      DW_TAG_subprogram         [no children] (0x6c)
+    DW_AT_low_pc                   DW_FORM_addrx                 
+    DW_AT_high_pc                  DW_FORM_data4                 
+    DW_AT_frame_base               DW_FORM_exprloc               
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_prototyped               DW_FORM_flag_present          
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_external                 DW_FORM_flag_present          
+   10     DW_TAG_subprogram         [has children] (0x83)
+    DW_AT_low_pc                   DW_FORM_addrx                 
+    DW_AT_high_pc                  DW_FORM_data4                 
+    DW_AT_frame_base               DW_FORM_exprloc               
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_prototyped               DW_FORM_flag_present          
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_external                 DW_FORM_flag_present          
+   11     DW_TAG_formal_parameter   [no children] (0x9a)
+    DW_AT_location                 DW_FORM_exprloc               
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+   12     DW_TAG_pointer_type       [no children] (0xa9)
+    DW_AT_type                     DW_FORM_ref4                  
+   13     DW_TAG_structure_type     [no children] (0xb0)
+    DW_AT_name                     DW_FORM_strx1                 
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+   14     DW_TAG_const_type         [no children] (0xbd)
+    DW_AT_type                     DW_FORM_ref4                  
+
+  Compilation Unit @ offset 0x0:
+   Length:        0xed
+   Version:       5
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+   Unit Type:     DW_UT_compile
+
+<0xc>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x0): (null)
+     DW_AT_language            : 29   (C11)
+     DW_AT_name                : (indirect string, offset: 0x1): (null)
+     DW_AT_str_offsets_base    : <0x8>
+     DW_AT_stmt_list           : <0x0>
+     DW_AT_comp_dir            : (indirect string, offset: 0x2): (null)
+     DW_AT_low_pc              : 0x2
+     DW_AT_high_pc             : 210
+     DW_AT_addr_base           : <0x8>
+<0x23>: Abbrev Number: 2    (DW_TAG_variable)
+     DW_AT_type                : <0x2d>
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 9
+     DW_AT_location            : 2 byte block: 0xa1 0x00
+<0x2d>: Abbrev Number: 3    (DW_TAG_array_type)
+     DW_AT_type                : <0x39>
+<0x32>: Abbrev Number: 4    (DW_TAG_subrange_type)
+     DW_AT_type                : <0x3d>
+     DW_AT_count               : 4
+<0x38>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x39>: Abbrev Number: 5    (DW_TAG_base_type)
+     DW_AT_name                : (indirect string, offset: 0x3): (null)
+     DW_AT_encoding            : 6
+     DW_AT_byte_size           : 1
+<0x3d>: Abbrev Number: 6    (DW_TAG_base_type)
+     DW_AT_name                : (indirect string, offset: 0x4): (null)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 7
+<0x41>: Abbrev Number: 2    (DW_TAG_variable)
+     DW_AT_type                : <0x4b>
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 22
+     DW_AT_location            : 2 byte block: 0xa1 0x01
+<0x4b>: Abbrev Number: 3    (DW_TAG_array_type)
+     DW_AT_type                : <0x39>
+<0x50>: Abbrev Number: 4    (DW_TAG_subrange_type)
+     DW_AT_type                : <0x3d>
+     DW_AT_count               : 10
+<0x56>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x57>: Abbrev Number: 7    (DW_TAG_subprogram)
+     DW_AT_low_pc              : 0x2
+     DW_AT_high_pc             : 41
+     DW_AT_frame_base          : 1 byte block: 0x56
+     DW_AT_name                : (indirect string, offset: 0x5): (null)
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 5
+     DW_AT_external            : 1
+<0x62>: Abbrev Number: 8    (DW_TAG_variable)
+     DW_AT_location            : 2 byte block: 0x91 0x78
+     DW_AT_name                : (indirect string, offset: 0xd): (null)
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 8
+     DW_AT_type                : <0xc9>
+<0x6d>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x6e>: Abbrev Number: 9    (DW_TAG_subprogram)
+     DW_AT_low_pc              : 0x3
+     DW_AT_high_pc             : 8
+     DW_AT_frame_base          : 1 byte block: 0x56
+     DW_AT_name                : (indirect string, offset: 0x6): (null)
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 8
+     DW_AT_prototyped          : 1
+     DW_AT_type                : <0xc9>
+     DW_AT_external            : 1
+<0x7d>: Abbrev Number: 7    (DW_TAG_subprogram)
+     DW_AT_low_pc              : 0x4
+     DW_AT_high_pc             : 41
+     DW_AT_frame_base          : 1 byte block: 0x56
+     DW_AT_name                : (indirect string, offset: 0x8): (null)
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 5
+     DW_AT_external            : 1
+<0x88>: Abbrev Number: 8    (DW_TAG_variable)
+     DW_AT_location            : 2 byte block: 0x91 0x78
+     DW_AT_name                : (indirect string, offset: 0xd): (null)
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 8
+     DW_AT_type                : <0xd3>
+<0x93>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x94>: Abbrev Number: 9    (DW_TAG_subprogram)
+     DW_AT_low_pc              : 0x5
+     DW_AT_high_pc             : 8
+     DW_AT_frame_base          : 1 byte block: 0x56
+     DW_AT_name                : (indirect string, offset: 0x9): (null)
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 15
+     DW_AT_prototyped          : 1
+     DW_AT_type                : <0xd3>
+     DW_AT_external            : 1
+<0xa3>: Abbrev Number: 10   (DW_TAG_subprogram)
+     DW_AT_low_pc              : 0x6
+     DW_AT_high_pc             : 82
+     DW_AT_frame_base          : 1 byte block: 0x56
+     DW_AT_name                : (indirect string, offset: 0xb): (null)
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 20
+     DW_AT_prototyped          : 1
+     DW_AT_type                : <0xdd>
+     DW_AT_external            : 1
+<0xb2>: Abbrev Number: 11   (DW_TAG_formal_parameter)
+     DW_AT_location            : 2 byte block: 0x91 0x78
+     DW_AT_name                : (indirect string, offset: 0xe): (null)
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 20
+     DW_AT_type                : <0xdd>
+<0xbd>: Abbrev Number: 11   (DW_TAG_formal_parameter)
+     DW_AT_location            : 2 byte block: 0x91 0x70
+     DW_AT_name                : (indirect string, offset: 0xf): (null)
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 20
+     DW_AT_type                : <0xe1>
+<0xc8>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xc9>: Abbrev Number: 12   (DW_TAG_pointer_type)
+     DW_AT_type                : <0xce>
+<0xce>: Abbrev Number: 13   (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0x7): (null)
+     DW_AT_byte_size           : 0
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 6
+<0xd3>: Abbrev Number: 12   (DW_TAG_pointer_type)
+     DW_AT_type                : <0xd8>
+<0xd8>: Abbrev Number: 13   (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0xa): (null)
+     DW_AT_byte_size           : 0
+     DW_AT_decl_file           : 0
+     DW_AT_decl_line           : 13
+<0xdd>: Abbrev Number: 5    (DW_TAG_base_type)
+     DW_AT_name                : (indirect string, offset: 0xc): (null)
+     DW_AT_encoding            : 5
+     DW_AT_byte_size           : 4
+<0xe1>: Abbrev Number: 12   (DW_TAG_pointer_type)
+     DW_AT_type                : <0xe6>
+<0xe6>: Abbrev Number: 12   (DW_TAG_pointer_type)
+     DW_AT_type                : <0xeb>
+<0xeb>: Abbrev Number: 14   (DW_TAG_const_type)
+     DW_AT_type                : <0x39>
+<0xf0>: Abbrev Number: 0    (DW_TAG_null_entry)
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             236
+  DWARF Version:                      5
+  Header Length:                      105
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 1
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+ The Directory Table:
+  0     /usr/w/g/radare2/test/bins/src
+  1     /tmp
+  2     ./dwarf-line
+
+ The File Name Table:
+  Entry Dir     Time      Size       MD5                              Name
+  1     0       0         0          7681dc1f3cfbda3ecdbae25290458245 /usr/w/g/radare2/test/bins/src/dwarf-line.c
+  2     1       0         0          8b215c9ae07305911dd15fda87b82207 /tmp/dwarf-line-foo.c
+  3     2       0         0          037cb383b3bb0cdbf1c52955a1ec3b7f /usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c
+
+ Line Number Statements:
+  Extended opcode 2: set Address to 0x1140
+  Special opcode 9: advance Address by 0 to 0x1140 and Line by 4 to 5
+  Set column to 18
+  set_prologue_end
+  Special opcode 120: advance Address by 8 to 0x1148 and Line by 3 to 8
+  Set column to 14
+  Set is_stmt to 0
+  Special opcode 75: advance Address by 5 to 0x114d and Line by 0 to 8
+  Set column to 17
+  Set is_stmt to 1
+  Special opcode 62: advance Address by 4 to 0x1151 and Line by 1 to 9
+  Set column to 2
+  Set is_stmt to 0
+  Special opcode 61: advance Address by 4 to 0x1155 and Line by 0 to 9
+  Set column to 1
+  Set is_stmt to 1
+  set_epilogue_begin
+  Special opcode 202: advance Address by 14 to 0x1163 and Line by 1 to 10
+  Set file to 0
+  Set column to 0
+  Special opcode 185: advance Address by 13 to 0x1170 and Line by -2 to 8
+  Set column to 2
+  set_prologue_end
+  Special opcode 62: advance Address by 4 to 0x1174 and Line by 1 to 9
+  Set is_stmt to 0
+  set_epilogue_begin
+  Special opcode 33: advance Address by 2 to 0x1176 and Line by 0 to 9
+  Set file to 2
+  Set column to 0
+  Set is_stmt to 1
+  Special opcode 141: advance Address by 10 to 0x1180 and Line by -4 to 5
+  Set column to 18
+  set_prologue_end
+  Special opcode 120: advance Address by 8 to 0x1188 and Line by 3 to 8
+  Set column to 14
+  Set is_stmt to 0
+  Special opcode 75: advance Address by 5 to 0x118d and Line by 0 to 8
+  Set column to 17
+  Set is_stmt to 1
+  Special opcode 62: advance Address by 4 to 0x1191 and Line by 1 to 9
+  Set column to 2
+  Set is_stmt to 0
+  Special opcode 61: advance Address by 4 to 0x1195 and Line by 0 to 9
+  Set column to 1
+  Set is_stmt to 1
+  set_epilogue_begin
+  Special opcode 202: advance Address by 14 to 0x11a3 and Line by 1 to 10
+  Set file to 0
+  Set column to 0
+  Special opcode 192: advance Address by 13 to 0x11b0 and Line by 5 to 15
+  Set column to 2
+  set_prologue_end
+  Special opcode 62: advance Address by 4 to 0x11b4 and Line by 1 to 16
+  Set is_stmt to 0
+  set_epilogue_begin
+  Special opcode 33: advance Address by 2 to 0x11b6 and Line by 0 to 16
+  Set column to 0
+  Set is_stmt to 1
+  Special opcode 149: advance Address by 10 to 0x11c0 and Line by 4 to 20
+  Set column to 10
+  set_prologue_end
+  Advance PC by constant 17 to 0x11d1
+  Special opcode 76: advance Address by 5 to 0x11d6 and Line by 1 to 21
+  Set column to 13
+  Set is_stmt to 0
+  Special opcode 159: advance Address by 11 to 0x11e1 and Line by 0 to 21
+  Set column to 2
+  Special opcode 47: advance Address by 3 to 0x11e4 and Line by 0 to 21
+  Set column to 25
+  Set is_stmt to 1
+  Special opcode 90: advance Address by 6 to 0x11ea and Line by 1 to 22
+  Set column to 3
+  Set is_stmt to 0
+  Special opcode 47: advance Address by 3 to 0x11ed and Line by 0 to 22
+  Set column to 2
+  Set is_stmt to 1
+  Special opcode 200: advance Address by 14 to 0x11fb and Line by -1 to 21
+  Special opcode 78: advance Address by 5 to 0x1200 and Line by 3 to 24
+  Special opcode 76: advance Address by 5 to 0x1205 and Line by 1 to 25
+  Special opcode 76: advance Address by 5 to 0x120a and Line by 1 to 26
+  Set is_stmt to 0
+  set_epilogue_begin
+  Special opcode 33: advance Address by 2 to 0x120c and Line by 0 to 26
+  Advance PC by 6 to 0x1212
+  Extended opcode 1: End of Sequence
+
+0x0000118d	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	8
+0x00001188	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	8
+0x00001200	/usr/w/g/radare2/test/bins/src/dwarf-line.c	24
+0x00001140	/tmp/dwarf-line-foo.c	5
+0x000011a3	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	10
+0x00001163	/tmp/dwarf-line-foo.c	10
+0x00001195	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	9
+0x0000120c	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
+0x000011c0	/usr/w/g/radare2/test/bins/src/dwarf-line.c	20
+0x0000120a	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
+0x000011fb	/usr/w/g/radare2/test/bins/src/dwarf-line.c	21
+0x00001191	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	9
+0x0000114d	/tmp/dwarf-line-foo.c	8
+0x00001212	/usr/w/g/radare2/test/bins/src/dwarf-line.c	26
+0x00001151	/tmp/dwarf-line-foo.c	9
+0x000011ea	/usr/w/g/radare2/test/bins/src/dwarf-line.c	22
+0x00001155	/tmp/dwarf-line-foo.c	9
+0x000011ed	/usr/w/g/radare2/test/bins/src/dwarf-line.c	22
+0x00001170	/usr/w/g/radare2/test/bins/src/dwarf-line.c	8
+0x000011d6	/usr/w/g/radare2/test/bins/src/dwarf-line.c	21
+0x00001176	/usr/w/g/radare2/test/bins/src/dwarf-line.c	9
+0x00001174	/usr/w/g/radare2/test/bins/src/dwarf-line.c	9
+0x000011b6	/usr/w/g/radare2/test/bins/src/dwarf-line.c	16
+0x000011b4	/usr/w/g/radare2/test/bins/src/dwarf-line.c	16
+0x000011b0	/usr/w/g/radare2/test/bins/src/dwarf-line.c	15
+0x00001180	/usr/w/g/radare2/test/bins/src/./dwarf-line/bar.c	5
+0x000011e1	/usr/w/g/radare2/test/bins/src/dwarf-line.c	21
+0x000011e4	/usr/w/g/radare2/test/bins/src/dwarf-line.c	21
+0x00001205	/usr/w/g/radare2/test/bins/src/dwarf-line.c	25
+0x00001148	/tmp/dwarf-line-foo.c	8
 EOF
 RUN
 
