@@ -64,28 +64,29 @@ R_API bool r_id_pool_kick_id(RIDPool* pool, ut32 kick) {
 	return true;
 }
 
-R_API void r_id_pool_free(RIDPool* pool) {
+R_API void r_id_pool_free(RIDPool *pool) {
 	if (pool) {
 		r_queue_free (pool->freed_ids);
 		free (pool);
 	}
 }
 
-R_API RIDStorage* r_id_storage_new(ut32 start_id, ut32 last_id) {
-	RIDStorage* storage = NULL;
-	RIDPool *pool = r_id_pool_new (start_id, last_id);
-	if (pool) {
-		storage = R_NEW0 (RIDStorage);
-		if (!storage) {
-			r_id_pool_free (pool);
-			return NULL;
-		}
-		storage->pool = pool;
-	}
-	return storage;
+R_API bool r_id_storage_init(RIDStorage *storage, ut32 start_id, ut32 last_id) {
+	R_RETURN_VAL_IF_FAIL (storage, false);
+	storage->pool = r_id_pool_new (start_id, last_id);
+	return !!storage->pool;
 }
 
-static bool id_storage_reallocate(RIDStorage* storage, ut32 size) {
+R_API RIDStorage *r_id_storage_new(ut32 start_id, ut32 last_id) {
+	RIDStorage *storage = R_NEW0 (RIDStorage);
+	if (!storage || r_id_storage_init (storage, start_id, last_id)) {
+		return storage;
+	}
+	free (storage);
+	return NULL;
+}
+
+static bool id_storage_reallocate(RIDStorage *storage, ut32 size) {
 	if (!storage) {
 		return false;
 	}
@@ -258,15 +259,18 @@ R_API bool r_id_storage_foreach(RIDStorage* storage, RIDStorageForeachCb cb, voi
 	return true;
 }
 
-R_API void r_id_storage_free(RIDStorage* storage) {
-	if (storage) {
-		r_id_pool_free (storage->pool);
-		free (storage->data);
-		free (storage);
-	}
+R_API void r_id_storage_fini(RIDStorage *storage){
+	R_RETURN_IF_FAIL (storage);
+	r_id_pool_free (storage->pool);
+	free (storage->data);
 }
 
-static bool _list(void* user, void* data, ut32 id) {
+R_API void r_id_storage_free(RIDStorage *storage) {
+	r_id_storage_fini (storage);
+	free (storage);
+}
+
+static bool _list(void *user, void *data, ut32 id) {
 	r_list_append (user, data);
 	return true;
 }
