@@ -1170,9 +1170,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
 		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
-			r_bin_list_archs (bin, pj, 'q');
+			r_bin_list_archs (bin, pj, NULL, 'q');
 		} else {
-			r_bin_list_archs (bin, pj, (rad == R_MODE_JSON)? 'j': 1);
+			r_bin_list_archs (bin, pj, NULL, (rad == R_MODE_JSON)? 'j': 1);
 		}
 		free (arch_name);
 	}

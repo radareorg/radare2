@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_util/r_table.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +74,7 @@ R_API void r_lang_free(RLang *lang);
 R_API bool r_lang_setup(RLang *lang);
 R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *plugin);
 R_API bool r_lang_plugin_remove(RLang *lang, RLangPlugin *plugin);
-R_API void r_lang_list(RLang *lang, int mode);
+R_DEPRECATE R_API void r_lang_list(RLang *lang, int mode, RTable *t); // R2_600 - move into rcore
 R_API bool r_lang_use(RLang *lang, const char *name);
 R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h);
 R_API bool r_lang_run(RLang *lang, const char *code, int len);

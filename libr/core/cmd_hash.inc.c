@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
 
 #if R_INCLUDE_BEGIN
 
@@ -99,18 +99,21 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 			switch (mod) {
 			case 'j':
 			case 'q':
-				r_lang_list (core->lang, mod);
+				r_core_list_lang (core, mod);
 				break;
 			case '*':
-				r_lang_list (core->lang, 0);
+				r_core_list_lang (core, 0);
+				break;
+			case '?':
+				R_LOG_INFO ("Missing halp");
 				break;
 			default:
-				R_LOG_INFO ("Missing halp");
+				r_core_return_invalid_command (core, "#!", av[0][0]);
 				break;
 			}
 		}
 	} else {
-		r_lang_list (core->lang, 0);
+		r_core_list_lang (core, 0);
 	}
 	r_str_argv_free (av);
 	return true;

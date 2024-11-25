@@ -530,19 +530,19 @@ static bool cmd_ec(RCore *core, const char *input) {
 				  r_str_argv_free (argv);
 				  return false;
 			  case '.':
-				  r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset, NULL);
+				  r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset, NULL, NULL);
 				  r_str_argv_free (argv);
 				  return false;
 			  case '\0':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 0, NULL);
+				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 0, NULL, NULL);
 				  r_str_argv_free (argv);
 				  return false;
 			  case 'j':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 'j', NULL);
+				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 'j', NULL, NULL);
 				  r_str_argv_free (argv);
 				  return false;
 			  case '*':
-				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, '*', NULL);
+				  r_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, '*', NULL, NULL);
 				  r_str_argv_free (argv);
 				  return false;
 			  case ' ':

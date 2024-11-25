@@ -498,7 +498,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_CC);
 		break;
 	case ',': // "CC,"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, ',', input + 2);
+		{
+			RTable *t = r_core_table_new (core, "meta");
+			r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, ',', input + 2, t);
+		}
 		break;
 	case 'F': // "CC,"
 		if (input[2] == '?') {
@@ -519,9 +522,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 		} else {
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			if (comment && *comment) {
+			if (R_STR_ISNOTEMPTY (comment)) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
-				if (cmtfile && *cmtfile) {
+				if (R_STR_ISNOTEMPTY (cmtfile)) {
 					char *cwd = getcommapath (core);
 					r_cons_printf ("%s"R_SYS_DIR"%s\n", cwd, cmtfile);
 					free (cwd);
@@ -540,7 +543,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		break;
 	case 0: // "CC"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0, NULL);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0, NULL, NULL);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
@@ -565,21 +568,24 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 			break;
 		case ',': // "CCf,"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, ',', core->offset, input + 3);
+			{
+				RTable *t = r_core_table_new (core, "comments");
+				r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, ',', core->offset, input + 3, t);
+			}
 			break;
 		case 'j': // "CCfj"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset, NULL);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset, NULL, NULL);
 			break;
 		case '*': // "CCf*"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->offset, NULL);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->offset, NULL, NULL);
 			break;
 		default:
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->offset, NULL);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->offset, NULL, NULL);
 			break;
 		}
 		break;
 	case 'j': // "CCj"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j', input + 2);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j', input + 2, NULL);
 		break;
 	case '!': // "CC!"
 		{
@@ -632,7 +638,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		break;
 	case '*': // "CC*"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1, NULL);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1, NULL, NULL);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
@@ -719,7 +725,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
-		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL);
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL, NULL);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
@@ -844,10 +850,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		break;
 	case '*': // "Cf*", "Cd*", ...
-		r_meta_print_list_all (core->anal, input[0], 1, NULL);
+		r_meta_print_list_all (core->anal, input[0], 1, NULL, NULL);
 		break;
 	case 'j': // "Cfj", "Cdj", ...
-		r_meta_print_list_all (core->anal, input[0], 'j', NULL);
+		r_meta_print_list_all (core->anal, input[0], 'j', NULL, NULL);
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
@@ -868,14 +874,14 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, size, input[3], NULL, false);
+				r_meta_print (core->anal, mi, addr, size, input[3], NULL, NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, size, input[2], NULL, false);
+				r_meta_print (core->anal, mi, addr, size, input[2], NULL, NULL, false);
 				r_cons_newline ();
 			}
 			break;
@@ -994,7 +1000,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			type = 's';
 		} else {
 			if (!input[1] && !core->tmpseek) {
-				r_meta_print_list_all (core->anal, type, 0, NULL);
+				r_meta_print_list_all (core->anal, type, 0, NULL, NULL);
 				break;
 			}
 		}
@@ -1345,24 +1351,24 @@ static int cmd_meta(void *data, const char *input) {
 		cmd_Cv (core, input + 1);
 		break;
 	case '\0': // "C"
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 0, NULL);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 0, NULL, NULL);
 		break;
 	case ',': // "C,"
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 1, NULL);
 		break;
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (input[1] == '.') {
-			r_meta_print_list_at (core->anal, core->offset, *input, input + 2);
+			r_meta_print_list_at (core->anal, core->offset, *input, input + 2, NULL);
 		} else if (input[1]) {
-			r_meta_print_list_at (core->anal, core->offset, *input, input + 2);
+			r_meta_print_list_at (core->anal, core->offset, *input, input + 2, NULL);
 		} else {
-			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 1);
+			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 1, NULL);
 		}
 		break;
 	}
 	case '.': { // "C."
-		r_meta_print_list_at (core->anal, core->offset, 0, NULL);
+		r_meta_print_list_at (core->anal, core->offset, 0, NULL, NULL);
 		break;
 	}
 	case 'L': // "CL"

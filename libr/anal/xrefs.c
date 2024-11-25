@@ -333,8 +333,10 @@ R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
 	return !!entry;
 }
 
-static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const char *arg) {
-	RTable *table = r_table_new ("xrefs");
+static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const char *arg, RTable *table) {
+	if (!table) {
+		table = r_table_new ("xrefs");
+	}
 	r_table_set_columnsf (table, "dddssss", "from", "to", "size", "type", "perm", "fromname", "toname");
 
 	RAnalRef *ref;
@@ -358,8 +360,8 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 		show_table = r_table_query (table, arg);
 	}
 	if (show_table) {
-		char *s = r_table_tofancystring (table);
-		r_cons_println (s);
+		char *s = r_table_tostring (table);
+		r_cons_print (s);
 		free (s);
 	}
 	r_table_free (table);
@@ -459,7 +461,7 @@ static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 	}
 }
 
-R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
+R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
 	R_RETURN_IF_FAIL (anal && anal->rm);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, UT64_MAX);
@@ -472,7 +474,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
 
 	switch (rad) {
 	case ',':
-		r_anal_xrefs_list_table (anal, anal_refs, arg);
+		r_anal_xrefs_list_table (anal, anal_refs, arg, t);
 		break;
 	case 'j':
 		r_anal_xrefs_list_json (anal, anal_refs);
