@@ -959,6 +959,15 @@ static bool cb_emuskip(void *user, void *data) {
 	return true;
 }
 
+static bool cb_tableformat(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		print_node_options (node);
+		return false;
+	}
+	return true;
+}
+
 static bool cb_jsonencoding(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -4306,6 +4315,19 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "specify a range of memory to be handled by cmd.esil.mdev");
 	SETBPREF ("esil.dfg.mapinfo", "false", "use mapinfo for esil dfg");
 	SETBPREF ("esil.dfg.maps", "false", "set ro maps for esil dfg");
+
+	/* table encodings */
+	SETI ("cfg.table.maxcol", 0, "Define maximum column width in tables");
+	SETBPREF ("cfg.table.wrap", "false", "Wrap text to not exceed maxcol");
+	n = SETCB ("cfg.table.format", "", cb_tableformat, "Change the default output format for tables");
+	SETOPTIONS (n, "simple", NULL);
+	SETOPTIONS (n, "fancy", NULL);
+	SETOPTIONS (n, "html", NULL);
+	SETOPTIONS (n, "json", NULL);
+	SETOPTIONS (n, "csv", NULL);
+	SETOPTIONS (n, "tsv", NULL);
+	SETOPTIONS (n, "sql", NULL);
+	SETOPTIONS (n, "r2", NULL);
 
 	/* json encodings */
 	n = NODECB ("cfg.json.str", "none", &cb_jsonencoding);

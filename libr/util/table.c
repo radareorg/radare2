@@ -2,7 +2,7 @@
 
 #include <r_util/r_table.h>
 #include <r_core.h>
-#include "r_cons.h"
+#include <r_cons.h>
 
 #define READ_SHOW_FLAG(t, bitflag) (((t)->showMode & bitflag) != 0)
 #define WRITE_SHOW_FLAG(t, bitflag, condition) \
@@ -95,7 +95,6 @@ R_API RTableColumnType *r_table_type(const char *name) {
 	return NULL;
 }
 
-// TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RTable *t) {
 	RListIter *iter, *iter2;
 	RTableColumn *col;
@@ -112,6 +111,9 @@ static void __table_adjust(RTable *t) {
 			RTableColumn *c = r_list_get_n (t->cols, ncol);
 			if (c) {
 				c->width = R_MAX (c->width, itemLength);
+				if (t->maxColumnWidth > 0) {
+					c->width = R_MIN (t->maxColumnWidth, c->width);
+				}
 			}
 			ncol ++;
 		}
@@ -141,6 +143,7 @@ R_API RTableRow *r_table_row_clone(RTableRow *row) {
 }
 
 R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
+	R_RETURN_VAL_IF_FAIL (col, NULL);
 	RTableColumn *c = R_NEW0 (RTableColumn);
 	if (!c) {
 		return NULL;
@@ -156,10 +159,18 @@ R_API RTable *r_table_new(const char *name) {
 		t->name = strdup (name);
 		t->cols = r_list_newf (r_table_column_free);
 		t->rows = r_list_newf (r_table_row_free);
+		t->maxColumnWidth = 32;
+		t->wrapColumns = false;
 		SET_SHOW_HEADER (t, true);
 		SET_SHOW_SUM (t, false);
 	}
 	return t;
+}
+
+R_API void r_table_set_width(RTable *t, int maxColumnWidth, bool wrap) {
+	R_RETURN_IF_FAIL (t);
+	t->maxColumnWidth = maxColumnWidth;
+	t->wrapColumns = wrap;
 }
 
 R_API void r_table_free(RTable *t) {
@@ -186,6 +197,7 @@ R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *nam
 }
 
 R_API RTableRow *r_table_row_new(RList *items) {
+	R_RETURN_VAL_IF_FAIL (items, NULL);
 	RTableRow *row = R_NEW (RTableRow);
 	row->items = items;
 	return row;
@@ -202,15 +214,31 @@ static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
 	return false;
 }
 
+static void wrap_items(RTable *t, RList *items) {
+	if (t->wrapColumns && t->maxColumnWidth > 0) {
+		char *item;
+		RListIter *iter;
+		r_list_foreach (items, iter, item) {
+			int itemLength = r_str_len_utf8_ansi (item);
+			if (itemLength + 3 > t->maxColumnWidth) {
+				char *p = (char *)r_str_ansi_chrn (item, t->maxColumnWidth - 3);
+				strcpy (p, "..");
+			}
+		}
+	}
+}
+
 R_API void r_table_add_row_list(RTable *t, RList *items) {
 	R_RETURN_IF_FAIL (t && items);
 	RTableRow *row = r_table_row_new (items);
+	wrap_items (t, items);
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
 	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
 }
 
 R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
+	R_RETURN_IF_FAIL (t && fmt);
 	va_list ap;
 	va_start (ap, fmt);
 	RTableColumnType *typeString = r_table_type ("string");
@@ -323,6 +351,7 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 		col++;
 	}
 	va_end (ap);
+	wrap_items (t, items);
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
@@ -475,9 +504,7 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 }
 
 R_API char *r_table_tostring(RTable *t) {
-	if (!t) { // guard
-		return strdup ("");
-	}
+	R_RETURN_VAL_IF_FAIL (t, NULL);
 	if (SHOULD_SHOW_R2 (t)) {
 		return r_table_tor2cmds (t);
 	}

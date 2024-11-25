@@ -341,7 +341,7 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 }
 
 static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
-	RTable *table = r_core_table (r, "strings");
+	RTable *table = r_core_table_new (r, "strings");
 	if (!table) {
 		return;
 	}
@@ -1554,7 +1554,7 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			r_cons_printf (" type=%s\n", type);
 		} else {
 			if (!table) {
-				table = r_core_table (r, "entrypoints");
+				table = r_core_table_new (r, "entrypoints");
 				r_table_set_columnsf (table, "XXXXs", "paddr", "vaddr", "phaddr", "vhaddr", "type");
 			}
 			ut64 vaddr = at;
@@ -1858,7 +1858,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.pfxlib");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	RTable *table = r_core_table (r, "relocs");
+	RTable *table = r_core_table_new (r, "relocs");
 	R_RETURN_VAL_IF_FAIL (table, false);
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
@@ -2162,7 +2162,7 @@ static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
-	RTable *table = r_core_table (r, "imports");
+	RTable *table = r_core_table_new (r, "imports");
 	R_RETURN_VAL_IF_FAIL (table, false);
 	RBinImport *import;
 	RListIter *iter;
@@ -2464,7 +2464,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	bool none = true;
 
 	int lastfs = 's';
-	RTable *table = r_core_table (r, "symbols");
+	RTable *table = r_core_table_new (r, "symbols");
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	const bool keep_lib = r_config_get_b (r->config, "bin.demangle.pfxlib");
 	if (IS_MODE_JSON (mode)) {
@@ -2912,13 +2912,14 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static bool bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
+static bool bin_map_sections_to_segments(RCore *core, PJ *pj, int mode) {
+	RBin*bin = core->bin;
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
 	RList *segments = r_list_new ();
 	RList *tmp = r_bin_get_sections (bin);
-	RTable *table = r_table_new ("segments");
+	RTable *table = r_core_table_new (core, "segments");
 	RTableColumnType *typeString = r_table_type ("string");
 
 	r_table_add_column (table, typeString, "Segment", 0);
@@ -2972,7 +2973,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	RBinSection *section;
 	RBinInfo *info = NULL;
 	RListIter *iter;
-	RTable *table = r_core_table (r, "sections");
+	RTable *table = r_core_table_new (r, "sections");
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
@@ -3030,7 +3031,7 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, humansz);
 			r_list_append (list, info);
 		}
-		RTable *table = r_core_table (r, "sections");
+		RTable *table = r_core_table_new (r, "sections");
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
 		bool show_table = true;
 		if (r->table_query) {
@@ -3886,7 +3887,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				const char *sym_name = r_bin_name_tostring (sym->name);
-				// char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				// char *mflags = r_core_bin_attr_tostring (r, sym->attr, mode);
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				// XXX probably access flags should not be part of the flag name
@@ -4087,7 +4088,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						#endif
 					}
 					if (sym->attr) {
-						char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+						char *mflags = r_core_bin_attr_tostring (r, sym->attr, mode);
 						pj_k (pj, "flags");
 						pj_j (pj, mflags);
 						free (mflags);
@@ -4115,7 +4116,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "type", type);
 					}
 					if (f->attr) {
-						char *mflags = r_core_bin_attr_tostring (f->attr, mode);
+						char *mflags = r_core_bin_attr_tostring (r, f->attr, mode);
 						pj_k (pj, "attr");
 						pj_j (pj, mflags);
 						free (mflags);
@@ -4146,7 +4147,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				free (csv);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				char *mflags = r_core_bin_attr_tostring (r, sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				const char *sname = r_bin_name_tostring2 (sym->name, pref);
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
@@ -4157,7 +4158,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			m = 0;
 			const char *ls = r_bin_lang_tostring (c->lang);
 			r_list_foreach (c->fields, iter3, f) {
-				char *mflags = r_core_bin_attr_tostring (f->attr, mode);
+				char *mflags = r_core_bin_attr_tostring (r, f->attr, mode);
 				const char *ks = r_bin_field_kindstr (f);
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
 					f->vaddr, ls, ks, m, mflags, r_bin_name_tostring2 (f->name, pref));
@@ -4781,7 +4782,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 		ret &= bin_sections (core, pj, mode, loadaddr, va, at, name, chksum, true);
 	}
 	if ((action & R_CORE_BIN_ACC_SECTIONS_MAPPING)) {
-		ret &= bin_map_sections_to_segments (core->bin, pj, mode);
+		ret &= bin_map_sections_to_segments (core, pj, mode);
 	}
 	if (r_config_get_b (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) {
@@ -5030,7 +5031,7 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 	return true;
 }
 
-R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
+R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode) {
 	RStrBuf *buf = r_strbuf_new (""); // rename to 'sb'
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (flags) {
@@ -5042,7 +5043,7 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		if (flags) {
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
 			char *flag_string = r_bin_attr_tostring (flags, false);
 			if (flag_string) {

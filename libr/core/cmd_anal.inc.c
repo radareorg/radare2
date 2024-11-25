@@ -2996,7 +2996,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		pj_o (pj);
 		pj_ka (pj, "blocks");
 	} else if (mode == ',' || mode == 't') {
-		table = r_table_new ("bbs");
+		table = r_core_table_new (core, "bbs");
 		RTableColumnType *s = r_table_type ("string");
 		RTableColumnType *n = r_table_type ("number");
 		r_table_add_column (table, n, "addr", 0);
@@ -3332,7 +3332,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core, "fcnbbs");
+		RTable *table = r_core_table_new (core, "fcnbbs");
 		if (!table) {
 			return false;
 		}
@@ -3348,7 +3348,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 
 	RTable *t = NULL;
 	if (mode == ',') {
-		t = r_table_new ("fcnbbs");
+		t = r_core_table_new (core, "fcnbbs");
 		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
 	r_list_foreach (fcn->bbs, iter, b) {
@@ -3967,7 +3967,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	} else if (*input == 't') {
 		SdbList *ls = sdb_foreach_list (db, true);
 		SdbListIter *it;
-		RTable *t = r_table_new ("fcnstats");
+		RTable *t = r_core_table_new (core, "fcnstats");
 		SdbKv *kv;
 		RTableColumnType *typeString = r_table_type ("string");
 		RTableColumnType *typeNumber = r_table_type ("number");
@@ -4030,7 +4030,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 		}
 		ls_free (ls);
 	}
-	RTable *t = r_table_new ("fcnallstats");
+	RTable *t = r_core_table_new (core, "fcnallstats");
 	SdbList *ls = sdb_foreach_list (d, true);
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
@@ -10544,7 +10544,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_list_free (ufuncs);
 			} else if (input[1] == ',') { // "axt,"
 				RAnalRef *ref;
-				RTable *table = r_table_new ("bbs");
+				RTable *table = r_core_table_new (core, "bbs");
 				RTableColumnType *s = r_table_type ("string");
 				RTableColumnType *n = r_table_type ("number");
 				r_table_add_column (table, n, "fcn", 0);

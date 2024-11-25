@@ -2094,7 +2094,7 @@ static void cmd_table_header(RCore *core, char *s) {
 		return;
 	}
 	if (!core->table) {
-		core->table = r_core_table (core, "header");
+		core->table = r_core_table_new (core, "header");
 	}
 	size_t i = 0;
 	r_list_foreach (list, iter, s) {
@@ -2128,7 +2128,7 @@ static bool display_table_filter(RCore *core, const char *input) {
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	if (!core->table) {
-		core->table = r_table_new ("table");
+		core->table = r_core_table_new (core, "table");
 	}
 	switch (*input) {
 	case 'h': // table header columns
@@ -2148,7 +2148,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '-':
 		r_table_free (core->table);
-		core->table = r_table_new ("table");
+		core->table = r_core_table_new (core, "table");
 		break;
 	case '/':
 		// query here
