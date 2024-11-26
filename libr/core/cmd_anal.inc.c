@@ -6328,18 +6328,6 @@ static bool reg_name_roll_set(RCore *core, const char *name, ut64 n) {
 
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
-#if 0
-	if (0) {
-		/* enable this block when dr and ar use the same code but just using
-		   core->dbg->reg or core->anal->reg and removing all the debugger
-		   dependent code */
-		RReg *reg = core->dbg->reg;
-		core->dbg->reg = core->anal->reg;
-		cmd_debug_reg (core, str);
-		core->dbg->reg = reg;
-		return;
-	}
-#endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	const char *use_color = NULL;
@@ -6347,7 +6335,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	char *arg;
 	char *save_ptr = NULL;
 
-	if (use_colors) {
+	if (use_colors > 0) {
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg) : Color_BWHITE;
 	}
@@ -9118,13 +9106,12 @@ static const char guess_arg(int n, const char *arg) {
 	return 'r';
 }
 
-#define colors_last 6
+#define colors_last 5
 static const char *colors[colors_last] = {
-	Color_YELLOW,
 	Color_CYAN,
+	Color_YELLOW,
 	Color_GREEN,
 	Color_MAGENTA,
-	Color_RED,
 	Color_BLUE,
 };
 
@@ -9141,6 +9128,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	} else {
 		r_io_read_at (core->io, core->offset, buf, sizeof (buf));
 	}
+	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 	RList *args[8];
 	int i, j;
 	RAnalOp analop, op;
@@ -9302,37 +9290,36 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 					rows++;
 				}
 			}
-#if 0
-			for (i = 0; i < rows; i++) {
-				r_cons_printf ("--> %d %s%d%s\n", i, colors[i], row[i].idx - 1, Color_RESET);
-			}
-#endif
 			r_cons_printf (" ");
 			for (p = s; *p; p++) {
 				int idx = *p - '0';
 				if (idx < 0 || idx > 7) {
-					r_cons_printf ("%c", *p);
+					r_cons_printf (Color_RED"%c"Color_RESET, *p);
 					continue;
 				}
-				const char *color = colors[idx % colors_last];
-				r_cons_printf ("%s%c%s", color, *p, Color_RESET);
+				if (use_color) {
+					const char *color = colors[idx % colors_last];
+					r_cons_printf ("%s%c%s", color, *p, Color_RESET);
+				} else {
+					r_cons_printf ("%c", *p);
+				}
 			}
 			RList *args = mnemonic_tolist (analop.mnemonic);
-#if 0
-			r_cons_printf ("  %s\n ", analop.mnemonic);
-#else
 			r_cons_printf ("     ");
 			RListIter *iter;
 			const char *arg;
 			int idx = 0;
 			r_list_foreach (args, iter, arg) {
-				const char *color = colors[idx % colors_last];
 				const char *sep = (idx > 0)? ", ": " ";
-				r_cons_printf ("%s%s%s%s", sep, color, arg, Color_RESET);
+				if (use_color) {
+					const char *color = colors[idx % colors_last];
+					r_cons_printf ("%s%s%s%s", sep, color, arg, Color_RESET);
+				} else {
+					r_cons_printf ("%s%s", sep, arg);
+				}
 				idx++;
 			}
 			r_cons_printf ("\n ");
-#endif
 			int i;
 			for (i = 0; i < rows; i++) {
 				int iref = row[i].idx - 1;
