@@ -235,7 +235,12 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 		r_buf_write (b, g_buf, p);
 		input += comp_len;
 	}
-	return (ut8*)r_buf_drain (b, output_size);
+	ut64 osz;
+	ut8 *res = r_buf_drain (b, &osz);
+	if (output_size) {
+		*output_size = osz;
+	}
+	return res;
 }
 
 R_API int r_lz4_compress(ut8 *obuf, ut8 *buf, size_t buf_size, const int max_chain) {
