@@ -18,7 +18,7 @@ static int base32_char_index(char c) {
 }
 
 R_API char *r_base32_encode(const ut8 *data, size_t input_length, size_t *output_length) {
-	size_t encoded_size = (input_length + 4) / 5 * 8;
+	const size_t encoded_size = (input_length + 4) / 5 * 8;
 	char *encoded_data = (char *)malloc (encoded_size + 1);
 	if (!encoded_data) {
 		return NULL;
@@ -72,6 +72,7 @@ R_API ut8 *r_base32_decode(const char *data, size_t input_length, size_t *output
 		for (index = 0; index < 8 && i < input_length; index++) {
 			next_byte = base32_char_index (toupper (data[i++]));
 			if (next_byte == -1) {
+				free (decoded_data);
 				return NULL;
 			}
 			current_byte = (current_byte << 5) | next_byte;

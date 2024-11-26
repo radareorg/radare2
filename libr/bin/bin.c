@@ -1698,7 +1698,7 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact) {
 			for (i = 0; i < 64; i++) {
 				const char *bn = attr_bit_name (i, true);
 				if (bn && *w == *bn) {
-					bits |= (1 << i);
+					bits |= (1ULL << i);
 					break;
 				}
 			}

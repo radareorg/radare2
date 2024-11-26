@@ -6,11 +6,11 @@
 
 // R2_600 - replace shlr/smallz4 with this code which also supports compressing
 
-#define BLOCK_SIZE (1024*8) /* 8K */
+#define BLOCK_SIZE (1024 * 8) /* 8K */
 #define PADDING_LITERALS 5
 #define WINDOW_BITS 10
-#define WINDOW_SIZE (1<<WINDOW_BITS)
-#define WINDOW_MASK (WINDOW_SIZE-1)
+#define WINDOW_SIZE (1 << WINDOW_BITS)
+#define WINDOW_MASK (WINDOW_SIZE - 1)
 
 #define MIN_MATCH 4
 
@@ -18,19 +18,11 @@
 
 #define LOAD_16(p) *(ut16*)&g_buf[(p)]
 #define LOAD_32(p) *(ut32*)&g_buf[(p)]
-#define STORE_16(p, x) *(ut16*)&g_buf[(p)] = (x)
 #define COPY_32(d, s) *(ut32*)&g_buf[(d)] = LOAD_32((s))
 
 #define HASH_BITS 12
 #define HASH_SIZE (1 << HASH_BITS)
-#define NIL (-1)
-
 #define HASH_32(p) ((LOAD_32(p)*0x9E3779B9)>>(32-HASH_BITS))
-
-/* Change endianness */
-#define SWAP16(i) (((i) >> 8) | ((i) << 8))
-#define SWAP32(i) ( (((i) >> 24) & 0x000000FF) | (((i) >> 8) & 0x0000FF00) | \
-	(((i) << 8) & 0x00FF0000) | (((i) << 24) & 0xFF000000) )
 
 static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	int i, dist, limit, run, j;
@@ -41,7 +33,7 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 	int head[HASH_SIZE];
 	int tail[WINDOW_SIZE];
 	for (i = 0; i < HASH_SIZE; i++) {
-		head[i]=NIL;
+		head[i] = -1;
 	}
 
 	while (p < uc_length) {
@@ -49,13 +41,13 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 		dist = 0;
 
 		const int max_match = (uc_length-PADDING_LITERALS)-p;
-		if (max_match >= R_MAX (12-PADDING_LITERALS, MIN_MATCH)) {
-			limit = R_MAX (p-WINDOW_SIZE, NIL);
+		if (max_match >= R_MAX (12 - PADDING_LITERALS, MIN_MATCH)) {
+			limit = R_MAX (p - WINDOW_SIZE, -1);
 			chain_len = max_chain;
 
 			int s = head[HASH_32(p)];
 			while (s > limit) {
-				if (g_buf[s+best_len] == g_buf[p+best_len] && LOAD_32(s)==LOAD_32(p)) {
+				if (g_buf[s + best_len] == g_buf[p + best_len] && LOAD_32 (s) == LOAD_32 (p)) {
 					len = MIN_MATCH;
 					while (len < max_match && g_buf[s+len] == g_buf[p+len]) {
 						len++;
@@ -71,31 +63,31 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 				if (--chain_len == 0) {
 					break;
 				}
-				s = tail[s&WINDOW_MASK];
+				s = tail[s & WINDOW_MASK];
 			}
 		}
 
 		if (best_len >= MIN_MATCH) {
-			len = best_len-MIN_MATCH;
+			len = best_len - MIN_MATCH;
 			nib = R_MIN (len, 15);
 
 			if (pp != p) {
 				run = p-pp;
 				if (run >= 15) {
-					g_buf[op++] = (15<<4)+nib;
-					j = run-15;
-					for (; j >= 255; j-=255) {
+					g_buf[op++] = (15 << 4) + nib;
+					j = run - 15;
+					for (; j >= 255; j -= 255) {
 						g_buf[op++] = 255;
 					}
 					g_buf[op++] = j;
 				} else {
-					g_buf[op++] = (run<<4)+nib;
+					g_buf[op++] = (run << 4) + nib;
 				}
 				COPY_32 (op, pp);
-				COPY_32 (op+4, pp+4);
-				for (i = 8; i < run; i+=8) {
-					COPY_32 (op+i, pp+i);
-					COPY_32 (op+4+i, pp+4+i);
+				COPY_32 (op + 4, pp + 4);
+				for (i = 8; i < run; i += 8) {
+					COPY_32 (op + i, pp + i);
+					COPY_32 (op + 4 + i, pp + 4 + i);
 				}
 				op += run;
 			} else {
@@ -131,12 +123,12 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 		if (run >= 15) {
 			g_buf[op++] = 15 << 4;
 			j = run-15;
-			for (; j >= 255; j-=255) {
+			for (; j >= 255; j -= 255) {
 				g_buf[op++] = 255;
 			}
 			g_buf[op++] = j;
 		} else {
-			g_buf[op++] = run<<4;
+			g_buf[op++] = run << 4;
 		}
 
 		COPY_32(op, pp);
@@ -168,15 +160,15 @@ static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
 					}
 				}
 			}
-			if ((p+run)>BLOCK_SIZE) {
+			if ((p + run) > BLOCK_SIZE) {
 				return -1;
 			}
 
 			COPY_32 (p, ip);
-			COPY_32 (p+4, ip+4);
+			COPY_32 (p + 4, ip + 4);
 			for (i = 8; i < run; i += 8) {
-				COPY_32 (p+i, ip+i);
-				COPY_32 (p+4+i, ip+4+i);
+				COPY_32 (p + i, ip + i);
+				COPY_32 (p + 4 + i, ip + 4 + i);
 			}
 			p += run;
 			ip += run;
@@ -200,11 +192,10 @@ static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
 				}
 			}
 		}
-		if ((p+len) > BLOCK_SIZE) {
+		if ((p + len) > BLOCK_SIZE) {
 			return -1;
 		}
-		if ((p-s) >= 4) {
-			/* wild_copy(p, s, len); */
+		if ((p - s) >= 4) {
 			COPY_32 (p, s);
 			COPY_32 (p + 4, s + 4);
 			for (i = 8; i < len; i += 8) {
@@ -223,6 +214,7 @@ static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
 }
 
 R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_size) {
+	R_RETURN_VAL_IF_FAIL (input && output_size, NULL);
 	RBuffer *b = r_buf_new ();
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
 	const ut8 *input_last = input + input_size;
@@ -237,18 +229,22 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 		memcpy (g_buf + BLOCK_SIZE, input, comp_len);
 		int error = lz4_decompress (g_buf, comp_len, &p);
 		if (error != 0) {
-			fprintf (stderr, "Invalid data\n");
 			r_buf_free (b);
 			return NULL;
 		}
 		r_buf_write (b, g_buf, p);
 		input += comp_len;
 	}
-	*output_size = r_buf_size (b);
-	return (ut8*)r_buf_tostring (b);
+	ut64 osz;
+	ut8 *res = r_buf_drain (b, &osz);
+	if (output_size) {
+		*output_size = osz;
+	}
+	return res;
 }
 
 R_API int r_lz4_compress(ut8 *obuf, ut8 *buf, size_t buf_size, const int max_chain) {
+	R_RETURN_VAL_IF_FAIL (obuf && buf, 0);
 	int i;
 	ut8 *obuf0 = obuf;
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
