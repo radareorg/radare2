@@ -295,7 +295,7 @@ R_API ut8 *r_buf_drain(RBuffer *b, ut64 *size) {
 	if (size) {
 		*size = r_buf_size (b);
 	}
-	ut8 *res = r_buf_tostring (b);
+	ut8 *res = (ut8 *)r_buf_tostring (b);
 	r_buf_free (b);
 	return res;
 }
