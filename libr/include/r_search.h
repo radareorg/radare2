@@ -123,7 +123,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
 R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data);
 
-R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
+R_API bool r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 R_API void r_search_reset(RSearch *s, int mode);
 R_API void r_search_kw_reset(RSearch *s);
 R_API void r_search_string_prepare_backward(RSearch *s);
@@ -137,10 +137,10 @@ R_API int r_search_range_reset(RSearch *s);
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
 R_API int r_search_strings(RSearch *s, ut32 min, ut32 max);
-R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max); // WTF dupped?
+R_API bool r_search_set_string_limits(RSearch *s, ut32 min, ut32 max); // WTF dupped?
 R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user); // TODO: depricate
 R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user);
-R_API int r_search_begin(RSearch *s);
+R_API void r_search_begin(RSearch *s);
 
 /* pattern search */
 R_API void r_search_pattern_size(RSearch *s, int size);
