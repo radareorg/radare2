@@ -138,6 +138,17 @@ R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 	if (R_UNLIKELY (!r_esil_plugins_init (esil))) {
 		goto plugins_fail;
 	}
+	int i;
+	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
+		if (r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
+			continue;
+		}
+		do {
+			r_id_storage_fini (&esil->voyeur[i]);
+			i--;
+		} while (i >= 0);
+		goto voyeur_fail;
+	}
 	//not initializing stats here, it needs get reworked and should live in anal
 	//same goes for trace, probably
 	esil->stacksize = stacksize;
@@ -147,6 +158,8 @@ R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 	esil->reg_if = *reg_if;
 	esil->mem_if = *mem_if;
 	return esil;
+voyeur_fail:
+	r_esil_plugins_fini (esil);
 plugins_fail:
 	r_esil_handlers_fini (esil);
 ops_setup_fail:
@@ -201,6 +214,49 @@ R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
 	REsilMemInterface simple_mem_if = {bnd->io, (REsilMemSwitch)bnd->bank_use,
 		(REsilMemRead)bnd->read_at, (REsilMemWrite)bnd->write_at};
 	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if);
+}
+
+R_API st32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt) {
+	R_RETURN_VAL_IF_FAIL (esil && vfn, -1);
+	switch (vt) {
+	case R_ESIL_VOYEUR_REG_READ:
+	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_MEM_READ:
+	case R_ESIL_VOYEUR_MEM_WRITE:
+		break;
+	default:
+		r_warn_if_reached ();
+		return -1;
+	}
+	REsilVoyeur *voyeur = R_NEW (REsilVoyeur);
+	if (!voyeur) {
+		return -1;
+	}
+	ut32 id;
+	if (!r_id_storage_add (&esil->voyeur[vt], voyeur, &id)) {
+		free (voyeur);
+		return -1;
+	}
+	voyeur->user = user;
+	voyeur->vfn = vfn;
+	return (st32)(id | (vt << 29));
+}
+
+R_API void r_esil_del_voyeur(REsil *esil, st32 vid) {
+	R_RETURN_IF_FAIL (esil);
+	const ut32 vt = (vid & (0x7 << 29)) >> 29;
+	switch (vt) {
+	case R_ESIL_VOYEUR_REG_READ:
+	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_MEM_READ:
+	case R_ESIL_VOYEUR_MEM_WRITE:
+		break;
+	default:
+		r_warn_if_reached ();
+		return;
+	}
+	const ut32 id = vid & ~(0x7 << 29);
+	free (r_id_storage_take (&esil->voyeur[vt], id));
 }
 
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type) {
