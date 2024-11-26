@@ -284,12 +284,6 @@ R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
 //R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
 R_API st32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt);
-#define	R_ESIL_ADD_VOYEUR(x, y, z)	_Generic((z),							\
-	REsilVoyeurRegRead:	r_esil_add_voyeur ((x), (y), (void *)(z), R_ESIL_VOYEUR_REG_READ),	\
-	REsilVoyeurRegWrite:	r_esil_add_voyeur ((x), (y), (void *)(z), R_ESIL_VOYEUR_REG_WRITE),	\
-	REsilVoyeurMemRead:	r_esil_add_voyeur ((x), (y), (void *)(z), R_ESIL_VOYEUR_MEM_READ),	\
-	REsilVoyeurMemWrite:	r_esil_add_voyeur ((x), (y), (void *)(z), R_ESIL_VOYEUR_MEM_WRITE),	\
-	default: -1)
 R_API void r_esil_del_voyeur(REsil *esil, st32 vid);
 R_API void r_esil_reset(REsil *esil);
 R_API void r_esil_set_pc(REsil *esil, ut64 addr);
