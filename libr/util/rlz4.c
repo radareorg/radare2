@@ -214,7 +214,7 @@ static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
 }
 
 R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_size) {
-	R_RETURN_VAL_IF_FAIL (input && output_size);
+	R_RETURN_VAL_IF_FAIL (input && output_size, NULL);
 	RBuffer *b = r_buf_new ();
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
 	const ut8 *input_last = input + input_size;
@@ -239,7 +239,7 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 }
 
 R_API int r_lz4_compress(ut8 *obuf, ut8 *buf, size_t buf_size, const int max_chain) {
-	R_RETURN_VAL_IF_FAIL (obuf && buf);
+	R_RETURN_VAL_IF_FAIL (obuf && buf, 0);
 	int i;
 	ut8 *obuf0 = obuf;
 	ut8 g_buf[(BLOCK_SIZE + BLOCK_SIZE + EXCESS) * sizeof (ut8)];
