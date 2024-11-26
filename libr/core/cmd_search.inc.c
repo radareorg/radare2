@@ -993,7 +993,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		}
 		return list;
 	} else if (r_str_startswith (mode, "bin.sections")) {
-		const int len = strlen ("bin.sections");
+		const size_t len = strlen ("bin.sections");
 		const char *sperm = mode + len;
 		int mask = (mode[len] == '.')? r_str_rwx (sperm + 1): 0;
 		if (mask < 0) {

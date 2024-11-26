@@ -277,7 +277,6 @@ R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	return r_buf_insert_bytes (b, 0, buf, length) >= 0;
 }
 
-// R2_600 - drain ?
 R_API char *r_buf_tostring(RBuffer *b) {
 	ut64 sz = r_buf_size (b);
 	char *s = malloc (sz + 1);
@@ -290,6 +289,15 @@ R_API char *r_buf_tostring(RBuffer *b) {
 	}
 	s[sz] = '\0';
 	return s;
+}
+
+R_API ut8 *r_buf_drain(RBuffer *b, ut64 *size) {
+	if (size) {
+		*size = r_buf_size (b);
+	}
+	ut8 *res = r_buf_tostring (b);
+	r_buf_free (b);
+	return res;
 }
 
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
