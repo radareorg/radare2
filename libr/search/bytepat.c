@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2006-2019 - esteve, pancake */
+/* radare - LGPL - Copyright 2006-2024 - esteve, pancake */
 
-#include <r_search.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
+#include <r_search.h>
 
 #define CTXMINB 5
-#define BSIZE (1024*1024)
+#define BSIZE (1024 * 1024)
 #define MAX_PATLEN 1024
 
 typedef struct _fnditem {
@@ -56,8 +56,9 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	return false;
 }
 
-R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to) {
-	ut8 block[BSIZE+MAX_PATLEN], sblk[BSIZE+MAX_PATLEN+1];
+R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
+	R_RETURN_VAL_IF_FAIL (s, false);
+	ut8 block[BSIZE+MAX_PATLEN], sblk[BSIZE+MAX_PATLEN + 1];
 	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
 	int nr,i, moar = 0, pcnt, cnt = 0, k = 0;
 	int patlen = s->pattern_size;
@@ -70,13 +71,12 @@ R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to) {
 	}
 	bact = from;
 	bytes = to;
-	//bytes += bact;
+	// bytes += bact;
 	root = init_fi ();
 	pcnt = -1;
-
-// bact = from
-// bytes = to
-// bproc = from2
+	// bact = from
+	// bytes = to
+	// bproc = from2
 	while (bact < bytes) {
 		addr = bact;
 		if (r_print_is_interrupted ()) {
@@ -84,12 +84,9 @@ R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to) {
 		}
 
 		bproc = bact + patlen ;
-//		read ( fd, sblk, patlen );
-//XXX bytepattern should be used with a read callback
 		nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
-	//XXX	radare_read_at(bact, sblk, patlen);
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
-		sblk[patlen] = 0; // XXX
+		sblk[patlen] = 0;
 
 		intaddr = bact;
 		cnt = 0;
@@ -129,5 +126,5 @@ R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to) {
 	}
 	eprintf ("\n");
 	fini_fi (root);
-	return 0;
+	return true;
 }
