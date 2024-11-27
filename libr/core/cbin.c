@@ -3062,11 +3062,11 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (hashtypes) {
-			r_table_set_columnsf (table, "dXxXxssssx",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "type", "name", "flags");
+			r_table_set_columnsf (table, "dXxXxsxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "flags", hashtypes, "type", "name");
 		} else {
-			r_table_set_columnsf (table, "dXxXxsssx",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name", "flags");
+			r_table_set_columnsf (table, "dXxXxsxss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "flags", "type", "name");
 		}
 		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
 		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
@@ -3303,15 +3303,15 @@ static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				stype = print_segments? "MAP": "----";
 			}
 			if (hashtypes) {
-				r_table_add_rowf (table, "dXxXxssssx", i,
+				r_table_add_rowf (table, "dXxXxsxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, r_str_get (hashstr), stype, section_name, section->flags);
+					perms, section->flags, r_str_get (hashstr), stype, section_name);
 			} else {
-				r_table_add_rowf (table, "dXxXxsssx", i,
+				r_table_add_rowf (table, "dXxXxsxss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, stype, section_name, section->flags);
+					perms, section->flags, stype, section_name);
 			}
 			free (hashstr);
 		}
