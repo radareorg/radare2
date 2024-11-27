@@ -124,6 +124,10 @@ R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 		R_LOG_DEBUG ("0x%08"PFMT64x" unaligned", addr);
 		return 1;
 	}
+	if (kw->align && (addr % kw->align)) {
+		R_LOG_DEBUG ("0x%08"PFMT64x" unaligned", addr);
+		return 1;
+	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
