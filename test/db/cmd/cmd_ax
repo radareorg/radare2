@@ -68,6 +68,7 @@ RUN
 
 NAME=axt..dotdot
 FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
 CMDS=<<EOF
 aa
 axt..7950
