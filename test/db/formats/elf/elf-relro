@@ -60,8 +60,8 @@ NAME=ELF: corkami elf-relro - sections
 FILE=bins/elf/analysis/elf-relro
 CMDS=iS~rel
 EXPECT=<<EOF
-9   0x0000027c    0x8 0x0804827c    0x8 -r-- REL         .rel.dyn
-10  0x00000284   0x10 0x08048284   0x10 -r-- REL         .rel.plt
+9   0x0000027c    0x8 0x0804827c    0x8 -r-- 0x2   REL         .rel.dyn
+10  0x00000284   0x10 0x08048284   0x10 -r-- 0x2   REL         .rel.plt
 EOF
 RUN
 
