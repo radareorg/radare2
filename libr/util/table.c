@@ -56,8 +56,10 @@ static void r_listinfo_fini(RListInfo *info) {
 }
 
 R_API void r_listinfo_free(RListInfo *info) {
-	r_listinfo_fini (info);
-	free (info);
+	if (info) {
+		r_listinfo_fini (info);
+		free (info);
+	}
 }
 static int sortString(const void *a, const void *b) {
 	return strcmp (a, b);
@@ -590,7 +592,8 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		}
 		r_list_foreach (t->cols, iter, col) {
 			bool nopad = !iter->n;
-			(void)__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, 10, tmp, sizeof (tmp)), nopad);
+			char *num = col->total == -1 ? "" : sdb_itoa (col->total, 10, tmp, sizeof (tmp));
+			(void)__strbuf_append_col_aligned (sb, col, num, nopad);
 		}
 	}
 	return r_strbuf_drain (sb);
