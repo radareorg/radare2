@@ -488,34 +488,34 @@ subdir('shlr/zip')
 # NOTE: copying most of the stuff from sdb to here for the moment, since we
 # should use subpackages to handle this well
 sdb_files = [
-  'shlr/sdb/src/array.c',
-  'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/set.c',
-  'shlr/sdb/src/cdb.c',
-  'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/dict.c',
-  'shlr/sdb/src/diff.c',
-  'shlr/sdb/src/disk.c',
-  'shlr/sdb/src/fmt.c',
-  'shlr/sdb/src/ht_uu.c',
-  'shlr/sdb/src/ht_up.c',
-  'shlr/sdb/src/ht_pp.c',
-  'shlr/sdb/src/ht_pu.c',
-  'shlr/sdb/src/ht_su.c',
-  'shlr/sdb/src/journal.c',
-  'shlr/sdb/src/json.c',
-  'shlr/sdb/src/lock.c',
-  'shlr/sdb/src/ls.c',
-  'shlr/sdb/src/match.c',
-  'shlr/sdb/src/ns.c',
-  'shlr/sdb/src/num.c',
-  'shlr/sdb/src/query.c',
-  'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/main.c',
-  'shlr/sdb/src/heap.c',
-  'shlr/sdb/src/ht.c',
-  'shlr/sdb/src/util.c',
-  'shlr/sdb/src/text.c'
+  'subprojects/sdb/src/array.c',
+  'subprojects/sdb/src/base64.c',
+  'subprojects/sdb/src/set.c',
+  'subprojects/sdb/src/cdb.c',
+  'subprojects/sdb/src/cdb_make.c',
+  'subprojects/sdb/src/dict.c',
+  'subprojects/sdb/src/diff.c',
+  'subprojects/sdb/src/disk.c',
+  'subprojects/sdb/src/fmt.c',
+  'subprojects/sdb/src/ht_uu.c',
+  'subprojects/sdb/src/ht_up.c',
+  'subprojects/sdb/src/ht_pp.c',
+  'subprojects/sdb/src/ht_pu.c',
+  'subprojects/sdb/src/ht_su.c',
+  'subprojects/sdb/src/journal.c',
+  'subprojects/sdb/src/json.c',
+  'subprojects/sdb/src/lock.c',
+  'subprojects/sdb/src/ls.c',
+  'subprojects/sdb/src/match.c',
+  'subprojects/sdb/src/ns.c',
+  'subprojects/sdb/src/num.c',
+  'subprojects/sdb/src/query.c',
+  'subprojects/sdb/src/sdb.c',
+  'subprojects/sdb/src/main.c',
+  'subprojects/sdb/src/heap.c',
+  'subprojects/sdb/src/ht.c',
+  'subprojects/sdb/src/util.c',
+  'subprojects/sdb/src/text.c'
 ]
 
 sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','include'))]
@@ -528,33 +528,9 @@ if r.returncode() == 0
 else
   sdb_version = 'unknown'
 endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/include/sdb/version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+run_command(py3_exe, '-c', 'with open("subprojects/sdb/include/sdb/version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
-sdb_inc_files = [
-  'shlr/sdb/include/sdb/buffer.h',
-  'shlr/sdb/include/sdb/cdb.h',
-  'shlr/sdb/include/sdb/cdb_make.h',
-  'shlr/sdb/include/sdb/config.h',
-  'shlr/sdb/include/sdb/dict.h',
-  'shlr/sdb/include/sdb/heap.h',
-  'shlr/sdb/include/sdb/ht.h',
-  'shlr/sdb/include/sdb/ht_inc.h',
-  'shlr/sdb/include/sdb/ht_pp.h',
-  'shlr/sdb/include/sdb/ht_pu.h',
-  'shlr/sdb/include/sdb/ht_up.h',
-  'shlr/sdb/include/sdb/ht_uu.h',
-  'shlr/sdb/include/sdb/ls.h',
-  'shlr/sdb/include/sdb/rangstr.h',
-  'shlr/sdb/include/sdb/sdb.h',
-  'shlr/sdb/include/sdb/set.h',
-  'shlr/sdb/include/sdb/types.h',
-  'shlr/sdb/include/sdb/version.h',
-  'shlr/sdb/include/sdb/asserts.h',
-  'shlr/sdb/include/sdb/cwisstable.h',
-  'shlr/sdb/include/sdb/gcc_stdatomic.h',
-  'shlr/sdb/include/sdb/msvc_stdatomic.h',
-]
-install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
+# install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
 script_files = [
   'scripts/il2cpp.r2.js',
@@ -568,24 +544,15 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-libr2sdb = static_library('r2sdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_IPI= -DSDB_API=__declspec(dllexport)' : [],
-)
+libsdb = dep_sdb.get_variable('libsdb')
+libr2sdb = libsdb.get_static_lib()
 
 sdb_dep = declare_dependency(
   link_whole: libr2sdb,
   include_directories: sdb_inc
 )
 
-sdb_exe = executable('sdb', ['shlr/sdb/src/entry.c'] + sdb_files,
-  include_directories: [
-    include_directories('shlr/sdb/include')
-  ],
-  implicit_include_directories: false,
-  native: true,
-)
+sdb_exe = dep_sdb.get_variable('sdb_exe')
 
 sdb_gen_cmd_cgen = [
   sdb_exe,
