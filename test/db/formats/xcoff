@@ -18,12 +18,12 @@ NAME=xcoff sections
 FILE=bins/xcoff/file-xcoff-aix51
 CMDS=iS
 EXPECT=<<EOF
-nth paddr         size vaddr        vsize perm type   name
-----------------------------------------------------------
-0   0x00000128  0x3722 0x10000128  0x3722 -r-x TEXT   .text-0
-1   0x0000384a   0x4ba 0x2000084a   0x4ba -rw- DATA   .data-1
-2   0x00000000    0x1c 0x20000d04    0x1c -rw- BSS    .bss-2
-3   0x00003d04   0xc73 0x00000000   0xc73 ---- LOADER .loader-3
+nth paddr         size vaddr        vsize perm flags type   name
+----------------------------------------------------------------
+0   0x00000128  0x3722 0x10000128  0x3722 -r-x 0x0   TEXT   .text-0
+1   0x0000384a   0x4ba 0x2000084a   0x4ba -rw- 0x0   DATA   .data-1
+2   0x00000000    0x1c 0x20000d04    0x1c -rw- 0x0   BSS    .bss-2
+3   0x00003d04   0xc73 0x00000000   0xc73 ---- 0x0   LOADER .loader-3
 EOF
 RUN
 

@@ -827,18 +827,18 @@ iSj.
 EOF
 EXPECT=<<EOF
 Current section
-nth paddr       size vaddr       vsize perm type name
------------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- NOTE .note.gnu.build-id
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- 0x2   NOTE .note.gnu.build-id
 Current section
-nth paddr  size vaddr  vsize perm type name
--------------------------------------------
-{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","paddr":1888,"vaddr":134514528}
+nth paddr  size vaddr  vsize perm flags type name
+-------------------------------------------------
+{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","flags":6,"paddr":1888,"vaddr":134514528}
 Current section
-nth paddr       size vaddr       vsize perm type name
------------------------------------------------------
-0   0x00000188  0x24 0x00000188   0x24 -r-- NOTE .note.gnu.build-id
-{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","paddr":1888,"vaddr":1888}
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000188  0x24 0x00000188   0x24 -r-- 0x2   NOTE .note.gnu.build-id
+{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","flags":6,"paddr":1888,"vaddr":1888}
 EOF
 RUN
 
@@ -856,6 +856,7 @@ EXPECT=<<EOF
       "vsize": 0,
       "type": "NULL",
       "perm": "----",
+      "flags": 0,
       "paddr": 0,
       "vaddr": 0
     },
@@ -865,6 +866,7 @@ EXPECT=<<EOF
       "vsize": 19,
       "type": "PROGBITS",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "3.68188080",
       "paddr": 340,
       "vaddr": 134512980
@@ -875,6 +877,7 @@ EXPECT=<<EOF
       "vsize": 32,
       "type": "NOTE",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "1.74868984",
       "paddr": 360,
       "vaddr": 134513000
@@ -885,6 +888,7 @@ EXPECT=<<EOF
       "vsize": 36,
       "type": "NOTE",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "4.13605609",
       "paddr": 392,
       "vaddr": 134513032
@@ -895,6 +899,7 @@ EXPECT=<<EOF
       "vsize": 176,
       "type": "GNU_HASH",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "4.74342302",
       "paddr": 428,
       "vaddr": 134513068
@@ -905,6 +910,7 @@ EXPECT=<<EOF
       "vsize": 592,
       "type": "DYNSYM",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "2.53170115",
       "paddr": 604,
       "vaddr": 134513244
@@ -915,6 +921,7 @@ EXPECT=<<EOF
       "vsize": 384,
       "type": "STRTAB",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "4.59829027",
       "paddr": 1196,
       "vaddr": 134513836
@@ -925,6 +932,7 @@ EXPECT=<<EOF
       "vsize": 74,
       "type": "GNU_VERSYM",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "1.55329753",
       "paddr": 1580,
       "vaddr": 134514220
@@ -935,6 +943,7 @@ EXPECT=<<EOF
       "vsize": 64,
       "type": "GNU_VERNEED",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "2.33399879",
       "paddr": 1656,
       "vaddr": 134514296
@@ -945,6 +954,7 @@ EXPECT=<<EOF
       "vsize": 16,
       "type": "REL",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "3.25000000",
       "paddr": 1720,
       "vaddr": 134514360
@@ -955,6 +965,7 @@ EXPECT=<<EOF
       "vsize": 112,
       "type": "REL",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "3.52414971",
       "paddr": 1736,
       "vaddr": 134514376
@@ -965,6 +976,7 @@ EXPECT=<<EOF
       "vsize": 35,
       "type": "PROGBITS",
       "perm": "-r-x",
+      "flags": 6,
       "entropy": "4.12467560",
       "paddr": 1848,
       "vaddr": 134514488
@@ -975,6 +987,7 @@ EXPECT=<<EOF
       "vsize": 240,
       "type": "PROGBITS",
       "perm": "-r-x",
+      "flags": 6,
       "entropy": "3.68026477",
       "paddr": 1888,
       "vaddr": 134514528
@@ -985,6 +998,7 @@ EXPECT=<<EOF
       "vsize": 1170,
       "type": "PROGBITS",
       "perm": "-r-x",
+      "flags": 6,
       "entropy": "5.89126869",
       "paddr": 2128,
       "vaddr": 134514768
@@ -995,6 +1009,7 @@ EXPECT=<<EOF
       "vsize": 20,
       "type": "PROGBITS",
       "perm": "-r-x",
+      "flags": 6,
       "entropy": "3.72192809",
       "paddr": 3300,
       "vaddr": 134515940
@@ -1005,6 +1020,7 @@ EXPECT=<<EOF
       "vsize": 249,
       "type": "PROGBITS",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "4.65845607",
       "paddr": 3320,
       "vaddr": 134515960
@@ -1015,6 +1031,7 @@ EXPECT=<<EOF
       "vsize": 84,
       "type": "PROGBITS",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "3.49291576",
       "paddr": 3572,
       "vaddr": 134516212
@@ -1025,6 +1042,7 @@ EXPECT=<<EOF
       "vsize": 336,
       "type": "PROGBITS",
       "perm": "-r--",
+      "flags": 2,
       "entropy": "4.46780720",
       "paddr": 3656,
       "vaddr": 134516296
@@ -1035,6 +1053,7 @@ EXPECT=<<EOF
       "vsize": 4,
       "type": "INIT_ARRAY",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "2.00000000",
       "paddr": 7944,
       "vaddr": 134520584
@@ -1045,6 +1064,7 @@ EXPECT=<<EOF
       "vsize": 4,
       "type": "FINI_ARRAY",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "2.00000000",
       "paddr": 7948,
       "vaddr": 134520588
@@ -1055,6 +1075,7 @@ EXPECT=<<EOF
       "vsize": 4,
       "type": "PROGBITS",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "0.00000000",
       "paddr": 7952,
       "vaddr": 134520592
@@ -1065,6 +1086,7 @@ EXPECT=<<EOF
       "vsize": 232,
       "type": "DYNAMIC",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "2.87462433",
       "paddr": 7956,
       "vaddr": 134520596
@@ -1075,6 +1097,7 @@ EXPECT=<<EOF
       "vsize": 4,
       "type": "PROGBITS",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "0.00000000",
       "paddr": 8188,
       "vaddr": 134520828
@@ -1085,6 +1108,7 @@ EXPECT=<<EOF
       "vsize": 68,
       "type": "PROGBITS",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "3.42061456",
       "paddr": 8192,
       "vaddr": 134520832
@@ -1095,6 +1119,7 @@ EXPECT=<<EOF
       "vsize": 8,
       "type": "PROGBITS",
       "perm": "-rw-",
+      "flags": 3,
       "entropy": "0.00000000",
       "paddr": 8260,
       "vaddr": 134520900
@@ -1105,6 +1130,7 @@ EXPECT=<<EOF
       "vsize": 8,
       "type": "NOBITS",
       "perm": "-rw-",
+      "flags": 3,
       "paddr": 8268,
       "vaddr": 134520928
     },
@@ -1114,6 +1140,7 @@ EXPECT=<<EOF
       "vsize": 36,
       "type": "PROGBITS",
       "perm": "----",
+      "flags": 48,
       "entropy": "4.04868811",
       "paddr": 8268,
       "vaddr": 0
@@ -1124,6 +1151,7 @@ EXPECT=<<EOF
       "vsize": 246,
       "type": "STRTAB",
       "perm": "----",
+      "flags": 0,
       "entropy": "4.28967882",
       "paddr": 8304,
       "vaddr": 0

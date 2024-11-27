@@ -58,19 +58,19 @@ nth vaddr      bind type lib name
 23  ---------- NONE FUNC     __TIFFDataSize
 24  ---------- NONE FUNC     __TIFFCheckMalloc
 25  ---------- NONE UNK      __fltused
-nth paddr         size vaddr        vsize perm type name
---------------------------------------------------------
-0   0x000001cc    0x2f 0x00000000    0x2f ---- MAP  .drectve-0
-1   0x000001fb  0x8670 0x00000030  0x8670 -r-- DATA .debug$S-1
-2   0x0000ad73    0x70 0x000086a0    0x70 -r-- DATA .debug$T-2
-3   0x0000ade3   0x625 0x00008710   0x625 -rw- DATA .data-3
-4   0x0000b408    0x54 0x00008d40    0x54 -r-- DATA .rdata-4
-5   0x00000000     0x8 0x00008da0     0x8 -rw- MAP  .bss-5
-6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x TEXT .text$mn-6
-7   0x0000e967     0x8 0x0000b650     0x8 -r-- DATA .rdata-7
-8   0x0000e96f     0x4 0x0000b660     0x4 -r-- DATA .rdata-8
-9   0x0000e973     0x8 0x0000b670     0x8 -r-- DATA .rdata-9
-10  0x0000e97b     0x4 0x0000b680     0x4 -r-- DATA .rdata-10
+nth paddr         size vaddr        vsize perm flags type name
+--------------------------------------------------------------
+0   0x000001cc    0x2f 0x00000000    0x2f ---- 0x0   MAP  .drectve-0
+1   0x000001fb  0x8670 0x00000030  0x8670 -r-- 0x0   DATA .debug$S-1
+2   0x0000ad73    0x70 0x000086a0    0x70 -r-- 0x0   DATA .debug$T-2
+3   0x0000ade3   0x625 0x00008710   0x625 -rw- 0x0   DATA .data-3
+4   0x0000b408    0x54 0x00008d40    0x54 -r-- 0x0   DATA .rdata-4
+5   0x00000000     0x8 0x00008da0     0x8 -rw- 0x0   MAP  .bss-5
+6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x 0x0   TEXT .text$mn-6
+7   0x0000e967     0x8 0x0000b650     0x8 -r-- 0x0   DATA .rdata-7
+8   0x0000e96f     0x4 0x0000b660     0x4 -r-- 0x0   DATA .rdata-8
+9   0x0000e973     0x8 0x0000b670     0x8 -r-- 0x0   DATA .rdata-9
+10  0x0000e97b     0x4 0x0000b680     0x4 -r-- 0x0   DATA .rdata-10
 EOF
 RUN
 
@@ -242,17 +242,17 @@ iE.
 EOF
 EXPECT=<<EOF
 Current section
-nth paddr       size vaddr       vsize perm type name
------------------------------------------------------
-0   0x00000000   0x4 0x00001180    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa277-280
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000000   0x4 0x00001180    0x4 -rw- 0x0   MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa277-280
 Current section
-nth paddr       size vaddr       vsize perm type name
------------------------------------------------------
-0   0x00000000   0x4 0x00138820    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa79999-80002
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000000   0x4 0x00138820    0x4 -rw- 0x0   MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa79999-80002
 Current section
-nth paddr       size vaddr       vsize perm type name
------------------------------------------------------
-0   0x00000000   0x4 0x00000100    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000000   0x4 0x00000100    0x4 -rw- 0x0   MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
 nth paddr      vaddr      bind  type size lib name          demangled
 ---------------------------------------------------------------------
 0   0x0030d4d8 0x00138830 LOCAL UNK  4        .llvm_addrsig

@@ -65,7 +65,7 @@ NAME=x86 - init_array detection2
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS~init_array
 EXPECT=<<EOF
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- INIT_ARRAY  .init_array
+18  0x0000059c    0x4 0x0804959c    0x4 -rw- 0x3   INIT_ARRAY  .init_array
 EOF
 RUN
 

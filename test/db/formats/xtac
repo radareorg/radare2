@@ -9,11 +9,11 @@ is
 EOF
 EXPECT=<<EOF
 --
-nth paddr       size vaddr        vsize perm type name
-------------------------------------------------------
-0   0x00000000   0x0 0x00000000    0x50 -r-- ---- header
-1   0x00000060   0x0 0x00000060  0xa4b8 -r-x ---- blck_code_0
-2   0x0000a518   0x0 0x0000a518  0x1518 -r-x ---- trans_code_0
+nth paddr       size vaddr        vsize perm flags type name
+------------------------------------------------------------
+0   0x00000000   0x0 0x00000000    0x50 -r-- 0x0   ---- header
+1   0x00000060   0x0 0x00000060  0xa4b8 -r-x 0x0   ---- blck_code_0
+2   0x0000a518   0x0 0x0000a518  0x1518 -r-x 0x0   ---- trans_code_0
 --
 nth paddr      vaddr      bind type size lib name         demangled
 -------------------------------------------------------------------
