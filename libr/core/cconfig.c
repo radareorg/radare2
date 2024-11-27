@@ -3526,6 +3526,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* anal */
 	SETBPREF ("anal.onchange", "false", "automatically reanalyze function if any byte has changed (EXPERIMENTAL)");
+	SETI ("anal.fcnalign", 0,  "use ArchInfo.funcAlign if zero, otherwise override (used by aap and others)");
 	SETPREF ("anal.fcnprefix", "fcn",  "prefix new function names with this");
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "specify default calling convention");
