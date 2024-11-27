@@ -133,7 +133,10 @@ typedef bool (*REsilMemRead)(void *mem, ut64 addr, ut8 *buf, int len);
 typedef bool (*REsilMemWrite)(void *mem, ut64 addr, const ut8 *buf, int len);
 
 typedef struct r_esil_memory_interface_t {
-	void *mem;
+	union {
+		void *mem;
+		void *user;
+	};
 	REsilMemSwitch mem_switch;
 	REsilMemRead mem_read;
 	REsilMemWrite mem_write;
@@ -141,12 +144,15 @@ typedef struct r_esil_memory_interface_t {
 
 //check if name is a valid register identifier
 typedef bool (*REsilIsReg)(void *reg, const char *name);
-typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *res, int *size);
+typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
 
 typedef struct r_esil_register_interface_t {
-	void *reg;
+	union {
+		void *reg;
+		void *user;
+	};
 	REsilIsReg is_reg;
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
@@ -278,6 +284,8 @@ typedef struct r_esil_active_plugin_t {
 } REsilActivePlugin;
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
+R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
+	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if);
 R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 	REsilRegInterface *reg_if, REsilMemInterface *mem_if);
 //this should replace existing r_esil_new
@@ -290,14 +298,19 @@ R_API void r_esil_set_pc(REsil *esil, ut64 addr);
 R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, bool romem, bool stats, bool nonull);
 R_API void r_esil_setup_macros(REsil *esil);
 R_API bool r_esil_setup_ops(REsil *esil);
+R_API void r_esil_fini(REsil *esil);
 R_API void r_esil_free(REsil *esil);
 R_API bool r_esil_runword(REsil *esil, const char *word);
 R_API bool r_esil_parse(REsil *esil, const char *str);
 R_API bool r_esil_dumpstack(REsil *esil);
 R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len);
+R_API bool r_esil_mem_write_silent(REsil *esil, ut64 addr, const ut8 *buf, int len);
 R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size);
-R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num);
+R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
+R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 num);
+R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);
 #if R2_590
