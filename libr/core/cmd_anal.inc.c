@@ -10513,7 +10513,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				break;
 			}
 		} else {
-			addr = core->offset;
+			const char *dotdot = strstr (input, "..");
+			if (dotdot) {
+				addr = r_num_tail (core->num, core->offset, dotdot + 2);
+			} else {
+				addr = core->offset;
+			}
 		}
 		RVecAnalRef *list = r_anal_xrefs_get (core->anal, addr);
 		if (list) {
@@ -10678,7 +10683,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						ref->addr, ref->type, addr, is_at_end? "": ",");
 					i++;
 				}
-			} else if (input[1] == ' ' || input[1] == 0) { // "axt"
+			} else if (input[1] == ' ' || input[1] == 0 || input[1] == '.') { // "axt"
 				RAnalFunction *fcn;
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
