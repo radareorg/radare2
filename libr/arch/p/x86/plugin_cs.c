@@ -4420,6 +4420,9 @@ static RList *anal_preludes(RArchSession *as) {
 		r_list_append (l, strdup ("554889e5"));
 		r_list_append (l, strdup ("55488bec"));
 		r_list_append (l, strdup ("f30f1efa")); // endbr64
+		// r_list_append (l, strdup ("4157415653")); // push r15,r14,rbx
+		r_list_append (l, strdup ("5541574156")); // push rbp,r15,r14
+		r_list_append (l, strdup ("415741564154")); // push r15,r14,r13,r12
 		break;
 	default:
 		// nothing to do on x86-16
