@@ -29,10 +29,10 @@ NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
 EXPECT=<<EOF
-nth paddr         size vaddr        vsize perm type name
---------------------------------------------------------
-0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MAP  MOVEABLE.2560
-1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MAP  MOVEABLE.30208
+nth paddr         size vaddr        vsize perm flags type name
+--------------------------------------------------------------
+0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x 0x0   MAP  MOVEABLE.2560
+1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx 0x0   MAP  MOVEABLE.30208
 EOF
 RUN
 
