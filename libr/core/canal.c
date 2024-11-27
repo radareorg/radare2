@@ -4024,13 +4024,12 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
 	R_RETURN_VAL_IF_FAIL (bbs, false);
-	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
-
 	if (depth < 0) {
 		R_LOG_ERROR ("going too deep");
 		return false;
 	}
 
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 	if (!bb) {
 		return false;
 	}
@@ -4087,14 +4086,15 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		return NULL;
 	}
 
-
 	// forward search
 	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state, avoid)) {
+		eprintf ("path found\n");
 		ht_up_free (state);
 		return list;
 	}
 
 	// backward search
+	eprintf ("Backward sear\n");
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
 	if (xrefs) {
 		RAnalRef *xref;
