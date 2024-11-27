@@ -688,7 +688,7 @@ static void r_core_cmd_om_tab(RCore *core, const char *arg) {
 			va, va_end, r_str_rwx_i (m->perm), name);
 	} while (r_id_storage_get_next (&core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
-		char *ts = strchr (arg, ':')? r_table_tostring (t) : r_table_tofancystring (t);
+		char *ts = strchr (arg, ':')? r_table_tostring (t) : r_table_tostring (t);
 		r_cons_printf ("%s", ts);
 		free (ts);
 	}
