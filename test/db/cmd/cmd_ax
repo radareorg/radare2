@@ -65,3 +65,23 @@ EXPECT=<<EOF
 0x600ff8
 EOF
 RUN
+
+NAME=axt..dotdot
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aa
+axt..7950
+?e --
+axt ..7950
+?e --
+axt sym.imp.write
+EOF
+EXPECT=<<EOF
+sym.func.10000699c 0x1000069bc [CALL:--x] bl sym.imp.write
+--
+sym.func.10000699c 0x1000069bc [CALL:--x] bl sym.imp.write
+--
+sym.func.10000699c 0x1000069bc [CALL:--x] bl sym.imp.write
+EOF
+RUN
