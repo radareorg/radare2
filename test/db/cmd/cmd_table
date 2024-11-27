@@ -37,7 +37,7 @@ rm .tt
 EOF
 EXPECT=<<EOF
 37
-37
+35
 EOF
 RUN
 
@@ -54,7 +54,7 @@ rm .tt2
 EOF
 EXPECT=<<EOF
 37
-37
+35
 EOF
 RUN
 
@@ -69,7 +69,7 @@ cat $a~?
 EOF
 EXPECT=<<EOF
 34
-37
+35
 EOF
 RUN
 
@@ -81,7 +81,7 @@ afr
 ,~?
 EOF
 EXPECT=<<EOF
-37
+35
 EOF
 RUN
 
@@ -96,8 +96,8 @@ aflt :r2 > $a
 ,~?
 EOF
 EXPECT=<<EOF
-37
-70
+35
+68
 EOF
 RUN
 
@@ -113,19 +113,15 @@ CMDS=<<EOF
 
 EOF
 EXPECT=<<EOF
-.--------------------.
-| foo  | bar  | cow  |
-)--------------------(
-`--------------------'
+foo bar cow
+-----------
 
 foo,bar,cow
 
 []
-.--------------------.
-| foo  | bar  | cow  |
-)--------------------(
-| 123  | 456  | 789  |
-`--------------------'
+foo bar cow
+-----------
+123 456 789
 
 EOF
 RUN
