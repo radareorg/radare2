@@ -3517,30 +3517,6 @@ static bool runword(REsil *esil, const char *word) {
 		return false;
 	}
 
-#if 0
-	// Don't push anything onto stack when processing if statements
-	if (!strcmp (word, "?{") && esil->Reil) {
-		esil->Reil->skip = esil->Reil->skip? 0: 1;
-		if (esil->Reil->skip) {
-			esil->Reil->cmd_count = 0;
-			memset (esil->Reil->if_buf, 0, sizeof (esil->Reil->if_buf));
-		}
-	}
-
-	if (esil->Reil && esil->Reil->skip) {
-		char *if_buf = esil->Reil->if_buf;
-		size_t n = strlen (if_buf);
-		snprintf (if_buf + n, sizeof (esil->Reil->if_buf) - n, "%s,", word);
-		if (!strcmp (word, "}")) {
-			r_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
-			r_esil_parse (esil, esil->Reil->if_buf);
-		} else if (iscommand (esil, word, &op)) {
-			esil->Reil->cmd_count++;
-		}
-		return true;
-	}
-#endif
-
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
 		if (esil->skip == 1) {
