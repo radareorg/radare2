@@ -428,9 +428,12 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
-	const int funcali = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
-	if (funcali > 1) {
-		kw->align = funcali;
+	const int afuncali = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
+	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
+	if (ufuncali > 1) {
+		kw->align = ufuncali;
+	} else if (afuncali > 1) {
+		kw->align = afuncali;
 	}
 	r_search_kw_add (core->search, kw);
 	r_search_begin (core->search);
