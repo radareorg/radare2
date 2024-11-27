@@ -4393,6 +4393,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;
+	case R_ARCH_INFO_FUNC_ALIGN:
+		if (as->config->bits == 64) {
+			return 4;
+		}
+		return 0;
 	case R_ARCH_INFO_MAXOP_SIZE:
 		return 16;
 	case R_ARCH_INFO_INVOP_SIZE:
