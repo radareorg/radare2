@@ -275,6 +275,9 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
+# dep_sdb = dependency('sdb', fallback: ['sdb'], required: true)
+dep_sdb = subproject('sdb')
+
 # handle xxhash library
 sys_xxhash = dependency('libxxhash', required: false)
 use_sys_xxhash = false
