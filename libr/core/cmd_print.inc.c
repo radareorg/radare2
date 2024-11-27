@@ -4499,7 +4499,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		r_cons_println (pj_string (pj));
 		break;
 	case 'h': {
-		char *table_string = r_table_tofancystring (t);
+		char *table_string = r_table_tostring (t);
 		if (!table_string) {
 			goto cleanup;
 		}

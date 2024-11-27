@@ -3126,13 +3126,16 @@ static void anal_bb_list(RCore *core, const char *input) {
 		r_cons_println (j);
 		free (j);
 	} else if (mode == 't' || mode == ',') {
-		char *q = strchr (input, ' ');
+		const char *q = strchr (input, ' ');
+		if (!q) {
+			q = input;
+		}
 		bool show_query = true;
 		if (q) {
 			show_query = r_table_query (table, q + 1);
 		}
 		if (show_query) {
-			char *s = r_table_tofancystring (table);
+			char *s = r_table_tostring (table);
 			r_cons_println (s);
 			free (s);
 		}
@@ -3423,7 +3426,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (mode == ',') {
 		const char *arg = input;
 		if (r_table_query (t, arg)) {
-			char *ts = r_table_tofancystring (t);
+			char *ts = r_table_tostring (t);
 			r_cons_printf ("%s", ts);
 			free (ts);
 		}
@@ -10573,7 +10576,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_table_query (table, q);
 				}
 				if (true) {
-					char *s = r_table_tofancystring (table);
+					char *s = r_table_tostring (table);
 					r_str_trim (s);
 					r_cons_println (s);
 					free (s);

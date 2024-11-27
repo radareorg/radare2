@@ -2478,7 +2478,7 @@ static char *__table_format_string(RTable *t, int fmt) {
 	case 'j': return r_table_tojson (t);
 	case 's': return r_table_tostring (t);
 	}
-	return r_table_tofancystring (t);
+	return r_table_tostring (t);
 }
 
 static void __tableRegList(RCore *core, RReg *reg, const char *str) {

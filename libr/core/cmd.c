@@ -2209,7 +2209,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case 0:
 		if (core->table) {
-			display_table (r_table_tofancystring (core->table));
+			display_table (r_table_tostring (core->table));
 		}
 		break;
 	case '?':
