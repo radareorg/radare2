@@ -21,11 +21,12 @@ typedef enum {
 #define R_ARCH_INFO_INVOP_SIZE 2
 #define R_ARCH_INFO_CODE_ALIGN 4
 #define R_ARCH_INFO_DATA_ALIGN 8
-#define R_ARCH_INFO_DATA2_ALIGN 16
-#define R_ARCH_INFO_DATA4_ALIGN 32
-#define R_ARCH_INFO_DATA8_ALIGN 64
-#define R_ARCH_INFO_JMPMID 128
-#define R_ARCH_INFO_ISVM 256
+#define R_ARCH_INFO_FUNC_ALIGN 16
+#define R_ARCH_INFO_DATA2_ALIGN 32
+#define R_ARCH_INFO_DATA4_ALIGN 64
+#define R_ARCH_INFO_DATA8_ALIGN 128
+#define R_ARCH_INFO_JMPMID 256
+#define R_ARCH_INFO_ISVM 512
 
 #if 1
 // R2_600 - Old and Deprecated Names. keeping it for compat until 6.0
