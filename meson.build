@@ -276,7 +276,6 @@ if sys_magic.found() and get_option('use_sys_magic')
 endif
 
 # dep_sdb = dependency('sdb', fallback: ['sdb'], required: true)
-dep_sdb = subproject('sdb')
 
 # handle xxhash library
 sys_xxhash = dependency('libxxhash', required: false)
@@ -518,7 +517,6 @@ sdb_files = [
   'subprojects/sdb/src/text.c'
 ]
 
-sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','include'))]
 
 # XXX we have sdb/meson.build for this!! dont dup
 # Create sdb_version.h
@@ -544,12 +542,16 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
+dep_sdb = subproject('sdb')
+sdb_dep = dep_sdb.get_variable('sdb_dep')
 libsdb = dep_sdb.get_variable('libsdb')
-libr2sdb = libsdb.get_static_lib()
+libsdb_includes = dep_sdb.get_variable('sdb_inc')
+sdb_inc = libsdb_includes
+libsdb_static = libsdb.get_static_lib()
 
 sdb_dep = declare_dependency(
-  link_whole: libr2sdb,
-  include_directories: sdb_inc
+  link_whole: libsdb_static,
+  include_directories: libsdb_includes
 )
 
 sdb_exe = dep_sdb.get_variable('sdb_exe')
@@ -587,8 +589,8 @@ spp_files = [
 spp_inc = [platform_inc, include_directories(join_paths('shlr','spp'))]
 
 libr2spp = static_library('r2spp', spp_files,
-  dependencies: sdb_dep,
-  include_directories: spp_inc,
+  link_with: [ libsdb ], # libsdb_static,
+  include_directories: [ sdb_inc, spp_inc ],
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )
