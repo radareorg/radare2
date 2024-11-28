@@ -8,7 +8,12 @@ static RBreakpointArch r_bp_plugin_null_bps[] = {
 };
 
 RBreakpointPlugin r_bp_plugin_null = {
-	.name = "null",
+	.meta = {
+		.name = "null",
+		.desc = "",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
+	},
 	.arch = "null",
 	.nbps = 0,
 	.bps = r_bp_plugin_null_bps,
