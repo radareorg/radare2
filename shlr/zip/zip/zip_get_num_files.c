@@ -32,20 +32,25 @@
 */
 
 
-#define _ZIP_COMPILING_DEPRECATED
+// #define _ZIP_COMPILING_DEPRECATED
 #include "zipint.h"
 #include <limits.h>
 
 
+// copypasta from zip_get_num_entries to remove the deprecation notice
 ZIP_EXTERN int
 zip_get_num_files(zip_t *za) {
     if (za == NULL)
         return -1;
 
-    if (za->nentry > INT_MAX) {
-        zip_error_set(&za->error, ZIP_ER_OPNOTSUPP, 0);
-        return -1;
+#if 0
+    if (flags & ZIP_FL_UNCHANGED) {
+        n = za->nentry;
+        while (n > 0 && za->entry[n - 1].orig == NULL)
+            --n;
+        return (zip_int64_t)n;
     }
+#endif
 
     return (int)za->nentry;
 }

@@ -34,7 +34,6 @@
 
 #include "zipint.h"
 
-
 ZIP_EXTERN zip_int64_t
 zip_get_num_entries(zip_t *za, zip_flags_t flags) {
     zip_uint64_t n;

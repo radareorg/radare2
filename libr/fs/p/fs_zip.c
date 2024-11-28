@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 
 static RFSFile *fs_zip_open(RFSRoot *root, const char *path, bool create) {
-	eprintf ("zip.open (%s)\n", path);
+	R_LOG_INFO ("zip.open (%s)", path);
 	// struct zip * zipArch = zip_open (archivename, perm, &zip_errorp);
 #if 0
 	char *enc_uri = enbase (path);
@@ -139,7 +139,8 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		free (buf);
 		return NULL;
 	}
-	int num_entries = zip_get_num_files (za);
+	int num_entries = zip_get_num_files (za); // Warns because of deprecation lol
+	// XXX fails to compile -- int num_entries = zip_get_num_entries (za, 0);
 	int i;
 	bool hasdir = false;
 	bool hasfailed = false;
