@@ -11,7 +11,7 @@ OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o cplugin.o cmd_print_list.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o vslides.o
 OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
-OBJS+=cproject.o clist.o
+OBJS+=cproject.o clist.o core_esil.o
 
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}

@@ -2609,8 +2609,8 @@ static bool cb_graphformat(void *user, void *data) {
 }
 
 static bool cb_exectrap(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore*)user;
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->exectrap = node->i_value;
 	}
@@ -2618,17 +2618,39 @@ static bool cb_exectrap(void *user, void *data) {
 }
 
 static bool cb_iotrap(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore*)user;
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->iotrap = node->i_value;
 	}
 	return true;
 }
 
+static bool cb_romem(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore*)user;
+	if (node->i_value) {
+		core->esil.cfg |= R_CORE_ESIL_RO;
+	} else {
+		core->esil.cfg &= ~R_CORE_ESIL_RO;
+	}
+	return true;
+}
+
+static bool cb_esilnonull(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore*)user;
+	if (node->i_value) {
+		core->esil.cfg |= R_CORE_ESIL_NONULL;
+	} else {
+		core->esil.cfg &= ~R_CORE_ESIL_NONULL;
+	}
+	return true;
+}
+
 static bool cb_scr_bgfill(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore*)user;
+	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_BGFILL;
 	} else {
@@ -4310,9 +4332,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB ("esil.exectrap", "false", &cb_exectrap, "trap when executing code in non-executable memory");
 	SETCB ("esil.iotrap", "true", &cb_iotrap, "invalid read or writes produce a trap exception");
-	SETBPREF ("esil.romem", "false", "set memory as read-only for ESIL");
+	SETCB ("esil.romem", "false", &cb_romem, "set memory as read-only for ESIL");
 	SETBPREF ("esil.stats", "false", "statistics from ESIL emulation stored in sdb");
-	SETBPREF ("esil.nonull", "false", "prevent memory read, memory write at null pointer");
+	SETCB ("esil.nonull", "false", &cb_esilnonull, "prevent memory read, memory write at null pointer");
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "specify a range of memory to be handled by cmd.esil.mdev");
 	SETBPREF ("esil.dfg.mapinfo", "false", "use mapinfo for esil dfg");
 	SETBPREF ("esil.dfg.maps", "false", "set ro maps for esil dfg");
