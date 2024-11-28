@@ -582,6 +582,7 @@ R_API void r_core_list_io(RCore *core);
 R_API void r_core_list_lang(RCore *core, int mode);
 
 R_API void r_core_visual_slides(RCore *core, const char *file);
+
 /* visual marks */
 R_API void r_core_vmark(RCore *core, ut8 ch);
 R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y);

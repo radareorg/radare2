@@ -72,7 +72,7 @@ static int sortNumber(const void *a, const void *b) {
 static int sortFloat(const void *a, const void *b) {
 	double fa = strtod ((const char *) a, NULL);
 	double fb = strtod ((const char *) b, NULL);
-	return (fa * 100) - (fb * 100);
+	return (int)((fa * 100) - (fb * 100));
 }
 
 // maybe just index by name instead of exposing those symbols as global
