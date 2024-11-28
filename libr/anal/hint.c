@@ -526,6 +526,7 @@ static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
 }
 
 R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	RAnalHint *hint = R_NEW0 (RAnalHint);
 	if (!hint) {
 		return NULL;
