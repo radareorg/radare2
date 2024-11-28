@@ -568,7 +568,6 @@ install_data(script_files, install_dir: r2_scripts)
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_IPI= -DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(
