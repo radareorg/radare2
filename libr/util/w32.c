@@ -3,7 +3,7 @@
 #include <r_userconf.h>
 #include <r_util.h>
 
-#if R2__WINDOWS__
+#if R2__WINDOWS__ || __MINGW32__
 #include <windows.h>
 
 #if 1
