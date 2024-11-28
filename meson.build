@@ -121,6 +121,7 @@ if cc.get_id() == 'msvc'
 #  add_project_arguments('/Zc:preprocessor', language: 'c')
   if get_option('static_runtime')
     add_project_arguments('/MT', language: 'c')
+    add_project_link_arguments(['/NODEFAULTLIB:MSVCRTD'], language: 'c')
   endif
 endif
 
