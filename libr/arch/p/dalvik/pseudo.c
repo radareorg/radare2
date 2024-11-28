@@ -360,6 +360,8 @@ RParsePlugin r_parse_plugin_dalvik_pseudo = {
 	.meta = {
 		.name = "dalvik.pseudo",
 		.desc = "DALVIK pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

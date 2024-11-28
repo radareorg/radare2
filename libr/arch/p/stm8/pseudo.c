@@ -227,6 +227,8 @@ RParsePlugin r_parse_plugin_stm8_pseudo = {
 	.meta = {
 		.name = "stm8.pseudo",
 		.desc = "STM8 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

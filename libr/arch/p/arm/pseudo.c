@@ -487,6 +487,8 @@ RParsePlugin r_parse_plugin_arm_pseudo = {
 	.meta = {
 		.name = "arm.pseudo",
 		.desc = "ARM/ARM64 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 	.subvar = &subvar,

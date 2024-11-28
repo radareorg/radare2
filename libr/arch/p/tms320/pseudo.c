@@ -178,6 +178,8 @@ RParsePlugin r_parse_plugin_tms320_pseudo = {
 	.meta = {
 		.name = "tms320.pseudo",
 		.desc = "tms320 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

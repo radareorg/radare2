@@ -218,6 +218,8 @@ RParsePlugin r_parse_plugin_riscv_pseudo = {
 	.meta = {
 		.name = "riscv.pseudo",
 		.desc = "riscv pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

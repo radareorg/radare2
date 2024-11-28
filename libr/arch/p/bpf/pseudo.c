@@ -86,6 +86,8 @@ RParsePlugin r_parse_plugin_bpf_pseudo = {
 	.meta = {
 		.name = "bpf.pseudo",
 		.desc = "bpf pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

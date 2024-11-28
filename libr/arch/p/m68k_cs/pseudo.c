@@ -196,6 +196,8 @@ RParsePlugin r_parse_plugin_m68k_pseudo = {
 	.meta = {
 		.name = "m68k.pseudo",
 		.desc = "M68K pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

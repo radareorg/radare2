@@ -368,6 +368,8 @@ RParsePlugin r_parse_plugin_mips_pseudo = {
 	.meta = {
 		.name = "mips.pseudo",
 		.desc = "MIPS pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 	.subvar = subvar,

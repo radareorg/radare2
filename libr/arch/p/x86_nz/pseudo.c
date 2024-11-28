@@ -577,6 +577,8 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 	.meta = {
 		.name = "x86.pseudo",
 		.desc = "X86 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = &parse,
 	.subvar = &subvar,

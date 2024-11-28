@@ -90,6 +90,8 @@ RParsePlugin r_parse_plugin_evm_pseudo = {
 	.meta = {
 		.name = "evm.pseudo",
 		.desc = "evm pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

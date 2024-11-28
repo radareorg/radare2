@@ -168,6 +168,8 @@ RParsePlugin r_parse_plugin_att2intel = {
 	.meta = {
 		.name = "att2intel",
 		.desc = "X86 att 2 intel plugin",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = &parse,
 };
