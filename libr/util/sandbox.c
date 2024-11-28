@@ -15,6 +15,10 @@
 #include <priv.h>
 #endif
 
+#ifdef __MINGW32__
+#include <unistd.h>
+#endif
+
 static R_TH_LOCAL bool G_enabled = false;
 static R_TH_LOCAL bool G_disabled = false;
 static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
