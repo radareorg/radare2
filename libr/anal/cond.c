@@ -31,6 +31,7 @@ R_API const char *r_anal_cond_typeexpr_tostring(int cc) {
 }
 
 R_API RAnalCondType r_anal_cond_type_fromstring(const char *type) {
+	R_RETURN_VAL_IF_FAIL (type, R_ANAL_CONDTYPE_ERR);
 	int i;
 	for (i = 0; i < R_ANAL_CONDTYPE_LAST; i++) {
 		if (!strcmp (type, condtypestr[i])) {
