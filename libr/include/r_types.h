@@ -141,7 +141,6 @@
 
 #if defined(__OpenBSD__)
 #include <sys/param.h>
-#include <unistd.h>
 #undef MAXCOMLEN	/* redefined in zipint.h */
 #endif
 
@@ -289,6 +288,7 @@
 
 #if __MINGW32__
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 
