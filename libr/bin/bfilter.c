@@ -65,11 +65,9 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 	return resname;
 }
 
-// R2_600 - return bool for success or not
-R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
-	R_RETURN_IF_FAIL (ht && sym && sym->name);
+R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
+	R_RETURN_VAL_IF_FAIL (ht && sym && sym->name, false);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
-#if 1
 	if (bf && bf->bo && bf->bo->lang) {
 		const char *lang = r_bin_lang_tostring (bf->bo->lang);
 		char *dn = r_bin_demangle (bf, lang, name, sym->vaddr, false);
@@ -92,11 +90,10 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 		}
 		free (dn);
 	}
-#endif
 	r_strf_var (uname, 256, "%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
 	if (!res) {
-		return;
+		return false;
 	}
 	sym->dup_count = 0;
 
@@ -105,12 +102,13 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	if (!prev_sym) {
 		if (!ht_pp_insert (ht, oname, sym)) {
 			R_LOG_WARN ("Failed to insert dup_count in ht");
-			return;
+			return false;
 		}
 	} else {
 		sym->dup_count = prev_sym->dup_count + 1;
 		ht_pp_update (ht, oname, sym);
 	}
+	return true;
 }
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {

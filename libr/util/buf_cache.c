@@ -216,7 +216,7 @@ static ut64 buf_cache_get_size(RBuffer *b) {
 static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence) {
 	r_warn_if_fail (b->rb_cache);
 	if (addr < 0) {
-		if (addr > -UT48_MAX) {
+		if (addr > -(st64)UT48_MAX) {
 			if (-addr > (st64)b->rb_cache->offset) {
 				return -1;
 			}
