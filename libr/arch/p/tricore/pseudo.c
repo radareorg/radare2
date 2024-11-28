@@ -465,6 +465,8 @@ RParsePlugin r_parse_plugin_tricore_pseudo = {
 	.meta = {
 		.name = "tricore.pseudo",
 		.desc = "TriCore pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = &parse,
 	.subvar = &subvar,

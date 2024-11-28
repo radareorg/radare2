@@ -108,6 +108,8 @@ RParsePlugin r_parse_plugin_chip8_pseudo = {
 	.meta = {
 		.name = "chip8.pseudo",
 		.desc = "chip8 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

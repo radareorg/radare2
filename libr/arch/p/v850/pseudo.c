@@ -224,6 +224,8 @@ RParsePlugin r_parse_plugin_v850_pseudo = {
 	.meta = {
 		.name = "v850.pseudo",
 		.desc = "v850 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 	.subvar = &subvar,

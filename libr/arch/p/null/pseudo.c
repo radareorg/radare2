@@ -6,6 +6,8 @@ RParsePlugin r_parse_plugin_null_pseudo = {
 	.meta = {
 		.name = "null.pseudo",
 		.desc = "pseudo nothing",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	}
 };
 

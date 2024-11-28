@@ -30,6 +30,8 @@ RParsePlugin r_parse_plugin_wasm_pseudo = {
 	.meta = {
 		.name = "wasm.pseudo",
 		.desc = "WASM pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.subvar = &subvar,
 };

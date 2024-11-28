@@ -212,6 +212,8 @@ RParsePlugin r_parse_plugin_avr_pseudo = {
 	.meta = {
 		.name = "avr.pseudo",
 		.desc = "AVR pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse
 };

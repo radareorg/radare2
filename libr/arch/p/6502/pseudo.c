@@ -180,6 +180,8 @@ RParsePlugin r_parse_plugin_6502_pseudo = {
 	.meta = {
 		.name = "6502.pseudo",
 		.desc = "6502 pseudo syntax",
+		.author = "pancake",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };
