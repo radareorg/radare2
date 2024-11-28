@@ -535,7 +535,16 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-dep_sdb = subproject('sdb')
+defopts = []
+if cc.get_id() == 'msvc'
+  # add_project_arguments('/Zc:preprocessor', language: 'c')
+  if get_option('static_runtime')
+    add_project_arguments('/MT', language: 'c')
+    defopts = ['b_vscrt=mt']
+  endif
+endif
+
+dep_sdb = subproject('sdb', default_options: defopts)
 sdb_dep = dep_sdb.get_variable('sdb_dep')
 libsdb = dep_sdb.get_variable('libsdb')
 libsdb_includes = dep_sdb.get_variable('sdb_inc')
@@ -546,14 +555,6 @@ sdb_dep = declare_dependency(
   link_whole: libsdb_static,
   include_directories: libsdb_includes
 )
-
-if cc.get_id() == 'msvc'
-  # add_project_arguments('/Zc:preprocessor', language: 'c')
-  if get_option('static_runtime')
-    add_project_arguments('/MT', language: 'c')
-  endif
-  dep_sdb.get_variable('add_project_arguments')('/MT', language: 'c')
-endif
 
 sdb_exe = dep_sdb.get_variable('sdb_exe')
 
