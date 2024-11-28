@@ -2855,6 +2855,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
+	r_lib_free (c->lib);
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	/*
@@ -2864,7 +2865,6 @@ R_API void r_core_fini(RCore *c) {
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}
-	r_lib_free (c->lib);
 	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
