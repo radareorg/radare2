@@ -529,7 +529,6 @@ jobs:
       matrix:
         sys: [MINGW64, UCRT64]
     runs-on: windows-latest
-    needs: [format, lint]
     steps:
     - uses: actions/checkout@v4
     - name: Setup MSYS2
