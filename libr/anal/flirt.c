@@ -1349,6 +1349,7 @@ beach:
 
 // if buf is a flirt signature, returns signature version, or zero
 R_API int r_sign_is_flirt(RBuffer *buf) {
+	R_RETURN_VAL_IF_FAIL (buf, 0);
 	int ret = 0;
 	idasig_v5_t *header = R_NEW0 (idasig_v5_t);
 	if (!header) {
