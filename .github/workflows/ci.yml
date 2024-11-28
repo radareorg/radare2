@@ -391,5 +391,3 @@ jobs:
       with:
         name: w64-mingw
         path: radare2*.zip
-
-
