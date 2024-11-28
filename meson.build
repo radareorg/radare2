@@ -117,14 +117,6 @@ endif
 platform_inc = include_directories(platform_inc)
 
 
-if cc.get_id() == 'msvc'
-#  add_project_arguments('/Zc:preprocessor', language: 'c')
-  if get_option('static_runtime')
-    add_project_arguments('/MT', language: 'c')
-    add_project_link_arguments(['/NODEFAULTLIB:MSVCRTD'], language: 'c')
-  endif
-endif
-
 if get_option('threadsafety')
   r2_critical_enabled = 1
 else
@@ -554,6 +546,14 @@ sdb_dep = declare_dependency(
   link_whole: libsdb_static,
   include_directories: libsdb_includes
 )
+
+if cc.get_id() == 'msvc'
+  # add_project_arguments('/Zc:preprocessor', language: 'c')
+  if get_option('static_runtime')
+    add_project_arguments('/MT', language: 'c')
+  endif
+  dep_sdb.get_variable('add_project_arguments')('/MT', language: 'c')
+endif
 
 sdb_exe = dep_sdb.get_variable('sdb_exe')
 
