@@ -3,34 +3,38 @@
 #include "r_core.h"
 #include "config.h"
 
-#define CB(x, y)\
-	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
-		RCore *core = (RCore *) user;\
-		pl->free = NULL; \
-		r_ ## x ## _plugin_add (core->y, hand);\
-		return true;\
-	}\
-	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *user, void *data) { \
+#define CB(x, y) \
+	static int __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
-		RCore *core = (RCore *) user; \
+		RCore *core = (RCore *)user; \
+		pl->free = NULL; \
+		pl->name = strdup (hand->meta.name); \
+		r_ ## x ## _plugin_add (core->y, hand); \
+		return true; \
+	} \
+	static int __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		RCore *core = (RCore *)user; \
+		free (pl->name); \
 		return r_ ## x ## _plugin_remove (core->y, hand); \
 	}
 
 // TODO: deprecate this
-#define CB_COPY(x, y)\
-	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
-		struct r_ ## x ## _plugin_t *instance;\
-		RCore *core = (RCore *) user;\
-		instance = R_NEW (struct r_ ## x ## _plugin_t);\
-		memcpy (instance, hand, sizeof (struct r_ ## x ## _plugin_t));\
-		r_ ## x ## _plugin_add (core->y, instance);\
-		return true;\
-	}\
+#define CB_COPY(x, y) \
+	static int __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		struct r_ ## x ## _plugin_t *instance; \
+		RCore *core = (RCore *)user; \
+		instance = R_NEW (struct r_ ## x ## _plugin_t); \
+		memcpy (instance, hand, sizeof (struct r_ ## x ## _plugin_t)); \
+		pl->name = strdup (hand->meta.name); \
+		r_ ## x ## _plugin_add (core->y, instance); \
+		return true; \
+	} \
 	static int __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
-		RCore *core = (RCore *) user; \
+		RCore *core = (RCore *)user; \
+		free (pl->name); \
 		return r_ ## x ## _plugin_remove (core->y, hand); \
 	}
 
