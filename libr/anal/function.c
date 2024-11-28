@@ -73,6 +73,7 @@ static void label_addrs_kv_free(HtPPKv *kv) {
 }
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {
 		return NULL;
@@ -316,11 +317,13 @@ R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn) {
 }
 
 R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	ensure_fcn_range (fcn);
 	return fcn->meta._max;
 }
 
 R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	ensure_fcn_range (fcn);
 	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
 }
