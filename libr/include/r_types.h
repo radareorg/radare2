@@ -14,25 +14,6 @@
 #include <stdint.h> // required for uint64_t
 #include <inttypes.h> // required for PRIx64
 
-#if R2__UNIX__
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <sys/time.h>
-#ifdef __HAIKU__
-// Original macro cast it to clockid_t
-#undef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 0
-#endif
-#endif
-
-#if __MINGW32__
-#include <sys/time.h>
-#endif
-
-
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
 #undef R2__BSD__
@@ -290,6 +271,25 @@
 #include <stdarg.h>
 #include <fcntl.h> /* for O_RDONLY */
 #include <r_endian.h> /* needs size_t */
+
+#if R2__UNIX__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/time.h>
+#ifdef __HAIKU__
+// Original macro cast it to clockid_t
+#undef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 0
+#endif
+#endif
+
+#if __MINGW32__
+#include <sys/time.h>
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
