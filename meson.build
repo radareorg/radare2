@@ -124,24 +124,24 @@ else
 endif
 
 if get_option('wasan')
-  add_project_arguments('/DEBUG', language: 'c')
-  add_project_arguments('/MD', language: 'c')
-  add_project_arguments('/fsanitize=address', language: 'c')
-  # add_project_arguments('/Zi', language: 'c') # generate .pdb iirc
-  # add_project_arguments('/Z7', language: 'c') # generate .symbols instead of .pdb
-  # add_project_arguments('/guard:cf', language: 'c')
+  add_global_arguments('/DEBUG', language: 'c')
+  add_global_arguments('/MD', language: 'c')
+  add_global_arguments('/fsanitize=address', language: 'c')
+  # add_global_arguments('/Zi', language: 'c') # generate .pdb iirc
+  # add_global_arguments('/Z7', language: 'c') # generate .symbols instead of .pdb
+  # add_global_arguments('/guard:cf', language: 'c')
 endif
 
 if cc.get_id() == 'clang-cl'
-  add_project_arguments('-D__STDC__=1', language: 'c')
-  add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
-  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
-  add_project_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
+  add_global_arguments('-D__STDC__=1', language: 'c')
+  add_global_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
+  add_global_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
+  add_global_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
 endif
 
 if get_option('default_library') == 'shared'
   if host_machine.system() != 'windows' or cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
-    add_project_arguments('-fvisibility=hidden', language: 'c')
+    add_global_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
@@ -535,16 +535,14 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-defopts = []
 if cc.get_id() == 'msvc'
   # add_project_arguments('/Zc:preprocessor', language: 'c')
   if get_option('static_runtime')
-    add_project_arguments('/MT', language: 'c')
-    defopts = ['b_vscrt=mt']
+    add_global_arguments('/MT', language: 'c')
   endif
 endif
 
-dep_sdb = subproject('sdb', default_options: defopts)
+dep_sdb = subproject('sdb')
 sdb_dep = dep_sdb.get_variable('sdb_dep')
 libsdb = dep_sdb.get_variable('libsdb')
 libsdb_includes = dep_sdb.get_variable('sdb_inc')
