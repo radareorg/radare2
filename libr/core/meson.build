@@ -12,6 +12,7 @@ r_core_sources = [
   'cmd_print_list.c',
   'cconfig.c',
   'cio.c',
+  'core_esil.c',
   'cmd.c',
   #'cmd_anal.c',
   'cmd_api.c',

@@ -302,6 +302,23 @@ typedef struct {
 	int y;
 } VisualMark;
 
+typedef struct r_core_esil_t {
+	REsil esil;
+	RReg *reg;
+	char *cmd_step;		// command to run before a step is performed
+	char *cmd_step_out;	// command to run after a step is performed
+	char *cmd_intr;		// command to run when an interrupt occurs
+	char *cmd_trap;		// command to run when a trap occurs
+	char *cmd_mdev;		// command to run when an memory mapped device address is used
+	char *cmd_todo;		// command to run when esil expr contains TODO
+	char *cmd_ioer;		// command to run when esil fails to IO
+	char *mdev_range;	// string containing the r_str_range to match for read/write accesses
+	ut8 cfg;
+} RCoreEsil;
+
+#define	R_CORE_ESIL_RO		0x1
+#define	R_CORE_ESIL_NONULL	0x2
+
 typedef struct RCorePriv RCorePriv;
 
 struct r_core_t {
@@ -329,6 +346,7 @@ struct r_core_t {
 	RList/*<RCmdDescriptor>*/ *cmd_descriptors;
 	RAnal *anal;
 	RAsm *rasm;
+	RCoreEsil esil;
 	/* ^^ */
 	RCoreTimes *times;
 	RParse *parser;
@@ -753,6 +771,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
+
+R_API bool r_core_esil_init(RCore *core);
+R_API void r_core_esil_fini(RCoreEsil *cesil);
 
 // both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise(RCore *core, ut32 bfid);
