@@ -272,6 +272,25 @@
 #include <fcntl.h> /* for O_RDONLY */
 #include <r_endian.h> /* needs size_t */
 
+#if R2__UNIX__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/time.h>
+#ifdef __HAIKU__
+// Original macro cast it to clockid_t
+#undef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 0
+#endif
+#endif
+
+#if __MINGW32__
+#include <sys/time.h>
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -403,20 +422,6 @@ static inline void *r_new_copy(int size, void *data) {
 #define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
 #else
 #define r_sys_perror(x) r_sys_perror_str(x);
-#endif
-
-#if R2__UNIX__
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <sys/time.h>
-#ifdef __HAIKU__
-// Original macro cast it to clockid_t
-#undef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 0
-#endif
 #endif
 
 #ifndef typeof
