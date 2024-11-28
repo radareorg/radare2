@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#if R2__WINDOWS__
+#if R2__WINDOWS__ || __MINGW32__
 #include <windows.h> // CreateToolhelp32Snapshot
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName

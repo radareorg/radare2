@@ -141,6 +141,7 @@
 
 #if defined(__OpenBSD__)
 #include <sys/param.h>
+#include <unistd.h>
 #undef MAXCOMLEN	/* redefined in zipint.h */
 #endif
 
