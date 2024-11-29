@@ -4533,7 +4533,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.type", "", "type of current file");
 	SETI ("file.loadalign", 1024, "alignment of load addresses");
-#if R2_580
+#if R2_600
 	SETCB ("file.log", "", cb_config_log_file, "Save log messages to given filename (alias for log.file)");
 	SETCB ("file.output", "", &cb_config_file_output, "pipe output to file of this name (scr.tee)");
 #else
