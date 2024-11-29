@@ -118,7 +118,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if) {
 	R_RETURN_VAL_IF_FAIL (esil && reg_if && reg_if->is_reg && reg_if->reg_read &&
 		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
-		mem_if->mem_write && (stacksize > 2), NULL);
+		mem_if->mem_write && (stacksize > 2), false);
 	//do not check for mem_switch, as that is optional
 	esil->stack = calloc (sizeof (char *), stacksize);
 	if (R_UNLIKELY (!esil->stack)) {

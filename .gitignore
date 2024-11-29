@@ -76,10 +76,6 @@ shlr/sdb/src/sdb
 shlr/sdb/src/.sdb
 shlr/sdb/src/sdb.exe
 shlr/sdb/src/.sdb.exe
-shlr/sdb/include/sdb/version.h
-shlr/sdb/src/sdb-version.h
-shlr/sdb/src/sdb_version.h
-shlr/sdb/include/sdb/version.h
 shlr/sdb/src/libsdb.so*
 shlr/spp/config.h
 shlr/.cs_tmp.zip
