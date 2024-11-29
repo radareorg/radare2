@@ -1,5 +1,30 @@
 project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50', version : '5.9.9')
 
+# Global Arguments First
+
+if get_option('wasan')
+  add_global_arguments('/DEBUG', language: 'c')
+  add_global_arguments('/MD', language: 'c')
+  add_global_arguments('/fsanitize=address', language: 'c')
+  # add_global_arguments('/Zi', language: 'c') # generate .pdb iirc
+  # add_global_arguments('/Z7', language: 'c') # generate .symbols instead of .pdb
+  # add_global_arguments('/guard:cf', language: 'c')
+endif
+
+if cc.get_id() == 'clang-cl'
+  add_global_arguments('-D__STDC__=1', language: 'c')
+  add_global_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
+  add_global_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
+  add_global_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
+endif
+
+if get_option('default_library') == 'shared'
+  if host_machine.system() != 'windows' or cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
+    add_global_arguments('-fvisibility=hidden', language: 'c')
+  endif
+endif
+
+
 py3_exe = import('python').find_installation('python3')
 gen_py = '@0@/libr/syscall/d/gen.py'.format(meson.current_source_dir())
 git_exe = find_program('git', required: false)
@@ -121,28 +146,6 @@ if get_option('threadsafety')
   r2_critical_enabled = 1
 else
   r2_critical_enabled = 0
-endif
-
-if get_option('wasan')
-  add_global_arguments('/DEBUG', language: 'c')
-  add_global_arguments('/MD', language: 'c')
-  add_global_arguments('/fsanitize=address', language: 'c')
-  # add_global_arguments('/Zi', language: 'c') # generate .pdb iirc
-  # add_global_arguments('/Z7', language: 'c') # generate .symbols instead of .pdb
-  # add_global_arguments('/guard:cf', language: 'c')
-endif
-
-if cc.get_id() == 'clang-cl'
-  add_global_arguments('-D__STDC__=1', language: 'c')
-  add_global_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
-  add_global_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
-  add_global_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
-endif
-
-if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
-    add_global_arguments('-fvisibility=hidden', language: 'c')
-  endif
 endif
 
 library_cflags = ['-DR2_PLUGIN_INCORE=1']
@@ -535,15 +538,8 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-if cc.get_id() == 'msvc'
-  # add_project_arguments('/Zc:preprocessor', language: 'c')
-  if get_option('static_runtime')
-    add_global_arguments('/MT', language: 'c')
-  endif
-endif
-
 dep_sdb = subproject('sdb')
-sdb_dep = dep_sdb.get_variable('sdb_dep')
+# sdb_dep = dep_sdb.get_variable('sdb_dep')
 libsdb = dep_sdb.get_variable('libsdb')
 libsdb_includes = dep_sdb.get_variable('sdb_inc')
 sdb_inc = libsdb_includes
