@@ -14,6 +14,13 @@ if get_option('wasan')
   # add_global_arguments('/guard:cf', language: 'c')
 endif
 
+if cc.get_id() == 'msvc'
+  # add_project_arguments('/Zc:preprocessor', language: 'c')
+  if get_option('static_runtime')
+    add_global_arguments('/MT', language: 'c')
+  endif
+endif
+
 if cc.get_id() == 'clang-cl'
   add_global_arguments('-D__STDC__=1', language: 'c')
   add_global_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
