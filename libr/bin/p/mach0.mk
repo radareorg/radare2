@@ -9,5 +9,5 @@ ALL_TARGETS+=${TARGET_MACH0}
 
 ${TARGET_MACH0}: ${OBJ_MACH0}
 	-${CC} $(call libname,bin_mach0) ${CFLAGS} \
-		${OBJ_MACH0} ${SHLR}/sdb/src/libsdb.a \
+		${OBJ_MACH0} ${SHLR}/../subprojects/sdb/src/libsdb.a \
 		$(LINK) $(LDFLAGS)

@@ -24,6 +24,6 @@ ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
 		-o core_java.${EXT_SO} \
 		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA} \
 		$(SHLR)/java/libr_java.$(EXT_AR) \
-		$(SHLR)/sdb/src/libsdb.$(EXT_AR) \
+		$(SHLR)/../subprojects/sdb/src/libsdb.$(EXT_AR) \
 		-L$(LIBR)/crypto -lr_crypto
 endif

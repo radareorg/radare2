@@ -13,4 +13,4 @@ ${TARGET_JAVA}: ${OBJ_JAVA}
 		-o java.${EXT_SO} \
 		${OBJ_JAVA} ${SHARED2_JAVA} \
 		$(SHLR)/java/libr_java.$(EXT_AR) \
-		$(SHLR)/sdb/src/libsdb.$(EXT_AR)
+		$(SHLR)/../subprojects/sdb/src/libsdb.$(EXT_AR)

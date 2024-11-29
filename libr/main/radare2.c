@@ -125,11 +125,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			}
 			{
 				pj_ko (pj, "sdb");
-				pj_ks (pj, "destdir", "shlr/sdb");
+				pj_ks (pj, "destdir", "subprojects/sdb");
 				pj_ks (pj, "git", "https://github.com/radareorg/sdb");
 				pj_ks (pj, "branch", "master");
 				pj_ks (pj, "license", "MIT");
-				pj_ks (pj, "commit", "c4db2b24dacd25403ecb084c9b8e7840889ca236");
+				pj_ks (pj, "commit", "2e24eb0616dfce5e28130660313b56db9252dd5c"); // TODO SUBPROJECTS
 				pj_end (pj);
 			}
 			{

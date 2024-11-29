@@ -3,7 +3,8 @@ include ../../global.mk
 NAME=r_asm
 R2DEPS=r_syscall r_util r_esil r_crypto
 R2DEPS+=r_flag r_cons r_reg r_arch
-CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
+CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
+CFLAGS+=-I../../shlr # for spp only
 CURDIR=p/
 
 include $(TOP)/libr/config.mk
@@ -17,7 +18,7 @@ alle:
 	$(MAKE) gperfs
 	$(MAKE) plugins
 
-SDB_PATH=../../../shlr/sdb
+SDB_PATH=../../../subprojects/sdb
 SDB=$(SDB_PATH)/sdb
 
 gperfs:

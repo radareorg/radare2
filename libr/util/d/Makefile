@@ -8,7 +8,8 @@ FILES+=macintosh big5 iso_646
 FILES+=cyrillic_iso cyrillic_windows
 
 F_SDB=$(addsuffix .sdb,$(FILES))
-SDB=../../../shlr/sdb/sdb
+# SUBPROJECTS TODO: SDB_EXE
+SDB=../../../subprojects/sdb/sdb
 
 include ../../../config-user.mk
 include ../../../global.mk

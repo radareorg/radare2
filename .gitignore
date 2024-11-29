@@ -70,14 +70,8 @@ libr/arch/p/arm/v35/arch-armv7
 shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
-shlr/sdb/sdb
-shlr/sdb/sdb.exe
-shlr/sdb/src/sdb
-shlr/sdb/src/.sdb
-shlr/sdb/src/sdb.exe
-shlr/sdb/src/.sdb.exe
-shlr/sdb/src/libsdb.so*
-shlr/spp/config.h
+subprojects/sdb
+subprojects/capstone
 shlr/.cs_tmp.zip
 sys/travis/*.txt
 sys/.mark_python-deps
