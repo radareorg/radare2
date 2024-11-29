@@ -523,7 +523,35 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w64.zip
 #          radare2-win-installer\Output\radare2.exe
-
+  msys2-w64-meson:
+    strategy:
+      fail-fast: false
+      matrix:
+        sys: [MINGW64, UCRT64]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.sys }}
+        update: true
+        install: base-devel git
+        pacboy: >-
+          cc:p
+          meson:p
+          ninja:p
+    - name: Configure Build
+      shell: msys2 {0}
+      run: |
+        prefix=$(case "${{ matrix.sys }}" in
+          MINGW64) echo /mingw64 ;;
+          UCRT64) echo /ucrt64 ;;
+        esac)
+        meson setup build --prefix=$prefix
+    - name: Compile Project
+      shell: msys2 {0}
+      run: meson compile -C build
 
   # FreeBSD
 #  freebsd:

@@ -8,6 +8,7 @@
 #include "r_types.h"
 #include "r_userconf.h"
 #include <r_list.h>
+#include <r_util/r_w32.h>
 
 #include <stdio.h>
 #include <stdlib.h>

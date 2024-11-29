@@ -116,7 +116,7 @@ static RDebugReasonType exception_to_reason(DWORD ExceptionCode) {
 	}
 }
 
-static int windbg_stop(RDebug *dbg) {
+static bool windbg_stop(RDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, 0);
 	return SUCCEEDED (ITHISCALL (dbgCtrl, SetInterrupt, DEBUG_INTERRUPT_ACTIVE));
