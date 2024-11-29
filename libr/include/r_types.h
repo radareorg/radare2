@@ -289,6 +289,8 @@
 #if __MINGW32__
 #include <sys/time.h>
 #include <unistd.h>
+#define PFMT64x "I64x"
+#define PFMT64x PRIx64
 #endif
 
 
