@@ -2,6 +2,9 @@ project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50', version : '
 
 # Global Arguments First
 
+# system dependencies
+cc = meson.get_compiler('c')
+
 if get_option('wasan')
   add_global_arguments('/DEBUG', language: 'c')
   add_global_arguments('/MD', language: 'c')
@@ -121,8 +124,6 @@ endif
 r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
 message('r2 lib version: ' + r2_libversion)
 
-# system dependencies
-cc = meson.get_compiler('c')
 # required for linux
 ldl = cc.find_library('dl', required: false)
 pth = dependency('threads', required: false)
