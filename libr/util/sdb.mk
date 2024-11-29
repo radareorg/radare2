@@ -1,5 +1,6 @@
-SDBPATH=$(SHLR)/sdb/src/
-SDBINCDIR=$(SHLR)/sdb/include
+# SUBPROJECTS TODO sdb
+SDBPATH=$(SHLR)/../subprojects/sdb/src/
+SDBINCDIR=$(SHLR)/../subprojects/sdb/include
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
 EXTRA_PRE+=$(SDBLIB)

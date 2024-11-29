@@ -1,7 +1,7 @@
 include ../../../global.mk
 include ../../../config-user.mk
 
-SDBPATH=$(LTOP)/../shlr/sdb/
+SDBPATH=$(LTOP)/../subprojects/sdb/
 SDB=$(SDBPATH)/sdb
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format

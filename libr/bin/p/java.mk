@@ -14,4 +14,4 @@ ${TARGET_JAVA}: ${OBJ_JAVA}
 	${CC} $(call libname,bin_java) ${CFLAGS} ${OBJ_JAVA} \
 		$(LINK) $(LDFLAGS) ${SHARED2_JAVA} \
 		${SHLR}/java/libr_java.${EXT_AR} \
-		${SHLR}/sdb/src/libsdb.${EXT_AR}
+		${SHLR}/../subprojects/sdb/src/libsdb.${EXT_AR}

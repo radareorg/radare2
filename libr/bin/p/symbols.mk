@@ -8,5 +8,5 @@ ALL_TARGETS+=${TARGET_SYMBOLS}
 
 ${TARGET_SYMBOLS}: ${OBJ_SYMBOLS}
 	-${CC} $(call libname,bin_mach0) ${CFLAGS} \
-		${OBJ_SYMBOLS} ${SHLR}/sdb/src/libsdb.a \
+		${OBJ_SYMBOLS} ${SHLR}/../subprojects/sdb/src/libsdb.a \
 		$(LINK) $(LDFLAGS)

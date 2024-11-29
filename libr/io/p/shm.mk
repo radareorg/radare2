@@ -24,4 +24,4 @@ R_IO_SHM_LINKFLAGS+=-L.. -lr_io
 endif
 
 $(N) p/${TARGET_SHM}: p/${OBJ_SHM}
-	cd p && $(CC) $(CFLAGS) -shared -L.. $(CSRC_SHM) -fPIC -o $(TARGET_SHM) -I../../include -I../../../shlr/sdb/src $(R_IO_SHM_LINKFLAGS)
+	cd p && $(CC) $(CFLAGS) -shared -L.. $(CSRC_SHM) -fPIC -o $(TARGET_SHM) -I../../include -I../../../subprojects/sdb/src $(R_IO_SHM_LINKFLAGS)

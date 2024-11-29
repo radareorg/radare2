@@ -27,7 +27,7 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDBPATH=$(LTOP)/../shlr/sdb/
+SDBPATH=$(LTOP)/../subprojects/sdb/
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
 else
