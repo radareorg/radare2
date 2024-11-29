@@ -409,16 +409,18 @@ static const char *reg32_to_name(ut8 reg) {
 }
 #endif
 
-// R2_590 - review ;D
-static char *get64from32(const char *s) {
+static inline bool get64from32(const char *s, char *out, size_t outsz) {
 	if (*s == 'e') {
-		return r_str_newf ("r%s", s + 1);
-	} else if (*s == 'r' && isdigit (s[1])) {
+		snprintf (out, outsz, "r%s", s + 1);
+		return true;
+	}
+	if (*s == 'r' && isdigit (s[1])) {
 		if (s[2] == 'd' || (s[2] != 0 && isdigit(s[2]) && s[3] == 'd')) {
-			return r_str_newf ("r%d", atoi (s + 1));
+			snprintf (out, outsz, "r%d", atoi (s + 1));
+			return true;
 		}
 	}
-	return NULL;
+	return false;
 }
 
 static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh handle, cs_insn *insn) {
@@ -862,8 +864,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				src = getarg (&gop, 1, 0, NULL, NULL);
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, NULL);
-				char *dst64 = get64from32 (dst);
-				if (bits == 64 && dst64) {
+				char dst64[16];
+				const bool havedst = get64from32 (dst, dst64, sizeof (dst64));
+				if (bits == 64 && havedst) {
 					// Here it is still correct, because 'e** = X'
 					// turns into 'r** = X' (first one will keep higher bytes,
 					// second one will overwrite them with zeros).
@@ -882,7 +885,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				}
 				free (src);
 				free (dst);
-				free (dst64);
 			}
 			break;
 		}
@@ -1648,8 +1650,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "^", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			char *dst_reg64 = get64from32 (dst2);
-			if (bits == 64 && dst_reg64) {
+			char dst_reg64[16];
+			const bool havedst = get64from32 (dst2, dst_reg64, sizeof (dst_reg64));
+			if (bits == 64 && havedst) {
 				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
 				esilprintf (op, "%s,%s,^,0xffffffff,&,%s,=,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
@@ -1661,7 +1664,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 			R_FREE (dst);
 			R_FREE (dst2);
-			R_FREE (dst_reg64);
 		}
 		break;
 	case X86_INS_XORPS:
@@ -1873,8 +1875,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "&", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			char *dst_reg64 = get64from32 (dst2);
-			if (bits == 64 && dst_reg64) {
+			char dst_reg64[16];
+			const bool havedst = get64from32 (dst2, dst_reg64, sizeof (dst_reg64));
+			if (bits == 64 && havedst) {
 				// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
 				esilprintf (op, "%s,%s,&,0xffffffff,&,%s,=,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
@@ -1885,7 +1888,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (src);
 			free (dst);
 			free (dst2);
-			free (dst_reg64);
 		}
 		break;
 	case X86_INS_PANDN:
