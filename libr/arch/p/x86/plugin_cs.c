@@ -411,12 +411,12 @@ static const char *reg32_to_name(ut8 reg) {
 
 static inline bool get64from32(const char *s, char *out, size_t outsz) {
 	if (*s == 'e') {
-		r_str_ncpy (out, "r%s", s + 1, outsz);
+		snprintf (out, outsz, "r%s", s + 1);
 		return true;
 	}
 	if (*s == 'r' && isdigit (s[1])) {
 		if (s[2] == 'd' || (s[2] != 0 && isdigit(s[2]) && s[3] == 'd')) {
-			r_str_ncpy (out, "r%d", atoi (s + 1), outsz);
+			snprintf (out, outsz, "r%d", atoi (s + 1));
 			return true;
 		}
 	}
