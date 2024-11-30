@@ -41,7 +41,7 @@ R_API int r_strbuf_length(RStrBuf *sb) {
 
 R_API void r_strbuf_init(RStrBuf *sb) {
 	R_RETURN_IF_FAIL (sb);
-	memset (sb, 0, sizeof (RStrBuf));
+	*sb = (const RStrBuf){0};
 }
 
 R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
