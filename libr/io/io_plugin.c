@@ -22,25 +22,16 @@ R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
 }
 
 R_API bool r_io_plugin_init(RIO *io) {
-	RIOPlugin *static_plugin;
 	int i;
 	if (!io) {
 		return false;
 	}
-	io->plugins = ls_newf (free);
+	io->plugins = ls_newf (NULL); // fine to use NULL here?
 	for (i = 0; io_static_plugins[i]; i++) {
 		if (!io_static_plugins[i]->meta.name) {
 			continue;
 		}
-		static_plugin = R_NEW0 (RIOPlugin);
-		if (!static_plugin) {
-			return false;
-		}
-		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
-		if (!r_io_plugin_add (io, static_plugin)) {
-			free (static_plugin);
-			return false;
-		}
+		r_io_plugin_add (io, io_static_plugins[i]);
 	}
 	return true;
 }
