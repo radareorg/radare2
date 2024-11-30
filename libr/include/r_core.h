@@ -304,6 +304,12 @@ typedef struct {
 
 typedef struct r_core_esil_t {
 	REsil esil;
+	union {
+		RStrBuf trap_revert;
+		ut64 old_pc;
+	};
+	ut32 tr_reg;
+	ut32 tr_mem;
 	RReg *reg;
 	char *cmd_step;		// command to run before a step is performed
 	char *cmd_step_out;	// command to run after a step is performed
@@ -318,6 +324,7 @@ typedef struct r_core_esil_t {
 
 #define	R_CORE_ESIL_RO		0x1
 #define	R_CORE_ESIL_NONULL	0x2
+#define	R_CORE_ESIL_REVERT	0x4
 
 typedef struct RCorePriv RCorePriv;
 

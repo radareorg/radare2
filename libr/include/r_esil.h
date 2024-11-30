@@ -162,7 +162,7 @@ typedef struct r_esil_register_interface_t {
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
 typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int len);
-typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *buf, const ut8 *old, int len);
+typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
 
 typedef struct r_esil_voyeur_t {
 	void *user;

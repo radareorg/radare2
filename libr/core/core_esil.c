@@ -108,6 +108,40 @@ static REsilMemInterface core_esil_mem_if = {
 	.mem_write = core_esil_mem_write
 };
 
+static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
+	ut64 old, ut64 val) {
+	RCoreEsil *cesil = user;
+	if (!(cesil->cfg & R_CORE_ESIL_REVERT)) {
+		return;
+	}
+	if (R_UNLIKELY (!r_strbuf_length (&cesil->trap_revert))) {
+		r_strbuf_setf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=", old, name);
+		return;
+	}
+	r_strbuf_appendf (&cesil->trap_revert, ",0x%"PFMT64x",%s,:=", old, name);
+}
+
+static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
+	const ut8 *old, const ut8 *buf, int len) {
+	RCoreEsil *cesil = user;
+	if (!(cesil->cfg & R_CORE_ESIL_REVERT)) {
+		return;
+	}
+	int i;
+	if (R_UNLIKELY (!r_strbuf_length (&cesil->trap_revert))) {
+		r_strbuf_setf (&cesil->trap_revert, "0x%02x,0x%"PFMT64x",=[1]",
+			*old, addr);
+		i = 1;
+	} else {
+		i = 0;
+	}
+	for (;i < len; i++) {
+		//TODO: optimize this after breaking
+		r_strbuf_appendf (&cesil->trap_revert, ",0x%02x,0x%"PFMT64x",=[1]",
+			old[i], addr + i);
+	}
+}
+
 R_API bool r_core_esil_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	core->esil.reg = r_reg_new ();
@@ -124,7 +158,12 @@ R_API bool r_core_esil_init(RCore *core) {
 		0, 0, R_ESIL_OP_TYPE_UNKNOWN)) {
 		goto op_fail;
 	}
+	r_strbuf_init (&core->esil.trap_revert);
 	core->esil.esil.user = core;
+	core->esil.tr_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -135,7 +174,10 @@ init_fail:
 
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
+	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
+	r_esil_del_voyeur (&cesil->esil, cesil->tr_mem);
 	r_esil_fini (&cesil->esil);
+	r_strbuf_fini (&cesil->trap_revert);
 	if (cesil->reg) {
 		r_reg_free (cesil->reg);
 		cesil->reg = NULL;
