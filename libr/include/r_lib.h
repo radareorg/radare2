@@ -150,7 +150,7 @@ R_API const char *r_lib_types_get(int idx);
 R_API int r_lib_types_get_i(const char *str);
 
 #include <r_util/pj.h>
-R_API void r_lib_meta_pj(PJ *pj, RPluginMeta *meta);
+R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta);
 #endif
 
 #ifdef __cplusplus

@@ -461,8 +461,6 @@ R_API void r_io_free(RIO *io);
 R_API bool r_io_plugin_init(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin);
-R_API int r_io_plugin_list(RIO *io);
-R_API int r_io_plugin_list_json(RIO *io);
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len);
 R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len);
 R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);

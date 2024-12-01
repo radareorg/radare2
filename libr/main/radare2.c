@@ -1120,10 +1120,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (mr.quiet_leak) {
 			exit (0);
 		}
+		const char *arg = argv[opt.ind];
 		if (mr.json) {
-			r_io_plugin_list_json (r->io);
+			r_core_list_io (r, arg, 'j');
 		} else {
-			r_io_plugin_list (r->io);
+			r_core_list_io (r, arg, 0);
 		}
 		r_cons_flush ();
 		mainr2_fini (&mr);
