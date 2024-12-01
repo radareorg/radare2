@@ -184,7 +184,11 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_list_foreach (as->anal->arch->plugins, iter, h) {
+	RList *plugins = R_UNWRAP4 (as, anal, arch, plugins);
+	r_list_foreach (plugins, iter, h) {
+		if (arch && strcmp (arch, h->meta.name)) {
+			continue;
+		}
 		const char *feat = "___";
 		if (h->encode) {
 			feat = h->decode? "ade": "a__";
@@ -195,11 +199,10 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		RList *bitslist = r_list_newf (NULL);
 		for (i = 0; i < 8; i++) {
 			ut8 bit = (bits & 0xFF); // TODO: use the macros
-			if (bit) {
-				r_list_append (bitslist, (void*)(size_t)bit);
-			} else {
+			if (!bit) {
 				break;
 			}
+			r_list_append (bitslist, (void*)(size_t)bit);
 			bits >>= 8; // TODO: use the macros
 		}
 		r_list_sort (bitslist, sizetsort);
@@ -222,6 +225,20 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "description", h->meta.desc);
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
+		} else if (arch) {
+			printf ("name: %s\n", h->meta.name);
+			printf ("bits: %s\n", bitstr);
+			printf ("desc: %s\n", h->meta.desc);
+			printf ("feat: %s\n", feat);
+			if (h->meta.author) {
+				printf ("auth: %s\n", h->meta.author);
+			}
+			if (h->meta.license) {
+				printf ("lice: %s\n", h->meta.license);
+			}
+			if (h->meta.version) {
+				printf ("vers: %s\n", h->meta.version);
+			}
 		} else {
 			printf ("%s %-11s %-11s %s", feat, bitstr, h->meta.name, h->meta.desc);
 #if 0
@@ -236,6 +253,9 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		}
 		r_list_free (bitslist);
 		free (bitstr);
+		if (arch) {
+			break;
+		}
 	}
 	if (as->json) {
 		pj_end (pj);
@@ -266,7 +286,7 @@ static int rasm_show_help(int v) {
 			" -j           output in json format\n"
 			" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
 			" -l [len]     input/Output length\n"
-			" -L           list RArch plugins: (a=asm, d=disasm, e=esil)\n"
+			" -L ([name])  list RArch plugins: (a=asm, d=disasm, e=esil)\n"
 			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n" // -n ?
 			" -o [file]    output file name (rasm2 -Bf a.asm -o a)\n"
 			" -p           run SPP over input for assembly\n"
@@ -1058,8 +1078,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			if (rad) {
 				as->oneliner = true;
-				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-				printf ("e asm.bits=%d\n", bits);
+				printf ("'e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+				printf ("'e asm.bits=%d\n", bits);
 				printf ("'wa ");
 			}
 			ret = rasm_disasm (as, offset, (char *)usrstr, len,
