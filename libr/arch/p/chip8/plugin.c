@@ -230,7 +230,7 @@ const RArchPlugin r_arch_plugin_chip8 = {
 	.meta = {
 		.name = "chip8",
 		.author = "maijin",
-		.desc = "CHIP8 analysis plugin",
+		.desc = "CHIP8 virtual CPU architecture",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "chip8",

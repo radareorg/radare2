@@ -1226,7 +1226,7 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 const RArchPlugin r_arch_plugin_bpf = {
 	.meta = {
 		.name = "bpf.mr",
-		.desc = "Classic BPF analysis plugin",
+		.desc = "BPF the Berkeley Packet Filter bytecode",
 		.license = "LGPL-3.0-only",
 		.author = "mrmacete"
 	},

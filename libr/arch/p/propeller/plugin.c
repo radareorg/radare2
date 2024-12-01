@@ -128,7 +128,7 @@ const RArchPlugin r_arch_plugin_propeller = {
 	.meta = {
 		.name = "propeller",
 		.author = "Fedor Sakharov,pancake",
-		.desc = "Parallax propeller code analysis plugin",
+		.desc = "Parallax propeller multi-core processor parallel computer",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "propeller",

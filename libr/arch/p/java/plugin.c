@@ -366,7 +366,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_java = {
 	.meta = {
 		.name = "java",
-		.desc = "Java bytecode analysis plugin",
+		.desc = "Java bytecode",
 		.author = "dso",
 		.license = "Apache-2.0",
 	},

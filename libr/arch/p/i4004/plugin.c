@@ -357,7 +357,7 @@ const RArchPlugin r_arch_plugin_i4004 = {
 	.meta = {
 		.name = "i4004",
 		.author = "pancake,condret",
-		.desc = "i4004 decoder plugin",
+		.desc = "The classic Intel 4004",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "i4004",

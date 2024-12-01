@@ -1581,7 +1581,7 @@ const RArchPlugin r_arch_plugin_ppc_cs = {
 	.meta = {
 		.name = "ppc",
 		.author = "pancake,deroad",
-		.desc = "Capstone (+vle+ps) PowerPC disassembler",
+		.desc = "Capstone (+vle+ps) PowerPC",
 		.license = "Apache-2.0",
 	},
 	.arch = "ppc",

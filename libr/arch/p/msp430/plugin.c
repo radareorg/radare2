@@ -156,7 +156,7 @@ const RArchPlugin r_arch_plugin_msp430 = {
 	.meta = {
 		.name = "msp430",
 		.author = "Fedor Sakharov,pancake",
-		.desc = "TI MSP430 code analysis plugin",
+		.desc = "TI MSP430 mixed signal microcontroller family from Texas Instruments",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "msp430",

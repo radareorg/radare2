@@ -901,7 +901,7 @@ const RArchPlugin r_arch_plugin_v850 = {
 	.meta = {
 		.name = "v850",
 		.author = "pancake,brainstorm,condret",
-		.desc = "V850 code analysis plugin",
+		.desc = "V850 Renesas Electronics microcontroller architecture",
 		.license = "MIT",
 	},
 	.preludes = preludes,

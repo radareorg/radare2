@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
+/* radare - LGPL - Copyright 2021-2024 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
@@ -1409,7 +1409,7 @@ const RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.meta = {
 		.name = "loongarch",
 		.author = "junchao82,zhaojunchao",
-		.desc = "loongson loongarch code analysis plugin",
+		.desc = "Loongson / loongarch architecture",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "loongarch",

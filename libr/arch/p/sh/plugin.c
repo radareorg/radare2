@@ -1324,7 +1324,7 @@ const RArchPlugin r_arch_plugin_sh = {
 	.meta = {
 		.name = "sh",
 		.author = "Eloi Sanfelix",
-		.desc = "SH-4 code analysis plugin",
+		.desc = "Hitachi SH-4 CPU",
 		.license = "LGPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

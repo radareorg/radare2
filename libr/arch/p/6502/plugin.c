@@ -984,7 +984,7 @@ const RArchPlugin r_arch_plugin_6502 = {
 	.meta = {
 		.name = "6502",
 		.author = "condret,riq,pancake",
-		.desc = "6502/NES analysis plugin",
+		.desc = "Disassembler for the 6502 microprocessor family (NES, c64, ..)",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "6502",

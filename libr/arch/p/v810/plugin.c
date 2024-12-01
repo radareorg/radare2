@@ -465,7 +465,7 @@ const RArchPlugin r_arch_plugin_v810 = {
 	.meta = {
 		.name = "v810",
 		.author = "danielps,pancake",
-		.desc = "V810 code analysis plugin",
+		.desc = "From the NEC V60 family",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "v810",

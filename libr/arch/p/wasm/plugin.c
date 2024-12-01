@@ -645,11 +645,11 @@ const RArchPlugin r_arch_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
 		.author = "pancake,xvilka,condret",
-		.desc = "WebAssembly analysis plugin",
+		.desc = "WebAssembly bytecode",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "wasm",
-	.bits = R_SYS_BITS_PACK1 (64),
+	.bits = R_SYS_BITS_PACK2 (32,64),
 	.regs = wasm_regs,
 	.decode = &wasm_decode,
 	.encode = &wasm_encode,

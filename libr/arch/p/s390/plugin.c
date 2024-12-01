@@ -370,6 +370,7 @@ static RList *preludes(RArchSession *as) {
 	r_list_append (l, strdup ("eb6ff03000")); // stgm
 	return l;
 }
+
 const RArchPlugin r_arch_plugin_s390_cs = {
 	.meta = {
 		.name = "s390",

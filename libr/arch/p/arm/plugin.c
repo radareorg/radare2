@@ -143,7 +143,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 const RArchPlugin r_arch_plugin_arm = {
 	.meta = {
 		.name = "arm.nz",
-		.desc = "custom thumb, arm32 and arm64 assembler",
+		.desc = "Custom thumb, arm32 and arm64 assembler",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},

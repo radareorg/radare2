@@ -215,12 +215,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 const RArchPlugin r_arch_plugin_xap = {
 	.meta = {
 		.name = "xap",
-		.desc = "XAP code analysis plugin",
+		.desc = "XAP 32-bit signal processing RISC processor architecture",
 		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.arch = "xap",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_SYS_BITS_PACK2 (16, 32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 };

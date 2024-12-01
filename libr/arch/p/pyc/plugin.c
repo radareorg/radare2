@@ -198,7 +198,7 @@ const RArchPlugin r_arch_plugin_pyc = {
 	.meta = {
 		.name = "pyc",
 		.author = "fxti",
-		.desc = "Python bytecode analysis plugin",
+		.desc = "Python bytecode (1.0 .. 3.9)",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "pyc",

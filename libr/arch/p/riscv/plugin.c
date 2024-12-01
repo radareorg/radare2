@@ -1011,7 +1011,7 @@ static bool _fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_riscv = {
 	.meta = {
 		.name = "riscv",
-		.desc = "RISC-V analysis plugin",
+		.desc = "RISC-V ISA architecture",
 		.author = "pancake,qnix",
 		.license = "GPL-3.0-only",
 	},

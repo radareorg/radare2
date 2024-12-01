@@ -45,7 +45,7 @@ CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
 EXPECT=<<EOF
-ade 4           i4004       i4004 decoder plugin (by pancake,condret)
+ade 4           i4004       The classic Intel 4004
 EOF
 RUN
 
@@ -543,7 +543,7 @@ CMDS=<<EOF
 !!rasm2 -L~arm.gnu?
 EOF
 EXPECT=<<EOF
-20
+29
 1
 EOF
 RUN

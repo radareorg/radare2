@@ -679,7 +679,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 const RArchPlugin r_arch_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x",
-		.desc = "Capstone M680X analysis plugin",
+		.desc = "Capstone M680X",
 		.license = "Apache-2.0",
 	},
 	.arch = "m680x",
@@ -696,7 +696,7 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 const RArchPlugin r_anal_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x (unsupported)",
-		.desc = "Capstone M680X analyzer (unsupported)",
+		.desc = "Capstone M680X (unsupported)",
 		.license = "Apache-2.0",
 	},
 	.arch = "m680x",

@@ -144,7 +144,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_ws = {
 	.meta = {
 		.name = "ws",
-		.desc = "Space, tab and linefeed analysis plugin",
+		.desc = "Kind of brainfuck but based on non-printable characters",
 		.license = "LGPL-3.0-only",
 		.author = "pancake"
 	},

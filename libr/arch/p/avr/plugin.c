@@ -2402,7 +2402,7 @@ const RArchPlugin r_arch_plugin_avr = {
 	.meta = {
 		.name = "avr",
 		.author = "pancake,rvalles,condret,killabyte",
-		.desc = "AVR code analysis plugin",
+		.desc = "AVR microcontroller CPU by Atmel",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "avr",

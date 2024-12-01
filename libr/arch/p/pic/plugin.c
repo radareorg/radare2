@@ -1188,7 +1188,7 @@ const RArchPlugin r_arch_plugin_pic = {
 	.meta = {
 		.author = "oddcoder,thestr4ng3r,courk",
 		.name = "pic",
-		.desc = "PIC analysis plugin",
+		.desc = "PIC microcontrollers family",
 		.license = "LGPL-3.0-only",
 	},
 	.cpus = "baseline,midrange,pic18",

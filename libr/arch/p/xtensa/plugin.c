@@ -2121,7 +2121,7 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_xtensa = {
 	.meta = {
 		.name = "xtensa",
-		.desc = "Xtensa disassembler",
+		.desc = "Tensilica's Xtensa modular RISC architecture",
 		.license = "LGPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

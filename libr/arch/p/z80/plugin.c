@@ -2838,7 +2838,7 @@ const RArchPlugin r_arch_plugin_z80 = {
 	.meta = {
 		.name = "z80",
 		.author = "pancake,condret,unlogic,Bas Wijnen,Jan Wilmans",
-		.desc = "Z80 CPU code analysis plugin",
+		.desc = "Generic Z80 architecture",
 		.license = "GPL-3.0-only",
 	},
 	.arch = "z80",

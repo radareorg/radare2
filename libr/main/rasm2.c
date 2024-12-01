@@ -224,12 +224,14 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_end (pj);
 		} else {
 			printf ("%s %-11s %-11s %s", feat, bitstr, h->meta.name, h->meta.desc);
+#if 0
 			if (h->meta.author) {
 				printf (" (by %s)", h->meta.author);
 			}
 			if (h->meta.version) {
 				printf (" v%s", h->meta.version);
 			}
+#endif
 			printf ("\n");
 		}
 		r_list_free (bitslist);

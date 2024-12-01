@@ -478,7 +478,7 @@ static char *get_reg_profile(RArchSession *as) {
 const RArchPlugin r_arch_plugin_lm32 = {
 	.meta = {
 		.name = "lm32",
-		.desc = "disassembly plugin for Lattice Micro 32 ISA",
+		.desc = "Lattice Micro 32 ISA",
 		.author = "Felix Held",
 		.license = "BSD-3-Clause",
 	},

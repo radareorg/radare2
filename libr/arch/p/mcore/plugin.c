@@ -123,7 +123,7 @@ const RArchPlugin r_arch_plugin_mcore = {
 	.meta = {
 		.name = "mcore",
 		.author = "deroad",
-		.desc = "MCore analysis plugin",
+		.desc = "MCore RISC-based microcontroller",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "mcore",

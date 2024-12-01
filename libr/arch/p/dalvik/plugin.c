@@ -1711,7 +1711,7 @@ const RArchPlugin r_arch_plugin_dalvik = {
 	.meta = {
 		.name = "dalvik",
 		.author = "pancake",
-		.desc = "Dalvik (Android VM) bytecode analysis plugin",
+		.desc = "Dalvik (Android VM) bytecode",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "dalvik",

@@ -783,7 +783,8 @@ const RArchPlugin r_arch_plugin_rsp = {
 	.meta = {
 		.name = "rsp",
 		.author = "bobby.smiles32,condret",
-		.desc = "RSP code analysis plugin",
+		.desc = "RSP - Reality Signal Processor (N64)",
+		.contact = "https://n64brew.dev/wiki/Reality_Signal_Processor",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "rsp",

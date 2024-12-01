@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2023 - pancake */
+/* Copyright (C) 2008-2024 - pancake */
 
 #include <r_arch.h>
 #include "binutils_as.c"
@@ -81,7 +81,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 const RArchPlugin r_arch_plugin_any_as = {
 	.meta = {
 		.name = "any.as",
-		.desc = "Uses system gnu/clang 'as' assembler",
+		.desc = "Use system's gnu/clang 'as' assembler",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
