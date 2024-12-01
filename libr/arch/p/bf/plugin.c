@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2023 - pancake */
+/* radare2 - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_arch.h>
 
@@ -318,7 +318,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_bf = {
 	.meta = {
 		.name = "bf",
-		.desc = "brainfuck code analysis plugin",
+		.desc = "brainfuck architecture",
 		.license = "LGPL-3.0-only",
 		.author = "pancake"
 	},

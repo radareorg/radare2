@@ -673,7 +673,7 @@ static bool fini(RArchSession *s) {
 const RArchPlugin r_arch_plugin_bpf_cs = {
 	.meta = {
 		.name = "bpf",
-		.desc = "Capstone BPF plugin",
+		.desc = "Capstone BPF bytecode",
 		.license = "BSD-3-Clause",
 		.author = "terorie,aemmitt",
 	},

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2023 - pancake */
+/* radare2 - LGPL - Copyright 2013-2024 - pancake */
 
 #include <r_arch.h>
 
@@ -644,7 +644,7 @@ const RArchPlugin r_arch_plugin_riscv_cs = {
 	.meta = {
 		.name = "riscv.cs",
 		.author = "pancake",
-		.desc = "RISC-V analysis plugin",
+		.desc = "Capstone's RISC-V ISA architecture",
 		.license = "Apache-2.0",
 	},
 	.arch = "riscv",

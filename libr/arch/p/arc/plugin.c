@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1230,10 +1230,10 @@ const RArchPlugin r_arch_plugin_arc = {
 		.name = "arc",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
-		.desc = "ARC code analysis plugin",
+		.desc = "ARC processor instruction decoder",
 	},
 	.arch = "arc",
-	.bits = 16 | 32,
+	.bits = R_SYS_BITS_PACK2 (16, 32),
 	.decode = decode,
 	.info = archinfo,
 	.regs = regs

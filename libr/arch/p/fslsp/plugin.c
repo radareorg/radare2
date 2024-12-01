@@ -1,4 +1,4 @@
-/* radare - LGPL-3.0-only - Copyright 2023 - eibachd, pancake */
+/* radare - LGPL-3.0-only - Copyright 2023-2024 - eibachd, pancake */
 
 /*
  * QorIQ platform's trust architecture 3.0 Service processor (SP) provides
@@ -7,28 +7,28 @@
  * PBI (Pre-Boot Initialization) Command Summary
  *
  * Command 						| Number | Size(bytes) | Description
- * ### Configuration Write Commands
- * CCSR Write 						-		8 			32-byte write to a CCSR register
- * Alternate Configuration Write	-		variable	variable size write to offset from current value of ALTCFG_BAR
- * ### Block Copy Commands
- * Block Copy						0x00	16			Copy data from any of the available memory interfaces to a RAM
- * CCSR Write from Address			0x02				Update large number of CCSR register consecutively from random accessible memory(OCRAM, SPRAM).
+ * ### Configuration Write Command
+ * CCSR Write 				-	8 		32-byte write to a CCSR register
+ * Alternate Configuration Write		variable	variable size write to offset from current value of ALTCFG_BAR
+ * ### Block Copy Command
+ * Block Copy				0x00	16		Copy data from any of the available memory interfaces to a RAM
+ * CCSR Write from Address		0x02			Update large number of CCSR register consecutively from random accessible memory(OCRAM, SPRAM).
  * ### Special Load commands
- * Load RCW with Checksum			0x10	136			Read Reset Configuration Word, perform simple 32-bit checksum, and update RCW registers
- * Load RCW w/o Checksum			0x11	136			Read Reset Configuration Word and update RCW registers without performing checksum
- * Load Alternate Config Window		0x12	4			Read in condition 14-bit base pointer for alternate configuration space
- * Load Condition 					0x14	12			Read in condition information for subsequent Conditional Jump
- * Load Security Header				0x20	84			Read CSF Header for authentication of PBI Image
- * Load Boot 1 CSF Header Ptr		0x22	8			Read in a pointer to CSF header for authentication of Boot 1 code
- * CCSR Read, Modify and Write		0x42				Reads a CCSR register and changes (SET/CLEAR ) its bits as per mask specified in the command
+ * Load RCW with Checksum		0x10	136		Read Reset Configuration Word, perform simple 32-bit checksum, and update RCW registers
+ * Load RCW w/o Checksum		0x11	136		Read Reset Configuration Word and update RCW registers without performing checksum
+ * Load Alternate Config Window		0x12	4		Read in condition 14-bit base pointer for alternate configuration space
+ * Load Condition 			0x14	12		Read in condition information for subsequent Conditional Jump
+ * Load Security Header			0x20	84		Read CSF Header for authentication of PBI Image
+ * Load Boot 1 CSF Header Ptr		0x22	8		Read in a pointer to CSF header for authentication of Boot 1 code
+ * CCSR Read, Modify and Write		0x42			Reads a CCSR register and changes (SET/CLEAR ) its bits as per mask specified in the command
  * ### Control Commands
- * Poll Short						0x80	16			Poll a specified address for a specified address for a specified value
- * Poll Long						0x81
- * Wait								0x82	4			Pause PBI sequence for specified number of iteration of a FOR loop
- * Jump								0x84	8			Unconditional jump forward in PBI command sequence
- * Jump Conditional					0x85	12			Conditional jump forward in PBI boot sequence
- * CRC and Stop						0x8F	8			Stop the PBI sequence and indicate the expected CRC value
- * Stop								0xFF	8			Stop the PBI sequence
+ * Poll Short				0x80	16		Poll a specified address for a specified address for a specified value
+ * Poll Long				0x81
+ * Wait					0x82	4		Pause PBI sequence for specified number of iteration of a FOR loop
+ * Jump					0x84	8		Unconditional jump forward in PBI command sequence
+ * Jump Conditional			0x85	12		Conditional jump forward in PBI boot sequence
+ * CRC and Stop				0x8F	8		Stop the PBI sequence and indicate the expected CRC value
+ * Stop					0xFF	8		Stop the PBI sequence
  */
 
 #include <r_arch.h>
@@ -246,7 +246,7 @@ const RArchPlugin r_arch_plugin_fslsp = {
 	.meta = {
 		.name = "fslsp",
 		.author = "eibachd",
-		.desc = "Freescale QorIQ service processor analysis plugin",
+		.desc = "Freescale QorIQ service processor",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "fslsp",

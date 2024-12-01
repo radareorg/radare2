@@ -25,7 +25,7 @@ const RArchPlugin r_arch_plugin_uxn = {
 	.meta = {
 		.name = "uxn",
 		.author = "pancake",
-		.desc = "UXN",
+		.desc = "The portable 8-bit virtual Varvara computer",
 		.license = "MIT",
 	},
 	.bits = 32,

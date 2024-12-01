@@ -1574,7 +1574,7 @@ const RArchPlugin r_arch_plugin_gb = {
 	.meta = {
 		.name = "gb",
 		.author = "condret",
-		.desc = "Gameboy CPU code analysis plugin",
+		.desc = "Gameboy CPU analysis (modified Z80)",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "z80",

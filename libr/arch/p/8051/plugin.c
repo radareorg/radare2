@@ -1149,7 +1149,7 @@ const RArchPlugin r_arch_plugin_8051 = {
 	.meta = {
 		.name = "8051",
 		.author = "pancake,dkreuter,astuder",
-		.desc = "8051 CPU code analysis plugin",
+		.desc = "8051 microcontroller (also known as MCS-51)",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "8051",

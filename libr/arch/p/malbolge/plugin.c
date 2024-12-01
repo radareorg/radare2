@@ -67,7 +67,7 @@ const RArchPlugin r_arch_plugin_malbolge = {
 	.meta = {
 		.name = "malbolge",
 		.author = "pancake",
-		.desc = "Malbolge analysis plugin",
+		.desc = "Malbolge esotheric virtual machine",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "malbolge",
