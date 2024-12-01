@@ -217,9 +217,11 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 }
 
 static int delete_plugin(RLib *lib, RLibPlugin *plugin) {
-
 	int ret = -1;
 	bool found;
+	if (plugin->name == NULL) {
+		return -1;
+	}
 	ht_pp_find (lib->plugins_ht, plugin->name, &found);
 	if (found) {
 		ht_pp_delete (lib->plugins_ht, plugin->name);
