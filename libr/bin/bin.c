@@ -570,6 +570,7 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 	}
 }
 
+// TODO: move to libr/core/clist
 R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
@@ -645,9 +646,8 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		pj_end (pj);
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf ("bin  %-11s %s %s %s\n",
-				bp->meta.name, bp->meta.desc, r_str_get (bp->meta.version),
-				r_str_get (bp->meta.author));
+			bin->cb_printf ("bin  %-11s %s\n", bp->meta.name, bp->meta.desc);
+			// bin->cb_printf ("bin  %-11s %s %s %s\n", bp->meta.name, bp->meta.desc, r_str_get (bp->meta.version), r_str_get (bp->meta.author));
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			const char *name = strncmp (bx->meta.name, "xtr.", 4)? bx->meta.name : bx->meta.name + 3;
