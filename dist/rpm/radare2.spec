@@ -5,7 +5,7 @@
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        5.8.2
+Version:        5.9.8
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
@@ -57,6 +57,7 @@ CFLAGS="%{optflags} -fPIC -I../include" make %{?_smp_mflags} LIBDIR=%{_libdir} P
 rm -rf %{buildroot}
 NOSUDO=1 make install DESTDIR=%{buildroot} LIBDIR=%{_libdir} PREFIX=%{_prefix}
 cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
+# 5.9.9 : cp subprojects/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -80,6 +81,8 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 %{_datadir}/%{name}/%{version}/fcnsign
 %{_datadir}/%{name}/%{version}/flag
 %{_datadir}/%{name}/%{version}/charsets
+%{_datadir}/%{name}/%{version}/platform
+%{_datadir}/%{name}/%{version}/scripts
 %{_datadir}/doc/%{name}
 %dir %{_prefix}/share/%{name}
 %dir %{_prefix}/share/%{name}/%{version}
@@ -89,7 +92,6 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 %{_mandir}/man7/esil.7.*
 %dir %{_datadir}/%{name}/%{version}/www
 %{_datadir}/%{name}/%{version}/www/*
-
 
 %files devel
 %{_includedir}/libr
