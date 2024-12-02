@@ -145,9 +145,9 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				pj_ko (pj, "armv7v35");
 				pj_ks (pj, "destdir", "libr/arch/p/arm/v35/arch-armv7");
 				pj_ks (pj, "git", "https://github.com/radareorg/vector35-arch-armv7");
-				pj_ks (pj, "commit", "f270a6cc99644cb8e76055b6fa632b25abd26024");
+				pj_ks (pj, "commit", "7d7a78f52196f6333bd5746dc526684edbfd9af0");
 				pj_ks (pj, "license", "Apache-2.0");
-				pj_ks (pj, "branch", "master");
+				pj_ks (pj, "branch", "radare2-2024");
 				pj_end (pj);
 			}
 			pj_end (pj);
