@@ -52,3 +52,72 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 		r_table_free (table);
 	}
 }
+
+R_API int r_core_list_io(RCore *core, const char *name, int mode) {
+	RIOPlugin *plugin;
+	SdbListIter *iter;
+	char str[4];
+	int n = 0;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+
+	ls_foreach (core->io->plugins, iter, plugin) {
+		const char *plugin_name = r_str_get (plugin->meta.name);
+		if (name && strcmp (plugin_name, name)) {
+			continue;
+		}
+		if (mode == 'j') {
+			pj_o (pj);
+			pj_ks (pj, "permissions", str);
+			r_lib_meta_pj (pj, &plugin->meta);
+			if (plugin->uris) {
+				char *uri;
+				char *uris = strdup (plugin->uris);
+				RList *plist = r_str_split_list (uris, ",",  0);
+				RListIter *piter;
+				pj_k (pj, "uris");
+				pj_a (pj);
+				r_list_foreach (plist, piter, uri) {
+					pj_s (pj, uri);
+				}
+				pj_end (pj);
+				r_list_free (plist);
+				free (uris);
+			}
+			pj_end (pj);
+		} else if (name) {
+			r_cons_printf ("name: %s\n", plugin->meta.name);
+			r_cons_printf ("auth: %s\n", plugin->meta.author);
+			r_cons_printf ("lice: %s\n", plugin->meta.license);
+			r_cons_printf ("desc: %s\n", plugin->meta.desc);
+			r_cons_printf ("uris: %s\n", plugin->uris);
+			if (*str) {
+				r_cons_printf ("perm: %s\n", str);
+			}
+			r_cons_printf ("sysc: %s\n", r_str_bool (plugin->system));
+		} else {
+			str[0] = 'r';
+			str[1] = plugin->write ? 'w' : '_';
+			str[2] = plugin->isdbg ? 'd' : '_';
+			str[3] = 0;
+			r_cons_printf ("%s  %-8s %s.", str,
+				r_str_get (plugin->meta.name),
+				r_str_get (plugin->meta.desc));
+			if (plugin->uris) {
+				r_cons_printf (" %s", plugin->uris);
+			}
+			r_cons_printf ("\n");
+		}
+		n++;
+	}
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	return n;
+}

@@ -2209,11 +2209,7 @@ static int cmd_open(void *data, const char *input) {
 				R_LOG_ERROR ("Oops. Cannot open library");
 			}
 		} else {
-			if ('j' == input[1]) {
-				r_io_plugin_list_json (core->io);
-			} else {
-				r_io_plugin_list (core->io);
-			}
+			r_core_list_io (core, NULL, input[1]);
 		}
 		break;
 	case 'u': { // "ou"

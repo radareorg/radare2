@@ -527,7 +527,7 @@ R_API void r_lib_list(RLib *lib) {
 }
 
 // TODO: pj_o should be inside rlibmetapj
-R_API void r_lib_meta_pj(PJ *pj, RPluginMeta *meta) {
+R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta) {
 	R_RETURN_IF_FAIL (pj && meta);
 	if (meta->name) {
 		pj_ks (pj, "name", meta->name);

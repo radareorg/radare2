@@ -579,11 +579,14 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		}
 	}
 	if (ro.pluglist) {
+		// list search plugins when implemented
+#if 0
 		if (ro.json) {
 			r_io_plugin_list_json (ro.io);
 		} else {
 			r_io_plugin_list (ro.io);
 		}
+#endif
 		r_cons_flush ();
 		return 0;
 	}
