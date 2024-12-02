@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define	USE_NEW_ESIL	0
+
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 // only flags that affect control flow
 enum {
@@ -307,9 +309,9 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len);
 R_API bool r_esil_mem_write_silent(REsil *esil, ut64 addr, const ut8 *buf, int len);
-R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size);
+R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
-R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 num);
+R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);

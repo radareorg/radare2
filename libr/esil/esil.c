@@ -387,7 +387,7 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 
 static bool alignCheck(REsil *esil, ut64 addr) {
 	// r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
-	const unsigned int da = esil->data_align;
+	const ut32 da = esil->data_align;
 	return !(da > 0 && addr % da);
 }
 
@@ -457,17 +457,36 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 }
 
 R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (buf && esil, 0);
-	bool ret = false;
+#if USE_NEW_ESIL
+	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
 	addr &= esil->addrmask;
+#else
+	R_RETURN_VAL_IF_FAIL (buf && esil, false);
+	addr &= esil->addrmask;
+	bool ret = false;
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
+#endif
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
 	}
+#if USE_NEW_ESIL
+	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
+		return false;
+	}
+	ut32 i;
+	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i)) {
+		return true;
+	}
+	do {
+		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], i);
+		voy->mem_read (voy->user, addr, buf, len);
+	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i));
+	return true;
+#else
 	if (!ret && esil->cb.mem_read) {
 		if (ret = esil->cb.mem_read (esil, addr, buf, len), (!ret && esil->iotrap)) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
@@ -483,11 +502,17 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		eprintf ("\n");
 	}
 	return ret;
+#endif
 }
 
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (buf && esil->mem_if.mem_read, false);
-	return esil->mem_if.mem_read (esil->mem_if.mem, addr & esil->addrmask, buf, len);
+	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
+	if (R_LIKELY (esil->mem_if.mem_read (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
+		return true;
+	}
+	esil->trap = R_ANAL_TRAP_READ_ERR;
+	esil->trap_code = addr;
+	return false;
 }
 
 static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -558,9 +583,52 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 }
 
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (esil && buf, false);
-	bool ret = false;
+#if USE_NEW_ESIL
+	R_RETURN_VAL_IF_FAIL (esil && buf && esil->mem_if.mem_write, false);
 	addr &= esil->addrmask;
+	union {
+		ut8 buf[16];
+		ut8 *ptr;
+	} o;
+	ut32 i;
+	if (R_LIKELY (len < 17)) {
+		memset (o.buf, 0xff, len);
+		if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.buf, len))) {
+			esil->trap = R_ANAL_TRAP_NONE;
+		}
+		if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
+			return false;
+		}
+		if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
+			return true;
+		}
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], i);
+			voy->mem_write (voy->user, addr, o.buf, buf, len);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], &i));
+		return true;
+	}
+	o.ptr = R_NEWS (ut8, len);
+	if (R_UNLIKELY (!o.ptr)) {
+		return r_esil_mem_write_silent (esil, addr, buf, len);
+	}
+	memset (o.ptr, 0xff, len);
+	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.ptr, len))) {
+		esil->trap = R_ANAL_TRAP_NONE;
+	}
+	if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
+		return false;
+	}
+	do {
+		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], i);
+		voy->mem_write (voy->user, addr, o.ptr, buf, len);
+	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], &i));
+	free (o.ptr);
+	return true;
+#else
+	R_RETURN_VAL_IF_FAIL (esil && buf, false);
+	addr &= esil->addrmask;
+	bool ret = false;
 	IFDBG {
 		eprintf ("0x%08" PFMT64x " <W ", addr);
 		int i;
@@ -576,11 +644,17 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		ret = esil->cb.mem_write (esil, addr, buf, len);
 	}
 	return ret;
+#endif
 }
 
 R_API bool r_esil_mem_write_silent(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && buf && esil->mem_if.mem_write, false);
-	return esil->mem_if.mem_write (esil->mem_if.mem, addr & esil->addrmask, buf, len);
+	if (R_LIKELY (esil->mem_if.mem_write (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
+		return true;
+	}
+	esil->trap = R_ANAL_TRAP_WRITE_ERR;
+	esil->trap_code = addr;
+	return false;
 }
 
 static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
@@ -726,7 +800,7 @@ static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
 		}
 		return true;
 	case R_ESIL_PARM_REG:
-		return r_esil_reg_read (esil, str, num, size);
+		return r_esil_reg_read (esil, str, num, (ut32 *)size);
 	default:
 		R_LOG_DEBUG ("Invalid esil arg to find parm size (%s)", str);
 		esil->parse_stop = 1;
@@ -738,17 +812,36 @@ R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 	return get_parm_size (esil, str, num, NULL);
 }
 
-R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num) {
+R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (esil && dst, false);
+#if USE_NEW_ESIL
+	ut64 old;
+	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, dst, &old, NULL))) {
+		return r_esil_reg_write_silent (esil, dst, val);
+	}
+	if (R_UNLIKELY (!r_esil_reg_write_silent (esil, dst, val))) {
+		return false;
+	}
+	ut32 i;
+	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], &i)) {
+		return true;
+	}
+	do {
+		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], i);
+		voy->reg_write (voy->user, dst, old, val);
+	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], &i));
+	return true;
+#else
 	bool ret = false;
-	R_LOG_DEBUG ("%s=0x%" PFMT64x, dst, num);
+	R_LOG_DEBUG ("%s=0x%" PFMT64x, dst, val);
 	if (esil->cb.hook_reg_write) {
-		ret = esil->cb.hook_reg_write (esil, dst, &num);
+		ret = esil->cb.hook_reg_write (esil, dst, &val);
 	}
 	if (!ret && esil->cb.reg_write) {
-		ret = esil->cb.reg_write (esil, dst, num);
+		ret = esil->cb.reg_write (esil, dst, val);
 	}
 	return ret;
+#endif
 }
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num) {
@@ -759,29 +852,45 @@ R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num) {
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size) {
 	void *old_hook_reg_read = (void *) esil->cb.hook_reg_read;
 	esil->cb.hook_reg_read = NULL;
-	bool ret = r_esil_reg_read (esil, regname, num, size);
+	bool ret = r_esil_reg_read (esil, regname, num, (ut32 *)size);
 	esil->cb.hook_reg_read = old_hook_reg_read;
 	return ret;
 }
 
-R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
+R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *size) {
+#if USE_NEW_ESIL
+	R_RETURN_VAL_IF_FAIL (esil && regname && val, false);
+	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, regname, val, size))) {
+		return false;
+	}
+	ut32 i;
+	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_READ], &i)) {
+		return true;
+	}
+	do {
+		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_READ], i);
+		voy->reg_read (voy->user, regname, *val);
+	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_READ], &i));
+	return true;
+#else
 	R_RETURN_VAL_IF_FAIL (esil && regname, false);
 	bool ret = false;
 	ut64 localnum = 0LL; // XXX why is this necessary?
-	if (!num) {
-		num = &localnum;
+	if (!val) {
+		val = &localnum;
 	}
-	*num = 0LL;
+	*val = 0LL;
 	if (size) {
 		*size = esil->anal->config->bits;
 	}
 	if (esil->cb.hook_reg_read) {
-		ret = esil->cb.hook_reg_read (esil, regname, num, size);
+		ret = esil->cb.hook_reg_read (esil, regname, val, (st32 *)size);
 	}
 	if (!ret && esil->cb.reg_read) {
-		ret = esil->cb.reg_read (esil, regname, num, size);
+		ret = esil->cb.reg_read (esil, regname, val, (st32 *)size);
 	}
 	return ret;
+#endif
 }
 
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size) {
@@ -1069,7 +1178,11 @@ static bool esil_eq(REsil *esil) {
 		}
 		free (newreg);
 		free (src2);
+#if USE_NEW_ESIL
+	} else if (src && dst && r_esil_reg_read_silent (esil, dst, &num, NULL)) {
+#else
 	} else if (src && dst && r_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
+#endif
 		if (r_esil_get_parm (esil, src, &num2)) {
 			ret = r_esil_reg_write (esil, dst, num2);
 			esil->cur = num2;
