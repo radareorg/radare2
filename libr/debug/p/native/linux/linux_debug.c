@@ -155,8 +155,9 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 			break;
 		}
 		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
-			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x " code=%d si_pid=%d ret=%d\n",
-				siginfo.si_signo, siginfo.si_errno,
+			const char *name = r_signal_tostring (dbg->reason.signum);
+			eprintf ("[+] SIGNAL %d (aka %s) errno=%d addr=0x%08"PFMT64x " code=%d si_pid=%d ret=%d\n",
+				siginfo.si_signo, name, siginfo.si_errno,
 				(ut64) (size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
 		}
 		return true;

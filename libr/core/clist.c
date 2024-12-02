@@ -69,6 +69,10 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 		if (name && strcmp (plugin_name, name)) {
 			continue;
 		}
+		str[0] = 'r';
+		str[1] = plugin->write ? 'w' : '_';
+		str[2] = plugin->isdbg ? 'd' : '_';
+		str[3] = 0;
 		if (mode == 'j') {
 			pj_o (pj);
 			pj_ks (pj, "permissions", str);
@@ -99,10 +103,6 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 			}
 			r_cons_printf ("sysc: %s\n", r_str_bool (plugin->system));
 		} else {
-			str[0] = 'r';
-			str[1] = plugin->write ? 'w' : '_';
-			str[2] = plugin->isdbg ? 'd' : '_';
-			str[3] = 0;
 			r_cons_printf ("%s  %-8s %s.", str,
 				r_str_get (plugin->meta.name),
 				r_str_get (plugin->meta.desc));
