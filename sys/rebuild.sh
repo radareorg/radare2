@@ -73,7 +73,7 @@ RebuildCapstone() {
 }
 
 RebuildSdb() {
-	Rebuild shlr/sdb
+	Rebuild subprojects/sdb
 	Rebuild libr/util
 }
 

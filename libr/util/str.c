@@ -268,8 +268,8 @@ R_API ut32 r_str_hash(const char *s) {
 }
 
 R_API int r_str_delta(char *p, char a, char b) {
-	char *_a = strchr (p, a);
-	char *_b = strchr (p, b);
+	const char *_a = strchr (p, a);
+	const char *_b = strchr (p, b);
 	return (!_a || !_b)? 0 : (_a - _b);
 }
 
@@ -320,10 +320,9 @@ R_API int r_str_word_set0(char *str) {
 				*p = '\0';
 				// FIX: i++;
 				continue;
-			} else {
-				quote = 1;
-				memmove (p, p + 1, strlen (p + 1) + 1);
 			}
+			quote = 1;
+			memmove (p, p + 1, strlen (p + 1) + 1);
 		}
 		if (quote) {
 			continue;

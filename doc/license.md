@@ -82,11 +82,11 @@ should be copied to `./plugins.cfg` before calling `./configure-plugins` to take
 ### Less restrictive than LGPL
 
 * libr/bin/mangling/cxx: GPLv2 or later, with linking exception
+* subprojects/sdb: MIT
 * shlr/capstone: BSD + LLVM
 * shlr/zip/zip: BSD
 * shlr/zip/zlib: BSD
 * shlr/java: Apache2.0
-* shlr/sdb: MIT
 * shlr/qnx: GPL (will be moved to extras soon)
 * shlr/grub: GPL (used by some fs plugins)
 * shlr/lz4: simplified BSD license

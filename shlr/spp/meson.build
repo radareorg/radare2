@@ -11,7 +11,7 @@ spp_files = [
 
 inc_dirs = [
   '../../libr/include',
-  '../../shlr/sdb/src'
+  '../../subprojects/sdb'
 ]
 
 libspp_static = static_library('spp', spp_files,
