@@ -145,7 +145,7 @@ sdb-host:
 	@echo ">>>>>>>>"
 	@echo
 	$(MAKE) -C $(SDB_ROOT) clean ; rm -f $(SDB_ROOT)/src/*.o $(SDB_ROOT)/include/sdb/version.h
-	$(MAKE) -C $(SDB_ROOT)/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SHLR)/sdb/include' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C $(SDB_ROOT)/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SDB_ROOT)/include' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f $(SDB_ROOT)/src/sdb${BUILD_EXT_EXE} $(SDB_ROOT)/src/.sdb${BUILD_EXT_EXE}
 	cp -f $(SDB_ROOT)/src/sdb${BUILD_EXT_EXE} $(SDB_ROOT)/sdb$(BUILD_EXT_EXE)
 	rm -f $(SDB_LIBA)
@@ -161,11 +161,11 @@ sdb-target:
 	$(MAKE) -C $(SDB_ROOT) clean ; rm -f $(SDB_ROOT)/src/*.o ../include/sdb/version.h
 	$(MAKE) -C $(SDB_ROOT)/src ../include/sdb/version.h
 ifeq ($(EXT_EXE),.wasm)
-	$(MAKE) -C $(SDB_ROOT)/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS=-I$(SHLR)/sdb/include \
+	$(MAKE) -C $(SDB_ROOT)/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS=-I$(SDB_ROOT)/include \
 		CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 else
-	$(MAKE) -C $(SDB_ROOT)/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS="-I$(SHLR)/sdb/include -DHAVE_SYSTEM=0" \
+	$(MAKE) -C $(SDB_ROOT)/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS="-I$(SDB_ROOT)/include -DHAVE_SYSTEM=0" \
 		CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 endif

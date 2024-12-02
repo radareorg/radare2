@@ -13,7 +13,8 @@ MACSDK=macosx10.10
 ENTITL=radare2.xcent
 #ENTITL=radare2_ios.xml
 
-CFLAGS_INCLUDES+=-I$(SHLR)/sdb/src
+include ../../shlr/sdb.mk
+CFLAGS_INCLUDES+=$(SDB_CFLAGS)
 CFLAGS_INCLUDES+=-I$(LIBR)/include
 
 ifeq (${COMPILER},emscripten)
@@ -94,6 +95,5 @@ include ../../shlr/bochs/deps.mk
 include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
-include ../../shlr/sdb.mk
 
 LDFLAGS+=$(LINK)

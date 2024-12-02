@@ -1,7 +1,7 @@
 include ../../../global.mk
 
 # this bin should be created by make -C shlr/Makefile sdb/sdb
-SDB=$(STOP)/sdb/sdb
+SDB=$(STOP)/../subprojects/sdb/sdb
 DBS=dospart.sdb
 
 all: $(DBS)
