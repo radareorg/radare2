@@ -44,20 +44,6 @@ static bool isnum(REsil *esil, const char *str, ut64 *num) {
 	return false;
 }
 
-static bool r_esil_runpending(REsil *esil, char *pending) {
-	if (pending) {
-		R_TAG_FREE (esil->pending);
-		esil->pending = pending;
-	} else if (esil->pending) {
-		char *expr = esil->pending;
-		esil->pending = NULL;
-		r_esil_parse (esil, R_TAG_NOP (expr));
-		R_TAG_FREE (expr);
-		return true;
-	}
-	return false;
-}
-
 static bool isregornum(REsil *esil, const char *str, ut64 *num) {
 	if (!r_esil_reg_read (esil, str, num, NULL)) {
 		if (!isnum (esil, str, num)) {
@@ -358,7 +344,6 @@ R_API void r_esil_free(REsil *esil) {
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
 	sdb_free (esil->stats);
-	free (esil->pending);
 	r_esil_stack_free (esil);
 	free (esil->stack);
 
@@ -2220,65 +2205,6 @@ static bool esil_add(REsil *esil) {
 	return ret;
 }
 
-#if ESIL_MACRO
-static bool esil_inc_macro(REsil *esil) {
-	bool ret = false;
-	char *src = r_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src)) {
-		r_esil_runpending (esil, r_str_newf ("1,%s,+", src));
-		ret = true;
-	} else {
-		R_LOG_DEBUG ("esil_inc: invalid parameters");
-	}
-	free (src);
-	return ret;
-}
-
-static bool esil_inceq_macro(REsil *esil) {
-	bool ret = false;
-	char *src = r_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src)) {
-		r_esil_runpending (esil, r_str_newf ("1,%s,+,%s,=", src, src));
-		ret = true;
-	} else {
-		R_LOG_DEBUG ("esil_inceq_macro: invalid parameters");
-	}
-	free (src);
-	return ret;
-}
-
-#if 0
-static bool esil_addeq_macro(REsil *esil) {
-	bool ret = false;
-	char *dst = r_esil_pop (esil);
-	char *src = r_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,=", src, dst, dst));
-		ret = true;
-	} else {
-		R_LOG_DEBUG ("esil_addeq_macro: invalid parameters");
-	}
-	free (src);
-	free (dst);
-	return ret;
-}
-
-static bool esil_subeq_macro(REsil *esil) {
-	bool ret = false;
-	char *dst = r_esil_pop (esil);
-	char *src = r_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,=", src, dst, dst));
-		ret = true;
-	} else {
-		R_LOG_DEBUG ("esil_subeq_macro: invalid parameters");
-	}
-	free (src);
-	free (dst);
-	return ret;
-}
-#endif
-#else
 static bool esil_inc(REsil *esil) {
 	bool ret = false;
 	ut64 s;
@@ -2310,8 +2236,6 @@ static bool esil_inceq(REsil *esil) {
 	free (src_dst);
 	return ret;
 }
-
-#endif
 
 static bool esil_addeq(REsil *esil) {
 	bool ret = false;
@@ -3976,9 +3900,6 @@ loop:
 repeat:
 	wordi = 0;
 	while (*str) {
-		if (r_esil_runpending (esil, NULL)) {
-			continue;
-		}
 		if (R_UNLIKELY (wordi > 62)) {
 			R_LOG_DEBUG ("Invalid esil string");
 			step_out (esil, esil->cmd_step_out);
@@ -4020,9 +3941,6 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
-		if (r_esil_runpending (esil, NULL)) {
-			goto step_out;
-		}
 		if (!runword (esil, word)) {
 			goto step_out;
 		}
@@ -4034,7 +3952,6 @@ repeat:
 	}
 	rc = 1;
 step_out:
-	r_esil_runpending (esil, NULL);
 	step_out (esil, esil->cmd_step_out);
 	return rc;
 }
@@ -4090,23 +4007,6 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 #define	OT_FLAG R_ESIL_OP_TYPE_FLAG
 #define	OT_TRAP R_ESIL_OP_TYPE_TRAP
 
-R_API void r_esil_setup_macros(REsil *esil) {
-	R_RETURN_IF_FAIL (esil);
-#if ESIL_MACRO
-	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
-	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
-	// OP ("+=", esil_addeq_macro, 0, 2, OT_MATH | OT_REGW);
-	// OP ("-=", esil_subeq_macro, 0, 2, OT_MATH | OT_REGW);
-	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
-#else
-	OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
-	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
-	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
-#endif
-}
-
 R_API bool r_esil_setup_ops(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	bool ret = OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
@@ -4156,7 +4056,11 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("^", esil_xor, 1, 2, OT_MATH);
 	ret &= OP ("^=", esil_xoreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("+", esil_add, 1, 2, OT_MATH);
+	ret &= OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
+	ret &= OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
+	ret &= OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
 	ret &= OP ("-", esil_sub, 1, 2, OT_MATH);
+	ret &= OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("--", esil_dec, 1, 1, OT_MATH);
 	ret &= OP ("--=", esil_deceq, 0, 1, OT_MATH | OT_REGW);
 	ret &= OP ("/", esil_div, 1, 2, OT_MATH);
@@ -4291,7 +4195,6 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	}
 	r_esil_mem_ro (esil, romem);
 	r_esil_stats (esil, stats);
-	r_esil_setup_macros (esil);
 	r_esil_setup_ops (esil);
 
 	// Try arch esil init cb first, then anal as fallback

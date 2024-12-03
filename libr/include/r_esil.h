@@ -241,7 +241,6 @@ typedef struct r_esil_t {
 	REsilCallbacks cb;
 	REsilCallbacks ocb;
 	bool ocb_set;
-	char *pending; // pending op computed as a macro
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -298,7 +297,6 @@ R_API void r_esil_del_voyeur(REsil *esil, st32 vid);
 R_API void r_esil_reset(REsil *esil);
 R_API void r_esil_set_pc(REsil *esil, ut64 addr);
 R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, bool romem, bool stats, bool nonull);
-R_API void r_esil_setup_macros(REsil *esil);
 R_API bool r_esil_setup_ops(REsil *esil);
 R_API void r_esil_fini(REsil *esil);
 R_API void r_esil_free(REsil *esil);
