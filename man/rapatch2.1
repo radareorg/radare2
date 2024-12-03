@@ -1,0 +1,72 @@
+.TH RAPATCH2 1 "rapatch2 tool" "Sep 27, 2024"
+.SH NAME
+rapatch2 - binary patching utility
+.SH SYNOPSIS
+.B rapatch2
+[-p #] [-R] file patch
+
+.SH DESCRIPTION
+rapatch2 is a tool from the radare2 suite designed for binary patching code and data.
+.PP
+Human friendly text format to apply patches to binary files.
+.Pp
+It supports a wide range of formats and features, including architecture and
+bits specification, delta patching, graph patching, and more.
+.Pp
+Those patches must be written in files and the syntax looks like the following:
+
+.RS
+.nf
+^# -> comments
+. -> execute command
+! -> execute command
+OFFSET { code block }
+OFFSET "string"
+OFFSET 01020304
+OFFSET : assembly
++ {code}|"str"|0210|: asm
+.fi
+.RE
+
+.SH OPTIONS
+.TP
+.B -h
+Show this help message
+.TP
+.B -R
+Reverse patch
+.TP
+.B -p [num]
+Skip num directories from patch file
+
+.TP
+.B -s
+Be silent
+
+.TP
+.B -v
+Show version string
+
+.SH USAGE EXAMPLES
+.TP
+.B "Comparing two binaries"
+radiff2 -u bin1 bin2 > patch
+
+rapatch2 -p 1 < patch
+
+.TP
+.B "Patch only one file"
+rapatch2 bin1 patch
+
+.SH COMMAND IN R2
+
+See the -p flag and command.
+
+.SH SEE ALSO
+radare2(1)
+
+.Sh WWW
+.Pp
+https://www.radare.org/
+.SH AUTHOR
+pancake <pancake@nopcode.org>
