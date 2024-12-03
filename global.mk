@@ -16,6 +16,7 @@ TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
 LTOP:=$(TOP)/libr
 STOP:=$(TOP)/shlr
 BTOP:=$(TOP)/binr
+SPRJ:=$(TOP)/subprojects
 
 ifeq ($(MAKEFLAGS),s)
 SILENT=1
