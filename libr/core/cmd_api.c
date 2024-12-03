@@ -6,60 +6,6 @@
 
 #define NCMDS (sizeof (cmd->cmds) / sizeof (*cmd->cmds))
 
-static const RCmdDescHelp not_defined_help = {
-	.usage = "Usage not defined",
-	.summary = "Help summary not defined",
-	.description = "Help description not defined.",
-};
-
-static const RCmdDescHelp root_help = {
-	.usage = "[.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...",
-	.description = "",
-};
-
-static void cmd_desc_free(RCmdDesc *cd) {
-	if (!cd) {
-		return;
-	}
-
-	r_pvector_clear (&cd->children);
-	free (cd->name);
-	free (cd);
-}
-
-static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
-	R_RETURN_VAL_IF_FAIL (cd && !cd->parent, false);
-	if (parent) {
-		cd->parent = parent;
-		r_pvector_push (&parent->children, cd);
-		parent->n_children++;
-	}
-	return true;
-}
-
-static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help, bool ht_insert) {
-	RCmdDesc *res = R_NEW0 (RCmdDesc);
-	if (!res) {
-		return NULL;
-	}
-	res->type = type;
-	res->name = strdup (name);
-	if (!res->name) {
-		goto err;
-	}
-	res->n_children = 0;
-	res->help = help? help: &not_defined_help;
-	r_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
-	if (ht_insert && !ht_pp_insert (cmd->ht_cmds, name, res)) {
-		goto err;
-	}
-	cmd_desc_set_parent (res, parent);
-	return res;
-err:
-	cmd_desc_free (res);
-	return NULL;
-}
-
 static void alias_freefn(HtPPKv *kv) {
 	if (kv) {
 		char *k = kv->key;
@@ -145,7 +91,7 @@ R_API RCmd *r_cmd_new(void) {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
+	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
@@ -170,46 +116,9 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 			R_FREE (cmd->cmds[i]);
 		}
 	}
-	cmd_desc_free (cmd->root_cmd_desc);
+	// cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
 	return NULL;
-}
-
-R_API RCmdDesc *r_cmd_get_root(RCmd *cmd) {
-	return cmd->root_cmd_desc;
-}
-
-R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier) {
-	R_RETURN_VAL_IF_FAIL (cmd && cmd_identifier, NULL);
-	char *cmdid = strdup (cmd_identifier);
-	char *end_cmdid = cmdid + strlen (cmdid);
-	RCmdDesc *res = NULL;
-	bool is_exact_match = true;
-	// match longer commands first
-	while (*cmdid) {
-		RCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
-		if (cd) {
-			switch (cd->type) {
-			case R_CMD_DESC_TYPE_ARGV:
-				if (!is_exact_match) {
-					break;
-				}
-				// fallthrough
-			case R_CMD_DESC_TYPE_GROUP:
-				// fallthrough
-			case R_CMD_DESC_TYPE_OLDINPUT:
-				res = cd;
-				goto out;
-			case R_CMD_DESC_TYPE_INNER:
-				break;
-			}
-		}
-		is_exact_match = false;
-		*(--end_cmdid) = '\0';
-	}
-out:
-	free (cmdid);
-	return res;
 }
 
 // This struct exists to store the index during hashtable foreach.
@@ -1010,115 +919,4 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 		mac->brk_value = &mac->_brk_value;
 	}
 	return 0;
-}
-
-/* RCmdParsedArgs */
-
-R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args) {
-	R_RETURN_VAL_IF_FAIL (cmd && n_args >= 0, NULL);
-	RCmdParsedArgs *res = R_NEW0 (RCmdParsedArgs);
-	res->has_space_after_cmd = true;
-	res->argc = n_args + 1;
-	res->argv = R_NEWS0 (char *, res->argc);
-	res->argv[0] = strdup (cmd);
-	int i;
-	for (i = 1; i < res->argc; i++) {
-		res->argv[i] = strdup (args[i - 1]);
-	}
-	return res;
-}
-
-R_API RCmdParsedArgs *r_cmd_parsed_args_newcmd(const char *cmd) {
-	return r_cmd_parsed_args_new (cmd, 0, NULL);
-}
-
-R_API RCmdParsedArgs *r_cmd_parsed_args_newargs(int n_args, char **args) {
-	return r_cmd_parsed_args_new ("", n_args, args);
-}
-
-R_API void r_cmd_parsed_args_free(RCmdParsedArgs *a) {
-	if (!a) {
-		return;
-	}
-
-	int i;
-	for (i = 0; i < a->argc; i++) {
-		free (a->argv[i]);
-	}
-	free (a->argv);
-	free (a);
-}
-
-static void free_array(char **arr, int n) {
-	int i;
-	for (i = 0; i < n; i++) {
-		free (arr[i]);
-	}
-	free (arr);
-}
-
-R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args) {
-	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], false);
-	char **tmp = R_NEWS0 (char *, n_args + 1);
-	if (!tmp) {
-		return false;
-	}
-	tmp[0] = strdup (a->argv[0]);
-	int i;
-	for (i = 1; i < n_args + 1; i++) {
-		tmp[i] = strdup (args[i - 1]);
-		if (!tmp[i]) {
-			goto err;
-		}
-	}
-	free_array (a->argv, a->argc);
-	a->argv = tmp;
-	a->argc = n_args + 1;
-	return true;
-err:
-	free_array (tmp, n_args + 1);
-	return false;
-}
-
-R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *a, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], false);
-	char *tmp = strdup (cmd);
-	if (!tmp) {
-		return false;
-	}
-	free (a->argv[0]);
-	a->argv[0] = tmp;
-	return true;
-}
-
-static void parsed_args_iterateargs(RCmdParsedArgs *a, RStrBuf *sb) {
-	int i;
-	for (i = 1; i < a->argc; i++) {
-		if (i > 1) {
-			r_strbuf_append (sb, " ");
-		}
-		r_strbuf_append (sb, a->argv[i]);
-	}
-}
-
-R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *a) {
-	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
-	RStrBuf *sb = r_strbuf_new ("");
-	parsed_args_iterateargs (a, sb);
-	return r_strbuf_drain (sb);
-}
-
-R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
-	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
-	RStrBuf *sb = r_strbuf_new (a->argv[0]);
-	if (a->argc > 1 && a->has_space_after_cmd) {
-		r_strbuf_append (sb, " ");
-	}
-	parsed_args_iterateargs (a, sb);
-	return r_strbuf_drain (sb);
-}
-
-R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
-	R_RETURN_VAL_IF_FAIL (a && a->argv && a->argv[0], NULL);
-	return a->argv[0];
 }
