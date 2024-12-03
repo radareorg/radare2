@@ -131,28 +131,6 @@ if %ERRORLEVEL% == 0 (
   exit /b 1
 )
 
-if EXIST "libr\arch\p\arm\v35\arch-arm64" (
-  echo "v35arm64 ok"
-) else (
-  pushd "libr\arch\p\arm\v35"
-  git clone https://github.com/radareorg/vector35-arch-arm64 arch-arm64
-  cd arch-arm64
-  git checkout radare2-2024
-  git reset --hard cb7a22763c112e6ca99558edec2b6a9137234fdc
-  popd
-)
-
-if EXIST "libr\arch\p\arm\v35\arch-armv7" (
-  echo "v35armv7 ok"
-) else (
-  pushd "libr\arch\p\arm\v35"
-  git clone https://github.com/radareorg/vector35-arch-armv7 arch-armv7
-  cd arch-armv7
-  git checkout radare2-2024
-  git reset --hard 7d7a78f52196f6333bd5746dc526684edbfd9af0
-  popd
-)
-
 echo Now you can run 'configure'
 ENDLOCAL
 cmd
