@@ -39,7 +39,9 @@ static RCoreHelpMessage help_msg_w = {
 
 static RCoreHelpMessage help_msg_wao = {
 	"wao", " [op]", "performs a modification on current opcode",
-	"wao+", "[op]", "same as 'wao', but seeks forward after writing",
+	"waol", " [op]", "length of the patch in bytes (f.example an intel nop is 1 byte)",
+	"wao*", " [op]", "show the commands that will be executed to apply the patch",
+	"wao+", " [op]", "same as 'wao', but seeks forward after writing",
 	"wao", " nop", "nop current opcode",
 	"wao", " jinf", "assemble an infinite loop",
 	"wao", " jz", "make current opcode conditional (same as je) (zero)",
@@ -2056,10 +2058,16 @@ static int cmd_wa(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 'o': // "wao"
-		if (input[1] == ' ' || input[1] == '+') {
-			r_core_hack (core, r_str_trim_head_ro (input + 1));
-		} else {
+		switch (input[1]) {
+		case ' ':
+		case '*':
+		case 'l':
+		case '+':
+			r_core_hack (core, r_str_trim_head_ro (input + 1), input[1]);
+			break;
+		default:
 			r_core_cmd_help (core, help_msg_wao);
+			break;
 		}
 		break;
 	case ' ':
@@ -2077,7 +2085,7 @@ static int cmd_wa(void *data, const char *input) {
 				ut64 at = core->offset;
 repeat:
 				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ARCH_OP_MASK_BASIC)) {
-					R_LOG_DEBUG ("Invalid instruction?");
+					R_LOG_ERROR ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
 					break;
@@ -2095,13 +2103,13 @@ repeat:
 			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
 				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
-					R_LOG_DEBUG ("Invalid instruction?");
+					R_LOG_ERROR ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
 					break;
 				}
 				if (analop.size < acode->len) {
-					R_LOG_DEBUG ("Doesnt fit");
+					R_LOG_ERROR ("Patch doesnt fit");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
 					break;
