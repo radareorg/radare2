@@ -1213,7 +1213,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		if (ds->pseudo) {
-			if (r_parse_parse (core->parser, ds->opstr, ds->str)) {
+			char *res = r_parse_pseudo (core->parser, ds->opstr);
+			if (res) {
+				r_str_ncpy (ds->str, res, sizeof (ds->str));
 				R_LOG_DEBUG ("asm.parse.pseudo (%s) -> (%s)", ds->opstr, ds->str);
 				if (R_STR_ISNOTEMPTY (ds->str)) {
 					free (ds->opstr);
@@ -3061,9 +3063,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (!str) {
 			str = ds->str;
 		}
-		r_parse_parse (core->parser, str, ds->str);
-		free (ds->opstr);
-		ds->opstr = strdup (ds->str);
+		char *res = r_parse_pseudo (core->parser, str);
+		if (res) {
+			r_str_ncpy (ds->str, res, sizeof (ds->str));
+			free (ds->opstr);
+			ds->opstr = strdup (ds->str);
+		}
 #else
 		char *str = ds->opstr? ds->opstr: ds->str;
 		char *s = r_parse_instruction (core->parser, str);
@@ -6488,11 +6493,11 @@ toro:
 		}
 		if (!ds->show_cmt_right) {
 			if (ds->show_cmt_pseudo) {
-				char *opstr = malloc (32 + strlen (ds->analop.mnemonic));
-				strcpy (opstr, ds->analop.mnemonic);
-				r_parse_parse (core->parser, opstr, opstr);
-				ds_comment (ds, true, "%s", opstr);
-				free (opstr);
+				char *res = r_parse_pseudo (core->parser, ds->analop.mnemonic);
+				if (res) {
+					ds_comment (ds, true, "%s", res);
+					free (res);
+				}
 			}
 			if (ds->show_cmt_esil) {
 				const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
@@ -6818,11 +6823,11 @@ toro:
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_cmt_user) && ds->show_cmt_right) {
 				if (ds->show_cmt_pseudo) {
-					char *opstr = malloc (32 + strlen (ds->analop.mnemonic));
-					strcpy (opstr, ds->analop.mnemonic);
-					r_parse_parse (core->parser, opstr, opstr);
-					ds_comment (ds, true, "%s", opstr);
-					free (opstr);
+					char *res = r_parse_pseudo (core->parser, ds->analop.mnemonic);
+					if (res) {
+						ds_comment (ds, true, "%s", res);
+						free (res);
+					}
 				}
 				if (ds->show_cmt_esil) {
 					const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
@@ -7379,7 +7384,9 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ARCH_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			r_parse_parse (core->parser, opstr, opstr);
+			char *res = r_parse_pseudo (core->parser, opstr);
+			r_str_ncpy (opstr, res, sizeof (opstr));
+			free (res);
 		}
 
 		// f = r_anal_get_fcn_in (core->anal, at,

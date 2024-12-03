@@ -2508,9 +2508,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_ks (pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
-				char *pseudo = calloc (128 + strlen (strsub), 3);
-				r_parse_parse (core->parser, strsub, pseudo);
-				if (pseudo && *pseudo) {
+				char *pseudo = r_parse_pseudo (core->parser, strsub);
+				if (R_STR_ISNOTEMPTY (pseudo)) {
 					pj_ks (pj, "pseudo", pseudo);
 				}
 				free (pseudo);
@@ -2712,9 +2711,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("disasm", "%s\n", disasm);
 			{
-				char *pseudo = calloc (128 + strlen (disasm), 3);
-				r_parse_parse (core->parser, disasm, pseudo);
-				if (pseudo && *pseudo) {
+				char *pseudo = r_parse_pseudo (core->parser, disasm);
+				if (R_STR_ISNOTEMPTY (pseudo)) {
 					printline ("pseudo", "%s\n", pseudo);
 				}
 				free (pseudo);

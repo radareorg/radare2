@@ -409,7 +409,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->ofilter) {
-		char *newtext = r_parse_instruction (a->ofilter, op->mnemonic);
+		char *newtext = r_parse_pseudo (a->ofilter, op->mnemonic);
 		if (newtext) {
 			r_anal_op_set_mnemonic (op, op->addr, newtext);
 		}
@@ -535,7 +535,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		ret = op.size;
 		if (a->ofilter) {
-			char *newtext = r_parse_instruction (a->ofilter, op.mnemonic);
+			char *newtext = r_parse_pseudo (a->ofilter, op.mnemonic);
 			if (newtext) {
 				free (op.mnemonic);
 				op.mnemonic = newtext;
@@ -564,8 +564,11 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && p) {
-		// XXX this can crash the output buffer
-		r_parse_parse (p, ret->assembly, ret->assembly);
+		char *res = r_parse_pseudo (p, ret->assembly);
+		if (res) {
+			free (ret->assembly);
+			ret->assembly = res;
+		}
 	}
 	free (buf);
 	return ret;

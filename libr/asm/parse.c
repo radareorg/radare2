@@ -27,6 +27,8 @@ typedef struct r_parse_session_t {
 	char *retleave_asm;
 } RParseSession;
 
+#endif
+
 R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	if (r_parse_use (p, name)) {
 		RParseSession *ps = R_NEW0 (RParseSession);
@@ -36,7 +38,8 @@ R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	}
 	return NULL;
 }
-#endif
+
+// R_API bool r_parse_session_
 
 R_API RParse *r_parse_new(void) {
 	RParse *p = R_NEW0 (RParse);
@@ -151,29 +154,17 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	return true;
 }
 
-// data is input disasm, str is output pseudo
-// TODO: refactoring, this should return char * instead
-// like parseHeap()
-R_API char *r_parse_instruction(RParse *p, const char *data) {
+R_API char *r_parse_pseudo(RParse *p, const char *data) {
 	R_RETURN_VAL_IF_FAIL (p && data, false);
 	char *str = malloc (32 + strlen (data) * 2);
 	strcpy (str, data);
-	bool bres = (p && p->cur && p->cur->parse)
-		? p->cur->parse (p, data, str) : false;
+	RParsePluginParse parse = R_UNWRAP3 (p, cur, parse);
+	bool bres = parse? parse (p, data, str) : false;
 	if (bres) {
 		return str;
 	}
 	free (str);
 	return NULL;
-}
-
-// TODO deprecate in R2_600 because r_parse_instruction is better
-// TODO worst api name ever
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
-	R_RETURN_VAL_IF_FAIL (p && data && str, false);
-	RParsePluginParse parse = R_UNWRAP3 (p, cur, parse);
-	return (*data && parse)? parse (p, data, str): false;
-	// causes pdc to be empty, we need that parser to be doing sthg
 }
 
 R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
