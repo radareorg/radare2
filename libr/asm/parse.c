@@ -176,13 +176,12 @@ R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	// causes pdc to be empty, we need that parser to be doing sthg
 }
 
-// R_API char *r_parse_immtrim(const char *_opstr)
 R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
 	char *opstr = strdup (_opstr);
-	char *n = strstr (_opstr, "0x");
+	char *n = strstr (opstr, "0x");
 	if (n) {
 		char *p = n + 2;
 		while (IS_HEXCHAR (*p)) {
@@ -204,6 +203,12 @@ R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
 	}
 	if (strstr (opstr, " + ")) {
 		opstr = r_str_replace (opstr, " + ", "+", 1);
+	}
+	r_str_trim (opstr);
+	char *last = opstr + strlen (opstr) - 1;
+	if (*last == ',') {
+		*last = 0;
+		r_str_trim (opstr);
 	}
 	return opstr;
 }
