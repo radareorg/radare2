@@ -188,50 +188,42 @@ r_arch_sources += [
 ]
 endif
 
-if get_option('use_v35')
-r_arch_sources += [
-  'p/arm/plugin_v35.c',
-  'p/arm/v35/arch-arm64/disassembler/decode.c',
-  'p/arm/v35/arch-arm64/disassembler/decode0.c',
-  'p/arm/v35/arch-arm64/disassembler/decode1.c',
-  'p/arm/v35/arch-arm64/disassembler/decode2.c',
-  'p/arm/v35/arch-arm64/disassembler/decode_fields32.c',
-  'p/arm/v35/arch-arm64/disassembler/decode_scratchpad.c',
-  'p/arm/v35/arch-arm64/disassembler/encodings_dec.c',
-  'p/arm/v35/arch-arm64/disassembler/encodings_fmt.c',
-  'p/arm/v35/arch-arm64/disassembler/format.c',
-  'p/arm/v35/arch-arm64/disassembler/gofer.c',
-  'p/arm/v35/arch-arm64/disassembler/operations.c',
-  'p/arm/v35/arch-arm64/disassembler/pcode.c',
-  'p/arm/v35/arch-arm64/disassembler/regs.c',
-  'p/arm/v35/arch-arm64/disassembler/sysregs.c'
-]
-endif
-
-# must be deleted when anal refactor is done
-
-r_arch = library('r_arch', r_arch_sources,
-  include_directories: [platform_inc],
-  c_args: library_cflags,
-  dependencies: [
+deps =  [
     r_util_dep,
     r_esil_dep,
     r_reg_dep,
     r_crypto_dep,
     java_dep,
     capstone_dep,
-  ],
+  ]
+
+links = []
+incs = [platform_inc]
+if get_option('use_v35')
+r_arch_sources += 'p/arm/plugin_v35.c'
+v35arm64 = subproject('v35arm64')
+incs += v35arm64.get_variable('incs')
+links += v35arm64.get_variable('libs').get_static_lib()
+endif
+
+# must be deleted when anal refactor is done
+
+r_arch = library('r_arch', r_arch_sources,
+  include_directories: [incs],
+  c_args: library_cflags,
+  dependencies: deps,
+  link_with: links,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
-r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [platform_inc])
+r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [incs])
 
 if get_option('blob')
 r_arch_static = static_library('r_arch_static', r_arch_sources,
-  include_directories: [platform_inc],
+  include_directories: [incs],
   c_args: library_cflags,
   dependencies: [
     r_util_static_dep,
@@ -242,7 +234,7 @@ r_arch_static = static_library('r_arch_static', r_arch_sources,
 )
 
 r_arch_static_dep = declare_dependency(link_with: r_arch_static,
-  include_directories: [platform_inc])
+  include_directories: [incs])
 endif
 
 pkgconfig_mod.generate(r_arch,

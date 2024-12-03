@@ -1,14 +1,13 @@
-/* radare2 - LGPL - Copyright 2020-2023 - aemitt, pancake */
+/* radare2 - LGPL - Copyright 2020-2024 - aemitt, pancake */
 
 #include <r_arch.h>
 #include <r_search.h>
 #include <sdb/ht_uu.h>
-// #include "./asm-arm.h"
 #include <r_util/r_assert.h>
-#include "v35/arch-arm64/disassembler/encodings_dec.h"
-#include "v35/arch-arm64/disassembler/encodings_fmt.h"
-#include "v35/arch-arm64/disassembler/operations.h"
-#include "v35/arch-arm64/disassembler/arm64dis.h"
+#include "encodings_dec.h"
+#include "encodings_fmt.h"
+#include "operations.h"
+#include "arm64dis.h"
 
 #define BITMASK_BY_WIDTH_COUNT 64
 static const ut64 bitmask_by_width[BITMASK_BY_WIDTH_COUNT] = {
