@@ -18,7 +18,6 @@ if get_option('enable_tests')
     'bin',
     'bitmap',
     'buf',
-    'cmd',
     'cmd_str',
     'cons',
     'debruijn',
