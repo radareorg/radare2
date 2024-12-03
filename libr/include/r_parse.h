@@ -40,18 +40,19 @@ typedef struct r_parse_t {
 	RAnalLabelAt label_get;
 } RParse; // TODO rename to RAsmParseState
 
+typedef int (*RParsePluginParse)(RParse *p, const char *data, char *str);
+typedef int (*RParsePluginFilter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
+typedef bool (*RParsePluginSubvar)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+
 // TODO Rename to asm plugins?
 typedef struct r_parse_plugin_t {
 	RPluginMeta meta;
 	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
 	int (*fini)(RParse *p, void *user); // receives the asmparsestate
 
-	int (*parse)(RParse *p, const char *data, char *str);
-	// UNUSED bool (*assemble)(RParse *p, char *data, char *str);
-	int (*filter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
-	bool (*subvar)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-	// int (*replace)(int argc, const char *argv[], char *newstr); // rename to pseudo!
-	// int (*pseudo)(int argc, const char *argv[], char *newstr); // rename to pseudo!
+	RParsePluginParse parse;
+	RParsePluginFilter filter;
+	RParsePluginSubvar subvar;
 } RParsePlugin;
 
 #ifdef R_API
@@ -69,10 +70,9 @@ R_API bool r_parse_use(RParse *p, const char *name);
 /* action */
 R_API bool r_parse_parse(RParse *p, const char *data, char *str);
 R_API char *r_parse_instruction(RParse *p, const char *data);
-R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-R_API char *r_parse_immtrim(char *opstr);
+R_API char *r_parse_immtrim(RParse *p, const char *opstr);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;

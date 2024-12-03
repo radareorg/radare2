@@ -4315,7 +4315,7 @@ static void cmd_afsj(RCore *core, const char *arg) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (f) {
 		char *s = r_anal_function_get_json (f);
-		r_cons_printf ("%s\n", s);
+		r_cons_println (s);
 		free (s);
 	} else {
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);

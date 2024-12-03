@@ -194,20 +194,7 @@ R_API RAsm *r_asm_new(void) {
 }
 
 // TODO must use the internal rparse api when both libraries are merged
-R_API bool r_asm_sub_names_input(RAsm *a, const char *f) {
-	R_RETURN_VAL_IF_FAIL (a && f, false);
-	if (!a->ifilter) {
-		a->ifilter = r_parse_new ();
-	}
-	if (!r_parse_use (a->ifilter, f)) {
-		r_parse_free (a->ifilter);
-		a->ifilter = NULL;
-		return false;
-	}
-	return true;
-}
-
-// TODO must use the internal rparse api when both libraries are merged
+// R2_600 - just call r_asm_parse_use ()
 R_API bool r_asm_sub_names_output(RAsm *a, const char *f) {
 	R_RETURN_VAL_IF_FAIL (a && f, false);
 	if (!a->ofilter) {
@@ -497,9 +484,6 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 	char *b = strdup (buf);
 	if (!b) {
 		return 0;
-	}
-	if (a->ifilter) {
-		r_parse_parse (a->ifilter, buf, b);
 	}
 	r_str_case (b, false); // to-lower
 	if (a->analb.anal) {
@@ -979,9 +963,6 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			} else { /* Instruction */
 				char *str = ptr_start;
 				r_str_trim (str);
-				if (a->ifilter) {
-					r_parse_parse (a->ifilter, ptr_start, ptr_start);
-				}
 				if (acode->equs) {
 					if (!*ptr_start) {
 						continue;
