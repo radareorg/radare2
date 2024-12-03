@@ -71,14 +71,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd pseudo=1 cmtright=0
+NAME=pd pseudo=1 cmt.right=0
 FILE=malloc://128
 CMDS=<<EOF
 wx 4889e5
 e asm.arch=x86
 e asm.bits=64
 e asm.pseudo=1
-e asm.cmtright =0
+e asm.cmt.right =0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -216,9 +216,9 @@ e asm.bits=64
 wx 31ed
 e asm.pseudo=true
 e asm.comments=true
-e asm.cmtright=true
+e asm.cmt.right=true
 pd 1
-e asm.cmtright=false
+e asm.cmt.right=false
 pd 1
 EOF
 EXPECT=<<EOF
