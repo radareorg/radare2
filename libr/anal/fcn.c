@@ -2038,6 +2038,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	return result;
 }
 
+// TODO: R2_600 - take PJ*pj instance as argument and return void or null instead
 // tfj and afsj call this function
 R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	RAnal *a = function->anal;

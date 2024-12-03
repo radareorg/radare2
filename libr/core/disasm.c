@@ -1179,7 +1179,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	ds->opstr = ds_sub_jumps (ds, ds->opstr);
 	if (ds->immtrim) {
-		char *res = r_parse_immtrim (ds->opstr);
+		char *res = r_parse_immtrim (core->parser, ds->opstr);
 		if (res) {
 			ds->opstr = res;
 		}
@@ -7086,7 +7086,7 @@ toro:
 			} else if (ds->immtrim) {
 				free (ds->opstr);
 				ds->opstr = strdup (ds->analop.mnemonic);
-				char *res = r_parse_immtrim (strdup (ds->opstr));
+				char *res = r_parse_immtrim (core->parser, strdup (ds->opstr));
 				if (res) {
 					free (ds->opstr);
 					ds->opstr = res;
@@ -7132,7 +7132,7 @@ toro:
 			if (ds->immtrim) {
 				free (ds->opstr);
 				ds->opstr = strdup (ds->analop.mnemonic);
-				ds->opstr = r_parse_immtrim (ds->opstr);
+				ds->opstr = r_parse_immtrim (core->parser, ds->opstr);
 			}
 		}
 		if (ds->asm_instr) {
@@ -7924,7 +7924,7 @@ toro:
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
 					if (asm_immtrim) {
-						char *res = r_parse_immtrim (opstr);
+						char *res = r_parse_immtrim (core->parser, opstr);
 						if (res) {
 							opstr = res;
 						}
@@ -7941,7 +7941,7 @@ toro:
 					r_str_case (asm_str, 1);
 				}
 				if (asm_immtrim) {
-					char *res = r_parse_immtrim (asm_str);
+					char *res = r_parse_immtrim (core->parser, asm_str);
 					if (res) {
 						asm_str = res;
 					}

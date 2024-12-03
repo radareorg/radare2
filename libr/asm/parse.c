@@ -171,21 +171,17 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 // TODO worst api name ever
 R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	R_RETURN_VAL_IF_FAIL (p && data && str, false);
-	if (*data && p->cur && p->cur->parse) {
-		return p->cur->parse (p, data, str);
-	}
+	RParsePluginParse parse = R_UNWRAP3 (p, cur, parse);
+	return (*data && parse)? parse (p, data, str): false;
 	// causes pdc to be empty, we need that parser to be doing sthg
-	return false;
 }
 
 // R_API char *r_parse_immtrim(const char *_opstr)
-R_API char *r_parse_immtrim(char *_opstr) {
+R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
-	char *opstr = _opstr;
-	// TODO: make this inmutable strdup
-	// char *opstr = strdup (_opstr);
+	char *opstr = strdup (_opstr);
 	char *n = strstr (_opstr, "0x");
 	if (n) {
 		char *p = n + 2;

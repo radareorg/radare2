@@ -40,7 +40,6 @@ typedef struct r_asm_t {
 	RArchSession *dcur; // decode current
 	RList *plugins;
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
-	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
 	RSyscall *syscall;
@@ -61,10 +60,13 @@ R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
-R_API bool r_asm_is_valid(RAsm *a, const char *name);
 
 R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
+#if 1
+// RParser refactoring
+R_API bool r_asm_use_parser(RAsm *a, const char *name);
+#endif
 
 // this is in archconfig
 R_API int r_asm_set_bits(RAsm *a, int bits);
@@ -83,8 +85,7 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
-R_API bool r_asm_sub_names_input(RAsm *a, const char *f);
-R_API bool r_asm_sub_names_output(RAsm *a, const char *f);
+R_API bool r_asm_sub_names_output(RAsm *a, const char *f); // XXX deprecate R2_600 . its just r_asm_use_parser()
 R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API const RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);

@@ -280,16 +280,17 @@ static int rasm_show_help(int v) {
 			" -e           use big endian instead of little endian\n"
 			" -E           display ESIL expression (same input as in -d)\n"
 			" -f [file]    read data from file\n"
-			" -F [in:out]  specify input and/or output filters (att2intel, x86.pseudo, ..)\n"
+			" -F [parser]  specify which parse filter use (see -LL)\n" // TODO: rename to -p
 			" -h, -hh      show this help, -hh for long\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
 			" -j           output in json format\n"
 			" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
 			" -l [len]     input/Output length\n"
 			" -L ([name])  list RArch plugins: (a=asm, d=disasm, e=esil)\n"
+			" -LL ([name]) list RParse plugins\n"
 			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n" // -n ?
 			" -o [file]    output file name (rasm2 -Bf a.asm -o a)\n"
-			" -p           run SPP over input for assembly\n"
+			" -p           run SPP over input for assembly\n" // TODO - must be done by default
 			" -q           quiet mode\n"
 			" -r           output in radare commands\n"
 			" -s,-@ [addr] define initial start/seek address (default 0)\n"
@@ -933,25 +934,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		goto beach;
 	}
 	if (filters) {
-		char *p = strchr (filters, ':');
-		if (p) {
-			*p = 0;
-			if (*filters) {
-				// R2_590 r_asm_input_filter (as->a, filters);
-				r_asm_sub_names_input (as->a, filters);
-			}
-			if (p[1]) {
-				// R2_590 r_asm_output_filter (as->a, p + 1);
-				r_asm_sub_names_output (as->a, p + 1);
-			}
-			*p = ':';
-		} else {
-			if (dis) {
-				r_asm_sub_names_output (as->a, filters);
-			} else {
-				r_asm_sub_names_input (as->a, filters);
-			}
-		}
+		// TODO: rename to use parse
+		r_asm_sub_names_output (as->a, filters);
 	}
 
 	if (file) {
