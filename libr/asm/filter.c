@@ -2,6 +2,8 @@
 
 #include <r_parse.h>
 
+#define FILTER_DWORD 0
+
 #define isx86separator(x) ( \
 	(x) == ' '||(x) == '\t'||(x) == '\n'|| (x) == '\r'||(x) == ' '|| \
 	(x) == ','||(x) == ';'||(x) == '['||(x) == ']'|| \
@@ -590,23 +592,4 @@ R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char 
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);
 	}
 	return false;
-}
-
-// r_asm_filter()
-// r_asm_parse()
-// r_asm_subvar()
-// r_asm_replace()
-// maybe RAsm.parse(what)
-
-// R2_600 - easier to use, should replace r_asm_filter(), but its not using rflag, analhint, endian, etc
-// this function is unused, but there's data we are missing, like the analhint.. that we must ensure that is called before calling this. so we need more tests for this.
-R_API char *r_parse_filter_dup(RParse *p, ut64 addr, const char *opstr) {
-	const size_t out_len = 256;
-	char *in = strdup (opstr);
-	char *out = calloc (out_len, 1);
-	if (!r_parse_filter (p, addr, NULL, NULL, in, out, out_len, false)) {
-		free (out);
-		return NULL;
-	}
-	return out;
 }

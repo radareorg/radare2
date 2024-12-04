@@ -1002,7 +1002,7 @@ static void ds_free(RDisasmState *ds) {
 
 /* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color) {
-	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
+	char *source = ds->opstr? ds->opstr: ds->asmop.mnemonic;
 	const char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
 	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
@@ -1051,7 +1051,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 }
 
 static void ds_highlight_word(RDisasmState *ds, char *word, char *color) {
-	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
+	char *source = ds->opstr? ds->opstr: ds->asmop.mnemonic;
 	const char *color_reset = line_highlighted (ds) ? ds->color_linehl : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str: source;
@@ -1137,7 +1137,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	if (!ds->opstr) {
 		// asmop works, analop fails hard
-		ds->opstr = strdup (r_str_get (r_asm_op_get_asm (&ds->asmop)));
+		ds->opstr = strdup (r_str_get (ds->asmop.mnemonic));
 	}
 	/* initialize */
 	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
@@ -1680,7 +1680,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (r_asm_op_get_asm (&ds->asmop));
+	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (ds->asmop.mnemonic);
 	for (b = ob; b && *b; b++, i++) {
 		r_strbuf_append_n (sb, b, 1);
 		if (*b == '(' || *b == '[') {
@@ -2419,7 +2419,7 @@ static void ds_show_comments_describe(RDisasmState *ds) {
 	/* respect asm.describe */
 	char *desc = NULL;
 	if (ds->asm_describe && !ds->has_description) {
-		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
+		char *op, *locase = strdup (ds->asmop.mnemonic);
 		if (!locase) {
 			return;
 		}
@@ -3017,7 +3017,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 
 	if (ds->show_nodup) {
-		const char *opname = (ret < 1)? "invalid": r_asm_op_get_asm (&ds->asmop);
+		const char *opname = (ret < 1)? "invalid": ds->asmop.mnemonic;
 		if (ds->prev_ins && !strcmp (ds->prev_ins, opname)) {
 			if (!ds->prev_ins_eq) {
 				ds->prev_ins_eq = true;
@@ -3034,7 +3034,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (ds->prev_ins) {
 			R_FREE (ds->prev_ins);
 		}
-		ds->prev_ins = strdup (r_asm_op_get_asm (&ds->asmop));
+		ds->prev_ins = strdup (ds->asmop.mnemonic);
 	}
 	ds->oplen = ds->asmop.size;
 
@@ -3058,7 +3058,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
-		char *str = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
+		char *str = ds->opstr ? ds->opstr : ds->asmop.mnemonic;
 		if (!str) {
 			str = ds->str;
 		}
@@ -3070,9 +3070,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 	}
 	if (ds->acase) {
-		r_str_case (r_asm_op_get_asm (&ds->asmop), 1);
+		r_str_case (ds->asmop.mnemonic, 1);
 	} else if (ds->capitalize) {
-		char *ba = r_asm_op_get_asm (&ds->asmop);
+		char *ba = ds->asmop.mnemonic;
 		*ba = toupper ((ut8)*ba);
 	}
 	if (meta && meta_size != UT64_MAX) {
@@ -5990,7 +5990,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		return;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
-		const char *asmstr = r_asm_op_get_asm (&ds->asmop);
+		const char *asmstr = ds->asmop.mnemonic;
 		if (R_STR_ISNOTEMPTY (asmstr)) {
 			char *locase = strdup (asmstr);
 			r_str_after (locase, ' ');
@@ -7075,7 +7075,7 @@ toro:
 #if 0
 				ds->opstr = tmpopstr? tmpopstr: strdup (ds->analop.mnemonic);
 #else
-				ds->opstr = (tmpopstr)? tmpopstr: strdup (r_asm_op_get_asm (&ds->asmop));
+				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.mnemonic);
 #endif
 
 			} else if (ds->immtrim) {
@@ -7368,7 +7368,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 
 		char opstr[256];
-		r_str_ncpy (opstr, r_asm_op_get_asm (&asmop), sizeof (opstr) - 1);
+		r_str_ncpy (opstr, asmop.mnemonic, sizeof (opstr) - 1);
 		core->rasm->pseudo = opseudo;
 
 		ds->has_description = false;
@@ -7389,7 +7389,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			int ba_len = strlen (asmop.mnemonic) + 128;
 			char *ba = malloc (ba_len);
 			if (ba) {
-				strcpy (ba, r_asm_op_get_asm (&asmop));
+				strcpy (ba, asmop.mnemonic);
 				r_parse_subvar (core->rasm->parse, f, at, ds->analop.size,
 						ba, ba, ba_len);
 				r_asm_op_set_asm (&asmop, ba);
@@ -7415,7 +7415,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			}
 		}
 		{
-			char *aop = r_asm_op_get_asm (&asmop);
+			const char *aop = asmop.mnemonic;
 			char *buf = malloc (strlen (aop) + 128);
 			if (buf) {
 				strcpy (buf, aop);
@@ -7663,7 +7663,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_parse_filter (core->rasm->parse, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&asmop),
+				r_parse_filter (core->rasm->parse, ds->vat, core->flags, ds->hint, asmop.mnemonic,
 						str, sizeof (str), be);
 				if (scr_color) {
 					RAnalOp aop;
@@ -7676,12 +7676,12 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 						free (buf_asm);
 					}
 				} else {
-					r_cons_println (r_asm_op_get_asm (&asmop));
+					r_cons_println (asmop.mnemonic);
 				}
 				break;
 			case '=':
 				if (i < 28) {
-					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n", ds->vat, "", r_asm_op_get_asm (&asmop));
+					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n", ds->vat, "", asmop.mnemonic);
 					char *sp = strchr (str, ' ');
 					if (sp) {
 						char *end = sp + 60 + 1;
@@ -7706,7 +7706,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				pj_o (pj);
 				pj_kn (pj, "addr", addr + i);
 				pj_ks (pj, "bytes", op_hex);
-				pj_ks (pj, "inst", r_asm_op_get_asm (&asmop));
+				pj_ks (pj, "inst", asmop.mnemonic);
 				pj_end (pj);
 				free (op_hex);
 				break;
@@ -7715,7 +7715,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				char *op_hex = r_asm_op_get_hex (&asmop);
 				r_cons_printf ("0x%08"PFMT64x" %20s  %s\n",
 						addr + i, op_hex,
-						r_asm_op_get_asm (&asmop));
+						asmop.mnemonic);
 				free (op_hex);
 			}
 			}
@@ -7921,7 +7921,7 @@ toro:
 					r_cons_println (esil);
 				} else {
 					if (decode) {
-						opstr = tmpopstr? tmpopstr: r_asm_op_get_asm (&(asmop));
+						opstr = tmpopstr? tmpopstr: asmop.mnemonic;
 					} else if (esil) {
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
@@ -7938,7 +7938,7 @@ toro:
 				char opstr[128] = {
 					0
 				};
-				char *asm_str = r_asm_op_get_asm (&asmop);
+				char *asm_str = asmop.mnemonic;
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}

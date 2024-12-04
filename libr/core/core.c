@@ -1970,7 +1970,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 				r_io_read_at (core->io, value, buf, sizeof (buf));
 				r_asm_set_pc (core->rasm, value);
 				r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
-				r_strbuf_appendf (s, "'%s' ", r_asm_op_get_asm (&op));
+				r_strbuf_appendf (s, "'%s' ", op.mnemonic);
 				r_asm_op_fini (&op);
 				/* get library name */
 				{ // NOTE: dup for mapname?
@@ -2686,7 +2686,6 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
-	core->rasm->parse = core->rasm->parse; // r_parse_new ();
 	r_anal_bind (core->anal, &(core->rasm->parse->analb));
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();

@@ -271,7 +271,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 				free (res);
 				free (op_hex);
 			}
-			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
+			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 			expr = strdup (r_strbuf_get (&analop.esil));

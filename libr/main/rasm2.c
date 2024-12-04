@@ -517,8 +517,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			}
 			char *op_hex = r_asm_op_get_hex (&op);
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
-				as->a->pc, op.size, op_hex,
-				r_asm_op_get_asm (&op));
+				as->a->pc, op.size, op_hex, op.mnemonic);
 			free (op_hex);
 			ret += op.size;
 			r_asm_set_pc (as->a, addr+ ret);
