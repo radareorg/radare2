@@ -356,7 +356,7 @@ struct r_core_t {
 	RCoreEsil esil;
 	/* ^^ */
 	RCoreTimes *times;
-	RParse *parser;
+	// RParse *parser;
 	RPrint *print;
 	RLang *lang;
 	RDebug *dbg;
