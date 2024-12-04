@@ -685,9 +685,7 @@ static inline void gb_anal_cb_srl(RAnalOp *op, const ut8 data) {
 }
 
 static bool gb_custom_daa(REsil *esil) {
-	if (!esil || !esil->anal || !esil->anal->reg) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	char *v = r_esil_pop (esil);
 	ut64 n;
 	if (!v || !r_esil_get_parm (esil, v, &n)) {
@@ -695,11 +693,17 @@ static bool gb_custom_daa(REsil *esil) {
 	}
 	R_FREE (v);
 	ut8 val = (ut8)n;
-	r_esil_reg_read (esil, "H", &n, NULL);
+	if (R_UNLIKELY (!r_esil_reg_read (esil, "H", &n, NULL))) {
+		return false;
+	}
 	const ut8 H = (ut8)n;
-	r_esil_reg_read (esil, "C", &n, NULL);
+	if (R_UNLIKELY (!r_esil_reg_read (esil, "C", &n, NULL))) {
+		return false;
+	}
 	const ut8 C = (ut8)n;
-	r_esil_reg_read (esil, "N", &n, NULL);
+	if (R_UNLIKELY (!r_esil_reg_read (esil, "N", &n, NULL))) {
+		return false;
+	}
 	if (n) {
 		if (C) {
 			val = (val - 0x60) & 0xff;
@@ -707,13 +711,13 @@ static bool gb_custom_daa(REsil *esil) {
 		if (H) {
 			val = (val - 0x06) & 0xff;
 		}
-	} else {
-		if (C || (val > 0x99)) {
-			val = (val + 0x60) & 0xff;
-		}
-		if (H || ((val & 0x0f) > 0x09)) {
-			val += 0x06;
-		};
+		return r_esil_pushnum (esil, val);
+	}
+	if (C || (val > 0x99)) {
+		val = (val + 0x60) & 0xff;
+	}
+	if (H || ((val & 0x0f) > 0x09)) {
+		val += 0x06;
 	}
 	return r_esil_pushnum (esil, val);
 }
@@ -1504,37 +1508,15 @@ static char* regs(RArchSession *as) {
 
 static int esil_gb_init(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-
-	// XXX esil-init shouldnt touch the registers or write into memory or antyhing like dat
-	GBUser *user = R_NEW0 (GBUser);
 	REsilOp *op = r_esil_get_op (esil, "}{");
 	r_esil_set_op (esil, "halt", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "stop", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
-	if (user) {
-		if (esil->anal) {
-			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
-			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
-			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
-			if (esil->anal->reg) { //initial values
-				r_reg_setv (esil->anal->reg, "mpc", 0x100);
-				r_reg_setv (esil->anal->reg, "sp", 0xfffe);
-				r_reg_setv (esil->anal->reg, "af", 0x01b0);
-				r_reg_setv (esil->anal->reg, "bc", 0x0013);
-				r_reg_setv (esil->anal->reg, "de", 0x00d8);
-				r_reg_setv (esil->anal->reg, "hl", 0x014d);
-				r_reg_setv (esil->anal->reg, "ime", true);
-			}
-		}
-		esil->cb.user = user;
-	}
 	return true;
 }
 
 static int esil_gb_fini(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-
-	R_FREE (esil->cb.user);
 	return true;
 }
 

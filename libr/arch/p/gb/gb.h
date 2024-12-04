@@ -2,15 +2,6 @@
 #define GB_H
 #include <r_types.h>
 
-typedef struct gb_user_t {
-	ut8 mbc_id;
-	ut8 romsz_id;
-	ut8 ramsz_id;
-	ut8 rombanks;
-	ut8 rambanks;
-	ut32 cycles;
-} GBUser;
-
 enum {
 	MBC_ROM = 0,
 	MBC1,
