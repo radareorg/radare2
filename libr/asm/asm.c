@@ -264,7 +264,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	}
 	// TODO: remove the alias workarounds because of missing pseudo plugins
 	if (r_str_startswith (name, "s390.")) {
-		name = "x86.pseudo";
+		name = "x86";
 	}
 #if 0
 	if (r_str_startswith (name, "blackfin")) {

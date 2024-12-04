@@ -734,7 +734,6 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_asmarch(void *user, void *data) {
-	char asmparser[32];
 	RCore *core = (RCore *) user;
 	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
 	RConfigNode *node = (RConfigNode *) data;
@@ -764,10 +763,7 @@ static bool cb_asmarch(void *user, void *data) {
 		R_LOG_ERROR ("asm.arch: cannot find '%s'", node->value);
 		return false;
 	}
-	//we should strdup here otherwise will crash if any r_config_set
-	//free the old value
-	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
-	r_config_set (core->config, "asm.parser", asmparser);
+	r_config_set (core->config, "asm.parser", node->value);
 
 	if (core->anal->cur && !(core->anal->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
@@ -1057,9 +1053,9 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 }
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
+#if 1
 	RListIter *iter;
 	RAsmPlugin *parser;
-#if 0
 	if (core && node && core->rasm->parse && core->rasm->parse->parsers) {
 		r_config_node_purge_options (node);
 		r_list_foreach (core->rasm->parse->parsers, iter, parser) {

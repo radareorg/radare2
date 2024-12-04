@@ -357,7 +357,7 @@ static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, 
 			if (ucase) {
 				r_str_case (oldstr, true);
 			}
-			parse_localvar (p, newstr, sizeof (newstr), sparg->name, reg, sign, ireg, att);
+			parse_localvar (a, newstr, sizeof (newstr), sparg->name, reg, sign, ireg, att);
 			char *ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				if (delta == 0) {
@@ -404,7 +404,7 @@ static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, 
 			if (ucase) {
 				r_str_case (oldstr, true);
 			}
-			parse_localvar (p, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
+			parse_localvar (a, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
 			char *ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				if (delta == 0) {
