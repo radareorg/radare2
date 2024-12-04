@@ -93,7 +93,7 @@ enum {
 	R_LIB_TYPE_LANG,    /* language */
 	R_LIB_TYPE_ASM,     /* assembler */
 	R_LIB_TYPE_ANAL,    /* analysis */
-	R_LIB_TYPE_PARSE,   /* parsers */
+	// DEPRECATED R_LIB_TYPE_PARSE,   /* parsers */
 	R_LIB_TYPE_BIN,     /* bin headers */
 	R_LIB_TYPE_BIN_XTR, /* bin extractors */
 	R_LIB_TYPE_BIN_LDR, /* bin loaders */

@@ -8,11 +8,29 @@
 
 R_LIB_VERSION (r_asm);
 
+static RAsmPlugin *asm_static_plugins[] =
+	{ R_ASM_STATIC_PLUGINS };
+
 static const char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", ".extern", NULL
 };
+
+R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
+	R_RETURN_VAL_IF_FAIL (a && foo, false);
+	RParse *p = a->parse;
+	bool itsFine = foo->init? foo->init (p, p->user): true;
+	if (itsFine) {
+		r_list_append (p->parsers, foo);
+	}
+	return true;
+}
+
+R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
+	// TODO implement
+	return true;
+}
 
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
@@ -191,6 +209,10 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
+	size_t i;
+	for (i = 0; asm_static_plugins[i]; i++) {
+		r_asm_plugin_add (a, asm_static_plugins[i]);
+	}
 	return a;
 }
 
@@ -251,7 +273,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 #endif
 
 	RListIter *iter;
-	RParsePlugin *h;
+	RAsmPlugin *h;
 	r_list_foreach (p->parsers, iter, h) {
 		if (!strcmp (h->meta.name, name)) {
 			p->cur = h;

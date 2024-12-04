@@ -5,8 +5,6 @@
 
 R_LIB_VERSION (r_parse);
 
-static RParsePlugin *parse_static_plugins[] =
-	{ R_PARSE_STATIC_PLUGINS };
 
 #if 0
 typedef struct r_parse_session_t {
@@ -58,10 +56,13 @@ R_API RParse *r_parse_new(void) {
 	p->subtail = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
+
+#if 0
 	size_t i;
 	for (i = 0; parse_static_plugins[i]; i++) {
 		r_parse_plugin_add (p, parse_static_plugins[i]);
 	}
+#endif
 	return p;
 }
 
@@ -72,89 +73,12 @@ R_API void r_parse_free(RParse *p) {
 	}
 }
 
-R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (p && foo, false);
-	bool itsFine = foo->init? foo->init (p, p->user): true;
-	if (itsFine) {
-		r_list_append (p->parsers, foo);
-	}
-	return true;
-}
-
-R_API bool r_parse_plugin_remove(RParse *p, RParsePlugin *plugin) {
-	// TODO implement
-	return true;
-}
-
-#if 0
-// DEPRECATE!
-R_API bool r_parse_use(RParse *p, const char *name) {
-	R_RETURN_VAL_IF_FAIL (p && name, false);
-
-	if (r_str_startswith (name, "r2ghidra")) {
-		// This plugin uses asm.cpu as a hack, ignoring
-		return false;
-	}
-	// TODO: remove the alias workarounds because of missing pseudo plugins
-	if (r_str_startswith (name, "s390.")) {
-		name = "x86.pseudo";
-	}
-#if 0
-	if (r_str_startswith (name, "blackfin")) {
-		name = "arm.pseudo";
-	}
-#endif
-
-	RListIter *iter;
-	RParsePlugin *h;
-	r_list_foreach (p->parsers, iter, h) {
-		if (!strcmp (h->meta.name, name)) {
-			p->cur = h;
-			return true;
-		}
-	}
-	bool found = false;
-	if (strchr (name, '.')) {
-		char *sname = predotname (name);
-		r_list_foreach (p->parsers, iter, h) {
-			char *shname = predotname (h->meta.name);
-			found = !strcmp (shname, sname);
-			free (shname);
-			if (found) {
-				p->cur = h;
-				break;
-			}
-		}
-		free (sname);
-	}
-	if (!found) {
-		R_LOG_WARN ("Cannot find asm.parser for %s", name);
-		if (p->cur && p->cur->meta.name) {
-			if (r_str_startswith (p->cur->meta.name, "null")) {
-				return false;
-			}
-		}
-		// check if p->cur
-		r_list_foreach (p->parsers, iter, h) {
-			if (r_str_startswith (h->meta.name, "null")) {
-				R_LOG_INFO ("Fallback to null");
-				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
-				p->cur = h;
-				return false;
-			}
-		}
-		return false;
-	}
-	return true;
-}
-#endif
-
 // TODO .make it internal
 R_API char *r_parse_pseudo(RParse *p, const char *data) {
 	R_RETURN_VAL_IF_FAIL (p && data, false);
 	char *str = malloc (32 + strlen (data) * 2);
 	strcpy (str, data);
-	RParsePluginParse parse = R_UNWRAP3 (p, cur, parse);
+	RAsmParsePseudo parse = R_UNWRAP3 (p, cur, parse);
 	bool bres = parse? parse (p, data, str) : false;
 	if (bres) {
 		return str;

@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_lib.h>
+#include <r_asm.h>
 #include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
@@ -131,161 +128,161 @@ static const char* getspr(const char *reg) {
 	}
 
 	switch (spr) {
-		case SPR_MQ:
-			return "mq";
-		case SPR_XER:
-			return "xer";
-		case SPR_RTCU:
-			return "rtcu";
-		case SPR_RTCL:
-			return "rtcl";
-		case SPR_LR:
-			return "lr";
-		case SPR_CTR:
-			return "ctr";
-		case SPR_DSISR:
-			return "dsisr";
-		case SPR_DAR:
-			return "dar";
-		case SPR_DEC:
-			return "dec";
-		case SPR_SDR1:
-			return "sdr1";
-		case SPR_SRR0:
-			return "srr0";
-		case SPR_SRR1:
-			return "srr1";
-		case SPR_VRSAVE:
-			return "vrsave";
-		case SPR_TBRL:
-			return "tbrl";
-		case SPR_TBRU:
-			return "tbru";
-		case SPR_SPRG0:
-			return "sprg0";
-		case SPR_SPRG1:
-			return "sprg1";
-		case SPR_SPRG2:
-			return "sprg2";
-		case SPR_SPRG3:
-			return "sprg3";
-		case SPR_EAR:
-			return "ear";
-		case SPR_TBL:
-			return "tbl";
-		case SPR_TBU:
-			return "tbu";
-		case SPR_PVR:
-			return "pvr";
-		case SPR_SPEFSCR:
-			return "spefscr";
-		case SPR_IBAT0U:
-			return "ibat0u";
-		case SPR_IBAT0L:
-			return "ibat0l";
-		case SPR_IBAT1U:
-			return "ibat1u";
-		case SPR_IBAT1L:
-			return "ibat1l";
-		case SPR_IBAT2U:
-			return "ibat2u";
-		case SPR_IBAT2L:
-			return "ibat2l";
-		case SPR_IBAT3U:
-			return "ibat3u";
-		case SPR_IBAT3L:
-			return "ibat3l";
-		case SPR_DBAT0U:
-			return "dbat0u";
-		case SPR_DBAT0L:
-			return "dbat0l";
-		case SPR_DBAT1U:
-			return "dbat1u";
-		case SPR_DBAT1L:
-			return "dbat1l";
-		case SPR_DBAT2U:
-			return "dbat2u";
-		case SPR_DBAT2L:
-			return "dbat2l";
-		case SPR_DBAT3U:
-			return "dbat3u";
-		case SPR_DBAT3L:
-			return "dbat3l";
-		case SPR_UMMCR0:
-			return "ummcr0";
-		case SPR_UMMCR1:
-			return "ummcr1";
-		case SPR_UPMC1:
-			return "upmc1";
-		case SPR_UPMC2:
-			return "upmc2";
-		case SPR_USIA:
-			return "usia";
-		case SPR_UPMC3:
-			return "upmc3";
-		case SPR_UPMC4:
-			return "upmc4";
-		case SPR_MMCR0:
-			return "mmcr0";
-		case SPR_PMC1:
-			return "pmc1";
-		case SPR_PMC2:
-			return "pmc2";
-		case SPR_SIA:
-			return "sia";
-		case SPR_MMCR1:
-			return "mmcr1";
-		case SPR_PMC3:
-			return "pmc3";
-		case SPR_PMC4:
-			return "pmc4";
-		case SPR_SDA:
-			return "sda";
-		case SPR_DMISS:
-			return "dmiss";
-		case SPR_DCMP:
-			return "dcmp";
-		case SPR_HASH1:
-			return "hash1";
-		case SPR_HASH2:
-			return "hash2";
-		case SPR_IMISS:
-			return "imiss";
-		case SPR_ICMP:
-			return "icmp";
-		case SPR_RPA:
-			return "rpa";
-		case SPR_HID0:
-			return "hid0";
-		case SPR_HID1:
-			return "hid1";
-		case SPR_IABR:
-			return "iabr";
-		case SPR_HID2:
-			return "hid2";
-		case SPR_HID4:
-			return "hid4";
-		case SPR_DABR:
-			return "dabr";
-		case SPR_HID5:
-			return "hid5";
-		case SPR_HID6:
-			return "hid6";
+	case SPR_MQ:
+		return "mq";
+	case SPR_XER:
+		return "xer";
+	case SPR_RTCU:
+		return "rtcu";
+	case SPR_RTCL:
+		return "rtcl";
+	case SPR_LR:
+		return "lr";
+	case SPR_CTR:
+		return "ctr";
+	case SPR_DSISR:
+		return "dsisr";
+	case SPR_DAR:
+		return "dar";
+	case SPR_DEC:
+		return "dec";
+	case SPR_SDR1:
+		return "sdr1";
+	case SPR_SRR0:
+		return "srr0";
+	case SPR_SRR1:
+		return "srr1";
+	case SPR_VRSAVE:
+		return "vrsave";
+	case SPR_TBRL:
+		return "tbrl";
+	case SPR_TBRU:
+		return "tbru";
+	case SPR_SPRG0:
+		return "sprg0";
+	case SPR_SPRG1:
+		return "sprg1";
+	case SPR_SPRG2:
+		return "sprg2";
+	case SPR_SPRG3:
+		return "sprg3";
+	case SPR_EAR:
+		return "ear";
+	case SPR_TBL:
+		return "tbl";
+	case SPR_TBU:
+		return "tbu";
+	case SPR_PVR:
+		return "pvr";
+	case SPR_SPEFSCR:
+		return "spefscr";
+	case SPR_IBAT0U:
+		return "ibat0u";
+	case SPR_IBAT0L:
+		return "ibat0l";
+	case SPR_IBAT1U:
+		return "ibat1u";
+	case SPR_IBAT1L:
+		return "ibat1l";
+	case SPR_IBAT2U:
+		return "ibat2u";
+	case SPR_IBAT2L:
+		return "ibat2l";
+	case SPR_IBAT3U:
+		return "ibat3u";
+	case SPR_IBAT3L:
+		return "ibat3l";
+	case SPR_DBAT0U:
+		return "dbat0u";
+	case SPR_DBAT0L:
+		return "dbat0l";
+	case SPR_DBAT1U:
+		return "dbat1u";
+	case SPR_DBAT1L:
+		return "dbat1l";
+	case SPR_DBAT2U:
+		return "dbat2u";
+	case SPR_DBAT2L:
+		return "dbat2l";
+	case SPR_DBAT3U:
+		return "dbat3u";
+	case SPR_DBAT3L:
+		return "dbat3l";
+	case SPR_UMMCR0:
+		return "ummcr0";
+	case SPR_UMMCR1:
+		return "ummcr1";
+	case SPR_UPMC1:
+		return "upmc1";
+	case SPR_UPMC2:
+		return "upmc2";
+	case SPR_USIA:
+		return "usia";
+	case SPR_UPMC3:
+		return "upmc3";
+	case SPR_UPMC4:
+		return "upmc4";
+	case SPR_MMCR0:
+		return "mmcr0";
+	case SPR_PMC1:
+		return "pmc1";
+	case SPR_PMC2:
+		return "pmc2";
+	case SPR_SIA:
+		return "sia";
+	case SPR_MMCR1:
+		return "mmcr1";
+	case SPR_PMC3:
+		return "pmc3";
+	case SPR_PMC4:
+		return "pmc4";
+	case SPR_SDA:
+		return "sda";
+	case SPR_DMISS:
+		return "dmiss";
+	case SPR_DCMP:
+		return "dcmp";
+	case SPR_HASH1:
+		return "hash1";
+	case SPR_HASH2:
+		return "hash2";
+	case SPR_IMISS:
+		return "imiss";
+	case SPR_ICMP:
+		return "icmp";
+	case SPR_RPA:
+		return "rpa";
+	case SPR_HID0:
+		return "hid0";
+	case SPR_HID1:
+		return "hid1";
+	case SPR_IABR:
+		return "iabr";
+	case SPR_HID2:
+		return "hid2";
+	case SPR_HID4:
+		return "hid4";
+	case SPR_DABR:
+		return "dabr";
+	case SPR_HID5:
+		return "hid5";
+	case SPR_HID6:
+		return "hid6";
 //		case SPR_L2CR:
 //			return "l2cr";
-		case SPR_ICTC:
-			return "ictc";
-		case SPR_THRM1:
-			return "thrm1";
-		case SPR_THRM2:
-			return "thrm2";
-		case SPR_THRM3:
-			return "thrm3";
-		case SPR_PIR:
-			return "pir";
-		default:
-			snprintf (cspr, sizeof (cspr), "spr_%u", spr);
-			break;
+	case SPR_ICTC:
+		return "ictc";
+	case SPR_THRM1:
+		return "thrm1";
+	case SPR_THRM2:
+		return "thrm2";
+	case SPR_THRM3:
+		return "thrm3";
+	case SPR_PIR:
+		return "pir";
+	default:
+		snprintf (cspr, sizeof (cspr), "spr_%u", spr);
+		break;
 	}
 	return cspr;
 }
@@ -1611,7 +1608,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(struct r_asm_t *a, const char *data, char *str) {
+// 	RParse *p = a->parse;
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -1745,10 +1743,10 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_ppc_pseudo = {
+RAsmPlugin r_asm_plugin_ppc = {
 	.meta = {
-		.name = "ppc.pseudo",
-		.desc = "PowerPC pseudo syntax",
+		.name = "ppc",
+		.desc = "Pseudocode for PowerPC assembly",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
@@ -1757,8 +1755,8 @@ RParsePlugin r_parse_plugin_ppc_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_ppc_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_ppc,
 	.version = R2_VERSION
 };
 #endif
