@@ -2418,7 +2418,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
-		char *mnem = strdup (r_str_get (r_asm_op_get_asm (&asmop)));
+		char *mnem = strdup (r_str_get (asmop.mnemonic));
 		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
@@ -2447,7 +2447,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		}
 		size = op.size;
 		if (fmt == 'd') {
-			char *opname = strdup (r_asm_op_get_asm (&asmop));
+			char *opname = strdup (asmop.mnemonic);
 			if (opname) {
 				r_str_split (opname, ' ');
 				char *d = r_asm_describe (core->rasm, opname);
@@ -2480,7 +2480,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			// pc+33
 			r_parse_subvar (core->rasm->parse, NULL,
 				core->offset + idx,
-				asmop.size, r_asm_op_get_asm (&asmop),
+				asmop.size, asmop.mnemonic,
 				strsub, sizeof (strsub));
 				ut64 killme = UT64_MAX;
 				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
@@ -2494,9 +2494,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (p);
 			}
 			pj_o (pj);
-			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+			pj_ks (pj, "opcode", asmop.mnemonic);
 			if (!*strsub) {
-				r_str_ncpy (strsub, r_asm_op_get_asm (&asmop), sizeof (strsub) -1 );
+				r_str_ncpy (strsub, asmop.mnemonic, sizeof (strsub) -1 );
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -2665,7 +2665,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else {
 			char disasm[128] = {0};
-			char *text = r_asm_op_get_asm (&asmop);
+			char *text = asmop.mnemonic;
 			if (!text) {
 				R_LOG_ERROR ("invalid");
 				break;
@@ -2694,9 +2694,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		if (fmt) r_cons_printf (fmt, arg);\
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
-			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
+			printline ("opcode", "%s\n", asmop.mnemonic);
 			if (!*disasm) {
-				r_str_ncpy (disasm, r_asm_op_get_asm (&asmop), sizeof (disasm) - 1);
+				r_str_ncpy (disasm, asmop.mnemonic, sizeof (disasm) - 1);
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -10809,7 +10809,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						pj_kn (pj, "to", ref->addr);
 						pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
 						pj_ks (pj, "perm", r_anal_ref_perm_tostring (ref));
-						pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+						pj_ks (pj, "opcode", asmop.mnemonic);
 						pj_end (pj);
 					}
 					pj_end (pj);
@@ -10838,8 +10838,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_asm_set_pc (core->rasm, ref->addr);
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-							r_parse_filter (core->rasm->parse, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
-									str, sizeof (str), be);
+							r_parse_filter (core->rasm->parse, ref->addr, core->flags,
+									hint, asmop.mnemonic, str, sizeof (str), be);
 							r_anal_hint_free (hint);
 							if (has_color) {
 								desc = desc_to_free = r_print_colorize_opcode (core->print, str,
