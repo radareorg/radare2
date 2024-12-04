@@ -15,10 +15,10 @@ EXPECT=<<EOF
 Reassembling 8051... OK
 EOF
 EXPECT_ERR=<<EOF
-WARN: Cannot find asm.parser for 8051.pseudo
+WARN: Cannot find asm.parser for 8051
 INFO: Fallback to null
 WARN: using oba to load the syminfo from different mapaddress
-WARN: Cannot find asm.parser for 8051.pseudo
+WARN: Cannot find asm.parser for 8051
 EOF
 RUN
 
@@ -523,7 +523,7 @@ CMDS=<<EOF
 !rasm2 -LL | grep -c null
 EOF
 EXPECT=<<EOF
-1
+0
 EOF
 RUN
 
