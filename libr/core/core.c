@@ -2607,7 +2607,6 @@ R_API bool r_core_init(RCore *core) {
 	core->crypto = r_crypto_new ();
 	core->egg = r_egg_new ();
 // 	core->egg->rasm = core->rasm;
-	// r_anal_bind (core->anal, &(core->egg->rasm->analb));
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
 
@@ -2649,6 +2648,7 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	core->anal = r_anal_new ();
 	r_anal_bind (core->anal, &core->egg->rasm->analb);
+	r_anal_bind (core->anal, &(core->rasm->analb));
 	r_asm_set_user_ptr (core->rasm, core);
 	// XXX this should be tied to RArchConfig
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
@@ -2681,7 +2681,6 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
-	r_anal_bind (core->anal, &core->rasm->analb);
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);

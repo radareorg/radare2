@@ -149,8 +149,16 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	const int bits = a->analb.anal->config->bits; /// if we move this api into r_asm, we can use a->config->bits directly
-	const int seggrn = a->analb.anal->config->seggrn;
+	RArchConfig *ac = R_UNWRAP3 (a, analb.anal, config);
+	if (!ac) {
+		eprintf ("%p\n", a->analb.anal);
+		R_LOG_ERROR ("no anal bind?");
+		return false;
+	}
+	const int bits = ac->bits;
+	// a->analb.anal->config->bits; /// if we move this api into r_asm, we can use a->config->bits directly
+	const int seggrn = ac->seggrn;
+	// a->analb.anal->config->seggrn;
 	bool x86 = false;
 	bool arm = false;
 	const char *pname = R_UNWRAP4 (a, cur, plugin, meta.name);
@@ -582,16 +590,11 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 	return false;
 }
 
-/// filter the opcode in data into str by following the flags and hints information
-// XXX this function have too many parameters, we need to simplify this
-// XXX too many arguments here
-// TODO we shouhld use RCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
-// TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
-// DEPRECATE
+/// XXX very ugly arguments, redesign!
 R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	RAsmPluginSession *aps = a->cur;
 	RParse *p = aps->rasm->parse;
-	filter (p, addr, f, hint, data, str, len, big_endian);
+	filter (aps, addr, f, hint, data, str, len, big_endian);
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {
 		return ap->filter (aps, addr, f, data, str, len, big_endian);
