@@ -8,11 +8,29 @@
 
 R_LIB_VERSION (r_asm);
 
+static RAsmPlugin *asm_static_plugins[] =
+	{ R_ASM_STATIC_PLUGINS };
+
 static const char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", ".extern", NULL
 };
+
+R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
+	R_RETURN_VAL_IF_FAIL (a && foo, false);
+	RParse *p = a->parse;
+	bool itsFine = foo->init? foo->init (p, p->user): true;
+	if (itsFine) {
+		r_list_append (a->plugins, foo);
+	}
+	return true;
+}
+
+R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
+	// TODO implement
+	return true;
+}
 
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
@@ -191,6 +209,10 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
+	size_t i;
+	for (i = 0; asm_static_plugins[i]; i++) {
+		r_asm_plugin_add (a, asm_static_plugins[i]);
+	}
 	return a;
 }
 
@@ -242,7 +264,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	}
 	// TODO: remove the alias workarounds because of missing pseudo plugins
 	if (r_str_startswith (name, "s390.")) {
-		name = "x86.pseudo";
+		name = "x86";
 	}
 #if 0
 	if (r_str_startswith (name, "blackfin")) {
@@ -251,8 +273,8 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 #endif
 
 	RListIter *iter;
-	RParsePlugin *h;
-	r_list_foreach (p->parsers, iter, h) {
+	RAsmPlugin *h;
+	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->meta.name, name)) {
 			p->cur = h;
 			return true;
@@ -261,7 +283,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	bool found = false;
 	if (strchr (name, '.')) {
 		char *sname = predotname (name);
-		r_list_foreach (p->parsers, iter, h) {
+		r_list_foreach (a->plugins, iter, h) {
 			char *shname = predotname (h->meta.name);
 			found = !strcmp (shname, sname);
 			free (shname);
@@ -280,7 +302,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 			}
 		}
 		// check if p->cur
-		r_list_foreach (p->parsers, iter, h) {
+		r_list_foreach (a->plugins, iter, h) {
 			if (r_str_startswith (h->meta.name, "null")) {
 				R_LOG_INFO ("Fallback to null");
 				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
@@ -467,7 +489,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->pseudo) {
-		char *newtext = r_parse_pseudo (a->parse, op->mnemonic);
+		char *newtext = r_asm_parse_pseudo (a, op->mnemonic);
 		if (newtext) {
 			r_anal_op_set_mnemonic (op, op->addr, newtext);
 		}
@@ -593,7 +615,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		ret = op.size;
 		if (a->pseudo) {
-			char *newtext = r_parse_pseudo (a->parse, op.mnemonic);
+			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
 			if (newtext) {
 				free (op.mnemonic);
 				op.mnemonic = newtext;
@@ -622,7 +644,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && p) {
-		char *res = r_parse_pseudo (p, ret->assembly);
+		char *res = r_asm_parse_pseudo (a, ret->assembly);
 		if (res) {
 			free (ret->assembly);
 			ret->assembly = res;
@@ -1206,7 +1228,7 @@ R_API RList *r_asm_cpus(RAsm *a) {
 R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
 	char *res = strdup (s);
 	if (what & R_PARSE_FILTER_IMMTRIM) {
-		char *newres = r_parse_immtrim (a->parse, s);
+		char *newres = r_asm_parse_immtrim (a, s);
 		if (newres) {
 			free (res);
 			res = newres;
@@ -1216,7 +1238,7 @@ R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
 		// r_parse_subvar (a->parse, f, addr, oplen, ..)
 	}
 	if (what & R_PARSE_FILTER_PSEUDO) {
-		char *newres = r_parse_pseudo (a->parse, s);
+		char *newres = r_asm_parse_pseudo (a, s);
 		if (newres) {
 			free (res);
 			res = newres;

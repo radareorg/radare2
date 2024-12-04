@@ -1,10 +1,10 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
-#include <r_parse.h>
+#include <r_asm.h>
 
-RParsePlugin r_parse_plugin_null_pseudo = {
+RAsmPlugin r_asm_plugin_null = {
 	.meta = {
-		.name = "null.pseudo",
+		.name = "null",
 		.desc = "pseudo nothing",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -13,8 +13,8 @@ RParsePlugin r_parse_plugin_null_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_null_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_null,
 	.version = R2_VERSION
 };
 #endif

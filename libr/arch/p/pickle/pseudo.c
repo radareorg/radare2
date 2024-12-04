@@ -1,17 +1,17 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
 #include <r_lib.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *a, const char *data, char *str) {
 	// Intentationally left blank
 	// because it's not yet implemented
 	return false;
 }
 
-RParsePlugin r_parse_plugin_pickle_pseudo = {
+RAsmPlugin r_asm_plugin_pickle = {
 	.meta = {
-		.name = "pickle.pseudo",
+		.name = "pickle",
 		.desc = "Pickle pseudo syntax",
 	},
 	.parse = parse, // parse actually converts the string into asm.pseudo
@@ -19,8 +19,8 @@ RParsePlugin r_parse_plugin_pickle_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_pickle_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_pickle,
 	.version = R2_VERSION
 };
 #endif

@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "fcn"
 
 #include <r_anal.h>
-#include <r_parse.h>
 #include <r_vec.h>
 
 #define READ_AHEAD 1

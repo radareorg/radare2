@@ -5,9 +5,9 @@
 
 #include <r_types.h>
 #include <r_arch.h>
+#include <r_anal.h>
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_util.h>
-#include <r_parse.h>
 #include <r_bind.h>
 
 #ifdef __cplusplus
@@ -37,6 +37,32 @@ typedef struct r_asm_code_t {
 	int code_align;
 } RAsmCode;
 
+typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
+
+typedef struct r_parse_t {
+	void *user;
+	RSpace *flagspace;
+	RSpace *notin_flagspace;
+	bool pseudo;
+	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
+	bool subrel; // replace rip relative expressions in instruction
+	bool subtail; // replace any immediate relative to current address with .. prefix syntax
+	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
+	ut64 subrel_addr;
+	int maxflagnamelen;
+	int minval;
+	char *retleave_asm;
+	struct r_asm_plugin_t *cur; // XXX move into session
+	RAnalVarList varlist;
+	st64 (*get_ptr_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
+	const char *(*get_reg_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
+	char* (*get_op_ireg)(void *user, ut64 addr);
+	RAnalBind analb;
+	RFlagGetAtAddr flag_get; // XXX
+	RAnalLabelAt label_get;
+} RParse;
+
+
 typedef struct r_asm_t {
 	RArch *arch;
 	RArchConfig *config;
@@ -56,7 +82,58 @@ typedef struct r_asm_t {
 	RParse *parse;
 } RAsm;
 
+// TODO: Take RAsmSession as first argument
+typedef int (*RAsmParsePseudo)(struct r_asm_t *a, const char *data, char *str);
+typedef int (*RAsmParseFilter)(struct r_asm_t *a, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
+typedef bool (*RAsmParseSubvar)(struct r_asm_t *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+
+typedef struct r_asm_plugin_t {
+	RPluginMeta meta;
+	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
+	int (*fini)(RParse *p, void *user); // receives the asmparsestate
+
+	RAsmParsePseudo parse; // TODO. rename to pseudo
+	RAsmParseFilter filter;
+	RAsmParseSubvar subvar;
+} RAsmPlugin;
+
+typedef struct r_parse_session_t {
+	RParse *p;
+	RAsmPlugin *cur;
+	void *data;
+} RAsmSession;
+
+#if 0
+typedef struct r_asm_session_t {
+	RAsm *p;
+	RAsmPlugin *cur;
+	void *user;
+	// all the settings
+	RSpace *flagspace;
+	RSpace *notin_flagspace;
+	bool pseudo;
+	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
+	bool subrel; // replace rip relative expressions in instruction
+	bool subtail; // replace any immediate relative to current address with .. prefix syntax
+	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
+	ut64 subrel_addr;
+	int maxflagnamelen;
+	int minval;
+	char *retleave_asm;
+} RAsmSession;
+#endif
+
 #ifdef R_API
+
+/* rparse */
+R_API RParse *r_parse_new(void);
+R_API void r_parse_free(RParse *p);
+
+R_API char *r_asm_parse_pseudo(RAsm *a, const char *data);
+R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
+R_API bool r_asm_parse_subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+R_API char *r_asm_parse_immtrim(RAsm *a, const char *opstr);
+
 
 /* asm.c */
 R_API RAsm *r_asm_new(void);
@@ -112,6 +189,35 @@ R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
+
+/* plugins */
+R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);
+R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin);
+
+extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_arm;
+extern RAsmPlugin r_asm_plugin_att2intel;
+extern RAsmPlugin r_asm_plugin_avr;
+extern RAsmPlugin r_asm_plugin_chip8;
+extern RAsmPlugin r_asm_plugin_dalvik;
+extern RAsmPlugin r_asm_plugin_dummy;
+extern RAsmPlugin r_asm_plugin_m68k;
+extern RAsmPlugin r_asm_plugin_mips;
+extern RAsmPlugin r_asm_plugin_ppc;
+extern RAsmPlugin r_asm_plugin_sh;
+extern RAsmPlugin r_asm_plugin_wasm;
+extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_x86;
+extern RAsmPlugin r_asm_plugin_z80;
+extern RAsmPlugin r_asm_plugin_tms320;
+extern RAsmPlugin r_asm_plugin_v850;
+extern RAsmPlugin r_asm_plugin_bpf;
+extern RAsmPlugin r_asm_plugin_stm8;
+extern RAsmPlugin r_asm_plugin_evm;
+extern RAsmPlugin r_asm_plugin_null;
+extern RAsmPlugin r_asm_plugin_gb;
+extern RAsmPlugin r_asm_plugin_pickle;
+extern RAsmPlugin r_asm_plugin_tricore;
 
 #endif
 

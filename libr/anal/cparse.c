@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2024 - pancake */
 
-#include "r_util.h"
-#include "r_types.h"
-#include "r_parse.h"
+#include <r_util.h>
+#include <r_asm.h>
+#include <r_types.h>
 #include "c/tcc.h"
 #include "c/tccgen.c"
 #include "c/tccpp.c"

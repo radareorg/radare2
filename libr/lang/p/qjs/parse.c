@@ -13,7 +13,7 @@
 		}
 		return {
 			name: "qjs",
-			desc: "Example QJS RParse plugin (qjs://)",
+			desc: "Example QJS RAsm plugin (qjs://)",
 			call: parseCall,
 		};
 	}
@@ -28,13 +28,14 @@
 
 #endif
 
-static int qjs_parse(RParse *p, const char *input, char *output) {
+static int qjs_parse(struct r_asm_t *a, const char *input, char *output) {
+	RParse *p = a->parse;
 	RCore *core = p->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
 
 	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
-	QjsParsePlugin *plugin;
-	R_VEC_FOREACH (&pm->parse_plugins, plugin) {
+	QjsAsmPlugin *plugin;
+	R_VEC_FOREACH (&pm->asm_plugins, plugin) {
 		JSContext *ctx = plugin->ctx;
 		JSValueConst args[1] = { JS_NewString (ctx, input) };
 		JSValue res = JS_Call (ctx, plugin->fn_parse_js, JS_UNDEFINED, countof (args), args);
@@ -85,14 +86,14 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 		return JS_NewBool (ctx, false);
 	}
 
-	QjsParsePlugin *cp = plugin_manager_find_parse_plugin (pm, nameptr);
+	QjsAsmPlugin *cp = plugin_manager_find_parse_plugin (pm, nameptr);
 	if (cp) {
 		R_LOG_WARN ("r2.plugin with name %s is already registered", nameptr);
 		// return JS_ThrowRangeError (ctx, "r2.plugin core already registered (only one exists)");
 		return JS_NewBool (ctx, false);
 	}
 
-	RParsePlugin *ap = R_NEW0 (RParsePlugin);
+	RAsmPlugin *ap = R_NEW0 (RAsmPlugin);
 	if (!ap) {
 		return JS_ThrowRangeError (ctx, "could not allocate qjs core plugin");
 	}
@@ -117,7 +118,7 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 
 	ap->parse = qjs_parse;  // Technically this could all be handled by a single generic plugin
 
-	QjsParsePlugin *pp = plugin_manager_add_parse_plugin (pm, nameptr, ctx, ap, fn_parse_js);
+	QjsAsmPlugin *pp = plugin_manager_add_parse_plugin (pm, nameptr, ctx, ap, fn_parse_js);
 	pp->fn_parse_js = fn_parse_js;
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
@@ -126,7 +127,7 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 		return JS_NewBool (ctx, false);
 	}
 
-	lib->type = R_LIB_TYPE_PARSE;
+	lib->type = R_LIB_TYPE_ASM;
 	lib->data = ap;
 	lib->version = R2_VERSION;
 	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);

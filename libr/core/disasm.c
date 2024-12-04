@@ -1156,7 +1156,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->rasm->parse->get_op_ireg = get_op_ireg;
 		core->rasm->parse->get_ptr_at = get_ptr_at;
 		core->rasm->parse->get_reg_at = get_reg_at;
-		r_parse_subvar (core->rasm->parse, f, at, ds->analop.size,
+		r_asm_parse_subvar (core->rasm, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
 			free (ds->opstr);
@@ -1179,7 +1179,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	ds->opstr = ds_sub_jumps (ds, ds->opstr);
 	if (ds->immtrim) {
-		char *res = r_parse_immtrim (core->rasm->parse, ds->opstr);
+		char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 		if (res) {
 			free (ds->opstr);
 			ds->opstr = res;
@@ -1213,7 +1213,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		if (ds->pseudo) {
-			char *res = r_parse_pseudo (core->rasm->parse, ds->opstr);
+			char *res = r_asm_parse_pseudo (core->rasm, ds->opstr);
 			if (res) {
 				r_str_ncpy (ds->str, res, sizeof (ds->str));
 				R_LOG_DEBUG ("asm.parse.pseudo (%s) -> (%s)", ds->opstr, ds->str);
@@ -1225,7 +1225,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 		if (ds->subjmp) {
 			char *input = strdup (ds->opstr? ds->opstr: ds->str);
-			r_parse_filter (core->rasm->parse, ds->vat, core->flags, ds->hint, input, // asm_str,
+			r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, input, // asm_str,
 					ds->str, sizeof (ds->str), be);
 			free (input);
 			//ds->opstr = strdup (ds->str);
@@ -3062,7 +3062,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (!str) {
 			str = ds->str;
 		}
-		char *res = r_parse_pseudo (core->rasm->parse, str);
+		char *res = r_asm_parse_pseudo (core->rasm, str);
 		if (res) {
 			r_str_ncpy (ds->str, res, sizeof (ds->str));
 			free (ds->opstr);
@@ -6482,7 +6482,7 @@ toro:
 		}
 		if (!ds->show_cmt_right) {
 			if (ds->show_cmt_pseudo) {
-				char *res = r_parse_pseudo (core->rasm->parse, ds->analop.mnemonic);
+				char *res = r_asm_parse_pseudo (core->rasm, ds->analop.mnemonic);
 				if (res) {
 					ds_comment (ds, true, "%s", res);
 					free (res);
@@ -6812,7 +6812,7 @@ toro:
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_cmt_user) && ds->show_cmt_right) {
 				if (ds->show_cmt_pseudo) {
-					char *res = r_parse_pseudo (core->rasm->parse, ds->analop.mnemonic);
+					char *res = r_asm_parse_pseudo (core->rasm, ds->analop.mnemonic);
 					if (res) {
 						ds_comment (ds, true, "%s", res);
 						free (res);
@@ -7081,7 +7081,7 @@ toro:
 			} else if (ds->immtrim) {
 				free (ds->opstr);
 				ds->opstr = strdup (ds->analop.mnemonic);
-				char *res = r_parse_immtrim (core->rasm->parse, ds->opstr);
+				char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 				if (res) {
 					free (ds->opstr);
 					ds->opstr = res;
@@ -7126,7 +7126,7 @@ toro:
 			}
 			if (ds->immtrim) {
 				free (ds->opstr);
-				ds->opstr = r_parse_immtrim (core->rasm->parse, ds->analop.mnemonic);
+				ds->opstr = r_asm_parse_immtrim (core->rasm, ds->analop.mnemonic);
 			}
 		}
 		if (ds->asm_instr) {
@@ -7376,7 +7376,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ARCH_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			char *res = r_parse_pseudo (core->rasm->parse, opstr);
+			char *res = r_asm_parse_pseudo (core->rasm, opstr);
 			if (res) {
 				r_str_ncpy (opstr, res, sizeof (opstr));
 				free (res);
@@ -7390,7 +7390,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			char *ba = malloc (ba_len);
 			if (ba) {
 				strcpy (ba, asmop.mnemonic);
-				r_parse_subvar (core->rasm->parse, f, at, ds->analop.size,
+				r_asm_parse_subvar (core->rasm, f, at, ds->analop.size,
 						ba, ba, ba_len);
 				r_asm_op_set_asm (&asmop, ba);
 				free (ba);
@@ -7420,7 +7420,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			if (buf) {
 				strcpy (buf, aop);
 				buf = ds_sub_jumps (ds, buf);
-				r_parse_filter (core->rasm->parse, ds->vat, core->flags, ds->hint, buf,
+				r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf,
 					str, sizeof (str) - 1, be);
 				str[sizeof (str) - 1] = '\0';
 				r_asm_op_set_asm (&asmop, buf);
@@ -7663,7 +7663,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_parse_filter (core->rasm->parse, ds->vat, core->flags, ds->hint, asmop.mnemonic,
+				r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, asmop.mnemonic,
 						str, sizeof (str), be);
 				if (scr_color) {
 					RAnalOp aop;
@@ -7926,7 +7926,7 @@ toro:
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
 					if (asm_immtrim) {
-						char *res = r_parse_immtrim (core->rasm->parse, opstr);
+						char *res = r_asm_parse_immtrim (core->rasm, opstr);
 						if (res) {
 							opstr = res;
 						}
@@ -7943,7 +7943,7 @@ toro:
 					r_str_case (asm_str, 1);
 				}
 				if (asm_immtrim) {
-					char *res = r_parse_immtrim (core->rasm->parse, asm_str);
+					char *res = r_asm_parse_immtrim (core->rasm, asm_str);
 					if (res) {
 						free (asm_str);
 						asm_str = res;
@@ -7952,7 +7952,7 @@ toro:
 				if (subnames) {
 					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
-					r_parse_filter (core->rasm->parse, at, core->flags, hint,
+					r_asm_parse_filter (core->rasm, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, be);
 					r_anal_hint_free (hint);
 					asm_str = (char *)&opstr;

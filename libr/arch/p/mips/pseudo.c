@@ -1,14 +1,9 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static int can_replace(const char *str, int idx, int max_operands) {
 	if (str[idx] > '9' || str[idx] < '1') {
@@ -127,7 +122,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 64
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *a, const char *data, char *str) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -250,7 +245,8 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RParse *p = a->parse;
 	RListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
@@ -364,9 +360,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	return ret;
 }
 
-RParsePlugin r_parse_plugin_mips_pseudo = {
+RAsmPlugin r_asm_plugin_mips= {
 	.meta = {
-		.name = "mips.pseudo",
+		.name = "mips",
 		.desc = "MIPS pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -377,8 +373,8 @@ RParsePlugin r_parse_plugin_mips_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_mips_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_mips,
 	.version = R2_VERSION
 };
 #endif

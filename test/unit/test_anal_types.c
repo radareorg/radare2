@@ -1,5 +1,4 @@
-#include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 #include "minunit.h"
 #include "test_sdb.h"

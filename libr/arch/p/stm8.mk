@@ -1,5 +1,4 @@
 OBJ_STM8=p/stm8/plugin.o
-OBJ_STM8+=p/stm8/pseudo.o
 
 STATIC_OBJ+=$(OBJ_STM8)
 TARGET_STM8=arch_stm8.$(EXT_SO)

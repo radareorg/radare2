@@ -1,17 +1,16 @@
 /* radare - LGPL - Copyright 2019-2024 - deroad */
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
 	const char *s = anal->binb.get_name (anal->binb.bin, 'f', fcn_id, false);
 	return s? strdup (s): NULL;
 }
 
-static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsm *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *fcn_name = NULL;
 	str[0] = 0;
 	if (!strncmp (data, "call ", 5)) {
@@ -26,9 +25,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	return false;
 }
 
-RParsePlugin r_parse_plugin_wasm_pseudo = {
+RAsmPlugin r_asm_plugin_wasm= {
 	.meta = {
-		.name = "wasm.pseudo",
+		.name = "wasm",
 		.desc = "WASM pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -38,8 +37,8 @@ RParsePlugin r_parse_plugin_wasm_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_wasm_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_wasm,
 	.version = R2_VERSION
 };
 #endif

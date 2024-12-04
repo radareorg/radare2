@@ -66,7 +66,6 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 #if !USE_LIB_MAGIC
 		{ "r_magic", r_magic_version },
 #endif
-		{ "r_parse", r_parse_version },
 		{ "r_reg", r_reg_version },
 		{ "r_sign", r_sign_version },
 		{ "r_search", r_search_version },

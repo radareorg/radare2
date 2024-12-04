@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2020-2024 - Aswin C (officialcjunior) */
 
 #include <r_lib.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
@@ -104,16 +104,17 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *a, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data), n;
-	char *buf, *ptr, *optr, *num;
+	char *ptr, *optr, *num;
 
 	if (len >= sizeof (w0)) {
 		return false;
 	}
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
+	char *buf = malloc (len + 1);
+	if (!buf) {
 		return false;
 	}
 	memcpy (buf, data, len + 1);
@@ -214,9 +215,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_riscv_pseudo = {
+RAsmPlugin r_asm_plugin_riscv = {
 	.meta = {
-		.name = "riscv.pseudo",
+		.name = "riscv",
 		.desc = "riscv pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -226,7 +227,7 @@ RParsePlugin r_parse_plugin_riscv_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_riscv_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_riscv,
 	.version = R2_VERSION};
 #endif
