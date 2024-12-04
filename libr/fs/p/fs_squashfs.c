@@ -117,7 +117,7 @@ static int fs_squashfs_read(RFSFile *file, ut64 addr, int len) {
 	}
 	memcpy (file->data, sqsh_file_reader_data (reader), len);
 	sqsh_file_reader_free (reader);
-	return 0;
+	return len;
 }
 
 static void fs_squashfs_close(RFSFile *file) {
@@ -209,7 +209,7 @@ static bool fs_squashfs_mount(RFSRoot *root) {
 	RIOMap *map = root->iob.map_get_at (root->iob.io, 0);
 	if (!map) {
 		R_LOG_ERROR ("no map");
-		return NULL;
+		return false;
 	}
 	int size = r_itv_size (map->itv);
 
