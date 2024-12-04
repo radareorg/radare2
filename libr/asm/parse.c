@@ -55,7 +55,7 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data) {
 	char *str = malloc (32 + strlen (data) * 2);
 	strcpy (str, data);
 	RAsmParsePseudo parse = R_UNWRAP3 (p, cur, parse);
-	bool bres = parse? parse (p, data, str) : false;
+	bool bres = parse? parse (a, data, str) : false;
 	if (bres) {
 		return str;
 	}
@@ -65,7 +65,6 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data) {
 
 // TODO: make it internal
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
-	RParse *p = a->parse;
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
