@@ -1053,16 +1053,15 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 }
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
-#if 1
 	RListIter *iter;
 	RAsmPlugin *parser;
-	if (core && node && core->rasm->parse && core->rasm->parse->parsers) {
+	RList *plugins = R_UNWRAP3 (core, rasm, plugins);
+	if (core && node && plugins) {
 		r_config_node_purge_options (node);
-		r_list_foreach (core->rasm->parse->parsers, iter, parser) {
+		r_list_foreach (plugins, iter, parser) {
 			SETOPTIONS (node, parser->meta.name, NULL);
 		}
 	}
-#endif
 }
 
 static bool cb_asmparser(void *user, void *data) {
