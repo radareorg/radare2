@@ -176,7 +176,7 @@ static int parse(RAsm *p, const char *data, char *str) {
 
 RAsmPlugin r_asm_plugin_tms320 = {
 	.meta = {
-		.name = "tms320.pseudo",
+		.name = "tms320",
 		.desc = "tms320 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",

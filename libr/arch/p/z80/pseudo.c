@@ -79,7 +79,7 @@ static int parse(RAsm *a, const char *data, char *str) {
 #if Z80_IS_GB
 RAsmPlugin r_asm_plugin_gb = {
 	.meta = {
-		.name = "gb.pseudo",
+		.name = "gb",
 		.desc = "GameBoy pseudo syntax",
 	},
 	.parse = parse, // parse actually converts the string into asm.pseudo
@@ -87,7 +87,7 @@ RAsmPlugin r_asm_plugin_gb = {
 #else
 RAsmPlugin r_asm_plugin_z80 = {
 	.meta = {
-		.name = "z80.pseudo",
+		.name = "z80",
 		.desc = "Z80 pseudo syntax",
 	},
 	.parse = parse, // parse actually converts the string into asm.pseudo

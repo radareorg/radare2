@@ -177,7 +177,7 @@ static int parse(RAsm *p, const char *data, char *str) {
 
 RAsmPlugin r_asm_plugin_6502 = {
 	.meta = {
-		.name = "6502.pseudo",
+		.name = "6502",
 		.desc = "6502 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",

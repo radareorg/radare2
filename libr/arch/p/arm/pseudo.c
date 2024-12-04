@@ -486,7 +486,7 @@ static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, 
 
 RAsmPlugin r_asm_plugin_arm = {
 	.meta = {
-		.name = "arm.pseudo",
+		.name = "arm",
 		.desc = "ARM/ARM64 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",

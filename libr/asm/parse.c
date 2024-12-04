@@ -26,11 +26,6 @@ R_API RParse *r_parse_new(void) {
 	if (!p) {
 		return NULL;
 	}
-	p->parsers = r_list_newf (NULL); // memleak
-	if (!p->parsers) {
-		r_parse_free (p);
-		return NULL;
-	}
 	p->notin_flagspace = NULL;
 	p->flagspace = NULL;
 	p->pseudo = false;
@@ -43,7 +38,6 @@ R_API RParse *r_parse_new(void) {
 
 R_API void r_parse_free(RParse *p) {
 	if (p) {
-		r_list_free (p->parsers);
 		free (p);
 	}
 }

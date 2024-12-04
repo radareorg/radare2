@@ -22,7 +22,7 @@ R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
 	RParse *p = a->parse;
 	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
-		r_list_append (p->parsers, foo);
+		r_list_append (a->plugins, foo);
 	}
 	return true;
 }
@@ -274,7 +274,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 
 	RListIter *iter;
 	RAsmPlugin *h;
-	r_list_foreach (p->parsers, iter, h) {
+	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->meta.name, name)) {
 			p->cur = h;
 			return true;
@@ -283,7 +283,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	bool found = false;
 	if (strchr (name, '.')) {
 		char *sname = predotname (name);
-		r_list_foreach (p->parsers, iter, h) {
+		r_list_foreach (a->plugins, iter, h) {
 			char *shname = predotname (h->meta.name);
 			found = !strcmp (shname, sname);
 			free (shname);
@@ -302,7 +302,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 			}
 		}
 		// check if p->cur
-		r_list_foreach (p->parsers, iter, h) {
+		r_list_foreach (a->plugins, iter, h) {
 			if (r_str_startswith (h->meta.name, "null")) {
 				R_LOG_INFO ("Fallback to null");
 				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);

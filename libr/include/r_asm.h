@@ -53,7 +53,6 @@ typedef struct r_parse_t {
 	int minval;
 	char *retleave_asm;
 	struct r_asm_plugin_t *cur; // XXX move into session
-	RList *parsers;
 	RAnalVarList varlist;
 	st64 (*get_ptr_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
 	const char *(*get_reg_at)(RAnalFunction *fcn, st64 delta, ut64 addr);

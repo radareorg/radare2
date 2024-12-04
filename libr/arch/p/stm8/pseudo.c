@@ -225,7 +225,7 @@ static int parse(RAsm *p, const char *data, char *str) {
 
 RAsmPlugin r_asm_plugin_stm8= {
 	.meta = {
-		.name = "stm8.pseudo",
+		.name = "stm8",
 		.desc = "STM8 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",

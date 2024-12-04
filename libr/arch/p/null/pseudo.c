@@ -4,7 +4,7 @@
 
 RAsmPlugin r_asm_plugin_null = {
 	.meta = {
-		.name = "null.pseudo",
+		.name = "null",
 		.desc = "pseudo nothing",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
