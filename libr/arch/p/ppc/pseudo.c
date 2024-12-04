@@ -1608,7 +1608,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static int parse(struct r_asm_t *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 // 	RParse *p = a->parse;
 	int i, len = strlen (data);
 	char w0[WSZ];

@@ -120,7 +120,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RAsm *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
 	size_t len = strlen (data);
@@ -255,9 +255,10 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 	r_strbuf_free (sb);
 }
 
-static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
-	RAnal *anal = p->analb.anal;
+	RAnal *anal = a->analb.anal;
 	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
@@ -457,12 +458,10 @@ static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, 
 	return ret;
 }
 
-#if 0
-static int fini(RAsm *p, void *usr) {
+static void fini(RAsmPluginSession *aps) {
+	RParse *p = aps->rasm->parse;
 	R_FREE (p->retleave_asm);
-	return 0;
 }
-#endif
 
 RAsmPlugin r_asm_plugin_tricore = {
 	.meta = {
@@ -471,9 +470,9 @@ RAsmPlugin r_asm_plugin_tricore = {
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
-	.parse = &parse,
-	.subvar = &subvar,
-	// .fini = &fini,
+	.parse = parse,
+	.subvar = subvar,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

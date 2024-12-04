@@ -161,8 +161,8 @@ static void guard_braces(char *buf) {
 	}
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
-	if (!strncmp (data, "|| ", 3)) {
+static bool parse(RAsmPluginSession *p, const char *data, char *str) {
+	if (r_str_startswith (data, "|| ")) {
 		data += 3;
 	}
 	if (R_STR_ISEMPTY (data)) {
@@ -198,7 +198,7 @@ static int parse(RAsm *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RAsm *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *r0 = strstr (data, "[r0]");
 	if (r0) {
 		char *neg = strstr (data, " -");
@@ -228,7 +228,7 @@ RAsmPlugin r_asm_plugin_v850 = {
 		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
-	.subvar = &subvar,
+	.subvar = subvar,
 };
 
 #ifndef R2_PLUGIN_INCORE

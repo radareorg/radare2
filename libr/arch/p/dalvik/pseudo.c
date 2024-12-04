@@ -233,7 +233,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		} \
 	} while (0)
 
-static int parse(RAsm *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr, *ptr2;
 	char w0[64];

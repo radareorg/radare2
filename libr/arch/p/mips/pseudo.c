@@ -122,7 +122,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 64
-static int parse(RAsm *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -245,12 +245,13 @@ static int parse(RAsm *a, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
 	RListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
-	RAnal *anal = p->analb.anal;
+	RAnal *anal = a->analb.anal;
 
 	if (f && p->varlist) {
 		RList *bpargs = p->varlist (f, 'b');

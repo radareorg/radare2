@@ -66,7 +66,7 @@ static int tokenize(const char* in, char* out[]) {
 	return count;
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int i;
 	char *argv[MAXARGS] = { NULL, NULL, NULL, NULL };
 	int argc = tokenize (data, argv);
@@ -74,7 +74,6 @@ static int parse(RAsm *p, const char *data, char *str) {
 	if (!replace (argc, argv, str, BUFSIZE)) {
 		strcpy (str, data);
 	}
-
 	for (i = 0; i < MAXARGS; i++) {
 		free (argv[i]);
 	}

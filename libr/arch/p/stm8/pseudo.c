@@ -139,7 +139,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;

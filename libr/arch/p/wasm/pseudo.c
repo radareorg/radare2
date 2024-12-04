@@ -10,12 +10,12 @@ static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
 	return s? strdup (s): NULL;
 }
 
-static bool subvar(RAsm *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *fcn_name = NULL;
 	str[0] = 0;
 	if (!strncmp (data, "call ", 5)) {
 		ut32 fcn_id = (ut32) r_num_get (NULL, data + 5);
-		if (!(fcn_name = get_fcn_name (p->analb.anal, fcn_id))) {
+		if (!(fcn_name = get_fcn_name (aps->rasm->analb.anal, fcn_id))) {
 			return false;
 		}
 		snprintf (str, len, "call sym.%s", fcn_name);
@@ -32,7 +32,7 @@ RAsmPlugin r_asm_plugin_wasm= {
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
-	.subvar = &subvar,
+	.subvar = subvar,
 };
 
 #ifndef R2_PLUGIN_INCORE

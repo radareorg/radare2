@@ -60,7 +60,7 @@ static char *replace(int argc, const char *argv[]) {
 	return r_strbuf_drain (sb);
 }
 
-static int parse(RAsm *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int argc = 0;
 	char *args = strdup (data);
 	args = r_str_replace (args, ",", " ", true);
@@ -82,7 +82,7 @@ RAsmPlugin r_asm_plugin_gb = {
 		.name = "gb",
 		.desc = "GameBoy pseudo syntax",
 	},
-	.parse = parse, // parse actually converts the string into asm.pseudo
+	.parse = parse,
 };
 #else
 RAsmPlugin r_asm_plugin_z80 = {
@@ -90,7 +90,7 @@ RAsmPlugin r_asm_plugin_z80 = {
 		.name = "z80",
 		.desc = "Z80 pseudo syntax",
 	},
-	.parse = parse, // parse actually converts the string into asm.pseudo
+	.parse = parse,
 };
 #endif
 
