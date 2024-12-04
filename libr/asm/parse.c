@@ -27,7 +27,6 @@ typedef struct r_parse_session_t {
 	char *retleave_asm;
 } RParseSession;
 
-#endif
 
 R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	if (r_parse_use (p, name)) {
@@ -38,6 +37,7 @@ R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
 	}
 	return NULL;
 }
+#endif
 
 // R_API bool r_parse_session_
 
@@ -82,18 +82,12 @@ R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *foo) {
 }
 
 R_API bool r_parse_plugin_remove(RParse *p, RParsePlugin *plugin) {
+	// TODO implement
 	return true;
 }
 
-static char *predotname(const char *name) {
-	char *sname = strdup (name);
-	char *dot = strchr (sname, '.');
-	if (dot) {
-		*dot = 0;
-	}
-	return sname;
-}
-
+#if 0
+// DEPRECATE!
 R_API bool r_parse_use(RParse *p, const char *name) {
 	R_RETURN_VAL_IF_FAIL (p && name, false);
 
@@ -153,7 +147,9 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	}
 	return true;
 }
+#endif
 
+// TODO .make it internal
 R_API char *r_parse_pseudo(RParse *p, const char *data) {
 	R_RETURN_VAL_IF_FAIL (p && data, false);
 	char *str = malloc (32 + strlen (data) * 2);
@@ -167,6 +163,7 @@ R_API char *r_parse_pseudo(RParse *p, const char *data) {
 	return NULL;
 }
 
+// TODO: make it internal
 R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
@@ -204,16 +201,11 @@ R_API char *r_parse_immtrim(RParse *p, const char *_opstr) {
 	return opstr;
 }
 
+// TODO : make it internal
 R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	R_RETURN_VAL_IF_FAIL (p, false);
 	if (p->cur && p->cur->subvar) {
 		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}
 	return false;
-}
-
-/* setters */
-R_API void r_parse_set_user_ptr(RParse *p, void *user) {
-	R_RETURN_IF_FAIL (p && user);
-	p->user = user;
 }

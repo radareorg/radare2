@@ -16,6 +16,12 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
+#define R_PARSE_FILTER_IMMTRIM 1
+#define R_PARSE_FILTER_SUBVAR 2
+#define R_PARSE_FILTER_FILTER 4
+#define R_PARSE_FILTER_PSEUDO 8
+#define R_PARSE_FILTER_COLOR 16
+
 typedef struct r_asm_code_t {
 #if 1
 	int len;
@@ -59,14 +65,11 @@ R_API void r_asm_free(RAsm *a);
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
-R_API void r_asm_set_user_ptr(RAsm *a, void *user);
+R_API void r_asm_set_user_ptr(RAsm *a, void *user); // TODO: rename to set_user or set_userdata or set_userptr
 
 R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
-#if 1
-// RParser refactoring
 R_API bool r_asm_use_parser(RAsm *a, const char *name);
-#endif
 
 // this is in archconfig
 R_API int r_asm_set_bits(RAsm *a, int bits);
