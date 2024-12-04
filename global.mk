@@ -39,11 +39,12 @@ endif
 	$(CC) $(LDFLAGS) -c $(CFLAGS) -o $@ $<
 
 .c.o:
-ifneq ($(SILENT),)
-	@echo "[$(shell $(LIBR)/count.sh)] CC $<"
-	@$(CC) -c $(CFLAGS) -o $@ $<
-else
+ifeq ($(SILENT),)
 	$(CC) -c $(CFLAGS) -o $@ $<
+else
+#@echo "[$(shell $(LIBR)/count.sh)] CC $<"
+	@echo "[__] CC $<"
+	@$(CC) -c $(CFLAGS) -o $@ $<
 endif
 
 -include $(TOP)/config-user.mk

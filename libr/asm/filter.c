@@ -593,7 +593,6 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 /// XXX very ugly arguments, redesign!
 R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	RAsmPluginSession *aps = a->cur;
-	RParse *p = aps->rasm->parse;
 	filter (aps, addr, f, hint, data, str, len, big_endian);
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {
