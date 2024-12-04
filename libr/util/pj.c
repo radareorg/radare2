@@ -297,9 +297,9 @@ R_API PJ *pj_n(PJ *j, ut64 n) {
 	pj_comma (j);
 	char numstr[32];
 	if (j->num_encoding == PJ_ENCODING_NUM_STR) {
-		snprintf (numstr, sizeof (numstr), "\"%" PFMT64u "\"", n);
+		snprintf (numstr, sizeof (numstr), "\"%" PFMT64u "\"", (uint64_t)n);
 	} else if (j->num_encoding == PJ_ENCODING_NUM_HEX) {
-		snprintf (numstr, sizeof (numstr), "\"0x%" PFMT64x "\"", n);
+		snprintf (numstr, sizeof (numstr), "\"0x%" PFMT64x "\"", (uint64_t)n);
 	} else {
 		snprintf (numstr, sizeof (numstr), "%" PFMT64u, n);
 	}
