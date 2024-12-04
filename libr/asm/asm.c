@@ -183,6 +183,7 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->codealign = 1;
 	a->dataalign = 1;
+	a->pseudo = false;
 	a->plugins = r_list_newf (NULL);
 	if (!a->plugins) {
 		free (a);
@@ -191,14 +192,6 @@ R_API RAsm *r_asm_new(void) {
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
 	return a;
-}
-
-// TODO must use the internal rparse api when both libraries are merged
-// R2_600 - just call r_asm_parse_use ()
-R_API bool r_asm_sub_names_output(RAsm *a, const char *f) {
-	R_RETURN_VAL_IF_FAIL (a && f, false);
-	// XXX deprecate. just the asm.useParser()
-	return r_asm_use_parser (a, f);
 }
 
 R_API void r_asm_free(RAsm *a) {
@@ -221,6 +214,7 @@ R_API void r_asm_free(RAsm *a) {
 
 R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
+	a->parse->user = user;
 }
 
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
@@ -472,8 +466,8 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			r_anal_op_set_mnemonic (op, op->addr, "invalid");
 		}
 	}
-	if (a->ofilter) {
-		char *newtext = r_parse_pseudo (a->ofilter, op->mnemonic);
+	if (a->pseudo) {
+		char *newtext = r_parse_pseudo (a->parse, op->mnemonic);
 		if (newtext) {
 			r_anal_op_set_mnemonic (op, op->addr, newtext);
 		}
@@ -592,14 +586,14 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		RAnalOp op = {0};
 		r_anal_op_init (&op);
 		r_asm_set_pc (a, pc + idx);
-		/// we can change this to return RAnalOp* instead of passing it as arg here
+		// we can change this to return RAnalOp* instead of passing it as arg here
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {
 			ret = mininstrsize;
 		}
 		ret = op.size;
-		if (a->ofilter) {
-			char *newtext = r_parse_pseudo (a->ofilter, op.mnemonic);
+		if (a->pseudo) {
+			char *newtext = r_parse_pseudo (a->parse, op.mnemonic);
 			if (newtext) {
 				free (op.mnemonic);
 				op.mnemonic = newtext;

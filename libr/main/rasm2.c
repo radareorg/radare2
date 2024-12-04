@@ -934,8 +934,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		goto beach;
 	}
 	if (filters) {
-		// TODO: rename to use parse
-		r_asm_sub_names_output (as->a, filters);
+		r_asm_use_parser (as->a, filters);
+		as->a->pseudo = true;
 	}
 
 	if (file) {

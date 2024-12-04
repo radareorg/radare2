@@ -2280,7 +2280,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 		r_asm_disassemble (core->rasm, &asmop, buf, size);
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-		r_parse_filter (core->parser, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
+		r_parse_filter (core->rasm->parse, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
 		r_anal_hint_free (hint);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 		char *print_comment = NULL;
@@ -2414,7 +2414,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 				char tmp[128] = { 0 };
 				RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-				r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
+				r_parse_filter (core->rasm->parse, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
 				r_anal_hint_free (hint);
 				if (param->outmode == R_MODE_SIMPLE) {
 					r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);

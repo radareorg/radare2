@@ -730,8 +730,8 @@ static void __cmd_pad(RCore *core, const char *arg) {
 		return;
 	}
 	r_asm_set_pc (core->rasm, core->offset);
-	bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
-	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->rasm, is_pseudo ? core->parser : NULL, arg);
+	bool is_pseudo = r_config_get_b (core->config, "asm.pseudo");
+	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->rasm, is_pseudo ? core->rasm->parse : NULL, arg);
 	if (acode) {
 		r_cons_print (acode->assembly);
 		r_asm_code_free (acode);

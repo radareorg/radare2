@@ -524,14 +524,14 @@ static bool cb_analijmp(void *user, void *data) {
 static bool cb_asmsubvarmin(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->parser->minval = node->i_value;
+	core->rasm->parse->minval = node->i_value;
 	return true;
 }
 
 static bool cb_asmsubtail(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->parser->subtail = node->i_value;
+	core->rasm->parse->subtail = node->i_value;
 	return true;
 }
 
@@ -1059,9 +1059,9 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	RParsePlugin *parser;
-	if (core && node && core->parser && core->parser->parsers) {
+	if (core && node && core->rasm->parse && core->rasm->parse->parsers) {
 		r_config_node_purge_options (node);
-		r_list_foreach (core->parser->parsers, iter, parser) {
+		r_list_foreach (core->rasm->parse->parsers, iter, parser) {
 			SETOPTIONS (node, parser->meta.name, NULL);
 		}
 	}
@@ -1209,7 +1209,7 @@ static bool cb_strpurge(void *user, void *data) {
 static bool cb_maxname(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	RCore *core = (RCore *) user;
-	core->parser->maxflagnamelen = node->i_value;
+	core->rasm->parse->maxflagnamelen = node->i_value;
 	return true;
 }
 
