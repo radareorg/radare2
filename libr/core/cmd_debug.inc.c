@@ -4677,7 +4677,10 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "dc"
 		r_reg_arena_swap (core->dbg->reg, true);
-#if __linux__
+#if 0
+		// This has been disabled as it caused `dc; dc; ood; dc` to
+		// hang on all binaries. TODO: Find the actual root cause and
+		// fix it.
 		core->dbg->continue_all_threads = true;
 #endif
 		if (r_debug_is_dead (core->dbg)) {
