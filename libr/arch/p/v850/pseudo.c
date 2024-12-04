@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2020-2022 - pancake */
+/* radare - LGPL - Copyright 2020-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 // https://www.renesas.com/us/en/doc/products/mpumcu/doc/v850/r01us0037ej0100_v850e2.pdf
 
@@ -161,7 +161,7 @@ static void guard_braces(char *buf) {
 	}
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *p, const char *data, char *str) {
 	if (!strncmp (data, "|| ", 3)) {
 		data += 3;
 	}
@@ -198,7 +198,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RAsm *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *r0 = strstr (data, "[r0]");
 	if (r0) {
 		char *neg = strstr (data, " -");
@@ -220,9 +220,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	return false;
 }
 
-RParsePlugin r_parse_plugin_v850_pseudo = {
+RAsmPlugin r_asm_plugin_v850 = {
 	.meta = {
-		.name = "v850.pseudo",
+		.name = "v850",
 		.desc = "v850 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -233,7 +233,7 @@ RParsePlugin r_parse_plugin_v850_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_v850_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_v850,
 	.version = R2_VERSION};
 #endif

@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
@@ -62,7 +62,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *p, const char *data, char *str) {
 	int i, n;
 	char w0[32];
 	char w1[32];
@@ -164,7 +164,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_att2intel = {
+RAsmPlugin r_asm_plugin_att2intel = {
 	.meta = {
 		.name = "att2intel",
 		.desc = "X86 att 2 intel plugin",
@@ -176,8 +176,8 @@ RParsePlugin r_parse_plugin_att2intel = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_att2intel,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_att2intel,
 	.version = R2_VERSION
 };
 #endif

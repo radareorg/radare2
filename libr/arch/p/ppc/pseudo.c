@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 #ifndef PFMT32x
 #define PFMT32x "lx"

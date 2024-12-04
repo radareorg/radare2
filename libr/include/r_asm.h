@@ -5,9 +5,9 @@
 
 #include <r_types.h>
 #include <r_arch.h>
+#include <r_anal.h>
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_util.h>
-#include <r_parse.h>
 #include <r_bind.h>
 
 #ifdef __cplusplus
@@ -36,6 +36,33 @@ typedef struct r_asm_code_t {
 	ut64 data_offset;
 	int code_align;
 } RAsmCode;
+
+typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
+
+typedef struct r_parse_t {
+	void *user;
+	RSpace *flagspace;
+	RSpace *notin_flagspace;
+	bool pseudo;
+	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
+	bool subrel; // replace rip relative expressions in instruction
+	bool subtail; // replace any immediate relative to current address with .. prefix syntax
+	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
+	ut64 subrel_addr;
+	int maxflagnamelen;
+	int minval;
+	char *retleave_asm;
+	struct r_asm_plugin_t *cur; // XXX move into session
+	RList *parsers;
+	RAnalVarList varlist;
+	st64 (*get_ptr_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
+	const char *(*get_reg_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
+	char* (*get_op_ireg)(void *user, ut64 addr);
+	RAnalBind analb;
+	RFlagGetAtAddr flag_get; // XXX
+	RAnalLabelAt label_get;
+} RParse;
+
 
 typedef struct r_asm_t {
 	RArch *arch;
@@ -77,10 +104,12 @@ typedef struct r_parse_session_t {
 	void *data;
 } RAsmSession;
 
-typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
-
-typedef struct r_parse_t {
+#if 0
+typedef struct r_asm_session_t {
+	RAsm *p;
+	RAsmPlugin *cur;
 	void *user;
+	// all the settings
 	RSpace *flagspace;
 	RSpace *notin_flagspace;
 	bool pseudo;
@@ -92,25 +121,19 @@ typedef struct r_parse_t {
 	int maxflagnamelen;
 	int minval;
 	char *retleave_asm;
-	struct r_asm_plugin_t *cur; // XXX move into session
-	RList *parsers;
-	RAnalVarList varlist;
-	st64 (*get_ptr_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
-	const char *(*get_reg_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
-	char* (*get_op_ireg)(void *user, ut64 addr);
-	RAnalBind analb;
-	RFlagGetAtAddr flag_get; // XXX
-	RAnalLabelAt label_get;
-} RParse;
+} RAsmSession;
+#endif
+
 #ifdef R_API
 
 /* rparse */
 R_API RParse *r_parse_new(void);
 R_API void r_parse_free(RParse *p);
-R_API char *r_parse_pseudo(RParse *p, const char *data);
-R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
-R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-R_API char *r_parse_immtrim(RParse *p, const char *opstr);
+
+R_API char *r_asm_parse_pseudo(RAsm *a, const char *data);
+R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
+R_API bool r_asm_parse_subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+R_API char *r_asm_parse_immtrim(RAsm *a, const char *opstr);
 
 
 /* asm.c */
@@ -167,6 +190,10 @@ R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
+
+/* plugins */
+R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *plugin);
+R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin);
 
 extern RAsmPlugin r_asm_plugin_6502;
 extern RAsmPlugin r_asm_plugin_arm;

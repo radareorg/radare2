@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2024 - nibble, pancake, maijin */
 
-#include <r_parse.h>
+#include <r_asm.h>
 
 #define FILTER_DWORD 0
 
@@ -586,10 +586,11 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 // TODO we shouhld use RCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
 // TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
 // DEPRECATE
-R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+	RParse *p = a->parse;
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
-		return p->cur->filter (p, addr, f, data, str, len, big_endian);
+		return p->cur->filter (a, addr, f, data, str, len, big_endian);
 	}
 	return false;
 }

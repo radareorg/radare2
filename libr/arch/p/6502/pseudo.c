@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2015-2024 - pancake, qnix */
 
 #include <r_lib.h>
-#include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 typedef enum {
 	IND_IDX = 0,
@@ -116,7 +115,7 @@ static ADDR_TYPE addr_type(const char *str) {
 	return NORM;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
@@ -176,7 +175,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_6502_pseudo = {
+RAsmPlugin r_asm_plugin_6502 = {
 	.meta = {
 		.name = "6502.pseudo",
 		.desc = "6502 pseudo syntax",
@@ -188,7 +187,7 @@ RParsePlugin r_parse_plugin_6502_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_6502_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_6502,
 	.version = R2_VERSION};
 #endif

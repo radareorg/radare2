@@ -489,7 +489,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->pseudo) {
-		char *newtext = r_parse_pseudo (a->parse, op->mnemonic);
+		char *newtext = r_asm_parse_pseudo (a, op->mnemonic);
 		if (newtext) {
 			r_anal_op_set_mnemonic (op, op->addr, newtext);
 		}
@@ -615,7 +615,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		ret = op.size;
 		if (a->pseudo) {
-			char *newtext = r_parse_pseudo (a->parse, op.mnemonic);
+			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
 			if (newtext) {
 				free (op.mnemonic);
 				op.mnemonic = newtext;
@@ -644,7 +644,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && p) {
-		char *res = r_parse_pseudo (p, ret->assembly);
+		char *res = r_asm_parse_pseudo (a, ret->assembly);
 		if (res) {
 			free (ret->assembly);
 			ret->assembly = res;
@@ -1228,7 +1228,7 @@ R_API RList *r_asm_cpus(RAsm *a) {
 R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
 	char *res = strdup (s);
 	if (what & R_PARSE_FILTER_IMMTRIM) {
-		char *newres = r_parse_immtrim (a->parse, s);
+		char *newres = r_asm_parse_immtrim (a, s);
 		if (newres) {
 			free (res);
 			res = newres;
@@ -1238,7 +1238,7 @@ R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
 		// r_parse_subvar (a->parse, f, addr, oplen, ..)
 	}
 	if (what & R_PARSE_FILTER_PSEUDO) {
-		char *newres = r_parse_pseudo (a->parse, s);
+		char *newres = r_asm_parse_pseudo (a, s);
 		if (newres) {
 			free (res);
 			res = newres;

@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i, j, k;
@@ -225,7 +225,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
+#define REPLACE(x,y) do { \
+		int snprintf_len1_ = snprintf (a, 32, x, w1, w1); \
+		int snprintf_len2_ = snprintf (b, 32, y, w1); \
+		if (snprintf_len1_ < 32 && snprintf_len2_ < 32) { \
+			p = r_str_replace (p, a, b, 0); \
+		} \
+	} while (0)
+
+static int parse(RAsm *a, const char *data, char *str) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr, *ptr2;
 	char w0[64];
@@ -321,44 +329,36 @@ static int parse(RParse *p, const char *data, char *str) {
 				}
 			}
 			replace (nw, wa, str);
-{
-	char *p = strdup (str);
-	p = r_str_replace (p, "+ -", "- ", 0);
+			{
+				char *p = strdup (str);
+				p = r_str_replace (p, "+ -", "- ", 0);
 #if EXPERIMENTAL_ZERO
-	p = r_str_replace (p, "zero", "0", 0);
-	if (!memcmp (p, "0 = ", 4)) *p = 0; // nop
+				p = r_str_replace (p, "zero", "0", 0);
+				if (!memcmp (p, "0 = ", 4)) *p = 0; // nop
 #endif
-	if (!strcmp (w1, w2)) {
-		char a[32], b[32];
-#define REPLACE(x,y) do { \
-		int snprintf_len1_ = snprintf (a, 32, x, w1, w1); \
-		int snprintf_len2_ = snprintf (b, 32, y, w1); \
-		if (snprintf_len1_ < 32 && snprintf_len2_ < 32) { \
-			p = r_str_replace (p, a, b, 0); \
-		} \
-	} while (0)
-
-		// TODO: optimize
-		REPLACE ("%s = %s +", "%s +=");
-		REPLACE ("%s = %s -", "%s -=");
-		REPLACE ("%s = %s &", "%s &=");
-		REPLACE ("%s = %s |", "%s |=");
-		REPLACE ("%s = %s ^", "%s ^=");
-		REPLACE ("%s = %s >>", "%s >>=");
-		REPLACE ("%s = %s <<", "%s <<=");
-	}
-	strcpy (str, p);
-	free (p);
-}
+				if (!strcmp (w1, w2)) {
+					char a[32], b[32];
+					// TODO: optimize
+					REPLACE ("%s = %s +", "%s +=");
+					REPLACE ("%s = %s -", "%s -=");
+					REPLACE ("%s = %s &", "%s &=");
+					REPLACE ("%s = %s |", "%s |=");
+					REPLACE ("%s = %s ^", "%s ^=");
+					REPLACE ("%s = %s >>", "%s >>=");
+					REPLACE ("%s = %s <<", "%s <<=");
+				}
+				strcpy (str, p);
+				free (p);
+			}
 		}
 	}
 	free (buf);
 	return true;
 }
 
-RParsePlugin r_parse_plugin_dalvik_pseudo = {
+RAsmPlugin r_asm_plugin_dalvik = {
 	.meta = {
-		.name = "dalvik.pseudo",
+		.name = "dalvik",
 		.desc = "DALVIK pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -368,8 +368,8 @@ RParsePlugin r_parse_plugin_dalvik_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_dalvik_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_dalvik,
 	.version = R2_VERSION
 };
 #endif

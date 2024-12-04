@@ -1,14 +1,9 @@
-/* radare - LGPL - Copyright 2017 - wargio */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2017-2024 - wargio */
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
@@ -157,7 +152,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *a, const char *data, char *str) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -264,9 +259,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_sh_pseudo = {
+RAsmPlugin r_asm_plugin_sh = {
 	.meta = {
-		.name = "sh.pseudo",
+		.name = "sh",
 		.desc = "SH-4 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -276,8 +271,8 @@ RParsePlugin r_parse_plugin_sh_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_sh_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_sh,
 	.version = R2_VERSION
 };
 #endif

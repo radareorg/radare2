@@ -2478,7 +2478,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == 'j') {
 			char strsub[128] = {0};
 			// pc+33
-			r_parse_subvar (core->rasm->parse, NULL,
+			r_asm_parse_subvar (core->rasm, NULL,
 				core->offset + idx,
 				asmop.size, asmop.mnemonic,
 				strsub, sizeof (strsub));
@@ -2489,7 +2489,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			// 0x33->sym.xx
 			char *p = strdup (strsub);
 			if (p) {
-				r_parse_filter (core->rasm->parse, addr, core->flags, hint, p,
+				r_asm_parse_filter (core->rasm, addr, core->flags, hint, p,
 						strsub, sizeof (strsub), be);
 				free (p);
 			}
@@ -2501,14 +2501,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_parse_subvar (core->rasm->parse, fcn, addr, asmop.size,
+					r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size,
 							strsub, strsub, sizeof (strsub));
 				}
 			}
 			pj_ks (pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
-				char *pseudo = r_parse_pseudo (core->rasm->parse, strsub);
+				char *pseudo = r_asm_parse_pseudo (core->rasm, strsub);
 				if (R_STR_ISNOTEMPTY (pseudo)) {
 					pj_ks (pj, "pseudo", pseudo);
 				}
@@ -2670,7 +2670,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				R_LOG_ERROR ("invalid");
 				break;
 			}
-			r_parse_subvar (core->rasm->parse, NULL,
+			r_asm_parse_subvar (core->rasm, NULL,
 				core->offset + idx,
 				asmop.size,  text,
 				disasm, sizeof (disasm));
@@ -2680,7 +2680,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			char *p = strdup (disasm);
 			if (p) {
-				r_parse_filter (core->rasm->parse, addr, core->flags, hint, p,
+				r_asm_parse_filter (core->rasm, addr, core->flags, hint, p,
 					disasm, sizeof (disasm), be);
 				free (p);
 			}
@@ -2701,7 +2701,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_parse_subvar (core->rasm->parse, fcn, addr, asmop.size,
+					r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size,
 							disasm, disasm, sizeof (disasm));
 				}
 			}
@@ -2711,7 +2711,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("disasm", "%s\n", disasm);
 			{
-				char *pseudo = r_parse_pseudo (core->rasm->parse, disasm);
+				char *pseudo = r_asm_parse_pseudo (core->rasm, disasm);
 				if (R_STR_ISNOTEMPTY (pseudo)) {
 					printline ("pseudo", "%s\n", pseudo);
 				}
@@ -10253,10 +10253,10 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		core->rasm->parse->get_ptr_at = r_anal_function_get_var_stackptr_at;
 		core->rasm->parse->get_reg_at = r_anal_function_get_var_reg_at;
 		core->rasm->parse->get_op_ireg = get_op_ireg;
-		r_parse_subvar (core->rasm->parse, fcn, addr, asmop.size, ba, ba, ba_len);
+		r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, ba, ba, ba_len);
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-	r_parse_filter (core->rasm->parse, addr, core->flags, hint, ba, str, sizeof (str), be);
+	r_asm_parse_filter (core->rasm, addr, core->flags, hint, ba, str, sizeof (str), be);
 	r_anal_hint_free (hint);
 	r_anal_op_set_mnemonic (&asmop, asmop.addr, ba);
 	free (ba);
@@ -10838,7 +10838,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_asm_set_pc (core->rasm, ref->addr);
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-							r_parse_filter (core->rasm->parse, ref->addr, core->flags,
+							r_asm_parse_filter (core->rasm, ref->addr, core->flags,
 									hint, asmop.mnemonic, str, sizeof (str), be);
 							r_anal_hint_free (hint);
 							if (has_color) {

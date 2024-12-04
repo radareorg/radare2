@@ -1,14 +1,10 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 static bool can_replace(const char *str, int idx, int max_operands) {
 	if (str[idx] > '9' || str[idx] < '1') {
@@ -99,7 +95,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 64
-static int parse(RParse *p, const char *data, char *str) {
+static int parse(RAsm *a, const char *data, char *str) {
+	RParse *p = a->parse;
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -192,9 +189,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_m68k_pseudo = {
+RAsmPlugin r_asm_plugin_m68k = {
 	.meta = {
-		.name = "m68k.pseudo",
+		.name = "m68k",
 		.desc = "M68K pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
@@ -204,8 +201,8 @@ RParsePlugin r_parse_plugin_m68k_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_m68k_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_m68k,
 	.version = R2_VERSION
 };
 #endif

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
-#include <r_parse.h>
+#include <r_asm.h>
 
 RAsmPlugin r_asm_plugin_null = {
 	.meta = {

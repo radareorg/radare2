@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2020 - pancake */
+/* radare - LGPL - Copyright 2020-2024 - pancake */
 
 #include <r_lib.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <r_parse.h>
+#include <r_asm.h>
 
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
 
@@ -137,8 +137,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RParse *p, const char *data, char *str) {
-	if (!strncmp (data, "|| ", 3)) {
+static int parse(RAsm *p, const char *data, char *str) {
+	if (r_str_startswith (data, "|| ")) {
 		data += 3;
 	}
 	if (R_STR_ISEMPTY (data)) {
@@ -174,7 +174,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_tms320_pseudo = {
+RAsmPlugin r_asm_plugin_tms320 = {
 	.meta = {
 		.name = "tms320.pseudo",
 		.desc = "tms320 pseudo syntax",
@@ -186,7 +186,7 @@ RParsePlugin r_parse_plugin_tms320_pseudo = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_tms320_pseudo,
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_tms320,
 	.version = R2_VERSION};
 #endif

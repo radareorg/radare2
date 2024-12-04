@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -26,7 +26,7 @@ CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
 CB (esil, anal->esil)
-CB (parse, rasm->parse)
+CB (asm, rasm)
 CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
@@ -90,8 +90,8 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
 	DF (ESIL, "esil emulation plugins", esil);
-	// DF (ASM, "(dis)assembler plugins", asm);
-	DF (PARSE, "parsing plugins", parse);
+	DF (ASM, "assembly plugins", asm);
+	// DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
