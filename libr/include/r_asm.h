@@ -3,11 +3,9 @@
 #ifndef R2_ASM_H
 #define R2_ASM_H
 
-#include <r_types.h>
 #include <r_arch.h>
 #include <r_anal.h>
 #include <r_bin.h> // only for binding, no hard dep required
-#include <r_util.h>
 #include <r_bind.h>
 
 #ifdef __cplusplus
@@ -52,16 +50,14 @@ typedef struct r_parse_t {
 	int maxflagnamelen;
 	int minval;
 	char *retleave_asm;
-	struct r_asm_plugin_t *cur; // XXX move into session
 	RAnalVarList varlist;
 	st64 (*get_ptr_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
 	const char *(*get_reg_at)(RAnalFunction *fcn, st64 delta, ut64 addr);
 	char* (*get_op_ireg)(void *user, ut64 addr);
-	RAnalBind analb;
 	RFlagGetAtAddr flag_get; // XXX
 	RAnalLabelAt label_get;
+	// -- struct r_asm_plugin_t *cur; // XXX move into session
 } RParse;
-
 
 typedef struct r_asm_t {
 	RArch *arch;
@@ -70,7 +66,8 @@ typedef struct r_asm_t {
 	void *user;
 	RArchSession *ecur; // encode current
 	RArchSession *dcur; // decode current
-	RList *plugins;
+	struct r_asm_plugin_session_t *cur;
+	RList *sessions; // NOTE: one session per plugin! both lists must have the same length
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
 	Sdb *pair;
 	RSyscall *syscall;
@@ -82,46 +79,27 @@ typedef struct r_asm_t {
 	RParse *parse;
 } RAsm;
 
+typedef struct r_asm_plugin_session_t {
+	struct r_asm_t *rasm;
+	struct r_asm_plugin_t *plugin;
+	void *data;
+} RAsmPluginSession;
+
 // TODO: Take RAsmSession as first argument
-typedef int (*RAsmParsePseudo)(struct r_asm_t *a, const char *data, char *str);
-typedef int (*RAsmParseFilter)(struct r_asm_t *a, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
-typedef bool (*RAsmParseSubvar)(struct r_asm_t *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+typedef void (*RAsmParseInit)(RAsmPluginSession *s);
+typedef void (*RAsmParseFini)(RAsmPluginSession *s);
+typedef bool (*RAsmParsePseudo)(RAsmPluginSession *s, const char *data, char *str);
+typedef int (*RAsmParseFilter)(RAsmPluginSession *s, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
+typedef bool (*RAsmParseSubvar)(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 
 typedef struct r_asm_plugin_t {
 	RPluginMeta meta;
-	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
-	int (*fini)(RParse *p, void *user); // receives the asmparsestate
-
+	RAsmParseInit init;
+	RAsmParseFini fini;
 	RAsmParsePseudo parse; // TODO. rename to pseudo
 	RAsmParseFilter filter;
 	RAsmParseSubvar subvar;
 } RAsmPlugin;
-
-typedef struct r_parse_session_t {
-	RParse *p;
-	RAsmPlugin *cur;
-	void *data;
-} RAsmSession;
-
-#if 0
-typedef struct r_asm_session_t {
-	RAsm *p;
-	RAsmPlugin *cur;
-	void *user;
-	// all the settings
-	RSpace *flagspace;
-	RSpace *notin_flagspace;
-	bool pseudo;
-	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
-	bool subrel; // replace rip relative expressions in instruction
-	bool subtail; // replace any immediate relative to current address with .. prefix syntax
-	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
-	ut64 subrel_addr;
-	int maxflagnamelen;
-	int minval;
-	char *retleave_asm;
-} RAsmSession;
-#endif
 
 #ifdef R_API
 
@@ -149,8 +127,6 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name);
 
 // this is in archconfig
 R_API int r_asm_set_bits(RAsm *a, int bits);
-R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
-// TODO: must be set_endian (BIG; MIDDLE; LITTLE, ..)
 R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
@@ -165,7 +141,6 @@ R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
 R_API char *r_asm_describe(RAsm *a, const char* str);
-R_API const RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
 R_API SdbGperf *r_asm_get_gperf(const char *k);
 R_API RList *r_asm_cpus(RAsm *a);

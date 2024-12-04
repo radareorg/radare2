@@ -254,7 +254,7 @@ R_API void r_arch_op_free(void *_op);
 #endif
 
 #if 1
-// R2_590 Deprecate!
+// R2_600 Deprecate! this is part of archconfig!
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
 R_API bool r_arch_set_arch(RArch *arch, char *archname);

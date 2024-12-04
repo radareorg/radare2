@@ -28,8 +28,8 @@
 
 #endif
 
-static int qjs_parse(struct r_asm_t *a, const char *input, char *output) {
-	RParse *p = a->parse;
+static bool qjs_parse(RAsmPluginSession *aps, const char *input, char *output) {
+	RParse *p = aps->rasm->parse;
 	RCore *core = p->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
 

@@ -62,7 +62,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int i, n;
 	char w0[32];
 	char w1[32];
@@ -171,7 +171,7 @@ RAsmPlugin r_asm_plugin_att2intel = {
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
-	.parse = &parse,
+	.parse = parse,
 };
 
 #ifndef R2_PLUGIN_INCORE

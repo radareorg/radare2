@@ -137,7 +137,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	if (r_str_startswith (data, "|| ")) {
 		data += 3;
 	}

@@ -19,11 +19,11 @@ static const char *directives[] = {
 
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (a && foo, false);
-	RParse *p = a->parse;
-	bool itsFine = foo->init? foo->init (p, p->user): true;
-	if (itsFine) {
-		r_list_append (a->plugins, foo);
-	}
+	RAsmPluginSession *aps = R_NEW0 (RAsmPluginSession);
+	aps->rasm = a;
+	aps->plugin = foo;
+	aps->data = NULL; // to be used by the plugin
+	r_list_append (a->sessions, aps);
 	return true;
 }
 
@@ -54,19 +54,6 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	r_anal_op_set_mnemonic (op, op->addr, input);
 	r_anal_op_set_bytes (op, op->addr, (const ut8*)input, len + 1);
 	return len;
-}
-
-static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
-	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		R_LOG_ERROR ("Unsupported value for .bits");
-		return -1;
-	}
-	return 0;
-}
-
-static inline bool r_asm_pseudo_org(RAsm *a, const char *input) {
-	r_asm_set_pc (a, r_num_math (NULL, input));
-	return true;
 }
 
 static inline int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n) {
@@ -202,11 +189,7 @@ R_API RAsm *r_asm_new(void) {
 	a->codealign = 1;
 	a->dataalign = 1;
 	a->pseudo = false;
-	a->plugins = r_list_newf (NULL);
-	if (!a->plugins) {
-		free (a);
-		return NULL;
-	}
+	a->sessions = r_list_newf (free);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
 	size_t i;
@@ -221,16 +204,21 @@ R_API void r_asm_free(RAsm *a) {
 		return;
 	}
 	// r_unref (a->config);
-	if (a->plugins) {
-		r_list_free (a->plugins);
-		a->plugins = NULL;
-	}
 	r_parse_free (a->parse);
 	r_unref (a->config);
 	r_syscall_free (a->syscall);
 	sdb_free (a->pair);
 	ht_pp_free (a->flags);
 	a->pair = NULL;
+	RListIter *iter;
+	RAsmPluginSession *aps;
+	r_list_foreach (a->sessions, iter, aps) {
+		RAsmParseFini fini = aps->plugin->fini;
+		if (fini) {
+			fini (aps);
+		}
+	}
+	r_list_free (a->sessions);
 	free (a);
 }
 
@@ -254,10 +242,21 @@ static char *predotname(const char *name) {
 	return sname;
 }
 
+static void useparser(RAsm *a, RAsmPluginSession *aps) {
+	RAsmPlugin *h = aps->plugin;
+	if (a->cur) {
+		if (a->cur == aps) {
+			return;
+		}
+		if (h->init && !aps->data) {
+			h->init (aps);
+		}
+	}
+	a->cur = aps;
+}
+
 R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	R_RETURN_VAL_IF_FAIL (a && name, false);
-	RParse *p = a->parse;
-
 	if (r_str_startswith (name, "r2ghidra")) {
 		// This plugin uses asm.cpu as a hack, ignoring
 		return false;
@@ -265,30 +264,29 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	// TODO: remove the alias workarounds because of missing pseudo plugins
 	if (r_str_startswith (name, "s390.")) {
 		name = "x86";
+	} else if (r_str_startswith (name, "blackfin")) {
+		name = "arm";
 	}
-#if 0
-	if (r_str_startswith (name, "blackfin")) {
-		name = "arm.pseudo";
-	}
-#endif
 
 	RListIter *iter;
-	RAsmPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->meta.name, name)) {
-			p->cur = h;
+	RAsmPluginSession *aps;
+	r_list_foreach (a->sessions, iter, aps) {
+		RAsmPlugin *ap = aps->plugin;
+		if (!strcmp (ap->meta.name, name)) {
+			useparser (a, aps);
 			return true;
 		}
 	}
 	bool found = false;
 	if (strchr (name, '.')) {
 		char *sname = predotname (name);
-		r_list_foreach (a->plugins, iter, h) {
-			char *shname = predotname (h->meta.name);
+		r_list_foreach (a->sessions, iter, aps) {
+			RAsmPlugin *ap = aps->plugin;
+			char *shname = predotname (ap->meta.name);
 			found = !strcmp (shname, sname);
 			free (shname);
 			if (found) {
-				p->cur = h;
+				useparser (a, aps);
 				break;
 			}
 		}
@@ -296,17 +294,18 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	}
 	if (!found) {
 		R_LOG_WARN ("Cannot find asm.parser for %s", name);
-		if (p->cur && p->cur->meta.name) {
-			if (r_str_startswith (p->cur->meta.name, "null")) {
+		RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
+		if (pcur && pcur->meta.name) {
+			if (r_str_startswith (pcur->meta.name, "null")) {
 				return false;
 			}
 		}
 		// check if p->cur
-		r_list_foreach (a->plugins, iter, h) {
+		r_list_foreach (a->sessions, iter, aps) {
+			RAsmPlugin *h = aps->plugin;
 			if (r_str_startswith (h->meta.name, "null")) {
 				R_LOG_INFO ("Fallback to null");
-				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
-				p->cur = h;
+				useparser (a, aps);
 				return false;
 			}
 		}
@@ -314,7 +313,6 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	}
 	return true;
 }
-
 
 static void load_asm_descriptions(RAsm *a) {
 	const char *arch = a->config->arch;
@@ -365,8 +363,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a);
-			// a->cur = NULL;
-			// a->acur = NULL;
 			return true;
 		}
 		R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
@@ -377,12 +373,14 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
+#if 0
 // R2_600
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	R_RETURN_IF_FAIL (a);
 	r_arch_config_set_cpu (a->config, cpu);
 }
+#endif
 
 R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 	a->config->bits = bits;
@@ -654,7 +652,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	return ret;
 }
 
-static void __flag_free_kv(HtPPKv *kv) {
+static void htpp_freekv(HtPPKv *kv) {
 	if (kv) {
 		free (kv->key);
 		free (kv->value);
@@ -662,7 +660,7 @@ static void __flag_free_kv(HtPPKv *kv) {
 	}
 }
 
-static void *__dup_val(const void *v) {
+static void *htpp_strdup(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
@@ -747,13 +745,18 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("cannot use %s", ptr + 6);
 		}
 	} else if (r_str_startswith (ptr, ".bits ")) {
-		ret = r_asm_pseudo_bits (a, ptr + 6);
+		if (!(r_asm_set_bits (a, r_num_math (NULL, ptr + 6)))) {
+			R_LOG_ERROR ("Unsupported value for .bits");
+			ret = -1;
+		} else {
+			ret = 0;
+		}
 	} else if (r_str_startswith (ptr, ".fill ")) {
 		ret = r_asm_pseudo_fill (op, ptr + 6);
 	} else if (r_str_startswith (ptr, ".kernel ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 8);
 	} else if (r_str_startswith (ptr, ".cpu ")) {
-		r_asm_set_cpu (a, ptr + 5);
+		r_arch_config_set_cpu (a->config, ptr + 5);
 	} else if (r_str_startswith (ptr, ".os ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
 	} else if (r_str_startswith (ptr, ".hex ")) {
@@ -794,10 +797,9 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
-		if (r_asm_pseudo_org (a, ptr + 5)) {
-			ret = 0;
-			*off = a->pc;
-		}
+		r_asm_set_pc (a, r_num_math (NULL, ptr + 5));
+		ret = 0;
+		*off = a->pc;
 	} else if (r_str_startswith (ptr, ".offset ")) {
 		R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 	} else if (r_str_startswith (ptr, ".text")) {
@@ -851,7 +853,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		return NULL;
 	}
 	ht_pp_free (a->flags);
-	if (!(a->flags = ht_pp_new (__dup_val, __flag_free_kv, NULL))) {
+	if (!(a->flags = ht_pp_new (htpp_strdup, htpp_freekv, NULL))) {
 		free (tokens);
 		return NULL;
 	}
@@ -1114,9 +1116,11 @@ R_API char *r_asm_describe(RAsm *a, const char* str) {
 	return (a && a->pair)? sdb_get (a->pair, str, 0): NULL;
 }
 
+#if 0
 R_API const RList* r_asm_get_plugins(RAsm *a) {
 	return a->plugins;
 }
+#endif
 
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
@@ -1235,7 +1239,8 @@ R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
 		}
 	}
 	if (what & R_PARSE_FILTER_SUBVAR) {
-		// r_parse_subvar (a->parse, f, addr, oplen, ..)
+		// ut64 addr = a->pc;
+		// r_asm_parse_subvar (a, f, addr, oplen, ..)
 	}
 	if (what & R_PARSE_FILTER_PSEUDO) {
 		char *newres = r_asm_parse_pseudo (a, s);

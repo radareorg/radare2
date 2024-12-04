@@ -115,7 +115,7 @@ static ADDR_TYPE addr_type(const char *str) {
 	return NORM;
 }
 
-static int parse(RAsm *p, const char *data, char *str) {
+static bool parse(RAsmPluginSession *s, const char *data, char *str) {
 	char w0[256], w1[256], w2[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;

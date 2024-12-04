@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int parse(RAsm *a, const char *data, char *str) {
+static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	// Intentationally left blank
 	// because it's not yet implemented
 	return false;
@@ -14,7 +14,7 @@ RAsmPlugin r_asm_plugin_pickle = {
 		.name = "pickle",
 		.desc = "Pickle pseudo syntax",
 	},
-	.parse = parse, // parse actually converts the string into asm.pseudo
+	.parse = parse,
 };
 
 #ifndef R2_PLUGIN_INCORE

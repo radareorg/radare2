@@ -2686,7 +2686,6 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
-	r_anal_bind (core->anal, &(core->rasm->parse->analb));
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
 	r_cons_bind (&core->bin->consb);
@@ -2727,7 +2726,6 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->flg_class_set = core_flg_class_set;
 	core->anal->flg_class_get = core_flg_class_get;
 	core->anal->flg_fcn_set = core_flg_fcn_set;
-	r_anal_bind (core->anal, &(core->rasm->parse->analb));
 	core->rasm->parse->flag_get = r_core_flag_get_by_spaces;
 	core->rasm->parse->label_get = r_anal_function_get_label_at;
 

@@ -142,16 +142,18 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+	RAsm *a = aps->rasm;
+	RParse *p = a->parse;
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	const int bits = p->analb.anal->config->bits; /// if we move this api into r_asm, we can use a->config->bits directly
-	const int seggrn = p->analb.anal->config->seggrn;
+	const int bits = a->analb.anal->config->bits; /// if we move this api into r_asm, we can use a->config->bits directly
+	const int seggrn = a->analb.anal->config->seggrn;
 	bool x86 = false;
 	bool arm = false;
-	const char *pname = R_UNWRAP3 (p, cur, meta.name);
+	const char *pname = R_UNWRAP4 (a, cur, plugin, meta.name);
 	if (pname) {
 		if (r_str_startswith (pname, "x86")) {
 			x86 = true;
@@ -169,9 +171,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	replaceWords (ptr, "qword ", src);
 #endif
 	if (p->subreg) {
-		__replaceRegisters (p->analb.anal->reg, ptr, false);
+		__replaceRegisters (a->analb.anal->reg, ptr, false);
 		if (x86) {
-			__replaceRegisters (p->analb.anal->reg, ptr, true);
+			__replaceRegisters (a->analb.anal->reg, ptr, true);
 		}
 	}
 	ptr2 = NULL;
@@ -200,7 +202,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			off = r_num_get (NULL, ptr);
 		}
 		if (off >= p->minval) {
-			fcn = p->analb.get_fcn_in (p->analb.anal, off, 0);
+			fcn = a->analb.get_fcn_in (a->analb.anal, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours
@@ -513,7 +515,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				break;
 			case 10:
 				{
-					RList *regs = r_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
+					RList *regs = r_reg_get_list (a->analb.anal->reg, R_REG_TYPE_GPR);
 					RRegItem *reg;
 					RListIter *iter;
 					bool imm32 = false;
@@ -550,8 +552,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				}
 				break;
 			case 80:
-				if (p && p->analb.anal && p->analb.anal->syscall) {
-					RSyscallItem *si = r_syscall_get (p->analb.anal->syscall, off, -1);
+				if (a && a->analb.anal && a->analb.anal->syscall) {
+					RSyscallItem *si = r_syscall_get (a->analb.anal->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
 					} else {
@@ -587,10 +589,12 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 // TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
 // DEPRECATE
 R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
-	RParse *p = a->parse;
+	RAsmPluginSession *aps = a->cur;
+	RParse *p = aps->rasm->parse;
 	filter (p, addr, f, hint, data, str, len, big_endian);
-	if (p->cur && p->cur->filter) {
-		return p->cur->filter (a, addr, f, data, str, len, big_endian);
+	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
+	if (ap && ap->filter) {
+		return ap->filter (aps, addr, f, data, str, len, big_endian);
 	}
 	return false;
 }

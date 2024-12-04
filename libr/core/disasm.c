@@ -1000,7 +1000,7 @@ static void ds_free(RDisasmState *ds) {
 	R_FREE (ds);
 }
 
-/* XXX move to r_print */
+/* XXX move to r_asm_parse */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.mnemonic;
 	const char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);

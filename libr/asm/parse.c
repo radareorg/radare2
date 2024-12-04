@@ -5,34 +5,11 @@
 
 R_LIB_VERSION (r_parse);
 
-
-#if 0
-
-R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
-	if (r_parse_use (p, name)) {
-		RParseSession *ps = R_NEW0 (RParseSession);
-		ps->p = p;
-		ps->cur = p->cur;
-		return ps;
-	}
-	return NULL;
-}
-#endif
-
-// R_API bool r_parse_session_
-
 R_API RParse *r_parse_new(void) {
 	RParse *p = R_NEW0 (RParse);
-	if (!p) {
-		return NULL;
+	if (R_LIKELY (p)) {
+		p->minval = 0x100;
 	}
-	p->notin_flagspace = NULL;
-	p->flagspace = NULL;
-	p->pseudo = false;
-	p->subrel = false;
-	p->subtail = false;
-	p->minval = 0x100;
-	p->localvar_only = false;
 	return p;
 }
 
@@ -45,20 +22,22 @@ R_API void r_parse_free(RParse *p) {
 // TODO .make it internal
 R_API char *r_asm_parse_pseudo(RAsm *a, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a && data, false);
-	RParse *p = a->parse;
-	char *str = malloc (32 + strlen (data) * 2);
-	strcpy (str, data);
-	RAsmParsePseudo parse = R_UNWRAP3 (p, cur, parse);
-	bool bres = parse? parse (a, data, str) : false;
-	if (bres) {
-		return str;
+	char *str = malloc (32 + (strlen (data) * 2));
+	if (str) {
+		strcpy (str, data);
+		RAsmParsePseudo parse = R_UNWRAP4 (a, cur, plugin, parse);
+		bool bres = parse? parse (a->cur, data, str) : false;
+		if (bres) {
+			return str;
+		}
+		free (str);
 	}
-	free (str);
 	return NULL;
 }
 
 // TODO: make it internal
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
+	R_RETURN_VAL_IF_FAIL (a && _opstr, NULL);
 	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
@@ -99,8 +78,9 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 R_API bool r_asm_parse_subvar(RAsm *a, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	RParse *p = a->parse;
-	if (p->cur && p->cur->subvar) {
-		return p->cur->subvar (a, f, addr, oplen, data, str, len);
+	RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
+	if (pcur && pcur->subvar) {
+		return pcur->subvar (a->cur, f, addr, oplen, data, str, len);
 	}
 	return false;
 }
