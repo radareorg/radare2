@@ -25,7 +25,7 @@ static bool r_core_hack_riscv(RCore *core, const RAnalOp *analop, const char *op
 	if (cmd) {
 		switch (mode) {
 		case '*': r_cons_println (cmd); break;
-		case 'l': r_cons_printf ("%lu\n", (strlen (cmd) - 3)/2); break;
+		case 'l': r_cons_printf ("%d\n", (int)(strlen (cmd) - 3)/2); break;
 		default: r_core_cmd0 (core, cmd); break;
 		}
 		return true;
@@ -46,18 +46,16 @@ static bool r_core_hack_dalvik(RCore *core, const RAnalOp *analop, const char *o
 		cmd = "wx 12100f00"; // mov v0, 1;ret v0
 	} else if (!strcmp (op, "ret0")) {
 		cmd = "wx 12000f00"; // mov v0, 0;ret v0
-	} else {
-		R_LOG_ERROR ("Unsupported operation '%s'", op);
-		return false;
 	}
 	if (cmd) {
 		switch (mode) {
 		case '*': r_cons_println (cmd); break;
-		case 'l': r_cons_printf ("%lu\n", (strlen (cmd) - 3)/2); break;
+		case 'l': r_cons_printf ("%d\n", (int)(strlen (cmd) - 3)/2); break;
 		default: r_core_cmd0 (core, cmd); break;
 		}
 		return true;
 	}
+	R_LOG_ERROR ("Unsupported operation '%s'", op);
 	return false;
 }
 
@@ -71,17 +69,15 @@ R_API bool r_core_hack_arm64(RCore *core, const RAnalOp *analop, const char *op,
 		cmd = "wx 000020d4";
 	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		R_LOG_ERROR ("ARM jz hack not supported");
-		return false;
 	} else if (!strcmp (op, "jinf")) {
 		cmd = "wx 00000014";
 	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
 		R_LOG_ERROR ("ARM jnz hack not supported");
-		return false;
 	} else if (!strcmp (op, "nocj")) {
 		R_LOG_ERROR ("ARM jnz hack not supported");
-		return false;
 	} else if (!strcmp (op, "recj")) {
 		if (analop->size < 4) {
+			R_LOG_ERROR ("can't fit 4 bytes in here");
 			return false;
 		}
 		const ut8 *buf = analop->bytes;
@@ -110,9 +106,6 @@ R_API bool r_core_hack_arm64(RCore *core, const RAnalOp *analop, const char *op,
 			case 0x35: // cbnz
 				cmd = "wx b4 @ $$+3";
 				break;
-			default:
-				R_LOG_ERROR ("TODO: unsupported instruction to toggle conditional jump");
-				return false;
 			}
 			break;
 		}
@@ -122,9 +115,6 @@ R_API bool r_core_hack_arm64(RCore *core, const RAnalOp *analop, const char *op,
 		cmd = "'wa mov x0, 0,,ret";
 	} else if (!strcmp (op, "retn")) {
 		cmd = "'wa mov x0, -1,,ret";
-	} else {
-		R_LOG_ERROR ("Invalid operation '%s'", op);
-		return false;
 	}
 	if (cmd) {
 		switch (mode) {
@@ -134,6 +124,7 @@ R_API bool r_core_hack_arm64(RCore *core, const RAnalOp *analop, const char *op,
 		}
 		return true;
 	}
+	R_LOG_ERROR ("Invalid operation '%s'", op);
 	return false;
 }
 
@@ -258,7 +249,7 @@ R_API bool r_core_hack_arm(RCore *core, const RAnalOp *analop, const char *op, i
 	if (cmd) {
 		switch (mode) {
 		case '*': r_cons_println (cmd); break;
-		case 'l': r_cons_printf ("%lu\n", (strlen (cmd) - 3)/2); break;
+		case 'l': r_cons_printf ("%d\n", (int)(strlen (cmd) - 3)/2); break;
 		default: r_core_cmd_call (core, cmd); break;
 		}
 		free (hcmd);
@@ -275,9 +266,10 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 	const char *cmd = NULL;
 	if (!strcmp (op, "nop")) {
 		if (size * 2 + 1 < size) {
+			R_LOG_ERROR ("Cant fit a nop in here");
 			return false;
 		}
-		char *hcmd = malloc (size * 2 + 1);
+		char *hcmd = malloc ((size * 2) + 5);
 		if (!hcmd) {
 			return false;
 		}
@@ -294,7 +286,6 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 			cmd = "wx 74";
 		} else {
 			R_LOG_ERROR ("Current opcode is not conditional");
-			return false;
 		}
 	} else if (!strcmp (op, "jinf")) {
 		cmd = "wx ebfe";
@@ -303,7 +294,6 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 			cmd = "wx 75";
 		} else {
 			R_LOG_ERROR ("Current opcode is not conditional");
-			return false;
 		}
 	} else if (!strcmp (op, "nocj")) {
 		if (*b == 0xf) {
@@ -312,7 +302,6 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 			cmd = "wx eb";
 		} else {
 			R_LOG_ERROR ("Current opcode is not conditional");
-			return false;
 		}
 	} else if (!strcmp (op, "recj")) {
 		int is_near = (*b == 0xf);
@@ -322,7 +311,6 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 			cmd = hcmd = r_str_newf ("wx 0f%x", (b[1]%2)? b[1] - 1: b[1] + 1);
 		} else {
 			R_LOG_ERROR ("Invalid conditional jump opcode");
-			return false;
 		}
 	} else if (!strcmp (op, "ret1")) {
 		cmd = "wx c20100";
@@ -332,12 +320,11 @@ R_API bool r_core_hack_x86(RCore *core, const RAnalOp *analop, const char *op, i
 		cmd = "wx c2ffff";
 	} else {
 		R_LOG_ERROR ("Invalid operation '%s'", op);
-		return false;
 	}
 	if (cmd) {
 		switch (mode) {
 		case '*': r_cons_println (cmd); break;
-		case 'l': r_cons_printf ("%lu\n", (strlen (cmd) - 3)/2); break;
+		case 'l': r_cons_printf ("%d\n", (int)(strlen (cmd) - 3)/2); break;
 		default: r_core_cmd0 (core, cmd); break;
 		}
 		free (hcmd);

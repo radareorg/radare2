@@ -197,15 +197,8 @@ R_API RAsm *r_asm_new(void) {
 // R2_600 - just call r_asm_parse_use ()
 R_API bool r_asm_sub_names_output(RAsm *a, const char *f) {
 	R_RETURN_VAL_IF_FAIL (a && f, false);
-	if (!a->ofilter) {
-		a->ofilter = r_parse_new ();
-	}
-	if (!r_parse_use (a->ofilter, f)) {
-		r_parse_free (a->ofilter);
-		a->ofilter = NULL;
-		return false;
-	}
-	return true;
+	// XXX deprecate. just the asm.useParser()
+	return r_asm_use_parser (a, f);
 }
 
 R_API void r_asm_free(RAsm *a) {
@@ -235,6 +228,77 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	// TODO not implemented
 	return false;
 }
+
+static char *predotname(const char *name) {
+	char *sname = strdup (name);
+	char *dot = strchr (sname, '.');
+	if (dot) {
+		*dot = 0;
+	}
+	return sname;
+}
+
+R_API bool r_asm_use_parser(RAsm *a, const char *name) {
+	R_RETURN_VAL_IF_FAIL (a && name, false);
+	RParse *p = a->parse;
+
+	if (r_str_startswith (name, "r2ghidra")) {
+		// This plugin uses asm.cpu as a hack, ignoring
+		return false;
+	}
+	// TODO: remove the alias workarounds because of missing pseudo plugins
+	if (r_str_startswith (name, "s390.")) {
+		name = "x86.pseudo";
+	}
+#if 0
+	if (r_str_startswith (name, "blackfin")) {
+		name = "arm.pseudo";
+	}
+#endif
+
+	RListIter *iter;
+	RParsePlugin *h;
+	r_list_foreach (p->parsers, iter, h) {
+		if (!strcmp (h->meta.name, name)) {
+			p->cur = h;
+			return true;
+		}
+	}
+	bool found = false;
+	if (strchr (name, '.')) {
+		char *sname = predotname (name);
+		r_list_foreach (p->parsers, iter, h) {
+			char *shname = predotname (h->meta.name);
+			found = !strcmp (shname, sname);
+			free (shname);
+			if (found) {
+				p->cur = h;
+				break;
+			}
+		}
+		free (sname);
+	}
+	if (!found) {
+		R_LOG_WARN ("Cannot find asm.parser for %s", name);
+		if (p->cur && p->cur->meta.name) {
+			if (r_str_startswith (p->cur->meta.name, "null")) {
+				return false;
+			}
+		}
+		// check if p->cur
+		r_list_foreach (p->parsers, iter, h) {
+			if (r_str_startswith (h->meta.name, "null")) {
+				R_LOG_INFO ("Fallback to null");
+				// R_LOG_INFO ("Fallback to null from %s", p->cur->name);
+				p->cur = h;
+				return false;
+			}
+		}
+		return false;
+	}
+	return true;
+}
+
 
 static void load_asm_descriptions(RAsm *a) {
 	const char *arch = a->config->arch;
@@ -1143,4 +1207,29 @@ R_API RList *r_asm_cpus(RAsm *a) {
 		: r_list_newf (free);
 	r_list_sort (list, (RListComparator)strcmp);
 	return list;
+}
+
+R_API char *r_asm_parse(RAsm *a, const char *s, int what) {
+	char *res = strdup (s);
+	if (what & R_PARSE_FILTER_IMMTRIM) {
+		char *newres = r_parse_immtrim (a->parse, s);
+		if (newres) {
+			free (res);
+			res = newres;
+		}
+	}
+	if (what & R_PARSE_FILTER_SUBVAR) {
+		// r_parse_subvar (a->parse, f, addr, oplen, ..)
+	}
+	if (what & R_PARSE_FILTER_PSEUDO) {
+		char *newres = r_parse_pseudo (a->parse, s);
+		if (newres) {
+			free (res);
+			res = newres;
+		}
+	}
+	if (what & R_PARSE_FILTER_COLOR) {
+		// TODO
+	}
+	return res;
 }

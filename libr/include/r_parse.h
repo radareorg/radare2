@@ -67,15 +67,9 @@ R_API RParse *r_parse_new(void);
 R_API void r_parse_free(RParse *p);
 
 /* plugins */
-R_API void r_parse_set_user_ptr(RParse *p, void *user);
 R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *plugin);
 R_API bool r_parse_plugin_remove(RParse *p, RParsePlugin *plugin);
 R_API bool r_parse_use(RParse *p, const char *name);
-
-#define R_PARSE_FILTER_IMMTRIM 1
-#define R_PARSE_FILTER_SUBVAR 2
-#define R_PARSE_FILTER_FILTER 4
-#define R_PARSE_FILTER_INSTRUCTION 8
 
 /* action */
 // DEPRECATED R_API bool r_parse_parse(RParse *p, const char *data, char *str);

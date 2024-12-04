@@ -1075,7 +1075,7 @@ static bool cb_asmparser(void *user, void *data) {
 		print_node_options (node);
 		return false;
 	}
-	return r_parse_use (core->parser, node->value);
+	return r_asm_use_parser (core->rasm, node->value);
 }
 
 typedef struct {

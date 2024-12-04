@@ -2689,8 +2689,6 @@ R_API bool r_core_init(RCore *core) {
 	core->parser = r_parse_new ();
 	r_anal_bind (core->anal, &(core->parser->analb));
 	core->parser->varlist = r_anal_function_get_var_fields;
-	/// XXX shouhld be using coreb
-	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
 	r_cons_bind (&core->bin->consb);
 	// XXX we should use RConsBind instead of this hardcoded pointer
