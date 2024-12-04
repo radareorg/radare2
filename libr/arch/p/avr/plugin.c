@@ -612,12 +612,9 @@ static void _inst__dec(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, i
 
 static void _inst__des(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
 	// DES k
-	PluginData *pd = as->data;
-	if (pd->desctx.round < 16) { // DES
-		op->type = R_ANAL_OP_TYPE_CRYPTO;
-		op->cycles = 1; // redo this
-		r_strbuf_setf (&op->esil, "%d,des", pd->desctx.round);
-	}
+	op->type = R_ANAL_OP_TYPE_CRYPTO;
+	op->cycles = 1; // redo this
+	r_strbuf_setf (&op->esil, "%d,des", buf[0] >> 4);
 }
 
 static void _inst__eijmp(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
