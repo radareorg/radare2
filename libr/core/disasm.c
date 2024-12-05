@@ -380,7 +380,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_demangled(RDisasmState *ds);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
-static char *ds_sub_jumps(RDisasmState *ds, char *str);
+static char *ds_sub_jumps(RDisasmState *ds, const char *str);
 static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
@@ -1176,7 +1176,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			RVecAnalRef_free (refs);
 		}
 	}
-	ds->opstr = ds_sub_jumps (ds, ds->opstr);
+	char *res = ds_sub_jumps (ds, ds->opstr);
+	if (res) {
+		free (ds->opstr);
+		ds->opstr = res;
+	}
 	if (ds->immtrim) {
 		char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 		if (res) {
@@ -6144,14 +6148,14 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 	return true;
 }
 
-// TODO: this should be moved into r_parse
-static char *ds_sub_jumps(RDisasmState *ds, char *str) {
+// R2_600 - TODO: this should be moved into r_parse
+static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	RAnal *anal = ds->core->anal;
 	RFlag *f = ds->core->flags;
 	const char *name = NULL;
 	const char *kw = "";
 	if (!ds->subjmp || !anal) {
-		return str;
+		return NULL;
 	}
 	int optype = ds->analop.type & 0xFFFF;
 	switch (optype) {
@@ -6160,7 +6164,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	case R_ANAL_OP_TYPE_CALL:
 		break;
 	default:
-		return str;
+		return NULL;
 	}
 	ut64 addr = ds->analop.jump;
 
@@ -6197,9 +6201,10 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		}
 	}
 	if (name) {
-		char *nptr, *ptr;
+		char *nptr;
 		ut64 numval;
-		ptr = str;
+		char *hstr = strdup (str);
+		char *ptr = hstr;
 		while ((nptr = _find_next_number (ptr))) {
 			ptr = nptr;
 			const char* arch = r_config_get (ds->core->config, "asm.arch");
@@ -6224,7 +6229,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr-ptr);
 					if (numstr) {
-						str = r_str_replace (str, numstr, kwname, 0);
+						hstr = r_str_replace (hstr, numstr, kwname, 0);
 						free (numstr);
 					}
 					free (kwname);
@@ -6232,8 +6237,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				break;
 			}
 		}
+		return hstr;
 	}
-	return str;
+	return NULL;
 }
 
 static bool line_highlighted(RDisasmState *ds) {
