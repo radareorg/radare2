@@ -438,9 +438,8 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		return 0;
 	}
 
-	int ret = 0; // op->payload = 0;
+	int ret = 0;
 	op->size = 4;
-	// op->bitsize = 0;
 	r_anal_op_set_mnemonic (op, op->addr, "");
 	if (a->config->codealign) {
 		const int mod = a->pc % a->config->codealign;
@@ -451,11 +450,8 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->analb.anal) {
-		// disassemble using the analysis plugin if found
-		// a->analb.opinit (op);
-		ret = a->analb.decode (a->analb.anal, op, a->pc, buf, len, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
-		// r_strbuf_set (&op->buf_asm, aop.mnemonic? aop.mnemonic: "");
-		// a->analb.opfini (op);
+		ret = a->analb.decode (a->analb.anal, op, a->pc,buf, len,
+				R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
 	}
 	if (ret < 0) {
 		ret = 0;
@@ -1105,22 +1101,9 @@ fail:
 	return NULL;
 }
 
-#if 0
-// XXX this is unused code!
-R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
-	return (a->cur && a->cur->modify) ? a->cur->modify (a, buf, field, val): false;
-}
-#endif
-
 R_API char *r_asm_describe(RAsm *a, const char* str) {
 	return (a && a->pair)? sdb_get (a->pair, str, 0): NULL;
 }
-
-#if 0
-R_API const RList* r_asm_get_plugins(RAsm *a) {
-	return a->plugins;
-}
-#endif
 
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {

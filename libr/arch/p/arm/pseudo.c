@@ -354,6 +354,204 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 	return oldstr;
 }
 
+static char *r_core_hack_arm64(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
+	const char *cmd = NULL;
+	if (!strcmp (op, "nop")) {
+		cmd = "wx 1f2003d5";
+	} else if (!strcmp (op, "ret")) {
+		cmd = "wx c0035fd6t";
+	} else if (!strcmp (op, "trap")) {
+		cmd = "wx 000020d4";
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
+		R_LOG_ERROR ("ARM jz hack not supported");
+	} else if (!strcmp (op, "jinf")) {
+		cmd = "wx 00000014";
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
+		R_LOG_ERROR ("ARM jnz hack not supported");
+	} else if (!strcmp (op, "nocj")) {
+		R_LOG_ERROR ("ARM jnz hack not supported");
+	} else if (!strcmp (op, "recj")) {
+		if (aop->size < 4) {
+			R_LOG_ERROR ("can't fit 4 bytes in here");
+			return NULL;
+		}
+		const ut8 *buf = aop->bytes;
+		if (!buf) {
+			return NULL;
+		}
+		switch (*buf) {
+		case 0x4c: // bgt -> ble
+			cmd = "wx 4d";
+			break;
+		case 0x4d: // ble -> bgt
+			cmd = "wx 4c";
+			break;
+		default:
+			switch (buf[3]) {
+			case 0x36: // tbz
+				cmd = "wx 37 @ $$+3";
+				break;
+			case 0x37: // tbnz
+				cmd = "wx 36 @ $$+3";
+				break;
+			case 0x34: // cbz
+			case 0xb4: // cbz
+				cmd = "wx 35 @ $$+3";
+				break;
+			case 0x35: // cbnz
+				cmd = "wx b4 @ $$+3";
+				break;
+			}
+			break;
+		}
+	} else if (!strcmp (op, "ret1")) {
+		cmd = "'wa mov x0, 1,,ret";
+	} else if (!strcmp (op, "ret0")) {
+		cmd = "'wa mov x0, 0,,ret";
+	} else if (!strcmp (op, "retn")) {
+		cmd = "'wa mov x0, -1,,ret";
+	}
+	if (cmd) {
+		return strdup (cmd);
+	}
+	return NULL;
+}
+
+static char *r_core_hack_arm(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
+	const int bits = s->rasm->config->bits;
+	const ut8 *b = aop->bytes;
+	char *hcmd = NULL;
+	const char *cmd = NULL;
+
+	if (!strcmp (op, "nop")) {
+		const int nopsize = (bits == 16)? 2: 4;
+		const char *nopcode = (bits == 16)? "00bf":"0000a0e1";
+		const int len = aop->size;
+		int i;
+
+		if (len % nopsize) {
+			R_LOG_ERROR ("Invalid nopcode size");
+			return false;
+		}
+		hcmd = calloc (len + 8, 2);
+		if (R_LIKELY (hcmd)) {
+			strcpy (hcmd, "wx ");
+			int n = 3;
+			for (i = 0; i < len; i += nopsize) {
+				memcpy (hcmd + n + i * 2, nopcode, nopsize * 2);
+			}
+			hcmd[n + (len * 2)] = '\0';
+			cmd = hcmd;
+		}
+	} else if (!strcmp (op, "jinf")) {
+		hcmd = r_str_newf ("wx %s", (bits==16)? "fee7": "feffffea");
+		cmd = hcmd;
+	} else if (!strcmp (op, "trap")) {
+		const char* trapcode = (bits==16)? "bebe": "fedeffe7";
+		hcmd = r_str_newf ("wx %s", trapcode);
+		cmd = hcmd;
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
+		if (bits == 16) {
+			switch (b[1]) {
+			case 0xb9: // CBNZ
+				cmd = "wx b1 @ $$+1"; //CBZ
+				break;
+			case 0xbb: // CBNZ
+				cmd = "wx b3 @ $$+1"; //CBZ
+				break;
+			case 0xd1: // BNE
+				cmd = "wx d0 @ $$+1"; //BEQ
+				break;
+			default:
+				R_LOG_ERROR ("Current opcode is not conditional");
+				return NULL;
+			}
+		} else {
+			R_LOG_ERROR ("ARM jz hack not supported");
+			return NULL;
+		}
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
+		if (bits == 16) {
+			switch (b[1]) {
+			case 0xb1: // CBZ
+				cmd = "wx b9 @ $$+1"; //CBNZ
+				break;
+			case 0xb3: // CBZ
+				cmd = "wx bb @ $$+1"; //CBNZ
+				break;
+			case 0xd0: // BEQ
+				cmd = "wx d1 @ $$+1"; //BNE
+				break;
+			default:
+				R_LOG_ERROR ("Current opcode is not conditional");
+				return NULL;
+			}
+		} else {
+			R_LOG_ERROR ("ARM jnz hack not supported");
+			return NULL;
+		}
+	} else if (!strcmp (op, "nocj")) {
+		// TODO: drop conditional bit instead of that hack
+		if (bits == 16) {
+			switch (b[1]) {
+			case 0xb1: // CBZ
+			case 0xb3: // CBZ
+			case 0xd0: // BEQ
+			case 0xb9: // CBNZ
+			case 0xbb: // CBNZ
+			case 0xd1: // BNE
+				cmd = "wx e0 @ $$+1"; //BEQ
+				break;
+			default:
+				R_LOG_ERROR ("Current opcode is not conditional");
+				return NULL;
+			}
+		} else {
+			R_LOG_ERROR ("ARM un-cjmp hack not supported");
+			return NULL;
+		}
+	} else if (!strcmp (op, "recj")) {
+		R_LOG_ERROR ("TODO: use jnz or jz");
+		return false;
+	} else if (!strcmp (op, "ret1")) {
+		if (bits == 16) {
+			cmd = "wx 01207047"; // mov r0, 1; bx lr
+		} else {
+			cmd = "wx 0100b0e31eff2fe1"; // movs r0, 1; bx lr
+		}
+	} else if (!strcmp (op, "ret0")) {
+		if (bits == 16) {
+			cmd = "wx 00207047"; // mov r0, 0; bx lr
+		} else {
+			cmd = "wx 0000a0e31eff2fe1"; // movs r0, 0; bx lr
+		}
+	} else if (!strcmp (op, "retn")) {
+		if (bits == 16) {
+			cmd = "wx ff207047"; // mov r0, -1; bx lr
+		} else {
+			cmd = "wx ff00a0e31eff2fe1"; // movs r0, -1; bx lr
+		}
+	} else {
+		R_LOG_ERROR ("Invalid operation");
+		return NULL;
+	}
+	if (hcmd) {
+		return hcmd;
+	}
+	if (cmd) {
+		return strdup (cmd);
+	}
+	free (hcmd);
+	return NULL;
+}
+
+static char *patch(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
+	if (s->rasm->config->bits == 64) {
+		return r_core_hack_arm64 (s, aop, op);
+	}
+	return r_core_hack_arm (s, aop, op);
+}
+
 static bool subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	RAsm *a = s->rasm;
@@ -494,6 +692,7 @@ RAsmPlugin r_asm_plugin_arm = {
 	},
 	.parse = parse,
 	.subvar = subvar,
+	.patch = patch
 };
 
 #ifndef R2_PLUGIN_INCORE

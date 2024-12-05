@@ -83,3 +83,12 @@ R_API bool r_asm_parse_subvar(RAsm *a, R_NULLABLE RAnalFunction *f, ut64 addr, i
 	}
 	return false;
 }
+
+R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *op) {
+	R_RETURN_VAL_IF_FAIL (a, false);
+	RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
+	if (pcur && pcur->patch) {
+		return pcur->patch (a->cur, aop, op);
+	}
+	return NULL;
+}

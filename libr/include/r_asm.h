@@ -85,12 +85,12 @@ typedef struct r_asm_plugin_session_t {
 	void *data;
 } RAsmPluginSession;
 
-// TODO: Take RAsmSession as first argument
 typedef void (*RAsmParseInit)(RAsmPluginSession *s);
 typedef void (*RAsmParseFini)(RAsmPluginSession *s);
 typedef bool (*RAsmParsePseudo)(RAsmPluginSession *s, const char *data, char *str);
 typedef int (*RAsmParseFilter)(RAsmPluginSession *s, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
 typedef bool (*RAsmParseSubvar)(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+typedef char *(*RAsmParsePatch)(RAsmPluginSession *s, RAnalOp *aop, const char *newop);
 
 typedef struct r_asm_plugin_t {
 	RPluginMeta meta;
@@ -99,6 +99,7 @@ typedef struct r_asm_plugin_t {
 	RAsmParsePseudo parse; // TODO. rename to pseudo
 	RAsmParseFilter filter;
 	RAsmParseSubvar subvar;
+	RAsmParsePatch patch;
 } RAsmPlugin;
 
 #ifdef R_API
@@ -111,6 +112,7 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data);
 R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_asm_parse_subvar(RAsm *a, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *opstr);
+R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *newop);
 
 
 /* asm.c */
