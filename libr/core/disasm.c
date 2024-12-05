@@ -7230,7 +7230,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	ut64 at;
 	int dis_opcodes = 0;
 	int limit_by = 'b';
-	char str[512];
 
 	const char *pdu_condition_opcode = pdu_condition ? (const char *)pdu_condition : "";
 	int opcode_len = strlen (pdu_condition_opcode);
@@ -7397,15 +7396,18 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				core->rasm->parse->subrel_addr = killme;
 			}
 		}
+		char *disasm = strdup (asmop.mnemonic);
 		{
-			char *buf = ds_sub_jumps (ds, asmop.mnemonic);
-			if (!buf) {
-				buf = strdup (asmop.mnemonic);
+			char *buf = ds_sub_jumps (ds, disasm);
+			if (buf) {
+				free (disasm);
+				disasm = buf;
 			}
-			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf);
+			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, disasm);
 			if (res) {
 				r_asm_op_set_asm (&asmop, res);
-				free (res);
+				free (disasm);
+				disasm = res;
 			}
 			free (buf);
 		}
@@ -7425,7 +7427,8 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_kn (pj, "fcn_last", f ? r_anal_function_max_addr (f) - ds->oplen : 0);
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
-		pj_ks (pj, "disasm", str);
+		pj_ks (pj, "disasm", disasm);
+		free (disasm);
 		{
 			char *hex = r_asm_op_get_hex (&asmop);
 			pj_ks (pj, "bytes", hex);
