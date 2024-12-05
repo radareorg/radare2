@@ -230,14 +230,14 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						name = flag->realname;
 					}
 				}
-				char *res = r_str_newf ("%s%s%s", data, name, (ptr != ptr2)? ptr2: "");
+				char *res = r_str_newf ("%s%s%s", hdata, name, (ptr != ptr2)? ptr2: "");
 				free (hdata);
 				return res;
 			}
 			if (f) {
 				RFlagItem *flag2;
-				bool lea = x86 && r_str_startswith (data, "lea")
-						&& (data[3] == ' ' || data[3] == 0x1b);
+				bool lea = x86 && r_str_startswith (hdata, "lea")
+						&& (hdata[3] == ' ' || hdata[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, false, off);
 				if ((!flag || arm) && p->subrel_addr) {
@@ -269,21 +269,18 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					if (remove_brackets && ptr != ptr2 && *ptr) {
 						if (*ptr2 == ']') {
 							ptr2++;
-							for (ptr--; ptr > data && *ptr != '['; ptr--) {
+							for (ptr--; ptr > hdata && *ptr != '['; ptr--) {
 								;
 							}
-							if (ptr == data) {
+							if (ptr == hdata) {
 								ptr = ptr_backup;
 							}
 						}
 					}
 					*ptr = 0;
-					char *flagname;
-					if (label) {
-						flagname = r_str_newf (".%s", label);
-					} else {
-						flagname = strdup (f->realnames? flag->realname : flag->name);
-					}
+					char *flagname = label
+						? r_str_newf (".%s", label)
+						: strdup (f->realnames? flag->realname : flag->name);
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
@@ -301,17 +298,14 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							flagname = newstr;
 						} else {
 							const char *lower = r_str_rstr (flagname, "_");
-							char *newstr;
-							if (lower) {
-								newstr = r_str_newf ("..%s", lower + 1);
-							} else {
-								newstr = r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
-							}
+							char *newstr = lower
+								? r_str_newf ("..%s", lower + 1)
+								: r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
 							free (flagname);
 							flagname = newstr;
 						}
 					}
-					char *str = r_str_newf ("%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					char *str = r_str_newf ("%s%s%s", hdata, flagname, (ptr != ptr2) ? ptr2 : "");
 					free (flagname);
 					bool banned = false;
 					{
@@ -324,7 +318,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					}
 					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
-						char *ptr_end = str + strlen (data) + flag_len - 1;
+						char *ptr_end = str + strlen (hdata) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
 						if (!*ptr_end) {

@@ -7363,8 +7363,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			continue;
 		}
 
-		char opstr[256];
-		r_str_ncpy (opstr, asmop.mnemonic, sizeof (opstr) - 1);
+		char * opstr = strdup (asmop.mnemonic);
 		core->rasm->pseudo = opseudo;
 
 		ds->has_description = false;
@@ -7374,8 +7373,8 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		if (ds->pseudo) {
 			char *res = r_asm_parse_pseudo (core->rasm, opstr);
 			if (res) {
-				r_str_ncpy (opstr, res, sizeof (opstr));
-				free (res);
+				free (opstr);
+				opstr = res;
 			}
 		}
 
@@ -7439,6 +7438,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", disasm);
 		free (disasm);
+		free (opstr);
 		{
 			char *hex = r_asm_op_get_hex (&asmop);
 			pj_ks (pj, "bytes", hex);
@@ -7843,8 +7843,7 @@ toro:
 			}
 		}
 		r_asm_set_pc (core->rasm, addr + i);
-		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i,
-			nb_bytes - addrbytes * i);
+		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ret = asmop.size;
 		if (midflags || midbb) {
 			RDisasmState ds = {
