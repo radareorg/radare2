@@ -4625,6 +4625,10 @@ static void visual_refresh_oneshot(RCore *core) {
 }
 
 static int varcount(RCore *core, RAnalFunction *f) {
+	int mode = r_config_get_i (core->config, "asm.var.summary");
+	if (mode != 0) {
+		return 0;
+	}
 	RAnalFcnVarsCache vars_cache;
 	if (!f) {
 		f = r_anal_get_function_at (core->anal, core->offset);
