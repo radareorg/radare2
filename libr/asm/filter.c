@@ -582,8 +582,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				break;
 			}
 			*ptr = 0;
+			char *res = r_str_newf ("%s%s%s", hdata, num, (ptr != ptr2)? ptr2: "");
 			free (hdata);
-			return r_str_newf ("%s%s%s", data, num, (ptr != ptr2)? ptr2: "");
+			return res;
 		}
 		ptr = ptr2;
 	}
