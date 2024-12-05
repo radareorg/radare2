@@ -420,15 +420,12 @@ static void handle_sigchld(int sig) {
 
 static R2RSubprocess *pid_to_proc(int pid) {
 	void **it;
-	r_th_lock_enter (subprocs_mutex);
 	r_pvector_foreach (&subprocs, it) {
 		R2RSubprocess *p = *it;
 		if (p->pid == pid) {
-			r_th_lock_leave (subprocs_mutex);
 			return p;
 		}
 	}
-	r_th_lock_leave (subprocs_mutex);
 	return NULL;
 }
 
@@ -456,6 +453,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			// 	r_sys_perror ("waitpid failed");
 				continue;
 			}
+			r_th_lock_enter (subprocs_mutex);
 			R2RSubprocess *proc = pid_to_proc (pid);
 			if (proc) {
 				r_th_lock_enter (proc->lock);
@@ -473,9 +471,11 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				r_th_lock_leave (proc->lock);
 				if (ret != 1) {
 					r_sys_perror ("write killpipe-");
+					r_th_lock_leave (subprocs_mutex);
 					break;
 				}
 			}
+			r_th_lock_leave (subprocs_mutex);
 		}
 	}
 	return R_TH_STOP;
@@ -786,7 +786,6 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	r_th_lock_enter (subprocs_mutex);
 	r_th_lock_free (proc->lock);
 	r_pvector_remove_data (&subprocs, proc);
-	r_th_lock_leave (subprocs_mutex);
 	r_strbuf_fini (&proc->out);
 	r_strbuf_fini (&proc->err);
 	close (proc->killpipe[0]);
@@ -797,6 +796,7 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	close (proc->stdout_fd);
 	close (proc->stderr_fd);
 	free (proc);
+	r_th_lock_leave (subprocs_mutex);
 }
 #endif
 
