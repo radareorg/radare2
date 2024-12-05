@@ -122,7 +122,7 @@ e asm.cpu=ATmega8
 ao 1 @ 0x15e~^jump[1]
 EOF
 EXPECT=<<EOF
-0x00006824
+0x00000824
 EOF
 RUN
 
@@ -137,7 +137,7 @@ ao 1~^jump[1]
 EOF
 EXPECT=<<EOF
 rjmp 0x3434
-0x00003434
+0x00001434
 EOF
 RUN
 
