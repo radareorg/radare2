@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2024 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -32,7 +32,6 @@ typedef struct _cpu_model_tag {
 } CPU_MODEL;
 
 typedef struct plugin_data_t {
-	RDESContext desctx;
 	CPU_MODEL *cpu;
 } PluginData;
 
@@ -1781,12 +1780,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static bool avr_custom_des(REsil *esil) {
-	ut64 key, encrypt, text, des_round;
-	ut32 key_lo, key_hi, buf_lo, buf_hi;
-	PluginData *pd = R_UNWRAP5 (esil, anal, arch, session, data);
-	if (!esil || !pd) {
+	if (!esil) {
 		return false;
 	}
+	ut64 key, encrypt, text, des_round;
 	if (!__esil_pop_argument (esil, &des_round)) {
 		return false;
 	}
@@ -1794,42 +1791,28 @@ static bool avr_custom_des(REsil *esil) {
 	r_esil_reg_read (esil, "deskey", &key, NULL);
 	r_esil_reg_read (esil, "text", &text, NULL);
 
-	key_lo = key & UT32_MAX;
-	key_hi = key >> 32;
-	buf_lo = text & UT32_MAX;
-	buf_hi = text >> 32;
+	ut32 key_lo = key & UT32_MAX;
+	ut32 key_hi = key >> 32;
+	ut32 buf_lo = text & UT32_MAX;
+	ut32 buf_hi = text >> 32;
 
-	if (des_round != pd->desctx.round) {
-		pd->desctx.round = des_round;
+	des_round &= 0xf;
+	if (!encrypt) {
+		des_round ^= 0xf;
 	}
 
-	if (!pd->desctx.round) {
-		int i;
-		// generating all round keys
-		r_des_permute_key (&key_lo, &key_hi);
-		for (i = 0; i < 16; i++) {
-			r_des_round_key (i, &pd->desctx.round_key_lo[i], &pd->desctx.round_key_hi[i], &key_lo, &key_hi);
-		}
+	ut32 round_key_lo, round_key_hi;
+	r_des_round_key (des_round, &round_key_lo, &round_key_hi, &key_lo, &key_hi);
+
+	if (!des_round) {
 		r_des_permute_block0 (&buf_lo, &buf_hi);
 	}
-
-	if (encrypt) {
-		r_des_round (&buf_lo, &buf_hi,
-			&pd->desctx.round_key_lo[pd->desctx.round],
-			&pd->desctx.round_key_hi[pd->desctx.round]);
-	} else {
-		r_des_round (&buf_lo, &buf_hi,
-			&pd->desctx.round_key_lo[15 - pd->desctx.round],
-			&pd->desctx.round_key_hi[15 - pd->desctx.round]);
-	}
-
-	if (pd->desctx.round == 15) {
+	r_des_round (&buf_lo, &buf_hi, &round_key_lo, &round_key_hi);
+	if (des_round == 0xf) {
 		r_des_permute_block1 (&buf_hi, &buf_lo);
-		pd->desctx.round = 0;
-	} else {
-		pd->desctx.round++;
 	}
 
+	text = (((ut64)buf_hi) << 32) | buf_lo;
 	r_esil_reg_write (esil, "text", text);
 	return true;
 }
@@ -1860,8 +1843,7 @@ static bool avr_custom_spm_page_erase(REsil *esil) {
 	ut8 c = 0xff;
 	ut64 i;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
-		r_esil_mem_write (
-			esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
+		r_esil_mem_write (esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
 	}
 
 	return true;
@@ -1972,9 +1954,7 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 static bool esil_avr_init(RArchSession *as, REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (as && as->data && esil, false);
 
-	PluginData *pd = as->data;
-	pd->desctx.round = 0;
-	r_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ESIL_OP_TYPE_CUSTOM); // better meta info plz
+	r_esil_set_op (esil, "des", avr_custom_des, 0, 1, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
