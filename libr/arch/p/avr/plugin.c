@@ -127,12 +127,55 @@ CPU_MODEL cpu_models[] = {
 			cpu_reg_common,
 			cpu_memsize_m640_m1280m_m1281_m2560_m2561,
 			cpu_pagesize_7_bits,
-			NULL },
+			NULL
+		}
 	},
-	{ .model = "ATxmega128a4u", .pc = 17, .consts = { cpu_reg_common, cpu_memsize_xmega128a4u, cpu_pagesize_7_bits, NULL } }, { .model = "ATmega1280", .pc = 16, .inherit = "ATmega640" }, { .model = "ATmega1281", .pc = 16, .inherit = "ATmega640" }, { .model = "ATmega2560", .pc = 17, .inherit = "ATmega640" }, { .model = "ATmega2561", .pc = 17, .inherit = "ATmega640" }, { .model = "ATmega88", .pc = 8, .inherit = "ATmega8" },
-	//	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
+	{
+		.model = "ATxmega128a4u",
+		.pc = 17,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_xmega128a4u,
+			cpu_pagesize_7_bits,
+			NULL
+		}
+	},
+	{
+		.model = "ATmega1280",
+		.pc = 16,
+		.inherit = "ATmega640"
+	},
+	{
+		.model = "ATmega1281",
+		.pc = 16,
+		.inherit = "ATmega640"
+	},
+	{
+		.model = "ATmega2560",
+		.pc = 17,
+		.inherit = "ATmega640"
+	},
+	{
+		.model = "ATmega2561",
+		.pc = 17,
+		.inherit = "ATmega640"
+	},
+	{
+		.model = "ATmega88",
+		.pc = 8,
+		.inherit = "ATmega8"
+	},
 	// last model is the default AVR - ATmega8 forever!
-	{ .model = "ATmega8", .pc = 13, .consts = { cpu_reg_common, cpu_memsize_common, cpu_pagesize_5_bits, NULL } },
+	{
+		.model = "ATmega8",
+		.pc = 13,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_common,
+			cpu_pagesize_5_bits,
+			NULL
+		}
+	},
 	//{ .model = NULL },
 };
 
