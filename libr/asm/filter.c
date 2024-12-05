@@ -405,7 +405,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
-				char *res = r_str_newf ("%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
+				char *res = r_str_newf ("%s%s%s", hdata, hint->offset, (ptr != ptr2)? ptr2: "");
 				free (hdata);
 				return res;
 			}
@@ -529,7 +529,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					RListIter *iter;
 					bool imm32 = false;
 					r_list_foreach (regs, iter, reg) {
-						if (reg->size == 32 && r_str_casestr (data, reg->name)) {
+						if (reg->size == 32 && r_str_casestr (hdata, reg->name)) {
 							imm32 = true;
 							break;
 						}
