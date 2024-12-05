@@ -1232,7 +1232,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		// use 'str' from now on
 		// subvar depends on filter
 		if (ds->subvar) {
-			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
+			// R2_600 - HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->opstr, "0x");
 			if (ox) {
 				char *e = strchr (ox, ']');
