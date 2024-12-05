@@ -2,7 +2,7 @@
 
 #define R_LOG_ORIGIN "disasm"
 
-#include "r_core.h"
+#include <r_core.h>
 #include <r_vec.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
@@ -1240,46 +1240,44 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					e = strchr (ox, ',');
 					if (!e) {
 						e = strchr (ox, ')');
+						if (!e) {
+							e = "";
+						}
 					}
 				}
-				if (e) {
-					e = strdup (e);
-					ut64 addr = r_num_get (NULL, ox);
-					if (addr > ds->min_ref_addr) {
-						const RList *ls = r_flag_get_list (ds->core->flags, addr);
-						RFlagItem *fi;
-						RListIter *iter;
-						r_list_foreach (ls, iter, fi) {
-							if (fi->space && fi->space->name && (!strcmp (fi->space->name, "format") || !strcmp (fi->space->name, "segments") || !strcmp (fi->space->name, "sections"))) {
-								// ignore
-							} else {
-								const char *n = (fi->realname) ? fi->realname: fi->name;
-								if (strlen (n) > 3) {
-									char *opstrx = r_str_ndup (ds->opstr, ox - ds->opstr);
-									char *newox = r_str_newf ("%s%s%s", opstrx, n, e);
-									free (ds->opstr);
-									ds->opstr = newox;
-									free (opstrx);
-									break;
-								}
+				e = strdup (e);
+				ut64 addr = r_num_get (NULL, ox);
+				if (addr > ds->min_ref_addr) {
+					const RList *ls = r_flag_get_list (ds->core->flags, addr);
+					RFlagItem *fi;
+					RListIter *iter;
+					r_list_foreach (ls, iter, fi) {
+						const char *fsname = R_UNWRAP3 (fi, space, name);
+						if (fsname && (!strcmp (fsname, "format") || !strcmp (fsname, "segments") || !strcmp (fsname, "sections"))) {
+							// ignore
+						} else {
+							const char *n = (core->flags->realnames) ? fi->realname? fi->realname: fi->name: fi->name;
+							if (strlen (n) > 3) {
+								char *opstrx = r_str_ndup (ds->opstr, ox - ds->opstr);
+								char *newox = r_str_newf ("%s%s%s", opstrx, n, e);
+								free (ds->opstr);
+								ds->opstr = newox;
+								free (opstrx);
+								break;
 							}
 						}
 					}
-					free (e);
 				}
+				free (e);
 			}
 		}
 		core->rasm->parse->flagspace = ofs;
-		__replaceImports (ds);
-		char *asm_str = colorize_asm_string (core, ds, print_color);
-		if (asm_str) {
-			free (ds->opstr);
-			ds->opstr = asm_str;
-		}
 	} else {
 		r_str_trim (ds->opstr); // trim before coloring git
-		__replaceImports (ds);
-		char *asm_str = colorize_asm_string (core, ds, print_color);
+	}
+	__replaceImports (ds);
+	char *asm_str = colorize_asm_string (core, ds, print_color);
+	if (asm_str) {
 		free (ds->opstr);
 		ds->opstr = asm_str;
 	}
