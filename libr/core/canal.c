@@ -6463,6 +6463,7 @@ typedef struct {
 	bool followCalls;
 	int followDepth;
 	int count; // max number of results
+	bool interrupted;
 } RCoreAnalPaths;
 
 static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
@@ -6492,16 +6493,16 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 static void analPaths(RCoreAnalPaths *p, PJ *pj);
 
 static void analPathFollow(RCoreAnalPaths *p, ut64 addr, PJ *pj) {
-	if (addr == UT64_MAX) {
-		return;
-	}
-	if (!dict_get (&p->visited, addr)) {
+	if (addr != UT64_MAX && !dict_get (&p->visited, addr)) {
 		p->cur = r_anal_bb_from_offset (p->core->anal, addr);
 		analPaths (p, pj);
 	}
 }
 
 static void analPaths(RCoreAnalPaths *p, PJ *pj) {
+	if (p->interrupted) {
+		return;
+	}
 	RAnalBlock *cur = p->cur;
 	if (!cur) {
 		// eprintf ("eof\n");
@@ -6517,24 +6518,39 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 		return;
 	}
 	if (p->toBB && cur->addr == p->toBB->addr) {
+		// one path is enough
+		p->interrupted = true;
 		if (!printAnalPaths (p, pj)) {
 			return;
 		}
 	} else {
-		ut64 j = cur->jump;
-		ut64 f = cur->fail;
-		analPathFollow (p, j, pj);
-		analPathFollow (p, f, pj);
-		if (p->cur == cur && p->followCalls) {
+		// if (p->cur == cur && p->followCalls) {
+		if (p->followCalls) {
 			int i;
 			for (i = 0; i < cur->op_pos_size; i++) {
 				ut64 addr = cur->addr + cur->op_pos[i];
 				RAnalOp *op = r_core_anal_op (p->core, addr, R_ARCH_OP_MASK_BASIC);
-				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-					analPathFollow (p, op->jump, pj);
+				if (op) {
+					if (op->ptr != UT64_MAX) {
+						analPathFollow (p, op->ptr, pj);
+					}
+					if (op->val != UT64_MAX) {
+						analPathFollow (p, op->val, pj);
+					}
+					if (op->jump != UT64_MAX) {
+						analPathFollow (p, op->jump, pj);
+					}
 				}
 				r_anal_op_free (op);
 			}
+		}
+		ut64 j = cur->jump;
+		if (j != UT64_MAX) {
+			analPathFollow (p, j, pj);
+		}
+		ut64 f = cur->fail;
+		if (f != UT64_MAX) {
+			analPathFollow (p, f, pj);
 		}
 	}
 	p->cur = r_list_pop (p->path);
