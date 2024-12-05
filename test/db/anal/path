@@ -135,3 +135,92 @@ compat_mode("bin/ls", "Unix2003")
 0x00000000 0x00000000 0xffffffffffffffff   ........
 EOF
 RUN
+
+NAME=path between functions
+FILE=bins/elf/ls-focal
+CMDS=<<EOF
+aaa
+s sym.imp.strrchr
+abpf entry0
+.abpf entry0
+EOF
+EXPECT=<<EOF
+pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
+            ;-- rip:
+/ 46: entry0 (int64_t arg3);
+| `- args(rdx)
+|           0x000067d0      f30f1efa       endbr64
+|           0x000067d4      31ed           xor ebp, ebp
+|           0x000067d6      4989d1         mov r9, rdx                 ; arg3
+|           0x000067d9      5e             pop rsi
+|           0x000067da      4889e2         mov rdx, rsp
+|           0x000067dd      4883e4f0       and rsp, 0xfffffffffffffff0
+|           0x000067e1      50             push rax
+|           0x000067e2      54             push rsp
+|           0x000067e3      4c8d05660d..   lea r8, [0x00017550]
+|           0x000067ea      488d0def0c..   lea rcx, [0x000174e0]
+|           0x000067f1      488d3df8e5..   lea rdi, [main]             ; 0x4df0
+\           0x000067f8      ff15d2c70100   call qword [reloc.__libc_start_main] ; [0x22fd0:8]=0
+            ; DATA XREF from entry0 @ 0x67f1(r)
+/ 6603: int main (int argc, char **argv);
+| `- args(rdi, rsi) vars(10:sp[0x40..0x74])
+|           0x00004df0      f30f1efa       endbr64
+|           0x00004df4      4157           push r15
+|           0x00004df6      4156           push r14
+|           0x00004df8      4155           push r13
+|           0x00004dfa      4154           push r12
+|           0x00004dfc      4189fc         mov r12d, edi               ; argc
+|           0x00004dff      55             push rbp
+|           0x00004e00      4889f5         mov rbp, rsi                ; argv
+|           0x00004e03      53             push rbx
+|           0x00004e04      4883ec48       sub rsp, 0x48
+|           0x00004e08      488b3e         mov rdi, qword [rsi]        ; int64_t arg1
+|           0x00004e0b      64488b0425..   mov rax, qword fs:[0x28]
+|           0x00004e14      4889442438     mov qword [var_38h], rax
+|           0x00004e19      31c0           xor eax, eax
+|           0x00004e1b      e8b0e40000     call fcn.000132d0
+|           ; DATA XREF from main @ 0x5ad1(r)
+|           0x00004e20      488d35d749..   lea rsi, [0x000197fe]       ; const char *locale
+|           0x00004e27      bf06000000     mov edi, 6                  ; int category
+|           0x00004e2c      e8cffdffff     call sym.imp.setlocale      ; char *setlocale(int category, const char *locale)
+|           0x00004e31      488d35114b..   lea rsi, str._usr_share_locale ; 0x19949 ; "/usr/share/locale" ; char *dirname
+|           0x00004e38      488d3df04a..   lea rdi, [0x0001992f]       ; "coreutils" ; char *domainname
+|           0x00004e3f      e84cfaffff     call sym.imp.bindtextdomain ; char *bindtextdomain(char *domainname, char *dirname)
+|           0x00004e44      488d3de44a..   lea rdi, [0x0001992f]       ; "coreutils" ; char *domainname
+|           0x00004e4b      e800faffff     call sym.imp.textdomain     ; char *textdomain(char *domainname)
+|           0x00004e50      488d3d8991..   lea rdi, [0x0000dfe0]
+|           0x00004e57      c70597e301..   mov dword [obj.exit_failure], 2 ; [0x231f8:4]=1
+|           0x00004e61      e8fa260100     call fcn.00017560
+|           0x00004e66      c6054bf401..   mov byte [0x000242b8], 1    ; [0x242b8:1]=0
+|           0x00004e6d      48b8000000..   movabs rax, 0x8000000000000000
+|           0x00004e77      488905f2f4..   mov qword [0x00024370], rax ; [0x24370:8]=0
+|           0x00004e7e      8b055ce30100   mov eax, dword [obj.ls_mode] ; [0x231e0:4]=1
+|           0x00004e84      c70582f301..   mov dword [0x00024210], 0   ; [0x24210:4]=0
+|           0x00004e8e      48c705e7f4..   mov qword [0x00024380], 0   ; [0x24380:8]=0
+|           0x00004e99      48c705d4f4..   mov qword [0x00024378], 0xffffffffffffffff ; [0x24378:8]=0
+|           0x00004ea4      c6052df401..   mov byte [0x000242d8], 0    ; [0x242d8:1]=0
+|           0x00004eab      83f802         cmp eax, 2
+|       ,=< 0x00004eae      0f842e0e0000   je 0x5ce2
+            ; CALL XREF from main @ 0x4e1b(x)
+/ 176: fcn.000132d0 (char **arg1);
+| `- args(rdi)
+|           0x000132d0      f30f1efa       endbr64
+|           0x000132d4      53             push rbx
+|           0x000132d5      4885ff         test rdi, rdi               ; arg1
+|       ,=< 0x000132d8      0f8485000000   je 0x13363
+|           0x000132de      be2f000000     mov esi, 0x2f               ; '/' ; int c
+|           0x000132e3      4889fb         mov rbx, rdi                ; arg1
+|           0x000132e6      e87516ffff     call sym.imp.strrchr        ; char *strrchr(const char *s, int c)
+|           0x000132eb      4885c0         test rax, rax
+|       ,=< 0x000132ee      744b           je 0x1333b
+            ; XREFS: CALL 0x00007d3f  CALL 0x00007d52  CALL 0x0000c866  
+            ; XREFS: CALL 0x0000c876  CALL 0x0000c8d7  CALL 0x0000c8e7  
+            ; XREFS: CALL 0x0000c98c  CALL 0x0000c99d  CALL 0x0000ca4c  
+            ; XREFS: CALL 0x0000ca5d  CALL 0x0000cac7  CALL 0x0000cadb  
+            ; XREFS: CALL 0x0000cb47  CALL 0x0000cb5b  CALL 0x0000cc1f  
+            ; XREFS: CALL 0x0000cc32  CALL 0x000132e6  
+/ 11: char *sym.imp.strrchr (const char *s, int c);
+|           0x00004960      f30f1efa       endbr64
+\           0x00004964      f2ff2535e4..   bnd jmp qword [reloc.strrchr] ; [0x22da0:8]=0x4290
+EOF
+RUN
