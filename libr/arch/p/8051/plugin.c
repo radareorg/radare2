@@ -227,9 +227,6 @@ static RI8051Reg registers[] = {
 };
 #endif
 
-#define e(frag) r_strbuf_append (&op->esil, frag)
-#define ef(frag, ...) r_strbuf_appendf (&op->esil, frag, __VA_ARGS__)
-
 #define flag_c "7,$c,c,:=,"
 #define flag_b "8,$b,c,:=,"
 #define flag_ac "3,$c,ac,:=,"
@@ -255,14 +252,14 @@ static RI8051Reg registers[] = {
 #define ev_sp1 0
 
 static void exr_a(RAnalOp *op, ut8 dummy) {
-	e ("a,");
+	r_strbuf_append (&op->esil, "a,");
 }
 
 static void exr_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
-		ef ("_idata,%d,+,[1],", addr);
+		r_strbuf_appendf (&op->esil, "_idata,%d,+,[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,[1],", addr);
+		r_strbuf_appendf (&op->esil, "_sfr,%d,+,[1],", addr);
 	}
 }
 
@@ -271,57 +268,57 @@ static void exr_bit(RAnalOp *op, ut8 addr) {
 }
 
 static void exr_dpx(RAnalOp *op, ut8 dummy) {
-	e ("_xdata,dptr,+,[1],");
+	r_strbuf_append (&op->esil, "_xdata,dptr,+,[1],");
 }
 
 static void exr_imm1(RAnalOp *op, ut8 val) {
-	ef ("%d,", val);
+	r_strbuf_appendf (&op->esil, "%d,", val);
 }
 
 static void exr_imm2(RAnalOp *op, ut8 val) {
-	ef ("%d,", val);
+	r_strbuf_appendf (&op->esil, "%d,", val);
 }
 
 static void exr_imm16(RAnalOp *op, ut16 val) {
-	ef ("%d,", val);
+	r_strbuf_appendf (&op->esil, "%d,", val);
 }
 
 static void exr_ri(RAnalOp *op, ut8 reg) {
-	ef ("_idata,r%d,+,[1],", reg);
+	r_strbuf_appendf (&op->esil, "_idata,r%d,+,[1],", reg);
 }
 
 static void exr_rix(RAnalOp *op, ut8 reg) {
-	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
+	r_strbuf_appendf (&op->esil, "8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
 }
 
 static void exr_rn(RAnalOp *op, ut8 reg) {
-	ef ("r%d,", reg);
+	r_strbuf_appendf (&op->esil, "r%d,", reg);
 }
 
 static void exr_sp1(RAnalOp *op, ut8 dummy) {
-	e ("_idata,sp,+,[1],");
-	e ("1,sp,-=,");
+	r_strbuf_append (&op->esil, "_idata,sp,+,[1],");
+	r_strbuf_append (&op->esil, "1,sp,-=,");
 }
 
 static void exr_sp2(RAnalOp *op, ut8 dummy) {
-	e ("1,sp,-=,");
-	e ("_idata,sp,+,[2],");
-	e ("1,sp,-=,");
+	r_strbuf_append (&op->esil, "1,sp,-=,");
+	r_strbuf_append (&op->esil, "_idata,sp,+,[2],");
+	r_strbuf_append (&op->esil, "1,sp,-=,");
 }
 
 static void exw_a(RAnalOp *op, ut8 dummy) {
-	e ("a,=,");
+	r_strbuf_append (&op->esil, "a,=,");
 }
 
 static void exw_c(RAnalOp *op, ut8 dummy) {
-	e ("c,=,");
+	r_strbuf_append (&op->esil, "c,=,");
 }
 
 static void exw_dir1(RAnalOp *op, ut8 addr) {
 	if (addr < 0x80) {
-		ef ("_idata,%d,+,=[1],", addr);
+		r_strbuf_appendf (&op->esil, "_idata,%d,+,=[1],", addr);
 	} else {
-		ef ("_sfr,%d,+,=[1],", addr);
+		r_strbuf_appendf (&op->esil, "_sfr,%d,+,=[1],", addr);
 	}
 }
 
@@ -334,53 +331,53 @@ static void exw_bit(RAnalOp *op, ut8 addr) {
 }
 
 static void exw_dp(RAnalOp *op, ut8 dummy) {
-	e ("dptr,=,");
+	r_strbuf_append (&op->esil, "dptr,=,");
 }
 
 static void exw_dpx(RAnalOp *op, ut8 dummy) {
-	e ("_xdata,dptr,+,=[1],");
+	r_strbuf_append (&op->esil, "_xdata,dptr,+,=[1],");
 }
 
 static void exw_ri(RAnalOp *op, ut8 reg) {
-	ef ("_idata,r%d,+,=[1],", reg);
+	r_strbuf_appendf (&op->esil, "_idata,r%d,+,=[1],", reg);
 }
 
 static void exw_rix(RAnalOp *op, ut8 reg) {
-	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
+	r_strbuf_appendf (&op->esil, "8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
 }
 
 static void exw_rn(RAnalOp *op, ut8 reg) {
-	ef ("r%d,=,", reg);
+	r_strbuf_appendf (&op->esil, "r%d,=,", reg);
 }
 
 static void exw_sp1(RAnalOp *op, ut8 dummy) {
-	e ("1,sp,+=,");
-	e ("_idata,sp,+,=[1],");
+	r_strbuf_append (&op->esil, "1,sp,+=,");
+	r_strbuf_append (&op->esil, "_idata,sp,+,=[1],");
 }
 
 static void exw_sp2(RAnalOp *op, ut8 dummy) {
-	e ("1,sp,+=,");
-	e ("_idata,sp,+,=[2],");
-	e ("1,sp,+=,");
+	r_strbuf_append (&op->esil, "1,sp,+=,");
+	r_strbuf_append (&op->esil, "_idata,sp,+,=[2],");
+	r_strbuf_append (&op->esil, "1,sp,+=,");
 }
 
 static void exi_a(RAnalOp *op, ut8 dummy, const char* operation) {
-	ef ("a,%s=,", operation);
+	r_strbuf_appendf (&op->esil, "a,%s=,", operation);
 }
 
 static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
-	ef ("c,%s=,", operation);
+	r_strbuf_appendf (&op->esil, "c,%s=,", operation);
 }
 
 static void exi_dp(RAnalOp *op, ut8 dummy, const char *operation) {
-	ef ("dptr,%s=,", operation);
+	r_strbuf_appendf (&op->esil, "dptr,%s=,", operation);
 }
 
 static void exi_dir1(RAnalOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
-		ef ("_idata,%d,+,%s=[1],", addr, operation);
+		r_strbuf_appendf (&op->esil, "_idata,%d,+,%s=[1],", addr, operation);
 	} else {
-		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+		r_strbuf_appendf (&op->esil, "_sfr,%d,+,%s=[1],", addr, operation);
 	}
 }
 
@@ -389,28 +386,30 @@ static void exi_bit(RAnalOp *op, ut8 addr, const char *operation) {
 }
 
 static void exi_ri(RAnalOp *op, ut8 reg, const char *operation) {
-	ef ("_idata,r%d,+,%s=[1],", reg, operation);
+	r_strbuf_appendf (&op->esil, "_idata,r%d,+,%s=[1],", reg, operation);
 }
 
 static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
-	ef ("r%d,%s=,", reg, operation);
+	r_strbuf_appendf (&op->esil, "r%d,%s=,", reg, operation);
 }
 
 #define xr(subject) exr_##subject (op, ev_##subject)
 #define xw(subject) exw_##subject (op, ev_##subject)
 #define xi(subject, operation) exi_##subject (op, ev_##subject, operation)
 
-#define bit_set ef ("%d,1,<<,", buf[1] & 7)
-#define bit_mask bit_set; e ("255,^,")
-#define bit_r ef ("%d,", buf[1] & 7); xr (bit); e (">>,1,&,")
-#define bit_c ef ("%d,c,<<,", buf[1] & 7);
+#define bit_set r_strbuf_appendf (&op->esil ,"%d,1,<<,", buf[1] & 7)
+#define bit_mask bit_set; r_strbuf_append (&op->esil, "255,^,")
+#define bit_r r_strbuf_appendf (&op->esil, "%d,", buf[1] & 7); \
+	xr (bit); \
+	r_strbuf_append (&op->esil, ">>,1,&,")
+#define bit_c r_strbuf_appendf (&op->esil, "%d,c,<<,", buf[1] & 7);
 
-#define jmp ef ("%" PFMT64d ",pc,=", op->jump)
-#define cjmp e ("?{,"); jmp; e (",}")
-#define call ef ("%" PFMT64d ",", op->fail); xw (sp2); jmp
+#define jmp r_strbuf_appendf (&op->esil, "%" PFMT64d ",pc,=", op->jump)
+#define cjmp r_strbuf_append (&op->esil, "?{,"); jmp; r_strbuf_append (&op->esil, ",}")
+#define call r_strbuf_appendf (&op->esil, "%" PFMT64d ",", op->fail); xw (sp2); jmp
 
-#define alu_op(val, aluop, flags) xr (val); e ("a," aluop "=," flags)
-#define alu_op_c(val, aluop, flags) e ("c,"); xr (val); e ("+,a," aluop "=," flags)
+#define alu_op(val, aluop, flags) xr (val); r_strbuf_append (&op->esil, "a," aluop "=," flags)
+#define alu_op_c(val, aluop, flags) r_strbuf_append (&op->esil, "c,"); xr (val); r_strbuf_append (&op->esil, "+,a," aluop "=," flags)
 #define alu_op_d(val, aluop) xr (val); xi (dir1, aluop)
 
 #define template_alu4_c(base, aluop, flags) \
@@ -454,29 +453,37 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	switch (buf[0]) {
 	// Irregulars sorted by lower nibble
 	case 0x00: /* nop */
-		e (",");
+		r_strbuf_append (&op->esil, ",");
 		break;
 
 	case 0x10: /* jbc bit, offset */
-		bit_r; e ("?{,"); bit_mask; xi (bit, "&"); jmp; e (",}");
+		r_strbuf_appendf (&op->esil, "%d,", buf[1] & 7);
+		exr_bit (op, bitindex[buf[1]>>3]);
+		r_strbuf_appendf (&op->esil ,">>,1,&,?{,%d,1,<<,0xff,^,", buf[1] & 7);
+		exi_bit (op, bitindex[buf[1]>>3], "&");
+		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x20: /* jb bit, offset */
-		bit_r; cjmp;
+  		r_strbuf_appendf (&op->esil, "%d,", buf[1] & 7);
+		exr_bit (op, bitindex[buf[1]>>3]);
+		r_strbuf_appendf (&op->esil, ">>,1,&,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x30: /* jnb bit, offset */
-		bit_r; e ("!,"); cjmp;
+		r_strbuf_appendf (&op->esil, "%d,", buf[1] & 7);
+		exr_bit (op, bitindex[buf[1]>>3]);
+		r_strbuf_appendf (&op->esil, ">>,1,&,!,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x40: /* jc offset */
-		e ("c,1,&,"); cjmp;
+		r_strbuf_appendf (&op->esil, "c,1,&,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x50: /* jnc offset */
-		e ("c,1,&,!,"); cjmp;
+		r_strbuf_appendf (&op->esil, "c,1,&,!,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x60: /* jz offset */
-		e ("a,0,==,$z,"); cjmp;
+		r_strbuf_appendf (&op->esil, "a,!,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 	case 0x70: /* jnz offset */
-		e ("a,0,==,$z,!,"); cjmp;
+		r_strbuf_appendf (&op->esil, "a,!,!,?{,%"PFMT64d",pc,:=,}", op->jump);
 		break;
 
 	case 0x11: case 0x31: case 0x51: case 0x71:
@@ -493,14 +500,16 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 
 	case 0x22: /* ret */
 	case 0x32: /* reti */
-		xr (sp2); e ("pc,=");
+		xr (sp2);
+		r_strbuf_append (&op->esil, "pc,=");
 		break;
 
 	case 0x03: /* rr a */
-		e ("1,a,0x101,*,>>,a,=," flag_p);
+		r_strbuf_append (&op->esil, "1,a,0x101,*,>>,a,=," flag_p);
 		break;
 	case 0x04: /* inc a */
-		xi (a, "++"); e (flag_p);
+		xi (a, "++");
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0x05: /* inc direct */
 		xi (dir1, "++");
@@ -513,13 +522,16 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 		xi (rn, "++");
 		break;
 	case 0x13: /* rrc a */
-		e ("7,c,<<,1,a,&,c,=,0x7f,1,a,>>,&,+,a,=," flag_p);
+		r_strbuf_append (&op->esil,
+			"7,c,<<,1,a,&,c,=,0x7f,1,a,>>,&,+,a,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x14: /* dec a */
-		xi (a, "--"); e (flag_p);
+		xi (a, "--");
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0x15: /* dec direct */
-		xi (dir1, "--"); e (flag_p);
+		xi (dir1, "--");
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0x16: case 0x17: /* dec @Ri */
 		xi (ri, "--");
@@ -529,11 +541,11 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 		xi (rn, "--");
 		break;
 	case 0x23: /* rl a */
-		e ("7,a,0x101,*,>>,a,=," flag_p);
+		r_strbuf_append (&op->esil, "7,a,0x101,*,>>,a,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	template_alu4 (0x20, "+", flag_c flag_ac flag_ov flag_p) /* 0x24..0x2f add a,.. */
 	case 0x33: /* rlc a */
-		e ("c,1,&,a,a,+=,7,$c,c,:=,a,+=," flag_p);
+		r_strbuf_append (&op->esil, "c,1,&,a,a,+=,7,$c,c,:=,a,+=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	template_alu4_c (0x30, "+", flag_c flag_ac flag_ov flag_p) /* 0x34..0x3f addc a,.. */
 	template_alu2 (0x40, "|") /* 0x42..0x43 orl direct,.. */
@@ -546,183 +558,231 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 		bit_r; xi (c, "|");
 		break;
 	case 0x73: /* jmp @a+dptr */
-		e ("dptr,a,+,pc,=");
+		r_strbuf_append (&op->esil, "dptr,a,+,pc,=");
 		break;
 	case 0x74: /* mov a, imm */
-		xr (imm1); xw (a); e (flag_p);
+		exr_imm1 (op, buf[1]);
+		exw_a (op, 0);
+  		r_strbuf_append (&op->esil, "0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x75: /* mov direct, imm */
-		xr (imm2); xw (dir1);
+		exr_imm2 (op, buf[2]);
+		exw_dir1 (op, buf[1]);
 		break;
 	case 0x76: case 0x77: /* mov @Ri, imm */
-		xr (imm1); xw (ri);
+		exr_imm1 (op, buf[1]);
+		exw_ri (op, (1 & buf[0]));
 		break;
 	case 0x78: case 0x79: case 0x7A: case 0x7B:
 	case 0x7C: case 0x7D: case 0x7E: case 0x7F: /* mov Rn, imm */
-		xr (imm1); xw (rn);
+		exr_imm1 (op, buf[1]);
+		exw_rn (op, (7 & buf[0]));
 		break;
 	case 0x82: /* anl C, bit */
 		bit_r; xi (c, "&");
 		break;
 	case 0x83: /* movc a, @a+pc */
-		e ("a,pc,--,+,[1],a,=," flag_p);
+		r_strbuf_append (&op->esil, "a,pc,--,+,[1],a,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x84: /* div ab */
 		// note: escape % if this becomes a format string
-		e ("b,0,==,$z,ov,:=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
+		r_strbuf_append (&op->esil,
+			"b,!,ov,:=,b,a,%,b,a,/=,b,=,0,c,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x85: /* mov direct, direct */
-		xr (dir1); xw (dir2);
+		exr_dir1 (op, buf[1]);
+		exw_dir2 (op, buf[2]);
 		break;
 	case 0x86: case 0x87: /* mov direct, @Ri */
-		xr (ri); xw (dir1);
+  		exr_ri (op, (1 & buf[0]));
+		exw_dir1 (op, buf[1]);
 		break;
 	case 0x88: case 0x89: case 0x8A: case 0x8B:
 	case 0x8C: case 0x8D: case 0x8E: case 0x8F: /* mov direct, Rn */
-		xr (rn); xw (dir1);
+  		exr_rn (op, (7 & buf[0]));
+		exw_dir1 (op, buf[1]);
 		break;
 	case 0x90: /* mov dptr, imm */
-		xr (imm16); xw (dp);
+		exr_imm16 (op, op->val);
+		exw_dp (op, 0);
 		break;
 	case 0x92: /* mov bit, C */
-		bit_c; bit_mask; xr (bit); e ("&,|,"); xw(bit);
+		bit_c; bit_mask; xr (bit);
+		r_strbuf_append (&op->esil, "&,|,"); xw(bit);
 		break;
 	case 0x93: /* movc a, @a+dptr */
-		e ("a,dptr,+,[1],a,=," flag_p);
+  		r_strbuf_append (&op->esil, "a,dptr,+,[1],a,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	template_alu4_c (0x90, "-", flag_b flag_ab flag_ob flag_p) /* 0x94..0x9f subb a,.. */
 	case 0xA0: /* orl C, /bit */
-		bit_r; e ("!,"); xi (c, "|");
+		bit_r;
+		r_strbuf_append (&op->esil, "!,"); xi (c, "|");
 		break;
 	case 0xA2: /* mov C, bit */
 		bit_r; xw (c);
 		break;
 	case 0xA3: /* inc dptr */
-		xi (dp, "++");
+  		exi_dp (op, 0, "++");
 		break;
 	case 0xA4: /* mul ab */
-		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,$z,!,ov,:=,0,c,=," flag_p);
+		r_strbuf_append (&op->esil,
+			"8,a,b,*,DUP,a,=,>>,DUP,b,=,!,!,ov,:=,0,c,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0xA5: /* "reserved" */
-		e ("0,trap");
+		r_strbuf_append (&op->esil, "0,trap");
 		break;
 	case 0xA6: case 0xA7: /* mov @Ri, direct */
-		xr (dir1); xw (ri);
+		exr_dir1 (op, buf[1]);
+		exw_ri (op, (1 & buf[0]));
 		break;
 	case 0xA8: case 0xA9: case 0xAA: case 0xAB:
 	case 0xAC: case 0xAD: case 0xAE: case 0xAF: /* mov Rn, direct */
-		xr (dir1); xw (rn);
+		exr_dir1 (op, buf[1]);
+		exw_rn (op, (7 & buf[0]));
 		break;
 	case 0xB0: /* anl C, /bit */
-		bit_r; e ("!,"); xi (c, "&");
+		bit_r;
+		r_strbuf_append (&op->esil, "!,"); xi (c, "&");
 		break;
 	case 0xB2: /* cpl bit */
 		bit_set; xi (bit, "^");
 		break;
 	case 0xB3: /* cpl C */
-		e ("1,"); xi (c, "^");
+		r_strbuf_append (&op->esil, "1,"); xi (c, "^");
 		break;
 	case 0xB4: /* cjne a, imm, offset */
-		xr (imm1); xr (a); e ("==,$z,!," flag_b); cjmp;
+		xr (imm1); xr (a);
+		r_strbuf_append (&op->esil, "==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB5: /* cjne a, direct, offset */
-		xr (dir1); xr (a); e ("==,$z,!," flag_b); cjmp;
+		xr (dir1); xr (a);
+		r_strbuf_append (&op->esil, "==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB6: case 0xB7: /* cjne @ri, imm, offset */
-		xr (imm1); xr (ri); e ("==,$z,!," flag_b); cjmp;
+		xr (imm1); xr (ri);
+		r_strbuf_append (&op->esil, "==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB8: case 0xB9: case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD: case 0xBE: case 0xBF: /* cjne Rn, imm, offset */
-		xr (imm1); xr (rn); e ("==,$z,!," flag_b); cjmp;
+		xr (imm1); xr (rn);
+		r_strbuf_append (&op->esil, "==,$z,!," flag_b); cjmp;
 		break;
 	case 0xC0: /* push direct */
-		xr (dir1); xw (sp1);
+  		exr_dir1 (op, buf[1]);
+		exw_sp1 (op, 0);
 		break;
 	case 0xC2: /* clr bit */
 		bit_mask; xi (bit, "&");
 		break;
 	case 0xC3: /* clr C */
-		e ("0,"); xw (c);
+		r_strbuf_append (&op->esil, "0,"); xw (c);
 		break;
 	case 0xC4: /* swap a */
-		e ("0xff,4,a,0x101,*,>>,&,a,=," flag_p);
+		r_strbuf_append (&op->esil, "0xff,4,a,0x101,*,>>,&,a,=," flag_p);
 		break;
 	case 0xC5: /* xch a, direct */
-		xr (a); e ("0,+,"); xr (dir1); xw (a); xw (dir1); e (flag_p);
+		xr (a);
+		r_strbuf_append (&op->esil, "0,+,"); xr (dir1); xw (a); xw (dir1);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xC6: case 0xC7: /* xch a, @Ri */
-		xr (a); e ("0,+,"); xr (ri); xw (a); xw (ri); e (flag_p);
+		xr (a);
+		r_strbuf_append (&op->esil, "0,+,"); xr (ri); xw (a); xw (ri);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xC8: case 0xC9: case 0xCA: case 0xCB:
 	case 0xCC: case 0xCD: case 0xCE: case 0xCF: /* xch a, Rn */
-		xr (a); e ("0,+,"); xr (rn); xw (a); xw (rn); e (flag_p);
+		xr (a);
+		r_strbuf_append (&op->esil, "0,+,"); xr (rn); xw (a); xw (rn);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xD0: /* pop direct */
-		xr (sp1); xw (dir1);
+		exr_sp1 (op, 0);
+		exw_dir1 (op, buf[1]);
 		break;
 	case 0xD2: /* setb bit */
 		bit_set; xi (bit, "|");
 		break;
 	case 0xD3: /* setb C */
-		e ("1,"); xw (c);
+		r_strbuf_append (&op->esil, "1,"); xw (c);
 		break;
 	case 0xD4: /* da a */
 		// BCD adjust after add:
 		// if (lower nibble > 9) or (AC == 1) add 6
 		// if (higher nibble > 9) or (C == 1) add 0x60
 		// carry |= carry caused by this operation
-		e ("a,0x0f,&,9,==,4,$b,ac,|,?{,6,a,+=,7,$c,c,|,c,:=,},a,0xf0,&,0x90,==,8,$b,c,|,?{,0x60,a,+=,7,$c,c,|,c,:=,}," flag_p);
+		r_strbuf_append (&op->esil, "a,0x0f,&,9,==,4,$b,ac,|,?{,6,a,+=,7,$c,c,|,c,:=,},a,0xf0,&,0x90,==,8,$b,c,|,?{,0x60,a,+=,7,$c,c,|,c,:=,}," flag_p);
 		break;
 	case 0xD5: /* djnz direct, offset */
-		xi (dir1, "--"); xr (dir1); e ("0,==,$z,!,"); cjmp;
+		xi (dir1, "--"); xr (dir1);
+		r_strbuf_append (&op->esil, "0,==,$z,!,"); cjmp;
 		break;
 	case 0xD6:
 	case 0xD7: /* xchd a, @Ri*/
-		xr (a); e ("0xf0,&,"); xr (ri); e ("0x0f,&,|,");
-		xr (ri); e ("0xf0,&,"); xr (a); e ("0x0f,&,|,");
-		xw (ri); xw (a); e (flag_p);
+		xr (a);
+		r_strbuf_append (&op->esil, "0xf0,&,"); xr (ri);
+		r_strbuf_append (&op->esil, "0x0f,&,|,");
+		xr (ri);
+		r_strbuf_append (&op->esil, "0xf0,&,"); xr (a);
+		r_strbuf_append (&op->esil, "0x0f,&,|,");
+		xw (ri); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xD8: case 0xD9: case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD: case 0xDE: case 0xDF: /* djnz Rn, offset */
-		xi (rn, "--"); xr (rn); e ("0,==,$z,!,"); cjmp;
+		xi (rn, "--"); xr (rn);
+		r_strbuf_append (&op->esil, "0,==,$z,!,"); cjmp;
 		break;
 	case 0xE0: /* movx a, @dptr */
-		xr (dpx); xw (a); e (flag_p);
+		xr (dpx); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xE2: case 0xE3: /* movx a, @Ri */
-		xr (rix); xw (a); e (flag_p);
+		xr (rix); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xE4: /* clr a */
-		e ("0,"); xw (a); e (flag_p);
+		r_strbuf_append (&op->esil, "0,"); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xE5: /* mov a, direct */
-		xr (dir1); xw (a); e (flag_p);
+		xr (dir1); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xE6: case 0xE7: /* mov a, @Ri */
-		xr (ri); xw (a); e (flag_p);
+		xr (ri); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xE8: case 0xE9: case 0xEA: case 0xEB:
 	case 0xEC: case 0xED: case 0xEE: case 0xEF: /* mov a, Rn */
-		xr (rn); xw (a); e (flag_p);
+		xr (rn); xw (a);
+		r_strbuf_append (&op->esil, flag_p);
 		break;
 	case 0xF0: /* movx @dptr, a */
-		xr (a); xw (dpx);
+  		exr_a (op, 0);
+		exw_dpx (op, 0);
 		break;
 	case 0xF2: case 0xF3: /* movx @Ri, a */
-		xr (a); xw (rix);
+		exr_a (op, 0);
+		exw_rix (op, (1 & buf[0]));
 		break;
 	case 0xF4: /* cpl a */
-		e ("255,"); xi (a, "^"); e (flag_p);
+		r_strbuf_append (&op->esil, "255,");
+		exi_a (op, 0, "^");
+		r_strbuf_append (&op->esil, "0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0xF5: /* mov direct, a */
-		xr (a); xw (dir1);
+  		exr_a (op, 0);
+		exw_dir1 (op, buf[1]);
 		break;
 	case 0xF6: case 0xF7: /* mov  @Ri, a */
-		xr (a); xw (ri);
+  		exr_a (op, 0);
+		exw_ri (op, (1 & buf[0]));
 		break;
 	case 0xF8: case 0xF9: case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD: case 0xFE: case 0xFF: /* mov Rn, a */
-		xr (a); xw (rn);
+		exr_a (op, 0);
+		exw_rn (op, (7 & buf[0]));
 		break;
 	default:
 		break;
@@ -907,8 +967,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	set_cpu_model (as, false);
 
 	int i = 0;
-	while (buf[0] && _8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
-		i++;
+	if (buf[0]) {
+		while (_8051_ops[i].string &&
+			_8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
+			i++;
+		}
 	}
 
 	ut8 arg1 = _8051_ops[i].arg1;
