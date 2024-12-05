@@ -80,7 +80,7 @@ static const char* r_vline_uc[] = {
 // imho this should be moved to RAsm
 typedef struct r_disasm_state_t {
 	RCore *core;
-	char str[1024], strsub[1024];
+	// char str[1024];
 	bool immtrim;
 	bool immstr;
 	bool use_esil;
@@ -1156,11 +1156,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->rasm->parse->get_op_ireg = get_op_ireg;
 		core->rasm->parse->get_ptr_at = get_ptr_at;
 		core->rasm->parse->get_reg_at = get_reg_at;
-		r_asm_parse_subvar (core->rasm, f, at, ds->analop.size,
-			ds->opstr, ds->strsub, sizeof (ds->strsub));
-		if (*ds->strsub) {
+		char *res = r_asm_parse_subvar (core->rasm, f, at, ds->analop.size, ds->opstr);
+		if (res) {
 			free (ds->opstr);
-			ds->opstr = strdup (ds->strsub);
+			ds->opstr = res;
 		}
 		if (core->rasm->parse->subrel) {
 			RVecAnalRef *refs = r_anal_refs_get (core->anal, at);
@@ -1215,30 +1214,22 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (ds->pseudo) {
 			char *res = r_asm_parse_pseudo (core->rasm, ds->opstr);
 			if (res) {
-				r_str_ncpy (ds->str, res, sizeof (ds->str));
-				R_LOG_DEBUG ("asm.parse.pseudo (%s) -> (%s)", ds->opstr, ds->str);
-				if (R_STR_ISNOTEMPTY (ds->str)) {
-					free (ds->opstr);
-					ds->opstr = strdup (ds->str);
-				}
+				free (ds->opstr);
+				ds->opstr = res;
 			}
 		}
 		if (ds->subjmp) {
-			char *input = strdup (ds->opstr? ds->opstr: ds->str);
-			r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, input, // asm_str,
-					ds->str, sizeof (ds->str), be);
-			free (input);
-			//ds->opstr = strdup (ds->str);
-		} else {
-			if (ds->opstr) {
-				r_str_ncpy (ds->str, ds->opstr, sizeof (ds->str));
+			char *str = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, ds->opstr, be);
+			if (str) {
+				free (ds->opstr);
+				ds->opstr = str;
 			}
 		}
 		// use 'str' from now on
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
-			char *ox = strstr (ds->str, "0x");
+			char *ox = strstr (ds->opstr, "0x");
 			if (ox) {
 				char *e = strchr (ox, ']');
 				if (!e) {
@@ -1272,14 +1263,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		core->rasm->parse->flagspace = ofs;
-		free (ds->opstr);
-		ds->opstr = strdup (ds->str);
 		__replaceImports (ds);
 		char *asm_str = colorize_asm_string (core, ds, print_color);
 		if (asm_str) {
 			free (ds->opstr);
 			ds->opstr = asm_str;
-			r_str_ncpy (ds->str, asm_str, sizeof (ds->str));
 		}
 	} else {
 		r_str_trim (ds->opstr); // trim before coloring git
@@ -3068,15 +3056,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
-		char *str = ds->opstr ? ds->opstr : ds->asmop.mnemonic;
-		if (!str) {
-			str = ds->str;
-		}
+		const char *str = ds->opstr ? ds->opstr : ds->asmop.mnemonic;
 		char *res = r_asm_parse_pseudo (core->rasm, str);
 		if (res) {
-			r_str_ncpy (ds->str, res, sizeof (ds->str));
 			free (ds->opstr);
-			ds->opstr = strdup (ds->str);
+			ds->opstr = strdup (res);
 		}
 	}
 	if (ds->acase) {
@@ -7121,9 +7105,6 @@ toro:
 				if (oret < 1) {
 					free (ds->opstr);
 					ds->opstr = strdup (ds->analop.mnemonic);
-				} else {
-					free (ds->opstr);
-					ds->opstr = strdup (ds->str);
 				}
 				asm_str = colorize_asm_string (core, ds, true);
 				if (asm_str) {
@@ -7396,14 +7377,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		// f = r_anal_get_fcn_in (core->anal, at,
 		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 		if (ds->subvar && f) {
-			int ba_len = strlen (asmop.mnemonic) + 128;
-			char *ba = malloc (ba_len);
-			if (ba) {
-				strcpy (ba, asmop.mnemonic);
-				r_asm_parse_subvar (core->rasm, f, at, ds->analop.size,
-						ba, ba, ba_len);
-				r_asm_op_set_asm (&asmop, ba);
-				free (ba);
+			char *res = r_asm_parse_subvar (core->rasm, f, at, ds->analop.size, asmop.mnemonic);
+			if (res) {
+				r_asm_op_set_asm (&asmop, res);
+				free (res);
 			}
 		}
 		ds->oplen = r_asm_op_get_size (&asmop);
@@ -7425,17 +7402,13 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			}
 		}
 		{
-			const char *aop = asmop.mnemonic;
-			char *buf = malloc (strlen (aop) + 128);
-			if (buf) {
-				strcpy (buf, aop);
-				buf = ds_sub_jumps (ds, buf);
-				r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf,
-					str, sizeof (str) - 1, be);
-				str[sizeof (str) - 1] = '\0';
-				r_asm_op_set_asm (&asmop, buf);
-				free (buf);
+			char *buf = ds_sub_jumps (ds, asmop.mnemonic);
+			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf, be);
+			if (res) {
+				r_asm_op_set_asm (&asmop, res);
+				free (res);
 			}
+			free (buf);
 		}
 
 		pj_o (pj);
@@ -7595,16 +7568,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	return result;
 }
 
-// XXX R2_600 this is just a stupid wrapper that must be eliminated
-R_IPI int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
-	return r_core_print_disasm_json_ipi (core, addr, buf, nb_bytes, nb_opcodes, pj, NULL);
-}
-
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
 	const bool scr_color = r_config_get_i (core->config, "scr.color") > 0;
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
-	char str[128];
 	if (l < 1) {
 		l = len;
 	}
@@ -7673,20 +7640,23 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, asmop.mnemonic,
-						str, sizeof (str), be);
-				if (scr_color) {
-					RAnalOp aop;
-					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
-					r_anal_op (core->anal, &aop, addr, buf + i, l - i, R_ARCH_OP_MASK_ALL);
-					char *buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
-					if (buf_asm) {
-						r_cons_printf ("%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
-						free (buf_asm);
+				{
+					char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, asmop.mnemonic, be);
+
+					if (scr_color) {
+						RAnalOp aop;
+						RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
+						r_anal_op (core->anal, &aop, addr, buf + i, l - i, R_ARCH_OP_MASK_ALL);
+						char *buf_asm = r_print_colorize_opcode (core->print, res? res: asmop.mnemonic,
+								core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
+						if (buf_asm) {
+							r_cons_printf ("%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
+							free (buf_asm);
+						}
+					} else {
+						r_cons_println (asmop.mnemonic);
 					}
-				} else {
-					r_cons_println (asmop.mnemonic);
+					free (res);
 				}
 				break;
 			case '=':
@@ -7945,9 +7915,6 @@ toro:
 				}
 				free (tmpopstr);
 			} else {
-				char opstr[128] = {
-					0
-				};
 				char *asm_str = asmop.mnemonic;
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
@@ -7962,22 +7929,21 @@ toro:
 				if (subnames) {
 					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
-					r_asm_parse_filter (core->rasm, at, core->flags, hint,
-						asm_str, opstr, sizeof (opstr) - 1, be);
+					asm_str = r_asm_parse_filter (core->rasm, at, core->flags, hint,
+							asm_str, be);
 					r_anal_hint_free (hint);
-					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
-					RAnalOp aop = {
-						0
-					};
+					RAnalOp aop = { 0 };
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr + i, R_ANAL_FCN_TYPE_NULL);
+					r_anal_op_init (&aop);
 					r_anal_op (core->anal, &aop, addr + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
 						asm_str);
+					r_anal_op_fini (&aop);
 					free (asm_str);
 				} else {
 					r_cons_println (asm_str);

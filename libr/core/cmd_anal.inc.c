@@ -2477,33 +2477,34 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == '*') {
 			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
-			char strsub[128] = {0};
 			// pc+33
-			r_asm_parse_subvar (core->rasm, NULL,
-				core->offset + idx,
-				asmop.size, asmop.mnemonic,
-				strsub, sizeof (strsub));
-				ut64 killme = UT64_MAX;
-				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-					core->rasm->parse->subrel_addr = killme;
-				}
+			char *strsub = r_asm_parse_subvar (core->rasm, NULL,
+				core->offset + idx, asmop.size, asmop.mnemonic);
+			ut64 killme = UT64_MAX;
+			if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
+				core->rasm->parse->subrel_addr = killme;
+			}
 			// 0x33->sym.xx
-			char *p = strdup (strsub);
-			if (p) {
-				r_asm_parse_filter (core->rasm, addr, core->flags, hint, p,
-						strsub, sizeof (strsub), be);
-				free (p);
+			if (strsub) {
+				char *res2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, strsub, be);
+				if (res2) {
+					free (strsub);
+					strsub = res2;
+				}
 			}
 			pj_o (pj);
 			pj_ks (pj, "opcode", asmop.mnemonic);
-			if (!*strsub) {
-				r_str_ncpy (strsub, asmop.mnemonic, sizeof (strsub) -1 );
+			if (!strsub) {
+				strsub = strdup (asmop.mnemonic);
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size,
-							strsub, strsub, sizeof (strsub));
+					char *res2 = r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, strsub);
+					if (res2) {
+						free (strsub);
+						strsub = res2;
+					}
 				}
 			}
 			pj_ks (pj, "disasm", strsub);
@@ -2665,25 +2666,27 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				// ignored/skipped eprintf ("No esil for '%s'\n", op.mnemonic);
 			}
 		} else {
-			char disasm[128] = {0};
 			char *text = asmop.mnemonic;
 			if (!text) {
 				R_LOG_ERROR ("invalid");
 				break;
 			}
-			r_asm_parse_subvar (core->rasm, NULL,
+			char *disasm = r_asm_parse_subvar (core->rasm, NULL,
 				core->offset + idx,
-				asmop.size,  text,
-				disasm, sizeof (disasm));
+				asmop.size, text);
+			if (!disasm) {
+				disasm = strdup (text);
+			}
 			ut64 killme = UT64_MAX;
 			if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
 				core->rasm->parse->subrel_addr = killme;
 			}
-			char *p = strdup (disasm);
-			if (p) {
-				r_asm_parse_filter (core->rasm, addr, core->flags, hint, p,
-					disasm, sizeof (disasm), be);
-				free (p);
+			if (disasm) {
+				char *disasm2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, disasm, be);
+				if (disasm2) {
+					free (disasm);
+					disasm = disasm2;
+				}
 			}
 #define printline(k, fmt, arg)\
 	{ \
@@ -2696,14 +2699,17 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", asmop.mnemonic);
-			if (!*disasm) {
-				r_str_ncpy (disasm, asmop.mnemonic, sizeof (disasm) - 1);
+			if (!disasm) {
+				disasm = strdup (asmop.mnemonic);
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size,
-							disasm, disasm, sizeof (disasm));
+					char *disasm2 = r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, disasm);
+					if (disasm2) {
+						free (disasm);
+						disasm = disasm2;
+					}
 				}
 			}
 			if (esilstr) {
@@ -2720,17 +2726,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("mnemonic", "%s\n", mnem);
 			{
-				char *opname = strdup (disasm);
-				char *sp = strchr (opname, ' ');
+				char *sp = strchr (disasm, ' ');
 				if (sp) {
 					*sp = 0;
 				}
-				char *d = r_asm_describe (core->rasm, opname);
+				char *d = r_asm_describe (core->rasm, disasm);
 				if (R_STR_ISNOTEMPTY (d)) {
 					printline ("description", "%s\n", d);
 				}
 				free (d);
-				free (opname);
+				R_FREE (disasm);
 			}
 			{
 				const int left = len - idx;
@@ -10247,17 +10252,23 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);
 	r_asm_disassemble (core->rasm, &asmop, buf, size);
-	int ba_len = strlen (asmop.mnemonic) + 128;
-	char *ba = malloc (ba_len);
-	strcpy (ba, asmop.mnemonic);
+	char *ba = strdup (asmop.mnemonic);
 	if (asm_subvar) {
 		core->rasm->parse->get_ptr_at = r_anal_function_get_var_stackptr_at;
 		core->rasm->parse->get_reg_at = r_anal_function_get_var_reg_at;
 		core->rasm->parse->get_op_ireg = get_op_ireg;
-		r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, ba, ba, ba_len);
+		char *ba2 = r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, ba);
+		if (ba2) {
+			free (ba);
+			ba = ba2;
+		}
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-	r_asm_parse_filter (core->rasm, addr, core->flags, hint, ba, str, sizeof (str), be);
+	char *ba2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, ba, be);
+	if (ba2) {
+		free (ba);
+		ba = ba2;
+	}
 	r_anal_hint_free (hint);
 	r_anal_op_set_mnemonic (&asmop, asmop.addr, ba);
 	free (ba);
@@ -10839,8 +10850,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_asm_set_pc (core->rasm, ref->addr);
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-							r_asm_parse_filter (core->rasm, ref->addr, core->flags,
-									hint, asmop.mnemonic, str, sizeof (str), be);
+							char *res = r_asm_parse_filter (core->rasm, ref->addr, core->flags,
+									hint, asmop.mnemonic, be);
+							if (res) {
+								free (asmop.mnemonic);
+								asmop.mnemonic = res;
+							}
 							r_anal_hint_free (hint);
 							if (has_color) {
 								desc = desc_to_free = r_print_colorize_opcode (core->print, str,

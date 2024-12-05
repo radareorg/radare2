@@ -2265,7 +2265,6 @@ beach:
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
-	char str[512];
 	ut8 buf[12];
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (!xrefs) {
@@ -2280,7 +2279,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 		r_asm_disassemble (core->rasm, &asmop, buf, size);
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-		r_asm_parse_filter (core->rasm, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
+		char *disasm = r_asm_parse_filter (core->rasm, ref->addr, core->flags, hint, asmop.mnemonic, be);
 		r_anal_hint_free (hint);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 		char *print_comment = NULL;
@@ -2294,7 +2293,8 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 		free (print_comment);
 		if (from <= ref->addr && to >= ref->addr) {
 			r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
-					buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), str);
+					buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type),
+					disasm? disasm: asmop.mnemonic);
 			if (*param->cmd_hit) {
 				ut64 here = core->offset;
 				r_core_seek (core, ref->addr, true);
@@ -2411,21 +2411,22 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 			break;
 		default:
 			if (asm_sub_names) {
-				char tmp[128] = { 0 };
 				RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-				r_asm_parse_filter (core->rasm, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
-				r_anal_hint_free (hint);
-				if (param->outmode == R_MODE_SIMPLE) {
-					r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
-				} else {
-					char *s = (hit->len > 0)
-						? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
-						: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
-					if (s) {
-						r_cons_printf ("%s", s);
+				char *tmp = r_asm_parse_filter (core->rasm, hit->addr, core->flags, hint, hit->code, be);
+				if (tmp) {
+					r_anal_hint_free (hint);
+					if (param->outmode == R_MODE_SIMPLE) {
+						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
+					} else {
+						char *s = (hit->len > 0)
+							? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
+							: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
+						if (s) {
+							r_cons_printf ("%s", s);
+						}
+						free (s);
 					}
-					free (s);
 				}
 			} else {
 				r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, r_str_get (hit->code));
