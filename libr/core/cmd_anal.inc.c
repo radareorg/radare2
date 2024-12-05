@@ -291,6 +291,7 @@ static RCoreHelpMessage help_msg_abl = {
 static RCoreHelpMessage help_msg_abp = {
 	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
 	"abp", " [addr] [num]", "find num paths from current offset to addr",
+	"abpf", " [addr]", "same as /gg find the path between two addresses across functions and basic blocks",
 	"abpe", " [addr]", "emulate from function start to the given address",
 	"abpe*", " [addr]", "show commands to emulate from function start to the given address",
 	"abpj", " [addr] [num]", "display paths in JSON",
@@ -13213,6 +13214,12 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 
 static void cmd_anal_abp(RCore *core, const char *input) {
 	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg_abp);
+		break;
+	case 'f': // "abpf"
+		r_core_cmdf (core, "/gg %s", input + 1);
+		break;
 	case 'e': // "abpe"
 		{
 		bool showcmds = input[1] == '*';
@@ -13262,9 +13269,6 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 			free (paths);
 		}
 		}
-		break;
-	case '?':
-		r_core_cmd_help (core, help_msg_abp);
 		break;
 	case 'j': { // "abpj"
 		ut64 addr = r_num_math (core->num, input + 1);
@@ -15126,7 +15130,7 @@ static int cmd_apt(RCore *core, const char *input) {
 
 static void cmd_ab(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-	if (input[0] && input[0] != 't' && input[1] == '?') {
+	if (input[0] && input[0] != 'p' && input[0] != 't' && input[1] == '?') {
 		char cmd[5] = "ab#";
 		cmd[2] = input[0];
 		r_core_cmd_help_match (core, help_msg_ab, cmd);
