@@ -450,10 +450,11 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		}
 		while (true) {
 			int wstat;
-			pid_t pid = waitpid (-1, &wstat, WNOHANG);
+			pid_t pid = wait (&wstat);
+			// pid_t pid = waitpid (-1, &wstat, 0);
 			if (pid <= 0) {
-				r_sys_perror ("waitpid failed");
-				break;
+			// 	r_sys_perror ("waitpid failed");
+				continue;
 			}
 			R2RSubprocess *proc = pid_to_proc (pid);
 			if (proc) {
@@ -592,7 +593,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_th_lock_leave (subprocs_mutex);
 		r_sys_perror ("subproc-start fork");
 		free (proc);
-	//	free (argv);
 		return NULL;
 	}
 	if (proc->pid == 0) {
