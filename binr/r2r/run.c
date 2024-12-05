@@ -458,7 +458,11 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			R2RSubprocess *proc = pid_to_proc (pid);
 			if (proc) {
 				r_th_lock_enter (proc->lock);
-				if (WIFEXITED (wstat)) {
+				if (WIFSIGNALED (wstat)) {
+					int signal_number = WTERMSIG(wstat);
+					proc->ret = -1;
+					R_LOG_ERROR ("Child signal %d", signal_number);
+				} else if (WIFEXITED (wstat)) {
 					proc->ret = WEXITSTATUS (wstat);
 				} else {
 					proc->ret = -1;
