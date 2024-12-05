@@ -780,6 +780,8 @@ R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
 R_API bool r_core_esil_init(RCore *core);
 R_API void r_core_esil_fini(RCoreEsil *cesil);
+R_API void r_core_esil_load_arch(RCore *core);
+R_API void r_core_esil_unload_arch(RCore *core);
 
 // both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise(RCore *core, ut32 bfid);

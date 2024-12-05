@@ -172,6 +172,40 @@ init_fail:
 	return false;
 }
 
+R_API void r_core_esil_load_arch(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch);
+	if (!core->anal->arch->session || !core->anal->arch->session->plugin ||
+		!core->anal->arch->session->plugin->esilcb ||
+		!core->anal->arch->session->plugin->regs) {
+		//This doesn't count as fail
+		return;
+	}
+	//This is awful. TODO: massage r_arch api
+	REsil *arch_esil = core->anal->arch->esil;
+	core->anal->arch->esil = &core->esil.esil;
+	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
+	core->anal->arch->esil = arch_esil;
+	char *rp = core->anal->arch->session->plugin->regs (core->anal->arch->session);
+	if (!rp) {
+		R_LOG_WARN ("Couldn't set reg profile");
+		return;
+	}
+	r_reg_set_profile_string (core->esil.reg, rp):
+	free (rp);
+}
+
+R_API void r_core_esil_unload_arch(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch);
+	if (!core->anal->arch->session || !core->anal->arch->session->plugin ||
+		!core->anal->arch->session->plugin->esilcb) {
+		return;
+	}
+	REsil *arch_esil = core->anal->arch->esil;
+	core->anal->arch->esil = &core->esil.esil;
+	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_FINI);
+	core->anal->arch->esil = arch_esil;
+}
+
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
