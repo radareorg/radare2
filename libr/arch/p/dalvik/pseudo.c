@@ -1,10 +1,6 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2024 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
 #include <r_asm.h>
@@ -225,6 +221,25 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
+static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
+	const char *cmd = NULL;
+	if (!strcmp (op, "nop")) {
+		cmd = "wx 0000";
+	} else if (!strcmp (op, "ret2")) {
+		cmd = "wx 12200f00"; // mov v0, 2;ret v0
+	} else if (!strcmp (op, "jinf")) {
+		cmd = "wx 2800";
+	} else if (!strcmp (op, "ret1")) {
+		cmd = "wx 12100f00"; // mov v0, 1;ret v0
+	} else if (!strcmp (op, "ret0")) {
+		cmd = "wx 12000f00"; // mov v0, 0;ret v0
+	}
+	if (cmd) {
+		return strdup (cmd);
+	}
+	return NULL;
+}
+
 #define REPLACE(x,y) do { \
 		int snprintf_len1_ = snprintf (a, 32, x, w1, w1); \
 		int snprintf_len2_ = snprintf (b, 32, y, w1); \
@@ -364,6 +379,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
+	.patch = patch
 };
 
 #ifndef R2_PLUGIN_INCORE

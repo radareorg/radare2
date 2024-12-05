@@ -104,6 +104,30 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
+static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
+	const char *cmd = NULL;
+	const int size = aop->size;
+	// TODO honor analop->size
+	if (!strcmp (op, "nop")) {
+		if (size < 2) {
+			R_LOG_ERROR ("Can't nop <4 byte instructions");
+			return false;
+		}
+		if (size < 4) {
+			cmd = "wx 0100";
+		} else {
+		       cmd = "wx 13000000";
+		}
+	} else if (!strcmp (op, "jinf")) {
+		if (size < 2) {
+			R_LOG_ERROR ("Minimum jinf is 2 byte");
+			return false;
+		}
+		cmd = "wx 01a0";
+	}
+	return cmd? strdup (cmd): NULL;
+}
+
 static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data), n;
@@ -223,6 +247,7 @@ RAsmPlugin r_asm_plugin_riscv = {
 		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
+	.patch = patch
 };
 
 #ifndef R2_PLUGIN_INCORE

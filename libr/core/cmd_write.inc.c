@@ -2054,6 +2054,49 @@ static int cmd_wx(void *data, const char *input) {
 	return 0;
 }
 
+static bool asm_patch(RCore *core, const char *op, int mode) {
+	R_RETURN_VAL_IF_FAIL (core && op, false);
+	const char *asmarch = r_config_get (core->config, "asm.arch");
+	const bool doseek = (*op == '+');
+	if (doseek) {
+		op++;
+		mode = *op;
+	}
+	if (!asmarch) {
+		return false;
+	}
+	if (core->blocksize < 4) {
+		return false;
+	}
+	{
+		RAnalOp aop = { .addr = core->offset };
+		r_anal_op_set_bytes (&aop, core->offset, core->block, 4);
+		// TODO: use r_arch_decode
+		if (!r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
+			R_LOG_ERROR ("anal op fail");
+			r_anal_op_fini (&aop);
+			return false;
+		}
+		char *cmd = r_asm_parse_patch (core->rasm, &aop, op);
+		if (cmd) {
+			switch (mode) {
+			case '*': r_cons_println (cmd); break;
+			case 'l': r_cons_printf ("%d\n", (int)(strlen (cmd) - 3)/2); break;
+			default: r_core_cmd0 (core, cmd); break;
+			}
+			free (cmd);
+		} else {
+			R_LOG_ERROR ("No asm.patch possible");
+		}
+		r_anal_op_fini (&aop);
+		if (doseek) {
+			r_core_seek (core, core->offset + aop.size, 1);
+		}
+		return true;
+	}
+	return false;
+}
+
 static int cmd_wa(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -2063,7 +2106,7 @@ static int cmd_wa(void *data, const char *input) {
 		case '*':
 		case 'l':
 		case '+':
-			r_core_hack (core, r_str_trim_head_ro (input + 1), input[1]);
+			asm_patch (core, r_str_trim_head_ro (input + 1), input[1]);
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_wao);

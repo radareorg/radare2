@@ -369,6 +369,78 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 	r_strbuf_free (sb);
 }
 
+static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
+	const ut8 *b = aop->bytes; // core->block;
+	int i, size = aop->size;
+	char *hcmd = NULL;
+	const char *cmd = NULL;
+	if (!strcmp (op, "nop")) {
+		if (size * 2 + 1 < size) {
+			R_LOG_ERROR ("Cant fit a nop in here");
+			return false;
+		}
+		char *hcmd = malloc ((size * 2) + 5);
+		if (!hcmd) {
+			return false;
+		}
+		strcpy (hcmd, "wx ");
+		for (i = 0; i < size; i++) {
+			memcpy (hcmd + 3 + (i * 2), "90", 2);
+		}
+		cmd = hcmd;
+		hcmd[3 + (size * 2)] = '\0';
+	} else if (!strcmp (op, "trap")) {
+		cmd = "wx cc";
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
+		if (b[0] == 0x75) {
+			cmd = "wx 74";
+		} else {
+			R_LOG_ERROR ("Current opcode is not conditional");
+		}
+	} else if (!strcmp (op, "jinf")) {
+		cmd = "wx ebfe";
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
+		if (b[0] == 0x74) {
+			cmd = "wx 75";
+		} else {
+			R_LOG_ERROR ("Current opcode is not conditional");
+		}
+	} else if (!strcmp (op, "nocj")) {
+		if (*b == 0xf) {
+			cmd = "wx 90e9";
+		} else if (b[0] >= 0x70 && b[0] <= 0x7f) {
+			cmd = "wx eb";
+		} else {
+			R_LOG_ERROR ("Current opcode is not conditional");
+		}
+	} else if (!strcmp (op, "recj")) {
+		int is_near = (*b == 0xf);
+		if (b[0] < 0x80 && b[0] >= 0x70) { // short jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+			cmd = hcmd = r_str_newf ("wx %x", (b[0]%2)? b[0] - 1: b[0] + 1);
+		} else if (is_near && b[1] < 0x90 && b[1] >= 0x80) { // near jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+			cmd = hcmd = r_str_newf ("wx 0f%x", (b[1]%2)? b[1] - 1: b[1] + 1);
+		} else {
+			R_LOG_ERROR ("Invalid conditional jump opcode");
+		}
+	} else if (!strcmp (op, "ret1")) {
+		cmd = "wx c20100";
+	} else if (!strcmp (op, "ret0")) {
+		cmd = "wx c20000";
+	} else if (!strcmp (op, "retn")) {
+		cmd = "wx c2ffff";
+	} else {
+		R_LOG_ERROR ("Invalid operation '%s'", op);
+	}
+	if (cmd) {
+		if (hcmd) {
+			return hcmd;
+		}
+		return strdup (cmd);
+	}
+	free (hcmd);
+	return NULL;
+}
+
 static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
@@ -586,6 +658,7 @@ RAsmPlugin r_asm_plugin_x86 = {
 	},
 	.parse = parse,
 	.subvar = subvar,
+	.patch = patch,
 	.fini = fini,
 };
 
