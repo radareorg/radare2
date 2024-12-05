@@ -82,7 +82,7 @@ tests-esil:
 .PHONY: do doclean
 
 do:
-	$(MAKE) -C ../arch/p/arm/v35
+	#$(MAKE) -C ../arch/p/arm/v35
 	$(MAKE) -C d
 
 doclean:
