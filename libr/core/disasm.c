@@ -7409,6 +7409,9 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 		{
 			char *buf = ds_sub_jumps (ds, asmop.mnemonic);
+			if (!buf) {
+				buf = strdup (asmop.mnemonic);
+			}
 			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf);
 			if (res) {
 				r_asm_op_set_asm (&asmop, res);

@@ -230,8 +230,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						name = flag->realname;
 					}
 				}
+				char *res = r_str_newf ("%s%s%s", data, name, (ptr != ptr2)? ptr2: "");
 				free (hdata);
-				return r_str_newf ("%s%s%s", data, name, (ptr != ptr2)? ptr2: "");
+				return res;
 			}
 			if (f) {
 				RFlagItem *flag2;
@@ -410,8 +411,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
+				char *res = r_str_newf ("%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
 				free (hdata);
-				return r_str_newf ("%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
+				return res;
 			}
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
@@ -607,5 +609,6 @@ R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, co
 		}
 		return str;
 	}
+	free (str);
 	return false;
 }
