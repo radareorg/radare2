@@ -2077,7 +2077,6 @@ static bool asm_patch(RCore *core, const char *op, int mode) {
 			r_anal_op_fini (&aop);
 			return false;
 		}
-		r_anal_op_fini (&aop);
 		char *cmd = r_asm_parse_patch (core->rasm, &aop, op);
 		if (cmd) {
 			switch (mode) {
@@ -2089,6 +2088,7 @@ static bool asm_patch(RCore *core, const char *op, int mode) {
 		} else {
 			R_LOG_ERROR ("No asm.patch possible");
 		}
+		r_anal_op_fini (&aop);
 		if (doseek) {
 			r_core_seek (core, core->offset + aop.size, 1);
 		}

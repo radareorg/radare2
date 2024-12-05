@@ -377,7 +377,14 @@ static char *r_core_hack_arm64(RAsmPluginSession *s, RAnalOp *aop, const char *o
 		}
 		const ut8 *buf = aop->bytes;
 		if (!buf) {
-			return NULL;
+			buf = aop->bytes_buf;
+			if (!buf) {
+				R_LOG_DEBUG ("aop->bytes[0] == 0");
+				return NULL;
+			}
+		}
+		if (!*buf) {
+			R_LOG_DEBUG ("aop->bytes[0] == 0");
 		}
 		switch (*buf) {
 		case 0x4c: // bgt -> ble
