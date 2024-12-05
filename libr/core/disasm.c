@@ -1176,11 +1176,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			RVecAnalRef_free (refs);
 		}
 	}
+#if 0
 	char *res = ds_sub_jumps (ds, ds->opstr);
 	if (res) {
 		free (ds->opstr);
 		ds->opstr = res;
 	}
+#endif
 	if (ds->immtrim) {
 		char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 		if (res) {
@@ -1222,16 +1224,22 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				ds->opstr = res;
 			}
 		}
+		bool isjmp = false;
 		if (ds->subjmp) {
 			char *str = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, ds->opstr);
 			if (str) {
+				isjmp = true;
 				free (ds->opstr);
 				ds->opstr = str;
 			}
 		}
-		// use 'str' from now on
-		// subvar depends on filter
-		if (ds->subvar) {
+		switch (ds->analop.type & R_ANAL_OP_TYPE_MASK) {
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_JMP:
+			isjmp = true;
+			break;
+		}
+		if (ds->subvar && !isjmp) {
 			// R2_600 - HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->opstr, "0x");
 			if (ox) {
