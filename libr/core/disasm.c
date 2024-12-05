@@ -7363,7 +7363,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			continue;
 		}
 
-		char * opstr = strdup (asmop.mnemonic);
+		char *opstr = strdup (asmop.mnemonic);
 		core->rasm->pseudo = opseudo;
 
 		ds->has_description = false;
@@ -7418,7 +7418,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				free (disasm);
 				disasm = res;
 			}
-			free (buf);
 		}
 
 		pj_o (pj);
@@ -7438,7 +7437,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", disasm);
 		free (disasm);
-		free (opstr);
 		{
 			char *hex = r_asm_op_get_hex (&asmop);
 			pj_ks (pj, "bytes", hex);
@@ -7567,6 +7565,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		if (end_nbopcodes || end_nbbytes || end_pdu_condition) {
 			break;
 		}
+		free (opstr);
 	}
 	r_cons_break_pop ();
 	r_anal_op_fini (&ds->analop);
