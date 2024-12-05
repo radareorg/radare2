@@ -1255,8 +1255,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 							} else {
 								const char *n = (fi->realname) ? fi->realname: fi->name;
 								if (strlen (n) > 3) {
-									r_str_cpy (ox, n);
-									r_str_cat (ox, e);
+									char *opstrx = r_str_ndup (ds->opstr, ox - ds->opstr);
+									char *newox = r_str_newf ("%s%s%s", opstrx, n, e);
+									free (ds->opstr);
+									ds->opstr = newox;
+									free (opstrx);
 									break;
 								}
 							}
