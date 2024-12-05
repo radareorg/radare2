@@ -613,23 +613,12 @@ static void _inst__des(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, i
 	// DES k
 	op->type = R_ANAL_OP_TYPE_CRYPTO;
 	op->cycles = 1; // redo this
-	r_strbuf_setf (&op->esil, "%d,des", buf[0] >> 4);
+	// <text>,<deskey><encrypt>,<round>,des,<text>,:=
+	r_strbuf_setf (&op->esil, "text,deskey,hf,%d,des,text,:=", buf[0] >> 4);
 }
 
 static void _inst__eijmp(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
-	// EIJMP
-	ut64 z = 0;
-	ut64 eind = 0;
-	// read z and eind for calculating jump address on runtime
-	if (as->arch->esil) {
-		r_esil_reg_read (as->arch->esil, "z", &z, NULL);
-		r_esil_reg_read (as->arch->esil, "eind", &eind, NULL);
-	}
-	// real target address may change during execution, so this value will
-	// be changing all the time
-	op->jump = ((eind << 16) + z) << 1;
-	// jump
-	r_strbuf_append (&op->esil, "1,z,16,eind,<<,+,<<,pc,=,");
+	r_strbuf_append (&op->esil, "1,z,16,eind,<<,+,<<,pc,:=,");
 	// cycles
 	op->cycles = 2;
 }
@@ -637,13 +626,12 @@ static void _inst__eijmp(RArchSession *as, RAnalOp *op, const ut8 *buf, int len,
 static void _inst__eicall(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
 	// EICALL
 	// push pc in stack
-	r_strbuf_append (&op->esil, "pc,"); // esil is already pointing to
-					     // next instruction (@ret)
-	__generic_push (op, CPU_PC_SIZE (cpu)); // push @ret in stack
+	r_strbuf_set (&op->esil, "pc,");
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
 	// do a standard EIJMP
 	INST_CALL (eijmp);
 	// fix cycles
-	op->cycles = !STR_BEGINS (cpu->model, "ATxmega") ? 3 : 4;
+	op->cycles = !STR_BEGINS (cpu->model, "ATxmega")? 3: 4;
 }
 
 static void _inst__elpm(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
@@ -723,14 +711,6 @@ static void _inst__fmulsu(RArchSession *as, RAnalOp *op, const ut8 *buf, int len
 
 static void _inst__ijmp(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
 	// IJMP k
-	ut64 z = 0;
-	// read z for calculating jump address on runtime
-	if (as->arch->esil) {
-		r_esil_reg_read (as->arch->esil, "z", &z, NULL);
-	}
-	// real target address may change during execution, so this value will
-	// be changing all the time
-	op->jump = z << 1;
 	op->cycles = 2;
 	r_strbuf_append (&op->esil, "1,z,<<,pc,=,"); // jump!
 }
@@ -738,8 +718,7 @@ static void _inst__ijmp(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, 
 static void _inst__icall(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
 	// ICALL k
 	// push pc in stack
-	r_strbuf_append (&op->esil, "pc,"); // esil is already pointing to
-					     // next instruction (@ret)
+	r_strbuf_set (&op->esil, "pc,");
 	__generic_push (op, CPU_PC_SIZE (cpu)); // push @ret in stack
 	// do a standard IJMP
 	INST_CALL (ijmp);
@@ -1411,41 +1390,14 @@ static void _inst__sleep(RArchSession *as, RAnalOp *op, const ut8 *buf, int len,
 
 static void _inst__spm(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu) {
 	// SPM Z+
-	ut64 spmcsr = 0;
-
-	// read SPM Control Register (SPMCR)
-	if (as->arch->esil) {
-		r_esil_reg_read (as->arch->esil, "spmcsr", &spmcsr, NULL);
-	}
-
-	// clear SPMCSR
-	r_strbuf_append (&op->esil, "0x7c,spmcsr,&=,");
-
-	// decide action depending on the old value of SPMCSR
-	switch (spmcsr & 0x7f) {
-	case 0x03: // PAGE ERASE
-		// invoke SPM_CLEAR_PAGE (erases target page writing
-		// the 0xff value
-		r_strbuf_append (&op->esil, "16,rampz,<<,z,+,"); // push target address
-		r_strbuf_append (&op->esil, "SPM_PAGE_ERASE,"); // do magic
-		break;
-
-	case 0x01: // FILL TEMPORARY BUFFER
-		r_strbuf_append (&op->esil, "r1,r0,"); // push data
-		r_strbuf_append (&op->esil, "z,"); // push target address
-		r_strbuf_append (&op->esil, "SPM_PAGE_FILL,"); // do magic
-		break;
-
-	case 0x05: // WRITE PAGE
-		r_strbuf_append (&op->esil, "16,rampz,<<,z,+,"); // push target address
-		r_strbuf_append (&op->esil, "SPM_PAGE_WRITE,"); // do magic
-		break;
-
-	default:
-		eprintf ("SPM: I dont know what to do with SPMCSR %02x.\n",
-			(unsigned int)spmcsr);
-	}
-
+	r_strbuf_set (&op->esil, "spmcsr,0x7f,&,"
+		"spmcsr,0x7f,&,"
+		"spmcsr,0x7f,&,"
+		"0x7c,spmcsr,&=,"
+		"0x1,^,!,?{,r1,r0,z,SPM_PAGE_FILL,CLEAR,BREAK,},"
+		"0x3,^,!,?{,16,rampz,<<,z,+,SPM_PAGE_ERASE,CLEAR,BREAK,},"
+		"0x5,^,!,?{,16,rampz,<<,z,+,SPM_PAGE_WRITE,}"
+	);
 	op->cycles = 1; // This is truly false. Datasheets do not publish how
 			// many cycles this instruction uses in all its
 			// operation modes and I am pretty sure that this value
@@ -1751,6 +1703,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	// select cpu info
 	CPU_MODEL *cpu = get_cpu_model (as->data, as->config->cpu);
 
+#if 0
 	// set memory layout registers
 	if (as->arch->esil) {
 		ut64 offset = 0;
@@ -1768,6 +1721,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "eeprom_size"));
 		r_esil_reg_write (as->arch->esil, "_page", offset);
 	}
+#endif
 	// process opcode
 	avr_op_analyze (as, op, addr, buf, len, cpu);
 
@@ -1783,13 +1737,19 @@ static bool avr_custom_des(REsil *esil) {
 	if (!esil) {
 		return false;
 	}
-	ut64 key, encrypt, text, des_round;
+	ut64 text, key, encrypt, des_round;
+	if (!__esil_pop_argument (esil, &text)) {
+		return false;
+	}
+	if (!__esil_pop_argument (esil, &key)) {
+		return false;
+	}
+	if (!__esil_pop_argument (esil, &encrypt)) {
+		return false;
+	}
 	if (!__esil_pop_argument (esil, &des_round)) {
 		return false;
 	}
-	r_esil_reg_read (esil, "hf", &encrypt, NULL);
-	r_esil_reg_read (esil, "deskey", &key, NULL);
-	r_esil_reg_read (esil, "text", &text, NULL);
 
 	ut32 key_lo = key & UT32_MAX;
 	ut32 key_hi = key >> 32;
@@ -1812,9 +1772,7 @@ static bool avr_custom_des(REsil *esil) {
 		r_des_permute_block1 (&buf_hi, &buf_lo);
 	}
 
-	text = (((ut64)buf_hi) << 32) | buf_lo;
-	r_esil_reg_write (esil, "text", text);
-	return true;
+	return r_esil_pushnum (esil, (((ut64)buf_hi) << 32) | buf_lo);
 }
 
 // ESIL operation SPM_PAGE_ERASE
@@ -1954,10 +1912,10 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 static bool esil_avr_init(RArchSession *as, REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (as && as->data && esil, false);
 
-	r_esil_set_op (esil, "des", avr_custom_des, 0, 1, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "des", avr_custom_des, 1, 4, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_MATH);
+	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 1, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 3, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 1, R_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 	return true;
 }
