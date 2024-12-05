@@ -418,6 +418,17 @@ static void handle_sigchld(int sig) {
 	}
 }
 
+static R2RSubprocess *pid_to_proc(int pid) {
+	void **it;
+	r_pvector_foreach (&subprocs, it) {
+		R2RSubprocess *p = *it;
+		if (p->pid == pid) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
 static RThreadFunctionRet sigchld_th(RThread *th) {
 	while (true) {
 		ut8 b;
@@ -434,40 +445,37 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		if (!b) {
 			break;
 		}
-		while (true) {
-			int wstat;
-			pid_t pid = waitpid (-1, &wstat, WNOHANG);
-			if (pid <= 0) {
-				break;
-			}
-			r_th_lock_enter (subprocs_mutex);
-			void **it;
-			R2RSubprocess *proc = NULL;
-			r_pvector_foreach (&subprocs, it) {
-				R2RSubprocess *p = *it;
-				if (p->pid == pid) {
-					proc = p;
-					break;
-				}
-			}
-			if (!proc) {
-			 	r_th_lock_leave (subprocs_mutex);
-				continue;
-			}
+		int wstat;
+		// pid_t pid = wait (&wstat);
+		pid_t pid = waitpid (-1, &wstat, 0);
+		if (pid <= 0) {
+			// r_sys_perror ("waitpid failed");
+			break;
+		}
+		r_th_lock_enter (subprocs_mutex);
+		R2RSubprocess *proc = pid_to_proc (pid);
+		if (proc) {
 			r_th_lock_enter (proc->lock);
-			if (WIFEXITED (wstat)) {
+			if (WIFSIGNALED (wstat)) {
+				const int signal_number = WTERMSIG (wstat);
+				R_LOG_ERROR ("Child signal %d", signal_number);
+				proc->ret = -signal_number;
+			} else if (WIFEXITED (wstat)) {
 				proc->ret = WEXITSTATUS (wstat);
 			} else {
 				proc->ret = -1;
 			}
-			ut8 r = 0;
+			ut8 r = pid;
 			int ret = write (proc->killpipe[1], &r, 1);
 			r_th_lock_leave (proc->lock);
-			r_th_lock_leave (subprocs_mutex);
 			if (ret != 1) {
-				break;
+				proc->ret = -1;
+				r_sys_perror ("write killpipe-");
+				// r_th_lock_leave (subprocs_mutex);
+				// break;
 			}
 		}
+		r_th_lock_leave (subprocs_mutex);
 	}
 	return R_TH_STOP;
 }
@@ -532,15 +540,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
-	char **argv = calloc (args_size + 2, sizeof (char *));
-	if (!argv) {
-		return NULL;
-	}
-	argv[0] = (char *)file;
-	if (args_size) {
-		memcpy (argv + 1, args, sizeof (char *) * args_size);
-	}
-	// done by calloc: argv[args_size + 1] = NULL;
 	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
@@ -593,13 +592,20 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_th_lock_leave (subprocs_mutex);
 		r_sys_perror ("subproc-start fork");
 		free (proc);
-		free (argv);
 		return NULL;
 	}
 	if (proc->pid == 0) {
 		dup_retry (stdin_pipe, 0, STDIN_FILENO);
 		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
 		dup_retry (stderr_pipe, 1, STDERR_FILENO);
+		char **argv = calloc (args_size + 2, sizeof (char *));
+		if (!argv) {
+			return NULL;
+		}
+		argv[0] = (char *)file;
+		if (args_size) {
+			memcpy (argv + 1, args, sizeof (char *) * args_size);
+		}
 		size_t i;
 		for (i = 0; i < env_size; i++) {
 			setenv (envvars[i], envvals[i], 1);
@@ -608,7 +614,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_sys_perror ("subproc-start exec");
 		r_sys_exit (-1, true);
 	}
-	free (argv);
 
 	// parent
 	close (stdin_pipe[0]);
@@ -621,7 +626,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 	return proc;
 error:
-	free (argv);
 	if (proc && proc->killpipe[0] == -1) {
 		close (proc->killpipe[0]);
 	}
@@ -711,6 +715,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 1");
+				child_dead = true;
 				stdout_eof = true;
 			} else if (sz == 0) {
 				stdout_eof = true;
@@ -724,8 +729,10 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 2");
+				timedout = false;
 				stderr_eof = true;
-				continue;
+				child_dead = true;
+				break;
 			}
 			if (sz == 0) {
 				stderr_eof = true;
@@ -781,7 +788,6 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	r_th_lock_enter (subprocs_mutex);
 	r_th_lock_free (proc->lock);
 	r_pvector_remove_data (&subprocs, proc);
-	r_th_lock_leave (subprocs_mutex);
 	r_strbuf_fini (&proc->out);
 	r_strbuf_fini (&proc->err);
 	close (proc->killpipe[0]);
@@ -792,6 +798,7 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	close (proc->stdout_fd);
 	close (proc->stderr_fd);
 	free (proc);
+	r_th_lock_leave (subprocs_mutex);
 }
 #endif
 
