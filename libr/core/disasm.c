@@ -2920,9 +2920,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	r_anal_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
-		if (len > ds->asmop.size) {
-			len = ds->asmop.size;
-		}
+	if (len > ds->asmop.size) {
+		len = ds->asmop.size;
+	}
 	if (!ds->asmop.bytes) {
 		// this happens only when the instruction is truncated
 		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
@@ -6276,7 +6276,6 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	bool pdu_condition_met = false;
 	char *opstr_nocolor = NULL;
 	int opcode_len = -1;
-	//const char *pdu_condition_esil = NULL;
 	const char *pdu_condition_instruction = NULL;
 	const char *pdu_condition_opcode = NULL;
 
