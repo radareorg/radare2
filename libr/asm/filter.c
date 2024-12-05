@@ -605,10 +605,8 @@ R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, co
 		char *res = ap->filter (aps, addr, f, str);
 		if (res) {
 			free (str);
-			return res;
+			str = res;
 		}
-		return str;
 	}
-	free (str);
-	return false;
+	return str;
 }
