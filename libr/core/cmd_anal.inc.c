@@ -10236,7 +10236,6 @@ static char *get_op_ireg(void *user, ut64 addr) {
 
 static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, bool color) {
 	int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char str[512];
 	const int size = 12;
 	ut8 buf[12];
 	RAnalOp asmop = {0};
@@ -10273,11 +10272,12 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	free (ba);
 	char *buf_asm = NULL;
 	if (color && has_color) {
-		buf_asm = r_print_colorize_opcode (core->print, str,
+		buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
 				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
-		buf_asm = strdup (str);
+		buf_asm = strdup (asmop.mnemonic);
 	}
+	r_asm_op_fini (&asmop);
 	return buf_asm;
 }
 
