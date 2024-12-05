@@ -445,37 +445,46 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		if (!b) {
 			break;
 		}
-		int wstat;
-		// pid_t pid = wait (&wstat);
-		pid_t pid = waitpid (-1, &wstat, 0);
-		if (pid <= 0) {
-			// r_sys_perror ("waitpid failed");
-			continue;
-		}
-		r_th_lock_enter (subprocs_mutex);
-		R2RSubprocess *proc = pid_to_proc (pid);
-		if (proc) {
-			r_th_lock_enter (proc->lock);
-			if (WIFSIGNALED (wstat)) {
-				const int signal_number = WTERMSIG (wstat);
-				R_LOG_ERROR ("Child signal %d", signal_number);
-				proc->ret = -signal_number;
-			} else if (WIFEXITED (wstat)) {
-				proc->ret = WEXITSTATUS (wstat);
-			} else {
-				proc->ret = -1;
+		while (true) {
+			int wstat;
+			// pid_t pid = wait (&wstat);
+			pid_t pid = waitpid (-1, &wstat, 0);
+			if (pid <= 0) {
+			// 	r_sys_perror ("waitpid failed");
+				break;
 			}
-			ut8 r = pid;
-			int ret = write (proc->killpipe[1], &r, 1);
-			r_th_lock_leave (proc->lock);
-			if (ret != 1) {
-				proc->ret = -1;
-				r_sys_perror ("write killpipe-");
-				// r_th_lock_leave (subprocs_mutex);
-				// break;
+			r_th_lock_enter (subprocs_mutex);
+			R2RSubprocess *proc = pid_to_proc (pid);
+			if (proc) {
+				r_th_lock_enter (proc->lock);
+				if (WIFSIGNALED (wstat)) {
+					const int signal_number = WTERMSIG (wstat);
+					R_LOG_ERROR ("Child signal %d", signal_number);
+					proc->ret = -1;
+					int r = pid;
+					int ret = write (proc->killpipe[1], &r, 1);
+					if (ret != 1) {
+						r_sys_perror ("write killpipe-");
+						r_th_lock_leave (proc->lock);
+						r_th_lock_leave (subprocs_mutex);
+						break;
+					}
+				} else if (WIFEXITED (wstat)) {
+					proc->ret = WEXITSTATUS (wstat);
+				} else {
+					proc->ret = -1;
+				}
+				ut8 r = pid;
+				int ret = write (proc->killpipe[1], &r, 1);
+				r_th_lock_leave (proc->lock);
+				if (ret != 1) {
+					r_sys_perror ("write killpipe-");
+					r_th_lock_leave (subprocs_mutex);
+					break;
+				}
 			}
+			r_th_lock_leave (subprocs_mutex);
 		}
-		r_th_lock_leave (subprocs_mutex);
 	}
 	return R_TH_STOP;
 }
