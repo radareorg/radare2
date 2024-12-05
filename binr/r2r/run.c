@@ -451,7 +451,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			// pid_t pid = waitpid (-1, &wstat, 0);
 			if (pid <= 0) {
 			// 	r_sys_perror ("waitpid failed");
-				continue;
+				break;
 			}
 			r_th_lock_enter (subprocs_mutex);
 			R2RSubprocess *proc = pid_to_proc (pid);
@@ -467,7 +467,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 						r_sys_perror ("write killpipe-");
 						r_th_lock_leave (proc->lock);
 						r_th_lock_leave (subprocs_mutex);
-						return R_TH_STOP;
+						break;
 					}
 				} else if (WIFEXITED (wstat)) {
 					proc->ret = WEXITSTATUS (wstat);
@@ -480,7 +480,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				if (ret != 1) {
 					r_sys_perror ("write killpipe-");
 					r_th_lock_leave (subprocs_mutex);
-					return R_TH_STOP;
+					break;
 				}
 			}
 			r_th_lock_leave (subprocs_mutex);
@@ -724,6 +724,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 1");
+				child_dead = true;
 				stdout_eof = true;
 			} else if (sz == 0) {
 				stdout_eof = true;
@@ -737,8 +738,10 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 2");
+				timedout = false;
 				stderr_eof = true;
-				continue;
+				child_dead = true;
+				break;
 			}
 			if (sz == 0) {
 				stderr_eof = true;
