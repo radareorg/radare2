@@ -447,8 +447,8 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		}
 		while (true) {
 			int wstat;
-			pid_t pid = wait (&wstat);
-			// pid_t pid = waitpid (-1, &wstat, 0);
+			// pid_t pid = wait (&wstat);
+			pid_t pid = waitpid (-1, &wstat, 0);
 			if (pid <= 0) {
 			// 	r_sys_perror ("waitpid failed");
 				break;
