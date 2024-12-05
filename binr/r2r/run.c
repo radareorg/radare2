@@ -418,6 +418,20 @@ static void handle_sigchld(int sig) {
 	}
 }
 
+static R2RSubprocess *pid_to_proc(int pid) {
+	void **it;
+	r_th_lock_enter (subprocs_mutex);
+	r_pvector_foreach (&subprocs, it) {
+		R2RSubprocess *p = *it;
+		if (p->pid == pid) {
+			r_th_lock_leave (subprocs_mutex);
+			return p;
+		}
+	}
+	r_th_lock_leave (subprocs_mutex);
+	return NULL;
+}
+
 static RThreadFunctionRet sigchld_th(RThread *th) {
 	while (true) {
 		ut8 b;
@@ -438,34 +452,24 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			int wstat;
 			pid_t pid = waitpid (-1, &wstat, WNOHANG);
 			if (pid <= 0) {
+				r_sys_perror ("waitpid failed");
 				break;
 			}
-			r_th_lock_enter (subprocs_mutex);
-			void **it;
-			R2RSubprocess *proc = NULL;
-			r_pvector_foreach (&subprocs, it) {
-				R2RSubprocess *p = *it;
-				if (p->pid == pid) {
-					proc = p;
+			R2RSubprocess *proc = pid_to_proc (pid);
+			if (proc) {
+				r_th_lock_enter (proc->lock);
+				if (WIFEXITED (wstat)) {
+					proc->ret = WEXITSTATUS (wstat);
+				} else {
+					proc->ret = -1;
+				}
+				ut8 r = 0;
+				int ret = write (proc->killpipe[1], &r, 1);
+				r_th_lock_leave (proc->lock);
+				if (ret != 1) {
+					r_sys_perror ("write killpipe-");
 					break;
 				}
-			}
-			if (!proc) {
-			 	r_th_lock_leave (subprocs_mutex);
-				continue;
-			}
-			r_th_lock_enter (proc->lock);
-			if (WIFEXITED (wstat)) {
-				proc->ret = WEXITSTATUS (wstat);
-			} else {
-				proc->ret = -1;
-			}
-			ut8 r = 0;
-			int ret = write (proc->killpipe[1], &r, 1);
-			r_th_lock_leave (proc->lock);
-			r_th_lock_leave (subprocs_mutex);
-			if (ret != 1) {
-				break;
 			}
 		}
 	}
@@ -532,15 +536,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
-	char **argv = calloc (args_size + 2, sizeof (char *));
-	if (!argv) {
-		return NULL;
-	}
-	argv[0] = (char *)file;
-	if (args_size) {
-		memcpy (argv + 1, args, sizeof (char *) * args_size);
-	}
-	// done by calloc: argv[args_size + 1] = NULL;
 	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
@@ -593,13 +588,21 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_th_lock_leave (subprocs_mutex);
 		r_sys_perror ("subproc-start fork");
 		free (proc);
-		free (argv);
+	//	free (argv);
 		return NULL;
 	}
 	if (proc->pid == 0) {
 		dup_retry (stdin_pipe, 0, STDIN_FILENO);
 		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
 		dup_retry (stderr_pipe, 1, STDERR_FILENO);
+		char **argv = calloc (args_size + 2, sizeof (char *));
+		if (!argv) {
+			return NULL;
+		}
+		argv[0] = (char *)file;
+		if (args_size) {
+			memcpy (argv + 1, args, sizeof (char *) * args_size);
+		}
 		size_t i;
 		for (i = 0; i < env_size; i++) {
 			setenv (envvars[i], envvals[i], 1);
@@ -608,7 +611,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_sys_perror ("subproc-start exec");
 		r_sys_exit (-1, true);
 	}
-	free (argv);
 
 	// parent
 	close (stdin_pipe[0]);
@@ -621,7 +623,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 	return proc;
 error:
-	free (argv);
 	if (proc && proc->killpipe[0] == -1) {
 		close (proc->killpipe[0]);
 	}
