@@ -6496,6 +6496,8 @@ static void analPathFollow(RCoreAnalPaths *p, ut64 addr, PJ *pj) {
 	if (addr != UT64_MAX && !dict_get (&p->visited, addr)) {
 		p->cur = r_anal_bb_from_offset (p->core->anal, addr);
 		analPaths (p, pj);
+		// dict_set (&p->visited, p->cur->addr, 1, NULL);
+		dict_set (&p->visited, addr, 1, NULL);
 	}
 }
 
@@ -6519,8 +6521,8 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 	}
 	if (p->toBB && cur->addr == p->toBB->addr) {
 		// one path is enough
-		p->interrupted = true;
 		if (!printAnalPaths (p, pj)) {
+			p->interrupted = true;
 			return;
 		}
 	} else {
