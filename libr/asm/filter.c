@@ -142,17 +142,20 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
-	char *ptr = data, *ptr2, *ptr_backup;
+	char *hdata = strdup (data); // XXX
+	char *ptr = hdata;
+	const bool big_endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	char *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
 	RArchConfig *ac = R_UNWRAP3 (a, analb.anal, config);
 	if (!ac) {
-		eprintf ("%p\n", a->analb.anal);
 		R_LOG_ERROR ("no anal bind?");
+		free (hdata);
 		return false;
 	}
 	const int bits = ac->bits;
@@ -172,6 +175,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 		}
 	}
 	if (!data || !p) {
+		free (hdata);
 		return 0;
 	}
 #if FILTER_DWORD
@@ -226,9 +230,8 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 						name = flag->realname;
 					}
 				}
-				snprintf (str, len, "%s%s%s", data, name,
-					(ptr != ptr2)? ptr2: "");
-				return true;
+				free (hdata);
+				return r_str_newf ("%s%s%s", data, name, (ptr != ptr2)? ptr2: "");
 			}
 			if (f) {
 				RFlagItem *flag2;
@@ -307,7 +310,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 							flagname = newstr;
 						}
 					}
-					snprintf (str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					char *str = r_str_newf ("%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
 					free (flagname);
 					bool banned = false;
 					{
@@ -324,7 +327,8 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
 						if (!*ptr_end) {
-							return true;
+							free (hdata);
+							return str;
 						}
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
@@ -375,7 +379,8 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 							break;
 						}
 					}
-					return true;
+					free (hdata);
+					return str;
 				}
 				if (p->subtail) { //  && off > UT32_MAX && addr > UT32_MAX)
 					if (off != UT64_MAX) {
@@ -405,8 +410,8 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
-				return true;
+				free (hdata);
+				return r_str_newf ("%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
 			}
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
@@ -441,7 +446,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = hdata; tmp < ptr; tmp++) {
 					if (*tmp == 0x1b) {
 						while (tmp < ptr - 1 && *tmp != 'm') {
 							tmp++;
@@ -577,26 +582,29 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				break;
 			}
 			*ptr = 0;
-			snprintf (str, len, "%s%s%s", data, num, (ptr != ptr2)? ptr2: "");
-			return true;
+			free (hdata);
+			return r_str_newf ("%s%s%s", data, num, (ptr != ptr2)? ptr2: "");
 		}
 		ptr = ptr2;
 	}
-	if (data != str) {
-		strncpy (str, data, len);
-	} else {
-		R_LOG_ERROR ("Invalid str/data inputs");
-	}
-	return false;
+	free (hdata);
+	return NULL;
 }
 
-/// XXX very ugly arguments, redesign!
-R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
 	RAsmPluginSession *aps = a->cur;
-	filter (aps, addr, f, hint, data, str, len, big_endian);
+	char *str = filter (aps, addr, f, hint, data);
+	if (!str) {
+		str = strdup (data);
+	}
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {
-		return ap->filter (aps, addr, f, data, str, len, big_endian);
+		char *res = ap->filter (aps, addr, f, str);
+		if (res) {
+			free (str);
+			return res;
+		}
+		return str;
 	}
 	return false;
 }

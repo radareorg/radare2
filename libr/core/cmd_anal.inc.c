@@ -2486,7 +2486,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			// 0x33->sym.xx
 			if (strsub) {
-				char *res2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, strsub, be);
+				char *res2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, strsub);
 				if (res2) {
 					free (strsub);
 					strsub = res2;
@@ -2682,7 +2682,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				core->rasm->parse->subrel_addr = killme;
 			}
 			if (disasm) {
-				char *disasm2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, disasm, be);
+				char *disasm2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, disasm);
 				if (disasm2) {
 					free (disasm);
 					disasm = disasm2;
@@ -10241,7 +10241,6 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	ut8 buf[12];
 	RAnalOp asmop = {0};
 	bool asm_subvar = r_config_get_b (core->config, "asm.sub.var");
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	core->rasm->parse->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	core->rasm->parse->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->rasm->parse->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
@@ -10264,7 +10263,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		}
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-	char *ba2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, ba, be);
+	char *ba2 = r_asm_parse_filter (core->rasm, addr, core->flags, hint, ba);
 	if (ba2) {
 		free (ba);
 		ba = ba2;
@@ -10364,7 +10363,6 @@ static void axfm(RCore *core) {
 }
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '-': { // "ax-"
@@ -10851,7 +10849,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							char *res = r_asm_parse_filter (core->rasm, ref->addr, core->flags,
-									hint, asmop.mnemonic, be);
+									hint, asmop.mnemonic);
 							if (res) {
 								free (asmop.mnemonic);
 								asmop.mnemonic = res;
