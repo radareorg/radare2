@@ -458,9 +458,19 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			if (proc) {
 				r_th_lock_enter (proc->lock);
 				if (WIFSIGNALED (wstat)) {
-					int signal_number = WTERMSIG(wstat);
-					proc->ret = -1;
+					const int signal_number = WTERMSIG (wstat);
 					R_LOG_ERROR ("Child signal %d", signal_number);
+					proc->ret = -1;
+int r = 0;
+				int ret = write (proc->killpipe[1], &r, 1);
+				if (ret != 1) {
+					r_sys_perror ("write killpipe-");
+					r_th_lock_leave (subprocs_mutex);
+					return R_TH_STOP;
+				}
+				r_th_lock_leave (proc->lock);
+					r_th_lock_leave (subprocs_mutex);
+					return R_TH_STOP;
 				} else if (WIFEXITED (wstat)) {
 					proc->ret = WEXITSTATUS (wstat);
 				} else {
@@ -472,7 +482,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				if (ret != 1) {
 					r_sys_perror ("write killpipe-");
 					r_th_lock_leave (subprocs_mutex);
-					break;
+					return R_TH_STOP;
 				}
 			}
 			r_th_lock_leave (subprocs_mutex);
