@@ -131,16 +131,6 @@ CPU_MODEL cpu_models[] = {
 		}
 	},
 	{
-		.model = "ATxmega128a4u",
-		.pc = 17,
-		.consts = {
-			cpu_reg_common,
-			cpu_memsize_xmega128a4u,
-			cpu_pagesize_7_bits,
-			NULL
-		}
-	},
-	{
 		.model = "ATmega1280",
 		.pc = 16,
 		.inherit = "ATmega640"
@@ -165,7 +155,6 @@ CPU_MODEL cpu_models[] = {
 		.pc = 8,
 		.inherit = "ATmega8"
 	},
-	// last model is the default AVR - ATmega8 forever!
 	{
 		.model = "ATmega8",
 		.pc = 13,
@@ -176,6 +165,17 @@ CPU_MODEL cpu_models[] = {
 			NULL
 		}
 	},
+	// last model is the default AVR
+	{
+		.model = "ATxmega128a4u",
+		.pc = 17,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_xmega128a4u,
+			cpu_pagesize_7_bits,
+			NULL
+		}
+	}
 	//{ .model = NULL },
 };
 
@@ -2391,7 +2391,8 @@ const RArchPlugin r_arch_plugin_avr = {
 	.esilcb = esil_cb,
 	.init = init,
 	.fini = fini,
-	.cpus = "ATmega8," // First one is default
+	.cpus = "ATxmega128a4u,"	// First one is default
+		"ATmega8,"
 		"ATmega1280,"
 		"ATmega1281,"
 		"ATmega168,"
@@ -2401,8 +2402,7 @@ const RArchPlugin r_arch_plugin_avr = {
 		"ATmega32u4,"
 		"ATmega48,"
 		"ATmega640,"
-		"ATmega88,"
-		"ATxmega128a4u"
+		"ATmega88"
 };
 
 #ifndef R2_PLUGIN_INCORE
