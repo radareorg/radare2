@@ -2264,7 +2264,6 @@ beach:
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	ut8 buf[12];
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (!xrefs) {
@@ -2279,7 +2278,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 		r_asm_disassemble (core->rasm, &asmop, buf, size);
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-		char *disasm = r_asm_parse_filter (core->rasm, ref->addr, core->flags, hint, asmop.mnemonic, be);
+		char *disasm = r_asm_parse_filter (core->rasm, ref->addr, core->flags, hint, asmop.mnemonic);
 		r_anal_hint_free (hint);
 		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 		char *print_comment = NULL;
@@ -2412,8 +2411,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 		default:
 			if (asm_sub_names) {
 				RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
-				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-				char *tmp = r_asm_parse_filter (core->rasm, hit->addr, core->flags, hint, hit->code, be);
+				char *tmp = r_asm_parse_filter (core->rasm, hit->addr, core->flags, hint, hit->code);
 				if (tmp) {
 					r_anal_hint_free (hint);
 					if (param->outmode == R_MODE_SIMPLE) {

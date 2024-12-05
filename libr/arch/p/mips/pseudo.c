@@ -245,7 +245,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
 	RListIter *iter;
@@ -350,18 +350,10 @@ static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int ople
 		r_list_free (bpargs);
 		r_list_free (spargs);
 	}
-	bool ret = true;
-	if (len > strlen (tstr)) {
-		strcpy (str, tstr);
-	} else {
-		// TOO BIG STRING CANNOT REPLACE HERE
-		ret = false;
-	}
-	free (tstr);
-	return ret;
+	return tstr;
 }
 
-RAsmPlugin r_asm_plugin_mips= {
+RAsmPlugin r_asm_plugin_mips = {
 	.meta = {
 		.name = "mips",
 		.desc = "MIPS pseudo syntax",

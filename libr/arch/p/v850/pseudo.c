@@ -120,6 +120,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
+// UNSAFE
 static char *reorder(char *buf) {
 	char *arr = strstr (buf, "-0x");
 	if (!arr) {
@@ -198,7 +199,7 @@ static bool parse(RAsmPluginSession *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	char *r0 = strstr (data, "[r0]");
 	if (r0) {
 		char *neg = strstr (data, " -");
@@ -208,16 +209,10 @@ static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int ople
 			free (n);
 			*neg = 0;
 			ut64 addr = UT32_MAX + negdelta + 1;
-			char *res = r_str_newf ("%s 0x%"PFMT64x"%s", data, addr, r0 + 4);
-			strcpy (str, res);
-			free (res);
-			return true;
+			return r_str_newf ("%s 0x%"PFMT64x"%s", data, addr, r0 + 4);
 		}
 	}
-	if (str != data) {
-		r_str_cpy (str, data);
-	}
-	return false;
+	return NULL;
 }
 
 RAsmPlugin r_asm_plugin_v850 = {

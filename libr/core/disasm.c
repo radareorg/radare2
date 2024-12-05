@@ -1219,7 +1219,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		if (ds->subjmp) {
-			char *str = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, ds->opstr, be);
+			char *str = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, ds->opstr);
 			if (str) {
 				free (ds->opstr);
 				ds->opstr = str;
@@ -7393,7 +7393,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		}
 		{
 			char *buf = ds_sub_jumps (ds, asmop.mnemonic);
-			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf, be);
+			char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, buf);
 			if (res) {
 				r_asm_op_set_asm (&asmop, res);
 				free (res);
@@ -7583,7 +7583,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		pj_a (pj);
 	}
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	r_cons_break_push (NULL, NULL);
@@ -7631,7 +7630,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			switch (mode) {
 			case 'i':
 				{
-					char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, asmop.mnemonic, be);
+					char *res = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, asmop.mnemonic);
 
 					if (scr_color) {
 						RAnalOp aop;
@@ -7905,7 +7904,7 @@ toro:
 				}
 				free (tmpopstr);
 			} else {
-				char *asm_str = asmop.mnemonic;
+				char *asm_str = strdup (asmop.mnemonic);
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}
@@ -7917,10 +7916,12 @@ toro:
 					}
 				}
 				if (subnames) {
-					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
-					asm_str = r_asm_parse_filter (core->rasm, at, core->flags, hint,
-							asm_str, be);
+					char *res = r_asm_parse_filter (core->rasm, at, core->flags, hint, asm_str);
+					if (res) {
+						free (asm_str);
+						asm_str = res;
+					}
 					r_anal_hint_free (hint);
 				}
 				if (show_color) {

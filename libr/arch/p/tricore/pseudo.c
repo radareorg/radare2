@@ -255,7 +255,7 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 	r_strbuf_free (sb);
 }
 
-static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
 	RAnal *anal = a->analb.anal;
@@ -435,27 +435,19 @@ static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int ople
 		r_list_free (spargs);
 		r_list_free (bpargs);
 	}
-
+#if 0
 	char bp[32];
 	if (anal->reg->name[R_REG_NAME_BP]) {
 		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
-		if (isupper ((ut8)*str)) {
+		if (isupper ((ut8)tstr[0])) {
 			r_str_case (bp, true);
 		}
 		bp[sizeof (bp) - 1] = 0;
 	} else {
 		bp[0] = 0;
 	}
-
-	bool ret = true;
-	if (len > strlen (tstr)) {
-		strcpy (str, tstr);
-	} else {
-		// TOO BIG STRING CANNOT REPLACE HERE
-		ret = false;
-	}
-	free (tstr);
-	return ret;
+#endif
+	return tstr;
 }
 
 static void fini(RAsmPluginSession *aps) {
