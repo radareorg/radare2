@@ -9118,6 +9118,11 @@ static const char *colors[colors_last] = {
 
 static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	ut8 buf[32] = {0};
+if (mode =='j') {
+ut8 *a = (ut8*)0;
+*a =0;
+
+}
 	if (R_STR_ISNOTEMPTY (arg)) {
 		char *choparg = r_str_ndup (arg, 8);
 		int res = r_hex_str2bin (choparg, (ut8 *)buf);
