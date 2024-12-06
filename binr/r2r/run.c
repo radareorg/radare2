@@ -461,8 +461,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 					const int signal_number = WTERMSIG (wstat);
 					R_LOG_ERROR ("Child signal %d", signal_number);
 					proc->ret = -1;
-					int r = pid;
-					int ret = write (proc->killpipe[1], &r, 1);
+					int ret = write (proc->killpipe[1], "", 1);
 					if (ret != 1) {
 						r_sys_perror ("write killpipe-");
 						r_th_lock_leave (proc->lock);
@@ -474,8 +473,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				} else {
 					proc->ret = -1;
 				}
-				ut8 r = pid;
-				int ret = write (proc->killpipe[1], &r, 1);
+				int ret = write (proc->killpipe[1], "", 1);
 				r_th_lock_leave (proc->lock);
 				if (ret != 1) {
 					r_sys_perror ("write killpipe-");
@@ -609,6 +607,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		dup_retry (stderr_pipe, 1, STDERR_FILENO);
 		char **argv = calloc (args_size + 2, sizeof (char *));
 		if (!argv) {
+			free (proc);
 			return NULL;
 		}
 		argv[0] = (char *)file;
