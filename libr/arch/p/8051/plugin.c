@@ -859,6 +859,7 @@ static int i8051_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 }
 #endif
 
+#if 0
 static int esil_i8051_init(RArchSession *as, REsil *esil) {
 	PluginData *pd = as->data;
 	if (esil->cb.user) {
@@ -886,6 +887,7 @@ static int esil_i8051_fini(RArchSession *as, REsil *esil) {
 	pd->i8051_is_init = false;
 	return true;
 }
+#endif
 
 static char *regs(RArchSession *as) {
 	const char *p =
@@ -1155,6 +1157,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return false;
 }
 
+#if 0
 static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	REsil *esil = as->arch->esil;
 	if (!esil) {
@@ -1173,6 +1176,7 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	}
 	return true;
 }
+#endif
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
@@ -1220,7 +1224,7 @@ const RArchPlugin r_arch_plugin_8051 = {
 	.decode = decode,
 	.encode = encode,
 	.regs = regs,
-	.esilcb = esil_cb,
+//	.esilcb = esil_cb,
 	.info = archinfo,
 	.init = init,
 	.fini = fini,
