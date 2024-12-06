@@ -1161,12 +1161,14 @@ static void setprintmode(RCore *core, int n) {
 
 	if (n > 0) {
 		v->printidx = R_ABS ((v->printidx + 1) % NPF);
-	} else {
+	} else if (n < 0) {
 		if (v->printidx) {
 			v->printidx--;
 		} else {
 			v->printidx = NPF - 1;
 		}
+	} else {
+		v->printidx = 0;
 	}
 	switch (v->printidx) {
 	case R_CORE_VISUAL_MODE_PD:
@@ -1958,6 +1960,7 @@ static void visual_textlogs(RCore *core) {
 	}
 }
 
+#if 0
 static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
@@ -2001,6 +2004,7 @@ beach:
 	free (comment);
 	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
+#endif
 
 static bool isDisasmPrint(int mode) {
 	return (mode == R_CORE_VISUAL_MODE_PD || mode == R_CORE_VISUAL_MODE_DB);
@@ -3206,7 +3210,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, false);
 			break;
 		case ',':
-			visual_comma (core);
+			// visual_comma (core);
+			core->visual.current0format = 0;
+			core->visual.current0format = 0;
+			core->visual.currentFormat = core->visual.current0format;
+			setprintmode (core, 0);
 			break;
 		case 't':
 			{
