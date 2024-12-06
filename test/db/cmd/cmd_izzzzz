@@ -115,3 +115,23 @@ EXPECT=<<EOF
 LnJvZGF0YQ==
 EOF
 RUN
+
+NAME=iz-n-m
+FILE=bins/elf/ls
+ARGS=-n -m 0x800000
+CMDS=<<EOF
+izz~:0..10
+EOF
+EXPECT=<<EOF
+nth  paddr      vaddr      len size section type    string
+----------------------------------------------------------
+0    0x00800034 0x00800034 4   10           utf16le @8\v@
+1    0x008002a8 0x008002a8 27  28           ascii   /lib64/ld-linux-x86-64.so.2
+2    0x00800300 0x00800300 6   8            utf8    6NdU\t܂
+3    0x00800328 0x00800328 5   24           utf32le qrstv
+4    0x00801019 0x00801019 11  12           ascii   libcap.so.2
+5    0x00801025 0x00801025 27  28           ascii   _ITM_deregisterTMCloneTable
+6    0x00801041 0x00801041 14  15           ascii   __gmon_start__
+7    0x00801050 0x00801050 25  26           ascii   _ITM_registerTMCloneTable
+EOF
+RUN

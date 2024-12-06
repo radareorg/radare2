@@ -45,7 +45,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	const char *section_name = s ? s->name : "";
 	const char *type_string = r_bin_string_type (string->type);
 	ut64 vaddr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
-	ut64 addr = vaddr;
+	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
@@ -407,8 +407,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 				}
 			}
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
+			// ut64 baddr = bf->bo? bf->bo->baddr: bf->loadaddr;
+			ut64 maddr = bf->bo? 0: bf->loadaddr;
+			bs->vaddr = str_start - pdelta + vdelta + baddr + maddr;
 			bs->paddr = str_start + baddr;
-			bs->vaddr = str_start - pdelta + vdelta + baddr;
 			bs->string = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
 			if (strings_nofp) {
@@ -485,6 +487,11 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 					return;
 				}
 			}
+		}
+		if (!bf->bo) {
+			// use laddr instead of baddr if no bin object is loaded
+			const ut64 binLaddr = cb->cfgGetI (cb->core, "bin.laddr");
+			bf->loadaddr = binLaddr;
 		}
 	}
 	if (raw != 2) {
