@@ -21,7 +21,7 @@ else
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'next'
-      CS_TIP = 'e46838ed974948b4446c7c478508409e0000aeaa'
+      CS_TIP = '0a29bf80017b8422c79ba51e3ad5c34ba5ee6142'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',

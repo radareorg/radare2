@@ -3,9 +3,6 @@
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
 
-#if CS_API_MAJOR < 6
-#define AARCH64LAYOUT_VL_INVALID AARCH64LAYOUT_INVALID
-#endif
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #define CAPSTONE_ARM_COMPAT_HEADER
 #include <capstone/capstone.h>
@@ -125,8 +122,6 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 // *********************
 // CS6 compatibility:
 #if CS_API_MAJOR == 6
-
-#define ARM64_CC_NV AArch64CC_NV
 
 #define ARM_INS_NOP ARM_INS_ALIAS_NOP
 
