@@ -151,7 +151,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			break;
 		case 'r':
 			{
-				char *cmt = io->coreb.cmdstrf (io->coreb.core, "fd 0x%08"PFMT64x, addr);
+				char *cmt = io->coreb.cmdStrF (io->coreb.core, "fd 0x%08"PFMT64x, addr);
 				r_str_trim (cmt);
 				if (j < undos) {
 					io->cb_printf ("0x%08"PFMT64x" ; %ds- # %s\n", addr, idx + 1, cmt);

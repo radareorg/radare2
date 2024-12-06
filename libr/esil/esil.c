@@ -1358,8 +1358,8 @@ static bool esil_trap(REsil *esil) {
 static bool esil_bits(REsil *esil) {
 	ut64 s;
 	if (popRN (esil, &s)) {
-		if (esil->anal && esil->anal->coreb.setab) {
-			esil->anal->coreb.setab (esil->anal->coreb.core, NULL, s);
+		if (esil->anal && esil->anal->coreb.setArchBits) {
+			esil->anal->coreb.setArchBits (esil->anal->coreb.core, NULL, s);
 		}
 		return true;
 	}
@@ -1386,7 +1386,7 @@ static bool esil_syscall(REsil *esil) {
 static bool esil_cmd(REsil *esil) {
 	char *str = r_esil_pop (esil);
 	if (str) {
-		if (esil->anal && esil->anal->coreb.setab) {
+		if (esil->anal && esil->anal->coreb.setArchBits) {
 			esil->anal->coreb.cmd (esil->anal->coreb.core, str);
 		}
 	}

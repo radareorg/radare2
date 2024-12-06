@@ -782,7 +782,7 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 
 	// get size
 	RCore *core = a->coreb.core;
-	int maxsz = a->coreb.cfggeti (core, "zign.maxsz");
+	int maxsz = a->coreb.cfgGetI (core, "zign.maxsz");
 	r_list_sort (fcn->bbs, &bb_sort_by_addr);
 	ut64 ea = fcn->addr;
 	RAnalBlock *bb = (RAnalBlock *)fcn->bbs->tail->data;
@@ -925,7 +925,7 @@ static char *real_function_name(RAnal *a, RAnalFunction *fcn) {
 	ut64 addr = fcn->addr;
 	const char *name = fcn->name;
 	// resolve the manged name
-	char *res = a->coreb.cmdstrf (core, "is,vaddr/eq/0x%"PFMT64x",demangled/cols,a/head/1,:quiet", addr);
+	char *res = a->coreb.cmdStrF (core, "is,vaddr/eq/0x%"PFMT64x",demangled/cols,a/head/1,:quiet", addr);
 	if (res) {
 		r_str_trim (res);
 		if (*res) {
@@ -947,7 +947,7 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	r_cons_break_push (NULL, NULL);
 	RCoreBind cb = a->coreb;
 	RCore *core = cb.core;
-	bool do_mangled = cb.cfggeti (core, "zign.mangled");
+	bool do_mangled = cb.cfgGetI (core, "zign.mangled");
 	bool zign_dups = a->opt.zigndups;
 	r_list_foreach_prev (a->fcns, iter, fcn) {
 		if (r_cons_is_breaked ()) {

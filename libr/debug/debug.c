@@ -183,8 +183,8 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 	/* now that we've cleaned up after the breakpoint, call the other
 	 * potential breakpoint handlers
 	 */
-	if (dbg->coreb.core && dbg->coreb.bphit) {
-		dbg->coreb.bphit (dbg->coreb.core, b);
+	if (dbg->coreb.core && dbg->coreb.bpHit) {
+		dbg->coreb.bpHit (dbg->coreb.core, b);
 	}
 	return true;
 }
@@ -1258,7 +1258,7 @@ repeat:
 	}
 	if (reason == R_DEBUG_REASON_BREAKPOINT &&
 	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->coreb.core &&
-					dbg->coreb.cfggeti (dbg->coreb.core, "dbg.bpsysign")))) {
+					dbg->coreb.cfgGetI (dbg->coreb.core, "dbg.bpsysign")))) {
 		goto repeat;
 	}
 
@@ -1619,8 +1619,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 		reg = show_syscall (dbg, "SN");
 
-		if (dbg->coreb.core && dbg->coreb.syshit) {
-			dbg->coreb.syshit (dbg->coreb.core);
+		if (dbg->coreb.core && dbg->coreb.sysHit) {
+			dbg->coreb.sysHit (dbg->coreb.core);
 		}
 
 		if (n_sc == -1) {

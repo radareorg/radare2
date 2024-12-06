@@ -456,7 +456,7 @@ static const char x86r_32[] = "\n"
 "drx	dr7	.32	28	0\n";
 
 static bool is_arch_arm(RIO *io) {
-	char *arch = io->coreb.cmdstrf (io->coreb.core, "-a");
+	char *arch = io->coreb.cmdStrF (io->coreb.core, "-a");
 	bool is_arm = !strcmp (arch, "arm");
 	free (arch);
 	return is_arm;

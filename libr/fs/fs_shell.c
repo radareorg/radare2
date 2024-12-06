@@ -60,7 +60,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	RListIter *iter;
 	PrintfCallback cb_printf = fs->csb.cb_printf;
 	if (*buf == ':') {
-		char *msg = fs->cob.cmdstr (fs->cob.core, buf + 1);
+		char *msg = fs->cob.cmdStr (fs->cob.core, buf + 1);
 		printf ("%s", msg);
 		free (msg);
 	} else if (*buf == '!') {

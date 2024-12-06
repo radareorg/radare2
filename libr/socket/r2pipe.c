@@ -245,7 +245,7 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 		R2Pipe *r2pipe = r2pipe_new ();
 		if (r2pipe) {
 			r2pipe->coreb.core = rnew ();
-			r2pipe->coreb.cmdstr = rcmd;
+			r2pipe->coreb.cmdStr = rcmd;
 			// r2pipe->coreb.free = rfre;
 		}
 		return r2pipe;
