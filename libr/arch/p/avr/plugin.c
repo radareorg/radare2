@@ -511,7 +511,7 @@ static void _inst__call(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, 
 		return;
 	}
 	op->jump = ((buf[2] << 1) | (buf[3] << 9) | (buf[1] & 0x01) << 23 |
-		(buf[0] & 0x01) << 17 | (buf[0] & 0xf0) << 14) & CPU_PC_MASK (cpu);
+		(buf[0] & 0x01) << 17 | (buf[0] & 0xf0) << 14) & (cpu? CPU_PC_MASK (cpu): 0x1ffff);
 	op->fail = op->addr + op->size;
 	if (cpu) {
 		op->cycles = cpu->pc <= 16 ? 3 : 4;
