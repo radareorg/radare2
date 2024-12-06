@@ -292,6 +292,7 @@ static RCoreHelpMessage help_msg_visual = {
 	"$", "set the program counter to the current offset + cursor",
 	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
+	"0", "reset print mode (V0pp)",
 	"^", "seek to the beginning of the function",
 	"!", "swap into visual panels mode",
 	"TAB", "switch to the next print mode (or element in cursor mode)",
@@ -1960,7 +1961,6 @@ static void visual_textlogs(RCore *core) {
 	}
 }
 
-#if 0
 static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
@@ -2004,7 +2004,6 @@ beach:
 	free (comment);
 	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
-#endif
 
 static bool isDisasmPrint(int mode) {
 	return (mode == R_CORE_VISUAL_MODE_PD || mode == R_CORE_VISUAL_MODE_DB);
@@ -3210,11 +3209,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, false);
 			break;
 		case ',':
-			// visual_comma (core);
-			core->visual.current0format = 0;
-			core->visual.current0format = 0;
-			core->visual.currentFormat = core->visual.current0format;
-			setprintmode (core, 0);
+			visual_comma (core);
 			break;
 		case 't':
 			{
@@ -3376,15 +3371,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_config (core);
 			break;
 		case '^':
-			  {
-				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				  if (fcn) {
-					  r_core_seek (core, fcn->addr, false);
-				  } else {
-					  __core_visual_gogo (core, 'g');
-				  }
-			  }
-			  break;
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					r_core_seek (core, fcn->addr, false);
+				} else {
+					__core_visual_gogo (core, 'g');
+				}
+			}
+			break;
 		case 'E':
 			r_core_visual_colors (core);
 			break;
@@ -3786,13 +3781,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '0':
-		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			if (fcn) {
-				r_core_seek (core, fcn->addr, true);
-			}
-		}
-		break;
+			core->visual.current0format = 0;
+			core->visual.current0format = 0;
+			core->visual.currentFormat = core->visual.current0format;
+			setprintmode (core, 0);
+			break;
 		case '-':
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
