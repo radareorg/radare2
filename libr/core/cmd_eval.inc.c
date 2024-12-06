@@ -33,6 +33,8 @@ static RCoreHelpMessage help_msg_e = {
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", " [var]", "open cfg.editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
+	"ed*", "", "show contents of your ~/.radare2c",
+	"ed+", "", "add or set an eval config line into your ~/.radare2c",
 	"ed-", "[!]", "delete ~/.radare2c (Use ed-! to delete without prompting)",
 	"ej", "", "list config vars in JSON",
 	"eJ", "", "list config vars in verbose JSON",
@@ -812,6 +814,14 @@ static int cmd_eval(void *data, const char *input) {
 	case 'd': // "ed"
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_e, "ed");
+		} else if (input[1] == '*') {
+			char *file = r_file_home (".radare2rc");
+			char *data = r_file_slurp (file, NULL);
+			r_cons_println (data);
+			free (data);
+			free (file);
+		} else if (input[1] == '+') {
+			cmd_eplus (core, input + 2);
 		} else if (input[1] == '-') { // "ed-"
 			const bool prompt = (input[2] != '!');
 			char *file = r_file_home (".radare2rc");
