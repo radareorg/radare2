@@ -2513,7 +2513,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 #define MATH32_NEG(opchar) arm32math(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
 #define MATH32AS(opchar) arm32mathaddsub(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar)
 
-static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
+static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
+	csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
 	const char *op1;
 	const char *op2;
@@ -2551,7 +2552,8 @@ static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	}
 }
 
-static void arm32mathaddsub(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar) {
+static void arm32mathaddsub(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
+	csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar) {
 	const char *dst = ARG (0);
 	const char *src;
 	bool noflags = false;
@@ -2590,7 +2592,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 
 	switch (insn->id) {
 	case ARM_INS_CLZ:
-		r_strbuf_appendf (&op->esil, "%s,!,?{,32,%s,=,BREAK,},0,%s,=,%s,%s,<<,0x80000000,&,!,?{,1,%s,+=,11,GOTO,}", REG (1), REG (0), REG (0), REG (0), REG (1), REG (0));
+		r_strbuf_appendf (&op->esil, "%s,!,?{,32,%s,=,BREAK,},"
+			"0,%s,=,%s,%s,<<,0x80000000,&,!,?{,1,%s,+=,11,GOTO,}",
+			REG (1), REG (0), REG (0), REG (0), REG (1), REG (0));
 		break;
 	case ARM_INS_IT:
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", addr + 2);
@@ -3037,16 +3041,19 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			if (REGBASE (2) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP (2);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x",>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
+					",>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 					(ut64)MEMDISP (2), addr + pcdelta, REG (0), REG (1));
 			} else {
 				int disp = MEMDISP (2);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
-					r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x
+						",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						(ut64)-disp, MEMBASE (2), REG (0), REG (1));
 				} else {
-					r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x
+						",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						(ut64)disp, MEMBASE (2), REG (0), REG (1));
 				}
 			}
@@ -3056,10 +3063,12 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				op->ptr = addr + pcdelta + MEMDISP (2);
 				if (HASMEMINDEX (2) || ISREG (2)) {
 					const char op_index = ISMEMINDEXSUB (2)? '-': '+';
-					r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x",>>,<<,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x
+						",>>,<<,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						MEMINDEX (2), addr + pcdelta, op_index, REG (0), REG (1));
 				} else {
-					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x",>>,<<,%d,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
+						",>>,<<,%d,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						addr + pcdelta, MEMDISP (2), REG (0), REG (1));
 				}
 			} else {
@@ -3157,7 +3166,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			if (REGBASE (1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x",>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
+					",>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
 					(ut64)MEMDISP(1), addr + pcdelta, mask, REG(0));
 			} else {
 				int disp = MEMDISP(1);
@@ -3175,15 +3185,18 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x",>>,<<,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
+					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
+						",>>,<<,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						addr + pcdelta, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
 				} else {
 					if (ISREG(1)) {
 						const char op_index = ISMEMINDEXSUB (1)? '-': '+';
-						r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x",>>,<<,%c,0xffffffff,&,[4],0x%x,&,%s,=",
+						r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x
+							",>>,<<,%c,0xffffffff,&,[4],0x%x,&,%s,=",
 							MEMINDEX (1), addr + pcdelta, op_index, mask, REG (0));
 					} else {
-						r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x",>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
+						r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
+							",>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
 							addr + pcdelta, MEMDISP(1), mask, REG(0));
 					}
 				}
