@@ -76,7 +76,7 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 		if (rcmd) {
 			r_socket_read_block (s, (ut8*)rcmd, cmd_len);
 			// char *res = r_core_cmd_str (core, rcmd);
-			char *res = c->cmdstr (c->core, rcmd);
+			char *res = c->cmdStr (c->core, rcmd);
 			if (res) {
 				int res_len = strlen (res) + 1;
 				ut8 *pkt = r_rap_packet ((RAP_PACKET_CMD | RAP_PACKET_REPLY), res_len);

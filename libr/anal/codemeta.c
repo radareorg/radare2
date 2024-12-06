@@ -385,7 +385,7 @@ static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 		if (anal && anal->coreb.core) {
 			RCore *core = anal->coreb.core;
 			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
-			char *res = anal->coreb.cmdstrf (core, c);
+			char *res = anal->coreb.cmdStrF (core, c);
 			free (c);
 			r_str_trim (res);
 			int w = r_str_ansi_len (res);

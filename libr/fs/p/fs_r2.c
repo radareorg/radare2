@@ -54,7 +54,7 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 
 static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
-	char *res = root->cob.cmdstr (root->cob.core, cmd);
+	char *res = root->cob.cmdStr (root->cob.core, cmd);
 	if (res) {
 		RList *list = r_list_newf (free);
 		if (!list) {
@@ -125,7 +125,7 @@ static void fs_r2_close(RFSFile *file) {
 
 static int __version(RFSRoot *root, RFSFile *file, const char *path) {
 	R_RETURN_VAL_IF_FAIL (root && file && path, -1);
-	char *res = root->cob.cmdstrf (root->cob.core, "?V");
+	char *res = root->cob.cmdStrF (root->cob.core, "?V");
 	file->ptr = NULL;
 	free (file->data);
 	file->data = (ut8*)res;
@@ -142,7 +142,7 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	} else {
 		last = path;
 	}
-	char *res = root->cob.cmdstrf (root->cob.core, "?v %s", last);
+	char *res = root->cob.cmdStrF (root->cob.core, "?v %s", last);
 	file->ptr = NULL;
 	file->data = (ut8*)res;
 	file->p = root->p;
@@ -153,14 +153,14 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 static int __bsize_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
-	char *res = file->root->cob.cmdstrf (core, "b %s", data);
+	char *res = file->root->cob.cmdStrF (core, "b %s", data);
 	free (res);
 	return len;
 }
 
 static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	R_RETURN_VAL_IF_FAIL (root && file, -1);
-	char *res = root->cob.cmdstrf (root->cob.core, "b");
+	char *res = root->cob.cmdStrF (root->cob.core, "b");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
 	file->p = root->p;
@@ -171,14 +171,14 @@ static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 static int __seek_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
-	char *res = file->root->cob.cmdstrf (core, "s %s", data);
+	char *res = file->root->cob.cmdStrF (core, "s %s", data);
 	free (res);
 	return len;
 }
 
 static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	R_RETURN_VAL_IF_FAIL (root && file, -1);
-	char *res = root->cob.cmdstrf (root->cob.core, "s");
+	char *res = root->cob.cmdStrF (root->cob.core, "s");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
 	file->p = root->p;
@@ -191,7 +191,7 @@ static int __cfg_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	const char *a = file->name;
 	void *core = file->root->cob.core;
 	char *prefix = strdup (file->path + strlen ("/cfg/"));
-	char *res = file->root->cob.cmdstrf (core, "e %s.%s=%s", prefix, a, data);
+	char *res = file->root->cob.cmdStrF (core, "e %s.%s=%s", prefix, a, data);
 	free (prefix);
 	free (res);
 	return len;
@@ -204,7 +204,7 @@ static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	}
 	char *a = strdup (path + 5);
 	r_str_replace_char (a, '/', '.');
-	char *res = root->cob.cmdstrf (root->cob.core, "e %s", a);
+	char *res = root->cob.cmdStrF (root->cob.core, "e %s", a);
 	file->ptr = NULL;
 	file->data = (ut8*)res;
 	file->p = root->p;
@@ -235,7 +235,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 	char *cmd = prefix
 		? r_str_newf ("es %s", prefix)
 		: strdup ("es");
-	char *res = root->cob.cmdstr (root->cob.core, cmd);
+	char *res = root->cob.cmdStr (root->cob.core, cmd);
 	free (cmd);
 	if (res) {
 		RList *list = r_list_new ();

@@ -159,8 +159,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	// use core binding to set asm.bits correctly based on the addr
 	// this is because of the hassle of arm/thumb
 	// this causes the reg profile to be invalidated
-	if (anal && anal->coreb.archbits) {
-		anal->coreb.archbits (anal->coreb.core, addr);
+	if (anal && anal->coreb.archBits) {
+		anal->coreb.archBits (anal->coreb.core, addr);
 	}
 	const int codealign = anal->config->codealign;
 	if (codealign > 1 && (addr % codealign)) {

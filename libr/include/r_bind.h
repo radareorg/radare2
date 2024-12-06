@@ -35,19 +35,19 @@ typedef struct r_core_bind_t {
 	void *core;
 	RCoreCmd cmd;
 	RCoreCmdF cmdf;
-	RCoreCallAt callat;
-	RCoreCmdStr cmdstr; // should be cmdStr if we care about snake
-	RCoreCmdStrF cmdstrf;
+	RCoreCallAt callAt;
+	RCoreCmdStr cmdStr; // should be cmdStr if we care about snake
+	RCoreCmdStrF cmdStrF;
 	RCoreBindHelp help;
 	RCorePuts puts;
-	RCoreDebugBpHit bphit;
-	RCoreDebugSyscallHit syshit;
-	RCoreSetArchBits setab;
+	RCoreDebugBpHit bpHit;
+	RCoreDebugSyscallHit sysHit;
+	RCoreSetArchBits setArchBits;
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;
-	RCoreSeekArchBits archbits;
+	RCoreSeekArchBits archBits;
 	// R2_600 cfgGetB for booleans
-	RCoreConfigGetI cfggeti; // R2_600 inconsistent flat vs snake below
+	RCoreConfigGetI cfgGetI;
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;

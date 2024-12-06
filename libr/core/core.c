@@ -333,20 +333,20 @@ R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	R_RETURN_IF_FAIL (core && bnd);
 	bnd->core = core;
-	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
-	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
+	bnd->bpHit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
+	bnd->sysHit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
-	bnd->callat = (RCoreCallAt)r_core_cmd_call_str_at;
-	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
-	bnd->cmdstrf = (RCoreCmdStrF)r_core_cmd_strf;
+	bnd->callAt = (RCoreCallAt)r_core_cmd_call_str_at;
+	bnd->cmdStr = (RCoreCmdStr)r_core_cmd_str;
+	bnd->cmdStrF = (RCoreCmdStrF)r_core_cmd_strf;
 	bnd->help = (RCoreBindHelp)core_help;
 	bnd->puts = (RCorePuts)r_cons_print;
-	bnd->setab = (RCoreSetArchBits)setab;
+	bnd->setArchBits = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
 	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;
-	bnd->archbits = (RCoreSeekArchBits)archbits;
-	bnd->cfggeti = (RCoreConfigGetI)cfggeti;
+	bnd->archBits = (RCoreSeekArchBits)archbits;
+	bnd->cfgGetI = (RCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
