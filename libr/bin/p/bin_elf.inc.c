@@ -788,11 +788,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 	case EM_ARM:
 		if (!rel->sym && rel->mode == DT_REL) {
 			iob->read_at (iob->io, rel->rva, buf, 4);
-			V = r_read_ble32 (buf, bo->endian);
 		} else {
 			V = S + A;
+			r_write_ble32 (buf, V, bo->endian);
 		}
-		r_write_le32 (buf, V);
 		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 		break;
 	case EM_AARCH64:
