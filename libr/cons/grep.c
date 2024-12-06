@@ -1056,17 +1056,19 @@ continuation:
 		RConsContext *ctx = cons->context;
 		ctx->sorted_column = grep->sort;
 
-		if (grep->sort != -1) {
-			r_list_sort (ctx->sorted_lines, cmp);
-		}
-		if (grep->sort_invert) {
-			r_list_reverse (ctx->sorted_lines);
-		}
-		if (grep->sort_uniq) {
-			r_list_uniq_inplace (ctx->sorted_lines, cmpstrings);
-			r_list_free (ctx->unsorted_lines);
-			ctx->unsorted_lines = NULL;
-			nl = 0;
+		if (ctx->sorted_lines) {
+			if (grep->sort != -1) {
+				r_list_sort (ctx->sorted_lines, cmp);
+			}
+			if (grep->sort_invert) {
+				r_list_reverse (ctx->sorted_lines);
+			}
+			if (grep->sort_uniq) {
+				r_list_uniq_inplace (ctx->sorted_lines, cmpstrings);
+				r_list_free (ctx->unsorted_lines);
+				ctx->unsorted_lines = NULL;
+				nl = 0;
+			}
 		}
 		cons->context->buffer_len = 0;
 		INSERT_LINES (ctx->unsorted_lines);
