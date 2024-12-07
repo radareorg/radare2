@@ -644,7 +644,7 @@ bool w32_select(RDebug *dbg, int pid, int tid) {
 		}
 	}
 
-	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
+	if (dbg->coreb.cfgGetI (dbg->coreb.core, "dbg.threads")) {
 		// Suspend all other threads
 		r_list_foreach (dbg->threads, it, th) {
 			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
@@ -688,7 +688,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 void w32_break_process(void *user) {
 	RDebug *dbg = (RDebug *)user;
 	RW32Dw *wrap = dbg->user;
-	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
+	if (dbg->coreb.cfgGetI (dbg->coreb.core, "dbg.threads")) {
 		w32_select (dbg, wrap->pi.dwProcessId, -1); // Suspend all threads
 	} else {
 		if (!r_w32_DebugBreakProcess (wrap->pi.hProcess)) {

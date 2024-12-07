@@ -311,16 +311,16 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 
 			/* Check if autoload PDB is set, and load PDB information if yes */
 			RCore *core = dbg->coreb.core;
-			bool autoload_pdb = dbg->coreb.cfggeti (core, "pdb.autoload");
+			bool autoload_pdb = dbg->coreb.cfgGetI (core, "pdb.autoload");
 			if (autoload_pdb) {
 				PLIB_ITEM lib = r->lib;
 #if 0
 				dbg->coreb.cmdf (core, "\"o \\\"%s\\\" 0x%p\"", lib->Path, lib->BaseOfDll);
-				char *o_res = dbg->coreb.cmdstrf (core, "o~+%s", lib->Name);
+				char *o_res = dbg->coreb.cmdStrF (core, "o~+%s", lib->Name);
 				int fd = atoi (o_res);
 				free (o_res);
 				if (fd) {
-					char *pdb_file = dbg->coreb.cmdstr (core, "i~dbg_file");
+					char *pdb_file = dbg->coreb.cmdStr (core, "i~dbg_file");
 					if (pdb_file && (r_str_trim (pdb_file), *pdb_file)) {
 						if (!r_file_exists (pdb_file + 9)) {
 #else
