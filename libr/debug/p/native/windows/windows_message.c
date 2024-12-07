@@ -377,7 +377,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 	if (!found) {
 		return 0;
 	}
-	char *res = dbg->coreb.cmdstr (dbg->coreb.core, "f~DispatchMessageW");
+	char *res = dbg->coreb.cmdStr (dbg->coreb.core, "f~DispatchMessageW");
 	if (!*res) {
 		free (res);
 		return 0;

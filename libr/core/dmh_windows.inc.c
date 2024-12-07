@@ -273,7 +273,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		return false;
 	}
 	bool doopen = lastNdtllAddr != map->addr;
-	char *ntdllopen = dbg->coreb.cmdstrf (dbg->coreb.core, "ob~%s", ntdll);
+	char *ntdllopen = dbg->coreb.cmdStrF (dbg->coreb.core, "ob~%s", ntdll);
 	if (*ntdllopen) {
 		char *save_ptr = NULL;
 		char *saddr = r_str_tok_r (ntdllopen, " ", &save_ptr);
@@ -284,7 +284,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		if (doopen) {
 			// Close to reopen at the right address
 			int fd = atoi (ntdllopen);
-			dbg->coreb.cmdstrf (dbg->coreb.core, "o-%d", fd);
+			dbg->coreb.cmdStrF (dbg->coreb.core, "o-%d", fd);
 			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
 		}
 	}
@@ -299,12 +299,12 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	r_list_free (modules);
 
 	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
-		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
+		char *res = dbg->coreb.cmdStrF (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		if (!*res) {
 			// Try downloading the pdb
 			free (res);
 			dbg->coreb.cmd (dbg->coreb.core, "idpd");
-			res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
+			res = dbg->coreb.cmdStrF (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		}
 		if (*res) {
 			RtlpHpHeapGlobalsOffset = r_num_math (NULL, res);
@@ -313,7 +313,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 			return false;
 		}
 		free (res);
-		res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpLFHKey");
+		res = dbg->coreb.cmdStrF (dbg->coreb.core, "idpi~RtlpLFHKey");
 		if (*res) {
 			RtlpLFHKeyOffset = r_num_math (NULL, res);
 		}
@@ -322,7 +322,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 
 	if (doopen) {
 		// Close ntdll.dll
-		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "o~%s", ntdll);
+		char *res = dbg->coreb.cmdStrF (dbg->coreb.core, "o~%s", ntdll);
 		int fd = atoi (res);
 		free (res);
 		dbg->coreb.cmdf (dbg->coreb.core, "o-%d", fd);
