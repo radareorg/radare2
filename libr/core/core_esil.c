@@ -190,7 +190,7 @@ R_API void r_core_esil_load_arch(RCore *core) {
 		R_LOG_WARN ("Couldn't set reg profile");
 		return;
 	}
-	r_reg_set_profile_string (core->esil.reg, rp):
+	r_reg_set_profile_string (core->esil.reg, rp);
 	free (rp);
 }
 
