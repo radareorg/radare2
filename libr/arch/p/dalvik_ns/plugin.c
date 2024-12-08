@@ -236,7 +236,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	struct dalvik_instr instr;
+	struct dalvik_instr instr = {0};
 	if (!dalvik_read_instr (buf, &instr)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
