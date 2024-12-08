@@ -1880,8 +1880,8 @@ static bool cb_gotolimit(void *user, void *data) {
 }
 
 static bool cb_esilverbose(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = user;
+	RConfigNode *node = data;
 	if (core->anal->esil) {
 		core->anal->esil->verbose = node->i_value;
 	}
@@ -1889,7 +1889,7 @@ static bool cb_esilverbose(void *user, void *data) {
 }
 
 static bool cb_esilstackdepth(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RConfigNode *node = data;
 	if (node->i_value < 3) {
 		R_LOG_ERROR ("esil.stack.depth must be greater than 2");
 		node->i_value = 32;
@@ -1897,8 +1897,19 @@ static bool cb_esilstackdepth(void *user, void *data) {
 	return true;
 }
 
+static bool cb_esiltraprevert(void *user, void *data) {
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (node->i_value) {
+		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT_CONFIG;
+	} else {
+		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT_CONFIG;
+	}
+	return true;
+}
+
 static bool cb_fixrows(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RConfigNode *node = data;
 	r_cons_singleton ()->fix_rows = (int)node->i_value;
 	return true;
 }
@@ -3701,6 +3712,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.addr.size", 64, "maximum address size in accessed by the ESIL VM");
 	SETBPREF ("esil.breakoninvalid", "false", "break esil execution when instruction is invalid");
 	SETI ("esil.timeout", 0, "a timeout (in seconds) for when we should give up emulating");
+	SETCB ("esil.traprevert", "false", &cb_esiltraprevert,
+		"Revert the entire expression, when esil traps, instead of just the pc");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "debugger mode");
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
