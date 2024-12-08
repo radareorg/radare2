@@ -1,9 +1,9 @@
-/* tiv - terminal image viewer - MIT 2013-2022 - pancake */
+/* tiv - terminal image viewer - MIT 2013-2024 - pancake */
 
 #include <r_cons.h>
 #include <r_th.h>
 
-#define XY(b,x,y) ( b+((y)*(w*3))+(x*3) )
+#define XY(b,x,y) ( b+((y)*(w*components))+(x*components) )
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
@@ -93,10 +93,9 @@ static void render_rgb(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 }
 
 static void render_greyscale(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
-	int color1, color2, k;
-	color1 = (c[0] + c[1] + c[2]) / 3;
-	color2 = (d[0] + d[1] + d[2]) / 3;
-	k = 231 + ((int)((float)color1 / 10.3));
+	int color1 = (c[0] + c[1] + c[2]) / 3;
+	int color2 = (d[0] + d[1] + d[2]) / 3;
+	int k = 231 + ((int)((float)color1 / 10.3));
 	if (k < 232) {
 		k = 232;
 	}
@@ -120,13 +119,13 @@ static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	cb_printf ("%c", pal[idx]);
 }
 
-static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
+static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h, int components) {
 	const ut8 *c, *d;
 	int x, y;
 	if (renderer == render_sixel) {
 		cb_printf ("\x1bPq");
 		for (y = 0; y < h; y += 6) {
-			for (x = 0; x < w; x+=3) {
+			for (x = 0; x < w; x += 3) {
 				c = XY (buf, x, y);
 				d = XY (buf, x, y + 1);
 				if (d + 3 > (buf + len)) {
@@ -167,15 +166,16 @@ static Renderer select_renderer(int mode) {
 		return render_sixel;
 	case '2':
 		return render_256;
+	case 'r':
 	default:
 		return render_rgb;
 	}
 }
 
-R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode) {
-	const int height = (bufsz / width) / 3;
+R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
+	const int height = (bufsz / width) / components;
 	Renderer renderer = select_renderer (mode);
-	do_render (renderer, r_cons_printf, buf, bufsz, width, height);
+	do_render (renderer, r_cons_printf, buf, bufsz, width, height, components);
 }
 
 #if 0
