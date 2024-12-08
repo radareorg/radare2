@@ -278,8 +278,6 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
-# dep_sdb = dependency('sdb', fallback: ['sdb'], required: true)
-
 # handle xxhash library
 sys_xxhash = dependency('libxxhash', required: false)
 use_sys_xxhash = false
@@ -486,53 +484,6 @@ libr_pc = configure_file(
 
 subdir('shlr/zip')
 
-# handle sdb dependency
-# NOTE: copying most of the stuff from sdb to here for the moment, since we
-# should use subpackages to handle this well
-sdb_files = [
-  'subprojects/sdb/src/array.c',
-  'subprojects/sdb/src/base64.c',
-  'subprojects/sdb/src/set.c',
-  'subprojects/sdb/src/cdb.c',
-  'subprojects/sdb/src/cdb_make.c',
-  'subprojects/sdb/src/dict.c',
-  'subprojects/sdb/src/diff.c',
-  'subprojects/sdb/src/disk.c',
-  'subprojects/sdb/src/fmt.c',
-  'subprojects/sdb/src/ht_uu.c',
-  'subprojects/sdb/src/ht_up.c',
-  'subprojects/sdb/src/ht_pp.c',
-  'subprojects/sdb/src/ht_pu.c',
-  'subprojects/sdb/src/ht_su.c',
-  'subprojects/sdb/src/journal.c',
-  'subprojects/sdb/src/json.c',
-  'subprojects/sdb/src/lock.c',
-  'subprojects/sdb/src/ls.c',
-  'subprojects/sdb/src/match.c',
-  'subprojects/sdb/src/ns.c',
-  'subprojects/sdb/src/num.c',
-  'subprojects/sdb/src/query.c',
-  'subprojects/sdb/src/sdb.c',
-  'subprojects/sdb/src/main.c',
-  'subprojects/sdb/src/heap.c',
-  'subprojects/sdb/src/ht.c',
-  'subprojects/sdb/src/util.c',
-  'subprojects/sdb/src/text.c'
-]
-
-
-# XXX we have sdb/meson.build for this!! dont dup
-# Create sdb_version.h
-r = run_command(py3_exe, join_paths('sys','sdb_version.py'), join_paths('shlr','sdb','config.mk'))
-if r.returncode() == 0
-  sdb_version = r.stdout().strip().split('\n')[0]
-else
-  sdb_version = 'unknown'
-endif
-run_command(py3_exe, '-c', 'with open("subprojects/sdb/include/sdb/version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
-
-# install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
-
 script_files = [
   'scripts/il2cpp.r2.js',
   'scripts/ipsw-kernel-symbolicate.r2.js',
@@ -545,19 +496,16 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-dep_sdb = subproject('sdb')
-# sdb_dep = dep_sdb.get_variable('sdb_dep')
-libsdb = dep_sdb.get_variable('libsdb')
-libsdb_includes = dep_sdb.get_variable('sdb_inc')
-sdb_inc = libsdb_includes
-libsdb_static = libsdb.get_static_lib()
+libsdb_sp = subproject('sdb')
+libsdb_static = libsdb_sp.get_variable('libsdb_static')
+libsdb_includes = libsdb_sp.get_variable('sdb_inc')
 
 sdb_dep = declare_dependency(
   link_whole: libsdb_static,
   include_directories: libsdb_includes
 )
 
-sdb_exe = dep_sdb.get_variable('sdb_exe')
+sdb_exe = libsdb_sp.get_variable('sdb_exe')
 
 sdb_gen_cmd_cgen = [
   sdb_exe,
@@ -592,8 +540,8 @@ spp_files = [
 spp_inc = [platform_inc, include_directories(join_paths('shlr','spp'))]
 
 libr2spp = static_library('r2spp', spp_files,
-  link_with: [ libsdb ], # libsdb_static,
-  include_directories: [ sdb_inc, spp_inc ],
+  link_with: [ libsdb_static ], # libsdb_static,
+  include_directories: [ libsdb_includes, spp_inc ],
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )

@@ -153,7 +153,7 @@ jobs:
         name: results.json
         path: test/results.json
   linux-static-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
@@ -167,7 +167,8 @@ jobs:
         sudo pip3 install meson ninja
     - name: Static r2 build with meson
       run: |
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        # CFLAGS="-static" LDFLAGS="-static"
+        meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
     - name: meson gpl-less build
       run: |
