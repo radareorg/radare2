@@ -126,7 +126,7 @@ static REsilMemInterface core_esil_mem_if = {
 static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
 	ut64 old, ut64 val) {
 	RCoreEsil *cesil = user;
-	if (!(cesil->cfg & R_CORE_ESIL_REVERT)) {
+	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
 	if (R_UNLIKELY (!r_strbuf_length (&cesil->trap_revert))) {
@@ -139,7 +139,7 @@ static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name
 static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	const ut8 *old, const ut8 *buf, int len) {
 	RCoreEsil *cesil = user;
-	if (!(cesil->cfg & R_CORE_ESIL_REVERT)) {
+	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
 	int i;

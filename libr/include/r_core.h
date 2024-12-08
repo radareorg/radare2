@@ -323,7 +323,8 @@ typedef struct r_core_esil_t {
 
 #define	R_CORE_ESIL_RO		0x1
 #define	R_CORE_ESIL_NONULL	0x2
-#define	R_CORE_ESIL_REVERT	0x4
+#define	R_CORE_ESIL_TRAP_REVERT	0x4
+#define	R_CORE_ESIL_TRAP_REVERT_CONFIG	0x8
 
 typedef struct RCorePriv RCorePriv;
 
