@@ -32,7 +32,7 @@ R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size
 		}
 #endif
 		size = R_MIN (size, 64); // sizeof (op->bytes_buf));
-		if (size < sizeof (op->bytes_buf)) {
+		if (size <= sizeof (op->bytes_buf)) {
 			op->weakbytes = true;
 			op->bytes = op->bytes_buf;
 			memcpy (op->bytes_buf, data, size);

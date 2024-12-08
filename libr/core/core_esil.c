@@ -133,7 +133,12 @@ static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name
 		r_strbuf_setf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=", old, name);
 		return;
 	}
-	r_strbuf_appendf (&cesil->trap_revert, ",0x%"PFMT64x",%s,:=", old, name);
+	char *prep = r_str_newf ("0x%"PFMT64x",%s,:=,", old, name);
+	if (!prep) {
+		return;
+	}
+	r_strbuf_prepend (&cesil->trap_revert, prep);
+	free (prep);
 }
 
 static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
@@ -152,8 +157,12 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	}
 	for (;i < len; i++) {
 		//TODO: optimize this after breaking
-		r_strbuf_appendf (&cesil->trap_revert, ",0x%02x,0x%"PFMT64x",=[1]",
-			old[i], addr + i);
+		char *prep = r_str_newf ("0x%02x,0x%"PFMT64x",=[1],", old[i], addr + i);
+		if (!prep) {
+			return;
+		}
+		r_strbuf_prepend (&cesil->trap_revert, prep);
+		free (prep);
 	}
 }
 
@@ -220,6 +229,119 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 	core->anal->arch->esil = &core->esil.esil;
 	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_FINI);
 	core->anal->arch->esil = arch_esil;
+}
+
+R_API void r_core_esil_single_step(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch &&
+		core->io && core->esil.reg);
+	const char *pc_name = r_reg_get_name (core->esil.reg, R_REG_NAME_PC);
+	if (!pc_name) {
+		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
+		return;
+	}
+	ut64 pc;
+	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pc, NULL)) {
+		R_LOG_ERROR ("Couldn't read from PC register");
+		return;
+	}
+	//check if pc is in mapped rx area,
+	//or in case io is pa
+	//check if pc is within desc and desc is at least readable
+	RIORegion region;
+	if (!r_io_get_region_at (core->io, &region, pc)) {
+		goto trap;
+	}
+	if ((region.perm & (R_PERM_R | R_PERM_X)) != (R_PERM_R | R_PERM_X) ||
+		(!core->io->va && !(region.perm & R_PERM_R))) {
+		goto trap;
+	}
+	int max_opsize = R_MIN (64,
+		r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
+	if (R_UNLIKELY (max_opsize < 1)) {
+		R_LOG_WARN ("Couldn't fetch max_opsize from archplugin. Using 32");
+		max_opsize = 32;
+	}
+	ut8 buf[64];
+	if (R_UNLIKELY (!r_io_read_at (core->io, pc, buf, max_opsize))) {
+		R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, pc);
+		return;
+	}
+	RAnalOp op;
+	r_anal_op_init (&op);
+	//cannot fail, because max size here is 64
+	r_anal_op_set_bytes (&op, pc, buf, max_opsize);
+	//intentionally not using r_anal_op here, because this function is a fucking fever dream
+	if (!r_arch_decode (core->anal->arch, &op,
+		R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
+		R_LOG_ERROR ("COuldn't decode instruction at 0x%"PFMT64x, pc);
+		r_anal_op_fini (&op);
+		return;
+	}
+	RAnalHint *hint = r_anal_hint_get (core->anal, pc);
+	if (hint) {
+		if (hint->size) {
+			op.size = hint->size;
+		}
+		if (hint->type > 0) {
+			op.type = hint->type;
+		}
+		if (hint->esil) {
+			r_strbuf_set (&op.esil, hint->esil);
+		}
+		//maybe do something about arch, bits and endian shit here
+		//difficult, because that could mean a different reg profile,
+		//which would invalidate some previous steps
+		r_anal_hint_free (hint);
+		hint = NULL;
+	}
+	if (op.size < 1 || op.type == R_ANAL_OP_TYPE_ILL ||
+		op.type == R_ANAL_OP_TYPE_UNK) {
+		goto op_trap;
+	}
+	if (!r_itv_contain (region.itv, pc + op.size)) {
+		goto op_trap;
+	}
+	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) {
+		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
+		r_strbuf_init (&core->esil.trap_revert);
+	} else {
+		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+		core->esil.old_pc = pc;
+	}
+	pc += op.size;
+	char *expr = r_strbuf_drain_nofree (&op.esil);
+	r_anal_op_fini (&op);
+	//invoke core_esil_voyeur_trap_revert_reg_write
+	r_esil_reg_write (&core->esil.esil, pc_name, pc);
+	const bool suc = r_esil_parse (&core->esil.esil, expr);
+	free (expr);
+	if (suc) {
+		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+			r_strbuf_fini (&core->esil.trap_revert);
+		}
+		return;
+	}
+	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+		//disable trap_revert voyeurs
+		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+		//TODO: check trap codes here
+		//revert all changes
+		r_esil_parse (&core->esil.esil, expr);
+		free (expr);
+		goto trap;
+	}
+	//restore pc
+	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
+	//TODO: check trap codes here
+	goto trap;
+op_trap:
+	r_anal_op_fini (&op);
+trap:
+	if (core->esil.cmd_trap) {
+		r_core_cmd0 (core, core->esil.cmd_trap);
+	}
+	return;
 }
 
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
