@@ -265,11 +265,11 @@ EXPECT=<<EOF
 0x1000042a0      cmp x23, x8
 0x1000042a4      b.ge 0x10000447c
 | // true: 0x10000447c  false: 0x1000042a8
-0x1000042a8      bl sym Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg ; sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg
+0x1000042a8      bl sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg ; Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg
 0x1000042ac      cbz x0, 0x1000044a0
 | // true: 0x1000044a0  false: 0x1000042b0
 0x1000042b0      mov x19, x0
-0x1000042b4      bl sym getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg ; sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg
+0x1000042b4      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg
 0x1000042b8      subs x8, x23, x0
 0x1000042bc      b.vc 0x100004378
 | // true: 0x100004378  false: 0x1000042c0
@@ -318,11 +318,11 @@ EXPECT=<<EOF
 0x100004358      cmp x23, x8
 0x10000435c      b.ge 0x10000448c
 | // true: 0x10000448c  false: 0x100004360
-0x100004360      bl sym Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg ; sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg
+0x100004360      bl sym.imp.Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer______.Sgvg ; Foundation.__DataStorage._bytes.allocator__UnsafeMutableRawPointer -> ().Sgvg
 0x100004364      cbz x0, 0x1000044a4
 | // true: 0x1000044a4  false: 0x100004368
 0x100004368      mov x19, x0
-0x10000436c      bl sym getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg ; sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg
+0x10000436c      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg
 0x100004370      subs x8, x23, x0
 0x100004374      b.vs 0x100004490
 | // true: 0x100004490  false: 0x100004378
@@ -350,7 +350,7 @@ EXPECT=<<EOF
 0x1000043c4      movk x0, 0x6832, lsl 16                               ; '2h'
 0x1000043c8      movk x0, 0x7868, lsl 32                               ; 'hx'
 0x1000043cc      mov x1, -0x1a00000000000000
-0x1000043d0      bl sym FoundationCVarArg...dtcfC                      ; sym.imp.FoundationCVarArg...dtcfC
+0x1000043d0      bl sym.imp.FoundationCVarArg...dtcfC
 0x1000043d4      mov x27, x0
 0x1000043d8      mov x28, x1
 0x1000043dc      stur x24, [x29, -0x68]

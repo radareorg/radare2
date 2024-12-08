@@ -760,10 +760,10 @@ e asm.cmt.right=false
 pd 1 @ 0x004010f0
 EOF
 EXPECT=<<EOF
-            0x004010f0      68b8214000     push 0x4021b8               ; num_cpu ; u"Number of CPU %d\n"
-            ; num_cpu
+            0x004010f0      68b8214000     push num_cpu                ; 0x4021b8 ; u"Number of CPU %d\n"
+            ; 0x4021b8
             ; u"Number of CPU %d\n"
-            0x004010f0      68b8214000     push 0x4021b8
+            0x004010f0      68b8214000     push num_cpu
 EOF
 RUN
 
@@ -1893,18 +1893,18 @@ pd 1
 pdJ 1
 EOF
 EXPECT=<<EOF
-            0x00002000      mov eax, 0x1000                            ; ansi_str ; "path\"C:\\Program\n"
-[{"offset":8192,"text":"            0x00002000      mov eax, 0x1000                            ; ansi_str ; \"path\\\"C:\\\\Program\\n\""}]
-            0x00002000      mov eax, 0x1000                            ; ansi_str ; "path\"C:\Program\n"
-[{"offset":8192,"text":"            0x00002000      mov eax, 0x1000                            ; ansi_str ; \"path\\\"C:\\Program\\n\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\\r\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; "p"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; \"p\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\\\Program\\r\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program\r"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\\r\""}]
+            0x00002000      mov eax, ansi_str                          ; 0x1000 ; "path\"C:\\Program\n"
+[{"offset":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\\\Program\\n\""}]
+            0x00002000      mov eax, ansi_str                          ; 0x1000 ; "path\"C:\Program\n"
+[{"offset":8192,"text":"            0x00002000      mov eax, ansi_str                          ; 0x1000 ; \"path\\\"C:\\Program\\n\""}]
+            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
+            0x00004000      mov ebx, wide_str                          ; 0x3000 ; "p"
+[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; \"p\""}]
+            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\\\Program\\r\""}]
+            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u"path\"C:\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, wide_str                          ; 0x3000 ; u\"path\\\"C:\\Program\\r\""}]
 EOF
 RUN
 

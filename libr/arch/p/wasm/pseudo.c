@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2019-2024 - deroad */
 
 #include <r_lib.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_asm.h>
 
 static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
@@ -10,19 +8,18 @@ static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
 	return s? strdup (s): NULL;
 }
 
-static bool subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	char *fcn_name = NULL;
-	str[0] = 0;
-	if (!strncmp (data, "call ", 5)) {
+	if (r_str_startswith (data, "call ")) {
 		ut32 fcn_id = (ut32) r_num_get (NULL, data + 5);
 		if (!(fcn_name = get_fcn_name (aps->rasm->analb.anal, fcn_id))) {
 			return false;
 		}
-		snprintf (str, len, "call sym.%s", fcn_name);
+		char *res = r_str_newf ("call sym.%s", fcn_name);
 		free (fcn_name);
-		return true;
+		return res;
 	}
-	return false;
+	return NULL;
 }
 
 RAsmPlugin r_asm_plugin_wasm= {
