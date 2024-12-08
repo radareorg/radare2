@@ -153,7 +153,7 @@ jobs:
         name: results.json
         path: test/results.json
   linux-static-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
