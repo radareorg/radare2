@@ -132,7 +132,17 @@ static RCoreHelpMessage help_msg_pF = {
 	NULL
 };
 
-static const char* help_msg_pr[] = {
+static RCoreHelpMessage help_msg_pri = {
+	"Usage: pri", "[n1sg]", "print raw images",
+	"prin", "t [msg]", "print a message",
+	"pri1", "", "1 bitmap image",
+	"pris", "", "sixel image",
+	"prig", "", "greyscale image",
+	"prir", "", "RGB image (same as pri)",
+	"pri4", "", "RGBA image",
+	NULL
+};
+static RCoreHelpMessage help_msg_pr = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
@@ -6208,26 +6218,6 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 	}
 }
 
-#if 0
-static void bitimage0(RCore *core, int cols) {
-	int stride = r_config_get_i (core->config, "hex.stride");
-	if (stride < 1) {
-		stride = 16;
-	}
-	stride = 1;
-	const ut8 *b = core->block;
-	int x, y;
-	for (y = 0; y < 8; y++) {
-		ut8 byte = b[y * stride];
-		for (x = 8; x > 0; x--) {
-			bool pixel = byte & (1 << x);
-			r_cons_printf ("%s", pixel? "##": "--");
-		}
-		r_cons_printf ("\n");
-	}
-}
-#endif
-
 static void bitimage(RCore *core, int cols) {
 	int stride = r_config_get_i (core->config, "hex.stride");
 	if (stride < 1) {
@@ -6249,6 +6239,56 @@ static void bitimage(RCore *core, int cols) {
 		r_cons_printf ("\n");
 	}
 }
+
+static void cmd_pri(RCore *core, const char *input) {
+	int cols = r_config_get_i (core->config, "hex.cols");
+	bool has_color = r_config_get_i (core->config, "scr.color") > 0;
+	switch (input[2]) {
+	case '?':
+		r_core_cmd_help (core, help_msg_pri);
+		break;
+	case 'n':
+		cmd_printmsg (core, input + 4);
+		break;
+	case '1':
+		bitimage (core, 1);
+		break;
+	case 'g': // gresycale
+		r_cons_image (core->block, core->blocksize, cols, 'g', 3);
+		break;
+	case 's': // sixel
+		r_cons_image (core->block, core->blocksize, cols, 's', 3);
+		break;
+	case '4':
+		r_cons_image (core->block, core->blocksize, cols, 'r', 4);
+		break;
+	case 'r':
+	default:
+		// int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
+		r_cons_image (core->block, core->blocksize, cols, has_color? 'r': 'a', 3);
+		break;
+	}
+}
+
+#if 0
+static void bitimage0(RCore *core, int cols) {
+	int stride = r_config_get_i (core->config, "hex.stride");
+	if (stride < 1) {
+		stride = 16;
+	}
+	stride = 1;
+	const ut8 *b = core->block;
+	int x, y;
+	for (y = 0; y < 8; y++) {
+		ut8 byte = b[y * stride];
+		for (x = 8; x > 0; x--) {
+			bool pixel = byte & (1 << x);
+			r_cons_printf ("%s", pixel? "##": "--");
+		}
+		r_cons_printf ("\n");
+	}
+}
+#endif
 
 static bool check_string_pointer(RCore *core, ut64 addr) {
 	ut8 buf[16];
@@ -7762,33 +7802,8 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'r': // "pr"
 		switch (input[1]) {
-		case 'i': // "pri" // color raw image
-			switch (input[2]) {
-			case '?':
-				r_core_cmd_help_match (core, help_msg_pr, "pri");
-				break;
-			case 'n':
-				cmd_printmsg (core, input + 4);
-				break;
-			case '1':
-				bitimage (core, 1);
-				break;
-			case 's':
-				{
-					const int cols = r_config_get_i (core->config, "hex.cols");
-					r_cons_image (core->block, core->blocksize, cols, 's');
-				}
-				break;
-			default:
-				{
-					// TODO: do colormap and palette conversions here
-					int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
-					int cols = r_config_get_i (core->config, "hex.cols");
-					r_cons_image (core->block, core->blocksize, cols, mode);
-					break;
-				}
-				break;
-			}
+		case 'i':
+			cmd_pri (core, input);
 			break;
 		case 'c': // "prc" // color raw dump
 			switch (input[2]) {
