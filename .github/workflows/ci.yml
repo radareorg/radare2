@@ -167,7 +167,8 @@ jobs:
         sudo pip3 install meson ninja
     - name: Static r2 build with meson
       run: |
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        # CFLAGS="-static" LDFLAGS="-static"
+        meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
     - name: meson gpl-less build
       run: |

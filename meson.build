@@ -278,8 +278,6 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
-# dep_sdb = dependency('sdb', fallback: ['sdb'], required: true)
-
 # handle xxhash library
 sys_xxhash = dependency('libxxhash', required: false)
 use_sys_xxhash = false
@@ -498,18 +496,16 @@ script_files = [
 ]
 install_data(script_files, install_dir: r2_scripts)
 
-dep_sdb = subproject('sdb')
-# sdb_dep = dep_sdb.get_variable('sdb_dep')
-libsdb_static = dep_sdb.get_variable('libsdb_static')
-libsdb_includes = dep_sdb.get_variable('sdb_inc')
-sdb_inc = libsdb_includes
+libsdb_sp = subproject('sdb')
+libsdb_static = libsdb_sp.get_variable('libsdb_static')
+libsdb_includes = libsdb_sp.get_variable('sdb_inc')
 
 sdb_dep = declare_dependency(
   link_whole: libsdb_static,
   include_directories: libsdb_includes
 )
 
-sdb_exe = dep_sdb.get_variable('sdb_exe')
+sdb_exe = libsdb_sp.get_variable('sdb_exe')
 
 sdb_gen_cmd_cgen = [
   sdb_exe,
@@ -545,7 +541,7 @@ spp_inc = [platform_inc, include_directories(join_paths('shlr','spp'))]
 
 libr2spp = static_library('r2spp', spp_files,
   link_with: [ libsdb_static ], # libsdb_static,
-  include_directories: [ sdb_inc, spp_inc ],
+  include_directories: [ libsdb_includes, spp_inc ],
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )

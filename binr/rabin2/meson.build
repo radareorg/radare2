@@ -1,5 +1,5 @@
 executable('rabin2', 'rabin2.c',
-  include_directories: [platform_inc, sdb_inc],
+  include_directories: [platform_inc, libsdb_includes],
   dependencies: [
     r_core_dep,
     r_main_dep,
