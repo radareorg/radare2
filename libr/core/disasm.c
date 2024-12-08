@@ -1176,13 +1176,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			RVecAnalRef_free (refs);
 		}
 	}
-#if 0
 	char *res = ds_sub_jumps (ds, ds->opstr);
 	if (res) {
 		free (ds->opstr);
 		ds->opstr = res;
 	}
-#endif
 	if (ds->immtrim) {
 		char *res = r_asm_parse_immtrim (core->rasm, ds->opstr);
 		if (res) {
@@ -6167,6 +6165,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		return NULL;
 	}
 	int optype = ds->analop.type & 0xFFFF;
+#if 1
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
@@ -6175,6 +6174,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	default:
 		return NULL;
 	}
+#endif
 	ut64 addr = ds->analop.jump;
 
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
