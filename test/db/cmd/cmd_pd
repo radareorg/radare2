@@ -1130,7 +1130,7 @@ pd 1 @ 0x00401157
 EOF
 EXPECT=<<EOF
 |           0x00401157      e8b4feffff     call fcn.00401010
-|           0x00401157      e8b4feffff     call 0x401010               ; fcn.00401010
+|           0x00401157      e8b4feffff     call fcn.00401010
 EOF
 RUN
 
@@ -2072,7 +2072,7 @@ pd 1 @ 0x004016ca
 EOF
 EXPECT=<<EOF
             0x004016ca      mov edi, str.__B__                         ; 0x40235a ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
-            0x004016ca      mov edi, str.fence                         ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
+            0x004016ca      mov edi, str.__B__                         ; str.fence ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
 EOF
 RUN
 
@@ -2111,8 +2111,7 @@ EXPECT=<<EOF
 |           0x00005af3      4c8d05660c..   lea r8, [0x00016760]
 |           0x00005afa      488d0def0b..   lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5..   lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
-\           0x00005b08      ff150ac30100   call qword [__libc_start_main] ; reloc.__libc_start_main
-\                                                                      ; [0x21e18:8]=0
+\           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
 / 46: entry0 (int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
@@ -2178,7 +2177,7 @@ EXPECT=<<EOF
             0x08048566      e829feffff     call printf                 ; sym.imp.printf
 0x08048394    1      6 sym.imp.printf
 |           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format)
-|           0x08048566      e829feffff     call printf                 ; sym.imp.printf ; int printf(const char *format)
+|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format)
 EOF
 RUN
 

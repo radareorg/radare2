@@ -6171,6 +6171,8 @@ return true;
 static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	RAnal *anal = ds->core->anal;
 	RFlag *f = ds->core->flags;
+	const char* arch = r_config_get (ds->core->config, "asm.arch");
+	const bool x86 = r_str_startswith (arch, "x86");
 	const char *name = NULL;
 	const char *kw = "";
 	if (!ds->subjmp || !anal) {
@@ -6181,10 +6183,14 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_LEA:
-		return NULL;
+		if (x86) {
+			// let the pseudo plugin trim the '[]'
+			return NULL;
+		}
+		// for ARM adrp, section is better than adrp, segment
+		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
-	// case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_MJMP:
 		break;
@@ -6243,9 +6249,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			if (addr) { //  && *name == '.') {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {
-					name = flag->name;
-					if (f->realnames && flag->realname) {
-						name = flag->realname;
+					if (!r_str_startswith (flag->name, "section")) {
+						name = flag->name;
+						if (f->realnames && flag->realname) {
+							name = flag->realname;
+						}
 					}
 				}
 			}
@@ -6254,9 +6262,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			// if (!set_jump_realname (ds, addr, &kw, &name)) {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {
-					name = flag->name;
-					if (f->realnames && flag->realname) {
-						name = flag->realname;
+					if (!r_str_startswith (flag->name, "section")) {
+						name = flag->name;
+						if (f->realnames && flag->realname) {
+							name = flag->realname;
+						}
 					}
 				}
 			// }
@@ -6267,8 +6277,6 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		ut64 numval;
 		char *hstr = strdup (str);
 		char *ptr = hstr;
-		const char* arch = r_config_get (ds->core->config, "asm.arch");
-		const bool x86 = r_str_startswith (arch, "x86");
 		const int bits = ds->core->rasm->config->bits;
 		const int seggrn = ds->core->rasm->config->seggrn;
 		while ((nptr = _find_next_number (ptr))) {

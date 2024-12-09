@@ -1484,8 +1484,7 @@ s 0x0003a4af
 pd 1
 EOF
 EXPECT=<<EOF
-            0x0003a4af      ff15f33a1800   call qword [free]           ; reloc.free
-                                                                       ; [0x1bdfa8:8]=0
+            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
 EOF
 RUN
 

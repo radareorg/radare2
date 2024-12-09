@@ -44,7 +44,7 @@ e asm.lines=false
 pd 15 @ entry0~call
 EOF
 EXPECT=<<EOF
-0x00001068      ff15722f0000   call qword [__libc_start_main]
+0x00001068      ff15722f0000   call qword [reloc.__libc_start_main]
 EOF
 RUN
 
@@ -57,7 +57,7 @@ e asm.lines=false
 pd 1 @ 0x0800005e
 EOF
 EXPECT=<<EOF
-0x0800005e      e878840300     call r_spaces_set
+0x0800005e      e878840300     call reloc.r_spaces_set
 EOF
 RUN
 
@@ -73,9 +73,9 @@ pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
 EOF
 EXPECT=<<EOF
-0x0800007c      e88e0a0000     call __fentry__
-0x0800008c      e8860a0000     call printk
-0x0800009f      e8730a0000     call printk
+0x0800007c      e88e0a0000     call reloc.__fentry__
+0x0800008c      e8860a0000     call reloc.printk
+0x0800009f      e8730a0000     call reloc.printk
 EOF
 RUN
 
@@ -105,18 +105,18 @@ pi 15
 px 0x26
 EOF
 EXPECT=<<EOF
-call __fentry__
+call reloc.__fentry__
 push ebp
 mov ebp, esp
 push str.8D___n
-call printk
+call reloc.printk
 xor eax, eax
 leave
 ret
 push ebp
 mov ebp, esp
 push str.Ulu_mulu_n
-call printk
+call reloc.printk
 pop eax
 leave
 ret
@@ -135,18 +135,18 @@ pi 15
 px 0x26
 EOF
 EXPECT=<<EOF
-call __fentry__
+call reloc.__fentry__
 push ebp
 mov ebp, esp
-push .rodata.str1.1
+push 0
 call printk
 xor eax, eax
 leave
 ret
 push ebp
 mov ebp, esp
-push 0xf
-call printk
+push .rodata.str1.1
+call reloc.printk
 pop eax
 leave
 ret
