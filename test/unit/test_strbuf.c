@@ -22,6 +22,25 @@ bool test_r_strbuf_append(void) {
 	mu_end;
 }
 
+bool test_r_strbuf_prependf(void) {
+	RStrBuf *sb = r_strbuf_newf ("%8s", "a");
+	r_strbuf_prependf (sb, "%16s", "b");
+	char *s = r_strbuf_get (sb);
+	mu_assert_streq (s, "               b       a", "prependf_0");
+	r_strbuf_prependf (sb, "%24s", "c");
+	s = r_strbuf_get (sb);
+	mu_assert_streq (s,
+		"                       c               b       a", "prependf_1");
+	r_strbuf_prependf (sb, "%1100s", "d");
+	s = r_strbuf_drain (sb);
+	mu_assert_streq (s,
+		"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           d                       c               b       a",
+		"prependf_2");
+	free (s);
+
+	mu_end;
+}
+
 bool test_r_strbuf_strong_string(void) {
 	// small string
 	RStrBuf *sa = r_strbuf_new ("");
@@ -218,6 +237,7 @@ bool test_r_strbuf_initf(void) {
 
 bool all_tests(void) {
 	mu_run_test (test_r_strbuf_append);
+	mu_run_test (test_r_strbuf_prependf);
 	mu_run_test (test_r_strbuf_strong_string);
 	mu_run_test (test_r_strbuf_strong_binary);
 	mu_run_test (test_r_strbuf_weak_string);

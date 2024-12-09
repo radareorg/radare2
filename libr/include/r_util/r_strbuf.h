@@ -26,8 +26,11 @@ R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap); // r
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
+R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
+R_API bool r_strbuf_prependf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API char *r_strbuf_get(RStrBuf *sb); // R2_590 rename _tostring, avoid clash on line 40
 R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb); // rename to _tostring() or asstring() ?
