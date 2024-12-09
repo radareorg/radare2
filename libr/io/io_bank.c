@@ -925,6 +925,63 @@ R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, 
 	return ret;
 }
 
+typedef struct bank_overlay_foreach_user_t {
+	RIO *io;
+	RIOMap *map;
+	RIOSubMap *sm;
+	RIOOverlayForeach cb;
+	void *user;
+} BOFUser;
+
+static void bof_cb (RInterval itv, const ut8 *data, void *user) {
+	BOFUser *bof = user;
+	if (!r_itv_overlap (itv, bof->sm->itv)) {
+		return;
+	}
+	RInterval ov_itv = r_itv_intersect (itv, bof->sm->itv);
+	ut8 *m_data = R_NEWS (ut8, r_itv_size (ov_itv));
+	if (!m_data) {
+		return;
+	}
+	const ut8 *o_data = &data[
+		(r_itv_begin (itv) < r_itv_begin (ov_itv))?
+		(r_itv_begin (ov_itv) - r_itv_begin (itv)): 0];
+	const ut64 pa = r_itv_begin (ov_itv) - r_io_map_from (bof->map) + bof->map->delta;
+	if (r_io_fd_read_at (bof->io, bof->map->fd, pa, m_data, r_itv_size (ov_itv)) != r_itv_size (ov_itv)) {
+		R_LOG_WARN ("r_io_fd_read_at failed");
+		free (m_data);
+		return;
+	}
+	bof->cb (ov_itv, m_data, o_data, bof->user);
+	free (m_data);
+}
+
+R_API void r_io_bank_overlay_foreach(RIO *io, const ut32 bankid, RIOOverlayForeach cb, void *user) {
+	R_RETURN_IF_FAIL (io && cb);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank || !bank->submaps || !bank->submaps->size) {
+		return;
+	}
+	RRBNode *node = r_crbtree_first_node (bank->submaps);
+	if (!node) {
+		return;
+	}
+	do {
+		RIOSubMap *sm = node->data;
+		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+		if (R_UNLIKELY (!map)) {
+			R_LOG_WARN ("RIOBank %u got corrupted", bankid);
+		}
+		BOFUser bof = { io,
+			map,
+			sm,
+			cb,
+			user,
+		};
+		r_io_map_overlay_foreach (map, bof_cb, (void *)&bof);
+	} while ((node = r_rbnode_next (node)), node);
+}
+
 // reads only from single submap at addr and returns amount of bytes read.
 // if no submap is mapped at addr, fcn returns 0. returns -1 on error
 R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {

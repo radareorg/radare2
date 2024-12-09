@@ -741,3 +741,22 @@ R_API void r_io_map_drain_overlay(RIOMap *map) {
 	}
 	r_queue_free (q);
 }
+
+R_API void r_io_map_overlay_foreach(RIOMap *map, RIOMapOverlayForeach cb, void *user) {
+	R_RETURN_IF_FAIL (map && cb);
+	if (!map->overlay || !map->overlay->size) {
+		return;
+	}
+	RRBNode *node = r_crbtree_first_node (map->overlay);
+	if (!node) {
+		return;
+	}
+	do {
+		MapOverlayChunk *moc = node->data;
+		RInterval itv = {
+			moc->itv.addr + map->itv.addr,
+			moc->itv.size
+		};
+		cb (itv, moc->buf, user);
+	} while ((node = r_rbnode_next (node)), node);
+}
