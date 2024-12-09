@@ -573,6 +573,10 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	r_list_foreach (list, iter, flg) {
 		// get the "priority" of the flag flagspace and
 		// check if better than what we found so far
+		if (!flg->space) {
+			ret = flg;
+			break;
+		}
 		for (i = 0; i < n_spaces; i++) {
 			if (flg->space == spaces[i]) {
 				break;
