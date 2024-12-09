@@ -115,7 +115,7 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 			return r_str_newf ("method.%s.%s", sym->classname, sym_name);
 		}
 	}
-	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
+	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, false, addr);
 	if (flag) {
 		return strdup (flag->name);
 	}
@@ -993,7 +993,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				continue;
 			}
 		}
-		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+		f = r_core_flag_get_by_spaces (core->flags, false, fcn->addr);
 		bool renamed = set_fcn_name_from_flag (core, fcn, f, fcnpfx);
 
 		if (fcnlen == R_ANAL_RET_ERROR ||
@@ -1005,7 +1005,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			if (!renamed) {
-				f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+				f = r_core_flag_get_by_spaces (core->flags, false, fcn->addr);
 				if (f && f->name && !r_str_startswith (f->name, "sect")) { /* Check if it's already flagged */
 					char *new_name = strdup (f->name);
 					if (is_entry_flag (f)) {
@@ -4488,7 +4488,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
-			RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, xref_to);
+			RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, false, xref_to);
 			if (!flag || !r_str_startswith (flag->name, "str.")) {
 				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
 				char *strf = r_str_newf ("str.%s", str);
@@ -6155,7 +6155,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							if (cfg_anal_strings) {
 								add_string_ref (core, op.addr, dst);
 							}
-							if ((f = r_core_flag_get_by_spaces (core->flags, dst))) {
+							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 							} else if ((str = is_string_at (core, dst, NULL))) {
 								char *str2 = r_str_newf ("esilref: '%s'", str);

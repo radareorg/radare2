@@ -515,7 +515,7 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 }
 
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
-	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
+	RFlagItem *flag = anal->flag_get (anal->flb.f, false, addr);
 	if (flag) {
 		const char *token = "x86_indirect_thunk_";
 		const char *thunk = strstr (flag->name, token);
@@ -845,7 +845,7 @@ noskip:
 			}
 		}
 		if (flagends && fcn->addr != at) {
-			RFlagItem *flag = anal->flag_get (anal->flb.f, at);
+			RFlagItem *flag = anal->flag_get (anal->flb.f, false, at);
 			if (flag) {
 				if (r_str_startswith (flag->name, "sym")) {
 					gotoBeach (R_ANAL_RET_END);
@@ -2044,7 +2044,7 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
 	const char *realname = NULL, *import_substring = NULL;
 
-	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot
@@ -2136,7 +2136,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	const char *realname = NULL, *import_substring = NULL;
 
-	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot

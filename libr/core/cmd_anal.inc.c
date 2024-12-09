@@ -1658,7 +1658,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		if (tgt_addr == UT64_MAX) {
 			tgt_addr = core->offset;
 		}
-		RFlagItem *f = r_flag_get_by_spaces (core->flags, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
 			f = r_flag_get_i (core->flags, tgt_addr);
 		}
@@ -4244,7 +4244,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	const char *realname = NULL, *import_substring = NULL;
 	RStrBuf *sb = r_strbuf_new ("");
 
-	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot
@@ -8352,7 +8352,7 @@ static void cmd_aep(RCore *core, const char *input) {
 		}
 		// get flag in current offset
 		// find a pin named like the flag, skip dots if any
-		RFlagItem *f = r_flag_get_by_spaces (core->flags, addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
 			f = r_flag_get_i (core->flags, addr);
 		}

@@ -1230,7 +1230,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		RAnalFunction *f = r_anal_get_function_at (anal, offset);
 		if (!f) {
 			RCore *core = (RCore *)anal->coreb.core;
-			RFlagItem *flag = r_flag_get_by_spaces (core->flags, offset, R_FLAGS_FS_IMPORTS, NULL);
+			RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
 				callee = r_type_func_guess (TDB, flag->name);
 				if (callee) {

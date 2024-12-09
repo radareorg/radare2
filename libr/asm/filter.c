@@ -221,7 +221,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				const char *name = fcn->name;
 				// TODO: implement realname with flags, because functions dont hold this yet
 				if (f->realnames) {
-					flag = p->flag_get (f, off);
+					flag = p->flag_get (f, false, off);
 					if (flag && flag->realname) {
 						name = flag->realname;
 					}
@@ -235,10 +235,10 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				bool lea = x86 && r_str_startswith (data, "lea")
 						&& (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
-				flag = p->flag_get (f, off);
+				flag = p->flag_get (f, false, off);
 				if ((!flag || arm) && p->subrel_addr) {
 					remove_brackets = lea || (arm && p->subrel_addr);
-					flag2 = p->flag_get (f, p->subrel_addr);
+					flag2 = p->flag_get (f, false, p->subrel_addr);
 					if (!flag || arm) {
 						flag = flag2;
 					}
