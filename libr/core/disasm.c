@@ -223,7 +223,7 @@ typedef struct r_disasm_state_t {
 	bool show_noisy_comments;
 	ut64 asm_highlight;
 	const char *pal_hint;
-	const char *pal_comment;
+	const char *pal_comment; // dupe with color_comment??
 	const char *color_comment;
 	const char *color_usrcmt;
 	const char *color_fname;
@@ -1488,6 +1488,14 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (!ds->show_xrefs || !ds->show_comments) {
 		return;
 	}
+	char keyhint[64] = " ";
+	if (core->vmode && core->offset == ds->at && r_config_get_b (core->config, "scr.interactive")) {
+		const char *hintcolor = ds->pal_hint;
+		const char *commentcolor = ds->color_comment;
+		snprintf (keyhint, sizeof (keyhint), "%s[x] %s", hintcolor, commentcolor);
+	} else {
+		strcpy (keyhint, " ");
+	}
 	/* show xrefs */
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, ds->at);
 	if (!xrefs) {
@@ -1498,9 +1506,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (RVecAnalRef_length (xrefs) > ds->maxrefs) {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, fcnlines);
-		ds_comment (ds, false, "%s; XREFS(%lu)",
+		ds_comment (ds, false, "%s;%sXREFS(%lu)",
 			ds->show_color? ds->pal_comment: "",
-			RVecAnalRef_length (xrefs));
+			keyhint, RVecAnalRef_length (xrefs));
 		if (ds->show_color) {
 			ds_print_color_reset (ds);
 		}
@@ -1515,7 +1523,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols = cols > 5 ? 5 : cols;
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, fcnlines);
-		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		ds_comment (ds, false, "%s;%sXREFS: ", ds->show_color? ds->pal_comment: "", keyhint);
 		const ut64 length = RVecAnalRef_length (xrefs);
 		ut64 i = 0;
 		RAnalRef *refi;
@@ -1628,8 +1636,8 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			ds_pre_xrefs (ds, fcnlines);
 			const char* plural = r_list_length (addrs) > 1 ? "S" : "";
 			const char* plus = fun ? "" : "+";
-			ds_comment (ds, false, "%s%s %s XREF%s from %s @ ",
-				COLOR (ds, pal_comment), ds->cmtoken, r_anal_ref_type_tostring (refi->type), plural,
+			ds_comment (ds, false, "%s%s%s%s XREF%s from %s @ ",
+				COLOR (ds, pal_comment), ds->cmtoken, keyhint, r_anal_ref_type_tostring (refi->type), plural,
 				realname ? realname : name);
 			ut64 *addrptr;
 
@@ -2903,17 +2911,19 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 		r_pvector_free (metas);
 	}
-	if (ds->hint && ds->hint->bits) {
-		if (!ds->core->anal->opt.ignbithints) {
-			r_config_set_i (core->config, "asm.bits", ds->hint->bits);
+	if (ds->hint) {
+		if (ds->hint->bits) {
+			if (!ds->core->anal->opt.ignbithints) {
+				r_config_set_i (core->config, "asm.bits", ds->hint->bits);
+			}
 		}
-	}
-	if (ds->hint && ds->hint->size) {
-		ds->oplen = ds->hint->size;
-	}
-	if (ds->hint && ds->hint->opcode) {
-		free (ds->opstr);
-		ds->opstr = strdup (ds->hint->opcode);
+		if (ds->hint->size) {
+			ds->oplen = ds->hint->size;
+		}
+		if (ds->hint->opcode) {
+			free (ds->opstr);
+			ds->opstr = strdup (ds->hint->opcode);
+		}
 	}
 	r_anal_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
