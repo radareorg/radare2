@@ -510,6 +510,6 @@ aae
 axt 0x10000640
 EOF
 EXPECT=<<EOF
-done
+(nofunc) 0x100004a0 [DATA:r--] addi r3, r9, str.Simple_PPC_program.
 EOF
 RUN
