@@ -198,7 +198,7 @@ EXPECT=<<EOF
     "family": "cpu",
     "type": "mov",
     "reloc": false,
-    "type_num": 9,
+    "type_num": 268435465,
     "type2_num": 0,
     "addrline": {
       "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",

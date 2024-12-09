@@ -4488,11 +4488,14 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
-			r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
-			char *strf = r_str_newf ("str.%s", str);
-			r_flag_set (core->flags, strf, xref_to, len);
-			free (strf);
-			r_flag_space_pop (core->flags);
+			RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, xref_to);
+			if (!flag || !r_str_startswith (flag->name, "str.")) {
+				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
+				char *strf = r_str_newf ("str.%s", str);
+				r_flag_set (core->flags, strf, xref_to, len);
+				free (strf);
+				r_flag_space_pop (core->flags);
+			}
 		}
 		RAnalMetaItem *mi = r_meta_get_at (core->anal, xref_to, R_META_TYPE_ANY, NULL);
 		if (!mi || mi->type != R_META_TYPE_STRING) {
