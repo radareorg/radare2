@@ -42,8 +42,8 @@ endif
 ifeq ($(SILENT),)
 	$(CC) -c $(CFLAGS) -o $@ $<
 else
-#@echo "[$(shell $(LIBR)/count.sh)] CC $<"
-	@echo "[__] CC $<"
+	#@echo "[$(shell $(LIBR)/count.sh)] CC $<"
+	@echo "[$(shell basename `pwd`)] CC $<"
 	@$(CC) -c $(CFLAGS) -o $@ $<
 endif
 
