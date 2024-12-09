@@ -6168,10 +6168,15 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_PUSH:
+	// case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_MJMP:
-	case R_ANAL_OP_TYPE_CALL:
 		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		return NULL;
 	default:
 		return NULL;
 	}
