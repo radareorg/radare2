@@ -5505,9 +5505,11 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 	} else {
-		// sparc and others
-		if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
-			add_string_ref (anal->coreb.core, esil->addr, at);
+		// intel, sparc and others
+		if (op->type != R_ANAL_OP_TYPE_RMOV) {
+			if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
+				add_string_ref (anal->coreb.core, esil->addr, at);
+			}
 		}
 	}
 	return 0;

@@ -70,60 +70,6 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	return true;
 }
 
-#if 0
-// old api
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const int bits = a->config->bits;
-	const bool is_thumb = (bits == 16);
-	int opsize;
-	ut32 opcode = UT32_MAX;
-	if (bits == 64) {
-		if (!arm64ass (buf, a->pc, &opcode)) {
-			return -1;
-		}
-	} else {
-		opcode = armass_assemble (buf, a->pc, is_thumb);
-		if (bits != 32 && bits != 16) {
-			R_LOG_ERROR ("ARM assembler only supports 16 or 32 bits");
-			return -1;
-		}
-	}
-	if (opcode == UT32_MAX) {
-		return -1;
-	}
-	ut8 opbuf[4];
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
-	if (is_thumb) {
-		const int o = opcode >> 16;
-		opsize = o > 0? 4: 2;
-		if (opsize == 4) {
-			if (be) {
-				r_write_le16 (opbuf, opcode >> 16);
-				r_write_le16 (opbuf + 2, opcode & UT16_MAX);
-			} else {
-				r_write_be32 (opbuf, opcode);
-			}
-		} else if (opsize == 2) {
-			if (be) {
-				r_write_le16 (opbuf, opcode & UT16_MAX);
-			} else {
-				r_write_be16 (opbuf, opcode & UT16_MAX);
-			}
-		}
-	} else {
-		opsize = 4;
-		if (be) {
-			r_write_le32 (opbuf, opcode);
-		} else {
-			r_write_be32 (opbuf, opcode);
-		}
-	}
-	r_strbuf_setbin (&op->buf, opbuf, opsize);
-// XXX. thumb endian assembler needs no swap
-	return opsize;
-}
-#endif
-
 static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
 	case R_ARCH_INFO_DATA_ALIGN:

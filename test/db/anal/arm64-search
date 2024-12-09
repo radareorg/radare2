@@ -8,7 +8,7 @@ ax~STRN?
 axt 0x100004b48
 EOF
 EXPECT=<<EOF
-94
+106
 (nofunc) 0x10000125a [STRN:r--] lea rsi, str.Unix2003
 (nofunc) 0x100001293 [STRN:r--] lea rsi, str.Unix2003
 (nofunc) 0x1000013a9 [STRN:r--] lea rsi, str.Unix2003
