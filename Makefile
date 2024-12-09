@@ -196,6 +196,7 @@ clean:
 distclean mrproper: clean
 	rm -rf libr/arch/p/arm/v35/arch-arm*
 	rm -rf shlr/capstone
+	$(MAKE) -C subprojects clean 
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
