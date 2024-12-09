@@ -6182,9 +6182,9 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	}
 #endif
 	ut64 addr = ds->analop.jump;
-	if (addr == UT64_MAX) {
+	if (!addr || addr == UT64_MAX) {
 		addr = ds->analop.ptr;
-		if (addr == UT64_MAX) {
+		if (!addr || addr == UT64_MAX) {
 			return NULL;
 		}
 	}
