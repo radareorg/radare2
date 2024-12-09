@@ -6164,7 +6164,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	if (!ds->subjmp || !anal) {
 		return NULL;
 	}
-#if 0
+#if 1
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
