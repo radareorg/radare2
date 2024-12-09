@@ -1240,6 +1240,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (ds->subvar && !isjmp) {
 			// R2_600 - HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->opstr, "0x");
+			if (ox && ox > ds->opstr) {
+				// if opcode contains "switch.0x" we wont replace it again "switch.switch.0x"
+				char *pox = ox - 1;
+				if (*pox == '.') {
+					ox = NULL;
+				}
+			}
 			if (ox) {
 				char *e = strchr (ox, ']');
 				if (!e) {
@@ -6167,9 +6174,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	if (!ds->subjmp || !anal) {
 		return NULL;
 	}
+	ut64 addr = ds->analop.jump;
 #if 1
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
+	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	// case R_ANAL_OP_TYPE_LEA:
@@ -6177,6 +6186,12 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	case R_ANAL_OP_TYPE_MJMP:
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
+		addr = ds->analop.val;
+		if (addr < 10) {
+			// ignore push 0
+			return NULL;
+		}
+		break;
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_UCALL:
@@ -6191,7 +6206,6 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	if (bo && !bo->is_reloc_patched) {
 		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
 	}
-	ut64 addr = ds->analop.jump;
 	if (!rel) {
 		rel = r_core_getreloc (ds->core, addr, ds->analop.size);
 		if (!rel) {
@@ -6204,8 +6218,12 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			}
 		}
 	}
-	if (rel && addr == UT64_MAX) {
-		addr = 0;
+	if (addr == UT64_MAX) {
+		if (rel) {
+			addr = 0;
+		} else {
+			addr = ds->analop.ptr;
+		}
 	}
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
@@ -6219,7 +6237,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			} else if (rel && rel->symbol && rel->symbol->name) {
 				name = r_bin_name_tostring (rel->symbol->name);
 			}
-			if (addr && *name == '.') {
+			if (addr) { //  && *name == '.') {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {
 					name = flag->name;
@@ -6229,6 +6247,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 				}
 			}
 		} else {
+
 			// if (!set_jump_realname (ds, addr, &kw, &name)) {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {

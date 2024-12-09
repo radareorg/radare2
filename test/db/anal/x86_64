@@ -1538,7 +1538,8 @@ EXPECT=<<EOF
 
         ╎   ; CALL XREF from main @ 0x400406(x)
 ┌ 6: int sym.imp.puts (const char *s);
-└       ╎   0x004003f0      jmp qword [reloc.puts]                     ; [0x601018:8]=0x4003f6
+└       ╎   0x004003f0      jmp qword [puts]                           ; reloc.puts
+└       ╎                                                              ; [0x601018:8]=0x4003f6
         ╎   0x004003f6      push 0
         └─< 0x004003fb      jmp section..plt
 EOF
@@ -3370,7 +3371,7 @@ sub rax, rdi
 mov rbp, rsp
 cmp rax, 0xe
 jbe 0x5c80
-mov rax, qword [reloc._ITM_deregisterTMCloneTable]
+mov rax, qword [_ITM_deregisterTMCloneTable]
 test rax, rax
 je 0x5c80
 pop rbp
