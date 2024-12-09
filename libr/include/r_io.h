@@ -380,6 +380,8 @@ R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len)
 R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int len);
 R_IPI bool io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len);
 R_API void r_io_map_drain_overlay(RIOMap *map);
+typedef void (*RIOMapOverlayForeach)(RInterval itv, const ut8 *data,  void *user);
+R_API void r_io_map_overlay_foreach(RIOMap *map, RIOMapOverlayForeach cb, void *user);
 
 // next free address to place a map.. maybe just unify
 R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align);
@@ -417,6 +419,8 @@ R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
+typedef void (*RIOOverlayForeach)(RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user);
+R_API void r_io_bank_overlay_foreach(RIO *io, const ut32 bankid, RIOOverlayForeach cb, void *user);
 R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
