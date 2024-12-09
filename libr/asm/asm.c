@@ -264,6 +264,8 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	// TODO: remove the alias workarounds because of missing pseudo plugins
 	if (r_str_startswith (name, "s390.")) {
 		name = "x86";
+	} else if (r_str_startswith (name, "loongarch")) {
+		name = "mips";
 	} else if (r_str_startswith (name, "blackfin")) {
 		name = "arm";
 	}
