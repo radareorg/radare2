@@ -129,16 +129,7 @@ static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name
 	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
-	if (R_UNLIKELY (!r_strbuf_length (&cesil->trap_revert))) {
-		r_strbuf_setf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=", old, name);
-		return;
-	}
-	char *prep = r_str_newf ("0x%"PFMT64x",%s,:=,", old, name);
-	if (!prep) {
-		return;
-	}
-	r_strbuf_prepend (&cesil->trap_revert, prep);
-	free (prep);
+	r_strbuf_prependf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=,", old, name);
 }
 
 static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
@@ -148,21 +139,10 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 		return;
 	}
 	int i;
-	if (R_UNLIKELY (!r_strbuf_length (&cesil->trap_revert))) {
-		r_strbuf_setf (&cesil->trap_revert, "0x%02x,0x%"PFMT64x",=[1]",
-			*old, addr);
-		i = 1;
-	} else {
-		i = 0;
-	}
-	for (;i < len; i++) {
+	for (i = 0; i < len; i++) {
 		//TODO: optimize this after breaking
-		char *prep = r_str_newf ("0x%02x,0x%"PFMT64x",=[1],", old[i], addr + i);
-		if (!prep) {
-			return;
-		}
-		r_strbuf_prepend (&cesil->trap_revert, prep);
-		free (prep);
+		r_strbuf_prependf (&cesil->trap_revert,
+			"0x%02x,0x%"PFMT64x",=[1],", old[i], addr + i);
 	}
 }
 
@@ -303,7 +283,8 @@ R_API void r_core_esil_single_step(RCore *core) {
 	}
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) {
 		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
-		r_strbuf_init (&core->esil.trap_revert);
+		r_strbuf_initf (&core->esil.trap_revert,
+			"0x%"PFMT64x",%s,:=", pc, pc_name);
 	} else {
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		core->esil.old_pc = pc;
@@ -311,8 +292,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 	pc += op.size;
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_anal_op_fini (&op);
-	//invoke core_esil_voyeur_trap_revert_reg_write
-	r_esil_reg_write (&core->esil.esil, pc_name, pc);
+	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	const bool suc = r_esil_parse (&core->esil.esil, expr);
 	free (expr);
 	if (suc) {
