@@ -2070,7 +2070,7 @@ pd 1 @ 0x004016ca
 EOF
 EXPECT=<<EOF
             0x004016ca      mov edi, str.__B__                         ; 0x40235a ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
-            0x004016ca      mov edi, str.__B__                         ; str.fence ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
+            0x004016ca      mov edi, str.fence                         ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
 EOF
 RUN
 

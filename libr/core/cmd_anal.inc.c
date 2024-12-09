@@ -4244,7 +4244,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	const char *realname = NULL, *import_substring = NULL;
 	RStrBuf *sb = r_strbuf_new ("");
 
-	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot

@@ -657,7 +657,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	RFlagItem *fi = anal->flag_get (anal->flb.f, addr);
+	RFlagItem *fi = anal->flag_get (anal->flb.f, false, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->realname ? fi->realname : fi->name)) {
 			return true;
@@ -709,7 +709,7 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 		return false;
 	}
 	ut8 *owned = NULL;
-	RFlagItem *flag = anal->flag_get (anal->flb.f, addr); // XXX should get a list
+	RFlagItem *flag = anal->flag_get (anal->flb.f, false, addr); // XXX should get a list
 	if (flag) {
 		if (r_str_startswith (flag->name, "func.")) {
 			return true;
