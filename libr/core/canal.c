@@ -4485,7 +4485,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	}
 	char *str = is_string_at (core, xref_to, &len);
 	if (R_STR_ISNOTEMPTY (str) && len > 0) {
-		r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
+		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
 			r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
@@ -4493,7 +4493,10 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 			r_flag_set (core->flags, strf, xref_to, len);
 			free (strf);
 			r_flag_space_pop (core->flags);
-			r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
+		}
+		RAnalMetaItem *mi = r_meta_get_at (core->anal, xref_to, R_META_TYPE_ANY, NULL);
+		if (!mi || mi->type != R_META_TYPE_STRING) {
+			r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
 		}
 	}
 	free (str);
