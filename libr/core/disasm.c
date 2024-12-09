@@ -4767,7 +4767,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
 	RFlagItem *f = NULL, *f2 = NULL;
-	bool f2_in_opstr = false;  /* Also if true, f exists */
+	bool f2_in_opstr = false; /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -5117,7 +5117,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	// const char *lang = r_config_get (core->config, "bin.lang");
-	bool demangle = r_config_get_i (core->config, "asm.demangle");
+	const bool demangle = r_config_get_i (core->config, "asm.demangle");
 	// bool keep_lib = r_config_get_i (core->config, "bin.demangle.pfxlib");
 	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 #if 0
@@ -5639,7 +5639,7 @@ static bool can_emulate_metadata(RCore *core, ut64 at) {
 static void mipsTweak(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *asm_arch = r_config_get (core->config, "asm.arch");
-	if (asm_arch && *asm_arch && strstr (asm_arch, "mips")) {
+	if (r_str_startswith (asm_arch, "mips")) {
 		if (r_config_get_b (core->config, "anal.fixed.gp")) {
 			ut64 gp = r_config_get_i (core->config, "anal.gp");
 			r_reg_setv (core->anal->reg, "gp", gp);
@@ -6164,11 +6164,12 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	if (!ds->subjmp || !anal) {
 		return NULL;
 	}
-	int optype = ds->analop.type & 0xFFFF;
-#if 1
+#if 0
+	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_MJMP:
 	case R_ANAL_OP_TYPE_CALL:
 		break;
 	default:
@@ -6176,6 +6177,12 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	}
 #endif
 	ut64 addr = ds->analop.jump;
+	if (addr == UT64_MAX) {
+		addr = ds->analop.ptr;
+		if (addr == UT64_MAX) {
+			return NULL;
+		}
+	}
 
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
@@ -6217,7 +6224,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		while ((nptr = _find_next_number (ptr))) {
 			ptr = nptr;
 			const char* arch = r_config_get (ds->core->config, "asm.arch");
-			const bool x86 = !strncmp (arch, "x86", 3);
+			const bool x86 = r_str_startswith (arch, "x86");
 			const int bits = ds->core->rasm->config->bits;
 			const int seggrn = ds->core->rasm->config->seggrn;
 			char* colon = strchr (ptr, ':');
