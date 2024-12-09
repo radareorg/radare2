@@ -32,7 +32,7 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b64
 CMDS=pi 1 @ sym.imp.exit
 EXPECT=<<EOF
-jmp qword [reloc.exit]
+jmp qword [exit]
 EOF
 RUN
 

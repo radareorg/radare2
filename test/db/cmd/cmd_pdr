@@ -480,7 +480,8 @@ EXPECT=<<EOF
 | 0x00005b5f      48d1fe         sar rsi, 1
 | 0x00005b62      7414           je 0x5b78
 | // true: 0x00005b78  false: 0x00005b64
-| 0x00005b64      488b053dc4..   mov rax, qword [reloc._ITM_registerTMCloneTable] ; [0x21fa8:8]=0
+| 0x00005b64      488b053dc4..   mov rax, qword [_ITM_registerTMCloneTable] ; reloc._ITM_registerTMCloneTable
+|                                                                      ; [0x21fa8:8]=0
 | 0x00005b6b      4885c0         test rax, rax
 | 0x00005b6e      7408           je 0x5b78
 | // true: 0x00005b78  false: 0x00005b70

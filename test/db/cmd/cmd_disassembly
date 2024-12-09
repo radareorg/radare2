@@ -54,7 +54,7 @@ f sym.imp.objc_msgSend=0xedfa8
 pd 1
 EOF
 EXPECT=<<EOF
-0x00000000      bl 0xedfa8    ; sym.imp.objc_msgSend
+0x00000000      bl sym.imp.objc_msgSend
 EOF
 RUN
 

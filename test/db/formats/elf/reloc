@@ -44,7 +44,7 @@ e asm.lines=false
 pd 15 @ entry0~call
 EOF
 EXPECT=<<EOF
-0x00001068      ff15722f0000   call qword [reloc.__libc_start_main]
+0x00001068      ff15722f0000   call qword [__libc_start_main]
 EOF
 RUN
 
@@ -138,7 +138,7 @@ EXPECT=<<EOF
 call __fentry__
 push ebp
 mov ebp, esp
-push 0
+push .rodata.str1.1
 call printk
 xor eax, eax
 leave

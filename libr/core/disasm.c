@@ -6180,51 +6180,61 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_UCALL:
-break;
+		break;
 	//	return NULL;
 	default:
 		return NULL;
 	}
 #endif
+	RBinReloc *rel = NULL;
+	RBinObject *bo = r_bin_cur_object (ds->core->bin);
+	if (bo && !bo->is_reloc_patched) {
+		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+	}
 	ut64 addr = ds->analop.jump;
-	if (!addr || addr == UT64_MAX) {
-		addr = ds->analop.ptr;
-		if (!addr || addr == UT64_MAX) {
-			return NULL;
+	if (!rel) {
+		rel = r_core_getreloc (ds->core, addr, ds->analop.size);
+		if (!rel) {
+			// some jmp 0 are actually relocs, so we can just ignore it
+			if (!addr || addr == UT64_MAX) {
+				rel = r_core_getreloc (ds->core, ds->analop.ptr, ds->analop.size);
+				if (rel) {
+					addr = ds->analop.ptr;
+				}
+			}
 		}
 	}
-
+	if (rel && addr == UT64_MAX) {
+		addr = 0;
+	}
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
 		if (!set_jump_realname (ds, addr, &kw, &name)) {
 			name = fcn->name;
 		}
 	} else {
-		RBinReloc *rel = NULL;
-		RBinObject *bo = r_bin_cur_object (ds->core->bin);
-		if (bo && !bo->is_reloc_patched) {
-			rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
-		}
-		if (!rel) {
-			rel = r_core_getreloc (ds->core, addr, ds->analop.size);
-		}
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = r_bin_name_tostring (rel->import->name);
 			} else if (rel && rel->symbol && rel->symbol->name) {
 				name = r_bin_name_tostring (rel->symbol->name);
 			}
+			if (addr && *name == '.') {
+				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
+				if (flag) {
+					name = flag->name;
+					if (f->realnames && flag->realname) {
+						name = flag->realname;
+					}
+				}
+			}
 		} else {
 			// if (!set_jump_realname (ds, addr, &kw, &name)) {
-				RFlagItem *flag = r_core_flag_get_by_spaces (f, true, addr);
+				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {
-					if (strchr (flag->name, '.')) {
-						name = flag->name;
-						if (f->realnames && flag->realname) {
-							name = flag->realname;
-						}
-					} else {
-						name = flag->name;
+					name = flag->name;
+					if (f->realnames && flag->realname) {
+						name = flag->realname;
 					}
 				}
 			// }
@@ -6235,12 +6245,12 @@ break;
 		ut64 numval;
 		char *hstr = strdup (str);
 		char *ptr = hstr;
+		const char* arch = r_config_get (ds->core->config, "asm.arch");
+		const bool x86 = r_str_startswith (arch, "x86");
+		const int bits = ds->core->rasm->config->bits;
+		const int seggrn = ds->core->rasm->config->seggrn;
 		while ((nptr = _find_next_number (ptr))) {
 			ptr = nptr;
-			const char* arch = r_config_get (ds->core->config, "asm.arch");
-			const bool x86 = r_str_startswith (arch, "x86");
-			const int bits = ds->core->rasm->config->bits;
-			const int seggrn = ds->core->rasm->config->seggrn;
 			char* colon = strchr (ptr, ':');
 			if (x86 && bits == 16 && colon) {
 				*colon = '\0';
@@ -6257,7 +6267,7 @@ break;
 				}
 				char *kwname = r_str_newf ("%s%s", kw, name);
 				if (kwname) {
-					char* numstr = r_str_ndup (ptr, nptr-ptr);
+					char* numstr = r_str_ndup (ptr, nptr - ptr);
 					if (numstr) {
 						hstr = r_str_replace (hstr, numstr, kwname, 0);
 						free (numstr);
