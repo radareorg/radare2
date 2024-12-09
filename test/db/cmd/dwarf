@@ -525,14 +525,14 @@ EXPECT=<<EOF
 |           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
 |           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
 |           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
-|           0x00002755      488d05dc08..   lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
+|           0x00002755      488d05dc08..   lea rax, [obj.__gnat_ada_main_program_name] ; 0x3038 ; "_ada_ada_test"
 |           0x0000275c      488945f0       mov qword [ensure_reference], rax
 |           0x00002760      8b45ec         mov eax, dword [var_14h]
-|           0x00002763      8905572a0000   mov dword [gnat_argc], eax  ; [0x51c0:4]=0
+|           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0
 |           0x00002769      488b45e0       mov rax, qword [var_20h]
-|           0x0000276d      488905b429..   mov qword [gnat_argv], rax  ; [0x5128:8]=0
+|           0x0000276d      488905b429..   mov qword [obj.gnat_argv], rax ; [0x5128:8]=0
 |           0x00002774      488b45d8       mov rax, qword [var_28h]
-|           0x00002778      4889051129..   mov qword [gnat_envp], rax  ; [0x5090:8]=0
+|           0x00002778      4889051129..   mov qword [obj.gnat_envp], rax ; [0x5090:8]=0
 |           0x0000277f      488d45f8       lea rax, [seh.F]
 |           0x00002783      4889c7         mov rdi, rax
 |           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
@@ -540,8 +540,7 @@ EXPECT=<<EOF
 |           0x00002790      e847000000     call dbg._ada_ada_test
 |           0x00002795      e8b6fcffff     call dbg.adafinal
 |           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
-|           0x0000279f      8b054b290000   mov eax, dword [__gl_leap_seconds_support] ; obj.gnat_exit_status
-|                                                                      ; [0x50f0:4]=0
+|           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
 |           0x000027a5      c9             leave
 \           0x000027a6      c3             ret
 EOF
@@ -574,14 +573,14 @@ EXPECT=<<EOF
 |           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
 |           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
 |           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
-|           0x00002755      488d05dc08..   lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
+|           0x00002755      488d05dc08..   lea rax, [obj.__gnat_ada_main_program_name] ; 0x3038 ; "_ada_ada_test"
 |           0x0000275c      488945f0       mov qword [ensure_reference], rax
 |           0x00002760      8b45ec         mov eax, dword [var_14h]
-|           0x00002763      8905572a0000   mov dword [gnat_argc], eax  ; [0x51c0:4]=0
+|           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0
 |           0x00002769      488b45e0       mov rax, qword [var_20h]
-|           0x0000276d      488905b429..   mov qword [gnat_argv], rax  ; [0x5128:8]=0
+|           0x0000276d      488905b429..   mov qword [obj.gnat_argv], rax ; [0x5128:8]=0
 |           0x00002774      488b45d8       mov rax, qword [var_28h]
-|           0x00002778      4889051129..   mov qword [gnat_envp], rax  ; [0x5090:8]=0
+|           0x00002778      4889051129..   mov qword [obj.gnat_envp], rax ; [0x5090:8]=0
 |           0x0000277f      488d45f8       lea rax, [seh.F]
 |           0x00002783      4889c7         mov rdi, rax
 |           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
@@ -589,8 +588,7 @@ EXPECT=<<EOF
 |           0x00002790      e847000000     call dbg._ada_ada_test
 |           0x00002795      e8b6fcffff     call dbg.adafinal
 |           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
-|           0x0000279f      8b054b290000   mov eax, dword [__gl_leap_seconds_support] ; obj.gnat_exit_status
-|                                                                      ; [0x50f0:4]=0
+|           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
 |           0x000027a5      c9             leave
 \           0x000027a6      c3             ret
 EOF

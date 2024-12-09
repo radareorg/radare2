@@ -6131,6 +6131,7 @@ static char *_find_next_number(char *op) {
 	return NULL;
 }
 
+#if 0
 static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, const char **name) {
 return true;
 	RFlag *f = ds->core->flags;
@@ -6164,6 +6165,7 @@ return true;
 	}
 	return true;
 }
+#endif
 
 // R2_600 - TODO: this should be moved into r_parse
 static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
@@ -6179,6 +6181,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_LEA:
+		return NULL;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	// case R_ANAL_OP_TYPE_LEA:
@@ -6227,9 +6230,9 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	}
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
-		if (!set_jump_realname (ds, addr, &kw, &name)) {
+	//	if (!set_jump_realname (ds, addr, &kw, &name)) {
 			name = fcn->name;
-		}
+	//	}
 	} else {
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
