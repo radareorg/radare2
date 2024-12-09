@@ -3921,7 +3921,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.demangle.usecmd", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW) (see bin.demangle.trylib)");
 	SETBPREF ("bin.demangle.pfxlib", "false", "show library name on demangled symbols names");
 	SETI ("bin.baddr", -1, "base address of the binary");
-	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
 	SETBPREF ("bin.relocs.apply", "false", "apply reloc information");
