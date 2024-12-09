@@ -142,9 +142,9 @@ static RCoreHelpMessage help_msg_om = {
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
+	"oml", " fd", "map the given fd with lowest priority",
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
-	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	"ompd", " mapid", "deprioritize map with corresponding id",
@@ -1026,9 +1026,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'o': // "omo"
+	case 'l': // "oml"
 		if (input[2] == ' ') {
-			r_core_cmdf (core, "om %s 0x%08" PFMT64x " $s r omo", input + 2, core->offset);
+			r_core_cmdf (core, "om %s 0x%08"PFMT64x
+				" $s r oml", input + 2, core->offset);
 		} else {
 			r_core_cmd0 (core, "om `oq.` $B $s r");
 		}
