@@ -145,6 +145,7 @@ static RCoreHelpMessage help_msg_om = {
 	"oml", " fd", "map the given fd with lowest priority",
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
+	"omo*", "", "show map overlay data( usual relocs) in diff to map data",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	"ompd", " mapid", "deprioritize map with corresponding id",
@@ -938,6 +939,15 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	}
 }
 
+static void overlay_print_diff_cb (RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
+//	RCore *core = user;
+	char *m_hex = r_hex_bin2strdup (m_data, r_itv_size (itv));
+	char *o_hex = r_hex_bin2strdup (o_data, r_itv_size (itv));
+	r_cons_printf ("0x%08"PFMT64x":\t%s => %s\n", r_itv_begin (itv), m_hex, o_hex);
+	free (m_hex);
+	free (o_hex);
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
@@ -1034,6 +1044,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_core_cmd0 (core, "om `oq.` $B $s r");
 		}
 		r_core_cmd0 (core, "ompd `omq.`");
+		break;
+	case 'o': // "omo"
+		if (core->io->va) {
+			r_io_bank_overlay_foreach (core->io, core->io->bank, overlay_print_diff_cb, NULL);
+		}
 		break;
 	case 'p':
 		switch (input[2]) {
