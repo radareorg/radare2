@@ -1226,7 +1226,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (ds->subjmp) {
 			char *str = r_asm_parse_filter (core->rasm, ds->vat, core->flags, ds->hint, ds->opstr);
 			if (str) {
-				isjmp = true;
+				// isjmp = true;
 				free (ds->opstr);
 				ds->opstr = str;
 			}
@@ -6125,6 +6125,7 @@ static char *_find_next_number(char *op) {
 }
 
 static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, const char **name) {
+return true;
 	RFlag *f = ds->core->flags;
 	if (!f) {
 		return false;
@@ -6133,7 +6134,7 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 		// nothing to do, neither demangled nor regular realnames should be shown
 		return false;
 	}
-	RFlagItem *flag_sym = r_flag_get_by_spaces (f, false, addr, R_FLAGS_FS_SYMBOLS, NULL);
+	RFlagItem *flag_sym = r_flag_get_by_spaces (f, true, addr, R_FLAGS_FS_SYMBOLS, NULL);
 	if (!flag_sym || !flag_sym->realname) {
 		// nothing to replace
 		return false;
@@ -6145,12 +6146,14 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 	*name = flag_sym->realname;
 	RFlagItem *flag_mthd = r_flag_get_by_spaces (f, false, addr, R_FLAGS_FS_CLASSES, NULL);
 	if (!f->realnames) {
+#if 1
 		// for asm.flags.real, we don't want these prefixes
 		if (flag_mthd && flag_mthd->name && r_str_startswith (flag_mthd->name, "method.")) {
-			*kw = "method ";
+			*kw = "method,";
 		} else {
-			*kw = "sym ";
+			*kw = "sym,";
 		}
+#endif
 	}
 	return true;
 }
@@ -6168,15 +6171,17 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_CJMP:
 	// case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_MJMP:
 		break;
+	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_UCALL:
-		return NULL;
+break;
+	//	return NULL;
 	default:
 		return NULL;
 	}
@@ -6194,7 +6199,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		if (!set_jump_realname (ds, addr, &kw, &name)) {
 			name = fcn->name;
 		}
-	} else if (f) {
+	} else {
 		RBinReloc *rel = NULL;
 		RBinObject *bo = r_bin_cur_object (ds->core->bin);
 		if (bo && !bo->is_reloc_patched) {
@@ -6210,15 +6215,19 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 				name = r_bin_name_tostring (rel->symbol->name);
 			}
 		} else {
-			if (!set_jump_realname (ds, addr, &kw, &name)) {
-				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
-				if (flag && strchr (flag->name, '.')) {
-					name = flag->name;
-					if (f->realnames && flag->realname) {
-						name = flag->realname;
+			// if (!set_jump_realname (ds, addr, &kw, &name)) {
+				RFlagItem *flag = r_core_flag_get_by_spaces (f, true, addr);
+				if (flag) {
+					if (strchr (flag->name, '.')) {
+						name = flag->name;
+						if (f->realnames && flag->realname) {
+							name = flag->realname;
+						}
+					} else {
+						name = flag->name;
 					}
 				}
-			}
+			// }
 		}
 	}
 	if (name) {

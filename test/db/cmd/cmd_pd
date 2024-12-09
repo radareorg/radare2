@@ -880,11 +880,11 @@ EOF
 EXPECT=<<EOF
             0x0040169d      mov esi, str.see                           ; "see \xdab\xbee\xace\xcaf\n"
             0x0040169d      mov esi, str.see                           ; "see .b.e.e.f\n"
-            0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ......... .[0m\n"
-            0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ... .[0m."
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ......... .[0m\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ... .[0m."
             0x004016ac      mov edi, 0x40224a                          ; 'J\"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:.[32m ... .[0m."
-            0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:.[36m ... .[0m."
-            0x004016f7      mov edi, 0x40266c                          ; U"Mountain range with embedded quad zeros: .A.A.A."
+            0x004016ed      mov edi, str.utf32le__u00a2u20acU00010348_in_cyan:e_36m__e_0m_n ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:.[36m ... .[0m."
+            0x004016f7      mov edi, str.Mountain_range_with_embedded_quad_zeros:_AAA_n ; U"Mountain range with embedded quad zeros: .A.A.A."
 EOF
 RUN
 
@@ -903,9 +903,9 @@ e bin.str.enc=guess
 pd 1 @ 0x00401693
 EOF
 EXPECT=<<EOF
-            0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-            0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \x1b[0m\n"
-            0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \x1b[0m\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
 EOF
 RUN
 
@@ -980,8 +980,8 @@ EOF
 EXPECT=<<EOF
             0x004016de      mov esi, str._tLinux_wideesc:_e_0m_r_n     ; u"\t"
             0x004016de      mov esi, str._tLinux_wideesc:_e_0m_r_n     ; U"\tLinux_wide\\esc: \x1b[0m\xa1\r\n"
-            0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
-            0x004016f7      mov edi, 0x40266c                          ; U"Mountain range with embedded quad zeros: \U00010300A\U00010300A\U00010300A\n"
+            0x004016ed      mov edi, str.utf32le__u00a2u20acU00010348_in_cyan:e_36m__e_0m_n ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
+            0x004016f7      mov edi, str.Mountain_range_with_embedded_quad_zeros:_AAA_n ; U"Mountain range with embedded quad zeros: \U00010300A\U00010300A\U00010300A\n"
             0x00401701      mov edi, 0x402730                          ; '0\'@' ; "e%"
             0x00401701      mov edi, 0x402730                          ; '0\'@' ; U"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565"
 EOF
@@ -1042,9 +1042,9 @@ EXPECT=<<EOF
 guess
 utf8
 utf16le
-            0x004016c0      mov edi, 0x40230c                          ; str.__B_ ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
+            0x004016c0      mov edi, str.__B_                          ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
 utf32le
-            0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
+            0x004016ed      mov edi, str.utf32le__u00a2u20acU00010348_in_cyan:e_36m__e_0m_n ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
 
 utf32be
 utf16le
@@ -1123,12 +1123,14 @@ RUN
 NAME=fcn name cmt alignment
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
-e asm.sub.names=false
 af @ main
+pd 1 @ 0x00401157
+e asm.sub.names=false
 pd 1 @ 0x00401157
 EOF
 EXPECT=<<EOF
 |           0x00401157      e8b4feffff     call fcn.00401010
+|           0x00401157      e8b4feffff     call 0x401010               ; fcn.00401010
 EOF
 RUN
 
@@ -1142,11 +1144,11 @@ e asm.cmt.right=false
 pd 1 @ 0x004010c6
 EOF
 EXPECT=<<EOF
-            0x004010c6      ff1508204000   call dword [0x402008]       ; sym.imp.KERNEL32.dll_GetProcAddress ; " *" ; FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
-            ; sym.imp.KERNEL32.dll_GetProcAddress
+            0x004010c6      ff1508204000   call dword [sym.imp.KERNEL32.dll_GetProcAddress] ; 0x402008 ; " *" ; FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
+            ; 0x402008
             ; " *"
             ; FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
-            0x004010c6      ff1508204000   call dword [0x402008]
+            0x004010c6      ff1508204000   call dword [sym.imp.KERNEL32.dll_GetProcAddress]
 EOF
 RUN
 
@@ -1693,7 +1695,7 @@ pd 1 @ 0x00402a5f
 EOF
 EXPECT=<<EOF
             0x00402a5f      bfdf4f4100     mov edi, str.COLUMNS        ; 0x414fdf ; "COLUMNS"
-            0x00402a5f      bfdf4f4100     mov edi, 0x414fdf           ; str.COLUMNS ; "COLUMNS"
+            0x00402a5f      bfdf4f4100     mov edi, str.COLUMNS        ; 0x414fdf ; "COLUMNS"
 EOF
 RUN
 
@@ -2070,7 +2072,7 @@ pd 1 @ 0x004016ca
 EOF
 EXPECT=<<EOF
             0x004016ca      mov edi, str.__B__                         ; 0x40235a ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
-            0x004016ca      mov edi, str.__B__                         ; str.fence ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
+            0x004016ca      mov edi, str.fence                         ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
 EOF
 RUN
 
@@ -2109,7 +2111,8 @@ EXPECT=<<EOF
 |           0x00005af3      4c8d05660c..   lea r8, [0x00016760]
 |           0x00005afa      488d0def0b..   lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5..   lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
-\           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
+\           0x00005b08      ff150ac30100   call qword [__libc_start_main] ; reloc.__libc_start_main
+\                                                                      ; [0x21e18:8]=0
 / 46: entry0 (int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
