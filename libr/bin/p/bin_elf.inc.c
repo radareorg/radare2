@@ -696,6 +696,10 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			break;
 		}
 		break;
+	case EM_LOONGARCH:
+		// 3 and 5 :: switch (rel->type) {
+		ADD (32, 0);
+		break;
 	case EM_MIPS:
 		ADD (32, 0);
 		break;
