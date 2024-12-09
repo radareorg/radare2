@@ -1658,7 +1658,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		if (tgt_addr == UT64_MAX) {
 			tgt_addr = core->offset;
 		}
-		RFlagItem *f = r_flag_get_by_spaces (core->flags, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
 			f = r_flag_get_i (core->flags, tgt_addr);
 		}
@@ -8352,7 +8352,7 @@ static void cmd_aep(RCore *core, const char *input) {
 		}
 		// get flag in current offset
 		// find a pin named like the flag, skip dots if any
-		RFlagItem *f = r_flag_get_by_spaces (core->flags, addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
 			f = r_flag_get_i (core->flags, addr);
 		}

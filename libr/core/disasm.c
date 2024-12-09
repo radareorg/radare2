@@ -1586,7 +1586,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					}
 				}
 				if (ds->asm_demangle) {
-					f = r_flag_get_by_spaces (core->flags, fun->addr, R_FLAGS_FS_SYMBOLS, NULL);
+					f = r_flag_get_by_spaces (core->flags, false, fun->addr, R_FLAGS_FS_SYMBOLS, NULL);
 					if (f && f->demangled && f->realname) {
 						realname = strdup (f->realname);
 					}
@@ -1615,7 +1615,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					if (ds->asm_demangle) {
 						RFlagItem *f_sym = f;
 						if (!r_str_startswith (f_sym->name, "sym.")) {
-							f_sym = r_flag_get_by_spaces (core->flags, f->offset,
+							f_sym = r_flag_get_by_spaces (core->flags, false, f->offset,
 									R_FLAGS_FS_SYMBOLS, NULL);
 						}
 						if (f_sym && f_sym->demangled && f_sym->realname) {
@@ -4265,7 +4265,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->subnames))) {
 		const char *arch;
-		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
+		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, false, ds->analop.jump,
 				R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
 		if (flag && flag->name
 				&& ds->opstr && !strstr (ds->opstr, flag->name)
@@ -4276,7 +4276,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			RFlagItem *flag_sym = flag;
 			if (ds->core->vmode && ds->asm_demangle
 					&& (r_str_startswith (flag->name, "sym.")
-						|| (flag_sym = r_flag_get_by_spaces (ds->core->flags,
+						|| (flag_sym = r_flag_get_by_spaces (ds->core->flags, false,
 							ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL)))
 				&& flag_sym->demangled) {
 				return;
@@ -4311,7 +4311,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			RFlagItem *flag_sym;
 			if (ds->core->vmode
 					&& ds->asm_demangle
-					&& (flag_sym = r_flag_get_by_spaces (ds->core->flags,
+					&& (flag_sym = r_flag_get_by_spaces (ds->core->flags, false,
 						ds->analop.jump,
 						R_FLAGS_FS_SYMBOLS, NULL))
 					&& flag_sym->demangled) {
@@ -4859,7 +4859,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (f) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
-					f2 = r_core_flag_get_by_spaces (core->flags, subrel_addr);
+					f2 = r_core_flag_get_by_spaces (core->flags, false, subrel_addr);
 					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
 				}
 				refaddr = p;
@@ -5107,7 +5107,7 @@ static void ds_print_demangled(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_CALL:
-		f = r_flag_get_by_spaces (core->flags, ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL);
+		f = r_flag_get_by_spaces (core->flags, false, ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL);
 		if (f && f->demangled && f->realname && ds->opstr && !strstr (ds->opstr, f->realname)) {
 			ds_begin_nl_comment (ds);
 			ds_comment (ds, true, "%s %s", ds->cmtoken, f->realname);
@@ -6138,7 +6138,7 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 		// nothing to do, neither demangled nor regular realnames should be shown
 		return false;
 	}
-	RFlagItem *flag_sym = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_SYMBOLS, NULL);
+	RFlagItem *flag_sym = r_flag_get_by_spaces (f, false, addr, R_FLAGS_FS_SYMBOLS, NULL);
 	if (!flag_sym || !flag_sym->realname) {
 		// nothing to replace
 		return false;
@@ -6148,7 +6148,7 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 		return false;
 	}
 	*name = flag_sym->realname;
-	RFlagItem *flag_mthd = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_CLASSES, NULL);
+	RFlagItem *flag_mthd = r_flag_get_by_spaces (f, false, addr, R_FLAGS_FS_CLASSES, NULL);
 	if (!f->realnames) {
 		// for asm.flags.real, we don't want these prefixes
 		if (flag_mthd && flag_mthd->name && r_str_startswith (flag_mthd->name, "method.")) {
@@ -6202,7 +6202,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			}
 		} else {
 			if (!set_jump_realname (ds, addr, &kw, &name)) {
-				RFlagItem *flag = r_core_flag_get_by_spaces (f, addr);
+				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag && strchr (flag->name, '.')) {
 					name = flag->name;
 					if (f->realnames && flag->realname) {

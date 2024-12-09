@@ -3832,7 +3832,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				ut64 ptr = r_num_math (NULL, str);
 				RFlagItem *flag = NULL;
 				if (str) {
-					flag = r_core_flag_get_by_spaces (core->flags, ptr);
+					flag = r_core_flag_get_by_spaces (core->flags, false, ptr);
 				}
 				if (!flag) {
 					if (string && r_str_startswith (string, "0x")) {

@@ -2380,8 +2380,8 @@ R_API void r_core_autocomplete_reload(RCore *core) {
 	__init_autocomplete (core);
 }
 
-R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
-	return r_flag_get_by_spaces (f, off,
+R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off) {
+	return r_flag_get_by_spaces (f, prionospace, off,
 		R_FLAGS_FS_FUNCTIONS,
 		R_FLAGS_FS_SIGNS,
 		R_FLAGS_FS_CLASSES,

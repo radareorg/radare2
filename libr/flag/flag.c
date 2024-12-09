@@ -522,7 +522,7 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 /* return the first flag that matches an offset ordered by the order of
  * operands to the function.
  * Pass in the name of each space, in order, followed by a NULL */
-R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
+R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off, ...) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
 		off &= f->mask;
@@ -573,7 +573,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	r_list_foreach (list, iter, flg) {
 		// get the "priority" of the flag flagspace and
 		// check if better than what we found so far
-		if (!flg->space) {
+		if (prionospace && !flg->space) {
 			ret = flg;
 			break;
 		}
