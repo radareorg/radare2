@@ -114,7 +114,8 @@ typedef enum {
 	R_ANAL_OP_TYPE_ILL   = 6, /* illegal instruction // trap */
 	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
 	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
-	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
+	R_ANAL_OP_TYPE_MOV   = 9, /* move immediate into register */
+	R_ANAL_OP_TYPE_RMOV  = 9 | R_ANAL_OP_TYPE_REG, /* register move */
 	R_ANAL_OP_TYPE_CMOV  = 9 | R_ANAL_OP_TYPE_COND, /* conditional move */
 	R_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
 	R_ANAL_OP_TYPE_SWI   = 11, /* syscall, software interrupt */

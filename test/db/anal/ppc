@@ -500,3 +500,16 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=ppc-hello-ref
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+f-str*
+e anal.strings=true
+aae
+axt 0x10000640
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100004a0 [DATA:r--] addi r3, r9, str.Simple_PPC_program.
+EOF
+RUN

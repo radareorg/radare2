@@ -869,6 +869,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			esilprintf (op, "%s,lr,=", ARG (0));
 			break;
 		case PPC_INS_MR:
+			op->type = R_ANAL_OP_TYPE_RMOV;
+			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
+			break;
 		case PPC_INS_LI:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));

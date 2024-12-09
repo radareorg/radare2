@@ -4485,15 +4485,21 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	}
 	char *str = is_string_at (core, xref_to, &len);
 	if (R_STR_ISNOTEMPTY (str) && len > 0) {
-		r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
+		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
-			r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
-			char *strf = r_str_newf ("str.%s", str);
-			r_flag_set (core->flags, strf, xref_to, len);
-			free (strf);
-			r_flag_space_pop (core->flags);
-			r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
+			RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, xref_to);
+			if (!flag || !r_str_startswith (flag->name, "str.")) {
+				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
+				char *strf = r_str_newf ("str.%s", str);
+				r_flag_set (core->flags, strf, xref_to, len);
+				free (strf);
+				r_flag_space_pop (core->flags);
+			}
+		}
+		RAnalMetaItem *mi = r_meta_get_at (core->anal, xref_to, R_META_TYPE_ANY, NULL);
+		if (!mi || mi->type != R_META_TYPE_STRING) {
+			r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
 		}
 	}
 	free (str);
@@ -5468,39 +5474,48 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
 	handle_var_stack_access (esil, *val, R_PERM_NONE, esil->anal->config->bits / 8);
-	const bool is_arm = !strcmp (core->anal->config->arch, "arm");
+	const bool is_arm = r_str_startswith (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
-	if (anal && anal->opt.armthumb) {
-		if (anal->config->bits < 33 && is_arm && !strcmp (name, "pc") && op) {
-			switch (op->type) {
-			case R_ANAL_OP_TYPE_UCALL: // BLX
-			case R_ANAL_OP_TYPE_UJMP: // BX
-				// R2_590 - maybe UJMP/UCALL is enough here
-				if (!(*val & 1)) {
-					r_anal_hint_set_bits (anal, *val, 32);
-				} else {
-					ut64 snv = r_reg_getv (anal->reg, "pc");
-					if (snv != UT32_MAX && snv != UT64_MAX) {
-						if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
-							r_anal_hint_set_bits (anal, *val - 1, 16);
+	if (is_arm) {
+		if (anal && anal->opt.armthumb) {
+			if (anal->config->bits < 33 && is_arm && !strcmp (name, "pc") && op) {
+				switch (op->type) {
+				case R_ANAL_OP_TYPE_UCALL: // BLX
+				case R_ANAL_OP_TYPE_UJMP: // BX
+							  // R2_600 - maybe UJMP/UCALL is enough here
+					if (!(*val & 1)) {
+						r_anal_hint_set_bits (anal, *val, 32);
+					} else {
+						ut64 snv = r_reg_getv (anal->reg, "pc");
+						if (snv != UT32_MAX && snv != UT64_MAX) {
+							if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
+								r_anal_hint_set_bits (anal, *val - 1, 16);
+							}
 						}
 					}
+					break;
+				default:
+					break;
 				}
-				break;
-			default:
-				break;
 			}
 		}
-	}
-	if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
-		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-			add_string_ref (anal->coreb.core, esil->addr, at);
+		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
+			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
+				add_string_ref (anal->coreb.core, esil->addr, at);
+			}
+		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
+			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
+				add_string_ref (anal->coreb.core, esil->addr, at);
+			}
 		}
-	} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
-		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-			add_string_ref (anal->coreb.core, esil->addr, at);
+	} else {
+		// intel, sparc and others
+		if (op->type != R_ANAL_OP_TYPE_RMOV) {
+			if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
+				add_string_ref (anal->coreb.core, esil->addr, at);
+			}
 		}
 	}
 	return 0;
