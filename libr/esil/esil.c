@@ -3723,15 +3723,6 @@ static bool esil_float_sqrt(REsil *esil) {
 	return ret;
 }
 
-static bool iscommand(REsil *esil, const char *word, REsilOp **op) {
-	REsilOp *eop = r_esil_get_op (esil, word);
-	if (eop) {
-		*op = eop;
-		return true;
-	}
-	return false;
-}
-
 static bool runword(REsil *esil, const char *word) {
 	REsilOp *op = NULL;
 	if (!word) {
@@ -3764,24 +3755,23 @@ static bool runword(REsil *esil, const char *word) {
 		return true;
 	}
 
-	if (iscommand (esil, word, &op)) {
+	op = r_esil_get_op (esil, word);
+	if (op) {
 		// run action
-		if (op) {
-			if (esil->cb.hook_command) {
-				if (esil->cb.hook_command (esil, word)) {
-					return 1; // XXX cannot return != 1
-				}
+		if (esil->cb.hook_command) {
+			if (esil->cb.hook_command (esil, word)) {
+				return 1; // XXX cannot return != 1
 			}
-			esil->current_opstr = strdup (word);
-			// so this is basically just sharing what's the
-			// operation with the operation useful for wrappers
-			const bool ret = op->code (esil);
-			R_FREE (esil->current_opstr);
-			if (!ret) {
-				R_LOG_DEBUG ("%s returned 0", word);
-			}
-			return ret;
 		}
+		esil->current_opstr = strdup (word);
+		// so this is basically just sharing what's the
+		// operation with the operation useful for wrappers
+		const bool ret = op->code (esil);
+		R_FREE (esil->current_opstr);
+		if (!ret) {
+			R_LOG_DEBUG ("%s returned 0", word);
+		}
+		return ret;
 	}
 	if (!*word || *word == ',') {
 		// skip empty words
