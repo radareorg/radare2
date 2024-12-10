@@ -215,19 +215,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
 	if (len >= sizeof (w0)) {
-		return false;
+		return NULL;
 	}
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {
-		return false;
+		return NULL;
 	}
 	memcpy (buf, data, len + 1);
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data);
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
@@ -302,7 +304,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	}
 	free (buf);
 	r_str_fixspaces (str);
-	return true;
+	return str;
 }
 
 static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {

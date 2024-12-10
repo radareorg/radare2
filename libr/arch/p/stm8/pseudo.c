@@ -139,7 +139,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
@@ -163,9 +163,10 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 #endif
 	const char *op0 = buf;
 	if (!strcmp (op0, "ret") || !strcmp (op0, "iret")) {
-		strcpy (str, "return a");
-		return true;
+		return strdup ("return a");
 	}
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data);
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
@@ -220,7 +221,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	}
 	free (buf);
 	r_str_fixspaces (str);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_stm8= {

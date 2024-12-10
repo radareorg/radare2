@@ -128,20 +128,22 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 	return cmd? strdup (cmd): NULL;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data), n;
 	char *ptr, *optr, *num;
 
 	if (len >= sizeof (w0)) {
-		return false;
+		return NULL;
 	}
 	// malloc can be slow here :?
 	char *buf = malloc (len + 1);
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 	memcpy (buf, data, len + 1);
+	char *str = malloc (len + 128);
+	strcpy (str, data);
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
@@ -236,7 +238,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 		free (s);
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_riscv = {

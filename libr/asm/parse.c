@@ -17,24 +17,14 @@ R_API void r_parse_free(RParse *p) {
 	free (p);
 }
 
-// TODO .make it internal
+// TODO .make it internal?
 R_API char *r_asm_parse_pseudo(RAsm *a, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a && data, false);
-	char *str = malloc (32 + (strlen (data) * 2));
-	if (str) {
-		strcpy (str, data);
-		// XXX TODO return char * instead of passing both strings here
-		RAsmParsePseudo parse = R_UNWRAP4 (a, cur, plugin, parse);
-		bool bres = parse? parse (a->cur, data, str) : false;
-		if (bres) {
-			return str;
-		}
-		free (str);
-	}
-	return NULL;
+	RAsmParsePseudo parse = R_UNWRAP4 (a, cur, plugin, parse);
+	return parse? parse (a->cur, data) : NULL;
 }
 
-// TODO: make it internal
+// TODO: make it internal?
 R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 	R_RETURN_VAL_IF_FAIL (a && _opstr, NULL);
 	if (R_STR_ISEMPTY (_opstr)) {

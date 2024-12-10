@@ -137,13 +137,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	if (r_str_startswith (data, "|| ")) {
 		data += 3;
 	}
 	if (R_STR_ISEMPTY (data)) {
-		*str = 0;
-		return false;
+		return NULL;
 	}
 
 	char *buf = strdup (data);
@@ -166,12 +165,14 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 			}
 		}
 	}
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data);
 	replace (nw, wa, str);
 
 	free (buf);
 	r_list_free (list);
 
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_tms320 = {

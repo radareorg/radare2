@@ -88,10 +88,13 @@ static int tokenize(const char* in, char* out[]) {
 	return count;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i;
 	char *argv[MAXARGS] = { NULL, NULL, NULL, NULL };
 	int argc = tokenize (data, argv);
+	// XXX deprecate and make replace return the *
+	char *str = malloc (BUFSIZE);
+	r_str_ncpy (str, data, BUFSIZE);
 
 	if (!replace (argc, argv, str, BUFSIZE)) {
 		strcpy (str, data);
@@ -99,7 +102,11 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	for (i = 0; i < MAXARGS; i++) {
 		free (argv[i]);
 	}
-	return true;
+	if (!strcmp (str, data)) {
+		free (str);
+		return NULL;
+	}
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_chip8 = {
