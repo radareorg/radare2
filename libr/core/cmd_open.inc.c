@@ -939,7 +939,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	}
 }
 
-static void overlay_print_diff_cb (RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
+static void overlay_print_diff_cb(RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
 //	RCore *core = user;
 	char *m_hex = r_hex_bin2strdup (m_data, r_itv_size (itv));
 	char *o_hex = r_hex_bin2strdup (o_data, r_itv_size (itv));

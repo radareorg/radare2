@@ -939,27 +939,42 @@ static void bof_cb (RInterval itv, const ut8 *data, void *user) {
 		return;
 	}
 	RInterval ov_itv = r_itv_intersect (itv, bof->sm->itv);
-	ut8 *m_data = R_NEWS (ut8, r_itv_size (ov_itv));
-	if (!m_data) {
-		return;
+	union {
+		ut8 data[sizeof (ut8 *)];
+		ut8 *ptr;
+	} m;
+	if (R_UNLIKELY (r_itv_size (ov_itv) > sizeof (ut8 *))) {
+		m.ptr = R_NEWS (ut8, r_itv_size (ov_itv));
+		if (!m.ptr) {
+			return;
+		}
 	}
 	const ut8 *o_data = &data[
 		(r_itv_begin (itv) < r_itv_begin (ov_itv))?
 		(r_itv_begin (ov_itv) - r_itv_begin (itv)): 0];
 	const ut64 pa = r_itv_begin (ov_itv) - r_io_map_from (bof->map) + bof->map->delta;
-	if (r_io_fd_read_at (bof->io, bof->map->fd, pa, m_data, r_itv_size (ov_itv)) != r_itv_size (ov_itv)) {
-		R_LOG_WARN ("r_io_fd_read_at failed");
-		free (m_data);
+	if (R_UNLIKELY (r_itv_size (ov_itv) > sizeof (ut8 *))) {
+		if (r_io_fd_read_at (bof->io, bof->map->fd, pa, m.ptr,
+			r_itv_size (ov_itv)) != r_itv_size (ov_itv)) {
+			R_LOG_WARN ("r_io_fd_read_at failed");
+			free (m.ptr);
+			return;
+		}
+		bof->cb (ov_itv, m.ptr, o_data, bof->user);
+		free (m.ptr);
 		return;
 	}
-	bof->cb (ov_itv, m_data, o_data, bof->user);
-	free (m_data);
+	if (r_io_fd_read_at (bof->io, bof->map->fd, pa, m.data, r_itv_size (ov_itv)) != r_itv_size (ov_itv)) {
+		R_LOG_WARN ("r_io_fd_read_at failed");
+		return;
+	}
+	bof->cb (ov_itv, m.data, o_data, bof->user);
 }
 
 R_API void r_io_bank_overlay_foreach(RIO *io, const ut32 bankid, RIOOverlayForeach cb, void *user) {
 	R_RETURN_IF_FAIL (io && cb);
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	if (!bank || !bank->submaps || !bank->submaps->size) {
+	if (!io->overlay || !bank || !bank->submaps || !bank->submaps->size) {
 		return;
 	}
 	RRBNode *node = r_crbtree_first_node (bank->submaps);
