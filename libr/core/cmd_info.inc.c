@@ -1849,9 +1849,13 @@ static bool fdof_cb(void *user, void *data, ut32 id) {
 }
 
 static bool is_entrypoint_symbol(const char *name) {
+#if 0
+	On Swift any method can be an entrypoint if @main is used as attribute
+#endif
 	const char *words[] = {
 		"main", "_start", "_main", "Main",
 		"WinMain", "wmain", "DllMain", "wWinMain",
+		"UIApplicationMain",
 		"applicationDidFinishLaunching",
 		"application:didFinishLaunchingWithOptions",
 		"applicationWillResignActive",
