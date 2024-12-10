@@ -6262,6 +6262,8 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			// if (!set_jump_realname (ds, addr, &kw, &name)) {
 				RFlagItem *flag = r_core_flag_get_by_spaces (f, false, addr);
 				if (flag) {
+					// R2R db/anal/jmptbl
+					// adrp x0, segment.DATA //instead-of// adrp x0, section.20.__DATA.__objc_const
 					if (!r_str_startswith (flag->name, "section")) {
 						name = flag->name;
 						if (f->realnames && flag->realname) {

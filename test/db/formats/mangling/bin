@@ -110,8 +110,7 @@ NAME=C++ demangle relocs
 FILE=bins/elf/libstdc++.so.6
 CMDS=pd 1 @0x00091004
 EXPECT=<<EOF
-            0x00091004      488b159d88..   mov rdx, qword [_ZTVSt9bad_alloc] ; new:57 ; reloc.vtable_for_std::bad_alloc
-                                                                       ; [0x1898a8:8]=0
+            0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57 ; [0x1898a8:8]=0
 EOF
 RUN
 
@@ -138,8 +137,7 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=pd 1 @0x08048aac
 EXPECT=<<EOF
-            0x08048aac      c7042460b0..   mov dword [esp], _ZSt4cerr  ; obj.std::cerr
-                                                                       ; [0x804b060:4]=0
+            0x08048aac      c7042460b0..   mov dword [esp], obj.std::cerr ; [0x804b060:4]=0
 EOF
 RUN
 

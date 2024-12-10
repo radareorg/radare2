@@ -525,7 +525,7 @@ EXPECT=<<EOF
 |           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
 |           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
 |           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
-|           0x00002755      488d05dc08..   lea rax, [obj.__gnat_ada_main_program_name] ; 0x3038 ; "_ada_ada_test"
+|           0x00002755      488d05dc08..   lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
 |           0x0000275c      488945f0       mov qword [ensure_reference], rax
 |           0x00002760      8b45ec         mov eax, dword [var_14h]
 |           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0
@@ -573,7 +573,7 @@ EXPECT=<<EOF
 |           0x0000274a      897dec         mov dword [var_14h], edi    ; argc
 |           0x0000274d      488975e0       mov qword [var_20h], rsi    ; argv
 |           0x00002751      488955d8       mov qword [var_28h], rdx    ; envp
-|           0x00002755      488d05dc08..   lea rax, [obj.__gnat_ada_main_program_name] ; 0x3038 ; "_ada_ada_test"
+|           0x00002755      488d05dc08..   lea rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
 |           0x0000275c      488945f0       mov qword [ensure_reference], rax
 |           0x00002760      8b45ec         mov eax, dword [var_14h]
 |           0x00002763      8905572a0000   mov dword [obj.gnat_argc], eax ; [0x51c0:4]=0

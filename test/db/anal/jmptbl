@@ -330,8 +330,7 @@ EXPECT=<<EOF
 0x10000437c      ldr x22, [arg_140hx88]
 | // true: 0x100004380
 ; CODE XREF from sym.func.100004124 @ 0x100004344(x)
-0x100004380      adrp x0, section.20.__DATA.__objc_const               ; segment.__DATA
-                                                                       ; 0x100010000
+0x100004380      adrp x0, segment.__DATA                               ; 0x100010000
 0x100004384      add x0, x0, 0xc0
 0x100004388      bl sym.func.10000524c
 0x10000438c      mov w1, 0x48                                          ; 'H'
