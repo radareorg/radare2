@@ -78,7 +78,7 @@ On x86 according to Wikipedia
 #define R_ANAL_OP_HINT_MASK 0xf0000000
 
 typedef enum {
-	// R2_590 - DEPRECATE
+	// R2_600 - DEPRECATE
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix? // should not be TYPE those are modifiers!
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?

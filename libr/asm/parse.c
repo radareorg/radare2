@@ -14,9 +14,7 @@ R_API RParse *r_parse_new(void) {
 }
 
 R_API void r_parse_free(RParse *p) {
-	if (p) {
-		free (p);
-	}
+	free (p);
 }
 
 // TODO .make it internal
@@ -25,6 +23,7 @@ R_API char *r_asm_parse_pseudo(RAsm *a, const char *data) {
 	char *str = malloc (32 + (strlen (data) * 2));
 	if (str) {
 		strcpy (str, data);
+		// XXX TODO return char * instead of passing both strings here
 		RAsmParsePseudo parse = R_UNWRAP4 (a, cur, plugin, parse);
 		bool bres = parse? parse (a->cur, data, str) : false;
 		if (bres) {
@@ -74,14 +73,14 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 	return opstr;
 }
 
-// TODO : make it internal
-R_API bool r_asm_parse_subvar(RAsm *a, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+// TODO : make them internal?
+R_API char *r_asm_parse_subvar(RAsm *a, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
 	if (pcur && pcur->subvar) {
-		return pcur->subvar (a->cur, f, addr, oplen, data, str, len);
+		return pcur->subvar (a->cur, f, addr, oplen, data);
 	}
-	return false;
+	return NULL;
 }
 
 R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *op) {

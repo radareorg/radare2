@@ -26,7 +26,7 @@ sub sp, 0x20, sp
 orcc g0, g1, g0
 be loc..nope
 mov g1, o0
-call atexit
+call sym.imp.atexit
 nop
 sethi 0xb0, o0
 EOF

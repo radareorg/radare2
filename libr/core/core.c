@@ -2391,8 +2391,10 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 		R_FLAGS_FS_STRINGS,
 		R_FLAGS_FS_RESOURCES,
 		R_FLAGS_FS_SYMBOLS_SECTIONS,
+#if 1
 		R_FLAGS_FS_SECTIONS,
 		R_FLAGS_FS_SEGMENTS,
+#endif
 		NULL);
 }
 

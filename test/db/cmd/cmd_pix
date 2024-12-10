@@ -38,7 +38,7 @@ str r8, [sp, -0x4]!
 ldrh r4, [r0, 0x28]
 mov r5, r1
 mov r6, r0
-blx 
+blx 0x137d68
 vsubhn.i32 d4, q13, q0
 mov r8, r0
 invalid

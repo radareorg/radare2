@@ -142,17 +142,20 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
-	char *ptr = data, *ptr2, *ptr_backup;
+	char *hdata = strdup (data); // XXX
+	char *ptr = hdata;
+	const bool big_endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	char *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
 	RArchConfig *ac = R_UNWRAP3 (a, analb.anal, config);
 	if (!ac) {
-		eprintf ("%p\n", a->analb.anal);
 		R_LOG_ERROR ("no anal bind?");
+		free (hdata);
 		return false;
 	}
 	const int bits = ac->bits;
@@ -172,6 +175,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 		}
 	}
 	if (!data || !p) {
+		free (hdata);
 		return 0;
 	}
 #if FILTER_DWORD
@@ -226,14 +230,14 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 						name = flag->realname;
 					}
 				}
-				snprintf (str, len, "%s%s%s", data, name,
-					(ptr != ptr2)? ptr2: "");
-				return true;
+				char *res = r_str_newf ("%s%s%s", hdata, name, (ptr != ptr2)? ptr2: "");
+				free (hdata);
+				return res;
 			}
 			if (f) {
 				RFlagItem *flag2;
-				bool lea = x86 && r_str_startswith (data, "lea")
-						&& (data[3] == ' ' || data[3] == 0x1b);
+				bool lea = x86 && r_str_startswith (hdata, "lea")
+						&& (hdata[3] == ' ' || hdata[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, false, off);
 				if ((!flag || arm) && p->subrel_addr) {
@@ -265,21 +269,18 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 					if (remove_brackets && ptr != ptr2 && *ptr) {
 						if (*ptr2 == ']') {
 							ptr2++;
-							for (ptr--; ptr > data && *ptr != '['; ptr--) {
+							for (ptr--; ptr > hdata && *ptr != '['; ptr--) {
 								;
 							}
-							if (ptr == data) {
+							if (ptr == hdata) {
 								ptr = ptr_backup;
 							}
 						}
 					}
 					*ptr = 0;
-					char *flagname;
-					if (label) {
-						flagname = r_str_newf (".%s", label);
-					} else {
-						flagname = strdup (f->realnames? flag->realname : flag->name);
-					}
+					char *flagname = label
+						? r_str_newf (".%s", label)
+						: strdup (f->realnames? flag->realname : flag->name);
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
@@ -297,17 +298,14 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 							flagname = newstr;
 						} else {
 							const char *lower = r_str_rstr (flagname, "_");
-							char *newstr;
-							if (lower) {
-								newstr = r_str_newf ("..%s", lower + 1);
-							} else {
-								newstr = r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
-							}
+							char *newstr = lower
+								? r_str_newf ("..%s", lower + 1)
+								: r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
 							free (flagname);
 							flagname = newstr;
 						}
 					}
-					snprintf (str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					char *str = r_str_newf ("%s%s%s", hdata, flagname, (ptr != ptr2) ? ptr2 : "");
 					free (flagname);
 					bool banned = false;
 					{
@@ -320,11 +318,12 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 					}
 					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
-						char *ptr_end = str + strlen (data) + flag_len - 1;
+						char *ptr_end = str + strlen (hdata) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
 						if (!*ptr_end) {
-							return true;
+							free (hdata);
+							return str;
 						}
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
@@ -375,7 +374,8 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 							break;
 						}
 					}
-					return true;
+					free (hdata);
+					return str;
 				}
 				if (p->subtail) { //  && off > UT32_MAX && addr > UT32_MAX)
 					if (off != UT64_MAX) {
@@ -405,8 +405,9 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
-				return true;
+				char *res = r_str_newf ("%s%s%s", hdata, hint->offset, (ptr != ptr2)? ptr2: "");
+				free (hdata);
+				return res;
 			}
 			strncpy (num, ptr, sizeof (num)-2);
 			pnum = num;
@@ -441,7 +442,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = hdata; tmp < ptr; tmp++) {
 					if (*tmp == 0x1b) {
 						while (tmp < ptr - 1 && *tmp != 'm') {
 							tmp++;
@@ -528,7 +529,7 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 					RListIter *iter;
 					bool imm32 = false;
 					r_list_foreach (regs, iter, reg) {
-						if (reg->size == 32 && r_str_casestr (data, reg->name)) {
+						if (reg->size == 32 && r_str_casestr (hdata, reg->name)) {
 							imm32 = true;
 							break;
 						}
@@ -577,26 +578,29 @@ static bool filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint,
 				break;
 			}
 			*ptr = 0;
-			snprintf (str, len, "%s%s%s", data, num, (ptr != ptr2)? ptr2: "");
-			return true;
+			char *res = r_str_newf ("%s%s%s", hdata, num, (ptr != ptr2)? ptr2: "");
+			free (hdata);
+			return res;
 		}
 		ptr = ptr2;
 	}
-	if (data != str) {
-		strncpy (str, data, len);
-	} else {
-		R_LOG_ERROR ("Invalid str/data inputs");
-	}
-	return false;
+	free (hdata);
+	return NULL;
 }
 
-/// XXX very ugly arguments, redesign!
-R_API bool r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
 	RAsmPluginSession *aps = a->cur;
-	filter (aps, addr, f, hint, data, str, len, big_endian);
+	char *str = filter (aps, addr, f, hint, data);
+	if (!str) {
+		str = strdup (data);
+	}
 	RAsmPlugin *ap = R_UNWRAP3 (a, cur, plugin);
 	if (ap && ap->filter) {
-		return ap->filter (aps, addr, f, data, str, len, big_endian);
+		char *res = ap->filter (aps, addr, f, str);
+		if (res) {
+			free (str);
+			str = res;
+		}
 	}
-	return false;
+	return str;
 }

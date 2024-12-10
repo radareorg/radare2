@@ -235,13 +235,13 @@ EXPECT=<<EOF
 0x000017f4      add x0, sp, 0x28                  ; int64_t arg1
 0x000017f8      mov x1, x0                        ; char *arg2
 0x000017fc      ldr w0, [var_8ch]
-0x00001800      bl sym getXa(int, char const*)    ; sym.getXa_int__char_const_ ; sym.getXa_int__char_const_ ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
+0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
 0x00001804      str x0, [var_80h]
 0x00001808      ldr x1, [var_80h]
 0x0000180c      mov x0, 0x9c80
 0x00001810      movk x0, 0x1d2, lsl 16
 0x00001814      add x0, x1, x0                    ; int64_t arg1
-0x00001818      bl sym lsp64(long)                ; sym.lsp64_long_ ; sym.lsp64_long_ ; sym.lsp64_long_(0x1d29c80)
+0x00001818      bl sym.lsp64_long_                ; lsp64(long) ; sym.lsp64_long_(0x1d29c80)
 0x0000181c      add x0, x0, 8
 0x00001820      str x0, [var_78h]
 0x00001824      adrp x0, 0x1000
@@ -256,7 +256,7 @@ EXPECT=<<EOF
                                                   ; int printf("步数地址=%lx")
 0x00001840      mov w1, 0x63                      ; 'c'
 0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
-0x00001848      bl sym WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_ ; sym.WriteAddress_DWORD_long__int_ ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
+0x00001848      bl sym.WriteAddress_DWORD_long__int_ ; WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
 0x0000184c      adrp x0, 0x1000
 0x00001850      add x0, x0, 0xa20                 ; 0x1a20 ; "修改成功" ; const char *s ; str._n_n
 0x00001854      bl sym.imp.puts                   ; int puts(const char *s)
@@ -283,13 +283,13 @@ EXPECT=<<EOF
 0x000017f4      add x0, sp, 0x28                  ; int64_t arg1
 0x000017f8      mov x1, x0                        ; char *arg2
 0x000017fc      ldr w0, [var_8ch]
-0x00001800      bl sym getXa(int, char const*)    ; sym.getXa_int__char_const_ ; sym.getXa_int__char_const_ ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
+0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
 0x00001804      str x0, [var_80h]
 0x00001808      ldr x1, [var_80h]
 0x0000180c      mov x0, 0x9c80
 0x00001810      movk x0, 0x1d2, lsl 16
 0x00001814      add x0, x1, x0                    ; int64_t arg1
-0x00001818      bl sym lsp64(long)                ; sym.lsp64_long_ ; sym.lsp64_long_ ; sym.lsp64_long_(0x1d29c80)
+0x00001818      bl sym.lsp64_long_                ; lsp64(long) ; sym.lsp64_long_(0x1d29c80)
 0x0000181c      add x0, x0, 8
 0x00001820      str x0, [var_78h]
 0x00001824      adrp x0, 0x1000
@@ -304,7 +304,7 @@ EXPECT=<<EOF
                                                   ; int printf("\n\xe6\xad\xa5\xe6\x95\xb0\xe5\x9c\xb0\xe5\x9d\x80=%lx\n")
 0x00001840      mov w1, 0x63                      ; 'c'
 0x00001844      ldr x0, [var_78h]                 ; int64_t arg1
-0x00001848      bl sym WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_ ; sym.WriteAddress_DWORD_long__int_ ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
+0x00001848      bl sym.WriteAddress_DWORD_long__int_ ; WriteAddress_DWORD(long, int) ; sym.WriteAddress_DWORD_long__int_(0x0, 0x63)
 0x0000184c      adrp x0, 0x1000
 0x00001850      add x0, x0, 0xa20                 ; 0x1a20 ; "\n\u4fee\u6539\u6210\u529f\n" ; const char *s ; str._n_n
 0x00001854      bl sym.imp.puts                   ; int puts(const char *s)

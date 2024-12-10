@@ -559,7 +559,7 @@ static char *patch(RAsmPluginSession *s, RAnalOp *aop, const char *op) {
 	return r_core_hack_arm (s, aop, op);
 }
 
-static bool subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	RAsm *a = s->rasm;
 	RParse *p = a->parse;
@@ -679,15 +679,7 @@ static bool subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen,
 		r_list_free (bpargs);
 		r_list_free (spargs);
 	}
-	if (len > strlen (tstr)) {
-		strcpy  (str, tstr);
-	} else {
-		// TOO BIG STRING CANNOT REPLACE HERE
-		free (tstr);
-		return false;
-	}
-	free (tstr);
-	return true;
+	return tstr;
 }
 
 RAsmPlugin r_asm_plugin_arm = {

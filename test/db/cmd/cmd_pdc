@@ -70,7 +70,7 @@ EOF
 EXPECT=<<EOF
 / 109: entry0 ();
 |           0x0040200f      66be0300       mov si, 3
-|           0x00402013      e8e8ffffff     call section..text          ; fcn.00402000
+|           0x00402013      e8e8ffffff     call fcn.00402000
 |       .-> 0x00402018      6a00           push 0
 |       :   0x0040201a      680e104000     push "LABEL"                ; 0x40100e
 |       :   0x0040201f      6800104000     push "Hello, World!"        ; section..data
