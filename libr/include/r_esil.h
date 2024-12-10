@@ -118,7 +118,7 @@ typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 typedef struct r_esil_callbacks_t {
 	void *user;
 	/* callbacks */
-	bool (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
+//	bool (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
 	bool (*hook_command)(ESIL *esil, const char *op);
 	bool (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	bool (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
@@ -341,6 +341,7 @@ typedef struct {
 	RStrBuf *sb;
 	void *anal; // RAnal*
 } REsilC;
+
 R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, int bits);
 R_API void r_esil_toc_free(REsilC *ec);
 R_API char *r_esil_toc(REsilC *esil, const char *expr);
@@ -390,8 +391,14 @@ R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin);
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name);
 R_API void r_esil_plugin_deactivate(REsil *esil, const char *name);
 
+typedef struct r_esil_stats_t {
+	Sdb *db;
+	ut32 vid[R_ESIL_VOYEUR_LAST];
+} REsilStats;
+
 R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly);
-R_API void r_esil_stats(REsil *esil, bool enable);
+//R_API void r_esil_stats(REsil *esil, bool enable);
+R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable);
 
 /* trace */
 R_API REsilTrace *r_esil_trace_new(REsil *esil);
