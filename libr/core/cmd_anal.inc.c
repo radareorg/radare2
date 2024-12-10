@@ -985,6 +985,7 @@ static RCoreHelpMessage help_msg_aob = {
 	"aob", " cd80", "decode 'int 0x80' and analize its bits",
 	"aobj", "", "opcode decoding information in json",
 	"aobv", "", "visually attractive representation",
+	"aobV", "", "visually attractive representation with the bit stream on top",
 	NULL
 };
 
@@ -9135,6 +9136,11 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	} else {
 		r_io_read_at (core->io, core->offset, buf, sizeof (buf));
 	}
+	bool showbits = false;
+	if (mode == 'V') {
+		showbits = true;
+		mode = 'v';
+	}
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
 	RList *args[8];
 	int i, j;
@@ -9279,6 +9285,23 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			int rows = 0;
 			char *p;
 			char *s = r_strbuf_drain (sb);
+			if (showbits) {
+				for (i = 0; i < last; i++) {
+					ut8 *byte = buf + i;
+					r_cons_print (" ");
+					if (pj) {
+						pj_a (pj);
+					}
+					if (i == 4) {
+						r_strbuf_append (sb, "| ");
+					}
+					for (j = 0; j < 8; j++) {
+						bool bit = R_BIT_CHK (byte, 7 - j);
+						r_cons_printf ("%d", bit?1:0);
+					}
+				}
+				r_cons_print ("\n");
+			}
 			for (p = s; *p; p++) {
 				int idx = *p - '0' + 1;
 				if (idx >= 0 && idx < 7) {
@@ -9474,6 +9497,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		} else if (input[1] == 'j') { // "aobj"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			cmd_anal_opcode_bits (core, arg, 'j');
+		} else if (input[1] == 'V') { // "aobV"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			cmd_anal_opcode_bits (core, arg, 'V');
 		} else if (input[1] == 'v') { // "aobv"
 			const char *arg = r_str_trim_head_ro (input + 2);
 			cmd_anal_opcode_bits (core, arg, 'v');
