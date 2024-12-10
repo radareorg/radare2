@@ -209,6 +209,7 @@ CMDS=<<EOF
 ies
 EOF
 EXPECT=<<EOF
+0x1000ff3e4  UIApplicationMain
 0x1000052fc  mainView.viewDidLoad
 0x100009064  pageViewController.viewDidLoad
 0x10000a69c  lifeViewController.viewDidLoad
