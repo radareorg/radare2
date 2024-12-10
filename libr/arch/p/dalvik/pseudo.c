@@ -341,6 +341,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
+			str = malloc (strlen (data) + 128);
+			strcpy (str, data);
 			replace (nw, wa, str);
 			{
 				char *p = strdup (str);
