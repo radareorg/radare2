@@ -14,7 +14,6 @@
 #include <float.h>
 #include <fenv.h>
 
-#define ESIL_MACRO 0
 // TODO: replace esil->verbose with R_LOG_DEBUG
 #define IFDBG if (esil->verbose > 1)
 
@@ -209,46 +208,48 @@ R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
 	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if);
 }
 
-R_API st32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt) {
-	R_RETURN_VAL_IF_FAIL (esil && vfn, -1);
+R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt) {
+	R_RETURN_VAL_IF_FAIL (esil && vfn, R_ESIL_VOYEUR_ERR);
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
+	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
 		r_warn_if_reached ();
-		return -1;
+		return R_ESIL_VOYEUR_ERR;
 	}
 	REsilVoyeur *voyeur = R_NEW (REsilVoyeur);
 	if (!voyeur) {
-		return -1;
+		return R_ESIL_VOYEUR_ERR;
 	}
 	ut32 id;
 	if (!r_id_storage_add (&esil->voyeur[vt], voyeur, &id)) {
 		free (voyeur);
-		return -1;
+		return R_ESIL_VOYEUR_ERR;
 	}
 	voyeur->user = user;
 	voyeur->vfn = vfn;
-	return (st32)(id | (vt << 29));
+	return id | (vt << VOYEUR_SHIFT_LEFT);
 }
 
-R_API void r_esil_del_voyeur(REsil *esil, st32 vid) {
+R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	R_RETURN_IF_FAIL (esil);
-	const ut32 vt = (vid & (0x7 << 29)) >> 29;
+	const ut32 vt = (vid & VOYEUR_TYPE_MASK) >> VOYEUR_SHIFT_LEFT;
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
+	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
 		r_warn_if_reached ();
 		return;
 	}
-	const ut32 id = vid & ~(0x7 << 29);
+	const ut32 id = vid & ~VOYEUR_TYPE_MASK;
 	free (r_id_storage_take (&esil->voyeur[vt], id));
 }
 
@@ -3758,11 +3759,21 @@ static bool runword(REsil *esil, const char *word) {
 	op = r_esil_get_op (esil, word);
 	if (op) {
 		// run action
+#if USE_NEW_ESIL
+		ut32 i;
+		if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_OP], &i)) {
+			do {
+				REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_OP], i);
+				voy->op (voy->user, word);
+			} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_OP], &i));
+		}
+#else
 		if (esil->cb.hook_command) {
 			if (esil->cb.hook_command (esil, word)) {
 				return 1; // XXX cannot return != 1
 			}
 		}
+#endif
 		esil->current_opstr = strdup (word);
 		// so this is basically just sharing what's the
 		// operation with the operation useful for wrappers
