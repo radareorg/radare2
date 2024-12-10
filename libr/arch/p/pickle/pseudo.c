@@ -3,10 +3,10 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	// Intentationally left blank
 	// because it's not yet implemented
-	return false;
+	return NULL;
 }
 
 RAsmPlugin r_asm_plugin_pickle = {

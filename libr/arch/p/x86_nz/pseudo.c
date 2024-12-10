@@ -174,7 +174,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 	return false;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	RParse *p = aps->rasm->parse;
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
@@ -182,18 +182,20 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int sz = 32;
 	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
-		return false;
+		return NULL;
 	}
 	// strdup can be slow here :?
 	char *buf = strdup (data);
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (strchr (data, '(')) {
 		// avoid double-pseudo calls
-		return false;
+		return NULL;
 	}
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data); // XXX
 	if (*buf) {
 		end = buf + strlen (buf);
 		ptr = strchr (buf, '(');
@@ -310,7 +312,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	}
 	r_str_fixspaces (str);
 	free (buf);
-	return true;
+	return str;
 }
 
 static void parse_localvar(RAsm *a, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {

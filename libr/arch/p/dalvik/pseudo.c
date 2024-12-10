@@ -248,7 +248,7 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 		} \
 	} while (0)
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr, *ptr2;
 	char w0[64];
@@ -261,8 +261,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	||  !strcmp (data, "???")
 	||  !strcmp (data, "nop")
 	||  !strcmp (data, "DEPRECATED")) {
-		str[0] = 0;
-		return true;
+		return strdup ("");
 	}
 
 	// malloc can be slow here :?
@@ -273,21 +272,20 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 
 	r_str_trim (buf);
 
+	char * str = NULL;
 	if (*buf) {
-		w0[0]='\0';
-		w1[0]='\0';
-		w2[0]='\0';
-		w3[0]='\0';
-		w4[0]='\0';
+		w0[0] = '\0';
+		w1[0] = '\0';
+		w2[0] = '\0';
+		w3[0] = '\0';
+		w4[0] = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (ptr++; *ptr == ' '; ptr++) {
-				;
-			}
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, sizeof (w0) - 1);
 			w0[sizeof (w0)-1] = '\0';
 			strncpy (w1, ptr, sizeof (w1) - 1);
@@ -362,13 +360,12 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
-				strcpy (str, p);
-				free (p);
+				str = p;
 			}
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_dalvik = {

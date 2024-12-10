@@ -95,7 +95,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 64
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -105,22 +105,22 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (!strcmp (data, "jr ra")) {
-		strcpy (str, "ret");
-		return true;
+		return strdup ("ret");
 	}
 
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {
-		return false;
+		return NULL;
 	}
 	memcpy (buf, data, len + 1);
 
-	r_str_replace_in (buf, len+1, ".l", "", 1);
-	r_str_replace_in (buf, len+1, ".w", "", 1);
-	r_str_replace_in (buf, len+1, ".d", "", 1);
-	r_str_replace_in (buf, len+1, ".b", "", 1);
+	r_str_replace_in (buf, len + 1, ".l", "", 1);
+	r_str_replace_in (buf, len + 1, ".w", "", 1);
+	r_str_replace_in (buf, len + 1, ".d", "", 1);
+	r_str_replace_in (buf, len + 1, ".b", "", 1);
 	r_str_trim (buf);
-
+	char *str = malloc (len + 128);
+	strcpy (str, data);
 	if (*buf) {
 		w0[0]='\0';
 		w1[0]='\0';
@@ -185,7 +185,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_m68k = {

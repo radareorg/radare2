@@ -62,7 +62,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, n;
 	char w0[32];
 	char w1[32];
@@ -73,7 +73,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	// malloc can be slow here :?
 	buf = strdup (data);
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 	r_str_trim_head (buf);
 
@@ -84,8 +84,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	}
 	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
 		free (buf);
-		strcpy (str, data);
-		return true;
+		return strdup (data);
 	}
 	r_str_replace_char (buf, '$', 0);
 	r_str_replace_char (buf, '%', 0);
@@ -114,7 +113,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 			*ptr = '[';
 		}
 	}
-
+	char *str = NULL;
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = 0;
 		ptr = strchr (buf, ' ');
@@ -157,11 +156,13 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 					nw++;
 				}
 			}
+			char *str = malloc (strlen (data) + 128);
+			strcpy (str, data);
 			replace (nw, wa, str);
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_att2intel = {
