@@ -202,3 +202,19 @@ paddr      vaddr      phaddr     vhaddr     type
 0x0000074a 0x0000074a 0x0004dd80 0x0004dd80 preinit
 EOF
 RUN
+
+NAME=ies
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+ies
+EOF
+EXPECT=<<EOF
+0x1000ff3e4  UIApplicationMain
+0x1000052fc  mainView.viewDidLoad
+0x100009064  pageViewController.viewDidLoad
+0x10000a69c  lifeViewController.viewDidLoad
+0x10000f330  masterViewController.viewDidLoad
+0x1000807ac  GADViewController.viewDidLoad
+0x100083178  GADBrowserViewController.viewDidLoad
+EOF
+RUN
