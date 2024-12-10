@@ -1,11 +1,8 @@
 /* radare - LGPL - Copyright 2012-2024 - pancake */
 
-#include <r_lib.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_asm.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
+static char *replace(int argc, const char *argv[]) {
 	int i, j, k;
 	struct {
 		const char *op;
@@ -183,32 +180,32 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "mul-double", "1 = 2 * 3" },
 		{ "move-wide", "1 = 2" },
 		{ "move-wide/16", "1 = 2" },
+		{ "return-void", "return" },
 		{ "return-wide", "return (wide) 1" },
 		{ "return-object", "return (object) 1" },
 		// { "sget", "1 = 2[3]" },
 		{ NULL }
 	};
 
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] >= '1' && ops[i].str[j] <= '9') {
-						const char *w = argv[ops[i].str[j] - '0'];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+				if (ops[i].str[j] >= '1' && ops[i].str[j] <= '9') {
+					const char *w = argv[ops[i].str[j] - '0'];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					char ch = ops[i].str[j];
+					r_strbuf_append_n (sb, &ch, 1);
 				}
-				newstr[k] = '\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
-
+	r_strbuf_free (sb);
+#if 0
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
@@ -217,8 +214,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
 	}
-
-	return false;
+#endif
+	return NULL;
 }
 
 static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
@@ -341,10 +338,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			str = malloc (strlen (data) + 128);
-			strcpy (str, data);
-			replace (nw, wa, str);
-			{
+			str = replace (nw, wa);
+			if (str) {
 				char *p = strdup (str);
 				p = r_str_replace (p, "+ -", "- ", 0);
 #if EXPERIMENTAL_ZERO
