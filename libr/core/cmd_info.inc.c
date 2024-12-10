@@ -29,6 +29,7 @@ static RCoreHelpMessage help_msg_is = {
 	"is.", "", "current symbol",
 	"is*", "", "same as above, but in r2 commands",
 	"isj", "", "in json format",
+	"ise", "", "entrypoints symbols",
 	NULL
 };
 
@@ -1847,6 +1848,83 @@ static bool fdof_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool is_entrypoint_symbol(const char *name) {
+	const char *words[] = {
+		"main", "_start", "_main", "WinMain",
+		"applicationDidFinishLaunching",
+		"application:didFinishLaunchingWithOptions",
+		"applicationWillResignActive",
+		"applicationDidEnterBackground",
+		"applicationWillEnterForeground",
+		"applicationDidBecomeActive",
+		"applicationWillTerminate",
+		"application:configurationForConnectingSceneSession:options",
+		"application:didDiscardSceneSessions",
+		"application:openURL:options",
+		"application:performFetchWithCompletionHandler",
+		"application:didReceiveRemoteNotification:fetchCompletionHandler",
+		"application:handleEventsForBackgroundURLSession:completionHandler",
+		"application:shouldSaveSecureApplicationState",
+		"application:shouldRestoreSecureApplicationState",
+		"application:didRegisterForRemoteNotificationsWithDeviceToken",
+		"application:didFailToRegisterForRemoteNotificationsWithError",
+		"application:didReceiveRemoteNotification",
+		"application:handleOpenURL",
+		"application:continueUserActivity:restorationHandler",
+		"application:didUpdateUserActivity",
+		"scene:willConnectToSession:options",
+		"sceneDidDisconnect",
+		"sceneDidBecomeActive",
+		"sceneWillResignActive",
+		"sceneWillEnterForeground",
+		"sceneDidEnterBackground",
+		"application:handleWatchKitExtensionRequest:reply",
+		"main",
+		"loadView",
+		"viewDidLoad"
+	};
+	size_t i, size = sizeof(words) / sizeof(words[0]);
+
+	for (i = 0; i < size; i++) {
+		if (!strcmp (name, words[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
+	// iterate over symbols and class methods that match
+	RBinSymbol *sym;
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec(core->bin);
+	R_VEC_FOREACH (symbols, sym) {
+		const char *name = r_bin_name_tostring2 (sym->name, 'o');
+		if (is_entrypoint_symbol (name)) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+		}
+	}
+	RList *bfiles = r_core_bin_files (core);
+	RBinFile *bf;
+	RListIter *objs_iter;
+	r_list_foreach (bfiles, objs_iter, bf) {
+		RBinObject *obj = bf->bo;
+		RBinClass *klass;
+		RListIter *iter, *iter2;
+		core->bin->cur = bf;
+		RBinSymbol *method;
+		r_list_foreach (obj->classes, iter, klass) {
+			r_list_foreach (klass->methods, iter2, method) {
+				const char *name = r_bin_name_tostring2 (method->name, 'o');
+				if (is_entrypoint_symbol (name)) {
+					const char *kname = r_bin_name_tostring2 (klass->name, 'o');
+					r_cons_printf ("0x%08"PFMT64x"  %s.%s\n",
+						method->vaddr, kname, name);
+				}
+			}
+		}
+	}
+}
+
 static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_array, int va) {
 	char i1 = input[1];
 	if (i1 == ',') {
@@ -1856,6 +1934,8 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 	}
 	if (i1 == '?') {
 		r_core_cmd_help (core, help_msg_ie);
+	} else if (i1 == 's') {
+		cmd_ies (core, input, pj, mode, va);
 	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
