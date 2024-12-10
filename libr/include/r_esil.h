@@ -165,6 +165,7 @@ typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
 typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
+typedef void (*REsilVoyeurOp)(void *user, const char *op);
 
 typedef struct r_esil_voyeur_t {
 	void *user;
@@ -173,6 +174,7 @@ typedef struct r_esil_voyeur_t {
 		REsilVoyeurRegWrite reg_write;
 		REsilVoyeurMemRead mem_read;
 		REsilVoyeurMemWrite mem_write;
+		REsilVoyeurOp op;
 		void *vfn;
 	};
 } REsilVoyeur;
@@ -182,10 +184,16 @@ typedef enum {
 	R_ESIL_VOYEUR_REG_WRITE,
 	R_ESIL_VOYEUR_MEM_READ,
 	R_ESIL_VOYEUR_MEM_WRITE,
+	R_ESIL_VOYEUR_OP,
 	R_ESIL_VOYEUR_LAST,
+	R_ESIL_VOYEUR_HIGH_MASK = 0x7,
+	R_ESIL_VOYEUR_ERR = UT32_MAX,
 } REsilVoyeurType;
 
-#define	MAX_VOYEURS	(UT32_MAX ^ (0x7 << 29))
+#define	VOYEUR_TYPE_BITS	3
+#define	VOYEUR_SHIFT_LEFT	((sizeof (ut32) << 3) - VOYEUR_TYPE_BITS)
+#define	VOYEUR_TYPE_MASK	(R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
+#define	MAX_VOYEURS	(UT32_MAX ^ VOYEUR_TYPE_MASK)
 
 typedef struct r_esil_options_t {
 	int nowrite;
@@ -292,8 +300,8 @@ R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 //this should replace existing r_esil_new
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
 //R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
-R_API st32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt);
-R_API void r_esil_del_voyeur(REsil *esil, st32 vid);
+R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt);
+R_API void r_esil_del_voyeur(REsil *esil, ut32 vid);
 R_API void r_esil_reset(REsil *esil);
 R_API void r_esil_set_pc(REsil *esil, ut64 addr);
 R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, bool romem, bool stats, bool nonull);
