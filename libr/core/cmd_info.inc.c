@@ -1850,7 +1850,8 @@ static bool fdof_cb(void *user, void *data, ut32 id) {
 
 static bool is_entrypoint_symbol(const char *name) {
 	const char *words[] = {
-		"main", "_start", "_main", "WinMain",
+		"main", "_start", "_main", "Main",
+		"WinMain", "wmain", "DllMain", "wWinMain",
 		"applicationDidFinishLaunching",
 		"application:didFinishLaunchingWithOptions",
 		"applicationWillResignActive",
@@ -1883,7 +1884,7 @@ static bool is_entrypoint_symbol(const char *name) {
 		"loadView",
 		"viewDidLoad"
 	};
-	size_t i, size = sizeof(words) / sizeof(words[0]);
+	size_t i, size = sizeof (words) / sizeof (words[0]);
 
 	for (i = 0; i < size; i++) {
 		if (!strcmp (name, words[i])) {
