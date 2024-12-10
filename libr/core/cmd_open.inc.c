@@ -37,7 +37,7 @@ static RCoreHelpMessage help_msg_o = {
 
 static RCoreHelpMessage help_msg_on = {
 	"Usage: on[n+*]", "[file] ([addr] [rwx])", "Open file without parsing headers",
-	"on", " /bin/ls 0x4000", "map raw file at 0x4000 (no r_bin involved)",
+	"on", " /bin/ls [addr] [perm] [vsize]", "map raw file at addr with vsize (no r_bin involved)",
 	"onn", " [file] ([rwx])", "open file without creating any map or parsing headers with rbin)",
 	"onnu", " [file] ([rwx])", "same as onn, but unique, will return previos fd if already opened",
 	"on+", " [file] ([rwx])", "open file in rw mode without parsing headers",
@@ -1830,6 +1830,62 @@ static bool cmd_onn(RCore *core, const char* input) {
 	return true;
 }
 
+static int cmd_on(RCore *core, int argc, char *argv[]) {
+	char *path = NULL;
+	int fd;
+	ut64 vsize, vaddr = 0ULL;
+	ut32 i, perm = R_PERM_R;
+	const ut32 end = R_MIN (argc, 4);
+	for (i = 0; i < end; i++) {
+		switch (i) {
+		case 0:
+			if (!strcmp (argv[0], "-")) {
+				path = "malloc://512";
+				perm = R_PERM_RW;
+				continue;
+			}
+			path = argv[0];
+			if (r_str_startswith (path, "malloc://")) {
+				perm = R_PERM_RW;	//HACK
+			}
+			continue;
+		case 1:
+			if (!r_num_is_valid_input (core->num, argv[1])) {
+				continue;
+			}
+			vaddr = r_num_math (core->num, argv[1]);
+			continue;
+		case 2:
+			perm = r_str_rwx (argv[2]);
+			continue;
+		case 3:
+			fd = r_io_fd_open (core->io, path, perm, 0664);
+			if (fd < 0) {
+				return fd;
+			}
+			if (r_num_is_valid_input (core->num, argv[3])) {
+				vsize = R_MIN (r_num_math (core->num, argv[3]),
+					r_io_fd_size (core->io, fd));
+				continue;
+			} else {
+				vsize = r_io_fd_size (core->io, fd);
+			}
+			continue;
+		}
+	}
+	if (argc < 3) {
+		fd = r_io_fd_open (core->io, path, perm, 0664);
+		if (fd < 0) {
+			return fd;
+		}
+		vsize = r_io_fd_size (core->io, fd);
+	}
+	if (!r_io_map_add (core->io, fd, perm, 0ULL, vaddr, vsize)) {
+		R_LOG_WARN ("Couldn't create map");
+	}
+	return fd;
+}
+
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_PERM_R;
@@ -1837,7 +1893,6 @@ static int cmd_open(void *data, const char *input) {
 	ut64 addr = 0LL;
 	int argc, fd = -1;
 	RIODesc *file;
-	RIODesc *desc;
 	const char *ptr = NULL;
 	char **argv = NULL;
 
@@ -1939,34 +1994,8 @@ static int cmd_open(void *data, const char *input) {
 			r_str_argv_free (argv);
 			return 0;
 		}
-		ptr = argv[0];
-		if (argc == 2) {
-			if (r_num_is_valid_input (core->num, argv[1])) {
-				addr = r_num_math (core->num, argv[1]);
-			} else {
-				perms = r_str_rwx (argv[1]);
-				if (perms < 0) {
-					R_LOG_WARN ("Invalid permissions string");
-					perms = 0;
-				}
-			}
-		}
-		if (argc == 3) {
-			addr = r_num_math (core->num, argv[1]);
-			perms = r_str_rwx (argv[2]);
-			if (perms < 0) {
-				R_LOG_WARN ("Invalid permissions string");
-				perms = 0;
-			}
-		}
-		if (!strcmp (ptr, "-")) {
-			ptr = "malloc://512";
-		}
-		if ((desc = r_io_open_at (core->io, ptr, perms, 0644, addr))) {
-			fd = desc->fd;
-		}
-		if (fd == -1) {
-			R_LOG_ERROR ("Cannot open file '%s'", ptr);
+		if (cmd_on (core, argc, argv) < 0) {
+			R_LOG_ERROR ("Cannot open file '%s'", argv[0]);
 		}
 		r_str_argv_free (argv);
 		r_core_return_value (core, fd);
