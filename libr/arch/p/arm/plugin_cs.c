@@ -2607,7 +2607,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
-		r_strbuf_append (&op->esil, "pc,lr,:=,");
+		r_strbuf_appendf (&op->esil, "pc,%d,+,lr,:=,", thumb);
 		/* fallthrough */
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
