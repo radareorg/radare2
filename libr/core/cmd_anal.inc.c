@@ -15086,6 +15086,9 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 		fcnalign = 4;
 	}
 	ut8 *buf = calloc (1, bufsz);
+	if (!buf) {
+		return false;
+	}
 	ut64 off = core->offset;
 #if 0
 	if (input[1] == ' ') {

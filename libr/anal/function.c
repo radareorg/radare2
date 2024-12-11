@@ -73,6 +73,7 @@ static void label_addrs_kv_free(HtPPKv *kv) {
 }
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
+	// XXX fcn->name is null because its r_anal_create_function the one that must be called
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {

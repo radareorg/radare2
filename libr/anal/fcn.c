@@ -1233,7 +1233,7 @@ noskip:
 				bool must_eob = true;
 				RIOMap *map = anal->iob.map_get_at (anal->iob.io, addr);
 				if (map) {
-					must_eob = ( ! r_io_map_contain (map, op->jump) );
+					must_eob = ! r_io_map_contain (map, op->jump);
 				}
 				if (must_eob) {
 					op->jump = UT64_MAX;
@@ -1259,9 +1259,18 @@ noskip:
 				(void)anal->iob.read_at (anal->iob.io, op->jump, (ut8 *) buf, sizeof (buf));
 				if (r_anal_is_prelude (anal, op->jump, buf, sizeof (buf))) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
+					// XXX using type-jump wont analyze the destination as a function
+					// calling fcn_recurse wont make it analyze it either
+#if 0
+					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
+#else
 					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
-					fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
-					op->jump = UT64_MAX;
+					// using type-jump wont analyze the destination as a function
+					// fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
+					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
+					RAnalFunction *fcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
+					r_anal_function (anal, fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+#endif
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
@@ -1812,7 +1821,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 }
 
 /* Does NOT invalidate read-ahead cache. */
-R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
+R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
 	RPVector *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
 	if (metas) {

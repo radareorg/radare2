@@ -1066,7 +1066,7 @@ R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *
 
 R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
 
-R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
+R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype);
 R_API int r_anal_function_del(RAnal *anal, ut64 addr);
 R_API bool r_anal_function_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
