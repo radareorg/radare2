@@ -4124,6 +4124,7 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 }
 
 R_API void r_str_fixspaces(char *str) {
+	R_RETURN_IF_FAIL (str);
 	// add space after commas
 	char *os = strdup (str);
 	int i, j;

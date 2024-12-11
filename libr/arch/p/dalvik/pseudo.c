@@ -269,7 +269,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 
 	r_str_trim (buf);
 
-	char * str = NULL;
+	char *str = NULL;
 	if (*buf) {
 		w0[0] = '\0';
 		w1[0] = '\0';
@@ -357,6 +357,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
+				free (str);
 				str = p;
 			}
 		}

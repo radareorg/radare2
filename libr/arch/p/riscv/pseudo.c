@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2020-2024 - Aswin C (officialcjunior) */
 
-#include <r_lib.h>
 #include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -166,12 +165,13 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 				ptr = strchr (ptr+1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr (ptr + 1, '}');
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
+				free (str);
 				free (buf);
-				return false;
+				return NULL;
 			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
