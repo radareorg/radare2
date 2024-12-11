@@ -1832,7 +1832,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 
 static int cmd_on(RCore *core, int argc, char *argv[]) {
 	char *path = NULL;
-	int fd;
+	int fd = -1;
 	ut64 vsize, vaddr = 0ULL;
 	ut32 i, perm = R_PERM_R;
 	const ut32 end = R_MIN (argc, 4);
