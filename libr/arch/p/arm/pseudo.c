@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
+static char *replace(int argc, const char *argv[]) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -158,10 +158,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "push.w", "push #", { 1 } },
 		{ 0, NULL }
 	};
-	if (!newstr) {
-		return false;
-	}
-
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (ops[i].narg) {
 			if (argc - 1 != ops[i].narg) {
@@ -169,67 +166,56 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				d = 0;
-				j = 0;
+			d = 0;
+			j = 0;
+			ch = ops[i].str[j];
+			for (j = 0, k = 0; ch != '\0'; j++) {
 				ch = ops[i].str[j];
-				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
-					if (ch == '#') {
-						if (d >= MAXPSEUDOOPS) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						int idx = ops[i].args[d];
-						d++;
-						if (idx <= 0) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						const char *w = argv[idx];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ch;
+				if (ch == '#') {
+					if (d >= MAXPSEUDOOPS) {
+						// XXX Shouldn't ever happen...
+						continue;
 					}
+					int idx = ops[i].args[d];
+					d++;
+					if (idx <= 0) {
+						// XXX Shouldn't ever happen...
+						continue;
+					}
+					const char *w = argv[idx];
+					if (w) {
+						r_strbuf_append (sb, w);
+					}
+				} else {
+					r_strbuf_append_n (sb, &ch, 1);
 				}
-				newstr[k] = '\0';
 			}
-
-			r_str_replace_char (newstr, '{', '(');
-			r_str_replace_char (newstr, '}', ')');
-			return true;
+			goto fin;
 		}
 	}
 
 	/* TODO: this is slow */
-	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " " : ",");
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (!i || i == argc - 1)? " " : ",");
 	}
+fin:;
+	char *newstr = r_strbuf_drain (sb);
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
-	return false;
+	return newstr;
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
 	char w0[256], w1[256], w2[256], w3[256], w4[256];
-	int i, len = strlen (data);
-	char *buf, *ptr, *optr;
+	char *ptr, *optr;
+	int i;
 
-	if (len >= sizeof (w0)) {
+	if (strlen (data) >= sizeof (w0)) {
 		return NULL;
 	}
-	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
-		return NULL;
-	}
-	memcpy (buf, data, len + 1);
-	char *str = malloc (strlen (data) + 128);
-	strcpy (str, data);
+	char *buf = strdup (data);
+	char *s = NULL;
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
@@ -254,7 +240,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			if (!ptr) {
 				R_LOG_ERROR ("Unbalanced bracket");
 				free (buf);
-				return false;
+				return NULL;
 			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -288,10 +274,9 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			s = replace (nw, wa);
 		}
 	}
-	char *s = strdup (str);
 	if (s) {
 		s = r_str_replace (s, "xzr", "0", 1);
 		s = r_str_replace (s, "wzr", "0", 1);
@@ -299,12 +284,10 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
-		strcpy (str, s);
-		free (s);
+		r_str_fixspaces (s);
 	}
 	free (buf);
-	r_str_fixspaces (str);
-	return str;
+	return s;
 }
 
 static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
@@ -343,7 +326,6 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 	} else {
 		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
 		oldstr = r_str_newf (tmplt, reg, -delta);
-		// oldstr = r_str_newf ("%d", -delta); // tmplt, reg, -delta);
 	}
 	if (ucase) {
 		char *comma = strchr (oldstr, ',');

@@ -1,8 +1,5 @@
 /* radare - LGPL - Copyright 2011-2022 - pancake */
 
-#include <r_lib.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_asm.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -63,21 +60,18 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
+	char w0[32], w1[32], w2[32], w3[32];
+	char *optr, *num;
 	int i, n;
-	char w0[32];
-	char w1[32];
-	char w2[32];
-	char w3[32];
-	char *buf, *ptr, *optr, *num;
 
 	// malloc can be slow here :?
-	buf = strdup (data);
+	char *buf = strdup (data);
 	if (!buf) {
 		return NULL;
 	}
 	r_str_trim_head (buf);
 
-	ptr = strchr (buf, '#');
+	char *ptr = strchr (buf, '#');
 	if (ptr) {
 		*ptr = 0;
 		r_str_trim (buf);
@@ -156,7 +150,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			char *str = malloc (strlen (data) + 128);
+			str = malloc (strlen (data) + 128);
 			strcpy (str, data);
 			replace (nw, wa, str);
 		}
