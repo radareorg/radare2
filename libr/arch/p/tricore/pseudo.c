@@ -192,7 +192,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		}
 	}
 #if 0
-	r_str_fixspaces (str);
+	str = r_str_fixspaces (str);
 #endif
 	char *str = malloc (strlen (data) + 128);
 	strcpy (str, data);

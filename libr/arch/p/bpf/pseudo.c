@@ -79,8 +79,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	for (i = 0; i < MAXARGS; i++) {
 		free (argv[i]);
 	}
-	r_str_fixspaces (str);
-	return str;
+	return r_str_fixspaces (str);
 }
 
 RAsmPlugin r_asm_plugin_bpf = {

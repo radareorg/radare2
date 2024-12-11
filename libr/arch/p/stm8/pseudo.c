@@ -219,8 +219,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		}
 	}
 	free (buf);
-	r_str_fixspaces (str);
-	return str;
+	return r_str_fixspaces (str);
 }
 
 RAsmPlugin r_asm_plugin_stm8= {

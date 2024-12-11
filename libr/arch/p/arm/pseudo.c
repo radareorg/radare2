@@ -284,7 +284,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
-		r_str_fixspaces (s);
+		s = r_str_fixspaces (s);
 	}
 	free (buf);
 	return s;

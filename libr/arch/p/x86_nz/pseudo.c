@@ -300,7 +300,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		str = replace (nw, wa);
 	}
 	if (str) {
-		r_str_fixspaces (str);
+		str = r_str_fixspaces (str);
 	}
 	free (buf);
 	return str;
