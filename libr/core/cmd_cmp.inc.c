@@ -1098,8 +1098,8 @@ static void cmd_curl(RCore *core, const char *arg) {
 		if (r_str_startswith (arg, "http://") || r_str_startswith (arg, "https://")) {
 			int len;
 			char *s = postdata
-				? r_socket_http_post (arg, postdata, NULL, &len)
-				: r_socket_http_get (arg, NULL, &len);
+				? r_socket_http_post (arg, NULL, postdata, NULL, &len)
+				: r_socket_http_get (arg, NULL, NULL, &len);
 			if (s) {
 				r_cons_write (s, len);
 				free (s);

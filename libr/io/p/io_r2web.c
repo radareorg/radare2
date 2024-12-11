@@ -29,7 +29,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char *url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
 		rURL (fd), hexbuf, r2w->addr);
 	int code, rlen;
-	char *out = r_socket_http_get (url, &code, &rlen);
+	char *out = r_socket_http_get (url, NULL, &code, &rlen);
 	r2w->addr += count;
 	free (out);
 	free (url);
@@ -46,7 +46,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	char *url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
 		rURL(fd), count, r2w->addr);
 	int code, rlen;
-	char *out = r_socket_http_get (url, &code, &rlen);
+	char *out = r_socket_http_get (url, NULL, &code, &rlen);
 	if (out && rlen > 0) {
 		ut8 *tmp = calloc (1, rlen+1);
 		if (!tmp) {
@@ -118,7 +118,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		char *url = r_str_newf ("http://%s/?V", path);
 		//eprintf  ("URL:(%s)\n", url);
-		out = r_socket_http_get (url, &code, &rlen);
+		out = r_socket_http_get (url, NULL, &code, &rlen);
 		//eprintf ("RES %d %d\n", code, rlen);
 		//eprintf ("OUT(%s)\n", out);
 		if (out && rlen > 0) {
@@ -146,7 +146,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	int code, rlen;
 	char *cmd = r_str_uri_encode (command);
 	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);
-	char *out = r_socket_http_get (url, &code, &rlen);
+	char *out = r_socket_http_get (url, NULL, &code, &rlen);
 	if (out && rlen > 0) {
 		io->cb_printf ("%s", out);
 	}
