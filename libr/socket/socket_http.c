@@ -215,6 +215,9 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		free (escaped_url);
 		free (command);
 		if (!res) {
+			if (code) {
+				*code = 404;
+			}
 			return NULL;
 		}
 		if (res) {
@@ -318,6 +321,9 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		free (escaped_url);
 		free (command);
 		if (!res) {
+			if (code) {
+				*code = 404;
+			}
 			return NULL;
 		}
 		if (res) {
