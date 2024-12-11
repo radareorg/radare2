@@ -53,7 +53,7 @@ static int enter_switch_op(ut64 addr, const ut8* bytes, int len) {
 			sz2, BYTES_CONSUMED, sz);
 	}
 	init_switch_op ();
-	IN_SWITCH_OP = true;
+	// TODO IN_SWITCH_OP = true;
 	SWITCH_OP.addr = addr;
 	SWITCH_OP.def_jmp = (UINT (bytes, sz));
 	SWITCH_OP.min_val = (UINT (bytes, sz + 4));
