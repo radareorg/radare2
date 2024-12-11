@@ -169,7 +169,7 @@ static char *replace(int argc, const char *argv[]) {
 			d = 0;
 			j = 0;
 			ch = ops[i].str[j];
-			for (j = 0, k = 0; ch != '\0'; j++) {
+			for (j = 0; ch != '\0'; j++) {
 				ch = ops[i].str[j];
 				if (ch == '#') {
 					if (d >= MAXPSEUDOOPS) {
