@@ -538,62 +538,62 @@ static const char * const theme_bright = \
 	"ec graph.traced rgb:ffff00\n"
 	"ec graph.current rgb:0000ff\n"
 ;
-static const char * const theme_catpuccin = \
-    // https://github.com/catppuccin/catppuccin
-    // based on basic theme and used Mocha colours
+static const char * const theme_catppuccin = \
+	"# https:#github.com/catppuccin/catppuccin\n"
+	"# based on basic theme and used Mocha colours\n"
 	"ecd\n"
-	"ec fname rgb:8bd5ca\n" // Teal
-	"ec label rgb:8bd5ca\n" // Teal
-	"ec fline rgb:8bd5ca\n" // Teal
-	"ec flag rgb:a6da95\n" // Green
-	"ec offset rgb:f4dbd6\n" // Rosewater
-	"ec comment rgb:eed49f\n" // Red
-	"ec usrcmt rgb:a6da95\n" // Green
-	"ec flow rgb:a6da95\n" // Green
-	"ec flow2 rgb:a6da95\n" // Green
-	"ec b0x00 rgb:f4dbd6\n" // Rosewater
-	"ec b0xff rgb:eed49f\n" // Red
-	"ec bin rbg:cad3f5\n" // Gray
-	"ec b0x7f rgb:f4dbd6\n" // Rosewater
-	"ec other rgb:cad3f5\n" // Gray
-	"ec btext rgb:8bd5ca\n" // Teal
-	"ec trap rgb:eed49f\n" // Red
-	"ec ucall rgb:a6da95\n" // Green
-	"ec ujmp rgb:a6da95\n" // Green
-	"ec args rgb:a6da95\n" // Green
-	"ec help rgb:eed49f\n" // Yellow
-	"ec prompt rgb:eed49f\n" // Yellow
-	"ec mov rgb:f4dbd6\n" // Rosewater
-	"ec math rgb:cad3f5\n" // Gray
-	"ec push rgb:8bd5ca\n" // Teal
-	"ec reg rgb:eed49f\n" // Yellow
-	"ec creg rgb:eed49f\n" // Yellow
-	"ec num rgb:8bd5ca\n" // Teal
-	"ec invalid rgb:ed8796\n" // Red
-	"ec swi rgb:8bd5ca\n" // Teal
-	"ec cmp rgb:f4dbd6\n" // Rosewater
-	"ec call rgb:a6da95\n" // Green
-	"ec cjmp rgb:a6da95\n" // Green
-	"ec jmp rgb:a6da95\n" // Green
-	"ec pop rgb:8bd5ca\n" // Teal
-	"ec linehl rgb:7dc4e4\n" // Sapphire
-	"ec graph.true rgb:a6da95\n" // Green
-	"ec graph.false rgb:eed49f\n" // Red
-	"ec graph.trufae rgb:8aadf4\n" // Blue
-	"ec graph.current rgb:8aadf4\n" // Blue
-	"ec graph.traced gb:8aadf4\n" // Blue
-	"ec graph.box rgb:cad3f5\n" // Gray
-	"ec graph.box2 rgb:8aadf4\n" // Blue
-	"ec graph.box3 rgb:cad3f5\n" // Gray
-	"ec graph.box4 rgb:cad3f5\n" // Gray
+	"ec fname rgb:8bd5ca # Teal\n"
+	"ec label rgb:8bd5ca # Teal\n"
+	"ec fline rgb:8bd5ca # Teal\n"
+	"ec flag rgb:a6da95 # Green\n"
+	"ec offset rgb:f4dbd6 # Rosewater\n"
+	"ec comment rgb:eed49f # Red\n"
+	"ec usrcmt rgb:a6da95 # Green\n"
+	"ec flow rgb:a6da95 # Green\n"
+	"ec flow2 rgb:a6da95 # Green\n"
+	"ec b0x00 rgb:f4dbd6 # Rosewater\n"
+	"ec b0xff rgb:eed49f # Red\n"
+	"ec bin rbg:cad3f5 # Gray\n"
+	"ec b0x7f rgb:f4dbd6 # Rosewater\n"
+	"ec other rgb:cad3f5 # Gray\n"
+	"ec btext rgb:8bd5ca # Teal\n"
+	"ec trap rgb:eed49f # Red\n"
+	"ec ucall rgb:a6da95 # Green\n"
+	"ec ujmp rgb:a6da95 # Green\n"
+	"ec args rgb:a6da95 # Green\n"
+	"ec help rgb:eed49f # Yellow\n"
+	"ec prompt rgb:eed49f # Yellow\n"
+	"ec mov rgb:f4dbd6 # Rosewater\n"
+	"ec math rgb:cad3f5 # Gray\n"
+	"ec push rgb:8bd5ca # Teal\n"
+	"ec reg rgb:eed49f # Yellow\n"
+	"ec creg rgb:eed49f # Yellow\n"
+	"ec num rgb:8bd5ca # Teal\n"
+	"ec invalid rgb:ed8796 # Red\n"
+	"ec swi rgb:8bd5ca # Teal\n"
+	"ec cmp rgb:f4dbd6 # Rosewater\n"
+	"ec call rgb:a6da95 # Green\n"
+	"ec cjmp rgb:a6da95 # Green\n"
+	"ec jmp rgb:a6da95 # Green\n"
+	"ec pop rgb:8bd5ca # Teal\n"
+	"ec linehl rgb:7dc4e4 # Sapphire\n"
+	"ec graph.true rgb:a6da95 # Green\n"
+	"ec graph.false rgb:eed49f # Red\n"
+	"ec graph.trufae rgb:8aadf4 # Blue\n"
+	"ec graph.current rgb:8aadf4 # Blue\n"
+	"ec graph.traced gb:8aadf4 # Blue\n"
+	"ec graph.box rgb:cad3f5 # Gray\n"
+	"ec graph.box2 rgb:8aadf4 # Blue\n"
+	"ec graph.box3 rgb:cad3f5 # Gray\n"
+	"ec graph.box4 rgb:cad3f5 # Gray\n"
 	"\n"
-	"ec var rgb:f4dbd6\n" // Rosewater
-	"ec var.type rgb:8aadf4\n" // Blue
-	"ec var.addr rgb:8bd5ca\n" // Teal
-	"ec var.name rgb:f4dbd6\n" // Rosewater
+	"ec var rgb:f4dbd6 # Rosewater\n"
+	"ec var.type rgb:8aadf4 # Blue\n"
+	"ec var.addr rgb:8bd5ca # Teal\n"
+	"ec var.name rgb:f4dbd6 # Rosewater\n"
 	"\n"
-	"ec widget.bg rgb:363a4f\n" // Some kind of grey
-	"ec widget.sel rgb:b7bdf8\n" // Lavender
+	"ec widget.bg rgb:363a4f # Some kind of grey\n"
+	"ec widget.sel rgb:b7bdf8 # Lavender\n"
 ;
 static const char * const theme_cga = \
 	"ecd\n"
@@ -2371,7 +2371,7 @@ RConsTheme d_themes[] = {
 	{ "bobcrawl", theme_bobcrawl },
 	{ "bold", theme_bold },
 	{ "bright", theme_bright },
-	{ "catpuccin", theme_catpuccin },
+	{ "catppuccin", theme_catppuccin },
 	{ "cga", theme_cga },
 	{ "chrome", theme_chrome },
 	{ "consonance", theme_consonance },
