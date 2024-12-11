@@ -37,7 +37,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	}
 #endif
 	int len;
-	char *file_buf = r_socket_http_get (url, NULL, &len);
+	char *file_buf = r_socket_http_get (url, NULL, NULL, &len);
 	free (url);
 	if (!len || R_STR_ISEMPTY (file_buf)) {
 		free (dir);

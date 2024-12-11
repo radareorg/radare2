@@ -217,7 +217,7 @@ static void __rtr_shell(RCore *core, int nth) {
 				}
 				ptr = r_str_uri_encode (res);
 				char *uri = r_str_newf ("http://%s:%s/%s!%s", host, port, file, res);
-				str = r_socket_http_get (uri, NULL, &len);
+				str = r_socket_http_get (uri, NULL, NULL, &len);
 				if (str) {
 					str[len] = 0;
 					res = strstr (str, "\n\n");

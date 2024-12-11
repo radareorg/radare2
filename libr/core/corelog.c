@@ -123,7 +123,7 @@ R_API char *r_core_log_get(RCore *core, int index) {
 		char *url = index > 0
 			? r_str_newf ("%s/cmd/T%%20%d", host, index)
 			: r_str_newf ("%s/cmd/T", host);
-		char *res = r_socket_http_get (url, NULL, NULL);
+		char *res = r_socket_http_get (url, NULL, NULL, NULL);
 		free (url);
 		return res? res: strdup ("");
 	}
