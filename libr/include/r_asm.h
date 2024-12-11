@@ -195,6 +195,7 @@ extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_pickle;
 extern RAsmPlugin r_asm_plugin_tricore;
+extern RAsmPlugin r_asm_plugin_java;
 
 #endif
 
