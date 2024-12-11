@@ -1268,8 +1268,8 @@ noskip:
 					// using type-jump wont analyze the destination as a function
 					// fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
-					RAnalFunction *fcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
-					r_anal_function (anal, fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
+					r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
 #endif
 					gotoBeach (R_ANAL_RET_END);
 				}
