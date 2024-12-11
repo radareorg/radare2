@@ -98,7 +98,7 @@ EXPECT=<<EOF
 0x004015f0 581 flirt.__libc_setup_tls
 0x00401930 339 flirt.__assert_fail_base
 0x00401a90 80 flirt.__assert_fail
-0x00401ae0 7517 flirt.__dcgettext
+0x00401ae0 15 flirt.__dcgettext
 0x00403840 672 flirt._nl_find_domain
 0x00403ae0 5366 flirt._nl_load_domain
 0x004054e0 601 flirt.__cxa_finalize
@@ -112,7 +112,8 @@ EXPECT=<<EOF
 0x0040da90 7 flirt.__umount
 0x0040dbb0 561 flirt.abort
 0x0040ddf0 1092 flirt.msort_with_tmp.part.0
-0x0040e6c0 1160 flirt.qsort
+0x0040e240 1152 flirt.__qsort_r
+0x0040e6c0 8 flirt.qsort
 0x0040e6d0 212 flirt.getenv
 0x0040e7b0 636 flirt.__run_exit_handlers
 0x0040ea30 32 flirt.exit
@@ -208,7 +209,9 @@ EXPECT=<<EOF
 0x0045a200 1312 flirt._nl_load_locale_from_archive
 0x0045a870 80 flirt.__setfpucw
 0x0045a8c0 132 flirt.__sigsetjmp
-0x0045abc0 6232 flirt._quicksort
+0x0045abc0 6126 flirt._quicksort
+0x0045c040 984 flirt.__add_to_environ
+0x0045c420 309 flirt.__unsetenv
 0x0045c620 19 flirt.__libc_secure_getenv
 0x0045ce30 10704 flirt.group_number
 0x0045f800 13172 flirt._IO_vfprintf_internal
