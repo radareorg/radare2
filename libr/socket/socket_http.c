@@ -28,9 +28,9 @@ static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	return i;
 }
 
-static char *socket_http_get_recursive(const char *url, const char **headers, int *code, int *rlen, ut32 redirections);
+static char *socket_http_get_recursive(const char *url, const char *headers[], int *code, int *rlen, ut32 redirections);
 
-static char *socket_http_answer(RSocket *s, const char **headers, int *code, int *rlen, ut32 redirections) {
+static char *socket_http_answer(RSocket *s, const char *headers[], int *code, int *rlen, ut32 redirections) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *p;
 	int ret, len = 0, delta = 0;
@@ -203,7 +203,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
 		if (headers) {
 			const char **header = headers;
-			while (header) {
+			while (*header) {
 				r_strbuf_appendf (sb, " -H '%s'", *header);
 				header++;
 			}
@@ -296,14 +296,14 @@ R_API char *r_socket_http_get(const char *url, const char **headers, int *code, 
 	return socket_http_get_recursive (url, headers, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
 }
 
-R_API char *r_socket_http_post(const char *url, const char **headers, const char *data, int *code, int *rlen) {
+R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
 		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
 		if (headers) {
 			const char **header = headers;
-			while (header) {
+			while (*header) {
 				r_strbuf_appendf (sb, " -H '%s'", *header);
 				header++;
 			}
