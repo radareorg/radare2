@@ -15081,6 +15081,10 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 	ut8 *prelude = (ut8 *)strdup (input);
 	int prelude_sz = r_hex_str2bin (input, prelude);
 	const int bufsz = core->blocksize;
+	int fcnalign = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
+	if (fcnalign < 2) {
+		fcnalign = 4;
+	}
 	ut8 *buf = calloc (1, bufsz);
 	ut64 off = core->offset;
 #if 0
@@ -15098,7 +15102,7 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 		const int delta = (size_t)(pos - buf);
 		free (buf);
 		*fcnaddr = off - delta;
-		if (*fcnaddr % 4) {
+		if (*fcnaddr % fcnalign) {
 			// ignore unaligned hits
 			return false;
 		}
