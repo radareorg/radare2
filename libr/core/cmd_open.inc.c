@@ -1833,7 +1833,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 static int cmd_on(RCore *core, int argc, char *argv[]) {
 	char *path = NULL;
 	int fd = -1;
-	ut64 vsize, vaddr = 0ULL;
+	ut64 vsize = 0, vaddr = 0ULL;
 	ut32 i, perm = R_PERM_R;
 	const ut32 end = R_MIN (argc, 4);
 	for (i = 0; i < end; i++) {
@@ -1880,7 +1880,9 @@ static int cmd_on(RCore *core, int argc, char *argv[]) {
 		}
 		vsize = r_io_fd_size (core->io, fd);
 	}
-	if (!r_io_map_add (core->io, fd, perm, 0ULL, vaddr, vsize)) {
+	if (vsize == 0) {
+		R_LOG_WARN ("Map size not defined");
+	} else if (!r_io_map_add (core->io, fd, perm, 0ULL, vaddr, vsize)) {
 		R_LOG_WARN ("Couldn't create map");
 	}
 	return fd;
