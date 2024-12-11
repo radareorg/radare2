@@ -122,9 +122,8 @@ R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
 }
 
 /* mountpoint */
-R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 delta) {
-	R_RETURN_VAL_IF_FAIL (fs && fstype && path, NULL);
-	RFSPlugin* p;
+R_API RFSRoot* r_fs_mount(RFS* fs, R_NULLABLE const char* fstype, const char* path, ut64 delta) {
+	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
 	RFSRoot* root;
 	RListIter* iter;
 	char* str;
@@ -132,14 +131,18 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	char *heapFsType = NULL;
 
 	if (path[0] != '/') {
-		R_LOG_ERROR ("invalid mountpoint %s", path);
+		R_LOG_ERROR ("Invalid mountpoint %s", path);
 		return NULL;
 	}
-	if (!fstype || !*fstype) {
+	if (R_STR_ISEMPTY (fstype)) {
 		heapFsType = r_fs_name (fs, delta);
 		fstype = (const char *)heapFsType;
 	}
-	if (!(p = r_fs_plugin_get (fs, fstype))) {
+	if (fstype == NULL) {
+		return NULL;
+	}
+	RFSPlugin* p = r_fs_plugin_get (fs, fstype);
+	if (!p) {
 		R_LOG_ERROR ("Invalid filesystem type '%s'", fstype);
 		free (heapFsType);
 		return NULL;

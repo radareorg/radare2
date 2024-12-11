@@ -175,6 +175,7 @@ RBinPlugin r_bin_plugin_dol = {
 		.desc = "Nintendo Dolphin binary format",
 		.license = "BSD-3-Clause",
 	},
+	.weak_guess = true,
 	.load = &load,
 	.baddr = &baddr,
 	.check = &check,

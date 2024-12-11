@@ -231,6 +231,7 @@ RBinPlugin r_bin_plugin_le = {
 		.author = "GustavoLCR",
 		.license = "LGPL-3.0-only",
 	},
+	.weak_guess = true,
 	.check = &check,
 	.load = &load,
 	.destroy = &destroy,
