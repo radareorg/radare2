@@ -1901,14 +1901,19 @@ static bool is_entrypoint_symbol(const char *name) {
 static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 	// iterate over symbols and class methods that match
 	RBinSymbol *sym;
-	RVecRBinSymbol *symbols = r_bin_get_symbols_vec(core->bin);
-	R_VEC_FOREACH (symbols, sym) {
-		const char *name = r_bin_name_tostring2 (sym->name, 'o');
-		if (is_entrypoint_symbol (name)) {
-			r_cons_printf ("0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+	if (symbols) {
+		R_VEC_FOREACH (symbols, sym) {
+			const char *name = r_bin_name_tostring2 (sym->name, 'o');
+			if (is_entrypoint_symbol (name)) {
+				r_cons_printf ("0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+			}
 		}
 	}
 	RList *bfiles = r_core_bin_files (core);
+	if (!bfiles) {
+		return;
+	}
 	RBinFile *bf;
 	RListIter *objs_iter;
 	r_list_foreach (bfiles, objs_iter, bf) {

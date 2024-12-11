@@ -125,7 +125,7 @@ static bool replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -136,11 +136,13 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {
-		return false;
+		return NULL;
 	}
 	memcpy (buf, data, len + 1);
 
 	r_str_trim (buf);
+	char *str = malloc (len + 128);
+	strcpy (str, data);
 	if (*buf) {
 		w0[0] = '\0';
 		w1[0] = '\0';
@@ -205,7 +207,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_avr = {

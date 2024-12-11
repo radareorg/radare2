@@ -384,7 +384,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 							int len; // do remote http query and proxy response
 							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
 							bed = r_cons_sleep_begin ();
-							res = r_socket_http_get (bar, NULL, &len);
+							res = r_socket_http_get (bar, NULL, NULL, &len);
 							r_cons_sleep_end (bed);
 							if (res) {
 								res[len] = 0;

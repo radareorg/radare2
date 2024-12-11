@@ -87,7 +87,7 @@ typedef struct r_asm_plugin_session_t {
 
 typedef void (*RAsmParseInit)(RAsmPluginSession *s);
 typedef void (*RAsmParseFini)(RAsmPluginSession *s);
-typedef bool (*RAsmParsePseudo)(RAsmPluginSession *s, const char *data, char *str);
+typedef char *(*RAsmParsePseudo)(RAsmPluginSession *s, const char *data);
 typedef char *(*RAsmParseFilter)(RAsmPluginSession *s, ut64 addr, RFlag *f, const char *data);
 typedef char *(*RAsmParseSubvar)(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen, const char *data);
 typedef char *(*RAsmParsePatch)(RAsmPluginSession *s, RAnalOp *aop, const char *newop);
@@ -195,6 +195,7 @@ extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_pickle;
 extern RAsmPlugin r_asm_plugin_tricore;
+extern RAsmPlugin r_asm_plugin_java;
 
 #endif
 

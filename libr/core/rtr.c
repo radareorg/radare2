@@ -85,7 +85,7 @@ static char *rtrcmd(TextLog T, const char *str) {
 	char *uri = r_str_newf ("http://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
 	int len;
 	free (ptr);
-	ptr2 = r_socket_http_get (uri, NULL, &len);
+	ptr2 = r_socket_http_get (uri, NULL, NULL, &len);
 	free (uri);
 	if (ptr2) {
 		ptr2[len] = 0;
@@ -794,7 +794,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		{
 			int len;
 			char *uri = r_str_newf ("http://%s:%s/%s", host, port, file);
-			char *str = r_socket_http_get (uri, NULL, &len);
+			char *str = r_socket_http_get (uri, NULL, NULL, &len);
 			if (!str) {
 				R_LOG_ERROR ("Cannot find peer");
 				r_socket_free (fd);
@@ -1069,7 +1069,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		}
 		int len;
 		char *uri = r_str_newf ("http://%s:%d/cmd/%s", rh->host, rh->port, cmd);
-		char *str = r_socket_http_get (uri, NULL, &len);
+		char *str = r_socket_http_get (uri, NULL, NULL, &len);
 		if (!str) {
 			R_LOG_ERROR ("Cannot find '%s'", uri);
 			return;

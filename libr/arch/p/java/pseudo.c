@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2024 - pancake */
 
-#include <r_lib.h>
 #include <r_asm.h>
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
@@ -9,10 +8,10 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	return NULL;
 }
 
-RAsmPlugin r_asm_plugin_pickle = {
+RAsmPlugin r_asm_plugin_java = {
 	.meta = {
-		.name = "pickle",
-		.desc = "Pickle pseudo syntax",
+		.name = "java",
+		.desc = "Java pseudocode",
 	},
 	.parse = parse,
 };
@@ -20,7 +19,7 @@ RAsmPlugin r_asm_plugin_pickle = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_pickle,
+	.data = &r_asm_plugin_java,
 	.version = R2_VERSION
 };
 #endif

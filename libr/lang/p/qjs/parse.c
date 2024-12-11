@@ -28,7 +28,7 @@
 
 #endif
 
-static bool qjs_parse(RAsmPluginSession *aps, const char *input, char *output) {
+static char *qjs_parse(RAsmPluginSession *aps, const char *input) {
 	RParse *p = aps->rasm->parse;
 	RCore *core = p->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
@@ -44,14 +44,13 @@ static bool qjs_parse(RAsmPluginSession *aps, const char *input, char *output) {
 			const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, res, false);
 			if (!nameptr) {
 				R_LOG_WARN ("r2.plugin requires the function to return an object with the `name` field");
-				return false;
+				return NULL;
 			}
-			strcpy (output, nameptr);
-			return true;
+			return strdup (nameptr);
 		}
 	}
 
-	return false;
+	return NULL;
 }
 
 static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {

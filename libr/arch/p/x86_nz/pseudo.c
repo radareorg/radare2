@@ -9,9 +9,9 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static bool replace(int argc, char *argv[], char *newstr) {
+static char *replace(int argc, char *argv[]) {
 #define MAXPSEUDOOPS 10
-	int i, j, k, d;
+	int i, j, d;
 	char ch;
 	struct {
 		const char *op;
@@ -120,8 +120,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 	};
 	if (argc == 1) {
 		if (argv[0][0] && !argv[0][1]) {
-			*newstr = 0;
-			return true;
+			return strdup ("");
 		}
 	}
 
@@ -131,6 +130,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 			argv[2] = "0";
 		}
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (strcmp (ops[i].op, argv[0])) {
 			continue;
@@ -138,7 +138,7 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		d = 0;
 		j = 0;
 		ch = ops[i].str[j];
-		for (j = 0, k = 0; ch != '\0'; j++, k++) {
+		for (j = 0; ch != '\0'; j++) {
 			ch = ops[i].str[j];
 			if (ch == '#') {
 				if (d >= MAXPSEUDOOPS) {
@@ -152,29 +152,23 @@ static bool replace(int argc, char *argv[], char *newstr) {
 				}
 				const char *w = argv[idx];
 				if (w) {
-					strcpy (newstr + k, w);
-					k += strlen (w) - 1;
+					r_strbuf_append (sb, w);
 				}
 			} else {
-				newstr[k] = ch;
+				r_strbuf_append_n (sb, &ch, 1);
 			}
 		}
-		newstr[k] = '\0';
-		return true;
+		return r_strbuf_drain (sb);
 	}
 
-	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < argc; i++) {
 		r_strbuf_append (sb, argv[i]);
-		r_strbuf_append (sb, (i == argc - 1)?"":" ");
+		r_strbuf_append (sb, (i == argc - 1)? "": " ");
 	}
-	char *sbs = r_strbuf_drain (sb);
-	strcpy (newstr, sbs);
-	free (sbs);
-	return false;
+	return r_strbuf_drain (sb);
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	RParse *p = aps->rasm->parse;
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
@@ -182,18 +176,19 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	int sz = 32;
 	char *ptr, *optr, *end;
 	if (len >= sizeof (w0) || sz >= sizeof (w0)) {
-		return false;
+		return NULL;
 	}
 	// strdup can be slow here :?
 	char *buf = strdup (data);
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (strchr (data, '(')) {
 		// avoid double-pseudo calls
-		return false;
+		return NULL;
 	}
+	char *str = NULL;
 	if (*buf) {
 		end = buf + strlen (buf);
 		ptr = strchr (buf, '(');
@@ -256,11 +251,10 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 		}
 	}
 	/* TODO: interpretation of memory location fails*/
-	//ensure imul & mul interpretations works
+	// ensure imul & mul interpretations works
 	if (strstr (w0, "mul")) {
 		if (nw == 2) {
 			r_str_ncpy (wa[3], wa[1], sizeof (w3));
-
 			switch (wa[3][0]) {
 			case 'q':
 			case 'r': //qword, r..
@@ -288,29 +282,28 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 			r_str_ncpy (wa[3], wa[2], sizeof (w3));
 			r_str_ncpy (wa[2], wa[1], sizeof (w2));
 		}
-		replace (nw, wa, str);
+		str = replace (nw, wa);
 	} else if (strstr (w0, "lea")) {
 		r_str_replace_char (w2, '[', 0);
 		r_str_replace_char (w2, ']', 0);
-		replace (nw, wa, str);
+		str = replace (nw, wa);
 	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
-		if (!(p->retleave_asm = (char *) malloc (sz))) {
-			return false;
-		}
-		r_snprintf (p->retleave_asm, sz, "return %s", w2);
-		replace (nw, wa, str);
+		p->retleave_asm = r_str_newf ("return %s", w2);
+		str = replace (nw, wa);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
-		r_str_ncpy (str, p->retleave_asm, sz);
+		str = strdup (p->retleave_asm);
 		R_FREE (p->retleave_asm);
 	} else if (p->retleave_asm) {
 		R_FREE (p->retleave_asm);
-		replace (nw, wa, str);
+		str = replace (nw, wa);
 	} else {
-		replace (nw, wa, str);
+		str = replace (nw, wa);
 	}
-	r_str_fixspaces (str);
+	if (str) {
+		str = r_str_fixspaces (str);
+	}
 	free (buf);
-	return true;
+	return str;
 }
 
 static void parse_localvar(RAsm *a, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {

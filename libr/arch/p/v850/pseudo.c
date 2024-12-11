@@ -162,16 +162,16 @@ static void guard_braces(char *buf) {
 	}
 }
 
-static bool parse(RAsmPluginSession *p, const char *data, char *str) {
+static char *parse(RAsmPluginSession *p, const char *data) {
 	if (r_str_startswith (data, "|| ")) {
 		data += 3;
 	}
 	if (R_STR_ISEMPTY (data)) {
-		*str = 0;
-		return false;
+		return NULL;
 	}
 
 	char *buf = strdup (data);
+	char *str = malloc (strlen (data) + 128);
 	guard_braces (buf);
 	RListIter *iter;
 	char *sp = strchr (buf, ' ');
@@ -196,7 +196,7 @@ static bool parse(RAsmPluginSession *p, const char *data, char *str) {
 	free (buf);
 	r_list_free (list);
 
-	return true;
+	return str;
 }
 
 static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int oplen, const char *data) {

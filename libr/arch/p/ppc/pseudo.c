@@ -1608,8 +1608,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
-// 	RParse *p = a->parse;
+#define REPLACE(x,y) do { \
+		int snprintf_len1_ = snprintf (a, 64, x, w1, w1); \
+		int snprintf_len2_ = snprintf (b, 64, y, w1); \
+		if (snprintf_len1_ < 64 && snprintf_len2_ < 64) { \
+			p = r_str_replace (p, a, b, 0); \
+		} \
+	} while (0)
+
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, len = strlen (data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -1620,19 +1627,20 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (!strcmp (data, "jr ra")) {
-		strcpy (str, "return");
-		return true;
+		return strdup ("return");
 	}
 
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {
-		return false;
+		return NULL;
 	}
 	memcpy (buf, data, len + 1);
 
 	r_str_replace_char (buf, '(', ',');
 	r_str_replace_char (buf, ')', ' ');
 	r_str_trim (buf);
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data);
 	if (*buf) {
 		w0[0] = '\0';
 		w1[0] = '\0';
@@ -1716,13 +1724,6 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 #endif
 				if (!strcmp (w1, w2)) {
 					char a[64], b[64];
-#define REPLACE(x,y) do { \
-		int snprintf_len1_ = snprintf (a, 64, x, w1, w1); \
-		int snprintf_len2_ = snprintf (b, 64, y, w1); \
-		if (snprintf_len1_ < 64 && snprintf_len2_ < 64) { \
-			p = r_str_replace (p, a, b, 0); \
-		} \
-	} while (0)
 
 					// TODO: optimize
 					REPLACE ("%s = %s +", "%s +=");
@@ -1740,7 +1741,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_ppc = {

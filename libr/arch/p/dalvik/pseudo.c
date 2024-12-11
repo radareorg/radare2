@@ -1,11 +1,8 @@
 /* radare - LGPL - Copyright 2012-2024 - pancake */
 
-#include <r_lib.h>
-#include <r_flag.h>
-#include <r_anal.h>
 #include <r_asm.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
+static char *replace(int argc, const char *argv[]) {
 	int i, j, k;
 	struct {
 		const char *op;
@@ -183,32 +180,32 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "mul-double", "1 = 2 * 3" },
 		{ "move-wide", "1 = 2" },
 		{ "move-wide/16", "1 = 2" },
+		{ "return-void", "return" },
 		{ "return-wide", "return (wide) 1" },
 		{ "return-object", "return (object) 1" },
 		// { "sget", "1 = 2[3]" },
 		{ NULL }
 	};
 
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] >= '1' && ops[i].str[j] <= '9') {
-						const char *w = argv[ops[i].str[j] - '0'];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+				if (ops[i].str[j] >= '1' && ops[i].str[j] <= '9') {
+					const char *w = argv[ops[i].str[j] - '0'];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					char ch = ops[i].str[j];
+					r_strbuf_append_n (sb, &ch, 1);
 				}
-				newstr[k] = '\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
-
+	r_strbuf_free (sb);
+#if 0
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
@@ -217,8 +214,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
 	}
-
-	return false;
+#endif
+	return NULL;
 }
 
 static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
@@ -248,7 +245,7 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 		} \
 	} while (0)
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr, *ptr2;
 	char w0[64];
@@ -261,8 +258,7 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	||  !strcmp (data, "???")
 	||  !strcmp (data, "nop")
 	||  !strcmp (data, "DEPRECATED")) {
-		str[0] = 0;
-		return true;
+		return strdup ("");
 	}
 
 	// malloc can be slow here :?
@@ -273,21 +269,20 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 
 	r_str_trim (buf);
 
+	char *str = NULL;
 	if (*buf) {
-		w0[0]='\0';
-		w1[0]='\0';
-		w2[0]='\0';
-		w3[0]='\0';
-		w4[0]='\0';
+		w0[0] = '\0';
+		w1[0] = '\0';
+		w2[0] = '\0';
+		w3[0] = '\0';
+		w4[0] = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (ptr++; *ptr == ' '; ptr++) {
-				;
-			}
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, sizeof (w0) - 1);
 			w0[sizeof (w0)-1] = '\0';
 			strncpy (w1, ptr, sizeof (w1) - 1);
@@ -343,8 +338,8 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
-			{
+			str = replace (nw, wa);
+			if (str) {
 				char *p = strdup (str);
 				p = r_str_replace (p, "+ -", "- ", 0);
 #if EXPERIMENTAL_ZERO
@@ -362,13 +357,13 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
-				strcpy (str, p);
-				free (p);
+				free (str);
+				str = p;
 			}
 		}
 	}
 	free (buf);
-	return true;
+	return str;
 }
 
 RAsmPlugin r_asm_plugin_dalvik = {

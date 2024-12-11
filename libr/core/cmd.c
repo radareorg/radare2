@@ -5376,8 +5376,12 @@ static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 		if (next) {
 			*next = 0;
 		}
-		if (arg && *arg) {
+		if (R_STR_ISNOTEMPTY (arg)) {
 			ut64 n = r_num_get (NULL, arg);
+			if (core->num->nc.errors != 0) {
+				R_LOG_ERROR ("Invalid number '%s'", arg);
+				break;
+			}
 			if (pair % 2) {
 				r_core_block_size (core, n);
 				r_core_cmd0 (core, cmd);
@@ -5806,6 +5810,10 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 			if (str) {
 				*str = '\0';
 				addr = r_num_math (core->num, each);
+				if (core->num->nc.errors != 0) {
+					R_LOG_ERROR ("Invalid number '%s'", each);
+					break;
+				}
 				*str = ' ';
 				each = str + 1;
 			} else {
@@ -5813,6 +5821,10 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 					break;
 				}
 				addr = r_num_math (core->num, each);
+				if (core->num->nc.errors != 0) {
+					R_LOG_ERROR ("Invalid number '%s'", each);
+					break;
+				}
 				each = NULL;
 			}
 			r_core_seek (core, addr, true);

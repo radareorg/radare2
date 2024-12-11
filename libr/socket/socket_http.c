@@ -28,9 +28,9 @@ static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	return i;
 }
 
-static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections);
+static char *socket_http_get_recursive(const char *url, const char *headers[], int *code, int *rlen, ut32 redirections);
 
-static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirections) {
+static char *socket_http_answer(RSocket *s, const char *headers[], int *code, int *rlen, ut32 redirections) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *p;
 	int ret, len = 0, delta = 0;
@@ -81,7 +81,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 			int url_len = end_url - p;
 			char *url = r_str_ndup (p, url_len);
 			r_str_trim (url);
-			res = socket_http_get_recursive (url, code, rlen, --redirections);
+			res = socket_http_get_recursive (url, headers, code, rlen, --redirections);
 			free (url);
 			len = *rlen;
 		}
@@ -190,23 +190,34 @@ exit:
 }
 #endif
 
-static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut32 redirections) {
+static char *socket_http_get_recursive(const char *url, const char **headers, int *code, int *rlen, ut32 redirections) {
 	if (code) {
 		*code = 0;
 	}
 	if (rlen) {
 		*rlen = 0;
 	}
-	char *curl_env = r_sys_getenv ("R2_CURL");
-	if (!R_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
+	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
-		char *command = r_str_newf ("curl -sfL -o - \"%s\"", escaped_url);
+		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
+		if (headers) {
+			const char **header = headers;
+			while (*header) {
+				r_strbuf_appendf (sb, " -H '%s'", *header);
+				header++;
+			}
+		}
+		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
+		char *command = r_strbuf_drain (sb);
+		// eprintf ("--> %s\n", command);
 		char *res = r_sys_cmd_str (command, NULL, &len);
 		free (escaped_url);
 		free (command);
-		free (curl_env);
 		if (!res) {
+			if (code) {
+				*code = 404;
+			}
 			return NULL;
 		}
 		if (res) {
@@ -219,7 +230,6 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 		}
 		return res;
 	}
-	free (curl_env);
 #if R2__WINDOWS__
 	return http_get_w32 (url, code, rlen);
 #else
@@ -274,7 +284,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 				"Accept: */*\r\n"
 				"Host: %s:%s\r\n"
 				"\r\n", path, host, port);
-		response = socket_http_answer (s, code, rlen, redirections);
+		response = socket_http_answer (s, NULL, code, rlen, redirections);
 	} else {
 		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
 		response = NULL;
@@ -285,12 +295,47 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 #endif
 }
 
-R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
-	return socket_http_get_recursive (url, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
+R_API char *r_socket_http_get(const char *url, const char **headers, int *code, int *rlen) {
+	return socket_http_get_recursive (url, headers, code, rlen, SOCKET_HTTP_MAX_REDIRECTS);
 }
 
-R_API char *r_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
-	RSocket *s;
+R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
+	if (r_sys_getenv_asbool ("R2_CURL")) {
+		int len;
+		char *escaped_url = r_str_escape_sh (url);
+		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
+		if (headers) {
+			const char **header = headers;
+			while (*header) {
+				r_strbuf_appendf (sb, " -H '%s'", *header);
+				header++;
+			}
+		}
+		char *escaped_data = r_str_escape_sh (data);
+		r_strbuf_appendf (sb, " -d \"%s\"", escaped_data);
+		free (escaped_data);
+		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
+		char *command = r_strbuf_drain (sb);
+		// eprintf ("--> %s\n", command);
+		char *res = r_sys_cmd_str (command, NULL, &len);
+		free (escaped_url);
+		free (command);
+		if (!res) {
+			if (code) {
+				*code = 404;
+			}
+			return NULL;
+		}
+		if (res) {
+			if (code) {
+				*code = 200;
+			}
+			if (rlen) {
+				*rlen = len;
+			}
+		}
+		return res;
+	}
 	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
 	if (!uri) {
@@ -316,7 +361,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	} else {
 		path = "";
 	}
-	s = r_socket_new (ssl);
+	RSocket *s = r_socket_new (ssl);
 	if (!s) {
 		R_LOG_ERROR ("Cannot create socket");
 		free (uri);
@@ -329,6 +374,8 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 		return NULL;
 	}
 	/* Send */
+	// RStrBuf *sb = r_strbuf_new ("POST /%s HTTP/1.0\r\n");
+	// char *data = r_strbuf_drain (sb);
 	r_socket_printf (s,
 			"POST /%s HTTP/1.0\r\n"
 			"User-Agent: radare2 "R2_VERSION"\r\n"
@@ -339,7 +386,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 			"\r\n", path, host, atoi (port), (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
-	return socket_http_answer (s, code, rlen, 0);
+	return socket_http_answer (s, NULL, code, rlen, 0);
 }
 
 #if TEST

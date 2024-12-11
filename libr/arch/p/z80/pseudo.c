@@ -60,7 +60,7 @@ static char *replace(int argc, const char *argv[]) {
 	return r_strbuf_drain (sb);
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int argc = 0;
 	char *args = strdup (data);
 	args = r_str_replace (args, ",", " ", true);
@@ -69,11 +69,9 @@ static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
 	char *res = replace (argc, argv);
 	free (args);
 	if (!res) {
-		return false;
+		return NULL;
 	}
-	strcpy (str, res); // XXX
-	free (res);
-	return true;
+	return res;
 }
 
 #if Z80_IS_GB

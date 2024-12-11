@@ -1,0 +1,16 @@
+NAME=tailcall issue on cobalt
+FILE=bins/pe/cobalt.exe
+CMDS=<<EOF
+aaa
+0x00401742
+axt
+pd 2
+EOF
+EXPECT=<<EOF
+fcn.00401795 0x40182e [CODE:--x] jmp fcn.00401742
+            ; CODE XREF from fcn.00401795 @ 0x40182e(x)
+/ 83: fcn.00401742 ();
+|           0x00401742      56             push rsi
+|           0x00401743      53             push rbx
+EOF
+RUN

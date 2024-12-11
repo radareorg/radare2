@@ -70,20 +70,19 @@ static int tokenize(const char* in, char* out[]) {
 	return count;
 }
 
-static bool parse(RAsmPluginSession *aps, const char *data, char *str) {
+static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i;
 	char *argv[MAXARGS] = { NULL, NULL, NULL, NULL };
 	int argc = tokenize (data, argv);
-
+	char *str = malloc (strlen (data) + 128);
+	strcpy (str, data);
 	if (!replace (argc, argv, str, BUFSIZE)) {
 		strcpy (str, data);
 	}
-
 	for (i = 0; i < MAXARGS; i++) {
 		free (argv[i]);
 	}
-	r_str_fixspaces (str);
-	return true;
+	return r_str_fixspaces (str);
 }
 
 RAsmPlugin r_asm_plugin_evm = {
