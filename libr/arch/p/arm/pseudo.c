@@ -4,7 +4,7 @@
 
 static char *replace(int argc, const char *argv[]) {
 #define MAXPSEUDOOPS 10
-	int i, j, k, d;
+	int i, j, d;
 	char ch;
 	struct {
 		int narg;
