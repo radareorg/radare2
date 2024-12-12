@@ -44,13 +44,14 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return NULL;
 }
 
+// TODO: remove laddr, just pass RBinFileOptions which should be inside rbinfile
 static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.parse_start_symbols = true;
 
-	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (buf, &opts);
+	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (bf, buf, &opts);
 	if (mo) {
 		bf->bo->bin_obj = mo;
 		if (mo->chained_starts) {

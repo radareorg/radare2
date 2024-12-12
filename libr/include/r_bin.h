@@ -378,6 +378,19 @@ typedef struct r_bin_object_t {
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
+typedef struct r_bin_file_options_t {
+	const char *pluginname;
+	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // starting physical address to read from the target file
+	// ut64 paddr; // offset
+	ut64 sz;
+	int xtr_idx; // load Nth binary
+	int fd;
+	int rawstr;
+	bool nofuncstarts;
+	const char *filename;
+} RBinFileOptions;
+
 // XXX: RbinFile may hold more than one RBinObject?
 /// XX curplugin == o->plugin
 typedef struct r_bin_file_t {
@@ -401,25 +414,14 @@ typedef struct r_bin_file_t {
 	// struct r_bin_plugin_t *curplugin; // use o->plugin
 	RList *xtr_data;
 	Sdb *sdb;
-// #warning RBinFile.sdb_info will be removed in r2-5.7.0
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	void *addrinfo_priv; // future use to store abi-safe addrline info instead of k/v
 	struct r_bin_t *rbin;
 	int string_count;
+	// R2_600 - add RBinFileOptions here
+	RBinFileOptions *options;
 } RBinFile;
-
-typedef struct r_bin_file_options_t {
-	const char *pluginname;
-	ut64 baseaddr; // where the linker maps the binary in memory
-	ut64 loadaddr; // starting physical address to read from the target file
-	// ut64 paddr; // offset
-	ut64 sz;
-	int xtr_idx; // load Nth binary
-	int rawstr;
-	int fd;
-	const char *filename;
-} RBinFileOptions;
 
 typedef struct r_bin_create_options_t {
 	const char *pluginname;
