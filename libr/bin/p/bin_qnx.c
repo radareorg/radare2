@@ -269,6 +269,7 @@ RBinPlugin r_bin_plugin_qnx = {
 		.desc = "QNX executable file support",
 		.license = "LGPL-3.0-only",
 	},
+	.weak_guess = true,
 	.load = &load,
 	.destroy = &destroy,
 	.relocs = &relocs,

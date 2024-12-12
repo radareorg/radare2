@@ -382,6 +382,7 @@ RBinPlugin r_bin_plugin_s390 = {
 		.license = "LGPL-3.0-only",
 		.author = "Jose Antonio Romero",
 	},
+	.weak_guess = true,
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

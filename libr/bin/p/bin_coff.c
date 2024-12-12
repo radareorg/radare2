@@ -977,6 +977,7 @@ RBinPlugin r_bin_plugin_coff = {
 		.desc = "COFF format r_bin plugin",
 		.license = "LGPL-3.0-only",
 	},
+	.weak_guess = true,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

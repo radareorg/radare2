@@ -76,15 +76,15 @@ static RCoreHelpMessage help_msg_slash_ad = {
 static RCoreHelpMessage help_msg_slash_magic = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
-	"/me", " ", "like ?e similar to IRC's /me",
-	"/mm", " ", "search for known filesystems and mount them automatically",
+	"/me", " [msg]", "like ?e similar to IRC's /me",
+	"/mm", "", "search for known filesystems and mount them automatically",
 	"/mb", "", "search recognized RBin headers",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_slash = {
 	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
-				  "Use io.va for searching in non virtual addressing spaces",
+	"Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
 	"/!", " ff", "search for first occurrence not matching, command modifier",
@@ -341,11 +341,16 @@ hell:
 }
 
 static void cmd_search_bin(RCore *core, RInterval itv) {
-	ut64 from = itv.addr, to = r_itv_end (itv);
+	ut64 from = itv.addr;
+	ut64 to = r_itv_end (itv);
 	int size; // , sz = sizeof (buf);
-
+	if (to == UT64_MAX) {
+		size = r_io_size (core->io);
+		to = from + size;
+	}
 	int fd = core->io->desc->fd;
 	RBuffer *b = r_buf_new_with_io (&core->anal->iob, fd);
+
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
 		if (r_cons_is_breaked ()) {
@@ -354,6 +359,10 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		RBuffer *ref = r_buf_new_slice (b, from, to);
 		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, NULL, ref);
 		if (plug) {
+			// ignore bin plugins with lots of false positives
+			if (plug->weak_guess) {
+				goto next;
+			}
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->meta.name);
 			if (plug->size) {
 				RBinFileOptions opt = {
@@ -372,6 +381,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 				}
 			}
 		}
+next:;
 		r_buf_free (ref);
 		from++;
 	}
@@ -4780,12 +4790,20 @@ reread:
 		if (input[1] == '?') { // "/me"
 			r_core_cmd_help (core, help_msg_slash_magic);
 		} else if (input[1] == 'b') { // "/mb"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_magic, "/mb");
+				break;
+			}
 			bool bin_verbose = r_config_get_i (core->config, "bin.verbose");
-			r_config_set_i (core->config, "bin.verbose", false);
+			r_config_set_b (core->config, "bin.verbose", false);
 			// TODO : iter maps?
 			cmd_search_bin (core, search_itv);
-			r_config_set_i (core->config, "bin.verbose", bin_verbose);
+			r_config_set_b (core->config, "bin.verbose", bin_verbose);
 		} else if (input[1] == 'm') { // "/mm"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_magic, "/mm");
+				break;
+			}
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
@@ -4814,6 +4832,10 @@ reread:
 			}
 			eprintf ("\n");
 		} else if (input[1] == 'e') { // "/me"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_magic, "/me");
+				break;
+			}
 			r_cons_printf ("* r2 thinks%s\n", input + 2);
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
 			int ret;

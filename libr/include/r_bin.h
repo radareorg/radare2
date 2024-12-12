@@ -511,6 +511,7 @@ typedef struct r_bin_xtr_plugin_t {
 	RBinXtrData *(*extract)(RBin *bin, int idx);
 	RList *(*extractall)(RBin *bin);
 	bool loadbuf;
+	bool weak_guess;
 
 	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
@@ -589,6 +590,7 @@ typedef struct r_bin_plugin_t {
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;
+	bool weak_guess;
 	void *user;
 } RBinPlugin;
 
