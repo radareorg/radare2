@@ -356,7 +356,7 @@ static RCoreHelpMessage help_msg_aei = {
 	"Usage:", "aei", "[smp] [...]",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeis", " argc [argv] [envp]", "initialize entrypoint stack environment",
-	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
+	"aeim", "[?] [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 	"aeip", "", "initialize ESIL program counter to curseek",
 	NULL
 };
@@ -8881,7 +8881,6 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_aei);
-			cmd_esil_mem (core, "?");
 			break;
 		case '-':
 			r_esil_reset (esil);

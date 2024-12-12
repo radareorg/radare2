@@ -97,6 +97,7 @@ typedef enum {
 	R_CORE_VISUAL_MODE_CD = 4
 } RCoreVisualMode;
 
+// R2_600 - coresession
 typedef struct r_core_plugin_t {
 	RPluginMeta meta;
 	RCmdCb call; // returns true if command was handled, false otherwise.
