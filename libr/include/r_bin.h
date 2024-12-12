@@ -386,7 +386,7 @@ typedef struct r_bin_file_options_t {
 	ut64 sz;
 	int xtr_idx; // load Nth binary
 	int fd;
-	bool rawstr;
+	int rawstr;
 	bool nofuncstarts;
 	const char *filename;
 } RBinFileOptions;
