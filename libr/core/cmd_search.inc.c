@@ -356,7 +356,6 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		eprintf ("0x%08llx .. 0x%08llx\n", from, to);
 		RBuffer *ref = r_buf_new_slice (b, from, to);
 		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, NULL, ref);
 		if (plug) {
