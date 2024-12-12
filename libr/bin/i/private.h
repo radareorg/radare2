@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include <r_types.h>
 
-R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
+R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
 R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
@@ -37,5 +37,5 @@ R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classnam
 R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name);
 
 R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
-R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname);
+R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, RBinFileOptions *opt);
 #endif

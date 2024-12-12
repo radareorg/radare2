@@ -171,9 +171,9 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			if (!regular_entries) {
 				goto beach;
 			}
-			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) regular_entries, "iii",
-					info->entriesCount) != entries_size) {
-				R_LOG_ERROR ("incomplete local symbol entries");
+			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset,
+					(ut8*) regular_entries, "iii", info->entriesCount) != entries_size) {
+				R_LOG_ERROR ("Incomplete local symbol entries");
 				goto beach;
 			}
 			entries = regular_entries;
@@ -329,7 +329,7 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 		opts.symbols_off = bin->symbols_off - bin->hdr_offset;
 	}
 
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
+	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
 	if (mach0) {
 		mach0->user = cache;
 		mach0->va2pa = &bin_obj_va2pa;
@@ -971,7 +971,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		opts.header_at = bin->header_at;
 		opts.symbols_off = 0;
 
-		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (cache->buf, &opts);
+		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, cache->buf, &opts);
 		if (!mach0) {
 			goto beach;
 		}
