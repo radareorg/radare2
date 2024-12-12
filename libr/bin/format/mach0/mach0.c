@@ -2266,59 +2266,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->parse_start_symbols = false;
 }
 
-#if 0
-
-static void *duplicate_ptr(void *p) {
-	return p;
-}
-
-static void free_only_key(HtPPKv *kv) {
-	free (kv->key);
-}
-
-static size_t ptr_size(void *c) {
-	// :D
-	return 8;
-}
-// XXX should be deprecated its never called
-struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options) {
-	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
-	if (!mo) {
-		return NULL;
-	}
-	if (options) {
-		mo->verbose = options->verbose;
-		mo->header_at = options->header_at;
-		mo->symbols_off = options->symbols_off;
-		mo->parse_start_symbols = options->parse_start_symbols;
-	}
-	mo->symbols_vec = &options->bf->bo->symbols_vec; // probably unnecessary indirection if we pass bf or bo to the apis instead of mo
-	mo->options = *options;
-	mo->file = file;
-	size_t binsz = 0;
-	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
-	mo->size = binsz;
-	if (!buf) {
-		return MACH0_(mach0_free)(mo);
-	}
-	mo->b = r_buf_new ();
-	if (!r_buf_set_bytes (mo->b, buf, mo->size)) {
-		free (buf);
-		return MACH0_(mach0_free)(mo);
-	}
-	free (buf);
-	mo->dyld_info = NULL;
-	if (!init (mo)) {
-		return MACH0_(mach0_free)(mo);
-	}
-	mo->imports_by_ord_size = 0;
-	mo->imports_by_ord = NULL;
-	mo->imports_by_name = ht_pp_new ((HtPPDupValue)duplicate_ptr, free_only_key, (HtPPCalcSizeV)ptr_size);
-	return mo;
-}
-#endif
-
-struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
+struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *options) {
 	R_RETURN_VAL_IF_FAIL (buf && options->bf->bo, NULL);
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
 	if (mo) {
@@ -2330,7 +2278,8 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		mo->symbols_vec = &(options->bf->bo->symbols_vec);
 		mo->options = *options;
 		mo->limit = options->bf->rbin->limit;
-		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
+		// mo->nofuncstarts = options->nofuncstarts;
+		// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 		ut64 sz = r_buf_size (buf);
 		if (options) {
 #if 0
