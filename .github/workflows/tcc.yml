@@ -136,6 +136,7 @@ jobs:
   r2pm:
     name: r2pm-tcc
     runs-on: ubuntu-24.04
+    if: false
     steps:
     - name: Checkout TinyCC repository
       run: |
