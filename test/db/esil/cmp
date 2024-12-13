@@ -141,3 +141,14 @@ EXPECT=<<EOF
 0x1
 EOF
 RUN
+
+NAME=nofile aei
+ARGS=-a arm -b 64
+FILE=--
+CMDS=<<EOF
+ae 33,x0,:=;ar?x0
+EOF
+EXPECT=<<EOF
+0x00000021
+EOF
+RUN
