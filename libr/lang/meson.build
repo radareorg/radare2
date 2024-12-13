@@ -4,12 +4,13 @@ r_lang_sources = [
 
 spp_inc = [platform_inc, include_directories('../../shlr/spp')]
 # qjs_inc = [ include_directories('../../shlr/qjs/src') ]
-qjs_inc = '../../shlr/qjs/src'
-r_lang_sources += '../../shlr/qjs/src/quickjs.c'
-r_lang_sources += '../../shlr/qjs/src/libbf.c'
-r_lang_sources += '../../shlr/qjs/src/cutils.c'
-r_lang_sources += '../../shlr/qjs/src/libregexp.c'
-r_lang_sources += '../../shlr/qjs/src/libunicode.c'
+qjs = subproject('qjs')
+qjs_inc = qjs.get_variable('incs')
+r_lang_sources += '../../subprojects/qjs/src/quickjs.c'
+r_lang_sources += '../../subprojects/qjs/src/libbf.c'
+r_lang_sources += '../../subprojects/qjs/src/cutils.c'
+r_lang_sources += '../../subprojects/qjs/src/libregexp.c'
+r_lang_sources += '../../subprojects/qjs/src/libunicode.c'
 
 visibility_flags = [
   '-fvisibility=hidden',
