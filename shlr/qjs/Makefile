@@ -172,7 +172,7 @@ endif
 	echo 'static const char *const js_repl_qjs = "" \\' > js_repl.c
 	r2 -fqcpcc mini.qjs | grep -v ^const >> js_repl.c
 
-lang_qjs.${EXT_SO}: src js_repl.c js_require.c
+lang_qjs.${EXT_SO}: js_repl.c js_require.c
 	# $(MAKE) CFLAGS_OPT="-Oz -DCONFIG_VERSION=\\\"0.1\\\"" -C $(QJS_NAME) libquickjs.a
 #-Wl,-exported_symbols_list,symbols.lst
 	-$(CC) -flto -D 'CONFIG_VERSION="$(VERSION)"' -g -Oz -Wl,-dead_strip -std=c99 $(DUK_CFLAGS) -I quickjs $(QJS_CFLAGS) $(CFLAGS) -fPIC $(LDFLAGS_LIB) \

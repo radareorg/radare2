@@ -6,7 +6,8 @@
 
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
-#include <qjs/quickjs.h>
+//#include <qjs/quickjs.h>
+#include "quickjs.h"
 
 #include "../js_require.c"
 #include "../js_r2papi.c"
