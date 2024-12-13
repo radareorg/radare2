@@ -341,7 +341,7 @@ jobs:
         python-version: '3.10'
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install git+https://github.com/frida/meson.git@32af71f85f7eba55781e8404f2742a2c434f8c6f --break-system-packages
         pip install ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
@@ -388,7 +388,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install git+https://github.com/frida/meson.git@32af71f85f7eba55781e8404f2742a2c434f8c6f --break-system-packages
         pip install ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
@@ -441,7 +441,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install git+https://github.com/frida/meson.git@32af71f85f7eba55781e8404f2742a2c434f8c6f --break-system-packages
         pip install ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
@@ -491,7 +491,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
+        pip install git+https://github.com/frida/meson.git@32af71f85f7eba55781e8404f2742a2c434f8c6f --break-system-packages
         pip install ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
