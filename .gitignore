@@ -78,6 +78,7 @@ subprojects/capstone
 subprojects/capstone-v5
 subprojects/v35arm64
 subprojects/v35armv7
+subprojects/qjs
 shlr/.cs_tmp.zip
 sys/travis/*.txt
 sys/.mark_python-deps
