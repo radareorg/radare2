@@ -329,8 +329,12 @@ static void parse_function(const char **pp, RStrBuf *sb, AttrList *attrs) {
 		char params[1024] = {0};
 		size_t params_len = 0;
 		while (*p && paren_level > 0) {
-			if (*p == '(') paren_level++;
-			if (*p == ')') paren_level--;
+			if (*p == '(') {
+				paren_level++;
+			}
+			if (*p == ')') {
+				paren_level--;
+			}
 			if (paren_level > 0) {
 				params[params_len++] = *p;
 			}
@@ -447,6 +451,9 @@ char* parse_header(const char* header_content) {
 			func_p++;
 		}
 		size_t type_len = func_p - type_start;
+		if (type_len < 1) {
+			continue;
+		}
 		if (type_len > 0) {
 			func_p = skip_spaces (func_p);
 			const char *name_start = func_p;
