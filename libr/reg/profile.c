@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
+#include <r_util.h>
 #include <r_lib.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
@@ -242,22 +243,17 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			} else {
 				const char *r = NULL;
 				if (*first == '^') {
-					int endian = R_SYS_ENDIAN;
+					reg->endian = R_SYS_ENDIAN;
 					switch (first[1]) {
 					case 'l':
-						endian = R_SYS_ENDIAN_LITTLE;
+						reg->endian = R_SYS_ENDIAN_LITTLE;
 						break;
 					case 'b':
-						endian = R_SYS_ENDIAN_BIG;
+						reg->endian = R_SYS_ENDIAN_BIG;
 						break;
 					case 'm':
-						endian = R_SYS_ENDIAN_MIDDLE;
+						reg->endian = R_SYS_ENDIAN_MIDDLE;
 						break;
-					}
-					if (reg->config) {
-						reg->config->endian = endian;
-					} else {
-						R_LOG_WARN ("Cannot force reg profile endianness");
 					}
 				} else if (*first == '=') {
 					r = parse_alias (reg, tok, j);

@@ -127,8 +127,6 @@ typedef struct r_reg_set_t {
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
 } RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
 
-struct r_arch_config_t;
-#include <r_arch.h>
 typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
@@ -137,11 +135,11 @@ typedef struct r_reg_t {
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
 	char *roregs;
+	ut64 hasbits;
 	int iters;
 	int size;
 	int bits_default;
-	ut64 hasbits;
-	struct r_arch_config_t *config;
+	ut32 endian;
 	R_REF_TYPE;
 } RReg;
 

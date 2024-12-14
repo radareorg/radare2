@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake, rkx1209 */
 
+#include <r_esil.h>
 #include <r_anal.h>
+#include <r_arch.h>
+
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
@@ -289,7 +292,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 	return ret != 0;
 }
 
-R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
+R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	R_RETURN_IF_FAIL (esil && op);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (!esil->trace) {
