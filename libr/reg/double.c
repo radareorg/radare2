@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2015-2022 - pancake */
 
 #include <r_reg.h>
+#include <r_util.h>
 
 // TODO: add support for 80bit floating point value
 

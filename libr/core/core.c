@@ -2665,12 +2665,10 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->config = core->rasm->config;
 
 	r_ref (core->rasm->config);
-	r_unref (core->anal->reg->config);
-	core->anal->reg->config = core->rasm->config;
+	core->anal->reg->endian = core->rasm->config->endian;
 #else
 	r_ref_set (core->print->config, core->rasm->config);
 	r_ref_set (core->anal->config, core->rasm->config);
-	r_ref_set (core->anal->reg->config, core->rasm->config);
 #endif
 	// RAnal.new() doesnt initializes this field. but it should be refcounted
 	core->anal->print = core->print;
@@ -2855,7 +2853,6 @@ R_API void r_core_fini(RCore *c) {
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	/*
-	r_unref (c->anal->reg->config);
 	r_unref (c->anal->config);
 	*/
 	if (c->anal->esil) {

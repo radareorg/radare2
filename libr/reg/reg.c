@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
+#include <r_util.h>
 
 R_LIB_VERSION (r_reg);
 
@@ -298,8 +299,7 @@ R_API void r_reg_free(RReg *reg) {
 R_API RReg *r_reg_init(RReg *reg) {
 	R_RETURN_VAL_IF_FAIL (reg, NULL);
 	r_ref_init (reg, &r_reg_free);
-	reg->config = R_NEW0 (RArchConfig);
-	reg->config->endian = R_SYS_ENDIAN;
+	reg->endian = R_SYS_ENDIAN;
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		memset (&reg->regset[i], 0, sizeof (RRegSet));
@@ -380,10 +380,6 @@ R_API RReg *r_reg_clone(RReg *r) {
 	R_RETURN_VAL_IF_FAIL (r, NULL);
 	RListIter *iter;
 	RRegItem *reg;
-	int i;
-	if (r->config) {
-		r_ref (r->config);
-	}
 	RReg *rr = R_NEW0 (RReg);
 	if (!rr) {
 		return NULL;
@@ -391,6 +387,7 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->profile = dups (r->profile);
 	rr->reg_profile_cmt = dups (r->reg_profile_cmt);
 	rr->reg_profile_str = dups (r->reg_profile_str);
+	int i;
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
 		rr->name[i] = dups (r->name[i]);
 	}
@@ -402,7 +399,7 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->size = r->size;
 	rr->bits_default = r->bits_default;
 	rr->hasbits = r->hasbits;
-	rr->config = r->config;
+	rr->endian = r->endian;
 	r->allregs = r_list_newf (NULL);
 	r_list_foreach (r->allregs, iter, reg) {
 		RRegItem *ri = r_reg_item_clone (reg);
