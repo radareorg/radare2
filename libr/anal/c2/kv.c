@@ -24,9 +24,13 @@ static inline const char *skip_spaces(const char *p) {
 		p += 2;
 		while (*p) {
 			if (p[0] == '*' && p[1] == '/') {
+				p += 2;
 				break;
 			}
 			p++;
+		}
+		if (!*p) {
+			return p;
 		}
 	}
 	while (isspace ((ut8)*p)) {
@@ -113,7 +117,7 @@ static bool parse_member_typename(const char *b, const char *e, char **name, cha
 		*dimensions = r_str_ndup (d + 1, e - d + 2);
 	}
 	const char *name_begin = e - 1;
-	while (*name_begin && !isspace (*name_begin) && *name_begin != '*') {
+	while (name_begin > b && !isspace(*name_begin) && *name_begin != '*') {
 		name_begin--;
 	}
 	name_begin++;
@@ -303,10 +307,10 @@ static void parse_function(const char **pp, RStrBuf *sb, AttrList *attrs) {
 	if (*par == '(') {
 		const char *name_end = par;
 		par--;
-		while (isspace (*par)) {
+		while (isspace(*par)) {
 			par--;
 		}
-		while (!isspace (*par)) {
+		while (par > p && !isspace(*par)) {
 			par--;
 		}
 		par++;
@@ -391,15 +395,13 @@ char* parse_header(const char* header_content) {
 	RStrBuf *sb = r_strbuf_new ("");
 	const char *p = header_content;
 	while (*p) {
-		// handle /*
-		p = skip_spaces (p);
-#if 0
+		const char *old_p = p;
+		p = skip_spaces(p);
 		if (r_str_startswith (p, "typedef") && isspace ((ut8)p[7])) {
 			p += 7;
 			while (isspace((ut8)*p)) p++;
 			continue;
 		}
-#endif
 		if (r_str_startswith (p, "struct") && isspace((ut8)p[6])) {
 			p += 6;
 			parse_struct ("struct", &p, sb, &attrs);
@@ -418,28 +420,6 @@ char* parse_header(const char* header_content) {
 		}
 		if (r_str_startswith (p, "///")) {
 			p = parse_attributes (p + 3, &attrs);
-#if 0
-			const char *func_p = attr_p;
-			const char *type_start = func_p;
-			while (isalnum ((ut8)*func_p) || *func_p == '_' || *func_p == '*') {
-				func_p++;
-			}
-			size_t type_len = func_p - type_start;
-			if (type_len > 0) {
-				while (isspace((ut8)*func_p)) func_p++;
-				const char *name_start = func_p;
-				while (isalnum ((ut8)*func_p) || *func_p == '_') func_p++;
-				size_t name_len = func_p - name_start;
-				if (name_len > 0) {
-					while (isspace ((ut8)*func_p)) func_p++;
-					if (*func_p == '(') {
-						p = attr_p;
-						parse_function (&p, sb, &attrs);
-						continue;
-					}
-				}
-			}
-#endif
 			continue;
 		}
 		if (r_str_startswith (p, "//")) {
@@ -470,6 +450,9 @@ char* parse_header(const char* header_content) {
 			}
 		}
 		p = skip_spaces (p);
+		if (p == old_p) {
+			p++;
+		}
 	}
 	return r_strbuf_drain (sb);
 }
