@@ -518,7 +518,7 @@ char* parse_header(const char* header_content) {
 		skip_spaces (kvc, &p);
 		if (p == old_p) {
 #if 0
-			eprintf ("Syntax error, invalid token\n");
+			eprintf ("Syntax error, invalid token");
 			break;
 #endif
 			p++;
