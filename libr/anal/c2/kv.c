@@ -16,7 +16,9 @@ static const char *skip_until(const char *p, char ch, char ch2) {
 	return p;
 }
 
-static inline const char *skip_spaces(const char *p) {
+static inline bool skip_spaces(const char **op) {
+	const char *p = *op;
+	bool havespace = false;
 	while (isspace ((ut8)*p)) {
 		p++;
 	}
@@ -30,7 +32,9 @@ static inline const char *skip_spaces(const char *p) {
 			p++;
 		}
 		if (!*p) {
-			return p;
+			havespace = *op == p;
+			*op = p;
+			return havespace;
 		}
 	}
 	while (isspace ((ut8)*p)) {
@@ -42,10 +46,16 @@ static inline const char *skip_spaces(const char *p) {
 			p++;
 		}
 	}
-	if (isspace (*p)) {
-		return skip_spaces (p);
+	while (isspace ((ut8)*p)) {
+		p++;
 	}
-	return p;
+	if (isspace (*p)) {
+		*op = p;
+		return skip_spaces (op);
+	}
+	havespace = *op == p;
+	*op = p;
+	return havespace;
 }
 
 static const char *find_semicolon(const char *p) {
@@ -65,7 +75,7 @@ static const char *skip_until_semicolon(const char *p) {
 
 static const char *parse_attributes(const char *p, AttrList *attrs) {
 	attrs->count = 0;
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	while (*p == '@') {
 		p++;
 		const char *attr_start = p;
@@ -92,7 +102,7 @@ static const char *parse_attributes(const char *p, AttrList *attrs) {
 		strncpy (attrs->attr_keys[attrs->count], attr_name, 256);
 		strncpy (attrs->attr_values[attrs->count], attr_value, 256);
 		attrs->count++;
-		p = skip_spaces (p);
+		skip_spaces (&p);
 	}
 	return p;
 }
@@ -131,8 +141,7 @@ static bool parse_member_typename(const char *b, const char *e, char **name, cha
 static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrList *attrs) {
 	const char *p = *pp;
 	char struct_name[256] = "";
-	// AttrList attrs = { .count = 0 };
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	const char *name_start = p;
 	while (isalnum ((ut8)*p) || *p == '_') {
 		p++;
@@ -142,7 +151,7 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 		strncpy (struct_name, name_start, name_len);
 		struct_name[name_len] = '\0';
 	}
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	RStrBuf *args_sb = r_strbuf_new ("");
 	if (*p == '{') {
 		p++;
@@ -151,10 +160,10 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 		}
 		int member_idx = 0;
 		while (*p && *p != '}') {
-			p = skip_spaces (p);
+			skip_spaces (&p);
 			if (r_str_startswith (p, "///")) {
 				p = parse_attributes (p + 3, attrs);
-				p = skip_spaces (p);
+				skip_spaces (&p);
 			}
 			char *member_name = NULL;
 			char *member_type = NULL;
@@ -166,7 +175,8 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 			if (*semicolon == ';') {
 				const char *type_end = semicolon;
 				parse_member_typename (type_start, type_end, &member_name, &member_type, &dimensions);
-				p = skip_spaces (type_end + 1);
+				p = type_end + 1;
+				skip_spaces (&p);
 			} else {
 				// ERROR HERE
 				R_LOG_ERROR ("Missing semicolon");
@@ -202,7 +212,7 @@ static bool parse_struct(const char *type, const char **pp, RStrBuf *sb, AttrLis
 
 static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 	char enum_name[256] = "";
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	const char *name_start = p;
 	while (isalnum ((ut8)*p) || *p == '_') {
 		p++;
@@ -212,12 +222,12 @@ static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 		strncpy (enum_name, name_start, name_len);
 		enum_name[name_len] = '\0';
 	}
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	if (*p == '{') {
 		p++;
 		int value = 0;
 		while (*p && *p != '}') {
-			p = skip_spaces (p);
+			skip_spaces (&p);
 			if (r_str_startswith (p, "///")) {
 				p = parse_attributes (p + 3, attrs);
 			} else if (r_str_startswith (p, "//")) {
@@ -235,9 +245,10 @@ static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 			strncpy (member_name, name_start, name_len);
 			member_name[name_len] = '\0';
 
-			p = skip_spaces (p);
+			skip_spaces (&p);
 			if (*p == '=') {
-				p = skip_spaces (p + 1);
+				p++;
+				skip_spaces (&p);
 				const char *value_start = p;
 				while (isalnum ((ut8)*p) || *p == '_' || *p == '+' || *p == '-') {
 					p++;
@@ -246,7 +257,7 @@ static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 				char value_str[256];
 				strncpy (value_str, value_start, value_len);
 				value_str[value_len] = '\0';
-				value = atoi(value_str);
+				value = atoi (value_str);
 			}
 			char full_scope[512];
 			snprintf (full_scope, sizeof (full_scope), "%s.%s", enum_name, member_name);
@@ -255,7 +266,7 @@ static const char *parse_enum(const char *p, RStrBuf *sb, AttrList *attrs) {
 			}
 			r_strbuf_appendf (sb, "enum.%s=%d\n", full_scope, value);
 			value++;
-			p = skip_spaces (p);
+			skip_spaces (&p);
 			if (*p == ',') {
 				p++;
 			}
@@ -307,10 +318,10 @@ static void parse_function(const char **pp, RStrBuf *sb, AttrList *attrs) {
 	if (*par == '(') {
 		const char *name_end = par;
 		par--;
-		while (isspace(*par)) {
+		while (isspace (*par)) {
 			par--;
 		}
-		while (par > p && !isspace(*par)) {
+		while (par > p && !isspace (*par)) {
 			par--;
 		}
 		par++;
@@ -324,7 +335,7 @@ static void parse_function(const char **pp, RStrBuf *sb, AttrList *attrs) {
 	}
 
 	RStrBuf *func_args_sb = r_strbuf_new ("");
-	p = skip_spaces (p);
+	skip_spaces (&p);
 	if (*p == '(') {
 		p++;
 		// Parse parameters
@@ -363,7 +374,7 @@ static void parse_function(const char **pp, RStrBuf *sb, AttrList *attrs) {
 				param_name = r_str_newf ("arg%d", arg_idx);
 			}
 			r_strbuf_appendf (sb, "func.%s.%s=%s\n", func_name, param_name, param_type);
-			param_p = skip_spaces (param_p);
+			skip_spaces (&param_p);
 			if (*param_p == ',') {
 				param_p++;
 			}
@@ -396,13 +407,14 @@ char* parse_header(const char* header_content) {
 	const char *p = header_content;
 	while (*p) {
 		const char *old_p = p;
-		p = skip_spaces(p);
+		skip_spaces (&p);
 		if (r_str_startswith (p, "typedef") && isspace ((ut8)p[7])) {
 			p += 7;
 			while (isspace((ut8)*p)) p++;
+			// skip_spaces (&p);
 			continue;
 		}
-		if (r_str_startswith (p, "struct") && isspace((ut8)p[6])) {
+		if (r_str_startswith (p, "struct") && isspace ((ut8)p[6])) {
 			p += 6;
 			parse_struct ("struct", &p, sb, &attrs);
 			continue;
@@ -414,7 +426,7 @@ char* parse_header(const char* header_content) {
 			}
 			continue;
 		}
-		if (r_str_startswith (p, "enum") && isspace((ut8)p[4])) {
+		if (r_str_startswith (p, "enum") && isspace ((ut8)p[4])) {
 			p = parse_enum (p + 4, sb, &attrs);
 			continue;
 		}
@@ -430,27 +442,35 @@ char* parse_header(const char* header_content) {
 		while (isalnum ((ut8)*func_p) || *func_p == '_' || *func_p == '*') {
 			func_p++;
 		}
-		size_t type_len = func_p - type_start;
+		int type_len = func_p - type_start;
 		if (type_len < 1) {
+			if (p == old_p) {
+				R_LOG_ERROR ("Syntax error, invalid token");
+				break;
+			}
 			continue;
 		}
 		if (type_len > 0) {
-			func_p = skip_spaces (func_p);
+			skip_spaces (&func_p);
 			const char *name_start = func_p;
 			while (*func_p && isalnum ((ut8)*func_p) || *func_p == '_') {
 				func_p++;
 			}
 			size_t name_len = func_p - name_start;
 			if (name_len > 0) {
-				func_p = skip_spaces (func_p);
+				skip_spaces (&func_p);
 				if (*func_p == '(') {
 					parse_function (&p, sb, &attrs);
 					continue;
 				}
 			}
 		}
-		p = skip_spaces (p);
+		skip_spaces (&p);
 		if (p == old_p) {
+#if 0
+			eprintf ("Syntax error, invalid token\n");
+			break;
+#endif
 			p++;
 		}
 	}
