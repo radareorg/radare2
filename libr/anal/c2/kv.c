@@ -1,16 +1,44 @@
 #include <r_util.h>
 
+#define KVLEN 256
+
 typedef struct {
-	char attr_keys[10][256];
-	char attr_values[10][256];
+	char attr_keys[10][KVLEN];
+	char attr_values[10][KVLEN];
 	int count;
 } AttrList;
+
+// TODO: use this instead of fixed length buffers
+typedef struct {
+#if 0
+	size_t a, b;
+#else
+	const char *a;
+	const char *b;
+#endif
+} KVCToken;
 
 typedef struct {
 	RStrBuf *sb;
 	int line;
 	AttrList attrs;
+	KVCToken s;
 } KVCParser;
+
+static size_t kvctoken_len(KVCToken t) {
+	R_RETURN_VAL_IF_FAIL (t.a > t.b, 0);
+	return t.b - t.a;
+}
+
+static char *kvctoken_tostring(KVCToken t) {
+	size_t len = kvctoken_len (t);
+	return r_str_ndup (t.a, len);
+}
+
+static void kvctoken_append(KVCToken t, RStrBuf *sb) {
+	size_t len = kvctoken_len (t);
+	r_strbuf_append_n (sb, t.a, len);
+}
 
 static const char *skip_until(const char *p, char ch, char ch2) {
 	while (*p && *p != ch) {
@@ -89,24 +117,32 @@ static const char *parse_attributes(KVCParser *kvc, const char *p) {
 			p++;
 		}
 		size_t attr_len = p - attr_start;
-		char attr_name[256];
-		strncpy (attr_name, attr_start, attr_len);
-		attr_name[attr_len] = '\0';
+		if (attr_len >= KVLEN) {
+			// raise error here
+			R_LOG_ERROR ("attribute name length is too large");
+			return NULL;
+		}
+		char *attr_name = kvc->attrs.attr_keys[kvc->attrs.count];
+		r_str_ncpy (attr_name, attr_start, attr_len + 1);
 
-		char attr_value[256] = "true";
+		char *attr_value = kvc->attrs.attr_values[kvc->attrs.count];
 		if (*p == '(') {
 			p++;
 			const char *value_start = p;
 			p = skip_until (p, ')', 0);
 			size_t value_len = p - value_start;
-			strncpy (attr_value, value_start, value_len);
-			attr_value[value_len] = '\0';
+			if (value_len >= KVLEN) {
+				// raise error here
+				R_LOG_ERROR ("attribute name length is too large");
+				return NULL;
+			}
+			r_str_ncpy (attr_value, value_start, value_len + 1);
 			if (*p == ')') {
 				p++;
 			}
+		} else {
+			strcpy (attr_value, "true");
 		}
-		strncpy (kvc->attrs.attr_keys[kvc->attrs.count], attr_name, 256);
-		strncpy (kvc->attrs.attr_values[kvc->attrs.count], attr_value, 256);
 		kvc->attrs.count++;
 		skip_spaces (kvc, &p);
 	}
@@ -155,8 +191,12 @@ static bool parse_struct(KVCParser *kvc, const char *type, const char **pp) {
 		p++;
 	}
 	size_t name_len = p - name_start;
+	if (name_len >= sizeof (struct_name)) {
+		R_LOG_ERROR ("struct name is too large");
+		return false;
+	}
 	if (name_len > 0) {
-		strncpy (struct_name, name_start, name_len);
+		r_str_ncpy (struct_name, name_start, name_len + 1);
 		struct_name[name_len] = '\0';
 	}
 	skip_spaces (kvc, &p);
@@ -348,8 +388,7 @@ static void parse_function(KVCParser *kvc, const char **pp) {
 		while (*p && paren_level > 0) {
 			if (*p == '(') {
 				paren_level++;
-			}
-			if (*p == ')') {
+			} else if (*p == ')') {
 				paren_level--;
 			}
 			if (paren_level > 0) {
@@ -400,9 +439,11 @@ static void parse_function(KVCParser *kvc, const char **pp) {
 	*pp = p;
 }
 
-static void kvcparser_init(KVCParser *kvc) {
+static void kvcparser_init(KVCParser *kvc, const char *data) {
 	kvc->line = 0;
 	kvc->sb = r_strbuf_new ("");
+	kvc->s.a = data;
+	kvc->s.b = data + strlen (data);;
 }
 
 static void kvcparser_fini(KVCParser *kvc) {
@@ -412,7 +453,7 @@ static void kvcparser_fini(KVCParser *kvc) {
 char* parse_header(const char* header_content) {
 	KVCParser _kvc;
 	KVCParser *kvc = &_kvc;
-	kvcparser_init (&_kvc);
+	kvcparser_init (&_kvc, header_content);
 	const char *p = header_content;
 	while (*p) {
 		const char *old_p = p;
