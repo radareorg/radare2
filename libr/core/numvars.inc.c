@@ -370,7 +370,8 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 	case 'D': return core->offset - bb->addr;
 	case 'E': return bb->addr + bb->size;
 	case 'S': return bb->size;
-	case 'I': return bb->ninstr;
+	case 'I':
+	case 'i': return bb->ninstr;
 	case 'J':
 	case 'j': return bb->jump;
 	case 'F':
