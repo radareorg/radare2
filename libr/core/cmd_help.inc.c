@@ -1186,7 +1186,7 @@ static int cmd_help(void *data, const char *input) {
 				"$is", "$ij", "$if", "$ir", "$iv", "$in", "$ip",
 				"$fb", "$fs", "$fd", "$fe", "$f",
 				"$e",
-				"$BB", "$BI", "$BS", "$BE", "$BD", "$BC", "$B", "$BJ", "$Bj", "$BF", "$Bf",
+				"$BB", "$BI", "$Bi", "$BS", "$BE", "$BD", "$BC", "$B", "$BJ", "$Bj", "$BF", "$Bf",
 				"$FB", "$FI", "$FS", "$FE", "$Fs", "$FD", "$F",
 				"$Ja", "$M", "$MM",
 				"$o", "$p", "$P", "$s",
