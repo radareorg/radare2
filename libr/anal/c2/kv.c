@@ -1,22 +1,15 @@
 #include <r_util.h>
 
-#define KVLEN 256
-
 typedef struct {
-	char attr_keys[10][KVLEN];
-	char attr_values[10][KVLEN];
-	int count;
-} AttrList;
-
-// TODO: use this instead of fixed length buffers?
-typedef struct {
-#if 0
-	size_t a, b;
-#else
 	const char *a;
 	const char *b;
-#endif
 } KVCToken;
+
+typedef struct {
+	KVCToken keys[10];
+	KVCToken values[10];
+	size_t count;
+} AttrList;
 
 typedef struct {
 	RStrBuf *sb;
@@ -41,9 +34,13 @@ static char *kvctoken_tostring(KVCToken t) {
 	return NULL;
 }
 
-static void kvctoken_append(KVCToken t, RStrBuf *sb) {
-	size_t len = kvctoken_len (t);
-	r_strbuf_append_n (sb, t.a, len);
+static bool kvctoken_equals(KVCToken a, KVCToken b) {
+	int alen = kvctoken_len (a);
+	int blen = kvctoken_len (b);
+	if (alen != blen) {
+		return false;
+	}
+	return !memcmp (a.a, b.a, alen);
 }
 
 static void kvctoken_trim(KVCToken *t) {
@@ -53,14 +50,6 @@ static void kvctoken_trim(KVCToken *t) {
 	while (t->b >= t->a && isspace (t->b[-1])) {
 		t->b--;
 	}
-}
-
-static const char *kvctoken_lastspace(KVCToken t) {
-	const char *p = t.b;
-	while (t.a < p && !isspace (*p)) {
-		p--;
-	}
-	return p;
 }
 
 static inline bool kvctoken_eof(KVCToken t) {
@@ -191,25 +180,10 @@ repeat:
 	}
 }
 
-static const char *find_semicolon(const char *p) {
-	while (*p && *p != ';') {
-		p++;
-	}
-	return p;
-}
-
-static const char *skip_until_semicolon(const char *p) {
-	p = find_semicolon (p);
-	if (*p == ';') {
-		p++;
-	}
-	return p;
-}
 
 static const char *consume_word(KVCParser *kvc) {
 	skip_only_spaces (kvc);
 	const char *word = kvc->s.a;
-	const char *p = word;
 	while (true) {
 		const char ch = kvc_peek (kvc, 0);
 		if (!ch) {
@@ -293,10 +267,8 @@ static bool parse_attributes(KVCParser *kvc) {
 		bool duppedkey = false;
 		{
 			int i;
-			char *aname = kvctoken_tostring (attr_name);
 			for (i = 0; i < kvc->attrs.count; i++) {
-				const char *name = kvc->attrs.attr_keys[i];
-				if (!strcmp (name, aname)) {
+				if (kvctoken_equals (kvc->attrs.keys[i], attr_name)) {
 					duppedkey = true;
 					atidx = i;
 					break;
@@ -305,15 +277,13 @@ static bool parse_attributes(KVCParser *kvc) {
 		}
 		if (!duppedkey) {
 			kvc->attrs.count++;
-			char *an = kvc->attrs.attr_keys[atidx];
-			r_str_ncpy (an, attr_name.a, kvctoken_len (attr_name) + 1);
+			kvc->attrs.keys[atidx] = attr_name;
 		}
-		char *av = kvc->attrs.attr_values[atidx];
-		// XXX TODO: use KVCToken too
 		if (attr_value.a) {
-			r_str_ncpy (av, attr_value.a, kvctoken_len (attr_value) + 1);
+			kvc->attrs.values[atidx] = attr_value;
 		} else {
-			r_str_ncpy (av, "true", 5);
+			kvc->attrs.values[atidx].a = "true";
+			kvc->attrs.values[atidx].b = kvc->attrs.values[atidx].a + 4;
 		}
 	}
 	skip_until (kvc, '\n', 0);
@@ -323,51 +293,18 @@ static bool parse_attributes(KVCParser *kvc) {
 static void apply_attributes(KVCParser *kvc, const char *type, const char *scope) {
 	int i;
 	for (i = 0; i < kvc->attrs.count; i++) {
-		r_strbuf_appendf (kvc->sb, "%s.%s.@.%s=%s\n",
-			type, scope, kvc->attrs.attr_keys[i],
-			kvc->attrs.attr_values[i]);
+		KVCToken key = kvc->attrs.keys[i];
+		KVCToken val = kvc->attrs.values[i];
+		r_strbuf_appendf (kvc->sb, "%s.%s.@.", type, scope);
+		r_strbuf_append_n (kvc->sb, key.a, kvctoken_len (key));
+		r_strbuf_append (kvc->sb, "=");
+		r_strbuf_append_n (kvc->sb, val.a, kvctoken_len (val));
+		r_strbuf_append (kvc->sb, "\n");
 	}
 	kvc->attrs.count = 0; // Reset after applying
 }
 
-static char *parse_member_dimensions(KVCToken *name) {
-	const char *o = kvctoken_find (*name, "[");
-	const char *c = kvctoken_find (*name, "]");
-	if (o && c) {
-		if (o < c) {
-			name->b = o;
-			return r_str_ndup (o + 1, c - o - 2);
-		}
-	}
-	return NULL;
-}
-
-static bool parse_member_typename(const char *b, const char *e, char **name, char **type, char **dimensions) {
-	const char *d = NULL;
-	*dimensions = NULL;
-	if (e > b && e[-1] == ']') {
-		d = e - 1;
-		do {
-			d--;
-		} while (*d != '[');
-		e = d;
-		*dimensions = r_str_ndup (d + 1, e - d + 2);
-	}
-	const char *name_begin = e - 1;
-	while (name_begin > b && !isspace (*name_begin) && *name_begin != '*') {
-		name_begin--;
-	}
-	name_begin++;
-	*name = r_str_ndup (name_begin, e - name_begin);
-	*type = r_str_ndup (b, name_begin - b);
-	r_str_trim (*name);
-	r_str_trim (*type);
-	return true;
-}
-
 static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
-	// readjust name and rtyp
-	// kvctoken_trim (fun_rtyp);
 	fun_rtyp->b = fun_name->b;
 	// eprintf ("i TYPENAME t (%s)\n", kvctoken_tostring (*fun_rtyp));
 	// eprintf ("i TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
@@ -375,7 +312,6 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	while (p > fun_rtyp->a) {
 		if (!isalnum (*p) || isspace (*p)) {
 			if (*p != '[' && *p != ']') {
-				eprintf ("BREAK %c\n", *p);
 				p++;
 				break;
 			}
@@ -392,7 +328,6 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 
 // works for unions and structs
 static bool parse_struct(KVCParser *kvc, const char *type) {
-	const char *p = kvc->s.a;
 	KVCToken struct_name = { .a = consume_word (kvc) };
 	if (!struct_name.a) {
 		R_LOG_ERROR ("Cannot consume word");
@@ -416,7 +351,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		parse_attributes (kvc);
 		skip_spaces (kvc);
 
-		char *dimensions = NULL;
 		KVCToken member_type = {0};
 		KVCToken member_name = {0};
 		KVCToken member_dimm = {0};
@@ -427,7 +361,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			const char ch0 = kvc_peek (kvc, 0);
 			if (ch0 == '}') {
 				// end of struct definition
-				char ch = kvc_getch (kvc);
+				kvc_getch (kvc);
 				kvc_getch (kvc);
 				break;
 			}
@@ -441,7 +375,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			break;
 		}
 		memcpy (&member_name, &member_type, sizeof (member_name));
-		eprintf ("ENTRY ((%s)))\n", kvctoken_tostring (member_type));
+		// eprintf ("ENTRY ((%s)))\n", kvctoken_tostring (member_type));
 		kvctoken_typename (&member_type, &member_name);
 		kvc_getch (kvc); // skip semicolon
 		kvctoken_trim (&member_type);
@@ -473,7 +407,6 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *mt = kvctoken_tostring (member_type);
 		char *mn = kvctoken_tostring (member_name);
 		char *md = kvctoken_tostring (member_dimm);
-		char array_info[256] = "";
 		char full_scope[512];
 		if (!*mn) {
 			break;
@@ -517,7 +450,6 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	r_strbuf_appendf (kvc->sb, "%s=enum\n", en);
 	apply_attributes (kvc, "enum", en);
 	free (en);
-	const char *name_start = kvc->s.a;
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
@@ -694,11 +626,10 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 	return false;
 }
 
-char* parse_header(const char* header_content) {
+R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	KVCParser _kvc = {0};
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, header_content);
-	const char *p = header_content;
 	while (!kvctoken_eof (kvc->s)) {
 		skip_spaces (kvc);
 		const char *word = kvc_peekn (kvc, 6);
@@ -722,8 +653,13 @@ char* parse_header(const char* header_content) {
 		}
 		skip_spaces (kvc);
 	}
-	char *res = r_strbuf_drain (kvc->sb);
-	kvc->sb = NULL;
+	char *res = NULL;
+	if (kvc->error && errmsg) {
+		*errmsg = strdup (kvc->error);
+	} else {
+		res = r_strbuf_drain (kvc->sb);
+		kvc->sb = NULL;
+	}
 	kvcparser_fini (kvc);
 	return res;
 }
@@ -740,7 +676,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	char *result = parse_header ((const char *)content);
+	char *result = kvc_parse ((const char *)content, NULL);
 	if (result) {
 		printf ("%s\n", result);
 		free (result);

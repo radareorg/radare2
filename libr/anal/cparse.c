@@ -151,7 +151,15 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 	return str;
 }
 
+R_IPI char* kvc_parse(const char* header_content, char **errmsg);
+R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
+	return kvc_parse (code, error_msg);
+}
+
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
+#if 1
+	return r_anal_cparse2 (anal, code, error_msg);
+#else
 	char *str = NULL;
 	TCCState *s1 = new_tcc (anal);
 	if (!s1) {
@@ -170,4 +178,5 @@ R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
 	}
 	tcc_delete (s1);
 	return str;
+#endif
 }
