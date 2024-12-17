@@ -3504,6 +3504,11 @@ static void _handle_call(RCore *core, char *line, char **str) {
 	R_RETURN_IF_FAIL (core && line && str);
 	if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "x86")) {
 		*str = strstr (line, "call ");
+		if (!*str) {
+			if (strstr (line, "[reloc.")) {
+				*str = strstr (line, "jmp ");
+			}
+		}
 	} else if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "arm")) {
 		*str = strstr (line, " b ");
 		if (*str && strstr (*str, " 0x")) {
@@ -3673,18 +3678,21 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		} else {
 #define USE_PREFIXES 1
 #if USE_PREFIXES
-			// XXX leak
-			str = strstr (line, " obj.");
+			str = strstr (line, " reloc.");
 			if (!str) {
-				str = strstr (line, " str.");
+			// XXX leak
+				str = strstr (line, " obj.");
 				if (!str) {
-					str = strstr (line, " imp.");
+					str = strstr (line, " str.");
 					if (!str) {
-						str = strstr (line, " fcn.");
+						str = strstr (line, " imp.");
 						if (!str) {
-							str = strstr (line, " hit.");
+							str = strstr (line, " fcn.");
 							if (!str) {
-								str = strstr (line, " sub.");
+								str = strstr (line, " hit.");
+								if (!str) {
+									str = strstr (line, " sub.");
+								}
 							}
 						}
 					}
@@ -3733,7 +3741,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			if (!str) {
 				str = strstr (line, "sym.");
 				if (!str) {
-					str = strstr (line, "fcn.");
+					str = strstr (line, "reloc.");
+					if (!str) {
+						str = strstr (line, "fcn.");
+					}
 				}
 			}
 		}
