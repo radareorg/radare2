@@ -387,6 +387,7 @@ static bool blacklisted_word(const char* name) {
 		"func.",
 		"\\",
 		"fcn.0",
+		"plt",
 		"assert",
 		"__stack_chk_guard",
 		"__stderrp",
@@ -513,26 +514,38 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	RListIter *iter;
 	r_list_foreach (strings, iter, name) {
 		r_str_trim (name);
+		char *fcn0 = strstr (name, "fcn.0");
+		if (fcn0) {
+			*fcn0 = 0;
+		}
 		if (blacklisted_word (name)) {
 			continue;
 		}
-		char *dot = strchr (name, '.');
-		if (dot) {
-			name = dot + 1;
+		char *bra = strchr (name, '[');
+		if (bra) {
+			strcpy (name, bra + 1);
+		} else {
+			char *dot = strchr (name, '.');
+			if (dot) {
+				name = dot + 1;
+			}
 		}
 		if (*name == '"') {
 			r_str_replace_char (name, '"', '_');
 		}
 		r_str_replace_char (name, ';', '_');
 		char *sp = strchr (name, ' ');
-		if (sp) {
+		if (sp && !strchr (name, ']')) {
 			name = sp + 1;
 			char *sp2 = strchr (name, ' ');
 			if (sp2) {
 				*sp2 = 0;
 			}
 		}
-		r_list_append (names, strdup (name));
+		r_str_replace_char (name, ']', '_');
+		if (*name) {
+			r_list_append (names, strdup (name));
+		}
 	}
 	free (pdsfq);
 	char *bestname = NULL;
@@ -544,6 +557,8 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		}
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
+		} else if (r_str_startswith (name, "reloc.")) {
+			name += 6;
 		} else if (r_str_startswith (name, "sym.imp.")) {
 			name += 4; // 8?
 		} else if (r_str_startswith (name, "sym.")) {
