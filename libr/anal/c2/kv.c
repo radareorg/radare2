@@ -308,7 +308,6 @@ static bool parse_attributes(KVCParser *kvc) {
 			char *an = kvc->attrs.attr_keys[atidx];
 			r_str_ncpy (an, attr_name.a, kvctoken_len (attr_name) + 1);
 		}
-		eprintf ("KEY (%s)\n", kvctoken_tostring (attr_name));
 		char *av = kvc->attrs.attr_values[atidx];
 		// XXX TODO: use KVCToken too
 		if (attr_value.a) {
@@ -436,6 +435,10 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				R_LOG_ERROR ("Cant find semicolon in struct field %d %c", ch0, ch0);
 			}
 			return false;
+		}
+		if (member_type.a == member_type.b) {
+			kvc_getch (kvc);
+			break;
 		}
 		memcpy (&member_name, &member_type, sizeof (member_name));
 		eprintf ("ENTRY ((%s)))\n", kvctoken_tostring (member_type));
@@ -655,7 +658,8 @@ static bool parse_function(KVCParser *kvc) {
 			r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
 			r_strbuf_appendf (func_args_sb, "%s%s", arg_idx?",":"", an);
 			arg_idx++;
-			argp = ++pa;
+			pa++;
+			argp = pa;
 		} while (comma);
 	}
 	char *func_args = r_strbuf_drain (func_args_sb);

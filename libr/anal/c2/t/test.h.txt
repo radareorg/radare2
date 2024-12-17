@@ -1,0 +1,8 @@
+Foo=struct
+struct.Foo.a=int
+struct.Foo.a.@.pack=1
+struct.Foo.a.@.brow=123
+struct.Foo.b=char
+struct.Foo.c=ut8,0,32
+struct.Foo=a,b,c
+
