@@ -561,7 +561,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 				char *val = sdb_array_get (TDB, var2, 0, NULL);
 				if (val) {
 					char *arr = sdb_array_get (TDB, var2, 2, NULL);
-					int arrnum = atoi (arr);
+					int arrnum = arr? atoi (arr): 0;
 					free (arr);
 					if (multiline) {
 						r_cons_printf ("  %s", val);

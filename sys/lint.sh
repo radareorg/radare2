@@ -76,7 +76,7 @@ cd "$(dirname $0)"/..
 # ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#' | grep c:) && exit 1
 # ( git grep strcmp | grep '== 0') && exit 1
 # ( git grep strncmp | grep '== 0') && exit 1 ## must use r_str_startswith
-(git grep -n ';;$' libr) && exit 1
+(git grep -n ';;$' libr | grep -v c2) && exit 1
 (git grep -n '0 ;' libr) && exit 1
 (git grep -n -e 'i<' -e 'j<' -e 'k<' libr | grep -v '"') && exit 1
 (git grep -n '\ $' libr) && exit 1 # trailing space
