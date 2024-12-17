@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2013-2024 - pancake */
 
-#include <r_util.h>
 #include <r_asm.h>
-#include <r_types.h>
 #include "c/tcc.h"
 #include "c/tccgen.c"
 #include "c/tccpp.c"
@@ -157,7 +155,7 @@ R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
 }
 
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
-	if (anal->newcparser) {
+	if (anal->opt.newcparser) {
 		return r_anal_cparse2 (anal, code, error_msg);
 	}
 	char *str = NULL;
