@@ -1,4 +1,4 @@
-TESTS=test test-enum a c b invalid j macho union crash
+TESTS=test test-enum a c b invalid j macho union crash vararg
 
 all:
 	rm -f a.out
