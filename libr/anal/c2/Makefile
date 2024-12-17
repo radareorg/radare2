@@ -1,4 +1,4 @@
-TESTS=test test-enum a c b invalid j macho
+TESTS=test test-enum a c b invalid j macho union crash
 
 all:
 	rm -f a.out

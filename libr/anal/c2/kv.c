@@ -111,7 +111,7 @@ static const char *kvc_find_semicolon(KVCParser *kvc) {
 			// kvc_getch (kvc);
 			return kvc->s.a;
 		}
-		if (!isalnum (c) && !isspace (c)) {
+		if (!isalnum (c) && !isspace (c) && c != '_') {
 			if (c != '[' && c != ']' && c != '*') {
 				return NULL;
 			}
@@ -318,6 +318,8 @@ static void apply_attributes(KVCParser *kvc, const char *type, const char *scope
 
 static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = fun_name->b;
+	kvctoken_trim (fun_rtyp);
+	kvctoken_trim (fun_name);
 	// eprintf ("i TYPENAME t (%s)\n", kvctoken_tostring (*fun_rtyp));
 	// eprintf ("i TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 	const char *p = fun_rtyp->b - 1;
@@ -334,6 +336,9 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = p;
 	kvctoken_trim (fun_rtyp);
 	kvctoken_trim (fun_name);
+	if (fun_name->a > fun_name->b) {
+		fun_name->b = fun_name->a;
+	}
 	// eprintf ("o TYPENAME t (%s)\n", kvctoken_tostring (*fun_rtyp));
 	// eprintf ("o TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 }
@@ -393,7 +398,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				break;
 			}
 			if (ch0) {
-				R_LOG_ERROR ("Cant find semicolon in struct field %d %c", ch0, ch0);
+				R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
 			}
 			return false;
 		}
@@ -417,17 +422,19 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		member_name.b = kvc->s.a - 1;
 		kvctoken_trim (&member_name);
 #endif
-		const char *bracket = kvctoken_find (member_name, "[");
-		if (bracket) {
-			// parse dimensions
-			member_dimm.a = bracket + 1;
-			member_dimm.b = member_name.b;
-			member_name.b = member_dimm.a - 1;
-			member_dimm.b = kvctoken_find (member_dimm, "]");
-			if (member_dimm.b) {
-				kvc_skipn (kvc, kvctoken_len (member_dimm));
-			} else {
-				R_LOG_ERROR ("Missing ] in struct field dimension");
+		if (member_name.a) {
+			const char *bracket = kvctoken_find (member_name, "[");
+			if (bracket) {
+				// parse dimensions
+				member_dimm.a = bracket + 1;
+				member_dimm.b = member_name.b;
+				member_name.b = member_dimm.a - 1;
+				member_dimm.b = kvctoken_find (member_dimm, "]");
+				if (member_dimm.b) {
+					kvc_skipn (kvc, kvctoken_len (member_dimm));
+				} else {
+					R_LOG_ERROR ("Missing ] in struct field dimension");
+				}
 			}
 		}
 
@@ -444,7 +451,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		} else {
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,0\n", type, full_scope, mt, off);
 		}
-		off += kvc_typesize (kvc, mt);
+		if (!strcmp (type, "struct")) {
+			off += kvc_typesize (kvc, mt);
+		}
 		apply_attributes (kvc, type, full_scope);
 		r_strbuf_appendf (args_sb, "%s%s", member_idx?",":"", mn);
 		member_idx++;
@@ -599,9 +608,11 @@ static bool parse_function(KVCParser *kvc) {
 	r_strbuf_appendf (kvc->sb, "%s=func\n", fn);
 	apply_attributes (kvc, "func", fn);
 
+#if 0
 	eprintf ("RETURN (%s)\n", kvctoken_tostring (fun_rtyp));
 	eprintf ("FNAME (%s)\n", fn);
 	eprintf ("FPARM (%s)\n", kvctoken_tostring (fun_parm));
+#endif
 
 	RStrBuf *func_args_sb = r_strbuf_new ("");
 	int arg_idx = 0;
