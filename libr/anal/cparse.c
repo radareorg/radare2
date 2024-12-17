@@ -157,9 +157,9 @@ R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
 }
 
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
-#if 1
-	return r_anal_cparse2 (anal, code, error_msg);
-#else
+	if (anal->newcparser) {
+		return r_anal_cparse2 (anal, code, error_msg);
+	}
 	char *str = NULL;
 	TCCState *s1 = new_tcc (anal);
 	if (!s1) {
@@ -178,5 +178,4 @@ R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
 	}
 	tcc_delete (s1);
 	return str;
-#endif
 }
