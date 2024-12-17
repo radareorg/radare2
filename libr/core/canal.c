@@ -523,7 +523,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		}
 		char *bra = strchr (name, '[');
 		if (bra) {
-			strcpy (name, bra + 1);
+			r_str_cpy (name, bra + 1);
 		} else {
 			char *dot = strchr (name, '.');
 			if (dot) {
