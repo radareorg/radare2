@@ -87,7 +87,7 @@ static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
 }
 
 static void kvc_error(KVCParser *kvc, const char *msg) {
-	eprintf ("Error at line %d: %s\n", kvc->line, msg);
+	R_LOG_ERROR ("Parsing problem at line %d: %s", kvc->line, msg);
 	kvc->error = msg;
 	kvc->s.a = kvc->s.b;
 }
@@ -556,7 +556,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		if (ch == '}') {
 			closing = true;
 		} else if (ch == ',') {
-			// next 
+			// next
 		} else {
 			kvc_error (kvc, "Expected , or } inside enum");
 			return false;
