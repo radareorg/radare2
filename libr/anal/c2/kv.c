@@ -334,8 +334,22 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = p;
 	kvctoken_trim (fun_rtyp);
 	kvctoken_trim (fun_name);
-	//eprintf ("o TYPENAME t (%s)\n", kvctoken_tostring (*fun_rtyp));
+	// eprintf ("o TYPENAME t (%s)\n", kvctoken_tostring (*fun_rtyp));
 	// eprintf ("o TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
+}
+
+static int kvc_typesize(KVCParser *kvc, const char *name) {
+	if (r_str_endswith (name, "8")) {
+		return 1;
+	}
+	if (r_str_endswith (name, "16")) {
+		return 2;
+	}
+	if (r_str_endswith (name, "64")) {
+		return 8;
+	}
+	// TODO: honor alignment, packing, access types
+	return 4;
 }
 
 // works for unions and structs
@@ -358,6 +372,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	r_strbuf_appendf (kvc->sb, "%s=%s\n", sn, type);
 	apply_attributes (kvc, type, sn);
 	int member_idx = 0;
+	int off = 0;
 	while (true) {
 		skip_spaces (kvc);
 		parse_attributes (kvc);
@@ -425,10 +440,11 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		}
 		snprintf (full_scope, sizeof (full_scope), "%s.%s", sn, mn);
 		if (md) {
-			r_strbuf_appendf (kvc->sb, "%s.%s=%s,0,%s\n", type, full_scope, mt, md);
+			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
 		} else {
-			r_strbuf_appendf (kvc->sb, "%s.%s=%s\n", type, full_scope, mt);
+			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,0\n", type, full_scope, mt, off);
 		}
+		off += kvc_typesize (kvc, mt);
 		apply_attributes (kvc, type, full_scope);
 		r_strbuf_appendf (args_sb, "%s%s", member_idx?",":"", mn);
 		member_idx++;
