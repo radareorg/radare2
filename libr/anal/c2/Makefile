@@ -1,4 +1,4 @@
-TESTS=test test-enum a c b invalid j
+TESTS=test test-enum a c b invalid j macho
 
 all:
 	rm -f a.out

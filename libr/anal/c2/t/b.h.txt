@@ -23,4 +23,5 @@ enum.Enum.FOO=1
 enum.Enum.BAR=2
 enum.Enum.COW=3
 enum.Enum.LOW=-1
+enum.Enum=Enum,BAR,COW,LOW
 

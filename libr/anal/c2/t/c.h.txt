@@ -11,4 +11,5 @@ Foo=enum
 enum.Foo.FOO=1
 enum.Foo.BAR=2
 enum.Foo.COW=3
+enum.Foo=Foo,BAR,COW
 

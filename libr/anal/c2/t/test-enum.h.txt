@@ -3,4 +3,5 @@ enum.Foo.FOO=1
 enum.Foo.BAR=2
 enum.Foo.LOW=3
 enum.Foo.COW=-1
+enum.Foo=Foo,BAR,LOW,COW
 

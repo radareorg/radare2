@@ -151,7 +151,20 @@ static inline void skip_only_spaces(KVCParser *kvc) {
 	}
 }
 
-static inline void skip_spaces(KVCParser *kvc) { // TODO: rename to skip_only_spacesand_comments
+static void skip_semicolons(KVCParser *kvc) {
+	while (true) {
+		char ch = kvc_peek (kvc, 0);
+		if (!ch) {
+			break;
+		}
+		if (ch && ch != ';' && !isspace (ch)) {
+			break;
+		}
+		kvc_getch (kvc);
+	}
+}
+
+static void skip_spaces(KVCParser *kvc) { // TODO: rename to skip_only_spacesand_comments
 	bool havespace = false;
 repeat:
 	skip_only_spaces (kvc);
@@ -179,7 +192,6 @@ repeat:
 		goto repeat;
 	}
 }
-
 
 static const char *consume_word(KVCParser *kvc) {
 	skip_only_spaces (kvc);
@@ -448,8 +460,8 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	enum_name.b = kvc->s.a;
 	char *en = kvctoken_tostring (enum_name);
 	r_strbuf_appendf (kvc->sb, "%s=enum\n", en);
+	RStrBuf *enumstr = NULL;
 	apply_attributes (kvc, "enum", en);
-	free (en);
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
@@ -495,22 +507,36 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		}
 
 		char full_scope[512];
-		char *en = kvctoken_tostring (enum_name);
 		char *mn = kvctoken_tostring (member_name);
 		apply_attributes (kvc, "enum", en);
 		snprintf (full_scope, sizeof (full_scope), "%s.%s", en, mn);
 		if (member_value.a) {
-			int nv = atoi (member_value.a);
-			r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, nv);
-			value = nv;
+			st64 nv = r_num_get (NULL, member_value.a);
+			if (r_str_startswith (member_value.a, "0x")) {
+				r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+			} else {
+				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
+			}
+			value = nv; // r_num_get (NULL, member_value.a);
 		} else {
 			r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, value);
 		}
+		if (enumstr) {
+			r_strbuf_appendf (enumstr, ",%s", mn);
+		} else {
+			enumstr = r_strbuf_new (en);
+		}
+		free (mn);
 		value++;
 	}
-	// if (*p == '}') { p++; }
+	if (enumstr) {
+		char *es = r_strbuf_drain (enumstr);
+		r_strbuf_appendf (kvc->sb, "enum.%s=%s\n", en, es);
+		free (es);
+	}
 	char ch = kvc_peek (kvc, 0);
 	if (ch == ';') {
+		skip_semicolons (kvc);
 		kvc_getch (kvc);
 	}
 	return true;
@@ -532,6 +558,7 @@ static bool parse_function(KVCParser *kvc) {
 	fun_name.a = fun_rtyp.a;
 	if (!skip_until (kvc, '(', 0)) {
 		kvc_error (kvc, "Cannot find ( in function definition");
+		// r_sys_breakpoint();
 		return false;
 	}
 	fun_name.b = kvc->s.a;
@@ -649,9 +676,10 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 #endif
 		skip_spaces (kvc);
 		if (!hasparse) {
+			skip_semicolons (kvc); // hack
 			parse_function (kvc);
+			skip_spaces (kvc);
 		}
-		skip_spaces (kvc);
 	}
 	char *res = NULL;
 	if (kvc->error && errmsg) {
