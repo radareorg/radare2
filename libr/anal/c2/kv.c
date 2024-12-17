@@ -664,6 +664,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 	return res;
 }
 
+#if MAIN
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		eprintf ("Usage: %s <header_file.h>\n", argv[0]);
@@ -685,3 +686,4 @@ int main(int argc, char *argv[]) {
 	free (content);
 	return 0;
 }
+#endif
