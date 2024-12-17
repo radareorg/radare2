@@ -3507,6 +3507,10 @@ static void _handle_call(RCore *core, char *line, char **str) {
 		if (!*str) {
 			if (strstr (line, "[reloc.")) {
 				*str = strstr (line, "jmp ");
+				char *bra = strchr (line, ']');
+				if (bra) {
+					*bra = 0;
+				}
 			}
 		}
 	} else if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "arm")) {

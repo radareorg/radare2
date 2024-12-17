@@ -177,6 +177,7 @@ EXPECT=<<EOF
 0x100001461 str.Unix2003
 0x100001468 call sym.imp.compat_mode
 0x100001468 "bin/ls", "Unix2003"
+0x10000158d reloc.optind
 0x1000015b4 str.CLICOLOR
 0x1000015bb call sym.imp.getenv
 0x1000015bb "CLICOLOR"
