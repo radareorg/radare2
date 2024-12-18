@@ -788,6 +788,72 @@ typedef struct r_anal_esil_dfg_node_t {
 	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
+typedef struct r_anal_esil_change_reg_t {
+	int idx;
+	ut64 data;
+} RAnalEsilRegChange;
+
+typedef struct r_anal_esil_change_mem_t {
+	int idx;
+	ut8 data;
+} RAnalEsilMemChange;
+
+typedef struct r_anal_esil_register_access_t {
+	const char *name;
+	ut64 value;
+	// TODO: size
+} RAnalEsilRegAccess;
+
+typedef struct r_anal_esil_memory_access_t {
+	char *data;
+	ut64 addr;
+	// TODO: size
+} RAnalEsilMemAccess;
+
+typedef struct r_anal_esil_trace_access_t {
+	union {
+		RAnalEsilRegAccess reg;
+		RAnalEsilMemAccess mem;
+	};
+	bool is_write;
+	bool is_reg;
+} RAnalEsilTraceAccess;
+
+typedef struct r_anal_esil_trace_op_t {
+	ut64 addr;
+	ut32 start;
+	ut32 end; // 1 past the end of the op for this index
+} RAnalEsilTraceOp;
+
+static inline void ae_fini_access(RAnalEsilTraceAccess *access) {
+	if (access->is_reg) {
+		return;
+	}
+	free (access->mem.data);
+}
+
+R_VEC_TYPE(RVecAnalEsilTraceOp, RAnalEsilTraceOp);
+R_VEC_TYPE_WITH_FINI(RVecAnalEsilAccess, RAnalEsilTraceAccess, ae_fini_access);
+
+typedef struct r_anal_esil_trace_db_t {
+	RVecAnalEsilTraceOp ops;
+	RVecAnalEsilAccess accesses;
+	HtUU *loop_counts;
+} RAnalEsilTraceDB;
+
+typedef struct r_anal_esil_trace_t {
+	RAnalEsilTraceDB db;
+	int idx;
+	int end_idx;
+	int cur_idx;
+	HtUP *registers;
+	HtUP *memory;
+	RRegArena *arena[R_REG_TYPE_LAST];
+	ut64 stack_addr;
+	ut64 stack_size;
+	ut8 *stack_data;
+} RAnalEsilTrace;
+
 typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
@@ -1584,6 +1650,9 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg);
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg, bool use_map_info, bool use_maps);
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
+
+R_API bool r_anal_esil_trace_init(RAnalEsilTrace *trace, REsil *esil, RReg *reg, ut64 stack_addr, ut64 stack_size);
+
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
