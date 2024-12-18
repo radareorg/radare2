@@ -4,12 +4,9 @@ r_lang_sources = [
 
 spp_inc = [platform_inc, include_directories('../../shlr/spp')]
 # qjs_inc = [ include_directories('../../shlr/qjs/src') ]
-qjs_inc = '../../shlr/qjs/src'
-r_lang_sources += '../../shlr/qjs/src/quickjs.c'
-r_lang_sources += '../../shlr/qjs/src/libbf.c'
-r_lang_sources += '../../shlr/qjs/src/cutils.c'
-r_lang_sources += '../../shlr/qjs/src/libregexp.c'
-r_lang_sources += '../../shlr/qjs/src/libunicode.c'
+qjs = subproject('qjs')
+qjs_inc = qjs.get_variable('incs')
+qjs_static = qjs.get_variable('qjs_static')
 
 visibility_flags = [
   '-fvisibility=hidden',
@@ -30,6 +27,7 @@ r_lang = library('r_lang', r_lang_sources,
     r_crypto_dep,
     r_cons_dep
   ],
+  link_with: qjs_static,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -51,6 +49,7 @@ r_lang_static = static_library('r_lang_static', r_lang_sources,
     r_crypto_static_dep,
     r_cons_static_dep
   ],
+  link_with: qjs_static,
   install: true,
   implicit_include_directories: false,
 )
