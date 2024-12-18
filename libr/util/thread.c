@@ -36,7 +36,7 @@ static void *_r_th_launcher(void *_th) {
 		while (!th->ready) {
 			// spinlock
 #ifdef	__GNUC__
-			asm volatile ("nop");
+			__asm__ volatile ("nop");
 #else
 	//		r_sys_usleep (1);
 #endif
