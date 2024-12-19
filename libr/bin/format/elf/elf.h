@@ -61,6 +61,7 @@ typedef struct r_bin_elf_symbol_t {
 	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 	bool is_imported;
+	bool is_internal;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
