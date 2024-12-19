@@ -3574,7 +3574,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
-	int asm_bytes = r_config_get_i (core->config, "asm.bytes");
+	bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_b (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
@@ -3586,7 +3586,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "asm.tabs", 0);
-	r_config_set_i (core->config, "asm.bytes", 0);
+	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "scr.html", false);
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
@@ -3939,7 +3939,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 restore_conf:
 	r_config_set_b (core->config, "asm.offset", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
-	r_config_set_i (core->config, "asm.bytes", asm_bytes);
+	r_config_set_b (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_b (core->config, "asm.emu", asm_emu);
