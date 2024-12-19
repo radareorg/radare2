@@ -3639,6 +3639,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	}
 	ut64 addr = UT64_MAX;
 	ut64 oaddr = UT64_MAX;
+	// r_core_cmd0 (core, "afs"); // TODO include function name
 	for (i = 0; i < count; i++) {
 		addr = UT64_MAX;
 		char *str;
