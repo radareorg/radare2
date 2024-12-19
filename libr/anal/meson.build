@@ -3,6 +3,7 @@ subdir('d')
 r_anal_sources = [
   'c2/kv.c',
   'anal.c',
+  'anal_esil_trace.c',
   'anplugs.c',
   'bb.c',
   'block.c',
