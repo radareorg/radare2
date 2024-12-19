@@ -114,7 +114,7 @@ R_API void r_cons_grep_expression(const char *str) {
 	}
 	if (len > 0 && str[len] == '?') {
 		grep->counter = 1;
-		r_str_ncpy (buf, str, R_MIN (len, sizeof (buf) - 1));
+		r_str_ncpy (buf, str, sizeof (buf) - 1);
 		buf[len] = 0;
 		len--;
 	} else {
@@ -1011,9 +1011,12 @@ continuation:
 		}
 	}
 
-	const int ob_len = r_strbuf_length (ob);
+	int ob_len = r_strbuf_length (ob);
 	cons->context->buffer_len = ob_len;
-	if (grep->counter) {
+
+	// count before uniq
+	// XXX dupe from the code below
+	if (grep->counter && !grep->sort_uniq) {
 		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
 		free (cons->context->buffer);
 		char *cntstr = r_str_newf ("%d\n", cnt);
@@ -1025,7 +1028,6 @@ continuation:
 		r_strbuf_free (ob);
 		return;
 	}
-
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;
 		cons->context->buffer = r_strbuf_drain (ob);
@@ -1033,8 +1035,8 @@ continuation:
 		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
 		cons->context->buffer[ob_len] = 0;
 		r_strbuf_free (ob);
+		ob = NULL;
 	}
-
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list) \
 		if (list) { \
@@ -1046,11 +1048,9 @@ continuation:
 					memcpy (ptr + slen, "\n", 2); \
 					ptr += slen + 1; \
 				} \
-				nl++; \
 			} \
 		}
 		RListIter *iter;
-		int nl = 0;
 		char *ptr = cons->context->buffer;
 		char *str;
 		RConsContext *ctx = cons->context;
@@ -1067,9 +1067,9 @@ continuation:
 				r_list_uniq_inplace (ctx->sorted_lines, cmpstrings);
 				r_list_free (ctx->unsorted_lines);
 				ctx->unsorted_lines = NULL;
-				nl = 0;
 			}
 		}
+		const int nl = r_list_length (ctx->sorted_lines);
 		cons->context->buffer_len = 0;
 		INSERT_LINES (ctx->unsorted_lines);
 		INSERT_LINES (ctx->sorted_lines);
@@ -1079,6 +1079,19 @@ continuation:
 		ctx->sorted_lines = NULL;
 		r_list_free (ctx->unsorted_lines);
 		ctx->unsorted_lines = NULL;
+	}
+	// count after uniq
+	if (grep->counter && grep->sort_uniq) {
+		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
+		free (cons->context->buffer);
+		char *cntstr = r_str_newf ("%d\n", cnt);
+		size_t cntstr_len = cntstr? strlen (cntstr): 0;
+		cons->context->buffer = cntstr;
+		cons->context->buffer_len = cntstr_len;
+		cons->context->buffer_sz = cntstr_len + 1;
+		cons->num->value = cons->lines;
+		r_strbuf_free (ob);
+		return;
 	}
 }
 
