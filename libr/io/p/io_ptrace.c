@@ -299,7 +299,7 @@ static void show_help(void) {
 	eprintf ("Usage: :cmd args\n"
 		" :ptrace   - use ptrace io\n"
 		" :mem      - use /proc/pid/mem io if possible\n"
-		" :tls      - use /proc/pid/mem io if possible\n"
+		" :tls      - find the thread local storage address\n"
 		" :pid      - show targeted pid\n"
 		" :pid <#>  - select new pid\n");
 }
