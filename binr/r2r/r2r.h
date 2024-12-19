@@ -129,6 +129,11 @@ typedef struct r2r_run_config_t {
 	const char *rasm2_cmd;
 	const char *json_test_file;
 	ut64 timeout_ms;
+	int shallow;
+	// TODO: not yet used
+	bool skip_cmd;
+	bool skip_fuzz;
+	bool skip_asm;
 } R2RRunConfig;
 
 typedef struct r2r_process_output_t {

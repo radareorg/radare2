@@ -1,4 +1,4 @@
-.Dd Mar 17, 2024
+.Dd Dec 20, 2024
 .Dt R2R 1
 .Sh NAME
 .Nm r2r
@@ -19,6 +19,7 @@
 .Op Fl C Ar chdir
 .Op Fl o Ar file
 .Op Fl s Ar ignore
+.Op Fl S Ar shallow
 .Op Fl t Ar seconds
 .Op [test-(dir|file) ...]
 .Sh DESCRIPTION
@@ -57,6 +58,8 @@ Specify the path where the fuzzed binaries are
 Output test run information in JSON format to file
 .It Fl s Ar test
 Set R2R_SKIP_(TEST)=1 to skip running that test type
+.It Fl S Ar shallow
+Set R2R_SHALLOW=N to skip a random N percentage of the tests
 .It Fl t Ar seconds
 Timeout per test (default is (30*60))
 .El
