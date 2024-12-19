@@ -3574,7 +3574,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
-	int asm_bytes = r_config_get_i (core->config, "scr.bytes");
+	int asm_bytes = r_config_get_i (core->config, "asm.bytes");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_b (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
