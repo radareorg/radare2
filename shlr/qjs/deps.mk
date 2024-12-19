@@ -18,6 +18,6 @@ endif
 endif
 
 QJSOBJS=$(subst .c,.o,$(QJSFILES))
-QJS_FILES=$(addprefix $(SHLR)/qjs/src/,$(QJSFILES))
-QJS_OBJS=$(addprefix $(SHLR)/qjs/src/,$(QJSOBJS))
-CFLAGS+=-I$(SHLR)/qjs/src
+QJS_FILES=$(addprefix $(SPRJ)/qjs/,$(QJSFILES))
+QJS_OBJS=$(addprefix $(SPRJ)/qjs/,$(QJSOBJS))
+CFLAGS+=-I$(SPRJ)/qjs/
