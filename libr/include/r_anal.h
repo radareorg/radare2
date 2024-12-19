@@ -788,32 +788,32 @@ typedef struct r_anal_esil_dfg_node_t {
 	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
-typedef struct r_anal_esil_change_reg_t {
+typedef struct r_anal_esil_trace_reg_change_t {
 	int idx;
 	ut64 data;
-} RAnalEsilRegChange;
+} RAnalEsilTraceRegChange;
 
-typedef struct r_anal_esil_change_mem_t {
+typedef struct r_anal_esil_trace_mem_change_t {
 	int idx;
 	ut8 data;
-} RAnalEsilMemChange;
+} RAnalEsilTraceMemChange;
 
-typedef struct r_anal_esil_register_access_t {
+typedef struct r_anal_esil_trace_register_access_t {
 	const char *name;
 	ut64 value;
 	// TODO: size
-} RAnalEsilRegAccess;
+} RAnalEsilTraceRegAccess;
 
-typedef struct r_anal_esil_memory_access_t {
+typedef struct r_anal_esil_trace_memory_access_t {
 	char *data;
 	ut64 addr;
 	// TODO: size
-} RAnalEsilMemAccess;
+} RAnalEsilTraceMemAccess;
 
 typedef struct r_anal_esil_trace_access_t {
 	union {
-		RAnalEsilRegAccess reg;
-		RAnalEsilMemAccess mem;
+		RAnalEsilTraceRegAccess reg;
+		RAnalEsilTraceMemAccess mem;
 	};
 	bool is_write;
 	bool is_reg;
@@ -846,6 +846,7 @@ typedef struct r_anal_esil_trace_t {
 	int idx;
 	int end_idx;
 	int cur_idx;
+	RReg *reg;
 	HtUP *registers;
 	HtUP *memory;
 	RRegArena *arena[R_REG_TYPE_LAST];
