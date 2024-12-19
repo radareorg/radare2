@@ -17,6 +17,23 @@ paddr      vaddr       phaddr     vhaddr     type
 EOF
 RUN
 
+NAME=o3
+FILE=--
+CMDS=<<EOF
+on file://bins/elf/ezpz 0x4000 r
+?ee ok
+o
+om
+EOF
+EXPECT=<<EOF
+ 3 - r-- 0x0000c3ef bins/elf/ezpz
+- 1 fd: 3 +0x00000000 0x00004000 - 0x000103ee r--
+EOF
+EXPECT_ERR=<<EOF
+ok
+EOF
+RUN
+
 NAME=m1slice.v35
 ARGS=-a arm.v35
 FILE=bins/mach0/ls-m1
