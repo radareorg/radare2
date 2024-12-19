@@ -3532,6 +3532,33 @@ static void _handle_call(RCore *core, char *line, char **str) {
 	}
 }
 
+static char *strpfx(char *line) {
+	char *str = strstr (line, " reloc.");
+	if (!str) {
+		// XXX leak
+		str = strstr (line, " fn.");
+		if (str) {
+			return str;
+		}
+		str = strstr (line, " obj.");
+		if (!str) {
+			str = strstr (line, " str.");
+			if (!str) {
+				str = strstr (line, " imp.");
+				if (!str) {
+					str = strstr (line, " fcn.");
+					if (!str) {
+						str = strstr (line, " hit.");
+						if (!str) {
+							str = strstr (line, " sub.");
+						}
+					}
+				}
+			}
+		}
+	}
+	return str;
+}
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RAnalOp to know
 // when we have a call and such
@@ -3547,6 +3574,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
+	bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_b (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
@@ -3558,6 +3586,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "asm.tabs", 0);
+	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "scr.html", false);
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
@@ -3604,15 +3633,20 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.color", use_color);
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
-	if (!line || !*line || count < 1) {
+	if (R_STR_ISEMPTY (line) || count < 1) {
 	//	R_FREE (s);
 		goto restore_conf;
 	}
 	ut64 addr = UT64_MAX;
 	ut64 oaddr = UT64_MAX;
+	// r_core_cmd0 (core, "afs"); // TODO include function name
 	for (i = 0; i < count; i++) {
 		addr = UT64_MAX;
 		char *str;
+		if (strstr (line, "XREF from")) {
+			line += strlen (line) + 1;
+			continue;
+		}
 		ox = strstr (line, "0x");
 		qo = strchr (line, '\"');
 		R_FREE (string);
@@ -3683,26 +3717,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		} else {
 #define USE_PREFIXES 1
 #if USE_PREFIXES
-			str = strstr (line, " reloc.");
-			if (!str) {
-			// XXX leak
-				str = strstr (line, " obj.");
-				if (!str) {
-					str = strstr (line, " str.");
-					if (!str) {
-						str = strstr (line, " imp.");
-						if (!str) {
-							str = strstr (line, " fcn.");
-							if (!str) {
-								str = strstr (line, " hit.");
-								if (!str) {
-									str = strstr (line, " sub.");
-								}
-							}
-						}
-					}
-				}
-			}
+			str = strpfx (line);
 #else
 			if (strchr (line, ';')) {
 				const char *dot = r_str_rchr (line, NULL, '.');
@@ -3718,6 +3733,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 #endif
 		}
 		if (str) {
+			char *atsign = strchr (str, '@');
+			if (atsign) {
+				*atsign = 0;
+			}
 			char *qoe = strchr (str + 1, '\x1b');
 			if (!qoe) {
 				qoe = strchr (str + 1, ';');
@@ -3890,6 +3909,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
 						}
+						if (string2) {
+							if (!strcmp (string, string2)) {
+								string2 = NULL;
+							}
+						}
 						r_cons_printf ("%s%s%s%s%s%s%s\n",
 							r_str_get (linecolor),
 							r_str_get (string2), string2? " ": "", string,
@@ -3916,6 +3940,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 restore_conf:
 	r_config_set_b (core->config, "asm.offset", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
+	r_config_set_b (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_b (core->config, "asm.emu", asm_emu);
