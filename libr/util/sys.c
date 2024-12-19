@@ -558,6 +558,18 @@ err_r_sys_get_env:
 #endif
 }
 
+R_API void r_sys_setenv_asbool(const char *key, bool v) {
+	R_RETURN_IF_FAIL (key);
+	r_sys_setenv (key, v? "1": "0");
+}
+
+R_API void r_sys_setenv_asut64(const char *key, ut64 n) {
+	R_RETURN_IF_FAIL (key);
+	char *env = r_str_newf ("%"PFMT64d, n);
+	r_sys_setenv (key, env);
+	free (env);
+}
+
 R_API bool r_sys_getenv_asbool(const char *key) {
 	R_RETURN_VAL_IF_FAIL (key, false);
 	char *env = r_sys_getenv (key);
