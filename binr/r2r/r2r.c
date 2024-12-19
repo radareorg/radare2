@@ -477,6 +477,10 @@ int main(int argc, char **argv) {
 		r_num_irand ();
 		state.run_config.shallow = shallow;
 	}
+	state.run_config.skip_cmd = r_sys_getenv_asbool ("R2R_SKIP_CMD");
+	state.run_config.skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
+	state.run_config.skip_json = r_sys_getenv_asbool ("R2R_SKIP_JSON");
+	state.run_config.skip_fuzz = r_sys_getenv_asbool ("R2R_SKIP_FUZZ");
 	state.run_config.rasm2_cmd = "rasm2";
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = (timeout_sec > UT64_MAX / 1000) ? UT64_MAX : timeout_sec * 1000;

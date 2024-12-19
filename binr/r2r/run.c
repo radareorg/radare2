@@ -1403,7 +1403,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	int needsabi = r2r_test_needsabi (test);
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
-		if (r_sys_getenv_asbool ("R2R_SKIP_CMD")) {
+		if (config->skip_cmd) {
 			success = true;
 			ret->run_failed = false;
 		} else {
@@ -1435,7 +1435,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		}
 		break;
 	case R2R_TEST_TYPE_ASM:
-		if (r_sys_getenv_asbool ("R2R_SKIP_ASM")) {
+		if (config->skip_asm) {
 			success = true;
 			ret->run_failed = false;
 		} else {
@@ -1458,7 +1458,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		}
 		break;
 	case R2R_TEST_TYPE_JSON:
-		if (r_sys_getenv_asbool ("R2R_SKIP_JSON")) {
+		if (config->skip_json) {
 			success = true;
 			ret->run_failed = false;
 		} else {
@@ -1481,7 +1481,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		}
 		break;
 	case R2R_TEST_TYPE_FUZZ:
-		if (r_sys_getenv_asbool ("R2R_SKIP_FUZZ")) {
+		if (config->skip_fuzz) {
 			success = true;
 			ret->run_failed = false;
 		} else {
