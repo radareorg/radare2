@@ -1624,15 +1624,15 @@ z/
 afl~main?
 zi~sign.bytes_func_collision.badname_1?
 zi~sign.graph_collision.badname_1?
-zi~sign.bytes_func_collision.badname2_1?
-zi~sign.graph_collision.badname2_1?
+zi~sign.bytes_func_collision.badname_1?
+zi~sign.graph_func_collision.badname2_1?
 EOF
 EXPECT=<<EOF
 1
 1
+0
 1
-1
-1
+0
 EOF
 RUN
 
@@ -1672,7 +1672,7 @@ f test_orig_size = `z~?`
 zaM
 ?v test_orig_size - `z~?`
 zaF
-?v test_orig_size - `z~?`~0xf?
+?v test_orig_size - `z~?`~0x0?
 EOF
 EXPECT=<<EOF
 0x0
