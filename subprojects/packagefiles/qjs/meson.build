@@ -10,7 +10,7 @@ sources = [
 
 incs = include_directories('.')
 
-qjs_static = static_library( 
+qjs_static = static_library(
   'qjs', sources,
   include_directories: incs
 )
