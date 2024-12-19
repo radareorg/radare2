@@ -366,12 +366,12 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	}
 	struct_name.b = kvc->s.a;
 	skip_spaces (kvc);
-	RStrBuf *args_sb = r_strbuf_new ("");
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
 		R_LOG_ERROR ("Expected { after name in struct");
 		return false;
 	}
+	RStrBuf *args_sb = r_strbuf_new ("");
 	kvc_getch (kvc);
 	char *sn = kvctoken_tostring (struct_name);
 	r_strbuf_appendf (kvc->sb, "%s=%s\n", sn, type);
@@ -400,6 +400,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			if (ch0) {
 				R_LOG_ERROR ("Cant find semicolon in struct field chr(%d)='%c'", ch0, ch0);
 			}
+			free (sn);
+			r_strbuf_free (args_sb);
 			return false;
 		}
 		if (member_type.a == member_type.b) {
@@ -443,6 +445,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *md = kvctoken_tostring (member_dimm);
 		char full_scope[512];
 		if (!*mn) {
+			free (mt);
+			free (mn);
+			free (md);
 			break;
 		}
 		snprintf (full_scope, sizeof (full_scope), "%s.%s", sn, mn);
@@ -491,6 +496,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
 		R_LOG_ERROR ("Expected { after name in enum");
+		free (en);
 		return false;
 	}
 	kvc_getch (kvc);
@@ -528,6 +534,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			// next
 		} else {
 			kvc_error (kvc, "Expected , or } inside enum");
+			free (en);
 			return false;
 		}
 
@@ -564,6 +571,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		skip_semicolons (kvc);
 		kvc_getch (kvc);
 	}
+	free (en);
 	return true;
 }
 
@@ -643,6 +651,8 @@ static bool parse_function(KVCParser *kvc) {
 			char *at = kvctoken_tostring (arg_type);
 			r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
 			r_strbuf_appendf (func_args_sb, "%s%s", arg_idx?",":"", an);
+			free (an);
+			free (at);
 			arg_idx++;
 			pa++;
 			argp = pa;
@@ -654,6 +664,7 @@ static bool parse_function(KVCParser *kvc) {
 	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
 	free (func_args);
 	free (fn);
+	free (fr);
 	return true;
 }
 

@@ -596,7 +596,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	if (dbg->coreb.core) {
 		ut64 v = r_reg_getv (dbg->reg, "rax");
 		dbg->coreb.cmdf (dbg->coreb.core, "'f dx.value=0x%08"PFMT64x, v);
-		R_LOG_INFO ("'f dx.value = 0x%08"PFMT64x"\n", v);
+		R_LOG_INFO ("'f dx.value = 0x%08"PFMT64x, v);
 	}
 
 	/* Restore bytes at PC and remove the breakpoint reference */
