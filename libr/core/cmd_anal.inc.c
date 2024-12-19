@@ -1096,8 +1096,8 @@ static RCoreHelpMessage help_msg_ax = {
 	"axd", " addr [at]", "add data ref",
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axf", "[?] [addr]", "find data/code references from this address",
-	"axff[j]", " [addr]", "find data/code references from this function",
-	"axg", "[j*] [addr]", "show xrefs graph to reach current function",
+	"axff", "[*jq] [addr]", "find data/code references from this function",
+	"axg", "[*j] [addr]", "show xrefs graph to reach current function",
 	// "axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
 	// "axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axi", " addr [at]", "add indirect code reference (see ax?)",
@@ -10754,9 +10754,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	} break;
 	case 'f':
 		if (input[1] == 'f') { // "axff"
+			bool quiet = false;
+			bool r2mode = false;
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			PJ *pj = NULL;
-			if (input[2] == 'j') { // "axffj"
+			if (input[2] == '*') { // "axff*"
+				r2mode = true;
+			} else if (input[2] == 'q') { // "axffq"
+				quiet = true;
+			} else if (input[2] == 'j') { // "axffj"
 				// start a new JSON object
 				pj = r_core_pj_new (core);
 				pj_a (pj);
@@ -10775,8 +10781,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						pj_ks (pj, "name", name);
 						pj_end (pj);
 					} else {
-						r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-							r_anal_ref_type_tostring(refi->type), refi->at, refi->addr, name);
+						if (r2mode) {
+							r_cons_printf ("ax%c 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+								refi->type, refi->addr, refi->at);
+						} else if (quiet) {
+							r_cons_printf ("%s\n", name);
+						} else {
+							r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+								r_anal_ref_type_tostring (refi->type), refi->at, refi->addr, name);
+						}
 					}
 				}
 				RVecAnalRef_free (refs);
