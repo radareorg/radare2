@@ -1845,46 +1845,49 @@ static int cmd_on(RCore *core, int argc, char *argv[]) {
 			if (!strcmp (argv[0], "-")) {
 				path = "malloc://512";
 				perm = R_PERM_RW;
-				continue;
+				break;
 			}
 			path = argv[0];
 			if (r_str_startswith (path, "malloc://")) {
 				perm = R_PERM_RW;	//HACK
 			}
-			continue;
+			break;
 		case 1:
 			if (!r_num_is_valid_input (core->num, argv[1])) {
-				continue;
+				break;
 			}
 			vaddr = r_num_math (core->num, argv[1]);
-			continue;
+			break;
 		case 2:
 			perm = r_str_rwx (argv[2]);
-			continue;
+			break;
 		case 3:
 			fd = r_io_fd_open (core->io, path, perm, 0664);
 			if (fd < 0) {
+				R_LOG_ERROR ("Cannot open file at %s", path);
 				return fd;
 			}
 			if (r_num_is_valid_input (core->num, argv[3])) {
 				vsize = R_MIN (r_num_math (core->num, argv[3]),
 					r_io_fd_size (core->io, fd));
-				continue;
 			} else {
 				vsize = r_io_fd_size (core->io, fd);
 			}
-			continue;
+			break;
 		}
 	}
-	if (argc < 3) {
+	if (argc < 4) {
 		fd = r_io_fd_open (core->io, path, perm, 0664);
 		if (fd < 0) {
+			R_LOG_ERROR ("Cannot open file %s", path);
 			return fd;
 		}
+	}
+	if (fd >= 0 && vsize < 1) {
 		vsize = r_io_fd_size (core->io, fd);
 	}
 	if (!r_io_map_add (core->io, fd, perm, 0ULL, vaddr, vsize)) {
-		R_LOG_WARN ("Couldn't create map");
+		R_LOG_WARN ("Couldn't create map at 0x%08"PFMT64x" with size=0x%08"PFMT64x, vaddr, vsize);
 	}
 	return fd;
 }
