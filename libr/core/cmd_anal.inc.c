@@ -673,7 +673,7 @@ static RCoreHelpMessage help_msg_afl = {
 	"afl+", "", "display sum all function sizes",
 	"afl*", "", "reconstruct all functions in r2 commands",
 	"afl=", "", "display ascii-art bars with function ranges",
-	"afla", "", "reverse call order (useful for afna and noret, also see afba)",
+	"afla", "[j]", "reverse call order (useful for afna and noret, also see afba)",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
@@ -4126,6 +4126,7 @@ typedef struct {
 	RVecAddr *togo;
 	RVecAddr *list;
 	bool inloop;
+	PJ *pj;
 } ReverseCallData;
 
 static bool afba_leafs(void *user, const ut64 addr, const void *data) {
@@ -4942,7 +4943,11 @@ static bool afla_leafs(void *user, const ut64 addr, const void *data) {
 	ReverseCallData *rcd = (ReverseCallData*)user;
 	RVecAddr *va = (RVecAddr *)data;
 	if (RVecAddr_empty (va)) {
-		r_cons_printf ("0x%08"PFMT64x"\n", addr);
+		if (rcd->pj) {
+			pj_n (rcd->pj, addr);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x"\n", addr);
+		}
 		RVecAddr_push_back (rcd->list, &addr);
 		RVecAddr_push_back (rcd->togo, &addr);
 	}
@@ -4977,6 +4982,12 @@ repeat:
 
 static void cmd_afla(RCore *core, const char *input) {
 	RListIter *iter;
+	const bool json = *input == 'j';
+	PJ *pj = NULL;
+	if (json) {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	RAnalRef *xref;
 	RAnalFunction *fcn;
 	HtUP *ht = ht_up_new0 ();
@@ -5020,7 +5031,8 @@ static void cmd_afla(RCore *core, const char *input) {
 		.core = core,
 		.togo = RVecAddr_new (),
 		.list = RVecAddr_new (),
-		.inloop = true
+		.inloop = true,
+		.pj = pj
 	};
 	do {
 		ht_up_foreach (ht, afla_leafs, &rcd);
@@ -5043,8 +5055,18 @@ static void cmd_afla(RCore *core, const char *input) {
 			}
 		}
 		if (!found) {
-			r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
+			if (pj) {
+				pj_n (pj, fcn->addr);
+			} else {
+				r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
+			}
 		}
+	}
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		free (s);
 	}
 }
 
@@ -5511,8 +5533,8 @@ static int cmd_af(RCore *core, const char *input) {
 				break;
 			}
 			break;
-		case 'a': // listing in analysis order
-			cmd_afla (core, input);
+		case 'a': // "afla" listing in analysis order
+			cmd_afla (core, input + 3);
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
