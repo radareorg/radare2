@@ -498,7 +498,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
 		"cw", "", "list comparison watchers",
 		"cw ", "addr", "Show comparison watcher for given address",
-		"cw ", "addr sz cmd", "Add a compare watcher",
+		"cw ", "addr sz [(cmd)]", "Add a compare watcher (cmd is optional)",
 		"cw", "[*qj] [addr]", "Show compare watchers (*=r2 commands, q=quiet, j=json)",
 		"cwd", " [addr]", "Delete watcher",
 		"cwr", " [addr]", "Revert watcher",
