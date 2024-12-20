@@ -111,7 +111,7 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 		found = true;
 	}
 	cmpw->size = size;
-	cmpw->cmd = strdup (cmd);
+	cmpw->cmd = cmd? strdup (cmd): NULL;
 	if (!cmpw->cmd) {
 		free (cmpw);
 		return false;
@@ -240,7 +240,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			for (i = 0; i < w->size; i++) {
 				r_cons_printf ("%02x", w->ndata[i]);
 			}
-			r_cons_print ("\n  cur: ");
+			r_cons_print ("\n  cmd: ");
 			char *cmd_output = cwcmd (core, w);
 			r_cons_println (cmd_output);
 			free (cmd_output);
@@ -527,7 +527,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 				if (size < 1 || size > INT_MAX) {
 					ret = 1;
 					R_LOG_ERROR ("Invalid size");
-				} else if (!r_core_cmpwatch_add (core, addr, size, "p8")) {
+				} else if (!r_core_cmpwatch_add (core, addr, size, NULL)) {
 					ret = 1;
 					R_LOG_ERROR ("Failed to add watcher");
 				}
