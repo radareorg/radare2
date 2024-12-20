@@ -5,6 +5,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+#include <r_core.h>
 
 #if __APPLE__ && DEBUGGER
 
@@ -510,6 +511,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			R_LOG_ERROR ("Usage: :perm [rwx]");
 		}
 		return NULL;
+	}
+	if (r_str_startswith (cmd, "tls")) {
+#if __arm64__
+		RCore *core = io->coreb.core;
+		io->coreb.cmd (core, "dxr 60d03bd5");
+#else
+		R_LOG_TODO ("Not implemented for this architecture");
+#endif
 	}
 	if (r_str_startswith (cmd, "pid")) {
 		RIOMachData *iodd = fd->data;
