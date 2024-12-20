@@ -1099,6 +1099,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'g':
 			ro.mode = MODE_GRAPH;
+			// ro.pdc = true;
 			addr = opt.arg;
 			break;
 		case 'm':{
@@ -1125,6 +1126,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'C':
 			ro.mode = MODE_CODE;
+			ro.diffmode = 'U';
 			break;
 		case 'i':
 			ro.diffmode = 'U';
@@ -1169,7 +1171,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'D':
 			if (ro.disasm) {
 				ro.pdc = true;
-				ro.disasm = false;
+				ro.disasm = true;
 				ro.mode = MODE_CODE;
 			} else {
 				ro.disasm = true;
@@ -1309,16 +1311,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			}
 		}
 		if (ro.pdc) {
+			const char *r2cmd = "pdc";
 			/* should be in mode not in bool pdc */
-			r_config_set_i (c->config, "scr.color", COLOR_MODE_DISABLED);
-			r_config_set_i (c2->config, "scr.color", COLOR_MODE_DISABLED);
+			r_config_set_i (c->config, "scr.color", 0);
+			r_config_set_i (c2->config, "scr.color", 0);
 
 			ut64 addra = r_num_math (c->num, addr);
-			bufa = (ut8 *) r_core_cmd_strf (c, "af;pdc @ 0x%08"PFMT64x, addra);
+			bufa = (ut8 *) r_core_cmd_strf (c, "af;%s @ 0x%08"PFMT64x, r2cmd, addra);
 			sza = (ut64)strlen ((const char *) bufa);
 
 			ut64 addrb = r_num_math (c2->num, addr);
-			bufb = (ut8 *) r_core_cmd_strf (c2, "af;pdc @ 0x%08"PFMT64x, addrb);
+			bufb = (ut8 *) r_core_cmd_strf (c2, "af;%s @ 0x%08"PFMT64x, r2cmd, addrb);
 			szb = (ut64)strlen ((const char *) bufb);
 			ro.mode = MODE_DIFF;
 		} else if (ro.mode == MODE_GRAPH) {
@@ -1476,7 +1479,15 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			R_UNUSED_RESULT (write (1, "\x00", 1));
 		} else {
 			r_diff_set_callback (d, &cb, &ro);
-			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
+			// r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
+			if (ro.pdc) {
+				char *res = r_diff_buffers_unified (d, bufa, (ut32)sza, bufb, (ut32)szb);
+				r_cons_printf ("%s\n", res);
+				free (res);
+			} else {
+				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
+				// r_diff_buffers_delta (d, bufa, (ut32)sza, bufb, (ut32)szb);
+			}
 		}
 		if (ro.diffmode == 'j') {
 			pj_end (ro.pj);
