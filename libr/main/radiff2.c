@@ -1485,7 +1485,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_cons_printf ("%s\n", res);
 				free (res);
 			} else {
-				r_diff_buffers_delta (d, bufa, (ut32)sza, bufb, (ut32)szb);
+				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
+				// r_diff_buffers_delta (d, bufa, (ut32)sza, bufb, (ut32)szb);
 			}
 		}
 		if (ro.diffmode == 'j') {
