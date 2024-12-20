@@ -94,7 +94,7 @@ R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (core && cmd && size > 0, false);
+	R_RETURN_VAL_IF_FAIL (core && size > 0, false);
 
 	bool found = false;
 	RCoreCmpWatcher *cmpw = r_core_cmpwatch_get (core, addr);
@@ -105,18 +105,13 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 		}
 		cmpw->addr = addr;
 	} else {
-		free (cmpw->odata);
-		free (cmpw->ndata);
-		free (cmpw->cmd);
+		R_FREE (cmpw->odata);
+		R_FREE (cmpw->ndata);
+		R_FREE (cmpw->cmd);
 		found = true;
 	}
 	cmpw->size = size;
 	cmpw->cmd = cmd? strdup (cmd): NULL;
-	if (!cmpw->cmd) {
-		free (cmpw);
-		return false;
-	}
-
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	if (!cmpw->ndata) {
@@ -162,6 +157,9 @@ R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
 }
 
 static char *cwcmd(RCore *core, RCoreCmpWatcher *w) {
+	if (!w->cmd) {
+		return NULL;
+	}
 	// use w->size for the temporary block size maybe?
 	if (strchr (w->cmd, '@')) {
 		if (strchr (w->cmd, ' ')) {
@@ -197,7 +195,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 		switch (mode) {
 		case '*': // print watchers as r2 commands
 			r_cons_printf ("cw 0x%08" PFMT64x " %d %s%s\n",
-					w->addr, w->size, w->cmd,
+					w->addr, w->size, r_str_get (w->cmd),
 					changed? " # differs": "");
 			break;
 		case 'q': // quiet
@@ -207,11 +205,12 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			break;
 		case 'j': // "cw"
 			{
-			char *cmd_output = cwcmd (core, w);
 			pj_o (pj);
 			pj_kn (pj, "addr", w->addr);
 			pj_kb (pj, "changed", changed);
-			pj_ks (pj, "cmd", w->cmd);
+			if (w->cmd) {
+				pj_ks (pj, "cmd", w->cmd);
+			}
 			if (w->odata) {
 				char *m = r_hex_bin2strdup (w->odata, w->size);
 				pj_ks (pj, "oldmem", m);
@@ -222,9 +221,12 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 				pj_ks (pj, "newmem", m);
 				free (m);
 			}
-			pj_ks (pj, "cmd_out", r_str_get (cmd_output));
-			pj_end (pj);
+			char *cmd_output = cwcmd (core, w);
+			if (cmd_output) {
+				pj_ks (pj, "cmd_out", r_str_get (cmd_output));
+			}
 			free (cmd_output);
+			pj_end (pj);
 			}
 			break;
 		default:
@@ -240,10 +242,14 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			for (i = 0; i < w->size; i++) {
 				r_cons_printf ("%02x", w->ndata[i]);
 			}
-			r_cons_print ("\n  cmd: ");
 			char *cmd_output = cwcmd (core, w);
-			r_cons_println (cmd_output);
-			free (cmd_output);
+			if (cmd_output) {
+				r_cons_print ("\n  cmd: ");
+				r_cons_println (cmd_output);
+				free (cmd_output);
+			} else {
+				r_cons_newline ();
+			}
 			break;
 		}
 		ret = true;
