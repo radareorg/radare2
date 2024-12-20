@@ -1,0 +1,55 @@
+# https:#github.com/catppuccin/catppuccin
+# based on basic theme and used Mocha colours
+ecd
+ec fname rgb:8bd5ca # Teal
+ec label rgb:8bd5ca # Teal
+ec fline rgb:8bd5ca # Teal
+ec flag rgb:a6da95 # Green
+ec offset rgb:eed49f # Yellow
+ec comment rgb:eed49f # Red
+ec usrcmt rgb:a6da95 # Green
+ec flow rgb:a6da95 # Green
+ec flow2 rgb:a6da95 # Green
+ec b0x00 rgb:f4dbd6 # Rosewater
+ec b0xff rgb:eed49f # Red
+ec bin rbg:cad3f5 # Gray
+ec b0x7f rgb:f4dbd6 # Rosewater
+ec other rgb:cad3f5 # Gray
+ec btext rgb:8bd5ca # Teal
+ec trap rgb:eed49f # Red
+ec ucall rgb:a6da95 # Green
+ec ujmp rgb:a6da95 # Green
+ec args rgb:a6da95 # Green
+ec help rgb:eed49f # Yellow
+ec prompt rgb:eed49f # Yellow
+ec mov rgb:f4dbd6 # Rosewater
+ec math rgb:cad3f5 # Gray
+ec push rgb:8bd5ca # Teal
+ec reg rgb:eed49f # Yellow
+ec creg rgb:eed49f # Yellow
+ec num rgb:8bd5ca # Teal
+ec invalid rgb:ed8796 # Red
+ec swi rgb:8bd5ca # Teal
+ec cmp rgb:f4dbd6 # Rosewater
+ec call rgb:a6da95 # Green
+ec cjmp rgb:a6da95 # Green
+ec jmp rgb:a6da95 # Green
+ec pop rgb:8bd5ca # Teal
+ec linehl rgb:7dc4e4 # Sapphire
+ec graph.true rgb:a6da95 # Green
+ec graph.false rgb:eed49f # Red
+ec graph.trufae rgb:8aadf4 # Blue
+ec graph.current rgb:8aadf4 # Blue
+ec graph.traced gb:8aadf4 # Blue
+ec graph.box rgb:cad3f5 # Gray
+ec graph.box2 rgb:8aadf4 # Blue
+ec graph.box3 rgb:cad3f5 # Gray
+ec graph.box4 rgb:cad3f5 # Gray
+
+ec var rgb:f4dbd6 # Rosewater
+ec var.type rgb:8aadf4 # Blue
+ec var.addr rgb:8bd5ca # Teal
+ec var.name rgb:f4dbd6 # Rosewater
+
+ec widget.bg rgb:363a4f # Some kind of grey
+ec widget.sel rgb:b7bdf8 # Lavender
