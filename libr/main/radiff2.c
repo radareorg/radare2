@@ -1099,7 +1099,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'g':
 			ro.mode = MODE_GRAPH;
-			ro.pdc = true;
+			// ro.pdc = true;
 			addr = opt.arg;
 			break;
 		case 'm':{
