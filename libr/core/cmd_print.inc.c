@@ -2245,6 +2245,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			char *home = r_xdg_datadir ("format");
 			if (home) {
 				files = r_sys_dir (home);
+				r_list_sort (files, (RListComparator)strcmp);
 				r_list_foreach (files, iter, fn) {
 					if (is_pfo_file (fn)) {
 						r_cons_println (fn);
@@ -2256,6 +2257,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			char *path = r_str_r2_prefix (R2_SDB_FORMAT R_SYS_DIR);
 			if (path) {
 				files = r_sys_dir (path);
+				r_list_sort (files, (RListComparator)strcmp);
 				r_list_foreach (files, iter, fn) {
 					if (is_pfo_file (fn)) {
 						r_cons_println (fn);
