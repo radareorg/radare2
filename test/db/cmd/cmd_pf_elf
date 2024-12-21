@@ -1,7 +1,7 @@
 NAME=32: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pfs.elf_header
 EOF
 EXPECT=<<EOF
@@ -12,7 +12,7 @@ RUN
 NAME=64: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pfs.elf_header
 EOF
 EXPECT=<<EOF
@@ -23,7 +23,7 @@ RUN
 NAME=32: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pfs.elf_phdr
 EOF
 EXPECT=<<EOF
@@ -34,7 +34,7 @@ RUN
 NAME=64: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pfs.elf_phdr
 EOF
 EXPECT=<<EOF
@@ -45,7 +45,7 @@ RUN
 NAME=32: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pfs.elf_shdr
 EOF
 EXPECT=<<EOF
@@ -56,7 +56,7 @@ RUN
 NAME=64: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pfs.elf_shdr
 EOF
 EXPECT=<<EOF
@@ -67,7 +67,7 @@ RUN
 NAME=32: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pf [2]? (elf_shdr)sections
 EOF
 EXPECT=<<EOF
@@ -103,7 +103,7 @@ RUN
 NAME=64: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pf [2]? (elf_shdr)sections
 EOF
 EXPECT=<<EOF
@@ -392,7 +392,7 @@ RUN
 NAME=pf elf_header times fix
 FILE=-
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pf? elf_header
 pfs.elf_header
 ?e

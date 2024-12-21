@@ -465,7 +465,7 @@ RUN
 NAME=pf?
 FILE=-
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pf?elf_header
 pf? elf_header
 EOF
