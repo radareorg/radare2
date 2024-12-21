@@ -47,6 +47,7 @@ EXPECT=<<EOF
 'fs+header
 'f header.ELF 1 0x00000000
 'f header.ELF.value 1 0x464c457f
+Cd4 @ 0x0
 pf.ELF x
 'f header.Type 1 0x00000010
 'f header.Type.value 1 0x00000002
@@ -56,17 +57,22 @@ pf.Type w
 pf.Machine w
 'f header.Version 1 0x00000014
 'f header.Version.value 1 0x00000001
+Cd4 @ 0x14
 pf.Version x
 'f header.EntryPoint 1 0x00000018
 'f header.EntryPoint.value 1 0x08048300
+Cd4 @ 0x18
 pf.EntryPoint x
 'f header.PhOff 1 0x0000001c
 'f header.PhOff.value 1 0x00000034
+Cd4 @ 0x1c
 pf.PhOff x
 'f header.ShOff 1 0x00000020
 'f header.ShOff.value 1 0x000007cc
+Cd4 @ 0x20
 pf.ShOff x
 'f header.Flags 1 0x00000024
+Cd4 @ 0x24
 pf.Flags x
 'f header.EhSize 1 0x00000028
 'f header.EhSize.value 1 0x00000034
@@ -99,6 +105,7 @@ EXPECT=<<EOF
     "name": "ELF",
     "vaddr": 0,
     "paddr": 0,
+    "size": 4,
     "value": 1179403647,
     "format": "x",
     "pf": [
@@ -113,6 +120,7 @@ EXPECT=<<EOF
     "name": "Type",
     "vaddr": 16,
     "paddr": 16,
+    "size": 2,
     "value": 2,
     "format": "w",
     "pf": [
@@ -127,6 +135,7 @@ EXPECT=<<EOF
     "name": "Machine",
     "vaddr": 18,
     "paddr": 18,
+    "size": 2,
     "value": 3,
     "format": "w",
     "pf": [
@@ -141,6 +150,7 @@ EXPECT=<<EOF
     "name": "Version",
     "vaddr": 20,
     "paddr": 20,
+    "size": 4,
     "value": 1,
     "format": "x",
     "pf": [
@@ -155,6 +165,7 @@ EXPECT=<<EOF
     "name": "EntryPoint",
     "vaddr": 24,
     "paddr": 24,
+    "size": 4,
     "value": 134513408,
     "format": "x",
     "pf": [
@@ -169,6 +180,7 @@ EXPECT=<<EOF
     "name": "PhOff",
     "vaddr": 28,
     "paddr": 28,
+    "size": 4,
     "value": 52,
     "format": "x",
     "pf": [
@@ -183,6 +195,7 @@ EXPECT=<<EOF
     "name": "ShOff",
     "vaddr": 32,
     "paddr": 32,
+    "size": 4,
     "value": 1996,
     "format": "x",
     "pf": [
@@ -197,6 +210,7 @@ EXPECT=<<EOF
     "name": "Flags",
     "vaddr": 36,
     "paddr": 36,
+    "size": 4,
     "format": "x",
     "pf": [
       {
@@ -210,6 +224,7 @@ EXPECT=<<EOF
     "name": "EhSize",
     "vaddr": 40,
     "paddr": 40,
+    "size": 2,
     "value": 52,
     "format": "w",
     "pf": [
@@ -224,6 +239,7 @@ EXPECT=<<EOF
     "name": "PhentSize",
     "vaddr": 42,
     "paddr": 42,
+    "size": 2,
     "value": 32,
     "format": "w",
     "pf": [
@@ -238,6 +254,7 @@ EXPECT=<<EOF
     "name": "PhNum",
     "vaddr": 44,
     "paddr": 44,
+    "size": 2,
     "value": 8,
     "format": "w",
     "pf": [
@@ -252,6 +269,7 @@ EXPECT=<<EOF
     "name": "ShentSize",
     "vaddr": 46,
     "paddr": 46,
+    "size": 2,
     "value": 40,
     "format": "w",
     "pf": [
@@ -266,6 +284,7 @@ EXPECT=<<EOF
     "name": "ShNum",
     "vaddr": 48,
     "paddr": 48,
+    "size": 2,
     "value": 30,
     "format": "w",
     "pf": [
@@ -280,6 +299,7 @@ EXPECT=<<EOF
     "name": "ShrStrndx",
     "vaddr": 50,
     "paddr": 50,
+    "size": 2,
     "value": 27,
     "format": "w",
     "pf": [

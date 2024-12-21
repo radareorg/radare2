@@ -33,9 +33,7 @@ static char *iocmd(RBinFile *bf, const char *s) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	char *res = iocmd (bf, "i");
-	eprintf ("-->(i) %s\n", res);
-	free (res);
+	free (iocmd (bf, "i"));
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
@@ -68,9 +66,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 #endif
 
 static RList *symbols(RBinFile *bf) {
-	char *res = iocmd (bf, "is");
-	eprintf ("-->(is) %s\n", res);
-	free (res);
+	free (iocmd (bf, "is"));
 	RList *ret = r_list_newf (free);
 #if 0
 	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
@@ -79,9 +75,7 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	char *res = iocmd (bf, "iS");
-	eprintf ("-->(iS) %s\n", res);
-	free (res);
+	free (iocmd (bf, "iS"));
 	RList *ret = r_list_new ();
 #if 0
 	RBinSection *ptr;
@@ -127,11 +121,13 @@ static RList *sections(RBinFile *bf) {
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	char *res = iocmd (bf, "ie");
-	ut64 entry0 = r_num_get (NULL, res);
-	free (res);
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	ptr->paddr = ptr->vaddr = entry0;
-	r_list_append (ret, ptr);
+	if (res) {
+		ut64 entry0 = r_num_get (NULL, res);
+		free (res);
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		ptr->paddr = ptr->vaddr = entry0;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
