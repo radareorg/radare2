@@ -201,15 +201,21 @@ foreach file : sdb_files
 endforeach
 
 format_files = [
-  'dex',
-  'macho',
-  'elf32',
-  'elf64',
-  'elf_enums',
-  'pe32',
-  'trx',
-  'mz',
-  'zip'
+  'cdex.h',
+  'dex.h',
+  'jni.h',
+  'bios.r2',
+  'dex.r2',
+  'elf32.r2',
+  'elf64.r2',
+  'elf_enums.r2',
+  'fatmacho.r2',
+  'macho.r2',
+  'mz.r2',
+  'ntfs.r2',
+  'pe32.r2',
+  'trx.r2',
+  'zip.r2',
 ]
 
 install_data(format_files,
