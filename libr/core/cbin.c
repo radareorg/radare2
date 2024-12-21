@@ -3405,13 +3405,20 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			if (field->value != 0 && field->value != UT64_MAX) {
 				r_cons_printf ("'f header.%s.value 1 0x%08"PFMT64x"\n", fname, field->value);
 			}
-			if (field->comment && *field->comment) {
+			if (R_STR_ISNOTEMPTY (field->comment)) {
 				char *e = sdb_encode ((const ut8*)field->comment, -1);
 				r_cons_printf ("CCu base64:%s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
 				char *f = r_name_filter_shell (field->format);
 				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
 				free (f);
+			}
+			if (field->size > 0) {
+				if (field->size == 8) {
+					r_cons_printf ("Cd8 @ 0x%"PFMT64x"\n", addr);
+				} else if (field->size == 4) {
+					r_cons_printf ("Cd4 @ 0x%"PFMT64x"\n", addr);
+				}
 			}
 			if (!field->format_named && R_STR_ISNOTEMPTY (field->format)) {
 				r_cons_printf ("pf.%s %s\n", fname, field->format);
@@ -3421,6 +3428,9 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			pj_ks (pj, "name", r_bin_name_tostring2 (field->name, pref));
 			pj_kN (pj, "vaddr", field->vaddr);
 			pj_kN (pj, "paddr", field->paddr);
+			if (field->size > 0) {
+				pj_kN (pj, "size", field->size);
+			}
 			if (v) {
 				pj_kN (pj, "value", v);
 			}
