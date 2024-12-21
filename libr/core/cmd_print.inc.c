@@ -2105,6 +2105,17 @@ static void cmd_pfb(RCore *core, const char *_input) {
 	}
 }
 
+static bool is_pfo_file(const char *fn) {
+	if (*fn != '.') {
+		if (r_str_endswith (fn, ".r2")) {
+			return true;
+		}
+		if (r_str_endswith (fn, ".h")) {
+			return true;
+		}
+	}
+	return false;
+}
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	bool v2 = false;
@@ -2235,7 +2246,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (home) {
 				files = r_sys_dir (home);
 				r_list_foreach (files, iter, fn) {
-					if (*fn != '.') {
+					if (is_pfo_file (fn)) {
 						r_cons_println (fn);
 					}
 				}
@@ -2246,7 +2257,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (path) {
 				files = r_sys_dir (path);
 				r_list_foreach (files, iter, fn) {
-					if (*fn != '.') {
+					if (is_pfo_file (fn)) {
 						r_cons_println (fn);
 					}
 				}
