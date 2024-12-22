@@ -138,7 +138,6 @@ typedef struct r_io_t {
 	bool ff;
 	ut8 Oxff; // which printable char to use instead of 0xff for unallocated bytes
 	size_t addrbytes; // XXX also available in RArchConfig.addrbytes
-	bool aslr;
 	bool autofd;
 	bool overlay;
 	// moved into cache.mode // ut32 cached; // uses R_PERM_RWX // wtf cache for exec?

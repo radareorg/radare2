@@ -3023,8 +3023,8 @@ NAME=iM* command
 FILE=bins/elf/redpill
 CMDS=iM*
 EXPECT=<<EOF
-fs symbols
-f main @ 0x0000142e
+'fs symbols
+'@0x0000142e'f main
 EOF
 RUN
 

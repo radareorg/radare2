@@ -1416,8 +1416,8 @@ static bool bin_main(RCore *r, PJ *pj, int mode, int va) {
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64d, addr);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs symbols\n");
-		r_cons_printf ("f main @ 0x%08"PFMT64x"\n", addr);
+		r_cons_printf ("'fs symbols\n");
+		r_cons_printf ("'@0x%08"PFMT64x"'f main\n", addr);
 		if (isthumb) {
 			r_cons_printf ("'@0x%08"PFMT64x"'ahb 16\n", addr);
 		}
