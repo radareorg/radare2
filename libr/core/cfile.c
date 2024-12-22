@@ -78,7 +78,12 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (new_baddr == UT64_MAX) {
-		new_baddr = r_config_get_i (core->config, "bin.baddr");
+		if (r_config_get_b (core->config, "bin.aslr")) {
+			new_baddr = r_num_rand (32) << 24;
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = r_config_get_i (core->config, "bin.baddr");
+		}
 	}
 
 	if (r_sandbox_enable (0)) {
@@ -158,7 +163,12 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			} else if (new_baddr != UT64_MAX) {
 				baddr = new_baddr;
 			} else {
-				baddr = r_config_get_i (core->config, "bin.baddr");
+				if (r_config_get_b (core->config, "bin.aslr")) {
+					baddr = r_num_rand (32) << 24;
+					r_config_set_i (core->config, "bin.baddr", baddr);
+				} else {
+					baddr = r_config_get_i (core->config, "bin.baddr");
+				}
 			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
@@ -453,6 +463,13 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	}
 	R_CRITICAL_ENTER (r);
 	r_io_use_fd (r->io, fd);
+	if (baseaddr == UT64_MAX) {
+		// ASLR - this is probably the only place where bin.aslr is used. maybe move into rbin.options before R2_600
+		if (r_config_get_b (r->config, "bin.aslr")) {
+			baseaddr = r_num_rand (32) << 24;
+			r_config_set_i (r->config, "bin.baddr", baseaddr);
+		}
+	}
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	// opt.fd = fd;

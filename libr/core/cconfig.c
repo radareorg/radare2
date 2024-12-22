@@ -2323,10 +2323,19 @@ static bool cb_io_cache(void *user, void *data) {
 	return true;
 }
 
+#if 0
 static bool cb_ioaslr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->aslr = (bool)node->i_value;
+	return true;
+}
+#endif
+
+static bool cb_binaslr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->bin->options.fake_aslr = (bool)node->i_value;
 	return true;
 }
 
@@ -4536,7 +4545,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("io.mask", 0, &cb_iomask, "mask addresses before resolving as maps");
 	SETBPREF ("io.exec", "true", "see !!r2 -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "use this value instead of 0xff to fill unallocated areas");
-	SETCB ("io.aslr", "false", &cb_ioaslr, "disable ASLR for spawn and such");
+	// SETCB ("dbg.aslr", "false", &cb_ioaslr, "disable ASLR for spawn and such");
+	SETCB ("bin.aslr", "false", &cb_binaslr, "pick a random bin.baddr to simulate ASLR for static analysis");
 	SETCB ("io.va", "true", &cb_iova, "use virtual address layout");
 	SETBPREF ("io.voidwrites", "true",
 		"handle writes to fully unmapped areas as valid operations (requires io.va to be set)");

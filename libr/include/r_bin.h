@@ -435,6 +435,10 @@ typedef struct r_bin_create_options_t {
 	int bits;
 } RBinCreateOptions;
 
+typedef struct r_bin_options_t {
+	bool fake_aslr;
+} RBinOptions;
+
 struct r_bin_t {
 	const char *file;
 	RBinFile *cur; // TODO: deprecate
@@ -475,6 +479,7 @@ struct r_bin_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
+	RBinOptions options; // R2_600 - move all the options from rbin into this struct
 };
 
 typedef struct r_bin_xtr_metadata_t {
