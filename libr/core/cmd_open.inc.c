@@ -156,6 +156,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omt", " mapid", "toggle map backwards tying (same as omtb)",
 	"omtb", " mapid", "toggle map backwards tying",
 	"omtf", " mapid", "toggle map forwards tying",
+	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
 	NULL
 };
 
@@ -879,8 +880,10 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			}
 			break;
 		case '?': // "omb?"
-		default:
 			r_core_cmd_help (core, help_msg_omb);
+			break;
+		default:
+			r_core_return_invalid_command (core, "omb", argv[0][1]);
 			break;
 		}
 		return;
@@ -952,7 +955,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
 	ut64 addr = 0;
-	char *s = NULL, *p = NULL, *q = NULL;
+	char *s = NULL, *p = NULL;
 	ut64 newaddr;
 	RIOMap *map = NULL;
 	const char *P;
@@ -1084,6 +1087,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 				R_LOG_ERROR ("Cannot find any map with mapid %d", id);
 			}
 			break;
+		default:
+			r_core_return_invalid_command (core, "omp", input[2]);
+			break;
 		}
 		break;
 	case 't': // "omt"
@@ -1108,27 +1114,45 @@ static void cmd_open_map(RCore *core, const char *input) {
 				case 0:
 					r_cons_printf ("%s\n", map->name);
 					break;
-				default:
+				case ' ':
 					r_io_map_set_name (map, r_str_trim_head_ro (input + 3));
+					break;
+				default:
+					r_core_return_invalid_command (core, "omn.", input[3]);
 					break;
 				}
 			}
-		} else {
+		} else if (input[2] == 0 || input[2] == ' ' || input[2] == 'i') {
 			bool use_id = (input[2] == 'i') ? true : false;
 			s = r_str_trim_dup (input + (use_id ? 3: 2));
 			if (!s) {
 				break;
 			}
 			p = s;
-
-			while (*s == ' ') {
-				s++;
-			}
+			s = (char *)r_str_trim_head_ro (s);
 			if (*s == '\0') {
 				s = p;
 				break;
 			}
-			if (!(q = strchr (s, ' '))) {
+			char *q = strchr (s, ' ');
+			if (q) {
+				*q++ = '\0';
+				if (use_id) {
+					id = (ut32)r_num_math (core->num, s);
+					map = r_io_map_get (core->io, id);
+				} else {
+					addr = r_num_math (core->num, s);
+					map = r_io_map_get_at (core->io, addr);
+				}
+				if (map) {
+					if (*q) {
+						r_io_map_set_name (map, q);
+					} else {
+						r_io_map_del_name (map);
+					}
+				}
+				s = p;
+			} else {
 				if (use_id) {
 					id = (ut32)r_num_math (core->num, s);
 					map = r_io_map_get (core->io, id);
@@ -1144,23 +1168,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 				s = p;
 				break;
 			}
-			*q = '\0';
-			q++;
-			if (use_id) {
-				id = (ut32)r_num_math (core->num, s);
-				map = r_io_map_get (core->io, id);
-			} else {
-				addr = r_num_math (core->num, s);
-				map = r_io_map_get_at (core->io, addr);
-			}
-			if (map) {
-				if (*q) {
-					r_io_map_set_name (map, q);
-				} else {
-					r_io_map_del_name (map);
-				}
-			}
-			s = p;
+		} else {
+			r_core_return_invalid_command (core, "omn", input[2]);
 		}
 		break;
 	case 'a': // "oma"
@@ -1180,7 +1189,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'm': // "omm"
 		if (input[2] == '?') {
 			r_core_cmd_help_contains (core, help_msg_om, "omm");
-		} else {
+		} else if (input[2] == 0 || input[2] == ' ') {
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
@@ -1192,6 +1201,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 			} else {
 				R_LOG_DEBUG ("Cannot find any fd to map");
 			}
+		} else {
+			r_core_return_invalid_command (core, "omm", input[2]);
 		}
 		break;
 	case '-': // "om-"
@@ -1200,12 +1211,28 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else if (input[2] == '*') {
 			r_io_map_reset (core->io);
 		} else {
-			r_io_map_del (core->io, r_num_math (core->num, input + 2));
+			const char *arg = r_str_trim_head_ro (input + 2);
+			const int mapid = r_num_math (core->num, arg);
+			if (core->num->nc.errors != 0) {
+				R_LOG_ERROR ("Invalid mapid %s", arg);
+			} else {
+				r_io_map_del (core->io, mapid);
+			}
 		}
 		break;
-	case 'u': // "omu"
-		// same as "om", but checks if already exists
-		cmd_om (core, input + 1, 'u');
+	case 'u': // "omu" -- same as "om", but checks if already exists
+		switch (input[2]) {
+		case '?':
+			r_core_cmd_help_match (core, help_msg_om, "omu");
+			break;
+		case 0:
+		case ' ':
+			cmd_om (core, input + 1, 'u');
+			break;
+		default:
+			r_core_return_invalid_command (core, "omu", input[2]);
+			break;
+		}
 		break;
 	case 'd': // "omd"
 		cmd_omd (core, input + 2);
@@ -1223,8 +1250,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_str_argv_free (argv);
 			}
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_om);
+			break;
+		default:
+			r_core_return_invalid_command (core, "omf", input[2]);
 			break;
 		}
 		break;
@@ -1277,14 +1307,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *tablestr = r_table_tostring (table);
-		r_cons_printf ("\n%s\n", tablestr);
+		if (tablestr) {
+			r_cons_printf ("\n%s\n", tablestr);
+			free (tablestr);
+		}
 		r_table_free (table);
 		r_list_free (list);
-		free (tablestr);
 		} break;
-	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_om);
+		break;
+	default:
+		r_core_return_invalid_command (core, "om", input[1]);
 		break;
 	}
 	R_FREE (s);
