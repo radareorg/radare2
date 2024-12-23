@@ -142,3 +142,25 @@ nth vaddr      bind   type   lib name
 6   ---------- WEAK   FUNC       __cxa_finalize
 EOF
 RUN
+
+NAME=opseeks
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+o
+e io.va=0
+s 0
+op 3
+s
+op 4
+s
+op 3
+s
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+ 4 - r-- 0x00002560 null://9568
+0x0
+0x0
+0x0
+EOF
+RUN
