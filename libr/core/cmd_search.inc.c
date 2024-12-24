@@ -93,6 +93,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"//", "", "repeat last search",
 	"/a", "[?][1aoditfmsltf] jmp eax", "find instructions by text or bytes (asm/disasm)",
 	"/b", "[?][p]", "search backwards, command modifier, followed by other command",
+	"/B", "", "search possible base address",
 	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -4096,6 +4097,153 @@ static bool is_json_command(const char *input, int *param_offset) {
 	return (*lastch == 'j');
 }
 
+#if 1
+// arm16
+#define BADDR_BSZ (16 * 1024)
+#define BADDR_MSK (UT64_MAX << 16)
+#define BADDR_MIN (ut64)0x1000000ULL
+#define BADDR_MAX (ut64)0x100000000ULL
+#else
+// stm8 - experimental
+#define BADDR_BSZ (8 * 1024)
+#define BADDR_MSK (UT64_MAX << 12)
+#define BADDR_MIN 0x1000
+#define BADDR_MAX 0x10000
+#endif
+
+static void appendbaddr(RList *res, ut64 n) {
+	if (n == UT64_MAX) {
+		return;
+	}
+	if (n & 1) {
+		return;
+	}
+	if (n < BADDR_MIN) {
+		return;
+	}
+	if (n > BADDR_MAX) {
+		return;
+	}
+	if (!n) {
+		return;
+	}
+	ut8 lo = ((n >> 16) & 0xff);
+	ut8 hi = ((n >> 24) & 0xff);
+	if (lo == 0xff || hi == 0xff) {
+		return;
+	}
+	if (lo && hi) {
+		return;
+	}
+	ut64 mn = n & BADDR_MSK;
+	if (mn) {
+		r_list_append (res, ut64_new (mn));
+	}
+}
+
+
+static void cmd_search_baddr_asm(RCore *core, RList *res, RIOMap *map) {
+	ut64 from = r_io_map_begin (map);
+	ut64 to = r_io_map_end (map);
+	RAnalOp aop;
+	size_t len = to - from;
+	if (len > BADDR_BSZ) {
+		char hs[32];
+		r_num_units (hs, sizeof (hs), BADDR_BSZ);
+		R_LOG_WARN ("Dim scan to %s", hs);
+		len = BADDR_BSZ;
+	}
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return;
+	}
+	r_io_read_at (core->io, from, buf, len);
+	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	ut64 idx;
+	for (idx = 0; idx < len; idx++) {
+		ut64 at = from + idx;
+		r_anal_op_init (&aop);
+		int error = r_anal_op (core->anal, &aop, at, buf + idx, len - idx, R_ARCH_OP_MASK_DISASM);
+		if (error < 1 || aop.type == R_ANAL_OP_TYPE_ILL) {
+			if (codealign > 1) {
+				idx += codealign - 1;
+				continue;
+			}
+		}
+		// eprintf ("0x%llx %s%c", at, aop.mnemonic, 10);
+		switch (aop.type) {
+		case R_ANAL_OP_TYPE_LOAD:
+			if (aop.refptr == 4) {
+				ut8 b[4] = {0};
+				(void) r_io_read_at (core->io, aop.ptr, b, sizeof b);
+				ut32 w = r_read_le32 (b);
+				appendbaddr (res, w);
+			}
+			break;
+		default:
+			appendbaddr (res, aop.ptr);
+			appendbaddr (res, aop.val);
+			break;
+		}
+		idx += aop.size - 1;
+		r_anal_op_fini (&aop);
+	}
+	free (buf);
+}
+
+static int ut64cmp(const void *a, const void *b) {
+	ut64 *na = (ut64*)a;
+	ut64 *nb = (ut64*)b;
+	if (*nb > *na) {
+		return 1;
+	}
+	if (*nb < *na) {
+		return -1;
+	}
+	return 0;
+}
+
+static ut64 ut64item(const void *a) {
+	ut64 *na = (ut64*)a;
+	return *na;
+}
+
+static void cmd_search_baddr(RCore *core, const char *input) {
+	const char *where = r_config_get (core->config, "search.in");
+	RList *res = r_list_newf (free);
+	RList *bounds = r_core_get_boundaries_prot (core, R_PERM_R, where, "search");
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	if (obj) {
+		RBinString *s;
+		RListIter *iter;
+		r_list_foreach (obj->strings, iter, s) {
+			if (strstr (s->string, "0x")) {
+				ut64 n = r_num_math (NULL, s->string);
+				appendbaddr (res, n);
+			}
+		}
+	}
+	// find strings with addresses
+	// find absolute references
+	{
+		RIOMap *map;
+		RListIter *iter;
+		r_list_foreach (bounds, iter, map) {
+			cmd_search_baddr_asm (core, res, map);
+		}
+	}
+	{
+		RListIter *iter;
+		ut64 *n;
+		r_list_uniq_inplace (res, ut64item);
+		r_list_sort (res, ut64cmp);
+		r_list_foreach (res, iter, n) {
+			r_cons_printf ("0x%08"PFMT64x"%c", *n, 10);
+		}
+		r_list_free (res);
+	}
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
@@ -4224,6 +4372,10 @@ reread:
 			}
 		}
 		goto reread;
+	case 'B': // "/B" base address search
+		cmd_search_baddr (core, input);
+		goto beach;
+		break;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
 				  r_core_cmd_help_match (core, help_msg_slash, "/o");
