@@ -6131,32 +6131,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				i++;
 			}
 		} else {
-			FILE *fd = r_sandbox_fopen (each + 1, "r");
-			if (fd) {
-				core->rcmd->macro.counter = 0;
-				size_t buf_size = 1024;
-				char *buf = calloc (buf_size, 1);
-				if (buf) {
-					while (!feof (fd)) {
-						buf[0] = '\0';
-						if (!fgets (buf, buf_size, fd)) {
-							break;
-						}
-						if (*buf) {
-							addr = r_num_math (core->num, buf);
-							r_core_seek (core, addr, true); // XXX
-							r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, addr);
-							if (!foreach_newline (core)) {
-								break;
-							}
-							core->rcmd->macro.counter++;
-						}
+			const char *arg = r_str_trim_head_ro (each + 1);
+			char *data = r_core_slurp (core, arg, NULL);
+			if (data) {
+				RList *rows = r_str_split_list (data, "\n", 0);
+				char *row;
+				RListIter *iter;
+				r_list_foreach (rows, iter, row) {
+					ut64 addr = r_num_math (core->num, row);
+					if (core->num->nc.errors == 0) {
+						r_core_cmd_call_at (core, addr, cmd);
 					}
+					if (!foreach_newline (core)) {
+						break;
+					}
+					core->rcmd->macro.counter++;
 				}
-				free (buf);
-				fclose (fd);
+				r_list_free (rows);
+				free (data);
 			} else {
-				R_LOG_ERROR ("cannot open file '%s' to read offsets", each + 1);
+				R_LOG_ERROR ("cannot open file '%s' to read offsets", arg);
 			}
 		}
 		break;
