@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2024 - pancake */
+/* radare2 - MIT - Copyright 2024 - pancake */
 
 #include <r_arch.h>
 
@@ -10,8 +10,6 @@
 #define IGNORE	5
 #define END	6
 #define LONGSKIP 7
-
-#define EPROMSIZE	36000
 
 struct opcode {
 	unsigned char opcode;
@@ -576,13 +574,13 @@ static int cdp_disasm(RAnalOp *aop) {
 	const ut8 *buf = aop->bytes;
 	ut8 b0 = buf[0];
 	struct opcode op = opcodes[b0];
+	int size = op.argc + 1;
 	if (b0 == 0x68) {
 		buf++;
+		size = op.argc + 2;
 		op = opcodes2[buf[0]];
 	}
-	// eprintf ("%02x\n", b0);
 
-	int size = op.argc + 1;
 	switch (op.argc) {
 	case 1:
 		aop->mnemonic = r_str_newf ("%s 0x%02x", op.mnemonic, buf[1]);
@@ -601,15 +599,36 @@ static int cdp_disasm(RAnalOp *aop) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			aop->jump = ((ut16)buf[1] << 8) | buf[2];;
+			aop->jump = ((ut16)buf[1] << 8) | buf[2];
 			aop->fail = aop->addr + size;
 			break;
 		}
 		break;
 	default:
 		aop->mnemonic = r_str_newf ("%s", op.mnemonic);
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			{
+				// longskip
+				struct opcode nextop = opcodes[buf[size]];
+				aop->jump = aop->addr + size + nextop.argc + 1;
+				aop->fail = aop->addr + size;
+			}
+			break;
+		}
 		break;
 	}
+#if 0
+	Most instructions execute in 2 machine cycles. Some in 3. The 1804 and
+	1805 also have instructions which take up to 10 machine cycles.
+	Every machine cycle requires 8 clock cycles, which obviously results in a
+	less than average performance of the processor. Most instructions take 16
+	clock cycles to execute. The 1804 and 1805 use slightly less clock cycles,
+	making them just a little bit less slow.
+#endif
+	aop->cycles = 2;
 	aop->size = size;
 	aop->type = op.type;
 	return size;
@@ -631,7 +650,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 static char *getregs(RArchSession *as) {
 	// const char *cpu = as->config->cpu;
 	const char * const p =
-		"=PC	pc\n"
+		"=PC	pc\n" // XXX any register can be codeptr or dataptr
 		"=SP	r7\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
@@ -664,13 +683,14 @@ static int info(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_cosmac = {
 	.meta = {
 		.author = "pancake",
-		.name = "cdp1806",
+		.name = "cosmac",
 		// COSMAC = COmplementary Symmetry Monolithic Array Computer
 		.desc = "RCA COSMAC MicroProcessor 180X family",
 		.license = "MIT",
 	},
-	// .cpus = "1802,1800,1804,1805,1806 ...",
+	// .cpus = "1802,1800,1804,1805,cdp1806 ...",
 	.arch = "cosmac",
+	.endian = R_SYS_ENDIAN_BIG, // ignored by rcore
 	.info = info,
 	.bits = R_SYS_BITS_PACK2 (8, 16),
 	.decode = &decode,
