@@ -1,0 +1,16 @@
+# TODO: read arch/p/cosmac/plugin.c and finish this
+ldn=load D with (R)
+idl=idle or wait for interrupt or dma request
+inc=increment
+dec=decrement
+irx=increment register X
+plo=put low register
+phi=put high register
+ghi=get high register
+sep=set program counter register
+sex=set register as data pointer
+stpc=stop counter
+sret=standard return to (R)
+rsxd=store register in memory
+dadd=decimal add
+dsm=decimal substract memory
