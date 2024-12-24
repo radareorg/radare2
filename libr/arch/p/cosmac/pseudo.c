@@ -12,7 +12,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
-		{ 0, "ret", "return", { } },
+		{ 0, "ret", "return", { 0 } },
 		{ 1, "bnz", "if (!zero) goto #", { 1 } },
 		{ 0, NULL }
 	};
