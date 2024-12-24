@@ -504,6 +504,15 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
+	char *bestname = NULL;
+	char *fd = r_core_cmd_str_at (core, fcn->addr, "fd");
+	if (r_str_startswith (fd, "sym.") && !r_str_startswith (fd, "sym.func.")) {
+		r_str_trim (fd);
+		r_list_append (names, fd);
+		bestname = strdup (fd);
+	} else {
+		free (fd);
+	}
 	// TODO: check if import, if its in plt, by name, by rbin...
 	int scr_color = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
@@ -548,7 +557,6 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		}
 	}
 	free (pdsfq);
-	char *bestname = NULL;
 	bool use_getopt = false;
 	r_list_uniq_inplace (names, cmpstrings);
 	r_list_foreach (names, iter, name) {
@@ -594,12 +602,20 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		return strdup ("main_args");
 	}
 	if (bestname) {
+		if (r_str_startswith (bestname, "sym.")) {
+			return bestname;
+		}
 		if (r_str_startswith (bestname, "imp.")) {
 			char *bn = r_str_newf ("sym.%s", bestname);
 			free (bestname);
 			return bn;
 		}
-		char *ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		char *ret;
+		if (r_str_startswith (bestname, "sub.")) {
+			ret = r_str_newf ("%s_%"PFMT64x, bestname, fcn->addr);
+		} else {
+			ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		}
 		free (bestname);
 		return ret;
 	}
