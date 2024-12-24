@@ -506,7 +506,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	}
 	char *bestname = NULL;
 	char *fd = r_core_cmd_str_at (core, fcn->addr, "fd");
-	if (r_str_startswith (fd, "sym.")) {
+	if (r_str_startswith (fd, "sym.") && !r_str_startswith (fd, "sym.func.")) {
 		r_str_trim (fd);
 		r_list_append (names, fd);
 		bestname = strdup (fd);
