@@ -17,7 +17,7 @@ struct opcode {
 	int argc;
 	int argt;
 	char desc[128];
-	int type;
+	ut64 type;
 };
 
 static struct opcode opcodes[256] = {
