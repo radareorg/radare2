@@ -247,7 +247,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 			return false;
 		}
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_ALIAS_PC]);
 	}
 
 	if (r_anal_op (dbg->anal, &op, Gopc, obuf, sizeof (obuf), R_ARCH_OP_MASK_ESIL)) {
@@ -270,7 +270,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 				return 0;
 			}
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_ALIAS_PC]);
 		}
 	}
 	return ret;

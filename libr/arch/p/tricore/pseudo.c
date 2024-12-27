@@ -439,8 +439,8 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 	}
 #if 0
 	char bp[32];
-	if (anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
+	if (anal->reg->name[R_REG_ALIAS_BP]) {
+		strncpy (bp, anal->reg->name[R_REG_ALIAS_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)tstr[0])) {
 			r_str_case (bp, true);
 		}
