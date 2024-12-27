@@ -702,6 +702,27 @@ static bool esil_cmp(REsil *esil) {
 	return ret;
 }
 
+#if 1
+// needed for COSMAC
+static bool esil_regalias(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	ut64 num;
+	bool ret = false;
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &num)) {
+		ret = true;
+		int kind = r_reg_get_name_idx (dst);
+		if (kind != -1) {
+			r_reg_set_name (esil->anal->reg, kind, src);
+		}
+	}
+	free (dst);
+	free (src);
+	return ret;
+}
+#endif
+
 #if 0
 x86 documentation:
 CF - carry flag -- Set on high-order bit carry or borrow; cleared otherwise
@@ -2942,7 +2963,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("$ds", esil_ds, 1, 0, OT_UNK);
 	ret &= OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	ret &= OP ("$js", esil_js, 1, 0, OT_UNK);
-	//OP ("$r", esil_rs, 1, 0, OT_UNK); // R_DEPRECATE
+	ret &= OP ("r=", esil_regalias, 1, 0, OT_UNK); // r0,PC,@= -> change PC alias to r0
 	ret &= OP ("$$", esil_address, 1, 0, OT_UNK);
 	ret &= OP ("~", esil_signext, 1, 2, OT_MATH);
 	ret &= OP ("~=", esil_signexteq, 0, 2, OT_MATH);

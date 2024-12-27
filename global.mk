@@ -51,5 +51,5 @@ endif
 -include $(TOP)/mk/platform.mk
 -include $(TOP)/mk/${COMPILER}.mk
 
-WWWROOT=${DATADIR}/radare2/${VERSION}/www
+WWWROOT=$(DATADIR)/radare2/${VERSION}/www
 endif

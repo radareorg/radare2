@@ -126,6 +126,12 @@ static bool default_is_reg(void *reg, const char *name) {
 	return true;
 }
 
+#if 0
+static bool default_reg_alias(void *reg, int kind, const char *name) {
+	return r_reg_set_name ((RReg *)reg, kind, name);
+}
+#endif
+
 static bool default_reg_read(void *reg, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
 	if (!ri) {
@@ -149,7 +155,8 @@ static REsilRegInterface simple_reg_if = {
 	.is_reg = default_is_reg,
 	.reg_read = default_reg_read,
 	.reg_write = (REsilRegWrite)r_reg_setv,
-	.reg_size = default_reg_size
+	.reg_size = default_reg_size,
+	// .reg_alias = default_reg_alias
 };
 
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
