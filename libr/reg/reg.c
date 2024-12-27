@@ -469,19 +469,16 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	R_RETURN_VAL_IF_FAIL (reg && name, NULL);
+	int alias = r_reg_alias_fromstring (name);
+	if (alias != -1) {
+		const char *nname = r_reg_alias_getname (reg, alias);
+		if (nname) {
+			name = nname;
+		}
+	}
 	if (type == -1) {
 		i = 0;
 		e = R_REG_TYPE_LAST;
-		int alias = r_reg_alias_fromstring (name);
-#if 1
-		// probably redundant code
-		if (alias != -1) {
-			const char *nname = r_reg_alias_getname (reg, alias);
-			if (nname) {
-				name = nname;
-			}
-		}
-#endif
 	} else {
 		// TODO: define flag register as R_REG_TYPE_FLG
 		i = (type == R_REG_TYPE_FLG)? R_REG_TYPE_GPR: type;
