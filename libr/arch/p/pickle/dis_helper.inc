@@ -1,0 +1,167 @@
+enum opcode {
+	OP_MARK = '(',
+	OP_STOP = '.',
+	OP_POP = '0',
+	OP_POP_MARK = '1',
+	OP_DUP = '2',
+	OP_FLOAT = 'F',
+	OP_INT = 'I',
+	OP_BININT = 'J',
+	OP_BININT1 = 'K',
+	OP_LONG = 'L',
+	OP_BININT2 = 'M',
+	OP_NONE = 'N',
+	OP_PERSID = 'P',
+	OP_BINPERSID = 'Q',
+	OP_REDUCE = 'R',
+	OP_STRING = 'S',
+	OP_BINSTRING = 'T',
+	OP_SHORT_BINSTRING = 'U',
+	OP_UNICODE = 'V',
+	OP_BINUNICODE = 'X',
+	OP_APPEND = 'a',
+	OP_BUILD = 'b',
+	OP_GLOBAL = 'c',
+	OP_DICT = 'd',
+	OP_EMPTY_DICT = '}',
+	OP_APPENDS = 'e',
+	OP_GET = 'g',
+	OP_BINGET = 'h',
+	OP_INST = 'i',
+	OP_LONG_BINGET = 'j',
+	OP_LIST = 'l',
+	OP_EMPTY_LIST = ']',
+	OP_OBJ = 'o',
+	OP_PUT = 'p',
+	OP_BINPUT = 'q',
+	OP_LONG_BINPUT = 'r',
+	OP_SETITEM = 's',
+	OP_TUPLE = 't',
+	OP_EMPTY_TUPLE = ')',
+	OP_SETITEMS = 'u',
+	OP_BINFLOAT = 'G',
+
+	// Protocol 2.
+	OP_PROTO = '\x80',
+	OP_NEWOBJ = '\x81',
+	OP_EXT1 = '\x82',
+	OP_EXT2 = '\x83',
+	OP_EXT4 = '\x84',
+	OP_TUPLE1 = '\x85',
+	OP_TUPLE2 = '\x86',
+	OP_TUPLE3 = '\x87',
+	OP_NEWTRUE = '\x88',
+	OP_NEWFALSE = '\x89',
+	OP_LONG1 = '\x8a',
+	OP_LONG4 = '\x8b',
+
+	// Protocol 3 (Python 3.x)
+	OP_BINBYTES = 'B',
+	OP_SHORT_BINBYTES = 'C',
+
+	// Protocol 4
+	OP_SHORT_BINUNICODE = '\x8c',
+	OP_BINUNICODE8 = '\x8d',
+	OP_BINBYTES8 = '\x8e',
+	OP_EMPTY_SET = '\x8f',
+	OP_ADDITEMS = '\x90',
+	OP_FROZENSET = '\x91',
+	OP_NEWOBJ_EX = '\x92',
+	OP_STACK_GLOBAL = '\x93',
+	OP_MEMOIZE = '\x94',
+	OP_FRAME = '\x95',
+
+	// Protocol 5
+	OP_BYTEARRAY8 = '\x96',
+	OP_NEXT_BUFFER = '\x97',
+	OP_READONLY_BUFFER = '\x98',
+
+	// not a real pickle opcode, indicates failure in parsing
+	OP_FAILURE = '\xff'
+};
+
+struct opmap {
+	const char *const name;
+	char op;
+};
+
+static const struct opmap op_name_map[] = {
+	{ "mark", '(' },
+	{ "stop", '.' },
+	{ "pop", '0' },
+	{ "pop_mark", '1' },
+	{ "dup", '2' },
+	{ "float", 'F' },
+	{ "int", 'I' },
+	{ "binint", 'J' },
+	{ "binint1", 'K' },
+	{ "long", 'L' },
+	{ "binint2", 'M' },
+	{ "none", 'N' },
+	{ "persid", 'P' },
+	{ "binpersid", 'Q' },
+	{ "reduce", 'R' },
+	{ "string", 'S' },
+	{ "binstring", 'T' },
+	{ "short_binstring", 'U' },
+	{ "unicode", 'V' },
+	{ "binunicode", 'X' },
+	{ "append", 'a' },
+	{ "build", 'b' },
+	{ "global", 'c' },
+	{ "dict", 'd' },
+	{ "empty_dict", '}' },
+	{ "appends", 'e' },
+	{ "get", 'g' },
+	{ "binget", 'h' },
+	{ "inst", 'i' },
+	{ "long_binget", 'j' },
+	{ "list", 'l' },
+	{ "empty_list", ']' },
+	{ "obj", 'o' },
+	{ "put", 'p' },
+	{ "binput", 'q' },
+	{ "long_binput", 'r' },
+	{ "setitem", 's' },
+	{ "tuple", 't' },
+	{ "empty_tuple", ')' },
+	{ "setitems", 'u' },
+	{ "binfloat", 'G' },
+	{ "proto", '\x80' },
+	{ "newobj", '\x81' },
+	{ "ext1", '\x82' },
+	{ "ext2", '\x83' },
+	{ "ext4", '\x84' },
+	{ "tuple1", '\x85' },
+	{ "tuple2", '\x86' },
+	{ "tuple3", '\x87' },
+	{ "newtrue", '\x88' },
+	{ "newfalse", '\x89' },
+	{ "long1", '\x8a' },
+	{ "long4", '\x8b' },
+	{ "binbytes", 'B' },
+	{ "short_binbytes", 'C' },
+	{ "short_binunicode", '\x8c' },
+	{ "binunicode8", '\x8d' },
+	{ "binbytes8", '\x8e' },
+	{ "empty_set", '\x8f' },
+	{ "additems", '\x90' },
+	{ "frozenset", '\x91' },
+	{ "newobj_ex", '\x92' },
+	{ "stack_global", '\x93' },
+	{ "memoize", '\x94' },
+	{ "frame", '\x95' },
+	{ "bytearray8", '\x96' },
+	{ "next_buffer", '\x97' },
+	{ "readonly_buffer", '\x98' }
+};
+
+static inline int name_to_op(const char *opstr) {
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+		if (!r_str_casecmp (opstr, op_name_map[i].name)) {
+			return op_name_map[i].op;
+		}
+	}
+	return OP_FAILURE;
+}
