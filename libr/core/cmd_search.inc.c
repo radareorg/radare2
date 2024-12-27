@@ -4124,9 +4124,6 @@ static void appendbaddr(RList *res, ut64 n) {
 	if (n > BADDR_MAX) {
 		return;
 	}
-	if (!n) {
-		return;
-	}
 	ut8 lo = ((n >> 16) & 0xff);
 	ut8 hi = ((n >> 24) & 0xff);
 	if (lo == 0xff || hi == 0xff) {
@@ -4242,6 +4239,7 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 		}
 		r_list_free (res);
 	}
+	r_list_free (bounds);
 }
 
 static int cmd_search(void *data, const char *input) {
