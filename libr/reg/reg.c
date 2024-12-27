@@ -257,7 +257,7 @@ static int regcmp(RRegItem *a, RRegItem *b) {
 	return (offa > offb) - (offa < offb);
 }
 
-R_API void r_reg_reindex(RReg *reg) {
+R_IPI void r_reg_reindex(RReg *reg) {
 	R_RETURN_IF_FAIL (reg);
 	int i, index;
 	RListIter *iter;
