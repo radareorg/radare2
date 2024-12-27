@@ -39,9 +39,9 @@ static const struct opcode opcodes[256] = {
 	{ 0x0e, "ldn re", 0, NONE ,"Load D with (RE)"},
 	{ 0x0f, "ldn rf", 0, NONE ,"Load D with (RF)"},
 
-	{ 0x10, "inc r0", 0, NONE ,"Increment (R0)", R_ANAL_OP_TYPE_ADD},
-	{ 0x11, "inc r1", 0, NONE ,"Increment (R1)", R_ANAL_OP_TYPE_ADD},
-	{ 0x12, "inc r2", 0, NONE ,"Increment (R2)", R_ANAL_OP_TYPE_ADD},
+	{ 0x10, "inc r0", 0, NONE ,"Increment (R0)", R_ANAL_OP_TYPE_ADD, "1,r0,+,r0,:="},
+	{ 0x11, "inc r1", 0, NONE ,"Increment (R1)", R_ANAL_OP_TYPE_ADD, "1,r1,+,r1,:="},
+	{ 0x12, "inc r2", 0, NONE ,"Increment (R2)", R_ANAL_OP_TYPE_ADD, "1,r2,+,r2,:="},
 	{ 0x13, "inc r3", 0, NONE ,"Increment (R3)", R_ANAL_OP_TYPE_ADD},
 	{ 0x14, "inc r4", 0, NONE ,"Increment (R4)", R_ANAL_OP_TYPE_ADD},
 	{ 0x15, "inc r5", 0, NONE ,"Increment (R5)", R_ANAL_OP_TYPE_ADD},
@@ -571,7 +571,7 @@ static const struct opcode opcodes2[256] = {
 	{ 0xff, "dsmi", 1, ABSVAL ,"decimal substract memory, immediate", R_ANAL_OP_TYPE_SUB}
 };
 
-static int cdp_disasm(RAnalOp *aop) {
+static int cdp_disasm(RAnalOp *aop, RArchDecodeMask mask) {
 	const ut8 *buf = aop->bytes;
 	ut8 b0 = buf[0];
 	struct opcode op = opcodes[b0];
@@ -621,6 +621,9 @@ static int cdp_disasm(RAnalOp *aop) {
 		}
 		break;
 	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		r_strbuf_initf (&aop->esil, "%s", op.esil);
+	}
 #if 0
 	Most instructions execute in 2 machine cycles. Some in 3. The 1804 and
 	1805 also have instructions which take up to 10 machine cycles.
@@ -637,7 +640,7 @@ static int cdp_disasm(RAnalOp *aop) {
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	// const char *cpu = as->config->cpu;
-	op->size = cdp_disasm (op);
+	op->size = cdp_disasm (op, mask);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 	//	op->size = cdp_disasm (op);
 		if (R_STR_ISEMPTY (op->mnemonic)) {
