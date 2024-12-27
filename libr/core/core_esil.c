@@ -159,8 +159,8 @@ R_API bool r_core_esil_init(RCore *core) {
 		goto init_fail;
 	}
 	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0,
-		R_ESIL_OP_TYPE_UNKNOWN) || !r_esil_set_op (&core->esil.esil,
-		"$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN)) {
+		R_ESIL_OP_TYPE_UNKNOWN, NULL) || !r_esil_set_op (&core->esil.esil,
+		"$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
 		goto op_fail;
 	}
 	r_strbuf_init (&core->esil.trap_revert);

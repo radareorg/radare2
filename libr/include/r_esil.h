@@ -339,6 +339,7 @@ typedef struct r_esil_operation_t {
 	ut32 push; // amount of operands pushed
 	ut32 pop; // amount of operands popped
 	ut32 type;
+	const char *info;
 } REsilOp;
 
 // esil2c
@@ -352,7 +353,9 @@ R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, int bits);
 R_API void r_esil_toc_free(REsilC *ec);
 R_API char *r_esil_toc(REsilC *esil, const char *expr);
 
-R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type);
+R_API char*r_esil_opstr(REsil*, int mode);
+
+R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type, const char *info);
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op);
 R_API void r_esil_del_op(REsil *esil, const char *op);
 R_API void r_esil_stack_free(REsil *esil);
