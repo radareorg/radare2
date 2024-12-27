@@ -2007,6 +2007,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	RRegItem *reg_pc = r_reg_get (core->dbg->reg, "PC", -1);
+	const char *screg = get_syscall_register (core);
 
 	ut8 *arr = malloc (bsize);
 	if (!arr) {
@@ -2051,8 +2052,8 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 		r_anal_op_fini (&aop);
 	}
 	free (arr);
-	int sysno = r_debug_reg_get (core->dbg, "A0");
-	r_reg_setv (core->dbg->reg, "A0", -2); // clearing register A0
+	int sysno = r_debug_reg_get (core->dbg, screg);
+	r_reg_setv (core->dbg->reg, screg, -2); // clearing register A0
 	return sysno;
 }
 #endif
@@ -2101,12 +2102,12 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #endif
 	r_cons_break_push (NULL, NULL);
 	// XXX: the syscall register depends on arcm
-	const char *a0 = get_syscall_register (core);
-	char *esp = r_str_newf ("%s,=", a0);
+	const char *screg = get_syscall_register (core);
+	char *esp = r_str_newf ("%s,=", screg);
 	char *esp32 = NULL;
 	r_reg_arena_push (core->anal->reg);
 	if (core->anal->config->bits == 64) {
-		const char *reg = r_reg_64_to_32 (core->anal->reg, a0);
+		const char *reg = r_reg_64_to_32 (core->anal->reg, screg);
 		if (reg) {
 			esp32 = r_str_newf ("%s,=", reg);
 		}
