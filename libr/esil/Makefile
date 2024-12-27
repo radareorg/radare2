@@ -12,8 +12,8 @@ pre: libr_esil.$(EXT_SO) libr_esil.$(EXT_AR)
 
 include $(STATIC_ESIL_PLUGINS)
 STATIC_OBJS=$(subst ..,p/..,$(subst esil_,p/esil_,$(STATIC_OBJ)))
-OBJS=esil.o esil_plugin.o esil_handler.o esil_stats.o esil_trace.o esil_toc.o
-OBJS+=esil_compiler.o
+OBJS=esil.o esil_plugin.o esil_handler.o esil_stats.o
+OBJS+=esil_compiler.o esil_ops.o esil_toc.o esil_trace.o
 OBJS+=${STATIC_OBJS}
 
 include ../rules.mk
