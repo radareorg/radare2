@@ -158,44 +158,50 @@ typedef struct r_reg_flags_t {
 } RRegFlags;
 
 #ifdef R_API
+
+// internal
+R_IPI void r_reg_free_internal(RReg *reg, bool init);
+R_IPI void r_reg_reindex(RReg *reg);
+R_IPI void r_reg_item_free(RRegItem *item);
+
+// lifecicle
 R_API void r_reg_free(RReg *reg);
-R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
 R_API RReg *r_reg_init(RReg *reg);
+
+// alias
 R_API bool r_reg_alias_setname(RReg *reg, RRegAlias alias, const char *name);
 R_API const char *r_reg_alias_tostring(RRegAlias alias);
+R_API const char *r_reg_alias_getname(RReg *reg, RRegAlias alias);
+R_API int r_reg_alias_fromstring(const char *type);
+
+// profile // R2_600 - refactor this api
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API char* r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API char *r_reg_parse_gdb_profile(const char *profile);
+
 R_API bool r_reg_ro_reset(RReg *reg, const char *arg);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
-R_API RRegSet *r_reg_regset_clone(RRegSet *r);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
-// R_API const char *r_reg_get_name_by_type(RReg *reg, const char *name);
-R_API const char *r_reg_get_type(int idx);
-R_API const char *r_reg_alias_getname(RReg *reg, RRegAlias alias);
-R_API const char *r_reg_get_name(RReg *reg, int kind);
+
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta);
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize);
 
-R_API void r_reg_reindex(RReg *reg);
+// TODO: rename to RReg.getAt ?
 R_API RRegItem *r_reg_index_get(RReg *reg, int idx);
 
-/* Item */
-R_API void r_reg_item_free(RRegItem *item);
-
-/* XXX: dupped ?? */
-R_API int r_reg_type_by_name(const char *str);
+R_API int r_reg_type_by_name(const char *str); // rename to rreg_type_fromstring
 R_API const char *r_reg_type_tostring(int idx);
-R_API int r_reg_alias_fromstring(const char *type);
 
+// cond apis
+R_API bool r_reg_cond(RReg *r, int type);
 R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name);
 R_API void r_reg_cond_apply(RReg *r, RRegFlags *f);
 R_API bool r_reg_cond_set(RReg *reg, const char *name, bool val);
@@ -203,7 +209,6 @@ R_API bool r_reg_cond_get_value(RReg *r, const char *name);
 R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v);
 R_API bool r_reg_cond_bits(RReg *r, int type, RRegFlags *f);
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *);
-R_API bool r_reg_cond(RReg *r, int type);
 
 /* integer value 8-64 bits */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
@@ -232,8 +237,10 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str);
 R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val);
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits);
 
-/* byte arena */
 R_API int r_reg_default_bits(RReg *reg);
+R_API int r_reg_default_endian(RReg *reg);
+
+/* byte arena */
 R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size);
 R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len);
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len);
