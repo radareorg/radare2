@@ -211,3 +211,81 @@ fail_memory_ht:
 fail_registers_ht:
 	return false;
 }
+
+R_API void r_anal_esil_trace_fini(RAnalEsilTrace *trace) {
+	R_RETURN_IF_FAIL (trace);
+	RVecAnalEsilTraceOp_fini (&trace->db.ops);
+	RVecAnalEsilAccess_fini (&trace->db.accesses);
+	ht_uu_free (trace->db.loop_counts);
+	ht_up_free (trace->registers);
+	ht_up_free (trace->memory);
+	free (trace->stack_data);
+	ut32 i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_reg_arena_free (trace->arena[i]);
+	}
+	trace[0] = (const RAnalEsilTrace){0};
+}
+
+R_API void r_anal_esil_trace_op(RAnalEsilTrace *trace, REsil *esil, RAnalOp *op) {
+	R_RETURN_IF_FAIL (trace && esil && op);
+	const char *expr = r_strbuf_get (&op->esil);
+	if (R_UNLIKELY (!expr || !strlen (expr))) {
+		R_LOG_WARN ("expr is empty or null");
+		return;
+	}
+	ut32 voy[4];
+	voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
+		anal_esil_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
+	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
+		return;
+	}
+	voy[R_ESIL_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
+		anal_esil_trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_regw_voy;
+	}
+	voy[R_ESIL_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
+		anal_esil_trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
+	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_memr_voy;
+	}
+	voy[R_ESIL_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
+		anal_esil_trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_memw_voy;
+	}
+	
+	RRegItem *ri = r_reg_get (esil->anal->reg, "PC", -1);
+	if (ri) {
+		add_reg_change (trace, ri, op->addr);
+		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr);
+		r_unref (ri);
+		if (!suc) {
+			goto fail_set_pc;
+		}
+	}
+
+	RAnalEsilTraceOp *to = RVecAnalEsilTraceOp_emplace_back (&trace->db.ops);
+	if (R_LIKELY (to)) {
+		ut32 vec_idx = RVecAnalEsilAccess_length (&trace->db.accesses);
+		to->start = vec_idx;
+		to->end = vec_idx;
+		to->addr = op->addr;
+	} else {
+		R_LOG_WARN ("Couldn't allocate(emplace_back) trace op");
+		//anything to do here?
+	}
+	r_esil_parse (esil, expr);
+	r_esil_stack_free (esil);
+	trace->idx++;
+	trace->end_idx++;	// should be vector length?
+fail_set_pc:
+	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_MEM_WRITE]);
+fail_memw_voy:
+	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_MEM_READ]);
+fail_memr_voy:
+	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_WRITE]);
+fail_regw_voy:
+	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_READ]);
+}
