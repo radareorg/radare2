@@ -1653,6 +1653,8 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 
 R_API bool r_anal_esil_trace_init(RAnalEsilTrace *trace, REsil *esil, RReg *reg, ut64 stack_addr, ut64 stack_size);
+R_API void r_anal_esil_trace_fini(RAnalEsilTrace *trace);
+R_API void r_anal_esil_trace_op(RAnalEsilTrace *trace, REsil *esil, RAnalOp *op);
 
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
