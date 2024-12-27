@@ -1509,9 +1509,9 @@ static char* regs(RArchSession *as) {
 static int esil_gb_init(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	REsilOp *op = r_esil_get_op (esil, "}{");
-	r_esil_set_op (esil, "halt", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "stop", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "halt", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+	r_esil_set_op (esil, "stop", op->code, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM, NULL);
 	return true;
 }
 
