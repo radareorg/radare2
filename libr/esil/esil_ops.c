@@ -12,7 +12,8 @@
 #include <fenv.h>
 
 #define IFDBG if (esil->verbose > 1)
-#define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z)
+#define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
+#define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
 #define	OT_UNK	R_ESIL_OP_TYPE_UNKNOWN
 #define	OT_CTR	R_ESIL_OP_TYPE_CONTROL_FLOW
 #define	OT_MATH	R_ESIL_OP_TYPE_MATH
@@ -21,7 +22,6 @@
 #define	OT_MEMR	R_ESIL_OP_TYPE_MEM_READ
 #define	OT_FLAG R_ESIL_OP_TYPE_FLAG
 #define	OT_TRAP R_ESIL_OP_TYPE_TRAP
-
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr);
 
@@ -1812,18 +1812,18 @@ static bool esil_peek_some(REsil *esil) {
 static bool esil_mem_oreq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_esil_pop (esil);  //save the dst-addr
-	char *src0 = r_esil_pop (esil); //get the src
+	char *dst = r_esil_pop (esil); // save the dst-addr
+	char *src0 = r_esil_pop (esil); // get the src
 	char *src1 = NULL;
-	if (src0 && r_esil_get_parm (esil, src0, &s)) { 	//get the src
-		r_esil_push (esil, dst);			//push the dst-addr
-		ret = !!esil_peek_n (esil, bits);		//read
-		src1 = r_esil_pop (esil);			//get the old dst-value
-		if (src1 && r_esil_get_parm (esil, src1, &d)) { //get the old dst-value
-			d |= s;					//calculate the new dst-value
-			r_esil_pushnum (esil, d);		//push the new dst-value
-			r_esil_push (esil, dst);		//push the dst-addr
-			ret &= (!!esil_poke_n (esil, bits));	//write
+	if (src0 && r_esil_get_parm (esil, src0, &s)) { 	// get the src
+		r_esil_push (esil, dst);			// push the dst-addr
+		ret = !!esil_peek_n (esil, bits);		// read
+		src1 = r_esil_pop (esil);			// get the old dst-value
+		if (src1 && r_esil_get_parm (esil, src1, &d)) { // get the old dst-value
+			d |= s;					// calculate the new dst-value
+			r_esil_pushnum (esil, d);		// push the new dst-value
+			r_esil_push (esil, dst);		// push the dst-addr
+			ret &= (!!esil_poke_n (esil, bits));	// write
 		} else {
 			ret = false;
 		}
@@ -3066,7 +3066,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP (">>=[8]", esil_mem_lsreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	ret &= OP ("[*]", esil_peek_some, 0, 0, OT_MEMR);
 	ret &= OP ("=[*]", esil_poke_some, 0, 0, OT_MEMW);
-	ret &= OP ("[1]", esil_peek1, 1, 1, OT_MEMR);
+	ret &= OP2 ("[1]", esil_peek1, 1, 1, OT_MEMR, "read 1 byte from address taken from stack push the byte value");
 	ret &= OP ("[2]", esil_peek2, 1, 1, OT_MEMR);
 	ret &= OP ("[3]", esil_peek3, 1, 1, OT_MEMR);
 	ret &= OP ("[4]", esil_peek4, 1, 1, OT_MEMR);
@@ -3088,7 +3088,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("SETD", esil_set_delay_slot, 0, 1, OT_UNK);
 
 	/* we all float down here */
-	ret &= OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
+	ret &= OP2 ("NAN", esil_is_nan, 1, 1, OT_MATH, "check if not a number, returns 1|0");
 	// XXX I2D and S2D do the same, kill one
 	ret &= OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
 	// OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH); R_DEPRECATE
@@ -3111,3 +3111,56 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	return ret & OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
 }
 
+typedef struct {
+	RStrBuf *sb;
+	PJ *pj;
+} OpsData;
+
+static bool opsforeach(void *user, const void *key, const void *value) {
+	OpsData *opsdata = (OpsData*)user;
+	REsilOp *eop = (REsilOp*)value;
+	const char *type = "";
+	switch (eop->type) {
+	case OT_MATH: type = " (math)"; break;
+	case OT_UNK: type = " (unknown)"; break;
+	case OT_CTR: type = " (control)"; break;
+	case OT_MATH|OT_REGW: type = " (math+regw)"; break;
+	case OT_MATH|OT_MEMR|OT_REGW: type = " (math+memr+regw)"; break;
+	case OT_MEMR: type = " (memr)"; break;
+	case OT_MEMW: type = " (memw)"; break;
+	}
+	if (opsdata->sb) {
+		r_strbuf_appendf (opsdata->sb, ": %s (%d -- %d) \\ %s%s\n",
+			(const char *)key, eop->pop, eop->push, eop->info?eop->info: "", type);
+	} else if (opsdata->pj) {
+		PJ *pj = opsdata->pj;
+		pj_o (pj);
+		pj_ks (pj, "name", key);
+		pj_kn (pj, "inputs", eop->pop);
+		pj_kn (pj, "outputs", eop->push);
+		if (eop->info) {
+			pj_ks (pj, "info", eop->info);
+		}
+		if (R_STR_ISNOTEMPTY (type)) {
+			pj_ks (pj, "type", type);
+		}
+		pj_end (pj);
+	}
+	return true;
+}
+
+R_API char *r_esil_opstr(REsil *esil, int mode) {
+	OpsData opsdata = { 0 };
+	if (mode == 'j') {
+		opsdata.pj = pj_new ();
+		pj_a (opsdata.pj);
+	} else {
+		opsdata.sb = r_strbuf_new ("");
+	}
+	ht_pp_foreach (esil->ops, opsforeach, &opsdata);
+	if (mode == 'j') {
+		pj_end (opsdata.pj);
+		return pj_drain (opsdata.pj);
+	}
+	return r_strbuf_drain (opsdata.sb);
+}

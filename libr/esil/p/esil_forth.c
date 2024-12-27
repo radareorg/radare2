@@ -29,7 +29,7 @@ static bool esil_over(REsil *esil) {
 
 static void *r_esil_forth_init(REsil *esil) {
 	r_esil_set_op (esil, "OVER", esil_over,
-		2, 3, R_ESIL_OP_TYPE_CUSTOM);
+		2, 3, R_ESIL_OP_TYPE_CUSTOM, NULL);
 #if 0
 	r_esil_set_interrupt (esil, 1337,
 		esil_forth_interrupt_handler, NULL);

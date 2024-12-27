@@ -1893,7 +1893,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 		/* hook addrinfo */
-		r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
+		r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 		/* hook addrinfo */
 		r_esil_setup (esil, core->anal, 1, 0, nonull);
 		r_esil_stack_free (esil);

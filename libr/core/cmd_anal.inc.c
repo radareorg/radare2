@@ -367,6 +367,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"ae!", " [file]", "compile esil file into an esil expression",
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
+	"ae???", "", "list ESIL ops",
 	"aea", "[f] [count]", "analyse n esil instructions accesses (regs, mem..)",
 	"aeA", "[f] [count]", "analyse n bytes for their esil accesses (regs, mem..)",
 	"aeb", " ([addr])", "emulate block in current or given address",
@@ -9023,12 +9024,20 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case '?': // "ae?"
 		if (input[1] == '?') {
+			if (input[2] == '?') {
+				// TODO: find better name for this command
+				char *s = r_esil_opstr (core->anal->esil, input[3]);
+				r_cons_print (s);
+				free (s);
+				break;
+			}
 			r_core_cmd_help (core, help_detail_ae);
 			break;
 		}
-		/* fallthrough */
-	default:
 		r_core_cmd_help (core, help_msg_ae);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ae", input[0]);
 		break;
 	}
 }

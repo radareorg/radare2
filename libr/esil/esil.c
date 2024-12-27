@@ -213,7 +213,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	free (r_id_storage_take (&esil->voyeur[vt], id));
 }
 
-R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type) {
+R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type, const char *info) {
 	R_RETURN_VAL_IF_FAIL (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
 	REsilOp *eop = ht_pp_find (esil->ops, op, NULL);
 	if (!eop) {
@@ -231,6 +231,7 @@ R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push,
 	eop->pop = pop;
 	eop->type = type;
 	eop->code = code;
+	eop->info = info;
 	return true;
 }
 
