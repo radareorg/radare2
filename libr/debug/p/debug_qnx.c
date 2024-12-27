@@ -115,8 +115,7 @@ static RList *r_debug_qnx_map_get(RDebug *dbg) {
 static bool r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
 	int bits = dbg->anal->config->bits;
-	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
-	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
+	RRegItem *reg = r_reg_get (dbg->anal->reg, "PC", 0);
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd || !pd->reg_buf) {
 		// we cannot write registers before we once read them

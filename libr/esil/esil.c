@@ -128,7 +128,7 @@ static bool default_is_reg(void *reg, const char *name) {
 
 #if 0
 static bool default_reg_alias(void *reg, int kind, const char *name) {
-	return r_reg_set_name ((RReg *)reg, kind, name);
+	return r_reg_set_alias ((RReg *)reg, kind, name);
 }
 #endif
 
@@ -246,7 +246,7 @@ R_API void r_esil_del_op(REsil *esil, const char *op) {
 
 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
 	R_RETURN_IF_FAIL (esil);
-	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
+	// r_reg_set_value_by_role (esil->anal->reg, R_REG_ALIAS_PC, addr);
 	esil->addr = addr;
 }
 
@@ -503,9 +503,9 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->anal->reg, false);
 	RReg *reg = esil->anal->reg;
 
-	const char *pc = r_reg_get_name (reg, R_REG_NAME_PC);
-	const char *sp = r_reg_get_name (reg, R_REG_NAME_SP);
-	const char *bp = r_reg_get_name (reg, R_REG_NAME_BP);
+	const char *pc = r_reg_alias_getname (reg, R_REG_ALIAS_PC);
+	const char *sp = r_reg_alias_getname (reg, R_REG_ALIAS_SP);
+	const char *bp = r_reg_alias_getname (reg, R_REG_ALIAS_BP);
 
 	if (!pc) {
 		R_LOG_WARN ("RReg profile does not contain PC register");

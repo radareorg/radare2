@@ -612,7 +612,7 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 					reg = p->get_reg_at (f, var->delta, addr);
 				}
 				if (!reg) {
-					reg = anal->reg->name[R_REG_NAME_BP];
+					reg = anal->reg->alias[R_REG_ALIAS_BP];
 				}
 				oldstr = mount_oldstr (p, reg, delta, ucase);
 				if (strstr (tstr, oldstr)) {
@@ -649,7 +649,7 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 					reg = p->get_reg_at (f, delta, addr);
 				}
 				if (!reg) {
-					reg = anal->reg->name[R_REG_NAME_SP];
+					reg = anal->reg->alias[R_REG_ALIAS_SP];
 				}
 				oldstr = mount_oldstr (p, reg, delta, ucase);
 				if (strstr (tstr, oldstr)) {

@@ -530,7 +530,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				reg = p->get_reg_at (f, sparg->delta, addr);
 			}
 			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_SP];
+				reg = anal->reg->alias[R_REG_ALIAS_SP];
 			}
 			mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 
@@ -578,7 +578,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				reg = p->get_reg_at (f, bparg->delta, addr);
 			}
 			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_BP];
+				reg = anal->reg->alias[R_REG_ALIAS_BP];
 			}
 			mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 			if (ucase) {
@@ -616,8 +616,8 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 	}
 
 	char bp[32];
-	if (anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
+	if (anal->reg->alias[R_REG_ALIAS_BP]) {
+		strncpy (bp, anal->reg->alias[R_REG_ALIAS_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)*tstr)) {
 			r_str_case (bp, true);
 		}

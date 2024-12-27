@@ -3711,7 +3711,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	// allow to change the current function during debugging
 	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
 		// seek only when the graph node changes
-		const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+		const char *pc = r_reg_alias_getname (core->dbg->reg, R_REG_ALIAS_PC);
 		ut64 addr = r_reg_getv (core->dbg->reg, pc);
 		RANode *acur = get_anode (g->curnode);
 

@@ -5563,7 +5563,6 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
 	int tmp_esil_str_len;
-	const char *esilstr;
 	const int maxaddrlen = 20;
 	const char *spname = NULL;
 	if (!esil) {
@@ -5599,14 +5598,14 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	}
 
 	r_asm_set_pc (core->rasm, cur);
-	esilstr = R_STRBUF_SAFEGET (&op.esil);
+	const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 	if (!esilstr) {
 		goto err_anal_op;
 	}
 	// Ugly code
 	// This is a hack, since ESIL doesn't always preserve values pushed on the stack. That probably needs to be rectified
-	spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	if (!spname || !*spname) {
+	spname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
+	if (R_STR_ISEMPTY (spname)) {
 		goto err_anal_op;
 	}
 	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
@@ -5616,7 +5615,7 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	}
 	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%s,[", spname);
-	if (!*esilstr || (strncmp ( esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
+	if (!*esilstr || (strncmp (esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
 		free (tmp_esil_str);
 		goto err_anal_op;
 	}
@@ -5640,7 +5639,7 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 	r_esil_set_pc (&esil_cpy, cur);
-	if (!esilstr || !*esilstr) {
+	if (R_STR_ISEMPTY (esilstr)) {
 		goto err_anal_op;
 	}
 	r_esil_parse (&esil_cpy, esilstr);
@@ -5858,7 +5857,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, start, buf, iend + 1);
 	// maybe r_core_cmd_call (core, "aeim");
-	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");
 		return;
@@ -5883,7 +5882,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
-	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *kpcname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
 	if (R_STR_ISEMPTY (kpcname)) {
 		R_LOG_ERROR ("Cannot find program counter register in the current profile");
 		return;
@@ -5916,7 +5915,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 
 	r_reg_arena_push (core->anal->reg);
-	char *sn = (char *)r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	char *sn = (char *)r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
 	if (sn) {
 		sn = strdup (sn);
 	} else {

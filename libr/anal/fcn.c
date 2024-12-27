@@ -730,8 +730,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 		maxlen = 0;
 	}
-	const char *_bp_reg = anal->reg->name[R_REG_NAME_BP];
-	const char *_sp_reg = anal->reg->name[R_REG_NAME_SP];
+	const char *_bp_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	const char *_sp_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 	const bool has_stack_regs = _bp_reg && _sp_reg;
 	if (has_stack_regs) {
 		free (bp_reg);
@@ -2098,10 +2098,9 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 			*comma = 0;
 			pj_ks (pj, "name", comma + 1);
 			pj_ks (pj, "type", arg_i);
-			r_strf_var (regname, 32, "A%d", i);
-			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (regname));
-			if (cc_arg) {
-				pj_ks (pj, "cc", cc_arg);
+			const char *rn = r_reg_alias_getname (a->reg, R_REG_ALIAS_A0 + i);
+			if (rn) {
+				pj_ks (pj, "cc", rn);
 			}
 		}
 		free (arg_i);
@@ -2362,13 +2361,16 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
 	const char *opdreg = dst? dst->reg: NULL;
 	const char *opsreg = src? src->reg: NULL;
-	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
-	bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
-	bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bp_name);
-	if (op->type == R_ANAL_OP_TYPE_XCHG) {
-		return src_is_bp || dst_is_bp;
+	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	if (bpreg) {
+		bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bpreg);
+		bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bpreg);
+		if (op->type == R_ANAL_OP_TYPE_XCHG) {
+			return src_is_bp || dst_is_bp;
+		}
+		return dst_is_bp;
 	}
-	return dst_is_bp;
+	return false;
 }
 
 /*
@@ -2383,8 +2385,11 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	char *pos;
 	// XXX omg this is one of the most awful things ive seen lately
 	char str_to_find[40];
-	snprintf (str_to_find, sizeof (str_to_find),
-		"\"type\":\"reg\",\"value\":\"%s", anal->reg->name[R_REG_NAME_BP]);
+	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	if (bpreg) {
+		snprintf (str_to_find, sizeof (str_to_find),
+			"\"type\":\"reg\",\"value\":\"%s", bpreg);
+	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
 		RAnalValue *src = NULL;
@@ -2405,8 +2410,8 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
 				if (can_affect_bp (anal, &op)) {
-					const char *spreg = anal->reg->name[R_REG_NAME_SP];
-					if (src && src->reg && strcmp (src->reg, spreg)) {
+					const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+					if (spreg && src && src->reg && strcmp (src->reg, spreg)) {
 						fcn->bp_frame = false;
 						r_anal_op_fini (&op);
 						free (buf);

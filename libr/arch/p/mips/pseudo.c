@@ -274,7 +274,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				reg = p->get_reg_at (f, var->delta, addr);
 			}
 			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_SP];
+				reg = anal->reg->alias[R_REG_ALIAS_SP];
 			}
 			char *tmpf;
 			//TODO: honor asm pseudo
@@ -320,7 +320,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				reg = p->get_reg_at (f, var->delta, addr);
 			}
 			if (!reg) {
-				reg = anal->reg->name[R_REG_NAME_BP];
+				reg = anal->reg->alias[R_REG_ALIAS_BP];
 			}
 			if (R_ABS (delta) < 10) {
 				tmpf = "%d(%s)";

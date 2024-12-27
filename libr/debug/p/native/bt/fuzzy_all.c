@@ -55,7 +55,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	if (at == UT64_MAX) {
 		RRegItem *ri;
 		RReg *reg = dbg->reg;
-		const char *spname = r_reg_get_name (reg, R_REG_NAME_SP);
+		const char *spname = r_reg_alias_getname (reg, R_REG_ALIAS_SP);
 		if (!spname) {
 			R_LOG_ERROR ("Cannot find stack pointer register");
 			free (stack);

@@ -1016,23 +1016,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 
 			// check for reg alias
-			struct r_reg_item_t *r = r_reg_get (core->dbg->reg, str, -1);
-			if (!r) {
-				int role = r_reg_get_name_idx (str);
-				if (role != -1) {
-					const char *alias = r_reg_get_name (core->dbg->reg, role);
-					if (alias) {
-						r = r_reg_get (core->dbg->reg, alias, -1);
-						if (r) {
-							if (ok) {
-								*ok = true;
-							}
-							ret = r_reg_get_value (core->dbg->reg, r);
-							return ret;
-						}
-					}
-				}
-			} else {
+			RRegItem *r = r_reg_get (core->dbg->reg, str, -1);
+			if (r) {
 				if (ok) {
 					*ok = true;
 				}

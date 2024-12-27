@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2024 - pancake */
 
 #include <r_debug.h>
 
@@ -28,7 +28,7 @@ typedef struct {
 static R_TH_LOCAL RDebug *dbg = NULL;
 static R_TH_LOCAL bool has_match = false;
 static R_TH_LOCAL int prestep = 1; // TODO: make it configurable
-static R_TH_LOCAL ut64 opc = 0;
+static R_TH_LOCAL ut64 Gopc = 0;
 static R_TH_LOCAL RList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
 #define ESIL dbg->anal->esil
@@ -70,7 +70,7 @@ static bool esilbreak_check_pc(RDebug *dbg, ut64 pc) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (!pc) {
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		pc = r_debug_reg_get (dbg, "PC");
 	}
 	r_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & R_PERM_X) {
@@ -228,8 +228,8 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	}
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	opc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	dbg->iob.read_at (dbg->iob.io, opc, obuf, sizeof (obuf));
+	Gopc = r_debug_reg_get (dbg, "PC");
+	dbg->iob.read_at (dbg->iob.io, Gopc, obuf, sizeof (obuf));
 
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
@@ -247,16 +247,16 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 			return false;
 		}
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_ALIAS_PC]);
 	}
 
-	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ARCH_OP_MASK_ESIL)) {
-		if (esilbreak_check_pc (dbg, opc)) {
-			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, opc);
+	if (r_anal_op (dbg->anal, &op, Gopc, obuf, sizeof (obuf), R_ARCH_OP_MASK_ESIL)) {
+		if (esilbreak_check_pc (dbg, Gopc)) {
+			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, Gopc);
 			ret = 0;
 		} else {
-			r_esil_set_pc (ESIL, opc);
-			eprintf ("0x%08"PFMT64x"  %s\n", opc, R_STRBUF_SAFEGET (&op.esil));
+			r_esil_set_pc (ESIL, Gopc);
+			eprintf ("0x%08"PFMT64x"  %s\n", Gopc, R_STRBUF_SAFEGET (&op.esil));
 			(void)r_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
 			//r_esil_dumpstack (ESIL);
 			r_esil_stack_free (ESIL);
@@ -270,7 +270,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 				return 0;
 			}
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_ALIAS_PC]);
 		}
 	}
 	return ret;
@@ -286,7 +286,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 			break;
 		}
 		if (has_match) {
-			R_LOG_INFO ("EsilBreak match at 0x%08"PFMT64x, opc);
+			R_LOG_INFO ("EsilBreak match at 0x%08"PFMT64x, Gopc);
 			break;
 		}
 		if (count > 0) {
@@ -298,7 +298,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 		}
 	} while (r_debug_esil_stepi (dbg));
 	r_cons_break_pop ();
-	return opc;
+	return Gopc;
 }
 
 R_API ut64 r_debug_esil_continue(RDebug *dbg) {

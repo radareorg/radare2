@@ -123,11 +123,11 @@ static char *findNextNumber(char *op) {
 static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	int i;
 	for (i = 0; i < 64; i++) {
-		const char *k = r_reg_get_name (reg, i);
-		if (!k || i == R_REG_NAME_PC) {
+		const char *k = r_reg_alias_getname (reg, i);
+		if (!k || i == R_REG_ALIAS_PC) {
 			continue;
 		}
-		const char *v = r_reg_get_role (i);
+		const char *v = r_reg_alias_tostring (i);
 		if (!v) {
 			break;
 		}

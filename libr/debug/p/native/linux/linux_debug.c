@@ -126,8 +126,8 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 					if (p) {
 						if (r_str_startswith (p, "dbg.libs")) {
 							const char *name = strstr (b->data, "sym.imp.dlopen")
-								? r_reg_get_name (dbg->reg, R_REG_NAME_A0)
-								: r_reg_get_name (dbg->reg, R_REG_NAME_A1);
+								? r_reg_alias_getname (dbg->reg, R_REG_ALIAS_A0)
+								: r_reg_alias_getname (dbg->reg, R_REG_ALIAS_A1);
 							b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
 							break;
