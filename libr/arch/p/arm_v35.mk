@@ -22,5 +22,5 @@ ALL_TARGETS+=$(TARGET_ARM_V35)
 
 $(TARGET_ARM_V35):
 	${CC} $(V35ARM64_CFLAGS) ${CFLAGS} $(call libname,$(N)) \
-		-lr_util -lr_search -o $(TARGET_ARM_V35) 
+		-lr_util -lr_search -o $(TARGET_ARM_V35) \
 		${OBJ_ARM_V35} $(V35ARM64_LDFLAGS)
