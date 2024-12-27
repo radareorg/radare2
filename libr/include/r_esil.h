@@ -152,16 +152,18 @@ typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
+// typedef bool (*REsilRegAlias)(void *reg, int kind, const char *name);
 
 typedef struct r_esil_register_interface_t {
 	union {
 		void *reg;
 		void *user;
 	};
-	REsilIsReg is_reg;
+	REsilIsReg is_reg; /// IsReg breaks the REsilReg prefix naming
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
 	REsilRegSize reg_size;
+	// REsilRegAlias reg_alias;
 } REsilRegInterface;
 
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
