@@ -343,8 +343,7 @@ static bool gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	}
 	int buflen = 0;
 	int bits = dbg->anal->config->bits;
-	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
-	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
+	RRegItem *reg = r_reg_get (dbg->anal->reg, "PC", 0);
 	if (reg) {
 		if (bits != reg->size) {
 			bits = reg->size;

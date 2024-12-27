@@ -364,9 +364,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	const char *cc = fcn->cc ? fcn->cc: "default";
 	const char *cc_a0 = r_anal_cc_arg (core->anal, cc, 0, -1);
 	const char *cc_a1 = r_anal_cc_arg (core->anal, cc, 1, -1);
-	const char *a0 = cc_a0? cc_a0: r_reg_get_name_by_type (core->anal->reg, "A0");
-	const char *a1 = cc_a1? cc_a1: r_reg_get_name_by_type (core->anal->reg, "A1");
-	const char *r0 = r_reg_get_name_by_type (core->anal->reg, "R0");
+	const char *a0 = cc_a0? cc_a0: r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_A0);
+	const char *a1 = cc_a1? cc_a1: r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_A1);
+	const char *r0 = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_R0);
 	if (show_c_headers) {
 		// NEWLINE (fcn->addr, indent);
 		PRINTF ("// global registers\n");

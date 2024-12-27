@@ -936,6 +936,9 @@ beach:
 }
 
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
+	if (!fcn) {
+		return;
+	}
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -949,13 +952,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	const char *pc_name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	const char *sp_name = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	RRegItem *pc = r_reg_get (core->anal->reg, pc_name, -1);
+	RRegItem *pc = r_reg_get (core->anal->reg, "PC", -1);
 
-	if (!fcn) {
-		return;
-	}
 	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
@@ -972,11 +970,11 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 	r_reg_arena_push (core->anal->reg);
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-	ut64 spval = r_reg_getv (esil->anal->reg, sp_name);
+	ut64 spval = r_reg_getv (esil->anal->reg, "SP");
 	if (spval) {
 		// reset stack pointer to initial value
-		RRegItem *sp = r_reg_get (esil->anal->reg, sp_name, -1);
-		ut64 curpc = r_reg_getv (esil->anal->reg, pc_name);
+		RRegItem *sp = r_reg_get (esil->anal->reg, "SP", -1);
+		ut64 curpc = r_reg_getv (esil->anal->reg, "PC");
 		int stacksz = r_core_get_stacksz (core, fcn->addr, curpc);
 		if (stacksz > 0) {
 			r_reg_arena_zero (esil->anal->reg); // clear prev reg values

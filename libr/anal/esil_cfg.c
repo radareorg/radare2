@@ -585,7 +585,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(R_NULLABLE RAnalEsilCFG *cfg, RAnal *anal
 		free (glue_bb);
 		return NULL;
 	}
-	const char *pc = r_reg_get_name (anal->reg, R_REG_NAME_PC);
+	const char *pc = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
 	r_strbuf_setf (glue, "0x%" PFMT64x ",%s,:=,", op->addr + op->size, pc);
 	glue_bb->expr = strdup (r_strbuf_get (glue));
 	r_strbuf_free (glue);

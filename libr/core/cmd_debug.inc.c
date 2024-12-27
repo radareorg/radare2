@@ -606,6 +606,7 @@ static void cmd_debug_cont_syscall(RCore *core, const char *_str) {
 static int showreg(RCore *core, const char *str) {
 	int size = 0;
 	RRegItem *r = 0;
+#if 0
 	const char *rname = str;
 	// check for alias reg
 	int role = r_reg_get_name_idx (str);
@@ -615,7 +616,8 @@ static int showreg(RCore *core, const char *str) {
 	if (!rname) {
 		return 0;
 	}
-	r = r_reg_get (core->dbg->reg, rname , -1);
+#endif
+	r = r_reg_get (core->dbg->reg, str, -1);
 	if (r) {
 		ut64 off;
 		utX value;
@@ -908,7 +910,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 				break;
 			}
 			r_debug_step (core->dbg, 1);
-			pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
+			pc = r_debug_reg_get (core->dbg, "PC");
 			// 'Copy' from r_debug_step_soft
 			if (!core->dbg->iob.read_at) {
 				R_LOG_ERROR ("cannot read");
@@ -1255,8 +1257,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 				*pcbits2 = 32;
 			}
 		} else {
-			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			RRegItem *reg = r_reg_get (core->anal->reg, "PC", 0);
 			if (reg) {
 				if (core->rasm->config->bits != reg->size)
 					pcbits = reg->size;
@@ -2151,10 +2152,10 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 
 		const char *role = "";
 		int i;
-		for (i = 0; i < R_REG_NAME_LAST; i++) {
-			const char *t = r_reg_get_name (reg, i);
+		for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+			const char *t = r_reg_alias_getname (reg, i);
 			if (t && !strcmp (t, r->name)) {
-				role = r_reg_get_role (i);
+				role = r_reg_alias_tostring (i);
 			}
 		}
 
@@ -2195,22 +2196,22 @@ static void cmd_drpi(RCore *core) {
 	RListIter *iter;
 	RRegItem *ri;
 	r_cons_printf ("Aliases (Reg->name)\n");
-	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		const char *v = r_str_get_fail (core->anal->reg->name[i], "?");
-		r_cons_printf ("%d %s %s\n", i, r_reg_get_role (i), v);
+	for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+		const char *v = r_str_get_fail (r_reg_alias_getname (core->anal->reg, i), "?");
+		r_cons_printf ("%d %s %s\n", i, r_reg_alias_tostring (i), v);
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		const char *nmi = r_reg_get_type (i);
+		const char *nmi = r_reg_type_tostring (i);
 		r_cons_printf ("regset %d (%s)\n", i, nmi);
 		RRegSet *rs = &core->anal->reg->regset[i];
 		if (!rs || !rs->arena) {
-			r_cons_printf ("* arena %s no\n", r_reg_get_type (i));
+			r_cons_printf ("* arena %s no\n", r_reg_type_tostring (i));
 			continue;
 		}
-		r_cons_printf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
+		r_cons_printf ("* arena %s size %d\n", r_reg_type_tostring (i), rs->arena->size);
 		r_list_foreach (rs->regs, iter, ri) {
-			const char *tpe = r_reg_get_type (ri->type);
-			const char *arn = r_reg_get_type (ri->arena);
+			const char *tpe = r_reg_type_tostring (ri->type);
+			const char *arn = r_reg_type_tostring (ri->arena);
 			r_cons_printf ("   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset / 8, ri->size / 8);
 			if ((ri->offset / 8) + (ri->size / 8) > rs->arena->size) {
 				r_cons_printf (" *OVERFLOW*");
@@ -2337,12 +2338,12 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			pj_o (pj);
 			pj_k (pj, "alias_info");
 			pj_a (pj);
-			for (i = 0; i < R_REG_NAME_LAST; i++) {
-				if (core->dbg->reg->name[i]) {
+			for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+				if (core->dbg->reg->alias[i]) {
 					pj_o (pj);
 					pj_kn (pj, "role", i);
-					pj_ks (pj, "role_str", r_reg_get_role (i));
-					pj_ks (pj, "reg", core->dbg->reg->name[i]);
+					pj_ks (pj, "role_str", r_reg_alias_tostring (i));
+					pj_ks (pj, "reg", r_reg_alias_getname (core->dbg->reg, i));
 					pj_end (pj);
 				}
 			}
@@ -2353,7 +2354,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
 					pj_o (pj);
 					pj_kn (pj, "type", r->type);
-					pj_ks (pj, "type_str", r_reg_get_type (r->type));
+					pj_ks (pj, "type_str", r_reg_type_tostring (r->type));
 					pj_ks (pj, "name", r->name);
 					pj_kn (pj, "size", r->size);
 					pj_kn (pj, "offset", r->offset);
@@ -2610,10 +2611,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (count == 1) {
 					r_cons_printf ("0x%08"PFMT64x"\n", off);
 				} else {
-					int type = r_reg_get_name_idx (arg);
+					int type = r_reg_alias_fromstring (arg);
 					const char *r = arg;
 					if (type != -1) {
-						r = r_reg_get_name (core->dbg->reg, type);
+						r = r_reg_alias_getname (core->dbg->reg, type);
 					}
 					r_cons_printf ("%3s %3s 0x%08"PFMT64x"\n", arg, r, off);
 				}
@@ -2868,7 +2869,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			int size = 0; // auto
 			char *q, *p, *name;
 			char *eq = NULL;
-			RRegisterType reg_type = R_REG_TYPE_VEC128;
+			RRegType reg_type = R_REG_TYPE_VEC128;
 			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
 				if (str[1] == 'y') { // support `drvy ymm0` and `drv ymm0`
 					str = str + 1;
@@ -3050,7 +3051,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		char rad = 0;
 		switch (str[1]) {
 		case '\0': // "drt"
-			for (i = 0; (name = r_reg_get_type (i)); i++) {
+			for (i = 0; (name = r_reg_type_tostring (i)); i++) {
 				r_cons_println (name);
 			}
 			break;
@@ -3064,7 +3065,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					break;
 				}
 				pj_a (pj);
-				for (i = 0; (name = r_reg_get_type (i)); i++) {
+				for (i = 0; (name = r_reg_type_tostring (i)); i++) {
 					pj_s (pj, name);
 				}
 				pj_end (pj);
@@ -3075,8 +3076,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			// fallthrough
 		case ' ': // "drt "
 		{
-			int role = r_reg_get_name_idx (str+2);
-			const char *regname = r_reg_get_name (core->dbg->reg, role);
+			int role = r_reg_alias_fromstring (str + 2);
+			const char *regname = r_reg_alias_getname (core->dbg->reg, role);
 			if (!regname) {
 				regname = str + 2;
 			}
@@ -3116,9 +3117,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'n': // "drn"
 		{
-			char *foo = strdup (str+2);
+			char *foo = r_str_trim_dup (str + 2);
 			r_str_case (foo, true);
-			name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (foo));
+			name = r_reg_alias_getname (core->dbg->reg, r_reg_alias_fromstring (foo));
 			if (name && *name) {
 				r_cons_println (name);
 			} else {
@@ -3217,8 +3218,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '\0': // "dr"
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits = core->anal->config->bits;
-			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			RRegItem *reg = r_reg_get (core->anal->reg, "PC", 0);
 			if (reg) {
 				if (core->rasm->config->bits != reg->size) {
 					pcbits = reg->size;
@@ -3247,11 +3247,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (arg) {
 			*arg = 0;
 			char *string = r_str_trim_dup (str + 1);
-			const char *regname = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (string));
-			if (!regname) {
-				regname = string;
-			}
-			r = r_reg_get (core->dbg->reg, regname, -1);
+			r = r_reg_get (core->dbg->reg, string, -1);
 			if (r) {
 				if (r->flags) {
 					r_cons_printf ("0x%08"PFMT64x" ->",
@@ -3312,24 +3308,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 static void backtrace_vars(RCore *core, RList *frames) {
 	RDebugFrame *f;
 	RListIter *iter;
-	// anal vs debug ?
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
-	if (!sp) {
-		sp = "SP";
-	}
-	if (!bp) {
-		bp = "BP";
-	}
 	RReg *r = core->anal->reg;
-	ut64 dsp = r_reg_getv (r, sp);
-	ut64 dbp = r_reg_getv (r, bp);
+	ut64 dsp = r_reg_getv (r, "SP");
+	ut64 dbp = r_reg_getv (r, "BP");
 	int n = 0;
 	r_list_foreach (frames, iter, f) {
 		ut64 s = f->sp ? f->sp : dsp;
 		ut64 b = f->bp ? f->bp : dbp;
-		r_reg_setv (r, bp, s);
-		r_reg_setv (r, sp, b);
+		r_reg_setv (r, "BP", s);
+		r_reg_setv (r, "SP", b);
 //////////
 		char flagdesc[1024], flagdesc2[1024];
 		RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
@@ -3366,8 +3353,8 @@ static void backtrace_vars(RCore *core, RList *frames) {
 		free (res);
 		n++;
 	}
-	r_reg_setv (r, bp, dbp);
-	r_reg_setv (r, sp, dsp);
+	r_reg_setv (r, "BP", dbp);
+	r_reg_setv (r, "SP", dsp);
 }
 
 static void asciiart_backtrace(RCore *core, RList *frames) {
@@ -3378,17 +3365,9 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	RDebugFrame *f;
 	RListIter *iter;
 	bool mymap = false;
-	// anal vs debug ?
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
-	if (!sp) {
-		sp = "SP";
-	}
-	if (!bp) {
-		bp = "BP";
-	}
-	ut64 dsp = r_reg_getv (core->anal->reg, sp);
-	ut64 dbp = r_reg_getv (core->anal->reg, bp);
+	const char *spreg = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
+	ut64 dsp = r_reg_getv (core->anal->reg, spreg);
+	ut64 dbp = r_reg_getv (core->anal->reg, "BP");
 	RDebugMap *map = r_debug_map_get (core->dbg, dsp);
 	if (!map) {
 		mymap = true;
@@ -3398,17 +3377,17 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	}
 
 	r_cons_printf ("0x%016"PFMT64x"  STACK END  ^^^\n", map->addr);
-	r_cons_printf ("0x%016"PFMT64x"  STACK POINTER: %s\n", dsp, sp);
+	r_cons_printf ("0x%016"PFMT64x"  STACK POINTER: %s\n", dsp, spreg);
 	r_cons_printf ("                    .------------------------.\n");
 	int n = 0;
 	r_list_foreach (frames, iter, f) {
 		ut64 s = f->sp ? f->sp : dsp;
 		ut64 b = f->bp ? f->bp : dbp;
 		char *str = r_str_newf ("[frame %d]", n);
-		r_cons_printf ("0x%016"PFMT64x"  |%4s    %10s      | ; size %" PFMTDPTR "\n", s, sp, str, (ptrdiff_t)(s - b));
+		r_cons_printf ("0x%016"PFMT64x"  |%4s    %10s      | ; size %" PFMTDPTR "\n", s, "SP", str, (ptrdiff_t)(s - b));
 		free (str);
 		r_cons_printf ("                    |            ...         |\n");
-		r_cons_printf ("0x%016"PFMT64x"  |%4s 0x%016"PFMT64x" | %s\n", b, bp, f->addr, "; return address");
+		r_cons_printf ("0x%016"PFMT64x"  |%4s 0x%016"PFMT64x" | %s\n", b, "BP", f->addr, "; return address");
 		r_cons_printf ("                    )------------------------(\n");
 		// eprintf ("0x%08llx 0x%08llx 0x%08llx\n", f->addr, s, b);
 		n++;
@@ -4578,25 +4557,23 @@ static bool cmd_dcu(RCore *core, const char *input) {
 		    && !strcmp (core->dbg->arch, "x86") && core->dbg->bits == 4) {
 			unsigned long steps = 0;
 			long level = 0;
-			const char *pc_name = core->dbg->reg->name[R_REG_NAME_PC];
 			ut64 prev_pc = UT64_MAX;
 			bool prev_call = false;
 			bool prev_ret = false;
-			const char *sp_name = core->dbg->reg->name[R_REG_NAME_SP];
 			ut64 old_sp, cur_sp;
 			r_cons_break_push (NULL, NULL);
 			r_list_free (core->dbg->call_frames);
 			core->dbg->call_frames = r_list_new ();
 			core->dbg->call_frames->free = free;
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-			old_sp = r_debug_reg_get (core->dbg, sp_name);
+			old_sp = r_debug_reg_get (core->dbg, "SP");
 			while (true) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				pc = r_debug_reg_get (core->dbg, pc_name);
+				pc = r_debug_reg_get (core->dbg, "PC");
 				if (prev_call) {
 					ut32 ret_addr;
 					RDebugFrame *frame = R_NEW0 (RDebugFrame);
-					cur_sp = r_debug_reg_get (core->dbg, sp_name);
+					cur_sp = r_debug_reg_get (core->dbg, "SP");
 					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp,
 							(ut8 *)&ret_addr, sizeof (ret_addr));
 					frame->addr = ret_addr;

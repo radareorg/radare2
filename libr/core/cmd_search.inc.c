@@ -1985,19 +1985,20 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 
 #if USE_EMULATION
 static const char *get_syscall_register(RCore *core) {
-	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
-		const char *os = core->anal->config->os;
+	const char *sn = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	if (!strcmp (cfg->arch, "arm") && cfg->bits == 64) {
+		const char *os = cfg->os;
 		if (!os) {
 			os = r_config_get (core->config, "asm.os");
 		}
 		if (!strcmp (os, "linux") || !strcmp (os, "android")) {
-			a0 = "x8";
+			sn = "x8";
 		} else if (!strcmp (os, "macos")) {
-			a0 = "x16";
+			sn= "x16";
 		}
 	}
-	return a0;
+	return sn;
 }
 
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
@@ -2005,10 +2006,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	const char *a0 = get_syscall_register (core);
-	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	RRegItem *reg_pc = r_reg_get (core->dbg->reg, pc, -1);
-	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
+	RRegItem *reg_pc = r_reg_get (core->dbg->reg, "PC", -1);
 
 	ut8 *arr = malloc (bsize);
 	if (!arr) {
@@ -2053,8 +2051,8 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 		r_anal_op_fini (&aop);
 	}
 	free (arr);
-	int sysno = r_debug_reg_get (core->dbg, a0);
-	r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
+	int sysno = r_debug_reg_get (core->dbg, "A0");
+	r_reg_setv (core->dbg->reg, "A0", -2); // clearing register A0
 	return sysno;
 }
 #endif

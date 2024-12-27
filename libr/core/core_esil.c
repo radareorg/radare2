@@ -212,9 +212,8 @@ R_API void r_core_esil_unload_arch(RCore *core) {
 }
 
 R_API void r_core_esil_single_step(RCore *core) {
-	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch &&
-		core->io && core->esil.reg);
-	const char *pc_name = r_reg_get_name (core->esil.reg, R_REG_NAME_PC);
+	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->esil.reg);
+	const char *pc_name = r_reg_alias_getname (core->esil.reg, R_REG_ALIAS_PC);
 	if (!pc_name) {
 		R_LOG_ERROR ("CoreEsil reg profile has no pc register");
 		return;

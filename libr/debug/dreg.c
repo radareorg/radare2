@@ -150,8 +150,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	if (rad == 1 || rad == '*') {
 		dbg->cb_printf ("fs+%s\n", R_FLAGS_FS_REGISTERS);
 	}
-	const char *pcname = r_reg_get_name_by_type (dbg->reg, "PC");
-	const char *spname = r_reg_get_name_by_type (dbg->reg, "SP");
+	const char *pcname = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_PC);
+	const char *spname = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_SP);
 	bool isfirst = true;
 	r_list_foreach (list, iter, item) {
 		ut64 value;
@@ -326,13 +326,15 @@ beach:
 
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	R_RETURN_VAL_IF_FAIL (dbg && name, false);
-	int role = r_reg_get_name_idx (name);
 	if (!dbg->reg) {
 		return false;
 	}
+#if 0
+	int alias = r_reg_get_name_idx (name);
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 	}
+#endif
 	RRegItem *ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
@@ -345,7 +347,6 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value) {
 	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
-	int role = r_reg_get_name_idx (name);
 	if (err) {
 		*err = 0;
 	}
@@ -355,8 +356,10 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 		}
 		return UT64_MAX;
 	}
-	if (role != -1) {
-		name = r_reg_get_name (dbg->reg, role);
+#if 0
+	int alias = r_reg_alias_tostring (name);
+	if (alias != -1) {
+		name = r_reg_get_name (dbg->reg, alias);
 		if (R_STR_ISEMPTY (name)) {
 			if (err) {
 				*err = 1;
@@ -364,6 +367,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 			return UT64_MAX;
 		}
 	}
+#endif
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);

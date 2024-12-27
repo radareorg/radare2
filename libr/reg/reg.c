@@ -83,14 +83,16 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 	return NULL;
 }
 
-R_API const char *r_reg_get_type(int idx) {
+R_API const char *r_reg_type_tostring(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
 }
 
-R_API const char *r_reg_get_name_by_type(RReg *reg, const char *alias_name) {
+#if 0
+R_API const char *r_reg_alias_tostring(RReg *reg, const char *alias_name) {
 	const int n = r_reg_get_name_idx (alias_name);
-	return (n != -1)? r_reg_get_name (reg, n): NULL;
+	return (n != -1)? r_reg_alias_tostring (reg, n): NULL;
 }
+#endif
 
 R_API int r_reg_default_bits(RReg *reg) {
 	return reg->bits_default;
@@ -123,7 +125,7 @@ R_API void r_reg_item_free(RRegItem *item) {
 	}
 }
 
-R_API int r_reg_get_name_idx(const char *type) {
+R_API int r_reg_alias_fromstring(const char *type) {
 	R_RETURN_VAL_IF_FAIL (type, -1);
 	char type0 = type[0];
 	if (!type0 || !type[1] || !isupper (type0)) {
@@ -132,64 +134,64 @@ R_API int r_reg_get_name_idx(const char *type) {
 	if (!type[2])
 	switch (type0 | (type[1] << 8)) {
 	// flags
-	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
-	case 'S' + ('F' << 8): return R_REG_NAME_SF;
-	case 'C' + ('F' << 8): return R_REG_NAME_CF;
-	case 'O' + ('F' << 8): return R_REG_NAME_OF;
+	case 'Z' + ('F' << 8): return R_REG_ALIAS_ZF;
+	case 'S' + ('F' << 8): return R_REG_ALIAS_SF;
+	case 'C' + ('F' << 8): return R_REG_ALIAS_CF;
+	case 'O' + ('F' << 8): return R_REG_ALIAS_OF;
 	// gpr
-	case 'P' + ('C' << 8): return R_REG_NAME_PC;
-	case 'S' + ('R' << 8): return R_REG_NAME_SR;
-	case 'L' + ('R' << 8): return R_REG_NAME_LR;
-	case 'S' + ('P' << 8): return R_REG_NAME_SP;
-	case 'G' + ('P' << 8): return R_REG_NAME_GP;
-	case 'R' + ('A' << 8): return R_REG_NAME_RA;
-	case 'B' + ('P' << 8): return R_REG_NAME_BP;
-	case 'S' + ('N' << 8): return R_REG_NAME_SN;
+	case 'P' + ('C' << 8): return R_REG_ALIAS_PC;
+	case 'S' + ('R' << 8): return R_REG_ALIAS_SR;
+	case 'L' + ('R' << 8): return R_REG_ALIAS_LR;
+	case 'S' + ('P' << 8): return R_REG_ALIAS_SP;
+	case 'G' + ('P' << 8): return R_REG_ALIAS_GP;
+	case 'R' + ('A' << 8): return R_REG_ALIAS_RA;
+	case 'B' + ('P' << 8): return R_REG_ALIAS_BP;
+	case 'S' + ('N' << 8): return R_REG_ALIAS_SN;
 	// args
-	case 'A' + ('0' << 8): return R_REG_NAME_A0;
-	case 'A' + ('1' << 8): return R_REG_NAME_A1;
-	case 'A' + ('2' << 8): return R_REG_NAME_A2;
-	case 'A' + ('3' << 8): return R_REG_NAME_A3;
-	case 'A' + ('4' << 8): return R_REG_NAME_A4;
-	case 'A' + ('5' << 8): return R_REG_NAME_A5;
-	case 'A' + ('6' << 8): return R_REG_NAME_A6;
-	case 'A' + ('7' << 8): return R_REG_NAME_A7;
-	case 'A' + ('8' << 8): return R_REG_NAME_A8;
-	case 'A' + ('9' << 8): return R_REG_NAME_A9;
+	case 'A' + ('0' << 8): return R_REG_ALIAS_A0;
+	case 'A' + ('1' << 8): return R_REG_ALIAS_A1;
+	case 'A' + ('2' << 8): return R_REG_ALIAS_A2;
+	case 'A' + ('3' << 8): return R_REG_ALIAS_A3;
+	case 'A' + ('4' << 8): return R_REG_ALIAS_A4;
+	case 'A' + ('5' << 8): return R_REG_ALIAS_A5;
+	case 'A' + ('6' << 8): return R_REG_ALIAS_A6;
+	case 'A' + ('7' << 8): return R_REG_ALIAS_A7;
+	case 'A' + ('8' << 8): return R_REG_ALIAS_A8;
+	case 'A' + ('9' << 8): return R_REG_ALIAS_A9;
 	// return values
-	case 'R' + ('0' << 8): return R_REG_NAME_R0;
-	case 'R' + ('1' << 8): return R_REG_NAME_R1;
-	case 'R' + ('2' << 8): return R_REG_NAME_R2;
-	case 'R' + ('3' << 8): return R_REG_NAME_R3;
-	case 'F' + ('0' << 8): return R_REG_NAME_F0;
-	case 'F' + ('1' << 8): return R_REG_NAME_F1;
-	case 'F' + ('2' << 8): return R_REG_NAME_F2;
-	case 'F' + ('3' << 8): return R_REG_NAME_F3;
+	case 'R' + ('0' << 8): return R_REG_ALIAS_R0;
+	case 'R' + ('1' << 8): return R_REG_ALIAS_R1;
+	case 'R' + ('2' << 8): return R_REG_ALIAS_R2;
+	case 'R' + ('3' << 8): return R_REG_ALIAS_R3;
+	case 'F' + ('0' << 8): return R_REG_ALIAS_F0;
+	case 'F' + ('1' << 8): return R_REG_ALIAS_F1;
+	case 'F' + ('2' << 8): return R_REG_ALIAS_F2;
+	case 'F' + ('3' << 8): return R_REG_ALIAS_F3;
 	// thread register
-	case 'T' + ('R' << 8): return R_REG_NAME_TR;
+	case 'T' + ('R' << 8): return R_REG_ALIAS_TR;
 	}
 	return -1;
 }
 
-R_API bool r_reg_set_name(RReg *reg, int role, const char *name) {
+R_API bool r_reg_alias_setname(RReg *reg, RRegAlias alias, const char *name) {
 	R_RETURN_VAL_IF_FAIL (reg && name, false);
-	if (role >= 0 && role < R_REG_NAME_LAST) {
-		free (reg->name[role]);
-		reg->name[role] = strdup (name);
+	if (alias >= 0 && alias < R_REG_ALIAS_LAST) {
+		free (reg->alias[alias]);
+		reg->alias[alias] = strdup (name);
 		return true;
 	}
 	return false;
 }
 
-R_API const char *r_reg_get_name(RReg *reg, int role) {
+R_API const char *r_reg_alias_getname(RReg *reg, RRegAlias alias) {
 	R_RETURN_VAL_IF_FAIL (reg, NULL);
-	if (role >= 0 && role < R_REG_NAME_LAST) {
-		return reg->name[role];
+	if (alias >= 0 && alias < R_REG_ALIAS_LAST) {
+		return reg->alias[alias];
 	}
 	return NULL;
 }
 
-static const char * const roles[R_REG_NAME_LAST + 1] = {
+static const char * const alias_names[R_REG_ALIAS_LAST + 1] = {
 	"PC", "SP", "GP", "RA", "SR", "BP", "LR", "RS",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3", "F0", "F1", "F2", "F3",
@@ -198,9 +200,9 @@ static const char * const roles[R_REG_NAME_LAST + 1] = {
 	NULL
 };
 
-R_API const char *r_reg_get_role(int role) {
-	if (role >= 0 && role < R_REG_NAME_LAST) {
-		return roles[role];
+R_API const char *r_reg_alias_tostring(RRegAlias alias) {
+	if (alias >= 0 && alias < R_REG_ALIAS_LAST) {
+		return alias_names[alias];
 	}
 	return NULL;
 }
@@ -212,9 +214,9 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 	R_FREE (reg->reg_profile_cmt);
 	R_FREE (reg->roregs);
 
-	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		if (reg->name[i]) {
-			R_FREE (reg->name[i]);
+	for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+		if (reg->alias[i]) {
+			R_FREE (reg->alias[i]);
 		}
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -388,11 +390,10 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->reg_profile_cmt = dups (r->reg_profile_cmt);
 	rr->reg_profile_str = dups (r->reg_profile_str);
 	int i;
-	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		rr->name[i] = dups (r->name[i]);
+	for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+		rr->alias[i] = dups (r->alias[i]);
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		rr->name[i] = dups (r->name[i]);
 		r_reg_set_copy (&rr->regset[i], &r->regset[i]);
 	}
 	rr->iters = r->iters;
@@ -467,15 +468,18 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	if (type == -1) {
 		i = 0;
 		e = R_REG_TYPE_LAST;
-		int alias = r_reg_get_name_idx (name);
+		int alias = r_reg_alias_fromstring (name);
+#if 1
+		// probably redundant code
 		if (alias != -1) {
-			const char *nname = r_reg_get_name (reg, alias);
+			const char *nname = r_reg_alias_getname (reg, alias);
 			if (nname) {
 				name = nname;
 			}
 		}
+#endif
 	} else {
-		//TODO: define flag register as R_REG_TYPE_FLG
+		// TODO: define flag register as R_REG_TYPE_FLG
 		i = (type == R_REG_TYPE_FLG)? R_REG_TYPE_GPR: type;
 		e = i + 1;
 	}

@@ -849,7 +849,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				R_LOG_INFO ("Setting up coredump: Problem while setting the registers");
 			} else {
 				R_LOG_INFO ("Setting up coredump: Registers have been set");
-				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
+				const char *regname = r_reg_alias_getname (r->anal->reg, R_REG_ALIAS_SP);
 				if (regname) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
@@ -857,7 +857,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 						stack_map = r_io_map_get_at (r->io, sp_addr);
 					}
 				}
-				regname = r_reg_get_name (r->anal->reg, R_REG_NAME_PC);
+				regname = r_reg_alias_getname (r->anal->reg, R_REG_ALIAS_PC);
 				if (regname) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {

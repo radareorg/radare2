@@ -102,9 +102,7 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsil
 	r_config_set_b (core->config, "dbg.trace", true);
 	r_config_set_b (core->config, "esil.nonull", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
-	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {
+	if (!r_reg_getv (core->anal->reg, "BP") && !r_reg_getv (core->anal->reg, "SP")) {
 		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
 		return false;
 	}
@@ -143,8 +141,7 @@ static bool type_pos_hit(RAnal *anal, bool in_stack, int idx, int size, const ch
 	DD eprintf ("TYpe pos hit %d %d %d %s\n", in_stack, idx, size, place);
 	REsilTrace *etrace = anal->esil->trace;
 	if (in_stack) {
-		const char *sp_name = r_reg_get_name (anal->reg, R_REG_NAME_SP); // XXX this is slow and we can cache
-		ut64 sp = r_reg_getv (anal->reg, sp_name); // XXX this is slow too and we can cache
+		ut64 sp = r_reg_getv (anal->reg, "SP"); // XXX this is slow too and we can cache
 		const ut64 write_addr = etrace_memwrite_addr (etrace, idx); // AAA -1
 		return (write_addr == sp + size);
 	}
@@ -641,12 +638,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char prev_type[256] = {0};
 	const char *prev_dest = NULL;
 	char *ret_reg = NULL;
-	const char *_pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	if (!_pc) {
-		anal_emul_restore (core, hc, dt, et);
-		return;
-	}
-	char *pc = strdup (_pc);
 	r_cons_break_push (NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
@@ -657,7 +648,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 repeat:
 	if (retries < 0) {
 		anal_emul_restore (core, hc, dt, et);
-		free (pc);
 		return;
 	}
 	RVecUT64_clear (&bblist);
@@ -692,12 +682,12 @@ repeat:
 		if (r_io_read_at (core->io, addr, buf_ptr, bb_size) < 1) {
 			break;
 		}
-		r_reg_setv (core->dbg->reg, pc, addr);
+		r_reg_setv (core->dbg->reg, "PC", addr);
 		for (i = 0; i < bb_size;) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
-			ut64 pcval = r_reg_getv (anal->reg, pc);
+			ut64 pcval = r_reg_getv (anal->reg, "PC");
 			D eprintf ("---> 0x%"PFMT64x"\n", addr);
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr) || pcval != addr) {
 				// stop emulating this bb if pc is outside the basic block boundaries
@@ -709,7 +699,7 @@ repeat:
 				DD eprintf ("FAIL\n");
 				i += minopcode;
 				addr += minopcode;
-				r_reg_setv (core->dbg->reg, pc, addr);
+				r_reg_setv (core->dbg->reg, "PC", addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
@@ -723,9 +713,8 @@ repeat:
 #endif
 			r_esil_trace_loopcount_increment (etrace, addr);
 			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
-		//		eprintf ("%x nonlinear\n", pcval);
-				r_reg_setv (core->dbg->reg, pc, addr + aop.size); // + ret
-				//
+				// eprintf ("%x nonlinear\n", pcval);
+				r_reg_setv (core->dbg->reg, "PC", addr + aop.size); // + ret
 			} else {
 				// eprintf ("STEP 0x%"PFMT64x"\n", addr);
 				int res = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
@@ -1002,5 +991,4 @@ out_function:
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 	anal_emul_restore (core, hc, dt, et);
-	free (pc);
 }

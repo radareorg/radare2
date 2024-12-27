@@ -712,9 +712,9 @@ static bool esil_regalias(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src && r_esil_get_parm (esil, src, &num)) {
 		ret = true;
-		int kind = r_reg_get_name_idx (dst);
+		int kind = r_reg_alias_fromstring (dst);
 		if (kind != -1) {
-			r_reg_set_name (esil->anal->reg, kind, src);
+			r_reg_alias_setname (esil->anal->reg, kind, src);
 		}
 	}
 	free (dst);

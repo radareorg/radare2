@@ -165,13 +165,16 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	return 0LL;
 }
 
-R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
+R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegAlias alias) {
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
-	RRegItem *ri = r_reg_get (reg, r_reg_get_name (reg, role), -1);
+	const char *rn = r_reg_alias_getname (reg, alias);
 	ut64 res = UT64_MAX;
-	if (ri) {
-		res = r_reg_get_value (reg, ri);
-		r_unref (ri);
+	if (R_LIKELY (rn)) {
+		RRegItem *ri = r_reg_get (reg, rn, -1);
+		if (ri) {
+			res = r_reg_get_value (reg, ri);
+			r_unref (ri);
+		}
 	}
 	return res;
 }
@@ -264,14 +267,17 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	return false;
 }
 
-R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 val) {
+R_API bool r_reg_set_value_by_role(RReg *reg, RRegAlias alias, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (reg, false);
-	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
-	RRegItem *r = r_reg_get (reg, r_reg_get_name (reg, role), -1);
+	const char *rn = r_reg_alias_getname (reg, alias);
 	bool res = false;
-	if (r) {
-		res = r_reg_set_value (reg, r, val);
-		r_unref (r);
+	if (R_LIKELY (rn)) {
+		// TODO use mapping from RRegAlias to RRegItem (via RRegSet)
+		RRegItem *r = r_reg_get (reg, rn, -1);
+		if (r) {
+			res = r_reg_set_value (reg, r, val);
+			r_unref (r);
+		}
 	}
 	return res;
 }
