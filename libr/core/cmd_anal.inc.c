@@ -6674,16 +6674,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'n': // "arn"
-		if (*(str + 1) == '\0') {
-			R_LOG_ERROR ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]");
-			break;
-		}
-		name = r_reg_alias_getname (core->dbg->reg, r_reg_alias_fromstring (str + 2));
-		if (R_STR_ISNOTEMPTY (name)) {
-			r_cons_println (name);
-		} else {
-			R_LOG_ERROR ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]");
-		}
+		cmd_drn (core, str);
 		break;
 	case 'd': // "ard"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
