@@ -2384,7 +2384,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	char *pos;
 	// XXX omg this is one of the most awful things ive seen lately
-	char str_to_find[40];
+	char str_to_find[40] = {0};
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 	if (bpreg) {
 		snprintf (str_to_find, sizeof (str_to_find),
@@ -2432,21 +2432,31 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_SUB:
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_SHL:
-// op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
- 				pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
-				if (pos && pos - op.opex.ptr < 60) {
-					fcn->bp_frame = false;
-					r_anal_op_fini (&op);
-					free (buf);
-					return;
+				// op.dst is not filled for these operations, so for now,
+				// check for bp as dst looks like this; in the future
+				// it may be just replaced with call to can_affect_bp
+				if (*str_to_find) {
+					pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
+					if (pos && pos - op.opex.ptr < 60) {
+						fcn->bp_frame = false;
+						r_anal_op_fini (&op);
+						free (buf);
+						return;
+					}
+				} else {
+					R_LOG_WARN ("No string to find");
 				}
 				break;
 			case R_ANAL_OP_TYPE_XCHG:
-				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
-					fcn->bp_frame = false;
-					r_anal_op_fini (&op);
-					free (buf);
-					return;
+				if (*str_to_find) {
+					if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
+						fcn->bp_frame = false;
+						r_anal_op_fini (&op);
+						free (buf);
+						return;
+					}
+				} else {
+					R_LOG_WARN ("No string to find");
 				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
