@@ -97,8 +97,8 @@ static RCoreHelpMessage help_msg_db = {
 #if __WINDOWS__
 	"dbW", " <WM_DEFINE> [?|handle|name]", "set cond. breakpoint on a window message handler",
 #endif
-	"drx", " number addr len perm", "modify hardware breakpoint",
-	"drx-", "number", "clear hardware breakpoint",
+	"dbx", " number addr len perm", "modify hardware breakpoint",
+	"dbx-", "number", "clear hardware breakpoint",
 	NULL
 };
 
@@ -370,6 +370,7 @@ static RCoreHelpMessage help_msg_dr = {
 	"drl", "[j]", "list all register names",
 	"drv", "[?]", "show vector registers (also known as sve / packed / multimedia)",
 	"dro", "", "show previous (old) values of registers",
+	"drn", "", "list, show or change register alias name (PC,A0, defined by the register profile)",
 	"drp", "[?] ", "display current register profile",
 	"drr", "", "show registers references (telescoping)",
 	"drrj", "", "show registers references (telescoping) in JSON format",
@@ -554,6 +555,43 @@ struct trace_node {
 	ut64 addr;
 	int refs;
 };
+
+static void cmd_drn(RCore *core, const char *str) {
+	RReg *reg = core->dbg->reg;
+	char *foo = r_str_trim_dup (str + 1);
+	r_str_case (foo, true);
+	if (*foo == '?') {
+		r_core_cmd_help_match (core, help_msg_dr, "drn");
+	} else if (*foo) {
+		char *eq = strchr (foo, '=');
+		if (eq) {
+			*eq++ = 0;
+			int type = r_reg_alias_fromstring (foo);
+			if (type >= 0) {
+				r_reg_alias_setname (reg, type, eq);
+			} else {
+				R_LOG_ERROR ("Invalid register alias");
+			}
+		} else {
+			const char *name = r_reg_alias_getname (core->dbg->reg, r_reg_alias_fromstring (foo));
+			if (R_STR_ISNOTEMPTY (name)) {
+				r_cons_println (name);
+			} else {
+				R_LOG_ERROR ("Invalid register alias name");
+			}
+		}
+	} else {
+		int i;
+		for (i = 0; i < R_REG_ALIAS_LAST; i++) {
+			const char *r = r_reg_alias_getname (reg, i);
+			const char *a = r_reg_alias_tostring (i);
+			if (r && a) {
+				r_cons_printf ("%s %s\n", a, r);
+			}
+		}
+	}
+	free (foo);
+}
 
 // XXX those tmp files are never removed and we shouldnt use files for this
 static void setRarunProfileString(RCore *core, const char *str) {
@@ -3085,17 +3123,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'n': // "drn"
-		{
-			char *foo = r_str_trim_dup (str + 2);
-			r_str_case (foo, true);
-			name = r_reg_alias_getname (core->dbg->reg, r_reg_alias_fromstring (foo));
-			if (R_STR_ISNOTEMPTY (name)) {
-				r_cons_println (name);
-			} else {
-				R_LOG_ERROR ("oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]");
-			}
-			free (foo);
-		}
+		cmd_drn (core, str);
 		break;
 	case 'd': // "drd"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // xxx detect which one is current usage
