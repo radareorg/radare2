@@ -21,7 +21,7 @@ RUN
 NAME=search esil
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-/E $$,[1],0xe1,-,!
+/E PC,[1],0xe1,-,!
 s@hit0_0
 EOF
 EXPECT=<<EOF
@@ -33,7 +33,7 @@ RUN
 NAME=search esil json
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-/Ej $$,[1],0xe1,-,!
+/Ej PC,[1],0xe1,-,!
 s@hit0_0
 EOF
 EXPECT=<<EOF
