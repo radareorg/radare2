@@ -1074,10 +1074,15 @@ static void session_listen(RCore *core) {
 	free (tmpdir);
 }
 
-static void session_list(RCore *core) {
+static void session_list(RCore *core, int mode) {
 	char *tmpdir = r_file_tmpdir ();
 	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
 	char *file;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	RListIter *iter;
 	RList *files = r_sys_dir (tmpdir_r2);
 	r_list_foreach (files, iter, file) {
@@ -1087,18 +1092,32 @@ static void session_list(RCore *core) {
 			char *data = r_file_slurp (ffn, NULL);
 			int fpid = atoi (file);
 			if (data) {
+				bool show = true;
 #if R2__UNIX__ && !__wasi__
-				if (0 == kill (fpid, 0)) {
-					r_cons_printf ("r2 %s # pid %d\n", data, fpid);
-				} else {
+				if (kill (fpid, 0)) {
 					r_file_rm (ffn);
+					show = false;
 				}
-#else
-				r_cons_printf ("r2 %s # pid %d\n", data, fpid);
 #endif
+				if (show) {
+					if (pj) {
+						pj_o (pj);
+						pj_ks (pj, "uri", data);
+						pj_kn (pj, "pid", fpid);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("r2 %s # pid %d\n", data, fpid);
+					}
+				}
 			}
 			free (ffn);
 		}
+	}
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		free (s);
 	}
 	r_list_free (files);
 	free (tmpdir_r2);
@@ -1126,7 +1145,10 @@ static int cmd_rap(void *data, const char *input) {
 			r_core_cmdf (core, "k name=%s", r_str_trim_head_ro (input + 2));
 			break;
 		case 0: // "=l"
-			session_list (core);
+			session_list (core, 0);
+			break;
+		case 'j': // "=lj"
+			session_list (core, 'j');
 			break;
 		case 'l': // "=ll"
 			session_listen (core);
