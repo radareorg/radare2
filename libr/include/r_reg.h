@@ -1,9 +1,10 @@
 #ifndef R2_REG_H
 #define R2_REG_H
 
+#include <r_list.h>
 #include <r_types.h>
 #include <r_util/r_ref.h>
-#include <r_list.h>
+#include <r_util/r_sys.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
 
