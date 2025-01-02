@@ -623,6 +623,38 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 	return ret;
 }
 
+static char *opstr(RCore *core, RAnalOp *op, ut64 addr) {
+	ut8 data[32];
+	char *str;
+	r_io_read_at (core->io, addr, data, sizeof (data));
+	// dis A
+	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
+	r_asm_set_pc (core->rasm, addr);
+	(void) r_asm_disassemble (core->rasm, op, data, sizeof (data));
+	char *opa = strdup (op->mnemonic);
+	if (r_config_get_b (core->config, "asm.sub.var")) {
+		str = r_asm_parse_subvar (core->rasm, NULL, addr, op->size, opa);
+		if (str) {
+			free (opa);
+			opa = str;
+		}
+	}
+	str = r_asm_parse_filter (core->rasm, addr, core->flags, NULL, opa);
+	if (str) {
+		free (opa);
+		opa = str;
+	}
+	if (r_config_get_b (core->config, "asm.imm.trim")) {
+		str = r_asm_parse_immtrim (core->rasm, opa);
+		if (str) {
+			free (opa);
+			opa = str;
+		}
+	}
+	// R_LOG_INFO (opa);
+	return opa;
+}
+
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	RAnalOp op, op2;
 	int i, j;
@@ -658,29 +690,22 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 		break;
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
-			// dis A
-			r_asm_set_pc (core->rasm, core->offset + i);
-			(void) r_asm_disassemble (core->rasm, &op,
-				core->block + i, core->blocksize - i);
-
-			// dis B
-			r_asm_set_pc (core->rasm, off + i);
-			(void) r_asm_disassemble (core->rasm, &op2,
-				buf + j, core->blocksize - j);
+			char *opa = opstr (core, &op, core->offset + i);
+			char *opb = opstr (core, &op2, off + i);
 
 			// show output
-			bool iseq = !strcmp (op.mnemonic, op2.mnemonic);
+			bool iseq = !strcmp (opa, opb); // op.mnemonic, op2.mnemonic);
 			memset (colpad, ' ', sizeof (colpad));
 			{
-				int pos = strlen (op.mnemonic);
+				int pos = strlen (opa); // op.mnemonic);
 				pos = (pos > cols)? 0: cols - pos;
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
 				r_cons_print (iseq? pal->graph_true: pal->graph_false);
 			}
-			r_cons_printf (" 0x%08"PFMT64x "  %s %s", core->offset + i, op.mnemonic, colpad);
-			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, op2.mnemonic);
+			r_cons_printf (" 0x%08"PFMT64x "  %s %s", core->offset + i, opa, colpad);
+			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, opb);
 			if (hascolor) {
 				r_cons_print (Color_RESET);
 			}
