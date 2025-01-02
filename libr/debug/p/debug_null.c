@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 pancake */
+/* radare - LGPL - Copyright 2016-2024 pancake */
 
 #include <r_io.h>
 #include <r_debug.h>
@@ -11,7 +11,7 @@ RDebugPlugin r_debug_plugin_null = {
 		.license = "MIT",
 	},
 	.arch = "any",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -611,7 +611,7 @@ RDebugPlugin r_debug_plugin_bochs = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
-	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.step = r_debug_bochs_step,

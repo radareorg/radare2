@@ -641,9 +641,18 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
+#if R_SYS_BITS == R_SYS_BITS_32
+#define R_SYS_BITV  32
+#else
+#define R_SYS_BITV  64
+#endif
+
+// TODO: use 1234, 4321, 1324, ...
 #define R_SYS_ENDIAN_NONE 0
 #define R_SYS_ENDIAN_LITTLE 1
+// #define R_SYS_ENDIAN_4321 1
 #define R_SYS_ENDIAN_BIG 2
+// #define R_SYS_ENDIAN_1234 2
 #define R_SYS_ENDIAN_BI 3
 #define R_SYS_ENDIAN_MIDDLE 4
 

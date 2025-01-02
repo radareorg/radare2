@@ -103,7 +103,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	RRegItem *item;
 	ut64 diff;
 	char strvalue[256];
-	bool isJson = (rad == 'j' || rad == 'J');
+	bool isJson = tolower (rad) == 'j';
 	R_RETURN_VAL_IF_FAIL (!isJson || (isJson && pj), false);
 
 	if (dbg->coreb.core) {
@@ -111,15 +111,15 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	}
 	if (size != 0 && !r_reg_hasbits_check (dbg->reg, size)) {
 		if (r_reg_hasbits_check (dbg->reg, 64)) {
-			size = 64;
+			size = R_SYS_BITS_64;
 		} else if (r_reg_hasbits_check (dbg->reg, 32)) {
-			size = 32;
+			size = R_SYS_BITS_32;
 		} else {
 			// TODO: verify if 32bit exists too?
-			size = 16;
+			size = R_SYS_BITS_16;
 		}
 	}
-	if (dbg->bits & R_SYS_BITS_64) {
+	if (dbg->bits == R_SYS_BITS_64) {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";

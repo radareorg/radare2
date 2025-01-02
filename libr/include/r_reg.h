@@ -135,7 +135,7 @@ typedef struct r_reg_t {
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
 	char *roregs;
-	ut64 hasbits;
+	RSysBits hasbits;
 	int iters;
 	int size;
 	int bits_default;

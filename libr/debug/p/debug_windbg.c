@@ -613,7 +613,7 @@ RDebugPlugin r_debug_plugin_windbg = {
 		.author = "pancake",
 		.desc = "comunicate with a windbg",
 	},
-	.bits = R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK (64),
 	.arch = "x86,x64,arm,arm64",
 	.canstep = 1,
 	.init_debugger = windbg_init,

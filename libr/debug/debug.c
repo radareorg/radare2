@@ -360,7 +360,7 @@ R_API RDebug *r_debug_new(int hard) {
 	}
 	// R_SYS_ARCH
 	dbg->arch = strdup (R_SYS_ARCH);
-	dbg->bits = R_SYS_BITS;
+	dbg->bits = R_SYS_BITV;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
 	dbg->main_pid = -1;
@@ -487,17 +487,17 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	}
 	switch (bits) {
 	case 16:
-		if (plugin->bits == 16) {
+		if (R_SYS_BITS_CHECK (plugin->bits, 16)) {
 			dbg->bits = R_SYS_BITS_16;
 		}
 		break;
 	case 27:
-		if (plugin->bits == 27) {
+		if (R_SYS_BITS_CHECK (plugin->bits, 27)) {
 			dbg->bits = R_SYS_BITS_27;
 		}
 		break;
 	case 32:
-		if (plugin->bits & R_SYS_BITS_32) {
+		if (R_SYS_BITS_CHECK (plugin->bits, 32)) {
 			dbg->bits = R_SYS_BITS_32;
 		}
 		break;
@@ -505,16 +505,16 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 		dbg->bits = R_SYS_BITS_64;
 		break;
 	}
-	if (!plugin->bits) {
-		dbg->bits = plugin->bits;
-	} else if (!(plugin->bits & dbg->bits)) {
-		dbg->bits = plugin->bits & R_SYS_BITS_64;
-		if (!dbg->bits) {
-			dbg->bits = plugin->bits & R_SYS_BITS_32;
-		}
-		if (!dbg->bits) {
+	if (plugin->bits) {
+		if (R_SYS_BITS_CHECK (plugin->bits, 64)) {
+			dbg->bits = R_SYS_BITS_64;
+		} else if (R_SYS_BITS_CHECK (plugin->bits, 16)) {
+			dbg->bits = R_SYS_BITS_16;
+		} else {
 			dbg->bits = R_SYS_BITS_32;
 		}
+	} else {
+		dbg->bits = R_SYS_BITV;
 	}
 	free (dbg->arch);
 	dbg->arch = strdup (arch);
@@ -540,7 +540,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		R_LOG_WARN ("Child is dead");
 		return false;
 	}
-
 #if 0
 	if (restore && !ignore_stack) {
 		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
