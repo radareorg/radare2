@@ -919,7 +919,9 @@ R_API int r_cons_get_buffer_len(void) {
 
 R_API void r_cons_filter(void) {
 	/* grep */
-	if (C->filter || r_list_length (C->grep.strings) > 0 || C->grep.tokens_used || C->grep.less || C->grep.json) {
+	if (C->filter || C->grep.tokens_used \
+			|| (C->grep.strings && r_list_length (C->grep.strings) > 0) \
+			|| C->grep.less || C->grep.json) {
 		(void)r_cons_grepbuf ();
 		C->filter = false;
 	}
