@@ -263,10 +263,10 @@ typedef ut8 RSysBitValue;
 
 #define R_SYS_BITS_SIZE 8
 #define R_SYS_BITS_MASK 0xff
-#define R_SYS_BITS_PACK(x) (RSysBits)(x)
-#define R_SYS_BITS_PACK1(x) (RSysBits)(x)
+#define R_SYS_BITS_PACK(x) (x)
+#define R_SYS_BITS_PACK1(x) (x)
 #define R_SYS_BITS_PACK2(x,y) ((x) | ((y)<<R_SYS_BITS_SIZE))
-#define R_SYS_BITS_PACK3(x,y,z) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
+#define R_SYS_BITS_PACK3(x,y,z) ((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
 #define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
 #define R_SYS_BITS_CHECK(x, y) (bool)( \
 	(((x) & R_SYS_BITS_MASK) == (y)) || \
