@@ -505,19 +505,11 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 		dbg->bits = R_SYS_BITS_PACK (64);
 		break;
 	}
-#if 0
 	if (plugin->bits) {
-		if (R_SYS_BITS_CHECK (plugin->bits, 64)) {
-			dbg->bits = R_SYS_BITS_PACK (64);
-		} else if (R_SYS_BITS_CHECK (plugin->bits, 16)) {
-			dbg->bits = R_SYS_BITS_PACK (16);
-		} else {
-			dbg->bits = R_SYS_BITS_PACK (32);
+		if (R_SYS_BITS_CHECK (plugin->bits, bits)) {
+			dbg->bits = R_SYS_BITS_PACK (bits);
 		}
-	} else {
-		dbg->bits = R_SYS_BITS;
 	}
-#endif
 	free (dbg->arch);
 	dbg->arch = strdup (arch);
 	return true;
