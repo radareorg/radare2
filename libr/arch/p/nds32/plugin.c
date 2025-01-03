@@ -335,7 +335,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 		.desc = "Binutils based nds32 disassembler",
 	},
 	.arch = "nds32",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 	.regs = regs,

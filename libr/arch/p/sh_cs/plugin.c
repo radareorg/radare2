@@ -420,7 +420,7 @@ const RArchPlugin r_arch_plugin_sh_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "sh",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = decode,
 	.info = archinfo,
 	.regs = regs,

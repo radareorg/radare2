@@ -138,15 +138,15 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 
 R_API const char *r_str_sysbits(const RSysBits v) {
 	switch (v) {
-	case R_SYS_BITS_PACK (4): return "4";
-	case R_SYS_BITS_PACK (8): return "8";
-	case R_SYS_BITS_PACK (16): return "16";
-	case R_SYS_BITS_PACK (32): return "32";
-	case R_SYS_BITS_PACK (64): return "64";
-	case R_SYS_BITS_PACK2 (4, 8): return "4,8";
-	case R_SYS_BITS_PACK2 (16, 64): return "16,32";
-	case R_SYS_BITS_PACK2 (32, 64): return "32,64";
-	case R_SYS_BITS_PACK3 (16, 32, 64): return "16,32,64";
+	case R_BITS_PACK (4): return "4";
+	case R_BITS_PACK (8): return "8";
+	case R_BITS_PACK (16): return "16";
+	case R_BITS_PACK (32): return "32";
+	case R_BITS_PACK (64): return "64";
+	case R_BITS_PACK2 (4, 8): return "4,8";
+	case R_BITS_PACK2 (16, 64): return "16,32";
+	case R_BITS_PACK2 (32, 64): return "32,64";
+	case R_BITS_PACK3 (16, 32, 64): return "16,32,64";
 	}
 	return "?";
 }

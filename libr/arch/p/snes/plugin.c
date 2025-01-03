@@ -342,7 +342,7 @@ const RArchPlugin r_arch_plugin_snes = {
 		.author = "condret",
 	},
 	.arch = "snes", // modified 6502 ?
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.decode = snes_anop,
 	.info = snes_info,
 	.init = snes_init,

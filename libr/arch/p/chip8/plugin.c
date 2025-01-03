@@ -235,7 +235,7 @@ const RArchPlugin r_arch_plugin_chip8 = {
 	},
 	.arch = "chip8",
 	.info = archinfo,
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = &chip8_anop,
 };
 

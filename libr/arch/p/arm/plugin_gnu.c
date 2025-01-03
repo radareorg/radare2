@@ -654,7 +654,7 @@ const RArchPlugin r_arch_plugin_arm_gnu = {
 	"mulops,crc,dpvfp,v6m"
 #endif
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.info = archinfo,
 	.decode = arm_op,
 	.regs = set_reg_profile,

@@ -1588,7 +1588,7 @@ const RArchPlugin r_arch_plugin_ppc_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "ppc",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.cpus = "ppc,vle,ps",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,

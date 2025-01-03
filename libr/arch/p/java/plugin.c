@@ -372,7 +372,7 @@ const RArchPlugin r_arch_plugin_java = {
 	},
 	.arch = "java",
 	.info = archinfo,
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = decode,
 	.encode = encode,
 	//.cmd_ext = java_cmd_ext,

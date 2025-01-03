@@ -170,7 +170,7 @@ const RArchPlugin r_arch_plugin_xcore_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "xcore",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = decode,
 	.info = archinfo,
 	//.regs = regs,

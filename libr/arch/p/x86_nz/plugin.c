@@ -20,7 +20,7 @@ const RArchPlugin r_arch_plugin_x86_nz = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.encode = &x86nz_encode,
 };

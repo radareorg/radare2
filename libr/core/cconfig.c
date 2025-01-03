@@ -877,9 +877,9 @@ static bool cb_asmbits(void *user, void *data) {
 // XXX. that should depend on the plugin, not the host os
 #if R2__WINDOWS__
 #if !defined(_WIN64)
-			core->dbg->bits = R_SYS_BITS_PACK (32);
+			core->dbg->bits = R_BITS_PACK (32);
 #else
-			core->dbg->bits = R_SYS_BITS_PACK (64);
+			core->dbg->bits = R_BITS_PACK (64);
 #endif
 #endif
 			char *rp = plugin->reg_profile (core->dbg);

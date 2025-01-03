@@ -1233,7 +1233,7 @@ const RArchPlugin r_arch_plugin_arc = {
 		.desc = "ARC processor instruction decoder",
 	},
 	.arch = "arc",
-	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.bits = R_BITS_PACK2 (16, 32),
 	.decode = decode,
 	.info = archinfo,
 	.regs = regs

@@ -4491,7 +4491,7 @@ const RArchPlugin r_arch_plugin_x86_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "x86",
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.decode = &decode,
 	.preludes = anal_preludes,
 	.init = init,

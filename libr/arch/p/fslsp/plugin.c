@@ -250,7 +250,7 @@ const RArchPlugin r_arch_plugin_fslsp = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "fslsp",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = &fslsp_anop,
 };
 

@@ -788,7 +788,7 @@ const RArchPlugin r_arch_plugin_rsp = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "rsp",
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 	.decode = &rsp_op,
 	.info = &archinfo,
 	.regs = &get_reg_profile,

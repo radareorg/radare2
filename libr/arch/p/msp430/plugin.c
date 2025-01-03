@@ -160,7 +160,7 @@ const RArchPlugin r_arch_plugin_msp430 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "msp430",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_BITS_PACK1 (16),
 	.decode = &decode,
 	.info = info,
 	.regs = regs,

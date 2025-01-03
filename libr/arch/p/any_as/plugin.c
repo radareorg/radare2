@@ -87,7 +87,7 @@ const RArchPlugin r_arch_plugin_any_as = {
 	},
 	// TODO: add the "any" architecture to support any, instead of using null
 	.arch = "any", // on purpose because that's a multi-arch plugin
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.encode = &as_encode,
 };

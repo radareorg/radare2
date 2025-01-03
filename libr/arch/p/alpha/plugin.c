@@ -144,7 +144,7 @@ const RArchPlugin r_arch_plugin_alpha = {
 		.license = "GPL-3.0-only",
 	},
 	.arch = "alpha",
-	.bits = R_SYS_BITS_PACK1 (64),
+	.bits = R_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.info = info,
 	.regs = regs,

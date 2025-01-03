@@ -29,14 +29,14 @@ char *linux_reg_profile (RDebug *dbg) {
 #elif __riscv
 #	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	const bool is64 = R_BITS_CHECK (dbg->bits, 64);
 	if (is64) {
 #		include "reg/linux-arm64.h"
 	} else {
 #		include "reg/linux-arm.h"
 	}
 #elif __mips__
-	const bool is32 = R_SYS_BITS_CHECK (dbg->bits, 32);
+	const bool is32 = R_BITS_CHECK (dbg->bits, 32);
 	if (is32 && (dbg->bp->endian == 1)) {
 #		include "reg/linux-mips.h"
 	} else {
@@ -45,7 +45,7 @@ char *linux_reg_profile (RDebug *dbg) {
 #elif __loongarch__
 #		include "reg/linux-loongarch64.h"
 #elif (__i386__ || __x86_64__)
-	const bool is32 = R_SYS_BITS_CHECK (dbg->bits, 32);
+	const bool is32 = R_BITS_CHECK (dbg->bits, 32);
 	if (is32) {
 #if __x86_64__
 #		include "reg/linux-x64-32.h"
@@ -56,14 +56,14 @@ char *linux_reg_profile (RDebug *dbg) {
 #		include "reg/linux-x64.h"
 	}
 #elif __powerpc__
-	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	const bool is64 = R_BITS_CHECK (dbg->bits, 64);
 	if (is64) {
 #		include "reg/linux-ppc64.h"
 	} else {
 #		include "reg/linux-ppc.h"
 	}
 #elif __s390x__
-	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	const bool is64 = R_BITS_CHECK (dbg->bits, 64);
 	if (is64) {
 #		include "reg/linux-zarch.h"
 	} else {

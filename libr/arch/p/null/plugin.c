@@ -23,7 +23,7 @@ const RArchPlugin r_arch_plugin_null = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "none",
-	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64),
+	.bits = R_BITS_PACK4 (8, 16, 32, 64),
 //	.regs = regs
 };
 

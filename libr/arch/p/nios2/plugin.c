@@ -227,7 +227,7 @@ const RArchPlugin r_arch_plugin_nios2 = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = info,
 	.regs = regs,
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = &decode,
 };
 

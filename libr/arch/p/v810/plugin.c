@@ -469,7 +469,7 @@ const RArchPlugin r_arch_plugin_v810 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "v810",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.decode = v810_decode,
 	.regs = v810_regs,
 	.info = archinfo,

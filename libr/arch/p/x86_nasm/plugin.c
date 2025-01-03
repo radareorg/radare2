@@ -59,7 +59,7 @@ const RArchPlugin r_arch_plugin_x86_nasm = {
 	},
 	.arch = "x86",
 	// NOTE: 64bits is not supported on OSX's nasm :(
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.encode = &encode
 };

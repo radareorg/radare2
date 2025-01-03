@@ -139,7 +139,7 @@ const RArchPlugin r_arch_plugin_s390_gnu = {
 	},
 	.arch = "s390",
 	.cpus = "esa,zarch",
-	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
+	.bits = R_BITS_PACK2 (32, 64), // it's actually 31
 	.decode = &decode,
 	.info = archinfo,
 	.regs = &regs,

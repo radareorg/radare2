@@ -679,7 +679,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	},
 	/* TODO: Add support for more architectures here */
 	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.step = r_debug_gdb_step,

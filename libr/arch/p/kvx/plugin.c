@@ -317,7 +317,7 @@ const RArchPlugin r_arch_plugin_kvx = {
 		.license = "LGPL-3.0-only"
 	},
 	.arch = "kvx",
-	.bits = R_SYS_BITS_PACK1 (64),
+	.bits = R_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.init = kvx_init,
 	.fini = kvx_fini,

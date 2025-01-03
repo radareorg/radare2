@@ -73,7 +73,7 @@ const RArchPlugin r_arch_plugin_sm5xx = {
 		.desc = "Sharp SM 5XX family MCUs",
 		.license = "BSD-3-Clause",
 	},
-	.bits = R_SYS_BITS_PACK1 (4),
+	.bits = R_BITS_PACK1 (4),
 	.regs = regs,
 	.arch = "sm5xx",
 	.cpus = "5a,500,510,511,530,590",

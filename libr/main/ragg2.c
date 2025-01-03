@@ -209,7 +209,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *encoder = NULL;
 	const char *eggprg = NULL;
 	char *sequence = NULL;
-	int bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
+	int bits = R_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;

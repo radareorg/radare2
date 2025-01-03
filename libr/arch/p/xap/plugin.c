@@ -220,7 +220,7 @@ const RArchPlugin r_arch_plugin_xap = {
 		.author = "pancake",
 	},
 	.arch = "xap",
-	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.bits = R_BITS_PACK2 (16, 32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 };

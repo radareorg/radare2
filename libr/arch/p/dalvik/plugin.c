@@ -1715,7 +1715,7 @@ const RArchPlugin r_arch_plugin_dalvik = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "dalvik",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.regs = regs,
 	.info = archinfo,
 	.decode = decode,

@@ -170,7 +170,7 @@ const RArchPlugin r_arch_plugin_ebc = {
 	},
 	.info = archinfo,
 	.arch = "ebc",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.decode = &decode,
 };
 

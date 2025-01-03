@@ -2759,9 +2759,9 @@ R_API bool r_core_init(RCore *core) {
 	r_asm_use (core->rasm, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
 #endif
-	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
+	if (R_BITS_CHECK (R_SYS_BITS, 64)) {
 		r_config_set_i (core->config, "asm.bits", 64);
-	} else if (R_SYS_BITS_CHECK (R_SYS_BITS, 32)) {
+	} else if (R_BITS_CHECK (R_SYS_BITS, 32)) {
 		r_config_set_i (core->config, "asm.bits", 32);
 	}
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
@@ -3024,7 +3024,7 @@ static void set_prompt(RCore *r) {
 			prompt_sec (r, sec, sizeof (sec));
 		}
 		if (!promptset) {
-			const char *fmt = (r->print->wide_offsets && R_SYS_BITS_CHECK (r->dbg->bits, 64))
+			const char *fmt = (r->print->wide_offsets && R_BITS_CHECK (r->dbg->bits, 64))
 				? "0x%016" PFMT64x : "0x%08" PFMT64x;
 			snprintf (p, sizeof (p), fmt, r->offset);
 		}

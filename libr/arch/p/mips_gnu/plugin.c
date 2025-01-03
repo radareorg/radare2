@@ -1964,7 +1964,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 	},
 	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.info = archinfo,
 	.decode = decode,
 	.regs = regs,

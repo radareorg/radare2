@@ -7,11 +7,11 @@
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	int bits = s->config->bits;
-	if (R_SYS_BITS_CHECK (bits, 64)) {
+	if (R_BITS_CHECK (bits, 64)) {
 		bits = 64;
-	} else if (R_SYS_BITS_CHECK (bits, 32)) {
+	} else if (R_BITS_CHECK (bits, 32)) {
 		bits = 32;
-	} else if (R_SYS_BITS_CHECK (bits, 16)) {
+	} else if (R_BITS_CHECK (bits, 16)) {
 		bits = 16;
 	}
 	const bool is_thumb = (bits == 16);
@@ -80,7 +80,7 @@ const RArchPlugin r_arch_plugin_arm = {
 	},
 	.arch = "arm",
 	.info = archinfo,
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.encode = &encode,
 };

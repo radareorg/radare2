@@ -261,7 +261,7 @@ const RArchPlugin r_arch_plugin_vax = {
 		.license = "GPL-3.0-only",
 	},
 	.arch = "vax",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.regs = get_reg_profile,
 	.info = &archinfo,

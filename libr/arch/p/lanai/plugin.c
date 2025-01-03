@@ -104,7 +104,7 @@ const RArchPlugin r_arch_plugin_lanai = {
 		.desc = "Myricom's LANAI based on GNU binutils",
 	},
 	.arch = "lanai",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 	.regs = regs,
 	.info = info,

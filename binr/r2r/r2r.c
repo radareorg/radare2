@@ -45,9 +45,9 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 static void interact_diffchar(R2RTestResultInfo *result);
 
 R_IPI const char *getarchos(void) {
-	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
+	if (R_BITS_CHECK (R_SYS_BITS, 64)) {
 		return R_SYS_OS "-"R_SYS_ARCH "_64";
-	} else if (R_SYS_BITS_CHECK (R_SYS_BITS, 32)) {
+	} else if (R_BITS_CHECK (R_SYS_BITS, 32)) {
 		return R_SYS_OS "-"R_SYS_ARCH "_32";
 	}
 	return R_SYS_OS "-"R_SYS_ARCH;
