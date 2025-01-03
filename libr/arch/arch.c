@@ -48,7 +48,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 		if (strstr (p->meta.name, ".nz")) {
 			score += 50;
 		}
-		if (R_SYS_BITS_CHECK (p->bits, bits)) {
+		if (R_BITS_CHECK (p->bits, bits)) {
 			score += (!!score) * 30;
 		}
 	}

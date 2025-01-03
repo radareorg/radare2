@@ -1330,7 +1330,7 @@ const RArchPlugin r_arch_plugin_sh = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "sh",
 	.info = archinfo,
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 	.decode = &decode,
 	.regs = regs,
 };

@@ -649,7 +649,7 @@ const RArchPlugin r_arch_plugin_wasm = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "wasm",
-	.bits = R_SYS_BITS_PACK2 (32,64),
+	.bits = R_BITS_PACK2 (32,64),
 	.regs = wasm_regs,
 	.decode = &wasm_decode,
 	.encode = &wasm_encode,

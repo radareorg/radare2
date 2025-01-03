@@ -2842,7 +2842,7 @@ const RArchPlugin r_arch_plugin_z80 = {
 		.license = "GPL-3.0-only",
 	},
 	.arch = "z80",
-	.bits = R_SYS_BITS_PACK (16),
+	.bits = R_BITS_PACK (16),
 	.info = archinfo,
 	.decode = decode,
 	.encode = encode,

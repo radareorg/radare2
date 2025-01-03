@@ -688,7 +688,7 @@ const RArchPlugin r_arch_plugin_sparc_gnu = {
 		.license = "GPL-3.0-only",
 	},
 	.arch = "sparc",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.decode = &decode,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.info = archinfo,

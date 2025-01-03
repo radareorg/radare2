@@ -42,7 +42,7 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 		);
 		free (name);
 	} else {
-		const char *fmtstr = R_SYS_BITS_CHECK (dbg->bits, 64)
+		const char *fmtstr = R_BITS_CHECK (dbg->bits, 64)
 			? "0x%016" PFMT64x " - 0x%016" PFMT64x " %c %s %6s %c %s %s %s%s%s\n"
 			: "0x%08" PFMT64x " - 0x%08" PFMT64x " %c %s %6s %c %s %s %s%s%s\n";
 		const char *type = map->shared ? "sys": "usr";
@@ -228,7 +228,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 				mul = findMinMax (maps, &min, &max, skip, width); //  Recalculate minmax
 			}
 			skip++;
-			const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+			const bool is64 = R_BITS_CHECK (dbg->bits, 64);
 			fmtstr = is64
 				? "map %4.8s %c %s0x%016" PFMT64x "%s |"
 				: "map %4.8s %c %s0x%08" PFMT64x "%s |";

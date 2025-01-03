@@ -256,7 +256,7 @@ static char *windbg_reg_profile(RDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	ULONG type;
 	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &type))) {
-		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		if (R_BITS_CHECK (dbg->bits, 64)) {
 #include "native/reg/windows-x64.h"
 		} else {
 #include "native/reg/windows-x86.h"
@@ -613,7 +613,7 @@ RDebugPlugin r_debug_plugin_windbg = {
 		.author = "pancake",
 		.desc = "comunicate with a windbg",
 	},
-	.bits = R_SYS_BITS_PACK (64),
+	.bits = R_BITS_PACK (64),
 	.arch = "x86,x64,arm,arm64",
 	.canstep = 1,
 	.init_debugger = windbg_init,

@@ -988,7 +988,7 @@ const RArchPlugin r_arch_plugin_6502 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "6502",
-	.bits = R_SYS_BITS_PACK1 (8),
+	.bits = R_BITS_PACK1 (8),
 	.decode = &_6502_op,
 	.regs = regs,
 	.info = archinfo,

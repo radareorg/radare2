@@ -202,7 +202,7 @@ const RArchPlugin r_arch_plugin_pyc = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "pyc",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.info = archinfo,
 	.regs = regs,
 	.decode = &decode,

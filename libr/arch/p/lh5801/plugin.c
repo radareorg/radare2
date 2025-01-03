@@ -77,7 +77,7 @@ const RArchPlugin r_arch_plugin_lh5801 = {
 		.desc = "SHARP LH5801 microprocessor",
 	},
 	.arch = "LH5801",
-	.bits = R_SYS_BITS_PACK1 (8),
+	.bits = R_BITS_PACK1 (8),
 	.endian = R_SYS_ENDIAN_NONE,
 	.decode = &decode,
 	.info = info,

@@ -749,7 +749,7 @@ const RArchPlugin r_arch_plugin_h8300 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "h8300",
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.decode = &decode,
 	.regs = regs,
 	.info = archinfo,

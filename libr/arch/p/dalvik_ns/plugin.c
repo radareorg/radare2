@@ -627,7 +627,7 @@ const RArchPlugin r_arch_plugin_dalvik_ns = {
 		.license = "MIT",
 	},
 	.arch = "dalvik",
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 	.regs = regs,
 	.decode = decode,
 };

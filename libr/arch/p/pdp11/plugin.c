@@ -123,7 +123,7 @@ const RArchPlugin r_arch_plugin_pdp11 = {
 		.desc = "PDP-11 16 bit micro-computer by DEC",
 	},
 	.arch = "pdp11",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.info = info,
 	.regs = regs,

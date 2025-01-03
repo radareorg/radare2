@@ -94,7 +94,7 @@ const RArchPlugin r_arch_plugin_stm8 = {
 	},
 	.arch = "stm8",
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.info = archinfo,
 	.decode = &stm8_op,
 	.regs = &regs,

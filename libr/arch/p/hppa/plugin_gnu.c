@@ -163,7 +163,7 @@ const RArchPlugin r_arch_plugin_hppa_gnu = {
 		.desc = "HP PA-RISC",
 	},
 	.arch = "hppa",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_BIG,
 	.info = info,
 	.regs = regs,

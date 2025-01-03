@@ -1658,23 +1658,23 @@ RDebugPlugin r_debug_plugin_native = {
 		.desc = "native debug plugin",
 	},
 #if __i386__
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 	.arch = "x86",
 	.canstep = true,
 #elif __s390x__ || __s390__
-	.bits = R_SYS_BITS_PACK (64),
+	.bits = R_BITS_PACK (64),
 	.arch = "s390",
 	.canstep = true,
 #elif __riscv || __riscv__ || __riscv64__
-	.bits = R_SYS_BITS_PACK (64),
+	.bits = R_BITS_PACK (64),
 	.arch = "riscv",
 	.canstep = false,
 #elif __x86_64__
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.arch = "x86",
 	.canstep = true, // XXX it's 1 on some platforms...
 #elif __aarch64__ || __arm64__ || __arm64e__
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.arch = "arm",
 #if __APPLE__
 	.canstep = true,
@@ -1682,22 +1682,22 @@ RDebugPlugin r_debug_plugin_native = {
 	.canstep = false,
 #endif
 #elif __arm__
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.arch = "arm",
 	.canstep = false,
 #elif __mips__
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.arch = "mips",
 	.canstep = false,
 #elif __loongarch
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.arch = "loongarch",
 	.canstep = false,
 #elif __powerpc__
 # if __powerpc64__
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 # else
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 #endif
 	.arch = "ppc",
 	.canstep = true,

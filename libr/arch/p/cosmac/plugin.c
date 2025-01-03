@@ -693,7 +693,7 @@ const RArchPlugin r_arch_plugin_cosmac = {
 	.arch = "cosmac",
 	.endian = R_SYS_ENDIAN_BIG, // ignored by rcore
 	.info = info,
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.decode = &decode,
 	.regs = &getregs,
 };

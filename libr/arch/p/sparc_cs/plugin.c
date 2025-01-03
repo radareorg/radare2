@@ -463,7 +463,7 @@ const RArchPlugin r_arch_plugin_sparc_cs = {
 	},
 	.arch = "sparc",
 	.cpus = "v9",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,
 	.decode = decode,

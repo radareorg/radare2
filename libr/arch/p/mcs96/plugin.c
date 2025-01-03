@@ -196,7 +196,7 @@ const RArchPlugin r_arch_plugin_mcs96 = {
 	.decode = &decode,
 	.regs = regs,
 	.info = archinfo,
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64), // can work with 64bit registers too
+	.bits = R_BITS_PACK3 (16, 32, 64), // can work with 64bit registers too
 	.endian = R_SYS_ENDIAN_NONE,
 };
 

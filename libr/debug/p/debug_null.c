@@ -11,7 +11,7 @@ RDebugPlugin r_debug_plugin_null = {
 		.license = "MIT",
 	},
 	.arch = "any",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 };
 
 #ifndef R2_PLUGIN_INCORE

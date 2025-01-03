@@ -240,7 +240,7 @@ RDebugPlugin r_debug_plugin_evm = {
 		.desc = "evm debugger backend",
 	},
 	.arch = "evm",
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.step = r_debug_evm_step,
 	.cont = r_debug_evm_continue,
 	.attach = &r_debug_evm_attach,

@@ -291,7 +291,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	HANDLE th = wrap->pi.dwThreadId == dbg->tid ? wrap->pi.hThread : NULL;
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		if (R_BITS_CHECK (dbg->bits, 64)) {
 			flags |= THREAD_QUERY_INFORMATION;
 		}
 		th = OpenThread (flags, FALSE, dbg->tid);
@@ -335,7 +335,7 @@ static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
-	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+	if (R_BITS_CHECK (dbg->bits, 64)) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);

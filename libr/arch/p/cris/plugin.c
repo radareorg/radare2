@@ -348,7 +348,7 @@ const RArchPlugin r_arch_plugin_cris = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "cris",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.info = archinfo,
 	.regs = get_reg_profile,
 	.decode = &decode,

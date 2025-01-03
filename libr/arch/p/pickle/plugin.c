@@ -995,7 +995,7 @@ const RArchPlugin r_arch_plugin_pickle = {
 		.license = "BSD-3-Clause",
 	},
 	.arch = "pickle",
-	.bits = R_SYS_BITS_PACK1 (8), // not sure
+	.bits = R_BITS_PACK1 (8), // not sure
 	.decode = &pickle_decode,
 	.encode = &pickle_encode,
 	.info = pickle_info,

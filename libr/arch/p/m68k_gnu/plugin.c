@@ -123,7 +123,7 @@ const RArchPlugin r_arch_plugin_m68k_gnu = {
 	.arch = "m68k",
 	.cpus = "m68000,m68010,m68020,m68030,m68040,m68060,m68881,m68851"
 		"m68000up,m68010up,m68020up,m68030up,m68040up",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 	.decode = &decode,
 	.info = &info,

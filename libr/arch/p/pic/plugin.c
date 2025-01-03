@@ -1194,7 +1194,7 @@ const RArchPlugin r_arch_plugin_pic = {
 	.cpus = "baseline,midrange,pic18",
 	.arch = "pic",
 	.info = info,
-	.bits = R_SYS_BITS_PACK1 (8),
+	.bits = R_BITS_PACK1 (8),
 	.decode = &decode,
 	.regs = &getregs,
 };

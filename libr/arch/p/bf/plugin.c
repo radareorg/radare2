@@ -323,7 +323,7 @@ const RArchPlugin r_arch_plugin_bf = {
 		.author = "pancake"
 	},
 	.arch = "bf",
-	.bits = R_SYS_BITS_PACK (32),
+	.bits = R_BITS_PACK (32),
 	.endian = R_SYS_ENDIAN_NONE,
 	.decode = &decode,
 	.encode = &encode,

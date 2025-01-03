@@ -649,7 +649,7 @@ const RArchPlugin r_arch_plugin_riscv_cs = {
 	},
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.mnemonics = &mnemonics,
 	// .encode = &riscv_encode,
 	.decode = &riscv_decode,

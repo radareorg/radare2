@@ -685,7 +685,7 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 	.arch = "m680x",
 	.cpus = "6800,6801,6805,6808,6809,6811,6301,6309,cpu12,hcs08",
 	.regs = regs,
-	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.bits = R_BITS_PACK2 (16, 32),
 	.endian = R_SYS_ENDIAN_BIG,
 	.decode = decode,
 	.mnemonics = mnemonics,
@@ -700,7 +700,7 @@ const RArchPlugin r_anal_plugin_m680x_cs = {
 		.license = "Apache-2.0",
 	},
 	.arch = "m680x",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 };
 #endif
 

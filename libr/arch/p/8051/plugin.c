@@ -1220,7 +1220,7 @@ const RArchPlugin r_arch_plugin_8051 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "8051",
-	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.bits = R_BITS_PACK2 (8, 16),
 	.decode = decode,
 	.encode = encode,
 	.regs = regs,

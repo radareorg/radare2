@@ -495,7 +495,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 		cond = r_str_newf ("?= `ae %lu,edx,-`", type);
 	} else {
 		char *reg;
-		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		if (R_BITS_CHECK (dbg->bits, 64)) {
 			reg = "rcx";
 		} else {
 			reg = "ecx";

@@ -89,7 +89,7 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 		NE_image_segment_entry *se = &bin->segment_entries[i];
 		bs->size = se->length;
 		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;
-		bs->bits = R_SYS_BITS_PACK (16);
+		bs->bits = R_BITS_PACK (16);
 		bs->is_data = se->flags & IS_DATA;
 		bs->perm = __translate_perms (se->flags);
 		bs->paddr = (ut64)se->offset * bin->alignment;

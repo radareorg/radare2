@@ -151,9 +151,9 @@ static char *r_debug_winkd_reg_profile(RDebug *dbg) {
 		return NULL;
 	}
 	r_debug_winkd_attach (dbg, 0);
-	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+	if (R_BITS_CHECK (dbg->bits, 64)) {
 #include "native/reg/windows-x64.h"
-	} else if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
+	} else if (R_BITS_CHECK (dbg->bits, 32)) {
 #include "native/reg/windows-x86.h"
 	}
 	return NULL;
@@ -332,7 +332,7 @@ RDebugPlugin r_debug_plugin_winkd = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
-	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.bits = R_BITS_PACK2 (32, 64),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.init_debugger = &r_debug_winkd_init,

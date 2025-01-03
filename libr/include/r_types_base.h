@@ -261,32 +261,32 @@ typedef struct _utX {
 typedef ut64 RSysBits;
 typedef ut8 RSysBitValue;
 
-#define R_SYS_BITS_SIZE 8
-#define R_SYS_BITS_MASK 0xff
-#define R_SYS_BITS_PACK(x) (x)
-#define R_SYS_BITS_PACK1(x) (x)
-#define R_SYS_BITS_PACK2(x,y) ((x) | ((y)<<R_SYS_BITS_SIZE))
-#define R_SYS_BITS_PACK3(x,y,z) ((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
-#define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
-#define R_SYS_BITS_CHECK(x, y) (bool)( \
-	(((x) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (y)) \
+#define R_BITS_SIZE 8
+#define R_BITS_MASK 0xff
+#define R_BITS_PACK(x) (x)
+#define R_BITS_PACK1(x) (x)
+#define R_BITS_PACK2(x,y) ((x) | ((y)<<R_BITS_SIZE))
+#define R_BITS_PACK3(x,y,z) ((x) | ((y)<<R_BITS_SIZE) | ((z) << (R_BITS_SIZE*2)))
+#define R_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_BITS_SIZE) | ((z) << (R_BITS_SIZE*2)) | ((q) << (R_BITS_SIZE*3)) )
+#define R_BITS_CHECK(x, y) (bool)( \
+	(((x) & R_BITS_MASK) == (y)) || \
+	((((x) >> R_BITS_SIZE) & R_BITS_MASK) == (y)) || \
+	((((x) >> (R_BITS_SIZE*2)) & R_BITS_MASK) == (y)) || \
+	((((x) >> (R_BITS_SIZE*3)) & R_BITS_MASK) == (y)) \
 )
-#define R_SYS_BITS_CHECK3(x, a, b, c) (bool)( \
-	(((x) & R_SYS_BITS_MASK) == (a)) || \
-	(((x) & R_SYS_BITS_MASK) == (b)) || \
-	(((x) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (c)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (a)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (b)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (c)) \
+#define R_BITS_CHECK3(x, a, b, c) (bool)( \
+	(((x) & R_BITS_MASK) == (a)) || \
+	(((x) & R_BITS_MASK) == (b)) || \
+	(((x) & R_BITS_MASK) == (c)) || \
+	((((x) >> R_BITS_SIZE) & R_BITS_MASK) == (a)) || \
+	((((x) >> R_BITS_SIZE) & R_BITS_MASK) == (b)) || \
+	((((x) >> R_BITS_SIZE) & R_BITS_MASK) == (c)) || \
+	((((x) >> (R_BITS_SIZE*2)) & R_BITS_MASK) == (a)) || \
+	((((x) >> (R_BITS_SIZE*2)) & R_BITS_MASK) == (b)) || \
+	((((x) >> (R_BITS_SIZE*2)) & R_BITS_MASK) == (c)) || \
+	((((x) >> (R_BITS_SIZE*3)) & R_BITS_MASK) == (a)) || \
+	((((x) >> (R_BITS_SIZE*3)) & R_BITS_MASK) == (b)) || \
+	((((x) >> (R_BITS_SIZE*3)) & R_BITS_MASK) == (c)) \
 )
 
 

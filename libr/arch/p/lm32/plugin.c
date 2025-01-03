@@ -485,7 +485,7 @@ const RArchPlugin r_arch_plugin_lm32 = {
 	.arch = "lm32",
 	.decode = &decode,
 	.regs = get_reg_profile,
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 };
 

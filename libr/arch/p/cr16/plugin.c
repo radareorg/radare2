@@ -136,7 +136,7 @@ const RArchPlugin r_arch_plugin_cr16 = {
 	.arch = "cr16",
 // 	.cpus = "crc16c,plus", only supported in the gnu plugin, which we dont have :D
 	.info = &archinfo,
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_BITS_PACK1 (16),
 	.decode = &decode,
 };
 

@@ -66,7 +66,7 @@ const RArchPlugin r_arch_plugin_i8080 = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "i8080",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.bits = R_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 	.info = archinfo,

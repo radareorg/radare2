@@ -260,7 +260,7 @@ const RArchPlugin r_arch_plugin_tricore = {
 	},
 	.arch = "tricore",
 	.cpus = "generic,rider-a,rider-b,v2,pcp,pcp2",
-	.bits = R_SYS_BITS_PACK1 (32),
+	.bits = R_BITS_PACK1 (32),
 	.info = &archinfo,
 	.decode = &decode,
 	.endian = R_SYS_ENDIAN_LITTLE,

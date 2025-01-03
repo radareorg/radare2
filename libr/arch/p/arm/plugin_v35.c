@@ -3370,7 +3370,7 @@ const RArchPlugin r_arch_plugin_arm_v35 = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.regs = regs,
 	.preludes = anal_preludes,
-	.bits = R_SYS_BITS_PACK (64),
+	.bits = R_BITS_PACK (64),
 	.decode = &decode,
 	.mnemonics = &mnemonics,
 };

@@ -5060,7 +5060,7 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	},
 	.arch = "arm",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.bits = R_BITS_PACK3 (16, 32, 64),
 	.cpus = "cortex,v8",
 #if 0
 	// made obsolete by "e anal.mask = true"
