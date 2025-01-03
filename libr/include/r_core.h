@@ -875,7 +875,7 @@ typedef struct r_core_bin_filter_t {
 } RCoreBinFilter;
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum);
-R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, ut16 bits);
+R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, RSysBits bits);
 R_API bool r_core_bin_update_arch_bits(RCore *r);
 R_API char *r_core_bin_attr_tostring(RCore *core, ut64 flags, int mode);
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode);

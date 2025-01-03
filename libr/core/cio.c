@@ -359,8 +359,12 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 			}
 			if (!core->fixedbits && s->bits) {
 				// only enforce if there's one bits set
-				if (R_SYS_BITS_CHECK3 (s->bits, 16, 32, 64)) {
-					bitsval = s->bits * 8;
+				if (R_SYS_BITS_CHECK (s->bits, 16)) {
+					bitsval = 16;
+				} else if (R_SYS_BITS_CHECK (s->bits, 32)) {
+					bitsval = 32;
+				} else if (R_SYS_BITS_CHECK (s->bits, 64)) {
+					bitsval = 64;
 				}
 			}
 		}
