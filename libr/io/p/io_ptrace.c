@@ -333,10 +333,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 					// TODO: do not set pid if attach fails?
 					iop->pid = iop->tid = pid;
 				}
+				return NULL;
 			} else {
-				io->cb_printf ("%d\n", iop->pid);
+				return r_str_newf ("%d", iop->pid);
+				// io->cb_printf ("%d\n", iop->pid);
 			}
-			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
 		show_help ();

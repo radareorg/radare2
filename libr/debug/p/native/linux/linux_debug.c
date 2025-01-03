@@ -1272,6 +1272,7 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			size = R_MIN (sizeof (regs), size);
 			memcpy (buf, &regs, size);
+			// r_print_hexdump (NULL, 0, buf, size, 16, 16, 0);
 			return size;
 		}
 		break;

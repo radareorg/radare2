@@ -111,12 +111,12 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	}
 	if (size != 0 && !r_reg_hasbits_check (dbg->reg, size)) {
 		if (r_reg_hasbits_check (dbg->reg, 64)) {
-			size = R_SYS_BITS_PACK (64);
+			size = 64;
 		} else if (r_reg_hasbits_check (dbg->reg, 32)) {
-			size = R_SYS_BITS_PACK (32);
+			size = 32;
 		} else {
 			// TODO: verify if 32bit exists too?
-			size = R_SYS_BITS_PACK (16);
+			size = 16;
 		}
 	}
 	if (size == 64) {
