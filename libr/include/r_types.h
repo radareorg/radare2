@@ -289,10 +289,7 @@
 #if __MINGW32__
 #include <sys/time.h>
 #include <unistd.h>
-// #define PFMT64x "I64x"
-#define PFMT64x PRIx64
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -449,7 +446,11 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 
 #if R2__WINDOWS__
+#if __MINGW32__
+#define PFMT64x PRIx64
+#else
 #define PFMT64x "I64x"
+#endif
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"

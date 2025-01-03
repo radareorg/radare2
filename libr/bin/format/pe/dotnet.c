@@ -26,10 +26,10 @@ limitations under the License.
 #include <r_types.h>
 #include <r_util.h>
 
-typedef struct _IMAGE_DATA_DIRECTORY {
+typedef struct R_IMAGE_DATA_DIRECTORY {
 	ut32 VirtualAddress;
 	ut32 Size;
-} IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
+} R_IMAGE_DATA_DIRECTORY, *R_PIMAGE_DATA_DIRECTORY;
 
 #include "pe_specs.h"
 #include "dotnet.h"
@@ -61,13 +61,13 @@ typedef struct _PE {
 	void* object;
 } PE;
 
-PIMAGE_DATA_DIRECTORY pe_get_directory_entry( PE* pe, int entry) {
+R_PIMAGE_DATA_DIRECTORY pe_get_directory_entry( PE* pe, int entry) {
 #if 0
-	PIMAGE_DATA_DIRECTORY result = IS_64BITS_PE(pe)
+	R_PIMAGE_DATA_DIRECTORY result = IS_64BITS_PE(pe)
 		? &pe->header64->OptionalHeader.DataDirectory[entry]
 		: &pe->header->OptionalHeader.DataDirectory[entry];
 #else
-	PIMAGE_DATA_DIRECTORY result = {0};
+	R_PIMAGE_DATA_DIRECTORY result = {0};
 #endif
 	return result;
 }
@@ -1518,7 +1518,7 @@ void dotnet_parse_tilde(
 #endif
 
 void dotnet_parse_com(PE* pe, ut64 baddr) {
-	PIMAGE_DATA_DIRECTORY directory;
+	R_PIMAGE_DATA_DIRECTORY directory;
 	PCLI_HEADER cli_header;
 	PNET_METADATA metadata;
 	ut64 metadata_root;

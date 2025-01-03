@@ -23,13 +23,13 @@ typedef struct _CLI_HEADER {
     ut32 Size; // Called "Cb" in documentation.
     ut16 MajorRuntimeVersion;
     ut16 MinorRuntimeVersion;
-    IMAGE_DATA_DIRECTORY MetaData;
+    R_IMAGE_DATA_DIRECTORY MetaData;
     ut32 Flags;
     ut32 EntryPointToken;
-    IMAGE_DATA_DIRECTORY Resources;
-    IMAGE_DATA_DIRECTORY StrongNameSignature;
+    R_IMAGE_DATA_DIRECTORY Resources;
+    R_IMAGE_DATA_DIRECTORY StrongNameSignature;
     ut64 CodeManagerTable;
-    IMAGE_DATA_DIRECTORY VTableFixups;
+    R_IMAGE_DATA_DIRECTORY VTableFixups;
     ut64 ExportAddressTableJumps;
     ut64 ManagedNativeHeader;
 } CLI_HEADER, *PCLI_HEADER;
