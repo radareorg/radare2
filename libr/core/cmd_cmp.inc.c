@@ -717,6 +717,8 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				op2.size = 1;
 			}
 			j += op2.size;
+			free (opa);
+			free (opb);
 		}
 		break;
 	case 'u': // unified
