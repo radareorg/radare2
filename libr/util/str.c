@@ -137,19 +137,17 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 }
 
 R_API const char *r_str_sysbits(const RSysBits v) {
-	const bool is4 = R_SYS_BITS_CHECK (v, 4);
-	const bool is8 = R_SYS_BITS_CHECK (v, 8);
-	const bool is16 = R_SYS_BITS_CHECK (v, 16);
-	const bool is32 = R_SYS_BITS_CHECK (v, 32);
-	const bool is64 = R_SYS_BITS_CHECK (v, 64);
-	if (is16 && is32 && is64) return "16,32,64";
-	if (is32 && is64) return "32,64";
-	if (is16 && is32) return "16,32";
-	if (is4 && is8) return "4,8";
-	if (is64) return "64";
-	if (is32) return "32";
-	if (is16) return "16";
-	if (is8) return "8";
+	switch (v) {
+	case R_SYS_BITS_PACK (4): return "4";
+	case R_SYS_BITS_PACK (8): return "8";
+	case R_SYS_BITS_PACK (16): return "16";
+	case R_SYS_BITS_PACK (32): return "32";
+	case R_SYS_BITS_PACK (64): return "64";
+	case R_SYS_BITS_PACK2 (4, 8): return "4,8";
+	case R_SYS_BITS_PACK2 (16, 64): return "16,32";
+	case R_SYS_BITS_PACK2 (32, 64): return "32,64";
+	case R_SYS_BITS_PACK3 (16, 32, 64): return "16,32,64";
+	}
 	return "?";
 }
 
