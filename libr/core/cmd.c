@@ -625,15 +625,16 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 	}
 	RSysInfo *si = r_sys_info ();
 	if (si) {
+		const bool sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 		if (strstr (input, "-a")) {
 			r_cons_printf ("%s %s %s-%d", si->sysname, si->release,
-				R_SYS_ARCH, (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+				R_SYS_ARCH, sysbits);
 		} else if (strstr (input, "-j")) {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			pj_ks (pj, "platform", si->sysname);
 			pj_ks (pj, "arch", R_SYS_ARCH);
-			pj_kn (pj, "bits", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+			pj_kn (pj, "bits", sysbits);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf ("%s", s);
@@ -641,7 +642,7 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 		} else if (strstr (input, "-m")) {
 			r_cons_printf ("%s", R_SYS_ARCH);
 		} else if (strstr (input, "-b")) {
-			r_cons_printf ("%d", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+			r_cons_printf ("%d", sysbits);
 		} else {
 			r_cons_printf ("%s", si->sysname);
 			if (strstr (input, "-r")) {

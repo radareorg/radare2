@@ -2533,9 +2533,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	RRegItem *r;
 	const char *name;
 	int size, type = R_REG_TYPE_GPR;
-	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
-	int use_colors = r_config_get_i (core->config, "scr.color");
-	int newbits = atoi ((str&&*str)? str + 1: "");
+	int bits = R_SYS_BITS_CHECK (core->dbg->bits, 64)? 64: 32;
+	const bool use_colors = r_config_get_i (core->config, "scr.color") > 0;
+	int newbits = atoi (R_STR_ISNOTEMPTY (str)? str + 1: "");
 	if (newbits > 0) {
 		bits = newbits;
 	}
@@ -3440,10 +3440,10 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 		}
 	}
 	if (pcstr && spstr) {
-		if (core->dbg->bits & R_SYS_BITS_64) {
+		if (R_SYS_BITS_CHECK (core->dbg->bits, 64)) {
 			*pcstr = r_str_newf ("0x%-16" PFMT64x, frame->addr);
 			*spstr = r_str_newf ("0x%-16" PFMT64x, frame->sp);
-		} else if (core->dbg->bits & R_SYS_BITS_32) {
+		} else if (R_SYS_BITS_CHECK (core->dbg->bits, 32)) {
 			*pcstr = r_str_newf ("0x%-8" PFMT64x, frame->addr);
 			*spstr = r_str_newf ("0x%-8" PFMT64x, frame->sp);
 		} else {

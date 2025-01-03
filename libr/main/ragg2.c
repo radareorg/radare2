@@ -185,7 +185,7 @@ static int openfile(const char *f, int x) {
 #endif
 	return fd;
 }
-#define ISEXEC (fmt!='r')
+#define ISEXEC (fmt != 'r')
 
 R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *file = NULL;
@@ -209,7 +209,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *encoder = NULL;
 	const char *eggprg = NULL;
 	char *sequence = NULL;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	int bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;

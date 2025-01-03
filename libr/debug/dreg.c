@@ -111,15 +111,16 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	}
 	if (size != 0 && !r_reg_hasbits_check (dbg->reg, size)) {
 		if (r_reg_hasbits_check (dbg->reg, 64)) {
-			size = R_SYS_BITS_64;
+			size = R_SYS_BITS_PACK (64);
 		} else if (r_reg_hasbits_check (dbg->reg, 32)) {
-			size = R_SYS_BITS_32;
+			size = R_SYS_BITS_PACK (32);
 		} else {
 			// TODO: verify if 32bit exists too?
-			size = R_SYS_BITS_16;
+			size = R_SYS_BITS_PACK (16);
 		}
 	}
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (size == 64) {
+	// if (size == R_SYS_BITS_64) {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";
@@ -202,7 +203,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			if (isJson) {
 				pj_kn (pj, item->name, value);
 			} else {
-				if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
+				if (pr && pr->wide_offsets && R_SYS_BITS_CHECK (dbg->bits, 64)) {
 					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x, value);
 				} else {
 					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);

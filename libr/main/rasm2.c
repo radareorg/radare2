@@ -21,7 +21,7 @@ static void __as_set_archbits(RAsmState *as) {
 	const char *arch = as->a->config->arch; // R_SYS_ARCH;
 	r_asm_use (as->a, arch);
 	r_anal_use (as->anal, arch);
-	int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	const int sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	r_asm_set_bits (as->a, sysbits);
 	r_anal_set_bits (as->anal, sysbits);
 }
@@ -724,7 +724,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	bool hexwords = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, bin = 0, ret = 0, c, whatsop = 0;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	int bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;

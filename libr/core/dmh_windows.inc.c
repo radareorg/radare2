@@ -355,11 +355,12 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 	R_RETURN_VAL_IF_FAIL (heap && entry, false);
-	if (dbg->bits == R_SYS_BITS_64) {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (is64) {
 			heap = (PHEAP)((ut8 *)heap + dbg->bits);
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
@@ -369,10 +370,10 @@ static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 
 static bool DecodeLFHEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
 	R_RETURN_VAL_IF_FAIL (heap && entry, false);
-	if (dbg->bits == R_SYS_BITS_64) {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
-
 	if (heap->EncodeFlagMask) {
 		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ (addr >> 4);
 	}
@@ -411,7 +412,8 @@ static RList *GetListOfHeaps(RDebug *dbg, HANDLE ph) {
 	PVOID heapAddress;
 	PVOID *processHeaps;
 	ULONG numberOfHeaps;
-	if (dbg->bits == R_SYS_BITS_64) {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0xF0));
 		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0xE8));
 	} else {
@@ -724,7 +726,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
 	*/
 #if defined (_M_X64)
-	if (dbg->bits == R_SYS_BITS_32) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
 		return NULL; // Nope nope nope
 	}
 #endif
@@ -1127,7 +1129,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 			if (entry.UnusedBytes & 0x80) {
 				tmpEntry = entry;
 				WPARAM userBlocksOffset;
-				if (dbg->bits == R_SYS_BITS_64) {
+				if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 					*(((WPARAM *)&tmpEntry) + 1) ^= PtrToInt (h.BaseAddress) ^ (entryOffset >> 0x4) ^ (DWORD)NtLFHKey;
 					userBlocksOffset = entryOffset - (USHORT)((*(((WPARAM *)&tmpEntry) + 1)) >> 0xC);
 				} else {

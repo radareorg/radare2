@@ -10,7 +10,7 @@
 
 #else
 
-#if R_SYS_BITS == 4
+#if R_SYS_BITS == 32
 #define BITWORD_BITS_SHIFT 5
 #define RBitword ut32
 #else
