@@ -418,9 +418,9 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 char *xnu_reg_profile(RDebug *dbg) {
 #if __i386__ || __x86_64__
-	if (dbg->bits & R_SYS_BITS_32) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
 #		include "reg/darwin-x86.h"
-	} else if (dbg->bits == R_SYS_BITS_64) {
+	} else if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 #		include "reg/darwin-x64.h"
 	} else {
 		R_LOG_ERROR ("invalid bit size");
@@ -429,7 +429,7 @@ char *xnu_reg_profile(RDebug *dbg) {
 #elif __POWERPC__
 #	include "reg/darwin-ppc.h"
 #elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__ || __arm64e__)
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 #		include "reg/darwin-arm64.h"
 	} else {
 #		include "reg/darwin-arm.h"
@@ -455,7 +455,7 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #elif __i386__
 		memcpy (&th->drx.uds.ds64, buf, R_MIN (size, sizeof (th->drx)));
 #elif __arm64 || __aarch64 || __arm64e
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
 		} else {
 			memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
@@ -625,17 +625,15 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 #if __arm64__ || __aarch_64__ || __arm64e__
-	//#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
-	//	state.arm64.__pc : state.arm32.__pc
-	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \
 		__darwin_arm_thread_state64_get_pc (state.ts_64) : state.ts_32.__pc
 #elif __arm__ || __arm
-	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \
 		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define CPU_PC state.srr0
 #elif __x86_64__ || __i386__
-	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \
 		state.uts.ts64.__rip : state.uts.ts32.__eip
 #endif
 	RListIter *iter;
