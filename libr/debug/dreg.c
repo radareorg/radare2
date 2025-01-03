@@ -120,7 +120,6 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		}
 	}
 	if (size == 64) {
-	// if (size == R_SYS_BITS_64) {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";

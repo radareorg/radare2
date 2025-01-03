@@ -50,7 +50,7 @@ static bool xnu_x86_hwstep_enable32(RDebug *dbg, bool enable) {
 }
 
 bool xnu_native_hwstep_enable(RDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		return xnu_x86_hwstep_enable64 (dbg, enable);
 	}
 	return xnu_x86_hwstep_enable32 (dbg, enable);
