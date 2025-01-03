@@ -258,19 +258,6 @@ typedef struct _utX {
 #define DEBUGGER 0
 #endif
 
-#if 0
-// no need for an enum or type here, its just 1:1
-// XXX deprecate because it's confusing, we can use the new RSYS_BITS_PACK macros
-#define R_SYS_BITS_12	64
-#define R_SYS_BITS_16	2
-#define R_SYS_BITS_24	24
-#define R_SYS_BITS_27	16
-#define R_SYS_BITS_32	4
-#define R_SYS_BITS_4	32
-#define R_SYS_BITS_64	8
-#define R_SYS_BITS_8	1
-#endif
-
 typedef ut64 RSysBits;
 typedef ut8 RSysBitValue;
 
