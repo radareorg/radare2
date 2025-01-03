@@ -505,6 +505,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 		dbg->bits = R_SYS_BITS_PACK (64);
 		break;
 	}
+#if 0
 	if (plugin->bits) {
 		if (R_SYS_BITS_CHECK (plugin->bits, 64)) {
 			dbg->bits = R_SYS_BITS_PACK (64);
@@ -516,6 +517,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	} else {
 		dbg->bits = R_SYS_BITS;
 	}
+#endif
 	free (dbg->arch);
 	dbg->arch = strdup (arch);
 	return true;

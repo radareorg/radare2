@@ -858,9 +858,6 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-if (bits == 256) {
-r_sys_breakpoint ();
-}
 	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
