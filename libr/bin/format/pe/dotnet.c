@@ -83,7 +83,7 @@ char* pe_get_dotnet_string( PE* pe, const uint8_t* string_offset, ut32 string_in
 
 	// Search for a NULL terminator from start of string, up to remaining.
 	char *start = (char*) (string_offset + string_index);
-	char *eos = (char*) memmem((void*) start, remaining, "\0", 1);
+	char *eos = (char*) r_mem_mem((void*) start, remaining, (void*)"\0", 1);
 
 	return eos? start: NULL;
 }
@@ -267,7 +267,7 @@ STREAMS dotnet_parse_stream_headers(
     if (!fits_in_pe(pe, start, DOTNET_STREAM_NAME_SIZE))
       break;
 
-    eos = (char*) memmem((void*) start, DOTNET_STREAM_NAME_SIZE, "\0", 1);
+    eos = (char*) r_mem_mem((void*) start, DOTNET_STREAM_NAME_SIZE, (void*)"\0", 1);
 
     if (eos == NULL)
       break;
@@ -1538,13 +1538,15 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	offset = metadata_root = pe_rva_to_offset(
 			pe, cli_header->MetaData.VirtualAddress);
 
-	if (!struct_fits_in_pe(pe, pe->data + offset, NET_METADATA))
+	if (!struct_fits_in_pe(pe, pe->data + offset, NET_METADATA)) {
 		return;
+	}
 
 	metadata = (PNET_METADATA) (pe->data + offset);
 
-	if (metadata->Magic != NET_METADATA_MAGIC)
+	if (metadata->Magic != NET_METADATA_MAGIC) {
 		return;
+	}
 
 	// Version length must be between 1 and 255, and be a multiple of 4.
 	// Also make sure it fits in pe.
@@ -1559,12 +1561,12 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	// The length includes the NULL terminator and is rounded up to a multiple of
 	// 4. We need to exclude the terminator and the padding, so search for the
 	// first NULL byte.
-	end = (char*) memmem((void*) metadata->Version, metadata->Length, "\0", 1);
-	if (end)
+	end = (char*) r_mem_mem((void*) metadata->Version, metadata->Length, (void*)"\0", 1);
+	if (end) {
 		set_sized_string(metadata->Version,
-				(end - metadata->Version),
-				pe->object,
-				"version");
+			(end - metadata->Version),
+			pe->object, "version");
+	}
 
 	// The metadata structure has some variable length records after the version.
 	// We must manually parse things from here on out.
