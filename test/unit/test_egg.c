@@ -7,7 +7,7 @@
 #if __linux__ && __x86_64__
 const char *arch = R_SYS_ARCH;
 const char *os = R_EGG_OS_NAME;
-const int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+const int bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 const char program[] = "                \
 read@syscall(0);                        \
 write@syscall(1);                       \
