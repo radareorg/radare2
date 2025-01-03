@@ -594,6 +594,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		return false;
 	}
 	if (r_file_is_directory (path)) {
+		const char *archos = getarchos ();
 		RList *dir = r_sys_dir (path);
 		if (!dir) {
 			return false;
@@ -619,8 +620,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
-			if (is_archos_folder && (skip_archos || strcmp (subname, R2R_ARCH_OS))) {
-				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, R2R_ARCH_OS);
+			if (is_archos_folder && (skip_archos || strcmp (subname, archos))) {
+				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform \"%s\"", path, subname, archos);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);

@@ -115,12 +115,8 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #define IMAGE_OFFSET 0x201000
 #define KERNEL_LOWER 0x80000000
 #endif
-//#define R_DEBUG_STATE_T XXX
-//(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
-//#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
-//#define R_DEBUG_STATE_SZ ((dbg->bits == R_SYS_BITS_64) ? 168 : 64)
-#define REG_PC ((dbg->bits == R_SYS_BITS_64) ? 16 : 10)
-#define REG_FL ((dbg->bits == R_SYS_BITS_64) ? 17 : 9)
+#define REG_PC (R_SYS_BITS_CHECK (dbg->bits, 64) ? 16 : 10)
+#define REG_FL (R_SYS_BITS_CHECK (dbg->bits, 64) ? 17 : 9)
 #define REG_SP (7)
 #endif
 

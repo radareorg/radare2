@@ -103,7 +103,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	RRegItem *item;
 	ut64 diff;
 	char strvalue[256];
-	bool isJson = (rad == 'j' || rad == 'J');
+	bool isJson = tolower (rad) == 'j';
 	R_RETURN_VAL_IF_FAIL (!isJson || (isJson && pj), false);
 
 	if (dbg->coreb.core) {
@@ -119,7 +119,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			size = 16;
 		}
 	}
-	if (dbg->bits & R_SYS_BITS_64) {
+	if (size == 64) {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";
@@ -202,7 +202,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			if (isJson) {
 				pj_kn (pj, item->name, value);
 			} else {
-				if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
+				if (pr && pr->wide_offsets && R_SYS_BITS_CHECK (dbg->bits, 64)) {
 					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x, value);
 				} else {
 					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);

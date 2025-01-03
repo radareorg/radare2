@@ -347,8 +347,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	return ret;
 }
 
-// Get address-specific bits and arch at a certain address.
-// If there are no specific infos (i.e. asm.bits and asm.arch should apply), the bits and arch will be 0 or NULL respectively!
 R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch) {
 	int bitsval = 0;
 	const char *archval = NULL;
@@ -361,12 +359,12 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 			}
 			if (!core->fixedbits && s->bits) {
 				// only enforce if there's one bits set
-				switch (s->bits) {
-				case R_SYS_BITS_16:
-				case R_SYS_BITS_32:
-				case R_SYS_BITS_64:
-					bitsval = s->bits * 8;
-					break;
+				if (R_SYS_BITS_CHECK (s->bits, 16)) {
+					bitsval = 16;
+				} else if (R_SYS_BITS_CHECK (s->bits, 32)) {
+					bitsval = 32;
+				} else if (R_SYS_BITS_CHECK (s->bits, 64)) {
+					bitsval = 64;
 				}
 			}
 		}

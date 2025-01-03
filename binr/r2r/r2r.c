@@ -44,6 +44,15 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
 static void interact_diffchar(R2RTestResultInfo *result);
 
+R_IPI const char *getarchos(void) {
+	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
+		return R_SYS_OS "-"R_SYS_ARCH "_64";
+	} else if (R_SYS_BITS_CHECK (R_SYS_BITS, 32)) {
+		return R_SYS_OS "-"R_SYS_ARCH "_32";
+	}
+	return R_SYS_OS "-"R_SYS_ARCH;
+}
+
 static void parse_skip(const char *arg) {
 	if (strstr (arg, "arch")) {
 		r_sys_setenv ("R2R_SKIP_ARCHOS", "1");
@@ -104,7 +113,7 @@ static int help(bool verbose, int workers_count) {
 		helpvars (workers_count);
 		printf ("\n"
 		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
-		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
+		"OS/Arch for archos tests: %s\n", getarchos ());
 	}
 	return 1;
 }

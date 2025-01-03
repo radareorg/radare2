@@ -5,14 +5,6 @@
 
 #include <r_util.h>
 
-#if R_SYS_BITS & R_SYS_BITS_64
-#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_64"
-#elif R_SYS_BITS & R_SYS_BITS_32
-#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_32"
-#elif
-#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH
-#endif
-
 typedef struct r2r_cmd_test_string_record {
 	char *value;
 	ut64 line_begin; // inclusive
@@ -217,5 +209,6 @@ R_API char *r2r_test_name(R2RTest *test);
 R_API bool r2r_test_broken(R2RTest *test);
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test);
 R_API void r2r_test_result_info_free(R2RTestResultInfo *result);
+R_IPI const char *getarchos(void);
 
 #endif //RADARE2_R2R_H

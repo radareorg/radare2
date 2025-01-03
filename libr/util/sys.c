@@ -1079,6 +1079,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	return ret;
 }
 
+// TODO. maybe this should be moved into socket/run?
 R_API int r_sys_run_rop(const ut8 *buf, int len) {
 #if USE_FORK
 	int st;

@@ -249,7 +249,7 @@ RDebugPlugin r_debug_plugin_rv32ima = {
 		.license = "MIT",
 	},
 	.arch = "riscv",
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_PACK (32),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.init_debugger = __rv32ima_init,

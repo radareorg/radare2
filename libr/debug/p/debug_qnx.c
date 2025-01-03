@@ -399,7 +399,7 @@ RDebugPlugin r_debug_plugin_qnx = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86,arm",
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_PACK (32),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.step = r_debug_qnx_step,

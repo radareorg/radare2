@@ -132,7 +132,7 @@ RDebugPlugin r_debug_plugin_esil = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "any", // TODO: exception!
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.init_debugger = __esil_init,
 	.step = __esil_step,
 	.step_over = __esil_step_over,

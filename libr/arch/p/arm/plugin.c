@@ -7,20 +7,13 @@
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	int bits = s->config->bits;
-	if (bits & R_SYS_BITS_32) {
-		bits = 32;
-	} else if (bits & R_SYS_BITS_16) {
-		bits = 16;
-	}
-#if 0
-	if (s->config->bits & R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (bits, 64)) {
 		bits = 64;
-	} else if (s->config->bits & R_SYS_BITS_32) {
+	} else if (R_SYS_BITS_CHECK (bits, 32)) {
 		bits = 32;
-	} else if (s->config->bits & R_SYS_BITS_16) {
+	} else if (R_SYS_BITS_CHECK (bits, 16)) {
 		bits = 16;
 	}
-#endif
 	const bool is_thumb = (bits == 16);
 	int opsize;
 	ut32 opcode = UT32_MAX;
@@ -51,19 +44,11 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 				r_write_be32 (opbuf, opcode);
 			}
 		} else if (opsize == 2) {
-			if (be) {
-				r_write_le16 (opbuf, opcode & UT16_MAX);
-			} else {
-				r_write_be16 (opbuf, opcode & UT16_MAX);
-			}
+			r_write_ble16 (opbuf, opcode & UT16_MAX, !be);
 		}
 	} else {
 		opsize = 4;
-		if (be) {
-			r_write_le32 (opbuf, opcode);
-		} else {
-			r_write_be32 (opbuf, opcode);
-		}
+		r_write_ble32 (opbuf, opcode, !be);
 	}
 	r_anal_op_set_bytes (op, op->addr, opbuf, opsize);
 	// r_strbuf_setbin (&op->buf, opbuf, opsize);

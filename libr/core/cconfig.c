@@ -769,7 +769,6 @@ static bool cb_asmarch(void *user, void *data) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
-	//r_debug_set_arch (core->dbg, r_sys_arch_id (node->value), bits);
 	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
@@ -878,9 +877,9 @@ static bool cb_asmbits(void *user, void *data) {
 // XXX. that should depend on the plugin, not the host os
 #if R2__WINDOWS__
 #if !defined(_WIN64)
-			core->dbg->bits = R_SYS_BITS_32;
+			core->dbg->bits = R_SYS_BITS_PACK (32);
 #else
-			core->dbg->bits = R_SYS_BITS_64;
+			core->dbg->bits = R_SYS_BITS_PACK (64);
 #endif
 #endif
 			char *rp = plugin->reg_profile (core->dbg);
@@ -3655,11 +3654,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "select the instruction decoder to use");
 	update_archdecoder_options (core, n);
 	r_config_set_getter (cfg, "arch.decoder", (RConfigCallback)cb_archdecoder_getter);
-#if R_SYS_BITS == R_SYS_BITS_64
-	SETICB ("arch.bits", 64, &cb_archbits, "word size in bits at arch decoder");
-#else
-	SETICB ("arch.bits", 32, &cb_archbits, "word size in bits at arch decoder");
-#endif
+	SETICB ("arch.bits", R_SYS_BITS, &cb_archbits, "word size in bits at arch decoder");
 	r_config_set_getter (cfg, "arch.bits", (RConfigCallback)cb_archbits_getter);
 	SETCB ("arch.platform", "", &cb_arch_platform, "define arch platform to use");
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
@@ -3883,11 +3878,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "att", "intel", "masm", "jz", "regnum", NULL);
 	SETI ("asm.nbytes", 6, "number of bytes for each opcode at disassembly");
 	SETBPREF ("asm.bytes.space", "false", "separate hexadecimal bytes with a whitespace");
-#if R_SYS_BITS == R_SYS_BITS_64
-	SETICB ("asm.bits", 64, &cb_asmbits, "word size in bits at assembler");
-#else
-	SETICB ("asm.bits", 32, &cb_asmbits, "word size in bits at assembler");
-#endif
+	SETICB ("asm.bits", R_SYS_BITS, &cb_asmbits, "word size in bits at assembler");
 	n = r_config_node_get(cfg, "asm.bits");
 	update_asmbits_options (core, n);
 	SETBPREF ("asm.functions", "true", "show functions in disassembly");

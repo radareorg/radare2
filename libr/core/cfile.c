@@ -196,6 +196,8 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	}
 	r_core_seek (core, origoff, true);
 	if (isdebug) {
+		r_core_cmd0 (core, "arp>$_"); // Fixes a bug where registers are not synced wtf
+		// r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false); // does nothing
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd_call (core, "sr PC");

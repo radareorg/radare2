@@ -106,7 +106,7 @@ bool winkd_lock_leave(WindCtx *ctx) {
 }
 
 int winkd_get_bits(WindCtx *ctx) {
-	return ctx->is_x64 ? R_SYS_BITS_64 : R_SYS_BITS_32;
+	return ctx->is_x64 ? R_SYS_BITS_PACK (64): R_SYS_BITS_PACK (32);
 }
 
 int winkd_get_cpus(WindCtx *ctx) {

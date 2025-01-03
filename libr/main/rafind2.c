@@ -500,7 +500,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				char *colon = strchr (arg, ':');
 				char *comma = NULL;
 				ut8 buf[8] = {0};
-				int size = (R_SYS_BITS & R_SYS_BITS_64)? 8: 4;
+				int size = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 8: 4;
 				ut64 value, min_value = 0, max_value = 0;
 
 				if (colon) {

@@ -147,7 +147,7 @@ RDebugPlugin r_debug_plugin_io = {
 		.desc = "io debug plugin",
 	},
 	.arch = "any", // TODO: exception!
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.step = __io_step,
 	.map_get = __io_maps,
 	.attach = &__io_attach,

@@ -487,33 +487,27 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	}
 	switch (bits) {
 	case 16:
-		if (plugin->bits == 16) {
-			dbg->bits = R_SYS_BITS_16;
+		if (R_SYS_BITS_CHECK (plugin->bits, 16)) {
+			dbg->bits = R_SYS_BITS_PACK (16);
 		}
 		break;
 	case 27:
-		if (plugin->bits == 27) {
-			dbg->bits = R_SYS_BITS_27;
+		if (R_SYS_BITS_CHECK (plugin->bits, 27)) {
+			dbg->bits = R_SYS_BITS_PACK (27);
 		}
 		break;
 	case 32:
-		if (plugin->bits & R_SYS_BITS_32) {
-			dbg->bits = R_SYS_BITS_32;
+		if (R_SYS_BITS_CHECK (plugin->bits, 32)) {
+			dbg->bits = R_SYS_BITS_PACK (32);
 		}
 		break;
 	case 64:
-		dbg->bits = R_SYS_BITS_64;
+		dbg->bits = R_SYS_BITS_PACK (64);
 		break;
 	}
-	if (!plugin->bits) {
-		dbg->bits = plugin->bits;
-	} else if (!(plugin->bits & dbg->bits)) {
-		dbg->bits = plugin->bits & R_SYS_BITS_64;
-		if (!dbg->bits) {
-			dbg->bits = plugin->bits & R_SYS_BITS_32;
-		}
-		if (!dbg->bits) {
-			dbg->bits = R_SYS_BITS_32;
+	if (plugin->bits) {
+		if (R_SYS_BITS_CHECK (plugin->bits, bits)) {
+			dbg->bits = R_SYS_BITS_PACK (bits);
 		}
 	}
 	free (dbg->arch);
@@ -540,7 +534,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		R_LOG_WARN ("Child is dead");
 		return false;
 	}
-
 #if 0
 	if (restore && !ignore_stack) {
 		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
@@ -882,7 +875,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	switch (op.type) {
 	case R_ANAL_OP_TYPE_RET:
 		dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-		next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? sp_top.r64 : sp_top.r32[0];
 		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
@@ -908,7 +901,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		if (!dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? memval.r64 : memval.r32[0];
 		}
 		br = 1;
 		break;
@@ -922,7 +915,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		if (!dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? memval.r64: memval.r32[0];
 		}
 		br = 1;
 		break;
