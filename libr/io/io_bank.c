@@ -153,7 +153,7 @@ static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
 	return 1;
 }
 
-static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user) {
+static int _find_intersection_sm_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
 	if (r_io_submap_overlap (bd, sm)) {
 		return 0;
@@ -166,7 +166,7 @@ static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user)
 
 // returns the node containing the submap with lowest itv.addr, that intersects with sm
 static RRBNode *_find_entry_submap_node(RIOBank *bank, RIOSubMap *sm) {
-	RRBNode *node = r_crbtree_find_node (bank->submaps, sm, _find_lowest_intersection_sm_cb, NULL);
+	RRBNode *node = r_crbtree_find_node (bank->submaps, sm, _find_intersection_sm_cb, NULL);
 	if (!node) {
 		return NULL;
 	}
@@ -741,34 +741,48 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 	fake_sm.itv.addr = *addr + (load_align - *addr % load_align) % load_align;
 	fake_sm.itv.size = size;
 	fake_sm.mapref = (const RIOMapRef) {0};
-	RRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
+	RRBNode *entry = r_crbtree_find_node (bank->submaps, &fake_sm, _find_intersection_sm_cb, NULL);
 	if (!entry) {
 		// no submaps in this bank
 		*addr = fake_sm.itv.addr;
 		return true;
 	}
-	// this is a bit meh: first iteration can never be successful,
-	// bc entry->sm will always intersect with fake_sm, if
-	// _find_entry_submap_node suceeded previously
-	ut64 next_location = fake_sm.itv.addr;
-	while (entry) {
-		RIOSubMap *sm = (RIOSubMap *)entry->data;
-		if (size <= r_io_submap_from (sm) - next_location) {
-			*addr = next_location;
-			return true;
-		}
-		next_location = (r_io_submap_to (sm) + 1) +
-			(load_align - ((r_io_submap_to (sm) + 1) % load_align)) % load_align;
+	ut64 res = 0;
+	if (load_align == 1) {
+		RIOSubMap *sm = entry->data;
+		ut64 next_location = r_io_submap_to (sm) + 1;
 		entry = r_rbnode_next (entry);
+		while (entry) {
+			sm = entry->data;
+			if (size <= r_io_submap_from (sm) - next_location) {
+				*addr = next_location;
+				return true;
+			}
+			next_location = r_io_submap_to (sm) + 1;
+			entry = r_rbnode_next (entry);
+		}
+		res = next_location;
+	} else {
+		do {
+			RIOSubMap *sm = (RIOSubMap *)entry->data;
+			fake_sm.itv.addr = (r_io_submap_to (sm) + 1) +
+				(load_align - ((r_io_submap_to (sm) + 1) % load_align)) % load_align;
+			entry = r_crbtree_find_node (bank->submaps, &fake_sm, _find_intersection_sm_cb, NULL);
+		} while (entry);
+		res = fake_sm.itv.addr;
 	}
-	if (next_location == 0LL) {
+	if (res == 0LL) {
 		// overflow from last submap in the tree => no location
 		return false;
 	}
-	if (UT64_MAX - size + 1 < next_location) {
+	if ((res + size) < *addr) {
+		//probably not needed
 		return false;
 	}
-	*addr = next_location;
+	if ((UT64_MAX - size + 1) < res) {
+		return false;
+	}
+	*addr = res;
 	return true;
 }
 
