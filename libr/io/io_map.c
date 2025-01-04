@@ -363,9 +363,6 @@ R_API void r_io_map_del_name(RIOMap* map) {
 
 R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align) {
 	R_RETURN_VAL_IF_FAIL (io, false);
-	if (load_align == 0) {
-		load_align = 1;
-	}
 	return r_io_bank_locate (io, io->bank, addr, size, load_align);
 }
 
