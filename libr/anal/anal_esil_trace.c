@@ -41,7 +41,7 @@ static void anal_esil_trace_voyeur_reg_read (void *user, const char *name, ut64 
 	update_trace_db_op (db);
 }
 
-static void add_reg_change(RAnalEsilTrace *trace, RRegItem *ri, ut64 data) {
+static void add_reg_change(RAnalEsilTrace *trace, RRegItem *ri, ut64 data, ut64 odata) {
 	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
@@ -53,7 +53,8 @@ static void add_reg_change(RAnalEsilTrace *trace, RRegItem *ri, ut64 data) {
 		}
 		ht_up_insert (trace->registers, addr, vreg);
 	}
-	RAnalEsilTraceRegChange reg = {trace->cur_idx, data}; // imho cur_idx is not necessary, we keep track of this in the other vector
+	RAnalEsilTraceRegChange reg = {trace->cur_idx, trace->cc++,
+		strdup (ri->name), data, odata};
 	r_vector_push (vreg, &reg);
 }
 
@@ -79,7 +80,7 @@ static void anal_esil_trace_voyeur_reg_write (void *user, const char *name, ut64
 	access->reg.value = val;
 	access->is_write = true;
 
-	add_reg_change (trace, ri, val);
+	add_reg_change (trace, ri, val, old);
 	update_trace_db_op (&trace->db);
 	r_unref (ri);
 	return;
@@ -141,7 +142,7 @@ static void anal_esil_trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *
 			}
 			ht_up_insert (trace->memory, addr, vmem);
 		}
-		RAnalEsilTraceMemChange mem = {trace->cur_idx, buf[i]};
+		RAnalEsilTraceMemChange mem = {trace->idx, trace->cc++, addr, buf[i], old[i]};
 		r_vector_push (vmem, &mem);
 	}
 	update_trace_db_op (&trace->db);
@@ -234,6 +235,7 @@ R_API void r_anal_esil_trace_op(RAnalEsilTrace *trace, REsil *esil, RAnalOp *op)
 		R_LOG_WARN ("expr is empty or null");
 		return;
 	}
+	trace->cc = 0;
 	ut32 voy[4];
 	voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		anal_esil_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
@@ -258,8 +260,7 @@ R_API void r_anal_esil_trace_op(RAnalEsilTrace *trace, REsil *esil, RAnalOp *op)
 	
 	RRegItem *ri = r_reg_get (esil->anal->reg, "PC", -1);
 	if (ri) {
-		add_reg_change (trace, ri, op->addr);
-		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr);
+		const bool suc = r_esil_reg_write (esil, ri->name, op->addr);
 		r_unref (ri);
 		if (!suc) {
 			goto fail_set_pc;
@@ -288,4 +289,146 @@ fail_memr_voy:
 	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_WRITE]);
 fail_regw_voy:
 	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_READ]);
+}
+
+static bool count_changes_above_idx_cb (void *user, ut64 key, void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	ut64 *v = user;
+	const int idx = v[0] >> 32;
+	ut32 count = v[0] & UT32_MAX;
+	v[0] &= UT64_MAX ^ UT64_MAX;
+	ut32 i = r_vector_length (vec) - 1;
+	RAnalEsilTraceMemChange *change = r_vector_index_ptr (vec, i);
+	//idx is guaranteed to be at struct offset 0 for MemChange and RegChange, so this hack is fine
+	while (change->idx >= idx) {
+		count++;
+		if (!i) {
+			break;
+		}
+		i--;
+		change = r_vector_index_ptr (vec, i);
+	}
+	v[0] |= count;
+	return true;
+}
+
+typedef struct {
+	int idx;
+	union {
+		RAnalEsilTraceRegChange *rc_ptr;
+		RAnalEsilTraceMemChange *mc_ptr;
+		void *data;
+	};
+} ChangeCollector;
+
+static bool collect_reg_changes_cb (void *user, ut64 key, void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	ChangeCollector *cc = user;
+	ut32 i = r_vector_length (vec) - 1;
+	RAnalEsilTraceRegChange *rc = r_vector_index_ptr (vec, i);
+	while (rc->idx >= cc->idx) {
+		r_vector_remove_at (vec, i, cc->rc_ptr);
+		cc->rc_ptr++;
+		if (!i) {
+			return true;
+		}
+		i--;
+	}
+	return true;
+}
+
+static bool collect_mem_changes_cb (void *user, ut64 key, void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	ChangeCollector *cc = user;
+	ut32 i = r_vector_length (vec) - 1;
+	RAnalEsilTraceMemChange *rc = r_vector_index_ptr (vec, i);
+	while (rc->idx >= cc->idx) {
+		r_vector_remove_at (vec, i, cc->mc_ptr);
+		cc->mc_ptr++;
+		if (!i) {
+			return true;
+		}
+		i--;
+	}
+	return true;
+}
+
+static int sort_reg_changes_cb (const void *v0, const void *v1) {
+	const RAnalEsilTraceRegChange *a = v0;
+	const RAnalEsilTraceRegChange *b = v1;
+	if (a->idx == b->idx) {
+		return (int)b->cc - (int)a->cc;
+	}
+	return b->idx - a->idx;
+}
+
+static int sort_mem_changes_cb (const void *v0, const void *v1) {
+	const RAnalEsilTraceMemChange *a = v0;
+	const RAnalEsilTraceMemChange *b = v1;
+	if (a->idx == b->idx) {
+		return (int)b->cc - (int)a->cc;
+	}
+	return b->idx - a->idx;
+}
+
+R_API void r_anal_esil_trace_restore(RAnalEsilTrace *trace, REsil *esil, int idx) {
+	R_RETURN_IF_FAIL (trace && esil && (idx < trace->idx));
+	ut64 v = ((ut64)idx) << 32;
+	ht_up_foreach (trace->registers, count_changes_above_idx_cb, &v);
+	ut32 c_num = v & UT32_MAX;
+	void *data = NULL;
+	if (c_num) {
+		data = R_NEWS (RAnalEsilTraceRegChange, c_num);
+		ChangeCollector collector = {.idx = idx, .data = data};
+		ht_up_foreach (trace->registers, collect_reg_changes_cb, &collector);
+		//sort collected reg changes so that the newest come first
+		qsort (data, c_num, sizeof (RAnalEsilTraceRegChange), sort_reg_changes_cb);
+		collector.data = data;
+		for (i = 0; i < c_num; i++) {
+			r_esil_reg_write_silent (esil, collector.rc_ptr[i].name, collector.rc_ptr[i].odata);
+			R_FREE (collector.rc_ptr[i].name);
+		}
+	}
+	v &= UT64_MAX ^ UT32_MAX;
+	ht_up_foreach (trace->memory, count_changes_above_idx_cb, &v);
+	if (data && (((v & UT32_MAX) * sizeof (RAnalEsilTraceMemChange)) >
+		(c_num * sizeof (RAnalEsilTraceRegChange)))) {
+		c_num = v & UT32_MAX;
+		void *new_data = realloc (data, sizeof (RAnalEsilTraceMemChange) * c_num);
+		if (!new_data) {
+			free (data);
+			return;
+		}
+		data = new_data;
+	} else {
+		c_num = v & UT32_MAX;
+	}
+	if (!c_num) {
+		free (data);
+		return;
+	}
+	if (R_UNLIKELY (!data)) {
+		data = R_NEWS (RAnalEsilTraceMemChange, c_num);
+		if (!data) {
+			return;
+		}
+	}
+	ChangeCollector collector = {.idx = idx, .data = data};
+	ht_up_foreach (trace->memory, collect_mem_changes_cb, &collector);
+	//sort collected mem changes so that the newest come first
+	qsort (data, c_num, sizeof (RAnalEsilTraceMemChange), sort_mem_changes_cb);
+	collector.data = data;
+	for (i = 0; i < c_num; i++) {
+		r_esil_mem_write_silent (esil, collector.mc_ptr[i].addr, &collector.rc_ptr[i].odata, 1);
+	}
+	
 }

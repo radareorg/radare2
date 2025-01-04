@@ -790,12 +790,18 @@ typedef struct r_anal_esil_dfg_node_t {
 
 typedef struct r_anal_esil_trace_reg_change_t {
 	int idx;
+	ut32 cc;
+	char *name;
 	ut64 data;
+	ut64 odata;
 } RAnalEsilTraceRegChange;
 
 typedef struct r_anal_esil_trace_mem_change_t {
 	int idx;
+	ut32 cc;
+	ut64 addr;
 	ut8 data;
+	ut8 odata;
 } RAnalEsilTraceMemChange;
 
 typedef struct r_anal_esil_trace_register_access_t {
@@ -844,6 +850,7 @@ typedef struct r_anal_esil_trace_db_t {
 typedef struct r_anal_esil_trace_t {
 	RAnalEsilTraceDB db;
 	int idx;
+	ut32 cc;	//change counter
 	int end_idx;
 	int cur_idx;
 	RReg *reg;
