@@ -78,7 +78,12 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (new_baddr == UT64_MAX) {
-		new_baddr = r_config_get_i (core->config, "bin.baddr");
+		if (r_config_get_b (core->config, "bin.aslr")) {
+			new_baddr = ((ut64)r_num_rand (32)) << 24;
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = r_config_get_i (core->config, "bin.baddr");
+		}
 	}
 
 	if (r_sandbox_enable (0)) {
@@ -158,7 +163,12 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			} else if (new_baddr != UT64_MAX) {
 				baddr = new_baddr;
 			} else {
-				baddr = r_config_get_i (core->config, "bin.baddr");
+				if (r_config_get_b (core->config, "bin.aslr")) {
+					baddr = r_num_rand (32) << 24;
+					r_config_set_i (core->config, "bin.baddr", baddr);
+				} else {
+					baddr = r_config_get_i (core->config, "bin.baddr");
+				}
 			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
@@ -186,6 +196,8 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	}
 	r_core_seek (core, origoff, true);
 	if (isdebug) {
+		r_core_cmd0 (core, "arp>$_"); // Fixes a bug where registers are not synced wtf
+		// r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false); // does nothing
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd_call (core, "sr PC");
@@ -453,6 +465,13 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	}
 	R_CRITICAL_ENTER (r);
 	r_io_use_fd (r->io, fd);
+	if (baseaddr == UT64_MAX) {
+		// ASLR - this is probably the only place where bin.aslr is used. maybe move into rbin.options before R2_600
+		if (r_config_get_b (r->config, "bin.aslr")) {
+			baseaddr = ((ut64)r_num_rand (32)) << 24;
+			r_config_set_i (r->config, "bin.baddr", baseaddr);
+		}
+	}
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	// opt.fd = fd;
@@ -832,7 +851,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				R_LOG_INFO ("Setting up coredump: Problem while setting the registers");
 			} else {
 				R_LOG_INFO ("Setting up coredump: Registers have been set");
-				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
+				const char *regname = r_reg_alias_getname (r->anal->reg, R_REG_ALIAS_SP);
 				if (regname) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
@@ -840,7 +859,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 						stack_map = r_io_map_get_at (r->io, sp_addr);
 					}
 				}
-				regname = r_reg_get_name (r->anal->reg, R_REG_NAME_PC);
+				regname = r_reg_alias_getname (r->anal->reg, R_REG_ALIAS_PC);
 				if (regname) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {

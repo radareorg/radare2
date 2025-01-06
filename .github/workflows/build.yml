@@ -199,12 +199,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: arm64
-            macos: 13
-          - arch: x86_64
-            macos: 12
-    runs-on: macos-${{ matrix.macos }}
+        arch:
+          - arm64
+          - x86_64
+    runs-on: macos-13
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -232,7 +230,7 @@ jobs:
         include:
           - type: cydia
             sdk: true
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
     - uses: actions/checkout@v4
     - name: Install pkg-config/ldid2 with Homebrew
@@ -343,8 +341,7 @@ jobs:
         python-version: '3.10'
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
-        pip install ninja r2pipe wget --break-system-packages
+        pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -390,8 +387,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
-        pip install ninja r2pipe wget r2env --break-system-packages
+        pip install meson ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -443,8 +439,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
-        pip install ninja r2pipe wget r2env --break-system-packages
+        pip install meson ninja r2pipe wget r2env --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
@@ -493,8 +488,7 @@ jobs:
         arch: x64
     - name: Install dependencies
       run: |
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee --break-system-packages
-        pip install ninja r2pipe wget --break-system-packages
+        pip install meson ninja r2pipe wget --break-system-packages
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT

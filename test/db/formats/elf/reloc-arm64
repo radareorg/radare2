@@ -15,7 +15,6 @@ EXPECT=<<EOF
 0x00000ae8 arg3
 0x00000aec arg1
 0x00000af8 bl rsym._ZN7_JNIEnv14GetArrayLengthEP7_jarray
-0x00000b00 sym.Java_com_scottyab_rootbeer_RootBeerNative_checkForRoot @ 0xb74(x)
 0x00000b24 bl rsym._ZN7_JNIEnv21GetObjectArrayElementEP13_jobjectArrayi
 0x00000b3c bl rsym._ZN7_JNIEnv17GetStringUTFCharsEP8_jstringPh
 0x00000b48 bl rsym._Z6existsPKc

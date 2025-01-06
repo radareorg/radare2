@@ -619,12 +619,11 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
 		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg, &core->anal->last_disasm_reg_size);
-		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		RRegSet *regset = r_reg_regset_get (ds->core->anal->reg, R_REG_TYPE_GPR);
 		if (ds->esil_regstate_size == regset->arena->size) {
 			r_reg_arena_poke (core->anal->reg, ds->esil_regstate, ds->esil_regstate_size);
 		}
-		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
+		r_reg_setv (core->anal->reg, "PC", ds->esil_old_pc);
 		R_FREE (ds->esil_regstate);
 	}
 	if (core && core->anal && core->anal->esil) {
@@ -2280,11 +2279,12 @@ static void ds_show_functions(RDisasmState *ds) {
 				}
 				r_cons_printf ("%s; ", COLOR_ARG (ds, color_var));
 				switch (var->kind) {
-				case R_ANAL_VAR_KIND_BPV: {
-					char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
-					bool is_var = !var->isarg;
-					ds_show_functions_argvar (ds, f, var,
-						anal->reg->name[R_REG_NAME_BP], is_var, sign);
+				case R_ANAL_VAR_KIND_BPV:
+					{
+						const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+						char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
+						bool is_var = !var->isarg;
+						ds_show_functions_argvar (ds, f, var, bpreg? bpreg: "BP", is_var, sign);
 					}
 					break;
 				case R_ANAL_VAR_KIND_REG: {
@@ -2308,15 +2308,15 @@ static void ds_show_functions(RDisasmState *ds) {
 					}
 					}
 					break;
-				case R_ANAL_VAR_KIND_SPV: {
-					bool is_var = !var->isarg;
-					int saved_delta = var->delta;
-					var->delta = f->maxstack + var->delta;
-					char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
-					ds_show_functions_argvar (ds, f, var,
-						anal->reg->name[R_REG_NAME_SP],
-						is_var, sign);
-					var->delta = saved_delta;
+				case R_ANAL_VAR_KIND_SPV:
+					{
+						bool is_var = !var->isarg;
+						int saved_delta = var->delta;
+						const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+						var->delta = f->maxstack + var->delta;
+						char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
+						ds_show_functions_argvar (ds, f, var, spreg? spreg: "SP", is_var, sign);
+						var->delta = saved_delta;
 					}
 					break;
 				}
@@ -5453,15 +5453,14 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	}
 	ds->stackptr = ds->core->anal->stackptr;
 	esil->cb.hook_reg_write = NULL;
-	const ut64 pc = r_reg_getv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC));
+	const ut64 pc = r_reg_getv (ds->core->anal->reg, "PC");
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
 		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
 				// underlying assumption of esil expressions is pc register is set prior to emulation
-				r_reg_setv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC),
-					addr + op->size);
+				r_reg_setv (ds->core->anal->reg, "PC", addr + op->size);
 				r_esil_set_pc (esil, addr);
 				r_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
 				if (op->size > 0) {
@@ -5472,18 +5471,14 @@ static void ds_pre_emulation(RDisasmState *ds) {
 			r_anal_op_free (op);
 		}
 	}
-	r_reg_setv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC), pc);
+	r_reg_setv (ds->core->anal->reg, "PC", pc);
 	esil->cb.hook_reg_write = orig_cb;
 }
 
 static void ds_print_esil_anal_init(RDisasmState *ds) {
 	RCore *core = ds->core;
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	if (!pc) {
-		return;
-	}
 	r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
-	ds->esil_old_pc = r_reg_getv (core->anal->reg, pc);
+	ds->esil_old_pc = r_reg_getv (core->anal->reg, "PC");
 	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) {
 		ds->esil_old_pc = core->offset;
 	}
@@ -5667,13 +5662,12 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
 		pcv = UT64_MAX;
 	}
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (pcv == UT64_MAX) {
 		pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 		if (pcv == UT64_MAX || !pcv) {
 			r_esil_reg_read (esil, "$jt", &pcv, NULL);
 			if (pcv == UT64_MAX || !pcv) {
-				pcv = r_reg_getv (core->anal->reg, pc);
+				pcv = r_reg_getv (core->anal->reg, "PC");
 			}
 		}
 	}
@@ -5714,9 +5708,8 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 	}
 	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	ut64 spv = r_reg_getv (core->anal->reg, sp);
-	r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+	ut64 spv = r_reg_getv (core->anal->reg, "SP");
+	r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
 	RList *list = r_core_get_func_args (core, fcn_name);
 	// show function arguments
 	if (!r_list_empty (list)) {
@@ -5797,7 +5790,7 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 		ds_comment_end (ds, ")");
 	}
-	r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
+	r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
 }
 
 // modifies anal register state
@@ -5827,7 +5820,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		r_cons_print (ds->pal_comment);
 	}
 	esil = core->anal->esil;
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *pc = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
 	if (pc) {
 		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 		esil->cb.user = ds;
@@ -6434,14 +6427,17 @@ toro:
 		}
 		r_anal_op_fini (&ds->analop);
 	} else {
+		ds->dest = r_reg_getv (core->anal->reg, "PC");
+#if 0
 		/* highlight the program counter */
-		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+		const char *pc = core->anal->reg->name[R_REG_ALIAS_PC];
 		if (pc) {
 			RFlagItem *item = r_flag_get (core->flags, pc);
 			if (item) {
 				ds->dest = item->offset;
 			}
 		}
+#endif
 	}
 
 	ds_print_esil_anal_init (ds);
@@ -6516,7 +6512,6 @@ toro:
 				}
 			}
 		}
-
 		if (core->print->flags & R_PRINT_FLAGS_UNALLOC) {
 			if (!core->anal->iob.is_valid_offset (core->anal->iob.io, ds->at, 0)) {
 				ds_begin_line (ds);

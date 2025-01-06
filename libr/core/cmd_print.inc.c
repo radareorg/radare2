@@ -50,6 +50,7 @@ static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
 	"p8*", "", "display r2 commands to write this block",
+	"p8b", "", "print hexpairs of basic block",
 	"p8d", "", "space separated list of byte values in decimal",
 	"p8f", "", "print hexpairs of function (linear)",
 	"p8j", "", "print hexpairs in JSON array",
@@ -2104,6 +2105,17 @@ static void cmd_pfb(RCore *core, const char *_input) {
 	}
 }
 
+static bool is_pfo_file(const char *fn) {
+	if (*fn != '.') {
+		if (r_str_endswith (fn, ".r2")) {
+			return true;
+		}
+		if (r_str_endswith (fn, ".h")) {
+			return true;
+		}
+	}
+	return false;
+}
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	bool v2 = false;
@@ -2233,23 +2245,29 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			char *home = r_xdg_datadir ("format");
 			if (home) {
 				files = r_sys_dir (home);
-				r_list_foreach (files, iter, fn) {
-					if (*fn != '.') {
-						r_cons_println (fn);
+				if (files) {
+					r_list_sort (files, (RListComparator)strcmp);
+					r_list_foreach (files, iter, fn) {
+						if (is_pfo_file (fn)) {
+							r_cons_println (fn);
+						}
 					}
+					r_list_free (files);
 				}
-				r_list_free (files);
 				free (home);
 			}
 			char *path = r_str_r2_prefix (R2_SDB_FORMAT R_SYS_DIR);
 			if (path) {
 				files = r_sys_dir (path);
-				r_list_foreach (files, iter, fn) {
-					if (*fn != '.') {
-						r_cons_println (fn);
+				if (files) {
+					r_list_sort (files, (RListComparator)strcmp);
+					r_list_foreach (files, iter, fn) {
+						if (is_pfo_file (fn)) {
+							r_cons_println (fn);
+						}
 					}
+					r_list_free (files);
 				}
-				r_list_free (files);
 				free (path);
 			}
 		}
@@ -3504,6 +3522,15 @@ static void _handle_call(RCore *core, char *line, char **str) {
 	R_RETURN_IF_FAIL (core && line && str);
 	if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "x86")) {
 		*str = strstr (line, "call ");
+		if (!*str) {
+			if (strstr (line, "[reloc.")) {
+				*str = strstr (line, "jmp ");
+				char *bra = strchr (line, ']');
+				if (bra) {
+					*bra = 0;
+				}
+			}
+		}
 	} else if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "arm")) {
 		*str = strstr (line, " b ");
 		if (*str && strstr (*str, " 0x")) {
@@ -3522,6 +3549,33 @@ static void _handle_call(RCore *core, char *line, char **str) {
 	}
 }
 
+static char *strpfx(char *line) {
+	char *str = strstr (line, " reloc.");
+	if (!str) {
+		// XXX leak
+		str = strstr (line, " fn.");
+		if (str) {
+			return str;
+		}
+		str = strstr (line, " obj.");
+		if (!str) {
+			str = strstr (line, " str.");
+			if (!str) {
+				str = strstr (line, " imp.");
+				if (!str) {
+					str = strstr (line, " fcn.");
+					if (!str) {
+						str = strstr (line, " hit.");
+						if (!str) {
+							str = strstr (line, " sub.");
+						}
+					}
+				}
+			}
+		}
+	}
+	return str;
+}
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RAnalOp to know
 // when we have a call and such
@@ -3537,6 +3591,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
+	bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_b (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
@@ -3548,6 +3603,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "asm.tabs", 0);
+	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "scr.html", false);
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
@@ -3594,15 +3650,20 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "scr.color", use_color);
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
-	if (!line || !*line || count < 1) {
+	if (R_STR_ISEMPTY (line) || count < 1) {
 	//	R_FREE (s);
 		goto restore_conf;
 	}
 	ut64 addr = UT64_MAX;
 	ut64 oaddr = UT64_MAX;
+	// r_core_cmd0 (core, "afs"); // TODO include function name
 	for (i = 0; i < count; i++) {
 		addr = UT64_MAX;
 		char *str;
+		if (strstr (line, "XREF from")) {
+			line += strlen (line) + 1;
+			continue;
+		}
 		ox = strstr (line, "0x");
 		qo = strchr (line, '\"');
 		R_FREE (string);
@@ -3673,23 +3734,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		} else {
 #define USE_PREFIXES 1
 #if USE_PREFIXES
-			// XXX leak
-			str = strstr (line, " obj.");
-			if (!str) {
-				str = strstr (line, " str.");
-				if (!str) {
-					str = strstr (line, " imp.");
-					if (!str) {
-						str = strstr (line, " fcn.");
-						if (!str) {
-							str = strstr (line, " hit.");
-							if (!str) {
-								str = strstr (line, " sub.");
-							}
-						}
-					}
-				}
-			}
+			str = strpfx (line);
 #else
 			if (strchr (line, ';')) {
 				const char *dot = r_str_rchr (line, NULL, '.');
@@ -3705,6 +3750,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 #endif
 		}
 		if (str) {
+			char *atsign = strchr (str, '@');
+			if (atsign) {
+				*atsign = 0;
+			}
 			char *qoe = strchr (str + 1, '\x1b');
 			if (!qoe) {
 				qoe = strchr (str + 1, ';');
@@ -3733,7 +3782,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			if (!str) {
 				str = strstr (line, "sym.");
 				if (!str) {
-					str = strstr (line, "fcn.");
+					str = strstr (line, "reloc.");
+					if (!str) {
+						str = strstr (line, "fcn.");
+					}
 				}
 			}
 		}
@@ -3874,6 +3926,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
 						}
+						if (string2) {
+							if (!strcmp (string, string2)) {
+								string2 = NULL;
+							}
+						}
 						r_cons_printf ("%s%s%s%s%s%s%s\n",
 							r_str_get (linecolor),
 							r_str_get (string2), string2? " ": "", string,
@@ -3900,6 +3957,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 restore_conf:
 	r_config_set_b (core->config, "asm.offset", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
+	r_config_set_b (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_b (core->config, "asm.emu", asm_emu);
@@ -8665,6 +8723,8 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("%d ", block[i]);
 				}
 				r_cons_newline ();
+			} else if (input[1] == 'b') { // "p8b"
+				r_core_cmdf (core, "p8 $BS @ $BB");
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {

@@ -31,10 +31,10 @@ ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 ARM64CHK=`echo "$CFLAGS $ARCHFLAGS" | grep arm64`
 if [ -n "$ARM64CHK" ]; then
 	# crossbuild arm64 build
-	ARCH=m1
+	ARCH=arm64
 elif [ "`uname -m`" = arm64 ]; then
 	# local arm64 build
-	ARCH=m1
+	ARCH=arm64
 else
 	ARCH=x64
 fi

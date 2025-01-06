@@ -1,0 +1,10 @@
+Foo=struct
+struct.Foo.@.pack=2
+struct.Foo.@.align=4
+struct.Foo.a=int,0,0
+struct.Foo.b=int,4,0
+struct.Foo.c=int,8,0
+struct.Foo.name=char,12,20
+struct.Foo.var=float,16,0
+struct.Foo=a,b,c,name,var
+

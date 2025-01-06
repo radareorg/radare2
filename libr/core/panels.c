@@ -1223,8 +1223,7 @@ static void __init_panel_param(RCore *core, RPanel *p, const char *title, const 
 		__set_dcb (core, p);
 		__set_rcb (core->panels, p);
 		if (__check_panel_type (p, PANEL_CMD_STACK)) {
-			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
+			const ut64 stackbase = r_reg_getv (core->anal->reg, "SP");
 			m->baseAddr = stackbase;
 			__set_panel_addr (core, p, stackbase - r_config_get_i (core->config, "stack.delta"));
 		}
@@ -1472,11 +1471,7 @@ static void __panels_check_stackbase(RCore *core) {
 		return;
 	}
 	int i;
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	if (!sp) {
-		return;
-	}
-	const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
+	const ut64 stackbase = r_reg_getv (core->anal->reg, "SP");
 	RPanels *panels = core->panels;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);

@@ -375,7 +375,9 @@ grub_hfs_mount (grub_disk_t disk)
      volume name.  */
   key.parent_dir = grub_cpu_to_be32 (1);
   key.strlen = data->sblock.volname[0];
-  grub_strcpy ((char *) key.str, (char *) (data->sblock.volname + 1));
+  ///grub_strcpy ((char *) key.str, (char *) (data->sblock.volname + 1));
+  strncpy ((char *)key.str, (char *) (data->sblock.volname + 1), sizeof (key.str) - 1);
+  key.str[sizeof (key.str) - 1] = 0;
 
   int depth = 0;
   if (grub_hfs_find_node (data, (char *) &key, data->cat_root,
@@ -965,7 +967,9 @@ grub_hfs_find_dir (struct grub_hfs_data *data, const char *path,
 
       key.parent_dir = grub_cpu_to_be32 (inode);
       key.strlen = grub_strlen (path);
-      grub_strcpy ((char *) (key.str), path);
+      // grub_strcpy ((char *) (key.str), path);
+      strncpy ((char *)key.str, (char *) path, sizeof (key.str) - 1);
+      key.str[sizeof (key.str) - 1] = 0;
 
       /* Lookup this node.  */
       if (! grub_hfs_find_node (data, (char *) &key, data->cat_root,
@@ -1010,7 +1014,8 @@ grub_hfs_dir_hook (struct grub_hfs_record *rec, void *closure)
   struct grub_dirhook_info info;
   grub_memset (&info, 0, sizeof (info));
 
-  grub_strncpy (fname, (char *) (ckey->str), ckey->strlen);
+  strncpy (fname, (char *) (ckey->str), R_MIN (ckey->strlen, sizeof (fname)));
+  fname[sizeof (fname) - 1] = 0;
 
   if (*filetype == GRUB_HFS_FILETYPE_DIR
       || *filetype == GRUB_HFS_FILETYPE_FILE)

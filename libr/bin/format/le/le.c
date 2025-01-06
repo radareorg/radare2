@@ -381,9 +381,9 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 			sec->perm |= R_PERM_X;
 		}
 		if (entry->flags & O_BIG_BIT) {
-			sec->bits = R_SYS_BITS_32;
+			sec->bits = R_SYS_BITS_PACK (32);
 		} else {
-			sec->bits = R_SYS_BITS_16;
+			sec->bits = R_SYS_BITS_PACK (16);
 		}
 		sec->is_data = (entry->flags & O_RESOURCE) || !(sec->perm & R_PERM_X);
 		if (!entry->page_tbl_entries) {

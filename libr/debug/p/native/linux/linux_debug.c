@@ -29,13 +29,15 @@ char *linux_reg_profile (RDebug *dbg) {
 #elif __riscv
 #	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-	if (dbg->bits & R_SYS_BITS_32) {
-#		include "reg/linux-arm.h"
-	} else {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 #		include "reg/linux-arm64.h"
+	} else {
+#		include "reg/linux-arm.h"
 	}
 #elif __mips__
-	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
+	const bool is32 = R_SYS_BITS_CHECK (dbg->bits, 32);
+	if (is32 && (dbg->bp->endian == 1)) {
 #		include "reg/linux-mips.h"
 	} else {
 #		include "reg/linux-mips64.h"
@@ -43,7 +45,8 @@ char *linux_reg_profile (RDebug *dbg) {
 #elif __loongarch__
 #		include "reg/linux-loongarch64.h"
 #elif (__i386__ || __x86_64__)
-	if (dbg->bits & R_SYS_BITS_32) {
+	const bool is32 = R_SYS_BITS_CHECK (dbg->bits, 32);
+	if (is32) {
 #if __x86_64__
 #		include "reg/linux-x64-32.h"
 #else
@@ -53,16 +56,18 @@ char *linux_reg_profile (RDebug *dbg) {
 #		include "reg/linux-x64.h"
 	}
 #elif __powerpc__
-	if (dbg->bits & R_SYS_BITS_32) {
-#		include "reg/linux-ppc.h"
-	} else {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 #		include "reg/linux-ppc64.h"
+	} else {
+#		include "reg/linux-ppc.h"
 	}
 #elif __s390x__
-	if (dbg->bits & R_SYS_BITS_32) {
-#		include "reg/linux-s390x.h"
-	} else {
+	const bool is64 = R_SYS_BITS_CHECK (dbg->bits, 64);
+	if (is64) {
 #		include "reg/linux-zarch.h"
+	} else {
+#		include "reg/linux-s390x.h"
 	}
 #else
 #	error "Unsupported Linux CPU"
@@ -126,8 +131,8 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 					if (p) {
 						if (r_str_startswith (p, "dbg.libs")) {
 							const char *name = strstr (b->data, "sym.imp.dlopen")
-								? r_reg_get_name (dbg->reg, R_REG_NAME_A0)
-								: r_reg_get_name (dbg->reg, R_REG_NAME_A1);
+								? r_reg_alias_getname (dbg->reg, R_REG_ALIAS_A0)
+								: r_reg_alias_getname (dbg->reg, R_REG_ALIAS_A1);
 							b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
 							break;
@@ -1267,6 +1272,7 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			size = R_MIN (sizeof (regs), size);
 			memcpy (buf, &regs, size);
+			// r_print_hexdump (NULL, 0, buf, size, 16, 16, 0);
 			return size;
 		}
 		break;

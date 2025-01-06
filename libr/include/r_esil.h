@@ -5,7 +5,10 @@
 
 #include <r_reg.h>
 #include <r_vec.h>
+#include <r_util.h>
+#include <r_lib.h>
 #include <sdb/ht_uu.h>
+#include <sdb/ht_up.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,16 +152,18 @@ typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
+// typedef bool (*REsilRegAlias)(void *reg, int kind, const char *name);
 
 typedef struct r_esil_register_interface_t {
 	union {
 		void *reg;
 		void *user;
 	};
-	REsilIsReg is_reg;
+	REsilIsReg is_reg; /// IsReg breaks the REsilReg prefix naming
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
 	REsilRegSize reg_size;
+	// REsilRegAlias reg_alias;
 } REsilRegInterface;
 
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
@@ -311,6 +316,7 @@ R_API void r_esil_free(REsil *esil);
 R_API bool r_esil_runword(REsil *esil, const char *word);
 R_API bool r_esil_parse(REsil *esil, const char *str);
 R_API bool r_esil_dumpstack(REsil *esil);
+// XXX must be internal imho
 R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len);
@@ -333,6 +339,7 @@ typedef struct r_esil_operation_t {
 	ut32 push; // amount of operands pushed
 	ut32 pop; // amount of operands popped
 	ut32 type;
+	const char *info;
 } REsilOp;
 
 // esil2c
@@ -346,13 +353,18 @@ R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, int bits);
 R_API void r_esil_toc_free(REsilC *ec);
 R_API char *r_esil_toc(REsilC *esil, const char *expr);
 
-R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type);
+R_API char*r_esil_opstr(REsil*, int mode);
+
+R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type, const char *info);
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op);
 R_API void r_esil_del_op(REsil *esil, const char *op);
 R_API void r_esil_stack_free(REsil *esil);
+R_API int r_esil_condition(REsil *esil, const char *str);
+
+// R2_600 - unify these 3 functions into one
 R_API int r_esil_get_parm_type(REsil *esil, const char *str);
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num);
-R_API int r_esil_condition(REsil *esil, const char *str);
+R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *size);
 
 // esil_handler.c
 R_API bool r_esil_handlers_init(REsil *esil);
@@ -403,12 +415,16 @@ R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable);
 /* trace */
 R_API REsilTrace *r_esil_trace_new(REsil *esil);
 R_API void r_esil_trace_free(REsilTrace *trace);
+#include <r_arch.h>
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
 R_API void r_esil_trace_list(REsil *esil, int format);
 R_API void r_esil_trace_show(REsil *esil, int idx, int format);
 R_API void r_esil_trace_restore(REsil *esil, int idx);
 R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
 R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
+
+R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
+R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);
 
 extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;

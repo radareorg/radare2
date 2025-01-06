@@ -37,13 +37,12 @@ clean:
 
 .PHONY: all clean install install-symlink symstall uninstall
 
-FORMATS=dex macho elf32 elf64 elf_enums pe32 trx mz zip symclass.sdb
-
 install: $(F_SDB)
 	@echo "[i] Installing bin format files"
 	rm -rf "$P"
 	mkdir -p "$P"
-	-cp -f $(FORMATS) "$P" || true
+	-cp -f *.r2 *.h "$P" || true
+	-cp -f symclass.sdb "$P" || true
 	mkdir -p "$P/dll"
 	cp -f dll/*.sdb "$P/dll"
 
@@ -53,10 +52,9 @@ symclass.sdb:
 CWD=$(shell pwd)
 symstall install-symlink: symclass.sdb
 	mkdir -p "$P"
-	for FILE in * ; do \
-		if [ "$$FILE" != Makefile ]; then \
-			[ ! -d "$P/$$FILE" ] && ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
-		fi ; \
+	rm -rf "$P/dll"
+	for FILE in *.r2 *.h dll symclass.sdb ; do \
+		[ ! -d "$P/$$FILE" ] && ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 	done
 
 $(DLL_SDB):

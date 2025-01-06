@@ -299,6 +299,7 @@ static void show_help(void) {
 	eprintf ("Usage: :cmd args\n"
 		" :ptrace   - use ptrace io\n"
 		" :mem      - use /proc/pid/mem io if possible\n"
+		" :tls      - find the thread local storage address\n"
 		" :pid      - show targeted pid\n"
 		" :pid <#>  - select new pid\n");
 }
@@ -312,6 +313,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strcmp (cmd, "help")) {
 		show_help ();
+	} else if (!strcmp (cmd, "tls")) {
+#if __x86_64__
+		RCore *core = io->coreb.core;
+		io->coreb.cmd (core, "dxr 64488b042500000000");
+#else
+		R_LOG_TODO ("Not implemented for this architecture");
+#endif
 	} else if (!strcmp (cmd, "ptrace")) {
 		close_pidmem (iop);
 	} else if (!strcmp (cmd, "mem")) {
@@ -325,10 +333,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 					// TODO: do not set pid if attach fails?
 					iop->pid = iop->tid = pid;
 				}
+				return NULL;
 			} else {
-				io->cb_printf ("%d\n", iop->pid);
+				return r_str_newf ("%d", iop->pid);
+				// io->cb_printf ("%d\n", iop->pid);
 			}
-			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
 		show_help ();

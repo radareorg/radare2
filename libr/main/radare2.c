@@ -1759,6 +1759,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (mr.asmos) {
 			r_config_set (r->config, "asm.os", mr.asmos);
 		}
+		// R2R test/esil/cmp
+		r_core_cmd0 (r, "aei"); // should be implicit
 		r_core_block_read (r);
 	}
 	{

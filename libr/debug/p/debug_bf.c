@@ -234,7 +234,7 @@ RDebugPlugin r_debug_plugin_bf = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "bf",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.step = r_debug_bf_step,

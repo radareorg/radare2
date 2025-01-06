@@ -151,10 +151,10 @@ static char *r_debug_winkd_reg_profile(RDebug *dbg) {
 		return NULL;
 	}
 	r_debug_winkd_attach (dbg, 0);
-	if (dbg->bits == R_SYS_BITS_32) {
-#include "native/reg/windows-x86.h"
-	} else if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 #include "native/reg/windows-x64.h"
+	} else if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
+#include "native/reg/windows-x86.h"
 	}
 	return NULL;
 }
@@ -309,7 +309,6 @@ static RList *r_debug_winkd_modules(RDebug *dbg) {
 
 static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
-
 	ds->plugin_data = R_NEW0 (PluginData);
 	return !!ds->plugin_data;
 }
@@ -333,7 +332,7 @@ RDebugPlugin r_debug_plugin_winkd = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "x86",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.init_plugin = init_plugin,
 	.fini_plugin = fini_plugin,
 	.init_debugger = &r_debug_winkd_init,

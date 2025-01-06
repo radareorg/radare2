@@ -1656,156 +1656,156 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, R_NULLABLE RAnalEsilDFG *d
 		return NULL;
 	}
 
-	r_esil_set_op (esil, "=", edf_consume_2_set_reg, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, ":=", edf_eq_weak, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "$s", edf_sf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN); // XXX TODO
-	r_esil_set_op (esil, "$z", edf_zf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
-	r_esil_set_op (esil, "$p", edf_pf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
-	r_esil_set_op (esil, "$c", edf_cf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
-	r_esil_set_op (esil, "$b", edf_bf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
-	r_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "-=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "+=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "*=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "/=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "&=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "|=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE);
-	r_esil_set_op (esil, "+", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "-", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "&", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "|", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "^", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "%", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "*", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "/", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, ">>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "POP", edf_pop, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
+	r_esil_set_op (esil, "=", edf_consume_2_set_reg, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, ":=", edf_eq_weak, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "$s", edf_sf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL); // XXX TODO
+	r_esil_set_op (esil, "$z", edf_zf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL);
+	r_esil_set_op (esil, "$p", edf_pf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL);
+	r_esil_set_op (esil, "$c", edf_cf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
+	r_esil_set_op (esil, "$b", edf_bf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
+	r_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "-=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "+=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "*=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "/=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "&=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "|=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	r_esil_set_op (esil, "+", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "-", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "&", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "|", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "^", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "%", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "*", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "/", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, ">>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "POP", edf_pop, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 #if 1
-	r_esil_set_op (esil, "DUP", edf_dup, 1, 2, R_ESIL_OP_TYPE_UNKNOWN);
+	r_esil_set_op (esil, "DUP", edf_dup, 1, 2, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 #endif
-	r_esil_set_op (esil, "<<", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "!", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "++", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "--", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH);
-	r_esil_set_op (esil, "[1]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ);
-	r_esil_set_op (esil, "[2]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ);
-	r_esil_set_op (esil, "[4]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ);
-	r_esil_set_op (esil, "[8]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ);
-//	r_esil_set_op (esil, "[16]", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ);
-	r_esil_set_op (esil, "=[1]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE);
-	r_esil_set_op (esil, "=[2]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE);
-	r_esil_set_op (esil, "=[4]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE);
-	r_esil_set_op (esil, "=[8]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE);
+	r_esil_set_op (esil, "<<", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "!", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "++", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "--", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "[1]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ, NULL);
+	r_esil_set_op (esil, "[2]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ, NULL);
+	r_esil_set_op (esil, "[4]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ, NULL);
+	r_esil_set_op (esil, "[8]", edf_consume_1_get_mem_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ, NULL);
+//	r_esil_set_op (esil, "[16]", edf_consume_1_push_1, 1, 1, R_ESIL_OP_TYPE_MEM_READ, NULL);
+	r_esil_set_op (esil, "=[1]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
+	r_esil_set_op (esil, "=[2]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
+	r_esil_set_op (esil, "=[4]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
+	r_esil_set_op (esil, "=[8]", edf_consume_2_set_mem, 0, 2, R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "|=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "^=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "^=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "^=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "^=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "&=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "&=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "&=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "&=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "+=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "+=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "+=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "+=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "-=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "-=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "-=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "-=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "%=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "%=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "%=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "%=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "/=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "/=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "/=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "/=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "*=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "*=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "*=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "*=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, ">>=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, ">>=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, ">>=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, ">>=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "<<=[1]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "<<=[2]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "<<=[4]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "<<=[8]", edf_consume_2_use_set_mem, 0, 2,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "++=[1]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "++=[2]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "++=[4]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "++=[8]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	r_esil_set_op (esil, "--=[1]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "--=[2]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "--=[4]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 	r_esil_set_op (esil, "--=[8]", edf_consume_1_set_mem, 0, 1,
-		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE);
+		R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_MEM_READ | R_ESIL_OP_TYPE_MEM_WRITE, NULL);
 
 	esil->user = edf;
 

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2023 - pancake */
+/* radare2 - LGPL - Copyright 2021-2024 - pancake */
 
 #define R_LOG_ORIGIN "esil.dummy"
 
@@ -22,7 +22,7 @@ static bool esil_dummy_syscall_handler(REsil *esil, ut32 sysc, void *user) {
 
 static void *r_esil_dummy_init(REsil *esil) {
 	r_esil_set_op (esil, "dummy_op", esil_dummy_operation,
-		0, 0, R_ESIL_OP_TYPE_CUSTOM);
+		0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
 	r_esil_set_interrupt (esil, 1337,
 		esil_dummy_interrupt_handler, NULL);
 	r_esil_set_syscall (esil, 1337,

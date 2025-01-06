@@ -155,7 +155,7 @@ R_API char *r_str_newf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API char *r_str_newvf(const char *fmt, va_list ap);
 R_API int r_str_distance(const char *a, const char *b);
 R_API char *r_str_newlen(const char *str, int len);
-R_API const char *r_str_sysbits(const int v);
+R_API const char *r_str_sysbits(const RSysBits v);
 R_API char *r_str_trunc_ellipsis(const char *str, int len);
 R_API const char *r_str_bool(bool b);
 R_API bool r_str_is_true(const char *s);

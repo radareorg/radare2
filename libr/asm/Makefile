@@ -58,6 +58,7 @@ OBJS+=d/arc.o
 OBJS+=d/gb.o
 OBJS+=d/evm.o
 OBJS+=d/arm.o
+OBJS+=d/cosmac.o
 OBJS+=d/avr.o
 OBJS+=d/chip8.o
 OBJS+=d/java.o

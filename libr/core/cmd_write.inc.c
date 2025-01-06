@@ -2169,7 +2169,8 @@ repeat:
 						cmd_write_fail (core);
 					} else {
 						if (r_config_get_b (core->config, "scr.prompt")) { // maybe check interactive?
-							R_LOG_INFO ("Written %d byte(s) (%s) = wx %s @ 0x%08"PFMT64x, acode->len, input + 1, hex, core->offset);
+							const char *arg = r_str_trim_head_ro (input + 1);
+							R_LOG_INFO ("Written %d byte(s) (%s) = wx %s @ 0x%08"PFMT64x, acode->len, arg, hex, core->offset);
 						}
 						WSEEK (core, acode->len);
 					}

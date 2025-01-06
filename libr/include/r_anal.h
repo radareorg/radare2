@@ -8,14 +8,12 @@
 #define USE_VARSUBS 0
 
 #include <r_cons.h>
-#include <r_types.h>
 #include <r_io.h>
 #include <r_esil.h>
 #include <r_arch.h>
 #include <r_list.h>
 #include <r_util/r_print.h>
 #include <r_search.h>
-#include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
 #include <r_flag.h>
@@ -391,6 +389,7 @@ typedef struct r_anal_options_t {
 	bool flagends;
 	bool zigndups;
 	bool icods; // R2_600 -- add anal.icods or anal.xrefs.indirect references. needed for stm8 at least
+	bool newcparser;
 	// R2_600 - add zign_dups field for "zign.dups" config
 } RAnalOptions;
 

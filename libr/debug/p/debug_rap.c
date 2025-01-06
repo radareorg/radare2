@@ -71,7 +71,7 @@ RDebugPlugin r_debug_plugin_rap = {
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "any",
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_PACK (32),
 	.step = __rap_step,
 	.cont = __rap_continue,
 	.attach = &__rap_attach,

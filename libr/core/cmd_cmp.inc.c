@@ -31,6 +31,7 @@ static RCoreHelpMessage help_msg_c = {
 	"cc", " [at]", "compares in two hexdump columns of block size",
 	"ccc", " [at]", "same as above, but only showing different lines",
 	"ccd", " [at]", "compares in two disasm columns of block size",
+	"ccdf", " [at]", "compares function disasm with the other function",
 	"ccdd", " [at]", "compares decompiler output (e cmd.pdc=pdg|pdd)",
 	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
@@ -94,11 +95,10 @@ R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
-	RCoreCmpWatcher *cmpw;
-	bool found = false;
-	R_RETURN_VAL_IF_FAIL (core && cmd && size > 0, false);
+	R_RETURN_VAL_IF_FAIL (core && size > 0, false);
 
-	cmpw = r_core_cmpwatch_get (core, addr);
+	bool found = false;
+	RCoreCmpWatcher *cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW0 (RCoreCmpWatcher);
 		if (!cmpw) {
@@ -106,18 +106,13 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 		}
 		cmpw->addr = addr;
 	} else {
-		free (cmpw->odata);
-		free (cmpw->ndata);
-		free (cmpw->cmd);
+		R_FREE (cmpw->odata);
+		R_FREE (cmpw->ndata);
+		R_FREE (cmpw->cmd);
 		found = true;
 	}
 	cmpw->size = size;
-	cmpw->cmd = strdup (cmd);
-	if (!cmpw->cmd) {
-		free (cmpw);
-		return false;
-	}
-
+	cmpw->cmd = cmd? strdup (cmd): NULL;
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	if (!cmpw->ndata) {
@@ -162,6 +157,23 @@ R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
 	return ret;
 }
 
+static char *cwcmd(RCore *core, RCoreCmpWatcher *w) {
+	if (!w->cmd) {
+		return NULL;
+	}
+	// use w->size for the temporary block size maybe?
+	if (strchr (w->cmd, '@')) {
+		if (strchr (w->cmd, ' ')) {
+			return r_core_cmd_strf (core, "%s", w->cmd);
+		}
+		return r_core_cmd_strf (core, "%s %d", w->cmd, w->size);
+	}
+	if (strchr (w->cmd, ' ')) {
+		return r_core_cmd_strf (core, "%s @ %"PFMT64d, w->cmd, w->addr);
+	}
+	return r_core_cmd_strf (core, "%s %d @ %" PFMT64d, w->cmd, w->size, w->addr);
+}
+
 R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 	RListIter *iter;
 	RCoreCmpWatcher *w;
@@ -184,7 +196,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 		switch (mode) {
 		case '*': // print watchers as r2 commands
 			r_cons_printf ("cw 0x%08" PFMT64x " %d %s%s\n",
-					w->addr, w->size, w->cmd,
+					w->addr, w->size, r_str_get (w->cmd),
 					changed? " # differs": "");
 			break;
 		case 'q': // quiet
@@ -194,23 +206,53 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			break;
 		case 'j': // "cw"
 			{
-			char *cmd_output = r_core_cmd_strf (core, "%s %d @%" PFMT64d,
-					w->cmd, w->size, w->addr);
 			pj_o (pj);
 			pj_kn (pj, "addr", w->addr);
 			pj_kb (pj, "changed", changed);
-			pj_ks (pj, "cmd", w->cmd);
-			pj_ks (pj, "cmd_out", r_str_get (cmd_output));
-			pj_end (pj);
+			if (w->cmd) {
+				pj_ks (pj, "cmd", w->cmd);
+			}
+			if (w->odata) {
+				char *m = r_hex_bin2strdup (w->odata, w->size);
+				pj_ks (pj, "oldmem", m);
+				free (m);
+			}
+			if (w->ndata) {
+				char *m = r_hex_bin2strdup (w->ndata, w->size);
+				pj_ks (pj, "newmem", m);
+				free (m);
+			}
+			char *cmd_output = cwcmd (core, w);
+			if (cmd_output) {
+				pj_ks (pj, "cmd_out", r_str_get (cmd_output));
+			}
 			free (cmd_output);
+			pj_end (pj);
 			}
 			break;
 		default:
 			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
-			r_core_cmdf (core, "%s %d @%" PFMT64d, w->cmd, w->size, w->addr);
+			r_cons_print ("  old: ");
+			int i;
+			if (w->odata) {
+				for (i = 0; i < w->size; i++) {
+					r_cons_printf ("%02x", w->odata[i]);
+				}
+				r_cons_print (" => new: ");
+			}
+			for (i = 0; i < w->size; i++) {
+				r_cons_printf ("%02x", w->ndata[i]);
+			}
+			char *cmd_output = cwcmd (core, w);
+			if (cmd_output) {
+				r_cons_print ("\n  cmd: ");
+				r_cons_println (cmd_output);
+				free (cmd_output);
+			} else {
+				r_cons_newline ();
+			}
 			break;
 		}
-
 		ret = true;
 	}
 
@@ -455,77 +497,60 @@ static void nowatchers(ut64 addr) {
 static int cmd_cmp_watcher(RCore *core, const char *input) {
 	static RCoreHelpMessage help_msg_cw = {
 		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
-		"cw??", "", "Show more info about watchers",
-		"cw ", "addr sz cmd", "Add a compare watcher",
+		"cw", "", "list comparison watchers",
+		"cw ", "addr", "Show comparison watcher for given address",
+		"cw ", "addr sz [(cmd)]", "Add a compare watcher (cmd is optional)",
 		"cw", "[*qj] [addr]", "Show compare watchers (*=r2 commands, q=quiet, j=json)",
 		"cwd", " [addr]", "Delete watcher",
 		"cwr", " [addr]", "Revert watcher",
 		"cwu", " [addr]", "Update watcher",
 		NULL
 	};
-	static const char *verbose_help_cw =
-		"Watchers are used to record memory at 2 different points in time, then\n"
-		"report if and how it changed. First, create one with `cw addr sz cmd`. This\n"
-		"will record sz bytes at addr. To record the second state, use `cwu`. Now, when\n"
-		"you run `cw`, the watcher will report if the bytes changed and run the command given\n"
-		"at creation with the size and address. You may overwrite any watcher by creating\n"
-		"another at the same address. This will discard the existing watcher completely.\n"
-		"\n"
-		"When you create a watcher, the data read from memory is marked as \"new\". Updating\n"
-		"the watcher with `cwu` will mark this data as \"old\", and then read the \"new\" data.\n"
-		"`cwr` will mark the current \"old\" state as being \"new\", letting you reuse it as\n"
-		"your new base state when updating with `cwu`. Any existing \"new\" state from running\n"
-		"`cwu` previously is lost in this process. Watched memory areas may overlap with no ill\n"
-		"effects, but may have unexpected results if you update some but not others.\n"
-		"\n"
-		"Showing a watcher without updating will still run the command, but it will not report\n"
-		"changes.\n"
-		"\n"
-		"When an address is an optional argument, the command will apply to all watchers if\n"
-		"you don't pass one.\n"
-		"\n"
-		"For more details and examples, see section 4.10 of the radare2 book.\n";
 
 	ut64 addr = UT64_MAX;
 	int ret = 0;
 
 	switch (*input) {
 	case ' ': { // "cw "
-		int argc;
-		char **argv = r_str_argv (input + 1, &argc);
-		if (!argv) {
-			return 1;
-		}
-		if (argc == 1) { // "cw [addr]"
-			addr = r_num_math (core->num, argv[0]);
-			r_core_cmpwatch_show (core, addr, 0);
-		} else if (argc == 3) { // "cw addr sz cmd"
-			addr = r_num_math (core->num, argv[0]);
-			ut64 size = r_num_math (core->num, argv[1]);
-
-			if (size < 1) {
-				ret = 1;
-				R_LOG_ERROR ("Can't create a watcher with size less than 1");
-				goto out_free_argv;
-			}
-			if (size > INT_MAX) {
-				ret = 1;
-				R_LOG_ERROR ("Can't create a watcher with size larger than an int");
-				goto out_free_argv;
-			}
-
-			if (!r_core_cmpwatch_add (core, addr, (int)size, argv[2])) {
-				ret = 1;
-				R_LOG_ERROR ("Failed to add watcher");
+		char *arg_addr = r_str_trim_dup (input);
+		char *arg_size = strchr (arg_addr, ' ');
+		if (arg_size) {
+			*arg_size++ = 0;
+			r_str_trim (arg_size);
+			addr = r_num_math (core->num, arg_addr);
+			char *cmd = strchr (arg_size, ' ');
+			if (cmd) {
+				*cmd++ = 0;
+				st64 size = r_num_math (core->num, arg_size);
+				if (size < 1 || size > INT_MAX) {
+					ret = 1;
+					R_LOG_ERROR ("Invalid size");
+				} else if (!r_core_cmpwatch_add (core, addr, (int)size, cmd)) {
+					ret = 1;
+					R_LOG_ERROR ("Failed to add watcher");
+				}
+			} else {
+				st64 size = r_num_math (core->num, arg_size);
+				if (size < 1 || size > INT_MAX) {
+					ret = 1;
+					R_LOG_ERROR ("Invalid size");
+				} else if (!r_core_cmpwatch_add (core, addr, size, NULL)) {
+					ret = 1;
+					R_LOG_ERROR ("Failed to add watcher");
+				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_cw, "cw ");
+			ut64 addr = r_num_math (core->num, arg_addr);
+			if (core->num->nc.errors != 0) {
+				addr = UT64_MAX;
+			}
+			r_core_cmpwatch_show (core, addr, 0);
 		}
-out_free_argv:
-		r_str_argv_free (argv);
+		free (arg_addr);
 		break;
 	}
-	case 'd': // "cwd"
+	case 'd': // "cwd" /
+	case '-': // "cwd" // TODO rename to cw-
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_cw, "cwd");
 			return 0;
@@ -546,13 +571,10 @@ out_free_argv:
 			r_core_cmd_help_match (core, help_msg_cw, "cwr");
 			return 0;
 		}
-
 		if (input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-
-		if (addr == UT64_MAX &&
-				!r_cons_yesno ('n', "Revert all watchers? (y/N)")) {
+		if (addr == UT64_MAX && !r_cons_yesno ('n', "Revert all watchers? (y/N)")) {
 			return 1;
 		}
 
@@ -594,17 +616,43 @@ out_free_argv:
 	}
 	case '?': // "cw?"
 	default:
-		if (input[1] == '?') {
-			// this command really needs explaining
-			// so it's strongly signposted
-			r_cons_printf ("%s", verbose_help_cw);
-		} else {
-			r_core_cmd_help (core, help_msg_cw);
-		}
+		r_core_cmd_help (core, help_msg_cw);
 		break;
 	}
 
 	return ret;
+}
+
+static char *opstr(RCore *core, RAnalOp *op, ut64 addr) {
+	ut8 data[32];
+	char *str;
+	r_io_read_at (core->io, addr, data, sizeof (data));
+	// dis A
+	core->rasm->parse->subrel = r_config_get_b (core->config, "asm.sub.rel");
+	r_asm_set_pc (core->rasm, addr);
+	(void) r_asm_disassemble (core->rasm, op, data, sizeof (data));
+	char *opa = strdup (op->mnemonic);
+	if (r_config_get_b (core->config, "asm.sub.var")) {
+		str = r_asm_parse_subvar (core->rasm, NULL, addr, op->size, opa);
+		if (str) {
+			free (opa);
+			opa = str;
+		}
+	}
+	str = r_asm_parse_filter (core->rasm, addr, core->flags, NULL, opa);
+	if (str) {
+		free (opa);
+		opa = str;
+	}
+	if (r_config_get_b (core->config, "asm.imm.trim")) {
+		str = r_asm_parse_immtrim (core->rasm, opa);
+		if (str) {
+			free (opa);
+			opa = str;
+		}
+	}
+	// R_LOG_INFO (opa);
+	return opa;
 }
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
@@ -642,29 +690,22 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 		break;
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
-			// dis A
-			r_asm_set_pc (core->rasm, core->offset + i);
-			(void) r_asm_disassemble (core->rasm, &op,
-				core->block + i, core->blocksize - i);
-
-			// dis B
-			r_asm_set_pc (core->rasm, off + i);
-			(void) r_asm_disassemble (core->rasm, &op2,
-				buf + j, core->blocksize - j);
+			char *opa = opstr (core, &op, core->offset + i);
+			char *opb = opstr (core, &op2, off + i);
 
 			// show output
-			bool iseq = !strcmp (op.mnemonic, op2.mnemonic);
+			bool iseq = !strcmp (opa, opb); // op.mnemonic, op2.mnemonic);
 			memset (colpad, ' ', sizeof (colpad));
 			{
-				int pos = strlen (op.mnemonic);
+				int pos = strlen (opa); // op.mnemonic);
 				pos = (pos > cols)? 0: cols - pos;
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
 				r_cons_print (iseq? pal->graph_true: pal->graph_false);
 			}
-			r_cons_printf (" 0x%08"PFMT64x "  %s %s", core->offset + i, op.mnemonic, colpad);
-			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, op2.mnemonic);
+			r_cons_printf (" 0x%08"PFMT64x "  %s %s", core->offset + i, opa, colpad);
+			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, opb);
 			if (hascolor) {
 				r_cons_print (Color_RESET);
 			}
@@ -676,6 +717,8 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				op2.size = 1;
 			}
 			j += op2.size;
+			free (opa);
+			free (opb);
 		}
 		break;
 	case 'u': // unified
@@ -1384,19 +1427,36 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1] == '?') { // "cc?"
 			r_core_cmd_help_contains (core, help_msg_c, "cc");
 		} else if (input[1] == 'd') { // "ccd"
-			if (input[2] == 'd') { // "ccdd"
+			if (input[2] == '?') {
+				r_core_cmd_help_contains (core, help_msg_c, "ccd");
+			} else if (input[2] == 'd') { // "ccdd"
 				cmd_cmp_disasm (core, input + 3, 'd');
 			} else {
 				cmd_cmp_disasm (core, input + 2, 'c');
 			}
-		} else {
+		} else if (input[1] == 'f') { // "ccdf"
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+			if (fcn) {
+				const int obs = core->blocksize;
+				const int fsz = r_anal_function_linear_size (fcn);
+				r_core_block_size (core, fsz);
+				if (input[2] == ' ') {
+					r_core_cmdf (core, "ccd%s", input + 2);
+				} else {
+					R_LOG_ERROR ("Missing argument");
+				}
+				r_core_block_size (core, obs);
+			} else {
+				R_LOG_ERROR ("Cannot find function");
+			}
+		} else if (!input[1] || input[1] == ' ') {
 			ut32 oflags = core->print->flags;
 			ut64 addr = 0; // TOTHINK: Not sure what default address should be
 			if (input[1] == 'c') { // "ccc"
 				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
 				addr = r_num_math (core->num, input + 2);
 			} else {
-				if (*input && input[1]) {
+				if (input[0] && input[1]) {
 					addr = r_num_math (core->num, input + 2);
 				}
 			}
@@ -1410,6 +1470,8 @@ static int cmd_cmp(void *data, const char *input) {
 				free (b);
 			}
 			core->print->flags = oflags;
+		} else {
+			r_core_return_invalid_command (core, "cc", input[1]);
 		}
 		break;
 	case 'i': // "ci"

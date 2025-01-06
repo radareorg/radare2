@@ -15,17 +15,9 @@ EXPECT=<<EOF
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
-Usage: omb[+-adgq] [fd]  Operate on memory banks
-| omb           list all memory banks
-| omb [id]      switch to use a different bank
-| omb=[name]    same as 'omb id' but using its name
-| omb+ [name]   create a new bank with given name
-| omba [id]     adds a map to the bank
-| ombd [id]     delete a map from the bank
-| omb-*         delete all banks
-| omb- [mapid]  delete the bank with given id
-| ombg          associate all maps to the current bank
-| ombq          show current bankid
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find bank by id -1
 EOF
 RUN
 

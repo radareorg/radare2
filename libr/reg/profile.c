@@ -1,12 +1,14 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_reg.h>
+#include <r_util.h>
 #include <r_lib.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
-		const int role = r_reg_get_name_idx (tok[0] + 1);
-		return r_reg_set_name (reg, role, tok[1]) ? NULL : "Invalid alias";
+		const int type = r_reg_alias_fromstring (tok[0] + 1);
+		const bool works = r_reg_alias_setname (reg, type, tok[1]);
+		return works? NULL : "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -242,22 +244,17 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			} else {
 				const char *r = NULL;
 				if (*first == '^') {
-					int endian = R_SYS_ENDIAN;
+					reg->endian = R_SYS_ENDIAN;
 					switch (first[1]) {
 					case 'l':
-						endian = R_SYS_ENDIAN_LITTLE;
+						reg->endian = R_SYS_ENDIAN_LITTLE;
 						break;
 					case 'b':
-						endian = R_SYS_ENDIAN_BIG;
+						reg->endian = R_SYS_ENDIAN_BIG;
 						break;
 					case 'm':
-						endian = R_SYS_ENDIAN_MIDDLE;
+						reg->endian = R_SYS_ENDIAN_MIDDLE;
 						break;
-					}
-					if (reg->config) {
-						reg->config->endian = endian;
-					} else {
-						R_LOG_WARN ("Cannot force reg profile endianness");
 					}
 				} else if (*first == '=') {
 					r = parse_alias (reg, tok, j);
@@ -478,11 +475,11 @@ R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
 }
 
 R_API char *r_reg_profile_to_cc(RReg *reg) {
-	const char *r0 = r_reg_get_name_by_type (reg, "R0");
-	const char *a0 = r_reg_get_name_by_type (reg, "A0");
-	const char *a1 = r_reg_get_name_by_type (reg, "A1");
-	const char *a2 = r_reg_get_name_by_type (reg, "A2");
-	const char *a3 = r_reg_get_name_by_type (reg, "A3");
+	const char *r0 = r_reg_alias_getname (reg, R_REG_ALIAS_R0);
+	const char *a0 = r_reg_alias_getname (reg, R_REG_ALIAS_A0);
+	const char *a1 = r_reg_alias_getname (reg, R_REG_ALIAS_A1);
+	const char *a2 = r_reg_alias_getname (reg, R_REG_ALIAS_A2);
+	const char *a3 = r_reg_alias_getname (reg, R_REG_ALIAS_A3);
 
 	if (!r0) {
 		r0 = a0;

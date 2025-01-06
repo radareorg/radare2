@@ -2,13 +2,11 @@
 #include "minunit.h"
 
 bool test_r_reg_set_name(void) {
-	RReg *reg;
-
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
-	r_reg_set_name (reg, R_REG_NAME_PC, "eip");
-	const char *name = r_reg_get_name (reg, R_REG_NAME_PC);
+	r_reg_alias_setname (reg, R_REG_ALIAS_PC, "eip");
+	const char *name = r_reg_alias_getname (reg, R_REG_ALIAS_PC);
 	mu_assert_streq (name, "eip", "PC register alias is eip");
 
 	r_reg_free (reg);
@@ -16,13 +14,11 @@ bool test_r_reg_set_name(void) {
 }
 
 bool test_r_reg_set_profile_string(void) {
-	RReg *reg;
-
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	r_reg_set_profile_string (reg, "=PC eip");
-	const char *name = r_reg_get_name (reg, R_REG_NAME_PC);
+	const char *name = r_reg_alias_getname (reg, R_REG_ALIAS_PC);
 	mu_assert_streq (name, "eip", "PC register alias is eip");
 
 	mu_assert_eq (r_reg_set_profile_string (reg, "gpr eax .32 24 0"),
@@ -39,14 +35,13 @@ bool test_r_reg_set_profile_string(void) {
 }
 
 bool test_r_reg_get_value_gpr(void) {
-	RReg *reg;
 	ut64 value;
 
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	// force little endian
-	reg->config->endian = R_SYS_ENDIAN_LITTLE;
+	reg->endian = R_SYS_ENDIAN_LITTLE;
 
 	r_reg_set_profile_string (reg, "=A0 eax\n\
 		gpr eax .32 0 0\n\
@@ -89,7 +84,7 @@ bool test_r_reg_get_value_gpr(void) {
 	mu_assert_eq (value, 0xcdef, "get bx register value");
 
 	// force little endian
-	reg->config->endian = R_SYS_ENDIAN_BIG;
+	reg->endian = R_SYS_ENDIAN_BIG;
 	value = r_reg_getv (reg, "ax");
 	mu_assert_eq (value, 26437, "get big endian ax register value");
 
@@ -98,11 +93,10 @@ bool test_r_reg_get_value_gpr(void) {
 }
 
 bool test_r_reg_get_value_flag(void) {
-	RReg *reg;
 	RRegItem *r;
 	ut64 value;
 
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	r_reg_set_profile_string (reg,
@@ -147,10 +141,9 @@ bool test_r_reg_get_value_flag(void) {
 }
 
 bool test_r_reg_get(void) {
-	RReg *reg;
 	RRegItem *r;
 
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	bool success = r_reg_set_profile_string (reg,
@@ -176,11 +169,10 @@ bool test_r_reg_get(void) {
 }
 
 bool test_r_reg_get_list(void) {
-	RReg *reg;
 	RList *l;
 	int mask;
 
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	bool success = r_reg_set_profile_string (reg,

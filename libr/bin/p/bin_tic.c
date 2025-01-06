@@ -8,7 +8,6 @@
 #include <r_bin.h>
 #include "../i/private.h"
 
-
 #define CHUNK_TILES	1 // BG sprites (0...255). This is copied to RAM at 0x4000...0x5FFF.
 #define CHUNK_SPRITES	2 // FG sprites (256...511). This is copied to RAM at 0x6000...0x7FFF.
 #define CHUNK_COVER_DEP 3 // deprecated in 0.90
@@ -110,13 +109,13 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 				chunk_name (chunk_type), chunk_length);
 			break;
 		default:
-			R_LOG_ERROR ("Invalid chunk at offset 0x%"PFMT64x, off);
+			R_LOG_DEBUG ("Invalid chunk at offset 0x%"PFMT64x, off);
 			return false;
 		}
 		// data
 		off += chunk_length;
 	}
-	// first 3 bytes can be anything!
+	// first 3 bytes can be anything! lots of false positives here
 	return true;
 }
 
@@ -295,6 +294,7 @@ RBinPlugin r_bin_plugin_tic = {
 		.desc = "TIC-80 cartridge parser",
 		.license = "MIT",
 	},
+	.weak_guess = true,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

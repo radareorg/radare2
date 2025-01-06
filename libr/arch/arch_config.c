@@ -88,13 +88,7 @@ R_API RArchConfig *r_arch_config_new(void) {
 		return NULL;
 	}
 	ac->arch = strdup (R_SYS_ARCH);
-#if R_SYS_BITS == R_SYS_BITS_32
-	ac->bits = 32;
-#elif R_SYS_BITS == R_SYS_BITS_64
-	ac->bits = 64;
-#else
-	ac->bits = 64;
-#endif
+	ac->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	ac->bitshift = 0;
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
 	r_ref_init (ac, &_ac_free);

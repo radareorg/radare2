@@ -22,12 +22,18 @@ cw*
 EOF
 EXPECT=<<EOF
 0x00000000
-00000000
+  old: 00000000
+  cmd: 00000000
+
 0x00000064
-00000000
+  old: 00000000
+  cmd: 00000000
+
 ---
 0x00000064
-00000000
+  old: 00000000
+  cmd: 00000000
+
 ---
 ---
 ---
@@ -36,12 +42,14 @@ EXPECT=<<EOF
     "addr": 0,
     "changed": false,
     "cmd": "p8",
+    "newmem": "00000000",
     "cmd_out": "00000000\n"
   },
   {
     "addr": 100,
     "changed": false,
     "cmd": "p8",
+    "newmem": "00000000",
     "cmd_out": "00000000\n"
   }
 ]
@@ -75,7 +83,9 @@ EXPECT=<<EOF
 cw 0x00000000 4 p8
 ---
 0x00000000 modified
-11223344
+  old: 00000000 => new: 11223344
+  cmd: 11223344
+
 ---
 cw 0x00000000 4 p8 # differs
 ---
@@ -86,6 +96,8 @@ cw 0x00000000 4 p8 # differs
     "addr": 0,
     "changed": true,
     "cmd": "p8",
+    "oldmem": "00000000",
+    "newmem": "11223344",
     "cmd_out": "11223344\n"
   }
 ]

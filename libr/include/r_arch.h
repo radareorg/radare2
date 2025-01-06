@@ -352,6 +352,7 @@ extern const RArchPlugin r_arch_plugin_xap;
 extern const RArchPlugin r_arch_plugin_xcore_cs;
 extern const RArchPlugin r_arch_plugin_xtensa;
 extern const RArchPlugin r_arch_plugin_z80;
+extern const RArchPlugin r_arch_plugin_cosmac;
 
 #ifdef __cplusplus
 }

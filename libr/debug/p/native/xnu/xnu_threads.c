@@ -58,14 +58,14 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64)
+	thread->state_size = R_SYS_BITS_CHECK (dbg->bits, 64)
 		? sizeof (x86_debug_state64_t)
 		: sizeof (x86_debug_state32_t);
 	thread->state = &thread->drx.uds;
 	rc = thread_get_state (thread->port, thread->flavor,
 	       (thread_state_t)&thread->drx, &thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__ || __arm64e__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_get_state (thread->port, thread->flavor,
@@ -106,7 +106,7 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	}
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		regs->dsh.flavor = x86_DEBUG_STATE64;
 		regs->dsh.count  = x86_DEBUG_STATE64_COUNT;
 	} else {
@@ -116,7 +116,7 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__ || __arm64e__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_set_state (thread->port, thread->flavor,
@@ -169,7 +169,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->state = &regs->uts;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		regs->tsh.flavor = x86_THREAD_STATE64;
 		regs->tsh.count  = x86_THREAD_STATE64_COUNT;
 	} else {
@@ -177,7 +177,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		regs->tsh.count  = x86_THREAD_STATE32_COUNT;
 	}
 #elif __arm64 || __aarch64 || __arm64__ || __aarch64__ || __arm64e__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		thread_state_t remote_state = alloca (thread->state_size);
 
 		thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
@@ -240,7 +240,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif  __arm64 || __aarch64 || __arch64__ || __arm64__ || __arm64e__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		thread->flavor = ARM_UNIFIED_THREAD_STATE;
 		thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 		thread->state_size = sizeof (arm_thread_state64_t);
@@ -260,9 +260,9 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->state = &regs->uts;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
-				     sizeof (x86_thread_state64_t) :
-				     sizeof (x86_thread_state32_t);
+	thread->state_size = R_SYS_BITS_CHECK (dbg->bits, 64)
+		     ? sizeof (x86_thread_state64_t)
+		     : sizeof (x86_thread_state32_t);
 #endif
 #if defined(THREAD_CONVERT_THREAD_STATE_TO_SELF)
 #if !__POWERPC__
@@ -284,7 +284,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 #endif
 #if  __arm64e__
 		else {
-			if (dbg->bits == R_SYS_BITS_64) {
+			if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 				arm_thread_state64_ptrauth_strip (regs->ts_64);
 			}
 		}

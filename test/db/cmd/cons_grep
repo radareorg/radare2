@@ -685,3 +685,19 @@ EXPECT=<<EOF
 ----
 EOF
 RUN
+
+NAME=count+uniq
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af
+pdsfq~?
+pdsfq~$$?
+pdsfq~?$$
+EOF
+EXPECT=<<EOF
+145
+94
+94
+EOF
+RUN

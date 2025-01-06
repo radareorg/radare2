@@ -56,11 +56,10 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 }
 
 static int __suspend_thread(HANDLE th, int bits) {
-	int ret;
-	//if (bits == R_SYS_BITS_32) {
-		if ((ret = SuspendThread (th)) == -1) {
-			r_sys_perror ("__suspend_thread/SuspendThread");
-		}
+	int ret = SuspendThread (th);
+	if (ret == -1) {
+		r_sys_perror ("__suspend_thread/SuspendThread");
+	}
 	/*} else {
 		if ((ret = Wow64SuspendThread (th)) == -1) {
 			r_sys_perror ("__suspend_thread/Wow64SuspendThread");
@@ -70,16 +69,10 @@ static int __suspend_thread(HANDLE th, int bits) {
 }
 
 static int __resume_thread(HANDLE th, int bits) {
-	int ret;
-	//if (bits == R_SYS_BITS_32) {
-		if ((ret = ResumeThread (th)) == -1) {
-			r_sys_perror ("__resume_thread/ResumeThread");
-		}
-	/*} else {
-		if ((ret = ResumeThread (th)) == -1) {
-			r_sys_perror ("__resume_thread/Wow64ResumeThread");
-		}
-	}*/
+	int ret = ResumeThread (th);
+	if (ret == -1) {
+		r_sys_perror ("__resume_thread/ResumeThread");
+	}
 	return ret;
 }
 
@@ -298,8 +291,8 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	HANDLE th = wrap->pi.dwThreadId == dbg->tid ? wrap->pi.hThread : NULL;
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-		if (dbg->bits == R_SYS_BITS_64) {
-				flags |= THREAD_QUERY_INFORMATION;
+		if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+			flags |= THREAD_QUERY_INFORMATION;
 		}
 		th = OpenThread (flags, FALSE, dbg->tid);
 		if (!th && alive) {
@@ -342,7 +335,7 @@ static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);

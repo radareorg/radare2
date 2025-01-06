@@ -270,6 +270,7 @@ RBinPlugin r_bin_plugin_sfc = {
 		.author = "usrshare",
 		.license = "LGPL-3.0-only",
 	},
+	.weak_guess = true,
 	.load = &load,
 	.check = &check,
 	.entries = &entries,

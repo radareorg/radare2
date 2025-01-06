@@ -387,6 +387,7 @@ static bool blacklisted_word(const char* name) {
 		"func.",
 		"\\",
 		"fcn.0",
+		"plt",
 		"assert",
 		"__stack_chk_guard",
 		"__stderrp",
@@ -503,6 +504,15 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
+	char *bestname = NULL;
+	char *fd = r_core_cmd_str_at (core, fcn->addr, "fd");
+	if (r_str_startswith (fd, "sym.") && !r_str_startswith (fd, "sym.func.")) {
+		r_str_trim (fd);
+		r_list_append (names, fd);
+		bestname = strdup (fd);
+	} else {
+		free (fd);
+	}
 	// TODO: check if import, if its in plt, by name, by rbin...
 	int scr_color = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
@@ -513,29 +523,40 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	RListIter *iter;
 	r_list_foreach (strings, iter, name) {
 		r_str_trim (name);
+		char *fcn0 = strstr (name, "fcn.0");
+		if (fcn0) {
+			*fcn0 = 0;
+		}
 		if (blacklisted_word (name)) {
 			continue;
 		}
-		char *dot = strchr (name, '.');
-		if (dot) {
-			name = dot + 1;
+		char *bra = strchr (name, '[');
+		if (bra) {
+			r_str_cpy (name, bra + 1);
+		} else {
+			char *dot = strchr (name, '.');
+			if (dot) {
+				name = dot + 1;
+			}
 		}
 		if (*name == '"') {
 			r_str_replace_char (name, '"', '_');
 		}
 		r_str_replace_char (name, ';', '_');
 		char *sp = strchr (name, ' ');
-		if (sp) {
+		if (sp && !strchr (name, ']')) {
 			name = sp + 1;
 			char *sp2 = strchr (name, ' ');
 			if (sp2) {
 				*sp2 = 0;
 			}
 		}
-		r_list_append (names, strdup (name));
+		r_str_replace_char (name, ']', '_');
+		if (*name) {
+			r_list_append (names, strdup (name));
+		}
 	}
 	free (pdsfq);
-	char *bestname = NULL;
 	bool use_getopt = false;
 	r_list_uniq_inplace (names, cmpstrings);
 	r_list_foreach (names, iter, name) {
@@ -544,6 +565,8 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		}
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
+		} else if (r_str_startswith (name, "reloc.")) {
+			name += 6;
 		} else if (r_str_startswith (name, "sym.imp.")) {
 			name += 4; // 8?
 		} else if (r_str_startswith (name, "sym.")) {
@@ -579,12 +602,20 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		return strdup ("main_args");
 	}
 	if (bestname) {
+		if (r_str_startswith (bestname, "sym.")) {
+			return bestname;
+		}
 		if (r_str_startswith (bestname, "imp.")) {
 			char *bn = r_str_newf ("sym.%s", bestname);
 			free (bestname);
 			return bn;
 		}
-		char *ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		char *ret;
+		if (r_str_startswith (bestname, "sub.")) {
+			ret = r_str_newf ("%s_%"PFMT64x, bestname, fcn->addr);
+		} else {
+			ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		}
 		free (bestname);
 		return ret;
 	}
@@ -5532,7 +5563,6 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
 	int tmp_esil_str_len;
-	const char *esilstr;
 	const int maxaddrlen = 20;
 	const char *spname = NULL;
 	if (!esil) {
@@ -5568,14 +5598,14 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	}
 
 	r_asm_set_pc (core->rasm, cur);
-	esilstr = R_STRBUF_SAFEGET (&op.esil);
+	const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 	if (!esilstr) {
 		goto err_anal_op;
 	}
 	// Ugly code
 	// This is a hack, since ESIL doesn't always preserve values pushed on the stack. That probably needs to be rectified
-	spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	if (!spname || !*spname) {
+	spname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
+	if (R_STR_ISEMPTY (spname)) {
 		goto err_anal_op;
 	}
 	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
@@ -5585,7 +5615,7 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	}
 	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%s,[", spname);
-	if (!*esilstr || (strncmp ( esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
+	if (!*esilstr || (strncmp (esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
 		free (tmp_esil_str);
 		goto err_anal_op;
 	}
@@ -5609,7 +5639,7 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 	r_esil_set_pc (&esil_cpy, cur);
-	if (!esilstr || !*esilstr) {
+	if (R_STR_ISEMPTY (esilstr)) {
 		goto err_anal_op;
 	}
 	r_esil_parse (&esil_cpy, esilstr);
@@ -5827,7 +5857,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, start, buf, iend + 1);
 	// maybe r_core_cmd_call (core, "aeim");
-	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");
 		return;
@@ -5852,7 +5882,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
-	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *kpcname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
 	if (R_STR_ISEMPTY (kpcname)) {
 		R_LOG_ERROR ("Cannot find program counter register in the current profile");
 		return;
@@ -5885,7 +5915,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 
 	r_reg_arena_push (core->anal->reg);
-	char *sn = (char *)r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	char *sn = (char *)r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
 	if (sn) {
 		sn = strdup (sn);
 	} else {

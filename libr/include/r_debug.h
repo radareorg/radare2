@@ -294,7 +294,7 @@ typedef struct r_debug_plugin_session_t RDebugPluginSession;
 typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
 typedef struct r_debug_plugin_t {
 	RPluginMeta meta;
-	ut32 bits;
+	RSysBits bits;
 	const char *arch;
 	int canstep;
 	int keepio;
@@ -348,9 +348,9 @@ typedef struct r_debug_plugin_session_t {
 R_VEC_FORWARD_DECLARE (RVecDebugPluginSession);
 
 typedef struct r_debug_t {
-	// R2_590 use RArchConfig instead
+	// R2_600 use RArchConfig instead?
 	char *arch;
-	int bits; /// XXX: MUST SET ///
+	int bits; // only 16, 32, 64, .. not packed
 	int hitinfo;
 
 	int main_pid;

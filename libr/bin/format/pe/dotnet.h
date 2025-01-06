@@ -20,18 +20,18 @@
 // ECMA-335 Section II.25.3.3
 //
 typedef struct _CLI_HEADER {
-    DWORD Size; // Called "Cb" in documentation.
-    WORD MajorRuntimeVersion;
-    WORD MinorRuntimeVersion;
-    IMAGE_DATA_DIRECTORY MetaData;
-    DWORD Flags;
-    DWORD EntryPointToken;
-    IMAGE_DATA_DIRECTORY Resources;
-    IMAGE_DATA_DIRECTORY StrongNameSignature;
-    ULONGLONG CodeManagerTable;
-    IMAGE_DATA_DIRECTORY VTableFixups;
-    ULONGLONG ExportAddressTableJumps;
-    ULONGLONG ManagedNativeHeader;
+    ut32 Size; // Called "Cb" in documentation.
+    ut16 MajorRuntimeVersion;
+    ut16 MinorRuntimeVersion;
+    R_IMAGE_DATA_DIRECTORY MetaData;
+    ut32 Flags;
+    ut32 EntryPointToken;
+    R_IMAGE_DATA_DIRECTORY Resources;
+    R_IMAGE_DATA_DIRECTORY StrongNameSignature;
+    ut64 CodeManagerTable;
+    R_IMAGE_DATA_DIRECTORY VTableFixups;
+    ut64 ExportAddressTableJumps;
+    ut64 ManagedNativeHeader;
 } CLI_HEADER, *PCLI_HEADER;
 
 #define NET_METADATA_MAGIC 0x424a5342
@@ -43,11 +43,11 @@ typedef struct _CLI_HEADER {
 // Note: This is only part of the struct, as the rest of it is variable length.
 //
 typedef struct _NET_METADATA {
-    DWORD Magic;
-    WORD MajorVersion;
-    WORD MinorVersion;
-    DWORD Reserved;
-    DWORD Length;
+    ut32 Magic;
+    ut16 MajorVersion;
+    ut16 MinorVersion;
+    ut32 Reserved;
+    ut32 Length;
     char Version[0];
 } NET_METADATA, *PNET_METADATA;
 
@@ -58,8 +58,8 @@ typedef struct _NET_METADATA {
 // ECMA-335 Section II.24.2.2
 //
 typedef struct _STREAM_HEADER {
-    DWORD Offset;
-    DWORD Size;
+    ut32 Offset;
+    ut32 Size;
     char Name[0];
 } STREAM_HEADER, *PSTREAM_HEADER;
 
@@ -69,13 +69,13 @@ typedef struct _STREAM_HEADER {
 // ECMA-335 Section II.24.2.6
 //
 typedef struct _TILDE_HEADER {
-    DWORD Reserved1;
-    BYTE MajorVersion;
-    BYTE MinorVersion;
-    BYTE HeapSizes;
-    BYTE Reserved2;
-    ULONGLONG Valid;
-    ULONGLONG Sorted;
+    ut32 Reserved1;
+    ut8 MajorVersion;
+    ut8 MinorVersion;
+    ut8 HeapSizes;
+    ut8 Reserved2;
+    ut64 Valid;
+    ut64 Sorted;
 } TILDE_HEADER, *PTILDE_HEADER;
 
 // These are the bit positions in Valid which will be set if the table
@@ -152,22 +152,22 @@ typedef struct _TILDE_HEADER {
 // ECMA-335 Section II.22.30
 //
 typedef struct _MODULE_TABLE {
-    WORD Generation;
+    ut16 Generation;
     union {
-        WORD Name_Short;
-        DWORD Name_Long;
+        ut16 Name_Short;
+        ut32 Name_Long;
     } Name;
     union {
-        WORD Mvid_Short;
-        DWORD Mvid_Long;
+        ut16 Mvid_Short;
+        ut32 Mvid_Long;
     } Mvid;
     union {
-        WORD EncId_Short;
-        DWORD EncId_Long;
+        ut16 EncId_Short;
+        ut32 EncId_Long;
     } EncId;
     union {
-        WORD EncBaseId_Short;
-        DWORD EncBaseId_Long;
+        ut16 EncBaseId_Short;
+        ut32 EncBaseId_Long;
     } EncBaseId;
 } MODULE_TABLE, *PMODULE_TABLE;
 
@@ -176,19 +176,19 @@ typedef struct _MODULE_TABLE {
 // ECMA-335 Section II.22.2
 //
 typedef struct _ASSEMBLY_TABLE {
-    DWORD HashAlgId;
-    WORD MajorVersion;
-    WORD MinorVersion;
-    WORD BuildNumber;
-    WORD RevisionNumber;
-    DWORD Flags;
+    ut32 HashAlgId;
+    ut16 MajorVersion;
+    ut16 MinorVersion;
+    ut16 BuildNumber;
+    ut16 RevisionNumber;
+    ut32 Flags;
     union {
-        WORD PublicKey_Short;
-        DWORD PublicKey_Long;
+        ut16 PublicKey_Short;
+        ut32 PublicKey_Long;
     } PublicKey;
     union {
-        WORD Name_Short;
-        DWORD Name_Long;
+        ut16 Name_Short;
+        ut32 Name_Long;
     } Name;
 } ASSEMBLY_TABLE, *PASSEMBLY_TABLE;
 
@@ -198,18 +198,18 @@ typedef struct _ASSEMBLY_TABLE {
 // ECMA-335 Section II.22.5
 //
 typedef struct _ASSEMBLYREF_TABLE {
-    WORD MajorVersion;
-    WORD MinorVersion;
-    WORD BuildNumber;
-    WORD RevisionNumber;
-    DWORD Flags;
+    ut16 MajorVersion;
+    ut16 MinorVersion;
+    ut16 BuildNumber;
+    ut16 RevisionNumber;
+    ut32 Flags;
     union {
-        WORD PublicKeyOrToken_Short;
-        DWORD PublicKeyOrToken_Long;
+        ut16 PublicKeyOrToken_Short;
+        ut32 PublicKeyOrToken_Long;
     } PublicKeyOrToken;
     union {
-        WORD Name_Short;
-        DWORD Name_Long;
+        ut16 Name_Short;
+        ut32 Name_Long;
     } Name;
 } ASSEMBLYREF_TABLE, *PASSEMBLYREF_TABLE;
 
@@ -219,15 +219,15 @@ typedef struct _ASSEMBLYREF_TABLE {
 // ECMA-335 Section II.22.24
 //
 typedef struct _MANIFESTRESOURCE_TABLE {
-    DWORD Offset;
-    DWORD Flags;
+    ut32 Offset;
+    ut32 Flags;
     union {
-        WORD Name_Short;
-        DWORD Name_Long;
+        ut16 Name_Short;
+        ut32 Name_Long;
     } Name;
     union {
-        WORD Implementation_Short;
-        DWORD Implementation_Long;
+        ut16 Implementation_Short;
+        ut32 Implementation_Long;
     } Implementation;
 } MANIFESTRESOURCE_TABLE, *PMANIFESTRESOURCE_TABLE;
 
@@ -239,8 +239,8 @@ typedef struct _MANIFESTRESOURCE_TABLE {
 //
 typedef struct _MODULEREF_TABLE {
   union {
-      WORD Name_Short;
-      DWORD Name_Long;
+      ut16 Name_Short;
+      ut32 Name_Long;
   } Name;
 } MODULEREF_TABLE, *PMODULEREF_TABLE;
 
@@ -251,16 +251,16 @@ typedef struct _MODULEREF_TABLE {
 //
 typedef struct _CUSTOMATTRIBUTE_TABLE {
   union {
-    WORD Parent_Short;
-    DWORD Parent_Long;
+    ut16 Parent_Short;
+    ut32 Parent_Long;
   } Parent;
   union {
-    WORD Type_Short;
-    DWORD Type_Long;
+    ut16 Type_Short;
+    ut32 Type_Long;
   } Type;
   union {
-    WORD Value_Short;
-    DWORD Value_Long;
+    ut16 Value_Short;
+    ut32 Value_Long;
   } Value;
 } CUSTOMATTRIBUTE_TABLE, *PCUSTOMATTRIBUTE_TABLE;
 
@@ -270,14 +270,14 @@ typedef struct _CUSTOMATTRIBUTE_TABLE {
 // ECMA-335 Section II.22.9
 //
 typedef struct _CONSTANT_TABLE {
-  WORD Type;
+  ut16 Type;
   union {
-    WORD Parent_Short;
-    DWORD Parent_Long;
+    ut16 Parent_Short;
+    ut32 Parent_Long;
   } Parent;
   union {
-    WORD Value_Short;
-    DWORD Value_Long;
+    ut16 Value_Short;
+    ut32 Value_Long;
   } Value;
 } CONSTANT_TABLE, *PCONSTANT_TABLE;
 
@@ -296,34 +296,34 @@ typedef struct _STREAMS {
 // ECMA-335 Section II.24.2.4
 typedef struct _BLOB_PARSE_RESULT {
     uint8_t size; // Number of bytes parsed. This is the new offset.
-    DWORD length; // Value of the bytes parsed. This is the blob length.
+    ut32 length; // Value of the bytes parsed. This is the blob length.
 } BLOB_PARSE_RESULT, *PBLOB_PARSE_RESULT;
 
 
 // Used to store the number of rows of each table.
 typedef struct _ROWS {
-    uint32_t module;
-    uint32_t moduleref;
-    uint32_t assemblyref;
-    uint32_t typeref;
-    uint32_t methoddef;
-    uint32_t memberref;
-    uint32_t typedef_;
-    uint32_t typespec;
-    uint32_t field;
-    uint32_t param;
-    uint32_t property;
-    uint32_t interfaceimpl;
-    uint32_t event;
-    uint32_t standalonesig;
-    uint32_t assembly;
-    uint32_t file;
-    uint32_t exportedtype;
-    uint32_t manifestresource;
-    uint32_t genericparam;
-    uint32_t genericparamconstraint;
-    uint32_t methodspec;
-    uint32_t assemblyrefprocessor;
+    ut32 module;
+    ut32 moduleref;
+    ut32 assemblyref;
+    ut32 typeref;
+    ut32 methoddef;
+    ut32 memberref;
+    ut32 typedef_;
+    ut32 typespec;
+    ut32 field;
+    ut32 param;
+    ut32 property;
+    ut32 interfaceimpl;
+    ut32 event;
+    ut32 standalonesig;
+    ut32 assembly;
+    ut32 file;
+    ut32 exportedtype;
+    ut32 manifestresource;
+    ut32 genericparam;
+    ut32 genericparamconstraint;
+    ut32 methodspec;
+    ut32 assemblyrefprocessor;
 } ROWS, *PROWS;
 
 

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_reg.h>
+#include <r_util.h>
 
 /* non-endian safe - used for raw mapping with system registers */
 R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {

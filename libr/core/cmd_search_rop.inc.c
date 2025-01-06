@@ -55,7 +55,7 @@ static RList* get_constants(const char *str) {
 }
 
 static bool isFlag(RRegItem *reg) {
-	const char *type = r_reg_get_type (reg->type);
+	const char *type = r_reg_type_tostring (reg->type);
 
 	if (!strcmp (type, "flg"))
 		return true;

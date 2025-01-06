@@ -10,7 +10,7 @@ static char *r_debug_native_reg_profile(RDebug *dbg) {
 	 |   |   |
 	 |___|___|
 */
-	if (dbg->bits & R_SYS_BITS_64) {
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 #include "reg/windows-x64.h"
 	} else {
 #include "reg/windows-x86.h"

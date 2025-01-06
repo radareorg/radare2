@@ -1416,8 +1416,8 @@ static bool bin_main(RCore *r, PJ *pj, int mode, int va) {
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64d, addr);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs symbols\n");
-		r_cons_printf ("f main @ 0x%08"PFMT64x"\n", addr);
+		r_cons_printf ("'fs symbols\n");
+		r_cons_printf ("'@0x%08"PFMT64x"'f main\n", addr);
 		if (isthumb) {
 			r_cons_printf ("'@0x%08"PFMT64x"'ahb 16\n", addr);
 		}
@@ -3405,13 +3405,20 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			if (field->value != 0 && field->value != UT64_MAX) {
 				r_cons_printf ("'f header.%s.value 1 0x%08"PFMT64x"\n", fname, field->value);
 			}
-			if (field->comment && *field->comment) {
+			if (R_STR_ISNOTEMPTY (field->comment)) {
 				char *e = sdb_encode ((const ut8*)field->comment, -1);
 				r_cons_printf ("CCu base64:%s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
 				char *f = r_name_filter_shell (field->format);
 				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
 				free (f);
+			}
+			if (field->size > 0) {
+				if (field->size == 8) {
+					r_cons_printf ("Cd8 @ 0x%"PFMT64x"\n", addr);
+				} else if (field->size == 4) {
+					r_cons_printf ("Cd4 @ 0x%"PFMT64x"\n", addr);
+				}
 			}
 			if (!field->format_named && R_STR_ISNOTEMPTY (field->format)) {
 				r_cons_printf ("pf.%s %s\n", fname, field->format);
@@ -3421,6 +3428,9 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			pj_ks (pj, "name", r_bin_name_tostring2 (field->name, pref));
 			pj_kN (pj, "vaddr", field->vaddr);
 			pj_kN (pj, "paddr", field->paddr);
+			if (field->size > 0) {
+				pj_kN (pj, "size", field->size);
+			}
 			if (v) {
 				pj_kN (pj, "value", v);
 			}
@@ -4840,7 +4850,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	return ret;
 }
 
-R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, ut16 bits) {
+R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, RSysBits bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	if (!name) {

@@ -1,5 +1,6 @@
 r_esil_sources = [
   'esil.c',
+  'esil_ops.c',
   'esil_handler.c',
   'esil_plugin.c',
   'esil_stats.c',

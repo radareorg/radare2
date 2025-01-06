@@ -9,12 +9,12 @@ CFLAGS:=-I.. -I$(LTOP)/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CF
 LDFLAGS+=$(CS_LDFLAGS)
 
 .PHONY: pre
-pre: p v35pre
+pre: p
 	$(MAKE) libr_arch.$(EXT_SO)
 	$(MAKE) libr_arch.$(EXT_AR)
 
-v35pre:
-	$(MAKE) -C p/arm/v35
+# v35pre:
+#	$(MAKE) -C p/arm/v35
 
 include $(STATIC_ARCH_PLUGINS)
 include $(STOP)/java/deps.mk

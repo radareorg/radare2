@@ -1,5 +1,5 @@
 /*
-Forked by pancake in 2017
+Forked by pancake in 2017-2024
 
 Copyright (c) 2015. The YARA Authors. All Rights Reserved.
 
@@ -23,18 +23,14 @@ limitations under the License.
 #include <stdint.h>
 #include <ctype.h>
 #include <time.h>
+#include <r_types.h>
+#include <r_util.h>
 
-#define ULONGLONG ut64
-#define DWORD uint32_t
-#define WORD uint16_t
-#define BYTE uint8_t
+typedef struct R_IMAGE_DATA_DIRECTORY {
+	ut32 VirtualAddress;
+	ut32 Size;
+} R_IMAGE_DATA_DIRECTORY, *R_PIMAGE_DATA_DIRECTORY;
 
-typedef struct _IMAGE_DATA_DIRECTORY {
-	DWORD   VirtualAddress;
-	DWORD   Size;
-} IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
-
-#include "r_types.h"
 #include "pe_specs.h"
 #include "dotnet.h"
 
@@ -65,18 +61,18 @@ typedef struct _PE {
 	void* object;
 } PE;
 
-PIMAGE_DATA_DIRECTORY pe_get_directory_entry( PE* pe, int entry) {
+R_PIMAGE_DATA_DIRECTORY pe_get_directory_entry( PE* pe, int entry) {
 #if 0
-	PIMAGE_DATA_DIRECTORY result = IS_64BITS_PE(pe)
+	R_PIMAGE_DATA_DIRECTORY result = IS_64BITS_PE(pe)
 		? &pe->header64->OptionalHeader.DataDirectory[entry]
 		: &pe->header->OptionalHeader.DataDirectory[entry];
 #else
-	PIMAGE_DATA_DIRECTORY result = {0};
+	R_PIMAGE_DATA_DIRECTORY result = {0};
 #endif
 	return result;
 }
 
-char* pe_get_dotnet_string( PE* pe, const uint8_t* string_offset, DWORD string_index) {
+char* pe_get_dotnet_string( PE* pe, const uint8_t* string_offset, ut32 string_index) {
 	// Start of string must be within boundary
 	if (!(string_offset + string_index >= pe->data &&
 			string_offset + string_index < pe->data + pe->data_size)) {
@@ -87,7 +83,7 @@ char* pe_get_dotnet_string( PE* pe, const uint8_t* string_offset, DWORD string_i
 
 	// Search for a NULL terminator from start of string, up to remaining.
 	char *start = (char*) (string_offset + string_index);
-	char *eos = (char*) memmem((void*) start, remaining, "\0", 1);
+	char *eos = (char*) r_mem_mem((void*) start, remaining, (void*)"\0", 1);
 
 	return eos? start: NULL;
 }
@@ -119,7 +115,7 @@ void dotnet_parse_guid( PE* pe, ut64 metadata_root, PSTREAM_HEADER guid_header) 
 	int i = 0;
 
 	const uint8_t* guid_offset = pe->data + metadata_root + guid_header->Offset;
-	DWORD guid_size = guid_header->Size;
+	ut32 guid_size = guid_header->Size;
 
 	// Parse GUIDs if we have them.
 	// GUIDs are 16 bytes each.
@@ -169,7 +165,7 @@ BLOB_PARSE_RESULT dotnet_parse_blob_entry( PE* pe, const uint8_t* offset) {
 	}
 
 	if ((*offset & 0x80) == 0x00) {
-		result.length = (DWORD) *offset;
+		result.length = (ut32) *offset;
 		result.size = 1;
 	} else if ((*offset & 0xC0) == 0x80) {
 		// Make sure we have one more byte.
@@ -247,7 +243,7 @@ STREAMS dotnet_parse_stream_headers(
     PE* pe,
     ut64 offset,
     ut64 metadata_root,
-    DWORD num_streams)
+    ut32 num_streams)
 {
   PSTREAM_HEADER stream_header;
   STREAMS headers;
@@ -271,7 +267,7 @@ STREAMS dotnet_parse_stream_headers(
     if (!fits_in_pe(pe, start, DOTNET_STREAM_NAME_SIZE))
       break;
 
-    eos = (char*) memmem((void*) start, DOTNET_STREAM_NAME_SIZE, "\0", 1);
+    eos = (char*) r_mem_mem((void*) start, DOTNET_STREAM_NAME_SIZE, (void*)"\0", 1);
 
     if (eos == NULL)
       break;
@@ -344,7 +340,7 @@ void dotnet_parse_tilde_2(
   PMODULEREF_TABLE moduleref_table;
   PCUSTOMATTRIBUTE_TABLE customattribute_table;
   PCONSTANT_TABLE constant_table;
-  DWORD resource_size, implementation;
+  ut32 resource_size, implementation;
 
   char *name;
   char typelib[MAX_TYPELIB_SIZE + 1];
@@ -390,11 +386,11 @@ void dotnet_parse_tilde_2(
   uint8_t* typeref_row = NULL;
   uint8_t* memberref_row = NULL;
 
-  DWORD type_index;
-  DWORD class_index;
+  ut32 type_index;
+  ut32 class_index;
   BLOB_PARSE_RESULT blob_result;
-  DWORD blob_index;
-  DWORD blob_length;
+  ut32 blob_index;
+  ut32 blob_length;
 
   // These are used to determine the size of coded indexes, which are the
   // dynamically sized columns for some tables. The coded indexes are
@@ -584,10 +580,10 @@ void dotnet_parse_tilde_2(
           blob_offset = ((uint8_t*) constant_table) + 2 + index_size;
 
           if (index_sizes.blob == 4)
-            blob_index = *(DWORD*) blob_offset;
+            blob_index = *(ut32*) blob_offset;
           else
             // Cast the value (index into blob table) to a 32bit value.
-            blob_index = (DWORD) (*(WORD*) blob_offset);
+            blob_index = (ut32) (*(ut16*) blob_offset);
 
           // Everything checks out. Make sure the index into the blob field
           // is valid (non-null and within range).
@@ -687,7 +683,7 @@ void dotnet_parse_tilde_2(
               // Low 5 bits tell us what this is an index into. Remaining bits
               // tell us the index value.
               // Parent must be an index into the Assembly (0x0E) table.
-              if ((*(DWORD*) customattribute_table & 0x1F) != 0x0E)
+              if ((*(ut32*) customattribute_table & 0x1F) != 0x0E)
               {
                 row_ptr += row_size;
                 continue;
@@ -698,7 +694,7 @@ void dotnet_parse_tilde_2(
               // Low 5 bits tell us what this is an index into. Remaining bits
               // tell us the index value.
               // Parent must be an index into the Assembly (0x0E) table.
-              if ((*(WORD*) customattribute_table & 0x1F) != 0x0E)
+              if ((*(ut16*) customattribute_table & 0x1F) != 0x0E)
               {
                 row_ptr += row_size;
                 continue;
@@ -714,27 +710,27 @@ void dotnet_parse_tilde_2(
               // Low 3 bits tell us what this is an index into. Remaining bits
               // tell us the index value. Only values 2 and 3 are defined.
               // Type must be an index into the MemberRef table.
-              if ((*(DWORD*) customattribute_table & 0x07) != 0x03)
+              if ((*(ut32*) customattribute_table & 0x07) != 0x03)
               {
                 row_ptr += row_size;
                 continue;
               }
 
-              type_index = *(DWORD*) customattribute_table >> 3;
+              type_index = *(ut32*) customattribute_table >> 3;
             }
             else
             {
               // Low 3 bits tell us what this is an index into. Remaining bits
               // tell us the index value. Only values 2 and 3 are defined.
               // Type must be an index into the MemberRef table.
-              if ((*(WORD*) customattribute_table & 0x07) != 0x03)
+              if ((*(ut16*) customattribute_table & 0x07) != 0x03)
               {
                 row_ptr += row_size;
                 continue;
               }
 
               // Cast the index to a 32bit value.
-              type_index = (DWORD) ((*(WORD*) customattribute_table >> 3));
+              type_index = (ut32) ((*(ut16*) customattribute_table >> 3));
             }
 
             if (type_index > 0)
@@ -748,27 +744,27 @@ void dotnet_parse_tilde_2(
               // Low 3 bits tell us what this is an index into. Remaining bits
               // tell us the index value. Class must be an index into the
               // TypeRef table.
-              if ((*(DWORD*) memberref_row & 0x07) != 0x01)
+              if ((*(ut32*) memberref_row & 0x07) != 0x01)
               {
                 row_ptr += row_size;
                 continue;
               }
 
-              class_index = *(DWORD*) memberref_row >> 3;
+              class_index = *(ut32*) memberref_row >> 3;
             }
             else
             {
               // Low 3 bits tell us what this is an index into. Remaining bits
               // tell us the index value. Class must be an index into the
               // TypeRef table.
-              if ((*(WORD*) memberref_row & 0x07) != 0x01)
+              if ((*(ut16*) memberref_row & 0x07) != 0x01)
               {
                 row_ptr += row_size;
                 continue;
               }
 
               // Cast the index to a 32bit value.
-              class_index = (DWORD) (*(WORD*) memberref_row >> 3);
+              class_index = (ut32) (*(ut16*) memberref_row >> 3);
             }
 
             if (class_index > 0)
@@ -793,12 +789,12 @@ void dotnet_parse_tilde_2(
             if (index_sizes.string == 4)
             {
               name = pe_get_dotnet_string(
-                  pe, string_offset, *(DWORD*) typeref_row);
+                  pe, string_offset, *(ut32*) typeref_row);
             }
             else
             {
               name = pe_get_dotnet_string(
-                  pe, string_offset, *(WORD*) typeref_row);
+                  pe, string_offset, *(ut16*) typeref_row);
             }
 
             if (name && strncmp (name, "GuidAttribute", 13) != 0)
@@ -812,10 +808,10 @@ void dotnet_parse_tilde_2(
                 (row_ptr + index_size + index_size2);
 
             if (index_sizes.blob == 4)
-              blob_index = *(DWORD*) customattribute_table;
+              blob_index = *(ut32*) customattribute_table;
             else
               // Cast the value (index into blob table) to a 32bit value.
-              blob_index = (DWORD) (*(WORD*) customattribute_table);
+              blob_index = (ut32) (*(ut16*) customattribute_table);
 
             // Everything checks out. Make sure the index into the blob field
             // is valid (non-null and within range).
@@ -850,7 +846,7 @@ void dotnet_parse_tilde_2(
             }
 
             // Custom attributes MUST have a 16 bit prolog of 0x0001
-            if (*(WORD*) blob_offset != 0x0001)
+            if (*(ut16*) blob_offset != 0x0001)
             {
               row_ptr += row_size;
               continue;
@@ -1074,14 +1070,14 @@ void dotnet_parse_tilde_2(
           name = pe_get_dotnet_string(
               pe,
               string_offset,
-              *(DWORD*) (
+              *(ut32*) (
                   row_ptr + 4 + 2 + 2 + 2 + 2 + 4 +
                   index_sizes.blob));
         else
           name = pe_get_dotnet_string(
               pe,
               string_offset,
-              *(WORD*) (
+              *(ut16*) (
                   row_ptr + 4 + 2 + 2 + 2 + 2 + 4 +
                   index_sizes.blob));
 
@@ -1094,7 +1090,7 @@ void dotnet_parse_tilde_2(
           name = pe_get_dotnet_string(
               pe,
               string_offset,
-              *(DWORD*) (
+              *(ut32*) (
                   row_ptr + 4 + 2 + 2 + 2 + 2 + 4 +
                   index_sizes.blob +
                   index_sizes.string));
@@ -1104,7 +1100,7 @@ void dotnet_parse_tilde_2(
           name = pe_get_dotnet_string(
               pe,
               string_offset,
-              *(WORD*) (
+              *(ut16*) (
                   row_ptr + 4 + 2 + 2 + 2 + 2 + 4 +
                   index_sizes.blob +
                   index_sizes.string));
@@ -1179,11 +1175,11 @@ void dotnet_parse_tilde_2(
           if (index_sizes.string == 4)
             name = pe_get_dotnet_string(pe,
                 string_offset,
-                *(DWORD*) (row_ptr + 2 + 2 + 2 + 2 + 4 + index_sizes.blob));
+                *(ut32*) (row_ptr + 2 + 2 + 2 + 2 + 4 + index_sizes.blob));
           else
             name = pe_get_dotnet_string(pe,
                 string_offset,
-                *(WORD*) (row_ptr + 2 + 2 + 2 + 2 + 4 + index_sizes.blob));
+                *(ut16*) (row_ptr + 2 + 2 + 2 + 2 + 4 + index_sizes.blob));
 
           if (name)
             set_string(name, pe->object, "assembly_refs[%i].name", i);
@@ -1233,7 +1229,7 @@ void dotnet_parse_tilde_2(
         // it would give an inaccurate count in that case.
         counter = 0;
         row_ptr = table_offset;
-        // First DWORD is the offset.
+        // First ut32 is the offset.
         for (i = 0; i < num_rows; i++)
         {
           if (!fits_in_pe(pe, row_ptr, row_size))
@@ -1246,9 +1242,9 @@ void dotnet_parse_tilde_2(
           // Can't use manifestresource_table here because the Name and
           // Implementation fields are variable size.
           if (index_size == 4)
-            implementation = *(DWORD*) (row_ptr + 4 + 4 + index_sizes.string);
+            implementation = *(ut32*) (row_ptr + 4 + 4 + index_sizes.string);
           else
-            implementation = *(WORD*) (row_ptr + 4 + 4 + index_sizes.string);
+            implementation = *(ut16*) (row_ptr + 4 + 4 + index_sizes.string);
 
           if (implementation != 0)
           {
@@ -1259,13 +1255,13 @@ void dotnet_parse_tilde_2(
           if (!fits_in_pe(
                 pe,
                 pe->data + resource_base + resource_offset,
-                sizeof (DWORD)))
+                sizeof (ut32)))
           {
             row_ptr += row_size;
             continue;
           }
 
-          resource_size = *(DWORD*)(pe->data + resource_base + resource_offset);
+          resource_size = *(ut32*)(pe->data + resource_base + resource_offset);
 
           if (!fits_in_pe(
                 pe, pe->data + resource_base +
@@ -1522,13 +1518,13 @@ void dotnet_parse_tilde(
 #endif
 
 void dotnet_parse_com(PE* pe, ut64 baddr) {
-	PIMAGE_DATA_DIRECTORY directory;
+	R_PIMAGE_DATA_DIRECTORY directory;
 	PCLI_HEADER cli_header;
 	PNET_METADATA metadata;
 	ut64 metadata_root;
 	char* end;
 	STREAMS headers;
-	WORD num_streams;
+	ut16 num_streams;
 
 	directory = pe_get_directory_entry (pe, PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR);
 	st64 offset = pe_rva_to_offset (pe, directory->VirtualAddress);
@@ -1542,13 +1538,15 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	offset = metadata_root = pe_rva_to_offset(
 			pe, cli_header->MetaData.VirtualAddress);
 
-	if (!struct_fits_in_pe(pe, pe->data + offset, NET_METADATA))
+	if (!struct_fits_in_pe(pe, pe->data + offset, NET_METADATA)) {
 		return;
+	}
 
 	metadata = (PNET_METADATA) (pe->data + offset);
 
-	if (metadata->Magic != NET_METADATA_MAGIC)
+	if (metadata->Magic != NET_METADATA_MAGIC) {
 		return;
+	}
 
 	// Version length must be between 1 and 255, and be a multiple of 4.
 	// Also make sure it fits in pe.
@@ -1563,12 +1561,12 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	// The length includes the NULL terminator and is rounded up to a multiple of
 	// 4. We need to exclude the terminator and the padding, so search for the
 	// first NULL byte.
-	end = (char*) memmem((void*) metadata->Version, metadata->Length, "\0", 1);
-	if (end)
+	end = (char*) r_mem_mem((void*) metadata->Version, metadata->Length, (void*)"\0", 1);
+	if (end) {
 		set_sized_string(metadata->Version,
-				(end - metadata->Version),
-				pe->object,
-				"version");
+			(end - metadata->Version),
+			pe->object, "version");
+	}
 
 	// The metadata structure has some variable length records after the version.
 	// We must manually parse things from here on out.
@@ -1580,7 +1578,7 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	if (!fits_in_pe(pe, pe->data + offset, 2))
 		return;
 
-	num_streams = (WORD) *(pe->data + offset);
+	num_streams = (ut16) *(pe->data + offset);
 	offset += 2;
 
 	headers = dotnet_parse_stream_headers(pe, offset, metadata_root, num_streams);
@@ -1603,6 +1601,6 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 
 // entrypoint
 void dotnet_parse(const ut8 *buf, int size, ut64 baddr) {
-	PE pe = { buf, (DWORD)size, NULL};
+	PE pe = { buf, (ut32)size, NULL};
 	dotnet_parse_com (&pe, baddr);
 }

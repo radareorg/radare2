@@ -53,7 +53,11 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	ut8 buf_pc[32];
 
 	// Analyze current instruction
-	ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	const char *pcreg = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_PC);
+	if (!pcreg) {
+		return false;
+	}
+	ut64 pc = r_debug_reg_get (dbg, pcreg);
 	if (!dbg->iob.read_at) {
 		return false;
 	}

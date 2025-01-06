@@ -625,15 +625,16 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 	}
 	RSysInfo *si = r_sys_info ();
 	if (si) {
+		const bool sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 		if (strstr (input, "-a")) {
 			r_cons_printf ("%s %s %s-%d", si->sysname, si->release,
-				R_SYS_ARCH, (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+				R_SYS_ARCH, sysbits);
 		} else if (strstr (input, "-j")) {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			pj_ks (pj, "platform", si->sysname);
 			pj_ks (pj, "arch", R_SYS_ARCH);
-			pj_kn (pj, "bits", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+			pj_kn (pj, "bits", sysbits);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf ("%s", s);
@@ -641,7 +642,7 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 		} else if (strstr (input, "-m")) {
 			r_cons_printf ("%s", R_SYS_ARCH);
 		} else if (strstr (input, "-b")) {
-			r_cons_printf ("%d", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+			r_cons_printf ("%d", sysbits);
 		} else {
 			r_cons_printf ("%s", si->sysname);
 			if (strstr (input, "-r")) {
@@ -1074,10 +1075,15 @@ static void session_listen(RCore *core) {
 	free (tmpdir);
 }
 
-static void session_list(RCore *core) {
+static void session_list(RCore *core, int mode) {
 	char *tmpdir = r_file_tmpdir ();
 	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
 	char *file;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	RListIter *iter;
 	RList *files = r_sys_dir (tmpdir_r2);
 	r_list_foreach (files, iter, file) {
@@ -1087,18 +1093,32 @@ static void session_list(RCore *core) {
 			char *data = r_file_slurp (ffn, NULL);
 			int fpid = atoi (file);
 			if (data) {
+				bool show = true;
 #if R2__UNIX__ && !__wasi__
-				if (0 == kill (fpid, 0)) {
-					r_cons_printf ("r2 %s # pid %d\n", data, fpid);
-				} else {
+				if (kill (fpid, 0)) {
 					r_file_rm (ffn);
+					show = false;
 				}
-#else
-				r_cons_printf ("r2 %s # pid %d\n", data, fpid);
 #endif
+				if (show) {
+					if (pj) {
+						pj_o (pj);
+						pj_ks (pj, "uri", data);
+						pj_kn (pj, "pid", fpid);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("r2 %s # pid %d\n", data, fpid);
+					}
+				}
 			}
 			free (ffn);
 		}
+	}
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		free (s);
 	}
 	r_list_free (files);
 	free (tmpdir_r2);
@@ -1126,7 +1146,10 @@ static int cmd_rap(void *data, const char *input) {
 			r_core_cmdf (core, "k name=%s", r_str_trim_head_ro (input + 2));
 			break;
 		case 0: // "=l"
-			session_list (core);
+			session_list (core, 0);
+			break;
+		case 'j': // "=lj"
+			session_list (core, 'j');
 			break;
 		case 'l': // "=ll"
 			session_listen (core);
@@ -6131,32 +6154,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				i++;
 			}
 		} else {
-			FILE *fd = r_sandbox_fopen (each + 1, "r");
-			if (fd) {
-				core->rcmd->macro.counter = 0;
-				size_t buf_size = 1024;
-				char *buf = calloc (buf_size, 1);
-				if (buf) {
-					while (!feof (fd)) {
-						buf[0] = '\0';
-						if (!fgets (buf, buf_size, fd)) {
-							break;
-						}
-						if (*buf) {
-							addr = r_num_math (core->num, buf);
-							r_core_seek (core, addr, true); // XXX
-							r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, addr);
-							if (!foreach_newline (core)) {
-								break;
-							}
-							core->rcmd->macro.counter++;
-						}
+			const char *arg = r_str_trim_head_ro (each + 1);
+			char *data = r_core_slurp (core, arg, NULL);
+			if (data) {
+				RList *rows = r_str_split_list (data, "\n", 0);
+				char *row;
+				RListIter *iter;
+				r_list_foreach (rows, iter, row) {
+					ut64 addr = r_num_math (core->num, row);
+					if (core->num->nc.errors == 0) {
+						r_core_cmd_call_at (core, addr, cmd);
 					}
+					if (!foreach_newline (core)) {
+						break;
+					}
+					core->rcmd->macro.counter++;
 				}
-				free (buf);
-				fclose (fd);
+				r_list_free (rows);
+				free (data);
 			} else {
-				R_LOG_ERROR ("cannot open file '%s' to read offsets", each + 1);
+				R_LOG_ERROR ("cannot open file '%s' to read offsets", arg);
 			}
 		}
 		break;

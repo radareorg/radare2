@@ -3476,7 +3476,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 						i == *vindex ? "* ":"  ",
 						var->delta < 0? "var": "arg",
 						var->type, var->name,
-						core->anal->reg->name[R_REG_NAME_BP],
+						r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_BP),
 						(var->kind == 'v')?"-":"+",
 						var->delta);
 				break;
@@ -3485,7 +3485,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 						i == *vindex ? "* ":"  ",
 						var->delta < 0? "var": "arg",
 						var->type, var->name,
-						core->anal->reg->name[R_REG_NAME_SP],
+						r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP),
 						(var->kind == 'v')?"-":"+",
 						var->delta + fcn->maxstack);
 				break;

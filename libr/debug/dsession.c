@@ -94,9 +94,11 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	r_vector_push (dbg->session->checkpoints, &checkpoint);
 
 	// Add PC register change so we can check for breakpoints when continue [back]
-	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-	ut64 data = r_reg_get_value (dbg->reg, ripc);
-	r_debug_session_add_reg_change (dbg->session, ripc->arena, ripc->offset, data);
+	RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
+	if (ripc) {
+		ut64 data = r_reg_get_value (dbg->reg, ripc);
+		r_debug_session_add_reg_change (dbg->session, ripc->arena, ripc->offset, data);
+	}
 
 	return true;
 }

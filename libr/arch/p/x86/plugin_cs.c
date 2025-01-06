@@ -4475,10 +4475,8 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 		R_LOG_ERROR ("Failed to find an esil instance");
 		return false;
 	}
-	r_esil_set_op (esil, "TLS_BEGIN", tls_begin,
-		0, 0, R_ESIL_OP_TYPE_CUSTOM);
-	r_esil_set_op (esil, "TLS_END", tls_end,
-		0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "TLS_BEGIN", tls_begin, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+	r_esil_set_op (esil, "TLS_END", tls_end, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
 	// XXX. this depends on kernel
 	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	/* disable by default */

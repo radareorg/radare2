@@ -1464,7 +1464,7 @@ repeat:
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
 	{
-		char *address = (core->dbg->bits & R_SYS_BITS_64)
+		char *address = R_SYS_BITS_CHECK (core->dbg->bits, 64)
 			? r_str_newf ("0x%016"PFMT64x, addr)
 			: r_str_newf ("0x%08"PFMT64x, addr);
 		r_cons_printf ("[%s%srefs]> %s # (TAB/jk/q/?) ",
@@ -4230,7 +4230,7 @@ static void visual_title(RCore *core, int color) {
 	}
 	{
 		char *title;
-		char *address = (core->print->wide_offsets && core->dbg->bits & R_SYS_BITS_64)
+		char *address = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
 			? r_str_newf ("0x%016"PFMT64x, core->offset)
 			: r_str_newf ("0x%08"PFMT64x, core->offset);
 		if (core->visual.ime) {

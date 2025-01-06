@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_core.h>
 
@@ -129,11 +129,8 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 
 R_API void r_core_print_func_args(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal && core->anal->reg);
-
-
 	bool color = r_config_get_i (core->config, "scr.color");
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 cur_addr = r_reg_getv (core->anal->reg, pc);
+	ut64 cur_addr = r_reg_getv (core->anal->reg, "PC");
 	RListIter *iter;
 	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ARCH_OP_MASK_BASIC);
 	if (!op) {
@@ -207,7 +204,6 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	if (!key) {
 		return NULL;
 	}
-	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
 	if (!r_anal_cc_func (core->anal, key)) {
 		return NULL;
@@ -221,7 +217,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
-	ut64 spv = r_reg_getv (core->anal->reg, sp);
+	ut64 spv = r_reg_getv (core->anal->reg, "SP");
 	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {

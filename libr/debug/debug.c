@@ -63,7 +63,6 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
 	*pb = NULL;
-
 #if 0
 	/* if we are tracing, update the tracing data */
 	// uncommenting this line causes the trace to be dupped
@@ -71,7 +70,6 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 		r_debug_trace_pc (dbg, pc);
 	}
 #endif
-
 	/* remove all sw breakpoints for now. we'll set them back in stage 2
 	 *
 	 * this is necessary because while stopped we don't want any breakpoints in
@@ -162,7 +160,6 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 		}
 	}
 # endif
-
 	*pb = b;
 
 	/* if we are on a software stepping breakpoint, we hide what is going on... */
@@ -490,33 +487,27 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	}
 	switch (bits) {
 	case 16:
-		if (plugin->bits == 16) {
-			dbg->bits = R_SYS_BITS_16;
+		if (R_SYS_BITS_CHECK (plugin->bits, 16)) {
+			dbg->bits = R_SYS_BITS_PACK (16);
 		}
 		break;
 	case 27:
-		if (plugin->bits == 27) {
-			dbg->bits = R_SYS_BITS_27;
+		if (R_SYS_BITS_CHECK (plugin->bits, 27)) {
+			dbg->bits = R_SYS_BITS_PACK (27);
 		}
 		break;
 	case 32:
-		if (plugin->bits & R_SYS_BITS_32) {
-			dbg->bits = R_SYS_BITS_32;
+		if (R_SYS_BITS_CHECK (plugin->bits, 32)) {
+			dbg->bits = R_SYS_BITS_PACK (32);
 		}
 		break;
 	case 64:
-		dbg->bits = R_SYS_BITS_64;
+		dbg->bits = R_SYS_BITS_PACK (64);
 		break;
 	}
-	if (!plugin->bits) {
-		dbg->bits = plugin->bits;
-	} else if (!(plugin->bits & dbg->bits)) {
-		dbg->bits = plugin->bits & R_SYS_BITS_64;
-		if (!dbg->bits) {
-			dbg->bits = plugin->bits & R_SYS_BITS_32;
-		}
-		if (!dbg->bits) {
-			dbg->bits = R_SYS_BITS_32;
+	if (plugin->bits) {
+		if (R_SYS_BITS_CHECK (plugin->bits, bits)) {
+			dbg->bits = R_SYS_BITS_PACK (bits);
 		}
 	}
 	free (dbg->arch);
@@ -543,7 +534,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		R_LOG_WARN ("Child is dead");
 		return false;
 	}
-
 #if 0
 	if (restore && !ignore_stack) {
 		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
@@ -555,22 +545,15 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		return false;
 	}
 	r_reg_arena_push (dbg->reg);
-
-	char *pc = strdup (r_reg_get_name (dbg->reg, R_REG_NAME_PC));
-	char *sp = strdup (r_reg_get_name (dbg->reg, R_REG_NAME_SP));
-	ut64 reg_pc = r_reg_getv (dbg->reg, pc);
-	ut64 reg_sp = r_reg_getv (dbg->reg, sp);
+	ut64 reg_pc = r_reg_getv (dbg->reg, "PC");
+	ut64 reg_sp = r_reg_getv (dbg->reg, "SP");
 	if (reg_pc == UT64_MAX || reg_sp == UT64_MAX) {
 		R_LOG_ERROR ("Invalid pc/sp values");
-		free (pc);
-		free (sp);
 		return false;
 	}
 
 	ut8 *pc_backup = calloc (1, len);
 	if (!pc_backup) {
-		free (pc);
-		free (sp);
 		return false;
 	}
 
@@ -584,34 +567,44 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	ut64 bp_addr = reg_pc + len;
 	r_bp_add_sw (dbg->bp, bp_addr, dbg->bpsize, R_BP_PROT_EXEC);
 
+	// ut64 v = r_reg_setv (dbg->reg, "PC", reg_pc);
 	dbg->iob.write_at (dbg->iob.io, reg_pc, buf, len);
+	if (ret) {
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
+			R_LOG_WARN ("Cannot read registers after executing the injected payload");
+		}
+		*ret = r_reg_getv (dbg->reg, "PC");
+	}
 	r_debug_continue (dbg);
-	/* TODO: check if stopped in breakpoint or not */
+	if (dbg->coreb.core) {
+		ut64 v = r_reg_getv (dbg->reg, "rax");
+		dbg->coreb.cmdf (dbg->coreb.core, "'f dx.value=0x%08"PFMT64x, v);
+		R_LOG_INFO ("'f dx.value = 0x%08"PFMT64x, v);
+	}
 
 	/* Restore bytes at PC and remove the breakpoint reference */
 	r_bp_del (dbg->bp, bp_addr);
 
 	/* Propagate return value */
+	if (!ignore_stack) {
+		/* Restore stack */
+		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
+	}
 	if (ret) {
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			R_LOG_WARN ("Cannot read registers after executing the injected payload");
 		}
-		*ret = r_reg_getv (dbg->reg, pc);
-	}
-
-	if (restore && !ignore_stack) {
-		/* Restore stack */
-		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
-	}
-	r_reg_arena_pop (dbg->reg);
-	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-		R_LOG_ERROR ("Cannot restore registers");
+		*ret = r_reg_getv (dbg->reg, "PC");
 	}
 	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
+	if (restore) {
+		r_reg_arena_pop (dbg->reg);
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
+			R_LOG_ERROR ("Cannot restore registers");
+		}
+	}
 
 	free (pc_backup);
-	free (pc);
-	free (sp);
 
 	return true;
 }
@@ -796,7 +789,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			ut64 pc;
 
 			/* get the program coounter */
-			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
+			pc_ri = r_reg_get (dbg->reg, "PC", -1);
 			if (!pc_ri) { /* couldn't find PC?! */
 				R_LOG_ERROR ("Couldn't find the program counter!");
 				return R_DEBUG_REASON_ERROR;
@@ -864,8 +857,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		return false;
 	}
 
-	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	sp = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_SP]);
+	pc = r_debug_reg_get (dbg, "PC");
+	sp = r_debug_reg_get (dbg, "SP");
 
 	if (!dbg->iob.read_at) {
 		return false;
@@ -882,7 +875,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	switch (op.type) {
 	case R_ANAL_OP_TYPE_RET:
 		dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-		next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? sp_top.r64 : sp_top.r32[0];
 		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
@@ -908,7 +901,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		if (!dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? memval.r64 : memval.r32[0];
 		}
 		br = 1;
 		break;
@@ -922,7 +915,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		if (!dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? memval.r64: memval.r32[0];
 		}
 		br = 1;
 		break;
@@ -1113,11 +1106,11 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	}
 
 	// Initial refill
-	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	buf_pc = r_debug_reg_get (dbg, "PC");
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
 	for (; steps_taken < steps; steps_taken++) {
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		pc = r_debug_reg_get (dbg, "PC");
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
 			buf_pc = pc;
@@ -1196,7 +1189,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	// Go to the end or the next breakpoint in the changes
 	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
 		bool has_bp = false;
-		RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+		RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 		RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RDebugChangeReg *reg;
 		r_vector_foreach_prev (vreg, reg) {
@@ -1413,7 +1406,7 @@ R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 
 	// Initial refill
-	ut64 buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	ut64 buf_pc = r_debug_reg_get (dbg, "PC");
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
 	// step first, we don't want to check current optype
@@ -1422,7 +1415,7 @@ R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over) {
 			break;
 		}
 
-		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		ut64 pc = r_debug_reg_get (dbg, "PC");
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
 			buf_pc = pc;
@@ -1474,7 +1467,7 @@ static int r_debug_continue_until_internal(RDebug *dbg, ut64 addr, bool block) {
 		if (r_debug_is_dead (dbg) || dbg->reason.type) {
 			break;
 		}
-		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		ut64 pc = r_debug_reg_get (dbg, "PC");
 		if (pc == addr) {
 			break;
 		}
@@ -1502,7 +1495,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	int cnum;
 	bool has_bp = false;
 
-	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
 		R_LOG_ERROR ("cannot find PC change vector");

@@ -289,10 +289,7 @@
 #if __MINGW32__
 #include <sys/time.h>
 #include <unistd.h>
-// #define PFMT64x "I64x"
-#define PFMT64x PRIx64
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -360,7 +357,6 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
     #define R_API
   #endif
 #endif
-
 
 
 #define R_HIDDEN __attribute__((visibility("hidden")))
@@ -441,7 +437,6 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-
 #define R_FREE(x) { free((void *)x); x = NULL; }
 
 #if R2__WINDOWS__
@@ -451,7 +446,11 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 
 #if R2__WINDOWS__
+#if __MINGW32__
+#define PFMT64x PRIx64
+#else
 #define PFMT64x "I64x"
+#endif
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"
@@ -554,23 +553,23 @@ static inline void *r_new_copy(int size, void *data) {
 
 /* arch */
 #if __i386__
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "x86"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define R_SYS_ENDIAN 0
 #elif __EMSCRIPTEN__ || __wasi__
-#define R_SYS_ARCH "wasm"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "wasm"
+# define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
+# define R_SYS_ENDIAN 0
 #elif __x86_64__
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "x86"
+# define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
+# define R_SYS_ENDIAN 0
 #elif __POWERPC__
 # define R_SYS_ARCH "ppc"
 # ifdef __powerpc64__
-#  define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+#  define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
 # else
-#  define R_SYS_BITS R_SYS_BITS_32
+#  define R_SYS_BITS R_SYS_BITS_PACK (32)
 # endif
 # if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #  define R_SYS_ENDIAN 0
@@ -578,72 +577,75 @@ static inline void *r_new_copy(int size, void *data) {
 #  define R_SYS_ENDIAN 1
 # endif
 #elif __arm__
-#define R_SYS_ARCH "arm"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "arm"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define R_SYS_ENDIAN 0
 #elif __arm64__ || __aarch64__ || __arm64e__
-#define R_SYS_ARCH "arm"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "arm"
+# define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
+# define R_SYS_ENDIAN 0
 #elif __arc__
-#define R_SYS_ARCH "arc"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "arc"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define R_SYS_ENDIAN 0
 #elif __s390x__
-#define R_SYS_ARCH "s390"
-#define R_SYS_BITS R_SYS_BITS_64
-#define R_SYS_ENDIAN 1
+# define R_SYS_ARCH "s390"
+# define R_SYS_BITS R_SYS_BITS_PACK (64)
+# define R_SYS_ENDIAN 1
 #elif __sparc__
 #define R_SYS_ARCH "sparc"
-#define R_SYS_BITS R_SYS_BITS_32
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
 #define R_SYS_ENDIAN 1
 #elif __mips__
-#define R_SYS_ARCH "mips"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 1
+# define R_SYS_ARCH "mips"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define R_SYS_ENDIAN 1
 #elif __loongarch__
-#define R_SYS_ARCH "loongarch"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define R_SYS_ENDIAN 1
+# define R_SYS_ARCH "loongarch"
+# define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
+# define R_SYS_ENDIAN 1
 #elif __EMSCRIPTEN__
 /* we should default to wasm when ready */
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS R_SYS_BITS_32
+# define R_SYS_ARCH "x86"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
 #elif __riscv__ || __riscv
 # define R_SYS_ARCH "riscv"
 # define R_SYS_ENDIAN 0
 # if __riscv_xlen == 32
-#  define R_SYS_BITS R_SYS_BITS_32
+#  define R_SYS_BITS R_SYS_BITS_PACK (32)
 # else
-#  define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+#  define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
 # endif
 #else
 #ifdef _MSC_VER
 #if defined(_M_ARM64)
-#define R_SYS_ARCH "arm"
-#define R_SYS_BITS R_SYS_BITS_64
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "arm"
+# define R_SYS_BITS R_SYS_BITS_PACK (64)
+# define R_SYS_ENDIAN 0
 #elif defined(_WIN64)
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#define R_SYS_ENDIAN 0
-#define __x86_64__ 1
+# define R_SYS_ARCH "x86"
+# define R_SYS_BITS R_SYS_BITS_PACK2 (32, 64)
+# define R_SYS_ENDIAN 0
+# define __x86_64__ 1
 #else
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS (R_SYS_BITS_32)
-#define __i386__ 1
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "x86"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define __i386__ 1
+# define R_SYS_ENDIAN 0
 #endif
 #else
-#define R_SYS_ARCH "unknown"
-#define R_SYS_BITS R_SYS_BITS_32
-#define R_SYS_ENDIAN 0
+# define R_SYS_ARCH "unknown"
+# define R_SYS_BITS R_SYS_BITS_PACK (32)
+# define R_SYS_ENDIAN 0
 #endif
 #endif
 
+// TODO: use 1234, 4321, 1324, ...
 #define R_SYS_ENDIAN_NONE 0
 #define R_SYS_ENDIAN_LITTLE 1
+// #define R_SYS_ENDIAN_4321 1
 #define R_SYS_ENDIAN_BIG 2
+// #define R_SYS_ENDIAN_1234 2
 #define R_SYS_ENDIAN_BI 3
 #define R_SYS_ENDIAN_MIDDLE 4
 

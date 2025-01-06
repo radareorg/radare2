@@ -15,33 +15,6 @@
 extern "C" {
 #endif
 
-// no need for an enum or type here, its just 1:1
-// XXX deprecate because it's confusing, we can use the new RSYS_BITS_PACK macros
-#define R_SYS_BITS_8	1
-#define R_SYS_BITS_16	2
-#define R_SYS_BITS_32	4
-#define R_SYS_BITS_64	8
-#define R_SYS_BITS_24	24
-#define R_SYS_BITS_27	16
-#define R_SYS_BITS_4	32
-#define R_SYS_BITS_12	64
-
-typedef ut64 RSysBits;
-
-#define R_SYS_BITS_SIZE 8
-#define R_SYS_BITS_MASK 0xff
-#define R_SYS_BITS_PACK(x) (RSysBits)(x)
-#define R_SYS_BITS_PACK1(x) (RSysBits)(x)
-#define R_SYS_BITS_PACK2(x,y) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE))
-#define R_SYS_BITS_PACK3(x,y,z) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
-#define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
-#define R_SYS_BITS_CHECK(x, y) (bool)( \
-	(((x) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (y)) || \
-	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (y)) \
-)
-
 typedef struct {
 	char *sysname;
 	char *nodename;
@@ -91,6 +64,8 @@ R_API bool r_sys_getenv_asbool(const char *key);
 R_API int r_sys_getenv_asint(const char *key);
 R_API ut64 r_sys_getenv_asut64(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
+R_API void r_sys_setenv_asbool(const char *key, bool v);
+R_API void r_sys_setenv_asut64(const char *key, ut64 n);
 R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
 R_API int r_sys_uid(void);

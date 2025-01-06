@@ -10,6 +10,7 @@ EXPECT=<<EOF
     "name": "header",
     "vaddr": 4294967296,
     "paddr": 0,
+    "size": 1,
     "comment": "mach0_header",
     "format": "mach0_header",
     "pf": [
