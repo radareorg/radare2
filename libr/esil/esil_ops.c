@@ -333,17 +333,6 @@ static bool esil_js(REsil *esil) {
 	return r_esil_pushnum (esil, esil->jump_target_set);
 }
 
-//can we please deprecate this, plugins should know their current address
-//even if they don't know it, $$ should be equal to PC register at the begin of each expression
-//	- condret
-// YES PLS KILL IT
-static bool esil_address(REsil *esil) {
-	R_LOG_WARN ("Support for esil operation $$ is about to end soon, use `pc` or `PC` instead avoid using it!");
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	// esil->address = r_reg_getv (esil->anal->reg, "pc");
-	return r_esil_pushnum (esil, esil->addr);
-}
-
 static bool esil_weak_eq(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	char *dst = r_esil_pop (esil);
@@ -2964,7 +2953,6 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	ret &= OP ("$js", esil_js, 1, 0, OT_UNK);
 	ret &= OP ("r=", esil_regalias, 1, 0, OT_UNK); // r0,PC,@= -> change PC alias to r0
-	ret &= OP ("$$", esil_address, 1, 0, OT_UNK);
 	ret &= OP ("~", esil_signext, 1, 2, OT_MATH);
 	ret &= OP ("~=", esil_signexteq, 0, 2, OT_MATH);
 	ret &= OP ("==", esil_cmp, 0, 2, OT_MATH);

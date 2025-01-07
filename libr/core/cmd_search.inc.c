@@ -1849,6 +1849,11 @@ static bool esil_addrinfo(REsil *esil) {
 	return true;
 }
 
+static bool esil_address(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	return r_esil_pushnum (esil, esil->addr);
+}
+
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
 	RSearch *search = core->search;
@@ -1871,19 +1876,12 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const int nonull = r_config_get_i (core->config, "esil.nonull");
 	const int romem = r_config_get_i (core->config, "esil.romem");
 	const int stats = r_config_get_i (core->config, "esil.stats");
-	if (!core->anal->esil) {
-		// initialize esil vm
-		cmd_aei (core);
-		if (!core->anal->esil) {
-			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
-			R_LOG_ERROR ("Cannot initialize the ESIL vm");
-			return;
-		}
-		core->anal->esil->cb.user = core;
-	}
+	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	r_esil_set_op (esil, "$$", esil_address, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, "current address");
+	esil->cb.user = core;
+	// TODO:? cmd_aei (core);
 	RIOMap *map;
 	RListIter *iter;
-	REsil *esil = core->anal->esil;
 	r_esil_setup (esil, core->anal, romem, stats, nonull);
 	r_list_foreach (param->boundaries, iter, map) {
 		bool hit_happens = false;
@@ -1978,6 +1976,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
+	r_esil_free (esil);
 }
 
 #define MAXINSTR 8
