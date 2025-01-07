@@ -110,8 +110,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		ret = lseek (fd, addr, SEEK_SET);
 		if (ret >= 0) {
 			// Workaround for the buggy Debian Wheeze's /proc/pid/mem
-			if (read (fd, buf, len) != -1) {
-				return ret;
+			ssize_t res = read (fd, buf, len);
+			if (res != -1) {
+				return res;
 			}
 		}
 	}
@@ -124,7 +125,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 				len + sizeof (ptrace_word), aligned_addr);
 		memcpy (buf, aligned_buf + aligned_delta, len);
 		r_free_aligned (aligned_buf);
-		return res;
+		return R_MIN (len, res);
 	}
 	return -1;
 }
