@@ -124,7 +124,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 				len + sizeof (ptrace_word), aligned_addr);
 		memcpy (buf, aligned_buf + aligned_delta, len);
 		r_free_aligned (aligned_buf);
-		return res;
+		return res - sizeof (ptrace_word);
 	}
 	return -1;
 }
