@@ -335,11 +335,19 @@ static const RCoreHelpMessage help_msg_k = {
 
 static const RCoreHelpMessage help_msg_r = {
 	"Usage:", "r[+-][ size]", "Resize file",
-	"r", "", "display file size",
-	"rj", "", "display the file size in JSON format",
-	"r", " size", "expand or truncate file to given size",
+	"r", "", "display file size in decimal",
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
+	"r", " size", "expand or truncate file to given size",
+	"rb", " oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
+	"reset" ,"", "reset console settings (clear --hard)",
+	"rh" ,"", "show size in human format",
+	"rj", "", "display the file size in JSON format",
+	"rm" ," [file]", "remove file",
+	"rmrf", " [file|dir]", "recursive remove",
+	"rx", "", "display file size in hexadecimal",
+//
+	"r2" ," [file]", "launch r2 (same for rax2, rasm2, ...)",
 	"r2pm", " [...]", "run r2pm's main",
 	"rabin2", " [...]", "run rabin2's main",
 	"radare2", " [...]", "run radare2's main",
@@ -349,12 +357,6 @@ static const RCoreHelpMessage help_msg_r = {
 	"rasm2", " [...]", "run rasm2's main",
 	"ravc2", " [...]", "run ravc2's main",
 	"rax2", " [...]", "run rax2's main",
-	"rb", " oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
-	"rm" ," [file]", "remove file",
-	"rmrf", " [file|dir]", "recursive remove",
-	"rh" ,"", "show size in human format",
-	"r2" ," [file]", "launch r2 (same for rax2, rasm2, ...)",
-	"reset" ,"", "reset console settings (clear --hard)",
 	NULL
 };
 
@@ -2858,6 +2860,13 @@ static int cmd_resize(void *data, const char *input) {
 			}
 		} else {
 			r_core_cmd_help_contains (core, help_msg_r, "rm");
+		}
+		return true;
+	case 'x':
+		if (core->io->desc) {
+			if (oldsize != -1) {
+				r_cons_printf ("0x%"PFMT64x"\n", oldsize);
+			}
 		}
 		return true;
 	case '\0':
