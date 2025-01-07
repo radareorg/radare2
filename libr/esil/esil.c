@@ -28,7 +28,8 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	if (R_UNLIKELY (!esil)) {
 		return NULL;
 	}
-	if (stacksize < 3) {
+	if (stacksize < 4) {
+		R_LOG_ERROR ("Esil stacksize must be at least 4 bytes");
 		free (esil);
 		return NULL;
 	}

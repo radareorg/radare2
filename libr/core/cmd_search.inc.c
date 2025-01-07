@@ -1872,12 +1872,19 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	}
 	const unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	const int stacksize = r_config_get_i (core->config, "esil.stacksize");
+	int stacksize = r_config_get_i (core->config, "esil.stack.size");
 	const int nonull = r_config_get_i (core->config, "esil.nonull");
 	const int romem = r_config_get_i (core->config, "esil.romem");
 	const int stats = r_config_get_i (core->config, "esil.stats");
+	if (stacksize < 16) {
+		stacksize = 16;
+	}
 	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
-	r_esil_set_op (esil, "$$", esil_address, 1, 0, R_ESIL_OP_TYPE_UNKNOWN, "current address");
+	if (!esil) {
+		R_LOG_ERROR ("Cannot create an esil instance");
+		return;
+	}
+	r_esil_set_op (esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
 	esil->cb.user = core;
 	// TODO:? cmd_aei (core);
 	RIOMap *map;
