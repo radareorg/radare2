@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 nodepad, pancake */
+/* radare - LGPL - Copyright 2015-2024 nodepad, pancake */
 
 #include <r_bin.h>
 #include "mz/mz.h"
@@ -171,36 +171,25 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
+#define p bf->rbin->cb_printf
 	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
-	eprintf ("[0000:0000]  Signature           %c%c\n",
-		mz->dos_header->signature & 0xFF,
-		mz->dos_header->signature >> 8);
-	eprintf ("[0000:0002]  BytesInLastBlock    0x%04x\n",
-		mz->dos_header->bytes_in_last_block);
-	eprintf ("[0000:0004]  BlocksInFile        0x%04x\n",
-		mz->dos_header->blocks_in_file);
-	eprintf ("[0000:0006]  NumRelocs           0x%04x\n",
-		mz->dos_header->num_relocs);
-	eprintf ("[0000:0008]  HeaderParagraphs    0x%04x\n",
-		mz->dos_header->header_paragraphs);
-	eprintf ("[0000:000a]  MinExtraParagraphs  0x%04x\n",
-		mz->dos_header->min_extra_paragraphs);
-	eprintf ("[0000:000c]  MaxExtraParagraphs  0x%04x\n",
-		mz->dos_header->max_extra_paragraphs);
-	eprintf ("[0000:000e]  InitialSs           0x%04x\n",
-		mz->dos_header->ss);
-	eprintf ("[0000:0010]  InitialSp           0x%04x\n",
-		mz->dos_header->sp);
-	eprintf ("[0000:0012]  Checksum            0x%04x\n",
-		mz->dos_header->checksum);
-	eprintf ("[0000:0014]  InitialIp           0x%04x\n",
-		mz->dos_header->ip);
-	eprintf ("[0000:0016]  InitialCs           0x%04x\n",
-		mz->dos_header->cs);
-	eprintf ("[0000:0018]  RelocTableOffset    0x%04x\n",
-		mz->dos_header->reloc_table_offset);
-	eprintf ("[0000:001a]  OverlayNumber       0x%04x\n",
-		mz->dos_header->overlay_number);
+	const MZ_image_dos_header *dh = mz->dos_header;
+	p ("[0000:0000]  Signature           %c%c\n",
+		dh->signature & 0xFF,
+		dh->signature >> 8);
+	p ("[0000:0002]  BytesInLastBlock    0x%04x\n", dh->bytes_in_last_block);
+	p ("[0000:0004]  BlocksInFile        0x%04x\n", dh->blocks_in_file);
+	p ("[0000:0006]  NumRelocs           0x%04x\n", dh->num_relocs);
+	p ("[0000:0008]  HeaderParagraphs    0x%04x\n", dh->header_paragraphs);
+	p ("[0000:000a]  MinExtraParagraphs  0x%04x\n", dh->min_extra_paragraphs);
+	p ("[0000:000c]  MaxExtraParagraphs  0x%04x\n", dh->max_extra_paragraphs);
+	p ("[0000:000e]  InitialSs           0x%04x\n", dh->ss);
+	p ("[0000:0010]  InitialSp           0x%04x\n", dh->sp);
+	p ("[0000:0012]  Checksum            0x%04x\n", dh->checksum);
+	p ("[0000:0014]  InitialIp           0x%04x\n", dh->ip);
+	p ("[0000:0016]  InitialCs           0x%04x\n", dh->cs);
+	p ("[0000:0018]  RelocTableOffset    0x%04x\n", dh->reloc_table_offset);
+	p ("[0000:001a]  OverlayNumber       0x%04x\n", dh->overlay_number);
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -233,6 +222,42 @@ static RList *relocs(RBinFile *bf) {
 	return ret;
 }
 
+static RList* fields(RBinFile *bf) {
+	RList *ret = r_list_newf ((RListFree)free);
+	if (!ret) {
+		return NULL;
+	}
+	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
+	const MZ_image_dos_header *dh = mz->dos_header;
+	#define ROW(nam, fmt, cmt) { \
+		ut16 word = r_buf_read_le16_at (bf->buf, addr); \
+		RBinField *f = r_bin_field_new (addr, addr, word, 2, nam, cmt, fmt, false); \
+		r_list_append (ret, f); \
+		addr += 2; }
+	ut64 addr = 0;
+	ROW ("Signature", "w", "Magic number");
+	ROW ("LastBlockBytes", "w", "Bytes in the last page");
+	ROW ("Blocks", "w", "Total amount of pages");
+	ROW ("NumRelocs", "w", "Number of relocations");
+	ROW ("SizeOfHeader", "w", "In paragraphs (16 bytes)");
+	ROW ("MinAlloc", "w", "Minimum amount of extra paragraphs");
+	ROW ("MaxAlloc", "w", "Maximum amount of extra paragraphs");
+	ROW ("InitialSs", "w", "Initial value for the stack segment");
+	ROW ("InitialSp", "w", "Initial value for the stack pointer");
+	ROW ("Checksum", "w", "Optional. Usually zero");
+	ROW ("InitialIp", "w", "Initial value for the instruction pointer");
+	ROW ("InitialCs", "w", "Initial value for the code segment");
+	ROW ("RelocTable", "w", "Relocation Table offset");
+	ROW ("OverlayNumber", "w", "Overlay Number");
+	ROW ("OemId", "w", "OEM identifier (optional)");
+	ROW ("OemInfo", "w", "OEM information (optional)");
+#if 0
+	ROW ("Reserved", "w", reserved padding 20 bytes
+	ROW ("LFANew", "w", "Offset to the PE header
+#endif
+	return ret;
+}
+
 RBinPlugin r_bin_plugin_mz = {
 	.meta = {
 		.name = "mz",
@@ -249,6 +274,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.sections = &sections,
 	.info = &info,
 	.header = &header,
+	.fields = &fields,
 	.relocs = &relocs,
 	.minstrlen = 4,
 };
