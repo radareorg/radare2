@@ -227,8 +227,6 @@ static RList* fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
-	const MZ_image_dos_header *dh = mz->dos_header;
 	#define ROW(nam, fmt, cmt) { \
 		ut16 word = r_buf_read_le16_at (bf->buf, addr); \
 		RBinField *f = r_bin_field_new (addr, addr, word, 2, nam, cmt, fmt, false); \
