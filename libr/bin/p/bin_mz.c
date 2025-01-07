@@ -252,8 +252,8 @@ static RList* fields(RBinFile *bf) {
 	ROW ("OemId", "w", "OEM identifier (optional)");
 	ROW ("OemInfo", "w", "OEM information (optional)");
 #if 0
-	ROW ("Reserved", "w", reserved padding 20 bytes
-	ROW ("LFANew", "w", "Offset to the PE header
+	ROW ("Reserved", "w", "reserved padding 20 bytes");
+	ROW ("LFANew", "w", "Offset to the PE header");
 #endif
 	return ret;
 }
