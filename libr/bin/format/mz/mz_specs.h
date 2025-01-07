@@ -1,4 +1,6 @@
 /* radare - LGPL - Copyright 2015 nodepad */
+#ifndef R_MZ_SPECS_H
+#define R_MZ_SPECS_H
 
 typedef struct {
 	ut16 signature; /* == 'MZ' or 'ZM' */
@@ -21,3 +23,5 @@ typedef struct {
 	ut16 offset;
 	ut16 segment;
 } MZ_image_relocation_entry;
+
+#endif

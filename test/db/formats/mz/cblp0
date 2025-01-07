@@ -20,6 +20,7 @@ paddr      vaddr      phaddr     vhaddr     type
 0x00000200 0x00000000 ---------- ---------- program
 xor al, al
 fs sections
-'f section.seg_000 1 0x00000000
+'f section..mzhdr 1 0x00000000
+'f section..text 1 0x00000000
 EOF
 RUN

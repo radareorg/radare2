@@ -267,10 +267,12 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- section.seg_000:
+            ;-- section..mzhdr:
+            ;-- section..text:
+            ;-- segment.seg_000:
             ;-- mz.dos_header:
 / 50: entry0 ();
-|           0000:0000     b8800b         mov ax, 0xb80                 ; [00] -rwx section size 16818 named seg_000
+|           0000:0000     b8800b         mov ax, 0xb80                 ; [01] -r-- section size 17426 named .text
 |           0000:0003     ba1c04         mov dx, 0x41c
 |           0000:0006     050000         add ax, 0                     ; RELOC 16 
 |           0000:0009     3b060200       cmp ax, word [2]              ; [0x2:2]=0xba0b

@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2015 nodepad */
+/* radare - LGPL - Copyright 2015-2024 nodepad */
 
-#ifndef MZ_H
-#define MZ_H
+#ifndef R_MZ_H
+#define R_MZ_H
 
 #include <r_types.h>
 #include <r_list.h>
