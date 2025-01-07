@@ -507,6 +507,13 @@ sdb_dep = declare_dependency(
 
 sdb_exe = libsdb_sp.get_variable('sdb_exe')
 
+sdb_install = custom_target('r2sdb',
+  input : sdb_exe,
+  output : 'r2sdb',
+  command : ['cp', '-f', '@INPUT@', '@OUTPUT@'],
+  install : true,
+  install_dir : get_option('bindir'))
+
 sdb_gen_cmd_cgen = [
   sdb_exe,
   '-t',
