@@ -7,15 +7,17 @@ pd 3
 om
 EOF
 EXPECT=<<EOF
-nth paddr       size vaddr       vsize perm flags type name
------------------------------------------------------------
-0   0x00000200   0x0 0x00000000    0x0 -rwx 0x0   ---- seg_000
-1   0x00000200   0x1 0x00000000    0x1 -rwx 0x0   ---- seg_001
-            ;-- section.seg_000:
-            ;-- section.seg_001:
+nth paddr        size vaddr       vsize perm flags type name
+------------------------------------------------------------
+0   0x00000000  0x200 0x00000000  0x200 -r-- 0x0   ---- .mzhdr
+1   0x00000200  0x201 0x00000000  0x201 -r-- 0x0   ---- .text
+            ;-- section..mzhdr:
+            ;-- section..text:
+            ;-- segment.seg_000:
+            ;-- segment.seg_001:
             ;-- mz.dos_header:
             ;-- entry0:
-            0000:0000     30ff           xor bh, bh                    ; [01] -rwx section size 1 named seg_001
+            0000:0000     30ff           xor bh, bh                    ; [01] -r-- section size 513 named .text
             0000:0002     ff             invalid
             0000:0003     ff             invalid
 * 1 fd: 3 +0x00000200 0x00000000 - 0x00000000 r-x fmap.seg_001
