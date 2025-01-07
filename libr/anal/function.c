@@ -373,7 +373,11 @@ R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
 }
 
 R_API int r_anal_function_coverage(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	int total = r_list_length (fcn->bbs);
+	if (total == 0) {
+		return 0;
+	}
 	RListIter *iter;
 	RAnalBlock *bb;
 	int traced = 0;
