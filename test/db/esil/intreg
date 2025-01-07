@@ -2,18 +2,8 @@ NAME=intreg $$
 FILE=-
 CMDS=<<EOF
 s 10
-"ae $$,0,+"
-EOF
-EXPECT=<<EOF
-0xa
-EOF
-RUN
-
-NAME=intreg $$
-FILE=-
-CMDS=<<EOF
-s 10
-"ae 0,$$,+"
+ar PC=$$
+ae PC,0,+
 EOF
 EXPECT=<<EOF
 0xa
