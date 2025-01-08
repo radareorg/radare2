@@ -1864,6 +1864,17 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	char *sdb_module = NULL;
 
 	R_TIME_PROFILE_BEGIN;
+	{
+		int fd = r_io_fd_get_current (r->io);
+		if (fd != -1) {
+			RIODesc *desc = r_io_desc_get (r->io, fd);
+			if (desc && r_io_desc_is_dbg (desc)) {
+				R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
+				return false;
+			}
+
+		}
+	}
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
