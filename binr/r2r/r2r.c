@@ -444,6 +444,7 @@ int main(int argc, char **argv) {
 			dir_found = r2r_chdir (argv[0]);
 		}
 		if (!dir_found) {
+			free (cwd);
 			R_LOG_ERROR ("Cannot find db/ directory related to the given test");
 			return -1;
 		}
@@ -464,6 +465,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!r2r_subprocess_init ()) {
+		free (cwd);
 		R_LOG_ERROR ("Subprocess init failed");
 		return -1;
 	}
@@ -524,6 +526,7 @@ int main(int argc, char **argv) {
 				eprintf ("Category: %s\n", arg);
 				if (!strcmp (arg, "unit")) {
 					if (!r2r_test_run_unit ()) {
+						free (cwd);
 						return -1;
 					}
 					continue;
@@ -567,6 +570,7 @@ int main(int argc, char **argv) {
 					}
 				}
 				r_list_free (tests);
+				free (cwd);
 				return grc;
 				// continue;
 			}
@@ -575,6 +579,7 @@ int main(int argc, char **argv) {
 				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 				r2r_test_database_free (state.db);
 				free (tf);
+				free (cwd);
 				return -1;
 			}
 			free (tf);
