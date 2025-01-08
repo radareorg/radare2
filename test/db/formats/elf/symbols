@@ -186,3 +186,34 @@ EXPECT=<<EOF
 1731
 EOF
 RUN
+
+NAME=imports using the wrong baddr
+FILE=bins/elf/easiestprintf
+CMDS=<<EOF
+ii
+s 0x080485e8
+pd 2
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080485c8 WEAK   NOTYPE     __gmon_start__
+2   0x080485d8 GLOBAL FUNC       open
+3   0x080485f0 GLOBAL FUNC       memset
+4   0x080485f8 GLOBAL FUNC       __isoc99_scanf
+5   0x080485e8 GLOBAL FUNC       setvbuf
+6   0x080485d0 GLOBAL FUNC       exit
+8   0x080485b0 GLOBAL FUNC       alarm
+9   0x080485e0 GLOBAL FUNC       __libc_start_main
+11  0x080485a8 GLOBAL FUNC       sleep
+12  0x080485c0 GLOBAL FUNC       puts
+14  0x080485b8 GLOBAL FUNC       __stack_chk_fail
+15  0x08048600 GLOBAL FUNC       close
+16  0x08048590 GLOBAL FUNC       read
+17  0x08048598 GLOBAL FUNC       printf
+18  0x080485a0 GLOBAL FUNC       _exit
+            ;-- setvbuf:
+            0x080485e8      ff25f09f0408   jmp dword [reloc.setvbuf]   ; 0x8049ff0
+            0x080485ee      6690           nop
+EOF
+RUN

@@ -4360,12 +4360,21 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 // XXX this is slow because we can directly use RBinSymbol instead of RBinElfSymbol imho
 RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 	ut64 paddr, vaddr;
+	const ut64 baddr = Elf_(get_baddr) (eo);
+	if (baddr && baddr != UT64_MAX && symbol->offset && symbol->offset != UT64_MAX) {
+		if (symbol->is_vaddr && symbol->offset < baddr) {
+			symbol->is_vaddr = false;
+		}
+	}
 	if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
 	} else {
 		paddr = symbol->offset;
-		vaddr = Elf_(p2v_new) (eo, paddr);
+		ut64 va = Elf_(p2v_new) (eo, paddr);
+		if (va != UT64_MAX) {
+			vaddr = va;
+		}
 	}
 
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
