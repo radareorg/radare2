@@ -111,14 +111,14 @@ EXPECT=<<EOF
 0x00445870 20000 unit u.p$mozgkigyo memy()
 0x0044a690 2580 unit u.p$mozgkigyo leader()
 0x00000000 0 .ldebug_info0()
-0x00000000 0 .la1()
-0x00000000 0 .la2()
-0x00000000 0 .la3()
-0x00000000 0 .la4()
-0x00000000 0 .la5()
-0x00000000 0 .la6()
-0x00000000 0 .la7()
-0x00000000 0 .ledebug_info0()
+0x000008e5 0 .la1()
+0x00000904 0 .la2()
+0x00000922 0 .la3()
+0x0000093c 0 .la4()
+0x0000095a 0 .la5()
+0x00000985 0 .la6()
+0x0000099c 0 .la7()
+0x00000a17 0 .ledebug_info0()
 0x00400030 0 .lehdebug_line0()
 0x004011bd 0 .ledebug_line0()
 0x00000000 0 system.pp()
@@ -388,7 +388,7 @@ EXPECT=<<EOF
 0x004340a0 0 _(mozgkigyo,_ld3)
 0x00415520 361 fpc_unicodestr_concat()
 0x00424960 254 fpc_write_text_pchar_as_pointer()
-0x00424960 0 _(mozgkigyo,_ld142)
+0x0000092d 0 _(mozgkigyo,_ld142)
 0x00408550 29 unit system fprmdir(pchar)longint
 0x004349a0 0 _(mozgkigyo,_ld50)
 0x0043b4e0 54 unit rtti.system tvararrayboundarray()
@@ -437,7 +437,7 @@ EXPECT=<<EOF
 0x00438410 17 unit rtti.system terror()
 0x00419ea0 196 fpc_class_cast_intf()
 0x00420a20 78 unit system waitfree_fixed(pmemchunk_fixed,poschunk)
-0x00420a20 0 _(mozgkigyo,_ld151)
+0x00000a00 0 _(mozgkigyo,_ld151)
 0x0042ede0 14 unit baseunix wifexited(longint)boolean
 0x00412600 207 fpc_mul_int64()
 0x0041d710 140 unit system pos(variant,widestring)int64
@@ -767,7 +767,7 @@ EXPECT=<<EOF
 0x00434b28 0 _(mozgkigyo,_ld64)
 0x004367b0 1 unit tc.system writeerrorstostderr()
 0x0042f540 125 unit baseunix fpunlink(rawbytestring)longint
-0x0042f540 0 _(mozgkigyo,_ld139)
+0x000009c4 0 _(mozgkigyo,_ld139)
 0x0042f020 145 unit baseunix fpchown(rawbytestring,longword,longword)longint
 0x00437c50 19 unit rtti.system longword()
 0x0042fb10 98 unit baseunix fpopen(shortstring,longint)longint
@@ -974,7 +974,7 @@ EXPECT=<<EOF
 0x00419ba0 0 fpc_intf_incr_ref()
 0x004083f0 0 fpc_sysc_close()
 0x004241c0 50 fpc_get_input()
-0x004241c0 0 _(mozgkigyo,_ld144)
+0x00000944 0 _(mozgkigyo,_ld144)
 0x00435818 0 _(baseunix,_ld1)
 0x004325d0 1016 unit unix assignstream(text,text,text,ansistring,array_of_ansistring)longint
 0x0040adf0 0 fpc_popcnt_byte()
@@ -1005,7 +1005,7 @@ EXPECT=<<EOF
 0x00428950 22 unit system assign(typedfile,shortstring)
 0x004252e0 131 fpc_write_text_currency()
 0x004347b0 0 _(mozgkigyo,_ld36)
-0x004347b0 0 _(mozgkigyo,_ld131)
+0x000008f6 0 _(mozgkigyo,_ld131)
 0x00435520 0 _(system,_ld33)
 0x00424190 13 unit system gettextcodepage(text)word
 0x0041fa40 23 unit system freemem(pointer,qword)
@@ -1152,7 +1152,7 @@ EXPECT=<<EOF
 0x004253e0 116 fpc_write_text_boolean_iso()
 0x00403070 511 unit p$mozgkigyo crown(smallint,smallint)
 0x0043e2d8 14 unit init.baseunix stat()
-0x0043e2d8 0 _(mozgkigyo,_ld145)
+0x0000097b 0 _(mozgkigyo,_ld145)
 0x00436060 8 fpc_resourcestringtables()
 0x00438900 21 unit rtti.system pwidestring()
 0x0041e500 27 fpc_divbyzero()
@@ -1329,7 +1329,7 @@ EXPECT=<<EOF
 0x0043cff0 15 unit rtti.system trtlmethod()
 0x0043b6e0 215 unit rtti.system tvarop()
 0x0040b860 333 unit system ldexp(real,smallint)real
-0x0040b860 0 _(mozgkigyo,_ld141)
+0x00000915 0 _(mozgkigyo,_ld141)
 0x004357b0 0 _(crt,_ld13)
 0x00435650 0 _(system,_ld43)
 0x00431a80 148 unit unix assignpipe(file,file)longint
@@ -1337,7 +1337,7 @@ EXPECT=<<EOF
 0x0042b130 163 unit crt attr2ansi(longint,longint)shortstring::addsep(char)
 0x0042ffe0 104 unit baseunix fpselect(text,int64)longint
 0x00412430 121 fpc_mod_int64()
-0x00412430 0 _(mozgkigyo,_ld147)
+0x000009d0 0 _(mozgkigyo,_ld147)
 0x00427c70 38 unit system blockwrite(file,formal,longint,longint)
 0x0043af60 45 unit rtti.system iinvokable()
 0x004226b0 82 unit system do_seek(longint,int64)
@@ -1367,7 +1367,7 @@ EXPECT=<<EOF
 0x00438820 15 unit rtti.system pdate()
 0x00438160 45 unit rtti.system vtblarray()
 0x0040ad30 24 unit system ntobe(word)word
-0x0040ad30 0 _(mozgkigyo,_ld137)
+0x00000992 0 _(mozgkigyo,_ld137)
 0x0040a0c0 289 fpc_shortstr_concat()
 0x00434908 0 _(mozgkigyo,_ld45)
 0x0041d350 36 unit system assign(real)olevariant
@@ -1438,7 +1438,7 @@ EXPECT=<<EOF
 0x0041d490 85 unit system pos(shortstring,variant)int64
 0x0041c500 22 unit system assign(variant)boolean
 0x00434050 0 _(mozgkigyo,_ld2)
-0x00434050 0 _(mozgkigyo,_ld150)
+0x000009fb 0 _(mozgkigyo,_ld150)
 0x0043f7b0 18 unit rtti.unixtype pcsigned()
 0x0043d300 54 unit rtti.system trelocatethreadvarhandler()
 0x00421650 21 unit system endthread(longword)
@@ -1492,7 +1492,7 @@ EXPECT=<<EOF
 0x004296a0 49 unit system getdir(byte,rawbytestring)
 0x00414e80 27 unit system getunicodestringmanager(tunicodestringmanager)
 0x00421690 17 unit system resumethread(qword)longword
-0x00421690 0 _(mozgkigyo,_ld134)
+0x000008f1 0 _(mozgkigyo,_ld134)
 0x0040a560 35 unit system strpas(pchar)shortstring
 0x00439b70 26 unit rtti.system def462()
 0x0042ec20 0 fpc_sysc_pread()
@@ -1563,7 +1563,7 @@ EXPECT=<<EOF
 0x0041b510 287 unit system pushexceptobject(tobject,pointer,pointer)
 0x00417fe0 1740 unit system utf8tounicode(punicodechar,qword,pchar,qword)qword
 0x0042e7c0 34 unit baseunix fpsetgid(longword)longint
-0x0042e7c0 0 _(mozgkigyo,_ld149)
+0x000009e8 0 _(mozgkigyo,_ld149)
 0x0044b830 896 unit u.system input()
 0x00409790 21 unit system fpc_shortstr_chararray_intern_charmove(shortstring,array_of_char,int64)
 0x0041e5e0 66 unit system ioresult()word
@@ -2040,7 +2040,7 @@ EXPECT=<<EOF
 0x00401e60 371 unit p$mozgkigyo start(smallint,smallint)
 0x00408940 32 unit system fpmunmap(pointer,qword)longint
 0x00419820 0 unit system dynarraysetlength(pointer,pointer,int64,psizeint)
-0x00419820 0 _(mozgkigyo,_ld133)
+0x000008d7 0 _(mozgkigyo,_ld133)
 0x00408c40 14 unit system wifexited(longint)boolean
 0x00408320 0 fpc_syscall5()
 0x0043e1d0 35 unit rtti.baseunix def6()
@@ -2275,7 +2275,7 @@ EXPECT=<<EOF
 0x00435858 0 _(unix,_ld2)
 0x0044dcc0 4 unit u.unixutil tzseconds()
 0x00435430 0 _(system,_ld27)
-0x00435430 0 _(mozgkigyo,_ld136)
+0x00000976 0 _(mozgkigyo,_ld136)
 0x004095c0 4 unit system readbarrier()
 0x0043fc40 25 unit init.unixtype mbstate_value_t()
 0x00424240 41 fpc_textinit_iso()
@@ -2306,7 +2306,7 @@ EXPECT=<<EOF
 0x00435798 0 _(crt,_ld10)
 0x00439020 49 unit rtti.system tctrlbreakhandler()
 0x0043e180 35 unit rtti.baseunix def4()
-0x0043e180 0 _(mozgkigyo,_ld152)
+0x00000a11 0 _(mozgkigyo,_ld152)
 0x00422aa0 155 unit system do_erase(pwidechar,boolean)
 0x004120e0 59 fpc_setstring_shortstr()
 0x00437e30 12 unit rtti.system widestring()
@@ -2360,7 +2360,7 @@ EXPECT=<<EOF
 0x00414b00 126 unit system lowercase(ansistring)ansistring
 0x00434c38 0 _(mozgkigyo,_ld75)
 0x0041a1b0 275 unit system tobject.create()tobject
-0x0041a1b0 0 _(mozgkigyo,_ld148)
+0x000009e3 0 _(mozgkigyo,_ld148)
 0x0040a070 0 fpc_shortstr_assign()
 0x004295f0 164 unit system chdir(rawbytestring)
 0x0041e000 0 fpc_decref()
@@ -2482,7 +2482,7 @@ EXPECT=<<EOF
 0x00414d40 142 unit system defaultunicode2ansimove(punicodechar,rawbytestring,word,int64)
 0x00435810 0 _(crt,_ld24)
 0x0040a8c0 35 fpc_pchar_length()
-0x0040a8c0 0 _(mozgkigyo,_ld138)
+0x000009bf 0 _(mozgkigyo,_ld138)
 0x00421850 27 unit system setthreadmanager(tthreadmanager,tthreadmanager)boolean
 0x0041c7e0 23 unit system assign(variant)olevariant
 0x0042e950 32 unit baseunix fputime(pchar,putimbuf)longint
@@ -2608,11 +2608,11 @@ EXPECT=<<EOF
 0x00428930 22 unit system assign(typedfile,rawbytestring)
 0x0041b7f0 66 fpc_popaddrstack()
 0x00431970 25 unit unix closepipe(text)longint
-0x00431970 0 _(mozgkigyo,_ld140)
+0x000009cb 0 _(mozgkigyo,_ld140)
 0x00439be0 24 unit rtti.system def465()
 0x00408a70 0 fpc_sysc_getrlimit()
 0x004289f0 145 unit system doassign(typedfile)
-0x004289f0 0 _(mozgkigyo,_ld135)
+0x00000949 0 _(mozgkigyo,_ld135)
 0x0043aa50 172 unit rtti.system tinterfaceentrytype()
 0x004143b0 73 fpc_val_enum_ansistr()
 0x004145d0 0 fpc_ansistr_valsint()
@@ -2676,7 +2676,7 @@ EXPECT=<<EOF
 0x00427f80 138 unit system blockread(file,formal,int64)
 0x004320e0 138 unit unix popen(text,rawbytestring,char)longint
 0x00421ce0 45 unit system notryentercriticalsection(formal)longint
-0x00421ce0 0 _(mozgkigyo,_ld143)
+0x00000932 0 _(mozgkigyo,_ld143)
 0x0043b050 27 unit init.system tinterfacedobject()
 0x00438070 11 unit rtti.system typedfile()
 0x0040e680 2493 unit system str_real(smallint,smallint,extended,treal_type,openstring)
@@ -2921,7 +2921,7 @@ EXPECT=<<EOF
 0x0041aaa0 4 unit system tobject.afterconstruction()
 0x00435990 0 _(unix,_ld18)
 0x0041f8e0 39 fpc_longjmp()
-0x0041f8e0 0 _(mozgkigyo,_ld132)
+0x00000910 0 _(mozgkigyo,_ld132)
 0x0041cd00 17 unit system assign(olevariant)longint
 0x00408440 38 unit system fpread(longint,pchar,qword)int64
 0x0041c800 17 unit system assign(variant)terror
@@ -2952,7 +2952,7 @@ EXPECT=<<EOF
 0x004382a0 19 unit rtti.system ucs4char()
 0x00421990 23 unit system rtleventdestroy(prtlevent)
 0x0042dea0 28 unit baseunix freeshellargv(ppchar)
-0x0042dea0 0 _(mozgkigyo,_ld146)
+0x0000098d 0 _(mozgkigyo,_ld146)
 0x00408b60 21 unit system fps_isdir(longint)boolean
 0x00417790 266 fpc_unicodestr_float()
 0x0041cc60 22 unit system assign(olevariant)byte

@@ -4374,6 +4374,8 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 		ut64 va = Elf_(p2v_new) (eo, paddr);
 		if (va != UT64_MAX) {
 			vaddr = va;
+		} else {
+			vaddr = paddr;
 		}
 	}
 
