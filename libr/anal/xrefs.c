@@ -26,8 +26,8 @@ CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(AdjacencyList, ut64, Edges*);
 
 // NOTE: this is heavy in memory usage, but needed due to performance reasons for large amounts of xrefs..
 typedef struct r_ref_manager_t {
-	AdjacencyList refs;   // forward refs
-	AdjacencyList xrefs;  // backward refs
+	R_ALIGNED(16) AdjacencyList refs;   // forward refs
+	R_ALIGNED(16) AdjacencyList xrefs;  // backward refs
 } RefManager;
 
 static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
