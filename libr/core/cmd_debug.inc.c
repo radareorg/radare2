@@ -238,7 +238,7 @@ static RCoreHelpMessage help_msg_dm = {
 	"dm", " address size", "allocate <size> bytes at <address> (anywhere if address is -1) in child process",
 	"dm=", "", "list memory maps of target process (ascii-art bars)",
 	"dm.", "", "show map name of current address",
-	"dm*", "", "list memmaps in radare commands",
+	"dm*", "[*]", "list memmaps in radare commands (dm** creates io maps for all debug maps)",
 	"dm-", " address", "deallocate memory map of <address>",
 	"dmd", "[aw] [file]", "dump current (all or writable) debug map region to a file (from-to.dmp) (see Sd)",
 	"dmh", "[?]", "show map of heap",
