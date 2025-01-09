@@ -3082,6 +3082,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_CMOVP:
 	case X86_INS_CMOVS:
 		op->type = R_ANAL_OP_TYPE_CMOV;
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_STOSB:
 	case X86_INS_STOSD:
@@ -3249,12 +3250,14 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		// TODO: RCL Still does not work as intended
 		//  - Set flags
 		op->type = R_ANAL_OP_TYPE_ROL;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_ROR:
 	case X86_INS_RCR:
 		// TODO: RCR Still does not work as intended
 		//  - Set flags
 		op->type = R_ANAL_OP_TYPE_ROR;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SHL:
 	case X86_INS_SHLD:
@@ -3264,24 +3267,29 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		// number of bits shifted is greater than the size of the
 		// destination.
 		op->type = R_ANAL_OP_TYPE_SHL;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SARX:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		op->type = R_ANAL_OP_TYPE_SAR;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SAL:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		op->type = R_ANAL_OP_TYPE_SAL;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SALC:
 		op->type = R_ANAL_OP_TYPE_SAL;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SHR:
 	case X86_INS_SHRD:
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		op->type = R_ANAL_OP_TYPE_SHR;
+		op0_memimmhandle (op, insn, addr, regsz);
 		op->val = INSOP(1).imm;
 		// XXX this should be op->imm
 		//op->src[0] = r_anal_value_new ();
@@ -3644,21 +3652,25 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op0_memimmhandle (op, insn, addr, regsz);
 		op->val = 1;
 		break;
 	case X86_INS_DEC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		op->type = R_ANAL_OP_TYPE_SUB;
+		op0_memimmhandle (op, insn, addr, regsz);
 		op->val = 1;
 		break;
 	case X86_INS_NEG:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->family = R_ANAL_OP_FAMILY_CPU;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
 		op->family = R_ANAL_OP_FAMILY_CPU;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_PSUBB:
 	case X86_INS_PSUBW:
@@ -3727,16 +3739,22 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case X86_INS_IDIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_DIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
+		op0_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_IMUL:
 		op->type = R_ANAL_OP_TYPE_MUL;
 		op->sign = true;
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
-	case X86_INS_AAM:
 	case X86_INS_MUL:
+		op0_memimmhandle (op, insn, addr, regsz);
+		/* fallthru */
+	case X86_INS_AAM:
 	case X86_INS_MULX:
 	case X86_INS_MULPD:
 	case X86_INS_MULPS:
@@ -3797,6 +3815,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case X86_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 		/* Direction flag */
 	case X86_INS_CLD:
