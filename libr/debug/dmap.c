@@ -94,6 +94,9 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		pj_a (pj);
 		break;
 	case '*': // "dm*" don't print a header for r2 commands output
+		if (input[1] == '*') {
+			r_cons_println ("om-*");
+		}
 		break;
 	default:
 		// TODO: Find a way to only print headers if output isn't being grepped

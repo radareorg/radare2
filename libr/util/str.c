@@ -210,12 +210,12 @@ R_API int r_str_rwx(const char *str) {
 		ret |= strchr (str, 'm')? 16: 0;
 		ret |= strchr (str, 'r')? 4: 0;
 		ret |= strchr (str, 'w')? 2: 0;
-		ret |= strchr (str, 'x') ? 1 : 0;
-		if (*str && ret == 0 && strchr (str, '-')) {
+		ret |= strchr (str, 'x') ? 1: 0;
+		if (!ret && strcmp (str, "---")) {
 			ret = -1;
 		}
 	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
-		ret = 0;
+		ret = -1;
 	}
 	return ret;
 }
@@ -2898,7 +2898,7 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 					cb (u, from);
 				}
 			} else {
-				fprintf (stderr, "Invalid range\n");
+				R_LOG_ERROR ("Invalid range");
 			}
 			for (r++; *r && *r != ',' && *r != '-'; r++) {
 				;
@@ -2939,7 +2939,7 @@ R_API bool r_str_range_in(const char *r, ut64 addr) {
 					return true;
 				}
 			} else {
-				fprintf (stderr, "Invalid range\n");
+				R_LOG_ERROR ("Invalid range");
 			}
 			for (r++; *r && *r != ',' && *r != '-'; r++) {
 				;
