@@ -119,8 +119,8 @@ EXPECT=<<EOF
 0x00000985 0 .la6()
 0x0000099c 0 .la7()
 0x00000a17 0 .ledebug_info0()
-0x00000030 0 .lehdebug_line0()
-0x000011bd 0 .ledebug_line0()
+0x00400030 0 .lehdebug_line0()
+0x004011bd 0 .ledebug_line0()
 0x00000000 0 system.pp()
 0x004360d0 0 .ld1()
 0x0044c410 12 unit u.system errno()
@@ -1970,7 +1970,7 @@ EXPECT=<<EOF
 0x00438b20 17 unit init.system filerec()
 0x0040ad10 22 unit system ntobe(smallint)smallint
 0x004332c0 34 unit unixutil stringtoppchar(ansistring,smallint)ppchar
-0x00000190 0 __bss_start
+0x00400190 0 __bss_start
 0x0043e5a8 35 unit rtti.baseunix def16()
 0x004227e0 525 unit system do_open(formal,pchar,longint,boolean)
 0x00431b30 774 unit unix popen_internal(text,rawbytestring,char)longint
