@@ -84,6 +84,11 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	if (!dbg) {
 		return;
 	}
+	int fd = -1;
+	RIODesc *d = dbg->iob.io->desc;
+	if (d) {
+		fd = d->fd;
+	}
 
 	switch (input[0]) {
 	case 'j': // "dmj" add JSON opening array brace
@@ -94,6 +99,13 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		pj_a (pj);
 		break;
 	case '*': // "dm*" don't print a header for r2 commands output
+		if (input[1] == '-') {
+			r_cons_println ("om-*");
+			r_cons_printf ("omu %d 0x00000000 0xffffffffffffffff 0x00000000 rwx\n", fd);
+			return;
+		} else if (input[1] == '*') {
+			r_cons_println ("om-*");
+		}
 		break;
 	default:
 		// TODO: Find a way to only print headers if output isn't being grepped
@@ -111,8 +123,20 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 				print_debug_map_json (map, pj);
 				break;
 			case '*': // "dm*"
-				{
-					char *name = (map->name && *map->name)
+				if (input[1] == '*') {
+					char *name = R_STR_ISNOTEMPTY (map->name)
+						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
+						: r_str_newf ("%08" PFMT64x ".%s", map->addr, r_str_rwx_i (map->perm));
+					r_name_filter (name, 0);
+					ut64 va = map->addr;
+					ut64 sz = map->addr_end - map->addr + 1;
+					ut64 pa = map->addr;
+					const char *rwx = r_str_rwx_i (map->perm);
+					dbg->cb_printf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+							fd, va, sz, pa, rwx, name);
+					free (name);
+				} else {
+					char *name = R_STR_ISNOTEMPTY (map->name)
 						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
 						: r_str_newf ("%08" PFMT64x ".%s", map->addr, r_str_rwx_i (map->perm));
 					r_name_filter (name, 0);

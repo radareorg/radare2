@@ -571,7 +571,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 		? r_str_rwx (input + 1)
 		: r_str_rwx (input) : 7;
 	if (perm < 0) {
-		R_LOG_ERROR ("Invalid permission string");
+		R_LOG_ERROR ("Invalid permission string (%s)", input);
 		return;
 	}
 	ut32 mapid;
@@ -615,7 +615,7 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 			if (map) {
 				int nperm = r_str_rwx (argv[0]);
 				if (nperm < 0) {
-					R_LOG_ERROR ("Invalid permission string");
+					R_LOG_ERROR ("Invalid permission string (%s)", argv[0]);
 				} else {
 					map->perm = nperm;
 				}
@@ -630,7 +630,7 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 			if (map) {
 				int nperm = r_str_rwx (argv[1]);
 				if (nperm < 0) {
-					R_LOG_ERROR ("Invalid permission string");
+					R_LOG_ERROR ("Invalid permission string (%s)", argv[1]);
 				} else {
 					map->perm = nperm;
 				}
@@ -714,12 +714,15 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 			name = r_str_word_get0 (s, 5);
 			// fallthrough
 		case 5:
-			rwx = r_str_rwx (r_str_word_get0 (s, 4));
-			if (rwx < 0) {
-				R_LOG_WARN ("Invalid permissions string");
-				rwx = 0;
+			{
+				const char *arg = r_str_word_get0 (s, 4);
+				rwx = r_str_rwx (arg);
+				if (rwx < 0) {
+					R_LOG_WARN ("Invalid permissions string for om (%s)", arg);
+					rwx = 0;
+				}
+				rwx_arg = true;
 			}
-			rwx_arg = true;
 			// fallthrough
 		case 4:
 			paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
@@ -2193,7 +2196,7 @@ static int cmd_open(void *data, const char *input) {
 				} else {
 					perms = r_str_rwx (argv[1]);
 					if (perms < 0) {
-						R_LOG_WARN ("Invalid permissions string");
+						R_LOG_WARN ("Invalid permissions string (%s)", argv[1]);
 						perms = 0;
 					}
 				}
@@ -2201,7 +2204,7 @@ static int cmd_open(void *data, const char *input) {
 				addr = r_num_math (core->num, argv[1]);
 				perms = r_str_rwx (argv[2]);
 				if (perms < 0) {
-					R_LOG_WARN ("Invalid permissions string");
+					R_LOG_WARN ("Invalid permissions string (%s)", argv[1]);
 					perms = 0;
 				}
 			}
