@@ -1,0 +1,12 @@
+NAME=cw in debug mode
+FILE=bins/elf/ls-silent
+ARGS=-d
+CMDS=<<EOF
+# Add comparison watchers and grep for expected output.
+# -v inverts the matches so nothing should be printed to stdout.
+cw $$ 4 @@/v4 10 | grep -vE '0x[0-9a-f]{12} hit0_[0-9]{1,2} 0a000000'
+EOF
+EXPECT=
+# cw prints a progress bar to stderr so can't currently enforce stderr is empty
+# EXPECT_ERR=
+RUN
