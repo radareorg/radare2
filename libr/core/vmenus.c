@@ -1306,6 +1306,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 			*p = 0;
 		}
 		addr = r_num_get (NULL, res);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		r_core_seek (core, addr, true);
 		free (res);
 	}
