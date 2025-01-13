@@ -228,6 +228,8 @@ static RCoreHelpMessage help_msg_panels = {
 	"g",        "go/seek to given offset",
 	"G",        "go/seek to highlight",
 	"i",        "insert hex",
+	"I",        "insert assembly",
+	"`",        "rotate between common disassembly / hexdump options",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
 	"m",        "select the menu panel",
@@ -3671,19 +3673,33 @@ static void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 	}
 }
 
-static void __insert_value(RCore *core) {
+static void __insert_value(RCore *core, int wat) {
 	if (!r_config_get_i (core->config, "io.cache")) {
-		if (__show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
+		if (__show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now? (Y/n)")) {
 			r_config_set_b (core->config, "io.cache", true);
 			(void)__show_status (core, "io.cache is on and insert is available now.");
 		} else {
-			(void)__show_status (core, "You can always turn on io.cache in Menu->Edit->io.cache");
+			(void)__show_status (core, "Check Menu->Edit->io.cache to toggle that option.");
 			return;
 		}
 	}
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
 	char buf[128];
+	switch (wat) {
+	case 'a': // asm
+		r_core_visual_asm (core, cur->model->addr + core->print->cur);
+		cur->view->refresh = true;
+		return;
+	case 'x': // hex
+		{
+		const char *prompt = "insert hex: ";
+		__panel_prompt (prompt, buf, sizeof (buf));
+		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
+		cur->view->refresh = true;
+		}
+		return;
+	}
 	if (__check_panel_type (cur, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt (prompt, buf, sizeof (buf));
@@ -3698,9 +3714,9 @@ static void __insert_value(RCore *core) {
 			cur->view->refresh = true;
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-		const char *prompt = "insert hex: ";
+		const char *prompt = "insert asm: ";
 		__panel_prompt (prompt, buf, sizeof (buf));
-		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+		r_core_visual_asm (core, cur->model->addr + core->print->cur);
 		cur->view->refresh = true;
 	} else if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
 		const char *prompt = "insert hex: ";
@@ -3813,7 +3829,10 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 		cur->view->refresh = true;
 		break;
 	case 'i':
-		__insert_value (core);
+		__insert_value (core, 'x');
+		break;
+	case 'I':
+		__insert_value (core, 'a');
 		break;
 	case '*':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
@@ -7279,17 +7298,17 @@ virtualmouse:
 			__set_curnode (core, 0);
 		}
 		break;
-	case 'i':
+	case '`':
 		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, false);
+			cur->model->rotateCb (core, false); // || true
 			cur->view->refresh = true;
 		}
 		break;
+	case 'i':
+		__insert_value (core, 'x');
+		break;
 	case 'I':
-		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, true);
-			cur->view->refresh = true;
-		}
+		__insert_value (core, 'a');
 		break;
 	case 'o':
 		{
