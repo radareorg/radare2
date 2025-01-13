@@ -210,6 +210,7 @@ jobs:
       env:
         ARCHFLAGS: '-arch ${{ matrix.arch }}'
         CC: gcc -arch ${{ matrix.arch }}
+        LDFLAGS: '-headerpad_max_install_names' # Allow to relocate its dependencies using install_name_tool
       run: make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v4
