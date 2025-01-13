@@ -220,12 +220,14 @@ static RCoreHelpMessage help_msg_afls = {
 };
 
 static RCoreHelpMessage help_msg_afbs = {
-	"Usage:", "afbs", "[afbs] # sort function list",
-	"afbs", "", "same as afbsa",
+	"Usage:", "afbs", "[afbs] # sort basic blocks of current function",
+	// "afbs", "", "same as afbsa",
 	"afbsa", "", "sort by address (same as afbs)",
 	"afbss", "", "sort by size",
-	"afbsn", "", "sort by name",
-	"afbsb", "", "sort by number of basic blocks",
+	"afbsA", "", "sort by address (same as afbs) - inverse",
+	"afbsS", "", "sort by size - inverse",
+	// "afbsn", "", "sort by name",
+	// "afbsb", "", "sort by number of basic blocks",
 	NULL
 };
 
@@ -1183,8 +1185,30 @@ static int cmpbbs(const void *_a, const void *_b) {
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+static int cmpsize_bb(const void *a, const void *b) {
+	ut64 sa = (int) ((RAnalBlock *) a)->size;
+	ut64 sb = (int) ((RAnalBlock *) b)->size;
+	return (sa > sb)? -1: (sa < sb)? 1 : 0;
+}
+
+static int cmpsize_bb2(const void *a, const void *b) {
+	ut64 sa = (int) ((RAnalBlock *) a)->size;
+	ut64 sb = (int) ((RAnalBlock *) b)->size;
+	return (sa > sb)? 1: (sa < sb)? -1 : 0;
+}
+
+static int cmpaddr_bb(const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+static int cmpaddr_bb2(const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr)? -1: (a->addr < b->addr)? 1: 0;
 }
 
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {
@@ -4768,7 +4792,6 @@ static void cmd_afbs(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_afbs);
 		break;
-	case 0:
 	case 'a':
 	case 'b':
 	case 's':
@@ -4789,20 +4812,30 @@ static void cmd_afbs(RCore *core, const char *input) {
 	case 0: // default for "afbs"
 	case 'a': // "afba"
 		fcn->bbs->sorted = false;
-		r_list_sort (fcn->bbs, cmpaddr);
+		r_list_sort (fcn->bbs, cmpaddr_bb);
 		break;
+	case 's': // "afbss"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpsize_bb);
+		break;
+	case 'A': // "afbsA"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpaddr_bb2);
+		break;
+	case 'S': // "afbsS"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpsize_bb2);
+		break;
+#if 0
 	case 'b': // "afbb"
 		fcn->bbs->sorted = false;
-		r_list_sort (fcn->bbs, cmpbbs);
-		break;
-	case 's': // "afbs"
-		fcn->bbs->sorted = false;
-		r_list_sort (fcn->bbs, cmpsize);
+		r_list_sort (fcn->bbs, cmpbbs_bb);
 		break;
 	case 'n': // "afbn"
 		fcn->bbs->sorted = false;
-		r_list_sort (fcn->bbs, cmpname);
+		r_list_sort (fcn->bbs, cmpname_bb);
 		break;
+#endif
 	}
 }
 
