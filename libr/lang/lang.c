@@ -180,10 +180,6 @@ R_API bool r_lang_plugin_remove(RLang *lang, RLangPlugin *plugin) {
 	return true;
 }
 
-/* TODO: deprecate all list methods */
-R_API void r_lang_list(RLang *lang, int mode, RTable *t) {
-}
-
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 	RListIter *iter;
 	RLangPlugin *h;
