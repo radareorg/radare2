@@ -206,8 +206,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install pkg-config with Homebrew
-      run: brew install pkg-config
     - name: Packaging
       env:
         ARCHFLAGS: '-arch ${{ matrix.arch }}'
@@ -233,8 +231,8 @@ jobs:
     runs-on: macos-13
     steps:
     - uses: actions/checkout@v4
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
+    - name: Install ldid2 with Homebrew
+      run: brew install ldid
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
