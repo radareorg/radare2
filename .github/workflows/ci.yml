@@ -324,7 +324,7 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.3
+      uses: al-cheb/configure-pagefile-action@v1.4
       with:
           minimum-size: 16GB
           maximum-size: 16GB
