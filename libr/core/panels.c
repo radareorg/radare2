@@ -227,7 +227,7 @@ static RCoreHelpMessage help_msg_panels = {
 	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
 	"G",        "go/seek to highlight",
-	"i",        "insert hex",
+	"i",        "toggle disassembly views",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
 	"m",        "select the menu panel",
