@@ -219,6 +219,16 @@ static RCoreHelpMessage help_msg_afls = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_afbs = {
+	"Usage:", "afbs", "[afbs] # sort function list",
+	"afbs", "", "same as afbsa",
+	"afbsa", "", "sort by address (same as afbs)",
+	"afbss", "", "sort by size",
+	"afbsn", "", "sort by name",
+	"afbsb", "", "sort by number of basic blocks",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_aflx = {
 	"Usage:", "aflx", "[jv*] # list function xrefs",
 	"aflx", "", "list function xrefs (who references or calls the current function)",
@@ -4753,6 +4763,77 @@ static char *print_fcn_arg(RCore *core, const char *type, const char *name, cons
 	return argstr;
 }
 
+static void cmd_afbs(RCore *core, const char *input) {
+	switch (input[3]) {
+	case '?':
+		r_core_cmd_help (core, help_msg_afbs);
+		break;
+	case 0:
+	case 'a':
+	case 'b':
+	case 's':
+	case 'n':
+		break;
+	default:
+		r_core_return_invalid_command (core, "afbs", input[3]);
+		break;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!fcn) {
+		R_LOG_ERROR ("No function here");
+		return;
+	}
+	switch (input[3]) {
+	case '?':
+		break;
+	case 0: // default for "afbs"
+	case 'a': // "afba"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpaddr);
+		break;
+	case 'b': // "afbb"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpbbs);
+		break;
+	case 's': // "afbs"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpsize);
+		break;
+	case 'n': // "afbn"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpname);
+		break;
+	}
+}
+
+static void cmd_afls(RCore *core, const char *input) {
+	switch (input[3]) {
+	case '?':
+		r_core_cmd_help (core, help_msg_afls);
+		break;
+	case 0: // default for "afls"
+	case 'a': // "aflsa"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpaddr);
+		break;
+	case 'b': // "aflsb"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpbbs);
+		break;
+	case 's': // "aflss"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpsize);
+		break;
+	case 'n': // "aflsn"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpname);
+		break;
+	default:
+		r_core_return_invalid_command (core, "afbl", input[3]);
+		break;
+	}
+}
+
 static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -5507,29 +5588,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		case 's': // "afls"
-			switch (input[3]) {
-			default:
-			case '?':
-				r_core_cmd_help (core, help_msg_afls);
-				return true;
-			case 0: // default for "afls"
-			case 'a': // "aflsa"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpaddr);
-				break;
-			case 'b': // "aflsb"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpbbs);
-				break;
-			case 's': // "aflss"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpsize);
-				break;
-			case 'n': // "aflsn"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpname);
-				break;
-			}
+			cmd_afls (core, input);
 			break;
 		case 'a': // "afla" listing in analysis order
 			cmd_afla (core, input + 3);
@@ -5926,6 +5985,9 @@ static int cmd_af(RCore *core, const char *input) {
 		case '-': // "afb-"
 			anal_fcn_del_bb (core, r_str_trim_head_ro (input + 3));
 			break;
+		case 's': // "afbs"
+			cmd_afbs (core, input);
+			break;
 		case 'a':
 			cmd_afba (core, input + 2);
 			break;
@@ -5961,6 +6023,9 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'j': // "afbj"
 		case ',': // "afb,"
 			anal_fcn_list_bb (core, input + 2, false);
+			break;
+		case 'l':
+			anal_fcn_list_bb (core, "", false);
 			break;
 		case 'i': // "afbi"
 			anal_fcn_list_bb (core, input + 2, true);
