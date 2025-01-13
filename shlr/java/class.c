@@ -1475,6 +1475,9 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			if (!attr) {
 				R_LOG_ERROR ("unable to parse remainder of classfile after Field Attribute: %d", i);
 				free (field->metas);
+				free (field->class_name);
+				free (field->flags_str);
+				// free (field->type);
 				free (field);
 				return NULL;
 			}
@@ -1489,7 +1492,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			r_list_append (field->attributes, attr);
 			adv += attr->size;
 			if (adv + offset >= len) {
-				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
+				R_LOG_ERROR ("unable to parse remainder of classfile after Field Attribute: %d", i);
 				r_bin_java_fmtype_free (field);
 				return NULL;
 			}
@@ -1500,10 +1503,8 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_clone_cp_idx(RBinJavaObj *bin, ut32 idx) {
-	RBinJavaCPTypeObj *obj = NULL;
-	if (bin) {
-		obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
-	}
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	return r_bin_java_clone_cp_item (obj);
 }
 

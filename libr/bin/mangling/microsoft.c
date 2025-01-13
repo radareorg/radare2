@@ -639,8 +639,7 @@ get_template_err:
 	if (memorize) {
 		r_list_append (sd->abbr_names, strdup (type_code_str.type_str));
 	}
-	// will be free at a caller function
-	// free_type_code_str_struct(&type_code_str);
+	// XXX LEAK OR DOUBLE FREE free_type_code_str_struct (&type_code_str);
 	return len;
 }
 

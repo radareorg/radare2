@@ -1186,6 +1186,7 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->rpath = strdup ("NONE");
 	}
 	if (!(str = Elf_(get_file_type) (obj))) {
+		free (ret->rpath);
 		free (ret);
 		return NULL;
 	}
@@ -1194,26 +1195,38 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_lit = true;
 	ret->has_sanitizers = has_sanitizers (bf);
 	if (!(str = Elf_(get_elf_class) (obj))) {
+		free (ret->rpath);
 		free (ret);
 		return NULL;
 	}
 	ret->bclass = str;
 	if (!(str = Elf_(get_osabi_name) (obj))) {
+		free (ret->rpath);
+		free (ret->type);
 		free (ret);
 		return NULL;
 	}
 	ret->os = str;
 	if (!(str = Elf_(get_osabi_name) (obj))) {
+		free (ret->rpath);
+		free (ret->type);
 		free (ret);
 		return NULL;
 	}
 	ret->subsystem = str;
 	if (!(str = Elf_(get_machine_name) (obj))) {
+		free (ret->rpath);
+		free (ret->type);
+		free (ret->os);
 		free (ret);
 		return NULL;
 	}
 	ret->machine = str;
 	if (!(str = Elf_(get_arch) (obj))) {
+		free (ret->subsystem);
+		free (ret->rpath);
+		free (ret->type);
+		free (ret->os);
 		free (ret);
 		return NULL;
 	}

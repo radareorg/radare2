@@ -87,7 +87,7 @@ static bool r_x509_subjectpublickeyinfo_parse(RX509SubjectPublicKeyInfo *spki, R
 	r_x509_algorithmidentifier_parse (&spki->algorithm, object->list.objects[0]);
 	if (object->list.objects[1]) {
 		RASN1Object *o = object->list.objects[1];
-		spki->subjectPublicKey = r_asn1_create_binary (o->sector, o->length);
+		spki->subjectPublicKey = r_asn1_binary_new (o->sector, o->length);
 	}
 	return true;
 }
@@ -171,7 +171,7 @@ static bool r_x509_extension_parse(RX509Extension *ext, RASN1Object *object) {
 			o = object->list.objects[2];
 		}
 		if (o->tag == TAG_OCTETSTRING) {
-			ext->extnValue = r_asn1_create_binary (o->sector, o->length);
+			ext->extnValue = r_asn1_binary_new (o->sector, o->length);
 		}
 	}
 	return true;
@@ -256,14 +256,14 @@ static bool r_x509_tbscertificate_parse(RX509TBSCertificate *tbsc, RASN1Object *
 				continue;
 			}
 			if (elems[i]->tag == 1) {
-				tbsc->issuerUniqueID = r_asn1_create_binary (object->list.objects[i]->sector,
+				tbsc->issuerUniqueID = r_asn1_binary_new (object->list.objects[i]->sector,
 						object->list.objects[i]->length);
 			}
 			if (!elems[i]) {
 				continue;
 			}
 			if (elems[i]->tag == 2) {
-				tbsc->subjectUniqueID = r_asn1_create_binary (object->list.objects[i]->sector,
+				tbsc->subjectUniqueID = r_asn1_binary_new (object->list.objects[i]->sector,
 						object->list.objects[i]->length);
 			}
 			if (!elems[i]) {
@@ -304,9 +304,10 @@ static RX509CRLEntry *r_x509_crlentry_parse(RASN1Object *object) {
 		free (entry);
 		return NULL;
 	}
-	entry->userCertificate = r_asn1_create_binary (obj0->sector, obj0->length);
+	entry->userCertificate = r_asn1_binary_new (obj0->sector, obj0->length);
 	struct r_asn1_object_t *obj1 = object->list.objects[1];
 	if (!obj1) {
+		r_asn1_binary_free (entry->userCertificate);
 		free (entry);
 		return NULL;
 	}
@@ -347,10 +348,11 @@ R_API RX509Certificate *r_x509_certificate_parse(RASN1Object *object) {
 		R_FREE (cert);
 		goto fail;
 	}
-	cert->signature = r_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
+	cert->signature = r_asn1_binary_new (object->list.objects[2]->sector, object->list.objects[2]->length);
 	r_x509_tbscertificate_parse (&cert->tbsCertificate, object->list.objects[0]);
 
 	if (!r_x509_algorithmidentifier_parse (&cert->algorithmIdentifier, object->list.objects[1])) {
+		free (cert->signature);
 		R_FREE (cert);
 	}
 fail:
@@ -396,6 +398,7 @@ R_API RX509CertificateRevocationList *r_x509_crl_parse(RASN1Object *object) {
 	if (object->list.length > 4 && object->list.objects[4]) {
 		crl->revokedCertificates = calloc (object->list.objects[4]->list.length, sizeof (RX509CRLEntry *));
 		if (!crl->revokedCertificates) {
+			r_asn1_string_free (crl->nextUpdate);
 			free (crl);
 			return NULL;
 		}

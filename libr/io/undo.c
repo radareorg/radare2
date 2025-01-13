@@ -206,12 +206,12 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 /* undo writez */
 
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
-	RIOUndoWrite *uw;
+	R_RETURN_IF_FAIL (io);
 	if (!io->undo.w_enable) {
 		return;
 	}
 	/* undo write changes */
-	uw = R_NEW0 (RIOUndoWrite);
+	RIOUndoWrite *uw = R_NEW0 (RIOUndoWrite);
 	if (!uw) {
 		return;
 	}
@@ -226,6 +226,7 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	memcpy (uw->n, data, len);
 	uw->o = (ut8*) malloc (len);
 	if (!uw->o) {
+		free (uw->n);
 		R_FREE (uw);
 		return;
 	}
@@ -235,17 +236,20 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 }
 
 R_API void r_io_wundo_clear(RIO *io) {
+	R_RETURN_IF_FAIL (io);
 	// XXX memory leak
 	io->undo.w_list = r_list_new ();
 }
 
 // rename to r_io_undo_length ?
 R_API int r_io_wundo_size(RIO *io) {
+	R_RETURN_VAL_IF_FAIL (io, 0);
 	return r_list_length (io->undo.w_list);
 }
 
 // TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
 R_API void r_io_wundo_list(RIO *io) {
+	R_RETURN_IF_FAIL (io);
 #define BW 8 /* byte wrap */
 	RListIter *iter;
 	RIOUndoWrite *u;
