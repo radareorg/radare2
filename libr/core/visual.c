@@ -4641,7 +4641,7 @@ static int varcount(RCore *core, RAnalFunction *f) {
 	int len = r_list_length (vars_cache.rvars);
 	len += r_list_length (vars_cache.bvars);
 	len += r_list_length (vars_cache.svars);
-	r_anal_function_vars_cache_fini (core->anal, &vars_cache, f);
+	r_anal_function_vars_cache_fini (&vars_cache);
 	return len;
 }
 
