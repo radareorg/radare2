@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - inisider */
+/* radare - LGPL - Copyright 2014-2024 - inisider */
 
 #include "types.h"
 #include "tpi.h"
@@ -2159,10 +2159,9 @@ int parse_sctring(SCString *sctr, uint8_t *leaf_data, unsigned int *read_bytes, 
 		c++;
 		leaf_data++;
 	}
-	CAN_READ(*read_bytes, 1, len);
+	CAN_READ (*read_bytes, 1, len);
 	leaf_data += 1;
 	(*read_bytes) += (c + 1);
-
 	init_scstring (sctr, c + 1, (char *)leaf_data - (c + 1));
 	return 1;
 }
@@ -2187,9 +2186,10 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		{
 		    SVal_LF_UQUADWORD lf_uqword;
 		    READ8(*read_bytes, len, lf_uqword.value, leaf_data, st64);
-		    parse_sctring(&lf_uqword.name, leaf_data, read_bytes, len);
-		    val->name_or_val = malloc(sizeof (SVal_LF_UQUADWORD));
+		    parse_sctring (&lf_uqword.name, leaf_data, read_bytes, len);
+		    val->name_or_val = R_NEW0 (SVal_LF_UQUADWORD);
 		    if (!val->name_or_val) {
+			    free (lf_uqword.name.name);
 			    break;
 		    }
 		    memcpy(val->name_or_val, &lf_uqword, sizeof (SVal_LF_UQUADWORD));

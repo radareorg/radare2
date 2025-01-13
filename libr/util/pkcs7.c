@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - wargio */
+/* radare2 - LGPL - Copyright 2017-2025 - wargio, pancake */
 
 #include <r_util.h>
 #include "x509.h"
@@ -11,7 +11,7 @@ static bool r_pkcs7_contentinfo_parse(RPKCS7ContentInfo *ci, RASN1Object *object
 	if (object->list.length > 1) {
 		RASN1Object *obj1 = object->list.objects[1];
 		if (obj1) {
-			ci->content = r_asn1_create_binary (obj1->sector, obj1->length);
+			ci->content = r_asn1_binary_new (obj1->sector, obj1->length);
 		}
 	}
 	return true;
@@ -120,7 +120,7 @@ static bool r_pkcs7_issuerandserialnumber_parse(RPKCS7IssuerAndSerialNumber *ias
 	r_x509_name_parse (&iasu->issuer, object->list.objects[0]);
 	RASN1Object *obj1 = object->list.objects[1];
 	if (obj1) {
-		iasu->serialNumber = r_asn1_create_binary (obj1->sector, obj1->length);
+		iasu->serialNumber = r_asn1_binary_new (obj1->sector, obj1->length);
 	}
 	return true;
 }
@@ -145,7 +145,7 @@ static RPKCS7Attribute *r_pkcs7_attribute_parse(RASN1Object *object) {
 	if (object->list.length == 2) {
 		RASN1Object *obj1 = object->list.objects[1];
 		if (obj1) {
-			attribute->data = r_asn1_create_binary (obj1->sector, obj1->length);
+			attribute->data = r_asn1_binary_new (obj1->sector, obj1->length);
 		}
 	}
 	return attribute;
@@ -192,7 +192,7 @@ static bool r_pkcs7_signerinfo_parse(RPKCS7SignerInfo *si, RASN1Object *object) 
 	if (shift < object->list.length) {
 		RASN1Object *obj1 = object->list.objects[shift];
 		if (obj1) {
-			si->encryptedDigest = r_asn1_create_binary (obj1->sector, obj1->length);
+			si->encryptedDigest = r_asn1_binary_new (obj1->sector, obj1->length);
 			shift++;
 		}
 	}
@@ -608,7 +608,7 @@ static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1O
 	RASN1Object *obj1 = object->list.objects[1];
 	if (object->list.length > 1) {
 		if (obj1) {
-			data->data = r_asn1_create_binary (obj1->sector, obj1->length);
+			data->data = r_asn1_binary_new (obj1->sector, obj1->length);
 		}
 	}
 	return true;
@@ -623,7 +623,7 @@ static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Ob
 		return false;
 	}
 	RASN1Object *obj1 = object->list.objects[1];
-	messageDigest->digest = r_asn1_create_binary (obj1->sector, obj1->length);
+	messageDigest->digest = r_asn1_binary_new (obj1->sector, obj1->length);
 	return true;
 }
 

@@ -106,8 +106,8 @@ R_API char *r_asn1_oid(RAsn1 *a);
 
 R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode);
 
-R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32 length);
+R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_string_new(const char *string, bool allocated, ut32 length);
 R_API RASN1String *r_asn1_stringify_bits(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_utctime(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_time(const ut8 *buffer, ut32 length);

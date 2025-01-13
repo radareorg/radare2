@@ -1475,6 +1475,9 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			if (!attr) {
 				R_LOG_ERROR ("unable to parse remainder of classfile after Field Attribute: %d", i);
 				free (field->metas);
+				free (field->class_name);
+				free (field->flags_str);
+				free (field->type);
 				free (field);
 				return NULL;
 			}

@@ -13,6 +13,7 @@ R_API RSocketRapServer *r_socket_rap_server_new(bool use_ssl, const char *port) 
 			return s;
 		}
 		r_socket_free (s->fd);
+		free (s->port);
 		free (s);
 	}
 	return NULL;

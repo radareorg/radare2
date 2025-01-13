@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2022 - bobby.smiles32@gmail.com, condret */
+/* radare - LGPL - Copyright 2016-2024 - bobby.smiles32@gmail.com, condret */
 /*
  * TODO: finish esil support of the non vector instructions
  * TODO: refactor code to simplify per opcode analysis

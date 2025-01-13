@@ -1,8 +1,7 @@
-/* radare2 - LGPL - Copyright 2017-2024 - wargio, pancake */
+/* radare2 - LGPL - Copyright 2017-2025 - wargio, pancake */
 
 #define R_LOG_ORIGIN "asn1"
 
-#include <r_cons.h>
 #include <r_util.h>
 
 static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
@@ -223,7 +222,7 @@ R_API char *r_asn1_tostring(RAsn1 *a) {
 	return res;
 }
 
-R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
+R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
@@ -330,7 +329,7 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 		r_strbuf_appendf (sb, "|%-16s|", readable);
 	}
 	char* text = r_strbuf_drain (sb);
-	RASN1String* as = r_asn1_create_string (text, true, strlen (text) + 1);
+	RASN1String* as = r_asn1_string_new (text, true, strlen (text) + 1);
 	if (!as) {
 		/* no memory left.. */
 		free (text);

@@ -7637,6 +7637,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	REsil *esil = esil_new_setup (core);
 	if (!esil) {
 		free (buf);
+		aea_stats_fini (&stats);
 		return false;
 	}
 #	define hasNext() (maxbytes) ? (addr < addr_end) : (ops < ops_end)

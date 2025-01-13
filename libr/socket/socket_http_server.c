@@ -34,6 +34,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 #if R2__WINDOWS__
 		if (breaked && *breaked) {
 			r_socket_http_close (hr);
+			r_socket_free (hr->s);
 			return NULL;
 		}
 #endif
@@ -48,8 +49,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 
 		if (first == 0) {
 			first = 1;
-			if (strlen (buf)<3) {
+			if (strlen (buf) < 3) {
 				r_socket_http_close (hr);
+				r_socket_free (hr->s);
 				free (hr);
 				return NULL;
 			}
@@ -104,6 +106,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
 		if (content_length >= ST32_MAX) {
 			r_socket_http_close (hr);
+			r_socket_free (hr->s);
 			R_LOG_ERROR ("Could not allocate hr data");
 			return NULL;
 		}
