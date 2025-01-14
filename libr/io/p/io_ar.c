@@ -1,10 +1,7 @@
-/* radare - LGPLv3- Copyright 2017-2021 - xarkes */
+/* radare - LGPLv3- Copyright 2017-2025 - xarkes */
 
 #include <r_io.h>
-#include <r_lib.h>
-#include <r_cons.h>
 #include "ar.h"
-
 
 static const char *r_io_get_individual_schema(const char *file) {
 	if (r_str_startswith (file, "arall://")) {
@@ -147,6 +144,7 @@ RIOPlugin r_io_plugin_ar = {
 		.name = "ar",
 		.desc = "Open ar/lib files",
 		.license = "LGPL-3.0-only",
+		.author = "xarkes"
 	},
 	.uris = "ar://,lib://,arall://,liball://",
 	.open = r_io_ar_open,
