@@ -1201,7 +1201,7 @@ static int cmpbbs2(const void *_a, const void *_b) {
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
+	const RAnalFunction *a = _a, *b = _b;
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
