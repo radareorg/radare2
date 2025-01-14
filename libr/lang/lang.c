@@ -321,7 +321,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 	char buf[1024];
 	const char *p;
 
-	if (!lang || !lang->session) {
+	if (!lang->session) {
 		return false;
 	}
 
