@@ -15,8 +15,7 @@ static void r_bin_dbgitem_free(RBinDbgItem *di) {
 	}
 }
 
-// R2_600 - make this api public
-static RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
+R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 	r_strf_var (key, 64, "0x%"PFMT64x, addr); // TODO: use sdb_itoa because its faster
 	char *data = sdb_get (bin->cur->sdb_addrinfo, key, 0);
 	if (data) {

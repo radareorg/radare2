@@ -888,9 +888,12 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
+// R2_600 - refactor and optimize storage
+R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr);
 R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column);
 R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin);
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
+
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
