@@ -192,7 +192,7 @@ typedef struct {
 
 typedef struct r_io_plugin_t {
 	const RPluginMeta meta;
-	void *widget;
+	void *data; // kind of globals, used by rlang-io in this case
 	const char *uris;
 	int (*listener)(RIODesc *io);
 	bool (*init)(void);
