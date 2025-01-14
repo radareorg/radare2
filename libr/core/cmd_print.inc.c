@@ -5620,8 +5620,8 @@ static inline char cmd_pxb_p(char input) {
 	return IS_PRINTABLE (input)? input: '.';
 }
 
-static inline int cmd_pxb_k(const ut8 *buffer, int x) {
-	return buffer[3 - x] << (8 * x);
+static inline ut64 cmd_pxb_k(const ut8 *buffer, int x) {
+	return (ut64)(buffer[3 - x]) << (8 * x);
 }
 
 static void print_json_string(RCore *core, const char* block, int len, const char* type) {
@@ -6247,7 +6247,7 @@ static void cmd_print_pxb(RCore *core, int len, const char *input) {
 		r_print_cursor (core->print, i, 1, 0);
 		if (c == lastc) {
 			const ut8 *b = core->block + i - 3;
-			int (*k) (const ut8 *, int) = cmd_pxb_k;
+			ut64 (*k) (const ut8 *, int) = cmd_pxb_k;
 			char (*p) (char) = cmd_pxb_p;
 			switch (columns) {
 			case 1:
