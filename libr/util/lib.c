@@ -35,10 +35,15 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if R2__UNIX__
 	if (libname) {
 #if __linux__
-		if (strstr (libname, "python")) {
-			ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+		ret = dlopen (libname, RTLD_LOCAL | RTLD_NOW);
+		if (ret) {
+		//	R_LOG_ERROR ("LOPEN");
 		} else {
-			ret = dlopen (libname, RTLD_NOW);
+			if (strstr (libname, "python")) {
+				ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+			} else {
+				ret = dlopen (libname, RTLD_NOW);
+			}
 		}
 #endif
 		if (!ret) {
