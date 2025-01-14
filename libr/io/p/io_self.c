@@ -5,6 +5,19 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
+typedef struct {
+	char *name;
+	ut64 from;
+	ut64 to;
+	int perm;
+} RIOSelfSection;
+
+typedef struct {
+	RIOSelfSection self_sections[1024];
+	int self_sections_count;
+	bool mameio;
+} SelfData;
+
 #if DEBUGGER
 #if __APPLE__
 #include <mach/vm_map.h>
@@ -13,11 +26,10 @@
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-//#include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
-void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
+static void macosx_debug_regions (SelfData *data, RIO *io, task_t task, mach_vm_address_t address, int max);
 #elif R2__BSD__
 #if __FreeBSD__
 #include <sys/sysctl.h>
@@ -32,7 +44,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <kvm.h>
 #endif
 #include <errno.h>
-bool bsd_proc_vmmaps(RIO *io, int pid);
+static bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef __HAIKU__
 #include <kernel/image.h>
@@ -47,26 +59,16 @@ bool bsd_proc_vmmaps(RIO *io, int pid);
 #include <psapi.h>
 #endif
 
-typedef struct {
-	char *name;
-	ut64 from;
-	ut64 to;
-	int perm;
-} RIOSelfSection;
-
-static R_TH_LOCAL RIOSelfSection self_sections[1024];
-static R_TH_LOCAL int self_sections_count = 0;
-static R_TH_LOCAL bool mameio = false;
-
-static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
+static int self_in_section(RIODesc *desc, RIO *io, ut64 addr, int *left, int *perm) {
+	SelfData *sd = desc->data;
 	int i;
-	for (i = 0; i < self_sections_count; i++) {
-		if (addr >= self_sections[i].from && addr < self_sections[i].to) {
+	for (i = 0; i < sd->self_sections_count; i++) {
+		if (addr >= sd->self_sections[i].from && addr < sd->self_sections[i].to) {
 			if (left) {
-				*left = self_sections[i].to-addr;
+				*left = sd->self_sections[i].to-addr;
 			}
 			if (perm) {
-				*perm = self_sections[i].perm;
+				*perm = sd->self_sections[i].perm;
 			}
 			return true;
 		}
@@ -109,7 +111,7 @@ static char *getstr(char *s) {
 	return NULL;
 }
 
-static int serenity_debug_regions(RIO *io, int pid) {
+static int serenity_debug_regions(SelfData *sd, RIO *io, int pid) {
 	// pid is ignored
 	const char *path = "/proc/self/vm";
 #if 0
@@ -140,7 +142,7 @@ static int serenity_debug_regions(RIO *io, int pid) {
 	char region[100], region2[100], perms[5];
 
 	int sz;
-	self_sections_count = 0;
+	sd->self_sections_count = 0;
 	char *vmdata = r_file_slurp (path, &sz);
 	char *s = r_str_ndup (vmdata, sz);
 	char *p = s;
@@ -162,11 +164,11 @@ static int serenity_debug_regions(RIO *io, int pid) {
 			ut64 a = getnum (addr);
 			ut64 s = getnum (size);
 			char *n = getstr (name);
-			self_sections[self_sections_count].from = a;
-			self_sections[self_sections_count].to = a + s;
-			self_sections[self_sections_count].name = n;
-			self_sections[self_sections_count].perm = r|w|x;
-			self_sections_count++;
+			sd->self_sections[sd->self_sections_count].from = a;
+			sd->self_sections[sd->self_sections_count].to = a + s;
+			sd->self_sections[sd->self_sections_count].name = n;
+			sd->self_sections[sd->self_sections_count].perm = r|w|x;
+			sd->self_sections_count++;
 		}
 		p = next + 1;
 	}
@@ -177,8 +179,8 @@ static int serenity_debug_regions(RIO *io, int pid) {
 }
 #endif
 
-static int update_self_regions(RIO *io, int pid) {
-	self_sections_count = 0;
+static int update_self_regions(RIO *io, int pid, SelfData *sd) {
+	sd->self_sections_count = 0;
 #if __APPLE__
 	mach_port_t task;
 	kern_return_t rc;
@@ -187,10 +189,10 @@ static int update_self_regions(RIO *io, int pid) {
 		R_LOG_ERROR ("task_for_pid failed");
 		return false;
 	}
-	macosx_debug_regions (io, task, (size_t)1, 1000);
+	macosx_debug_regions (sd, io, task, (size_t)1, 1000);
 	return true;
 #elif __serenity__
-	return serenity_debug_regions (io, pid);
+	return serenity_debug_regions (sd, io, pid);
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -233,11 +235,11 @@ static int update_self_regions(RIO *io, int pid) {
 			case 'x': perm |= R_PERM_X; break;
 			}
 		}
-		self_sections[self_sections_count].from = r_num_get (NULL, region);
-		self_sections[self_sections_count].to = r_num_get (NULL, region2);
-		self_sections[self_sections_count].name = strdup (path);
-		self_sections[self_sections_count].perm = perm;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = r_num_get (NULL, region);
+		sd->self_sections[sd->self_sections_count].to = r_num_get (NULL, region2);
+		sd->self_sections[sd->self_sections_count].name = strdup (path);
+		sd->self_sections[sd->self_sections_count].perm = perm;
+		sd->self_sections_count++;
 		r_num_get (NULL, region2);
 	}
 	fclose (fd);
@@ -250,11 +252,11 @@ static int update_self_regions(RIO *io, int pid) {
 	int32 cookie = 0;
 
 	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
-		self_sections[self_sections_count].from = (ut64)(size_t)ii.text;
-		self_sections[self_sections_count].to = (ut64)(size_t)((char*)ii.text + ii.text_size);
-		self_sections[self_sections_count].name = strdup (ii.name);
-		self_sections[self_sections_count].perm = 0;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = (ut64)(size_t)ii.text;
+		sd->self_sections[sd->self_sections_count].to = (ut64)(size_t)((char*)ii.text + ii.text_size);
+		sd->self_sections[sd->self_sections_count].name = strdup (ii.name);
+		sd->self_sections[sd->self_sections_count].perm = 0;
+		sd->self_sections_count++;
 	}
 	return true;
 #elif __sun && defined _LP64
@@ -314,11 +316,11 @@ static int update_self_regions(RIO *io, int pid) {
 			perm |= R_PERM_X;
 		}
 
-		self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
-		self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
-		self_sections[self_sections_count].name = strdup (name);
-		self_sections[self_sections_count].perm = perm;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = (ut64)c->pr_vaddr;
+		sd->self_sections[sd->self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
+		sd->self_sections[sd->self_sections_count].name = strdup (name);
+		sd->self_sections[sd->self_sections_count].perm = perm;
+		sd->self_sections_count++;
 	}
 
 	free (map);
@@ -349,11 +351,11 @@ static int update_self_regions(RIO *io, int pid) {
 		if (perm && !r_w32_GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
 			name[0] = '\0';
 		}
-		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
-		self_sections[self_sections_count].to = (ut64) to;
-		self_sections[self_sections_count].name = r_sys_conv_win_to_utf8 (name);
-		self_sections[self_sections_count].perm = perm;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = (ut64) mbi.BaseAddress;
+		sd->self_sections[sd->self_sections_count].to = (ut64) to;
+		sd->self_sections[sd->self_sections_count].name = r_sys_conv_win_to_utf8 (name);
+		sd->self_sections[sd->self_sections_count].perm = perm;
+		sd->self_sections_count++;
 		name[0] = '\0';
 	}
 	free (name);
@@ -375,16 +377,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	int pid = r_sys_getpid ();
-	if (update_self_regions (io, pid)) {
-		return r_io_desc_new (io, &r_io_plugin_self,
-			file, rw, mode, NULL);
+	SelfData *sd = R_NEW0 (SelfData);
+	if (update_self_regions (io, pid, sd)) {
+		return r_io_desc_new (io, &r_io_plugin_self, file, rw, mode, sd);
 	}
+	free (sd);
 	return NULL;
 }
 
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
+static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	int left, perm;
-	if (self_in_section (io, io->off, &left, &perm)) {
+	if (self_in_section (desc, io, io->off, &left, &perm)) {
 		if (perm & R_PERM_R) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
@@ -396,10 +399,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return 0;
 }
 
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (fd->perm & R_PERM_W) {
+static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
+	if (desc->perm & R_PERM_W) {
 		int left, perm;
-		if (self_in_section (io, io->off, &left, &perm)) {
+		if (self_in_section (desc, io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			if (newlen > 0) {
@@ -439,9 +442,11 @@ static void got_alarm(int sig) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+	SelfData *sd = fd->data;
 	if (!strcmp (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
-	} else if (r_str_startswith (cmd, "pid")) {
+	}
+	if (r_str_startswith (cmd, "pid")) {
 		/* do nothing here */
 #if !defined(R2__WINDOWS__)
 	} else if (r_str_startswith (cmd, "kill")) {
@@ -462,7 +467,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		char *argv = strdup (cmd + 5);
 		int argc = r_str_word_set0 (argv);
 		if (argc == 0) {
-			eprintf ("Usage: :call [fcnptr] [a0] [a1] ...\n");
+			R_LOG_ERROR ("Usage: :call [fcnptr] [args..]");
 			free (argv);
 			return NULL;
 		}
@@ -541,7 +546,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		} else {
 			R_LOG_ERROR ("Unsupported number of arguments in call");
 		}
-		eprintf ("RES %"PFMT64d"\n", result);
+		R_LOG_INFO ("RES %"PFMT64d, result);
 		free (argv);
 #if !defined(R2__WINDOWS__) && !defined (__serenity__)
 	} else if (r_str_startswith (cmd, "alarm ")) {
@@ -564,38 +569,41 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *symbol = cmd + 6;
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, symbol);
-		eprintf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
+		char *s = r_str_newf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
 		r_lib_dl_close (lib);
+		return s;
 	} else if (!strcmp (cmd, "mameio")) {
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
 	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		if (ptr) {
 			R_LOG_TODO ("MAME IO is not yet implemented");
-			mameio = true;
+			sd->mameio = true;
 		} else {
 			R_LOG_ERROR ("This process is not a MAME!");
 		}
 		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "maps") || r_str_startswith (cmd, "dm")) {
 		int i;
-		for (i = 0; i < self_sections_count; i++) {
-			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
-				self_sections[i].from, self_sections[i].to,
-				r_str_rwx_i (self_sections[i].perm),
-				self_sections[i].name);
+		RStrBuf *sb = r_strbuf_new ("");
+		for (i = 0; i < sd->self_sections_count; i++) {
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
+				sd->self_sections[i].from, sd->self_sections[i].to,
+				r_str_rwx_i (sd->self_sections[i].perm),
+				sd->self_sections[i].name);
 		}
+		return r_strbuf_drain (sb);
 	} else if (*cmd == '?') {
-		eprintf ("Usage: :[cmd] [args]\n");
-		eprintf (" :pid               show getpid()\n");
-		eprintf (" :maps              show map regions (same as :dm)\n");
-		eprintf (" :kill              commit suicide\n");
+		return strdup ("Usage: :[cmd] [args]\n"
+		" :pid               show getpid()\n"
+		" :maps              show map regions (same as :dm)\n"
+		" :kill              commit suicide\n"
 #if !defined(R2__WINDOWS__)
-		eprintf (" :alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		" :alarm [secs]      setup alarm signal to raise r2 prompt\n"
 #endif
-		eprintf (" :dlsym [sym]       dlopen\n");
-		eprintf (" :call [sym] [...]  nativelly call a function\n");
-		eprintf (" :mameio            enter mame IO mode\n");
+		" :dlsym [sym]       dlopen\n"
+		" :call [sym] [...]  nativelly call a function\n"
+		" :mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }
@@ -648,7 +656,7 @@ static const char *share_mode[] = {
 };
 
 // TODO: unify that implementation in a single reusable place
-void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int max) {
+static void macosx_debug_regions(SelfData *sd, RIO *io, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
 	struct vm_region_submap_info_64 info;
 	mach_vm_size_t size;
@@ -674,7 +682,7 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 			char *print_size_unit;
 			int perm = 0;
 
-			io->cb_printf (num_printed? "   ... ": "Region ");
+			// io->cb_printf (num_printed? "   ... ": "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = size;
@@ -682,7 +690,7 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
-			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
+			R_LOG_DEBUG ("%p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
 					(void*)(size_t)(address),
 					(void*)(size_t)(address + size),
 					print_size,
@@ -706,15 +714,16 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 				perm |= R_PERM_X;
 			}
 
-			self_sections[self_sections_count].from = address;
-			self_sections[self_sections_count].to = address+size;
-			self_sections[self_sections_count].perm = perm;
-			self_sections_count++;
+			sd->self_sections[sd->self_sections_count].from = address;
+			sd->self_sections[sd->self_sections_count].to = address+size;
+			sd->self_sections[sd->self_sections_count].perm = perm;
+			sd->self_sections_count++;
+#if 0
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}
 			io->cb_printf ("\n");
-
+#endif
 			num_printed++;
 			address += size;
 			size = 0;
@@ -723,13 +732,13 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 		}
 
 		if ((max > 0) && (num_printed >= max)) {
-			eprintf ("Max %d num_printed %d\n", max, num_printed);
+			// eprintf ("Max %d num_printed %d\n", max, num_printed);
 			break;
 		}
 	}
 }
 #elif R2__BSD__
-bool bsd_proc_vmmaps(RIO *io, int pid) {
+static bool bsd_proc_vmmaps(RIO *io, int pid) {
 #if __FreeBSD__
 	size_t size;
 	bool ret = false;
@@ -779,11 +788,11 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 						entry->kve_path);
 			}
 
-			self_sections[self_sections_count].from = entry->kve_start;
-			self_sections[self_sections_count].to = entry->kve_end;
-			self_sections[self_sections_count].name = strdup (entry->kve_path);
-			self_sections[self_sections_count].perm = perm;
-			self_sections_count++;
+			sd->self_sections[sd->self_sections_count].from = entry->kve_start;
+			sd->self_sections[sd->self_sections_count].to = entry->kve_end;
+			sd->self_sections[sd->self_sections_count].name = strdup (entry->kve_path);
+			sd->self_sections[sd->self_sections_count].perm = perm;
+			sd->self_sections_count++;
 			p_start += sz;
 		}
 
@@ -824,17 +833,16 @@ exit:
 		if (entry.kve_protection & KVE_PROT_EXEC) {
 			perm |= R_PERM_X;
 		}
-
-		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
+		R_LOG_DEBUG ("%p - %p %s [off. %" PFMT64u "]",
 				(void *)entry.kve_start,
 				(void *)entry.kve_end,
 				r_str_rwx_i (perm),
 				(ut64)entry.kve_offset);
 
-		self_sections[self_sections_count].from = entry.kve_start;
-		self_sections[self_sections_count].to = entry.kve_end;
-		self_sections[self_sections_count].perm = perm;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = entry.kve_start;
+		sd->self_sections[sd->self_sections_count].to = entry.kve_end;
+		sd->self_sections[sd->self_sections_count].perm = perm;
+		sd->self_sections_count++;
 		entry.kve_start = entry.kve_start + 1;
 	}
 
@@ -881,18 +889,18 @@ exit:
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p %s (%s)\n",
+				R_LOG_DEBUG ("%p - %p %s (%s)",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
 				 	r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
-			self_sections[self_sections_count].from = entry->kve_start;
-			self_sections[self_sections_count].to = entry->kve_end;
-			self_sections[self_sections_count].name = strdup (entry->kve_path);
-			self_sections[self_sections_count].perm = perm;
-			self_sections_count++;
+			sd->self_sections[sd->self_sections_count].from = entry->kve_start;
+			sd->self_sections[sd->self_sections_count].to = entry->kve_end;
+			sd->self_sections[sd->self_sections_count].name = strdup (entry->kve_path);
+			sd->self_sections[sd->self_sections_count].perm = perm;
+			sd->self_sections_count++;
 			p_start += sz;
 		}
 
@@ -938,16 +946,16 @@ exit:
 		if (entry.protection & VM_PROT_EXECUTE) {
 			perm |= R_PERM_X;
 		}
-		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
+		R_LOG_DEBUG ("%p - %p %s [off. %" PFMT64u "]",
 				(void *)entry.ba.start,
 				(void *)entry.ba.end,
 				r_str_rwx_i (perm),
 				(ut64)entry.ba.offset);
 
-		self_sections[self_sections_count].from = entry.ba.start;
-		self_sections[self_sections_count].to = entry.ba.end;
-		self_sections[self_sections_count].perm = perm;
-		self_sections_count++;
+		sd->self_sections[sd->self_sections_count].from = entry.ba.start;
+		sd->self_sections[sd->self_sections_count].to = entry.ba.end;
+		sd->self_sections[sd->self_sections_count].perm = perm;
+		sd->self_sections_count++;
 		ep = kvm_vm_map_entry_next (k, ep, &entry);
 	}
 
