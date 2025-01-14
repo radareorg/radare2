@@ -103,6 +103,7 @@ typedef struct r_core_plugin_t {
 	RCmdCb call; // returns true if command was handled, false otherwise.
 	RCmdCb init; // XXX needs a context to store user data and return bool instead of int! RCmdCb is wrong
 	RCmdCb fini;
+	void *data; // required for rlang-python
 } RCorePlugin;
 
 typedef struct r_core_rtr_host_t {
