@@ -73,6 +73,7 @@ static void destroy(RBinFile *bf) {
 		}
 		R_FREE (eo->imports_by_ord);
 	}
+	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
 	Elf_(free) (eo);
 }
 
