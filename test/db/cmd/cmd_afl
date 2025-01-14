@@ -3,6 +3,8 @@ FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 aa
 afn aaa @ 0x100001245
+?e afl
+afl~:0..10
 ?e afls
 afls;afl~:0..10
 ?e aflsn
@@ -11,19 +13,32 @@ aflsn;afl~:0..10
 aflsb;afl~:0..10
 ?e aflss
 aflss;afl~:0..10
+?e aflsS
+aflsS;afl~:0..10
 EOF
 EXPECT=<<EOF
+afl
+0x10000450a    1      6 sym.imp.__assert_rtn
+0x100004510    1      6 sym.imp.__error
+0x100004516    1      6 sym.imp.__maskrune
+0x10000451c    1      6 sym.imp.__snprintf_chk
+0x100004522    1      6 sym.imp.__stack_chk_fail
+0x100004528    1      6 sym.imp.__tolower
+0x10000452e    1      6 sym.imp.acl_free
+0x100004534    1      6 sym.imp.acl_get_entry
+0x10000453a    1      6 sym.imp.acl_get_flag_np
+0x100004540    1      6 sym.imp.acl_get_flagset_np
 afls
-0x1000010f8    1     18 sym.func.1000010f8
-0x10000110a    1     21 sym.func.10000110a
-0x10000111f    7     69 sym.func.10000111f
-0x100001164    7     78 sym.func.100001164
-0x1000011b2    7     69 sym.func.1000011b2
-0x1000011f7    7     78 sym.func.1000011f7
-0x100001245    7     69 aaa
-0x10000128a    7     78 sym.func.10000128a
-0x1000012d8    4     50 sym.func.1000012d8
-0x10000130a    4     59 sym.func.10000130a
+0x10000450a    1      6 sym.imp.__assert_rtn
+0x100004510    1      6 sym.imp.__error
+0x100004516    1      6 sym.imp.__maskrune
+0x10000451c    1      6 sym.imp.__snprintf_chk
+0x100004522    1      6 sym.imp.__stack_chk_fail
+0x100004528    1      6 sym.imp.__tolower
+0x10000452e    1      6 sym.imp.acl_free
+0x100004534    1      6 sym.imp.acl_get_entry
+0x10000453a    1      6 sym.imp.acl_get_flag_np
+0x100004540    1      6 sym.imp.acl_get_flagset_np
 aflsn
 0x100001245    7     69 aaa
 0x1000013d8  120   2269 main
@@ -57,6 +72,17 @@ aflss
 0x100003b51   20    385 sym.func.100003b51
 0x100003f9e   18    371 sym.func.100003f9e
 0x100004111   18    331 sym.func.100004111
+aflsS
+0x10000450a    1      6 sym.imp.__assert_rtn
+0x100004510    1      6 sym.imp.__error
+0x100004516    1      6 sym.imp.__maskrune
+0x10000451c    1      6 sym.imp.__snprintf_chk
+0x100004522    1      6 sym.imp.__stack_chk_fail
+0x100004528    1      6 sym.imp.__tolower
+0x10000452e    1      6 sym.imp.acl_free
+0x100004534    1      6 sym.imp.acl_get_entry
+0x10000453a    1      6 sym.imp.acl_get_flag_np
+0x100004540    1      6 sym.imp.acl_get_flagset_np
 EOF
 RUN
 

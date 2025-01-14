@@ -211,11 +211,27 @@ static RCoreHelpMessage help_msg_aa = {
 
 static RCoreHelpMessage help_msg_afls = {
 	"Usage:", "afls", "[afls] # sort function list",
-	"afls", "", "same as aflsa",
+	// "afls", "", "TODO: show last order used",
 	"aflsa", "", "sort by address (same as afls)",
-	"aflss", "", "sort by size",
-	"aflsn", "", "sort by name",
+	"aflsA", "", "sort by address (inverse of alfsa)",
 	"aflsb", "", "sort by number of basic blocks",
+	"aflsB", "", "sort by number of basic blocks (inverse of aflsb)",
+	"aflss", "", "sort by size",
+	"aflsS", "", "sort by size (inverse of aflss)",
+	"aflsn", "", "sort by name",
+	"aflsN", "", "sort by name (inverse of aflsn)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_afbs = {
+	"Usage:", "afbs", "[afbs] # sort basic blocks of current function",
+	// "afbs", "", "same as afbsa",
+	"afbsa", "", "sort by address (same as afbs)",
+	"afbsA", "", "sort by address (same as afbs) - inverse",
+	"afbss", "", "sort by size",
+	"afbsS", "", "sort by size - inverse",
+	// "afbsn", "", "sort by name",
+	// "afbsb", "", "sort by number of basic blocks",
 	NULL
 };
 
@@ -566,8 +582,6 @@ static RCoreHelpMessage help_msg_af = {
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afb", "[?] [addr]", "List basic blocks of given function",
-	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
-	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afd", "[addr]", "show function + delta for given offset",
@@ -606,11 +620,13 @@ static RCoreHelpMessage help_msg_afb = {
 	"afb.", " [addr]", "show info of current basic block",
 	"afb,", "", "show basic blocks of current function in a table",
 	"afb=", "", "display ascii-art bars for basic block regions",
+	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afba", "[!]", "list basic blocks of current offset in analysis order (EXPERIMENTAL, see afla)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
+	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute", // why not lowercase?
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "[?]", "show addresses of instructions which leave the function",
@@ -1159,10 +1175,18 @@ static int cmpname(const void *_a, const void *_b) {
 	return (int)strcmp (a->name, b->name);
 }
 
+static int cmpname2(const void *_a, const void *_b) {
+	return -cmpname (_a, _b);
+}
+
 static int cmpsize(const void *a, const void *b) {
 	ut64 sa = (int) r_anal_function_linear_size ((RAnalFunction *) a);
 	ut64 sb = (int) r_anal_function_linear_size ((RAnalFunction *) b);
 	return (sa > sb)? -1: (sa < sb)? 1 : 0;
+}
+
+static int cmpsize2(const void *a, const void *b) {
+	return -cmpsize (a, b);
 }
 
 static int cmpbbs(const void *_a, const void *_b) {
@@ -1172,9 +1196,36 @@ static int cmpbbs(const void *_a, const void *_b) {
 	return (la > lb)? -1: (la < lb)? 1 : 0;
 }
 
+static int cmpbbs2(const void *_a, const void *_b) {
+	return -cmpbbs (_a, _b);
+}
+
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+static int cmpaddr2(const void *_a, const void *_b) {
+	return -cmpaddr (_a, _b);
+}
+
+static int cmpsize_bb(const void *a, const void *b) {
+	ut64 sa = (int) ((RAnalBlock *) a)->size;
+	ut64 sb = (int) ((RAnalBlock *) b)->size;
+	return (sa > sb)? -1: (sa < sb)? 1 : 0;
+}
+
+static int cmpsize_bb2(const void *a, const void *b) {
+	return -cmpsize_bb (a, b);
+}
+
+static int cmpaddr_bb(const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+static int cmpaddr_bb2(const void *_a, const void *_b) {
+	return -cmpaddr_bb (_a, _b);
 }
 
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {
@@ -4234,7 +4285,15 @@ static void cmd_afba(RCore *core, const char *input) {
 }
 #endif
 
-static void afbo(RCore *core) {
+static void cmd_afbo(RCore *core, const char *input) {
+	if (input[3] == '?') {
+		r_core_cmd_help_match (core, help_msg_afb, "afbo");
+		return;
+	}
+	if (input[3]) {
+		r_core_return_invalid_command (core, "afbo", input[3]);
+		return;
+	}
 	RAnalFunction *f = r_anal_get_function_at (core->anal, core->offset);
 	if (f) {
 		RListIter *iter;
@@ -4751,6 +4810,102 @@ static char *print_fcn_arg(RCore *core, const char *type, const char *name, cons
 		}
 	}
 	return argstr;
+}
+
+static void cmd_afbs(RCore *core, const char *input) {
+	switch (input[3]) {
+	case '?':
+		r_core_cmd_help (core, help_msg_afbs);
+		break;
+	case 'a':
+	case 's':
+		break;
+	default:
+		r_core_return_invalid_command (core, "afbs", input[3]);
+		break;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!fcn) {
+		R_LOG_ERROR ("No function here");
+		return;
+	}
+	switch (input[3]) {
+	case '?':
+		break;
+	case 0: // default for "afbs"
+	case 'a': // "afba"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpaddr_bb);
+		break;
+	case 's': // "afbss"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpsize_bb);
+		break;
+	case 'A': // "afbsA"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpaddr_bb2);
+		break;
+	case 'S': // "afbsS"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpsize_bb2);
+		break;
+#if 0
+	case 'b': // "afbb"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpbbs_bb);
+		break;
+	case 'n': // "afbn"
+		fcn->bbs->sorted = false;
+		r_list_sort (fcn->bbs, cmpname_bb);
+		break;
+#endif
+	}
+}
+
+static void cmd_afls(RCore *core, const char *input) {
+	switch (input[3]) {
+	case 0: // requires subcommand, would be nice to show how was sorted last time and if its sorted or not
+		r_core_return_invalid_command (core, "afls", input[3]);
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_afls);
+		break;
+	case 'a': // "aflsa"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpaddr);
+		break;
+	case 'A': // "aflsA"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpaddr2);
+		break;
+	case 'b': // "aflsb"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpbbs);
+		break;
+	case 'B': // "aflsB"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpbbs2);
+		break;
+	case 's': // "aflss"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpsize);
+		break;
+	case 'S': // "aflsS"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpsize2);
+		break;
+	case 'n': // "aflsn"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpname);
+		break;
+	case 'N': // "aflsN"
+		core->anal->fcns->sorted = false;
+		r_list_sort (core->anal->fcns, cmpname2);
+		break;
+	default:
+		r_core_return_invalid_command (core, "afbl", input[3]);
+		break;
+	}
 }
 
 static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
@@ -5507,29 +5662,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		case 's': // "afls"
-			switch (input[3]) {
-			default:
-			case '?':
-				r_core_cmd_help (core, help_msg_afls);
-				return true;
-			case 0: // default for "afls"
-			case 'a': // "aflsa"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpaddr);
-				break;
-			case 'b': // "aflsb"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpbbs);
-				break;
-			case 's': // "aflss"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpsize);
-				break;
-			case 'n': // "aflsn"
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpname);
-				break;
-			}
+			cmd_afls (core, input);
 			break;
 		case 'a': // "afla" listing in analysis order
 			cmd_afla (core, input + 3);
@@ -5926,11 +6059,14 @@ static int cmd_af(RCore *core, const char *input) {
 		case '-': // "afb-"
 			anal_fcn_del_bb (core, r_str_trim_head_ro (input + 3));
 			break;
-		case 'a':
+		case 's': // "afbs"
+			cmd_afbs (core, input);
+			break;
+		case 'a': // "afba"
 			cmd_afba (core, input + 2);
 			break;
 		case 'o': // "afbo"
-			afbo (core);
+			cmd_afbo (core, input);
 			break;
 		case 'e': // "afbe"
 			anal_bb_edge (core, r_str_trim_head_ro (input + 3));
@@ -5961,6 +6097,9 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'j': // "afbj"
 		case ',': // "afb,"
 			anal_fcn_list_bb (core, input + 2, false);
+			break;
+		case 'l':
+			anal_fcn_list_bb (core, "", false);
 			break;
 		case 'i': // "afbi"
 			anal_fcn_list_bb (core, input + 2, true);
