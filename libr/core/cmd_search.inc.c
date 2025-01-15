@@ -3338,7 +3338,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					goto done;
 				}
 			}
-			if (param.progressbar) {
+			if (param->progressbar) {
 				print_search_progress (at, to1, search->nhits, param);
 				r_cons_clear_line (1);
 			}
