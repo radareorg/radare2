@@ -161,6 +161,7 @@ typedef struct r_disasm_state_t {
 	bool show_bytes_align;
 	bool show_bytes_ascii;
 	bool show_bytes_asbits;
+	bool show_bytes_ascmt;
 	bool show_bytes_right;
 	bool show_bytes_opcolor;
 	bool show_reloff;
@@ -798,6 +799,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_bytes_asbits = r_config_get_i (core->config, "asm.bytes.asbits");
 	ds->show_bytes_align = r_config_get_i (core->config, "asm.bytes.align");
 	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
+	ds->show_bytes_ascmt = r_config_get_i (core->config, "asm.bytes.ascmt");
 	ds->show_bytes_opcolor = r_config_get_i (core->config, "asm.bytes.opcolor");
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
@@ -3872,6 +3874,8 @@ static void ds_print_bytes(RDisasmState *ds) {
 
 	if (!ds->show_color_bytes) {
 		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
+	} else if (ds->show_bytes_ascmt) {
+		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
 	}
 	strcpy (extra, " ");
 	if (ds->show_flag_in_bytes) {
@@ -6838,10 +6842,20 @@ toro:
 				ds_print_comments_right (ds);
 			}
 		} else {
-			/* show cursor */
+			// show cursor
 			ds_print_show_cursor (ds);
 			if (!ds->show_bytes_right) {
+				if (ds->show_bytes_ascmt) {
+					if (ds->show_color) {
+						r_cons_printf ("%s;;", COLOR (ds, color_comment));
+					} else {
+						r_cons_print (";;");
+					}
+				}
 				ds_print_bytes (ds);
+				if (ds->show_bytes_ascmt && ds->show_color) {
+					r_cons_print (Color_RESET);
+				}
 			}
 			ds_print_lines_right (ds);
 			ds_print_optype (ds);
@@ -6855,7 +6869,7 @@ toro:
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
 			if (core->rasm->config->syntax != R_ARCH_SYNTAX_INTEL) {
-				RAnalOp ao; /* disassemble for the vm .. */
+				RAnalOp ao; // disassemble for the vm ..
 				int os = core->rasm->config->syntax;
 				// r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
 				r_arch_config_set_syntax (core->anal->config, R_ARCH_SYNTAX_INTEL);
@@ -6864,7 +6878,8 @@ toro:
 				r_arch_config_set_syntax (core->anal->config, os);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
-				ds_comment (ds, true, "");
+				const char *pfx = ds->show_bytes_ascmt? ";;": "";
+				ds_comment (ds, true, pfx);
 				ds_print_bytes (ds);
 			}
 			if (ds->asm_hint_emu) {

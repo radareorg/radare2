@@ -3742,6 +3742,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.bytes.align", "false", "align bytes at right (left padding space)");
 	SETBPREF ("asm.bytes.asbits", "false", "show instruction bits instead of bytes");
 	SETBPREF ("asm.bytes.right", "false", "display the bytes at the right of the disassembly");
+	SETBPREF ("asm.bytes.ascmt", "false", "display bytes as comments (see asm.bytes.right)");
 	SETBPREF ("asm.bytes.ascii", "false", "display the bytes in ascii characters instead of hex");
 	SETBPREF ("asm.bytes.opcolor", "false", "colorize bytes depending on opcode size + variant information");
 	SETI ("asm.types", 1, "display the fcn types in calls (0=no,1=quiet,2=verbose)");
