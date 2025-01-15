@@ -246,6 +246,7 @@ struct search_parameters {
 	const char *searchprefix;
 	int c; // used for progress
 	int count;
+	bool progressbar;
 };
 
 struct endlist_pair {
@@ -254,6 +255,9 @@ struct endlist_pair {
 };
 
 static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+	if (!param->progressbar) {
+		return;
+	}
 	if ((++param->c % 64) || (param->outmode == R_MODE_JSON)) {
 		return;
 	}
@@ -4316,6 +4320,10 @@ static int cmd_search(void *data, const char *input) {
 
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries_prot (core, -1, param.mode, "search");
+	param.progressbar = r_config_get_b (core->config, "scr.progressbar");
+	if (param.progressbar) {
+		param.progressbar = r_config_get (core->config, "scr.interactive");
+	}
 
 	/*
 	   this introduces a bug until we implement backwards search
