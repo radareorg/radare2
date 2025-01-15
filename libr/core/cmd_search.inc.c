@@ -3338,8 +3338,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					goto done;
 				}
 			}
-			print_search_progress (at, to1, search->nhits, param);
-			r_cons_clear_line (1);
+			if (param.progressbar) {
+				print_search_progress (at, to1, search->nhits, param);
+				r_cons_clear_line (1);
+			}
 			r_core_return_value (core, search->nhits);
 			if (search_verbose && param->outmode != R_MODE_JSON) {
 				R_LOG_INFO ("hits: %" PFMT64d, search->nhits - saved_nhits);
@@ -4322,7 +4324,7 @@ static int cmd_search(void *data, const char *input) {
 	param.boundaries = r_core_get_boundaries_prot (core, -1, param.mode, "search");
 	param.progressbar = r_config_get_b (core->config, "scr.progressbar");
 	if (param.progressbar) {
-		param.progressbar = r_config_get (core->config, "scr.interactive");
+		param.progressbar = r_config_get_b (core->config, "scr.interactive");
 	}
 
 	/*
