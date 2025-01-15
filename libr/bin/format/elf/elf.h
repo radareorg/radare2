@@ -159,6 +159,7 @@ struct Elf_(obj_t) {
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVector g_relocs;  // RBinElfReloc
+	RList *relocs_list;
 	bool sections_loaded;
 	bool sections_cached;
 #if R2_590

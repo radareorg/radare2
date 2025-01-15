@@ -39,6 +39,7 @@ typedef struct r_bin_bflt_obj {
 	RBinBfltHeader *hdr;
 	RBinBfltReloc *reloc_table;
 	RBinBfltReloc *got_table;
+	RList *relocs_list;
 	RBuffer *b;
 	ut8 endian;
 	size_t size;

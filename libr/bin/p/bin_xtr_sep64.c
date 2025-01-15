@@ -334,8 +334,10 @@ beach:
 	r_buf_free (slice_buf);
 	free (name);
 	free (slice);
-	free (meta->type);
-	free (meta);
+	if (meta) {
+		free (meta->type);
+		free (meta);
+	}
 	mach0_info_free (info);
 	return NULL;
 }

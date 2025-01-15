@@ -119,7 +119,11 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 
 static RList *relocs(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->bo->bin_obj;
+	if (obj->relocs_list) {
+		return r_list_clone (obj->relocs_list, NULL);
+	}
 	RList *list = r_list_newf ((RListFree) free);
+	obj->relocs_list = list;
 	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);

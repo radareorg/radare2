@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 #include "../i/private.h"
@@ -262,17 +262,14 @@ static void _r_bin_reloc_free(RBinReloc *reloc) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinObject *obj = bf ? bf->bo : NULL;
-	struct MACH0_(obj_t) *bin = (bf && bf->bo)? bf->bo->bin_obj: NULL;
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)_r_bin_reloc_free))) {
-		return NULL;
-	}
-	ret->free = free;
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
 	if (!relocs) {
-		return ret;
+		return NULL;
 	}
+	RList *ret = r_list_newf ((RListFree)_r_bin_reloc_free);
+	// ret->free = free;
 
 	RSkipListNode *it;
 	struct reloc_t *reloc;
@@ -289,13 +286,13 @@ static RList *relocs(RBinFile *bf) {
 		ptr->additive = 0;
 		if (reloc->name[0]) {
 			RBinImport *imp;
-			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, bin->imports_by_name))) {
+			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name))) {
 				free (ptr);
 				break;
 			}
 			ptr->import = imp;
-		} else if (reloc->ord >= 0 && bin->imports_by_ord && reloc->ord < bin->imports_by_ord_size) {
-			ptr->import = bin->imports_by_ord[reloc->ord];
+		} else if (reloc->ord >= 0 && mo->imports_by_ord && reloc->ord < mo->imports_by_ord_size) {
+			ptr->import = mo->imports_by_ord[reloc->ord];
 		} else {
 			ptr->import = NULL;
 		}

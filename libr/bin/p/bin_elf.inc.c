@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, luctielen */
+/* radare - LGPL - Copyright 2009-2025 - nibble, pancake, luctielen */
 
 #define R_LOG_ORIGIN "bin.elf"
 
@@ -61,20 +61,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static void destroy(RBinFile *bf) {
-	ELFOBJ* eo = bf->bo->bin_obj;
-	if (eo && eo->imports_by_ord) {
-		int i;
-		for (i = 0; i < eo->imports_by_ord_size; i++) {
-			RBinImport *imp = eo->imports_by_ord[i];
-			if (imp) {
-				r_bin_import_free (eo->imports_by_ord[i]);
-				eo->imports_by_ord[i] = NULL;
-			}
-		}
-		R_FREE (eo->imports_by_ord);
-	}
-	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
-	Elf_(free) (eo);
+	Elf_(free) ((ELFOBJ*)bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -721,9 +708,12 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 
 static RList* relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	RList *ret = NULL;
 	ELFOBJ *eo = bf->bo->bin_obj;
-	if (!(ret = r_list_newf (free))) {
+	if (eo->relocs_list) {
+		return eo->relocs_list;
+	}
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -771,7 +761,9 @@ static RList* relocs(RBinFile *bf) {
 		}
 	}
 	ht_up_free (reloc_ht);
-	return ret;
+	eo->relocs_list = ret;
+	ret->free = NULL; // already freed in the hashtable
+	return r_list_clone (eo->relocs_list, NULL);
 }
 
 static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {

@@ -193,26 +193,19 @@ static void header(RBinFile *bf) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinReloc *rel = NULL;
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	const struct r_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
-	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
-	}
-	if (!(ret = r_list_newf (free))) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(relocs = r_bin_mz_get_relocs (bf->bo->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !relocs[i].last; i++) {
-		if (!(rel = R_NEW0 (RBinReloc))) {
-			free ((void *)relocs);
-			r_list_free (ret);
-			return NULL;
-		}
+		RBinReloc *rel = R_NEW0 (RBinReloc);
 		rel->type = R_BIN_RELOC_16;
 		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;

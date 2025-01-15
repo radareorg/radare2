@@ -499,19 +499,23 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 	return r_read_le16 (data);
 }
 
-#define BYTES_PER_IMP_RELOC		8
+#define BYTES_PER_IMP_RELOC 8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (!bin->scn_hdrs) {
 		return NULL;
 	}
-
+	if (bin->relocs_list) {
+		return r_list_clone (bin->relocs_list, NULL);
+	}
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
-	ut32 f_nscns = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_hdr.f_nscns: bin->hdr.f_nscns;
+	ut32 f_nscns = (bin->type == COFF_TYPE_BIGOBJ)
+		? bin->bigobj_hdr.f_nscns: bin->hdr.f_nscns;
 	RList *list_rel = r_list_newf (free);
+	bin->relocs_list = list_rel;
 	if (!list_rel) {
 		return NULL;
 	}
@@ -671,7 +675,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 		free (rel);
 	}
 	ht_uu_free (imp_vaddr_ht);
-	return list_rel;
+	return r_list_clone (bin->relocs_list, NULL);
 }
 
 static RList *relocs(RBinFile *bf) {

@@ -693,9 +693,12 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 				memcpy (check_uuid, entry.uuid, 16);
 				break;
 			}
+#if 1
+			// its unreachable by coverity but reachable by gcc, so it cant be commented :D
 			case SUBCACHE_FORMAT_UNDEFINED:
 				suffix = NULL;
 				break;
+#endif
 			}
 
 			char * subcache_filename = r_str_newf ("%s%s", dsc->filename, suffix);
