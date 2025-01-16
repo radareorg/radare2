@@ -787,7 +787,7 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 			*member_format = "::::";
 			return -2;
 		default:
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			break;
 		}
 		break;
@@ -815,7 +815,7 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 		break;
 	default:
 		// unknown mode ??
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return -1;
 	}
 	return 0;
@@ -849,13 +849,13 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		if (type_info->get_index) {
 			type_info->get_index (type_info, (void **)&under_type);
 		} else {
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 		}
 	} else if (type_info->leaf_type == eLF_METHOD ||
 		type_info->leaf_type == eLF_ONEMETHOD) {
 		return 0; // skip method member
 	} else {
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return -1;
 	}
 	type_info = &under_type->type_data;
@@ -927,12 +927,12 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 	}
 
 	default:
-		r_warn_if_reached (); // Unhandled type format
+		R_WARN_IF_REACHED (); // Unhandled type format
 		goto error;
 	}
 
 	if (!member_format) {
-		r_warn_if_reached (); // Unhandled type format
+		R_WARN_IF_REACHED (); // Unhandled type format
 		goto error;
 	}
 	r_strbuf_append (format, member_format);
@@ -1118,7 +1118,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
 			break;
 		default:
 			// Unimplemented printing of printable type
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			break;
 		}
 	}
@@ -1236,7 +1236,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 		}
 		default:
 			// Unimplemented printing of printable type
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			break;
 		}
 	}
@@ -1306,7 +1306,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 				}
 				break;
 			default:
-				r_warn_if_reached ();
+				R_WARN_IF_REACHED ();
 			}
 			r_strbuf_append (&member_names, " ");
 		}

@@ -569,7 +569,7 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 			ctx->next_count++;
 			break;
 		default:
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			break;
 		}
 		if (prefix) {
@@ -1047,7 +1047,7 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 			printb = true;
 			break;
 		default:
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			freelines (al);
 			freelines (bl);
 			return;

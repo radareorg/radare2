@@ -6083,7 +6083,7 @@ static int cmd_af(RCore *core, const char *input) {
 						bb->folded = !bb->folded;
 					}
 				} else {
-					r_warn_if_reached ();
+					R_WARN_IF_REACHED ();
 				}
 			}
 			}

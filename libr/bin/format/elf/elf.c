@@ -4509,7 +4509,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	// Elf_(fix_symbols) may find additional symbols, some of which could be
 	// imported symbols. Let's reserve additional space for them.
 	int ret_ctr = ii->ret_ctr;
-	r_warn_if_fail (ii->nsym >= ret_ctr);
+	R_WARN_IF_FAIL (ii->nsym >= ret_ctr);
 
 	int nsym = _find_max_symbol_ordinal (ii->memory.symbols_vec);
 	if (nsym < 0) {

@@ -116,7 +116,7 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 		b->methods = &buffer_ref_methods;
 		break;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		break;
 	}
 	if (!buf_init (b, user)) {

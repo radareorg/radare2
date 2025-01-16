@@ -83,14 +83,14 @@ static bool buf_sparse_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_sparse_fini(RBuffer *b) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	r_list_free (b->rb_sparse->sparse);
 	R_FREE (b->rb_sparse);
 	return true;
 }
 
 static bool buf_sparse_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	RListIter *iter, *tmp;
 	RBufferSparseItem *si;
 
@@ -124,14 +124,14 @@ static bool buf_sparse_resize(RBuffer *b, ut64 newsize) {
 }
 
 static ut64 buf_sparse_size(RBuffer *b) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	ut64 max;
 
 	return sparse_limits (b->rb_sparse->sparse, &max)? max: 0;
 }
 
 static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	RBufferSparseItem *si;
 	RListIter *iter;
 	ut64 max = 0;
@@ -161,14 +161,14 @@ static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
 }
 
 static st64 buf_sparse_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	st64 r = sparse_write (b->rb_sparse->sparse, b->rb_sparse->offset, buf, len);
 	b->rb_sparse->offset += r;
 	return r;
 }
 
 static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	ut64 max;
 	if (addr < 0 && (-addr) > (st64)b->rb_sparse->offset) {
 		return -1;
@@ -188,14 +188,14 @@ static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 		b->rb_sparse->offset = max + addr;
 		break;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return -1;
 	}
 	return b->rb_sparse->offset;
 }
 
 static RList *buf_sparse_nonempty_list(RBuffer *b) {
-	r_warn_if_fail (b->rb_sparse);
+	R_WARN_IF_FAIL (b->rb_sparse);
 	return r_list_clone (b->rb_sparse->sparse, NULL);
 }
 

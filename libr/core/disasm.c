@@ -5761,7 +5761,7 @@ static void ds_comment_call(RDisasmState *ds) {
 	}
 	r_list_free (list);
 	// function name not resolved
-	r_warn_if_fail (!key);
+	R_WARN_IF_FAIL (!key);
 	free (key);
 	if (fcn) {
 		// @TODO: fcn->nargs should be updated somewhere and used here instead

@@ -648,7 +648,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 				}
 			} else {
 				// there should always be a flag for a function
-				r_warn_if_reached ();
+				R_WARN_IF_REACHED ();
 			}
 		}
 	}
@@ -962,7 +962,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	ut64 *next = NULL;
 	int fcnlen = 0;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
-	r_warn_if_fail (fcn);
+	R_WARN_IF_FAIL (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
@@ -975,7 +975,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		cc = "reg";
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
-	r_warn_if_fail (fcn->cc);
+	R_WARN_IF_FAIL (fcn->cc);
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {

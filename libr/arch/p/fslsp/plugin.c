@@ -185,7 +185,7 @@ static bool fslsp_ancmd(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		if (disasm) {
 			op->mnemonic = r_strbuf_drain (buf_asm);
 		} else {
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			r_strbuf_free (buf_asm);
 		}
 	}
@@ -235,7 +235,7 @@ static bool fslsp_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		if (disasm) {
 			op->mnemonic = r_strbuf_drain (buf_asm);
 		} else {
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			r_strbuf_free (buf_asm);
 		}
 	}

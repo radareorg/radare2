@@ -158,7 +158,7 @@ static const char *import_typename(ut32 kind) {
 	case R_BIN_WASM_EXTERNALKIND_Global:
 		return R_BIN_BIND_GLOBAL_STR;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return NULL;
 	}
 }

@@ -26,14 +26,14 @@ static bool buf_mmap_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_mmap_fini(RBuffer *b) {
-	r_warn_if_fail (b->rb_mmap);
+	R_WARN_IF_FAIL (b->rb_mmap);
 	r_file_mmap_free (b->rb_mmap->mmap);
 	R_FREE (b->rb_mmap);
 	return true;
 }
 
 static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_mmap);
+	R_WARN_IF_FAIL (b->rb_mmap);
 	if (newsize > b->rb_mmap->mmap->len) {
 		ut8 *t = r_mem_mmap_resize (b->rb_mmap->mmap, newsize);
 		if (!t) {
