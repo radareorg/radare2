@@ -1209,7 +1209,6 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
 R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2);
-R_API int r_anal_diff_eval(RAnal *anal);
 
 R_API RAnalCond *r_anal_cond_new(void);
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);

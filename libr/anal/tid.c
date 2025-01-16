@@ -21,12 +21,6 @@ R_API bool r_anal_tid_kill(RAnal *anal, int tid) {
 	return false;
 }
 
-// XXX deprecate R2_600. its unused and does nothing
-R_API int r_anal_tid_usemap(RAnal *anal, int map) {
-	// TODO
-	return 0;
-}
-
 R_API int r_anal_tid_add(RAnal *anal, int map) {
 	R_RETURN_VAL_IF_FAIL (anal, -1);
 	if (map < 1) {

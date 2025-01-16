@@ -704,7 +704,6 @@ static inline int tcc_nerr(TCCState *s1) {
 
 /* public functions currently used by the tcc main function */
 R_API char *strcat2(char *buf, int buf_size, const char *s);
-R_API char *pstrncpy(char *out, const char *in, size_t num);
 R_API char *tcc_basename(const char *name);
 R_API char *tcc_fileextension(const char *name);
 R_API void tcc_error_noabort(const char *fmt, ...);
