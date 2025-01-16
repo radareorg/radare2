@@ -8,7 +8,9 @@ AR?=ar
 CC_AR=${AR} q ${LIBAR}
 CFLAGS+=-MD
 CFLAGS_INCLUDE=-I
-LDFLAGS+=-latomic
+CHECK_ATOMIC := $(shell echo "int main() { __atomic_fetch_add_8(0, 0, 0); return 0; }" | \
+	$(CC) -x c -o /dev/null - $(CFLAGS) $(LDFLAGS) >/dev/null 2>&1 || echo "-latomic")
+LDFLAGS+=$(CHECK_ATOMIC)
 LDFLAGS_LINK=-l
 LDFLAGS_LINKPATH=-L
 CFLAGS_OPT0=-O0
