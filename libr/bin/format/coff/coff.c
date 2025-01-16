@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2024 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2025 pancake, inisider */
 
 #include <r_util.h>
 #include "coff.h"

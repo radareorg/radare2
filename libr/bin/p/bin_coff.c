@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2025 - Fedor Sakharov */
 
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
@@ -501,72 +501,58 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 
 #define BYTES_PER_IMP_RELOC 8
 
-static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	if (!bin->scn_hdrs) {
+static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut64 imp_map) {
+	R_RETURN_VAL_IF_FAIL (rbin && co, NULL);
+	if (!co->scn_hdrs) {
 		return NULL;
 	}
-	if (bin->relocs_list) {
-		return r_list_clone (bin->relocs_list, NULL);
-	}
-	RBinReloc *reloc;
-	struct coff_reloc *rel;
 	int j, i = 0;
-	ut32 f_nscns = (bin->type == COFF_TYPE_BIGOBJ)
-		? bin->bigobj_hdr.f_nscns: bin->hdr.f_nscns;
-	RList *list_rel = r_list_newf (free);
-	bin->relocs_list = list_rel;
-	if (!list_rel) {
-		return NULL;
-	}
+	ut32 f_nscns = (co->type == COFF_TYPE_BIGOBJ)
+		? co->bigobj_hdr.f_nscns: co->hdr.f_nscns;
 	const bool patch_imports = patch && (imp_map != UT64_MAX);
 	HtUU *imp_vaddr_ht = patch_imports? ht_uu_new0 (): NULL;
 	if (patch_imports && !imp_vaddr_ht) {
-		r_list_free (list_rel);
 		return NULL;
 	}
+	RList *list_rel = r_list_newf (free); // r_bin_reloc_free
 	for (i = 0; i < f_nscns; i++) {
-		if (!bin->scn_hdrs[i].s_nreloc) {
+		if (!co->scn_hdrs[i].s_nreloc) {
 			continue;
 		}
-		int len = 0, size = bin->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
+		int len = 0, size = co->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
 		if (size < 0) {
 			break;
 		}
-		rel = calloc (1, size + sizeof (struct coff_reloc));
+		struct coff_reloc *rel = calloc (1, size + sizeof (struct coff_reloc));
 		if (!rel) {
 			break;
 		}
-		if (bin->scn_hdrs[i].s_relptr > bin->size ||
-			bin->scn_hdrs[i].s_relptr + size > bin->size) {
+		if (co->scn_hdrs[i].s_relptr > co->size \
+			|| co->scn_hdrs[i].s_relptr + size > co->size) {
 			free (rel);
 			break;
 		}
-		len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);
+		len = r_buf_read_at (co->b, co->scn_hdrs[i].s_relptr, (ut8*)rel, size);
 		if (len != size) {
 			free (rel);
 			break;
 		}
-		for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
-			RBinSymbol *symbol = (RBinSymbol *)ht_up_find (bin->sym_ht, (ut64)rel[j].r_symndx, NULL);
+		for (j = 0; j < co->scn_hdrs[i].s_nreloc; j++) {
+			RBinSymbol *symbol = (RBinSymbol *)ht_up_find (co->sym_ht, (ut64)rel[j].r_symndx, NULL);
 			if (!symbol) {
 				continue;
 			}
-			reloc = R_NEW0 (RBinReloc);
-			if (!reloc) {
-				continue;
-			}
-
+			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			reloc->symbol = symbol;
-			reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
-			if (bin->scn_va) {
-				reloc->vaddr = bin->scn_va[i] + rel[j].r_vaddr;
+			reloc->paddr = co->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
+			if (co->scn_va) {
+				reloc->vaddr = co->scn_va[i] + rel[j].r_vaddr;
 			}
 			reloc->type = rel[j].r_type;
 
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
-				reloc->import = (RBinImport *)ht_up_find (bin->imp_ht, (ut64)rel[j].r_symndx, NULL);
+				reloc->import = (RBinImport *)ht_up_find (co->imp_ht, (ut64)rel[j].r_symndx, NULL);
 				if (patch_imports) {
 					bool found;
 					sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
@@ -583,7 +569,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 			if (sym_vaddr) {
 				int plen = 0;
 				ut8 patch_buf[8];
-				ut16 magic = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_hdr.f_magic: bin->hdr.f_magic;
+				ut16 magic = co->type == COFF_TYPE_BIGOBJ? co->bigobj_hdr.f_magic: co->hdr.f_magic;
 				switch (magic) {
 				case COFF_FILE_MACHINE_I386:
 					switch (rel[j].r_type) {
@@ -675,7 +661,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 		free (rel);
 	}
 	ht_uu_free (imp_vaddr_ht);
-	return r_list_clone (bin->relocs_list, NULL);
+	return list_rel;
 }
 
 static RList *relocs(RBinFile *bf) {
