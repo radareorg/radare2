@@ -1336,7 +1336,6 @@ include_syntax:
 				}
 				path = s1->file->filename;
 				r_str_ncpy (buf1, path, tcc_basename (path) - path);
-				// pstrncpy (buf1, path, tcc_basename (path) - path);
 			} else {
 				/* search in all the include paths */
 				if (i < s1->nb_include_paths) {

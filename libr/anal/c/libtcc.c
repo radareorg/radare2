@@ -32,13 +32,6 @@ R_API char *strcat2(char *buf, int buf_size, const char *s) {
 	return buf;
 }
 
-// R2_600 - deprecate
-R_API char *pstrncpy(char *out, const char *in, size_t num) {
-	memcpy (out, in, num);
-	out[num] = '\0';
-	return out;
-}
-
 /* extract the basename of a file */
 R_API char *tcc_basename(const char *name) {
 	char *p = strchr (name, 0);
