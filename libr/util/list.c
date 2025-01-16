@@ -403,12 +403,13 @@ R_API RList *r_list_clone(const RList *list, RListClone clone) {
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 	R_RETURN_VAL_IF_FAIL (list && data && cmp, NULL);
 	RListIter *it;
+	RListIter *item = NULL;
 
 	for (it = list->head; it && it->data && cmp (data, it->data) > 0; it = it->n) {
 		;
 	}
 	if (it) {
-		RListIter *item = R_NEW0 (RListIter);
+		item = R_NEW0 (RListIter);
 		item->n = it;
 		item->p = it->p;
 		item->data = data;
