@@ -136,7 +136,7 @@ static inline char *parse_with_args(int op, char *args) {
 	case OP_PUT:
 		return r_str_newf ("memo[int(%s)] = stack[-1]", args);
 	}
-	r_warn_if_reached ();
+	R_WARN_IF_REACHED ();
 	return NULL;
 }
 

@@ -129,7 +129,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		const int num_wide_bytes = be
 			? r_utf16be_encode ((ut8 *)p, ch)
 			: r_utf16le_encode ((ut8 *)p, ch);
-		r_warn_if_fail (num_wide_bytes != 0);
+		R_WARN_IF_FAIL (num_wide_bytes != 0);
 		p2 += num_utf8_bytes;
 		p += num_wide_bytes;
 	}

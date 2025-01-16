@@ -736,7 +736,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			wlen += assemble_n_str (arg, 1, outbuf, outsz, true);
 			break;
 		default:
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 			wlen = -1;
 		}
 	}

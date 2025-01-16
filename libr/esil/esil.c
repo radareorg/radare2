@@ -179,7 +179,7 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return R_ESIL_VOYEUR_ERR;
 	}
 	REsilVoyeur *voyeur = R_NEW (REsilVoyeur);
@@ -207,7 +207,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return;
 	}
 	const ut32 id = vid & ~VOYEUR_TYPE_MASK;

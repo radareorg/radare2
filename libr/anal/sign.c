@@ -1584,7 +1584,7 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 		}
 		if (sanitized) {
 			R_LOG_INFO ("%s->%s needs to be sanitized", name, field);
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 		}
 	}
 }
@@ -1988,7 +1988,7 @@ R_API const char *r_sign_type_to_name(int type) {
 	case R_SIGN_BBHASH:
 		return "bbhash";
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return "UnknownType";
 	}
 }

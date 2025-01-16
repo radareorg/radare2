@@ -4378,7 +4378,7 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {
-			r_warn_if_reached ();
+			R_WARN_IF_REACHED ();
 		}
 		return true;
 	}

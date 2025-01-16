@@ -1940,12 +1940,12 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 	if (size == 0) { // empty basic blocks allowed?
 		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion", addr);
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return false;
 	}
 	if (size > a->opt.bb_max_size) {
 		R_LOG_WARN ("can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x, (st64)size, addr);
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return false;
 	}
 

@@ -406,7 +406,7 @@ grub_reiserfs_set_key_type (struct grub_reiserfs_key *key,
       = ((key->u.v2.offset_type & grub_cpu_to_le64 (~0ULL >> 4))
          | grub_cpu_to_le64 ((grub_uint64_t) type << 60));
 
-  r_warn_if_fail (grub_reiserfs_get_key_type (key) == grub_type);
+  R_WARN_IF_FAIL (grub_reiserfs_get_key_type (key) == grub_type);
 }
 
 /* -1 if key 1 if lower than key 2.
@@ -622,14 +622,14 @@ grub_reiserfs_get_item (struct grub_reiserfs_data *data,
 #endif
     }
 
-  r_warn_if_fail (grub_errno == GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return GRUB_ERR_NONE;
 
  fail:
-  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
-  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno != GRUB_ERR_NONE);
   return grub_errno;
 }
 
@@ -966,11 +966,11 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
   while (block_number);
 
  found:
-  r_warn_if_fail (grub_errno == GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno == GRUB_ERR_NONE);
   grub_free (block_header);
   return ret;
  fail:
-  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno != GRUB_ERR_NONE);
   grub_free (block_header);
   return 0;
 }
@@ -1058,7 +1058,7 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
   return GRUB_ERR_NONE;
 
  fail:
-  r_warn_if_fail (grub_errno != GRUB_ERR_NONE);
+  R_WARN_IF_FAIL (grub_errno != GRUB_ERR_NONE);
   grub_free (found);
   grub_free (data);
   return grub_errno;

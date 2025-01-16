@@ -88,7 +88,7 @@ static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && file, NULL);
 	ar_many_data data;
 	if ((data.schema = r_io_get_individual_schema (file)) == NULL) {
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return NULL;
 	}
 	data.io = io;

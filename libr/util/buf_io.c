@@ -21,10 +21,10 @@ static bool buf_io_fini(RBuffer *b) {
 static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 	int io_whence;
 
-	r_warn_if_fail (b->rb_io);
+	R_WARN_IF_FAIL (b->rb_io);
 	switch (whence) {
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 	case R_BUF_SET:
 		io_whence = R_IO_SEEK_SET;
 		break;
@@ -39,22 +39,22 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 static ut64 buf_io_get_size(RBuffer *b) {
-	r_warn_if_fail (b->rb_io);
+	R_WARN_IF_FAIL (b->rb_io);
 	return b->rb_io->iob->fd_size (b->rb_io->iob->io, b->rb_io->fd);
 }
 
 static bool buf_io_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_io);
+	R_WARN_IF_FAIL (b->rb_io);
 	return b->rb_io->iob->fd_resize (b->rb_io->iob->io, b->rb_io->fd, newsize);
 }
 
 static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_io);
+	R_WARN_IF_FAIL (b->rb_io);
 	return b->rb_io->iob->fd_read (b->rb_io->iob->io, b->rb_io->fd, buf, len);
 }
 
 static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_io);
+	R_WARN_IF_FAIL (b->rb_io);
 	return b->rb_io->iob->fd_write (b->rb_io->iob->io, b->rb_io->fd, buf, len);
 }
 

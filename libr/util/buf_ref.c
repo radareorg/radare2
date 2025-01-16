@@ -27,21 +27,21 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_ref_fini(RBuffer *b) {
-	r_warn_if_fail (b->rb_ref);
+	R_WARN_IF_FAIL (b->rb_ref);
 	r_buf_free (b->rb_ref->parent);
 	R_FREE (b->rb_ref);
 	return true;
 }
 
 static bool buf_ref_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_ref);
+	R_WARN_IF_FAIL (b->rb_ref);
 	const ut64 parent_sz = r_buf_size (b->rb_ref->parent);
 	b->rb_ref->size = R_MIN (parent_sz - b->rb_ref->base, newsize);
 	return true;
 }
 
 static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_ref);
+	R_WARN_IF_FAIL (b->rb_ref);
 	if (b->rb_ref->size < b->rb_ref->cur) {
 		return -1;
 	}
@@ -55,12 +55,12 @@ static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
 }
 
 static ut64 buf_ref_get_size(RBuffer *b) {
-	r_warn_if_fail (b->rb_ref);
+	R_WARN_IF_FAIL (b->rb_ref);
 	return b->rb_ref->size;
 }
 
 static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
-	r_warn_if_fail (b->rb_ref);
+	R_WARN_IF_FAIL (b->rb_ref);
 	switch (whence) {
 	case R_BUF_CUR:
 		b->rb_ref->cur += addr;
@@ -72,7 +72,7 @@ static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
 		b->rb_ref->cur = b->rb_ref->size + addr;
 		break;
 	default:
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 		return -1;
 	}
 	return b->rb_ref->cur;

@@ -1242,7 +1242,7 @@ R_API RBuffer *r_bin_create(RBin *bin, const char *p,
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files) {
 	if (!strcmp (type, "zip")) {
 		// XXX: implement me
-		r_warn_if_reached ();
+		R_WARN_IF_REACHED ();
 	} else if (!strcmp (type, "fat")) {
 		// XXX: this should be implemented in the fat plugin, not here
 		// XXX should pick the callback from the plugin list

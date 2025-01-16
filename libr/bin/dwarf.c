@@ -2558,7 +2558,7 @@ static RBinDwarfDebugInfo *parse_info_raw(RBin *bin, Sdb *sdb, RBinDwarfDebugAbb
 		if (da->decls->count >= da->capacity) {
 			R_LOG_WARN ("malformed dwarf have not enough buckets for decls");
 		}
-		r_warn_if_fail (da->count <= da->capacity);
+		R_WARN_IF_FAIL (da->count <= da->capacity);
 
 		// find abbrev start for current comp unit
 		// we could also do naive, ((char *)da->decls) + abbrev_offset,

@@ -1206,7 +1206,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	ut64 bound = offset + len - 1;
 
 	if (bound >= r_buf_size (buf)) {
-		r_warn_if_reached (); // section parsing should prevent this
+		R_WARN_IF_REACHED (); // section parsing should prevent this
 		eprintf ("[wasm] End of %s section data is beyond file end\n", sec->name);
 		return NULL;
 	}

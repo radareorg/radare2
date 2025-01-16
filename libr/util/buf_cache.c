@@ -76,7 +76,7 @@ static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence);
 
 static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), false);
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	ut64 addr = b->rb_cache->offset;
 	if ((UT64_MAX - len + 1) < addr) {
 		st64 ret = buf_cache_read (b, buf, UT64_MAX - addr + 1);
@@ -134,7 +134,7 @@ static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 
 static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf && (len > 0), 0);
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	ut64 addr = b->rb_cache->offset;
 
 	if ((UT64_MAX - len + 1) < addr) {
@@ -189,7 +189,7 @@ static bool buf_cache_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_cache_fini(RBuffer *b) {
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	if (b->rb_cache->is_bufowner) {
 		r_buf_free (b->rb_cache->sb);
 	}
@@ -200,7 +200,7 @@ static bool buf_cache_fini(RBuffer *b) {
 }
 
 static bool buf_cache_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	if (newsize > b->rb_cache->length) {
 		r_buf_resize (b, newsize);
 	}
@@ -209,12 +209,12 @@ static bool buf_cache_resize(RBuffer *b, ut64 newsize) {
 }
 
 static ut64 buf_cache_get_size(RBuffer *b) {
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	return b->rb_cache->length;
 }
 
 static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence) {
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	if (addr < 0) {
 		if (addr > -(st64)UT48_MAX) {
 			if (-addr > (st64)b->rb_cache->offset) {
@@ -238,7 +238,7 @@ static st64 buf_cache_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 static ut8 *buf_cache_get_whole_buf(RBuffer *b, ut64 *sz) {
-	r_warn_if_fail (b->rb_cache);
+	R_WARN_IF_FAIL (b->rb_cache);
 	if (sz) {
 		*sz = b->rb_cache->length;
 	}

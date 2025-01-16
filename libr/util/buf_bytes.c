@@ -48,7 +48,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_bytes_fini(RBuffer *b) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (b->rb_bytes->is_bufowner) {
 		free (b->rb_bytes->buf);
 	}
@@ -57,7 +57,7 @@ static bool buf_bytes_fini(RBuffer *b) {
 }
 
 static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (newsize > b->rb_bytes->length) {
 		ut8 *t = realloc (b->rb_bytes->buf, newsize);
 		if (!t) {
@@ -71,7 +71,7 @@ static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
 }
 
 static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (!b->rb_bytes->buf) {
 		return 0;
 	}
@@ -83,7 +83,7 @@ static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
 }
 
 static st64 buf_bytes_write(RBuffer *b, const ut8 *buf, ut64 len) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (b->rb_bytes->offset > b->rb_bytes->length || b->rb_bytes->offset + len >= b->rb_bytes->length) {
 		bool r = r_buf_resize (b, b->rb_bytes->offset + len);
 		if (!r) {
@@ -96,12 +96,12 @@ static st64 buf_bytes_write(RBuffer *b, const ut8 *buf, ut64 len) {
 }
 
 static ut64 buf_bytes_get_size(RBuffer *b) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	return b->rb_bytes->length;
 }
 
 static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (R_UNLIKELY (addr < 0)) {
 		if (addr > -(st64)UT48_MAX) {
 	       		if (-addr > (st64)b->rb_bytes->offset) {
@@ -127,7 +127,7 @@ static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 static ut8 *buf_bytes_get_whole_buf(RBuffer *b, ut64 *sz) {
-	r_warn_if_fail (b->rb_bytes);
+	R_WARN_IF_FAIL (b->rb_bytes);
 	if (sz) {
 		*sz = b->rb_bytes->length;
 	}
