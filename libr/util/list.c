@@ -379,15 +379,12 @@ R_API void r_list_reverse(RList *list) {
 }
 
 R_API RList *r_list_clone(const RList *list, RListClone clone) {
+	R_RETURN_VAL_IF_FAIL (list, NULL);
+
 	RListIter *iter;
 	void *data;
 
-	R_RETURN_VAL_IF_FAIL (list, NULL);
-
 	RList *l = r_list_new ();
-	if (!l) {
-		return NULL;
-	}
 	if (clone) {
 		l->free = list->free;
 		r_list_foreach (list, iter, data) {
@@ -404,18 +401,15 @@ R_API RList *r_list_clone(const RList *list, RListClone clone) {
 }
 
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
-	RListIter *it, *item = NULL;
-
 	R_RETURN_VAL_IF_FAIL (list && data && cmp, NULL);
+	RListIter *it;
+	RListIter *item = NULL;
 
 	for (it = list->head; it && it->data && cmp (data, it->data) > 0; it = it->n) {
 		;
 	}
 	if (it) {
 		item = R_NEW0 (RListIter);
-		if (!item) {
-			return NULL;
-		}
 		item->n = it;
 		item->p = it->p;
 		item->data = data;
@@ -434,10 +428,10 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 }
 
 R_API int r_list_set_n(RList *list, int n, void *p) {
+	R_RETURN_VAL_IF_FAIL (list, false);
 	RListIter *it;
 	int i;
 
-	R_RETURN_VAL_IF_FAIL (list, false);
 	for (it = list->head, i = 0; it ; it = it->n, i++) {
 		if (i == n) {
 			if (list->free) {

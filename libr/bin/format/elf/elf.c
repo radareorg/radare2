@@ -4919,6 +4919,19 @@ void Elf_(free)(ELFOBJ* eo) {
 	if (!eo) {
 		return;
 	}
+	r_list_free (eo->relocs_list);
+	if (eo->imports_by_ord) {
+		int i;
+		for (i = 0; i < eo->imports_by_ord_size; i++) {
+			RBinImport *imp = eo->imports_by_ord[i];
+			if (imp) {
+				r_bin_import_free (eo->imports_by_ord[i]);
+				eo->imports_by_ord[i] = NULL;
+			}
+		}
+		eo->imports_by_ord_size = 0;
+		R_FREE (eo->imports_by_ord);
+	}
 	free (eo->osabi);
 	free (eo->phdr);
 	free (eo->shdr);
@@ -4947,8 +4960,8 @@ void Elf_(free)(ELFOBJ* eo) {
 		eo->phdr_symbols_vec = NULL;
 	}
 	// causes double free in g_symbols_vec.free() 2 lines below
-	// RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-	// RVecRBinElfSymbol_free (eo->phdr_imports_vec);
+	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
+	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
 #if 0
