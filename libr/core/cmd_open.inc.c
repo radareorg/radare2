@@ -125,7 +125,7 @@ static RCoreHelpMessage help_msg_ob = {
 static RCoreHelpMessage help_msg_om = {
 	"Usage: om", "[arg]", "Map opened files",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
-	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
+	"om", " fd va [sz] [pa] [rwx] [name]", "create new io map",
 	"om", "", "list all defined IO maps",
 	"om*", "", "list all maps in r2 commands format",
 	"om-", "mapid", "remove the map with corresponding id",
@@ -134,7 +134,7 @@ static RCoreHelpMessage help_msg_om = {
 	"om.", "", "show map, that is mapped to current offset",
 	"om,", " [query]", "list maps using table api",
 	"om=", "", "list all maps in ascii art",
-	"oma", " [fd]", "create a map covering all VA for given fd",
+	"oma", "[.] ([mapid]) (attr)", "set attribute to the given map id",
 	"omb", "[?]", "list/select memory map banks",
 	"omB", " mapid addr", "relocate map with corresponding id",
 	"omB.", " addr", "relocate current map",
@@ -157,6 +157,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omtb", " mapid", "toggle map backwards tying",
 	"omtf", " mapid", "toggle map forwards tying",
 	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
+	"omv", " [fd]", "create a map covering all VA for given fd",
 	NULL
 };
 
@@ -820,6 +821,83 @@ static void cmd_omd(RCore *core, const char* input) {
 	}
 }
 
+static void cmd_oma(RCore *core, const char *input) {
+	switch (input[2]) {
+	case '?':
+		r_core_cmd_help_match (core, help_msg_om, "oma");
+		r_cons_print ("Type: ");
+		r_cons_println ("heap, stack, mmap, mmio, dma, jit, bss, shared, kernel, guard, null, gpu, tls, buffer, cow, pagetables");
+		r_cons_print ("Flags: ");
+		r_cons_println ("paged, private, persistent, aslr, swap, dep, enclave, compressed, encrypted, large");
+		break;
+	case 0:
+		{
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				char *s = r_io_map_getattr (map);
+				r_cons_println (s);
+				free (s);
+			}
+		}
+		break;
+	case ' ':
+		{
+			const char *arg0 = r_str_trim_head_ro (input + 1);
+			const char *arg1 = strchr (arg0, ' ');
+			if (arg1) {
+				char *s = r_str_ndup (arg0, arg1 - arg0);
+				int mapid = r_num_math (core->num, s);
+				free (s);
+				RIOMap *map = r_io_map_get (core->io, mapid);
+				if (map) {
+					if (!r_io_map_setattr_fromstring (map, arg1)) {
+						R_LOG_ERROR ("Invalid attributes string");
+					}
+				} else {
+					R_LOG_ERROR ("Cannot find map with id %d", mapid);
+				}
+			} else {
+				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				if (map) {
+					char *s = r_io_map_getattr (map);
+					r_cons_println (s);
+					free (s);
+				} else {
+					R_LOG_ERROR ("Cannot find map in the current offset");
+				}
+			}
+		}
+		break;
+	case '.':
+		if (input[3] == ' ') {
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				const char *arg = r_str_trim_head_ro (input + 3);
+				if (!r_io_map_setattr_fromstring (map, arg)) {
+					R_LOG_ERROR ("Invalid attributes string");
+				}
+			} else {
+				R_LOG_ERROR ("Cannot find map in the current offset");
+			}
+		} else if (!input[3]) {
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				char *s = r_io_map_getattr (map);
+				r_cons_println (s);
+				free (s);
+			} else {
+				R_LOG_ERROR ("Cannot find map in the current offset");
+			}
+		} else {
+			r_core_return_invalid_command (core, "oma.", input[3]);
+		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "oma", input[2]);
+		break;
+	}
+}
+
 static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	switch (argv[0][1]) {
 	case '=': // "omb=[name]"
@@ -1112,7 +1190,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_core_cmd_omt (core, input + 2);
 		break;
 	case ',': // "om,"
-		r_core_cmd_om_tab (core, input + 2);
+		cmd_omcomma (core, input + 2);
 		break;
 	case ' ': // "om"
 		cmd_om (core, input, 0);
@@ -1189,6 +1267,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "oma"
+		cmd_oma (core, input);
+		break;
+	case 'v': // "omv"
 		{
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -1198,7 +1279,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				r_core_cmd_help_contains (core, help_msg_om, "oma");
+				r_core_cmd_help_contains (core, help_msg_om, "omv");
 			}
 		}
 		break;
@@ -1253,7 +1334,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'd': // "omd"
 		cmd_omd (core, input + 2);
 		break;
-	case 'f': // "omf"
+	case 'f': // "omf" // R2_600 - rename to omp like we have for dmp
 		switch (input[2]) {
 		case 'g': // "omfg"
 			cmd_omfg (core, input + 3);
@@ -1266,8 +1347,17 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_str_argv_free (argv);
 			}
 			break;
-		case '?':
-			r_core_cmd_help (core, help_msg_om);
+		case '?': // "omf?"
+			r_core_cmd_help_match (core, help_msg_om, "omf");
+			break;
+		case 0: // "omf"
+			{
+				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				if (map) {
+					const char *sperm = r_str_rwx_i (map->perm);
+					r_cons_println (sperm);
+				}
+			}
 			break;
 		default:
 			r_core_return_invalid_command (core, "omf", input[2]);

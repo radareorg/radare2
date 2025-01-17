@@ -223,6 +223,43 @@ typedef struct r_io_plugin_t {
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
 #define	R_IO_MAP_TIE_FLG_FORTH	(1 << 1)	//ties a map so that the desc resizes when the map resizes
 
+typedef enum {
+	R_IO_MAP_META_TYPE_NONE = 0,
+	R_IO_MAP_META_TYPE_HEAP, // heap memory
+	R_IO_MAP_META_TYPE_STACK, // program stack
+	R_IO_MAP_META_TYPE_MMAP, // mapped memory
+	R_IO_MAP_META_TYPE_MMIO, // mapped devices
+	R_IO_MAP_META_TYPE_DMA, // high speed hw data transfer
+	R_IO_MAP_META_TYPE_JIT, // just in time code
+	R_IO_MAP_META_TYPE_BSS, // block started symbol (zero paged memory)
+	R_IO_MAP_META_TYPE_SHARED, // ipc, etc
+	R_IO_MAP_META_TYPE_KERNEL, // VDSO, etc, text|data|buffers
+	R_IO_MAP_META_TYPE_GUARD, // surrounding stack for protections
+	R_IO_MAP_META_TYPE_NULL, // to catch null derefs
+	R_IO_MAP_META_TYPE_GPU, // graphics memory
+	R_IO_MAP_META_TYPE_TLS, // thread-local storage
+	R_IO_MAP_META_TYPE_BUFFER, // temporal
+	R_IO_MAP_META_TYPE_COW, // copy on write
+	R_IO_MAP_META_TYPE_PAGETABLES, // mmu settings
+	R_IO_MAP_META_TYPE_LAST
+} RIOMapMetaType;
+
+#define R_IO_MAP_META_FLAG_LAST 16
+typedef enum {
+	R_IO_MAP_META_FLAG_PAGED, // anything can be non-paged.. must be bitfield
+	R_IO_MAP_META_FLAG_PRIVATE, // private memory
+	R_IO_MAP_META_FLAG_PERSISTENT, // non volatile
+	R_IO_MAP_META_FLAG_ASLR, // randomizable
+	R_IO_MAP_META_FLAG_SWAP, // swappage to disk
+	R_IO_MAP_META_FLAG_DEP, // same as W^X
+	R_IO_MAP_META_FLAG_ENCLAVE, // protected by a secure enclave
+	R_IO_MAP_META_FLAG_COMPRESSED, // compressed memory
+	R_IO_MAP_META_FLAG_ENCRYPTED, // cryptographically secure
+	R_IO_MAP_META_FLAG_LARGE, // different alignment for big data
+	R_IO_MAP_META_FLAG_SYSTEM, // frameworks, dyldcache, ..
+	R_IO_MAP_META_FLAG_LIBRARY, // maybe the same of system?
+} RIOMapMetaFlags;
+
 typedef struct r_io_map_t {
 	int fd;
 	int perm;
@@ -233,6 +270,7 @@ typedef struct r_io_map_t {
 	RRBTree *overlay;
 	char *name;
 	ut32 tie_flags;
+	ut32 meta; // metadata attributes
 } RIOMap;
 
 typedef struct r_io_map_ref_t {
@@ -583,6 +621,9 @@ R_API int r_io_fd_get_prev(RIO *io, int fd);
 R_API int r_io_fd_get_highest(RIO *io);
 R_API int r_io_fd_get_lowest(RIO *io);
 
+R_API bool r_io_map_setattr_fromstring(RIOMap *map, const char *s);
+R_API bool r_io_map_setattr(RIOMap *map, ut32 type, ut32 flags);
+R_API char *r_io_map_getattr(RIOMap *map);
 
 #define r_io_range_new()	R_NEW0(RIORange)
 #define r_io_range_free(x)	free(x)
