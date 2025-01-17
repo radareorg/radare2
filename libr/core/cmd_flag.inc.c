@@ -1388,18 +1388,18 @@ static int cmd_flag(void *data, const char *input) {
 			p = strchr (arg, ' ');
 			if (p) {
 				*p++ = 0;
-				item = r_flag_get_i (core->flags,
+				item = r_flag_get_in (core->flags,
 					r_num_math (core->num, arg));
 				if (item)
 					item->size = r_num_math (core->num, p);
 			} else {
 				if (*arg) {
-					item = r_flag_get_i (core->flags, core->offset);
+					item = r_flag_get_in (core->flags, core->offset);
 					if (item) {
 						item->size = r_num_math (core->num, arg);
 					}
 				} else {
-					item = r_flag_get_i (core->flags, r_num_math (core->num, arg));
+					item = r_flag_get_in (core->flags, r_num_math (core->num, arg));
 					if (item) {
 						r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 					}
@@ -1407,7 +1407,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			free (arg);
 		} else { // "fl"
-			item = r_flag_get_i (core->flags, core->offset);
+			item = r_flag_get_in (core->flags, core->offset);
 			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 			}
@@ -1417,7 +1417,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'd':
 		if (input[1] == ' ') {
 			char cmd[128];
-			RFlagItem *item = r_flag_get_i (core->flags,
+			RFlagItem *item = r_flag_get_in (core->flags,
 				r_num_math (core->num, input+2));
 			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
@@ -1435,7 +1435,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'x':
 		if (input[1] == ' ') {
-			RFlagItem *item = r_flag_get_i (core->flags,
+			RFlagItem *item = r_flag_get_in (core->flags,
 				r_num_math (core->num, input+2));
 			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
@@ -1506,7 +1506,7 @@ static int cmd_flag(void *data, const char *input) {
 				if (input[2] == ' ') {
 					off = r_num_math (core->num, input+2);
 				}
-				RFlagItem *f = r_flag_get_i (core->flags, off);
+				RFlagItem *f = r_flag_get_in (core->flags, off);
 				if (f) {
 					f->space = r_flag_space_cur (core->flags);
 				} else {
@@ -1640,7 +1640,7 @@ static int cmd_flag(void *data, const char *input) {
 					R_LOG_ERROR ("Cannot find flag with name '%s'", p);
 				}
 			} else {
-				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
+				item = r_flag_get_in (core->flags, r_num_math (core->num, p));
 				if (item && item->comment) {
 					r_cons_println (item->comment);
 				} else {
@@ -1674,7 +1674,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			} else {
 				new = old;
-				item = r_flag_get_i (core->flags, core->offset);
+				item = r_flag_get_in (core->flags, core->offset);
 			}
 			if (item) {
 				if (!r_flag_rename (core->flags, item, new)) {
@@ -1688,7 +1688,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'N':
 		if (!input[1]) {
-			RFlagItem *item = r_flag_get_i (core->flags, core->offset);
+			RFlagItem *item = r_flag_get_in (core->flags, core->offset);
 			if (item) {
 				r_cons_printf ("%s\n", item->realname);
 			}
@@ -1706,7 +1706,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			} else {
 				realname = name;
-				item = r_flag_get_i (core->flags, core->offset);
+				item = r_flag_get_in (core->flags, core->offset);
 			}
 			if (item) {
 				r_flag_item_set_realname (item, realname);

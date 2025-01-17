@@ -735,7 +735,7 @@ static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
 		free (name);
 	}
 	if (!fi) {
-		fi = r_flag_get_i (core->flags, addr);
+		fi = r_flag_get_in (core->flags, addr);
 		if (!fi) {
 			fi = r_flag_get_at (core->flags, core->offset, true);
 		}

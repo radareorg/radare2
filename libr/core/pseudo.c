@@ -723,7 +723,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			} else {
 				NEWLINE (bb->addr, 1);
 			}
-			RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
+			RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
 			if (fi && r_str_startswith (fi->name, "case.")) {
 				const char *val = r_str_lchr (fi->name, '.') + 1;
 				char *hex = r_str_newf ("0x%s", val);

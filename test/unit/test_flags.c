@@ -9,13 +9,13 @@ bool test_r_flag_get_set(void) {
 	mu_assert_notnull (flags, "r_flag_new () failed");
 
 	r_flag_set (flags, "foo", 1024, 50);
-	fi = r_flag_get_i (flags, 1024);
+	fi = r_flag_get_in (flags, 1024);
 	mu_assert_notnull (fi, "cannot find 'foo' flag at 1024");
 
 	r_flag_set (flags, "foo", 300LL, 0);
-	fi = r_flag_get_i (flags, 0);
+	fi = r_flag_get_in (flags, 0);
 	mu_assert_null (fi, "found a flag at 0 while there is none");
-	fi = r_flag_get_i (flags, 300LL);
+	fi = r_flag_get_in (flags, 300LL);
 	mu_assert_notnull (fi, "cannot find 'foo' flag at 300LL");
 
 	fi = r_flag_get (flags, "foo");

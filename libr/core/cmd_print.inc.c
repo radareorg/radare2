@@ -847,7 +847,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 			r_cons_printf (Color_RESET);
 		}
 		if (show_flags) {
-			RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+			RFlagItem *fi = r_flag_get_in (core->flags, core->offset + j);
 			if (fi) {
 				r_cons_printf (" ; %s", fi->name);
 			}
@@ -922,7 +922,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			}
 			if (square) {
 				if (show_flags) {
-					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+					RFlagItem *fi = r_flag_get_in (core->flags, core->offset + j);
 					if (fi) {
 						first_flag_chars (fi->name, &ch, &ch2);
 					} else {
@@ -1044,7 +1044,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			}
 			if (square) {
 				if (show_flags) {
-					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+					RFlagItem *fi = r_flag_get_in (core->flags, core->offset + j);
 					if (fi) {
 						if (fi->name[1]) {
 							ch = fi->name[0];
@@ -5742,7 +5742,7 @@ static void r_core_disasm_table(RCore *core, int l, const char *input) {
 		}
 		r_io_read_at (core->io, ea, bytes, op->size); // XXX ranalop should contain the bytes like rasmop do
 		char *sbytes = r_hex_bin2strdup(bytes, op->size);
-		RFlagItem *fi = r_flag_get_i (core->flags, ea);
+		RFlagItem *fi = r_flag_get_in (core->flags, ea);
 		char *fn = fi? fi->name: "";
 		const char *esil = R_STRBUF_SAFEGET (&op->esil);
 		char *refs = __op_refs (core, op, 0);

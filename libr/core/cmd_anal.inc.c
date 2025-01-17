@@ -1713,7 +1713,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		}
 		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
-			f = r_flag_get_i (core->flags, tgt_addr);
+			f = r_flag_get_in (core->flags, tgt_addr);
 		}
 		RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
 		if (fcn) {
@@ -4932,7 +4932,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	if (fcn) {
 		fcn_name = fcn->name;
 	} else {
-		RFlagItem *item = r_flag_get_i (core->flags, pcv);
+		RFlagItem *item = r_flag_get_in (core->flags, pcv);
 		if (item) {
 			fcn_name = item->name;
 		}
@@ -8490,7 +8490,7 @@ static void cmd_aep(RCore *core, const char *input) {
 		// find a pin named like the flag, skip dots if any
 		RFlagItem *f = r_flag_get_by_spaces (core->flags, false, addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
 		if (!f) {
-			f = r_flag_get_i (core->flags, addr);
+			f = r_flag_get_in (core->flags, addr);
 		}
 		if (f) {
 			const char *last = r_str_rchr (f->name, NULL, '.');
@@ -9955,7 +9955,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			if (valid && op.type == R_ANAL_OP_TYPE_CALL) {
 				bool isValidCall = true;
 				if (importsOnly) {
-					RFlagItem *f = r_flag_get_i (core->flags, op.jump);
+					RFlagItem *f = r_flag_get_in (core->flags, op.jump);
 					if (!f || !strstr (f->name, "imp.")) {
 						isValidCall = false;
 					}
@@ -12403,7 +12403,7 @@ static bool r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
 
 	r_list_foreach (fcn->bbs, iter, bb) {
-		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
+		RFlagItem *flag = r_flag_get_in (core->flags, bb->addr);
 		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
 		// TODO char *str = r_str_escape_dot (msg);
 		ht_uu_insert (ht, bb->addr, id);
@@ -15083,7 +15083,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {
-			RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+			RFlagItem *item = r_flag_get_in (core->flags, op->jump);
 			if (item) {
 				fcn_name = item->name;
 			}

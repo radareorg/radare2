@@ -1754,7 +1754,7 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	}
 
 	for (i = 1; i < ds->oplen; i++) {
-		RFlagItem *fi = r_flag_get_i (core->flags, ds->at + i);
+		RFlagItem *fi = r_flag_get_in (core->flags, ds->at + i);
 		if (fi && fi->name) {
 			const char *finame = fi->name;
 			if (r_anal_get_block_at (core->anal, ds->at)) {
@@ -2469,9 +2469,9 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	if (!ds->show_comments && !ds->show_cmt_user) {
 		return;
 	}
-	RFlagItem *item = r_flag_get_i (core->flags, ds->at);
+	RFlagItem *item = r_flag_get_in (core->flags, ds->at);
 	if (!item && ds->analop.ptr && ds->analop.ptr != UT64_MAX) {
-		item = r_flag_get_i (core->flags, ds->analop.ptr);
+		item = r_flag_get_in (core->flags, ds->analop.ptr);
 	}
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	// vartype also contains varname, so we use varname color to display it
@@ -3113,7 +3113,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			item = r_flag_get_i (ds->core->flags, ds->analop.jump);
+			item = r_flag_get_in (ds->core->flags, ds->analop.jump);
 			if (item && item->comment) {
 				if (ds->show_color) {
 					r_cons_print (ds->pal_comment);
@@ -3258,7 +3258,7 @@ R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
 #endif
 	}
 	if (!label && type & RELOFF_TO_FLAG) {
-		// RFlagItem *fi = r_flag_get_i (core->flags, at);
+		// RFlagItem *fi = r_flag_get_in (core->flags, at);
 		RFlagItem *fi = r_flag_get_at (core->flags, at, true);
 #if 0
 		if (fi) {
@@ -3366,7 +3366,7 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 		}
 	}
 	if (!label && type & RELOFF_TO_FLAG) {
-		RFlagItem *fi = r_flag_get_i (core->flags, at);
+		RFlagItem *fi = r_flag_get_in (core->flags, at);
 		if (fi) {
 			ds->lastflag = fi;
 		}
@@ -4805,7 +4805,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						printable = false;
 					}
 				}
-				if (printable && r_flag_get_i (core->flags, v)) {
+				if (printable && r_flag_get_in (core->flags, v)) {
 					printable = false;
 				}
 				if (canHaveChar && printable) {
@@ -4834,7 +4834,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		R_VEC_FOREACH (refs, ref) {
 			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 			if (rt == R_ANAL_REF_TYPE_STRN || rt == R_ANAL_REF_TYPE_DATA) {
-				if ((f = r_flag_get_i (core->flags, ref->addr))) {
+				if ((f = r_flag_get_in (core->flags, ref->addr))) {
 					refaddr = ref->addr;
 					break;
 				}
@@ -4861,7 +4861,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		const char *kind;
 		char *msg = calloc (sizeof (char), len);
 		if (((st64)p) > 0) {
-			f = r_flag_get_i (core->flags, p);
+			f = r_flag_get_in (core->flags, p);
 			if (f) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
@@ -4886,7 +4886,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				char str[128] = {0};
-				f = r_flag_get_i (core->flags, refaddr);
+				f = r_flag_get_in (core->flags, refaddr);
 				if (!f && ds->show_slow) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
 						      (ut8 *)str, sizeof (str) - 1);
@@ -4908,7 +4908,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
-					RFlagItem *f2_ = r_flag_get_i (core->flags, n);
+					RFlagItem *f2_ = r_flag_get_in (core->flags, n);
 					if (f2_) {
 						flag = f2_->name;
 					} else {
@@ -4989,7 +4989,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			msg[len - 1] = 0;
 		}
 #endif
-		f = r_flag_get_i (core->flags, refaddr);
+		f = r_flag_get_in (core->flags, refaddr);
 		if (f) {
 			if (strlen (msg) != 1) {
 				char *msg2 = strdup (msg);
@@ -5403,7 +5403,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		R_FREE (type);
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)
 		    && (ds->show_emu_strflag || !emu_str_printed)) {
-			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
+			RFlagItem *fi = r_flag_get_in (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", R_STR_ISNOTEMPTY (msg)? " " : "", fi->name);
 				if (ds->pj) {
@@ -5679,7 +5679,7 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (fcn) {
 		fcn_name = fcn->name;
 	} else {
-		RFlagItem *item = r_flag_get_i (core->flags, pcv);
+		RFlagItem *item = r_flag_get_in (core->flags, pcv);
 		if (item) {
 			fcn_name = item->name;
 		}
@@ -5915,7 +5915,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			full_name = fcn->name;
 		}
 	} else if (ds->analop.ptr != UT64_MAX) {
-		RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.ptr);
+		RFlagItem *flag = r_flag_get_in (ds->core->flags, ds->analop.ptr);
 		if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
 			full_name = flag->realname;
 		}
@@ -7865,7 +7865,7 @@ toro:
 		ut64 at = addr + i;
 		if (flags) {
 			if (fmt != 'e') { // pie
-				RFlagItem *item = r_flag_get_i (core->flags, at);
+				RFlagItem *item = r_flag_get_in (core->flags, at);
 				if (item) {
 					if (show_offset) {
 						r_print_offset (core->print, at, 0, 0, NULL);
