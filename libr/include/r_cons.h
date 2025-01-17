@@ -970,7 +970,7 @@ R_API void r_cons_thready(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
-R_API void r_cons_pal_update_event(void);
+R_API void r_cons_pal_reload(void);
 R_API void r_cons_pal_free(RConsContext *ctx);
 R_API void r_cons_pal_init(RConsContext *ctx);
 R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src);
