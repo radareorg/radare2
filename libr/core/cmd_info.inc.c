@@ -383,7 +383,7 @@ static RList *uniqrefs_for(RCore *core, ut64 addr) {
 
 static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	if (symname && !mode) {
-		const char *un = r_bin_symbol_unsafe (core->bin, symname);
+		const char *un = r_bin_import_tags (core->bin, symname);
 		if (R_STR_ISNOTEMPTY (un)) {
 			r_cons_println (un);
 		}
@@ -395,7 +395,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	Sdb *db = sdb_new0 ();
 	r_list_foreach (imports, iter, imp) {
 		const char *name = r_bin_name_tostring2 (imp->name, 'o');
-		const char *un = r_bin_symbol_unsafe (core->bin, name);
+		const char *un = r_bin_import_tags (core->bin, name);
 		if (!un) {
 			R_LOG_DEBUG ("Symbol not classified %s", name);
 			continue;

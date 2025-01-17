@@ -195,8 +195,7 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 }
 
 // query the symbol name into the symtypes database
-// XXX R2_600 rename to r_bin_import_tags
-R_API const char *r_bin_symbol_unsafe(RBin *bin, const char *name) {
+R_API const char *r_bin_import_tags(RBin *bin, const char *name) {
 	Sdb *db = sdb_ns (bin->sdb, "symclass", true); // R2_600 - rename to imptags
 	if (db) {
 		return sdb_const_get (db, name, 0);
