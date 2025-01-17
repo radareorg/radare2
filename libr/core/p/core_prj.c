@@ -503,7 +503,7 @@ static ut8 *rprj_find(RBuffer *b, ut32 type, ut32 *size) {
 }
 
 static void prj_load(RCore *core, const char *file, int mode) {
-	RBuffer *b = r_buf_new_slurp (file);
+	RBuffer *b = r_buf_new_from_file (file);
 	if (!b) {
 		R_LOG_ERROR ("Cannot open file");
 		return;

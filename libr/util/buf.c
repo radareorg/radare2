@@ -224,8 +224,7 @@ R_API RBuffer *r_buf_new_file(const char *file, int perm, int mode) {
 	return new_buffer (R_BUFFER_FILE, &u);
 }
 
-// R2_600 : rename to new_from_file ?
-R_API RBuffer *r_buf_new_slurp(const char *file) {
+R_API RBuffer *r_buf_new_from_file(const char *file) {
 	size_t len;
 	char *tmp = r_file_slurp (file, &len);
 	if (!tmp) {

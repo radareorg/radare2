@@ -1502,7 +1502,7 @@ error:
 }
 
 R_API bool init_pdb_parser(RPdb *pdb, const char *filename) {
-	RBuffer *buf = r_buf_new_slurp (filename);
+	RBuffer *buf = r_buf_new_from_file (filename);
 	if (!buf) {
 		R_LOG_ERROR ("%s: Error reading file \"%s\"", __func__, filename);
 		return false;

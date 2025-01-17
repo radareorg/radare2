@@ -1388,7 +1388,7 @@ static inline void flirt_free(RFlirt *f) {
 
 // dump a flirt signature content on screen
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
-	RBuffer *flirt_buf = r_buf_new_slurp (flirt_file);
+	RBuffer *flirt_buf = r_buf_new_from_file (flirt_file);
 	if (!flirt_buf) {
 		R_LOG_ERROR ("Can't slurp %s", flirt_file);
 		return;
@@ -1406,7 +1406,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 
 // parses a flirt signature file and scan the currently opened file with it
 R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
-	RBuffer *flirt_buf = r_buf_new_slurp (flirt_file);
+	RBuffer *flirt_buf = r_buf_new_from_file (flirt_file);
 	if (!flirt_buf) {
 		R_LOG_ERROR ("Can't slurp %s", flirt_file);
 		return;
