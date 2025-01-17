@@ -123,7 +123,6 @@ static RList *relocs(RBinFile *bf) {
 		return r_list_clone (obj->relocs_list, NULL);
 	}
 	RList *list = r_list_newf ((RListFree) free);
-	obj->relocs_list = list;
 	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);
@@ -227,7 +226,8 @@ static RList *relocs(RBinFile *bf) {
 		free (reloc_pointer_table);
 		obj->reloc_table = reloc_table;
 	}
-	return list;
+	obj->relocs_list = list;
+	return r_list_clone (list, NULL);
 out_error:
 	r_list_free (list);
 	return NULL;
