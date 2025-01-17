@@ -629,6 +629,13 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 			const int id = r_num_math (core->num, argv[0]);
 			RIOMap *map = r_io_map_get (core->io, id);
 			if (map) {
+				if (argc > 2) {
+					bool res = r_io_map_setattr_fromstring (map, argv[2]);
+					if (!res) {
+						R_LOG_ERROR ("Invalid meta type string");
+						break;
+					}
+				}
 				int nperm = r_str_rwx (argv[1]);
 				if (nperm < 0) {
 					R_LOG_ERROR ("Invalid permission string (%s)", argv[1]);
@@ -804,11 +811,12 @@ static void cmd_omd(RCore *core, const char* input) {
 			ut64 va = r_num_math (core->num, r_list_get_n (args, 0));
 			ut64 vb = r_num_math (core->num, r_list_get_n (args, 1));
 			ut64 sz = vb - va;
-			RIOMap *map = NULL;
 			if (va < vb) {
-				map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
-			}
-			if (!map) {
+				RIOMap *map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
+				if (!map) {
+					R_LOG_ERROR ("Cannot add a new map");
+				}
+			} else {
 				R_LOG_ERROR ("Invalid map range");
 			}
 		} else {
