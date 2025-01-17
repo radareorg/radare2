@@ -673,12 +673,12 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 	}
 }
 
-static void r_core_cmd_om_tab(RCore *core, const char *arg) {
+static void cmd_omcomma(RCore *core, const char *arg) {
 	RTable *t = r_core_table_new (core, "iomaps");
 	if (!t) {
 		return;
 	}
-	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
+	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "meta", "name", NULL);
 	ut32 mapid = 0;
 	r_id_storage_get_lowest (&core->io->maps, &mapid);
 	do {
@@ -693,12 +693,14 @@ static void r_core_cmd_om_tab(RCore *core, const char *arg) {
 		ut64 pa_size = r_itv_size (m->itv);
 		ut64 pa_end = pa + pa_size - 1;
 		const char *name = r_str_get (m->name);
-		r_table_add_rowf (t, "ddxxxxxss",
+		char *meta = r_io_map_getattr (m);
+		r_table_add_rowf (t, "ddxxxxxsss",
 			m->id, m->fd, pa, pa_end, pa_size,
-			va, va_end, r_str_rwx_i (m->perm), name);
+			va, va_end, r_str_rwx_i (m->perm), meta, name);
+		free (meta);
 	} while (r_id_storage_get_next (&core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
-		char *ts = strchr (arg, ':')? r_table_tostring (t) : r_table_tostring (t);
+		char *ts = r_table_tostring (t);
 		r_cons_printf ("%s", ts);
 		free (ts);
 	}
