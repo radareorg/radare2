@@ -4414,7 +4414,7 @@ onemoretime:
 			RAnalOp *op = r_core_anal_op (core, off, R_ARCH_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
-					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+					RFlagItem *item = r_flag_get_in (core->flags, op->jump);
 					if (item) {
 						const char *ptr = r_str_lchr (item->name, '.');
 						if (ptr) {
@@ -4463,7 +4463,7 @@ onemoretime:
 				}
 			} else if (tgt_addr != UT64_MAX) {
 				RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
-				RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
+				RFlagItem *f = r_flag_get_in (core->flags, tgt_addr);
 				if (fcn) {
 					q = r_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,
 						fcn->name, tgt_addr);
@@ -4489,7 +4489,7 @@ onemoretime:
 	}
 	case 'C':
 		{
-			RFlagItem *item = r_flag_get_i (core->flags, off);
+			RFlagItem *item = r_flag_get_in (core->flags, off);
 			if (item) {
 				char cmd[128];
 				r_cons_show_cursor (true);
@@ -4508,7 +4508,7 @@ onemoretime:
 		break;
 	case '$':
 		{
-			RFlagItem *item = r_flag_get_i (core->flags, off);
+			RFlagItem *item = r_flag_get_in (core->flags, off);
 			if (item) {
 				char cmd[128];
 				r_cons_printf ("Current flag size is: %" PFMT64d "\n", item->size);

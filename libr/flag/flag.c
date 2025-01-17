@@ -509,8 +509,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
-// R2_600 - rename to r_flag_get_at and r_flag_get_in ??
-R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
+R_API RFlagItem *r_flag_get_in(RFlag *f, ut64 off) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
 		off &= f->mask;
@@ -857,7 +856,7 @@ R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
  * return true if such a flag is found and unset, false otherwise. */
 R_API bool r_flag_unset_off(RFlag *f, ut64 off) {
 	R_RETURN_VAL_IF_FAIL (f, false);
-	RFlagItem *item = r_flag_get_i (f, off);
+	RFlagItem *item = r_flag_get_in (f, off);
 	if (item && r_flag_unset (f, item)) {
 		return true;
 	}
@@ -949,7 +948,7 @@ R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
 
 R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to) {
 	R_RETURN_VAL_IF_FAIL (f, false);
-	RFlagItem *item = r_flag_get_i (f, at);
+	RFlagItem *item = r_flag_get_in (f, at);
 	if (item) {
 		r_flag_set (f, item->name, to, item->size);
 		return true;

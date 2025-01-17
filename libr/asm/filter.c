@@ -248,7 +248,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					}
 				}
 				if (flag && !strncmp (flag->name, "section.", 8)) {
-					flag = r_flag_get_i (f, off);
+					flag = r_flag_get_in (f, off);
 				}
 				const char *label = fcn? p->label_get (fcn, off): NULL;
 				if (label || isvalidflag (flag)) {

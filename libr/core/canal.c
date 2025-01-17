@@ -251,7 +251,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			}
 		}
 	}
-	if (r_flag_get_i (core->flags, addr)) {
+	if (r_flag_get_in (core->flags, addr)) {
 		types |= R_ANAL_ADDR_TYPE_FLAG;
 	}
 	if (r_anal_get_fcn_in (core->anal, addr, 0)) {
@@ -421,7 +421,7 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	if (refs) {
 		R_VEC_FOREACH (refs, ref) {
-			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+			RFlagItem *f = r_flag_get_in (core->flags, ref->addr);
 			if (!f) {
 				continue;
 			}
@@ -888,7 +888,7 @@ static void function_rename(RFlag *flags, RAnalFunction *fcn) {
 		const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
 		const char *restofname = fcn->name + strlen ("loc.");
 		fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
-		RFlagItem *f = r_flag_get_i (flags, fcn->addr);
+		RFlagItem *f = r_flag_get_in (flags, fcn->addr);
 		if (f) {
 			r_flag_rename (flags, f, fcn->name);
 		}
@@ -904,7 +904,7 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 			RAnalRef *ref = RVecAnalRef_at (refs, 0);
 			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 			if (rt != R_ANAL_REF_TYPE_CALL) { /* Some fcns don't return */
-				RFlagItem *flg = r_flag_get_i (core->flags, ref->addr);
+				RFlagItem *flg = r_flag_get_in (core->flags, ref->addr);
 				if (flg && r_str_startswith (flg->name, "sym.imp.")) {
 					R_FREE (fcn->name);
 					fcn->name = r_str_newf ("sub.%s", flg->name + 8);
@@ -2361,7 +2361,7 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 					r_cons_printf ("agn %s\n", me);
 					found = true;
 				}
-				RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 				r_strf_buffer (32);
 				const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
 				r_cons_printf ("agn %s\n", dst);
@@ -2390,7 +2390,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 				continue;
 			}
 			r_strf_buffer (32);
-			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
 			r_cons_printf ("agn %s\n", dst);
 			r_cons_printf ("age %s %s\n", me, dst);
@@ -2427,7 +2427,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 		if (ref->addr == UT64_MAX) {
 			continue;
 		}
-		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+		RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 		char *src = item? strdup (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
 		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
 		free (src);
@@ -2577,7 +2577,7 @@ repeat:
 			break;
 		case R_GRAPH_FORMAT_GML:
 		case R_GRAPH_FORMAT_GMLFCN: {
-			RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
+			RFlagItem *flag = r_flag_get_in (core->flags, fcni->addr);
 			if (iteration == 0) {
 				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
 				r_cons_printf ("  node [\n"
@@ -2609,7 +2609,7 @@ repeat:
 		}
 		r_list_foreach (calls, iter2, fcnr) {
 			// TODO: display only code or data refs?
-			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
+			RFlagItem *flag = r_flag_get_in (core->flags, fcnr->addr);
 			char *fcnr_name = (flag && flag->name) ? flag->name : r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
 			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:
@@ -3057,7 +3057,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 			// Iterate over all refs from a function
 			Sdb *uniq = unique ? sdb_new0 (): NULL;
 			R_VEC_FOREACH (refs, refi) {
-				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+				RFlagItem *f = r_flag_get_in (core->flags, refi->addr);
 				char *dst = f? strdup (f->name): r_str_newf ("0x%08"PFMT64x, refi->addr);
 				if (unique) {
 					if (sdb_const_get (uniq, dst, NULL)) {
@@ -5327,7 +5327,7 @@ static void cccb(void *u) {
 static bool myvalid(RCore *core, ut64 addr) {
 	RIO *io = core->io;
 #if 1
-	RFlagItem *fi = r_flag_get_i (core->flags, addr);
+	RFlagItem *fi = r_flag_get_in (core->flags, addr);
 	if (fi && strchr (fi->name, '.')) {
 		return true;
 	}

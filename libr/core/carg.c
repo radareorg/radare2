@@ -150,7 +150,7 @@ R_API void r_core_print_func_args(RCore *core) {
 			fcn_name = fcn->name;
 		} else {
 			if (core->flags) {
-				RFlagItem *item = r_flag_get_i (core->flags, pcv);
+				RFlagItem *item = r_flag_get_in (core->flags, pcv);
 				if (item) {
 					fcn_name = item->name;
 				}

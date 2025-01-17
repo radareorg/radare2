@@ -7,7 +7,7 @@
 
 R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr) {
 	RFlag *flags = anal->flb.f;
-	RFlagItem *fi = r_flag_get_i (flags, addr);
+	RFlagItem *fi = r_flag_get_in (flags, addr);
 	if (fi && fi->space && fi->space->name && !strcmp (fi->space->name, GLOBAL_FLAGSPACE)) {
 		return fi;
 	}

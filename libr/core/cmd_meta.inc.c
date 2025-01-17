@@ -1177,7 +1177,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						r_str_ncpy (name, p, sizeof (name));
 					} else {
 						if (type != 'b' && type != 's') {
-							RFlagItem *fi = r_flag_get_i (core->flags, addr);
+							RFlagItem *fi = r_flag_get_in (core->flags, addr);
 							if (fi) {
 								r_str_ncpy (name, fi->name, sizeof (name));
 							}

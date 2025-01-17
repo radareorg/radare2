@@ -240,7 +240,7 @@ static void setab(RCore *core, const char *arch, int bits) {
 }
 
 static const char *getName(RCore *core, ut64 addr) {
-	RFlagItem *item = r_flag_get_i (core->flags, addr);
+	RFlagItem *item = r_flag_get_in (core->flags, addr);
 	if (item) {
 		if (core->flags->realnames) {
 			return item->realname
@@ -368,7 +368,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 		*ok = 0;
 	}
 	if (f) {
-		RFlagItem *item = r_flag_get_i (f, off);
+		RFlagItem *item = r_flag_get_in (f, off);
 		if (item) {
 			if (ok) {
 				*ok = true;
@@ -1671,13 +1671,13 @@ R_API int r_core_fgets(char *buf, int len) {
 
 static const char *r_core_print_offname(void *p, ut64 addr) {
 	RCore *c = (RCore*)p;
-	RFlagItem *item = r_flag_get_i (c->flags, addr);
+	RFlagItem *item = r_flag_get_in (c->flags, addr);
 	return item ? item->name : NULL;
 }
 
 static int r_core_print_offsize(void *p, ut64 addr) {
 	RCore *c = (RCore*)p;
-	RFlagItem *item = r_flag_get_i (c->flags, addr);
+	RFlagItem *item = r_flag_get_in (c->flags, addr);
 	return item ? item->size: -1;
 }
 
@@ -1770,7 +1770,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode) {
 		}
 		return res;
 	}
-	RFlagItem *fi = r_flag_get_i (core->flags, value);
+	RFlagItem *fi = r_flag_get_in (core->flags, value);
 	return fi? strdup (fi->name): NULL;
 }
 
