@@ -306,6 +306,7 @@ static RCoreHelpMessage help_msg_dmp = {
 	"Usage:", "dmp", " Change page permissions",
 	"dmp", " [addr] [size] [perms]", "change permissions",
 	"dmp", " [perms]", "change dbg.map permissions",
+	"dmp.", "", "show permissions of the current map",
 	NULL
 };
 
@@ -1661,6 +1662,19 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'p': // "dmp"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_dmp);
+		} else if (input[1] == '.' || !input[1]) {
+			ut64 addr = core->offset;
+			RList *list = core->dbg->maps;
+			if (list) {
+				r_list_foreach (list, iter, map) {
+					if (addr >= map->addr && addr < map->addr_end) {
+						r_cons_println (r_str_rwx_i (map->perm));
+						break;
+					}
+				}
+			} else {
+				R_LOG_ERROR ("Try with omp instead");
+			}
 		} else if (input[1] == ' ') {
 			int perms;
 			ut64 size = 0, addr;

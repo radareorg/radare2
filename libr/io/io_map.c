@@ -1,9 +1,6 @@
-/* radare2 - LGPL - Copyright 2017-2023 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2024 - condret, MaskRay */
 
 #include <r_io.h>
-#include <stdlib.h>
-#include <r_util.h>
-#include <sdb/sdb.h>
 
 #define END_OF_MAP_IDS UT32_MAX
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid);
