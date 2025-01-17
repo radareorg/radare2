@@ -286,8 +286,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	return vtables;
 }
 
-// R2_600 - rename to RAnal.vtablesList()
-R_API void r_anal_list_vtables(RAnal *anal, int rad) {
+R_API void r_anal_vtables_list(RAnal *anal, int rad) {
 	RVTableContext context = {0};
 	r_anal_vtable_begin (anal, &context);
 

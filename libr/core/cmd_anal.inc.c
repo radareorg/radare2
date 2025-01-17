@@ -14654,7 +14654,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	case '\0': // "av"
 	case '*': // "av*"
 	case 'j': // "avj"
-		r_anal_list_vtables (core->anal, input[0]);
+		r_anal_vtables_list (core->anal, input[0]);
 		break;
 	case 'g': // "avg"
 		cmd_avg (core, input + 1);
