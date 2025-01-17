@@ -293,7 +293,7 @@ R_API void r_cons_pal_random(void) {
 		rcolor = RCOLOR_AT (i);
 		*rcolor = r_cons_color_random (ALPHA_FG);
 	}
-	r_cons_pal_update_event ();
+	r_cons_pal_reload ();
 }
 
 R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
@@ -618,7 +618,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 }
 
 /* Modify the palette to set a color value.
- * r_cons_pal_update_event () must be called after this function
+ * r_cons_pal_reload () must be called after this function
  * so the changes take effect. */
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	size_t i;
@@ -665,8 +665,7 @@ R_API int r_cons_pal_len(void) {
 	return keys_len;
 }
 
-// R2_600 TODO: rename to RCons.pal_reload() // pal_apply() maybe?
-R_API void r_cons_pal_update_event(void) {
+R_API void r_cons_pal_reload(void) {
 	__cons_pal_update_event (r_cons_context ());
 }
 

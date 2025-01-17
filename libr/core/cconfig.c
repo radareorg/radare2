@@ -1609,7 +1609,7 @@ static bool cb_color(void *user, void *data) {
 	}
 	r_cons_singleton ()->context->color_mode = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M: node->i_value;
-	r_cons_pal_update_event ();
+	r_cons_pal_reload ();
 	r_print_set_flags (core->print, core->print->flags);
 	r_log_set_colors (node->i_value);
 	return true;
