@@ -429,7 +429,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			if (l) {
 				REBASE_PADDR (bo, l, RBinReloc);
 				bo->relocs = list2rbtree ((RList*)l);
-				// l->free = NULL;
+				l->free = NULL; // may leak or crash
 				r_list_free (l);
 			}
 		}
