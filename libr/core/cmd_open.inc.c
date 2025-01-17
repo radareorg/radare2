@@ -1191,6 +1191,15 @@ static void cmd_open_map(RCore *core, const char *input) {
 				R_LOG_ERROR ("Cannot find any map with mapid %d", id);
 			}
 			break;
+		case 0:
+			{
+				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				if (map) {
+					const char *sperm = r_str_rwx_i (map->perm);
+					r_cons_println (sperm);
+				}
+			}
+			break;
 		default:
 			r_core_return_invalid_command (core, "omp", input[2]);
 			break;
