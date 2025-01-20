@@ -863,6 +863,9 @@ static bool init(RLangSession *ls) {
 	if (!rt) {
 		return false;
 	}
+#if __has_feature(address_sanitizer)
+	JS_SetMaxStackSize (rt, 0);
+#endif
 	JSContext *ctx = JS_NewCustomContext (rt);
 	if (!ctx) {
 		JS_FreeRuntime (rt);
