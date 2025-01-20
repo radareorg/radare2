@@ -36,19 +36,19 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 }
 
 static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
-	ut8 *stack, *ptr;
-	int wordsize = dbg->bits; // XXX, dbg->bits is wordsize not bits
+	ut8 *ptr;
+	const int wordsize = dbg->bits / 8;
 	ut64 sp;
 	RIOBind *bio = &dbg->iob;
-	int i, stacksize;
+	int i;
 	ut64 *p64, addr = 0LL;
 	ut32 *p32;
 	ut16 *p16;
 	ut64 cursp, oldsp;
 	RList *list;
 
-	stacksize = 1024*512; // 512KB .. should get the size from the regions if possible
-	stack = malloc (stacksize);
+	const int stacksize = 1024 * 512; // 512KB .. should get the size from the regions if possible
+	ut8 *stack = malloc (stacksize);
 	if (!stack) {
 		return NULL;
 	}
