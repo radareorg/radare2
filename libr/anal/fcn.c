@@ -1103,7 +1103,7 @@ noskip:
 					// TODO: -1-
 					if (ready) {
 						ret = casetbl_addr == op->ptr
-							? try_walkthrough_jmptbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
+							? r_anal_jmptbl_walk (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
 							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4);
 						if (ret) {
 							anal->lea_jmptbl_ip = addr;
@@ -1333,7 +1333,7 @@ noskip:
 					if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
 						// TODO -1
 						if (op->ireg) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						} else { // op->reg
 							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						}
@@ -1427,12 +1427,12 @@ noskip:
 				tablesize *= 4;
 				ut64 tblloc = jmptbl_ptr_addr;
 				int sz = 4;
-				ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0,
+				ret = r_anal_jmptbl_walk (anal, fcn, bb, depth, op->addr, 0,
 						tblloc, jmptbl_ptr_addr, sz, tablesize, default_case, ret);
 			} else if (is_v850 && anal->opt.jmptbl) {
 				int ptsz = (anal->cmpval && anal->cmpval != UT64_MAX)? anal->cmpval + 1: 4;
 				if ((int)anal->cmpval > 0) {
-					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr,
+					ret = r_anal_jmptbl_walk (anal, fcn, bb, depth, op->addr,
 							0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret);
 				}
 				gotoBeach (R_ANAL_RET_END);
@@ -1474,14 +1474,14 @@ noskip:
 						}
 						r_anal_op_free (prev_op);
 						if (!case_table) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+							ret = r_anal_jmptbl_walk (anal, fcn, bb, depth, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						}
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
 					ut64 table_size, default_case;
 					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 					}
 				} else if (movdisp != UT64_MAX) {
 					st64 case_shift = 0;
@@ -1506,7 +1506,7 @@ noskip:
 						table_size = anal->cmpval + 1;
 						default_case = -1;
 					}
-					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
+					ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
 					anal->cmpval = UT64_MAX;
 #if 0
 				} else if (movdisp != UT64_MAX) {
@@ -1514,7 +1514,7 @@ noskip:
 					st64 case_shift;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						op->ptr = movdisp;
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 					}
 					movdisp = UT64_MAX;
 #endif
@@ -1560,7 +1560,7 @@ noskip:
 							count++;
 						}
 						// table_addr = 0x100004114;
-						ret = try_walkthrough_jmptbl (anal,
+						ret = r_anal_jmptbl_walk (anal,
 								fcn, bb, depth - 1,
 								op->addr - 12, 0,
 								table_addr,
@@ -1577,7 +1577,7 @@ noskip:
 						} else {
 							table_size += anal->cmpval;
 						}
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
 								op->addr + 4, 1, table_size, UT64_MAX, ret);
 						// skip inlined jumptable
 						idx += table_size;
@@ -1589,7 +1589,7 @@ noskip:
 						} else {
 							tablesize += anal->cmpval;
 						}
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
+						ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
 								op->addr + 4, 2, tablesize, UT64_MAX, ret);
 						// skip inlined jumptable
 						idx += (tablesize * 2);

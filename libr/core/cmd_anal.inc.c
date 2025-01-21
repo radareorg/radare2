@@ -5259,7 +5259,7 @@ static int cmd_af(RCore *core, const char *input) {
 				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 3));
 				ut64 seg = r_num_math (core->num, r_list_get_n (argv, 4));
 				int depth = 50;
-				try_walkthrough_jmptbl (core->anal, r_list_first (block->fcns), block,
+				r_anal_jmptbl_walk (core->anal, r_list_first (block->fcns), block,
 					depth, core->offset, 0, table, seg, sz, elements, 0, false);
 				free (args);
 			} else {
