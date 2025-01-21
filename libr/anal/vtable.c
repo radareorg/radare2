@@ -299,9 +299,6 @@ R_API void r_anal_vtables_list(RAnal *anal, int rad) {
 
 	if (rad == 'j') {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 		r_list_foreach (vtables, vtableIter, table) {
 			pj_o (pj);

@@ -820,7 +820,6 @@ R_API bool r_io_map_setattr(RIOMap *map, ut32 type, ut32 flags) {
 }
 
 R_API char *r_io_map_getattr(RIOMap *map) {
-	RStrBuf *sb = r_strbuf_new ("");
 	ut32 maptype = map->meta & 0xffff;
 	ut32 mapflag = (map->meta > 16) & 0xffff;
 	if (maptype >= R_IO_MAP_META_TYPE_LAST) {
@@ -829,6 +828,7 @@ R_API char *r_io_map_getattr(RIOMap *map) {
 	if (mapflag >= R_IO_MAP_META_FLAG_LAST) {
 		return false;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	r_strbuf_append (sb, metatypename[maptype]);
 	int i = 0;
 	for (i = 0; i < 16; i++) {
