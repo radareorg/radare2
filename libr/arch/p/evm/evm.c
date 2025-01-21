@@ -70,6 +70,10 @@ static const EvmOpDef opcodes[256] = {
 	[EVM_OP_MSIZE] = { "msize", 1 },
 	[EVM_OP_GAS] = { "gas", 1 },
 	[EVM_OP_JUMPDEST] = { "jumpdest", 1 },
+	[EVM_OP_TLOAD] = { "tload", 1 },
+	[EVM_OP_TSTORE] = { "tstore", 1 },
+	[EVM_OP_MCOPY] = { "mcopy", 1 },
+	[EVM_OP_PUSH0] = { "push0", 1 },
 	// ....
 	[EVM_OP_CREATE] = { "create", 1 },
 	[EVM_OP_CALL] = { "call", 1 },
