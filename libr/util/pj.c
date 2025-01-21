@@ -24,15 +24,13 @@ static void pj_comma(PJ *j) {
 	j->is_key = false;
 }
 
-R_API PJ *pj_new(void) {
+R_API R_NONNULL PJ *pj_new(void) {
 	PJ *j = R_NEW0 (PJ);
-	if (j) {
-		r_strbuf_init (&j->sb);
-		j->is_first = true;
-		j->comma = ",";
-		j->str_encoding = PJ_ENCODING_STR_DEFAULT;
-		j->num_encoding = PJ_ENCODING_NUM_DEFAULT;
-	}
+	r_strbuf_init (&j->sb);
+	j->is_first = true;
+	j->comma = ",";
+	j->str_encoding = PJ_ENCODING_STR_DEFAULT;
+	j->num_encoding = PJ_ENCODING_NUM_DEFAULT;
 	return j;
 }
 
