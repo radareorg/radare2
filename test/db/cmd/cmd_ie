@@ -216,5 +216,7 @@ EXPECT=<<EOF
 0x10000f330  masterViewController.viewDidLoad
 0x1000807ac  GADViewController.viewDidLoad
 0x100083178  GADBrowserViewController.viewDidLoad
+0x100010f7c  main
+0x100010f7c  entry0
 EOF
 RUN
