@@ -655,8 +655,11 @@ static int cmd_plugins(void *data, const char *input) {
 				r_cons_printf ("%-10s %s\n", cp->meta.name, cp->meta.desc);
 			}
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_L);
+			break;
+		default:
+			r_core_return_invalid_command (core, "Lc", input[1]);
 			break;
 		}
 		}

@@ -1669,6 +1669,9 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	}
+	case 'L': // "cL"
+		r_core_cmdf (core, "Lc%s", input + 1);
+		break;
 	case 'l': // "cl"
 		if (strchr (input, 'f')) {
 			r_cons_flush ();
