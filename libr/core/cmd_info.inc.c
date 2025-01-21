@@ -29,7 +29,7 @@ static RCoreHelpMessage help_msg_is = {
 	"is.", "", "current symbol",
 	"is*", "", "same as above, but in r2 commands",
 	"isj", "", "in json format",
-	"ise", "", "entrypoints symbols",
+	"ise", "", "entrypoints symbols (see 'ies')",
 	NULL
 };
 
@@ -95,6 +95,7 @@ static RCoreHelpMessage help_msg_ie = {
 	"Usage: ie", "[qj=]", "Show entrypoints and constructors",
 	"ie", "", "show entrypointsie=entrypoint",
 	"iee", "", "list constructors and destructors",
+	"ies", "", "list entrypoint symbols (see 'ise')",
 	NULL
 };
 
@@ -108,7 +109,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
-	"ie", "[?]e", "ie=entrypoint, iee=constructors+destructors",
+	"ie", "[?][es]", "ie=entrypoint, iee=constructors+destructors, ies=epsymbols",
 	"iE", "[?]", "exports (global symbols)",
 	"ig", "[?][h]", "guess size of binary program (igh use human units instead of number of bytes)",
 	"ih", "[?]", "show binary headers (see iH)",
@@ -1933,6 +1934,14 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 			}
 		}
 	}
+	RFlagItem *fi = r_flag_get (core->flags, "main");
+	if (fi) {
+		r_cons_printf ("0x%08"PFMT64x"  main\n", fi->offset);
+	}
+	fi = r_flag_get (core->flags, "entry0");
+	if (fi) {
+		r_cons_printf ("0x%08"PFMT64x"  entry0\n", fi->offset);
+	}
 }
 
 static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_array, int va) {
@@ -2366,6 +2375,10 @@ static int cmd_info(void *data, const char *input) {
 		}
 		break;
 	case 's': // "is"
+		if (input[1] == 'e') { // "ise"
+			r_core_cmdf (core, "ies%s", input + 1);
+			break;
+		}
 		if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
 			mode = R_MODE_JSON;
 			INIT_PJ ();
