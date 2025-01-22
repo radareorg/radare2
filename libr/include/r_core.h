@@ -675,7 +675,7 @@ R_API bool r_core_yank_file_all(RCore *core, const char *input);
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API bool r_core_loadlibs(RCore *core, int where, const char *path);
-R_API int r_core_cmd_buffer(RCore *core, const char *buf);
+R_API bool r_core_cmd_buffer(RCore *core, const char *buf);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
 R_API char *r_core_op_str(RCore *core, ut64 addr);
