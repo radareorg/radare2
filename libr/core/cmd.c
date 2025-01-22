@@ -6514,8 +6514,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 	return ret;
 }
 
-// R2_600 - return boolean here
-R_API int r_core_cmd_buffer(RCore *core, const char *buf) {
+R_API bool r_core_cmd_buffer(RCore *core, const char *buf) {
 	R_RETURN_VAL_IF_FAIL (core && buf, false);
 	char *ptr, *optr, *str = strdup (buf);
 	if (!str) {
