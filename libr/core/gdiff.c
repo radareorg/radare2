@@ -2,8 +2,7 @@
 
 #include <r_core.h>
 
-// R2_600 -return bool instead of int
-R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
+R_API bool r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	R_RETURN_VAL_IF_FAIL (c, false);
 	RAnalFunction *fa = r_anal_get_function_at (c->anal, addr);
 	RAnalFunction *fb = r_anal_get_function_at (c->anal, addr2);
