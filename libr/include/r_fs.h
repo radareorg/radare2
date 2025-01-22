@@ -86,7 +86,7 @@ typedef struct r_fs_shell_t {
 	char *cwd;
 	void (*set_prompt)(const char *prompt);
 	const char* (*readline)(void);
-	int (*hist_add)(const char *line);
+	bool (*hist_add)(const char *line);
 } RFSShell;
 
 typedef struct r_fs_type_t {
