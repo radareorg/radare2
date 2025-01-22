@@ -158,8 +158,7 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 	}
 }
 
-// R2_600 - return bool instead of int
-R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
+R_API bool r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 	R_RETURN_VAL_IF_FAIL (bp, false);
 	int delta;
 	RListIter *iter;
