@@ -164,7 +164,7 @@ r_arch_sources = [
   'p/fslsp/plugin.c',
 ]
 
-if arch_plugins.contains('python')
+if arch_plugins.contains('python') or arch_plugins.contains('pyc') or arch_plugins.contains('pickle')
   r_arch_sources += [
     # python
     'p/pyc/plugin.c',
