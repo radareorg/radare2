@@ -185,7 +185,7 @@ static inline void __cons_write_ll(const char *buf, int len) {
 		if (I->fdout == 1) {
 			r_cons_w32_print (buf, len, false);
 		} else {
-			(void) write (I->fdout, buf, len);
+			R_IGNORE_RETURN (write (I->fdout, buf, len));
 		}
 	}
 #else
@@ -1349,10 +1349,7 @@ R_API void r_cons_visual_write(char *buffer) {
 				int w = cols - (alen % cols == 0 ? cols : alen % cols);
 				__cons_write (pptr, plen);
 				if (I->blankline && w > 0) {
-					if (w > sizeof (white) - 1) {
-						w = sizeof (white) - 1;
-					}
-					__cons_write (white, w);
+					__cons_write (white, R_MIN (w, sizeof (white)));
 				}
 			}
 			// TRICK to empty columns.. maybe buggy in w32
@@ -1370,11 +1367,8 @@ R_API void r_cons_visual_write(char *buffer) {
 	}
 	/* fill the rest of screen */
 	if (lines > 0) {
-		if (cols > sizeof (white)) {
-			cols = sizeof (white);
-		}
 		while (--lines >= 0) {
-			__cons_write (white, cols);
+			__cons_write (white, R_MIN (cols, sizeof (white)));
 		}
 	}
 }
