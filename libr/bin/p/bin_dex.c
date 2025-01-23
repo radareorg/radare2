@@ -577,6 +577,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			break;
 		case 0x0a: // DBG_SET_FIRST_SPECIAL
 			{
+				eprintf ("especial\n");
 				// TODO
 			}
 			break;
@@ -587,12 +588,15 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			}
 			break;
 #endif
-		case 15: // DBG_LINE_RANGE
-			{
-				// TODO
-			}
-			break;
+#if 0
 		default:
+			// we parse trash or we dont support undocumented opcodes. but this must improve
+			R_LOG_WARN ("Unhandled dex debug opcode 0x%02x", opcode);
+			break;
+#else
+		default:
+#endif
+		case 0x0f: // DBG_LINE_RANGE
 			{
 			int adjusted_opcode = opcode - 10;
 			address += (adjusted_opcode / 15);
@@ -624,22 +628,20 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	// Loading the debug info takes too much time and nobody uses this afaik
 	// 0.5s of 5s is spent in this loop
 	ut64 old_source_file_idx = -1;
-	const char *old_source_file = NULL;
+	const char *source_file = NULL;
 	r_list_foreach (debug_positions, iter1, pos) {
-		const char *line = old_source_file;
 		if (old_source_file_idx != pos->source_file_idx) {
-			line = getstr (dex, pos->source_file_idx);
-			if (!strcmp (line, "SourceFile")) {
-				line = bf->file;
+			source_file = getstr (dex, pos->source_file_idx);
+			if (!strcmp (source_file, "SourceFile")) {
+				source_file = bf->file;
 			}
-			old_source_file = line;
 			old_source_file_idx = pos->source_file_idx;
 		}
 		char offset[SDB_NUM_BUFSZ] = {0};
-		if (R_STR_ISEMPTY (line)) {
+		if (R_STR_ISEMPTY (source_file)) {
 			continue;
 		}
-		char *fileline = r_str_newf ("%s|%"PFMT64d, line, pos->line);
+		char *fileline = r_str_newf ("%s|%"PFMT64d, source_file, pos->line);
 		char *offset_ptr = sdb_itoa (pos->address + paddr, 16, offset, sizeof (offset));
 		sdb_set (bf->sdb_addrinfo, offset_ptr, fileline, 0);
 		sdb_set (bf->sdb_addrinfo, fileline, offset_ptr, 0);
@@ -650,14 +652,10 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			dex->dexdump = false;
 			break;
 		}
-		if (line) {
-			rbindwardrow->file = strdup (line);
-			rbindwardrow->address = pos->address;
-			rbindwardrow->line = pos->line;
-			r_list_append (dex->lines_list, rbindwardrow);
-		} else {
-			free (rbindwardrow);
-		}
+		rbindwardrow->file = strdup (source_file);
+		rbindwardrow->address = pos->address;
+		rbindwardrow->line = pos->line;
+		r_list_append (dex->lines_list, rbindwardrow);
 	}
 	if (!dex->dexdump) {
 		goto beach;
