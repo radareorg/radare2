@@ -92,7 +92,6 @@ r_arch_sources = [
   'p/kvx/plugin.c',
   'p/kvx/kvx-dis.c',
   'p/kvx/kvx-reg.c',
-  'p/pickle/plugin.c',
   'p/mcore/plugin.c',
   'p/mcore/mcore.c',
   'p/wasm/plugin.c',
@@ -151,13 +150,6 @@ r_arch_sources = [
   'p/mips_gnu/mips-opc.c',
   'p/sh_cs/plugin.c',
   'p/tricore_cs/plugin.c',
-  # python
-  'p/pyc/plugin.c',
-  'p/pyc/opcode_all.c',
-  'p/pyc/opcode_anal.c',
-  'p/pyc/opcode_arg_fmt.c',
-  'p/pyc/opcode.c',
-  'p/pyc/pyc_dis.c',
   'p/i8080/i8080.c',
   'p/i8080/plugin.c',
   'p/gb/plugin.c',
@@ -171,6 +163,19 @@ r_arch_sources = [
   'p/dalvik_ns/plugin.c',
   'p/fslsp/plugin.c',
 ]
+
+if arch_plugins.contains('python') or arch_plugins.contains('pyc') or arch_plugins.contains('pickle')
+  r_arch_sources += [
+    # python
+    'p/pyc/plugin.c',
+    'p/pyc/opcode_all.c',
+    'p/pyc/opcode_anal.c',
+    'p/pyc/opcode_arg_fmt.c',
+    'p/pyc/opcode.c',
+    'p/pyc/pyc_dis.c',
+    'p/pickle/plugin.c'
+  ]
+endif
 
 if arch_plugins.contains('x86_nz')
   r_arch_sources += [

@@ -46,6 +46,10 @@ if user_plugins.contains('apple') or user_plugins.contains('macos') or user_plug
     'xtr_sep64'
   ]
 endif
+if user_plugins.contains('python')
+  bin_plugins += [ 'python' ]
+  arch_plugins += [ 'pyc', 'pickle' ]
+endif
 if user_plugins.contains('bf')
   bin_plugins += [ 'bf' ]
   bp_plugins += [ 'bf' ]
@@ -161,6 +165,7 @@ if get_option('plugins') == ''
     'ppc_cs',
     'propeller',
     'pyc',
+    'pickle',
     'riscv',
     'riscv_cs',
     'rsp',
@@ -209,6 +214,7 @@ if get_option('plugins') == ''
 
   bin_plugins += [
     'art',
+    'pyc',
     'avr',
     'bflt',
     'bios',

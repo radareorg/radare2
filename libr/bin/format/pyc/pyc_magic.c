@@ -267,7 +267,7 @@ struct pyc_version get_pyc_version(ut32 magic) {
 	case 0x0a0d0d16: // 3350
 		return pyver (0x0a0d0d16, "3.5.0b2", "7a0a1a4ac63942f4ea3c7804e323adf668d40a21");
 	case 0x0a0d0d17: // 3351
-		return pyver (0x0a0d0d17, "3.5.2", "Unkonwn commit");
+		return pyver (0x0a0d0d17, "3.5.2", "Unknown commit");
 	case 0x0a0d0d20: // 3360
 		return pyver (0x0a0d0d20, "3.6.0a0", "1ddeb2e175df5009571b3632a709c6b74995cb29");
 	case 0x0a0d0d21: // 3361
@@ -275,17 +275,17 @@ struct pyc_version get_pyc_version(ut32 magic) {
 	case 0x0a0d0d2c: // 3372
 		return pyver (0x0a0d0d2c, "v3.6.0a2", "fa42893546010a0c649ba0d85d41a8bb980086f0");
 	case 0x0a0d0d2a: // 3370
-		return pyver (0x0a0d0d2a, "3.6a2", "Unkonwn commit");
+		return pyver (0x0a0d0d2a, "3.6a2", "Unknown commit");
 	case 0x0a0d0d2b: // 3371
-		return pyver (0x0a0d0d2b, "3.6a2", "Unkonwn commit");
+		return pyver (0x0a0d0d2b, "3.6a2", "Unknown commit");
 	case 0x0a0d0d31: // 3377
 		return pyver (0x0a0d0d31, "v3.6.0b1", "beb798cad6a6013d5a606ea0cd19640b35b468ea");
 	case 0x0a0d0d2d: // 3373
-		return pyver (0x0a0d0d2d, "3.6b1", "Unkonwn commit");
+		return pyver (0x0a0d0d2d, "3.6b1", "Unknown commit");
 	case 0x0a0d0d2f: // 3375
-		return pyver (0x0a0d0d2f, "3.6b1", "Unkonwn commit");
+		return pyver (0x0a0d0d2f, "3.6b1", "Unknown commit");
 	case 0x0a0d0d30: // 3376
-		return pyver (0x0a0d0d30, "3.6b1", "Unkonwn commit");
+		return pyver (0x0a0d0d30, "3.6b1", "Unknown commit");
 	case 0x0a0d0d32: // 3378
 		return pyver (0x0a0d0d32, "v3.6.0b2", "7e16af499b92def6fc4ab1bbcecd2c055a38de29");
 	case 0x0a0d0d33: // 3379
@@ -303,7 +303,7 @@ struct pyc_version get_pyc_version(ut32 magic) {
 	case 0x0a0d0d49: // 3401
 		return pyver (0x0a0d0d49, "v3.8.0a1", "8cb4789728241d25bca2c15568317c6655389f1b");
 	case 0x0a0d0d48: // 3400
-		return pyver (0x0a0d0d48, "3.8a1", "Unkonwn commit");
+		return pyver (0x0a0d0d48, "3.8a1", "Unknown commit");
 	case 0x0a0d0d52: // 3410
 		return pyver (0x0a0d0d52, "v3.8.0a4", "1b3497f679823b0368fabc95ccd1a1c24b8d429e");
 	case 0x0a0d0d53: // 3411
@@ -313,230 +313,230 @@ struct pyc_version get_pyc_version(ut32 magic) {
 	case 0x0a0d0d55: // 3413
 		return pyver (0x0a0d0d55, "v3.8.0", "5d714034866ce1e9f89dc141fe4cc0b50cf20a8e");
 	case 0x0a0d0d5d: // 3421
-		return pyver (0x0a0d0d5d, "3.9a0", "Unkonwn commit");
+		return pyver (0x0a0d0d5d, "3.9a0", "Unknown commit");
 	case 0x0a0d0d5c: // 3420
 		return pyver (0x0a0d0d5c, "v3.9.0a1", "fd757083df79c21eee862e8d89aeefefe45f64a0");
 	case 0x0a0d0d5e: // 3422
 		return pyver (0x0a0d0d5e, "v3.9.0a2", "bf0a31c8fb782e03e9530c2488ab2d0e29fc0495");
 	case 0x0a0d0d5f: // 3423
-		return pyver (0x0a0d0d5f, "3.9a2", "Unkonwn commit");
+		return pyver (0x0a0d0d5f, "3.9a2", "Unknown commit");
 	case 0x0a0d0d61: // 3425
-		return pyver (0x0a0d0d61, "3.9a2", "Unkonwn commit");
+		return pyver (0x0a0d0d61, "3.9a2", "Unknown commit");
 	case 0x0a0d0d60: // 3424
 		return pyver (0x0a0d0d60, "v3.9.0a3", "a36ea266c6470f6c65416f24de4497637e59af23");
 	case 0x0a0d0d66: // 3430
-		return pyver (0x0a0d0d66, "3.10a1", "Unkonwn commit");
+		return pyver (0x0a0d0d66, "3.10a1", "Unknown commit");
 	case 0x0a0d0d67: // 3431
-		return pyver (0x0a0d0d67, "3.10a1", "Unkonwn commit");
+		return pyver (0x0a0d0d67, "3.10a1", "Unknown commit");
 	case 0x0a0d0d68: // 3432
-		return pyver (0x0a0d0d68, "3.10a2", "Unkonwn commit");
+		return pyver (0x0a0d0d68, "3.10a2", "Unknown commit");
 	case 0x0a0d0d69: // 3433
-		return pyver (0x0a0d0d69, "3.10a2", "Unkonwn commit");
+		return pyver (0x0a0d0d69, "3.10a2", "Unknown commit");
 	case 0x0a0d0d6a: // 3434
-		return pyver (0x0a0d0d6a, "3.10a6", "Unkonwn commit");
+		return pyver (0x0a0d0d6a, "3.10a6", "Unknown commit");
 	case 0x0a0d0d6b: // 3435
-		return pyver (0x0a0d0d6b, "3.10a7", "Unkonwn commit");
+		return pyver (0x0a0d0d6b, "3.10a7", "Unknown commit");
 	case 0x0a0d0d6c: // 3436
-		return pyver (0x0a0d0d6c, "3.10b1", "Unkonwn commit");
+		return pyver (0x0a0d0d6c, "3.10b1", "Unknown commit");
 	case 0x0a0d0d6d: // 3437
-		return pyver (0x0a0d0d6d, "3.10b1", "Unkonwn commit");
+		return pyver (0x0a0d0d6d, "3.10b1", "Unknown commit");
 	case 0x0a0d0d6e: // 3438
-		return pyver (0x0a0d0d6e, "3.10b1", "Unkonwn commit");
+		return pyver (0x0a0d0d6e, "3.10b1", "Unknown commit");
 	case 0x0a0d0d6f: // 3439
-		return pyver (0x0a0d0d6f, "3.10b1", "Unkonwn commit");
+		return pyver (0x0a0d0d6f, "3.10b1", "Unknown commit");
 	case 0x0a0d0d7a: // 3450
-		return pyver (0x0a0d0d7a, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7a, "3.11a1", "Unknown commit");
 	case 0x0a0d0d7b: // 3451
-		return pyver (0x0a0d0d7b, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7b, "3.11a1", "Unknown commit");
 	case 0x0a0d0d7c: // 3452
-		return pyver (0x0a0d0d7c, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7c, "3.11a1", "Unknown commit");
 	case 0x0a0d0d7d: // 3453
-		return pyver (0x0a0d0d7d, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7d, "3.11a1", "Unknown commit");
 	case 0x0a0d0d7e: // 3454
-		return pyver (0x0a0d0d7e, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7e, "3.11a1", "Unknown commit");
 	case 0x0a0d0d7f: // 3455
-		return pyver (0x0a0d0d7f, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d7f, "3.11a1", "Unknown commit");
 	case 0x0a0d0d80: // 3456
-		return pyver (0x0a0d0d80, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d80, "3.11a1", "Unknown commit");
 	case 0x0a0d0d81: // 3457
-		return pyver (0x0a0d0d81, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d81, "3.11a1", "Unknown commit");
 	case 0x0a0d0d82: // 3458
-		return pyver (0x0a0d0d82, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d82, "3.11a1", "Unknown commit");
 	case 0x0a0d0d83: // 3459
-		return pyver (0x0a0d0d83, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d83, "3.11a1", "Unknown commit");
 	case 0x0a0d0d84: // 3460
-		return pyver (0x0a0d0d84, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d84, "3.11a1", "Unknown commit");
 	case 0x0a0d0d85: // 3461
-		return pyver (0x0a0d0d85, "3.11a1", "Unkonwn commit");
+		return pyver (0x0a0d0d85, "3.11a1", "Unknown commit");
 	case 0x0a0d0d86: // 3462
-		return pyver (0x0a0d0d86, "3.11a2", "Unkonwn commit");
+		return pyver (0x0a0d0d86, "3.11a2", "Unknown commit");
 	case 0x0a0d0d87: // 3463
-		return pyver (0x0a0d0d87, "3.11a3", "Unkonwn commit");
+		return pyver (0x0a0d0d87, "3.11a3", "Unknown commit");
 	case 0x0a0d0d88: // 3464
-		return pyver (0x0a0d0d88, "3.11a3", "Unkonwn commit");
+		return pyver (0x0a0d0d88, "3.11a3", "Unknown commit");
 	case 0x0a0d0d89: // 3465
-		return pyver (0x0a0d0d89, "3.11a3", "Unkonwn commit");
+		return pyver (0x0a0d0d89, "3.11a3", "Unknown commit");
 	case 0x0a0d0d8a: // 3466
-		return pyver (0x0a0d0d8a, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8a, "3.11a4", "Unknown commit");
 	case 0x0a0d0d8b: // 3467
-		return pyver (0x0a0d0d8b, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8b, "3.11a4", "Unknown commit");
 	case 0x0a0d0d8c: // 3468
-		return pyver (0x0a0d0d8c, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8c, "3.11a4", "Unknown commit");
 	case 0x0a0d0d8d: // 3469
-		return pyver (0x0a0d0d8d, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8d, "3.11a4", "Unknown commit");
 	case 0x0a0d0d8e: // 3470
-		return pyver (0x0a0d0d8e, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8e, "3.11a4", "Unknown commit");
 	case 0x0a0d0d8f: // 3471
-		return pyver (0x0a0d0d8f, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d8f, "3.11a4", "Unknown commit");
 	case 0x0a0d0d90: // 3472
-		return pyver (0x0a0d0d90, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d90, "3.11a4", "Unknown commit");
 	case 0x0a0d0d91: // 3473
-		return pyver (0x0a0d0d91, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d91, "3.11a4", "Unknown commit");
 	case 0x0a0d0d92: // 3474
-		return pyver (0x0a0d0d92, "3.11a4", "Unkonwn commit");
+		return pyver (0x0a0d0d92, "3.11a4", "Unknown commit");
 	case 0x0a0d0d93: // 3475
-		return pyver (0x0a0d0d93, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d93, "3.11a5", "Unknown commit");
 	case 0x0a0d0d94: // 3476
-		return pyver (0x0a0d0d94, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d94, "3.11a5", "Unknown commit");
 	case 0x0a0d0d95: // 3477
-		return pyver (0x0a0d0d95, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d95, "3.11a5", "Unknown commit");
 	case 0x0a0d0d96: // 3478
-		return pyver (0x0a0d0d96, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d96, "3.11a5", "Unknown commit");
 	case 0x0a0d0d97: // 3479
-		return pyver (0x0a0d0d97, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d97, "3.11a5", "Unknown commit");
 	case 0x0a0d0d98: // 3480
-		return pyver (0x0a0d0d98, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d98, "3.11a5", "Unknown commit");
 	case 0x0a0d0d99: // 3481
-		return pyver (0x0a0d0d99, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d99, "3.11a5", "Unknown commit");
 	case 0x0a0d0d9a: // 3482
-		return pyver (0x0a0d0d9a, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d9a, "3.11a5", "Unknown commit");
 	case 0x0a0d0d9b: // 3483
-		return pyver (0x0a0d0d9b, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d9b, "3.11a5", "Unknown commit");
 	case 0x0a0d0d9c: // 3484
-		return pyver (0x0a0d0d9c, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d9c, "3.11a5", "Unknown commit");
 	case 0x0a0d0d9d: // 3485
-		return pyver (0x0a0d0d9d, "3.11a5", "Unkonwn commit");
+		return pyver (0x0a0d0d9d, "3.11a5", "Unknown commit");
 	case 0x0a0d0d9e: // 3486
-		return pyver (0x0a0d0d9e, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0d9e, "3.11a6", "Unknown commit");
 	case 0x0a0d0d9f: // 3487
-		return pyver (0x0a0d0d9f, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0d9f, "3.11a6", "Unknown commit");
 	case 0x0a0d0da0: // 3488
-		return pyver (0x0a0d0da0, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0da0, "3.11a6", "Unknown commit");
 	case 0x0a0d0da1: // 3489
-		return pyver (0x0a0d0da1, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0da1, "3.11a6", "Unknown commit");
 	case 0x0a0d0da2: // 3490
-		return pyver (0x0a0d0da2, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0da2, "3.11a6", "Unknown commit");
 	case 0x0a0d0da3: // 3491
-		return pyver (0x0a0d0da3, "3.11a6", "Unkonwn commit");
+		return pyver (0x0a0d0da3, "3.11a6", "Unknown commit");
 	case 0x0a0d0da4: // 3492
-		return pyver (0x0a0d0da4, "3.11a7", "Unkonwn commit");
+		return pyver (0x0a0d0da4, "3.11a7", "Unknown commit");
 	case 0x0a0d0da5: // 3493
-		return pyver (0x0a0d0da5, "3.11a7", "Unkonwn commit");
+		return pyver (0x0a0d0da5, "3.11a7", "Unknown commit");
 	case 0x0a0d0da6: // 3494
-		return pyver (0x0a0d0da6, "3.11a7", "Unkonwn commit");
+		return pyver (0x0a0d0da6, "3.11a7", "Unknown commit");
 	case 0x0a0d0da7: // 3495
-		return pyver (0x0a0d0da7, "3.11b4", "Unkonwn commit");
+		return pyver (0x0a0d0da7, "3.11b4", "Unknown commit");
 	case 0x0a0d0dac: // 3500
-		return pyver (0x0a0d0dac, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0dac, "3.12a1", "Unknown commit");
 	case 0x0a0d0dad: // 3501
-		return pyver (0x0a0d0dad, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0dad, "3.12a1", "Unknown commit");
 	case 0x0a0d0dae: // 3502
-		return pyver (0x0a0d0dae, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0dae, "3.12a1", "Unknown commit");
 	case 0x0a0d0daf: // 3503
-		return pyver (0x0a0d0daf, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0daf, "3.12a1", "Unknown commit");
 	case 0x0a0d0db0: // 3504
-		return pyver (0x0a0d0db0, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db0, "3.12a1", "Unknown commit");
 	case 0x0a0d0db1: // 3505
-		return pyver (0x0a0d0db1, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db1, "3.12a1", "Unknown commit");
 	case 0x0a0d0db2: // 3506
-		return pyver (0x0a0d0db2, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db2, "3.12a1", "Unknown commit");
 	case 0x0a0d0db3: // 3507
-		return pyver (0x0a0d0db3, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db3, "3.12a1", "Unknown commit");
 	case 0x0a0d0db4: // 3508
-		return pyver (0x0a0d0db4, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db4, "3.12a1", "Unknown commit");
 	case 0x0a0d0db5: // 3509
-		return pyver (0x0a0d0db5, "3.12a1", "Unkonwn commit");
+		return pyver (0x0a0d0db5, "3.12a1", "Unknown commit");
 	case 0x0a0d0db6: // 3510
-		return pyver (0x0a0d0db6, "3.12a2", "Unkonwn commit");
+		return pyver (0x0a0d0db6, "3.12a2", "Unknown commit");
 	case 0x0a0d0db7: // 3511
-		return pyver (0x0a0d0db7, "3.12a2", "Unkonwn commit");
+		return pyver (0x0a0d0db7, "3.12a2", "Unknown commit");
 	case 0x0a0d0db8: // 3512
-		return pyver (0x0a0d0db8, "3.12a2", "Unkonwn commit");
+		return pyver (0x0a0d0db8, "3.12a2", "Unknown commit");
 	case 0x0a0d0db9: // 3513
-		return pyver (0x0a0d0db9, "3.12a4", "Unkonwn commit");
+		return pyver (0x0a0d0db9, "3.12a4", "Unknown commit");
 	case 0x0a0d0dba: // 3514
-		return pyver (0x0a0d0dba, "3.12a4", "Unkonwn commit");
+		return pyver (0x0a0d0dba, "3.12a4", "Unknown commit");
 	case 0x0a0d0dbb: // 3515
-		return pyver (0x0a0d0dbb, "3.12a5", "Unkonwn commit");
+		return pyver (0x0a0d0dbb, "3.12a5", "Unknown commit");
 	case 0x0a0d0dbc: // 3516
-		return pyver (0x0a0d0dbc, "3.12a5", "Unkonwn commit");
+		return pyver (0x0a0d0dbc, "3.12a5", "Unknown commit");
 	case 0x0a0d0dbd: // 3517
-		return pyver (0x0a0d0dbd, "3.12a5", "Unkonwn commit");
+		return pyver (0x0a0d0dbd, "3.12a5", "Unknown commit");
 	case 0x0a0d0dbe: // 3518
-		return pyver (0x0a0d0dbe, "3.12a6", "Unkonwn commit");
+		return pyver (0x0a0d0dbe, "3.12a6", "Unknown commit");
 	case 0x0a0d0dbf: // 3519
-		return pyver (0x0a0d0dbf, "3.12a6", "Unkonwn commit");
+		return pyver (0x0a0d0dbf, "3.12a6", "Unknown commit");
 	case 0x0a0d0dc0: // 3520
-		return pyver (0x0a0d0dc0, "3.12a6", "Unkonwn commit");
+		return pyver (0x0a0d0dc0, "3.12a6", "Unknown commit");
 	case 0x0a0d0dc1: // 3521
-		return pyver (0x0a0d0dc1, "3.12a7", "Unkonwn commit");
+		return pyver (0x0a0d0dc1, "3.12a7", "Unknown commit");
 	case 0x0a0d0dc2: // 3522
-		return pyver (0x0a0d0dc2, "3.12a7", "Unkonwn commit");
+		return pyver (0x0a0d0dc2, "3.12a7", "Unknown commit");
 	case 0x0a0d0dc3: // 3523
-		return pyver (0x0a0d0dc3, "3.12a7", "Unkonwn commit");
+		return pyver (0x0a0d0dc3, "3.12a7", "Unknown commit");
 	case 0x0a0d0dc4: // 3524
-		return pyver (0x0a0d0dc4, "3.12a7", "Unkonwn commit");
+		return pyver (0x0a0d0dc4, "3.12a7", "Unknown commit");
 	case 0x0a0d0dc5: // 3525
-		return pyver (0x0a0d0dc5, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dc5, "3.12b1", "Unknown commit");
 	case 0x0a0d0dc6: // 3526
-		return pyver (0x0a0d0dc6, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dc6, "3.12b1", "Unknown commit");
 	case 0x0a0d0dc7: // 3527
-		return pyver (0x0a0d0dc7, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dc7, "3.12b1", "Unknown commit");
 	case 0x0a0d0dc8: // 3528
-		return pyver (0x0a0d0dc8, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dc8, "3.12b1", "Unknown commit");
 	case 0x0a0d0dc9: // 3529
-		return pyver (0x0a0d0dc9, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dc9, "3.12b1", "Unknown commit");
 	case 0x0a0d0dca: // 3530
-		return pyver (0x0a0d0dca, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dca, "3.12b1", "Unknown commit");
 	case 0x0a0d0dcb: // 3531
-		return pyver (0x0a0d0dcb, "3.12b1", "Unkonwn commit");
+		return pyver (0x0a0d0dcb, "3.12b1", "Unknown commit");
 	case 0x0a0d0dde: // 3550
-		return pyver (0x0a0d0dde, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0dde, "3.13a1", "Unknown commit");
 	case 0x0a0d0ddf: // 3551
-		return pyver (0x0a0d0ddf, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0ddf, "3.13a1", "Unknown commit");
 	case 0x0a0d0de0: // 3552
-		return pyver (0x0a0d0de0, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de0, "3.13a1", "Unknown commit");
 	case 0x0a0d0de1: // 3553
-		return pyver (0x0a0d0de1, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de1, "3.13a1", "Unknown commit");
 	case 0x0a0d0de2: // 3554
-		return pyver (0x0a0d0de2, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de2, "3.13a1", "Unknown commit");
 	case 0x0a0d0de3: // 3555
-		return pyver (0x0a0d0de3, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de3, "3.13a1", "Unknown commit");
 	case 0x0a0d0de4: // 3556
-		return pyver (0x0a0d0de4, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de4, "3.13a1", "Unknown commit");
 	case 0x0a0d0de5: // 3557
-		return pyver (0x0a0d0de5, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de5, "3.13a1", "Unknown commit");
 	case 0x0a0d0de6: // 3558
-		return pyver (0x0a0d0de6, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de6, "3.13a1", "Unknown commit");
 	case 0x0a0d0de7: // 3559
-		return pyver (0x0a0d0de7, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de7, "3.13a1", "Unknown commit");
 	case 0x0a0d0de8: // 3560
-		return pyver (0x0a0d0de8, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de8, "3.13a1", "Unknown commit");
 	case 0x0a0d0de9: // 3561
-		return pyver (0x0a0d0de9, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0de9, "3.13a1", "Unknown commit");
 	case 0x0a0d0dea: // 3562
-		return pyver (0x0a0d0dea, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0dea, "3.13a1", "Unknown commit");
 	case 0x0a0d0deb: // 3563
-		return pyver (0x0a0d0deb, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0deb, "3.13a1", "Unknown commit");
 	case 0x0a0d0dec: // 3564
-		return pyver (0x0a0d0dec, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0dec, "3.13a1", "Unknown commit");
 	case 0x0a0d0ded: // 3565
-		return pyver (0x0a0d0ded, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0ded, "3.13a1", "Unknown commit");
 	case 0x0a0d0dee: // 3566
-		return pyver (0x0a0d0dee, "3.13a1", "Unkonwn commit");
+		return pyver (0x0a0d0dee, "3.13a1", "Unknown commit");
 	case 0x0a0d0e10: // 3600
 		// 3.14 will have 3600, will it be 3.14a1? IDK, update below if do Mr. time traveler.
-		return pyver (0x0a0d0e10, "3.14", "Unkonwn commit");
+		return pyver (0x0a0d0e10, "3.14", "Unknown commit");
 	default:
 		return pyver (-1, NULL, NULL);
 	}
