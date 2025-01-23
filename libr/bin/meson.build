@@ -146,7 +146,7 @@ r_bin_sources = [
   'mangling/swift.c'
 ]
 
-if bin_plugins.contains('python')
+if bin_plugins.contains('pyc') or bin_plugins.contains('pickle')
   r_bin_sources += [
     'p/bin_pyc.c',
     'format/pyc/marshal.c',
