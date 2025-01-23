@@ -47,6 +47,7 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_ENABLE R_CRITICAL_ENABLED threadsafety enable mutexes in critical code paths ;
 
+ARG_WITHOUT WANT_QJS qjs build without the QuickJS runtime ;
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
@@ -334,7 +335,7 @@ REPORT
 	HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX
 	R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC NEW_IO_CACHE USE_SQSH
 	USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK USE_SMALLZ4
-	USE_LIB_ATOMIC HAVE___ATOMIC_FETCH_ADD_8 FORCE_LIB_ATOMIC 
+	USE_LIB_ATOMIC HAVE___ATOMIC_FETCH_ADD_8 FORCE_LIB_ATOMIC WANT_QJS
 ;
 
 PKGCFG_DO pkgcfg/r_egg.pc r_egg r_asm r_syscall r_util r_reg r_flag r_cons ;

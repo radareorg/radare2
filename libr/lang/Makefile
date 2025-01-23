@@ -16,9 +16,10 @@ R2DEPS+=r_syscall
 R2DEPS+=r_flag
 CFLAGS+=-DR2_PLUGIN_INCORE
 CFLAGS+=-DCONFIG_VERSION=\"0.0.0\"
-OBJS+=$(QJS_OBJS)
-# LINK+=$(QJS_FILES)
 LDFLAGS+=$(LIBATOMIC)
 
+ifeq ($(WANT_QJS),1)
+OBJS+=$(QJS_OBJS)
 include ../../shlr/qjs/deps.mk
+endif
 include ../rules.mk

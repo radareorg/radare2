@@ -71,7 +71,9 @@ R_API RLang *r_lang_new(void) {
 	r_lang_plugin_add (lang, &r_lang_plugin_spp);
 	r_lang_plugin_add (lang, &r_lang_plugin_lib);
 	r_lang_plugin_add (lang, &r_lang_plugin_asm);
+#if WANT_QJS
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
+#endif
 	r_lang_plugin_add (lang, &r_lang_plugin_tsc);
 	r_lang_plugin_add (lang, &r_lang_plugin_nim);
 	r_lang_plugin_add (lang, &r_lang_plugin_dart);

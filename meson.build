@@ -263,6 +263,7 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(de
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
 conf_data.set('WANT_THREADS', get_option('want_threads')? '1': '0')
+conf_data.set('WANT_QJS', get_option('want_qjs')? '1': '0')
 
 config_h = configure_file(
   input: 'libr/config.h.in',
@@ -414,6 +415,7 @@ userconf.set10('HAVE_LIBUV', use_libuv)
 userconf.set10('HAVE_FORK', use_fork)
 userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
 userconf.set10('WANT_DYLINK', use_dylink)
+userconf.set10('WANT_QJS', get_option('want_qjs'))
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
 userconf.set10('USE_NEW_ABI', get_option('use_new_abi'))
