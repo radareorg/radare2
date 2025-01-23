@@ -4,7 +4,7 @@ CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
-machine  Python 3.9a2 VM (rev Unkonwn commit)
+machine  Python 3.9a2 VM (rev Unknown commit)
 EOF
 RUN
 

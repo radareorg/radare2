@@ -59,7 +59,6 @@ r_bin_sources = [
   'p/bin_pebble.c',
   'p/bin_prg.c',
   'p/bin_psxexe.c',
-  'p/bin_pyc.c',
   'p/bin_qnx.c',
   'p/bin_rel.c',
   'p/bin_s390.c',
@@ -120,9 +119,6 @@ r_bin_sources = [
   'format/pe/pe64_write.c',
   'format/pe/pe_write.c',
   'format/pe/pemixed.c',
-  'format/pyc/marshal.c',
-  'format/pyc/pyc.c',
-  'format/pyc/pyc_magic.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
@@ -149,6 +145,15 @@ r_bin_sources = [
   'mangling/swift-sd.c',
   'mangling/swift.c'
 ]
+
+if bin_plugins.contains('python')
+  r_bin_sources += [
+    'p/bin_pyc.c',
+    'format/pyc/marshal.c',
+    'format/pyc/pyc.c',
+    'format/pyc/pyc_magic.c',
+  ]
+endif
 
 r_bin_sources += r_bin_d_sources
 
