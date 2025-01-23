@@ -4,6 +4,7 @@
 #define R_DEBUG 0
 #define R_RTDEBUG 1
 #define WANT_THREADS @WANT_THREADS@
+#define WANT_QJS @WANT_QJS@
 
 /* inlined APIs */
 #define R_INLINE 0

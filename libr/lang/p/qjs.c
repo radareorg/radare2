@@ -4,6 +4,8 @@
 #include <r_core.h>
 #include <r_vec.h>
 
+#if WANT_QJS
+
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
 //#include <qjs/quickjs.h>
@@ -932,4 +934,5 @@ RLibStruct radare_plugin = {
 	.data = &r_lang_plugin_qjs,
 	.version = R2_VERSION
 };
+#endif
 #endif
