@@ -9,9 +9,15 @@ sources = [
 ]
 
 incs = include_directories('.')
+visibility_flags = [
+  '-fvisibility=hidden',
+  '-Dutf8_encode=utf8_encode_r2'
+]
 
 qjs_static = static_library(
   'qjs', sources,
+  gnu_symbol_visibility: 'hidden',
+  c_args: visibility_flags,
   include_directories: incs
 )
 
