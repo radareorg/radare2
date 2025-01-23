@@ -631,11 +631,14 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	const char *source_file = NULL;
 	r_list_foreach (debug_positions, iter1, pos) {
 		if (old_source_file_idx != pos->source_file_idx) {
-			source_file = getstr (dex, pos->source_file_idx);
-			if (!strcmp (source_file, "SourceFile")) {
-				source_file = bf->file;
+			const char *sf = getstr (dex, pos->source_file_idx);
+			if (sf) {
+				if (!strcmp (sf, "SourceFile")) {
+					sf = bf->file;
+				}
+				old_source_file_idx = pos->source_file_idx;
+				source_file = sf;
 			}
-			old_source_file_idx = pos->source_file_idx;
 		}
 		char offset[SDB_NUM_BUFSZ] = {0};
 		if (R_STR_ISEMPTY (source_file)) {
