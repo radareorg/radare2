@@ -4529,49 +4529,48 @@ static bool is_x86_ret(RDebug *dbg, ut64 addr) {
 	/* Possibly incomplete with regard to instruction prefixes */
 }
 
+static ut64 getnum(RCore *core, const char *a) {
+	eprintf ("a (%s)\n", a);
+	if (r_str_startswith (a, "..")) {
+		return r_num_tail (core->num, core->offset, a + 2);
+	}
+	return r_num_math (core->num, a);
+}
+
 static bool cmd_dcu(RCore *core, const char *input) {
-	const char *ptr = NULL;
-	ut64 from, to, pc;
-	bool dcu_range = false;
+	ut64 pc;
 	bool invalid = (!input[0] || !input[1] || !input[2]);
 	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		r_core_cmd_help (core, help_msg_dcu);
+		r_core_return_invalid_command (core, "dcu", input[2]);
 		return false;
 	}
-	to = UT64_MAX;
-	if (input[2] == '.') {
-		ptr = (input[3])? strchr (input + 3, ' '): NULL;
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = r_num_tail (core->num, core->offset, input + 2);
-			if (ptr[1] == '.') {
-				to = r_num_tail (core->num, core->offset, ptr+2);
-			} else {
-				to = r_num_math (core->num, ptr+1);
-			}
-			dcu_range = true;
-		} else {
-			from = r_num_tail (core->num, core->offset, input + 2);
+	ut64 from = UT64_MAX;
+	ut64 to = UT64_MAX;
+	char *addrstr = r_str_trim_dup (input + 2);
+	char *space = strchr (addrstr, ' ');
+	bool dcu_range = false;
+	if (space) {
+		dcu_range = true; // implicit if from != -1?
+		*space = 0;
+		from = getnum (core, addrstr);
+		to = getnum (core, space + 1);
+		if (from == UT64_MAX) {
+			// error
+			R_LOG_ERROR ("Invalid range from address");
+			return false;
 		}
 	} else {
-		ptr = (input[2] && input[3])? strchr (input + 3, ' '): NULL;
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = r_num_math (core->num, input + 3);
-			if (ptr[1] == '.') {
-				to = r_num_tail (core->num, core->offset, ptr + 2);
-			} else {
-				to = r_num_math (core->num, ptr+1);
-			}
-			dcu_range = true;
-		} else {
-			from = r_num_math (core->num, input + 3);
-		}
+		from = to = getnum (core, addrstr);
 	}
-	if (core->num->nc.errors && r_cons_is_interactive ()) {
-		R_LOG_ERROR ("Cannot continue until unknown address '%s'", core->num->nc.calc_buf);
+	free (addrstr);
+	if (to == UT64_MAX) {
+		// error
+		R_LOG_ERROR ("Invalid range to address");
 		return false;
 	}
-	if (to == UT64_MAX) {
-		to = from;
+	if (core->num->nc.errors && r_cons_is_interactive ()) {
+		R_LOG_ERROR ("Cannot continue until unknown address");
+		return false;
 	}
 	if (dcu_range) {
 		r_cons_break_push (NULL, NULL);
@@ -4825,8 +4824,6 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	case 'u': // "dcu"
 		if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_dcu);
-		} else if (input[2] == '.') {
-			cmd_dcu (core, "cu $$");
 		} else {
 			cmd_dcu (core, input);
 		}
