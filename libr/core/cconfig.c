@@ -4187,8 +4187,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("dbg.bpsysign", "false", "ignore system breakpoints");
 	SETICB ("dbg.btdepth", 128, &cb_dbgbtdepth, "depth of backtrace");
 
-
-
 	/* filesystem */
 	n = NODECB ("fs.view", "normal", &cb_fsview);
 	SETDESC (n, "set visibility options for filesystems");

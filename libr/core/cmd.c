@@ -1863,8 +1863,9 @@ static int cmd_stdin(void *data, const char *input) {
 				const char *arch = r_config_get (core->config, "asm.arch");
 				r_cons_printf ("%s\n", arch);
 			} else {
-				r_config_set (core->config, "asm.arch", arg);
-				r_config_set (core->config, "anal.arch", arg);
+				if (r_config_set (core->config, "asm.arch", arg)) {
+					r_config_set (core->config, "anal.arch", arg);
+				}
 			}
 			break;
 		case 'i': // "-i"

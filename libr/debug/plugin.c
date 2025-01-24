@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 pancake */
+/* radare - LGPL - Copyright 2009-2025 pancake */
 
 #include <r_debug.h>
 #include <config.h>
@@ -18,8 +18,8 @@ static RDebugPlugin *debug_static_plugins[] = {
 
 R_API void r_debug_init_plugins(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
-	int i;
 	dbg->plugins = RVecDebugPluginSession_new ();
+	int i;
 	for (i = 0; debug_static_plugins[i]; i++) {
 		r_debug_plugin_add (dbg, debug_static_plugins[i]);
 	}
@@ -36,6 +36,7 @@ static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void 
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
+	const char *aname = R_UNWRAP4 (dbg, anal, config, arch);
 	if (R_STR_ISNOTEMPTY (str)) {
 		RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
 		if (!ds) {
@@ -46,9 +47,8 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 		}
 		if (ds) {
 			dbg->current = ds;
-			if (dbg->anal && dbg->anal->cur) {
-				const char *arch = dbg->anal->config->arch;
-				r_debug_set_arch (dbg, arch, dbg->bits);
+			if (aname) {
+				r_debug_set_arch (dbg, aname, dbg->bits);
 			}
 			dbg->bp->breakpoint = dbg->current->plugin->breakpoint;
 			dbg->bp->user = dbg;
@@ -72,7 +72,9 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			}
 			free (p);
 		} else {
-			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", plugin->meta.name);
+			R_LOG_ERROR ("No regprofile from debug plugin (%s) for (%s)",
+				plugin->meta.name, aname? aname: "?");
+			// r_sys_breakpoint ();
 		}
 	}
 	return dbg->current;
@@ -93,20 +95,16 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	RDebugPluginSession *ds;
 	R_VEC_FOREACH (dbg->plugins, ds) {
 		RPluginMeta meta = ds->plugin->meta;
-		int sp = 8 - strlen (meta.name);
-		memset (spaces, ' ', sp);
-		spaces[sp] = 0;
+		const int sp = 8 - strlen (meta.name);
+		if (sp > 0) {
+			memset (spaces, ' ', sp);
+			spaces[sp] = 0;
+		}
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", meta.name);
 		} else if (mode == 'j') {
 			pj_o (pj);
-			pj_ks (pj, "name", meta.name);
-			pj_ks (pj, "license", meta.license);
-			pj_ks (pj, "author", meta.author);
-			pj_ks (pj, "desc", meta.desc);
-			if (meta.version) {
-				pj_ks (pj, "version", meta.version);
-			}
+			r_lib_meta_pj (pj, &meta);
 			pj_end (pj);
 		} else {
 			dbg->cb_printf ("%s %s %s%s\n",
