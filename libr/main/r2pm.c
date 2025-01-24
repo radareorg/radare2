@@ -27,6 +27,7 @@ static const char *helpmsg =
 	" -l                list installed packages\n"
 	" -q                be quiet\n"
 	" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"
+	" -R <pkgname>      reload plugin (See R2PM_RELOAD code block package)\n"
 	" -s [<keyword>]    search available packages in database matching a string\n"
 	" -t [YYYY-MM-DD]   set a moment in time to pull the code from the git packages\n"
 	" -u <pkgname>      uninstall package (see -f to force uninstall)\n"
@@ -53,6 +54,7 @@ typedef struct r_r2pm_t {
 	bool quiet;
 	bool run;
 	bool search;
+	bool reload;
 	bool uninstall;
 	bool upgrade;
 	bool version;
@@ -1177,7 +1179,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		0
 	};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
+	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrRpst:uUv");
 	int i, c;
 	bool action = false;
 	// -H option without argument
@@ -1242,6 +1244,10 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			break;
 		case 't':
 			r2pm.time = opt.arg;
+			break;
+		case 'R':
+			r2pm.reload = true;
+			action = true;
 			break;
 		case 'r':
 			r2pm.run = true;
@@ -1380,6 +1386,22 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			res = 0;
 		} else {
 			res = 1;
+		}
+	}
+	if (r2pm.reload) {
+		RListIter *iter;
+		const char *pkg;
+		r_list_foreach (targets, iter, pkg) {
+			char *s = r2pm_get (pkg, "\nR2PM_RELOAD() {", TT_CODEBLOCK);
+			if (s) {
+				char *t = r_str_trim_lines (s);
+				r_cons_print (t);
+				free (t);
+				free (s);
+			}
+		}
+		if (havetoflush) {
+			r_cons_flush ();
 		}
 	}
 	r_list_free (targets);
