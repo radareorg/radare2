@@ -148,8 +148,7 @@ R_API void r_cons_grep_expression(const char *str) {
 			case ':':
 				if (ptr[1] == ')') { // ":)"
 					if (ptr[2] == ')') { // ":))"
-						// R2_600 - add grep->colorcode option
-						grep->sort = -123;
+						grep->colorcode = true;
 						ptr++;
 					}
 					grep->code = true;
@@ -721,7 +720,7 @@ R_API void r_cons_grepbuf(void) {
 		R_FREE (cons->context->buffer);
 		return;
 	}
-	if (grep->sort == -123) { // R2_600 - colorcode
+	if (grep->colorcode) {
 		colorcode ();
 		grep->sort = 0;
 		grep->code = false;
