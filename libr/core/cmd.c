@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2025 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -1312,7 +1312,6 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 
 	if (!strcmp (file, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
-		eprintf ("power %s \n", out);
 		if (out) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
