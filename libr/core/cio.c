@@ -77,7 +77,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		R_LOG_ERROR ("Cannot open '%s' for writing", file);
+		R_LOG_ERROR ("Cannot open coredump '%s' for writing", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
