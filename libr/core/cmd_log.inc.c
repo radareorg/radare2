@@ -639,8 +639,26 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_free (pj);
 			break;
 			}
+		case '-':
+			r_core_cmd_callf (core, "L-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case ' ':
-			r_lib_open (core->lib, r_str_trim_head_ro (input + 2));
+			{
+				const char *arg = r_str_trim_head_ro (input + 2);
+				char *p = r_file_home (arg);
+				if (r_file_exists (p)) {
+					r_lib_open (core->lib, p);
+				} else {
+					if (strchr (arg, '.')) {
+						r_lib_open (core->lib, arg);
+					} else {
+						char *q = r_str_newf ("%s.%s", arg, R_LIB_EXT);
+						r_lib_open (core->lib, q);
+						free (q);
+					}
+				}
+				free (p);
+			}
 			break;
 		case 'v':
 			r_lib_list (core->lib);
