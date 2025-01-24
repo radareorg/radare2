@@ -95,15 +95,17 @@ Example commands tests for the other `db/` folders:
 
 	NAME=test_db
 	FILE=bins/elf/ls
-	CMDS=<<EXPECT
+	CMDS=<<EOF
 	pd 4
-	EXPECT=<<RUN
+	EOF
+	EXPECT=<<EOF
             ;-- main:
             ;-- entry0:
             ;-- func.100001174:
             0x100001174      55             Push rbp
             0x100001175      4889e5         Mov  rbp, rsp
             0x100001178      4157           Push r15
+	EOF
 	RUN
 
 * **NAME** is the name of the test, it must be unique
