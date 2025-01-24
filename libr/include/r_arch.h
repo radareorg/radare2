@@ -76,7 +76,7 @@ typedef struct r_arch_config_t {
 	char *os;
 	int bits;
 	union {
-		int big_endian; // R2_590 - deprecate and just use typed endian for more than little+big
+		int big_endian; // R2_600 - deprecate and just use typed endian for more than little+big
 		ut32 endian;
 	};
 	int syntax;
