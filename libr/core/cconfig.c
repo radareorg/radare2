@@ -1362,9 +1362,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 	if (!core) {
 		return false;
 	}
-	if (core->io) {
-		core->io->va = !node->i_value;
-	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		r_config_set (core->config, "anal.in", "dbg.map");

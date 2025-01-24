@@ -709,7 +709,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 
 	r_config_set (core->config, "prj.name", prj_name);
 	if (!r_core_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
-		R_LOG_ERROR ("Cannot open '%s' for writing", prj_name);
+		R_LOG_ERROR ("Cannot open '%s' project name", prj_name);
 		ret = false;
 		r_config_set (core->config, "prj.name", "");
 	}
