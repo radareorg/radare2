@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -2092,6 +2092,7 @@ static bool regcb(void *u, const ut64 k, const void *v) {
 }
 
 R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
+	R_RETURN_IF_FAIL (core && reg);
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
@@ -2155,6 +2156,7 @@ static const char *mode_to_bitstr(int mode) {
 }
 
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
+	R_RETURN_IF_FAIL (core && reg);
 	char *color = "";
 	char *colorend = "";
 	const int scr_color = r_config_get_i (core->config, "scr.color");
@@ -4127,7 +4129,9 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
-	if (!tn) return;
+	if (!tn) {
+		return;
+	}
 	for (i = 0; i < n->depth - 1; i++) {
 		r_cons_printf ("  ");
 	}
@@ -4530,7 +4534,6 @@ static bool is_x86_ret(RDebug *dbg, ut64 addr) {
 }
 
 static ut64 getnum(RCore *core, const char *a) {
-	eprintf ("a (%s)\n", a);
 	if (r_str_startswith (a, "..")) {
 		return r_num_tail (core->num, core->offset, a + 2);
 	}
