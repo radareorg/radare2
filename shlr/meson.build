@@ -7,9 +7,10 @@ else
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
     # capstone_path = 'capstone'
-    capstone_path = join_paths(meson.source_root(), 'subprojects/capstone')
+    capstone_path = join_paths(meson.source_root(), 'subprojects/capstone-' + capstone_version)
   endif
 
+  message('capstone path:' + capstone_path)
   capstone_version = get_option('use_capstone_version')
   message('Use bundled capstone: ' + capstone_version)
 
@@ -59,7 +60,8 @@ else
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
+      # patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
+      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0

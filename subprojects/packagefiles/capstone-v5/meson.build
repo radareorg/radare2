@@ -11,6 +11,13 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
+platform_inc = ['../..', '../../libr/include']
+
+if host_machine.system() == 'windows'
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+endif
+platform_inc = include_directories(platform_inc)
+
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
   'arch/AArch64/AArch64Disassembler.c',
@@ -73,26 +80,7 @@ cs_files = [
 ]
 
 #capstone_includes = [include_directories('include'), include_directories('include/capstone')]
-capstone_includes = [include_directories('include/capstone')]
-
-libcapstone_c_args = [
-  '-DCAPSTONE_X86_ATT_DISABLE_NO',
-  '-DCAPSTONE_X86_REDUCE_NO',
-  '-DCAPSTONE_USE_SYS_DYN_MEM',
-  '-DCAPSTONE_DIET_NO',
-  '-DCAPSTONE_HAS_ARM',
-  '-DCAPSTONE_HAS_ARM64',
-  '-DCAPSTONE_HAS_M68K',
-  '-DCAPSTONE_HAS_M680X',
-  '-DCAPSTONE_HAS_MIPS',
-  '-DCAPSTONE_HAS_POWERPC',
-  '-DCAPSTONE_HAS_SPARC',
-  '-DCAPSTONE_HAS_SYSZ',
-  '-DCAPSTONE_HAS_X86',
-  '-DCAPSTONE_HAS_XCORE',
-  '-DCAPSTONE_HAS_TMS320C64X',
-  '-DCAPSTONE_HAS_TRICORE',
-]
+capstone_includes = [platform_inc, include_directories('include'), include_directories('include/capstone')]
 
 user_plugins = get_option('plugins').split(',')
 no_user_plugins = get_option('plugins') == ''
@@ -142,8 +130,8 @@ cs_c_args += [
   '-DCAPSTONE_HAS_RISCV',
 ]
 
-libcapstone = library('capstone', cs_files,
-  c_args: libcapstone_c_args,
+libcapstone = static_library('capstone', cs_files,
+  c_args: cs_c_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )
