@@ -325,6 +325,12 @@ R_API int r_str_printf(R_NONNULL char *buffer, size_t buffer_size, R_NONNULL con
   /// __attribute__ ((format (printf, 3, 4)));
 R_API int r_str_scanf(R_NONNULL const char *buffer, R_NONNULL const char *format, ...);
   /// __attribute__ ((format (scanf, 2, 3)));
+R_API int r_str_vasnprintf(char **buffer, R_NONNULL size_t *buffer_size, R_NONNULL const char *format, va_list ap);
+R_API int r_str_asnprintf(char **buffer, R_NONNULL size_t *buffer_size, R_NONNULL const char *format, ...);
+  /// __attribute__ ((format (printf, 3, 4)));
+R_API int r_str_vasprintf(char **buffer, R_NONNULL const char *format, va_list ap);
+R_API int r_str_asprintf(char **buffer, R_NONNULL const char *format, ...);
+  /// __attribute__ ((format (printf, 2, 3)));
 
 // rstr
 
