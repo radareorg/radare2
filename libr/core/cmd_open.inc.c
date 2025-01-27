@@ -130,7 +130,6 @@ static RCoreHelpMessage help_msg_om = {
 	"om*", "", "list all maps in r2 commands format",
 	"om-", "mapid", "remove the map with corresponding id",
 	"om-*", "", "remove all maps",
-	"om-..", "", "hud view of all the maps to select the one to remove",
 	"om.", "", "show map, that is mapped to current offset",
 	"om,", " [query]", "list maps using table api",
 	"om=", "", "list all maps in ascii art",
@@ -1322,9 +1321,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "om-"
-		if (!strcmp (input + 2, "..")) {
-			r_core_cmd0 (core, "om-`om~...`~[0]");
-		} else if (input[2] == '*') {
+		if (input[2] == '*') {
 			r_io_map_reset (core->io);
 		} else {
 			const char *arg = r_str_trim_head_ro (input + 2);
