@@ -14,36 +14,36 @@ else
   capstone_version = get_option('use_capstone_version')
   message('Use bundled capstone: ' + capstone_version)
 
-  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
-  if res.returncode() == 0
-    patches_files = []
-    # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    if capstone_version == 'next'
-      cs = subproject('capstone-next')
-      patches_files = [
-        'fix-x86-16.patch',
-      ]
-    elif capstone_version == 'v5'
-      cs = subproject('capstone-v5')
-      patches_files = [
-        'fix-x86-16.patch'
-      ]
-    elif capstone_version == 'v4'
-      cs = subproject('capstone-v4')
-      patches_files = [
-        'capstone-calloc.patch',
-        'fix-x86-16.patch',
-        'sparc-crash.patch',
-        'sstream-null.patch'
-      ]
-    elif capstone_version == 'v3'
-      cs = subproject('capstone-v3')
-      patches_files = [
-        'capstone-include.patch'
-      ]
-    else
-      error('Wrong capstone version selected. Please use one of the supported versions.')
-    endif
+  # res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
+  # if res.returncode() == 0
+  patches_files = []
+  # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
+  if capstone_version == 'next'
+    cs = subproject('capstone-next')
+    patches_files = [
+      'fix-x86-16.patch',
+    ]
+  elif capstone_version == 'v5'
+    cs = subproject('capstone-v5')
+    patches_files = [
+      'fix-x86-16.patch'
+    ]
+  elif capstone_version == 'v4'
+    cs = subproject('capstone-v4')
+    patches_files = [
+      'capstone-calloc.patch',
+      'fix-x86-16.patch',
+      'sparc-crash.patch',
+      'sstream-null.patch'
+    ]
+  elif capstone_version == 'v3'
+    cs = subproject('capstone-v3')
+    patches_files = [
+      'capstone-include.patch'
+    ]
+  else
+    error('Wrong capstone version selected. Please use one of the supported versions.')
+  endif
 
     # message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
     # git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
@@ -58,17 +58,17 @@ else
     #   error('Cannot execute git reset command')
     # endif
 
-    message('Patching capstone with radare\'s patches')
-    foreach file : patches_files
-      # patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-      patch_cmd = run_command(git_exe, patch_cmd_str.split())
-      if patch_cmd.returncode() != 0
-        warning('Cannot apply patch ' + file)
-      endif
-    endforeach
-  endif
+  message('Patching capstone with radare\'s patches')
+  foreach file : patches_files
+    # patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
+    patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+    patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
+    patch_cmd = run_command(git_exe, patch_cmd_str.split())
+    if patch_cmd.returncode() != 0
+      warning('Cannot apply patch ' + file)
+    endif
+  endforeach
+  #endif
 
   rel_cs4_files = [
     'arch/M680X/M680XDisassembler.c',
