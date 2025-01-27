@@ -1,7 +1,5 @@
-#ifndef R_CTYPES_H
-#define R_CTYPES_H
-
-// TODO R2_590 - rename to r_util/r_type.h
+#ifndef R_TYPE_H
+#define R_TYPE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,5 +52,5 @@ R_API R_OWN char *r_type_func_name(Sdb *types, const char *fname);
 }
 #endif
 
-#endif //  R_CTYPES_H
+#endif //  R_TYPE_H
 
