@@ -144,14 +144,14 @@ static RCoreHelpMessage help_msg_om = {
 	"oml", " fd", "map the given fd with lowest priority",
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
-	"omo*", "", "show map overlay data( usual relocs) in diff to map data",
+	"omo", "[j*]", "diff overlay map data (usually relocs)",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	"ompd", " mapid", "deprioritize map with corresponding id",
 	"ompf", " [fd]", "prioritize map by fd",
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
-	"omr", " [mapid newsize]", "resize map with corresponding id",
+	"omr", " [mapid] [newsize]", "resize map with corresponding id",
 	"omt", " mapid", "toggle map backwards tying (same as omtb)",
 	"omtb", " mapid", "toggle map backwards tying",
 	"omtf", " mapid", "toggle map forwards tying",
@@ -1045,11 +1045,34 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	}
 }
 
+static void overlay_print_diff_pj_cb(RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
+	PJ *pj = (PJ*)user;
+	pj_o (pj);
+	char *m_hex = r_hex_bin2strdup (m_data, r_itv_size (itv));
+	char *o_hex = r_hex_bin2strdup (o_data, r_itv_size (itv));
+	pj_kn (pj, "addr", r_itv_begin (itv));
+	pj_kn (pj, "size", r_itv_size (itv));
+	pj_ks (pj, "odata", m_hex);
+	pj_ks (pj, "ndata", o_hex);
+	pj_end (pj);
+	free (m_hex);
+	free (o_hex);
+}
+
+static void overlay_print_diff_r2_cb(RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
+//	RCore *core = user;
+	// char *m_hex = r_hex_bin2strdup (m_data, r_itv_size (itv));
+	char *o_hex = r_hex_bin2strdup (o_data, r_itv_size (itv));
+	r_cons_printf ("'@0x%08"PFMT64x"'wx %s\n", r_itv_begin (itv), o_hex);
+	// free (m_hex);
+	free (o_hex);
+}
+
 static void overlay_print_diff_cb(RInterval itv, const ut8 *m_data, const ut8 *o_data, void *user) {
 //	RCore *core = user;
 	char *m_hex = r_hex_bin2strdup (m_data, r_itv_size (itv));
 	char *o_hex = r_hex_bin2strdup (o_data, r_itv_size (itv));
-	r_cons_printf ("0x%08"PFMT64x":\t%s => %s\n", r_itv_begin (itv), m_hex, o_hex);
+	r_cons_printf ("0x%08"PFMT64x": %s => %s\n", r_itv_begin (itv), m_hex, o_hex);
 	free (m_hex);
 	free (o_hex);
 }
@@ -1153,7 +1176,30 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'o': // "omo"
 		if (core->io->va) {
-			r_io_bank_overlay_foreach (core->io, core->io->bank, overlay_print_diff_cb, NULL);
+			const char mode = input[2];
+			PJ *pj = NULL;
+			RIOOverlayForeach cb = overlay_print_diff_cb;
+			if (mode == '*') {
+				cb = overlay_print_diff_r2_cb;
+			} else if (mode == 'j') {
+				cb = overlay_print_diff_pj_cb;
+				pj = r_core_pj_new (core);
+				pj_a (pj);
+			} else if (mode == '?') {
+				r_core_cmd_help_match (core, help_msg_om, "omo");
+			} else if (mode) {
+				r_core_return_invalid_command (core, "omo", input[2]);
+				break;
+			}
+			r_io_bank_overlay_foreach (core->io, core->io->bank, cb, pj);
+			if (pj) {
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_cons_println (s);
+				free (s);
+			}
+		} else {
+			R_LOG_WARN ("Requires io.va");
 		}
 		break;
 	case 'p':
