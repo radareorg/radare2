@@ -448,3 +448,20 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+
+NAME=araoar
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
+CMDS=<<EOF
+ar PC=entry0
+ar~^pc
+ao @ 0x100003ba0~type
+ar~^pc
+EOF
+EXPECT=<<EOF
+pc = 0x100003a90
+type: jmp
+pc = 0x100003a90
+EOF
+RUN

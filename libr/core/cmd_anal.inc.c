@@ -2323,6 +2323,14 @@ static bool mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
+static bool rw(REsil *esil, const char *regname, ut64 num) {
+	return true;
+}
+
+static bool rr(REsil *esil, const char *regname, ut64 *num, int *size) {
+	return true;
+}
+
 static bool mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
 	*ec += len;
@@ -2339,6 +2347,8 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	e->user = &ec;
 	e->cb.mem_read = mr;
 	e->cb.mem_write = mw;
+	e->cb.reg_write = rw;
+	e->cb.reg_read = rr;
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 	return ec;
