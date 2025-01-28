@@ -4,7 +4,7 @@
 #include <r_util/r_str.h>
 #include <sdb/ht_pu.h>
 
-R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
 R_API RDebugTrace *r_debug_trace_new(void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
@@ -203,7 +203,7 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 	dbg->trace->addresses = R_STR_ISNOTEMPTY (str)? strdup (str): NULL;
 }
 
-R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
+R_API RDebugTracepointItem *r_debug_trace_get(RDebug *dbg, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, NULL);
 	const int tag = dbg->trace->tag;
 	r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
@@ -229,7 +229,7 @@ static void r_debug_trace_list_json(RDebug *dbg) {
 	pj_kn (pj, "tag", tag);
 	pj_ka (pj, "traces");
 
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			pj_o (pj);
@@ -251,7 +251,7 @@ static void r_debug_trace_list_json(RDebug *dbg) {
 
 static void r_debug_trace_list_quiet(RDebug *dbg) {
 	int tag = dbg->trace->tag;
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
@@ -274,7 +274,7 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 	bool flag = false;
 	int tag = dbg->trace->tag;
 
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			RListInfo *info = RVecListInfo_emplace_back (&info_vec);
@@ -308,7 +308,7 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 
 static void r_debug_trace_list_make(RDebug *dbg) {
 	int tag = dbg->trace->tag;
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
@@ -318,7 +318,7 @@ static void r_debug_trace_list_make(RDebug *dbg) {
 
 static void r_debug_trace_list_default(RDebug *dbg) {
 	int tag = dbg->trace->tag;
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
@@ -360,7 +360,7 @@ static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	return true;
 }
 
-R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
+R_API RDebugTracepointItem *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	const int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr)) {
@@ -368,9 +368,9 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	}
 	r_anal_trace_bb (dbg->anal, addr);
 	int last_times = 1;
-	RDebugTracepoint *last = r_debug_trace_get (dbg, addr);
+	RDebugTracepointItem *last = r_debug_trace_get (dbg, addr);
 	if (last) {
-		RDebugTracepoint *endtp = RVecDebugTracepoint_last (dbg->trace->traces);
+		RDebugTracepointItem *endtp = RVecDebugTracepoint_last (dbg->trace->traces);
 		if (last == endtp) {
 			// avoid tracing the same instruction twice
 			return NULL;
@@ -379,7 +379,7 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	}
 	int pos = RVecDebugTracepoint_length (dbg->trace->traces) + 1;
 	// emplacedback pointers are not constant, so we may rely on the index instead of ptr
-	RDebugTracepoint *tp = RVecDebugTracepoint_emplace_back (dbg->trace->traces);
+	RDebugTracepointItem *tp = RVecDebugTracepoint_emplace_back (dbg->trace->traces);
 	if (R_LIKELY (tp)) {
 		tp->stamp = r_time_now ();
 		tp->addr = addr;

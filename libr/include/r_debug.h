@@ -237,9 +237,8 @@ typedef struct r_debug_trace_t {
 	HtPP *ht; // use rbtree like the iocache?
 } RDebugTrace;
 
-// R2_590 rename to traceitem for consistency?
-#define r_debug_tracepoint_free(x) free((x))
-typedef struct r_debug_tracepoint_t {
+#define r_debug_tracepoint_item_free(x) free((x))
+typedef struct r_debug_tracepoint_item_t {
 	ut64 addr;
 	ut64 tags; // XXX
 	int tag; // XXX
@@ -253,7 +252,7 @@ typedef struct r_debug_tracepoint_t {
 	ut64 refaddr;
 	int direction
 #endif
-} RDebugTracepoint;
+} RDebugTracepointItem;
 
 typedef struct r_debug_t RDebug;
 
@@ -588,9 +587,9 @@ R_API void r_debug_trace_reset(RDebug *dbg);
 R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc);
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op);
 R_API void r_debug_trace_at(RDebug *dbg, const char *str);
-R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr);
+R_API RDebugTracepointItem *r_debug_trace_get(RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset, RTable *t);
-R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size);
+R_API RDebugTracepointItem *r_debug_trace_add(RDebug *dbg, ut64 addr, int size);
 R_API RDebugTrace *r_debug_trace_new(void);
 R_API void r_debug_trace_free(RDebugTrace *dbg);
 R_API int r_debug_trace_tag(RDebug *dbg, int tag);

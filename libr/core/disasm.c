@@ -3424,7 +3424,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			// label = r_core_get_reloff (ds->core, ds->show_reloff_to, at, &delta);
 		}
 		if (ds->show_trace) {
-			RDebugTracepoint *tp = r_debug_trace_get (ds->core->dbg, ds->at);
+			RDebugTracepointItem *tp = r_debug_trace_get (ds->core->dbg, ds->at);
 			show_trace = (tp? !!tp->count: false);
 		}
 		if (ds->hint && ds->hint->high) {
@@ -3478,7 +3478,7 @@ static void ds_print_op_size(RDisasmState *ds) {
 }
 
 static void ds_print_trace(RDisasmState *ds) {
-	RDebugTracepoint *tp = NULL;
+	RDebugTracepointItem *tp = NULL;
 	if (ds->show_trace && ds->show_trace_stats) {
 		tp = r_debug_trace_get (ds->core->dbg, ds->at);
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);

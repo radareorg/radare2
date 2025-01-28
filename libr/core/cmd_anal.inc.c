@@ -3316,7 +3316,7 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 }
 
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
-	RDebugTracepoint *tp = NULL;
+	RDebugTracepointItem *tp = NULL;
 	RListIter *iter;
 	RAnalBlock *b;
 	int mode = 0;

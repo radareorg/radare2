@@ -5415,11 +5415,11 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
-R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	RDebugTracepoint *t;
+	RDebugTracepointItem *t;
 	bool do_follow = false;
 	const char *ptr;
 	ut64 addr;
@@ -5427,7 +5427,7 @@ static int cmd_debug(void *data, const char *input) {
 	RListIter *iter;
 	RList *list;
 	RDebugPid *p;
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	RAnalOp *op;
 	int ret = 0;
 	ut64 old_seek = core->offset;
@@ -5580,7 +5580,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				RAnalOp *op = r_core_op_anal (core, addr, R_ARCH_OP_MASK_HINT);
 				if (op) {
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					RDebugTracepointItem *tp = r_debug_trace_add (core->dbg, addr, op->size);
 					if (tp) {
 						tp->count = count;
 						r_anal_trace_bb (core->anal, addr);

@@ -2409,7 +2409,7 @@ static void fold_asm_trace(RCore *core, RAGraph *g) {
 			continue;
 		}
 		ut64 addr = r_num_get (NULL, n->title);
-		RDebugTracepoint *tp = r_debug_trace_get (core->dbg, addr);
+		RDebugTracepointItem *tp = r_debug_trace_get (core->dbg, addr);
 		n->is_mini = (tp == NULL);
 	}
 	g->need_update_dim = 1;
