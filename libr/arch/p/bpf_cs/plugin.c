@@ -11,6 +11,11 @@
 #define CSINC BPF
 #define CSINC_MODE get_capstone_mode(as)
 
+// See-also: https://github.com/capstone-engine/capstone/commit/812e654c857348bf95ae4ab2e7db0ccf779a4cb8
+#if CS_API_MAJOR < 6
+#define BPF_INS_JA BPF_INS_JMP
+#endif
+
 static int get_capstone_mode(RArchSession *as) {
 	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)
 		? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
@@ -62,7 +67,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		if (insn->detail) {
 			switch (insn->id) {
-			case BPF_INS_JMP:
+			case BPF_INS_JA:
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = JUMP (0);
 				break;
@@ -332,7 +337,7 @@ void bpf_jump(RArchSession *a, RAnalOp *op, cs_insn *insn, char *condition) {
 
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
-	case BPF_INS_JMP:
+	case BPF_INS_JA:
 		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
 		break;
 	case BPF_INS_JEQ:
