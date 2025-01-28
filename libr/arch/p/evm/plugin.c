@@ -128,27 +128,6 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_SMOD:
 		op->type = R_ANAL_OP_TYPE_MOD;
 		break;
-	case EVM_INS_SHL:
-		op->type = R_ANAL_OP_TYPE_SHL;
-		break;
-	case EVM_INS_SHR:
-		op->type = R_ANAL_OP_TYPE_SHR;
-		break;
-	case EVM_INS_SAR:
-		op->type = R_ANAL_OP_TYPE_SAR;
-		break;
-	case EVM_INS_ADD:
-	case EVM_INS_ADDMOD:
-		op->type = R_ANAL_OP_TYPE_ADD;
-		break;
-	case EVM_INS_LT:
-	case EVM_INS_GT:
-	case EVM_INS_SLT:
-	case EVM_INS_SGT:
-	case EVM_INS_EQ:
-	case EVM_INS_ISZERO:
-		op->type = R_ANAL_OP_TYPE_CMP;
-		break;
 	case EVM_INS_JUMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->fail = op->addr + 1;
@@ -165,19 +144,28 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		break;
 	case EVM_INS_MLOAD:
 	case EVM_INS_SLOAD:
-	case EVM_INS_TLOAD:
-	case EVM_INS_MCOPY:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
 	case EVM_INS_MSTORE:
 	case EVM_INS_MSTORE8:
 	case EVM_INS_SSTORE:
-	case EVM_INS_TSTORE:
 		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case EVM_INS_LT:
+	case EVM_INS_GT:
+	case EVM_INS_SLT:
+	case EVM_INS_SGT:
+	case EVM_INS_EQ:
+	case EVM_INS_ISZERO:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case EVM_INS_COINBASE:
+	case EVM_INS_BLOCKHASH:
 		break;
 	case EVM_INS_SHA3:
 		op->type = R_ANAL_OP_TYPE_CRYPTO;
 		break;
+	case EVM_INS_CODECOPY:
 	case EVM_INS_SWAP1:
 	case EVM_INS_SWAP2:
 	case EVM_INS_SWAP3:
@@ -192,10 +180,28 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_SWAP12:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
+	case EVM_INS_GAS:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case EVM_INS_MUL:
 	case EVM_INS_EXP:
 	case EVM_INS_MULMOD:
 		op->type = R_ANAL_OP_TYPE_MUL;
+		break;
+	case EVM_INS_STOP:
+#if CS_API_MAJOR >= 6	
+	case EVM_INS_SELFDESTRUCT:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+#else
+	case EVM_INS_SUICIDE:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+#endif
+	case EVM_INS_DELEGATECALL:
+	case EVM_INS_CALLDATACOPY:
+	case EVM_INS_CALLDATALOAD:
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case EVM_INS_DIV:
 	case EVM_INS_SDIV:
@@ -212,55 +218,6 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		break;
 	case EVM_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
-		break;
-	case EVM_INS_STOP:
-	case EVM_INS_SELFDESTRUCT:
-		op->type = R_ANAL_OP_TYPE_TRAP;
-		break;
-	case EVM_INS_CREATE:
-	case EVM_INS_CREATE2:
-		op->type = R_ANAL_OP_TYPE_NEW;
-		break;
-	case EVM_INS_CALL:
-	case EVM_INS_CALLCODE:
-	case EVM_INS_DELEGATECALL:
-	case EVM_INS_STATICCALL:
-		op->type = R_ANAL_OP_TYPE_CALL;
-		break;
-	case EVM_INS_CODESIZE:
-	case EVM_INS_CALLDATASIZE:
-	case EVM_INS_EXTCODESIZE:
-	case EVM_INS_RETURNDATASIZE:
-		op->type = R_ANAL_OP_TYPE_LENGTH;
-		break;
-	case EVM_INS_CODECOPY:
-	case EVM_INS_EXTCODECOPY:
-	case EVM_INS_RETURNDATACOPY:
-	case EVM_INS_CALLDATACOPY:
-	case EVM_INS_CALLDATALOAD:
-	case EVM_INS_ADDRESS:
-	case EVM_INS_BALANCE:
-	case EVM_INS_ORIGIN:
-	case EVM_INS_CALLER:
-	case EVM_INS_CALLVALUE:
-	case EVM_INS_GASPRICE:
-	case EVM_INS_BLOCKHASH:
-	case EVM_INS_COINBASE:
-	case EVM_INS_TIMESTAMP:
-	case EVM_INS_NUMBER:
-	case EVM_INS_DIFFICULTY:
-	case EVM_INS_GASLIMIT:
-	case EVM_INS_CHAINID:
-	case EVM_INS_SELFBALANCE:
-	case EVM_INS_BASEFEE:
-	case EVM_INS_BLOBHASH:
-	case EVM_INS_BLOBBASEFEE:
-	case EVM_INS_GAS:
-		op->type = R_ANAL_OP_TYPE_CRYPTO;
-		break;
-	case EVM_INS_PC:
-	case EVM_INS_MSIZE:
-		op->type = R_ANAL_OP_TYPE_RPUSH;
 		break;
 	case EVM_INS_REVERT:
 	case EVM_INS_RETURN:
@@ -284,11 +241,13 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_DUP16:
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		break;
+#if CS_API_MAJOR >= 6
 	case EVM_INS_PUSH0:
 		esilprintf (op, "0x0,sp,=[1],32,sp,+=");
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		evm_add_push_to_db (s, op, addr, buf, len);
 		break;
+#endif
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
 		op->type = R_ANAL_OP_TYPE_PUSH;
@@ -354,8 +313,15 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		opsize = op->size = 33;
 		break;
+	case EVM_INS_ADD:
+	case EVM_INS_ADDMOD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
 	case EVM_INS_POP:
 		op->type = R_ANAL_OP_TYPE_POP;
+		break;
+	case EVM_INS_CODESIZE:
+		op->type = R_ANAL_OP_TYPE_LENGTH;
 		break;
 	case EVM_INS_LOG0:
 	case EVM_INS_LOG1:
