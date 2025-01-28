@@ -452,6 +452,7 @@ RUN
 
 NAME=araoar
 FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b 64
 CMDS=<<EOF
 ar PC=entry0
 ar~^pc
