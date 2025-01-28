@@ -43,7 +43,8 @@ CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
 CS_PATCHES=0
 else
 CS_TAR=
-CS_URL_BASE=github.com/capstone-engine/capstone
+# CS_URL_BASE=github.com/capstone-engine/capstone
+CS_URL_BASE=github.com/andelf/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
