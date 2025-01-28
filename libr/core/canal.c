@@ -1829,7 +1829,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			snprintf (key, sizeof (key), "bb.0x%08"PFMT64x".size", bbi->addr);
 			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>
 		} else if (is_json) {
-			RDebugTracepoint *t = r_debug_trace_get (core->dbg, bbi->addr);
+			RDebugTracepointItem *t = r_debug_trace_get (core->dbg, bbi->addr);
 			pj_o (pj);
 			pj_kn (pj, "offset", bbi->addr);
 			pj_kn (pj, "size", bbi->size);
@@ -3416,11 +3416,11 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
-R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
 static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
 	int tag = traced->tag;
-	RDebugTracepoint *trace;
+	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (traced->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (r_anal_function_contains (fcn, trace->addr)) {
