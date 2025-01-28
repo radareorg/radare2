@@ -24,7 +24,8 @@ else
       'fix-x86-16.patch',
     ]
   elif capstone_version == 'v5'
-    cs = subproject('capstone-v5')
+    opts = 'plugins='+get_option('plugins')
+    cs = subproject('capstone-v5', default_options: [opts])
     patches_files = [
       'fix-x86-16.patch'
     ]
