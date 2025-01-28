@@ -175,7 +175,6 @@ RUN
 
 NAME=offs390 bininfo
 FILE=bins/s390/zos/prueba/prueba
-ARGS=-a arm -b 64
 CMDS=<<EOF
 aod
 aod zap
