@@ -1421,7 +1421,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'p': // "omp"
 		switch (input[2]) {
 		case 'g': // "ompg"
-			cmd_ompg (core, input + 3);
+			if (input[3]) {
+				r_core_cmd_help_contains (core, help_msg_om, "ompg");
+			} else {
+				cmd_ompg (core, input + 3);
+			}
 			break;
 		case ' ': // "omp"
 			{
@@ -1433,18 +1437,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		case '?': // "omp?"
 			r_core_cmd_help_match (core, help_msg_om, "omp");
+			r_core_cmd_help_contains (core, help_msg_om, "ompg");
 			break;
 		case 0: // "omp"
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->offset);
 				if (map) {
-					const char *sperm = r_str_rwx_i (map->perm);
-					r_cons_println (sperm);
+					r_cons_println (r_str_rwx_i (map->perm));
 				}
 			}
 			break;
 		default:
-			r_core_return_invalid_command (core, "omf", input[2]);
+			r_core_return_invalid_command (core, "omp", input[2]);
 			break;
 		}
 		break;
