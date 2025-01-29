@@ -416,7 +416,7 @@ px 16~:1
 ?e
 om
 ?e
-omp 1
+omr 1
 px 16~:1
 EOF
 EXPECT=<<EOF
