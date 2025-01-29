@@ -1827,7 +1827,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_block_size (r, r_io_desc_size (mr.iod));
 	}
 	if (mr.perms & R_PERM_W) {
-		r_core_cmd0 (r, "omfg+w");
+		r_core_cmd0 (r, "ompg+w");
 	}
 	ret = run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
 	r_list_free (mr.cmds);

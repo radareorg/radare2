@@ -3422,7 +3422,7 @@ NAME=Indirect jump table case detection
 FILE=--
 CMDS=<<EOF
 o malloc://0x500 0x401000
-omf 1 rwx
+omp 1 rwx
 s 0x401000
 e asm.arch=x86
 e asm.bits=32

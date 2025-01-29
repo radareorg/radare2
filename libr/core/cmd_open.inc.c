@@ -623,7 +623,7 @@ static void cmd_ompg(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_omf(RCore *core, int argc, char *argv[]) {
+static void cmd_omp(RCore *core, int argc, char *argv[]) {
 	switch (argc) {
 	case 0:
 		break;
@@ -1431,7 +1431,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				int argc;
 				char **argv = r_str_argv (&input[3], &argc);
-				cmd_omf (core, argc, argv);
+				cmd_omp (core, argc, argv);
 				r_str_argv_free (argv);
 			}
 			break;
