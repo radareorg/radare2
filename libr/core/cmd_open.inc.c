@@ -1422,9 +1422,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		switch (input[2]) {
 		case 'g': // "ompg"
 			if (input[3]) {
-				r_core_cmd_help_contains (core, help_msg_om, "ompg");
-			} else {
 				cmd_ompg (core, input + 3);
+			} else {
+				r_core_cmd_help_contains (core, help_msg_om, "ompg");
 			}
 			break;
 		case ' ': // "omp"
