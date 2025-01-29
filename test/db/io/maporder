@@ -22,7 +22,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omp
+NAME=omr
 FILE=malloc://32
 CMDS=<<EOF
 o malloc://32 0x10 rw
@@ -30,10 +30,10 @@ b 48
 p8
 wox 0x90
 p8
-omp 1 
+omr 1 
 p8
 wox 0xff
-omp 2
+omr 2
 p8
 EOF
 EXPECT=<<EOF
@@ -44,7 +44,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omp 2
+NAME=omr 2
 FILE=malloc://3
 CMDS=<<EOF
 b 3
@@ -52,7 +52,7 @@ wow 90
 p8
 o malloc://1 1 rw
 p8
-omp 1
+omr 1
 p8
 EOF
 EXPECT=<<EOF
@@ -62,7 +62,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omp 3
+NAME=omr 3
 FILE=--
 CMDS=<<EOF
 o malloc://8 0 rw
@@ -70,10 +70,10 @@ o malloc://12 4 rw
 om~?
 b 16
 p8
-omp 1
+omr 1
 wox 90
 p8
-omp 2
+omr 2
 p8
 EOF
 EXPECT=<<EOF

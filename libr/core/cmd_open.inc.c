@@ -144,30 +144,30 @@ static RCoreHelpMessage help_msg_om = {
 	"Usage: om", "[arg]", "Map opened files",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", " fd va [sz] [pa] [rwx] [name]", "create new io map",
-	"om", "[,=*jqq]", "list all defined IO maps",
-	// "om*", "", "list all maps in r2 commands format",
+	"om", "[,=*jqq]", "list IO maps",
+	"om.", "", "show map, that is mapped to current offset",
 	"om-", "[mapid]", "remove the map with corresponding id",
 	"om-*", "", "remove all maps",
-	"om.", "", "show map, that is mapped to current offset",
-	// "om,", " [query]", "list maps using table api",
-	// "om=", "", "list all maps in ascii art",
-	"oma", "[.] ([mapid]) (attr)", "set attribute to the given map id",
 	"om+", " [fd]", "create a map covering all VA for given fd",
+	"oma", "[.] ([mapid]) (attr)", "set attribute to the given map id",
 	"omb", "[?]", "list/select memory map banks",
 	"omd", " from to @ paddr", "simplified om; takes current seek, fd and perms",
-	// "omj", "", "list all maps in json format",
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", "[j*]", "diff overlay map data (usually relocs)",
 	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
 	"ompg", "[+-]rwx", "global change permissions for all maps",
-	// "omq", "", "list all maps and their fds",
-	// "omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", "[?]", "reorder map priority",
 	"oms", " [mapid] [newsize]", "show or change size map with corresponding id",
 	"omt", "[?]", "toggle map ties backward or forward",
 	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
 	"omv", "[?]", "move map to the given address",
+	// "om*", "", "list all maps in r2 commands format",
+	// "om,", " [query]", "list maps using table api",
+	// "om=", "", "list all maps in ascii art",
+	// "omj", "", "list all maps in json format",
+	// "omq", "", "list all maps and their fds",
+	// "omqq", "", "list all maps addresses (See $MM to get the size)",
 	NULL
 };
 
@@ -667,15 +667,15 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 static void r_core_cmd_omt(RCore *core, const char *arg) {
 	ut32 toggle;
 	switch (arg[0]) {
-	case ' ':	//'omt'
-	case 'b':	//'omtb'
+	case ' ': // "omt"
+	case 'b': // "omtb"
 		toggle = R_IO_MAP_TIE_FLG_BACK;
 		break;
-	case 'f':
+	case 'f': // "omtf"
 		toggle = R_IO_MAP_TIE_FLG_FORTH;
 		break;
 	default:
-		r_core_cmd_help_contains (core, help_msg_om, "omt");
+		r_core_cmd_help (core, help_msg_omt);
 		return;
 	}
 	int argc;
@@ -1102,7 +1102,6 @@ static void cmd_open_map(RCore *core, const char *input) {
 	char *s = NULL, *p = NULL;
 	ut64 newaddr;
 	RIOMap *map = NULL;
-	const char *P;
 	PJ *pj;
 
 	switch (input[1]) {
@@ -1140,20 +1139,20 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 's': // "oms"
 		if (input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_om, "oms");
-			break;
-		}
-		if (input[2] != ' ') {
+		} else if (input[2] != ' ') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				r_cons_printf ("%"PFMT64d"\n", r_itv_size (map->itv));
 			}
-			break;
-		}
-		P = strchr (input + 3, ' ');
-		if (P) {
-			id = (ut32)r_num_math (core->num, input + 3);
-			newaddr = r_num_math (core->num, P + 1);
-			r_io_map_resize (core->io, id, newaddr);
+		} else {
+			const char *p = strchr (input + 3, ' ');
+			if (p) {
+				id = (ut32)r_num_math (core->num, input + 3);
+				newaddr = r_num_math (core->num, p + 1);
+				r_io_map_resize (core->io, id, newaddr);
+			} else {
+				R_LOG_ERROR ("Missing argument");
+			}
 		}
 		break;
 	case 'b': // "omb" -- manage memory banks
@@ -1165,21 +1164,26 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'v': // "omv"
-		if (input[2] == '.') {
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_omv);
+		} else if (input[2] == '.') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				ut64 dst = r_num_math (core->num, input + 3);
 				r_io_map_remap (core->io, map->id, dst);
 			}
 		} else {
-			if (input[2] != ' ') {
-				break;
-			}
-			P = strchr (input + 3, ' ');
-			if (P) {
-				id = (ut32)r_num_math (core->num, input + 3);
-				newaddr = r_num_math (core->num, P + 1);
-				r_io_map_remap (core->io, id, newaddr);
+			if (input[2] == ' ') {
+				const char *p = strchr (input + 3, ' ');
+				if (p) {
+					id = (ut32)r_num_math (core->num, input + 3);
+					newaddr = r_num_math (core->num, p + 1);
+					r_io_map_remap (core->io, id, newaddr);
+				} else {
+					R_LOG_ERROR ("Missing argument");
+				}
+			} else {
+				r_core_return_invalid_command (core, "omv", input[2]);
 			}
 		}
 		break;
@@ -1414,7 +1418,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'd': // "omd"
 		cmd_omd (core, input + 2);
 		break;
-	case 'p': // "omp" // R2_600 - rename to omp like we have for dmp
+	case 'p': // "omp"
 		switch (input[2]) {
 		case 'g': // "ompg"
 			cmd_ompg (core, input + 3);
