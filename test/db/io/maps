@@ -1,13 +1,13 @@
-NAME=omp twice bug
+NAME=omr twice bug
 FILE=malloc://1024
 CMDS=<<EOF
-omf 1 rw
+omp 1 rw
 wx 9090
 p8 2
 on malloc://1024
 p8 2
 om
-omp 1
+omr 1
 om
 p8 2
 EOF
@@ -88,15 +88,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omfg all rwx
+NAME=ompg all rwx
 FILE=-
 CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
 e scr.null=false
-omfg-rwx
+ompg-rwx
 om~rwx
-omfg
+ompg
 om~rwx~?
 EOF
 EXPECT=<<EOF
@@ -119,16 +119,16 @@ true
 EOF
 RUN
 
-NAME=omf one mapping
+NAME=omp one mapping
 FILE=-
 CMDS=<<EOF
-omf 1 rwx
+omp 1 rwx
 om~rwx~?
-omf 1 r-x
+omp 1 r-x
 om~r-x~?
-omf 1 --x
+omp 1 --x
 om~--x~?
-omf 1 -w-
+omp 1 -w-
 om~-w-~?
 EOF
 EXPECT=<<EOF

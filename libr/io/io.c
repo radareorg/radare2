@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2023 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2025 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb/sdb.h>
@@ -164,7 +164,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 		r_io_desc_exchange (io, od->fd, nd->fd);
 		r_io_desc_close (od);
 		if (nd->perm & R_PERM_W) {
-			io->coreb.cmdf (io->coreb.core, "omfg");
+			io->coreb.cmdf (io->coreb.core, "ompg");
 		}
 		return true;
 	}

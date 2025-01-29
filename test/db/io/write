@@ -7,7 +7,7 @@ w hello
 x 32
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
+ERROR: Cannot write. Use `omp`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -82,6 +82,6 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
+ERROR: [cmd_write_fail] Cannot write. Use `omp`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN

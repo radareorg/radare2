@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -122,41 +122,59 @@ static RCoreHelpMessage help_msg_ob = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_omr = {
+	"Usage: om", "[arg]", "Map opened files",
+	"omr", " mapid", "prioritize map with corresponding id",
+	"omrb", " [fd]", "prioritize maps of the bin associated with the binid",
+	"omrl", " fd", "reorder to the lower position the map with the given fd",
+	"omrd", " [mapid]", "reorder map down with corresponding id",
+	"omrf", " [fd]", "reorder map by fd",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_omt = {
+	"Usage: omt", "[arg]", "Manpilate IO map typings",
+	"omt", " mapid", "toggle map backwards tying (same as omtb)",
+	"omtb", " mapid", "toggle map backwards tying",
+	"omtf", " mapid", "toggle map forwards tying",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_om = {
 	"Usage: om", "[arg]", "Map opened files",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", " fd va [sz] [pa] [rwx] [name]", "create new io map",
-	"om", "", "list all defined IO maps",
-	"om*", "", "list all maps in r2 commands format",
-	"om-", "mapid", "remove the map with corresponding id",
-	"om-*", "", "remove all maps",
+	"om", "[,=*jqq]", "list IO maps",
 	"om.", "", "show map, that is mapped to current offset",
-	"om,", " [query]", "list maps using table api",
-	"om=", "", "list all maps in ascii art",
+	"om-", "[mapid]", "remove the map with corresponding id",
+	"om-*", "", "remove all maps",
+	"om+", " [fd]", "create a map covering all VA for given fd",
 	"oma", "[.] ([mapid]) (attr)", "set attribute to the given map id",
 	"omb", "[?]", "list/select memory map banks",
-	"omB", " mapid addr", "relocate map with corresponding id",
-	"omB.", " addr", "relocate current map",
 	"omd", " from to @ paddr", "simplified om; takes current seek, fd and perms",
-	"omf", " [mapid] rwx", "change flags/perms for current/given map",
-	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
-	"omj", "", "list all maps in json format",
-	"oml", " fd", "map the given fd with lowest priority",
 	"omm", " [fd]", "create default map for given fd (omm `oq`)",
 	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", "[j*]", "diff overlay map data (usually relocs)",
-	"omp", " mapid", "prioritize map with corresponding id",
-	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
-	"ompd", " mapid", "deprioritize map with corresponding id",
-	"ompf", " [fd]", "prioritize map by fd",
-	"omq", "", "list all maps and their fds",
-	"omqq", "", "list all maps addresses (See $MM to get the size)",
-	"omr", " [mapid] [newsize]", "resize map with corresponding id",
-	"omt", " mapid", "toggle map backwards tying (same as omtb)",
-	"omtb", " mapid", "toggle map backwards tying",
-	"omtf", " mapid", "toggle map forwards tying",
+	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
+	"ompg", "[+-]rwx", "global change permissions for all maps",
+	"omr", "[?]", "reorder map priority",
+	"oms", " [mapid] [newsize]", "show or change size map with corresponding id",
+	"omt", "[?]", "toggle map ties backward or forward",
 	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
-	"omv", " [fd]", "create a map covering all VA for given fd",
+	"omv", "[?]", "move map to the given address",
+	// "om*", "", "list all maps in r2 commands format",
+	// "om,", " [query]", "list maps using table api",
+	// "om=", "", "list all maps in ascii art",
+	// "omj", "", "list all maps in json format",
+	// "omq", "", "list all maps and their fds",
+	// "omqq", "", "list all maps addresses (See $MM to get the size)",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_omv = {
+	"Usage: omv", " ([mapid]) [addr]", "Move map to another address",
+	"omv", " mapid addr", "relocate map with corresponding id",
+	"omv.", " addr", "relocate current map",
 	NULL
 };
 
@@ -565,7 +583,7 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 }
 
 // TODO: move into r_io_remap()
-static void cmd_omfg(RCore *core, const char *input) {
+static void cmd_ompg(RCore *core, const char *input) {
 	input = r_str_trim_head_ro (input);
 	int perm = *input ? (*input == '+' || *input == '-')
 		? r_str_rwx (input + 1)
@@ -605,7 +623,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_omf(RCore *core, int argc, char *argv[]) {
+static void cmd_omp(RCore *core, int argc, char *argv[]) {
 	switch (argc) {
 	case 0:
 		break;
@@ -649,15 +667,15 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 static void r_core_cmd_omt(RCore *core, const char *arg) {
 	ut32 toggle;
 	switch (arg[0]) {
-	case ' ':	//'omt'
-	case 'b':	//'omtb'
+	case ' ': // "omt"
+	case 'b': // "omtb"
 		toggle = R_IO_MAP_TIE_FLG_BACK;
 		break;
-	case 'f':
+	case 'f': // "omtf"
 		toggle = R_IO_MAP_TIE_FLG_FORTH;
 		break;
 	default:
-		r_core_cmd_help_contains (core, help_msg_om, "omt");
+		r_core_cmd_help (core, help_msg_omt);
 		return;
 	}
 	int argc;
@@ -1084,7 +1102,6 @@ static void cmd_open_map(RCore *core, const char *input) {
 	char *s = NULL, *p = NULL;
 	ut64 newaddr;
 	RIOMap *map = NULL;
-	const char *P;
 	PJ *pj;
 
 	switch (input[1]) {
@@ -1119,23 +1136,23 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_cons_println ("{}");
 		}
 		break;
-	case 'r': // "omr"
+	case 's': // "oms"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_om, "omr");
-			break;
-		}
-		if (input[2] != ' ') {
+			r_core_cmd_help_match (core, help_msg_om, "oms");
+		} else if (input[2] != ' ') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				r_cons_printf ("%"PFMT64d"\n", r_itv_size (map->itv));
 			}
-			break;
-		}
-		P = strchr (input + 3, ' ');
-		if (P) {
-			id = (ut32)r_num_math (core->num, input + 3);
-			newaddr = r_num_math (core->num, P + 1);
-			r_io_map_resize (core->io, id, newaddr);
+		} else {
+			const char *p = strchr (input + 3, ' ');
+			if (p) {
+				id = (ut32)r_num_math (core->num, input + 3);
+				newaddr = r_num_math (core->num, p + 1);
+				r_io_map_resize (core->io, id, newaddr);
+			} else {
+				R_LOG_ERROR ("Missing argument");
+			}
 		}
 		break;
 	case 'b': // "omb" -- manage memory banks
@@ -1146,33 +1163,29 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_str_argv_free (argv);
 		}
 		break;
-	case 'B': // "omB"
-		if (input[2] == '.') {
+	case 'v': // "omv"
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_omv);
+		} else if (input[2] == '.') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				ut64 dst = r_num_math (core->num, input + 3);
 				r_io_map_remap (core->io, map->id, dst);
 			}
 		} else {
-			if (input[2] != ' ') {
-				break;
-			}
-			P = strchr (input + 3, ' ');
-			if (P) {
-				id = (ut32)r_num_math (core->num, input + 3);
-				newaddr = r_num_math (core->num, P + 1);
-				r_io_map_remap (core->io, id, newaddr);
+			if (input[2] == ' ') {
+				const char *p = strchr (input + 3, ' ');
+				if (p) {
+					id = (ut32)r_num_math (core->num, input + 3);
+					newaddr = r_num_math (core->num, p + 1);
+					r_io_map_remap (core->io, id, newaddr);
+				} else {
+					R_LOG_ERROR ("Missing argument");
+				}
+			} else {
+				r_core_return_invalid_command (core, "omv", input[2]);
 			}
 		}
-		break;
-	case 'l': // "oml"
-		if (input[2] == ' ') {
-			r_core_cmdf (core, "om %s 0x%08"PFMT64x
-				" $s r oml", input + 2, core->offset);
-		} else {
-			r_core_cmd0 (core, "om `oq.` $B $s r");
-		}
-		r_core_cmd0 (core, "ompd `omq.`");
 		break;
 	case 'o': // "omo"
 		if (core->io->va) {
@@ -1202,12 +1215,21 @@ static void cmd_open_map(RCore *core, const char *input) {
 			R_LOG_WARN ("Requires io.va");
 		}
 		break;
-	case 'p':
+	case 'r': // "omr"
 		switch (input[2]) {
-		case '?': // "omp?"
-			r_core_cmd_help_contains (core, help_msg_om, "omp");
+		case 'l': // "omrl"
+			if (input[2] == ' ') {
+				r_core_cmdf (core, "om %s 0x%08"PFMT64x
+					" $s r oml", input + 2, core->offset);
+			} else {
+				r_core_cmd0 (core, "om `oq.` $B $s r");
+			}
+			r_core_cmd0 (core, "omrd `omq.`");
 			break;
-		case 'd': // "ompf"
+		case '?': // "omr?"
+			r_core_cmd_help (core, help_msg_omr);
+			break;
+		case 'd': // "omrd"
 			id = r_num_math (core->num, input + 3);		//mapid
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_depriorize (core->io, id);
@@ -1215,20 +1237,20 @@ static void cmd_open_map(RCore *core, const char *input) {
 				R_LOG_ERROR ("Cannot find any map with mapid %d", id);
 			}
 			break;
-		case 'f': // "ompf"
+		case 'f': // "omrf"
 			fd = r_num_math (core->num, input + 3);
 			if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
 				R_LOG_ERROR ("Cannot prioritize any map for fd %d", (int)fd);
 			}
 			break;
-		case 'b': // "ompb"
+		case 'b': // "omrb"
 			id = (ut32)r_num_math (core->num, input + 4);
 			if (!r_bin_file_set_cur_by_id (core->bin, id)) {
 				R_LOG_ERROR ("Cannot prioritize bin with fd %d", id);
 			}
 			break;
-		case ' ': // "omp"
-			id = r_num_math (core->num, input + 3);		//mapid
+		case ' ': // "omr"
+			id = r_num_math (core->num, input + 3);	// mapid
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_priorize (core->io, id);
 				r_core_block_read (core);
@@ -1246,7 +1268,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			r_core_return_invalid_command (core, "omp", input[2]);
+			r_core_return_invalid_command (core, "omr", input[2]);
 			break;
 		}
 		break;
@@ -1333,7 +1355,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'a': // "oma"
 		cmd_oma (core, input);
 		break;
-	case 'v': // "omv"
+	case '+': // "om+"
 		{
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
@@ -1396,33 +1418,37 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'd': // "omd"
 		cmd_omd (core, input + 2);
 		break;
-	case 'f': // "omf" // R2_600 - rename to omp like we have for dmp
+	case 'p': // "omp"
 		switch (input[2]) {
-		case 'g': // "omfg"
-			cmd_omfg (core, input + 3);
+		case 'g': // "ompg"
+			if (input[3] == '?') {
+				r_core_cmd_help_contains (core, help_msg_om, "ompg");
+			} else {
+				cmd_ompg (core, input + 3);
+			}
 			break;
-		case ' ': // "omf"
+		case ' ': // "omp"
 			{
 				int argc;
 				char **argv = r_str_argv (&input[3], &argc);
-				cmd_omf (core, argc, argv);
+				cmd_omp (core, argc, argv);
 				r_str_argv_free (argv);
 			}
 			break;
-		case '?': // "omf?"
-			r_core_cmd_help_match (core, help_msg_om, "omf");
+		case '?': // "omp?"
+			r_core_cmd_help_match (core, help_msg_om, "omp");
+			r_core_cmd_help_contains (core, help_msg_om, "ompg");
 			break;
-		case 0: // "omf"
+		case 0: // "omp"
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->offset);
 				if (map) {
-					const char *sperm = r_str_rwx_i (map->perm);
-					r_cons_println (sperm);
+					r_cons_println (r_str_rwx_i (map->perm));
 				}
 			}
 			break;
 		default:
-			r_core_return_invalid_command (core, "omf", input[2]);
+			r_core_return_invalid_command (core, "omp", input[2]);
 			break;
 		}
 		break;
