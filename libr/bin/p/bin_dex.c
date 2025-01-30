@@ -577,8 +577,8 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			break;
 		case 0x0a: // DBG_SET_FIRST_SPECIAL
 			{
-				eprintf ("especial\n");
 				// TODO
+				R_LOG_TODO ("DBG_SET_FIRST_SPECIAL");
 			}
 			break;
 #if 0
