@@ -1098,6 +1098,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rahash2 -j file ssdeep
+FILE=-
+CMDS=!rahash2 -j -a ssdeep bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+[{"name":"ssdeep","hash":"96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE"}]
+EOF
+RUN
+
 NAME=rahash2 -j string
 FILE=-
 CMDS=!rahash2 -j -a sha1,sha256 -s 233
