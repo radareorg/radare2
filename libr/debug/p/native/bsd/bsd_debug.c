@@ -124,12 +124,14 @@ bool bsd_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	case R_REG_TYPE_VEC128: // XMM
 	case R_REG_TYPE_VEC256: // YMM
 	case R_REG_TYPE_VEC512: // ZMM
+#if __i386__ || __x86_64__
 #if __KFBSD__
 		struct ptrace_xstate_info info;
 		r = ptrace (PT_GETXSTATE_INFO, dbg->pid, (caddr_t)&info, sizeof (info));
 		if (info.xsave_len != 0) {
 			r = ptrace (PT_SETXSTATE, dbg->pid,  (caddr_t)buf, info.xsave_len);
 		}
+#endif
 #endif
 	      break;
 	}
