@@ -47,7 +47,7 @@ CS_URL_BASE=github.com/capstone-engine/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
-# NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
+
 ifeq ($(USE_CSNEXT),1)
 # CS_TIP=0a29bf80017b8422c79ba51e3ad5c34ba5ee6142
 # CS_BRA=next
@@ -63,6 +63,7 @@ else
 CS_ROOT=../subprojects/capstone-v5
 endif
 endif
+
 ifeq ($(CS_COMMIT_ARCHIVE),1)
 CS_ARCHIVE_URL=$(CS_ARCHIVE)/$(CS_TIP).zip
 else
