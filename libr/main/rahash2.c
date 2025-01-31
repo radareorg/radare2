@@ -147,7 +147,11 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 'j':
 		pj_o (pj);
 		pj_ks (pj, "name", hname);
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		if (hash & R_HASH_SSDEEP) {
+			pj_ks (pj, "hash", (const char *)c);
+		} else {
+			do_hash_hexprint (c, dlen, ule, pj, rad);
+		}
 		pj_end (pj);
 		break;
 	case 'J':
