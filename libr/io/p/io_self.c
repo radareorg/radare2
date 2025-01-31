@@ -44,7 +44,7 @@ static void macosx_debug_regions (SelfData *data, RIO *io, task_t task, mach_vm_
 #include <kvm.h>
 #endif
 #include <errno.h>
-static bool bsd_proc_vmmaps(RIO *io, int pid);
+static bool bsd_proc_vmmaps(SelfData *sd, RIO *io, int pid);
 #endif
 #ifdef __HAIKU__
 #include <kernel/image.h>
@@ -246,7 +246,7 @@ static int update_self_regions(RIO *io, int pid, SelfData *sd) {
 
 	return true;
 #elif R2__BSD__
-	return bsd_proc_vmmaps(io, pid);
+	return bsd_proc_vmmaps(sd, io, pid);
 #elif __HAIKU__
 	image_info ii;
 	int32 cookie = 0;
@@ -738,7 +738,7 @@ static void macosx_debug_regions(SelfData *sd, RIO *io, task_t task, mach_vm_add
 	}
 }
 #elif R2__BSD__
-static bool bsd_proc_vmmaps(RIO *io, int pid) {
+static bool bsd_proc_vmmaps(SelfData *sd, RIO *io, int pid) {
 #if __FreeBSD__
 	size_t size;
 	bool ret = false;
