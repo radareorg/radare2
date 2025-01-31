@@ -632,7 +632,11 @@ static int cdp_disasm(RAnalOp *aop, RArchDecodeMask mask) {
 	clock cycles to execute. The 1804 and 1805 use slightly less clock cycles,
 	making them just a little bit less slow.
 #endif
-	aop->cycles = 2;
+	if (buf[0] >= 0xc0 && buf[0] <= 0xcf) {
+		aop->cycles = 3;
+	} else {
+		aop->cycles = 2;
+	}
 	aop->size = size;
 	aop->type = op.type;
 	return size;
