@@ -12,7 +12,7 @@ capstone-v5_all: capstone-v5
 capstone-v5:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-v5
 	cd capstone-v5 && git fetch --depth=1 origin 8455b3c5a53b02e524494c7e72a3946a32518170
-	cd capstone-v5 && git checkout
+	cd capstone-v5 && git checkout FETCH_HEAD
 	cp -f packagefiles/capstone-v5/* capstone-v5
 
 capstone-v5_clean:

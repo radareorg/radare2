@@ -1,10 +1,10 @@
 ifeq ($(USE_CSNEXT),1)
-  CS_ROOT=../../../subprojects/capstone-next
+  CS_ROOT=../../subprojects/capstone-next
 else
 ifeq ($(USE_CS4),1)
-  CS_ROOT=../../../subprojects/capstone-v4
+  CS_ROOT=../../subprojects/capstone-v4
 else
-  CS_ROOT=../../../subprojects/capstone-v5
+  CS_ROOT=../../subprojects/capstone-v5
 endif
 endif
 
@@ -13,8 +13,12 @@ ifeq ($(WANT_CAPSTONE),1)
     CS_CFLAGS=${CAPSTONE_CFLAGS}
     CS_LDFLAGS=${CAPSTONE_LDFLAGS}
   else
+    #CS_CFLAGS=-I../../shlr/capstone/include
     CS_CFLAGS=-I$(CS_ROOT)/include
-    CS_CFLAGS+=-I$(CS_ROOT)/include/capstone
+    #CS_CFLAGS+=-I../$(CS_ROOT)/include
+    #CS_CFLAGS+=-I../../shlr/capstone/include/capstone
+    #CS_CFLAGS+=-I$(CS_ROOT)/include/capstone
+    #CS_CFLAGS+=-I$(CS_ROOT)/include/capstone
     CS_LDFLAGS=$(CS_ROOT)/libcapstone.a
   endif
 
