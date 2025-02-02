@@ -395,7 +395,10 @@ R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, c
 		digest_hex = calloc (digest_hex_size, 1);
 		snprintf (digest_hex, digest_hex_size, "%02.8f", ctx->entropy);
 	} else if (digest_size > 0) {
-		if (digest_size * 2 < digest_size) {
+		if (algo & R_HASH_SSDEEP) {
+			digest_hex = malloc (digest_size + 1);
+			snprintf (digest_hex, digest_size + 1, "%s", ctx->digest);
+		} else if (digest_size * 2 < digest_size) {
 			digest_hex = NULL;
 		} else {
 			digest_hex_size = (digest_size * 2) + 1;
