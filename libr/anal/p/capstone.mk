@@ -6,8 +6,8 @@ CS_CFLAGS=${CAPSTONE_CFLAGS}
 CS_LDFLAGS=${CAPSTONE_LDFLAGS}
 else
 # use capstone from shlr/capstone
-CS_CFLAGS=-I${SHLR}/capstone/include
-CS_LDFLAGS=$(SHLR)/capstone/libcapstone.a
+CS_CFLAGS=-I$(CS_ROOT)/include
+CS_LDFLAGS=$(CS_ROOT)/libcapstone.a
 #SHARED_OBJ+=${CS_LDFLAGS}
 endif
 

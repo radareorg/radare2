@@ -38,7 +38,7 @@ endif
 ifeq (${COMPILER},wasi)
 LINK+=$(SHLR)/zip/librz.a
 LINK+=$(SHLR)/gdb/lib/libgdbr.a
-LINK+=$(SHLR)/capstone/libcapstone.a
+LINK+=$(CS_ROOT)/libcapstone.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
 
 # instead of libr.a

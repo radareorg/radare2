@@ -115,7 +115,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 			pj_ko (pj, "thirdparty");
 			{
 				pj_ko (pj, "capstone");
-				pj_ks (pj, "destdir", "shlr/capstone");
+				pj_ks (pj, "destdir", "subprojects/capstone-v*");
 				pj_ks (pj, "git", "https://github.com/capstone-engine/capstone");
 				pj_ks (pj, "branch", "v5");
 				pj_ks (pj, "license", "BSD-3-Clause");

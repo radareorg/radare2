@@ -1,13 +1,3 @@
-ifeq ($(USE_CSNEXT),1)
-  CS_ROOT=../../subprojects/capstone-next
-else
-ifeq ($(USE_CS4),1)
-  CS_ROOT=../../subprojects/capstone-v4
-else
-  CS_ROOT=../../subprojects/capstone-v5
-endif
-endif
-
 ifeq ($(WANT_CAPSTONE),1)
   ifeq ($(USE_CAPSTONE),1)
     CS_CFLAGS=${CAPSTONE_CFLAGS}
