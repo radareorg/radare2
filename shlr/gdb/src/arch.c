@@ -22,7 +22,7 @@ gdb_reg_t *parse_def(char **tok) {
 		return NULL;
 	}
 
-	strcpy (r->name, tok[1]);
+	r_str_ncpy (r->name, tok[1], sizeof (r->name));
 	r->size = parse_size (tok[2], &end);
 	if (*end != '\0' || !r->size) {
 		free (r);
