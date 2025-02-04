@@ -12,7 +12,7 @@ capstone-next_all: capstone-next
 capstone-next:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-next
 	cd capstone-next && git fetch --depth=1 origin 0a29bf80017b8422c79ba51e3ad5c34ba5ee6142
-	cd capstone-next && git checkout
+	cd capstone-next && git checkout FETCH_HEAD
 	cp -f packagefiles/capstone-next/* capstone-next
 
 capstone-next_clean:

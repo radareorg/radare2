@@ -12,7 +12,7 @@ capstone-v4_all: capstone-v4
 capstone-v4:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-v4
 	cd capstone-v4 && git fetch --depth=1 origin 0efa3cc530ea188c0e03c945ab884ee19dd16342
-	cd capstone-v4 && git checkout
+	cd capstone-v4 && git checkout FETCH_HEAD
 	cp -f packagefiles/capstone-v4/* capstone-v4
 
 capstone-v4_clean:

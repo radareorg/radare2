@@ -11,7 +11,7 @@ v35arm64_all: v35arm64
 v35arm64:
 	git clone --no-checkout --depth=1 https://github.com/radareorg/vector35-arch-arm64 v35arm64
 	cd v35arm64 && git fetch --depth=1 origin radare2-2024
-	cd v35arm64 && git checkout
+	cd v35arm64 && git checkout FETCH_HEAD
 
 v35arm64_clean:
 	rm -rf v35arm64
