@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2025 - pancake, h4ng3r */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -6,6 +6,21 @@
 // XXX use rhash/crytpo/trans api instead
 #define r_hash_adler32 __adler32
 #include "../../crypto/hash/adler32.c"
+
+#define DBG_END_SEQUENCE          0x00
+#define DBG_ADVANCE_PC            0x01
+#define DBG_ADVANCE_LINE          0x02
+#define DBG_START_LOCAL           0x03
+#define DBG_START_LOCAL_EXTENDED  0x04
+#define DBG_END_LOCAL             0x05
+#define DBG_RESTART_LOCAL         0x06
+#define DBG_SET_PROLOGUE_END      0x07
+#define DBG_SET_EPILOGUE_BEGIN    0x08
+#define DBG_SET_FILE              0x09
+#define DBG_FIRST_SPECIAL         0x0A
+
+#define DBG_LINE_BASE             -4
+#define DBG_LINE_RANGE            15
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
@@ -431,24 +446,24 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 	while (keep) {
 		switch (opcode) {
-		case 0x00: // DBG_END_SEQUENCE
+		case DBG_END_SEQUENCE:
 			keep = false;
 			break;
-		case 0x01: // DBG_ADVANCE_PC
+		case DBG_ADVANCE_PC:
 			{
 			ut64 addr_diff;
 			r_buf_uleb128 (bf->buf, &addr_diff);
 			address += addr_diff;
 			}
 			break;
-		case 0x02: // DBG_ADVANCE_LINE
+		case DBG_ADVANCE_LINE:
 			{
 			st64 line_diff;
 			r_buf_sleb128 (bf->buf, &line_diff);
 			line += line_diff;
 			}
 			break;
-		case 0x03: // DBG_START_LOCAL
+		case DBG_START_LOCAL:
 			{
 			ut64 register_num, name_idx, type_idx;
 			r_buf_uleb128 (bf->buf, &register_num);
@@ -485,7 +500,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			//eprintf("DBG_START_LOCAL %x %x %x\n", register_num, name_idx, type_idx);
 			}
 			break;
-		case 0x04: // DBG_START_LOCAL_EXTENDED
+		case DBG_START_LOCAL_EXTENDED:
 			{
 			ut64 register_num, name_idx, type_idx, sig_idx;
 			r_buf_uleb128 (bf->buf, &register_num);
@@ -524,7 +539,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			debug_locals[register_num].live = true;
 			}
 			break;
-		case 0x05: // DBG_END_LOCAL
+		case DBG_END_LOCAL:
 			{
 			ut64 register_num;
 			r_buf_uleb128 (bf->buf, &register_num);
@@ -551,7 +566,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			debug_locals[register_num].live = false;
 			}
 			break;
-		case 0x06: // DBG_RESTART_LOCAL
+		case DBG_RESTART_LOCAL:
 			{
 			ut64 register_num;
 			r_buf_uleb128 (bf->buf, &register_num);
@@ -564,53 +579,34 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 			}
 			}
 			break;
-		case 0x07: // DBG_SET_PROLOGUE_END
+		case DBG_SET_PROLOGUE_END:
+			// ignored
 			break;
-		case 0x08: // DBG_SET_PROLOGUE_BEGIN
+		case DBG_SET_EPILOGUE_BEGIN:
+			// ignored
 			break;
-		case 0x09: // DBG_SET_FILE
+		case DBG_SET_FILE:
 			{
-			ut64 res;
-			r_buf_uleb128 (bf->buf, &res);
-			source_file_idx = res - 1;
+				ut64 res;
+				r_buf_uleb128 (bf->buf, &res);
+				source_file_idx = res - 1;
 			}
 			break;
-		case 0x0a: // DBG_SET_FIRST_SPECIAL
-			{
-				// TODO
-				R_LOG_TODO ("DBG_SET_FIRST_SPECIAL");
-			}
-			break;
-#if 0
-		case -4: // DBG_LINE_BASE
-			{
-				// TODO
-			}
-			break;
-#endif
-#if 0
 		default:
-			// we parse trash or we dont support undocumented opcodes. but this must improve
-			R_LOG_WARN ("Unhandled dex debug opcode 0x%02x", opcode);
-			break;
-#else
-		default:
-#endif
-		case 0x0f: // DBG_LINE_RANGE
-			{
-			int adjusted_opcode = opcode - 10;
-			address += (adjusted_opcode / 15);
-			line += -4 + (adjusted_opcode % 15);
-			struct dex_debug_position_t *position =
-				R_NEW0 (struct dex_debug_position_t);
-			if (!position) {
-				keep = false;
-				break;
-			}
-			position->source_file_idx = source_file_idx;
-			position->address = address;
-			position->line = line;
-			r_list_append (debug_positions, position);
+			if (opcode >= DBG_FIRST_SPECIAL) {
+				int adjusted_opcode = opcode - DBG_FIRST_SPECIAL;
+				int addr_delta = adjusted_opcode / DBG_LINE_RANGE;
+				int line_delta = DBG_LINE_BASE + (adjusted_opcode % DBG_LINE_RANGE);
+				address += addr_delta;
+				line += line_delta;
+				struct dex_debug_position_t *position =
+					R_NEW0 (struct dex_debug_position_t);
+				position->source_file_idx = source_file_idx;
+				position->address = address;
+				position->line = line;
+				r_list_append (debug_positions, position);
+			} else {
+				R_LOG_ERROR ("unknown dex debug opcode: 0x%02x", opcode);
 			}
 			break;
 		}
@@ -1131,7 +1127,6 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 }
 
 // TODO: refactor this method
-// XXX it needs a lot of love!!!
 static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->bo->bin_obj;
