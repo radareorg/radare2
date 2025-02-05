@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2024 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2025 - nibble, pancake, alvaro_fe */
 
 // R2R db/formats/elf/versioninfo
 // R2R db/formats/elf/reloc
@@ -4955,15 +4955,14 @@ void Elf_(free)(ELFOBJ* eo) {
 		free (eo->symbols_by_ord);
 	}
 	r_buf_free (eo->b);
-	if (eo->phdr_symbols_vec != eo->g_symbols_vec) {
-		RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-		eo->phdr_symbols_vec = NULL;
-	}
-	// causes double free in g_symbols_vec.free() 2 lines below
 	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
+	eo->phdr_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
+	eo->phdr_imports_vec = NULL;
+#if INVALID_FREE_OR_LEAK
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
+#endif
 #if 0
 	// R2_590
 	r_vector_free (eo->g_symbols);
