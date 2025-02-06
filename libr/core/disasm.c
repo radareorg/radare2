@@ -134,15 +134,15 @@ typedef struct r_disasm_state_t {
 	bool show_emu;
 	bool pre_emu;
 	bool show_emu_bb;
-	bool show_emu_str;
 	bool show_anos;
+	bool show_emu_str;
 	bool show_emu_stroff;
 	bool show_emu_strinv;
 	bool show_emu_strflag;
+	bool show_emu_strlea;
 	bool show_emu_stack;
 	bool show_emu_write;
 	bool show_optype;
-	bool show_emu_strlea;
 	bool show_emu_ssa;
 	bool show_section;
 	int show_section_col;
@@ -5271,6 +5271,7 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 	}
 	return escstr;
 }
+
 static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
@@ -5824,14 +5825,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		r_cons_print (ds->pal_comment);
 	}
 	esil = core->anal->esil;
-	const char *pc = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
-	if (pc) {
-		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
-		esil->cb.user = ds;
-		esil->cb.hook_reg_write = myregwrite;
-		esil->cb.hook_reg_read = myregread;
-		hook_mem_write = esil->cb.hook_mem_write;
-	}
+	r_reg_setv (core->anal->reg, "PC", at + ds->analop.size);
+	esil->cb.user = ds;
+	esil->cb.hook_reg_write = myregwrite;
+	esil->cb.hook_reg_read = myregread;
+	hook_mem_write = esil->cb.hook_mem_write;
 	if (ds->show_emu_stack) {
 		esil->cb.hook_mem_write = mymemwrite2;
 	} else {
