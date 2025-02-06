@@ -1749,7 +1749,8 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		r_io_read_at (r->io, reloc->addend, (ut8*)name, sizeof (name));
 		name[sizeof (name) - 1] = 0;
 		if (name[0] && name[1] && isalpha (name[0]) && isalpha (name[1])) {
-			R_LOG_DEBUG ("Naming fixup reloc with string %s\n", name);
+			r_name_filter (name, -1);
+			R_LOG_DEBUG ("Naming fixup reloc with string %s", name);
 			reloc_name = r_str_newf ("fixup.%s", name);
 			// add xref from fixup to string
 			r_anal_xrefs_set (r->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
@@ -1977,7 +1978,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 					}
 				}
 				int reloc_size = 4;
-				char *n = r_name_filter_quoted_shell (name);
+				// char *n = r_name_filter_quoted_shell (name);
+				char *n = strdup (name);
+				r_name_filter (n, -1);
 				r_cons_printf ("'f %s%s%s %d 0x%08"PFMT64x"\n",
 					r_str_get_fail (r->bin->prefix, "reloc."),
 					r->bin->prefix ? "." : "", n, reloc_size, addr);

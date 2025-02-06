@@ -19,6 +19,8 @@ EXPECT=<<EOF
 0x00021d68  string  reloc.strlen
 0x00021da8  string  reloc.snprintf
 0x00018bf7  time  str.ctime
+0x00021298  time  reloc.fixup.ctime
+0x00021780  time  reloc.fixup.time
 0x00021dd0  time  reloc.gettimeofday
 0x00021e88  time  reloc.tzset
 0x00021ee0  time  reloc.mktime
