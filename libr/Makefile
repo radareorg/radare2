@@ -146,8 +146,7 @@ else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
-		../libr/util/libr_util.${EXT_AR}
+		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
 endif
 
 libr.${EXT_SO}: libr.${EXT_AR}
@@ -156,8 +155,7 @@ ifeq (${COMPILER},emscripten)
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
-		../libr/util/libr_util.${EXT_AR}
+		../shlr/libr_shlr.${EXT_AR} $(E) ../libr/util/libr_util.${EXT_AR}
 endif
 
 else

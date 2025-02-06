@@ -473,20 +473,3 @@ ar_static_dep = declare_dependency(
   include_directories: ar_inc
 )
 endif
-
-# handle mpc dependency
-mpc_files = [
-  'mpc/mpc.c'
-]
-
-mpc_inc = [platform_inc, include_directories(['mpc'])]
-
-libmpc = static_library('r2mpc', mpc_files,
-  include_directories: mpc_inc,
-  implicit_include_directories: false
-)
-
-mpc_dep = declare_dependency(
-  link_with: libmpc,
-  include_directories: mpc_inc
-)

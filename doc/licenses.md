@@ -83,14 +83,13 @@ should be copied to `./plugins.cfg` before calling `./configure-plugins` to take
 
 * libr/bin/mangling/cxx: GPLv2 or later, with linking exception
 * subprojects/sdb: MIT
-* shlr/capstone: BSD + LLVM
+* subprojects/capstone: BSD + LLVM
 * shlr/zip/zip: BSD
 * shlr/zip/zlib: BSD
 * shlr/java: Apache2.0
 * shlr/qnx: GPL (will be moved to extras soon)
 * shlr/grub: GPL (used by some fs plugins)
 * shlr/lz4: simplified BSD license
-* shlr/mpc: BSD3
 
 ### The rest of code in shlr/ follows the LGPL
 
