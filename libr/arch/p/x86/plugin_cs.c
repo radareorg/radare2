@@ -36,9 +36,9 @@ call = 4
 
 #define CSINC X86
 #define CSINC_MODE \
-	(as->config->bits == 64)? CS_MODE_64: \
-	(as->config->bits == 32)? CS_MODE_32: \
-	(as->config->bits == 16)? CS_MODE_16: 0
+	R_SYS_BITS_CHECK (as->config->bits, 64)? CS_MODE_64: \
+	R_SYS_BITS_CHECK (as->config->bits, 32)? CS_MODE_32: \
+	R_SYS_BITS_CHECK (as->config->bits, 16)? CS_MODE_16: 0
 #include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
@@ -4049,8 +4049,22 @@ In a true 32 bit Windows GS is always zero.
 
 static char *get_reg_profile(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->config, NULL);
+	int bits = as->config->bits;
+	switch (bits) {
+	case 16:
+	case 32:
+	case 64:
+		break;
+	default:
+		if (R_SYS_BITS_CHECK (bits, 64)) {
+			bits = 64;
+		} else {
+			bits = 32;
+		}
+		break;
+	}
 	const char *p = NULL;
-	switch (as->config->bits) {
+	switch (bits) {
 	case 16: p =
 		"=PC	ip\n"
 		"=SP	sp\n"
@@ -4429,7 +4443,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;
 	case R_ARCH_INFO_FUNC_ALIGN:
-		if (as->config->bits == 64) {
+		if (R_SYS_BITS_CHECK (as->config->bits, 64)) {
 			return 4;
 		}
 		return 0;
