@@ -165,7 +165,7 @@ extern "C" {
 #define R_VEC_TYPE_WITH_FINI(vec_type, type, fini_fn) R_VEC_TYPE_INNER(vec_type, type, fini_fn, 1)
 
 #define R_VEC_TYPE_INNER(vec_type, type, fini_fn, has_fini) \
-	typedef struct r_vec_ ## vec_type ## _t { \
+	typedef struct R_ALIGNED(16) r_vec_ ## vec_type ## _t { \
 		type *_start; \
 		type *_end; \
 		size_t _capacity; \
