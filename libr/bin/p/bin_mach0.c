@@ -275,28 +275,32 @@ static RList *relocs(RBinFile *bf) {
 			continue;
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
-		if (!ptr) {
-			break;
-		}
 		ptr->type = reloc->type;
 		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
 		if (reloc->name[0]) {
-			RBinImport *imp;
-			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name))) {
-				free (ptr);
-				break;
-			}
-			ptr->import = imp;
+			ptr->import = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
 		} else if (reloc->ord >= 0 && mo->imports_by_ord && reloc->ord < mo->imports_by_ord_size) {
 			ptr->import = mo->imports_by_ord[reloc->ord];
-		} else {
-			ptr->import = NULL;
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
 		r_list_append (ret, ptr);
+	}
+	if (mo->reloc_fixups) {
+		RBinReloc *r;
+		RListIter *iter;
+
+		r_list_foreach (mo->reloc_fixups, iter, r) {
+			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			ptr->type = R_BIN_RELOC_64;
+			ut64 paddr = r->paddr + mo->baddr;
+			ptr->vaddr = paddr;
+			ptr->paddr = r->vaddr;
+			ptr->addend = r->vaddr;
+			r_list_append (ret, ptr);
+		}
 	}
 
 	return ret;
@@ -461,7 +465,9 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		r_pvector_push (&ext_relocs, reloc);
 	}
+#if 0
 	int relocs_count = 0;
+	// fixups are now considered part of the relocs listing
 	if (mo->reloc_fixups != NULL) {
 		relocs_count = r_list_length (mo->reloc_fixups);
 	}
@@ -491,6 +497,7 @@ static RList* patch_relocs(RBinFile *bf) {
 			}
 		}
 	}
+#endif
 	ut64 num_ext_relocs = r_pvector_length (&ext_relocs);
 	if (!num_ext_relocs) {
 		goto beach;
