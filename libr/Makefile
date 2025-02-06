@@ -129,8 +129,12 @@ E+=../shlr/bochs/lib/libbochs.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 E+=$(CAPSTONE_LDFLAGS)
+else ifeq ($(USE_CSNEXT),1)
+E+=$(CS_ROOT)/libcapstone.${EXT_AR}
+else ifeq ($(USE_CS4),1)
+E+=$(CS_ROOT)/libcapstone.${EXT_AR}
 else
-E+=../shlr/capstone/libcapstone.${EXT_AR}
+E+=$(CS_ROOT)/libcapstone.${EXT_AR}
 endif
 
 ifeq ($(OSTYPE),darwin)

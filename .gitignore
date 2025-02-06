@@ -76,6 +76,8 @@ shlr/spp/config.h
 subprojects/sdb
 subprojects/capstone
 subprojects/capstone-v5
+subprojects/capstone-v4
+subprojects/capstone-next
 subprojects/v35arm64
 subprojects/v35armv7
 subprojects/qjs
