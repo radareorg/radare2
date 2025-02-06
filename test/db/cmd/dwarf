@@ -309,7 +309,7 @@ EXPECT=<<EOF
 |           0x000057a4      c784249c00..   mov dword [var_9ch], 5
 |           0x000057af      c78424a000..   mov dword [var_a0h], 0
 |           0x000057ba      c78424a400..   mov dword [var_a4h], 6
-|           0x000057c5      488b05842b..   mov rax, qword [0x00038350] ; [0x38350:8]=0x38330
+|           0x000057c5      488b05842b..   mov rax, qword [0x00038350] ; [0x38350:8]=0x38330 reloc.fixup.Before:_After:_beachartcardeal
 |           0x000057cc      488d8c2480..   lea rcx, [numbers]
 |           0x000057d4      48898c24e8..   mov qword [var_e8h], rcx
 |           0x000057dc      488b8c24e8..   mov rcx, qword [var_e8h]
@@ -339,7 +339,7 @@ EXPECT=<<EOF
 |           0x0000586d      4889c7         mov rdi, rax                ; int64_t arg1
 |           0x00005870      be0a000000     mov esi, 0xa                ; int64_t arg2
 |           0x00005875      e8f6f9ffff     call dbg.bubble_sort<i32>   ; rust::bubble_sort::h0777bc845caabc60
-|           0x0000587a      488b05f72a..   mov rax, qword [0x00038378] ; [0x38378:8]=0x38358
+|           0x0000587a      488b05f72a..   mov rax, qword [0x00038378] ; [0x38378:8]=0x38358 reloc.fixup.After:_beachartcardealempty_usr
 |           0x00005881      488d8c2480..   lea rcx, [numbers]
 |           0x00005889      48898c2430..   mov qword [var_130h], rcx
 |           0x00005891      488b8c2430..   mov rcx, qword [var_130h]

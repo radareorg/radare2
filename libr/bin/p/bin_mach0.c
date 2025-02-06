@@ -78,7 +78,7 @@ static ut64 baddr(RBinFile *bf) {
 	return MACH0_(get_baddr)(mo);
 }
 
-// R2_590 return RVecSegment
+// R2_600 return RVecSegment
 static RList *sections(RBinFile *bf) {
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return MACH0_(get_segments) (bf, mo); // TODO split up sections and segments?
@@ -465,7 +465,9 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		r_pvector_push (&ext_relocs, reloc);
 	}
-#if 0
+#if 1
+	// XXX for some reason we are patching this twice as relocs and fixups
+	// may be good to find out why and comment back this code with an if0
 	int relocs_count = 0;
 	// fixups are now considered part of the relocs listing
 	if (mo->reloc_fixups != NULL) {

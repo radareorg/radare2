@@ -671,7 +671,7 @@ EXPECT=<<EOF
         ,=< 0x000041e0      je 0x421a
         |   0x000041e2      mov ecx, 4
         |   0x000041e7      lea rdx, [0x0001b980]
-        |   0x000041ee      lea rsi, [0x00021a40]
+        |   0x000041ee      lea rsi, reloc.fixup.literal               ; 0x21a40 ; "1\x8d\x01"
         |   0x000041f5      mov rdi, rax
         |   0x000041f8      call 0xc660
         |   0x000041fe      test eax, eax
@@ -685,14 +685,15 @@ EXPECT=<<EOF
        |                                                               ; [0x232b0:8]=0
        |    0x00004225      lea rdi, str.COLUMNS                       ; 0x18a22 ; "COLUMNS"
 
-            0x000041ee      lea rsi, [rip + 0x1d84b]                   ; 0x21a40
+            0x000041ee      lea rsi, [rip + 0x1d84b]                   ; reloc.fixup.literal
+                                                                       ; 0x21a40 ; "1\x8d\x01"
             0x00004225      lea rdi, [rip + 0x147f6]                   ; str.COLUMNS
                                                                        ; 0x18a22 ; "COLUMNS"
 
         [36m,[0m[36m=[0m[36m<[0m [32m0x000041e0[0m      [32mje[36m [33m0x421a[0m[0m[0m
         [36m|[0m   [32m0x000041e2[0m      [36mmov[36m ecx[0m,[36m [33m4[0m[0m[0m
         [36m|[0m   [32m0x000041e7[0m      [36mlea[36m rdx[0m,[36m[36m [0m[[33m0x0001b980[0m][36m[0m[0m[0m
-        [36m|[0m   [32m0x000041ee[0m      [36mlea[36m rsi[0m,[36m[36m [0m[[33m0x00021a40[0m][36m[0m[0m[0m
+        [36m|[0m   [32m0x000041ee[0m      [36mlea[36m rsi[0m,[36m[36m reloc.fixup.literal[0m[0m[31m               [31m; 0x21a40[31m [31m; "1\x8d\x01"[0m
         [36m|[0m   [32m0x000041f5[0m      [36mmov[36m rdi[0m,[36m rax[0m[0m[0m
         [36m|[0m   [32m0x000041f8[0m      [1;32mcall[36m [33m0xc660[0m[0m[0m
         [36m|[0m   [32m0x000041fe[0m      [33mtest[36m eax[0m,[36m eax[0m[0m[0m
@@ -706,14 +707,15 @@ EXPECT=<<EOF
        [36m|[0m    [31m                                                           [31m; [0x232b0:8]=0[0m
        [36m|[0m    [32m0x00004225[0m      [36mlea[36m rdi[0m,[36m[36m str.COLUMNS[0m[0m[31m                       [31m; 0x18a22[31m [31m; "COLUMNS"[0m
 
-            [32m0x000041ee[0m      [36mlea[36m rsi[0m,[36m [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m                   [31m; 0x21a40[0m
+            [32m0x000041ee[0m      [36mlea[36m rsi[0m,[36m [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m                   [31m; reloc.fixup.literal
+            [31m                                                           [31m; 0x21a40[31m [31m; "1\x8d\x01"[0m
             [32m0x00004225[0m      [36mlea[36m rdi[0m,[36m [0m[[36mrip [0m+[36m[36m [33m0x147f6[0m][36m[0m[0m[31m                   [31m; str.COLUMNS
             [31m                                                           [31m; 0x18a22[31m [31m; "COLUMNS"[0m
 
         ,=< 0x000041e0      je 0x421a
         |   0x000041e2      mov ecx, 4
         |   0x000041e7      mov rax, qword [0x0001b980]                ; [0x1b980:8]=0x100000000
-        |   0x000041ee      mov rax, qword [0x00021a40]                ; [0x21a40:8]=0x18d31 str.literal
+        |   0x000041ee      mov rax, qword [reloc.fixup.literal]       ; [0x21a40:8]=0x18d31 str.literal ; "1\x8d\x01"
         |   0x000041f5      mov rdi, rax
         |   0x000041f8      call 0xc660
         |   0x000041fe      test eax, eax
@@ -727,14 +729,15 @@ EXPECT=<<EOF
        |                                                               ; [0x232b0:8]=0
        |    0x00004225      mov rax, qword [str.COLUMNS]               ; [0x18a22:8]=0x534e4d554c4f43 ; "COLUMNS"
 
-            0x000041ee      mov rax, qword [rip + 0x1d84b]             ; [0x21a40:8]=0x18d31 str.literal
+            0x000041ee      mov rax, qword [rip + 0x1d84b]             ; reloc.fixup.literal
+                                                                       ; [0x21a40:8]=0x18d31 str.literal ; "1\x8d\x01"
             0x00004225      mov rax, qword [rip + 0x147f6]             ; str.COLUMNS
                                                                        ; [0x18a22:8]=0x534e4d554c4f43 ; "COLUMNS"
 
         [36m,[0m[36m=[0m[36m<[0m [32m0x000041e0[0m      [32mje[36m [33m0x421a[0m[0m[0m
         [36m|[0m   [32m0x000041e2[0m      [36mmov[36m ecx[0m,[36m [33m4[0m[0m[0m
         [36m|[0m   [32m0x000041e7[0m      [36mmov[36m rax[0m,[36m qword[36m [0m[[33m0x0001b980[0m][36m[0m[0m[31m                [31m; [[31m0x1b980[31m:8]=0x100000000[0m
-        [36m|[0m   [32m0x000041ee[0m      [36mmov[36m rax[0m,[36m qword[36m [0m[[33m0x00021a40[0m][36m[0m[0m[31m                [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
+        [36m|[0m   [32m0x000041ee[0m      [36mmov[36m rax[0m,[36m qword[36m [0m[[36mreloc.fixup.literal[0m][36m[0m[0m[31m       [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[31m [31m; "1\x8d\x01"[0m
         [36m|[0m   [32m0x000041f5[0m      [36mmov[36m rdi[0m,[36m rax[0m[0m[0m
         [36m|[0m   [32m0x000041f8[0m      [1;32mcall[36m [33m0xc660[0m[0m[0m
         [36m|[0m   [32m0x000041fe[0m      [33mtest[36m eax[0m,[36m eax[0m[0m[0m
@@ -748,14 +751,15 @@ EXPECT=<<EOF
        [36m|[0m    [31m                                                           [31m; [0x232b0:8]=0[0m
        [36m|[0m    [32m0x00004225[0m      [36mmov[36m rax[0m,[36m qword[36m [0m[[36mstr.COLUMNS[0m][36m[0m[0m[31m               [31m; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m [31m; "COLUMNS"[0m
 
-            [32m0x000041ee[0m      [36mmov[36m rax[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
+            [32m0x000041ee[0m      [36mmov[36m rax[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             [31m; reloc.fixup.literal
+            [31m                                                           [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[31m [31m; "1\x8d\x01"[0m
             [32m0x00004225[0m      [36mmov[36m rax[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x147f6[0m][36m[0m[0m[31m             [31m; str.COLUMNS
             [31m                                                           [31m; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m [31m; "COLUMNS"[0m
 
         ,=< 0x000041e0      je 0x421a
         |   0x000041e2      mov ecx, 4
         |   0x000041e7      cmp rdx, qword [0x0001b980]                ; [0x1b980:8]=0x100000000
-        |   0x000041ee      cmp rsi, qword [0x00021a40]                ; [0x21a40:8]=0x18d31 str.literal
+        |   0x000041ee      cmp rsi, qword [reloc.fixup.literal]       ; [0x21a40:8]=0x18d31 str.literal ; "1\x8d\x01"
         |   0x000041f5      mov rdi, rax
         |   0x000041f8      call 0xc660
         |   0x000041fe      test eax, eax
@@ -769,14 +773,15 @@ EXPECT=<<EOF
        |                                                               ; [0x232b0:8]=0
        |    0x00004225      cmp rdi, qword [str.COLUMNS]               ; [0x18a22:8]=0x534e4d554c4f43 ; "COLUMNS"
 
-            0x000041ee      cmp rsi, qword [rip + 0x1d84b]             ; [0x21a40:8]=0x18d31 str.literal
+            0x000041ee      cmp rsi, qword [rip + 0x1d84b]             ; reloc.fixup.literal
+                                                                       ; [0x21a40:8]=0x18d31 str.literal ; "1\x8d\x01"
             0x00004225      cmp rdi, qword [rip + 0x147f6]             ; str.COLUMNS
                                                                        ; [0x18a22:8]=0x534e4d554c4f43 ; "COLUMNS"
 
         [36m,[0m[36m=[0m[36m<[0m [32m0x000041e0[0m      [32mje[36m [33m0x421a[0m[0m[0m
         [36m|[0m   [32m0x000041e2[0m      [36mmov[36m ecx[0m,[36m [33m4[0m[0m[0m
         [36m|[0m   [32m0x000041e7[0m      [33mcmp[36m rdx[0m,[36m qword[36m [0m[[33m0x0001b980[0m][36m[0m[0m[31m                [31m; [[31m0x1b980[31m:8]=0x100000000[0m
-        [36m|[0m   [32m0x000041ee[0m      [33mcmp[36m rsi[0m,[36m qword[36m [0m[[33m0x00021a40[0m][36m[0m[0m[31m                [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
+        [36m|[0m   [32m0x000041ee[0m      [33mcmp[36m rsi[0m,[36m qword[36m [0m[[36mreloc.fixup.literal[0m][36m[0m[0m[31m       [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[31m [31m; "1\x8d\x01"[0m
         [36m|[0m   [32m0x000041f5[0m      [36mmov[36m rdi[0m,[36m rax[0m[0m[0m
         [36m|[0m   [32m0x000041f8[0m      [1;32mcall[36m [33m0xc660[0m[0m[0m
         [36m|[0m   [32m0x000041fe[0m      [33mtest[36m eax[0m,[36m eax[0m[0m[0m
@@ -790,7 +795,8 @@ EXPECT=<<EOF
        [36m|[0m    [31m                                                           [31m; [0x232b0:8]=0[0m
        [36m|[0m    [32m0x00004225[0m      [33mcmp[36m rdi[0m,[36m qword[36m [0m[[36mstr.COLUMNS[0m][36m[0m[0m[31m               [31m; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m [31m; "COLUMNS"[0m
 
-            [32m0x000041ee[0m      [33mcmp[36m rsi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
+            [32m0x000041ee[0m      [33mcmp[36m rsi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             [31m; reloc.fixup.literal
+            [31m                                                           [31m; [[31m0x21a40[31m:8]=0x18d31 str.literal[31m [31m; "1\x8d\x01"[0m
             [32m0x00004225[0m      [33mcmp[36m rdi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x147f6[0m][36m[0m[0m[31m             [31m; str.COLUMNS
             [31m                                                           [31m; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m [31m; "COLUMNS"[0m
 EOF
@@ -822,7 +828,7 @@ EXPECT=<<EOF
 je 0x421a
 mov ecx, 4
 lea rdx, [0x0001b980]
-lea rsi, [0x00021a40]
+lea rsi, reloc.fixup.literal
 mov rdi, rax
 call 0xc660
 test eax, eax
