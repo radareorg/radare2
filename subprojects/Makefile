@@ -7,8 +7,6 @@ else
   DEPS += capstone-v5
 endif
 
-$(info [-=--=] DEPS CAPSOTONE= $(DEPS))
-
 all: $(DEPS)
 
 clean:

@@ -6,7 +6,6 @@ else
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
-    # capstone_path = 'capstone'
     capstone_path = join_paths(meson.source_root(), 'subprojects/capstone-' + capstone_version)
   endif
 
@@ -14,10 +13,7 @@ else
   capstone_version = get_option('use_capstone_version')
   message('Use bundled capstone: ' + capstone_version)
 
-  # res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
-  # if res.returncode() == 0
   patches_files = []
-  # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
   if capstone_version == 'next'
     cs = subproject('capstone-next')
     patches_files = [
@@ -45,22 +41,8 @@ else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
 
-    # message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
-    # git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
-    # clone_cmd = run_command(git_exe, git_cmd.split())
-    # if clone_cmd.returncode() != 0
-    #   error('Cannot execute git clone command')
-    # endif
-
-    # reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
-    # reset_cmd = run_command(git_exe, reset_cmd_str.split())
-    # if reset_cmd.returncode() != 0
-    #   error('Cannot execute git reset command')
-    # endif
-
   message('Patching capstone with radare\'s patches')
   foreach file : patches_files
-    # patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
     patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
     patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
     patch_cmd = run_command(git_exe, patch_cmd_str.split())
@@ -68,33 +50,7 @@ else
       warning('Cannot apply patch ' + file)
     endif
   endforeach
-  #endif
 
-  rel_cs4_files = [
-    'arch/M680X/M680XDisassembler.c',
-    'arch/M680X/M680XInstPrinter.c',
-    'arch/M680X/M680XModule.c',
-    'arch/M68K/M68KDisassembler.c',
-    'arch/M68K/M68KInstPrinter.c',
-    'arch/M68K/M68KModule.c',
-    'arch/TMS320C64x/TMS320C64xDisassembler.c',
-    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
-    'arch/TMS320C64x/TMS320C64xMapping.c',
-    'arch/TMS320C64x/TMS320C64xModule.c',
-  ]
-
-  # capstone_includes = [platform_inc, include_directories(join_paths('capstone','include'))]
-
-  # libr2capstone = static_library('r2capstone', cs_files,
-  #   c_args: cs_c_args,
-  #   include_directories: capstone_includes,
-  #   implicit_include_directories: false
-  # )
-
-  # capstone_dep = declare_dependency(
-  #   link_with: libr2capstone,
-  #   include_directories: capstone_includes
-  # )
   capstone_dep = cs.get_variable('capstone_dep')
 endif
 

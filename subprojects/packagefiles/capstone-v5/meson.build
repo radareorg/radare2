@@ -11,12 +11,9 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
-platform_inc = ['../..', '../../libr/include']
-
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
-platform_inc = include_directories(platform_inc)
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -94,8 +91,7 @@ cs_files = [
   'utils.c',
 ]
 
-#capstone_includes = [include_directories('include'), include_directories('include/capstone')]
-capstone_includes = [platform_inc, include_directories('include'), include_directories('include/capstone')]
+capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
 user_plugins = get_option('plugins').split(',')
 no_user_plugins = get_option('plugins') == ''

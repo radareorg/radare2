@@ -1,5 +1,3 @@
-# this code was brutally pasted from Rizin
-
 project('capstone', 'c',
   version: '4.0.2',
   meson_version: '>=0.55.0',
@@ -13,6 +11,10 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
+if host_machine.system() == 'windows'
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+endif
+
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
   'arch/AArch64/AArch64Disassembler.c',
@@ -23,12 +25,6 @@ cs_files = [
   'arch/ARM/ARMInstPrinter.c',
   'arch/ARM/ARMMapping.c',
   'arch/ARM/ARMModule.c',
-  'arch/M680X/M680XDisassembler.c',
-  'arch/M680X/M680XInstPrinter.c',
-  'arch/M680X/M680XModule.c',
-  'arch/M68K/M68KDisassembler.c',
-  'arch/M68K/M68KInstPrinter.c',
-  'arch/M68K/M68KModule.c',
   'arch/Mips/MipsDisassembler.c',
   'arch/Mips/MipsInstPrinter.c',
   'arch/Mips/MipsMapping.c',
@@ -46,10 +42,6 @@ cs_files = [
   'arch/SystemZ/SystemZMapping.c',
   'arch/SystemZ/SystemZMCTargetDesc.c',
   'arch/SystemZ/SystemZModule.c',
-  'arch/TMS320C64x/TMS320C64xDisassembler.c',
-  'arch/TMS320C64x/TMS320C64xInstPrinter.c',
-  'arch/TMS320C64x/TMS320C64xMapping.c',
-  'arch/TMS320C64x/TMS320C64xModule.c',
   'arch/X86/X86ATTInstPrinter.c',
   'arch/X86/X86Disassembler.c',
   'arch/X86/X86DisassemblerDecoder.c',
@@ -60,36 +52,70 @@ cs_files = [
   'arch/XCore/XCoreInstPrinter.c',
   'arch/XCore/XCoreMapping.c',
   'arch/XCore/XCoreModule.c',
+  # 'Mapping.c',
   'cs.c',
   'MCInst.c',
   'MCInstrDesc.c',
   'MCRegisterInfo.c',
   'SStream.c',
   'utils.c',
+  'arch/M680X/M680XDisassembler.c',
+  'arch/M680X/M680XInstPrinter.c',
+  'arch/M680X/M680XModule.c',
+  'arch/M68K/M68KDisassembler.c',
+  'arch/M68K/M68KInstPrinter.c',
+  'arch/M68K/M68KModule.c',
+  'arch/TMS320C64x/TMS320C64xDisassembler.c',
+  'arch/TMS320C64x/TMS320C64xInstPrinter.c',
+  'arch/TMS320C64x/TMS320C64xMapping.c',
+  'arch/TMS320C64x/TMS320C64xModule.c',
 ]
 
 capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
-libcapstone_c_args = [
-  '-DCAPSTONE_X86_ATT_DISABLE_NO',
-  '-DCAPSTONE_X86_REDUCE_NO',
+user_plugins = get_option('plugins').split(',')
+no_user_plugins = get_option('plugins') == ''
+cs_c_args = [
   '-DCAPSTONE_USE_SYS_DYN_MEM',
   '-DCAPSTONE_DIET_NO',
-  '-DCAPSTONE_HAS_ARM',
-  '-DCAPSTONE_HAS_ARM64',
-  '-DCAPSTONE_HAS_M68K',
-  '-DCAPSTONE_HAS_M680X',
-  '-DCAPSTONE_HAS_MIPS',
-  '-DCAPSTONE_HAS_POWERPC',
-  '-DCAPSTONE_HAS_SPARC',
-  '-DCAPSTONE_HAS_SYSZ',
-  '-DCAPSTONE_HAS_X86',
-  '-DCAPSTONE_HAS_XCORE',
-  '-DCAPSTONE_HAS_TMS320C64X',
 ]
+if user_plugins.contains('x86') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_X86',
+    '-DCAPSTONE_X86_ATT_DISABLE_NO',
+    '-DCAPSTONE_X86_REDUCE_NO',
+  ]
+endif
+if user_plugins.contains('arm') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_ARM',
+    '-DCAPSTONE_HAS_ARM64',
+  ]
+endif
+if user_plugins.contains('sparc') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_SPARC',
+  ]
+endif
+if user_plugins.contains('mips') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_MIPS',
+  ]
+endif
+if no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_M68K',
+    '-DCAPSTONE_HAS_M680X',
+    '-DCAPSTONE_HAS_POWERPC',
+    '-DCAPSTONE_HAS_SPARC',
+    '-DCAPSTONE_HAS_SYSZ',
+    '-DCAPSTONE_HAS_XCORE',
+    '-DCAPSTONE_HAS_TMS320C64X',
+  ]
+endif
 
-libcapstone = library('capstone', cs_files,
-  c_args: libcapstone_c_args,
+libcapstone = static_library('capstone', cs_files,
+  c_args: cs_c_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )
