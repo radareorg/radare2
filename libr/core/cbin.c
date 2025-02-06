@@ -1745,8 +1745,18 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	char flagname[R_FLAG_NAME_SIZE];
 	char *reloc_name = construct_reloc_name (reloc, NULL);
 	if (R_STR_ISEMPTY (reloc_name)) {
-		free (reloc_name);
-		return;
+		char name[32] = {0};
+		r_io_read_at (r->io, reloc->addend, (ut8*)name, sizeof (name));
+		name[sizeof (name) - 1] = 0;
+		if (name[0] && name[1] && isalpha (name[0]) && isalpha (name[1])) {
+			R_LOG_DEBUG ("Naming fixup reloc with string %s\n", name);
+			reloc_name = r_str_newf ("fixup.%s", name);
+			// add xref from fixup to string
+			r_anal_xrefs_set (r->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
+		} else {
+			free (reloc_name);
+			return;
+		}
 	}
 	if (r->bin->prefix) {
 		snprintf (flagname, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
