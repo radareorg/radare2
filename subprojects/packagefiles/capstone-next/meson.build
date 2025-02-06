@@ -1,5 +1,3 @@
-# this code was brutally pasted from Rizin
-
 project('capstone', 'c',
   version: 'next',
   meson_version: '>=0.55.0',
@@ -13,7 +11,12 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
+if host_machine.system() == 'windows'
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+endif
+
 cs_files = [
+  # Taken from Rizin:
   'arch/Alpha/AlphaDisassembler.c',
   'arch/Alpha/AlphaInstPrinter.c',
   'arch/Alpha/AlphaMapping.c',
@@ -86,6 +89,20 @@ cs_files = [
   'arch/Xtensa/XtensaInstPrinter.c',
   'arch/Xtensa/XtensaMapping.c',
   'arch/Xtensa/XtensaModule.c',
+  'arch/MOS65XX/MOS65XXDisassembler.c',
+  'arch/MOS65XX/MOS65XXModule.c',
+  'arch/RISCV/RISCVDisassembler.c',
+  'arch/RISCV/RISCVInstPrinter.c',
+  'arch/RISCV/RISCVMapping.c',
+  'arch/RISCV/RISCVModule.c',
+  'arch/BPF/BPFDisassembler.c',
+  'arch/BPF/BPFInstPrinter.c',
+  'arch/BPF/BPFMapping.c',
+  'arch/BPF/BPFModule.c',
+  'arch/EVM/EVMDisassembler.c',
+  'arch/EVM/EVMInstPrinter.c',
+  'arch/EVM/EVMMapping.c',
+  'arch/EVM/EVMModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -98,35 +115,56 @@ cs_files = [
 
 capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
-libcapstone_c_args = [
-  '-DCAPSTONE_X86_ATT_DISABLE_NO',
-  '-DCAPSTONE_X86_REDUCE_NO',
+user_plugins = get_option('plugins').split(',')
+no_user_plugins = get_option('plugins') == ''
+cs_c_args = [
   '-DCAPSTONE_USE_SYS_DYN_MEM',
   '-DCAPSTONE_DIET_NO',
-  '-DCAPSTONE_HAS_AARCH64',
-  '-DCAPSTONE_HAS_ALPHA',
-  '-DCAPSTONE_HAS_ARM',
-  '-DCAPSTONE_HAS_HPPA',
-  '-DCAPSTONE_HAS_LOONGARCH',
-  '-DCAPSTONE_HAS_M680X',
-  '-DCAPSTONE_HAS_M68K',
-  '-DCAPSTONE_HAS_MIPS',
-  '-DCAPSTONE_HAS_POWERPC',
-  '-DCAPSTONE_HAS_SPARC',
-  '-DCAPSTONE_HAS_SYSTEMZ',
-  '-DCAPSTONE_HAS_TMS320C64X',
-  '-DCAPSTONE_HAS_TRICORE',
-  '-DCAPSTONE_HAS_X86',
-  '-DCAPSTONE_HAS_XCORE',
-  '-DCAPSTONE_HAS_XTENSA',
 ]
-
-if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
-  libcapstone_c_args += '-Wno-maybe-uninitialized'
+if user_plugins.contains('x86') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_X86',
+    '-DCAPSTONE_X86_ATT_DISABLE_NO',
+    '-DCAPSTONE_X86_REDUCE_NO',
+  ]
+endif
+if user_plugins.contains('arm') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_ARM',
+    '-DCAPSTONE_HAS_ARM64',
+  ]
+endif
+if user_plugins.contains('sparc') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_SPARC',
+  ]
+endif
+if user_plugins.contains('mips') or no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_MIPS',
+  ]
+endif
+if no_user_plugins
+  cs_c_args += [
+    '-DCAPSTONE_HAS_M68K',
+    '-DCAPSTONE_HAS_M680X',
+    '-DCAPSTONE_HAS_POWERPC',
+    '-DCAPSTONE_HAS_SPARC',
+    '-DCAPSTONE_HAS_SYSZ',
+    '-DCAPSTONE_HAS_XCORE',
+    '-DCAPSTONE_HAS_TMS320C64X',
+  ]
 endif
 
-libcapstone = library('capstone', cs_files,
-  c_args: libcapstone_c_args,
+cs_c_args += [
+  '-DCAPSTONE_HAS_BPF',
+  '-DCAPSTONE_HAS_EVM',
+  '-DCAPSTONE_HAS_MOS65XX',
+  '-DCAPSTONE_HAS_RISCV',
+]
+
+libcapstone = static_library('capstone', cs_files,
+  c_args: cs_c_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )

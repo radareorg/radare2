@@ -1,0 +1,2 @@
+option('plugins', type: 'string', value: '', description: 'Comma separated list of plugin names', yield: true)
+

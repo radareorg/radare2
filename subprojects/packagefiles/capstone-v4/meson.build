@@ -52,7 +52,6 @@ cs_files = [
   'arch/XCore/XCoreInstPrinter.c',
   'arch/XCore/XCoreMapping.c',
   'arch/XCore/XCoreModule.c',
-  # 'Mapping.c',
   'cs.c',
   'MCInst.c',
   'MCInstrDesc.c',
