@@ -82,7 +82,7 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=zip java mpc
+MODS=zip java
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -364,5 +364,3 @@ libr_shlr.${EXT_AR}:
 	$(RANLIB) $@
 
 .PHONY: spp
-
-include mpc/deps.mk
