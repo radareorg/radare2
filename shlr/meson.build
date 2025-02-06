@@ -1,5 +1,5 @@
 # handle capstone dependency
-capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
+capstone_dep = dependency('capstone', version: '>=4.0.0', required: false)
 if capstone_dep.found() and get_option('use_sys_capstone')
   message('Use system-provided capstone library')
 else
@@ -31,11 +31,6 @@ else
       'fix-x86-16.patch',
       'sparc-crash.patch',
       'sstream-null.patch'
-    ]
-  elif capstone_version == 'v3'
-    cs = subproject('capstone-v3')
-    patches_files = [
-      'capstone-include.patch'
     ]
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
