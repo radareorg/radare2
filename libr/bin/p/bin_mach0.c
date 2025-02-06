@@ -86,18 +86,16 @@ static RList *sections(RBinFile *bf) {
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (ptr) {
-		ptr->paddr = paddr;
-		ptr->vaddr = paddr;
-		ptr->hpaddr = hpaddr;
-		ptr->bits = bits;
-		ptr->type = type;
-		// realign due to thumb
-		if (bits == 16 && ptr->vaddr & 1) {
-			// TODO add hint about thumb entrypoint
-			ptr->paddr--;
-			ptr->vaddr--;
-		}
+	ptr->paddr = paddr;
+	ptr->vaddr = paddr;
+	ptr->hpaddr = hpaddr;
+	ptr->bits = bits;
+	ptr->type = type;
+	// realign due to thumb
+	if (bits == 16 && ptr->vaddr & 1) {
+		// TODO add hint about thumb entrypoint
+		ptr->paddr--;
+		ptr->vaddr--;
 	}
 	return ptr;
 }
@@ -269,7 +267,6 @@ static RList *relocs(RBinFile *bf) {
 		return NULL;
 	}
 	RList *ret = r_list_newf ((RListFree)_r_bin_reloc_free);
-	// ret->free = free;
 
 	RSkipListNode *it;
 	struct reloc_t *reloc;
@@ -553,17 +550,15 @@ static RList* patch_relocs(RBinFile *bf) {
 			continue;
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
-		if (R_LIKELY (ptr)) {
-			ptr->type = reloc->type;
-			ptr->additive = 0;
-			RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
-			if (R_LIKELY (imp)) {
-				ptr->vaddr = sym_addr;
-				ptr->import = imp;
-				r_list_append (ret, ptr);
-			} else {
-				free (ptr);
-			}
+		ptr->type = reloc->type;
+		ptr->additive = 0;
+		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
+		if (R_LIKELY (imp)) {
+			ptr->vaddr = sym_addr;
+			ptr->import = imp;
+			r_list_append (ret, ptr);
+		} else {
+			free (ptr);
 		}
 	}
 	if (r_list_empty (ret)) {
@@ -602,11 +597,9 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 
 static void add_fixup(RList *list, ut64 addr, ut64 value) {
 	RBinReloc *r = R_NEW0 (RBinReloc);
-	if (r) {
-		r->vaddr = value;
-		r->paddr = addr;
-		r_list_append (list, r);
-	}
+	r->vaddr = value;
+	r->paddr = addr;
+	r_list_append (list, r);
 }
 
 static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
@@ -944,10 +937,8 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 			ut64 addr = MACH0_(get_main) (mo);
 			if (addr != UT64_MAX && addr != 0) {
 				ret = R_NEW0 (RBinAddr);
-				if (ret) {
-					ret->vaddr = ((addr >> 1) << 1);
-					ret->paddr = ret->vaddr;
-				}
+				ret->vaddr = ((addr >> 1) << 1);
+				ret->paddr = ret->vaddr;
 			}
 		}
 		break;
