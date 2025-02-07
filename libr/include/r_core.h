@@ -622,6 +622,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 R_API bool r_core_serve(RCore *core, RIODesc *fd);
 
 // RCoreFile APIs (bind, riodesc + rbinfile)
+R_API ut64 r_core_get_cur_laddr(RCore *core);
 R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
 R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr);

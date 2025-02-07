@@ -3297,7 +3297,7 @@ reaccept:
 				if (!ptr) {
 					R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);
 				} else {
-					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
+					ut64 baddr = r_core_get_cur_laddr (core);
 					r_socket_read_block (c, ptr, cmd);
 					ptr[cmd] = 0;
 					ut32 perm = R_PERM_R;
