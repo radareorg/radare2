@@ -3827,6 +3827,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 }
 
 static bool is_macro_command(const char *ptr) {
+return false;
 	if (!strchr (ptr, ')')) {
 		return false;
 	}
