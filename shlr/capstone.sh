@@ -1,4 +1,6 @@
 #!/bin/sh
+
+# TODO: Delete this file?
 CS_URL="$1" # url
 CS_BRA="$2" # branch name
 CS_TIP="$3" # tip commit

@@ -7,6 +7,7 @@ include ../mk/${COMPILER}.mk
 include ../mk/darwin.mk
 
 
+# TODO: Delete this checks:
 ifeq ($(shell test -f ../ChangeLog -a -d capstone -a ! -d capstone/.git && echo 1),1)
 WITHOUT_PULL=1
 CS_RELEASE=0
@@ -14,6 +15,7 @@ else
 WITHOUT_PULL=0
 
 # Build against last capstone release or next
+# TODO: Delete this checks:
 ifeq ($(shell test -e ../.git && echo 1),1)
 CS_RELEASE=0
 else
@@ -37,40 +39,19 @@ WGET?=curl -o
 endif
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=5.0.3
-CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
-#CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
-CS_TAR=
-CS_URL_BASE=github.com/capstone-engine/capstone
-CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
-CS_ARCHIVE=https://$(CS_URL_BASE)/archive
-CS_UPD=20201203
 
 ifeq ($(USE_CSNEXT),1)
-# CS_TIP=0a29bf80017b8422c79ba51e3ad5c34ba5ee6142
-# CS_BRA=next
 CS_ROOT=../subprojects/capstone-next
 else
 ifeq ($(USE_CS4),1)
-# CS_TIP=0efa3cc530ea188c0e03c945ab884ee19dd16342
-# CS_BRA=v4
 CS_ROOT=../subprojects/capstone-v4
 else
-# CS_TIP=8455b3c5a53b02e524494c7e72a3946a32518170
-# CS_BRA=v5
 CS_ROOT=../subprojects/capstone-v5
 endif
 endif
 
-ifeq ($(CS_COMMIT_ARCHIVE),1)
-CS_ARCHIVE_URL=$(CS_ARCHIVE)/$(CS_TIP).zip
-else
-CS_ARCHIVE_URL=
-endif
-# REVERT THIS COMMIT BECAUSE ITS WRONG
-CS_REV=
 CS_PATCHES=1
 endif
 
@@ -210,10 +191,8 @@ install-symlink symstall:
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
-.PHONY: capstone capstone-sync capstone-build capstone-patch # capstone-clean  capstone-pull
+.PHONY: capstone capstone-sync capstone-build capstone-patch
 
-# capstone-pull:
-# 	$(MAKE) CS_RELEASE=1 WITHOUT_PULL=0 USE_CAPSTONE=0 WANT_CAPSTONE=1 capstone
 
 ifeq ($(WANT_CAPSTONE),0)
 capstone:
@@ -233,16 +212,9 @@ capstone-build:
 else
 
 ifeq ($(CS_RELEASE),1)
-# capstone-sync: capstone
 
-# capstone-clean:
-# 	-$(MAKE) -C capstone clean
-
-capstone: # capstone-$(CS_VER).tar.gz
+capstone:
 	$(MAKE) patch-capstone
-	# tar xzvf capstone-$(CS_VER).tar.gz
-	# rm -rf capstone
-	# mv capstone-$(CS_VER) capstone
 
 # already implemented in capstone.sh
 patch-capstone capstone-patch:
@@ -258,22 +230,7 @@ endif
 	mkdir -p $(CS_ROOT)/include/capstone
 	cp -rf $(CS_ROOT)/include/*.h $(CS_ROOT)/include/capstone
 
-# capstone-$(CS_VER).tar.gz:
-# 	$(WGET) capstone-$(CS_VER).tar.gz $(CS_TAR)
-# else
-
-# capstone: capstone-sync
-
 patch-capstone capstone-patch:
-
-# capstone-sync:
-# ifeq ($(WITHOUT_PULL),1)
-# 	@echo "Nothing to sync because of --without-pull"
-# else
-# 	if [ ! -d capstone ] || [ ! -f capstone/libcapstone.a ] || [ $(shell [ -d capstone/.git ] && git --git-dir capstone/.git rev-parse HEAD) != $(CS_TIP) ]; then \
-# 		"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}" ; \
-# 	fi
-# endif
 
 .PHONY: capstone capstone-sync
 endif
