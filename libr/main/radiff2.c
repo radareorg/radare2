@@ -449,7 +449,6 @@ static int show_help(int v) {
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 			"  -B [baddr] define the base address to add the offsets when listing\n"
-			"  -1         output in Generic Binary DIFF (0xd1ffd1ff magic header)\n"
 			"  -c [cmd]   run given command on every RCore instance\n"
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
@@ -1287,7 +1286,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:f:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
+	r_getopt_init (&opt, argc, argv, "Aa:b:B:CDe:f:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1298,11 +1297,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'b':
 			ro.bits = atoi (opt.arg);
-			break;
-		case '1':
-			// see -f bdiff instead
-			// maybe use '-o' to handle binary output to a file instead of screen :?
-			ro.diffmode = 'B';
 			break;
 		case 'B':
 			ro.baddr = r_num_math (NULL, opt.arg);

@@ -1,9 +1,9 @@
-.TH RADIFF2 1 "radiff2 tool" "Mar 16, 2024"
+.TH RADIFF2 1 "radiff2 tool" "Feb 9, 2025"
 .SH NAME
 radiff2 - binary diffing utility
 .SH SYNOPSIS
 .B radiff2
-[-1abcCdeGhijnropqsSxuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %] file file
+[abcCdeGhijnropqsSxuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %] file file
 
 .SH DESCRIPTION
 radiff2 is a tool from the radare2 suite designed for binary diffing code and data.
@@ -11,9 +11,6 @@ radiff2 is a tool from the radare2 suite designed for binary diffing code and da
 It supports a wide range of formats and features, including architecture and
 bits specification, delta diffing, graph diffing, and more.
 .SH OPTIONS
-.TP
-.B -1
-Output in Generic binary DIFF (0xd1ffd1ff magic header).
 .TP
 .B -a [arch]
 Specify architecture plugin to use (x86, arm, etc.).
@@ -27,8 +24,8 @@ Specify register size for architecture (16 (thumb), 32, 64, etc.).
 .B -B [baddr]
 Define the base address to add the offsets when listing.
 .TP
-.B -c
-Count of changes.
+.B -c [cmd]
+Run an r2 command on every RCore instance created.
 .TP
 .B -C
 Graphdiff code (columns: off-A, match-ratio, off-B) (see -A).
@@ -45,9 +42,6 @@ Set eval config var value for all RCore instances.
 .B -g [arg]
 Graph diff of [sym] or functions in [off1,off2].
 .TP
-.B -G [cmd]
-Run an r2 command on every RCore instance created.
-.TP
 .B -i [ifscm]
 Diff imports | fields | symbols | classes | methods.
 .TP
@@ -58,7 +52,7 @@ Output in JSON format.
 Choose the graph output mode (aditsjJ).
 .TP
 .B -n
-Print bare addresses only (diff.bare=1).
+Count number of changes
 .TP
 .B -O
 Code diffing with opcode bytes only.
