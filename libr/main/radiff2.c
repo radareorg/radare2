@@ -1,9 +1,14 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "radiff2"
 
 #include <r_core.h>
 #include <r_main.h>
+
+typedef enum {
+	ROF_HEXDUMP, // MODE_COLS
+	ROF_HEXII, // MODE_COLSII
+} RadiffOutputFormat;
 
 enum {
 	MODE_DIFF,
@@ -40,7 +45,7 @@ typedef struct {
 	const char *file;
 	const char *file2;
 	ut32 count;
-	int showcount;
+	bool showcount;
 	int useva;
 	int delta;
 	int showbare;
@@ -434,23 +439,24 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-1abcCdeGhijnropqsSxuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 			"  -B [baddr] define the base address to add the offsets when listing\n"
-			"  -1         output in Generic binary DIFF (0xd1ffd1ff magic header)\n"
+			"  -1         output in Generic Binary DIFF (0xd1ffd1ff magic header)\n"
 			"  -c         count of changes\n"
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
 			"  -D         show disasm instead of hexpairs\n"
 			"  -e [k=v]   set eval config var value for all RCore instances\n"
+			"  -f [ofmt]  select output format (see '-f help' for details)\n"
 			"  -g [arg]   graph diff of [sym] or functions in [off1,off2]\n"
 			"  -G [cmd]   run an r2 command on every RCore instance created\n"
-			"  -i [ifscm] diff imports | fields | symbols | classes | methods\n"
-			"  -j         output in json format\n"
+			"  -i [what]  compare bin information (symbols, strings, classes, ..)\n"
+			"  -j         output in json format (see -f json)\n"
 			"  -n         print bare addresses only (diff.bare=1)\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
 			"  -O         code diffing with opcode bytes only\n"
@@ -468,8 +474,8 @@ static int show_help(int v) {
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
 			"  -V         be verbose (current only for -s)\n"
-			"  -z         diff on extracted strings\n"
-			"  -Z         diff code comparing zignatures\n\n"
+			"  -z         diff on extracted strings (see -i)\n"
+			"  -Z         diff code comparing zignatures (see -i)\n\n"
 			"Graph Output formats: (-m [mode])\n"
 		        "  <blank/a>  ascii art\n"
 	                "  s          r2 commands\n"
@@ -1042,6 +1048,163 @@ static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size
 	pj_end (pj);
 }
 
+static inline bool singlechar(const char *arg) {
+	return (arg[0] && !arg[1]);
+}
+
+static const char idhelp[] = \
+	"Usage: radiff2 -i [what]\n"
+	"Available whats:\n"
+	" c code\n"
+	" d data\n"
+	"Binary Information:\n"
+	" s symbols\n"
+	" i imports\n"
+	" f fields\n"
+	" m methods\n"
+	" c classes\n"
+	" s strings\n"
+	" z zignatures\n"
+;
+
+static bool select_input_data(RadiffOptions *ro, const char *arg) {
+	char ch0 = *arg;
+	if (!singlechar (arg)) {
+		if (!strcmp (arg, "symbols")) {
+			ch0 = 's';
+		} else if (!strcmp (arg, "imports")) {
+			ch0 = 'i';
+		} else if (!strcmp (arg, "classes")) {
+			ch0 = 'c';
+		} else if (!strcmp (arg, "fields")) {
+			ch0 = 'f';
+		} else if (!strcmp (arg, "methods")) {
+			ch0 = 'm';
+		} else if (!strcmp (arg, "code")) {
+			ch0 = 'k';
+		} else if (!strcmp (arg, "data")) {
+			ch0 = 'd';
+		} else if (!strcmp (arg, "strings")) {
+			ch0 = 's';
+		} else if (!strcmp (arg, "sections")) {
+			ch0 = 'S';
+		} else if (!strcmp (arg, "help")) {
+			ch0 = 'h';
+		} else if (!strcmp (arg, "zignatures")) {
+			ch0 = 'z';
+		} else {
+			return false;
+		}
+	}
+	switch (ch0) {
+	case '?':
+	case 'h':
+		printf ("%s\n", idhelp);
+		return false;
+	case 'd':
+		// diff code instead of bin
+	//	ro->mode = MODE_CODE;
+	//	ro->diffmode = 'U';
+		break;
+	case 'k':
+		// diff code instead of bin
+		ro->mode = MODE_CODE;
+		ro->diffmode = 'U';
+		break;
+	case 'i':
+		ro->mode = MODE_DIFF_IMPORTS;
+		break;
+	case 's':
+		ro->mode = MODE_DIFF_SYMBOLS;
+		break;
+	case 'S':
+		// TODO ro->mode = MODE_DIFF_SECTIONS;
+		R_LOG_ERROR ("-iS not implemented");
+		return false;
+	case 'f':
+		ro->mode = MODE_DIFF_FIELDS;
+		break;
+	case 'm':
+		ro->mode = MODE_DIFF_METHODS;
+		break;
+	case 'c':
+		ro->mode = MODE_DIFF_CLASSES;
+		break;
+	default:
+		return false;
+	}
+	ro->diffmode = 'U';
+	return true;
+}
+
+static const char ofhelp[] = \
+	"Usage: radiff2 -f [format]\n"
+	"Available formats:\n"
+	" 1 bdiff        generic binary diff format\n"
+	" j json         json format\n"
+	" r radare       output as radare2 script\n"
+	" u unified      unified diffing format\n"
+	" U gdiff        use system's diff program instead\n"
+	" x hex          two column hexdump-style\n"
+	" X hexii        simplified hexdump (hexII format)\n"
+;
+
+static bool select_output_format(RadiffOptions *ro, const char *arg) {
+	char ch0 = *arg;
+	if (!singlechar (arg)) {
+		if (!strcmp (arg, "hexii")) {
+			ch0 = 'X';
+		} else if (r_str_startswith (arg, "hex")) {
+			ch0 = 'x';
+		} else if (!strcmp (arg, "r2") || !strcmp (arg, "radare")) {
+			ch0 = 'r';
+		} else if (!strcmp (arg, "unified")) {
+			ch0 = 'u';
+		} else if (!strcmp (arg, "json")) {
+			ch0 = 'j';
+		} else if (!strcmp (arg, "gdiff")) {
+			ch0 = 'U';
+		} else if (!strcmp (arg, "bdiff")) {
+			ch0 = '1';
+		} else if (!strcmp (arg, "help")) {
+			ch0 = '?';
+		} else {
+			return false;
+		}
+	}
+	switch (ch0) {
+	case '?':
+	case 'h':
+		printf ("%s\n", ofhelp);
+		return false;
+	case 'j':
+		ro->diffmode = 'j';
+		ro->pj = pj_new ();
+		break;
+	case 'u':
+		ro->diffmode = 'u';
+		break;
+	case 'U':
+		ro->diffmode = 'U';
+		break;
+	case 'x':
+		ro->mode = MODE_COLS;
+		break;
+	case 'r':
+		ro->diffmode = 'r';
+		break;
+	case '1':
+		ro->diffmode = 'B';
+		break;
+	case 'X':
+		ro->mode = MODE_COLSII;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
 typedef struct {
 	RCore **core;
 	const char *file;
@@ -1069,7 +1232,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
+	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:f:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1082,6 +1245,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.bits = atoi (opt.arg);
 			break;
 		case '1':
+			// see -f bdiff instead
 			// maybe use '-o' to handle binary output to a file instead of screen :?
 			ro.diffmode = 'B';
 			break;
@@ -1090,6 +1254,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'e':
 			r_list_append (ro.evals, (void*)opt.arg);
+			break;
+		case 'f':
+			if (!select_output_format (&ro, opt.arg)) {
+				R_LOG_ERROR ("Invalid output format selected");
+				return 1;
+			}
 			break;
 		case 'p':
 			ro.useva = false;
@@ -1122,32 +1292,15 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.runcmd = opt.arg;
 			break;
 		case 'c':
-			ro.showcount = 1;
+			ro.showcount = true;
 			break;
 		case 'C':
 			ro.mode = MODE_CODE;
 			ro.diffmode = 'U';
 			break;
 		case 'i':
-			ro.diffmode = 'U';
-			switch (opt.arg[0]) {
-			case 'i':
-				ro.mode = MODE_DIFF_IMPORTS;
-				break;
-			case 's':
-				ro.mode = MODE_DIFF_SYMBOLS;
-				break;
-			case 'f':
-				ro.mode = MODE_DIFF_FIELDS;
-				break;
-			case 'm':
-				ro.mode = MODE_DIFF_METHODS;
-				break;
-			case 'c':
-				ro.mode = MODE_DIFF_CLASSES;
-				break;
-			default:
-				R_LOG_ERROR ("-i expects [s|f|i|c|m] for symbols or imports diffing");
+			if (!select_input_data (&ro, opt.arg)) {
+				R_LOG_ERROR ("Invalid input data selected (see -i help)");
 				return 1;
 			}
 			break;
@@ -1180,11 +1333,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'h':
 			return show_help (1);
 		case 's':
-			if (ro.mode == MODE_DIST_MYERS) {
-				ro.mode = MODE_DIST_LEVENSHTEIN;
-			} else {
-				ro.mode = MODE_DIST_MYERS;
-			}
+			ro.mode = (ro.mode == MODE_DIST_MYERS)
+				? MODE_DIST_LEVENSHTEIN
+				: MODE_DIST_MYERS;
 			break;
 		case 'S':
 			columnSort = opt.arg;
