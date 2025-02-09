@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nikolai */
 
 #include <r_util/r_diff.h>
 
@@ -76,8 +76,7 @@ static inline ut32 lev_get_val(Levrow *row, ut32 i) {
 	return UT32_MAX - 1; // -1 so a +1 with sub weight does not overflow
 }
 
-// obtains array of operations, in reverse order, to get from column to row of
-// matrix
+// obtains array of operations, in reverse order, to get from column to row of matrix
 static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chgs) {
 	R_RETURN_VAL_IF_FAIL (len >= 2 && matrix && chgs && !*chgs, -1);
 	Levrow *row = matrix + len - 1;

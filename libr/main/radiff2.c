@@ -15,6 +15,7 @@ enum {
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
 	MODE_DIFF_SYMBOLS,
+	MODE_DIFF_SECTIONS,
 	MODE_DIFF_CLASSES,
 	MODE_DIFF_METHODS,
 	MODE_DIFF_FIELDS,
@@ -60,7 +61,7 @@ typedef struct {
 	const char *arch;
 	RList *runcmd;
 	int bits;
-	int anal_all;
+	int analysis_level;
 	int threshold;
 	bool verbose;
 	RList *evals;
@@ -104,9 +105,9 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		if (r_list_empty (r_bin_get_sections (c->bin))) {
 			r_config_set_i (c->config, "io.va", false);
 		}
-		if (ro->anal_all) {
+		if (ro->analysis_level) {
 			const char *cmd = "aac";
-			switch (ro->anal_all) {
+			switch (ro->analysis_level) {
 			case 1: cmd = "aa"; break;
 			case 2: cmd = "aaa"; break;
 			case 3: cmd = "aaaa"; break;
@@ -756,6 +757,26 @@ static int import_cmp(const RBinImport *a, const RBinImport *b) {
 	return strcmp (aname, bname);
 }
 
+static ut8 *get_sections(RCore *c, int *len) {
+	RListIter *iter;
+
+	if (!c || !len) {
+		return NULL;
+	}
+
+	RBinSection *sec;
+	const RList *list = r_bin_get_sections (c->bin);
+	RList *reslist = r_list_newf (free);
+	r_list_foreach (list, iter, sec) {
+		r_list_append (reslist, strdup (sec->name));
+	}
+	r_list_sort (reslist, (RListComparator)strcmp);
+	char *buf = r_str_list_join (reslist, "\n");
+	*len = strlen (buf);
+	r_list_free (reslist);
+	return (ut8*)buf;
+}
+
 static ut8 *get_classes(RCore *c, int *len) {
 	RListIter *iter;
 
@@ -1051,13 +1072,14 @@ static const char idhelp[] = \
 	" c code\n"
 	" d data\n"
 	"Binary Information:\n"
-	" s symbols\n"
-	" i imports\n"
-	" f fields\n"
-	" m methods\n"
 	" c classes\n"
-	" s strings\n"
-	" z zignatures\n"
+	" f fields\n"
+	" i imports\n"
+	" m methods\n"
+	" s symbols\n"
+	" S sections\n"
+	" z strings\n"
+	" Z zignatures\n"
 ;
 
 static bool select_input_data(RadiffOptions *ro, const char *arg) {
@@ -1069,6 +1091,8 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 			ch0 = 'i';
 		} else if (!strcmp (arg, "classes")) {
 			ch0 = 'c';
+		} else if (!strcmp (arg, "symbols")) {
+			ch0 = 's';
 		} else if (!strcmp (arg, "fields")) {
 			ch0 = 'f';
 		} else if (!strcmp (arg, "methods")) {
@@ -1078,13 +1102,13 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 		} else if (!strcmp (arg, "data")) {
 			ch0 = 'd';
 		} else if (!strcmp (arg, "strings")) {
-			ch0 = 's';
+			ch0 = 'z';
 		} else if (!strcmp (arg, "sections")) {
 			ch0 = 'S';
 		} else if (!strcmp (arg, "help")) {
 			ch0 = 'h';
 		} else if (!strcmp (arg, "zignatures")) {
-			ch0 = 'z';
+			ch0 = 'Z';
 		} else {
 			return false;
 		}
@@ -1094,10 +1118,16 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	case 'h':
 		printf ("%s\n", idhelp);
 		return false;
+	case 'c':
+		ro->mode = MODE_DIFF_CLASSES;
+		break;
 	case 'd':
 		// diff code instead of bin
 	//	ro->mode = MODE_CODE;
 	//	ro->diffmode = 'U';
+		break;
+	case 'f':
+		ro->mode = MODE_DIFF_FIELDS;
 		break;
 	case 'k':
 		// diff code instead of bin
@@ -1111,17 +1141,16 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 		ro->mode = MODE_DIFF_SYMBOLS;
 		break;
 	case 'S':
-		// TODO ro->mode = MODE_DIFF_SECTIONS;
-		R_LOG_ERROR ("-iS not implemented");
-		return false;
-	case 'f':
-		ro->mode = MODE_DIFF_FIELDS;
+		ro->mode = MODE_DIFF_SECTIONS;
 		break;
 	case 'm':
 		ro->mode = MODE_DIFF_METHODS;
 		break;
-	case 'c':
-		ro->mode = MODE_DIFF_CLASSES;
+	case 'z':
+		ro->mode = MODE_DIFF_STRS;
+		break;
+	case 'Z':
+		ro->zignatures = true;
 		break;
 	default:
 		return false;
@@ -1278,7 +1307,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
 	ut8 *bufa = NULL, *bufb = NULL;
-	int o, /*diffmode = 0,*/ delta = 0;
+	int o, delta = 0;
 	ut64 sza = 0, szb = 0;
 	double sim = 0.0;
 	RDiff *d;
@@ -1293,13 +1322,35 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.arch = opt.arg;
 			break;
 		case 'A':
-			ro.anal_all++;
+			ro.analysis_level++;
 			break;
 		case 'b':
 			ro.bits = atoi (opt.arg);
 			break;
 		case 'B':
 			ro.baddr = r_num_math (NULL, opt.arg);
+			break;
+		case 'c':
+			if (!ro.runcmd) {
+				ro.runcmd = r_list_newf (NULL);
+			}
+			r_list_append (ro.runcmd, (void*)opt.arg);
+			break;
+		case 'C':
+			ro.mode = MODE_CODE;
+			ro.diffmode = 'U';
+			break;
+		case 'd':
+			delta = 1;
+			break;
+		case 'D':
+			if (ro.disasm) {
+				ro.pdc = true;
+				ro.disasm = true;
+				ro.mode = MODE_CODE;
+			} else {
+				ro.disasm = true;
+			}
 			break;
 		case 'e':
 			r_list_append (ro.evals, (void*)opt.arg);
@@ -1309,6 +1360,16 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				R_LOG_ERROR ("Invalid output format selected");
 				return 1;
 			}
+			break;
+		case 'i':
+			if (!select_input_data (&ro, opt.arg)) {
+				R_LOG_ERROR ("Invalid input data selected (see -i help)");
+				return 1;
+			}
+			break;
+		case 'j':
+			ro.diffmode = 'j';
+			ro.pj = pj_new ();
 			break;
 		case 'p':
 			ro.useva = false;
@@ -1327,24 +1388,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				return 1;
 			}
 			break;
-		case 'c':
-			if (!ro.runcmd) {
-				ro.runcmd = r_list_newf (NULL);
-			}
-			r_list_append (ro.runcmd, (void*)opt.arg);
-			break;
 		case 'n':
 			ro.showcount = true;
-			break;
-		case 'C':
-			ro.mode = MODE_CODE;
-			ro.diffmode = 'U';
-			break;
-		case 'i':
-			if (!select_input_data (&ro, opt.arg)) {
-				R_LOG_ERROR ("Invalid input data selected (see -i help)");
-				return 1;
-			}
 			break;
 		case 'O':
 			ro.diffops = 1;
@@ -1356,18 +1401,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 't':
 			ro.threshold = atoi (opt.arg);
 			// printf ("%s\n", opt.arg);
-			break;
-		case 'd':
-			delta = 1;
-			break;
-		case 'D':
-			if (ro.disasm) {
-				ro.pdc = true;
-				ro.disasm = true;
-				ro.mode = MODE_CODE;
-			} else {
-				ro.disasm = true;
-			}
 			break;
 		case 'h':
 			return show_help (1);
@@ -1391,17 +1424,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'U':
 			ro.diffmode = 'U';
 			break;
-		case 'v':
-			return r_main_version_print ("radiff2", 0);
 		case 'q':
 			ro.quiet = true;
 			break;
+		case 'v':
+			return r_main_version_print ("radiff2", 0);
 		case 'V':
 			ro.verbose = true;
-			break;
-		case 'j':
-			ro.diffmode = 'j';
-			ro.pj = pj_new ();
 			break;
 		case 'z':
 			ro.mode = MODE_DIFF_STRS;
@@ -1567,6 +1596,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			bufa = get_classes (c, &sz);
 			sza = sz;
 			bufb = get_classes (c2, &sz);
+			szb = sz;
+		} else if (ro.mode == MODE_DIFF_SECTIONS) {
+			int sz;
+			bufa = get_sections (c, &sz);
+			sza = sz;
+			bufb = get_sections (c2, &sz);
 			szb = sz;
 		} else if (ro.mode == MODE_DIFF_SYMBOLS) {
 			int sz;
