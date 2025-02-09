@@ -46,7 +46,7 @@ typedef struct {
 	const char *file2;
 	ut32 count;
 	bool showcount;
-	int useva;
+	bool useva;
 	int delta;
 	bool json_started;
 	int diffmode;
@@ -58,7 +58,7 @@ typedef struct {
 	bool quiet;
 	RCore *core;
 	const char *arch;
-	const char *runcmd;
+	RList *runcmd;
 	int bits;
 	int anal_all;
 	int threshold;
@@ -115,7 +115,11 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 			r_core_cmd0 (c, cmd);
 		}
 		if (ro->runcmd) {
-			r_core_cmd0 (c, ro->runcmd);
+			const char *cmd;
+			RListIter *iter;
+			r_list_foreach (ro->runcmd, iter, cmd) {
+				r_core_cmd0 (c, cmd);
+			}
 		}
 		// generate zignaturez?
 		if (ro->zignatures) {
@@ -446,17 +450,17 @@ static int show_help(int v) {
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 			"  -B [baddr] define the base address to add the offsets when listing\n"
 			"  -1         output in Generic Binary DIFF (0xd1ffd1ff magic header)\n"
-			"  -c         count of changes\n"
+			"  -c [cmd]   run given command on every RCore instance\n"
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
 			"  -D         show disasm instead of hexpairs\n"
 			"  -e [k=v]   set eval config var value for all RCore instances\n"
 			"  -f [ofmt]  select output format (see '-f help' for details)\n"
 			"  -g [arg]   graph diff of [sym] or functions in [off1,off2]\n"
-			"  -G [cmd]   run an r2 command on every RCore instance created\n"
 			"  -i [what]  compare bin information (symbols, strings, classes, ..)\n"
 			"  -j         output in json format (see -f json)\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
+			"  -n         count of changes\n"
 			"  -O         code diffing with opcode bytes only\n"
 			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
@@ -474,16 +478,7 @@ static int show_help(int v) {
 			"  -V         be verbose (current only for -s)\n"
 			"  -z         diff on extracted strings (see -i)\n"
 			"  -Z         diff code comparing zignatures (see -i)\n\n"
-			"Graph Output formats: (-m [mode])\n"
-		        "  <blank/a>  ascii art\n"
-	                "  s          r2 commands\n"
-		        "  d          graphviz dot\n"
-	                "  g          graph Modelling Language (gml)\n"
-		        "  j          json\n"
-	                "  J          json with disarm\n"
-		        "  k          sdb key-value\n"
-	                "  t          tiny ascii art\n"
-		        "  i          interactive ascii art\n");
+			);
 	}
 	return 1;
 }
@@ -1030,6 +1025,7 @@ static void radiff_options_init(RadiffOptions *ro) {
 }
 
 static void radiff_options_fini(RadiffOptions *ro) {
+	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
 	r_core_free (ro->core);
 	r_cons_free ();
@@ -1146,6 +1142,19 @@ static const char ofhelp[] = \
 	" x hex          two column hexdump-style\n"
 	" X hexii        simplified hexdump (hexII format)\n"
 ;
+
+#if 0
+			"Graph Output formats: (-m [mode])\n"
+		        "  <blank/a>  ascii art\n"
+	                "  s          r2 commands\n"
+		        "  d          graphviz dot\n"
+	                "  g          graph Modelling Language (gml)\n"
+		        "  j          json\n"
+	                "  J          json with disarm\n"
+		        "  k          sdb key-value\n"
+	                "  t          tiny ascii art\n"
+		        "  i          interactive ascii art\n");
+#endif
 
 static bool select_output_format(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
@@ -1286,10 +1295,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			default: ro.gmode = GRAPH_DEFAULT_MODE; break;
 			}
 		}       break;
-		case 'G':
-			ro.runcmd = opt.arg;
-			break;
 		case 'c':
+			if (!ro->runcmd) {
+				ro->runcmd = r_list_new (NULL);
+			}
+			r_list_append (ro.runcmd, opt.arg);
+			break;
+		case 'n':
 			ro.showcount = true;
 			break;
 		case 'C':
