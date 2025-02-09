@@ -48,7 +48,6 @@ typedef struct {
 	bool showcount;
 	int useva;
 	int delta;
-	int showbare;
 	bool json_started;
 	int diffmode;
 	int diffops;
@@ -457,7 +456,6 @@ static int show_help(int v) {
 			"  -G [cmd]   run an r2 command on every RCore instance created\n"
 			"  -i [what]  compare bin information (symbols, strings, classes, ..)\n"
 			"  -j         output in json format (see -f json)\n"
-			"  -n         print bare addresses only (diff.bare=1)\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
 			"  -O         code diffing with opcode bytes only\n"
 			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
@@ -1304,9 +1302,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				return 1;
 			}
 			break;
-		case 'n':
-			ro.showbare = true;
-			break;
 		case 'O':
 			ro.diffops = 1;
 			break;
@@ -1437,8 +1432,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			r_config_set (c->config, "diff.sort", columnSort);
 			r_config_set (c2->config, "diff.sort", columnSort);
 		}
-		r_config_set_i (c->config, "diff.bare", ro.showbare);
-		r_config_set_i (c2->config, "diff.bare", ro.showbare);
 		r_anal_diff_setup_i (c->anal, ro.diffops, ro.threshold, ro.threshold);
 		r_anal_diff_setup_i (c2->anal, ro.diffops, ro.threshold, ro.threshold);
 		if (addr) {
