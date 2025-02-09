@@ -1131,6 +1131,67 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	return true;
 }
 
+static const char gfhelp[] = \
+	"Usage: radiff2 -m [graphtype]\n"
+	"Available types:\n"
+	"  <blank/a>  ascii art\n"
+	"  s          r2 commands\n"
+	"  d          graphviz dot\n"
+	"  g          graph Modelling Language (gml)\n"
+	"  j          json\n"
+	"  J          json with disasm\n"
+	"  k          sdb key-value\n"
+	"  t          tiny ascii art\n"
+	"  i          interactive ascii art\n"
+;
+
+static bool select_graph_type(RadiffOptions *ro, const char *arg) {
+	char ch0 = *arg;
+	if (!singlechar (arg)) {
+		if (!strcmp (arg, "sdb")) {
+			ch0 = 'k';
+		} else if (!strcmp (arg, "tui")) {
+			ch0 = 'i';
+		} else if (!strcmp (arg, "json")) {
+			ch0 = 'j';
+		} else if (!strcmp (arg, "r2")) {
+			ch0 = 'r';
+		} else if (!strcmp (arg, "dot")) {
+			ch0 = 'd';
+		} else if (!strcmp (arg, "tiny")) {
+			ch0 = 't';
+		} else if (!strcmp (arg, "jsondis")) {
+			ch0 = 'J';
+		} else if (!strcmp (arg, "mermaid")) {
+			ch0 = 'm';
+		} else if (!strcmp (arg, "gml")) {
+			ch0 = 'g';
+		} else if (!strcmp (arg, "help")) {
+			ch0 = '?';
+		} else {
+			return false;
+		}
+	}
+	switch (ch0) {
+	case '?':
+	case 'h':
+		printf ("%s\n", gfhelp);
+		return false;
+	case 'i': ro->gmode = GRAPH_INTERACTIVE_MODE; break;
+	case 'k': ro->gmode = GRAPH_SDB_MODE; break;
+	case 'j': ro->gmode = GRAPH_JSON_MODE; break;
+	case 'J': ro->gmode = GRAPH_JSON_DIS_MODE; break;
+	case 't': ro->gmode = GRAPH_TINY_MODE; break;
+	case 'd': ro->gmode = GRAPH_DOT_MODE; break;
+	case 'r': ro->gmode = GRAPH_STAR_MODE; break;
+	case 'm': ro->gmode = GRAPH_MERMAID_MODE; break;
+	case 'g': ro->gmode = GRAPH_GML_MODE; break;
+	case 'a':ro->gmode = GRAPH_DEFAULT_MODE; break;
+	default:
+		 return false;
+	}
+	return true;
+}
 static const char ofhelp[] = \
 	"Usage: radiff2 -f [format]\n"
 	"Available formats:\n"
@@ -1142,19 +1203,6 @@ static const char ofhelp[] = \
 	" x hex          two column hexdump-style\n"
 	" X hexii        simplified hexdump (hexII format)\n"
 ;
-
-#if 0
-			"Graph Output formats: (-m [mode])\n"
-		        "  <blank/a>  ascii art\n"
-	                "  s          r2 commands\n"
-		        "  d          graphviz dot\n"
-	                "  g          graph Modelling Language (gml)\n"
-		        "  j          json\n"
-	                "  J          json with disarm\n"
-		        "  k          sdb key-value\n"
-	                "  t          tiny ascii art\n"
-		        "  i          interactive ascii art\n");
-#endif
 
 static bool select_output_format(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
@@ -1279,27 +1327,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			// ro.pdc = true;
 			addr = opt.arg;
 			break;
-		case 'm':{
-			const char *tmp = opt.arg;
-			switch (tmp[0]) {
-			case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
-			case 'k': ro.gmode = GRAPH_SDB_MODE; break;
-			case 'j': ro.gmode = GRAPH_JSON_MODE; break;
-			case 'J': ro.gmode = GRAPH_JSON_DIS_MODE; break;
-			case 't': ro.gmode = GRAPH_TINY_MODE; break;
-			case 'd': ro.gmode = GRAPH_DOT_MODE; break;
-			case 's': ro.gmode = GRAPH_STAR_MODE; break;
-			case 'm': ro.gmode = GRAPH_MERMAID_MODE; break;
-			case 'g': ro.gmode = GRAPH_GML_MODE; break;
-			case 'a':
-			default: ro.gmode = GRAPH_DEFAULT_MODE; break;
+		case 'm':
+			if (!select_graph_type (&ro, opt.arg)) {
+				R_LOG_ERROR ("Invalid input data selected (see -i help)");
+				return 1;
 			}
-		}       break;
+			break;
 		case 'c':
-			if (!ro->runcmd) {
-				ro->runcmd = r_list_new (NULL);
+			if (!ro.runcmd) {
+				ro.runcmd = r_list_newf (NULL);
 			}
-			r_list_append (ro.runcmd, opt.arg);
+			r_list_append (ro.runcmd, (void*)opt.arg);
 			break;
 		case 'n':
 			ro.showcount = true;
