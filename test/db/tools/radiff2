@@ -1,6 +1,6 @@
-NAME=radiff2 -c
+NAME=radiff2 -n
 FILE=-
-CMDS=!radiff2 -c bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
+CMDS=!radiff2 -n bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 EXPECT=<<EOF
 1
 EOF
@@ -48,7 +48,7 @@ RUN
 
 NAME=radiff2 string comparison
 FILE=-
-CMDS=!!radiff2 -z bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!!radiff2 -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 0x00000000 48656c6c => 41414141 0x00000000
 EOF
@@ -56,7 +56,7 @@ RUN
 
 NAME=radiff2 unified string comparison
 FILE=-
-CMDS=!!radiff2 -quz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!!radiff2 -qu -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 -0x00000000:48 65 6c 6c 
 +0x00000000:41 41 41 41 
@@ -65,7 +65,7 @@ RUN
 
 NAME=radiff2 gnu unified string comparison
 FILE=-
-CMDS=!!radiff2 -Uz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
+CMDS=!!radiff2 -U -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
 EXPECT=<<EOF
 -Hello world!
 +AAAAo world!
@@ -96,9 +96,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 -1 (GDIFF support) #1
+NAME=radiff2 -f1 (GDIFF support) #1
 FILE=-
-CMDS=!!radiff2 -1 bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2 | rax2 -S
+CMDS=!!radiff2 -f1 bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2 | rax2 -S
 EXPECT=<<EOF
 d1ffd1ff04019000
 EOF

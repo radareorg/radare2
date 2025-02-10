@@ -51,7 +51,7 @@ typedef struct {
 	int delta;
 	bool json_started;
 	int diffmode;
-	int diffops;
+	bool diffops;
 	int mode;
 	int gmode;
 	bool disasm;
@@ -147,7 +147,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i;
-	RadiffOptions *ro = user;
+	RadiffOptions *ro = (RadiffOptions*)user;
 	char s[256] = {0};
 	if (ro->showcount) {
 		ro->count++;
@@ -455,9 +455,9 @@ static int show_help(int v) {
 			"  -d         use delta diffing\n"
 			"  -D         show disasm instead of hexpairs\n"
 			"  -e [k=v]   set eval config var value for all RCore instances\n"
-			"  -f [ofmt]  select output format (see '-f help' for details)\n"
+			"  -f [help]  select output format (see '-f help' for details)\n"
 			"  -g [arg]   graph diff of [sym] or functions in [off1,off2]\n"
-			"  -i [what]  compare bin information (symbols, strings, classes, ..)\n"
+			"  -i [help]  compare bin information (symbols, strings, classes, ..)\n"
 			"  -j         output in json format (see -f json)\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
 			"  -n         count of changes\n"
@@ -471,13 +471,10 @@ static int show_help(int v) {
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 			"  -T         analyze files in threads (EXPERIMENTAL, 30%% faster and crashy)\n"
 			"  -x         show two column hexdump diffing\n"
-			"  -X         show two column hexII diffing\n"
 			"  -u         unified output (---+++)\n"
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
 			"  -V         be verbose (current only for -s)\n"
-			"  -z         diff on extracted strings (see -i)\n"
-			"  -Z         diff code comparing zignatures (see -i)\n\n"
 			);
 	}
 	return 1;
@@ -1091,8 +1088,6 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 			ch0 = 'i';
 		} else if (!strcmp (arg, "classes")) {
 			ch0 = 'c';
-		} else if (!strcmp (arg, "symbols")) {
-			ch0 = 's';
 		} else if (!strcmp (arg, "fields")) {
 			ch0 = 'f';
 		} else if (!strcmp (arg, "methods")) {
@@ -1155,7 +1150,6 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	default:
 		return false;
 	}
-	ro->diffmode = 'U';
 	return true;
 }
 
@@ -1315,7 +1309,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "Aa:b:B:CDe:f:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
+	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jm:nOprst:TxuUqvV");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1361,6 +1355,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				return 1;
 			}
 			break;
+		case 'g':
+			ro.mode = MODE_GRAPH;
+			// ro.pdc = true;
+			addr = opt.arg;
+			break;
+		case 'h':
+			return show_help (1);
 		case 'i':
 			if (!select_input_data (&ro, opt.arg)) {
 				R_LOG_ERROR ("Invalid input data selected (see -i help)");
@@ -1371,17 +1372,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.diffmode = 'j';
 			ro.pj = pj_new ();
 			break;
-		case 'p':
-			ro.useva = false;
-			break;
-		case 'r':
-			ro.diffmode = 'r';
-			break;
-		case 'g':
-			ro.mode = MODE_GRAPH;
-			// ro.pdc = true;
-			addr = opt.arg;
-			break;
 		case 'm':
 			if (!select_graph_type (&ro, opt.arg)) {
 				R_LOG_ERROR ("Invalid input data selected (see -i help)");
@@ -1391,20 +1381,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'n':
 			ro.showcount = true;
 			break;
-		case 'O':
-			ro.diffops = 1;
+		case 'O': // move to options
+			ro.diffops = true;
 			break;
-		case 'T': // imho `t <=> T`
-			ro.thready = true;
-			// printf ("%s\n", opt.arg);
+		case 'p':
+			ro.useva = false;
 			break;
-		case 't':
-			ro.threshold = atoi (opt.arg);
-			// printf ("%s\n", opt.arg);
+		case 'r':
+			ro.diffmode = 'r';
 			break;
-		case 'h':
-			return show_help (1);
 		case 's':
+			// TODO: maybe use -a to select algorithm?
 			ro.mode = (ro.mode == MODE_DIST_MYERS)
 				? MODE_DIST_LEVENSHTEIN
 				: MODE_DIST_MYERS;
@@ -1412,11 +1399,16 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'S':
 			columnSort = opt.arg;
 			break;
+		case 't':
+			ro.threshold = atoi (opt.arg);
+			// printf ("%s\n", opt.arg);
+			break;
+		case 'T': // imho `t <=> T`
+			ro.thready = true;
+			// printf ("%s\n", opt.arg);
+			break;
 		case 'x':
 			ro.mode = MODE_COLS;
-			break;
-		case 'X':
-			ro.mode = MODE_COLSII;
 			break;
 		case 'u':
 			ro.diffmode = 'u';
@@ -1431,12 +1423,6 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			return r_main_version_print ("radiff2", 0);
 		case 'V':
 			ro.verbose = true;
-			break;
-		case 'z':
-			ro.mode = MODE_DIFF_STRS;
-			break;
-		case 'Z':
-			ro.zignatures = true;
 			break;
 		default:
 			return show_help (0);
