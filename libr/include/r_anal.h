@@ -432,7 +432,7 @@ typedef struct r_anal_t {
 	ut8 *last_disasm_reg;
 	int last_disasm_reg_size;
 	RSyscall *syscall;
-	int diff_ops;
+	bool diff_ops;
 	double diff_thbb;
 	double diff_thfcn;
 	RIOBind iob;
@@ -1202,8 +1202,8 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 
 /* diff.c */
 R_API RAnalDiff *r_anal_diff_new(void);
-R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn);
-R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn);
+R_API void r_anal_diff_setup(RAnal *anal, bool doops, double thbb, double thfcn);
+R_API void r_anal_diff_setup_i(RAnal *anal, bool doops, int thbb, int thfcn);
 R_API void r_anal_diff_free(RAnalDiff *diff);
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
 R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
