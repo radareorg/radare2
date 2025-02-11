@@ -167,7 +167,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		return true;
 	}
 	// eprintf ("OLD (%s) NEW (%s)\n", reg->reg_profile_str, str);
-// remove all arenas
+	// remove all arenas
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
 	// Purge the old registers
@@ -235,12 +235,17 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Save the token
 			tok[j++] = strdup (tmp);
 		}
+		tok[j] = NULL;
 		if (j) {
 			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
 			if (r_str_startswith (first, "=RS")) {
-				reg->bits_default = atoi (tok[1]);
+				if (tok[1]) {
+					reg->bits_default = atoi (tok[1]);
+				} else {
+					R_LOG_ERROR ("Missing argument for =RS");
+				}
 			} else {
 				const char *r = NULL;
 				if (*first == '^') {

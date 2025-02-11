@@ -328,7 +328,6 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		//check if the project uses git
 		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
 		core->prj->rvc = vc;
-		free (prj_path);
 	} else {
 		R_LOG_ERROR ("Failed to load rvc");
 	}
@@ -338,6 +337,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		r_line_hist_load (file);
 		free (file);
 	}
+	free (prj_path);
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
 	r_config_set_b (core->config, "scr.prompt", scr_prompt);

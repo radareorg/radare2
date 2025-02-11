@@ -879,6 +879,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 	return true;
 
 beach:
+	free (function);
 	return false;
 }
 

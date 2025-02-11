@@ -62,8 +62,8 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 	unsigned int i, j, k, max_score, stride;
 	unsigned int candb_position = 0;
 
-	unsigned int *score = (unsigned int *)calloc (size, sizeof (int));
-	unsigned int *stride_score = (unsigned int *)calloc (size, sizeof (int));
+	unsigned int *score = (unsigned int *)calloc (size, sizeof (unsigned int));
+	unsigned int *stride_score = (unsigned int *)calloc (size, sizeof (unsigned int));
 
 	unsigned char UDS_local[UDS_SIZE];
 	for (i = 1; i < size - (CANDB_SIZE * 2); i++) {

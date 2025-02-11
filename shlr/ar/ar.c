@@ -1,4 +1,5 @@
 /* radare - LGPLv3 - Copyright 2017 - xarkes */
+
 #include <stdio.h>
 #include <r_util.h>
 #include "ar.h"
@@ -309,21 +310,11 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 
 	filetable tbl = { NULL, 0, 0 };
 
-	ut32 *refc = R_NEW (ut32);
-	if (!refc) {
-		r_buf_free (b);
-		free (refc);
-		return -1;
-	}
-	/* The refcount is artificially inflated here. This allows the callback to
-	 * use ar_close without fear of free'ing the RBuffer. The refcounter must
-	 * be decremented later before returning.
-	*/
-	*refc = 1;
+	ut32 refc = 1;
 
 	int r = 0;
 	while (!r) {
-		RArFp *arf = arfp_new (b, refc);
+		RArFp *arf = arfp_new (b, &refc);
 		if (!arf) {
 			r = -1;
 			break;
@@ -338,13 +329,12 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 
 	free (tbl.data);
 
-	if (*refc == 1) {
+	if (refc == 1) {
 		// the cb closed all the RArFp's, so we free these resources
-		free (refc);
 		r_buf_free (b);
 	} else {
 		// return recf to true value
-		(*refc)--;
+		refc--;
 	}
 
 	return r;
@@ -357,7 +347,6 @@ R_API int ar_close(RArFp *f) {
 
 		// no more files open, clean underlying buffer
 		if (*f->refcount == 0) {
-			free (f->refcount);
 			r_buf_free (f->buf);
 		}
 		free (f);

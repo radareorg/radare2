@@ -101,7 +101,7 @@ static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
 		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
 			if (cp->dbginfo->get_line (bin->cur, addr, file, len, &line, &column)) {
 				RBinDbgItem *di = R_NEW0 (RBinDbgItem);
-				di->file = file;
+				di->file = strdup (file);
 				di->address = addr;
 				di->line = line;
 				di->column = column;

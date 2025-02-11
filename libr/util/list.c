@@ -516,8 +516,12 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 			result = result->n;
 		}
 	}
-	head->p = NULL;
-	next->n = NULL;
+	if (head) {
+		head->p = NULL;
+	}
+	if (next) {
+		next->n = NULL;
+	}
 	return head;
 }
 

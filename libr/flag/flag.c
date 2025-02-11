@@ -557,7 +557,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off, ...)
 
 	// get RSpaces from the names
 	i = 0;
-	spaces = R_NEWS (RSpace *, n_spaces);
+	spaces = R_NEWS (RSpace *, n_spaces + 1);
 	spacename = va_arg (ap, const char *);
 	while (spacename) {
 		RSpace *space = r_flag_space_get (f, spacename);
