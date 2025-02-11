@@ -289,7 +289,8 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
     zip_int64_t offstart, offdata, offend, data_length;
     zip_stat_t st;
     zip_file_attributes_t attributes;
-    zip_source_t *src_final, *src_tmp;
+    zip_source_t *src_final = NULL;
+    zip_source_t *src_tmp = NULL;
     int ret;
     int is_zip64;
     zip_flags_t flags;
