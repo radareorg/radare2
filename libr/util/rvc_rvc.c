@@ -1016,22 +1016,22 @@ static Sdb *vcdb_open(const char *rp) {
 static Rvc *open_rvc(const char *rp) {
 	if (rvc_repo_exists(rp)) {
 		Rvc *repo = R_NEW (Rvc);
-		if (repo) {
-			repo->p = &r_vc_plugin_rvc;
-			repo->db = vcdb_open (rp);
-			if (repo->db) {
-				repo->path = strdup(rp);
-				if (repo->path) {
-					return repo;
-				}
+		repo->p = &r_vc_plugin_rvc;
+		repo->db = vcdb_open (rp);
+		if (repo->db) {
+			repo->path = strdup(rp);
+			if (repo->path) {
+				return repo;
 			}
 		}
+		rvc_free (repo);
 	} else {
 		Rvc *repo = rvc_rvc_new (rp);
 		if (repo) {
 			repo->p = &r_vc_plugin_rvc;
 			return repo;
 		}
+		rvc_free (repo);
 	}
 	R_LOG_ERROR ("Can't open rvc repo in: %s", rp);
 	return NULL;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -1975,6 +1975,7 @@ static void visual_comma(RCore *core) {
 			if (R_STR_ISEMPTY (comment)) {
 				comment = r_str_newf (",(%s)", fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
+				R_FREE (comment);
 			} else {
 				// append filename in current comment
 				char *nc = r_str_newf ("%s ,(%s)", comment, fn);

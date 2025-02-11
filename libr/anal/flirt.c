@@ -814,6 +814,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 	ut8 current_byte;
 
 	module->public_functions = r_list_new ();
+	RFlirtFunction *function = NULL;
 
 	do {
 		if (f->version >= 9) {   // seems like version 9 introduced some larger offsets
@@ -827,7 +828,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 				goto beach;
 			}
 		}
-		RFlirtFunction *function = R_NEW0 (RFlirtFunction);
+		function = R_NEW0 (RFlirtFunction);
 		function->offset = offset;
 
 		current_byte = read_byte (f);
@@ -849,7 +850,6 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 #endif
 			current_byte = read_byte (f);
 			if (f->buf_eof || f->buf_err) {
-				free (function);
 				goto beach;
 			}
 		}
@@ -858,7 +858,6 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 			function->name[i] = current_byte;
 			current_byte = read_byte (f);
 			if (f->buf_eof || f->buf_err) {
-				free (function);
 				goto beach;
 			}
 		}
