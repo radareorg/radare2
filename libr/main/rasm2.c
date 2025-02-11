@@ -414,6 +414,10 @@ static ut64 pcpos(const char* buf) {
 }
 
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
+	if (len < 1) {
+		R_LOG_ERROR ("Invalid length");
+		return 0;
+	}
 	ut8 *data = NULL;
 	int ret = 0;
 	st64 clen = 0;
@@ -481,7 +485,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		len = clen;
 	}
 
-	if (hex == 2) {
+	if (hex == 2 && len > 0) {
 		RAnalOp aop = {0};
 		while (ret < len) {
 			if (ret == pcaddr) {
@@ -573,10 +577,12 @@ static bool print_label(void *user, const void *k, const void *v) {
 }
 
 static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool hexwords) {
-	RAsmCode *acode;
 	int i, j, ret = 0;
+
 	r_asm_set_pc (as->a, offset);
-	if (!(acode = r_asm_rasm_assemble (as->a, buf, use_spp))) {
+
+	RAsmCode *acode = r_asm_rasm_assemble (as->a, buf, use_spp);
+	if (!acode) {
 		return false;
 	}
 	if (acode->len) {
@@ -1055,14 +1061,21 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			ret = idx;
 			goto beach;
 		}
-		if (dis) {
+		if (dis == 1 || dis == 2) {
 			char *usrstr = strdup (opt.argv[opt.ind]);
 			len = strlen (usrstr);
-			if (skip && len > skip) {
+			if (skip > 0 && len > skip) {
 				skip *= 2;
-				memmove (usrstr, usrstr + skip, len - skip);
-				len -= skip;
-				usrstr[len] = 0;
+				if (skip < len) {
+					memmove (usrstr, usrstr + skip, len - skip);
+					len -= skip;
+					usrstr[len] = 0;
+				} else {
+					R_LOG_ERROR ("Invalid skip value");
+					free (usrstr);
+					len = 0;
+					goto beach;
+				}
 			}
 			if (r_str_startswith (usrstr, "0x")) {
 				memmove (usrstr, usrstr + 2, strlen (usrstr + 2) + 1);
