@@ -87,6 +87,11 @@ RebuildBin() {
 	Rebuild libr/core
 }
 
+RebuildAr() {
+	Rebuild shlr/ar
+	Rebuild libr/io
+}
+
 RebuildGdb() {
 	Rebuild shlr/gdb
 	Rebuild libr/io
@@ -113,6 +118,7 @@ case "$1" in
 grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
+ar)     RebuildAr ; ;;
 winkd)  RebuildWinkd ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
