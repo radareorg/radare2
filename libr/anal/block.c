@@ -900,11 +900,11 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
-	r_anal_block_unref (block);
 	ht_up_free (succs);
 
 	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
 
+	r_anal_block_unref (block);
 	// Do the actual merge
 	r_anal_block_automerge (&merge_blocks);
 

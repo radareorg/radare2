@@ -853,6 +853,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		case 'h':
 			r_core_fini (&core);
+			free (create);
 			free (state.stdin_buf);
 			return rabin_show_help (1);
 		default:

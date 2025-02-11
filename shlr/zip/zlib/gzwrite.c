@@ -305,7 +305,7 @@ z_size_t ZEXPORT gzfwrite(
     }
 
     /* write len bytes to buf, return the number of full items written */
-    return len ? gz_write(state, buf, len) / size : 0;
+    return (size && len) ? gz_write(state, buf, len) / size : 0;
 }
 
 /* -- see zlib.h -- */

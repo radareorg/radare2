@@ -240,6 +240,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 beach:
 	r_buf_free (fbuf);
+	r_rebase_info_free (rebase_info);
 	MACH0_(mach0_free) (main_mach0);
 	return false;
 }

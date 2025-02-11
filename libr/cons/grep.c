@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -220,7 +220,7 @@ R_API void r_cons_grep_expression(const char *str) {
 				} else {
 					grep->sort_invert = false;
 				}
-				while (isdigit (*ptr)) {
+				while (*ptr && isdigit (*ptr)) {
 					ptr++;
 				}
 				if (*ptr == ':') {
@@ -797,7 +797,7 @@ R_API void r_cons_grepbuf(void) {
 		cons->context->buffer_len = 0;
 		cons->context->buffer_sz = 0;
 		r_cons_print (s);
-		buf = cons->context->buffer;
+		in = buf = cons->context->buffer;
 		len = cons->context->buffer_len;
 		r_json_free (node);
 		free (a);

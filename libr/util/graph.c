@@ -426,12 +426,12 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 				min_n = in;
 			}
 		}
-		while (((RGraphDomNode *)max_n->data)->idx > dn->idx) {
+		while (max_n && ((RGraphDomNode *)max_n->data)->idx > dn->idx) {
 			max_n = (RGraphNode *)r_list_get_n (max_n->in_nodes, 0);
 		}
 // at this point max_n refers to the semi dominator (i hope this is correct)
 		RGraphNode *dom = min_n;
-		while (((RGraphDomNode *)max_n->data)->idx < ((RGraphDomNode *)dom->data)->idx) {
+		while (max_n && ((RGraphDomNode *)max_n->data)->idx < ((RGraphDomNode *)dom->data)->idx) {
 			dom = (RGraphNode *)r_list_get_n (dom->in_nodes, 0);
 		}
 // dom <= sdom

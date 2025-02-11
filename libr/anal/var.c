@@ -1810,6 +1810,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 			if (R_STR_ISEMPTY (type)) {
 				R_LOG_WARN ("Missing type for arg %d of function '%s'", i, type_fcn_name);
+				free (type);
 				goto beach;
 			}
 			size_t len = strlen (type);

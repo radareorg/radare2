@@ -1448,11 +1448,15 @@ static int cmd_help(void *data, const char *input) {
 				  }
 				  r_str_trim (str);
 				  RList *list = r_str_split_list (str, " ", 0);
-				  int *nums = calloc (sizeof (ut64), r_list_length (list));
+				  int *nums = calloc (sizeof (int), r_list_length (list));
 				  char **text = calloc (sizeof (char *), r_list_length (list));
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
-					nums[i] = r_num_math (core->num, word);
+					st64 n = r_num_math (core->num, word);
+					if (n >= ST32_MAX || n < 0) {
+						R_LOG_WARN ("Number out of range");
+					}
+					nums[i] = n;
 					i++;
 				  }
 				  int j = 0;

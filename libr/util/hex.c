@@ -249,15 +249,16 @@ R_API char *r_hex_from_c(const char *code) {
 
 
 R_API char *r_hex_from_js(const char *code) {
-	char * s1 = strchr (code, '\'');
-	char * s2 = strchr (code, '"');
+	char *s1 = strchr (code, '\'');
+	char *s2 = strchr (code, '"');
 
 	/* there are no strings in the input */
-	if (!(s1 || s2)) {
+	if (!s1 || !s2) {
 		return NULL;
 	}
 
-	char * start, * end;
+	char *start;
+	char *end;
 	if (s1 < s2) {
 		start = s1;
 		end = strchr (start + 1, '\'');

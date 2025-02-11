@@ -362,6 +362,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	loc_addr = sdb_num_get (db, "addr", NULL);
 	RAnalFunction *fcn_at_addr = r_anal_get_function_at (core->anal, loc_addr);
 	if (fcn_at_addr) {
+		free (function_label);
 		return false;
 	}
 
