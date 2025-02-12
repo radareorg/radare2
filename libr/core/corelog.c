@@ -80,7 +80,7 @@ R_API void r_core_log_init(RCoreLog *log) {
 	R_RETURN_IF_FAIL (log);
 	log->first = 1;
 	log->last = 1;
-	log->sp = r_strpool_new (0);
+	log->sp = r_strpool_new ();
 }
 
 R_API void r_core_log_free(RCoreLog *log) {

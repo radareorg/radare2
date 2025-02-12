@@ -64,7 +64,7 @@ static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *l
 	return false;
 }
 
-// XXX this api must return a struct instead of pa
+// XXX R2_600 - this api must return a struct instead of pa
 // R_API RBinDwarfRow *r_bin_addr2line(RBin *bin, ut64 addr) {}
 R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
