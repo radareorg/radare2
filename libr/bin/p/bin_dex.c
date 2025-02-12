@@ -379,9 +379,13 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 	}
 	r_buf_seek (bf->buf, debug_info_off, R_BUF_SET);
 	ut64 res;
-	r_buf_uleb128 (bf->buf, &res);
+	if (r_buf_uleb128 (bf->buf, &res) < 1) {
+		return;
+	}
 	line_start = res;
-	r_buf_uleb128 (bf->buf, &res);
+	if (r_buf_uleb128 (bf->buf, &res) < 1) {
+		return;
+	}
 	parameters_size = res;
 
 	// TODO: check when we should use source_file
@@ -418,7 +422,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		if ((argReg >= regsz) || !type || parameters_size <= 0) {
 			goto beach;
 		}
-		(void)r_buf_uleb128 (bf->buf, &res);
+		if (r_buf_uleb128 (bf->buf, &res) < 1) {
+			goto beach;
+		}
 		param_type_idx = res - 1;
 		name = getstr (dex, param_type_idx);
 		reg = argReg;
@@ -452,7 +458,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_ADVANCE_PC:
 			{
 			ut64 addr_diff;
-			r_buf_uleb128 (bf->buf, &addr_diff);
+			if (r_buf_uleb128 (bf->buf, &addr_diff) < 1) {
+				goto beach;
+			}
 			address += addr_diff;
 			}
 			break;
@@ -542,7 +550,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_END_LOCAL:
 			{
 			ut64 register_num;
-			r_buf_uleb128 (bf->buf, &register_num);
+			if (r_buf_uleb128 (bf->buf, &register_num) < 1) {
+				goto beach;
+			}
 			// emitLocalCbIfLive
 			if (register_num >= regsz) {
 				goto beach;
@@ -569,7 +579,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_RESTART_LOCAL:
 			{
 			ut64 register_num;
-			r_buf_uleb128 (bf->buf, &register_num);
+			if (r_buf_uleb128 (bf->buf, &register_num) < 1) {
+				goto beach;
+			}
 			if (register_num >= regsz) {
 				goto beach;
 			}
@@ -588,7 +600,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		case DBG_SET_FILE:
 			{
 				ut64 res;
-				r_buf_uleb128 (bf->buf, &res);
+				if (r_buf_uleb128 (bf->buf, &res) < 1) {
+					goto beach;
+				}
 				source_file_idx = res - 1;
 			}
 			break;
@@ -629,9 +643,11 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		if (old_source_file_idx != pos->source_file_idx) {
 			const char *sf = getstr (dex, pos->source_file_idx);
 			if (sf) {
-				if (!strcmp (sf, "SourceFile")) {
+#if 0
+				if (r_str_endswith (sf, "SourceFile")) {
 					sf = bf->file;
 				}
+#endif
 				old_source_file_idx = pos->source_file_idx;
 				source_file = sf;
 			}
