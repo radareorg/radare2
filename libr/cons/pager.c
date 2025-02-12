@@ -53,7 +53,7 @@ R_IPI void pager_printpage(const char *line, int *index, RList **mla, int from, 
 		return;
 	}
 
-	RStrpool *p = r_strpool_new (0);
+	RStrpool *p = r_strpool_new ();
 	if (!p) {
 		return;
 	}

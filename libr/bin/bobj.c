@@ -212,7 +212,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->plugin = plugin;
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 	RVecRBinSymbol_init (&bo->symbols_vec);
-	bo->pool = r_strpool_new (0);
+	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
 	if (plugin && plugin->load) {
