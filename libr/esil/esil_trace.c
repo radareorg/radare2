@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2025 - pancake, rkx1209 */
 
 #include <r_esil.h>
 #include <r_anal.h>
@@ -29,9 +29,6 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 	}
 	size_t i;
 	REsilTrace *trace = R_NEW0 (REsilTrace);
-	if (!trace) {
-		return NULL;
-	}
 	trace_db_init (&trace->db);
 	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
 	if (!trace->registers) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 pancake */
+/* radare - LGPL - Copyright 2009-2025 pancake */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -16,10 +16,8 @@ R_API RHash *r_hash_new(bool rst, ut64 flags) {
 		R_LOG_WARN ("Too many hash algorithms registered, some may be unavailable");
 	}
 	RHash *ctx = R_NEW0 (RHash);
-	if (ctx) {
-		r_hash_do_begin (ctx, flags);
-		ctx->rst = rst;
-	}
+	r_hash_do_begin (ctx, flags);
+	ctx->rst = rst;
 	return ctx;
 }
 

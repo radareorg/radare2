@@ -72,9 +72,6 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 
 R_API RCoreLog *r_core_log_new(void) {
 	RCoreLog *log = R_NEW0 (RCoreLog);
-	if (!log) {
-		return NULL;
-	}
 	r_core_log_init (log);
 	return log;
 }

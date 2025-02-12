@@ -25,9 +25,6 @@ static void esil_ops_free(HtPPKv *kv) {
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	REsil *esil = R_NEW0 (REsil);
-	if (R_UNLIKELY (!esil)) {
-		return NULL;
-	}
 	if (stacksize < 4) {
 		R_LOG_ERROR ("Esil stacksize must be at least 4 bytes");
 		free (esil);
@@ -107,9 +104,6 @@ ops_fail:
 R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
 	REsilRegInterface *reg_if, REsilMemInterface *mem_if) {
 	REsil *esil = R_NEW0 (REsil);
-	if (R_UNLIKELY (!esil)) {
-		return NULL;
-	}
 	if (R_UNLIKELY (!r_esil_init (esil, stacksize, iotrap,
 		addrsize, reg_if, mem_if))) {
 		free (esil);

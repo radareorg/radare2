@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2025 - pancake */
 
 #include <r_util.h>
 
@@ -10,15 +10,13 @@
 
 R_API RRange *r_range_new(void) {
 	RRange *r = R_NEW0 (RRange);
-	if (r) {
-		r->count = r->changed = 0;
-		r->ranges = r_list_new ();
-		if (!r->ranges) {
-			r_range_free (r);
-			return NULL;
-		}
-		r->ranges->free = free;
+	r->count = r->changed = 0;
+	r->ranges = r_list_new ();
+	if (!r->ranges) {
+		r_range_free (r);
+		return NULL;
 	}
+	r->ranges->free = free;
 	return r;
 }
 

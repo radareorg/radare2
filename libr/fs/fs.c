@@ -41,36 +41,34 @@ R_API R_MUSTUSE const RFSType* r_fs_type_index(int i) {
 }
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
-	RFSPlugin* static_plugin;
-	RFS* fs = R_NEW0 (RFS);
-	if (R_LIKELY (fs)) {
-		fs->view = R_FS_VIEW_NORMAL;
-		fs->roots = r_list_new ();
-		if (!fs->roots) {
-			r_fs_free (fs);
-			return NULL;
+	RFSPlugin *static_plugin;
+	RFS *fs = R_NEW0 (RFS);
+	fs->view = R_FS_VIEW_NORMAL;
+	fs->roots = r_list_new ();
+	if (!fs->roots) {
+		r_fs_free (fs);
+		return NULL;
+	}
+	fs->roots->free = (RListFree) r_fs_root_free;
+	fs->plugins = r_list_new ();
+	if (!fs->plugins) {
+		r_fs_free (fs);
+		return NULL;
+	}
+	fs->plugins->free = free;
+	// XXX fs->roots->free = r_fs_plugin_free;
+	size_t i;
+	for (i = 0; fs_static_plugins[i]; i++) {
+		if (!fs_static_plugins[i]->meta.name) {
+			continue;
 		}
-		fs->roots->free = (RListFree) r_fs_root_free;
-		fs->plugins = r_list_new ();
-		if (!fs->plugins) {
-			r_fs_free (fs);
-			return NULL;
+		static_plugin = R_NEW (RFSPlugin);
+		if (!static_plugin) {
+			continue;
 		}
-		fs->plugins->free = free;
-		// XXX fs->roots->free = r_fs_plugin_free;
-		size_t i;
-		for (i = 0; fs_static_plugins[i]; i++) {
-			if (!fs_static_plugins[i]->meta.name) {
-				continue;
-			}
-			static_plugin = R_NEW (RFSPlugin);
-			if (!static_plugin) {
-				continue;
-			}
-			memcpy (static_plugin, fs_static_plugins[i], sizeof (RFSPlugin));
-			r_fs_plugin_add (fs, static_plugin);
-			free (static_plugin);
-		}
+		memcpy (static_plugin, fs_static_plugins[i], sizeof (RFSPlugin));
+		r_fs_plugin_add (fs, static_plugin);
+		free (static_plugin);
 	}
 	return fs;
 }
@@ -101,15 +99,15 @@ R_API void r_fs_free(RFS* fs) {
 R_API bool r_fs_plugin_add(RFS* fs, RFSPlugin* p) {
 	R_RETURN_VAL_IF_FAIL (fs && p, false);
 	if (p->init) {
-		p->init ();
+		// TODO. return false if init fails?
+		if (!p->init ()) {
+			return false;
+		}
 	}
 	RFSPlugin* sp = R_NEW0 (RFSPlugin);
-	if (sp) {
-		memcpy (sp, p, sizeof (RFSPlugin));
-		r_list_append (fs->plugins, sp);
-		return true;
-	}
-	return false;
+	memcpy (sp, p, sizeof (RFSPlugin));
+	r_list_append (fs->plugins, sp);
+	return true;
 }
 
 R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p) {

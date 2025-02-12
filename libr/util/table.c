@@ -40,13 +40,11 @@ static R_TH_LOCAL RListComparator Gcmp = NULL;
 
 R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
 	RListInfo *info = R_NEW (RListInfo);
-	if (info) {
-		info->name = name ? strdup (name) : NULL;
-		info->pitv = pitv;
-		info->vitv = vitv;
-		info->perm = perm;
-		info->extra = extra ? strdup (extra) : NULL;
-	}
+	info->name = name ? strdup (name) : NULL;
+	info->pitv = pitv;
+	info->vitv = vitv;
+	info->perm = perm;
+	info->extra = extra ? strdup (extra) : NULL;
 	return info;
 }
 
@@ -129,9 +127,11 @@ R_API void r_table_row_free(void *_row) {
 }
 
 R_API void r_table_column_free(void *_col) {
-	RTableColumn *col = _col;
-	free (col->name);
-	free (col);
+	if (_col) {
+		RTableColumn *col = _col;
+		free (col->name);
+		free (col);
+	}
 }
 
 R_API RTableRow *r_table_row_clone(RTableRow *row) {
@@ -147,9 +147,6 @@ R_API RTableRow *r_table_row_clone(RTableRow *row) {
 R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 	R_RETURN_VAL_IF_FAIL (col, NULL);
 	RTableColumn *c = R_NEW0 (RTableColumn);
-	if (!c) {
-		return NULL;
-	}
 	memcpy (c, col, sizeof (*c));
 	c->name = strdup (c->name);
 	return c;
@@ -157,15 +154,13 @@ R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 
 R_API RTable *r_table_new(const char *name) {
 	RTable *t = R_NEW0 (RTable);
-	if (t) {
-		t->name = strdup (name);
-		t->cols = r_list_newf (r_table_column_free);
-		t->rows = r_list_newf (r_table_row_free);
-		t->maxColumnWidth = 32;
-		t->wrapColumns = false;
-		SET_SHOW_HEADER (t, true);
-		SET_SHOW_SUM (t, false);
-	}
+	t->name = strdup (name);
+	t->cols = r_list_newf (r_table_column_free);
+	t->rows = r_list_newf (r_table_row_free);
+	t->maxColumnWidth = 32;
+	t->wrapColumns = false;
+	SET_SHOW_HEADER (t, true);
+	SET_SHOW_SUM (t, false);
 	return t;
 }
 
@@ -176,26 +171,23 @@ R_API void r_table_set_width(RTable *t, int maxColumnWidth, bool wrap) {
 }
 
 R_API void r_table_free(RTable *t) {
-	if (!t) {
-		return;
+	if (R_LIKELY (t)) {
+		r_list_free (t->cols);
+		r_list_free (t->rows);
+		free (t->name);
+		free (t);
 	}
-	r_list_free (t->cols);
-	r_list_free (t->rows);
-	free (t->name);
-	free (t);
 }
 
 R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *name, int maxWidth) {
 	RTableColumn *c = R_NEW0 (RTableColumn);
-	if (c) {
-		c->name = strdup (name);
-		c->maxWidth = maxWidth;
-		c->type = type;
-		int itemLength = r_str_len_utf8_ansi (name) + 1;
-		c->width = itemLength;
-		r_list_append (t->cols, c);
-		c->total = -1;
-	}
+	c->name = strdup (name);
+	c->maxWidth = maxWidth;
+	c->type = type;
+	int itemLength = r_str_len_utf8_ansi (name) + 1;
+	c->width = itemLength;
+	r_list_append (t->cols, c);
+	c->total = -1;
 }
 
 R_API RTableRow *r_table_row_new(RList *items) {

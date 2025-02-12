@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2025 - pancake, condret */
 
 // TODO: esil_handler.c -> esil_syscall ? set_interrupts ? set_syscalls?
 #define R_LOG_ORIGIN "esil.syscall"
@@ -41,9 +41,6 @@ R_API bool r_esil_handlers_init(REsil *esil) {
 R_API REsilHandler *r_esil_handler_new(REsilHandlerCB cb, void *user) {
 	R_RETURN_VAL_IF_FAIL (cb, NULL);
 	REsilHandler *h = R_NEW0 (REsilHandler);
-	if (!h) {
-		return NULL;
-	}
 	h->cb = cb;
 	h->user = user;
 	return h;

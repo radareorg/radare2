@@ -1,16 +1,14 @@
-/* radare - LGPL - Copyright 2020-2022 - pancake */
+/* radare - LGPL - Copyright 2020-2025 - pancake */
 
-// project class definition to be used by project.c
-
-#include "rvc.h"
+#include <rvc.h>
 #include <r_core.h>
 
 R_API RProject *r_project_new(void) {
-	RProject *p = R_NEW0 (RProject);
-	return p;
+	return R_NEW0 (RProject);
 }
 
 R_API bool r_project_rename(RProject *p, const char *newname) {
+	R_RETURN_VAL_IF_FAIL (p && newname, false);
 	if (!r_project_is_loaded (p)) {
 		return false;
 	}
@@ -68,11 +66,12 @@ R_API bool r_project_open(RProject *p, const char *name, const char *path) {
 }
 
 R_API void r_project_save(RProject *p) {
+	// R2_600 - deprecate
 	// must call r_core_project_save()
 }
 
 R_API void r_project_free(RProject *p) {
-	if (p) {
+	if (R_LIKELY (p)) {
 		free (p->name);
 		free (p->path);
 		free (p);

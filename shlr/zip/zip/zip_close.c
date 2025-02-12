@@ -474,11 +474,13 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
 #endif
         }
 
+#if 0
         if (impl && (src_tmp = impl(za, src_final, de->encryption_method, ZIP_CODEC_ENCODE, password)) == NULL) {
             /* error set by impl */
             zip_source_free(src_final);
             return -1;
         }
+#endif
 
         zip_source_free(src_final);
         src_final = src_tmp;

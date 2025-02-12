@@ -636,9 +636,6 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 
 static RDisasmState *ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
-	if (!ds) {
-		return NULL;
-	}
 	ds->ssa = sdb_new0 ();
 	ds->core = core;
 	ds->addrbytes = core->io->addrbytes;

@@ -714,9 +714,6 @@ static int layer_sweep(const RGraph *g, const struct layer_t layers[], int maxla
 static void view_cyclic_edge(const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RAGraph *g = (RAGraph *) vis->data;
 	RGraphEdge *new_e = R_NEW0 (RGraphEdge);
-	if (!new_e) {
-		return;
-	}
 	new_e->from = e->from;
 	new_e->to = e->to;
 	new_e->nth = e->nth;
@@ -733,9 +730,6 @@ static void view_dummy(const RGraphEdge *e, const RGraphVisitor *vis) {
 	}
 	if (R_ABS (a->layer - b->layer) > 1) {
 		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
-		if (!new_e) {
-			return;
-		}
 		new_e->from = e->from;
 		new_e->to = e->to;
 		new_e->nth = e->nth;
@@ -1974,11 +1968,6 @@ static void backedge_info(RAGraph *g) {
 				}
 
 				AEdge *e = R_NEW0 (AEdge);
-				if (!e) {
-					free (arr);
-					return;
-				}
-
 				e->is_reversed = true;
 				e->from = a;
 				e->to = b;
@@ -2000,10 +1989,6 @@ static void backedge_info(RAGraph *g) {
 	if (inedge) {
 		RANode *n = (RANode *)g->layers[0].nodes[0]->data;
 		AEdge *e = R_NEW0 (AEdge);
-		if (!e) {
-			free (arr);
-			return;
-		}
 		e->is_reversed = true;
 		e->from = NULL;
 		e->to = NULL;
@@ -2020,11 +2005,6 @@ static void backedge_info(RAGraph *g) {
 	if (outedge) {
 		RANode *n = (RANode *)g->layers[g->n_layers - 1].nodes[0]->data;
 		AEdge *e = R_NEW0 (AEdge);
-		if (!e) {
-			free (arr);
-			return;
-		}
-
 		e->is_reversed = true;
 		e->from = NULL;
 		e->to = NULL;
@@ -3052,19 +3032,17 @@ static void agraph_print_edges(RAGraph *g) {
 
 		if (!tm) {
 			tm = R_NEW0 (struct tmplayer);
-			if (tm) {
-				tm->layer = a->layer;
-				tm->edgectr = 0;
-				tm->revedgectr = 0;
-				if (g->layout == 0) { // vertical layout
-					tm->minx = a->x;
-					tm->maxx = a->x + a->w;
-				} else {
-					tm->minx = a->y;
-					tm->maxx = a->y + a->h;
-				}
-				r_list_add_sorted (lyr, tm, tmplayercmp);
+			tm->layer = a->layer;
+			tm->edgectr = 0;
+			tm->revedgectr = 0;
+			if (g->layout == 0) { // vertical layout
+				tm->minx = a->x;
+				tm->maxx = a->x + a->w;
+			} else {
+				tm->minx = a->y;
+				tm->maxx = a->y + a->h;
 			}
+			r_list_add_sorted (lyr, tm, tmplayercmp);
 		}
 
 		bool many = r_list_length (neighbours) > 2;
@@ -3899,9 +3877,6 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		return res;
 	}
 	res = R_NEW0 (RANode);
-	if (!res) {
-		return NULL;
-	}
 
 	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
 	res->body = (body && strlen (body))? r_str_endswith (body, "\n")?
@@ -4097,9 +4072,6 @@ R_API void r_agraph_free(RAGraph *g) {
 
 R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 	RAGraph *g = R_NEW0 (RAGraph);
-	if (!g) {
-		return NULL;
-	}
 	g->can = can;
 	g->dummy = true;
 	agraph_init (g);
@@ -4535,13 +4507,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	core->vmode = true;
 
 	grd = R_NEW0 (struct agraph_refresh_data);
-	if (!grd) {
-		r_cons_canvas_free (can);
-		r_config_hold_restore (hc);
-		r_config_hold_free (hc);
-		r_agraph_free (g);
-		return false;
-	}
 	grd->g = g;
 	grd->fs = is_interactive == 1;
 	grd->core = core;

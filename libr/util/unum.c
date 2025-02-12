@@ -98,12 +98,10 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 	RNum *num = R_NEW0 (RNum);
-	if (num) {
-		num->value = 0LL;
-		num->callback = cb;
-		num->cb_from_value = cb2;
-		num->userptr = ptr;
-	}
+	num->value = 0LL;
+	num->callback = cb;
+	num->cb_from_value = cb2;
+	num->userptr = ptr;
 	return num;
 }
 

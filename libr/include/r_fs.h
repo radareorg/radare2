@@ -68,7 +68,7 @@ typedef struct r_fs_plugin_t {
 	int (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
-	void (*init)(void);
+	bool (*init)(void);
 	void (*fini)(void);
 	bool (*mount)(RFSRoot *root);
 	void (*umount)(RFSRoot *root);

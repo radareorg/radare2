@@ -64,9 +64,6 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 			arena = reg->regset[i].arena;
 		} else {
 			arena = reg->regset[i].arena = R_NEW0 (RRegArena);
-			if (!arena) {
-				return false;
-			}
 			arena->size = len;
 			arena->bytes = calloc (1, len);
 			if (!arena->bytes) {
@@ -166,11 +163,9 @@ R_API void r_reg_fit_arena(RReg *reg) {
 }
 
 R_API RRegArena *r_reg_arena_clone(RRegArena *a) {
-	if (!a) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	RRegArena *na = R_NEW0 (RRegArena);
-	if (na && a && a->bytes && a->size > 0) {
+	if (a->bytes && a->size > 0) {
 		na->bytes = r_mem_dup (a->bytes, a->size);
 		na->size = a->size;
 	}
@@ -180,15 +175,13 @@ R_API RRegArena *r_reg_arena_clone(RRegArena *a) {
 R_API RRegArena *r_reg_arena_new(int size) {
 	// if arena is resized, the constructor should take 0 arguments imho
 	RRegArena *arena = R_NEW0 (RRegArena);
-	if (arena) {
-		if (size < 1) {
-			size = 1;
-		}
-		if (!(arena->bytes = calloc (1, size + 8))) {
-			R_FREE (arena);
-		} else {
-			arena->size = size;
-		}
+	if (size < 1) {
+		size = 1;
+	}
+	if (!(arena->bytes = calloc (1, size + 8))) {
+		R_FREE (arena);
+	} else {
+		arena->size = size;
 	}
 	return arena;
 }
@@ -317,10 +310,9 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
 		return NULL;
 	}
 	ut8 *ret = malloc (regset->arena->size);
-	if (!ret) {
-		return NULL;
+	if (R_LIKELY (ret)) {
+		memcpy (ret, source, regset->arena->size);
 	}
-	memcpy (ret, source, regset->arena->size);
 	return ret;
 }
 

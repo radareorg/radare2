@@ -54,9 +54,6 @@ R_API RAnalOp *r_anal_op_new(void) {
 
 R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
-	if (!nop) {
-		return NULL;
-	}
 	*nop = *op;
 	if (op->mnemonic) {
 		nop->mnemonic = strdup (op->mnemonic);

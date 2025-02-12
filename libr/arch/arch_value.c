@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2010-2025 - pancake, condret */
 
 #include <r_arch.h>
 #include <r_io.h>
@@ -9,9 +9,7 @@ R_API RArchValue *r_arch_value_new(void) { //macro for this ?
 
 R_API RArchValue *r_arch_value_new_reg(const char * const reg) {
 	RArchValue *v = R_NEW0 (RArchValue);
-	if (v) {
-		v->reg = reg;
-	}
+	v->reg = reg;
 	return v;
 }
 

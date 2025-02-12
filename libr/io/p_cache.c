@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - condret, alvaro */
+/* radare2 - LGPL - Copyright 2017-2025 - condret, alvaro */
 
 #include <r_io.h>
 #include <r_types.h>
@@ -99,29 +99,26 @@ R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int l
 	caddr = paddr / R_IO_DESC_CACHE_SIZE;
 	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (written < len) {
-		//get an existing desc-cache, if it exists
+		// get an existing desc-cache, if it exists
 		if (!(cache = (RIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
-			//create new desc-cache
+			// create new desc-cache
 			cache = R_NEW0 (RIODescCache);
-			if (!cache) {
-				return 0;
-			}
-			//feed ht with the new desc-cache
+			// feed ht with the new desc-cache
 			ht_up_insert (desc->cache, caddr, cache);
 		}
-		//check if the remaining data fits into the cache
+		// check if the remaining data fits into the cache
 		if ((len - written) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
 			written += (R_IO_DESC_CACHE_SIZE - cbaddr);
-			//this can be optimized
+			// this can be optimized
 			for (; cbaddr < R_IO_DESC_CACHE_SIZE; cbaddr++) {
-				//write to cache
+				// write to cache
 				cache->cdata[cbaddr] = *buf;
-				//save, that its cached
+				// save, that its cached
 				cache->cached |= (0x1ULL << cbaddr);
 				buf++;
 			}
 		} else {
-			//XXX this looks like very suspicious
+			// XXX this looks like very suspicious
 			do {
 				cache->cdata[cbaddr] = *buf;
 				cache->cached |= (0x1ULL << cbaddr);
@@ -205,9 +202,6 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			if (!cache) {
 				cache = R_NEW0 (RIOCacheItem);
-				if (!cache) {
-					return false;
-				}
 				cache->data = malloc (R_IO_DESC_CACHE_SIZE - byteaddr);
 				if (!cache->data) {
 					free (cache);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_anal.h>
 #include <config.h>
@@ -13,10 +13,8 @@ static RAnalPlugin *anal_static_plugins[] = {
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
-	if (anal->limit) {
-		anal->limit->from = from;
-		anal->limit->to = to;
-	}
+	anal->limit->from = from;
+	anal->limit->to = to;
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
@@ -75,9 +73,6 @@ static void r_meta_item_free(void *_item) {
 R_API RAnal *r_anal_new(void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
-	if (!anal) {
-		return NULL;
-	}
 	if (!r_str_constpool_init (&anal->constpool)) {
 		free (anal);
 		return NULL;

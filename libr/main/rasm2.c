@@ -40,20 +40,18 @@ static void rasm_set_archbits(RAsmState *as) {
 
 static RAsmState *rasm_new(void) {
 	RAsmState *as = R_NEW0 (RAsmState);
-	if (as) {
-		as->l = r_lib_new (NULL, NULL);
-		as->a = r_asm_new ();
-		as->anal = r_anal_new ();
-		r_unref (as->anal->config);
-		as->a->num = r_num_new (NULL, NULL, NULL);
-		as->anal->config = r_ref_ptr (as->a->config);
-		r_anal_bind (as->anal, &as->a->analb);
-		const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
-		if (load_plugins) {
-			rasm_load_plugins (as);
-		}
-		rasm_set_archbits (as);
+	as->l = r_lib_new (NULL, NULL);
+	as->a = r_asm_new ();
+	as->anal = r_anal_new ();
+	r_unref (as->anal->config);
+	as->a->num = r_num_new (NULL, NULL, NULL);
+	as->anal->config = r_ref_ptr (as->a->config);
+	r_anal_bind (as->anal, &as->a->analb);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		rasm_load_plugins (as);
 	}
+	rasm_set_archbits (as);
 	return as;
 }
 
@@ -431,7 +429,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		}
 		char *nstr = r_str_newf ("%s%s", r_str_startswith (buf, "0b")? "": "0b", buf);
 		if (nstr[strlen (nstr) - 1] == 'b') {
-			nstr[strlen (nstr)-1] = 0;
+			nstr[strlen (nstr) - 1] = 0;
 		}
 		ut64 n = r_num_get (NULL, nstr);
 		free (nstr);
@@ -449,9 +447,6 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	}
 	ut64 pcaddr = UT64_MAX;
 	if (as->opt.bin) {
-		if (len < 0) {
-			return false;
-		}
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {

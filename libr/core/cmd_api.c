@@ -82,9 +82,6 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 R_API RCmd *r_cmd_new(void) {
 	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
-	if (!cmd) {
-		return cmd;
-	}
 	cmd->lcmds = r_list_new ();
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;

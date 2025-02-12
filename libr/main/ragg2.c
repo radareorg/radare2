@@ -56,14 +56,12 @@ static void __load_plugins(REggState *es) {
 
 static REggState *__es_new(bool load_plugins) {
 	REggState *es = R_NEW0 (REggState);
-	if (es) {
-		es->l = r_lib_new (NULL, NULL);
-		es->e = r_egg_new ();
-		es->a = r_anal_new ();
-		r_anal_bind (es->a, &es->e->rasm->analb);
-		if (load_plugins) {
-			__load_plugins (es);
-		}
+	es->l = r_lib_new (NULL, NULL);
+	es->e = r_egg_new ();
+	es->a = r_anal_new ();
+	r_anal_bind (es->a, &es->e->rasm->analb);
+	if (load_plugins) {
+		__load_plugins (es);
 	}
 	return es;
 }

@@ -7,9 +7,7 @@ R_LIB_VERSION (r_parse);
 
 R_API RParse *r_parse_new(void) {
 	RParse *p = R_NEW0 (RParse);
-	if (R_LIKELY (p)) {
-		p->minval = 0x100;
-	}
+	p->minval = 0x100;
 	return p;
 }
 

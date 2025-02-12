@@ -1200,9 +1200,6 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 		return NULL;
 	}
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (!op) {
-		return NULL;
-	}
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (sizeof (buf) < maxopsz) {
 		maxopsz = sizeof (buf);
@@ -1507,9 +1504,6 @@ static int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user
 
 static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
-	}
 	node->addr = addr;
 	node->type = HINT_NODE_ADDR;
 	node->addr_hints = records;
@@ -1519,26 +1513,20 @@ static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRec
 
 static bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (node) {
-		node->addr = addr;
-		node->type = HINT_NODE_ARCH;
-		node->arch = arch;
-		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-		return true;
-	}
-	return false;
+	node->addr = addr;
+	node->type = HINT_NODE_ARCH;
+	node->arch = arch;
+	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+	return true;
 }
 
 static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (node) {
-		node->addr = addr;
-		node->type = HINT_NODE_BITS;
-		node->bits = bits;
-		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-		return true;
-	}
-	return false;
+	node->addr = addr;
+	node->type = HINT_NODE_BITS;
+	node->bits = bits;
+	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+	return true;
 }
 
 static void print_hint_tree(RBTree tree, int mode) {
@@ -4917,17 +4905,13 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	RAnalBlock  *B;
 	RBinSymbol *S;
 	RListIter *iter, *iter2;
-	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
 	ut64 at;
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
 		return NULL;
 	}
-	as = R_NEW0 (RCoreAnalStats);
-	if (!as) {
-		return NULL;
-	}
+	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
 	if (step < 1) {
 		step = 1;
 	}

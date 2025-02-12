@@ -14,14 +14,12 @@
 
 static RSkipListNode *r_skiplist_node_new(void *data, int level) {
 	RSkipListNode *res = R_NEW0 (RSkipListNode);
-	if (R_LIKELY (res)) {
-		res->forward = R_NEWS0 (RSkipListNode *, level + 1);
-		if (R_UNLIKELY (!res->forward))  {
-			free (res);
-			return NULL;
-		}
-		res->data = data;
+	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
+	if (R_UNLIKELY (!res->forward))  {
+		free (res);
+		return NULL;
 	}
+	res->data = data;
 	return res;
 }
 
@@ -134,18 +132,16 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 // Returns a new heap-allocated skiplist.
 R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	RSkipList *list = R_NEW0 (RSkipList);
-	if (R_LIKELY (list)) {
-		list->head = r_skiplist_node_new (NULL, SKIPLIST_MAX_DEPTH);
-		if (R_UNLIKELY (!list->head)) {
-			free (list);
-			return NULL;
-		}
-		init_head (list->head);
-		list->list_level = 0;
-		list->size = 0;
-		list->freefn = freefn;
-		list->compare = comparefn;
+	list->head = r_skiplist_node_new (NULL, SKIPLIST_MAX_DEPTH);
+	if (R_UNLIKELY (!list->head)) {
+		free (list);
+		return NULL;
 	}
+	init_head (list->head);
+	list->list_level = 0;
+	list->size = 0;
+	list->freefn = freefn;
+	list->compare = comparefn;
 	return list;
 }
 
