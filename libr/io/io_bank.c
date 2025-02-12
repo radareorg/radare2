@@ -1,13 +1,10 @@
-/* radare2 - LGPL - Copyright 2021-2024 - condret */
+/* radare2 - LGPL - Copyright 2021-2025 - condret */
 
 #include <r_io.h>
 
 R_API RIOBank *r_io_bank_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RIOBank *bank = R_NEW0 (RIOBank);
-	if (!bank) {
-		return NULL;
-	}
 	bank->name = strdup (name);
 	bank->submaps = r_crbtree_new (free);
 	if (!bank->submaps) {

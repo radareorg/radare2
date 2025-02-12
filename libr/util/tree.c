@@ -58,9 +58,6 @@ static void update_depth(RTreeNode *n, RTreeVisitor *vis) {
 
 static RTreeNode *node_new(RTree *t, void *data) {
 	RTreeNode *n = R_NEW0 (RTreeNode);
-	if (!n) {
-		return NULL;
-	}
 	n->children = r_list_new ();
 	n->data = data;
 	n->tree = t;

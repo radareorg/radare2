@@ -4,7 +4,7 @@
 
 R_API RStrBuf *r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
-	if (s && str) {
+	if (str) {
 		r_strbuf_set (s, str);
 	}
 	return s;
@@ -13,12 +13,10 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 R_API RStrBuf *r_strbuf_newf(const char *fmt, ...) {
 	R_RETURN_VAL_IF_FAIL (fmt, NULL);
 	RStrBuf *sb = R_NEW0 (RStrBuf);
-	if (sb) {
-		va_list ap;
-		va_start (ap, fmt);
-		R_UNUSED_RESULT (r_strbuf_vappendf (sb, fmt, ap));
-		va_end (ap);
-	}
+	va_list ap;
+	va_start (ap, fmt);
+	R_UNUSED_RESULT (r_strbuf_vappendf (sb, fmt, ap));
+	va_end (ap);
 	return sb;
 }
 

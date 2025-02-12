@@ -1,4 +1,4 @@
-/* radare - BSD2 - Copyright 2024 - Enno Boland */
+/* radare - BSD2 - Copyright 2024-2025 - Enno Boland */
 
 #include <r_fs.h>
 #include <r_userconf.h>
@@ -34,17 +34,14 @@ static void prepare_file(RFSFile *fsf, struct SqshFile *file, bool is_symlink) {
 	}
 }
 
-static int fs_sqsh_mapper_init(
-	struct SqshMapper *mapper, const void *input, size_t *size) {
+static int fs_sqsh_mapper_init(struct SqshMapper *mapper, const void *input, size_t *size) {
 	(void)size;
 	// takes the input pointer, which is a RFSRoot object here and sets it as user data.
 	sqsh_mapper_set_user_data (mapper, (void *)input);
 	return 0;
 }
 
-static int fs_sqsh_mapper_map(
-	const struct SqshMapper *mapper, sqsh_index_t offset, size_t size,
-	uint8_t **data) {
+static int fs_sqsh_mapper_map(const struct SqshMapper *mapper, sqsh_index_t offset, size_t size, uint8_t **data) {
 	RFSRoot *root = sqsh_mapper_user_data (mapper);
 
 	ut8 *buf = calloc (size, 1);

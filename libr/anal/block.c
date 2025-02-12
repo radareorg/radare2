@@ -62,9 +62,6 @@ R_API void r_anal_block_ref(RAnalBlock *bb) {
 
 static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	RAnalBlock *block = R_NEW0 (RAnalBlock);
-	if (!block) {
-		return NULL;
-	}
 	block->addr = addr;
 	block->size = size;
 	block->anal = a;
@@ -817,9 +814,6 @@ static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
 	}
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
-	if (!succ) {
-		return false;
-	}
 	r_anal_block_ref (block);
 	succ->block = block;
 	succ->reachable = false; // reset for first iteration

@@ -183,9 +183,6 @@ static inline int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 
 R_API RAsm *r_asm_new(void) {
 	RAsm *a = R_NEW0 (RAsm);
-	if (!a) {
-		return NULL;
-	}
 	a->codealign = 1;
 	a->dataalign = 1;
 	a->pseudo = false;

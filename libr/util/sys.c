@@ -1404,14 +1404,12 @@ R_API RSysInfo *r_sys_info(void) {
 	struct utsname un = {{0}};
 	if (uname (&un) != -1) {
 		RSysInfo *si = R_NEW0 (RSysInfo);
-		if (si) {
-			si->sysname  = strdup (un.sysname);
-			si->nodename = strdup (un.nodename);
-			si->release  = strdup (un.release);
-			si->version  = strdup (un.version);
-			si->machine  = strdup (un.machine);
-			return si;
-		}
+		si->sysname  = strdup (un.sysname);
+		si->nodename = strdup (un.nodename);
+		si->release  = strdup (un.release);
+		si->version  = strdup (un.version);
+		si->machine  = strdup (un.machine);
+		return si;
 	}
 #elif R2__WINDOWS__
 	HKEY key;
@@ -1421,10 +1419,6 @@ R_API RSysInfo *r_sys_info(void) {
 	DWORD minor;
 	char tmp[256] = {0};
 	RSysInfo *si = R_NEW0 (RSysInfo);
-	if (!si) {
-		return NULL;
-	}
-
 	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
 		r_sys_perror ("r_sys_info/RegOpenKeyExA");

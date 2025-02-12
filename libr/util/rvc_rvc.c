@@ -1014,8 +1014,8 @@ static Sdb *vcdb_open(const char *rp) {
 }
 
 static Rvc *open_rvc(const char *rp) {
-	if (rvc_repo_exists(rp)) {
-		Rvc *repo = R_NEW (Rvc);
+	if (rvc_repo_exists (rp)) {
+		Rvc *repo = R_NEW0 (Rvc);
 		repo->p = &r_vc_plugin_rvc;
 		repo->db = vcdb_open (rp);
 		if (repo->db) {

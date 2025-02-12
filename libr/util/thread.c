@@ -239,30 +239,28 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 
 R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 	RThread *th = R_NEW0 (RThread);
-	if (th) {
-		th->lock = r_th_lock_new (true);
-		th->running = false;
-		th->fun = fun;
-		th->user = user;
-		th->delay = delay;
-		th->breaked = false;
-		th->ready = false;
+	th->lock = r_th_lock_new (true);
+	th->running = false;
+	th->fun = fun;
+	th->user = user;
+	th->delay = delay;
+	th->breaked = false;
+	th->ready = false;
 #if HAVE_PTHREAD
-		pthread_attr_t *pattr = NULL;
-		pthread_attr_t attr;
-		int rc = pthread_attr_init(&attr);
+	pthread_attr_t *pattr = NULL;
+	pthread_attr_t attr;
+	int rc = pthread_attr_init(&attr);
+	if (rc != -1) {
+		rc = pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE);
 		if (rc != -1) {
-			rc = pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE);
-			if (rc != -1) {
-				pattr = &attr;
-			}
+			pattr = &attr;
 		}
-		pthread_create (&th->tid, pattr, _r_th_launcher, th);
-#elif R2__WINDOWS__
-		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
-#endif
-		th->running = true;
 	}
+	pthread_create (&th->tid, pattr, _r_th_launcher, th);
+#elif R2__WINDOWS__
+	th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
+#endif
+	th->running = true;
 	return th;
 }
 

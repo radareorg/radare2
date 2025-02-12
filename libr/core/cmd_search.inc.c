@@ -782,9 +782,6 @@ static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
 
 static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, ut64 size, int perms) {
 	RIOMap *map = R_NEW0 (RIOMap);
-	if (!map) {
-		return;
-	}
 	if (io && io->desc) {
 		map->fd = r_io_fd_get_current (io);
 	}
@@ -1125,14 +1122,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				}
 				if (perm) {
 					RIOMap *nmap = R_NEW0 (RIOMap);
-					if (nmap) {
-						// nmap->fd = core->io->desc->fd;
-						r_io_map_set_begin (nmap, from);
-						r_io_map_set_size (nmap, to - from);
-						nmap->perm = perm;
-						nmap->delta = 0;
-						r_list_append (list, nmap);
-					}
+					// nmap->fd = core->io->desc->fd;
+					r_io_map_set_begin (nmap, from);
+					r_io_map_set_size (nmap, to - from);
+					nmap->perm = perm;
+					nmap->delta = 0;
+					r_list_append (list, nmap);
 				}
 			} else {
 				bool only = false;
@@ -1171,9 +1166,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 							list = r_list_newf (free);
 						}
 						RIOMap *nmap = R_NEW0 (RIOMap);
-						if (!nmap) {
-							break;
-						}
 						r_io_map_set_begin (nmap, map->addr);
 						r_io_map_set_size (nmap, map->addr_end - map->addr);
 						if (r_io_map_begin (nmap)) {
@@ -1678,17 +1670,15 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				}
 #endif
 				struct endlist_pair *epair = R_NEW0 (struct endlist_pair);
-				if (epair) {
-					// If this arch has branch delay slots, add the next instr as well
-					if (end_gadget.delay) {
-						epair->instr_offset = i + increment;
-						epair->delay_size = end_gadget.delay;
-					} else {
-						epair->instr_offset = (intptr_t) i;
-						epair->delay_size = end_gadget.delay;
-					}
-					r_list_append (end_list, (void *) (intptr_t) epair);
+				// If this arch has branch delay slots, add the next instr as well
+				if (end_gadget.delay) {
+					epair->instr_offset = i + increment;
+					epair->delay_size = end_gadget.delay;
+				} else {
+					epair->instr_offset = (intptr_t) i;
+					epair->delay_size = end_gadget.delay;
 				}
+				r_list_append (end_list, (void *) (intptr_t) epair);
 			}
 			r_anal_op_fini (&end_gadget);
 			if (r_cons_is_breaked ()) {

@@ -159,24 +159,20 @@ R_API void r_io_stream_free(RIOStream *s) {
 
 R_API RIOStream *r_io_stream_new(void) {
 	RIOStream *s = R_NEW0 (RIOStream);
-	if (s) {
-		s->log = r_list_newf ((RListFree)&r_io_stream_log_free);
-		s->mode = R_PERM_RW;
-	}
+	s->log = r_list_newf ((RListFree)&r_io_stream_log_free);
+	s->mode = R_PERM_RW;
 	return s;
 }
 
 static bool add_item(RIOStream *s, const ut8 *data, size_t len, bool host) {
 	R_LOG_DEBUG ("add stream slice %d", host);
 	RIOStreamItem *is = R_NEW0 (RIOStreamItem);
-	if (is) {
-		is->host = host;
-		is->data = r_mem_dup (data, len);
-		if (is->data) {
-			is->size = len;
-			r_list_append (s->log, is);
-			return true;
-		}
+	is->host = host;
+	is->data = r_mem_dup (data, len);
+	if (is->data) {
+		is->size = len;
+		r_list_append (s->log, is);
+		return true;
 	}
 	free (is->data);
 	free (is);

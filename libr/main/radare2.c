@@ -1543,9 +1543,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							if (R_STR_ISNOTEMPTY (filepath)) {
 								if (mr.threaded) {
 									ThreadData *td = R_NEW0 (ThreadData);
-									if (!td) {
-										return -1;
-									}
 									td->filepath = strdup (filepath);
 									td->baddr = mr.baddr;
 									td->core = r;
@@ -1802,9 +1799,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (mr.do_analysis > 0) {
 		if (mr.threaded) {
 			ThreadData *td = R_NEW0 (ThreadData);
-			if (!td) {
-				return -1;
-			}
 			td->th_bin = mr.th_bin;
 			td->do_analysis = mr.do_analysis;
 			td->core = r;

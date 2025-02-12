@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2021 - pancake */
+/* radare - LGPL - Copyright 2018-2025 - pancake */
 
 #include <r_asm.h>
 

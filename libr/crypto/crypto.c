@@ -134,10 +134,8 @@ R_API bool r_crypto_job_update(RCryptoJob *cj, const ut8 *buf, int len) {
 R_API RCryptoJob *r_crypto_job_new(RCrypto *cry, RCryptoPlugin *cp) {
 	R_RETURN_VAL_IF_FAIL (cry && cp, NULL);
 	RCryptoJob *cj = R_NEW0 (RCryptoJob);
-	if (R_UNLIKELY (cj)) {
-		cj->h = cp;
-		cj->c = cry;
-	}
+	cj->h = cp;
+	cj->c = cry;
 	return cj;
 }
 

@@ -383,9 +383,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 
 R_API RCore *r_core_new(void) {
 	RCore *c = R_NEW0 (RCore);
-	if (c) {
-		r_core_init (c);
-	}
+	r_core_init (c);
 	return c;
 }
 

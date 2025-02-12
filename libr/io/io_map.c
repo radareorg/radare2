@@ -12,7 +12,7 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
-	if (!map || !r_id_storage_add (&io->maps, map, &map->id)) {
+	if (!r_id_storage_add (&io->maps, map, &map->id)) {
 		free (map);
 		return NULL;
 	}
@@ -551,9 +551,6 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	RRBNode *node = r_crbtree_find_node (map->overlay, &search_itv, _overlay_chunk_find, NULL);
 	if (!node) {
 		MapOverlayChunk *chunk = R_NEW0 (MapOverlayChunk);
-		if (!chunk) {
-			return false;
-		}
 		chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
 		chunk->itv = search_itv;
 		if (!chunk->buf || !r_crbtree_insert (map->overlay, chunk, _overlay_chunk_insert, NULL)) {
@@ -614,9 +611,6 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		}
 	}
 	chunk = R_NEW0 (MapOverlayChunk);
-	if (!chunk) {
-		return false;
-	}
 	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
 	if (!chunk->buf) {
 		free (chunk);

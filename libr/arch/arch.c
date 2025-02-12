@@ -11,9 +11,6 @@ static void plugin_free(void *p) {
 
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
-	if (!a) {
-		return NULL;
-	}
 	a->plugins = r_list_newf ((RListFree)plugin_free);
 	if (!a->plugins) {
 		free (a);

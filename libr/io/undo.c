@@ -177,16 +177,14 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 		case 0:
 			if (list) {
 				RIOUndos *u = R_NEW0 (RIOUndos);
-				if (u) {
-					if (!(j == undos && redos == 0)) {
-						// Current position gets pushed before seek, so there
-						// is no valid offset when we are at the end of list.
-						memcpy (u, undo, sizeof (RIOUndos));
-					} else {
-						u->off = io->off;
-					}
-					r_list_append (list, u);
+				if (!(j == undos && redos == 0)) {
+					// Current position gets pushed before seek, so there
+					// is no valid offset when we are at the end of list.
+					memcpy (u, undo, sizeof (RIOUndos));
+				} else {
+					u->off = io->off;
 				}
+				r_list_append (list, u);
 			}
 			break;
 		}
@@ -212,9 +210,6 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	}
 	/* undo write changes */
 	RIOUndoWrite *uw = R_NEW0 (RIOUndoWrite);
-	if (!uw) {
-		return;
-	}
 	uw->set = true;
 	uw->off = off;
 	uw->len = len;

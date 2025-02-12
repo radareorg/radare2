@@ -32,7 +32,7 @@ R_API void r_io_init(RIO* io) {
 }
 
 R_API void r_io_free(RIO *io) {
-	if (io) {
+	if (R_LIKELY (io)) {
 		r_io_fini (io);
 		free (io);
 	}
@@ -600,9 +600,6 @@ R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr) {
 static ptrace_wrap_instance *io_ptrace_wrap_instance(RIO *io) {
 	if (!io->ptrace_wrap) {
 		io->ptrace_wrap = R_NEW (ptrace_wrap_instance);
-		if (!io->ptrace_wrap) {
-			return NULL;
-		}
 		if (ptrace_wrap_instance_start (io->ptrace_wrap) < 0) {
 			R_FREE (io->ptrace_wrap);
 			return NULL;

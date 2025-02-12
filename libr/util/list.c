@@ -180,11 +180,8 @@ R_API int r_list_join(RList *list1, RList *list2) {
 	return 1;
 }
 
-R_API RList *r_list_new(void) {
+R_API R_NONNULL RList *r_list_new(void) {
 	RList *list = R_NEW0 (RList);
-	if (!list) {
-		return NULL;
-	}
 	r_list_init (list);
 	return list;
 }
@@ -197,21 +194,16 @@ R_API RList *r_list_newf(RListFree f) {
 	return l;
 }
 
-R_API RListIter *r_list_item_new(void *data) {
+R_API R_NONNULL RListIter *r_list_item_new(void *data) {
 	RListIter *item = R_NEW0 (RListIter);
-	if (item) {
-		item->data = data;
-	}
+	item->data = data;
 	return item;
 }
 
-R_API RListIter *r_list_append(RList *list, void *data) {
+R_API R_NONNULL RListIter *r_list_append(RList *list, void *data) {
 	R_RETURN_VAL_IF_FAIL (list, NULL);
 
 	RListIter *item = r_list_item_new (data);
-	if (!item) {
-		return NULL;
-	}
 	if (list->tail) {
 		list->tail->n = item;
 	}
