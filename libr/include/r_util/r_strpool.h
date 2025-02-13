@@ -39,8 +39,9 @@ typedef struct {
 	int size;  // size of str allocation
 	/////////  // /////////////////////////
 	int count; // amount of strings in pool
-	int *idxs; // indexes
-	int *sidx; // sorted index -- not yet used
+	int isize; // size of idxs allocation
+	ut32 *idxs; // indexes
+	ut32 *sidx; // sorted index -- not yet used
 	RBloom *bloom;
 } RUStrpool;
 

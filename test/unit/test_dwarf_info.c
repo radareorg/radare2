@@ -62,7 +62,7 @@ bool test_dwarf3_c(void) {
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_eq (da->count, 7, "Incorrect number of abbreviation");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
 	mu_assert_eq (info->count, 1, "Incorrect number of info compilation units");
 
 	// check header
@@ -125,7 +125,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_eq (da->count, 37, "Incorrect number of abbreviation");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_eq (info->count, 2, "Incorrect number of info compilation units");
 
@@ -335,7 +335,7 @@ bool test_dwarf2_big_endian(void) {
 
 	RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_eq (da->count, 108, "Incorrect number of abbreviation");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_eq (info->count, 1, "Incorrect number of info compilation units");
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #ifndef R2_BIN_H
 #define R2_BIN_H
@@ -391,7 +391,30 @@ typedef struct r_bin_file_options_t {
 	const char *filename;
 } RBinFileOptions;
 
-// XXX: RbinFile may hold more than one RBinObject?
+// typedef void (*r_bin_addr2line_add)(RBin *bin, ut64 addr, const char *file, int line, int column);
+typedef struct r_bin_addrline_store_t RBinAddrLineStore;
+typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *bin, RBinDbgItem item); // ut64 addr, const char *file, int line, int column);
+typedef RBinDbgItem* (*RBinAddrLineGet)(RBinAddrLineStore *bin, ut64 addr);
+typedef void (*RBinAddrLineReset)(RBinAddrLineStore *bin);
+typedef void (*RBinAddrLineResetAt)(RBinAddrLineStore *bin, ut64 addr);
+typedef void (*RBinAddrLineDel)(RBinAddrLineStore *bin, ut64 addr);
+typedef bool (*RBinDbgInfoCallback)(void *user, RBinDbgItem *item);
+typedef RList *(*RBinAddrLineFiles)(RBinAddrLineStore *bin);
+typedef void (*RBinAddrLineForeach)(RBinAddrLineStore *bin, RBinDbgInfoCallback cb, void *user);
+
+struct r_bin_addrline_store_t {
+	bool used; // deprecated when finished
+	void *storage;
+	RBinAddrLineAdd al_add;
+	RBinAddrLineAdd al_add_cu;
+	RBinAddrLineGet al_get;
+	RBinAddrLineDel al_del;
+	RBinAddrLineReset al_reset;
+	RBinAddrLineFiles al_files;
+	RBinAddrLineForeach al_foreach;
+};
+
+// XXX: RBinFile may hold more than one RBinObject?
 /// XX curplugin == o->plugin
 typedef struct r_bin_file_t {
 	char *file;
@@ -415,11 +438,11 @@ typedef struct r_bin_file_t {
 	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
-	Sdb *sdb_addrinfo;
+	Sdb *sdb_addrinfo; // deprecate
+	RBinAddrLineStore addrline;
 	void *addrinfo_priv; // future use to store abi-safe addrline info instead of k/v
 	struct r_bin_t *rbin;
 	int string_count;
-	// R2_600 - add RBinFileOptions here
 	RBinFileOptions *options;
 } RBinFile;
 
@@ -727,6 +750,7 @@ typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
 // R2_600 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 
+
 typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
@@ -734,6 +758,8 @@ typedef struct r_bin_bind_t {
 	RBinGetSections get_sections;
 	RBinGetSectionAt get_vsect_at;
 	RBinDemangle demangle;
+//	RBinAddrLineAdd addrline_add;
+//	RBinAddrLineGet addrline_get;
 	// RBinBaddr baddr;
 	ut32 visibility;
 } RBinBind;
@@ -888,11 +914,19 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
-// R2_600 - refactor and optimize storage
+// R2_600 - refactor, rename and optimize storage
+R_API void r_bin_dbginfo_reset(RBin *bin);
+R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr);
+R_API bool r_bin_dbginfo_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
+R_API RList *r_bin_dbginfo_files(RBin *bin);
 R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr);
+R_API void r_bin_dbgitem_free(RBinDbgItem *di);
 R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column);
 R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin);
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
+
+R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinDbgItem item);
+R_API RBinDbgItem *r_bin_addr2line_get(RBin *bin, ut64 addr);
 
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);

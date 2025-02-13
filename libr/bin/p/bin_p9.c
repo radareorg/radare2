@@ -367,9 +367,12 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 		line = line - delta + 1;
 	}
 
-	char *line_info = r_str_newf ("%s|%"PFMT64d, name, line);
-	sdb_nset (bf->sdb_addrinfo, pc, line_info, 0);
-	free (line_info);
+	RBinDbgItem item = {
+		.addr = pc,
+		.file = name,
+		.line = line,
+	};
+	bf->addrline.al_add (&bf->addrline, item);
 	return 0;
 }
 
@@ -395,10 +398,6 @@ static RList *symbols(RBinFile *bf) {
 	}
 
 	const ut64 syms = o->header_size + o->header.text + o->header.data;
-
-	if (!bf->sdb_addrinfo && o->header.syms && o->header.pcsz) {
-		bf->sdb_addrinfo = sdb_new0 ();
-	}
 
 	ut64 offset = 0;
 	while (offset < o->header.syms) {
@@ -712,7 +711,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.dbginfo = &r_bin_dbginfo_p9,
+	// .dbginfo = &r_bin_dbginfo_p9,
 	.create = &create,
 };
 

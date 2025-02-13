@@ -157,13 +157,13 @@ typedef struct r_bin_dex_obj_t {
 	Sdb *mdb;
 } RBinDexObj;
 
-struct r_bin_dex_str_t {
+typedef struct r_bin_dex_str_t {
 	char str[R_BIN_DEX_MAXSTR];
 	ut64 offset;
 	ut64 ordinal;
 	int size;
 	int last;
-};
+} RBinDexStr;
 
 struct dex_encoded_type_addr_pair_t {
 	ut64 type_idx;
@@ -192,9 +192,9 @@ struct dex_debug_local_t {
 	ut16 endAddress;
 };
 
-char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
-void r_bin_dex_free(struct r_bin_dex_obj_t *bin);
-struct r_bin_dex_obj_t *r_bin_dex_new_buf(RBuffer *buf, bool verbose);
-struct r_bin_dex_str_t *r_bin_dex_get_strings(struct r_bin_dex_obj_t *bin);
+R_IPI char* r_bin_dex_get_version(RBinDexObj * bin);
+R_IPI void r_bin_dex_free(RBinDexObj *bin);
+R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose);
+R_IPI RBinDexStr *r_bin_dex_get_strings(RBinDexObj *bin);
 
 #endif

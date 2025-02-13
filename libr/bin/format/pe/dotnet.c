@@ -120,7 +120,7 @@ void dotnet_parse_guid( PE* pe, ut64 metadata_root, PSTREAM_HEADER guid_header) 
 	// Parse GUIDs if we have them.
 	// GUIDs are 16 bytes each.
 	while (guid_size >= 16 && fits_in_pe (pe, guid_offset, 16)) {
-		sprintf(guid, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		snprintf (guid, sizeof (guid), "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
 				*(uint32_t*) guid_offset,
 				*(uint16_t*) (guid_offset + 4),
 				*(uint16_t*) (guid_offset + 6),

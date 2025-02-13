@@ -28,7 +28,7 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 4);
@@ -95,7 +95,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
 
@@ -151,7 +151,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
 
@@ -206,7 +206,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (abbrevs, bin, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
 

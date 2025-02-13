@@ -7,7 +7,7 @@
 
 #define bprintf if (dex->verbose) eprintf
 
-char* r_bin_dex_get_version(RBinDexObj *bin) {
+R_IPI char* r_bin_dex_get_version(RBinDexObj *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	char* version = calloc (1, 8);
 	if (version) {
@@ -225,7 +225,7 @@ static bool readAnnotationSet(RBinDexObj *dex, ut64 addr) {
 	return r_buf_seek (dex->b, addr + (i * sizeof (ut32)), R_BUF_SET) >= 0;
 }
 
-void r_bin_dex_free(RBinDexObj *dex) {
+R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	if (!dex) {
 		return;
 	}
@@ -247,7 +247,7 @@ void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex);
 }
 
-RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
+R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	int i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
