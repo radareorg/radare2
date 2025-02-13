@@ -24,7 +24,7 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	free (str);
 	RCore *core = esil->user;
 	if (core->esil.cmd_intr) {
-		r_core_cmd0 (core, core->esil.cmd_todo);
+		r_core_cmd0 (core, core->esil.cmd_intr);
 	}
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
