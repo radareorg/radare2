@@ -1904,7 +1904,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 				eic.cryptid = r_read_ble32 (&seic[16], mo->big_endian);
 
 				mo->has_crypto = eic.cryptid;
-				sdb_set (mo->kv, "crypto", "true", 0);
+				sdb_set (mo->kv, "crypto", eic.cryptid ? "true" : "false", 0);
 				sdb_num_set (mo->kv, "cryptid", eic.cryptid, 0);
 				sdb_num_set (mo->kv, "cryptoff", eic.cryptoff, 0);
 				sdb_num_set (mo->kv, "cryptsize", eic.cryptsize, 0);
