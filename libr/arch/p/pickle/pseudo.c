@@ -4,7 +4,7 @@
 #include <r_asm.h>
 #include "dis_helper.inc"
 
-static inline char *parse_no_args(int op) {
+static inline char *parse_no_args(char op) {
 	switch (op) {
 	case OP_FAILURE:
 		return NULL; // opcode not found in table
@@ -80,7 +80,7 @@ static inline char *parse_no_args(int op) {
 	return NULL;
 }
 
-static inline char *parse_with_args(int op, char *args) {
+static inline char *parse_with_args(char op, char *args) {
 	switch (op) {
 	case OP_FAILURE:
 		return NULL; // opcode not found in table

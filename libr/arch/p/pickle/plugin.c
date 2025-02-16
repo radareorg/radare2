@@ -620,7 +620,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		arg = "";
 	}
 
-	int ob = name_to_op (opstr);
+	char ob = name_to_op (opstr);
 	if (ob == OP_FAILURE) {
 		R_LOG_ERROR ("Unknown pickle verb: %s", opstr);
 		wlen = -1;
