@@ -156,7 +156,7 @@ static const struct opmap op_name_map[] = {
 	{ "readonly_buffer", '\x98' }
 };
 
-static inline int name_to_op(const char *opstr) {
+static inline char name_to_op(const char *opstr) {
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
 		if (!r_str_casecmp (opstr, op_name_map[i].name)) {
