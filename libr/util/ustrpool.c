@@ -8,6 +8,11 @@ R_API R_NULLABLE RUStrpool* r_ustrpool_new(void) {
 	p->str = malloc (p->size);
 	if (p->str) {
 		p->str[0] = 0;
+		p->bloom = r_bloom_new (1024, 2, NULL);
+		if (!p->bloom) {
+			free (p->str);
+			R_FREE (p);
+		}
 	} else {
 		R_FREE (p);
 	}
@@ -53,7 +58,11 @@ static int strpool_memcat(RUStrpool *p, const char *s, int len) {
 }
 
 R_API int r_ustrpool_add(RUStrpool *p, const char *s) {
-	int pos = r_ustrpool_get (p, s);
+	R_RETURN_VAL_IF_FAIL (p && s, -1);
+	if (!r_bloom_check (p->bloom, s, strlen (s))) {
+		return r_ustrpool_append (p, s);
+	}
+	const int pos = r_ustrpool_get (p, s);
 	if (pos >= 0) {
 		return pos;
 	}
@@ -61,8 +70,10 @@ R_API int r_ustrpool_add(RUStrpool *p, const char *s) {
 }
 
 R_API int r_ustrpool_append(RUStrpool *p, const char *s) {
-	int l = strlen (s) + 1;
-	int idx = strpool_memcat (p, s, l);
+	R_RETURN_VAL_IF_FAIL (p && s, -1);
+	const int l = strlen (s) + 1;
+	const int idx = strpool_memcat (p, s, l);
+	r_bloom_add (p->bloom, s, l);
 	p->idxs[p->count] = idx;
 	p->count++;
 	return idx;
@@ -70,6 +81,7 @@ R_API int r_ustrpool_append(RUStrpool *p, const char *s) {
 
 R_API void r_ustrpool_free(RUStrpool *p) {
 	if (R_LIKELY (p)) {
+		r_bloom_free (p->bloom);
 		free (p->str);
 		free (p);
 	}
@@ -81,6 +93,7 @@ R_API char *r_ustrpool_get_at(RUStrpool *p, int index) {
 }
 
 R_API char *r_ustrpool_get_nth(RUStrpool *p, int index) {
+	R_RETURN_VAL_IF_FAIL (p, NULL);
 	if (index < 0 || index >= p->count) {
 		return NULL;
 	}

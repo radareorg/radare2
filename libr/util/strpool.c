@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2012-2025 - pancake */
 
+// XXX R2_600 deprecate this API we have a new stringpool api named ustrpool
+
 #include <r_util.h>
 
 R_API R_NULLABLE RStrpool* r_strpool_new(void) {

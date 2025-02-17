@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+#if 1
+// R2_600 -deprecate this api, just keep the new r_ustrpool
+
 typedef struct {
 	char *str; // single allocation with all the strings
 	int len;   // sum(strlen(str*))
@@ -25,6 +28,9 @@ R_API char *r_strpool_get_i(RStrpool *p, int index);
 R_API int r_strpool_get_index(RStrpool *p, const char *s);
 R_API char *r_strpool_next(RStrpool *p, int index);
 R_API char *r_strpool_slice(RStrpool *p, int index);
+
+#endif
+
 R_API char *r_strpool_empty(RStrpool *p);
 
 typedef struct {
@@ -35,6 +41,7 @@ typedef struct {
 	int count; // amount of strings in pool
 	int *idxs; // indexes
 	int *sidx; // sorted index -- not yet used
+	RBloom *bloom;
 } RUStrpool;
 
 R_API RUStrpool* r_ustrpool_new(void);
