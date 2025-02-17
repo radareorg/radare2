@@ -725,12 +725,58 @@ R_API char *r_str_newf(const char *fmt, ...) {
 		return p;
 	}
 	va_copy (ap2, ap);
+
+#ifdef _WIN32
+	// On Windows, the %p format specifier returns an address without the
+	// "0x"-prefix, in order not to break compatibility with r_num_get,
+	// this prepends "0x" to all occurances of "%p"
+
+	size_t n_ptr = 0;
+	size_t s_idx = 0;
+
+	while (fmt[s_idx] != '\0') {
+		if (fmt[s_idx] == '%' && fmt[s_idx + 1] == 'p') {
+			n_ptr++;
+		}
+		s_idx++;
+	}
+
+	size_t s_len = strlen (fmt) + 1 + 2 * n_ptr;
+	char *win_fmt = (char *)calloc (1, s_len);
+	if (!win_fmt) {
+		va_end (ap2);
+		va_end (ap);
+		return win_fmt;
+	}
+
+	memcpy (win_fmt, fmt, strlen (fmt) + 1);
+	s_idx = 0;
+
+	while (win_fmt[s_idx] != '\0') {
+		if (win_fmt[s_idx] == '%' && win_fmt[s_idx + 1] == 'p') {
+			memmove (win_fmt + s_idx + 2, win_fmt + s_idx, s_len - s_idx);
+			win_fmt[s_idx] = '0';
+			win_fmt[s_idx + 1] = 'x';
+			s_idx += 2;
+		}
+		s_idx++;
+	}
+
+	int ret = vsnprintf (NULL, 0, win_fmt, ap2);
+	ret++;
+	char *p = (char *)calloc (1, ret);
+	if (p) {
+		(void)vsnprintf (p, ret, win_fmt, ap);
+	}
+	free (win_fmt);
+#else
 	int ret = vsnprintf (NULL, 0, fmt, ap2);
 	ret++;
-	char *p = calloc (1, ret);
+	char *p = (char *)calloc (1, ret);
 	if (p) {
 		(void)vsnprintf (p, ret, fmt, ap);
 	}
+#endif
 	va_end (ap2);
 	va_end (ap);
 	return p;
