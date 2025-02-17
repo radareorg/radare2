@@ -51,7 +51,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	free (uri);
 	return desc;
 #else
-	char *uri = r_str_newf ("rbuf://%p", b);
+	char *uri = r_str_newf ("rbuf://0x%08"PFMT64x, (ut64)(size_t)(void *)b);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	free (uri);
 	return desc;
