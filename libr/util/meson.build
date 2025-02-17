@@ -3,6 +3,7 @@ subdir('d')
 r_util_sources = [
   'chartable.c',
   'assert.c',
+  'bloom.c',
   'w32.c',
   'rlz4.c',
   'w32dw.c',
