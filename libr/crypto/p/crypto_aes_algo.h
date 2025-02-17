@@ -4,6 +4,9 @@
 #include <r_crypto.h>
 #include <r_crypto/r_aes.h>
 
+#define AES_BLOCK_SIZE      16
+#define AES_WRAP_BLOCK_SIZE 8
+
 typedef struct aes_state {
 	ut8 key[32];
 	int key_size;
@@ -266,7 +269,7 @@ static const ut32 U3[256] = { UT };
 #undef V
 #undef UT
 
-void aes_encrypt(RCryptoAESState*, ut8*, ut8*);
-void aes_decrypt(RCryptoAESState*, ut8*, ut8*);
-
+bool aes_ecb (RCryptoAESState *, ut8 *const, ut8 *, bool, const int);
+bool aes_wrap (RCryptoAESState *, const ut8 *, ut8 *, const ut8 *, bool, int);
+bool aes_cbc (RCryptoAESState *, ut8 *, ut8 *, ut8 *, bool, const int);
 #endif

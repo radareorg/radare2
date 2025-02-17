@@ -1,4 +1,13 @@
-OBJ_AES=crypto_aes.o crypto_aes_algo.o
+OBJ_AES=crypto_aes.o
+
+ifeq ($(WANT_SSL_CRYPTO),1)
+OBJ_AES+=crypto_aes_algo_ssl.o
+CFLAGS+=${SSL_CFLAGS}
+LDFLAGS+=${SSL_LDFLAGS}
+LDFLAGS+=-lcrypto
+else
+OBJ_AES+=crypto_aes_algo.o
+endif
 
 R2DEPS+=r_util
 DEPFLAGS=-L../../util -lr_util -L.. -lr_crypto

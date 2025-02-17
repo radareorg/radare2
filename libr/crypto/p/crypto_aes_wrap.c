@@ -6,7 +6,6 @@
 #include <r_util/r_log.h>
 #include "crypto_aes_algo.h"
 
-#define BLOCK_SIZE 8
 
 static bool aes_wrap_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
@@ -23,12 +22,12 @@ static int aes_wrap_get_key_size(RCryptoJob *cj) {
 }
 
 static bool aes_wrap_set_iv(RCryptoJob *cj, const ut8 *iv_src, int ivlen) {
-	if (ivlen != BLOCK_SIZE) {
+	if (ivlen != AES_WRAP_BLOCK_SIZE) {
 		return false;
 	}
-	cj->iv = malloc (BLOCK_SIZE);
+	cj->iv = malloc (AES_WRAP_BLOCK_SIZE);
 	if (cj->iv) {
-		memcpy (cj->iv, iv_src, BLOCK_SIZE);
+		memcpy (cj->iv, iv_src, AES_WRAP_BLOCK_SIZE);
 	}
 	return true;
 }
@@ -39,14 +38,10 @@ static bool aes_wrap_use(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	struct aes_state st;
-	ut64 blocks = len / BLOCK_SIZE;
-	ut8 tmp[16] = {0};
-	long *tmp_ptr = (long *)tmp;
-	ut64 t = 0;
-	int i, j;
+	ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
 
-	if (len % BLOCK_SIZE != 0) {
-		R_LOG_ERROR ("Length must be a multiple of %d", BLOCK_SIZE);
+	if (len % AES_WRAP_BLOCK_SIZE != 0) {
+		R_LOG_ERROR ("Length must be a multiple of %d", AES_WRAP_BLOCK_SIZE);
 		return false;
 	}
 
@@ -60,16 +55,15 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	ut8 *const obuf = calloc (1, len + BLOCK_SIZE);
+	ut8 *const obuf = calloc (1, len + AES_WRAP_BLOCK_SIZE);
 	if (!obuf) {
 		return false;
 	}
-	long *obuf_ptr = (long *)obuf;
 
 	if (!cj->iv) {
-		cj->iv = malloc (BLOCK_SIZE);
+		cj->iv = malloc (AES_WRAP_BLOCK_SIZE);
 		if (cj->iv) {
-			memset (cj->iv, 0xa6, BLOCK_SIZE);
+			memset (cj->iv, 0xa6, AES_WRAP_BLOCK_SIZE);
 		}
 	}
 
@@ -78,54 +72,14 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	st.columns = st.key_size / 4;
 	memcpy (st.key, cj->key, st.key_size);
 
+	bool ret = aes_wrap (&st, buf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks);
+
 	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		// Encrypt
-		memcpy (obuf, cj->iv, BLOCK_SIZE);
-		memcpy (obuf + BLOCK_SIZE, buf, len);
-		for (j = 0; j <= 5; j++) {
-			for (i = 0; i < blocks; i++) {
-				/* B = AES(K, A | R[i]) */
-				*tmp_ptr = *obuf_ptr;
-				*(tmp_ptr + 1) = *(obuf_ptr + i + 1);
-				aes_encrypt (&st, tmp, tmp);
-
-				/* A = MSB(64, B) ^ t */
-				t++;
-				t = r_swap_ut64 (t);
-				*obuf_ptr = t ^ *tmp_ptr;
-				t = r_swap_ut64 (t);
-
-				/* R[i] = LSB(64, B) */
-				*(obuf_ptr + i + 1) = *(tmp_ptr + 1);
-			}
+		r_crypto_job_append (cj, obuf, len + AES_WRAP_BLOCK_SIZE);
+	} else {
+		if (ret) {
+			r_crypto_job_append (cj, obuf, len - AES_WRAP_BLOCK_SIZE);
 		}
-		r_crypto_job_append (cj, obuf, len + BLOCK_SIZE);
-	} else if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
-		// Decrypt
-		blocks -= 1;
-		t = 6 * blocks;
-		memcpy (obuf, buf, len);
-		for (j = 0; j <= 5; j++) {
-			for (i = blocks; i >= 1; i--) {
-				/* B = AES^-1( (A ^ t)| R[i] ) */
-				t = r_swap_ut64 (t);
-				*tmp_ptr = t ^ *obuf_ptr;
-				t = r_swap_ut64 (t);
-				t--;
-				*(tmp_ptr + 1) = *(obuf_ptr + i);
-				aes_decrypt (&st, tmp, tmp);
-
-				/* A = MSB_64(B) */
-				*obuf_ptr = *tmp_ptr;
-				/* R[i] = LSB_64(B) */
-				*(obuf_ptr + i) = *(tmp_ptr + 1);
-			}
-		}
-		if (memcmp (cj->iv, obuf, BLOCK_SIZE)) {
-			R_LOG_ERROR ("Invalid integrity check");
-			return false;
-		}
-		r_crypto_job_append (cj, obuf + BLOCK_SIZE, len - BLOCK_SIZE);
 	}
 
 	free (obuf);
