@@ -17,7 +17,8 @@ typedef struct r_bloom_t {
 static ut32 default_bloom_hash(const void *data, size_t len, ut32 seed) {
 	const ut8 *ptr = (const ut8*) data;
 	ut32 hash = 5381 ^ seed;
-	for (size_t i = 0; i < len; i++) {
+	size_t i;
+	for (i = 0; i < len; i++) {
 		hash = ((hash << 5) + hash) + ptr[i]; /* hash * 33 + c */
 	}
 	return hash;
@@ -42,8 +43,8 @@ R_API R_NULLABLE RBloom *r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_f
 	if (hash_funcs) {
 		memcpy (bf->hash_funcs, hash_funcs, k * sizeof (RBloomHashFunc));
 	} else {
-		/* Use the default hash function for all k functions */
-		for (size_t i = 0; i < k; i++) {
+		size_t i;
+		for (i = 0; i < k; i++) {
 			bf->hash_funcs[i] = default_bloom_hash;
 		}
 	}
