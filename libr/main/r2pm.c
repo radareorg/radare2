@@ -430,6 +430,10 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	r_sys_setenv ("R2PM_BINDIR", bindir);
 	free (bindir);
 
+	char *mandir = r_str_newf ("%s/man", r2_prefix);
+	r_sys_setenv("R2PM_MANDIR", mandir);
+	free (mandir);
+
 	char *libdir = r_str_newf ("%s/lib", r2_prefix);
 	r_sys_setenv ("R2PM_LIBDIR", libdir);
 	free (libdir);
@@ -1099,6 +1103,7 @@ static void r2pm_envhelp(void) {
 	int r2pm_log_level = r_sys_getenv_asint ("R2_LOG_LEVEL");
 	char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
 	char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
+	char *r2pm_mandir = r_sys_getenv ("R2PM_MANDIR");
 	char *r2pm_libdir = r_sys_getenv ("R2PM_LIBDIR");
 	char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
 	char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
@@ -1116,6 +1121,7 @@ static void r2pm_envhelp(void) {
 		"R2PM_PLUGDIR=%s (global)\n"
 		"R2PM_PREFIX=%s\n"
 		"R2PM_BINDIR=%s\n"
+		"R2PM_MANDIR=%s\n"
 		"R2PM_LIBDIR=%s\n"
 		"R2PM_DBDIR=%s\n"
 		"R2PM_GITDIR=%s\n"
@@ -1126,6 +1132,7 @@ static void r2pm_envhelp(void) {
 		r2pm_plugdir2,
 		r2pm_prefix,
 		r2pm_bindir,
+		r2pm_mandir,
 		r2pm_libdir,
 		r2pm_dbdir,
 		r2pm_gitdir,
@@ -1134,6 +1141,7 @@ static void r2pm_envhelp(void) {
 	free (r2pm_plugdir2);
 	free (r2pm_prefix);
 	free (r2pm_bindir);
+	free (r2pm_mandir);
 	free (r2pm_dbdir);
 	free (r2pm_gitdir);
 	free (r2pm_giturl);
