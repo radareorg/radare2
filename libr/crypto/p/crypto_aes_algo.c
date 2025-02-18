@@ -267,3 +267,101 @@ void aes_decrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
 	result[14] = InvSbox[(ut8)(t1 >> 8)] ^ (ut8)(tt >> 8);
 	result[15] = InvSbox[(ut8)t0] ^ (ut8)tt;
 }
+
+R_IPI bool aes_ecb(RCryptoAESState *st, ut8 *const ibuf, ut8 *obuf, bool encrypt, const int blocks) {
+	int i;
+
+	if (encrypt) {
+		for (i = 0; i < blocks; i++) {
+			const int delta = AES_BLOCK_SIZE * i;
+			aes_encrypt (st, ibuf + delta, obuf + delta);
+		}
+	} else {
+		for (i = 0; i < blocks; i++) {
+			const int delta = AES_BLOCK_SIZE * i;
+			aes_decrypt (st, ibuf + delta, obuf + delta);
+		}
+	}
+	return true;
+}
+
+R_IPI bool aes_wrap(RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, bool encrypt, int blocks) {
+	ut8 tmp[16] = { 0 };
+	long *tmp_ptr = (long *)tmp;
+	ut64 t = 0;
+	int i, j;
+	long *obuf_ptr = (long *)obuf;
+
+	if (encrypt) {
+		// Encrypt
+		memcpy (obuf, iv, AES_WRAP_BLOCK_SIZE);
+		memcpy (obuf + AES_WRAP_BLOCK_SIZE, ibuf, blocks * AES_WRAP_BLOCK_SIZE);
+		for (j = 0; j <= 5; j++) {
+			for (i = 0; i < blocks; i++) {
+				/* B = AES(K, A | R[i]) */
+				*tmp_ptr = *obuf_ptr;
+				*(tmp_ptr + 1) = *(obuf_ptr + i + 1);
+				aes_encrypt (st, tmp, tmp);
+
+				/* A = MSB(64, B) ^ t */
+				t++;
+				t = r_swap_ut64 (t);
+				*obuf_ptr = t ^ *tmp_ptr;
+				t = r_swap_ut64 (t);
+
+				/* R[i] = LSB(64, B) */
+				*(obuf_ptr + i + 1) = *(tmp_ptr + 1);
+			}
+		}
+	} else {
+		// Decrypt
+		memcpy (obuf, ibuf, blocks * AES_WRAP_BLOCK_SIZE);
+		blocks -= 1;
+		t = 6 * blocks;
+		for (j = 0; j <= 5; j++) {
+			for (i = blocks; i >= 1; i--) {
+				/* B = AES^-1( (A ^ t)| R[i] ) */
+				t = r_swap_ut64 (t);
+				*tmp_ptr = t ^ *obuf_ptr;
+				t = r_swap_ut64 (t);
+				t--;
+				*(tmp_ptr + 1) = *(obuf_ptr + i);
+				aes_decrypt (st, tmp, tmp);
+
+				/* A = MSB_64(B) */
+				*obuf_ptr = *tmp_ptr;
+				/* R[i] = LSB_64(B) */
+				*(obuf_ptr + i) = *(tmp_ptr + 1);
+			}
+		}
+		if (memcmp (iv, obuf, AES_WRAP_BLOCK_SIZE)) {
+			R_LOG_ERROR ("Invalid integrity check");
+			return false;
+		} else {
+			memcpy (obuf, obuf + AES_WRAP_BLOCK_SIZE, blocks * AES_WRAP_BLOCK_SIZE);
+		}
+	}
+	return true;
+}
+
+R_IPI bool aes_cbc(RCryptoAESState *st, ut8 *ibuf, ut8 *obuf, ut8 *iv, bool encrypt, const int blocks) {
+	int i, j;
+	if (encrypt) {
+		for (i = 0; i < blocks; i++) {
+			for (j = 0; j < AES_BLOCK_SIZE; j++) {
+				ibuf[i * AES_BLOCK_SIZE + j] ^= iv[j];
+			}
+			aes_encrypt (st, ibuf + AES_BLOCK_SIZE * i, obuf + AES_BLOCK_SIZE * i);
+			memcpy (iv, obuf + AES_BLOCK_SIZE * i, AES_BLOCK_SIZE);
+		}
+	} else {
+		for (i = 0; i < blocks; i++) {
+			aes_decrypt (st, ibuf + AES_BLOCK_SIZE * i, obuf + AES_BLOCK_SIZE * i);
+			for (j = 0; j < AES_BLOCK_SIZE; j++) {
+				obuf[i * AES_BLOCK_SIZE + j] ^= iv[j];
+			}
+			memcpy (iv, ibuf + AES_BLOCK_SIZE * i, AES_BLOCK_SIZE);
+		}
+	}
+	return true;
+}

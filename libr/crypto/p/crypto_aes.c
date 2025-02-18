@@ -4,8 +4,6 @@
 #include <r_crypto.h>
 #include "crypto_aes_algo.h"
 
-#define BLOCK_SIZE 16
-
 static bool aes_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
@@ -26,11 +24,16 @@ static bool aes_check(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	struct aes_state st;
-	// Pad to the block size, do not append dummy block
-	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
+
+	if (len % AES_BLOCK_SIZE != 0 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
+		R_LOG_ERROR ("Length must be a multiple of %d for decryption", AES_BLOCK_SIZE);
+		return false;
+	}
+
+	// Pad to the block size for encryption, do not append dummy block
+	const int diff = (AES_BLOCK_SIZE - (len % AES_BLOCK_SIZE)) % AES_BLOCK_SIZE;
 	const int size = len + diff;
-	const int blocks = size / BLOCK_SIZE;
-	int i;
+	const int blocks = size / AES_BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
 	if (!obuf) {
@@ -42,31 +45,19 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
+	// Zero padding
 	memset (ibuf, 0, size);
 	memcpy (ibuf, buf, len);
-	// Padding should start like 100000...
-	if (diff) {
-		ibuf[len] = 8; //0b1000;
-	}
 
 	st.key_size = cj->key_len;
 	st.rounds = 6 + (st.key_size / 4);
 	st.columns = (st.key_size / 4);
 	memcpy (st.key, cj->key, st.key_size);
 
-	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		for (i = 0; i < blocks; i++) {
-			const int delta = BLOCK_SIZE * i;
-			aes_encrypt (&st, ibuf + delta, obuf + delta);
-		}
-	} else {
-		for (i = 0; i < blocks; i++) {
-			const int delta = BLOCK_SIZE * i;
-			aes_decrypt (&st, ibuf + delta, obuf + delta);
-		}
+	if (aes_ecb (&st, ibuf, obuf, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {
+		r_crypto_job_append (cj, obuf, size);
 	}
 
-	r_crypto_job_append (cj, obuf, size);
 	free (obuf);
 	free (ibuf);
 	return true;
