@@ -752,7 +752,7 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 
 	int i = 0;
 
-#if 1
+#if 0
 	printf (" const int test_addresses[] = {\n");
 	r_list_foreach (line_list, iter, row) {
 	printf ("\t0x%08x,\n", row->addr);
