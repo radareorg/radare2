@@ -8,7 +8,7 @@ on:
 
 jobs:
   latest:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Determine current repository
         run: echo "{repo}={${GITHUB_REPOSITORY}}" >> $GITHUB_OUTPUT
