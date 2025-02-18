@@ -573,8 +573,8 @@ static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
 #if 0
 	r_bloom_add (store->bloomSet, &item, sizeof (item));
 	r_bloom_add (store->bloomGet, &item.addr, sizeof (item.addr));
-	ht_up_insert (store->ht, di->addr, di);
 #endif
+	ht_up_insert (store->ht, di->addr, di);
 	r_list_append (store->list, di);
 	return true;
 }
