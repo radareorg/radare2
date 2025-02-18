@@ -530,8 +530,10 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 typedef struct {
 	RList *list;
 	RUStrpool *pool;
+#if 0
 	RBloom *bloomSet;
 	RBloom *bloomGet;
+#endif
 	HtUP *ht;
 } AddrLineStore;
 
@@ -568,7 +570,7 @@ static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
 	di->colu = item.column;
 	di->file = item.file ? r_ustrpool_add (store->pool, item.file) : -1;
 	di->path = item.path ? r_ustrpool_add (store->pool, item.path) : -1;
-#if 1
+#if 0
 	r_bloom_add (store->bloomSet, &item, sizeof (item));
 	r_bloom_add (store->bloomGet, &item.addr, sizeof (item.addr));
 	ht_up_insert (store->ht, di->addr, di);
@@ -596,8 +598,10 @@ static void al_reset(RBinAddrLineStore *als) {
 	store->pool = r_ustrpool_new ();
 	ht_up_free (store->ht);
 	store->ht = ht_up_new0 ();
+#if 0
 	r_bloom_reset (store->bloomGet);
 	r_bloom_reset (store->bloomSet);
+#endif
 }
 
 static RBinDbgItem* dbgitem_from_internal(RBinAddrLineStore *als, RBinDbgItemInternal *item) {
@@ -661,7 +665,7 @@ static void al_del(RBinAddrLineStore *als, ut64 addr) {
 
 static RBinDbgItem* al_get(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-#if 1
+#if 0
 	if (!r_bloom_check (store->bloomGet, &addr, sizeof (addr))) {
 		return NULL;
 	}
@@ -689,8 +693,10 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	als->ht = ht_up_new0 ();
 	als->list = r_list_newf (free);
 	als->pool = r_ustrpool_new ();
+#if 0
 	als->bloomGet = r_bloom_new (9586, 7, NULL);
 	als->bloomSet = r_bloom_new (9586, 7, NULL);
+#endif
 	b->storage = (void*)als;
 	b->al_add = al_add;
 	b->al_add_cu = al_add_cu;
@@ -705,8 +711,10 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
+#if 0
 		r_bloom_free (store->bloomSet);
 		r_bloom_free (store->bloomGet);
+#endif
 		r_list_free (store->list);
 	}
 	free (als->storage);

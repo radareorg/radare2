@@ -50,12 +50,12 @@ static char *strpool_alloc(RUStrpool *p, int l) {
 }
 
 static bool strpool_resize_count(RUStrpool *p) {
-	if (p->count + 8 < p->isize) {
+	if (p->count + 8 >= p->isize) {
 		const size_t ns = p->isize + 32;
-		ut32 *ni = realloc (p->idxs, ns);
+		ut32 *ni = realloc (p->idxs, (sizeof (int) * ns));
 		if (ni) {
 			p->idxs = ni;
-			p->isize += ns;
+			p->isize = ns;
 		} else {
 			return false;
 		}
