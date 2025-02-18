@@ -268,7 +268,7 @@ void aes_decrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
 	result[15] = InvSbox[(ut8)t0] ^ (ut8)tt;
 }
 
-bool aes_ecb (RCryptoAESState *st, ut8 *const ibuf, ut8 *obuf, bool encrypt, const int blocks) {
+R_IPI bool aes_ecb(RCryptoAESState *st, ut8 *const ibuf, ut8 *obuf, bool encrypt, const int blocks) {
 	int i;
 
 	if (encrypt) {
@@ -285,7 +285,7 @@ bool aes_ecb (RCryptoAESState *st, ut8 *const ibuf, ut8 *obuf, bool encrypt, con
 	return true;
 }
 
-bool aes_wrap (RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, bool encrypt, int blocks) {
+R_IPI bool aes_wrap(RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, bool encrypt, int blocks) {
 	ut8 tmp[16] = { 0 };
 	long *tmp_ptr = (long *)tmp;
 	ut64 t = 0;
@@ -344,7 +344,7 @@ bool aes_wrap (RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, b
 	return true;
 }
 
-bool aes_cbc (RCryptoAESState *st, ut8 *ibuf, ut8 *obuf, ut8 *iv, bool encrypt, const int blocks) {
+R_IPI bool aes_cbc(RCryptoAESState *st, ut8 *ibuf, ut8 *obuf, ut8 *iv, bool encrypt, const int blocks) {
 	int i, j;
 	if (encrypt) {
 		for (i = 0; i < blocks; i++) {

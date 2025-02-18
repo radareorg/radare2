@@ -38,7 +38,7 @@ static bool aes_wrap_use(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	struct aes_state st;
-	ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
+	const ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
 
 	if (len % AES_WRAP_BLOCK_SIZE != 0) {
 		R_LOG_ERROR ("Length must be a multiple of %d", AES_WRAP_BLOCK_SIZE);

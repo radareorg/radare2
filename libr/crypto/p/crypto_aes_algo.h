@@ -269,7 +269,7 @@ static const ut32 U3[256] = { UT };
 #undef V
 #undef UT
 
-bool aes_ecb (RCryptoAESState *, ut8 *const, ut8 *, bool, const int);
-bool aes_wrap (RCryptoAESState *, const ut8 *, ut8 *, const ut8 *, bool, int);
-bool aes_cbc (RCryptoAESState *, ut8 *, ut8 *, ut8 *, bool, const int);
+R_IPI bool aes_ecb(RCryptoAESState *, ut8 *const, ut8 *, bool, const int);
+R_IPI bool aes_wrap(RCryptoAESState *, const ut8 *, ut8 *, const ut8 *, bool, int);
+R_IPI bool aes_cbc(RCryptoAESState *, ut8 *, ut8 *, ut8 *, bool, const int);
 #endif

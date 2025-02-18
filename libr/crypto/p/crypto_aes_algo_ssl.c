@@ -42,7 +42,7 @@ bool aes_ecb (RCryptoAESState *st, ut8 *const ibuf, ut8 *const obuf, bool encryp
 }
 
 // AES key wrap or unwrap using OpenSSL.
-bool aes_wrap (RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, bool encrypt, int blocks) {
+R_IPI bool aes_wrap(RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, bool encrypt, int blocks) {
 	int length = 0;
 	EVP_CIPHER const *mode;
 	bool ret = true;
@@ -79,7 +79,7 @@ bool aes_wrap (RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *iv, b
 }
 
 // AES encryption or decryption with CBC mode of operation using OpenSSL.
-bool aes_cbc (RCryptoAESState *st, ut8 *ibuf, ut8 *obuf, ut8 *iv, bool encrypt, const int blocks) {
+R_IPI bool aes_cbc(RCryptoAESState *st, ut8 *ibuf, ut8 *obuf, ut8 *iv, bool encrypt, const int blocks) {
 	int length = 0;
 	EVP_CIPHER const *mode;
 	bool ret = true;
