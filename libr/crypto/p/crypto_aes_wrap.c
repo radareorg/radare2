@@ -62,9 +62,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 
 	if (!cj->iv) {
 		cj->iv = malloc (AES_WRAP_BLOCK_SIZE);
-		if (cj->iv) {
-			memset (cj->iv, 0xa6, AES_WRAP_BLOCK_SIZE);
-		}
+		memset (cj->iv, 0xa6, AES_WRAP_BLOCK_SIZE);
 	}
 
 	st.key_size = cj->key_len;
@@ -73,7 +71,6 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	memcpy (st.key, cj->key, st.key_size);
 
 	bool ret = aes_wrap (&st, buf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks);
-
 	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
 		r_crypto_job_append (cj, obuf, len + AES_WRAP_BLOCK_SIZE);
 	} else {

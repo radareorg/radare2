@@ -42,13 +42,11 @@ R_API bool r_bloom_init(RBloom *bf, size_t m, size_t k, RBloomHashFunc * hash_fu
 	bf->array_size = (m + 7) / 8;
 	bf->bit_array = (ut8*) calloc (bf->array_size, sizeof (ut8));
 	if (! bf->bit_array) {
-		free (bf);
 		return false;
 	}
 	bf->hash_funcs = (RBloomHashFunc *) malloc (k * sizeof (RBloomHashFunc));
 	if (! bf->hash_funcs) {
 		free (bf->bit_array);
-		free (bf);
 		return false;
 	}
 	if (hash_funcs) {

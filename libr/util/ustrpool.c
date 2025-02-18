@@ -8,14 +8,16 @@ R_API R_NULLABLE RUStrpool* r_ustrpool_new(void) {
 	p->isize = 16;
 	p->str = malloc (p->size);
 	p->idxs = calloc (sizeof (p->idxs[0]), p->isize);
-	if (p->str) {
+	if (p->str && p->idxs) {
 		p->str[0] = 0;
 		p->bloom = r_bloom_new (1024, 2, NULL);
 		if (!p->bloom) {
 			free (p->str);
+			free (p->idxs);
 			R_FREE (p);
 		}
 	} else {
+		free (p->idxs);
 		R_FREE (p);
 	}
 	return p;
