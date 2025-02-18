@@ -11,7 +11,7 @@ on:
 jobs:
 #  build-offline:
 #    name: linux-offline
-#    runs-on: ubuntu-20.04
+#    runs-on: ubuntu-22.04
 #    steps:
 #    - name: Checkout
 #      uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
 #        make -j ; sudo make install
   build-oldlibs:
     name: linux-acr-oldlibsbug
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
         sys/install.sh
   build-nocs:
     name: linux-nocs
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
         cat /tmp/m.2
   build-acr-gperf:
     name: linux-acr-gperf
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -105,7 +105,7 @@ jobs:
   # TODO: Add job to build with capstone-next, for now v5 is stable
   build-syscapstone:
     name: linux-sys-capstone
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -121,7 +121,7 @@ jobs:
       run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
   build-resymlink:
     name: linux-acr-resymlink
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -134,7 +134,7 @@ jobs:
     - name: Reinstalling without symlinks
       run: sudo make install
   linux-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -155,7 +155,7 @@ jobs:
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -193,7 +193,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-rpath
     continue-on-error: true
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -227,7 +227,7 @@ jobs:
   build-spaces:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-meson-spaces
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -262,7 +262,7 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   linux-tinyasan-fuzz:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     continue-on-error: true
     steps:
     - name: Checkout
@@ -291,7 +291,7 @@ jobs:
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
   linux-asan-fuzz:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     continue-on-error: true
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
@@ -378,7 +378,7 @@ jobs:
         path: radare2*.zip
   w64-mingw:
     name: w64-mingw
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
