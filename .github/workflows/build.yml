@@ -9,7 +9,7 @@ on:
 jobs:
   # WASI
   linux-wasi:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
 
   # WASI API
   linux-wasi-api:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
           sys/install.sh --with-capstone-next
   # Source Tarballs
   tarball:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
 
   # Linux
   linux-static:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -85,7 +85,7 @@ jobs:
 
   linux-acr-rpm-64:
     # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
             gcc: aarch64-linux-gnu
           - arch: i386
             gcc: multilib
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
 
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
-#    runs-on: ubuntu:20.04
+#    runs-on: ubuntu:22.04
 #    container: centos:8
 #    steps:
 #    - name: Checkout
@@ -154,7 +154,7 @@ jobs:
 #        path: *.rpm
 #
 #  centos-meson-rpm:
-#    runs-on: ubuntu:20.04
+#    runs-on: ubuntu:22.04
 #    container: centos:8
 #    steps:
 #    - name: Checkout
