@@ -545,6 +545,8 @@ extern "C" {
 #define DW_LANG_UPC                     0x0012
 #define DW_LANG_D                       0x0013
 #define DW_LANG_Python                  0x0014
+#define DW_LANG_OpenCL                  0x0015
+#define DW_LANG_Modula3                 0x0016
 #define DW_LANG_Rust                    0x001c
 #define DW_LANG_C11                     0x001d
 #define DW_LANG_Swift                   0x001e
@@ -656,16 +658,21 @@ typedef struct {
 	int end_sequence;
 } RBinDwarfState;
 
-// TODO: Rename to RBinDbgItem
 typedef struct {
-	ut64 address; // RENAME addr
-	char *file; // RENAME filename
-	unsigned int line;
-	unsigned int column;
-} RBinDwarfRow;
+	ut64 addr;
+	const char *file;
+	const char *path;
+	ut32 line;
+	ut32 column;
+} RBinDbgItem;
 
-// R2_600 - rename this struct
-#define RBinDbgItem RBinDwarfRow
+typedef struct {
+	ut64 addr;
+	ut32 path;
+	ut32 file;
+	ut32 line;
+	ut32 colu;
+} RBinDbgItemInternal;
 
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {
@@ -861,7 +868,7 @@ typedef struct r_bin_dwarf_loc_list_t {
 R_API void r_bin_dwarf_parse_aranges(RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
-R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
+R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *a, RBinDwarfDebugAbbrev *da, int mode);
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBin *bin, int addr_size);
 R_API void r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size, PrintfCallback print);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);

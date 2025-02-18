@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2024 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2025 - pancake */
 
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
@@ -1120,8 +1120,8 @@ static void file_lines_free_kv(HtPPKv *kv) {
 	file_lines_free (kv->value);
 }
 
-static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
-	RBinDwarfRow *row;
+static bool bin_addrline(RCore *core, PJ *pj, int mode) {
+	RBinDbgItem *row;
 	RListIter *iter;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
@@ -1154,7 +1154,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 			}
 			return false;
 		}
-		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
+		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (core->bin, da, mode);
 		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->config->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
@@ -1188,8 +1188,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 	HtPP* file_lines = ht_pp_new (NULL, file_lines_free_kv, NULL);
 
 	SetP *set = set_p_new ();
-	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
-	//XXX this whole thing has leaks
+	// XXX this leaks like there's no stopper
 	r_list_foreach (list, iter, row) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -1230,7 +1229,10 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 				}
 			}
 			// TODO: implement internal : if ((mode & R_MODE_SET))
-			if ((mode & R_MODE_SET)) {
+			if ((mode & R_MODE_SIMPLE)) {
+				r_cons_printf ("0x%08"PFMT64x" %s:%d\n",
+					row->addr, file, (int)row->line);
+			} else if ((mode & R_MODE_SET)) {
 				// TODO: use CL here.. but its not necessary.. so better not do anything imho
 				// r_core_cmdf (core, "CL %s:%d 0x%08"PFMT64x, file, (int)row->line, row->address);
 #if 0
@@ -1238,14 +1240,14 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, row->address, cmt);
 				free (cmt);
 #endif
-			} else if (IS_MODE_JSON(mode)) {
+			} else if (IS_MODE_JSON (mode)) {
 				pj_a (pj);
 
 				pj_o (pj);
 				pj_ks (pj, "name", "CC");
 				pj_ks (pj, "file", file);
 				pj_ki (pj, "line_num", (int) row->line);
-				pj_kn (pj, "addr", row->address);
+				pj_kn (pj, "addr", row->addr);
 				pj_end (pj);
 
 				pj_o (pj);
@@ -1253,21 +1255,21 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 				pj_ks (pj, "file", file);
 				pj_ki (pj, "line_num", (int) row->line);
 				pj_ks (pj, "line", r_str_get (line));
-				pj_kn (pj, "addr", row->address);
+				pj_kn (pj, "addr", row->addr);
 				pj_end (pj);
 
 				pj_end (pj);
 			} else {
 				r_cons_printf ("'@0x%08"PFMT64x"'CL %s:%d\n",
-					row->address, file, (int)row->line);
+					row->addr, file, (int)row->line);
 				r_cons_printf ("'@0x%08"PFMT64x"'CC %s:%d %s\n",
-					row->address, file, row->line, r_str_get (line));
+					row->addr, file, row->line, r_str_get (line));
 			}
 			free (file);
 			free (line);
 		} else {
 			r_cons_printf ("0x%08" PFMT64x "\t%s\t%d\n",
-				       row->address, row->file, row->line);
+				       row->addr, row->file, row->line);
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -1346,9 +1348,11 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	return true;
 }
 
+#if 0
 static ut64 srclineVal(const void *a) {
 	return r_str_hash64 (a);
 }
+#endif
 
 static bool bin_source(RCore *r, PJ *pj, int mode) {
 	RList *final_list = r_list_new ();
@@ -1362,7 +1366,15 @@ static bool bin_source(RCore *r, PJ *pj, int mode) {
 		r_list_free (final_list);
 		return false;
 	}
-
+#if 1
+	// TODO: future optimization: dump the stringpool containing filenames
+	RList *files = r_bin_dbginfo_files (r->bin);
+	if (files) {
+		char *s = r_str_list_join (files, "\n");
+		r_cons_println (s);
+		free (s);
+	}
+#else
 	SdbListIter *iter;
 	RListIter *iter2;
 	char* srcline;
@@ -1384,6 +1396,7 @@ static bool bin_source(RCore *r, PJ *pj, int mode) {
 		r_cons_printf ("%s\n", srcline);
 	}
 	r_list_free (final_list);
+#endif
 	return true;
 }
 
@@ -4795,8 +4808,8 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	if ((action & R_CORE_BIN_ACC_MAIN)) {
 		ret &= bin_main (core, pj, mode, va);
 	}
-	if ((action & R_CORE_BIN_ACC_DWARF)) {
-		ret &= bin_dwarf (core, pj, mode);
+	if ((action & R_CORE_BIN_ACC_DWARF)) { // R2_600 : Rename R_CORE_BIN_ACC_DWARF to _ADDRLINE
+		ret &= bin_addrline (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_PDB)) {
 		ret &= r_core_pdb_info (core, core->bin->file, pj, mode);

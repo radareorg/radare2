@@ -110,7 +110,7 @@ NAME=C++ demangle relocs
 FILE=bins/elf/libstdc++.so.6
 CMDS=pd 1 @0x00091004
 EXPECT=<<EOF
-            0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57 ; [0x1898a8:8]=0
+            0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57:5 ; [0x1898a8:8]=0
 EOF
 RUN
 

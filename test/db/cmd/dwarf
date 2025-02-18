@@ -5,14 +5,6 @@ CL
 EOF
 EXPECT=<<EOF
 file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
-line: 95
-colu: 3
-addr: 0x00001059
-file: /tmp/a.c
-line: 9
-colu: 21
-addr: 0x00001183
-file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
 line: 84
 colu: 1
 addr: 0x00001050
@@ -20,38 +12,18 @@ file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../
 line: 94
 colu: 3
 addr: 0x00001054
-file: /tmp/a.c
-line: 8
-colu: 0
-addr: 0x00001160
-file: /tmp/a.c
-line: 12
-colu: 1
-addr: 0x00001190
-file: /tmp/a.c
-line: 10
-colu: 10
-addr: 0x0000117d
-file: /tmp/a.c
-line: 9
+file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
+line: 95
 colu: 3
-addr: 0x0000118e
-file: /tmp/a.c
-line: 12
-colu: 1
-addr: 0x0000119a
-file: /tmp/a.c
-line: 10
-colu: 20
-addr: 0x00001170
+addr: 0x00001059
+file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
+line: 96
+colu: 3
+addr: 0x00001059
 file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
 line: 96
 colu: 3
 addr: 0x00001061
-file: /tmp/a.c
-line: 10
-colu: 12
-addr: 0x00001175
 file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../src/libgcc/config/i386/crtfastmath.c
 line: 98
 colu: 1
@@ -60,6 +32,38 @@ file: /build/gcc-11-xKiWfi/gcc-11-11.3.0/build/x86_64-linux-gnu/libgcc/../../../
 line: 98
 colu: 1
 addr: 0x00001067
+file: /tmp/a.c
+line: 8
+colu: 0
+addr: 0x00001160
+file: /tmp/a.c
+line: 10
+colu: 20
+addr: 0x00001170
+file: /tmp/a.c
+line: 10
+colu: 12
+addr: 0x00001175
+file: /tmp/a.c
+line: 10
+colu: 10
+addr: 0x0000117d
+file: /tmp/a.c
+line: 9
+colu: 21
+addr: 0x00001183
+file: /tmp/a.c
+line: 9
+colu: 3
+addr: 0x0000118e
+file: /tmp/a.c
+line: 12
+colu: 1
+addr: 0x00001190
+file: /tmp/a.c
+line: 12
+colu: 1
+addr: 0x0000119a
 EOF
 RUN
 
@@ -72,29 +76,21 @@ xc
 EOF
 EXPECT=<<EOF
 file: /_test.c
-line: 6
-colu: 1
-addr: 0x00001165
-file: /_test.c
-line: 11
-colu: 1
-addr: 0x00001184
-file: /_test.c
-line: 11
-colu: 1
-addr: 0x00001186
+line: 4
+colu: 28
+addr: 0x00001149
 file: /_test.c
 line: 5
 colu: 5
 addr: 0x00001159
 file: /_test.c
+line: 6
+colu: 1
+addr: 0x00001165
+file: /_test.c
 line: 8
 colu: 12
 addr: 0x00001168
-file: /_test.c
-line: 4
-colu: 28
-addr: 0x00001149
 file: /_test.c
 line: 9
 colu: 5
@@ -103,6 +99,14 @@ file: /_test.c
 line: 10
 colu: 12
 addr: 0x0000117f
+file: /_test.c
+line: 11
+colu: 1
+addr: 0x00001184
+file: /_test.c
+line: 11
+colu: 1
+addr: 0x00001186
 - offset -  6061 6263 6465 6667 6869 6A6B 6C6D 6E6F  0123456789ABCDEF  comment
 0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; rip ; [16] -r-x section size 294 named .text ; arg3
 0x00001070  f050 5445 31c0 31c9 488d 3de9 0000 00ff  .PTE1.1.H.=.....
@@ -134,14 +138,6 @@ line: 2
 colu: 0
 addr: 0x100003f64
 file: /Users/pancake/hello.c
-line: 5
-colu: 2
-addr: 0x100003f80
-file: /Users/pancake/hello.c
-line: 0
-colu: 0
-addr: 0x100003f78
-file: /Users/pancake/hello.c
 line: 0
 colu: 0
 addr: 0x100003f6c
@@ -150,13 +146,21 @@ line: 3
 colu: 2
 addr: 0x100003f74
 file: /Users/pancake/hello.c
-line: 6
-colu: 1
-addr: 0x100003f90
+line: 0
+colu: 0
+addr: 0x100003f78
+file: /Users/pancake/hello.c
+line: 5
+colu: 2
+addr: 0x100003f80
 file: /Users/pancake/hello.c
 line: 6
 colu: 1
 addr: 0x100003f88
+file: /Users/pancake/hello.c
+line: 6
+colu: 1
+addr: 0x100003f90
 EOF
 RUN
 

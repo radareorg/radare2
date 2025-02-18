@@ -28,20 +28,28 @@ R_API R_NULLABLE RBloom *r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_f
 	if (m == 0 || k == 0) {
 		return NULL;
 	}
-	RBloom * bf = R_NEW (RBloom);
+	RBloom *bf = R_NEW (RBloom);
+	if (!r_bloom_init (bf, m, k, hash_funcs)) {
+		R_FREE (bf);
+	}
+	return bf;
+}
+
+R_API bool r_bloom_init(RBloom *bf, size_t m, size_t k, RBloomHashFunc * hash_funcs) {
+	R_RETURN_VAL_IF_FAIL (bf, false);
 	bf->m = m;
 	bf->k = k;
 	bf->array_size = (m + 7) / 8;
 	bf->bit_array = (ut8*) calloc (bf->array_size, sizeof (ut8));
 	if (! bf->bit_array) {
 		free (bf);
-		return NULL;
+		return false;
 	}
 	bf->hash_funcs = (RBloomHashFunc *) malloc (k * sizeof (RBloomHashFunc));
 	if (! bf->hash_funcs) {
 		free (bf->bit_array);
 		free (bf);
-		return NULL;
+		return false;
 	}
 	if (hash_funcs) {
 		memcpy (bf->hash_funcs, hash_funcs, k * sizeof (RBloomHashFunc));
@@ -51,13 +59,29 @@ R_API R_NULLABLE RBloom *r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_f
 			bf->hash_funcs[i] = default_bloom_hash;
 		}
 	}
-	return bf;
+	return true;
 }
 
-R_API void r_bloom_free(RBloom *bf) {
+R_API void r_bloom_reset(RBloom *bf) {
+	R_RETURN_IF_FAIL (bf);
+	size_t m = bf->m;
+	size_t k = bf->k;
+	RBloomHashFunc *funcs = bf->hash_funcs;
+	bf->hash_funcs = NULL;
+	r_bloom_fini (bf);
+	r_bloom_init (bf, m, k, funcs);
+	free (funcs);
+}
+
+R_API void r_bloom_fini(R_NONNULL RBloom *bf) {
+	R_RETURN_IF_FAIL (bf);
+	free (bf->bit_array);
+	free (bf->hash_funcs);
+}
+
+R_API void r_bloom_free(R_NULLABLE RBloom *bf) {
 	if (bf) {
-		free (bf->bit_array);
-		free (bf->hash_funcs);
+		r_bloom_fini (bf);
 		free (bf);
 	}
 }

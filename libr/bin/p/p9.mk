@@ -1,4 +1,4 @@
-OBJ_P9=bin_p9.o bin_dbginfo_p9.o ../format/p9/p9bin.o
+OBJ_P9=bin_p9.o ../format/p9/p9bin.o
 
 STATIC_OBJ+=${OBJ_P9}
 TARGET_P9=bin_p9.${EXT_SO}

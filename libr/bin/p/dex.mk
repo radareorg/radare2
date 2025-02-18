@@ -1,4 +1,4 @@
-OBJ_DEX=bin_dex.o bin_dbginfo_dex.o ../format/dex/dex.o
+OBJ_DEX=bin_dex.o ../format/dex/dex.o
 
 STATIC_OBJ+=${OBJ_DEX}
 TARGET_DEX=bin_dex.${EXT_SO}

@@ -138,7 +138,7 @@ CL $$ base64:SEVMTE8gV09STEQ=
 CL*
 EOF
 EXPECT=<<EOF
-HELLO WORLD
+'CL 0x000006a0 HELLO WORLD:0
 EOF
 RUN
 
@@ -227,10 +227,13 @@ CC-*
 pd 1
 CL-*
 pd 1
+CL $$ foo.c:123
+pd 1
 EOF
 EXPECT=<<EOF
-0x10000308      7c290b78       mr r9, r1 ; foo.c:123
+0x10000308      7c290b78       mr r9, r1 ; start.S:62
 0x10000308      7c290b78       mr r9, r1
+0x10000308      7c290b78       mr r9, r1 ; foo.c:123
 EOF
 RUN
 
@@ -240,190 +243,202 @@ CMDS=<<EOF
 CL
 EOF
 EXPECT=<<EOF
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 68
-colu: 0
-addr: 0x100004c8
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 89
-colu: 0
-addr: 0x1000060c
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
 line: 62
 colu: 0
 addr: 0x10000308
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 87
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
+line: 64
 colu: 0
-addr: 0x10000518
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 46
+addr: 0x1000030c
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
+line: 69
 colu: 0
-addr: 0x10000304
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 68
+addr: 0x10000310
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
+line: 71
 colu: 0
-addr: 0x100002d4
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 45
-colu: 0
-addr: 0x10000300
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 49
-colu: 0
-addr: 0x10000618
+addr: 0x10000314
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
 line: 72
 colu: 0
 addr: 0x10000318
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 71
+line: 73
 colu: 0
-addr: 0x10000314
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 74
-colu: 0
-addr: 0x100002ec
+addr: 0x1000031c
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 69
+line: 83
 colu: 0
-addr: 0x10000310
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 87
-colu: 0
-addr: 0x10000548
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 85
-colu: 0
-addr: 0x100005fc
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 89
-colu: 0
-addr: 0x10000614
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 88
-colu: 0
-addr: 0x10000544
+addr: 0x10000320
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 87
+line: 84
 colu: 0
-addr: 0x1000032c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 87
-colu: 0
-addr: 0x10000540
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 66
-colu: 0
-addr: 0x100002c8
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 89
-colu: 0
-addr: 0x10000554
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 65
-colu: 0
-addr: 0x100002c4
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 43
-colu: 0
-addr: 0x100002f8
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 88
-colu: 0
-addr: 0x1000052c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 64
-colu: 0
-addr: 0x100002c0
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 88
-colu: 0
-addr: 0x10000608
+addr: 0x10000324
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
 line: 87
 colu: 0
 addr: 0x10000328
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 84
+line: 87
 colu: 0
-addr: 0x10000324
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 42
-colu: 0
-addr: 0x100002f4
+addr: 0x1000032c
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 86
+line: 63
 colu: 0
-addr: 0x10000600
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 83
+addr: 0x100002bc
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 64
 colu: 0
-addr: 0x10000320
+addr: 0x100002c0
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 65
+colu: 0
+addr: 0x100002c4
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 66
+colu: 0
+addr: 0x100002c8
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 67
+colu: 0
+addr: 0x100002cc
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 68
+colu: 0
+addr: 0x100002d4
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 69
+colu: 0
+addr: 0x100002d8
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
 line: 71
 colu: 0
 addr: 0x100002dc
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 72
+colu: 0
+addr: 0x100002e0
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 73
+colu: 0
+addr: 0x100002e4
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 74
+colu: 0
+addr: 0x100002e8
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 74
+colu: 0
+addr: 0x100002ec
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 85
+colu: 0
+addr: 0x100005fc
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 86
+colu: 0
+addr: 0x10000600
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
 line: 87
 colu: 0
 addr: 0x10000604
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 96
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 88
 colu: 0
-addr: 0x1000057c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 87
+addr: 0x10000608
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 89
 colu: 0
-addr: 0x10000528
+addr: 0x1000060c
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
+line: 89
+colu: 0
+addr: 0x10000614
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 68
+colu: 0
+addr: 0x100004c8
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 83
+colu: 0
+addr: 0x10000508
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
 line: 86
 colu: 0
 addr: 0x1000050c
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 87
+colu: 0
+addr: 0x10000518
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 87
+colu: 0
+addr: 0x10000528
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 88
+colu: 0
+addr: 0x1000052c
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 87
+colu: 0
+addr: 0x10000540
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 88
+colu: 0
+addr: 0x10000544
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 87
+colu: 0
+addr: 0x10000548
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 89
+colu: 0
+addr: 0x10000554
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
+line: 96
+colu: 0
+addr: 0x1000057c
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
 line: 106
 colu: 0
 addr: 0x10000584
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 64
-colu: 0
-addr: 0x1000030c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 53
-colu: 0
-addr: 0x1000062c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 67
-colu: 0
-addr: 0x100002cc
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
 line: 106
 colu: 0
 addr: 0x10000590
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 74
-colu: 0
-addr: 0x100002e8
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 50
+line: 42
 colu: 0
-addr: 0x1000061c
+addr: 0x100002f4
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 43
+colu: 0
+addr: 0x100002f8
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
 line: 44
 colu: 0
 addr: 0x100002fc
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 72
-colu: 0
-addr: 0x100002e0
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
-line: 53
+line: 45
 colu: 0
-addr: 0x10000628
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 73
+addr: 0x10000300
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 46
 colu: 0
-addr: 0x100002e4
+addr: 0x10000304
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 46
+colu: 0
+addr: 0x10000308
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 49
+colu: 0
+addr: 0x10000618
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 50
+colu: 0
+addr: 0x1000061c
 file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
 line: 51
 colu: 0
@@ -432,22 +447,14 @@ file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/p
 line: 52
 colu: 0
 addr: 0x10000624
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S
-line: 73
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 53
 colu: 0
-addr: 0x1000031c
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 63
+addr: 0x10000628
+file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S
+line: 53
 colu: 0
-addr: 0x100002bc
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c
-line: 83
-colu: 0
-addr: 0x10000508
-file: /home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S
-line: 69
-colu: 0
-addr: 0x100002d8
+addr: 0x1000062c
 EOF
 RUN
 
@@ -459,44 +466,24 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 68,
-    "addr": 268436680
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 89,
-    "addr": 268437004
-  },
-  {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
     "line": 62,
     "addr": 268436232
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 87,
-    "addr": 268436760
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
+    "line": 64,
+    "addr": 268436236
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 46,
-    "addr": 268436228
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
+    "line": 69,
+    "addr": 268436240
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 68,
-    "addr": 268436180
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 45,
-    "addr": 268436224
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 49,
-    "addr": 268437016
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
+    "line": 71,
+    "addr": 268436244
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
@@ -505,83 +492,18 @@ EXPECT=<<EOF
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 71,
-    "addr": 268436244
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 74,
-    "addr": 268436204
+    "line": 73,
+    "addr": 268436252
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 69,
-    "addr": 268436240
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 87,
-    "addr": 268436808
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 85,
-    "addr": 268436988
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 89,
-    "addr": 268437012
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 88,
-    "addr": 268436804
+    "line": 83,
+    "addr": 268436256
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 87,
-    "addr": 268436268
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 87,
-    "addr": 268436800
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 66,
-    "addr": 268436168
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 89,
-    "addr": 268436820
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 65,
-    "addr": 268436164
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 43,
-    "addr": 268436216
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 88,
-    "addr": 268436780
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 64,
-    "addr": 268436160
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 88,
-    "addr": 268437000
+    "line": 84,
+    "addr": 268436260
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
@@ -590,23 +512,43 @@ EXPECT=<<EOF
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 84,
-    "addr": 268436260
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 42,
-    "addr": 268436212
+    "line": 87,
+    "addr": 268436268
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 86,
-    "addr": 268436992
+    "line": 63,
+    "addr": 268436156
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 83,
-    "addr": 268436256
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 64,
+    "addr": 268436160
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 65,
+    "addr": 268436164
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 66,
+    "addr": 268436168
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 67,
+    "addr": 268436172
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 68,
+    "addr": 268436180
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 69,
+    "addr": 268436184
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
@@ -615,18 +557,63 @@ EXPECT=<<EOF
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 72,
+    "addr": 268436192
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 73,
+    "addr": 268436196
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 74,
+    "addr": 268436200
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 74,
+    "addr": 268436204
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 85,
+    "addr": 268436988
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 86,
+    "addr": 268436992
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
     "line": 87,
     "addr": 268436996
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 96,
-    "addr": 268436860
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 88,
+    "addr": 268437000
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 89,
+    "addr": 268437004
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
+    "line": 89,
+    "addr": 268437012
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 87,
-    "addr": 268436776
+    "line": 68,
+    "addr": 268436680
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 83,
+    "addr": 268436744
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
@@ -635,23 +622,48 @@ EXPECT=<<EOF
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 87,
+    "addr": 268436760
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 87,
+    "addr": 268436776
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 88,
+    "addr": 268436780
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 87,
+    "addr": 268436800
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 88,
+    "addr": 268436804
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 87,
+    "addr": 268436808
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 89,
+    "addr": 268436820
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
+    "line": 96,
+    "addr": 268436860
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
     "line": 106,
     "addr": 268436868
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 64,
-    "addr": 268436236
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 53,
-    "addr": 268437036
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 67,
-    "addr": 268436172
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
@@ -659,14 +671,14 @@ EXPECT=<<EOF
     "addr": 268436880
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 74,
-    "addr": 268436200
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 42,
+    "addr": 268436212
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 50,
-    "addr": 268437020
+    "line": 43,
+    "addr": 268436216
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
@@ -674,19 +686,29 @@ EXPECT=<<EOF
     "addr": 268436220
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 72,
-    "addr": 268436192
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 45,
+    "addr": 268436224
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
-    "line": 53,
-    "addr": 268437032
+    "line": 46,
+    "addr": 268436228
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 73,
-    "addr": 268436196
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 46,
+    "addr": 268436232
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 49,
+    "addr": 268437016
+  },
+  {
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 50,
+    "addr": 268437020
   },
   {
     "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
@@ -699,24 +721,14 @@ EXPECT=<<EOF
     "addr": 268437028
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/start.S",
-    "line": 73,
-    "addr": 268436252
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 53,
+    "addr": 268437032
   },
   {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 63,
-    "addr": 268436156
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/elf-init.c",
-    "line": 83,
-    "addr": 268436744
-  },
-  {
-    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crti.S",
-    "line": 69,
-    "addr": 268436184
+    "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32/crtn.S",
+    "line": 53,
+    "addr": 268437036
   }
 ]
 EOF

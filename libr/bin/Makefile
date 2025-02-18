@@ -20,7 +20,7 @@ include $(SHLR)/ar/deps.mk
 include $(LIBR)/magic/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
-OBJS=bin.o dbginfo.o bin_ldr.o bin_write.o demangle.o
+OBJS=bin.o addrline.o bin_ldr.o bin_write.o demangle.o
 OBJS+=dwarf.o bfilter.o bfile.o bobj.o blang.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 OBJS+=mangling/demangler.o
