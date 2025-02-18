@@ -715,7 +715,7 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 	mu_assert_eq (da->count, 731, "Incorrect number of abbreviation");
 
 	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (r_list_length (line_list), 1159, "Amount of line information parse doesn't match");
+	mu_assert_eq (r_list_length (line_list), 1331, "Amount of line information parse doesn't match");
 
 	RBinDbgItem *row;
 	RListIter *iter;
@@ -734,20 +734,20 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 		0x00401010,
 		0x00401010,
 		0x00401010,
+		0x00401010,
 		0x00401013,
 		0x00401015,
 		0x0040101e,
 		0x00401028,
+		0x00401028,
 		0x00401032,
+		0x00401032,
+		0x0040103c,
 		0x0040103c,
 		0x00401046,
 		0x00401046,
 		0x00401046,
 		0x00401048,
-		0x0040104e,
-		0x00401058,
-		0x0040105e,
-		0x00401060,
 	};
 
 	int i = 0;
@@ -1024,7 +1024,7 @@ bool test_big_endian_dwarf2(void) {
 	mu_assert ("couldn't open file", res);
 
 	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (r_list_length (line_list), 395, "Amount of line information parse doesn't match");
+	mu_assert_eq (r_list_length (line_list), 475, "Amount of line information parse doesn't match");
 
 	RBinDbgItem *row;
 	RListIter *iter;
