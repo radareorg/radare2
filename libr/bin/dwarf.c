@@ -2833,6 +2833,7 @@ R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 	size_t len = 0;
+	dwarf_cache_reset ();
 	ut8 *buf = get_section_bytes (bin, DWARF_SN_ABBREV, &len);
 	if (!buf) {
 		return NULL;
