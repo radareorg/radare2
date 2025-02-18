@@ -86,6 +86,7 @@ R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 			return als->al_get (als, addr);
 		}
 	}
+	return NULL;
 #if 0
 	// R2_600 - eprintf ("OLDPATH\n");
 	r_strf_var (key, 64, "0x%"PFMT64x, addr); // TODO: use sdb_itoa because its faster
