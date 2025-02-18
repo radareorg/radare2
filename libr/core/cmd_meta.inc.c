@@ -427,6 +427,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (R_STR_ISNOTEMPTY (text)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", at, text);
 		}
+		free (text);
 		return 0;
 	}
 	if (*p == 'f') { // "CLf"
@@ -472,13 +473,14 @@ retry:
 	}
 	if (*p == '+') { // "CL+"
 		offset = core->offset;
-		p = strdup (r_str_trim_head_ro (p + 1));
+		p = r_str_trim_head_ro (p + 1);
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf) {
 			ret = cmd_meta_add_fileline (bf, p, offset);
 		}
 		return 0;
-	} else if (*p == ' ') { // "CL "
+	}
+	if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {

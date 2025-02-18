@@ -568,8 +568,8 @@ static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
 	di->addr = item.addr;
 	di->line = item.line;
 	di->colu = item.column;
-	di->file = item.file ? r_ustrpool_add (store->pool, item.file) : -1;
-	di->path = item.path ? r_ustrpool_add (store->pool, item.path) : -1;
+	di->file = item.file ? r_ustrpool_add (store->pool, item.file) : UT32_MAX;
+	di->path = item.path ? r_ustrpool_add (store->pool, item.path) : UT32_MAX;
 #if 0
 	r_bloom_add (store->bloomSet, &item, sizeof (item));
 	r_bloom_add (store->bloomGet, &item.addr, sizeof (item.addr));

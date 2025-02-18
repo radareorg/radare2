@@ -49,6 +49,7 @@ R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr) {
 		als->al_del (als, addr);
 		return;
 	}
+#if 0
 	// R2_600 - old sdb way here, deprecate before the release
 	char aoffset[SDB_NUM_BUFSZ];
 	char *aoffsetptr = sdb_itoa (addr, 16, aoffset, sizeof (aoffset));
@@ -57,6 +58,7 @@ R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr) {
 		return;
 	}
 	sdb_unset (bin->cur->sdb_addrinfo, aoffsetptr, 0);
+#endif
 }
 
 R_API RList *r_bin_dbginfo_files(RBin *bin) {
@@ -84,6 +86,8 @@ R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 			return als->al_get (als, addr);
 		}
 	}
+	return NULL;
+#if 0
 	// R2_600 - eprintf ("OLDPATH\n");
 	r_strf_var (key, 64, "0x%"PFMT64x, addr); // TODO: use sdb_itoa because its faster
 	char *data = sdb_get (bin->cur->sdb_addrinfo, key, 0);
@@ -110,6 +114,7 @@ R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 		return di;
 	}
 	return NULL;
+#endif
 }
 
 // XXX this is an useless wrapper
