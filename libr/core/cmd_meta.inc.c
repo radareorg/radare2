@@ -473,12 +473,11 @@ retry:
 	}
 	if (*p == '+') { // "CL+"
 		offset = core->offset;
-		p = strdup (r_str_trim_head_ro (p + 1));
+		p = r_str_trim_head_ro (p + 1);
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf) {
 			ret = cmd_meta_add_fileline (bf, p, offset);
 		}
-		free (p);
 		return 0;
 	}
 	if (*p == ' ') { // "CL "
