@@ -158,10 +158,10 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 	}
 	R_RETURN_IF_FAIL (nbytes > 0);
 
-	int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
+	const int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
 	int j = 0;
 	int i = nbytes - hex_digits_per_word;
-	char buffer[hex_digits_per_word + 1];
+	char buffer[(2 * R_BIG_WORD_SIZE) + 1];
 	buffer[hex_digits_per_word] = '\0';
 
 	while (i >= 0 && j < R_BIG_ARRAY_SIZE) {
