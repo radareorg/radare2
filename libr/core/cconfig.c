@@ -4122,16 +4122,14 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF ("dbg.skipover", "false", "make dso perform a dss (same goes for esil and visual/graph");
 #if __APPLE__
-	SETBPREF ("dbg.hwbp", "true", "use hardware breakpoints instead of software ones when enabled");
-#else
-	SETBPREF ("dbg.hwbp", "false", "use hardware breakpoints instead of software ones when enabled");
+	// SETBPREF ("dbg.hwbp", "true", "use hardware breakpoints instead of software ones when enabled");
 #endif
+	SETBPREF ("dbg.hwbp", "false", "use hardware breakpoints instead of software ones when enabled");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF ("dbg.slow", "false", "show stack and regs in visual mode in a slow but verbose mode");
 	SETBPREF ("dbg.funcarg", "false", "display arguments to function call in visual mode");
 
-	SETCB ("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "activate breakpoints only if they are inside a valid map");
 	SETCB ("dbg.forks", "false", &cb_dbg_forks, "stop execution if fork() is done (see dbg.threads)");
 	n = NODECB ("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
 	SETDESC (n, "select backtrace algorithm");
