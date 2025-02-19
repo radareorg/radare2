@@ -338,8 +338,7 @@ R_IPI bool aes_wrap(RCryptoAESState *st, const ut8 *ibuf, ut8 *obuf, const ut8 *
 			R_LOG_ERROR ("Invalid integrity check");
 			return false;
 		}
-		// The source buffer "obuf + 8" potentially overlaps with the destination buffer "obuf", which results in undefined behavior for "memcpy".
-		memcpy (obuf, obuf + AES_WRAP_BLOCK_SIZE, blocks * AES_WRAP_BLOCK_SIZE);
+		memmove (obuf, obuf + AES_WRAP_BLOCK_SIZE, blocks * AES_WRAP_BLOCK_SIZE);
 	}
 	return true;
 }
