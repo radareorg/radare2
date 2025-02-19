@@ -189,10 +189,16 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case EVM_INS_STOP:
+#if 0
 #if CS_API_MAJOR >= 6
 	case EVM_INS_SELFDESTRUCT:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
+#else
+	case EVM_INS_SUICIDE:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+#endif
 #else
 	case EVM_INS_SUICIDE:
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -241,12 +247,14 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_DUP16:
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		break;
+#if 0
 #if CS_API_MAJOR >= 6
 	case EVM_INS_PUSH0:
 		esilprintf (op, "0x0,sp,=[1],32,sp,+=");
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		evm_add_push_to_db (s, op, addr, buf, len);
 		break;
+#endif
 #endif
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
