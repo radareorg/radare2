@@ -424,61 +424,63 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			member_type.b = kvc_find_semicolon(kvc);
 			if (!member_type.b) {
 				kvc_error(kvc, "Missing semicolon in struct member");
-				r_strbuf_free(args_sb);
-				free(struct_tag);
+				r_strbuf_free (args_sb);
+				free (struct_tag);
 				return false;
 			}
 			if (member_type.a == member_type.b) {
-				kvc_getch(kvc);
+				kvc_getch (kvc);
 				break;
 			}
-			memcpy(&member_name, &member_type, sizeof(member_name));
-			kvctoken_typename(&member_type, &member_name);
-			kvc_getch(kvc); // Skip the semicolon
-			kvctoken_trim(&member_type);
+			memcpy (&member_name, &member_type, sizeof (member_name));
+			kvctoken_typename (&member_type, &member_name);
+			kvc_getch (kvc); // Skip the semicolon
+			kvctoken_trim (&member_type);
 			// Handle possible array dimensions (e.g. "[10]"):
-			const char *bracket = kvctoken_find(member_name, "[");
+			const char *bracket = kvctoken_find (member_name, "[");
 			if (bracket) {
 				member_dimm.a = bracket + 1;
 				member_dimm.b = member_name.b;
 				member_name.b = bracket - 1;
-				const char *close = kvctoken_find(member_dimm, "]");
+				const char *close = kvctoken_find (member_dimm, "]");
 				if (close) {
 					member_dimm.b = close;
 				} else {
-					r_strbuf_free(args_sb);
-					free(struct_tag);
-					kvc_error(kvc, "Missing ] in struct member dimension");
+					r_strbuf_free (args_sb);
+					free (struct_tag);
+					kvc_error (kvc, "Missing ] in struct member dimension");
 					return false;
 				}
 			}
-			char *mt = kvctoken_tostring(member_type);
-			char *mn = kvctoken_tostring(member_name);
-			char *md = kvctoken_tostring(member_dimm);
+			char *mt = kvctoken_tostring (member_type);
+			char *mn = kvctoken_tostring (member_name);
+			char *md = kvctoken_tostring (member_dimm);
 			char full_scope[512];
 			if (!*mn) {
-				free(mt); free(mn); free(md);
+				free (mt);
+				free (mn);
+				free (md);
 				break;
 			}
-			snprintf(full_scope, sizeof(full_scope), "%s.%s", struct_tag, mn);
-			if (md && *md) {
-				r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,%s\n",
+			snprintf (full_scope, sizeof (full_scope), "%s.%s", struct_tag, mn);
+			if (R_STR_ISNOTEMPTY (md)) {
+				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n",
 						struct_tag, mn, mt, off, md);
 			} else {
-				r_strbuf_appendf(kvc->sb, "struct.%s.%s=%s,%d,0\n",
+				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n",
 						struct_tag, mn, mt, off);
 			}
-			off += kvc_typesize(kvc, mt);
-			apply_attributes(kvc, "struct", full_scope);
-			r_strbuf_appendf(args_sb, "%s%s", member_idx ? "," : "", mn);
+			off += kvc_typesize (kvc, mt);
+			apply_attributes (kvc, "struct", full_scope);
+			r_strbuf_appendf (args_sb, "%s%s", member_idx ? "," : "", mn);
 			member_idx++;
-			free(mt);
-			free(mn);
-			free(md);
+			free (mt);
+			free (mn);
+			free (md);
 		}
 		// After the closing '}', we expect the typedef alias:
-		skip_spaces(kvc);
-		KVCToken alias = { .a = consume_word(kvc) };
+		skip_spaces (kvc);
+		KVCToken alias = { .a = consume_word (kvc) };
 		if (!alias.a) {
 			kvc_error (kvc, "Missing alias in typedef struct");
 			r_strbuf_free (args_sb);
@@ -500,16 +502,16 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		free (alias_str);
 		r_strbuf_free (args_sb);
 		return true;
-	} else if (next && r_str_startswith(next, "union")) {
+	} else if (next && r_str_startswith (next, "union")) {
 		/* Similar to the struct case, you would parse:
 		   typedef union [Tag]? { ... } Alias;
 		   (Implementation omitted for brevity) */
-		kvc_error(kvc, "typedef union not implemented");
+		kvc_error (kvc, "typedef union not implemented");
 		return false;
-	} else if (next && r_str_startswith(next, "enum")) {
+	} else if (next && r_str_startswith (next, "enum")) {
 		/* Similarly, handle typedef enum [Tag]? { ... } Alias;
 		   (Implementation omitted for brevity) */
-		kvc_error(kvc, "typedef enum not implemented");
+		kvc_error (kvc, "typedef enum not implemented");
 		return false;
 	} else {
 		/* Handle a “simple” typedef such as:
@@ -528,10 +530,10 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			p--;
 		}
 		const char *alias_end = p + 1;
-		while (p > start && (isalnum (*p) || *p=='_' || *p=='*')) {
+		while (p > start && (isalnum (*p) || *p == '_' || *p == '*')) {
 			p--;
 		}
-		if (!(isalnum (*p) || *p=='_' || *p=='*')) {
+		if (!(isalnum (*p) || *p == '_' || *p == '*')) {
 			p++;
 		}
 		KVCToken alias = { .a = p, .b = alias_end };
