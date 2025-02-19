@@ -13243,9 +13243,9 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 
 static void cmd_anal_aav(RCore *core, const char *input) {
 	R_RETURN_IF_FAIL (*input == 'v');
-	const bool relative = input[1] == 'r';
+	const bool relative = input[1] == 'r'; // "aavr"
 	const bool verbose = input[1] != 'q';
-	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0');
+	const bool forcemode = input[1] == '0' || (input[1] && input[2] == '0'); // "aav0" "aavr0"
 	ut64 o_align = r_config_get_i (core->config, "search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
@@ -13253,7 +13253,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	const bool is_debug = r_config_get_b (core->config, "cfg.debug");
 	int archAlign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	r_config_set_i (core->config, "search.align", archAlign);
-	r_config_set (core->config, "anal.in", "io.maps.x");
+	// r_config_set (core->config, "anal.in", "io.maps.x");
 
 	int vsize = 4; // 32bit dword
 	if (core->rasm->config->bits == 64) {
