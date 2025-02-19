@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2023 - pancake, Sylvain Pelissier */
+/* radare2 - LGPL - Copyright 2022-2025 - pancake, Sylvain Pelissier */
 
 #define R_LOG_ORIGIN "arch.evm"
 
@@ -168,6 +168,15 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_CODECOPY:
 	case EVM_INS_SWAP1:
 	case EVM_INS_SWAP2:
+	case EVM_INS_SWAP3:
+	case EVM_INS_SWAP4:
+	case EVM_INS_SWAP5:
+	case EVM_INS_SWAP6:
+	case EVM_INS_SWAP7:
+	case EVM_INS_SWAP8:
+	case EVM_INS_SWAP9:
+	case EVM_INS_SWAP10:
+	case EVM_INS_SWAP11:
 	case EVM_INS_SWAP12:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
@@ -180,9 +189,15 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case EVM_INS_STOP:
+#if CS_API_MAJOR >= 6
+	case EVM_INS_SELFDESTRUCT:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
+#else
 	case EVM_INS_SUICIDE:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
+#endif
 	case EVM_INS_DELEGATECALL:
 	case EVM_INS_CALLDATACOPY:
 	case EVM_INS_CALLDATALOAD:
@@ -226,6 +241,13 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case EVM_INS_DUP16:
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		break;
+#if CS_API_MAJOR >= 6
+	case EVM_INS_PUSH0:
+		esilprintf (op, "0x0,sp,=[1],32,sp,+=");
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		evm_add_push_to_db (s, op, addr, buf, len);
+		break;
+#endif
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
 		op->type = R_ANAL_OP_TYPE_PUSH;

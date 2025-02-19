@@ -41,7 +41,6 @@ endif
 ifeq ($(CS_RELEASE),1)
 CS_PATCHES=0
 else
-
 ifeq ($(USE_CSNEXT),1)
 CS_ROOT=../subprojects/capstone-next
 else
