@@ -4180,6 +4180,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("dbg.bpsize", 4, &cb_dbgbpsize, "size of software breakpoints");
 #endif
 	SETBPREF ("dbg.bpsysign", "false", "ignore system breakpoints");
+	SETCB ("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "activate breakpoints only if they are inside a valid map");
+	SETBPREF ("dbg.bpforuntil", "true", "honor breakpoints when performing 'dcu', 'dsu'");
 	SETICB ("dbg.btdepth", 128, &cb_dbgbtdepth, "depth of backtrace");
 
 	/* filesystem */
