@@ -1174,6 +1174,11 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 
 		// Maybe refactor these into their own functions aswell
 		switch (type_info->leaf_type) {
+		case eLF_MODIFIER:
+			pj_o (pj);
+			pj_ks (pj, "modifier", name);
+			pj_end (pj);
+			break;
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
 		case eLF_UNION: {
