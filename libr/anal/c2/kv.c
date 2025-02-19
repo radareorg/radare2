@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2024-2025 - pancake */
+
 #include <r_util.h>
 
 typedef struct {
@@ -357,7 +359,6 @@ static int kvc_typesize(KVCParser *kvc, const char *name) {
 	return 4;
 }
 
-
 static bool parse_typedef(KVCParser *kvc, const char *unused) {
 	skip_spaces (kvc);
 	const char *next = kvc_peekn (kvc, 6);
@@ -376,24 +377,24 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			tag.b = kvc->s.a;
 			has_tag = true;
-			skip_spaces(kvc);
+			skip_spaces (kvc);
 		}
 		if (kvc_peek (kvc, 0) != '{') {
 			/* This is a forward declaration:
 			   e.g. "typedef struct Tag Alias;" */
-			KVCToken alias = { .a = consume_word(kvc) };
+			KVCToken alias = { .a = consume_word (kvc) };
 			if (!alias.a) {
 				kvc_error(kvc, "Expected alias in typedef struct forward declaration");
 				return false;
 			}
 			alias.b = kvc->s.a;
 			char *alias_str = kvctoken_tostring (alias);
-			char *tag_str = has_tag ? kvctoken_tostring (tag) : strdup("");
+			char *tag_str = has_tag ? kvctoken_tostring (tag) : strdup ("");
 			r_strbuf_appendf (kvc->sb, "typedef.struct.%s=%s\n", alias_str, tag_str);
 			free (alias_str);
 			free (tag_str);
 			skip_semicolons (kvc);
-			if (kvc_peek(kvc, 0) == ';') {
+			if (kvc_peek (kvc, 0) == ';') {
 				kvc_getch(kvc);
 			}
 			return true;
@@ -401,10 +402,10 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		// Here we have a definition: typedef struct [Tag]? { ... } Alias;
 		kvc_getch (kvc);  // Consume the '{'
 		char *struct_tag = has_tag ? kvctoken_tostring (tag) :
-			r_str_newf("anon_struct_%d", kvc->line);
+			r_str_newf ("anon_struct_%d", kvc->line);
 		/* Begin output for the struct definition */
 		r_strbuf_appendf (kvc->sb, "struct.%s=struct\n", struct_tag);
-		apply_attributes(kvc, "struct", struct_tag);
+		apply_attributes (kvc, "struct", struct_tag);
 		RStrBuf *args_sb = r_strbuf_new ("");
 		int member_idx = 0;
 		int off = 0;
@@ -499,54 +500,52 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		free (alias_str);
 		r_strbuf_free (args_sb);
 		return true;
-	}
-	else if (next && r_str_startswith(next, "union")) {
+	} else if (next && r_str_startswith(next, "union")) {
 		/* Similar to the struct case, you would parse:
 		   typedef union [Tag]? { ... } Alias;
 		   (Implementation omitted for brevity) */
 		kvc_error(kvc, "typedef union not implemented");
 		return false;
-	}
-	else if (next && r_str_startswith(next, "enum")) {
+	} else if (next && r_str_startswith(next, "enum")) {
 		/* Similarly, handle typedef enum [Tag]? { ... } Alias;
 		   (Implementation omitted for brevity) */
 		kvc_error(kvc, "typedef enum not implemented");
 		return false;
-	}
-	else {
+	} else {
 		/* Handle a “simple” typedef such as:
 		   typedef int myint;
 		   In this case we assume that everything from the current pointer until
 		   the semicolon is the declaration, and the last word is the alias.
 		 */
 		const char *start = kvc->s.a;
-		const char *semicolon = kvc_find_semicolon(kvc);
+		const char *semicolon = kvc_find_semicolon (kvc);
 		if (!semicolon) {
 			kvc_error(kvc, "Missing semicolon in typedef");
 			return false;
 		}
 		const char *p = semicolon - 1;
-		while (p > start && isspace(*p)) {
+		while (p > start && isspace (*p)) {
 			p--;
 		}
 		const char *alias_end = p + 1;
-		while (p > start && (isalnum(*p) || *p=='_' || *p=='*')) {
+		while (p > start && (isalnum (*p) || *p=='_' || *p=='*')) {
 			p--;
 		}
-		if (!(isalnum(*p) || *p=='_' || *p=='*'))
+		if (!(isalnum (*p) || *p=='_' || *p=='*')) {
 			p++;
+		}
 		KVCToken alias = { .a = p, .b = alias_end };
 		KVCToken orig_type = { .a = start, .b = p };
-		kvctoken_trim(&alias);
-		kvctoken_trim(&orig_type);
-		char *alias_str = kvctoken_tostring(alias);
-		char *type_str = kvctoken_tostring(orig_type);
-		r_strbuf_appendf(kvc->sb, "typedef.%s=%s\n", alias_str, type_str);
-		free(alias_str);
-		free(type_str);
-		kvc_skipn(kvc, semicolon - kvc->s.a);
-		if (kvc_peek(kvc, 0) == ';') {
-			kvc_getch(kvc);
+		kvctoken_trim (&alias);
+		kvctoken_trim (&orig_type);
+		char *alias_str = kvctoken_tostring (alias);
+		char *type_str = kvctoken_tostring (orig_type);
+		r_strbuf_appendf (kvc->sb, "typedef.%s=%s\n", alias_str, type_str);
+		free (alias_str);
+		free (type_str);
+		kvc_skipn (kvc, semicolon - kvc->s.a);
+		if (kvc_peek (kvc, 0) == ';') {
+			kvc_getch (kvc);
 		}
 		return true;
 	}
@@ -896,7 +895,7 @@ R_IPI char* kvc_parse(const char* header_content, char **errmsg) {
 		// eprintf ("--> (((%s)))\n", r_str_ndup (word, 10));
 		bool hasparse = false;
 		if (word) {
-			hasparse |= tryparse (kvc, word, "typedef", NULL);
+			hasparse |= tryparse (kvc, word, "typedef", parse_typedef);
 			hasparse |= tryparse (kvc, word, "struct", parse_struct);
 			hasparse |= tryparse (kvc, word, "union", parse_struct);
 			hasparse |= tryparse (kvc, word, "enum", parse_enum);
