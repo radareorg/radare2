@@ -621,7 +621,6 @@ typedef struct {
 	bool is_gdb;
 	RThread *th_bin;
 	RThread *th_ana;
-	// bool compute_hashes = true;
 	RList *cmds;
 	RList *evals;
 	RList *files;

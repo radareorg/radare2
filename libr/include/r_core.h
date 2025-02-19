@@ -916,6 +916,8 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, const char *prefix);
 
 R_API bool r_core_patch(RCore *core, const char *patch);
+R_API bool r_core_patch_file(RCore *core, const char *patchfile);
+R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool revert);
 
 R_API bool r_core_hack(RCore *core, const char *op, int mode);
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
