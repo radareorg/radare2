@@ -1,21 +1,85 @@
-/* radare2 - LGPL - Copyright 2010 - FXTi */
+/* radare2 - LGPL - Copyright 2010-2025 - FXTi, pancake */
 /* Based on https://github.com/kokke/tiny-bignum-c */
 
 #include <r_util.h>
 
 #if !HAVE_LIB_GMP && !HAVE_LIB_SSL
-/* Functions for shifting number in-place. */
-static void _lshift_one_bit(RNumBig *a);
-static void _rshift_one_bit(RNumBig *a);
-static void _lshift_word(RNumBig *a, int nwords);
-static void _rshift_word(RNumBig *a, int nwords);
-static void _r_big_zero_out(RNumBig *n);
+
+/* Private / Static functions. */
+static void _rshift_word(RNumBig *a, int nwords) {
+	R_RETURN_IF_FAIL (a && nwords >= 0);
+
+	size_t i;
+	if (nwords >= R_BIG_ARRAY_SIZE) {
+		for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+			a->array[i] = 0;
+		}
+		return;
+	}
+
+	for (i = 0; i < R_BIG_ARRAY_SIZE - nwords; i++) {
+		a->array[i] = a->array[i + nwords];
+	}
+	for (; i < R_BIG_ARRAY_SIZE; i++) {
+		a->array[i] = 0;
+	}
+}
+
+static void _lshift_word(RNumBig *a, int nwords) {
+	R_RETURN_IF_FAIL (a && nwords >= 0);
+
+	int i;
+	/* Shift whole words */
+	for (i = (R_BIG_ARRAY_SIZE - 1); i >= nwords; i--) {
+		a->array[i] = a->array[i - nwords];
+	}
+	/* Zero pad shifted words. */
+	for (; i >= 0; i--) {
+		a->array[i] = 0;
+	}
+}
+
+static void _lshift_one_bit(RNumBig *a) {
+	R_RETURN_IF_FAIL (a);
+
+	int i;
+	for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
+		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - 1));
+	}
+	a->array[0] <<= 1;
+}
+
+static void _rshift_one_bit(RNumBig *a) {
+	R_RETURN_IF_FAIL (a);
+
+	int i;
+	for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
+		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - 1));
+	}
+	a->array[R_BIG_ARRAY_SIZE - 1] >>= 1;
+}
+
+static void _r_big_zero_out(RNumBig *a) {
+	R_RETURN_IF_FAIL (a);
+
+	size_t i;
+	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+		a->array[i] = 0;
+	}
+	a->sign = 1; /* hack to avoid -0 */
+}
+
+static R_BIG_DTYPE_TMP safe_abs(st64 n) {
+	if (n < 0) {
+		/* Avoid overflow for n == INT64_MIN */
+		return ((R_BIG_DTYPE_TMP)(-(n + 1))) + 1;
+	}
+	return (R_BIG_DTYPE_TMP)n;
+}
 
 R_API RNumBig *r_big_new(void) {
 	RNumBig *n = R_NEW (RNumBig);
-	if (n) {
-		_r_big_zero_out (n);
-	}
+	_r_big_zero_out (n);
 	return n;
 }
 
@@ -33,181 +97,171 @@ R_API void r_big_fini(RNumBig *b) {
 
 R_API void r_big_from_int(RNumBig *b, st64 n) {
 	R_RETURN_IF_FAIL (b);
-
 	_r_big_zero_out (b);
-	b->sign = (n < 0)? -1: 1;
-	R_BIG_DTYPE_TMP v = n * b->sign;
+	b->sign = (n < 0) ? -1 : 1;
+	R_BIG_DTYPE_TMP v = safe_abs (n);
 
-	/* Endianness issue if machine is not little-endian? */
-#ifdef R_BIG_WORD_SIZE
-#if (R_BIG_WORD_SIZE == 1)
-	b->array[0] = (v & 0x000000ff);
-	b->array[1] = (v & 0x0000ff00) >> 8;
-	b->array[2] = (v & 0x00ff0000) >> 16;
-	b->array[3] = (v & 0xff000000) >> 24;
-#elif (R_BIG_WORD_SIZE == 2)
-	b->array[0] = (v & 0x0000ffff);
-	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (R_BIG_WORD_SIZE == 4)
-	b->array[0] = v;
-	R_BIG_DTYPE_TMP num_32 = 32;
-	R_BIG_DTYPE_TMP tmp = v >> num_32;
-	b->array[1] = tmp;
-#endif
-#endif
+	int num_words = sizeof (v) / R_BIG_WORD_SIZE;
+	if (num_words > R_BIG_ARRAY_SIZE)
+		num_words = R_BIG_ARRAY_SIZE;
+	int i;
+	for (i = 0; i < num_words; i++) {
+		b->array[i] = (R_BIG_DTYPE)((v >> (i * R_BIG_WORD_SIZE * 8)) & R_BIG_MAX_VAL);
+	}
 }
 
 static void r_big_from_unsigned(RNumBig *b, ut64 v) {
 	R_RETURN_IF_FAIL (b);
-
 	_r_big_zero_out (b);
-
-	/* Endianness issue if machine is not little-endian? */
-#ifdef R_BIG_WORD_SIZE
-#if (R_BIG_WORD_SIZE == 1)
-	b->array[0] = (v & 0x000000ff);
-	b->array[1] = (v & 0x0000ff00) >> 8;
-	b->array[2] = (v & 0x00ff0000) >> 16;
-	b->array[3] = (v & 0xff000000) >> 24;
-#elif (R_BIG_WORD_SIZE == 2)
-	b->array[0] = (v & 0x0000ffff);
-	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (R_BIG_WORD_SIZE == 4)
-	b->array[0] = v;
-	R_BIG_DTYPE_TMP num_32 = 32;
-	R_BIG_DTYPE_TMP tmp = v >> num_32;
-	b->array[1] = tmp;
-#endif
-#endif
+	b->sign = 1;
+	int num_words = sizeof (v) / R_BIG_WORD_SIZE;
+	if (num_words > R_BIG_ARRAY_SIZE) {
+		num_words = R_BIG_ARRAY_SIZE;
+	}
+	int i;
+	for (i = 0; i < num_words; i++) {
+		b->array[i] = (R_BIG_DTYPE)((v >> (i * R_BIG_WORD_SIZE * 8)) & R_BIG_MAX_VAL);
+	}
 }
 
 R_API st64 r_big_to_int(RNumBig *b) {
-	R_RETURN_VAL_IF_FAIL (b, 0);
-
+	R_RETURN_VAL_IF_FAIL(b, 0);
 	R_BIG_DTYPE_TMP ret = 0;
-
-	/* Endianness issue if machine is not little-endian? */
-#if (R_BIG_WORD_SIZE == 1)
-	ret += b->array[0];
-	ret += b->array[1] << 8;
-	ret += b->array[2] << 16;
-	ret += b->array[3] << 24;
-#elif (R_BIG_WORD_SIZE == 2)
-	ret += b->array[0];
-	ret += b->array[1] << 16;
-#elif (R_BIG_WORD_SIZE == 4)
-	ret += b->array[1];
-	ret <<= 32;
-	ret += b->array[0];
-#endif
+	int num_words = sizeof(ret) / R_BIG_WORD_SIZE;
+	if (num_words > R_BIG_ARRAY_SIZE) {
+		num_words = R_BIG_ARRAY_SIZE;
+	}
+	int i;
+	for (i = 0; i < num_words; i++) {
+		ret |= ((R_BIG_DTYPE_TMP)b->array[i]) << (i * R_BIG_WORD_SIZE * 8);
+	}
 	if (b->sign < 0) {
 		return -(st64)ret;
 	}
-	return ret;
+	return (st64)ret;
 }
 
 R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
-	R_RETURN_IF_FAIL (n);
-	R_RETURN_IF_FAIL (str);
+	R_RETURN_IF_FAIL (n && str);
 	int nbytes = strlen (str);
-
 	_r_big_zero_out (n);
-
 	if (str[0] == '-') {
 		n->sign = -1;
-		str += 1;
-		nbytes -= 1;
+		str++;
+		nbytes--;
+	} else {
+		n->sign = 1;
 	}
-
-	if (str[0] == '0' && str[1] == 'x') {
+	if (nbytes >= 2 && str[0] == '0' && str[1] == 'x') {
 		str += 2;
 		nbytes -= 2;
 	}
 	R_RETURN_IF_FAIL (nbytes > 0);
 
-	R_BIG_DTYPE tmp;
-	int i = nbytes - (2 * R_BIG_WORD_SIZE); /* index into string */
-	int j = 0; /* index into array */
+	int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
+	int j = 0;
+	int i = nbytes - hex_digits_per_word;
+	char buffer[hex_digits_per_word + 1];
+	buffer[hex_digits_per_word] = '\0';
 
-	while (i >= 0) {
-		tmp = 0;
-		sscanf (&str[i], R_BIG_SSCANF_FORMAT_STR, &tmp);
+	while (i >= 0 && j < R_BIG_ARRAY_SIZE) {
+		strncpy (buffer, &str[i], hex_digits_per_word);
+		buffer[hex_digits_per_word] = '\0';
+		unsigned int tmp = 0;
+		sscanf (buffer, "%x", &tmp);
 		n->array[j] = tmp;
-		i -= (2 * R_BIG_WORD_SIZE); /* step R_BIG_WORD_SIZE hex-byte(s) back in the string. */
-		j += 1; /* step one element forward in the array. */
+		j++;
+		i -= hex_digits_per_word;
 	}
-
-	if (-2 * R_BIG_WORD_SIZE < i) {
-		char buffer[2 * R_BIG_WORD_SIZE];
-		memset (buffer, 0, sizeof (buffer));
-		i += 2 * R_BIG_WORD_SIZE - 1;
-		for (; i >= 0; i--) {
-			buffer[i] = str[i];
-		}
-		tmp = 0;
-		sscanf (buffer, R_BIG_SSCANF_FORMAT_STR, &tmp);
+	if (i > -hex_digits_per_word && j < R_BIG_ARRAY_SIZE && i < 0) {
+		int leftover = i + hex_digits_per_word;
+		memset(buffer, 0, sizeof(buffer));
+		/* Copy the leftover digits into the rightmost part of the buffer */
+		strncpy (buffer + (hex_digits_per_word - leftover), str, leftover);
+		buffer[hex_digits_per_word] = '\0';
+		unsigned int tmp = 0;
+		sscanf (buffer, "%x", &tmp);
 		n->array[j] = tmp;
 	}
 }
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
-
-	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
-	size_t i = 0; /* index into string representation. */
-	size_t k = 0; /* Leading zero's amount */
-	size_t z, last_z = 2 * R_BIG_WORD_SIZE;
-
-	for (; b->array[j] == 0 && j >= 0; j--) {
+	int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
+	int j = R_BIG_ARRAY_SIZE - 1;
+	while (j >= 0 && b->array[j] == 0) {
+		j--;
 	}
-	if (j == -1) {
-		return "0x0";
+	if (j < 0) {
+		return strdup ("0x0");
 	}
-
-	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
+	size_t size = 3 + (hex_digits_per_word * (j + 1)) + ((b->sign < 0) ? 1 : 0) + 1;
 	char *ret_str = calloc (size, sizeof (char));
 	if (!ret_str) {
 		return NULL;
 	}
-
+	size_t i = 0;
 	if (b->sign < 0) {
 		ret_str[i++] = '-';
 	}
 	ret_str[i++] = '0';
 	ret_str[i++] = 'x';
-
-	r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
-	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
-	}
-	for (z = k; ret_str[i + z] && z < last_z; z++) {
-		ret_str[i + z - k] = ret_str[i + z];
-	}
-	i += z - k;
-	ret_str[i] = '\x00'; // Truncate string for case(j < 0)
-
+	char temp[hex_digits_per_word + 1];
+	snprintf (temp, sizeof (temp), "%x", b->array[j]);
+	strcpy (ret_str + i, temp);
+	i += strlen (temp);
+	j--;
 	for (; j >= 0; j--) {
-		r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
-		i += 2 * R_BIG_WORD_SIZE;
+		snprintf (temp, sizeof (temp), "%0*x", hex_digits_per_word, b->array[j]);
+		strcpy (ret_str + i, temp);
+		i += strlen (temp);
 	}
-
 	return ret_str;
 }
 
-R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
-	R_RETURN_IF_FAIL (dst);
-	R_RETURN_IF_FAIL (src);
+static int r_big_mod2(RNumBig *b) {
+	R_RETURN_VAL_IF_FAIL(b, 0);
+	return b->array[0] & 1;
+}
 
+R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
+	R_RETURN_IF_FAIL(a && b && c && m);
+
+	RNumBig *bcopy = r_big_new ();
+	RNumBig *acopy = r_big_new ();
+	r_big_assign (bcopy, b);
+	r_big_assign (acopy, a);
+	r_big_mod (acopy, acopy, m);
+	r_big_from_int (c, 1);
+
+	while (!r_big_is_zero (bcopy)) {
+		if (r_big_mod2 (bcopy) == 1) {
+			r_big_mul (c, c, acopy);
+			r_big_mod (c, c, m);
+		}
+		_rshift_one_bit (bcopy);
+		r_big_mul (acopy, acopy, acopy);
+		r_big_mod (acopy, acopy, m);
+	}
+	r_big_free (bcopy);
+	r_big_free (acopy);
+}
+
+R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
+	R_RETURN_IF_FAIL (dst && src);
 	memcpy (dst, src, sizeof (RNumBig));
 }
 
 static void r_big_add_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
 	R_BIG_DTYPE_TMP tmp;
-	int carry = 0;
-	int i;
+	int i, carry = 0;
 	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
 		tmp = (R_BIG_DTYPE_TMP)a->array[i] + b->array[i] + carry;
-		carry = (tmp > R_BIG_MAX_VAL);
-		c->array[i] = (tmp & R_BIG_MAX_VAL);
+		carry = (tmp > R_BIG_MAX_VAL) ? 1 : 0;
+		c->array[i] = (R_BIG_DTYPE)(tmp & R_BIG_MAX_VAL);
+	}
+	if (carry) {
+		R_LOG_WARN ("Overflow occurred in r_big_add_inner");
 	}
 }
 
@@ -322,60 +376,55 @@ R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
 }
 
 R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
-	R_RETURN_IF_FAIL (a);
-	R_RETURN_IF_FAIL (b);
-	R_RETURN_IF_FAIL (c);
-	R_RETURN_IF_FAIL (!r_big_is_zero (b));
+	R_RETURN_IF_FAIL(a && b && c);
+	R_RETURN_IF_FAIL(!r_big_is_zero(b));
 
 	RNumBig *current = r_big_new ();
 	RNumBig *denom = r_big_new ();
-	;
 	RNumBig *tmp = r_big_new ();
 	int sign = a->sign * b->sign;
 
-	r_big_from_int (current, 1); // int current = 1;
-	r_big_assign (denom, b); // denom = b
+	/* Work with absolute value of a */
+	RNumBig *absA = r_big_new ();
+	r_big_assign (absA, a);
+	absA->sign = 1;
+
+	r_big_from_int (current, 1);
+	r_big_assign (denom, b);
 	denom->sign = 1;
-	r_big_assign (tmp, denom); // tmp = denom = b
-	_lshift_one_bit (tmp); // tmp <= 1
+	r_big_assign (tmp, denom);
+	_lshift_one_bit (tmp);
 
-	while (r_big_cmp (tmp, a) != 1) { // while (tmp <= a)
+	while (r_big_cmp (tmp, absA) != 1) {
 		if ((denom->array[R_BIG_ARRAY_SIZE - 1] >> (R_BIG_WORD_SIZE * 8 - 1)) == 1) {
-			break; // Reach the max value
+			break; // max value reached
 		}
-		_lshift_one_bit (tmp); // tmp <= 1
-		_lshift_one_bit (denom); // denom <= 1
-		_lshift_one_bit (current); // current <= 1
+		_lshift_one_bit (tmp);
+		_lshift_one_bit (denom);
+		_lshift_one_bit (current);
 	}
-
-	r_big_assign (tmp, a); // tmp = a
-	tmp->sign = 1;
-	_r_big_zero_out (c); // int answer = 0;
-
-	while (!r_big_is_zero (current)) // while (current != 0)
-	{
-		if (r_big_cmp (tmp, denom) != -1) //   if (dividend >= denom)
-		{
-			r_big_sub (tmp, tmp, denom); //     dividend -= denom;
-			r_big_or (c, current, c); //     answer |= current;
+	r_big_assign (tmp, absA);
+	_r_big_zero_out (c);
+	while (!r_big_is_zero (current)) {
+		if (r_big_cmp (tmp, denom) != -1) {
+			r_big_sub (tmp, tmp, denom);
+			r_big_or (c, current, c);
 		}
-		_rshift_one_bit (current); //   current >>= 1;
-		_rshift_one_bit (denom); //   denom >>= 1;
-	} // return answer;
-
+		_rshift_one_bit (current);
+		_rshift_one_bit (denom);
+	}
 	c->sign = sign;
 	if (r_big_is_zero (c)) {
-		c->sign = 1; // For -1 * 0 case
+		c->sign = 1;
 	}
 	r_big_free (current);
 	r_big_free (denom);
 	r_big_free (tmp);
+	r_big_free (absA);
 }
 
+// Take divmod and throw away div part
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
-	/*
-	Take divmod and throw away div part
-	*/
 	R_RETURN_IF_FAIL (a);
 	R_RETURN_IF_FAIL (b);
 	R_RETURN_IF_FAIL (c);
@@ -558,37 +607,8 @@ R_API void r_big_dec(RNumBig *a) {
 	r_big_free (tmp);
 }
 
-R_API void r_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
-	R_RETURN_IF_FAIL (a);
-	R_RETURN_IF_FAIL (b);
-	R_RETURN_IF_FAIL (c);
-	R_RETURN_IF_FAIL (m);
-
-	RNumBig *bcopy = r_big_new ();
-	RNumBig *acopy = r_big_new ();
-
-	r_big_assign (bcopy, b);
-	r_big_assign (acopy, a);
-	r_big_mod (acopy, acopy, m);
-	r_big_from_int (c, 1);
-
-	while (!r_big_is_zero (bcopy)) {
-		if (r_big_to_int (bcopy) % 2 == 1) {
-			r_big_mul (c, c, acopy);
-			r_big_mod (c, c, m);
-		}
-		_rshift_one_bit (bcopy);
-		r_big_mul (acopy, acopy, acopy);
-		r_big_mod (acopy, acopy, m);
-	}
-
-	r_big_free (bcopy);
-	r_big_free (acopy);
-}
-
 R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
-	R_RETURN_IF_FAIL (a);
-	R_RETURN_IF_FAIL (b);
+	R_RETURN_IF_FAIL (a && b);
 
 	RNumBig *tmp = r_big_new ();
 	RNumBig *low = r_big_new ();
@@ -620,71 +640,5 @@ R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
 	r_big_free (mid);
 }
 
-/* Private / Static functions. */
-static void _rshift_word(RNumBig *a, int nwords) {
-	/* Naive method: */
-	R_RETURN_IF_FAIL (a);
-	R_RETURN_IF_FAIL (nwords >= 0);
-
-	size_t i;
-	if (nwords >= R_BIG_ARRAY_SIZE) {
-		for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
-			a->array[i] = 0;
-		}
-		return;
-	}
-
-	for (i = 0; i < R_BIG_ARRAY_SIZE - nwords; i++) {
-		a->array[i] = a->array[i + nwords];
-	}
-	for (; i < R_BIG_ARRAY_SIZE; i++) {
-		a->array[i] = 0;
-	}
-}
-
-static void _lshift_word(RNumBig *a, int nwords) {
-	R_RETURN_IF_FAIL (a);
-	R_RETURN_IF_FAIL (nwords >= 0);
-
-	int i;
-	/* Shift whole words */
-	for (i = (R_BIG_ARRAY_SIZE - 1); i >= nwords; i--) {
-		a->array[i] = a->array[i - nwords];
-	}
-	/* Zero pad shifted words. */
-	for (; i >= 0; i--) {
-		a->array[i] = 0;
-	}
-}
-
-static void _lshift_one_bit(RNumBig *a) {
-	R_RETURN_IF_FAIL (a);
-
-	int i;
-	for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
-		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - 1));
-	}
-	a->array[0] <<= 1;
-}
-
-static void _rshift_one_bit(RNumBig *a) {
-	R_RETURN_IF_FAIL (a);
-
-	int i;
-	for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
-		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - 1));
-	}
-	a->array[R_BIG_ARRAY_SIZE - 1] >>= 1;
-}
-
-static void _r_big_zero_out(RNumBig *a) {
-	R_RETURN_IF_FAIL (a);
-
-	size_t i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
-		a->array[i] = 0;
-	}
-	a->sign = 1; /* hack to avoid -0 */
-}
 
 #endif
