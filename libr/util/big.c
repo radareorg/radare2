@@ -187,7 +187,7 @@ R_API void r_big_from_hexstr(RNumBig *n, const char *str) {
 
 R_API char *r_big_to_hexstr(RNumBig *b) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
-	int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
+	const int hex_digits_per_word = 2 * R_BIG_WORD_SIZE;
 	int j = R_BIG_ARRAY_SIZE - 1;
 	while (j >= 0 && b->array[j] == 0) {
 		j--;
@@ -206,7 +206,7 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	}
 	ret_str[i++] = '0';
 	ret_str[i++] = 'x';
-	char temp[hex_digits_per_word + 1];
+	char temp[(R_BIG_WORD_SIZE * 2) + 1];
 	snprintf (temp, sizeof (temp), "%x", b->array[j]);
 	strcpy (ret_str + i, temp);
 	i += strlen (temp);
