@@ -796,8 +796,8 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
  * TODO: handle ^C */
 
 static int step_until(RCore *core, ut64 addr) {
-	ut64 off = r_debug_reg_get (core->dbg, "PC");
-	if (!off) {
+	ut64 pc = r_debug_reg_get (core->dbg, "PC");
+	if (!pc) {
 		R_LOG_ERROR ("Cannot 'drn PC'");
 		return false;
 	}
@@ -805,6 +805,7 @@ static int step_until(RCore *core, ut64 addr) {
 		R_LOG_ERROR ("Cannot continue until address 0");
 		return false;
 	}
+	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
@@ -816,9 +817,16 @@ static int step_until(RCore *core, ut64 addr) {
 			break;
 		}
 		r_debug_step (core->dbg, 1);
-		off = r_debug_reg_get (core->dbg, "PC");
+		pc = r_debug_reg_get (core->dbg, "PC");
+		if (honorbps) {
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+			if (bpi) {
+				R_LOG_INFO ("Breakpoint hit");
+				break;
+			}
+		}
 		// check breakpoint here
-	} while (off != addr);
+	} while (pc != addr);
 	r_cons_break_pop ();
 	return true;
 }
@@ -862,6 +870,7 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 	R_RETURN_VAL_IF_FAIL (core && instr && core->dbg, false);
 	ut8 buf[32];
 	bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 
 	instr = r_str_trim_head_ro (instr);
 	r_cons_break_push (NULL, NULL);
@@ -879,14 +888,21 @@ static bool step_until_inst(RCore *core, const char *instr, bool regex) {
 		} else {
 			r_debug_step (core->dbg, 1);
 		}
-		pc = r_debug_reg_get (core->dbg, "PC");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
+		pc = r_debug_reg_get (core->dbg, "PC");
 		/* TODO: disassemble instruction and strstr */
 		r_asm_set_pc (core->rasm, pc);
+		if (honorbps) {
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+			if (bpi) {
+				R_LOG_INFO ("Breakpoint hit");
+				break;
+			}
+		}
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 		int ret = r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
-		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.mnemonic);
+		R_LOG_DEBUG ("0x%08"PFMT64x" %d %s", pc, ret, asmop.mnemonic);
 		if (ret > 0) {
 			const char *buf_asm = asmop.mnemonic;
 			if (regex) {
@@ -928,6 +944,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		goto end;
 	}
 
+	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	const bool debugMode = r_config_get_b (core->config, "cfg.debug");
 	optypes_list = r_str_split_list (optypes, " ", 0);
 
@@ -959,6 +976,13 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			pc = r_reg_getv (core->anal->reg, "PC");
 			if (pc == UT64_MAX) {
+				break;
+			}
+		}
+		if (honorbps) {
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+			if (bpi) {
+				R_LOG_INFO ("Breakpoint hit");
 				break;
 			}
 		}
@@ -994,6 +1018,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 	RListIter *iter;
 	RFlagItem *f;
 
+	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	instr = r_str_trim_head_ro (instr);
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
@@ -1003,6 +1028,13 @@ static bool step_until_flag(RCore *core, const char *instr) {
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
+		if (honorbps) {
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+			if (bpi) {
+				R_LOG_INFO ("Breakpoint hit");
+				break;
+			}
+		}
 		const RList *list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
 			if (R_STR_ISEMPTY (instr) || (f->realname && strstr (f->realname, instr))) {
@@ -4575,6 +4607,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 		R_LOG_ERROR ("Cannot continue until unknown address");
 		return false;
 	}
+	bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 	if (dcu_range) {
 		r_cons_break_push (NULL, NULL);
 		do {
@@ -4584,11 +4617,18 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			r_debug_step (core->dbg, 1);
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			pc = r_debug_reg_get (core->dbg, "PC");
-			eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
-					from, pc, to);
+			if (honorbps) {
+				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+				if (bpi) {
+					R_LOG_INFO ("Breakpoint hit");
+					break;
+				}
+			}
+			R_LOG_INFO ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x, from, pc, to);
 		} while (pc < from || pc > to);
 		r_cons_break_pop ();
 	} else {
+		bool honorbps = r_config_get_b (core->config, "dbg.bpforuntil");
 		ut64 addr = from;
 		if (!strcmp (core->dbg->btalgo, "trace") && core->dbg->arch
 		    && !strcmp (core->dbg->arch, "x86") && core->dbg->bits == 4) {
@@ -4607,6 +4647,13 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			while (true) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				pc = r_debug_reg_get (core->dbg, "PC");
+				if (honorbps) {
+					RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
+					if (bpi) {
+						R_LOG_INFO ("Breakpoint hit");
+						break;
+					}
+				}
 				if (prev_call) {
 					ut32 ret_addr;
 					RDebugFrame *frame = R_NEW0 (RDebugFrame);
@@ -4632,12 +4679,11 @@ static bool cmd_dcu(RCore *core, const char *input) {
 						eprintf ("%ld", level);
 						level--;
 					}
-					eprintf (" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n",
-							prev_pc, pc);
+					R_LOG_INFO (" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x, prev_pc, pc);
 					prev_ret = false;
 				}
 				if (steps % 500 == 0 || pc == addr) {
-					eprintf ("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
+					R_LOG_INFO ("At 0x%08" PFMT64x " after %lu steps", pc, steps);
 				}
 				if (r_cons_is_breaked () || r_debug_is_dead (core->dbg) || pc == addr) {
 					break;
@@ -4660,7 +4706,13 @@ static bool cmd_dcu(RCore *core, const char *input) {
 		if (bp) {
 			// theres a breakpoint already so no need to set
 		} else {
-			if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
+			bool works = false;
+			if (r_config_get_b (core->config, "dbg.hwbp")) {
+				works = r_bp_add_hw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
+			} else {
+				works = r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
+			}
+			if (works) {
 				bpset = true;
 				// ok go on!
 			} else {
