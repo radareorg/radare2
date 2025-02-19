@@ -1,4 +1,4 @@
-/* radare2 (from sdb) - MIT - Copyright 2012-2023 - pancake */
+/* radare2 (from sdb) - MIT - Copyright 2012-2025 - pancake */
 
 #include <r_util.h>
 
@@ -63,7 +63,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 				if (cur > pos) {
 					break;
 				}
-				if (indent < MAX_JSON_INDENT) {
+				if (indent > 0 && indent < MAX_JSON_INDENT) {
 					words[indent - 1] = str_a;
 					lengths[indent - 1] = s - str_a;
 					indexs[indent - 1] = 0;
@@ -107,7 +107,9 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			isarr = false;
 			// fallthrough
 		case '}':
-			indent--;
+			if (indent > 0) {
+				indent--;
+			}
 			break;
 		}
 	}
@@ -234,8 +236,11 @@ R_API char* r_print_json_human(const char* s) {
 			break;
 		case '}':
 		case ']':
-			indent--;
+			if (indent > 0) {
+				indent--;
+			}
 			doIndent (indent - 1, &o, tab);
+			*o++ = s0;
 			break;
 		default:
 			if (!instr) {
@@ -356,7 +361,9 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			EMIT_ESC (o, colors[JC_RESET]);
 			isValue = false;
 			*o++ = '\n';
-			indent--;
+			if (indent > 0) {
+				indent--;
+			}
 			doIndent (indent, &o, tab);
 			*o++ = *s;
 			break;
