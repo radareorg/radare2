@@ -322,7 +322,8 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 
 int __magic_file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
-		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
+		ms->c.len = level + 20;
+		size_t len = ms->c.len * sizeof (*ms->c.li);
 		ms->c.li = (!ms->c.li) ? malloc (len) :
 		    realloc (ms->c.li, len);
 		if (!ms->c.li) {
