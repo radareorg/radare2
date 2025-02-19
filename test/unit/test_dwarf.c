@@ -1409,11 +1409,11 @@ bool test_big_endian_dwarf2(void) {
 		// mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
 	}
 	printf ("}\n");
+#endif
 	int i = 0;
 	r_list_foreach (line_list, iter, row) {
 		mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
 	}
-#endif
 
 	r_list_free (line_list);
 	r_bin_free (bin);
