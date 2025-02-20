@@ -18,6 +18,7 @@ R_API R_NULLABLE RUStrpool* r_ustrpool_new(void) {
 		}
 	} else {
 		free (p->idxs);
+		free (p->str);
 		R_FREE (p);
 	}
 	return p;

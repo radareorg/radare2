@@ -141,18 +141,19 @@ static bool ishexchar(const char ch) {
 }
 
 R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool revert) {
-	char *p;
 	RIODesc *desc = NULL;
 	ut64 sub_addr = 0;
 	ut64 sub_size = 0;
 	ut64 add_addr = 0;
 	ut64 add_size = 0;
+	char *line = NULL;
+	char *p = patch;
 	while (true) {
 		char *nl = strchr (p, '\n');
 		if (!nl) {
 			break;
 		}
-		char *line = r_str_ndup (p, nl - p);
+		line = r_str_ndup (p, nl - p);
 		if (r_str_startswith (line, "--- ")) {
 			if (desc) {
 				r_io_desc_free (desc);
@@ -219,8 +220,8 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 			if (revert) {
 				R_LOG_ERROR ("TODO");
 			} else {
-				ut64 addr = revert? sub_addr: add_addr;
-				ut64 size = revert? sub_size: add_size;
+				ut64 addr = add_addr;
+				ut64 size = add_size;
 				if (r_str_startswith (line + 2, "LE ")) {
 					if (size == 4) {
 						ut8 buf[4] = {0};
@@ -253,8 +254,10 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 			R_LOG_INFO ("Ignored line %s", line);
 		}
 		free (line);
+		line = NULL;
 		p = nl + 1;
 	}
+	free (line);
 	return true;
 }
 
