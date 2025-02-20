@@ -2757,8 +2757,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				}
 			}
-			// R2_590 - r_hex_from_byte (ebytes, ch);
-			snprintf (ebytes, 3, "%02x", (ch & 0xff));
+			r_hex_from_byte (ebytes, ch & 0xff);
+			ebytes[2] = 0;
 			ebytes += strlen (ebytes);
 			if (hadflag) {
 				if (usecolor) {
