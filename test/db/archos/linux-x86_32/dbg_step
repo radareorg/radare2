@@ -1,0 +1,13 @@
+NAME=ds on jmp reg
+FILE=bins/elf/analysis/x86-jmpeax
+ARGS=-b 32 -a x86 -d
+CMDS=<<EOF
+dcu main
+5ds
+dr eip
+EOF
+EXPECT=<<EOF
+0x080483d0
+EOF
+RUN
+

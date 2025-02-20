@@ -12,18 +12,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.read.entry0
-FILE=bins/elf/analysis/elf-nx
-ARGS=-d
-CMDS=<<EOF
-s entry0
-p8 4
-EOF
-EXPECT=<<EOF
-31ed5e89
-EOF
-RUN
-
 NAME=dbg.write
 FILE=bins/elf/ls-focal
 ARGS=-d

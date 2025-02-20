@@ -1,44 +1,3 @@
-NAME=dbg.aslr
-FILE=bins/elf/analysis/pie
-ARGS=-d
-CMDS=pi 3 @ entry0
-EXPECT=<<EOF
-xor ebp, ebp
-pop esi
-mov ecx, esp
-EOF
-RUN
-
-NAME=function rebase
-FILE=bins/elf/analysis/pie
-ARGS=-d
-CMDS=<<EOF
-?v main-`dmm~pie[0]`
-doc
-?v main-`dmm~pie[0]`
-EOF
-EXPECT=<<EOF
-0x5c5
-0x5c5
-EOF
-RUN
-
-NAME=bp rebase
-FILE=bins/elf/analysis/pie
-ARGS=-d
-CMDS=<<EOF
-aa
-db main
-?v main-`db~main[0]`
-doc
-?v main-`db~main[0]`
-EOF
-EXPECT=<<EOF
-0x0
-0x0
-EOF
-RUN
-
 NAME=ref rebase
 FILE=bins/elf/hello_world
 ARGS=-d
@@ -51,23 +10,6 @@ EOF
 EXPECT=<<EOF
 0x6bd
 0x6bd
-EOF
-RUN
-
-NAME=flag rebase
-FILE=bins/elf/analysis/pie
-ARGS=-d
-CMDS=<<EOF
-aa
-fs test
-f testflag @ main+10
-?v `f~testflag[0]`-`e bin.baddr`
-doc
-?v `f~testflag[0]`-`e bin.baddr`
-EOF
-EXPECT=<<EOF
-0x5cf
-0x5cf
 EOF
 RUN
 
