@@ -5,28 +5,26 @@
 static const char abc[] = "0123456789abcdef";
 
 static int hex_digit_value(char c) {
-	if (c >= '0' && c <= '9') {
+	if (isdigit (c)) {
 		return c - '0';
 	}
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-	if (c >= 'A' && c <= 'F') {
-		return c - 'A' + 10;
+	const char lc = tolower (c);
+	if (lc >= 'a' && lc <= 'f') {
+		return lc - 'a' + 10;
 	}
 	return -1;
 }
 
-/* int c; ret = hex_to_byte(&c, 'c'); */
+// XXX this function returns true when there's an error wtf
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
 	R_RETURN_VAL_IF_FAIL (val, false);
 	int v = hex_digit_value (c);
 	if (v != -1) {
-		*val = v + (*val * 16);
-		*val += v;
-		return true;
+		*val <<= 4;
+		*val |= v & 0xf;
+		return false;
 	}
-	return false;
+	return true;
 }
 
 // takes 'c' byte and fills 2 bytes in the val string
