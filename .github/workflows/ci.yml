@@ -57,6 +57,9 @@ jobs:
       run:
         time r2 -a gb -e search.verbose=false -qc/m test/bins/mach0/ls-m1 > /tmp/m.1 2>&1 || true
         cat /tmp/m.1
+    - name: Running rahash2 tests
+      run:
+        r2r test/db/tools/rahash2
     - name: Uninstall test
       run: |
         sudo make uninstall
