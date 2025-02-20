@@ -1,0 +1,76 @@
+NAME=ood after open in debug mode
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+ood > $_
+dc
+ood > $_
+dc
+EOF
+EXPECT=<<EOF
+Hello world!
+Hello world!
+EOF
+RUN
+
+NAME=oo ; dc
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+oo
+dc
+EOF
+EXPECT=<<EOF
+Hello world!
+EOF
+RUN
+
+NAME=ood & om
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+om
+?e ---
+ood > /dev/null
+om
+EOF
+EXPECT=<<EOF
+* 1 fd: 3 +0x00000000 0x00000000 - 0xfffffffffffffffe rwx
+---
+* 1 fd: 4 +0x00000000 0x00000000 - 0xfffffffffffffffe rwx
+EOF
+RUN
+
+NAME=breakpoints after double doo
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS=<<EOF
+db main
+db main+3
+doo > $_
+dc # should hit the first breakpoint
+.dr*
+?v eip-main
+doo > $_
+dc # should hit the first breakpoint
+.dr*
+?v eip-main
+dc # should hit the the second breakpoint
+.dr*
+?v eip-main
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x3
+Hello world!
+EOF
+RUN
+
+NAME=ood check for ptrace errors
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ood
+EOF
+REGEXP_ERR=reopened
+RUN
