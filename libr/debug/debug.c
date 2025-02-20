@@ -547,7 +547,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	r_reg_arena_push (dbg->reg);
 	ut64 reg_pc = r_reg_getv (dbg->reg, "PC");
 	ut64 reg_sp = r_reg_getv (dbg->reg, "SP");
-	if (reg_pc == UT64_MAX || reg_sp == UT64_MAX) {
+	if (reg_pc == UT64_MAX || reg_sp == UT64_MAX || !reg_pc || !reg_sp) {
 		R_LOG_ERROR ("Invalid pc/sp values");
 		return false;
 	}
@@ -563,9 +563,14 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		/* Store bytes at stack */
 		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, sizeof (stack_backup));
 	}
+	bool usebp = false;
 
-	ut64 bp_addr = reg_pc + len;
-	r_bp_add_sw (dbg->bp, bp_addr, dbg->bpsize, R_BP_PROT_EXEC);
+
+	ut64 bp_addr = UT64_MAX;
+	if (usebp) {
+		bp_addr = reg_pc + len;
+		r_bp_add_sw (dbg->bp, bp_addr, dbg->bpsize, R_BP_PROT_EXEC);
+	}
 
 	// ut64 v = r_reg_setv (dbg->reg, "PC", reg_pc);
 	dbg->iob.write_at (dbg->iob.io, reg_pc, buf, len);
@@ -575,19 +580,26 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		}
 		*ret = r_reg_getv (dbg->reg, "PC");
 	}
+#if 1
+	r_debug_step (dbg, 1);
+#else
 	r_debug_continue (dbg);
+#endif
 	if (dbg->coreb.core) {
 		ut64 v = r_reg_getv (dbg->reg, "rax");
 		dbg->coreb.cmdf (dbg->coreb.core, "'f dx.value=0x%08"PFMT64x, v);
 		R_LOG_INFO ("'f dx.value = 0x%08"PFMT64x, v);
 	}
 
-	/* Restore bytes at PC and remove the breakpoint reference */
-	r_bp_del (dbg->bp, bp_addr);
+	if (usebp) {
+		/* Restore bytes at PC and remove the breakpoint reference */
+		r_bp_del (dbg->bp, bp_addr);
+	}
 
 	/* Propagate return value */
-	if (!ignore_stack) {
+	if (!ignore_stack && reg_sp) {
 		/* Restore stack */
+		// eprintf ("WRITE STEACK 0x%llx\n", reg_sp);
 		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
 	}
 	if (ret) {
@@ -596,6 +608,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		}
 		*ret = r_reg_getv (dbg->reg, "PC");
 	}
+	// eprintf ("WRITE CODE 0x%llx\n", reg_pc);
 	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
 	if (restore) {
 		r_reg_arena_pop (dbg->reg);
