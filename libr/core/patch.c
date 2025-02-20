@@ -147,9 +147,9 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 	ut64 add_addr = 0;
 	ut64 add_size = 0;
 	char *line = NULL;
-	char *p = patch;
+	const char *p = patch;
 	while (true) {
-		char *nl = strchr (p, '\n');
+		const char *nl = strchr (p, '\n');
 		if (!nl) {
 			break;
 		}

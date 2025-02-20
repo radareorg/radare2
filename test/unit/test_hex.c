@@ -156,6 +156,7 @@ bool test_r_hex_no_code(void) {
 bool test_str2bin_alloc (void) {
 	R_ALIGNED(8) ut8 *buf = NULL;
 	int len;
+
 	// bad strings
 	len = r_hex_str2bin_until_new ("4", &buf);
 	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 1");
@@ -177,9 +178,6 @@ bool test_str2bin_alloc (void) {
 	R_ALIGNED(8) ut8 buf2[8];
 	len = r_hex_str2bin_until_new ("44", (ut8 **)&buf2);
 	mu_assert_eq (len, 1, "r_hex_str2bin_until_new accepted non-null **");
-
-	len = r_hex_str2bin_until_new ("4142", NULL);
-	mu_assert_eq (len, -1, "r_hex_str2bin_until_new NULL *");
 
 	// valid input
 	buf = NULL;

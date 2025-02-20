@@ -1,30 +1,41 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_util.h>
 
-/* int c; ret = hex_to_byte(&c, 'c'); */
-R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
+static const char abc[] = "0123456789abcdef";
+
+static int hex_digit_value(char c) {
 	if (isdigit (c)) {
-		*val = (ut8)(*val) * 16 + (c - '0');
-	} else if (c >= 'A' && c <= 'F') {
-		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
-	} else if (c >= 'a' && c <= 'f') {
-		*val = (ut8)(*val) * 16 + (c - 'a' + 10);
-	} else {
-		return true;
+		return c - '0';
 	}
-	return false;
+	const char lc = tolower (c);
+	if (lc >= 'a' && lc <= 'f') {
+		return lc - 'a' + 10;
+	}
+	return -1;
+}
+
+// XXX this function returns true when there's an error wtf
+R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
+	R_RETURN_VAL_IF_FAIL (val, false);
+	int v = hex_digit_value (c);
+	if (v != -1) {
+		*val <<= 4;
+		*val |= v & 0xf;
+		return false;
+	}
+	return true;
 }
 
 // takes 'c' byte and fills 2 bytes in the val string
 R_API void r_hex_from_byte(char *val, ut8 c) {
-	const char abc[] = "0123456789abcdef";
 	val[0] = abc[(c >> 4) & 0xf];
 	val[1] = abc[c & 0xf];
+	// val[2] = 0
 }
 
 R_API char *r_hex_from_py_str(char *out, const char *code) {
-	if (!strncmp (code, "'''", 3)) {
+	if (r_str_startswith (code, "'''")) {
 		const char *s = code + 2;
 		return r_hex_from_c_str (out, &s);
 	}
@@ -43,7 +54,7 @@ static const char *skip_comment_py(const char *code) {
 }
 
 R_API char *r_hex_from_py_array(char *out, const char *code) {
-	const char abc[] = "0123456789abcdef";
+	R_RETURN_VAL_IF_FAIL (out && code, NULL);
 	if (*code != '[' || !strchr (code, ']')) {
 		return NULL;
 	}
@@ -77,9 +88,7 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 }
 
 R_API char* r_hex_from_py(const char *code) {
-	if (!code) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	char * const ret = malloc (strlen (code) * 3);
 	if (!ret) {
 		return NULL;
@@ -108,7 +117,7 @@ R_API char* r_hex_from_py(const char *code) {
 }
 
 R_API char *r_hex_from_c_str(char *out, const char **code) {
-	const char abc[] = "0123456789abcdefABCDEF";
+	R_RETURN_VAL_IF_FAIL (out && code, NULL);
 	const char *iter = *code;
 	if (*iter != '\'' && *iter != '"') {
 		return NULL;
@@ -153,15 +162,15 @@ R_API char *r_hex_from_c_str(char *out, const char **code) {
 	return out;
 }
 
-const char *skip_comment_c(const char *code) {
-	if (!strncmp (code, "/*", 2)) {
+static const char *skip_comment_c(const char *code) {
+	if (r_str_startswith (code, "/*")) {
 		char *end = strstr (code, "*/");
 		if (end) {
 			code = end + 2;
 		} else {
 			R_LOG_ERROR ("Missing closing comment");
 		}
-	} else if (!strncmp (code, "//", 2)) {
+	} else if (r_str_startswith (code, "//")) {
 		char *end = strchr (code, '\n');
 		if (end) {
 			code = end + 2;
@@ -171,7 +180,7 @@ const char *skip_comment_c(const char *code) {
 }
 
 R_API char *r_hex_from_c_array(char *out, const char *code) {
-	const char abc[] = "0123456789abcdef";
+	R_RETURN_VAL_IF_FAIL (out && code, NULL);
 	if (*code != '{' || !strchr (code, '}')) {
 		return NULL;
 	}
@@ -208,9 +217,7 @@ R_API char *r_hex_from_c_array(char *out, const char *code) {
  *    4123421b
  */
 R_API char *r_hex_from_c(const char *code) {
-	if (!code) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	char * const ret = malloc (strlen (code) * 3);
 	if (!ret) {
 		return NULL;
@@ -247,8 +254,8 @@ R_API char *r_hex_from_c(const char *code) {
 	return ret;
 }
 
-
 R_API char *r_hex_from_js(const char *code) {
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	char *s1 = strchr (code, '\'');
 	char *s2 = strchr (code, '"');
 
@@ -301,9 +308,7 @@ R_API char *r_hex_from_js(const char *code) {
  * 4123421b4123421b
  */
 R_API char *r_hex_no_code(const char *code) {
-	if (!code) {
-		return NULL;
-	}
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	char * const ret = calloc (1, strlen (code) * 3);
 	if (!ret) {
 		return NULL;
@@ -326,6 +331,7 @@ R_API char *r_hex_no_code(const char *code) {
 }
 
 R_API char *r_hex_from_code(const char *code) {
+	R_RETURN_VAL_IF_FAIL (code, NULL);
 	if (!strchr (code, '=')) {
 		return r_hex_no_code (code);
 	}
@@ -344,6 +350,7 @@ R_API char *r_hex_from_code(const char *code) {
 /* int byte = r_hex_pair2bin("A0"); */
 // (0A) => 10 || -1 (on error)
 R_API int r_hex_pair2bin(const char *arg) {
+	R_RETURN_VAL_IF_FAIL (arg, 0);
 	ut8 *ptr, c = 0, d = 0;
 	ut32 j = 0;
 
@@ -365,9 +372,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 }
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
-	if (!in || len < 1) {
-		return 0;
-	}
+	R_RETURN_VAL_IF_FAIL (in && len > 0, 0);
 	int i, idx;
 	char tmp[8];
 	for (idx = i = 0; i < len; i++, idx += 2)  {
@@ -379,9 +384,7 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 }
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
-	if (!in || len < 1) {
-		return strdup ("");
-	}
+	R_RETURN_VAL_IF_FAIL (in && len > 0, NULL);
 	int i, idx;
 
 	if ((len + 1) * 2 < len) {
@@ -450,10 +453,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 // get the hex chars from start of string, until first non-hex char, as a heap
 // allocated ut8* buffer
 R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
-	// R_RETURN_VAL_IF_FAIL (in && out, -1);
-	if (!in || !out) {
-		return -1;
-	}
+	R_RETURN_VAL_IF_FAIL (in && out, -1);
 	size_t len = strlen (in);
 	if (len <= 1) {
 		return 0;
@@ -487,6 +487,7 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 }
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
+	R_RETURN_VAL_IF_FAIL (in && out && mask, -1);
 	ut8 *ptr;
 	int ilen = strlen (in) + 1;
 	memcpy (out, in, ilen);
@@ -546,9 +547,9 @@ R_API st64 r_hex_bin_truncate(ut64 in, int n) {
 
 // Check if str contains only hexadecimal characters and return length of bytes
 R_API int r_hex_str_is_valid(const char* str) {
-	int i;
-	int len = 0;
-	if (!strncmp (str, "0x", 2)) {
+	R_RETURN_VAL_IF_FAIL (str, -1);
+	int i, len = 0;
+	if (r_str_startswith (str, "0x")) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0'; i++) {
