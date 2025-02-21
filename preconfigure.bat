@@ -83,8 +83,8 @@ IF "%~1"=="" (
     ) ELSE IF "!CHOICE!"=="4" (
         SET "TARGET_ARCH=arm64"
     ) ELSE (
-        ECHO Invalid choice. Defaulting to arm64.
-        SET "TARGET_ARCH=arm64"
+        ECHO Invalid choice. Defaulting to amd64.
+        SET "TARGET_ARCH=amd64"
     )
 
     REM Check if target and host are the same and set VSARCH accordingly
