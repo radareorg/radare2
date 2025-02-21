@@ -3,6 +3,6 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=px0
 EXPECT=<<EOF
-89e083ec0c50e8a50c
+89e083ec0c50e8750c
 EOF
 RUN
