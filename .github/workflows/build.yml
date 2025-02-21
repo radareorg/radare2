@@ -43,14 +43,6 @@ jobs:
           cp -f dist/plugins-cfg/plugins.cs6.cfg plugins.cfg
           ./configure-plugins
           sys/install.sh --with-capstone-next
-  linux-ssl-crypto:
-    runs-on: ubuntu-24.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Installing with ssl crypto
-      run: |
-          sys/install.sh --with-ssl-crypto
   # Source Tarballs
   tarball:
     runs-on: ubuntu-20.04
