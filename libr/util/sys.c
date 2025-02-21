@@ -1036,6 +1036,9 @@ R_API const char *r_sys_arch_str(int arch) {
 
 #define USE_FORK 0
 R_API int r_sys_run(const ut8 *buf, int len) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return -1;
+	}
 	const int sz = 4096;
 	int pdelta, ret, (*cb)();
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
@@ -1081,6 +1084,9 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 
 // TODO. maybe this should be moved into socket/run?
 R_API int r_sys_run_rop(const ut8 *buf, int len) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return -1;
+	}
 #if USE_FORK
 	int st;
 #endif
