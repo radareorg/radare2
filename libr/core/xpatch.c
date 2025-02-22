@@ -155,7 +155,7 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 				if (!data) {
 					R_LOG_ERROR ("Cannot allocate %d bytes", size);
 					break;
-				} 
+				}
 				// TODO: check error
 				r_io_read_at (core->io, addr, data, size);
 				if (r_str_startswith (line + 2, "LE ")) {
