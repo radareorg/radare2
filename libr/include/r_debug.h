@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #ifndef R2_DEBUG_H
 #define R2_DEBUG_H
@@ -329,10 +329,10 @@ typedef struct r_debug_plugin_t {
 	RList *(*map_get)(RDebug *dbg);
 	RList *(*modules_get)(RDebug *dbg);
 	RDebugMap* (*map_alloc)(RDebug *dbg, ut64 addr, int size, bool thp);
-	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
-	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
+	bool (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
+	bool (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
 	bool (*init_debugger)(RDebug *dbg);
-	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
+	bool (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RDebugDescPlugin desc;
 	RDebugCmdCb cmd;
 	// TODO: use RVec here
@@ -476,10 +476,10 @@ R_API int r_debug_cmd(RDebug *dbg, const char *s);
 /* continuations */
 R_API int r_debug_step(RDebug *dbg, int steps);
 R_API int r_debug_step_over(RDebug *dbg, int steps);
-R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
-R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr);
+R_API bool r_debug_continue_until(RDebug *dbg, ut64 addr);
+R_API bool r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr);
 R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over);
-R_API int r_debug_continue_until_nontraced(RDebug *dbg);
+R_API bool r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
 R_API int r_debug_continue(RDebug *dbg);
@@ -533,7 +533,7 @@ R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *str);
 /* memory */
 R_API RList *r_debug_modules_list(RDebug*);
 R_API RDebugMap *r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp);
-R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
+R_API bool r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
 R_API RList *r_debug_map_list_new(void);
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
 R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user);
@@ -568,7 +568,7 @@ R_API bool r_debug_stop(RDebug *dbg);
 R_API RList *r_debug_frames(RDebug *dbg, ut64 at);
 
 R_API bool r_debug_is_dead(RDebug *dbg);
-R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
+R_API bool r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 /* args XXX: weird food */
 R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num);
 R_API bool r_debug_arg_set(RDebug *dbg, const char *cc, int num, ut64 value);
@@ -599,7 +599,7 @@ R_API int r_debug_child_clone(RDebug *dbg);
 R_API void r_debug_drx_list(RDebug *dbg);
 R_API bool r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
 R_API int r_debug_drx_get(RDebug *dbg, ut64 addr);
-R_API int r_debug_drx_unset(RDebug *dbg, int idx);
+R_API bool r_debug_drx_unset(RDebug *dbg, int idx);
 
 /* esil */
 R_API bool r_debug_esil_stepi(RDebug *dbg);
