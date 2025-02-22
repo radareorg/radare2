@@ -1,4 +1,4 @@
-DEPS=sdb v35armv7 v35arm64 qjs
+DEPS=sdb v35armv7 v35arm64 qjs binaryninja
 ifeq ($(USE_CS4),1)
   DEPS += capstone-v4
 else ifeq ($(USE_CSNEXT),1)
