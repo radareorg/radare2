@@ -81,6 +81,7 @@ subprojects/capstone-next
 subprojects/v35arm64
 subprojects/v35armv7
 subprojects/qjs
+subprojects/binaryninja
 shlr/.cs_tmp.zip
 sys/travis/*.txt
 sys/.mark_python-deps
