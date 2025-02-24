@@ -941,7 +941,7 @@ err_linux_map_alloc:
 	return map;
 }
 
-static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
+static bool linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	char code[1024];
 	ut64 ret = 0;
@@ -979,7 +979,7 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
-	return (int)ret;
+	return ret == 0;
 }
 #endif
 
@@ -998,7 +998,7 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size, boo
 #endif
 }
 
-static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
+static bool r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 #if __APPLE__
 	return xnu_map_dealloc (dbg, addr, size);
 #elif R2__WINDOWS__
@@ -1325,7 +1325,7 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 }
 #endif
 
-static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
+static bool r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
 	int retval = false;
 #if NUM_DRX_REGISTERS > 0
@@ -1581,7 +1581,7 @@ static RList *r_debug_desc_native_list(int pid) {
 #endif
 }
 
-static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
+static bool r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 #if R2__WINDOWS__
 	return w32_map_protect (dbg, addr, size, perms);
 #elif __APPLE__
@@ -1589,9 +1589,7 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 #elif __linux__
 	RBuffer *buf = NULL;
 	char code[1024];
-	int num;
-
-	num = r_syscall_get_num (dbg->anal->syscall, "mprotect");
+	const int num = r_syscall_get_num (dbg->anal->syscall, "mprotect");
 	snprintf (code, sizeof (code),
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
@@ -1620,12 +1618,8 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}
-
-	return false;
-#else
-	// mprotect not implemented for this platform
-	return false;
 #endif
+	return false;
 }
 
 static int r_debug_desc_native_open(const char *path) {

@@ -500,7 +500,6 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		free (argstr);
 		free (struct_tag);
 		free (alias_str);
-		r_strbuf_free (args_sb);
 		return true;
 	} else if (next && r_str_startswith (next, "union")) {
 		/* Similar to the struct case, you would parse:

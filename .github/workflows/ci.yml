@@ -356,7 +356,7 @@ jobs:
     - name: Build with meson + ninja
       shell: cmd
       run: |
-        call preconfigure
+        call preconfigure amd64
         call configure release
         call make
     - name: Test executable

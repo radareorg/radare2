@@ -302,30 +302,30 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, in
 	}
 }
 
-R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
+R_API R_NONNULL RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
 		R_LOG_ERROR ("r_debug_map_new: invalid (0x%" PFMT64x " > 0x%" PFMT64x ")", addr, addr_end);
 		return NULL;
 	}
 	RDebugMap *map = R_NEW0 (RDebugMap);
-	if (map) {
-		map->name = strdup (name);
-		map->addr = addr;
-		map->addr_end = addr_end;
-		map->size = addr_end-addr;
-		map->perm = perm;
-		map->user = user;
-	}
+	map->name = strdup (name);
+	map->addr = addr;
+	map->addr_end = addr_end;
+	map->size = addr_end-addr;
+	map->perm = perm;
+	map->user = user;
 	return map;
 }
 
 R_API RList *r_debug_modules_list(RDebug *dbg) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
 	return (ds && ds->modules_get)?  ds->modules_get (dbg): NULL;
 }
 
 R_API bool r_debug_map_sync(RDebug *dbg) {
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	bool ret = false;
 	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
 	if (ds && ds->map_get) {
@@ -340,6 +340,7 @@ R_API bool r_debug_map_sync(RDebug *dbg) {
 }
 
 R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
 	if (ds && ds->map_alloc) {
 		return ds->map_alloc (dbg, addr, size, thp);
@@ -347,7 +348,8 @@ R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	return NULL;
 }
 
-R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
+R_API bool r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
+	R_RETURN_VAL_IF_FAIL (dbg && map, false);
 	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
 	bool ret = false;
 	ut64 addr = map->addr;
@@ -356,7 +358,7 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 			ret = true;
 		}
 	}
-	return (int)ret;
+	return ret;
 }
 
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {

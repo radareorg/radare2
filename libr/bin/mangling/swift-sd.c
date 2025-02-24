@@ -149,15 +149,12 @@ static char *swift_demangle_cmd(const char *s) {
 			if (!swift_demangle) {
 				char *xcrun = r_file_path ("xcrun");
 				if (xcrun) {
-					free (swift_demangle);
 					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
 					have_swift_demangle = 1;
 					free (xcrun);
 				} else {
-					free (swift_demangle);
 					char *found = r_file_path ("swift");
 					if (found) {
-						free (swift_demangle);
 						swift_demangle = r_str_newf ("%s demangle", found);
 						free (found);
 					}

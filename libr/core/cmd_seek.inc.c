@@ -171,11 +171,12 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-	free (core->print->lines_cache);
-	core->print->lines_cache = R_NEWS0 (ut64, bsz);
-	if (!core->print->lines_cache) {
+	ut64 *lines_cache = R_NEWS0 (ut64, bsz);
+	if (!lines_cache) {
 		return -1;
 	}
+	free (core->print->lines_cache);
+	core->print->lines_cache = lines_cache;
 
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 
