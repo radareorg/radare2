@@ -1,13 +1,10 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
-
-// 128M
-#define MAX_SCAN_SIZE 0x7ffffff
 
 HEAPTYPE (ut64);
 
@@ -5829,8 +5826,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	if (iend < 0) {
 		return;
 	}
-	if (iend > MAX_SCAN_SIZE) {
-		R_LOG_WARN ("Not going to analyze 0x%08"PFMT64x" bytes", (ut64)iend);
+	if (iend > r_config_get_i (core->config, "emu.maxsize")) {
+		char *s = r_num_units (NULL, 0, iend);
+		R_LOG_WARN ("Not going to analyze %s bytes. See 'e emu.maxsize'", s);
+		free (s);
 		return;
 	}
 	buf = calloc ((size_t)iend + 2, 1);
