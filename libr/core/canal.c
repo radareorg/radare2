@@ -5993,7 +5993,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, buf_size - buf_i, opflags)) {
 			i += minopsize - 1;
 			r_anal_op_fini (&op);
-			eprintf ("ERR 0x%x\n", op.addr);
 			goto repeat;
 		}
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK || op.type == R_ANAL_OP_TYPE_NULL) {
