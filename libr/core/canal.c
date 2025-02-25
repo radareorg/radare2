@@ -5645,7 +5645,7 @@ static int find_bb(ut64 *addr, RAnalBlock *bb) {
 	return *addr != bb->addr;
 }
 
-static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
+static bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	(*next_i)++;
 	ut64 cur_addr = *next_i + ctx->start_addr;
 	if (ctx->fcn) {
@@ -5733,6 +5733,29 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	return true;
 }
 
+static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 end, size_t i, ut64 *buf_addr, size_t buf_i) {
+	const size_t maxopsize = 64; // just in case
+	size_t maxsize = R_MIN (buf_size, end - i + maxopsize);
+	if (buf_i + 128 >= maxsize || i == 0) {
+		if (r_config_get_b (core->config, "scr.interactive")) { // or maybe scr.demo?
+			const int pc = i * 100 / (end - start);
+			eprintf (" > aae: %d%%\r", pc);
+		}
+		const ut64 newaddr = start + i;
+		r_io_read_at (core->io, newaddr, buf, maxsize);
+		*buf_addr = newaddr;
+		return 0;
+	}
+	ut64 new_buf_i = start + i - *buf_addr;
+	if (new_buf_i > buf_size) {
+		const ut64 newaddr = start + i;
+		eprintf ("FUCKING\n");
+		r_io_read_at (core->io, newaddr, buf, maxsize);
+		new_buf_i = 0;
+	}
+	return new_buf_i;
+}
+
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
@@ -5740,19 +5763,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	REsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
-	char *pcname = NULL;
 	RAnalOp op = {0};
-	ut8 *buf = NULL;
 	bool end_address_set = false;
 	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
-	ut64 addr = core->offset;
+	// ut64 addr = core->offset;
 	ut64 start = core->offset;
 	ut64 end = 0LL;
-	ut64 cur;
 	core->esil_anal_stop = false;
-	// R_LOG_INFO ("start is %llx", addr);
 
 	if (!strcmp (str, "?")) {
 		R_LOG_INFO ("should never happen");
@@ -5772,8 +5791,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			if (ntarget && ntarget != UT64_MAX) {
 				refptr = ntarget;
 			} else {
-				refptr = addr;
-				ntarget = addr;
+				refptr = start;
+				ntarget = start;
 			}
 		} else {
 			ntarget = UT64_MAX;
@@ -5788,13 +5807,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 	if (!end_address_set || !end) {
 		if (R_STR_ISNOTEMPTY (str)) { // str[0] == ' ') {
-			end = addr + r_num_math (core->num, str);
+			end = start + r_num_math (core->num, str);
 		} else {
 			RIOMap *map = r_io_map_get_at (core->io, start);
 			if (map) {
 				end = r_io_map_end (map);
 			} else {
-				end = addr + core->blocksize;
+				end = start + core->blocksize;
 			}
 		}
 	}
@@ -5804,7 +5823,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (fcn) {
 			start = r_anal_function_min_addr (fcn);
 			if (start != UT64_MAX) {
-				addr = fcn->addr;
+				start = fcn->addr;
 				end = r_anal_function_max_addr (fcn);
 				end_address_set = true;
 			}
@@ -5817,7 +5836,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	R_LOG_INFO ("-%llx -> %llx", start, end);
 	R_LOG_INFO ("+%llx -> %llx", core->offset, end);
 #endif
-
 	if (end < start) {
 		R_LOG_DEBUG ("end < start");
 		return;
@@ -5832,13 +5850,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		free (s);
 		return;
 	}
-	buf = calloc ((size_t)iend + 2, 1);
-	if (!buf) {
-		r_sys_perror ("malloc");
-		return;
-	}
+	ut8 *buf = NULL;
 	esilbreak_last_read = UT64_MAX;
-	r_io_read_at (core->io, start, buf, iend + 1);
 	// maybe r_core_cmd_call (core, "aeim");
 	const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
 	if (R_STR_ISEMPTY (kspname)) {
@@ -5865,12 +5878,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
-	const char *kpcname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
-	if (R_STR_ISEMPTY (kpcname)) {
-		R_LOG_ERROR ("Cannot find program counter register in the current profile");
-		return;
-	}
-	pcname = strdup (kpcname);
 	core->esil_anal_stop = false;
 	r_cons_break_push (cccb, core);
 
@@ -5904,15 +5911,23 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	} else {
 		R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
 	}
-
 	IterCtx ictx = { start, end, fcn, NULL };
-	size_t i = addr - start;
+	size_t i = 0; // addr - start;
 	size_t i_old = 0;
+	size_t buf_size = 128 * 1024; // 512KB
+	ut64 buf_addr = start;
+	buf = malloc (buf_size);
+	size_t buf_i = 0;
 	do {
 		if (core->esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
-		cur = start + i;
+		buf_i = pulldata (core,
+				buf, buf_size,
+				start, end, i,
+				&buf_addr, buf_i);
+		// rename cur to opaddr?
+		ut64 cur = start + i;
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
 		}
@@ -5952,7 +5967,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			r_pvector_free (list);
 		}
 #endif
-
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
 		int opalign = core->anal->config->codealign;
@@ -5971,9 +5985,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			opflags |= R_ARCH_OP_MASK_DISASM;
 		}
 		opflags |= R_ARCH_OP_MASK_DISASM;
-		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
+		if (buf_i > buf_size) {
+			R_LOG_WARN ("Invalid buffer index (%d) - %d / %d", i, buf_size, buf_i);
+			break;
+		}
+		// eprintf ("%llx %02x %02x\n", cur, buf[buf_i], buf[buf_i+1]);
+		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, buf_size - buf_i, opflags)) {
 			i += minopsize - 1;
 			r_anal_op_fini (&op);
+			eprintf ("ERR 0x%x\n", op.addr);
 			goto repeat;
 		}
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK || op.type == R_ANAL_OP_TYPE_NULL) {
@@ -5984,8 +6004,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				goto repeat;
 			}
 		}
-		//we need to check again i because buf+i may goes beyond its boundaries
-		//because of i += minopsize - 1
+		// we need to check again i because buf+i may goes beyond its boundaries
+		// because of i += minopsize - 1
 		if (op.size < 1) {
 			i += minopsize - 1;
 			goto repeat;
@@ -6051,7 +6071,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		r_esil_set_pc (ESIL, cur);
 		// R2_590 - if roregs is set we dont need to set that value everytime
-		r_reg_setv (core->anal->reg, pcname, cur + op.size);
+		r_reg_setv (core->anal->reg, "PC", cur + op.size);
 		if (gp_fixed && gp_reg) {
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
@@ -6245,7 +6265,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			{
 				ut64 dst = core->anal->esil->jump_target;
 				if (dst == 0 || dst == UT64_MAX) {
-					dst = r_reg_getv (core->anal->reg, pcname);
+					dst = r_reg_getv (core->anal->reg, "PC");
 				}
 				if (CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
@@ -6286,7 +6306,6 @@ repeat:
 		}
 	} while (get_next_i (&ictx, &i));
 	free (sn);
-	free (pcname);
 	free (spname);
 	r_list_free (ictx.bbl);
 	r_list_free (ictx.path);

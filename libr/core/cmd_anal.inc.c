@@ -7444,7 +7444,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		return;
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		R_LOG_WARN ("When cfg.debug is set, I refuse to create a fake stack");
+		R_LOG_WARN ("I refuse to create a fake stack with cfg.debug");
 		return;
 	}
 

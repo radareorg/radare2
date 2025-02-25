@@ -350,8 +350,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch) {
 	int bitsval = 0;
 	const char *archval = NULL;
-	RBinObject *o = r_bin_cur_object (core->bin);
 	if (!core->fixedarch || !core->fixedbits) {
+		RBinObject *o = r_bin_cur_object (core->bin);
 		RBinSection *s = o ? r_bin_get_section_at (o, addr, core->io->va) : NULL;
 		if (s) {
 			if (!core->fixedarch) {
@@ -369,7 +369,7 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 			}
 		}
 	}
-	//if we found bits related with anal hints pick it up
+	// if we found bits related with anal hints pick it up
 	if (bits && !bitsval && !core->fixedbits) {
 		bitsval = r_anal_hint_bits_at (core->anal, addr, NULL);
 	}

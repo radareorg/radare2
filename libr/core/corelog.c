@@ -162,7 +162,6 @@ R_API void r_core_log_del(RCore *core, int n) {
 		}
 		core->log->first += idx + 1;
 		char *msg = r_strpool_get_i (core->log->sp, idx);
-		// if (idx >= core->log->last) {
 		if (R_STR_ISEMPTY (msg)) {
 			core->log->first = core->log->last;
 			r_strpool_empty (core->log->sp);
