@@ -5904,7 +5904,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	const bool archIsMips32 = (core->anal->config->bits == 32 && arch == R2_ARCH_MIPS);
 	const bool is_thumb = arch == R2_ARCH_THUMB;
 	bool needOpVals = false;
-	if (archIsMips32) {
+	if (archIsMips32 || arch == R2_ARCH_ARM64) {
 		needOpVals = true;
 	}
 
