@@ -83,18 +83,18 @@ EOF
 RUN
 
 NAME=dso on call 1
-FILE=bins/elf/analysis/calls_x64
+FILE=bins/elf/analysis/calls_x64-jammy
 ARGS=-a x86 -d
 CMDS=<<EOF
 dcu main
-ds
+4ds
 dr rip
 dso
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400575
-0x0040057c
+0x004011f0
+0x004011f5
 Hello world
 EOF
 RUN
