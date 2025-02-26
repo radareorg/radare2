@@ -5889,12 +5889,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		archIsArm = true;
 	}
-	const bool archIsMips32 = (core->anal->config->bits == 32 && arch == R2_ARCH_MIPS);
-	const bool is_thumb = arch == R2_ARCH_THUMB;
-	bool needOpVals = false;
-	if (archIsMips32) {
-		needOpVals = true;
-	}
 
 	const ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
@@ -5906,6 +5900,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (info && info->lang && !strcmp (info->lang, "dart")) {
 			gp_reg = "x27";
 		}
+	}
+	const bool archIsMips32 = (core->anal->config->bits == 32 && arch == R2_ARCH_MIPS);
+	const bool is_thumb = arch == R2_ARCH_THUMB;
+	bool needOpVals = false;
+	if (archIsMips32) {
+		needOpVals = true;
 	}
 
 	r_reg_arena_push (core->anal->reg);
@@ -5924,7 +5924,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	buf = malloc (buf_size);
 	size_t buf_i = 0;
 	do {
-		r_anal_op_fini (&op);
 		if (core->esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
@@ -5999,7 +5998,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 #if 0
 		// eprintf ("%llx %02x %02x\n", cur, buf[buf_i], buf[buf_i+1]);
-		if (buf[buf_i] == 0 && buf[buf_i+1]== 0 && buf[buf_i+2] ==0) {
+		if (buf[buf_i] == 0 && buf[buf_i + 1] == 0 && buf[buf_i + 2] == 0) {
 			eprintf ("INVALID at 0x%llx\n", cur);
 		}
 #endif
