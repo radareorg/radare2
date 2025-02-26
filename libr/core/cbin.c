@@ -1368,7 +1368,7 @@ static bool bin_source(RCore *r, PJ *pj, int mode) {
 	}
 #if 1
 	// TODO: future optimization: dump the stringpool containing filenames
-	RList *files = r_bin_dbginfo_files (r->bin);
+	RList *files = r_bin_addrline_files (r->bin);
 	if (files) {
 		char *s = r_str_list_join (files, "\n");
 		r_cons_println (s);

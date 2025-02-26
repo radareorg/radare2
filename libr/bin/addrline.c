@@ -8,14 +8,7 @@
 // R2R db/perf/dex
 // R2R db/cmd/lea_intel
 
-#if 0
-R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
-R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
-R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
-R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {
-#endif
-
-R_API void r_bin_dbgitem_free(RBinDbgItem *di) {
+R_API void r_bin_addrline_free(RBinDbgItem *di) {
 	free (di);
 }
 
@@ -30,8 +23,7 @@ R_API void r_bin_dbgitem_reset(RBin *bin) {
 }
 
 // must be tied to the rbinfile
-// R2_600 - rename dbginfo to addrline
-R_API void r_bin_dbginfo_reset(RBin *bin) {
+R_API void r_bin_addrline_reset(RBin *bin) {
 	if (bin->cur) {
 	       	if (bin->cur->addrline.used) {
 			RBinAddrLineStore *als = &bin->cur->addrline;
@@ -43,7 +35,7 @@ R_API void r_bin_dbginfo_reset(RBin *bin) {
 	}
 }
 
-R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr) {
+R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
 		als->al_del (als, addr);
@@ -61,7 +53,7 @@ R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr) {
 #endif
 }
 
-R_API RList *r_bin_dbginfo_files(RBin *bin) {
+R_API RList *r_bin_addrline_files(RBin *bin) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
 		return als->al_files (als);
@@ -69,7 +61,7 @@ R_API RList *r_bin_dbginfo_files(RBin *bin) {
 	return NULL;
 }
 
-R_API bool r_bin_dbginfo_foreach(RBin *bin, RBinDbgInfoCallback cb, void *user) {
+R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback cb, void *user) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
 		als->al_foreach (als, cb, user);
@@ -132,7 +124,7 @@ static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *l
 			*column = di->column;
 		}
 		r_str_ncpy (file, di->file, len);
-		r_bin_dbgitem_free (di);
+		r_bin_addrline_free (di);
 		return true;
 	}
 	return false;
@@ -154,7 +146,7 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 			if (column) {
 				*column = item->column;
 			}
-			r_bin_dbgitem_free (item);
+			r_bin_addrline_free (item);
 			return true;
 		}
 		return false;
@@ -176,7 +168,7 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 	return false;
 }
 
-static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
+static RBinDbgItem *r_bin_addrline_api(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -188,7 +180,7 @@ static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
 	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
 		char file[4096];
 		int line = 0;
-		int column= 0;
+		int column = 0;
 		int len = sizeof (file);
 		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
 			if (cp->dbginfo->get_line (bin->cur, addr, file, len, &line, &column)) {
@@ -205,16 +197,35 @@ static RBinDbgItem *r_bin_dbgitem_api(RBin *bin, ut64 addr) {
 	return NULL;
 }
 
+static char *addr2fileline(RBin *bin, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	char file[1024];
+	int line = 0;
+	int colu = -1;
+	if (r_bin_addr2line (bin, addr, file, sizeof (file) - 1, &line, &colu)) {
+		const char *file_nopath = r_file_basename (file);
+		if (colu > 0) {
+			return r_str_newf ("%s:%d:%d", file_nopath, line, colu);
+		}
+		return r_str_newf ("%s:%d", file_nopath, line);
+	}
+	return NULL;
+}
+
 // given an address, return the filename:line:column\tcode or filename:line:column if the file doesnt exist
 // origin can be 0, 1 or 2
-R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
+R_API R_NULLABLE char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin) {
+	if (origin == 3) {
+		return addr2fileline (bin, addr);
+	}
+// R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin)
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (!bin->cur) {
 		return NULL;
 	}
 	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
 	if (!di) {
-		di = r_bin_dbgitem_api (bin, addr);
+		di = r_bin_addrline_api (bin, addr);
 		if (!di) {
 			return NULL;
 		}
@@ -278,23 +289,8 @@ R_API R_NULLABLE char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	}
 	free (filename);
 	free (basename);
-	r_bin_dbgitem_free (di);
+	r_bin_addrline_free (di);
 	return res;
-}
-
-R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	char file[1024];
-	int line = 0;
-	int colu = -1;
-	if (r_bin_addr2line (bin, addr, file, sizeof (file) - 1, &line, &colu)) {
-		const char *file_nopath = r_file_basename (file);
-		if (colu > 0) {
-			return r_str_newf ("%s:%d:%d", file_nopath, line, colu);
-		}
-		return r_str_newf ("%s:%d", file_nopath, line);
-	}
-	return NULL;
 }
 
 R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinDbgItem item) {

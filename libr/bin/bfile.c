@@ -643,7 +643,7 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 	r_list_foreach (store->list, iter, item) {
 		RBinDbgItem *di = dbgitem_from_internal (als, item);
 		bool go_on = cb (user, di);
-		r_bin_dbgitem_free (di);
+		r_bin_addrline_free (di);
 		if (!go_on) {
 			break;
 		}

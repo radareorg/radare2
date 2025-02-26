@@ -2835,7 +2835,7 @@ static RBinDbgItem *row_new(ut64 addr, const char *file, int line, int col) {
 static void row_free(void *p) {
 	if (p) {
 		RBinDbgItem *row = (RBinDbgItem *)p;
-		r_bin_dbgitem_free (row);
+		r_bin_addrline_free (row);
 	}
 }
 
