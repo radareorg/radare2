@@ -758,7 +758,7 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;
 	RListIter *iter;
-	// TODO: must be O(1) .. use sdb here
+	// TODO: must be O(1) .. use memoization or tree or so
 	r_list_foreach (o->sections, iter, section) {
 		if (section->is_segment) {
 			continue;
