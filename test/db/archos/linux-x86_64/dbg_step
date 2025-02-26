@@ -47,21 +47,21 @@ EOF
 RUN
 
 NAME=ds on calls and jumps
-FILE=bins/elf/analysis/calls_x64
+FILE=bins/elf/analysis/calls_x64-jammy
 ARGS=-a x86 -d
 CMDS=<<EOF
 dcu main
-2ds
+5ds
 dr rip
-2ds
+5ds
 dr rip
-2ds
+5ds
 dr rip
 ds
 dr rip
-2ds
+4ds
 dr rip
-2ds
+ds
 dr rip
 ds
 dr rip
@@ -70,14 +70,14 @@ dr rip
 dc
 EOF
 EXPECT=<<EOF
-0x0040052f
-0x0040053c
-0x00400549
-0x0040054f
-0x0040055b
-0x00400567
-0x0040056e
-0x00400510
+0x004011ce
+0x004011b9
+0x004011a4
+0x004011a8
+0x0040118f
+0x0040117a
+0x00401165
+0x00401150
 Hello world
 EOF
 RUN
