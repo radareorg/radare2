@@ -5749,7 +5749,6 @@ static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 en
 	ut64 new_buf_i = start + i - *buf_addr;
 	if (new_buf_i > buf_size) {
 		const ut64 newaddr = start + i;
-		eprintf ("FUCKING\n");
 		r_io_read_at (core->io, newaddr, buf, maxsize);
 		new_buf_i = 0;
 	}
