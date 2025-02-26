@@ -4570,7 +4570,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 	// TODO: cache value in ds
 	int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
 	free (ds->sl);
-	ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
+	ds->sl = r_bin_addrline_tostring (ds->core->bin, ds->at, dwarfFile);
 	if (ds->sl && (!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
 		char *line = strdup (ds->sl);
 		if (!line) {

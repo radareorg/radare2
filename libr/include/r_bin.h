@@ -915,15 +915,14 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
 // R2_600 - refactor, rename and optimize storage
-R_API void r_bin_dbginfo_reset(RBin *bin);
-R_API void r_bin_dbginfo_reset_at(RBin *bin, ut64 addr);
-R_API bool r_bin_dbginfo_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
-R_API RList *r_bin_dbginfo_files(RBin *bin);
-R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr);
-R_API void r_bin_dbgitem_free(RBinDbgItem *di);
-R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column);
-R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin);
-R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
+R_API void r_bin_addrline_reset(RBin *bin);
+R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr);
+R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
+R_API RList *r_bin_addrline_files(RBin *bin);
+R_API RBinDbgItem *r_bin_addrline_at(RBin *bin, ut64 addr);
+R_API void r_bin_addrline_free(RBinDbgItem *di);
+R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column); // R2_600 - must be deprecated
+R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 
 R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinDbgItem item);
 R_API RBinDbgItem *r_bin_addr2line_get(RBin *bin, ut64 addr);

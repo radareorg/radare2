@@ -472,7 +472,7 @@ error:
 
 static int rabin_show_srcline(RBin *bin, ut64 at) {
 	char *srcline;
-	if (at != UT64_MAX && (srcline = r_bin_addr2text (bin, at, true))) {
+	if (at != UT64_MAX && (srcline = r_bin_addrline_tostring (bin, at, 1))) {
 		printf ("%s\n", srcline);
 		free (srcline);
 		return true;

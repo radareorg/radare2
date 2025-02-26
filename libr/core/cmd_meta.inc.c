@@ -423,7 +423,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (p[1] == ' ') {
 			at = r_num_get (core->num, p + 2);
 		}
-		char *text = r_bin_addr2text (core->bin, at, 0);
+		char *text = r_bin_addrline_tostring (core->bin, at, 0);
 		if (R_STR_ISNOTEMPTY (text)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", at, text);
 		}
@@ -438,7 +438,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 retry:
 		;
-		char *s = r_bin_addr2fileline (core->bin, addr);
+		char *s = r_bin_addrline_tostring (core->bin, addr, 3);
 		if (!s) {
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
 			if (op) {
@@ -496,10 +496,10 @@ retry:
 	}
 	if (all && core->bin->cur) {
 		if (remove) {
-			r_bin_dbginfo_reset (core->bin);
+			r_bin_addrline_reset (core->bin);
 		} else {
 			if (core->bin->cur && core->bin->cur->addrline.used) {
-				r_bin_dbginfo_foreach (core->bin, print_addrinfo2, &fs);
+				r_bin_addrline_foreach (core->bin, print_addrinfo2, &fs);
 			} else {
 				sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, &fs);
 			}
@@ -542,7 +542,7 @@ retry:
 	}
 	free (myp);
 	if (remove) {
-		r_bin_dbginfo_reset_at (core->bin, offset);
+		r_bin_addrline_reset_at (core->bin, offset);
 	} else {
 		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
 		fs.filter_offset = offset;
@@ -554,13 +554,13 @@ retry:
 			pj = r_core_pj_new (core);
 			fs.pj = pj;
 			pj_a (pj);
-			if (!r_bin_dbginfo_foreach (core->bin, print_addrinfo2_json, &fs)) {
+			if (!r_bin_addrline_foreach (core->bin, print_addrinfo2_json, &fs)) {
 				if (bf && bf->sdb_addrinfo) {
 					sdb_foreach (bf->sdb_addrinfo, print_addrinfo_json, &fs);
 				}
 			}
 		} else {
-			if (!r_bin_dbginfo_foreach (core->bin, print_addrinfo2, &fs)) {
+			if (!r_bin_addrline_foreach (core->bin, print_addrinfo2, &fs)) {
 				if (bf && bf->sdb_addrinfo) {
 					sdb_foreach (bf->sdb_addrinfo, print_addrinfo, &fs);
 				}
