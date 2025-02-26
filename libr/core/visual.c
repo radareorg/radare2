@@ -60,7 +60,8 @@ static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8x", "pcc", "psb", "pcp", "pcd",
 };
 
-R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
+R_IPI void applyHexMode(RCore *core) {
+	int hexMode = core->visual.hexMode;
 	core->visual.currentFormat = R_ABS (hexMode) % PRINT_HEX_FORMATS;
 	switch (core->visual.currentFormat) {
 	case 0: /* px */
@@ -135,8 +136,8 @@ static void setcursor(RCore *core, bool cur) {
 	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
-// R2_600 make this function static and disMode must be taken from core->visual.disMode instead of an argument
-R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
+R_IPI void applyDisMode(RCore *core) {
+	const int disMode = core->visual.disMode;
 	core->visual.currentFormat = R_ABS (disMode) % 5;
 	switch (core->visual.currentFormat) {
 	case 0:
@@ -443,17 +444,17 @@ static void printFormat(RCore *core, int next) {
 	switch (core->visual.printidx) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
 		core->visual.hexMode += next;
-		r_core_visual_applyHexMode (core, core->visual.hexMode);
+		applyHexMode (core);
 		printfmtSingle[0] = printHexFormats[R_ABS (core->visual.hexMode) % PRINT_HEX_FORMATS];
 		break;
 	case R_CORE_VISUAL_MODE_PD: // pd
 		core->visual.disMode += next;
-		r_core_visual_applyDisMode (core, core->visual.disMode);
+		applyDisMode (core);
 		printfmtSingle[1] = rotateAsmemu (core);
 		break;
 	case R_CORE_VISUAL_MODE_DB: // debugger
 		core->visual.disMode += next;
-		r_core_visual_applyDisMode (core, core->visual.disMode);
+		applyDisMode (core);
 		printfmtSingle[1] = rotateAsmemu (core);
 		core->visual.current3format += next;
 		core->visual.currentFormat = R_ABS (core->visual.current3format) % PRINT_3_FORMATS;
@@ -2363,11 +2364,11 @@ static void visual_windows(RCore *core) {
 		case R_CORE_VISUAL_MODE_PD:
 		case R_CORE_VISUAL_MODE_DB:
 			core->visual.disMode = b;
-			r_core_visual_applyDisMode (core, core->visual.disMode);
+			applyDisMode (core);
 			break;
 		case R_CORE_VISUAL_MODE_PX:
 			core->visual.hexMode = b;
-			r_core_visual_applyHexMode (core, core->visual.hexMode);
+			applyHexMode (core);
 			core->visual.currentFormat = b;
 			printfmtSingle[0] = printHexFormats[R_ABS (core->visual.hexMode) % PRINT_HEX_FORMATS];
 			break;
@@ -2812,7 +2813,7 @@ static void handle_space_key(RCore *core, int force) {
 			} else {
 				printFormat (core, 1);
 			}
-			r_core_visual_applyHexMode (core, core->visual.hexMode);
+			applyHexMode (core);
 			break;
 		case R_CORE_VISUAL_MODE_PD:
 		case R_CORE_VISUAL_MODE_DB:

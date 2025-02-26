@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2024 - pancake, vane11ope */
+/* radare2 - LGPL - Copyright 2014-2025 - pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -11,6 +11,8 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 static void __set_dcb(RCore *core, RPanel *p);
 static void __set_pcb(RPanel *p);
 static void __panels_refresh(RCore *core);
+R_IPI void applyDisMode(RCore *core);
+R_IPI void applyHexMode(RCore *core);
 
 #define MENU_Y 1
 #define PANEL_NUM_LIMIT 16
@@ -2416,7 +2418,8 @@ static void __rotate_hexdump_cb(void *user, bool rev) {
 	} else {
 		p->model->rotate++;
 	}
-	r_core_visual_applyHexMode (core, p->model->rotate);
+	core->visual.hexMode = p->model->rotate;
+	applyHexMode (core);
 	__rotate_asmemu (core, p);
 }
 
@@ -2449,7 +2452,8 @@ static void __rotate_disasm_cb(void *user, bool rev) {
 	} else {
 		p->model->rotate++;
 	}
-	r_core_visual_applyDisMode (core, p->model->rotate);
+	core->visual.disMode = p->model->rotate;
+	applyDisMode (core);
 	__rotate_asmemu (core, p);
 }
 
