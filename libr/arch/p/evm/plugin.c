@@ -189,7 +189,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case EVM_INS_STOP:
-#if CS_API_MAJOR > 6
+#if CS_API_MAJOR >= 6
 	case EVM_INS_SELFDESTRUCT:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
