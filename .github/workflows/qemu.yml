@@ -8,7 +8,7 @@ on:
 
 jobs:
   linux-arm64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Build on qemu-arm64
     steps:
     - name: Checkout
@@ -17,7 +17,7 @@ jobs:
       name: Run commands
       with:
         arch: aarch64
-        distro: ubuntu20.04
+        distro: ubuntu22.04
         run: |
           uname -a
           apt update ; apt install --assume-yes gcc make git patch zip xz-utils
@@ -29,7 +29,7 @@ jobs:
         name: linux-acr-deb-arm64
         path: dist/debian/*/*.deb
   linux-rv64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Build on qemu-riscv64
     steps:
     - name: Checkout
@@ -38,7 +38,7 @@ jobs:
       name: Run commands
       with:
         arch: riscv64
-        distro: ubuntu20.04
+        distro: ubuntu22.04
         run: |
           uname -a
           apt update ; apt install --assume-yes gcc make git patch zip xz-utils
@@ -50,7 +50,7 @@ jobs:
         name: linux-acr-deb-riscv64
         path: dist/debian/*/*.deb
   linux-s390x:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Build on qemu-s390x
     steps:
     - name: Checkout
@@ -59,7 +59,7 @@ jobs:
       name: Run commands
       with:
         arch: s390x
-        distro: ubuntu20.04
+        distro: ubuntu22.04
         run: |
           uname -a
           apt update ; apt install --assume-yes gcc make git patch zip xz-utils
