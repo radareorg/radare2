@@ -4625,7 +4625,6 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				}
 			} else {
 				cs_arm_op armop = INSOP (i);
-
 				if (armop.access == CS_AC_WRITE) {
 					continue;
 				}

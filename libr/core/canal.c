@@ -5316,7 +5316,7 @@ static bool myvalid(RCore *core, ut64 addr) {
 	if (addr < 0x100) {
 		return false;
 	}
-	if (addr == UT32_MAX || addr == UT64_MAX) {	//the best of the best of the best :(
+	if (addr == UT32_MAX || addr == UT64_MAX) { // the best of the best of the best :(
 		return false;
 	}
 	if (!r_io_is_valid_offset (io, addr, 0)) {
@@ -5535,12 +5535,10 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 
 static void getpcfromstack(RCore *core, REsil *esil) {
 	ut64 cur;
-	ut64 addr;
 	ut64 size;
 	int idx;
 	REsil esil_cpy;
 	RAnalOp op = {0};
-	RAnalFunction *fcn = NULL;
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
 	int tmp_esil_str_len;
@@ -5551,8 +5549,8 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	}
 
 	memcpy (&esil_cpy, esil, sizeof (esil_cpy));
-	addr = cur = esil_cpy.cur;
-	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	ut64 addr = cur = esil_cpy.cur;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return;
 	}
@@ -5889,7 +5887,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		archIsArm = true;
 	}
-	const bool is_thumb = arch == R2_ARCH_THUMB;
 
 	const ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
@@ -5901,6 +5898,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (info && info->lang && !strcmp (info->lang, "dart")) {
 			gp_reg = "x27";
 		}
+	}
+	const bool archIsMips32 = (core->anal->config->bits == 32 && arch == R2_ARCH_MIPS);
+	const bool is_thumb = arch == R2_ARCH_THUMB;
+	bool needOpVals = false;
+	if (archIsMips32 || archIsArm) {
+		needOpVals = true;
 	}
 
 	r_reg_arena_push (core->anal->reg);
@@ -5914,9 +5917,20 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = 0; // addr - start;
 	size_t i_old = 0;
 	size_t buf_size = 128 * 1024; // 512KB
+	const size_t maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 buf_addr = start;
 	buf = malloc (buf_size);
 	size_t buf_i = 0;
+
+	int opflags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
+	if (needOpVals) {
+		opflags |= R_ARCH_OP_MASK_VAL;
+	}
+	if (newstack) {
+		opflags |= R_ARCH_OP_MASK_DISASM;
+	}
+	opflags |= R_ARCH_OP_MASK_DISASM;
+
 	do {
 		if (core->esil_anal_stop || r_cons_is_breaked ()) {
 			break;
@@ -5972,35 +5986,37 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
-
-		r_anal_op_fini (&op);
-		r_asm_set_pc (core->rasm, cur);
 		i_old = i;
 		if (i >= iend) {
 			goto repeat;
 		}
-		int opflags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
-		if (newstack) {
-			opflags |= R_ARCH_OP_MASK_DISASM;
-		}
-		opflags |= R_ARCH_OP_MASK_DISASM;
 		if (buf_i > buf_size) {
 			R_LOG_WARN ("Invalid buffer index (%d) - %d / %d", i, buf_size, buf_i);
 			break;
 		}
+#if 0
 		// eprintf ("%llx %02x %02x\n", cur, buf[buf_i], buf[buf_i+1]);
-		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, buf_size - buf_i, opflags)) {
+		if (buf[buf_i] == 0 && buf[buf_i + 1] == 0 && buf[buf_i + 2] == 0) {
+			eprintf ("INVALID at 0x%llx\n", cur);
+		}
+#endif
+		size_t opsz = R_MIN (buf_size - buf_i, maxopsz);
+		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, opsz, opflags)) {
 			i += minopsize - 1;
-			r_anal_op_fini (&op);
 			goto repeat;
 		}
-		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK || op.type == R_ANAL_OP_TYPE_NULL) {
-			R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_ILL:
+		case R_ANAL_OP_TYPE_UNK:
+		case R_ANAL_OP_TYPE_NULL:
 			if (is_thumb) {
+				R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
 				i++; // codelalign is not always the best option to catch unaligned instructions
-				r_anal_op_fini (&op);
 				goto repeat;
+			} else {
+				R_LOG_DEBUG ("invalid instructions at 0x%08"PFMT64x, cur);
 			}
+			break;
 		}
 		// we need to check again i because buf+i may goes beyond its boundaries
 		// because of i += minopsize - 1
@@ -6008,6 +6024,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			i += minopsize - 1;
 			goto repeat;
 		}
+		// TODO: rename emu.lazy to emu.slow ? or just reuse anal.slow
 		if (emu_lazy) {
 			if (op.type & R_ANAL_OP_TYPE_REP) {
 				i += op.size - 1;
@@ -6082,20 +6099,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			// arm64
 			if (cur && arch == R2_ARCH_ARM64) {
 				if (CHECKREF (ESIL->cur)) {
-#if 1
 					int type = core_type_by_addr (core, ESIL->cur);
 					if (type == R_ANAL_REF_TYPE_NULL) {
-						type = R_ANAL_REF_TYPE_DATA;
-					}
-					if (type == R_ANAL_REF_TYPE_ICOD) {
+						type = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+					} else if (type == R_ANAL_REF_TYPE_ICOD) {
 						type |= R_ANAL_REF_TYPE_EXEC;
 					} else {
 						type |= R_ANAL_REF_TYPE_READ;
 					}
 					r_anal_xrefs_set (core->anal, cur, ESIL->cur, type);
-#else
-					r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
-#endif
 				}
 #if 0
 				ut64 dst = esilbreak_last_read;
@@ -6164,7 +6176,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if (cfg_anal_strings) {
 					add_string_ref (core, op.addr, dst);
 				}
-			} else if ((core->anal->config->bits == 32 && arch == R2_ARCH_MIPS)) {
+			} else if (archIsMips32) {
+				if (!needOpVals) {
+					R_LOG_ERROR ("Inconsistent needvals state");
+					break;
+				}
 				ut64 dst = ESIL->cur;
 				RAnalValue *opsrc0 = r_vector_at (&op.srcs, 0);
 				RAnalValue *opsrc1 = r_vector_at (&op.srcs, 1);
@@ -6290,6 +6306,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		r_esil_stack_free (ESIL);
 repeat:
+		r_anal_op_fini (&op);
 		if (!r_anal_get_block_at (core->anal, cur)) {
 			size_t fcn_i;
 			for (fcn_i = i_old + 1; fcn_i <= i; fcn_i++) {
