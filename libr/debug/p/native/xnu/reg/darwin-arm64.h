@@ -49,7 +49,7 @@ return strdup (
 "gpr	x27	.64	216	0\n"
 "gpr	x28	.64	224	0\n"
 "gpr	x29	.64	232	0\n"
-// "gpr	x30	.64	240	0\n"
+"gpr	x30	.64	240	0\n"
 // "gpr	x31	.64	248	0\n" // LR
 // words (32bit lower part of x
 "gpr	w0	.32	0	0\n" // w0
@@ -82,6 +82,8 @@ return strdup (
 "gpr	w27	.32	216	0\n" // w0
 "gpr	w28	.32	224	0\n" // w0
 "gpr	w29	.32	232	0\n" // w0
+"gpr	w30	.32	240	0\n" // w0
+"gpr	xzr	.64	?	0\n" // w0
 "gpr	wzr	.32	?	0\n" // w0
 "gpr	zr	.64	?	0\n" // w0
 "gpr	tmp	.64	?	0\n" // tmp - imaginary register used by esil
