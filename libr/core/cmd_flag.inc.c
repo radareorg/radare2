@@ -1070,7 +1070,7 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 		item = r_flag_set (core->flags, cstr, off, bsze);
 	}
 	if (item && comment) {
-		r_flag_item_set_comment (item, comment);
+		r_flag_item_set_comment (core->flags, item, comment);
 		if (comment_needs_free) {
 			free (comment);
 		}
@@ -1641,21 +1641,24 @@ static int cmd_flag(void *data, const char *input) {
 					if (!strncmp (q + 1, "base64:", 7)) {
 						dec = (char *) r_base64_decode_dyn (q + 8, -1);
 						if (dec) {
-							r_flag_item_set_comment (item, dec);
+							r_flag_item_set_comment (core->flags, item, dec);
 							free (dec);
 						} else {
 							R_LOG_ERROR ("Failed to decode base64-encoded string");
 						}
 					} else {
-						r_flag_item_set_comment (item, q + 1);
+						r_flag_item_set_comment (core->flags, item, q + 1);
 					}
 				} else {
 					R_LOG_ERROR ("Cannot find flag with name '%s'", p);
 				}
 			} else {
 				item = r_flag_get_in (core->flags, r_num_math (core->num, p));
-				if (item && item->comment) {
-					r_cons_println (item->comment);
+				if (item) {
+					const char *cmt = r_flag_item_set_comment (core->flags, item, NULL);
+					if (cmt) {
+						r_cons_println (cmt);
+					}
 				} else {
 					R_LOG_ERROR ("Cannot find item");
 				}
@@ -1722,7 +1725,7 @@ static int cmd_flag(void *data, const char *input) {
 				item = r_flag_get_in (core->flags, core->addr);
 			}
 			if (item) {
-				r_flag_item_set_realname (item, realname);
+				r_flag_item_set_realname (core->flags, item, realname);
 			}
 			break;
 		}

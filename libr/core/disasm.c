@@ -203,7 +203,7 @@ typedef struct r_disasm_state_t {
 	int lbytes;
 	int show_cmt_right;
 	int pre;
-	char *ocomment;
+	const char *ocomment; // weak pointer
 	bool cmt_wrap;
 	int linesopts;
 	int lastfail;
@@ -2477,10 +2477,13 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		if (vartype) {
 			R_FREE (ds->comment);
 			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype);
-		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
-			ds->ocomment = item->comment;
-			R_FREE (ds->comment);
-			ds->comment = strdup (item->comment);
+		} else if (item) {
+			const char *cmt = r_flag_item_set_comment (core->flags, item, NULL);
+			if (cmt) {
+				R_FREE (ds->comment);
+				ds->ocomment = cmt;
+				ds->comment = strdup (cmt);
+			}
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
@@ -2534,18 +2537,21 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		R_FREE (ds->comment);
 		ds_newline (ds);
 		/* flag one */
-		if (item && item->comment && ds->ocomment != item->comment) {
-			ds_begin_line (ds);
-			ds_newline (ds);
-			ds_begin_line (ds);
-			if (ds->show_color) {
-				r_cons_print (ds->pal_comment);
-			}
-			r_cons_print ("  ;  ");
-			r_cons_print_justify (item->comment, mycols, ';');
-			ds_newline (ds);
-			if (ds->show_color) {
-				ds_print_color_reset (ds);
+		if (item) {
+			const char *item_comment = r_flag_item_set_comment (core->flags, item, NULL);
+			if (item_comment && ds->ocomment != item_comment) {
+				ds_begin_line (ds);
+				ds_newline (ds);
+				ds_begin_line (ds);
+				if (ds->show_color) {
+					r_cons_print (ds->pal_comment);
+				}
+				r_cons_print ("  ;  ");
+				r_cons_print_justify (item_comment, mycols, ';');
+				ds_newline (ds);
+				if (ds->show_color) {
+					ds_print_color_reset (ds);
+				}
 			}
 		}
 	}
@@ -2625,11 +2631,11 @@ static bool is_first(const char *fs) {
 }
 
 static RList *custom_sorted_flags(const RList *flaglist) {
-	RListIter *iter;
-	RFlagItem *fi;
 	if (!flaglist) {
 		return NULL;
 	}
+	RListIter *iter;
+	RFlagItem *fi;
 	RList *list = r_list_uniq (flaglist, flagVal);
 	RList *res = r_list_newf (NULL);
 	RList *rest = r_list_newf (NULL);
@@ -3126,13 +3132,17 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			item = r_flag_get_in (ds->core->flags, ds->analop.jump);
-			if (item && item->comment) {
-				if (ds->show_color) {
-					r_cons_print (ds->pal_comment);
+			if (item) {
+				const char *cmt = r_flag_item_set_comment (ds->core->flags, item, NULL);
+				if (cmt) {
+					if (ds->show_color) {
+						r_cons_print (ds->pal_comment);
+					}
+					ds_align_comment (ds);
+					const char *cmt = r_flag_item_set_comment (ds->core->flags, item, NULL);
+					r_cons_printf ("  ; ref to %s: %s\n", item->name, cmt);
+					ds_print_color_reset (ds);
 				}
-				ds_align_comment (ds);
-				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
-				ds_print_color_reset (ds);
 			}
 			break;
 		}

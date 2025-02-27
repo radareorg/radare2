@@ -425,7 +425,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 			if (fi && realstr) {
 				char *es = r_str_escape (string->string);
 				char *s = r_str_newf ("\"%s\"", es);
-				r_flag_item_set_realname (fi, s);
+				r_flag_item_set_realname (r->flags, fi, s);
 				free (s);
 				free (es);
 			}
@@ -1800,7 +1800,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			char *realname = (r->bin->prefix)
 				? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
 				: r_str_newf ("%s", demname);
-			r_flag_item_set_realname (fi, realname);
+			r_flag_item_set_realname (r->flags, fi, realname);
 			free (realname);
 		}
 	}
@@ -2602,18 +2602,19 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					r_name_filter (sn.methflag, -1);
 				}
 				if (fi) {
-					r_flag_item_set_realname (fi, sn.methname);
+					r_flag_item_set_realname (core->flags, fi, sn.methname);
 					if ((fi->addr - core->flags->base) == addr) {
-				//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (core->flags, fi);
 					}
 				} else {
 					fi = r_flag_set (core->flags, sn.methflag, addr, symbol->size);
+#if 0
 					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
 					if (comment) {
 						r_flag_item_set_comment (fi, comment);
 						free (comment);
 					}
+#endif
 				}
 			} else {
 				const char *n = sn.demname ? sn.demname : name;
@@ -2626,16 +2627,16 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				} else {
 					RFlagItem *fi = r_flag_set (core->flags, fnp, addr, symbol->size);
 					if (fi) {
-						r_flag_item_set_realname (fi, n);
-#if 0 && METAFLAG
-						bool is_demangled = (bool)(size_t)sn.demname;
+						r_flag_item_set_realname (core->flags, fi, n);
+						const bool is_demangled = (bool)(size_t)sn.demname;
 						if (is_demangled) {
+#if 0 && METAFLAG
 							RFlagItemMeta *fim = r_flag_get_meta2 (core->flags, fi);
 							fim->demangled = true;
-						}
 #else
-						fi->demangled = true;
+							fi->demangled = true;
 #endif
+						}
 					} else {
 						if (fn) {
 							R_LOG_WARN ("Can't find flag (%s)", fn);
@@ -3445,14 +3446,15 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		}
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
+		const char *cmt = field->comment;
 		if (IS_MODE_RAD (mode)) {
 			const char *fname = r_bin_name_tostring2 (field->name, 'f');
 			r_cons_printf ("'f header.%s 1 0x%08"PFMT64x"\n", fname, addr);
 			if (field->value != 0 && field->value != UT64_MAX) {
 				r_cons_printf ("'f header.%s.value 1 0x%08"PFMT64x"\n", fname, field->value);
 			}
-			if (R_STR_ISNOTEMPTY (field->comment)) {
-				char *e = sdb_encode ((const ut8*)field->comment, -1);
+			if (R_STR_ISNOTEMPTY (cmt)) {
+				char *e = sdb_encode ((const ut8*)cmt, -1);
 				r_cons_printf ("CCu base64:%s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
 				char *f = r_name_filter_shell (field->format);
@@ -3480,9 +3482,9 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			if (v) {
 				pj_kN (pj, "value", v);
 			}
-			if (field->comment && *field->comment) {
+			if (R_STR_ISNOTEMPTY (cmt)) {
 				// TODO: filter comment before json
-				pj_ks (pj, "comment", field->comment);
+				pj_ks (pj, "comment", cmt);
 			}
 			if (R_STR_ISNOTEMPTY (field->format)) {
 				// TODO: filter comment before json
@@ -3501,7 +3503,7 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s",
 				field->vaddr, field->paddr, v, r_bin_name_tostring2 (field->name, pref),
 				haveComment? "; ": "",
-				haveComment? field->comment: "");
+				haveComment? cmt: "");
 			r_cons_newline ();
 		} else if (IS_MODE_SET (mode)) {
 			// nothing

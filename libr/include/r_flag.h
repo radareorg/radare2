@@ -36,8 +36,8 @@ typedef struct r_flags_at_addr_t {
 typedef struct r_flag_item_meta_t {
 	char *type;
 	char *color;    /* item color */
-#if 0
 	char *comment;  /* item comment */
+#if 0
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
 	bool demangled; /* real name from demangling? */
 #endif
@@ -50,10 +50,10 @@ typedef struct r_flag_item_t {
 	ut64 addr;      /* address of the flag */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
-	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
 	bool demangled; /* real name from demangling? */
 #if 0
+	char *comment;  /* item comment */
 	char *color;    /* item color */
 	char *type;
 #endif
@@ -157,8 +157,8 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free(RFlagItem *item);
-R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
-R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, R_NULLABLE const char *comment);
+R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *fi, const char *realname);
 R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, R_NULLABLE const char *color);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
