@@ -677,7 +677,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", false);
 		}
-		char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=%d", bb->addr, show_addr);
+		char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.addr=%d", bb->addr, show_addr);
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", true);
 		}
