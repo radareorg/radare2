@@ -10,3 +10,15 @@ EXPECT=<<EOF
 0x100011328
 EOF
 RUN
+
+NAME=aaa in swift implies avr on rw sections
+FILE=bins/mach0/SwiftAsynciOS
+CMDS=<<EOF
+s 0x100007504
+aaa
+axtq
+EOF
+EXPECT=<<EOF
+0x100011328
+EOF
+RUN
