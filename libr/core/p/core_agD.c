@@ -35,15 +35,15 @@ static int r_cmd_agD_call(void *user, const char *input) {
 	}
 	RGraph *fcn_dtgraph = r_graph_dom_tree (fcn_graph, node);
 	const bool o_asm_lines = r_config_get_b (core->config, "asm.lines");
-	const bool o_asm_offset = r_config_get_b (core->config, "asm.offset");
+	const bool o_asm_offset = r_config_get_b (core->config, "asm.addr");
 	const bool o_asm_bytes = r_config_get_b (core->config, "asm.bytes");
 	r_config_set_b (core->config, "asm.lines", false);
-	r_config_set_b (core->config, "asm.offset", false);
+	r_config_set_b (core->config, "asm.addr", false);
 	r_config_set_b (core->config, "asm.bytes", false);
 	RAGraphTransitionCBs agtcbs = {&_get_title, &_get_body};
 	RAGraph *dtagraph = r_agraph_new_from_graph (fcn_dtgraph, &agtcbs, core);
 	r_config_set_b (core->config, "asm.lines", o_asm_lines);
-	r_config_set_b (core->config, "asm.offset", o_asm_offset);
+	r_config_set_b (core->config, "asm.addr", o_asm_offset);
 	r_config_set_b (core->config, "asm.bytes", o_asm_bytes);
 	dtagraph->can->color = r_config_get_b (core->config, "scr.color");
 	r_agraph_print (dtagraph);

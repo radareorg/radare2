@@ -7322,7 +7322,7 @@ virtualmouse:
 				"analyze function\n" \
 				"analyze program\n" \
 				"bytes\n" \
-				"offset\n" \
+				"address\n" \
 				"disasm\n" \
 				"entropy\n";
 			char *format = r_cons_hud_line_string (s);
@@ -7334,8 +7334,8 @@ virtualmouse:
 					r_core_cmd_call (core, "aaef");
 				} else if (!strcmp (format, "analyze program")) {
 					r_core_cmd_call (core, "aaa");
-				} else if (!strcmp (format, "offset")) {
-					r_config_toggle (core->config, "asm.offset");
+				} else if (!strcmp (format, "address")) {
+					r_config_toggle (core->config, "asm.addr");
 				} else if (!strcmp (format, "esil")) {
 					r_config_toggle (core->config, "asm.esil");
 				} else if (!strcmp (format, "bytes")) {
