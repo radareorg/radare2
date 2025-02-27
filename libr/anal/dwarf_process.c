@@ -1900,7 +1900,7 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			}
 			if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
 				char *global_name = r_str_newf ("global_%s", var_name);
-				r_flag_unset_off (flags, offset);
+				r_flag_unset_addr (flags, offset);
 				r_flag_set_next (flags, global_name, offset, 4);
 				free (global_name);
 			} else if (*kind == 's' && fcn) {
