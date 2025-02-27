@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - GustavoLCR */
+/* radare - LGPL - Copyright 2020-2025 - GustavoLCR */
 
 #define INITGUID
 #include <r_core.h>
@@ -342,7 +342,7 @@ fail:
 	return NULL;
 }
 
-static bool windbg_init(void) {
+static bool windbg_init(RIODesc *desc) {
 	if (w32_DebugCreate && w32_DebugConnectWide) {
 		return true;
 	}
