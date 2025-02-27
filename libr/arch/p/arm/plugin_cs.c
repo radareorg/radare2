@@ -4684,7 +4684,6 @@ static inline bool is_valid_mnemonic(const char *m) {
 }
 
 static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	R_CRITICAL_ENTER (as);
 	csh *cs_handle = cs_handle_for_session (as);
 	cs_insn *insn = NULL;
 	op->size = (as->config->bits == 16)? 2: 4;
@@ -4738,7 +4737,6 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			}
-			R_CRITICAL_LEAVE (as);
 			return -1;
 		}
 		hacky_arm_anal (as, op, buf, len);
@@ -4751,7 +4749,6 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 			}
 		}
 	}
-	R_CRITICAL_LEAVE (as);
 	return true;
 }
 

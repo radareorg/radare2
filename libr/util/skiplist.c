@@ -15,11 +15,11 @@
 static RSkipListNode *r_skiplist_node_new(void *data, int level) {
 	RSkipListNode *res = R_NEW0 (RSkipListNode);
 	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
-	if (R_UNLIKELY (!res->forward))  {
-		free (res);
-		return NULL;
+	if (R_LIKELY (res->forward))  {
+		res->data = data;
+	} else {
+		R_FREE (res);
 	}
-	res->data = data;
 	return res;
 }
 
@@ -48,7 +48,6 @@ static inline void init_head(RSkipListNode *head) {
 //       elements, when provided.
 static RSkipListNode *find_insertpoint(const RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
 	RSkipListNode *x = list->head;
-#if 1
 	int i = list->list_level;
 	if (by_data) {
 		for (; i >= 0; i--) {
@@ -73,25 +72,6 @@ static RSkipListNode *find_insertpoint(const RSkipList *list, void *data, RSkipL
 			}
 		}
 	}
-#else
-	int i;
-
-	for (i = list->list_level; i >= 0; i--) {
-		if (by_data) {
-			while (x->forward[i] != list->head
-					&& list->compare (x->forward[i]->data, data) < 0) {
-				x = x->forward[i];
-			}
-		} else {
-			while (x->forward[i] != list->head && x->forward[i] != data) {
-				x = x->forward[i];
-			}
-		}
-		if (updates) {
-			updates[i] = x;
-		}
-	}
-#endif
 	x = x->forward[0];
 	return x;
 }
