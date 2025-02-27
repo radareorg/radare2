@@ -186,6 +186,16 @@ static void ht_free_flag(HtPPKv *kv) {
 	}
 }
 
+static void ht_free_meta(HtUPKv *kv) {
+	if (kv) {
+		// free (kv->key);
+		RFlagItemMeta *fim = (RFlagItemMeta *)kv->value;
+		free (fim->comment);
+		free (fim->color);
+		free (fim);
+	}
+}
+
 static bool count_flags(RFlagItem *fi, void *user) {
 	int *count = (int *)user;
 	(*count)++;
@@ -230,6 +240,7 @@ R_API RFlag *r_flag_new(void) {
 	f->zones = r_list_newf (r_flag_zone_item_free);
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+	f->ht_meta = ht_up_new (NULL, ht_free_meta, NULL);
 	f->by_addr = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 	new_spaces (f);
 	R_DIRTY_SET (f);
@@ -795,7 +806,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 		is_new = true;
 		f->lastid++;
 	}
-
+	item->id = f->lastid;
 	item->space = r_flag_space_cur (f);
 	item->size = size;
 
