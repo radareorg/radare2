@@ -4924,7 +4924,7 @@ repeat_arroba:
 				{
 					char *arg = getarg (ptr + 1);
 					if (arg) {
-						int err = 0;
+						bool err = false;
 						ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
 						free (arg);
 						if (err) {

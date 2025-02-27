@@ -21,46 +21,46 @@ EXPECT=<<EOF
     "name": "sym.imp.std::__throw_bad_alloc__",
     "realname": "std::__throw_bad_alloc()",
     "size": 6,
-    "offset": 4144
+    "addr": 4144
   },
   {
     "name": "sym.imp.std::__throw_length_error_char_const_",
     "realname": "std::__throw_length_error(char const*)",
     "size": 6,
-    "offset": 4176
+    "addr": 4176
   },
   {
     "name": "sym.imp.__cxa_rethrow",
     "realname": "__cxa_rethrow",
     "size": 6,
-    "offset": 4240
+    "addr": 4240
   },
   {
     "name": "reloc.std::__throw_bad_alloc__",
     "realname": "std::__throw_bad_alloc()",
     "size": 8,
-    "offset": 16408
+    "addr": 16408
   },
   {
     "name": "method.std.__throw_bad_alloc__",
     "size": 1,
-    "offset": 16408
+    "addr": 16408
   },
   {
     "name": "reloc.std::__throw_length_error_char_const_",
     "realname": "std::__throw_length_error(char const*)",
     "size": 8,
-    "offset": 16424
+    "addr": 16424
   },
   {
     "name": "method.std.__throw_length_error_char_const_",
     "size": 1,
-    "offset": 16424
+    "addr": 16424
   },
   {
     "name": "reloc.__cxa_rethrow",
     "size": 8,
-    "offset": 16456
+    "addr": 16456
   }
 ]
 EOF
@@ -73,7 +73,7 @@ fn.j
 fnj.
 EOF
 EXPECT=<<EOF
-[{"name":"entry0","realname":"entry0","offset":4304,"size":1},{"name":"section..text","realname":"section..text","offset":4304,"size":3717},{"name":"sym._start","realname":"_start","offset":4304,"size":47}]
+[{"name":"entry0","realname":"entry0","addr":4304,"size":1},{"name":"section..text","realname":"section..text","addr":4304,"size":3717},{"name":"sym._start","realname":"_start","addr":4304,"size":47}]
 entry0
 section..text
 sym._start
