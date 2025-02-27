@@ -47,10 +47,10 @@ static int flag_skiplist_cmp(const void *va, const void *vb) {
 	return 0;
 }
 
-static ut64 num_callback(RNum *user, const char *name, int *ok) {
+static ut64 num_callback(RNum *user, const char *name, bool *ok) {
 	RFlag *f = (RFlag *)user;
 	if (ok) {
-		*ok = 0;
+		*ok = false;
 	}
 	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
 	if (item) {
@@ -59,7 +59,7 @@ static ut64 num_callback(RNum *user, const char *name, int *ok) {
 			return 0LL;
 		}
 		if (ok) {
-			*ok = 1;
+			*ok = true;
 		}
 		return item->addr;
 	}
