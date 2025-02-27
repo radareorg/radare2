@@ -1,0 +1,12 @@
+NAME=aavr async swift
+FILE=bins/mach0/SwiftAsynciOS
+CMDS=<<EOF
+s 0x100007504
+e anal.in=bin.sections.rw
+aavr
+axtq
+EOF
+EXPECT=<<EOF
+0x100011328
+EOF
+RUN
