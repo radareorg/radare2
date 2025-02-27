@@ -163,9 +163,9 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	R_RETURN_VAL_IF_FAIL (num, NULL);
 	if (num->cb_from_value) {
-		int ok = 0;
+		bool ok = false;
 		const char *msg = num->cb_from_value (num, n, &ok);
-		if (msg && *msg) {
+		if (R_STR_ISNOTEMPTY (msg)) {
 			return msg;
 		}
 		if (ok) {
@@ -233,7 +233,7 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
-	int i, j, ok;
+	int i, j;
 	char lch;
 	ut64 ret = 0LL;
 	ut32 s, a;
@@ -258,7 +258,7 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 	}
 	/* resolve string with an external callback */
 	if (num && num->callback) {
-		ok = 0;
+		bool ok = false;
 		ret = num->callback (num->userptr, str, &ok);
 		if (ok) {
 			return ret;
@@ -351,7 +351,7 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 			break;
 		case 'b': // binary
 			ret = 0;
-			ok = true;
+			bool ok = true;
 			if (strlen (str) <= 65) { // 64 bit + the 'b' suffix
 				for (j = 0, i = strlen (str) - 2; i >= 0; i--, j++) {
 					if (str[i] == '1') {

@@ -798,7 +798,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 }
 
 R_API bool r_core_project_is_dirty(RCore *core) {
-	return !R_IS_DIRTY (core->config) && !R_IS_DIRTY (core->anal) && !R_IS_DIRTY (core->flags);
+	return !R_DIRTY_CHECK (core->config) && !R_DIRTY_CHECK (core->anal) && !R_DIRTY_CHECK (core->flags);
 }
 
 R_API void r_core_project_undirty(RCore *core) {

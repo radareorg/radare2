@@ -4924,7 +4924,7 @@ repeat_arroba:
 				{
 					char *arg = getarg (ptr + 1);
 					if (arg) {
-						int err = 0;
+						bool err = false;
 						ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
 						free (arg);
 						if (err) {
@@ -5392,9 +5392,9 @@ static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
 	r_list_append (list, fli);
 }
 
-static bool copy_into_flagitem_list(RFlagItem *item, void *u) {
+static bool copy_into_flagitem_list(RFlagItem *fi, void *u) {
 	RList *list = (RList*)u;
-	append_item (list, item->name, item->offset, item->size);
+	append_item (list, fi->name, fi->addr, fi->size);
 	return true;
 }
 
@@ -6229,7 +6229,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 					char *buf = NULL;
 					const char *tmp = NULL;
-					r_core_seek (core, flag->offset, true);
+					r_core_seek (core, flag->addr, true);
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
 					tmp = r_cons_get_buffer ();

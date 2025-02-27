@@ -282,7 +282,7 @@ f bloh 0x00000003 @ 0x00000002
 fj
 EOF
 EXPECT=<<EOF
-[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
+[{"name":"bloh","size":3,"addr":2},{"name":"blah","size":10,"addr":11}]
 EOF
 RUN
 
@@ -553,7 +553,7 @@ f+skutter 1 @ 12
 fj
 EOF
 EXPECT=<<EOF
-[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
+[{"name":"cat","size":1,"addr":0},{"name":"rimmer","size":12,"addr":0},{"name":"skutter","size":1,"addr":12},{"name":"lister","size":32,"addr":666},{"name":"kryten","size":32,"addr":666}]
 EOF
 RUN
 
@@ -676,7 +676,7 @@ fs *
 f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
 fs *
 f indirect 1 0x00000020 base64:d29ya3MgdG9v
-[{"name":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","size":1,"offset":32,"comment":"works too"}]
+[{"name":"direct1","size":1,"addr":0,"comment":"verbatim"},{"name":"direct2","size":1,"addr":16,"comment":"\"base64 armored\""},{"name":"indirect","size":1,"addr":32,"comment":"works too"}]
 EOF
 RUN
 

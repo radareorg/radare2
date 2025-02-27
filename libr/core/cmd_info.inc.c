@@ -429,9 +429,9 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 			RList *values = r_str_split_list (s, ",", 0);
 			RList *rrrr = NULL;
 			r_list_foreach (values, iter2, value) {
-				RFlagItem *item = get_flag_for_import (core, value);
-				if (item) {
-					RList *refs = uniqrefs_for (core, item->offset);
+				RFlagItem *fi = get_flag_for_import (core, value);
+				if (fi) {
+					RList *refs = uniqrefs_for (core, fi->addr);
 					if (refs && rrrr) {
 						r_list_join (rrrr, refs);
 					} else if (refs && !rrrr) {
@@ -462,9 +462,9 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 			const char *value;
 			RList *values = r_str_split_list (v, ",", 0);
 			r_list_foreach (values, iter2, value) {
-				RFlagItem *item = get_flag_for_import (core, value);
-				if (item) {
-					const ut64 at = item->offset;
+				RFlagItem *fi = get_flag_for_import (core, value);
+				if (fi) {
+					const ut64 at = fi->addr;
 					r_cons_printf ("'@0x%08"PFMT64x"'CC kind(%s)\n", at, k);
 				}
 			}
@@ -491,9 +491,9 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 			RList *values = r_str_split_list (v, ",", 0);
 			r_list_foreach (values, iter2, value) {
 				pj_ka (pj, value);
-				RFlagItem *item = get_flag_for_import (core, value);
-				if (item) {
-					RList *refs = uniqrefs_for (core, item->offset);
+				RFlagItem *fi = get_flag_for_import (core, value);
+				if (fi) {
+					RList *refs = uniqrefs_for (core, fi->addr);
 					RListIter *iter;
 					char *ref;
 					r_list_foreach (refs, iter, ref) {
@@ -525,9 +525,9 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 			RList *values = r_str_split_list (v, ",", 0);
 			r_list_foreach (values, iter2, value) {
 				r_cons_printf ("|  |- %s\n", value);
-				RFlagItem *item = get_flag_for_import (core, value);
-				if (item) {
-					RList *refs = uniqrefs_for (core, item->offset);
+				RFlagItem *fi = get_flag_for_import (core, value);
+				if (fi) {
+					RList *refs = uniqrefs_for (core, fi->addr);
 					RListIter *iter;
 					char *ref;
 					r_list_foreach (refs, iter, ref) {
@@ -1940,11 +1940,11 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 	}
 	RFlagItem *fi = r_flag_get (core->flags, "main");
 	if (fi) {
-		r_cons_printf ("0x%08"PFMT64x"  main\n", fi->offset);
+		r_cons_printf ("0x%08"PFMT64x"  main\n", fi->addr);
 	}
 	fi = r_flag_get (core->flags, "entry0");
 	if (fi) {
-		r_cons_printf ("0x%08"PFMT64x"  entry0\n", fi->offset);
+		r_cons_printf ("0x%08"PFMT64x"  entry0\n", fi->addr);
 	}
 }
 

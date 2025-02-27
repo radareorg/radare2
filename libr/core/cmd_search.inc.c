@@ -853,7 +853,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RListIter *iter;
 		r_list_foreach (ls, iter, fi) {
 			if (fi->size > 1) {
-				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
+				append_bound (list, core->io, search_itv, fi->addr, fi->size, 7);
 			}
 		}
 	} else if (r_str_startswith (mode, "flag:")) {
@@ -863,7 +863,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RListIter *iter;
 		r_list_foreach (ls, iter, fi) {
 			if (fi->size > 1 && r_str_glob (fi->name, match)) {
-				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
+				append_bound (list, core->io, search_itv, fi->addr, fi->size, 7);
 			}
 		}
 	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
@@ -3967,11 +3967,11 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 			if (fail) {
 				break;
 			}
-			RFlagItem *item = r_flag_get (core->flags, "hit.prelude");
-			if (item) {
+			RFlagItem *fi = r_flag_get (core->flags, "hit.prelude");
+			if (fi) {
 				if (doseek) {
-					r_core_seek (core, item->offset, true);
-					r_flag_unset (core->flags, item);
+					r_core_seek (core, fi->addr, true);
+					r_flag_unset (core->flags, fi);
 				}
 				break;
 			}

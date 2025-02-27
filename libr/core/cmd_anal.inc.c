@@ -7451,7 +7451,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	if (input[0] == 'p') {
 		fi = r_flag_get (core->flags, "aeim.stack");
 		if (fi) {
-			addr = fi->offset;
+			addr = fi->addr;
 			size = fi->size;
 		} else {
 			cmd_esil_mem (core, "");
@@ -10801,8 +10801,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							}
 						} else {
 							pj_k (pj, "name");
-							if (fi->offset != ref->addr) {
-								int delta = (int)(ref->addr - fi->offset);
+							if (fi->addr != ref->addr) {
+								int delta = (int)(ref->addr - fi->addr);
 								char *name_ref = r_str_newf ("%s+%d", fi->name, delta);
 								pj_s (pj, name_ref);
 								free (name_ref);
@@ -10821,7 +10821,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, false);
 						if (fi) {
 							pj_ks (pj, "near_name", fi->name);
-							pj_kn (pj, "near_addr", fi->offset);
+							pj_kn (pj, "near_addr", fi->addr);
 						}
 					}
 					char *refname = core->anal->coreb.getNameDelta (core, ref->at);
@@ -13839,10 +13839,10 @@ static bool cmd_aa(RCore *core, bool aaa) {
 		r_core_cmd0 (core, "af@@@i");
 	}
 
-	RFlagItem *item = r_flag_get (core->flags, "entry0");
-	if (item) {
+	RFlagItem *fi = r_flag_get (core->flags, "entry0");
+	if (fi) {
 		logline (core, 12, "Analyze entrypoint (af@ entry0)");
-		r_core_af (core, item->offset, "entry0", anal_calls);
+		r_core_af (core, fi->addr, "entry0", anal_calls);
 	} else {
 		r_core_af (core, core->offset, NULL, anal_calls);
 	}

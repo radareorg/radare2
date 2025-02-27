@@ -139,14 +139,14 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	R2ProjectFlag flag;
 	ut32 name = rprj_st_append (cur->st, fi->name);
 	ut32 mid = UT32_MAX;
-	R2ProjectMod *mod = find_mod (cur, fi->offset, &mid);
+	R2ProjectMod *mod = find_mod (cur, fi->addr, &mid);
 	r_write_le32 (&flag.name, name);
 	if (mod) {
 		r_write_le32 (&flag.mod, mid);
-		r_write_le64 (&flag.delta, fi->offset - mod->vmin);
+		r_write_le64 (&flag.delta, fi->addr - mod->vmin);
 	} else {
 		r_write_le32 (&flag.mod, UT32_MAX);
-		r_write_le64 (&flag.delta, fi->offset);
+		r_write_le64 (&flag.delta, fi->addr);
 	}
 	r_write_le32 (&flag.size, fi->size);
 	r_buf_write (cur->b, (ut8*)&flag, sizeof (flag));

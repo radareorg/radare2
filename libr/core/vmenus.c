@@ -14,7 +14,7 @@ enum {
 enum {
 	SORT_NONE,
 	SORT_NAME,
-	SORT_OFFSET
+	SORT_ADDR
 };
 
 typedef struct {
@@ -1273,7 +1273,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 
 static bool hudstuff_append(RFlagItem *fi, void *user) {
 	RList *list = (RList *)user;
-	char *s = r_str_newf ("0x%08"PFMT64x"  %s", fi->offset, fi->name);
+	char *s = r_str_newf ("0x%08"PFMT64x"  %s", fi->addr, fi->name);
 	if (s) {
 		r_list_append (list, s);
 	}
@@ -1949,10 +1949,10 @@ static int flag_name_sort(const void *a, const void *b) {
 static int flag_offset_sort(const void *a, const void *b) {
 	const RFlagItem *fa = (const RFlagItem *)a;
 	const RFlagItem *fb = (const RFlagItem *)b;
-	if (fa->offset < fb->offset) {
+	if (fa->addr < fb->addr) {
 		return -1;
 	}
-	if (fa->offset > fb->offset) {
+	if (fa->addr > fb->addr) {
 		return 1;
 	}
 	return 0;
@@ -1963,7 +1963,7 @@ static void sort_flags(RList *l, int sort) {
 	case SORT_NAME:
 		r_list_sort (l, flag_name_sort);
 		break;
-	case SORT_OFFSET:
+	case SORT_ADDR:
 		r_list_sort (l, flag_offset_sort);
 		break;
 	case SORT_NONE:
@@ -2280,7 +2280,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 						r_cons_printf (Color_INVERT);
 					}
 					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
-						       cur?'>':' ', i, fi->offset, fi->size, fi->name);
+						       cur?'>':' ', i, fi->addr, fi->size, fi->name);
 					if (cur && hasColor) {
 						r_cons_printf (Color_RESET);
 					}
@@ -2361,7 +2361,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			}
 			break;
 		case 'J': option += 10; break;
-		case 'o': sort = SORT_OFFSET; break;
+		case 'o': sort = SORT_ADDR; break;
 		case 'n': sort = SORT_NAME; break;
 		case 'j': option++; break;
 		case 'k':
@@ -4112,13 +4112,13 @@ struct seek_flag_offset_t {
 static bool seek_flag_offset(RFlagItem *fi, void *user) {
 	struct seek_flag_offset_t *u = (struct seek_flag_offset_t *)user;
 	if (u->is_next) {
-		if (fi->offset < *u->next && fi->offset > u->offset) {
-			*u->next = fi->offset;
+		if (fi->addr < *u->next && fi->addr > u->offset) {
+			*u->next = fi->addr;
 			u->found = true;
 		}
 	} else {
-		if (fi->offset >= *u->next && fi->offset <  u->offset) {
-			*u->next = fi->offset;
+		if (fi->addr >= *u->next && fi->addr <  u->offset) {
+			*u->next = fi->addr;
 			u->found = true;
 		}
 	}

@@ -458,13 +458,12 @@ static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const ch
 	if (!old_name || !new_name || !anal->flb.unset || !anal->flg_class_get || !anal->flg_class_set) {
 		return;
 	}
-	RFlagItem *flag = anal->flg_class_get (anal->flb.f, old_name);
-	if (!flag) {
-		return;
+	RFlagItem *fi = anal->flg_class_get (anal->flb.f, old_name);
+	if (fi) {
+		const ut64 addr = fi->addr;
+		anal->flb.unset (anal->flb.f, fi);
+		anal->flg_class_set (anal->flb.f, new_name, addr, 0);
 	}
-	ut64 addr = flag->offset;
-	anal->flb.unset (anal->flb.f, flag);
-	anal->flg_class_set (anal->flb.f, new_name, addr, 0);
 }
 
 static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {

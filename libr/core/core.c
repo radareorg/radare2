@@ -254,8 +254,8 @@ static const char *getName(RCore *core, ut64 addr) {
 static char *getNameDelta(RCore *core, ut64 addr) {
 	RFlagItem *item = r_flag_get_at (core->flags, addr, true);
 	if (item) {
-		if (item->offset != addr) {
-			return r_str_newf ("%s + %d", item->name, (int)(addr - item->offset));
+		if (item->addr != addr) {
+			return r_str_newf ("%s + %d", item->name, (int)(addr - item->addr));
 		}
 		return strdup (item->name);
 	}
@@ -362,10 +362,10 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 	RFlag *f = (RFlag*)user;
 	if (ok) {
-		*ok = 0;
+		*ok = false;
 	}
 	if (f) {
 		RFlagItem *item = r_flag_get_in (f, off);
@@ -2102,7 +2102,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 	if (!verbose) {
 		// check for flag colors
 		RFlagItem *fi = r_flag_get_at (core->flags, addr, true);
-		if (fi && fi->offset + fi->size >= addr && fi->color) {
+		if (fi && fi->addr + fi->size >= addr && fi->color) {
 			free (const_color);
 			const_color = r_cons_pal_parse (fi->color, NULL);
 			return const_color;
@@ -2920,18 +2920,18 @@ R_API bool r_core_prompt_loop(RCore *r) {
 	return true;
 }
 
-static int prompt_flag(RCore *r, char *s, size_t maxlen) {
+static int prompt_flag(RCore *core, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
-	const RFlagItem *f = r_flag_get_at (r->flags, r->offset, true);
+	const RFlagItem *f = r_flag_get_at (core->flags, core->offset, true);
 	if (!f) {
 		return false;
 	}
-	if (f->offset < r->offset) {
+	if (f->addr < core->offset) {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x,
-				r->offset, f->name, r->offset - f->offset);
+				core->offset, f->name, core->offset - f->addr);
 	} else {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s",
-				r->offset, f->name);
+				core->offset, f->name);
 	}
 	if (strlen (s) > maxlen - sizeof (DOTS)) {
 		s[maxlen - sizeof (DOTS) - 1] = '\0';
@@ -2940,13 +2940,16 @@ static int prompt_flag(RCore *r, char *s, size_t maxlen) {
 	return true;
 }
 
-static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const RBinSection *sec = r_bin_get_section_at (r_bin_cur_object (r->bin), r->offset, true);
-	if (!sec) {
-		return;
+// ugly function signature
+static void prompt_sec(RCore *core, char *s, size_t maxlen) {
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	if (bo) {
+		const RBinSection *sec = r_bin_get_section_at (bo, core->offset, true);
+		if (sec) {
+			r_str_ncpy (s, sec->name, maxlen - 2);
+			strcat (s, ":");
+		}
 	}
-	r_str_ncpy (s, sec->name, maxlen - 2);
-	strcat (s, ":");
 }
 
 static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {

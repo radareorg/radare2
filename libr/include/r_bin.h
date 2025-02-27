@@ -694,7 +694,7 @@ typedef struct r_bin_field_t {
 	ut64 paddr;
 	ut64 value;
 	int size;
-	int offset;
+	int offset; // R2_600 -rename to addr
 	// ut32 visibility; // R2_590 - deprecate we have attr!
 	RBinName *name;
 	RBinName *type;

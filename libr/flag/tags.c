@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2024 - pancake */
+/* radare - LGPL - Copyright 2018-2025 - pancake */
 
 #include <r_flag.h>
 

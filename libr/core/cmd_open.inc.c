@@ -1604,15 +1604,15 @@ struct __rebase_struct {
 #define __is_inside_section(item_addr, section)\
 	(item_addr >= old_base + section->vaddr && item_addr <= old_base + section->vaddr + section->vsize)
 
-static bool __rebase_flags(RFlagItem *flag, void *user) {
+static bool __rebase_flags(RFlagItem *fi, void *user) {
 	struct __rebase_struct *reb = user;
 	ut64 old_base = reb->old_base;
 	RListIter *it;
 	RBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
 	r_list_foreach (reb->old_sections, it, sec) {
-		if (__is_inside_section (flag->offset, sec)) {
-			r_flag_set (reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
+		if (__is_inside_section (fi->addr, sec)) {
+			r_flag_set (reb->core->flags, fi->name, fi->addr + reb->diff, fi->size);
 			break;
 		}
 	}

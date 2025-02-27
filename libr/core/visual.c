@@ -1285,7 +1285,7 @@ R_API int r_line_hist_offset_up(RLine *line) {
 	line->offset_hist_index--;
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command = (f && f->offset == off && f->offset > 0)
+	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
 	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
@@ -1308,7 +1308,7 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command = (f && f->offset == off && f->offset > 0)
+	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
 		: r_str_newf ("0x%"PFMT64x, off);
 	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
@@ -1517,7 +1517,7 @@ repeat:
 				} else {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					if (f) {
-						name = r_str_newf ("%s + %" PFMT64d, f->name, refi->addr - f->offset);
+						name = r_str_newf ("%s + %" PFMT64d, f->name, refi->addr - f->addr);
 					} else {
 						name = strdup ("unk");
 					}
@@ -3184,7 +3184,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				range = max - min + 1;
 				if (!strcmp (n, "-")) {
-					r_flag_unset_off (core->flags, core->offset + core->print->cur);
+					r_flag_unset_addr (core->flags, core->offset + core->print->cur);
 				} else if (*n == '.') {
 					if (n[1] == '-') {
 						//unset
@@ -4165,11 +4165,11 @@ static void visual_title(RCore *core, int color) {
 			f = r_flag_get_at (core->flags, addr, showDelta);
 		}
 		if (f) {
-			if (f->offset == addr || !f->offset) {
+			if (f->addr == addr || !f->addr) {
 				snprintf (pos, sizeof (pos), "@ %s", f->name);
 			} else {
 				snprintf (pos, sizeof (pos), "@ %s+%d # 0x%"PFMT64x,
-					f->name, (int) (addr - f->offset), addr);
+					f->name, (int) (addr - f->addr), addr);
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);

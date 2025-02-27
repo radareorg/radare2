@@ -1607,11 +1607,11 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						const RAnalRef *next = RVecAnalRef_at (xrefs, i + 1);
 						ut64 next_addr = next->addr;
 						next_f = r_flag_get_at (core->flags, next_addr, true);
-						if (next_f && f->offset == next_f->offset) {
+						if (next_f && f->addr == next_f->addr) {
 							if (xci < 32) {
 								xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
 							}
-							r_list_append (addrs, r_num_dup (refi->addr - f->offset));
+							r_list_append (addrs, r_num_dup (refi->addr - f->addr));
 							i++;
 							continue;
 						}
@@ -1619,7 +1619,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					if (ds->asm_demangle) {
 						RFlagItem *f_sym = f;
 						if (!r_str_startswith (f_sym->name, "sym.")) {
-							f_sym = r_flag_get_by_spaces (core->flags, false, f->offset,
+							f_sym = r_flag_get_by_spaces (core->flags, false, f->addr,
 									R_FLAGS_FS_SYMBOLS, NULL);
 						}
 						if (f_sym && f_sym->demangled && f_sym->realname) {
@@ -1631,7 +1631,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					if (xci < 32) {
 						xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
 					}
-					r_list_append (addrs, r_num_dup (refi->addr - f->offset));
+					r_list_append (addrs, r_num_dup (refi->addr - f->addr));
 				} else {
 					name = strdup ("unk");
 				}
@@ -2674,12 +2674,12 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	}
 #endif
 	r_list_foreach (uniqlist, iter, flag) {
-		if (!overlapped && f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
+		if (!overlapped && f && f->addr == flag->addr && !strcmp (flag->name, f->name)) {
 			// do not show non-overlapped flags that have the same name as the function
 			// do not show flags that have the same name as the function
 			continue;
 		}
-		bool no_fcn_lines = (!overlapped && f && f->addr == flag->offset);
+		bool no_fcn_lines = (!overlapped && f && f->addr == flag->addr);
 		if (ds->maxflags && count >= ds->maxflags) {
 			if (printPre) {
 				ds_pre_xrefs (ds, no_fcn_lines);
@@ -2787,7 +2787,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 				docolon = false;
 			} else {
 				const char *lang = r_config_get (core->config, "bin.lang");
-				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset, keep_lib);
+				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->addr, keep_lib);
 				if (!name) {
 					const char *n = flag->realname? flag->realname: flag->name;
 					if (n) {
@@ -3186,20 +3186,20 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
-			ds->sfi.offset = ds->fcn->addr;
+			ds->sfi.addr = ds->fcn->addr;
 			ds->sfi.name = ds->fcn->name;
 			ds->lastflag = &ds->sfi;
 		} else {
 			RFlagItem *fi = r_flag_get_at (core->flags, ds->at, !ds->lastflag);
-			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				ds->sfi.offset = fi->offset;
+			if (fi) {
+				ds->sfi.addr = fi->addr;
 				ds->sfi.name = fi->name;
 				ds->lastflag = &ds->sfi;
 			}
 		}
 		if (ds->lastflag && ds->lastflag->name) {
 			name = ds->lastflag->name;
-			delta = ds->at - ds->lastflag->offset;
+			delta = ds->at - ds->lastflag->addr;
 		}
 		{
 			char *str = r_str_newf ("%s + %-4d", name, delta);
@@ -3248,34 +3248,12 @@ R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
 			*delta = at - f->addr;
 			label = strdup (f->name);
 		}
-#if 0
-		if (!ds->lastflag) {
-			*delta = 0;
-		}
-#endif
 	}
 	if (!label && type & RELOFF_TO_FLAG) {
 		// RFlagItem *fi = r_flag_get_in (core->flags, at);
 		RFlagItem *fi = r_flag_get_at (core->flags, at, true);
-#if 0
 		if (fi) {
-			ds->lastflag = fi;
-		}
-		if (ds->lastflag) {
-			if (ds->lastflag->offset == at) {
-				*delta = 0;
-			} else {
-				*delta = at - ds->lastflag->offset;
-			}
-		} else {
-			*delta = at - core->offset;
-		}
-		if (ds->lastflag) {
-			label = strdup (ds->lastflag->name);
-		}
-#endif
-		if (fi) {
-			*delta = at - fi->offset;
+			*delta = at - fi->addr;
 			label = strdup (fi->name);
 		}
 	}
@@ -3302,7 +3280,7 @@ R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
 		r_flag_space_push (f, "maps");
 		RFlagItem *fi = r_flag_get_at (f, at, true);
 		if (fi) {
-			*delta = at - fi->offset;
+			*delta = at - fi->addr;
 			label = r_str_trim_dup (fi->name);
 		}
 		r_flag_space_pop (f);
@@ -3312,7 +3290,7 @@ R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
 		r_flag_space_push (f, "libs");
 		RFlagItem *fi = r_flag_get_at (f, at, true);
 		if (fi) {
-			*delta = at - fi->offset;
+			*delta = at - fi->addr;
 			label = strdup (fi->name);
 			r_str_trim (label);
 		}
@@ -3354,7 +3332,7 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 		if (f) {
 			*delta = at - f->addr;
 			ds->sfi.name = f->name;
-			ds->sfi.offset = f->addr;
+			ds->sfi.addr = f->addr;
 			ds->lastflag = &ds->sfi;
 			label = strdup (f->name);
 		}
@@ -3368,10 +3346,10 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 			ds->lastflag = fi;
 		}
 		if (ds->lastflag) {
-			if (ds->lastflag->offset == at) {
+			if (ds->lastflag->addr == at) {
 				*delta = 0;
 			} else {
-				*delta = at - ds->lastflag->offset;
+				*delta = at - ds->lastflag->addr;
 			}
 		} else {
 			*delta = at - core->offset;
@@ -3393,14 +3371,14 @@ static void ds_print_offset(RDisasmState *ds) {
 	bool hasCustomColor = false;
 	// probably tooslow
 	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
-	if (f && ds->show_flag_in_offset && f->offset == at) {
+	if (f && ds->show_flag_in_offset && f->addr == at) {
 		ds_newline (ds);
 		if (ds_show_flags (ds, false)) {
 			ds_begin_cont (ds);
 		}
 	}
 	if (ds->show_color && f && R_STR_ISNOTEMPTY (f->color)) {
-		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
+		if (ds->at >= f->addr && ds->at < f->addr + f->size) {
 		//	if (r_itv_inrange (f->itv, ds->at))
 			char *k = r_cons_pal_parse (f->color, NULL);
 			if (R_STR_ISNOTEMPTY (k)) {
@@ -5445,7 +5423,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	if (!f) {
 		return;
 	}
-	ut64 base = f->offset;
+	ut64 base = f->addr;
 	REsil *esil = ds->core->anal->esil;
 	int i, end = ds->core->offset - base;
 	int maxemu = 1024 * 1024;

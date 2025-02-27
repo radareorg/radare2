@@ -1680,11 +1680,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (!mr.debug && o && !o->regstate) {
 			RFlagItem *fi = r_flag_get (r->flags, "entry0");
 			if (fi) {
-				r_core_seek (r, fi->offset, true);
+				r_core_seek (r, fi->addr, true);
 			} else {
 				fi = r_flag_get (r->flags, "section.0.__TEXT.__text");
 				if (fi) {
-					r_core_seek (r, fi->offset, true);
+					r_core_seek (r, fi->addr, true);
 				} else if (o) {
 					RList *sections = r_bin_get_sections (r->bin);
 					RListIter *iter;

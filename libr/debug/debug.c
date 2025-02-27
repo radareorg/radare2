@@ -338,13 +338,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 	return bpi;
 }
 
-static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
+static const char *str_callback(RNum *userptr, ut64 off, bool *ok) {
 	// RDebug *dbg = (RDebug *)userptr;
 	// TODO: implement the rnum callback for str or just get rid of it as we dont need it
 	return NULL;
 }
 
-static ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
+static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 	RDebug *dbg = (RDebug *)userptr;
 	// resolve using regnu
 	return r_debug_reg_get_err (dbg, str, ok, NULL);
@@ -381,7 +381,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->trace = r_debug_trace_new ();
 	dbg->cb_printf = (void *)printf;
 	dbg->reg = r_reg_new ();
-	dbg->num = r_num_new (r_debug_num_callback, r_debug_str_callback, dbg);
+	dbg->num = r_num_new (num_callback, str_callback, dbg);
 	dbg->current = NULL;
 	dbg->threads = NULL;
 	dbg->hitinfo = 1;
@@ -1577,7 +1577,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 // continue execution until a syscall is found, then return its syscall number or -1 on error
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
-	int i, err, reg;
+	int i, reg;
 	if (!dbg->current || r_debug_is_dead (dbg)) {
 		return -1;
 	}
@@ -1592,6 +1592,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		R_LOG_ERROR ("--> cannot read registers");
 		return -1;
 	}
+	bool err;
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
 		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");

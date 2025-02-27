@@ -181,7 +181,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		free (var->regname);
 		free (var->type);
 	}
-	R_DIRTY (fcn->anal);
+	R_DIRTY_SET (fcn->anal);
 	var->name = strdup (name);
 	var->regname = reg? strdup (reg->name): NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
@@ -201,7 +201,7 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 			return false;
 		}
 	}
-	R_DIRTY (fcn->anal);
+	R_DIRTY_SET (fcn->anal);
 	return true;
 }
 
@@ -707,7 +707,7 @@ R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address) {
 		RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 		r_pvector_remove_data (inst_accesses, var);
 	}
-	R_DIRTY (var->fcn->anal);
+	R_DIRTY_SET (var->fcn->anal);
 }
 
 R_API void r_anal_var_clear_accesses(RAnalVar *var) {
@@ -725,7 +725,7 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 		}
 	}
 	r_vector_clear (&var->accesses);
-	R_DIRTY (var->fcn->anal);
+	R_DIRTY_SET (var->fcn->anal);
 }
 
 R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {

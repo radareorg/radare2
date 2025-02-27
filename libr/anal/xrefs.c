@@ -275,14 +275,14 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 	}
 
 	ref_manager_add_entry (anal->rm, from, to, type);
-	R_DIRTY (anal);
+	R_DIRTY_SET (anal);
 	return true;
 }
 
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	ref_manager_remove_entry (anal->rm, from, to);
-	R_DIRTY (anal);
+	R_DIRTY_SET (anal);
 	return true;
 }
 
