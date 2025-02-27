@@ -101,7 +101,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 		return;
 	}
 	core->visual.hold = r_config_hold_new (core->config);
-	r_config_hold (core->visual.hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
+	r_config_hold (core->visual.hold, "asm.hint.pos", "asm.cmt.col", "asm.addr", "asm.lines",
 	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.cmt.user", "asm.instr", NULL);
 	if (for_graph) {
 		r_config_set (core->config, "asm.hint.pos", "-2");
@@ -113,7 +113,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 		r_config_set_b (core->config, "asm.lines", true);
 	}
 	r_config_set_i (core->config, "asm.cmt.col", 0);
-	r_config_set_b (core->config, "asm.offset", false);
+	r_config_set_b (core->config, "asm.addr", false);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "asm.comments", false);
@@ -4314,9 +4314,9 @@ static int visual_responsive(RCore *core) {
 			r_config_set_i (core->config, "hex.cols", 16);
 		}
 		if (w < 25) {
-			r_config_set_i (core->config, "asm.offset", 0);
+			r_config_set_b (core->config, "asm.addr", false);
 		} else {
-			r_config_set_i (core->config, "asm.offset", 1);
+			r_config_set_b (core->config, "asm.addr", true);
 		}
 		if (w > 80) {
 			r_config_set_i (core->config, "asm.lines.width", 14);

@@ -509,7 +509,7 @@ e asm.arch=x86
 e asm.bits=32
 s entry0
 e asm.lines=false
-e asm.offset=false
+e asm.addr=false
 e asm.functions=false
 e asm.comments=false
 f--

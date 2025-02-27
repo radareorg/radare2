@@ -749,9 +749,9 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_b (core->config, "asm.demangle");
 	ds->asm_describe = r_config_get_b (core->config, "asm.describe");
-	ds->show_offset = r_config_get_b (core->config, "asm.offset");
-	ds->show_offset_focus = r_config_get_b (core->config, "asm.offset.focus");
-	ds->show_offdec = r_config_get_i (core->config, "asm.offset.base10");
+	ds->show_offset = r_config_get_b (core->config, "asm.addr");
+	ds->show_offset_focus = r_config_get_b (core->config, "asm.addr.focus");
+	ds->show_offdec = r_config_get_i (core->config, "asm.addr.base10");
 	ds->show_bbline = r_config_get_i (core->config, "asm.lines.bb");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
@@ -789,7 +789,7 @@ static RDisasmState *ds_init(RCore *core) {
 		}
 	}
 	ds->stackptr = core->anal->stackptr;
-	ds->show_offseg = r_config_get_b (core->config, "asm.offset.segment");
+	ds->show_offseg = r_config_get_b (core->config, "asm.addr.segment");
 	ds->show_flags = r_config_get_b (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_b (core->config, "asm.bytes");
 	ds->show_bytes_ascii = r_config_get_b (core->config, "asm.bytes.ascii");
@@ -802,7 +802,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
 	{
-		const char *relto = r_config_get (core->config, "asm.offset.relto");
+		const char *relto = r_config_get (core->config, "asm.addr.relto");
 		ds->show_reloff_to = 0;
 		ds->show_reloff_to |= strstr (relto, "fu")? RELOFF_TO_FUNC: 0;
 		ds->show_reloff_to |= strstr (relto, "fl")? RELOFF_TO_FLAG: 0;
@@ -814,7 +814,7 @@ static RDisasmState *ds_init(RCore *core) {
 		ds->show_reloff_to |= strstr (relto, "fm")? RELOFF_TO_FMAP: 0;
 		ds->show_reloff_to |= strstr (relto, "li")? RELOFF_TO_LIBS: 0;
 	}
-	ds->show_reloff = ds->show_reloff_to != 0; // r_config_get_i (core->config, "asm.offset.rel");
+	ds->show_reloff = ds->show_reloff_to != 0; // r_config_get_i (core->config, "asm.addr.rel");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_b (core->config, "asm.comments");
 	ds->show_cmt_user = r_config_get_b (core->config, "asm.cmt.user");
@@ -7780,8 +7780,8 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 }
 
 R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
-	bool show_offset = r_config_get_b (core->config, "asm.offset");
-	// bool show_offset_focus = r_config_get_b (core->config, "asm.offset.focus");
+	bool show_offset = r_config_get_b (core->config, "asm.addr");
+	// bool show_offset_focus = r_config_get_b (core->config, "asm.addr.focus");
 	bool show_bytes = r_config_get_b (core->config, "asm.bytes");
 	bool decode = r_config_get_b (core->config, "asm.decode");
 	bool subnames = r_config_get_b (core->config, "asm.sub.names");
