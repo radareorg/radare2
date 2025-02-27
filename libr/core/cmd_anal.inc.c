@@ -13925,6 +13925,15 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	return true;
 }
 
+static bool is_swift(RCore *core) {
+	const char *vlang = r_config_get (core->config, "bin.lang");
+	r_str_var (lang, 16, vlang);
+	if (*lang) {
+		return !strcmp (lang, "swift");
+	}
+	return false;
+}
+
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
 		r_core_cmd_help (core, help_msg_aaa);
@@ -14183,6 +14192,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 				r_core_cmd_call (core, "aavq");
 			}
 			r_core_task_yield (&core->tasks);
+		}
+		if (is_swift (core)) {
+			r_core_cmd0 (core, "aavr@e:anal.in=bin.sections.rw");
 		}
 		r_core_cmd_call (core, "s-");
 		if (dh_orig) {
