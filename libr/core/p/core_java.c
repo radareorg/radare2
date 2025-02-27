@@ -890,7 +890,7 @@ static int r_cmd_java_handle_reload_bin(RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *obj = (RBinJavaObj *)r_cmd_java_get_bin_obj (anal);
 	const char *p = cmd;
-	ut64 addr = 0LL; //cur_offset = core->offset, addr = 0;
+	ut64 addr = 0LL;
 	ut64 buf_size = 0;
 	ut8 *buf = NULL;
 	int res = false;
@@ -1327,12 +1327,12 @@ static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 	IFDBG r_cons_printf ("r_cmd_java_handle_flags_str_at: ftype = 0x%02x, idx = %s\n", f_type, p);
 	if (p) {
 		flag_value = 0;
-		ut64 cur_offset = core->offset;
+		ut64 cur_offset = core->addr;
 		ut64 flag_value_addr = r_cmd_java_is_valid_input_num_value (core, p)
 			? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 		r_io_read_at (core->io, flag_value_addr, (ut8 *)&flag_value, 2);
 		IFDBG r_cons_printf ("r_cmd_java_handle_flags_str_at: read = 0x%04x\n", flag_value);
-		if (cur_offset != core->offset) {
+		if (cur_offset != core->addr) {
 			r_core_seek (core, cur_offset - 2, true);
 		}
 		flag_value = R_BIN_JAVA_USHORT (((ut8 *)&flag_value), 0);

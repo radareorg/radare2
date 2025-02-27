@@ -232,11 +232,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '.': // "ob."
 		{
 			const char *arg = r_str_trim_head_ro (input + 2);
-			ut64 at = core->offset;
+			ut64 at = core->addr;
 			if (*arg) {
 				at = r_num_math (core->num, arg);
 				if (at == 0 && *arg != '0') {
-					at = core->offset;
+					at = core->addr;
 				}
 			}
 			RBinFile *bf = r_bin_file_at (core->bin, at);
@@ -315,7 +315,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
 				RBinFileOptions opt;
-				r_bin_file_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
+				r_bin_file_options_init (&opt, fd, core->addr, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".ie*");
 				break;
@@ -475,7 +475,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				r_list_append (list, info);
 			}
 			RTable *table = r_core_table_new (core, "bins");
-			r_table_visual_list (table, list, core->offset, core->blocksize,
+			r_table_visual_list (table, list, core->addr, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 			char *table_text = r_table_tostring (table);
 			if (table_text) {
@@ -494,7 +494,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 // TODO: discuss the output format
 static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 	RIO *io = core->io;
-	ut64 off = core->offset;
+	ut64 off = core->addr;
 	R_RETURN_IF_FAIL (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -629,7 +629,7 @@ static void cmd_omp(RCore *core, int argc, char *argv[]) {
 		break;
 	case 1:
 		{
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				int nperm = r_str_rwx (argv[0]);
 				if (nperm < 0) {
@@ -826,7 +826,7 @@ static void cmd_omd(RCore *core, const char* input) {
 		char *inp = r_str_trim_dup (input);
 		RList *args = r_str_split_list (inp, " ", 0);
 		if (args && r_list_length (args) == 2) {
-			ut64 pa = core->offset;
+			ut64 pa = core->addr;
 			ut64 va = r_num_math (core->num, r_list_get_n (args, 0));
 			ut64 vb = r_num_math (core->num, r_list_get_n (args, 1));
 			ut64 sz = vb - va;
@@ -859,7 +859,7 @@ static void cmd_oma(RCore *core, const char *input) {
 		break;
 	case 0:
 		{
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				char *s = r_io_map_getattr (map);
 				r_cons_println (s);
@@ -884,7 +884,7 @@ static void cmd_oma(RCore *core, const char *input) {
 					R_LOG_ERROR ("Cannot find map with id %d", mapid);
 				}
 			} else {
-				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
 					char *s = r_io_map_getattr (map);
 					r_cons_println (s);
@@ -897,7 +897,7 @@ static void cmd_oma(RCore *core, const char *input) {
 		break;
 	case '.':
 		if (input[3] == ' ') {
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				const char *arg = r_str_trim_head_ro (input + 3);
 				if (!r_io_map_setattr_fromstring (map, arg)) {
@@ -907,7 +907,7 @@ static void cmd_oma(RCore *core, const char *input) {
 				R_LOG_ERROR ("Cannot find map in the current offset");
 			}
 		} else if (!input[3]) {
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				char *s = r_io_map_getattr (map);
 				r_cons_println (s);
@@ -1106,7 +1106,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.': // "om."
-		map = r_io_map_get_at (core->io, core->offset);
+		map = r_io_map_get_at (core->io, core->addr);
 		if (map) {
 			if (input[2] == 'j') { // "om.j"
 				pj = r_core_pj_new (core);
@@ -1140,7 +1140,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_om, "oms");
 		} else if (input[2] != ' ') {
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				r_cons_printf ("%"PFMT64d"\n", r_itv_size (map->itv));
 			}
@@ -1167,7 +1167,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_omv);
 		} else if (input[2] == '.') {
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				ut64 dst = r_num_math (core->num, input + 3);
 				r_io_map_remap (core->io, map->id, dst);
@@ -1220,7 +1220,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		case 'l': // "omrl"
 			if (input[2] == ' ') {
 				r_core_cmdf (core, "om %s 0x%08"PFMT64x
-					" $s r oml", input + 2, core->offset);
+					" $s r oml", input + 2, core->addr);
 			} else {
 				r_core_cmd0 (core, "om `oq.` $B $s r");
 			}
@@ -1260,7 +1260,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		case 0:
 			{
-				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
 					const char *sperm = r_str_rwx_i (map->perm);
 					r_cons_println (sperm);
@@ -1285,7 +1285,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (input[2] == '?') { // "omn?"
 			r_core_cmd_help (core, help_msg_omn);
 		} else if (input[2] == '.') { // "omn."
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				switch (input[3]) {
 				case '-':
@@ -1441,7 +1441,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		case 0: // "omp"
 			{
-				RIOMap *map = r_io_map_get_at (core->io, core->offset);
+				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
 					r_cons_println (r_str_rwx_i (map->perm));
 				}
@@ -1457,12 +1457,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case '*': // "om*" "om**"
 	case 'q': // "omq"
 		if (input[1] && input[2] == '*') { // "om**"
-			map = r_io_map_get_at (core->io, core->offset);
+			map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				map_list (core, input[1], core->print, -3);
 			}
 		} else if (input[1] && input[2] == '.') {
-			map = r_io_map_get_at (core->io, core->offset);
+			map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				core->print->cb_printf ("%i\n", map->id);
 			}
@@ -1498,7 +1498,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_list_append (list, info);
 		}
 		RTable *table = r_core_table_new (core, "maps");
-		r_table_visual_list (table, list, core->offset, core->blocksize,
+		r_table_visual_list (table, list, core->addr, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *tablestr = r_table_tostring (table);
 		if (tablestr) {
@@ -2570,12 +2570,12 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '.': // "o."
 		if (input[1] == 'q') { // "o.q" // same as oq
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				r_cons_printf ("%d\n", map->fd);
 			}
 		} else {
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				RIODesc *desc = r_io_desc_get (core->io, map->fd);
 				if (desc) {
@@ -2592,7 +2592,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 			char *uri = r_str_newf ("malloc://%d", len);
 			ut8 *data = calloc (len, 1);
-			r_io_read_at (core->io, core->offset, data, len);
+			r_io_read_at (core->io, core->addr, data, len);
 			if ((file = r_core_file_open (core, uri, R_PERM_RWX, 0))) {
 				fd = file->fd;
 				r_core_return_value (core, fd);

@@ -229,7 +229,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	int autoseg = r_str_startswith (asmarch, "x86") && asmbits == 16;
-	r_config_set (cfg, "asm.offset.segment", r_str_bool (autoseg));
+	r_config_set (cfg, "asm.addr.segment", r_str_bool (autoseg));
 }
 
 static bool cb_debug_hitinfo(void *user, void *data) {
@@ -1635,7 +1635,7 @@ static bool cb_reloff(void *user, void *data) {
 		if (strchr (node->value, '?')) {
 			r_cons_printf (options);
 		} else {
-			R_LOG_ERROR ("Invalid value, try `-e asm.offset.relto=?`");
+			R_LOG_ERROR ("Invalid value, try `-e asm.addr.relto=?`");
 		}
 		return false;
 	}
@@ -2755,7 +2755,7 @@ static bool cb_segoff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_offset_segment_bits(void *user, void *data) {
+static bool cb_asm_addr_segment_bits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->rasm->config->seggrn = node->i_value;
@@ -3578,7 +3578,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("anal.mask", "false", "use the smart aobm command to compute the binary mask of the instruction");
 	SETBPREF ("anal.a2f", "false", "use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "comma separated list of register names to be readonly");
-	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.offset.segment and asm.offset.segment.bits)");
+	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.addr.segment and asm.addr.segment.bits)");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "set the value of the GP register (MIPS)");
 	SETBPREF ("anal.fixed.gp", "true", "set gp register to anal.gp before emulating each instruction in aae");
 	SETCB ("anal.fixed.arch", "false", &cb_anal_fixed_arch, "permit arch changes during analysis");
@@ -3824,13 +3824,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "cache last output after flush to make _ command work (disable for performance)");
-	SETBPREF ("asm.offset", "true", "show offsets in disassembly");
-	SETBPREF ("asm.offset.base36", "false", "use base36 for addresses");
-	SETCB ("asm.offset.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
-	SETICB ("asm.offset.segment.bits", 4, &cb_asm_offset_segment_bits, "segment granularity in bits (x86-16)");
-	SETCB ("asm.offset.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
-	SETCB ("asm.offset.relto", "", &cb_reloff, "show offset relative to fun,map,sec,flg");
-	SETBPREF ("asm.offset.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
+	SETBPREF ("asm.addr", "true", "show offsets in disassembly");
+	SETBPREF ("asm.addr.base36", "false", "use base36 for addresses");
+	SETCB ("asm.addr.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
+	SETICB ("asm.addr.segment.bits", 4, &cb_asm_addr_segment_bits, "segment granularity in bits (x86-16)");
+	SETCB ("asm.addr.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
+	SETCB ("asm.addr.relto", "", &cb_reloff, "show offset relative to fun,map,sec,flg");
+	SETBPREF ("asm.addr.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETBPREF ("asm.section", "false", "show section name before offset");
 	SETBPREF ("asm.section.perm", "false", "show section permissions in the disasm");
 	SETBPREF ("asm.section.name", "true", "show section name in the disasm");

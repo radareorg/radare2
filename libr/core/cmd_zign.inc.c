@@ -269,7 +269,7 @@ static int cmd_za(void *data, const char *input) {
 			if (n > 0) {
 				fcni = r_anal_get_function_byname (core->anal, r_str_word_get0 (args, 0));
 			} else {
-				fcni = r_anal_get_function_at (core->anal, core->offset);
+				fcni = r_anal_get_function_at (core->anal, core->addr);
 			}
 			if (fcni) {
 				r_sign_add_func (core->anal, fcni, zigname);
@@ -908,9 +908,9 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 		}
 	}
 
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	if (!fcn) {
-		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->addr);
 		return false;
 	}
 
@@ -1093,9 +1093,9 @@ static bool cmd_zd(void *data, const char *input) {
 	R_RETURN_VAL_IF_FAIL (data && input, false);
 	RCore *core = (RCore *)data;
 
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	if (!fcn) {
-		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->addr);
 		return false;
 	}
 
@@ -1237,13 +1237,13 @@ static int cmd_zdot(void *data, const char *input) {
 	}
 
 	R_LOG_INFO ("searching function metrics");
-	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	if (fcn) {
 		r_cons_break_push (NULL, NULL);
 		r_sign_fcn_match_metrics (&sm, fcn);
 		r_cons_break_pop ();
 	} else {
-		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->addr);
 	}
 
 	if (ctx.rad) {
@@ -1371,10 +1371,10 @@ static int cmd_zign(void *data, const char *input) {
 					naddr = UT64_MAX;
 				}
 			}
-			ut64 oaddr = core->offset;
-			core->offset = naddr; // XXX R2_600 - this is a hack because we cant break the abi
+			ut64 oaddr = core->addr;
+			core->addr = naddr; // XXX R2_600 - this is a hack because we cant break the abi
 			r_sign_list (core->anal, *input);
-			core->offset = oaddr;
+			core->addr = oaddr;
 		}
 		break;
 	case ',': // "z,"

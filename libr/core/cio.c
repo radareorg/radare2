@@ -61,7 +61,7 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 }
 
 R_API int r_core_seek_base(RCore *core, const char *hex) {
-	ut64 addr = r_num_tail (core->num, core->offset, hex);
+	ut64 addr = r_num_tail (core->num, core->addr, hex);
 	return r_core_seek (core, addr, true);
 }
 
@@ -342,7 +342,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (!buf) {
 		return false;
 	}
-	int ret = r_core_write_at (core, core->offset, buf, core->blocksize);
+	int ret = r_core_write_at (core, core->addr, buf, core->blocksize);
 	free (buf);
 	return ret;
 }
@@ -401,13 +401,13 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
-	core->offset = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+	core->addr = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (rb) {
 		r_core_block_read (core);
 	}
 	if (core->binat) {
 		// XXX wtf is this code doing here
-		RBinFile *bf = r_bin_file_at (core->bin, core->offset);
+		RBinFile *bf = r_bin_file_at (core->bin, core->addr);
 		if (bf) {
 			core->bin->cur = bf;
 			r_bin_select_bfid (core->bin, bf->id);
@@ -416,11 +416,11 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 			core->bin->cur = NULL;
 		}
 	}
-	return core->offset == addr;
+	return core->addr == addr;
 }
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
-	ut64 tmp = core->offset;
+	ut64 tmp = core->addr;
 	if (addr == 0) {
 		return true;
 	}
@@ -435,7 +435,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 			addr += tmp;
 		}
 	}
-	core->offset = addr;
+	core->addr = addr;
 	return r_core_seek (core, addr, true);
 }
 
@@ -469,7 +469,7 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 		ret = r_io_write_at (core->io, addr, buf, size);
 	}
 beach:
-	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
+	if (addr >= core->addr && addr <= core->addr + core->blocksize - 1) {
 		r_core_block_read (core);
 	}
 	return ret;
@@ -482,14 +482,14 @@ R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 	}
 	const bool io_va = r_config_get_b (core->config, "io.va");
 	if (io_va) {
-		RIOMap *map = r_io_map_get_at (core->io, core->offset);
+		RIOMap *map = r_io_map_get_at (core->io, core->addr);
 		if (map) {
 			addr = addr - r_io_map_begin (map) + map->delta;
 		}
 		r_config_set_i (core->config, "io.va", false);
 	}
 	int ret = r_io_extend_at (core->io, addr, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
+	if (addr >= core->addr && addr <= core->addr + core->blocksize) {
 		r_core_block_read (core);
 	}
 	r_config_set_b (core->config, "io.va", io_va);
@@ -564,7 +564,7 @@ R_API int r_core_block_read(RCore *core) {
 	int res = -1;
 	R_CRITICAL_ENTER (core);
 	if (core && core->block) {
-		res = r_io_read_at (core->io, core->offset, core->block, core->blocksize);
+		res = r_io_read_at (core->io, core->addr, core->block, core->blocksize);
 	}
 	R_CRITICAL_LEAVE (core);
 	return res;

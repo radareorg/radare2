@@ -34,7 +34,7 @@ static int cmd_yank(void *data, const char *input) {
 		{
 			char *args = r_str_trim_dup (input + 1);
 			char *arg = r_str_after (args, ' ');
-			ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+			ut64 addr = arg? r_num_math (core->num, arg): core->addr;
 			r_core_yank (core, addr, r_num_math (core->num, args));
 			free (args);
 		}
@@ -51,14 +51,14 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 'y': // "yy"
 		input = r_str_trim_head_ro (input);
-		n = input[1]? r_num_math (core->num, input + 1): core->offset;
+		n = input[1]? r_num_math (core->num, input + 1): core->addr;
 		r_core_yank_paste (core, n, 0);
 		break;
 	case 'x': // "yx"
 		r_core_yank_hexdump (core, r_num_math (core->num, input + 1));
 		break;
 	case 'z': // "yz"
-		r_core_yank_string (core, core->offset, r_num_math (core->num, input + 1));
+		r_core_yank_string (core, core->addr, r_num_math (core->num, input + 1));
 		break;
 	case 'w': // "yw" ... we have yf which makes more sense than 'w'
 		switch (input[1]) {
@@ -70,7 +70,7 @@ static int cmd_yank(void *data, const char *input) {
 				char *out = strdup (input + 3);
 				int len = r_hex_str2bin (input + 3, (ut8*)out);
 				if (len > 0) {
-					r_core_yank_set (core, core->offset, (const ut8*)out, len);
+					r_core_yank_set (core, core->addr, (const ut8*)out, len);
 				} else {
 					R_LOG_ERROR ("Invalid length");
 				}

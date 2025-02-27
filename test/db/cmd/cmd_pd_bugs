@@ -35,7 +35,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 af
 e asm.var.summary=0
-e asm.offset.relto=func
+e asm.addr.relto=func
 pd 10
 e scr.color=1
 pd 10

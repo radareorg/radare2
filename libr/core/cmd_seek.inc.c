@@ -8,7 +8,7 @@ static RCoreHelpMessage help_msg_s = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "print current address",
 	"s", " addr", "seek to address",
-	"s.", "[?]hexoff", "seek honoring a base from core->offset",
+	"s.", "[?]hexoff", "seek honoring a base from core->addr",
 	"s:", "pad", "print current address with N padded zeros (defaults to 8)",
 	"s-", "", "undo seek",
 	"s-*", "", "reset undo seek history",
@@ -109,7 +109,7 @@ static void printPadded(RCore *core, int pad) {
 		pad = 8;
 	}
 	char *fmt = r_str_newf ("0x%%0%d" PFMT64x, pad);
-	char *off = r_str_newf (fmt, core->offset);
+	char *off = r_str_newf (fmt, core->addr);
 	r_cons_printf ("%s\n", off);
 	free (off);
 	free (fmt);
@@ -117,7 +117,7 @@ static void printPadded(RCore *core, int pad) {
 
 static void __get_current_line(RCore *core) {
 	if (core->print->lines_cache_sz > 0) {
-		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->addr);
 		r_cons_printf ("%d\n", curr);
 	}
 }
@@ -131,7 +131,7 @@ static void __seek_line_absolute(RCore *core, int numline) {
 }
 
 static void __seek_line_relative(RCore *core, int numlines) {
-	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->addr);
 	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
 		R_LOG_ERROR ("Line must be < %d", core->print->lines_cache_sz - 1);
 	} else if (numlines < 0 && curr + numlines < 1) {
@@ -153,9 +153,9 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 
 	while (imin <= imax) {
 		imid = imin + ((imax - imin) / 2);
-		if (core->print->lines_cache[imid] == core->offset) {
+		if (core->print->lines_cache[imid] == core->addr) {
 			return imid;
-		} else if (core->print->lines_cache[imid] < core->offset) {
+		} else if (core->print->lines_cache[imid] < core->addr) {
 			imin = imid + 1;
 		} else {
 			imax = imid - 1;
@@ -224,7 +224,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		ut64 off = r_debug_reg_get (core->dbg, input);
 		if (!is_silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 		}
 		r_core_seek (core, off, true);
 	} else {
@@ -233,7 +233,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 		ut64 off = r_debug_reg_get (core->dbg, input);
 		core->dbg->reg = orig;
 		if (!is_silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 		}
 		r_core_seek (core, off, true);
 	}
@@ -270,24 +270,24 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 	int i, val = 0;
 	// N previous instructions
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	int ret = 0;
-	if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
-		ret = core->offset - addr;
+	if (r_core_prevop_addr (core, core->addr, numinstr, &addr)) {
+		ret = core->addr - addr;
 	} else {
 #if 0
 		// core_asm_bwdis_len is buggy as hell we should kill it. seems like prevop_addr
 		// works as expected, because is the one used from visual
 		ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
-		addr = core->offset;
+		addr = core->addr;
 		const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
 				prev_addr = addr - mininstrsize;
 			}
-			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
+			if (prev_addr == UT64_MAX || prev_addr >= core->addr) {
 				break;
 			}
 			RAnalOp op = {0};
@@ -311,7 +311,7 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
 		RAnalOp op;
-		ret = r_anal_op (core->anal, &op, core->offset, core->block,
+		ret = r_anal_op (core->anal, &op, core->addr, core->block,
 			core->blocksize, R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
@@ -340,10 +340,10 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	char *cmd, *p;
-	ut64 off = core->offset;
+	ut64 off = core->addr;
 
 	if (!*input) {
-		r_cons_printf ("0x%"PFMT64x "\n", core->offset);
+		r_cons_printf ("0x%"PFMT64x "\n", core->addr);
 		return 0;
 	}
 	char *ptr;
@@ -351,7 +351,7 @@ static int cmd_seek(void *data, const char *input) {
 		char *dup = strdup (input);
 		dup[ptr - input] = '\x00';
 		off = r_num_math (core->num, dup + 1);
-		core->offset = off;
+		core->addr = off;
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
@@ -399,7 +399,7 @@ static int cmd_seek(void *data, const char *input) {
 	case 'd': // "sd"
 		{
 			st64 delta;
-			ut64 at = core->offset;
+			ut64 at = core->addr;
 			char *ro = r_core_get_reloff (core, RELOFF_TO_FLAG, at, &delta);
 			if (ro) {
 				r_cons_printf ("flag %s+0x%"PFMT64x"\n", ro, delta);
@@ -457,7 +457,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_interval_tree_foreach (&core->anal->meta, it, meta) {
 				if (meta->type == R_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
 					if (!silent) {
-						r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+						r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 					}
 					r_core_seek (core, off, true);
 					r_core_block_read (core);
@@ -493,7 +493,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		}
 		if (!silent) {
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 		}
 		r_core_seek (core, addr, true);
 		r_core_block_read (core);
@@ -526,7 +526,7 @@ static int cmd_seek(void *data, const char *input) {
 		case 'r':
 		case '/':
 		case 'x':
-			r_config_set_i (core->config, "search.from", core->offset + 1);
+			r_config_set_i (core->config, "search.from", core->addr + 1);
 			r_config_set_i (core->config, "search.maxhits", 1);
 			r_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
 				input, pfx, kwidx, pfx, kwidx);
@@ -549,11 +549,11 @@ static int cmd_seek(void *data, const char *input) {
 			for (input++; *input == '.'; input++) {
 				;
 			}
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 			r_core_seek_base (core, input);
 		} else {
 			// just re-read the current block
-			r_core_seek (core, core->offset, true);
+			r_core_seek (core, core->addr, true);
 			r_core_block_read (core);
 		}
 		break;
@@ -673,7 +673,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			// int delta = (input[1] == '+')? core->blocksize: off;
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset,
+				r_io_sundo_push (core->io, core->addr,
 					r_print_get_cursor (core->print));
 			}
 			r_core_seek_delta (core, delta);
@@ -693,7 +693,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 0: // "s-"
 			{
-				RIOUndos *undo = r_io_sundo (core->io, core->offset);
+				RIOUndos *undo = r_io_sundo (core->io, core->addr);
 				if (undo) {
 					r_core_seek (core, undo->off, false);
 					r_core_block_read (core);
@@ -712,7 +712,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 				}
 				if (!silent) {
-					r_io_sundo_push (core->io, core->offset,
+					r_io_sundo_push (core->io, core->addr,
 							r_print_get_cursor (core->print));
 				}
 				r_core_seek_delta (core, delta);
@@ -728,7 +728,7 @@ static int cmd_seek(void *data, const char *input) {
 			__core_cmd_search_backward_prelude (core, true, true);
 		} else {
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 			}
 			const char *nkey = (input[1] == ' ')
 				? input + 2
@@ -743,7 +743,7 @@ static int cmd_seek(void *data, const char *input) {
 			__core_cmd_search_backward_prelude (core, true, false);
 		} else {
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 			}
 			const char *nkey = (input[1] == ' ')
 				? input + 2
@@ -767,7 +767,7 @@ static int cmd_seek(void *data, const char *input) {
 				free (cmd);
 			}
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 			}
 			r_core_seek_align (core, off, 0);
 		} else {
@@ -777,10 +777,10 @@ static int cmd_seek(void *data, const char *input) {
 	case 'b': // "sb"
 		if (input[1] == 0 || input[1] == ' ') {
 			if (off == 0) {
-				off = core->offset;
+				off = core->addr;
 			}
 			if (!silent) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+				r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 			}
 			r_core_anal_bb_seek (core, off);
 		} else {
@@ -791,7 +791,7 @@ static int cmd_seek(void *data, const char *input) {
 		RAnalFunction *fcn;
 		switch (input[1]) {
 		case '\0': // "sf"
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
 				r_core_seek (core, r_anal_function_max_addr (fcn), true);
 			}
@@ -803,7 +803,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			break;
 		case '.': // "sf."
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, true);
 			}
@@ -849,7 +849,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_s, "sg");
 		} else {
-			RIOMap *map  = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map  = r_io_map_get_at (core->io, core->addr);
 			if (map) {
 				r_core_seek (core, r_io_map_begin (map), true);
 			} else {
@@ -864,7 +864,7 @@ static int cmd_seek(void *data, const char *input) {
 			if (!core->io->desc) {
 				break;
 			}
-			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->addr);
 			// XXX: this +2 is a hack. must fix gap between sections
 			if (map) {
 				r_core_seek (core, r_io_map_end (map) + 2, true);
@@ -968,7 +968,7 @@ static int cmd_seek(void *data, const char *input) {
 			ut64 n = r_num_math (core->num, input);
 			if (n) {
 				if (!silent) {
-					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+					r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 				}
 				r_core_seek (core, n, true);
 				r_core_block_read (core);

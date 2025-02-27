@@ -860,7 +860,7 @@ NAME=bin.str.enc no-guess with initial null
 FILE=bins/elf/utfbe&bom
 CMDS=<<EOF
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 e asm.cmt.off=false
 aar
 (pdenc enc; e bin.str.enc=$0; pd 1)
@@ -884,7 +884,7 @@ NAME=bin.str.enc guess bom, asm.cmt.off=0/1
 FILE=bins/elf/utfbe&bom
 CMDS=<<EOF
 e asm.bytes=0
-e asm.offset=0
+e asm.addr=0
 e asm.cmt.off=0
 e bin.str.enc=guess
 aar
@@ -917,7 +917,7 @@ FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e asm.symbol=true
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 e asm.comments=false
 s entry0 + 2
 pd 2

@@ -1268,10 +1268,10 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 		r_bp_traptrace_list (core->dbg->bp);
 	} else {
 		ut64 oaddr = 0LL;
-		R_LOG_INFO ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x, core->offset, core->offset + len);
+		R_LOG_INFO ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x, core->addr, core->addr + len);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_bp_traptrace_reset (core->dbg->bp, true);
-		r_bp_traptrace_add (core->dbg->bp, core->offset, core->offset+len);
+		r_bp_traptrace_add (core->dbg->bp, core->addr, core->addr+len);
 		r_bp_traptrace_enable (core->dbg->bp, true);
 		do {
 			ut8 buf[32];
@@ -1328,7 +1328,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 	RDebugMap *map;
 	RListIter *iter;
 	r_debug_map_sync (core->dbg); // update process memory maps
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	int do_dump = false;
 	int ret = !r_list_empty (core->dbg->maps);
 	r_list_foreach (core->dbg->maps, iter, map) {
@@ -1376,7 +1376,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 }
 
 static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	RDebugMap *map;
 	RList *list;
 	RListIter *iter;
@@ -1640,7 +1640,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
 		break;
 	case '.':
-		r_debug_snap (core->dbg, core->offset);
+		r_debug_snap (core->dbg, core->addr);
 		break;
 	case 'C':
 		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
@@ -1669,7 +1669,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 static int cmd_debug_map(RCore *core, const char *input) {
 	RListIter *iter;
 	RDebugMap *map;
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 
 	switch (input[0]) {
 	case 's': // "dms"
@@ -1695,7 +1695,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_dmp);
 		} else if (input[1] == '.' || !input[1]) {
-			ut64 addr = core->offset;
+			ut64 addr = core->addr;
 			RList *list = core->dbg->maps;
 			if (list) {
 				r_list_foreach (list, iter, map) {
@@ -1744,7 +1744,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				r_debug_map_sync (core->dbg); // update process memory maps
 				addr = UT64_MAX;
 				r_list_foreach (core->dbg->maps, iter, map) {
-					if (core->offset >= map->addr  && core->offset < map->addr_end) {
+					if (core->addr >= map->addr  && core->addr < map->addr_end) {
 						addr = map->addr;
 						size = map->size;
 						break;
@@ -1879,7 +1879,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				map = get_closest_map (core, addr);
 				if (map) {
 					RCoreBinFilter filter;
-					filter.offset = 0LL;
+					filter.addr = 0LL;
 					filter.name = (char *)symname;
 					baddr = map->addr;
 
@@ -1916,7 +1916,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			break;
 		case '.': // "dmi."
 			if (r_config_get_b (core->config, "cfg.debug")) {
-				ut64 addr = core->offset;
+				ut64 addr = core->addr;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if (!map->shared) {
 						continue;
@@ -1947,7 +1947,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					}
 					if (closest_symbol) {
 						RCoreBinFilter filter = {
-							.offset = 0LL,
+							.addr = 0LL,
 							.name = (char *) closest_symbol->name
 						};
 						r_bin_set_baddr (core->bin, map->addr);
@@ -2079,7 +2079,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'q': // "dmq"
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg); // update process memory maps
-			r_debug_map_list (core->dbg, core->offset, input);
+			r_debug_map_list (core->dbg, core->addr, input);
 		} else {
 			R_LOG_INFO ("dm requires the debugger or use `om` instead");
 			if (*input == 'j') {
@@ -2090,7 +2090,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '=': // "dm="
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg);
-			r_debug_map_list_visual (core->dbg, core->offset, input,
+			r_debug_map_list_visual (core->dbg, core->addr, input,
 					r_config_get_i (core->config, "scr.color"));
 		} else {
 			R_LOG_WARN ("Memory Maps require to be (cfg.debug/-d) in debugger mode. Otherwise use 'om'");
@@ -2164,9 +2164,9 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 				r_cons_printf (" %s", r);
 			}
 			r_cons_print (Color_RESET);
-			ut64 o_offset = core->offset;
+			ut64 o_offset = core->addr;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
-			core->offset = o_offset;
+			core->addr = o_offset;
 			if (R_STR_ISNOTEMPTY (rrstr) && strchr (rrstr, 'R')) {
 				r_cons_printf ("    ;%s"Color_RESET, rrstr);
 			}
@@ -2250,9 +2250,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			namestr = strdup (r->name);
 			valuestr = r_str_newf ("0x%"PFMT64x, value);
 		}
-		ut64 o_offset = core->offset;
+		ut64 o_offset = core->addr;
 		char *rrstr = r_core_anal_hasrefs (core, value, true);
-		core->offset = o_offset;
+		core->addr = o_offset;
 		if (!rrstr) {
 			rrstr = strdup ("");
 		}
@@ -2410,7 +2410,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		{
 			// "drpj" .. dup from "arpj"
 			RListIter *iter;
-			RRegItem *r;
+			RRegItem *ri;
 			int i;
 			PJ *pj = r_core_pj_new (core);
 			if (!pj) {
@@ -2432,13 +2432,13 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			pj_k (pj, "reg_info");
 			pj_a (pj);
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+				r_list_foreach (core->dbg->reg->regset[i].regs, iter, ri) {
 					pj_o (pj);
-					pj_kn (pj, "type", r->type);
-					pj_ks (pj, "type_str", r_reg_type_tostring (r->type));
-					pj_ks (pj, "name", r->name);
-					pj_kn (pj, "size", r->size);
-					pj_kn (pj, "offset", r->offset);
+					pj_kn (pj, "type", ri->type);
+					pj_ks (pj, "type_str", r_reg_type_tostring (ri->type));
+					pj_ks (pj, "name", ri->name);
+					pj_kn (pj, "size", ri->size);
+					pj_kn (pj, "offset", ri->offset);
 					pj_end (pj);
 				}
 			}
@@ -3528,7 +3528,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 		break;
 	case '.': // "dbi."
 		{
-			const int index = r_bp_get_index_at (core->dbg->bp, core->offset);
+			const int index = r_bp_get_index_at (core->dbg->bp, core->addr);
 			if (index != -1) {
 				r_cons_printf ("%d\n", index);
 			}
@@ -3713,13 +3713,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		if (input[2]) {
-			ut64 addr = r_num_tail (core->num, core->offset, input + 2);
+			ut64 addr = r_num_tail (core->num, core->addr, input + 2);
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) {
 				R_LOG_ERROR ("Unable to add breakpoint (%s)", input + 2);
 			}
 		} else {
-			bpi = r_bp_get_at (core->dbg->bp, core->offset);
+			bpi = r_bp_get_at (core->dbg->bp, core->addr);
 			if (bpi) {
 				r_cons_printf ("breakpoint %s %s %s\n",
 						r_str_rwx_i (bpi->perm),
@@ -3752,7 +3752,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_db, "dbx");
 		} else if (input[2] == ' ') {
 			if (addr == UT64_MAX) {
-				addr = core->offset;
+				addr = core->addr;
 			}
 			bpi = r_bp_get_at (core->dbg->bp, addr);
 			if (bpi) {
@@ -4040,13 +4040,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
 	case 'n': // "dbn"
-		bpi = r_bp_get_at (core->dbg->bp, core->offset);
+		bpi = r_bp_get_at (core->dbg->bp, core->addr);
 		if (input[2] == ' ') {
 			if (bpi) {
 				free (bpi->name);
 				bpi->name = strdup (input + 3);
 			} else {
-				R_LOG_ERROR ("Cannot find breakpoint at 0x%08"PFMT64x, core->offset);
+				R_LOG_ERROR ("Cannot find breakpoint at 0x%08"PFMT64x, core->addr);
 			}
 		} else {
 			if (bpi && bpi->name) {
@@ -4567,7 +4567,7 @@ static bool is_x86_ret(RDebug *dbg, ut64 addr) {
 
 static ut64 getnum(RCore *core, const char *a) {
 	if (r_str_startswith (a, "..")) {
-		return r_num_tail (core->num, core->offset, a + 2);
+		return r_num_tail (core->num, core->addr, a + 2);
 	}
 	return r_num_math (core->num, a);
 }
@@ -4918,7 +4918,7 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 }
 
 static int cmd_debug_step(RCore *core, const char *input) {
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
@@ -5482,7 +5482,7 @@ static int cmd_debug(void *data, const char *input) {
 	RDebugTracepointItem *trace;
 	RAnalOp *op;
 	int ret = 0;
-	ut64 old_seek = core->offset;
+	ut64 old_seek = core->addr;
 
 	if (r_sandbox_enable (0)) {
 		R_LOG_INFO ("Debugger commands disabled in sandbox mode");
@@ -5514,15 +5514,15 @@ static int cmd_debug(void *data, const char *input) {
 		case '=': // "dt="
 		case 'q': // "dtq"
 		case 'j': // "dtj"
-			r_debug_trace_list (core->dbg, input[1], core->offset, NULL);
+			r_debug_trace_list (core->dbg, input[1], core->addr, NULL);
 			break;
 		case '*': // "dt*"
-			r_debug_trace_list (core->dbg, 1, core->offset, NULL);
+			r_debug_trace_list (core->dbg, 1, core->addr, NULL);
 			break;
 		case ',': // "dt,"
 			{
 				RTable *t = r_core_table_new (core, "traces");
-				r_debug_trace_list (core->dbg, ',', core->offset, t);
+				r_debug_trace_list (core->dbg, ',', core->addr, t);
 			}
 			break;
 		case ' ': // "dt [addr]"
@@ -5666,7 +5666,7 @@ static int cmd_debug(void *data, const char *input) {
 			case 'i': { // "dtei"
 				ut64 addr = r_num_math (core->num, input + 3);
 				if (!addr) {
-					addr = core->offset;
+					addr = core->addr;
 				}
 				RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
 				if (op) {
@@ -6188,7 +6188,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_dx, "dxa");
 				break;
 			}
-			r_asm_set_pc (core->rasm, core->offset);
+			r_asm_set_pc (core->rasm, core->addr);
 			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
@@ -6216,7 +6216,7 @@ static int cmd_debug(void *data, const char *input) {
 					// assemble the blob
 					if (r_egg_assemble (egg)) {
 						RBuffer *b = r_egg_get_bin (egg);
-						r_asm_set_pc (core->rasm, core->offset);
+						r_asm_set_pc (core->rasm, core->addr);
 						r_reg_arena_push (core->dbg->reg);
 						ut64 tmpsz;
 						const ut8 *tmp = r_buf_data (b, &tmpsz);
@@ -6269,7 +6269,7 @@ static int cmd_debug(void *data, const char *input) {
 	/* RDebug, specifically RDebug.execute() may incorrectly
 	 * advance seek, so we force it back here before processing
 	 * dbg.follow. */
-	if (core->offset != old_seek) {
+	if (core->addr != old_seek) {
 		r_core_seek (core, old_seek, false);
 	}
 
@@ -6277,7 +6277,7 @@ static int cmd_debug(void *data, const char *input) {
 		int follow = r_config_get_i (core->config, "dbg.follow");
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		// Is PC before offset or after the follow cutoff?
-		if (!R_BETWEEN (core->offset, pc, core->offset + follow)) {
+		if (!R_BETWEEN (core->addr, pc, core->addr + follow)) {
 			r_core_cmd_call (core, "sr PC");
 		}
 	}

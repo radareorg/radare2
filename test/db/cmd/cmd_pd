@@ -190,7 +190,7 @@ e asm.arch=x86
 e asm.bits=64
 aaaa
 e asm.pseudo=true
-e asm.offset=false
+e asm.addr=false
 e asm.lines.jmp=false
 e asm.marks=false
 e asm.nbytes=0
@@ -380,7 +380,7 @@ NAME=pd 10 flags and cmts without offset
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 e asm.cmt.right=0
 pd 10
 EOF
@@ -581,7 +581,7 @@ e asm.lines.jmp=false
 e asm.bytes=false
 e asm.comments=false
 e asm.lines.fcn=false
-e asm.offset=false
+e asm.addr=false
 e scr.color=false
 wx 554889e583ec60488b44244089ec5dc3
 af

@@ -304,7 +304,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	Sdb *db;
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return false;
@@ -315,7 +315,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold (hc, "io.cache", NULL);
 	if (!fcn) {
-		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->addr);
 		r_config_hold_free (hc);
 		return false;
 	}

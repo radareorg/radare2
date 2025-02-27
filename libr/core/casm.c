@@ -62,7 +62,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 
 // TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
-	ut64 at, toff = core->offset;
+	ut64 at, toff = core->addr;
 	const int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
@@ -803,7 +803,7 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, u
 	RCoreAsmHit *hit;
 	RListIter *iter = NULL;
 	// TODO if length of nb instructions is larger than blocksize
-	RList* hits = r_core_asm_bwdisassemble (core, core->offset, nb, core->blocksize);
+	RList* hits = r_core_asm_bwdisassemble (core, core->addr, nb, core->blocksize);
 	if (instr_len) {
 		*instr_len = 0;
 	}

@@ -22,13 +22,13 @@ static int r_cmd_agD_call(void *user, const char *input) {
 	if (!r_str_startswith (input, "agD")) {
 		return false;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_ANY);
 	if (!fcn) {
 		R_LOG_ERROR ("core_agD: no fcn here");
 		return true;
 	}
 	RGraphNode *node = NULL;
-	RGraph *fcn_graph = r_anal_function_get_graph (fcn, &node, core->offset);
+	RGraph *fcn_graph = r_anal_function_get_graph (fcn, &node, core->addr);
 	if (!fcn_graph || !node) {
 		R_LOG_ERROR ("core_agD: no fcn_graph/node here");
 		return true;

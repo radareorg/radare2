@@ -609,7 +609,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
-		r_cons_printf ("# seek\n" "s 0x%08" PFMT64x "\n", core->offset);
+		r_cons_printf ("# seek\n" "s 0x%08" PFMT64x "\n", core->addr);
 		flush (sb);
 	}
 	r_cons_singleton ()->context->is_interactive = true;

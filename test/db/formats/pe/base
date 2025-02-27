@@ -11,7 +11,7 @@ CMDS=<<EOF
 e asm.functions = false
 e asm.comments = false
 e asm.bytes = false
-e asm.offset = false
+e asm.addr = false
 e asm.cmt.calls = false
 pd 1 @ 0x0040128d
 EOF

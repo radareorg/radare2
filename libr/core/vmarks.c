@@ -89,7 +89,7 @@ R_API void r_core_vmark(RCore *core, ut8 ch) {
 	if (isdigit (ch)) {
 		ch += ASCII_MAX + 1;
 	}
-	r_core_vmark_set (core, ch, core->offset, 0, 0);
+	r_core_vmark_set (core, ch, core->addr, 0, 0);
 }
 
 R_API void r_core_vmark_seek(RCore *core, ut8 ch, RAGraph *g) {

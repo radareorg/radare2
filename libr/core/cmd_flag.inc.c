@@ -371,7 +371,7 @@ static void cmd_fz(RCore *core, const char *input) {
 	case '.': // "fz."
 		{
 			const char *a = NULL, *b = NULL;
-			r_flag_zone_around (core->flags, core->offset, &a, &b);
+			r_flag_zone_around (core->flags, core->addr, &a, &b);
 			r_cons_printf ("%s %s\n", r_str_get_fail (a, "~"), r_str_get_fail (b, "~"));
 		}
 		break;
@@ -380,7 +380,7 @@ static void cmd_fz(RCore *core, const char *input) {
 			const char *a, *b;
 			int a_len = 0;
 			int w = r_cons_get_size (NULL);
-			r_flag_zone_around (core->flags, core->offset, &a, &b);
+			r_flag_zone_around (core->flags, core->addr, &a, &b);
 			if (a) {
 				r_cons_printf ("[<< %s]", a);
 				a_len = strlen (a) + 4;
@@ -388,7 +388,7 @@ static void cmd_fz(RCore *core, const char *input) {
 			int padsize = (w / 2)  - a_len;
 			int title_size = 12;
 			if (a || b) {
-				char *title = r_str_newf ("[ 0x%08"PFMT64x" ]", core->offset);
+				char *title = r_str_newf ("[ 0x%08"PFMT64x" ]", core->addr);
 				title_size = strlen (title);
 				padsize -= strlen (title) / 2;
 				const char *halfpad = r_str_pad (' ', padsize);
@@ -406,7 +406,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, r_str_trim_head_ro (input + 1), core->offset);
+		r_flag_zone_add (core->flags, r_str_trim_head_ro (input + 1), core->addr);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -470,10 +470,10 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 static int flag_to_flag(RCore *core, const char *glob) {
 	R_RETURN_VAL_IF_FAIL (glob, 0);
 	glob = r_str_trim_head_ro (glob);
-	struct flag_to_flag_t u = { .next = UT64_MAX, .addr = core->offset };
+	struct flag_to_flag_t u = { .next = UT64_MAX, .addr = core->addr };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);
-	if (u.next != UT64_MAX && u.next > core->offset) {
-		return u.next - core->offset;
+	if (u.next != UT64_MAX && u.next > core->addr) {
+		return u.next - core->addr;
 	}
 	return 0;
 }
@@ -768,7 +768,7 @@ static void cmd_fd_dot(RCore *core, const char *input) {
 	bool isJson = false;
 	const RList *flaglist;
 	const char *arg = strchr (input, ' ');
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	if (arg) {
 		addr = r_num_math (core->num, arg + 1);
 	}
@@ -860,7 +860,7 @@ static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
 }
 
 static void cmd_fd(RCore *core, const char *input) {
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	char *arg = NULL;
 	RFlagItem *f = NULL;
 	bool strict_offset = false;
@@ -869,7 +869,7 @@ static void cmd_fd(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_fd);
 		return;
 	case '\0':
-		addr = core->offset;
+		addr = core->addr;
 		break;
 	case 'd':
 		arg = strchr (input, ' ');
@@ -893,14 +893,14 @@ static void cmd_fd(RCore *core, const char *input) {
 			  RList *temp = r_flag_all_list (core->flags, true);
 			  ut64 loff = 0;
 			  ut64 uoff = 0;
-			  ut64 curseek = core->offset;
+			  ut64 curseek = core->addr;
 			  char *lmatch = NULL , *umatch = NULL;
 			  RFlagItem *flag;
 			  RListIter *iter;
 			  r_list_sort (temp, &cmpflag);
 			  r_list_foreach (temp, iter, flag) {
 				  if (strstr (flag->name , arg)) {
-					  if (flag->addr < core->offset) {
+					  if (flag->addr < core->addr) {
 						  loff = flag->addr;
 						  lmatch = flag->name;
 						  continue;
@@ -1002,7 +1002,7 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 	if (*cstr == '.') {
 		return cmd_flag (core, str);
 	}
-	ut64 off = core->offset;
+	ut64 off = core->addr;
 	// Check base64 padding
 	if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
 		*eq = 0;
@@ -1118,7 +1118,7 @@ static void cmd_fR(RCore *core, const char *str) {
 static int cmd_flag(void *data, const char *input) {
 	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
-	ut64 off = core->offset;
+	ut64 off = core->addr;
 	char *ptr;
 	RFlagItem *item;
 	char *name = NULL;
@@ -1132,7 +1132,7 @@ static int cmd_flag(void *data, const char *input) {
 		} else if (input[1] == 's') { // "ffs"
 			const int delta = flag_to_flag (core, input + 2);
 			if (delta > 0) {
-				r_cons_printf ("0x%08"PFMT64x"\n", core->offset + delta);
+				r_cons_printf ("0x%08"PFMT64x"\n", core->addr + delta);
 			}
 		} else {
 			r_cons_printf ("%d\n", flag_to_flag (core, input + 1));
@@ -1142,7 +1142,7 @@ static int cmd_flag(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 			ptr = r_str_newf ("%s.%d", input + 2, flagenum);
-			(void)r_flag_set (core->flags, ptr, core->offset, 1);
+			(void)r_flag_set (core->flags, ptr, core->addr, 1);
 			flagenum++;
 			free (ptr);
 			break;
@@ -1190,7 +1190,7 @@ static int cmd_flag(void *data, const char *input) {
 			fi = r_flag_get (core->flags, name);
 			if (!fi) {
 				fi = r_flag_set (core->flags, name,
-					core->offset, 1);
+					core->addr, 1);
 			}
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
@@ -1225,14 +1225,14 @@ static int cmd_flag(void *data, const char *input) {
 							arg++;
 						}
 						arg = r_str_trim_head_ro (arg);
-						ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+						ut64 addr = arg? r_num_math (core->num, arg): core->addr;
 						r_core_vmark_set (core, n, addr, 0, 0);
 					} else {
 						R_LOG_ERROR ("invalid argument for fV");
 					}
 				} else {
 					const char *arg = r_str_trim_head_ro (input + 3);
-					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+					ut64 addr = arg? r_num_math (core->num, arg): core->addr;
 					r_core_vmark_set (core, input[2], addr, 0, 0);
 				}
 			} else {
@@ -1248,7 +1248,7 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'm': // "fm"
-		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
+		r_flag_move (core->flags, core->addr, r_num_math (core->num, input+1));
 		break;
 	case 'R': // "fR"
 		cmd_fR (core, str);
@@ -1298,7 +1298,7 @@ static int cmd_flag(void *data, const char *input) {
 				ut64 addr = r_num_math (core->num, flagname);
 				r_flag_unset_addr (core->flags, addr);
 			} else if (!strcmp (flagname, "$$")) {
-				r_flag_unset_addr (core->flags, core->offset);
+				r_flag_unset_addr (core->flags, core->addr);
 			} else if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
@@ -1390,7 +1390,7 @@ static int cmd_flag(void *data, const char *input) {
 					item->size = r_num_math (core->num, p);
 			} else {
 				if (*arg) {
-					item = r_flag_get_in (core->flags, core->offset);
+					item = r_flag_get_in (core->flags, core->addr);
 					if (item) {
 						item->size = r_num_math (core->num, arg);
 					}
@@ -1403,7 +1403,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			free (arg);
 		} else { // "fl"
-			item = r_flag_get_in (core->flags, core->offset);
+			item = r_flag_get_in (core->flags, core->addr);
 			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 			}
@@ -1498,7 +1498,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 		case 'm': // "fsm"
 			{
-				ut64 off = core->offset;
+				ut64 off = core->addr;
 				if (input[2] == ' ') {
 					off = r_num_math (core->num, input+2);
 				}
@@ -1540,7 +1540,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'c': // "fc"
 		if (input[1] == 0 || input[1] == '.') {
 			RList *list_to_free = input[1]? NULL: r_flag_all_list (core->flags, false);
-			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): list_to_free;
+			const RList *list = input[1]? r_flag_get_list (core->flags, core->addr): list_to_free;
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
@@ -1557,7 +1557,7 @@ static int cmd_flag(void *data, const char *input) {
 		} else if (input[1] == '-') {
 			RListIter *iter;
 			RFlagItem *fi;
-			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
+			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->addr;
 			RList *list_to_free = (input[1] && input[2] == '*')? r_flag_all_list (core->flags, false): NULL;
 			const RList *list = (input[1] && input[2] == '*')?
 				list_to_free
@@ -1598,7 +1598,7 @@ static int cmd_flag(void *data, const char *input) {
 					R_LOG_ERROR ("Unknown flag '%s'", arg);
 				}
 			} else {
-				const RList *list = r_flag_get_list (core->flags, core->offset);
+				const RList *list = r_flag_get_list (core->flags, core->addr);
 				char *color = r_str_trim_dup (input + 2);
 				RListIter *iter;
 				RFlagItem *fi;
@@ -1670,7 +1670,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			} else {
 				new = old;
-				item = r_flag_get_in (core->flags, core->offset);
+				item = r_flag_get_in (core->flags, core->addr);
 			}
 			if (item) {
 				if (!r_flag_rename (core->flags, item, new)) {
@@ -1684,7 +1684,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'N':
 		if (!input[1]) {
-			RFlagItem *item = r_flag_get_in (core->flags, core->offset);
+			RFlagItem *item = r_flag_get_in (core->flags, core->addr);
 			if (item) {
 				r_cons_printf ("%s\n", item->realname);
 			}
@@ -1702,7 +1702,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			} else {
 				realname = name;
-				item = r_flag_get_in (core->flags, core->offset);
+				item = r_flag_get_in (core->flags, core->addr);
 			}
 			if (item) {
 				r_flag_item_set_realname (item, realname);
@@ -1734,7 +1734,7 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		if (input[0] && input[1] == '.') {
 			const int mode = input[2];
-			const RList *list = r_flag_get_list (core->flags, core->offset);
+			const RList *list = r_flag_get_list (core->flags, core->addr);
 			PJ *pj = NULL;
 			if (mode == 'j') {
 				pj = r_core_pj_new (core);
@@ -1779,7 +1779,7 @@ static int cmd_flag(void *data, const char *input) {
 				char *sp = strchr (arg, ' ');
 				if (!sp) {
 					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,
-						input[1], core->offset, arg, core->offset);
+						input[1], core->addr, arg, core->addr);
 					free (arg);
 					arg = newarg;
 				} else {
@@ -1790,14 +1790,14 @@ static int cmd_flag(void *data, const char *input) {
 			} else {
 				free (arg);
 				arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
-					core->offset, core->offset + core->blocksize);
+					core->addr, core->addr + core->blocksize);
 			}
 			r_flag_list (core->flags, 'i', arg);
 			free (arg);
 		} else {
 			// XXX dupe for prev case
 			char *arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
-				core->offset, core->offset + core->blocksize);
+				core->addr, core->addr + core->blocksize);
 			r_flag_list (core->flags, 'i', arg);
 			free (arg);
 		}
@@ -1828,7 +1828,7 @@ static int cmd_flag(void *data, const char *input) {
 			if (input[2] == ' ') {
 				char *orig = r_str_trim_dup (input + 3);
 				char *nfn = r_name_filter_dup (orig);
-				r_flag_set (core->flags, nfn, core->offset, 1);
+				r_flag_set (core->flags, nfn, core->addr, 1);
 				free (nfn);
 				free (orig);
 			} else {

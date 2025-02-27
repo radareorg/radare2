@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, DennisGoodlett */
+/* radare - LGPL - Copyright 2009-2025 - pancake, DennisGoodlett */
 
 #define R_LOG_ORIGIN "rasign2"
 
@@ -79,15 +79,15 @@ static int inline output(RCore *core, RasignOptions *conf) {
 	if (conf->collision) {
 		r_sign_resolve_collisions (anal);
 	}
-	ut64 oaddr = core->offset; // R2_600 - r_sign_list should take addr as arg
-	core->offset = UT64_MAX;
+	ut64 oaddr = core->addr; // R2_600 - r_sign_list should take addr as arg
+	core->addr = UT64_MAX;
 	if (conf->rad) {
 		r_sign_list (anal, '*');
 	}
 	if (conf->json) {
 		r_sign_list (anal, 'j');
 	}
-	core->offset = oaddr;
+	core->addr = oaddr;
 	// write sigs to file
 	if (conf->ofile && !r_sign_save (anal, conf->ofile)) {
 		R_LOG_ERROR ("Failed to write file");

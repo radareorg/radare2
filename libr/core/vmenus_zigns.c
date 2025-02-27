@@ -63,7 +63,7 @@ R_API int __core_visual_view_zigns_update(RCore *core, RCoreVisualViewZigns *sta
 R_API int r_core_visual_view_zigns(RCore *core) {
 	RCoreVisualViewZigns status = {0};
 	status.core = core;
-	status.addr = core->offset;
+	status.addr = core->addr;
 	status.fcn = NULL;
 
 	while (true) {

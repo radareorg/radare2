@@ -118,7 +118,7 @@ typedef struct r_core_undo_t {
 	char *action;
 	char *revert;
 	ut64 tstamp;
-	ut64 offset;
+	ut64 addr;
 } RCoreUndo;
 
 typedef enum {
@@ -194,14 +194,14 @@ typedef struct r_core_autocomplete_t {
 
 typedef struct r_core_visual_tab_t {
 	int printidx;
-	ut64 offset;
+	ut64 addr;
 	bool cur_enabled;
 	int cur;
 	int ocur;
 	int cols;
 	int disMode;
 	int hexMode;
-	int asm_offset;
+	int asm_addr;
 	int asm_instr;
 	int asm_indent;
 	int asm_bytes;
@@ -334,8 +334,8 @@ struct r_core_t {
 	RBin *bin;
 	RConfig *config;
 	RProject *prj;
-	ut64 offset; // current seek
-	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
+	ut64 addr; // current seek
+	ut64 prompt_addr; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
@@ -871,7 +871,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_PRJ_ALL		0xFFFF
 
 typedef struct r_core_bin_filter_t {
-	ut64 offset;
+	ut64 addr;
 	const char *name;
 } RCoreBinFilter;
 
