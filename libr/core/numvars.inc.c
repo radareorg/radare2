@@ -35,7 +35,7 @@ static ut64 invalid_numvar(RCore *core, const char *str) {
 	return 0;
 }
 
-static ut64 numvar_instruction_prev(RCore *core, int n, int *ok) {
+static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 	if (ok) {
 		*ok = true;
 	}
@@ -80,7 +80,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, int *ok) {
 	return val;
 }
 
-static ut64 numvar_instruction_next(RCore *core, ut64 addr, int n, int *ok) {
+static ut64 numvar_instruction_next(RCore *core, ut64 addr, int n, bool *ok) {
 	RAnalOp op;
 	// N forward instructions
 	ut8 data[32];
@@ -104,7 +104,7 @@ static ut64 numvar_instruction_next(RCore *core, ut64 addr, int n, int *ok) {
 
 }
 
-static ut64 numvar_instruction(RCore *core, const char *str, int *ok) {
+static ut64 numvar_instruction(RCore *core, const char *str, bool *ok) {
 #if 0
 * `$j` -> `$ij` jump destination
 * `$f` -> `$if` fail destination
@@ -172,7 +172,7 @@ static ut64 numvar_instruction(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "invalid $i?");
 }
 
-static ut64 numvar_k(RCore *core, const char *str, int *ok) {
+static ut64 numvar_k(RCore *core, const char *str, bool *ok) {
 	if (!str[2]) {
 		return invalid_numvar (core, "Usage: $k:key or $k{key}");
 	}
@@ -213,7 +213,7 @@ static ut64 numvar_k(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $k{key}");
 }
 
-static ut64 numvar_section(RCore *core, const char *str, int *ok) {
+static ut64 numvar_section(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	if (ch0) {
@@ -302,7 +302,7 @@ static ut64 numvar_section(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $S subvar");
 }
 
-static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
+static ut64 numvar_bb(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	if (ch0) {
@@ -393,7 +393,7 @@ static ut64 numvar_bb(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $B subvar");
 }
 
-static ut64 numvar_debug(RCore *core, const char *str, int *ok) {
+static ut64 numvar_debug(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	if (ch0) {
@@ -499,7 +499,7 @@ static bool mapscb(void *user, void *data, ut32 id) {
 	}
 	return true;
 }
-static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
+static ut64 numvar_maps(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	if (ch0) {
@@ -573,7 +573,7 @@ static ut64 numvar_maps(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $M subvar");
 }
 
-static ut64 numvar_function(RCore *core, const char *str, int *ok) {
+static ut64 numvar_function(RCore *core, const char *str, bool *ok) {
 	char ch0 = *str;
 	char *name = NULL;
 	int nth = -1;
@@ -680,7 +680,7 @@ static ut64 numvar_function(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $F subvar");
 }
 
-static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
+static ut64 numvar_flag(RCore *core, const char *str, bool *ok) {
 #if 0
 * `$f` -> address of closest flag
   * `$fs` -> flag size
@@ -757,7 +757,7 @@ static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, "unknown $f subvar");
 }
 
-static ut64 numvar_dollar(RCore *core, const char *str, int *ok) {
+static ut64 numvar_dollar(RCore *core, const char *str, bool *ok) {
 	if (!strcmp (str, "$$")) {
 		return core->offset;
 	}
@@ -779,7 +779,7 @@ static ut64 numvar_dollar(RCore *core, const char *str, int *ok) {
 	return invalid_numvar (core, str);
 }
 
-static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
+static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
@@ -852,7 +852,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) {
-			*ok = 1;
+			*ok = true;
 		}
 		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));

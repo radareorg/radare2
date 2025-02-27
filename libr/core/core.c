@@ -362,10 +362,10 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RNum *user, ut64 off, bool *ok) {
 	RFlag *f = (RFlag*)user;
 	if (ok) {
-		*ok = 0;
+		*ok = false;
 	}
 	if (f) {
 		RFlagItem *item = r_flag_get_in (f, off);
