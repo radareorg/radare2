@@ -206,14 +206,14 @@ EOF
 RUN
 
 NAME=dbg.dcu can reach main
-FILE=bins/elf/analysis/calls_x64
+FILE=bins/elf/analysis/calls_x64-jammy
 ARGS=-a x86 -d
 CMDS=<<EOF
 dcu main
 ?v $$
 EOF
 EXPECT=<<EOF
-0x400574
+0x4011e3
 Hello world
 EOF
 RUN
