@@ -30,6 +30,37 @@ typedef struct r_flags_at_addr_t {
 	RList *flags;   /* list of RFlagItem at addr */
 } RFlagsAtOffset;
 
+#define METAFLAG 1
+
+#if METAFLAG
+typedef struct r_flag_item_meta_t {
+	char *type;
+	char *color;    /* item color */
+#if 0
+	char *comment;  /* item comment */
+	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
+	bool demangled; /* real name from demangling? */
+#endif
+} RFlagItemMeta;
+
+typedef struct r_flag_item_t {
+	ut32 id;
+	char *name;     /* unique name, escaped to avoid issues with r2 shell */
+	char *realname; /* real name, without any escaping */
+	ut64 addr;      /* address of the flag */
+	ut64 size;      /* size of the flag item */
+	RSpace *space;  /* flag space this item belongs to */
+	char *comment;  /* item comment */
+	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
+	bool demangled; /* real name from demangling? */
+#if 0
+	char *color;    /* item color */
+	char *type;
+#endif
+} RFlagItem;
+
+#else
+
 typedef struct r_flag_item_t {
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
@@ -42,6 +73,8 @@ typedef struct r_flag_item_t {
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
 	char *type;
 } RFlagItem;
+#endif
+
 
 typedef struct r_flag_t {
 	RSpaces spaces;   /* handle flag spaces */
@@ -50,11 +83,13 @@ typedef struct r_flag_t {
 	Sdb *tags;
 	RNum *num;
 	RSkipList *by_addr; /* flags sorted by addr, value=RFlagsAtOffset */
-	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem * */
+	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem */
+	HtUP *ht_meta; // hashtable for the flags metadata
 	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
 	RThreadLock *lock;
+	ut32 lastid;
 	R_DIRTY_VAR;
 	// ??? RStrpool *pool; // stringpool can be tricky because removing flags wont free memory
 } RFlag;
@@ -95,6 +130,9 @@ typedef struct r_flag_bind_t {
 #ifdef R_API
 
 /* flag */
+R_API R_NULLABLE RFlagItemMeta *r_flag_get_meta(RFlag *f, ut32 id);
+R_API RFlagItemMeta *r_flag_get_meta2(RFlag *f, ut32 id);
+R_API void r_flag_del_meta(RFlag *f, ut32 id);
 
 #define r_flag_bind_init(x) memset (&x, 0, sizeof (x))
 R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
@@ -111,7 +149,7 @@ R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 addr);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 addr);
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item);
 R_API bool r_flag_unset_name(RFlag *f, const char *name);
-R_API void r_flag_item_set_type(RFlagItem *fi, const char *type);
+R_API void r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char *type);
 R_API bool r_flag_unset_addr(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all(RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
@@ -121,7 +159,7 @@ R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free(RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
-R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color);
+R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, R_NULLABLE const char *color);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);

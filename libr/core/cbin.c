@@ -2627,7 +2627,15 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 					RFlagItem *fi = r_flag_set (core->flags, fnp, addr, symbol->size);
 					if (fi) {
 						r_flag_item_set_realname (fi, n);
-						fi->demangled = (bool)(size_t)sn.demname;
+#if 0 && METAFLAG
+						bool is_demangled = (bool)(size_t)sn.demname;
+						if (is_demangled) {
+							RFlagItemMeta *fim = r_flag_get_meta2 (core->flags, fi);
+							fim->demangled = true;
+						}
+#else
+						fi->demangled = true;
+#endif
 					} else {
 						if (fn) {
 							R_LOG_WARN ("Can't find flag (%s)", fn);

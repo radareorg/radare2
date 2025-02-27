@@ -1544,6 +1544,17 @@ static int cmd_flag(void *data, const char *input) {
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
+#if METAFLAG
+				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+				if (fim && fim->color) {
+					if (input[1] && input[2] == '*') {
+						r_cons_printf ("fc %s=%s\n", fi->name, fim->color);
+					} else {
+						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
+						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fim->color);
+					}
+				}
+#else
 				if (fi->color) {
 					if (input[1] && input[2] == '*') {
 						r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
@@ -1552,6 +1563,7 @@ static int cmd_flag(void *data, const char *input) {
 						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fi->color);
 					}
 				}
+#endif
 			}
 			r_list_free (list_to_free);
 		} else if (input[1] == '-') {
@@ -1563,9 +1575,7 @@ static int cmd_flag(void *data, const char *input) {
 				list_to_free
 				: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {
-				if (fi->color) {
-					R_FREE (fi->color);
-				}
+				r_flag_item_set_color (core->flags, fi, "");
 			}
 			r_list_free (list_to_free);
 		} else if (input[1] == '*') {
@@ -1573,9 +1583,16 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *fi;
 			RList *list = r_flag_all_list (core->flags, false);
 			r_list_foreach (list, iter, fi) {
+#if METAFLAG
+				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+				if (fim && fim->color) {
+					r_cons_printf ("fc %s=%s\n", fi->name, fim->color);
+				}
+#else
 				if (fi->color) {
 					r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
 				}
+#endif
 			}
 			r_list_free (list);
 		} else if (input[1] == ' ') {
@@ -1587,12 +1604,12 @@ static int cmd_flag(void *data, const char *input) {
 				RFlagItem *fi = r_flag_get (core->flags, arg);
 				if (fi) {
 					if (*color) {
-						ret = r_flag_item_set_color (fi, color);
+						ret = r_flag_item_set_color (core->flags, fi, color);
 						if (ret) {
 							r_cons_println (ret);
 						}
 					} else {
-						r_flag_item_set_color (fi, NULL);
+						r_flag_item_set_color (core->flags, fi, NULL);
 					}
 				} else {
 					R_LOG_ERROR ("Unknown flag '%s'", arg);
@@ -1603,7 +1620,7 @@ static int cmd_flag(void *data, const char *input) {
 				RListIter *iter;
 				RFlagItem *fi;
 				r_list_foreach (list, iter, fi) {
-					r_flag_item_set_color (fi, color);
+					r_flag_item_set_color (core->flags, fi, color);
 				}
 				free (color);
 			}

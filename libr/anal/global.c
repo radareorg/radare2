@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2025 - pancake */
 
 #include <r_anal.h>
 #include <r_util/r_print.h>
@@ -28,7 +28,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 	// check if type exist
 	RFlagItem *fi = r_flag_set_inspace (flags, GLOBAL_FLAGSPACE, name, addr, 1);
 	if (fi) {
-		r_flag_item_set_type (fi, fmtstr);
+		r_flag_item_set_type (flags, fi, fmtstr);
 	}
 	r_meta_set (anal, R_META_TYPE_FORMAT, addr, fmtsize, fmtstr);
 	// implicit
@@ -51,7 +51,8 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr) {
 R_API bool r_anal_global_retype(RAnal *anal, ut64 addr, const char *new_type) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
-		r_flag_item_set_type (fi, new_type);
+		RFlag *flags = anal->flb.f;
+		r_flag_item_set_type (flags, fi, new_type);
 		return true;
 	}
 	return false;
@@ -70,7 +71,13 @@ R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name) {
 R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
+#if METAFLAG
+		RFlag *flags = anal->flb.f;
+		RFlagItemMeta *fim = r_flag_get_meta (flags, fi->id);
+		return fim? fim->type: NULL;
+#else
 		return fi->type;
+#endif
 	}
 	return NULL;
 }

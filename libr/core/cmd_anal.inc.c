@@ -14650,7 +14650,16 @@ static void cmd_avg(RCore *core, const char* input) {
 			} else {
 				RFlagItem *fi = r_anal_global_get (core->anal, core->addr);
 				if (fi) {
-					R_LOG_INFO ("type %s", fi->type);
+#if METAFLAG
+					RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+					if (fim && fim->type) {
+						R_LOG_INFO ("type %s", fim->type);
+					}
+#else
+					if (fi->type) {
+						R_LOG_INFO ("type %s", fi->type);
+					}
+#endif
 				}
 			}
 			free (a);

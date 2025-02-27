@@ -2620,9 +2620,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 							free (flagname);
 							flagname = fnear->name;
 						}
+#if 0
+// TODO missing color here?
 						if (fnear->color) {
 							curflag = fnear;
 						}
+#endif
 						if (!curflag) {
 							curflag = fnear;
 						}
@@ -2632,16 +2635,17 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			} else {
 				r_list_foreach (list, iter, fi) {
 					flagsize = R_MAX (flagsize, fi->size);
-					if (fi->color) {
+					const char *fi_color = r_flag_item_set_color (core->flags, fi, NULL);
+					if (fi_color) {
 						curflag = fi;
 					}
-					if (!flagaddr || fi->color) {
+					if (!flagaddr || fi_color) {
 						flagaddr = fi->addr;
 						if (fi->addr == at) {
 							free (flagname);
 							flagname = strdup (fi->name);
 						}
-						if (!fi->color) {
+						if (!fi_color) {
 							curflag = fi;
 						}
 					}
@@ -2705,8 +2709,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				} else if (!hascolor) {
 					hascolor = true;
-					if (curflag && curflag->color) {
-						char *ansicolor = r_cons_pal_parse (curflag->color, NULL);
+					const char *curcolor = NULL;
+					if (curflag) {
+						const char *fimcolor = r_flag_item_set_color (core->flags, curflag, NULL);
+						if (fimcolor) {
+							curcolor = fimcolor;
+						}
+					}
+					if (curcolor) {
+						char *ansicolor = r_cons_pal_parse (curcolor, NULL);
 						if (ansicolor) {
 							append (ebytes, ansicolor);
 							append (echars, ansicolor);

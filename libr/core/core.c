@@ -2102,10 +2102,13 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 	if (!verbose) {
 		// check for flag colors
 		RFlagItem *fi = r_flag_get_at (core->flags, addr, true);
-		if (fi && fi->addr + fi->size >= addr && fi->color) {
-			free (const_color);
-			const_color = r_cons_pal_parse (fi->color, NULL);
-			return const_color;
+		if (fi && fi->addr + fi->size >= addr) {
+			const char *ficolor = r_flag_item_set_color (core->flags, fi, NULL);
+			if (ficolor) {
+				free (const_color);
+				const_color = r_cons_pal_parse (ficolor, NULL);
+				return const_color;
+			}
 		}
 		return NULL;
 	}

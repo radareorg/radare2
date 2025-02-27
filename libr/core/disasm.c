@@ -2568,14 +2568,27 @@ static int flagCmp(const void *a, const void *b) {
 }
 #endif
 
-static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
+static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
+	R_RETURN_IF_FAIL (ds && fi);
 	ds_newline (ds);
 	ds_begin_line (ds);
 	ds_pre_line (ds);
 	if (ds->show_color) {
 		bool hasColor = false;
-		if (flag->color) {
-			char *color = r_cons_pal_parse (flag->color, NULL);
+#if METAFLAG
+		RFlagItemMeta *fim = r_flag_get_meta (ds->core, fi->id);
+		if (fim && fim->color) {
+			char *color = r_cons_pal_parse (fim->color, NULL);
+			if (color) {
+				r_cons_print (color);
+				free (color);
+				ds->lastflag = fi;
+				hasColor = true;
+			}
+		}
+#else
+		if (fi->color) {
+			char *color = r_cons_pal_parse (fi->color, NULL);
 			if (color) {
 				r_cons_print (color);
 				free (color);
@@ -2583,6 +2596,7 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 				hasColor = true;
 			}
 		}
+#endif
 		if (!hasColor) {
 			r_cons_print (ds->color_flag);
 		}
@@ -2612,7 +2626,7 @@ static bool is_first(const char *fs) {
 
 static RList *custom_sorted_flags(const RList *flaglist) {
 	RListIter *iter;
-	RFlagItem *flag;
+	RFlagItem *fi;
 	if (!flaglist) {
 		return NULL;
 	}
@@ -2620,24 +2634,24 @@ static RList *custom_sorted_flags(const RList *flaglist) {
 	RList *res = r_list_newf (NULL);
 	RList *rest = r_list_newf (NULL);
 	RList *tail = r_list_newf (NULL);
-	r_list_foreach (list, iter, flag) {
-		const char *fs = flag->space? flag->space->name: NULL;
+	r_list_foreach (list, iter, fi) {
+		const char *fs = fi->space? fi->space->name: NULL;
 		if (is_first (fs)) {
-			r_list_append (res, flag);
+			r_list_append (res, fi);
 		} else {
-			r_list_append (rest, flag);
+			r_list_append (rest, fi);
 		}
 	}
-	r_list_foreach (rest, iter, flag) {
-		const char *fs = flag->space? flag->space->name: NULL;
+	r_list_foreach (rest, iter, fi) {
+		const char *fs = R_UNWRAP3 (fi, space, name);
 		if (fs && !strcmp (fs, "registers")) {
-			r_list_append (tail, flag);
+			r_list_append (tail, fi);
 		} else {
-			r_list_append (res, flag);
+			r_list_append (res, fi);
 		}
 	}
-	r_list_foreach (tail, iter, flag) {
-		r_list_append (res, flag);
+	r_list_foreach (tail, iter, fi) {
+		r_list_append (res, fi);
 	}
 	r_list_free (tail);
 	r_list_free (rest);
@@ -2739,8 +2753,9 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 		bool hasColor = false;
 		char *color = NULL;
 		if (ds->show_color) {
-			if (flag->color) {
-				color = r_cons_pal_parse (flag->color, NULL);
+			const char *fcolor = r_flag_item_set_color (core->flags, flag, NULL);
+			if (fcolor) {
+				color = r_cons_pal_parse (fcolor, NULL);
 				if (color) {
 					r_cons_print (color);
 					ds->lastflag = flag;
@@ -3371,16 +3386,17 @@ static void ds_print_offset(RDisasmState *ds) {
 	bool hasCustomColor = false;
 	// probably tooslow
 	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
+	const char *fcolor = NULL;
 	if (f && ds->show_flag_in_offset && f->addr == at) {
 		ds_newline (ds);
 		if (ds_show_flags (ds, false)) {
 			ds_begin_cont (ds);
 		}
+		fcolor = r_flag_item_set_color (core->flags, f, NULL);
 	}
-	if (ds->show_color && f && R_STR_ISNOTEMPTY (f->color)) {
+	if (ds->show_color && f && fcolor) {
 		if (ds->at >= f->addr && ds->at < f->addr + f->size) {
-		//	if (r_itv_inrange (f->itv, ds->at))
-			char *k = r_cons_pal_parse (f->color, NULL);
+			char *k = r_cons_pal_parse (fcolor, NULL);
 			if (R_STR_ISNOTEMPTY (k)) {
 				r_cons_printf ("%s", k);
 				hasCustomColor = true;
