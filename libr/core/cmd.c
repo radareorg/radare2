@@ -627,7 +627,7 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 	}
 	RSysInfo *si = r_sys_info ();
 	if (si) {
-		const bool sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
+		const int sysbits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 		if (strstr (input, "-a")) {
 			r_cons_printf ("%s %s %s-%d", si->sysname, si->release,
 				R_SYS_ARCH, sysbits);
