@@ -273,7 +273,7 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   linux-tinyasan-fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
     - name: Checkout
@@ -292,17 +292,17 @@ jobs:
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make -C test fuzz-tests
   linux-asan-fuzz:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     continue-on-error: true
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
@@ -321,14 +321,14 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make tests
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make -C test fuzz-tests
 
   w64-make:
