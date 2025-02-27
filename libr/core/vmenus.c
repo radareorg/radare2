@@ -4496,7 +4496,7 @@ onemoretime:
 				r_cons_flush ();
 				r_line_set_prompt ("color: ");
 				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) > 0) {
-					r_flag_item_set_color (item, cmd);
+					r_flag_item_set_color (core->flags, item, cmd);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
 				}

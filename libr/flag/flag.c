@@ -186,6 +186,16 @@ static void ht_free_flag(HtPPKv *kv) {
 	}
 }
 
+static void ht_free_meta(HtUPKv *kv) {
+	if (kv) {
+		// free (kv->key);
+		RFlagItemMeta *fim = (RFlagItemMeta *)kv->value;
+		free (fim->comment);
+		free (fim->color);
+		free (fim);
+	}
+}
+
 static bool count_flags(RFlagItem *fi, void *user) {
 	int *count = (int *)user;
 	(*count)++;
@@ -230,6 +240,7 @@ R_API RFlag *r_flag_new(void) {
 	f->zones = r_list_newf (r_flag_zone_item_free);
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+	f->ht_meta = ht_up_new (NULL, ht_free_meta, NULL);
 	f->by_addr = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 	new_spaces (f);
 	R_DIRTY_SET (f);
@@ -240,8 +251,13 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
 
 	RFlagItem *n = R_NEW0 (RFlagItem);
+#if METAFLAG
+	n->id = item->id;
+#else
+	n->type = STRDUP_OR_NULL (item->type);
 	n->color = STRDUP_OR_NULL (item->color);
 	n->comment = STRDUP_OR_NULL (item->comment);
+#endif
 	n->alias = STRDUP_OR_NULL (item->alias);
 	n->name = STRDUP_OR_NULL (item->name);
 	n->realname = STRDUP_OR_NULL (item->realname);
@@ -253,8 +269,11 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 
 R_API void r_flag_item_free(RFlagItem *fi) {
 	if (R_LIKELY (fi)) {
+#if METAFLAG
+#else
 		free (fi->color);
 		free (fi->comment);
+#endif
 		free (fi->alias);
 		/* release only one of the two pointers if they are the same */
 		free_item_name (fi);
@@ -310,9 +329,18 @@ static bool print_flag_json(RFlagItem *fi, void *user) {
 	} else {
 		pj_kn (u->pj, "addr", fi->addr);
 	}
+#if METAFLAG
+	RFlagItemMeta *fim = r_flag_get_meta (u->f, fi->id);
+	if (fim) {
+		if (fim->comment) {
+			pj_ks (u->pj, "comment", fim->comment);
+		}
+	}
+#else
 	if (fi->comment) {
 		pj_ks (u->pj, "comment", fi->comment);
 	}
+#endif
 	pj_end (u->pj);
 	return true;
 }
@@ -327,8 +355,13 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		u->fs = flag->space;
 		u->f->cb_printf ("fs %s\n", u->fs? u->fs->name: "*");
 	}
-	if (flag->comment && *flag->comment) {
-		comment_b64 = r_base64_encode_dyn (flag->comment, -1);
+#if METAFLAG
+	const char *cmt = r_flag_item_set_comment (u->f, flag, NULL);
+#else
+	const char *cmt = flag->comment;
+#endif
+	if (R_STR_ISNOTEMPTY (cmt)) {
+		comment_b64 = r_base64_encode_dyn (cmt, -1);
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
 			tmp = r_str_newf ("base64:%s", comment_b64);
@@ -771,8 +804,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	if (!item) {
 		item = R_NEW0 (RFlagItem);
 		is_new = true;
+		f->lastid++;
 	}
-
+	item->id = f->lastid;
 	item->space = r_flag_space_cur (f);
 	item->size = size;
 
@@ -782,32 +816,76 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 }
 
 /* add/replace/remove the alias of a flag item */
-R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias) {
-	R_RETURN_IF_FAIL (item);
-	free (item->alias);
-	item->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
+R_API void r_flag_item_set_alias(RFlagItem *fi, const char *alias) {
+	R_RETURN_IF_FAIL (fi);
+	free (fi->alias);
+	fi->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
 }
 
 /* add/replace/remove the comment of a flag item */
-R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
-	R_RETURN_IF_FAIL (item);
-	free (item->comment);
-	item->comment = R_STR_ISEMPTY (comment)? NULL: strdup (comment);
+R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, const char *comment) {
+	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
+#if METAFLAG
+	if (comment) {
+		RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
+		R_FREE (fim->comment);
+		if (*comment) {
+			fim->comment = strdup (comment);
+		}
+	} else {
+		RFlagItemMeta *fim = r_flag_get_meta (f, fi->id);
+		return fim? fim->comment: NULL;
+	}
+	return NULL;
+#else
+	if (comment) {
+		R_FREE (fi->comment);
+		if (*comment) {
+			fi->comment = strdup (comment);
+		}
+	}
+	return fi->comment;
+#endif
 }
 
 /* add/replace/remove the realname of a flag item */
-R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
-	R_RETURN_IF_FAIL (item);
+R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char *realname) {
+	R_RETURN_VAL_IF_FAIL (item, NULL);
 	free_item_realname (item);
 	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
+	return item->realname;
 }
 
 /* add/replace/remove the color of a flag item */
-R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
-	R_RETURN_VAL_IF_FAIL (item, NULL);
-	free (item->color);
-	item->color = (color && *color) ? strdup (color) : NULL;
-	return item->color;
+R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE const char *color) {
+	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
+#if METAFLAG
+	RFlagItemMeta *fim;
+	if (color) {
+		fim = r_flag_get_meta2 (f, fi->id);
+		if (fim) {
+			if (*color) {
+				free (fim->color);
+				fim->color = strdup (color);
+			} else {
+				R_FREE (fim->color);
+			}
+			return fim->color;
+		}
+	} else {
+		fim = r_flag_get_meta (f, fi->id);
+		if (fim) {
+			return fim->color;
+		}
+	}
+	return NULL;
+#else
+	if (color) {
+		free (fi->color);
+		fi->color = (*color) ? strdup (color) : NULL;
+	}
+	return fi->color;
+#endif
 }
 
 /* change the name of a flag item, if the new name is available.
@@ -817,10 +895,34 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	return update_flag_item_name (f, item, name, false);
 }
 
-R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
+R_API void r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char *type) {
 	R_RETURN_IF_FAIL (fi && type);
+#if METAFLAG
+	RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
+	free (fim->type);
+	fim->type = strdup (type);
+#else
 	free (fi->type);
 	fi->type = strdup (type);
+#endif
+}
+
+R_API R_NULLABLE RFlagItemMeta *r_flag_get_meta(RFlag *f, ut32 id) {
+	R_RETURN_VAL_IF_FAIL (f, NULL);
+	return (RFlagItemMeta *)ht_up_find (f->ht_meta, id, NULL);
+}
+
+R_API RFlagItemMeta *r_flag_get_meta2(RFlag *f, ut32 id) {
+	RFlagItemMeta *fim = r_flag_get_meta (f, id);
+	if (!fim) {
+		fim = R_NEW0 (RFlagItemMeta);
+		ht_up_insert (f->ht_meta, id, fim);
+	}
+	return fim;
+}
+
+R_API void r_flag_del_meta(RFlag *f, ut32 id) {
+	ht_up_delete (f->ht_meta, id);
 }
 
 /* unset the given flag item.
@@ -829,6 +931,7 @@ R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
  * NOTE: the item is freed. */
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
 	R_RETURN_VAL_IF_FAIL (f && item, false);
+	r_flag_del_meta (f, item->id);
 	remove_addrmap (f, item);
 	ht_pp_delete (f->ht_name, item->name);
 	R_DIRTY_SET (f);

@@ -203,7 +203,7 @@ typedef struct r_disasm_state_t {
 	int lbytes;
 	int show_cmt_right;
 	int pre;
-	char *ocomment;
+	const char *ocomment; // weak pointer
 	bool cmt_wrap;
 	int linesopts;
 	int lastfail;
@@ -2477,10 +2477,13 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		if (vartype) {
 			R_FREE (ds->comment);
 			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype);
-		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
-			ds->ocomment = item->comment;
-			R_FREE (ds->comment);
-			ds->comment = strdup (item->comment);
+		} else if (item) {
+			const char *cmt = r_flag_item_set_comment (core->flags, item, NULL);
+			if (cmt) {
+				R_FREE (ds->comment);
+				ds->ocomment = cmt;
+				ds->comment = strdup (cmt);
+			}
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
@@ -2534,18 +2537,21 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		R_FREE (ds->comment);
 		ds_newline (ds);
 		/* flag one */
-		if (item && item->comment && ds->ocomment != item->comment) {
-			ds_begin_line (ds);
-			ds_newline (ds);
-			ds_begin_line (ds);
-			if (ds->show_color) {
-				r_cons_print (ds->pal_comment);
-			}
-			r_cons_print ("  ;  ");
-			r_cons_print_justify (item->comment, mycols, ';');
-			ds_newline (ds);
-			if (ds->show_color) {
-				ds_print_color_reset (ds);
+		if (item) {
+			const char *item_comment = r_flag_item_set_comment (core->flags, item, NULL);
+			if (item_comment && ds->ocomment != item_comment) {
+				ds_begin_line (ds);
+				ds_newline (ds);
+				ds_begin_line (ds);
+				if (ds->show_color) {
+					r_cons_print (ds->pal_comment);
+				}
+				r_cons_print ("  ;  ");
+				r_cons_print_justify (item_comment, mycols, ';');
+				ds_newline (ds);
+				if (ds->show_color) {
+					ds_print_color_reset (ds);
+				}
 			}
 		}
 	}
@@ -2568,14 +2574,27 @@ static int flagCmp(const void *a, const void *b) {
 }
 #endif
 
-static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
+static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
+	R_RETURN_IF_FAIL (ds && fi);
 	ds_newline (ds);
 	ds_begin_line (ds);
 	ds_pre_line (ds);
 	if (ds->show_color) {
 		bool hasColor = false;
-		if (flag->color) {
-			char *color = r_cons_pal_parse (flag->color, NULL);
+#if METAFLAG
+		RFlagItemMeta *fim = r_flag_get_meta (ds->core->flags, fi->id);
+		if (fim && fim->color) {
+			char *color = r_cons_pal_parse (fim->color, NULL);
+			if (color) {
+				r_cons_print (color);
+				free (color);
+				ds->lastflag = fi;
+				hasColor = true;
+			}
+		}
+#else
+		if (fi->color) {
+			char *color = r_cons_pal_parse (fi->color, NULL);
 			if (color) {
 				r_cons_print (color);
 				free (color);
@@ -2583,6 +2602,7 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 				hasColor = true;
 			}
 		}
+#endif
 		if (!hasColor) {
 			r_cons_print (ds->color_flag);
 		}
@@ -2611,33 +2631,33 @@ static bool is_first(const char *fs) {
 }
 
 static RList *custom_sorted_flags(const RList *flaglist) {
-	RListIter *iter;
-	RFlagItem *flag;
 	if (!flaglist) {
 		return NULL;
 	}
+	RListIter *iter;
+	RFlagItem *fi;
 	RList *list = r_list_uniq (flaglist, flagVal);
 	RList *res = r_list_newf (NULL);
 	RList *rest = r_list_newf (NULL);
 	RList *tail = r_list_newf (NULL);
-	r_list_foreach (list, iter, flag) {
-		const char *fs = flag->space? flag->space->name: NULL;
+	r_list_foreach (list, iter, fi) {
+		const char *fs = fi->space? fi->space->name: NULL;
 		if (is_first (fs)) {
-			r_list_append (res, flag);
+			r_list_append (res, fi);
 		} else {
-			r_list_append (rest, flag);
+			r_list_append (rest, fi);
 		}
 	}
-	r_list_foreach (rest, iter, flag) {
-		const char *fs = flag->space? flag->space->name: NULL;
+	r_list_foreach (rest, iter, fi) {
+		const char *fs = R_UNWRAP3 (fi, space, name);
 		if (fs && !strcmp (fs, "registers")) {
-			r_list_append (tail, flag);
+			r_list_append (tail, fi);
 		} else {
-			r_list_append (res, flag);
+			r_list_append (res, fi);
 		}
 	}
-	r_list_foreach (tail, iter, flag) {
-		r_list_append (res, flag);
+	r_list_foreach (tail, iter, fi) {
+		r_list_append (res, fi);
 	}
 	r_list_free (tail);
 	r_list_free (rest);
@@ -2739,8 +2759,9 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 		bool hasColor = false;
 		char *color = NULL;
 		if (ds->show_color) {
-			if (flag->color) {
-				color = r_cons_pal_parse (flag->color, NULL);
+			const char *fcolor = r_flag_item_set_color (core->flags, flag, NULL);
+			if (fcolor) {
+				color = r_cons_pal_parse (fcolor, NULL);
 				if (color) {
 					r_cons_print (color);
 					ds->lastflag = flag;
@@ -3111,13 +3132,17 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			item = r_flag_get_in (ds->core->flags, ds->analop.jump);
-			if (item && item->comment) {
-				if (ds->show_color) {
-					r_cons_print (ds->pal_comment);
+			if (item) {
+				const char *cmt = r_flag_item_set_comment (ds->core->flags, item, NULL);
+				if (cmt) {
+					if (ds->show_color) {
+						r_cons_print (ds->pal_comment);
+					}
+					ds_align_comment (ds);
+					const char *cmt = r_flag_item_set_comment (ds->core->flags, item, NULL);
+					r_cons_printf ("  ; ref to %s: %s\n", item->name, cmt);
+					ds_print_color_reset (ds);
 				}
-				ds_align_comment (ds);
-				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
-				ds_print_color_reset (ds);
 			}
 			break;
 		}
@@ -3371,16 +3396,17 @@ static void ds_print_offset(RDisasmState *ds) {
 	bool hasCustomColor = false;
 	// probably tooslow
 	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
+	const char *fcolor = NULL;
 	if (f && ds->show_flag_in_offset && f->addr == at) {
 		ds_newline (ds);
 		if (ds_show_flags (ds, false)) {
 			ds_begin_cont (ds);
 		}
+		fcolor = r_flag_item_set_color (core->flags, f, NULL);
 	}
-	if (ds->show_color && f && R_STR_ISNOTEMPTY (f->color)) {
+	if (ds->show_color && f && fcolor) {
 		if (ds->at >= f->addr && ds->at < f->addr + f->size) {
-		//	if (r_itv_inrange (f->itv, ds->at))
-			char *k = r_cons_pal_parse (f->color, NULL);
+			char *k = r_cons_pal_parse (fcolor, NULL);
 			if (R_STR_ISNOTEMPTY (k)) {
 				r_cons_printf ("%s", k);
 				hasCustomColor = true;
