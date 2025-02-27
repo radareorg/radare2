@@ -47,8 +47,8 @@ typedef struct r_num_calc_t {
 } RNumCalc;
 
 typedef struct r_num_t {
-	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
-	const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, int *ok);
+	ut64 (*callback)(struct r_num_t *userptr, const char *str, bool *ok);
+	const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, bool *ok);
 //	RNumCallback callback;
 	ut64 value;
 	double fvalue;
@@ -58,7 +58,7 @@ typedef struct r_num_t {
 // R2_590 R_REF_TYPE
 } RNum;
 
-typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
+typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, bool *ok);
 typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, bool *ok);
 
 static inline ut64 r_num_bitmask(ut8 width) {
