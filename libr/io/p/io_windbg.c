@@ -398,7 +398,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	if (!windbg_check (io, uri, 0)) {
 		return NULL;
 	}
-	if (!windbg_init ()) {
+	if (!windbg_init (NULL)) {
 		return NULL;
 	}
 	HRESULT hr = E_FAIL;
