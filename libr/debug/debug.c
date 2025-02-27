@@ -681,11 +681,9 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	// Synchronize with the current thread's data
 	if (dbg->coreb.core) {
 		RCore *core = (RCore *)dbg->coreb.core;
-
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
-
-		core->offset = r_debug_reg_get (dbg, "PC");
+		core->addr = r_debug_reg_get (dbg, "PC");
 	}
 
 	return true;
