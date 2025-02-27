@@ -358,7 +358,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	} else {
 		function_label = r_str_newf ("fcn.%08"PFMT64x, addr);
 	}
-	// loc_addr = core->offset; // sdb_num_get (db, "addr", NULL);
+	// loc_addr = core->addr; // sdb_num_get (db, "addr", NULL);
 	loc_addr = sdb_num_get (db, "addr", NULL);
 	RAnalFunction *fcn_at_addr = r_anal_get_function_at (core->anal, loc_addr);
 	if (fcn_at_addr) {
@@ -438,8 +438,8 @@ static bool analcall(RAnal *anal, const char *input) {
 				return true;
 			}
 
-			if (!analyzeFunction (core, core->offset)) {
-				R_LOG_DEBUG ("a2f: Failed to analyze function at 0x%08"PFMT64x, core->offset);
+			if (!analyzeFunction (core, core->addr)) {
+				R_LOG_DEBUG ("a2f: Failed to analyze function at 0x%08"PFMT64x, core->addr);
 			}
 			break;
 		default:

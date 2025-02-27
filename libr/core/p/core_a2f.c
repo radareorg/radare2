@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2024 pancake, defragger */
+/* radare - Copyright 2014-2025 - pancake, defragger */
 
 #define R_LOG_ORIGIN "a2f"
 
