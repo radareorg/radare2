@@ -858,7 +858,7 @@ R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char
 
 /* add/replace/remove the color of a flag item */
 R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE const char *color) {
-	R_RETURN_VAL_IF_FAIL (f && fi && color, NULL);
+	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
 #if METAFLAG
 	RFlagItemMeta *fim;
 	if (color) {
