@@ -128,11 +128,10 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 static char *filter_item_name(R_NONNULL const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	char *res = strdup (name);
-	if (!res) {
-		return NULL;
+	if (R_LIKELY (res)) {
+		r_str_trim (res);
+		r_name_filter (res, 0);
 	}
-	r_str_trim (res);
-	r_name_filter (res, 0);
 	return res;
 }
 
@@ -144,21 +143,19 @@ static void set_name(RFlagItem *item, char *name) {
 	item->realname = item->name;
 }
 
-static bool update_flag_item_addr(RFlag *f, RFlagItem *item, ut64 newaddr, bool is_new, bool force) {
-	if (item->addr != newaddr || force) {
+static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is_new, bool force) {
+	if (fi->addr != newaddr || force) {
 		if (!is_new) {
-			remove_addrmap (f, item);
+			remove_addrmap (f, fi);
 		}
-		item->addr = newaddr;
+		fi->addr = newaddr;
 		RFlagsAtOffset *flagsAtOffset = flags_at_addr (f, newaddr);
-		if (!flagsAtOffset) {
-			return false;
+		if (flagsAtOffset) {
+			r_list_append (flagsAtOffset->flags, fi);
+			R_DIRTY_SET (f);
+			return true;
 		}
-		r_list_append (flagsAtOffset->flags, item);
-		R_DIRTY_SET (f);
-		return true;
 	}
-
 	return false;
 }
 
@@ -254,15 +251,15 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	return n;
 }
 
-R_API void r_flag_item_free(RFlagItem *item) {
-	if (R_LIKELY (item)) {
-		free (item->color);
-		free (item->comment);
-		free (item->alias);
+R_API void r_flag_item_free(RFlagItem *fi) {
+	if (R_LIKELY (fi)) {
+		free (fi->color);
+		free (fi->comment);
+		free (fi->alias);
 		/* release only one of the two pointers if they are the same */
-		free_item_name (item);
-		free (item->realname);
-		free (item);
+		free_item_name (fi);
+		free (fi->realname);
+		free (fi);
 	}
 }
 
@@ -490,8 +487,8 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	return false;
 }
 
-/* return the flag item with name "name" in the RFlag "f", if it exists.
- * Otherwise, NULL is returned. */
+/* return the flag item with name "name" in the RFlag "f", if it exists. */
+/* Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	RFlagItem *r = ht_pp_find (f->ht_name, name, NULL);
@@ -508,9 +505,8 @@ R_API RFlagItem *r_flag_get_in(RFlag *f, ut64 addr) {
 	return list? evalFlag (f, r_list_last (list)): NULL;
 }
 
-/* return the first flag that matches an addr ordered by the order of
- * operands to the function.
- * Pass in the name of each space, in order, followed by a NULL */
+/* Return the first flag matching an address ordered by the operands */
+/* Pass in the name of each space, in order, followed by a NULL */
 R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (f->mask) {
@@ -519,12 +515,9 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 
 	const RList *list = r_flag_get_list (f, addr);
 	RFlagItem *ret = NULL;
-	const char *spacename;
-	RSpace **spaces;
 	RListIter *iter;
-	RFlagItem *flg;
+	RFlagItem *fi;
 	va_list ap, aq;
-	size_t n_spaces = 0, i;
 
 	va_start (ap, addr);
 	// some quick checks for common cases
@@ -538,7 +531,9 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 
 	// count spaces in the vaarg
 	va_copy (aq, ap);
-	spacename = va_arg (aq, const char *);
+	const char *spacename = va_arg (aq, const char *);
+
+	size_t n_spaces = 0;
 	while (spacename) {
 		n_spaces++;
 		spacename = va_arg (aq, const char *);
@@ -546,8 +541,8 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 	va_end (aq);
 
 	// get RSpaces from the names
-	i = 0;
-	spaces = R_NEWS (RSpace *, n_spaces + 1);
+	size_t i = 0;
+	RSpace **spaces = R_NEWS (RSpace *, n_spaces + 1);
 	spacename = va_arg (ap, const char *);
 	while (spacename) {
 		RSpace *space = r_flag_space_get (f, spacename);
@@ -559,15 +554,15 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 	n_spaces = i;
 
 	ut64 min_space_i = n_spaces + 1;
-	r_list_foreach (list, iter, flg) {
+	r_list_foreach (list, iter, fi) {
 		// get the "priority" of the flag flagspace and
 		// check if better than what we found so far
-		if (prionospace && !flg->space) {
-			ret = flg;
+		if (prionospace && !fi->space) {
+			ret = fi;
 			break;
 		}
 		for (i = 0; i < n_spaces; i++) {
-			if (flg->space == spaces[i]) {
+			if (fi->space == spaces[i]) {
 				break;
 			}
 			if (i >= min_space_i) {
@@ -577,7 +572,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 addr, ...
 
 		if (i < min_space_i) {
 			min_space_i = i;
-			ret = flg;
+			ret = fi;
 		}
 		if (!min_space_i) {
 			// this is the best flag we can find, let's stop immediately
