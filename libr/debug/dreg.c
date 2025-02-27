@@ -344,11 +344,11 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	return (ri);
 }
 
-R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value) {
+R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *value) {
 	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
 	if (err) {
-		*err = 0;
+		*err = false;
 	}
 	if (!dbg || !dbg->reg) {
 		if (err) {
