@@ -12,20 +12,15 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_flag);
 
+// XXX this is a soft limitation, there's no limits in the rflag api
 #define R_FLAG_NAME_SIZE 512
 
 /* zones.c */
 
-#define R_FLAG_ZONE_USE_SDB 0
-
 typedef struct r_flag_zone_item_t {
 	ut64 from;
 	ut64 to;
-#if R_FLAG_ZONE_USE_SDB
-	const char *name;
-#else
 	char *name;
-#endif
 } RFlagZoneItem;
 
 /* flag.c */
@@ -97,10 +92,12 @@ typedef struct r_flag_bind_t {
 	RFlagPopSpace pop_fs;
 } RFlagBind;
 
-#define r_flag_bind_init(x) memset(&x,0,sizeof (x))
-R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
-
 #ifdef R_API
+
+/* flag */
+
+#define r_flag_bind_init(x) memset (&x, 0, sizeof (x))
+R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
 R_API RFlag *r_flag_new(void);
 R_API void r_flag_free(RFlag *f);
 R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
@@ -139,6 +136,7 @@ R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, v
 R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
 
 /* spaces */
+
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {
 	return r_spaces_get (&f->spaces, name);
 }
