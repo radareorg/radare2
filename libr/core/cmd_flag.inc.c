@@ -1776,7 +1776,6 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
 			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			if (*arg) {
-				arg = strdup (r_str_trim_head_ro (input + 2));
 				char *sp = strchr (arg, ' ');
 				if (!sp) {
 					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,

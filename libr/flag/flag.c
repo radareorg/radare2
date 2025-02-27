@@ -150,12 +150,10 @@ static bool update_flag_item_addr(RFlag *f, RFlagItem *item, ut64 newaddr, bool 
 			remove_addrmap (f, item);
 		}
 		item->addr = newaddr;
-
 		RFlagsAtOffset *flagsAtOffset = flags_at_addr (f, newaddr);
 		if (!flagsAtOffset) {
 			return false;
 		}
-
 		r_list_append (flagsAtOffset->flags, item);
 		R_DIRTY_SET (f);
 		return true;
@@ -299,24 +297,24 @@ struct print_flag_t {
 	const char *pfx;
 };
 
-static bool print_flag_json(RFlagItem *flag, void *user) {
+static bool print_flag_json(RFlagItem *fi, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->addr < u->range_from || flag->addr >= u->range_to)) {
+	if (u->in_range && (fi->addr < u->range_from || fi->addr >= u->range_to)) {
 		return true;
 	}
 	pj_o (u->pj);
-	pj_ks (u->pj, "name", flag->name);
-	if (flag->realname && flag->name != flag->realname) {
-		pj_ks (u->pj, "realname", flag->realname);
+	pj_ks (u->pj, "name", fi->name);
+	if (fi->realname && fi->name != fi->realname) {
+		pj_ks (u->pj, "realname", fi->realname);
 	}
-	pj_ki (u->pj, "size", flag->size);
-	if (flag->alias) {
-		pj_ks (u->pj, "alias", flag->alias);
+	pj_ki (u->pj, "size", fi->size);
+	if (fi->alias) {
+		pj_ks (u->pj, "alias", fi->alias);
 	} else {
-		pj_kn (u->pj, "addr", flag->addr);
+		pj_kn (u->pj, "addr", fi->addr);
 	}
-	if (flag->comment) {
-		pj_ks (u->pj, "comment", flag->comment);
+	if (fi->comment) {
+		pj_ks (u->pj, "comment", fi->comment);
 	}
 	pj_end (u->pj);
 	return true;
@@ -380,7 +378,7 @@ R_API void r_flag_list(RFlag *f, int rad, R_NULLABLE const char *pfx) {
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
 	if (rad == 'i') {
-		char *arg = R_STR_ISEMPTY (pfx)? strdup (pfx + 1): strdup ("");
+		char *arg = R_STR_ISNOTEMPTY (pfx)? r_str_trim_dup (pfx + 1): strdup ("");
 		char *sp = strchr (arg,  ' ');
 		if (sp) {
 			*sp++ = 0;

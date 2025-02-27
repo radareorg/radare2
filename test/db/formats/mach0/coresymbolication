@@ -388,7 +388,7 @@ CMDS=<<EOF
 fdj@0x100006430~{:
 EOF
 EXPECT=<<EOF
-offset: 4294992900
+addr: 4294992900
 name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
@@ -400,7 +400,7 @@ CMDS=<<EOF
 fdj@0x100006430~{:
 EOF
 EXPECT=<<EOF
-offset: 4294992900
+addr: 4294992900
 name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
@@ -412,7 +412,7 @@ CMDS=<<EOF
 fdj@0x100005cea~{:
 EOF
 EXPECT=<<EOF
-offset: 4294990968
+addr: 4294990968
 name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
