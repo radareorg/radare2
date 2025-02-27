@@ -753,12 +753,6 @@ static void __cmd_pad(RCore *core, const char *arg) {
 
 static void first_flag_chars(const char *name, char *ch, char *ch2) {
 	name = r_name_filter_ro (name);
-	// name = "ab"; // r_name_filter_ro (name);
-/*
-	while (*name == '_') {
-		name++;
-	}
-*/
 	const bool two = name[0] && name[1];
 	*ch = two? name[0]: ' ';
 	*ch2 = two? name[1]: name[0]; // two? 1: 0];
@@ -2667,7 +2661,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				} else {
 					fend = addr + j + flagsize;
 				}
-				const char *name = r_name_filter_ro (flagname);
+				const char *name = flagname? r_name_filter_ro (flagname): NULL;
 				if (name) {
 					free (note[j]);
 					note[j] = r_str_prepend (strdup (name), "/");
