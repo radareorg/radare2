@@ -2615,14 +2615,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				// get flag fnear and check for size
 				RFlagItem *fnear = r_flag_get_at (core->flags, at, true);
 				if (fnear) {
-					if (fnear->offset <= at) {
-						if (fnear->offset + fnear->size >= at) {
+					if (fnear->addr <= at) {
+						if (fnear->addr + fnear->size >= at) {
 							found = true;
 						}
 					}
 					if (found) {
-						flagaddr = fnear->offset;
-						if (fnear->offset == at) {
+						flagaddr = fnear->addr;
+						if (fnear->addr== at) {
 							free (flagname);
 							flagname = fnear->name;
 						}
@@ -2642,8 +2642,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						curflag = fi;
 					}
 					if (!flagaddr || fi->color) {
-						flagaddr = fi->offset;
-						if (fi->offset == at) {
+						flagaddr = fi->addr;
+						if (fi->addr == at) {
 							free (flagname);
 							flagname = strdup (fi->name);
 						}
@@ -2690,7 +2690,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 			} else {
 				// Are we past the current flag?
-				if (curflag && addr + j > (curflag->offset + curflag->size)) {
+				if (curflag && addr + j > (curflag->addr + curflag->size)) {
 					setcolor = false;
 					curflag = NULL;
 				}
@@ -2965,8 +2965,8 @@ struct count_pz_t {
 static bool count_pzs(RFlagItem *fi, void *u) {
 	struct count_pz_t *user = (struct count_pz_t *)u;
 	if (fi->space == user->flagspace &&
-	    ((user->addr <= fi->offset && fi->offset < user->addr + user->size) ||
-	     (user->addr <= fi->offset + fi->size && fi->offset + fi->size < user->addr + user->size))) {
+	    ((user->addr <= fi->addr && fi->addr < user->addr + user->size) ||
+	     (user->addr <= fi->addr + fi->size && fi->addr + fi->size < user->addr + user->size))) {
 		(*user->ret)++;
 	}
 
@@ -2974,7 +2974,7 @@ static bool count_pzs(RFlagItem *fi, void *u) {
 }
 static bool count_pzf(RFlagItem *fi, void *u) {
 	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->offset <= user->addr && user->addr < fi->offset + fi->size) {
+	if (fi->addr <= user->addr && user->addr < fi->addr + fi->size) {
 		(*user->ret)++;
 	}
 	return true;
@@ -8290,13 +8290,13 @@ static int cmd_print(void *data, const char *input) {
 					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;
 					if (f) {
-						st64 delta = (v - f->offset);
+						st64 delta = (v - f->addr);
 						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
+							if (v == f->addr) {
 								fn = strdup (f->name);
 							} else {
 								fn = r_str_newf ("%s+%" PFMT64d,
-									f->name, v - f->offset);
+									f->name, v - f->addr);
 							}
 						}
 					}
@@ -8371,12 +8371,12 @@ static int cmd_print(void *data, const char *input) {
 					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;
 					if (f) {
-						st64 delta = (v - f->offset);
+						st64 delta = (v - f->addr);
 						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
+							if (v == f->addr) {
 								fn = strdup (f->name);
 							} else {
-								fn = r_str_newf ("%s+%"PFMT64d, f->name, v - f->offset);
+								fn = r_str_newf ("%s+%"PFMT64d, f->name, v - f->addr);
 							}
 						}
 					}
@@ -8427,12 +8427,12 @@ static int cmd_print(void *data, const char *input) {
 					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;
 					if (f) {
-						st64 delta = (v - f->offset);
+						st64 delta = (v - f->addr);
 						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
+							if (v == f->addr) {
 								fn = strdup (f->name);
 							} else {
-								fn = r_str_newf ("%s+%" PFMT64d, f->name, v - f->offset);
+								fn = r_str_newf ("%s+%" PFMT64d, f->name, v - f->addr);
 							}
 						}
 					}

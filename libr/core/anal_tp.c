@@ -514,7 +514,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 						RFlagItem *f = r_flag_get_by_spaces (core->flags, false, op->ptr, R_FLAGS_FS_STRINGS, NULL);
 						if (f) {
 							char formatstr[0x200];
-							int read = r_io_nread_at (core->io, f->offset, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
+							int read = r_io_nread_at (core->io, f->addr, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
 							if (read > 0) {
 								formatstr[read] = '\0';
 								RVecString_clear (&types);

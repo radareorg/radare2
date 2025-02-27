@@ -432,13 +432,13 @@ struct flagbar_t {
 static bool flagbar_foreach(RFlagItem *fi, void *user) {
 	struct flagbar_t *u = (struct flagbar_t *)user;
 	ut64 min = 0, max = r_io_size (u->core->io);
-	RIOMap *m = r_io_map_get_at (u->core->io, fi->offset);
+	RIOMap *m = r_io_map_get_at (u->core->io, fi->addr);
 	if (m) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;
 	}
-	r_cons_printf ("0x%08"PFMT64x" ", fi->offset);
-	r_print_rangebar (u->core->print, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	r_cons_printf ("0x%08"PFMT64x" ", fi->addr);
+	r_print_rangebar (u->core->print, fi->addr, fi->addr + fi->size, min, max, u->cols);
 	r_cons_printf ("  %s\n", fi->name);
 	return true;
 }
@@ -456,13 +456,13 @@ static void flagbars(RCore *core, const char *glob) {
 
 struct flag_to_flag_t {
 	ut64 next;
-	ut64 offset;
+	ut64 addr;
 };
 
 static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 	struct flag_to_flag_t *u = (struct flag_to_flag_t *)user;
-	if (fi->offset < u->next && fi->offset > u->offset) {
-		u->next = fi->offset;
+	if (fi->addr < u->next && fi->addr > u->addr) {
+		u->next = fi->addr;
 	}
 	return true;
 }
@@ -470,7 +470,7 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 static int flag_to_flag(RCore *core, const char *glob) {
 	R_RETURN_VAL_IF_FAIL (glob, 0);
 	glob = r_str_trim_head_ro (glob);
-	struct flag_to_flag_t u = { .next = UT64_MAX, .offset = core->offset };
+	struct flag_to_flag_t u = { .next = UT64_MAX, .addr = core->offset };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);
 	if (u.next != UT64_MAX && u.next > core->offset) {
 		return u.next - core->offset;
@@ -487,7 +487,7 @@ static bool __tableItemCallback(RFlagItem *flag, void *user) {
 	if (!R_STR_ISEMPTY (flag->name)) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
-		r_strf_var (addr, 32, "0x%08"PFMT64x, flag->offset);
+		r_strf_var (addr, 32, "0x%08"PFMT64x, flag->addr);
 		r_strf_var (size, 32, "%"PFMT64d, flag->size);
 		r_table_add_row (t, addr, size, spaceName, flag->name, NULL);
 	}
@@ -603,14 +603,14 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 			  // TODO : implement ftnj
 			  // TODO : implement ftn, -> using table api
 			r_list_foreach (flags, iter, flag) {
-				// r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
+				// r_cons_printf ("0x%08"PFMT64x"\n", flag->addr);
 				r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
-						flag->offset, arg, flag->name);
+						flag->addr, arg, flag->name);
 			}
 			break;
 		default:
 			r_list_foreach (flags, iter, flag) {
-				r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
+				r_cons_printf ("0x%08"PFMT64x"\n", flag->addr);
 			}
 			break;
 		}
@@ -650,7 +650,7 @@ static void flag_ordinals(RCore *core, const char *str) {
 
 static int cmpflag(const void *_a, const void *_b) {
 	const RFlagItem *flag1 = _a , *flag2 = _b;
-	return (flag1->offset - flag2->offset);
+	return (flag1->addr - flag2->addr);
 }
 
 struct find_flag_t {
@@ -660,7 +660,7 @@ struct find_flag_t {
 
 static bool find_flag_after(RFlagItem *flag, void *user) {
 	struct find_flag_t *u = (struct find_flag_t *)user;
-	if (flag->offset > u->at && (!u->win || flag->offset < u->win->offset)) {
+	if (flag->addr > u->at && (!u->win || flag->addr < u->win->addr)) {
 		u->win = flag;
 	}
 	return true;
@@ -672,17 +672,17 @@ static bool find_flag_after_foreach(RFlagItem *flag, void *user) {
 	}
 
 	RFlag *flags = (RFlag *)user;
-	struct find_flag_t u = { .win = NULL, .at = flag->offset };
+	struct find_flag_t u = { .win = NULL, .at = flag->addr };
 	r_flag_foreach (flags, find_flag_after, &u);
 	if (u.win) {
-		flag->size = u.win->offset - flag->offset;
+		flag->size = u.win->addr - flag->addr;
 	}
 	return true;
 }
 
 static bool adjust_offset(RFlagItem *flag, void *user) {
 	st64 base = *(st64 *)user;
-	flag->offset += base;
+	flag->addr += base;
 	return true;
 }
 
@@ -900,12 +900,12 @@ static void cmd_fd(RCore *core, const char *input) {
 			  r_list_sort (temp, &cmpflag);
 			  r_list_foreach (temp, iter, flag) {
 				  if (strstr (flag->name , arg)) {
-					  if (flag->offset < core->offset) {
-						  loff = flag->offset;
+					  if (flag->addr < core->offset) {
+						  loff = flag->addr;
 						  lmatch = flag->name;
 						  continue;
 					  }
-					  uoff = flag->offset;
+					  uoff = flag->addr;
 					  umatch = flag->name;
 					  break;
 				  }
@@ -929,12 +929,12 @@ static void cmd_fd(RCore *core, const char *input) {
 	}
 	f = r_flag_get_at (core->flags, addr, !strict_offset);
 	if (f) {
-		if (f->offset != addr) {
+		if (f->addr != addr) {
 			// if input contains 'j' print json
 			if (strchr (input, 'j')) {
 				PJ *pj = r_core_pj_new (core);
 				pj_o (pj);
-				pj_kn (pj, "offset", f->offset);
+				pj_kn (pj, "addr", f->addr);
 				pj_ks (pj, "name", f->name);
 				// Print flag's real name if defined
 				if (f->realname) {
@@ -945,13 +945,9 @@ static void cmd_fd(RCore *core, const char *input) {
 				pj_free (pj);
 			} else {
 				// Print realname if exists and asm.flags.real is enabled
-				if (core->flags->realnames && f->realname) {
-					r_cons_printf ("%s + %d\n", f->realname,
-							(int)(addr - f->offset));
-				} else {
-					r_cons_printf ("%s + %d\n", f->name,
-							(int)(addr - f->offset));
-				}
+				const char *name = (core->flags->realnames && f->realname)
+					? f->realname: f->name;
+				r_cons_printf ("%s + %d\n", name, (int)(addr - f->addr));
 			}
 		} else {
 			if (strchr (input, 'j')) {
@@ -1300,9 +1296,9 @@ static int cmd_flag(void *data, const char *input) {
 				r_core_cmd_help_contains (core, help_msg_f, "f-");
 			} else if (isdigit (*flagname)) {
 				ut64 addr = r_num_math (core->num, flagname);
-				r_flag_unset_off (core->flags, addr);
+				r_flag_unset_addr (core->flags, addr);
 			} else if (!strcmp (flagname, "$$")) {
-				r_flag_unset_off (core->flags, core->offset);
+				r_flag_unset_addr (core->flags, core->offset);
 			} else if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
@@ -1318,7 +1314,7 @@ static int cmd_flag(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_flag_unset_off (core->flags, off);
+			r_flag_unset_addr (core->flags, off);
 		}
 		break;
 	case '.': // "f."
@@ -1438,8 +1434,8 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *item = r_flag_get_in (core->flags,
 				r_num_math (core->num, input+2));
 			if (item) {
-				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
-				r_core_cmdf (core, "px@%"PFMT64d":%"PFMT64d, item->offset, item->size);
+				r_cons_printf ("0x%08"PFMT64x"\n", item->addr);
+				r_core_cmdf (core, "px@%"PFMT64d":%"PFMT64d, item->addr, item->size);
 			}
 		} else {
 			R_LOG_ERROR ("Missing arguments");
@@ -1553,7 +1549,7 @@ static int cmd_flag(void *data, const char *input) {
 						r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
 					} else {
 						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
-						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->offset, fi->name, pad, fi->color);
+						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fi->color);
 					}
 				}
 			}
@@ -1749,14 +1745,14 @@ static int cmd_flag(void *data, const char *input) {
 			r_list_foreach (list, iter, item) {
 				switch (mode) {
 				case '*':
-					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->offset);
+					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->addr);
 					break;
 				case 'j':
 					{
 						pj_o (pj);
 						pj_ks (pj, "name", item->name);
 						pj_ks (pj, "realname", item->realname);
-						pj_kn (pj, "offset", item->offset);
+						pj_kn (pj, "addr", item->addr);
 						pj_kn (pj, "size", item->size);
 						pj_end (pj);
 					}

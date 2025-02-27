@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2024 - pancake */
+/* radare - LGPL - Copyright 2016-2025 - pancake */
 
 #include <r_flag.h>
 
@@ -83,6 +83,7 @@ R_API void r_flag_zone_item_free(void *a) {
 }
 
 R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char **next) {
+	R_RETURN_VAL_IF_FAIL (f && prev && next, false);
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	*prev = *next = NULL;

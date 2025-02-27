@@ -2602,7 +2602,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				}
 				if (fi) {
 					r_flag_item_set_realname (fi, sn.methname);
-					if ((fi->offset - r->flags->base) == addr) {
+					if ((fi->addr - r->flags->base) == addr) {
 				//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (r->flags, fi);
 					}

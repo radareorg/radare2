@@ -2392,7 +2392,7 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 		return;
 	}
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
-	char *me = (f && f->offset == addr)
+	char *me = (f && f->addr == addr)
 		? strdup (f->name)
 		: r_str_newf ("0x%" PFMT64x, addr);
 
@@ -4890,7 +4890,7 @@ struct block_flags_stat_t {
 
 static bool block_flags_stat(RFlagItem *fi, void *user) {
 	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
-	int piece = (fi->offset - u->from) / u->step;
+	int piece = (fi->addr - u->from) / u->step;
 	u->as->block[piece].flags++;
 	return true;
 }
@@ -6683,7 +6683,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 }
 
 static bool __cb(RFlagItem *fi, void *user) {
-	r_list_append (user, r_str_newf ("0x%08"PFMT64x, fi->offset));
+	r_list_append (user, r_str_newf ("0x%08"PFMT64x, fi->addr));
 	return true;
 }
 

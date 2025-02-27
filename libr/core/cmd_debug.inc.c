@@ -1038,7 +1038,7 @@ static bool step_until_flag(RCore *core, const char *instr) {
 		const RList *list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
 			if (R_STR_ISEMPTY (instr) || (f->realname && strstr (f->realname, instr))) {
-				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n", f->offset, f->realname);
+				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n", f->addr, f->realname);
 				r_cons_break_pop ();
 				return true;
 			}
@@ -3367,8 +3367,8 @@ static void backtrace_vars(RCore *core, RList *frames) {
 		RFlagItem *fi = r_flag_get_at (core->flags, f->addr, true);
 		flagdesc[0] = flagdesc2[0] = 0;
 		if (fi) {
-			if (fi->offset != f->addr) {
-				int delta = (int)(f->addr - fi->offset);
+			if (fi->addr != f->addr) {
+				int delta = (int)(f->addr - fi->addr);
 				if (delta > 0) {
 					snprintf (flagdesc, sizeof (flagdesc),
 							"%s+%d", fi->name, delta);
@@ -3450,8 +3450,8 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
 	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
+		if (f->addr != addr) {
+			int delta = (int)(frame->addr - f->addr);
 			if (delta > 0) {
 				*flagdesc = r_str_newf ("%s+%d", f->name, delta);
 			} else if (delta < 0) {
@@ -3468,8 +3468,8 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 		f = r_flag_get_at (core->flags, frame->addr - 1, true);
 	}
 	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - 1 - f->offset);
+		if (f->addr != addr) {
+			int delta = (int)(frame->addr - 1 - f->addr);
 			if (delta > 0) {
 				*flagdesc2 = r_str_newf ("%s+%d", f->name, delta + 1);
 			} else if (delta < 0) {
@@ -3672,8 +3672,8 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 				if (!strcmp (DB_ARG (i), "$$")) {
 					RFlagItem *f = r_core_flag_get_by_spaces (core->flags, false, addr);
 					if (f) {
-						if (addr > f->offset) {
-							bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+						if (addr > f->addr) {
+							bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->addr);
 						} else {
 							bpi->name = strdup (f->name);
 						}

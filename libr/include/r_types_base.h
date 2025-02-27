@@ -296,8 +296,9 @@ typedef ut8 RSysBitValue;
 		return m? *m = n, m: m; \
 	}
 
-#define R_DIRTY(x) (x)->is_dirty = true
-#define R_IS_DIRTY(x) (x)->is_dirty
+#define R_DIRTY_SET(x) (x)->is_dirty = true
+#define R_DIRTY_UNSET(x) (x)->is_dirty = false
+#define R_DIRTY_CHECK(x) (x)->is_dirty
 #define R_DIRTY_VAR bool is_dirty
 
 #define R_TAG(x) (void*)((size_t)(x)|1)

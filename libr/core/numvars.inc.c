@@ -750,9 +750,9 @@ static ut64 numvar_flag(RCore *core, const char *str, int *ok) {
 	case 's': // "$fs"
 		return fi->size;
 	case 'd': // "$fd"
-		return core->offset - fi->offset;
+		return core->offset - fi->addr;
 	case 'e': // "$fe"
-		return fi->offset + fi->size;
+		return fi->addr + fi->size;
 	}
 	return invalid_numvar (core, "unknown $f subvar");
 }
@@ -1008,7 +1008,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 #endif
 			if ((flag = r_flag_get (core->flags, str))) {
-				ret = flag->offset;
+				ret = flag->addr;
 				if (ok) {
 					*ok = true;
 				}

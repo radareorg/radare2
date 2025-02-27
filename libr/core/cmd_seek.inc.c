@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -572,9 +572,9 @@ static int cmd_seek(void *data, const char *input) {
 
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
 					if (f) {
-						if (f->offset != undo->off) {
+						if (f->addr != undo->off) {
 							name = r_str_newf ("%s+%d", f->name,
-									(int)(undo->off- f->offset));
+									(int)(undo->off - f->addr));
 						} else {
 							name = strdup (f->name);
 						}
@@ -637,9 +637,9 @@ static int cmd_seek(void *data, const char *input) {
 
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
 					if (f) {
-						if (f->offset != undo->off) {
+						if (f->addr != undo->off) {
 							name = r_str_newf ("%s + %d\n", f->name,
-									(int)(undo->off - f->offset));
+									(int)(undo->off - f->addr));
 						} else {
 							name = strdup (f->name);
 						}

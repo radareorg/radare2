@@ -59,7 +59,7 @@ typedef struct r_num_t {
 } RNum;
 
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
-typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
+typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, bool *ok);
 
 static inline ut64 r_num_bitmask(ut8 width) {
 	if (width >= 64) {

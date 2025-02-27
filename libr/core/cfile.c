@@ -360,7 +360,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = r_bp_add_sw (r->dbg->bp, fi->offset, 1, R_BP_PROT_EXEC);
+	bp = r_bp_add_sw (r->dbg->bp, fi->addr, 1, R_BP_PROT_EXEC);
 	if (bp) {
 		bp->internal = true;
 #if __linux__
@@ -812,7 +812,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				// R_LOG_ERROR ("Cannot find '%s' import in the PLT", imp->name);
 				continue;
 			}
-			ut64 imp_addr = impsym->offset;
+			ut64 imp_addr = impsym->addr;
 			const char *imp_name = r_bin_name_tostring2 (imp->name, 'o');
 			eprintf ("Resolving %s... ", imp_name);
 			RCoreLinkData linkdata = {imp_name, UT64_MAX, r->bin};
