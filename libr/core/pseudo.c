@@ -215,7 +215,7 @@ static char *cleancomments(char *s) {
 				if (0) {
 					char *nnl = strchr (p, '\n');
 					char *port = r_str_ndup (p, nnl - p);
-					R_LOG_INFO ("newline port (%s)\n", port);
+					R_LOG_INFO ("newline port (%s)", port);
 					free (port);
 				}
 				memmove (nl + 1, p, strlen (p) + 1);
