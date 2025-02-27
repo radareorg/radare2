@@ -374,8 +374,8 @@ static bool print_flag_orig_name(RFlagItem *flag, void *user) {
 }
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
-	R_RETURN_IF_FAIL (f && pfx);
+R_API void r_flag_list(RFlag *f, int rad, R_NULLABLE const char *pfx) {
+	R_RETURN_IF_FAIL (f);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
