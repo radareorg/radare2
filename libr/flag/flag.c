@@ -601,13 +601,15 @@ beach:
 }
 
 static bool isFunctionFlag(const char *n) {
-	return (0
-	|| r_str_startswith (n, "sym.func.")
-	|| r_str_startswith (n, "method.")
-	|| r_str_startswith (n, "fn.")
-	|| r_str_startswith (n, "sym.")
-	|| r_str_startswith (n, "func.")
-	|| r_str_startswith (n, "fcn.0"));
+	if (r_str_startswith (n, "method.") || r_str_startswith (n, "sym.")) {
+		return true;
+	}
+	if (*n == 'f') {
+		return (r_str_startswith (n, "fn.")
+			|| r_str_startswith (n, "func.")
+			|| r_str_startswith (n, "fcn.0"));
+	}
+	return false;
 }
 
 /* returns the last flag item defined before or at the given offset.
