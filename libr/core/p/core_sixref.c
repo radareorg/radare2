@@ -13,7 +13,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 	const ut8 *mem = core->block;
 	ut32 *p = (ut32*)((uint8_t*)mem);
 	ut32 *e = (ut32*)(p + (lenbytes / 4));
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 
 	for (; p < e; p++, addr += 4) {
 		ut32 v = *p;
@@ -301,7 +301,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	input = r_str_trim_head_ro (input + strlen ("sixref"));
 
 	RCore *core = (RCore *)user;
-	const ut64 oaddr = core->offset;
+	const ut64 oaddr = core->addr;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 
@@ -344,7 +344,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 			siguza_xrefs (core, search, s->vaddr, s->vsize);
 		}
 	} else {
-		ut64 offset = core->offset;
+		ut64 offset = core->addr;
 		if (offset & 3) {
 			offset -= offset % 4;
 			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed", offset);

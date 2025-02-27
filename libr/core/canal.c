@@ -742,7 +742,7 @@ static bool check_string_at(RCore *core, ut64 addr) {
 	// fallback with data analysis
 	if (r_list_empty (flags)) {
 		const char *r = r_anal_data_kind (core->anal,
-			core->offset, core->block, core->blocksize);
+			core->addr, core->block, core->blocksize);
 		if (strstr (r, "text")) {
 			return true;
 		}
@@ -1201,9 +1201,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (sizeof (buf) < maxopsz) {
 		maxopsz = sizeof (buf);
 	}
-	int delta = (addr - core->offset);
+	int delta = (addr - core->addr);
 	int minopsz = 8;
-	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
+	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->addr && addr + 16 < core->addr + core->blocksize) {
 		ptr = core->block + delta;
 		len = core->blocksize - delta;
 		if (len < 1) {
@@ -1650,7 +1650,7 @@ static char *palColorFor(const char *k) {
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_b (core->config, "graph.gv.current");
-	bool current = r_anal_block_contains (bbi, core->offset);
+	bool current = r_anal_block_contains (bbi, core->addr);
 	if (current && color_current) {
 		char *pal_curr = palColorFor ("graph.current");
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
@@ -1890,11 +1890,11 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				} else if (!is_json) {
 					nodes++;
 					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_hold (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
+					r_config_hold (hc, "scr.color", "scr.utf8", "asm.addr", "asm.lines",
 							"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.utf8", 0);
-					r_config_set_i (core->config, "asm.offset", 0);
+					r_config_set_i (core->config, "asm.addr", 0);
 					r_config_set_i (core->config, "asm.lines", 0);
 					r_config_set_i (core->config, "asm.cmt.right", 0);
 					r_config_set_i (core->config, "asm.lines.fcn", 0);
@@ -1989,7 +1989,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						top += 250;
 					}
 				} else if (!is_json && !is_keva) {
-					bool current = r_anal_block_contains (bbi, core->offset);
+					bool current = r_anal_block_contains (bbi, core->addr);
 					const char *label_color = bbi->traced
 							? pal_traced
 							: (current && color_current)
@@ -2169,7 +2169,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 
 	const bool use_esil = r_config_get_b (core->config, "anal.esil");
 
-	//update bits based on the core->offset otherwise we could have the
+	//update bits based on the core->addr otherwise we could have the
 	//last value set and blow everything up
 	r_core_seek_arch_bits (core, at);
 
@@ -2257,12 +2257,12 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	}
 
 	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_hold (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+	r_config_hold (hc, "scr.color", "scr.utf8", "asm.marks", "asm.addr", "asm.lines",
 	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*r_config_set_i (core->config, "scr.color", 0);*/
 	r_config_set_i (core->config, "scr.utf8", 0);
 	r_config_set_i (core->config, "asm.marks", 0);
-	r_config_set_i (core->config, "asm.offset", 0);
+	r_config_set_i (core->config, "asm.addr", 0);
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.cmt.right", 0);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
@@ -2975,7 +2975,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 		pj_a (pj);
 	}
 
-	ut64 cur_fcn_addr = core->offset;
+	ut64 cur_fcn_addr = core->addr;
 	if (mode == '.') {
 		RList *fcns = r_anal_get_functions_in (core->anal, cur_fcn_addr);
 		if (fcns && r_list_length (fcns) > 0) {
@@ -3727,7 +3727,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 	if (*rad == '.') {
-		RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+		RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
 		if (!fcns || r_list_empty (fcns)) {
 			R_LOG_ERROR ("No functions at current address");
 			r_list_free (fcns);
@@ -3743,7 +3743,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	}
 
 	const char *name = input;
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	if (R_STR_ISNOTEMPTY (input)) {
 		name = input + 1;
 		addr = r_num_math (core->num, name);
@@ -3790,7 +3790,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			r_list_append (flist, info);
 		}
 		RTable *table = r_core_table_new (core, "functions");
-		r_table_visual_list (table, flist, core->offset, core->blocksize,
+		r_table_visual_list (table, flist, core->addr, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);
 		r_cons_printf ("\n%s\n", s);
@@ -4093,7 +4093,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 }
 
 static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
-	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
 
@@ -4105,7 +4105,7 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 
 
 	// forward search
-	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state, avoid)) {
+	if (anal_path_exists (core, core->addr, addr, list, depth - 1, state, avoid)) {
 		ht_up_free (state);
 		return list;
 	}
@@ -4117,11 +4117,11 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		R_VEC_FOREACH (xrefs, xref) {
 			int rt = R_ANAL_REF_TYPE_MASK (xref->type);
 			if (rt == R_ANAL_REF_TYPE_CALL) {
-				ut64 offset = core->offset;
-				core->offset = xref->addr;
+				ut64 offset = core->addr;
+				core->addr = xref->addr;
 				r_list_free (list);
 				list = anal_graph_to (core, addr, depth - 1, avoid);
-				core->offset = offset;
+				core->addr = offset;
 				if (list && r_list_length (list)) {
 					RVecAnalRef_free (xrefs);
 					ht_up_free (state);
@@ -4175,7 +4175,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	PJ *pj = NULL;
 
 	if (!addr) {
-		addr = core->offset;
+		addr = core->addr;
 	}
 	if (r_list_empty (core->anal->fcns)) {
 		return false;
@@ -4992,7 +4992,7 @@ R_API void r_core_anal_stats_free(RCoreAnalStats *s) {
 
 R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	int depth = 0;
 	RAnalOp *op = NULL;
 	RAnalCycleFrame *prev = NULL, *cf = NULL;
@@ -5236,7 +5236,7 @@ bool fcn_merge_add_cb(RAnalBlock *block, RAnalFunction *fcn) {
 }
 
 /* Join function at addr2 into function at addr */
-// addr use to be core->offset
+// addr use to be core->addr
 R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	RListIter *iter_fcn;
 	RListIter *iter_merge;
@@ -5765,8 +5765,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
-	// ut64 addr = core->offset;
-	ut64 start = core->offset;
+	// ut64 addr = core->addr;
+	ut64 start = core->addr;
 	ut64 end = 0LL;
 	core->esil_anal_stop = false;
 
@@ -5778,7 +5778,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	bool xrefs_only = false;
 	if (target && !strcmp (target, "+x")) {
 		xrefs_only = true;
-		ntarget = core->offset;
+		ntarget = core->addr;
 		refptr = 0LL;
 		target = NULL;
 	} else if (target) {
@@ -5798,7 +5798,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 //		start = ntarget;
 		end_address_set = true;
 	} else {
-		ntarget = core->offset;
+		ntarget = core->addr;
 		refptr = 0LL;
 	}
 
@@ -5816,7 +5816,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	RAnalFunction *fcn = NULL;
 	if (!strcmp (str, "f")) {
-		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 		if (fcn) {
 			start = r_anal_function_min_addr (fcn);
 			if (start != UT64_MAX) {
@@ -5831,7 +5831,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x, target, start);
 #if 0
 	R_LOG_INFO ("-%llx -> %llx", start, end);
-	R_LOG_INFO ("+%llx -> %llx", core->offset, end);
+	R_LOG_INFO ("+%llx -> %llx", core->addr, end);
 #endif
 	if (end < start) {
 		R_LOG_DEBUG ("end < start");

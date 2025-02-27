@@ -14,7 +14,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 	char *q, *p;
 	const char *str;
 	int delta = 0, adelta = 0, ret;
-	ut64 curoffset = core->offset;
+	ut64 curoffset = core->addr;
 	int max_hits = r_config_get_i (core->config, "search.maxhits");
 	char *flag;
 
@@ -33,9 +33,9 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 			must_report_progress = r_config_get_b (core->config, "scr.interactive");
 		}
 	}
-	if (addr != core->offset) {
-		if (addr >= core->offset && (addr + NAH) < (core->offset + core->blocksize)) {
-			delta = addr - core->offset;
+	if (addr != core->addr) {
+		if (addr >= core->addr && (addr + NAH) < (core->addr + core->blocksize)) {
+			delta = addr - core->addr;
 		} else {
 			r_core_seek (core, addr, true);
 		}
@@ -203,14 +203,14 @@ seek_exit:
 }
 
 static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 	int hits = 0;
 
 	r_core_magic_at (core, NULL, file, addr, 0, v, pj, &hits);
 	if (pj) {
 		r_cons_newline ();
 	}
-	if (addr != core->offset) {
+	if (addr != core->addr) {
 		r_core_seek (core, addr, true);
 	}
 }

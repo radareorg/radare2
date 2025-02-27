@@ -1,22 +1,21 @@
-/* radare2 - LGPL - Copyright 2018-2022 - pancake */
+/* radare2 - LGPL - Copyright 2018-2025 - pancake */
 
 #include <r_core.h>
 
 #if 0
-
 TODO:
 
 - add more methods to "undo according to some conditions"
 - undo all comments in current offfset
 #endif
 
-R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert) {
+R_API RCoreUndo *r_core_undo_new(ut64 addr, const char *action, const char *revert) {
 	RCoreUndo *cu = R_NEW (RCoreUndo);
 	if (cu) {
 		cu->action = strdup (action);
 		cu->revert = strdup (revert);
 		cu->tstamp = r_time_now ();
-		cu->offset = offset;
+		cu->addr = addr;
 	}
 	return cu;
 }
@@ -50,7 +49,7 @@ R_API bool r_core_undo_condition(RCoreUndo *cu, RCoreUndoCondition *cond) {
 	}
 	bool mustPrint = false;
 	if (cond->addr != UT64_MAX) {
-		mustPrint = (cu->offset == cond->addr);
+		mustPrint = (cu->addr == cond->addr);
 	}
 	if (cond->minstamp) {
 		mustPrint = (cu->tstamp >= cond->minstamp);
@@ -67,7 +66,7 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 	if (mode) {
 		r_list_foreach (core->undos, iter, cu) {
 			if (r_core_undo_condition (cu, cond)) {
-				r_cons_printf ("%s @ 0x%"PFMT64x"\n", cu->revert, cu->offset);
+				r_cons_printf ("%s @ 0x%"PFMT64x"\n", cu->revert, cu->addr);
 			}
 		}
 	} else {
@@ -76,7 +75,7 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 		r_list_foreach (core->undos, iter, cu) {
 			const char * arrow = (i == core->undoindex - 1)? "*": "-";
 			r_cons_printf ("%s 0x%08"PFMT64x" old:% ds cmd: %s (revert: %s)\n",
-				arrow, cu->offset, (int)((now - cu->tstamp) / 1000000), cu->action, cu->revert);
+				arrow, cu->addr, (int)((now - cu->tstamp) / 1000000), cu->action, cu->revert);
 			i++;
 		}
 	}

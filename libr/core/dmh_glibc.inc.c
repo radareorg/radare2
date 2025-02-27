@@ -788,7 +788,7 @@ void GH(print_heap_chunk)(RCore *core) {
 	if (!cnk) {
 		return;
 	}
-	GHT chunk = core->offset;
+	GHT chunk = core->addr;
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	(void) r_io_read_at (core->io, chunk, (ut8 *)cnk, sizeof (*cnk));
@@ -1178,8 +1178,8 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 
 	switch (input[0]) {
 	case '\0': // dmhf
-		if (core->offset != core->prompt_offset) {
-			m_arena = core->offset;
+		if (core->addr != core->prompt_addr) {
+			m_arena = core->addr;
 		}
 		PRINT_YA ("fastbinY {\n");
 		for (i = 1; i <= NFASTBINS; i++) {
@@ -1826,8 +1826,8 @@ static void GH(dmhg)(RCore *core, const char *input, MallocState *main_arena, GH
 	input++;
 	bool get_state = false;
 	if (!*input) {
-		if (core->offset != core->prompt_offset) {
-			m_state = core->offset;
+		if (core->addr != core->prompt_addr) {
+			m_state = core->addr;
 			get_state = true;
 		}
 	} else {
@@ -1891,8 +1891,8 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 		// pass through
 	case '\0': // dmh
 		if (GH(resolve_main_arena) (core, &m_arena)) {
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
+			if (core->addr != core->prompt_addr) {
+				m_state = core->addr;
 			} else {
 				if (!get_state) {
 					m_state = m_arena;
@@ -1925,8 +1925,8 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 			}
 			input++;
 			if (!*input) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
+				if (core->addr != core->prompt_addr) {
+					m_state = core->addr;
 				}
 			} else {
 				m_state = r_num_get (core->num, input);
@@ -1948,8 +1948,8 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 			}
 			input++;
 			if (!*input) {
-				if (core->offset != core->prompt_offset) {
-					m_arena = core->offset;
+				if (core->addr != core->prompt_addr) {
+					m_arena = core->addr;
 					if (!GH (update_main_arena) (core, m_arena, main_arena)) {
 						break;
 					}
@@ -1979,11 +1979,8 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 					m_state = m_arena;
 				}
 			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				} else {
-					m_state = m_arena;
-				}
+				m_state = (core->addr == core->prompt_addr)
+					? m_arena: core->addr;
 			}
 			if (GH(is_arena) (core, m_arena, m_state)) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
@@ -2014,8 +2011,8 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 					m_state = m_arena;
 				}
 			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
+				if (core->addr != core->prompt_addr) {
+					m_state = core->addr;
 				} else {
 					m_state = m_arena;
 				}

@@ -574,12 +574,12 @@ static bool lastcmd_repeat(RCore *core, int next) {
 			}
 		} else {
 			if (next) {
-				r_core_seek (core, core->offset + core->blocksize, true);
+				r_core_seek (core, core->addr + core->blocksize, true);
 			} else {
-				if (core->blocksize > core->offset) {
+				if (core->blocksize > core->addr) {
 					r_core_seek (core, 0, true);
 				} else {
-					r_core_seek (core, core->offset - core->blocksize, true);
+					r_core_seek (core, core->addr - core->blocksize, true);
 				}
 			}
 		}
@@ -695,7 +695,7 @@ static int cmd_undo(void *data, const char *input) {
 			char *rcmd = strchr (cmd, ',');
 			if (rcmd) {
 				*rcmd++ = 0;
-				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
+				RCoreUndo *undo = r_core_undo_new (core->addr, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
 				r_core_cmd_help_match (core, help_msg_uc, "uc");
@@ -708,7 +708,7 @@ static int cmd_undo(void *data, const char *input) {
 			break;
 		case '.': { // "uc."
 			RCoreUndoCondition cond = {
-				.addr = core->offset,
+				.addr = core->addr,
 				.minstamp = 0,
 				.glob = NULL
 			};
@@ -978,7 +978,7 @@ repeat:
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_socket_printf (s, "[0x%08"PFMT64x"]> ", core->offset);
+			r_socket_printf (s, "[0x%08"PFMT64x"]> ", core->addr);
 			r_socket_flush (s);
 			memset (buf, 0, buf_size);
 			r_socket_block_time (s, true, 99999, 0);
@@ -1781,7 +1781,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 		pj_o (pj);
 		pj_ks (pj, "command", input + 1);
 		pj_ks (pj, "output", s);
-		pj_ki (pj, "offset", core->offset);
+		pj_ki (pj, "offset", core->addr);
 		pj_ki (pj, "blocksize", core->blocksize);
 		pj_ks (pj, "log", ""); // TODO: use r_log api here
 		pj_ki (pj, "rc", core->rc); // XXX always 0?
@@ -2803,10 +2803,10 @@ static int cmd_rebase(RCore *core, const char *input) {
 		return 0;
 	}
 	// old base = addr
-	// new base = core->offset
-	r_debug_bp_rebase (core->dbg, addr, core->offset);
-	r_bin_set_baddr (core->bin, core->offset);
-	r_flag_move (core->flags, addr, core->offset);
+	// new base = core->addr
+	r_debug_bp_rebase (core->dbg, addr, core->addr);
+	r_bin_set_baddr (core->bin, core->addr);
+	r_flag_move (core->flags, addr, core->addr);
 	r_core_cmd0 (core, ".is*");
 	r_core_cmd0 (core, ".iM*");
 	r_core_cmd0 (core, ".ii*");
@@ -2949,8 +2949,8 @@ static int cmd_resize(void *data, const char *input) {
 			R_LOG_ERROR ("r_io_resize: cannot resize");
 		}
 	}
-	if (delta && core->offset < newsize) {
-		r_io_shift (core->io, core->offset, grow?newsize:oldsize, delta);
+	if (delta && core->addr < newsize) {
+		r_io_shift (core->io, core->addr, grow?newsize:oldsize, delta);
 	}
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
@@ -2958,7 +2958,7 @@ static int cmd_resize(void *data, const char *input) {
 			R_LOG_ERROR ("cannot resize");
 		}
 	}
-	if (newsize < (core->offset + core->blocksize) || oldsize < (core->offset + core->blocksize)) {
+	if (newsize < (core->addr + core->blocksize) || oldsize < (core->addr + core->blocksize)) {
 		r_core_block_read (core);
 	}
 	return true;
@@ -3872,7 +3872,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 			if (end) {
 				*end = 0;
 				cmd = end + 1;
-				ut64 addr = core->offset;
+				ut64 addr = core->addr;
 				ut64 at = r_num_math (core->num, arg);
 				r_core_seek (core, at, true);
 				res = r_core_cmd_call (core, cmd);
@@ -3898,7 +3898,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 			} else {
 				*end = 0;
 				cmd = end + 2;
-				ut64 addr = core->offset;
+				ut64 addr = core->addr;
 				ut64 at = r_num_math (core->num, arg + 1);
 				r_core_seek (core, at, true);
 				res = r_core_cmd_call (core, cmd);
@@ -3950,14 +3950,14 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	R_CRITICAL_ENTER (core);
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
-	ut64 orig_offset = core->offset;
+	ut64 orig_offset = core->addr;
 	icmd = strdup (cmd);
 	if (!icmd) {
 		goto beach;
 	}
 
 	if (core->max_cmd_depth - core->cur_cmd_depth == 1) {
-		core->prompt_offset = core->offset;
+		core->prompt_addr = core->addr;
 	}
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
@@ -4276,7 +4276,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						*q = 0;
 					}
 					haveQuote = q;
-					oseek = core->offset;
+					oseek = core->addr;
 					r_core_seek (core, r_num_math (core->num, p + 2), true);
 					if (q) {
 						*p = '"';
@@ -4787,7 +4787,7 @@ escape_backtick:
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
-		ut64 addr = core->offset;
+		ut64 addr = core->addr;
 		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
@@ -4857,11 +4857,11 @@ repeat_arroba:
 		} else if (ptr[1] == '.') { // "@."
 			if (ptr[2] == '.') { // "@.."
 				if (ptr[3] == '.') { // "@..."
-					ut64 addr = r_num_tail (core->num, core->offset, ptr + 4);
-					r_core_block_size (core, R_ABS ((st64)addr - (st64)core->offset));
+					ut64 addr = r_num_tail (core->num, core->addr, ptr + 4);
+					r_core_block_size (core, R_ABS ((st64)addr - (st64)core->addr));
 					goto fuji;
 				} else {
-					addr = r_num_tail (core->num, core->offset, ptr + 3);
+					addr = r_num_tail (core->num, core->addr, ptr + 3);
 					r_core_seek (core, addr, true);
 					cmd_tmpseek = core->tmpseek = true;
 					goto fuji;
@@ -4880,7 +4880,7 @@ repeat_arroba:
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
 					int index = (int)r_num_math (core->num, ptr + 2);
-					RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+					RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->addr);
 					if (bb) {
 						// handle negative indices
 						if (index < 0) {
@@ -4894,7 +4894,7 @@ repeat_arroba:
 							R_LOG_INFO ("Current basic block has %d instructions", bb->ninstr);
 						}
 					} else {
-						R_LOG_ERROR ("Can't find a basic block for 0x%08"PFMT64x, core->offset);
+						R_LOG_ERROR ("Can't find a basic block for 0x%08"PFMT64x, core->addr);
 					}
 					break;
 				}
@@ -4913,7 +4913,7 @@ repeat_arroba:
 							if (pamode) {
 								r_config_set_b (core->config, "io.va", true);
 							}
-							r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
 						}
 					}
 				} else {
@@ -5012,7 +5012,7 @@ repeat_arroba:
 						if (pamode) {
 							r_config_set_b (core->config, "io.va", true);
 						}
-						r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
 						r_core_block_size (core, len);
 						r_core_block_read (core);
 					}
@@ -5037,7 +5037,7 @@ repeat_arroba:
 								if (pamode) {
 									r_config_set_b (core->config, "io.va", true);
 								}
-								r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+								r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
 								r_core_block_size (core, len);
 								r_core_block_read (core);
 							}
@@ -5101,7 +5101,7 @@ repeat_arroba:
 							if (pamode) {
 								r_config_set_b (core->config, "io.va", true);
 							}
-							r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
 							r_core_block_size (core, len);
 							// r_core_block_read (core);
 						}
@@ -5148,7 +5148,7 @@ ignore:
 
 		switch (*offstr) {
 		case '{':
-			addr = core->offset;
+			addr = core->addr;
 			break;
 		case '@':
 		case '?':
@@ -5175,7 +5175,7 @@ ignore:
 		} else {
 			char ch = *offstr;
 			if (ch == '-' || ch == '+') {
-				addr = core->offset + addr;
+				addr = core->addr + addr;
 			}
 		}
 		// remap thhe tmpdesc if any
@@ -5254,7 +5254,7 @@ next_arroba:
 			}
 			if (usemyblock) {
 				if (addr_is_set) {
-					core->offset = addr;
+					core->addr = addr;
 				}
 			} else {
 				if (addr_is_set && ptr[1]) {
@@ -5587,7 +5587,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'b': // "@@@b"
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
 				RListIter *iter;
 				RAnalBlock *bb;
@@ -5695,7 +5695,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 'r':
 	case 'i':
 		{
-			ut64 offorig = core->offset;
+			ut64 offorig = core->addr;
 			ut64 bszorig = core->blocksize;
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (list, iter, item) {
@@ -5880,7 +5880,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	ut64 oseek, addr;
 	cmd = r_str_trim_head_ro (cmd);
 
-	oseek = core->offset;
+	oseek = core->addr;
 	ostr = str = strdup (each);
 	r_cons_break_push (NULL, NULL); //pop on return
 	switch (each[0]) {
@@ -5904,7 +5904,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		{
 			RListIter *iter;
 			RAnalBlock *bb;
-			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			int bs = core->blocksize;
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
@@ -5951,7 +5951,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			RAnalBlock *bb;
 			int i;
-			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			SetU *set = set_u_new ();
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
@@ -6075,7 +6075,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 'd': // "@@d"
 		if (each[1] == 'b' && each[2] == 't') {
-			ut64 oseek = core->offset;
+			ut64 oseek = core->addr;
 			RDebugFrame *frame;
 			RListIter *iter;
 			RList *list;
@@ -6253,7 +6253,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	}
 	r_cons_break_pop ();
 	// XXX: use r_core_seek here
-	core->offset = oseek;
+	core->addr = oseek;
 
 	free (word);
 	free (ostr);
@@ -6535,7 +6535,7 @@ R_API int r_core_cmdf_at(RCore *core, ut64 addr, const char *fmt, ...) {
 	R_RETURN_VAL_IF_FAIL (core && fmt, -1);
 	va_list ap;
 	va_start (ap, fmt);
-	ut64 oaddr = core->offset;
+	ut64 oaddr = core->addr;
 	if (oaddr != addr) {
 		r_core_seek (core, addr, 1);
 	}
@@ -6605,15 +6605,15 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 
 R_API char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt, ...) {
 	va_list ap;
-	ut64 oaddr = core->offset;
+	ut64 oaddr = core->addr;
 	va_start (ap, fmt);
-	if (addr != core->offset) {
+	if (addr != core->addr) {
 		r_core_seek (core, addr, 1);
 	}
 	char *cmd = r_str_newvf (fmt, ap);
 	char *ret = r_core_cmd_str (core, cmd);
 	free (cmd);
-	if (addr != core->offset) {
+	if (addr != core->addr) {
 		r_core_seek (core, oaddr, 1);
 	}
 	va_end (ap);
@@ -6634,7 +6634,7 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 R_API int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && cmd, -1);
 	R_LOG_DEBUG ("RCoreCallAt(0x%08"PFMT64x"): %s", addr, cmd);
-	const ut64 oaddr = core->offset;
+	const ut64 oaddr = core->addr;
 	const bool mustseek = addr != oaddr;
 	if (mustseek) {
 		r_core_seek (core, addr, 1);
@@ -6662,7 +6662,7 @@ R_API int r_core_cmd_callf(RCore *core, const char *fmt, ...) {
 }
 
 R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd) {
-	ut64 oseek = core->offset;
+	ut64 oseek = core->addr;
 	r_core_seek (core, addr, true);
 	char *res = r_core_cmd_str (core, cmd);
 	r_core_seek (core, oseek, true);

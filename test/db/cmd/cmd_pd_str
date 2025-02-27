@@ -3,8 +3,8 @@ FILE=bins/mach0/mac-ls3
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.cmt.col=0
-e asm.offset=0
-e asm.bytes=0
+e asm.addr=false
+e asm.bytes=false
 e asm.lines=0
 e emu.str=true
 s..5343

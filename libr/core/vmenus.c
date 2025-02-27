@@ -44,9 +44,9 @@ R_IPI void visual_add_comment(RCore *core, ut64 at) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	const ut64 orig = core->offset;
+	const ut64 orig = core->addr;
 	if (at == UT64_MAX) {
-		at = core->offset;
+		at = core->addr;
 		if (core->print->cur_enabled) {
 			at += core->print->cur;
 		}
@@ -237,7 +237,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	REsil *esil = r_esil_new (20, 0, addrsize);
 	r_esil_setup (esil, core->anal, false, false, false);
 	// esil->anal = core->anal;
-	r_esil_set_pc (esil, core->offset);
+	r_esil_set_pc (esil, core->addr);
 	char *expr = NULL;
 	bool refresh = false;
 	for (;;) {
@@ -255,14 +255,14 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 			(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 			analop.type = -1;
-			(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL);
+			(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL);
 			analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 			r_cons_printf ("r2's esil debugger:\n\n");
 			const char *vi = r_config_get (core->config, "cmd.vprompt");
 			if (R_STR_ISNOTEMPTY (vi)) {
 				r_core_cmd0 (core, vi);
 			}
-			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->addr);
 			r_cons_printf ("pos: %d\n", x);
 			{
 				char *op_hex = r_asm_op_get_hex (&asmop);
@@ -271,7 +271,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 				free (res);
 				free (op_hex);
 			}
-			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->offset);
+			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->addr);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 			expr = strdup (r_strbuf_get (&analop.esil));
@@ -336,7 +336,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so+1");
-			r_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->addr);
 			break;
 		case 'N':
 		case 'p':
@@ -345,7 +345,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so-1");
-			r_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->addr);
 			break;
 		case '=':
 		{ // TODO: edit
@@ -495,8 +495,8 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		r_anal_op_init (&analop);
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		r_anal_op_set_bytes (&analop, core->offset + cur, buf, sizeof (ut64));
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
+		r_anal_op_set_bytes (&analop, core->addr + cur, buf, sizeof (ut64));
+		(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		{
 			ut8 *o = core->block;
@@ -512,7 +512,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_print_at (s, 60, 1, 20, 12);
 			free (s);
 		}
-		r_cons_printf ("[0x08%"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", core->offset + cur);
+		r_cons_printf ("[0x08%"PFMT64x"]> Vd1 # r2's sprite / bit editor\n\n", core->addr + cur);
 		if (analop.bytes) {
 			char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 			char *res = r_print_hexpair (core->print, op_hex, -1);
@@ -535,7 +535,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_printf ("shf: >> %d << %d\n", word, (analop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string (core, analop.mnemonic, analopType, core->offset);
+			char *op = colorize_asm_string (core, analop.mnemonic, analopType, core->addr);
 			if (op) {
 				r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 				free (op);
@@ -1306,7 +1306,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 			*p = 0;
 		}
 		addr = r_num_get (NULL, res);
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
 		r_core_seek (core, addr, true);
 		free (res);
 	}
@@ -2109,7 +2109,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				if (!*cmd || *cmd == 'q') {
 					break;
 				}
-				ut64 oseek = core->offset;
+				ut64 oseek = core->addr;
 				r_core_seek (core, addr + delta, false);
 				r_core_cmd (core, cmd, 1);
 				r_core_seek (core, oseek, false);
@@ -3330,7 +3330,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 
 static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	ut64 a_tmp = core->offset;
+	ut64 a_tmp = core->addr;
 	int i = 0;
 	RListIter *iter;
 	RList *list = r_anal_var_all_list (core->anal, fcn);
@@ -3368,8 +3368,8 @@ static void variable_set_type(RCore *core, ut64 addr, int vindex, const char *ty
 static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	int wdelta = (idx > 5)? idx - 5: 0;
 	char *var_functions;
-	ut64 seek = core->offset;
-	ut64 addr = core->offset;
+	ut64 seek = core->addr;
+	ut64 addr = core->addr;
 	RAnalFunction *fcn;
 	int window, i = 0, print_full_func;
 	RListIter *iter;
@@ -3511,7 +3511,7 @@ static const char *printCmds[lastPrintMode] = {
 
 static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
-		? core->offset
+		? core->addr
 		: var_functions_show (core, option, 0, colpos);
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h, w = r_cons_get_size (&h);
@@ -3569,7 +3569,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	RStrBuf *buf;
 	bool color = r_config_get_i (core->config, "scr.color");
 	int h, cols = r_cons_get_size (&h);
-	addr = core->offset;
+	addr = core->addr;
 	cols -= 50;
 	int maxcols = 60 + coldelta;
 	if (cols > maxcols) {
@@ -3710,7 +3710,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		switch (ch) {
 		case 'Q': // tab
 			{
-				ut64 oseek = core->offset;
+				ut64 oseek = core->addr;
 				core->vmode = false;
 				r_core_seek (core, trace_addr, true);
 				r_core_visual (core, "");
@@ -3785,7 +3785,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 
 	RConsEvent olde = core->cons->event_resize;
 	void *olde_user = core->cons->event_data;
-	ut64 addr = core->offset;
+	ut64 addr = core->addr;
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -3843,7 +3843,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case ':':
 			{
-				ut64 orig = core->offset;
+				ut64 orig = core->addr;
 				r_core_seek (core, addr, false);
 				while (r_core_visual_prompt (core));
 				r_core_seek (core, orig, false);
@@ -3878,7 +3878,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case 'r':
 			{
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				if (!f) {
 					r_cons_any_key ("No function found in the current offset");
 					break;
@@ -3953,7 +3953,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case 's': // "Vvs"
 			{
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				if (f) {
 					r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
 				} else {
@@ -3975,7 +3975,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				RListIter *iter;
 				RAnalFunction *fcn;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					if (fcn->addr == core->offset) {
+					if (fcn->addr == core->addr) {
 						option = n;
 						break;
 					}
@@ -4059,7 +4059,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			RAnalFunction *fcn;
 			int i = 0;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				if (core->offset == fcn->addr) {
+				if (core->addr == fcn->addr) {
 					option = i;
 				}
 				i++;
@@ -4131,8 +4131,8 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	bool found = false;
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
-		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
-			next = core->offset + aop.size;
+		if (r_anal_op (core->anal, &aop, core->addr, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
+			next = core->addr + aop.size;
 			found = true;
 		} else {
 			R_LOG_ERROR ("Invalid opcode");
@@ -4140,18 +4140,18 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (fcni->addr < next && fcni->addr > core->offset) {
+			if (fcni->addr < next && fcni->addr > core->addr) {
 				next = fcni->addr;
 				found = true;
 			}
 		}
 	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true, .found = false };
+		struct seek_flag_offset_t u = { .offset = core->addr, .next = &next, .is_next = true, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
 		found = u.found;
 	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true, .found = false };
+		struct seek_flag_offset_t u = { .offset = core->addr, .next = &next, .is_next = true, .found = false };
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
 		found = u.found;
 	}
@@ -4169,18 +4169,18 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (fcni->addr > next && fcni->addr < core->offset) {
+			if (fcni->addr > next && fcni->addr < core->addr) {
 				next = fcni->addr;
 				found = true;
 			}
 		}
 	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
+		struct seek_flag_offset_t u = { .offset = core->addr, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
 		found = u.found;
 	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
+		struct seek_flag_offset_t u = { .offset = core->addr, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
 		found = u.found;
 	}
@@ -4227,7 +4227,7 @@ static void handleHints(RCore *core) {
 				r_str_trim (arg);
 				int bits = atoi (arg);
 				if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
-					r_anal_hint_set_bits (core->anal, core->offset, bits);
+					r_anal_hint_set_bits (core->anal, core->addr, bits);
 				}
 			}
 			break;
@@ -4240,7 +4240,7 @@ static void handleHints(RCore *core) {
 R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 	RCoreVisual *v = &core->visual;
 	int plen = core->blocksize;
-	ut64 off = core->offset;
+	ut64 off = core->addr;
 	int i, h = 0, n, ch, ntotal = 0;
 	ut8 *p = core->block;
 	int rep = -1;
@@ -4447,7 +4447,7 @@ onemoretime:
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		int rc = r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ARCH_OP_MASK_BASIC);
+			core->block + off - core->addr, 32, R_ARCH_OP_MASK_BASIC);
 		if (rc < 1) {
 			R_LOG_ERROR ("analyzing opcode at 0x%08"PFMT64x, off);
 		} else {
@@ -4531,7 +4531,7 @@ onemoretime:
 		{
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 		if (!fcn) {
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 		}
 		if (fcn) {
 			RAnalOp op;
@@ -4560,7 +4560,7 @@ onemoretime:
 		break;
 	case 'r': // "Vdr"
 		{
-			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (f) {
 				r_core_cmdf (core, "cls;pd 10 @ 0x%08"PFMT64x, off);
 				r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
@@ -4684,9 +4684,9 @@ onemoretime:
 		break;
 	case 'f':
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
-				r_anal_function_resize (fcn, core->offset - fcn->addr);
+				r_anal_function_resize (fcn, core->addr - fcn->addr);
 			}
 			r_cons_break_push (NULL, NULL);
 			r_core_cmdf_at (core, off, "af");

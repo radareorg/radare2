@@ -1708,7 +1708,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
 #endif
-		if (!mr.s_seek && mr.mapaddr && mr.mapaddr != r->offset) {
+		if (!mr.s_seek && mr.mapaddr && mr.mapaddr != r->addr) {
 			mr.s_seek = r_str_newf ("0x%08"PFMT64x, mr.mapaddr);
 		}
 		if (mr.s_seek) {
@@ -1722,7 +1722,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_core_block_size (r, r_io_desc_size (mr.iod));
 		}
 
-		r_core_seek (r, r->offset, true); // read current block
+		r_core_seek (r, r->addr, true); // read current block
 
 		r_list_foreach (mr.evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);

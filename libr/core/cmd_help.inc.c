@@ -793,7 +793,7 @@ static int cmd_help(void *data, const char *input) {
 			ut8 data[32];
 			ut64 n = r_num_math (core->num, input + 1);
 			r_write_le32 (data, n);
-			int res = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
+			int res = r_anal_op (core->anal, &aop, core->addr, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
 			if (res > 0) {
 				r_cons_printf ("bedec   %s\n", aop.mnemonic);
 			} else {
@@ -801,7 +801,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			r_anal_op_fini (&aop);
 			r_write_be32 (data, n);
-			res = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
+			res = r_anal_op (core->anal, &aop, core->addr, data, sizeof (data), R_ARCH_OP_MASK_DISASM);
 			if (res > 0) {
 				r_cons_printf ("ledec   %s\n", aop.mnemonic);
 			} else {
@@ -1521,7 +1521,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'P': // "?P"
 		if (core->io->va) {
 			ut64 o, n = (input[0] && input[1])?
-				r_num_math (core->num, input + 2): core->offset;
+				r_num_math (core->num, input + 2): core->addr;
 			RIOMap *map = r_io_map_get_paddr (core->io, n);
 			if (map) {
 				o = n + r_io_map_begin (map) - map->delta;
@@ -1530,14 +1530,14 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("0x%08"PFMT64x"\n", core->addr);
 		}
 		break;
 	case 'p': // "?p"
 		if (core->io->va) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
-				r_num_math (core->num, input + 2): core->offset;
+				r_num_math (core->num, input + 2): core->addr;
 			RIOMap *map = r_io_map_get_at (core->io, n);
 			if (map) {
 				o = n - r_io_map_begin (map) + map->delta;
@@ -1546,7 +1546,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("0x%08"PFMT64x"\n", core->addr);
 		}
 		break;
 	case '_': // "?_" hud input

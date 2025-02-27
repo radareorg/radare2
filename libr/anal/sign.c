@@ -1944,7 +1944,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 
 	{ // R2_600 - we need to pass addr as argument
 		RCore *core = a->coreb.core;
-		ut64 addr = core? core->offset: UT64_MAX;
+		ut64 addr = core? core->addr: UT64_MAX;
 		struct ctxListCB ctx = { a, 0, format, pj, addr};
 		r_sign_foreach (a, listCB, &ctx);
 	}

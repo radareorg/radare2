@@ -107,7 +107,7 @@ R_API bool r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len
 }
 
 R_API bool r_core_yank(RCore *core, ut64 addr, int len) {
-	ut64 curseek = core->offset;
+	ut64 curseek = core->addr;
 	if (len < 0) {
 		R_LOG_ERROR ("Cannot yank negative bytes");
 		return false;
@@ -119,7 +119,7 @@ R_API bool r_core_yank(RCore *core, ut64 addr, int len) {
 	if (!buf) {
 		return false;
 	}
-	if (addr != core->offset) {
+	if (addr != core->addr) {
 		r_core_seek (core, addr, true);
 	}
 	r_io_read_at (core->io, addr, buf, len);
@@ -133,12 +133,12 @@ R_API bool r_core_yank(RCore *core, ut64 addr, int len) {
 
 /* Copy a zero terminated string to the clipboard. Clamp to maxlen or blocksize. */
 R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
-	ut64 curseek = core->offset;
+	ut64 curseek = core->addr;
 	if (maxlen < 0) {
 		R_LOG_ERROR ("Cannot yank negative bytes");
 		return false;
 	}
-	if (addr != core->offset) {
+	if (addr != core->addr) {
 		r_core_seek (core, addr, true);
 	}
 	/* Ensure space and safe termination for largest possible string allowed */
@@ -193,7 +193,7 @@ R_API bool r_core_yank_to(RCore *core, const char *_arg) {
 		str[0] = ' ';
 	}
 	if (str && pos != -1 && len > 0) {
-		if (r_core_yank (core, core->offset, len) == true) {
+		if (r_core_yank (core, core->addr, len) == true) {
 			res = r_core_yank_paste (core, pos, len);
 		}
 	}
@@ -362,7 +362,7 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 	char *out = strdup (input);
 	int len = r_hex_str2bin (input, (ut8 *)out);
 	if (len > 0) {
-		r_core_yank_set (core, core->offset, (ut8 *)out, len);
+		r_core_yank_set (core, core->addr, (ut8 *)out, len);
 	}
 	free (out);
 	return true;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
@@ -29,7 +29,7 @@ static int rabin_show_help(int v) {
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -g              same as -SMZIHVResizcld -SS -SSS -ee (show all info)\n"
-		" -G [addr]       load address . offset to header\n"
+		" -G [addr]       load address . address to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -49,7 +49,7 @@ static int rabin_show_help(int v) {
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
-		" -qq             show less info (no offset/size for -z for ex.)\n"
+		" -qq             show less info (no addr/size for -z for ex.)\n"
 		" -Q              show load address used by dlopen (non-aslr libs)\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
@@ -1160,7 +1160,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 }
 	core.bin = bin;
 	bin->cb_printf = r_cons_printf;
-	filter.offset = at;
+	filter.addr = at;
 	filter.name = name;
 	r_cons_new ()->context->is_interactive = false;
 

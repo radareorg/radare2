@@ -479,7 +479,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 f sym.callback=0x315
 pd 1
 EOF
@@ -496,7 +496,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 f sym.callback=0x14
 pd 1
 e asm.sub.varmin=0
@@ -515,7 +515,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 pd 1 @ 0x00008168
 pd 1 @ 0x00008204
 pd 1 @ 0x0000816c
@@ -537,7 +537,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 pd 1 @ 0x00014368
 EOF
 EXPECT=<<EOF
@@ -761,7 +761,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 e asm.flags=false
 af @ sym.call_gmon_start
 af @ entry0
@@ -787,7 +787,7 @@ e asm.arch=arm
 e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
-e asm.offset=false
+e asm.addr=false
 e asm.flags=false
 af @ sym.deregister_tm_clones
 aav

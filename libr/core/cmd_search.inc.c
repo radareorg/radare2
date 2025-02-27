@@ -759,7 +759,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 		free (flag);
 	}
 	if (*param->cmd_hit) {
-		ut64 here = core->offset;
+		ut64 here = core->addr;
 		r_core_seek (core, base_addr + addr, true);
 		r_core_cmd (core, param->cmd_hit, 0);
 		r_core_seek (core, here, true);
@@ -848,7 +848,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		perm = R_PERM_RWX;
 	}
 	if (!strcmp (mode, "flag")) {
-		const RList *ls = r_flag_get_list (core->flags, core->offset);
+		const RList *ls = r_flag_get_list (core->flags, core->addr);
 		RFlagItem *fi;
 		RListIter *iter;
 		r_list_foreach (ls, iter, fi) {
@@ -858,7 +858,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		}
 	} else if (r_str_startswith (mode, "flag:")) {
 		const char *match = mode + 5;
-		const RList *ls = r_flag_get_list (core->flags, core->offset);
+		const RList *ls = r_flag_get_list (core->flags, core->addr);
 		RFlagItem *fi;
 		RListIter *iter;
 		r_list_foreach (ls, iter, fi) {
@@ -871,9 +871,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	} else if (!strcmp (mode, "file")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
-		append_bound (list, core->io, search_itv, core->offset, core->blocksize, 7);
+		append_bound (list, core->io, search_itv, core->addr, core->blocksize, 7);
 	} else if (!strcmp (mode, "io.map")) {
-		RIOMap *m = r_io_map_get_at (core->io, core->offset);
+		RIOMap *m = r_io_map_get_at (core->io, core->addr);
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
@@ -1049,7 +1049,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
-				if (R_BETWEEN (addr, core->offset, addr + size)) {
+				if (R_BETWEEN (addr, core->addr, addr + size)) {
 					append_bound (list, core->io, search_itv, addr, size, s->perm);
 				}
 			}
@@ -1065,13 +1065,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
-				if (R_BETWEEN (addr, core->offset, addr + size)) {
+				if (R_BETWEEN (addr, core->addr, addr + size)) {
 					append_bound (list, core->io, search_itv, addr, size, s->perm);
 				}
 			}
 		}
 	} else if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr,
 			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			ut64 from = f->addr, size = r_anal_function_size_from_entry (f);
@@ -1082,7 +1082,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				RAnalBlock *bb;
 
 				r_list_foreach (f->bbs, iter, bb) {
-					ut64 at = core->offset;
+					ut64 at = core->addr;
 					if ((at >= bb->addr) && (at < (bb->addr + bb->size))) {
 						from = bb->addr;
 						size = bb->size;
@@ -1093,7 +1093,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			append_bound (list, core->io, search_itv, from, size, 5);
 		} else {
 			R_LOG_WARN ("search.in = ( anal.bb | anal.fcn ) requires to seek into a valid function");
-			append_bound (list, core->io, search_itv, core->offset, 1, 5);
+			append_bound (list, core->io, search_itv, core->addr, 1, 5);
 		}
 	} else if (r_str_startswith (mode, "dbg.")) {
 		if (r_config_get_b (core->config, "cfg.debug")) {
@@ -1110,8 +1110,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 
 			if (!strcmp (mode, "dbg.map")) {
 				int perm = 0;
-				ut64 from = core->offset;
-				ut64 to = core->offset;
+				ut64 from = core->addr;
+				ut64 to = core->addr;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if (from >= map->addr && from < map->addr_end) {
 						from = map->addr;
@@ -1185,12 +1185,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	} else {
 		/* obey temporary seek if defined '/x 8080 @ addr:len' */
 		if (core->tmpseek) {
-			append_bound (list, core->io, search_itv, core->offset, core->blocksize, 5);
+			append_bound (list, core->io, search_itv, core->addr, core->blocksize, 5);
 		} else {
 			// TODO: repeat last search doesnt works for /a
 			ut64 from = r_config_get_i (core->config, bound_from);
 			if (from == UT64_MAX) {
-				from = core->offset;
+				from = core->addr;
 			}
 			ut64 to = r_config_get_i (core->config, bound_to);
 			if (to == UT64_MAX) {
@@ -2096,7 +2096,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	}
 
 	cmd_aei (core);// requied to have core->anal->esil initialized.. imho esil should never be NULL!
-	ut64 oldoff = core->offset;
+	ut64 oldoff = core->addr;
 #if !USE_EMULATION
 	int syscallNumber = 0;
 #endif
@@ -2230,7 +2230,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 				r_syscall_item_free (item);
 				if (*param->cmd_hit) {
-					ut64 here = core->offset;
+					ut64 here = core->addr;
 					r_core_seek (core, at, true);
 					r_core_cmd (core, param->cmd_hit, 0);
 					r_core_seek (core, here, true);
@@ -2305,7 +2305,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 					buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type),
 					disasm? disasm: asmop.mnemonic);
 			if (*param->cmd_hit) {
-				ut64 here = core->offset;
+				ut64 here = core->addr;
 				r_core_seek (core, ref->addr, true);
 				r_core_cmd (core, param->cmd_hit, 0);
 				r_core_seek (core, here, true);
@@ -3058,7 +3058,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						r_flag_set (core->flags, flag, at, ret);
 					}
 					if (*param->cmd_hit) {
-						ut64 here = core->offset;
+						ut64 here = core->addr;
 						r_core_seek (core, at, true);
 						r_core_cmd (core, param->cmd_hit, 0);
 						r_core_seek (core, here, true);
@@ -3531,7 +3531,7 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, from, vsize, from); // flag at offset of hit
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
-		ut64 addr = core->offset;
+		ut64 addr = core->addr;
 		r_core_seek (core, from, true);
 		r_core_cmd (core, cmdHit, 0);
 		r_core_seek (core, addr, true);
@@ -3753,7 +3753,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 		eprintf (" (%d h/s)  \r", mount);
 		if (!memcmp (hashValue, ctx->digest, hashLength)) {
 			eprintf ("\nCOLLISION FOUND!\n");
-			r_print_hexdump (core->print, core->offset, buf, bufsz, 0, 16, 0);
+			r_print_hexdump (core->print, core->addr, buf, bufsz, 0, 16, 0);
 			r_cons_flush ();
 		}
 		inc++;
@@ -3928,7 +3928,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 	if (preds) {
 		RListIter *iter;
 		RSearchKeyword *kw;
-		ut64 addr = core->offset;
+		ut64 addr = core->addr;
 		if (forward) {
 			addr -= bs;
 			addr += 4;
@@ -4366,8 +4366,8 @@ reread:
 			goto beach;
 		}
 		search->bckwrds = true;
-		if (core->offset) {
-			RInterval itv = {0, core->offset};
+		if (core->addr) {
+			RInterval itv = {0, core->addr};
 			if (!r_itv_overlap (search_itv, itv)) {
 				goto beach;
 			} else {
@@ -4389,7 +4389,7 @@ reread:
 			  if (((st64)n) < 1) {
 				  n = 1;
 			  }
-			  if (!r_core_prevop_addr (core, core->offset, n, &addr)) {
+			  if (!r_core_prevop_addr (core, core->addr, n, &addr)) {
 				  addr = UT64_MAX;
 				  (void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 			  }
@@ -4409,7 +4409,7 @@ reread:
 		if (!n) {
 			n = 1;
 		}
-		addr = r_core_prevop_addr_force (core, core->offset, n);
+		addr = r_core_prevop_addr_force (core, core->addr, n);
 		if (param.outmode == R_MODE_JSON) {
 			r_cons_printf ("[%"PFMT64u "]", addr);
 		} else {
@@ -4508,7 +4508,7 @@ reread:
 				r_list_foreach (param.boundaries, iter, map) {
 					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					ut64 refptr = r_num_math (core->num, input + 2);
-					ut64 curseek = core->offset;
+					ut64 curseek = core->addr;
 					r_core_seek (core, r_io_map_begin (map), true);
 					char *arg = r_str_newf (" %"PFMT64d, r_io_map_size (map));
 					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
@@ -4557,8 +4557,8 @@ reread:
 						r_core_anal_search (core, from, to, r_num_math (core->num, input + 2), 0);
 						do_ref_search (core, r_num_math (core->num, input + 2), from, to, &param);
 					} else {
-						r_core_anal_search (core, from, to, core->offset, 0);
-						do_ref_search (core, core->offset, from, to, &param);
+						r_core_anal_search (core, from, to, core->addr, 0);
+						do_ref_search (core, core->addr, from, to, &param);
 					}
 					if (r_cons_is_breaked ()) {
 						break;
@@ -5341,9 +5341,9 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_forward);
 			break;
 		}
-		if (core->offset) {
-			st64 coff = core->offset;
-			RInterval itv = {core->offset, -coff};
+		if (core->addr) {
+			st64 coff = core->addr;
+			RInterval itv = {core->addr, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
 				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				goto beach;
@@ -5364,13 +5364,13 @@ reread:
 				if (fcn) {
 					addr = fcn->addr;
 				} else {
-					addr = core->offset;
+					addr = core->addr;
 				}
 			}
 			const int depth = r_config_get_i (core->config, "anal.depth");
 			// Va;ifate input length
 			if (input[1] != '\0') {
-				r_core_anal_paths (core, addr, core->offset, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
+				r_core_anal_paths (core, addr, core->addr, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
 			}
 		}
 		break;

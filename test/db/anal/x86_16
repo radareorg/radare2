@@ -203,7 +203,7 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-e asm.offset.segment.bits=8
+e asm.addr.segment.bits=8
 s 0x400
 wx 9090558becea000004005dc3
 pd 1 @ 0x405
@@ -218,7 +218,7 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-e asm.offset.segment.bits=8
+e asm.addr.segment.bits=8
 s 0x400
 wx 558becea000004005dc3
 af funcA @ 0x400
@@ -249,7 +249,7 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-e asm.offset.segment.bits=8
+e asm.addr.segment.bits=8
 s 0x400
 wx 558bec9a000004005dc3
 af funcA @ 0x400

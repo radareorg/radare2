@@ -624,7 +624,7 @@ static void __set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 
 #if 0
 static void __set_decompiler_cache(RCore *core, char *s) {
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (func) {
 		if (core->panels_root->cur_pdc_cache) {
 			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
@@ -703,7 +703,7 @@ static void __handlePrompt(RCore *core, RPanels *panels) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
 		if (p && __check_panel_type (p, PANEL_CMD_DISASSEMBLY)) {
-			__set_panel_addr (core, p, core->offset);
+			__set_panel_addr (core, p, core->addr);
 			break;
 		}
 	}
@@ -1199,7 +1199,7 @@ static void __init_panel_param(RCore *core, RPanel *p, const char *title, const 
 	m->type = PANEL_TYPE_DEFAULT;
 	m->rotate = 0;
 	v->curpos = 0;
-	__set_panel_addr (core, p, core->offset);
+	__set_panel_addr (core, p, core->addr);
 	m->rotateCb = NULL;
 	__set_cmd_str_cache (core, p, NULL);
 	__set_read_only (core, p, NULL);
@@ -1592,7 +1592,7 @@ static void __fix_cursor_up(RCore *core) {
 	if (print->cur >= 0) {
 		return;
 	}
-	int sz = r_core_visual_prevopsz (core, core->offset + print->cur);
+	int sz = r_core_visual_prevopsz (core, core->addr + print->cur);
 	if (sz < 1) {
 		sz = 1;
 	}
@@ -1622,7 +1622,7 @@ static void __cursor_left(RCore *core) {
 
 static void __fix_cursor_down(RCore *core) {
 	RPrint *print = core->print;
-	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
+	bool cur_is_visible = core->addr + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
 		int i;
 		// XXX: ugly hack
@@ -1664,7 +1664,7 @@ static void __cursor_right(RCore *core) {
 static ut64 insoff(RCore *core, int delta) {
 	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-	ut64 addr = core->offset + delta; // should be core->print->cur
+	ut64 addr = core->addr + delta; // should be core->print->cur
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
 	if (bb) {
 		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
@@ -1692,7 +1692,7 @@ static void __cursor_up(RCore *core) {
 
 static void __cursor_down(RCore *core) {
 	RPrint *print = core->print;
-	RAnalOp *aop = r_core_anal_op (core, core->offset + print->cur, R_ARCH_OP_MASK_BASIC);
+	RAnalOp *aop = r_core_anal_op (core, core->addr + print->cur, R_ARCH_OP_MASK_BASIC);
 	if (aop) {
 		print->cur += aop->size;
 		r_anal_op_free (aop);
@@ -2002,7 +2002,7 @@ static void __replace_cmd(RCore *core, const char *title, const char *cmd) {
 	cur->model->cache = false;
 	__set_cmd_str_cache (core, cur, NULL);
 	cur->model->cache = false;
-	__set_panel_addr (core, cur, core->offset);
+	__set_panel_addr (core, cur, core->addr);
 	cur->model->type = PANEL_TYPE_DEFAULT;
 	__set_dcb (core, cur);
 	__set_pcb (cur);
@@ -2096,7 +2096,7 @@ static void __update_disassembly_or_open(RCore *core) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
 		if (__check_panel_type (p, PANEL_CMD_DISASSEMBLY)) {
-			__set_panel_addr (core, p, core->offset);
+			__set_panel_addr (core, p, core->addr);
 			create_new = false;
 		}
 	}
@@ -2275,7 +2275,7 @@ static void __step_over_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED co
 
 static int __show_all_decompiler_cb(void *user) {
 	RCore *core = (RCore *)user;
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (!func) {
 		return 0;
 	}
@@ -2752,7 +2752,7 @@ static void __handleComment(RCore *core) {
 	r_line_set_prompt ("[Comment]> ");
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
 		ut64 addr, orig;
-		addr = orig = core->offset;
+		addr = orig = core->addr;
 		if (core->print->cur_enabled) {
 			addr += core->print->cur;
 			r_core_seek (core, addr, false);
@@ -2886,7 +2886,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			__cursor_left (core);
 			r_core_block_read (core);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			cur->model->addr--;
 		} else if (cur->view->sx > 0) {
@@ -2897,7 +2897,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			__cursor_right (core);
 			r_core_block_read (core);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			cur->model->addr++;
 		} else {
@@ -2905,28 +2905,28 @@ static void __direction_disassembly_cb(void *user, int direction) {
 		}
 		break;
 	case UP:
-		core->offset = cur->model->addr;
+		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			__cursor_up (core);
 			r_core_block_read (core);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		} else {
 			r_core_visual_disasm_up (core, &cols);
 			r_core_seek_delta (core, -cols);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
 	case DOWN:
-		core->offset = cur->model->addr;
+		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			__cursor_down (core);
 			r_core_block_read (core);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		} else {
 			RAnalOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
-			r_core_seek (core, core->offset + cols, true);
-			__set_panel_addr (core, cur, core->offset);
+			r_core_seek (core, core->addr + cols, true);
+			__set_panel_addr (core, cur, core->addr);
 			r_asm_op_fini (&op);
 		}
 		break;
@@ -3159,7 +3159,7 @@ static void __direction_panels_cursor_cb(void *user, int direction) {
 		}
 		break;
 	case DOWN:
-		core->offset = cur->model->addr;
+		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			cur->view->curpos++;
 			sub = cur->view->curpos - cur->view->sy;
@@ -3663,7 +3663,7 @@ static void __jmp_to_cursor_addr(RCore *core, RPanel *panel) {
 	if (addr == UT64_MAX) {
 		return;
 	}
-	core->offset = addr;
+	core->addr = addr;
 	__update_disassembly_or_open (core);
 }
 
@@ -3672,7 +3672,7 @@ static void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 		return;
 	}
 	if (__check_panel_type (panel, PANEL_CMD_DISASSEMBLY)) {
-		r_core_cmdf (core, "dbs 0x%08"PFMT64x, core->offset + core->print->cur);
+		r_core_cmdf (core, "dbs 0x%08"PFMT64x, core->addr + core->print->cur);
 		panel->view->refresh = true;
 	}
 }
@@ -3755,7 +3755,7 @@ static void __set_addr_by_type(RCore *core, const char *cmd, ut64 addr) {
 
 static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
 	if (tmp != UT64_MAX) {
-		core->offset = tmp;
+		core->addr = tmp;
 	}
 	int key = __show_status(core, "xrefs:x refs:X ");
 	switch (key) {
@@ -3769,9 +3769,9 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
 		break;
 	}
 	if (__check_panel_type (panel, PANEL_CMD_DISASSEMBLY)) {
-		__set_panel_addr (core, panel, core->offset);
+		__set_panel_addr (core, panel, core->addr);
 	} else {
-		__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, core->offset);
+		__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, core->addr);
 	}
 }
 
@@ -3840,8 +3840,8 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 		break;
 	case '*':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + print->cur);
-			__set_panel_addr (core, cur, core->offset + print->cur);
+			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->addr + print->cur);
+			__set_panel_addr (core, cur, core->addr + print->cur);
 		}
 		break;
 	case '-':
@@ -4359,7 +4359,7 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		if (addr != 0 && addr != UT64_MAX) {
 			// TODO implement proper panel offset sync
 			// __set_panel_addr (core, idx, addr);
-			r_io_sundo_push (core->io, core->offset, 0);
+			r_io_sundo_push (core->io, core->addr, 0);
 			__seek_all (core, addr);
 		}
 	}
@@ -4423,7 +4423,7 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 }
 
 static void __add_vmark(RCore *core) {
-	char *msg = r_str_newf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x": ", core->offset);
+	char *msg = r_str_newf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x": ", core->addr);
 	int ch = __show_status (core, msg);
 	free (msg);
 	r_core_vmark (core, ch);
@@ -4456,7 +4456,7 @@ static void __handle_vmark(RCore *core) {
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
 			r_core_vmark_seek (core, ch, NULL);
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 	}
 }
@@ -4610,7 +4610,7 @@ static void __swap_panels(RPanels *panels, int p0, int p1) {
 }
 
 static bool __check_func(RCore *core) {
-	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (!fun) {
 		r_cons_message ("Not in a function. Type 'df' to define it here");
 		return false;
@@ -4641,7 +4641,7 @@ static void __call_visual_graph(RCore *core) {
 }
 
 static bool __check_func_diff(RCore *core, RPanel *p) {
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (!func) {
 		if (R_STR_ISEMPTY (p->model->funcName)) {
 			return false;
@@ -4674,9 +4674,9 @@ static void __print_decompiler_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	char *cmdstr = NULL;
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (!func) {
-		char *msg = r_str_newf ("No function at 0x%08"PFMT64x, core->offset);
+		char *msg = r_str_newf ("No function at 0x%08"PFMT64x, core->addr);
 		__update_pdc_contents (core, panel, msg);
 		free (msg);
 		return;
@@ -4748,15 +4748,15 @@ static void __print_disassembly_cb(void *user, void *p) {
 	} else {
 		panel->model->cmd = r_str_newf ("%s", panel->model->cmd);
 	}
-	ut64 o_offset = core->offset;
-	core->offset = panel->model->addr;
+	ut64 o_offset = core->addr;
+	core->addr = panel->model->addr;
 	r_core_seek (core, panel->model->addr, true);
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, ".dr*", 0);
 	}
 	free (cmdstr);
 	cmdstr = __handle_cmd_str_cache (core, panel, false);
-	core->offset = o_offset;
+	core->addr = o_offset;
 	free (panel->model->cmd);
 	panel->model->cmd = ocmd;
 	__update_panel_contents (core, panel, cmdstr);
@@ -4832,10 +4832,10 @@ static void __print_hexdump_cb(void *user, void *p) {
 	RPanel *panel = (RPanel *)p;
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (!cmdstr) {
-		ut64 o_offset = core->offset;
+		ut64 o_offset = core->addr;
 		if (!panel->model->cache) {
-			core->offset = panel->model->addr;
-			r_core_seek (core, core->offset, true);
+			core->addr = panel->model->addr;
+			r_core_seek (core, core->addr, true);
 			r_core_block_read (core);
 		}
 		char *base = hexdump_rotate[R_ABS(panel->model->rotate) % COUNT (hexdump_rotate)];
@@ -4851,7 +4851,7 @@ static void __print_hexdump_cb(void *user, void *p) {
 		}
 		panel->model->cmd = cmd;
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
-		core->offset = o_offset;
+		core->addr = o_offset;
 	}
 	__update_panel_contents (core, panel, cmdstr);
 	free (cmdstr);
@@ -4863,13 +4863,13 @@ static void __hudstuff(RCore *core) {
 	r_core_visual_hudstuff (core);
 
 	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 	} else {
 		int i;
 		for (i = 0; i < panels->n_panels; i++) {
 			RPanel *panel = __get_panel (panels, i);
 			if (__check_panel_type (panel, PANEL_CMD_DISASSEMBLY)) {
-				__set_panel_addr (core, panel, core->offset);
+				__set_panel_addr (core, panel, core->addr);
 				break;
 			}
 		}
@@ -5344,7 +5344,7 @@ static int __write_hex_cb(void *user) {
 
 static int __assemble_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_visual_asm (core, core->offset);
+	r_core_visual_asm (core, core->addr);
 	return 0;
 }
 
@@ -5462,7 +5462,7 @@ static int __calculator_cb(void *user) {
 static int __r2_assembler_cb(void *user) {
 	RCore *core = (RCore *)user;
 	const int ocur = core->print->cur_enabled;
-	r_core_visual_asm (core, core->offset);
+	r_core_visual_asm (core, core->addr);
 	core->print->cur_enabled = ocur;
 	return 0;
 }
@@ -5550,11 +5550,11 @@ static int __esil_step_range_cb(void *user) {
 	if (s_a >= d_a) {
 		return 0;
 	}
-	ut64 tmp = core->offset;
-	core->offset = s_a;
+	ut64 tmp = core->addr;
+	core->addr = s_a;
 	__esil_init (core);
 	__esil_step_to (core, d_a);
-	core->offset = tmp;
+	core->addr = tmp;
 	return 0;
 }
 
@@ -6118,7 +6118,7 @@ static void __refresh_core_offset(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
 	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-		core->offset = cur->model->addr;
+		core->addr = cur->model->addr;
 	}
 }
 
@@ -6283,7 +6283,7 @@ static void __panels_refresh(RCore *core) {
 		r_cons_canvas_write (can, Color_RESET);
 		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
-	r_strbuf_setf (title, "[0x%08"PFMT64x "]", core->offset);
+	r_strbuf_setf (title, "[0x%08"PFMT64x "]", core->addr);
 	i = -can->sx + w - r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, r_strbuf_get (title));
@@ -6484,7 +6484,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 	case 'i':
 		{
 			char cmd[128] = {0};
-			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->offset);
+			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->addr);
 			__panel_prompt (prompt, cmd, sizeof (cmd));
 			if (*cmd) {
 				if (!strcmp (cmd, "clear")) {
@@ -6709,10 +6709,10 @@ static void __undo_seek(RCore *core) {
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
-	RIOUndos *undo = r_io_sundo (core->io, core->offset);
+	RIOUndos *undo = r_io_sundo (core->io, core->addr);
 	if (undo) {
 		r_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 	}
 }
 
@@ -6737,7 +6737,7 @@ static void __redo_seek(RCore *core) {
 	RIOUndos *undo = r_io_sundo_redo (core->io);
 	if (undo) {
 		r_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 	}
 }
 
@@ -6795,7 +6795,7 @@ static void prevOpcode(RCore *core) {
 }
 
 static void nextOpcode(RCore *core) {
-	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ARCH_OP_MASK_BASIC);
+	RAnalOp *aop = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
@@ -6906,7 +6906,7 @@ virtualmouse:
 	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY) && '0' < key && key <= '9') {
 		ut8 ch = key;
 		r_core_visual_jump (core, ch);
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 		goto repeat;
 	}
 
@@ -6939,7 +6939,7 @@ virtualmouse:
 					r_core_seek (core, addr, true);
 				}
 			}
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		} else if (!strcmp (cur->model->title, "Stack")) {
 			r_config_set_i (core->config, "stack.delta", 0);
 		}
@@ -6963,13 +6963,13 @@ virtualmouse:
 	case 's':
 		__panel_single_step_in (core);
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
 	case 'S':
 		__panel_single_step_over (core);
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
 	case ' ':
@@ -6977,7 +6977,7 @@ virtualmouse:
 		break;
 	case ':':
 		__handlePrompt(core, panels);
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 		break;
 	case 'c':
 		__activate_cursor (core);
@@ -7024,7 +7024,7 @@ virtualmouse:
 	case 'A':
 		{
 			const int ocur = core->print->cur_enabled;
-			r_core_visual_asm (core, core->offset);
+			r_core_visual_asm (core, core->addr);
 			core->print->cur_enabled = ocur;
 		}
 		break;
@@ -7178,13 +7178,13 @@ virtualmouse:
 	case 'n':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
 	case 'N':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
-			__set_panel_addr (core, cur, core->offset);
+			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
 	case 'x':
@@ -7194,7 +7194,7 @@ virtualmouse:
 #if 0
 // already accessible via xX
 		r_core_visual_refs (core, false, true);
-		cur->model->addr = core->offset;
+		cur->model->addr = core->addr;
 		set_refresh_all (panels, false);
 #endif
 		__dismantle_del_panel (core, cur, panels->curnode);
@@ -7229,7 +7229,7 @@ virtualmouse:
 		r_core_visual_showcursor (core, true);
 		r_core_visual_offset (core);
 		r_core_visual_showcursor (core, false);
-		__set_panel_addr (core, cur, core->offset);
+		__set_panel_addr (core, cur, core->addr);
 		break;
 	case 'G':
 		{
@@ -7322,7 +7322,7 @@ virtualmouse:
 				"analyze function\n" \
 				"analyze program\n" \
 				"bytes\n" \
-				"offset\n" \
+				"address\n" \
 				"disasm\n" \
 				"entropy\n";
 			char *format = r_cons_hud_line_string (s);
@@ -7334,8 +7334,8 @@ virtualmouse:
 					r_core_cmd_call (core, "aaef");
 				} else if (!strcmp (format, "analyze program")) {
 					r_core_cmd_call (core, "aaa");
-				} else if (!strcmp (format, "offset")) {
-					r_config_toggle (core->config, "asm.offset");
+				} else if (!strcmp (format, "address")) {
+					r_config_toggle (core->config, "asm.addr");
 				} else if (!strcmp (format, "esil")) {
 					r_config_toggle (core->config, "asm.esil");
 				} else if (!strcmp (format, "bytes")) {
@@ -7463,7 +7463,7 @@ virtualmouse:
 		} else {
 			__panel_single_step_in (core);
 			if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-				__set_panel_addr (core, cur, core->offset);
+				__set_panel_addr (core, cur, core->addr);
 			}
 		}
 		break;
@@ -7474,7 +7474,7 @@ virtualmouse:
 		} else {
 			__panel_single_step_over (core);
 			if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-				__set_panel_addr (core, cur, core->offset);
+				__set_panel_addr (core, cur, core->addr);
 			}
 		}
 		break;
@@ -7485,7 +7485,7 @@ virtualmouse:
 		} else {
 			if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 				__panel_continue (core);
-				__set_panel_addr (core, cur, core->offset);
+				__set_panel_addr (core, cur, core->addr);
 			}
 		}
 		break;
@@ -7603,7 +7603,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		for (; i < panels->n_panels; i++) {
 			RPanel *cur = __get_panel (panels, i);
 			if (cur) {
-				cur->model->addr = core->offset;
+				cur->model->addr = core->addr;
 			}
 		}
 	}

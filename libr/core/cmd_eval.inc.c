@@ -526,13 +526,13 @@ static bool cmd_ec(RCore *core, const char *input) {
 				  if (input[3] == '*') {
 					  r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
 				  } else {
-					  r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, 1);
-					  // r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+					  r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, 1);
+					  // r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
 				  }
 				  r_str_argv_free (argv);
 				  return false;
 			  case '.':
-				  r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset, NULL, NULL);
+				  r_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->addr, NULL, NULL);
 				  r_str_argv_free (argv);
 				  return false;
 			  case '\0':
@@ -584,11 +584,11 @@ static bool cmd_ec(RCore *core, const char *input) {
 				  r_str_argv_free (argv);
 				  return true;
 			  }
-			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
-			  const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
+			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, "");
+			  const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr);
 			  char *dup = r_str_newf ("%s \"%s%s\"", r_str_get (str), r_str_get (word),
 					  color_code ? color_code : r_cons_singleton ()->context->pal.wordhl);
-			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
+			  r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->addr, dup);
 			  r_str_argv_free (argv);
 			  free (color_code);
 			  R_FREE (word);

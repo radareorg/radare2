@@ -267,7 +267,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 
 // XXX i.j ij. is inconsistent maybe move to 'ai'?
 static void cmd_info_here(RCore *core, PJ *pj, int mode) {
-	RCoreItem *item = r_core_item_at (core, core->offset);
+	RCoreItem *item = r_core_item_at (core, core->addr);
 	// fixme: other modes
 	if (!item) {
 		return;
@@ -293,7 +293,7 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 			pj_ks (pj, "data", item->data);
 		}
 		{
-			RVecAnalRef *refs = r_anal_refs_get (core->anal, core->offset);
+			RVecAnalRef *refs = r_anal_refs_get (core->anal, core->addr);
 			if (refs && !RVecAnalRef_empty (refs)) {
 				pj_k (pj, "refs");
 				pj_a (pj);
@@ -309,7 +309,7 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 			RVecAnalRef_free (refs);
 		}
 		{
-			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, core->offset);
+			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, core->addr);
 			if (refs && !RVecAnalRef_empty (refs)) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);
@@ -937,10 +937,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 		r_list_append (klasses, klass);
 	}
 	if (method_name == NULL) {
-		klass->addr = core->offset;
+		klass->addr = core->addr;
 	} else {
-		ut64 pa = core->offset; // XXX
-		ut64 va = core->offset;
+		ut64 pa = core->addr; // XXX
+		ut64 va = core->addr;
 		RBinSymbol *m;
 		bool found = false;
 		r_list_foreach (klass->methods, iter, m) {
@@ -1291,7 +1291,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					break;
 				case '.': // "ic."
 					{
-					ut64 addr = core->offset;
+					ut64 addr = core->addr;
 					ut64 min = UT64_MAX;
 					const char *method = NULL;
 					ut64 max = 0LL;
@@ -1372,7 +1372,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	bool rdump = false;
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
-		ut64 addr = core->offset;
+		ut64 addr = core->addr;
 		bool old_tmpseek = core->tmpseek;
 		input++;
 		if (input[1] == ' ') {

@@ -987,7 +987,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
-	ut64 oldoff = core->offset;
+	ut64 oldoff = core->addr;
 	r_cons_break_push (NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	r_list_sort (fcn->bbs, bb_cmpaddr);
@@ -1581,7 +1581,7 @@ static int cmd_type(void *data, const char *input) {
 		case '.': // "tx." type xrefs
 		case 'f': // "txf" type xrefs
 			{
-			ut64 addr = core->offset;
+			ut64 addr = core->addr;
 			if (input[2] == ' ') {
 				addr = r_num_math (core->num, input + 2);
 			}
@@ -1689,7 +1689,7 @@ static int cmd_type(void *data, const char *input) {
 		case ' ': {
 			char *type = strdup (input + 2);
 			char *ptr = strchr (type, '=');
-			ut64 addr = core->offset;
+			ut64 addr = core->addr;
 
 			if (ptr) {
 				*ptr++ = 0;
@@ -1706,7 +1706,7 @@ static int cmd_type(void *data, const char *input) {
 			char *tmp = sdb_get (TDB, type, 0);
 			if (R_STR_ISNOTEMPTY (tmp)) {
 				r_type_set_link (TDB, type, addr);
-				RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+				RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
 				if (r_list_length (fcns) > 1) {
 					R_LOG_ERROR ("Multiple functions found in here");
 				} else if (r_list_length (fcns) == 1) {
@@ -1776,7 +1776,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
 			if (fmt && *fmt) {
-				ut64 val = core->offset;
+				ut64 val = core->addr;
 				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, val);
 			} else {
 				r_core_cmd_help_match (core, help_msg_tp, "tpv");
@@ -1807,10 +1807,10 @@ static int cmd_type(void *data, const char *input) {
 				if (input[1] == 'x' && arg) { // "tpx"
 					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
 				} else {
-					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
+					ut64 addr = arg ? r_num_math (core->num, arg): core->addr;
 					ut64 original_addr = addr;
 					if (!addr && arg) {
-						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 						if (fcn) {
 							RAnalVar *var = r_anal_function_get_var_byname (fcn, arg);
 							if (var) {

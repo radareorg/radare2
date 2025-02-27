@@ -369,10 +369,10 @@ static int cmd_mount(void *data, const char *_input) {
 				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 		} else {
-			if (!(ptr = r_fs_name (core->fs, core->offset))) {
+			if (!(ptr = r_fs_name (core->fs, core->addr))) {
 				R_LOG_ERROR ("Unknown filesystem type");
 			}
-			if (ptr && !r_fs_mount (core->fs, ptr, input, core->offset)) {
+			if (ptr && !r_fs_mount (core->fs, ptr, input, core->addr)) {
 				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 			free (ptr);
