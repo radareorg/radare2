@@ -401,6 +401,9 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
+	if (!rb && addr == core->addr) {
+		return false;
+	}
 	core->addr = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (rb) {
 		r_core_block_read (core);
