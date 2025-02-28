@@ -1483,7 +1483,7 @@ static RList *classes(RBinFile *bf) {
 			}
 
 			bool is_classlist = strstr (section->name, "__objc_classlist");
-			bool is_catlist = strstr (section->name, "__objc_catlist");
+			bool is_catlist = strstr (section->name, "__objc_catlist") && !strstr (section->name, "__objc_catlist2");
 
 			if (!is_classlist && !is_catlist) {
 				continue;
