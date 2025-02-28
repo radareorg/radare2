@@ -142,6 +142,7 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 		} else if (r_str_startswith (line, "@@ ")) {
 			if (!ubp_parseBlock (line, &ubpBlock)) {
 				R_LOG_ERROR ("Invalid patch format, Cant find +");
+				break;
 			}
 		} else if (r_str_startswith (line, "- ")) {
 			// - LE 0x001b7358 # 1799000 comment after the # symbol, could be assembly

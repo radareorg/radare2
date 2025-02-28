@@ -111,7 +111,8 @@ jobs:
             gcc: aarch64-linux-gnu
           - arch: i386
             gcc: multilib
-    runs-on: ubuntu-22.04
+    # TODO: Update to 22.04 when xpatch.c warnings have been fixed
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
