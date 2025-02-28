@@ -203,20 +203,6 @@ static char *swift_demangle_lib(const char *s) {
 		haveSwiftCore = true;
 	}
 	if (swift_demangle) {
-		char *_s = NULL;
-		if (*s == '$') {
-			// all swift symbols must start with _$ now
-			_s = r_str_newf ("_%s", s);
-			char *res = swift_demangle (_s, strlen (_s), NULL, NULL, 0, 0);
-			free (_s);
-			return res;
-		}
-		if (*s == 's' && isdigit (s[1])) {
-			_s = r_str_newf ("_$%s", s);
-			char *res = swift_demangle (_s, strlen (_s), NULL, NULL, 0, 0);
-			free (_s);
-			return res;
-		}
 		return swift_demangle (s, strlen (s), NULL, NULL, 0, 0);
 	}
 #endif
@@ -926,6 +912,12 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		// see https://github.com/swiftlang/swift/blob/c998bbc4d98b4b4ca16831b33054fa750456e053/docs/ABI/Mangling.rst#declaration-contexts
 		return strdup ("Swift._SwiftObject");
 	}
+	if (trylib) {
+		char *res = swift_demangle_lib (s);
+		if (res) {
+			return res;
+		}
+	}
 	const char *os = s;
 	bool hasdollar = *s == '$';
 
@@ -981,13 +973,6 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	s = str_removeprefix (s, "reloc.");
 	// check if string doesnt start with __ then return
 	s = str_removeprefix (s, "__"); // NOOO
-
-	if (trylib) {
-		char *res = swift_demangle_lib (s);
-		if (res) {
-			return res;
-		}
-	}
 
 	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
 		// modern swift symbols not yet supported in this parser (only via trylib)
