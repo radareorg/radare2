@@ -680,7 +680,6 @@ RIOPlugin r_io_plugin_windbg = {
 	},
 	.uris = WINDBGURI,
 	.isdbg = true,
-	.init = windbg_init,
 	.open = windbg_open,
 	.seek = windbg_lseek,
 	.read = windbg_read,
