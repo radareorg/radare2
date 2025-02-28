@@ -36,7 +36,7 @@ static bool check_swift(RBinSymbol *sym) {
 
 static bool check_golang(RBinSymbol *sym) {
 	const char *sym_name = r_bin_name_tostring (sym->name);
-	return r_str_startswith (sym_name, "go.");
+	return r_str_startswith (sym_name, "go:");
 }
 
 static inline bool is_cxx_symbol(const char *name) {
