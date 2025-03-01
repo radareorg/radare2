@@ -1175,7 +1175,6 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'a':
 		if (input[1] == ' ') {
-			RFlagItem *fi;
 			R_FREE (str);
 			str = strdup (input + 2);
 			ptr = strchr (str, '=');
@@ -1187,13 +1186,12 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			name = (char *)r_str_trim_head_ro (str);
 			ptr = (char *)r_str_trim_head_ro (ptr);
-			fi = r_flag_get (core->flags, name);
+			RFlagItem *fi = r_flag_get (core->flags, name);
 			if (!fi) {
-				fi = r_flag_set (core->flags, name,
-					core->addr, 1);
+				fi = r_flag_set (core->flags, name, core->addr, 1);
 			}
 			if (fi) {
-				r_flag_item_set_alias (fi, ptr);
+				r_flag_item_set_alias (core->flags, fi, ptr);
 			} else {
 				R_LOG_ERROR ("Cannot find flag '%s'", name);
 			}

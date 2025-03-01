@@ -671,12 +671,12 @@ fj
 EOF
 EXPECT=<<EOF
 fs *
-f direct1 1 0x00000000 base64:dmVyYmF0aW0=
+'f direct1 1 0x00000000 base64:dmVyYmF0aW0=
 fs *
-f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
+'f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
 fs *
-f indirect 1 0x00000020 base64:d29ya3MgdG9v
-[{"name":"direct1","size":1,"addr":0,"comment":"verbatim"},{"name":"direct2","size":1,"addr":16,"comment":"\"base64 armored\""},{"name":"indirect","size":1,"addr":32,"comment":"works too"}]
+'f indirect 1 0x00000020 base64:d29ya3MgdG9v
+[{"name":"direct1","size":1,"comment":"verbatim","addr":0},{"name":"direct2","size":1,"comment":"\"base64 armored\"","addr":16},{"name":"indirect","size":1,"comment":"works too","addr":32}]
 EOF
 RUN
 
