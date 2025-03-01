@@ -88,6 +88,8 @@ if [ $? = 0 ]; then
 	exit 1
 fi
 
+export WANT_V35=0
+
 export USE_CS4=0
 export USE_CSNEXT=0
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }

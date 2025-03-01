@@ -1,7 +1,5 @@
 DEPS=sdb qjs
 
-$(info ---- checking var - $(WANT_V35))
-
 ifeq ($(WANT_V35),1)
   DEPS += binaryninja
 endif
