@@ -728,7 +728,8 @@ static int cmd_eval(void *data, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help_contains (core, help_msg_e, "en");
 			break;
-		} else if (!strcmp (input + 1, "vj")) {
+		}
+		if (!strcmp (input + 1, "vj")) {
 			char **e = r_sys_get_environ ();
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
@@ -765,7 +766,7 @@ static int cmd_eval(void *data, const char *input) {
 			if (p) {
 				r_cons_println (p);
 				free (p);
-			} else {
+			} else if (!var || !*var) {
 				char **e = r_sys_get_environ ();
 				if (e != NULL) {
 					while (*e) {
