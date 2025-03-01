@@ -3,7 +3,8 @@ include ../../config-user.mk
 include ../../global.mk
 
 N=arch_arm_v35
-V35ARM64_HOME=$(TOP)/subprojects/v35arm64/disassembler
+# V35ARM64_HOME=$(TOP)/subprojects/v35arm64/disassembler
+V35ARM64_HOME=$(TOP)/subprojects/binaryninja/arch/arm64/disassembler
 
 include p/arm/v35/deps-arm64.mk
 
