@@ -10,3 +10,7 @@ all:
 		&& diff -u t/$${a}.h.txt t/$${a}.h.tmp ; \
 	done
 	rm -f t/*.tmp*
+
+td:
+	./a.out typedef.h
+	r2 -qc 'to typedef.h;t*~foo,bar' --
