@@ -38,7 +38,7 @@ jobs:
       env:
           CC: tcc
       run: |
-          ./configure --prefix=/usr --with-compiler=tcc --with-new-abi
+          ./configure --prefix=/usr --with-compiler=tcc --with-new-abi --with-v35
           make -j
           sudo make install
     - name: Run tests
@@ -81,7 +81,7 @@ jobs:
       env:
           CC: tcc
       run: |
-          ./configure --prefix=/usr --with-compiler=tcc
+          ./configure --prefix=/usr --with-compiler=tcc --with-v35
           make -j
           sudo make install
     - name: Run tests
@@ -120,7 +120,7 @@ jobs:
       env:
           CC: tcc
       run: |
-          ./configure --prefix=/usr --with-compiler=tcc
+          ./configure --prefix=/usr --with-compiler=tcc --with-v35
           make -j
           sudo make install
 
