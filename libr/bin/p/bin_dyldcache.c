@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2024 - pancake, mrmacete, keegan */
+/* radare2 - LGPL - Copyright 2018-2025 - pancake, mrmacete, keegan */
 
 #include <r_core.h>
 #include <sdb/ht_su.h>
@@ -1483,7 +1483,7 @@ static RList *classes(RBinFile *bf) {
 			}
 
 			bool is_classlist = strstr (section->name, "__objc_classlist");
-			bool is_catlist = strstr (section->name, "__objc_catlist") && !strstr (section->name, "__objc_catlist2");
+			bool is_catlist = r_str_endswith (section->name, "__objc_catlist");
 
 			if (!is_classlist && !is_catlist) {
 				continue;
