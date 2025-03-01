@@ -1091,34 +1091,42 @@ beach:
 	free (buf);
 }
 
-static void test_flag(RCore *core, bool res) {
+static void test_flag(RCore *core, bool res, bool verbose) {
 	r_core_return_value (core, res? 0: 1);
+	if (verbose) {
+		r_cons_println (res? "found": "not found");
+	}
 }
 
 static int cmd_test(RCore *core, const char *input) {
+	bool verbose = false;
 	int type = 'f';
 	if (*input == '-') {
+		if (input[1] == 'v') {
+			input++;
+			verbose = true;
+		}
 		type = input[1];
 	}
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = r_str_trim_head_ro (arg + 1);
 	} else {
-		R_LOG_ERROR ("Missing file argument. Use 'test -fdx [file]'");
+		R_LOG_ERROR ("Missing file argument. Use 'test -[v]fdx [file]'");
 		return 1;
 	}
 	switch (type) {
 	case 'f': // "test -f"
-		test_flag (core, r_file_exists (arg));
+		test_flag (core, r_file_exists (arg), verbose);
 		break;
 	case 'x': // "test -x"
-		test_flag (core, r_file_is_executable (arg));
+		test_flag (core, r_file_is_executable (arg), verbose);
 		break;
 	case 's': // "test -s"
-		test_flag (core, r_file_size (arg) > 0);
+		test_flag (core, r_file_size (arg) > 0, verbose);
 		break;
 	case 'd': // "test -d"
-		test_flag (core, r_file_is_directory (arg));
+		test_flag (core, r_file_is_directory (arg), verbose);
 		break;
 	default:
 		R_LOG_ERROR ("Unknown flag for test. Use -f, -x or -d");
