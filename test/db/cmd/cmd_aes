@@ -77,7 +77,7 @@ aep test @ 0x5
 test
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Missing file argument. Use 'test -fdx [file]'
+ERROR: Missing file argument. Use 'test -[v]fdx [file]'
 EOF
 RUN
 
