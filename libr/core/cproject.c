@@ -65,11 +65,6 @@ R_API bool r_project_open(RProject *p, const char *name, const char *path) {
 	return true;
 }
 
-R_API void r_project_save(RProject *p) {
-	// R2_600 - deprecate
-	// must call r_core_project_save()
-}
-
 R_API void r_project_free(RProject *p) {
 	if (R_LIKELY (p)) {
 		free (p->name);

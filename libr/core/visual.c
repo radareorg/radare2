@@ -2846,7 +2846,7 @@ static void handle_space_key(RCore *core, int force) {
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 och = arg[0];
 	ut64 offset = core->addr;
-	char buf[4096];
+	char buf[4096]; // TODO: remove this var, use local ones for each specific case
 	const char *key_s;
 	int i, cols = core->print->cols;
 	int wheelspeed;
@@ -3078,12 +3078,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '|':
 		{ // TODO: edit
 			r_core_visual_showcursor (core, true);
-			const char *buf = NULL;
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
 			r_line_set_prompt ("cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
-			buf = r_line_readline ();
+			const char *buf = r_line_readline ();
 			if (buf && !strcmp (buf, "|")) {
 				R_FREE (I->line->contents);
 				core->print->cur_enabled = true;
@@ -3281,6 +3280,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			ut64 oaddr = core->addr;
 			int delta = (core->print->ocur != -1)? R_MIN (core->print->cur, core->print->ocur): core->print->cur;
 			ut64 addr = core->addr + delta;
+			char buf[128];
+			*buf = 0;
 			if (!canWrite (core, addr)) {
 				R_LOG_ERROR ("File is read-only. Use `r2 -w` or run `oo+` or `e io.cache=true`");
 				r_cons_any_key (NULL);
@@ -3303,7 +3304,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->seltab == 0) {
 					addr = r_debug_reg_get (core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
-					char buf[128];
 					if (prompt_read ("new-reg-value> ", buf, sizeof (buf))) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
@@ -3356,7 +3356,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, false);
 			}
-			r_core_cmd (core, buf, 1);
+			if (*buf) {
+				r_core_cmd (core, buf, 1);
+			}
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, true);
 			}
