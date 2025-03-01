@@ -71,13 +71,9 @@ R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name) {
 R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
-#if METAFLAG
 		RFlag *flags = anal->flb.f;
 		RFlagItemMeta *fim = r_flag_get_meta (flags, fi->id);
 		return fim? fim->type: NULL;
-#else
-		return fi->type;
-#endif
 	}
 	return NULL;
 }

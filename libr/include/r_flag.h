@@ -30,8 +30,6 @@ typedef struct r_flags_at_addr_t {
 	RList *flags;   /* list of RFlagItem at addr */
 } RFlagsAtOffset;
 
-#define METAFLAG 1
-
 typedef struct r_flag_item_meta_t {
 	char *type;
 	char *color;    /* item color */
@@ -43,7 +41,7 @@ typedef struct r_flag_item_meta_t {
 } RFlagItemMeta;
 
 typedef struct r_flag_item_t {
-	ut32 id;
+	ut32 id;        /* unique identifier, maybe use ut64? */
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
 	bool demangled; /* real name from demangling? .. maybe we can embed this into realname */

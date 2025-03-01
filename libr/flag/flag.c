@@ -253,14 +253,7 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
 
 	RFlagItem *n = R_NEW0 (RFlagItem);
-#if METAFLAG
 	n->id = item->id;
-#else
-	n->type = STRDUP_OR_NULL (item->type);
-	n->color = STRDUP_OR_NULL (item->color);
-	n->comment = STRDUP_OR_NULL (item->comment);
-	n->alias = STRDUP_OR_NULL (item->alias);
-#endif
 	n->name = STRDUP_OR_NULL (item->name);
 	n->realname = STRDUP_OR_NULL (item->realname);
 	n->addr = item->addr;
@@ -271,12 +264,6 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 
 R_API void r_flag_item_free(RFlagItem *fi) {
 	if (R_LIKELY (fi)) {
-#if METAFLAG
-#else
-		free (fi->color);
-		free (fi->comment);
-		free (fi->alias);
-#endif
 		/* release only one of the two pointers if they are the same */
 		free_item_name (fi);
 		free (fi->realname);
@@ -326,7 +313,6 @@ static bool print_flag_json(RFlagItem *fi, void *user) {
 		pj_ks (u->pj, "realname", fi->realname);
 	}
 	pj_ki (u->pj, "size", fi->size);
-#if METAFLAG
 	RFlagItemMeta *fim = r_flag_get_meta (u->f, fi->id);
 	if (fim) {
 		if (fim->comment) {
@@ -342,17 +328,6 @@ static bool print_flag_json(RFlagItem *fi, void *user) {
 	} else {
 		pj_kn (u->pj, "addr", fi->addr);
 	}
-#else
-	if (fi->alias) {
-		pj_ks (u->pj, "alias", fi->alias);
-		pj_kn (u->pj, "addr", fi->addr);
-	} else {
-		pj_kn (u->pj, "addr", fi->addr);
-	}
-	if (fi->comment) {
-		pj_ks (u->pj, "comment", fi->comment);
-	}
-#endif
 	pj_end (u->pj);
 	return true;
 }
@@ -367,13 +342,8 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		u->fs = flag->space;
 		u->f->cb_printf ("fs %s\n", u->fs? u->fs->name: "*");
 	}
-#if METAFLAG
 	const char *cmt = r_flag_item_set_comment (u->f, flag, NULL);
 	const char *alias = r_flag_item_set_alias (u->f, flag, NULL);
-#else
-	const char *cmt = flag->comment;
-	const char *alias = flag->alias;
-#endif
 	if (R_STR_ISNOTEMPTY (cmt)) {
 		comment_b64 = r_base64_encode_dyn (cmt, -1);
 		// prefix the armored string with "base64:"
@@ -830,17 +800,29 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	return item;
 }
 
+static void purgeifempty(RFlag *f, RFlagItem *fi, RFlagItemMeta *fim) {
+	RFlagItemMeta empty = {0};
+	if (!memcmp (&empty, fim, sizeof (empty))) {
+		ht_up_delete (f->ht_meta, fi->id);
+	}
+}
+
 /* add/replace/remove the alias of a flag item */
 R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *fi, const char *alias) {
 	R_RETURN_VAL_IF_FAIL (fi, NULL);
 	RFlagItemMeta *fim;
 	if (alias) {
-		fim = r_flag_get_meta2 (f, fi->id);
 		if (*alias) {
+			fim = r_flag_get_meta2 (f, fi->id);
 			free (fim->alias);
 			fim->alias = strdup (alias);
 		} else {
-			R_FREE (fim->alias);
+			fim = r_flag_get_meta (f, fi->id);
+			if (fim && fim->alias) {
+				R_FREE (fim->alias);
+				purgeifempty (f, fi, fim);
+			}
+			return NULL;
 		}
 	} else {
 		fim = r_flag_get_meta (f, fi->id);
@@ -852,27 +834,23 @@ R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *fi, const char *ali
 /* add/replace/remove the comment of a flag item */
 R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, const char *comment) {
 	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
-#if METAFLAG
 	if (comment) {
-		RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
-		R_FREE (fim->comment);
 		if (*comment) {
+			RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
+			free (fim->comment);
 			fim->comment = strdup (comment);
+		} else {
+			RFlagItemMeta *fim = r_flag_get_meta (f, fi->id);
+			if (fim) {
+				R_FREE (fim->comment);
+				purgeifempty (f, fi, fim);
+			}
 		}
 	} else {
 		RFlagItemMeta *fim = r_flag_get_meta (f, fi->id);
 		return fim? fim->comment: NULL;
 	}
 	return NULL;
-#else
-	if (comment) {
-		R_FREE (fi->comment);
-		if (*comment) {
-			fi->comment = strdup (comment);
-		}
-	}
-	return fi->comment;
-#endif
 }
 
 /* add/replace/remove the realname of a flag item */
@@ -886,7 +864,6 @@ R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char
 /* add/replace/remove the color of a flag item */
 R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE const char *color) {
 	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
-#if METAFLAG
 	RFlagItemMeta *fim;
 	if (color) {
 		fim = r_flag_get_meta2 (f, fi->id);
@@ -894,10 +871,11 @@ R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE cons
 			if (*color) {
 				free (fim->color);
 				fim->color = strdup (color);
-			} else {
-				R_FREE (fim->color);
+				return fim->color;
 			}
-			return fim->color;
+			R_FREE (fim->color);
+			purgeifempty (f, fi, fim);
+			return NULL;
 		}
 	} else {
 		fim = r_flag_get_meta (f, fi->id);
@@ -906,13 +884,6 @@ R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE cons
 		}
 	}
 	return NULL;
-#else
-	if (color) {
-		free (fi->color);
-		fi->color = (*color) ? strdup (color) : NULL;
-	}
-	return fi->color;
-#endif
 }
 
 /* change the name of a flag item, if the new name is available.
@@ -924,16 +895,10 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 
 R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, R_NULLABLE const char *type) {
 	R_RETURN_VAL_IF_FAIL (fi && type, NULL);
-#if METAFLAG
 	RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
 	free (fim->type);
 	fim->type = strdup (type);
 	return fim->type;
-#else
-	free (fi->type);
-	fi->type = strdup (type);
-	return fi->type;
-#endif
 }
 
 R_API R_NULLABLE RFlagItemMeta *r_flag_get_meta(RFlag *f, ut32 id) {
