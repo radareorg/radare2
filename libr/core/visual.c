@@ -702,15 +702,16 @@ repeat:
 	goto repeat;
 }
 
-static void prompt_read(const char *p, char *buf, int buflen) {
+static bool prompt_read(const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
-		return;
+		return false;
 	}
 	*buf = 0;
 	r_line_set_prompt (p);
 	r_core_visual_showcursor (NULL, true);
 	r_cons_fgets (buf, buflen, 0, NULL);
 	r_core_visual_showcursor (NULL, false);
+	return *buf != 0;
 }
 
 static void reset_print_cur(RPrint *p) {
@@ -979,10 +980,12 @@ static int visual_nkey(RCore *core, int ch) {
 
 static void setdiff(RCore *core) {
 	char from[64], to[64];
-	prompt_read ("diff from: ", from, sizeof (from));
-	r_config_set (core->config, "diff.from", from);
-	prompt_read ("diff to: ", to, sizeof (to));
-	r_config_set (core->config, "diff.to", to);
+	if (prompt_read ("diff from: ", from, sizeof (from))) {
+		r_config_set (core->config, "diff.from", from);
+	}
+	if (prompt_read ("diff to: ", to, sizeof (to))) {
+		r_config_set (core->config, "diff.to", to);
+	}
 }
 
 static void findPair(RCore *core) {
@@ -3144,8 +3147,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '@':
 			if (core->print->cur_enabled) {
 				char buf[128];
-				prompt_read ("cursor at:", buf, sizeof (buf));
-				core->print->cur = (st64) r_num_math (core->num, buf);
+				if (prompt_read ("cursor at:", buf, sizeof (buf))) {
+					core->print->cur = (st64) r_num_math (core->num, buf);
+				}
 			}
 			break;
 		case 'C':
@@ -3300,8 +3304,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					addr = r_debug_reg_get (core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
 					char buf[128];
-					prompt_read ("new-reg-value> ", buf, sizeof (buf));
-					if (*buf) {
+					if (prompt_read ("new-reg-value> ", buf, sizeof (buf))) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							r_core_cmdf (core, "dr %s = %s", creg, buf);
@@ -3910,8 +3913,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
-						r_config_set_i (core->config, "stack.size",
-							r_config_get_i (core->config, "stack.size") + w);
+						const int newstacksize = r_config_get_i (core->config, "stack.size") + w;
+						r_config_set_i (core->config, "stack.size", newstacksize);
 					}
 				} else {
 					r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->addr + core->print->cur);
@@ -3923,14 +3926,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '>':
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
-					eprintf ("No range selected. Use HJKL.\n");
+					R_LOG_ERROR ("No range selected. Use HJKL");
 					r_cons_any_key (NULL);
 					break;
 				}
 				char buf[128];
 				// TODO autocomplete filenames
-				prompt_read ("dump to file: ", buf, sizeof (buf));
-				if (buf[0]) {
+				if (prompt_read ("dump to file: ", buf, sizeof (buf))) {
 					ut64 from = core->addr + core->print->ocur;
 					ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
 					r_core_dump (core, buf, from, size, false);
@@ -3944,8 +3946,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				char buf[128];
 				// TODO autocomplete filenames
-				prompt_read ("load from file: ", buf, sizeof (buf));
-				if (buf[0]) {
+				if (prompt_read ("load from file: ", buf, sizeof (buf))) {
 					size_t sz;
 					char *data = r_file_slurp (buf, &sz);
 					if (data) {
