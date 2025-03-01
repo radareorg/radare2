@@ -54,6 +54,10 @@ done
 ABSPREFIX=`realpath ${PREFIX} 2> /dev/null`
 [ -n "${ABSPREFIX}" ] && PREFIX="${ABSPREFIX}"
 
+if [ "${WANT_V35}" = 1 ]; then
+	CFGARG="${CFGARG} --with-v35"
+fi
+
 if [ "${USE_CS4}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone4"
 fi

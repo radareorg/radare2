@@ -1,4 +1,11 @@
-DEPS=sdb v35armv7 v35arm64 qjs binaryninja
+DEPS=sdb qjs
+
+$(info ---- checking var - $(WANT_V35))
+
+ifeq ($(WANT_V35),1)
+  DEPS += binaryninja
+endif
+
 ifeq ($(USE_CS4),1)
   DEPS += capstone-v4
 else ifeq ($(USE_CSNEXT),1)
@@ -13,8 +20,9 @@ clean:
 	rm -rf $(DEPS)
 
 include sdb.mk
-include v35armv7.mk
-include v35arm64.mk
+ifeq ($(WANT_V35),1)
+  include binaryninja.mk
+endif
 ifeq ($(USE_CS4),1)
   include capstone-v4.mk
 else ifeq ($(USE_CSNEXT),1)
