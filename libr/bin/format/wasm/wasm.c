@@ -414,7 +414,9 @@ static inline void free_custom_names(RBinWasmCustomNames *names) {
 	if (names) {
 		free (names->mod.name);
 		storage_deep_free (names->funcs.store);
-		r_id_storage_foreach (names->locals.store, (RIDStorageForeachCb)_2d_store_free_cb, NULL);
+		if (names->locals.store) {
+			r_id_storage_foreach (names->locals.store, (RIDStorageForeachCb)_2d_store_free_cb, NULL);
+		}
 		free (names);
 	}
 }
