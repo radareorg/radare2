@@ -206,9 +206,6 @@ links = []
 incs = [platform_inc]
 if get_option('use_v35')
 r_arch_sources += 'p/arm/plugin_v35.c'
-# v35arm64 = subproject('v35arm64')
-# incs += v35arm64.get_variable('incs')
-# links += v35arm64.get_variable('libs').get_static_lib()
 binaryninja = subproject('binaryninja')
 incs += binaryninja.get_variable('incs_arm64')
 links += binaryninja.get_variable('libs_arm64').get_static_lib()

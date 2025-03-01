@@ -1,5 +1,0 @@
-[wrap-git]
-url = https://github.com/radareorg/vector35-arch-arm64
-revision = radare2-2024
-directory = v35arm64
-depth = 1
