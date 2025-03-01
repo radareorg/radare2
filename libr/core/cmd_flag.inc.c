@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -36,7 +36,7 @@ static RCoreHelpMessage help_msg_f = {
 	"f--", "", "delete all flags and flagspaces (deinit)",
 	"f+", "name 12 @ 33", "like above but creates new one if doesnt exist",
 	"f=", " [glob]", "list range bars graphics with flag offsets and sizes",
-	"fa", " [name] [alias]", "alias a flag to evaluate an expression",
+	"fa", "[- ][name] [alias]", "set or unset(-) an alias expression for a flag",
 	"fb", " [addr]", "set base address for new flags",
 	"fb", " [addr] [flag*]", "move flags matching 'flag' to relative addr",
 	"fc", "[?][name] [color]", "set color for given flag",
@@ -1165,16 +1165,57 @@ static int cmd_flag(void *data, const char *input) {
 		case ' ':
 			flagbars (core, input + 2);
 			break;
-		default:
-			r_core_return_invalid_command (core, "f=", input[1]);
-			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_feq);
 			break;
+		default:
+			r_core_return_invalid_command (core, "f=", input[1]);
+			break;
 		}
 		break;
-	case 'a':
-		if (input[1] == ' ') {
+	case 'a': // "fa"
+		switch (input[1]) {
+		case 0:
+		case '.':
+			{
+				RFlagItem *fi = r_flag_get_at (core->flags, core->addr, false);
+				if (fi) {
+					const char *alias = r_flag_item_set_alias (core->flags, fi, NULL);
+					if (alias) {
+						r_cons_println (alias);
+					} else {
+						R_LOG_ERROR ("No alias set for this flag");
+					}
+				} else {
+					R_LOG_ERROR ("Cannot find flag '%s'", name);
+				}
+			}
+			break;
+		case '-':
+			{
+				const char *name = (char *)r_str_trim_head_ro (input + 2);
+				if (*name) {
+					if (*name == '*') {
+						R_LOG_ERROR ("Not implemented");
+						break;
+					}
+					RFlagItem *fi;
+					if (*name == '.') {
+						fi = r_flag_get_at (core->flags, core->addr, false);
+					} else {
+						fi = r_flag_get (core->flags, name);
+					}
+					if (fi) {
+						r_flag_item_set_alias (core->flags, fi, "");
+					} else {
+						R_LOG_ERROR ("Cannot find flag '%s'", name);
+					}
+				} else {
+					R_LOG_ERROR ("Missing flag name to remove its alias");
+				}
+			}
+			break;
+		case ' ':
 			R_FREE (str);
 			str = strdup (input + 2);
 			ptr = strchr (str, '=');
@@ -1195,8 +1236,13 @@ static int cmd_flag(void *data, const char *input) {
 			} else {
 				R_LOG_ERROR ("Cannot find flag '%s'", name);
 			}
-		} else {
+			break;
+		case '?':
 			r_core_cmd_help_match (core, help_msg_f, "fa");
+			break;
+		default:
+			r_core_return_invalid_command (core, "fa", input[1]);
+			break;
 		}
 		break;
 	case 'V': // "fV" visual marks
