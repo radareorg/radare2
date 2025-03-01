@@ -3186,6 +3186,7 @@ static int cmd_env(void *data, const char *input) {
 		break;
 	default:
 		ret = r_core_cmdf (core, "env %s", input);
+		break;
 	}
 	return ret;
 }
@@ -6766,7 +6767,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "{", "run a command in json", cmd_json },
 		{ "#", "calculate hash", cmd_hash },
 		{ "$", "alias", cmd_alias },
-		{ "%", "short version of 'env' command", cmd_env },
+		{ "%", "environment variables (same as 'env' command)", cmd_env },
 		{ "&", "tasks", cmd_tasks },
 		{ "(", "macro", cmd_macro },
 		{ "*", "pointer read/write", cmd_pointer },
