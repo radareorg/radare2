@@ -2581,7 +2581,6 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
 	ds_pre_line (ds);
 	if (ds->show_color) {
 		bool hasColor = false;
-#if METAFLAG
 		RFlagItemMeta *fim = r_flag_get_meta (ds->core->flags, fi->id);
 		if (fim && fim->color) {
 			char *color = r_cons_pal_parse (fim->color, NULL);
@@ -2592,17 +2591,6 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *fi) {
 				hasColor = true;
 			}
 		}
-#else
-		if (fi->color) {
-			char *color = r_cons_pal_parse (fi->color, NULL);
-			if (color) {
-				r_cons_print (color);
-				free (color);
-				ds->lastflag = flag;
-				hasColor = true;
-			}
-		}
-#endif
 		if (!hasColor) {
 			r_cons_print (ds->color_flag);
 		}

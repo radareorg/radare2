@@ -1588,7 +1588,6 @@ static int cmd_flag(void *data, const char *input) {
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
-#if METAFLAG
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
 					if (input[1] && input[2] == '*') {
@@ -1598,16 +1597,6 @@ static int cmd_flag(void *data, const char *input) {
 						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fim->color);
 					}
 				}
-#else
-				if (fi->color) {
-					if (input[1] && input[2] == '*') {
-						r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
-					} else {
-						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
-						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, pad, fi->color);
-					}
-				}
-#endif
 			}
 			r_list_free (list_to_free);
 		} else if (input[1] == '-') {
@@ -1627,16 +1616,10 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *fi;
 			RList *list = r_flag_all_list (core->flags, false);
 			r_list_foreach (list, iter, fi) {
-#if METAFLAG
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
 					r_cons_printf ("fc %s=%s\n", fi->name, fim->color);
 				}
-#else
-				if (fi->color) {
-					r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
-				}
-#endif
 			}
 			r_list_free (list);
 		} else if (input[1] == ' ') {
