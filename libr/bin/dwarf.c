@@ -2724,7 +2724,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RBinDwarfDebugAbbrev
 	if (bf && section) {
 		RBinSection *debug_str = getsection (bin, DWARF_SN_STR);
 		if (debug_str) {
-			debug_str_len = debug_str->size;
+			debug_str_len = debug_str->size & 0xffff;
 			debug_str_buf = calloc (1, debug_str_len + 1);
 			if (!debug_str_buf) {
 				goto cleanup;
@@ -2931,20 +2931,16 @@ static inline ut64 get_max_offset(size_t addr_size) {
 
 static inline RBinDwarfLocList *create_loc_list(ut64 offset) {
 	RBinDwarfLocList *list = R_NEW0 (RBinDwarfLocList);
-	if (list) {
-		list->list = r_list_new ();
-		list->offset = offset;
-	}
+	list->list = r_list_new ();
+	list->offset = offset;
 	return list;
 }
 
 static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwarfBlock *block) {
 	RBinDwarfLocRange *range = R_NEW0 (RBinDwarfLocRange);
-	if (range) {
-		range->start = start;
-		range->end = end;
-		range->expression = block;
-	}
+	range->start = start;
+	range->end = end;
+	range->expression = block;
 	return range;
 }
 
