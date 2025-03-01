@@ -238,7 +238,7 @@ R_API bool r_file_is_abspath(const char *file) {
 
 R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
-	if (!file || !*file || !strcmp (file, ".") || !strcmp (file, "./")) {
+	if (R_STR_ISEMPTY (file) || !strcmp (file, ".") || !strcmp (file, "./")) {
 		return r_sys_getdir ();
 	}
 	if (strstr (file, "://")) {

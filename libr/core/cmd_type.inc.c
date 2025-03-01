@@ -1115,23 +1115,26 @@ static int cmd_test(RCore *core, const char *input) {
 		R_LOG_ERROR ("Missing file argument. Use 'test -[v]fdx [file]'");
 		return 1;
 	}
+	char *filePath = r_file_abspath_rel (NULL, arg);
 	switch (type) {
 	case 'f': // "test -f"
-		test_flag (core, r_file_exists (arg), verbose);
+		test_flag (core, r_file_exists (filePath), verbose);
 		break;
 	case 'x': // "test -x"
-		test_flag (core, r_file_is_executable (arg), verbose);
+		test_flag (core, r_file_is_executable (filePath), verbose);
 		break;
 	case 's': // "test -s"
-		test_flag (core, r_file_size (arg) > 0, verbose);
+		test_flag (core, r_file_size (filePath) > 0, verbose);
 		break;
 	case 'd': // "test -d"
-		test_flag (core, r_file_is_directory (arg), verbose);
+		test_flag (core, r_file_is_directory (filePath), verbose);
 		break;
 	default:
 		R_LOG_ERROR ("Unknown flag for test. Use -f, -x or -d");
+		free (filePath);
 		return 1;
 	}
+	free (filePath);
 	return 0;
 }
 
