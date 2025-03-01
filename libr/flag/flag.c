@@ -52,16 +52,18 @@ static ut64 num_callback(RNum *user, const char *name, bool *ok) {
 	if (ok) {
 		*ok = false;
 	}
-	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
-	if (item) {
+	RFlagItem *fi = ht_pp_find (f->ht_name, name, NULL);
+	if (fi) {
+		// XXX this is not efficient
+		const char *alias = r_flag_item_set_alias (f, fi, NULL);
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
-		if (item->alias) {
+		if (alias) {
 			return 0LL;
 		}
 		if (ok) {
 			*ok = true;
 		}
-		return item->addr;
+		return fi->addr;
 	}
 	return 0LL;
 }
@@ -257,8 +259,8 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	n->type = STRDUP_OR_NULL (item->type);
 	n->color = STRDUP_OR_NULL (item->color);
 	n->comment = STRDUP_OR_NULL (item->comment);
-#endif
 	n->alias = STRDUP_OR_NULL (item->alias);
+#endif
 	n->name = STRDUP_OR_NULL (item->name);
 	n->realname = STRDUP_OR_NULL (item->realname);
 	n->addr = item->addr;
@@ -273,8 +275,8 @@ R_API void r_flag_item_free(RFlagItem *fi) {
 #else
 		free (fi->color);
 		free (fi->comment);
-#endif
 		free (fi->alias);
+#endif
 		/* release only one of the two pointers if they are the same */
 		free_item_name (fi);
 		free (fi->realname);
@@ -324,19 +326,29 @@ static bool print_flag_json(RFlagItem *fi, void *user) {
 		pj_ks (u->pj, "realname", fi->realname);
 	}
 	pj_ki (u->pj, "size", fi->size);
-	if (fi->alias) {
-		pj_ks (u->pj, "alias", fi->alias);
-	} else {
-		pj_kn (u->pj, "addr", fi->addr);
-	}
 #if METAFLAG
 	RFlagItemMeta *fim = r_flag_get_meta (u->f, fi->id);
 	if (fim) {
 		if (fim->comment) {
 			pj_ks (u->pj, "comment", fim->comment);
 		}
+		if (fim->alias) {
+			pj_ks (u->pj, "alias", fim->alias);
+			ut64 addr = r_num_math (u->f->num, fim->alias);
+			pj_kn (u->pj, "addr", addr);
+		} else {
+			pj_kn (u->pj, "addr", fi->addr);
+		}
+	} else {
+		pj_kn (u->pj, "addr", fi->addr);
 	}
 #else
+	if (fi->alias) {
+		pj_ks (u->pj, "alias", fi->alias);
+		pj_kn (u->pj, "addr", fi->addr);
+	} else {
+		pj_kn (u->pj, "addr", fi->addr);
+	}
 	if (fi->comment) {
 		pj_ks (u->pj, "comment", fi->comment);
 	}
@@ -357,8 +369,10 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 	}
 #if METAFLAG
 	const char *cmt = r_flag_item_set_comment (u->f, flag, NULL);
+	const char *alias = r_flag_item_set_alias (u->f, flag, NULL);
 #else
 	const char *cmt = flag->comment;
+	const char *alias = flag->alias;
 #endif
 	if (R_STR_ISNOTEMPTY (cmt)) {
 		comment_b64 = r_base64_encode_dyn (cmt, -1);
@@ -369,14 +383,14 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 			comment_b64 = tmp;
 		}
 	}
-	if (flag->alias) {
-		u->f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
+	if (alias) {
+		u->f->cb_printf ("'fa %s %s\n", flag->name, alias);
 		if (comment_b64) {
-			u->f->cb_printf ("\"fC %s %s\"\n",
+			u->f->cb_printf ("'fC %s %s\n",
 				flag->name, r_str_get (comment_b64));
 		}
 	} else {
-		u->f->cb_printf ("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
+		u->f->cb_printf ("'f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
 			flag->name, flag->size, flag->addr,
 			u->pfx? "+": "", r_str_get (u->pfx),
 			r_str_get (comment_b64));
@@ -386,17 +400,17 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static bool print_flag_orig_name(RFlagItem *flag, void *user) {
+static bool print_flag_orig_name(RFlagItem *fi, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->addr < u->range_from || flag->addr >= u->range_to)) {
+	if (u->in_range && (fi->addr < u->range_from || fi->addr >= u->range_to)) {
 		return true;
 	}
-	if (flag->alias) {
-		const char *n = u->real? flag->realname: flag->name;
-		u->f->cb_printf ("%s %"PFMT64d" %s\n", flag->alias, flag->size, n);
+	const char *alias = r_flag_item_set_alias (u->f, fi, NULL);
+	const char *name = u->real? fi->realname: (u->f->realnames? fi->realname: fi->name);
+	if (alias) {
+		u->f->cb_printf ("%s %"PFMT64d" %s\n", alias, fi->size, name);
 	} else {
-		const char *n = u->real? flag->realname: (u->f->realnames? flag->realname: flag->name);
-		u->f->cb_printf ("0x%08" PFMT64x " %" PFMT64d " %s\n", flag->addr, flag->size, n);
+		u->f->cb_printf ("0x%08" PFMT64x " %" PFMT64d " %s\n", fi->addr, fi->size, name);
 	}
 	return true;
 }
@@ -492,12 +506,13 @@ R_API void r_flag_list(RFlag *f, int rad, R_NULLABLE const char *pfx) {
 	}
 }
 
-static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
-	R_RETURN_VAL_IF_FAIL (f && item, NULL);
-	if (item->alias) {
-		item->addr = r_num_math (f->num, item->alias);
+static RFlagItem *evalFlag(RFlag *f, RFlagItem *fi) {
+	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
+	const char *alias = r_flag_item_set_alias (f, fi, NULL);
+	if (alias) {
+		fi->addr = r_num_math (f->num, alias);
 	}
-	return item;
+	return fi;
 }
 
 /* return true if flag.* exist at addr. Otherwise, false is returned.
@@ -816,10 +831,22 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 }
 
 /* add/replace/remove the alias of a flag item */
-R_API void r_flag_item_set_alias(RFlagItem *fi, const char *alias) {
-	R_RETURN_IF_FAIL (fi);
-	free (fi->alias);
-	fi->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
+R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *fi, const char *alias) {
+	R_RETURN_VAL_IF_FAIL (fi, NULL);
+	RFlagItemMeta *fim;
+	if (alias) {
+		fim = r_flag_get_meta2 (f, fi->id);
+		if (*alias) {
+			free (fim->alias);
+			fim->alias = strdup (alias);
+		} else {
+			R_FREE (fim->alias);
+		}
+	} else {
+		fim = r_flag_get_meta (f, fi->id);
+	}
+	// TODO: remove the meta if empty
+	return fim? fim->alias: NULL;
 }
 
 /* add/replace/remove the comment of a flag item */
@@ -895,15 +922,17 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	return update_flag_item_name (f, item, name, false);
 }
 
-R_API void r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char *type) {
-	R_RETURN_IF_FAIL (fi && type);
+R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, R_NULLABLE const char *type) {
+	R_RETURN_VAL_IF_FAIL (fi && type, NULL);
 #if METAFLAG
 	RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
 	free (fim->type);
 	fim->type = strdup (type);
+	return fim->type;
 #else
 	free (fi->type);
 	fi->type = strdup (type);
+	return fi->type;
 #endif
 }
 
