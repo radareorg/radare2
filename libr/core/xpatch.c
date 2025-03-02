@@ -97,9 +97,9 @@ static bool ubp_parseBlock(char *line, UBP_Block *b) {
 R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool revert) {
 	R_RETURN_VAL_IF_FAIL (core && patch, false);
 	RIODesc *desc = NULL;
-	UBP_File ubpFileAdd;
-	UBP_File ubpFileDel;
-	UBP_Block ubpBlock;
+	UBP_File ubpFileAdd = {0};
+	UBP_File ubpFileDel = {0};
+	UBP_Block ubpBlock = {0};
 #if 0
 	UBP_Entry ubpAdd;
 	UBP_Entry ubpDel;
