@@ -8,6 +8,7 @@ typedef struct r_io_mmo_t {
 	int mode;
 	int perm;
 	int fd;
+	ut64 addr;
 	bool rawio;
 	bool nocache;
 	RBuffer *buf;
@@ -45,19 +46,14 @@ static int open_file(const char *file, int perm, int mode) {
 }
 
 static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
-	if (!mmo) {
-		return UT64_MAX - 1;
-	}
 	if (mmo->rawio) {
-		io->off = lseek (mmo->fd, offset, whence);
-		return io->off;
-	}
-	if (!mmo->buf) {
+		mmo->addr = lseek (mmo->fd, offset, whence);
+	} else if (mmo->buf) {
+		mmo->addr = r_buf_seek (mmo->buf, offset, whence);
+	} else {
 		return UT64_MAX - 1;
 	}
-	// XXX it should not be modifying the global offset wtf
-	io->off = r_buf_seek (mmo->buf, offset, whence);
-	return io->off;
+	return mmo->addr;
 }
 
 static bool mmap_refresh(RIOMMapFileObj *mmo) {
@@ -110,7 +106,7 @@ static void mmap_free(R_NULLABLE RIOMMapFileObj *mmo) {
 	}
 }
 
-static RIOMMapFileObj *create_mmap(RIO  *io, const char *filename, int perm, int mode) {
+static RIOMMapFileObj *mmap_create(RIO  *io, const char *filename, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (r_str_startswith (filename, "file://")) {
@@ -164,45 +160,42 @@ static bool uricheck(const char *filename) {
 
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
-	if (io->off == UT64_MAX) {
-		memset (buf, 0xff, count);
+	RIOMMapFileObj *mmo = (RIOMMapFileObj*)fd->data;
+	if (mmo->addr == UT64_MAX) {
+		memset (buf, io->Oxff, count);
 		return count;
 	}
-	// TODO : unbox magic
-	RIOMMapFileObj *mmo = fd->data;
 	if (!mmo) {
 		return -1;
 	}
 	if (mmo->rawio) {
-		if (lseek (mmo->fd, io->off, SEEK_SET) < 0) {
+		if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
 			return -1;
 		}
 		return read (mmo->fd, buf, count);
 	}
-	if (r_buf_size (mmo->buf) < io->off) {
-		io->off = r_buf_size (mmo->buf);
+	if (r_buf_size (mmo->buf) < mmo->addr) {
+		mmo->addr = r_buf_size (mmo->buf);
 	}
-	int r = r_buf_read_at (mmo->buf, io->off, buf, count);
+	int r = r_buf_read_at (mmo->buf, mmo->addr, buf, count);
 	if (r < 0) {
 		return r;
 	}
 	r_buf_seek (mmo->buf, r, R_BUF_CUR);
-	io->off += r;
+	mmo->addr += r;
 	return r;
 }
 
 static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (io && fd && fd->data && buf, -1);
 
-	int len = -1;
-	ut64 addr = io->off;
 	RIOMMapFileObj *mmo = fd->data;
+	ut64 addr = mmo->addr;
 	if (mmo->rawio) {
 		if (lseek (mmo->fd, addr, 0) < 0) {
 			return -1;
 		}
-		len = write (mmo->fd, buf, count);
-		return len;
+		return write (mmo->fd, buf, count);
 	}
 
 	if (mmo && mmo->buf) {
@@ -215,7 +208,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 	}
 
-	len = r_file_mmap_write (mmo->filename, io->off, buf, count);
+	int len = r_file_mmap_write (mmo->filename, mmo->addr, buf, count);
 	if (len != count) {
 		// aim to hack some corner cases?
 		if (lseek (fd->fd, addr, 0) < 0) {
@@ -242,7 +235,7 @@ static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 	free (uri);
 	return d;
 #else
-	RIOMMapFileObj *mmo = create_mmap (io, file, perm, mode);
+	RIOMMapFileObj *mmo = mmap_create (io, file, perm, mode);
 	if (!mmo) {
 		return NULL;
 	}
@@ -259,9 +252,9 @@ static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 #endif
 }
 
-static int mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
+static int mmap_truncate(RIODesc *fd, RIOMMapFileObj *mmo, ut64 size) {
 	bool res = r_file_truncate (mmo->filename, size);
-	if (res && !mmap_refresh (mmo) ) {
+	if (res && !mmap_refresh (mmo)) {
 		R_LOG_ERROR ("Can't refresh the def_mmap'ed file");
 		res = false;
 	} else if (!res) {
@@ -310,7 +303,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	if (!(mmo->perm & R_PERM_W)) {
 		return false;
 	}
-	return mmap_truncate (mmo, size);
+	return mmap_truncate (fd, mmo, size);
 }
 
 #if R2__UNIX__
@@ -329,6 +322,7 @@ RIOPlugin r_io_plugin_default = {
 	.meta = {
 		.name = "default",
 		.desc = "Open local files",
+		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
 	.uris = "file://,nocache://,stdio://",
