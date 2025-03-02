@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 #if ALLINC
@@ -1075,7 +1075,7 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	ut64 paths_completed = r_pvector_length (&state->completed_paths);
 	int a = r_pvector_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		printf ("[%d/%d] %50s ",
+		printf ("[%d/%d] %40s ",
 				(int)paths_completed,
 				(int)(a + prev_paths_completed),
 				(const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
