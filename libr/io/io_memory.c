@@ -79,7 +79,7 @@ R_IPI bool io_memory_resize(RIO *io, RIODesc *fd, ut64 count) {
 
 R_IPI int io_memory_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (io && fd && buf, -1);
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	if (!fd->data) {
 		return -1;
 	}

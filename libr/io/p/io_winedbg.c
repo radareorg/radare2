@@ -101,7 +101,7 @@ Wine-dbg>
 	int wordSize = 4;
 	ut32 *w = (ut32*)buf;
 	int i;
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	int words = count / wordSize; // XXX must pad align to 4
 	for (i = 0; i < words ; i++) {
 		ut64 addr = io->off + (i * wordSize);
@@ -116,7 +116,7 @@ Wine-dbg>
 
 	int left = count % wordSize;
 	if (left > 0) {
-		ut32 n = 0xff;
+		ut32 n = UT32_MAX;
 		ut8 *wn = (ut8*)&n;
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);

@@ -922,7 +922,7 @@ static int r_io_posix_open(const char *file, int perm, int mode, bool nocache) {
 static int dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
 	if (io->off == UT64_MAX) {
-		memset (buf, 0xff, count);
+		memset (buf, io->Oxff, count);
 		return count;
 	}
 	RIODscObject *dsc = fd->data;

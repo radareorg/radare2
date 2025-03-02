@@ -1,4 +1,4 @@
-/* io_r2k - radare2 - LGPL - Copyright 2016-2024 - SkUaTeR + panda */
+/* io_r2k - radare2 - LGPL - Copyright 2016-2025 - pancake, SkUaTeR, panda */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -49,12 +49,12 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return ReadMemory (io, fd, IOCTL_READ_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
 	default:
 		R_LOG_ERROR ("Undefined beid in r2k__read");
-		memset (buf, 0xff, count);
+		memset (buf, io->Oxff, count);
 		return count;
 	}
 #else
 	R_LOG_TODO ("r2k not implemented for this plataform");
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	return count;
 #endif
 }
@@ -135,7 +135,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_r2k = {
 	.meta = {
 		.name = "r2k",
-		.desc = "Kernel access API io",
+		.desc = "Client side to comunicate with the r2k kernel module",
 		.author = "skuater,panda",
 		.license = "LGPL-3.0-only",
 	},

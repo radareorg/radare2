@@ -233,7 +233,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	if (dd ->magic != r_str_hash ("mach")) {
 		return -1;
 	}
-	memset (buf, 0xff, len);
+	memset (buf, io->Oxff, len);
 	int pid = __get_pid (desc);
 	task_t task = pid_to_task (desc, pid);
 	if (task_is_dead (desc, pid)) {
@@ -260,12 +260,12 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
-				memset (buf+copied, 0xff, len-copied);
+				memset (buf+copied, io->Oxff, len-copied);
 				return size+copied;
 			}
 			blocksize = 1;
 			blen = 1;
-			buf[copied] = 0xff;
+			buf[copied] = io->Oxff;
 			break;
 		}
 		if (err == -1 || size < 1) {
@@ -273,12 +273,12 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 		if (size == 0) {
 			if (blocksize == 1) {
-				memset (buf + copied, 0xff, len - copied);
+				memset (buf + copied, io->Oxff, len - copied);
 				return len;
 			}
 			blocksize = 1;
 			blen = 1;
-			buf[copied] = 0xff;
+			buf[copied] = io->Oxff;
 		}
 		copied += blen;
 	}

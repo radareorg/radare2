@@ -33,7 +33,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		return -1;
 	}
 	int left = arena->size - io->off;
-	memset (buf, 0xff, len);
+	memset (buf, io->Oxff, len);
 	memcpy (buf, arena->bytes + io->off, R_MIN (left, len));
 	return len;
 }
@@ -76,9 +76,8 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case R_IO_SEEK_SET:
 		if (offset >= size) {
 			return size;
-		} else {
-			return offset;
 		}
+		return offset;
 	case R_IO_SEEK_CUR:
 		return io->off + offset;
 	case R_IO_SEEK_END:
