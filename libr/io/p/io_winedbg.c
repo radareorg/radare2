@@ -116,7 +116,7 @@ Wine-dbg>
 
 	int left = count % wordSize;
 	if (left > 0) {
-		const ut32 n = UT32_MAX;
+		ut32 n = UT32_MAX;
 		ut8 *wn = (ut8*)&n;
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
