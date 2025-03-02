@@ -225,7 +225,7 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 		R_FREE (uw);
 		return;
 	}
-	memset (uw->o, 0xff, len);
+	memset (uw->o, io->Oxff, len);
 	r_io_read_at (io, off, uw->o, len);
 	r_list_append (io->undo.w_list, uw);
 }

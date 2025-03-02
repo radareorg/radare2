@@ -395,7 +395,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 			return newlen;
 		}
 	}
-	memset (buf, 0xff, len);
+	memset (buf, io->Oxff, len);
 	return 0;
 }
 

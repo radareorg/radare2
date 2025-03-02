@@ -166,7 +166,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!io || !fd || !buf || count < 1) {
 		return -1;
 	}
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;

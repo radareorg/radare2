@@ -34,7 +34,7 @@ static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
-	memset (buf, 0xff, len); // TODO: only memset the non-readed bytes
+	memset (buf, io->Oxff, len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 

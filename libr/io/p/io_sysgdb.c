@@ -166,7 +166,7 @@ repeat:
 		left = count - 1024;
 		count = 1024;
 	}
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	if (count > 0) {
 		char *cmd = r_str_newf ("x/%db 0x%"PFMT64x, count, addr);
 		char *ores = runcmd (cmd);

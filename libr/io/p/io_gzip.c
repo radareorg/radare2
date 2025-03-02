@@ -104,7 +104,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	memset (buf, 0xff, count);
+	memset (buf, io->Oxff, count);
 	if (!fd || !fd->data) {
 		return -1;
 	}
