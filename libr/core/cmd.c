@@ -4185,7 +4185,7 @@ static char *find_subcmd_end(char *cmd, bool backquote) {
 			if (*p == ')') {
 				nest--;
 				if (nest == 0) {
-					return p + 1;
+					return p;
 				}
 			}
 		}
