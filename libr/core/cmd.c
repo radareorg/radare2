@@ -4172,7 +4172,27 @@ static char *find_subcmd_begin(char *cmd) {
 }
 
 static char *find_subcmd_end(char *cmd, bool backquote) {
-	return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
+	if (backquote) {
+		return (char *)r_str_firstbut_escape (cmd, '`', "'");
+	}
+	char *p = cmd;
+	int nest = 1;
+	while (*p) {
+		if (r_str_startswith (p, "$(")) {
+			nest++;
+			p++;
+		} else {
+			if (*p == ')') {
+				nest--;
+				if (nest == 0) {
+					return p + 1;
+				}
+			}
+		}
+		p++;
+	}
+	return NULL;
+	// return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
 }
 
 static char *getarg(char *ptr) {
@@ -4719,7 +4739,7 @@ next2:
 				str = r_core_cmd_str_pipe (core, ptr + 1);
 			} else {
 				// Color disabled when doing backticks ?e `pi 1`
-				int ocolor = r_config_get_i (core->config, "scr.color");
+				const int ocolor = r_config_get_i (core->config, "scr.color");
 				r_config_set_i (core->config, "scr.color", 0);
 				str = r_core_cmd_str (core, ptr + 1);
 				r_config_set_i (core->config, "scr.color", ocolor);
