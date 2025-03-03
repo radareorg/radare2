@@ -4144,7 +4144,7 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 	return true;
 }
 
-static char *r_core_cmd_find_subcmd_begin(char *cmd) {
+static char *find_subcmd_begin(char *cmd) {
 	R_RETURN_VAL_IF_FAIL (cmd, NULL);
 	int quote = 0;
 	char *p;
@@ -4171,7 +4171,7 @@ static char *r_core_cmd_find_subcmd_begin(char *cmd) {
 	return NULL;
 }
 
-static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
+static char *find_subcmd_end(char *cmd, bool backquote) {
 	return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
 }
 
@@ -4368,6 +4368,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			r_list_free (tmpenvs);
 			return ret;
 		}
+	}
+	char *backtick = find_subcmd_begin (cmd);
+	if (backtick) {
+		goto escape_redir;
 	}
 
 	// TODO must honor " and `
@@ -4610,7 +4614,6 @@ repeat:;
 		} else {
 			next_redirect = NULL;
 		}
-		// eprintf ("---> (%s)\n", ptr + 1);
 		// eprintf ("next (%s)\n", next_redirect);
 		const bool appendResult = (ptr[1] == '>');
 		if (*str == '$' && !str[1]) {
@@ -4684,7 +4687,7 @@ repeat:;
 escape_redir:
 next2:
 	/* sub commands */
-	ptr = r_core_cmd_find_subcmd_begin (cmd);
+	ptr = find_subcmd_begin (cmd);
 	if (R_UNLIKELY (ptr)) {
 		bool backquote = false;
 		if (*ptr == '`') {
@@ -4704,7 +4707,7 @@ next2:
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
-		ptr2 = r_core_cmd_find_subcmd_end (ptr + 1, backquote);
+		ptr2 = find_subcmd_end (ptr + 1, backquote);
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
 			goto fail;

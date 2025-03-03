@@ -4439,12 +4439,13 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 static void r_core_debug_kill(RCore *core, const char *input) {
 	if (!input || *input == '?') {
 		if (input && input[1]) {
-			const char *signame, *arg = input + 1;
+			const char *arg = input + 1;
 			int signum = atoi (arg);
 			if (signum > 0) {
-				signame = r_signal_tostring (signum);
-				if (signame)
+				const char *signame = r_signal_tostring (signum);
+				if (signame) {
 					r_cons_println (signame);
+				}
 			} else {
 				signum = r_signal_from_string (arg);
 				if (signum > 0) {
@@ -4456,46 +4457,47 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		}
 	} else if (*input == 'o') {
 		switch (input[1]) {
-			case 0: // "dko" - list signal skip/conts
-				r_debug_signal_list (core->dbg, 1);
-				break;
-			case ' ': // dko SIGNAL
-				if (input[2]) {
-					char *p, *name = strdup (input + 2);
-					int signum = atoi (name);
-					p = strchr (name, ' ');
-					if (p) *p++ = 0; /* got SIGNAL and an action */
-					// Actions:
-					//  - pass
-					//  - trace
-					//  - stop
-					if (signum<1) signum = r_signal_from_string (name);
-					if (signum>0) {
-						if (!p || !p[0]) { // stop (the usual)
-							r_debug_signal_setup (core->dbg, signum, 0);
-						} else if (*p == 's') { // skip
-							r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
-						} else if (*p == 'c') { // cont
-							r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_CONT);
-						} else {
-							R_LOG_ERROR ("Invalid option: %s", p);
-						}
+		case 0: // "dko" - list signal skip/conts
+			r_debug_signal_list (core->dbg, 1);
+			break;
+		case ' ': // dko SIGNAL
+			if (input[2]) {
+				char *name = strdup (input + 2);
+				int signum = atoi (name);
+				char *p = strchr (name, ' ');
+				if (p) *p++ = 0; /* got SIGNAL and an action */
+				// Actions:
+				//  - pass
+				//  - trace
+				//  - stop
+				if (signum<1) signum = r_signal_from_string (name);
+				if (signum>0) {
+					if (!p || !p[0]) { // stop (the usual)
+						r_debug_signal_setup (core->dbg, signum, 0);
+					} else if (*p == 's') { // skip
+						r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
+					} else if (*p == 'c') { // cont
+						r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_CONT);
 					} else {
-						R_LOG_ERROR ("Invalid signal: %s", input + 2);
+						R_LOG_ERROR ("Invalid option: %s", p);
 					}
-					free (name);
-					break;
+				} else {
+					R_LOG_ERROR ("Invalid signal: %s", input + 2);
 				}
-				/* fall through */
-			case '?':
-			default:
-				{
-					r_core_cmd_help (core, help_msg_dko);
-					// TODO #7967 help refactor: move to detail
-					r_cons_println ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
-							"  skip means do not enter into the signal handler\n"
-							"  continue means enter into the signal handler");
-				}
+				free (name);
+				break;
+			}
+			/* fall through */
+		case '?':
+		default:
+			{
+				r_core_cmd_help (core, help_msg_dko);
+				// TODO #7967 help refactor: move to detail
+				r_cons_println ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
+						"  skip means do not enter into the signal handler\n"
+						"  continue means enter into the signal handler");
+			}
+			break;
 		}
 	} else if (*input == 'j') {
 		core->dbg->pj = r_core_pj_new (core);
