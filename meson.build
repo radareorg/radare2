@@ -493,6 +493,7 @@ script_files = [
   'scripts/parseplug.r2.js',
   'scripts/r2sptrace.py',
   'scripts/tags.r2.js',
+  'scripts/symbols.r2.js',
   'scripts/unzip.r2.js',
   'scripts/vsmap.r2.js',
 ]
@@ -516,30 +517,27 @@ sdb_install = custom_target('r2sdb',
   install : true,
   install_dir : get_option('bindir'))
 
-sdb_gen_cmd_cgen = [
-  sdb_exe,
-  '-t',
-  '-C',
-  '-o',
-  '@OUTPUT@',
-  '@INPUT@'
-]
+os_name = host_machine.system()
+lib_extension = '.so'  # Default for Linux
 
-sdb_gen_cmd = [
-  sdb_exe,
-  '@OUTPUT@',
-  '==',
-  '@INPUT@'
-]
+if os_name == 'darwin'
+    lib_extension = '.dylib'
+elif os_name == 'windows'
+    lib_extension = '.dll'
+endif
+
+libsdb_install = custom_target('libr2sdb',
+  input : libsdb_static,
+  output : 'libr2sdb' + lib_extension,
+  command : ['cp', '-f', '@INPUT@', '@OUTPUT@'],
+  install : true,
+  install_dir : get_option('libdir'))
+
+sdb_gen_cmd_cgen = [ sdb_exe, '-t', '-C', '-o', '@OUTPUT@', '@INPUT@' ]
+sdb_gen_cmd = [ sdb_exe, '@OUTPUT@', '==', '@INPUT@' ]
 
 py_cmd = '__import__("os").readlink(r"@0@"))'.format(repo)
-syscall_sdb_gen_cmd = [
-  py3_exe,
-  gen_py,
-  sdb_exe,
-  '@INPUT@',
-  '@OUTPUT@',
-]
+syscall_sdb_gen_cmd = [ py3_exe, gen_py, sdb_exe, '@INPUT@', '@OUTPUT@', ]
 
 # handle spp dependency
 spp_files = [
