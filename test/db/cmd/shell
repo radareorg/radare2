@@ -33,3 +33,67 @@ EXPECT=<<EOF
 1011121314151617
 EOF
 RUN
+
+NAME=single quote
+FILE=-
+CMDS=<<EOF
+woe 1
+'p8 8
+'@16'p8 8
+EOF
+EXPECT=<<EOF
+0001020304050607
+1011121314151617
+EOF
+RUN
+
+NAME=escaped or
+FILE=-
+CMDS=<<EOF
+?v 1 \| 2
+EOF
+EXPECT=<<EOF
+0x3
+EOF
+RUN
+
+NAME=nested escaped or
+FILE=-
+CMDS=<<EOF
+?v 4 \| `?v 1 \| 2`
+EOF
+EXPECT=<<EOF
+0x7
+EOF
+RUN
+
+NAME=nested escaped or with dolarpar
+FILE=-
+CMDS=<<EOF
+?v 4 \| $(?v 1 \| 2)
+EOF
+EXPECT=<<EOF
+0x7
+EOF
+RUN
+
+NAME=nested escaped or with double quote
+FILE=-
+CMDS=<<EOF
+?v 4 \| `""?v 1 | 2`
+EOF
+EXPECT=<<EOF
+0x7
+EOF
+RUN
+
+NAME=nested escaped or with single quote
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+?v 4 \| `'?v 1 | 2`
+EOF
+EXPECT=<<EOF
+0x7
+EOF
+RUN
