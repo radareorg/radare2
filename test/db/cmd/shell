@@ -97,3 +97,14 @@ EXPECT=<<EOF
 0x7
 EOF
 RUN
+
+NAME=nested dolarpar
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+?e $(?v 4 \| $(?v 1 \| 2))
+EOF
+EXPECT=<<EOF
+0x7
+EOF
+RUN
