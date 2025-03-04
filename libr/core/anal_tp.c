@@ -123,8 +123,9 @@ static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *r
 }
 
 static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const char *place) {
+	eprintf ("TYPEOS\n");
 	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
-	REsilTrace *etrace = tps->et;
+	REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
 	if (in_stack) {
 		ut64 sp = r_reg_getv (tps->core->anal->reg, "SP"); // XXX this is slow too and we can cache
 		const ut64 write_addr = etrace_memwrite_addr (etrace, idx); // AAA -1
@@ -322,7 +323,13 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 			tmp++;
 		}
 		*tmp = '\0';
+#if 1
+		/// slowpath
+		const char *spec = r_config_get (tps->core->config, "anal.types.spec");
+		r_strf_var (query, 128, "spec.%s.%s", spec, arr);
+#else
 		r_strf_var (query, 128, "spec.%s.%s", tps->cfg_spec, arr);
+#endif
 		const char *type = sdb_const_get (s, query, 0); // maybe better to return an owned pointer here?
 		if (type) {
 			RVecString_push_back (vec, &type);
@@ -335,7 +342,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 }
 
 static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int size, const char *type) {
-	R_LOG_DEBUG (">>> CALLE ARG\n");
+	R_LOG_DEBUG (">>> CALLE ARG");
 	RAnalFunction *fcn = r_anal_get_function_byname (anal, callee_name);
 	if (!fcn) {
 		return;
@@ -382,14 +389,13 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
  */
 static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
-	R_RETURN_IF_FAIL (tps && fcn_name);
 	RAnal *anal = tps->core->anal;
-	REsilTrace *etrace = tps->et;
+	REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (etrace) -1;
 	const bool verbose = r_config_get_b (tps->core->config, "anal.types.verbose"); // XXX
 	bool stack_rev = false, in_stack = false, format = false;
-	DD eprintf ("type_match %s %"PFMT64x" %"PFMT64x" %s %d\n", fcn_name, addr, baddr, cc, prev_idx);
+	R_LOG_DEBUG ("type_match %s %"PFMT64x" %"PFMT64x" %s %d", fcn_name, addr, baddr, cc, prev_idx);
 
 	if (!fcn_name || !cc) {
 		return;
@@ -458,11 +464,13 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		bool cmt_set = false;
 		bool res = false;
 		// Backtrace instruction from source sink to prev source sink
+			eprintf ("ii %d %d\n", j, prev_idx);
 		for (j = idx; j >= prev_idx; j--) {
 			// r_strf_var (k, 32, "%d.addr", j);
 			// ut64 instr_addr = sdb_num_get (trace, k, 0);
 			ut64 instr_addr = etrace_addrof (etrace, j);
 			R_LOG_DEBUG ("0x%08"PFMT64x" back traceing %d", instr_addr, j);
+			eprintf ("MOSTO\n");
 			if (instr_addr < baddr) {
 				break;
 			}
@@ -576,25 +584,27 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static TPState *tps_init(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, false);
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, NULL);
 	TPState *tps = R_NEW0 (TPState);
-	tps->cfg_spec = strdup (r_config_get (core->config, "anal.types.spec"));
-	tps->cfg_breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
-	tps->cfg_chk_constraint = r_config_get_b (core->config, "anal.types.constraint");
-	tps->hc = r_config_hold_new (core->config);
-	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
-	r_config_set_b (core->config, "esil.romem", true);
-	r_config_set_b (core->config, "dbg.trace", true);
-	r_config_set_b (core->config, "esil.nonull", true);
-	r_config_set_i (core->config, "dbg.follow", 0);
+	RConfig *cfg = core->config;
 	tps->core = core;
-	tps->_et = core->anal->esil->trace;
 	tps->_dt = core->dbg->trace;
+	tps->_et = core->anal->esil->trace;
+	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
+	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
+	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
+	tps->hc = r_config_hold_new (cfg);
+	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
+	r_config_set_b (cfg, "esil.romem", true);
+	r_config_set_b (cfg, "dbg.trace", true);
+	r_config_set_b (cfg, "esil.nonull", true);
+	r_config_set_i (cfg, "dbg.follow", 0);
 	tps->et = r_esil_trace_new (core->anal->esil);
 	tps->dt = r_debug_trace_new ();
 	core->anal->esil->trace = tps->et;
 	core->dbg->trace = tps->dt;
-	if (!r_reg_getv (core->anal->reg, "BP") && !r_reg_getv (core->anal->reg, "SP")) {
+	RReg *reg = core->anal->reg;
+	if (!r_reg_getv (reg, "BP") && !r_reg_getv (reg, "SP")) {
 		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
 		return NULL;
 	}
@@ -632,14 +642,14 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	// TODO: maybe move into tps
-	RDebugTrace *dtrace = tps->dt; // core->dbg->trace;
+	RDebugTrace *dtrace = core->dbg->trace; // tps->dt; // core->dbg->trace;
 	HtPPOptions opt = dtrace->ht->opt;
 	ht_pp_free (dtrace->ht);
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	tps->et->cur_idx = 0;
-	// anal->esil->trace->cur_idx = 0;
+	// tps->et->cur_idx = 0;
+	anal->esil->trace->cur_idx = 0;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
@@ -671,7 +681,8 @@ repeat:
 	int i, j;
 	r_config_set_b (core->config, "dbg.trace.eval", false);
 	for (j = 0; j < bblist_size; j++) {
-		REsilTrace *etrace = tps->et; // core->anal->esil->trace;
+		// REsilTrace *etrace = tps->et; // core->anal->esil->trace;
+		REsilTrace *etrace = core->anal->esil->trace;
 		{
 			const ut64 addr = *RVecUT64_at (&bblist, j);
 			DD eprintf ("BB 0x%"PFMT64x"\n", addr);
@@ -787,7 +798,7 @@ repeat:
 						userfnc = true;
 					}
 					const char* Cc = r_anal_cc_func (anal, fcn_name);
-					DD eprintf ("CC can %s %s\n", Cc, fcn_name);
+					R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
 					if (Cc && r_anal_cc_exist (anal, Cc)) {
 						char *cc = strdup (Cc);
 						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
@@ -808,7 +819,8 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
-						cur_idx = tps->et->cur_idx - 2;
+						// cur_idx = tps->et->cur_idx - 2;
+						cur_idx = tps->core->anal->esil->trace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
 						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
@@ -829,7 +841,8 @@ repeat:
 				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
-				cur_idx = tps->et->cur_idx - 1;
+				// cur_idx = tps->et->cur_idx - 1;
+				cur_idx = tps->core->anal->esil->trace->cur_idx - 1; // et->cur_idx - 2;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				DD eprintf ("regwrite2 %d\n", cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
