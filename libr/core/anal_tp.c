@@ -123,7 +123,6 @@ static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *r
 }
 
 static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const char *place) {
-	eprintf ("TYPEOS\n");
 	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
 	REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
 	if (in_stack) {
@@ -470,7 +469,6 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			// ut64 instr_addr = sdb_num_get (trace, k, 0);
 			ut64 instr_addr = etrace_addrof (etrace, j);
 			R_LOG_DEBUG ("0x%08"PFMT64x" back traceing %d", instr_addr, j);
-			eprintf ("MOSTO\n");
 			if (instr_addr < baddr) {
 				break;
 			}
@@ -583,34 +581,6 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
-static TPState *tps_init(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, NULL);
-	TPState *tps = R_NEW0 (TPState);
-	RConfig *cfg = core->config;
-	tps->core = core;
-	tps->_dt = core->dbg->trace;
-	tps->_et = core->anal->esil->trace;
-	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
-	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
-	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
-	tps->hc = r_config_hold_new (cfg);
-	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
-	r_config_set_b (cfg, "esil.romem", true);
-	r_config_set_b (cfg, "dbg.trace", true);
-	r_config_set_b (cfg, "esil.nonull", true);
-	r_config_set_i (cfg, "dbg.follow", 0);
-	tps->et = r_esil_trace_new (core->anal->esil);
-	tps->dt = r_debug_trace_new ();
-	core->anal->esil->trace = tps->et;
-	core->dbg->trace = tps->dt;
-	RReg *reg = core->anal->reg;
-	if (!r_reg_getv (reg, "BP") && !r_reg_getv (reg, "SP")) {
-		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
-		return NULL;
-	}
-	return tps;
-}
-
 static void tps_fini(TPState *tps) {
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
@@ -620,6 +590,35 @@ static void tps_fini(TPState *tps) {
 	tps->core->anal->esil->trace = tps->_et;
 	tps->core->dbg->trace = tps->_dt;
 	free (tps);
+}
+
+static TPState *tps_init(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, NULL);
+	TPState *tps = R_NEW0 (TPState);
+	RConfig *cfg = core->config;
+	tps->core = core;
+	tps->hc = r_config_hold_new (cfg);
+	tps->_dt = core->dbg->trace;
+	tps->_et = core->anal->esil->trace;
+	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
+	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
+	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
+	tps->et = r_esil_trace_new (core->anal->esil);
+	tps->dt = r_debug_trace_new ();
+	core->anal->esil->trace = tps->et;
+	core->dbg->trace = tps->dt;
+	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
+	r_config_set_b (cfg, "esil.romem", true);
+	r_config_set_b (cfg, "dbg.trace", true);
+	r_config_set_b (cfg, "esil.nonull", true);
+	r_config_set_i (cfg, "dbg.follow", 0);
+	RReg *reg = core->anal->reg;
+	if (!r_reg_getv (reg, "BP") && !r_reg_getv (reg, "SP")) {
+		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
+		tps_fini (tps);
+		return NULL;
+	}
+	return tps;
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
@@ -802,7 +801,8 @@ repeat:
 					if (Cc && r_anal_cc_exist (anal, Cc)) {
 						char *cc = strdup (Cc);
 						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
-						prev_idx = tps->et->cur_idx;
+						// prev_idx = tps->et->cur_idx;
+						prev_idx = tps->core->anal->esil->trace->cur_idx;
 						R_FREE (ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
 						if (rt) {
@@ -842,7 +842,7 @@ repeat:
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
 				// cur_idx = tps->et->cur_idx - 1;
-				cur_idx = tps->core->anal->esil->trace->cur_idx - 1; // et->cur_idx - 2;
+				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				DD eprintf ("regwrite2 %d\n", cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
