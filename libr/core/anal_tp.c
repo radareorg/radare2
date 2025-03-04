@@ -14,6 +14,8 @@ typedef struct {
 	RCore *core;
 	REsilTrace *et;
 	RDebugTrace *dt;
+	REsilTrace *_et;
+	RDebugTrace *_dt;
 	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
@@ -582,7 +584,7 @@ static TPState *tps_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, false);
 	if (!r_reg_getv (core->anal->reg, "BP") && !r_reg_getv (core->anal->reg, "SP")) {
 		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
-		return NULL;;
+		return NULL;
 	}
 	TPState *tps = R_NEW0 (TPState);
 	tps->cfg_spec = strdup (r_config_get (core->config, "anal.types.spec"));
@@ -595,6 +597,8 @@ static TPState *tps_init(RCore *core) {
 	r_config_set_b (core->config, "esil.nonull", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
 	tps->core = core;
+	tps->_et = core->anal->esil->trace;
+	tps->_dt = core->dbg->trace;
 	tps->et = r_esil_trace_new (core->anal->esil);
 	tps->dt = r_debug_trace_new ();
 	return tps;
@@ -606,6 +610,8 @@ static void tps_fini(TPState *tps) {
 	r_config_hold_free (tps->hc);
 	r_debug_trace_free (tps->dt);
 	r_esil_trace_free (tps->et);
+	tps->core->anal->esil->trace = tps->_et;
+	tps->core->dbg->trace = tps->_dt;
 	free (tps);
 }
 
