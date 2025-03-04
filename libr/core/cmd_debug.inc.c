@@ -5645,6 +5645,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
+#if 0
 		case 'e': // "dte"
 			if (!core->anal->esil) {
 				int stacksize = r_config_get_i (core->config, "esil.stack.depth");
@@ -5730,6 +5731,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			}
 			break;
+#endif
 		case 's': // "dts"
 			switch (input[2]) {
 			case '+': // "dts+"
