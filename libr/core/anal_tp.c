@@ -13,9 +13,9 @@ R_VEC_TYPE (RVecBuf, ut8);
 typedef struct {
 	RCore *core;
 	REsilTrace *et;
-	RDebugTrace *dt;
+//	RDebugTrace *dt;
 	REsilTrace *_et;
-	RDebugTrace *_dt;
+//	RDebugTrace *_dt;
 	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
@@ -585,10 +585,10 @@ static void tps_fini(TPState *tps) {
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
-	r_debug_trace_free (tps->dt);
+	// r_debug_trace_free (tps->dt);
 	r_esil_trace_free (tps->et);
 	tps->core->anal->esil->trace = tps->_et;
-	tps->core->dbg->trace = tps->_dt;
+	// tps->core->dbg->trace = tps->_dt;
 	free (tps);
 }
 
@@ -598,18 +598,18 @@ static TPState *tps_init(RCore *core) {
 	RConfig *cfg = core->config;
 	tps->core = core;
 	tps->hc = r_config_hold_new (cfg);
-	tps->_dt = core->dbg->trace;
+	// tps->_dt = core->dbg->trace;
 	tps->_et = core->anal->esil->trace;
 	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
 	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
 	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
 	tps->et = r_esil_trace_new (core->anal->esil);
-	tps->dt = r_debug_trace_new ();
+	// tps->dt = r_debug_trace_new ();
 	core->anal->esil->trace = tps->et;
-	core->dbg->trace = tps->dt;
+	// core->dbg->trace = tps->dt;
 	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (cfg, "esil.romem", true);
-	r_config_set_b (cfg, "dbg.trace", true);
+	r_config_set_b (cfg, "dbg.trace", true); // core->dbg->trace->enabled = node->i_value;
 	r_config_set_b (cfg, "esil.nonull", true);
 	r_config_set_i (cfg, "dbg.follow", 0);
 	RReg *reg = core->anal->reg;
