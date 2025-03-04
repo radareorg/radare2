@@ -464,7 +464,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		bool cmt_set = false;
 		bool res = false;
 		// Backtrace instruction from source sink to prev source sink
-			eprintf ("ii %d %d\n", j, prev_idx);
+			///// eprintf ("ii %d %d\n", j, prev_idx);
 		for (j = idx; j >= prev_idx; j--) {
 			// r_strf_var (k, 32, "%d.addr", j);
 			// ut64 instr_addr = sdb_num_get (trace, k, 0);
