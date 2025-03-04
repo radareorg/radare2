@@ -607,9 +607,8 @@ static TPState *tps_init(RCore *core) {
 	// tps->dt = r_debug_trace_new ();
 	core->anal->esil->trace = tps->et;
 	// core->dbg->trace = tps->dt;
-	r_config_hold (tps->hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
+	r_config_hold (tps->hc, "esil.romem", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (cfg, "esil.romem", true);
-	r_config_set_b (cfg, "dbg.trace", true); // core->dbg->trace->enabled = node->i_value;
 	r_config_set_b (cfg, "esil.nonull", true);
 	r_config_set_i (cfg, "dbg.follow", 0);
 	RReg *reg = core->anal->reg;
@@ -637,7 +636,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int cur_idx, prev_idx = 0;
 	TPState *tps = tps_init (core);
 	if (!tps) {
-		tps_fini (tps);
 		return;
 	}
 	// TODO: maybe move into tps

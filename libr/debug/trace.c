@@ -191,7 +191,6 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	R_RETURN_IF_FAIL (dbg && dbg->trace);
 	if (dbg->trace->enabled) {
-		r_esil_trace_op (dbg->anal->esil, op);
 		r_debug_trace_add (dbg, op->addr, op->size);
 	}
 }

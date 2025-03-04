@@ -4946,6 +4946,12 @@ static int cmd_debug_step(RCore *core, const char *input) {
 				core->break_loop = true;
 			}
 		} else {
+			if (core->dbg->anal->esil->trace) {
+				ut64 pc = r_debug_reg_get (core->dbg, "PC");
+				ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
+				RAnalOp *op = r_core_anal_op (core, pc, mask);
+				r_esil_trace_op (core->dbg->anal->esil, op);
+			}
 			r_core_cmdf (core, "%daes", R_MAX (1, times));
 		}
 		break;
