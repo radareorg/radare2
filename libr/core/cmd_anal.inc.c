@@ -7035,6 +7035,14 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
+#if 1
+			if (core->dbg->anal->esil->trace) {
+			//	ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			//	ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
+			//	RAnalOp *op = r_core_anal_op (core, pc, mask);
+				r_esil_trace_op (core->dbg->anal->esil, &op);
+			}
+#endif
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
@@ -7098,6 +7106,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				core->dbg->reg = core->anal->reg;
 				r_debug_trace_op (core->dbg, &op);
 				core->dbg->reg = reg;
+			} else if (core->anal->esil->trace) {
+				// required for type propagation analysis
+			//	r_esil_trace_op (core->anal->esil, &op);
 			}
 			if (wanteval && R_STR_ISNOTEMPTY (e)) {
 				R_LOG_DEBUG ("esil_parse: %s", e);
@@ -7132,7 +7143,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					isNextFall = true;
 				}
 			}
-			// only support 1 slot for now
+			// only support 1 delay slot for now
 			if (op.delay && !isNextFall) {
 				ut8 code2[32];
 				// ut64 naddr = addr + op.size;
@@ -7177,7 +7188,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (core->anal->config->codealign > 0) {
 			pc -= (pc % core->anal->config->codealign);
 			r_reg_setv (core->anal->reg, "PC", pc);
-			r_reg_setv (core->dbg->reg, "PC", pc);
+			if (core->anal->reg != core->dbg->reg) {
+				r_reg_setv (core->dbg->reg, "PC", pc);
+			}
 		}
 		st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 		if (follow > 0) {
@@ -7197,12 +7210,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			continue;
 		}
-#if 1
 		if (esil->trap) {
 			R_LOG_DEBUG ("TRAP");
 			return_tail (0);
 		}
-#endif
 		if (until_expr) {
 			// eprintf ("CHK %s\n", until_expr);
 			if (r_esil_condition (esil, until_expr)) {
@@ -8586,18 +8597,19 @@ static void cmd_aes(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aes);
 		break;
 	case 'l': // "aesl"
-	{
-		ut64 pc = r_debug_reg_get (core->dbg, "PC");
-		RAnalOp *op = r_core_anal_op (core, pc, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-		if (!op) {
-			break;
+		{
+			ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			RAnalOp *op = r_core_anal_op (core, pc, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+			if (!op) {
+				break;
+			}
+			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+			r_debug_reg_set (core->dbg, "PC", pc + op->size);
+			r_esil_set_pc (esil, pc + op->size);
+			r_core_cmd0 (core, ".ar*");
+			r_anal_op_free (op);
 		}
-		r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
-		r_debug_reg_set (core->dbg, "PC", pc + op->size);
-		r_esil_set_pc (esil, pc + op->size);
-		r_core_cmd0 (core, ".ar*");
-		r_anal_op_free (op);
-	} break;
+		break;
 	case 'b': // "aesb"
 		if (!r_core_esil_step_back (core)) {
 			R_LOG_ERROR ("Cannot step back");
