@@ -43,9 +43,11 @@ ifeq ($(USE_SYSLZ4),1)
 CFLAGS+=${LZ4_CFLAGS}
 PCLIBS+=@LZ4_LDFLAGS@
 LDFLAGS+=${LZ4_LDFLAGS}
-else
+else ifeq ($(USE_SMALLZ4),1)
 CFLAGS+=-DUSE_SMALLZ4
 OBJS+=$(SHLR)/smallz4/smallz4cat.o
+else
+CFLAGS+=-DUSE_RLZ4
 endif
 
 OBJS+=big_gmp.o

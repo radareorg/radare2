@@ -18,7 +18,9 @@
 
 #define LOAD_16(p) *(ut16*)&g_buf[(p)]
 #define LOAD_32(p) *(ut32*)&g_buf[(p)]
+#define LOAD_32_FROM(p, x)     *(ut32 *)&x[(p)]
 #define COPY_32(d, s) *(ut32*)&g_buf[(d)] = LOAD_32((s))
+#define COPY_32_TO(d, s, x, y) *(ut32 *)&x[(d)] = LOAD_32_FROM (s, y)
 
 #define HASH_BITS 12
 #define HASH_SIZE (1 << HASH_BITS)
@@ -140,6 +142,77 @@ static int lz4_compress(ut8 *g_buf, const int uc_length, int max_chain) {
 		op += run;
 	}
 	return op - BLOCK_SIZE;
+}
+
+R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *obuf, int osz) {
+	int i, s, len, run, p = 0;
+	int ip = 0;
+	int ip_end = ip + comp_len;
+
+	for (;;) {
+		const int token = g_buf[ip++];
+		if (token >= 16) {
+			run = token >> 4;
+			if (run == 15) {
+				for (;;) {
+					const int c = g_buf[ip++];
+					run += c;
+					if (c != 255) {
+						break;
+					}
+				}
+			}
+			if ((p + run) > osz) {
+				return -1;
+			}
+
+			COPY_32_TO (p, ip, obuf, g_buf);
+			COPY_32_TO (p + 4, ip + 4, obuf, g_buf);
+			for (i = 8; i < run; i += 8) {
+				COPY_32_TO (p + i, ip + i, obuf, g_buf);
+				COPY_32_TO (p + 4 + i, ip + 4 + i, obuf, g_buf);
+			}
+			p += run;
+			ip += run;
+			if (ip >= ip_end) {
+				break;
+			}
+		}
+
+		s = p - LOAD_16 (ip);
+		ip += 2;
+		if (s < 0) {
+			return -1;
+		}
+		len = (token & 15) + MIN_MATCH;
+		if (len == (15 + MIN_MATCH)) {
+			for (;;) {
+				const int c = g_buf[ip++];
+				len += c;
+				if (c != 255) {
+					break;
+				}
+			}
+		}
+		if ((p + len) > osz) {
+			return -1;
+		}
+		if ((p - s) >= 4) {
+			COPY_32_TO (p, s, obuf, obuf);
+			COPY_32_TO (p + 4, s + 4, obuf, obuf);
+			for (i = 8; i < len; i += 8) {
+				COPY_32_TO (p + i, s + i, obuf, obuf);
+				COPY_32_TO (p + 4 + i, s + 4 + i, obuf, obuf);
+			}
+			p += len;
+		} else {
+			while (len-- != 0) {
+				obuf[p++] = obuf[s++];
+			}
+		}
+	}
+	*pp = p;
+	return 0;
 }
 
 static int lz4_decompress(ut8 *g_buf, const int comp_len, int *pp) {
