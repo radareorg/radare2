@@ -2429,7 +2429,7 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 
 static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
-	r_cons_thready ();
+	// r_cons_thready ();
 	while (r_th_is_running (th) && !th->breaked) {
 		r_th_sem_wait (core->chan->sem); // busy because stack is empty
 		if (!r_th_is_running (th) || th->breaked) {
@@ -2438,9 +2438,9 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 		RThreadChannelMessage *cm = r_th_channel_read (core->chan);
 		if (!cm) {
 			// eprintf ("thchan_handler no message\n");
-		//	r_th_sem_post (cm->sem);
-		//	r_th_channel_write (core->chan, NULL);
-		// r_th_lock_leave (cm->lock);
+			// r_th_sem_post (cm->sem);
+			// r_th_channel_write (core->chan, NULL);
+			// r_th_lock_leave (cm->lock);
 			continue;
 		}
 		char *res = r_core_cmd_str (core, (const char *)cm->msg);

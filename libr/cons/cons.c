@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2024 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2025 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -10,7 +10,8 @@ R_LIB_VERSION (r_cons);
 
 static R_TH_LOCAL int oldraw = -1;
 static R_TH_LOCAL RConsContext r_cons_context_default = {0};
-static R_TH_LOCAL RCons g_cons_instance = {0};
+static RCons g_cons_instance = {0};
+static R_TH_LOCAL RCons g_cons_instance_tls = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
@@ -2226,6 +2227,8 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
+	// use tls instance
+	r_cons_instance = &g_cons_instance_tls;
 	if (r_cons_instance) {
 		R_CRITICAL_ENTER (I);
 	}
