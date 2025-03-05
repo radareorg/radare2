@@ -236,7 +236,7 @@ static const RCoreHelpMessage help_msg_dot = {
 static const RCoreHelpMessage help_msg_equal = {
 	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
 	"\nremote commands:", "", "",
-	"=", "", "list all open connections",
+	"=", "[*j]", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
 	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
 	"=!", " cmd", "run command via r_io_system",
@@ -1131,7 +1131,9 @@ static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0': // "="
-		r_core_rtr_list (core);
+	case 'j': // "=j"
+	case '*': // "=*"
+		r_core_rtr_list (core, *input);
 		break;
 	case 't': // "=t" // tcp
 		cmd_tcp_server (core, r_str_trim_head_ro (input + 1));
@@ -1166,9 +1168,6 @@ static int cmd_rap(void *data, const char *input) {
 			r_core_return_invalid_command (core, "=l", input[1]);
 			break;
 		}
-		break;
-	case 'j': // "=j"
-		R_LOG_ERROR ("TODO: list connections in json");
 		break;
 	case '!': // "=!"
 		if (input[1] == 'q') {
