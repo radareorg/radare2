@@ -3,7 +3,7 @@
 radiff2 - binary diffing utility
 .SH SYNOPSIS
 .B radiff2
-[abcCdeGhijnropqsSxuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %] file file
+[abcCdeGhijnropqsSxXuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %] file file
 
 .SH DESCRIPTION
 radiff2 is a tool from the radare2 suite designed for binary diffing code and data.
@@ -95,6 +95,9 @@ Be verbose (current only for -s).
 .TP
 .B -x
 Show two-column hexdump diffing.
+.TP
+.B -X
+Use xpatch format for the diffing output.
 .TP
 
 .SH "GRAPH OUTPUT FORMATS (-m [mode])"
