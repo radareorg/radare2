@@ -181,7 +181,6 @@ TODO:
 
 // XXX: this needs to be moved to use the standard shell like in !=! and support visual+panels
 static void __rtr_shell(RCore *core, int nth) {
-	char *proto = "http";
 	char *host = "";
 	char *port= "";
 	char *file= "";
@@ -189,6 +188,21 @@ static void __rtr_shell(RCore *core, int nth) {
 	int len;
 	const char* res;
 	RSocket *s = NULL;
+	if (nth < 0 || nth > RTR_MAX_HOSTS) {
+		R_LOG_ERROR ("Invalid fd");
+		return;
+	}
+	if (!rtr_host[nth].fd || rtr_host[nth].fd->fd < 1) {
+		R_LOG_ERROR ("Invalid connection");
+		return;
+	}
+	const char *proto = rtr_proto_tostring (rtr_host[nth].proto);
+	if (!proto) {
+		R_LOG_ERROR ("Unknown protocol");
+		return;
+	}
+	host = strdup (rtr_host[nth].host);
+	port = r_str_newf ("%d", rtr_host[nth].port);
 
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		eprintf ("Set scr.interfactive to use the remote r2 shell.\n");
@@ -196,13 +210,12 @@ static void __rtr_shell(RCore *core, int nth) {
 	}
 
 	TextLog T = { host, port, file };
-	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ",
-			proto, host, port, file);
+	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ", proto, host, port, file);
 	snprintf (prompt2, sizeof (prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
 		r_line_set_prompt (prompt);
 		res = r_line_readline ();
-		if (!res || !*res) {
+		if (R_STR_ISEMPTY (res)) {
 			break;
 		}
 		if (*res == 'q') {
@@ -249,5 +262,7 @@ static void __rtr_shell(RCore *core, int nth) {
 		}
 	}
 	r_socket_free (s);
+	free (host);
+	free (port);
 }
 

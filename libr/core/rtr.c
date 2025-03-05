@@ -962,8 +962,8 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		R_LOG_ERROR ("Not supported for your platform");
 #endif
 	} else {
-		eprintf ("(%s)\n", input);
-		eprintf ("Event types: errmsg, stdin, stdout, stderr, #fdn\n");
+		R_LOG_INFO ("Input (%s)", input);
+		R_LOG_INFO ("Event types: errmsg, stdin, stdout, stderr, #fdn");
 	}
 }
 
