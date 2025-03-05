@@ -5734,6 +5734,10 @@ static bool get_next_i(IterCtx *ctx, size_t *next_i) {
 static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 end, size_t i, ut64 *buf_addr, size_t buf_i) {
 	const size_t maxopsize = 64; // just in case
 	size_t maxsize = R_MIN (buf_size, end - i + maxopsize);
+	if (start >= end) {
+		// fix division by zero
+		return 0;
+	}
 	if (buf_i + 128 >= maxsize || i == 0) {
 		if (r_config_get_b (core->config, "scr.interactive")) { // or maybe scr.demo?
 			const int pc = i * 100 / (end - start);
@@ -5838,7 +5842,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 	iend = end - start;
-	if (iend < 0) {
+	if (iend < 1) {
 		return;
 	}
 	if (iend > r_config_get_i (core->config, "emu.maxsize")) {
