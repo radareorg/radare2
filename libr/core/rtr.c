@@ -187,7 +187,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 #endif
 	core->http_up = false;
 	if (((size_t)u) > 0xff) {
-		const char *port = listenport? listenport: r_config_get (core->config, "http.port");
+		char *port = strdup (listenport? listenport: r_config_get (core->config, "http.port"));
 		char *sport = r_str_startswith (port, "0x")
 			? r_str_newf ("%d", (int)r_num_get (NULL, port))
 			: strdup (port);
@@ -195,6 +195,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 		(void)r_socket_connect (sock, "127.0.0.1", sport, R_SOCKET_PROTO_TCP, timeout);
 		free (sport);
 		r_socket_free (sock);
+		free (port);
 	}
 	r_socket_free (s);
 	s = NULL;
