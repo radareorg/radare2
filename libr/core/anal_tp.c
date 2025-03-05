@@ -322,13 +322,7 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 			tmp++;
 		}
 		*tmp = '\0';
-#if 1
-		/// slowpath
-		const char *spec = r_config_get (tps->core->config, "anal.types.spec");
-		r_strf_var (query, 128, "spec.%s.%s", spec, arr);
-#else
 		r_strf_var (query, 128, "spec.%s.%s", tps->cfg_spec, arr);
-#endif
 		const char *type = sdb_const_get (s, query, 0); // maybe better to return an owned pointer here?
 		if (type) {
 			RVecString_push_back (vec, &type);
@@ -582,13 +576,12 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static void tps_fini(TPState *tps) {
+	R_RETURN_IF_FAIL (tps);
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
-	// r_debug_trace_free (tps->dt);
 	r_esil_trace_free (tps->et);
 	tps->core->anal->esil->trace = tps->_et;
-	// tps->core->dbg->trace = tps->_dt;
 	free (tps);
 }
 
@@ -645,8 +638,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	// tps->et->cur_idx = 0;
-	anal->esil->trace->cur_idx = 0;
+	tps->et->cur_idx = 0;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
