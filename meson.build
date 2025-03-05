@@ -585,7 +585,6 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
-subdir('shlr/smallz4')
 subdir('libr/util')
 subdir('libr/socket')
 subdir('libr/crypto')
