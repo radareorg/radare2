@@ -239,6 +239,17 @@ static void activateDieTime(RCore *core) {
 	}
 }
 
+static const char *rtr_proto_tostring(int proto) {
+	switch (proto) {
+	case RTR_PROTOCOL_HTTP: return "http"; break;
+	case RTR_PROTOCOL_TCP: return "tcp"; break;
+	case RTR_PROTOCOL_UDP: return "udp"; break;
+	case RTR_PROTOCOL_RAP: return "rap"; break;
+	case RTR_PROTOCOL_UNIX: return "unix"; break;
+	default: return NULL;
+	}
+}
+
 #include "rtr_http.inc.c"
 #include "rtr_shell.inc.c"
 
@@ -698,23 +709,41 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	free (str);
 }
 
-R_API void r_core_rtr_list(RCore *core) {
+R_API void r_core_rtr_list(RCore *core, int mode) {
 	int i;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	for (i = 0; i < RTR_MAX_HOSTS; i++) {
 		if (!rtr_host[i].fd) {
 			continue;
 		}
-		const char *proto = "rap";
-		switch (rtr_host[i].proto) {
-		case RTR_PROTOCOL_HTTP: proto = "http"; break;
-		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
-		case RTR_PROTOCOL_UDP: proto = "udp"; break;
-		case RTR_PROTOCOL_RAP: proto = "rap"; break;
-		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
+		const char *proto = rtr_proto_tostring (rtr_host[i].proto);
+		if (pj) {
+			pj_o (pj);
+			pj_ks (pj, "protocol", proto);
+			pj_kn (pj, "fd", rtr_host[i].fd->fd);
+			pj_ks (pj, "host", rtr_host[i].host);
+			pj_kn (pj, "port", rtr_host[i].port);
+			pj_ks (pj, "file", rtr_host[i].file);
+			pj_end (pj);
+		} else if (mode == '*') {
+			r_cons_printf ("# %d fd:%i %s://%s:%i/%s\n",
+				i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
+				rtr_host[i].port, rtr_host[i].file);
+		} else {
+			r_cons_printf ("%d fd:%i %s://%s:%i/%s\n",
+				i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
+				rtr_host[i].port, rtr_host[i].file);
 		}
-		r_cons_printf ("%d fd:%i %s://%s:%i/%s\n",
-			i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
-			rtr_host[i].port, rtr_host[i].file);
+	}
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		free (s);
 	}
 }
 
@@ -910,7 +939,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		// TODO: support udp, tcp, rap, ...
 #if R2__UNIX__ && !__wasi__
 		char *f = r_file_temp ("errmsg");
-		r_cons_printf ("%s\n", f);
+		r_cons_println (f);
 		r_file_rm (f);
 		errmsg_tmpfile = strdup (f);
 		int e = mkfifo (f, 0644);

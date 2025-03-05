@@ -886,7 +886,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port);
 R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *port, const char *cmd);
 R_API void r_core_rtr_help(RCore *core);
 R_API void r_core_rtr_pushout(RCore *core, const char *input);
-R_API void r_core_rtr_list(RCore *core);
+R_API void r_core_rtr_list(RCore *core, int mode);
 R_API void r_core_rtr_add(RCore *core, const char *input);
 R_API void r_core_rtr_remove(RCore *core, const char *input);
 R_API void r_core_rtr_session(RCore *core, const char *input);
