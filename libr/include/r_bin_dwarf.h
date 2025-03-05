@@ -558,6 +558,37 @@ extern "C" {
 #define DW_LANG_lo_user                 0x8000
 #define DW_LANG_hi_user                 0xffff
 
+
+#define DW_LANG_Kotlin 0x0026
+#define DW_LANG_Zig 0x0027
+#define DW_LANG_Crystal 0x0028
+#define DW_LANG_C_plus_plus_17 0x002a
+#define DW_LANG_C_plus_plus_20 0x002b
+#define DW_LANG_C17 0x002c
+#define DW_LANG_Fortran18 0x002d
+#define DW_LANG_Ada2005 0x002e
+#define DW_LANG_Ada2012 0x002f
+#define DW_LANG_HIP 0x0030
+#define DW_LANG_Assembly 0x0031
+#define DW_LANG_C_sharp 0x0032
+#define DW_LANG_Mojo 0x0033
+#define DW_LANG_GLSL 0x0034
+#define DW_LANG_GLSL_ES 0x0035
+#define DW_LANG_HLSL 0x0036
+#define DW_LANG_OpenCL_CPP 0x0037
+#define DW_LANG_CPP_for_OpenCL 0x0038
+#define DW_LANG_SYCL 0x0039
+#define DW_LANG_C_plus_plus_23 0x003a
+#define DW_LANG_Odin 0x003b
+#define DW_LANG_P4 0x003c
+#define DW_LANG_Metal 0x003d
+#define DW_LANG_C23 0x003e
+#define DW_LANG_Fortran23 0x003f
+#define DW_LANG_Ruby 0x0040
+#define DW_LANG_Move 0x0041
+#define DW_LANG_Hylo 0x0042
+#define DW_LANG_V 0x0043
+
 #define DW_ID_case_sensitive            0x00
 #define DW_ID_up_case                   0x01
 #define DW_ID_down_case                 0x02
