@@ -12,10 +12,9 @@ R_VEC_TYPE (RVecBuf, ut8);
 
 typedef struct {
 	RCore *core;
+	RAnal *anal;
 	REsilTrace *et;
-//	RDebugTrace *dt;
 	REsilTrace *_et;
-//	RDebugTrace *_dt;
 	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
@@ -670,8 +669,7 @@ repeat:
 	int i, j;
 	r_config_set_b (core->config, "dbg.trace.eval", false);
 	for (j = 0; j < bblist_size; j++) {
-		// REsilTrace *etrace = tps->et; // core->anal->esil->trace;
-		REsilTrace *etrace = core->anal->esil->trace;
+		REsilTrace *etrace = tps->et;
 		{
 			const ut64 addr = *RVecUT64_at (&bblist, j);
 			DD eprintf ("BB 0x%"PFMT64x"\n", addr);
