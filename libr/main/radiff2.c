@@ -24,7 +24,8 @@ enum {
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS,
-	MODE_COLSII
+	MODE_COLSII,
+	MODE_XPATCH,
 };
 
 enum {
@@ -134,15 +135,32 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 
 static void readstr(char *s, int sz, const ut8 *buf, int len) {
 	*s = 0;
-	int last = R_MIN (len, sz);
-	if (last < 1) {
-		return;
+	const int last = R_MIN (len, sz);
+	if (last > 0) {
+		s[sz - 1] = 0;
+		while (*s == '\n') {
+			s++;
+		}
+		r_str_ncpy (s, (char *) buf, last);
 	}
-	s[sz - 1] = 0;
-	while (*s == '\n') {
-		s++;
+}
+
+static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
+	int i;
+	RadiffOptions *ro = (RadiffOptions*)user;
+	r_cons_printf ("@@ u8,u8,%%2x -0x%08"PFMT64x",%d, +0x%08"PFMT64x",%d @@\n",
+			op->a_off + ro->baddr, op->a_len,
+			op->b_off + ro->baddr, op->b_len);
+	r_cons_printf ("- ");
+	for (i = 0; i < op->a_len; i++) {
+		r_cons_printf ("%02x", op->a_buf[i]);
 	}
-	r_str_ncpy (s, (char *) buf, last);
+	r_cons_printf ("\n+ ");
+	for (i = 0; i < op->b_len; i++) {
+		r_cons_printf ("%02x", op->b_buf[i]);
+	}
+	r_cons_newline ();
+	return 0;
 }
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
@@ -471,6 +489,7 @@ static int show_help(int v) {
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 			"  -T         analyze files in threads (EXPERIMENTAL, 30%% faster and crashy)\n"
 			"  -x         show two column hexdump diffing\n"
+			"  -X         use xpatch format for the diffing output\n"
 			"  -u         unified output (---+++)\n"
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
@@ -1309,7 +1328,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jm:nOprst:TxuUqvV");
+	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jm:nOprst:TXxuUqvV");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1409,6 +1428,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'x':
 			ro.mode = MODE_COLS;
+			break;
+		case 'X':
+			ro.mode = MODE_XPATCH;
 			break;
 		case 'u':
 			ro.diffmode = 'u';
@@ -1644,6 +1666,15 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	(void)r_cons_new ();
 
 	switch (ro.mode) {
+	case MODE_XPATCH:
+		d = r_diff_new ();
+		r_diff_set_delta (d, delta);
+		r_cons_printf ("--- %s\n", ro.file);
+		r_cons_printf ("+++ %s\n", ro.file2);
+		r_diff_set_callback (d, &cb_xpatch, &ro);
+		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
+		r_cons_flush ();
+		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
 			c = opencore (&ro, NULL);
