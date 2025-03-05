@@ -91,6 +91,7 @@ int gettimeofday (struct timeval* p, void* tz);
 
 R_API int r_lz4_compress(ut8 *obuf, ut8 *buf, size_t buf_size, const int max_chain);
 R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_size);
+R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *obuf, int osz);
 
 #ifdef __cplusplus
 extern "C" {

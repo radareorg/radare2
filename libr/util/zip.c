@@ -6,35 +6,11 @@
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000
 
-#if USE_SMALLZ4
-#include "../../../shlr/smallz4/smallz4cat.h"
+#ifndef USE_RLZ4
+#define USE_RLZ4 0
+#endif
 
-struct UserPtr {
-	const ut8 * input;
-	ut64 inputPos;
-	ut8 *output;
-	ut64 outputPos;
-	ut32 *outputSize;
-	int error;
-};
-
-static void smallz4Write(const unsigned char* data, unsigned int numBytes, void *userPtr) {
-	struct UserPtr* user = (struct UserPtr*)userPtr;
-	if (data != NULL && numBytes > 0) {
-		if (*(user->outputSize) - user->outputPos < numBytes) {
-			user->error = -1;
-			return;
-		}
-		memcpy(user->output + user->outputPos, data, numBytes);
-		user->outputPos += numBytes;
-	}
-}
-
-static ut8 smallz4GetByte(void *userPtr) {
-	struct UserPtr* user = (struct UserPtr*)userPtr;
-	return *(user->input + (user->inputPos++));
-}
-#else
+#if !USE_RLZ4
 #include <lz4.h>
 #endif
 
@@ -116,28 +92,22 @@ err_exit:
 R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, R_NULLABLE int *consumed, int *dstLen) {
 	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
 	ut32 osz = srcLen * 5;
+	int pp = 0;
+
 	ut8 *obuf = calloc (srcLen, 5);
 	if (!obuf) {
 		return NULL;
 	}
 
-#if USE_SMALLZ4
-	struct UserPtr user = {
-		.input = src,
-		.inputPos = 0,
-		.output = obuf,
-		.outputPos = 0,
-		.outputSize = &osz,
-		.error = 0
-	};
-	int res = unlz4Block_userPtr (smallz4GetByte, smallz4Write, &user, srcLen, NULL, NULL);
-	if (res < 1 || user.error != 0)
+#if USE_RLZ4
+	int res = r_lz4_decompress_block ((ut8 *)src, srcLen, &pp, obuf, osz);
+	if (res < 0)
 #else
 	int res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
 	if (res < 1)
 #endif
 	{
-		const int mul = srcLen / -res;
+		const int mul = USE_RLZ4? 1: srcLen / -res;
 		const int nosz = osz * (5 * (mul + 1));
 		if (nosz < osz) {
 			free (obuf);
@@ -150,24 +120,19 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, R_NULLABLE int *consumed, i
 		}
 		obuf = nbuf;
 		osz = nosz;
-#if USE_SMALLZ4
-		user.output = obuf;
-		user.inputPos = 0;
-		user.outputPos = 0;
-		user.error = 0;
-		res = unlz4Block_userPtr (smallz4GetByte, smallz4Write, &user, srcLen, NULL, NULL);
-	}
-	user.output = NULL;
-	user.input = NULL;
+#if USE_RLZ4
+		res = r_lz4_decompress_block ((ut8 *)src, srcLen, &pp, obuf, osz);
 #else
-	}
-	res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
+		res = LZ4_decompress_safe ((const char *)src, (char *)obuf, (uint32_t)srcLen, (uint32_t)osz);
 #endif
-	if (res > 0) {
-		*dstLen = res;
+	}
+
+	if (USE_RLZ4? res == 0: res > 0) {
+		*dstLen = USE_RLZ4? pp: res;
 		*consumed = srcLen;
 		return obuf;
 	}
+
 	*dstLen = 0;
 	*consumed = 0;
 	free (obuf);

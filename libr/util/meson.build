@@ -110,8 +110,9 @@ if get_option('sdb_cgen')
   r_util_sources += r_util_d_sources
 endif
 
+lz4_dep = dependency('liblz4', required: false)
 if not get_option('use_sys_lz4')
-  library_cflags += ['-DUSE_SMALLZ4']
+  library_cflags += ['-DUSE_RLZ4']
 endif
 
 r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, lz4_dep, zlib_dep, platform_deps]
