@@ -104,6 +104,15 @@ IFAND WITH_SYSLZ4 HAVE_PKGCFG_LIBLZ4 {
 
 }
 
+(( SMALLZ4 ))
+ARG_WITH WITH_SMALLZ4 smallz4 build with smallz4 use it as the lz4 decompressor ;
+IF WITH_SMALLZ4 {
+	USE_SMALLZ4 = 1 ;
+}{
+	USE_SMALLZ4 = 0 ;
+
+}
+
 (( ZIP ))
 CHKLIB z
 CHKLIB zip
