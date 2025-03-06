@@ -3770,7 +3770,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("emu.pre", "false", "run ESIL emulation starting at the closest flag in pd");
 	SETBPREF ("asm.refptr", "true", "show refpointer information in disasm");
 	SETBPREF ("emu.lazy", "false", "do not emulate all instructions with aae (optimization)");
-	SETI ("emu.maxsize", 134217728, "do not emulate regions larger than maxsize bytes. Default: 128M");
+	SETPREF ("emu.maxsize", "128M", "do not emulate regions larger than maxsize bytes. Default: 128M");
 	SETBPREF ("emu.stack", "false", "create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "show only strings if any in the asm.emu output");
 	SETBPREF ("emu.bb", "false", "emulate basic blocks (see: abe, aeb and afbd)");
