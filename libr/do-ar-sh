@@ -10,6 +10,10 @@ else
 	LIBS="$(LIBS) subprojects/capstone-v5/libcapstone.a"
 fi
 
+if [ "${WANT_V35}" = 1 ]; then
+	LIBS="$(LIBS) subprojects/binaryninja/v35arm64.a subprojects/binaryninja/v35armv7.a"
+fi
+
 cd ..
 
 LIB=libr.a
