@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2008-2024 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2025 - nibble, pancake, thestr4ng3r */
 
-#include <r_anal.h>
 #include <r_core.h>
 
 static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, R_NULLABLE const RSpace *space) {
@@ -128,16 +127,18 @@ static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 
 }
 
 R_API bool r_meta_set_string(RAnal *a, RAnalMetaType type, ut64 addr, const char *s) {
+	R_RETURN_VAL_IF_FAIL (a && s, false);
 	return meta_set (a, type, 0, addr, addr, s);
 }
 
 R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), addr);
-	if (!node) {
-		return NULL;
+	if (node) {
+		RAnalMetaItem *item = node->data;
+		return item->str;
 	}
-	RAnalMetaItem *item = node->data;
-	return item->str;
+	return NULL;
 }
 
 static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
@@ -173,10 +174,12 @@ static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut
 }
 
 R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
+	R_RETURN_IF_FAIL (a);
 	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
 R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
+	R_RETURN_VAL_IF_FAIL (a && str, false);
 	return r_meta_set_with_subtype (a, type, 0, addr, size, str);
 }
 
@@ -190,6 +193,7 @@ R_API bool r_meta_set_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut
 }
 
 R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT R_NULLABLE ut64 *size) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), addr);
 	if (node && size) {
 		*size = r_meta_item_size (node->start, node->end);
@@ -198,14 +202,17 @@ R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OU
 }
 
 R_API RIntervalNode *r_meta_get_in(RAnal *a, ut64 addr, RAnalMetaType type) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	return find_node_in (a, type, r_spaces_current (&a->meta_spaces), addr);
 }
 
 R_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *r_meta_get_all_at(RAnal *a, ut64 at) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	return collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), at);
 }
 
 R_API RPVector *r_meta_get_all_in(RAnal *a, ut64 at, RAnalMetaType type) {
+	R_RETURN_VAL_IF_FAIL (a, NULL);
 	return collect_nodes_in (a, type, r_spaces_current (&a->meta_spaces), at);
 }
 
@@ -484,16 +491,17 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 }
 
 R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RTable *t) {
+	R_RETURN_IF_FAIL (a);
 	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, r_spaces_current (&a->meta_spaces), addr);
-	if (!nodes) {
-		return;
+	if (nodes) {
+		void **it;
+		r_pvector_foreach (nodes, it) {
+			RIntervalNode *node = *it;
+			size_t ns = r_meta_node_size (node);
+			r_meta_print (a, node->data, node->start, ns, rad, NULL, t, true);
+		}
+		r_pvector_free (nodes);
 	}
-	void **it;
-	r_pvector_foreach (nodes, it) {
-		RIntervalNode *node = *it;
-		r_meta_print (a, node->data, node->start, r_meta_node_size (node), rad, NULL, t, true);
-	}
-	r_pvector_free (nodes);
 }
 
 static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t) {
@@ -576,6 +584,7 @@ R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr,
 }
 
 R_API void r_meta_rebase(RAnal *anal, ut64 diff) {
+	R_RETURN_IF_FAIL (anal);
 	if (!diff) {
 		return;
 	}
@@ -624,6 +633,7 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
 }
 
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
+	R_RETURN_VAL_IF_FAIL (a && space, 0);
 	int r = 0;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
