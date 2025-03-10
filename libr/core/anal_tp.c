@@ -123,7 +123,8 @@ static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *r
 
 static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const char *place) {
 	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
-	REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
+	// REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
+	REsilTrace *etrace = tps->et;
 	if (in_stack) {
 		ut64 sp = r_reg_getv (tps->core->anal->reg, "SP"); // XXX this is slow too and we can cache
 		const ut64 write_addr = etrace_memwrite_addr (etrace, idx); // AAA -1
@@ -382,7 +383,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
 	RAnal *anal = tps->core->anal;
-	REsilTrace *etrace = tps->core->anal->esil->trace; // tps->et;
+	REsilTrace *etrace = tps->et; // core->anal->esil->trace;
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (etrace) -1;
 	const bool verbose = r_config_get_b (tps->core->config, "anal.types.verbose"); // XXX
@@ -669,6 +670,7 @@ repeat:
 	int i, j;
 	RAnalOp *next_op = R_NEW0 (RAnalOp);
 	r_config_set_b (core->config, "dbg.trace.eval", false);
+	REsilTrace *et = tps->et;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
 		R_LOG_DEBUG ("BB 0x%"PFMT64x, bbat);
@@ -680,7 +682,6 @@ repeat:
 		}
 		ut64 bb_addr = bb->addr;
 		ut64 bb_size = bb->size;
-		ut64 addr = bb_addr;
 		const ut64 buf_size = bb->size + 32;
 		if (!RVecBuf_reserve (&buf, buf_size)) {
 			break;
@@ -689,28 +690,27 @@ repeat:
 		if (r_io_read_at (core->io, bb_addr, buf_ptr, bb_size) < 1) {
 			break;
 		}
-		r_reg_setv (core->dbg->reg, "PC", addr);
 		for (i = 0; i < bb_size;) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
+			ut64 addr = bb_addr + i;
+			ut64 left = bb_size - i;
 			ut64 pcval = r_reg_getv (anal->reg, "PC");
-			D eprintf ("---> 0x%"PFMT64x"\n", addr);
+			r_reg_setv (core->dbg->reg, "PC", addr);
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr) || pcval != addr) {
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			DD eprintf ("op 0x%"PFMT64x"\n", addr);
-			ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_size - i, op_tions);
+			ret = r_anal_op (anal, &aop, addr, buf_ptr + i, left, op_tions);
 			if (ret <= 0) {
 				DD eprintf ("FAIL\n");
 				i += minopcode;
-				addr += minopcode;
 				r_reg_setv (core->dbg->reg, "PC", addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			const int loop_count = r_esil_trace_loopcount (tps->et, addr);
+			const int loop_count = r_esil_trace_loopcount (et, addr);
 #if 1
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				DD eprintf ("0x%"PFMT64x" LOOP FAIL %d\n", aop.addr, loop_count);
@@ -718,7 +718,7 @@ repeat:
 				break;
 			}
 #endif
-			r_esil_trace_loopcount_increment (tps->et, addr);
+			r_esil_trace_loopcount_increment (et, addr);
 			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
 				// eprintf ("%x nonlinear\n", pcval);
 				r_reg_setv (core->dbg->reg, "PC", addr + aop.size); // + ret
@@ -728,8 +728,8 @@ repeat:
 				if (tps->cfg_breakoninvalid && !res) {
 					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
-					r_anal_op_fini (next_op);
-					r_anal_op_fini (&aop);
+					// r_anal_op_fini (next_op);
+					// r_anal_op_fini (&aop);
 					goto repeat;
 				}
 			}
@@ -741,31 +741,36 @@ repeat:
 				if (!bb) {
 					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", *RVecUT64_at (&bblist, i));
 					retries--;
-					r_anal_op_fini (next_op);
-					r_anal_op_fini (&aop);
+					// r_anal_op_fini (next_op);
+					// r_anal_op_fini (&aop);
 					goto repeat;
 				}
 			}
 #endif
 			bool userfnc = false;
-			cur_idx = etrace_index (tps->et) - 1;
+			cur_idx = etrace_index (et) - 1;
 			if (cur_idx < 0) {
 				cur_idx = 0;
 			}
-			tps->et->cur_idx = etrace_index (tps->et);
+			et->cur_idx = etrace_index (et);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 			DD eprintf ("CUR IDX %d %s\n", cur_idx, var?var->name:"");
-
 #if 0
 			// XXX this is analyzing the same op twice wtf this is so wrong
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
+			next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
 #else
-			if (i < bb_size) {
-				int ret2 = r_anal_op (anal, next_op, addr + aop.size, buf_ptr + i, bb_size - i, R_ARCH_OP_MASK_BASIC);
+			if (i + aop.size < bb_size) {
+				size_t offset = i + aop.size;
+				if (!next_op) {
+					next_op = R_NEW0 (RAnalOp);
+				}
+				int ret2 = r_anal_op (anal, next_op, bb_addr + offset, buf_ptr + offset, bb_size - offset, R_ARCH_OP_MASK_BASIC);
 				if (ret2 < 1) {
 					r_anal_op_fini (&aop);
 					break;
 				}
+			} else {
+				R_FREE (next_op);
 			}
 #endif
 
@@ -801,7 +806,7 @@ repeat:
 					if (Cc && r_anal_cc_exist (anal, Cc)) {
 						char *cc = strdup (Cc);
 						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
-						// prev_idx = tps->et->cur_idx;
+						// prev_idx = et->cur_idx;
 						prev_idx = tps->core->anal->esil->trace->cur_idx;
 						R_FREE (ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
@@ -819,10 +824,10 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
-						// cur_idx = tps->et->cur_idx - 2;
+						// cur_idx = et->cur_idx - 2;
 						cur_idx = tps->core->anal->esil->trace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
-						ut64 mov_addr = etrace_addrof (tps->et, cur_idx);
+						ut64 mov_addr = etrace_addrof (et, cur_idx);
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
@@ -841,9 +846,9 @@ repeat:
 				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
-				// cur_idx = tps->et->cur_idx - 1;
+				// cur_idx = et->cur_idx - 1;
 				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
-				const char *cur_dest = etrace_regwrite (tps->et, cur_idx);
+				const char *cur_dest = etrace_regwrite (et, cur_idx);
 				DD eprintf ("regwrite2 %d\n", cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
@@ -974,15 +979,14 @@ repeat:
 				if (var && str_flag) {
 					var_retype (anal, var, NULL, "const char *", false, false);
 				}
-				prev_dest = etrace_regwrite (tps->et, cur_idx);
+				prev_dest = etrace_regwrite (et, cur_idx);
 				DD eprintf (":= regwrite prevdest %d %s\n", cur_idx, prev_dest);
 				if (var) {
 					r_str_ncpy (prev_type, var->type, sizeof (prev_type) - 1);
 					prop = true;
 				}
 			}
-			i += ret;
-			addr += ret;
+			i += aop.size;
 			// XXX its slow to analyze 2 instructions for every instruction :facepalm: we can reuse
 			// r_anal_op_free (next_op);
 			r_anal_op_fini (next_op);
