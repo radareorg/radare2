@@ -667,28 +667,26 @@ repeat:
 		RVecUT64_push_back (&bblist, &bb->addr);
 	}
 	int i, j;
+	RAnalOp *next_op = R_NEW0 (RAnalOp);
 	r_config_set_b (core->config, "dbg.trace.eval", false);
 	for (j = 0; j < bblist_size; j++) {
-		REsilTrace *etrace = tps->et;
-		{
-			const ut64 addr = *RVecUT64_at (&bblist, j);
-			DD eprintf ("BB 0x%"PFMT64x"\n", addr);
-			bb = r_anal_get_block_at (core->anal, addr);
-			if (!bb) {
-				R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", addr);
-				retries--;
-				goto repeat;
-			}
+		const ut64 bbat = *RVecUT64_at (&bblist, j);
+		R_LOG_DEBUG ("BB 0x%"PFMT64x, bbat);
+		bb = r_anal_get_block_at (core->anal, bbat);
+		if (!bb) {
+			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bbat);
+			retries--;
+			goto repeat;
 		}
 		ut64 bb_addr = bb->addr;
 		ut64 bb_size = bb->size;
-		ut64 addr = bb->addr;
+		ut64 addr = bb_addr;
 		const ut64 buf_size = bb->size + 32;
 		if (!RVecBuf_reserve (&buf, buf_size)) {
 			break;
 		}
 		ut8 *buf_ptr = R_VEC_START_ITER (&buf);
-		if (r_io_read_at (core->io, addr, buf_ptr, bb_size) < 1) {
+		if (r_io_read_at (core->io, bb_addr, buf_ptr, bb_size) < 1) {
 			break;
 		}
 		r_reg_setv (core->dbg->reg, "PC", addr);
@@ -712,7 +710,7 @@ repeat:
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			const int loop_count = r_esil_trace_loopcount (etrace, addr);
+			const int loop_count = r_esil_trace_loopcount (tps->et, addr);
 #if 1
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				DD eprintf ("0x%"PFMT64x" LOOP FAIL %d\n", aop.addr, loop_count);
@@ -720,7 +718,7 @@ repeat:
 				break;
 			}
 #endif
-			r_esil_trace_loopcount_increment (etrace, addr);
+			r_esil_trace_loopcount_increment (tps->et, addr);
 			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
 				// eprintf ("%x nonlinear\n", pcval);
 				r_reg_setv (core->dbg->reg, "PC", addr + aop.size); // + ret
@@ -730,6 +728,8 @@ repeat:
 				if (tps->cfg_breakoninvalid && !res) {
 					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
+					r_anal_op_fini (next_op);
+					r_anal_op_fini (&aop);
 					goto repeat;
 				}
 			}
@@ -741,21 +741,33 @@ repeat:
 				if (!bb) {
 					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", *RVecUT64_at (&bblist, i));
 					retries--;
+					r_anal_op_fini (next_op);
+					r_anal_op_fini (&aop);
 					goto repeat;
 				}
 			}
 #endif
 			bool userfnc = false;
-			cur_idx = etrace_index (etrace) - 1;
+			cur_idx = etrace_index (tps->et) - 1;
 			if (cur_idx < 0) {
 				cur_idx = 0;
 			}
-			tps->et->cur_idx = etrace_index (etrace);
+			tps->et->cur_idx = etrace_index (tps->et);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 			DD eprintf ("CUR IDX %d %s\n", cur_idx, var?var->name:"");
 
+#if 0
 			// XXX this is analyzing the same op twice wtf this is so wrong
 			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
+#else
+			if (i < bb_size) {
+				int ret2 = r_anal_op (anal, next_op, addr + aop.size, buf_ptr + i, bb_size - i, R_ARCH_OP_MASK_BASIC);
+				if (ret2 < 1) {
+					r_anal_op_fini (&aop);
+					break;
+				}
+			}
+#endif
 
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
@@ -810,7 +822,7 @@ repeat:
 						// cur_idx = tps->et->cur_idx - 2;
 						cur_idx = tps->core->anal->esil->trace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
-						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
+						ut64 mov_addr = etrace_addrof (tps->et, cur_idx);
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
@@ -831,7 +843,7 @@ repeat:
 				// sdb_const_get (trace, query, 0);
 				// cur_idx = tps->et->cur_idx - 1;
 				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
-				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
+				const char *cur_dest = etrace_regwrite (tps->et, cur_idx);
 				DD eprintf ("regwrite2 %d\n", cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
@@ -914,6 +926,7 @@ repeat:
 						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
 							r_anal_op_free (jmp_op);
+							r_anal_op_fini (next_op);
 							r_anal_op_fini (&aop);
 							break;
 						}
@@ -961,7 +974,7 @@ repeat:
 				if (var && str_flag) {
 					var_retype (anal, var, NULL, "const char *", false, false);
 				}
-				prev_dest = etrace_regwrite (etrace, cur_idx);
+				prev_dest = etrace_regwrite (tps->et, cur_idx);
 				DD eprintf (":= regwrite prevdest %d %s\n", cur_idx, prev_dest);
 				if (var) {
 					r_str_ncpy (prev_type, var->type, sizeof (prev_type) - 1);
@@ -971,10 +984,12 @@ repeat:
 			i += ret;
 			addr += ret;
 			// XXX its slow to analyze 2 instructions for every instruction :facepalm: we can reuse
-			r_anal_op_free (next_op);
+			// r_anal_op_free (next_op);
+			r_anal_op_fini (next_op);
 			r_anal_op_fini (&aop);
 		}
 	}
+	free (next_op);
 	r_config_set_b (core->config, "dbg.trace.eval", true);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
