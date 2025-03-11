@@ -694,7 +694,7 @@ repeat:
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
-			// XXX fail sometimes : 
+			// XXX fail sometimes
 			/// addr = bb_addr + i;
 			r_reg_setv (core->dbg->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
