@@ -95,7 +95,7 @@ static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, R_NULL
 	return ctx.result;
 }
 
-static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
+static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, R_NULLABLE const char *str) {
 	if (to < from) {
 		return false;
 	}
@@ -178,8 +178,8 @@ R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
 	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
-R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char *str) {
-	R_RETURN_VAL_IF_FAIL (a && str, false);
+R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, R_NULLABLE const char *str) {
+	R_RETURN_VAL_IF_FAIL (a, false);
 	return r_meta_set_with_subtype (a, type, 0, addr, size, str);
 }
 
