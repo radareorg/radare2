@@ -466,7 +466,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
-	ut64 ret = r_num_calc (num, str, &err); // TODO: rename r_num_calc to r_num_math_err()
+	ut64 ret = r_num_calc (num, str, &err); // TODO: R2_600 - rename r_num_calc to r_num_math_err()
 	if (err) {
 		R_LOG_DEBUG ("(%s) in (%s)", err, str);
 	}
