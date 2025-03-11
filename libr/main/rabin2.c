@@ -833,7 +833,14 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			}
 			break;
 		case 'B':
-			baddr = r_num_math (NULL, opt.arg);
+			{
+				const char *err = NULL;
+				baddr = r_num_calc (core.num, opt.arg, &err);
+				if (err) {
+					R_LOG_ERROR ("%s in base address (-B): '%s'", err, opt.arg);
+					return 1;
+				}
+			}
 			break;
 		case '@':
 			at = r_num_math (NULL, opt.arg);
