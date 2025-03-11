@@ -1067,17 +1067,17 @@ continuation:
 				r_list_free (ctx->unsorted_lines);
 				ctx->unsorted_lines = NULL;
 			}
+			const int nl = r_list_length (ctx->sorted_lines);
+			cons->context->buffer_len = 0;
+			INSERT_LINES (ctx->unsorted_lines);
+			INSERT_LINES (ctx->sorted_lines);
+			cons->context->buffer_len = (ptr - cons->context->buffer);
+			cons->lines = nl;
+			r_list_free (ctx->sorted_lines);
+			ctx->sorted_lines = NULL;
+			r_list_free (ctx->unsorted_lines);
+			ctx->unsorted_lines = NULL;
 		}
-		const int nl = r_list_length (ctx->sorted_lines);
-		cons->context->buffer_len = 0;
-		INSERT_LINES (ctx->unsorted_lines);
-		INSERT_LINES (ctx->sorted_lines);
-		cons->context->buffer_len = (ptr - cons->context->buffer);
-		cons->lines = nl;
-		r_list_free (ctx->sorted_lines);
-		ctx->sorted_lines = NULL;
-		r_list_free (ctx->unsorted_lines);
-		ctx->unsorted_lines = NULL;
 	}
 	// count after uniq
 	if (grep->counter && grep->sort_uniq) {
