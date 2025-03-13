@@ -152,22 +152,25 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 		return false;
 	}
 
-	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
-	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
 	ut64 baddr = r_bin_get_baddr (bin);
 	if (baddr == UT64_MAX) {
 		baddr = 0;
 	}
 	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
+#if 0
+		RBinFile *bf = r_bin_cur (bin);
+		RBinPlugin *cp = r_bin_file_cur_plugin (bf);
 		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
 			return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
 		}
+#endif
 		return addr2line_from_sdb (bin, addr, file, len, line, column);
 	}
 	return false;
 }
 
+#if 0
 static RBinAddrline *r_bin_addrline_api(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *binfile = r_bin_cur (bin);
@@ -182,6 +185,7 @@ static RBinAddrline *r_bin_addrline_api(RBin *bin, ut64 addr) {
 		int line = 0;
 		int column = 0;
 		int len = sizeof (file);
+#if 0
 		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
 			if (cp->dbginfo->get_line (bin->cur, addr, file, len, &line, &column)) {
 				RBinAddrline *di = R_NEW0 (RBinAddrline);
@@ -192,10 +196,12 @@ static RBinAddrline *r_bin_addrline_api(RBin *bin, ut64 addr) {
 				return di;
 			}
 		}
+#endif
 		// like addr2line but ensure we are not calling the sdb thing again
 	}
 	return NULL;
 }
+#endif
 
 static char *addr2fileline(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
@@ -225,10 +231,14 @@ R_API R_NULLABLE char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin)
 	}
 	RBinAddrline *di = r_bin_dbgitem_at (bin, addr);
 	if (!di) {
+#if 0
 		di = r_bin_addrline_api (bin, addr);
 		if (!di) {
 			return NULL;
 		}
+#else
+		return NULL;
+#endif
 	}
 	char *res = NULL;
 	char *filename = strdup (di->file);

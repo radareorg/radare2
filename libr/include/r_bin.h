@@ -607,7 +607,6 @@ typedef struct r_bin_plugin_t {
 	void (*header)(RBinFile *bf);
 	char* (*signature)(RBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
-	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	ut64 (*get_offset) (RBinFile *bf, int type, int idx);
 	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
@@ -725,10 +724,6 @@ typedef struct r_bin_map_t {
 	int perms;
 	char *file;
 } RBinMap;
-
-typedef struct r_bin_dbginfo_t {
-	bool (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line, int *column);
-} RBinDbgInfo;
 
 typedef bool (*RBinWriteAddLib)(RBinFile *bf, const char *lib);
 typedef ut64 (*RBinWriteScnResize)(RBinFile *bf, const char *name, ut64 newsize);
