@@ -5747,7 +5747,7 @@ static void r_core_disasm_table(RCore *core, int l, const char *input) {
 			break;
 		}
 		r_io_read_at (core->io, ea, bytes, op->size); // XXX ranalop should contain the bytes like rasmop do
-		char *sbytes = r_hex_bin2strdup(bytes, op->size);
+		char *sbytes = r_hex_bin2strdup (bytes, op->size);
 		RFlagItem *fi = r_flag_get_in (core->flags, ea);
 		char *fn = fi? fi->name: "";
 		const char *esil = R_STRBUF_SAFEGET (&op->esil);
