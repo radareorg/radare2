@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -934,7 +934,7 @@ static int cmd_help(void *data, const char *input) {
 					continue;
 				}
 				const char *err = NULL;
-				n = r_num_calc (core->num, str, &err);
+				n = r_num_math_err (core->num, str, &err);
 				if (core->num->dbz) {
 					R_LOG_ERROR ("Division by Zero");
 				}

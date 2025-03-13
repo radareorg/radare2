@@ -461,18 +461,6 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 	return ret;
 }
 
-R_API ut64 r_num_math(RNum *num, const char *str) {
-	const char *err = NULL;
-	if (R_STR_ISEMPTY (str)) {
-		return 0LL;
-	}
-	ut64 ret = r_num_calc (num, str, &err); // TODO: R2_600 - rename r_num_calc to r_num_math_err()
-	if (err) {
-		R_LOG_DEBUG ("(%s) in (%s)", err, str);
-	}
-	return ret;
-}
-
 R_API int r_num_is_float(RNum *num, const char *str) {
 	return (isdigit (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2024 - pancake */
+/* radare2 - LGPL - Copyright 2007-2025 - pancake */
 
 #define R_LOG_ORIGIN "rax2"
 
@@ -85,7 +85,7 @@ static void rax2_newline(RaxActions flags) {
 
 static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxActions flags) {
 	const char *errstr = NULL;
-	ut64 n = r_num_calc (num, s, &errstr);
+	ut64 n = r_num_math_err (num, s, &errstr);
 	if (errstr) {
 		R_LOG_ERROR (errstr);
 		return false;
@@ -367,7 +367,7 @@ dotherax:
 		ut32 *m = (ut32 *) buf;
 		n = r_hex_str2bin (str, (ut8 *) buf);
 		if (n < 1 || r_str_startswith (str, "0x")) {
-			ut64 q = r_num_calc (num, str, &errstr);
+			ut64 q = r_num_math_err (num, str, &errstr);
 			if (errstr) {
 				R_LOG_ERROR (errstr);
 				free (buf);
@@ -383,7 +383,7 @@ dotherax:
 		return true;
 }
 	if (flags->binarynum) { // -x
-		ut64 n = r_num_calc (num, str, &errstr);
+		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -421,7 +421,7 @@ dotherax:
 		free (newstr);
 		return true;
 	} else if (flags->signedword) { // -w
-		ut64 n = r_num_calc (num, str, &errstr);
+		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -437,7 +437,7 @@ dotherax:
 		printf ("%" PFMT64d "\n", n);
 		return true;
 	} else if (flags->binaryraw) { // -c
-		ut64 n = r_num_calc (num, str, &errstr);
+		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -471,7 +471,7 @@ dotherax:
 		return true;
 	} else if (flags->showunits) { // -u
 		char buf[8] = {0};
-		r_num_units (buf, sizeof (buf), r_num_calc (NULL, str, &errstr));
+		r_num_units (buf, sizeof (buf), r_num_math_err (NULL, str, &errstr));
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -485,14 +485,14 @@ dotherax:
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
 			gmt = (const char*) r_list_head (split)->n->data + 2;
 		}
-		ut32 n = r_num_calc (num, ts, &errstr);
+		ut32 n = r_num_math_err (num, ts, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
 		}
 		RPrint *p = r_print_new ();
 		if (gmt) {
-			p->datezone = r_num_calc (num, gmt, &errstr);
+			p->datezone = r_num_math_err (num, gmt, &errstr);
 			if (errstr) {
 				R_LOG_ERROR (errstr);
 				return false;
@@ -550,7 +550,7 @@ dotherax:
 		double d;
 		float f;
 		const char *errstr = NULL;
-		ut64 n = r_num_calc (num, str, &errstr);
+		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -609,7 +609,7 @@ dotherax:
 		double d;
 		float f;
 		const char *errstr = NULL;
-		ut64 n = r_num_calc (num, str, &errstr);
+		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
 			R_LOG_ERROR (errstr);
 			return false;
@@ -691,7 +691,7 @@ dotherax:
 			? strdup (str)
 			: r_str_newf ("0%s", str);
 		const char *errstr = NULL;
-		ut64 n = r_num_calc (num, modified_str, &errstr);
+		ut64 n = r_num_math_err (num, modified_str, &errstr);
 		free (modified_str);
 		if (errstr) {
 			R_LOG_ERROR ("%s", errstr);
@@ -719,7 +719,7 @@ dotherax:
 			printf ("0x%08x\n", ip32);
 		} else {
 			const char *errstr = NULL;
-			ut32 ip32 = (ut32)r_num_calc (NULL, str, &errstr);
+			ut32 ip32 = (ut32)r_num_math_err (NULL, str, &errstr);
 			if (errstr) {
 				R_LOG_ERROR (errstr);
 				return false;
