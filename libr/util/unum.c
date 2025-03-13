@@ -446,6 +446,9 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 		default:
 			errno = 0;
 			ret = strtoull (str, &endptr, 10);
+			if (errno == EINVAL) {
+				error (num, "invalid symbol");
+			}
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
