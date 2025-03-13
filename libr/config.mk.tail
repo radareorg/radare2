@@ -14,10 +14,6 @@ MSVC=$(R2DIR)/msvc
 endif
 endif
 
-ifeq ($(WANT_V35),1)
-STATIC_ARCH_PLUGINS+=p/arm_v35.mk
-endif
-
 ifeq ($(USE_CSNEXT),1)
 CS_ROOT:=$(LIBR)/../subprojects/capstone-next
 else ifeq ($(USE_CS4),1)
