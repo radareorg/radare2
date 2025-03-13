@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2024 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2025 - pancake, unlogic, emvivre */
 
 #include <r_arch.h>
 
@@ -4714,7 +4714,7 @@ static ut64 getnum(RArchSession *a, const char *s, bool *berr) {
 	s = r_str_trim_head_ro (s);
 	// ut64 res = r_num_math (a->arch->num, s);
 	const char *err = NULL;
-	ut64 res = r_num_calc (a->arch->num, s, &err);
+	ut64 res = r_num_math_err (a->arch->num, s, &err);
 	if (err) {
 		*berr = true;
 		return UT64_MAX;

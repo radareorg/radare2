@@ -1,12 +1,4 @@
-/* ported to C by pancake for r2 in 2012-2021 */
-// TODO: integrate floating point support
-// TODO: do not use global variables
-/*
-	Reference Chapter 6:
-	"The C++ Programming Language", Special Edition.
-	Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
-	ISBN: 0201700735
-*/
+/* ported to C by pancake for r2 in 2012-2025 */
 
 #define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>
@@ -14,7 +6,7 @@
 /* accessors */
 static inline RNumCalcValue Nset(ut64 v) { RNumCalcValue n; n.d =(double)v; n.n = v; return n; }
 static inline RNumCalcValue Nsetf(double v) { RNumCalcValue n; n.d = v; n.n =(ut64)v; return n; }
-//UNUSED static inline RNumCalcValue Naddf(RNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
+// UNUSED static inline RNumCalcValue Naddf(RNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
 static inline RNumCalcValue Naddi(RNumCalcValue n, ut64 v) { n.d +=(double)v; n.n += v; return n; }
 static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) { n.d -=(double)v; n.n -= v; return n; }
 static inline RNumCalcValue Nneg(RNumCalcValue n) { n.n = ~n.n; return n; }
@@ -113,7 +105,7 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 		} else if (nc->curr_tok == RNCMOD) {
 			RNumCalcValue d = prim (num, nc, 1);
 			if (!d.d) {
-				//error (num, nc, "divide by 0");
+				// error (num, nc, "divide by 0");
 				return d;
 			}
 			left = Nmod (left, d);
@@ -141,8 +133,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		get_token (num, nc);
 		return v;
 	case RNCNAME:
-		//fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
-		//double& v = table[nc->string_value];
+		// fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
+		// double& v = table[nc->string_value];
 		r_str_trim (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
 #if 0
@@ -208,7 +200,7 @@ static inline void cin_putback(RNum *num, RNumCalc *nc, char c) {
 	nc->oc = c;
 }
 
-R_API const char *r_num_calc_index(RNum *num, const char *p) {
+R_API const char *r_num_math_index(RNum *num, const char *p) {
 	if (!num) {
 		return NULL;
 	}
@@ -378,7 +370,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 				error (num, nc, "cannot find opening [");
 				return 0;
 			} else {
-				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
+				while (cin_get (num, nc, &ch) && isvalidchar ((ut8)ch)) {
 					if (i >= R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;
@@ -440,6 +432,18 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	return n.n;
 }
 
+R_API ut64 r_num_math(RNum *num, const char *str) {
+	const char *err = NULL;
+	if (R_STR_ISEMPTY (str)) {
+		return 0LL;
+	}
+	ut64 ret = r_num_math_err (num, str, &err);
+	if (err) {
+		R_LOG_DEBUG ("(%s) in (%s)", err, str);
+	}
+	return ret;
+}
+
 #ifdef TEST
 int main(int argc, char* argv[]) {
 	RNumCalcValue n;
@@ -454,7 +458,7 @@ int main(int argc, char* argv[]) {
 		}
 		n = expr (num, nc, 0);
 		if (n.d == ((double)(int)n.d)) {
-			printf ("%llx\n", n.n);
+			printf ("0x%"PFMT64x"\n", n.n);
 		} else {
 			printf ("%lf\n", n.d);
 		}
