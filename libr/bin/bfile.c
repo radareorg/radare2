@@ -537,10 +537,10 @@ typedef struct {
 	HtUP *ht;
 } AddrLineStore;
 
-static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
+static bool al_add(RBinAddrLineStore *als, RBinAddrline item) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	RBinDbgItemInternal *di;
+	RBinAddrlineInternal *di;
 #if 0
 	RListIter *iter;
 	if (r_bloom_check (store->bloomGet, &item.addr, sizeof (item.addr))) {
@@ -559,12 +559,12 @@ static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
 	}
 	// R_LOG_WARN ("ADD %llx %s %d %d", item.addr, item.file, item.line, item.column);
 #else
-	RBinDbgItemInternal *hitem = ht_up_find (store->ht, item.addr, NULL);
+	RBinAddrlineInternal *hitem = ht_up_find (store->ht, item.addr, NULL);
 	if (hitem && hitem->line == item.line) {
 		return false;
 	}
 #endif
-	di = R_NEW0 (RBinDbgItemInternal);
+	di = R_NEW0 (RBinAddrlineInternal);
 	di->addr = item.addr;
 	di->line = item.line;
 	di->colu = item.column;
@@ -579,7 +579,7 @@ static bool al_add(RBinAddrLineStore *als, RBinDbgItem item) {
 	return true;
 }
 
-static bool al_add_cu(RBinAddrLineStore *als, RBinDbgItem item) {
+static bool al_add_cu(RBinAddrLineStore *als, RBinAddrline item) {
 	AddrLineStore *store = als->storage;
 	// TODO: add storage for the compilation units here
 	// we are just storing the filename in the stringpool for `idx` purposes
@@ -604,9 +604,9 @@ static void al_reset(RBinAddrLineStore *als) {
 #endif
 }
 
-static RBinDbgItem* dbgitem_from_internal(RBinAddrLineStore *als, RBinDbgItemInternal *item) {
+static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
 	AddrLineStore *store = als->storage;
-	RBinDbgItem *di = R_NEW0 (RBinDbgItem);
+	RBinAddrline *di = R_NEW0 (RBinAddrline);
 	di->addr = item->addr;
 	di->line = item->line;
 	di->column = item->colu;
@@ -639,9 +639,9 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 	AddrLineStore *store = als->storage;
 
 	RListIter *iter;
-	RBinDbgItemInternal *item;
+	RBinAddrlineInternal *item;
 	r_list_foreach (store->list, iter, item) {
-		RBinDbgItem *di = dbgitem_from_internal (als, item);
+		RBinAddrline *di = dbgitem_from_internal (als, item);
 		bool go_on = cb (user, di);
 		r_bin_addrline_free (di);
 		if (!go_on) {
@@ -654,7 +654,7 @@ static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
 
 	RListIter *iter;
-	RBinDbgItemInternal *item;
+	RBinAddrlineInternal *item;
 	r_list_foreach (store->list, iter, item) {
 		if (item->addr == addr) {
 			r_list_delete (store->list, iter);
@@ -663,7 +663,7 @@ static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	}
 }
 
-static RBinDbgItem* al_get(RBinAddrLineStore *als, ut64 addr) {
+static RBinAddrline* al_get(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
 #if 0
 	if (!r_bloom_check (store->bloomGet, &addr, sizeof (addr))) {
@@ -671,13 +671,13 @@ static RBinDbgItem* al_get(RBinAddrLineStore *als, ut64 addr) {
 	}
 #endif
 #if 1
-	RBinDbgItemInternal *item = ht_up_find (store->ht, addr, NULL);
+	RBinAddrlineInternal *item = ht_up_find (store->ht, addr, NULL);
 	if (item) {
 		return dbgitem_from_internal (als, item);
 	}
 #else
 	RListIter *iter;
-	RBinDbgItemInternal *item;
+	RBinAddrlineInternal *item;
 	R_LOG_DEBUG ("ITEMS %d / %d", store->pool->count, r_list_length (store->list));
 	r_list_foreach (store->list, iter, item) {
 		if (item->addr == addr) {

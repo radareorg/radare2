@@ -1122,7 +1122,7 @@ static void file_lines_free_kv(HtPPKv *kv) {
 }
 
 static bool bin_addrline(RCore *core, PJ *pj, int mode) {
-	RBinDbgItem *row;
+	RBinAddrline *row;
 	RListIter *iter;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);

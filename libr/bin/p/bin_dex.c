@@ -613,7 +613,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 					position->line = line;
 					r_list_append (debug_positions, position);
 				}
-				RBinDbgItem item = {
+				RBinAddrline item = {
 					.addr = address + paddr,
 					.file = getstr (dex, source_file_idx),
 					.line = line,
