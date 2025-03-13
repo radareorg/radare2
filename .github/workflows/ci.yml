@@ -95,7 +95,7 @@ jobs:
     - name: Installing with symlinks
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
-        sys/install.sh --with-v35
+        sys/install.sh
     - name: Running tests
       run: r2r -o /tmp/r2r.json test/db/cmd
     - uses: actions/upload-artifact@v4
@@ -143,7 +143,7 @@ jobs:
       run: |
         pip install r2pipe wheel
         export CFLAGS="-O2 -Wno-unused-result"
-        sys/install.sh --with-v35
+        sys/install.sh
     - name: Running tests
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
@@ -283,7 +283,7 @@ jobs:
         pip install r2pipe
         sudo sh -c 'echo 0 > /proc/sys/kernel/randomize_va_space'
         export SANITIZE=address
-        sys/sanitize.sh --with-v35
+        sys/sanitize.sh
     - name: Installing tools for the testsuite
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
     - name: Running tests
