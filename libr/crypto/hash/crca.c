@@ -1,18 +1,20 @@
-//author: Victor Mu~noz (vmunoz@ingenieria-inversa.cl
-//license: the very same than radare, blah, blah
-//some definitions and test cases borrowed from http://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
+// author: Victor Mu~noz (vmunoz@ingenieria-inversa.cl
+// license: the very same than radare, blah, blah
+// some definitions and test cases borrowed from http://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
 
 #include <r_hash.h>
 
-void crc_init (R_CRC_CTX *ctx, utcrc crc, ut32 size, int reflect, utcrc poly, utcrc xout) {
+#if 0
+static void crc_init(R_CRC_CTX *ctx, utcrc crc, ut32 size, int reflect, utcrc poly, utcrc xout) {
 	ctx->crc = crc;
 	ctx->size = size;
 	ctx->reflect = reflect;
 	ctx->poly = poly;
 	ctx->xout = xout;
 }
+#endif
 
-void crc_update(R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
+static void crc_update(R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
 	utcrc crc, d;
 	int i, j;
 
@@ -129,7 +131,7 @@ R_CRC_CTX crc_presets[] = {
 #endif /* #if R_HAVE_CRC64_EXTRA */
 };
 
-void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
+static void crc_init_preset(R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
 	ctx->crc = crc_presets[preset].crc;
 	ctx->size = crc_presets[preset].size;
 	ctx->reflect = crc_presets[preset].reflect;
@@ -137,7 +139,7 @@ void crc_init_preset (R_CRC_CTX *ctx, enum CRC_PRESETS preset) {
 	ctx->xout = crc_presets[preset].xout;
 }
 
-utcrc r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
+utcrc r_hash_crc_preset(const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
 	if (!data || !size || preset >= CRC_PRESET_SIZE) {
 		return 0;
 	}
@@ -148,6 +150,3 @@ utcrc r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset) {
 	crc_final (&crcctx, &r);
 	return r;
 }
-
-
-

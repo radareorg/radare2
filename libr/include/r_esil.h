@@ -38,7 +38,8 @@ enum {
 	R_ESIL_OP_TYPE_MATH = 0x20,
 	R_ESIL_OP_TYPE_CUSTOM = 0x40,
 	R_ESIL_OP_TYPE_FLAG = 0x80,
-	R_ESIL_OP_TYPE_TRAP = 0x100 // syscall, interrupts, breakpoints, ...
+	R_ESIL_OP_TYPE_TRAP = 0x100, // syscall, interrupts, breakpoints, ...
+	R_ESIL_OP_TYPE_CRYPTO = 0x200,
 };
 
 typedef struct r_esil_t ESIL;

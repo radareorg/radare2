@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2017-2024 - deroad */
+/* radare - LGPL - Copyright 2017-2025 - deroad */
 
 #include <r_crypto.h>
+#include "des.inc.c"
 
 struct des_state {
 	ut32 keylo[16]; // round key low
