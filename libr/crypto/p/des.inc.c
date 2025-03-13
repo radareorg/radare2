@@ -101,7 +101,7 @@ static const ut32 sbox8[64] = {
 	0x10041040, 0x00041000, 0x00041000, 0x00001040, 0x00001040, 0x00040040, 0x10000000, 0x10041000
 };
 
-R_IPI void r_des_permute_key(ut32 *keylo, ut32 *keyhi) {
+R_IPI inline void r_des_permute_key(ut32 *keylo, ut32 *keyhi) {
 	if (!keylo || !keyhi) {
 		return;
 	}
