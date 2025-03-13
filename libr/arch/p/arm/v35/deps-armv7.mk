@@ -1,7 +1,7 @@
 
 # V35ARMV7_ARCH?=arch-armv7
 # V35ARMV7_SRCDIR=$(V35ARM64_HOME)/$(V35ARMV7_ARCH)/armv7_disasm/
-V35ARMV7_SRCDIR=$(TOP)/subprojects/binaryninja/arch/armv7/armv7_disasm/
+V35ARMV7_SRCDIR=$(SPRJ)/binaryninja/arch/armv7/armv7_disasm/
 # subprojects/binaryninja/arch/armv7/armv7_disasm
 
 V35ARMV7_CFLAGS=-I$(V35ARMV7_SRCDIR)
