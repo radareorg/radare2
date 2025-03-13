@@ -547,7 +547,7 @@ install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
   'include/r_crypto/r_aes.h',
-  'include/r_crypto/r_des.h',
+#'include/r_crypto/r_des.h',
   'include/r_crypto/r_ed25519.h',
   'include/r_crypto/r_sm4.h'
 ]
