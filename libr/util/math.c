@@ -394,9 +394,10 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_err = NULL;
 }
 
-R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
+R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
-	RNumCalc *nc, nc_local;
+	RNumCalc *nc;
+	RNum num_local = {0};
 	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
@@ -404,7 +405,8 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 		nc = &num->nc;
 		num->dbz = 0;
 	} else {
-		nc = &nc_local;
+		num = &num_local;
+		nc = &num->nc;
 	}
 	/* init */
 	nc->curr_tok = RNCPRINT;
