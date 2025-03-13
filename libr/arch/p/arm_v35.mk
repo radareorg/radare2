@@ -1,8 +1,12 @@
+
 # include ../config.mk
 include ../../config-user.mk
 include ../../global.mk
 
 N=arch_arm_v35
+
+ifeq ($(WANT_V35),1)
+
 V35ARM64_HOME=$(SPRJ)/binaryninja/arch/arm64/disassembler
 
 include p/arm/v35/deps-arm64.mk
@@ -17,6 +21,13 @@ STATIC_OBJ+=${OBJ_ARM_V35}
 
 CFLAGS+=$(V35ARM64_CFLAGS)
 TARGET_ARM_V35=$(N).${LIBEXT}
+
+else # WANT_V35
+
+OBJ_ARM_V35=p/arm/plugin_v35.o
+STATIC_OBJ+=${OBJ_ARM_V35}
+TARGET_ARM_V35=$(N).${LIBEXT}
+endif # WANT_V35
 
 ALL_TARGETS+=$(TARGET_ARM_V35)
 
