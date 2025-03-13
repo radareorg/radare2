@@ -5,12 +5,12 @@ http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
 https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #endif
 
-#include <r_crypto.h>
 #include <r_arch.h>
 #include <r_anal.h>
 
 #include "./disasm.h"
 #include "./assemble.h"
+#include "../crypto/p/des.inc.c"
 
 typedef struct _cpu_const_tag {
 	const char *const key;
@@ -1934,7 +1934,7 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 
 static bool esil_avr_init(RArchSession *as, REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (as && as->data && esil, false);
-	r_esil_set_op (esil, "des", avr_custom_des, 1, 4, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "des", avr_custom_des, 1, 4, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL);
 	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 1, R_ESIL_OP_TYPE_CUSTOM, NULL);
 	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 3, R_ESIL_OP_TYPE_CUSTOM, NULL);
 	r_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 1, R_ESIL_OP_TYPE_CUSTOM, NULL);

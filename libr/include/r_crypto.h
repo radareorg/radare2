@@ -5,7 +5,7 @@
 
 #include <r_types.h>
 #include <r_th.h>
-#include <r_crypto/r_des.h>
+// #include <r_crypto/r_des.h>
 #include <r_hash.h>
 #include <r_lib.h>
 #include <r_crypto/r_sm4.h>

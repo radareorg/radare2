@@ -1,5 +1,12 @@
+/* radare - MIT - Copyright 2015-2025 - pancake, seu */
+
 #include <r_types.h>
 #include <r_util.h>
+
+#undef R_IPI
+#define R_IPI static
+#define DES_KEY_SIZE 8
+#define DES_BLOCK_SIZE 8
 
 #define ROTL28(rs, sh) ((((rs) << (sh)) | ((rs) >> (28 - (sh)))) & 0x0FFFFFFF) // left 28
 #define ROTL(rs, sh) (((rs) << (sh)) | ((rs) >> (32 - (sh)))) // left 32
@@ -94,7 +101,7 @@ static const ut32 sbox8[64] = {
 	0x10041040, 0x00041000, 0x00041000, 0x00001040, 0x00001040, 0x00040040, 0x10000000, 0x10041000
 };
 
-R_API void r_des_permute_key(ut32 *keylo, ut32 *keyhi) {
+R_IPI void r_des_permute_key(ut32 *keylo, ut32 *keyhi) {
 	if (!keylo || !keyhi) {
 		return;
 	}
@@ -121,7 +128,7 @@ R_API void r_des_permute_key(ut32 *keylo, ut32 *keyhi) {
 }
 
 // first permutation of the block
-R_API void r_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
+R_IPI void r_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
 	if (!blocklo || !blockhi) {
 		return;
 	}
@@ -142,7 +149,7 @@ R_API void r_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
 }
 
 // last permutation of the block
-R_API void r_des_permute_block1(ut32 *blocklo, ut32 *blockhi) {
+R_IPI void r_des_permute_block1(ut32 *blocklo, ut32 *blockhi) {
 	if (!blocklo || !blockhi) {
 		return;
 	}
@@ -166,7 +173,7 @@ R_API void r_des_permute_block1(ut32 *blocklo, ut32 *blockhi) {
 
 // keylo & keyhi are the derivated round keys
 // deskeylo & deskeyhi are the des derivated keys
-R_API void r_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 *deskeyhi) {
+R_IPI void r_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 *deskeyhi) {
 	if (!keylo || !keyhi || !deskeylo || !deskeyhi) {
 		return;
 	}
@@ -181,7 +188,7 @@ R_API void r_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32
 	ut32 deslo = *deskeylo;
 	ut32 deshi = *deskeyhi;
 
-	*keylo =((deslo << 4)  & 0x24000000) | ((deslo << 28) & 0x10000000) |
+	*keylo = ((deslo << 4)  & 0x24000000) | ((deslo << 28) & 0x10000000) |
 			((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
 			((deslo << 6)  & 0x01000000) | ((deslo << 9)  & 0x00200000) |
 			((deslo >> 1)  & 0x00100000) | ((deslo << 10) & 0x00040000) |
@@ -193,7 +200,7 @@ R_API void r_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32
 			((deshi >> 3)  & 0x00000008) | ((deshi >> 18) & 0x00000004) |
 			((deshi >> 26) & 0x00000002) | ((deshi >> 24) & 0x00000001);
 
-	*keyhi =((deslo << 15) & 0x20000000) | ((deslo << 17) & 0x10000000) |
+	*keyhi = ((deslo << 15) & 0x20000000) | ((deslo << 17) & 0x10000000) |
 			((deslo << 10) & 0x08000000) | ((deslo << 22) & 0x04000000) |
 			((deslo >> 2)  & 0x02000000) | ((deslo << 1)  & 0x01000000) |
 			((deslo << 16) & 0x00200000) | ((deslo << 11) & 0x00100000) |
@@ -206,7 +213,7 @@ R_API void r_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32
 			((deshi << 2)  & 0x00000004) | ((deshi >> 21) & 0x00000002);
 }
 
-R_API void r_des_round(ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {
+R_IPI void r_des_round(ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {
 	if (!buflo || !bufhi || !roundkeylo || !roundkeyhi) {
 		return;
 	}
