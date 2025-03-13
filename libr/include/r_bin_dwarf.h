@@ -695,7 +695,7 @@ typedef struct {
 	const char *path;
 	ut32 line;
 	ut32 column;
-} RBinDbgItem;
+} RBinAddrline;
 
 typedef struct {
 	ut64 addr;
@@ -703,7 +703,7 @@ typedef struct {
 	ut32 file;
 	ut32 line;
 	ut32 colu;
-} RBinDbgItemInternal;
+} RBinAddrlineInternal;
 
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {

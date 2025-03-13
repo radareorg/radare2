@@ -1246,7 +1246,7 @@ static inline void add_sdb_addrline(RBinFile *bf, ut64 addr, const char *file, u
 	sdb_add (s, fileline, offset_ptr, 0);
 	free (fileline);
 #else
-	RBinDbgItem item = {
+	RBinAddrline item = {
 		.addr = addr,
 		.file = file,
 		.line = line,
@@ -2818,7 +2818,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RBinDwarfDebugAbbrev
 					if (path && name) {
 						// printf ("0x%08"PFMT64x" %s %s\n", low, path, name);
 						char *abspath = (*name != '/')? r_str_newf ("%s/%s", path, name): strdup (name);
-						RBinDbgItem item = {
+						RBinAddrline item = {
 							.addr = low + 1, // XXX this low is wrong, we must add compilation units not addrline
 							.file = abspath,
 							.line = 0,
@@ -2851,9 +2851,9 @@ cleanup:
 	return NULL;
 }
 
-static RBinDbgItem *row_new(ut64 addr, const char *file, int line, int col) {
+static RBinAddrline *row_new(ut64 addr, const char *file, int line, int col) {
 	R_RETURN_VAL_IF_FAIL (file, NULL);
-	RBinDbgItem *row = R_NEW0 (RBinDbgItem);
+	RBinAddrline *row = R_NEW0 (RBinAddrline);
 	row->file = strdup (file);
 	row->addr = addr;
 	row->line = line;
@@ -2863,14 +2863,14 @@ static RBinDbgItem *row_new(ut64 addr, const char *file, int line, int col) {
 
 static void row_free(void *p) {
 	if (p) {
-		RBinDbgItem *row = (RBinDbgItem *)p;
+		RBinAddrline *row = (RBinAddrline *)p;
 		r_bin_addrline_free (row);
 	}
 }
 
-static bool cb(void *user, RBinDbgItem *item) {
+static bool cb(void *user, RBinAddrline *item) {
 	RList *list = (RList *)user;
-	RBinDbgItem *row = row_new (item->addr, item->file, item->line, item->column);
+	RBinAddrline *row = row_new (item->addr, item->file, item->line, item->column);
 	if (row) {
 		r_list_append (list, row);
 	}

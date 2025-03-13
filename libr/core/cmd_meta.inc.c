@@ -259,7 +259,7 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool print_addrinfo2_json(void *user, RBinDbgItem *item) {
+static bool print_addrinfo2_json(void *user, RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct *)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
@@ -309,7 +309,7 @@ static bool print_addrinfo2_json(void *user, RBinDbgItem *item) {
 	return true;
 }
 
-static bool print_addrinfo2(void *user, RBinDbgItem *item) {
+static bool print_addrinfo2(void *user, RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct*)user;
 	ut64 offset = item->addr;
 	if (!offset || offset == UT64_MAX) {
@@ -374,7 +374,7 @@ static int cmd_meta_add_fileline(RBinFile *bf, const char *fileline, ut64 offset
 	if (line) {
 		*line++ = 0;
 	}
-	RBinDbgItem item = {
+	RBinAddrline item = {
 		.addr = offset,
 		.file = file,
 		.line = line? atoi (line): 0,

@@ -393,12 +393,12 @@ typedef struct r_bin_file_options_t {
 
 // typedef void (*r_bin_addr2line_add)(RBin *bin, ut64 addr, const char *file, int line, int column);
 typedef struct r_bin_addrline_store_t RBinAddrLineStore;
-typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *bin, RBinDbgItem item); // ut64 addr, const char *file, int line, int column);
-typedef RBinDbgItem* (*RBinAddrLineGet)(RBinAddrLineStore *bin, ut64 addr);
+typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *bin, RBinAddrline item); // ut64 addr, const char *file, int line, int column);
+typedef RBinAddrline* (*RBinAddrLineGet)(RBinAddrLineStore *bin, ut64 addr);
 typedef void (*RBinAddrLineReset)(RBinAddrLineStore *bin);
 typedef void (*RBinAddrLineResetAt)(RBinAddrLineStore *bin, ut64 addr);
 typedef void (*RBinAddrLineDel)(RBinAddrLineStore *bin, ut64 addr);
-typedef bool (*RBinDbgInfoCallback)(void *user, RBinDbgItem *item);
+typedef bool (*RBinDbgInfoCallback)(void *user, RBinAddrline *item);
 typedef RList *(*RBinAddrLineFiles)(RBinAddrLineStore *bin);
 typedef void (*RBinAddrLineForeach)(RBinAddrLineStore *bin, RBinDbgInfoCallback cb, void *user);
 
@@ -919,13 +919,13 @@ R_API void r_bin_addrline_reset(RBin *bin);
 R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr);
 R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
 R_API RList *r_bin_addrline_files(RBin *bin);
-R_API RBinDbgItem *r_bin_addrline_at(RBin *bin, ut64 addr);
-R_API void r_bin_addrline_free(RBinDbgItem *di);
+R_API RBinAddrline *r_bin_addrline_at(RBin *bin, ut64 addr);
+R_API void r_bin_addrline_free(RBinAddrline *di);
 R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column); // R2_600 - must be deprecated
 R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 
-R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinDbgItem item);
-R_API RBinDbgItem *r_bin_addr2line_get(RBin *bin, ut64 addr);
+R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinAddrline item);
+R_API RBinAddrline *r_bin_addr2line_get(RBin *bin, ut64 addr);
 
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);

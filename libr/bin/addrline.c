@@ -8,7 +8,7 @@
 // R2R db/perf/dex
 // R2R db/cmd/lea_intel
 
-R_API void r_bin_addrline_free(RBinDbgItem *di) {
+R_API void r_bin_addrline_free(RBinAddrline *di) {
 	free (di);
 }
 
@@ -71,7 +71,7 @@ R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback cb, void *user)
 	return false;
 }
 
-R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
+R_API RBinAddrline *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
 		if (als) {
@@ -84,7 +84,7 @@ R_API RBinDbgItem *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
 	r_strf_var (key, 64, "0x%"PFMT64x, addr); // TODO: use sdb_itoa because its faster
 	char *data = sdb_get (bin->cur->sdb_addrinfo, key, 0);
 	if (data) {
-		RBinDbgItem *di = R_NEW0 (RBinDbgItem);
+		RBinAddrline *di = R_NEW0 (RBinAddrline);
 		di->addr = addr;
 		// 0xaddr=file.c|line:column
 		char *token = strchr (data, '|');
@@ -115,7 +115,7 @@ static bool addr2line_from_sdb(RBin *bin, ut64 addr, char *file, int len, int *l
 	if (!bin->cur || !bin->cur->sdb_addrinfo) {
 		return false;
 	}
-	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
+	RBinAddrline *di = r_bin_dbgitem_at (bin, addr);
 	if (di) {
 		if (line) {
 			*line = di->line;
@@ -136,7 +136,7 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
-		RBinDbgItem *item = als->al_get (als, addr);
+		RBinAddrline *item = als->al_get (als, addr);
 		if (item) {
 			// TODO: honor path
 			r_str_ncpy (file, item->file, len);
@@ -168,7 +168,7 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 	return false;
 }
 
-static RBinDbgItem *r_bin_addrline_api(RBin *bin, ut64 addr) {
+static RBinAddrline *r_bin_addrline_api(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -184,7 +184,7 @@ static RBinDbgItem *r_bin_addrline_api(RBin *bin, ut64 addr) {
 		int len = sizeof (file);
 		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
 			if (cp->dbginfo->get_line (bin->cur, addr, file, len, &line, &column)) {
-				RBinDbgItem *di = R_NEW0 (RBinDbgItem);
+				RBinAddrline *di = R_NEW0 (RBinAddrline);
 				di->file = strdup (file);
 				di->addr = addr;
 				di->line = line;
@@ -223,7 +223,7 @@ R_API R_NULLABLE char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin)
 	if (!bin->cur) {
 		return NULL;
 	}
-	RBinDbgItem *di = r_bin_dbgitem_at (bin, addr);
+	RBinAddrline *di = r_bin_dbgitem_at (bin, addr);
 	if (!di) {
 		di = r_bin_addrline_api (bin, addr);
 		if (!di) {
@@ -293,12 +293,12 @@ R_API R_NULLABLE char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin)
 	return res;
 }
 
-R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinDbgItem item) {
+R_API void r_bin_addr2line_add(RBin *bin, ut64 addr, RBinAddrline item) {
 	eprintf ("ADD LINE\n");
 	// const char *file, int line, int column) {
 }
 
-R_API RBinDbgItem *r_bin_addr2line_get(RBin *bin, ut64 addr) {
+R_API RBinAddrline *r_bin_addr2line_get(RBin *bin, ut64 addr) {
 	eprintf ("GET LINE\n");
 	// const char *file, int line, int column) {
 	return NULL;
