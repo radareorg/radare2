@@ -177,9 +177,8 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
 			cj->output_len = 0;
 			cj->output_size = newlen;
 		} else {
-			free (buf);
+			R_FREE (buf);
 		}
-		return NULL;
 	}
 	return buf;
 }
@@ -238,17 +237,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 				pj_free (pj);
 				return;
 			}
-			// pj_ko (pj, "meta");
-			if (cp->meta.author) {
-				pj_ks (pj, "author", cp->meta.author);
-			}
-			if (cp->meta.desc) {
-				pj_ks (pj, "description", cp->meta.desc);
-			}
-			if (cp->meta.license) {
-				pj_ks (pj, "license", cp->meta.license);
-			}
-			// pj_end (pj);
+			r_lib_meta_pj (pj, &cp->meta);
 			pj_end (pj);
 			break;
 		default:
@@ -256,7 +245,7 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 			break;
 		}
 	}
-	// TODO: R2_592 move all those static hashes into crypto plugins and remove the code below
+	// TODO: R2_600 move all those static hashes into crypto plugins and remove the code below
 	if (type == R_CRYPTO_TYPE_HASH || type == R_CRYPTO_TYPE_ALL) {
 		int i;
 		for (i = 0; i < 64; i++) {
@@ -291,7 +280,6 @@ R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int 
 		free (s);
 	} else if (mode == 'j') {
 		pj_end (pj);
-	//	pj_end (pj);
 		char *s = pj_drain (pj);
 		cb_printf ("%s\n", s);
 		free (s);
