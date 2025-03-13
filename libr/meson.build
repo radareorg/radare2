@@ -495,6 +495,7 @@ r_util_files = [
   'include/r_util/r_type.h',
   'include/r_util/r_debruijn.h',
   'include/r_util/r_diff.h',
+  'include/r_util/r_bloom.h',
   'include/r_util/r_event.h',
   'include/r_util/r_file.h',
   'include/r_util/r_graph.h',
