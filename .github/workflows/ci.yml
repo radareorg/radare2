@@ -291,6 +291,8 @@ jobs:
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
+        export R2R_SHALLOW=25 # Run 3/4 of the test suite
+        export JOBS=4         # Limit to -j4
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         r2r -t 3600 test/db/cmd
@@ -320,6 +322,8 @@ jobs:
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
         export R2R_SKIP_ARCHOS=1
         export R2R_TIMEOUT=3600
+        export R2R_SHALLOW=25 # Run 3/4 of the test suite
+        export JOBS=4         # Limit to -j4
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
         make tests

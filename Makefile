@@ -34,6 +34,7 @@ TAREXT=tar.gz
 CZ=gzip -f
 endif
 PWD=$(shell pwd)
+JOBS?=
 
 ifeq ($(BUILD_OS),windows)
 ifeq ($(OSTYPE),mingw32)
@@ -362,7 +363,7 @@ shot:
 	$(MAKE) -C dist/tarball VERSION=`date '+%Y%m%d'`
 
 tests test:
-	$(MAKE) -j -C test
+	$(MAKE) -j${JOBS} -C test
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign
