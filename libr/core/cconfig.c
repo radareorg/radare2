@@ -1133,14 +1133,14 @@ static bool cb_binfilter(void *user, void *data) {
 static bool cb_bdc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->demangle_usecmd = node->i_value;
+	core->bin->options.demangle_usecmd = node->i_value;
 	return true;
 }
 
 static bool cb_useldr(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->use_ldr = node->i_value;
+	core->bin->options.use_ldr = node->i_value;
 	return true;
 }
 
@@ -1161,14 +1161,14 @@ static bool cb_binat(void *user, void *data) {
 static bool cb_usextr(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->use_xtr = node->i_value;
+	core->bin->options.use_xtr = node->i_value;
 	return true;
 }
 
 static bool cb_binlimit(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->limit = node->i_value;
+	core->bin->options.limit = node->i_value;
 	return true;
 }
 
@@ -2856,7 +2856,7 @@ static bool cb_analverbose(void *user, void *data) {
 static bool cb_binverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->bin->verbose = node->i_value;
+	core->bin->options.verbose = node->i_value;
 	return true;
 }
 
@@ -2896,7 +2896,7 @@ static bool cb_prjname(void *user, void *data) {
 static bool cb_rawstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->bin->rawstr = node->i_value;
+	core->bin->options.rawstr = node->i_value;
 	return true;
 }
 static bool cb_bin_classes(void *user, void *data) {
@@ -2914,7 +2914,7 @@ static bool cb_bin_classes(void *user, void *data) {
 static bool cb_debase64(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->bin->debase64 = node->i_value;
+	core->bin->options.debase64 = node->i_value;
 	return true;
 }
 
@@ -2936,7 +2936,7 @@ static bool cb_demangle_trylib(void *user, void *data) {
 	if (!core || !core->bin) {
 		return false;
 	}
-	core->bin->demangle_trylib = node->i_value;
+	core->bin->options.demangle_trylib = node->i_value;
 	return true;
 }
 
@@ -2980,11 +2980,11 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
-		ut64 old_v = core->bin->maxstrbuf;
+		ut64 old_v = core->bin->options.maxstrbuf;
 		if (v < 1) {
 			v = 4; // HACK
 		}
-		core->bin->maxstrbuf = v;
+		core->bin->options.maxstrbuf = v;
 		if (v>old_v) {
 			r_bin_reset_strings (core->bin);
 		}
@@ -2997,7 +2997,7 @@ static bool cb_binmaxsymlen(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
-		core->bin->maxsymlen = node->i_value;
+		core->bin->options.maxsymlen = node->i_value;
 		return true;
 	}
 	return true;
@@ -3011,7 +3011,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 		if (v < 1) {
 			v = 0; // HACK
 		}
-		core->bin->maxstrlen = v;
+		core->bin->options.maxstrlen = v;
 		r_bin_reset_strings (core->bin);
 		return true;
 	}
@@ -3026,7 +3026,7 @@ static bool cb_binminstr(void *user, void *data) {
 		if (v < 1) {
 			v = 4; // HACK
 		}
-		core->bin->minstrlen = v;
+		core->bin->options.minstrlen = v;
 		r_bin_reset_strings (core->bin);
 		return true;
 	}

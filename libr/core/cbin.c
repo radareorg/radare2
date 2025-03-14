@@ -356,8 +356,8 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	RBinString *string;
 	RBinSection *section;
 
-	bin->minstrlen = minstr;
-	bin->maxstrlen = maxstr;
+	bin->options.minstrlen = minstr;
+	bin->options.maxstrlen = maxstr;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
@@ -2448,7 +2448,7 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 		// is in the middle of the code and it would make the code less
 		// readable.
 	} else {
-		if (core->bin->verbose) {
+		if (core->bin->options.verbose) {
 			R_LOG_WARN ("Special symbol %s not handled", oname);
 		}
 	}
@@ -3266,11 +3266,11 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
 						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
-					} else if (core->bin->verbose) {
+					} else if (core->bin->options.verbose) {
 						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
-				} else if (core->bin->verbose) {
+				} else if (core->bin->options.verbose) {
 					R_LOG_ERROR ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
@@ -3301,7 +3301,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
 						free (build_hash_string (pj, mode, hashtypes, data, datalen));
-					} else if (core->bin->verbose) {
+					} else if (core->bin->options.verbose) {
 						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
@@ -3324,7 +3324,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
 						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
-					} else if (core->bin->verbose) {
+					} else if (core->bin->options.verbose) {
 						hashstr = strdup ("*error*");
 						R_LOG_WARN ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}

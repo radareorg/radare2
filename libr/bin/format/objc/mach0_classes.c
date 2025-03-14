@@ -1106,7 +1106,7 @@ static inline const char *skipnum(const char *s) {
 static char *demangle_classname(RBin *rbin, const char *s) {
 	char *ret;
 	if (r_str_startswith (s, "_TtC")) {
-		ret = r_bin_demangle_swift (s, rbin->demangle_usecmd, rbin->demangle_trylib);
+		ret = r_bin_demangle_swift (s, rbin->options.demangle_usecmd, rbin->options.demangle_trylib);
 	} else {
 		ret = strdup (s);
 	}
@@ -1343,8 +1343,8 @@ static mach0_ut get_isa_value(void) {
 void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
 	RBin *bin = bf->rbin;
-	bool trylib = bin? bin->demangle_trylib: false;
-	bool usecmd = bin? bin->demangle_usecmd: false;
+	bool trylib = bin? bin->options.demangle_trylib: false;
+	bool usecmd = bin? bin->options.demangle_usecmd: false;
 	struct MACH0_(SClass) c = {0};
 	const int size = sizeof (struct MACH0_(SClass));
 	ut32 offset = 0, left = 0;
@@ -1556,8 +1556,8 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 		return;
 	}
 	RBin *bin = bf->rbin;
-	bool trylib = bin? bin->demangle_trylib: false;
-	bool usecmd = bin? bin->demangle_usecmd: false;
+	bool trylib = bin? bin->options.demangle_trylib: false;
+	bool usecmd = bin? bin->options.demangle_usecmd: false;
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
@@ -1746,7 +1746,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	int len;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
-	const int limit = bf->rbin->limit;
+	const int limit = bf->rbin->options.limit;
 
 	if (!bf->bo->bin_obj || !bf->bo->info) {
 		return NULL;

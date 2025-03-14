@@ -457,8 +457,21 @@ typedef struct r_bin_create_options_t {
 	int bits;
 } RBinCreateOptions;
 
+// R2_600 - move all the options from rbin into this struct
 typedef struct r_bin_options_t {
 	bool fake_aslr;
+	bool demangle_usecmd;
+	bool demangle_trylib;
+	bool verbose;
+	bool use_xtr; // use extract plugins when loading a file?
+	bool use_ldr; // use loader plugins when loading a file?
+	bool debase64;
+	int minstrlen;
+	int maxstrlen;
+	int maxsymlen;
+	ut64 maxstrbuf;
+	int limit; // max symbols
+	int rawstr;
 } RBinOptions;
 
 struct r_bin_t {
@@ -467,13 +480,6 @@ struct r_bin_t {
 	int narch;
 	void *user;
 	/* preconfigured values */
-	bool debase64;
-	int minstrlen;
-	int maxstrlen;
-	int maxsymlen;
-	int limit; // max symbols
-	ut64 maxstrbuf;
-	int rawstr;
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
@@ -495,13 +501,8 @@ struct r_bin_t {
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
-	bool demangle_usecmd;
-	bool demangle_trylib;
-	bool verbose;
-	bool use_xtr; // use extract plugins when loading a file?
-	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
-	RBinOptions options; // R2_600 - move all the options from rbin into this struct
+	RBinOptions options;
 };
 
 typedef struct r_bin_xtr_metadata_t {
@@ -627,7 +628,7 @@ typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 typedef struct r_bin_class_t {
 	RBinName *name;
 	RList *super; // list of RBinName
-	char *visibility_str; // XXX R2_590 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
+	char *visibility_str; // XXX R2_600 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
 	ut64 addr;
 	char *ns; // namespace // maybe RBinName?
@@ -692,15 +693,13 @@ typedef struct r_bin_field_t {
 	ut64 paddr;
 	ut64 value;
 	int size;
-	int offset; // R2_600 -rename to addr
-	// ut32 visibility; // R2_590 - deprecate we have attr!
+	int offset;
 	RBinName *name;
 	RBinName *type;
 	RBinFieldKind kind;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
-	// ut64 flags; // rename to attr and use R_BIN_ATTR_
 	RBinAttribute attr;
 } RBinField;
 
@@ -742,8 +741,7 @@ typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
 typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
-// R2_600 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
-
+typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -752,9 +750,9 @@ typedef struct r_bin_bind_t {
 	RBinGetSections get_sections;
 	RBinGetSectionAt get_vsect_at;
 	RBinDemangle demangle;
-//	RBinAddrLineAdd addrline_add;
-//	RBinAddrLineGet addrline_get;
-	// RBinBaddr baddr;
+	RBinAddrLineAdd addrline_add;
+	RBinAddrLineGet addrline_get;
+	RBinBaddr baddr;
 	ut32 visibility;
 } RBinBind;
 

@@ -520,13 +520,13 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 }
 
 static char *__demangleAs(RBin *bin, int type, const char *file) {
-	bool syscmd = bin->demangle_usecmd;
+	bool syscmd = bin->options.demangle_usecmd;
 	char *res = NULL;
 	switch (type) {
 	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
 	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->options.demangle_trylib); break;
 	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
 	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
@@ -904,7 +904,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			return rabin_show_help (0);
 		}
 		int type = r_bin_demangle_type (do_demangle);
-		bin->demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
+		bin->options.demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
 		file = argv[opt.ind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
@@ -1109,8 +1109,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			return 1;
 		}
 	}
-	bin->minstrlen = r_config_get_i (core.config, "bin.str.min");
-	bin->maxstrbuf = r_config_get_i (core.config, "bin.str.maxbuf");
+	bin->options.minstrlen = r_config_get_i (core.config, "bin.str.min");
+	bin->options.maxstrbuf = r_config_get_i (core.config, "bin.str.maxbuf");
 
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
@@ -1139,7 +1139,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		RBinFile *bf = r_bin_cur (core.bin);
 		if (bf) {
 			bf->strmode = rad;
-			r_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);
+			r_bin_dump_strings (bf, bin->options.minstrlen, bf->rawstr);
 		}
 	}
 	if (query) {

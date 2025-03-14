@@ -198,7 +198,7 @@ static char *demangle_internal(RCore *core, int type, const char *s) {
 	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
 	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (s); break;
 	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (s, core->bin->demangle_usecmd, core->bin->demangle_trylib); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (s, core->bin->options.demangle_usecmd, core->bin->options.demangle_trylib); break;
 	case R_BIN_LANG_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (s); break;
 	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;

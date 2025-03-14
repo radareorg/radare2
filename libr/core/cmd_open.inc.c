@@ -252,6 +252,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		if (input[2] && input[3]) {
 			char *arg = strdup (input + 3);
+			const bool rawstr = core->bin->options.rawstr;
 			char *filename = strchr (arg, ' ');
 			if (filename && isfile (filename + 1)) {
 				int saved_fd = r_io_fd_get_current (core->io);
@@ -260,7 +261,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
 					RBinFileOptions opt;
-					r_bin_file_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					r_bin_file_options_init (&opt, desc->fd, addr, 0, rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_bin_load (core, NULL, UT64_MAX);
 					r_core_cmd0 (core, ".is*");
@@ -279,7 +280,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					opt.baseaddr = baddr;
 					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
-					r_bin_file_options_init (&opt, desc->fd, baddr, addr, core->bin->rawstr);
+					r_bin_file_options_init (&opt, desc->fd, baddr, addr, rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -294,7 +295,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					opt.baseaddr = addr;
 					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
-					r_bin_file_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
+					r_bin_file_options_init (&opt, desc->fd, addr, addr, rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -315,7 +316,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
 				RBinFileOptions opt;
-				r_bin_file_options_init (&opt, fd, core->addr, 0, core->bin->rawstr);
+				r_bin_file_options_init (&opt, fd, core->addr, 0, core->bin->options.rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".ie*");
 				break;

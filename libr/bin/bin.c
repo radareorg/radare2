@@ -261,7 +261,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 		return false;
 	}
 	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
+	r_bin_file_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->options.rawstr);
 	opt.filename = bf->file;
 	if (!bf->buf) {
 		r_bin_file_delete (bin, bf->id);
@@ -278,14 +278,14 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
-	bin->rawstr = opt->rawstr;
+	bin->options.rawstr = opt->rawstr;
 	bin->file = opt->filename;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
 
 	RBinFile *bf = NULL;
-	if (bin->use_xtr && !opt->pluginname) {
+	if (bin->options.use_xtr && !opt->pluginname) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
@@ -299,14 +299,14 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					bf = r_bin_file_xtr_load (bin, xtr,
 						bin->file, buf, opt->baseaddr, opt->loadaddr,
-						opt->xtr_idx, opt->fd, bin->rawstr);
+						opt->xtr_idx, opt->fd, bin->options.rawstr);
 				}
 			}
 		}
 	}
 	if (!bf) {
 		const char *bfile = bin->file? bin->file: "?";
-		opt->rawstr = bin->rawstr;
+		opt->rawstr = bin->options.rawstr;
 		bf = r_bin_file_new_from_buffer (bin, bfile, buf, opt);
 		if (!bf) {
 			return false;
@@ -786,15 +786,15 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 	ht_up_free (bf->bo->strings_db);
 	bf->bo->strings_db = ht_up_new0 ();
 
-	bf->rawstr = bin->rawstr;
+	bf->rawstr = bin->options.rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
 	if (plugin && plugin->strings) {
 		bf->bo->strings = plugin->strings (bf);
 	} else {
-		bf->bo->strings = r_bin_file_get_strings (bf, bin->minstrlen, 0, bf->rawstr);
+		bf->bo->strings = r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
 	}
-	if (bin->debase64) {
+	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}
 	return bf->bo->strings;
@@ -869,7 +869,7 @@ R_API RBin *r_bin_new(void) {
 	}
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_newf ((RListFree)free);
-	bin->minstrlen = 0;
+	bin->options.minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
 	bin->want_dbginfo = true;

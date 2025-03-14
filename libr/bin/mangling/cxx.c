@@ -73,7 +73,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);
 					if (sym) {
 						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
-							if (bf && bf->rbin && bf->rbin->verbose) {
+							if (bf && bf->rbin && bf->rbin->options.verbose) {
 								R_LOG_WARN ("Dupped method found: %s", r_bin_name_tostring (sym->name));
 							}
 						}

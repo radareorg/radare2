@@ -16,7 +16,7 @@ static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	bf->bo->bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
+	bf->bo->bin_obj = r_bin_coff_new_buf (buf, bf->rbin->options.verbose);
 	return bf->bo->bin_obj != NULL;
 }
 
