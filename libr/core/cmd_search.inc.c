@@ -376,7 +376,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 					.loadaddr = 0,
 					.sz = 4096,
 					.xtr_idx = 0,
-					.rawstr = core->bin->rawstr,
+					.rawstr = core->bin->options.rawstr,
 					.fd = fd,
 				};
 				r_bin_open_io (core->bin, &opt);
