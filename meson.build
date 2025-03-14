@@ -510,10 +510,16 @@ sdb_dep = declare_dependency(
 
 sdb_exe = libsdb_sp.get_variable('sdb_exe')
 
+if host_machine.system() == 'windows'
+copyinout = ['copy', '@INPUT@', '@OUTPUT@'],
+else
+copyinout = ['cp', '-f', '@INPUT@', '@OUTPUT@'],
+endif
+
 sdb_install = custom_target('r2sdb',
   input : sdb_exe,
   output : 'r2sdb',
-  command : ['cp', '-f', '@INPUT@', '@OUTPUT@'],
+  command : copyinout,
   install : true,
   install_dir : get_option('bindir'))
 
