@@ -143,13 +143,13 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	size_t maxsize = R_MAX (ss_const, ss_selrefs);
 	maxsize = R_MIN (maxsize, objc->file_size);
 	if (ss_const > maxsize) {
-		if (objc->core->bin->verbose) {
+		if (objc->core->bin->options.verbose) {
 			R_LOG_WARN ("aao: Truncating ss_const from %u to %u", (int)ss_const, (int)maxsize);
 		}
 		ss_const = maxsize;
 	}
 	if (ss_selrefs > maxsize) {
-		if (objc->core->bin->verbose) {
+		if (objc->core->bin->options.verbose) {
 			R_LOG_WARN ("aao: Truncating ss_selrefs from %u to %u", (int)ss_selrefs, (int)maxsize);
 		}
 		ss_selrefs = maxsize;

@@ -443,8 +443,8 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE const 
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
 		// get bin.str.min
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
-		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
+		r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
+		r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	} else if (bf) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
@@ -478,7 +478,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		}
 	}
 	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
+	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->options.rawstr);
 	// opt.fd = fd;
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
@@ -519,8 +519,8 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
 		// get bin.str.min
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
-		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
+		r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
+		r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	} else if (bf) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
@@ -695,8 +695,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			is_io_load = false;
 		}
 	}
-	r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
-	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
+	r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
+	r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	R_CRITICAL_LEAVE (r);
 	if (desc && is_io_load) {
 		int desc_fd = desc->fd;
@@ -746,8 +746,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// r_config_set_b (r->config, "bin.str.raw", true);
 			// r_config_set_b (r->config, "io.va", false);
 			// get bin.str.min
-			r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
-			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
+			r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
+			r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 		} else if (binfile) {
 			RBinObject *obj = r_bin_cur_object (r->bin);
 			if (obj) {
