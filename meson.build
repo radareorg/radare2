@@ -511,7 +511,7 @@ sdb_dep = declare_dependency(
 sdb_exe = libsdb_sp.get_variable('sdb_exe')
 
 if host_machine.system() == 'windows'
-copyinout = ['copy', '@INPUT@', '@OUTPUT@']
+copyinout = ['cmd', '/c', 'copy', '@INPUT@', '@OUTPUT@']
 else
 copyinout = ['cp', '-f', '@INPUT@', '@OUTPUT@']
 endif
