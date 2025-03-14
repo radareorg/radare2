@@ -3658,7 +3658,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "set arch endianness");
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
 	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
-	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");
 
@@ -3786,7 +3785,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.sub.names", "true", "replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETBPREF ("asm.optype", "false", "show opcode type next to the instruction bytes");
-	SETBPREF ("asm.lines.fcn", "true", "show function boundary lines");
 	SETBPREF ("asm.flags", "true", "show flags");
 	SETBPREF ("asm.flags.prefix", "true", "show ;-- before the flags");
 	SETICB ("asm.flags.maxname", 0, &cb_maxname, "maximum length of flag name with smart chopping");
@@ -3804,8 +3802,11 @@ R_API int r_core_config_init(RCore *core) {
 	       "show flags' unfiltered realnames instead of names, except realnames from demangling");
 	SETBPREF ("asm.lbytes", "true", "align disasm bytes to left");
 	SETBPREF ("asm.lines", "true", "show ASCII-art lines at disassembly");
+	SETBPREF ("asm.lines.fcn", "true", "show function boundary lines");
+	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 	SETBPREF ("asm.lines.jmp", "true", "show flow lines at jumps");
 	SETI ("asm.lines.limit", 4096*4, "dont show control flow lines if function is larger than X bytes");
+	SETBPREF ("asm.lines.split", "false", "show up/down lines splitted form");
 	SETBPREF ("asm.lines.bb", "false", "show empty line after every basic block");
 	SETBPREF ("asm.lines.call", "false", "enable call lines");
 	SETBPREF ("asm.lines.ret", "false", "show separator lines after ret");

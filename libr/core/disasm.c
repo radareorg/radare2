@@ -104,7 +104,8 @@ typedef struct r_disasm_state_t {
 	bool subjmp;
 	bool subvar;
 	bool show_lines;
-	bool show_lines_bb;
+	bool show_lines_jmp;
+	bool show_lines_split;
 	bool show_lines_ret;
 	bool show_lines_call;
 	bool show_lines_fcn;
@@ -279,9 +280,12 @@ typedef struct r_disasm_state_t {
 	int middle;
 	int indent_level;
 	int indent_space;
+	char *lineup;
+	char *lineup_col;
 	char *line;
 	char *line_col, *prev_line_col;
-	char *refline, *refline2;
+	char *refline;
+	char *refline2;
 	char *comment;
 	char *opstr;
 	char *osl, *sl;
@@ -360,6 +364,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void ds_print_lines_right(RDisasmState *ds);
+static void ds_print_lines_split (RDisasmState *ds);
 static void ds_print_lines_left(RDisasmState *ds);
 static void ds_print_cycles(RDisasmState *ds);
 static void ds_print_family(RDisasmState *ds);
@@ -405,6 +410,8 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
+typedef const char *(*fn_utf8char)(const char line, RDisasmState *ds);
+
 static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	switch (line) {
 	case '<': return ds->core->cons->vline[ARROW_LEFT];
@@ -421,7 +428,24 @@ static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	}
 }
 
-static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
+static const char *get_utf8_char_split(const char line, RDisasmState *ds) {
+	switch (line) {
+	case '<': return ds->core->cons->vline[ARROW_RIGHT]; //LEFT];
+	case '>': return ds->core->cons->vline[ARROW_LEFT];
+	case ':': return ds->core->cons->vline[LINE_UP];
+	case '|': return ds->core->cons->vline[LINE_VERT];
+	case '!': return "!";
+	case '=':
+	case '-': return ds->core->cons->vline[LINE_HORIZ];
+	case ',': return ds->core->cons->vline[CORNER_TL];
+	case '.': return RUNE_CORNER_TR; // ds->core->cons->vline[CORNER_TR]; // XXX
+	case '`': return ds->core->cons->vline[CORNER_BR];
+	default: return " ";
+	}
+}
+
+static void ds_print_ref_lines(RDisasmState *ds, char *line, char *line_col, bool split) {
+	fn_utf8char utf8char = split? get_utf8_char_split: get_utf8_char;
 	int i;
 	int len = strlen (line);
 	if (ds->core->cons->use_utf8 || ds->linesopts & R_ANAL_REFLINE_TYPE_UTF8) {
@@ -432,12 +456,12 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 					continue;
 				}
 				const char *flow_tint = (line_col[i] == 'd')? COLOR (ds, color_flow): COLOR (ds, color_flow2);
-				r_cons_printf ("%s%s%s", flow_tint, get_utf8_char (line[i], ds), COLOR_RESET (ds));
+				r_cons_printf ("%s%s%s", flow_tint, utf8char (line[i], ds), COLOR_RESET (ds));
 			}
 		} else {
 			len = strlen (line);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%s", get_utf8_char (line[i], ds));
+				r_cons_printf ("%s", utf8char (line[i], ds));
 			}
 		}
 	} else {
@@ -483,7 +507,7 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 		return Gsection;
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		char *rv = r_core_cmd_strf (core, "dmi.@0x%08"PFMT64x, addr);
+		char *rv = r_core_cmd_str_at (core, addr, "dmi.");
 		if (rv) {
 			r_str_replace_char (rv, '\n', ' ');
 			free (Gsection);
@@ -529,7 +553,7 @@ static void ds_comment_align(RDisasmState *ds) {
 		r_cons_print (COLOR_RESET (ds));
 		ds_print_pre (ds, true);
 		r_cons_printf ("%s", sn);
-		ds_print_ref_lines (ds->refline, ds->line_col, ds);
+		ds_print_ref_lines (ds, ds->refline, ds->line_col, false);
 		r_cons_printf ("   %s", COLOR (ds, color_comment));
 	}
 }
@@ -730,7 +754,8 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->asm_types = r_config_get_i (core->config, "asm.types");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_b (core->config, "asm.lines");
-	ds->show_lines_bb = ds->show_lines ? r_config_get_b (core->config, "asm.lines.jmp") : false;
+	ds->show_lines_jmp = ds->show_lines ? r_config_get_b (core->config, "asm.lines.jmp") : false;
+	ds->show_lines_split = r_config_get_b (core->config, "asm.lines.split");
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
@@ -906,7 +931,7 @@ static RDisasmState *ds_init(RCore *core) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
-	if (ds->show_lines_bb) {
+	if (ds->show_lines_jmp) {
 		ds->ocols += 10; // XXX
 	}
 	if (ds->show_offset) {
@@ -933,7 +958,7 @@ static RDisasmState *ds_init(RCore *core) {
 	} else {
 		ds->cursor = -1;
 	}
-	if (r_config_get_i (core->config, "asm.lines.wide")) {
+	if (r_config_get_b (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
@@ -948,6 +973,8 @@ static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	r_list_free (anal->reflines);
 	anal->reflines = NULL;
+	r_list_free (anal->reflines2);
+	anal->reflines2 = NULL;
 	R_FREE (ds->refline);
 	R_FREE (ds->refline2);
 	R_FREE (ds->prev_line_col);
@@ -956,16 +983,29 @@ static void ds_reflines_fini(RDisasmState *ds) {
 static void ds_reflines_init(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	st64 limit = r_config_get_i (ds->core->config, "asm.lines.limit");
+	bool split = r_config_get_b (ds->core->config, "asm.lines.split");
 	const bool inlimit = (limit > 0 && ds->len < limit);
 
-	if (inlimit && (ds->show_lines_bb || ds->pj)) {
+	if (inlimit && (ds->show_lines_jmp || ds->pj)) {
 		ds_reflines_fini (ds);
-		anal->reflines = r_anal_reflines_get (anal,
-			ds->addr, ds->buf, ds->len, ds->count,
-			ds->linesout, ds->show_lines_call);
+		if (split) {
+			anal->reflines = r_anal_reflines_get (anal,
+				ds->addr, ds->buf, ds->len, ds->count,
+				ds->linesout, ds->show_lines_call, 1);
+			anal->reflines2 = r_anal_reflines_get (anal,
+				ds->addr, ds->buf, ds->len, ds->count,
+				ds->linesout, ds->show_lines_call, -1);
+		} else {
+			anal->reflines = r_anal_reflines_get (anal,
+				ds->addr, ds->buf, ds->len, ds->count,
+				ds->linesout, ds->show_lines_call, 0);
+			anal->reflines2 = NULL;
+		}
 	} else {
 		r_list_free (anal->reflines);
 		anal->reflines = NULL;
+		r_list_free (anal->reflines2);
+		anal->reflines2 = NULL;
 	}
 }
 
@@ -1394,10 +1434,10 @@ static void ds_newline(RDisasmState *ds) {
 static void ds_begin_cont(RDisasmState *ds) {
 	ds_begin_line (ds);
 	ds_setup_print_pre (ds, false, false);
-	if (!ds->linesright && ds->show_lines_bb && ds->line) {
+	if (!ds->linesright && ds->show_lines_jmp && ds->line) {
 		RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
 				ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-		ds_print_ref_lines (refstr->str, refstr->cols, ds);
+		ds_print_ref_lines (ds, refstr->str, refstr->cols, false);
 		r_anal_reflines_str_free (refstr);
 	}
 }
@@ -2852,9 +2892,23 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 }
 
 static void ds_update_ref_lines(RDisasmState *ds) {
-	if (ds->show_lines_bb) {
+	if (ds->show_lines_jmp) {
 		free (ds->line);
 		free (ds->line_col);
+		if (ds->show_lines_split) {
+			RAnalRefStr *line2 = r_anal_reflines_str (ds->core, ds->at, ds->linesopts | R_ANAL_REFLINE_TYPE_SPLIT);
+			if (line2) {
+				free (ds->lineup);
+				ds->lineup = strdup (line2->str);
+				r_str_reverse (ds->lineup);
+				r_str_replace_char (ds->lineup, ':', '|');
+				r_str_replace_char (ds->lineup, '=', '-');
+				ds->lineup_col = line2->cols;
+			} else {
+				ds->lineup = NULL;
+			}
+			r_anal_reflines_str_free (line2);
+		}
 		RAnalRefStr *line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		if (!line) {
 			return;
@@ -3137,9 +3191,21 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 	}
 }
 
+static void ds_print_lines_split(RDisasmState *ds) {
+	if (ds->show_lines_split) {
+		ds_print_ref_lines (ds, ds->lineup, ds->lineup_col, true);
+	}
+}
+
 static void ds_print_lines_right(RDisasmState *ds) {
-	if (ds->linesright && ds->show_lines_bb && ds->line) {
-		ds_print_ref_lines (ds->line, ds->line_col, ds);
+#if 0
+	if (ds->show_lines_split) {
+		ds_print_ref_lines (ds, ds->lineup, ds->lineup_col);
+		r_cons_printf ("--");
+	}
+#endif
+	if (ds->linesright && ds->show_lines_jmp && ds->line) {
+		ds_print_ref_lines (ds, ds->line, ds->line_col, false);
 	}
 }
 
@@ -3221,7 +3287,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		}
 	}
 	if (ds->line) {
-		ds_print_ref_lines (ds->line, ds->line_col, ds);
+		ds_print_ref_lines (ds, ds->line, ds->line_col, false);
 	}
 }
 
@@ -3473,13 +3539,12 @@ static void ds_print_trace(RDisasmState *ds) {
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 	}
 	if (ds->tracespace) {
-		char spaces [32];
-		int times;
 		if (!tp) {
 			tp = r_debug_trace_get (ds->core->dbg, ds->at);
 		}
 		if (tp) {
-			times = R_MIN (tp->times, 30); // limit to 30
+			char spaces[32];
+			int times = R_MIN (tp->times, 30); // limit to 30
 			memset (spaces, ' ', sizeof (spaces));
 			spaces[times] = 0;
 			r_cons_print (spaces);
@@ -3499,7 +3564,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	RCore *core = ds->core;
 	const char *type = NULL;
 	char msg[64];
-	const int isSigned = (ib == 1 || ib == 8 || ib == 10)? 1: 0;
+	const bool isSigned = (ib == 1 || ib == 8 || ib == 10);
 	switch (size) {
 	case 1: type = isSigned? ".char": ".byte"; break;
 	case 2: type = isSigned? ".int16": ".word"; break;
@@ -5527,12 +5592,11 @@ static void ds_print_bbline(RDisasmState *ds) {
 			size_t snl = sn? strlen (sn) + 4: 4;
 			r_cons_printf ("%s", r_str_pad (' ', R_MAX (10, snl - 1)));
 		}
-		if (!ds->linesright && ds->show_lines_bb && ds->line) {
-			char *refline, *reflinecol = NULL;
+		if (!ds->linesright && ds->show_lines_jmp && ds->line) {
 			ds_update_ref_lines (ds);
-			refline = ds->refline2;
-			reflinecol = ds->prev_line_col;
-			ds_print_ref_lines (refline, reflinecol, ds);
+			char *refline = ds->refline2;
+			char *reflinecol = ds->prev_line_col;
+			ds_print_ref_lines (ds, refline, reflinecol, false);
 		}
 		r_cons_printf ("|");
 		ds_newline (ds);
@@ -5540,8 +5604,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 }
 
 static void print_fcn_arg(RCore *core, int nth, const char *type, const char *name,
-			   const char *fmt, const ut64 addr,
-			   const int on_stack, int asm_types) {
+			   const char *fmt, const ut64 addr, const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
 		r_cons_printf ("%s", type);
 	}
@@ -6791,6 +6854,7 @@ toro:
 				ds_print_core_vmode (ds, ds->asm_hint_pos);
 			}
 		}
+		ds_print_lines_split (ds);
 		ds_print_op_size (ds);
 		ds_print_trace (ds);
 		ds_print_cycles (ds);
@@ -6915,7 +6979,7 @@ toro:
 				}
 				ds_begin_line (ds);
 				ds_print_pre (ds, true);
-				ds_print_ref_lines (ds->line, ds->line_col, ds);
+				ds_print_ref_lines (ds, ds->line, ds->line_col, false);
 				r_cons_printf ("%s --------------------------------------", ds->cmtoken);
 				ds_newline (ds);
 			}

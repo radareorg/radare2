@@ -62,6 +62,15 @@ typedef struct r_anal_range_t {
 } RAnalRange;
 
 enum {
+	R_ANAL_REFLINE_TYPE_UTF8 = 1,
+	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
+	R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
+	                                        * reflines (used for comment lines before disasm) */
+	R_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8, /* as above but for lines after disasm */
+	R_ANAL_REFLINE_TYPE_SPLIT = 16 /* use reflines2 for upward lines */
+};
+
+enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
 	R_ANAL_DATA_TYPE_STRING = 2,
@@ -472,6 +481,7 @@ typedef struct r_anal_t {
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
+	RList *reflines2;
 	RListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
@@ -1232,7 +1242,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
-		ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
+		ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall, int splitmode);
 R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API RAnalRefStr *r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
