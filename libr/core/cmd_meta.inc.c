@@ -160,46 +160,44 @@ static RCoreHelpMessage help_msg_Cvs = {
 };
 
 static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
-	int line;
-	char file[1024];
-	int colu = 0; /// addr2line function cant retrieve column info
-	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line, &colu);
-	if (!ret) {
+	RBinAddrline *al = r_bin_addrline_get (core->bin, addr);
+	if (!al) {
 		return false;
 	}
 	if (pj) {
 		pj_o (pj);
-		pj_ks (pj, "file", file);
-		pj_kn (pj, "line", line);
-		pj_kn (pj, "colu", colu);
+		pj_ks (pj, "file", al->file);
+		pj_kn (pj, "line", al->line);
+		pj_kn (pj, "colu", al->column);
 		pj_kn (pj, "addr", addr);
-		if (r_file_exists (file)) {
-			char *row = r_file_slurp_line (file, line, 0);
+		if (r_file_exists (al->file)) {
+			char *row = r_file_slurp_line (al->file, al->line, 0);
 			pj_ks (pj, "text", row);
 			free (row);
 		} else {
 			// R_LOG_ERROR ("Cannot open '%s'", file);
 		}
 		pj_end (pj);
-		return ret;
+		return true;
 	}
+	int line = al->line;
 
-	r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", file, line, colu, addr);
+	r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al->file, line, al->column, addr);
 	int line_old = line;
 	if (line >= 2) {
 		line -= 2;
 	}
-	if (r_file_exists (file)) {
+	if (r_file_exists (al->file)) {
 		int i;
 		for (i = 0; i < 5; i++) {
-			char *row = r_file_slurp_line (file, line + i, 0);
+			char *row = r_file_slurp_line (al->file, line + i, 0);
 			if (row) {
-				r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line + i, row);
+				r_cons_printf ("%c %.3x  %s\n", al->line + i == line_old ? '>' : ' ', line + i, row);
 				free (row);
 			}
 		}
 	} else {
-		R_LOG_ERROR ("Cannot open '%s'", file);
+		R_LOG_ERROR ("Cannot open '%s'", al->file);
 	}
 	return true;
 }

@@ -1596,17 +1596,17 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	const bool is_html = r_cons_context ()->is_html;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
-	char file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
-	int line = 0, oline = 0, colu = 0;
+	char *cmdstr = NULL, *filestr = NULL, *str = NULL;
+	int oline = 0;
 	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
 		RStrBuf *sb = r_strbuf_new ("");
 		const ut64 bb_end = bb->addr + bb->size;
 		for (at = bb->addr; at < bb_end; at += 2) {
-			r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu);
-			if (line != 0 && line != oline && strcmp (file, "??")) {
-				filestr = r_file_slurp_line (file, line, 0);
+			RBinAddrline *al = r_bin_addrline_get (core->bin, at);
+			if (al && al->line && al->line != oline && strcmp (al->file, "??")) {
+				filestr = r_file_slurp_line (al->file, al->line, 0);
 				if (filestr) {
 					r_strbuf_append (sb, filestr);
 					if (is_json) {
@@ -1619,7 +1619,7 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					free (filestr);
 				}
 			}
-			oline = line;
+			oline = al->line;
 		}
 		cmdstr = r_strbuf_drain (sb);
 	} else if (opts & R_CORE_ANAL_STAR) {
