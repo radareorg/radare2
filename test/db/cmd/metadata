@@ -75,8 +75,8 @@ EXPECT=<<EOF
 0x00000002 ; (Cr 2 pd 1)
 0x00000002 ; (Cr 2 pd 1)
 0x00000002 ; (Cr 2 pd 1)
-  0x00000004      c3             ret
-  0x00000005      c3             ret
+            0x00000004      c3             ret
+            0x00000005      c3             ret
 EOF
 RUN
 
