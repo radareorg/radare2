@@ -65,51 +65,15 @@ R_API RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr) {
 	return NULL;
 }
 
-// XXX R2_600 - this api must return a struct instead of pa -- or just deprecate it
-R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column) {
-	R_RETURN_VAL_IF_FAIL (bin, false);
-
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		RBinAddrline *item = als->al_get (als, addr);
-		if (item) {
-			// TODO: honor path
-			r_str_ncpy (file, item->file, len);
-			if (line) {
-				*line = item->line;
-			}
-			if (column) {
-				*column = item->column;
-			}
-			r_bin_addrline_free (item);
-			return true;
-		}
-		return false;
-	}
-#if 0
-	RBinObject *o = r_bin_cur_object (bin);
-	ut64 baddr = r_bin_get_baddr (bin);
-	if (baddr == UT64_MAX) {
-		baddr = 0;
-	}
-	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
-		return addr2line_from_sdb (bin, addr, file, len, line, column);
-	}
-#endif
-	return false;
-}
-
 static char *addr2fileline(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	char file[1024];
-	int line = 0;
-	int colu = -1;
-	if (r_bin_addr2line (bin, addr, file, sizeof (file) - 1, &line, &colu)) {
-		const char *file_nopath = r_file_basename (file);
-		if (colu > 0) {
-			return r_str_newf ("%s:%d:%d", file_nopath, line, colu);
+	RBinAddrline *al = r_bin_addrline_get (bin, addr);
+	if (al) {
+		const char *file_nopath = r_file_basename (al->file);
+		if (al->column > 0) {
+			return r_str_newf ("%s:%d:%d", file_nopath, al->line, al->column);
 		}
-		return r_str_newf ("%s:%d", file_nopath, line);
+		return r_str_newf ("%s:%d", file_nopath, al->line);
 	}
 	return NULL;
 }

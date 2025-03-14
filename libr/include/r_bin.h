@@ -908,14 +908,12 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
-// R2_600 - refactor, rename and optimize storage
 R_API void r_bin_addrline_reset(RBin *bin);
 R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr);
 R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback item, void *user);
 R_API RList *r_bin_addrline_files(RBin *bin);
 R_API RBinAddrline *r_bin_addrline_at(RBin *bin, ut64 addr);
 R_API void r_bin_addrline_free(RBinAddrline *di);
-R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line, int *column); // R2_600 - must be deprecated
 R_API RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr);
 R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 

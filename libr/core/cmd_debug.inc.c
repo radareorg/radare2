@@ -1068,40 +1068,45 @@ static int step_until_eof(RCore *core) {
 }
 
 static int step_line(RCore *core, int times) {
-	char file[512], file2[512];
-	int find_meta, line = -1, line2 = -1, colu = -1, colu2 = -1;
-	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
 		R_LOG_ERROR ("Cannot 'drn PC'");
 		return false;
 	}
-	file[0] = 0;
-	file2[0] = 0;
-	if (r_bin_addr2line (core->bin, off, file, sizeof (file), &line, &colu)) {
-		char* ptr = r_file_slurp_line (file, line, 0);
-		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, file, line, ptr);
+	RBinAddrline *al = r_bin_addrline_get (core->bin, off);
+	bool find_meta;
+	if (al) {
+		char* ptr = r_file_slurp_line (al->file, al->line, 0);
+		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, al->file, al->line, ptr);
 		find_meta = false;
 		free (ptr);
 	} else {
-		R_LOG_DEBUG ("Stepping until the next dwarf line reference");
+		R_LOG_DEBUG ("Stepping until the next addrline reference");
 		find_meta = true;
 	}
+	RBinAddrline *al2 = NULL;
 	do {
 		r_debug_step (core->dbg, 1);
 		off = r_debug_reg_get (core->dbg, "PC");
-		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2, &colu2)) {
+		r_bin_addrline_free (al2);
+		al2 = r_bin_addrline_get (core->bin, off);
+		if (!al2) {
 			if (find_meta) {
 				continue;
 			}
-			R_LOG_ERROR ("Cannot retrieve dwarf info at 0x%08"PFMT64x, off);
+			R_LOG_ERROR ("Cannot retrieve addrline info at 0x%08"PFMT64x, off);
+			r_bin_addrline_free (al);
 			return false;
 		}
-	} while (!strcmp (file, file2) && line == line2);
+	} while (!strcmp (al->file, al2->file) && al->line == al2->line);
 
-	tmp_ptr = r_file_slurp_line (file2, line2, 0);
-	R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, file2, line2, tmp_ptr);
-	free (tmp_ptr);
+	if (al2) {
+		char *tmp_ptr = r_file_slurp_line (al2->file, al2->line, 0);
+		R_LOG_DEBUG ("addrline 0x%08"PFMT64x" %s : %d (%s)", off, al2->file, al2->line, tmp_ptr);
+		free (tmp_ptr);
+		r_bin_addrline_free (al2);
+	}
+	r_bin_addrline_free (al);
 
 	return true;
 }

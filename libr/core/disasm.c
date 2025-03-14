@@ -7520,7 +7520,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
 		// addr addrline info here
 		{
-#if 1
 			RBinAddrline *al = r_bin_addrline_get (core->bin, at);
 			if (al) {
 				pj_ko (pj, "addrline");
@@ -7529,16 +7528,6 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				pj_end (pj);
 				r_bin_addrline_free (al);
 			}
-#else
-			int line, colu;
-			char file[1024];
-			if (r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu)) {
-				pj_ko (pj, "addrline");
-				pj_ks (pj, "file", file);
-				pj_kn (pj, "line", line);
-				pj_end (pj);
-			}
-#endif
 		}
 		// handle switch statements
 		if (ds->analop.switch_op && r_list_length (ds->analop.switch_op->cases) > 0) {
