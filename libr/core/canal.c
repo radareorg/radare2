@@ -1618,8 +1618,8 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					}
 					free (filestr);
 				}
+				oline = al->line;
 			}
-			oline = al->line;
 		}
 		cmdstr = r_strbuf_drain (sb);
 	} else if (opts & R_CORE_ANAL_STAR) {
