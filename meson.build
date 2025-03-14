@@ -514,7 +514,7 @@ if host_machine.system() == 'windows'
 copyinout = [
 	'powershell', '-Command',
 	'Copy-Item', '@INPUT@', '@OUTPUT@'
-],
+]
 else
 copyinout = ['cp', '-f', '@INPUT@', '@OUTPUT@']
 endif
