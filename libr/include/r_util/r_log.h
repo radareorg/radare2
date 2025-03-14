@@ -107,6 +107,7 @@ R_API RLogLevel r_log_get_traplevel(void);
 R_API void r_log_set_traplevel(RLogLevel level);
 R_API void r_log_set_callback(RLogCallback cbfunc);
 R_API const char *r_log_level_tostring(int i);
+R_API int r_log_level_fromstring(const char *);
 R_API const char *r_log_level_tocolor(int i);
 
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(6, 7);

@@ -3382,22 +3382,23 @@ static bool cb_malloc(void *user, void *data) {
 static bool cb_config_log_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	if (!strcmp (node->value, "?")) {
-		r_cons_printf ("0 - fatal\n");
-		r_cons_printf ("1 - error\n");
-		r_cons_printf ("2 - info\n");
-		r_cons_printf ("3 - warn\n");
-		r_cons_printf ("4 - todo\n");
-		r_cons_printf ("5 - debug\n");
+		int i;
+		for (i = 0; ; i++) {
+			const char *lm = r_log_level_tostring (i);
+			if (!strcmp (lm, "UNKN")) {
+				break;
+			}
+			char *llm = strdup (lm);
+			r_str_case (llm, false);
+			r_cons_printf ("%d  %s\n", i, llm);
+			free (llm);
+		}
 		return false;
 	}
-	int i;
-	const char *uvalue = node->value;
-	for (i = 0; i < R_LOG_LEVEL_LAST; i++) {
-		const char *m = r_log_level_tostring (i);
-		if (r_str_casecmp (m, uvalue) == 0) {
-			r_log_set_level (i);
-			return true;
-		}
+	int ll = r_log_level_fromstring (node->value);
+	if (ll != -1) {
+		r_log_set_level (ll);
+		return true;
 	}
 	r_log_set_level (node->i_value);
 	return true;

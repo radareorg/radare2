@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2010-2025 - pancake */
 
 #define R_LOG_ORIGIN "util.log"
 
@@ -12,19 +12,24 @@ typedef struct r_log_cbuser_t {
 } RLogCallbackUser;
 
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOG_LEVEL_FATAL]     = "FATAL",
-	[R_LOG_LEVEL_ERROR]     = "ERROR",
-	[R_LOG_LEVEL_INFO]      = "INFO",
-	[R_LOG_LEVEL_WARN]      = "WARN",
-	[R_LOG_LEVEL_TODO]      = "TODO",
-	[R_LOG_LEVEL_DEBUG]     = "DEBUG",
+	[R_LOG_LEVEL_FATAL] = "FATAL",
+	[R_LOG_LEVEL_ERROR] = "ERROR",
+	[R_LOG_LEVEL_INFO]  = "INFO",
+	[R_LOG_LEVEL_WARN]  = "WARN",
+	[R_LOG_LEVEL_TODO]  = "TODO",
+	[R_LOG_LEVEL_DEBUG] = "DEBUG",
 };
 
-#if R2_600
-R_API const char *r_log_level_fromstring(int i) {
-	// TODO. see libr/core/cconfig.c:3340
+R_API int r_log_level_fromstring(const char *ll) {
+	int i;
+	for (i = 0; i < R_LOG_LEVEL_LAST; i++) {
+		const char *m = r_log_level_tostring (i);
+		if (r_str_casecmp (m, ll) == 0) {
+			return i;
+		}
+	}
+	return -1;
 }
-#endif
 
 R_API const char *r_log_level_tostring(int i) {
 	if (i >= 0 && i < R_LOG_LEVEL_LAST) {
