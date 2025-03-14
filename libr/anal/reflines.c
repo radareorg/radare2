@@ -21,23 +21,27 @@ static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
+static R_NONNULL ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	ReflineEnd *re = R_NEW0 (struct refline_end);
-	if (!re) {
-		return NULL;
-	}
 	re->val = val;
 	re->is_from = is_from;
 	re->r = ref;
 	return re;
 }
 
-static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type) {
-	ReflineEnd *re1, *re2;
-	RAnalRefline *item = R_NEW0 (RAnalRefline);
-	if (!item) {
-		return false;
+static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type, int splitmode) {
+	if (splitmode) {
+		if (splitmode > 0) {
+			if (addr > to) {
+				return true;
+			}
+		} else {
+			if (addr < to) {
+				return true;
+			}
+		}
 	}
+	RAnalRefline *item = R_NEW0 (RAnalRefline);
 	item->from = addr;
 	item->to = to;
 	item->index = *idx;
@@ -47,19 +51,10 @@ static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, 
 	*idx += 1;
 	r_list_append (list, item);
 
-	re1 = refline_end_new (item->from, true, item);
-	if (!re1) {
-		free (item);
-		return false;
-	}
+	ReflineEnd *re1 = refline_end_new (item->from, true, item);
 	r_list_add_sorted (sten, re1, (RListComparator)cmp_asc);
 
-	re2 = refline_end_new (item->to, false, item);
-	if (!re2) {
-		free (re1);
-		free (item);
-		return false;
-	}
+	ReflineEnd *re2 = refline_end_new (item->to, false, item);
 	r_list_add_sorted (sten, re2, (RListComparator)cmp_asc);
 	return true;
 }
@@ -75,8 +70,9 @@ R_API void r_anal_reflines_free(RAnalRefline *rl) {
  *
  * nlines - max number of lines of code to consider
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
- * linescall - true if you want to display call lines */
-R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+ * linescall - true if you want to display call lines
+ * splitmode - 0, -1, 1 */
+R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall, int splitmode) {
 	RListIter *iter;
 	RAnalOp op = {0};
 	struct refline_end *el;
@@ -153,7 +149,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 		}
 		if (bind_addr != 0 && bind_addr != UT64_MAX) {
-			add_refline (list, sten, addr, bind_addr, &count, 'b');
+			add_refline (list, sten, addr, bind_addr, &count, 'b', splitmode);
 			bind_addr = UT64_MAX;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
@@ -190,13 +186,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!add_refline (list, sten, addr, op.jump, &count, 'j')) {
+			if (!add_refline (list, sten, addr, op.jump, &count, 'j', splitmode)) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!add_refline (list, sten, addr, op.fail, &count, 'f')) {
+				if (!add_refline (list, sten, addr, op.fail, &count, 'f', splitmode)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -215,7 +211,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j')) {
+				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j', splitmode)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -362,8 +358,6 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	R_RETURN_VAL_IF_FAIL (core && core->cons && core->anal, NULL);
 	RCons *cons = core->cons;
 	RAnal *anal = core->anal;
-	RBuffer *b;
-	RBuffer *c;
 	RListIter *iter;
 	RAnalRefline *ref;
 	int l;
@@ -371,18 +365,21 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	int dir = 0, pos = -1, max_level = -1;
 	bool middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
 	bool middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
+	bool split_mode = opts & R_ANAL_REFLINE_TYPE_SPLIT;
 	char *str = NULL;
 	char *col_str = NULL;
-
+#if 0
 	if (!anal->reflines) {
 		return NULL;
 	}
+#endif
+	RList *reflines = split_mode ? anal->reflines2: anal->reflines;
 
 	RList *lvls = r_list_new ();
 	if (!lvls) {
 		return NULL;
 	}
-	r_list_foreach (anal->reflines, iter, ref) {
+	r_list_foreach (reflines, iter, ref) {
 		if (cons->context && cons->context->breaked) {
 			r_list_free (lvls);
 			return NULL;
@@ -391,8 +388,8 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
 	}
-	b = r_buf_new ();
-	c = r_buf_new ();
+	RBuffer *b = r_buf_new ();
+	RBuffer *c = r_buf_new ();
 	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
@@ -494,10 +491,8 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 
 	r_list_free (lvls);
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
-	if (out) {
-		out->str = str;
-		out->cols = col_str;
-	}
+	out->str = str;
+	out->cols = col_str;
 	return out;
 }
 

@@ -185,14 +185,6 @@ typedef enum {
 } RAnalCondType;
 
 enum {
-	R_ANAL_REFLINE_TYPE_UTF8 = 1,
-	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
-	R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
-	                                        * reflines (used for comment lines before disasm) */
-	R_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
-};
-
-enum {
 	R_ANAL_RET_NOP = 0,
 	R_ANAL_RET_ERROR = -1,
 	R_ANAL_RET_DUP = -2,
