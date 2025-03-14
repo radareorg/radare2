@@ -92,7 +92,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		return NULL;
 	}
 	RBin *bin = bf? bf->rbin: NULL;
-	bool trylib = bin? bin->demangle_trylib: true;
+	bool trylib = bin? bin->options.demangle_trylib: true;
 	RBinObject *o = bf? bf->bo: NULL;
 	RListIter *iter;
 	const char *lib = NULL;
@@ -162,7 +162,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_LANG_JAVA: demangled = r_bin_demangle_java (str); break;
 	case R_BIN_LANG_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
 	case R_BIN_LANG_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
-	case R_BIN_LANG_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demangle_usecmd: false, trylib); break;
+	case R_BIN_LANG_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->options.demangle_usecmd: false, trylib); break;
 	case R_BIN_LANG_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
 	case R_BIN_LANG_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
 	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;

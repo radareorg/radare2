@@ -110,12 +110,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	ut64 str_start, needle = from;
 	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
-	const int limit = bf->rbin->limit;
-	int minstr = bin->minstrlen;
+	const int limit = bf->rbin->options.limit;
+	int minstr = bin->options.minstrlen;
 	if (minstr < 1) {
 		minstr = 1;
 	}
-	int maxstr = bin->maxstrlen;
+	int maxstr = bin->options.maxstrlen;
 	if (maxstr < 1) {
 		maxstr = R_STRING_SCAN_BUFFER_SIZE;
 	}
@@ -497,8 +497,9 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 	if (raw != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
-		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
-			if (bf->rbin->verbose) {
+		ut64 maxstrbuf = bf->rbin->options.maxstrbuf;
+		if (maxstrbuf && size && size > maxstrbuf) {
+			if (bf->rbin->options.verbose) {
 				R_LOG_WARN ("bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.str.maxbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)", size);
 			}
 			return;
@@ -957,8 +958,8 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, R_NULLABLE RBinObject *ob
 		obj = bf->bo;
 	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
-	if (bin->minstrlen < 1) {
-		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;
+	if (bin->options.minstrlen < 1) {
+		bin->options.minstrlen = plugin? plugin->minstrlen: bin->options.minstrlen;
 	}
 	if (obj) {
 		if (!obj->info) {
@@ -1197,7 +1198,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		if (bin->verbose) {
+		if (bin->options.verbose) {
 			R_LOG_WARN ("file size exceeds bin.hashlimit");
 		}
 		return NULL;

@@ -340,7 +340,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	bool isSwift = false;
 	RBin *bin = bf->rbin;
 	RBinPlugin *p = bo->plugin;
-	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
+	int minlen = (bf->rbin->options.minstrlen > 0) ? bf->rbin->options.minstrlen : p->minstrlen;
 	bf->bo = bo;
 
 	bo->info = p->info? p->info (bf): NULL;
@@ -438,7 +438,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		bo->strings = p->strings
 			? p->strings (bf)
 			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
-		if (bin->debase64) {
+		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
 		REBASE_PADDR (bo, bo->strings, RBinString);

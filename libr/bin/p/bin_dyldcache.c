@@ -967,7 +967,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 
 		struct MACH0_(opts_t) opts = {0};
 		MACH0_(opts_set_default) (&opts, bf);
-		opts.verbose = bf->rbin->verbose;
+		opts.verbose = bf->rbin->options.verbose;
 		opts.header_at = bin->header_at;
 		opts.symbols_off = 0;
 
@@ -1526,7 +1526,7 @@ static RList *classes(RBinFile *bf) {
 				bf->buf = orig_buf;
 
 				if (!klass->name) {
-					if (bf->rbin->verbose) {
+					if (bf->rbin->options.verbose) {
 						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x" [pa 0x%"PFMT64x" va 0x%"PFMT64x"], is_classlist %d",
 								pointer_to_class, cursor - pointers + offset, cursor - pointers + section->vaddr,  is_classlist);
 					}

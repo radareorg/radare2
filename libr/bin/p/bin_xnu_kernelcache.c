@@ -2091,7 +2091,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			}
 		}
 		if (fd->plugin->read == kernelcache_io_read) {
-			if (core->bin->verbose) {
+			if (core->bin->options.verbose) {
 				R_LOG_ERROR ("Avoid recursive reads");
 			}
 			return -1;

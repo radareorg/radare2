@@ -2261,8 +2261,8 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->bf = bf;
 	options->header_at = 0;
 	options->symbols_off = 0;
-	options->verbose = bf->rbin->verbose;
-	options->maxsymlen = bf->rbin->maxsymlen;
+	options->verbose = bf->rbin->options.verbose;
+	options->maxsymlen = bf->rbin->options.maxsymlen;
 	options->parse_start_symbols = false;
 }
 
@@ -2277,7 +2277,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(
 		// RVecRBinSymbol_init (&options->bf->bo->symbols_vec);
 		mo->symbols_vec = &(options->bf->bo->symbols_vec);
 		mo->options = *options;
-		mo->limit = options->bf->rbin->limit;
+		mo->limit = options->bf->rbin->options.limit;
 		// mo->nofuncstarts = options->nofuncstarts;
 		// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 		ut64 sz = r_buf_size (buf);
@@ -3003,7 +3003,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 	mo->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
 	bool is_stripped = true;
-	const int limit = bf->rbin->limit;
+	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -3183,7 +3183,7 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo,
 	if (!mo->func_start) {
 		return true;
 	}
-	const int limit = bf->rbin->limit;
+	const int limit = bf->rbin->options.limit;
 	char symstr[128];
 	ut64 value = 0, address = 0;
 	const ut8 *temp = mo->func_start;
@@ -3404,7 +3404,7 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	}
 
 	int i, num_imports;
-	const int limit = bf->rbin->limit;
+	const int limit = bf->rbin->options.limit;
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;

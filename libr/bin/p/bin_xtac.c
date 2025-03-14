@@ -516,7 +516,7 @@ static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && buf, false);
-	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->verbose);
+	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->options.verbose);
 	if (res) {
 		bf->bo->bin_obj = res;
 		return true;
