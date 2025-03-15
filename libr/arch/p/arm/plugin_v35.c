@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include <r_search.h>
+#if WANT_V35
 #include <sdb/ht_uu.h>
 #include <r_util/r_assert.h>
 #include "encodings_dec.h"
@@ -3374,6 +3375,17 @@ const RArchPlugin r_arch_plugin_arm_v35 = {
 	.decode = &decode,
 	.mnemonics = &mnemonics,
 };
+
+#else // WANT_V35
+const RArchPlugin r_arch_plugin_arm_v35 = {
+	.meta = {
+		.name = "arm.v35",
+		.author = "aemitt,pancake,Vector35",
+		.desc = "Vector35 ARM analyzer (not compiled)",
+		.license = "BSD-3-Clause",
+	},
+};
+#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {

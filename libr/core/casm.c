@@ -703,7 +703,7 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;
 			eprintf("current_instr_addr: 0x%"PFMT64x", current_buf_pos: 0x%"PFMT64x", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
 
-			ut8 *hex_str = (ut8*)r_hex_bin2strdup(buf+current_buf_pos, byte_cnt);
+			ut8 *hex_str = (ut8*)r_hex_bin2strdup (buf+current_buf_pos, byte_cnt);
 			eprintf ("==== current_instr_bytes: %s ",hex_str);
 
 			if (current_instr_len > 0) {
