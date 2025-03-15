@@ -1,7 +1,7 @@
 lz4_dep = dependency('liblz4', required: false)
-if lz4_dep.found() and get_option('use_sys_lz4')
+if lz4_dep.found() and get_option('use_sys_lz4') and not get_option('use_smallz4')
   message('Using system-provided lz4 library')
-else
+elif get_option('use_smallz4')
   message('Using smallz4')
   smallz4_files = [
     'smallz4cat.c',
