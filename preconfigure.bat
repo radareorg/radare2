@@ -42,9 +42,7 @@ if %ERRORLEVEL% == 0 (
   if %ERRORLEVEL% == 0 (
     echo FOUND
   ) else (
-    pip install -UI pip ninja
-    REM meson==0.59.1 
-    pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+    pip install -UI pip ninja meson
     preconfigure.bat
     exit /b 0
   )
