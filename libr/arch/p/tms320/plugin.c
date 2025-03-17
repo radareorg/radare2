@@ -329,7 +329,7 @@ static int tms320_c54x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *b
 
 static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	tms320_dasm_t *engine = tms320_engine_for_session (as);
-	const char * str = engine->syntax;
+	const char *str = engine->syntax;
 
 	op->delay = 0;
 	op->size = tms320_dasm (engine, buf, len);
@@ -339,7 +339,7 @@ static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *b
 		op->mnemonic = strdup (str);
 	}
 
-	str = strstr(str, "||") ? str + 3 : str;
+	str = strstr (str, "||") ? str + 3 : str;
 	if (match (str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
@@ -395,7 +395,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		tms320_dasm_t *engine = tms320_engine_for_session (as);
 		if (!r_str_casecmp (cpu, "c64x")) {
 #ifdef CAPSTONE_TMS320C64X_H
-			return tms320c64x_analop (as, op, addr, buf, len, mask) > 0;
+			aop = tms320c64x_analop;
 #else
 			return false;
 #endif
@@ -409,6 +409,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			tms320_f_set_cpu (engine, TMS320_F_CPU_C55X_PLUS);
 			aop = tms320_c55x_plus_op;
 		}
+	}
+	if (len > 3 && as->config->big_endian & R_SYS_ENDIAN_BIG) {
+		ut8 mbuf[4];
+		mbuf[0] = buf[3];
+		mbuf[1] = buf[2];
+		mbuf[2] = buf[1];
+		mbuf[3] = buf[0];
+		return aop (as, op, addr, mbuf, len, mask) > 0;
 	}
 	return aop (as, op, addr, buf, len, mask) > 0;
 }
