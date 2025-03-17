@@ -79,6 +79,7 @@ static RCoreHelpMessage help_msg_aae = {
 static RCoreHelpMessage help_msg_aav = {
 	"Usage:", "aav", "[sat] # find values referencing a specific section or map",
 	"aav", "", "find absolute reference values (see aav0)",
+	"aavq", "", "same as aav, but in quiet mode",
 	"aav0", "", "find absolute reference values (accept maps at address zero)",
 	"aavr", "[0]", "find relative reference values (address + 4 byte signed int)",
 	NULL

@@ -2446,7 +2446,14 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 		return strdup ("x86");
 	case EM_NONE:
 		return strdup ("null");
-	default: return strdup ("Unknown or unsupported arch");
+	case EM_TI_C6000:
+	case EM_TI_C2000:
+	case EM_TI_C5500:
+		return strdup ("tms320");
+	default:
+		// should be NULL instead
+		R_LOG_ERROR ("Unknown e_machine 0x%02x", eo->ehdr.e_machine);
+		return strdup ("unknown"); // Unknown or unsupported arch");
 	}
 }
 
