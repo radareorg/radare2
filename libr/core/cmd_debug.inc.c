@@ -1098,7 +1098,7 @@ static int step_line(RCore *core, int times) {
 			r_bin_addrline_free (al);
 			return false;
 		}
-	} while (!strcmp (al->file, al2->file) && al->line == al2->line);
+	} while (al && al2 && !strcmp (al->file, al2->file) && al->line == al2->line);
 
 	if (al2) {
 		char *tmp_ptr = r_file_slurp_line (al2->file, al2->line, 0);
