@@ -1,5 +1,6 @@
 -include ../config-user.mk
-RUNTEST=r2r -L -o results.json
+OUTPUT?=-o results.json
+RUNTEST=r2r -L ${OUTPUT}
 
 all: r2r-tests
 
