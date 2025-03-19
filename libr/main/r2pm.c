@@ -655,6 +655,16 @@ static int r2pm_clone(const char *pkg) {
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
 	free (pkgdir);
 
+#if R2__WINDOWS__
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
+	if (!script) {
+		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
+		free (srcdir);
+		return 1;
+	}
+	free (script);
+#endif
+
 	bool offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	if (offline) {
 		free (srcdir);
