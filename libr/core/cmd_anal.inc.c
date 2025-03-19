@@ -1679,7 +1679,7 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 	}
 }
 
-static int cmd_an(RCore *core, const char *name, int mode) {
+static int cmd_an2(RCore *core, const char *name, int mode) {
 	int ret = 0;
 	RAnalOp op = {0};
 	PJ *pj = NULL;
@@ -1692,6 +1692,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		goto failure;
 	}
 	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
+	// RFlagItem *fi = r_flag_get_at (core->flags, at, false);
 
 	ut64 tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
@@ -1734,33 +1735,59 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		} else if (f) {
 			if (name) {
 				ret = r_flag_rename (core->flags, f, name)? 0: -1;
-			} else if (mode == '*') {
-				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->addr);
-			} else if (mode == 'j') {
-				pj_o (pj);
-				pj_ks (pj, "name", f->name);
-				if (f->realname) {
-					pj_ks (pj, "realname", f->realname);
-				}
-				pj_ks (pj, "type", "flag");
-				pj_kn (pj, "offset", tgt_addr);
-				pj_end (pj);
 			} else {
-				r_cons_println (f->name);
+				char *hname = NULL;
+				if (!name) {
+					hname = r_core_cmd_strf (core, "fd");
+					r_str_trim (hname);
+					if (R_STR_ISEMPTY (hname)) {
+						R_LOG_ERROR ("Cannot find a name for this address");
+						goto failure;
+					}
+					name = hname;
+				}
+				if (mode == '*') {
+					r_cons_printf ("f %s=0x%" PFMT64x "\n", name, core->addr);
+				} else if (mode == 'j') {
+					pj_o (pj);
+					pj_ks (pj, "name", f->name);
+					if (f->realname) {
+						pj_ks (pj, "realname", f->realname);
+					}
+					pj_ks (pj, "type", "flag");
+					pj_kn (pj, "offset", tgt_addr);
+					pj_end (pj);
+				} else {
+					r_cons_println (f->name);
+				}
+				free (hname);
 			}
 		} else {
 			if (name) {
 				ret = r_flag_set (core->flags, name, tgt_addr, 1)? 0: -1;
-			} else if (mode == '*') {
-				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->addr);
-			} else if (mode == 'j') {
-				pj_o (pj);
-				pj_ks (pj, "name", r_str_get (name));
-				pj_ks (pj, "type", "address");
-				pj_kn (pj, "offset", tgt_addr);
-				pj_end (pj);
 			} else {
-				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
+				char *hname = NULL;
+				if (!name) {
+					hname = r_core_cmd_strf (core, "fd");
+					r_str_trim (hname);
+					if (R_STR_ISEMPTY (hname)) {
+						R_LOG_ERROR ("Cannot find a name for this address");
+						goto failure;
+					}
+					name = hname;
+				}
+				if (mode == '*') {
+					r_cons_printf ("f %s=0x%" PFMT64x "\n", name, core->addr);
+				} else if (mode == 'j') {
+					pj_o (pj);
+					pj_ks (pj, "name", name);
+					pj_ks (pj, "type", "address");
+					pj_kn (pj, "offset", tgt_addr);
+					pj_end (pj);
+				} else {
+					r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
+				}
+				free (hname);
 			}
 		}
 	}
@@ -15677,6 +15704,56 @@ static void cmd_ap(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_an(RCore *core, const char *input) {
+	if (input[1] == 'o') {
+		cmd_ano (core, input);
+	} else if (input[1] == 'f') {
+		const bool list = input[2] == 'l';
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
+		if (fcn) {
+			if (list) {
+				free (r_core_anal_fcn_autoname (core, fcn, 'l'));
+			} else {
+				char *n = r_core_anal_fcn_autoname (core, fcn, 0);
+				r_cons_println (n? n: fcn->name);
+				free (n);
+			}
+		} else {
+			R_LOG_WARN ("cant find a function here");
+		}
+	} else {
+		const char *name = "";
+		int mode = 0;
+		switch (input[1]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_an);
+			mode = -1;
+			break;
+		case 'j':
+		case '*':
+			mode = input[1];
+			input++;
+			break;
+		}
+		if (mode >= 0) {
+			if (input[1] == ' ') {
+				name = input + 1;
+				while (name[0] == ' ') {
+					name++;
+				}
+				char *end = strchr (name, ' ');
+				if (end) {
+					*end = '\0';
+				}
+			}
+			if (R_STR_ISEMPTY (name)) {
+				name = NULL;
+			}
+			cmd_an2 (core, name, mode);
+		}
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
@@ -15766,53 +15843,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "an"
-		if (input[1] == 'o') {
-			cmd_ano (core, input);
-		} else if (input[1] == 'f') {
-			const bool list = input[2] == 'l';
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
-			if (fcn) {
-				if (list) {
-					free (r_core_anal_fcn_autoname (core, fcn, 'l'));
-				} else {
-					char *n = r_core_anal_fcn_autoname (core, fcn, 0);
-					r_cons_printf ("%s\n", n? n: fcn->name);
-					free (n);
-				}
-			} else {
-				R_LOG_WARN ("cant find function here");
-			}
-		} else {
-			const char *name = "";
-			int mode = 0;
-			switch (input[1]) {
-			case '?':
-				r_core_cmd_help (core, help_msg_an);
-				mode = -1;
-				break;
-			case 'j':
-			case '*':
-				mode = input[1];
-				input++;
-				break;
-			}
-			if (mode >= 0) {
-				if (input[1] == ' ') {
-					name = input + 1;
-					while (name[0] == ' ') {
-						name++;
-					}
-					char *end = strchr (name, ' ');
-					if (end) {
-						*end = '\0';
-					}
-				}
-				if (R_STR_ISEMPTY (name)) {
-					name = NULL;
-				}
-				cmd_an (core, name, mode);
-			}
-		}
+		cmd_an (core, input);
 		break;
 	case 'g': // "ag"
 		cmd_anal_graph (core, input + 1);

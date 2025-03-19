@@ -627,6 +627,9 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 		RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, addr);
 		if (used_vars && !r_pvector_empty (used_vars)) {
 			var = r_pvector_at (used_vars, 0);
+			if (R_STR_ISEMPTY (var->name)) {
+				var = NULL;
+			}
 			break;
 		}
 	}
