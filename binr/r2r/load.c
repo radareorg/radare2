@@ -626,7 +626,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 #if WANT_V35 == 0
 			bool skip = false;
-			for (size_t i = 0; i < sizeof(v35_tests_to_skip) / sizeof(R2RTestToSkip); i++) {
+			size_t i = 0;
+			for (; i < sizeof(v35_tests_to_skip) / sizeof(R2RTestToSkip); i++) {
 				R2RTestToSkip test = v35_tests_to_skip[i];
 				bool is_dir = r_str_endswith (path, r_str_newf(R_SYS_DIR"%s", test.dir));
 				if (is_dir) {
