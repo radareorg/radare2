@@ -66,7 +66,7 @@ R_API const char *r_name_filter_ro(const char *a) {
 
 // filter string for printing purposes
 R_API bool r_name_filter_print(char *s) {
-	R_RETURN_VAL_IF_FAIL (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	char *es = s + strlen (s);
 	bool valid = true;
 	while (*s && s < es) {
@@ -85,7 +85,7 @@ R_API bool r_name_filter_print(char *s) {
 }
 
 R_API bool r_name_filter(char *s, int maxlen) {
-	R_RETURN_VAL_IF_FAIL (s, NULL);
+	R_RETURN_VAL_IF_FAIL (s, false);
 	if (R_STR_ISEMPTY (s)) {
 		return false;
 	}
