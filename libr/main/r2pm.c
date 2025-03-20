@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2024 - pancake */
+/* radare - LGPL - Copyright 2021-2025 - pancake */
 
 #define R_LOG_ORIGIN "r2pm"
 
@@ -193,10 +193,7 @@ static char *find_newline(char *s) {
 	if (r && n) {
 		return (r < n)? r: n;
 	}
-	if (r) {
-		return r;
-	}
-	return n;
+	return r? r: n;
 
 }
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {

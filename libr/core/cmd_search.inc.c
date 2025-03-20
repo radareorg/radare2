@@ -2375,7 +2375,7 @@ static bool check_false_positive(const char *s) {
 	}
 	bool ok = true;
 	int rep = 0;
-	char s0 = *s;
+	ut8 s0 = *s;
 	if (!isalpha (s0) && !isdigit (s0)) {
 		return false;
 	}

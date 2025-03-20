@@ -1057,7 +1057,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		if (dis) {
 			char *usrstr = strdup (opt.argv[opt.ind]);
 			if (dis == 3) {
-				if (isalpha (usrstr[0])) {
+				if (isalpha (usrstr[0]) & 0xff) {
 					// assemble and get the string back
 					RAsmCode *acode = r_asm_rasm_assemble (as->a, usrstr, as->opt.use_spp);
 					if (!acode) {

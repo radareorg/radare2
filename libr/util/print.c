@@ -2234,7 +2234,7 @@ static bool issymbol(char c) {
 static bool check_arg_name(RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (isalpha ((unsigned char)p[z]) || isdigit ((unsigned char)p[z]) || p[z] == '_'); z++) {
+		for (z = 0; p[z] && (isalpha (p[z] & 0xff) || isdigit (p[z] & 0xff) || p[z] == '_'); z++) {
 			;
 		}
 		char tmp = p[z];
@@ -2251,7 +2251,7 @@ static bool ishexprefix(char *p) {
 }
 
 static bool is_not_token(const char p) {
-	if (isalpha (p) || isdigit (p)) {
+	if (isalpha (p & 0xff) || isdigit (p & 0xff)) {
 		return true;
 	}
 	switch (p) {
@@ -2263,7 +2263,7 @@ static bool is_not_token(const char p) {
 }
 
 static bool is_flag(const char *p) {
-	while (*p && !isalpha (*p) && !isdigit (*p)) {
+	while (*p && !isalpha (*p & 0xff) && !isdigit (*p & 0xff)) {
 		if (*p == 0x1b) {
 			while (*p && *p != 'm') {
 				p++;
@@ -2275,7 +2275,7 @@ static bool is_flag(const char *p) {
 	while (*e && is_not_token (*e)) {
 		e++;
 	}
-	if (*p == 'r' && isdigit (p[1])) {
+	if (*p == 'r' && isdigit (p[1] & 0xff)) {
 		p++;
 	}
 	size_t len = e? e - p: strlen (p);
@@ -2317,7 +2317,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		}
 		/* colorize numbers */
 		if ((ishexprefix (p + i) && previous != ':') \
-		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
+		     || (isdigit (p[i] & 0xff) && issymbol (previous))) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
 			const char *name = print->offname (print->user, n)? color_flag: NULL;
@@ -2382,7 +2382,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i + 1] == '$' || isdigit (p[i + 1]))) {
+				if (!(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
 					const char *color = found_var ? print->cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #define R_LOG_ORIGIN "util.file"
 

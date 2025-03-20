@@ -82,7 +82,7 @@ static bool start_token(RTokenizer *tok, char ch) {
 		tok->type = R_TOKEN_MATH;
 		return false;
 	}
-	if (isalpha (ch)) {
+	if (isalpha (ch & 0xff)) {
 		tok->type = R_TOKEN_WORD;
 	}
 	if (ch >= '0' && ch <= '9') {
@@ -100,7 +100,7 @@ static bool is_token_char(RTokenizer *tok, char ch) {
 		// ERROR
 		return false;
 	case R_TOKEN_HASH:
-		return (isdigit (ch) || ch == '#' || ch == '_') || (isalpha (ch) && !IS_WHITESPACE (ch));
+		return (isdigit (ch & 0xff) || ch == '#' || ch == '_') || (isalpha (ch & 0xff) && !IS_WHITESPACE (ch));
 	case R_TOKEN_COMMENT:
 		if (tok->end-tok->begin == 0) {
 			if (ch != '/') {
@@ -110,7 +110,7 @@ static bool is_token_char(RTokenizer *tok, char ch) {
 		}
 		return (ch != '\n');
 	case R_TOKEN_WORD:
-		return (isdigit (ch) || ch == '#' || ch == '_') || (isalpha (ch) && !IS_WHITESPACE (ch));
+		return (isdigit (ch & 0xff) || ch == '#' || ch == '_') || (isalpha (ch & 0xff) && !IS_WHITESPACE (ch));
 	case R_TOKEN_INT:
 		if (ch == 'x') {
 			tok->hex = true;
@@ -130,7 +130,7 @@ static bool is_token_char(RTokenizer *tok, char ch) {
 		}
 		return ch >= '0' && ch <= '9';
 	case R_TOKEN_FLOAT:
-		return isdigit (ch) || ch == 'f'; // XXX 'f' is the last char
+		return isdigit (ch & 0xff) || ch == 'f'; // XXX 'f' is the last char
 	case R_TOKEN_STRING:
 		if (tok->escape) {
 			tok->escape = false;
