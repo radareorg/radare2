@@ -110,35 +110,50 @@ if %ERRORLEVEL% == 0 (
             for /f "tokens=*" %%i in ('"%vswherePath%" -property installationName') do (
                 echo Visual Studio %%i is installed.
             )
+	    ENDLOCAL
             call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
         )
     ) else if EXIST "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" (
         echo "Found 2022 Enterprise edition"
+	ENDLOCAL
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files\Microsoft Visual Studio\2022\Community" (
         echo "Found 2022 Community edition"
+	ENDLOCAL
         call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
         echo "Found 2022 BuildTools"
+	ENDLOCAL
         call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
         echo "Found 2019 Community edition"
+	ENDLOCAL
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
         echo "Found 2019 Enterprise edition"
+	ENDLOCAL
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
         echo "Found 2019 Professional edition"
+	ENDLOCAL
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
         echo "Found 2019 BuildTools"
+	ENDLOCAL
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else (
+	ENDLOCAL
         echo "Not Found"
         exit /b 1
     )
 )
 
+cl --help > NUL 2> NUL
+if %ERRORLEVEL% == 0 (
+    echo CL FOUND
+) else (
+    echo FAILED TO SETUP VISUAL STUDIO
+    exit /b 1
+)
 echo Now you can run 'configure'
-ENDLOCAL
 cmd
