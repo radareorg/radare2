@@ -140,8 +140,11 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 		if (key_len > c->encode_maxkeylen) {
 			c->encode_maxkeylen = key_len;
 		}
-		if (val_len > c->decode_maxkeylen) {
-			c->decode_maxkeylen = val_len;
+		if (r_str_startswith (new_value, "0x")) {
+			size_t vlen = strlen (new_value + 2) / 2;
+			if (vlen > c->decode_maxkeylen) {
+				c->decode_maxkeylen = vlen;
+			}
 		}
 		sdb_add (c->db_char_to_hex, new_key, new_value, 0);
 		c->loaded = true;
@@ -155,9 +158,6 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx) {
 	R_RETURN_VAL_IF_FAIL (ch && hx, NULL);
 	RCharsetRune* c = R_NEW0 (RCharsetRune);
-	if (!c) {
-		return NULL;
-	}
 	c->ch = (ut8 *) strdup ((char *) ch);
 	c->hx = (ut8 *) strdup ((char *) hx);
 	c->left = NULL;
@@ -235,7 +235,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			r_str_ncpy (o, res, out_len - oi);
 			free (res);
 		}
-		size_t di = strlen (o);
+		const size_t di = strlen (o);
 		oi += di;
 		o += di;
 	}
