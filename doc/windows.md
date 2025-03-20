@@ -34,8 +34,20 @@ containing all the distribution binaries, libraries and support files.
 
 ## Running
 
-As said, check the `prefix\bin` directory and type `radare2`
+Check the `prefix\bin` directory and type `radare2`
 
+## Debugging
+
+If you experience any segfault you can start the VS debugger from `cmd.exe`
+using the following line:
+
+```console
+devenv /DebugExe radare2.exe rax2.exe
+```
+
+After starting the process, vs will take the source information and display
+the stacktrace, variable values and so on, fix the code, run `make.bat` and
+try again until the bug is gone.
 
 # Crosscompilation
 
