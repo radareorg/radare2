@@ -823,6 +823,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		} else {
 			result = R_NEW0 (R2RTestResultInfo);
 			result->result = R2R_TEST_RESULT_OK;
+			result->run_skipped = true;
 		}
 		r_th_lock_enter (state->lock);
 		r_pvector_push (&state->results, result);
@@ -1012,7 +1013,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = r_pvector_at (&state->results, (size_t)i);
-		if (state->test_results) {
+		if (state->test_results && !result->run_skipped) {
 			test_result_to_json (state->test_results, result);
 		}
 		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
