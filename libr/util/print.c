@@ -830,6 +830,10 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	}
 }
 
+static bool invalidchar(char ch) {
+	return !ch || !IS_PRINTABLE (ch) || isspace (ch & 0xff);
+}
+
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	R_RETURN_IF_FAIL (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
@@ -1360,13 +1364,24 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
+					ut8 ch2 = (j + 1 < end)? buf[j + 1]: 0;
 					if (p && p->charset && p->charset->loaded) {
-						ut8 input[2] = {ch, 0};
+						ut8 input[3] = { ch, ch2, 0 };
 						ut8 output[32];
-						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1, false);
-						ch = (len > 0)? *output: '?';
+						size_t cw = p->charset->decode_maxkeylen;
+						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, cw, false);
+						if (len < 1 || (invalidchar (output[0]) && invalidchar (output[1]))) {
+							print (".");
+						} else {
+							print (output);
+						}
+						ch = (len > 0)? *output: '.';
+						if (len > 1) {
+							j++;
+						}
+					} else {
+						r_print_byte (p, addr + j, "%c", j, ch);
 					}
-					r_print_byte (p, addr + j, "%c", j, ch);
 					bytes++;
 				}
 			}
