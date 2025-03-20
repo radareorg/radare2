@@ -32,9 +32,6 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 		return NULL;
 	}
 	kw = R_NEW0 (RSearchKeyword);
-	if (!kw) {
-		return NULL;
-	}
 	kw->type = R_SEARCH_KEYWORD_TYPE_BINARY;
 	kw->data = (void *) data;
 	kw->keyword_length = kwlen;
@@ -224,7 +221,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *d
 	for (start = i; str[i]; i++) {
 		if (str[i] == '/' && str[i - 1] != '\\') {
 			break;
-		} else if (str[i - 1] == '\\' && isalpha ((unsigned char)str[i])) {
+		} else if (str[i - 1] == '\\' && isalpha (str[i] & 0xff)) {
 			specials++;
 		}
 	}

@@ -2121,7 +2121,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_function_delete_vars_by_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
-			if (isdigit (str[2])) {
+			if (isdigit (str[2] & 0xff)) {
 				var = r_anal_function_get_var (fcn, type, (int)r_num_math (core->num, str + 1));
 			} else {
 				char *name = r_str_trim_dup (str + 2);
@@ -6939,7 +6939,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				for (j = i; str[++j] && str[j] != ','; );
 				if (j - i + 1 <= sizeof name) {
 					r_str_ncpy (name, str + i, j - i + 1);
-					if (isdigit (name[0])) { // e.g. ar 32
+					if (isdigit (name[0] & 0xff)) { // e.g. ar 32
 						__anal_reg_list (core, R_REG_TYPE_GPR, atoi (name), '\0');
 					} else if (showreg (core, name) > 0) {
 						// e.g. ar rax
@@ -7699,7 +7699,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		r_list_pop (stats->regread);
 		R_FREE (oldregread)
 	}
-	if (!isdigit (*name)) {
+	if (!isdigit (*name & 0xff)) {
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
 		}
@@ -7717,7 +7717,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 
 static bool myregread(REsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
-	if (!isdigit (*name)) {
+	if (!isdigit (*name & 0xff)) {
 		if (!contains (stats->inputregs, name)) {
 			if (!contains (stats->regwrite, name)) {
 				r_list_push (stats->inputregs, strdup (name));
@@ -9660,7 +9660,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				free (ops);
 			}
 		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
-			if (input[1] == ' ' && !isdigit (input[2])) {
+			if (input[1] == ' ' && !isdigit (input[2] & 0xff)) {
 				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->rasm, input + 2));
 			} else {
 				// "aoml"
@@ -10149,7 +10149,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	case 'c': // "asc"
 		if (input[1] == 'a') {
 			if (input[2] == ' ') {
-				if (!isalpha ((ut8)input[3]) && (n = r_num_math (core->num, input + 3)) >= 0 ) {
+				if (!isalpha (input[3] & 0xff) && (n = r_num_math (core->num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (snstr, n));
@@ -10174,7 +10174,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == ' ') {
-				if (!isalpha ((ut8)input[2]) && (n = r_num_math (core->num, input + 2)) >= 0) {
+				if (!isalpha (input[2] & 0xff) && (n = r_num_math (core->num, input + 2)) >= 0) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (snstr, n));
@@ -11255,7 +11255,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_set_immbase (core->anal, addr? addr: core->addr, 0);
 			break;
 		}
-		if (isdigit ((ut8)input[1])) {
+		if (isdigit (input[1] & 0xff)) {
 			r_anal_hint_set_nword (core->anal, core->addr, input[1] - '0');
 			input++;
 		}

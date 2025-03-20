@@ -459,16 +459,16 @@ static void p_ere_exp(struct parse *p) {
 		p_bracket (p);
 		break;
 	case '\\':
-		REQUIRE (MORE(), R_REGEX_EESCAPE);
+		REQUIRE (MORE (), R_REGEX_EESCAPE);
 		c = GETNEXT ();
-		if (!isalpha (c)) {
+		if (!isalpha (c & 0xff)) {
 			ordinary (p, c);
 		} else {
 			special (p, c);
 		}
 		break;
 	case '{': /* okay as ordinary except if digit follows */
-		REQUIRE (!MORE() || !isdigit((ut8)PEEK()), R_REGEX_BADRPT);
+		REQUIRE (!MORE() || !isdigit(PEEK() & 0xff), R_REGEX_BADRPT);
 		/* FALLTHROUGH */
 	default:
 		ordinary(p, c);
@@ -481,7 +481,7 @@ static void p_ere_exp(struct parse *p) {
 	c = PEEK();
 	/* we call { a repetition if followed by a digit */
 	if (!(c == '*' || c == '+' || c == '?' ||
-		    (c == '{' && MORE2 () && isdigit ((ut8)PEEK2 ())))) {
+		    (c == '{' && MORE2 () && isdigit (PEEK2 () & 0xff)))) {
 		return; /* no repetition, we're done */
 	}
 	NEXT();
@@ -511,7 +511,7 @@ static void p_ere_exp(struct parse *p) {
 	case '{':
 		count = p_count(p);
 		if (EAT(',')) {
-			if (isdigit((ut8)PEEK())) {
+			if (isdigit(PEEK() & 0xff)) {
 				count2 = p_count(p);
 				REQUIRE(count <= count2, R_REGEX_BADBR);
 			} else { /* single number with comma */
@@ -536,7 +536,7 @@ static void p_ere_exp(struct parse *p) {
 	}
 	c = PEEK();
 	if (!(c == '*' || c == '+' || c == '?' ||
-		    (c == '{' && MORE2 () && isdigit ((ut8)PEEK2 ())))) {
+		    (c == '{' && MORE2 () && isdigit (PEEK2 () & 0xff)))) {
 		return;
 	}
 	SETERROR(R_REGEX_BADRPT);
@@ -691,7 +691,7 @@ static int p_simp_re(struct parse *p, int starordinary) { /* is a leading * an o
 	} else if (EATTWO('\\', '{')) {
 		count = p_count(p);
 		if (EAT(',')) {
-			if (MORE() && isdigit((ut8)PEEK())) {
+			if (MORE() && isdigit(PEEK() & 0xff)) {
 				count2 = p_count(p);
 				REQUIRE(count <= count2, R_REGEX_BADBR);
 			} else { /* single number with comma */
@@ -722,7 +722,7 @@ static int p_count(struct parse *p) {
 	int count = 0;
 	int ndigits = 0;
 
-	while (MORE() && isdigit((ut8)PEEK()) && count <= DUPMAX) {
+	while (MORE() && isdigit(PEEK() & 0xff) && count <= DUPMAX) {
 		count = count*10 + (GETNEXT() - '0');
 		ndigits++;
 	}
@@ -784,7 +784,7 @@ static void p_bracket(struct parse *p) {
 		int ci;
 
 		for (i = p->g->csetsize - 1; i >= 0; i--) {
-			if (CHIN (cs, i) && isalpha (i)) {
+			if (CHIN (cs, i) && isalpha (i & 0xff)) {
 				ci = othercase(i);
 				if (ci != i) {
 					CHadd (cs, ci);
@@ -899,7 +899,7 @@ static void p_b_cclass(struct parse *p, cset *cs) {
 	const char *u;
 	char c;
 
-	while (MORE () && isalpha ((ut8)PEEK ())) {
+	while (MORE () && isalpha (0xff & PEEK ())) {
 		NEXT ();
 	}
 	len = p->next - sp;
@@ -985,7 +985,7 @@ p_b_coll_elem(struct parse *p, int endc) { /* name ended by endc,']' */
  - othercase - return the case counterpart of an alphabetic if no counterpart, return ch
  */
 static char othercase(int ch) {
-	ch = (ut8)ch;
+	ch = (ut8)(ch & 0xff);
 	if (isalpha (ch)) {
 		if (isupper (ch)) {
 			return ((ut8)tolower (ch));

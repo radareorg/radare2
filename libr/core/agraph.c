@@ -4244,7 +4244,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 		char ch = r_cons_readchar ();
 		obuf[i++] = ch;
 		r_cons_write (&ch, 1);
-		cont = isalpha ((ut8) ch) && !islower ((ut8) ch);
+		cont = isalpha (ch & 0xff) && !islower (ch & 0xff);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	r_cons_flush ();
 
