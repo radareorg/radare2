@@ -589,6 +589,15 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+#if WANT_V35 == 0
+	R2RTestToSkip v35_tests_to_skip[] = {
+		{"asm", "arm.v35_64"},
+		{"esil", "arm_64"},
+		{"cmd", "cmd_open"},
+		{"tools", "rasm2"},
+	};
+#endif
+
 	if (depth <= 0) {
 		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
 		return false;
@@ -615,6 +624,24 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				R_LOG_WARN ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
 				continue;
 			}
+#if WANT_V35 == 0
+			bool skip = false;
+			size_t i = 0;
+			for (; i < sizeof (v35_tests_to_skip) / sizeof (R2RTestToSkip); i++) {
+				R2RTestToSkip test = v35_tests_to_skip[i];
+				bool is_dir = r_str_endswith (path, r_str_newf(R_SYS_DIR"%s", test.dir));
+				if (is_dir) {
+					if (!strcmp (subname, test.name)) {
+						R_LOG_WARN ("Skipping test %s"R_SYS_DIR"%s because it requires binary ninja", path, subname);
+						skip = true;
+						break;
+					}
+				}
+			}
+			if (skip) {
+				continue;
+			}
+#endif
 			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;

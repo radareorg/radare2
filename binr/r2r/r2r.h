@@ -82,6 +82,11 @@ typedef struct r2r_asm_test_t {
 	size_t bytes_size;
 } R2RAsmTest;
 
+typedef struct r2r_test_to_skip_t {
+	const char *dir;
+	const char *name;
+} R2RTestToSkip;
+
 typedef struct r2r_json_test_t {
 	ut64 line;
 	char *cmd;

@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/Vector35/binaryninja-api
+revision = 85faf55c31868f8184a3af34b049a9ac03281490
+directory = binaryninja
+patch_directory = binaryninja
+depth = 1
