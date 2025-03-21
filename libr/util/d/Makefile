@@ -1,7 +1,7 @@
 FILES=pokered ascii ebcdic37 iso8859_1 katakana hiragana
 # from imhex
 FILES+=arabic_iso arabic_windows
-FILES+=ascii_oem ascii_ansi
+FILES+=ascii_oem ascii_ansi jis7
 FILES+=greek_iso greek_windows
 FILES+=hebrew_iso hebrew_windows
 FILES+=macintosh big5 iso_646
