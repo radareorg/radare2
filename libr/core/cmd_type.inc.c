@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2025 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #if R_INCLUDE_BEGIN
 
@@ -1190,6 +1190,17 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	}
+	case 'i': // "ti"
+		if (r_str_startswith (input, "ime")) {
+			if (input[3] == ' ') {
+				r_core_cmdf (core, "?t %s", r_str_trim_head_ro (input + 4));
+			} else {
+				R_LOG_INFO ("Usage: time [command] # alias for the `?t` command");
+			}
+		} else {
+			r_core_return_invalid_command (core, "ti", input[1]);
+		}
+		break;
 	case 'k': // "tk"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_t, "tk");
