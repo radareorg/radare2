@@ -21,7 +21,7 @@ else
 	git pull https://github.com/radareorg/radare2 master
 fi
 ./preconfigure
-./configure-plugins
+# ./configure-plugins
 bash ./configure --with-compiler=termux --prefix=${PREFIX} || exit 1
 make libr/include/r_version.h
 touch -t 197001010000 libr/include/r_version.h
