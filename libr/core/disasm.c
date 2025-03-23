@@ -2903,7 +2903,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 				r_str_reverse (ds->lineup);
 				r_str_replace_char (ds->lineup, ':', '|');
 				r_str_replace_char (ds->lineup, '=', '-');
-				ds->lineup_col = line2->cols;
+				ds->lineup_col = strdup (line2->cols);
 			} else {
 				ds->lineup = NULL;
 			}
