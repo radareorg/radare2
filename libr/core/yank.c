@@ -264,11 +264,12 @@ R_API bool r_core_yank_hexdump(RCore *core, ut64 pos) {
 	const int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			ut8 *buf = R_NEWS (ut8, ybl - pos);
+			size_t len = ybl - pos;
+			ut8 *buf = R_NEWS (ut8, len);
 			if (buf) {
-				r_buf_read_at (core->yank_buf, pos, buf, ybl - pos);
+				r_buf_read_at (core->yank_buf, pos, buf, len);
 				r_print_hexdump (core->print, pos,
-					buf, ybl - pos, 16, 1, 1);
+					buf, len, 16, 1, 1);
 				free (buf);
 				return true;
 			}
