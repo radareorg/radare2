@@ -1364,7 +1364,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
-					ut8 ch2 = (j + 1 < end)? buf[j + 1]: 0;
+					ut8 ch2 = (j + 1 < len)? buf[j + 1]: 0;
 					if (p && p->charset && p->charset->loaded) {
 						ut8 input[3] = { ch, ch2, 0 };
 						ut8 output[32];
