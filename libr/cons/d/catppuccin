@@ -26,7 +26,7 @@ ec math rgb:cad3f5 # Gray
 ec mov rgb:f4dbd6 # Rosewater
 ec nop rgb:7dc4e4 # Sapphire
 ec num rgb:f5a97f # Peach
-ec offset rgb:8aadf4 # Blue
+ec addr rgb:8aadf4 # Blue
 ec other rgb:cad3f5 # Gray
 ec pop rgb:8bd5ca # Teal
 ec prompt rgb:eed49f # Yellow
@@ -38,9 +38,7 @@ ec trap rgb:ed8796 # Red
 ec ucall rgb:a6da95 # Green
 ec ujmp rgb:a6da95 # Green
 ec usrcmt rgb:a6da95 # Green
-
 ec gui.border rgb:8aadf4 # Blue
-
 ec graph.true rgb:a6da95 # Green
 ec graph.false rgb:eed49f # Red
 ec graph.trufae rgb:8aadf4 # Blue
@@ -50,11 +48,9 @@ ec graph.box rgb:cad3f5 # Gray
 ec graph.box2 rgb:8aadf4 # Blue
 ec graph.box3 rgb:cad3f5 # Gray
 ec graph.box4 rgb:cad3f5 # Gray
-
 ec var rgb:f4dbd6 # Rosewater
 ec var.type rgb:8aadf4 # Blue
 ec var.addr rgb:8bd5ca # Teal
 ec var.name rgb:f4dbd6 # Rosewater
-
 ec widget.bg rgb:363a4f # Some kind of grey
 ec widget.sel rgb:b7bdf8 # Lavender

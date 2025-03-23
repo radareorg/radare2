@@ -210,8 +210,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, R_NULLABLE RConsPrintablePalette 
 		return NULL;
 	}
 	if (pal) {
-		const char *k = pal->offset;
-		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET"  ", k, d->addr);
+		r_strbuf_appendf (sb, "%s0x%08" PFMT64x Color_RESET"  ", pal->addr, d->addr);
 	} else {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x "  ", d->addr);
 	}
@@ -256,8 +255,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, R_NULLABLE RConsPrintablePalette 
 	case R_ANAL_DATA_TYPE_POINTER:
 		r_strbuf_append (sb, "pointer ");
 		if (pal) {
-			const char *k = pal->offset;
-			r_strbuf_appendf (sb, " %s0x%08" PFMT64x, k, d->ptr);
+			r_strbuf_appendf (sb, " %s0x%08" PFMT64x, pal->addr, d->ptr);
 		} else {
 			r_strbuf_appendf (sb, " 0x%08" PFMT64x, d->ptr);
 		}

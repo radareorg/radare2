@@ -13,7 +13,7 @@ ec label rgb:8787d7
 ec help rgb:ff5f87
 ec flow2 rgb:0000ff
 ec prompt rgb:d75f00
-ec offset rgb:afafaf
+ec addr rgb:afafaf
 ec input rgb:d75f00
 ec invalid rgb:001f00
 ec other rgb:5f8787

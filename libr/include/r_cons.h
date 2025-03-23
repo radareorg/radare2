@@ -196,7 +196,7 @@ typedef struct r_cons_palette_t {
 	RColor mov;
 	RColor nop;
 	RColor num;
-	RColor offset;
+	RColor addr;
 	RColor other;
 	RColor pop;
 	RColor prompt;
@@ -273,7 +273,7 @@ typedef struct r_cons_printable_palette_t {
 	char *mov;
 	char *nop;
 	char *num;
-	char *offset;
+	char *addr;
 	char *other;
 	char *pop;
 	char *prompt;

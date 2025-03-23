@@ -677,7 +677,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->color_flow2 = P(flow2): Color_BLUE;
 	ds->color_flag = P(flag): Color_CYAN;
 	ds->color_label = P(label): Color_CYAN;
-	ds->color_offset = P(offset): Color_GREEN;
+	ds->color_offset = P(addr): Color_GREEN;
 	ds->color_other = P(other): Color_WHITE;
 	ds->color_nop = P(nop): Color_BLUE;
 	ds->color_bin = P(bin): Color_YELLOW;

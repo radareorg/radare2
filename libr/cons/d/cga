@@ -17,7 +17,7 @@ ec label rgb:f0f
 ec flow rgb:f0f
 ec flow2 rgb:f0f
 ec prompt rgb:0ff
-ec offset rgb:0ff
+ec addr rgb:0ff
 ec other rgb:fff
 ec b0x00 rgb:fff
 ec b0x7f rgb:f0f

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 
@@ -1394,7 +1394,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 						i, clr, c->addr, cname);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
-						i, core->cons->context->pal.offset, c->addr, cname);
+						i, core->cons->context->pal.addr, c->addr, cname);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
@@ -1448,7 +1448,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 						i, clr, f->vaddr, mflags, name);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET" %s %s\n",
-						i, core->cons->context->pal.offset, f->vaddr, mflags, name);
+						i, core->cons->context->pal.addr, f->vaddr, mflags, name);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
@@ -1507,7 +1507,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 						i, clr, m->vaddr, mflags, name);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET" %s %s\n",
-						i, core->cons->context->pal.offset, m->vaddr, mflags, name);
+						i, core->cons->context->pal.addr, m->vaddr, mflags, name);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
@@ -2181,7 +2181,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				r_str_replace_char (line, '\n', ';');
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
-					// const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+					// const char *offsetColor = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
 					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x Color_RESET"  %s", offsetColor, addr + delta, line));
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
 				} else {
@@ -3378,7 +3378,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	(void)r_cons_get_size (&window);
 	window -= 8; // Size of printed things
 	bool color = r_config_get_i (core->config, "scr.color");
-	const char *color_addr = core->cons->context->pal.offset;
+	const char *color_addr = core->cons->context->pal.addr;
 	const char *color_fcn = core->cons->context->pal.fname;
 	r_cons_newline ();
 

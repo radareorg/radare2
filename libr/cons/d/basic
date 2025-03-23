@@ -4,7 +4,7 @@ ec fname cyan
 ec label cyan
 ec fline cyan
 ec flag green
-ec offset white
+ec addr white
 ec comment red
 ec usrcmt green
 ec flow green

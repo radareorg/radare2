@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2021 - javierptd, pancake */
+/* radare - LGPL - Copyright 2017-2025 - javierptd, pancake */
 
 #if R_INCLUDE_BEGIN
 
