@@ -613,6 +613,8 @@ typedef struct r_cons_t {
 #define Color_BGMAGENTA  "\x1b[45m"
 #define Color_YELLOW     "\x1b[33m"
 #define Color_BGYELLOW   "\x1b[43m"
+#define Color_ORANGE     "\x1b[31m"
+#define Color_BGORANGE   "\x1b[41m"
 #define Color_CYAN       "\x1b[36m"
 #define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
@@ -656,6 +658,8 @@ typedef struct r_cons_t {
 #define RColor_BGMAGENTA  RCOLOR(ALPHA_BG, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00,  5)
 #define RColor_YELLOW     RCOLOR(ALPHA_FG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
 #define RColor_BGYELLOW   RCOLOR(ALPHA_BG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
+#define RColor_ORANGE     RCOLOR(ALPHA_FG, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
+#define RColor_BGORANGE   RCOLOR(ALPHA_BG, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
 #define RColor_CYAN       RCOLOR(ALPHA_FG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00,  6)
 #define RColor_BGCYAN     RCOLOR(ALPHA_BG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00,  6)
 #define RColor_BLUE       RCOLOR(ALPHA_FG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,  4)
@@ -692,6 +696,7 @@ typedef struct r_cons_t {
 #define RColor_BGMAGENTA  RCOLOR(ALPHA_BG, 136,  23, 152, 0x00, 0x00, 0x00,  5)
 #define RColor_YELLOW     RCOLOR(ALPHA_FG, 193, 156,   0, 0x00, 0x00, 0x00,  3)
 #define RColor_BGYELLOW   RCOLOR(ALPHA_BG, 193, 156,   0, 0x00, 0x00, 0x00,  3)
+#define RColor_ORANGE     RCOLOR(ALPHA_FG, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
 #define RColor_CYAN       RCOLOR(ALPHA_FG,  58, 150, 221, 0x00, 0x00, 0x00,  6)
 #define RColor_BGCYAN     RCOLOR(ALPHA_BG,  58, 150, 221, 0x00, 0x00, 0x00,  6)
 #define RColor_BLUE       RCOLOR(ALPHA_FG,   0,  55, 218, 0x00, 0x00, 0x00,  4)

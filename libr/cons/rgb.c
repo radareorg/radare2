@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, xarkes */
-/* ansi 256 color extension for r_cons */
-/* https://en.wikipedia.org/wiki/ANSI_color */
+/* radare - LGPL - Copyright 2013-2025 - pancake, xarkes */
 
 #include <r_cons.h>
 #include <r_th.h>
@@ -320,6 +318,9 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	}
 	if (r == 0xff && g == b && g == 0) {
 		str = "red";
+	}
+	if (g == 0xff && r == 0x80 && b == 0) {
+		str = "orange";
 	}
 	if (g == 0xff && r == b && r == 0) {
 		str = "green";

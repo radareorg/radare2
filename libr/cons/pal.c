@@ -107,6 +107,7 @@ struct {
 	{ "green",    RColor_GREEN,    Color_GREEN,    Color_BGGREEN },
 	{ "magenta",  RColor_MAGENTA,  Color_MAGENTA,  Color_BGMAGENTA },
 	{ "yellow",   RColor_YELLOW,   Color_YELLOW,   Color_BGYELLOW },
+	{ "orange",   RColor_ORANGE,   Color_ORANGE,   Color_BGORANGE },
 	{ "cyan",     RColor_CYAN,     Color_CYAN,     Color_BGCYAN },
 	{ "blue",     RColor_BLUE,     Color_BLUE,     Color_BGBLUE },
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
@@ -605,8 +606,8 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 			r_cons_newline ();
 			break;
 		default:
-			r_cons_printf (" %s##"Color_RESET"  %s\n", *color,
-				keys[i].name);
+			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
+			break;
 		}
 	}
 	if (rad == 'j' || pj) {
@@ -622,12 +623,10 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
  * so the changes take effect. */
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	size_t i;
-	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT (i);
-			char *r = r_cons_pal_parse (val, rcolor);
-			free (r);
+			RColor *rcolor = RCOLOR_AT (i);
+			free (r_cons_pal_parse (val, rcolor));
 			return true;
 		}
 	}
@@ -638,10 +637,9 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 /* Get the named RColor */
 R_API RColor r_cons_pal_get(const char *key) {
 	size_t i;
-	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT (i);
+			RColor *rcolor = RCOLOR_AT (i);
 			return rcolor? *rcolor: (RColor) RColor_NULL;
 		}
 	}
