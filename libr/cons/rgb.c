@@ -41,7 +41,7 @@ static void init_color_table(void) {
 	}
 }
 
-static int __lookup_rgb(int r, int g, int b) {
+static int rgb_lookup(int r, int g, int b) {
 	RConsContext *ctx = r_cons_singleton ()->context;
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
@@ -53,41 +53,21 @@ static int __lookup_rgb(int r, int g, int b) {
 	return -1;
 }
 
-static ut32 __approximate_rgb(int r, int g, int b) {
-	bool grey = (r > 0 && r < 255 && r == g && r == b);
+static ut32 rgb_aprox(int r, int g, int b) {
+	const bool grey = (r > 0 && r < 255 && r == g && r == b);
 	if (grey) {
 		return 232 + (int)((double)r / (255 / 24.1));
 	}
-#if 0
-	const double M = 16;
-	double R = r;
-	double G = g;
-	double B = b;
-	R = R /256 * 216;
-	R /= 256 * 216;
-	R /= 256 * 216;
-	r = R = R_DIM (R / 16, 0, 16);
-	g = G = R_DIM (G / 16, 0, 16);
-	b = B = R_DIM (B / 16, 0, 16);
-	r &= 0xff;
-	g &= 0xff;
-	b &= 0xff;
-	return (ut32)((G * M * M)  + (g * M) + b) + 16;
-#else
 	const int k = 256 / 6;
 	r = R_DIM (r / k, 0, 5);
 	g = R_DIM (g / k, 0, 5);
 	b = R_DIM (b / k, 0, 5);
 	return 16 + (r * 36) + (g * 6) + b;
-#endif
 }
 
 static int rgb(int r, int g, int b) {
-	int c = __lookup_rgb (r, g, b);
-	if (c == -1) {
-		return __approximate_rgb (r, g, b);
-	}
-	return c;
+	const int c = rgb_lookup (r, g, b);
+	return (c != -1) ? c: rgb_aprox (r, g, b);
 }
 
 static void __unrgb(int color, int *r, int *g, int *b) {
@@ -110,22 +90,23 @@ R_API void r_cons_rgb_init(void) {
 }
 
 /* Parse an ANSI code string into RGB values -- Used by HTML filter only */
-R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
+R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	const char *q = 0;
 	ut8 isbg = 0, bold = 127;
 	if (!p) {
-		return 0;
+		// XXX maybe assert?
+		return false;
 	}
 	if (*p == 0x1b) {
 		p++;
 		if (!*p) {
-			return 0;
+			return false;
 		}
 	}
 	if (*p == '[') {
 		p++;
 		if (!*p) {
-			return 0;
+			return false;
 		}
 	}
 	// here, p should be just after the '['
@@ -133,7 +114,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	case '1':
 		bold = 255;
 		if (!p[1] || !p[2]) {
-			return 0;
+			return false;
 		}
 		p += 2;
 		break;
@@ -171,33 +152,32 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 			}
 			q = strchr (q + 1, ';');
 			if (!q) {
-				return 0;
+				return false;
 			}
 			if (b) {
 				*b = atoi (q + 1);
 			}
 		}
-		return 1;
-	} else {
-		/* plain ansi escape codes */
-		if (a) {
-			*a = isbg;
-		}
-		if (!*p) {
-			return 0;
-		}
-		switch (p[1]) {
-		case '0': SETRGB (0, 0, 0); break;
-		case '1': SETRGB (bold, 0, 0); break;
-		case '2': SETRGB (0, bold, 0); break;
-		case '3': SETRGB (bold, bold, 0); break;
-		case '4': SETRGB (0, 0, bold); break;
-		case '5': SETRGB (bold, 0, bold); break;
-		case '6': SETRGB (0, bold, bold); break;
-		case '7': SETRGB (bold, bold, bold); break;
-		}
+		return true;
 	}
-	return 1;
+	/* plain ansi escape codes */
+	if (a) {
+		*a = isbg;
+	}
+	if (!*p) {
+		return false;
+	}
+	switch (p[1]) {
+	case '0': SETRGB (0, 0, 0); break;
+	case '1': SETRGB (bold, 0, 0); break;
+	case '2': SETRGB (0, bold, 0); break;
+	case '3': SETRGB (bold, bold, 0); break;
+	case '4': SETRGB (0, 0, bold); break;
+	case '5': SETRGB (bold, 0, bold); break;
+	case '6': SETRGB (0, bold, bold); break;
+	case '7': SETRGB (bold, bold, bold); break;
+	}
+	return true;
 }
 
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
@@ -337,5 +317,5 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	if (r == 0xff && g == 0x00 && b == 0xff) {
 		str = "magenta";
 	}
-	return str? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
+	return str? strdup (str) : r_str_newf ("rgb:%02x%02x%02x", r, g, b);
 }
