@@ -27,7 +27,6 @@ endif
 endif
 endif
 
-# CAPSTONE_CFLAGS?=-g
 CAPSTONE_CFLAGS=
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
@@ -81,12 +80,15 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build bochs sdbs
+preall: libwinkd capstone-build bochs sdbs sdbtool
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
+.PHONY: sdbtool
+sdbtool:
+	$(CC) -I ../libr/include -L ../libr/util -lr_util -o sdbtool sdbtool.c
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
