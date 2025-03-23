@@ -354,7 +354,7 @@ static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) 
 		const char *colorEnd = useColor? Color_RESET: "";
 
 		if (useColor) {
-			r_cons_printf ("%s0x%08" PFMT64x"  "Color_RESET, pal->offset, of + i);
+			r_cons_printf ("%s0x%08" PFMT64x"  "Color_RESET, pal->addr, of + i);
 		} else {
 			r_cons_printf ("0x%08" PFMT64x"  ", of + i);
 		}
@@ -847,7 +847,7 @@ static int cmp_bits(RCore *core, ut64 addr) {
 
 	/* Print offset header if enabled */
 	if (r_config_get_i (core->config, "hex.header")) {
-		const char *color = use_color? pal->offset: "";
+		const char *color = use_color? pal->addr: "";
 		char *n = r_str_newf ("0x%08" PFMT64x, core->addr);
 		const char *padding = r_str_pad (' ', strlen (n) - 10);
 		free (n);

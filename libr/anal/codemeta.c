@@ -366,8 +366,7 @@ static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 			width--;
 		}
 	} else {
-		PRINT_COLOR (PALETTE (offset)
-			     : Color_GREEN);
+		PRINT_COLOR (PALETTE (addr) : Color_GREEN);
 		r_cons_printf ("0x%08" PFMT64x, offset);
 		PRINT_COLOR (Color_RESET);
 	}
@@ -401,7 +400,7 @@ static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 			}
 			free (res);
 		} else {
-			PRINT_COLOR (PALETTE (offset) : Color_GREEN);
+			PRINT_COLOR (PALETTE (addr) : Color_GREEN);
 			r_cons_printf ("0x%08" PFMT64x, offset);
 			PRINT_COLOR (Color_RESET);
 			const char *pad = r_str_pad (' ', width - 11);

@@ -9,7 +9,7 @@ ec help rgb:3cf
 ec args rgb:09f
 ec flow rgb:e71
 ec prompt rgb:09f
-ec offset rgb:666
+ec addr rgb:666
 ec input rgb:fc1
 ec invalid rgb:e34
 ec other rgb:09f

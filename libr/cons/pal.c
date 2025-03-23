@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2025 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 #include <r_th.h>
@@ -24,7 +24,7 @@ static struct {
 	{ "flow2", r_offsetof (RConsPrintablePalette, flow2), r_offsetof (RConsPalette, flow2) },
 	{ "prompt", r_offsetof (RConsPrintablePalette, prompt), r_offsetof (RConsPalette, prompt) },
 	{ "bgprompt", r_offsetof (RConsPrintablePalette, bgprompt), r_offsetof (RConsPalette, bgprompt) },
-	{ "offset", r_offsetof (RConsPrintablePalette, offset), r_offsetof (RConsPalette, offset) },
+	{ "addr", r_offsetof (RConsPrintablePalette, addr), r_offsetof (RConsPalette, addr) },
 	{ "input", r_offsetof (RConsPrintablePalette, input), r_offsetof (RConsPalette, input) },
 	{ "invalid", r_offsetof (RConsPrintablePalette, invalid), r_offsetof (RConsPalette, invalid) },
 	{ "other", r_offsetof (RConsPrintablePalette, other), r_offsetof (RConsPalette, other) },
@@ -205,7 +205,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.mov                = (RColor) RColor_CYAN; // works on white and black terminals
 	ctx->cpal.nop                = (RColor) RColor_BLUE;
 	ctx->cpal.num                = (RColor) RColor_YELLOW;
-	ctx->cpal.offset             = (RColor) RColor_GREEN;
+	ctx->cpal.addr               = (RColor) RColor_GREEN;
 	ctx->cpal.other              = (RColor) RColor_CYAN;
 	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
 	// ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
@@ -429,7 +429,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		R_LOG_ERROR ("Invalid color code");
 		return NULL;
 	}
-	return *out ? strdup (out) : NULL;
+	return *out ? strdup (out) : strdup ("");
 }
 
 static void r_cons_pal_show_gs(void) {

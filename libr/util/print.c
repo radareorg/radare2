@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2024 - pancake */
+/* radare2 - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -455,7 +455,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			white = r_str_pad (' ', 9 - strlen (space));
 		}
 		if (use_color) {
-			const char *pre = PREOFF (offset): Color_GREEN;
+			const char *pre = PREOFF (addr): Color_GREEN;
 			const char *fin = Color_RESET;
 			if (dec) {
 				printfmt ("%s%s%s%s%c", pre, white, space, fin, ch);
@@ -476,7 +476,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			white = r_str_pad (' ', w);
 		}
 		if (use_color) {
-			const char *pre = PREOFF (offset): Color_GREEN;
+			const char *pre = PREOFF (addr): Color_GREEN;
 			const char *fin = Color_RESET;
 			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
@@ -838,7 +838,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	R_RETURN_IF_FAIL (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
-	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
+	const char *color_title = c? (Pal (p, addr): Color_MAGENTA): "";
 	int inc = p? p->cols : 16;
 	size_t i, j, k;
 	int sparse_char = 0;

@@ -43,7 +43,7 @@ ec flow rgb:c0a060
 ec flow2 rgb:f0e0c0
 ec prompt rgb:906000
 ec bgprompt rgb:000000
-ec offset rgb:906000
+ec addr rgb:13a10e
 ec input rgb:c0a060
 ec invalid rgb:c06040
 ec other rgb:b0a060
@@ -118,6 +118,7 @@ EXPECT=<<EOF
 [32m[42m__[0m green
 [35m[45m__[0m magenta
 [33m[43m__[0m yellow
+[31m[41m__[0m orange
 [36m[46m__[0m cyan
 [34m[44m__[0m blue
 [90m[100m__[0m gray
@@ -157,7 +158,7 @@ EXPECT=<<EOF
  [34m##[0m  flow2
  [33m##[0m  prompt
  [0m##[0m  bgprompt
- [32m##[0m  offset
+ [32m##[0m  addr
  [37m##[0m  input
  [1;31m##[0m  invalid
  [36m##[0m  other
@@ -229,7 +230,7 @@ EXPECT=<<EOF
  [94m##[0m  flow2
  [93m##[0m  prompt
  [0m##[0m  bgprompt
- [92m##[0m  offset
+ [92m##[0m  addr
  [97m##[0m  input
  [1;91m##[0m  invalid
  [97m##[0m  other
@@ -314,6 +315,7 @@ NAME=ecHi
 FILE=-
 CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
+ERROR: Invalid color code
 ERROR: Unknown color xxxx
 EOF
 RUN

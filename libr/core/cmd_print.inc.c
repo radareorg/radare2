@@ -2558,7 +2558,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			r_io_p2v (core->io, addr, &ea);
 		}
 		if (usecolor) {
-			append (ebytes, core->cons->context->pal.offset);
+			append (ebytes, core->cons->context->pal.addr);
 		}
 		if (show_section) {
 			const char * name = r_core_get_section_name (core, ea);
@@ -3831,7 +3831,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							pj_end (pj);
 						} else {
 							if (show_offset) {
-								r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
+								r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->addr: "", addr);
 							}
 							r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 						}
@@ -3871,7 +3871,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 								op = (bb->fail == UT64_MAX)? "jmp": "cjmp";
 							}
 							if (show_offset) {
-								r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
+								r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->addr: "", addr);
 							}
 							r_cons_printf ("%s 0x%08"PFMT64x "%s\n",
 								op, bb->jump, use_color? Color_RESET: "");
@@ -3930,7 +3930,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						pj_end (pj);
 					} else if (use_color) {
 						if (show_offset) {
-							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
+							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->addr: "", addr);
 						}
 						if (string2) {
 							if (!strcmp (string, string2)) {
@@ -5447,7 +5447,7 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 				r_cons_printf ("%s\n", m);
 			} else {
 				if (show_color) {
-					const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+					const char *offsetColor = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
 					r_cons_printf ("%s0x%08"PFMT64x Color_RESET"  %10s %s\n",
 							offsetColor, addr + p, "", m);
 				} else {
@@ -9058,7 +9058,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		char rgbstr[32];
-		const char *k = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+		const char *k = r_cons_singleton ()->context->pal.addr; // TODO etooslow. must cache
 		const char *inv = invert ? R_CONS_INVERT (true, true) : "";
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);

@@ -3,7 +3,6 @@ ec b0x00 rgb:ccc
 ec b0x7f rgb:ccc
 ec b0xff red
 ec btext rgb:fff . bold
-
 ec args white
 ec bin white
 ec cmp white
@@ -12,10 +11,8 @@ ec reg green . bold
 ec creg rgb:f72
 ec flag yellow . bold
 ec fline white
-
 ec flow yellow
 ec flow2 white
-
 ec fname black green bold
 ec help yellow . bold
 ec input yellow . bold
@@ -23,7 +20,6 @@ ec label white . bold
 ec math white
 ec mov white
 ec nop rgb:ccc
-
 ec comment yellow . bold
 ec call black green bold
 ec ucall black green bold
@@ -31,21 +27,16 @@ ec num rgb:fff . bold
 ec jmp yellow . bold
 ec cjmp yellow . bold
 ec ujmp yellow . bold
-
-ec offset white . bold
+ec addr white . bold
 ec other rgb:999
 ec pop rgb:999
-
 ec prompt black yellow bold
-
 ec graph.box white
 ec graph.box2 green
 ec graph.box3 rgb:000
 ec graph.box4 rgb:000
-
 ec graph.true green . bold
 ec graph.false red
-
 ec push white
 ec ret rgb:777
 ec swi black red bold
@@ -59,17 +50,14 @@ ec crypto rgb:f72
 ec floc rgb:777
 ec invalid red
 ec linehl rgb:008
-
 ec var yellow . bold
 ec var.type blue . bold
 ec var.addr cyan . bold
 ec var.name yellow
-
 ec ai.read white . bold
 ec ai.write white . bold
 ec ai.exec red . bold
 ec ai.seq green . bold
 ec ai.ascii yellow . bold
-
 ec widget.bg yellow black
 ec widget.sel black yellow
