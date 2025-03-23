@@ -34,7 +34,6 @@ ec crypto rgb:000000 rgb:ff5f5f
 ec trap rgb:000000 rgb:ff005f
 ec ucall rgb:000000 rgb:00ff5f
 ec ujmp rgb:000000 rgb:5f87ff
-
 ec invalid rgb:000000 rgb:ff005f
 ec num rgb:af87ff rgb:121212
 ec reg rgb:5fff5f rgb:121212
