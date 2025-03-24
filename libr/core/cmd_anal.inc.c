@@ -1742,6 +1742,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					r_str_trim (hname);
 					if (R_STR_ISEMPTY (hname)) {
 						R_LOG_ERROR ("Cannot find a name for this address");
+						R_FREE (hname);
 						goto failure;
 					}
 					name = hname;
@@ -1772,6 +1773,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					r_str_trim (hname);
 					if (R_STR_ISEMPTY (hname)) {
 						R_LOG_ERROR ("Cannot find a name for this address");
+						R_FREE (hname);
 						goto failure;
 					}
 					name = hname;
