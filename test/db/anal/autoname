@@ -6,7 +6,7 @@ af
 afna
 EOF
 EXPECT=<<EOF
-afn sub.add2_1050 0x00001050
+'0x00001050'afn sub.add2_1050
 EOF
 RUN
 

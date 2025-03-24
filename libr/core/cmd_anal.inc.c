@@ -6179,12 +6179,12 @@ static int cmd_af(RCore *core, const char *input) {
 				ut64 addr = core->addr;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 				if (fcn) {
-					r_cons_printf ("f %s=0x%08"PFMT64x"\n", fcn->name, addr);
-					r_cons_printf ("afn %s @ 0x%08"PFMT64x"\n", fcn->name, addr);
+					r_cons_printf ("'f %s=0x%08"PFMT64x"\n", fcn->name, addr);
+					r_cons_printf ("'@0x%08"PFMT64x"'afn %s\n", addr, fcn->name);
 					char *sig = r_core_cmd_str (core, "afs");
 					r_str_trim (sig);
 					r_str_replace_char (sig, ',', 0);
-					r_cons_printf ("afs %s @ 0x%08"PFMT64x"\n", sig, addr);
+					r_cons_printf ("'@0x%08"PFMT64x"'afs %s\n", addr, sig);
 					free (sig);
 				}
 				}
@@ -6197,7 +6197,7 @@ static int cmd_af(RCore *core, const char *input) {
 				if (fcn) {
 					char *name = r_core_anal_fcn_autoname (core, fcn, 'v');
 					if (name) {
-						r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->addr);
+						r_cons_printf ("'0x%08"PFMT64x"'afn %s\n", core->addr, name);
 						free (name);
 					}
 				} else {
