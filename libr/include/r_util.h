@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2023 - pancake */
+/* radare - LGPL - Copyright 2008-2025 - pancake */
 
 #ifndef R2_UTIL_H
 #define R2_UTIL_H
@@ -64,6 +64,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_spaces.h"
 #include "r_util/r_stack.h"
 #include "r_util/r_str.h"
+#include "r_util/r_charset.h"
 #include "r_util/r_strbuf.h"
 #include "r_util/r_bloom.h"
 #include "r_util/r_strpool.h"
