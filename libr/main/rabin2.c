@@ -7,8 +7,42 @@ typedef struct rabin2_state_t {
 	char *stdin_buf;
 } Rabin2State;
 
+typedef struct {
+	const char *name;
+	const char *desc;
+} Rabin2Env;
+
+static Rabin2Env env[] = {
+	{ "R2_NOPLUGINS",				"                      # same as r2 -N. Dont load shared plugins" },
+	{ "RABIN2_ARGS",				"                      # ignore cli and use these program arguments" },
+	{ "RABIN2_CHARSET",				"e cfg.charset         # set default value charset for -z strings" },
+	{ "RABIN2_CODESIGN_VERBOSE",	"                      # show codesign details at parse time" },
+//TODO { "RABIN2_MACHO_CODESIGN",	"" },
+	{ "RABIN2_DEBASE64",			"e bin.str.debase64    # try to debase64 all strings" },
+	{ "RABIN2_DEMANGLE",			"e bin.demangle        # dont demangle symbols if value is 0" },
+	{ "RABIN2_DEMANGLE_CMD", 		"e bin.demangle.cmd    # try to purge false positives" },
+	{ "RABIN2_DEMANGLE_TRYLIB",		"e bin.demangle.trylib # load Swift libs to demangle (default: false)" },
+//	{ "RABIN2_DEMAN_PFXLIB",		"e bin.demangle.pfxlib # prefix symbols with library name" },
+//	{ "RABIN2_DEMAN_NAT",			"e bin.demangle.native # load Swift libs to demangle (default: true)" },
+	{ "RABIN2_LANG",				"e bin.lang            # assume lang for demangling" },
+	{ "RABIN2_MACHO_NOFUNCSTARTS",	"                      # if set it will ignore the FUNCSTART information" },
+	{ "RABIN2_MACHO_NOSWIFT",		"                      # avoid parsing the swift metadata" },
+	{ "RABIN2_MACHO_SKIPFIXUPS",	"                      # do not parse the mach-o chained fixups" },
+	{ "RABIN2_MAXSTRBUF",			"e bin.str.maxbuf      # specify maximum buffer size" },
+	{ "RABIN2_PDBSERVER",			"e pdb.server          # use alternative PDB server" },
+	{ "RABIN2_PREFIX",				"e bin.prefix          # prefix symbols/sections/relocs with a specific string" },
+	{ "RABIN2_STRFILTER",			"e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' -" },
+	{ "RABIN2_STRPURGE",			"e bin.str.purge       # try to purge false positives" },
+//	{ "RABIN2_STR_FILTER",			"e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' -" },
+//	{ "RABIN2_STR_PURGE",			"e bin.str.purge       # try to purge false positives" },"
+	{ "RABIN2_SYMSTORE",			"e pdb.symstore        # path to downstream symbol store" },
+	{ "RABIN2_VERBOSE",				"e bin.verbose         # show debugging messages from the parser" },
+};
+
+static void rabin_show_env(bool show_desc);
+
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 		"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (v) {
@@ -35,6 +69,7 @@ static int rabin_show_help(int v) {
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
 		" -j              output in json\n"
+		" -J ([var])      display variable\n"
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -l              linked libraries\n"
@@ -73,32 +108,8 @@ static int rabin_show_help(int v) {
 		);
 	}
 	if (v) {
-		printf ("Environment:\n"
-		" R2_NOPLUGINS:                                  # same as r2 -N. Dont load shared plugins\n"
-		" RABIN2_ARGS:                                   # ignore cli and use these program arguments\n"
-		" RABIN2_CHARSET:          e cfg.charset         # set default value charset for -z strings\n"
-		" RABIN2_CODESIGN_VERBOSE:                       # show codesign details at parse time\n"
-		// TODO RABIN2_MACHO_CODESIGN
-		" RABIN2_DEBASE64:         e bin.str.debase64    # try to debase64 all strings\n"
-		" RABIN2_DEMANGLE:         e bin.demangle        # dont demangle symbols if value is 0\n"
-		" RABIN2_DEMANGLE_CMD:     e bin.demangle.cmd    # try to purge false positives\n"
-		" RABIN2_DEMANGLE_TRYLIB:  e bin.demangle.trylib # load Swift libs to demangle (default: false)\n"
-		// " RABIN2_DEMAN_PFXLIB:  e bin.demangle.pfxlib # prefix symbols with library name\n"
-		// " RABIN2_DEMAN_NAT: e bin.demangle.native # load Swift libs to demangle (default: true)\n"
-		" RABIN2_LANG:             e bin.lang            # assume lang for demangling\n"
-		" RABIN2_MACHO_NOFUNCSTARTS                      # if set it will ignore the FUNCSTART information\n"
-		" RABIN2_MACHO_NOSWIFT                           # avoid parsing the swift metadata\n"
-		" RABIN2_MACHO_SKIPFIXUPS                        # do not parse the mach-o chained fixups\n"
-		" RABIN2_MAXSTRBUF:        e bin.str.maxbuf      # specify maximum buffer size\n"
-		" RABIN2_PDBSERVER:        e pdb.server          # use alternative PDB server\n"
-		" RABIN2_PREFIX:           e bin.prefix          # prefix symbols/sections/relocs with a specific string\n"
-		" RABIN2_STRFILTER:        e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' -\n"
-		" RABIN2_STRPURGE:         e bin.str.purge       # try to purge false positives\n"
-		// " RABIN2_STR_FILTER: e bin.str.filter   # r2 -qc 'e bin.str.filter=?" "?' -\n"
-		// " RABIN2_STR_PURGE:  e bin.str.purge    # try to purge false positives\n"
-		" RABIN2_SYMSTORE:         e pdb.symstore        # path to downstream symbol store\n"
-		" RABIN2_VERBOSE:          e bin.verbose         # show debugging messages from the parser\n"
-		);
+		printf ("Environment:\n");
+		rabin_show_env (true);
 	}
 	return 1;
 }
@@ -546,6 +557,24 @@ static void __listPlugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
 	}
 }
 
+static void rabin_env_print(const char *name) {
+	char *value = r_sys_getenv (name);
+	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	free (value);
+}
+
+static void rabin_show_env(bool show_desc) {
+	int id = 0;
+	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
+		if (show_desc) {
+			printf ("%s\t%s\n", env[id].name, env[id].desc);
+		} else {
+			printf ("%s=", env[id].name);
+			rabin_env_print(env[id].name);
+		}
+	}
+}
+
 R_API int r_main_rabin2(int argc, const char **argv) {
 	Rabin2State state = {0};
 	const char *name = NULL;
@@ -664,7 +693,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	if (argc == 2 && !strcmp (argv[1], "-J")) {
+		rabin_show_env (false);
+		r_core_fini (&core);
+		free (state.stdin_buf);
+		return 0;
+	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -750,6 +785,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		case 'Z': set_action (R_BIN_REQ_SIZE); break;
 		case 'I': set_action (R_BIN_REQ_INFO); break;
+		case 'J':
+			rabin_env_print (opt.arg);
+			r_core_fini (&core);
+			free (state.stdin_buf);
+			return 0;
 		case 'H':
 			set_action (R_BIN_REQ_FIELDS);
 			break;

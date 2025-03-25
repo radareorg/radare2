@@ -6,6 +6,17 @@
 #include <r_list.h>
 #include <r_main.h>
 
+typedef struct {
+	const char *name;
+	const char *desc;
+} RAvcEnv;
+
+static RAvcEnv env[] = {
+	{ "RAVC2_USER", "override cfg.user value to author commit" }
+};
+
+static void ravc_show_env(bool show_desc);
+
 static void usage(void) {
 	printf ("Usage: ravc2 [-qvh] [action] [args ...]\n");
 }
@@ -14,20 +25,21 @@ static void help(void) {
 	usage ();
 	printf (
 		"Flags:\n"
-		" -q       quiet mode\n"
-		" -v       show version\n"
-		" -h       display this help message\n"
-		" -j       json output\n"
+		" -q         quiet mode\n"
+		" -v         show version\n"
+		" -h         display this help message\n"
+		" -H ([var]) display variable\n"
+		" -j         json output\n"
 		"Actions:\n"
-		" init     [git | rvc]          initialize a repository with the given vc\n"
-		" branch   [name]               if a name is provided, create a branch with that name otherwise list branches\n"
-		" commit   [message] [files...] commit the files with the message\n"
-		" checkout [branch]             set the current branch to the given branch\n"
+		" init       [git | rvc]          initialize a repository with the given vc\n"
+		" branch     [name]               if a name is provided, create a branch with that name otherwise list branches\n"
+		" commit     [message] [files...] commit the files with the message\n"
+		" checkout   [branch]             set the current branch to the given branch\n"
 		" status                        print a status message\n"
 		" reset                         remove all uncommited changes\n"
 		" log                           print all commits\n"
-		" RAVC2_USER=[n]                override cfg.user value to author commit\n"
 	);
+	ravc_show_env (true);
 }
 
 static char *get_author(void) {
@@ -37,6 +49,24 @@ static char *get_author(void) {
 		return r_sys_whoami ();
 	}
 	return author;
+}
+
+static void ravc_env_print(const char *name) {
+	char *value = r_sys_getenv (name);
+	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	free (value);
+}
+
+static void ravc_show_env(bool show_desc) {
+	int id = 0;
+	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
+		if (show_desc) {
+			printf ("%s\t%s\n", env[id].name, env[id].desc);
+		} else {
+			printf ("%s=", env[id].name);
+			ravc_env_print(env[id].name);
+		}
+	}
 }
 
 R_API int r_main_ravc2(int argc, const char **argv) {
@@ -53,7 +83,11 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_cons_new ();
 	}
 	int rad = 0;
-	r_getopt_init (&opt, argc, argv, "gqvhj");
+	r_getopt_init (&opt, argc, argv, "gqvhH:j");
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		ravc_show_env (false);
+		return 0;
+	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q':
@@ -68,6 +102,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			break;
 		case 'h':
 			help ();
+			return 0;
+		case 'H':
+			ravc_env_print (opt.arg);;
 			return 0;
 		default:
 			usage ();

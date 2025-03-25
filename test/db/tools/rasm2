@@ -756,3 +756,21 @@ EXPECT=<<EOF
 0x0000003f   1                       31  invalid
 EOF
 RUN
+
+NAME=rasm2 -H RASM2_ARCH
+FILE=-
+CMDS=%RASM2_ARCH=test;!rasm2 -H RASM2_ARCH
+EXPECT=<<EOF
+test
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 -H RASM2_BITS
+FILE=-
+CMDS=%RASM2_BITS=test;!rasm2 -H RASM2_BITS
+EXPECT=<<EOF
+test
+EOF
+EXPECT_ERR=
+RUN

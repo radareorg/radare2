@@ -9,6 +9,7 @@ typedef struct {
 	bool oneliner;
 	bool coutput;
 	bool quiet;
+	bool envhelp;
 	bool json;
 	bool use_spp;
 	bool isbig;
@@ -26,7 +27,22 @@ typedef struct {
 	RAsmOptions opt;
 } RAsmState;
 
+typedef struct {
+	const char *name;
+	const char *desc;
+} RAsmEnv;
+
+static RAsmEnv env[] = {
+	{ "R2_NOPLUGINS",		"do not load shared plugins (speedup loading)" },
+	{ "R2_LOG_LEVEL",		"change the log level" },
+	{ "R2_DEBUG",			"if defined, show error messages and crash signal" },
+	{ "R2_DEBUG_ASSERT",	"lldb -- r2 to get proper backtrace of the runtime assert" },
+	{ "RASM2_ARCH",			"same as rasm2 -a" },
+	{ "RASM2_BITS",			"same as rasm2 -b" }
+};
+
 static void rasm_load_plugins(RAsmState *as);
+static void rasm_show_env(bool show_desc);
 
 static void rasm_set_archbits(RAsmState *as) {
 	const char *arch = as->a->config->arch;
@@ -263,7 +279,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
-		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
+		printf ("Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
 			"   [-f file] [-o file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
 	}
 	if (v != 1) {
@@ -279,6 +295,7 @@ static int rasm_show_help(int v) {
 			" -f [file]    read data from file\n"
 			" -F [parser]  specify which parse filter use (see -LL)\n" // TODO: rename to -p
 			" -h, -hh      show this help, -hh for long\n"
+			" -H ([var])   display variable\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
 			" -j           output in json format\n"
 			" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
@@ -297,14 +314,8 @@ static int rasm_show_help(int v) {
 			" -w           what's this instruction for? describe opcode\n"
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
-		printf ("Environment:\n"
-			" R2_NOPLUGINS   do not load shared plugins (speedup loading)\n"
-			" R2_LOG_LEVEL=X    change the log level\n"
-			" R2_DEBUG          if defined, show error messages and crash signal\n"
-			" R2_DEBUG_ASSERT=1 lldb -- r2 to get proper backtrace of the runtime assert\n"
-			" RASM2_ARCH        same as rasm2 -a\n"
-			" RASM2_BITS        same as rasm2 -b\n"
-			"");
+		printf ("Environment:\n");
+		rasm_show_env (true);
 	}
 	if (v == 2) {
 		printf ("Preprocessor directives:\n");
@@ -710,6 +721,24 @@ static char *io_slurp(const char *file, size_t *len) {
 	return (char *)ret;
 }
 
+static void rasm_env_print(const char *name) {
+	char *value = r_sys_getenv (name);
+	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	free (value);
+}
+
+static void rasm_show_env(bool show_desc) {
+	int id = 0;
+	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
+		if (show_desc) {
+			printf ("%s\t%s\n", env[id].name, env[id].desc);
+		} else {
+			printf ("%s=", env[id].name);
+			rasm_env_print(env[id].name);
+		}
+	}
+}
+
 R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
@@ -753,7 +782,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:S:pqrs:vwx");
+	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hH:i:jk:l:L@:o:S:pqrs:vwx");
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		rasm_show_env (false);
+		return 0;
+	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -798,6 +831,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			break;
 		case 'h':
 			help++;
+			break;
+		case 'H':
+			as->opt.envhelp = true;
+			break;
 		case 'i':
 			skip = r_num_math (NULL, opt.arg);
 			break;
@@ -886,6 +923,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		goto beach;
 	}
 
+	if (as->opt.envhelp) {
+		rasm_env_print (opt.arg);
+		goto beach;
+	}
 	if (as->opt.cpu) {
 		r_arch_config_set_cpu (as->a->config, as->opt.cpu);
 	}

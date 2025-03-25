@@ -78,3 +78,12 @@ message=hello world!
 ****
 EOF
 RUN
+
+NAME=ravc2 -H RAVC2_USER
+FILE=-
+CMDS=%RAVC2_USER=test;!ravc2 -H RAVC2_USER
+EXPECT=<<EOF
+test
+EOF
+EXPECT_ERR=
+RUN
