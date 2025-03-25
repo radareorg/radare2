@@ -140,7 +140,12 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 		R_LOG_WARN ("Unnamed function at 0x%08"PFMT64x, fcn->addr);
 		// r_sys_breakpoint ();
 		free (fcn->name);
-		fcn->name = r_str_newf ("fcn.%"PFMT64x, fcn->addr);
+		const char *fcnprefix = anal->coreb.cfgGet ? anal->coreb.cfgGet (anal->coreb.core, "anal.fcnprefix") : NULL;
+		if (R_STR_ISEMPTY (fcnprefix)) {
+			fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
+		} else {
+			fcn->name = r_str_newf ("%s.%"PFMT64x, fcnprefix, fcn->addr);
+		}
 	}
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
@@ -173,10 +178,11 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 		fcn->name = strdup (name);
 	} else {
 		const char *fcnprefix = anal->coreb.cfgGet ? anal->coreb.cfgGet (anal->coreb.core, "anal.fcnprefix") : NULL;
-		if (!fcnprefix) {
-			fcnprefix = "fcn";
+		if (R_STR_ISEMPTY (fcnprefix)) {
+			fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
+		} else {
+			fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
 		}
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
 	}
 	if (diff) {
 		fcn->diff->type = diff->type;

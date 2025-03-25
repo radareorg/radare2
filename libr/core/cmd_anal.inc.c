@@ -1167,6 +1167,47 @@ static RCoreHelpMessage help_msg_axf = {
 	NULL
 };
 
+#if 0
+static bool fcnNeedsPrefix(const char *name) {
+	if (r_str_startswith (name, "entry")) {
+		return false;
+	}
+	if (r_str_startswith (name, "main")) {
+		return false;
+	}
+	return (!strchr (name, '.'));
+}
+
+static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
+	const char *fcnpfx = "";
+	if (prefix) {
+		if (fcnNeedsPrefix (name) && R_STR_ISEMPTY (fcnpfx)) {
+			fcnpfx = "fcn";
+		} else {
+			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+		}
+	}
+	if (r_reg_get (core->anal->reg, name, -1)) {
+		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
+	}
+	return strdup (name);
+}
+#else
+static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
+	if (!name || r_reg_get (core->anal->reg, name, -1)) {
+		const char *fcnpfx = "";
+		if (prefix) {
+			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+		}
+		if (R_STR_ISEMPTY (fcnpfx)) {
+			return r_str_newf ("fcn_%08"PFMT64x, off);
+		}
+		return r_str_newf ("%s.%08"PFMT64x, fcnpfx, off);
+	}
+	return strdup (name);
+}
+#endif
+
 static inline const char *get_arch_name(RCore *core) {
 	return r_config_get (core->config, "asm.arch");
 }
@@ -1512,7 +1553,7 @@ static void single_block_analysis(RCore *core) {
 				continue;
 			}
 			RFlagItem *fi = r_flag_get_at (core->flags, at, false);
-			char *name = (fi) ? strdup (fi->name): r_str_newf ("fcn.%08"PFMT64x, at);
+			char *name = (fi) ? strdup (fi->name): getFunctionName (core, at, NULL, true);
 			RAnalFunction *fcn = r_anal_create_function (core->anal, name, at, 0, NULL);
 			if (fcn) {
 				r_anal_function_add_bb (core->anal, fcn, at, len, UT64_MAX, UT64_MAX, 0);
@@ -3763,31 +3804,6 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 	free (bitmap);
 }
 
-static bool fcnNeedsPrefix(const char *name) {
-	if (!strncmp (name, "entry", 5)) {
-		return false;
-	}
-	if (!strncmp (name, "main", 4)) {
-		return false;
-	}
-	return (!strchr (name, '.'));
-}
-
-static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
-	const char *fcnpfx = "";
-	if (prefix) {
-		if (fcnNeedsPrefix (name) && (!fcnpfx || !*fcnpfx)) {
-			fcnpfx = "fcn";
-		} else {
-			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-		}
-	}
-	if (r_reg_get (core->anal->reg, name, -1)) {
-		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
-	}
-	return strdup (name); // r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
-}
-
 static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 #define DB anal->sdb_types
 	// rename type
@@ -5444,13 +5460,13 @@ static int cmd_af(RCore *core, const char *input) {
 					RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
 					name = hname = (fi)
 						? strdup (fi->name)
-						: r_str_newf ("fcn.%08"PFMT64x, addr);
+						: getFunctionName (core, addr, NULL, true);
 				}
 				break;
 			}
 			RAnalFunction *fcn = r_anal_create_function (core->anal, name, addr, type, diff);
 			if (!fcn) {
-				R_LOG_ERROR ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x, name, addr);
+				R_LOG_ERROR ("Cannot add dupped function '%s' at 0x%08"PFMT64x, name, addr);
 			}
 			free (hname);
 		}
@@ -6417,7 +6433,7 @@ R_API void r_core_anal_undefine(RCore *core, ut64 off) {
 	// RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
 	RAnalFunction *f = r_anal_get_function_at (core->anal, off);
 	if (f) {
-		if (!strncmp (f->name, "fcn.", 4)) {
+		if (r_str_startswith (f->name, "fcn.")) {
 			r_flag_unset_name (core->flags, f->name);
 		}
 		r_meta_del (core->anal, R_META_TYPE_ANY, r_anal_function_min_addr (f), r_anal_function_linear_size (f));

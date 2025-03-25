@@ -117,7 +117,7 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 		return strdup (flag->name);
 	}
 	if (R_STR_ISEMPTY (fcnpfx)) {
-		fcnpfx = "fcn";
+		return r_str_newf ("fcn_%08"PFMT64x, addr);
 	}
 	return r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
 }
@@ -884,7 +884,11 @@ static void function_rename(RFlag *flags, RAnalFunction *fcn) {
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
 		const char *restofname = fcn->name + strlen ("loc.");
-		fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
+		if (R_STR_ISEMPTY (fcnpfx)) {
+			fcn->name = strdup (restofname);
+		} else {
+			fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
+		}
 		RFlagItem *f = r_flag_get_in (flags, fcn->addr);
 		if (f) {
 			r_flag_rename (flags, f, fcn->name);
@@ -961,9 +965,11 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	R_WARN_IF_FAIL (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+#if 0
 	if (R_STR_ISEMPTY (fcnpfx)) {
 		fcnpfx = "fcn";
 	}
+#endif
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		if (r_anal_cc_once (core->anal)) {
@@ -1053,11 +1059,15 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					fcn->name = new_name;
 				} else {
 					R_FREE (fcn->name);
-					const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
-					if (R_STR_ISEMPTY (fcnpfx) || !strcmp (fcnpfx, "fcn")) {
-						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+					const char *myfcnpfx = r_anal_functiontype_tostring (fcn->type);
+					if (R_STR_ISEMPTY (myfcnpfx) || !strcmp (myfcnpfx, "fcn")) {
+						myfcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
-					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+					if (R_STR_ISEMPTY (myfcnpfx)) {
+						fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
+					} else {
+						fcn->name = r_str_newf ("%s.%08"PFMT64x, myfcnpfx, fcn->addr);
+					}
 					autoname_imp_trampoline (core, fcn);
 					/* Add flag */
 					r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
@@ -1071,13 +1081,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				RAnalRefType ref_type = reftype == UT64_MAX ? R_ANAL_REF_TYPE_CODE : reftype;
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
-			// XXX: this is wrong. See CID 1134565
-#if 0
-			if (R_STR_ISEMPTY (fcn->name)) {
-				free (fcn->name);
-				fcn->name = r_str_newf ("fcn.%"PFMT64x, fcn->addr);
-			}
-#endif
 			r_anal_add_function (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
