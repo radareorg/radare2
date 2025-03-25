@@ -1195,10 +1195,7 @@ static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefi
 #else
 static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	if (!name || r_reg_get (core->anal->reg, name, -1)) {
-		const char *fcnpfx = "";
-		if (prefix) {
-			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-		}
+		const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 		if (R_STR_ISEMPTY (fcnpfx)) {
 			return r_str_newf ("fcn_%08"PFMT64x, off);
 		}
