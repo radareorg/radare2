@@ -194,7 +194,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			snprintf (k, sizeof (k), "0x%02x", in[i]);
 		}
 		const char *v = sdb_const_get (rc->db, k, 0);
-		if (!v && in_len > 1 && ws == 1) {
+		if (!v && in_len > 1 && ws == 1 && i + 1 < in_len) {
 			const char *v = sdb_const_get (rc->db, k, 0);
 			snprintf (k, sizeof (k), "0x%02x%02x", in[i], in[i + 1]);
 			v = sdb_const_get (rc->db, k, 0);
