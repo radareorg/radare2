@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -1205,6 +1205,9 @@ rip:
 		r2r_subprocess_free (proc);
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
+		if (test->bytes_size < 1) {
+			goto beach;
+		}
 		char *hex = r_hex_bin2strdup (test->bytes, test->bytes_size);
 		if (!hex) {
 			goto beach;
@@ -1444,12 +1447,17 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			success = r2r_check_asm_test (out, at);
 			const bool is_broken = at->mode & R2R_ASM_TEST_MODE_BROKEN;
 			if (!success && !is_broken) {
-				char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
-				char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
-				eprintf ("\n"Color_RED"- %s"Color_RESET" # %s\n", at->disasm, b0);
-				eprintf (Color_GREEN"+ %s"Color_RESET" # %s\n", out->disasm, b1);
-				free (b0);
-				free (b1);
+				if (at->bytes_size < 1 || out->bytes_size < 1) {
+					eprintf ("\n"Color_RED"- %s"Color_RESET" # bytes_size = %d\n", at->disasm, (int)at->bytes_size);
+					eprintf (Color_GREEN"+ %s"Color_RESET" # bytes_size = %d\n", out->disasm, (int)out->bytes_size);
+				} else {
+					char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
+					char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
+					eprintf ("\n"Color_RED"- %s"Color_RESET" # %s\n", at->disasm, b0);
+					eprintf (Color_GREEN"+ %s"Color_RESET" # %s\n", out->disasm, b1);
+					free (b0);
+					free (b1);
+				}
 			}
 			// TODO: show more details of the failed assembled instruction
 			ret->asm_out = out;
