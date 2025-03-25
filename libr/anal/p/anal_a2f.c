@@ -356,7 +356,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		function_label = strdup (fi->name);
 	} else {
-		const char *fcnpfx = coreb.cfgget (coreb.core, "anal.fcnprefix");
+		const char *fcnpfx = coreb.cfgGet (coreb.core, "anal.fcnprefix");
 		if (R_STR_ISEMPTY (fcnpfx)) {
 			function_label = r_str_newf ("fcn_%08"PFMT64x, addr);
 		} else {
