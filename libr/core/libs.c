@@ -31,6 +31,7 @@ CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
 CB (arch, anal->arch);
+CB (charset, anal->arch);
 
 static void open_plugins_at(RCore *core, const char *arg, const char *user_path) {
 	if (R_STR_ISNOTEMPTY (arg)) {
@@ -107,7 +108,7 @@ static bool is_script(const char *name) {
 		|| !strcmp (ext, "go")
 		|| !strcmp (ext, "ts")
 		|| !strcmp (ext, "js")
-		|| !strcmp (ext, "qjs")
+		|| !strcmp (ext, "qjs") // deprecate?
 		|| !strcmp (ext, "lua")
 		|| !strcmp (ext, "pl")
 		|| !strcmp (ext, "py")

@@ -524,6 +524,7 @@ r_util_files = [
   'include/r_util/r_signal.h',
   'include/r_util/r_spaces.h',
   'include/r_util/r_stack.h',
+  'include/r_util/r_charset.h',
   'include/r_util/r_str.h',
   'include/r_util/r_str_constpool.h',
   'include/r_util/r_str_util.h',
