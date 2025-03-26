@@ -370,8 +370,8 @@ EXPECT=<<EOF
 0x00001337    0      0 func
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Cannot add function 'func' (duplicated) at 0x00001337
-ERROR: Cannot add function 'func' (duplicated) at 0x00001337
+ERROR: Cannot add dupped function 'func' at 0x00001337
+ERROR: Cannot add dupped function 'func' at 0x00001337
 EOF
 RUN
 
