@@ -356,7 +356,12 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		function_label = strdup (fi->name);
 	} else {
-		function_label = r_str_newf ("fcn.%08"PFMT64x, addr);
+		const char *fcnpfx = coreb.cfgGet (coreb.core, "anal.fcnprefix");
+		if (R_STR_ISEMPTY (fcnpfx)) {
+			function_label = r_str_newf ("fcn_%08"PFMT64x, addr);
+		} else {
+			function_label = r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
+		}
 	}
 	// loc_addr = core->addr; // sdb_num_get (db, "addr", NULL);
 	loc_addr = sdb_num_get (db, "addr", NULL);

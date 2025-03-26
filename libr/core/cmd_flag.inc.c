@@ -1709,11 +1709,10 @@ static int cmd_flag(void *data, const char *input) {
 			char *old = str + 1;
 			char *new = strchr (old, ' ');
 			if (new) {
-				*new = 0;
-				new++;
+				*new++ = 0;
 				item = r_flag_get (core->flags, old);
-				if (!item && !strncmp (old, "fcn.", 4)) {
-					item = r_flag_get (core->flags, old+4);
+				if (!item && r_str_startswith (old, "fcn.")) {
+					item = r_flag_get (core->flags, old + 4);
 				}
 			} else {
 				new = old;
@@ -1741,11 +1740,10 @@ static int cmd_flag(void *data, const char *input) {
 			char *name = str + 1;
 			char *realname = strchr (name, ' ');
 			if (realname) {
-				*realname = 0;
-				realname++;
+				*realname++ = 0;
 				item = r_flag_get (core->flags, name);
-				if (!item && !strncmp (name, "fcn.", 4)) {
-					item = r_flag_get (core->flags, name+4);
+				if (!item && r_str_startswith (name, "fcn.")) {
+					item = r_flag_get (core->flags, name + 4);
 				}
 			} else {
 				realname = name;

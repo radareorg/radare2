@@ -168,11 +168,14 @@ static bool checkFunction(fcn_t *fcn) {
 }
 
 static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
-	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
-	if (!pfx) {
-		pfx = "fcn";
+	if (name) {
+		return strdup (name);
 	}
-	return name? (char *) strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, addr);
+	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
+	if (R_STR_ISNOTEMPTY (pfx)) {
+		return r_str_newf ("%s.%" PFMT64x, pfx, addr);
+	}
+	return r_str_newf ("fcn_%" PFMT64x, addr);
 }
 
 static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
