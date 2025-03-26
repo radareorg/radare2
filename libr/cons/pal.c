@@ -643,6 +643,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 			char *res = r_cons_pal_parse (val, &rrcolor);
 			if (res) {
 				*rcolor = rrcolor;
+				free (res);
 				return true;
 			}
 			R_LOG_ERROR ("Parsing color fail %s", val);
