@@ -291,7 +291,7 @@ fail_regw_voy:
 	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_READ]);
 }
 
-static bool count_changes_above_idx_cb (void *user, ut64 key, void *val) {
+static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *val) {
 	RVector *vec = val;
 	if (R_UNLIKELY (r_vector_empty (vec))) {
 		return true;
@@ -324,7 +324,7 @@ typedef struct {
 	};
 } ChangeCollector;
 
-static bool collect_reg_changes_cb (void *user, ut64 key, void *val) {
+static bool collect_reg_changes_cb (void *user, const ut64 key, const void *val) {
 	RVector *vec = val;
 	if (R_UNLIKELY (r_vector_empty (vec))) {
 		return true;
@@ -343,7 +343,7 @@ static bool collect_reg_changes_cb (void *user, ut64 key, void *val) {
 	return true;
 }
 
-static bool collect_mem_changes_cb (void *user, ut64 key, void *val) {
+static bool collect_mem_changes_cb (void *user, const ut64 key, const void *val) {
 	RVector *vec = val;
 	if (R_UNLIKELY (r_vector_empty (vec))) {
 		return true;
@@ -393,7 +393,8 @@ R_API void r_anal_esil_trace_restore(RAnalEsilTrace *trace, REsil *esil, int idx
 		//sort collected reg changes so that the newest come first
 		qsort (data, c_num, sizeof (RAnalEsilTraceRegChange), sort_reg_changes_cb);
 		collector.data = data;
-		for (i = 0; i < c_num; i++) {
+		ut32 i = 0;
+		for (; i < c_num; i++) {
 			r_esil_reg_write_silent (esil, collector.rc_ptr[i].name, collector.rc_ptr[i].odata);
 			R_FREE (collector.rc_ptr[i].name);
 		}
@@ -427,7 +428,8 @@ R_API void r_anal_esil_trace_restore(RAnalEsilTrace *trace, REsil *esil, int idx
 	//sort collected mem changes so that the newest come first
 	qsort (data, c_num, sizeof (RAnalEsilTraceMemChange), sort_mem_changes_cb);
 	collector.data = data;
-	for (i = 0; i < c_num; i++) {
+	ut32 i = 0;
+	for (;i < c_num; i++) {
 		r_esil_mem_write_silent (esil, collector.mc_ptr[i].addr, &collector.rc_ptr[i].odata, 1);
 	}
 	
