@@ -25,7 +25,7 @@ ec math rgb:fff
 ec mov rgb:fff
 ec nop rgb:888
 ec num rgb:fff
-ec offset rgb:888
+ec addr rgb:888
 ec other rgb:577
 ec pop rgb:fff
 ec prompt rgb:4cf

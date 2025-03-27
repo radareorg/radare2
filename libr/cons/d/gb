@@ -13,7 +13,7 @@ ec label rgb:86c06c
 ec flow rgb:86c06c
 ec flow2 rgb:86c06c
 ec prompt rgb:e0f8cf
-ec offset rgb:306850
+ec addr rgb:306850
 ec other rgb:306850
 ec b0x00 rgb:306850
 ec b0x7f rgb:86c06c

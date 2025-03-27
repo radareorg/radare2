@@ -12,7 +12,7 @@ ec label rgb:af2
 ec flow rgb:af2
 ec flow2 rgb:af2
 ec prompt rgb:090
-ec offset rgb:ef0
+ec addr rgb:ef0
 ec input rgb:7d5
 ec other rgb:090
 ec b0x00 rgb:040

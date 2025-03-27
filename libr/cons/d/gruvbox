@@ -33,7 +33,7 @@ ec linehl rgb:3c3836
 ec mov rgb:ebdbb2
 ec nop rgb:928374
 ec num rgb:d3869b
-ec offset rgb:d65d0e
+ec addr rgb:d65d0e
 ec other rgb:7c6f64
 ec prompt rgb:8ec07c
 ec call rgb:fb4934

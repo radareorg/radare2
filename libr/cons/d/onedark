@@ -18,7 +18,7 @@ ec ucall rgb:e06c75
 ec jmp rgb:c678dd
 ec cjmp rgb:c678dd
 ec ujmp rgb:c678dd
-ec offset rgb:366
+ec addr rgb:366
 ec comment rgb:56b6c2
 ec usrcmt rgb:ff0
 ec push rgb:61afef

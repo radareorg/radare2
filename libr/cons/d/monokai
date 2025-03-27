@@ -23,7 +23,7 @@ ec label rgb:66d9ef
 ec math rgb:ddd
 ec mov rgb:ddd
 ec nop rgb:FFE792
-ec offset rgb:f92672
+ec addr rgb:f92672
 ec prompt rgb:ef8d1a
 ec pop rgb:ef8d1a
 ec push rgb:ef8d1a

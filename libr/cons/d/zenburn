@@ -26,7 +26,7 @@ ec invalid rgb:ff8
 ec mov rgb:cd9
 ec nop rgb:8a8
 ec num rgb:c88
-ec offset rgb:aaa
+ec addr rgb:aaa
 ec pop rgb:ffc
 ec prompt rgb:d50
 ec push rgb:ffc

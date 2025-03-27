@@ -10,7 +10,7 @@ ec help rgb:13a10e
 ec flow rgb:3a96dd
 ec flow2 rgb:0037da
 ec prompt rgb:c19c00
-ec offset rgb:13a10e
+ec addr rgb:13a10e
 ec input rgb:cccccc
 ec invalid rgb:e74856 . bold
 ec other rgb:cccccc
