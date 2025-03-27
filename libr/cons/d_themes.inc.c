@@ -586,7 +586,7 @@ static const char * const theme_catppuccin = \
 	"ec graph.false rgb:eed49f # Red\n"
 	"ec graph.trufae rgb:8aadf4 # Blue\n"
 	"ec graph.current rgb:8aadf4 # Blue\n"
-	"ec graph.traced gb:8aadf4 # Blue\n"
+	"ec graph.traced rgb:8aadf4 # Blue\n"
 	"ec graph.box rgb:cad3f5 # Gray\n"
 	"ec graph.box2 rgb:8aadf4 # Blue\n"
 	"ec graph.box3 rgb:cad3f5 # Gray\n"

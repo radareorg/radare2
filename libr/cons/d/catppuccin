@@ -43,7 +43,7 @@ ec graph.true rgb:a6da95 # Green
 ec graph.false rgb:eed49f # Red
 ec graph.trufae rgb:8aadf4 # Blue
 ec graph.current rgb:8aadf4 # Blue
-ec graph.traced gb:8aadf4 # Blue
+ec graph.traced rgb:8aadf4 # Blue
 ec graph.box rgb:cad3f5 # Gray
 ec graph.box2 rgb:8aadf4 # Blue
 ec graph.box3 rgb:cad3f5 # Gray
