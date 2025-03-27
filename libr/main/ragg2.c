@@ -19,6 +19,17 @@ typedef struct {
 	// bool quiet;
 } REggState;
 
+typedef struct {
+	const char *name;
+	const char *desc;
+} REggEnv;
+
+static REggEnv env[] = {
+	{ "R2_NOPLUGINS", "do not load any plugin" }
+};
+
+static void ragg_show_env(bool show_desc);
+
 /* egg callback */
 static int __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin *)data;
@@ -92,6 +103,7 @@ static int usage(int v) {
 			" -f [format]     output format (raw, c, pe, elf, mach0, python, javascript)\n"
 			" -F              output native format (osx=mach0, linux=elf, ..)\n"
 			" -h              show this help\n"
+			" -H ([var])      display variable\n"
 			" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
 			" -I [path]       add include path\n"
 			" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
@@ -112,8 +124,8 @@ static int usage(int v) {
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
 			" -X [hexpairs]   execute rop chain, using the stack provided\n"
-			" -z              output in C string syntax\n"
-			"R2_NOPLUGINS=1   do not load any plugin\n");
+			" -z              output in C string syntax\n");
+			ragg_show_env (true);
 	}
 	return 1;
 }
@@ -185,6 +197,24 @@ static int openfile(const char *f, int x) {
 }
 #define ISEXEC (fmt != 'r')
 
+static void ragg_env_print(const char *name) {
+	char *value = r_sys_getenv (name);
+	printf ("%s\n", R_STR_ISNOTEMPTY (value) ? value : "");
+	free (value);
+}
+
+static void ragg_show_env(bool show_desc) {
+	int id = 0;
+	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
+		if (show_desc) {
+			printf ("%s\t%s\n", env[id].name, env[id].desc);
+		} else {
+			printf ("%s=", env[id].name);
+			ragg_env_print(env[id].name);
+		}
+	}
+}
+
 R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
@@ -222,7 +252,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	REggState *es = __es_new (load_plugins);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:Fhi:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");
+	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:FhH:i:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		ragg_show_env (false);
+		__es_free (es);
+		free (sequence);
+		return 0;
+	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -403,6 +439,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			__es_free (es);
 			free (sequence);
 			return usage (1);
+		case 'H':
+			ragg_env_print (opt.arg);
+			__es_free (es);
+			free (sequence);
+			return 0;
 		case 'v':
 			free (sequence);
 			__es_free (es);
