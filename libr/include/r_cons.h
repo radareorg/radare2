@@ -427,6 +427,7 @@ typedef struct r_cons_context_t {
 	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
+	size_t buffer_limit;
 	bool breaked;
 	bool was_breaked;
 	bool unbreakable;

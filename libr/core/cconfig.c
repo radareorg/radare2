@@ -2714,6 +2714,12 @@ static bool cb_scr_histsize(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_limit(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->context->buffer_limit = node->i_value;
+	return true;
+}
+
 static bool cb_scrprompt(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4455,6 +4461,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.prompt.sect", "false", "show section name in the prompt");
 	SETBPREF ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
+	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");
 	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
