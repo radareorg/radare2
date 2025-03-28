@@ -156,8 +156,9 @@ r_bin_sources += r_bin_d_sources
 r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 if not get_option('use_sys_lz4')
-  library_cflags += ['-DUSE_SMALLZ4']
+  library_cflags += ['-DUSE_RLZ4']
 endif
+
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
