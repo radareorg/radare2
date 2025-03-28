@@ -1429,6 +1429,18 @@ R_API int r_cons_get_column(void) {
 	return r_str_ansi_len (line);
 }
 
+static int chop(int len) {
+	if (C->buffer_limit > 0) {
+		if (C->buffer_len + len >= C->buffer_limit) {
+			if (C->buffer_len >= C->buffer_limit) {
+				return 0;
+			}
+			return C->buffer_limit - C->buffer_len;
+		}
+	}
+	return len;
+}
+
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
 	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
@@ -1445,6 +1457,9 @@ R_API int r_cons_write(const char *str, int len) {
 	if (str && len > 0 && !I->null) {
 		R_CRITICAL_ENTER (I);
 		if (palloc (len + 1)) {
+			if ((len = chop (len)) < 1) {
+				return 0;
+			}
 			memcpy (C->buffer + C->buffer_len, str, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
@@ -1464,6 +1479,9 @@ R_API int r_cons_write(const char *str, int len) {
 
 R_API void r_cons_memset(char ch, int len) {
 	if (!I->null && len > 0) {
+		if ((len = chop (len)) < 1) {
+			return;
+		}
 		if (palloc (len + 1)) {
 			memset (C->buffer + C->buffer_len, ch, len);
 			C->buffer_len += len;
