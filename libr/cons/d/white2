@@ -35,7 +35,7 @@ ec math rgb:761B48 0 bold              # math instructions like sub, add
 ec mov black
 ec nop rgb:a37acc               # nop instructions
 ec num rgb:761B48               # numbers
-ec offset rgb:2F6F9F            # offset in visual mode
+ec addr rgb:2F6F9F            # offset in visual mode
 ec other rgb:4D4D4D
 ec pop rgb:ff7733               # pop instructions
 ec prompt rgb:2F6F9F 0 bold            # color for main r2 prompt

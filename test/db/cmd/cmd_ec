@@ -43,7 +43,7 @@ ec flow rgb:c0a060
 ec flow2 rgb:f0e0c0
 ec prompt rgb:906000
 ec bgprompt rgb:000000
-ec addr rgb:13a10e
+ec addr rgb:906000
 ec input rgb:c0a060
 ec invalid rgb:c06040
 ec other rgb:b0a060

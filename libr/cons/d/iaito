@@ -11,7 +11,7 @@ ec help rgb:005f87
 ec flow rgb:5f8700
 ec flow2 rgb:5f8700
 ec prompt rgb:30a000
-ec offset rgb:8e8c8b
+ec addr rgb:8e8c8b
 ec input rgb:000000
 ec invalid rgb:e03030
 ec other rgb:005f87

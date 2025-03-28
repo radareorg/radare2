@@ -8,7 +8,7 @@ ec label rgb:f5d
 ec flow rgb:f5d
 ec flow2 rgb:72d
 ec prompt rgb:f5d
-ec offset rgb:72d
+ec addr rgb:72d
 ec input rgb:f5d
 ec other rgb:d5a
 ec b0x00 rgb:a27

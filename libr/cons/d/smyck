@@ -24,7 +24,7 @@ ec label rgb:9df
 ec math rgb:ddd
 ec mov rgb:ddd
 ec nop rgb:444
-ec offset rgb:bb5
+ec addr rgb:bb5
 ec prompt rgb:bb5
 ec pop rgb:fd6
 ec push rgb:fd6

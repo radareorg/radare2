@@ -24,7 +24,7 @@ ec crypto rgb:366
 ec mov rgb:666
 ec nop rgb:444
 ec num rgb:99a
-ec offset rgb:366
+ec addr rgb:366
 ec other rgb:bbb
 ec prompt rgb:366
 ec push rgb:99a
