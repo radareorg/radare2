@@ -18,7 +18,11 @@
 #define LOAD_32(p) *(ut32*)&g_buf[(p)]
 #define LOAD_32_FROM(p, x)     *(ut32 *)&x[(p)]
 #define COPY_32(d, s) *(ut32*)&g_buf[(d)] = LOAD_32((s))
-#define COPY_32_TO(d, s, x, y) *(ut32 *)&x[(d)] = LOAD_32_FROM (s, y)
+
+// Using memcpy for these two because they make ASAN happy
+// Avoids the 'misaligned address' error
+#define COPY_32_TO(d, s, x, y) memcpy (&x[d], &y[s], 4)
+#define LOAD_16_TO(p, x)       memcpy (&x, &g_buf[p], 2)
 
 #define HASH_BITS 12
 #define HASH_SIZE (1 << HASH_BITS)
@@ -148,6 +152,7 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 	int maxLen = obuf? osz: BLOCK_SIZE;
 	int ip_end = ip + comp_len;
 	ut8 *dst = obuf? obuf: g_buf;
+	ut16 tmp = 0;
 
 	for (;;) {
 		const int token = g_buf[ip++];
@@ -166,12 +171,9 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 				return -1;
 			}
 
-			COPY_32_TO (p, ip, dst, g_buf);
-			COPY_32_TO (p + 4, ip + 4, dst, g_buf);
-			for (i = 8; i < run; i += 8) {
-				COPY_32_TO (p + i, ip + i, dst, g_buf);
-				COPY_32_TO (p + 4 + i, ip + 4 + i, dst, g_buf);
-			}
+			// Avoid heap overflow
+			memcpy (&dst[p], &g_buf[ip], run);
+
 			p += run;
 			ip += run;
 			if (ip >= ip_end) {
@@ -179,7 +181,8 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 			}
 		}
 
-		s = p - LOAD_16 (ip);
+		LOAD_16_TO (ip, tmp);
+		s = p - tmp;
 		ip += 2;
 		if (s < 0) {
 			return -1;
