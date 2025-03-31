@@ -1306,6 +1306,18 @@ static int real_strlen(const char *ptr, int len) {
 	return ansilen - diff;
 }
 
+static int chop(int len) {
+	if (C->buffer_limit > 0) {
+		if (C->buffer_len + len >= C->buffer_limit) {
+			if (C->buffer_len >= C->buffer_limit) {
+				return 0;
+			}
+			return C->buffer_limit - C->buffer_len;
+		}
+	}
+	return len;
+}
+
 R_API void r_cons_visual_write(char *buffer) {
 	char white[1024];
 	int cols = I->columns;
@@ -1375,7 +1387,6 @@ R_API void r_cons_visual_write(char *buffer) {
 }
 
 R_API void r_cons_printf_list(const char *format, va_list ap) {
-	size_t written;
 	va_list ap2, ap3;
 
 	va_copy (ap2, ap);
@@ -1390,16 +1401,18 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 		if (palloc (MOAR + strlen (format) * 20)) {
 club:
 			left = C->buffer_sz - C->buffer_len; /* remaining space in C->buffer */
-			// if (left > 0) {}
-			written = vsnprintf (C->buffer + C->buffer_len, left, format, ap3);
-			if (written >= left) { /* not all bytes were written */
-				if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
-					va_end (ap3);
-					va_copy (ap3, ap2);
-					goto club;
+			if ((left = chop (left)) > 0) {
+				// if (left > 0) {}
+				size_t written = vsnprintf (C->buffer + C->buffer_len, left, format, ap3);
+				if (written >= left) { /* not all bytes were written */
+					if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
+						va_end (ap3);
+						va_copy (ap3, ap2);
+						goto club;
+					}
 				}
+				C->buffer_len += written;
 			}
-			C->buffer_len += written;
 		}
 	} else {
 		r_cons_print (format);
@@ -1427,18 +1440,6 @@ R_API int r_cons_get_column(void) {
 	}
 	C->buffer[C->buffer_len] = 0;
 	return r_str_ansi_len (line);
-}
-
-static int chop(int len) {
-	if (C->buffer_limit > 0) {
-		if (C->buffer_len + len >= C->buffer_limit) {
-			if (C->buffer_len >= C->buffer_limit) {
-				return 0;
-			}
-			return C->buffer_limit - C->buffer_len;
-		}
-	}
-	return len;
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
