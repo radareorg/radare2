@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2025 - pancake, maijin */
 
 #if R_INCLUDE_BEGIN
 
@@ -13889,6 +13889,30 @@ static bool isSkippable(RBinSymbol *s) {
 	return false;
 }
 
+static int cmpfn_fw(const void *a, const void *b) {
+	RBinSymbol *sa = (RBinSymbol*) a;
+	RBinSymbol *sb = (RBinSymbol*) b;
+	if (sa->vaddr > sb->vaddr) {
+		return 1;
+	}
+	if (sa->vaddr < sb->vaddr) {
+		return -1;
+	}
+	return 0;
+}
+
+static int cmpfn_bw(const void *a, const void *b) {
+	RBinSymbol *sa = (RBinSymbol*) a;
+	RBinSymbol *sb = (RBinSymbol*) b;
+	if (sa->vaddr > sb->vaddr) {
+		return 1;
+	}
+	if (sa->vaddr < sb->vaddr) {
+		return -1;
+	}
+	return 0;
+}
+
 static bool cmd_aa(RCore *core, bool aaa) {
 	const RList *list;
 	RListIter *iter;
@@ -13898,6 +13922,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	RBinSymbol *symbol;
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
+	const bool anal_back = r_config_get_b (core->config, "anal.back");
 
 	// required for noreturn
 	if (r_config_get_b (core->config, "anal.imports")) {
@@ -13927,21 +13952,21 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
+		RSkipList *symbols = r_skiplist_new (NULL, anal_back? cmpfn_fw: cmpfn_bw);
 		R_VEC_FOREACH (v, symbol) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			// Stop analyzing PE imports further
-			if (isSkippable (symbol)) {
+			if (isSkippable (symbol) || !isValidSymbol (symbol)) {
 				continue;
 			}
-			if (isValidSymbol (symbol)) {
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
-				r_core_af (core, addr, NULL, anal_calls);
-			}
+			r_skiplist_insert (symbols, symbol);
 		}
+		RSkipListNode *it;
+		r_skiplist_foreach (symbols, it, symbol) {
+			ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+			// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
+			// r_core_af (core, addr, symbol->name, anal_calls);
+			r_core_af (core, addr, NULL, anal_calls);
+		}
+		r_skiplist_free (symbols);
 	}
 	r_core_task_yield (&core->tasks);
 	/* Main */
@@ -13981,6 +14006,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 				if (r_str_startswith (fname, "dbg.")
 				||  r_str_startswith (fname, "rsym.")
 				||  r_str_startswith (fname, "sym.")
+				||  r_str_startswith (fname, "func.")
 				||  r_str_startswith (fname, "main")) {
 					fcni->type = R_ANAL_FCN_TYPE_SYM;
 				}

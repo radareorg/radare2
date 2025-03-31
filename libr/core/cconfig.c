@@ -3141,7 +3141,7 @@ static bool cb_anal_cs(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_anal_from(RCore *core, RConfigNode *node) {
-	if (r_config_get_i (core->config, "anal.limits")) {
+	if (r_config_get_b (core->config, "anal.limits")) {
 		r_anal_set_limits (core->anal,
 				r_config_get_i (core->config, "anal.from"),
 				r_config_get_i (core->config, "anal.to"));
@@ -3628,6 +3628,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETCB ("anal.ignbithints", "false", &cb_anal_ignbithints, "ignore the ahb hints (only obey asm.bits)");
+	SETBPREF ("anal.back", "false", "sort functions backward when analyzing (EXPERIMENTAL)");
 	SETBPREF ("anal.imports", "true", "run af@@@i in aa for better noreturn propagation");
 	SETBPREF ("anal.calls", "false", "make basic af analysis walk into calls");
 	SETBPREF ("anal.autoname", "false", "speculatively set a name for the functions, may result in some false positives");
