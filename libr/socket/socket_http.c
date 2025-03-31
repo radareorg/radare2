@@ -200,7 +200,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
-		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
+		RStrBuf *sb = r_strbuf_new ("curl -s -D - -L");
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -210,22 +210,65 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		}
 		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
 		char *command = r_strbuf_drain (sb);
-		// eprintf ("--> %s\n", command);
-		char *res = r_sys_cmd_str (command, NULL, &len);
+
+		char *error = NULL;
+		char *res = NULL;
+
+		// Execute curl command
+		int cmd_result = r_sys_cmd_str_full (command, NULL, 0, &res, &len, &error);
+
 		free (escaped_url);
 		free (command);
-		if (!res) {
+
+		if (cmd_result <= 0 || !res) {
+			// Command failed to execute
 			if (code) {
-				*code = 404;
+				*code = 500; // Internal error
 			}
-			return NULL;
+			if (error && *error) {
+				R_LOG_ERROR ("curl failed: %s", error);
+				char *err_msg = strdup (error);
+				free (error);
+				free (res);
+				return err_msg;
+			} else {
+				R_LOG_ERROR ("curl failed to execute");
+				free (error);
+				free (res);
+				return NULL;
+			}
 		}
+
+		// Parse the response
 		if (res) {
+			// Parse HTTP status code from header
 			if (code) {
-				*code = 200;
+				char *status_line = strstr (res, "HTTP/");
+				if (status_line) {
+					char *space = strchr (status_line, ' ');
+					if (space) {
+						*code = atoi (space + 1);
+					} else {
+						*code = 200; // Default success
+					}
+				} else {
+					*code = 200; // Default success
+				}
 			}
+
+			// Separate headers from body
+			char *body = strstr (res, "\r\n\r\n");
+			if (body) {
+				body += 4;
+				// Move the body to the beginning of the string
+				char *new_res = strdup (body);
+				free (res);
+				res = new_res;
+			}
+
+			free (error);
 			if (rlen) {
-				*rlen = len;
+				*rlen = strlen (res);
 			}
 		}
 		return res;
@@ -303,7 +346,7 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
-		RStrBuf *sb = r_strbuf_new ("curl -sfL -o -");
+		RStrBuf *sb = r_strbuf_new ("curl -s -D - -L");
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -316,24 +359,68 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		free (escaped_data);
 		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
 		char *command = r_strbuf_drain (sb);
-		// eprintf ("--> %s\n", command);
-		char *res = r_sys_cmd_str (command, NULL, &len);
+
+		char *error = NULL;
+		char *res = NULL;
+
+		// Execute curl command
+		int cmd_result = r_sys_cmd_str_full (command, NULL, 0, &res, &len, &error);
+
 		free (escaped_url);
 		free (command);
-		if (!res) {
+
+		if (cmd_result <= 0 || !res) {
+			// Command failed to execute
 			if (code) {
-				*code = 404;
+				*code = 500; // Internal error
 			}
-			return NULL;
+			if (error && *error) {
+				R_LOG_ERROR ("curl failed: %s", error);
+				char *err_msg = strdup (error);
+				free (error);
+				free (res);
+				return err_msg;
+			} else {
+				R_LOG_ERROR ("curl failed to execute");
+				free (error);
+				free (res);
+				return NULL;
+			}
 		}
+
+		// Parse the response
 		if (res) {
+			// Parse HTTP status code from header
 			if (code) {
-				*code = 200;
+				char *status_line = strstr (res, "HTTP/");
+				if (status_line) {
+					char *space = strchr (status_line, ' ');
+					if (space) {
+						*code = atoi (space + 1);
+					} else {
+						*code = 200; // Default success
+					}
+				} else {
+					*code = 200; // Default success
+				}
 			}
+
+			// Separate headers from body
+			char *body = strstr (res, "\r\n\r\n");
+			if (body) {
+				body += 4;
+				// Move the body to the beginning of the string
+				char *new_res = strdup (body);
+				free (res);
+				res = new_res;
+			}
+
+			free (error);
 			if (rlen) {
-				*rlen = len;
+				*rlen = strlen (res);
 			}
 		}
+
 		return res;
 	}
 	bool ssl = r_str_startswith (url, "https://");
