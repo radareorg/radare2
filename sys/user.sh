@@ -30,21 +30,22 @@ ARGS=""
 while [ $# -gt 0 ]
 do
 	case "$1" in
-		"--without-pull")
-			WITHOUT_PULL=1
-			;;
-		"--install-path")
-			shift
-			if [ -n "$1" ]; then
-				PREFIX="`abspath $1`"
-				BINDIR="$PREFIX/bin"
-			else
-				echo "ERROR: install-path must not be empty"
-				exit 1
-			fi
-			;;
-		*)
-			ARGS="${ARGS} $1"
+	"--without-pull")
+		WITHOUT_PULL=1
+		;;
+	"--install-path")
+		shift
+		if [ -n "$1" ]; then
+			PREFIX="`abspath $1`"
+			BINDIR="$PREFIX/bin"
+		else
+			echo "ERROR: install-path must not be empty"
+			exit 1
+		fi
+		;;
+	*)
+		ARGS="${ARGS} $1"
+		;;
 	esac
 	shift
 done
@@ -73,7 +74,6 @@ if [ -z "${PREFIX}" ]; then
 		echo "HOME not set"
 		exit 1
 	fi
-
 	if [ ! -d "${HOME}" ]; then
 		echo "HOME is not a directory"
 		exit 1
