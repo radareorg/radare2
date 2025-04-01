@@ -112,10 +112,6 @@ static bool r2pm_add(R2Pm *r2pm, const char *repository) {
 	return false;
 }
 
-static char *r2pm_bindir(void) {
-	return r_xdg_datadir ("prefix/bin");
-}
-
 static char *r2pm_gitdir(void) {
 	char *e = r_sys_getenv ("R2PM_GITDIR");
 	if (R_STR_ISNOTEMPTY (e)) {
@@ -423,32 +419,19 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (r2pm_pkgcfg);
 	free (pkgcfg);
 
-	char *bindir = r_str_newf ("%s/bin", r2_prefix);
-	r_sys_setenv ("R2PM_BINDIR", bindir);
-	free (bindir);
+	char *r2pm_bindir = r_str_newf ("%s/bin", r2_prefix);
+	r_sys_mkdirp (r2pm_bindir);
+	r_sys_setenv ("R2PM_BINDIR", r2pm_bindir);
+	r_sys_setenv_sep ("PATH", r2pm_bindir, false);
+	r_sys_setenv_sep ("PATH", R2_BINDIR, false);
+	free (r2pm_bindir);
 
 	char *mandir = r_str_newf ("%s/man", r2_prefix);
 	r_sys_setenv("R2PM_MANDIR", mandir);
 	free (mandir);
 
-	char *libdir = r_str_newf ("%s/lib", r2_prefix);
-	r_sys_setenv ("R2PM_LIBDIR", libdir);
-	free (libdir);
-
-	char *incdir = r_str_newf ("%s/include", r2_prefix);
-	r_sys_setenv ("R2PM_INCDIR", incdir);
-	free (incdir);
-
-	char *oldpath = r_sys_getenv ("PATH");
-	if (!oldpath) {
-		oldpath = strdup ("/bin");
-	}
-	if (!strstr (oldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/bin%s%s", r2_prefix, R_SYS_ENVSEP, oldpath);
-		r_sys_setenv ("PATH", newpath);
-		free (newpath);
-	}
-	free (oldpath);
+	char *r2pm_libdir = r_str_newf ("%s/lib", r2_prefix);
+	r_sys_setenv ("R2PM_LIBDIR", r2pm_libdir);
 #if R2__WINDOWS__
 	const char *ldpathvar = NULL;
 #elif __HAIKU__
@@ -458,47 +441,14 @@ static void r2pm_setenv(R2Pm *r2pm) {
 #else
 	const char *ldpathvar = "LD_LIBRARY_PATH";
 #endif
-	char *opath = r_sys_getenv ("PATH");
-	if (opath) {
-		char *bindir = r2pm_bindir ();
-		r_sys_mkdirp (bindir);
-		const char *sep = R_SYS_ENVSEP;
-		char *newpath = r_str_newf ("%s%s%s", bindir, sep, opath);
-		r_sys_setenv ("PATH", newpath);
-		free (newpath);
-		free (opath);
-		free (bindir);
-	}
+	r_sys_setenv_sep (ldpathvar, r2pm_libdir, false);
+	r_sys_setenv_sep (ldpathvar, R2_LIBDIR, false);
+	free (r2pm_libdir);
 
-	char *ldpath = r_sys_getenv (ldpathvar);
-	if (!ldpath) {
-		ldpath = strdup ("");
-	}
-	if (!strstr (ldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/lib%s%s", r2_prefix, R_SYS_ENVSEP, ldpath);
-		r_sys_setenv (ldpathvar, newpath);
-		free (ldpath);
-		ldpath = newpath;
-	}
-	char *gr2_prefix = r_sys_cmd_str ("radare2 -NN -H R2_PREFIX", NULL, NULL);
-	if (gr2_prefix) {
-		r_str_trim (gr2_prefix);
-		if (R_STR_ISNOTEMPTY (gr2_prefix)) {
-			if (!strstr (ldpath, gr2_prefix)) {
-				char *newpath = r_str_newf ("%s/lib%s%s", gr2_prefix, R_SYS_ENVSEP, ldpath);
-				r_sys_setenv (ldpathvar, newpath);
-				free (newpath);
-			}
-		}
-		free (gr2_prefix);
-	}
+	char *incdir = r_str_newf ("%s/include", r2_prefix);
+	r_sys_setenv ("R2PM_INCDIR", incdir);
+	free (incdir);
 
-	if (!strstr (ldpath, r2_prefix)) {
-		char *newpath = r_str_newf ("%s/lib%s%s", r2_prefix, R_SYS_ENVSEP, ldpath);
-		r_sys_setenv (ldpathvar, newpath);
-		free (newpath);
-	}
-	free (ldpath);
 	free (r2_prefix);
 	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	static const char *python_bins[] = {
