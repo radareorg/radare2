@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -450,6 +450,19 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #pragma message("r_sys_setenv : unimplemented for this platform")
 	return 0;
 #endif
+}
+
+R_API int r_sys_setenv_sep(const char *key, const char *value, bool prefix) {
+	char *o = r_sys_getenv (key);
+	if (R_STR_ISEMPTY (o)) {
+		return r_sys_setenv (key, value);
+	}
+	char *v = prefix
+		? r_str_newf ("%s" R_SYS_ENVSEP "%s", o, value)
+		: r_str_newf ("%s" R_SYS_ENVSEP "%s", value, o);
+	int res = r_sys_setenv (key, v);
+	free (v);
+	return res;
 }
 
 #if WANT_DEBUGSTUFF
