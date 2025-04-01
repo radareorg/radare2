@@ -13952,21 +13952,33 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
-		RSkipList *symbols = r_skiplist_new (NULL, anal_back? cmpfn_fw: cmpfn_bw);
-		R_VEC_FOREACH (v, symbol) {
-			if (isSkippable (symbol) || !isValidSymbol (symbol)) {
-				continue;
+		if (anal_back) {
+			RSkipList *symbols = r_skiplist_new (NULL, anal_back? cmpfn_fw: cmpfn_bw);
+			R_VEC_FOREACH (v, symbol) {
+				if (isSkippable (symbol) || !isValidSymbol (symbol)) {
+					continue;
+				}
+				r_skiplist_insert (symbols, symbol);
 			}
-			r_skiplist_insert (symbols, symbol);
+			RSkipListNode *it;
+			r_skiplist_foreach (symbols, it, symbol) {
+				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
+				// r_core_af (core, addr, symbol->name, anal_calls);
+				r_core_af (core, addr, NULL, anal_calls);
+			}
+			r_skiplist_free (symbols);
+		} else {
+			R_VEC_FOREACH (v, symbol) {
+				if (isSkippable (symbol) || !isValidSymbol (symbol)) {
+					continue;
+				}
+				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
+				// r_core_af (core, addr, symbol->name, anal_calls);
+				r_core_af (core, addr, NULL, anal_calls);
+			}
 		}
-		RSkipListNode *it;
-		r_skiplist_foreach (symbols, it, symbol) {
-			ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-			// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-			// r_core_af (core, addr, symbol->name, anal_calls);
-			r_core_af (core, addr, NULL, anal_calls);
-		}
-		r_skiplist_free (symbols);
 	}
 	r_core_task_yield (&core->tasks);
 	/* Main */
