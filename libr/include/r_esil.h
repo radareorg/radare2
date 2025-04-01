@@ -430,6 +430,7 @@ R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *nu
 extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;
 extern REsilPlugin r_esil_plugin_forth;
+extern REsilPlugin r_esil_plugin_banksy;
 
 #ifdef __cplusplus
 }
