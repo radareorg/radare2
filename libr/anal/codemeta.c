@@ -550,7 +550,7 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
 	RCodeMeta *code = user;
 	const RCodeMetaItem *annotation = val;
-	char *b64statement = r_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
+	char *b64statement = r_base64_encode_dyn ((const ut8*)code->code + annotation->start, annotation->end - annotation->start);
 	r_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free (b64statement);
 	return true;

@@ -581,11 +581,11 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	RBinString *ptr;
 	RListIter *iter;
 	r_list_foreach (strings, iter, ptr) {
-		char *dec = (char *)r_base64_decode_dyn (ptr->string, -1);
+		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
 		if (dec) {
 			char *s = ptr->string;
 			for (;;) {
-				char *dec2 = (char *)r_base64_decode_dyn (s, -1);
+				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL);
 				if (!dec2) {
 					break;
 				}

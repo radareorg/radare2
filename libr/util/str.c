@@ -1565,7 +1565,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	char *encoded_str;
 
 	if (encoding == PJ_ENCODING_STR_BASE64) {
-		encoded_str = r_base64_encode_dyn (buf, buf_sz);
+		encoded_str = r_base64_encode_dyn ((const ut8*)buf, buf_sz);
 	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
 		size_t loop = 0;
 		size_t i = 0;

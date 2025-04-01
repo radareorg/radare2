@@ -1932,7 +1932,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 
 						if (is_star) {
 							char *title = get_title (bbi->addr);
-							char *body_b64 = r_base64_encode_dyn (diffstr, -1);
+							char *body_b64 = r_base64_encode_dyn ((const ut8*)diffstr, -1);
 							if (!title  || !body_b64) {
 								free (body_b64);
 								free (title);
@@ -1957,7 +1957,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 					} else {
 						if (is_star) {
 							char *title = get_title (bbi->addr);
-							char *body_b64 = r_base64_encode_dyn (str, -1);
+							char *body_b64 = r_base64_encode_dyn ((const ut8*)str, -1);
 							int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 							if (!title  || !body_b64) {
 								free (body_b64);
@@ -2007,7 +2007,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 					nodes++;
 					if (is_star) {
 						char *title = get_title (bbi->addr);
-						char *body_b64 = r_base64_encode_dyn (str, -1);
+						char *body_b64 = r_base64_encode_dyn ((const ut8*)str, -1);
 						int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 						if (!title || !body_b64) {
 								free (body_b64);
@@ -2278,7 +2278,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		}
 		char *title = get_title (bb->addr);
 		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
-		char *body_b64 = r_base64_encode_dyn (body, -1);
+		char *body_b64 = r_base64_encode_dyn ((const ut8*)body, -1);
 		if (!title || !body || !body_b64) {
 			free (body_b64);
 			free (body);

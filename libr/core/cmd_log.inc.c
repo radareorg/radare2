@@ -369,7 +369,7 @@ static int cmd_log(void *data, const char *input) {
 		} else {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (r_str_startswith (arg, "base64:")) {
-				ut8 *s = r_base64_decode_dyn (arg + 7, -1);
+				ut8 *s = r_base64_decode_dyn (arg + 7, -1, NULL);
 				if (s) {
 					r_core_log_add (core, (const char *)s);
 					free (s);

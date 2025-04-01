@@ -8119,7 +8119,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = malloc (memory_alloc);
 			if (str) {
 				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-				out = r_base64_encode_dyn ((const char *) str, strlen (str));
+				out = r_base64_encode_dyn ((const ut8 *) str, strlen (str));
 				free (str);
 				str = out;
 			}
@@ -8156,7 +8156,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = malloc (memory_alloc);
 			if (str) {
 				snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
-				out = r_base64_encode_dyn ((const char *) str, strlen (str));
+				out = r_base64_encode_dyn ((const ut8 *) str, strlen (str));
 				free (str);
 				str = out;
 			}
@@ -8184,7 +8184,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = malloc (memory_alloc);
 			if (str) {
 				snprintf (str, memory_alloc, "\"%s\"", string_str);
-				out = r_base64_encode_dyn ((const char *) str, strlen (str));
+				out = r_base64_encode_dyn ((const ut8 *) str, strlen (str));
 				free (str);
 				str = out;
 			}
@@ -8201,10 +8201,9 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			r_base64_encode (str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 		}
 	} else if (!strcmp (cp_name, "Long")) {
-		str = malloc (34);
+		str = r_str_newf ("0x%"PFMT64x, r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
 		if (str) {
-			snprintf (str, 34, "0x%"PFMT64x, r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
-			out = r_base64_encode_dyn ((const char *) str, strlen (str));
+			out = r_base64_encode_dyn ((const ut8 *) str, strlen (str));
 			free (str);
 			str = out;
 		}
@@ -8212,7 +8211,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		str = malloc (1000);
 		if (str) {
 			snprintf (str, 1000, "%f", r_bin_java_raw_to_double (item->info.cp_double.bytes.raw, 0));
-			out = r_base64_encode_dyn ((const char *) str, strlen (str));
+			out = r_base64_encode_dyn ((const ut8*) str, strlen (str));
 			free (str);
 			str = out;
 		}
@@ -8220,7 +8219,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		str = calloc (34, 1);
 		if (str) {
 			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw, 0));
-			out = r_base64_encode_dyn ((const char *) str, strlen (str));
+			out = r_base64_encode_dyn ((const ut8*) str, strlen (str));
 			free (str);
 			str = out;
 		}
@@ -8228,7 +8227,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		str = malloc (34);
 		if (str) {
 			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw, 0));
-			out = r_base64_encode_dyn ((const char *) str, strlen (str));
+			out = r_base64_encode_dyn ((const ut8*) str, strlen (str));
 			free (str);
 			str = out;
 		}
@@ -8246,7 +8245,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = malloc (memory_alloc);
 			if (str) {
 				snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
-				out = r_base64_encode_dyn ((const char *) str, strlen (str));
+				out = r_base64_encode_dyn ((const ut8 *) str, strlen (str));
 				free (str);
 				str = out;
 			}
@@ -8258,7 +8257,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (desc_str);
 		}
 	} else {
-		str = r_base64_encode_dyn ((const char *) "(null)", 6);
+		str = r_base64_encode_dyn ((const ut8*) "(null)", 6);
 	}
 	return str;
 }

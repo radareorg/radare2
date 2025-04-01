@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_core.h>
 
@@ -39,7 +39,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 				break;
 			case '*':
 				{
-					char *b = r_base64_encode_dyn (str, -1);
+					char *b = r_base64_encode_dyn ((const ut8*)str, -1);
 					r_cons_printf ("T base64:%s\n", b);
 					free (b);
 				}
