@@ -350,7 +350,7 @@ static int cmd_project(void *data, const char *input) {
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
 						char *data = r_file_slurp (str, &len);
-						char *res = r_base64_encode_dyn (data, (int)len);
+						char *res = r_base64_encode_dyn ((const ut8*)data, (int)len);
 						if (res) {
 							r_cons_println (res);
 							free (res);
@@ -360,7 +360,7 @@ static int cmd_project(void *data, const char *input) {
 					}
 				} else if (input[2] == ' ') {
 					/* set base64 string */
-					ut8 *data = r_base64_decode_dyn (input + 3, -1);
+					ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL);
 					if (data) {
 						char *str = r_core_project_notes_file (core, fileproject);
 						if (str) {

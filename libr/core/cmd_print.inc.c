@@ -7631,7 +7631,7 @@ static int cmd_print(void *data, const char *input) {
 						r_str_nlen ((const char*)s, l), NULL);
 				} else if (input[2] == '*') {
 					char *a = r_str_ndup ((const char*)s, l);
-					char *b = r_base64_encode_dyn (a, -1);
+					char *b = (char *)r_base64_encode_dyn ((const ut8 *)a, -1);
 					r_cons_printf ("w6e %s\n", b);
 					free (b);
 					free (a);

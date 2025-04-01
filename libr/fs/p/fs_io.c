@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2017-2023 - pancake */
+/* radare - LGPL - Copyright 2017-2025 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
 #include <sys/stat.h>
 
 static char *enbase(const char *p) {
-	char *enc_path = r_base64_encode_dyn (p, -1);
+	char *enc_path = r_base64_encode_dyn ((const ut8*)p, -1);
 	char *res = r_str_newf ("base64:%s", enc_path);
 	free (enc_path);
 	return res;

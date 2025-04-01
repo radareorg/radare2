@@ -1757,7 +1757,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 			if (r_lang_use (core->lang, "qjs")) {
 				const char *arg = r_str_trim_head_ro (input + 1);
 				if (r_str_startswith (arg, "base64:")) {
-					char *script = (char *)r_base64_decode_dyn (arg + 7, -1);
+					char *script = (char *)r_base64_decode_dyn (arg + 7, -1, NULL);
 					if (script) {
 						r_lang_run (core->lang, script, -1);
 						free (script);

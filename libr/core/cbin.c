@@ -401,7 +401,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		section_name = section ? section->name : "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string->string, -1);
+			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL);
 			if (s && *s && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
 				free (b64.string);

@@ -6237,7 +6237,7 @@ static int cmd_af(RCore *core, const char *input) {
 				r_core_cmd_help_match (core, help_msg_afn, "afn");
 			} else {
 				if (r_str_startswith (name, "base64:")) {
-					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
+					char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL);
 					if (res) {
 						free (name);
 						name = res;
@@ -11615,7 +11615,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
-	char *encbody = r_base64_encode_dyn (n->body, len);
+	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
 	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
 	r_cons_print (cmd);
 	free (cmd);
@@ -11724,7 +11724,6 @@ static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 static void cmd_agraph_node(RCore *core, const char *input) {
 	switch (*input) {
 	case ' ': { // "agn"
-		char *newbody = NULL;
 		char *body;
 		int n_args, B_LEN = strlen ("base64:");
 		char *color = NULL;
@@ -11741,7 +11740,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			if (strncmp (body, "base64:", B_LEN) == 0) {
 				if (body[B_LEN]) {
 					body = r_str_replace (body, "\\n", "", true);
-					newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
+					char *newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1, NULL);
 					if (!newbody) {
 						R_LOG_ERROR ("Invalid base64 string in agn (%s)", body+B_LEN);
 						r_str_argv_free (args);
@@ -12285,16 +12284,14 @@ static void print_graph_agg(RGraph /*RGraphNodeInfo*/ *graph) {
 	RGraphNode *node, *target;
 	RListIter *it, *edge_it;
 	r_list_foreach (graph->nodes, it, node) {
-		char *encbody;
-		int len;
 		print_node = node->data;
 		if (R_STR_ISNOTEMPTY (print_node->body)) {
-			len = strlen (print_node->body);
+			int len = strlen (print_node->body);
 
 			if (len > 0 && print_node->body[len - 1] == '\n') {
 				len--;
 			}
-			encbody = r_base64_encode_dyn (print_node->body, len);
+			char *encbody = r_base64_encode_dyn ((const ut8*)print_node->body, len);
 			r_cons_printf ("agn \"%s\" base64:%s\n", print_node->title, encbody);
 			free (encbody);
 		} else {
@@ -15307,7 +15304,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	r_anal_op_free (op);
 	char *s = r_strbuf_drain (sb);
 	if (is_aCer) {
-		char *u = r_base64_encode_dyn (s, -1);
+		char *u = (char *)r_base64_encode_dyn ((const ut8 *)s, -1);
 		if (u) {
 			r_cons_printf ("'CCu base64:%s\n", u);
 			free (u);

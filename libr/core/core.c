@@ -2321,7 +2321,7 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	REventMeta *rems = data;
 	r_strf_buffer (64);
 	char *pstr;
-	char *str = r_base64_encode_dyn (rems->string, -1);
+	char *str = r_base64_encode_dyn ((const ut8*)rems->string, -1);
 	switch (event_type) {
 	case R_EVENT_META_SET:
 		if (rems->type == 'C') {

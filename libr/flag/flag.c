@@ -345,7 +345,7 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 	const char *cmt = r_flag_item_set_comment (u->f, flag, NULL);
 	const char *alias = r_flag_item_set_alias (u->f, flag, NULL);
 	if (R_STR_ISNOTEMPTY (cmt)) {
-		comment_b64 = r_base64_encode_dyn (cmt, -1);
+		comment_b64 = r_base64_encode_dyn ((const ut8*)cmt, -1);
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
 			tmp = r_str_newf ("base64:%s", comment_b64);

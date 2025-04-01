@@ -265,6 +265,7 @@ static RCoreHelpMessage help_msg_question_i = {
 static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
+	"?e:", "base64text", "decode given base64 text and throw it thru rcons",
 	"?e=", " 32", "progress bar at 32 percentage",
 	"?ea", " text", "ascii art echo (seven segment text, same as ~?ea",
 	"?eb", " 10 20 30", "proportional segments bar",
@@ -1324,12 +1325,22 @@ static int cmd_help(void *data, const char *input) {
 		case 't': // "?et" "?e=t newtitle"
 			r_cons_set_title (r_str_trim_head_ro (input + 2));
 			break;
-		case '=': { // "?e="
-			ut64 pc = r_num_math (core->num, input + 2);
-			r_print_progressbar (core->print, pc, 80, NULL);
-			r_cons_newline ();
+		case ':': { // "?e:"
+				const char *arg = r_str_trim_head_ro (input + 2);
+				int res_len = 0;
+				ut8 *res = r_base64_decode_dyn (arg, -1, &res_len);
+				if (res && res_len > 0) {
+					r_cons_write ((const char *)res, res_len);
+				}
+				free (res);
+			}
 			break;
-		}
+		case '=': { // "?e="
+				ut64 pc = r_num_math (core->num, input + 2);
+				r_print_progressbar (core->print, pc, 80, NULL);
+				r_cons_newline ();
+			}
+			break;
 		case 'b': { // "?eb"
 			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			int n = r_str_split (arg, ' ');

@@ -1038,7 +1038,7 @@ static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
 			if (s3) {
 				*s3 = '\0';
 				if (r_str_startswith (s3 + 1, "base64:")) {
-					comment = (char *) r_base64_decode_dyn (s3 + 8, -1);
+					comment = (char *) r_base64_decode_dyn (s3 + 8, -1, NULL);
 					comment_needs_free = true;
 				} else if (s3[1]) {
 					comment = s3 + 1;
@@ -1666,7 +1666,7 @@ static int cmd_flag(void *data, const char *input) {
 				item = r_flag_get (core->flags, p);
 				if (item) {
 					if (!strncmp (q + 1, "base64:", 7)) {
-						dec = (char *) r_base64_decode_dyn (q + 8, -1);
+						dec = (char *) r_base64_decode_dyn (q + 8, -1, NULL);
 						if (dec) {
 							r_flag_item_set_comment (core->flags, item, dec);
 							free (dec);

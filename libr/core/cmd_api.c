@@ -346,8 +346,7 @@ R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v) {
 	if (v->is_str) {
 		return strdup ((char *)v->data);
 	}
-
-	return r_base64_encode_dyn ((char *)v->data, v->sz);
+	return r_base64_encode_dyn ((const ut8*)v->data, v->sz);
 }
 
 R_API void r_cmd_set_data(RCmd *cmd, void *data) {
