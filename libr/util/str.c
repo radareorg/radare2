@@ -1601,6 +1601,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	return encoded_str;
 }
 
+// XXX R2_600 - very bad and long name
 R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
