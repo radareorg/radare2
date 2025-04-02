@@ -13919,7 +13919,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	RBinSymbol *symbol;
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
-	const bool anal_back = r_config_get_b (core->config, "anal.back");
+	const bool anal_symsort = r_config_get_b (core->config, "anal.symsort");
 
 	// required for noreturn
 	if (r_config_get_b (core->config, "anal.imports")) {
@@ -13949,8 +13949,8 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
-		if (anal_back) {
-			RSkipList *symbols = r_skiplist_new (NULL, anal_back? cmpfn_fw: cmpfn_bw);
+		if (anal_symsort) {
+			RSkipList *symbols = r_skiplist_new (NULL, (anal_symsort > 0)? cmpfn_fw: cmpfn_bw);
 			R_VEC_FOREACH (v, symbol) {
 				if (isSkippable (symbol) || !isValidSymbol (symbol)) {
 					continue;
