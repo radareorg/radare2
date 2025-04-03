@@ -4,9 +4,6 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
-#define D if (false)
-#define DD if (false)
-
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
 
@@ -227,7 +224,6 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 }
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
-	DD eprintf ("getsrcregname 0x%"PFMT64x" %s %d\n", addr, regname, size);
 	R_RETURN_IF_FAIL (core && regname && size > 0);
 	RAnal *anal = core->anal;
 	regname[0] = 0;
@@ -515,19 +511,13 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					}
 					res = true;
 				} else {
-					DD eprintf ("re-typed 0x%"PFMT64x"\n", instr_addr);
 					get_src_regname (tps->core, instr_addr, regname, sizeof (regname));
-					DD eprintf ("get src regname 0x%"PFMT64x" = %s\n", instr_addr, regname);
 					xaddr = get_addr (et, regname, j);
 				}
-			} else {
-				DD eprintf ("NoHit\n");
 			}
-			DD eprintf ("RES REGNAME %d %d %s\n", res, j, regname);
 			// Type propagate by following source reg
 			if (!res && *regname && etrace_regwrite_contains (et, j, regname)) {
 				if (var) {
-					DD eprintf ("----- retyps (%s) (%s)\n", var->name, type);
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
 						var_retype (anal, var, name, type, memref, false);
@@ -672,7 +662,6 @@ repeat:
 	REsilTrace *etrace = tps->et;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
-		DD eprintf ("BB 0x%"PFMT64x"\n", bbat);
 		bb = r_anal_get_block_at (core->anal, bbat);
 		if (!bb) {
 			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bbat);
@@ -698,12 +687,10 @@ repeat:
 			/// addr = bb_addr + i;
 			r_reg_setv (core->dbg->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
-			D eprintf ("---> 0x%"PFMT64x"\n", addr);
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			DD eprintf ("op 0x%"PFMT64x"\n", addr);
 			if (0&&next_op->addr == addr) {
 				memcpy (&aop, next_op, sizeof (aop));
 				ret = next_op->size;
@@ -711,7 +698,6 @@ repeat:
 				ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_left, op_tions);
 			}
 			if (ret <= 0) {
-				DD eprintf ("FAIL\n");
 				i += minopcode;
 				addr += minopcode;
 				r_reg_setv (core->dbg->reg, "PC", addr);
@@ -721,7 +707,6 @@ repeat:
 			const int loop_count = r_esil_trace_loopcount (etrace, addr);
 #if 1
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
-				DD eprintf ("0x%"PFMT64x" LOOP FAIL %d\n", aop.addr, loop_count);
 				r_anal_op_fini (&aop);
 				break;
 			}
@@ -758,7 +743,6 @@ repeat:
 			}
 			tps->et->cur_idx = etrace_index (etrace);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
-			DD eprintf ("CUR IDX %d %s\n", cur_idx, var?var->name:"");
 
 			// XXX this is analyzing the same op twice wtf this is so wrong
 #if 0
@@ -852,7 +836,6 @@ repeat:
 				// cur_idx = tps->et->cur_idx - 1;
 				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
-				DD eprintf ("regwrite2 %d\n", cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
 					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
@@ -900,12 +883,10 @@ repeat:
 				if (sign || aop.sign) {
 					var_retype (anal, var, NULL, "signed", false, true);
 				}
-				DD eprintf ("PREV DEST %s\n", prev_dest);
 				// lea rax , str.hello  ; mov [local_ch], rax;
 				// mov rdx , [local_4h] ; mov [local_8h], rdx;
 				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = {0};
-					DD eprintf ("rmove-typed %s\n", prev_type);
 					get_src_regname (core, addr, reg, sizeof (reg));
 					bool match = strstr (prev_dest, reg);
 					if (str_flag && match) {
@@ -982,7 +963,6 @@ repeat:
 					var_retype (anal, var, NULL, "const char *", false, false);
 				}
 				prev_dest = etrace_regwrite (etrace, cur_idx);
-				DD eprintf (":= regwrite prevdest %d %s\n", cur_idx, prev_dest);
 				if (var) {
 					r_str_ncpy (prev_type, var->type, sizeof (prev_type) - 1);
 					prop = true;
