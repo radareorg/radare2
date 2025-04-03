@@ -47,7 +47,9 @@ R_API int r_sandbox_kill(int pid, int sig);
 #define R_SANDBOX_GRAIN_DISK (2)
 #define R_SANDBOX_GRAIN_FILES (4)
 #define R_SANDBOX_GRAIN_EXEC (8)
-#define R_SANDBOX_GRAIN_ALL (8|4|2|1)
+#define R_SANDBOX_GRAIN_ENVIRON (16)
+#define R_SANDBOX_GRAIN_ALL (16|8|4|2|1)
+
 R_API bool r_sandbox_enable(bool e);
 R_API bool r_sandbox_disable(bool e);
 R_API int r_sandbox_grain(int mask);

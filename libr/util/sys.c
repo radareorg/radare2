@@ -399,13 +399,16 @@ R_API int r_sys_usleep(int usecs) {
 #endif
 }
 
-R_API int r_sys_clearenv(void) {
+R_API bool r_sys_clearenv(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return false;
+	}
 #if R2__UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
 		r_sys_env_init ();
-		return 0;
+		return true;
 	}
 	char **e = env;
 	while (*e) {
@@ -413,20 +416,23 @@ R_API int r_sys_clearenv(void) {
 	}
 #else
 	if (!environ) {
-		return 0;
+		return false;
 	}
 	while (*environ) {
 		*environ++ = NULL;
 	}
 #endif
-	return 0;
+	return true;
 #else
 #pragma message ("r_sys_clearenv : unimplemented for this platform")
-	return 0;
+	return false;
 #endif
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return false;
+	}
 	if (!key) {
 		return 0;
 	}
@@ -453,6 +459,9 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 }
 
 R_API int r_sys_setenv_sep(const char *key, const char *value, bool prefix) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return false;
+	}
 	char *o = r_sys_getenv (key);
 	if (R_STR_ISEMPTY (o)) {
 		int res = r_sys_setenv (key, value);
@@ -530,6 +539,9 @@ R_API bool r_sys_crash_handler(const char *cmd) {
 #endif
 
 R_API char *r_sys_getenv(const char *key) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return false;
+	}
 #if R2__WINDOWS__
 	DWORD dwRet;
 	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
@@ -1295,6 +1307,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 }
 
 R_API void r_sys_env_init(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return;
+	}
 	char **envp = r_sys_get_environ ();
 	if (envp) {
 		r_sys_set_environ (envp);
@@ -1302,6 +1317,9 @@ R_API void r_sys_env_init(void) {
 }
 
 R_API char **r_sys_get_environ(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return NULL;
+	}
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1315,6 +1333,9 @@ R_API char **r_sys_get_environ(void) {
 }
 
 R_API void r_sys_set_environ(char **e) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)) {
+		return;
+	}
 	env = e;
 }
 
