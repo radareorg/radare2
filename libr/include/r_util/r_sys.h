@@ -67,7 +67,7 @@ R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_setenv_sep(const char *key, const char *value, bool prefix);
 R_API void r_sys_setenv_asbool(const char *key, bool v);
 R_API void r_sys_setenv_asut64(const char *key, ut64 n);
-R_API int r_sys_clearenv(void);
+R_API bool r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
 R_API int r_sys_uid(void);
 R_API char *r_sys_getdir(void);
