@@ -4,6 +4,72 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
+typedef struct type_trace_change_reg_t {
+	int idx;
+	ut64 data;
+} TypeTraceRegChange;
+
+typedef struct type_trace_change_mem_t {
+	int idx;
+	ut8 data;
+} TypeTraceMemChange;
+
+typedef struct {
+	const char *name;
+	ut64 value;
+	// TODO: size
+} TypeTraceRegAccess;
+
+typedef struct {
+	char *data;
+	ut64 addr;
+	// TODO: size
+} TypeTraceMemoryAccess;
+
+typedef struct {
+	union {
+		TypeTraceRegAccess reg;
+		TypeTraceMemoryAccess mem;
+	};
+	bool is_write;
+	bool is_reg;
+} TypeTraceAccess;
+
+typedef struct {
+	ut64 addr;
+	ut32 start;
+	ut32 end; // 1 past the end of the op for this index
+} TypeTraceOp;
+
+static inline void fini_access(TypeTraceAccess *access) {
+	if (access->is_reg) {
+		return;
+	}
+	free (access->mem.data);
+}
+
+R_VEC_TYPE(VecTraceOp, TypeTraceOp);
+R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, fini_access);
+
+typedef struct {
+	RVecTraceOp ops;
+	RVecAccess accesses;
+	HtUU *loop_counts;
+} TypeTraceDB;
+
+typedef struct type_trace_t {
+	TypeTraceDB db;
+	int idx;
+	int end_idx;
+	int cur_idx;
+	HtUP *registers;
+	HtUP *memory;
+	RRegArena *arena[R_REG_TYPE_LAST];
+	ut64 stack_addr;
+	ut64 stack_size;
+	ut8 *stack_data;
+} TypeTrace;
+
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
 
