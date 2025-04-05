@@ -95,13 +95,13 @@ static bool pef_load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	if (!strcmp (arch, "pwpc")) {
 		R_LOG_INFO ("arch: powerpc");
 	} else {
-		R_LOG_INFO ("arch %s\n", arch);
+		R_LOG_INFO ("arch %s", arch);
 	}
 	R_LOG_INFO ("version %d", r_read_be32 (&hdr.version));
 	obj->hdr = hdr;
 	int scount = r_read_be16 ((const ut8 *)&hdr.section_count);
 	int iscount = r_read_be16 ((const ut8 *)&hdr.inst_section_count); // instantiated sections
-	R_LOG_INFO ("%d %d\n", scount, iscount);
+	R_LOG_INFO ("%d %d", scount, iscount);
 	obj->section_count = scount;
 	obj->sections = (PEFSectionHeader *)calloc (scount, sizeof (PEFSectionHeader));
 	if (!obj->sections) {
