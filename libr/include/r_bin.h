@@ -312,6 +312,7 @@ typedef struct r_bin_section_t {
 	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
 	bool is_segment;
+	RIODesc *backing;
 } RBinSection;
 
 typedef struct r_bin_import_t {
