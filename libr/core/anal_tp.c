@@ -47,7 +47,7 @@ typedef struct {
 	ut32 end; // 1 past the end of the op for this index
 } TypeTraceOp;
 
-static inline void fini_access(TypeTraceAccess *access) {
+static inline void tt_fini_access(TypeTraceAccess *access) {
 	if (access->is_reg) {
 		return;
 	}
@@ -55,7 +55,7 @@ static inline void fini_access(TypeTraceAccess *access) {
 }
 
 R_VEC_TYPE(VecTraceOp, TypeTraceOp);
-R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, fini_access);
+R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, tt_fini_access);
 
 typedef struct {
 	VecTraceOp ops;
@@ -134,6 +134,96 @@ static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata
 	TypeTraceRegChange reg = {trace->cur_idx, trace->cc++,
 		strdup (ri->name), data, odata};
 	r_vector_push (vreg, &reg);
+}
+
+static void type_trace_voyeur_reg_write (void *user, const char *name, ut64 old, ut64 val) {
+	R_RETURN_IF_FAIL (user && name);
+	TypeTrace *trace = user;
+	RRegItem *ri = r_reg_get (trace->reg, name, -1);
+	if (!ri) {
+		return;
+	}
+	char *name_dup = strdup (name);
+	if (!name_dup) {
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
+		goto fail_name_dup;
+	}
+	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		goto fail_emplace_back;
+	}
+	access->is_reg = true;
+	access->reg.name = name_dup;
+	access->reg.value = val;
+	access->is_write = true;
+
+	add_reg_change (trace, ri, val, old);
+	update_trace_db_op (&trace->db);
+	r_unref (ri);
+	return;
+fail_emplace_back:
+	free (name_dup);
+fail_name_dup:
+	r_unref (ri);
+}
+
+static void type_trace_voyeur_mem_read (void *user, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_IF_FAIL (user && buf && (len > 0));
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
+	if (!hexbuf) {
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		return;
+	}
+	TypeTraceDB *db = user;
+	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	if (!access) {
+		free (hexbuf);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = false;
+	update_trace_db_op (db);
+}
+
+static void type_trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+	R_RETURN_IF_FAIL (user && buf && (len > 0));
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
+	if (!hexbuf) {
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		return;
+	}
+	TypeTrace *trace = user;
+	TypeTraceAccess *access = RVecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		free (hexbuf);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = true;
+	ut32 i;
+	for (i = 0; i < len; i++) {
+		//adding each byte one by one is utterly stupid, typical gsoc crap
+		//ideally this would use a tree structure, that splits nodes when necessary
+		RVector *vmem = ht_up_find (trace->memory, addr, NULL);
+		if (!vmem) {
+			vmem = r_vector_new (sizeof (TypeTraceMemChange), NULL, NULL);
+			if (!vmem) {
+				R_LOG_ERROR ("creating a memory vector");
+				break;
+			}
+			ht_up_insert (trace->memory, addr, vmem);
+		}
+		TypeTraceMemChange mem = {trace->idx, trace->cc++, addr, buf[i], old[i]};
+		r_vector_push (vmem, &mem);
+	}
+	update_trace_db_op (&trace->db);
 }
 
 R_VEC_TYPE (RVecUT64, ut64);
