@@ -460,11 +460,6 @@ static RList *fields(RBinFile *bf) {
 	return ret;
 }
 
-// There is a "preferred base address" in PEF section headers but it is never used.
-static ut64 baddr(RBinFile *bf) {
-	return 0;
-}
-
 static ut64 size(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	ut64 s = 0;
@@ -738,7 +733,6 @@ RBinPlugin r_bin_plugin_pef = {
 	.destroy = &destroy,
 	.info = &info,
 	.fields = &fields,
-	.baddr = &baddr,
 	.size = &size,
 	.binsym = &binsym,
 	.sections = &sections,
