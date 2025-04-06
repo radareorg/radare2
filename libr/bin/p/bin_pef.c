@@ -36,13 +36,13 @@ static const char *class2string(ut8 class) {
 	}
 }
 
-static int pidata_getcount(const char **ptr, const char *limit, ut32 *ret) {
+static bool pidata_getcount(const char **ptr, const char *limit, ut32 *ret) {
 	*ret = 0;
 	for (;;) {
-		if (*ptr >= limit) return 1; // fail
+		if (*ptr >= limit) return true; // fail
 		ut8 byte = *(*ptr)++;
 		*ret = (*ret << 7) | (byte & 0x7f);
-		if ((byte & 0x80) == 0) return 0; // OK
+		if ((byte & 0x80) == 0) return false; // OK
 	}
 }
 
