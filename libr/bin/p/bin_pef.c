@@ -157,7 +157,6 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			at + 2*printpc, printpc, r_buf_read_be16_at(b, at+2*printpc), name, buf, codeA, dataA, rSymI, rAddr); \
 	}
 
-	// Abuse the RBinReloc struct fields slightly
 	#define PUSH_RELOC(ofs, targ, imp) { \
 		PEFReloc *r = R_NEW0(PEFReloc); \
 		r->offset = ofs; \
