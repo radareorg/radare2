@@ -1,16 +1,7 @@
 /* radare - LGPL - Copyright 2025 - elliotnunn */
 
-#include "r_endian.h"
-#include "r_io.h"
-#include "r_list.h"
-#include "r_types.h"
-#include "r_types_base.h"
-#include "r_util/r_buf.h"
 #include <r_lib.h>
 #include <r_bin.h>
-
-#include <stddef.h>
-#include <stdlib.h>
 
 typedef struct {
 	ut32 offset;
