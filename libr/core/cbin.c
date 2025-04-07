@@ -2918,7 +2918,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (sec->backing) {
 		RIOMap *map = r_io_map_add(core->io, sec->backing->fd, R_PERM_RWX, 0LL, addr, sec->vsize);
 		if (map) {
-			free(map->name);
+			free (map->name);
 			map->name = r_str_newf ("unpack.%s", sec->name);
 		} else {
 			R_LOG_ERROR ("map failed!");

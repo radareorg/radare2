@@ -599,7 +599,7 @@ static RList *imports(RBinFile *bf) {
 	ut32 importedLibraryCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 24);
 	ut32 totalImportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 28);
 	ut32 loaderStringsOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 40);
-	RBinImport **ary = R_NEWS (RBinImport *, totalImportedSymbolCount);
+	RBinImport **ary = calloc (RBinImport, totalImportedSymbolCount);
 	int i, j;
 
 	for (i=0; i<totalImportedSymbolCount; i++) {
