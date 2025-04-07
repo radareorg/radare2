@@ -312,6 +312,7 @@ typedef struct r_bin_section_t {
 	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
 	bool is_segment;
+	int backing_fd;
 } RBinSection;
 
 typedef struct r_bin_import_t {
@@ -1031,6 +1032,7 @@ extern RBinPlugin r_bin_plugin_pdp11;
 extern RBinPlugin r_bin_plugin_pcap;
 extern RBinPlugin r_bin_plugin_uf2;
 extern RBinPlugin r_bin_plugin_io;
+extern RBinPlugin r_bin_plugin_pef;
 
 #ifdef __cplusplus
 }

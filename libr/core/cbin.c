@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2011-2025 - pancake */
 
+#include "r_io.h"
+#include "r_types.h"
+#undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
 
@@ -2912,6 +2915,17 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at, ut64 gap) {
 }
 
 static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
+	if (sec->backing_fd > 0) {
+		RIOMap *map = r_io_map_add (core->io, sec->backing_fd, R_PERM_RWX, 0LL, addr, sec->vsize);
+		if (map) {
+			free (map->name);
+			map->name = r_str_newf ("unpack.%s", sec->name);
+		} else {
+			R_LOG_ERROR ("map failed!");
+		}
+		return;
+	}
+
 	if (!r_io_desc_get (core->io, fd) || UT64_ADD_OVFCHK (sec->size, sec->paddr) ||
 			UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
 		return;
