@@ -1161,8 +1161,8 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	case 'Q': // quieter
 	case ',':
 		mode = *lastchar;
-		if (cmd == *lastchar) {
-			cmd = 0;
+		if (lastchar > input && cmd == *lastchar) {
+			cmd = 'Q';
 		}
 		break;
 	default:
@@ -1187,6 +1187,8 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	// commands that iterate
 	case ' ': // "ic "
 	case 'k': // "ick"
+	case 'q': // "icq"
+	case 'Q': // "icQ" // "icqq"
 	case '.': // "ic."
 	case 's': // "ics"
 	case 'g': // "icg"
@@ -1254,7 +1256,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				}
 				tts_say (core, "classes", r_list_length (bo->classes));
 				switch (cmd) {
-				case 'g':
+				case 'g': // "icg"
 					cmd_icg (core, bo, arg);
 					break;
 				case 's': // "ics"
@@ -1343,10 +1345,17 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					}
 					// input = " ";
 					break;
+				case 'j':
+					mode = R_MODE_JSON;
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
+					break;
+				case '*':
+					mode = R_MODE_RADARE;
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
+					break;
+				case 'Q':
 				case 'q':
-					if (mode == 'j') {
-						mode = R_MODE_JSON;
-					}
+					mode = (cmd == 'Q')? R_MODE_SIMPLEST: R_MODE_SIMPLE;
 					// TODO add the ability to filter by name
 					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (bo->classes));
 					break;

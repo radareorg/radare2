@@ -165,3 +165,34 @@ class Employer_1 {
 EOF
 RUN
 
+NAME=icqq swift
+FILE=bins/mach0/main-inherit
+CMDS=<<EOF
+icqq
+EOF
+EXPECT=<<EOF
+Employee
+Employer
+main.Employee
+main.Employer
+Greet
+Employee_1
+Employer_1
+EOF
+RUN
+
+NAME=icq swift
+FILE=bins/mach0/main-inherit
+CMDS=<<EOF
+icq
+EOF
+EXPECT=<<EOF
+0x00003e44 [0x00003e44 - 0x00003e44] swift Employee
+0x00003eac [0x00003eac - 0x00003eac] swift Employer
+0x100008148 [0x100008148 - 0x100008148] objc main.Employee Swift._SwiftObject
+0x100008200 [0x100008200 - 0x100008200] objc main.Employer main.Employee
+0x00000000 [0x100003f04 - 0x100003f04] ? Greet
+0x00000000 [0x100003f14 - 0x100003f14] ? Employee_1
+0x00000000 [0x100003f1e - 0x100003f1e] ? Employer_1
+EOF
+RUN
