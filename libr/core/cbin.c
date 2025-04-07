@@ -2,6 +2,7 @@
 
 #include "r_io.h"
 #include "r_types.h"
+#undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
 
