@@ -228,7 +228,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 	/* Stack for DFS traversal of flag hierarchy */
 	RList *stack = r_list_newf (NULL);
 	if (!stack) {
-		free(flag_array);
+		free (flag_array);
 		return;
 	}
 	/* Initialize root context */
@@ -289,7 +289,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			}
 			/* Case 2: last element or no shared prefix beyond parent -> output current as leaf */
 			if (i + 1 >= ctx->end) {
-				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp(name, parent_prefix) != 0) {
+				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
 					if (mode == '*') {
 						r_cons_printf ("agn %s %s\n", name, name + parent_len);
@@ -339,7 +339,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					aborted = true;
 					break;
 				}
-				if (!ht_pp_find (ctx->processed, group, NULL) && strcmp(group, parent_prefix) != 0) {
+				if (!ht_pp_find (ctx->processed, group, NULL) && strcmp (group, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, group, (void *)1);
 					/* Print the group prefix */
 					if (mode == '*') {
