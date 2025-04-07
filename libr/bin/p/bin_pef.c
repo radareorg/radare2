@@ -523,7 +523,6 @@ static RList *sections(RBinFile *bf) {
 			sec->kind == 4 ? "loader" :
 			"");
 		ptr->name = strdup(ptr->type);
-		ptr->arch = strdup("ppc");
 		ptr->is_data = sec->kind != 0;
 		ptr->add = sec->kind != 4;
 		ptr->perm =
