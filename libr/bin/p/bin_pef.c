@@ -657,10 +657,11 @@ static RList *sections(RBinFile *bf) {
 			ptr->size = 0; // cannot be read direct from disk, don't try
 
 			char *muri = r_str_newf ("malloc://%" PFMT32u, sec->lenTotal); // gets zero-inited
-			ptr->backing = r_io_open_nomap (bf->rbin->iob.io, muri, R_PERM_RW, 0);
+			RIODesc *desc = r_io_open_nomap (bf->rbin->iob.io, muri, R_PERM_RW, 0);
 			free (muri);
-			if (ptr->backing != NULL) {
-				r_io_desc_write (ptr->backing, sec->unpack, sec->lenUnpack);
+			if (desc != NULL) {
+				ptr->backing_fd = desc->fd;
+				r_io_desc_write (desc, sec->unpack, sec->lenUnpack);
 			}
 		}
 

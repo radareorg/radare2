@@ -2915,8 +2915,8 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at, ut64 gap) {
 }
 
 static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
-	if (sec->backing) {
-		RIOMap *map = r_io_map_add(core->io, sec->backing->fd, R_PERM_RWX, 0LL, addr, sec->vsize);
+	if (sec->backing_fd > 0) {
+		RIOMap *map = r_io_map_add (core->io, sec->backing_fd, R_PERM_RWX, 0LL, addr, sec->vsize);
 		if (map) {
 			free (map->name);
 			map->name = r_str_newf ("unpack.%s", sec->name);
