@@ -189,34 +189,60 @@ static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
 
 static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	RList *list = r_list_newf (free);
+	if (!list) {
+		return NULL;
+	}
+
+	const size_t prefix_len = strlen (prefix);
 	RListIter *iter, *iter2;
 	RFlagItem *f, *f2;
 	char *fn;
 
-	const size_t prefix_len = strlen (prefix);
+	// Pre-filter flags that match the prefix to reduce computation
+	RList *matching_flags = r_list_new();
+	if (!matching_flags) {
+		r_list_free (list);
+		return NULL;
+	}
+
+	// First pass: gather flags matching the prefix
 	r_list_foreach (flags, iter, f) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if (prefix_len > 0 && strncmp (f->name, prefix, prefix_len)) {
+
+		if (prefix_len > 0 && strncmp(f->name, prefix, prefix_len)) {
 			continue;
 		}
-		if (prefix_len > strlen (f->name)) {
+		if (prefix_len > strlen(f->name)) {
 			continue;
 		}
+		r_list_append (matching_flags, f);
+	}
+
+	// Second pass: compute keywords for matching flags
+	r_list_foreach (matching_flags, iter, f) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
 		const char *name = f->name;
-		int name_len = strlen (name);
-		r_list_foreach (flags, iter2, f2) {
-			if (r_cons_is_breaked ()) {
+		int name_len = strlen(name);
+
+		// Find minimum matching length with other flags
+		r_list_foreach (matching_flags, iter2, f2) {
+			if (r_cons_is_breaked()) {
 				break;
 			}
-			if (prefix_len > strlen (f2->name)) {
+
+			if (prefix_len > strlen(f2->name)) {
 				continue;
 			}
-			if (prefix_len > 0 && strncmp (f2->name, prefix, prefix_len)) {
+			if (prefix_len > 0 && strncmp(f2->name, prefix, prefix_len)) {
 				continue;
 			}
-			int matching = countMatching (name, f2->name);
+
+			int matching = countMatching(name, f2->name);
 			if (matching < prefix_len || matching == name_len) {
 				continue;
 			}
@@ -227,22 +253,35 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				name_len = matching;
 			}
 		}
-		char *kw = r_str_ndup (name, name_len + 1);
-		const int kw_len = strlen (kw);
-		const char *only = __isOnlySon (core, flags, kw);
+
+		char *kw = r_str_ndup(name, name_len + 1);
+		if (!kw) {
+			continue;
+		}
+
+		const int kw_len = strlen(kw);
+		const char *only = __isOnlySon(core, flags, kw);
+
 		if (only) {
-			free (kw);
+			free(kw);
 			kw = strdup (only);
+			if (!kw) {
+				continue;
+			}
 		} else {
+			// Further refine the keyword
 			const char *fname = NULL;
 			size_t fname_len = 0;
+
 			r_list_foreach (flags, iter2, f2) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (strncmp (f2->name, kw, kw_len)) {
+
+				if (strncmp(f2->name, kw, kw_len)) {
 					continue;
 				}
+
 				if (fname) {
 					int matching = countMatching (fname, f2->name);
 					if (fname_len) {
@@ -256,32 +295,41 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 					fname = f2->name;
 				}
 			}
+
 			if (fname_len > 0) {
 				free (kw);
 				kw = r_str_ndup (fname, fname_len);
+				if (!kw) {
+					continue;
+				}
 			}
 		}
 
+		// Check if this keyword is already in the list
 		bool found = false;
 		r_list_foreach (list, iter2, fn) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+
 			if (!strcmp (fn, kw)) {
 				found = true;
 				break;
 			}
 		}
+
 		if (found) {
 			free (kw);
 		} else {
 			if (strcmp (prefix, kw)) {
 				r_list_append (list, kw);
 			} else {
-				free (kw);
+				free(kw);
 			}
 		}
 	}
+
+	r_list_free (matching_flags);
 	return list;
 }
 
