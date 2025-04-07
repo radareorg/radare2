@@ -158,130 +158,133 @@ static bool listFlag(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static size_t countMatching(const char *a, const char *b) {
-	size_t matches = 0;
-	for (; *a && *b; a++, b++) {
-		if (*a != *b) {
-			break;
-		}
-		matches++;
-	}
-	return matches;
+static int strcmp_cb(const void *a, const void *b) {
+	const RFlagItem *fa = *(const RFlagItem **)a;
+	const RFlagItem *fb = *(const RFlagItem **)b;
+	return strcmp (fa->name, fb->name);
 }
 
-static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
-	RListIter *iter;
-	RFlagItem *f;
-
-	size_t count = 0;
-	char *fname = NULL;
-	r_list_foreach (flags, iter, f) {
-		if (!strncmp (f->name, kw, strlen (kw))) {
-			count++;
-			if (count > 1) {
-				return NULL;
-			}
-			fname = f->name;
-		}
+static size_t common_prefix_len(const char *a, const char *b, size_t start) {
+	size_t k = start;
+	while (a[k] && b[k] && a[k] == b[k]) {
+		k++;
 	}
-	return fname;
+	return k;
 }
 
 static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	RList *list = r_list_newf (free);
-	RListIter *iter, *iter2;
-	RFlagItem *f, *f2;
-	char *fn;
+	if (!list) {
+		return NULL;
+	}
+	size_t prefix_len = strlen (prefix);
 
-	const size_t prefix_len = strlen (prefix);
+	size_t n = r_list_length (flags);
+	if (n == 0) {
+		return list;
+	}
+	RFlagItem **flag_array = malloc (n * sizeof (RFlagItem*));
+	if (!flag_array) {
+		return list;
+	}
+
+	size_t count = 0;
+	RListIter *iter;
+	RFlagItem *f;
 	r_list_foreach (flags, iter, f) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if (prefix_len > 0 && strncmp (f->name, prefix, prefix_len)) {
-			continue;
-		}
-		if (prefix_len > strlen (f->name)) {
-			continue;
-		}
 		const char *name = f->name;
-		int name_len = strlen (name);
-		r_list_foreach (flags, iter2, f2) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			if (prefix_len > strlen (f2->name)) {
-				continue;
-			}
-			if (prefix_len > 0 && strncmp (f2->name, prefix, prefix_len)) {
-				continue;
-			}
-			int matching = countMatching (name, f2->name);
-			if (matching < prefix_len || matching == name_len) {
-				continue;
-			}
-			if (matching > name_len) {
-				break;
-			}
-			if (matching < name_len) {
-				name_len = matching;
-			}
+		size_t len = strlen (name);
+		if (len <= prefix_len || strncmp (name, prefix, prefix_len) != 0) {
+			continue;
 		}
-		char *kw = r_str_ndup (name, name_len + 1);
-		const int kw_len = strlen (kw);
-		const char *only = __isOnlySon (core, flags, kw);
-		if (only) {
-			free (kw);
-			kw = strdup (only);
-		} else {
-			const char *fname = NULL;
-			size_t fname_len = 0;
-			r_list_foreach (flags, iter2, f2) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				if (strncmp (f2->name, kw, kw_len)) {
-					continue;
-				}
-				if (fname) {
-					int matching = countMatching (fname, f2->name);
-					if (fname_len) {
-						if (matching < fname_len) {
-							fname_len = matching;
-						}
-					} else {
-						fname_len = matching;
-					}
-				} else {
-					fname = f2->name;
-				}
+		flag_array[count++] = f;
+	}
+
+	if (count == 0 || r_cons_is_breaked ()) {
+		free (flag_array);
+		return list;
+	}
+
+	qsort (flag_array, count, sizeof (RFlagItem*), strcmp_cb);
+
+	HtPP *processed = ht_pp_new0 ();
+	if (!processed) {
+		free (flag_array);
+		return list;
+	}
+
+	size_t i;
+	for (i = 0; i < count && !r_cons_is_breaked ();) {
+		const char *name = flag_array[i]->name;
+
+		if (i + 1 < count && strncmp (flag_array[i+1]->name, name, strlen (name)) == 0) {
+			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
+				ht_pp_insert (processed, name, (void*)1);
+				r_list_append (list, strdup (name));
 			}
-			if (fname_len > 0) {
-				free (kw);
-				kw = r_str_ndup (fname, fname_len);
-			}
+			i++;
+			continue;
 		}
 
-		bool found = false;
-		r_list_foreach (list, iter2, fn) {
-			if (r_cons_is_breaked ()) {
-				break;
+		if (i + 1 >= count) {
+			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
+				ht_pp_insert (processed, name, (void*)1);
+				r_list_append (list, strdup (name));
 			}
-			if (!strcmp (fn, kw)) {
-				found = true;
-				break;
-			}
+			i++;
+			continue;
 		}
-		if (found) {
-			free (kw);
-		} else {
-			if (strcmp (prefix, kw)) {
-				r_list_append (list, kw);
+
+		const char *next = flag_array[i + 1]->name;
+		size_t common_len = common_prefix_len (name, next, prefix_len);
+		if (common_len <= prefix_len) {
+			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
+				ht_pp_insert (processed, name, (void*)1);
+				r_list_append (list, strdup (name));
+			}
+			i++;
+			continue;
+		}
+
+		size_t j = i + 2;
+		size_t cluster_prefix_len = common_len;
+		while (j < count && strncmp (flag_array[j]->name, name, cluster_prefix_len) == 0) {
+			size_t new_common = common_prefix_len (name, flag_array[j]->name, prefix_len);
+			if (new_common < cluster_prefix_len) {
+				cluster_prefix_len = new_common;
+			}
+			j++;
+		}
+
+		bool skip_group = cluster_prefix_len == strlen (name);
+		if (j - i < 2) skip_group = true;
+
+		if (!skip_group) {
+			char *group = r_str_ndup (name, cluster_prefix_len);
+			if (group && strcmp (group, prefix) != 0 && !ht_pp_find (processed, group, NULL)) {
+				ht_pp_insert (processed, group, (void*)1);
+				r_list_append (list, group);
 			} else {
-				free (kw);
+				free (group);
+			}
+		} else {
+			size_t k;
+			for (k = i; k < j && !r_cons_is_breaked (); k++) {
+				const char *fname = flag_array[k]->name;
+				if (strcmp (fname, prefix) != 0 && !ht_pp_find (processed, fname, NULL)) {
+					ht_pp_insert (processed, fname, (void*)1);
+					r_list_append (list, strdup (fname));
+				}
 			}
 		}
+		i = j;
 	}
+
+	ht_pp_free (processed);
+	free (flag_array);
 	return list;
 }
 
