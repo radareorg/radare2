@@ -508,41 +508,86 @@ static RList *sections(RBinFile *bf) {
 	for (i=0; i<pef->nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
 		RBinSection *ptr = R_NEW0(RBinSection);
-		ptr->is_segment = true;
-
+		ptr->is_segment = false; // like XCOFF, we have no concept of ELF segments
+		ptr->add = true;
 		ptr->paddr = sec->offset;
 		ptr->size = sec->lenDisk;
-		ptr->vaddr = sec->addr;
-		ptr->vsize = sec->lenTotal;
 
-		ptr->type = strdup(
-			sec->kind == 0 ? "text" :
-			sec->kind == 1 ? "data" :
-			sec->kind == 2 ? "pidata" :
-			sec->kind == 3 ? "rodata" :
-			sec->kind == 4 ? "loader" :
-			"");
-		ptr->name = strdup(ptr->type);
-		ptr->is_data = sec->kind != 0;
-		ptr->add = sec->kind != 4;
-		ptr->perm =
-			sec->kind == 0 ? R_PERM_RX : // text
-			sec->kind == 1 ? R_PERM_RWX : // data
-			sec->kind == 2 ? R_PERM_RWX : // pidata
-			sec->kind == 3 ? R_PERM_R : // rodata
-			sec->kind == 4 ? 0 : // loader
-			R_PERM_RWX; // unknown
+		switch (sec->kind) {
+		case 0: // common
+			ptr->type = "code";
+			ptr->is_data = false;
+			ptr->perm = R_PERM_RX;
+			break;
+		case 1: // fairly common
+			ptr->type = "data";
+			ptr->is_data = true;
+			ptr->perm = R_PERM_RW;
+			break;
+		case 2: // common: "pattern initialized" ~ compressed
+			ptr->type = "pidata";
+			ptr->is_data = true;
+			ptr->perm = R_PERM_RW;
+			break;
+		case 3: // never observed
+			ptr->type = "rodata";
+			ptr->is_data = true;
+			ptr->perm = R_PERM_R;
+			break;
+		case 4: // mandatory
+			ptr->type = "loader";
+			ptr->is_data = false;
+			ptr->perm = R_PERM_NONE;
+			break;
+		case 5: // reserved
+			ptr->type = "debug";
+			ptr->is_data = false;
+			ptr->perm = R_PERM_NONE;
+			break;
+		case 6: // never observed
+			ptr->type = "selfmodcode";
+			ptr->is_data = true;
+			ptr->perm = R_PERM_RWX;
+			break;
+		case 7: // reserved
+			ptr->type = "exception";
+			ptr->is_data = false;
+			ptr->perm = R_PERM_NONE;
+			break;
+		case 8: // reserved
+			ptr->type = "traceback";
+			ptr->is_data = false;
+			ptr->perm = R_PERM_NONE;
+			break;
+		default:
+			r_bin_section_free(ptr);
+			continue;
+		}
+		ptr->name = r_str_newf(".%s-%d", ptr->type, i); // same naming convention as XCOFF
 
-		if (sec->kind == 2) { // pidata, need to decompress
+		// Exists in memory
+		if (ptr->perm != R_PERM_NONE) {
+			ptr->vaddr = sec->addr;
+			ptr->vsize = sec->lenTotal;
+		}
+
+		// Sharing field is set to a non-default value (>1) for some
+		// non-memory-loaded sections where sharing would be meaningless.
+		if (sec->share != 1 && ptr->perm != R_PERM_NONE) {
+			ptr->perm |= R_PERM_S;
+		}
+
+		// Decompressed section
+		if (sec->unpack != NULL) {
+			ptr->paddr = 0;
+			ptr->size = 0; // cannot be read direct from disk, don't try
+
 			char *muri = r_str_newf ("malloc://%"PFMT32u, sec->lenTotal); // gets zero-inited
 			ptr->backing = r_io_open_nomap(bf->rbin->iob.io, muri, R_PERM_RW, 0);
 			free(muri);
 			if (ptr->backing != NULL) {
 				r_io_desc_write(ptr->backing, sec->unpack, sec->lenUnpack);
 			}
-
-			ptr->paddr = 0;
-			ptr->size = 0; // hide from R2, nothing good can come from it
 		}
 
 		r_list_append(ret, ptr);
