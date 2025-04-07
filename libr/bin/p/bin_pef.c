@@ -373,9 +373,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		r_buf_read_at (buf, offset + 26, &sec->align, 1);
 
 		if (sec->kind <= 3 || sec->kind == 6) { // exists in memory
-			climb += sec->align - 1;
-			climb &= ~(ut64)(sec->align - 1);
-			sec->addr = climb;
+			ut64 alignmask = (1 << sec->align) - 1;
+			sec->addr = climb = (climb + alignmask) & ~alignmask;
 			climb += sec->lenTotal;
 		}
 
