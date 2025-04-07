@@ -1307,12 +1307,18 @@ static int real_strlen(const char *ptr, int len) {
 }
 
 static int chop(int len) {
-	if (C->buffer_limit > 0) {
-		if (C->buffer_len + len >= C->buffer_limit) {
-			if (C->buffer_len >= C->buffer_limit) {
+	RConsContext *ctx = getctx ();
+	if (ctx->buffer_limit > 0) {
+		if (ctx->buffer_len + len >= ctx->buffer_limit) {
+			if (ctx->buffer_len >= ctx->buffer_limit) {
+				R_LOG_WARN ("LIMITE");
 				return 0;
 			}
-			return C->buffer_limit - C->buffer_len;
+			int left = ctx->buffer_limit - ctx->buffer_len;
+			if (left < 16) {
+				return 0;
+			}
+			return ctx->buffer_limit - ctx->buffer_len;
 		}
 	}
 	return len;
@@ -1399,11 +1405,12 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 	if (strchr (format, '%')) {
 		int left = 0;
 		if (palloc (MOAR + strlen (format) * 20)) {
+			RConsContext *ctx = getctx ();
 club:
-			left = C->buffer_sz - C->buffer_len; /* remaining space in C->buffer */
+			left = ctx->buffer_sz - ctx->buffer_len; /* remaining space in C->buffer */
 			if ((left = chop (left)) > 0) {
 				// if (left > 0) {}
-				size_t written = vsnprintf (C->buffer + C->buffer_len, left, format, ap3);
+				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
 				if (written >= left) { /* not all bytes were written */
 					if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
 						va_end (ap3);
@@ -1411,7 +1418,7 @@ club:
 						goto club;
 					}
 				}
-				C->buffer_len += written;
+				ctx->buffer_len += written;
 			}
 		}
 	} else {
