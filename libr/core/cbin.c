@@ -2920,7 +2920,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 			free(map->name);
 			map->name = r_str_newf ("unpack.%s", sec->name);
 		} else {
-			printf("map failed!\n");
+			R_LOG_ERROR ("map failed!");
 		}
 		return;
 	}
