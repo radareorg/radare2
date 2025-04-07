@@ -507,7 +507,7 @@ static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 			case '8':
 			case '9':
 				if (m == 1) {
-					m = r_num_get (NULL, &fmt[j]);
+					m = atoi (fmt + j);
 				}
 				continue;
 			case 's': tsize = 2; bigendian = false; break;
