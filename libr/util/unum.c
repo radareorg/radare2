@@ -457,7 +457,7 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 #endif
 		default:
 			errno = 0;
-			if (!isdigit (*str)) {
+			if (*str != '-' && !isdigit (*str)) {
 				error (num, "unknown symbol");
 			} else {
 				ret = strtoull (str, &endptr, 10);
