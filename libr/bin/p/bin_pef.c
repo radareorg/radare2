@@ -739,7 +739,10 @@ static RList *symbols(RBinFile *bf) {
 		}
 
 		RBinSymbol *ptr = R_NEW0(RBinSymbol);
-		char *name = calloc(1, nameLen + 1);
+		char *name = calloc(1, nameLen + 1); // +1 for the null terminator, which is not on disk
+		if (!name) {
+			continue;
+		}
 		r_buf_read_at(bf->buf, nameOfs, (ut8*)name, nameLen);
 		ptr->name = r_bin_name_new_from(name);
 		ptr->vaddr = pef->sec[index].addr + addr;
