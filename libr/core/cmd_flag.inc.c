@@ -172,419 +172,269 @@ static size_t common_prefix_len(const char *a, const char *b, size_t start) {
 	return k;
 }
 
-#if 0
-static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
-	RList *list = r_list_newf (free);
-	if (!list) {
-		return NULL;
-	}
+static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode) {
+	/* Context structure for iterative traversal */
+	typedef struct {
+		char *prefix;
+		size_t prefix_len;
+		size_t start;
+		size_t end;
+		size_t index;
+		HtPP *processed;
+	} FlagContext;
+
 	size_t prefix_len = strlen (prefix);
-
-	size_t n = r_list_length (flags);
-	if (n == 0) {
-		return list;
-	}
-	RFlagItem **flag_array = malloc (n * sizeof (RFlagItem*));
-	if (!flag_array) {
-		return list;
-	}
-
-	size_t count = 0;
-	RListIter *iter;
-	RFlagItem *f;
-	r_list_foreach (flags, iter, f) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		const char *name = f->name;
-		size_t len = strlen (name);
-		if (len <= prefix_len || strncmp (name, prefix, prefix_len) != 0) {
-			continue;
-		}
-		flag_array[count++] = f;
-	}
-
-	if (count == 0 || r_cons_is_breaked ()) {
-		free (flag_array);
-		return list;
-	}
-
-	qsort (flag_array, count, sizeof (RFlagItem*), strcmp_cb);
-
-	HtPP *processed = ht_pp_new0 ();
-	if (!processed) {
-		free (flag_array);
-		return list;
-	}
-
-	size_t i;
-	for (i = 0; i < count && !r_cons_is_breaked ();) {
-		const char *name = flag_array[i]->name;
-
-		if (i + 1 < count && strncmp (flag_array[i+1]->name, name, strlen (name)) == 0) {
-			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
-				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup (name));
-			}
-			i++;
-			continue;
-		}
-
-		if (i + 1 >= count) {
-			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
-				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup (name));
-			}
-			i++;
-			continue;
-		}
-
-		const char *next = flag_array[i + 1]->name;
-		size_t common_len = common_prefix_len (name, next, prefix_len);
-		if (common_len <= prefix_len) {
-			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
-				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup (name));
-			}
-			i++;
-			continue;
-		}
-
-		size_t j = i + 2;
-		size_t cluster_prefix_len = common_len;
-		while (j < count && strncmp (flag_array[j]->name, name, cluster_prefix_len) == 0) {
-			size_t new_common = common_prefix_len (name, flag_array[j]->name, prefix_len);
-			if (new_common < cluster_prefix_len) {
-				cluster_prefix_len = new_common;
-			}
-			j++;
-		}
-
-		bool skip_group = cluster_prefix_len == strlen (name);
-		if (j - i < 2) skip_group = true;
-
-		if (!skip_group) {
-			char *group = r_str_ndup (name, cluster_prefix_len);
-			if (group && strcmp (group, prefix) != 0 && !ht_pp_find (processed, group, NULL)) {
-				ht_pp_insert (processed, group, (void*)1);
-				r_list_append (list, group);
-			} else {
-				free (group);
-			}
-		} else {
-			size_t k;
-			for (k = i; k < j && !r_cons_is_breaked (); k++) {
-				const char *fname = flag_array[k]->name;
-				if (strcmp (fname, prefix) != 0 && !ht_pp_find (processed, fname, NULL)) {
-					ht_pp_insert (processed, fname, (void*)1);
-					r_list_append (list, strdup (fname));
-				}
-			}
-		}
-		i = j;
-	}
-
-	ht_pp_free (processed);
-	free (flag_array);
-	return list;
-}
-
-static void __printRecursive(RCore *core, RList *list, const char *prefix, int mode, int depth);
-
-static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode, int depth) {
-	char *fn;
-	RListIter *iter;
-	const int prefix_len = strlen (prefix);
-	// eprintf ("# fg %s\n", prefix);
 	if (mode == '*' && !*prefix) {
 		r_cons_printf ("agn root\n");
 	}
+	/* If prefix is an actual flag name, do nothing (leaf) */
 	if (r_flag_get (core->flags, prefix)) {
 		return;
 	}
-	RList *children = __childrenFlagsOf (core, flags, prefix);
-	r_list_foreach (children, iter, fn) {
+
+	/* Build and sort array of flag items (cache all flags under the given prefix) */
+	size_t total = r_list_length (flags);
+	if (total == 0) {
+		return;
+	}
+	RFlagItem **flag_array = malloc (total * sizeof (RFlagItem *));
+	if (!flag_array) {
+		return;
+	}
+	size_t count = 0;
+	RListIter *it;
+	RFlagItem *f;
+	r_list_foreach (flags, it, f) {
 		if (r_cons_is_breaked ()) {
-			break;
+			free (flag_array);
+			return;
 		}
-		if (!strcmp (fn, prefix)) {
+		const char *name = f->name;
+		size_t len = strlen (name);
+		if (prefix_len > 0) {
+			if (len <= prefix_len || strncmp (name, prefix, prefix_len) != 0) {
+				continue;
+			}
+		}
+		/* Exclude the prefix itself if present (already handled above by r_flag_get) */
+		flag_array[count++] = f;
+	}
+	if (count == 0) {
+		free (flag_array);
+		return;
+	}
+	qsort (flag_array, count, sizeof (RFlagItem *), strcmp_cb);
+
+	/* Stack for DFS traversal of flag hierarchy */
+	RList *stack = r_list_newf (NULL);
+	if (!stack) {
+		free(flag_array);
+		return;
+	}
+	/* Initialize root context */
+	FlagContext *root_ctx = R_NEW0 (FlagContext);
+	if (!root_ctx) {
+		r_list_free (stack);
+		free (flag_array);
+		return;
+	}
+	root_ctx->prefix = strdup (prefix);
+	root_ctx->prefix_len = prefix_len;
+	root_ctx->start = 0;
+	root_ctx->end = count;
+	root_ctx->index = 0;
+	root_ctx->processed = ht_pp_new0 ();
+	if (!root_ctx->processed) {
+		free (root_ctx->prefix);
+		free (root_ctx);
+		r_list_free (stack);
+		free (flag_array);
+		return;
+	}
+	r_list_append (stack, root_ctx);
+
+	bool aborted = false;
+	/* Depth-first traversal using stack */
+	while (!r_list_empty (stack) && !aborted) {
+		FlagContext *ctx = r_list_pop (stack);  /* get current context (LIFO) */
+		if (!ctx) {
 			continue;
 		}
-		if (mode == '*') {
-			r_cons_printf ("agn %s %s\n", fn, fn + prefix_len);
-			r_cons_printf ("age %s %s\n", *prefix ? prefix : "root", fn);
-		} else {
-			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
+		size_t i = ctx->index;
+		const char *parent_prefix = ctx->prefix;
+		size_t parent_len = ctx->prefix_len;
+		bool resume = false;
+		/* Iterate over children in this context */
+		while (i < ctx->end && !r_cons_is_breaked ()) {
+			const char *name = flag_array[i]->name;
+			/* Skip printing if the child name equals the parent prefix */
+			if (!strcmp (name, parent_prefix)) {
+				i++;
+				continue;
+			}
+			/* Case 1: current name is prefix of next name -> output current and skip grouping */
+			if (i + 1 < ctx->end && strncmp (flag_array[i+1]->name, name, strlen (name)) == 0) {
+				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
+					ht_pp_insert (ctx->processed, name, (void *)1);
+					if (mode == '*') {
+						r_cons_printf ("agn %s %s\n", name, name + parent_len);
+						r_cons_printf ("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+					} else {
+						r_cons_printf ("%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
+					}
+				}
+				/* No recursive push for actual flag (leaf) */
+				i++;
+				continue;
+			}
+			/* Case 2: last element or no shared prefix beyond parent -> output current as leaf */
+			if (i + 1 >= ctx->end) {
+				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp(name, parent_prefix) != 0) {
+					ht_pp_insert (ctx->processed, name, (void *)1);
+					if (mode == '*') {
+						r_cons_printf ("agn %s %s\n", name, name + parent_len);
+						r_cons_printf ("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+					} else {
+						r_cons_printf ("%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
+					}
+				}
+				i++;
+				continue;
+			}
+			/* Case 3: there is a common prefix with the next name beyond parent_prefix */
+			const char *next_name = flag_array[i + 1]->name;
+			size_t common_len = common_prefix_len (name, next_name, parent_len);
+			if (common_len <= parent_len) {
+				/* No additional common prefix beyond parent -> current is a standalone leaf */
+				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
+					ht_pp_insert (ctx->processed, name, (void *)1);
+					if (mode == '*') {
+						r_cons_printf ("agn %s %s\n", name, name + parent_len);
+						r_cons_printf ("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+					} else {
+						r_cons_printf ("%s %s\n", r_str_pad (' ', parent_len), name + parent_len);
+					}
+				}
+				i++;
+				continue;
+			}
+			/* Determine the cluster of names sharing the common prefix */
+			size_t j = i + 2;
+			size_t cluster_prefix_len = common_len;
+			while (j < ctx->end && strncmp (flag_array[j]->name, name, cluster_prefix_len) == 0) {
+				size_t new_common = common_prefix_len(name, flag_array[j]->name, parent_len);
+				if (new_common < cluster_prefix_len) {
+					cluster_prefix_len = new_common;
+				}
+				j++;
+			}
+			bool skip_group = (cluster_prefix_len == strlen(name));
+			if (j - i < 2) {
+				skip_group = true;  /* only one element in cluster */
+			}
+			if (!skip_group) {
+				/* Create a group prefix for this cluster */
+				char *group = r_str_ndup(name, cluster_prefix_len);
+				if (!group) {
+					aborted = true;
+					break;
+				}
+				if (!ht_pp_find (ctx->processed, group, NULL) && strcmp(group, parent_prefix) != 0) {
+					ht_pp_insert (ctx->processed, group, (void *)1);
+					/* Print the group prefix */
+					if (mode == '*') {
+						r_cons_printf ("agn %s %s\n", group, group + parent_len);
+						r_cons_printf ("age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
+					} else {
+						r_cons_printf ("%s %s\n", r_str_pad (' ', parent_len), group + parent_len);
+					}
+					/* Prepare new context for this group */
+					FlagContext *child_ctx = R_NEW0 (FlagContext);
+					if (!child_ctx) {
+						free (group);
+						aborted = true;
+						break;
+					}
+					child_ctx->prefix = group;
+					child_ctx->prefix_len = cluster_prefix_len;
+					child_ctx->start = i;
+					child_ctx->end = j;
+					child_ctx->index = i;
+					child_ctx->processed = ht_pp_new0();
+					if (!child_ctx->processed) {
+						free (child_ctx->prefix);
+						free (child_ctx);
+						aborted = true;
+						break;
+					}
+					/* Update current context to resume after this cluster */
+					ctx->index = j;
+					/* Push current context back and push the new child context */
+					r_list_append (stack, ctx);
+					r_list_append (stack, child_ctx);
+					resume = true;
+					break;  /* dive into child context next */
+				} else {
+					/* Group prefix already processed or equals parent prefix, skip grouping */
+					free (group);
+					/* Just skip this cluster since it's already handled */
+					i = j;
+					continue;
+				}
+			} else {
+				/* No grouping: output each element in the cluster individually */
+				size_t k;
+				for (k = i; k < j && !r_cons_is_breaked (); k++) {
+					const char *fname = flag_array[k]->name;
+					if (!ht_pp_find (ctx->processed, fname, NULL) && strcmp (fname, parent_prefix) != 0) {
+						ht_pp_insert (ctx->processed, fname, (void *)1);
+						if (mode == '*') {
+							r_cons_printf ("agn %s %s\n", fname, fname + parent_len);
+							r_cons_printf ("age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
+						} else {
+							r_cons_printf ("%s %s\n", r_str_pad(' ', parent_len), fname + parent_len);
+						}
+					}
+				}
+				if (r_cons_is_breaked ()) {
+					break;
+				}
+				/* Advance index past this cluster */
+				i = j;
+				continue;
+			}
+		} /* end while over children */
+
+		if (r_cons_is_breaked ()) {
+			aborted = true;
 		}
-		//r_cons_printf (".fg %s\n", fn);
-		__printRecursive (core, flags, fn, mode, depth + 1);
+		if (!resume) {
+			/* Context finished processing all children (or aborted), free it */
+			ht_pp_free (ctx->processed);
+			free (ctx->prefix);
+			free (ctx);
+		} else {
+			/* If we broke out early to dive, the context was pushed back on stack */
+			/* Do NOT free ctx here, it remains on stack for later processing */
+		}
 	}
-	r_list_free (children);
+
+	/* If aborted, clear any remaining stack entries without processing */
+	if (aborted) {
+		RListIter *iter;
+		FlagContext *ctx;
+		r_list_foreach (stack, iter, ctx) {
+			if (!ctx) continue;
+			if (ctx->processed) {
+				ht_pp_free (ctx->processed);
+			}
+			free (ctx->prefix);
+			free (ctx);
+		}
+	}
+	r_list_free (stack);
+	free (flag_array);
 }
-#else
-static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode) {
-    /* Context structure for iterative traversal */
-    typedef struct {
-        char *prefix;
-        size_t prefix_len;
-        size_t start;
-        size_t end;
-        size_t index;
-        HtPP *processed;
-    } FlagContext;
-
-    size_t prefix_len = strlen(prefix);
-    if (mode == '*' && !*prefix) {
-        r_cons_printf("agn root\n");
-    }
-    /* If prefix is an actual flag name, do nothing (leaf) */
-    if (r_flag_get(core->flags, prefix)) {
-        return;
-    }
-
-    /* Build and sort array of flag items (cache all flags under the given prefix) */
-    size_t total = r_list_length(flags);
-    if (total == 0) {
-        return;
-    }
-    RFlagItem **flag_array = malloc(total * sizeof(RFlagItem *));
-    if (!flag_array) {
-        return;
-    }
-    size_t count = 0;
-    RListIter *it;
-    RFlagItem *f;
-    r_list_foreach(flags, it, f) {
-        if (r_cons_is_breaked()) {
-            free(flag_array);
-            return;
-        }
-        const char *name = f->name;
-        size_t len = strlen(name);
-        if (prefix_len > 0) {
-            if (len <= prefix_len || strncmp(name, prefix, prefix_len) != 0) {
-                continue;
-            }
-        }
-        /* Exclude the prefix itself if present (already handled above by r_flag_get) */
-        flag_array[count++] = f;
-    }
-    if (count == 0) {
-        free(flag_array);
-        return;
-    }
-    qsort(flag_array, count, sizeof(RFlagItem *), strcmp_cb);
-
-    /* Stack for DFS traversal of flag hierarchy */
-    RList *stack = r_list_newf(NULL);
-    if (!stack) {
-        free(flag_array);
-        return;
-    }
-    /* Initialize root context */
-    FlagContext *root_ctx = R_NEW0(FlagContext);
-    if (!root_ctx) {
-        r_list_free(stack);
-        free(flag_array);
-        return;
-    }
-    root_ctx->prefix = strdup(prefix);
-    root_ctx->prefix_len = prefix_len;
-    root_ctx->start = 0;
-    root_ctx->end = count;
-    root_ctx->index = 0;
-    root_ctx->processed = ht_pp_new0();
-    if (!root_ctx->processed) {
-        free(root_ctx->prefix);
-        free(root_ctx);
-        r_list_free(stack);
-        free(flag_array);
-        return;
-    }
-    r_list_append(stack, root_ctx);
-
-    bool aborted = false;
-    /* Depth-first traversal using stack */
-    while (!r_list_empty(stack) && !aborted) {
-        FlagContext *ctx = r_list_pop(stack);  /* get current context (LIFO) */
-        if (!ctx) {
-            continue;
-        }
-        size_t i = ctx->index;
-        const char *parent_prefix = ctx->prefix;
-        size_t parent_len = ctx->prefix_len;
-        bool resume = false;
-        /* Iterate over children in this context */
-        while (i < ctx->end && !r_cons_is_breaked()) {
-            const char *name = flag_array[i]->name;
-            /* Skip printing if the child name equals the parent prefix */
-            if (!strcmp(name, parent_prefix)) {
-                i++;
-                continue;
-            }
-            /* Case 1: current name is prefix of next name -> output current and skip grouping */
-            if (i + 1 < ctx->end && strncmp(flag_array[i+1]->name, name, strlen(name)) == 0) {
-                if (!ht_pp_find(ctx->processed, name, NULL) && strcmp(name, parent_prefix) != 0) {
-                    ht_pp_insert(ctx->processed, name, (void *)1);
-                    if (mode == '*') {
-                        r_cons_printf("agn %s %s\n", name, name + parent_len);
-                        r_cons_printf("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-                    } else {
-                        r_cons_printf("%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
-                    }
-                }
-                /* No recursive push for actual flag (leaf) */
-                i++;
-                continue;
-            }
-            /* Case 2: last element or no shared prefix beyond parent -> output current as leaf */
-            if (i + 1 >= ctx->end) {
-                if (!ht_pp_find(ctx->processed, name, NULL) && strcmp(name, parent_prefix) != 0) {
-                    ht_pp_insert(ctx->processed, name, (void *)1);
-                    if (mode == '*') {
-                        r_cons_printf("agn %s %s\n", name, name + parent_len);
-                        r_cons_printf("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-                    } else {
-                        r_cons_printf("%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
-                    }
-                }
-                i++;
-                continue;
-            }
-            /* Case 3: there is a common prefix with the next name beyond parent_prefix */
-            const char *next_name = flag_array[i+1]->name;
-            size_t common_len = common_prefix_len(name, next_name, parent_len);
-            if (common_len <= parent_len) {
-                /* No additional common prefix beyond parent -> current is a standalone leaf */
-                if (!ht_pp_find(ctx->processed, name, NULL) && strcmp(name, parent_prefix) != 0) {
-                    ht_pp_insert(ctx->processed, name, (void *)1);
-                    if (mode == '*') {
-                        r_cons_printf("agn %s %s\n", name, name + parent_len);
-                        r_cons_printf("age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-                    } else {
-                        r_cons_printf("%s %s\n", r_str_pad(' ', parent_len), name + parent_len);
-                    }
-                }
-                i++;
-                continue;
-            }
-            /* Determine the cluster of names sharing the common prefix */
-            size_t j = i + 2;
-            size_t cluster_prefix_len = common_len;
-            while (j < ctx->end && strncmp(flag_array[j]->name, name, cluster_prefix_len) == 0) {
-                size_t new_common = common_prefix_len(name, flag_array[j]->name, parent_len);
-                if (new_common < cluster_prefix_len) {
-                    cluster_prefix_len = new_common;
-                }
-                j++;
-            }
-            bool skip_group = (cluster_prefix_len == strlen(name));
-            if (j - i < 2) {
-                skip_group = true;  /* only one element in cluster */
-            }
-            if (!skip_group) {
-                /* Create a group prefix for this cluster */
-                char *group = r_str_ndup(name, cluster_prefix_len);
-                if (!group) {
-                    aborted = true;
-                    break;
-                }
-                if (!ht_pp_find(ctx->processed, group, NULL) && strcmp(group, parent_prefix) != 0) {
-                    ht_pp_insert(ctx->processed, group, (void *)1);
-                    /* Print the group prefix */
-                    if (mode == '*') {
-                        r_cons_printf("agn %s %s\n", group, group + parent_len);
-                        r_cons_printf("age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
-                    } else {
-                        r_cons_printf("%s %s\n", r_str_pad(' ', parent_len), group + parent_len);
-                    }
-                    /* Prepare new context for this group */
-                    FlagContext *child_ctx = R_NEW0(FlagContext);
-                    if (!child_ctx) {
-                        free(group);
-                        aborted = true;
-                        break;
-                    }
-                    child_ctx->prefix = group;
-                    child_ctx->prefix_len = cluster_prefix_len;
-                    child_ctx->start = i;
-                    child_ctx->end = j;
-                    child_ctx->index = i;
-                    child_ctx->processed = ht_pp_new0();
-                    if (!child_ctx->processed) {
-                        free(child_ctx->prefix);
-                        free(child_ctx);
-                        aborted = true;
-                        break;
-                    }
-                    /* Update current context to resume after this cluster */
-                    ctx->index = j;
-                    /* Push current context back and push the new child context */
-                    r_list_append(stack, ctx);
-                    r_list_append(stack, child_ctx);
-                    resume = true;
-                    break;  /* dive into child context next */
-                } else {
-                    /* Group prefix already processed or equals parent prefix, skip grouping */
-                    free(group);
-                    /* Just skip this cluster since it's already handled */
-                    i = j;
-                    continue;
-                }
-            } else {
-                /* No grouping: output each element in the cluster individually */
-                for (size_t k = i; k < j && !r_cons_is_breaked(); k++) {
-                    const char *fname = flag_array[k]->name;
-                    if (!ht_pp_find(ctx->processed, fname, NULL) && strcmp(fname, parent_prefix) != 0) {
-                        ht_pp_insert(ctx->processed, fname, (void *)1);
-                        if (mode == '*') {
-                            r_cons_printf("agn %s %s\n", fname, fname + parent_len);
-                            r_cons_printf("age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
-                        } else {
-                            r_cons_printf("%s %s\n", r_str_pad(' ', parent_len), fname + parent_len);
-                        }
-                    }
-                }
-                if (r_cons_is_breaked()) {
-                    break;
-                }
-                /* Advance index past this cluster */
-                i = j;
-                continue;
-            }
-        } /* end while over children */
-
-        if (r_cons_is_breaked()) {
-            aborted = true;
-        }
-        if (!resume) {
-            /* Context finished processing all children (or aborted), free it */
-            ht_pp_free(ctx->processed);
-            free(ctx->prefix);
-            free(ctx);
-        } else {
-            /* If we broke out early to dive, the context was pushed back on stack */
-            /* Do NOT free ctx here, it remains on stack for later processing */
-        }
-    }
-
-    /* If aborted, clear any remaining stack entries without processing */
-    if (aborted) {
-        RListIter *iter;
-        FlagContext *ctx;
-        r_list_foreach(stack, iter, ctx) {
-            if (!ctx) continue;
-            if (ctx->processed) {
-                ht_pp_free(ctx->processed);
-            }
-            free(ctx->prefix);
-            free(ctx);
-        }
-    }
-    r_list_free(stack);
-    free(flag_array);
-}
-#endif
 
 static void __flag_graph(RCore *core, const char *input, int mode) {
 	RList *flags = r_list_newf (NULL);
