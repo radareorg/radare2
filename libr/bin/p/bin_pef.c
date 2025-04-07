@@ -42,6 +42,7 @@ static bool pidata_getcount(const char **ptr, const char *limit, ut32 *ret) {
 		if (*ptr >= limit) return true; // fail
 		ut8 byte = *(*ptr)++;
 		*ret = (*ret << 7) | (byte & 0x7f);
+		if (*ret & 0x80000000) return true; // unrealistically large, prevent oflow when used as int
 		if ((byte & 0x80) == 0) return false; // OK
 	}
 }
@@ -52,6 +53,7 @@ static bool pidata_getcount(const char **ptr, const char *limit, ut32 *ret) {
 static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) {
 	char *dlim = dest + dlen;
 	const char *slim = src + slen;
+	int i, j;
 
 	while (src < slim) {
 		ut8 firstbyte = *src++;
@@ -62,12 +64,12 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 		}
 
 		if (opcode == 0) { // put zeros
-			for (ut32 i=0; i<arg; i++) {
+			for (i=0; i<arg; i++) {
 				if (dest >= dlim) return 2;
 				*dest++ = 0;
 			}
 		} else if (opcode == 1) { // copy block
-			for (ut32 i=0; i<arg; i++) {
+			for (i=0; i<arg; i++) {
 				if (src >= slim || dest >= dlim) return 3;
 				*dest++ = *src++;
 			}
@@ -77,7 +79,7 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			if (pidata_getcount(&src, slim, &repeatCountMin1)) return 4;
 
 			do {
-				for (ut32 i=0; i<blockSize; i++) {
+				for (i=0; i<blockSize; i++) {
 					if (src + i >= slim || dest >= dlim) return 5;
 					*dest++ = src[i];
 				}
@@ -90,18 +92,18 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			if (pidata_getcount(&src, slim, &repeatCount)) return 7;
 
 			const char *common = src;
-			for (ut32 i=0; i<commonSize; i++) {
+			for (i=0; i<commonSize; i++) {
 				if (src >= slim || dest >= dlim) return 8;
 				*dest++ = *src++;
 			}
 
-			for (ut32 i=0; i<repeatCount; i++) {
-				for (ut32 j=0; j<customSize; j++) {
+			for (i=0; i<repeatCount; i++) {
+				for (j=0; j<customSize; j++) {
 					if (src >= slim || dest >= dlim) return 9;
 					*dest++ = *src++;
 				}
 				const char *comcopy = common;
-				for (ut32 j=0; j<commonSize; j++) {
+				for (j=0; j<commonSize; j++) {
 					if (dest >= dlim) return 10;
 					*dest++ = *comcopy++;
 				}
@@ -112,17 +114,17 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			if (pidata_getcount(&src, slim, &customSize)) return 11;
 			if (pidata_getcount(&src, slim, &repeatCount)) return 12;
 
-			for (ut32 i=0; i<commonSize; i++) {
+			for (i=0; i<commonSize; i++) {
 				if (dest >= dlim) return 13;
 				*dest++ = 0;
 			}
 
-			for (ut32 i=0; i<repeatCount; i++) {
-				for (ut32 j=0; j<customSize; j++) {
+			for (i=0; i<repeatCount; i++) {
+				for (j=0; j<customSize; j++) {
 					if (src >= slim || dest >= dlim) return 14;
 					*dest++ = *src++;
 				}
-				for (ut32 j=0; j<commonSize; j++) {
+				for (j=0; j<commonSize; j++) {
 					if (dest >= dlim) return 15;
 					*dest++ = 0;
 				}
@@ -141,10 +143,10 @@ static int reloc_comparator(const PEFReloc *a, const PEFReloc *b) {
 
 static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 	RList *ret = r_list_newf((RListFree)free);
-
 	ut32 codeA = 0, dataA = 1, rSymI = 0, rAddr = 0;
 	ut32 loopInstruct = UT32_MAX;
 	ut32 loopDone = 0;
+	int i;
 
 	if (0) {
 		printf("           Instr     Op    Operand           codeA dataA rSymI rAddr\n");
@@ -184,7 +186,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg("DDAT", "delta=%d,n=%d", skipCount*4, relocCount);
 
 			rAddr += 4 * skipCount;
-			for (ut8 i=0; i<relocCount; i++) {
+			for (i=0; i<relocCount; i++) {
 				PUSH_RELOC(rAddr, dataA, false);
 				rAddr += 4;
 			}
@@ -193,7 +195,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// DumpPEF sometimes gets rAddr wrong for large runLength!
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("CODE", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, codeA, false);
 				rAddr += 4;
 			}
@@ -201,7 +203,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocBySectD (DATA)
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("DATA", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, dataA, false);
 				rAddr += 4;
 			}
@@ -209,7 +211,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocTVector12 (DESC)
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("DESC", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, codeA, false);
 				rAddr += 4;
 				PUSH_RELOC(rAddr, dataA, false);
@@ -219,7 +221,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocTVector8 (DSC2)
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("DSC2", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, codeA, false);
 				rAddr += 4;
 				PUSH_RELOC(rAddr, dataA, false);
@@ -229,7 +231,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocVTable8 (VTBL)
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("VTBL", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, dataA, false);
 				rAddr += 8;
 			}
@@ -237,7 +239,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocImportRun (SYMR)
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg("SYMR", "cnt=%d", runLength);
-			for (ut16 i=0; i<runLength; i++) {
+			for (i=0; i<runLength; i++) {
 				PUSH_RELOC(rAddr, rSymI, true);
 				rAddr += 4;
 				rSymI += 1;
@@ -357,7 +359,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!pef) return false;
 	pef->nsec = nsec;
 	ut64 climb = loadaddr;
-	for (ut16 i=0; i<nsec; i++) {
+	int i;
+	for (i=0; i<nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
 		size_t offset = 40 + 28*i;
 		sec->defAddress = r_buf_read_be32_at(buf, offset + 4);
@@ -395,7 +398,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 relocSecCount = r_buf_read_be32_at(bf->buf, pef->ldrsec + 32);
 	ut32 relocInstrOffset = r_buf_read_be32_at(bf->buf, pef->ldrsec + 36);
 
-	for (ut32 i=0; i<relocSecCount; i++) {
+	for (i=0; i<relocSecCount; i++) {
 		ut32 at = pef->ldrsec + 56 + 24*importedLibraryCount + 4*totalImportedSymbolCount + 12*i;
 		ut16 sec = r_buf_read_be16_at(bf->buf, at);
 		ut32 instCount = r_buf_read_be32_at(bf->buf, at + 4);
@@ -409,7 +412,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static void destroy(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-	for (int i=0; i<pef->nsec; i++) {
+	int i;
+	for (i=0; i<pef->nsec; i++) {
 		free(pef->sec[i].unpack);
 		r_list_free(pef->sec[i].relocs);
 	}
@@ -463,7 +467,8 @@ static RList *fields(RBinFile *bf) {
 static ut64 size(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	ut64 s = 0;
-	for (int i=0; i<pef->nsec; i++) {
+	int i;
+	for (i=0; i<pef->nsec; i++) {
 		ut64 e = pef->sec[i].offset + pef->sec[i].lenDisk;
 		if (s < e) s = e;
 	}
@@ -498,8 +503,9 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 static RList *sections(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	RList *ret = r_list_newf((RListFree)r_bin_section_free);
+	int i;
 
-	for (ut16 i=0; i<pef->nsec; i++) {
+	for (i=0; i<pef->nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
 		RBinSection *ptr = R_NEW0(RBinSection);
 		ptr->is_segment = true;
@@ -547,23 +553,23 @@ static RList *sections(RBinFile *bf) {
 
 static RList *imports(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-
 	ut32 importedLibraryCount = r_buf_read_be32_at(bf->buf, pef->ldrsec + 24);
 	ut32 totalImportedSymbolCount = r_buf_read_be32_at(bf->buf, pef->ldrsec + 28);
 	ut32 loaderStringsOffset = r_buf_read_be32_at(bf->buf, pef->ldrsec + 40);
-
 	RBinImport **ary = R_NEWS(RBinImport *, totalImportedSymbolCount);
-	for (ut32 i=0; i<totalImportedSymbolCount; i++) {
+	int i, j;
+
+	for (i=0; i<totalImportedSymbolCount; i++) {
 		ary[i] = R_NEW0(RBinImport);
 	}
 
-	for (ut32 i=0; i<importedLibraryCount; i++) {
+	for (i=0; i<importedLibraryCount; i++) {
 		ut32 at = pef->ldrsec + 56 + 24*i;
 		ut32 libNamePtr = r_buf_read_be32_at(bf->buf, at);
 		ut32 libSymCount = r_buf_read_be32_at(bf->buf, at + 12);
 		ut32 firstSym = r_buf_read_be32_at(bf->buf, at + 16);
 
-		for (ut32 j=firstSym; j<firstSym+libSymCount && j<totalImportedSymbolCount; j++) {
+		for (j=firstSym; j<firstSym+libSymCount && j<totalImportedSymbolCount; j++) {
 			at = pef->ldrsec + 56 + 24*importedLibraryCount + 4*j;
 			ut8 kind = 0;
 			r_buf_read_at(bf->buf, at, &kind, 1);
@@ -578,7 +584,7 @@ static RList *imports(RBinFile *bf) {
 	}
 
 	RList *ret = r_list_newf((RListFree)r_bin_import_free);
-	for (ut32 i=0; i<totalImportedSymbolCount; i++) {
+	for (i=0; i<totalImportedSymbolCount; i++) {
 		if (ary[i]->name != NULL) {
 			r_list_append(ret, ary[i]);
 		}
@@ -589,12 +595,12 @@ static RList *imports(RBinFile *bf) {
 
 static RList *libs(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-
+	RList *ret = r_list_newf((RListFree)free);
 	ut32 importedLibraryCount = r_buf_read_be32_at(bf->buf, pef->ldrsec + 24);
 	ut32 loaderStringsOffset = r_buf_read_be32_at(bf->buf, pef->ldrsec + 40);
+	int i;
 
-	RList *ret = r_list_newf((RListFree)free);
-	for (ut32 i=0; i<importedLibraryCount; i++) {
+	for (i=0; i<importedLibraryCount; i++) {
 		ut32 at = pef->ldrsec + 56 + 24*i;
 		ut32 libNamePtr = r_buf_read_be32_at(bf->buf, at);
 		char *name = r_buf_get_string(bf->buf, pef->ldrsec + loaderStringsOffset + libNamePtr);
@@ -616,15 +622,14 @@ void **flatlist(RList *list) {
 
 static RList *relocs(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-
-	// Need an indexable list of imports
-	RList *importList = imports(bf);
-	void **importArray = flatlist(importList);
-
 	RList *ret = r_list_newf(free); // r_bin_reloc_free
+	RList *importList = imports(bf); // Import linked-list
+	void **importArray = flatlist(importList); // Indexable import list
 	PEFReloc *r;
 	RListIter *iter;
-	for (int i=0; i<pef->nsec; i++) {
+	int i;
+
+	for (i=0; i<pef->nsec; i++) {
 		r_list_foreach(pef->sec[i].relocs, iter, r) {
 			RBinReloc *ptr = R_NEW0(RBinReloc);
 			ptr->type = R_BIN_RELOC_32;
@@ -669,15 +674,15 @@ static RList *patch_relocs(RBinFile *bf) {
 static RList *symbols(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	RList *ret = r_list_newf((RListFree)r_bin_symbol_free);
-
 	ut32 loaderStringsOffset = r_buf_read_be32_at(bf->buf, pef->ldrsec + 40);
 	ut32 exportHashOffset = r_buf_read_be32_at(bf->buf, pef->ldrsec + 44);
 	ut32 exportHashTablePower = r_buf_read_be32_at(bf->buf, pef->ldrsec + 48);
 	ut32 exportedSymbolCount = r_buf_read_be32_at(bf->buf, pef->ldrsec + 52);
 	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (4<<exportHashTablePower);
 	ut32 exportTable = stringLenTable + 4*exportedSymbolCount;
+	int i;
 
-	for (ut32 i=0; i<exportedSymbolCount; i++) {
+	for (i=0; i<exportedSymbolCount; i++) {
 		ut32 ofs = exportTable + 10*i;
 		ut8 kind = 0;
 		r_buf_read_at(bf->buf, ofs, &kind, 1);
@@ -701,14 +706,15 @@ static RList *symbols(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
+	RList *ret = r_list_newf(free);
 	static const int types[] = {
 		R_BIN_ENTRY_TYPE_MAIN,
 		R_BIN_ENTRY_TYPE_INIT,
 		R_BIN_ENTRY_TYPE_FINI
 	};
+	int i;
 
-	RList *ret = r_list_newf(free);
-	for (int i=0; i<3; i++) {
+	for (i=0; i<3; i++) {
 		ut32 sec = r_buf_read_be32_at(bf->buf, pef->ldrsec + i*8);
 		ut32 offset = r_buf_read_be32_at(bf->buf, pef->ldrsec + i*8+4);
 		if (sec < pef->nsec && offset < pef->sec[sec].addr+pef->sec[sec].lenTotal) {
