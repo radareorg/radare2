@@ -516,11 +516,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = sec->lenTotal;
 
 		ptr->type = strdup(
-			sec->kind == 0 ? "TEXT" :
-			sec->kind == 1 ? "DATA" :
-			sec->kind == 2 ? "PIDATA" :
-			sec->kind == 3 ? "RODATA" :
-			sec->kind == 4 ? "LOADER" :
+			sec->kind == 0 ? "text" :
+			sec->kind == 1 ? "data" :
+			sec->kind == 2 ? "pidata" :
+			sec->kind == 3 ? "rodata" :
+			sec->kind == 4 ? "loader" :
 			"");
 		ptr->name = strdup(ptr->type);
 		ptr->arch = strdup("ppc");
