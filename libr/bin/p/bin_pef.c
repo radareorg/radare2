@@ -637,7 +637,7 @@ static RList *sections(RBinFile *bf) {
 			r_bin_section_free (ptr);
 			continue;
 		}
-		ptr->name = r_str_newf (".%s-%d", ptr->type, i); // same naming convention as XCOFF
+		ptr->name = r_str_newf (".%s-%d", ptr->type, (int)i); // same naming convention as XCOFF
 
 		// Exists in memory
 		if (ptr->perm != R_PERM_NONE) {
