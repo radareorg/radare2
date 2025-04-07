@@ -1254,6 +1254,10 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 
 	r_buf_seek (f->b, 0, R_BUF_SET);
 	header = parse_header (f);
+	if (!header) {
+		R_LOG_ERROR ("Cannot parse flirt header");
+		goto beach;
+	}
 	if (version >= 6) {
 		idasig_v6_v7_t *v6_v7 = parse_v6_v7_header (f);
 		if (!v6_v7) {
