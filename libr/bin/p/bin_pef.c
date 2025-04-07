@@ -734,7 +734,9 @@ static RList *symbols(RBinFile *bf) {
 		ut32 addr = r_buf_read_be32_at(bf->buf, ofs + 4);
 		st16 index = r_buf_read_be16_at(bf->buf, ofs + 8);
 		ut16 nameLen = r_buf_read_be16_at(bf->buf, stringLenTable + 4*i);
-		if (index < 0 || index >= pef->nsec) continue; // re-exported func or absolute mem address, not supported
+		if (index < 0 || index >= pef->nsec) {
+			continue; // re-exported func or absolute mem address, not supported
+		}
 
 		RBinSymbol *ptr = R_NEW0(RBinSymbol);
 		char *name = calloc(1, nameLen + 1);
