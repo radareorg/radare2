@@ -161,7 +161,7 @@ static bool listFlag(RFlagItem *flag, void *user) {
 static int strcmp_cb(const void *a, const void *b) {
 	const RFlagItem *fa = *(const RFlagItem **)a;
 	const RFlagItem *fb = *(const RFlagItem **)b;
-	return strcmp(fa->name, fb->name);
+	return strcmp (fa->name, fb->name);
 }
 
 static size_t common_prefix_len(const char *a, const char *b, size_t start) {
@@ -183,7 +183,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	if (n == 0) {
 		return list;
 	}
-	RFlagItem **flag_array = malloc (n * sizeof(RFlagItem*));
+	RFlagItem **flag_array = malloc (n * sizeof (RFlagItem*));
 	if (!flag_array) {
 		return list;
 	}
@@ -191,12 +191,12 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	size_t count = 0;
 	RListIter *iter;
 	RFlagItem *f;
-	r_list_foreach(flags, iter, f) {
-		if (r_cons_is_breaked()) {
+	r_list_foreach (flags, iter, f) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		const char *name = f->name;
-		size_t len = strlen(name);
+		size_t len = strlen (name);
 		if (len <= prefix_len || strncmp (name, prefix, prefix_len) != 0) {
 			continue;
 		}
@@ -204,7 +204,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	}
 
 	if (count == 0 || r_cons_is_breaked ()) {
-		free(flag_array);
+		free (flag_array);
 		return list;
 	}
 
@@ -216,13 +216,14 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		return list;
 	}
 
-	for (size_t i = 0; i < count && !r_cons_is_breaked ();) {
+	size_t i;
+	for (i = 0; i < count && !r_cons_is_breaked ();) {
 		const char *name = flag_array[i]->name;
 
 		if (i + 1 < count && strncmp (flag_array[i+1]->name, name, strlen (name)) == 0) {
 			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
 				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup(name));
+				r_list_append (list, strdup (name));
 			}
 			i++;
 			continue;
@@ -231,7 +232,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		if (i + 1 >= count) {
 			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
 				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup(name));
+				r_list_append (list, strdup (name));
 			}
 			i++;
 			continue;
@@ -242,7 +243,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		if (common_len <= prefix_len) {
 			if (strcmp (name, prefix) != 0 && !ht_pp_find (processed, name, NULL)) {
 				ht_pp_insert (processed, name, (void*)1);
-				r_list_append (list, strdup(name));
+				r_list_append (list, strdup (name));
 			}
 			i++;
 			continue;
@@ -258,7 +259,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 			j++;
 		}
 
-		bool skip_group = cluster_prefix_len == strlen(name);
+		bool skip_group = cluster_prefix_len == strlen (name);
 		if (j - i < 2) skip_group = true;
 
 		if (!skip_group) {
@@ -267,7 +268,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				ht_pp_insert (processed, group, (void*)1);
 				r_list_append (list, group);
 			} else {
-				free(group);
+				free (group);
 			}
 		} else {
 			size_t k;
@@ -275,7 +276,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				const char *fname = flag_array[k]->name;
 				if (strcmp (fname, prefix) != 0 && !ht_pp_find (processed, fname, NULL)) {
 					ht_pp_insert (processed, fname, (void*)1);
-					r_list_append (list, strdup(fname));
+					r_list_append (list, strdup (fname));
 				}
 			}
 		}
