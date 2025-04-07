@@ -484,7 +484,7 @@ static void destroy(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	char hdr[40];
-	int r = r_buf_read_at (bf->buf, 0, (ut8 *)hdr, sizeof (hdr));
+	const int r = r_buf_read_at (bf->buf, 0, (ut8 *)hdr, sizeof (hdr));
 	if (r != sizeof (hdr)) {
 		return NULL;
 	}
@@ -567,17 +567,17 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	ut32 offset = r_buf_read_be32_at (bf->buf, pef->ldrsec + n * 8 + 4);
 	if (sec < pef->nsec && offset < pef->sec[sec].addr + pef->sec[sec].lenTotal) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		ptr->paddr = pef->sec[sec].addr;
 		ptr->vaddr = pef->sec[sec].addr + offset;
 		return ptr;
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 static RList *sections(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	int i;
+	size_t i;
 
 	for (i = 0; i < pef->nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
@@ -844,6 +844,7 @@ static RList *entries(RBinFile *bf) {
 		ut32 offset = r_buf_read_be32_at (bf->buf, pef->ldrsec + i * 8 + 4);
 		if (sec < pef->nsec && offset < pef->sec[sec].addr + pef->sec[sec].lenTotal) {
 			RBinAddr *ptr = R_NEW0 (RBinAddr);
+			ptr->paddr = pef->sec[sec].addr;
 			ptr->vaddr = pef->sec[sec].addr + offset;
 			ptr->type = types[i];
 			r_list_append (ret, ptr);
