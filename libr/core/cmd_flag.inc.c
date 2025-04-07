@@ -158,35 +158,6 @@ static bool listFlag(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static size_t countMatching(const char *a, const char *b) {
-	size_t matches = 0;
-	for (; *a && *b; a++, b++) {
-		if (*a != *b) {
-			break;
-		}
-		matches++;
-	}
-	return matches;
-}
-
-static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
-	RListIter *iter;
-	RFlagItem *f;
-
-	size_t count = 0;
-	char *fname = NULL;
-	r_list_foreach (flags, iter, f) {
-		if (!strncmp (f->name, kw, strlen (kw))) {
-			count++;
-			if (count > 1) {
-				return NULL;
-			}
-			fname = f->name;
-		}
-	}
-	return fname;
-}
-
 static int strcmp_cb(const void *a, const void *b) {
 	const RFlagItem *fa = *(const RFlagItem **)a;
 	const RFlagItem *fb = *(const RFlagItem **)b;
