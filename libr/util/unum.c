@@ -386,6 +386,11 @@ R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
 				error (num, "invalid ternary number");
 			}
 			break;
+		case 's':
+			if (isdigit (*str)) {
+				ret *= 60;
+			}
+			break;
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
