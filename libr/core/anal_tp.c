@@ -4,6 +4,228 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
+typedef struct type_trace_change_reg_t {
+	int idx;
+	ut32 cc;
+	char *name;
+	ut64 data;
+	ut64 odata;
+} TypeTraceRegChange;
+
+typedef struct type_trace_change_mem_t {
+	int idx;
+	ut32 cc;
+	ut64 addr;
+	ut8 data;
+	ut8 odata;
+} TypeTraceMemChange;
+
+typedef struct {
+	const char *name;
+	ut64 value;
+	// TODO: size
+} TypeTraceRegAccess;
+
+typedef struct {
+	char *data;
+	ut64 addr;
+	// TODO: size
+} TypeTraceMemoryAccess;
+
+typedef struct {
+	union {
+		TypeTraceRegAccess reg;
+		TypeTraceMemoryAccess mem;
+	};
+	bool is_write;
+	bool is_reg;
+} TypeTraceAccess;
+
+typedef struct {
+	ut64 addr;
+	ut32 start;
+	ut32 end; // 1 past the end of the op for this index
+} TypeTraceOp;
+
+static inline void tt_fini_access(TypeTraceAccess *access) {
+	if (access->is_reg) {
+		return;
+	}
+	free (access->mem.data);
+}
+
+R_VEC_TYPE(VecTraceOp, TypeTraceOp);
+R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, tt_fini_access);
+
+typedef struct {
+	VecTraceOp ops;
+	VecAccess accesses;
+	HtUU *loop_counts;
+} TypeTraceDB;
+
+typedef struct type_trace_t {
+	TypeTraceDB db;
+	int idx;
+	ut32 cc;
+	int end_idx;
+	int cur_idx;
+	RReg *reg;
+	HtUP *registers;
+	HtUP *memory;
+	RRegArena *arena[R_REG_TYPE_LAST];
+	ut64 stack_addr;
+	ut64 stack_size;
+	ut8 *stack_data;
+} TypeTrace;
+
+#define CMP_REG_CHANGE(x, y) ((x) - ((TypeTraceRegChange *)y)->idx)
+#define CMP_MEM_CHANGE(x, y) ((x) - ((TypeTraceMemChange *)y)->idx)
+
+static void update_trace_db_op(TypeTraceDB *db) {
+	const ut32 trace_op_len = VecTraceOp_length (&db->ops);
+	if (!trace_op_len) {
+		return;
+	}
+	TypeTraceOp *last = VecTraceOp_at (&db->ops, trace_op_len - 1);
+	if (!last) {
+		return;
+	}
+	const ut32 vec_idx = VecAccess_length (&db->accesses);
+	if (!vec_idx) {
+		R_LOG_ERROR ("Invalid access database");
+		return;
+	}
+	last->end = vec_idx; //  - 1;
+}
+
+static void type_trace_voyeur_reg_read (void *user, const char *name, ut64 val) {
+	R_RETURN_IF_FAIL (user && name);
+	char *name_dup = strdup (name);
+	if (!name_dup) {
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
+		return;
+	}
+	TypeTraceDB *db = user;
+	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	if (!access) {
+		free (name_dup);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
+	access->reg.name = name_dup;
+	access->reg.value = val;
+	access->is_reg = true;
+	access->is_write = false;
+	update_trace_db_op (db);
+}
+
+static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata) {
+	R_RETURN_IF_FAIL (trace && ri);
+	ut64 addr = ri->offset | (ri->arena << 16);
+	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
+	if (R_UNLIKELY (!vreg)) {
+		vreg = r_vector_new (sizeof (TypeTraceRegChange), NULL, NULL);
+		if (R_UNLIKELY (!vreg)) {
+			R_LOG_ERROR ("creating a register vector");
+			return;
+		}
+		ht_up_insert (trace->registers, addr, vreg);
+	}
+	TypeTraceRegChange reg = {trace->cur_idx, trace->cc++,
+		strdup (ri->name), data, odata};
+	r_vector_push (vreg, &reg);
+}
+
+static void type_trace_voyeur_reg_write (void *user, const char *name, ut64 old, ut64 val) {
+	R_RETURN_IF_FAIL (user && name);
+	TypeTrace *trace = user;
+	RRegItem *ri = r_reg_get (trace->reg, name, -1);
+	if (!ri) {
+		return;
+	}
+	char *name_dup = strdup (name);
+	if (!name_dup) {
+		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
+		goto fail_name_dup;
+	}
+	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		goto fail_emplace_back;
+	}
+	access->is_reg = true;
+	access->reg.name = name_dup;
+	access->reg.value = val;
+	access->is_write = true;
+
+	add_reg_change (trace, ri, val, old);
+	update_trace_db_op (&trace->db);
+	r_unref (ri);
+	return;
+fail_emplace_back:
+	free (name_dup);
+fail_name_dup:
+	r_unref (ri);
+}
+
+static void type_trace_voyeur_mem_read (void *user, ut64 addr, const ut8 *buf, int len) {
+	R_RETURN_IF_FAIL (user && buf && (len > 0));
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
+	if (!hexbuf) {
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		return;
+	}
+	TypeTraceDB *db = user;
+	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	if (!access) {
+		free (hexbuf);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = false;
+	update_trace_db_op (db);
+}
+
+static void type_trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+	R_RETURN_IF_FAIL (user && buf && (len > 0));
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
+	if (!hexbuf) {
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
+		return;
+	}
+	TypeTrace *trace = user;
+	TypeTraceAccess *access = RVecAccess_emplace_back (&trace->db.accesses);
+	if (!access) {
+		free (hexbuf);
+		R_LOG_ERROR ("Failed to allocate memory for storing access");
+		return;
+	}
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = true;
+	ut32 i;
+	for (i = 0; i < len; i++) {
+		//adding each byte one by one is utterly stupid, typical gsoc crap
+		//ideally this would use a tree structure, that splits nodes when necessary
+		RVector *vmem = ht_up_find (trace->memory, addr, NULL);
+		if (!vmem) {
+			vmem = r_vector_new (sizeof (TypeTraceMemChange), NULL, NULL);
+			if (!vmem) {
+				R_LOG_ERROR ("creating a memory vector");
+				break;
+			}
+			ht_up_insert (trace->memory, addr, vmem);
+		}
+		TypeTraceMemChange mem = {trace->idx, trace->cc++, addr, buf[i], old[i]};
+		r_vector_push (vmem, &mem);
+	}
+	update_trace_db_op (&trace->db);
+}
+
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
 
