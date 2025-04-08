@@ -1311,11 +1311,7 @@ static int chop(int len) {
 	if (ctx->buffer_limit > 0) {
 		if (ctx->buffer_len + len >= ctx->buffer_limit) {
 			if (ctx->buffer_len >= ctx->buffer_limit) {
-				R_LOG_WARN ("LIMITE");
-				return 0;
-			}
-			int left = ctx->buffer_limit - ctx->buffer_len;
-			if (left < 16) {
+				C->breaked = true;
 				return 0;
 			}
 			return ctx->buffer_limit - ctx->buffer_len;
@@ -1406,19 +1402,28 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 		int left = 0;
 		if (palloc (MOAR + strlen (format) * 20)) {
 			RConsContext *ctx = getctx ();
-club:
+// club:
 			left = ctx->buffer_sz - ctx->buffer_len; /* remaining space in C->buffer */
-			if ((left = chop (left)) > 0) {
-				// if (left > 0) {}
+			int nleft = chop (left);
+			if (nleft > 0) {
 				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
 				if (written >= left) { /* not all bytes were written */
 					if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
+						(void) vsnprintf (ctx->buffer + ctx->buffer_len, nleft, format, ap3);
+						if (nleft < left) {
+							C->breaked = true;
+						}
+#if 0
 						va_end (ap3);
 						va_copy (ap3, ap2);
+						return;
 						goto club;
+#endif
 					}
 				}
 				ctx->buffer_len += written;
+			} else {
+				C->breaked = true;
 			}
 		}
 	} else {
@@ -1452,9 +1457,10 @@ R_API int r_cons_get_column(void) {
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
 	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
-	if (len < 1) {
+	if (len < 1 || C->breaked) {
 		return 0;
 	}
+
 	if (I->echo) {
 		// Here to silent pedantic meson flags ...
 		int rlen;
@@ -1466,6 +1472,7 @@ R_API int r_cons_write(const char *str, int len) {
 		R_CRITICAL_ENTER (I);
 		if (palloc (len + 1)) {
 			if ((len = chop (len)) < 1) {
+				R_CRITICAL_LEAVE (I);
 				return 0;
 			}
 			memcpy (C->buffer + C->buffer_len, str, len);
@@ -1486,6 +1493,9 @@ R_API int r_cons_write(const char *str, int len) {
 }
 
 R_API void r_cons_memset(char ch, int len) {
+	if (C->breaked) {
+		return;
+	}
 	if (!I->null && len > 0) {
 		if ((len = chop (len)) < 1) {
 			return;
