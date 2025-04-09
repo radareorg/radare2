@@ -476,6 +476,13 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	r->paddr = rel->offset;
 	r->laddr = rel->laddr;
 
+	ut64 sym_vaddr = 0;
+	if (r->symbol) {
+		sym_vaddr = r->symbol->vaddr;
+	} else if (rel->sym) { // r->import) {
+		sym_vaddr = rel->rva;
+	}
+
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA; return r
 
@@ -607,15 +614,40 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_AARCH64_LDST64_ABS_LO12_NC:
 			ADD (32, 0);
 			break;
+		case R_AARCH64_MOVW_UABS_G0:
+		case R_AARCH64_MOVW_UABS_G0_NC:
+			SET(16);
+			r->addend = sym_vaddr & 0xFFFF;
+			r->type = R_BIN_RELOC_16;
+			break;
+		case R_AARCH64_MOVW_UABS_G1:
+		case R_AARCH64_MOVW_UABS_G1_NC:
+			SET(16);
+			r->addend = (sym_vaddr >> 16) & 0xFFFF;
+			r->type = R_BIN_RELOC_16;
+			break;
+		case R_AARCH64_MOVW_UABS_G2:
+		case R_AARCH64_MOVW_UABS_G2_NC:
+			SET(16);
+			r->addend = (sym_vaddr >> 32) & 0xFFFF;
+			r->type = R_BIN_RELOC_16;
+			break;
+		case R_AARCH64_MOVW_UABS_G3:
+			SET(16);
+			r->addend = (sym_vaddr >> 48) & 0xFFFF;
+			r->type = R_BIN_RELOC_16;
+			break;
+#if 0
+		case R_AARCH64_TLS_TPREL64:
+			SET(64);
+			r->type = R_BIN_RELOC_TLS;
+			break;
+#endif
 #if 0
 /* Instructions. */
-#define R_AARCH64_MOVW_UABS_G0		263
 #define R_AARCH64_MOVW_UABS_G0_NC	264
-#define R_AARCH64_MOVW_UABS_G1		265
 #define R_AARCH64_MOVW_UABS_G1_NC	266
-#define R_AARCH64_MOVW_UABS_G2		267
 #define R_AARCH64_MOVW_UABS_G2_NC	268
-#define R_AARCH64_MOVW_UABS_G3		269
 
 #define R_AARCH64_MOVW_SABS_G0		270
 #define R_AARCH64_MOVW_SABS_G1		271
