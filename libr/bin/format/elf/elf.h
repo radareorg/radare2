@@ -168,6 +168,7 @@ struct Elf_(obj_t) {
 	RVector g_sections; // RBinElfSection
 #endif
 	RVector cached_sections; // RBinSection
+	RBinElfSection *last_section; // RBinSection
 	bool libs_loaded;
 	RVector g_libs; // RBinElfLib
 	bool fields_loaded;
