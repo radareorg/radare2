@@ -200,6 +200,10 @@ typedef enum {
 	R_BIN_RELOC_48 = 48,
 	R_BIN_RELOC_64 = 64
 } RBinRelocType;
+#if 0
+R_BIN_RELOC_64     S + A        Pointers, addresses
+R_BIN_RELOC_PC64   S + A - P    Jumps, branches, GOT/PLT
+#endif
 
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
