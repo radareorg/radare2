@@ -5836,6 +5836,13 @@ static int cmd_af(RCore *core, const char *input) {
 					const char *ls = r_str_lchr (fcnname_aux, ' ');
 					char *fcnname = strdup (ls? ls: fcnname_aux);
 					if (fcnname) {
+                        if (strchr (fcnname, '.') != NULL) {
+							R_LOG_ERROR ("Function name in signature shouldn't contain dot");
+							free (fcnname);
+							free (fcnstr_copy);
+							free (fcnstr);
+							break;
+						}
 						// TODO: move this into r_anal_str_to_fcn()
 						if (strcmp (f->name, fcnname)) {
 							(void)__setFunctionName (core, addr, fcnname, false);
