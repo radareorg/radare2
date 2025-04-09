@@ -689,10 +689,12 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	return true;
 }
 
-// TODO: use a hashtable. and maybe just have a public api in rbin(obj|file) for that
-/// R2_590 this is O(n)
+// TODO: a hashtable is slower than a vector, using memoization is faster and takes less memory
 static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *name) {
 	if (eo->sections_loaded) {
+		if (eo->last_section && !strcmp (name, eo->last_section->name)) {
+			return eo->last_section;
+		}
 		RBinElfSection *sec;
 #if R2_590
 		R_VEC_FOREACH (eo->g_sections_vec, sec) {
@@ -700,6 +702,7 @@ static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *name) {
 		r_vector_foreach (&eo->g_sections, sec) {
 #endif
 			if (!strcmp (sec->name, name)) {
+				eo->last_section = sec;
 				return sec;
 			}
 		}
