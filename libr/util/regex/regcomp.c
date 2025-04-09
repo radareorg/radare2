@@ -137,7 +137,7 @@ R_API bool r_regex_match(const char *pattern, const char *flags, const char *tex
 	RRegex rx;
 	int re_flags = r_regex_flags (flags);
 	if (r_regex_init (&rx, pattern, re_flags)) {
-		eprintf ("r_regex_match: /%s/ fails to compile.\n", pattern);
+		R_LOG_ERROR ("r_regex_match: /%s/ fails to compile", pattern);
 		return false;
 	}
 	int rc = r_regex_exec (&rx, text, 0, 0, re_flags);
