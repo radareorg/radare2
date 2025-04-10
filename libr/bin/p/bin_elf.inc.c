@@ -611,6 +611,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		// instructions
 		case R_AARCH64_ADR_PREL_PG_HI21:
 			R_LOG_WARN ("Poorly supported AARCH64 instruction reloc type %d at 0x%08"PFMT64x, rel->type, rel->rva);
+			ADD (32, 0);
+			break;
 		case R_AARCH64_ADD_ABS_LO12_NC:
 		case R_AARCH64_CALL26:
 		case R_AARCH64_LDST32_ABS_LO12_NC:
@@ -619,39 +621,31 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			break;
 		case R_AARCH64_MOVW_UABS_G0:
 		case R_AARCH64_MOVW_UABS_G0_NC:
-			SET(16);
 			r->addend = sym_vaddr & 0xFFFF;
 			r->type = R_BIN_RELOC_16;
 			break;
 		case R_AARCH64_MOVW_UABS_G1:
 		case R_AARCH64_MOVW_UABS_G1_NC:
-			SET(16);
 			r->addend = (sym_vaddr >> 16) & 0xFFFF;
 			r->type = R_BIN_RELOC_16;
 			break;
 		case R_AARCH64_MOVW_UABS_G2:
 		case R_AARCH64_MOVW_UABS_G2_NC:
-			SET(16);
 			r->addend = (sym_vaddr >> 32) & 0xFFFF;
 			r->type = R_BIN_RELOC_16;
 			break;
 		case R_AARCH64_MOVW_UABS_G3:
-			SET(16);
 			r->addend = (sym_vaddr >> 48) & 0xFFFF;
 			r->type = R_BIN_RELOC_16;
 			break;
 #if 0
 		case R_AARCH64_TLS_TPREL64:
-			SET(64);
 			r->type = R_BIN_RELOC_TLS;
+			SET(64);
 			break;
 #endif
 #if 0
 /* Instructions. */
-#define R_AARCH64_MOVW_UABS_G0_NC	264
-#define R_AARCH64_MOVW_UABS_G1_NC	266
-#define R_AARCH64_MOVW_UABS_G2_NC	268
-
 #define R_AARCH64_MOVW_SABS_G0		270
 #define R_AARCH64_MOVW_SABS_G1		271
 #define R_AARCH64_MOVW_SABS_G2		272
