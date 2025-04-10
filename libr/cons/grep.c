@@ -725,42 +725,40 @@ R_API void r_cons_grepbuf(void) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
-	const char *in = buf;
-	int ret, l = 0, tl = 0;
-	bool show = false;
-	if (cons->context->filter) {
-		cons->context->buffer_len = 0;
-		R_FREE (cons->context->buffer);
+	RConsContext *ctx = cons->context;
+
+	if (ctx->filter) {
+		ctx->buffer_len = 0;
+		R_FREE (ctx->buffer);
 		return;
 	}
+
 	if (grep->colorcode) {
 		colorcode ();
 		grep->sort = 0;
 		grep->code = false;
 		return;
 	}
+
 	if (grep->code) {
-		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
+		char *sbuf = r_str_ndup (ctx->buffer, ctx->buffer_len);
 		if (sbuf) {
 			char *res = r_str_tokenize_json (sbuf);
-			if (!res) {
-				return;
-			}
 			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
 			free (res);
 			res = r_str_newf ("%s\n", nres);
 			free (nres);
 			free (sbuf);
 			if (res) {
-				cons->context->buffer_len = strlen (res);
-				cons->context->buffer_sz = cons->context->buffer_len;
-				free (cons->context->buffer);
-				cons->context->buffer = res;
+				ctx->buffer_len = strlen (res);
+				ctx->buffer_sz = ctx->buffer_len;
+				free (ctx->buffer);
+				ctx->buffer = res;
 			} else {
-				cons->context->buffer_len = 0;
-				cons->context->buffer_sz = 0;
-				free (cons->context->buffer);
-				cons->context->buffer = strdup ("");
+				ctx->buffer_len = 0;
+				ctx->buffer_sz = 0;
+				free (ctx->buffer);
+				ctx->buffer = strdup ("");
 			}
 		}
 		return;
@@ -772,126 +770,129 @@ R_API void r_cons_grepbuf(void) {
 		grep->less = 0;
 		return;
 	}
+
 	if (grep->ascart) {
-		char *sbuf = strdup (cons->context->buffer);
+		char *sbuf = strdup (ctx->buffer);
 		r_str_ansi_filter (sbuf, NULL, NULL, -1);
 		char *out = r_str_ss (sbuf, NULL, 0);
 		free (sbuf);
-		free (cons->context->buffer);
-		cons->context->buffer = out;
-		cons->context->buffer_len = strlen (out);
-		cons->context->buffer_sz = cons->context->buffer_len;
+		free (ctx->buffer);
+		ctx->buffer = out;
+		ctx->buffer_len = strlen (out);
+		ctx->buffer_sz = ctx->buffer_len;
 		return;
 	}
+
 	if (grep->zoom) {
-		char *sin = calloc (cons->context->buffer_len + 2, 4);
+		char *sin = calloc (ctx->buffer_len + 2, 4);
 		if (R_UNLIKELY (!sin)) {
 			grep->zoom = 0;
 			grep->zoomy = 0;
 			return;
 		}
-		strcpy (sin, cons->context->buffer);
-		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
+		strcpy (sin, ctx->buffer);
+		char *out = r_str_scale (buf, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
 		if (out) {
-			free (cons->context->buffer);
-			cons->context->buffer = out;
-			cons->context->buffer_len = strlen (out);
-			cons->context->buffer_sz = cons->context->buffer_len;
+			free (ctx->buffer);
+			ctx->buffer = out;
+			ctx->buffer_len = strlen (out);
+			ctx->buffer_sz = ctx->buffer_len;
 		}
 		grep->zoom = 0;
 		grep->zoomy = 0;
 		free (sin);
 		return;
 	}
+
 	if (grep->gron) {
-		char *a = strdup (cons->context->buffer);
+		char *a = strdup (ctx->buffer);
 		RJson *node = r_json_parse (a);
 		RStrBuf *sb = r_strbuf_new ("");
 		gron (sb, node, "json");
 		char *s = r_strbuf_drain (sb);
-		R_FREE (cons->context->buffer);
-		cons->context->buffer_len = 0;
-		cons->context->buffer_sz = 0;
+		R_FREE (ctx->buffer);
+		ctx->buffer_len = 0;
+		ctx->buffer_sz = 0;
 		r_cons_print (s);
-		in = buf = cons->context->buffer;
-		len = cons->context->buffer_len;
+		buf = ctx->buffer;
+		len = ctx->buffer_len;
 		r_json_free (node);
 		free (a);
 		free (s);
 		goto continuation;
 	}
+
 	if (grep->xml) {
-		// parse and indent xml
 		char *x = r_str_ndup (buf, len);
 		char *xi = r_xml_indent (x);
-		free (cons->context->buffer);
-		in = buf = cons->context->buffer = xi;
-		len = cons->context->buffer_len = strlen (xi);
+		free (ctx->buffer);
+		buf = ctx->buffer = xi;
+		len = ctx->buffer_len = strlen (xi);
 		free (x);
 		return;
 	}
+
 	if (grep->json) {
 		if (grep->json_path) {
-			char *u = sdb_json_get_str (cons->context->buffer, grep->json_path);
+			char *u = sdb_json_get_str (ctx->buffer, grep->json_path);
 			if (u) {
-				cons->context->buffer = u;
-				cons->context->buffer_len = strlen (u);
-				cons->context->buffer_sz = cons->context->buffer_len + 1;
+				ctx->buffer = u;
+				ctx->buffer_len = strlen (u);
+				ctx->buffer_sz = ctx->buffer_len + 1;
 				grep->json = false;
 				r_cons_newline ();
 			}
 			R_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
-				cons->context->pal.graph_false, // f
-				cons->context->pal.graph_true, // t
-				cons->context->pal.num, // k
-				cons->context->pal.comment, // v
+				ctx->pal.graph_false,
+				ctx->pal.graph_true,
+				ctx->pal.num,
+				ctx->pal.comment,
 				Color_RESET,
 				NULL
 			};
 			char *bb = strdup (buf);
 			r_str_ansi_filter (bb, NULL, NULL, -1);
-			char *out = (cons->context->grep.human)
+			char *out = (ctx->grep.human)
 				? r_print_json_human (bb)
 				: r_print_json_indent (bb, I (context->color_mode), "  ", palette);
 			free (bb);
 			if (!out) {
 				return;
 			}
-			free (cons->context->buffer);
-			cons->context->buffer = out;
-			cons->context->buffer_len = strlen (out);
-			cons->context->buffer_sz = cons->context->buffer_len + 1;
+			free (ctx->buffer);
+			ctx->buffer = out;
+			ctx->buffer_len = strlen (out);
+			ctx->buffer_sz = ctx->buffer_len + 1;
 			grep->json = false;
-			in = buf = out;
-			len = cons->context->buffer_len;
-			cons->context->grep_color = true;
-			// R2R db/cmd/cmd_iz
+			buf = out;
+			len = ctx->buffer_len;
+			ctx->grep_color = true;
 			R_FREE (grep->str);
-			cons->context->grep_color = false;
+			ctx->grep_color = false;
 			RConsGrepWord *gw = r_list_pop_head (grep->strings);
 			r_cons_grep_word_free (gw);
 			if (grep->hud) {
 				grep->hud = false;
-				r_cons_hud_string (cons->context->buffer);
+				r_cons_hud_string (ctx->buffer);
 				return;
 			}
 			if (grep->less) {
 				grep->less = 0;
-				r_cons_less_str (cons->context->buffer, NULL);
+				r_cons_less_str (ctx->buffer, NULL);
 				return;
 			}
 		}
 		if (r_list_empty (grep->strings)) {
 			return;
 		}
-		buf = cons->context->buffer;
-		len = cons->context->buffer_len;
+		buf = ctx->buffer;
+		len = ctx->buffer_len;
 		grep->range_line = 1;
 		goto continuation;
-		// cons->lines = ?? return 3;
 	}
+
 	if (grep->less) {
 		int less = grep->less;
 		grep->less = 0;
@@ -909,32 +910,26 @@ R_API void r_cons_grepbuf(void) {
 			}
 		} else {
 			r_cons_less_str (buf, NULL);
-			cons->context->buffer_len = 0;
-			cons->context->buffer_sz = 0;
-			R_FREE (cons->context->buffer);
+			ctx->buffer_len = 0;
+			ctx->buffer_sz = 0;
+			R_FREE (ctx->buffer);
 		}
 		return;
 	}
-	RStrBuf *ob = NULL;
-continuation:
-	ob = r_strbuf_new ("");
-	// if we modify cons->lines we should update I.context->buffer too
-	cons->lines = 0;
-	// used to count lines and change negative grep.line values
+
+continuation:;
+	
+	// Use a single buffer for output collection
+	RStrBuf *ob = r_strbuf_new ("");
+	r_strbuf_reserve (ob, len + 128);
+
+	// Count total lines for negative indices if needed
+	int total_lines = 0;
 	if ((!grep->range_line && grep->line < 0) || grep->range_line) {
-		int total_lines = 0;
-		while ((int) (size_t) (in - buf) < len) {
-			char *p = strchr (in, '\n');
-			if (!p) {
-				break;
-			}
-			l = p - in;
-			if (l > 0) {
-				in += l + 1;
-			} else {
-				in++;
-			}
+		const char *in_counter = buf;
+		while ((in_counter = memchr (in_counter, '\n', len - (in_counter - buf)))) {
 			total_lines++;
+			in_counter++;
 		}
 		if (!grep->range_line && grep->line < 0) {
 			grep->line = total_lines + grep->line;
@@ -948,110 +943,143 @@ continuation:
 			}
 		}
 	}
-	bool is_range_line_grep_only = grep->range_line != 2 && grep->str && *grep->str == '\0';
 
-	in = buf;
-	while ((int) (size_t) (in - buf) < len) {
-		char *p = strchr (in, '\n');
+	// Preallocate line buffers to avoid repeated allocations
+	const size_t max_line_len = R_MIN(8192, len + 1);
+	char *line_buf = malloc(max_line_len);
+	char *filtered_buf = malloc(max_line_len);
+	if (!line_buf || !filtered_buf) {
+		free(line_buf);
+		free(filtered_buf);
+		r_strbuf_free(ob);
+		return;
+	}
+
+	bool is_range_line_grep_only = grep->range_line != 2 && grep->str && *grep->str == '\0';
+	bool show = false;
+	const char *in = buf;
+	cons->lines = 0;
+
+	// Process each line more efficiently
+	while ((size_t)(in - buf) < len) {
+		const char *p = memchr(in, '\n', len - (in - buf));
 		if (!p) {
 			break;
 		}
-		l = p - in;
-		if ((!l && is_range_line_grep_only) || l > 0) {
-			char *tline = r_str_ndup (in, l);
-			if (cons->context->grep_color) {
-				tl = l;
+
+		size_t line_len = p - in;
+		if (line_len >= max_line_len) {
+			line_len = max_line_len - 1;
+		}
+
+		if ((!line_len && is_range_line_grep_only) || line_len > 0) {
+			memcpy (line_buf, in, line_len);
+			line_buf[line_len] = '\0';
+
+			size_t filtered_len;
+			if (!ctx->grep_color) {
+				r_str_ansi_filter (line_buf, &filtered_buf, NULL, line_len);
+				filtered_len = strlen (filtered_buf);
 			} else {
-				tl = r_str_ansi_filter (tline, NULL, NULL, l);
+				memcpy(filtered_buf, line_buf, line_len + 1);
+				filtered_len = line_len;
 			}
-			if (tl < 0) {
-				ret = -1;
-			} else {
-				ret = r_cons_grep_line (tline, tl);
-				if (!grep->range_line) {
-					if (grep->line == cons->lines) {
-						show = true;
-					}
-				} else if (grep->range_line == 1) {
-					if (grep->f_line == cons->lines) {
-						show = true;
-					}
-					if (grep->l_line == cons->lines) {
-						show = false;
-					}
-				} else {
+
+			int ret = r_cons_grep_line(filtered_buf, filtered_len);
+
+			if (!grep->range_line) {
+				show = (grep->line == cons->lines);
+			} else if (grep->range_line == 1) {
+				if (grep->f_line == cons->lines) {
 					show = true;
 				}
+				if (grep->l_line == cons->lines) {
+					show = false;
+				}
+			} else {
+				show = true;
 			}
+
 			if (grep->counter) {
 				show = false;
 			}
+
 			if ((!ret && is_range_line_grep_only) || ret > 0) {
 				if (show) {
-					char *str = r_str_ndup (tline, ret);
-					if (cons->context->grep_highlight) {
-						RListIter *iter;
-						RConsGrepWord *gw;
-						r_list_foreach (grep->strings, iter, gw) {
-							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, gw->str);
-							if (str && newstr) {
-								if (grep->icase) {
-									str = r_str_replace_icase (str, gw->str, newstr, 1, 1);
-								} else {
-									str = r_str_replace (str, gw->str, newstr, 1);
+					char *str = NULL;
+
+					if (ctx->grep_highlight) {
+						str = r_str_ndup(filtered_buf, ret);
+						if (str) {
+							RListIter *iter;
+							RConsGrepWord *gw;
+							r_list_foreach (grep->strings, iter, gw) {
+								char *newstr = r_str_newf(Color_INVERT"%s"Color_RESET, gw->str);
+								if (newstr) {
+									if (grep->icase) {
+										str = r_str_replace_icase(str, gw->str, newstr, 1, 1);
+									} else {
+										str = r_str_replace(str, gw->str, newstr, 1);
+									}
+									free(newstr);
 								}
 							}
-							free (newstr);
+							r_strbuf_append(ob, str);
+							r_strbuf_append(ob, "\n");
+							free(str);
 						}
-					}
-					if (str) {
-						r_strbuf_append (ob, str);
-						r_strbuf_append (ob, "\n");
-						free (str);
+					} else {
+						r_strbuf_append_n(ob, filtered_buf, ret);
+						r_strbuf_append(ob, "\n");
 					}
 				}
+
 				if (!grep->range_line) {
 					show = false;
 				}
+
 				cons->lines++;
-			} else if (ret < 0) {
-				free (tline);
-				r_strbuf_free (ob);
-				return;
 			}
-			free (tline);
-			in += l + 1;
+
+			in += line_len + 1;
 		} else {
 			in++;
 		}
 	}
 
-	int ob_len = r_strbuf_length (ob);
-	cons->context->buffer_len = ob_len;
+	// Free temporary buffers
+	free(line_buf);
+	free(filtered_buf);
 
-	// count before uniq
-	// XXX dupe from the code below
+	int ob_len = r_strbuf_length(ob);
+	ctx->buffer_len = ob_len;
+
+	// Handle counter options
 	if (grep->counter && !grep->sort_uniq) {
-		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		free (cons->context->buffer);
-		char *cntstr = r_str_newf ("%d\n", cnt);
-		size_t cntstr_len = cntstr? strlen (cntstr): 0;
-		cons->context->buffer = cntstr;
-		cons->context->buffer_len = cntstr_len;
-		cons->context->buffer_sz = cntstr_len + 1;
+		int cnt = grep->charCounter ? strlen(ctx->buffer) : cons->lines;
+		free(ctx->buffer);
+		char *cntstr = r_str_newf("%d\n", cnt);
+		size_t cntstr_len = cntstr ? strlen(cntstr) : 0;
+		ctx->buffer = cntstr;
+		ctx->buffer_len = cntstr_len;
+		ctx->buffer_sz = cntstr_len + 1;
 		cons->num->value = cons->lines;
-		r_strbuf_free (ob);
+		r_strbuf_free(ob);
 		return;
 	}
-	if (ob_len >= cons->context->buffer_sz) {
-		cons->context->buffer_sz = ob_len + 1;
-		cons->context->buffer = r_strbuf_drain (ob);
+
+	// Update the buffer with processed content
+	if (ob_len >= ctx->buffer_sz) {
+		ctx->buffer_sz = ob_len + 1;
+		free(ctx->buffer);
+		ctx->buffer = r_strbuf_drain(ob);
 	} else {
-		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
-		cons->context->buffer[ob_len] = 0;
-		r_strbuf_free (ob);
-		ob = NULL;
+		memcpy(ctx->buffer, r_strbuf_getbin(ob, NULL), ob_len);
+		ctx->buffer[ob_len] = 0;
+		r_strbuf_free(ob);
 	}
+
+	// Handle sorting
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list) \
 		if (list) { \
@@ -1066,46 +1094,46 @@ continuation:
 			} \
 		}
 		RListIter *iter;
-		char *ptr = cons->context->buffer;
+		char *ptr = ctx->buffer;
 		char *str;
-		RConsContext *ctx = cons->context;
 		ctx->sorted_column = grep->sort;
 
 		if (ctx->sorted_lines) {
 			if (grep->sort != -1) {
-				r_list_sort (ctx->sorted_lines, cmp);
+				r_list_sort(ctx->sorted_lines, cmp);
 			}
 			if (grep->sort_invert) {
-				r_list_reverse (ctx->sorted_lines);
+				r_list_reverse(ctx->sorted_lines);
 			}
 			if (grep->sort_uniq) {
-				r_list_uniq_inplace (ctx->sorted_lines, cmpstrings);
-				r_list_free (ctx->unsorted_lines);
+				r_list_uniq_inplace(ctx->sorted_lines, cmpstrings);
+				r_list_free(ctx->unsorted_lines);
 				ctx->unsorted_lines = NULL;
 			}
-			const int nl = r_list_length (ctx->sorted_lines);
-			cons->context->buffer_len = 0;
-			INSERT_LINES (ctx->unsorted_lines);
-			INSERT_LINES (ctx->sorted_lines);
-			cons->context->buffer_len = (ptr - cons->context->buffer);
+			const int nl = r_list_length(ctx->sorted_lines);
+			ctx->buffer_len = 0;
+			INSERT_LINES(ctx->unsorted_lines);
+			INSERT_LINES(ctx->sorted_lines);
+			ctx->buffer_len = (ptr - ctx->buffer);
 			cons->lines = nl;
-			r_list_free (ctx->sorted_lines);
+			r_list_free(ctx->sorted_lines);
 			ctx->sorted_lines = NULL;
-			r_list_free (ctx->unsorted_lines);
+			r_list_free(ctx->unsorted_lines);
 			ctx->unsorted_lines = NULL;
 		}
 	}
-	// count after uniq
+
+	// Counter with sort_uniq
 	if (grep->counter && grep->sort_uniq) {
-		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		free (cons->context->buffer);
-		char *cntstr = r_str_newf ("%d\n", cnt);
-		size_t cntstr_len = cntstr? strlen (cntstr): 0;
-		cons->context->buffer = cntstr;
-		cons->context->buffer_len = cntstr_len;
-		cons->context->buffer_sz = cntstr_len + 1;
+		int cnt = grep->charCounter ? strlen(ctx->buffer) : cons->lines;
+		free(ctx->buffer);
+		char *cntstr = r_str_newf("%d\n", cnt);
+		size_t cntstr_len = cntstr ? strlen(cntstr) : 0;
+		ctx->buffer = cntstr;
+		ctx->buffer_len = cntstr_len;
+		ctx->buffer_sz = cntstr_len + 1;
 		cons->num->value = cons->lines;
-		r_strbuf_free (ob);
+		r_strbuf_free(ob);
 		return;
 	}
 }
