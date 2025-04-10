@@ -374,8 +374,9 @@ R_API void r_cons_grep_expression(const char *str) {
 			if (!grep->str) {
 				grep->str = (char *)strdup (ptr);
 			} else {
-				grep->str = r_str_append (grep->str, ",");
-				grep->str = r_str_append (grep->str, ptr);
+				char *s = r_str_newf (",%s", ptr);
+				grep->str = r_str_append (grep->str, s);
+				free (s);
 			}
 			do {
 				optr = ptr;
@@ -488,7 +489,14 @@ static int cmp(const void *a, const void *b) {
 	const char *ca = r_str_trim_head_ro (a);
 	const char *cb = r_str_trim_head_ro (b);
 	if (!a || !b) {
-		return (int) (size_t) ((char *) a - (char *) b);
+		ptrdiff_t diff = (char*)a - (char*)b;
+		if (diff > INT_MAX) {
+			return INT_MAX;
+		}
+		if (diff < INT_MIN) {
+			return INT_MIN;
+		}
+		return (int)diff;
 	}
 	RConsContext *ctx = r_cons_context ();
 	if (ctx->sorted_column > 0) {
@@ -735,6 +743,9 @@ R_API void r_cons_grepbuf(void) {
 		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
 		if (sbuf) {
 			char *res = r_str_tokenize_json (sbuf);
+			if (!res) {
+				return;
+			}
 			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
 			free (res);
 			res = r_str_newf ("%s\n", nres);
