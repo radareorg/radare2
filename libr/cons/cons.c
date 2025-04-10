@@ -1076,29 +1076,28 @@ static void optimize(RConsContext *ctx) {
 			escape_seq[k++] = buf[i++]; // ESC
 			escape_seq[k++] = buf[i++]; // [
 
-			while (i < len && k < sizeof(escape_seq) - 1) {
+			while (i < len && k < sizeof (escape_seq) - 1) {
 				char c = buf[i++];
-				if (j + k > buf_sz) { goto overflow; } // Check space before copy
+				if (j + k > buf_sz) {
+					goto overflow;
+				}
 				escape_seq[k++] = c;
-				// Check for command character (typically A-Z, a-z)
 				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 					break;
 				}
 			}
-			escape_seq[k] = '\0'; // Null-terminate for potential processing
+			escape_seq[k] = '\0';
 
-			// --- Core Optimization Decision ---
 			// TODO: Implement logic here to determine if escape_seq should be kept,
 			// modified, or discarded based on context or previous sequences.
 			// For now, we assume it should always be kept.
 			bool keep_sequence = true;
 			if (keep_sequence) {
-				// Check buffer bounds before writing the sequence back
 				if (j + k <= buf_sz) {
 					memcpy (buf + j, escape_seq, k);
 					j += k;
 				} else {
-					goto overflow; // Not enough space
+					goto overflow;
 				}
 			}
 		} else {
