@@ -332,12 +332,19 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "print disasm summary, showing referenced names",
-	"pdsb", " [N]", "basic block summary",
-	"pdsf", "[sjq]", "show function summary of strings, calls, variables, references..",
-	"pdss", " [N]", "string summary in current function",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_pds = {
+	"Usage:", "pds[*|b|f|s] [N]", "Print strings in the disassembly",
+	"pds", "[?]", "print disasm summary, showing referenced names",
+	"pds*", "[?]", "print r2 commands addings comments for each string reference",
+	"pdsb", " [N]", "basic block summary",
+	"pdsf", "[sjq]", "show function summary of strings, calls, variables, references..",
+	"pdss", " [N]", "string summary in current function",
 	NULL
 };
 
@@ -7173,10 +7180,27 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_contains (core, help_msg_pd, "pds");
+				r_core_cmd_help (core, help_msg_pds);
+			} else if (input[2] == '*') {
+				char *s = r_core_cmd_str (core, "pdsf@e:scr.color=0");
+				r_str_ansi_filter (s, NULL, NULL, strlen (s));
+				RList *items = r_str_split_list (s, "\n", 0);
+				char *it;
+				RListIter *iter;
+				r_list_foreach (items, iter, it) {
+					if (r_str_startswith (it, "0x") && strchr (it, '"')) {
+						char *sp = strchr (it, ' ');
+						if (sp) {
+							*sp = 0;
+							r_cons_printf ("'@%s'CC string: %s\n", it, sp + 1);
+						}
+					}
+				}
+				r_list_free (items);
+				free (s);
 			} else {
 				if (input[2] && input[3] == '?') {
-					r_core_cmd_help_contains (core, help_msg_pd, "pds");
+					r_core_cmd_help (core, help_msg_pds);
 				} else {
 					disasm_strings (core, input, NULL);
 				}
