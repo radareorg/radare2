@@ -679,6 +679,10 @@ static RList *imports(RBinFile *bf) {
 		R_LOG_WARN ("invalid amount of imports");
 		return NULL;
 	}
+	if (importedLibraryCount > (UT32_MAX / 24)) {
+		R_LOG_WARN ("invalid amount of libraries");
+		return NULL;
+	}
 	RBinImport **ary = calloc (sizeof (RBinImport), totalImportedSymbolCount);
 	int i, j;
 
@@ -692,8 +696,18 @@ static RList *imports(RBinFile *bf) {
 		ut32 libSymCount = r_buf_read_be32_at (bf->buf, at + 12);
 		ut32 firstSym = r_buf_read_be32_at (bf->buf, at + 16);
 
+		// Check for invalid firstSym or libSymCount to prevent integer overflow
+		if (firstSym > totalImportedSymbolCount ||
+				libSymCount > totalImportedSymbolCount ||
+				firstSym > (UT32_MAX - libSymCount)) {
+			continue;
+		}
+
 		for (j = firstSym; j < firstSym + libSymCount && j < totalImportedSymbolCount; j++) {
-			at = pef->ldrsec + 56 + 24 * importedLibraryCount + 4 * j;
+			// Recalculate 'at' safely using checked values
+			ut32 offset = 56 + 24 * importedLibraryCount;
+			at = pef->ldrsec + offset + 4 * j;
+
 			ut8 kind = 0;
 			r_buf_read_at (bf->buf, at, &kind, 1);
 			ut32 symNamePtr = r_buf_read_be32_at (bf->buf, at) & 0xffffff;
