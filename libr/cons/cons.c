@@ -18,27 +18,27 @@ static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? ma
 #define I (r_cons_instance)
 #define C (getctx ())
 
-static inline void cons_input_state_init(InputState *state) {
+static inline void init_cons_input(InputState *state) {
 	state->readbuffer = NULL;
 	state->readbuffer_length = 0;
 	state->bufactive = true;
 }
 
-static RConsContext *getctx(void) {
+static inline void init_cons_instance(void) {
 	if (R_UNLIKELY (!r_cons_instance)) {
 		r_cons_instance = &g_cons_instance;
 		r_cons_instance->context = &r_cons_context_default;
-		cons_input_state_init (&r_cons_instance->input_state);
+		init_cons_input (&r_cons_instance->input_state);
 	}
+}
+
+static RConsContext *getctx(void) {
+	init_cons_instance ();
 	return r_cons_instance->context;
 }
 
 R_API InputState *r_cons_input_state(void) {
-	if (R_UNLIKELY (!r_cons_instance)) {
-		r_cons_instance = &g_cons_instance;
-		r_cons_instance->context = &r_cons_context_default;
-		cons_input_state_init (&r_cons_instance->input_state);
-	}
+	init_cons_instance ();
 	return &r_cons_instance->input_state;
 }
 
@@ -138,7 +138,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	}
 }
 
-static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
+static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	context->breaked = false;
 	// context->cmd_depth = R_CONS_CMD_DEPTH + 1;
@@ -722,8 +722,8 @@ R_API RCons *r_cons_new(void) {
 	I->maxpage = 102400;
 
 	r_cons_context_reset ();
-	cons_context_init (C, NULL);
-	cons_input_state_init (&I->input_state);
+	init_cons_context (C, NULL);
+	init_cons_input (&I->input_state);
 
 	r_cons_get_size (&I->pagesize);
 	I->num = NULL;
@@ -978,16 +978,15 @@ R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	if (!context) {
 		return NULL;
 	}
-	cons_context_init (context, parent);
+	init_cons_context (context, parent);
 	return context;
 }
 
 R_API void r_cons_context_free(RConsContext *context) {
-	if (!context) {
-		return;
+	if (R_LIKELY (context)) {
+		cons_context_deinit (context);
+		free (context);
 	}
-	cons_context_deinit (context);
-	free (context);
 }
 
 R_API void r_cons_context_load(RConsContext *context) {
@@ -1010,12 +1009,11 @@ R_API bool r_cons_context_is_main(void) {
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
-	if (!context) {
-		return;
-	}
-	context->breaked = true;
-	if (context->event_interrupt) {
-		context->event_interrupt (context->event_interrupt_data);
+	if (R_LIKELY (context)) {
+		context->breaked = true;
+		if (context->event_interrupt) {
+			context->event_interrupt (context->event_interrupt_data);
+		}
 	}
 }
 
