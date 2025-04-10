@@ -186,10 +186,6 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 	ut32 loopDone = 0;
 	int i;
 
-	if (0) {
-		printf ("           Instr     Op    Operand           codeA dataA rSymI rAddr\n");
-	}
-
 #define dbg(name, format, ...) \
 	if (0) { \
 		char buf[50]; \
@@ -216,7 +212,8 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 		ut32 longop = 0;
 		if (op >= 0xa000) {
 			if (pc >= instCount) {
-				return 0;
+				r_list_free (ret);
+				return NULL;
 			}
 			longop = ((ut32)op << 16) | r_buf_read_be16_at (b, at + 2 * pc++);
 		}
@@ -322,6 +319,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("RPT", "i=%d,rpt=%d", blockCount, repeatCount);
 
 			if (loopInstruct != UT32_MAX && loopInstruct != pc) {
+				r_list_free (ret);
 				return NULL; // nested loop
 			}
 			loopInstruct = pc;
@@ -332,6 +330,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 				loopDone++;
 				pc--; // rewind over "op"
 				if (blockCount > pc) {
+					r_list_free (ret);
 					return NULL; // can't go back this far
 				}
 				pc -= blockCount;
@@ -355,6 +354,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("LRPT", "i=%d,rpt=%d", blockCount, repeatCount);
 
 			if (loopInstruct != UT32_MAX && loopInstruct != pc) {
+				r_list_free (ret);
 				return NULL; // nested loop
 			}
 			loopInstruct = pc;
@@ -365,6 +365,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 				loopDone++;
 				pc -= 2; // rewind over "longop"
 				if (blockCount > pc) {
+					r_list_free (ret);
 					return NULL; // can't go back this far
 				}
 				pc -= blockCount;
@@ -386,6 +387,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("LSEC", "LDTIS,sct=%d", index);
 			dataA = index;
 		} else {
+			r_list_free (ret);
 			return NULL;
 		}
 	}
@@ -439,15 +441,21 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 		if (sec->kind == 2) { // pidata, extract now
 			void *pac = malloc (sec->lenDisk);
-			sec->unpack = malloc (sec->lenUnpack);
+			sec->unpack = sec->lenUnpack > 0 ? malloc (sec->lenUnpack) : NULL;
 			if (!pac || !sec->unpack) {
+				free (pac);
+				free (sec->unpack);
 				return false;
 			}
 			st64 n = r_buf_read_at (bf->buf, sec->offset, pac, sec->lenDisk);
 			if (n != sec->lenDisk) {
+				free (pac);
+				free (sec->unpack);
 				return false;
 			}
 			if (unpack_pidata (sec->unpack, sec->lenUnpack, pac, sec->lenDisk)) {
+				free (pac);
+				free (sec->unpack);
 				return false;
 			}
 			free (pac);
@@ -459,14 +467,43 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 totalImportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 28);
 	ut32 relocSecCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 32);
 	ut32 relocInstrOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 36);
+	if (importedLibraryCount > 0x10000000 || totalImportedSymbolCount > 0x10000000 || relocSecCount > 0x10000000) {
+		// integer overflow prevented
+		return false;
+	}
+	// Calculate safely to avoid overflow
+	ut64 at_offset = 56;
+	at_offset += (ut64)24 * importedLibraryCount;
+	at_offset += (ut64)4 * totalImportedSymbolCount;
+	at_offset += (ut64)12 * i;
+
+	// Check if the calculated offset would overflow ut32
+	if (at_offset > UT32_MAX || pef->ldrsec > UT32_MAX - at_offset) {
+		return false;
+	}
+
+	ut32 at = pef->ldrsec + (ut32)at_offset;
 
 	for (i = 0; i < relocSecCount; i++) {
-		ut32 at = pef->ldrsec + 56 + 24 * importedLibraryCount + 4 * totalImportedSymbolCount + 12 * i;
+		// Calculate safely to avoid overflow
+		ut64 at_offset = 56;
+		at_offset += (ut64)24 * importedLibraryCount;
+		at_offset += (ut64)4 * totalImportedSymbolCount;
+		at_offset += (ut64)12 * i;
+
+		// Check if the calculated offset would overflow ut32
+		if (at_offset > UT32_MAX || pef->ldrsec > UT32_MAX - at_offset) {
+			return false;
+		}
+
+		ut32 at = pef->ldrsec + (ut32)at_offset;
 		ut16 sec = r_buf_read_be16_at (bf->buf, at);
 		ut32 instCount = r_buf_read_be32_at (bf->buf, at + 4);
 		ut32 firstInst = r_buf_read_be32_at (bf->buf, at + 8);
 
-		pef->sec[sec].relocs = do_reloc_bytecode (bf->buf, pef->ldrsec + relocInstrOffset + firstInst, instCount);
+		if (sec < pef->nsec) {
+			pef->sec[sec].relocs = do_reloc_bytecode (bf->buf, pef->ldrsec + relocInstrOffset + firstInst, instCount);
+		}
 	}
 
 	return true;
@@ -684,6 +721,9 @@ static RList *imports(RBinFile *bf) {
 		return NULL;
 	}
 	RBinImport **ary = calloc (sizeof (RBinImport), totalImportedSymbolCount);
+	if (!ary) {
+		return NULL;
+	}
 	int i, j;
 
 	for (i = 0; i < totalImportedSymbolCount; i++) {
