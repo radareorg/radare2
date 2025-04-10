@@ -1053,50 +1053,83 @@ R_API void r_cons_echo(const char *msg) {
 	}
 }
 
-// TODO: must be called twice to remove all unnecessary reset codes. maybe adding the last two words would be faster
-// TODO remove all the strdup
-// TODO remove the slow memmove
-static void optimize(void) {
-	char *buf = C->buffer;
-	int len = C->buffer_len;
-	int i;
-	int escape_n = 0;
-	char escape[32];
-	bool onescape = false;
-	char *oldstr = NULL;
-	for (i = 0; i < len; i++) {
-		if (onescape) {
-			escape[escape_n++] = buf[i];
-			escape[escape_n] = 0;
-			if (buf[i] == 'm' || buf[i] == 'K' || buf[i] == 'L') {
-				int pos = (i - escape_n);
-			// 	eprintf ("JJJ(%s) (%s)%c", escape + 1, oldstr?oldstr+1:"", 10);
-				if (oldstr && !strcmp (escape, oldstr)) {
-					// trim str
-					memmove (buf + pos + 1, buf + i + 1, len - i + 1);
-					i -= escape_n - 1;
-					len -= escape_n;
+static void optimize(RConsContext *ctx) {
+	char *buf = ctx->buffer;
+	int len = ctx->buffer_len;
+	if (len < 1) {
+		return;
+	}
+
+	int i = 0;
+	int j = 0;
+	const int buf_sz = ctx->buffer_sz;
+
+	while (i < len) {
+		if (buf[i] == 0x1b && i + 1 < len && buf[i+1] == '[') {
+			char escape_seq[32];
+			int k = 0;
+
+			// Copy ESC and [
+			if (j + 2 > buf_sz) {
+				goto overflow;
+			}
+			escape_seq[k++] = buf[i++]; // ESC
+			escape_seq[k++] = buf[i++]; // [
+
+			while (i < len && k < sizeof (escape_seq) - 1) {
+				char c = buf[i++];
+				if (j + k > buf_sz) {
+					goto overflow;
 				}
-				free (oldstr);
-				oldstr = strdup (escape);
-			//	eprintf ("ERN (%d) %s%c", pos, escape, 10);
-				onescape = false;
-			} else {
-				if (escape_n + 1 >= sizeof (escape)) {
-					escape_n = 0;
-					onescape = false;
+				escape_seq[k++] = c;
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+					break;
 				}
 			}
-		} else if (buf[i] == 0x1b) {
-			escape_n = 0;
-			onescape = true;
-			escape[escape_n++] = buf[i];
-			escape[escape_n] = 0;
+			escape_seq[k] = '\0';
+
+			// TODO: Implement logic here to determine if escape_seq should be kept,
+			// modified, or discarded based on context or previous sequences.
+			// For now, we assume it should always be kept.
+			bool keep_sequence = true;
+			if (keep_sequence) {
+				if (j + k <= buf_sz) {
+					memcpy (buf + j, escape_seq, k);
+					j += k;
+				} else {
+					goto overflow;
+				}
+			}
+		} else {
+			if (j < buf_sz) {
+				buf[j++] = buf[i++];
+			} else {
+				goto overflow;
+			}
 		}
 	}
-	// eprintf ("FROM %d TO %d (%d)%c", C->buffer_len, len, codes, 10);
-	C->buffer_len = len;
-	free (oldstr);
+
+	if (j < ctx->buffer_len) {
+		ctx->buffer_len = j;
+		if (j < buf_sz) {
+			buf[j] = '\0';
+		}
+	}
+	return;
+
+overflow:
+	R_LOG_WARN ("Buffer overflow during ANSI optimization, output truncated");
+	if (j <= buf_sz) {
+		ctx->buffer_len = j;
+		if (j < buf_sz) {
+			buf[j] = '\0';
+		}
+	} else {
+		ctx->buffer_len = buf_sz > 0 ? buf_sz -1 : 0;
+		if (ctx->buffer_len >= 0 && buf_sz > 0) {
+			buf[ctx->buffer_len] = '\0';
+		}
+	}
 }
 
 R_API char *r_cons_drain(void) {
@@ -1108,13 +1141,15 @@ R_API char *r_cons_drain(void) {
 }
 
 R_API void r_cons_flush(void) {
+	RConsContext *ctx = getctx ();
+	if (!ctx) {
+		r_cons_context_reset ();
+		ctx = getctx ();
+	}
 	if (!r_cons_instance) {
 		r_cons_instance = &g_cons_instance;
 	}
 	const char *tee = I->teefile;
-	if (!C) {
-		r_cons_context_reset ();
-	}
 	if (C->noflush) {
 		return;
 	}
@@ -1122,51 +1157,52 @@ R_API void r_cons_flush(void) {
 		r_cons_reset ();
 		return;
 	}
-	if (!r_list_empty (C->marks)) {
-		r_list_free (C->marks);
-		C->marks = r_list_newf ((RListFree)r_cons_mark_free);
+	if (!r_list_empty (ctx->marks)) {
+		r_list_free (ctx->marks);
+		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	}
-	if (lastMatters () && !C->lastMode) {
+	if (lastMatters () && !ctx->lastMode) {
 		// snapshot of the output
-		if (C->buffer_len > C->lastLength) {
-			free (C->lastOutput);
-			C->lastOutput = malloc (C->buffer_len + 1);
+		if (ctx->buffer_len > ctx->lastLength) {
+			free (ctx->lastOutput);
+			ctx->lastOutput = malloc (ctx->buffer_len + 1);
 		}
-		C->lastLength = C->buffer_len;
-		memcpy (C->lastOutput, C->buffer, C->buffer_len);
+		ctx->lastLength = ctx->buffer_len;
+		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
 	} else {
-		C->lastMode = false;
+		ctx->lastMode = false;
 	}
-	if (I->optimize) {
+	if (I->optimize > 0) {
 		// compress output (45 / 250 KB)
-		optimize ();
+		optimize (C);
 		if (I->optimize > 1) {
-			optimize ();
+			optimize (C);
 		}
 	}
+
 	r_cons_filter ();
-	if (C->buffer_len < 1) {
+	if (ctx->buffer_len < 1) {
 		r_cons_reset ();
 		return;
 	}
 	if (r_cons_is_interactive () && I->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (C->pageable && C->buffer && I->pager && *I->pager && C->buffer_len > 0 && r_str_char_count (C->buffer, '\n') >= I->rows) {
-			C->buffer[C->buffer_len - 1] = 0;
+		if (ctx->pageable && ctx->buffer && I->pager && *I->pager && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= I->rows) {
+			ctx->buffer[ctx->buffer_len - 1] = 0;
 			if (!strcmp (I->pager, "..")) {
-				char *str = r_str_ndup (C->buffer, C->buffer_len);
-				C->pageable = false;
+				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
+				ctx->pageable = false;
 				r_cons_less_str (str, NULL);
 				r_cons_reset ();
 				free (str);
 				return;
 			} else {
-				r_sys_cmd_str_full (I->pager, C->buffer, -1, NULL, NULL, NULL);
+				r_sys_cmd_str_full (I->pager, ctx->buffer, -1, NULL, NULL, NULL);
 				r_cons_reset ();
 			}
-		} else if (I->maxpage > 0 && C->buffer_len > I->maxpage) {
+		} else if (I->maxpage > 0 && ctx->buffer_len > I->maxpage) {
 #if COUNT_LINES
-			char *buffer = C->buffer;
+			char *buffer = ctx->buffer;
 			int i, lines = 0;
 			for (i = 0; buffer[i]; i++) {
 				if (buffer[i] == '\n') {
@@ -1179,7 +1215,7 @@ R_API void r_cons_flush(void) {
 			}
 #else
 			char buf[8];
-			r_num_units (buf, sizeof (buf), C->buffer_len);
+			r_num_units (buf, sizeof (buf), ctx->buffer_len);
 			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
 				r_cons_reset ();
 				return;
@@ -1192,7 +1228,7 @@ R_API void r_cons_flush(void) {
 	if (R_STR_ISNOTEMPTY (tee)) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
-			if (C->buffer_len != fwrite (C->buffer, 1, C->buffer_len, d)) {
+			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
 				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
 			}
 			fclose (d);
@@ -1206,10 +1242,10 @@ R_API void r_cons_flush(void) {
 		if (I->linesleep > 0 && I->linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, I->pagesize);
-			char *ptr = C->buffer;
+			char *ptr = ctx->buffer;
 			char *nl = strchr (ptr, '\n');
-			int len = C->buffer_len;
-			C->buffer[C->buffer_len] = 0;
+			int len = ctx->buffer_len;
+			ctx->buffer[ctx->buffer_len] = 0;
 			r_cons_break_push (NULL, NULL);
 			while (nl && !r_cons_is_breaked ()) {
 				__cons_write (ptr, nl - ptr + 1);
@@ -1220,13 +1256,13 @@ R_API void r_cons_flush(void) {
 				nl = strchr (ptr, '\n');
 				i++;
 			}
-			__cons_write (ptr, C->buffer + len - ptr);
+			__cons_write (ptr, ctx->buffer + len - ptr);
 			r_cons_break_pop ();
 		} else {
-			__cons_write (C->buffer, C->buffer_len);
+			__cons_write (ctx->buffer, ctx->buffer_len);
 		}
 	} else {
-		__cons_write (C->buffer, C->buffer_len);
+		__cons_write (ctx->buffer, ctx->buffer_len);
 	}
 
 	r_cons_reset ();
@@ -1234,10 +1270,10 @@ R_API void r_cons_flush(void) {
 		eprintf ("\n");
 		I->newline = false;
 	}
-	if (C->tmp_html) {
-		C->is_html = C->was_html;
-		C->tmp_html = false;
-		C->was_html = false;
+	if (ctx->tmp_html) {
+		ctx->is_html = ctx->was_html;
+		ctx->tmp_html = false;
+		ctx->was_html = false;
 	}
 }
 
