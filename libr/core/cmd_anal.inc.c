@@ -14064,12 +14064,12 @@ static void cmd_aaa(RCore *core, const char *input) {
 		goto jacuzzi;
 	}
 	ut64 curseek = core->addr;
-	logline (core, 4, "Analyze all flags starting with sym. and entry0 (aa)");
+	logline (core, 5, "Analyze all flags starting with sym. and entry0 (aa)");
 	r_cons_break_push (NULL, NULL);
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	bool anal_imports = false;
 	if (r_config_get_b (core->config, "anal.imports")) {
-		logline (core, 8, "Analyze imports (af@@@i)");
+		logline (core, 10, "Analyze imports (af@@@i)");
 		r_core_cmd0 (core, "af@@@i");
 		anal_imports = true;
 	}
@@ -14084,7 +14084,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// TODO: should not be run sometimes
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
-		logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
+		logline (core, 15, "Analyze all functions arguments/locals (afva@@@F)");
 		// r_core_cmd0 (core, "afva@@f");
 		r_core_cmd0 (core, "afva@@@F");
 	}
@@ -14106,9 +14106,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	if (*input == 'a') { // "aaa" .. which is checked just in the case above
 		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
-			logline (core, 30, "Find function and symbol names from golang binaries (aang)");
+			logline (core, 20, "Find function and symbol names from golang binaries (aang)");
 			r_core_anal_autoname_all_golang_fcns (core);
-			logline (core, 35, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+			logline (core, 25, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 			r_core_cmd0 (core, "aF @@@F:sym.go.*");
 		}
 		r_core_task_yield (&core->tasks);
@@ -14131,7 +14131,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			goto jacuzzi;
 		}
 
-		logline (core, 40, "Analyze function calls (aac)");
+		logline (core, 30, "Analyze function calls (aac)");
 		(void)cmd_anal_calls (core, "", false, false); // "aac"
 		r_core_seek (core, curseek, true);
 		// R_LOG_INFO ("Analyze data refs as code (LEA)");
@@ -14141,7 +14141,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			goto jacuzzi;
 		}
 		if (is_unknown_file (core)) {
-			logline (core, 45, "find and analyze function preludes (aap)");
+			logline (core, 35, "find and analyze function preludes (aap)");
 			(void)r_core_search_preludes (core, false); // "aap"
 			didAap = true;
 			r_core_task_yield (&core->tasks);
@@ -14150,18 +14150,18 @@ static void cmd_aaa(RCore *core, const char *input) {
 			}
 		}
 
-		logline (core, 50, "Analyze len bytes of instructions for references (aar)");
+		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked ()) {
 			goto jacuzzi;
 		}
 		if (is_apple_target (core)) {
-			logline (core, 55, "Check for objc references (aao)");
+			logline (core, 45, "Check for objc references (aao)");
 			cmd_anal_objc (core, input + 1, true);
 		}
 		r_core_task_yield (&core->tasks);
-		logline (core, 60, "Finding and parsing C++ vtables (avrr)");
+		logline (core, 50, "Finding and parsing C++ vtables (avrr)");
 		r_core_cmd_call (core, "avrr");
 		logline (core, 65, "Analyzing methods (af @@ method.*)");
 		r_core_cmd0 (core, "af @@ method.*");
@@ -14175,7 +14175,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 
 		if (!didAap && isPreludableArch) {
 			didAap = true;
-			logline (core, 67, "Finding function preludes (aap)");
+			logline (core, 60, "Finding function preludes (aap)");
 			(void)r_core_search_preludes (core, false); // "aap"
 			r_core_task_yield (&core->tasks);
 		}
@@ -14192,7 +14192,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 				// if (!r_str_startswith (asm_arch, "hex"))  maybe?
 				// XXX moving this oustide the x86 guard breaks some tests, missing types
 			if (cfg_debug) {
-				logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
+				logline (core, 65, "Skipping function emulation in debugger mode (aaef)");
 				// nothing to do
 			} else {
 				if (r_config_get_b (core->config, "anal.emumem")) {
@@ -14254,14 +14254,14 @@ static void cmd_aaa(RCore *core, const char *input) {
 		}
 		r_core_task_yield (&core->tasks);
 
-		logline (core, 92, "Propagate noreturn information (aanr)");
+		logline (core, 93, "Propagate noreturn information (aanr)");
 		r_core_anal_propagate_noreturn (core, UT64_MAX);
 		r_core_task_yield (&core->tasks);
 
 		// apply dwarf function information
 		Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
 		if (dwarf_sdb) {
-			logline (core, 94, "Integrate dwarf function information");
+			logline (core, 95, "Integrate dwarf function information");
 			r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
 		}
 
@@ -14277,10 +14277,10 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "anal.types.constraint", true);
 			if (input[2] == 'a') { // "aaaa"
-				logline (core, 98, "Reanalizing graph references to adjust functions count (aarr)");
+				logline (core, 97, "Reanalizing graph references to adjust functions count (aarr)");
 				r_core_cmd_call (core, "aarr");
 				// const char *mode = core->anal->opt.slow? "slow": "fast";
-				logline (core, 99, "Autoname all functions (.afna@@c:afla)");
+				logline (core, 98, "Autoname all functions (.afna@@c:afla)");
 				r_core_cmd0 (core, ".afna@@c:afla");
 			}
 		} else {
