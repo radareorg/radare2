@@ -14286,6 +14286,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 		} else {
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 		}
+		logline (core, 99, "Emulating all the sections with executable permissions");
+		r_core_cmd_call (core, "aae");
 		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
 			logline (core, 99, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
 			int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
