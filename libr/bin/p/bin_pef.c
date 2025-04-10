@@ -471,18 +471,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		// integer overflow prevented
 		return false;
 	}
-	// Calculate safely to avoid overflow
-	ut64 at_offset = 56;
-	at_offset += (ut64)24 * importedLibraryCount;
-	at_offset += (ut64)4 * totalImportedSymbolCount;
-	at_offset += (ut64)12 * i;
-
-	// Check if the calculated offset would overflow ut32
-	if (at_offset > UT32_MAX || pef->ldrsec > UT32_MAX - at_offset) {
-		return false;
-	}
-
-	ut32 at = pef->ldrsec + (ut32)at_offset;
 
 	for (i = 0; i < relocSecCount; i++) {
 		// Calculate safely to avoid overflow
