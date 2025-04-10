@@ -11,15 +11,20 @@
 #define I(x) r_cons_singleton ()->x
 
 static char *strchr_ns(char *s, const char ch) {
-	char *p = strchr (s, ch);
-	if (p && p > s) {
-		char *prev = p - 1;
-		if (*prev == '\\') {
-			memmove (prev, p, strlen (p) + 1);
-			return strchr_ns (p, ch);
+	if (!s) {
+		return NULL;
+	}
+
+	char *p;
+	while ((p = strchr (s, ch)) != NULL) {
+		if (p > s && *(p - 1) == '\\') {
+			memmove (p - 1, p, strlen (p) + 1);
+			s = p;
+		} else {
+			return p;
 		}
 	}
-	return p;
+	return NULL;
 }
 
 static void r_cons_grep_word_free(RConsGrepWord *gw) {
