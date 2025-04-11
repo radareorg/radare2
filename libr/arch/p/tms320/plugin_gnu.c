@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2025 - pancake */
 
 #define R_LOG_ORIGIN "arch.tms320.gnu"
 
@@ -42,12 +42,18 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	*options = 0;
-	const int bits = a->config->bits;
-	if (!R_STR_ISEMPTY (a->config->cpu)) {
-		snprintf (options, sizeof (options), "%s,%s",
-			(bits == 64)? "64": "", a->config->cpu);
-	} else if (bits == 64) {
-		r_str_ncpy (options, "64", sizeof (options));
+	int av = 5; // arch-version
+	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
+		const char *cpu = a->config->cpu;
+		if (strstr (cpu, "c3")) {
+			av = 3;
+		} else if (strstr (cpu, "c4")) {
+			av = 4;
+		} else if (strstr (cpu, "c5")) {
+			av = 5;
+		} else if (strstr (cpu, "c6")) {
+			av = 6;
+		}
 	}
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
@@ -60,24 +66,24 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	const int arch = 50;
-	switch (arch) {
-	case 30:
+	switch (av) {
+	case 3:
 		op->size = print_insn_tic30 ((bfd_vma)addr, &disasm_obj);
 		break;
-	case 40:
+	case 4:
 		op->size = print_insn_tic4x ((bfd_vma)addr, &disasm_obj);
 		break;
-	case 50:
+	case 5:
 		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
 		break;
 #if TMS320GNU_HAVE_C64
-	case 60:
+	case 6:
 		op->size = print_insn_tic6x ((bfd_vma)addr, &disasm_obj);
 		break;
 #endif
 	default:
-		R_LOG_TODO ("Not yet");
+		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
+		R_LOG_DEBUG ("Fallback to c54x");
 		break;
 	}
 	if (op->size == -1) {
@@ -189,10 +195,10 @@ static int archinfo(RArchSession *as, ut32 q) {
 const RArchPlugin r_arch_plugin_tms320_gnu = {
 	.meta = {
 		.name = "tms320.gnu",
-		.desc = "TMS320 C54X C64X",
-		.license = "LGPL-3.0-only",
+		.desc = "TMS320 TIC c30/c4x/c54x/c6x",
+		.license = "GPL-3.0-only",
 	},
-	.cpus = "c54x,c55x,c55x+,c64x",
+	.cpus = "c30,c4x,c54x,c6x",
 	.arch = "tms320",
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK2 (32, 64),

@@ -223,7 +223,7 @@ const RArchPlugin r_arch_plugin_ppc_gnu = {
 	.meta = {
 		.name = "ppc.gnu",
 		.desc = "PowerPC analysis plugin",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
 	.arch = "ppc",
