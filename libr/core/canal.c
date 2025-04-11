@@ -2967,8 +2967,14 @@ static int maxbbins(RAnalFunction *fcn) {
 	return bbins;
 }
 
+static int atoisort(const void *a, const void *b) {
+	int _a = atoi (a);
+	int _b = atoi (b);
+	return _b - _a;
+}
+
 // Lists function names and their calls (uniqified)
-static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique, bool recursive) {
+static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique, bool recursive, bool here) {
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	PJ *pj = NULL;
@@ -2976,10 +2982,12 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
+	} else if (mode == 'c') {
+		unique = true;
 	}
 
 	ut64 cur_fcn_addr = core->addr;
-	if (mode == '.') {
+	if (here) {
 		RList *fcns = r_anal_get_functions_in (core->anal, cur_fcn_addr);
 		if (fcns && r_list_length (fcns) > 0) {
 			RListIter *iter;
@@ -3022,7 +3030,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				}
 				continue;
 			}
-			if (mode == '.') {
+			if (here) {
 				if (fcn->addr != cur_fcn_addr) {
 					continue;
 				}
@@ -3033,11 +3041,11 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				pj_kn (pj, "addr", fcn->addr);
 				pj_k (pj, "calls");
 				pj_a (pj);
-			} else {
+			} else if (!here) {
 				r_cons_printf ("%s", fcn->name);
 			}
 
-			if (mode == 'm' || mode == '.') {
+			if (!mode || !here) {
 				r_cons_printf (":\n");
 			} else if (mode == 'q') {
 				r_cons_printf (" -> ");
@@ -3048,22 +3056,38 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				RFlagItem *f = r_flag_get_in (core->flags, refi->addr);
 				char *dst = f? strdup (f->name): r_str_newf ("0x%08"PFMT64x, refi->addr);
 				if (unique) {
-					if (sdb_const_get (uniq, dst, NULL)) {
+					if (sdb_num_inc (uniq, dst, 1, 0) > 1) {
 						continue;
 					}
-					sdb_set (uniq, dst, "1", 0);
 				}
 				if (pj) { // Append calee json item
 					pj_o (pj);
 					pj_ks (pj, "name", dst);
 					pj_kn (pj, "addr", refi->addr);
 					pj_end (pj); // close referenced item
+				} else if (mode == 'c') {
+					// print later
 				} else if (mode == 'q') {
 					r_cons_printf ("%s ", dst);
 				} else {
 					r_cons_printf ("    %s\n", dst);
 				}
 				free (dst);
+			}
+			if (mode == 'c') {
+				RList *sortbycount = r_list_newf (free);
+				SdbList *list = sdb_foreach_list (uniq, true);
+				SdbListIter *iter;
+				SdbKv *kv;
+				ls_foreach (list, iter, kv) {
+					const int count = (int)r_num_get (NULL, kv->base.value);
+					char *row = r_str_newf ("  %d %s", count, (const char *)kv->base.key);
+					r_list_append (sortbycount, row);
+				}
+				r_list_sort (sortbycount, atoisort);
+				char *s = r_str_list_join (sortbycount, "\n");
+				r_cons_println (s);
+				free (s);
 			}
 			sdb_free (uniq);
 			if (pj) {
@@ -3705,6 +3729,7 @@ static RCoreHelpMessage help_msg_aflm = {
 	"Usage:", "aflm", "[q.j] List functions in makefile style (func -> calls)",
 	"aflm", "", "list functions and what they call in makefile-like format",
 	"aflm.", "", "only print the summary for the current function (see pds)",
+	"aflmc", "", "like aflmu (uniq) but counting",
 	"aflmq", "", "list functions with its calls in quiet mode",
 	"aflmj", "", "same as above but in json format",
 	"aflmu", "[jq.]", "same as aflm, but listing calls once (uniq filter)",
@@ -3837,26 +3862,23 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case 'm': // "aflm"
 		{
 			bool uniq = false;
+			bool here = false;
 			bool recursive = false;
-			char mode = 'm';
-			if (rad[1] == 'u') { // "aflmu" // for unique
-				uniq = true;
-				rad++;
-			} else if (rad[1] == 'r') {
-				recursive = true;
-				rad++;
-			}
-
-			if (rad[1] != 0) {
-				switch (rad[1]) {
-				case '.': // "aflm."
-				case 'j': // "aflmj"
-				case 'q': // "aflmq"
-					mode = rad[1];
-					break;
+			char mode = 0;
+			int i;
+			for (i = 0; i < 2; i++) {
+				switch (rad[1 + i]) {
+				case 'u': uniq = true; break;
+				case '.': here = true; break;
+				case 'r': recursive = true; break;
+				case 'c':
+				case 'j':
+				case 'q':
+					  mode = rad[1 + i];
+					  break;
 				}
 			}
-			fcn_print_makestyle (core, fcns, mode, uniq, recursive);
+			fcn_print_makestyle (core, fcns, mode, uniq, recursive, here);
 			break;
 		}
 	case 1:
