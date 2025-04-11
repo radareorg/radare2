@@ -42,7 +42,7 @@ dk 9
 EOF
 EXPECT=<<EOF
 0
-0
+1
 EOF
 RUN
 
