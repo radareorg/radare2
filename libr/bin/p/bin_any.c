@@ -14,7 +14,7 @@ static char *get_filetype(RBuffer *b) {
 		}
 		const char *tmp = r_magic_buffer (ck, buf, sizeof (buf));
 		r_magic_free (ck);
-		return strdup (tmp);
+		return tmp? strdup (tmp): NULL;
 	}
 	return NULL;
 }
