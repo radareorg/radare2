@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2025 - pancake */
 
-#define R_LOG_ORIGIN "arch.ppc.gnu"
+#define R_LOG_ORIGIN "arch.tms320.gnu"
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
 
-static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int tms320_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1; // disable backward reads
@@ -42,27 +42,49 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	*options = 0;
-	const int bits = a->config->bits;
-	if (!R_STR_ISEMPTY (a->config->cpu)) {
-		snprintf (options, sizeof (options), "%s,%s",
-			(bits == 64)? "64": "", a->config->cpu);
-	} else if (bits == 64) {
-		r_str_ncpy (options, "64", sizeof (options));
+	int av = 5; // arch-version
+	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
+		const char *cpu = a->config->cpu;
+		if (strstr (cpu, "c3")) {
+			av = 3;
+		} else if (strstr (cpu, "c4")) {
+			av = 4;
+		} else if (strstr (cpu, "c5")) {
+			av = 5;
+		} else if (strstr (cpu, "c6")) {
+			av = 6;
+		}
 	}
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_vma = addr;
-	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
+	disasm_obj.buffer_length = len;
+	disasm_obj.read_memory_func = &tms320_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	if (disasm_obj.endian) {
-		op->size = print_insn_big_powerpc ((bfd_vma)addr, &disasm_obj);
-	} else {
-		op->size = print_insn_little_powerpc ((bfd_vma)addr, &disasm_obj);
+	switch (av) {
+	case 3:
+		op->size = print_insn_tic30 ((bfd_vma)addr, &disasm_obj);
+		break;
+	case 4:
+		op->size = print_insn_tic4x ((bfd_vma)addr, &disasm_obj);
+		break;
+	case 5:
+		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
+		break;
+#if TMS320GNU_HAVE_C64
+	case 6:
+		op->size = print_insn_tic6x ((bfd_vma)addr, &disasm_obj);
+		break;
+#endif
+	default:
+		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
+		R_LOG_DEBUG ("Fallback to c54x");
+		break;
 	}
 	if (op->size == -1) {
 		op->mnemonic = strdup ("invalid");
@@ -78,80 +100,19 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	return op->size;
 }
 
-static bool ppc_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+static bool tms320_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
 	const ut8 *bytes = op->bytes;
-	// XXX hack
-	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
-	short baddr = (((ut32) bytes[2] << 8) | (bytes[3] & 0xfc));// 16-29
-	int aa = bytes[3]&0x2;
-	int lk = bytes[3]&0x1;
-	//if (baddr>0x7fff)
-	//      baddr = -baddr;
 
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		int res = disassemble (as, op, addr, bytes, len);
-		if (res == -1) {
-			op->type = R_ANAL_OP_TYPE_ILL;
-		}
+	int res = disassemble (as, op, addr, bytes, len);
+	if (res == -1) {
+		op->type = R_ANAL_OP_TYPE_ILL;
 	}
-//	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
-
-	switch (opcode) {
-//	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;
-	case 11: // cmpi
-		op->type = R_ANAL_OP_TYPE_CMP;
-		break;
-	case 9: // pure branch
-		if (bytes[0] == 0x4e) {
-			// bctr
-		} else {
-			op->jump = aa? baddr: addr + baddr;
-			if (lk) {
-				op->fail = addr + 4;
-			}
-		}
-		op->eob = 1;
-		break;
-	case 6: // bc // conditional jump
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = aa? baddr: addr + baddr + 4;
-		op->eob = 1;
-		break;
-#if 0
-	case 7: // sc/svc
-		op->type = R_ANAL_OP_TYPE_SWI;
-		break;
-#endif
-#if 0
-	case 15: // bl
-		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (aa)?(baddr):(addr+baddr);
-		op->fail = addr+4;
-		op->eob = 1;
-		break;
-#endif
-	case 8: // bne i tal
-		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (aa)?(baddr):(addr+baddr+4);
-		op->fail = addr+4;
-		op->eob = 1;
-		break;
-	case 19: // bclr/bcr/bcctr/bcc
-		op->type = R_ANAL_OP_TYPE_RET; // jump to LR
-		if (lk) {
-			op->jump = UT32_MAX; // LR ?!?
-			op->fail = addr+4;
-		}
-		op->eob = 1;
-		break;
-	}
+	// TODO: get op info from disasm
 	op->size = 4;
 	return op->size;
 }
@@ -216,71 +177,40 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	return 4; /* :D */
+	switch (q) {
+	case R_ARCH_INFO_DATA_ALIGN:
+		return 2;
+	case R_ARCH_INFO_CODE_ALIGN:
+		return 2;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 8;
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 2;
+	case R_ARCH_INFO_MINOP_SIZE:
+		return 2;
+	}
+	return 4;
 }
 
-const RArchPlugin r_arch_plugin_ppc_gnu = {
+const RArchPlugin r_arch_plugin_tms320_gnu = {
 	.meta = {
-		.name = "ppc.gnu",
-		.desc = "PowerPC analysis plugin",
+		.name = "tms320.gnu",
+		.desc = "TMS320 TIC c30/c4x/c54x/c6x",
 		.license = "GPL-3.0-only",
 	},
-	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
-	.arch = "ppc",
+	.cpus = "c30,c4x,c54x,c6x",
+	.arch = "tms320",
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.decode = &ppc_op,
+	.decode = &tms320_op,
 	.regs = &regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
-	.data = &r_arch_plugin_ppc_gnu,
+	.data = &r_arch_plugin_tms320_gnu,
 	.version = R2_VERSION
 };
-#endif
-
-#if 0
-NOTES:
-======
-	 10000
-	 AA = absolute address
-	 LK = link bit
-	 BD = bits 16-19
-	   address
-	 if (AA) {
-	   address = (int32) BD << 2
-	 } else {
-	   address += (int32) BD << 2
-	 }
-	AA LK
-	30 31
-	 0  0  bc
-	 1  0  bca
-	 0  1  bcl
-	 1  1  bcla
-
-	 10011
-	 BCCTR
-	 LK = 31
-
-	 bclr or bcr (Branch Conditional Link Register) Instruction
-	 10011
-
-	 6-29 -> LL (addr) ?
-	 B  10010 -> branch
-	 30 31
-	 0  0   b
-	 1  0   ba
-	 0  1   bl
-	 1  1   bla
-	 SC SYSCALL 5 first bytes 10001
-	 SVC SUPERVISORCALL
-	 30 31
-	 0  0  svc
-	 0  1  svcl
-	 1  0  svca
-	 1  1  svcla
 #endif

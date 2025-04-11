@@ -324,6 +324,7 @@ extern const RArchPlugin r_arch_plugin_sparc_cs;
 extern const RArchPlugin r_arch_plugin_sparc_gnu;
 extern const RArchPlugin r_arch_plugin_stm8;
 extern const RArchPlugin r_arch_plugin_tms320;
+extern const RArchPlugin r_arch_plugin_tms320_gnu;
 extern const RArchPlugin r_arch_plugin_tricore;
 extern const RArchPlugin r_arch_plugin_tricore_cs;
 extern const RArchPlugin r_arch_plugin_uxn;
