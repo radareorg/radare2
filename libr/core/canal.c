@@ -2967,6 +2967,12 @@ static int maxbbins(RAnalFunction *fcn) {
 	return bbins;
 }
 
+static int atoisort(const void *a, const void *b) {
+	int _a = atoi (a);
+	int _b = atoi (b);
+	return _b - _a;
+}
+
 // Lists function names and their calls (uniqified)
 static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique, bool recursive, bool here) {
 	RListIter *fcniter;
@@ -3035,11 +3041,11 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				pj_kn (pj, "addr", fcn->addr);
 				pj_k (pj, "calls");
 				pj_a (pj);
-			} else {
+			} else if (!here) {
 				r_cons_printf ("%s", fcn->name);
 			}
 
-			if (!mode || here) {
+			if (!mode || !here) {
 				r_cons_printf (":\n");
 			} else if (mode == 'q') {
 				r_cons_printf (" -> ");
@@ -3069,13 +3075,19 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				free (dst);
 			}
 			if (mode == 'c') {
+				RList *sortbycount = r_list_newf (free);
 				SdbList *list = sdb_foreach_list (uniq, true);
 				SdbListIter *iter;
 				SdbKv *kv;
 				ls_foreach (list, iter, kv) {
 					const int count = (int)r_num_get (NULL, kv->base.value);
-					r_cons_printf ("  %d %s\n", count, (const char *)kv->base.key);
+					char *row = r_str_newf ("  %d %s", count, (const char *)kv->base.key);
+					r_list_append (sortbycount, row);
 				}
+				r_list_sort (sortbycount, atoisort);
+				char *s = r_str_list_join (sortbycount, "\n");
+				r_cons_println (s);
+				free (s);
 			}
 			sdb_free (uniq);
 			if (pj) {
