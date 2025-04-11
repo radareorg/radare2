@@ -128,24 +128,24 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			cs_tms320c64x_op *op = x->operands + i;
 			pj_o (pj);
 			switch (op->type) {
-				case TMS320C64X_OP_REG:
-					pj_ks (pj, "type", "reg");
-					pj_ks (pj, "value", cs_reg_name (handle, op->reg));
-					break;
-				case TMS320C64X_OP_IMM:
-					pj_ks (pj, "type", "imm");
-					pj_ki (pj, "value", op->imm);
-					break;
-				case TMS320C64X_OP_MEM:
-					pj_ks (pj, "type", "mem");
-					if (op->mem.base != SPARC_REG_INVALID) {
-						pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
-					}
-					pj_kN (pj, "disp", (st64)op->mem.disp);
-					break;
-				default:
-					pj_ks (pj, "type", "invalid");
-					break;
+			case TMS320C64X_OP_REG:
+				pj_ks (pj, "type", "reg");
+				pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+				break;
+			case TMS320C64X_OP_IMM:
+				pj_ks (pj, "type", "imm");
+				pj_ki (pj, "value", op->imm);
+				break;
+			case TMS320C64X_OP_MEM:
+				pj_ks (pj, "type", "mem");
+				if (op->mem.base != SPARC_REG_INVALID) {
+					pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+				}
+				pj_kN (pj, "disp", (st64)op->mem.disp);
+				break;
+			default:
+				pj_ks (pj, "type", "invalid");
+				break;
 			}
 			pj_end (pj); /* o operand */
 		}
