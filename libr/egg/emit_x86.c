@@ -257,7 +257,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 			r_egg_printf (egg, "  jmp %s\n", str);
 		}
 	} else {
-		eprintf ("Jump without destination\n");
+		R_LOG_ERROR ("Jump without destination");
 	}
 }
 
@@ -395,7 +395,6 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 			d = atoi (p + 1);
 		}
 	}
-	//eprintf ("emit_load_ptr: HACK\n");
 	// XXX: 32/64bit care
 	//r_egg_printf (egg, "# DELTA IS (%s)\n", dst);
 	if (attsyntax) {
@@ -523,9 +522,9 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 		}
 		// TODO:
 #if 0
-		eprintf ("TYPE = %c\n", type);
-		eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
-		eprintf ("  %s %s, [%s]\n", op, p, eq);
+		R_LOG_DEBUG ("TYPE = %c", type);
+		R_LOG_DEBUG ("  %s%c %c%s, %s", op, vs, type, eq, p);
+		R_LOG_DEBUG ("  %s %s, [%s]", op, p, eq);
 #endif
 		if (type == '*') {
 			r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);

@@ -65,7 +65,7 @@ typedef void (*REsilPin)(RAnal *a);
 
 R_API void r_anal_pin_init(RAnal *a) {
 	sdb_free (DB);
-	DB = sdb_new0();
+	DB = sdb_new0 ();
 	r_anal_pin_set (a, "strlen", "dr R0=`pszl@r:A0`;aexa ret");
 	r_anal_pin_set (a, "memcpy", "wf `dr?A1` `dr?A2` @ `dr?A0`;aexa ret");
 	r_anal_pin_set (a, "puts", "psz@r:A0; aexa ret");

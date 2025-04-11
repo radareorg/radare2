@@ -147,7 +147,7 @@ MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x, STM8.
 
 ## File Formats
 
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI, 
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI,
 Dyldcache, DEX, ART, Java class, Android boot image, Plan9 executables, Amiga HUNK,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC, CGC,
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80,
@@ -165,5 +165,5 @@ GB/GBA, NDS and N3DS, and mount several filesystems like NTFS, FAT, HFS+, EXT,..
 * [![Homebrew package](https://repology.org/badge/version-for-repo/homebrew/radare2.svg)](https://repology.org/project/radare2/versions) [![MacPorts package](https://repology.org/badge/version-for-repo/macports/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Haiku Ports](https://repology.org/badge/version-for-repo/haikuports_master/radare2.svg)](https://repology.org/project/radare2/versions) [![Void Linux](https://repology.org/badge/version-for-repo/void_x86_64/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Ubuntu 24.10 package](https://repology.org/badge/version-for-repo/ubuntu_24_10/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 24.04 package](https://repology.org/badge/version-for-repo/ubuntu_24_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
-* [![Debian Unstable package](https://repology.org/badge/version-for-repo/debian_unstable/radare2.svg)](https://repology.org/project/radare2/versions) [![Debian 12 package](https://repology.org/badge/version-for-repo/debian_12/radare2.svg)](https://repology.org/project/radare2/versions) 
+* [![Debian Unstable package](https://repology.org/badge/version-for-repo/debian_unstable/radare2.svg)](https://repology.org/project/radare2/versions) [![Debian 12 package](https://repology.org/badge/version-for-repo/debian_12/radare2.svg)](https://repology.org/project/radare2/versions)
 [![Kali Linux Rolling package](https://repology.org/badge/version-for-repo/kali_rolling/radare2.svg)](https://repology.org/project/radare2/versions)

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S r2 -j
 (function() {
-	// TODO: get rid of theses aliases 
+	// TODO: get rid of theses aliases
 	const compat = {
 		"LGPLv3": "LGPL-3.0-only",
 		"LGPL3": "LGPL-3.0-only",
@@ -33,7 +33,7 @@
 		try {
 			const res = JSON.parse(response).licenseText;
 			cache[aliasedName] = res;
-			r2.call("mkdir -p doc/licenses"); 
+			r2.call("mkdir -p doc/licenses");
 			r2.cmd("p6ds " + b64(res) + " > doc/licenses/"+ aliasedName + ".txt");
 			return res;
 		} catch (e) {

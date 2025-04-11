@@ -658,7 +658,8 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse (context, addr, mode, strict);
 }
-RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
+
+static RecoveryCompleteObjectLocator *recovery_complete_object_locator_new(void) {
 	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
 	if (!col) {
 		return NULL;

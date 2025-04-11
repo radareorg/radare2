@@ -36,7 +36,7 @@ What is tested?
 - communication via DDC2Bi3
 - controlling a MegaChips RD1-4320 DisplayPort 1.2a splitter reference board
 - controlling a DELL U2410 connected via DVI
-- flashing a STDP2600 with RC3.3 firmware on MNT RHDP board(mntre.com) 
+- flashing a STDP2600 with RC3.3 firmware on MNT RHDP board(mntre.com)
 
 How to use for dummies?
 -----------------------

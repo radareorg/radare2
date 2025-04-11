@@ -148,8 +148,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (reg && str, false);
-//	eprintf ("@SET PROFIL strin%c", 10);
-//	r_sys_backtrace ();
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
@@ -166,9 +164,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	//	r_reg_init (reg);
 		return true;
 	}
-	// eprintf ("OLD (%s) NEW (%s)\n", reg->reg_profile_str, str);
-	// remove all arenas
-	// we should reset all the arenas before setting the new reg profile
+	// reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
 	// Purge the old registers
 	r_reg_free_internal (reg, true);
@@ -299,9 +295,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 	}
 	// Align to byte boundary if needed
-	//if (reg->size & 7) {
+	// if (reg->size & 7) {
 	//	reg->size += 8 - (reg->size & 7);
-	//}
+	// }
 	//reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
 	// dup the last arena to allow regdiffing
@@ -314,7 +310,6 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 // read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
-	// eprintf ("@SET PROFIL%c", 10);
 	R_RETURN_VAL_IF_FAIL (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {

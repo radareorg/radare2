@@ -104,7 +104,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			help ();
 			return 0;
 		case 'H':
-			ravc_env_print (opt.arg);;
+			ravc_env_print (opt.arg);
 			return 0;
 		default:
 			usage ();

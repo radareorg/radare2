@@ -71,7 +71,6 @@ zip_error_init_with_code(zip_error_t *error, int ze) {
         case ZIP_ET_LIBZIP:
             error->sys_err = errno;
             break;
-            
         default:
             error->sys_err = 0;
             break;

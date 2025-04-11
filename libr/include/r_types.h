@@ -368,9 +368,9 @@ R_API const char *x##_version(void) { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define R_NEWS0(x,y) (x*)calloc(y,sizeof (x))
+#define R_NEWS0(x,y) (x*)calloc(y, sizeof (x))
 #define R_NEWS(x,y) (x*)malloc(sizeof (x)*(y))
-#define R_NEW0(x) (x*)calloc(1,sizeof (x))
+#define R_NEW0(x) (x*)calloc(1, sizeof (x))
 #define R_NEW(x) (x*)malloc(sizeof (x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof (x), y)
 
