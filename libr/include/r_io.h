@@ -624,9 +624,6 @@ R_API bool r_io_map_setattr_fromstring(RIOMap *map, const char *s);
 R_API bool r_io_map_setattr(RIOMap *map, ut32 type, ut32 flags);
 R_API char *r_io_map_getattr(RIOMap *map);
 
-#define r_io_range_new()	R_NEW0(RIORange)
-#define r_io_range_free(x)	free(x)
-
 /* io/ioutils.c */
 R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);

@@ -59,15 +59,12 @@ zip_error_strerror(zip_error_t *err) {
             case ZIP_ET_SYS:
                 system_error_string = strerror(err->sys_err);
                 break;
-                
             case ZIP_ET_ZLIB:
                 system_error_string = zError(err->sys_err);
                 break;
-                
             case ZIP_ET_LIBZIP: {
                 zip_uint8_t error = GET_ERROR_FROM_DETAIL(err->sys_err);
                 int index = GET_INDEX_FROM_DETAIL(err->sys_err);
-                
                 if (error == 0) {
                     system_error_string = NULL;
                 }
@@ -86,7 +83,6 @@ zip_error_strerror(zip_error_t *err) {
                 }
                 break;
             }
-                
             default:
                 system_error_string = NULL;
         }

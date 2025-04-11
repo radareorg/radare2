@@ -3332,7 +3332,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 			}
 			return;
 		} else if (R_STR_ISEMPTY (input) && a) {
-			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
+			R_LOG_WARN ("Cannot add '%s'. Already exists", arg);
 			return;
 		} else {
 			b = a;

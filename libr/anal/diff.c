@@ -147,10 +147,10 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 		}
 		if (mbb && mbb2) {
 			if (!mbb->diff) {
-				mbb->diff = r_anal_diff_new();
+				mbb->diff = r_anal_diff_new ();
 			}
 			if (!mbb2->diff) {
-				mbb2->diff = r_anal_diff_new();
+				mbb2->diff = r_anal_diff_new ();
 			}
 			if (!mbb->diff || !mbb2->diff) {
 				return false;

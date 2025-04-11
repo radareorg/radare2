@@ -63,7 +63,7 @@ function tagsCommand(cmd) {
 		if (functionName.startsWith("_")) {
 			if (!catFunction(functionName)) {
 				catFunction(functionName.substr(1));
-			} 
+			}
 		} else {
 			catFunction(functionName);
 		}

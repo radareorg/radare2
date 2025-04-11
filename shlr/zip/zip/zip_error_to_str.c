@@ -54,11 +54,9 @@ zip_error_to_str(char *buf, zip_uint64_t len, int ze, int se) {
         case ZIP_ET_SYS:
             ss = strerror(se);
             break;
-            
         case ZIP_ET_ZLIB:
             ss = zError(se);
             break;
-            
         default:
             ss = NULL;
     }

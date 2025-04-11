@@ -671,7 +671,6 @@ _zip_dirent_process_winzip_aes(zip_dirent_t *de, zip_error_t *error) {
             crc_valid = false;
             /* TODO: When checking consistency, check that crc is 0. */
             break;
-            
         default:
             zip_error_set(error, ZIP_ER_ENCRNOTSUPP, 0);
             _zip_buffer_free(buffer);
