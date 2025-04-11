@@ -366,7 +366,7 @@ while_end:
 			} else {
 				char *s = r_str_newf (",%s", ptr);
 				grep->str = r_str_append (grep->str, s);
-				free(s);
+				free (s);
 			}
 			char *optr;
 			do {
@@ -375,7 +375,7 @@ while_end:
 				if (ptr) {
 					*ptr++ = '\0';
 				}
-				int wlen = strlen(optr);
+				int wlen = strlen (optr);
 				if (!wlen) {
 					continue;
 				}
