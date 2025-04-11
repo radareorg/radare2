@@ -1138,7 +1138,7 @@ extern "C" {
 
 #define JNIIMPORT
 #define JNIEXPORT  __attribute__ ((visibility ("default")))
-#define JNICALL 
+#define JNICALL
 
 	/*
 	 * Prototypes for functions exported by loadable shared libs.  These are

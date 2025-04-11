@@ -37,7 +37,7 @@ cd "$(dirname $0)"/..
 (git grep -n 'cmp(' libr | grep -v "R_API" | grep -v "R_IPI" |grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
-(git grep r_file_new | grep -v ", NULL" | grep '"')
+(git grep r_file_new libr | grep -v ", NULL" | grep '"')
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1
 (git grep -n 'for (' libr | grep "; ++" | grep -v arch ) && exit 1
 (git grep -n 'for (int' | grep -v sys/) && exit 1
