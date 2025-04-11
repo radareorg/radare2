@@ -365,25 +365,10 @@ static bool cb_analhpskip(void *user, void *data) {
 	return true;
 }
 
-static void update_analarch_options(RCore *core, RConfigNode *node) {
-	// XXX R2_590 - does nothing, but needs testing to prove that
-	RAnalPlugin *h;
-	RListIter *it;
-	if (core && core->anal && node) {
-		r_config_node_purge_options (node);
-		r_list_foreach (core->anal->plugins, it, h) {
-			if (h->meta.name) {
-				SETOPTIONS (node, h->meta.name, NULL);
-			}
-		}
-	}
-}
-
 static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		update_analarch_options (core, node);
 		print_node_options (node);
 		return false;
 	}
@@ -3649,7 +3634,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "select the architecture to use");
-	update_analarch_options (core, n);
 	// SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "specify the anal.cpu to use");
 	SETS ("anal.prelude", "", "specify an hexpair to find preludes in code");
 	SETCB ("anal.recont", "false", &cb_analrecont, "end block after splitting a basic block instead of error"); // testing
