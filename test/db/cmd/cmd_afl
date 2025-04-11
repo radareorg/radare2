@@ -192,3 +192,79 @@ EXPECT=<<EOF
 main
 EOF
 RUN
+
+NAME=aflmc
+ARGS=-A
+FILE=bins/elf/ls-focal
+CMDS=<<EOF
+aflmc.@main
+EOF
+EXPECT=<<EOF
+  12 sym.imp.dcgettext
+  10 sym.imp.getenv
+  9 fcn.000046d0
+  8 fcn.000148c0
+  7 fcn.0000d7b0
+  7 sym.imp.error
+  6 fcn.00015040
+  6 fcn.000158c0
+  4 sym.imp.isatty
+  3 fcn.00006b40
+  3 fcn.000148e0
+  3 fcn.0000cca0
+  3 fcn.00006910
+  3 sym._obstack_begin
+  3 sym.imp.__assert_fail
+  3 sym.imp.strncmp
+  2 fcn.0000eb50
+  2 fcn.000109e0
+  2 fcn.00014860
+  2 fcn.000148a0
+  2 fcn.0000a9d0
+  2 fcn.00006bb0
+  2 fcn.0000d4e0
+  2 fcn.000075f0
+  2 sym.imp.raise
+  2 sym.imp.strchr
+  2 sym.imp.fputs_unlocked
+  1 fcn.0000d5f0
+  1 fcn.00007390
+  1 fcn.00006c30
+  1 fcn.0000f020
+  1 fcn.0000f4c0
+  1 fcn.0000f680
+  1 fcn.0000fc00
+  1 fcn.00007dc0
+  1 fcn.000132d0
+  1 fcn.00008060
+  1 fcn.0000a1a0
+  1 fcn.00006e80
+  1 fcn.0000b8c0
+  1 fcn.00006f70
+  1 fcn.00015750
+  1 fcn.00007180
+  1 sym.imp.__fprintf_chk
+  1 sym.imp.__overflow
+  1 sym.imp.__printf_chk
+  1 sym.imp.__stack_chk_fail
+  1 sym.imp.abort
+  1 sym.imp.bindtextdomain
+  1 fcn.00015b70
+  1 fcn.00015cd0
+  1 sym.imp.exit
+  1 sym.imp.fflush_unlocked
+  1 sym.imp.fnmatch
+  1 fcn.00015db0
+  1 fcn.00016270
+  1 sym.imp.getopt_long
+  1 sym.imp.ioctl
+  1 fcn.00016d50
+  1 fcn.00017560
+  1 sym.imp.setlocale
+  1 fcn.00015b10
+  1 sym.imp.strcmp
+  1 fcn.00015b30
+  1 sym.imp.textdomain
+
+EOF
+RUN
