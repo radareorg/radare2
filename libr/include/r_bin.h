@@ -548,9 +548,9 @@ typedef struct r_bin_xtr_plugin_t {
 	bool loadbuf;
 	bool weak_guess;
 
-	bool (*load)(RBin *bin);
+	bool (*load)(RBin *bin); // TODO: rename to init?
 	int (*size)(RBin *bin);
-	void (*destroy)(RBin *bin);
+	void (*destroy)(RBin *bin); // TODO: rename to fini
 	void (*free_xtr)(void *xtr_obj);
 } RBinXtrPlugin;
 
@@ -779,7 +779,6 @@ typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 // options functions
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits);
-// R_API void r_bin_create_options_init(RBinCreateOptions *opt, const char *arch, int bits);
 
 // open/close/reload functions
 R_API RBin *r_bin_new(void);
