@@ -89,52 +89,46 @@ R_API void r_cons_grep_help(void) {
 	r_cons_cmd_help (help_detail_tilde, true);
 }
 
-// R2_600 remove this limit
-#define R_CONS_GREP_BUFSIZE 4096
-
 R_API void r_cons_grep_expression(const char *str) {
-	char buf[R_CONS_GREP_BUFSIZE];
-	char *ptrs[R_CONS_GREP_COUNT];
-	int wlen, is_range, num_is_parsed, fail = false;
-	char *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
-	ut64 range_begin, range_end;
-	size_t ptrs_length = 1;
-	char *ptr = buf;
-	ptrs[0] = ptr;
-
-	if (R_STR_ISEMPTY (str)) {
+	if (R_STR_ISEMPTY(str)) {
 		return;
 	}
+
 	RCons *cons = r_cons_singleton ();
 	RConsContext *ctx = cons->context;
 	RConsGrep *grep = &ctx->grep;
 
-	int len = strlen (str) - 1;
-	if (len < 0) {
-		len = 0;
-	}
-	if (len > R_CONS_GREP_BUFSIZE - 1) {
-		R_LOG_ERROR ("r_cons_grep: too long!");
-		return;
-	}
-	if (len > 0 && str[len] == '?') {
+	size_t str_len = strlen (str);
+	size_t buf_len = str_len;
+	bool has_counter = str_len > 0 && str[str_len - 1] == '?';
+
+	if (has_counter) {
 		grep->counter = 1;
-		r_str_ncpy (buf, str, sizeof (buf) - 1);
-		buf[len] = 0;
-		len--;
-	} else {
-		r_str_ncpy (buf, str, sizeof (buf) - 1);
+		buf_len--;
 	}
 
-	// TODO: replace with r_str_split_by ("~");
-	while ((ptrs[ptrs_length] = (strchr (ptr, '~')))) {
+	char *buf = malloc (buf_len + 1);
+	if (!buf) {
+		R_LOG_ERROR ("r_cons_grep: cannot allocate buffer");
+		return;
+	}
+
+	memcpy (buf, str, buf_len);
+	buf[buf_len] = '\0';
+
+	char *ptrs[R_CONS_GREP_COUNT];
+	size_t ptrs_length = 1;
+	ptrs[0] = buf;
+	char *ptr = buf;
+
+	while ((ptrs[ptrs_length] = strchr (ptr, '~'))) {
 		*(ptrs[ptrs_length]) = '\0';
 		ptrs[ptrs_length]++;
 		ptr = ptrs[ptrs_length];
 		ptrs_length++;
 		if (ptrs_length >= R_CONS_GREP_COUNT) {
 			R_LOG_ERROR ("too many nested greps");
-			return;
+			goto cleanup;
 		}
 	}
 
@@ -147,7 +141,7 @@ R_API void r_cons_grep_expression(const char *str) {
 		bool gw_neg = false;
 		bool gw_end = false;
 		ptr = ptrs[i];
-		end_ptr = ptr2 = ptr3 = NULL;
+		char *end_ptr = NULL, *ptr2 = NULL, *ptr3 = NULL;
 		while (*ptr) {
 			switch (*ptr) {
 			case ':':
@@ -171,7 +165,7 @@ R_API void r_cons_grep_expression(const char *str) {
 					} else {
 						grep->less = 1;
 					}
-					return;
+					goto cleanup;
 				}
 				ptr++;
 				break;
@@ -206,7 +200,7 @@ R_API void r_cons_grep_expression(const char *str) {
 					} else {
 						free (jsonPath);
 					}
-					return;
+					goto cleanup;
 				}
 				ptr++;
 				break;
@@ -269,12 +263,11 @@ R_API void r_cons_grep_expression(const char *str) {
 					grep->charCounter = true;
 					ptr++;
 				} else if (!strcmp (ptr, "ea")) {
-					// "?ea"
 					grep->ascart = true;
 				} else if (*ptr == '?') {
 					cons->context->filter = true;
 					r_cons_grep_help ();
-					return;
+					goto cleanup;
 				}
 				break;
 			default:
@@ -282,22 +275,21 @@ R_API void r_cons_grep_expression(const char *str) {
 			}
 			first = false;
 		}
-	while_end:
+while_end:
 		ptr2 = strchr (ptr, '[');
 		ptr3 = strchr (ptr, ']');
-		is_range = 0;
-		num_is_parsed = 0;
-		fail = false;
-		range_begin = range_end = -1;
+		int is_range = 0, num_is_parsed = 0;
+		bool fail = false;
+		ut64 range_begin = -1, range_end = -1;
 
 		if (ptr2 && ptr3) {
 			end_ptr = ptr2;
-			last = ptr3[1];
+			char last = ptr3[1];
 			ptr3[1] = '\0';
 			ptr2++;
 			for (; ptr2 <= ptr3; ptr2++) {
 				if (fail) {
-					ZERO_FILL (grep->tokens);
+					ZERO_FILL(grep->tokens);
 					grep->tokens_used = 0;
 					break;
 				}
@@ -317,7 +309,6 @@ R_API void r_cons_grep_expression(const char *str) {
 						grep->tokens[range_begin] = 1;
 						grep->tokens_used = 1;
 					}
-					// case of [n-]
 					if (*ptr2 == ']' && is_range && !num_is_parsed) {
 						num_is_parsed = true;
 						range_end = -1;
@@ -330,9 +321,8 @@ R_API void r_cons_grep_expression(const char *str) {
 					if (!num_is_parsed) {
 						if (is_range) {
 							range_end = r_num_get (cons->num, ptr2);
-							// check for bad value, if range_end == 0, we check if ptr2 == '0'
-							if (range_end == 0 && *ptr != '0') {
-								range_end = -1; // this allow [n- ]
+							if (range_end == 0 && *ptr2 != '0') {
+								range_end = -1;
 							}
 						} else {
 							range_begin = range_end = r_num_get (cons->num, ptr2);
@@ -345,46 +335,47 @@ R_API void r_cons_grep_expression(const char *str) {
 		}
 
 		ptr2 = strchr_ns (ptr, ':'); // line number
-		grep->range_line = 2; // there is not :
+		grep->range_line = 2; // there is no :
 		if (ptr2 && ptr2[1] != ':' && ptr2[1] && (isdigit (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
-			end_ptr = end_ptr? R_MIN (end_ptr, ptr2): ptr2;
+			end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
 			char *p, *token = ptr2 + 1;
-			p = strstr (token, "..");
+			p = strstr(token, "..");
 			if (!p) {
 				grep->line = r_num_get (cons->num, ptr2 + 1);
 				grep->range_line = 0;
 			} else {
 				*p = '\0';
 				grep->range_line = 1;
-				grep->f_line = *token? r_num_get (cons->num, token): 0;
-				grep->l_line = p[2]? r_num_get (cons->num, p + 2): 0;
+				grep->f_line = *token ? r_num_get (cons->num, token) : 0;
+				grep->l_line = p[2] ? r_num_get (cons->num, p + 2) : 0;
 			}
 		}
 		if (end_ptr) {
 			*end_ptr = '\0';
 		}
 
-		len = strlen (ptr) - 1;
-		if (len > 1 && ptr[len] == '$' && ptr[len - 1] != '\\') {
+		int len = strlen (ptr);
+		if (len > 1 && ptr[len - 1] == '$' && ptr[len - 2] != '\\') {
 			gw_end = true;
-			ptr[len] = '\0';
+			ptr[len - 1] = '\0';
 		}
 
 		if (*ptr) {
 			if (!grep->str) {
-				grep->str = (char *)strdup (ptr);
+				grep->str = strdup (ptr);
 			} else {
 				char *s = r_str_newf (",%s", ptr);
 				grep->str = r_str_append (grep->str, s);
 				free (s);
 			}
+			char *optr;
 			do {
 				optr = ptr;
 				ptr = strchr (ptr, ','); // grep keywords
 				if (ptr) {
 					*ptr++ = '\0';
 				}
-				wlen = strlen (optr);
+				int wlen = strlen (optr);
 				if (!wlen) {
 					continue;
 				}
@@ -398,13 +389,15 @@ R_API void r_cons_grep_expression(const char *str) {
 			} while (ptr);
 		}
 	}
-	// XXX this is a hack
+
 	if (!grep->str) {
 		RConsGrepWord *gw = R_NEW0 (RConsGrepWord);
 		gw->str = strdup ("");
 		grep->str = strdup ("");
 		r_list_append (grep->strings, gw);
 	}
+cleanup:
+	free (buf);
 }
 
 // Finds and returns next intgrep expression,

@@ -701,3 +701,17 @@ EXPECT=<<EOF
 95
 EOF
 RUN
+
+NAME=vigrepcount
+FILE=-
+CMDS=<<EOF
+?vi 123-123~?^0
+?vi 123-123~?^0$
+?vi 0~?^0
+EOF
+EXPECT=<<EOF
+1
+1
+1
+EOF
+RUN
