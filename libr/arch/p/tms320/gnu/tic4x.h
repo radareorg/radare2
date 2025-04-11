@@ -1,9 +1,9 @@
 /* Table of opcodes for the Texas Instruments TMS320C[34]X family.
 
    Copyright (C) 2002-2025 Free Software Foundation, Inc.
-  
+
    Contributed by Michael P. Hayes (m.hayes@elec.canterbury.ac.nz)
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
@@ -455,7 +455,7 @@ typedef struct tic4x_inst tic4x_inst_t;
   { name, opcode|0x00400000, 0xffe00000, "*,r", level }, \
   { name, opcode|0x00600000, 0xffe00000, "S,r", level }
 
-/* B6: Limited 2-operand float operation 
+/* B6: Limited 2-operand float operation
    Syntax: <i> src, dst
        src = Direct (@), Indirect (*)
        dst = Register 0-11 (r)
@@ -836,9 +836,9 @@ typedef struct tic4x_inst tic4x_inst_t;
   { name "3", opcode|0x30400000, 0xffe00000, "W,O", OP_C4X }, \
   { name "3", opcode|0x30600000, 0xffe00000, "C,O", OP_C4X }
 
-/* T2C: General commutative 3-operand integer operation with 2 args 
+/* T2C: General commutative 3-operand integer operation with 2 args
    Syntax: <i> src2, src1 - Manual
-           <i> src1, src2 
+           <i> src1, src2
        src2 = Register (E), Indirect 0,1,IR0,IR1 (I), C4x T2: Indirect (C), Immediate (W)
        src1 = Register (G), Indirect 0,1,IR0,IR1 (J), C4x T2: Indirect (0)
    Instr: 1/0 - TSTB3
@@ -870,7 +870,7 @@ typedef struct tic4x_inst tic4x_inst_t;
 
 /* Z: Misc operations with or without arguments
    Syntax: <i> <arg1>,...
-   Instr: 16 - RETIc, RETSc, SIGI(c3X), SWI, IDLE, IDLE2, RETIcD, 
+   Instr: 16 - RETIc, RETSc, SIGI(c3X), SWI, IDLE, IDLE2, RETIcD,
                TRAPc, LATc, LDEP, LDEHI, LDEPE, LDPK, STIK, LDP, IACK
 */
 
@@ -1033,7 +1033,7 @@ static const tic4x_inst_t tic4x_insts[] =
   R_CLASS_INSN(  "rorc",          0x1360ffff, OP_C3X   ),
   { "rptb",   0x64000000, 0xff000000, "B"   , OP_C3X   },  /* I2_CLASS */
   { "rptb",   0x79000000, 0xff000000, "Q"   , OP_C4X   },  /* I2_CLASS */
-  { "rptbd",  0x65000000, 0xff000000, "B"   , OP_C4X   },  /* I2_CLASS */ 
+  { "rptbd",  0x65000000, 0xff000000, "B"   , OP_C4X   },  /* I2_CLASS */
   { "rptbd",  0x79800000, 0xff000000, "Q"   , OP_C4X   },  /* I2_CLASS */
   A3_CLASS_INSN( "rpts",          0x139b0000, OP_C3X   ),
   B_CLASS_INSN(  "rsqrf",         0x1c800000, OP_C4X   ),

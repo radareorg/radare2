@@ -742,7 +742,7 @@ tic4x_disassemble (unsigned long pc,
     }
   else
     {
-      for (i = 0; i<TIC4X_SPESOP_SIZE; i++)
+      for (i = 0; i < TIC4X_SPESOP_SIZE; i++)
 	if (optab_special[i] != NULL
 	    && optab_special[i]->opcode == instruction)
 	  {

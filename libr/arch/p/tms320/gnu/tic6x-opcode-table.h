@@ -1667,7 +1667,7 @@ INSN(mpyh, m, m3_sat_0, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(mpyhi, m, compound, 4cycle, C64X, 0,
      FIX1(FIX(op, 0x14)),
@@ -1693,7 +1693,7 @@ INSN(mpyhl, m, m3_sat_0, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(mpyhlu, m, mpy, 1616_m, C62X, 0,
      FIX1(FIX(op, 0x0f)),
@@ -1789,7 +1789,7 @@ INSN(mpylh, m, m3_sat_0, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(mpylhu, m, mpy, 1616_m, C62X, 0,
      FIX1(FIX(op, 0x17)),
@@ -2614,7 +2614,7 @@ INSN(smpy, m, m3_sat_1, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(smpyh, m, mpy, 1616_m, C62X, 0,
      FIX1(FIX(op, 0x02)),
@@ -2628,7 +2628,7 @@ INSN(smpyh, m, m3_sat_1, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(smpyhl, m, mpy, 1616_m, C62X, 0,
      FIX1(FIX(op, 0x0a)),
@@ -2642,7 +2642,7 @@ INSN(smpyhl, m, m3_sat_1, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(smpylh, m, mpy, 1616_m, C62X, 0,
      FIX1(FIX(op, 0x12)),
@@ -2656,7 +2656,7 @@ INSN(smpylh, m, m3_sat_1, 1616_m, C67X, 0,
       OP3(ORREG1, ORXREG1, OWREG2),
       ENC5(ENC(s, fu, 0), ENC(x, xpath, 0), ENC(src1, reg, 0),
            ENC(src2, reg, 1), ENC(dst, reg_shift, 2)))
-/**/ 
+/**/
 
 INSN(smpy2, m, compound, 4cycle, C64X, 0,
      FIX1(FIX(op, 0x01)),

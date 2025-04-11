@@ -134,8 +134,9 @@ tic6x_field_width (const tic6x_insn_field *field)
   if (!field->num_bitfields)
     return field->bitfields[0].width;
 
-  for (i = 0 ; i < field->num_bitfields ; i++)
+  for (i = 0; i < field->num_bitfields; i++) {
     width += field->bitfields[i].width;
+  }
 
   return width;
 }
@@ -151,7 +152,7 @@ tic6x_field_bits (unsigned int opcode, const tic6x_insn_field *field)
   if (!field->num_bitfields)
     return (opcode >> field->bitfields[0].low_pos) & ((1u << field->bitfields[0].width) - 1);
 
-  for (i = 0 ; i < field->num_bitfields ; i++)
+  for (i = 0; i < field->num_bitfields; i++)
     val |= ((opcode >> field->bitfields[i].low_pos) & ((1u << field->bitfields[i].width) - 1))
       << field->bitfields[i].pos;
 

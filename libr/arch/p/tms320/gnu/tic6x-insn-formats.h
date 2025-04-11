@@ -97,36 +97,36 @@ FMT(d_adda_long, 32, 0x1000000c, 0xf000000c,
 /* C-8 */
 FMT(d_doff4_dsz_0xx, 16, DSZ(0) | 0x0004, DSZ(0x4) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_100, 16, DSZ(4) | 0x0004, DSZ(0x7) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_000, 16, DSZ(0) | 0x0004, DSZ(0x7) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_x01, 16, DSZ(1) | 0x0004, DSZ(0x3) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_01x, 16, DSZ(2) | 0x0004, DSZ(0x6) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_111, 16, DSZ(7) | 0x0004, DSZ(0x7) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_x11, 16, DSZ(3) | 0x0004, DSZ(0x3) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_010, 16, DSZ(2) | 0x0004, DSZ(0x7) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 FMT(d_doff4_dsz_110, 16, DSZ(6) | 0x0004, DSZ(0x7) | 0x0406,
     SFLDS6(FLD(op, 3, 1), FLD(srcdst, 4, 3), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 
 /* C-9 */
 FMT(d_doff4dw, 16, DSZ(4) | 0x0004, DSZ(0x4) | 0x0406,
     SFLDS7(FLD(op, 3, 1), FLD(na, 4, 1), FLD(srcdst, 5, 2), FLD(ptr, 7, 2), FLD(sz, 9, 1), FLD(t, 12, 1),
-           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3))))) 
+           COMPFLD(cst, BFLD2(BFLD(13, 3, 0), BFLD(11, 1, 3)))))
 
 /* C-10 */
 FMT(d_dind_dsz_0xx, 16, DSZ(0) | 0x0404, DSZ(0x4) | 0x0c06,
@@ -265,7 +265,7 @@ FMT(d_dx2op, 16, 0x0036, 0x047e,
 
 /* C-18 */
 FMT(d_dx5, 16, 0x0436, 0x047e,
-    SFLDS2(FLD(dst, 7, 3), 
+    SFLDS2(FLD(dst, 7, 3),
            COMPFLD(cst, BFLD2(BFLD(11, 2, 3), BFLD(13, 3, 0)))))
 
 /* C-19 */
@@ -497,7 +497,7 @@ FMT(s_sx1b, 16, 0x006e, 0x187e,
 
 /* Appendix G 16-bit formats will go here.  */
 FMT(lsdmvto, 16, 0x0006, 0x0066,
-    SFLDS4(FLD(unit, 3, 2), 
+    SFLDS4(FLD(unit, 3, 2),
            FLD(x, 12, 1), FLD(dst, 13, 3),
            COMPFLD(src2, BFLD2(BFLD(10, 2, 3), BFLD(7, 3, 0)))))
 
@@ -551,7 +551,7 @@ FMT(nfu_uspl, 16, 0x0c66, 0xbc7e,
 /* H-6 */
 /* make up some fields to pretend to have s and z fields s for this format
    so as to fit in other predicated compact instruction to avoid special-
-   casing this instruction in tic6x-dis.c 
+   casing this instruction in tic6x-dis.c
    use op field as a predicate adress register selector (s field)
    use the first zeroed bit as a z value as this insn only supports [a0]
    and [b0] predicate forms.

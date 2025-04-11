@@ -70,7 +70,7 @@ typedef enum
 typedef struct
 {
   /* The least-significant bit position in the field.  */
-  unsigned short low_pos; 
+  unsigned short low_pos;
 
   /* The number of bits in the field.  */
   unsigned short width;
@@ -470,7 +470,7 @@ typedef enum
        that use src1 as port for loading lsb of double-precision
        operand value (absdp, dpint, dpsp, dptrunc, rcpdp, rsqrdp).  */
     tic6x_coding_regpair_lsb,
-    /* Encode the register-pair's msb (odd register), see above.  */ 
+    /* Encode the register-pair's msb (odd register), see above.  */
     tic6x_coding_regpair_msb,
     /* Store 0 for register B14, 1 for register B15.  When applied to
        a memory reference, encode the base register.  */

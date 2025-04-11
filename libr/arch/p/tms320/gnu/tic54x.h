@@ -88,7 +88,7 @@ typedef struct _template
   const char *name;
   unsigned int words; /* insn size in words */
   int minops, maxops; /* min/max operand count */
-  /* The significant bits in the opcode.  Other bits are zero. 
+  /* The significant bits in the opcode.  Other bits are zero.
      Instructions with more than 16 bits of opcode store the rest in the upper
      16 bits.
    */
@@ -123,7 +123,7 @@ typedef struct _template
 #define MAX_OPERANDS 4
   enum optype operand_types[MAX_OPERANDS];
 
-  /* Special purpose flags (e.g. branch type, parallel, delay, etc) 
+  /* Special purpose flags (e.g. branch type, parallel, delay, etc)
    */
   unsigned short flags;
 #define B_NEXT      0 /* normal execution, next insn is next address */
@@ -134,7 +134,7 @@ typedef struct _template
 #define FL_BMASK    0x07
 
 #define FL_DELAY    0x10 /* instruction uses delay slots */
-#define FL_EXT      0x20 /* instruction takes two words */   
+#define FL_EXT      0x20 /* instruction takes two words */
 #define FL_FAR      0x40 /* far mode addressing */
 #define FL_LP       0x80 /* LP-only instruction */
 #define FL_NR       0x100 /* no repeat allowed */
@@ -157,7 +157,7 @@ extern const tic54x_symbol tic54x_condition_codes[], tic54x_cc2_codes[];
 extern const tic54x_symbol tic54x_status_bits[], tic54x_cc3_codes[];
 extern const char *tic54x_misc_symbols[];
 struct disassemble_info;
-extern const insn_template* tic54x_get_insn (struct disassemble_info *, 
+extern const insn_template* tic54x_get_insn (struct disassemble_info *,
                                         bfd_vma, unsigned short, int *);
 
 #endif /* _opcode_tic54x_h_ */

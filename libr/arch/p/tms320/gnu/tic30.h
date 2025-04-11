@@ -228,7 +228,7 @@ typedef struct _template
 #define PCRel       0x02000000
 #define StackOp     0x001F0000
 #define Rotate      StackOp
-  
+
   /* operand_types[i] describes the type of operand i.  This is made
      by OR'ing together all of the possible type masks.  (e.g.
      'operand_types[i] = Reg|Imm' specifies that operand i can be
