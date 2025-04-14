@@ -202,7 +202,7 @@ static int help(void) {
 		"  -t         tstamp -> str        ;  rax2 -t 1234567890\n"
 		"  -u         units                ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v         version              ;  rax2 -v\n"
-		"  -w         signed word          ;  rax2 -w 16 0xffff\n"
+		"  -w         signed word          ;  rax2 -w 0xffff 0xffff_ffff '0xff&0xfffff'\n"
 		"  -x         output in hexpairs   ;  rax2 -x 0x1234 # 34120000\n"
 		"  -X         bin -> hex(bignum)   ;  rax2 -X 111111111 # 0x1ff\n"
 		"  -z         str -> bin           ;  rax2 -z hello\n"
