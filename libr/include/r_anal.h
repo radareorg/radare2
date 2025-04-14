@@ -343,9 +343,8 @@ typedef enum {
 
 /* meta */
 typedef struct r_anal_meta_item_t {
-	// XXX missing size
-	RAnalMetaType type;
-	int subtype;
+	uint8_t type; // RAnalMetaType type;
+	uint8_t subtype;
 	char *str;
 	const RSpace *space;
 } RAnalMetaItem;
