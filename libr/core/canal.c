@@ -3088,6 +3088,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 				char *s = r_str_list_join (sortbycount, "\n");
 				r_cons_println (s);
 				free (s);
+				r_list_free (sortbycount);
 			}
 			sdb_free (uniq);
 			if (pj) {

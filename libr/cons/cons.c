@@ -1125,8 +1125,8 @@ overflow:
 			buf[j] = '\0';
 		}
 	} else {
-		ctx->buffer_len = buf_sz > 0 ? buf_sz -1 : 0;
-		if (ctx->buffer_len >= 0 && buf_sz > 0) {
+		ctx->buffer_len = buf_sz > 0 ? buf_sz - 1 : 0;
+		if (buf_sz > 0) {
 			buf[ctx->buffer_len] = '\0';
 		}
 	}
@@ -1181,13 +1181,13 @@ R_API void r_cons_flush(void) {
 	}
 
 	r_cons_filter ();
-	if (ctx->buffer_len < 1) {
+	if (!ctx->buffer || ctx->buffer_len < 1) {
 		r_cons_reset ();
 		return;
 	}
 	if (r_cons_is_interactive () && I->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (ctx->pageable && ctx->buffer && I->pager && *I->pager && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= I->rows) {
+		if (ctx->pageable && I->pager && *I->pager && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= I->rows) {
 			ctx->buffer[ctx->buffer_len - 1] = 0;
 			if (!strcmp (I->pager, "..")) {
 				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
@@ -1203,7 +1203,8 @@ R_API void r_cons_flush(void) {
 		} else if (I->maxpage > 0 && ctx->buffer_len > I->maxpage) {
 #if COUNT_LINES
 			char *buffer = ctx->buffer;
-			int i, lines = 0;
+			int lines = 0;
+			int i;
 			for (i = 0; buffer[i]; i++) {
 				if (buffer[i] == '\n') {
 					lines ++;
