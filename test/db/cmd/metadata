@@ -144,9 +144,7 @@ Cd 3
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000      hex size=3 delta=0
-0x00000000  3930 39                                  909
-
+            0x00000000       3930 39                                  909 ; +0 
             0x00000003      3039           xor byte [ecx], bh
 EOF
 RUN
