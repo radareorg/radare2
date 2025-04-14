@@ -838,6 +838,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	R_RETURN_IF_FAIL (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
+	const bool trimlast = p->flags & R_PRINT_FLAGS_TRIMLAST;
 	const char *color_title = c? (Pal (p, addr): Color_MAGENTA): "";
 	int inc = p? p->cols : 16;
 	size_t i, j, k;
@@ -1487,7 +1488,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (use_align && rowbytes < inc && bytes >= rowbytes) {
 				i -= (inc - bytes);
 			}
-			print ("\n");
+			if (trimlast) {
+				if (i + inc < len) {
+					print ("\n");
+				}
+			} else {
+				print ("\n");
+			}
 		}
 		rows++;
 		bytes = 0;
