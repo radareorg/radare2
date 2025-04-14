@@ -71,6 +71,7 @@ static bool r_bin_bflt_init(RBinBfltObj *obj, RBuffer *buf) {
 
 R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
 	if (o) {
+		o->relocs_list->free = NULL;
 		r_list_free (o->relocs_list);
 		R_FREE (o->hdr);
 		r_buf_free (o->b);
