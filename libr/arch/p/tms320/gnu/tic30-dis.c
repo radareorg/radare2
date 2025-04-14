@@ -363,7 +363,7 @@ print_two_operand (disassemble_info *info,
 
   if (insn->tm == NULL)
     return 0;
-  strcpy (name, insn->tm->name);
+  snprintf (name, sizeof (name), "%s", insn->tm->name);
   if (insn->tm->opcode_modifier == AddressMode)
     {
       int src_op, dest_op;
@@ -391,7 +391,7 @@ print_two_operand (disassemble_info *info,
 	    get_register_operand ((insn_word & 0x0000001F), operand[src_op]);
 	  break;
 	case AM_DIRECT:
-	  sprintf (operand[src_op], "@0x%lX", (insn_word & 0x0000FFFF));
+	  snprintf (operand[0], sizeof (operand[0]), "@0x%lX", (insn_word & 0x0000FFFF));
 	  break;
 	case AM_INDIRECT:
 	  get_indirect_operand ((insn_word & 0x0000FFFF), 2, operand[src_op]);
@@ -402,13 +402,13 @@ print_two_operand (disassemble_info *info,
 	    {
 	    case Imm_Float:
 	      cnvt_tmsfloat_ieee ((insn_word & 0x0000FFFF), 2, &f_number);
-	      sprintf (operand[src_op], "%2.2f", f_number);
+	      snprintf (operand[src_op], sizeof (operand[0]), "%2.2f", f_number);
 	      break;
 	    case Imm_SInt:
-	      sprintf (operand[src_op], "%d", (short) (insn_word & 0x0000FFFF));
+	      snprintf (operand[src_op], sizeof (operand[0]), "%d", (short) (insn_word & 0x0000FFFF));
 	      break;
 	    case Imm_UInt:
-	      sprintf (operand[src_op], "%lu", (insn_word & 0x0000FFFF));
+	      snprintf (operand[src_op], sizeof (operand[0]), "%lu", (insn_word & 0x0000FFFF));
 	      break;
 	    default:
 	      return 0;
@@ -417,7 +417,7 @@ print_two_operand (disassemble_info *info,
 	  if ((insn_word & 0xFFFFFF00) == LDP_INSN)
 	    {
 	      strcpy (name, "ldp");
-	      sprintf (operand[0], "0x%06lX", (insn_word & 0x000000FF) << 16);
+	      snprintf (operand[0], sizeof (operand[0]), "0x%06lX", (insn_word & 0x000000FF) << 16);
 	      operand[1][0] = '\0';
 	    }
 	}
@@ -590,6 +590,7 @@ print_par_insn (disassemble_info *info,
 	}
       break;
     default:
+      free (name1);
       return 0;
     }
   info->fprintf_func (info->stream, "   %s %s,%s%c%s", name1,
@@ -623,14 +624,14 @@ print_branch (disassemble_info *info,
   if (insn->tm->operand_types[0] & Imm24)
     {
       address = insn_word & 0x00FFFFFF;
-      sprintf (operand[0], "0x%lX", address);
+      snprintf (operand[0], sizeof (operand[0]), "0x%lX", address);
       print_label = 1;
     }
   /* Get the operand for the trap instruction.  */
   else if (insn->tm->operand_types[0] & IVector)
     {
       address = insn_word & 0x0000001F;
-      sprintf (operand[0], "0x%lX", address);
+      snprintf (operand[0], sizeof (operand[0]), "0x%lX", address);
     }
   else
     {
@@ -641,7 +642,7 @@ print_branch (disassemble_info *info,
 	  get_register_operand (((insn_word & 0x01C00000) >> 22) + REG_AR0, operand[0]);
 	  if (insn_word & PCRel)
 	    {
-	      sprintf (operand[1], "%d", (short) address);
+	      snprintf (operand[1], sizeof (operand[1]), "%d", (short) address);
 	      print_label = 1;
 	    }
 	  else
@@ -653,7 +654,7 @@ print_branch (disassemble_info *info,
 	  if (insn_word & PCRel)
 	    {
 	      address = (short) address;
-	      sprintf (operand[0], "%ld", address);
+	      snprintf (operand[0], sizeof (operand[0]), "%ld", address);
 	      print_label = 1;
 	    }
 	  else
