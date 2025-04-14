@@ -1193,9 +1193,19 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut64 target, base;
 	RAnalOp op;
 	int len, ret, i;
+	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
+	if (in) {
+		// RAnalMetaItem *ami = (RAnalMetaItem *)in->data;
+		const int hexcols = r_config_get_i (core->config, "hex.cols");
+		int amisize = r_meta_item_size (in->start, in->end);
+		if (amisize > hexcols) {
+			return addr - hexcols;
+		}
+		return addr - amisize;
+	}
+
 	const int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-
 	if (minop == maxop) {
 		if (minop == -1) {
 			return addr - 4;
@@ -3514,13 +3524,24 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
-					// Check if we have a data annotation.
-					ut64 amisize;
-					RAnalMetaItem *ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_DATA, &amisize);
+					ut64 amisize = 0;
+					RIntervalNode *in = r_meta_get_in (core->anal, core->addr, R_META_TYPE_DATA);
+					RAnalMetaItem *ami = NULL; // r_meta_get_in (core->anal, core->addr, R_META_TYPE_DATA); // , &amisize);
+					if (in) {
+						ami = in->data;
+						amisize = r_meta_item_size (in->start, in->end);
+					}
+
+					// RAnalMetaItem *ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_DATA, &amisize);
 					if (!ami) {
 						ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_STRING, &amisize);
 					}
 					if (ami) {
+						const int hexcols = r_config_get_i (core->config, "hex.cols");
+						if (amisize > hexcols) {
+							int pad = core->addr % hexcols;
+							amisize = hexcols - pad;
+						}
 						r_core_seek_delta (core, amisize);
 					} else {
 						int distance = numbuf_pull (core);

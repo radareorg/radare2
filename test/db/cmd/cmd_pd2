@@ -9,8 +9,8 @@ EOF
 EXPECT=<<EOF
             0x00000000      0100           add dword [rax], eax
             0x00000002      214354         and dword [rbx + 0x54], eax
-        ,=< 0x00000005 -1      .dword 0x02017654
-        `-> 0x00000008      .dword 0x00000403
+        ,=< 0x00000005      .dword 0x03020176
+            0x00000009      .dword 0x00000004
 EOF
 RUN
 
@@ -26,8 +26,8 @@ s+2048
 pd 1~?
 EOF
 EXPECT=<<EOF
-258
-129
+2
+1
 1
 EOF
 RUN

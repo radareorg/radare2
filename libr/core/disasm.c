@@ -3787,42 +3787,63 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			int size = mi_size;
 			ut8 *b = malloc (mi_size);
 			if (b) {
+				int limit = r_config_get_i (core->config, "hex.cols");
 				int delta = ds->at - node->start;
+#if 0
 				if (delta > 0) {
 					ds->at -= delta;
-					r_cons_printf ("-%d ", delta);
 				}
+#endif
+				ds->oplen = R_MIN (mi_size, limit);
 				r_io_read_at (core->io, ds->at, b, mi_size);
 				if (size > 0 && !ds_print_data_type (ds, b, ds->hint? ds->hint->immbase: 0, mi_size)) {
+					int remaining = (size - delta); //  - idx;
 					if (size > delta) {
-						r_cons_printf ("hex size=%d delta=%d\n", size , delta);
-						int remaining = (size - delta) - idx;
 						remaining = R_MAX (remaining, 0);
-						remaining = R_MIN (mi_size, remaining - idx);
+						// r_cons_printf ("LEFT %d (%d - %d) - %d\n", remaining, size, delta, idx);
+						// remaining = R_MIN (mi_size, remaining - idx);
+						remaining = R_MIN (limit, remaining);
+						if (remaining == 0) {
+							remaining = limit;
+						}
+						RPrint p = *core->print;
+						p.flags &= ~R_PRINT_FLAGS_OFFSET;
+						p.flags |= R_PRINT_FLAGS_TRIMLAST;
 						if (remaining > (len - delta)) {
 							size_t calloc_size = R_MAX (len, size - delta);
 							if (idx < calloc_size) {
 								ut8 *b = calloc (1, calloc_size);
 								if (b) {
 									memcpy (b, buf, len);
-									r_print_hexdump (core->print, ds->at,
+									r_print_hexdump (&p, ds->at,
 											b + idx, remaining, 16, 1, 1);
 									free (b);
 								}
 							}
 						} else {
-							r_print_hexdump (core->print, ds->at,
+							r_print_hexdump (&p, ds->at,
 									buf + idx, remaining, 16, 1, 1);
 						}
 					} else {
 						r_cons_printf ("hex size=%d hexlen=%d delta=%d",
 								size, hexlen, delta);
 					}
+					size = remaining;
+						// r_cons_printf ("hex size=%d delta=%d\n", size , delta);
+					if (delta > 0) {
+						ds->at -= delta;
+						r_cons_printf (" ; +%d  (%d)", delta, remaining);
+					} else {
+						r_cons_printf (" ; +0 ");
+					}
 				}
 				free (b);
 			}
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
-			ds->asmop.size = (int)size - (node->start - ds->at);
+			ds->asmop.size = size; // (int)size - (node->start - ds->at);
+			ds->oplen = size;
+			// ds->asmop.size = 16;
+			// ds->oplen = 16;
 			R_FREE (ds->line);
 			R_FREE (ds->line_col);
 			R_FREE (ds->refline);
