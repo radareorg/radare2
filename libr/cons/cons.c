@@ -791,12 +791,12 @@ R_API RCons *r_cons_free(void) {
 }
 
 #define MOAR (4096 * 8)
-static bool palloc(int moar) {
-	if (moar <= 0) {
+static bool palloc(size_t moar) {
+	if (moar < 1) {
 		return false;
 	}
 	if (!C->buffer) {
-		if ((INT_MAX - MOAR) < moar) {
+		if (moar > SIZE_MAX - MOAR) {
 			return false;
 		}
 		size_t new_sz = moar + MOAR;
@@ -807,17 +807,15 @@ static bool palloc(int moar) {
 			C->buffer[0] = '\0';
 		}
 	} else if (moar + C->buffer_len > C->buffer_sz) {
-		char *new_buffer;
-		int old_buffer_sz = C->buffer_sz;
 		if ((INT_MAX - MOAR - moar) < C->buffer_sz) {
 			return false;
 		}
-		C->buffer_sz += moar + MOAR;
-		new_buffer = realloc (C->buffer, C->buffer_sz);
+		size_t new_buffer_size = C->buffer_sz + moar + MOAR;
+		void *new_buffer = realloc (C->buffer, new_buffer_size);
 		if (new_buffer) {
 			C->buffer = new_buffer;
+			C->buffer_sz = new_buffer_size;
 		} else {
-			C->buffer_sz = old_buffer_sz;
 			return false;
 		}
 	}
