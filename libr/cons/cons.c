@@ -1429,36 +1429,34 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 	va_copy (ap2, ap);
 	va_copy (ap3, ap);
 	if (I->null || !format) {
-		va_end (ap2);
-		va_end (ap3);
+		va_end(ap2);
+		va_end(ap3);
 		return;
 	}
 	if (strchr (format, '%')) {
-		int left = 0;
 		if (palloc (MOAR + strlen (format) * 20)) {
 			RConsContext *ctx = getctx ();
-// club:
-			left = ctx->buffer_sz - ctx->buffer_len; /* remaining space in C->buffer */
-			int nleft = chop (left);
-			if (nleft > 0) {
-				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
-				if (written >= left) { /* not all bytes were written */
-					if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
-						(void) vsnprintf (ctx->buffer + ctx->buffer_len, nleft, format, ap3);
-						if (nleft < left) {
-							C->breaked = true;
+			bool need_retry = true;
+			while (need_retry) {
+				need_retry = false;
+				int left = ctx->buffer_sz - ctx->buffer_len;
+				int nleft = chop (left);
+				if (nleft > 0) {
+					size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
+					if (written >= left) {
+						if (palloc (written + 1)) {
+							va_end (ap3);
+							va_copy (ap3, ap2);
+							need_retry = true;
+						} else {
+							ctx->buffer_len += written;
 						}
-#if 0
-						va_end (ap3);
-						va_copy (ap3, ap2);
-						return;
-						goto club;
-#endif
+					} else {
+						ctx->buffer_len += written;
 					}
+				} else {
+					C->breaked = true;
 				}
-				ctx->buffer_len += written;
-			} else {
-				C->breaked = true;
 			}
 		}
 	} else {
