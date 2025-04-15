@@ -1427,8 +1427,8 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 	va_copy (ap2, ap);
 	va_copy (ap3, ap);
 	if (I->null || !format) {
-		va_end(ap2);
-		va_end(ap3);
+		va_end (ap2);
+		va_end (ap3);
 		return;
 	}
 	if (strchr (format, '%')) {
@@ -1437,25 +1437,25 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 			bool need_retry = true;
 			while (need_retry) {
 				need_retry = false;
-				int left = ctx->buffer_sz - ctx->buffer_len;
-				int nleft = chop (left);
-				if (nleft > 0) {
-					size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
-					if (written >= left) {
-						if (palloc (written + 1)) {
-							va_end (ap3);
-							va_copy (ap3, ap2);
-							need_retry = true;
-						} else {
-							ctx->buffer_len += written;
-						}
+				size_t left = ctx->buffer_sz - ctx->buffer_len;
+				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
+				if (written >= left) {
+					if (palloc (written + 1)) {
+						va_end (ap3);
+						va_copy (ap3, ap2);
+						need_retry = true; // Retry with larger buffer
 					} else {
-						ctx->buffer_len += written;
+						// Allocation failed, use available space
+						size_t added = (left > 0) ? left - 1 : 0;
+						ctx->buffer_len += added;
+						C->breaked = true; // Indicate truncation
 					}
 				} else {
-					C->breaked = true;
+					ctx->buffer_len += written;
 				}
 			}
+		} else {
+			C->breaked = true; // Initial allocation failed
 		}
 	} else {
 		r_cons_print (format);
