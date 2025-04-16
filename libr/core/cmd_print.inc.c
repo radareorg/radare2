@@ -613,6 +613,7 @@ static RCoreHelpMessage help_msg_px = {
 	"px/", "", "same as x/ in gdb (help x)",
 	"px*", "", "same as pc* or p8*, print r2 commands as in hexdump",
 	"px0", "", "8bit hexpair list of bytes until zero byte",
+	"px3", "", "24bit hexdump",
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
 	"pxb", "", "dump bits in hexdump form", // should be px1?
@@ -8284,6 +8285,15 @@ static int cmd_print(void *data, const char *input) {
 				default:
 					r_core_cmd_help (core, help_msg_pxd);
 					break;
+				}
+			}
+			break;
+		case '3': // "px3"
+			if (l != 0) {
+				if (input[2] == 'j') {
+					r_print_jsondump (core->print, core->block, len, 24);
+				} else {
+					r_print_hexdump (core->print, core->addr, core->block, len, 48, 3, 1);
 				}
 			}
 			break;
