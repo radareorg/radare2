@@ -928,6 +928,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			use_header = false;
 		}
 		break;
+	case 3:
+	case 24:
+		bytefmt = "0x%06x ";
+		pre = " ";
+		if (inc < 3) {
+			inc = 3;
+		}
+		break;
 	case 32:
 		bytefmt = "0x%08x ";
 		pre = " ";
@@ -1146,7 +1154,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
 					ut64 n = 0;
 					size_t sz_n = (base == 64)
-						? sizeof (ut64) : (step == 2)
+						? (base == 24) ? 3 : sizeof (ut64) : (step == 2)
 						? sizeof (ut16) : sizeof (ut32);
 					sz_n = R_MIN (left, sz_n);
 					if (j + sz_n > len) {
@@ -1166,6 +1174,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						case 2:
 							n = n32 & 0xffff;
 							break;
+						case 3:
+							n = n32 & 0xffffff;
+							break;
 						case 4:
 							n = n32;
 							break;
@@ -1179,6 +1190,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							break;
 						case 2:
 							n = n64 & 0xffff;
+							break;
+						case 3:
+							n = n64 & 0xffffff;
 							break;
 						case 4:
 							n = n64 & 0xffffffff;
@@ -1268,6 +1282,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						r_print_cursor (p, j, 2, 1);
 						printfmt ("%7d ", w);
 						r_print_cursor (p, j, 2, 0);
+					}
+					j += 1;
+				} else if (base == 48) { // px3
+					if (j + 1 < len) {
+						ut32 w = r_read_ble24 (buf + j, be);
+						r_print_cursor (p, j, 3, 1);
+						printfmt ("0x%06x ", (w & 0xFFFFff));
+						r_print_cursor (p, j, 3, 0);
 					}
 					j += 1;
 				} else if (base == -11) { // pxu2
