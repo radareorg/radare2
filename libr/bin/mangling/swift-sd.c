@@ -36,7 +36,7 @@ static const SwiftType types[] = {
 	{ "GV", "mutableAddressor" },
 	{ "Sa", "Array" },
 	{ "Sb", "Bool" },
-	{ "Sg", "Grumpy" },
+	{ "Sg", "GenericAccessor" },
 	{ "SC", "Syntesized" },
 	{ "Sc", "UnicodeScalar" },
 	{ "Sd", "Swift.Double" },

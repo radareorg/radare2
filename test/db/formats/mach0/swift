@@ -14,16 +14,16 @@ class SomeClass {
   func 4() {}  // 0x100003d20
   func 5() {}  // 0x100003d24
   func 6() {}  // 0x100003d1d
-  func allocator....cfCTq() {}  // 0x100003d90
+  func allocator.(...cfCTq) {}  // 0x100003d90
   func 8() {}  // 0x100003d2c
   func 9() {}  // 0x100003d34
 }
 class SuperKlass {
   property superfield : Swift.Int;
-  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vg() {}  // 0x1000028f0
-  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vs() {}  // 0x100002950
-  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vM() {}  // 0x1000029b0
-  func allocator....cfC() {}  // 0x100002a10
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vg) {}  // 0x1000028f0
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vs) {}  // 0x100002950
+  func superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vM) {}  // 0x1000029b0
+  func allocator.(...cfC) {}  // 0x100002a10
   func 4() {}  // 0x100003d9c
 }
 @objc
@@ -105,85 +105,85 @@ EXPECT=<<EOF
     ],
     "methods": [
       {
-        "name": "backButton.allocator: allocator, backButton: allocator, S...8UIButtonCSgvg",
-        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S...8UIButtonCSgvg",
+        "name": "backButton.allocator: allocator, backButton: allocator, S.UIButton(...gvg)",
+        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S.UIButton_...gvg_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvg",
         "lang": "swift",
         "addr": 4294975724
       },
       {
-        "name": "backButton.allocator: allocator, backButton: allocator, S...8UIButtonCSgvs",
-        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S...8UIButtonCSgvs",
+        "name": "backButton.allocator: allocator, backButton: allocator, S.UIButton(...gvs)",
+        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S.UIButton_...gvs_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvs",
         "lang": "swift",
         "addr": 4294975900
       },
       {
-        "name": "backButton.allocator: allocator, backButton: allocator, S...8UIButtonCSgvM",
-        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S...8UIButtonCSgvM",
+        "name": "backButton.allocator: allocator, backButton: allocator, S.UIButton(...gvM)",
+        "flag": "method.WKWebViewController.backButton.allocator:_allocator__backButton:_allocator__S.UIButton_...gvM_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvM",
         "lang": "swift",
         "addr": 4294976260
       },
       {
-        "name": "wkWeb.allocator...0So0dE0CSgvg",
-        "flag": "method.WKWebViewController.wkWeb.allocator...0So0dE0CSgvg",
+        "name": "wkWeb.allocator...E0So0dE0CSgvg",
+        "flag": "method.WKWebViewController.wkWeb.allocator...E0So0dE0CSgvg",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE0So0dE0CSgvg",
         "lang": "swift",
         "addr": 4294976864
       },
       {
-        "name": "wkWeb.allocator...0So0dE0CSgvs",
-        "flag": "method.WKWebViewController.wkWeb.allocator...0So0dE0CSgvs",
+        "name": "wkWeb.allocator...E0So0dE0CSgvs",
+        "flag": "method.WKWebViewController.wkWeb.allocator...E0So0dE0CSgvs",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE0So0dE0CSgvs",
         "lang": "swift",
         "addr": 4294976964
       },
       {
-        "name": "wkWeb.allocator...0So0dE0CSgvM",
-        "flag": "method.WKWebViewController.wkWeb.allocator...0So0dE0CSgvM",
+        "name": "wkWeb.allocator...E0So0dE0CSgvM",
+        "flag": "method.WKWebViewController.wkWeb.allocator...E0So0dE0CSgvM",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE0So0dE0CSgvM",
         "lang": "swift",
         "addr": 4294977088
       },
       {
-        "name": "wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvg",
-        "flag": "method.WKWebViewController.wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvg",
+        "name": "wkWeb.allocator.PreferencesManager...A0deiJ0CSgvg",
+        "flag": "method.WKWebViewController.wkWeb.allocator.PreferencesManager...A0deiJ0CSgvg",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE18PreferencesManagerAA0deiJ0CSgvg",
         "lang": "swift",
         "addr": 4294977472
       },
       {
-        "name": "wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvs",
-        "flag": "method.WKWebViewController.wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvs",
+        "name": "wkWeb.allocator.PreferencesManager...A0deiJ0CSgvs",
+        "flag": "method.WKWebViewController.wkWeb.allocator.PreferencesManager...A0deiJ0CSgvs",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE18PreferencesManagerAA0deiJ0CSgvs",
         "lang": "swift",
         "addr": 4294977572
       },
       {
-        "name": "wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvM",
-        "flag": "method.WKWebViewController.wkWeb.allocator...18PreferencesManagerAA0deiJ0CSgvM",
+        "name": "wkWeb.allocator.PreferencesManager...A0deiJ0CSgvM",
+        "flag": "method.WKWebViewController.wkWeb.allocator.PreferencesManager...A0deiJ0CSgvM",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE18PreferencesManagerAA0deiJ0CSgvM",
         "lang": "swift",
         "addr": 4294977696
       },
       {
-        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S...7NSTimerCvg",
-        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S...7NSTimerCvg",
+        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S.NSTimer(...g)",
+        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S.NSTimer_...g_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvg",
         "lang": "swift",
         "addr": 4294978264
       },
       {
-        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S...7NSTimerCvs",
-        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S...7NSTimerCvs",
+        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S.NSTimer(...s)",
+        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S.NSTimer_...s_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvs",
         "lang": "swift",
         "addr": 4294978364
       },
       {
-        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S...7NSTimerCvM",
-        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S...7NSTimerCvM",
+        "name": "progressBarTimer.allocator: allocator, progressBarTimer: allocator, S.NSTimer(...M)",
+        "flag": "method.WKWebViewController.progressBarTimer.allocator:_allocator__progressBarTimer:_allocator__S.NSTimer_...M_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvM",
         "lang": "swift",
         "addr": 4294978492
@@ -210,162 +210,162 @@ EXPECT=<<EOF
         "addr": 4294979100
       },
       {
-        "name": "wkWeb.allocator...11PlaceholderSo6UIViewCSgvg",
-        "flag": "method.WKWebViewController.wkWeb.allocator...11PlaceholderSo6UIViewCSgvg",
+        "name": "wkWeb.allocator.Placeholder.UIView(...gvg)",
+        "flag": "method.WKWebViewController.wkWeb.allocator.Placeholder.UIView_...gvg_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE11PlaceholderSo6UIViewCSgvg",
         "lang": "swift",
         "addr": 4294979320
       },
       {
-        "name": "wkWeb.allocator...11PlaceholderSo6UIViewCSgvs",
-        "flag": "method.WKWebViewController.wkWeb.allocator...11PlaceholderSo6UIViewCSgvs",
+        "name": "wkWeb.allocator.Placeholder.UIView(...gvs)",
+        "flag": "method.WKWebViewController.wkWeb.allocator.Placeholder.UIView_...gvs_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE11PlaceholderSo6UIViewCSgvs",
         "lang": "swift",
         "addr": 4294979496
       },
       {
-        "name": "wkWeb.allocator...11PlaceholderSo6UIViewCSgvM",
-        "flag": "method.WKWebViewController.wkWeb.allocator...11PlaceholderSo6UIViewCSgvM",
+        "name": "wkWeb.allocator.Placeholder.UIView(...gvM)",
+        "flag": "method.WKWebViewController.wkWeb.allocator.Placeholder.UIView_...gvM_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC05wkWebE11PlaceholderSo6UIViewCSgvM",
         "lang": "swift",
         "addr": 4294979856
       },
       {
-        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S...05UIBarH4ItemCSgvg",
-        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S...05UIBarH4ItemCSgvg",
+        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S.UIBar.Item(...gvg)",
+        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S.UIBar.Item_...gvg_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvg",
         "lang": "swift",
         "addr": 4294980296
       },
       {
-        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S...05UIBarH4ItemCSgvs",
-        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S...05UIBarH4ItemCSgvs",
+        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S.UIBar.Item(...gvs)",
+        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S.UIBar.Item_...gvs_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvs",
         "lang": "swift",
         "addr": 4294980472
       },
       {
-        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S...05UIBarH4ItemCSgvM",
-        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S...05UIBarH4ItemCSgvM",
+        "name": "scenarioButton.allocator: allocator, scenarioButton: allocator, S.UIBar.Item(...gvM)",
+        "flag": "method.WKWebViewController.scenarioButton.allocator:_allocator__scenarioButton:_allocator__S.UIBar.Item_...gvM_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvM",
         "lang": "swift",
         "addr": 4294980832
       },
       {
-        "name": "showOkAlert.allocator__String...tF",
-        "flag": "method.WKWebViewController.showOkAlert.allocator__String...tF",
+        "name": "showOkAlert.allocator__String(...tF)",
+        "flag": "method.WKWebViewController.showOkAlert.allocator__String_...tF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC11showOkAlert5title7messageySS_SStF",
         "lang": "swift",
         "addr": 4294985372
       },
       {
-        "name": "web.allocator...o12WKNavigationCSgtF",
+        "name": "web.allocator(...o12WKNavigationCSgtF)",
         "flag": "func.100004adc",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC03webE0_29didStartProvisionalNavigationySo0dE0C_So12WKNavigationCSgtF",
         "lang": "swift",
         "addr": 4294986460
       },
       {
-        "name": "web.allocator...o12WKNavigationCSgtF",
-        "flag": "method.WKWebViewController.web.allocator...o12WKNavigationCSgtF",
+        "name": "web.allocator(...o12WKNavigationCSgtF)",
+        "flag": "method.WKWebViewController.web.allocator_...o12WKNavigationCSgtF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC03webE0_9didFinishySo0dE0C_So12WKNavigationCSgtF",
         "lang": "swift",
         "addr": 4294987312
       },
       {
-        "name": "web.allocator...tF",
+        "name": "web.allocator(...tF)",
         "flag": "func.100005524",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC03webE0_7didFail9withErrorySo0dE0C_So12WKNavigationCSgs0K0_ptF",
         "lang": "swift",
         "addr": 4294989092
       },
       {
-        "name": "web.allocator...tF",
-        "flag": "method.WKWebViewController.web.allocator...tF",
+        "name": "web.allocator(...tF)",
+        "flag": "method.WKWebViewController.web.allocator_...tF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC03webE0_28didFailProvisionalNavigation9withErrorySo0dE0C_So12WKNavigationCSgs0M0_ptF",
         "lang": "swift",
         "addr": 4294991292
       },
       {
-        "name": "loadUrlFromBar.allocator...yF",
-        "flag": "method.WKWebViewController.loadUrlFromBar.allocator...yF",
+        "name": "loadUrlFromBar.allocator(...yF)",
+        "flag": "method.WKWebViewController.loadUrlFromBar.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC14loadUrlFromBaryyF",
         "lang": "swift",
         "addr": 4294993644
       },
       {
-        "name": "unwindTo.allocator...F",
-        "flag": "method.WKWebViewController.unwindTo.allocator...F",
+        "name": "unwindTo.allocator(...F)",
+        "flag": "method.WKWebViewController.unwindTo.allocator_...F_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC08unwindTodE05segueySo17UIStoryboardSegueC_tF",
         "lang": "swift",
         "addr": 4294996224
       },
       {
-        "name": "progressBarTimerCallback.allocator...yF",
-        "flag": "method.WKWebViewController.progressBarTimerCallback.allocator...yF",
+        "name": "progressBarTimerCallback.allocator(...yF)",
+        "flag": "method.WKWebViewController.progressBarTimerCallback.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC24progressBarTimerCallbackyyF",
         "lang": "swift",
         "addr": 4294997084
       },
       {
-        "name": "showScenarioSelection.allocator...yF",
-        "flag": "method.WKWebViewController.showScenarioSelection.allocator...yF",
+        "name": "showScenarioSelection.allocator(...yF)",
+        "flag": "method.WKWebViewController.showScenarioSelection.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC21showScenarioSelectionyyF",
         "lang": "swift",
         "addr": 4294997888
       },
       {
-        "name": "loadScenario1.allocator...yF",
-        "flag": "method.WKWebViewController.loadScenario1.allocator...yF",
+        "name": "loadScenario1.allocator(...yF)",
+        "flag": "method.WKWebViewController.loadScenario1.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC13loadScenario1yyF",
         "lang": "swift",
         "addr": 4294999460
       },
       {
-        "name": "loadScenario2.allocator...yF",
-        "flag": "method.WKWebViewController.loadScenario2.allocator...yF",
+        "name": "loadScenario2.allocator(...yF)",
+        "flag": "method.WKWebViewController.loadScenario2.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC13loadScenario2yyF",
         "lang": "swift",
         "addr": 4295000952
       },
       {
-        "name": "loadScenario3.allocator...yF",
-        "flag": "method.WKWebViewController.loadScenario3.allocator...yF",
+        "name": "loadScenario3.allocator(...yF)",
+        "flag": "method.WKWebViewController.loadScenario3.allocator_...yF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC13loadScenario3yyF",
         "lang": "swift",
         "addr": 4295003248
       },
       {
-        "name": "goToUrl.allocator...yypF",
-        "flag": "method.WKWebViewController.goToUrl.allocator...yypF",
+        "name": "goToUrl.allocator(...yypF)",
+        "flag": "method.WKWebViewController.goToUrl.allocator_...yypF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC7goToUrlyyypF",
         "lang": "swift",
         "addr": 4295005020
       },
       {
-        "name": "backButtonPressed.allocator...yypF",
-        "flag": "method.WKWebViewController.backButtonPressed.allocator...yypF",
+        "name": "backButtonPressed.allocator(...yypF)",
+        "flag": "method.WKWebViewController.backButtonPressed.allocator_...yypF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC17backButtonPressedyyypF",
         "lang": "swift",
         "addr": 4295005200
       },
       {
-        "name": "urlBarEditingGo.allocator...ySo11UITextFieldCF",
-        "flag": "method.WKWebViewController.urlBarEditingGo.allocator...ySo11UITextFieldCF",
+        "name": "urlBarEditingGo.allocator(...ySo11UITextFieldCF)",
+        "flag": "method.WKWebViewController.urlBarEditingGo.allocator_...ySo11UITextFieldCF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC15urlBarEditingGoyySo11UITextFieldCF",
         "lang": "swift",
         "addr": 4295005816
       },
       {
-        "name": "selectScenarioButtonPressed.allocator...ySo05UIBarI4ItemCF",
-        "flag": "method.WKWebViewController.selectScenarioButtonPressed.allocator...ySo05UIBarI4ItemCF",
+        "name": "selectScenarioButtonPressed.allocator(...ySo05UIBarI4ItemCF)",
+        "flag": "method.WKWebViewController.selectScenarioButtonPressed.allocator_...ySo05UIBarI4ItemCF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC27selectScenarioButtonPressedyySo05UIBarI4ItemCF",
         "lang": "swift",
         "addr": 4295005972
       },
       {
-        "name": "loadContentButtonPressed.allocator...ySo05UIBarI4ItemCF",
-        "flag": "method.WKWebViewController.loadContentButtonPressed.allocator...ySo05UIBarI4ItemCF",
+        "name": "loadContentButtonPressed.allocator(...ySo05UIBarI4ItemCF)",
+        "flag": "method.WKWebViewController.loadContentButtonPressed.allocator_...ySo05UIBarI4ItemCF_",
         "rawname": "_$s15WheresMyBrowser19WKWebViewControllerC24loadContentButtonPressedyySo05UIBarI4ItemCF",
         "lang": "swift",
         "addr": 4295006128
@@ -375,25 +375,25 @@ EXPECT=<<EOF
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "UITextField.allocatorSgXw",
+        "type": "UITextField.allocator__GenericAccessorSgXw",
         "addr": 4295134384
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "UIProgressView.allocatorSgXw",
+        "type": "UIProgressView.allocator__GenericAccessorSgXw",
         "addr": 4295134391
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "UIButton.allocatorSgXw",
+        "type": "UIButton.allocator__GenericAccessorSgXw",
         "addr": 4295134403
       },
       {
         "name": "wkWebView",
         "kind": "property",
-        "type": "WKWebView.allocatorSg",
+        "type": "WKWebView.allocator__GenericAccessorSg",
         "addr": 4295134414
       },
       {
@@ -416,13 +416,13 @@ EXPECT=<<EOF
       {
         "name": "wkWebViewPlaceholder",
         "kind": "property",
-        "type": "UIView.allocatorSgXw",
+        "type": "UIView.allocator__GenericAccessorSgXw",
         "addr": 4295134528
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "UIBarButtonItem.allocatorSgXw",
+        "type": "UIBarButtonItem.allocator__GenericAccessorSgXw",
         "addr": 4295134549
       }
     ]
@@ -442,7 +442,7 @@ EXPECT=<<EOF
       {
         "name": "window",
         "kind": "property",
-        "type": "UIWindow.allocatorSg",
+        "type": "UIWindow.allocator__GenericAccessorSg",
         "addr": 4295134564
       }
     ]
@@ -488,7 +488,7 @@ EXPECT=<<EOF
       {
         "name": "versionLabel",
         "kind": "property",
-        "type": "UILabel.allocatorSgXw",
+        "type": "UILabel.allocator__GenericAccessorSgXw",
         "addr": 4295134606
       }
     ]
@@ -720,19 +720,19 @@ EXPECT=<<EOF
       {
         "name": "optionsSwitch",
         "kind": "property",
-        "type": "UISwitch.allocatorSgXw",
+        "type": "UISwitch.allocator__GenericAccessorSgXw",
         "addr": 4295134704
       },
       {
         "name": "optionsNameLabel",
         "kind": "property",
-        "type": "UILabel.allocatorSgXw",
+        "type": "UILabel.allocator__GenericAccessorSgXw",
         "addr": 4295134720
       },
       {
         "name": "optionsDescriptionLabel",
         "kind": "property",
-        "type": "UILabel.allocatorSgXw",
+        "type": "UILabel.allocator__GenericAccessorSgXw",
         "addr": 4295134752
       },
       {
@@ -810,8 +810,8 @@ EXPECT=<<EOF
         "addr": 4295119836
       },
       {
-        "name": "Web.allocator...7SettingC11descriptionSSvpMV",
-        "flag": "method.WKPreferencesViewController.Web.allocator...7SettingC11descriptionSSvpMV",
+        "name": "Web.allocator.Setting.description(...vpMV)",
+        "flag": "method.WKPreferencesViewController.Web.allocator.Setting.description_...vpMV_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC11descriptionSSvpMV",
         "lang": "swift",
         "addr": 4295119840
@@ -823,21 +823,21 @@ EXPECT=<<EOF
         "addr": 4295119832
       },
       {
-        "name": "Web.allocator...7SettingC11descriptionSSvpMV",
-        "flag": "method.WKPreferencesViewController.Web.allocator...7SettingC11descriptionSSvpMV",
-        "rawname": "WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator...7SettingC11descriptionSSvpMV",
+        "name": "Web.allocator.Setting.description_...vpMV_",
+        "flag": "method.WKPreferencesViewController.Web.allocator.Setting.description_...vpMV_",
+        "rawname": "WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting.description(...vpMV)",
         "lang": "swift",
         "addr": 4295119840
       },
       {
-        "name": "wkWeb.allocator...13ConfigurationSo0deJ0CvpWvd",
+        "name": "wkWeb.allocator.Configuration...o0deJ0CvpWvd",
         "flag": "field.class.WheresMyBrowser.WKWebViewPreferencesManager.var.wkWebViewConfiguration",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC05wkWebE13ConfigurationSo0deJ0CvpWvd",
         "lang": "swift",
         "addr": 4295119864
       },
       {
-        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S...ySSGvpWvd",
+        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S(...ySSGvpWvd)",
         "flag": "field.class.WheresMyBrowser.WKWebViewPreferencesManager.var.option_ids",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC10option_idsSaySSGvpWvd",
         "lang": "swift",
@@ -865,7 +865,7 @@ EXPECT=<<EOF
       {
         "name": "preferencesTableView",
         "kind": "property",
-        "type": "UITableView.allocatorSg",
+        "type": "UITableView.allocator__GenericAccessorSg",
         "addr": 4295134880
       }
     ]
@@ -877,57 +877,57 @@ EXPECT=<<EOF
     "index": 15,
     "methods": [
       {
-        "name": "options.allocator__Array: allocator, options: allocator, S...yAC03WebE7SettingCGvM",
-        "flag": "method.WKWebViewPreferencesManager.options.allocator__Array:_allocator__options:_allocator__S...yAC03WebE7SettingCGvM",
+        "name": "options.allocator__Array: allocator, options: allocator, S(...yAC03WebE7SettingCGvM)",
+        "flag": "method.WKWebViewPreferencesManager.options.allocator__Array:_allocator__options:_allocator__S_...yAC03WebE7SettingCGvM_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC7optionsSayAC03WebE7SettingCGvM",
         "lang": "swift",
         "addr": 4295060228
       },
       {
-        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S...ySSGvg",
-        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S...ySSGvg",
+        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S(...ySSGvg)",
+        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S_...ySSGvg_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC10option_idsSaySSGvg",
         "lang": "swift",
         "addr": 4295060588
       },
       {
-        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S...ySSGvs",
-        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S...ySSGvs",
+        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S(...ySSGvs)",
+        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S_...ySSGvs_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC10option_idsSaySSGvs",
         "lang": "swift",
         "addr": 4295060664
       },
       {
-        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S...ySSGvM",
-        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S...ySSGvM",
+        "name": "option_ids.allocator__Array: allocator, option_ids: allocator, S(...ySSGvM)",
+        "flag": "method.WKWebViewPreferencesManager.option_ids.allocator__Array:_allocator__option_ids:_allocator__S_...ySSGvM_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC10option_idsSaySSGvM",
         "lang": "swift",
         "addr": 4295060756
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S...ySSAC03WebE7SettingCGvg",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S...ySSAC03WebE7SettingCGvg",
+        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvg)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvg_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvg",
         "lang": "swift",
         "addr": 4295061180
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S...ySSAC03WebE7SettingCGvs",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S...ySSAC03WebE7SettingCGvs",
+        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvs)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvs_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvs",
         "lang": "swift",
         "addr": 4295061256
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S...ySSAC03WebE7SettingCGvM",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S...ySSAC03WebE7SettingCGvM",
+        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvM)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvM_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvM",
         "lang": "swift",
         "addr": 4295061348
       },
       {
-        "name": "wkWeb.allocator...cfC",
-        "flag": "method.WKWebViewPreferencesManager.wkWeb.allocator...cfC",
+        "name": "wkWeb.allocator(...cfC)",
+        "flag": "method.WKWebViewPreferencesManager.wkWeb.allocator_...cfC_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC05wkWebE0ACSo0dE0C_tcfC",
         "lang": "swift",
         "addr": 4295061472
@@ -940,29 +940,29 @@ EXPECT=<<EOF
         "addr": 4295062948
       },
       {
-        "name": "isOptionEnabled.allocator...SbSSF",
-        "flag": "method.WKWebViewPreferencesManager.isOptionEnabled.allocator...SbSSF",
+        "name": "isOptionEnabled.allocator(...SbSSF)",
+        "flag": "method.WKWebViewPreferencesManager.isOptionEnabled.allocator_...SbSSF_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC15isOptionEnabledySbSSF",
         "lang": "swift",
         "addr": 4295063828
       },
       {
-        "name": "enableJavaScript.allocator...ySbF",
-        "flag": "method.WKWebViewPreferencesManager.enableJavaScript.allocator...ySbF",
+        "name": "enableJavaScript.allocator(...ySbF)",
+        "flag": "method.WKWebViewPreferencesManager.enableJavaScript.allocator_...ySbF_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC16enableJavaScriptyySbF",
         "lang": "swift",
         "addr": 4295064368
       },
       {
-        "name": "enableJavaScriptBridge.allocator...ySbF",
-        "flag": "method.WKWebViewPreferencesManager.enableJavaScriptBridge.allocator...ySbF",
+        "name": "enableJavaScriptBridge.allocator(...ySbF)",
+        "flag": "method.WKWebViewPreferencesManager.enableJavaScriptBridge.allocator_...ySbF_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC22enableJavaScriptBridgeyySbF",
         "lang": "swift",
         "addr": 4295064932
       },
       {
-        "name": "enableUndocumentedAllowAccessFromFileURLs.allocator...ySbF",
-        "flag": "method.WKWebViewPreferencesManager.enableUndocumentedAllowAccessFromFileURLs.allocator...ySbF",
+        "name": "enableUndocumentedAllowAccessFromFileURLs.allocator(...ySbF)",
+        "flag": "method.WKWebViewPreferencesManager.enableUndocumentedAllowAccessFromFileURLs.allocator_...ySbF_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC41enableUndocumentedAllowAccessFromFileURLsyySbF",
         "lang": "swift",
         "addr": 4295065552
@@ -1104,19 +1104,19 @@ EXPECT=<<EOF
       {
         "name": "baseUrlTextField",
         "kind": "property",
-        "type": "UITextField.allocatorSgXw",
+        "type": "UITextField.allocator__GenericAccessorSgXw",
         "addr": 4295135056
       },
       {
         "name": "contentTextView",
         "kind": "property",
-        "type": "UITextView.allocatorSgXw",
+        "type": "UITextView.allocator__GenericAccessorSgXw",
         "addr": 4295135073
       },
       {
         "name": "parentWebView",
         "kind": "property",
-        "type": "UIViewController.allocatorSg",
+        "type": "UIViewController.allocator__GenericAccessorSg",
         "addr": 4295135089
       },
       {
@@ -1148,31 +1148,31 @@ EXPECT=<<EOF
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "UITextField.allocatorSgXw",
+        "type": "UITextField.allocator__GenericAccessorSgXw",
         "addr": 4295135136
       },
       {
         "name": "uiWebView",
         "kind": "property",
-        "type": "UIWebView.allocatorSgXw",
+        "type": "UIWebView.allocator__GenericAccessorSgXw",
         "addr": 4295135143
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "UIProgressView.allocatorSgXw",
+        "type": "UIProgressView.allocator__GenericAccessorSgXw",
         "addr": 4295135153
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "UIButton.allocatorSgXw",
+        "type": "UIButton.allocator__GenericAccessorSgXw",
         "addr": 4295135165
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "UIBarButtonItem.allocatorSgXw",
+        "type": "UIBarButtonItem.allocator__GenericAccessorSgXw",
         "addr": 4295135176
       },
       {
@@ -1196,7 +1196,7 @@ EXPECT=<<EOF
       {
         "name": "loadContentButtonPressed",
         "kind": "property",
-        "type": "UIBarButtonItem.allocatorSgXw",
+        "type": "UIBarButtonItem.allocator__GenericAccessorSgXw",
         "addr": 4295135264
       }
     ]
@@ -2505,25 +2505,25 @@ EXPECT=<<EOF
         "addr": 4295133424
       },
       {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
         "flag": "sym.WKWebViewPreferencesManager._symbolic_SS______t_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "rawname": "_symbolic SS______t 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134038
       },
       {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
         "flag": "sym.WKWebViewPreferencesManager._symbolic_Say_____G_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "rawname": "_symbolic Say_____G 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134048
       },
       {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
-        "flag": "sym.WKWebViewPreferencesManager._symbolic______ySay_____GG_s16IndexingIteratorV_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebG7SettingC",
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator(",
+        "flag": "method.WKWebViewPreferencesManager_1.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator_",
         "rawname": "_symbolic _____ySay_____GG s16IndexingIteratorV 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebG7SettingC",
         "addr": 4295134058
       },
       {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
         "flag": "sym.WKWebViewPreferencesManager._symbolic_SDySS_____G_15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "rawname": "_symbolic SDySS_____G 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134076
@@ -2535,8 +2535,8 @@ EXPECT=<<EOF
         "addr": 4295134088
       },
       {
-        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
-        "flag": "method.WKWebViewPreferencesManager_1.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator",
+        "name": "symbolic WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
+        "flag": "method.WKWebViewPreferencesManager_1.symbolic_WheresMyBrowser.WKWebViewPreferencesManager.Web.allocator.Setting",
         "rawname": "_symbolic _____ 15WheresMyBrowser27WKWebViewPreferencesManagerC03WebE7SettingC",
         "addr": 4295134156
       }
@@ -2600,13 +2600,13 @@ EXPECT=<<EOF
     "index": 37,
     "methods": [
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
         "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedEncodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "rawname": "_symbolic _____y_____G s22KeyedEncodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133766
       },
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
         "flag": "sym.MainTabBarViewController._symbolic______y_____G_s22KeyedDecodingContainerV_15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "rawname": "_symbolic _____y_____G s22KeyedDecodingContainerV 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133780
@@ -2624,8 +2624,8 @@ EXPECT=<<EOF
         "addr": 4295133824
       },
       {
-        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
-        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E",
+        "name": "symbolic WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E(",
+        "flag": "method.MainTabBarViewController_1.symbolic_WheresMyBrowser.MainTabBarViewController.UpdateData.allocator.CodingKeys._60F9CE1417ACA0AFA4D8B149128E141E_",
         "rawname": "_symbolic _____ 15WheresMyBrowser24MainTabBarViewControllerC10UpdateDataV10CodingKeys33_60F9CE1417ACA0AFA4D8B149128E141ELLO",
         "addr": 4295133830
       }
