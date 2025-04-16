@@ -25,7 +25,11 @@ static inline void init_cons_input(InputState *state) {
 }
 
 static inline void init_cons_instance(void) {
-	if (R_UNLIKELY (!r_cons_instance)) {
+	if (R_LIKELY (r_cons_instance)) {
+		if (!r_cons_instance->context) {
+			r_cons_instance->context = &r_cons_context_default;
+		}
+	} else {
 		r_cons_instance = &g_cons_instance;
 		r_cons_instance->context = &r_cons_context_default;
 		init_cons_input (&r_cons_instance->input_state);
@@ -2258,15 +2262,18 @@ R_API void r_cons_clear_buffer(void) {
 R_API void r_cons_thready(void) {
 	// use tls instance
 	r_cons_instance = &g_cons_instance_tls;
-	if (r_cons_instance) {
+	if (r_cons_instance->refcnt > 0) {
 		R_CRITICAL_ENTER (I);
 	}
-	C->unbreakable = true;
+	RConsContext *ctx = getctx();
+	if (ctx) {
+		C->unbreakable = true;
+	}
 	r_sys_signable (false); // disable signal handling
-	if (!r_cons_instance) {
+	if (r_cons_instance->refcnt == 0) {
 		r_cons_new ();
 	}
-	if (r_cons_instance) {
+	if (r_cons_instance->refcnt > 0) {
 		R_CRITICAL_LEAVE (I);
 	}
 }
