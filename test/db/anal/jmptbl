@@ -149,13 +149,13 @@ EXPECT=<<EOF
 0x100004138      stp x20, x19, [var_120h]
 0x10000413c      stp x29, x30, [var_130h]
 0x100004140      add x29, sp, 0x130
-0x100004144      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x100004144      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004148      ldr x8, [x8, 0x390]
 0x10000414c      ldr x8, [x8]
 0x100004150      stur x8, [x29, -0x60]
 0x100004154      str x1, [var_80h]                                     ; arg2
 0x100004158      lsr x25, x1, 0x3e                                     ; arg2
-0x10000415c      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x10000415c      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004160      ldr x24, [x24, 0x398]
 0x100004164      mov x19, x21
 0x100004168      adrp x8, sym.func.100004000                           ; 0x100004000
@@ -188,7 +188,7 @@ EXPECT=<<EOF
 0x1000041a8      b.vs 0x10000449c
 | // true: 0x10000449c  false: 0x1000041ac
 ; CODE XREFS from sym.func.100004124 @ 0x100004188(x), 0x10000419c(x)
-0x1000041ac      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000041ac      adrp x24, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x1000041b0      ldr x24, [x24, 0x398]
 0x1000041b4      cbz x26, case.0x100004170.3
 | // true: 0x100004438  false: 0x1000041b8
@@ -269,7 +269,7 @@ EXPECT=<<EOF
 0x1000042ac      cbz x0, 0x1000044a0
 | // true: 0x1000044a0  false: 0x1000042b0
 0x1000042b0      mov x19, x0
-0x1000042b4      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg
+0x1000042b4      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS_...vg_ ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS(...vg)
 0x1000042b8      subs x8, x23, x0
 0x1000042bc      b.vc 0x100004378
 | // true: 0x100004378  false: 0x1000042c0
@@ -322,7 +322,7 @@ EXPECT=<<EOF
 0x100004364      cbz x0, 0x1000044a4
 | // true: 0x1000044a4  false: 0x100004368
 0x100004368      mov x19, x0
-0x10000436c      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS...vg ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS...vg
+0x10000436c      bl sym.imp.getter_Foundation.__DataStorage._offset.allocator__Swift.Int______:_allocator_offsetallocatorS_...vg_ ; getter Foundation.__DataStorage._offset.allocator__Swift.Int -> (): allocator_offsetallocatorS(...vg)
 0x100004370      subs x8, x23, x0
 0x100004374      b.vs 0x100004490
 | // true: 0x100004490  false: 0x100004378
@@ -339,10 +339,10 @@ EXPECT=<<EOF
 0x100004398      mov x2, x0
 0x10000439c      ldr q0, [arg_140hx90]
 0x1000043a0      str q0, [x0, 0x10]
-0x1000043a4      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000043a4      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x1000043a8      ldr x8, [x8, 0x360]
 0x1000043ac      str x8, [x0, 0x38]
-0x1000043b0      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x1000043b0      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x1000043b4      ldr x8, [x8, 0x368]
 0x1000043b8      str x8, [x0, 0x40]
 0x1000043bc      strb w19, [x0, 0x20]
@@ -350,7 +350,7 @@ EXPECT=<<EOF
 0x1000043c4      movk x0, 0x6832, lsl 16                               ; '2h'
 0x1000043c8      movk x0, 0x7868, lsl 32                               ; 'hx'
 0x1000043cc      mov x1, -0x1a00000000000000
-0x1000043d0      bl sym.imp.FoundationCVarArg...dtcfC
+0x1000043d0      bl sym.imp.FoundationCVarArg_...dtcfC_                ; FoundationCVarArg(...dtcfC)
 0x1000043d4      mov x27, x0
 0x1000043d8      mov x28, x1
 0x1000043dc      stur x24, [x29, -0x68]
@@ -386,7 +386,7 @@ EXPECT=<<EOF
 ;-- case 3:                                                            ; from 0x100004170
 ; CODE XREF from sym.func.100004124 @ 0x100004170(x)
 0x100004438      ldur x8, [x29, -0x60]
-0x10000443c      adrp x9, reloc.Foundation.__DataStorage.bytes.allocator...itcfc ; 0x10000c000
+0x10000443c      adrp x9, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x100004440      ldr x9, [x9, 0x390]
 0x100004444      ldr x9, [x9]
 0x100004448      cmp x9, x8
