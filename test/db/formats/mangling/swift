@@ -16,6 +16,40 @@ PasswordCheck.ContentView.body.SwiftUI.Tuple...D0VyAE0D0PAEE7paddingyQrAE4EdgeO3
 EOF
 RUN
 
+NAME=more demangling
+FILE=--
+CMDS=<<EOF
+iD swift _$s10HomeWallet0A13DeeplinkModelV10launchIDFASSSgvM
+iD swift _$s10HomeWallet0A12FileProviderC013getContentsOfC04with4type10Foundation4DataVSgSS_SStF
+iD swift _$s10HomeWallet0A13DeeplinkModelV6pageIdSSSgvpfi
+EOF
+EXPECT=<<EOF
+HomeWallet.DeeplinkModel.launchIDFA(...SgvM)
+HomeWallet.FileProvider.getContentsOf.with.type__String(...tF)
+HomeWallet.DeeplinkModel.pageId(...Sgvpfi)
+EOF
+RUN
+
+NAME=aB swift demangling cases
+FILE=--
+CMDS=<<EOF
+iD swift _$s10CartFacade0aB13ModalItemViewC14moreItemsLabelSo7UILabelCSgvgTq
+EOF
+EXPECT=<<EOF
+CartFacade: ', ModalItemView.moreItemsLabel: ', C.more.UILabel(...gvgTq)
+EOF
+RUN
+
+NAME=aB swift compact symbol
+FILE=--
+CMDS=<<EOF
+iD swift $s9CryptoKit4P384O12KeyAgreementO07PrivateD0V20compactRepresentableAGSb_tcfC
+EOF
+EXPECT=<<EOF
+CryptoKit.P384.KeyAgreement.Private(...cfC)
+EOF
+RUN
+
 NAME=1b34 longsym
 FILE=bins/mach0/PasswordCheck-swift
 CMDS=<<EOF
@@ -31,7 +65,7 @@ NAME=swift long method
 FILE=--
 CMDS=iD swift s16IOSSecuritySuiteAAC14denySymbolHook_2at10imageSlideySS_SPySo11mach_headerVGSitFZ
 EXPECT=<<EOF
-IOSSecuritySuite..denySymbolHook.at.imageSlide...eaderVGSitFZ
+IOSSecuritySuite..denySymbolHook.at.imageSlide(...eaderVGSitFZ)
 EOF
 RUN
 
@@ -39,7 +73,7 @@ NAME=swift long method
 FILE=--
 CMDS=iD swift s16IOSSecuritySuiteAAC16amIRuntimeHooked13dyldAllowList14detectionClass8selector02isJ6MethodSbSaySSG_yXlXp10ObjectiveC8SelectorVSbtFZ
 EXPECT=<<EOF
-IOSSecuritySuite..amIRuntimeHooked.dyldAllowList...XlXp10ObjectiveC8SelectorVSbtFZ
+IOSSecuritySuite..amIRuntimeHooked.dyldAllowList(...XlXp10ObjectiveC8SelectorVSbtFZ)
 EOF
 RUN
 
@@ -47,7 +81,7 @@ NAME=swift long multiple dupes
 FILE=--
 CMDS=iD swift $s9CryptoKit8Curve448O7SigningO9PublicKeyV17rawRepresentationAGx_tKc10Foundation15ContiguousBytesRzlufC
 EXPECT=<<EOF
-CryptoKit.Curve448.Signing.PublicKey.rawRepresentation.Foundation.ContiguousBytes...lufC
+CryptoKit.Curve448.Signing.PublicKey.rawRepresentation.Foundation.ContiguousBytes(...lufC)
 EOF
 RUN
 
@@ -71,7 +105,7 @@ NAME=swift missing A2CmFWC attributes
 FILE=--
 CMDS=iD swift s16IOSSecuritySuite11FailedCheckO30restrictedDirectoriesWriteableyA2CmFWC
 EXPECT=<<EOF
-IOSSecuritySuite.FailedCheck.restrictedDirectoriesWriteable...A2CmFWC
+IOSSecuritySuite.FailedCheck.restrictedDirectoriesWriteable(...A2CmFWC)
 EOF
 RUN
 
@@ -96,16 +130,16 @@ EXPECT=<<EOF
 0x100003d20 swift   method   4      4
 0x100003d24 swift   method   5      5
 0x100003d1d swift   method   6      6
-0x100003d90 swift   method   7      allocator....cfCTq
+0x100003d90 swift   method   7      allocator.(...cfCTq)
 0x100003d2c swift   method   8      8
 0x100003d34 swift   method   9      9
 0x100003e8d swift property   0      meh
 0x100003e91 swift property   1      cow
 0x00003d44 [0x1000028f0 - 0x100003d9c]   5292 swift class 2 SuperKlass
-0x1000028f0 swift   method   0      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vg
-0x100002950 swift   method   1      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vs
-0x1000029b0 swift   method   2      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS...vM
-0x100002a10 swift   method   3      allocator....cfC
+0x1000028f0 swift   method   0      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vg)
+0x100002950 swift   method   1      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vs)
+0x1000029b0 swift   method   2      superfield.allocator__Swift.Int: allocatorsuperfield: allocatorS(...vM)
+0x100002a10 swift   method   3      allocator.(...cfC)
 0x100003d9c swift   method   4      4
 0x100003e95 swift property   0      superfield
 0x100008260 [0x100008260 - 0x100008260]      0 objc class 3 klass.SomeClass :: klass.SuperKlass

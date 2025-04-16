@@ -27,6 +27,7 @@ static const SwiftType types[] = {
 	{ "Bb", "Builtin.BridgeObject" },
 	{ "BB", "Builtin.UnsafeValueBuffer" },
 	{ "Bo", "Builtin.NativeObject" },
+	{ "aB", "'" },
 	{ "BO", "Builtin.UnknownObject" },
 	{ "Bp", "Builtin.RawPointer" },
 	{ "Bt", "Builtin.SILToken" },
@@ -35,6 +36,7 @@ static const SwiftType types[] = {
 	{ "GV", "mutableAddressor" },
 	{ "Sa", "Array" },
 	{ "Sb", "Bool" },
+	{ "Sg", "GenericAccessor" },
 	{ "SC", "Syntesized" },
 	{ "Sc", "UnicodeScalar" },
 	{ "Sd", "Swift.Double" },
@@ -455,6 +457,7 @@ static char *my_swift_demangler(const char *s) {
 			}
 		}
 		if (q > q_end) {
+			eprintf ("END\n");
 			r_strbuf_free (out);
 			return NULL;
 		}
@@ -530,7 +533,7 @@ moreitems:
 						continue;
 					}
 					// ignored stuff here
-					break;
+					// break;
 				case 'C': // "s16IOSSecuritySuiteAACMu"
 				case 'O':
 					if (!isdigit (q[1]) && looks_valid (q[1])) {
@@ -851,7 +854,11 @@ repeat:;
 					} else {
 						n = strchr (q, '_');
 						if (!n && *q) {
-							r_strbuf_appendf (out, "...%s", q);
+							if (isdigit (*q)) {
+								q--;
+								goto repeat;
+							}
+							r_strbuf_appendf (out, "(...%s)", q);
 							break;
 						}
 						if (n) {
