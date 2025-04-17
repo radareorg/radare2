@@ -1100,10 +1100,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=prc hex.offset=0
+NAME=prc hex.addr=0
 FILE=-
 CMDS=<<EOF
-e hex.offset=0
+e hex.addr=0
 woe 0 0xff 1
 f s @ 0x77
 prc 256
@@ -1128,10 +1128,10 @@ OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 EOF
 RUN
 
-NAME=p=e hex.offset=0
+NAME=p=e hex.addr=0
 FILE=-
 CMDS=<<EOF
-e hex.offset=0
+e hex.addr=0
 e scr.color=0
 woe 0 0xff 1
 p=e 10
@@ -1150,12 +1150,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxA hex.offset=0
+NAME=pxA hex.addr=0
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e hex.offset=0
+e hex.addr=0
 e scr.color=0
 woe 0 0xff 1
 pxA 10
