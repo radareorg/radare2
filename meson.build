@@ -502,7 +502,9 @@ install_data(script_files, install_dir: r2_scripts)
 
 libsdb_sp = subproject('sdb')
 libsdb_static = libsdb_sp.get_variable('libsdb_static')
+libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
 libsdb_includes = libsdb_sp.get_variable('sdb_inc')
+libsdb_version = libsdb_sp.get_variable('sdb_version')
 
 sdb_dep = declare_dependency(
   link_whole: libsdb_static,
@@ -528,7 +530,7 @@ sdb_install = custom_target('r2sdb',
   install_dir : get_option('bindir'))
 
 os_name = host_machine.system()
-lib_extension = '.so'  # Default for Linux
+lib_extension = '.so.' + libsdb_version  # Default for Linux
 
 if os_name == 'darwin'
     lib_extension = '.dylib'
@@ -537,8 +539,8 @@ elif os_name == 'windows'
 endif
 
 libsdb_install = custom_target('libr2sdb',
-  input : libsdb_static,
-  output : 'libr2sdb' + lib_extension,
+  input : libsdb_dynamic,
+  output : 'libsdb' + lib_extension,
   command : copyinout,
   install : true,
   install_dir : get_option('libdir'))
