@@ -3812,7 +3812,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.middle", "false", "allow disassembling jumps in the middle of an instruction");
 	SETB ("asm.bbmiddle", "true", "realign disassembly if a basic block starts in the middle of an instruction");
 	SETB ("asm.noisy", "true", "show comments considered noisy but possibly useful");
-	SETB ("hex.offset", "true", "show offsets in hex-dump");
+	SETB ("hex.addr", "true", "show address/offset in hexdump (px)");
 	SETB ("scr.square", "true", "use square pixels or not");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "shows rainbow colors depending of address");

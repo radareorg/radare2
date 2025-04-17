@@ -421,13 +421,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=hex.offset
+NAME=hex.addr
 FILE=malloc://1024
 CMDS=<<EOF
 w hello world
 b 32
 px
-e hex.offset=0
+e hex.addr=0
 px
 EOF
 EXPECT=<<EOF

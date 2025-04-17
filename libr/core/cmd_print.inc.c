@@ -786,7 +786,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 	const bool show_color = r_config_get_b (core->config, "scr.color");
 	const bool show_flags = r_config_get_b (core->config, "asm.flags");
 	const bool show_section = r_config_get_b (core->config, "hex.section");
-	const bool show_offset = r_config_get_b (core->config, "hex.offset");
+	const bool show_offset = r_config_get_b (core->config, "hex.addr");
 	// const bool show_cursor = core->print->cur_enabled;
 	const bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {
@@ -869,7 +869,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const bool show_color = r_config_get_b (core->config, "scr.color");
 	const bool show_flags = r_config_get_b (core->config, "asm.flags");
 	const bool show_section = r_config_get_b (core->config, "hex.section");
-	const bool show_offset = r_config_get_b (core->config, "hex.offset");
+	const bool show_offset = r_config_get_b (core->config, "hex.addr");
 	const bool show_cursor = core->print->cur_enabled;
 	const bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {
@@ -972,7 +972,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
-	bool show_offset = r_config_get_i (core->config, "hex.offset");
+	bool show_offset = r_config_get_i (core->config, "hex.addr");
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	ut8 *block = core->block;
 	int len = core->blocksize;
@@ -2465,7 +2465,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	core->print->use_comments = r_config_get_i (core->config, "hex.comments");
 	int flagsz = r_config_get_i (core->config, "hex.flagsz");
 	bool show_section = r_config_get_b (core->config, "hex.section");
-	bool show_offset = r_config_get_b (core->config, "hex.offset");
+	bool show_offset = r_config_get_b (core->config, "hex.addr");
 	const ut8 *buf = core->block;
 	ut64 addr = core->addr;
 	int color_idx = 0;
@@ -3095,7 +3095,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int onechar = r_config_get_i (core->config, "hex.onechar");
-	bool hex_offset = r_config_get_i (core->config, "hex.offset");
+	bool hex_offset = r_config_get_i (core->config, "hex.addr");
 	int bgcolor_in_heap = false;
 	bool show_cursor = core->print->cur_enabled;
 	char buf[2];
@@ -5097,7 +5097,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	}
 	if (print_bars) {
-		bool hex_offset = r_config_get_i (core->config, "hex.offset");
+		bool hex_offset = r_config_get_i (core->config, "hex.addr");
 		if (hex_offset) {
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
@@ -8090,7 +8090,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmdf (core, "px %d@0x%08"PFMT64x, size, addr);
 			break;
 		} else {
-			bool show_offset = r_config_get_i (core->config, "hex.offset");
+			bool show_offset = r_config_get_i (core->config, "hex.addr");
 			if (show_offset) {
 				core->print->flags |= R_PRINT_FLAGS_OFFSET;
 			} else {
@@ -8198,7 +8198,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "pxi"
 			if (l != 0) {
-				core->print->show_offset = r_config_get_i (core->config, "hex.offset");
+				core->print->show_offset = r_config_get_i (core->config, "hex.addr");
 				r_print_hexii (core->print, core->addr, core->block,
 					core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			}
@@ -8308,7 +8308,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'W': // "pxW"
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.addr"));
 				bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
@@ -8445,7 +8445,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.addr"));
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
