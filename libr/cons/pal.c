@@ -684,6 +684,7 @@ R_API int r_cons_pal_len(void) {
 }
 
 R_API void r_cons_pal_reload(void) {
+	// This is slowly executed on every change of scr.color
 	__cons_pal_update_event (r_cons_context ());
 }
 

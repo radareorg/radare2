@@ -1032,7 +1032,9 @@ continuation:
 		cons->context->buffer = cntstr;
 		cons->context->buffer_len = cntstr_len;
 		cons->context->buffer_sz = cntstr_len + 1;
-		cons->num->value = cons->lines;
+		if (cons->num) {
+			cons->num->value = cons->lines;
+		}
 		r_strbuf_free (ob);
 		return;
 	}

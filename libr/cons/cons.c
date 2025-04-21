@@ -98,30 +98,29 @@ static void cons_stack_free(void *ptr) {
 }
 
 static RConsStack *cons_stack_dump(bool recreate) {
+	RConsContext *ctx = getctx ();
 	RConsStack *data = R_NEW0 (RConsStack);
-	if (data) {
-		if (C->buffer) {
-			data->buf = C->buffer;
-			data->buf_len = C->buffer_len;
-			data->buf_size = C->buffer_sz;
+	if (ctx->buffer) {
+		data->buf = ctx->buffer;
+		data->buf_len = ctx->buffer_len;
+		data->buf_size = ctx->buffer_sz;
+	}
+	data->grep = R_NEW0 (RConsGrep);
+	if (data->grep) {
+		memcpy (data->grep, &ctx->grep, sizeof (RConsGrep));
+		if (ctx->grep.str) {
+			data->grep->str = strdup (ctx->grep.str);
 		}
-		data->grep = R_NEW0 (RConsGrep);
-		if (data->grep) {
-			memcpy (data->grep, &C->grep, sizeof (RConsGrep));
-			if (C->grep.str) {
-				data->grep->str = strdup (C->grep.str);
-			}
+	}
+	if (recreate && ctx->buffer_sz > 0) {
+		ctx->buffer = malloc (ctx->buffer_sz);
+		if (R_UNLIKELY (!ctx->buffer)) {
+			ctx->buffer = data->buf;
+			free (data);
+			return NULL;
 		}
-		if (recreate && C->buffer_sz > 0) {
-			C->buffer = malloc (C->buffer_sz);
-			if (R_UNLIKELY (!C->buffer)) {
-				C->buffer = data->buf;
-				free (data);
-				return NULL;
-			}
-		} else {
-			C->buffer = NULL;
-		}
+	} else {
+		ctx->buffer = NULL;
 	}
 	return data;
 }
@@ -418,10 +417,11 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 }
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
-	if (r_stack_size (C->break_stack) > 0) {
+	RConsContext *ctx = getctx ();
+	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
 		r_cons_break_timeout (I->otimeout);
 	}
-	r_cons_context_break_push (C, cb, user, true);
+	r_cons_context_break_push (ctx, cb, user, true);
 }
 
 R_API void r_cons_break_pop(void) {
@@ -883,30 +883,31 @@ R_API int r_cons_get_buffer_len(void) {
 }
 
 R_API void r_cons_filter(void) {
+	RConsContext *ctx = getctx ();
 	/* grep */
-	if (C->filter || C->grep.tokens_used \
-			|| (C->grep.strings && r_list_length (C->grep.strings) > 0) \
-			|| C->grep.less || C->grep.json) {
+	if (ctx->filter || ctx->grep.tokens_used \
+			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
+			|| ctx->grep.less || ctx->grep.json) {
 		(void)r_cons_grepbuf ();
-		C->filter = false;
+		ctx->filter = false;
 	}
 	/* html */
-	if (C->is_html) {
+	if (ctx->is_html) {
 		int newlen = 0;
-		char *input = r_str_ndup (C->buffer, C->buffer_len);
+		char *input = r_str_ndup (ctx->buffer, ctx->buffer_len);
 		char *res = r_cons_html_filter (input, &newlen);
 		if (res) {
-			free (C->buffer);
-			C->buffer = res;
-			C->buffer_len = newlen;
-			C->buffer_sz = newlen;
+			free (ctx->buffer);
+			ctx->buffer = res;
+			ctx->buffer_len = newlen;
+			ctx->buffer_sz = newlen;
 		}
 		free (input);
 	}
-	if (C->tmp_html) {
-		C->is_html = C->was_html;
-		C->tmp_html = false;
-		C->was_html = false;
+	if (ctx->tmp_html) {
+		ctx->is_html = ctx->was_html;
+		ctx->tmp_html = false;
+		ctx->was_html = false;
 	}
 }
 
@@ -982,12 +983,13 @@ R_API void r_cons_context_break(RConsContext *context) {
 }
 
 R_API void r_cons_last(void) {
-	if (!C->lastEnabled) {
+	RConsContext *ctx = getctx ();
+	if (!ctx->lastEnabled) {
 		return;
 	}
-	C->lastMode = true;
-	if (C->lastLength > 0) {
-		r_cons_write (C->lastOutput, C->lastLength);
+	ctx->lastMode = true;
+	if (ctx->lastLength > 0) {
+		r_cons_write (ctx->lastOutput, ctx->lastLength);
 	}
 }
 
