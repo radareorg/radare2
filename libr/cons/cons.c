@@ -983,12 +983,13 @@ R_API void r_cons_context_break(RConsContext *context) {
 }
 
 R_API void r_cons_last(void) {
-	if (!C->lastEnabled) {
+	RConsContext *ctx = getctx ();
+	if (!ctx->lastEnabled) {
 		return;
 	}
-	C->lastMode = true;
-	if (C->lastLength > 0) {
-		r_cons_write (C->lastOutput, C->lastLength);
+	ctx->lastMode = true;
+	if (ctx->lastLength > 0) {
+		r_cons_write (ctx->lastOutput, ctx->lastLength);
 	}
 }
 
