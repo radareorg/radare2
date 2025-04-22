@@ -197,7 +197,7 @@ static void type_trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, 
 		return;
 	}
 	TypeTrace *trace = user;
-	TypeTraceAccess *access = RVecAccess_emplace_back (&trace->db.accesses);
+	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	if (!access) {
 		free (hexbuf);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
@@ -501,7 +501,7 @@ static void type_trace_restore(TypeTrace *trace, REsil *esil, int idx) {
 			return;
 		}
 	}
-	ChangeCollector collector = {.idx = idx, .data = data};
+	TTChangeCollector collector = {.idx = idx, .data = data};
 	ht_up_foreach (trace->memory, collect_mem_changes_cb, &collector);
 	//sort collected mem changes so that the newest come first
 	qsort (data, c_num, sizeof (TypeTraceMemChange), sort_mem_changes_cb);
@@ -528,23 +528,23 @@ typedef struct {
 
 /// BEGIN /////////////////// esil trace helpers ///////////////////////
 
-static int etrace_index(REsilTrace *etrace) {
-	int len = RVecTraceOp_length (&etrace->db.ops);
+static int etrace_index(TypeTrace *etrace) {
+	int len = VecTraceOp_length (&etrace->db.ops);
 	etrace->cur_idx = len; //  > 0? len -1: 0;
-	return etrace->cur_idx; // RVecTraceOp_length (&etrace->db.ops);
+	return etrace->cur_idx; // VecTraceOp_length (&etrace->db.ops);
 }
 
-static ut64 etrace_addrof(REsilTrace *etrace, ut32 idx) {
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx);
+static ut64 etrace_addrof(TypeTrace *etrace, ut32 idx) {
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	return op? op->addr: 0;
 }
 
-static ut64 etrace_memwrite_addr(REsilTrace *etrace, ut32 idx) {
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx);
+static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
 	if (op && op->start != op->end) {
-		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);
-		REsilTraceAccess *end = RVecAccess_at (&etrace->db.accesses, op->end - 1);
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
 		while (start <= end) {
 			if (!start->is_reg && start->is_write) {
 				return start->mem.addr;
@@ -556,11 +556,11 @@ static ut64 etrace_memwrite_addr(REsilTrace *etrace, ut32 idx) {
 }
 
 static bool etrace_have_memread(REsilTrace *etrace, ut32 idx) {
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx);
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memread %d %d", etrace->idx, idx);
 	if (op && op->start != op->end) {
-		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);
-		REsilTraceAccess *end = RVecAccess_at (&etrace->db.accesses, op->end - 1);
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
 		while (start <= end) {
 			if (!start->is_reg && !start->is_write) {
 				return true;
@@ -573,10 +573,10 @@ static bool etrace_have_memread(REsilTrace *etrace, ut32 idx) {
 
 static ut64 etrace_regread_value(REsilTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regread %d %d", etrace->idx, idx);
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx);
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	if (op && op->start != op->end) {
-		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);
-		REsilTraceAccess *end = RVecAccess_at (&etrace->db.accesses, op->end - 1);
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
 		while (start <= end) {
 			if (start->is_reg && !start->is_write) {
 				if (!strcmp (rname, start->reg.name)) {
@@ -591,10 +591,10 @@ static ut64 etrace_regread_value(REsilTrace *etrace, ut32 idx, const char *rname
 
 static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
 	R_LOG_DEBUG ("regwrite %d %d", etrace->idx, idx);
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx);
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	if (op && op->start != op->end) {
-		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);
-		REsilTraceAccess *end = RVecAccess_at (&etrace->db.accesses, op->end - 1);
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				return start->reg.name;
@@ -610,10 +610,10 @@ static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
 static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regwrite contains %d %s", idx, rname);
 	R_RETURN_VAL_IF_FAIL (etrace && rname, false);
-	REsilTraceOp *op = RVecTraceOp_at (&etrace->db.ops, idx); // AAA + 1);
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx); // AAA + 1);
 	if (op && op->start != op->end) {
-		REsilTraceAccess *start = RVecAccess_at (&etrace->db.accesses, op->start);
-		REsilTraceAccess *end = RVecAccess_at (&etrace->db.accesses, op->end - 1);
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				if (!strcmp (rname, start->reg.name)) {
