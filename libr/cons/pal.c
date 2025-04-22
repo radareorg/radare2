@@ -6,6 +6,8 @@
 #define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
 
+static RThreadLock *lock = NULL;
+
 static struct {
 	const char *name;
 	int off;  // RConsPrintablePalette offset
@@ -93,7 +95,7 @@ static struct {
 
 	{ NULL, 0, 0 }
 };
-static const int keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
+static const size_t keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
 
 struct {
 	const char *name;
@@ -148,6 +150,7 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 	SdbListIter *iter;
 	SdbKv *kv;
 	r_cons_rainbow_free (ctx);
+	r_th_lock_leave (lock);
 	r_cons_rainbow_new (ctx, list->length);
 	ls_foreach (list, iter, kv) {
 		ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
@@ -156,8 +159,6 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 	ls_free (list);
 	sdb_free (db);
 }
-
-static R_TH_LOCAL RThreadLock *lock = NULL;
 
 R_API void r_cons_pal_init(RConsContext *ctx) {
 	size_t i;
@@ -265,6 +266,11 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 }
 
 R_API void r_cons_pal_free(RConsContext *ctx) {
+	// Protect palette free against concurrent updates
+	if (!lock) {
+		lock = r_th_lock_new (false);
+	}
+	r_th_lock_enter (lock);
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
@@ -276,6 +282,10 @@ R_API void r_cons_pal_free(RConsContext *ctx) {
 }
 
 R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
+	if (!lock) {
+		lock = r_th_lock_new (false);
+	}
+	r_th_lock_enter (lock);
 	memcpy (&dst->cpal, &src->cpal, sizeof (src->cpal));
 	memset (&dst->pal, 0, sizeof (dst->pal));
 
@@ -285,6 +295,7 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 	dst->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 
 	__cons_pal_update_event (dst);
+	r_th_lock_leave (lock);
 }
 
 R_API void r_cons_pal_random(void) {
@@ -631,9 +642,11 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 	}
 }
 
-/* Modify the palette to set a color value.
- * r_cons_pal_reload () must be called after this function
- * so the changes take effect. */
+#if 0
+Modify the palette to set a color value.
+r_cons_pal_reload () must be called after this function
+so the changes take effect.
+#endif
 R_API int r_cons_pal_set(const char *key, const char *val) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
@@ -679,13 +692,18 @@ R_API const char *r_cons_pal_get_name(int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
-R_API int r_cons_pal_len(void) {
+R_API size_t r_cons_pal_len(void) {
 	return keys_len;
 }
 
 R_API void r_cons_pal_reload(void) {
 	// This is slowly executed on every change of scr.color
+	if (!lock) {
+		lock = r_th_lock_new (false);
+	}
+	r_th_lock_enter (lock);
 	__cons_pal_update_event (r_cons_context ());
+	r_th_lock_leave (lock);
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {
