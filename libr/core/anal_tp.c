@@ -91,7 +91,6 @@ static void update_trace_db_op(TypeTraceDB *db) {
 		return;
 	}
 	const ut32 vec_idx = VecAccess_length (&db->accesses);
-	if (!vec_idx) {
 		R_LOG_ERROR ("Invalid access database");
 		return;
 	}
@@ -518,8 +517,10 @@ R_VEC_TYPE (RVecBuf, ut8);
 typedef struct {
 	RCore *core;
 	RAnal *anal;
-	REsilTrace *et;
-	REsilTrace *_et;
+	int stack_fd;
+	ut32 stack_map;
+	ut64 stack_base;
+	TypeTrace *et;
 	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
@@ -555,7 +556,7 @@ static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
 	return 0;
 }
 
-static bool etrace_have_memread(REsilTrace *etrace, ut32 idx) {
+static bool etrace_have_memread(TypeTrace *etrace, ut32 idx) {
 	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memread %d %d", etrace->idx, idx);
 	if (op && op->start != op->end) {
@@ -571,7 +572,7 @@ static bool etrace_have_memread(REsilTrace *etrace, ut32 idx) {
 	return false;
 }
 
-static ut64 etrace_regread_value(REsilTrace *etrace, ut32 idx, const char *rname) {
+static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regread %d %d", etrace->idx, idx);
 	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	if (op && op->start != op->end) {
@@ -589,7 +590,7 @@ static ut64 etrace_regread_value(REsilTrace *etrace, ut32 idx, const char *rname
 	return 0;
 }
 
-static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
+static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 	R_LOG_DEBUG ("regwrite %d %d", etrace->idx, idx);
 	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	if (op && op->start != op->end) {
@@ -607,7 +608,7 @@ static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
 
 /// END ///////////////////// esil trace helpers ///////////////////////
 
-static bool etrace_regwrite_contains(REsilTrace *etrace, ut32 idx, const char *rname) {
+static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regwrite contains %d %s", idx, rname);
 	R_RETURN_VAL_IF_FAIL (etrace && rname, false);
 	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx); // AAA + 1);
@@ -765,7 +766,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	r_anal_op_free (op);
 }
 
-static ut64 get_addr(REsilTrace *et, const char *regname, int idx) {
+static ut64 get_addr(TypeTrace *et, const char *regname, int idx) {
 	if (R_STR_ISEMPTY (regname)) {
 		return 0;
 	}
@@ -886,7 +887,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		int prev_idx, bool userfnc, ut64 caddr) {
 	RAnal *anal = tps->core->anal;
 	RCons *cons = tps->core->cons;
-	REsilTrace *et= tps->et;
+	REsilTrace *et = tps->et;
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (et) -1;
 	const bool verbose = r_config_get_b (tps->core->config, "anal.types.verbose"); // XXX
@@ -1087,9 +1088,21 @@ static TPState *tps_init(RCore *core) {
 	TPState *tps = R_NEW0 (TPState);
 	RConfig *cfg = core->config;
 	tps->core = core;
-	tps->hc = r_config_hold_new (cfg);
 	// tps->_dt = core->dbg->trace;
-	tps->_et = core->anal->esil->trace;
+	int align = r_arch_info (core->anal->arch, R_ARCH_INFO_DATA_ALIGN);
+	align = R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
+	align = R_MAX (align, 1);
+	tps->stack_base = r_config_get_i (core->config, "esil.stack.addr");
+	ut64 stack_size = r_config_get_i (core->config, "esil.stack.size");
+	//ideally this all would happen in a dedicated temporal io bank
+	if (!r_io_map_locate (core->io, &tps->stack_base, stack_size, align)) {
+		free (tps);
+		return NULL;
+	}
+	char *uri = r_str_newf ("malloc://0x%"PFMT64x, stack_size);
+	tps->stack_fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+	tps->stack_map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size)->id;
+	tps->hc = r_config_hold_new (cfg);
 	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
 	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
 	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
@@ -1169,7 +1182,7 @@ repeat:
 	}
 	int i, j;
 	r_config_set_b (core->config, "dbg.trace.eval", false);
-	REsilTrace *etrace = tps->et;
+	TypeTrace *etrace = tps->et;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
 		bb = r_anal_get_block_at (core->anal, bbat);
