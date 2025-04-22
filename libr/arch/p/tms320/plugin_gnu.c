@@ -10,7 +10,7 @@ static int tms320_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 len
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	if ((delta + length) > 4) {
+	if ((delta + length) > info->buffer_length) {
 		return -1;
 	}
 	ut8 *bytes = info->buffer;
@@ -76,11 +76,9 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case 5:
 		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
 		break;
-#if TMS320GNU_HAVE_C64
 	case 6:
 		op->size = print_insn_tic6x ((bfd_vma)addr, &disasm_obj);
 		break;
-#endif
 	default:
 		op->size = print_insn_tic54x ((bfd_vma)addr, &disasm_obj);
 		R_LOG_DEBUG ("Fallback to c54x");

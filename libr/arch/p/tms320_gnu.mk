@@ -3,12 +3,7 @@ OBJ_TMS320GNU+=p/tms320/gnu/tic30-dis.o
 OBJ_TMS320GNU+=p/tms320/gnu/tic4x-dis.o
 OBJ_TMS320GNU+=p/tms320/gnu/tic54x-dis.o
 OBJ_TMS320GNU+=p/tms320/gnu/tic54x-opc.o
-TMS320GNU_HAVE_C64=0
-
-CFLAGS+=-DTMS320GNU_HAVE_C64=$(TMS320GNU_HAVE_C64)
-ifeq ($(TMS320GNU_HAVE_C64),1)
 OBJ_TMS320GNU+=p/tms320/gnu/tic6x-dis.o
-endif
 
 STATIC_OBJ+=${OBJ_TMS320GNU}
 TARGET_TMS320GNU=arch_tms320_gnu.${EXT_SO}

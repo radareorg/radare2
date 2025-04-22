@@ -24,6 +24,7 @@
 #include "../../include/disas-asm.h"
 // #include "disassemble.h"
 #include "tic6x.h"
+#include "r_util.h"
 // #include "libiberty.h"
 
 /* Define the instruction format table.  */
@@ -31,7 +32,7 @@ const tic6x_insn_format tic6x_insn_format_table[tic6x_insn_format_max] =
   {
 #define FMT(name, num_bits, cst_bits, mask, fields) \
     { num_bits, cst_bits, mask, fields },
-#include "opcode/tic6x-insn-formats.h"
+#include "tic6x-insn-formats.h"
 #undef FMT
   };
 
@@ -46,7 +47,7 @@ const tic6x_ctrl tic6x_ctrl_table[tic6x_ctrl_max] =
       crlo,					\
       crhi_mask					\
     },
-#include "opcode/tic6x-control-registers.h"
+#include "tic6x-control-registers.h"
 #undef CTRL
   };
 
@@ -101,7 +102,7 @@ const tic6x_opcode tic6x_opcode_table[tic6x_opcode_max] =
       ops,								\
       var								\
     },
-#include "opcode/tic6x-opcode-table.h"
+#include "tic6x-opcode-table.h"
 #undef INSN
 #undef INSNE
 #undef INSNU
@@ -238,6 +239,7 @@ int
 print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 {
   int status;
+  eprintf ("PIRI\n");
   bfd_vma fp_addr;
   bfd_vma fp_offset;
   unsigned char fp[32];
@@ -257,6 +259,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
   if (status)
     {
       info->memory_error_func (status, addr, info);
+  eprintf ("memerr\n");
       return -1;
     }
 
@@ -371,7 +374,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	  if (!z_field)
 	    {
 	      printf ("*** opcode %x: missing z field", opcode);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  creg_value = tic6x_field_bits (opcode, creg_field);
@@ -415,14 +418,14 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		{
 		  printf ("opcode %x: missing compact insn predicate register field (s field)\n",
 			  opcode);
-		  abort ();
+		  return -1; // abort ();
 		}
 	      s_value = tic6x_field_bits (opcode, s_field);
 	      z_field = tic6x_field_from_fmt (fmt, tic6x_field_z);
 	      if (!z_field)
 		{
 		  printf ("opcode %x: missing compact insn predicate z_value (z field)\n", opcode);
-		  abort ();
+		  return -1; // abort ();
 		}
 
 	      z_value = tic6x_field_bits (opcode, z_field);
@@ -432,7 +435,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
           if (!cond_known)
 	    {
 	      printf ("opcode %x: unspecified ompact insn predicate\n", opcode);
-	      abort ();
+	      return -1; // abort ();
 	    }
           cond = conds[s_value][z_value];
 	}
@@ -450,7 +453,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	    {
 	      printf ("opcode %x: missing field #%d for FIX #%d\n",
 		      opcode, opc->fixed_fields[fix].field_id, fix);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  field_bits = tic6x_field_bits (opcode, field);
@@ -558,7 +561,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		{
 		  printf ("opcode %x: could not retrieve field (field_id:%d)\n",
 			  opcode, fld_num);
-		  abort ();
+		  return -1; // abort ();
 		}
 
 	      fld_val = tic6x_field_bits (opcode, field);
@@ -571,7 +574,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		    {
 		      printf ("opcode %x: field #%d use tic6x_coding_fu, but func_unit_side is already set!\n",
 			      opcode, fld_num);
-		      abort ();
+		      return -1; // abort ();
 		    }
 		  func_unit_side = (fld_val ? 2 : 1);
 		  break;
@@ -582,7 +585,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		    {
 		      printf ("opcode %x: field #%d use tic6x_coding_fu, but func_unit_side is already set!\n",
 			      opcode, fld_num);
-		      abort ();
+		      return -1; // abort ();
 		    }
 		  func_unit_data_side = (fld_val ? 2 : 1);
 		  break;
@@ -594,7 +597,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		    {
 		      printf ("opcode %x: field #%d use tic6x_coding_xpath, have_cross is already set!\n",
 			      opcode, fld_num);
-		      abort ();
+		      return -1; // abort ();
 		    }
 		  have_cross = true;
 		  func_unit_cross = fld_val;
@@ -623,7 +626,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	  if (func_unit_side != 1 && func_unit_side != 2)
 	    {
 	      printf ("opcode %x: func_unit_side is not encoded!\n", opcode);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  /* Cross paths are not applicable when sides are specified
@@ -632,7 +635,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	    {
 	      printf ("opcode %x: xpath not applicable when side are specified both for address and data!\n",
 		      opcode);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  /* Separate address and data paths are only applicable for
@@ -641,7 +644,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	    {
 	      printf ("opcode %x: separate address and data paths only applicable for D unit!\n",
 		      opcode);
-	      abort ();
+	      return -1; // abort ();
           }
 
 	  /* If an address register is being used but in ADDA rather
@@ -653,7 +656,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	      if (have_cross)
 		{
 		  printf ("opcode %x: illegal cross path specifier in adda opcode!\n", opcode);
-		  abort ();
+	          return -1; // abort ();
 		}
 	      func_unit_cross = func_unit_side == 1;
 	    }
@@ -678,7 +681,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 	    default:
               printf ("opcode %x: illegal func_unit specifier %d\n", opcode, opc->func_unit);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  switch (func_unit_data_side)
@@ -698,7 +701,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	    default:
               printf ("opcode %x: illegal data func_unit specifier %d\n",
 		      opcode, func_unit_data_side);
-	      abort ();
+	      return -1; // abort ();
 	    }
 
 	  if (opc->flags & TIC6X_FLAG_INSN16_BSIDE && func_unit_side == 1)
@@ -828,7 +831,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	      if (!field)
 		{
 		  printf ("opcode %x: missing field (field_id:%d) in format\n", opcode, enc->field_id);
-		  abort ();
+	          return -1; // abort ();
 		}
               fld_val = tic6x_field_bits (opcode, field);
 	      switch (enc->coding_method)
@@ -857,7 +860,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 		    default:
                       printf ("opcode %x: illegal operand form for operand#%d\n", opcode, op_num);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  break;
 
@@ -910,7 +913,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 		case tic6x_coding_regpair_msb:
 		  if (opc->operand_info[op_num].form != tic6x_operand_regpair)
-		    abort ();
+	            return -1; // abort ();
 		  operands_text[op_num] = true;
 		  snprintf (operands[op_num], 24, "%c%u:%c%u",
 			    (func_unit_side == 2 ? 'b' : 'a'), (fld_val | 0x1),
@@ -936,7 +939,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
                       if (!have_t)
 			{
 			  printf ("opcode %x: operand treg but missing t field\n", opcode);
-			  abort ();
+	                  return -1; // abort ();
 			}
 		      operands_text[op_num] = true;
                       reg_side = t_val ? 'b' : 'a';
@@ -1001,7 +1004,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
                       if (!have_t)
 			{
 			  printf ("opcode %x: operand tregpair but missing t field\n", opcode);
-			  abort ();
+	                  return -1; // abort ();
 			}
 		      operands_text[op_num] = true;
 		      if (fld_val & 1)
@@ -1037,7 +1040,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		    default:
                       printf ("opcode %x: unexpected operand form %d for operand #%d",
 			      opcode, opc->operand_info[op_num].form, op_num);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  break;
 
@@ -1050,7 +1053,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 			{
 			  printf("opcode %x: illegal field value for ptr register of operand #%d (%d)",
 				 opcode, op_num, fld_val);
-			  abort ();
+	                  return -1; // abort ();
 			}
 		      mem_base_reg = 0x4 | fld_val;
 		      mem_base_reg_known = true;
@@ -1059,7 +1062,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		    default:
                       printf ("opcode %x: unexpected operand form %d for operand #%d",
 			      opcode, opc->operand_info[op_num].form, op_num);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  break;
 
@@ -1079,7 +1082,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 		    default:
                       printf ("opcode %x: bad operand form\n", opcode);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  break;
 
@@ -1232,7 +1235,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 			      if (sploop_ii <= 0)
 				{
 				  printf ("opcode %x:  sloop index not found (%d)\n", opcode, sploop_ii);
-				  abort ();
+	                          return -1; // abort ();
 				}
 			      else if (sploop_ii <= 1)
 				fcyc_bits = 0;
@@ -1260,7 +1263,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		  if (fcyc_bits > tic6x_field_width(field))
 		    {
 		      printf ("opcode %x: illegal fcyc value (%d)\n", opcode, fcyc_bits);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  if (enc->coding_method == tic6x_coding_fstg)
 		    {
@@ -1309,7 +1312,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 		default:
                   printf ("opcode %x: illegal field encoding (%d)\n", opcode, enc->coding_method);
-		  abort ();
+	          return -1; // abort ();
 		}
 
 	      if (mem_base_reg_known_long && mem_offset_known_long)
@@ -1317,7 +1320,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		  if (operands_text[op_num] || operands_pcrel[op_num])
 		    {
 		      printf ("opcode %x: long access but operands already known ?\n", opcode);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		  operands_text[op_num] = true;
 		  snprintf (operands[op_num], 24, "*+b%u(%u)", mem_base_reg,
@@ -1339,7 +1342,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		  if (operands_text[op_num] || operands_pcrel[op_num])
 		    {
 		      printf ("opcode %x: mem access operands already known ?\n", opcode);
-		      abort ();
+	              return -1; // abort ();
 		    }
 
 		  side = func_unit_side == 2 ? 'b' : 'a';
@@ -1420,7 +1423,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 
 		    default:
                       printf ("*** unknown mem_mode : %d \n", mem_mode);
-		      abort ();
+	              return -1; // abort ();
 		    }
 		}
 
@@ -1432,7 +1435,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		  if (operands_text[op_num] || operands_pcrel[op_num])
 		    {
 		      printf ("*** abort crlo crli\n");
-		      abort ();
+	              return -1; // abort ();
 		    }
 
 		  rw = opc->operand_info[op_num].rw;
@@ -1440,7 +1443,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 		      && rw != tic6x_rw_write)
 		    {
 		      printf ("*** abort rw : %d\n", rw);
-		      abort ();
+	              return -1; // abort ();
 		    }
 
 		  for (crid = 0; crid < tic6x_ctrl_max; crid++)
@@ -1482,7 +1485,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	      if (num_operands != 1)
 		{
 		  printf ("opcode: %x, num_operands != 1 : %d\n", opcode, num_operands);
-		  abort ();
+	          return -1; // abort ();
 		}
 	      num_operands = 0;
 	      break;
@@ -1492,7 +1495,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	  if (!operands_text[op_num] && !operands_pcrel[op_num])
             {
               printf ("opcode: %x, operand #%d not decoded\n", opcode, op_num);
-              abort ();
+	      return -1; // abort ();
             }
         }
       /* end for op_num */
@@ -1514,6 +1517,7 @@ print_insn_tic6x (bfd_vma addr, struct disassemble_info *info)
 	}
       if (fetch_packet_header_based && header.prot)
 	info->fprintf_func (info->stream, " || nop 5");
+  eprintf ("ok\n");
 
       return num_bits / 8;
     }

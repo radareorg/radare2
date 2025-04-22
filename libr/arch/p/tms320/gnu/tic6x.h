@@ -20,6 +20,7 @@
 #define OPCODE_TIC6X_H
 
 #include "../../include/mybfd.h"
+#include <stdbool.h>
 #include "symcat.h"
 
 #ifdef __cplusplus
