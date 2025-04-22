@@ -111,8 +111,33 @@ R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
 	return false;
 }
 
+typedef struct {
+	RIO *io;
+	bool dup;
+	RIOBank *bank;
+} NameBankDup;
+
+static bool namedupchk(void *user, void *data, ut32 id) {
+	NameBankDup *nbd = (NameBankDup*)user;
+	if (nbd->dup) {
+		return false;
+	}
+	RIOBank *bank = (RIOBank *)data;
+	if (!strcmp (nbd->bank->name, bank->name)) {
+		nbd->dup = true;
+	}
+	return true;
+}
+
 R_API bool r_io_bank_add(RIO *io, RIOBank *bank) {
 	R_RETURN_VAL_IF_FAIL (io && bank, false);
+	NameBankDup nbd = { io, false, bank };
+	r_id_storage_foreach (&io->banks, namedupchk, &nbd);
+	if (nbd.dup) {
+		R_LOG_ERROR ("Cannot have two banks with the same name");
+		return false;
+	}
+	// TODO: we can have two banks with the same name.. which maybe its not
 	return r_id_storage_add (&io->banks, bank, &bank->id);
 }
 
