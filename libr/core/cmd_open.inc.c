@@ -77,6 +77,7 @@ static RCoreHelpMessage help_msg_omb = {
 	"Usage: omb[+-adgq]", "[fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
+	"ombj", "", "list memory banks in json",
 	"omb=", "[name]", "same as 'omb id' but using its name",
 	"omb+", " [name]", "create a new bank with given name",
 	"omba", " [id]", "adds a map to the bank",
@@ -1028,6 +1029,39 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			} else {
 				R_LOG_ERROR ("Cannot create map from %s", argv[1]);
 			}
+		}
+		break;
+	case 'j': // "ombj"
+		if (argc == 1) {
+			ut32 bank_id = 0;
+			if (!r_id_storage_get_lowest (&core->io->banks, &bank_id)) {
+				break;
+			}
+			PJ *pj = r_core_pj_new (core);
+			pj_a (pj);
+			do {
+				RIOBank *bank = r_id_storage_get (&core->io->banks, bank_id);
+				bool selected = core->io->bank == bank_id;
+				pj_o (pj);
+				pj_kb (pj, "selected", selected);
+				pj_ki (pj, "id", bank->id);
+				pj_ks (pj, "name", bank->name);
+				pj_ka (pj, "maps");
+				RIOMapRef *mapref;
+				RListIter *iter;
+				r_list_foreach (bank->maprefs, iter, mapref) {
+					pj_i (pj, mapref->id);
+				}
+				pj_end (pj);
+				pj_end (pj);
+				// list all the associated maps
+			} while (r_id_storage_get_next (&core->io->banks, &bank_id));
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_println (s);
+			free (s);
+		} else {
+			R_LOG_ERROR ("ombj takes no arguments");
 		}
 		break;
 	case 0: // "omb [id]"
