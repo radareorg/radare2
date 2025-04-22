@@ -600,10 +600,10 @@ typedef struct
 /* An index into the table of control registers.  */
 typedef enum
   {
-#define CTRL(name, isa, rw, crlo, crhi_mask)	\
+#define TIC6_CTRL(name, isa, rw, crlo, crhi_mask)	\
     CONCAT2(tic6x_ctrl_,name),
 #include "tic6x-control-registers.h"
-#undef CTRL
+#undef TIC6_CTRL
     tic6x_ctrl_max
   } tic6x_ctrl_id;
 

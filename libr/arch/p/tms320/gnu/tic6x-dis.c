@@ -39,7 +39,7 @@ const tic6x_insn_format tic6x_insn_format_table[tic6x_insn_format_max] =
 /* Define the control register table.  */
 const tic6x_ctrl tic6x_ctrl_table[tic6x_ctrl_max] =
   {
-#define CTRL(name, isa, rw, crlo, crhi_mask)	\
+#define TIC6_CTRL(name, isa, rw, crlo, crhi_mask)	\
     {						\
       STRINGX(name),				\
       CONCAT2(TIC6X_INSN_,isa),			\
