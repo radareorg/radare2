@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2023 - pancake, qnix */
+/* radare - LGPL - Copyright 2015-2025 - pancake, qnix */
 
 #include <r_arch.h>
 #include "./riscv-opc.c"
@@ -654,15 +654,15 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("c.jr")) {
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else if (is_any ("jal ", "j ")) {
-		// decide whether it's jump or call
-		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
-		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
+	} else if (is_any ("jal ")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		if (op->type == R_ANAL_OP_TYPE_CALL) {
-			op->fail = addr + op->size;
-		}
+		op->fail = addr + op->size;
+	} else if (is_any ("j ")) {
+		// decide whether it's jump or call
+		// int rd = (word >> OP_SH_RD) & OP_MASK_RD;
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
 	} else if (is_any ("jalr")) {
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
