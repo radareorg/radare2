@@ -7515,7 +7515,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			continue;
 		}
 
-		char *opstr = strdup (asmop.mnemonic);
+		char *opstr = strdup (asmop.mnemonic? asmop.mnemonic: "");
 		core->rasm->pseudo = opseudo;
 
 		ds->has_description = false;
@@ -7557,7 +7557,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 				core->rasm->parse->subrel_addr = killme;
 			}
 		}
-		char *disasm = strdup (asmop.mnemonic);
+		char *disasm = strdup (asmop.mnemonic? asmop.mnemonic: "");
 		{
 			char *buf = ds_sub_jumps (ds, disasm);
 			if (buf) {
