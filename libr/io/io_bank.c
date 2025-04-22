@@ -944,7 +944,7 @@ typedef struct bank_overlay_foreach_user_t {
 	void *user;
 } BOFUser;
 
-static void bof_cb (RInterval itv, const ut8 *data, void *user) {
+static void bof_cb(RInterval itv, const ut8 *data, void *user) {
 	BOFUser *bof = user;
 	if (!r_itv_overlap (itv, bof->sm->itv)) {
 		return;

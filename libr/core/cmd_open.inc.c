@@ -77,14 +77,14 @@ static RCoreHelpMessage help_msg_omb = {
 	"Usage: omb[+-adgq]", "[fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
-	"ombj", "", "list memory banks in json",
 	"omb=", "[name]", "same as 'omb id' but using its name",
-	"omb+", " [name]", "create a new bank with given name",
+	"omb-", "*", "delete all banks",
+	"omb-", "[mapid]", "delete the bank with given id",
+	"omb+", "[name]", "create a new bank with given name",
 	"omba", " [id]", "adds a map to the bank",
 	"ombd", " [id]", "delete a map from the bank",
-	"omb-", "*", "delete all banks",
-	"omb-", " [mapid]", "delete the bank with given id",
 	"ombg", "", "associate all maps to the current bank",
+	"ombj", "", "list memory banks in json",
 	"ombq", "", "show current bankid",
 	NULL
 };
@@ -986,7 +986,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 				core->io->bank = r_io_bank_first (core->io);
 			} else {
 				int bank_id = r_num_math (core->num, arg);
-				if (core->num->nc.errors != 0) {
+				if (core->num->nc.errors == 0) {
 					r_io_bank_del (core->io, bank_id);
 				} else {
 					R_LOG_ERROR ("Invalid number in %s", arg);
@@ -1084,8 +1084,12 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			} while (r_id_storage_get_next (&core->io->banks, &bank_id));
 		} else {
 			int id = r_num_get (NULL, argv[1]);
-			if (!r_io_bank_use (core->io, id)) {
-				R_LOG_ERROR ("Cannot find bank by id %s", argv[1]);
+			if (core->num->nc.errors == 0) {
+				if (!r_io_bank_use (core->io, id)) {
+					R_LOG_ERROR ("Cannot find bank by id %s", argv[1]);
+				}
+			} else {
+				R_LOG_ERROR ("omb expects a number, not a string");
 			}
 		}
 		break;
