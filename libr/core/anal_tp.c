@@ -515,6 +515,7 @@ R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
 
 typedef struct {
+	REsil esil;
 	RCore *core;
 	RAnal *anal;
 	int stack_fd;
@@ -1078,13 +1079,74 @@ static void tps_fini(TPState *tps) {
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
-	r_esil_trace_free (tps->et);
-	tps->core->anal->esil->trace = tps->_et;
+//	r_esil_trace_free (tps->et);
+//	tps->core->anal->esil->trace = tps->_et;
 	free (tps);
 }
 
+static bool tt_is_reg(void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	r_unref (ri);
+	return true;
+}
+
+static bool tt_reg_read(void *reg, const char *name, ut64 *val) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	*val = r_reg_get_value ((RReg *)reg, ri);
+	r_unref (ri);
+	return true;
+}
+
+static ut32 tt_reg_size(void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	r_unref (ri);
+	return ri->size;
+}
+
+static REsilRegInterface type_trace_reg_if = {
+	.is_reg = tt_is_reg,
+	.reg_read = tt_reg_read,
+	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_size = tt_reg_size,
+	// .reg_alias = default_reg_alias
+};
+
+static bool tt_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
+	TPState *tps = (TPState *)mem;
+	return r_io_read_at (tps->core->io, addr, buf, len);
+}
+
+// ensures type trace esil engine only writes to it's designated stack map.
+// writes outside of that itv will be assumed as valid and return true.
+// this function assumes, that stack map has highest priority,
+// or does not overlap with any other map.
+static bool tt_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
+	TPState *tps = (TPState *)mem;
+	RIOMap *map = r_io_map_get (tps->core->io, tps->stack_map);
+	RInterval itv = {addr, len};
+	if (!r_itv_overlap (map->itv, itv)) {
+		return true;
+	}
+	itv = r_itv_intersect (map->itv, itv);
+	return r_io_write_at (tps->core->io, itv.addr, &buf[itv.addr - addr], (int)itv.size);
+}
+
+static REsilMemInterface type_trace_mem_if = {
+		.mem_read = tt_mem_read,
+		.mem_write = tt_mem_write
+};
+
 static TPState *tps_init(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->esil, NULL);
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->esil, NULL);
 	TPState *tps = R_NEW0 (TPState);
 	RConfig *cfg = core->config;
 	tps->core = core;
@@ -1100,15 +1162,30 @@ static TPState *tps_init(RCore *core) {
 		return NULL;
 	}
 	char *uri = r_str_newf ("malloc://0x%"PFMT64x, stack_size);
+	if (!uri) {
+		free (tps);
+		return NULL;
+	}
 	tps->stack_fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
-	tps->stack_map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size)->id;
+	free (uri);
+	RIOMap *map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size);
+	if (!map) {
+		r_io_fd_close (core->io, tps->stack_fd);
+		free (tps);
+		return NULL;
+	}
+	tps->stack_map = map->id;
+	//todo fix addrsize
+	type_trace_reg_if.reg = core->anal->reg;
+	type_trace_mem_if.mem = tps;
+	r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if);
 	tps->hc = r_config_hold_new (cfg);
 	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
 	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
 	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
 	tps->et = r_esil_trace_new (core->anal->esil);
 	// tps->dt = r_debug_trace_new ();
-	core->anal->esil->trace = tps->et;
+	//core->anal->esil->trace = tps->et;
 	// core->dbg->trace = tps->dt;
 	r_config_hold (tps->hc, "esil.romem", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (cfg, "esil.romem", true);
