@@ -5277,11 +5277,11 @@ static void cmd_afla(RCore *core, const char *input) {
 	}
 }
 
-static void afe() {
+#if 0
+static void afe(void) {
 }
 
 static void cmd_afe(RCore *core, const char *input) {
-	RList *
 	switch (input[2]) {
 	case '?':
 		break;
@@ -5292,6 +5292,7 @@ static void cmd_afe(RCore *core, const char *input) {
 	}
 
 }
+#endif
 
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
@@ -5545,9 +5546,14 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'e': // "afe" used by "anal.emu" - see aef
+		r_core_anal_esil (core, "f", NULL);
+		break;
+#if 0
 	case 'e': // "afe"
 		cmd_afe (core, input);
 		break;
+#endif
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
@@ -6283,9 +6289,6 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		break;
 	}
-	case 'e': // "afe" used by "anal.emu" - see aef
-		r_core_anal_esil (core, "f", NULL);
-		break;
 #if 0
 	/* this is undocumented, broken and probably have no uses. plz discuss */
 	case 'e': // "afe"
