@@ -242,11 +242,7 @@ static RCoreHelpMessage help_msg_dm = {
 	"dm-", " address", "deallocate memory map of <address>",
 	"dmd", "[aw] [file]", "dump current (all or writable) debug map region to a file (from-to.dmp) (see Sd)",
 	"dmh", "[?]", "show map of heap",
-	"dmi", " [addr|libname] [symname]", "list symbols of target lib",
-	"dmi*", " [addr|libname] [symname]", "list symbols of target lib in radare commands",
-	"dmi.", "", "list closest symbol to the current address",
-	"dmis", " [libname]", "same as .dmi* - import all symbols from given lib as flags",
-	"dmiv", "", "show address of given symbol for given lib",
+	"dmi", "[?] ([addr|libname] [symname])", "list or load symbols from library",
 	"dmj", "", "list memmaps in JSON format",
 	"dml", " <file>", "load contents of file into the current map region",
 	"dmm", "[?][j*]", "list modules (libraries, binaries loaded in memory)",
@@ -262,10 +258,11 @@ static RCoreHelpMessage help_msg_dm = {
 
 static RCoreHelpMessage help_msg_dmi = {
 	"Usage: dmi", "", " # List/load Symbols",
-	"dmi", "[j|q|*] [libname] [symname]", "list symbols of target lib",
-	"dmia", "[j|q|*] [libname]", "list all info of target lib",
-	"dmi*", "", "list symbols of target lib in radare commands",
 	"dmi.", "", "list closest symbol to the current address",
+	"dmi", "[j|q|*] [libname] [symname]", "list symbols of target lib",
+	"dmi*", "", "list symbols of target lib in radare commands",
+	"dmia", "[j|q|*] [libname]", "list all info of target lib",
+	"dmis", " [libname]", "same as .dmi* - import all symbols from given lib as flags",
 	"dmiv", "", "show address of given symbol for given lib",
 	NULL
 };

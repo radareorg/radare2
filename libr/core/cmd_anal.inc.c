@@ -586,6 +586,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afC", "[?] ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afd", "[addr]", "show function + delta for given offset",
+	"afe", "", "analyze where the function entrypoints are",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
@@ -5276,6 +5277,22 @@ static void cmd_afla(RCore *core, const char *input) {
 	}
 }
 
+static void afe() {
+}
+
+static void cmd_afe(RCore *core, const char *input) {
+	RList *
+	switch (input[2]) {
+	case '?':
+		break;
+	case '*':
+		break;
+	default:
+		break;
+	}
+
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -5527,6 +5544,9 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		}
+		break;
+	case 'e': // "afe"
+		cmd_afe (core, input);
 		break;
 	case 'i': // "afi"
 		switch (input[2]) {
