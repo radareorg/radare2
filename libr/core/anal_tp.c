@@ -457,6 +457,7 @@ static int sort_mem_changes_cb (const void *v0, const void *v1) {
 	return b->idx - a->idx;
 }
 
+#if 0
 static void type_trace_restore(TypeTrace *trace, REsil *esil, int idx) {
 	R_RETURN_IF_FAIL (trace && esil && (idx < trace->idx));
 	ut64 v = ((ut64)idx) << 32;
@@ -510,6 +511,7 @@ static void type_trace_restore(TypeTrace *trace, REsil *esil, int idx) {
 		r_esil_mem_write_silent (esil, collector.mc_ptr[i].addr, &collector.rc_ptr[i].odata, 1);
 	}
 }
+#endif
 
 R_VEC_TYPE (RVecUT64, ut64);
 R_VEC_TYPE (RVecBuf, ut8);
@@ -633,10 +635,10 @@ static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const c
 	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
 	if (in_stack) {
 		ut64 sp = r_reg_getv (tps->core->anal->reg, "SP"); // XXX this is slow too and we can cache
-		const ut64 write_addr = etrace_memwrite_addr (tps->et, idx); // AAA -1
+		const ut64 write_addr = etrace_memwrite_addr (&tps->tt, idx); // AAA -1
 		return (write_addr == sp + size);
 	}
-	return place && etrace_regwrite_contains (tps->et, idx, place);
+	return place && etrace_regwrite_contains (&tps->tt, idx, place);
 }
 
 static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
@@ -1239,7 +1241,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	tps->et->cur_idx = 0;
+	tps->tt.cur_idx = 0;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
@@ -1272,7 +1274,7 @@ repeat:
 	}
 	int i, j;
 	r_config_set_b (core->config, "dbg.trace.eval", false);
-	TypeTrace *etrace = tps->et;
+	TypeTrace *etrace = &tps->tt;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
 		bb = r_anal_get_block_at (core->anal, bbat);
@@ -1354,7 +1356,7 @@ repeat:
 			if (cur_idx < 0) {
 				cur_idx = 0;
 			}
-			tps->et->cur_idx = etrace_index (etrace);
+			tps->tt.cur_idx = etrace_index (etrace);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 
 			// XXX this is analyzing the same op twice wtf this is so wrong
@@ -1406,7 +1408,7 @@ repeat:
 					if (Cc && r_anal_cc_exist (anal, Cc)) {
 						char *cc = strdup (Cc);
 						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
-						// prev_idx = tps->et->cur_idx;
+						// prev_idx = tps->tt.cur_idx;
 						prev_idx = tps->core->anal->esil->trace->cur_idx;
 						R_FREE (ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
@@ -1424,7 +1426,7 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
-						// cur_idx = tps->et->cur_idx - 2;
+						// cur_idx = tps->tt.cur_idx - 2;
 						cur_idx = tps->core->anal->esil->trace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
 						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
@@ -1446,7 +1448,7 @@ repeat:
 				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
-				// cur_idx = tps->et->cur_idx - 1;
+				// cur_idx = tps->tt.cur_idx - 1;
 				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
