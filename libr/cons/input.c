@@ -416,7 +416,11 @@ R_API int r_cons_any_key(const char *msg) {
 	return r_cons_readchar ();
 }
 
-extern void resizeWin(void);
+static inline void resizeWin(void) {
+	if (I->event_resize) {
+		I->event_resize (I->event_data);
+	}
+}
 
 #if R2__WINDOWS__
 static int __cons_readchar_w32(ut32 usec) {
