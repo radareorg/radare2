@@ -516,12 +516,13 @@ R_VEC_TYPE (RVecBuf, ut8);
 
 typedef struct {
 	REsil esil;
+	TypeTrace tt;
+	ut64 stack_base;
+	ut64 sp;	//old sp
+	ut64 bp;	//old bp
 	RCore *core;
-	RAnal *anal;
 	int stack_fd;
 	ut32 stack_map;
-	ut64 stack_base;
-	TypeTrace *et;
 	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
@@ -1076,11 +1077,14 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
+	type_trace_fini (&tps->tt);
+	r_esil_fini (&tps->esil);
+	r_io_fd_close (tps->core->io, tps->stack_fd);
+	r_reg_setv (core->anal->reg, "SP", tps->sp);
+	r_reg_setv (core->anal->reg, "BP", tps->bp);
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
-//	r_esil_trace_free (tps->et);
-//	tps->core->anal->esil->trace = tps->_et;
 	free (tps);
 }
 
@@ -1145,12 +1149,12 @@ static REsilMemInterface type_trace_mem_if = {
 		.mem_write = tt_mem_write
 };
 
+//XXX: this name is wrong
 static TPState *tps_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->esil, NULL);
 	TPState *tps = R_NEW0 (TPState);
 	RConfig *cfg = core->config;
 	tps->core = core;
-	// tps->_dt = core->dbg->trace;
 	int align = r_arch_info (core->anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	align = R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
 	align = R_MAX (align, 1);
@@ -1171,6 +1175,7 @@ static TPState *tps_init(RCore *core) {
 	RIOMap *map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size);
 	if (!map) {
 		r_io_fd_close (core->io, tps->stack_fd);
+		r_reg_free (tps->reg);
 		free (tps);
 		return NULL;
 	}
@@ -1178,25 +1183,33 @@ static TPState *tps_init(RCore *core) {
 	//todo fix addrsize
 	type_trace_reg_if.reg = core->anal->reg;
 	type_trace_mem_if.mem = tps;
-	r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if);
+	ut64 sp = tps->stack_base + stack_size - (stack_size % align) - align * 8;
+	//todo: this probably needs some boundary checks
+	tps->sp = r_reg_getv (core->anal->reg, "SP");
+	tps->bp = r_reg_getv (core->anal->reg, "BP");
+	r_reg_setv (core->anal->reg, "SP", sp);
+	r_reg_setv (core->anal->reg, "BP", sp);
+	if (!r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if)) {
+		r_reg_setv (core->anal->reg, "SP", tps->sp);
+		r_reg_setv (core->anal->reg, "BP", tps->bp);
+		r_io_fd_close (core->io, tps->stack_fd);
+		free (tps);
+		return NULL;
+	}
+	if (!type_trace_init (&tps->tt, &tps->esil, tps->reg, sp, sp - tps->stack_base)) {
+		r_esil_fini (&tps->esil);
+		r_reg_setv (core->anal->reg, "SP", tps->sp);
+		r_reg_setv (core->anal->reg, "BP", tps->bp);
+		r_io_fd_close (core->io, tps->stack_fd);
+		free (tps);
+		return NULL;
+	}
 	tps->hc = r_config_hold_new (cfg);
 	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
 	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
 	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
-	tps->et = r_esil_trace_new (core->anal->esil);
-	// tps->dt = r_debug_trace_new ();
-	//core->anal->esil->trace = tps->et;
-	// core->dbg->trace = tps->dt;
-	r_config_hold (tps->hc, "esil.romem", "esil.nonull", "dbg.follow", NULL);
-	r_config_set_b (cfg, "esil.romem", true);
-	r_config_set_b (cfg, "esil.nonull", true);
+	r_config_hold (tps->hc, "dbg.follow", NULL);
 	r_config_set_i (cfg, "dbg.follow", 0);
-	RReg *reg = core->anal->reg;
-	if (!r_reg_getv (reg, "BP") && !r_reg_getv (reg, "SP")) {
-		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
-		tps_fini (tps);
-		return NULL;
-	}
 	return tps;
 }
 
