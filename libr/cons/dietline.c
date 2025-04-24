@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include "r_util/r_str_util.h"
@@ -21,9 +21,15 @@ static int r_line_readchar_win(ut8 *s, int slen);
 
 static const char word_break_characters[] = "\t\r\n ~`!@#$%^&*()-=+[]{}\\|;:\"'<>,./";
 
-// TODO: remove global variables
-static R_TH_LOCAL bool enable_yank_pop = false;
-static R_TH_LOCAL int count = 0;
+typedef struct {
+	bool enable_yank_pop;
+	bool yank_flag;
+	bool gcomp;
+	int count;
+	int gcomp_idx;
+} Dietline;
+
+static R_TH_LOCAL Dietline D = {0};
 
 typedef enum {
 	MINOR_BREAK,
@@ -334,7 +340,7 @@ static void paste(void) {
 		memmove (cursor + len, cursor, dist);
 		memcpy (cursor, I.clipboard, len);
 		I.buffer.index += len;
-		enable_yank_pop = true;
+		D.enable_yank_pop = true;
 	}
 }
 
@@ -1100,7 +1106,7 @@ R_API const char *r_line_readline(void) {
 }
 
 static inline void rotate_kill_ring(void) {
-	if (enable_yank_pop) {
+	if (D.enable_yank_pop) {
 		I.buffer.index -= strlen (r_list_get_n (I.kill_ring, I.kill_ring_ptr));
 		I.buffer.data[I.buffer.index] = 0;
 		I.kill_ring_ptr -= 1;
@@ -1174,7 +1180,7 @@ static void __print_prompt(void) {
 #endif
 	if (I.demo) {
 		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
-		int pos = (count > 0)? count % strlen (I.prompt): 0;
+		int pos = (D.count > 0)? D.count % strlen (I.prompt): 0;
 		char *a = strdup (I.prompt);
 		char *kb = (char *) r_str_ansi_chrn (a, pos);
 		char *kc = (char *) r_str_ansi_chrn (kb, 3);
@@ -1187,9 +1193,9 @@ static void __print_prompt(void) {
 		free (b);
 		free (rb);
 		free (c);
-		count++;
-		if (count > strlen (I.prompt)) {
-			count = 0;
+		D.count++;
+		if (D.count > strlen (I.prompt)) {
+			D.count = 0;
 		}
 	} else {
 		printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
@@ -1402,7 +1408,6 @@ static bool __vi_mode(void) {
 	I.vi_mode = CONTROL_MODE;
 	__update_prompt_color ();
 	const char *gcomp_line = "";
-	static R_TH_LOCAL int gcomp = 0;
 	/* mimic vim's behaviour when entering normal mode */
 	__move_cursor_left ();
 	for (;;) {
@@ -1438,7 +1443,7 @@ static bool __vi_mode(void) {
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			gcomp = 0;
+			D.gcomp = false;
 			return false;
 		case 'C':
 			delete_till_end ();
@@ -1477,20 +1482,20 @@ static bool __vi_mode(void) {
 		/* fall through */
 		case '^':
 		case '0':
-			if (gcomp) {
+			if (D.gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = 0;
-				gcomp = false;
+				D.gcomp = false;
 			}
 			I.buffer.index = 0;
 			break;
 		case 'A':
-			if (gcomp) {
+			if (D.gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				gcomp = false;
+				D.gcomp = false;
 			} else {
 				I.buffer.index = I.buffer.length;
 			}
@@ -1500,11 +1505,11 @@ static bool __vi_mode(void) {
 			I.vi_mode = INSERT_MODE;
 			break;
 		case '$':
-			if (gcomp) {
+			if (D.gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				gcomp = false;
+				D.gcomp = false;
 			} else {
 				I.buffer.index = I.buffer.length - 1;
 			}
@@ -1665,9 +1670,6 @@ static void dietline_print_risprompt(const char *gcomp_line) {
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int rows;
 	const char *gcomp_line = "";
-	static R_TH_LOCAL int gcomp_idx = 0;
-	static R_TH_LOCAL bool yank_flag = 0;
-	static R_TH_LOCAL int gcomp = 0;
 	signed char buf[10];
 #if USE_UTF8
 	int utflen;
@@ -1711,7 +1713,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	r_cons_break_push (NULL, NULL);
 	r_cons_enable_mouse (I.hud);
 	for (;;) {
-		yank_flag = 0;
+		D.yank_flag = false;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -1741,7 +1743,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.demo && utflen == 0) {
 			// refresh
 			__print_prompt ();
-			count++;
+			D.count++;
 			continue;
 		}
 #else
@@ -1774,11 +1776,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			/* ignore atm */
 			break;
 		case 1:	// ^A
-			if (gcomp) {
+			if (D.gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = 0;
-				gcomp = false;
+				D.gcomp = false;
 			}
 			I.buffer.index = 0;
 			break;
@@ -1786,11 +1788,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			__move_cursor_left ();
 			break;
 		case 5:	// ^E
-			if (gcomp) {
+			if (D.gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				gcomp = false;
+				D.gcomp = false;
 			} else if (prev == 24) {// ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
 				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
@@ -1820,7 +1822,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			gcomp = 0;
+			D.gcomp = false;
 			goto _end;
 		case 4:	// ^D
 			if (!I.buffer.data[0]) {/* eof */
@@ -1849,14 +1851,14 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			fflush (stdout);
 			break;
 		case 18:// ^R -- autocompletion
-			if (gcomp) {
-				gcomp_idx++;
+			if (D.gcomp) {
+				D.gcomp_idx++;
 			}
-			gcomp = 1;
+			D.gcomp = true;
 			break;
 		case 19:// ^S -- backspace
-			if (gcomp) {
-				gcomp--;
+			if (D.gcomp) {
+				D.gcomp--;
 			} else {
 				__move_cursor_left ();
 			}
@@ -1917,11 +1919,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 25:// ^Y - paste
 			paste ();
-			yank_flag = 1;
+			D.yank_flag = true;
 			break;
 		case 29: // ^^ - rotate kill ring
 			rotate_kill_ring ();
-			yank_flag = enable_yank_pop? 1: 0;
+			D.yank_flag = D.enable_yank_pop;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
 			kill_word (MINOR_BREAK, 'w');
@@ -1937,9 +1939,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
-			} else if (gcomp) {
-				if (gcomp_idx > 0) {
-					gcomp_idx--;
+			} else if (D.gcomp) {
+				if (D.gcomp_idx > 0) {
+					D.gcomp_idx--;
 				}
 			} else {
 				I.history.do_setup_match = o_do_setup_match;
@@ -1954,8 +1956,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			} else if (I.sel_widget) {
 				selection_widget_up (1);
 				selection_widget_draw ();
-			} else if (gcomp) {
-				gcomp_idx++;
+			} else if (D.gcomp) {
+				D.gcomp_idx++;
 			} else {
 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_up ();
@@ -2134,8 +2136,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (I.sel_widget) {
 							selection_widget_up (1);
 							selection_widget_draw ();
-						} else if (gcomp) {
-							gcomp_idx++;
+						} else if (D.gcomp) {
+							D.gcomp_idx++;
 						} else {
 							I.history.do_setup_match = o_do_setup_match;
 							if (r_line_hist_up () == -1) {
@@ -2152,9 +2154,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (I.sel_widget) {
 							selection_widget_down (1);
 							selection_widget_draw ();
-						} else if (gcomp) {
-							if (gcomp_idx > 0) {
-								gcomp_idx--;
+						} else if (D.gcomp) {
+							if (D.gcomp_idx > 0) {
+								D.gcomp_idx--;
 							}
 						} else {
 							I.history.do_setup_match = o_do_setup_match;
@@ -2291,16 +2293,17 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				selection_widget_select ();
 				break;
 			}
-			if (gcomp && I.buffer.length > 0) {
+			if (D.gcomp && I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
 				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
 			}
-			gcomp_idx = gcomp = 0;
+			D.gcomp_idx = 0;
+			D.gcomp = false;
 			goto _end;
 		default:
-			if (gcomp) {
-				gcomp++;
+			if (D.gcomp) {
+				D.gcomp++;
 			}
 			{
 #if USE_UTF8
@@ -2360,7 +2363,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 		prev = buf[0];
 		if (I.echo) {
-			if (gcomp) {
+			if (D.gcomp) {
 				gcomp_line = "";
 				int counter = 0;
 				if (I.history.data) {
@@ -2370,12 +2373,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						if (strstr (I.history.data[i], I.buffer.data)) {
 							gcomp_line = I.history.data[i];
-							if (++counter > gcomp_idx) {
+							if (++counter > D.gcomp_idx) {
 								break;
 							}
 						}
 						if (i == 0) {
-							gcomp_idx--;
+							D.gcomp_idx--;
 						}
 					}
 				}
@@ -2385,7 +2388,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			fflush (stdout);
 		}
-		enable_yank_pop = yank_flag? 1: 0;
+		D.enable_yank_pop = D.yank_flag;
 		if (I.hud) {
 			goto _end;
 		}
