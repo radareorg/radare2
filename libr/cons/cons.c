@@ -8,7 +8,12 @@
 
 R_LIB_VERSION (r_cons);
 
-static R_TH_LOCAL int oldraw = -1;
+typedef struct {
+	int oldraw; // 0 = not initialized, 1 = false, 2 = true
+} Console;
+
+static R_TH_LOCAL Console G = {0};
+
 static R_TH_LOCAL RConsContext r_cons_context_default = {0};
 static RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons g_cons_instance_tls = {0};
@@ -1882,33 +1887,24 @@ R_API void r_cons_show_cursor(int cursor) {
 #endif
 }
 
-/**
- * void r_cons_set_raw( [0,1] )
- *
- *   Change canonicality of the terminal
- *
- * For optimization reasons, there's no initialization flag, so you need to
- * ensure that the make the first call to r_cons_set_raw() with '1' and
- * the next calls ^= 1, so: 1, 0, 1, 0, 1, ...
- *
- * If you doesn't use this order you'll probably loss your terminal properties.
- *
- */
 R_API void r_cons_set_raw(bool is_raw) {
-	if (oldraw != -1) {
-		if (is_raw == oldraw) {
+	if (G.oldraw != 0) {
+		if (is_raw == G.oldraw - 1) {
 			return;
 		}
 	}
 #if EMSCRIPTEN || __wasi__
 	/* do nothing here */
 #elif R2__UNIX__
-	// enforce echo off
+	struct termios *term_mode;
 	if (is_raw) {
 		I->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-		tcsetattr (0, TCSANOW, &I->term_raw);
+		term_mode = &I->term_raw;
 	} else {
-		tcsetattr (0, TCSANOW, &I->term_buf);
+		term_mode = &I->term_buf;
+	}
+	if (tcsetattr (0, TCSANOW, term_mode) == -1) {
+		return;
 	}
 #elif R2__WINDOWS__
 	if (I->term_xterm) {
@@ -1918,24 +1914,20 @@ R_API void r_cons_set_raw(bool is_raw) {
 		}
 		free (stty);
 	}
-	if (is_raw) {
-		if (I->term_xterm) {
-			r_sandbox_system ("stty raw -echo", 1);
-		} else {
-			SetConsoleMode (h, I->term_raw);
-		}
+	if (I->term_xterm) {
+		const char *cmd = is_raw
+			? "stty raw -echo"
+			: "stty raw echo";
+		r_sandbox_system (cmd, 1);
 	} else {
-		if (I->term_xterm) {
-			r_sandbox_system ("stty -raw echo", 1);
-		} else {
-			SetConsoleMode (h, I->term_buf);
+		if (!SetConsoleMode (h, is_raw? I->term_raw: I->term_buf)) {
+			return;
 		}
 	}
 #else
 #warning No raw console supported for this platform
 #endif
-	fflush (stdout);
-	oldraw = is_raw;
+	G.oldraw = is_raw + 1;
 }
 
 R_API void r_cons_set_utf8(bool b) {
