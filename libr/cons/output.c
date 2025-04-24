@@ -21,9 +21,13 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-static R_TH_LOCAL HANDLE hStdout = NULL;
-static R_TH_LOCAL HANDLE hStderr = NULL;
-static R_TH_LOCAL CONSOLE_SCREEN_BUFFER_INFO csbi;
+typedef struct {
+	HANDLE hStdout;
+	HANDLE hStderr;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+} Output;
+
+static R_TH_LOCAL Output G;
 
 R_API void r_cons_w32_clear(void) {
 	COORD startCoords;
@@ -35,24 +39,24 @@ R_API void r_cons_w32_clear(void) {
 	if (I->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
-	if (!hStdout) {
-		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (!G.hStdout) {
+		G.hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 	}
-	GetConsoleScreenBufferInfo (hStdout, &csbi);
+	GetConsoleScreenBufferInfo (G.hStdout, &G.csbi);
 	startCoords = (COORD) {
-		csbi.srWindow.Left,
-		csbi.srWindow.Top
+		G.csbi.srWindow.Left,
+		G.csbi.srWindow.Top
 	};
-	DWORD nLength = csbi.dwSize.X * (csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
-	FillConsoleOutputCharacter (hStdout, ' ',
+	DWORD nLength = G.csbi.dwSize.X * (G.csbi.srWindow.Bottom - G.csbi.srWindow.Top + 1);
+	FillConsoleOutputCharacter (G.hStdout, ' ',
 		nLength, startCoords, &dummy);
-	FillConsoleOutputAttribute (hStdout,
+	FillConsoleOutputAttribute (G.hStdout,
 		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 		nLength, startCoords, &dummy);
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
-	HANDLE *hConsole = (fd == 1)? &hStdout : &hStderr;
+	HANDLE *hConsole = (fd == 1)? &G.hStdout : &G.hStderr;
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
