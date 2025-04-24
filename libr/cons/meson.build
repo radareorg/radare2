@@ -3,6 +3,7 @@ r_cons_sources = [
   'canvas.c',
   'canvas_line.c',
   'cons.c',
+#  'kons.c',
   'help.c',
   'html.c',
   # 'dietline.c',

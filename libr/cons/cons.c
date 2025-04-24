@@ -11,6 +11,8 @@ static R_TH_LOCAL RConsContext r_cons_context_default = {0};
 
 static RCons s_cons_global = {0};
 static R_TH_LOCAL RCons s_cons_thread = {0};
+
+#include "kons.inc.c"
 static R_TH_LOCAL RCons *I = NULL;
 
 #define C (getctx ())
@@ -254,8 +256,7 @@ R_API void r_cons_color(int fg, int r, int g, int b) {
 }
 
 R_API void r_cons_println(const char* str) {
-	r_cons_print (str);
-	r_cons_newline ();
+	r_kons_println (I, str);
 }
 
 R_API void r_cons_printat(const char *str, int x, char y) {
@@ -741,55 +742,13 @@ R_API RCons *r_cons_free(void) {
 	return NULL;
 }
 
-#define MOAR (4096 * 8)
-static bool palloc(size_t moar) {
-	if (moar == 0 || moar > INT_MAX) {
-		return false;
-	}
-	if (!C->buffer) {
-		if (moar > SIZE_MAX - MOAR) {
-			return false;
-		}
-		size_t new_sz = moar + MOAR;
-		void *temp = calloc (1, new_sz);
-		if (temp) {
-			C->buffer_sz = new_sz; // Maintain int for C->buffer_sz
-			C->buffer = temp;
-			C->buffer[0] = '\0';
-		} else {
-			return false;
-		}
-	} else if (moar + C->buffer_len > C->buffer_sz) {
-		size_t old_buffer_sz = C->buffer_sz;
-		size_t new_sz = old_buffer_sz * 2; // Exponential growth
-		if (new_sz < old_buffer_sz || new_sz < moar + C->buffer_len) {
-			new_sz = moar + C->buffer_len + MOAR; // Ensure enough space
-		}
-		if (new_sz < old_buffer_sz) { // Check for overflow
-			return false;
-		}
-		void *new_buffer = realloc (C->buffer, new_sz);
-		if (new_buffer) {
-			C->buffer = new_buffer;
-			C->buffer_sz = (int)new_sz; // Maintain int for C->buffer_sz
-		} else {
-			C->buffer_sz = (int)old_buffer_sz; // Restore on failure
-			return false;
-		}
-	}
-	return true;
-}
 
 R_API int r_cons_eof(void) {
 	return feof (I->fdin);
 }
 
 R_API void r_cons_gotoxy(int x, int y) {
-#if R2__WINDOWS__
-	r_cons_w32_gotoxy (1, x, y);
-#else
-	r_cons_printf ("\x1b[%d;%dH", y, x);
-#endif
+	return r_kons_gotoxy (I, x, y);
 }
 
 R_API void r_cons_print_clear(void) {
@@ -1296,20 +1255,6 @@ static int real_strlen(const char *ptr, int len) {
 	return ansilen - diff;
 }
 
-static int chop(int len) {
-	RConsContext *ctx = getctx ();
-	if (ctx->buffer_limit > 0) {
-		if (ctx->buffer_len + len >= ctx->buffer_limit) {
-			if (ctx->buffer_len >= ctx->buffer_limit) {
-				C->breaked = true;
-				return 0;
-			}
-			return ctx->buffer_limit - ctx->buffer_len;
-		}
-	}
-	return len;
-}
-
 R_API void r_cons_visual_write(char *buffer) {
 	char white[1024];
 	int cols = I->columns;
@@ -1378,61 +1323,6 @@ R_API void r_cons_visual_write(char *buffer) {
 	}
 }
 
-R_API void r_cons_printf_list(const char *format, va_list ap) {
-	va_list ap2, ap3;
-
-	va_copy (ap2, ap);
-	va_copy (ap3, ap);
-	if (I->null || !format) {
-		va_end (ap2);
-		va_end (ap3);
-		return;
-	}
-	if (strchr (format, '%')) {
-		if (palloc (MOAR + strlen (format) * 20)) {
-			RConsContext *ctx = getctx ();
-			bool need_retry = true;
-			while (need_retry) {
-				need_retry = false;
-				size_t left = ctx->buffer_sz - ctx->buffer_len;
-				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
-				if (written >= left) {
-					if (palloc (written + 1)) {
-						va_end (ap3);
-						va_copy (ap3, ap2);
-						need_retry = true; // Retry with larger buffer
-					} else {
-						// Allocation failed, use available space
-						size_t added = (left > 0) ? left - 1 : 0;
-						ctx->buffer_len += added;
-						C->breaked = true; // Indicate truncation
-					}
-				} else {
-					ctx->buffer_len += written;
-				}
-			}
-		} else {
-			C->breaked = true; // Initial allocation failed
-		}
-	} else {
-		r_cons_print (format);
-	}
-	va_end (ap2);
-	va_end (ap3);
-}
-
-R_API int r_cons_printf(const char *format, ...) {
-	va_list ap;
-	if (R_STR_ISEMPTY (format)) {
-		return -1;
-	}
-	va_start (ap, format);
-	r_cons_printf_list (format, ap);
-	va_end (ap);
-
-	return 0;
-}
-
 R_API int r_cons_get_column(void) {
 	char *line = strrchr (C->buffer, '\n');
 	if (!line) {
@@ -1444,86 +1334,19 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
-	R_RETURN_VAL_IF_FAIL (str && len >= 0, -1);
-	if (len < 1 || C->breaked) {
-		return 0;
-	}
-
-	if (I->echo) {
-		// Here to silent pedantic meson flags ...
-		int rlen;
-		if ((rlen = write (2, str, len)) != len) {
-			return rlen;
-		}
-	}
-	if (str && len > 0 && !I->null) {
-		R_CRITICAL_ENTER (I);
-		if (palloc (len + 1)) {
-			if ((len = chop (len)) < 1) {
-				R_CRITICAL_LEAVE (I);
-				return 0;
-			}
-			memcpy (C->buffer + C->buffer_len, str, len);
-			C->buffer_len += len;
-			C->buffer[C->buffer_len] = 0;
-		}
-		R_CRITICAL_LEAVE (I);
-	}
-	if (C->flush) {
-		r_cons_flush ();
-	}
-	if (I->break_word && str && len > 0) {
-		if (r_mem_mem ((const ut8*)str, len, (const ut8*)I->break_word, I->break_word_len)) {
-			C->breaked = true;
-		}
-	}
-	return len;
+	return r_kons_write (I, str, len);
 }
 
 R_API void r_cons_memset(char ch, int len) {
-	if (C->breaked) {
-		return;
-	}
-	if (!I->null && len > 0) {
-		if ((len = chop (len)) < 1) {
-			return;
-		}
-		if (palloc (len + 1)) {
-			memset (C->buffer + C->buffer_len, ch, len);
-			C->buffer_len += len;
-			C->buffer[C->buffer_len] = 0;
-		}
-	}
+	r_kons_memset (I, ch, len);
 }
 
 R_API void r_cons_print(const char *str) {
-	R_RETURN_IF_FAIL (str);
-	if (!I || I->null) {
-		return;
-	}
-	size_t len = strlen (str);
-	if (len > 0) {
-		r_cons_write (str, len);
-	}
+	r_kons_print (I, str);
 }
 
 R_API void r_cons_newline(void) {
-	if (!I->null) {
-		r_cons_print ("\n");
-	}
-#if 0
-This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function r_cons_w32_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
-
-#if R2__WINDOWS__
-	r_cons_reset_colors();
-#else
-	r_cons_print (Color_RESET_ALL"\n");
-#endif
-	if (I->is_html) r_cons_print ("<br />\n");
-#endif
+	r_kons_newline (I);
 }
 
 /* return the aproximated x,y of cursor before flushing */
@@ -1694,97 +1517,8 @@ static bool __xterm_get_size(void) {
 
 #endif
 
-// XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
-#if R2__WINDOWS__
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	if (ret) {
-		I->columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-		I->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-	} else {
-		if (I->term_xterm) {
-			ret = __xterm_get_size ();
-		}
-		if (!ret || (I->columns == -1 && I->rows == 0)) {
-			// Stdout is probably redirected so we set default values
-			I->columns = 80;
-			I->rows = 23;
-		}
-	}
-#elif EMSCRIPTEN || __wasi__
-	I->columns = 80;
-	I->rows = 23;
-#elif R2__UNIX__
-	struct winsize win = {0};
-	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
-		if ((!win.ws_col) || (!win.ws_row)) {
-			char ttybuf[64];
-			const char *tty = NULL;
-			if (isatty (1)) {
-				if (!ttyname_r (1, ttybuf, sizeof (ttybuf))) {
-					tty = ttybuf;
-				}
-			}
-			int fd = open (r_str_get_fail (tty, "/dev/tty"), O_RDONLY);
-			if (fd != -1) {
-				int ret = ioctl (fd, TIOCGWINSZ, &win);
-				if (ret || !win.ws_col || !win.ws_row) {
-					win.ws_col = 80;
-					win.ws_row = 23;
-				}
-				close (fd);
-			}
-		}
-		I->columns = win.ws_col;
-		I->rows = win.ws_row;
-	} else {
-		I->columns = 80;
-		I->rows = 23;
-	}
-#else
-	char *str = r_sys_getenv ("COLUMNS");
-	if (str) {
-		I->columns = atoi (str);
-		I->rows = 23; // XXX. windows must get console size
-		free (str);
-	} else {
-		I->columns = 80;
-		I->rows = 23;
-	}
-#endif
-#if SIMULATE_ADB_SHELL
-	I->rows = 0;
-	I->columns = 0;
-#endif
-#if SIMULATE_MAYHEM
-	// expect tons of crashes
-	I->rows = -1;
-	I->columns = -1;
-#endif
-	if (I->rows < 0) {
-		I->rows = 0;
-	}
-	if (I->columns < 0) {
-		I->columns = 0;
-	}
-	if (I->force_columns) {
-		I->columns = I->force_columns;
-	}
-	if (I->force_rows) {
-		I->rows = I->force_rows;
-	}
-	if (I->fix_columns) {
-		I->columns += I->fix_columns;
-	}
-	if (I->fix_rows) {
-		I->rows += I->fix_rows;
-	}
-	if (rows) {
-		*rows = I->rows;
-	}
-	I->rows = R_MAX (0, I->rows);
-	return R_MAX (0, I->columns);
+	return r_kons_get_size (I, rows);
 }
 
 #if R2__WINDOWS__
@@ -1993,16 +1727,12 @@ R_API void r_cons_column(int c) {
 	free (b);
 }
 
-//  XXX deprecate must be push/pop context state
-static bool lasti = false; /* last interactive mode */
-
 R_API void r_cons_set_interactive(bool x) {
-	lasti = r_cons_context ()->is_interactive;
-	r_cons_context ()->is_interactive = x;
+	r_kons_set_interactive (I, x);
 }
 
 R_API void r_cons_set_last_interactive(void) {
-	r_cons_context ()->is_interactive = lasti;
+	r_kons_set_last_interactive (I);
 }
 
 R_API void r_cons_set_title(const char *str) {
@@ -2189,10 +1919,9 @@ R_API void r_cons_trim(void) {
 	}
 }
 
-R_API void r_cons_bind(RConsBind *bind) {
-	if (!bind) {
-		return;
-	}
+R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
+	R_RETURN_IF_FAIL (cons && bind);
+	bind->cons = cons;
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
 	bind->cb_printf = r_cons_printf;
@@ -2309,4 +2038,19 @@ R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name) {
 		}
 	}
 	return NULL;
+}
+
+R_API void r_cons_printf_list(const char *format, va_list ap) {
+	return r_kons_printf_list (I, format, ap);
+}
+
+R_API int r_cons_printf(const char *format, ...) {
+	va_list ap;
+	if (R_STR_ISEMPTY (format)) {
+		return -1;
+	}
+	va_start (ap, format);
+	r_kons_printf_list (I, format, ap);
+	va_end (ap);
+	return 0;
 }

@@ -6789,7 +6789,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else if (input[1] == '?') {
 			if (input[2] == 'j') {
-				r_cons_cmd_help_json (help_msg_pa);
+				r_core_cmd_help_json (core, help_msg_pa);
 			} else {
 				r_core_cmd_help (core, help_msg_pa);
 			}
@@ -9039,7 +9039,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	default:
 		if (*input && input[1] == 'j') {
-			r_cons_cmd_help_json (help_msg_p);
+			r_core_cmd_help_json (core, help_msg_p);
 		} else {
 			r_core_return_invalid_command (core, "p", ch0); // *input);
 		}

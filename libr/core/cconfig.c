@@ -521,8 +521,9 @@ static bool cb_asmsubtail(void *user, void *data) {
 }
 
 static bool cb_scrlast(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->context->lastEnabled = node->i_value;
+	core->cons->context->lastEnabled = node->i_value;
 	return true;
 }
 
@@ -1491,18 +1492,18 @@ static bool cb_completion_maxtab(void *user, void *data) {
 static bool cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
 	if (*node->value == '?') {
-		r_core_fortune_list (core);
+		r_core_fortune_list (core, false);
 		return false;
 	}
 	return true;
 }
 
 static bool cb_cfg_fortunes_type(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		r_core_fortune_list_types ();
+		r_core_fortune_list (core, true);
 		return false;
 	}
 	return true;
@@ -1512,23 +1513,23 @@ static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		r_cons_printf ("pdc\n");
+		r_kons_printf (core->cons, "pdc\n");
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
 			if (!strcmp (cp->meta.name, "r2retdec")) {
-				r_cons_printf ("pdz\n");
+				r_kons_printf (core->cons, "pdz\n");
 			} else if (!strcmp (cp->meta.name, "decai")) {
-				r_cons_printf ("decai\n");
+				r_kons_printf (core->cons, "decai\n");
 			} else if (!strcmp (cp->meta.name, "r2jadx")) {
-				r_cons_printf ("r2jadx\n");
+				r_kons_printf (core->cons, "r2jadx\n");
 			} else if (!strcmp (cp->meta.name, "r2ghidra")) {
-				r_cons_printf ("pdg\n");
+				r_kons_printf (core->cons, "pdg\n");
 			}
 		}
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
-			r_cons_printf ("pdd\n");
+			r_kons_printf (core->cons, "pdd\n");
 		}
 		return false;
 	}
@@ -1589,7 +1590,7 @@ static bool cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	r_cons_singleton ()->context->color_mode = (node->i_value > COLOR_MODE_16M)
+	core->cons->context->color_mode = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_reload ();
 	r_print_set_flags (core->print, core->print->flags);
@@ -1598,10 +1599,10 @@ static bool cb_color(void *user, void *data) {
 }
 
 static bool cb_color_getter(void *user, RConfigNode *node) {
-	(void)user;
-	node->i_value = r_cons_singleton ()->context->color_mode;
+	RCore *core = (RCore *) user;
+	node->i_value = core->cons->context->color_mode;
 	char buf[128];
-	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color_mode, node);
+	r_config_node_value_format_i (buf, sizeof (buf), core->cons->context->color_mode, node);
 	if (!node->value || strcmp (node->value, buf) != 0) {
 		free (node->value);
 		node->value = strdup (buf);
@@ -1890,20 +1891,23 @@ static bool cb_esiltraprevert(void *user, void *data) {
 }
 
 static bool cb_fixrows(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = data;
-	r_cons_singleton ()->fix_rows = (int)node->i_value;
+	core->cons->fix_rows = (int)node->i_value;
 	return true;
 }
 
 static bool cb_fixcolumns(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->fix_columns = atoi (node->value);
+	core->cons->fix_columns = atoi (node->value);
 	return true;
 }
 
 static bool cb_rows(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->force_rows = node->i_value;
+	core->cons->force_rows = node->i_value;
 	return true;
 }
 
@@ -2408,8 +2412,9 @@ static bool cb_pager(void *user, void *data) {
 }
 
 static bool cb_breaklines(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->break_lines = node->i_value;
+	core->cons->break_lines = node->i_value;
 	return true;
 }
 
@@ -2421,8 +2426,9 @@ static bool cb_scr_gadgets(void *user, void *data) {
 }
 
 static bool cb_fps(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->fps = node->i_value;
+	core->cons->fps = node->i_value;
 	return true;
 }
 
@@ -2494,9 +2500,11 @@ static bool cb_scrcss_prefix(void *user, void *data) {
 }
 
 static bool cb_scrhtml(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_context ()->was_html = r_cons_context ()->is_html;
-	r_cons_context ()->is_html = node->i_value;
+	RConsContext *ctx = core->cons->context;
+	ctx->was_html = ctx->is_html;
+	ctx->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
@@ -2514,17 +2522,17 @@ static bool scr_vtmode(void *user, void *data) {
 		node->i_value = 1;
 	}
 	node->i_value = node->i_value > 2 ? 2 : node->i_value;
-	r_line_singleton ()->vtmode = r_cons_singleton ()->vtmode = node->i_value;
+	r_line_singleton ()->vtmode = core->cons->vtmode = node->i_value;
 
 	DWORD mode;
 	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (input, &mode);
 	if (node->i_value == 2) {
 		SetConsoleMode (input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		r_cons_singleton ()->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
+		core->cons->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
 		SetConsoleMode (input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		r_cons_singleton ()->term_raw = 0;
+		core->cons->term_raw = 0;
 	}
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	int i;
@@ -2546,32 +2554,37 @@ static bool scr_vtmode(void *user, void *data) {
 #endif
 
 static bool cb_screcho(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->echo = node->i_value;
+	core->cons->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrlinesleep(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->linesleep = node->i_value;
+	core->cons->linesleep = node->i_value;
 	return true;
 }
 
 static bool cb_scr_maxpage(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->maxpage = node->i_value;
+	core->cons->maxpage = node->i_value;
 	return true;
 }
 
 static bool cb_scrpagesize(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->pagesize = node->i_value;
+	core->cons->pagesize = node->i_value;
 	return true;
 }
 
 static bool cb_scrflush(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_context ()->flush = node->i_value;
+	core->cons->context->flush = node->i_value;
 	return true;
 }
 
@@ -2659,11 +2672,12 @@ static bool cb_scr_bgfill(void *user, void *data) {
 }
 
 static bool cb_scrint(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
 	}
-	r_cons_singleton ()->context->is_interactive = node->i_value;
+	core->cons->context->is_interactive = node->i_value;
 	return true;
 }
 
@@ -2677,8 +2691,9 @@ static bool cb_scrnkey(void *user, void *data) {
 }
 
 static bool cb_scr_demo(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
-	RCons *cons = r_cons_singleton ();
+	RCons *cons = core->cons;
 	cons->context->demo = node->i_value;
 	if (cons->line) {
 		cons->line->demo = node->i_value;
@@ -2700,8 +2715,9 @@ static bool cb_scr_histsize(void *user, void *data) {
 }
 
 static bool cb_scr_limit(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->context->buffer_limit = node->i_value;
+	core->cons->context->buffer_limit = node->i_value;
 	return true;
 }
 
@@ -2782,8 +2798,9 @@ static bool cb_consbreak(void *user, void *data) {
 }
 
 static bool cb_config_file_output(void *user, void *data) {
+	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->teefile = node->value;
+	core->cons->teefile = node->value;
 	return true;
 }
 
@@ -2831,7 +2848,7 @@ static bool cb_zoombyte(void *user, void *data) {
 		break;
 	default:
 		R_LOG_ERROR ("Invalid zoom.byte value. See pz? for help");
-		r_cons_printf ("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
+		r_kons_printf (core->cons, "pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
 	return true;
@@ -3029,7 +3046,7 @@ static bool cb_searchin(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
+			r_kons_printf (core->cons, "Valid values for search.in (depends on .from/.to and io.va):\n"
 			"range              search between .from/.to boundaries\n"
 			"flag               find boundaries in ranges defined by flags larger than 1 byte\n"
 			"flag:[glob]        find boundaries in flags matching given glob and larger than 1 byte\n"
@@ -3370,7 +3387,8 @@ static bool cb_malloc(void *user, void *data) {
 	return true;
 }
 
-static bool cb_config_log_level(void *coreptr, void *nodeptr) {
+static bool cb_config_log_level(void *user, void *nodeptr) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	if (!strcmp (node->value, "?")) {
 		int i;
@@ -3381,7 +3399,7 @@ static bool cb_config_log_level(void *coreptr, void *nodeptr) {
 			}
 			char *llm = strdup (lm);
 			r_str_case (llm, false);
-			r_cons_printf ("%d  %s\n", i, llm);
+			r_kons_printf (core->cons, "%d  %s\n", i, llm);
 			free (llm);
 		}
 		return false;
@@ -3444,9 +3462,10 @@ static bool cb_log_cons(void *user, int level, const char *origin, const char *m
 		// log level doesn't match
 		return false;
 	}
+	RCore *core = (RCore *)user;
 	const char *levelstr = r_log_level_tostring (level);
 	const char *originstr = origin? origin: "";
-	r_cons_printf ("%s: [%s] %s\n", levelstr, originstr, msg);
+	r_kons_printf (core->cons, "%s: [%s] %s\n", levelstr, originstr, msg);
 	return true;
 }
 
@@ -3486,15 +3505,16 @@ static bool cb_dbg_verbose(void *user, void *data) {
 }
 
 static bool cb_prjvctype(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = data;
 	char *git = r_file_path ("git");
 	bool have_git = git != NULL;
 	free (git);
 	if (*node->value == '?') {
 		if (have_git) {
-			r_cons_println ("git");
+			r_kons_println (core->cons, "git");
 		}
-		r_cons_println ("rvc");
+		r_kons_println (core->cons, "rvc");
 		return true;
 	}
 	if (!strcmp (node->value, "git")) {
@@ -4385,7 +4405,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETB ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if R2__WINDOWS__
-	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode? 1: 0,
+	SETICB ("scr.vtmode", core->cons->vtmode? 1: 0,
 		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
 	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");

@@ -65,20 +65,24 @@ R_IPI RList *r_core_fortune_types(void) {
 	return types;
 }
 
-R_API void r_core_fortune_list_types(void) {
+static void core_fortune_list_types(RCore *core) {
 	RList *types = r_core_fortune_types ();
 	if (types) {
 		char *fts = r_str_list_join (types, "\n");
 		if (fts) {
-			r_cons_println (fts);
+			r_kons_println (core->cons, fts);
 			free (fts);
 		}
 		r_list_free (types);
 	}
 }
 
-R_API void r_core_fortune_list(RCore *core) {
+R_API void r_core_fortune_list(RCore *core, bool list_types_instead_of_fortunes) {
 	R_RETURN_IF_FAIL (core);
+	if (list_types_instead_of_fortunes) {
+		core_fortune_list_types (core);
+		return;
+	}
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		return;
 	}
@@ -98,7 +102,7 @@ R_API void r_core_fortune_list(RCore *core) {
 				free (file);
 				continue;
 			}
-			r_cons_println (str);
+			r_kons_println (core->cons, str);
 			free (str);
 			free (file);
 		}
@@ -159,7 +163,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
 		} else {
-			r_cons_printf (" -- %s\n", line);
+			r_kons_printf (core->cons, " -- %s\n", line);
 		}
 		if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
 			r_sys_tts (line, true);

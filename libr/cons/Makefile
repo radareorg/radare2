@@ -9,3 +9,6 @@ R2DEPS=r_util
 include ../rules.mk
 
 line.o: dietline.c
+
+kons:
+	git grep r_kons *| grep 'inc.c'|cut -d : -f 2-| grep R_API | sed -e 's/) {/);/'

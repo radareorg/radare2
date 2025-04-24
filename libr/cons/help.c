@@ -1,19 +1,19 @@
-/* radare2 - LGPL - Copyright 2008-2022 - pancake */
+/* radare2 - LGPL - Copyright 2008-2025 - pancake */
 
 #include <r_cons.h>
 
-R_API void r_cons_cmd_help_json(RCoreHelpMessage help) {
+// TODO: deprecate
+R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 	int i, max_length = 0;
-	const char * const usage_str = "Usage:";
-	const char * help_cmd = NULL;
-	const char * help_args = NULL;
-	const char * help_desc = NULL;
+	const char usage_str[] = "Usage:";
+	const char *help_cmd = NULL;
+	const char *help_args = NULL;
+	const char *help_desc = NULL;
 
 	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 3) {
 		help_cmd  = help[i + 0];
 		help_args = help[i + 1];
-
 		int len_cmd = strlen (help_cmd);
 		int len_args = strlen (help_args);
 		if (i) {
@@ -27,7 +27,6 @@ R_API void r_cons_cmd_help_json(RCoreHelpMessage help) {
 		help_cmd  = help[i + 0];
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
-
 
 		if (r_str_startswith (help_cmd, usage_str)) {
 			pj_ks (pj, "root", help_cmd);

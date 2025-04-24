@@ -2632,7 +2632,7 @@ R_API bool r_core_init(RCore *core) {
 		//r_line_singleton ()->user = (void *)core;
 	}
 	core->print->cons = core->cons;
-	r_cons_bind (&core->print->consbind);
+	r_cons_bind (core->cons, &core->print->consbind);
 	core->cmdlog = NULL;
 	// XXX causes uaf
 	r_log_add_callback (cbcore, core);
@@ -2688,7 +2688,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
-	r_cons_bind (&core->bin->consb);
+	r_cons_bind (core->cons, &core->bin->consb);
 	// XXX we should use RConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
@@ -2718,8 +2718,8 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));
 	r_io_bind (core->io, &(core->fs->iob));
-	r_cons_bind (&(core->fs->csb));
-	r_cons_bind (&(core->search->consb));
+	r_cons_bind (core->cons, &(core->fs->csb));
+	r_cons_bind (core->cons, &(core->search->consb));
 	r_core_bind (core, &(core->fs->cob));
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));

@@ -82,6 +82,7 @@ typedef struct r_cons_bind_t {
 	RConsIsBreaked is_breaked;
 	RConsFlush cb_flush;
 	RConsGrepCallback cb_grep;
+	struct r_cons_t *cons;
 } RConsBind;
 
 typedef struct r_cons_mark_t {
@@ -561,6 +562,8 @@ typedef struct r_cons_t {
 	int oldraw; // 0 = not initialized, 1 = false, 2 = true
 	ut64 prev;
 	RStrBuf *echodata;
+	bool lasti;
+
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -960,7 +963,7 @@ R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
 R_API void r_cons_cmd_help(const char * const help[], bool use_color);
-R_API void r_cons_cmd_help_json(const char * const help[]);
+R_API void r_cons_cmd_help_json(RCons *cons, const char * const help[]);
 R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
@@ -1039,7 +1042,7 @@ R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(const bool enable);
 R_API void r_cons_enable_highlight(const bool enable);
-R_API void r_cons_bind(RConsBind *bind);
+R_API void r_cons_bind(RCons *cons, RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
@@ -1200,6 +1203,19 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
 R_API void r_line_completion_clear(RLineCompletion *completion);
 
+// kons.c
+
+R_API void r_kons_println(RCons *cons, const char* str);
+R_API void r_kons_print(RCons *cons, const char *str);
+R_API void r_kons_newline(RCons *cons);
+R_API int r_kons_write(RCons *cons, const char *str, int len);
+R_API void r_kons_memset(RCons *cons, char ch, int len);
+R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap);
+R_API int r_kons_printf(RCons *cons, const char *format, ...);
+R_API void r_kons_gotoxy(RCons *cons, int x, int y);
+R_API int r_kons_printf(RCons *cons, const char *format, ...);
+R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap);
+R_API void r_kons_cmd_help_json(RCons *cons, const char * const help[]);
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
 #endif
