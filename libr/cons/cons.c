@@ -10,6 +10,8 @@ R_LIB_VERSION (r_cons);
 
 typedef struct {
 	int oldraw; // 0 = not initialized, 1 = false, 2 = true
+	ut64 prev;
+	RStrBuf *echodata;
 } Console;
 
 static R_TH_LOCAL Console G = {0};
@@ -18,8 +20,6 @@ static R_TH_LOCAL RConsContext r_cons_context_default = {0};
 static RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons g_cons_instance_tls = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
-static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
-static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
 #define C (getctx ())
 
@@ -1007,18 +1007,18 @@ static bool lastMatters(void) {
 
 R_API void r_cons_echo(const char *msg) {
 	if (msg) {
-		if (echodata) {
-			r_strbuf_append (echodata, msg);
-			r_strbuf_append (echodata, "\n");
+		if (G.echodata) {
+			r_strbuf_append (G.echodata, msg);
+			r_strbuf_append_n (G.echodata, "\n", 1);
 		} else {
-			echodata = r_strbuf_new (msg);
+			G.echodata = r_strbuf_new (msg);
 		}
 	} else {
-		if (echodata) {
-			char *data = r_strbuf_drain (echodata);
+		if (G.echodata) {
+			char *data = r_strbuf_drain (G.echodata);
 			r_cons_print (data);
 			r_cons_newline ();
-			echodata = NULL;
+			G.echodata = NULL;
 			free (data);
 		}
 	}
@@ -1275,17 +1275,17 @@ R_API void r_cons_visual_flush(void) {
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;
-	if (prev) {
+	if (G.prev) {
 		ut64 now = r_time_now_mono ();
-		st64 diff = (st64)(now - prev);
+		st64 diff = (st64)(now - G.prev);
 		if (diff <= 0) {
 			fps = 0;
 		} else {
 			fps = (diff < 1000000)? (int)(1000000.0 / diff): 0;
 		}
-		prev = now;
+		G.prev = now;
 	} else {
-		prev = r_time_now_mono ();
+		G.prev = r_time_now_mono ();
 	}
 	if (col < 1) {
 		col = 12;
