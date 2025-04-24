@@ -24,7 +24,7 @@ static const char word_break_characters[] = "\t\r\n ~`!@#$%^&*()-=+[]{}\\|;:\"'<
 typedef struct {
 	bool enable_yank_pop;
 	bool yank_flag;
-	bool gcomp;
+	int gcomp;
 	int count;
 	int gcomp_idx;
 } Dietline;
@@ -1443,7 +1443,7 @@ static bool __vi_mode(void) {
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			D.gcomp = false;
+			D.gcomp = 0;
 			return false;
 		case 'C':
 			delete_till_end ();
@@ -1482,20 +1482,20 @@ static bool __vi_mode(void) {
 		/* fall through */
 		case '^':
 		case '0':
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = 0;
-				D.gcomp = false;
+				D.gcomp = 0;
 			}
 			I.buffer.index = 0;
 			break;
 		case 'A':
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				D.gcomp = false;
+				D.gcomp = 0;
 			} else {
 				I.buffer.index = I.buffer.length;
 			}
@@ -1505,11 +1505,11 @@ static bool __vi_mode(void) {
 			I.vi_mode = INSERT_MODE;
 			break;
 		case '$':
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				D.gcomp = false;
+				D.gcomp = 0;
 			} else {
 				I.buffer.index = I.buffer.length - 1;
 			}
@@ -1776,11 +1776,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			/* ignore atm */
 			break;
 		case 1:	// ^A
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = 0;
-				D.gcomp = false;
+				D.gcomp = 0;
 			}
 			I.buffer.index = 0;
 			break;
@@ -1788,11 +1788,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			__move_cursor_left ();
 			break;
 		case 5:	// ^E
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
 				I.buffer.length = I.buffer.index;
-				D.gcomp = false;
+				D.gcomp = 0;
 			} else if (prev == 24) {// ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
 				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
@@ -1822,7 +1822,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			D.gcomp = false;
+			D.gcomp = 0;
 			goto _end;
 		case 4:	// ^D
 			if (!I.buffer.data[0]) {/* eof */
@@ -1851,13 +1851,13 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			fflush (stdout);
 			break;
 		case 18:// ^R -- autocompletion
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				D.gcomp_idx++;
 			}
-			D.gcomp = true;
+			D.gcomp = 1;
 			break;
 		case 19:// ^S -- backspace
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				D.gcomp--;
 			} else {
 				__move_cursor_left ();
@@ -1939,7 +1939,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
-			} else if (D.gcomp) {
+			} else if (D.gcomp > 0) {
 				if (D.gcomp_idx > 0) {
 					D.gcomp_idx--;
 				}
@@ -1956,7 +1956,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			} else if (I.sel_widget) {
 				selection_widget_up (1);
 				selection_widget_draw ();
-			} else if (D.gcomp) {
+			} else if (D.gcomp > 0) {
 				D.gcomp_idx++;
 			} else {
 				I.history.do_setup_match = o_do_setup_match;
@@ -2136,7 +2136,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (I.sel_widget) {
 							selection_widget_up (1);
 							selection_widget_draw ();
-						} else if (D.gcomp) {
+						} else if (D.gcomp > 0) {
 							D.gcomp_idx++;
 						} else {
 							I.history.do_setup_match = o_do_setup_match;
@@ -2154,7 +2154,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (I.sel_widget) {
 							selection_widget_down (1);
 							selection_widget_draw ();
-						} else if (D.gcomp) {
+						} else if (D.gcomp > 0) {
 							if (D.gcomp_idx > 0) {
 								D.gcomp_idx--;
 							}
@@ -2293,16 +2293,16 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				selection_widget_select ();
 				break;
 			}
-			if (D.gcomp && I.buffer.length > 0) {
+			if (D.gcomp > 0&& I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
 				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
 			}
 			D.gcomp_idx = 0;
-			D.gcomp = false;
+			D.gcomp = 0;
 			goto _end;
 		default:
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				D.gcomp++;
 			}
 			{
@@ -2363,7 +2363,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 		prev = buf[0];
 		if (I.echo) {
-			if (D.gcomp) {
+			if (D.gcomp > 0) {
 				gcomp_line = "";
 				int counter = 0;
 				if (I.history.data) {
