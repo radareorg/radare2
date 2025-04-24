@@ -1009,7 +1009,7 @@ R_API void r_cons_echo(const char *msg) {
 	if (msg) {
 		if (G.echodata) {
 			r_strbuf_append (G.echodata, msg);
-			r_strbuf_append (G.echodata, "\n");
+			r_strbuf_append_n (G.echodata, "\n", 1);
 		} else {
 			G.echodata = r_strbuf_new (msg);
 		}
