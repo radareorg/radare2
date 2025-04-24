@@ -558,6 +558,9 @@ typedef struct r_cons_t {
 	RThreadLock *lock;
 	RConsCursorPos cpos;
 	RVecFdPairs fds;
+	int oldraw; // 0 = not initialized, 1 = false, 2 = true
+	ut64 prev;
+	RStrBuf *echodata;
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1

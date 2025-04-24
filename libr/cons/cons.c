@@ -1,26 +1,18 @@
-/* radare2 - LGPL - Copyright 2008-2025 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2025 - pancake */
 
 #include <r_cons.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
 
 #define COUNT_LINES 1
 
 R_LIB_VERSION (r_cons);
 
-typedef struct {
-	int oldraw; // 0 = not initialized, 1 = false, 2 = true
-	ut64 prev;
-	RStrBuf *echodata;
-} Console;
-
-static R_TH_LOCAL Console G = {0};
-
 static R_TH_LOCAL RConsContext r_cons_context_default = {0};
-static RCons g_cons_instance = {0};
-static R_TH_LOCAL RCons g_cons_instance_tls = {0};
-static R_TH_LOCAL RCons *r_cons_instance = NULL;
-#define I (r_cons_instance)
+
+static RCons s_cons_global = {0};
+static R_TH_LOCAL RCons s_cons_thread = {0};
+static R_TH_LOCAL RCons *I = NULL;
+
 #define C (getctx ())
 
 static inline void init_cons_input(InputState *state) {
@@ -30,29 +22,29 @@ static inline void init_cons_input(InputState *state) {
 }
 
 static inline void init_cons_instance(void) {
-	if (R_LIKELY (r_cons_instance)) {
-		if (!r_cons_instance->context) {
-			r_cons_instance->context = &r_cons_context_default;
+	if (R_LIKELY (I)) {
+		if (!I->context) {
+			I->context = &r_cons_context_default;
 		}
 	} else {
-		r_cons_instance = &g_cons_instance;
-		r_cons_instance->context = &r_cons_context_default;
-		init_cons_input (&r_cons_instance->input_state);
+		I = &s_cons_global;
+		I->context = &r_cons_context_default;
+		init_cons_input (&I->input_state);
 	}
 }
 
 static RConsContext *getctx(void) {
 	init_cons_instance ();
-	return r_cons_instance->context;
+	return I->context;
 }
 
 R_API InputState *r_cons_input_state(void) {
 	init_cons_instance ();
-	return &r_cons_instance->input_state;
+	return &I->input_state;
 }
 
 R_API bool r_cons_is_initialized(void) {
-	return r_cons_instance != NULL;
+	return I != NULL;
 }
 
 typedef struct {
@@ -173,13 +165,13 @@ static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *pa
 	cons_grep_reset (&context->grep);
 }
 
-static void cons_context_deinit(RConsContext *context) {
-	r_stack_free (context->cons_stack);
-	r_list_free (context->marks);
-	context->cons_stack = NULL;
-	r_stack_free (context->break_stack);
-	context->break_stack = NULL;
-	r_cons_pal_free (context);
+static void cons_context_deinit(RConsContext *ctx) {
+	r_stack_free (ctx->cons_stack);
+	r_list_free (ctx->marks);
+	ctx->cons_stack = NULL;
+	r_stack_free (ctx->break_stack);
+	ctx->break_stack = NULL;
+	r_cons_pal_free (ctx);
 }
 
 static void __break_signal(int sig) {
@@ -554,7 +546,7 @@ R_API void r_cons_break_end(void) {
 
 R_API void *r_cons_sleep_begin(void) {
 	R_CRITICAL_ENTER (I);
-	if (!r_cons_instance) {
+	if (!I) {
 		r_cons_thready ();
 	}
 	if (!I->cb_sleep_begin) {
@@ -564,7 +556,7 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
-	if (!r_cons_instance) {
+	if (!I) {
 		r_cons_thready ();
 	}
 	if (I->cb_sleep_end) {
@@ -589,11 +581,6 @@ static void resize(int sig) {
 	sigwinchFlag = 1;
 }
 #endif
-void resizeWin(void) {
-	if (I->event_resize) {
-		I->event_resize (I->event_data);
-	}
-}
 
 R_API void r_cons_set_click(int x, int y) {
 	I->click_x = x;
@@ -648,8 +635,8 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 }
 
 R_API RCons *r_cons_new(void) {
-	if (!r_cons_instance) {
-		r_cons_instance = &g_cons_instance;
+	if (!I) {
+		I = &s_cons_global;
 	}
 	I->refcnt++;
 	if (I->refcnt != 1) {
@@ -945,32 +932,29 @@ R_API void r_cons_pop(void) {
 
 R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	RConsContext *context = R_NEW0 (RConsContext);
-	if (!context) {
-		return NULL;
-	}
 	init_cons_context (context, parent);
 	return context;
 }
 
-R_API void r_cons_context_free(RConsContext *context) {
-	if (R_LIKELY (context)) {
-		cons_context_deinit (context);
-		free (context);
+R_API void r_cons_context_free(RConsContext *ctx) {
+	if (R_LIKELY (ctx)) {
+		cons_context_deinit (ctx);
+		free (ctx);
 	}
 }
 
 R_API void r_cons_context_load(RConsContext *context) {
-	if (!r_cons_instance) {
-		r_cons_instance = &g_cons_instance;
+	if (!I) {
+		I = &s_cons_global;
 	}
-	r_cons_instance->context = context;
+	I->context = context;
 }
 
 R_API void r_cons_context_reset(void) {
-	if (!r_cons_instance) {
-		r_cons_instance = &g_cons_instance;
+	if (!I) {
+		I = &s_cons_global;
 	}
-	r_cons_instance->context = &r_cons_context_default;
+	I->context = &r_cons_context_default;
 	C->sorted_column = -1;
 }
 
@@ -1007,18 +991,18 @@ static bool lastMatters(void) {
 
 R_API void r_cons_echo(const char *msg) {
 	if (msg) {
-		if (G.echodata) {
-			r_strbuf_append (G.echodata, msg);
-			r_strbuf_append_n (G.echodata, "\n", 1);
+		if (I->echodata) {
+			r_strbuf_append (I->echodata, msg);
+			r_strbuf_append_n (I->echodata, "\n", 1);
 		} else {
-			G.echodata = r_strbuf_new (msg);
+			I->echodata = r_strbuf_new (msg);
 		}
 	} else {
-		if (G.echodata) {
-			char *data = r_strbuf_drain (G.echodata);
+		if (I->echodata) {
+			char *data = r_strbuf_drain (I->echodata);
 			r_cons_print (data);
 			r_cons_newline ();
-			G.echodata = NULL;
+			I->echodata = NULL;
 			free (data);
 		}
 	}
@@ -1117,8 +1101,8 @@ R_API void r_cons_flush(void) {
 		r_cons_context_reset ();
 		ctx = getctx ();
 	}
-	if (!r_cons_instance) {
-		r_cons_instance = &g_cons_instance;
+	if (!I) {
+		I = &s_cons_global;
 	}
 	const char *tee = I->teefile;
 	if (C->noflush) {
@@ -1275,17 +1259,17 @@ R_API void r_cons_visual_flush(void) {
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;
-	if (G.prev) {
+	if (I->prev) {
 		ut64 now = r_time_now_mono ();
-		st64 diff = (st64)(now - G.prev);
+		st64 diff = (st64)(now - I->prev);
 		if (diff <= 0) {
 			fps = 0;
 		} else {
 			fps = (diff < 1000000)? (int)(1000000.0 / diff): 0;
 		}
-		G.prev = now;
+		I->prev = now;
 	} else {
-		G.prev = r_time_now_mono ();
+		I->prev = r_time_now_mono ();
 	}
 	if (col < 1) {
 		col = 12;
@@ -1888,8 +1872,8 @@ R_API void r_cons_show_cursor(int cursor) {
 }
 
 R_API void r_cons_set_raw(bool is_raw) {
-	if (G.oldraw != 0) {
-		if (is_raw == G.oldraw - 1) {
+	if (I->oldraw != 0) {
+		if (is_raw == I->oldraw - 1) {
 			return;
 		}
 	}
@@ -1927,7 +1911,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 #else
 #warning No raw console supported for this platform
 #endif
-	G.oldraw = is_raw + 1;
+	I->oldraw = is_raw + 1;
 }
 
 R_API void r_cons_set_utf8(bool b) {
@@ -2254,20 +2238,19 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
-	// use tls instance
-	r_cons_instance = &g_cons_instance_tls;
-	if (r_cons_instance->refcnt > 0) {
+	I = &s_cons_thread;
+	if (I->refcnt > 0) {
 		R_CRITICAL_ENTER (I);
 	}
-	RConsContext *ctx = getctx();
+	RConsContext *ctx = getctx ();
 	if (ctx) {
 		C->unbreakable = true;
 	}
 	r_sys_signable (false); // disable signal handling
-	if (r_cons_instance->refcnt == 0) {
+	if (I->refcnt == 0) {
 		r_cons_new ();
 	}
-	if (r_cons_instance->refcnt > 0) {
+	if (I->refcnt > 0) {
 		R_CRITICAL_LEAVE (I);
 	}
 }
