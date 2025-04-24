@@ -4,6 +4,8 @@
 #include <r_lib.h>
 #include <r_util/r_print.h>
 
+#if !(__wasi__ || __EMSCRIPTEN__)
+
 #define USE_OWNTIMER 1
 #if USE_OWNTIMER
 #include "io_gprobe.h"
@@ -1568,6 +1570,22 @@ RIOPlugin r_io_plugin_gprobe = {
 	.write = __write,
 	.system = __system,
 };
+
+#else
+
+#warning io.gprobe not available for this platform
+
+RIOPlugin r_io_plugin_gprobe = {
+	.meta = {
+		.name = "gprobe",
+		.author = "Dirk Eibach, Guntermann, Drunck GmbH",
+		.desc = "Open gprobe connection (DISABLED)",
+		.license = "LGPL-3.0-only",
+	},
+	.uris = "gprobe://",
+};
+
+#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
