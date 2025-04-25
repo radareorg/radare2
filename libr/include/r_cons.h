@@ -1246,6 +1246,10 @@ R_API void r_kons_clear_buffer(RCons *cons);
 R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);
 R_API void r_kons_mark_flush(RCons *cons);
 R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name);
+R_API void r_kons_break_pop(RCons *cons);
+R_API bool r_kons_is_breaked(RCons *cons);
+R_API void r_kons_break_clear(RCons *cons);
+R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user);
 
 #endif
 

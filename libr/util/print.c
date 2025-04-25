@@ -39,7 +39,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	for (i = 0; i < n_portions; i++) {
 		ut64 sum = total + portions[i];
 		if (total > sum) {
-			eprintf ("portionbar overflow aborted\n");
+			R_LOG_ERROR ("portionbar overflow aborted");
 			return;
 		}
 		total = sum;
@@ -1723,10 +1723,13 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 	}
 }
 
-R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
+#if 0
+// unused
+R_API char *r_print_c(RPrint *p, const ut8 *str, int len) {
 	int i, inc = p->width / 6;
 	const char *namenm = p->codevarname;
 	char *namesz = NULL;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (R_STR_ISEMPTY (namenm)) {
 		namenm = "buffer";
 		namesz = strdup ("_BUFFER_SIZE");
@@ -1735,21 +1738,24 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 		r_str_case (namesz, true);
 	}
 
-	p->cb_printf ("#define %s %d\n"
-	"unsigned char %s[%s] = {\n", namesz, len, namenm, namesz);
+	r_strbuf_appendf (sb, "#define %s %d\n"
+		"unsigned char %s[%s] = {\n", namesz, len, namenm, namesz);
+	free (namesz);
 	for (i = 0; !r_print_is_interrupted () && i < len;) {
-		r_print_byte (p, (ut64)i, "0x%02x", i, str[i]);
+		char *bs = r_print_byte_str (p, (ut64)i, "0x%02x", i, str[i]);
+		r_strbuf_append (sb, ", ");
 		i++;
 		if (i < len) {
-			p->cb_printf (", ");
+			r_strbuf_append (sb, ", ");
 		}
 		if (!(i % inc)) {
-			p->cb_printf ("\n");
+			r_strbuf_append (sb, "\n");
 		}
 	}
-	p->cb_printf ("};\n");
-	free (namesz);
+	r_strbuf_append (sb, "};\n");
+	return r_strbuf_drain (sb);
 }
+#endif
 
 // HACK :D
 static R_TH_LOCAL RPrint staticp = {
@@ -1839,13 +1845,12 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) 
 	int d = (c / 100) / 6;
 	int k = r - a;
 	// eprintf ("DD %d\n", jeje - a);
-	//eprintf ("%d: cols=%d a: %d %d %d %d r=%d\n", pc, cols, a, b,c,d, r);
+	// eprintf ("%d: cols=%d a: %d %d %d %d r=%d\n", pc, cols, a, b,c,d, r);
 	p->cb_printf ("%s", portion[k%6]);
 	for (i = cols - a; i; i--) {
 		p->cb_printf (" ");
 		// p->cb_printf ("·");
 	}
-
 #endif
 }
 
@@ -1890,8 +1895,7 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 		}
 		if (enable_colors) {
 			p->cb_printf ("%s]", Color_RESET);
-		}
-		else {
+		} else {
 			p->cb_printf ("]");
 		}
 	}
@@ -1902,7 +1906,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	const char *block = p->consb.cons->use_utf8? R_UTF8_BLOCK: "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
-	p->cb_printf ("|");
+	RStrBuf *sb = r_strbuf_new ("|");
 	if (cols < 1) {
 		cols = 1;
 	}
@@ -1913,18 +1917,21 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 		ut64 endB = min + (((ut64)j + 1) * (ut64)mul);
 		if (startA <= endB && endA >= startB) {
 			if (show_colors & isFirst) {
-				p->cb_printf (Color_GREEN);
+				r_strbuf_append (sb, Color_GREEN);
 				isFirst = false;
 			}
-			p->cb_printf ("%s", block);
+			r_strbuf_append (sb, block);
 		} else {
 			if (!isFirst) {
 				p->cb_printf (Color_RESET);
 			}
-			p->cb_printf ("%s", h_line);
+			r_strbuf_append (sb, h_line);
 		}
 	}
-	p->cb_printf ("|");
+	r_strbuf_append (sb, "|");
+	char *s = r_strbuf_drain (sb);
+	p->cb_printf ("%s", s);
+	free (s);
 }
 
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from, ut64 to, int len, int maxlen) {
@@ -2096,8 +2103,7 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf, const char **colors) {
 		const char *chstr = ".=*@";
 		const char ch = chstr[c % 4];
 		if (useColor) {
-			const char *color = "";
-			color = colors[c]; // c is by definition 0, 1, 2 or 3
+			const char *color = colors[c]; // c is by definition 0, 1, 2 or 3
 			if (p) {
 				p->cb_printf ("%s%c%c"Color_RESET, color, ch, ch);
 			} else {
@@ -2535,14 +2541,16 @@ R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite) {
 		p->row_offsets = R_NEWS (ut32, p->row_offsets_sz);
 	}
 	if (i >= p->row_offsets_sz) {
-		size_t new_size;
 		p->row_offsets_sz *= 2;
 		//XXX dangerous
 		while (i >= p->row_offsets_sz) {
 			p->row_offsets_sz *= 2;
 		}
-		new_size = sizeof (ut32) * p->row_offsets_sz;
-		p->row_offsets = realloc (p->row_offsets, new_size);
+		size_t new_size = sizeof (ut32) * p->row_offsets_sz;
+		void *row_offsets = realloc (p->row_offsets, new_size);
+		if (row_offsets) {
+			p->row_offsets = row_offsets;
+		}
 	}
 	p->row_offsets[i] = offset;
 }
@@ -2615,7 +2623,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	int i, j, index;
-	RPrint myp = {.cb_printf = libc_printf};
+	RPrint myp = { .cb_printf = libc_printf };
 	const int len = strlen (bin_str);
 	if (!len) {
 		return;
@@ -2655,8 +2663,7 @@ R_API void r_print_bin_from_str(RPrint *p, char *str) {
 	for (i = 0; i < len; i++) {
 		ut8 ch = str[i];
 		if (p) {
-			p->cb_eprintf ("%d%d%d%d"
-				       "%d%d%d%d",
+			p->cb_eprintf ("%d%d%d%d%d%d%d%d",
 				ch & 128? 1: 0,
 				ch & 64? 1: 0,
 				ch & 32? 1: 0,
@@ -2666,8 +2673,7 @@ R_API void r_print_bin_from_str(RPrint *p, char *str) {
 				ch & 2? 1: 0,
 				ch & 1? 1: 0);
 		} else {
-			printf ("%d%d%d%d"
-				"%d%d%d%d",
+			printf ("%d%d%d%d%d%d%d%d",
 				ch & 128? 1: 0,
 				ch & 64? 1: 0,
 				ch & 32? 1: 0,

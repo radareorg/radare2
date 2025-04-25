@@ -377,6 +377,23 @@ static bool lastMatters(RConsContext *C) {
 		&& !C->grep.json && !C->is_html);
 }
 
+R_API bool r_kons_is_interactive(RCons *cons) {
+	return cons->context->is_interactive;
+}
+
+R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user) {
+	RConsContext *ctx = cons->context;
+	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
+		r_cons_break_timeout (cons->otimeout);
+	}
+	r_cons_context_break_push (ctx, cb, user, true);
+}
+
+R_API void r_kons_break_pop(RCons *cons) {
+	cons->timeout = 0;
+	r_cons_context_break_pop (cons->context, true);
+}
+
 R_API void r_kons_flush(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	const char *tee = cons->teefile;
@@ -411,12 +428,12 @@ R_API void r_kons_flush(RCons *cons) {
 		}
 	}
 #endif
-	r_cons_filter ();
+	r_kons_filter (cons);
 	if (!ctx->buffer || ctx->buffer_len < 1) {
 		r_cons_reset ();
 		return;
 	}
-	if (r_cons_is_interactive () && cons->fdout == 1) {
+	if (r_kons_is_interactive (cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
 			ctx->buffer[ctx->buffer_len - 1] = 0;
@@ -424,12 +441,12 @@ R_API void r_kons_flush(RCons *cons) {
 				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
 				ctx->pageable = false;
 				r_cons_less_str (str, NULL);
-				r_cons_reset ();
+				r_kons_reset (cons);
 				free (str);
 				return;
 			}
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
-			r_cons_reset ();
+			r_kons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
 #if COUNT_LINES
 			char *buffer = ctx->buffer;
@@ -467,9 +484,9 @@ R_API void r_kons_flush(RCons *cons) {
 			R_LOG_ERROR ("Cannot write on '%s'", tee);
 		}
 	}
-	r_cons_highlight (cons->highlight);
+	r_kons_highlight (cons, cons->highlight);
 
-	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
+	if (r_kons_is_interactive (cons) && !r_sandbox_enable (false)) {
 		if (cons->linesleep > 0 && cons->linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, cons->pagesize);
@@ -478,7 +495,7 @@ R_API void r_kons_flush(RCons *cons) {
 			int len = ctx->buffer_len;
 			ctx->buffer[ctx->buffer_len] = 0;
 			r_cons_break_push (NULL, NULL);
-			while (nl && !r_cons_is_breaked ()) {
+			while (nl && !r_kons_is_breaked (cons)) {
 				__cons_write (cons, ptr, nl - ptr + 1);
 				if (cons->linesleep && !(i % pagesize)) {
 					r_sys_usleep (cons->linesleep * 1000);
@@ -577,12 +594,9 @@ static RConsStack *cons_stack_dump(RCons *cons, bool recreate) {
 		data->buf_len = ctx->buffer_len;
 		data->buf_size = ctx->buffer_sz;
 	}
-	data->grep = R_NEW0 (RConsGrep);
-	if (data->grep) {
-		memcpy (data->grep, &ctx->grep, sizeof (RConsGrep));
-		if (ctx->grep.str) {
-			data->grep->str = strdup (ctx->grep.str);
-		}
+	data->grep = r_mem_dup (&ctx->grep, sizeof (RConsGrep));
+	if (ctx->grep.str) {
+		data->grep->str = strdup (ctx->grep.str);
 	}
 	if (recreate && ctx->buffer_sz > 0) {
 		ctx->buffer = malloc (ctx->buffer_sz);
@@ -754,15 +768,13 @@ R_API RCons *r_kons_new(void) {
 
 R_API void r_kons_pop(RCons *cons) {
 	RConsContext *ctx = cons->context;
-	if (!ctx->cons_stack) {
-		return;
+	if (ctx->cons_stack) {
+		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
+		if (data) {
+			cons_stack_load (ctx, data, true);
+			cons_stack_free ((void *)data);
+		}
 	}
-	RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
-	if (!data) {
-		return;
-	}
-	cons_stack_load (ctx, data, true);
-	cons_stack_free ((void *)data);
 }
 
 R_API void r_kons_free(R_NULLABLE RCons *cons) {
@@ -915,7 +927,7 @@ R_API void r_kons_filter(RCons *cons) {
 	if (ctx->filter || ctx->grep.tokens_used \
 			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
 			|| ctx->grep.less || ctx->grep.json) {
-		(void)r_cons_grepbuf ();
+		(void)r_kons_grepbuf (cons);
 		ctx->filter = false;
 	}
 	/* html */
@@ -939,18 +951,17 @@ R_API void r_kons_filter(RCons *cons) {
 }
 
 R_API void r_kons_push(RCons *cons) {
-	RConsContext *C = cons->context;
-	if (!C->cons_stack) {
+	RConsContext *ctx = cons->context;
+	if (!ctx->cons_stack) {
 		return;
 	}
 	RConsStack *data = cons_stack_dump (cons, true);
-	if (!data) {
-		return;
-	}
-	r_stack_push (C->cons_stack, data);
-	C->buffer_len = 0;
-	if (C->buffer) {
-		memset (C->buffer, 0, C->buffer_sz);
+	if (data) {
+		r_stack_push (ctx->cons_stack, data);
+		ctx->buffer_len = 0;
+		if (ctx->buffer) {
+			memset (ctx->buffer, 0, ctx->buffer_sz);
+		}
 	}
 }
 
@@ -1179,7 +1190,7 @@ R_API void r_kons_visual_flush(RCons *cons) {
 	if (C->noflush) {
 		return;
 	}
-	r_cons_highlight (cons->highlight);
+	r_kons_highlight (cons, cons->highlight);
 	if (!cons->null) {
 /* TODO: this ifdef must go in the function body */
 #if R2__WINDOWS__
@@ -1728,3 +1739,42 @@ R_API bool r_kons_is_breaked(RCons *cons) {
 #endif
 }
 
+R_API void r_kons_break_end(RCons *cons) {
+	RConsContext *C = cons->context;
+	C->breaked = false;
+	cons->timeout = 0;
+#if R2__UNIX__ && !__wasi__
+	if (!C->unbreakable) {
+		r_sys_signal (SIGINT, SIG_IGN);
+	}
+#endif
+	if (!r_stack_is_empty (C->break_stack)) {
+		// free all the stack
+		r_stack_free (C->break_stack);
+		// create another one
+		C->break_stack = r_stack_newf (6, break_stack_free);
+		C->event_interrupt_data = NULL;
+		C->event_interrupt = NULL;
+	}
+}
+
+R_API void *r_kons_sleep_begin(RCons *cons) {
+	R_CRITICAL_ENTER (cons);
+	if (cons->cb_sleep_begin) {
+		return cons->cb_sleep_begin (cons->user);
+	}
+	return NULL;
+}
+
+R_API void r_kons_sleep_end(RCons *cons, void *user) {
+	if (cons->cb_sleep_end) {
+		cons->cb_sleep_end (cons->user, user);
+	}
+	R_CRITICAL_LEAVE (cons);
+}
+
+R_API void r_kons_break_clear(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	ctx->was_breaked = false;
+	ctx->breaked = false;
+}

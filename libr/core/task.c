@@ -139,15 +139,14 @@ R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler) {
 
 static void task_join(RCoreTask *task) {
 	RThreadSemaphore *sem = task->running_sem;
-	if (!sem) {
-		return;
+	if (sem) {
+		r_th_sem_wait (sem);
+		r_th_sem_post (sem);
 	}
-
-	r_th_sem_wait (sem);
-	r_th_sem_post (sem);
 }
 
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id) {
+	return;
 	if (current && id == current->id) {
 		return;
 	}
@@ -258,6 +257,7 @@ hell:
 }
 
 R_API void r_core_task_incref(RCoreTask *task) {
+	return;
 	if (!task) {
 		return;
 	}
@@ -268,6 +268,7 @@ R_API void r_core_task_incref(RCoreTask *task) {
 }
 
 R_API void r_core_task_decref(RCoreTask *task) {
+	return;
 	if (!task) {
 		return;
 	}
@@ -282,6 +283,7 @@ R_API void r_core_task_decref(RCoreTask *task) {
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
+	return;
 	if (!current) {
 		return;
 	}
@@ -353,6 +355,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 }
 
 static void task_wakeup(RCoreTask *current) {
+	return;
 	if (!current) {
 		return;
 	}
@@ -390,6 +393,7 @@ static void task_wakeup(RCoreTask *current) {
 
 	scheduler->current_task = current;
 
+	eprintf ("JAPUTA\n");
 	if (current->cons_context) {
 		r_cons_context_load (current->cons_context);
 	} else {

@@ -481,9 +481,9 @@ static bool duplicate_flag(RFlagItem *flag, void *u) {
 static bool foreach_newline(RCore *core) {
 	bool nl = r_config_get_b (core->config, "scr.loopnl");
 	if (nl) {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
-	return !r_cons_is_breaked ();
+	return !r_kons_is_breaked (core->cons);
 }
 
 static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
@@ -2370,18 +2370,18 @@ bypass:
 		if (filter) {
 			*filter = 0;
 		}
-		int tmp_html = r_cons_context ()->is_html;
-		r_cons_context ()->is_html = false;
+		int tmp_html = core->cons->context->is_html;
+		core->cons->context->is_html = false;
 		ptr = str = r_core_cmd_str (core, inp);
-		r_cons_context ()->is_html = tmp_html;
+		core->cons->context->is_html = tmp_html;
 
 		if (filter) {
 			*filter = '~';
 		}
-		r_cons_break_push (NULL, NULL);
+		r_kons_break_push (core->cons, NULL, NULL);
 		if (ptr) {
 			for (;;) {
-				if (r_cons_is_breaked ()) {
+				if (r_kons_is_breaked (core->cons)) {
 					break;
 				}
 				eol = strchr (ptr, '\n');
@@ -3918,6 +3918,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 }
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
+	// PANCAKE eprintf ("subst(%s) (%s)\n", cmd, core->cons->context->grep.strings);
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
 	char *colon = NULL, *icmd = NULL;
@@ -3931,7 +3932,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
 		if (r_str_startswith (cmd + 2, "\"\"")) {
 			return r_core_cmd_callf (core, "?t'%s", cmd + 4);
-		} else if (r_str_startswith (cmd + 2, "'")) {
+		}
+		if (r_str_startswith (cmd + 2, "'")) {
 			return r_core_cmd_callf (core, "?t'%s", cmd + 3);
 		}
 	}
@@ -4071,22 +4073,20 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			break;
 		}
 		if (colon) {
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 		if (cr && *cr && orep > 1) {
 			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			// XXX: we must import register flags in C
-			// r_core_cmd_subst (core, ".dr*");
-			// r_core_cmd_subst (core, cr);
 			(void)r_core_cmd0 (core, ".dr*");
 			(void)r_core_cmd0 (core, cr);
 		}
 		free (cr);
 	}
-	r_cons_break_pop ();
+	r_kons_break_pop (core->cons);
 	if (is_root_cmd) {
-		r_cons_break_clear ();
+		r_kons_break_clear (core->cons);
 	}
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, true);
@@ -4540,7 +4540,7 @@ escape_pipe:
 			}
 			r_cons_break_push (NULL, NULL);
 			recursive_help (core, detail, cmd);
-			r_cons_break_pop ();
+			r_kons_break_pop (core->cons);
 			r_cons_grep_parsecmd (ptr + 2, "`");
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
@@ -4763,6 +4763,9 @@ next2:
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
 			r_core_return_value (core, value);
+			// PANCAKE - context is not deinitialized properly after a subcommand
+			memset (core->cons->context, 0, sizeof (RConsContext));
+			// eprintf ("--> (%s)\n", cmd);
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			if (scr_html != -1) {
@@ -6366,7 +6369,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		if (*cstr == 'q') {
 			R_FREE (core->cmdremote);
 			goto beach; // false
-		} else if (*cstr != '=' && !r_str_startswith (cstr, "!=")) {
+		}
+		if (*cstr != '=' && !r_str_startswith (cstr, "!=")) {
 			if (core->cmdremote[0]) {
 				char *s = r_str_newf ("%s %s", core->cmdremote, cstr);
 				r_core_rtr_cmd (core, s);
@@ -6721,11 +6725,11 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 			core->cons->context->noflush = false;
 		}
 	}
-	r_cons_filter ();
-	const char *static_str = r_cons_get_buffer ();
+	r_kons_filter (core->cons);
+	const char *static_str = r_kons_get_buffer (core->cons);
 	char *retstr = strdup (r_str_get (static_str));
-	r_cons_pop ();
-	r_cons_echo (NULL);
+	r_kons_pop (core->cons);
+	r_kons_echo (core->cons, NULL);
 	return retstr;
 }
 

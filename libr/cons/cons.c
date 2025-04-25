@@ -45,6 +45,7 @@ R_API bool r_cons_is_initialized(void) {
 }
 
 static void __break_signal(int sig) {
+	eprintf ("brk.signal\n");
 	r_cons_context_break (&r_cons_context_default);
 }
 
@@ -189,11 +190,11 @@ R_API RCons *r_cons_singleton(void) {
 }
 
 R_API void r_cons_break_clear(void) {
-	C->was_breaked = false;
-	C->breaked = false;
+	r_kons_break_clear (I);
 }
 
 R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
+	// eprintf ("Brk.push\n");
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
@@ -224,6 +225,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 }
 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
+	// eprintf ("Brk.pop\n");
 #if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
@@ -251,23 +253,19 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 }
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
-	RConsContext *ctx = getctx ();
-	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_cons_break_timeout (I->otimeout);
-	}
-	r_cons_context_break_push (ctx, cb, user, true);
+	r_kons_break_push (I, cb, user);
 }
 
 R_API void r_cons_break_pop(void) {
-	I->timeout = 0;
-	r_cons_context_break_pop (C, true);
+	r_kons_break_pop (I);
 }
 
 R_API bool r_cons_is_interactive(void) {
-	return C->is_interactive;
+	return r_kons_is_interactive (I);
 }
 
 R_API bool r_cons_default_context_is_interactive(void) {
+	// XXX this is pure evil
 	return r_cons_context_default.is_interactive;
 }
 
@@ -285,6 +283,9 @@ R_API bool r_cons_was_breaked(void) {
 R_API bool r_cons_is_breaked(void) {
 	return r_kons_is_breaked (r_cons_singleton ());
 }
+
+#if 0
+// UNUSED
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 	char chstr[2] = {ch, 0};
 	int X, Y;
@@ -295,6 +296,7 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 		}
 	}
 }
+#endif
 
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
@@ -344,42 +346,15 @@ R_API void r_cons_break_timeout(int timeout) {
 }
 
 R_API void r_cons_break_end(void) {
-	C->breaked = false;
-	I->timeout = 0;
-#if R2__UNIX__ && !__wasi__
-	if (!C->unbreakable) {
-		r_sys_signal (SIGINT, SIG_IGN);
-	}
-#endif
-	if (!r_stack_is_empty (C->break_stack)) {
-		// free all the stack
-		r_stack_free (C->break_stack);
-		// create another one
-		C->break_stack = r_stack_newf (6, break_stack_free);
-		C->event_interrupt_data = NULL;
-		C->event_interrupt = NULL;
-	}
+	r_kons_break_end (I);
 }
 
 R_API void *r_cons_sleep_begin(void) {
-	R_CRITICAL_ENTER (I);
-	if (!I) {
-		r_cons_thready ();
-	}
-	if (!I->cb_sleep_begin) {
-		return NULL;
-	}
-	return I->cb_sleep_begin (I->user);
+	return r_kons_sleep_begin (I);
 }
 
 R_API void r_cons_sleep_end(void *user) {
-	if (!I) {
-		r_cons_thready ();
-	}
-	if (I->cb_sleep_end) {
-		I->cb_sleep_end (I->user, user);
-	}
-	R_CRITICAL_LEAVE (I);
+	r_kons_sleep_end (I, user);
 }
 
 R_API void r_cons_set_click(int x, int y) {
@@ -507,12 +482,14 @@ R_API void r_cons_pop(void) {
 
 R_DEPRECATE R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	RConsContext *context = R_NEW0 (RConsContext);
-	eprintf ("init\n");
+	// eprintf ("init\n");
 	init_cons_context (context, parent);
 	return context;
 }
 
 R_API void r_cons_context_free(RConsContext *ctx) {
+	// eprintf ("ctx.fri\n");
+	return;
 	if (R_LIKELY (ctx)) {
 		cons_context_deinit (ctx);
 		free (ctx);
@@ -520,6 +497,8 @@ R_API void r_cons_context_free(RConsContext *ctx) {
 }
 
 R_API void r_cons_context_load(RConsContext *context) {
+	// eprintf ("ctx.loa\n");
+	return;
 	if (!I) {
 		I = &s_cons_global;
 	}
@@ -527,6 +506,7 @@ R_API void r_cons_context_load(RConsContext *context) {
 }
 
 R_API void r_cons_context_reset(void) {
+	// eprintf ("ctx.rst\n");
 	return;
 	if (!I) {
 		I = &s_cons_global;
@@ -540,6 +520,7 @@ R_API bool r_cons_context_is_main(void) {
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
+	// eprintf ("ctx.brk\n");
 	if (R_LIKELY (context)) {
 		context->breaked = true;
 		if (context->event_interrupt) {
@@ -883,17 +864,7 @@ R_API bool r_cons_set_cup(bool enable) {
 }
 
 R_API void r_cons_column(int c) {
-	char *b = malloc (C->buffer_len + 1);
-	if (!b) {
-		return;
-	}
-	memcpy (b, C->buffer, C->buffer_len);
-	b[C->buffer_len] = 0;
-	r_cons_reset ();
-	// align current buffer N chars right
-	r_cons_print_justify (b, c, 0);
-	r_cons_gotoxy (0, 0);
-	free (b);
+	r_kons_column (I, c);
 }
 
 R_API void r_cons_set_interactive(bool x) {
@@ -1027,18 +998,8 @@ R_API const RConsTheme* r_cons_themes(void) {
 #endif
 
 R_API void r_cons_mark(ut64 addr, const char *name) {
-	RConsMark *mark = R_NEW0 (RConsMark);
-	if (mark) {
-		RConsContext *ctx = getctx ();
-		mark->addr = addr;
-		int row = 0, col = r_kons_get_cursor (I, &row);
-		mark->name = strdup (name); // TODO. use a const pool
-		mark->pos = ctx->buffer_len;
-		mark->col = col;
-		mark->row = row;
-		r_list_append (ctx->marks, mark);
-	}
-};
+	r_kons_mark (I, addr, name);
+}
 
 // must be called before
 R_API void r_cons_mark_flush(void) {
@@ -1046,20 +1007,7 @@ R_API void r_cons_mark_flush(void) {
 }
 
 R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name) {
-	RListIter *iter;
-	RConsMark *mark;
-	r_list_foreach (C->marks, iter, mark) {
-		if (R_STR_ISNOTEMPTY (name)) {
-			if (strcmp (mark->name, name)) {
-				continue;
-			}
-			return mark;
-		}
-		if (addr != UT64_MAX && mark->addr == addr) {
-			return mark;
-		}
-	}
-	return NULL;
+	return r_kons_mark_at (I, addr, name);
 }
 
 R_API void r_cons_printf_list(const char *format, va_list ap) {

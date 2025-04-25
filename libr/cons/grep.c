@@ -403,8 +403,7 @@ R_API void r_cons_grep_expression(const char *str) {
 }
 
 
-// Finds and returns next intgrep expression,
-// unescapes escaped twiddles
+// Finds and returns next intgrep expression, unescapes escaped twiddles
 static char *find_next_intgrep(char *cmd, const char *quotes) {
 	do {
 		char *p = (char *)r_str_firstbut (cmd, '~', quotes);
@@ -1107,7 +1106,6 @@ continuation:
 		cons->context->buffer_sz = cntstr_len + 1;
 		cons->num->value = cons->lines;
 		r_strbuf_free (ob);
-		return;
 	}
 }
 
