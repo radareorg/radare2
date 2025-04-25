@@ -91,6 +91,7 @@ static void update_trace_db_op(TypeTraceDB *db) {
 		return;
 	}
 	const ut32 vec_idx = VecAccess_length (&db->accesses);
+	if (!vec_idx) {
 		R_LOG_ERROR ("Invalid access database");
 		return;
 	}
