@@ -3345,17 +3345,18 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 	R_LOG_ERROR ("Invalid usage of !!!");
 }
 
-static int cmd_last(void *data, const char *input) {
+static int cmd_last(void *user, const char *input) {
+	RCore *core = (RCore *)user;
 	static RCoreHelpMessage help_msg_last = {
 		"_", "", "print last output",
 		NULL
 	};
 	switch (*input) {
 	case 0:
-		r_cons_last ();
+		r_kons_last (core->cons);
 		break;
 	default:
-		r_core_cmd_help ((RCore *)data, help_msg_last);
+		r_core_cmd_help (core, help_msg_last);
 	}
 	return 0;
 }

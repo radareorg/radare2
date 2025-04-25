@@ -29,32 +29,6 @@ typedef struct {
 
 static R_TH_LOCAL Output G;
 
-R_API void r_cons_w32_clear(void) {
-	COORD startCoords;
-	DWORD dummy;
-	if (I->vtmode) {
-		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
-		return;
-	}
-	if (I->is_wine == 1) {
-		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
-	}
-	if (!G.hStdout) {
-		G.hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-	}
-	GetConsoleScreenBufferInfo (G.hStdout, &G.csbi);
-	startCoords = (COORD) {
-		G.csbi.srWindow.Left,
-		G.csbi.srWindow.Top
-	};
-	DWORD nLength = G.csbi.dwSize.X * (G.csbi.srWindow.Bottom - G.csbi.srWindow.Top + 1);
-	FillConsoleOutputCharacter (G.hStdout, ' ',
-		nLength, startCoords, &dummy);
-	FillConsoleOutputAttribute (G.hStdout,
-		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-		nLength, startCoords, &dummy);
-}
-
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &G.hStdout : &G.hStderr;
 	COORD coord;

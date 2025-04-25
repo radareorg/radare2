@@ -5,8 +5,8 @@
 
 static const int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
-static void init_color_table(void) {
-	RConsContext *ctx = r_cons_singleton ()->context;
+static void init_color_table(RCons *cons) {
+	RConsContext *ctx = cons->context;
 	int i, r, g, b;
 	// ansi colors
 	ctx->colors[0] = 0x000000;
@@ -83,11 +83,20 @@ static void __unrgb(int color, int *r, int *g, int *b) {
 }
 
 R_API void r_cons_rgb_init(void) {
-	RConsContext *ctx = r_cons_singleton ()->context;
+	RCons *cons = r_cons_singleton ();
+	RConsContext *ctx = cons->context;
 	if (ctx->colors[255] == 0) {
-		init_color_table ();
+		init_color_table (cons);
 	}
 }
+
+R_API void r_kons_rgb_init(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	if (ctx->colors[255] == 0) {
+		init_color_table (cons);
+	}
+}
+
 
 /* Parse an ANSI code string into RGB values -- Used by HTML filter only */
 R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
