@@ -748,7 +748,7 @@ R_API int r_cons_eof(void) {
 }
 
 R_API void r_cons_gotoxy(int x, int y) {
-	return r_kons_gotoxy (I, x, y);
+	r_kons_gotoxy (I, x, y);
 }
 
 R_API void r_cons_print_clear(void) {
@@ -1495,26 +1495,6 @@ static int __xterm_get_cur_pos(int *xpos) {
 	return ypos;
 }
 
-static bool __xterm_get_size(void) {
-	if (write (I->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
-		return false;
-	}
-	int rows, columns;
-	const char nainnain[] = "\x1b[999;999H";
-	if (write (I->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
-		return false;
-	}
-	rows = __xterm_get_cur_pos (&columns);
-	if (rows) {
-		I->rows = rows;
-		I->columns = columns;
-	} // otherwise reuse previous values
-	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
-		return false;
-	}
-	return true;
-}
-
 #endif
 
 R_API int r_cons_get_size(int *rows) {
@@ -2041,7 +2021,7 @@ R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name) {
 }
 
 R_API void r_cons_printf_list(const char *format, va_list ap) {
-	return r_kons_printf_list (I, format, ap);
+	r_kons_printf_list (I, format, ap);
 }
 
 R_API int r_cons_printf(const char *format, ...) {

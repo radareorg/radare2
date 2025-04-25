@@ -119,7 +119,7 @@ R_API int r_kons_write(RCons *cons, const char *str, int len) {
 		R_CRITICAL_LEAVE (cons);
 	}
 	if (ctx->flush) {
-		r_cons_flush ();
+		r_kons_flush (cons);
 	}
 	if (cons->break_word && str && len > 0) {
 		if (r_mem_mem ((const ut8*)str, len, (const ut8*)cons->break_word, cons->break_word_len)) {
@@ -146,6 +146,28 @@ R_API void r_kons_memset(RCons *cons, char ch, int len) {
 	}
 }
 
+#if R2__WINDOWS__
+static bool w32_xterm_get_size(void) {
+	if (write (I->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+		return false;
+	}
+	int rows, columns;
+	const char nainnain[] = "\x1b[999;999H";
+	if (write (I->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
+		return false;
+	}
+	rows = __xterm_get_cur_pos (&columns);
+	if (rows) {
+		I->rows = rows;
+		I->columns = columns;
+	} // otherwise reuse previous values
+	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
+		return false;
+	}
+	return true;
+}
+#endif
+
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_kons_get_size(RCons *cons, int *rows) {
 #if R2__WINDOWS__
@@ -156,7 +178,7 @@ R_API int r_kons_get_size(RCons *cons, int *rows) {
 		cons->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
 		if (cons->term_xterm) {
-			ret = __xterm_get_size ();
+			ret = w32_xterm_get_size ();
 		}
 		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
 			// Stdout is probably redirected so we set default values
