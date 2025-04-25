@@ -156,7 +156,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 	if (write (cons->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
 		return false;
 	}
-	rows = w32_xterm_get_cur_pos (&columns);
+	rows = w32_xterm_get_cur_pos (cons, &columns);
 	if (rows) {
 		cons->rows = rows;
 		cons->columns = columns;
@@ -688,7 +688,7 @@ R_API RCons *r_kons_new(void) {
 	// r_cons_context_reset (cons->context);
 	cons->context = R_NEW0 (RConsContext);
 	init_cons_context (cons->context, NULL);
-	eprintf ("CTX %p %p\n", cons, cons->context);
+	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
 	cons->lock = r_th_lock_new (false);
 	cons->use_utf8 = r_cons_is_utf8 ();
@@ -845,14 +845,14 @@ R_API void r_kons_reset_colors(RCons *cons) {
 }
 
 #if R2__WINDOWS__
-static inline void w32_clear(void) {
+static inline void w32_clear(RCons *cons) {
 	COORD startCoords;
 	DWORD dummy;
-	if (I->vtmode) {
+	if (cons->vtmode) {
 		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!G.hStdout) {
@@ -875,7 +875,7 @@ static inline void w32_clear(void) {
 R_API void r_kons_clear(RCons *cons) {
 	cons->lines = 0;
 #if R2__WINDOWS__
-	w32_clear ();
+	w32_clear (cons);
 #else
 	r_kons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
 #endif
@@ -1253,10 +1253,10 @@ R_API int r_kons_get_cursor(RCons *cons, int *rows) {
 }
 
 #if R2__WINDOWS__
-static int w32_xterm_get_cur_pos(int *xpos) {
+static int w32_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	int ypos = 0;
 	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
-	if (write (I->fdout, get_pos, sizeof (get_pos)) < 1) {
+	if (write (cons->fdout, get_pos, sizeof (get_pos)) < 1) {
 		return 0;
 	}
 	int ch;
@@ -1309,7 +1309,7 @@ static int w32_xterm_get_cur_pos(int *xpos) {
 #endif
 
 #if R2__WINDOWS__
-R_API int r_cons_is_vtcompat(void) {
+R_IPI int r_kons_is_vtcompat(RCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
@@ -1332,11 +1332,11 @@ R_API int r_cons_is_vtcompat(void) {
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
 		if (strstr (term, "xterm")) {
-			I->term_xterm = true;
+			cons->term_xterm = true;
 			free (term);
 			return 2;
 		}
-		I->term_xterm = false;
+		cons->term_xterm = false;
 		free (term);
 	}
 	char *ansicon = r_sys_getenv ("ANSICON");
