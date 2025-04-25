@@ -1216,6 +1216,9 @@ R_API void r_kons_gotoxy(RCons *cons, int x, int y);
 R_API int r_kons_printf(RCons *cons, const char *format, ...);
 R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap);
 R_API void r_kons_cmd_help_json(RCons *cons, const char * const help[]);
+R_API void r_kons_flush(RCons *cons);
+R_API void r_kons_set_interactive(RCons *cons, bool x);
+R_API void r_kons_set_last_interactive(RCons *cons);
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
 #endif

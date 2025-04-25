@@ -147,21 +147,21 @@ R_API void r_kons_memset(RCons *cons, char ch, int len) {
 }
 
 #if R2__WINDOWS__
-static bool w32_xterm_get_size(void) {
-	if (write (I->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+static bool w32_xterm_get_size(RCons *cons) {
+	if (write (cons->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
 	const char nainnain[] = "\x1b[999;999H";
-	if (write (I->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
+	if (write (cons->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
 		return false;
 	}
 	rows = __xterm_get_cur_pos (&columns);
 	if (rows) {
-		I->rows = rows;
-		I->columns = columns;
+		cons->rows = rows;
+		cons->columns = columns;
 	} // otherwise reuse previous values
-	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
+	if (write (cons->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
 		return false;
 	}
 	return true;
@@ -178,7 +178,7 @@ R_API int r_kons_get_size(RCons *cons, int *rows) {
 		cons->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
 		if (cons->term_xterm) {
-			ret = w32_xterm_get_size ();
+			ret = w32_xterm_get_size (cons);
 		}
 		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
 			// Stdout is probably redirected so we set default values
@@ -331,4 +331,178 @@ R_API void r_kons_set_interactive(RCons *cons, bool x) {
 
 R_API void r_kons_set_last_interactive(RCons *cons) {
 	cons->context->is_interactive = cons->lasti;
+}
+
+static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
+#if R2__WINDOWS__
+	if (cons->vtmode) {
+		(void) write (cons->fdout, buf, len);
+	} else {
+		if (cons->fdout == 1) {
+			r_cons_w32_print (buf, len, false);
+		} else {
+			R_IGNORE_RETURN (write (cons->fdout, buf, len));
+		}
+	}
+#else
+	if (cons->fdout < 1) {
+		cons->fdout = 1;
+	}
+	R_IGNORE_RETURN (write (cons->fdout, buf, len));
+#endif
+}
+
+static inline void __cons_write(RCons *cons, const char *obuf, int olen) {
+	const size_t bucket = 64 * 1024;
+	size_t i;
+	if (olen < 0) {
+		olen = strlen (obuf);
+	}
+	for (i = 0; (i + bucket) < olen; i += bucket) {
+		__cons_write_ll (cons, obuf + i, bucket);
+	}
+	if (i < olen) {
+		__cons_write_ll (cons, obuf + i, olen - i);
+	}
+}
+
+static bool lastMatters(RConsContext *C) {
+	if (!C->lastMode) {
+		return false;
+	}
+	return (C->buffer_len > 0 &&
+		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings)) \
+		&& !C->grep.tokens_used && !C->grep.less \
+		&& !C->grep.json && !C->is_html);
+}
+
+R_API void r_kons_flush(RCons *cons) {
+	RConsContext *ctx = cons->context;
+	const char *tee = cons->teefile;
+	if (ctx->noflush) {
+		return;
+	}
+	if (cons->null) {
+		r_cons_reset ();
+		return;
+	}
+	if (!r_list_empty (ctx->marks)) {
+		r_list_free (ctx->marks);
+		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
+	}
+	if (lastMatters (ctx)) {
+		// snapshot of the output
+		if (ctx->buffer_len > ctx->lastLength) {
+			free (ctx->lastOutput);
+			ctx->lastOutput = malloc (ctx->buffer_len + 1);
+		}
+		ctx->lastLength = ctx->buffer_len;
+		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
+	} else {
+		ctx->lastMode = false;
+	}
+#if 0
+	if (cons->optimize > 0) {
+		// compress output (45 / 250 KB)
+		optimize (ctx);
+		if (I->optimize > 1) {
+			optimize (C);
+		}
+	}
+#endif
+	r_cons_filter ();
+	if (!ctx->buffer || ctx->buffer_len < 1) {
+		r_cons_reset ();
+		return;
+	}
+	if (r_cons_is_interactive () && cons->fdout == 1) {
+		/* Use a pager if the output doesn't fit on the terminal window. */
+		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
+			ctx->buffer[ctx->buffer_len - 1] = 0;
+			if (!strcmp (cons->pager, "..")) {
+				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
+				ctx->pageable = false;
+				r_cons_less_str (str, NULL);
+				r_cons_reset ();
+				free (str);
+				return;
+			}
+			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
+			r_cons_reset ();
+		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
+#if COUNT_LINES
+			char *buffer = ctx->buffer;
+			int lines = 0;
+			int i;
+			for (i = 0; buffer[i]; i++) {
+				if (buffer[i] == '\n') {
+					lines ++;
+				}
+			}
+			if (lines > 0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
+				r_cons_reset ();
+				return;
+			}
+#else
+			char buf[8];
+			r_num_units (buf, sizeof (buf), ctx->buffer_len);
+			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
+				r_cons_reset ();
+				return;
+			}
+#endif
+			// fix | more | less problem
+			r_cons_set_raw (true);
+		}
+	}
+	if (R_STR_ISNOTEMPTY (tee)) {
+		FILE *d = r_sandbox_fopen (tee, "a+");
+		if (d) {
+			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
+				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
+			}
+			fclose (d);
+		} else {
+			R_LOG_ERROR ("Cannot write on '%s'", tee);
+		}
+	}
+	r_cons_highlight (cons->highlight);
+
+	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
+		if (cons->linesleep > 0 && cons->linesleep < 1000) {
+			int i = 0;
+			int pagesize = R_MAX (1, cons->pagesize);
+			char *ptr = ctx->buffer;
+			char *nl = strchr (ptr, '\n');
+			int len = ctx->buffer_len;
+			ctx->buffer[ctx->buffer_len] = 0;
+			r_cons_break_push (NULL, NULL);
+			while (nl && !r_cons_is_breaked ()) {
+				__cons_write (cons, ptr, nl - ptr + 1);
+				if (cons->linesleep && !(i % pagesize)) {
+					r_sys_usleep (cons->linesleep * 1000);
+				}
+				ptr = nl + 1;
+				nl = strchr (ptr, '\n');
+				i++;
+			}
+			__cons_write (cons, ptr, ctx->buffer + len - ptr);
+			r_cons_break_pop ();
+		} else {
+			__cons_write (cons, ctx->buffer, ctx->buffer_len);
+		}
+	} else {
+		__cons_write (cons, ctx->buffer, ctx->buffer_len);
+	}
+
+	r_cons_reset ();
+	if (cons->newline) {
+		eprintf ("\n");
+		cons->newline = false;
+	}
+	if (ctx->tmp_html) {
+		ctx->is_html = ctx->was_html;
+		ctx->tmp_html = false;
+		ctx->was_html = false;
+	}
 }

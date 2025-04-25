@@ -180,39 +180,6 @@ static void __break_signal(int sig) {
 	r_cons_context_break (&r_cons_context_default);
 }
 
-static inline void __cons_write_ll(const char *buf, int len) {
-#if R2__WINDOWS__
-	if (I->vtmode) {
-		(void) write (I->fdout, buf, len);
-	} else {
-		if (I->fdout == 1) {
-			r_cons_w32_print (buf, len, false);
-		} else {
-			R_IGNORE_RETURN (write (I->fdout, buf, len));
-		}
-	}
-#else
-	if (I->fdout < 1) {
-		I->fdout = 1;
-	}
-	R_IGNORE_RETURN (write (I->fdout, buf, len));
-#endif
-}
-
-static inline void __cons_write(const char *obuf, int olen) {
-	const size_t bucket = 64 * 1024;
-	size_t i;
-	if (olen < 0) {
-		olen = strlen (obuf);
-	}
-	for (i = 0; (i + bucket) < olen; i += bucket) {
-		__cons_write_ll (obuf + i, bucket);
-	}
-	if (i < olen) {
-		__cons_write_ll (obuf + i, olen - i);
-	}
-}
-
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
 	if (C->color_mode > COLOR_MODE_16) {
@@ -941,13 +908,6 @@ R_API void r_cons_last(void) {
 	}
 }
 
-static bool lastMatters(void) {
-	return (C->buffer_len > 0 &&
-		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings)) \
-		&& !C->grep.tokens_used && !C->grep.less \
-		&& !C->grep.json && !C->is_html);
-}
-
 R_API void r_cons_echo(const char *msg) {
 	if (msg) {
 		if (I->echodata) {
@@ -967,6 +927,7 @@ R_API void r_cons_echo(const char *msg) {
 	}
 }
 
+#if 0
 static void optimize(RConsContext *ctx) {
 	char *buf = ctx->buffer;
 	int len = ctx->buffer_len;
@@ -1045,6 +1006,7 @@ overflow:
 		}
 	}
 }
+#endif
 
 R_API char *r_cons_drain(void) {
 	const char *buf = r_cons_get_buffer ();
@@ -1055,141 +1017,7 @@ R_API char *r_cons_drain(void) {
 }
 
 R_API void r_cons_flush(void) {
-	RConsContext *ctx = getctx ();
-	if (!ctx) {
-		r_cons_context_reset ();
-		ctx = getctx ();
-	}
-	if (!I) {
-		I = &s_cons_global;
-	}
-	const char *tee = I->teefile;
-	if (C->noflush) {
-		return;
-	}
-	if (I->null) {
-		r_cons_reset ();
-		return;
-	}
-	if (!r_list_empty (ctx->marks)) {
-		r_list_free (ctx->marks);
-		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
-	}
-	if (lastMatters () && !ctx->lastMode) {
-		// snapshot of the output
-		if (ctx->buffer_len > ctx->lastLength) {
-			free (ctx->lastOutput);
-			ctx->lastOutput = malloc (ctx->buffer_len + 1);
-		}
-		ctx->lastLength = ctx->buffer_len;
-		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
-	} else {
-		ctx->lastMode = false;
-	}
-	if (I->optimize > 0) {
-		// compress output (45 / 250 KB)
-		optimize (C);
-		if (I->optimize > 1) {
-			optimize (C);
-		}
-	}
-
-	r_cons_filter ();
-	if (!ctx->buffer || ctx->buffer_len < 1) {
-		r_cons_reset ();
-		return;
-	}
-	if (r_cons_is_interactive () && I->fdout == 1) {
-		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (ctx->pageable && I->pager && *I->pager && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= I->rows) {
-			ctx->buffer[ctx->buffer_len - 1] = 0;
-			if (!strcmp (I->pager, "..")) {
-				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
-				ctx->pageable = false;
-				r_cons_less_str (str, NULL);
-				r_cons_reset ();
-				free (str);
-				return;
-			} else {
-				r_sys_cmd_str_full (I->pager, ctx->buffer, -1, NULL, NULL, NULL);
-				r_cons_reset ();
-			}
-		} else if (I->maxpage > 0 && ctx->buffer_len > I->maxpage) {
-#if COUNT_LINES
-			char *buffer = ctx->buffer;
-			int lines = 0;
-			int i;
-			for (i = 0; buffer[i]; i++) {
-				if (buffer[i] == '\n') {
-					lines ++;
-				}
-			}
-			if (lines > 0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
-				r_cons_reset ();
-				return;
-			}
-#else
-			char buf[8];
-			r_num_units (buf, sizeof (buf), ctx->buffer_len);
-			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_cons_reset ();
-				return;
-			}
-#endif
-			// fix | more | less problem
-			r_cons_set_raw (true);
-		}
-	}
-	if (R_STR_ISNOTEMPTY (tee)) {
-		FILE *d = r_sandbox_fopen (tee, "a+");
-		if (d) {
-			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
-				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
-			}
-			fclose (d);
-		} else {
-			R_LOG_ERROR ("Cannot write on '%s'", tee);
-		}
-	}
-	r_cons_highlight (I->highlight);
-
-	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
-		if (I->linesleep > 0 && I->linesleep < 1000) {
-			int i = 0;
-			int pagesize = R_MAX (1, I->pagesize);
-			char *ptr = ctx->buffer;
-			char *nl = strchr (ptr, '\n');
-			int len = ctx->buffer_len;
-			ctx->buffer[ctx->buffer_len] = 0;
-			r_cons_break_push (NULL, NULL);
-			while (nl && !r_cons_is_breaked ()) {
-				__cons_write (ptr, nl - ptr + 1);
-				if (I->linesleep && !(i % pagesize)) {
-					r_sys_usleep (I->linesleep * 1000);
-				}
-				ptr = nl + 1;
-				nl = strchr (ptr, '\n');
-				i++;
-			}
-			__cons_write (ptr, ctx->buffer + len - ptr);
-			r_cons_break_pop ();
-		} else {
-			__cons_write (ctx->buffer, ctx->buffer_len);
-		}
-	} else {
-		__cons_write (ctx->buffer, ctx->buffer_len);
-	}
-
-	r_cons_reset ();
-	if (I->newline) {
-		eprintf ("\n");
-		I->newline = false;
-	}
-	if (ctx->tmp_html) {
-		ctx->is_html = ctx->was_html;
-		ctx->tmp_html = false;
-		ctx->was_html = false;
-	}
+	r_kons_flush (I);
 }
 
 R_API void r_cons_visual_flush(void) {
@@ -1288,24 +1116,24 @@ R_API void r_cons_visual_write(char *buffer) {
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
 			if (lines > 0) {
-				__cons_write (pptr, plen);
+				__cons_write (I, pptr, plen);
 				if (len != olen) {
-					__cons_write (R_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
-					__cons_write (Color_RESET, strlen (Color_RESET));
+					__cons_write (I, R_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
+					__cons_write (I, Color_RESET, strlen (Color_RESET));
 				}
 			}
 		} else {
 			if (lines > 0) {
 				int w = cols - (alen % cols == 0 ? cols : alen % cols);
-				__cons_write (pptr, plen);
+				__cons_write (I, pptr, plen);
 				if (I->blankline && w > 0) {
-					__cons_write (white, R_MIN (w, sizeof (white)));
+					__cons_write (I, white, R_MIN (w, sizeof (white)));
 				}
 			}
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I->rows;
-				__cons_write (pptr, plen);
+				__cons_write (I, pptr, plen);
 			}
 		}
 		if (break_lines) {
@@ -1318,7 +1146,7 @@ R_API void r_cons_visual_write(char *buffer) {
 	/* fill the rest of screen */
 	if (lines > 0) {
 		while (--lines >= 0) {
-			__cons_write (white, R_MIN (cols, sizeof (white)));
+			__cons_write (I, white, R_MIN (cols, sizeof (white)));
 		}
 	}
 }
