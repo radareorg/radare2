@@ -458,6 +458,7 @@ R_API RCons *r_cons_new(void) {
 	RCons *cons = r_kons_new ();
 	if (I) {
 		R_LOG_INFO ("Second cons!");
+		I = cons;
 	} else {
 		I = cons;
 	}
