@@ -368,7 +368,7 @@ static inline void __cons_write(RCons *cons, const char *obuf, int olen) {
 }
 
 static bool lastMatters(RConsContext *C) {
-	if (!C->lastMode) {
+	if (!C->lastEnabled) {
 		return false;
 	}
 	return (C->buffer_len > 0 &&
