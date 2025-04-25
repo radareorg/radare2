@@ -4030,9 +4030,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 
 	bool is_root_cmd = core->cur_cmd_depth + 1 == core->max_cmd_depth;
 	if (is_root_cmd) {
-		r_cons_break_clear ();
+		r_kons_break_clear (core->cons);
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (core->cons, NULL, NULL);
 	R_CRITICAL_ENTER (core);
 	const bool ocur_enabled = core->print && core->print->cur_enabled;
 	R_CRITICAL_LEAVE (core);
@@ -4075,7 +4075,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		if (colon) {
 			r_kons_flush (core->cons);
 		}
-		if (cr && *cr && orep > 1) {
+		if (R_STR_ISNOTEMPTY (cr) && orep > 1) {
 			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 			r_kons_flush (core->cons);
 			// XXX: we must import register flags in C
@@ -4600,7 +4600,7 @@ repeat:;
 			R_LOG_DEBUG ("FD FROM (%s)", ptr - 1);
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') { // "H>"
-				scr_html = r_cons_context ()->is_html;
+				scr_html = core->cons->context->is_html;
 				r_config_set_b (core->config, "scr.html", true);
 				pipecolor = true;
 				*fdnum = 0;
@@ -4735,46 +4735,48 @@ next2:
 		if (!ptr2) {
 			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
 			goto fail;
-		} else {
-			int value = core->num->value;
-			*ptr = '\0';
-			*ptr2 = '\0';
-			if (ptr[1] == '!') {
-				str = r_core_cmd_str_pipe (core, ptr + 1);
-			} else {
-				// Color disabled when doing backticks ?e `pi 1`
-				const int ocolor = r_config_get_i (core->config, "scr.color");
-				r_config_set_i (core->config, "scr.color", 0);
-				str = r_core_cmd_str (core, ptr + 1);
-				r_config_set_i (core->config, "scr.color", ocolor);
-			}
-			if (!str) {
-				goto fail;
-			}
-			// ignore contents if first char is pipe or comment
-			if (*str == '|' || *str == '*') {
-				R_LOG_ERROR ("invalid sub-command");
-				free (str);
-				goto fail;
-			}
-			if (str) {
-				r_str_replace_ch (str, '\n', ' ', true);
-			}
-			str = r_str_append (str, ptr2 + 1);
-			cmd = r_str_append (strdup (cmd), str);
-			r_core_return_value (core, value);
-			// PANCAKE - context is not deinitialized properly after a subcommand
-			memset (core->cons->context, 0, sizeof (RConsContext));
-			// eprintf ("--> (%s)\n", cmd);
-			ret = r_core_cmd_subst (core, cmd);
-			free (cmd);
-			if (scr_html != -1) {
-				r_config_set_b (core->config, "scr.html", scr_html);
-			}
-			free (str);
-			r_list_free (tmpenvs);
-			return ret;
 		}
+		int value = core->num->value;
+		*ptr = '\0';
+		*ptr2 = '\0';
+		if (ptr[1] == '!') {
+			str = r_core_cmd_str_pipe (core, ptr + 1);
+		} else {
+			// Color disabled when doing backticks ?e `pi 1`
+			const int ocolor = r_config_get_i (core->config, "scr.color");
+			r_config_set_i (core->config, "scr.color", 0);
+			str = r_core_cmd_str (core, ptr + 1);
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
+		if (!str) {
+			goto fail;
+		}
+		// ignore contents if first char is pipe or comment
+		if (*str == '|' || *str == '*') {
+			R_LOG_ERROR ("invalid sub-command");
+			free (str);
+			goto fail;
+		}
+		if (str) {
+			r_str_replace_ch (str, '\n', ' ', true);
+		}
+		str = r_str_append (str, ptr2 + 1);
+		cmd = r_str_append (strdup (cmd), str);
+		r_core_return_value (core, value);
+		// XXX this is a hack but should be a cons_context_pop()
+		// EXAMPLE: ?v `i~baddr[1]`
+		// PANCAKE - context is not deinitialized properly after a subcommand
+		// memset (core->cons->context, 0, sizeof (RConsContext));
+		memset (&core->cons->context->grep, 0, sizeof (core->cons->context->grep));
+		// eprintf ("--> (%s)\n", cmd);
+		ret = r_core_cmd_subst (core, cmd);
+		free (cmd);
+		if (scr_html != -1) {
+			r_config_set_b (core->config, "scr.html", scr_html);
+		}
+		free (str);
+		r_list_free (tmpenvs);
+		return ret;
 	}
 escape_backtick:
 	// TODO must honor " and `
@@ -5022,7 +5024,7 @@ repeat_arroba:
 				if (ptr[1] == ':') {
 					ut8 buf[8] = {0};
 					ut64 v = r_num_math (core->num, ptr + 2);
-					int be = r_config_get_i (core->config, "cfg.bigendian");
+					bool be = r_config_get_b (core->config, "cfg.bigendian");
 					int bi = r_config_get_i (core->config, "asm.bits");
 					if (bi == 64) {
 						r_write_ble64 (buf, v, be);
@@ -5363,8 +5365,8 @@ beach:
 		free (grep);
 	}
 	if (scr_html != -1) {
-		r_cons_flush ();
-		r_config_set_i (core->config, "scr.html", scr_html);
+		r_kons_flush (core->cons);
+		r_config_set_b (core->config, "scr.html", scr_html);
 	}
 	if (scr_color != -1) {
 		r_config_set_i (core->config, "scr.color", scr_color);

@@ -548,7 +548,11 @@ typedef struct r_cons_t {
 	ut64 prev;
 	RStrBuf *echodata;
 	bool lasti;
-
+#if R2__WINDOWS__
+	HANDLE hStdout;
+	HANDLE hStderr;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+#endif
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1

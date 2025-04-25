@@ -318,7 +318,7 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 
 R_API void r_kons_gotoxy(RCons *cons, int x, int y) {
 #if R2__WINDOWS__
-	r_cons_w32_gotoxy (1, x, y);
+	r_cons_w32_gotoxy (cons, 1, x, y);
 #else
 	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
 #endif
@@ -867,18 +867,17 @@ static inline void w32_clear(RCons *cons) {
 	if (cons->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
-	if (!G.hStdout) {
-		G.hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (!cons->hStdout) {
+		cons->hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 	}
-	GetConsoleScreenBufferInfo (G.hStdout, &G.csbi);
+	GetConsoleScreenBufferInfo (cons->hStdout, &cons->csbi);
 	startCoords = (COORD) {
-		G.csbi.srWindow.Left,
-		G.csbi.srWindow.Top
+		cons->csbi.srWindow.Left,
+		cons->csbi.srWindow.Top
 	};
-	DWORD nLength = G.csbi.dwSize.X * (G.csbi.srWindow.Bottom - G.csbi.srWindow.Top + 1);
-	FillConsoleOutputCharacter (G.hStdout, ' ',
-		nLength, startCoords, &dummy);
-	FillConsoleOutputAttribute (G.hStdout,
+	DWORD nLength = cons->csbi.dwSize.X * (cons->csbi.srWindow.Bottom - cons->csbi.srWindow.Top + 1);
+	FillConsoleOutputCharacter (cons->hStdout, ' ', nLength, startCoords, &dummy);
+	FillConsoleOutputAttribute (cons->hStdout,
 		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 		nLength, startCoords, &dummy);
 }

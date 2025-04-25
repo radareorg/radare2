@@ -21,16 +21,8 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-typedef struct {
-	HANDLE hStdout;
-	HANDLE hStderr;
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-} Output;
-
-static R_TH_LOCAL Output G;
-
-R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
-	HANDLE *hConsole = (fd == 1)? &G.hStdout : &G.hStderr;
+R_API void r_cons_w32_gotoxy(RCons *cons, int fd, int x, int y) {
+	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
