@@ -232,7 +232,7 @@ static void htup_vector_free(HtUPKv *kv) {
 	}
 }
 
-static void trace_db_init(TraceDB *db) {
+static void trace_db_init(TypeTraceDB *db) {
 	VecTraceOp_init (&db->ops);
 	VecAccess_init (&db->accesses);
 	db->loop_counts = ht_uu_new0 ();
