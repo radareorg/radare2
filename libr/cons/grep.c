@@ -89,12 +89,10 @@ R_API void r_cons_grep_help(void) {
 	r_cons_cmd_help (help_detail_tilde, true);
 }
 
-R_API void r_cons_grep_expression(const char *str) {
+R_API void r_kons_grep_expression(RCons *cons, const char *str) {
 	if (R_STR_ISEMPTY(str)) {
 		return;
 	}
-
-	RCons *cons = r_cons_singleton ();
 	RConsContext *ctx = cons->context;
 	RConsGrep *grep = &ctx->grep;
 
@@ -399,6 +397,11 @@ while_end:
 cleanup:
 	free (buf);
 }
+
+R_API void r_cons_grep_expression(const char *str) {
+	r_kons_grep_expression (r_cons_singleton (), str);
+}
+
 
 // Finds and returns next intgrep expression,
 // unescapes escaped twiddles
@@ -714,7 +717,10 @@ static void colorcode(void) {
 }
 
 R_API void r_cons_grepbuf(void) {
-	RCons *cons = r_cons_singleton ();
+	r_kons_grepbuf (r_cons_singleton ());
+}
+
+R_API void r_kons_grepbuf(RCons *cons) {
 	const char *buf = cons->context->buffer;
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
@@ -1248,8 +1254,13 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
-R_API void r_cons_grep(const char *grep) {
+R_API void r_kons_grep(RCons *cons, const char *grep) {
 	R_RETURN_IF_FAIL (grep);
-	r_cons_grep_expression (grep);
-	r_cons_grepbuf ();
+	r_kons_grep_expression (cons, grep);
+	r_kons_grepbuf (cons);
 }
+
+R_API void r_cons_grep(const char *grep) {
+	r_kons_grep (r_cons_singleton (), grep);
+}
+

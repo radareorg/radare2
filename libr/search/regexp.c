@@ -35,7 +35,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 		// TODO: allow user to configure according to the maximum expected
 		// match length to prevent FN on matches that span boundaries.
 		while (addr < to) { // get buffer
-			if (s->consb.is_breaked ()) {
+			if (s->consb.is_breaked (s->consb.cons)) {
 				goto beach;
 			}
 

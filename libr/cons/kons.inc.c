@@ -1703,3 +1703,28 @@ R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	}
 	return NULL;
 }
+
+R_API bool r_kons_is_breaked(RCons *cons) {
+#if WANT_DEBUGSTUFF
+	RConsContext *C = cons->context;
+	if (R_UNLIKELY (cons->cb_break)) {
+		cons->cb_break (cons->user);
+	}
+	if (R_UNLIKELY (cons->timeout)) {
+		if (r_stack_size (C->break_stack) > 0) {
+			if (r_time_now_mono () > cons->timeout) {
+				C->breaked = true;
+				C->was_breaked = true;
+				r_cons_break_timeout (cons->otimeout);
+			}
+		}
+	}
+	if (R_UNLIKELY (!C->was_breaked)) {
+		C->was_breaked = C->breaked;
+	}
+	return R_UNLIKELY (C && C->breaked);
+#else
+	return false;
+#endif
+}
+

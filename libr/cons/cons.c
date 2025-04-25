@@ -283,28 +283,8 @@ R_API bool r_cons_was_breaked(void) {
 }
 
 R_API bool r_cons_is_breaked(void) {
-#if WANT_DEBUGSTUFF
-	if (R_UNLIKELY (I->cb_break)) {
-		I->cb_break (I->user);
-	}
-	if (R_UNLIKELY (I->timeout)) {
-		if (r_stack_size (C->break_stack) > 0) {
-			if (r_time_now_mono () > I->timeout) {
-				C->breaked = true;
-				C->was_breaked = true;
-				r_cons_break_timeout (I->otimeout);
-			}
-		}
-	}
-	if (R_UNLIKELY (!C->was_breaked)) {
-		C->was_breaked = C->breaked;
-	}
-	return R_UNLIKELY (C && C->breaked);
-#else
-	return false;
-#endif
+	return r_kons_is_breaked (r_cons_singleton ());
 }
-
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 	char chstr[2] = {ch, 0};
 	int X, Y;
@@ -981,12 +961,12 @@ R_API void r_cons_trim(void) {
 R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 	R_RETURN_IF_FAIL (cons && bind);
 	bind->cons = cons;
-	bind->get_size = r_cons_get_size;
-	bind->get_cursor = r_cons_get_cursor;
-	bind->cb_printf = r_cons_printf;
-	bind->cb_flush = r_cons_flush;
-	bind->cb_grep = r_cons_grep;
-	bind->is_breaked = r_cons_is_breaked;
+	bind->get_size = r_kons_get_size;
+	bind->get_cursor = r_kons_get_cursor;
+	bind->cb_printf = r_kons_printf;
+	bind->cb_flush = r_kons_flush;
+	bind->cb_grep = r_kons_grep;
+	bind->is_breaked = r_kons_is_breaked;
 }
 
 R_API const char* r_cons_get_rune(const ut8 ch) {

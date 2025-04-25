@@ -130,8 +130,7 @@ typedef struct r_print_t {
 	RPrintSectionGet get_section_name;
 	Sdb *formats;
 	Sdb *sdb_types;
-	RCons *cons;
-	RConsBind consbind;
+	RConsBind consb;
 	RNum *num;
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);

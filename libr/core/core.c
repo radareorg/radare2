@@ -2629,10 +2629,9 @@ R_API bool r_core_init(RCore *core) {
 #else
 		core->cons->user_fgets = (void *)r_core_fgets;
 #endif
-		//r_line_singleton ()->user = (void *)core;
+		// r_line_singleton ()->user = (void *)core;
 	}
-	core->print->cons = core->cons;
-	r_cons_bind (core->cons, &core->print->consbind);
+	r_cons_bind (core->cons, &core->print->consb);
 	core->cmdlog = NULL;
 	// XXX causes uaf
 	r_log_add_callback (cbcore, core);

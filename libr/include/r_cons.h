@@ -66,24 +66,9 @@ R_LIB_VERSION_HEADER(r_cons);
 
 #define R_CONS_CMD_DEPTH 100
 
-typedef int (*RConsGetSize)(int *rows);
-typedef int (*RConsGetCursor)(int *rows);
-typedef bool (*RConsIsBreaked)(void);
-typedef void (*RConsFlush)(void);
-typedef void (*RConsGrepCallback)(const char *grep);
 #ifndef R2_BIND_H
-typedef const char * const RCoreHelpMessage[];
+typedef const char *const RCoreHelpMessage[];
 #endif
-
-typedef struct r_cons_bind_t {
-	RConsGetSize get_size;
-	RConsGetCursor get_cursor;
-	PrintfCallback cb_printf;
-	RConsIsBreaked is_breaked;
-	RConsFlush cb_flush;
-	RConsGrepCallback cb_grep;
-	struct r_cons_t *cons;
-} RConsBind;
 
 typedef struct r_cons_mark_t {
 	ut64 addr;
@@ -1042,7 +1027,6 @@ R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(const bool enable);
 R_API void r_cons_enable_highlight(const bool enable);
-R_API void r_cons_bind(RCons *cons, RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
@@ -1207,6 +1191,8 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
+R_API void r_kons_grep(RCons *cons, const char *grep);
+R_API void r_kons_grepbuf(RCons *cons);
 R_API void r_kons_println(RCons *cons, const char* str);
 R_API void r_kons_print(RCons *cons, const char *str);
 R_API void r_kons_newline(RCons *cons);
@@ -1261,8 +1247,26 @@ R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);
 R_API void r_kons_mark_flush(RCons *cons);
 R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name);
 
-
 #endif
+
+// bind
+typedef int (*RConsGetSize)(RCons *cons, int *rows);
+typedef int (*RConsGetCursor)(RCons *cons, int *rows);
+typedef bool (*RConsIsBreaked)(RCons *cons);
+typedef void (*RConsFlush)(RCons *cons);
+typedef int (*RConsPrintfCallback)(RCons *cons, const char *format, ...);
+typedef void (*RConsGrepCallback)(RCons *cons, const char *grep);
+typedef struct r_cons_bind_t {
+	RConsGetSize get_size;
+	RConsGetCursor get_cursor;
+	RConsPrintfCallback cb_printf;
+	RConsIsBreaked is_breaked;
+	RConsFlush cb_flush;
+	RConsGrepCallback cb_grep;
+	struct r_cons_t *cons;
+} RConsBind;
+R_API void r_cons_bind(RCons *cons, RConsBind *bind);
+
 
 typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {

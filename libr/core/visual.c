@@ -258,10 +258,10 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 		if (map) {
 			RPrint *p = core->print;
 			int scr_rows;
-			if (!p->consbind.get_size) {
+			if (!p->consb.get_size) {
 				break;
 			}
-			(void)p->consbind.get_size (&scr_rows);
+			(void)p->consb.get_size (p->consb.cons, &scr_rows);
 			ut64 scols = r_config_get_i (core->config, "hex.cols");
 			ret = r_core_seek (core, r_io_map_end (map) - (scr_rows - 2) * scols, true);
 		}

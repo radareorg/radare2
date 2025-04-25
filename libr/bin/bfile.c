@@ -177,10 +177,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		r_charset_free (ch);
 	}
 	free (charset);
+	RCons *cons = bin->consb.cons;
 	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
 	// may oobread
 	while (needle < to && needle < UT64_MAX - 4) {
-		if (is_breaked && is_breaked ()) {
+		if (is_breaked && is_breaked (cons)) {
 			break;
 		}
 		// smol optimization

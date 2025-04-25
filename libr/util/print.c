@@ -75,9 +75,9 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
-	RConsPrintablePalette *pal = &p->cons->context->pal;
-	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
+	const char *vline = p->consb.cons->use_utf8 ? RUNE_LINE_VERT : "|";
+	const char *block = p->consb.cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
@@ -340,7 +340,7 @@ R_API RPrint* r_print_new(void) {
 	p->screen_bounds = 0;
 	p->esc_bslash = false;
 	p->strconv_mode = NULL;
-	memset (&p->consbind, 0, sizeof (p->consbind));
+	memset (&p->consb, 0, sizeof (p->consb));
 	p->io_unalloc_ch = '.';
 	p->enable_progressbar = true;
 	p->charset = r_charset_new ();
@@ -433,7 +433,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		0
 	};
 	const char *white = "";
-#define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
+#define PREOFF(x) (p && p->consb.cons && p->consb.cons->context && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -480,9 +480,9 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			const char *fin = Color_RESET;
 			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
-				if (p->cons && p->cons->rgbstr) {
+				if (p->consb.cons && p->consb.cons->rgbstr) {
 					static R_TH_LOCAL char rgbstr[32];
-					pre = p->cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
+					pre = p->consb.cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
 				}
 			}
 			if (dec) {
@@ -528,7 +528,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	int ch, i;
 
 	if (colors) {
-#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
+#define P(x) (p->consb.cons && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 		color_0x00 = P (b0x00): Color_GREEN;
 		color_0x7f = P (b0x7f): Color_YELLOW;
 		color_0xff = P (b0xff): Color_RED;
@@ -602,7 +602,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 }
 
 static char colorbuffer[64];
-#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
+#define P(x) (p->consb.cons && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
@@ -660,7 +660,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool only_printable = (options & R_PRINT_STRING_ONLY_PRINTABLE);
-	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
+	bool is_interactive = (p && p->consb.cons) ? p->consb.cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
@@ -747,7 +747,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 	return true;
 }
 
-#define Pal(x,y) (x->cons && x->cons->context->pal.y)? x->cons->context->pal.y
+#define Pal(x,y) (x->consb.cons && x->consb.cons->context->pal.y)? x->consb.cons->context->pal.y
 R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
@@ -799,17 +799,17 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	if (!p->screen_bounds) {
 		return;
 	}
-	if (!p->consbind.get_size) {
+	if (!p->consb.get_size) {
 		return;
 	}
-	if (!p->consbind.get_cursor) {
+	if (!p->consb.get_cursor) {
 		return;
 	}
 
 	if (p->screen_bounds == 1) {
 		int r, rc;
-		(void)p->consbind.get_size (&r);
-		(void)p->consbind.get_cursor (&rc);
+		(void)p->consb.get_size (p->consb.cons, &r);
+		(void)p->consb.get_cursor (p->consb.cons, &rc);
 
 		if (rc > r - 1) {
 			p->screen_bounds = addr;
@@ -1072,7 +1072,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool be = p? (p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
-		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
+		if (p && p->consb.cons && p->consb.cons->context && p->consb.cons->context->breaked) {
 			break;
 		}
 		rowbytes = inc;
@@ -1209,7 +1209,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					// stub for colors
 					if (p && p->colorfor) {
 						if (!p->iob.addr_is_mapped (p->iob.io, addr + j)) {
-							a = p->cons->context->pal.ai_unmap;
+							a = p->consb.cons->context->pal.ai_unmap;
 						} else {
 							a = p->colorfor (p->user, addr, n, true);
 						}
@@ -1550,9 +1550,9 @@ R_API void r_print_hexdump_simple(const ut8 *buf, int len) {
 static const char* getbytediff(RPrint *p, char *fmt, size_t fmt_size, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
+			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->consb.cons->context->pal.graph_true, a);
 		} else {
-			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
+			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->consb.cons->context->pal.graph_false, a);
 		}
 	} else {
 		snprintf (fmt, fmt_size, "%02x", a);
@@ -1564,9 +1564,9 @@ static const char* getchardiff(RPrint *p, char *fmt, size_t fmt_size, ut8 a, ut8
 	const char ch = IS_PRINTABLE (a)? a: '.';
 	if (*fmt) {
 		if (a == b) {
-			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
+			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->consb.cons->context->pal.graph_true, ch);
 		} else {
-			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
+			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->consb.cons->context->pal.graph_false, ch);
 		}
 	} else {
 		snprintf (fmt, fmt_size, "%c", ch);
@@ -1794,7 +1794,7 @@ R_API void r_print_spinbar(RPrint *p, const char *msg) {
 
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) {
-	const bool utf8 = p->cons->use_utf8;
+	const bool utf8 = p->consb.cons->use_utf8;
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
@@ -1856,8 +1856,8 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 		p = &staticp;
 	}
 	const bool enable_colors = p && (p->flags & R_PRINT_FLAGS_COLOR);
-	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
+	const char *h_line = p->consb.cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->consb.cons->use_utf8? R_UTF8_BLOCK: "#";
 
 	total = R_MAX (1, total);
 	pc = R_MAX (0, R_MIN (total, pc));
@@ -1898,8 +1898,8 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 }
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
-	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
+	const char *h_line = p->consb.cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->consb.cons->use_utf8? R_UTF8_BLOCK: "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
@@ -1965,7 +1965,7 @@ R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 f
 
 		// TODO: memoize blocks or gtfo
 		for (i = 0; i < len; i++) {
-			if (p->cons->context->breaked) {
+			if (p->consb.cons->context->breaked) {
 				break;
 			}
 			p->iob.read_at (p->iob.io, from + j, bufz2, size);
@@ -1992,9 +1992,9 @@ R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from,
 }
 
 static inline void printHistBlock(RPrint *p, int k, int cols) {
-	RConsPrintablePalette *pal = &p->cons->context->pal;
-	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
+	const char *h_line = p->consb.cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = p->consb.cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
@@ -2026,7 +2026,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	R_RETURN_IF_FAIL (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
-	bool useUtf8 = p->cons->use_utf8;
+	bool useUtf8 = p->consb.cons->use_utf8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
 
@@ -2164,7 +2164,7 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, co
 
 // probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
 R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
-	RConsPrintablePalette *pal = &p->cons->context->pal;
+	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_NOP:
 		return pal->nop;
@@ -2333,7 +2333,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	ut32 c_reset = strlen (reset);
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
-	const char *color_flag = print->cons->context->pal.flag;
+	const char *color_flag = print->consb.cons->context->pal.flag;
 
 	if (R_STR_ISEMPTY (p)) {
 		return NULL;
@@ -2427,7 +2427,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i + 1] == '$' || isdigit (p[i + 1] & 0xff))) {
-					const char *color = found_var ? print->cons->context->pal.var_type : reg;
+					const char *color = found_var ? print->consb.cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {
 						color = color_flag;
@@ -2692,7 +2692,7 @@ R_API RBraile r_print_braile(int u) {
 }
 
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
-	const bool utf8 = print->cons->use_utf8;
+	const bool utf8 = print->consb.cons->use_utf8;
 	if (utf8) {
 		size_t i;
 		for (i = 0; i < len; i++) {

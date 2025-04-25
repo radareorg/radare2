@@ -175,7 +175,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 		}
 
 		addr += i;
-		if (addr >= to - klen || srch->consb.is_breaked ()) {
+		if (addr >= to - klen || srch->consb.is_breaked (srch->consb.cons)) {
 			break;
 		}
 
