@@ -487,6 +487,7 @@ R_DEPRECATE R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *pare
 	return context;
 }
 
+#if 0
 R_API void r_cons_context_free(RConsContext *ctx) {
 	// eprintf ("ctx.fri\n");
 	return;
@@ -495,6 +496,7 @@ R_API void r_cons_context_free(RConsContext *ctx) {
 		free (ctx);
 	}
 }
+#endif
 
 R_API void r_cons_context_load(RConsContext *context) {
 	// eprintf ("ctx.loa\n");

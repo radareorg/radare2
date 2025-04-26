@@ -4767,7 +4767,7 @@ next2:
 		// EXAMPLE: ?v `i~baddr[1]`
 		// PANCAKE - context is not deinitialized properly after a subcommand
 		// memset (core->cons->context, 0, sizeof (RConsContext));
-		memset (&core->cons->context->grep, 0, sizeof (core->cons->context->grep));
+		// memset (&core->cons->context->grep, 0, sizeof (core->cons->context->grep));
 		// eprintf ("--> (%s)\n", cmd);
 		ret = r_core_cmd_subst (core, cmd);
 		free (cmd);
@@ -6737,7 +6737,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 
 /* get command output in raw bytes */
 R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
-	r_cons_push ();
+	r_kons_push (core->cons);
 	core->cons->context->noflush = true;
 
 	core->cons->context->cmd_str_depth++;
@@ -6745,9 +6745,9 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
-		r_cons_pop ();
+		r_kons_pop (core->cons);
 		return NULL;
 	}
 

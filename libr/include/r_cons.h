@@ -395,7 +395,7 @@ typedef struct r_cons_canvas_t {
 #define R_UTF8_DOOR "🚪"
 
 // Variation Selectors
-#define R_UTF8_VS16 "\xef\xb8\x8f"
+// #define R_UTF8_VS16 "\xef\xb8\x8f"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
@@ -409,7 +409,7 @@ typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MOD
 
 typedef struct r_cons_context_t {
 	RConsGrep grep;
-	RStack *cons_stack;
+	// RStack *cons_stack;
 	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
@@ -438,8 +438,8 @@ typedef struct r_cons_context_t {
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 
-	RList *sorted_lines;
-	RList *unsorted_lines;
+	RList *sorted_lines; // wtf
+	RList *unsorted_lines; // wtf
 	int sorted_column; // -1
 	bool demo;
 	bool is_html;
@@ -469,7 +469,8 @@ typedef struct input_state_t {
 } InputState;
 
 typedef struct r_cons_t {
-	RConsContext *context;
+	RConsContext *context; // TODO: Rename to ctx
+	RList *ctx_stack;
 	InputState input_state;
 	char *lastline;
 	int lines;

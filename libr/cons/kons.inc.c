@@ -505,8 +505,7 @@ R_API void r_kons_flush(RCons *cons) {
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
 #if COUNT_LINES
 			char *buffer = ctx->buffer;
-			int lines = 0;
-			int i;
+			int i, lines = 0;
 			for (i = 0; buffer[i]; i++) {
 				if (buffer[i] == '\n') {
 					lines ++;
@@ -604,6 +603,7 @@ typedef struct {
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
 } RConsBreakStack;
+
 static void break_stack_free(void *ptr) {
 	RConsBreakStack *b = (RConsBreakStack*)ptr;
 	free (b);
@@ -667,6 +667,7 @@ static RConsStack *cons_stack_dump(RCons *cons, bool recreate) {
 }
 
 static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current) {
+	return;
 	R_RETURN_IF_FAIL (data);
 	if (free_current) {
 		// double free
@@ -683,12 +684,15 @@ static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current
 }
 
 static void cons_context_deinit(RConsContext *ctx) {
-	r_stack_free (ctx->cons_stack);
+	return;
+#if 0
+	// r_stack_free (ctx->cons_stack);
 	r_list_free (ctx->marks);
 	ctx->cons_stack = NULL;
 	r_stack_free (ctx->break_stack);
 	ctx->break_stack = NULL;
 	r_cons_pal_free (ctx);
+#endif
 }
 
 static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *parent) {
@@ -699,7 +703,7 @@ static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->lastEnabled = true;
 	context->buffer_len = 0;
 	context->is_interactive = false;
-	context->cons_stack = r_stack_newf (6, cons_stack_free);
+	// context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
@@ -756,6 +760,7 @@ R_API RCons *r_kons_new(void) {
 #endif
 	// r_cons_context_reset (cons->context);
 	cons->context = R_NEW0 (RConsContext);
+	cons->ctx_stack = r_list_newf ((RListFree)r_cons_context_free);
 	init_cons_context (cons->context, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
@@ -819,17 +824,6 @@ R_API RCons *r_kons_new(void) {
 	r_kons_rgb_init (cons);
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
 	return cons;
-}
-
-R_API void r_kons_pop(RCons *cons) {
-	RConsContext *ctx = cons->context;
-	if (ctx->cons_stack) {
-		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
-		if (data) {
-			cons_stack_load (ctx, data, true);
-			cons_stack_free ((void *)data);
-		}
-	}
 }
 
 R_API void r_kons_free(R_NULLABLE RCons *cons) {
@@ -1004,8 +998,47 @@ R_API void r_kons_filter(RCons *cons) {
 	}
 }
 
+R_API void r_cons_context_free(R_NULLABLE RConsContext *ctx) {
+	if (ctx) {
+		// TODO: free more stuff 
+#if 0
+	// r_stack_free (ctx->cons_stack);
+	r_list_free (ctx->marks);
+	ctx->cons_stack = NULL;
+	r_stack_free (ctx->break_stack);
+	ctx->break_stack = NULL;
+	r_cons_pal_free (ctx);
+#endif
+		free (ctx);
+	}
+}
+
+R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
+	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
+	if (ctx->buffer) {
+		c->buffer = r_mem_dup (ctx->buffer, ctx->buffer_sz);
+	}
+	if (ctx->break_stack) {
+		c->break_stack = r_stack_newf (3, break_stack_free);
+	}
+	if (ctx->lastOutput) {
+		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
+	}
+	if (ctx->sorted_lines) {
+		c->sorted_lines = r_list_clone (ctx->sorted_lines, (RListClone)strdup);
+	}
+	if (ctx->unsorted_lines) {
+		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
+	}
+	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	return c;
+}
+
 R_API void r_kons_push(RCons *cons) {
-	RConsContext *ctx = cons->context;
+	r_list_push (cons->ctx_stack, cons->context);
+	cons->context = r_cons_context_clone (cons->context);
+#if 0
+	// memcpy (&tc, cons->context, sizeof (tc));
 	if (!ctx->cons_stack) {
 		return;
 	}
@@ -1017,7 +1050,29 @@ R_API void r_kons_push(RCons *cons) {
 			memset (ctx->buffer, 0, ctx->buffer_sz);
 		}
 	}
+#endif
 }
+
+R_API void r_kons_pop(RCons *cons) {
+	RConsContext *ctx = r_list_pop (cons->ctx_stack);
+	if (ctx) {
+		r_cons_context_free (cons->context);
+		cons->context = ctx;
+	} else {
+		R_LOG_INFO ("Nothing to pop");
+	}
+#if 0
+	if (ctx->cons_stack) {
+		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
+		if (data) {
+			cons_stack_load (ctx, data, true);
+			cons_stack_free ((void *)data);
+		}
+	}
+	memcpy (cons->context, &tc, sizeof (tc));
+#endif
+}
+
 
 R_API bool r_kons_context_is_main(RCons *cons) {
 	return cons->context == &r_cons_context_default;
