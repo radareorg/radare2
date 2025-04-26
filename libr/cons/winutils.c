@@ -265,7 +265,7 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 				str = ptr + 1;
 				continue;
 			} else if (ptr[0] == '2' && ptr[1] == 'J') {
-				win_clear (cons);
+				r_cons_win_clear (cons);
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
