@@ -474,15 +474,6 @@ R_API void r_kons_flush(RCons *cons) {
 	} else {
 		ctx->lastMode = false;
 	}
-#if 0
-	if (cons->optimize > 0) {
-		// compress output (45 / 250 KB)
-		optimize (ctx);
-		if (I->optimize > 1) {
-			optimize (C);
-		}
-	}
-#endif
 	r_kons_filter (cons);
 	if (!ctx->buffer || ctx->buffer_len < 1) {
 		r_cons_reset ();
@@ -852,6 +843,9 @@ R_API void r_kons_free(R_NULLABLE RCons *cons) {
 		r_line_free ();
 		cons->line = NULL;
 	}
+	while (r_kons_pop (cons)) {
+		// do not stop
+	}
 	r_cons_context_free (cons->context);
 #if 0
 	RConsContext *ctx = cons->context;
@@ -1107,87 +1101,6 @@ R_API void r_kons_echo(RCons *cons, const char *msg) {
 		}
 	}
 }
-
-#if 0
-static void optimize(RConsContext *ctx) {
-	char *buf = ctx->buffer;
-	int len = ctx->buffer_len;
-	if (len < 1) {
-		return;
-	}
-
-	int i = 0;
-	int j = 0;
-	const int buf_sz = ctx->buffer_sz;
-
-	while (i < len) {
-		if (buf[i] == 0x1b && i + 1 < len && buf[i+1] == '[') {
-			char escape_seq[32];
-			int k = 0;
-
-			// Copy ESC and [
-			if (j + 2 > buf_sz) {
-				goto overflow;
-			}
-			escape_seq[k++] = buf[i++]; // ESC
-			escape_seq[k++] = buf[i++]; // [
-
-			while (i < len && k < sizeof (escape_seq) - 1) {
-				char c = buf[i++];
-				if (j + k > buf_sz) {
-					goto overflow;
-				}
-				escape_seq[k++] = c;
-				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-					break;
-				}
-			}
-			escape_seq[k] = '\0';
-
-			// TODO: Implement logic here to determine if escape_seq should be kept,
-			// modified, or discarded based on context or previous sequences.
-			// For now, we assume it should always be kept.
-			bool keep_sequence = true;
-			if (keep_sequence) {
-				if (j + k <= buf_sz) {
-					memcpy (buf + j, escape_seq, k);
-					j += k;
-				} else {
-					goto overflow;
-				}
-			}
-		} else {
-			if (j < buf_sz) {
-				buf[j++] = buf[i++];
-			} else {
-				goto overflow;
-			}
-		}
-	}
-
-	if (j < ctx->buffer_len) {
-		ctx->buffer_len = j;
-		if (j < buf_sz) {
-			buf[j] = '\0';
-		}
-	}
-	return;
-
-overflow:
-	R_LOG_WARN ("Buffer overflow during ANSI optimization, output truncated");
-	if (j <= buf_sz) {
-		ctx->buffer_len = j;
-		if (j < buf_sz) {
-			buf[j] = '\0';
-		}
-	} else {
-		ctx->buffer_len = buf_sz > 0 ? buf_sz - 1 : 0;
-		if (buf_sz > 0) {
-			buf[ctx->buffer_len] = '\0';
-		}
-	}
-}
-#endif
 
 R_API char *r_kons_drain(RCons *cons) {
 	const char *buf = r_kons_get_buffer (cons);

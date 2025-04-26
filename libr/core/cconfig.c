@@ -2455,13 +2455,6 @@ static bool cb_scrbreakword(void* user, void* data) {
 	return true;
 }
 
-static bool cb_scroptimize(void* user, void* data) {
-	RConfigNode *node = (RConfigNode*) data;
-	RCore *core = (RCore*) user;
-	core->cons->optimize = node->i_value;
-	return true;
-}
-
 static bool cb_scrtimeout(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	r_cons_break_timeout (node->i_value);
@@ -4429,7 +4422,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.theme", "default", &cb_scrtheme, "specify the theme name to load on startup (See 'ec?')");
 	SETICB ("scr.timeout", 0, &cb_scrtimeout, "check for timeout during the break.(push|pop) contexts");
 	SETICB ("scr.cols", 0, &cb_scrcolumns, "force console column count (width)");
-	SETICB ("scr.optimize", 0, &cb_scroptimize, "optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETB ("scr.dumpcols", "false", "prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "force console row count (height) ");
 	SETI ("scr.notch", 0, "force console row count (height) (duplicate?)");
