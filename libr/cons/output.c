@@ -23,14 +23,12 @@ static void __fill_tail(int cols, int lines) {
 
 R_API void r_cons_w32_gotoxy(RCons *cons, int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
-	COORD coord;
-	coord.X = x;
-	coord.Y = y;
-	if (I->vtmode) {
+	COORD coord = { .X = x, .Y = y };
+	if (cons->vtmode) {
 		r_cons_printf ("\x1b[%d;%dH", y, x);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		write (fd, "\x1b[0;0H", 6);
 	}
 	if (!*hConsole) {
@@ -80,7 +78,7 @@ static int bytes_utf8len(const char *s, int n) {
 	return ret;
 }
 
-static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
+static int w32_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle (hdl);
 	int fd = hdl == STD_OUTPUT_HANDLE ? 1 : 2;
 	int esc = 0;
@@ -220,7 +218,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 				}
 			}
 			if (state == -2) {
-				r_cons_w32_gotoxy (fd, x, y);
+				r_cons_w32_gotoxy (cons, fd, x, y);
 				ptr += i;
 				str = ptr; // + i-2;
 				continue;
@@ -233,7 +231,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 					// fill row here
 					__fill_tail (cols, lines);
 				}
-				r_cons_w32_gotoxy (fd, 0, 0);
+				r_cons_w32_gotoxy (cons, fd, 0, 0);
 				lines = 0;
 				esc = 0;
 				ptr += 3;
@@ -374,11 +372,11 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	return ret;
 }
 
-R_API int r_cons_w32_print(const char *ptr, int len, bool vmode) {
-	return r_cons_w32_hprint (STD_OUTPUT_HANDLE, ptr, len, vmode);
+R_API int r_cons_w32_print(RCons *cons, const char *ptr, int len, bool vmode) {
+	return w32_hprint (cons, STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 
-R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) {
 	va_list ap2;
 	int ret = -1;
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
@@ -387,7 +385,7 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 		if (I->vtmode) {
 			return fwrite (fmt, 1, len, con);
 		}
-		return r_cons_w32_hprint (hdl, fmt, len, vmode);
+		return w32_hprint (cons, hdl, fmt, len, vmode);
 	}
 	va_copy (ap2, ap);
 	int num_chars = vsnprintf (NULL, 0, fmt, ap2);
@@ -398,7 +396,7 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 		if (I->vtmode) {
 			ret = fwrite (buf, 1, num_chars - 1, con);
 		} else {
-			ret = r_cons_w32_hprint (hdl, buf, num_chars - 1, vmode);
+			ret = w32_hprint (cons, hdl, buf, num_chars - 1, vmode);
 		}
 		free (buf);
 	}
@@ -406,24 +404,24 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 	return ret;
 }
 
-R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
+R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_vhprintf (STD_OUTPUT_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (cons, STD_OUTPUT_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }
 
-R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) {
+R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_vhprintf (STD_ERROR_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (cons, STD_ERROR_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }

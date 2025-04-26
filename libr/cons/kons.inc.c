@@ -395,7 +395,7 @@ static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 		(void) write (cons->fdout, buf, len);
 	} else {
 		if (cons->fdout == 1) {
-			r_cons_w32_print (buf, len, false);
+			r_cons_w32_print (cons, buf, len, false);
 		} else {
 			R_IGNORE_RETURN (write (cons->fdout, buf, len));
 		}
@@ -1001,7 +1001,7 @@ R_API void r_kons_filter(RCons *cons) {
 
 R_API void r_cons_context_free(R_NULLABLE RConsContext *ctx) {
 	if (ctx) {
-		// TODO: free more stuff 
+		// TODO: free more stuff
 #if 0
 	// r_stack_free (ctx->cons_stack);
 	r_list_free (ctx->marks);
@@ -1219,8 +1219,8 @@ R_API void r_kons_visual_write(RCons *cons, char *buffer) {
 }
 
 R_API void r_kons_visual_flush(RCons *cons) {
-	RConsContext *C = cons->context;
-	if (C->noflush) {
+	RConsContext *ctx = cons->context;
+	if (ctx->noflush) {
 		return;
 	}
 	r_kons_highlight (cons, cons->highlight);
@@ -1228,12 +1228,12 @@ R_API void r_kons_visual_flush(RCons *cons) {
 /* TODO: this ifdef must go in the function body */
 #if R2__WINDOWS__
 		if (cons->vtmode) {
-			r_kons_visual_write (cons, C->buffer);
+			r_kons_visual_write (cons, ctx->buffer);
 		} else {
-			r_cons_w32_print (C->buffer, C->buffer_len, true);
+			r_cons_w32_print (cons, ctx->buffer, ctx->buffer_len, true);
 		}
 #else
-		r_kons_visual_write (cons, C->buffer);
+		r_kons_visual_write (cons, ctx->buffer);
 #endif
 	}
 	r_cons_reset ();
