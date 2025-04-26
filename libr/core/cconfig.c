@@ -2510,6 +2510,7 @@ static bool cb_scrhighlight(void *user, void *data) {
 
 #if R2__WINDOWS__
 static bool scr_vtmode(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (r_str_is_true (node->value)) {
 		node->i_value = 1;
