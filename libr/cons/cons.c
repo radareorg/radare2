@@ -11,14 +11,15 @@ R_LIB_VERSION (r_cons);
 
 static RCons s_cons_global = {0};
 static R_TH_LOCAL RCons s_cons_thread = {0};
-static void __break_signal(int sig) {
-	r_cons_context_break (I->context); // &r_cons_context_default);
-}
 
+static void __break_signal(int sig);
 
 #include "kons.inc.c"
 static R_TH_LOCAL RCons *I = NULL; // &s_cons_global; // NULL;
 
+static void __break_signal(int sig) {
+	r_cons_context_break (I->context); // &r_cons_context_default);
+}
 #define C (getctx ())
 
 static inline void init_cons_instance(void) {
