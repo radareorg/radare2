@@ -1037,7 +1037,11 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 
 R_API void r_kons_push(RCons *cons) {
 	r_list_push (cons->ctx_stack, cons->context);
-	cons->context = r_cons_context_clone (cons->context);
+	RConsContext *nc = r_cons_context_clone (cons->context);
+	nc->buffer = NULL;
+	nc->buffer_sz = 0;
+	cons->context = nc;
+	// r_cons_context_reset (cons->context);
 #if 0
 	// memcpy (&tc, cons->context, sizeof (tc));
 	if (!ctx->cons_stack) {
@@ -1061,7 +1065,7 @@ R_API bool r_kons_pop(RCons *cons) {
 		cons->context = ctx;
 		return true;
 	}
-	R_LOG_INFO ("Nothing to pop");
+	// R_LOG_INFO ("Nothing to pop");
 	return false;
 #if 0
 	if (ctx->cons_stack) {

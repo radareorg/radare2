@@ -3112,6 +3112,11 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 }
 
 static char *filename(RCore *core, ut64 addr) {
+#if 0
+	RBinAddrline *line = r_bin_dbgitem_at (core->bin, addr);
+	if (line) {
+	}
+#endif
 	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
 	// ignore return code
 	r_core_return_code (core, 0);
