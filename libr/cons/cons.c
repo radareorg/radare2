@@ -770,63 +770,6 @@ R_API int r_cons_get_size(int *rows) {
 	return r_kons_get_size (I, rows);
 }
 
-#if R2__WINDOWS__
-R_IPI int w32_is_vtcompat(void) {
-	DWORD major;
-	DWORD minor;
-	DWORD release = 0;
-	char *cmd_session = r_sys_getenv ("SESSIONNAME");
-	if (cmd_session) {
-		free (cmd_session);
-		return 2;
-	}
-	// Windows Terminal
-	char *wt_session = r_sys_getenv ("WT_SESSION");
-	if (wt_session) {
-		free (wt_session);
-		return 2;
-	}
-	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
-	if (alacritty) {
-		free (alacritty);
-		return 1;
-	}
-	char *term = r_sys_getenv ("TERM");
-	if (term) {
-		if (strstr (term, "xterm")) {
-			I->term_xterm = true;
-			free (term);
-			return 2;
-		}
-		I->term_xterm = false;
-		free (term);
-	}
-	char *ansicon = r_sys_getenv ("ANSICON");
-	if (ansicon) {
-		free (ansicon);
-		return 1;
-	}
-	bool win_support = 0;
-	RSysInfo *info = r_sys_info ();
-	if (info && info->version) {
-		char *save_ptr = NULL;
-		char *dot = r_str_tok_r (info->version, ".", &save_ptr);
-		major = atoi (dot);
-		dot = r_str_tok_r (NULL, ".", &save_ptr);
-		minor = atoi (dot);
-		if (info->release) {
-			release = atoi (info->release);
-		}
-		if (major > 10
-			|| (major == 10 && minor > 0)
-			|| (major == 10 && minor == 0 && release >= 1703)) {
-			win_support = 1;
-		}
-	}
-	r_sys_info_free (info);
-	return win_support;
-}
-#endif
 
 R_API void r_cons_invert(int set, int color) {
 	r_kons_invert (I, set, color);

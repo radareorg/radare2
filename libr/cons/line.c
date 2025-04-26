@@ -21,7 +21,7 @@ R_API RLine *r_line_new(void) {
 	I.kill_ring = r_list_newf (free);
 	I.kill_ring_ptr = -1;
 #if R2__WINDOWS__
-	I.vtmode = w32_is_vtcompat ();
+	I.vtmode = win_is_vtcompat ();
 #else
 	I.vtmode = 2;
 #endif

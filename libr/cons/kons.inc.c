@@ -134,7 +134,7 @@ R_API void r_kons_newline(RCons *cons) {
 #if 0
 This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
 and break json output appending extra chars.
-this code now is managed into output.c:118 at function r_cons_w32_print
+this code now is managed into output.c:118 at function r_cons_win_print
 now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
 #if R2__WINDOWS__
@@ -373,7 +373,7 @@ R_API int r_kons_printf(RCons *cons, const char *format, ...) {
 
 R_API void r_kons_gotoxy(RCons *cons, int x, int y) {
 #if R2__WINDOWS__
-	r_cons_w32_gotoxy (cons, 1, x, y);
+	r_cons_win_gotoxy (cons, 1, x, y);
 #else
 	r_kons_printf (cons, "\x1b[%d;%dH", y, x);
 #endif
@@ -395,7 +395,7 @@ static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 		(void) write (cons->fdout, buf, len);
 	} else {
 		if (cons->fdout == 1) {
-			r_cons_w32_print (cons, buf, len, false);
+			r_cons_win_print (cons, buf, len, false);
 		} else {
 			R_IGNORE_RETURN (write (cons->fdout, buf, len));
 		}
@@ -1132,7 +1132,7 @@ R_API void r_kons_print_fps(RCons *cons, int col) {
 	if (cons->vtmode) {
 		eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 	} else {
-		r_cons_w32_gotoxy (cons, 2, w - col, 0);
+		r_cons_win_gotoxy (cons, 2, w - col, 0);
 		eprintf (" [%d FPS] \n", fps);
 	}
 #else
@@ -1230,7 +1230,7 @@ R_API void r_kons_visual_flush(RCons *cons) {
 		if (cons->vtmode) {
 			r_kons_visual_write (cons, ctx->buffer);
 		} else {
-			r_cons_w32_print (cons, ctx->buffer, ctx->buffer_len, true);
+			r_cons_win_print (cons, ctx->buffer, ctx->buffer_len, true);
 		}
 #else
 		r_kons_visual_write (cons, ctx->buffer);
@@ -1295,7 +1295,6 @@ R_API int r_kons_get_cursor(RCons *cons, int *rows) {
 	return col;
 #endif
 }
-
 
 #if R2__WINDOWS__
 R_IPI int r_kons_is_vtcompat(RCons *cons) {
