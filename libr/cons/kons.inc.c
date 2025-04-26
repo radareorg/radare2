@@ -906,37 +906,10 @@ R_API void r_kons_reset_colors(RCons *cons) {
 	r_kons_print (cons, Color_RESET_BG Color_RESET);
 }
 
-#if R2__WINDOWS__
-static inline void win_clear(RCons *cons) {
-	COORD startCoords;
-	DWORD dummy;
-	if (cons->vtmode) {
-		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
-		return;
-	}
-	if (cons->is_wine == 1) {
-		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
-	}
-	if (!cons->hStdout) {
-		cons->hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-	}
-	GetConsoleScreenBufferInfo (cons->hStdout, &cons->csbi);
-	startCoords = (COORD) {
-		cons->csbi.srWindow.Left,
-		cons->csbi.srWindow.Top
-	};
-	DWORD nLength = cons->csbi.dwSize.X * (cons->csbi.srWindow.Bottom - cons->csbi.srWindow.Top + 1);
-	FillConsoleOutputCharacter (cons->hStdout, ' ', nLength, startCoords, &dummy);
-	FillConsoleOutputAttribute (cons->hStdout,
-		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-		nLength, startCoords, &dummy);
-}
-#endif
-
 R_API void r_kons_clear(RCons *cons) {
 	cons->lines = 0;
 #if R2__WINDOWS__
-	win_clear (cons);
+	r_cons_win_clear (cons);
 #else
 	r_kons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
 #endif

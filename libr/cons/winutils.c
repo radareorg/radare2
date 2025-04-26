@@ -5,6 +5,8 @@
 #include <r_util/r_assert.h>
 #define I r_cons_singleton ()
 
+// TODO: drop the `r_cons` prefix from all these functions
+
 #if R2__WINDOWS__
 
 static void __fill_tail(int cols, int lines) {
@@ -21,7 +23,32 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-R_API void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
+R_IPI void r_cons_win_clear(RCons *cons) {
+	COORD startCoords;
+	DWORD dummy;
+	if (cons->vtmode) {
+		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
+		return;
+	}
+	if (cons->is_wine == 1) {
+		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
+	}
+	if (!cons->hStdout) {
+		cons->hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	}
+	GetConsoleScreenBufferInfo (cons->hStdout, &cons->csbi);
+	startCoords = (COORD) {
+		cons->csbi.srWindow.Left,
+		cons->csbi.srWindow.Top
+	};
+	DWORD nLength = cons->csbi.dwSize.X * (cons->csbi.srWindow.Bottom - cons->csbi.srWindow.Top + 1);
+	FillConsoleOutputCharacter (cons->hStdout, ' ', nLength, startCoords, &dummy);
+	FillConsoleOutputAttribute (cons->hStdout,
+		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+		nLength, startCoords, &dummy);
+}
+
+R_IPI void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
 	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
 	COORD coord = { .X = x, .Y = y };
 	if (cons->vtmode) {
@@ -372,11 +399,11 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 	return ret;
 }
 
-R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode) {
+R_IPI int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode) {
 	return win_hprint (cons, STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 
-R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+R_IPI int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) {
 	va_list ap2;
 	int ret = -1;
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
@@ -404,7 +431,7 @@ R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fm
 	return ret;
 }
 
-R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) {
+R_IPI int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
@@ -415,7 +442,7 @@ R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) {
 	return ret;
 }
 
-R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) {
+R_IPI int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
