@@ -17,7 +17,7 @@ static int kons_chop(RCons *cons, int len) {
 }
 
 #if R2__WINDOWS__
-static int w32_xterm_get_cur_pos(RCons *cons, int *xpos) {
+static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	int ypos = 0;
 	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
 	if (write (cons->fdout, get_pos, sizeof (get_pos)) < 1) {
@@ -211,7 +211,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 	if (write (cons->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
 		return false;
 	}
-	rows = w32_xterm_get_cur_pos (cons, &columns);
+	rows = win_xterm_get_cur_pos (cons, &columns);
 	if (rows) {
 		cons->rows = rows;
 		cons->columns = columns;
@@ -789,7 +789,7 @@ R_API RCons *r_kons_new(void) {
 	cons->null = 0;
 #if R2__WINDOWS__
 	cons->old_cp = GetConsoleOutputCP ();
-	cons->vtmode = r_cons_is_vtcompat ();
+	cons->vtmode = win_is_vtcompat ();
 #else
 	cons->vtmode = 2;
 #endif
