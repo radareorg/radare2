@@ -7,7 +7,7 @@
 
 R_LIB_VERSION (r_cons);
 
-static R_TH_LOCAL RConsContext r_cons_context_default = {0};
+// static R_TH_LOCAL RConsContext r_cons_context_default = {0};
 
 static RCons s_cons_global = {0};
 static R_TH_LOCAL RCons s_cons_thread = {0};
@@ -19,6 +19,7 @@ static R_TH_LOCAL RCons *I = NULL; // &s_cons_global; // NULL;
 
 static inline void init_cons_instance(void) {
 	return;
+#if 0
 	if (R_LIKELY (I)) {
 		if (!I->context) {
 			I->context = &r_cons_context_default;
@@ -28,6 +29,7 @@ static inline void init_cons_instance(void) {
 		I->context = &r_cons_context_default;
 		init_cons_input (&I->input_state);
 	}
+#endif
 }
 
 static RConsContext *getctx(void) {
@@ -45,8 +47,7 @@ R_API bool r_cons_is_initialized(void) {
 }
 
 static void __break_signal(int sig) {
-	eprintf ("brk.signal\n");
-	r_cons_context_break (&r_cons_context_default);
+	r_cons_context_break (I->context); // &r_cons_context_default);
 }
 
 R_API RColor r_cons_color_random(ut8 alpha) {
@@ -266,7 +267,7 @@ R_API bool r_cons_is_interactive(void) {
 
 R_API bool r_cons_default_context_is_interactive(void) {
 	// XXX this is pure evil
-	return r_cons_context_default.is_interactive;
+	return I->context->is_interactive;
 }
 
 R_API bool r_cons_was_breaked(void) {
@@ -508,13 +509,12 @@ R_API void r_cons_context_load(RConsContext *context) {
 }
 
 R_API void r_cons_context_reset(void) {
-	// eprintf ("ctx.rst\n");
-	return;
-	if (!I) {
-		I = &s_cons_global;
+	eprintf ("wtf\n");
+#if 0
+	while (r_kons_pop (I)) {
+		// you cant stop
 	}
-	I->context = &r_cons_context_default;
-	C->sorted_column = -1;
+#endif
 }
 
 R_API bool r_cons_context_is_main(void) {

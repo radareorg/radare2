@@ -2575,7 +2575,7 @@ R_API bool r_core_init(RCore *core) {
 	// XXX R2_590 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif
-	core->print->cb_color = r_cons_rainbow_get;
+	// core->print->cb_color = r_cons_rainbow_get; // NEVER CALLED
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
 	core->print->disasm = __disasm;

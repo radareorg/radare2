@@ -628,6 +628,7 @@ static void cons_grep_reset(RConsGrep *grep) {
 	}
 }
 
+#if 0
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	R_FREE (s->buf);
@@ -640,7 +641,9 @@ static void cons_stack_free(void *ptr) {
 	cons_grep_reset (&C->grep);
 #endif
 }
+#endif
 
+#if 0
 static RConsStack *cons_stack_dump(RCons *cons, bool recreate) {
 	RConsContext *ctx = cons->context;
 	RConsStack *data = R_NEW0 (RConsStack);
@@ -682,18 +685,19 @@ static void cons_stack_load(RConsContext *C, RConsStack *data, bool free_current
 		memcpy (&C->grep, data->grep, sizeof (RConsGrep));
 	}
 }
+#endif
 
+#if 0
 static void cons_context_deinit(RConsContext *ctx) {
 	return;
-#if 0
 	// r_stack_free (ctx->cons_stack);
 	r_list_free (ctx->marks);
 	ctx->cons_stack = NULL;
 	r_stack_free (ctx->break_stack);
 	ctx->break_stack = NULL;
 	r_cons_pal_free (ctx);
-#endif
 }
+#endif
 
 static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
@@ -830,7 +834,6 @@ R_API void r_kons_free(R_NULLABLE RCons *cons) {
 	if (!cons) {
 		return;
 	}
-	RConsContext *ctx = cons->context;
 #if R2__WINDOWS__
 	r_cons_enable_mouse (false);
 	if (cons->old_cp) {
@@ -849,11 +852,15 @@ R_API void r_kons_free(R_NULLABLE RCons *cons) {
 		r_line_free ();
 		cons->line = NULL;
 	}
+	r_cons_context_free (cons->context);
+#if 0
+	RConsContext *ctx = cons->context;
 	R_FREE (ctx->buffer);
 	R_FREE (cons->break_word);
 	cons_context_deinit (ctx);
 	R_FREE (ctx->lastOutput);
 	ctx->lastLength = 0;
+#endif
 	R_FREE (cons->pager);
 	RVecFdPairs_fini (&cons->fds);
 }
@@ -868,7 +875,7 @@ R_API void r_kons_fill_line(RCons *cons) {
 	if (cols < 1) {
 		return;
 	}
-	char *p = (cols >= sizeof (white))?  malloc (cols + 1): white;
+	char *p = (cols >= sizeof (white))? malloc (cols + 1): white;
 	if (p) {
 		memset (p, ' ', cols);
 		p[cols] = 0;
@@ -1053,14 +1060,15 @@ R_API void r_kons_push(RCons *cons) {
 #endif
 }
 
-R_API void r_kons_pop(RCons *cons) {
+R_API bool r_kons_pop(RCons *cons) {
 	RConsContext *ctx = r_list_pop (cons->ctx_stack);
 	if (ctx) {
 		r_cons_context_free (cons->context);
 		cons->context = ctx;
-	} else {
-		R_LOG_INFO ("Nothing to pop");
+		return true;
 	}
+	R_LOG_INFO ("Nothing to pop");
+	return false;
 #if 0
 	if (ctx->cons_stack) {
 		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
@@ -1073,9 +1081,12 @@ R_API void r_kons_pop(RCons *cons) {
 #endif
 }
 
-
 R_API bool r_kons_context_is_main(RCons *cons) {
-	return cons->context == &r_cons_context_default;
+	if (r_list_length (cons->ctx_stack) == 0) {
+		return true;
+	}
+	RConsContext *first_context = r_list_get_n (cons->ctx_stack, 0);
+	return cons->context == first_context;
 }
 
 R_API void r_kons_echo(RCons *cons, const char *msg) {

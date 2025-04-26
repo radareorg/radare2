@@ -168,7 +168,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
-		if (color && *color) {
+		if (R_STR_ISNOTEMPTY (color)) {
 			R_FREE (*color);
 		}
 	}
@@ -268,7 +268,7 @@ R_API void r_cons_pal_free(RConsContext *ctx) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
-		if (color && *color) {
+		if (R_STR_ISNOTEMPTY (color)) {
 			R_FREE (*color);
 		}
 	}
@@ -705,8 +705,7 @@ R_API void r_cons_rainbow_free(RConsContext *ctx) {
 	R_FREE (ctx->pal.rainbow);
 }
 
-R_API char *r_cons_rainbow_get(int idx, int last, bool bg) {
-	RCons *cons = r_cons_singleton ();
+R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
 	if (last < 0) {
 		last = cons->context->pal.rainbow_sz;
 	}

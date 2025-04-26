@@ -991,7 +991,7 @@ R_API bool r_cons_is_tty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
-R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
+R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
@@ -1212,7 +1212,7 @@ R_API void r_kons_set_last_interactive(RCons *cons);
 R_API void r_kons_flush(RCons *cons);
 R_API void r_kons_last(RCons *cons);
 R_API RCons *r_kons_new(void);
-R_API void r_kons_pop(RCons *cons);
+R_API bool r_kons_pop(RCons *cons);
 R_API void r_kons_free(R_NULLABLE RCons *cons);
 R_API void r_kons_print_clear(RCons *cons);
 R_API void r_kons_fill_line(RCons *cons);

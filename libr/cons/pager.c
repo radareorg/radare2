@@ -117,8 +117,8 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 			if (!cpos || m.rm_so >= ncpos) {
 				break;
 			}
-			RRegexMatch *ms = R_NEW0 (RRegexMatch);
-			if (ms && cpos) {
+			if (cpos) {
+				RRegexMatch *ms = R_NEW0 (RRegexMatch);
 				ms->rm_so = cpos[m.rm_so];
 				ms->rm_eo = cpos[m.rm_eo];
 				r_list_append (mla[l], ms);

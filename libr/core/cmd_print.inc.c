@@ -2477,7 +2477,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	ut8 ch = 0;
 	char *colors[10] = { NULL };
 	for (i = 0; i < 10; i++) {
-		colors[i] = r_cons_rainbow_get (i, 10, false);
+		colors[i] = r_cons_rainbow_get (core->cons, i, 10, false);
 	}
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
