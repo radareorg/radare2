@@ -11,6 +11,10 @@ R_LIB_VERSION (r_cons);
 
 static RCons s_cons_global = {0};
 static R_TH_LOCAL RCons s_cons_thread = {0};
+static void __break_signal(int sig) {
+	r_cons_context_break (I->context); // &r_cons_context_default);
+}
+
 
 #include "kons.inc.c"
 static R_TH_LOCAL RCons *I = NULL; // &s_cons_global; // NULL;
@@ -44,10 +48,6 @@ R_API InputState *r_cons_input_state(void) {
 
 R_API bool r_cons_is_initialized(void) {
 	return I != NULL;
-}
-
-static void __break_signal(int sig) {
-	r_cons_context_break (I->context); // &r_cons_context_default);
 }
 
 R_API RColor r_cons_color_random(ut8 alpha) {
