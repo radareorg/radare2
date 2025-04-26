@@ -907,7 +907,7 @@ R_API void r_kons_reset_colors(RCons *cons) {
 }
 
 #if R2__WINDOWS__
-static inline void w32_clear(RCons *cons) {
+static inline void win_clear(RCons *cons) {
 	COORD startCoords;
 	DWORD dummy;
 	if (cons->vtmode) {
@@ -936,7 +936,7 @@ static inline void w32_clear(RCons *cons) {
 R_API void r_kons_clear(RCons *cons) {
 	cons->lines = 0;
 #if R2__WINDOWS__
-	w32_clear (cons);
+	win_clear (cons);
 #else
 	r_kons_print (cons, Color_RESET R_CONS_CLEAR_SCREEN);
 #endif
