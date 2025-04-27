@@ -864,7 +864,7 @@ R_API void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y);
 R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
-R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
+R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
 #if 0
