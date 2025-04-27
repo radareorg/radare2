@@ -1596,9 +1596,11 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		free (s);
 		r_table_free (table);
 	} else if (IS_MODE_SET (mode)) {
-		if (entry) {
-			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			r_core_seek (r, at, false);
+		if (r_config_get_b (r->config, "io.va")) {
+			if (entry) {
+				ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
+				r_core_seek (r, at, false);
+			}
 		}
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("'fs-");
@@ -4897,12 +4899,11 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	}
 	if ((action & R_CORE_BIN_ACC_FIELDS)) {
 		if (IS_MODE_SIMPLE (mode)) {
-			// ret &= bin_fields (core, NULL, mode, va);
 			ret &= bin_fields (core, NULL, mode, va);
 			// ret &= bin_header (core, mode);
 		} else if (IS_MODE_NORMAL (mode)) {
-			// ret &= bin_header (core, mode);
 			ret &= bin_fields (core, NULL, mode, va);
+			// ret &= bin_header (core, mode);
 		} else {
 			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
 				ret &= bin_fields (core, pj, mode, va);
