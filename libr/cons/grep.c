@@ -1050,8 +1050,8 @@ continuation:
 		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
 		cons->context->buffer[ob_len] = 0;
 		r_strbuf_free (ob);
-		ob = NULL;
 	}
+	ob = NULL;
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list) \
 		if (list) { \

@@ -4100,7 +4100,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *arg = strchr (input, ' ');
 	arg = arg? r_str_trim_head_ro (arg + 1): input;
 
-	st64 repeat = r_num_math (core->num, arg);
+	ut64 repeat = r_num_math (core->num, arg);
 	if (repeat < 0) {
 		repeat = 1;
 	}
@@ -4319,29 +4319,30 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	case '?': // "pv?"
 		r_core_cmd_help (core, help_msg_pv);
 		break;
-	default:
+	default:;
+		ut64 delta = 0;
 		do {
 			repeat--;
 			const int p_bits = core->rasm->config->bits / 8;
 			if (block + 8 >= block_end) {
-				int blockdelta = block - core->block;
 				if (heaped_block) {
-					blockdelta = block - heaped_block;
 					free (heaped_block);
 				}
 				blocksize = ((1 + repeat) * 8) + 8;
 				block_end = block + blocksize;
 				heaped_block = calloc (blocksize, 1);
 				if (!heaped_block) {
+					R_LOG_ERROR ("invalid block size");
 					break;
 				}
-				r_io_read_at (core->io, core->addr + blockdelta, heaped_block, blocksize);
+				r_io_read_at (core->io, core->addr + delta, heaped_block, blocksize);
 				block = heaped_block;
 			}
 			ut64 v;
 			if (!fixed_size) {
 				n = 0;
 			}
+			delta += n;
 			switch (n) {
 			case 1:
 				v = r_read_ble8 (block);
@@ -4365,7 +4366,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				break;
 			default:
 				v = r_read_ble64 (block, be);
-				switch (p_bits) { // core->rasm->config->bits / 8) {
+				switch (p_bits) { // core->rasm->config->bits / 8)
 				case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
 				case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
 				case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;

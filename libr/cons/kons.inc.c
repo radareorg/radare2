@@ -93,7 +93,7 @@ static bool kons_palloc(RCons *cons, size_t moar) {
 	} else if (moar + C->buffer_len > C->buffer_sz) {
 		size_t new_sz = moar + (C->buffer_sz * 2); // Exponential growth
 		if (new_sz < C->buffer_sz || new_sz < moar + C->buffer_len) {
-			new_sz = moar + C->buffer_len + MOAR; // Ensure enough space
+			new_sz = moar + C->buffer_sz + MOAR; // Ensure enough space
 		}
 		if (new_sz < C->buffer_sz) { // Check for overflow
 			return false;
@@ -166,6 +166,7 @@ R_API int r_kons_write(RCons *cons, const char *str, int len) {
 				R_CRITICAL_LEAVE (cons);
 				return 0;
 			}
+			len = choplen;
 			memcpy (ctx->buffer + ctx->buffer_len, str, len);
 			ctx->buffer_len += len;
 			ctx->buffer[ctx->buffer_len] = 0;
@@ -1008,8 +1009,11 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 R_API void r_kons_push(RCons *cons) {
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
+#if 1
 	nc->buffer = NULL;
 	nc->buffer_sz = 0;
+	nc->buffer_len = 0;
+#endif
 	cons->context = nc;
 	// r_cons_context_reset (cons->context);
 #if 0
