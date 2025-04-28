@@ -318,7 +318,7 @@ static void type_trace_fini(TypeTrace *trace) {
 }
 
 static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
-	R_RETURN_IF_FAIL (trace && esil && op);
+	R_RETURN_VAL_IF_FAIL (trace && esil && op, false);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (R_UNLIKELY (!expr || !strlen (expr))) {
 		R_LOG_WARN ("expr is empty or null");
