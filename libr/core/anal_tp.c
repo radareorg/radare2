@@ -317,33 +317,37 @@ static void type_trace_fini(TypeTrace *trace) {
 	trace[0] = (const TypeTrace){0};
 }
 
-static void type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
+static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	R_RETURN_IF_FAIL (trace && esil && op);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (R_UNLIKELY (!expr || !strlen (expr))) {
 		R_LOG_WARN ("expr is empty or null");
-		return;
+		return false;
 	}
 	trace->cc = 0;
 	ut32 voy[4];
 	voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
 	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
-		return;
+		return false;
 	}
+	bool ret = true;
 	voy[R_ESIL_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
 		type_trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
 	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		ret = false;
 		goto fail_regw_voy;
 	}
 	voy[R_ESIL_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
 	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
+		ret = false;
 		goto fail_memr_voy;
 	}
 	voy[R_ESIL_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
 		type_trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
 	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		ret = false;
 		goto fail_memw_voy;
 	}
 	
@@ -352,6 +356,7 @@ static void type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		const bool suc = r_esil_reg_write (esil, ri->name, op->addr);
 		r_unref (ri);
 		if (!suc) {
+			ret = false;
 			goto fail_set_pc;
 		}
 	}
@@ -366,7 +371,9 @@ static void type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		R_LOG_WARN ("Couldn't allocate(emplace_back) trace op");
 		//anything to do here?
 	}
-	r_esil_parse (esil, expr);
+	if (!r_esil_parse (esil, expr)) {
+		ret = false;
+	}
 	r_esil_stack_free (esil);
 	trace->idx++;
 	trace->end_idx++;	// should be vector length?
@@ -378,6 +385,7 @@ fail_memr_voy:
 	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_WRITE]);
 fail_regw_voy:
 	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_READ]);
+	return ret;
 }
 
 static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *val) {
@@ -1094,8 +1102,8 @@ static void tps_fini(TPState *tps) {
 	type_trace_fini (&tps->tt);
 	r_esil_fini (&tps->esil);
 	r_io_fd_close (tps->core->io, tps->stack_fd);
-	r_reg_setv (core->anal->reg, "SP", tps->sp);
-	r_reg_setv (core->anal->reg, "BP", tps->bp);
+	r_reg_setv (tps->core->anal->reg, "SP", tps->sp);
+	r_reg_setv (tps->core->anal->reg, "BP", tps->bp);
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
@@ -1189,7 +1197,6 @@ static TPState *tps_init(RCore *core) {
 	RIOMap *map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size);
 	if (!map) {
 		r_io_fd_close (core->io, tps->stack_fd);
-		r_reg_free (tps->reg);
 		free (tps);
 		return NULL;
 	}
@@ -1210,7 +1217,7 @@ static TPState *tps_init(RCore *core) {
 		free (tps);
 		return NULL;
 	}
-	if (!type_trace_init (&tps->tt, &tps->esil, tps->reg, sp, sp - tps->stack_base)) {
+	if (!type_trace_init (&tps->tt, &tps->esil, core->anal->reg, sp, sp - tps->stack_base)) {
 		r_esil_fini (&tps->esil);
 		r_reg_setv (core->anal->reg, "SP", tps->sp);
 		r_reg_setv (core->anal->reg, "BP", tps->bp);
