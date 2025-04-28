@@ -294,7 +294,7 @@ static bool test_r_codemeta_print_json(void) {
 	RCons *cons = r_cons_new ();
 	r_kons_push (cons);
 	r_codemeta_print_json (code);
-	actual = strdup (r_kons_get_buffer (cons));
+	actual = strdup (r_kons_get_buffer (cons, NULL));
 	r_kons_pop (cons);
 	mu_assert_streq (actual, expected, "pdgj OUTPUT DOES NOT MATCH");
 
