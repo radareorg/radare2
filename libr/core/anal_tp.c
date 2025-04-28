@@ -1421,7 +1421,7 @@ bla:
 						char *cc = strdup (Cc);
 						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
 						// prev_idx = tps->tt.cur_idx;
-						prev_idx = tps->core->anal->esil->trace->cur_idx;
+						prev_idx = etrace->cur_idx;
 						R_FREE (ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
 						if (rt) {
