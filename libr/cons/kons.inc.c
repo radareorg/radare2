@@ -74,7 +74,7 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 #define MOAR (4096 * 8)
 static bool kons_palloc(RCons *cons, size_t moar) {
 	RConsContext *C = cons->context;
-	if (moar == 0 || moar > INT_MAX) {
+	if (moar == 0 || moar > ST32_MAX) {
 		return false;
 	}
 	if (!C->buffer) {
@@ -91,22 +91,19 @@ static bool kons_palloc(RCons *cons, size_t moar) {
 			return false;
 		}
 	} else if (moar + C->buffer_len > C->buffer_sz) {
-		size_t old_buffer_sz = C->buffer_sz;
-		size_t new_sz = old_buffer_sz * 2; // Exponential growth
-		if (new_sz < old_buffer_sz || new_sz < moar + C->buffer_len) {
+		size_t new_sz = moar + (C->buffer_sz * 2); // Exponential growth
+		if (new_sz < C->buffer_sz || new_sz < moar + C->buffer_len) {
 			new_sz = moar + C->buffer_len + MOAR; // Ensure enough space
 		}
-		if (new_sz < old_buffer_sz) { // Check for overflow
+		if (new_sz < C->buffer_sz) { // Check for overflow
 			return false;
 		}
 		void *new_buffer = realloc (C->buffer, new_sz);
-		if (new_buffer) {
-			C->buffer = new_buffer;
-			C->buffer_sz = (int)new_sz; // Maintain int for C->buffer_sz
-		} else {
-			C->buffer_sz = (int)old_buffer_sz; // Restore on failure
+		if (!new_buffer) {
 			return false;
 		}
+		C->buffer = new_buffer;
+		C->buffer_sz = new_sz;
 	}
 	return true;
 }
