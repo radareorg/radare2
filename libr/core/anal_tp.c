@@ -356,7 +356,7 @@ static void type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		}
 	}
 
-	RAnalEsilTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
+	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
 	if (R_LIKELY (to)) {
 		ut32 vec_idx = VecAccess_length (&trace->db.accesses);
 		to->start = vec_idx;
