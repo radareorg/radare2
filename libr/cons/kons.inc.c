@@ -115,7 +115,7 @@ R_API void r_kons_println(RCons *cons, const char* str) {
 
 R_API void r_kons_print(RCons *cons, const char *str) {
 	R_RETURN_IF_FAIL (str);
-	if (!cons || cons->null) {
+	if (cons->null) {
 		return;
 	}
 	size_t len = strlen (str);
@@ -160,7 +160,9 @@ R_API int r_kons_write(RCons *cons, const char *str, int len) {
 	if (str && len > 0 && !cons->null) {
 		R_CRITICAL_ENTER (cons);
 		if (kons_palloc (cons, len + 1)) {
-			if ((len = kons_chop (cons, len)) < 1) {
+			int choplen = kons_chop (cons, len);
+			if (choplen > len || choplen < 1) {
+				// R_LOG_ERROR ("CHOP ISSUE");
 				R_CRITICAL_LEAVE (cons);
 				return 0;
 			}
@@ -929,15 +931,13 @@ R_API void r_kons_reset(RCons *cons) {
 	c->pageable = true;
 }
 
-R_API const char *r_kons_get_buffer(RCons *cons) {
+R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len) {
 	RConsContext *ctx = cons->context;
+	if (buffer_len) {
+		*buffer_len = ctx->buffer_len;
+	}
 	// check len otherwise it will return trash
-	return ctx->buffer_len? ctx->buffer : NULL;
-}
-
-R_API int r_kons_get_buffer_len(RCons *cons) {
-	RConsContext *ctx = cons->context;
-	return ctx->buffer_len;
+	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
 }
 
 R_API void r_kons_filter(RCons *cons) {
@@ -1077,8 +1077,8 @@ R_API void r_kons_echo(RCons *cons, const char *msg) {
 }
 
 R_API char *r_kons_drain(RCons *cons) {
-	const char *buf = r_kons_get_buffer (cons);
-	size_t buf_size = r_kons_get_buffer_len (cons);
+	size_t buf_size;
+	const char *buf = r_kons_get_buffer (cons, &buf_size);
 	char *s = r_str_ndup (buf, buf_size);
 	r_kons_reset (cons);
 	return s;

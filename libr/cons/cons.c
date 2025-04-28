@@ -462,12 +462,14 @@ R_API void r_cons_reset(void) {
 
 // TODO. merge these two functions into one!! return len with parameter
 R_API const char *r_cons_get_buffer(void) {
-	return r_kons_get_buffer (I);
+	return r_kons_get_buffer (I, NULL);
 }
 
 // TODO. merge these two functions into one!! return len with parameter
 R_API int r_cons_get_buffer_len(void) {
-	return r_kons_get_buffer_len (I);
+	size_t len;
+	r_kons_get_buffer (I, &len);
+	return (int)len;
 }
 
 R_API void r_cons_filter(void) {

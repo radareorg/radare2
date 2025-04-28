@@ -1004,8 +1004,10 @@ R_API char *r_cons_hud_path(const char *path, int dir);
 R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);
 
+#if 1
 R_API const char *r_cons_get_buffer(void);
 R_API int r_cons_get_buffer_len(void);
+#endif
 R_API void r_cons_grep_help(void);
 R_API void r_cons_grep_expression(const char *str);
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
@@ -1223,8 +1225,8 @@ R_API void r_kons_reset_colors(RCons *cons);
 R_API void r_kons_clear(RCons *cons);
 R_API void r_kons_clear00(RCons *cons);
 R_API void r_kons_reset(RCons *cons);
-R_API const char *r_kons_get_buffer(RCons *cons);
 R_API int r_kons_get_buffer_len(RCons *cons);
+R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_kons_filter(RCons *cons);
 R_API void r_kons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);

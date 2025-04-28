@@ -6728,7 +6728,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		}
 	}
 	r_kons_filter (core->cons);
-	const char *static_str = r_kons_get_buffer (core->cons);
+	const char *static_str = r_kons_get_buffer (core->cons, NULL);
 	char *retstr = strdup (r_str_get (static_str));
 	r_kons_pop (core->cons);
 	r_kons_echo (core->cons, NULL);
