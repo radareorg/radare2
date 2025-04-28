@@ -351,7 +351,7 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		goto fail_memw_voy;
 	}
 	
-	RRegItem *ri = r_reg_get (esil->anal->reg, "PC", -1);
+	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
 	if (ri) {
 		const bool suc = r_esil_reg_write (esil, ri->name, op->addr);
 		r_unref (ri);
