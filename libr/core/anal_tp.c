@@ -1337,8 +1337,7 @@ repeat:
 					}
 					goto bla;
 				}
-				char *expr = r_strbuf_drain_nofree (&op.esil);
-				if ((!expr || !r_esil_parse (&tps->esil, expr)) && tps->cfg_breakoninvalid) {
+				if ((type_trace_op (etrace, &tps->esil, &aop)) && tps->cfg_breakoninvalid) {
 					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
 					goto repeat;
