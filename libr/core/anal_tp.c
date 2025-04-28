@@ -1231,7 +1231,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (core && core->anal && fcn);
 
 	// const int op_tions = R_ARCH_OP_MASK_BASIC ;//| R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
-	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT;
+	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -1246,12 +1246,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	if (!tps) {
 		return;
 	}
-	// TODO: maybe move into tps
-	RDebugTrace *dtrace = core->dbg->trace; // tps->dt; // core->dbg->trace;
-	HtPPOptions opt = dtrace->ht->opt;
-	ht_pp_free (dtrace->ht);
-	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
-	dtrace->ht->opt = opt;
 
 	tps->tt.cur_idx = 0;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
@@ -1285,7 +1279,6 @@ repeat:
 		RVecUT64_push_back (&bblist, &bb->addr);
 	}
 	int i, j;
-	r_config_set_b (core->config, "dbg.trace.eval", false);
 	TypeTrace *etrace = &tps->tt;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
@@ -1312,22 +1305,17 @@ repeat:
 			}
 			// XXX fail sometimes
 			/// addr = bb_addr + i;
-			r_reg_setv (core->dbg->reg, "PC", addr);
+			r_reg_setv (core->anal->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			if (0&&next_op->addr == addr) {
-				memcpy (&aop, next_op, sizeof (aop));
-				ret = next_op->size;
-			} else {
-				ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_left, op_tions);
-			}
+			ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_left, op_tions);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
-				r_reg_setv (core->dbg->reg, "PC", addr);
+				r_reg_setv (core->anal->reg, "PC", addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
@@ -1339,18 +1327,26 @@ repeat:
 			}
 #endif
 			type_trace_loopcount_increment (etrace, addr);
-			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
-				// eprintf ("%x nonlinear\n", pcval);
-				r_reg_setv (core->dbg->reg, "PC", addr + aop.size);
-			} else {
-				// eprintf ("STEP 0x%"PFMT64x"\n", addr);
-				int res = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
-				if (tps->cfg_breakoninvalid && !res) {
+			r_reg_setv (core->anal->reg, "PC", addr + aop.size);
+			if (!r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
+//this shit probably needs further refactoring. i hate this code
+				if (aop.type == R_ANAL_OP_TYPE_ILL || aop.type == R_ANAL_OP_TYPE_UNK) {
+					if (tps->cfg_breakoninvalid) {
+						R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
+						r_anal_op_fini (&aop);
+						retries = -1;
+						goto repeat;
+					}
+					goto bla;
+				}
+				char *expr = r_strbuf_drain_nofree (&op.esil);
+				if ((!expr || !r_esil_parse (&tps->esil, expr)) && tps->cfg_breakoninvalid) {
 					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
 					goto repeat;
 				}
 			}
+bla:
 #if 1
 			// XXX this code looks wrong and slow maybe is not needed
 			// maybe the basic block is gone after the step
@@ -1603,7 +1599,6 @@ repeat:
 		}
 	}
 	R_FREE (next_op);
-	r_config_set_b (core->config, "dbg.trace.eval", true);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 
