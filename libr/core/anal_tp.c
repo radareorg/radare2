@@ -291,6 +291,17 @@ fail_registers_ht:
 	return false;
 }
 
+static ut64 type_trace_loopcount(TypeTrace *trace, ut64 addr) {
+	bool found = false;
+	const ut64 count = ht_uu_find (trace->db.loop_counts, addr, &found);
+	return found? count: 0;
+}
+
+static void type_trace_loopcount_increment(TypeTrace *trace, ut64 addr) {
+	const ut64 count = type_trace_loopcount (trace, addr);
+	ht_uu_update (trace->db.loop_counts, addr, count + 1);
+}
+
 static void type_trace_fini(TypeTrace *trace) {
 	R_RETURN_IF_FAIL (trace);
 	VecTraceOp_fini (&trace->db.ops);
@@ -1075,7 +1086,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
+	return a->addr > b->addr? 1: (a->addr < b->addr? -1: 0);
 }
 
 static void tps_fini(TPState *tps) {
@@ -1320,14 +1331,14 @@ repeat:
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			const int loop_count = r_esil_trace_loopcount (etrace, addr);
+			const int loop_count = type_trace_loopcount (etrace, addr);
 #if 1
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
 #endif
-			r_esil_trace_loopcount_increment (etrace, addr);
+			type_trace_loopcount_increment (etrace, addr);
 			if (r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
 				// eprintf ("%x nonlinear\n", pcval);
 				r_reg_setv (core->dbg->reg, "PC", addr + aop.size);
