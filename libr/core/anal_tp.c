@@ -1439,7 +1439,7 @@ bla:
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
 						// cur_idx = tps->tt.cur_idx - 2;
-						cur_idx = tps->core->anal->esil->trace->cur_idx - 2;
+						cur_idx = etrace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
 						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
@@ -1461,7 +1461,7 @@ bla:
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
 				// cur_idx = tps->tt.cur_idx - 1;
-				cur_idx = tps->core->anal->esil->trace->cur_idx - 1;
+				cur_idx = etrace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
