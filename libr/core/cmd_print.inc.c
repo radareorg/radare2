@@ -7183,6 +7183,10 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_pds);
 			} else if (input[2] == '*') {
+				if (input[3] == '?') {
+					r_core_cmd_help (core, help_msg_pds);
+					break;
+				}
 				char *s = r_core_cmd_str (core, "pdsf@e:scr.color=0");
 				r_str_ansi_filter (s, NULL, NULL, strlen (s));
 				RList *items = r_str_split_list (s, "\n", 0);
