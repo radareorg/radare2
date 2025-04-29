@@ -218,9 +218,6 @@ static void task_free(RCoreTask *task) {
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
-	if (!task) {
-		goto hell;
-	}
 	task->thread = NULL;
 	task->cmd = cmd ? strdup (cmd) : NULL;
 	task->cmd_log = false;
