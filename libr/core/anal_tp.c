@@ -412,6 +412,7 @@ static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *
 	return true;
 }
 
+#if 0
 typedef struct {
 	int idx;
 	union {
@@ -477,7 +478,6 @@ static int sort_mem_changes_cb (const void *v0, const void *v1) {
 	return b->idx - a->idx;
 }
 
-#if 0
 static void type_trace_restore(TypeTrace *trace, REsil *esil, int idx) {
 	R_RETURN_IF_FAIL (trace && esil && (idx < trace->idx));
 	ut64 v = ((ut64)idx) << 32;
