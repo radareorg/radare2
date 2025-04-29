@@ -689,31 +689,32 @@ static void cons_context_deinit(RConsContext *ctx) {
 }
 #endif
 
-static void init_cons_context(RConsContext *context, R_NULLABLE RConsContext *parent) {
-	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
-	context->breaked = false;
-	// context->cmd_depth = R_CONS_CMD_DEPTH + 1;
-	context->buffer_sz = 0;
-	context->lastEnabled = true;
-	context->buffer_len = 0;
-	context->is_interactive = false;
-	// context->cons_stack = r_stack_newf (6, cons_stack_free);
-	context->break_stack = r_stack_newf (6, break_stack_free);
-	context->event_interrupt = NULL;
-	context->event_interrupt_data = NULL;
-	context->pageable = true;
-	context->log_callback = NULL;
-	context->cmd_str_depth = 0;
-	context->noflush = false;
+static void init_cons_context(RCons *cons, R_NULLABLE RConsContext *parent) {
+	RConsContext *ctx = cons->context;
+	ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
+	ctx->breaked = false;
+	// ctx->cmd_depth = R_CONS_CMD_DEPTH + 1;
+	ctx->buffer_sz = 0;
+	ctx->lastEnabled = true;
+	ctx->buffer_len = 0;
+	ctx->is_interactive = false;
+	// ctx->cons_stack = r_stack_newf (6, cons_stack_free);
+	ctx->break_stack = r_stack_newf (6, break_stack_free);
+	ctx->event_interrupt = NULL;
+	ctx->event_interrupt_data = NULL;
+	ctx->pageable = true;
+	ctx->log_callback = NULL;
+	ctx->cmd_str_depth = 0;
+	ctx->noflush = false;
 
 	if (parent) {
-		context->color_mode = parent->color_mode;
-		r_cons_pal_copy (context, parent);
+		ctx->color_mode = parent->color_mode;
+		r_cons_pal_copy (cons, parent);
 	} else {
-		context->color_mode = COLOR_MODE_DISABLED;
-		r_cons_pal_init (context);
+		ctx->color_mode = COLOR_MODE_DISABLED;
+		r_cons_pal_init (cons);
 	}
-	cons_grep_reset (&context->grep);
+	cons_grep_reset (&ctx->grep);
 }
 #if R2__WINDOWS__
 static HANDLE h;
@@ -755,7 +756,7 @@ R_API RCons *r_kons_new(void) {
 	// r_cons_context_reset (cons->context);
 	cons->context = R_NEW0 (RConsContext);
 	cons->ctx_stack = r_list_newf ((RListFree)r_cons_context_free);
-	init_cons_context (cons->context, NULL);
+	init_cons_context (cons, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
 	cons->lock = r_th_lock_new (false);
@@ -1002,6 +1003,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
 	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	r_kons_pal_clone (c);
 	return c;
 }
 
@@ -1009,6 +1011,7 @@ R_API void r_kons_push(RCons *cons) {
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
 #if 1
+	// maybe this is done by kons_reset too
 	nc->buffer = NULL;
 	nc->buffer_sz = 0;
 	nc->buffer_len = 0;

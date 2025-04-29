@@ -855,6 +855,7 @@ R_API void r_cons_break_timeout(int timeout);
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 R_API void r_cons_pipe_close_all(void);
+R_IPI void r_kons_pal_clone(RConsContext *ctx);
 
 #if R2__WINDOWS__
 // TODO all the w32 apis must be ipi
@@ -978,8 +979,8 @@ R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
 R_API void r_cons_pal_reload(RCons *cons);
 R_API void r_cons_pal_free(RConsContext *ctx);
-R_API void r_cons_pal_init(RConsContext *ctx);
-R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src);
+R_API void r_cons_pal_init(RCons *cons);
+R_API void r_cons_pal_copy(RCons *cons, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(const char *str, RColor *outcol);
 R_API void r_cons_pal_random(RCons *cons);
 R_API RColor r_cons_pal_get(const char *key);
@@ -1232,6 +1233,7 @@ R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_kons_filter(RCons *cons);
 R_API void r_kons_push(RCons *cons);
 R_API bool r_kons_context_is_main(RCons *cons);
+R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
 R_API void r_kons_echo(RCons *cons, const char *msg);
 R_API char *r_kons_drain(RCons *cons);
 R_API void r_kons_print_fps(RCons *cons, int col);

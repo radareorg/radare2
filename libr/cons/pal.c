@@ -3,9 +3,12 @@
 #include <r_cons.h>
 #include <r_th.h>
 
+// XXX globals
 #define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
 #define COLOR_KEY(name, field) { name, r_offsetof (RConsPrintablePalette, field), r_offsetof (RConsPalette, field) }
+
+static R_TH_LOCAL RThreadLock *lock = NULL;
 
 static struct {
 	const char *name;
@@ -131,15 +134,35 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 	return r << 4 | r2;
 }
 
-static void pal_refresh(RConsContext *ctx) {
+R_IPI void r_kons_pal_clone(RConsContext *ctx) {
+	int i;
+	/* Compute cons->pal values */
+	for (i = 0; keys[i].name; i++) {
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
+		if (*color) {
+			*color = strdup (*color);
+		}
+	}
+	if (ctx->pal.rainbow) {
+		int sz = ctx->pal.rainbow_sz;
+		for (i = 0; i < sz; i++) {
+			ctx->pal.rainbow[i] = strdup (ctx->pal.rainbow[i]);
+		}
+	}
+}
+
+static void pal_refresh(RCons *cons) {
+	RConsContext *ctx = cons->context;
 	Sdb *db = sdb_new0 ();
-	int i, n = 0;
+	int i;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
-		R_FREE (*color);
+		free (*color);
+		*color = NULL;
+//		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
 		r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgbstr, "1", 0);
@@ -147,19 +170,23 @@ static void pal_refresh(RConsContext *ctx) {
 	SdbList *list = sdb_foreach_list (db, true);
 	SdbListIter *iter;
 	SdbKv *kv;
+#if 0
 	r_cons_rainbow_free (ctx);
 	r_cons_rainbow_new (ctx, list->length);
-	ls_foreach (list, iter, kv) {
-		ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+#endif
+	int n = 0;
+	if (ctx->pal.rainbow) {
+		ls_foreach (list, iter, kv) {
+			ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+		}
 	}
 	ctx->pal.rainbow_sz = n;
 	ls_free (list);
 	sdb_free (db);
 }
 
-static R_TH_LOCAL RThreadLock *lock = NULL;
-
-R_API void r_cons_pal_init(RConsContext *ctx) {
+R_API void r_cons_pal_init(RCons *cons) {
+	RConsContext *ctx = cons->context;
 	size_t i;
 	if (!lock) {
 		lock = r_th_lock_new (false);
@@ -260,7 +287,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.diff_match    = (RColor) RColor_GRAY;
 	ctx->cpal.diff_unmatch  = (RColor) RColor_YELLOW;
 	ctx->pal.reset          = Color_RESET; // reset is not user accessible, const char* is ok
-	pal_refresh (ctx);
+	pal_refresh (cons);
 	r_th_lock_leave (lock);
 }
 
@@ -275,7 +302,9 @@ R_API void r_cons_pal_free(RConsContext *ctx) {
 	r_cons_rainbow_free (ctx);
 }
 
-R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
+// rename to copy_from for clarity?
+R_API void r_cons_pal_copy(RCons *cons, RConsContext *src) {
+	RConsContext *dst = cons->context;
 	memcpy (&dst->cpal, &src->cpal, sizeof (src->cpal));
 	memset (&dst->pal, 0, sizeof (dst->pal));
 
@@ -284,7 +313,7 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 
 	dst->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 
-	pal_refresh (dst);
+	pal_refresh (cons);
 }
 
 R_API void r_cons_pal_random(RCons *cons) {
@@ -685,7 +714,7 @@ R_API int r_cons_pal_len(void) {
 
 R_API void r_cons_pal_reload(RCons *cons) {
 	// This is slowly executed on every change of scr.color
-	pal_refresh (cons->context);
+	pal_refresh (cons);
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {

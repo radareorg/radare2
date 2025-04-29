@@ -484,24 +484,6 @@ R_API void r_cons_pop(void) {
 	r_kons_pop (I);
 }
 
-R_DEPRECATE R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
-	RConsContext *context = R_NEW0 (RConsContext);
-	// eprintf ("init\n");
-	init_cons_context (context, parent);
-	return context;
-}
-
-#if 0
-R_API void r_cons_context_free(RConsContext *ctx) {
-	// eprintf ("ctx.fri\n");
-	return;
-	if (R_LIKELY (ctx)) {
-		cons_context_deinit (ctx);
-		free (ctx);
-	}
-}
-#endif
-
 R_API void r_cons_context_load(RConsContext *context) {
 	// eprintf ("ctx.loa\n");
 	return;

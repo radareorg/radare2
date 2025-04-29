@@ -4744,9 +4744,9 @@ next2:
 		} else {
 			// Color disabled when doing backticks ?e `pi 1`
 			const int ocolor = r_config_get_i (core->config, "scr.color");
-			r_config_set_i (core->config, "scr.color", 0);
-			str = r_core_cmd_str (core, ptr + 1);
-			r_config_set_i (core->config, "scr.color", ocolor);
+			r_config_set_i (core->config, "scr.color", 0);// alloc
+			str = r_core_cmd_str (core, ptr + 1); // free
+			r_config_set_i (core->config, "scr.color", ocolor); // dblfree
 		}
 		if (!str) {
 			goto fail;
@@ -6707,13 +6707,13 @@ R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd) {
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core, NULL);
 	if (cmd && *cmd != '"' && strchr (cmd, '>')) {
-		r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, cmd); // CMD HERE
 		return strdup ("");
 	}
 	r_kons_push (core->cons);
 	core->cons->context->noflush = true; // why
 	core->cons->context->cmd_str_depth++; // wat
-	if (cmd && r_core_cmd (core, cmd, 0) == -1) {
+	if (cmd && r_core_cmd (core, cmd, 0) == -1) { // dbl Free
 		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;

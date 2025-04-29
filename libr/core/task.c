@@ -234,7 +234,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	}
 
 	if (create_cons) {
-		task->cons_context = r_cons_context_new (r_cons_singleton ()->context);
+		task->cons_context = r_cons_context_clone (core->cons->context);
 		if (!task->cons_context) {
 			goto hell;
 		}

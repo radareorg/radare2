@@ -200,7 +200,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 			free (core->theme);
 			core->theme = strdup (_arg);
 		}
-		r_cons_pal_init (core->cons->context);
+		r_cons_pal_init (core->cons);
 		return true;
 	}
 	bool ret = false;
@@ -395,7 +395,7 @@ static bool is_static_theme(const char *th) {
 static bool cmd_ec(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 'd': // "ecd"
-		r_cons_pal_init (core->cons->context);
+		r_cons_pal_init (core->cons);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_ec);
