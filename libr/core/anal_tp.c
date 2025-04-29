@@ -347,6 +347,7 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	return ret;
 }
 
+#if 0
 static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *val) {
 	RVector *vec = val;
 	if (R_UNLIKELY (r_vector_empty (vec))) {
@@ -371,7 +372,6 @@ static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *
 	return true;
 }
 
-#if 0
 typedef struct {
 	int idx;
 	union {
