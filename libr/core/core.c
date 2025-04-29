@@ -3089,7 +3089,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 	int rnv = r->num->value;
 	set_prompt (r);
-	int ret = r_cons_fgets (line, sizeof (line), 0, NULL);
+	int ret = r_cons_fgets (r->cons, line, sizeof (line), 0, NULL);
 	if (ret == -2) {
 		return R_CORE_CMD_EXIT; // ^D
 	}

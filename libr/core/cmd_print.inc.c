@@ -2478,6 +2478,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	char *colors[10] = { NULL };
 	for (i = 0; i < 10; i++) {
 		colors[i] = r_cons_rainbow_get (core->cons, i, 10, false);
+eprintf ("%sAAAA %d BBBB%s\n", colors[i], i, Color_RESET);
 	}
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
@@ -2547,13 +2548,13 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		snprintf (bytes + j + i, bytes_size - j - i, "%0X", i % 17);
 	}
 	if (usecolor) {
-		r_cons_print (Color_GREEN);
-		r_cons_print (bytes);
-		r_cons_print (Color_RESET);
+		r_kons_print (core->cons, Color_GREEN);
+		r_kons_print (core->cons, bytes);
+		r_kons_print (core->cons, Color_RESET);
 	} else {
-		r_cons_print (bytes);
+		r_kons_print (core->cons, bytes);
 	}
-	r_cons_newline ();
+	r_kons_newline (core->cons);
 
 	// hexdump
 	for (i = 0; i < rows; i++) {
@@ -2588,7 +2589,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			RIntervalNode *meta_node = r_meta_get_in (core->anal, ea + j, R_META_TYPE_FORMAT);
 			RAnalMetaItem *meta = meta_node ? meta_node->data : NULL;
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta_node->start == addr + j) {
-				r_cons_printf (".format %s ; size=", meta->str);
+				r_kons_printf (core->cons, ".format %s ; size=", meta->str);
 				r_core_cmd_callf (core, "pfs %s", meta->str);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta_node->start);
 				if (usecolor) {
@@ -2686,7 +2687,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				color_idx++;
 				color_idx %= 10;
 				if (show_section) {
-					r_cons_printf ("%20s ", "");
+					r_kons_printf (core->cons, "%20s ", "");
 				}
 				if (flagaddr == addr + j) {
 					if (usecolor) {
@@ -2841,27 +2842,27 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
-				r_cons_print (addrpad);
-				r_cons_print (out + 1);
-				r_cons_newline ();
+				r_kons_print (core->cons, addrpad);
+				r_kons_print (core->cons, out + 1);
+				r_kons_newline (core->cons);
 			}
 			marks = false;
 			free (out);
 		}
-		r_cons_print (bytes);
-		r_cons_print (chars);
+		r_kons_print (core->cons, bytes);
+		r_kons_print (core->cons, chars);
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
 				char *comment = core->print->get_comments (core->print->user, addr + j);
 				if (comment) {
-					r_cons_printf (" ; %s", comment);
+					r_kons_printf (core->cons, " ; %s", comment);
 					free (comment);
 				}
 			}
 		}
 
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 		addr += nb_cols;
 	}
 

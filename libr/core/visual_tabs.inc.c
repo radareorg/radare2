@@ -163,7 +163,7 @@ static void visual_tabname(RCore *core) {
 		return;
 	}
 	char name[32]={0};
-	prompt_read ("tab name: ", name, sizeof (name));
+	prompt_read (core, "tab name: ", name, sizeof (name));
 	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 	if (tab) {
 		strcpy (tab->name, name);

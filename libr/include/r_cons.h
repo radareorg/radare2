@@ -824,6 +824,7 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API RCons *r_cons_global(RCons *c);
 R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_trim(void);
 R_API RConsContext *r_cons_context(void);
@@ -1003,7 +1004,7 @@ R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
-R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
+R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv);
 R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt);
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s);
 R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir);
@@ -1033,7 +1034,7 @@ R_API void r_cons_color(int fg, int r, int g, int b);
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
 R_API bool r_cons_yesno(int def, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API char *r_cons_input(const char *msg);
+R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
 R_API void r_cons_column(int c);

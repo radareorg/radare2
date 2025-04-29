@@ -121,7 +121,7 @@ static int textlog_chat(RCore *core) {
 	for (;;) {
 		r_core_log_list (core, lastmsg, 0, 0);
 		lastmsg = core->log->last;
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
+		if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 			return 1;
 		}
 		if (!*buf) {

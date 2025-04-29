@@ -499,8 +499,8 @@ static int __show_status(RCore *core, const char *msg) {
 }
 
 static bool __show_status_yesno(RCore *core, int def, const char *msg) {
-	r_cons_gotoxy (0, 0);
-	r_cons_flush ();
+	r_kons_gotoxy (core->cons, 0, 0);
+	r_kons_flush (core->cons);
 	return r_cons_yesno (def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
 
@@ -508,7 +508,7 @@ static char *__show_status_input(RCore *core, const char *msg) {
 	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();
-	char *out = r_cons_input (n_msg);
+	char *out = r_cons_input (core->cons, n_msg);
 	r_cons_set_raw (true);
 	free (n_msg);
 	return out;
@@ -2241,10 +2241,10 @@ static void __step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const R
 	__step_cb (user);
 }
 
-static void __panel_prompt(const char *prompt, char *buf, int len) {
+static void __panel_prompt(RCore *core, const char *prompt, char *buf, int len) {
 	r_line_set_prompt (prompt);
 	*buf = 0;
-	r_cons_fgets (buf, len, 0, NULL);
+	r_cons_fgets (core->cons, buf, len, 0, NULL);
 }
 
 static int __break_points_cb(void *user) {
@@ -2256,7 +2256,7 @@ static int __break_points_cb(void *user) {
 	r_line_set_hist_callback (core->cons->line,
 		&r_line_hist_offset_up,
 		&r_line_hist_offset_down);
-	__panel_prompt (prompt, buf, sizeof (buf));
+	__panel_prompt (core, prompt, buf, sizeof (buf));
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 
@@ -2750,7 +2750,7 @@ static void __handleComment(RCore *core) {
 	char buf[4095];
 	char *cmd = NULL;
 	r_line_set_prompt ("[Comment]> ");
-	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
+	if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 		ut64 addr, orig;
 		addr = orig = core->addr;
 		if (core->print->cur_enabled) {
@@ -3698,7 +3698,7 @@ static void __insert_value(RCore *core, int wat) {
 	case 'x': // hex
 		{
 		const char *prompt = "insert hex: ";
-		__panel_prompt (prompt, buf, sizeof (buf));
+		__panel_prompt (core, prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
 		cur->view->refresh = true;
 		}
@@ -3706,25 +3706,25 @@ static void __insert_value(RCore *core, int wat) {
 	}
 	if (__check_panel_type (cur, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
-		__panel_prompt (prompt, buf, sizeof (buf));
+		__panel_prompt (core, prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
 		cur->view->refresh = true;
 	} else if (__check_panel_type (cur, PANEL_CMD_REGISTERS)) {
 		const char *creg = core->dbg->creg;
 		if (creg) {
 			const char *prompt = "new-reg-value> ";
-			__panel_prompt (prompt, buf, sizeof (buf));
+			__panel_prompt (core, prompt, buf, sizeof (buf));
 			r_core_cmdf (core, "dr %s = %s", creg, buf);
 			cur->view->refresh = true;
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		const char *prompt = "insert asm: ";
-		__panel_prompt (prompt, buf, sizeof (buf));
+		__panel_prompt (core, prompt, buf, sizeof (buf));
 		r_core_visual_asm (core, cur->model->addr + core->print->cur);
 		cur->view->refresh = true;
 	} else if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
 		const char *prompt = "insert hex: ";
-		__panel_prompt (prompt, buf, sizeof (buf));
+		__panel_prompt (core, prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
 		cur->view->refresh = true;
 	}
@@ -5631,8 +5631,8 @@ static int __watch_points_cb(void *user) {
 	RCore *core = (RCore *)user;
 	char addrBuf[128], rw[128];
 	const char *addrPrompt = "addr: ", *rwPrompt = "<r/w/rw>: ";
-	__panel_prompt (addrPrompt, addrBuf, sizeof (addrBuf));
-	__panel_prompt (rwPrompt, rw, sizeof (rw));
+	__panel_prompt (core, addrPrompt, addrBuf, sizeof (addrBuf));
+	__panel_prompt (core, rwPrompt, rw, sizeof (rw));
 	ut64 addr = r_num_math (core->num, addrBuf);
 	r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
 	return 0;
@@ -6485,7 +6485,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 		{
 			char cmd[128] = {0};
 			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->addr);
-			__panel_prompt (prompt, cmd, sizeof (cmd));
+			__panel_prompt (core, prompt, cmd, sizeof (cmd));
 			if (*cmd) {
 				if (!strcmp (cmd, "clear")) {
 					r_core_cmd0 (core, ":>$console");

@@ -136,7 +136,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
 		free (ret);
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
+		if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 			goto beach;
 		}
 		if (!*buf) {

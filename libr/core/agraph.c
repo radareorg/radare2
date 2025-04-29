@@ -3367,7 +3367,7 @@ static void agraph_toggle_mini(RAGraph *g) {
 	agraph_set_layout ((RAGraph *) g);
 }
 
-static void agraph_follow_innodes(RAGraph *g, bool in) {
+static void agraph_follow_innodes(RCore *core, RAGraph *g, bool in) {
 	int count = 0;
 	RListIter *iter;
 	RANode *an = get_anode (g->curnode);
@@ -3379,8 +3379,8 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	if (r_list_length (list) == 0) {
 		return;
 	}
-	r_cons_gotoxy (0, 2);
-	r_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
+	r_kons_gotoxy (core->cons, 0, 2);
+	r_kons_printf (core->cons, in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	RGraphNode *gn;
@@ -3415,7 +3415,7 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	} else {
 		r_cons_show_cursor (true);
 		r_cons_enable_mouse (false);
-		char *nth_string = r_cons_input ("index> ");
+		char *nth_string = r_cons_input (core->cons, "index> ");
 		nth = atoi (nth_string);
 		if (nth == 0 && *nth_string != '0') {
 			nth = -1;
@@ -3637,7 +3637,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			r_core_cmd_call (core, "pg");
 		}
 		if (mustFlush) {
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 		}
 		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
 			int h, w = r_cons_get_size (&h);
@@ -4082,14 +4082,14 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 static void visual_offset(RAGraph *g, RCore *core) {
 	char buf[256];
 	int rows;
-	r_cons_get_size (&rows);
-	r_cons_gotoxy (0, rows);
-	r_cons_flush ();
+	r_kons_get_size (core->cons, &rows);
+	r_kons_gotoxy (core->cons, 0, rows);
+	r_kons_flush (core->cons);
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_offset_up, &r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
-	if (r_cons_fgets (buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
+	if (r_cons_fgets (core->cons, buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (buf[2] == '.') {
 			buf[1] = '.';
 		}
@@ -4118,7 +4118,7 @@ R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 		printf (Color_RESET);
 		r_cons_flush ();
 
-		r_cons_fgets (buf, sizeof (buf), 0, NULL);
+		r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
 
 		if (buf[0] == '\0') {
 			break;
@@ -4183,7 +4183,7 @@ find_next:
 			if (c == ';') {
 				char buf[256];
 				r_line_set_prompt ("[comment]> ");
-				if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
+				if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 					r_core_cmdf (core, "'CC %s", buf);
 				}
 				r_line_set_prompt ("[find]> ");
@@ -4919,7 +4919,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				showcursor (core, true);
 				char buf[256];
 				r_line_set_prompt ("[comment]> ");
-				if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
+				if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 					r_core_cmdf (core, "'CC %s", buf);
 				}
 				g->need_reload_nodes = true;
@@ -5116,10 +5116,10 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'i':
-			agraph_follow_innodes (g, true);
+			agraph_follow_innodes (core, g, true);
 			break;
 		case 'I':
-			agraph_follow_innodes (g, false);
+			agraph_follow_innodes (core, g, false);
 			break;
 		case 't':
 			agraph_follow_true (g);

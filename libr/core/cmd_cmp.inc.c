@@ -1545,8 +1545,9 @@ static int cmd_cmp(void *data, const char *input) {
 		r_core_diff_show (core, core2);
 		/* exchange a segfault with a memleak */
 		core2->config = NULL;
-		r_core_free (core2);
+	//	r_core_free (core2);
 		r_core_bind_cons (core);
+r_cons_global (core->cons);
 	}
 	break;
 	case 'u': // "cu"

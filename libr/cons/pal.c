@@ -170,10 +170,8 @@ static void pal_refresh(RCons *cons) {
 	SdbList *list = sdb_foreach_list (db, true);
 	SdbListIter *iter;
 	SdbKv *kv;
-#if 0
 	r_cons_rainbow_free (ctx);
 	r_cons_rainbow_new (ctx, list->length);
-#endif
 	int n = 0;
 	if (ctx->pal.rainbow) {
 		ls_foreach (list, iter, kv) {

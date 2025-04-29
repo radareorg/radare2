@@ -183,6 +183,13 @@ R_API RConsContext *r_cons_context(void) {
 	return C;
 }
 
+R_API RCons *r_cons_global(RCons *c) {
+	if (c) {
+		I = c;
+	}
+	return I;
+}
+
 R_API RCons *r_cons_singleton(void) {
 	if (!I) {
 		r_cons_new ();

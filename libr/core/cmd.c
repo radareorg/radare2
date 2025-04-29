@@ -2548,7 +2548,7 @@ static int cmd_kuery(void *data, const char *input) {
 		while (buf) {
 			r_line_set_prompt (p);
 			*buf = 0;
-			if (r_cons_fgets (buf, buf_size, 0, NULL) < 1) {
+			if (r_cons_fgets (core->cons, buf, buf_size, 0, NULL) < 1) {
 				break;
 			}
 			if (!*buf) {
