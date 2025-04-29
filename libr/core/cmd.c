@@ -4715,7 +4715,7 @@ repeat:;
 		core->cons->context->use_tts = false;
 		r_list_free (tmpenvs);
 		r_cons_pipe_close_all (core->cons);
-		r_cons_set_last_interactive (); // XXX
+		r_kons_set_last_interactive (core->cons);
 		return ret;
 	}
 escape_redir:
@@ -6491,7 +6491,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	}
 	if (ret && R_STR_ISNOTEMPTY (data)) {
 		r_core_cmd (core, data, 0);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 		r_core_task_yield (&core->tasks);
 	}
 	free (odata);

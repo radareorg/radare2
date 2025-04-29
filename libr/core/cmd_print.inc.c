@@ -4320,7 +4320,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		r_core_cmd_help (core, help_msg_pv);
 		break;
 	default:;
-		ut64 delta = 0;
+		// ut64 delta = 0;
 		size_t bs = ((repeat + 8) * n);
 		heaped_block = calloc (repeat + 8, n);
 		r_io_read_at (core->io, core->addr, heaped_block, bs);
@@ -4345,7 +4345,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			}
 #endif
 			ut64 v;
-			delta += n;
+			// delta += n;
 			if (!fixed_size) {
 				n = 0;
 			}

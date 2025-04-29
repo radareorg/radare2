@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
@@ -395,7 +395,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd_lines (r, cmdn);
-		r_cons_flush ();
+		r_kons_flush (r->cons);
 	}
 beach:
 	if (quiet && !has_failed) {
