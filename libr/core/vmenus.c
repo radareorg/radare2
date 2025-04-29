@@ -1257,7 +1257,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 				m->vaddr, cname, name));
 		}
 	}
-	res = r_cons_hud (list, NULL);
+	res = r_cons_hud (core->cons, list, NULL);
 	if (res) {
 		char *p = strchr (res, ' ');
 		if (p) {
@@ -1299,7 +1299,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 			}
 		}
 	}
-	res = r_cons_hud (list, NULL);
+	res = r_cons_hud (core->cons, list, NULL);
 	if (res) {
 		char *p = strchr (res, ' ');
 		if (p) {
@@ -1325,7 +1325,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 	r_list_foreach (core->config->nodes, iter, bt) {
 		r_list_append (list, r_str_newf ("%s %s", bt->name, bt->value));
 	}
-	char *res = r_cons_hud (list, NULL);
+	char *res = r_cons_hud (core->cons, list, NULL);
 	if (res) {
 		const char *oldvalue = NULL;
 		char cmd[512];
@@ -3831,7 +3831,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_visual_append_help (rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
 			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
 			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
-			r_cons_less_str (r_strbuf_get (rsb), "?");
+			r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 			r_strbuf_free (rsb);
 			break;
 		case 9:

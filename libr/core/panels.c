@@ -7325,7 +7325,7 @@ virtualmouse:
 				"address\n" \
 				"disasm\n" \
 				"entropy\n";
-			char *format = r_cons_hud_line_string (s);
+			char *format = r_cons_hud_line_string (core->cons, s);
 			if (format) {
 				if (!strcmp (format, "hexdump")) {
 					__replace_cmd (core, "px", "px");

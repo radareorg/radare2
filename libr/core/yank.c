@@ -332,7 +332,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
-	char *buf = r_cons_hud_file (r_str_trim_head_ro (input + 1));
+	char *buf = r_cons_hud_file (core->cons, r_str_trim_head_ro (input + 1));
 	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
 	bool res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
@@ -341,7 +341,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 
 R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	R_RETURN_VAL_IF_FAIL (core, false);
-	char *buf = r_cons_hud_path (r_str_trim_head_ro (input), dir);
+	char *buf = r_cons_hud_path (core->cons, r_str_trim_head_ro (input), dir);
 	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
 	int res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);

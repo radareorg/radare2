@@ -951,8 +951,8 @@ R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
-R_API int r_cons_less_str(const char *str, const char *exitkeys);
-R_API void r_cons_less(void);
+R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys);
+R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
@@ -1004,11 +1004,11 @@ R_API void r_cons_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API char *r_cons_hud(RList *list, const char *prompt);
-R_API char *r_cons_hud_line_string(const char *s);
-R_API char *r_cons_hud_path(const char *path, int dir);
-R_API char *r_cons_hud_string(const char *s);
-R_API char *r_cons_hud_file(const char *f);
+R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt);
+R_API char *r_cons_hud_line_string(RCons *cons, const char *s);
+R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir);
+R_API char *r_cons_hud_string(RCons *cons, const char *s);
+R_API char *r_cons_hud_file(RCons *cons, const char *f);
 
 #if 1
 R_API const char *r_cons_get_buffer(void);
@@ -1207,6 +1207,7 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
 R_API void r_kons_grep(RCons *cons, const char *grep);
+R_API void r_kons_set_interactive(RCons *cons, bool x);
 R_API void r_kons_grepbuf(RCons *cons);
 R_API void r_kons_println(RCons *cons, const char* str);
 R_API void r_kons_print(RCons *cons, const char *str);
@@ -1263,6 +1264,7 @@ R_API void r_kons_mark_flush(RCons *cons);
 R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name);
 R_API void r_kons_break_pop(RCons *cons);
 R_API bool r_kons_is_breaked(RCons *cons);
+R_API bool r_kons_is_interactive(RCons *cons);
 R_API void r_kons_break_clear(RCons *cons);
 R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user);
 

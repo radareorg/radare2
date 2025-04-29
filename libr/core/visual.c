@@ -502,13 +502,13 @@ R_API bool r_core_visual_hud(RCore *core) {
 
 	r_core_visual_showcursor (core, true);
 	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {
-		res = r_cons_hud_file (c);
+		res = r_cons_hud_file (core->cons, c);
 	}
 	if (!res && homehud) {
-		res = r_cons_hud_file (homehud);
+		res = r_cons_hud_file (core->cons, homehud);
 	}
 	if (!res && r_file_exists (f)) {
-		res = r_cons_hud_file (f);
+		res = r_cons_hud_file (core->cons, f);
 	}
 	if (!res) {
 		r_cons_message ("Cannot find hud file");
@@ -598,6 +598,7 @@ repeat:
 	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
 	r_cons_printf ("%s", r_strbuf_get (q));
 	r_cons_flush ();
+	const char *lesstr = NULL;
 	switch (r_cons_readchar ()) {
 	case 'q':
 		r_strbuf_free (p);
@@ -609,7 +610,7 @@ repeat:
 	case '?':
 		r_core_visual_append_help (p, "Visual Mode Help (full)", help_msg_visual);
 		r_core_visual_append_help (p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'v':
 		r_strbuf_append (p, "Visual Views:\n\n");
@@ -624,7 +625,7 @@ repeat:
 			" C   -> rotate scr.color=0,1,2,3\n"
 			" R   -> rotate color theme with ecr command which honors scr.randpal\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'p':
 		r_strbuf_append (p, "Visual Print Modes:\n\n");
@@ -633,7 +634,7 @@ repeat:
 			" TAB    rotate between all the configurations for the current print mode\n"
 			" SPACE  toggle between graph/disasm or similar hex modes\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'e':
 		r_strbuf_append (p, "Visual Evals:\n\n");
@@ -641,7 +642,7 @@ repeat:
 			" E   toggle asm.hint.lea\n"
 			" &   rotate asm.bits=16,32,64\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'c':
 		setcursor (core, !core->print->cur_enabled);
@@ -656,7 +657,7 @@ repeat:
 			" +   increment value of byte\n"
 			" -   decrement value of byte\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'd':
 		r_strbuf_append (p, "Visual Debugger Help:\n\n");
@@ -667,7 +668,7 @@ repeat:
 			" B    toggle breakpoint\n"
 			" :dc  continue\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'm':
 		r_strbuf_append (p, "Visual Moving Around:\n\n");
@@ -681,7 +682,7 @@ repeat:
 			" c        toggle cursor mode (use hjkl to move and HJKL to select a range)\n"
 			" mK/'K    mark/go to Key (any key)\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'a':
 		r_strbuf_append (p, "Visual Analysis:\n\n");
@@ -694,8 +695,13 @@ repeat:
 			" dd  define current block or selected bytes as data\n"
 			" V   view graph (same as press the 'space' key)\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
+	}
+	if (lesstr) {
+		ret = r_cons_less_str (core->cons, lesstr, "?");
+		lesstr = NULL;
+
 	}
 	r_strbuf_free (p);
 	r_strbuf_free (q);
@@ -1644,7 +1650,7 @@ repeat:
 		r_cons_clear00 ();
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
-		ret = r_cons_less_str (r_strbuf_get (rsb), "?");
+		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 		r_strbuf_free (rsb);
 		goto repeat;
 	case 9: // TAB
@@ -2368,7 +2374,7 @@ static void visual_windows(RCore *core) {
 	r_list_append (pmodes, strdup ("4:0 code dump"));
 	r_list_append (pmodes, strdup ("4:1 assembly code"));
 	r_list_append (pmodes, strdup ("4:2 hex bytes"));
-	char *res = r_cons_hud (pmodes, NULL);
+	char *res = r_cons_hud (core->cons, pmodes, NULL);
 	if (R_STR_ISNOTEMPTY (res)) {
 		int a, b;
 		sscanf (res, "%d:%d", &a, &b);
@@ -2558,7 +2564,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->visual.ime = false;
 		break;
 	case '?':
-		r_cons_less_str ("\nVisual Insert Mode:\n\n"
+		r_cons_less_str (core->cons, "\nVisual Insert Mode:\n\n"
 			" tab          - toggle between ascii and hex columns\n"
 			" q (or alt-q) - quit insert mode\n"
 			"\nHex column:\n"

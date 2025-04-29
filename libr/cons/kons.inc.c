@@ -455,7 +455,7 @@ R_API void r_kons_flush(RCons *cons) {
 		return;
 	}
 	if (cons->null) {
-		r_cons_reset ();
+		r_kons_reset (cons);
 		return;
 	}
 	if (!r_list_empty (ctx->marks)) {
@@ -475,7 +475,7 @@ R_API void r_kons_flush(RCons *cons) {
 	}
 	r_kons_filter (cons);
 	if (!ctx->buffer || ctx->buffer_len < 1) {
-		r_cons_reset ();
+		r_kons_reset (cons);
 		return;
 	}
 	if (r_kons_is_interactive (cons) && cons->fdout == 1) {
@@ -485,7 +485,7 @@ R_API void r_kons_flush(RCons *cons) {
 			if (!strcmp (cons->pager, "..")) {
 				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
 				ctx->pageable = false;
-				r_cons_less_str (str, NULL);
+				r_cons_less_str (cons, str, NULL);
 				r_kons_reset (cons);
 				free (str);
 				return;
@@ -502,14 +502,14 @@ R_API void r_kons_flush(RCons *cons) {
 				}
 			}
 			if (lines > 0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
-				r_cons_reset ();
+				r_kons_reset (cons);
 				return;
 			}
 #else
 			char buf[8];
 			r_num_units (buf, sizeof (buf), ctx->buffer_len);
 			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
-				r_cons_reset ();
+				r_kons_reset (cons);
 				return;
 			}
 #endif
@@ -557,7 +557,7 @@ R_API void r_kons_flush(RCons *cons) {
 		__cons_write (cons, ctx->buffer, ctx->buffer_len);
 	}
 
-	r_cons_reset ();
+	r_kons_reset (cons);
 	if (cons->newline) {
 		eprintf ("\n");
 		cons->newline = false;
@@ -1235,7 +1235,7 @@ R_API void r_kons_visual_flush(RCons *cons) {
 		r_kons_visual_write (cons, ctx->buffer);
 #endif
 	}
-	r_cons_reset ();
+	r_kons_reset (cons);
 	if (cons->fps) {
 		r_kons_print_fps (cons, 0);
 	}

@@ -2956,11 +2956,11 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 	}
 }
 
-static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {
+static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max_tmp_size) {
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
 
-	int w = r_cons_get_size (NULL);
+	int w = r_kons_get_size (core->cons, NULL);
 	size_t file_len = strlen (filename);
 	size_t tmp_len = strlen (tmp);
 	int p_len = R_MAX (0, w - 6);
@@ -3041,7 +3041,7 @@ static void set_prompt(RCore *core) {
 	if (!END) {
 		END = "";
 	}
-	chop_prompt (filename, tmp, 128);
+	chop_prompt (core, filename, tmp, 128);
 	char *prompt = NULL;
 	if (r_config_get_b (core->config, "scr.prompt.code")) {
 		st64 code = core->num->value;
@@ -3060,19 +3060,19 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 	if (!interactive) {
 		return;
 	}
-	r_cons_push ();
+	r_kons_push (core->cons);
 	r_cons_break_push (NULL, NULL);
 	while (!r_cons_is_breaked ()) {
 		char *cmd = r_list_pop (core->cmdqueue);
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			free (cmd);
 		}
 		r_sys_usleep (100);
 	}
 	r_cons_break_pop ();
-	r_cons_pop ();
+	r_kons_pop (core->cons);
 }
 
 R_API void r_core_cmd_queue(RCore *core, const char *line) {
@@ -3135,10 +3135,10 @@ R_API int r_core_prompt_exec(RCore *r) {
 			}
 			r->cons->context->use_tts = false;
 		}
-		r_cons_echo (NULL);
-		r_cons_flush (); // double free
+		r_kons_echo (r->cons, NULL);
+		r_kons_flush (r->cons); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
-			r_cons_zero ();
+			r_kons_zero (r->cons);
 		}
 	}
 	return ret;

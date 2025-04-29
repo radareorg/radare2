@@ -877,12 +877,12 @@ R_API void r_kons_grepbuf(RCons *cons) {
 			r_cons_grep_word_free (gw);
 			if (grep->hud) {
 				grep->hud = false;
-				r_cons_hud_string (cons->context->buffer);
+				r_cons_hud_string (cons, cons->context->buffer);
 				return;
 			}
 			if (grep->less) {
 				grep->less = 0;
-				r_cons_less_str (cons->context->buffer, NULL);
+				r_cons_less_str (cons, cons->context->buffer, NULL);
 				return;
 			}
 		}
@@ -899,19 +899,19 @@ R_API void r_kons_grepbuf(RCons *cons) {
 		int less = grep->less;
 		grep->less = 0;
 		if (less == 3) {
-			char *res = r_cons_hud_line_string (buf);
+			char *res = r_cons_hud_line_string (cons, buf);
 			if (res) {
 				r_cons_println (res);
 				free (res);
 			}
 		} else if (less == 2) {
-			char *res = r_cons_hud_string (buf);
+			char *res = r_cons_hud_string (cons, buf);
 			if (res) {
 				r_cons_println (res);
 				free (res);
 			}
 		} else {
-			r_cons_less_str (buf, NULL);
+			r_cons_less_str (cons, buf, NULL);
 			cons->context->buffer_len = 0;
 			cons->context->buffer_sz = 0;
 			R_FREE (cons->context->buffer);

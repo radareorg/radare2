@@ -475,7 +475,7 @@ R_API int r_cons_get_buffer_len(void) {
 }
 
 R_API void r_cons_filter(void) {
-	r_kons_filter (I);
+	r_kons_filter (r_cons_singleton ());
 }
 
 R_API void r_cons_push(void) {
