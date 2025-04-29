@@ -862,6 +862,12 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 #ifdef R2__WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
+	if (!actual) {
+		actual = "";
+	}
+	if (!expected) {
+		expected = "";
+	}
 	char *output = (char *)actual;
 	if (regexp) {
 		RRegex *rx = r_regex_new (regexp, "en");
@@ -869,6 +875,9 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		output = r_list_to_str (matches, '\0');
 		r_list_free (matches);
 		r_regex_free (rx);
+	}
+	if (!output) {
+		output = "";
 	}
 	if (diffchar) {
 		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
