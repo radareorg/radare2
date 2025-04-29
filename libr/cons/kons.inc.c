@@ -1016,6 +1016,7 @@ R_API void r_kons_push(RCons *cons) {
 	cons->context = nc;
 	// global hacks
 	r_cons_singleton ()->context = nc;
+	r_kons_reset (cons);
 	// r_cons_context_reset (cons->context);
 #if 0
 	// memcpy (&tc, cons->context, sizeof (tc));

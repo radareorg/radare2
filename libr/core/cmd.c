@@ -6710,22 +6710,20 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		r_core_cmd0 (core, cmd);
 		return strdup ("");
 	}
-	r_cons_push ();
-	if (core->cons) {
-		core->cons->context->noflush = true;
-		core->cons->context->cmd_str_depth++;
-		if (cmd && r_core_cmd (core, cmd, 0) == -1) {
-			//eprintf ("Invalid command: %s\n", cmd);
-			if (--core->cons->context->cmd_str_depth == 0) {
-				core->cons->context->noflush = false;
-				r_cons_flush ();
-			}
-			r_cons_pop ();
-			return NULL;
-		}
+	r_kons_push (core->cons);
+	core->cons->context->noflush = true; // why
+	core->cons->context->cmd_str_depth++; // wat
+	if (cmd && r_core_cmd (core, cmd, 0) == -1) {
+		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
+			r_kons_flush (core->cons);
 		}
+		r_kons_pop (core->cons);
+		return NULL;
+	}
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
 	}
 	r_kons_filter (core->cons);
 	const char *static_str = r_kons_get_buffer (core->cons, NULL);
