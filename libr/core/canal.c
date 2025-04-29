@@ -1643,19 +1643,16 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	return str;
 }
 
-static char *palColorFor(const char *k) {
-	if (r_cons_singleton ()) {
-		RColor rcolor = r_cons_pal_get (k);
-		return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
-	}
-	return NULL;
+static char *palColorFor(RCons *cons, const char *k) {
+	RColor rcolor = r_cons_pal_get (cons, k);
+	return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_b (core->config, "graph.gv.current");
 	bool current = r_anal_block_contains (bbi, core->addr);
 	if (current && color_current) {
-		char *pal_curr = palColorFor ("graph.current");
+		char *pal_curr = palColorFor (core->cons, "graph.current");
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
 		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
 		free (pal_curr);
@@ -1669,9 +1666,10 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 	const bool is_star = opts & R_CORE_ANAL_STAR;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
 	const bool is_html = core->cons->context->is_html;
-	char *pal_jump = palColorFor ("graph.true");
-	char *pal_fail = palColorFor ("graph.false");
-	char *pal_trfa = palColorFor ("graph.trufae");
+	RCons *cons = core->cons;
+	char *pal_jump = palColorFor (cons, "graph.true");
+	char *pal_fail = palColorFor (cons, "graph.false");
+	char *pal_trfa = palColorFor (cons, "graph.trufae");
 	int nodes = 0;
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != UT64_MAX) {
@@ -1802,10 +1800,11 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 	int left = 300;
 	int top = 0;
 
+	RCons *cons = core->cons;
 	int is_json_format_disasm = opts & R_CORE_ANAL_JSON_FORMAT_DISASM;
-	char *pal_curr = palColorFor ("graph.current");
-	char *pal_traced = palColorFor ("graph.traced");
-	char *pal_box4 = palColorFor ("graph.box4");
+	char *pal_curr = palColorFor (cons, "graph.current");
+	char *pal_traced = palColorFor (cons, "graph.traced");
+	char *pal_box4 = palColorFor (cons, "graph.box4");
 	const char *font = r_config_get (core->config, "graph.font");
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *str;
@@ -2048,12 +2047,13 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
-	char *pal_jump = palColorFor ("graph.true");
-	char *pal_fail = palColorFor ("graph.false");
-	char *pal_trfa = palColorFor ("graph.trufae");
-	char *pal_curr = palColorFor ("graph.current");
-	char *pal_traced = palColorFor ("graph.traced");
-	char *pal_box4 = palColorFor ("graph.box4");
+	RCons *cons = core->cons;
+	char *pal_jump = palColorFor (cons, "graph.true");
+	char *pal_fail = palColorFor (cons, "graph.false");
+	char *pal_trfa = palColorFor (cons, "graph.trufae");
+	char *pal_curr = palColorFor (cons, "graph.current");
+	char *pal_traced = palColorFor (cons, "graph.traced");
+	char *pal_box4 = palColorFor (cons, "graph.box4");
 	if (!fcn || !fcn->bbs) {
 		nodes = -1;
 		goto fin;

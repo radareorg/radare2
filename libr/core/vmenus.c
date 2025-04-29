@@ -4785,14 +4785,15 @@ R_API void r_core_visual_colors(RCore *core) {
 	bool show_help = false;
 	RColor rcolor, zcolor = { 0 };
 	r_cons_show_cursor (false);
-	rcolor = r_cons_pal_get_i (opt);
+	RCons *cons = core->cons;
+	rcolor = r_cons_pal_get_i (cons, opt);
 	for (;;) {
 		r_cons_clear ();
 		r_cons_gotoxy (0, 0);
-		k = r_cons_pal_get_name (opt);
+		k = r_cons_pal_get_name (cons, opt);
 		if (!k) {
 			opt = 0;
-			k = r_cons_pal_get_name (opt);
+			k = r_cons_pal_get_name (cons, opt);
 		}
 		color = r_str_newf (rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
@@ -4824,7 +4825,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		r_cons_printf ("  ec %s %s # %d (\\x1b%.*s)\n",
 			k, color, atoi (cstr + 7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);
 		if (esc) {
-			r_cons_printf (" (\\x1b%s)", esc + 1);
+			r_kons_printf (cons, " (\\x1b%s)", esc + 1);
 		}
 
 		if (memcmp (&rcolor, &zcolor, sizeof (rcolor)) != 0) {
@@ -4841,7 +4842,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		} else {
 			r_cons_printf ("\n%s", res);
 		}
-		r_cons_flush ();
+		r_kons_flush (cons);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
@@ -4924,7 +4925,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		opt = R_DIM (opt, 0, r_cons_pal_len () - 1);
 		if (opt != oopt) {
-			rcolor = r_cons_pal_get_i (opt);
+			rcolor = r_cons_pal_get_i (core->cons, opt);
 			oopt = opt;
 		}
 		free (res);

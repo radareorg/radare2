@@ -3,16 +3,15 @@
 #include <r_cons.h>
 #include <r_th.h>
 
-// XXX globals
-#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
-#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
+#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(cons->context->cpal)) + keys[i].coff)
+#define COLOR_AT(i) (char **) (((ut8 *) &(cons->context->pal)) + keys[i].off)
 #define COLOR_KEY(name, field) { name, r_offsetof (RConsPrintablePalette, field), r_offsetof (RConsPalette, field) }
 
 static R_TH_LOCAL RThreadLock *lock = NULL;
 
 static struct {
 	const char *name;
-	int off;  // RConsPrintablePalette offset
+	int off; // RConsPrintablePalette offset
 	int coff; // RConsPalette offset
 } keys[] = {
 	COLOR_KEY ("comment", comment),
@@ -59,16 +58,15 @@ static struct {
 	COLOR_KEY ("var.name", var_name),
 	COLOR_KEY ("var.type", var_type),
 	COLOR_KEY ("var.addr", var_addr),
-	// widget.bg/sel
-	{ "widget.bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
-	{ "widget.sel", r_offsetof (RConsPrintablePalette, widget_sel), r_offsetof (RConsPalette, widget_sel) },
-
-	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
-	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
-	{ "ai.exec", r_offsetof (RConsPrintablePalette, ai_exec), r_offsetof (RConsPalette, ai_exec) },
-	{ "ai.seq", r_offsetof (RConsPrintablePalette, ai_seq), r_offsetof (RConsPalette, ai_seq) },
-	{ "ai.ascii", r_offsetof (RConsPrintablePalette, ai_ascii), r_offsetof (RConsPalette, ai_ascii) },
-
+	COLOR_KEY ("widget.bg", widget_bg),
+	COLOR_KEY ("widget.sel", widget_sel),
+	COLOR_KEY ("ai.read", ai_read),
+	COLOR_KEY ("ai.write", ai_write),
+	COLOR_KEY ("ai.exec", ai_exec),
+	COLOR_KEY ("ai.write", ai_write),
+	COLOR_KEY ("ai.exec", ai_exec),
+	COLOR_KEY ("ai.seq", ai_seq),
+	COLOR_KEY ("ai.ascii", ai_ascii),
 
 	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
@@ -146,12 +144,15 @@ R_API void r_kons_pal_clone(RConsContext *ctx) {
 	if (ctx->pal.rainbow) {
 		int sz = ctx->pal.rainbow_sz;
 		for (i = 0; i < sz; i++) {
-			ctx->pal.rainbow[i] = strdup (ctx->pal.rainbow[i]);
+			if (ctx->pal.rainbow[i]) {
+				ctx->pal.rainbow[i] = strdup (ctx->pal.rainbow[i]);
+			}
 		}
 	}
 }
 
 static void pal_refresh(RCons *cons) {
+	// TODO: unnecessarily slow
 	RConsContext *ctx = cons->context;
 	Sdb *db = sdb_new0 ();
 	int i;
@@ -160,18 +161,20 @@ static void pal_refresh(RCons *cons) {
 		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
-		free (*color);
-		*color = NULL;
-//		R_FREE (*color);
+		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
 		r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		// eprintf ("-> %s\n", rgbstr);
 		sdb_set (db, rgbstr, "1", 0);
 	}
-	SdbList *list = sdb_foreach_list (db, true);
+	SdbList *list = sdb_foreach_list (db, false);
 	SdbListIter *iter;
 	SdbKv *kv;
-	r_cons_rainbow_free (ctx);
-	r_cons_rainbow_new (ctx, list->length);
+#if 1
+	r_cons_rainbow_free (cons); // 
+	r_cons_rainbow_new (cons, list->length); // alocated here
+	ctx = cons->context;
+#endif
 	int n = 0;
 	if (ctx->pal.rainbow) {
 		ls_foreach (list, iter, kv) {
@@ -289,15 +292,15 @@ R_API void r_cons_pal_init(RCons *cons) {
 	r_th_lock_leave (lock);
 }
 
-R_API void r_cons_pal_free(RConsContext *ctx) {
+R_API void r_cons_pal_free(RCons *cons) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
-		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
+		char **color = (char **) (((ut8 *) &(cons->context->pal)) + keys[i].off);
 		if (R_STR_ISNOTEMPTY (color)) {
 			R_FREE (*color);
 		}
 	}
-	r_cons_rainbow_free (ctx);
+	r_cons_rainbow_free (cons);
 }
 
 // rename to copy_from for clarity?
@@ -311,7 +314,7 @@ R_API void r_cons_pal_copy(RCons *cons, RConsContext *src) {
 
 	dst->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 
-	pal_refresh (cons);
+	// pal_refresh (cons);
 }
 
 R_API void r_cons_pal_random(RCons *cons) {
@@ -459,9 +462,9 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 	return *out ? strdup (out) : strdup ("");
 }
 
-static void r_cons_pal_show_gs(void) {
+static void r_cons_pal_show_gs(RCons *cons) {
 	int i, n;
-	r_cons_print ("\nGreyscale:\n");
+	r_kons_print (cons, "\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
 	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
@@ -475,18 +478,18 @@ static void r_cons_pal_show_gs(void) {
 			strcpy (fg, Color_BLACK);
 		}
 		r_cons_rgb_str (bg, sizeof (bg), &rcolor);
-		r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
+		r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "Color_RESET,
 			fg, bg, i, i, i);
 		if (n++ == 5) {
 			n = 0;
-			r_cons_newline ();
+			r_kons_newline (cons);
 		}
 	}
 }
 
-static void r_cons_pal_show_256(void) {
+static void r_cons_pal_show_256(RCons *cons) {
 	RColor rc = RColor_BLACK;
-	r_cons_print ("\n\nXTerm colors:\n");
+	r_kons_print (cons, "\n\nXTerm colors:\n");
 	int r = 0;
 	int g = 0;
 	int b = 0;
@@ -508,15 +511,15 @@ static void r_cons_pal_show_256(void) {
 				}
 				const char *fg = ((rc.r <= 0x5f) && (rc.g <= 0x5f)) ? Color_WHITE: Color_BLACK;
 				r_cons_rgb_str (bg, sizeof (bg), &rc);
-				r_cons_printf ("%s%s rgb:%02x%02x%02x "
+				r_kons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 			}
-			r_cons_newline ();
+			r_kons_newline (cons);
 		}
 	}
 }
 
-static void r_cons_pal_show_rgb(void) {
+static void r_cons_pal_show_rgb(RCons *cons) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
@@ -542,7 +545,7 @@ static void r_cons_pal_show_rgb(void) {
 	}
 }
 
-R_API void r_cons_pal_show(void) {
+R_API void r_cons_pal_show(RCons *cons) {
 	size_t i;
 	for (i = 0; colors[i].name; i++) {
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
@@ -550,14 +553,14 @@ R_API void r_cons_pal_show(void) {
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (r_cons_context ()->color_mode) {
+	switch (cons->context->color_mode) {
 	case COLOR_MODE_256: // 256 color palette
-		r_cons_pal_show_gs ();
-		r_cons_pal_show_256 ();
+		r_cons_pal_show_gs (cons);
+		r_cons_pal_show_256 (cons);
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		r_cons_pal_show_gs ();
-		r_cons_pal_show_rgb ();
+		r_cons_pal_show_gs (cons);
+		r_cons_pal_show_rgb (cons);
 		break;
 	default:
 		break;
@@ -569,7 +572,7 @@ typedef struct {
 	const char *str;
 } RAttrStr;
 
-R_API void r_cons_pal_list(int rad, const char *arg) {
+R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
 	int i;
@@ -604,7 +607,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 					sname[j] = '_';
 				}
 			}
-			r_cons_printf (".%s%s { color: rgb(%d, %d, %d); }%s",
+			r_kons_printf (cons, ".%s%s { color: rgb(%d, %d, %d); }%s",
 				prefix, sname, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			free (sname);
 			}
@@ -612,17 +615,17 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 		case 'h':
 			name = strdup (keys[i].name);
 			r_str_replace_char (name, '.', '_');
-			r_cons_printf (".%s { color:#%02x%02x%02x }\n",
+			r_kons_printf (cons, ".%s { color:#%02x%02x%02x }\n",
 				name, rcolor->r, rcolor->g, rcolor->b);
 			free (name);
 			break;
 		case '*':
 		case 'r':
 		case 1:
-			r_cons_printf ("ec %s rgb:%02x%02x%02x",
+			r_kons_printf (cons, "ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
 			if (rcolor->a == ALPHA_FGBG) {
-				r_cons_printf (" rgb:%02x%02x%02x",
+				r_kons_printf (cons, " rgb:%02x%02x%02x",
 					rcolor->r2, rcolor->g2, rcolor->b2);
 			}
 			if (rcolor->attr) {
@@ -635,25 +638,25 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
-					r_cons_print (" .");
+					r_kons_print (cons, " .");
 				}
 				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {
-						r_cons_printf (" %s", attrs[j].str);
+						r_kons_printf (cons, " %s", attrs[j].str);
 					}
 				}
 			}
-			r_cons_newline ();
+			r_kons_newline (cons);
 			break;
 		default:
-			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
+			r_kons_printf (cons, " %s##"Color_RESET"  %s\n", *color, keys[i].name);
 			break;
 		}
 	}
 	if (rad == 'j' || pj) {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_printf ("%s\n", s);
+		r_kons_println (cons, s);
 		free (s);
 	}
 }
@@ -661,7 +664,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 /* Modify the palette to set a color value.
  * r_cons_pal_reload () must be called after this function
  * so the changes take effect. */
-R_API int r_cons_pal_set(const char *key, const char *val) {
+R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
@@ -682,7 +685,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 }
 
 /* Get the named RColor */
-R_API RColor r_cons_pal_get(const char *key) {
+R_API RColor r_cons_pal_get(RCons *cons, const char *key) {
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
@@ -694,7 +697,7 @@ R_API RColor r_cons_pal_get(const char *key) {
 }
 
 /* Get the RColor at specified index */
-R_API RColor r_cons_pal_get_i(int index) {
+R_API RColor r_cons_pal_get_i(RCons *cons, int index) {
 	if (index >= 0 && index < keys_len) {
 		return *(RCOLOR_AT (index));
 	}
@@ -702,7 +705,7 @@ R_API RColor r_cons_pal_get_i(int index) {
 }
 
 /* Get color name at index */
-R_API const char *r_cons_pal_get_name(int index) {
+R_API const char *r_cons_pal_get_name(RCons *cons, int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
@@ -715,21 +718,35 @@ R_API void r_cons_pal_reload(RCons *cons) {
 	pal_refresh (cons);
 }
 
-R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {
-	ctx->pal.rainbow_sz = sz;
-	free (ctx->pal.rainbow);
-	ctx->pal.rainbow = calloc (sizeof (char *), sz);
-}
-
-R_API void r_cons_rainbow_free(RConsContext *ctx) {
-	int i, sz = ctx->pal.rainbow_sz;
-	if (ctx->pal.rainbow) {
+R_API void r_cons_rainbow_new(RCons *cons, int sz) {
+	if (sz < 1) {
+		R_LOG_ERROR ("Negative rainbow");
+	}
+	cons->context->pal.rainbow_sz = sz;
+	if (cons->context->pal.rainbow) {
+		memset (cons->context->pal.rainbow, 0, sizeof (sz * sizeof (char *)));
+		int i;
 		for (i = 0; i < sz; i++) {
-			free (ctx->pal.rainbow[i]);
+			cons->context->pal.rainbow[i] = NULL;
 		}
 	}
-	ctx->pal.rainbow_sz = 0;
-	R_FREE (ctx->pal.rainbow);
+	// free (cons->context->pal.rainbow);
+	// cons->context->pal.rainbow = calloc (sizeof (char *), sz);
+}
+
+R_API void r_cons_rainbow_free(RCons *cons) {
+	return;
+	int i, sz = cons->context->pal.rainbow_sz;
+	if (sz > 0 && cons->context->pal.rainbow) {
+		for (i = 0; i < sz; i++) {
+			eprintf ("I=%d\n", i);
+			eprintf ("free %p %d / %d\n", cons->context->pal.rainbow[i], i, sz);
+			R_FREE (cons->context->pal.rainbow[i]);
+		}
+		 eprintf ("Free %p\n", cons->context->pal.rainbow);
+		R_FREE (cons->context->pal.rainbow);
+	}
+	cons->context->pal.rainbow_sz = 0;
 }
 
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {

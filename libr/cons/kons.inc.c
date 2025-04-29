@@ -521,7 +521,7 @@ R_API void r_kons_flush(RCons *cons) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
 			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
-				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
+				R_LOG_ERROR ("r_kons_flush: fwrite: error (%s)", tee);
 			}
 			fclose (d);
 		} else {
@@ -1007,6 +1007,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	}
 	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
 	r_kons_pal_clone (c);
+	// rainbow_clone (c);
 	memset (&c->grep, 0, sizeof (c->grep));
 	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
 	c->grep.line = -1;
@@ -1016,6 +1017,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 }
 
 R_API void r_kons_push(RCons *cons) {
+	// eprintf ("push\n");
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
 #if 1
@@ -1060,7 +1062,7 @@ R_API bool r_kons_pop(RCons *cons) {
 		}
 		return true;
 	}
-	// R_LOG_INFO ("Nothing to pop");
+	R_LOG_INFO ("Nothing to pop");
 	return false;
 #if 0
 	if (ctx->cons_stack) {
