@@ -141,6 +141,9 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 	bool first = true;
 	ctx->sorted_column = 0;
 	size_t i;
+	if (!grep->strings) {
+		grep->strings = r_list_newf ((RListFree)grep_word_free);
+	}
 	for (i = 0; i < ptrs_length; i++) {
 		bool gw_begin = false;
 		bool gw_neg = false;
@@ -390,9 +393,6 @@ while_end:
 				gw->neg = gw_neg;
 				gw->end = gw_end;
 				gw_end = false;
-				if (!grep->strings) {
-					grep->strings = r_list_newf ((RListFree)grep_word_free);
-				}
 				r_list_append (grep->strings, gw);
 			} while (ptr);
 		}

@@ -1008,6 +1008,10 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
 	r_kons_pal_clone (c);
 	memset (&c->grep, 0, sizeof (c->grep));
+	c->grep.strings = r_list_newf ((RListFree)grep_word_free);
+	c->grep.line = -1;
+	c->grep.sort = -1;
+	c->grep.sort_invert = false;
 	return c;
 }
 
