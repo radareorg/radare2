@@ -3505,18 +3505,23 @@ static int cmd_system(void *data, const char *input) {
 					R_LOG_ERROR ("The !! command is disabled in sandbox mode");
 					return 0;
 				}
-				int olen;
+				r_kons_push (core->cons);
+				int olen = 0;
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
-					void *bed = r_cons_sleep_begin ();
+				//	void *bed = r_kons_sleep_begin (core->cons);
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, 0, &out, &olen, NULL);
-					r_cons_sleep_end (bed);
+				//	r_kons_sleep_end (core->cons, bed);
 					r_core_sysenv_end (core, input);
-					r_cons_write (out, olen);
-					free (out);
+core->cons->context->noflush = false;
 					free (cmd);
 				}
+				r_kons_pop (core->cons);
+					if (out && olen > 0) {
+						r_kons_write (core->cons, out, olen);
+					}
+					free (out);
 			} else {
 				r_line_hist_list (false);
 			}

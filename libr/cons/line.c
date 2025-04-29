@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #define R_LOG_ORIGIN "line"
 
 #include <r_cons.h>
 
-static R_TH_LOCAL RLine r_line_instance;
+static R_TH_LOCAL RLine r_line_instance = {0};
 #define I r_line_instance
 
 R_API RLine *r_line_singleton(void) {
@@ -30,6 +30,7 @@ R_API RLine *r_line_new(void) {
 }
 
 R_API void r_line_free(void) {
+return;
 	// XXX: prompt out of the heap?
 	free ((void *)I.prompt);
 	I.prompt = NULL;

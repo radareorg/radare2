@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #define R_LOG_ORIGIN "rafind2"
 
@@ -7,6 +7,7 @@
 #include <r_util/r_print.h>
 
 typedef struct {
+	RCons *cons;
 	RIO *io;
 	bool showstr;
 	bool rad;
@@ -42,6 +43,7 @@ static void rafind_options_fini(RafindOptions *ro) {
 		ro->cur = 0;
 		r_list_free (ro->keywords);
 		ro->keywords = NULL;
+		r_kons_free (ro->cons);
 	}
 }
 
@@ -53,7 +55,7 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->color = true;
 	ro->keywords = r_list_newf (NULL);
 	ro->pj = NULL;
-	r_cons_new ();
+	ro->cons = r_cons_new ();
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -332,7 +334,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		}
 	}
 done:
-	r_cons_free ();
+//	r_kons_free (ro);
 err:
 	free (efile);
 	r_io_free (io);

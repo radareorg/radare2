@@ -422,10 +422,11 @@ R_API RCons *r_cons_new(void) {
 	return cons;
 }
 
-R_API RCons *r_cons_free(void) {
-	r_kons_free (I);
-	I = NULL; // hack for globals
-	return NULL;
+R_API void r_cons_free(RCons *cons) {
+	r_kons_free (cons);
+	if (cons == I) {
+		I = NULL; // hack for globals
+	}
 }
 
 R_API void r_cons_gotoxy(int x, int y) {

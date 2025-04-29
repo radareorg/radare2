@@ -828,7 +828,7 @@ R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_trim(void);
 R_API RConsContext *r_cons_context(void);
 R_API InputState *r_cons_input_state(void);
-R_API RCons *r_cons_free(void);
+R_API void r_cons_free(RCons *cons);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 R_API void r_cons_set_click(int x, int y);
@@ -856,6 +856,9 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 R_API void r_cons_pipe_close_all(void);
 R_API void r_kons_pal_clone(RConsContext *ctx);
+R_API void *r_kons_sleep_begin(RCons *cons);
+R_API void r_kons_sleep_end(RCons *cons, void *user);
+R_API void r_kons_break_end(RCons *cons);
 
 #if R2__WINDOWS__
 // TODO all the w32 apis must be ipi
