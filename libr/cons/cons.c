@@ -488,7 +488,6 @@ R_API void r_cons_pop(void) {
 
 R_API void r_cons_context_load(RConsContext *context) {
 	// eprintf ("ctx.loa\n");
-	return;
 	if (!I) {
 		I = &s_cons_global;
 	}
@@ -496,7 +495,6 @@ R_API void r_cons_context_load(RConsContext *context) {
 }
 
 R_API void r_cons_context_reset(void) {
-	eprintf ("wtf\n");
 #if 0
 	while (r_kons_pop (I)) {
 		// you cant stop

@@ -3111,7 +3111,7 @@ static int cmd_tasks(void *data, const char *input) {
 			RCoreTask *task = r_core_task_get_incref (&core->tasks, tid);
 			if (task) {
 				if (task->res) {
-					r_cons_println (task->res);
+					r_kons_println (core->cons, task->res);
 				}
 				r_core_task_decref (task);
 			} else {

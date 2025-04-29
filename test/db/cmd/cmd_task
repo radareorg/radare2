@@ -14,9 +14,24 @@ EOF
 RUN
 
 NAME=& + grep
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 "& ?e Hello\nfrom\na task!~task"
+&& 1
+&= 1
+EOF
+EXPECT=<<EOF
+a task!
+
+EOF
+RUN
+
+NAME=& + grep 2
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+'& ?e Hello\nfrom\na task!~task
 && 1
 &= 1
 EOF

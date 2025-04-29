@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2025 - pancake, thestr4ng3r */
 
 #include <r_core.h>
 
@@ -146,7 +146,7 @@ static void task_join(RCoreTask *task) {
 }
 
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id) {
-	return;
+//	return;
 	if (current && id == current->id) {
 		return;
 	}
@@ -280,7 +280,6 @@ R_API void r_core_task_decref(RCoreTask *task) {
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
-	return;
 	if (!current) {
 		return;
 	}
@@ -392,6 +391,7 @@ static void task_wakeup(RCoreTask *current) {
 
 	eprintf ("JAPUTA\n");
 	if (current->cons_context) {
+		// core->cons->context = current->cons_context;
 		r_cons_context_load (current->cons_context);
 	} else {
 		r_cons_context_reset ();

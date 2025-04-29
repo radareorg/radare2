@@ -4324,7 +4324,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		size_t bs = ((repeat + 8) * n);
 		heaped_block = calloc (repeat + 8, n);
 		r_io_read_at (core->io, core->addr, heaped_block, bs);
-		block = heaped_block; 
+		block = heaped_block;
 		do {
 			repeat--;
 			const int p_bits = core->rasm->config->bits / 8;

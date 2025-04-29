@@ -505,8 +505,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 		}
 		if (end && word) {
 			ut64 val = r_num_math (core->num, word);
-			char num[32];
-			snprintf (num, sizeof (num), "0x%"PFMT64x, val);
+			r_strf_var (num, 32, "0x%"PFMT64x, val);
 			buf = r_str_append (buf, num);
 			msg = end;
 		} else {
@@ -1015,7 +1014,7 @@ static int cmd_help(void *data, const char *input) {
 			free (inputs);
 			r_list_free (list);
 			if (pj) {
-				r_cons_printf ("%s\n", pj_string (pj));
+				r_kons_printf (core->cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -1402,7 +1401,7 @@ static int cmd_help(void *data, const char *input) {
 				r_strbuf_append (b, r_str_pad('-', len));
 				r_strbuf_append (b, "'\n");
 				char * s = r_strbuf_drain (b);
-				r_cons_print (s);
+				r_kons_print (core->cons, s);
 				free (s);
 			}
 			break;
@@ -1430,9 +1429,9 @@ static int cmd_help(void *data, const char *input) {
 						  r_core_cmdf (core, "?e=%d", i);
 						  r_cons_print (d);
 						  r_cons_clear_line (0);
-						  r_cons_newline ();
+						  r_kons_newline (core->cons);
 						  free (d);
-						  r_cons_flush ();
+						  r_kons_flush (core->cons);
 						  r_sys_usleep (2000);
 					  }
 				  }
@@ -1442,8 +1441,8 @@ static int cmd_help(void *data, const char *input) {
 				  char *d = r_str_donut (r_num_math (core->num, input + 2));
 				  r_str_trim_tail (d);
 				  const char *color = (core->cons && core->cons->context->pal.flag)? core->cons->context->pal.flag: "";
-				  r_cons_printf ("%s%s", color, d);
-				  r_cons_newline ();
+				  r_kons_printf (core->cons, "%s%s", color, d);
+				  r_kons_newline (core->cons);
 				  free (d);
 			}
 			break;
@@ -1490,7 +1489,7 @@ static int cmd_help(void *data, const char *input) {
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
-			r_cons_println (newmsg);
+			r_kons_println (core->cons, newmsg);
 			free (newmsg);
 			}
 			break;
