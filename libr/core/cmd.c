@@ -487,6 +487,8 @@ static bool foreach_newline(RCore *core) {
 }
 
 static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
+// eprintf ("JAJ %s %d\n", cmd_prefix, core->cons->context->buffer_len);
+
 	if (R_STR_ISEMPTY (cmd_prefix)) {
 		recursive_help (core, detail, "%");
 		recursive_help (core, detail, "(");
@@ -504,13 +506,15 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		return;
 	}
 	R_LOG_DEBUG ("[recursive help] %s", cmd_prefix);
+// eprintf ("ejej %s\n", cmd_prefix);
 	char *s = r_core_cmd_strf (core, "%s?", cmd_prefix);
+// eprintf ("eqeq %s\n", s);
 	if (R_STR_ISEMPTY (s)) {
 		free (s);
 		return;
 	}
 	RList *pending = r_list_newf (free);
-	r_cons_print (s);
+	r_kons_print (core->cons, s);
 	RList *rows = r_str_split_list (s, "\n", 0);
 
 	RListIter *iter;
@@ -4543,9 +4547,10 @@ escape_pipe:
 					detail++;
 				}
 			}
-			r_kons_break_push (core->cons, NULL, NULL);
+			//r_kons_break_push (core->cons, NULL, NULL);
 			recursive_help (core, detail, cmd);
-			r_kons_break_pop (core->cons);
+			core->cons->context->noflush = false; // PANCAKE for some reason wtf
+			//r_kons_break_pop (core->cons);
 			r_cons_grep_parsecmd (core->cons, ptr + 2, "`");
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
