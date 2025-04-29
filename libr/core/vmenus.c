@@ -4903,7 +4903,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			r_core_visual_prompt_input (core);
 			break;
 		case ',':
-			r_cons_pal_random ();
+			r_cons_pal_random (core->cons);
 			break;
 		case '.':
 			rcolor.r = r_num_rand (0xff);

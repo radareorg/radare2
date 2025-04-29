@@ -141,8 +141,7 @@ static void pal_refresh(RConsContext *ctx) {
 		// Color is dynamically allocated, needs to be freed
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
-		char rgbstr[16];
-		snprintf (rgbstr, sizeof (rgbstr), "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgbstr, "1", 0);
 	}
 	SdbList *list = sdb_foreach_list (db, true);
@@ -288,14 +287,14 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 	pal_refresh (dst);
 }
 
-R_API void r_cons_pal_random(void) {
+R_API void r_cons_pal_random(RCons *cons) {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		rcolor = RCOLOR_AT (i);
 		*rcolor = r_cons_color_random (ALPHA_FG);
 	}
-	r_cons_pal_reload ();
+	r_cons_pal_reload (cons);
 }
 
 R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
@@ -684,9 +683,9 @@ R_API int r_cons_pal_len(void) {
 	return keys_len;
 }
 
-R_API void r_cons_pal_reload(void) {
+R_API void r_cons_pal_reload(RCons *cons) {
 	// This is slowly executed on every change of scr.color
-	pal_refresh (r_cons_context ());
+	pal_refresh (cons->context);
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {

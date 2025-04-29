@@ -208,7 +208,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (R_STR_ISNOTEMPTY (theme_script)) {
 		core->cmdfilter = "ec ";
 		r_core_cmd_lines (core, theme_script);
-		r_cons_pal_reload ();
+		r_cons_pal_reload (core->cons);
 		core->cmdfilter = NULL;
 		ret = true; // maybe the script fails?
 	} else {
@@ -503,7 +503,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 		r_cons_pal_list (0, NULL);
 		break;
 	case 'r': // "ecr"
-		r_cons_pal_random ();
+		r_cons_pal_random (core->cons);
 		break;
 	case 'n': // "ecn"
 		nextpal (core, 'n');
@@ -606,7 +606,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 				 // Set color
 				 *q++ = 0;
 				 if (r_cons_pal_set (p, q)) {
-					 r_cons_pal_reload ();
+					 r_cons_pal_reload (core->cons);
 				 }
 			 } else {
 				 char color[32] = {0};

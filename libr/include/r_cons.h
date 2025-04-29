@@ -976,12 +976,12 @@ R_API void r_cons_thready(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
-R_API void r_cons_pal_reload(void);
+R_API void r_cons_pal_reload(RCons *cons);
 R_API void r_cons_pal_free(RConsContext *ctx);
 R_API void r_cons_pal_init(RConsContext *ctx);
 R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(const char *str, RColor *outcol);
-R_API void r_cons_pal_random(void);
+R_API void r_cons_pal_random(RCons *cons);
 R_API RColor r_cons_pal_get(const char *key);
 R_API RColor r_cons_pal_get_i(int index);
 R_API const char *r_cons_pal_get_name(int index);
