@@ -2897,6 +2897,7 @@ R_API void r_core_free(RCore *c) {
 	}
 }
 
+// R2_600
 #if !R2_USE_NEW_ABI
 R_IPI int Gload_index = 0;
 #endif
@@ -3033,7 +3034,12 @@ static void set_prompt(RCore *core) {
 		}
 		snprintf (tmp, sizeof (tmp), "%s%s", sec, p);
 	}
-
+	if (!BEGIN) {
+		BEGIN = "";
+	}
+	if (!END) {
+		END = "";
+	}
 	chop_prompt (filename, tmp, 128);
 	char *prompt = NULL;
 	if (r_config_get_b (core->config, "scr.prompt.code")) {
