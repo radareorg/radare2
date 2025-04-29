@@ -1801,7 +1801,3 @@ R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color) {
 		}
 	}
 }
-
-R_API void r_kons_grep_help(RCons *cons) {
-	r_cons_cmd_help (help_detail_tilde, true);
-}

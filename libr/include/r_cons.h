@@ -867,8 +867,6 @@ R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PR
 R_IPI void r_cons_win_clear(RCons *cons);
 R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
 
-R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
-R_API void r_kons_grep_help(RCons *cons);
 #endif
 
 #if 0
@@ -957,7 +955,8 @@ R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(const char * const help[], bool use_color);
+R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color);
+R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
 R_API void r_cons_cmd_help_json(RCons *cons, const char * const help[]);
 R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
@@ -1011,9 +1010,9 @@ R_API char *r_cons_hud_file(const char *f);
 R_API const char *r_cons_get_buffer(void);
 R_API int r_cons_get_buffer_len(void);
 #endif
-R_API void r_cons_grep_help(void);
-R_API void r_cons_grep_expression(const char *str);
-R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
+R_API void r_cons_grep_help(RCons *cons);
+R_API void r_cons_grep_expression(RCons *cons, const char *str);
+R_API void r_cons_grep_parsecmd(RCons *cons, char *cmd, const char *quotestr);
 R_API char *r_cons_grep_strip(char *cmd, const char *quotestr);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API void r_cons_grepbuf(void);

@@ -3731,7 +3731,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
 	if (*shell_cmd == '!') {
-		r_cons_grep_parsecmd (shell_cmd, "\"");
+		r_cons_grep_parsecmd (core->cons, shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
 		// TODO: implement foo
@@ -4541,7 +4541,7 @@ escape_pipe:
 			r_cons_break_push (NULL, NULL);
 			recursive_help (core, detail, cmd);
 			r_kons_break_pop (core->cons);
-			r_cons_grep_parsecmd (ptr + 2, "`");
+			r_cons_grep_parsecmd (core->cons, ptr + 2, "`");
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
 			}
@@ -4796,7 +4796,7 @@ escape_backtick:
 				}
 			}
 			if (showHelp) {
-				r_kons_grep_help (core->cons);
+				r_cons_grep_help (core->cons);
 				r_list_free (tmpenvs);
 				return true;
 			}
@@ -5361,7 +5361,7 @@ beach:
 		char *old_grep = grep;
 		grep = unescape_special_chars (old_grep, SPECIAL_CHARS);
 		free (old_grep);
-		r_cons_grep_expression (grep);
+		r_cons_grep_expression (core->cons, grep);
 		free (grep);
 	}
 	if (scr_html != -1) {
