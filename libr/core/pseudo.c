@@ -423,12 +423,22 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			R_LOG_ERROR ("No code here");
 			break;
 		}
+		if (!*code) {
+			free (code);
+			R_LOG_ERROR ("Empty code here");
+			break;
+		}
 		// SET_INDENT (indent);
 		// PRINTF ("\n---\n");
 		code = r_str_replace (code, "\n\n", "\n", true);
 		code = r_str_replace (code, ";", "//", true);
 		code = cleancomments (code);
 		size_t len = strlen (code);
+		if (len < 1) {
+			free (code);
+			R_LOG_ERROR ("Empty code here");
+			break;
+		}
 		code[len - 1] = 0; // chop last newline
 		find_and_change (code, len);
 		if (!sdb_const_get (db, K_MARK (bb->addr), 0)) {

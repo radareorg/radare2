@@ -328,13 +328,12 @@ R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
 		return;
 	}
 	if (strchr (format, '%')) {
-		RConsContext *ctx = cons->context;
 		if (kons_palloc (cons, MOAR + strlen (format) * 20)) {
 			bool need_retry = true;
 			while (need_retry) {
 				need_retry = false;
-				size_t left = ctx->buffer_sz - ctx->buffer_len;
-				size_t written = vsnprintf (ctx->buffer + ctx->buffer_len, left, format, ap3);
+				size_t left = cons->context->buffer_sz - cons->context->buffer_len;
+				size_t written = vsnprintf (cons->context->buffer + cons->context->buffer_len, left, format, ap3);
 				if (written >= left) {
 					if (kons_palloc (cons, written + 1)) {
 						va_end (ap3);
@@ -343,15 +342,15 @@ R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap) {
 					} else {
 						// Allocation failed, use available space
 						size_t added = (left > 0) ? left - 1 : 0;
-						ctx->buffer_len += added;
-						ctx->breaked = true; // Indicate truncation
+						cons->context->buffer_len += added;
+						cons->context->breaked = true; // Indicate truncation
 					}
 				} else {
-					ctx->buffer_len += written;
+					cons->context->buffer_len += written;
 				}
 			}
 		} else {
-			ctx->breaked = true; // Initial allocation failed
+			cons->context->breaked = true; // Initial allocation failed
 		}
 	} else {
 		r_kons_print (cons, format);
