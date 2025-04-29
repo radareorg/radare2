@@ -424,6 +424,7 @@ R_API RCons *r_cons_new(void) {
 
 R_API RCons *r_cons_free(void) {
 	r_kons_free (I);
+	I = NULL; // hack for globals
 	return NULL;
 }
 
