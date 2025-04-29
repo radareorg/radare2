@@ -47,7 +47,7 @@ typedef struct {
 } RapThread;
 
 R_API void r_core_wait(RCore *core) {
-	r_cons_context ()->breaked = true;
+	core->cons->context->breaked = true;
 #if R2__UNIX__
 	if (core->http_up) {
 		r_core_rtr_http_stop (core);
