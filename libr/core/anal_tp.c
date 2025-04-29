@@ -72,10 +72,7 @@ typedef struct type_trace_t {
 	RReg *reg;
 	HtUP *registers;
 	HtUP *memory;
-	RRegArena *arena[R_REG_TYPE_LAST];
-	ut64 stack_addr;
-	ut64 stack_size;
-	ut8 *stack_data;
+	ut32 voy[4];
 } TypeTrace;
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((TypeTraceRegChange *)y)->idx)
@@ -238,9 +235,8 @@ static void trace_db_init(TypeTraceDB *db) {
 	db->loop_counts = ht_uu_new0 ();
 }
 
-static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg,
-	ut64 stack_addr, ut64 stack_size) {
-	R_RETURN_VAL_IF_FAIL (trace && esil && reg && stack_size, false);
+static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg) {
+	R_RETURN_VAL_IF_FAIL (trace && esil && reg, false);
 	*trace = (const TypeTrace){0};
 	trace_db_init (&trace->db);
 	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
@@ -251,37 +247,35 @@ static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg,
 	if (!trace->memory) {
 		goto fail_memory_ht;
 	}
-	trace->stack_data = malloc (stack_size);
-	if (!trace->stack_data) {
-		goto fail_malloc;
+	trace->voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
+		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
+	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_regr_voy;
 	}
-	if (!r_esil_mem_read_silent (esil, stack_addr, trace->stack_data, stack_size)) {
-		goto fail_read;
+	trace->voy[R_ESIL_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
+		type_trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_regw_voy;
 	}
-	ut32 i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = reg->regset[i].arena;
-		RRegArena *b = r_reg_arena_new (a->size);
-		if (!b) {
-			goto fail_regs_copy;
-		}
-		if (b->bytes && a->bytes && b->size > 0) {
-			memcpy (b->bytes, a->bytes, b->size);
-		}
-		trace->arena[i] = b;
+	trace->voy[R_ESIL_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
+		type_trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
+	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_memr_voy;
+	}
+	trace->voy[R_ESIL_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
+		type_trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
+		goto fail_memw_voy;
 	}
 	trace->reg = reg;
-	trace->stack_addr = stack_addr;
-	trace->stack_size = stack_size;
 	return true;
-fail_regs_copy:
-	while (i) {
-		i--;
-		r_reg_arena_free (trace->arena[i]);
-	}
-fail_read:
-	R_FREE (trace->stack_data);
-fail_malloc:
+fail_memw_voy:
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
+fail_memr_voy:
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
+fail_regw_voy:
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
+fail_regr_voy:
 	ht_up_free (trace->memory);
 	trace->memory = NULL;
 fail_memory_ht:
@@ -302,18 +296,19 @@ static void type_trace_loopcount_increment(TypeTrace *trace, ut64 addr) {
 	ht_uu_update (trace->db.loop_counts, addr, count + 1);
 }
 
-static void type_trace_fini(TypeTrace *trace) {
-	R_RETURN_IF_FAIL (trace);
+//XXX: trace should be the only parameter
+static void type_trace_fini(TypeTrace *trace, REsil *esil) {
+	R_RETURN_IF_FAIL (trace && esil);
 	VecTraceOp_fini (&trace->db.ops);
 	VecAccess_fini (&trace->db.accesses);
 	ht_uu_free (trace->db.loop_counts);
 	ht_up_free (trace->registers);
 	ht_up_free (trace->memory);
-	free (trace->stack_data);
-	ut32 i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_reg_arena_free (trace->arena[i]);
-	}
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_WRITE]);
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
+	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
+	r_reg_free (trace->reg);
 	trace[0] = (const TypeTrace){0};
 }
 
@@ -325,39 +320,13 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		return false;
 	}
 	trace->cc = 0;
-	ut32 voy[4];
-	voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
-		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
-	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
-		return false;
-	}
-	bool ret = true;
-	voy[R_ESIL_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
-		type_trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
-		ret = false;
-		goto fail_regw_voy;
-	}
-	voy[R_ESIL_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
-		type_trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
-	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
-		ret = false;
-		goto fail_memr_voy;
-	}
-	voy[R_ESIL_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
-		type_trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
-	if (R_UNLIKELY (voy[R_ESIL_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
-		ret = false;
-		goto fail_memw_voy;
-	}
 	
 	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
 	if (ri) {
-		const bool suc = r_esil_reg_write (esil, ri->name, op->addr);
+		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr + op->size);
 		r_unref (ri);
 		if (!suc) {
-			ret = false;
-			goto fail_set_pc;
+			return false;
 		}
 	}
 
@@ -371,20 +340,10 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 		R_LOG_WARN ("Couldn't allocate(emplace_back) trace op");
 		//anything to do here?
 	}
-	if (!r_esil_parse (esil, expr)) {
-		ret = false;
-	}
+	const bool ret = r_esil_parse (esil, expr);
 	r_esil_stack_free (esil);
 	trace->idx++;
 	trace->end_idx++;	// should be vector length?
-fail_set_pc:
-	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_MEM_WRITE]);
-fail_memw_voy:
-	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_MEM_READ]);
-fail_memr_voy:
-	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_WRITE]);
-fail_regw_voy:
-	r_esil_del_voyeur (esil, voy[R_ESIL_VOYEUR_REG_READ]);
 	return ret;
 }
 
@@ -654,7 +613,7 @@ static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rn
 static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const char *place) {
 	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
 	if (in_stack) {
-		ut64 sp = r_reg_getv (tps->core->anal->reg, "SP"); // XXX this is slow too and we can cache
+		ut64 sp = r_reg_getv (tps->tt.reg, "SP"); // XXX this is slow too and we can cache
 		const ut64 write_addr = etrace_memwrite_addr (&tps->tt, idx); // AAA -1
 		return (write_addr == sp + size);
 	}
@@ -1098,11 +1057,9 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
-	type_trace_fini (&tps->tt);
+	type_trace_fini (&tps->tt, &tps->esil);
 	r_esil_fini (&tps->esil);
 	r_io_fd_close (tps->core->io, tps->stack_fd);
-	r_reg_setv (tps->core->anal->reg, "SP", tps->sp);
-	r_reg_setv (tps->core->anal->reg, "BP", tps->bp);
 	free (tps->cfg_spec);
 	r_config_hold_restore (tps->hc);
 	r_config_hold_free (tps->hc);
@@ -1199,27 +1156,30 @@ static TPState *tps_init(RCore *core) {
 		free (tps);
 		return NULL;
 	}
-	tps->stack_map = map->id;
-	//todo fix addrsize
-	type_trace_reg_if.reg = core->anal->reg;
-	type_trace_mem_if.mem = tps;
-	ut64 sp = tps->stack_base + stack_size - (stack_size % align) - align * 8;
-	//todo: this probably needs some boundary checks
-	tps->sp = r_reg_getv (core->anal->reg, "SP");
-	tps->bp = r_reg_getv (core->anal->reg, "BP");
-	r_reg_setv (core->anal->reg, "SP", sp);
-	r_reg_setv (core->anal->reg, "BP", sp);
-	if (!r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if)) {
-		r_reg_setv (core->anal->reg, "SP", tps->sp);
-		r_reg_setv (core->anal->reg, "BP", tps->bp);
+	//XXX: r_reg_clone should be invoked in type_trace_init
+	RReg *reg = r_reg_clone (core->anal->reg);
+	if (!reg) {
 		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
 	}
-	if (!type_trace_init (&tps->tt, &tps->esil, core->anal->reg, sp, sp - tps->stack_base)) {
+	tps->stack_map = map->id;
+	//todo fix addrsize
+	type_trace_reg_if.reg = reg;
+	type_trace_mem_if.mem = tps;
+	ut64 sp = tps->stack_base + stack_size - (stack_size % align) - align * 8;
+	//todo: this probably needs some boundary checks
+	r_reg_setv (reg, "SP", sp);
+	r_reg_setv (reg, "BP", sp);
+	if (!r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if)) {
+		r_reg_free (reg);
+		r_io_fd_close (core->io, tps->stack_fd);
+		free (tps);
+		return NULL;
+	}
+	if (!type_trace_init (&tps->tt, &tps->esil, reg)) {
 		r_esil_fini (&tps->esil);
-		r_reg_setv (core->anal->reg, "SP", tps->sp);
-		r_reg_setv (core->anal->reg, "BP", tps->bp);
+		r_reg_free (reg);
 		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
@@ -1310,7 +1270,7 @@ repeat:
 			}
 			// XXX fail sometimes
 			/// addr = bb_addr + i;
-			r_reg_setv (core->anal->reg, "PC", addr);
+			r_reg_setv (etrace->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
 				// stop emulating this bb if pc is outside the basic block boundaries
@@ -1320,7 +1280,7 @@ repeat:
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
-				r_reg_setv (core->anal->reg, "PC", addr);
+				r_reg_setv (etrace->reg, "PC", addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
@@ -1332,7 +1292,7 @@ repeat:
 			}
 #endif
 			type_trace_loopcount_increment (etrace, addr);
-			r_reg_setv (core->anal->reg, "PC", addr + aop.size);
+			r_reg_setv (etrace->reg, "PC", addr + aop.size);
 			if (!r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
 //this shit probably needs further refactoring. i hate this code
 				if (aop.type == R_ANAL_OP_TYPE_ILL || aop.type == R_ANAL_OP_TYPE_UNK) {
