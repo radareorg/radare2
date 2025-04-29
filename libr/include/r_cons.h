@@ -852,9 +852,9 @@ R_API void r_cons_break_end(void);
 R_API void r_cons_break_timeout(int timeout);
 
 /* pipe */
-R_API int r_cons_pipe_open(const char *file, int fdn, int append);
-R_API void r_cons_pipe_close(int fd);
-R_API void r_cons_pipe_close_all(void);
+R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
+R_API void r_cons_pipe_close(RCons *cons, int fd);
+R_API void r_cons_pipe_close_all(RCons *cons);
 R_API void r_kons_pal_clone(RConsContext *ctx);
 R_API void *r_kons_sleep_begin(RCons *cons);
 R_API void r_kons_sleep_end(RCons *cons, void *user);
@@ -1256,7 +1256,6 @@ R_API char *r_kons_lastline(RCons *cons, int *len);
 R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len);
 R_API bool r_kons_drop(RCons *cons, int n);
 R_API void r_kons_trim(RCons *cons);
-// R_API void r_kons_bind(RCons *cons, RConsBind *bind);
 R_API void r_kons_breakword(RCons *cons, R_NULLABLE const char *s);
 R_API void r_kons_clear_buffer(RCons *cons);
 R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);

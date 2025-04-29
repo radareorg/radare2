@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake */
+/* radare - LGPL - Copyright 2011-2025 - pancake */
 
 #include <r_debug.h>
+#include <r_core.h>
 
 static bool __rap_step(RDebug *dbg) {
 	r_io_system (dbg->iob.io, "ds");
@@ -47,11 +48,12 @@ static bool __rap_detach(RDebug *dbg, int pid) {
 }
 
 static char *__rap_reg_profile(RDebug *dbg) {
+	RCons *cons = ((RCore*)dbg->coreb.core)->cons;
 	char *out, *tf = r_file_temp ("rap.XXXXXX");
-	int fd = r_cons_pipe_open (tf, 1, 0);
+	int fd = r_cons_pipe_open (cons, tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
-	r_cons_flush ();
-	r_cons_pipe_close (fd);
+	r_kons_flush (cons);
+	r_cons_pipe_close (cons, fd);
 	out = r_file_slurp (tf, NULL);
 	r_file_rm (tf);
 	free (tf);
