@@ -588,7 +588,7 @@ static RCoreHelpMessage help_msg_af = {
 	"afd", "[addr]", "show function + delta for given offset",
 	"afe", "", "analyze where the function entrypoints are",
 	"afF", "[1|0|]", "fold/unfold/toggle",
-	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
+	"afi", "[?] [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",

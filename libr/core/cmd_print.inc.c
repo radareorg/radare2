@@ -7184,7 +7184,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_cmd_help (core, help_msg_pds);
 			} else if (input[2] == '*') {
 				if (input[3] == '?') {
-					r_core_cmd_help (core, help_msg_pds);
+					r_core_cmd_help_contains (core, help_msg_pds, "pds*");
 					break;
 				}
 				char *s = r_core_cmd_str (core, "pdsf@e:scr.color=0");
