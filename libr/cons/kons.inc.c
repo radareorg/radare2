@@ -608,10 +608,13 @@ static void grep_word_free(RConsGrepWord *gw) {
 
 static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
-		R_FREE (grep->str);
+		free (grep->str);
+		grep->str = NULL;
+		if (grep->strings) {
+			r_list_free (grep->strings);
+			grep->strings = r_list_newf ((RListFree)grep_word_free);
+		}
 		ZERO_FILL (*grep);
-		r_list_free (grep->strings);
-		grep->strings = r_list_newf ((RListFree)grep_word_free);
 		grep->line = -1;
 		grep->sort = -1;
 		grep->sort_invert = false;
@@ -1004,6 +1007,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	}
 	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
 	r_kons_pal_clone (c);
+	memset (&c->grep, 0, sizeof (c->grep));
 	return c;
 }
 

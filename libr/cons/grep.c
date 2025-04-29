@@ -85,6 +85,13 @@ static RCoreHelpMessage help_detail_tilde = {
 	NULL
 };
 
+static void grep_word_free(RConsGrepWord *gw) {
+	if (gw) {
+		free (gw->str);
+		free (gw);
+	}
+}
+
 R_API void r_cons_grep_help(RCons *cons) {
 	r_kons_cmd_help (cons, help_detail_tilde, true);
 }
@@ -383,6 +390,9 @@ while_end:
 				gw->neg = gw_neg;
 				gw->end = gw_end;
 				gw_end = false;
+				if (!grep->strings) {
+					grep->strings = r_list_newf ((RListFree)grep_word_free);
+				}
 				r_list_append (grep->strings, gw);
 			} while (ptr);
 		}
