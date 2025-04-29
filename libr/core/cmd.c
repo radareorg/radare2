@@ -4796,7 +4796,7 @@ escape_backtick:
 				}
 			}
 			if (showHelp) {
-				r_cons_grep_help ();
+				r_kons_grep_help (core->cons);
 				r_list_free (tmpenvs);
 				return true;
 			}

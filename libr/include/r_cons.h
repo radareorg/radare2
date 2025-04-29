@@ -866,6 +866,9 @@ R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRI
 R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_IPI void r_cons_win_clear(RCons *cons);
 R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
+
+R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
+R_API void r_kons_grep_help(RCons *cons);
 #endif
 
 #if 0
