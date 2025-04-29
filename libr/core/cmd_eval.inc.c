@@ -429,7 +429,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 			cmd_load_theme (core, core->theme); // reload
 			break;
 		case ' ':
-			cmd_load_theme (core, input + 3);
+			cmd_load_theme (core, r_str_trim_head_ro (input + 3));
 			break;
 		case 'o':
 			cmd_load_theme (core, core->theme);
