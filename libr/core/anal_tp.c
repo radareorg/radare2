@@ -499,9 +499,8 @@ typedef struct {
 	REsil esil;
 	TypeTrace tt;
 	ut64 stack_base;
-	ut64 sp;	//old sp
-	ut64 bp;	//old bp
 	RCore *core;
+	RReg *anal_reg;
 	int stack_fd;
 	ut32 stack_map;
 	RConfigHold *hc;
@@ -1058,6 +1057,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
+	tps->core->anal->reg = tps->anal_reg;
 	type_trace_fini (&tps->tt, &tps->esil);
 	r_esil_fini (&tps->esil);
 	r_io_fd_close (tps->core->io, tps->stack_fd);
@@ -1185,6 +1185,10 @@ static TPState *tps_init(RCore *core) {
 		free (tps);
 		return NULL;
 	}
+//XXX: HACK
+	tps->anal_reg = core->anal->reg;
+	tps->esil.anal = core->anal;
+	core->anal->reg = reg;
 	tps->hc = r_config_hold_new (cfg);
 	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
 	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
