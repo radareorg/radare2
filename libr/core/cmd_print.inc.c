@@ -4321,9 +4321,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		break;
 	default:;
 		ut64 delta = 0;
+		size_t bs = ((repeat + 8) * n);
+		heaped_block = calloc (repeat + 8, n);
+		r_io_read_at (core->io, core->addr, heaped_block, bs);
+		block = heaped_block; 
 		do {
 			repeat--;
 			const int p_bits = core->rasm->config->bits / 8;
+#if 0
 			if (block + 8 >= block_end) {
 				if (heaped_block) {
 					free (heaped_block);
@@ -4338,11 +4343,12 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				r_io_read_at (core->io, core->addr + delta, heaped_block, blocksize);
 				block = heaped_block;
 			}
+#endif
 			ut64 v;
+			delta += n;
 			if (!fixed_size) {
 				n = 0;
 			}
-			delta += n;
 			switch (n) {
 			case 1:
 				v = r_read_ble8 (block);
