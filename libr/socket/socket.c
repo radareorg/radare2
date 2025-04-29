@@ -788,6 +788,7 @@ R_API char *r_socket_tostring(RSocket *s) {
 R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	int ret, delta = 0;
 #if R2__UNIX__
+	// this is on non-linux only in theory..
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
@@ -806,9 +807,12 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 #endif
 		if (s->proto == R_SOCKET_PROTO_SERIAL) {
 			ret = write (s->fd, (char *)buf + delta, b);
-			eprintf ("SERIAL WRITE %d\n", ret);
 		} else {
+#if __linux__
+			ret = send (s->fd, (char *)buf + delta, b, MSG_NOSIGNAL);
+#else
 			ret = send (s->fd, (char *)buf + delta, b, 0);
+#endif
 		}
 		//if (ret == 0) return -1;
 		if (ret < 1) {
