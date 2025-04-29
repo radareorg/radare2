@@ -134,7 +134,7 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 	return r << 4 | r2;
 }
 
-R_IPI void r_kons_pal_clone(RConsContext *ctx) {
+R_API void r_kons_pal_clone(RConsContext *ctx) {
 	int i;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {

@@ -855,7 +855,7 @@ R_API void r_cons_break_timeout(int timeout);
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 R_API void r_cons_pipe_close_all(void);
-R_IPI void r_kons_pal_clone(RConsContext *ctx);
+R_API void r_kons_pal_clone(RConsContext *ctx);
 
 #if R2__WINDOWS__
 // TODO all the w32 apis must be ipi
