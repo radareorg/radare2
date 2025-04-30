@@ -1006,6 +1006,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 		c->unsorted_lines = r_list_clone (ctx->unsorted_lines, (RListClone)strdup);
 	}
 	c->marks = r_list_clone (ctx->marks, (RListClone)strdup);
+	c->pal.rainbow = NULL;
 	r_kons_pal_clone (c);
 	// rainbow_clone (c);
 	memset (&c->grep, 0, sizeof (c->grep));

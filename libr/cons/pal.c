@@ -63,20 +63,16 @@ static struct {
 	COLOR_KEY ("ai.read", ai_read),
 	COLOR_KEY ("ai.write", ai_write),
 	COLOR_KEY ("ai.exec", ai_exec),
-	COLOR_KEY ("ai.write", ai_write),
-	COLOR_KEY ("ai.exec", ai_exec),
 	COLOR_KEY ("ai.seq", ai_seq),
 	COLOR_KEY ("ai.ascii", ai_ascii),
-
-	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
-	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
-	{ "graph.box3", r_offsetof (RConsPrintablePalette, graph_box3), r_offsetof (RConsPalette, graph_box3) },
-	{ "graph.box4", r_offsetof (RConsPrintablePalette, graph_box4), r_offsetof (RConsPalette, graph_box4) },
-	{ "graph.true", r_offsetof (RConsPrintablePalette, graph_true), r_offsetof (RConsPalette, graph_true) },
-	{ "graph.false", r_offsetof (RConsPrintablePalette, graph_false), r_offsetof (RConsPalette, graph_false) },
-	{ "graph.trufae", r_offsetof (RConsPrintablePalette, graph_trufae), r_offsetof (RConsPalette, graph_trufae) },
-	{ "graph.current", r_offsetof (RConsPrintablePalette, graph_current), r_offsetof (RConsPalette, graph_current) },
-	{ "graph.traced", r_offsetof (RConsPrintablePalette, graph_traced), r_offsetof (RConsPalette, graph_traced) },
+	COLOR_KEY ("graph.box", graph_box),
+	COLOR_KEY ("graph.box2", graph_box2),
+	COLOR_KEY ("graph.box3", graph_box3),
+	COLOR_KEY ("graph.box4", graph_box4),
+	COLOR_KEY ("graph.true", graph_true),
+	COLOR_KEY ("graph.false", graph_false),
+	COLOR_KEY ("graph.current", graph_current),
+	COLOR_KEY ("graph.traced", graph_traced),
 
 	// rename to diff, no need for graph prefix here
 	{ "diff.unknown", r_offsetof (RConsPrintablePalette, diff_unknown), r_offsetof (RConsPalette, diff_unknown) },
@@ -151,7 +147,19 @@ R_API void r_kons_pal_clone(RConsContext *ctx) {
 	}
 }
 
-static void pal_refresh(RCons *cons) {
+static bool is_valid_color(RColor c) {
+	if (c.r == 0 && c.g == 0 && c.b == 0) {
+		// no black
+		return false;
+	}
+	if (c.r == 255 && c.g == 255 && c.b == 255) {
+		// no white
+		return false;
+	}
+	return true;
+}
+
+static void pal_refresh(RCons *cons, bool rain) {
 	// TODO: unnecessarily slow
 	RConsContext *ctx = cons->context;
 	Sdb *db = sdb_new0 ();
@@ -163,26 +171,28 @@ static void pal_refresh(RCons *cons) {
 		// Color is dynamically allocated, needs to be freed
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
-		r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-		// eprintf ("-> %s\n", rgbstr);
-		sdb_set (db, rgbstr, "1", 0);
-	}
-	SdbList *list = sdb_foreach_list (db, false);
-	SdbListIter *iter;
-	SdbKv *kv;
-#if 1
-	r_cons_rainbow_free (cons); // 
-	r_cons_rainbow_new (cons, list->length); // alocated here
-	ctx = cons->context;
-#endif
-	int n = 0;
-	if (ctx->pal.rainbow) {
-		ls_foreach (list, iter, kv) {
-			ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+		if (is_valid_color (*rcolor)) {
+			r_strf_var (rgbstr, 16, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+			// eprintf ("-> %s\n", rgbstr);
+			sdb_set (db, rgbstr, "1", 0);
 		}
 	}
-	ctx->pal.rainbow_sz = n;
-	ls_free (list);
+	if (rain) {
+		SdbList *list = sdb_foreach_list (db, false);
+		SdbListIter *iter;
+		SdbKv *kv;
+		r_cons_rainbow_free (cons);
+		cons->context->pal.rainbow = calloc (sizeof (char *), list->length);
+		r_cons_rainbow_new (cons, list->length); // alocated here
+		int n = 0;
+		if (ctx->pal.rainbow) {
+			ls_foreach (list, iter, kv) {
+				ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+			}
+		}
+		ctx->pal.rainbow_sz = n;
+		ls_free (list);
+	}
 	sdb_free (db);
 }
 
@@ -288,7 +298,7 @@ R_API void r_cons_pal_init(RCons *cons) {
 	ctx->cpal.diff_match    = (RColor) RColor_GRAY;
 	ctx->cpal.diff_unmatch  = (RColor) RColor_YELLOW;
 	ctx->pal.reset          = Color_RESET; // reset is not user accessible, const char* is ok
-	pal_refresh (cons);
+	pal_refresh (cons, false);
 	r_th_lock_leave (lock);
 }
 
@@ -318,10 +328,10 @@ R_API void r_cons_pal_copy(RCons *cons, RConsContext *src) {
 }
 
 R_API void r_cons_pal_random(RCons *cons) {
+	R_RETURN_IF_FAIL (cons);
 	int i;
-	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT (i);
+		RColor *rcolor = RCOLOR_AT (i);
 		*rcolor = r_cons_color_random (ALPHA_FG);
 	}
 	r_cons_pal_reload (cons);
@@ -715,7 +725,7 @@ R_API int r_cons_pal_len(void) {
 
 R_API void r_cons_pal_reload(RCons *cons) {
 	// This is slowly executed on every change of scr.color
-	pal_refresh (cons);
+	pal_refresh (cons, false);
 }
 
 R_API void r_cons_rainbow_new(RCons *cons, int sz) {
@@ -723,33 +733,30 @@ R_API void r_cons_rainbow_new(RCons *cons, int sz) {
 		R_LOG_ERROR ("Negative rainbow");
 	}
 	cons->context->pal.rainbow_sz = sz;
-	if (cons->context->pal.rainbow) {
-		memset (cons->context->pal.rainbow, 0, sizeof (sz * sizeof (char *)));
-		int i;
-		for (i = 0; i < sz; i++) {
-			cons->context->pal.rainbow[i] = NULL;
-		}
+	if (!cons->context->pal.rainbow) {
+		cons->context->pal.rainbow = calloc (sizeof (char *), sz);
 	}
-	// free (cons->context->pal.rainbow);
-	// cons->context->pal.rainbow = calloc (sizeof (char *), sz);
+	int i;
+	for (i = 0; i < sz; i++) {
+		cons->context->pal.rainbow[i] = NULL;
+	}
 }
 
 R_API void r_cons_rainbow_free(RCons *cons) {
-	return;
 	int i, sz = cons->context->pal.rainbow_sz;
 	if (sz > 0 && cons->context->pal.rainbow) {
 		for (i = 0; i < sz; i++) {
-			eprintf ("I=%d\n", i);
-			eprintf ("free %p %d / %d\n", cons->context->pal.rainbow[i], i, sz);
 			R_FREE (cons->context->pal.rainbow[i]);
 		}
-		 eprintf ("Free %p\n", cons->context->pal.rainbow);
 		R_FREE (cons->context->pal.rainbow);
 	}
 	cons->context->pal.rainbow_sz = 0;
 }
 
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
+	if (!cons->context->pal.rainbow) {
+		pal_refresh (cons, true);
+	}
 	if (last < 0) {
 		last = cons->context->pal.rainbow_sz;
 	}
@@ -765,5 +772,6 @@ R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
 		free (dup);
 		return res;
 	}
+// eprintf ("banana\n");dd
 	return r_cons_pal_parse (a, NULL);
 }
