@@ -280,7 +280,7 @@ typedef struct r_anal_function_t {
 	char *realname; // R2_590: add realname for the mangled one
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
-	const char *cc; // calling convention, should come from RAnal.constpool
+	const char *callconv; // calling convention, should come from RAnal.constpool
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;

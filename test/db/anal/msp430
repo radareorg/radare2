@@ -29,14 +29,14 @@ add 0x0064, sp
 bis 0x00f0, sr
 jmp $-0x0004
 #
-offset: 0x00004438
+addr: 0x00004438
 name: main
 size: 62
 is-pure: true
 realsz: 62
 stackframe: 0
-call-convention: reg
-cyclomatic-cost: 0
+callconv: reg
+cyclic-cost: 0
 cyclomatic-complexity: 1
 bits: 32
 type: fcn [NEW]

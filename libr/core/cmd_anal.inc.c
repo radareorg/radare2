@@ -663,14 +663,14 @@ static RCoreHelpMessage help_msg_afC = {
 
 static RCoreHelpMessage help_msg_afi_fields = {
 	"Fields:", "", "afi",
-	"offset", "", "absolute address of the function entrypoint",
+	"offset", "", "absolute address of the function entrypoint", // rename to addr
 	"name", "", "name of the function",
-	"size", "", "size of the function",
-	"realsz", "", "linear size ((maxbb+maxxbsz) - minbb)",
+	"size", "", "size of the function", // rename to bbsize
+	"realsz", "", "linear size ((maxbb+maxxbsz) - minbb)", // rename to linearsize
 	"stackframe", "", "stack frame size",
-	"call-convention", "", "calling convention (see afcl)",
-	"cyclomatic-cost", "", "cyclomatic",
-	"cyclomatic-complexity", "", "calling convention (see afcl)",
+	"callconv", "", "calling convention (ms, cdecl, ... see afcl)",
+	"cyclo-cost", "", "sum cpu cycles cost of all the instructions in the basic blocks",
+	"cyclo-complexity", "", "CC = edges - nodes + (2 * end nodes)",
 	"bits", "", "arch.bits value",
 	"type", "", "related to diffing",
 	"num-bbs", "", "basic blocks count",
@@ -4419,8 +4419,8 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	if (no_return) {
 		r_strbuf_appendf (sb, "tn %s\n", function->name);
 	}
-	if (function->cc) {
-		r_strbuf_appendf (sb, "afc %s\n", function->cc);
+	if (function->callconv) {
+		r_strbuf_appendf (sb, "afc %s\n", function->callconv);
 	}
 	int i;
 	for (i = 0; i < argc; i++) {
@@ -4849,7 +4849,7 @@ static void cmd_aflxj(RCore *core) {
 }
 
 static void cmd_afci(RCore *core, RAnalFunction *fcn) {
-	const char *cc = (fcn && fcn->cc)? fcn->cc: "reg";
+	const char *cc = (fcn && fcn->callconv)? fcn->callconv: "reg";
 	r_core_cmdf (core, "afcll~%s (", cc);
 }
 
@@ -5999,7 +5999,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		switch (input[2]) {
 		case '\0': // "afc"
-			r_cons_println (fcn->cc);
+			r_cons_println (fcn->callconv);
 			break;
 		case ' ': { // "afc "
 				  char *cc = r_str_trim_dup (input + 3);
@@ -6007,7 +6007,7 @@ static int cmd_af(RCore *core, const char *input) {
 					  const char *asmOs = r_config_get (core->config, "asm.os");
 					  R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
 				  } else {
-					  fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+					  fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
 				  }
 				  free (cc);
 			  }
@@ -6067,7 +6067,7 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				pj_o (pj);
 			}
-			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+			char *cmd = r_str_newf ("cc.%s.ret", fcn->callconv);
 			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
@@ -6081,7 +6081,7 @@ static int cmd_af(RCore *core, const char *input) {
 				pj_ka (pj, "args");
 			}
 			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-				cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
+				cmd = r_str_newf ("cc.%s.arg%d", fcn->callconv, i);
 				regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 				if (regname) {
 					if (json) {
@@ -6095,7 +6095,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (json) {
 				pj_end (pj);
 			}
-			cmd = r_str_newf ("cc.%s.self", fcn->cc);
+			cmd = r_str_newf ("cc.%s.self", fcn->callconv);
 			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
@@ -6105,7 +6105,7 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 			}
 			free (cmd);
-			cmd = r_str_newf ("cc.%s.error", fcn->cc);
+			cmd = r_str_newf ("cc.%s.error", fcn->callconv);
 			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {

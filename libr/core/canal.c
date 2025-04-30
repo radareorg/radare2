@@ -977,8 +977,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		cc = "reg";
 	}
-	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
-	R_WARN_IF_FAIL (fcn->cc);
+	fcn->callconv = r_str_constpool_get (&core->anal->constpool, cc);
 
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
@@ -1818,7 +1817,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 		} else if (is_json) {
 			RDebugTracepointItem *t = r_debug_trace_get (core->dbg, bbi->addr);
 			pj_o (pj);
-			pj_kn (pj, "offset", bbi->addr);
+			pj_kn (pj, "addr", bbi->addr);
 			pj_kn (pj, "size", bbi->size);
 			if (bbi->jump != UT64_MAX) {
 				pj_kn (pj, "jump", bbi->jump);
@@ -1830,7 +1829,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				RAnalSwitchOp *op = bbi->switch_op;
 				pj_k (pj, "switchop");
 				pj_o (pj);
-				pj_kn (pj, "offset", op->addr);
+				pj_kn (pj, "addr", op->addr);
 				pj_kn (pj, "defval", op->def_val);
 				pj_kn (pj, "maxval", op->max_val);
 				pj_kn (pj, "minval", op->min_val);
@@ -1840,7 +1839,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				RListIter *case_iter;
 				r_list_foreach (op->cases, case_iter, case_op) {
 					pj_o (pj);
-					pj_kn (pj, "offset", case_op->addr);
+					pj_kn (pj, "addr", case_op->addr);
 					pj_kn (pj, "value", case_op->value);
 					pj_kn (pj, "jump", case_op->jump);
 					pj_end (pj);
@@ -2083,7 +2082,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_o (pj);
 		pj_ks (pj, "name", r_str_getf (fcn_name_escaped));
 		free (fcn_name_escaped);
-		pj_kn (pj, "offset", fcn->addr);
+		pj_kn (pj, "addr", fcn->addr);
 		pj_ki (pj, "ninstr", fcn->ninstr);
 		pj_ki (pj, "nargs", r_anal_var_count_args (fcn));
 		pj_ki (pj, "nlocals", r_anal_var_count_locals (fcn));
@@ -2859,7 +2858,7 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 
 static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
-		r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
+		r_kons_printf (core->cons, "0x%08"PFMT64x"\n", fcn->addr);
 	} else {
 		const bool use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 		char *name = r_core_anal_fcn_name (core, fcn);
@@ -2867,12 +2866,12 @@ static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 		if (use_colors) {
 			RAnalBlock *firstBlock = r_list_first (fcn->bbs);
 			char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): strdup ("");
-			r_cons_printf ("%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
+			r_kons_printf (core->cons, "%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
 					color, fcn->addr, r_list_length (fcn->bbs),
 					realsize, name, Color_RESET);
 			free (color);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
+			r_kons_printf (core->cons, "0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
 					fcn->addr, r_list_length (fcn->bbs), realsize, name);
 		}
 		free (name);
@@ -3154,7 +3153,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	}
 	int ebbs = 0;
 	pj_o (pj);
-	pj_kn (pj, "offset", fcn->addr);
+	pj_kn (pj, "addr", fcn->addr);
 	char *name = r_core_anal_fcn_name (core, fcn);
 	if (name) {
 		pj_ks (pj, "name", name);
@@ -3165,8 +3164,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
-	if (fcn->cc) {
-		pj_ks (pj, "calltype", fcn->cc); // calling conventions
+	if (fcn->callconv) {
+		pj_ks (pj, "calltype", fcn->callconv); // calling conventions
 	}
 	pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
 	pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
@@ -3392,9 +3391,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf ("'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
 	// FIXME command injection vuln here
-	if (fcn->cc || defaultCC) {
+	if (fcn->callconv || defaultCC) {
 		r_cons_printf ("s 0x%"PFMT64x"\n", fcn->addr);
-		r_cons_printf ("'afc %s\n", fcn->cc? fcn->cc: defaultCC);
+		r_cons_printf ("'afc %s\n", fcn->callconv? fcn->callconv: defaultCC);
 		r_cons_println ("s-");
 	}
 	if (fcn->folded) {
@@ -3454,21 +3453,21 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	int ebbs = 0;
 	char *name = r_core_anal_fcn_name (core, fcn);
 
-	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
+	r_cons_printf ("#\naddr: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
 			fcn->addr, name, r_anal_function_linear_size (fcn));
 	free (name);
 	r_cons_printf ("\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf ("\nrealsz: %" PFMT64d, r_anal_function_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
-	if (fcn->cc) {
-		r_cons_printf ("\ncall-convention: %s", fcn->cc);
+	if (fcn->callconv) {
+		r_cons_printf ("\ncallconv: %s", fcn->callconv);
 	}
 	char *fn = filename (core, fcn->addr);
 	if (fn) {
 		r_cons_printf ("\nfile: %s", fn);
 		free (fn);
 	}
-	r_cons_printf ("\ncyclomatic-cost: %d", r_anal_function_cost (fcn));
+	r_cons_printf ("\ncyclic-cost: %d", r_anal_function_cost (fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_function_complexity (fcn));
 	r_cons_printf ("\nbits: %d", fcn->bits);
 	r_cons_printf ("\ntype: %s", r_anal_functiontype_tostring (fcn->type));
@@ -4035,7 +4034,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			break;
 		}
 		if (optype == R_ANAL_OP_TYPE_CALL) {
-			int i, max_count = fcn->cc ? r_anal_cc_max_arg (core->anal, fcn->cc) : 0;
+			int i, max_count = fcn->callconv ? r_anal_cc_max_arg (core->anal, fcn->callconv) : 0;
 			for (i = 0; i < max_count; i++) {
 				reg_set[i] = 2;
 			}

@@ -118,7 +118,7 @@ afij~{.callrefs}
 afixj~{.callrefs}
 EOF
 EXPECT=<<EOF
-{"offset":4294983524,"name":"main","size":52,"is-pure":"false","realsz":52,"noreturn":false,"recursive":false,"stackframe":32,"calltype":"arm64","cost":5,"cc":1,"bits":64,"type":"fcn","nbbs":1,"tracecov":0,"is-lineal":true,"ninstrs":13,"edges":0,"ebbs":1,"signature":"int main (int argc);","minbound":4294983524,"maxbound":4294983576,"maxbbins":13,"midbbins":13.000,"ratbbins":1.000,"indegree":0,"outdegree":2,"nlocals":2,"nargs":1,"difftype":"new"}
+{"addr":4294983524,"name":"main","size":52,"is-pure":"false","realsz":52,"noreturn":false,"recursive":false,"stackframe":32,"calltype":"arm64","cost":5,"cc":1,"bits":64,"type":"fcn","nbbs":1,"tracecov":0,"is-lineal":true,"ninstrs":13,"edges":0,"ebbs":1,"signature":"int main (int argc);","minbound":4294983524,"maxbound":4294983576,"maxbbins":13,"midbbins":13.000,"ratbbins":1.000,"indegree":0,"outdegree":2,"nlocals":2,"nargs":1,"difftype":"new"}
 --
 [{"addr":4294983576,"type":"CALL","at":4294983548},{"addr":4294983588,"type":"CALL","at":4294983556}]
 EOF
