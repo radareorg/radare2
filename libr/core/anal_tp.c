@@ -1090,8 +1090,9 @@ static ut32 tt_reg_size(void *reg, const char *name) {
 	if (!ri) {
 		return 0;
 	}
+	ut32 size = ri->size;
 	r_unref (ri);
-	return ri->size;
+	return size;
 }
 
 static REsilRegInterface type_trace_reg_if = {

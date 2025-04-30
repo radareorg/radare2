@@ -121,6 +121,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 		if (r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
 			continue;
 		}
+		R_LOG_ERROR ("voyeur init failed");
 		do {
 			r_id_storage_fini (&esil->voyeur[i]);
 			i--;
