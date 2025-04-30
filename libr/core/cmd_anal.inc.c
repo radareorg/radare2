@@ -661,6 +661,37 @@ static RCoreHelpMessage help_msg_afC = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_afi_fields = {
+	"Fields:", "", "afi",
+	"offset", "", "absolute address of the function entrypoint",
+	"name", "", "name of the function",
+	"size", "", "size of the function",
+	"realsz", "", "linear size ((maxbb+maxxbsz) - minbb)",
+	"stackframe", "", "stack frame size",
+	"call-convention", "", "calling convention (see afcl)",
+	"cyclomatic-cost", "", "cyclomatic",
+	"cyclomatic-complexity", "", "calling convention (see afcl)",
+	"bits", "", "arch.bits value",
+	"type", "", "related to diffing",
+	"num-bbs", "", "basic blocks count",
+	"num-instrs", "", "how many instructions",
+	"edges", "", "how many relationships between basic blocks",
+	"minbound", "", "minumum address",
+	"maxbound", "", "maximum address",
+	"islineal", "", "are the basic blocks linearly allocated in memory",
+	"end-bbs", "", "how many basic blocks return",
+	"maxbbins", "", "max instructions in any one basic block ",
+	"midbbins", "", "average instructions per basic block",
+	"ratbbins", "", "ratio between basic blocks and instructions",
+	"noreturn", "", "true if it ends up calling a noreturn function like exit or assert",
+	"recursive", "", "true if the function calls itself",
+	"in-degree", "", "number of functions that call this one (xrefs or incoming edges in call graph)",
+	"out-degree", "", "number of functions this one calls (0 = it doesn’t call others)",
+	"locals", "", "how many local variables",
+	"args", "", "function arguments",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_afi = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
@@ -5557,7 +5588,11 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help (core, help_msg_afi);
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_afi_fields);
+			} else {
+				r_core_cmd_help (core, help_msg_afi);
+			}
 			break;
 		case 'x': // "afix"
 			cmd_afix (core, input);
