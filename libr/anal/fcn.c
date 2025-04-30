@@ -628,7 +628,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
 	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
 	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
-	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
+	const bool is_amd64 = is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
@@ -1861,7 +1861,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		fcn->addr = addr;
 	}
 	fcn->maxstack = 0;
-	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
+	if (fcn->callconv && !strcmp (fcn->callconv, "ms")) {
 		// Probably should put this on the cc sdb
 		const int shadow_store = 0x28; // First 4 args + retaddr
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
@@ -2009,6 +2009,7 @@ R_API int r_anal_function_loops(RAnalFunction *fcn) {
 }
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
 #if 0
 	* CC = E - N + 2P
 	* E = the number of edges of the graph.
@@ -2038,7 +2039,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 		}
 	}
 
-	int result = E - N + (2 * P);
+	const int result = E - N + (2 * P);
 	if (result < 1 && (!anal || anal->verbose)) {
 		R_LOG_WARN ("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x, E, N, P, fcn->addr);
 	}
@@ -2048,21 +2049,22 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 
 // TODO: R2_600 - take PJ*pj instance as argument and return void or null instead
 // tfj and afsj call this function
-R_API char *r_anal_function_get_json(RAnalFunction *function) {
-	RAnal *a = function->anal;
+R_API char *r_anal_function_get_json(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	RAnal *a = fcn->anal;
 	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
 	const char *realname = NULL, *import_substring = NULL;
 
-	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
+	RFlagItem *flag = a->flag_get (a->flb.f, false, fcn->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot
-		import_substring = r_str_rchr (function->name, NULL, '.');
+		import_substring = r_str_rchr (fcn->name, NULL, '.');
 		if (import_substring) {
 			realname = import_substring + 1;
 		}
 	} else {
-		realname = function->name;
+		realname = fcn->name;
 	}
 
 	char *args = strdup ("");
@@ -2076,12 +2078,12 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	int argc = argc_str? atoi (argc_str): 0;
 
 	pj_o (pj);
-	pj_ks (pj, "name", function->name);
-	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
+	pj_ks (pj, "name", fcn->name);
+	const bool no_return = r_anal_noreturn_at_addr (a, fcn->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	if (function->cc) {
-		pj_ks (pj, "cc", function->cc);
+	if (fcn->callconv) {
+		pj_ks (pj, "callconv", fcn->callconv);
 	}
 	pj_kn (pj, "argc", argc);
 	pj_k (pj, "args");

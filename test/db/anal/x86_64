@@ -723,10 +723,10 @@ CMDS=<<EOF
 aa
 s entry0
 afc stdcall
-afi~call-convention
+afi~conv
 EOF
 EXPECT=<<EOF
-call-convention: stdcall
+callconv: stdcall
 EOF
 RUN
 
@@ -2748,14 +2748,14 @@ pdf
 EOF
 EXPECT=<<EOF
 #
-offset: 0x00000000
+addr: 0x00000000
 name: fcn.00000000
 size: 7
 is-pure: true
 realsz: 7
 stackframe: 0
-call-convention: amd64
-cyclomatic-cost: 4
+callconv: amd64
+cyclic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -2811,14 +2811,14 @@ e io.cache=true
 EOF
 EXPECT=<<EOF
 #
-offset: 0x00000000
+addr: 0x00000000
 name: fcn.00000000
 size: 13
 is-pure: false
 realsz: 16
 stackframe: 0
-call-convention: amd64
-cyclomatic-cost: 6
+callconv: amd64
+cyclic-cost: 6
 cyclomatic-complexity: 1
 bits: 64
 type: fcn [NEW]
@@ -2889,14 +2889,14 @@ args: 0
 ..
 
 #
-offset: 0x00000000
+addr: 0x00000000
 name: fcn.00000000
 size: 14
 is-pure: false
 realsz: 17
 stackframe: 0
-call-convention: amd64
-cyclomatic-cost: 7
+callconv: amd64
+cyclic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -2975,14 +2975,14 @@ args: 0
 ..
 
 #
-offset: 0x00000000
+addr: 0x00000000
 name: fcn.00000000
 size: 14
 is-pure: false
 realsz: 17
 stackframe: 0
-call-convention: amd64
-cyclomatic-cost: 7
+callconv: amd64
+cyclic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
@@ -3070,14 +3070,14 @@ args: 0
 ..
 
 #
-offset: 0x00000000
+addr: 0x00000000
 name: fcn.00000000
 size: 19
 is-pure: false
 realsz: 24
 stackframe: 0
-call-convention: amd64
-cyclomatic-cost: 9
+callconv: amd64
+cyclic-cost: 9
 cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]

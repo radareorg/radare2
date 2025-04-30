@@ -1795,7 +1795,7 @@ int main (int argc, char **argv, char **envp);
   "name": "main",
   "noreturn": false,
   "ret": "int",
-  "cc": "amd64",
+  "callconv": "amd64",
   "argc": 3,
   "args": [
     {
@@ -1820,7 +1820,7 @@ char * strcpy (char *dest, const char *src);
   "name": "sym.imp.strcpy",
   "noreturn": false,
   "ret": "char *",
-  "cc": "amd64",
+  "callconv": "amd64",
   "argc": 2,
   "args": [
     {

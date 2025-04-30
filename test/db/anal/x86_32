@@ -656,10 +656,10 @@ NAME=Main in disassembly
 FILE=bins/elf/analysis/ls_main_bug
 CMDS=<<EOF
 aa
-afi @ main ~offset
+afi @ main ~addr
 EOF
 EXPECT=<<EOF
-offset: 0x000038b0
+addr: 0x000038b0
 EOF
 RUN
 

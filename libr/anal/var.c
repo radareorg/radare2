@@ -594,19 +594,19 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	char *ri_name = strdup (ri->name);
 	r_unref (ri);
 	int i;
-	char *cc = var->fcn->cc ? strdup (var->fcn->cc): NULL;
-	const int arg_max = cc ? r_anal_cc_max_arg (anal, cc) : 0;
+	char *callconv = var->fcn->callconv ? strdup (var->fcn->callconv): NULL;
+	const int arg_max = callconv ? r_anal_cc_max_arg (anal, callconv) : 0;
 	int total = 0;
 	for (i = 0; i < arg_max; i++) {
-		const char *reg_arg = r_anal_cc_arg (anal, cc, i, total);
+		const char *reg_arg = r_anal_cc_arg (anal, callconv, i, total);
 		if (reg_arg && !strcmp (ri_name, reg_arg)) {
-			free (cc);
+			free (callconv);
 			free (ri_name);
 			return i;
 		}
 	}
 	free (ri_name);
-	free (cc);
+	free (callconv);
 	return -1;
 }
 
@@ -1032,7 +1032,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const char *place = fcn->cc ? r_anal_cc_arg (anal, fcn->cc, maxarg, -1) : NULL;
+			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
 			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
@@ -1041,9 +1041,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				if (stack_rev) {
 					const size_t cnt = r_type_func_args_count (anal->sdb_types, fname);
 					from = cnt ? cnt - 1 : cnt;
-					to = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
+					to = fcn->callconv ? r_anal_cc_max_arg (anal, fcn->callconv) : 0;
 				} else {
-					from = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
+					from = fcn->callconv ? r_anal_cc_max_arg (anal, fcn->callconv) : 0;
 					to = r_type_func_args_count (anal->sdb_types, fname);
 				}
 				const int bytes = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
@@ -1211,13 +1211,13 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
-	if (!fcn->cc) {
+	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
-	int max_count = r_anal_cc_max_arg (anal, fcn->cc);
+	int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	if (!max_count || (*count >= max_count)) {
 		free (fname);
 		return;
@@ -1240,12 +1240,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				callee = r_type_func_guess (TDB, flag->name);
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
-					if (cc && !strcmp (fcn->cc, cc)) {
+					if (cc && !strcmp (fcn->callconv, cc)) {
 						callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
 					}
 				}
 			}
-		} else if (!f->is_variadic && !strcmp (fcn->cc, f->cc)) {
+		} else if (!f->is_variadic && !strcmp (fcn->callconv, f->callconv)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
 				callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
@@ -1265,7 +1265,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			char *type = NULL;
 			char *name = NULL;
 			int delta = 0;
-			const char *regname = r_anal_cc_arg (anal, fcn->cc, i, total);
+			const char *regname = r_anal_cc_arg (anal, fcn->callconv, i, total);
 			if (regname) {
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
@@ -1314,7 +1314,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 
 	const int total = 0; // TODO: pass argn
 	for (i = 0; i < max_count; i++) {
-		const char *regname = r_anal_cc_arg (anal, fcn->cc, i, total);
+		const char *regname = r_anal_cc_arg (anal, fcn->callconv, i, total);
 		if (!regname) {
 		// WIP	break;
 		} else {
@@ -1363,7 +1363,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 
-	const char *selfreg = r_anal_cc_self (anal, fcn->cc);
+	const char *selfreg = r_anal_cc_self (anal, fcn->callconv);
 	if (selfreg) {
 		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal);
 		if (is_arg && reg_set[i] != 2) {
@@ -1389,7 +1389,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_error (anal, fcn->cc);
+	const char *errorreg = r_anal_cc_error (anal, fcn->callconv);
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 			int delta = 0;

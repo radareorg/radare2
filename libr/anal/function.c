@@ -81,7 +81,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	}
 	fcn->anal = anal;
 	fcn->addr = UT64_MAX;
-	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
+	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
 	fcn->bbs = r_list_new ();
 	fcn->diff = r_anal_diff_new ();
@@ -171,7 +171,7 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 	}
 	fcn->addr = addr;
 	fcn->type = type;
-	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
+	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
 	if (name) {
 		free (fcn->name);

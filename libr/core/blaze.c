@@ -211,7 +211,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->config->bits;
-	f->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	f->callconv = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
