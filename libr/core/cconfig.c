@@ -3700,7 +3700,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
-	SETCB ("anal.newcparser", "false", &cb_anal_newcparser, "use the new c parser instead of tcc");
+	SETCB ("anal.newcparser", "true", &cb_anal_newcparser, "use the new c parser instead of tcc");
 
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
 	SETDESC (n, "select C++ RTTI ABI");
