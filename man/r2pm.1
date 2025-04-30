@@ -5,7 +5,7 @@
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op [adhHIipuUglsv]
+.Op [adhHIijpuUglsv]
 .Op [pkg ...]
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
@@ -32,6 +32,8 @@ Initialize or Update the package database
 Same as -U, but then upgrade all the installed packages
 .It Fl gu Ar pkgname
 Uninstall a package from the system directory
+.It Fl j
+Output in JSON if implemented
 .It Fl l
 List installed packages
 .It Fl s Ar keyword

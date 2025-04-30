@@ -24,6 +24,7 @@ static const char *helpmsg =
 	" -H ([variable])   list all or selected r2pm environment variables\n"
 	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
 	" -I                information about the repository and installed packages\n"
+	" -j                json output\n"
 	" -l                list installed packages\n"
 	" -q                be quiet\n"
 	" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"
@@ -52,6 +53,7 @@ typedef struct r_r2pm_t {
 	bool list;
 	bool plugdir; // requires -c/clean
 	bool quiet;
+	bool json;
 	bool run;
 	bool search;
 	bool reload;
@@ -294,22 +296,37 @@ static char *r2pm_desc(const char *file) {
 	return r2pm_get (file, "\nR2PM_DESC ", TT_TEXTLINE);
 }
 
-static char *r2pm_list(void) {
+static char *r2pm_list(int mode) {
 	char *path = r2pm_pkgdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
 	if (!files) {
 		return NULL;
 	}
-	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
+	}
 	RListIter *iter;
 	const char *file;
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
-			r_strbuf_appendf (sb, "%s\n", file);
+			if (pj) {
+				pj_s (pj, file);
+			} else {
+				r_strbuf_appendf (sb, "%s\n", file);
+			}
 		}
 	}
 	r_list_free (files);
+	if (pj) {
+		pj_end (pj);
+		return pj_drain (pj);
+	}
 	return r_strbuf_drain (sb);
 }
 
@@ -1034,7 +1051,7 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-static char *r2pm_search(const char *grep) {
+static char *r2pm_search(const char *grep, int mode) {
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
@@ -1043,20 +1060,39 @@ static char *r2pm_search(const char *grep) {
 	}
 	RListIter *iter;
 	const char *file;
-	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
+	}
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
 			bool match = R_STR_ISEMPTY (grep) || r_str_casestr (file, grep);
 			char *desc = r2pm_desc (file);
 			if (desc) {
 				if (match || r_str_casestr (desc, grep)) {
-					r_strbuf_appendf (sb, "%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
+					if (pj) {
+						pj_o (pj);
+						pj_ks (pj, "name", file);
+						pj_ks (pj, "desc", desc);
+						pj_end (pj);
+					} else {
+						r_strbuf_appendf (sb, "%s%s%s\n",
+							file, r_str_pad (' ', 20 - strlen (file)), desc);
+					}
 				}
 				free (desc);
 			}
 		}
 	}
 	r_list_free (files);
+	if (pj) {
+		pj_end (pj);
+		return pj_drain (pj);
+	}
 	return r_strbuf_drain (sb);
 }
 
@@ -1148,7 +1184,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		0
 	};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrRpst:uUv");
+	r_getopt_init (&opt, argc, argv, "aqecdiIjhH:flgrRpst:uUv");
 	int i, c;
 	bool action = false;
 	// -H option without argument
@@ -1162,6 +1198,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		case 'a':
 			r2pm.add = true;
 			action = true;
+			break;
+		case 'j':
+			r2pm.json = true;
 			break;
 		case 'q':
 			r2pm.quiet = true;
@@ -1267,7 +1306,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	if (r2pm.version) {
 		int mode = 0;
-		if (r2pm.quiet) {
+		if (r2pm.json) {
+			mode = 'j';
+		} else if (r2pm.quiet) {
 			mode = 'q';
 		}
 		return r_main_version_print ("r2pm", mode);
@@ -1322,7 +1363,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		res = r2pm_clean (targets);
 	}
 	if (r2pm.search) {
-		char *s = r2pm_search (argv[opt.ind]);
+		char *s = r2pm_search (argv[opt.ind], r2pm.json? 'j': 0);
 		if (s) {
 			r_cons_print (s);
 			if (havetoflush) {
@@ -1346,7 +1387,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	} else if (r2pm.clean) {
 		res = r2pm_clean (targets);
 	} else if (r2pm.list) {
-		char *s = r2pm_list ();
+		char *s = r2pm_list (r2pm.json? 'j': 0);
 		if (s) {
 			r_cons_print (s);
 			if (havetoflush) {
