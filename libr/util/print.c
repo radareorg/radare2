@@ -155,22 +155,6 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb) {
 	is_interrupted_cb = cb;
 }
 
-R_API bool r_print_mute(RPrint *p, int x) {
-	if (x) {
-		if (p->cb_printf == &nullprinter) {
-			return false;
-		}
-		p->oprintf = p->cb_printf;
-		p->cb_printf = nullprinter;
-		return true;
-	}
-	if (p->cb_printf == nullprinter) {
-		p->cb_printf = p->oprintf;
-		return true;
-	}
-	return false;
-}
-
 static int r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
 	static R_TH_LOCAL char data[32768]; // ???
 	const char *string = "Az+|.-=/^@_pT";
@@ -258,7 +242,6 @@ R_API char* r_print_stereogram(const char *bump, int w, int h) {
 #define STEREOGRAM_IN_COLOR 1
 R_API char* r_print_stereogram_bytes(const ut8 *buf, int len) {
 	int i, bumpi;
-	char *ret;
 	int scr_width = 80;
 	if (!buf || len < 1) {
 		return NULL;
@@ -280,7 +263,7 @@ R_API char* r_print_stereogram_bytes(const ut8 *buf, int len) {
 		bump[bumpi++] = '0' + v;
 	}
 	bump[bumpi] = 0;
-	ret = r_print_stereogram (bump, cols, rows);
+	char *ret = r_print_stereogram (bump, cols, rows);
 	free (bump);
 	return ret;
 }

@@ -185,7 +185,6 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
 R_API void r_print_bin_from_str(RPrint *p, char *str);
 R_API RPrint *r_print_new(void);
 R_API void r_print_free(RPrint *p);
-R_API bool r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
