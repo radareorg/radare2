@@ -71,6 +71,7 @@ static struct {
 	COLOR_KEY ("graph.box4", graph_box4),
 	COLOR_KEY ("graph.true", graph_true),
 	COLOR_KEY ("graph.false", graph_false),
+	COLOR_KEY ("graph.trufae", graph_trufae),
 	COLOR_KEY ("graph.current", graph_current),
 	COLOR_KEY ("graph.traced", graph_traced),
 
