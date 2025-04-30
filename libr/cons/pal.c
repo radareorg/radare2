@@ -179,7 +179,7 @@ static void pal_refresh(RCons *cons, bool rain) {
 		}
 	}
 	if (rain) {
-		SdbList *list = sdb_foreach_list (db, false);
+		SdbList *list = sdb_foreach_list (db, true);
 		SdbListIter *iter;
 		SdbKv *kv;
 		r_cons_rainbow_free (cons);
