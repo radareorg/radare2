@@ -5913,6 +5913,37 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 	free (cmd);
 }
 
+static void atat_i(RCore *core, const char *cmd) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	int i;
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
+	SetU *set = set_u_new ();
+	if (fcn) {
+		r_list_sort (fcn->bbs, bb_cmp);
+		r_list_foreach (fcn->bbs, iter, bb) {
+			r_core_seek (core, bb->addr, true);
+			r_core_cmd (core, cmd, 0);
+			for (i = 0; i < bb->op_pos_size; i++) {
+				if (!bb->op_pos[i]) {
+					break;
+				}
+				ut64 addr = bb->addr + bb->op_pos[i];
+				if (set_u_contains (set, addr)) {
+					continue;
+				}
+				r_core_seek (core, addr, true);
+				r_core_cmd (core, cmd, 0);
+				set_u_add (set, addr);
+				if (!foreach_newline (core)) {
+					break;
+				}
+			}
+		}
+	}
+	set_u_free (set);
+}
+
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
@@ -5990,40 +6021,15 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'i': // "@@i" - function instructions
-		{
-			RListIter *iter;
-			RAnalBlock *bb;
-			int i;
-			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
-			SetU *set = set_u_new ();
-			if (fcn) {
-				r_list_sort (fcn->bbs, bb_cmp);
-				r_list_foreach (fcn->bbs, iter, bb) {
-					r_core_seek (core, bb->addr, true);
-					r_core_cmd (core, cmd, 0);
-					for (i = 0; i < bb->op_pos_size; i++) {
-						if (!bb->op_pos[i]) {
-							break;
-						}
-						ut64 addr = bb->addr + bb->op_pos[i];
-						if (set_u_contains (set, addr)) {
-							continue;
-						}
-						r_core_seek (core, addr, true);
-						r_core_cmd (core, cmd, 0);
-						set_u_add (set, addr);
-						if (!foreach_newline (core)) {
-							break;
-						}
-					}
-				}
-			}
-			set_u_free (set);
-			goto out_finish;
-		}
+		atat_i (core, cmd);
+		//goto out_finish;
 		break;
 	case 'F': // "@@F" - alias for "@@c:afla"
-		r_core_cmdf (core, "%s @@c:afla", cmd);
+		if (each[1] == 'i') { // "@@Fi" as an alias for "@@i"
+			atat_i (core, cmd);
+		} else {
+			r_core_cmdf (core, "%s @@c:afla", cmd);
+		}
 		break;
 	case 'f': // "@@f"
 		if (each[1] == ':') {
