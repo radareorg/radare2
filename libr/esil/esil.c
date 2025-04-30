@@ -75,6 +75,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 		if (r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
 			continue;
 		}
+		R_LOG_ERROR ("voyeur init failed");
 		do {
 			r_id_storage_fini (&esil->voyeur[i]);
 			i--;
@@ -399,9 +400,9 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 			return true;
 		}
 		do {
-			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], i);
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], i);
 			voy->mem_write (voy->user, addr, o.buf, buf, len);
-		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], &i));
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i));
 		return true;
 	}
 	o.ptr = R_NEWS (ut8, len);
@@ -416,9 +417,9 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		return false;
 	}
 	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], i);
+		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], i);
 		voy->mem_write (voy->user, addr, o.ptr, buf, len);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_OP_TYPE_MEM_WRITE], &i));
+	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i));
 	free (o.ptr);
 	return true;
 #else
