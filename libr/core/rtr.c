@@ -47,7 +47,9 @@ typedef struct {
 } RapThread;
 
 R_API void r_core_wait(RCore *core) {
-	r_cons_context ()->breaked = true;
+	// we need a global console break
+	// r_cons_context_break (core->cons->context);
+	// core->cons->context->breaked = true;
 #if R2__UNIX__
 	if (core->http_up) {
 		r_core_rtr_http_stop (core);
@@ -134,7 +136,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
 		free (ret);
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
+		if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 			goto beach;
 		}
 		if (!*buf) {

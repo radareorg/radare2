@@ -7,7 +7,7 @@
 
 #if R2__WINDOWS__
 #include <windows.h>
-#define printf(...) r_cons_win_printf (false, __VA_ARGS__)
+#define printf(...) r_cons_win_printf (r_cons_singleton (), false, __VA_ARGS__)
 #define USE_UTF8 1
 static int r_line_readchar_win(ut8 *s, int slen);
 #else

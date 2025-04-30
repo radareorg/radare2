@@ -1643,19 +1643,16 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	return str;
 }
 
-static char *palColorFor(const char *k) {
-	if (r_cons_singleton ()) {
-		RColor rcolor = r_cons_pal_get (k);
-		return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
-	}
-	return NULL;
+static char *palColorFor(RCons *cons, const char *k) {
+	RColor rcolor = r_cons_pal_get (cons, k);
+	return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_b (core->config, "graph.gv.current");
 	bool current = r_anal_block_contains (bbi, core->addr);
 	if (current && color_current) {
-		char *pal_curr = palColorFor ("graph.current");
+		char *pal_curr = palColorFor (core->cons, "graph.current");
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
 		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
 		free (pal_curr);
@@ -1665,13 +1662,14 @@ static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int opts, PJ *pj, Sdb *DB) {
 	RAnalBlock *bbi;
 	RListIter *iter;
-	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
-	int is_star = opts & R_CORE_ANAL_STAR;
-	int is_json = opts & R_CORE_ANAL_JSON;
-	int is_html = r_cons_context ()->is_html;
-	char *pal_jump = palColorFor ("graph.true");
-	char *pal_fail = palColorFor ("graph.false");
-	char *pal_trfa = palColorFor ("graph.trufae");
+	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
+	const bool is_star = opts & R_CORE_ANAL_STAR;
+	const bool is_json = opts & R_CORE_ANAL_JSON;
+	const bool is_html = core->cons->context->is_html;
+	RCons *cons = core->cons;
+	char *pal_jump = palColorFor (cons, "graph.true");
+	char *pal_fail = palColorFor (cons, "graph.false");
+	char *pal_trfa = palColorFor (cons, "graph.trufae");
 	int nodes = 0;
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != UT64_MAX) {
@@ -1696,7 +1694,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 				if (is_star) {
 					char *from = get_title (bbi->addr);
 					char *to = get_title (bbi->jump);
-					r_cons_printf ("age %s %s\n", from, to);
+					r_kons_printf (core->cons, "age %s %s\n", from, to);
 					free (from);
 					free (to);
 				} else {
@@ -1705,7 +1703,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					if (sdb_const_get (core->sdb, r_strf ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", bbi->addr, bbi->jump), 0)) {
 						edge_color = "cyan";
 					}
-					r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					r_kons_printf (core->cons, "        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 							"[color=\"%s\"];\n", bbi->addr, bbi->jump, edge_color);
 					core_anal_color_curr_node (core, bbi);
 				}
@@ -1714,18 +1712,18 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 		if (bbi->fail != UT64_MAX) {
 			nodes++;
 			if (is_html) {
-				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+				r_kons_printf (core->cons, "<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 						"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 						bbi->addr, bbi->fail);
 			} else if (!is_keva && !is_json) {
 				if (is_star) {
 					char *from = get_title (bbi->addr);
 					char *to = get_title (bbi->fail);
-					r_cons_printf ("age %s %s\n", from, to);
+					r_kons_printf (core->cons, "age %s %s\n", from, to);
 					free (from);
 					free (to);
 				} else {
-					r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					r_kons_printf (core->cons, "        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 									"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
 					core_anal_color_curr_node (core, bbi);
 				}
@@ -1737,18 +1735,18 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 
 			if (bbi->fail != UT64_MAX) {
 				if (is_html) {
-					r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+					r_kons_printf (core->cons, "<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
 							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 							bbi->addr, bbi->fail);
 				} else if (!is_keva && !is_json) {
 					if (is_star) {
 						char *from = get_title (bbi->addr);
 						char *to = get_title (bbi->fail);
-						r_cons_printf ("age %s %s\n", from, to);
+						r_kons_printf (core->cons, "age %s %s\n", from, to);
 						free (from);
 						free (to);
 					} else {
-						r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+						r_kons_printf (core->cons, "        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 								"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
 						core_anal_color_curr_node (core, bbi);
 					}
@@ -1766,18 +1764,18 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 							"bb.0x%08"PFMT64x".switch", bbi->addr);
 							sdb_array_add_num (DB, key, caseop->value, 0);
 				} else if (is_html) {
-					r_cons_printf ("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
+					r_kons_printf (core->cons, "<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
 							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 							bbi->addr, caseop->addr);
 				} else if (!is_json && !is_keva) {
 					if (is_star) {
 						char *from = get_title (bbi->addr);
 						char *to = get_title (caseop->addr);
-						r_cons_printf ("age %s %s\n", from ,to);
+						r_kons_printf (core->cons, "age %s %s\n", from ,to);
 						free (from);
 						free (to);
 					} else {
-						r_cons_printf ("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
+						r_kons_printf (core->cons, "        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
 								"[color=\"%s\"];\n",
 								bbi->addr, caseop->addr, pal_trfa);
 						core_anal_color_curr_node (core, bbi);
@@ -1798,14 +1796,15 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int is_star = opts & R_CORE_ANAL_STAR;
 	int is_json = opts & R_CORE_ANAL_JSON;
-	int is_html = r_cons_context ()->is_html;
+	int is_html = core->cons->context->is_html;
 	int left = 300;
 	int top = 0;
 
+	RCons *cons = core->cons;
 	int is_json_format_disasm = opts & R_CORE_ANAL_JSON_FORMAT_DISASM;
-	char *pal_curr = palColorFor ("graph.current");
-	char *pal_traced = palColorFor ("graph.traced");
-	char *pal_box4 = palColorFor ("graph.box4");
+	char *pal_curr = palColorFor (cons, "graph.current");
+	char *pal_traced = palColorFor (cons, "graph.traced");
+	char *pal_box4 = palColorFor (cons, "graph.box4");
 	const char *font = r_config_get (core->config, "graph.font");
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *str;
@@ -1940,13 +1939,13 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
-							r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+							r_kons_printf (core->cons, "agn %s %s %d\n", title, body_b64, bbi->diff->type);
 							free (body_b64);
 							free (title);
 						} else {
 							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
 							diffstr = r_str_replace (diffstr, "\"", "'", 1);
-							r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+							r_kons_printf (core->cons, " \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 							"color=\"black\", fontname=\"%s\","
 							" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 							bbi->addr, difftype, font, diffstr, fcn->name,
@@ -1966,11 +1965,11 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
-							r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+							r_kons_printf (core->cons, "agn %s %s %d\n", title, body_b64, color);
 							free (body_b64);
 							free (title);
 						} else {
-							r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+							r_kons_printf (core->cons, " \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 									"color=\"black\", fontname=\"%s\","
 									" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 									bbi->addr, difftype, font, str, fcn->name, bbi->addr);
@@ -1983,7 +1982,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			} else {
 				if (is_html) {
 					nodes++;
-					r_cons_printf ("<p class=\"block draggable\" style=\""
+					r_kons_printf (core->cons, "<p class=\"block draggable\" style=\""
 							"top: %dpx; left: %dpx; width: 400px;\" id=\""
 							"_0x%08"PFMT64x"\">\n%s</p>\n",
 							top, left, bbi->addr, str);
@@ -2015,18 +2014,18 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								return false;
 						}
 						body_b64 = r_str_prepend (body_b64, "base64:");
-						r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+						r_kons_printf (core->cons, "agn %s %s %d\n", title, body_b64, color);
 						free (body_b64);
 						free (title);
 					} else {
 						if (R_STR_ISEMPTY (str)) {
-						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
+							r_kons_printf (core->cons, "\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
 								"%sfontname=\"%s\"]\n",
 								bbi->addr, fcn->name, bbi->addr,
 								fill_color, font);
 						} else {
-						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
+							r_kons_printf (core->cons, "\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
 								"%sfontname=\"%s\", "
 								"label=\"%s\"]\n",
@@ -2048,12 +2047,13 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
-	char *pal_jump = palColorFor ("graph.true");
-	char *pal_fail = palColorFor ("graph.false");
-	char *pal_trfa = palColorFor ("graph.trufae");
-	char *pal_curr = palColorFor ("graph.current");
-	char *pal_traced = palColorFor ("graph.traced");
-	char *pal_box4 = palColorFor ("graph.box4");
+	RCons *cons = core->cons;
+	char *pal_jump = palColorFor (cons, "graph.true");
+	char *pal_fail = palColorFor (cons, "graph.false");
+	char *pal_trfa = palColorFor (cons, "graph.trufae");
+	char *pal_curr = palColorFor (cons, "graph.current");
+	char *pal_traced = palColorFor (cons, "graph.traced");
+	char *pal_box4 = palColorFor (cons, "graph.box4");
 	if (!fcn || !fcn->bbs) {
 		nodes = -1;
 		goto fin;
@@ -2513,7 +2513,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 				// ortho for bbgraph and curved for callgraph
 				gv_spline = "splines=\"curved\"";
 			}
-			r_cons_printf ("digraph code {\n"
+			r_kons_printf (core->cons, "digraph code {\n"
 					"rankdir=LR;\n"
 					"outputorder=edgesfirst;\n"
 					"graph [%s fontname=\"%s\" %s];\n"
@@ -3112,6 +3112,11 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode, bool unique,
 }
 
 static char *filename(RCore *core, ut64 addr) {
+#if 0
+	RBinAddrline *line = r_bin_dbgitem_at (core->bin, addr);
+	if (line) {
+	}
+#endif
 	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
 	// ignore return code
 	r_core_return_code (core, 0);
@@ -4192,12 +4197,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 	const char *font = r_config_get (core->config, "graph.font");
-	int is_html = r_cons_context ()->is_html;
+	bool is_html = core->cons->context->is_html;
 	int is_json = opts & R_CORE_ANAL_JSON;
 	int is_json_format_disasm = opts & R_CORE_ANAL_JSON_FORMAT_DISASM;
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int is_star = opts & R_CORE_ANAL_STAR;
-	RConfigHold *hc;
 	RAnalFunction *fcni;
 	RListIter *iter;
 	int nodes = 0;
@@ -4209,7 +4213,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (r_list_empty (core->anal->fcns)) {
 		return false;
 	}
-	hc = r_config_hold_new (core->config);
+	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return false;
 	}
@@ -4223,9 +4227,9 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		r_config_set_i (core->config, "asm.bytes", 0);
 	}
 	if (!is_html && !is_json && !is_keva && !is_star) {
-		const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
-		const char * gv_node = r_config_get (core->config, "graph.gv.node");
-		const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
+		const char *gv_edge = r_config_get (core->config, "graph.gv.edge");
+		const char *gv_node = r_config_get (core->config, "graph.gv.node");
+		const char *gv_spline = r_config_get (core->config, "graph.gv.spline");
 		const char *gv_grph = r_config_get (core->config, "graph.gv.graph");
 		if (R_STR_ISEMPTY (gv_edge)) {
 			gv_edge = "arrowhead=\"normal\"";
@@ -4239,7 +4243,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (R_STR_ISEMPTY (gv_grph)) {
 			gv_grph = "bgcolor=azure";
 		}
-		r_cons_printf ("digraph code {\n"
+		r_kons_printf (core->cons, "digraph code {\n"
 			"\tgraph [fontsize=8 fontname=\"%s\" %s %s];\n"
 			"\tnode [%s];\n"
 			"\tedge [%s];\n", font, gv_grph, gv_spline, gv_node, gv_edge);
@@ -4273,18 +4277,18 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (is_star) {
 				char *name = get_title (fcn ? fcn->addr: addr);
-				r_cons_printf ("agn %s;", name);
+				r_kons_printf (core->cons, "agn %s;", name);
 			} else {
-				r_cons_printf ("\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
+				r_kons_printf (core->cons, "\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
 			}
 		}
 	}
 	if (!is_keva && !is_html && !is_json && !is_star && !is_json_format_disasm) {
-		r_cons_printf ("}\n");
+		r_kons_printf (core->cons, "}\n");
 	}
 	if (is_json) {
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_kons_printf (core->cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 	r_config_hold_restore (hc);

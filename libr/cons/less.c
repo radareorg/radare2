@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2024 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2025 - pancake */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -16,9 +16,9 @@ static const char *r_cons_less_help = \
 	" ?        - show this help\n"
 	"\n";
 
-R_API int r_cons_less_str(const char *str, const char *exitkeys) {
+R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys) {
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
-	if (!r_cons_is_interactive ()) {
+	if (!r_kons_is_interactive (cons)) {
 		R_LOG_ERROR ("Internal less requires scr.interactive=true");
 		return 0;
 	}
@@ -57,7 +57,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	}
 	r_cons_set_raw (true);
 	r_cons_show_cursor (false);
-	r_cons_reset ();
+	r_kons_reset (cons);
 	h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
@@ -83,12 +83,12 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case '_':
-			r_cons_hud_string (ostr);
+			r_cons_hud_string (cons, ostr);
 			break;
 		case '?':
 			if (!in_help) {
 				in_help = true;
-				(void)r_cons_less_str (r_cons_less_help, NULL);
+				(void)r_cons_less_str (cons, r_cons_less_help, NULL);
 				in_help = false;
 			}
 			break;
@@ -169,8 +169,8 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_less(void) {
-	(void)r_cons_less_str (r_cons_context ()->buffer, NULL);
+R_API void r_cons_less(RCons *cons) {
+	(void)r_cons_less_str (cons, cons->context->buffer, NULL);
 }
 
 #if 0

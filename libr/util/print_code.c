@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -34,6 +34,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 		r_str_case (namesz, true);
 	}
 
+	// p->consb.cb_printf (p->consb.cons,"#define %s %d\n", namesz, len);
 	p->cb_printf ("#define %s %d\n", namesz, len);
 	p->cb_printf ("const uint8_t %s[%s] = {\n", namenm, namesz);
 	free (namesz);

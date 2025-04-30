@@ -206,7 +206,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	int ybl = core->yank_buf ? r_buf_size (core->yank_buf): 0;
 	if (ybl < 1) {
 		if (format == 'j') {
-			r_cons_printf ("{}\n");
+			r_kons_println (core->cons, "{}");
 		} else {
 			R_LOG_ERROR ("No buffer yanked yet");
 		}
@@ -219,9 +219,9 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	switch (format) {
 	case '8':
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 		break;
 	case 'j': {
 		PJ *pj = r_core_pj_new (core);
@@ -237,25 +237,25 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 		pj_ks (pj, "bytes", r_strbuf_get (buf));
 		r_strbuf_free (buf);
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 		break;
 	}
 	case '*':
-		r_cons_printf ("'wx ");
+		r_kons_print (core->cons, "'wx ");
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 		break;
 	default:
-		r_cons_printf ("0x%08" PFMT64x " %" PFMT64d " ",
+		r_kons_printf (core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
 				core->yank_addr + pos,
 				r_buf_size (core->yank_buf) - pos);
 		for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-			r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+			r_kons_printf (core->cons, "%02x", r_buf_read8_at (core->yank_buf, i));
 		}
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 	return true;
 }
@@ -290,15 +290,15 @@ R_API bool r_core_yank_cat(RCore *core, ut64 pos) {
 			char *buf = R_NEWS (char, sz);
 			if (buf) {
 				r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
-				r_cons_write (buf, sz);
-				r_cons_newline ();
+				r_kons_write (core->cons, buf, sz);
+				r_kons_newline (core->cons);
 				free (buf);
 				return true;
 			}
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");
 	} else {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 	return false;
 }
@@ -315,14 +315,14 @@ R_API bool r_core_yank_cat_string(RCore *core, ut64 pos) {
 			}
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			int len = r_str_nlen (buf, sz);
-			r_cons_write (buf, len);
-			r_cons_newline ();
+			r_kons_write (core->cons, buf, len);
+			r_kons_newline (core->cons);
 			free (buf);
 			return true;
 		}
 	//	R_LOG_ERROR ("Position exceeds buffer length");
 	} else {
-		r_cons_newline ();
+		r_kons_newline (core->cons);
 	}
 	return false;
 }
@@ -332,7 +332,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
-	char *buf = r_cons_hud_file (r_str_trim_head_ro (input + 1));
+	char *buf = r_cons_hud_file (core->cons, r_str_trim_head_ro (input + 1));
 	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
 	bool res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
@@ -341,7 +341,7 @@ R_API bool r_core_yank_hud_file(RCore *core, const char *input) {
 
 R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	R_RETURN_VAL_IF_FAIL (core, false);
-	char *buf = r_cons_hud_path (r_str_trim_head_ro (input), dir);
+	char *buf = r_cons_hud_path (core->cons, r_str_trim_head_ro (input), dir);
 	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
 	int res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
@@ -361,7 +361,7 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 		return false;
 	}
 	char *out = strdup (input);
-	int len = r_hex_str2bin (input, (ut8 *)out);
+	const int len = r_hex_str2bin (input, (ut8 *)out);
 	if (len > 0) {
 		r_core_yank_set (core, core->addr, (ut8 *)out, len);
 	}

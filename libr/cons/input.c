@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_cons.h>
 
@@ -358,9 +358,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 #define P(x) write (1, (x), strlen ((x)));
 #endif
 // XXX no control for max length here?!?!
-R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
+R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
-	RCons *cons = r_cons_singleton ();
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
 		r_cons_set_raw (false);
@@ -754,7 +753,7 @@ R_API char *r_cons_password(const char *msg) {
 	return buf;
 }
 
-R_API char *r_cons_input(const char *msg) {
+R_API char *r_cons_input(RCons *cons, const char *msg) {
 	char *oprompt = r_line_get_prompt ();
 	if (!oprompt) {
 		return NULL;
@@ -768,7 +767,7 @@ R_API char *r_cons_input(const char *msg) {
 	char *buf = malloc (buf_size);
 	if (buf) {
 		*buf = 0;
-		r_cons_fgets (buf, buf_size, 0, NULL);
+		r_cons_fgets (cons, buf, buf_size, 0, NULL);
 		r_line_set_prompt (oprompt);
 	}
 	free (oprompt);

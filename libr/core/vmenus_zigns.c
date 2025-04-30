@@ -160,7 +160,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
+			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			cmd[sizeof (cmd) - 1] = 0;

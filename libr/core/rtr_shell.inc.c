@@ -83,7 +83,7 @@ TODO:
 						r_line_set_prompt (":> ");
 					}
 					showcursor (core, true);
-					r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL);
+					r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 3, 0, NULL);
 					memcpy (buf, "wx ", 3);
 					if (buf[3]) {
 						buf[sizeof (buf) - 1] = 0;
@@ -117,7 +117,7 @@ TODO:
 						r_line_set_prompt (":> ");
 #endif
 						showcursor (core, true);
-						r_cons_fgets (buf, sizeof (buf), 0, NULL);
+						r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
 						if (*buf) {
 							r_line_hist_add (buf);
 							char *res = rtrcmd (T, buf);

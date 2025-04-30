@@ -575,7 +575,7 @@ R_API int r_search_maps(RSearch *s, RList *maps) {
 	int ret = 0;
 
 	r_list_foreach_prev (maps, iter, m) {
-		if (s->consb.is_breaked ()) {
+		if (s->consb.is_breaked (s->consb.cons)) {
 			break;
 		}
 		ut64 from = r_io_map_begin (m);

@@ -455,11 +455,10 @@ R_API void *r_list_get_n(const RList *list, int n) {
 }
 
 R_API RListIter *r_list_contains(const RList *list, const void *p) {
-	void *q;
-	RListIter *iter;
-
 	R_RETURN_VAL_IF_FAIL (list, NULL);
 
+	void *q;
+	RListIter *iter;
 	r_list_foreach (list, iter, q) {
 		if (p == q) {
 			return iter;

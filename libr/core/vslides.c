@@ -275,12 +275,12 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case ':':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (false);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			while (1) {
 				char cmd[1024];
 				*cmd = 0;
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
+				if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				r_core_cmd0 (core, cmd);

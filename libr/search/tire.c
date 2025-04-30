@@ -194,7 +194,7 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 
 		//  printf ("finished searching 0x%lx bytes from 0x%lx", finger - buf, addr); // DENNIS
 		addr += finger - buf;
-		if (addr >= to - maxkey || srch->consb.is_breaked ()) {
+		if (addr >= to - maxkey || srch->consb.is_breaked (srch->consb.cons)) {
 			break;
 		}
 		// printf ("Next up, addr 0x%lx", addr); // DENNIS

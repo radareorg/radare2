@@ -66,23 +66,9 @@ R_LIB_VERSION_HEADER(r_cons);
 
 #define R_CONS_CMD_DEPTH 100
 
-typedef int (*RConsGetSize)(int *rows);
-typedef int (*RConsGetCursor)(int *rows);
-typedef bool (*RConsIsBreaked)(void);
-typedef void (*RConsFlush)(void);
-typedef void (*RConsGrepCallback)(const char *grep);
 #ifndef R2_BIND_H
-typedef const char * const RCoreHelpMessage[];
+typedef const char *const RCoreHelpMessage[];
 #endif
-
-typedef struct r_cons_bind_t {
-	RConsGetSize get_size;
-	RConsGetCursor get_cursor;
-	PrintfCallback cb_printf;
-	RConsIsBreaked is_breaked;
-	RConsFlush cb_flush;
-	RConsGrepCallback cb_grep;
-} RConsBind;
 
 typedef struct r_cons_mark_t {
 	ut64 addr;
@@ -321,8 +307,8 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_trufae;
 	char *graph_traced;
 	char *graph_current;
-	char **rainbow; // rainbow
-	int rainbow_sz; // size of rainbow
+	char **rainbow;
+	size_t rainbow_sz;
 } RConsPrintablePalette;
 
 typedef void (*RConsEvent)(void *);
@@ -423,7 +409,7 @@ typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MOD
 
 typedef struct r_cons_context_t {
 	RConsGrep grep;
-	RStack *cons_stack;
+	// RStack *cons_stack;
 	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
@@ -452,8 +438,8 @@ typedef struct r_cons_context_t {
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 
-	RList *sorted_lines;
-	RList *unsorted_lines;
+	RList *sorted_lines; // wtf
+	RList *unsorted_lines; // wtf
 	int sorted_column; // -1
 	bool demo;
 	bool is_html;
@@ -483,7 +469,8 @@ typedef struct input_state_t {
 } InputState;
 
 typedef struct r_cons_t {
-	RConsContext *context;
+	RConsContext *context; // TODO: Rename to ctx
+	RList *ctx_stack;
 	InputState input_state;
 	char *lastline;
 	int lines;
@@ -561,6 +548,12 @@ typedef struct r_cons_t {
 	int oldraw; // 0 = not initialized, 1 = false, 2 = true
 	ut64 prev;
 	RStrBuf *echodata;
+	bool lasti;
+#if R2__WINDOWS__
+	HANDLE hStdout;
+	HANDLE hStderr;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+#endif
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -831,11 +824,12 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API RCons *r_cons_global(RCons *c);
 R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_trim(void);
 R_API RConsContext *r_cons_context(void);
 R_API InputState *r_cons_input_state(void);
-R_API RCons *r_cons_free(void);
+R_API void r_cons_free(RCons *cons);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 R_API void r_cons_set_click(int x, int y);
@@ -859,18 +853,25 @@ R_API void r_cons_break_end(void);
 R_API void r_cons_break_timeout(int timeout);
 
 /* pipe */
-R_API int r_cons_pipe_open(const char *file, int fdn, int append);
-R_API void r_cons_pipe_close(int fd);
-R_API void r_cons_pipe_close_all(void);
+R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
+R_API void r_cons_pipe_close(RCons *cons, int fd);
+R_API void r_cons_pipe_close_all(RCons *cons);
+R_API void r_kons_pal_clone(RConsContext *ctx);
+R_API void *r_kons_sleep_begin(RCons *cons);
+R_API void r_kons_sleep_end(RCons *cons, void *user);
+R_API void r_kons_break_end(RCons *cons);
 
 #if R2__WINDOWS__
-R_API int r_cons_is_vtcompat(void);
-R_API void r_cons_w32_clear(void);
-R_API void r_cons_w32_gotoxy(int fd, int x, int y);
-R_API int r_cons_w32_print(const char *ptr, int len, bool vmode);
-R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
+// TODO all the w32 apis must be ipi
+R_IPI int win_is_vtcompat(void);
+R_API void r_kons_clear(RCons *cons);
+R_API void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y);
+R_API int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode);
+R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+R_IPI void r_cons_win_clear(RCons *cons);
+R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
+
 #endif
 
 #if 0
@@ -894,7 +895,8 @@ enum {
 
 R_API void r_cons_push(void);
 R_API void r_cons_pop(void);
-R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent);
+
+R_DEPRECATE R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
 R_API void r_cons_context_reset(void);
@@ -950,17 +952,17 @@ R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
-R_API void r_cons_last(void);
-R_API int r_cons_less_str(const char *str, const char *exitkeys);
-R_API void r_cons_less(void);
+R_API int r_cons_less_str(RCons *cons, const char *str, const char *exitkeys);
+R_API void r_cons_less(RCons *cons);
 R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(const char * const help[], bool use_color);
-R_API void r_cons_cmd_help_json(const char * const help[]);
+R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color);
+R_API void r_kons_cmd_help(RCons *cons, RCoreHelpMessage help, bool use_color);
+R_API void r_cons_cmd_help_json(RCons *cons, const char * const help[]);
 R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
@@ -975,46 +977,47 @@ R_API void r_cons_readflush(void);
 R_API void r_cons_switchbuf(bool active);
 R_API int r_cons_readchar_timeout(ut32 usec);
 R_API int r_cons_any_key(const char *msg);
-R_API int r_cons_eof(void);
 R_API void r_cons_thready(void);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
-R_API int r_cons_pal_set(const char *key, const char *val);
-R_API void r_cons_pal_reload(void);
-R_API void r_cons_pal_free(RConsContext *ctx);
-R_API void r_cons_pal_init(RConsContext *ctx);
-R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src);
+R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val);
+R_API void r_cons_pal_reload(RCons *cons);
+R_API void r_cons_pal_free(RCons *ctx);
+R_API void r_cons_pal_init(RCons *cons);
+R_API void r_cons_pal_copy(RCons *cons, RConsContext *src);
 R_API R_MUSTUSE char *r_cons_pal_parse(const char *str, RColor *outcol);
-R_API void r_cons_pal_random(void);
-R_API RColor r_cons_pal_get(const char *key);
-R_API RColor r_cons_pal_get_i(int index);
-R_API const char *r_cons_pal_get_name(int index);
+R_API void r_cons_pal_random(RCons *cons);
+R_API RColor r_cons_pal_get(RCons *cons, const char *key);
+R_API RColor r_cons_pal_get_i(RCons *cons, int index);
+R_API const char *r_cons_pal_get_name(RCons *cons, int index);
 R_API int r_cons_pal_len(void);
 R_API bool r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-R_API void r_cons_pal_list(int rad, const char *arg);
-R_API void r_cons_pal_show(void);
+R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg);
+R_API void r_cons_pal_show(RCons *cons);
 R_API int r_cons_get_size(int *rows);
 R_API bool r_cons_is_tty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
-R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
-R_API void r_cons_rainbow_free(RConsContext *ctx);
-R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
+R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
+R_API void r_cons_rainbow_free(RCons *ctx);
+R_API void r_cons_rainbow_new(RCons *ctx, size_t sz);
 
-R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API char *r_cons_hud(RList *list, const char *prompt);
-R_API char *r_cons_hud_line_string(const char *s);
-R_API char *r_cons_hud_path(const char *path, int dir);
-R_API char *r_cons_hud_string(const char *s);
-R_API char *r_cons_hud_file(const char *f);
+R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv);
+R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt);
+R_API char *r_cons_hud_line_string(RCons *cons, const char *s);
+R_API char *r_cons_hud_path(RCons *cons, const char *path, int dir);
+R_API char *r_cons_hud_string(RCons *cons, const char *s);
+R_API char *r_cons_hud_file(RCons *cons, const char *f);
 
+#if 1
 R_API const char *r_cons_get_buffer(void);
 R_API int r_cons_get_buffer_len(void);
-R_API void r_cons_grep_help(void);
-R_API void r_cons_grep_expression(const char *str);
-R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
+#endif
+R_API void r_cons_grep_help(RCons *cons);
+R_API void r_cons_grep_expression(RCons *cons, const char *str);
+R_API void r_cons_grep_parsecmd(RCons *cons, char *cmd, const char *quotestr);
 R_API char *r_cons_grep_strip(char *cmd, const char *quotestr);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API void r_cons_grepbuf(void);
@@ -1022,6 +1025,7 @@ R_API void r_cons_grepbuf(void);
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
+R_API void r_kons_rgb_init(RCons *cons);
 R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
@@ -1030,7 +1034,7 @@ R_API void r_cons_color(int fg, int r, int g, int b);
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
 R_API bool r_cons_yesno(int def, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API char *r_cons_input(const char *msg);
+R_API char *r_cons_input(RCons *cons, const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API bool r_cons_set_cup(bool enable);
 R_API void r_cons_column(int c);
@@ -1039,7 +1043,6 @@ R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(const bool enable);
 R_API void r_cons_enable_highlight(const bool enable);
-R_API void r_cons_bind(RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
@@ -1200,9 +1203,92 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
 R_API void r_line_completion_clear(RLineCompletion *completion);
 
+// kons.c
+
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
+R_API void r_kons_grep(RCons *cons, const char *grep);
+R_API void r_kons_set_interactive(RCons *cons, bool x);
+R_API void r_kons_grepbuf(RCons *cons);
+R_API void r_kons_println(RCons *cons, const char* str);
+R_API void r_kons_print(RCons *cons, const char *str);
+R_API void r_kons_newline(RCons *cons);
+R_API int r_kons_write(RCons *cons, const char *str, int len);
+R_API void r_kons_memset(RCons *cons, char ch, int len);
+R_API int r_kons_get_size(RCons *cons, int *rows);
+R_API void r_kons_printf_list(RCons *cons, const char *format, va_list ap);
+R_API int r_kons_printf(RCons *cons, const char *format, ...);
+R_API void r_kons_gotoxy(RCons *cons, int x, int y);
+R_API void r_kons_set_interactive(RCons *cons, bool x);
+R_API void r_kons_set_last_interactive(RCons *cons);
+R_API void r_kons_flush(RCons *cons);
+R_API void r_kons_last(RCons *cons);
+R_API RCons *r_kons_new(void);
+R_API bool r_kons_pop(RCons *cons);
+R_API void r_kons_free(R_NULLABLE RCons *cons);
+R_API void r_kons_print_clear(RCons *cons);
+R_API void r_kons_fill_line(RCons *cons);
+R_API void r_kons_clear_line(RCons *cons, int std_err);
+R_API void r_kons_reset_colors(RCons *cons);
+R_API void r_kons_clear(RCons *cons);
+R_API void r_kons_clear00(RCons *cons);
+R_API void r_kons_reset(RCons *cons);
+R_API int r_kons_get_buffer_len(RCons *cons);
+R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
+R_API void r_kons_filter(RCons *cons);
+R_API void r_kons_push(RCons *cons);
+R_API bool r_kons_context_is_main(RCons *cons);
+R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
+R_API void r_kons_echo(RCons *cons, const char *msg);
+R_API char *r_kons_drain(RCons *cons);
+R_API void r_kons_print_fps(RCons *cons, int col);
+R_API void r_kons_visual_write(RCons *cons, char *buffer);
+R_API void r_kons_visual_flush(RCons *cons);
+R_API int r_kons_get_column(RCons *cons);
+R_API int r_kons_get_cursor(RCons *cons, int *rows);
+R_API void r_kons_show_cursor(RCons *I, int cursor);
+R_API void r_kons_set_raw(RCons *I, bool is_raw);
+R_API void r_kons_set_utf8(RCons *cons, bool b);
+R_API void r_kons_invert(RCons *cons, int set, int color);
+R_API void r_kons_column(RCons *cons, int c);
+R_API void r_kons_set_title(RCons *cons, const char *str);
+R_API void r_kons_zero(RCons *cons);
+R_API void r_kons_highlight(RCons *cons, const char *word);
+R_API char *r_kons_lastline(RCons *cons, int *len);
+R_API char *r_kons_lastline_utf8_ansi_len(RCons *cons, int *len);
+R_API bool r_kons_drop(RCons *cons, int n);
+R_API void r_kons_trim(RCons *cons);
+R_API void r_kons_breakword(RCons *cons, R_NULLABLE const char *s);
+R_API void r_kons_clear_buffer(RCons *cons);
+R_API void r_kons_mark(RCons *cons, ut64 addr, const char *name);
+R_API void r_kons_mark_flush(RCons *cons);
+R_API RConsMark *r_kons_mark_at(RCons *cons, ut64 addr, const char *name);
+R_API void r_kons_break_pop(RCons *cons);
+R_API bool r_kons_is_breaked(RCons *cons);
+R_API bool r_kons_is_interactive(RCons *cons);
+R_API void r_kons_break_clear(RCons *cons);
+R_API void r_kons_break_push(RCons *cons, RConsBreak cb, void *user);
+
 #endif
+
+// bind
+typedef int (*RConsGetSize)(RCons *cons, int *rows);
+typedef int (*RConsGetCursor)(RCons *cons, int *rows);
+typedef bool (*RConsIsBreaked)(RCons *cons);
+typedef void (*RConsFlush)(RCons *cons);
+typedef int (*RConsPrintfCallback)(RCons *cons, const char *format, ...);
+typedef void (*RConsGrepCallback)(RCons *cons, const char *grep);
+typedef struct r_cons_bind_t {
+	RConsGetSize get_size;
+	RConsGetCursor get_cursor;
+	RConsPrintfCallback cb_printf;
+	RConsIsBreaked is_breaked;
+	RConsFlush cb_flush;
+	RConsGrepCallback cb_grep;
+	struct r_cons_t *cons;
+} RConsBind;
+R_API void r_cons_bind(RCons *cons, RConsBind *bind);
+
 
 typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {

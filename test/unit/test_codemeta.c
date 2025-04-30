@@ -291,14 +291,14 @@ static bool test_r_codemeta_print_json(void) {
 	RCodeMeta *code = get_hello_world ();
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
-	r_cons_new ();
-	r_cons_push ();
+	RCons *cons = r_cons_new ();
+	r_kons_push (cons);
 	r_codemeta_print_json (code);
-	actual = strdup (r_cons_get_buffer ());
-	r_cons_pop ();
+	actual = strdup (r_kons_get_buffer (cons, NULL));
+	r_kons_pop (cons);
 	mu_assert_streq (actual, expected, "pdgj OUTPUT DOES NOT MATCH");
 
-	r_cons_free ();
+	r_kons_free (cons);
 	free (actual);
 	r_codemeta_free (code);
 	mu_end;
@@ -310,13 +310,14 @@ static bool test_r_codemeta_print_json(void) {
 static bool test_r_codemeta_print_json_context_annotations(void) {
 	RCodeMeta *code = get_all_context_annotated_code ();
 	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
-	r_cons_new ();
-	r_cons_push ();
+	RCons *cons = r_cons_new ();
+	r_kons_push (cons);
 	r_codemeta_print_json (code);
 	char *actual = strdup (r_cons_get_buffer ());
-	r_cons_pop ();
+	r_kons_pop (cons);
 	mu_assert_streq (actual, expected, "r_codemeta_print_json() output doesn't match with the expected output");
 	free (actual);
+	r_kons_free (cons);
 	r_codemeta_free (code);
 	mu_end;
 }
@@ -331,13 +332,13 @@ static bool test_r_codemeta_print(void) {
 			       "    sym.imp.puts(\"Hello, World!\");\n"
 			       "    return;\n"
 			       "}\n";
-	r_cons_new ();
-	r_cons_push ();
+	RCons *cons = r_cons_new ();
+	r_kons_push (cons);
 	r_codemeta_print (code, NULL);
 	actual = strdup (r_cons_get_buffer ());
-	r_cons_pop ();
+	r_kons_pop (cons);
 	mu_assert_streq (actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
-	r_cons_pop ();
+	r_kons_pop (cons);
 
 	//Checking with offset - pdgo
 	RVector *offsets = r_codemeta_line_offsets (code);
@@ -350,11 +351,11 @@ static bool test_r_codemeta_print(void) {
 	r_codemeta_print (code, offsets);
 	free (actual);
 	actual = strdup (r_cons_get_buffer ());
-	r_cons_pop ();
+	r_kons_pop (cons);
 	mu_assert_streq (actual, expected_second, "pdgo OUTPUT DOES NOT MATCH");
-	r_cons_pop ();
+	r_kons_pop (cons);
 
-	r_cons_free ();
+	r_kons_free (cons);
 	free (actual);
 	r_vector_free (offsets);
 	r_codemeta_free (code);
@@ -366,14 +367,14 @@ static bool test_r_codemeta_print_comment_cmds(void) {
 	char *actual;
 	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
 			 "CCu base64:cmV0dXJu @ 0x115f\n";
-	r_cons_new ();
-	r_cons_push ();
+	RCons *cons = r_cons_new ();
+	r_kons_push (cons);
 	r_codemeta_print_comment_cmds (code);
 	actual = strdup (r_cons_get_buffer ());
-	r_cons_pop ();
+	r_kons_pop (cons);
 	mu_assert_streq (actual, expected, "pdg* OUTPUT DOES NOT MATCH");
 
-	r_cons_free ();
+	r_kons_free (cons);
 	free (actual);
 	r_codemeta_free (code);
 	mu_end;

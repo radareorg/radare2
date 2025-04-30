@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_cons.h>
 #include <r_th.h>
 #include <r_util/r_assert.h>
 #define I r_cons_singleton ()
+
+// TODO: drop the `r_cons` prefix from all these functions
 
 #if R2__WINDOWS__
 
@@ -21,50 +23,39 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-typedef struct {
-	HANDLE hStdout;
-	HANDLE hStderr;
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-} Output;
-
-static R_TH_LOCAL Output G;
-
-R_API void r_cons_w32_clear(void) {
+R_IPI void r_cons_win_clear(RCons *cons) {
 	COORD startCoords;
 	DWORD dummy;
-	if (I->vtmode) {
+	if (cons->vtmode) {
 		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
-	if (!G.hStdout) {
-		G.hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (!cons->hStdout) {
+		cons->hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 	}
-	GetConsoleScreenBufferInfo (G.hStdout, &G.csbi);
+	GetConsoleScreenBufferInfo (cons->hStdout, &cons->csbi);
 	startCoords = (COORD) {
-		G.csbi.srWindow.Left,
-		G.csbi.srWindow.Top
+		cons->csbi.srWindow.Left,
+		cons->csbi.srWindow.Top
 	};
-	DWORD nLength = G.csbi.dwSize.X * (G.csbi.srWindow.Bottom - G.csbi.srWindow.Top + 1);
-	FillConsoleOutputCharacter (G.hStdout, ' ',
-		nLength, startCoords, &dummy);
-	FillConsoleOutputAttribute (G.hStdout,
+	DWORD nLength = cons->csbi.dwSize.X * (cons->csbi.srWindow.Bottom - cons->csbi.srWindow.Top + 1);
+	FillConsoleOutputCharacter (cons->hStdout, ' ', nLength, startCoords, &dummy);
+	FillConsoleOutputAttribute (cons->hStdout,
 		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 		nLength, startCoords, &dummy);
 }
 
-R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
-	HANDLE *hConsole = (fd == 1)? &G.hStdout : &G.hStderr;
-	COORD coord;
-	coord.X = x;
-	coord.Y = y;
-	if (I->vtmode) {
+R_IPI void r_cons_win_gotoxy(RCons *cons, int fd, int x, int y) {
+	HANDLE *hConsole = (fd == 1)? &cons->hStdout : &cons->hStderr;
+	COORD coord = { .X = x, .Y = y };
+	if (cons->vtmode) {
 		r_cons_printf ("\x1b[%d;%dH", y, x);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		write (fd, "\x1b[0;0H", 6);
 	}
 	if (!*hConsole) {
@@ -114,9 +105,9 @@ static int bytes_utf8len(const char *s, int n) {
 	return ret;
 }
 
-static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
+static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle (hdl);
-	int fd = hdl == STD_OUTPUT_HANDLE ? 1 : 2;
+	int fd = (hdl == STD_OUTPUT_HANDLE) ? 1 : 2;
 	int esc = 0;
 	int bg = 0, fg = 1|2|4|8;
 	const char *ptr_end, *str = ptr;
@@ -254,7 +245,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 				}
 			}
 			if (state == -2) {
-				r_cons_w32_gotoxy (fd, x, y);
+				r_cons_win_gotoxy (cons, fd, x, y);
 				ptr += i;
 				str = ptr; // + i-2;
 				continue;
@@ -267,14 +258,14 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 					// fill row here
 					__fill_tail (cols, lines);
 				}
-				r_cons_w32_gotoxy (fd, 0, 0);
+				r_cons_win_gotoxy (cons, fd, 0, 0);
 				lines = 0;
 				esc = 0;
 				ptr += 3;
 				str = ptr + 1;
 				continue;
 			} else if (ptr[0] == '2' && ptr[1] == 'J') {
-				r_cons_w32_clear ();
+				r_cons_win_clear (cons);
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
@@ -408,11 +399,11 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	return ret;
 }
 
-R_API int r_cons_w32_print(const char *ptr, int len, bool vmode) {
-	return r_cons_w32_hprint (STD_OUTPUT_HANDLE, ptr, len, vmode);
+R_IPI int r_cons_win_print(RCons *cons, const char *ptr, int len, bool vmode) {
+	return win_hprint (cons, STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 
-R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+R_IPI int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) {
 	va_list ap2;
 	int ret = -1;
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
@@ -421,7 +412,7 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 		if (I->vtmode) {
 			return fwrite (fmt, 1, len, con);
 		}
-		return r_cons_w32_hprint (hdl, fmt, len, vmode);
+		return win_hprint (cons, hdl, fmt, len, vmode);
 	}
 	va_copy (ap2, ap);
 	int num_chars = vsnprintf (NULL, 0, fmt, ap2);
@@ -432,7 +423,7 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 		if (I->vtmode) {
 			ret = fwrite (buf, 1, num_chars - 1, con);
 		} else {
-			ret = r_cons_w32_hprint (hdl, buf, num_chars - 1, vmode);
+			ret = win_hprint (cons, hdl, buf, num_chars - 1, vmode);
 		}
 		free (buf);
 	}
@@ -440,25 +431,81 @@ R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap
 	return ret;
 }
 
-R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
+R_IPI int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_vhprintf (STD_OUTPUT_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (cons, STD_OUTPUT_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }
 
-R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) {
+R_IPI int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	R_RETURN_VAL_IF_FAIL (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_vhprintf (STD_ERROR_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (cons, STD_ERROR_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
+}
+
+R_IPI int win_is_vtcompat(void) {
+	DWORD major;
+	DWORD minor;
+	DWORD release = 0;
+	char *cmd_session = r_sys_getenv ("SESSIONNAME");
+	if (cmd_session) {
+		free (cmd_session);
+		return 2;
+	}
+	// Windows Terminal
+	char *wt_session = r_sys_getenv ("WT_SESSION");
+	if (wt_session) {
+		free (wt_session);
+		return 2;
+	}
+	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
+	if (alacritty) {
+		free (alacritty);
+		return 1;
+	}
+	char *term = r_sys_getenv ("TERM");
+	if (term) {
+		if (strstr (term, "xterm")) {
+			I->term_xterm = true;
+			free (term);
+			return 2;
+		}
+		I->term_xterm = false;
+		free (term);
+	}
+	char *ansicon = r_sys_getenv ("ANSICON");
+	if (ansicon) {
+		free (ansicon);
+		return 1;
+	}
+	bool win_support = 0;
+	RSysInfo *info = r_sys_info ();
+	if (info && info->version) {
+		char *save_ptr = NULL;
+		char *dot = r_str_tok_r (info->version, ".", &save_ptr);
+		major = atoi (dot);
+		dot = r_str_tok_r (NULL, ".", &save_ptr);
+		minor = atoi (dot);
+		if (info->release) {
+			release = atoi (info->release);
+		}
+		if (major > 10
+			|| (major == 10 && minor > 0)
+			|| (major == 10 && minor == 0 && release >= 1703)) {
+			win_support = 1;
+		}
+	}
+	r_sys_info_free (info);
+	return win_support;
 }
 #endif

@@ -355,8 +355,8 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
-	R_RETURN_VAL_IF_FAIL (core && core->cons && core->anal, NULL);
-	RCons *cons = core->cons;
+	R_RETURN_VAL_IF_FAIL (core && core->anal, NULL);
+	RConsContext *ctx= core->cons->context;
 	RAnal *anal = core->anal;
 	RListIter *iter;
 	RAnalRefline *ref;
@@ -380,7 +380,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		return NULL;
 	}
 	r_list_foreach (reflines, iter, ref) {
-		if (cons->context && cons->context->breaked) {
+		if (ctx->breaked) {
 			r_list_free (lvls);
 			return NULL;
 		}
@@ -393,7 +393,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
-		if (cons->context && cons->context->breaked) {
+		if (ctx->breaked) {
 			r_list_free (lvls);
 			r_buf_free (b);
 			r_buf_free (c);

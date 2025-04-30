@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 // pancake */
+/* radare - LGPL - Copyright 2009-2025 // pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -173,7 +173,7 @@ static int cmd_man(RCore *core, const char *input) {
 #else
 		char *text = readman (core, r_str_trim_head_ro (arg));
 		if (text) {
-			r_cons_less_str (text, NULL);
+			r_cons_less_str (core->cons, text, NULL);
 			free (text);
 		} else {
 			R_LOG_ERROR ("Cannot find manpage");

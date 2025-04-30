@@ -148,7 +148,7 @@ RUN
 NAME=32: Elf header
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pf.elf_header @ 0x8048000
 EOF
 EXPECT=<<EOF
@@ -177,7 +177,7 @@ RUN
 NAME=64: Elf header
 FILE=bins/elf/analysis/x64-simple
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pf.elf_header @ `i~baddr[1]`
 EOF
 EXPECT=<<EOF
@@ -417,7 +417,7 @@ RUN
 NAME=32: normal elf header
 FILE=bins/elf/hello_world32
 CMDS=<<EOF
-pfo elf32
+pfo elf32.r2
 pf.elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF
@@ -446,7 +446,7 @@ RUN
 NAME=64: normal elf header
 FILE=bins/elf/hello_world
 CMDS=<<EOF
-pfo elf64
+pfo elf64.r2
 pf.elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF

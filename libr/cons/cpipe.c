@@ -31,18 +31,17 @@ static bool mydup(const int fd, const int fdn) {
 }
 #endif
 
-R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
+R_API int r_cons_pipe_open(RCons *cons, const char *file, int fd_src, int append) {
 #if __wasi__
 	return -1;
 #else
 	if (fd_src < 1) {
 		return -1;
 	}
-	RCons *ci = r_cons_singleton ();
 	RConsFdPair *pair;
 #if !HONOR_LAST_REDIRECT
 	// prevent redirecting the same fd twice in the same line
-	R_VEC_FOREACH (&ci->fds, pair) {
+	R_VEC_FOREACH (&cons->fds, pair) {
 		if (fd_src == pair->fd_src) {
 			R_LOG_WARN ("cannot redirect the same fd twice");
 			// do not permit redirecting output to more than one file
@@ -63,7 +62,7 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 	int fd_bak = fd_src + 32; // XXX wrong assumptions
 	bool is_dual = false;
 #if HONOR_LAST_REDIRECT
-	R_VEC_FOREACH (&ci->fds, pair) {
+	R_VEC_FOREACH (&cons->fds, pair) {
 		if (fd_src == pair->fd_src) {
 			// do not permit redirecting output to more than one file
 #if USE_HACK
@@ -96,7 +95,7 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 		.fd_bak = fd_bak, // restored file descriptor to be used to recover the original fd into fdn
 	};
 	// eprintf (" %d -> %d\n", fd_src, fd_new);
-	RVecFdPairs_push_back (&ci->fds, &newPair);
+	RVecFdPairs_push_back (&cons->fds, &newPair);
 #if 0
 	if (!mydup (fd, fdn)) {
 		R_LOG_ERROR ("Cannot dup stdout to %d", fdn);
@@ -112,30 +111,29 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 #endif
 }
 
-R_API void r_cons_pipe_close(int fd) {
+R_API void r_cons_pipe_close(RCons *cons, int fd) {
 #if !__wasi__
-	r_cons_pipe_close_all ();
+	r_cons_pipe_close_all (cons);
 #if 0
 	if (fd != -1) {
 		close (fd);
 		RCons *ci = r_cons_singleton ();
-		if (ci->backup_fdn[fd] != -1) {
-			dup2 (ci->backup_fd, ci->backup_fdn[fd]);
-			close (ci->backup_fd);
-			ci->backup_fd = -1;
-			ci->backup_fdn[fd] = -1;
+		if (cons->backup_fdn[fd] != -1) {
+			dup2 (cons->backup_fd, cons->backup_fdn[fd]);
+			close (cons->backup_fd);
+			cons->backup_fd = -1;
+			cons->backup_fdn[fd] = -1;
 		}
 	}
 #endif
 #endif
 }
 
-R_API void r_cons_pipe_close_all(void) {
+R_API void r_cons_pipe_close_all(RCons *cons) {
 #if !__wasi__
-	RCons *ci = r_cons_singleton ();
 	RConsFdPair *pair;
 	int res;
-	R_VEC_FOREACH_PREV (&ci->fds, pair) {
+	R_VEC_FOREACH_PREV (&cons->fds, pair) {
 		res = dup2 (pair->fd_bak, pair->fd_src);
 		R_LOG_DEBUG ("dup2 %d -> %d = %d", pair->fd_bak, pair->fd_src, res);
 		res = close (pair->fd_bak);
@@ -147,7 +145,7 @@ R_API void r_cons_pipe_close_all(void) {
 		res = close (pair->fd_new);
 		R_LOG_DEBUG ("close (%d)=%d", pair->fd_new, res);
 	}
-	RVecFdPairs_fini (&ci->fds);
-	RVecFdPairs_init (&ci->fds);
+	RVecFdPairs_fini (&cons->fds);
+	RVecFdPairs_init (&cons->fds);
 #endif
 }

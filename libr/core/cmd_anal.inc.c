@@ -16023,7 +16023,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case '?':
 		if (input[1] == 'j') {
-			r_cons_cmd_help_json (help_msg_a);
+			r_core_cmd_help_json (core, help_msg_a);
 		} else {
 			r_core_cmd_help (core, help_msg_a);
 		}

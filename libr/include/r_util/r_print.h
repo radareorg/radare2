@@ -97,7 +97,7 @@ typedef struct r_print_t {
 	int (*write)(const unsigned char *buf, int len);
 	PrintfCallback cb_printf;
 	PrintfCallback cb_eprintf;
-	char *(*cb_color)(int idx, int last, bool bg);
+	// char *(*cb_color)(int idx, int last, bool bg);
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
@@ -130,8 +130,7 @@ typedef struct r_print_t {
 	RPrintSectionGet get_section_name;
 	Sdb *formats;
 	Sdb *sdb_types;
-	RCons *cons;
-	RConsBind consbind;
+	RConsBind consb;
 	RNum *num;
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);

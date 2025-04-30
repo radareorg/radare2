@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2024 - pancake */
+/* radare2 - LGPL - Copyright 2013-2025 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -32,6 +32,7 @@ static int showversion(void) {
 
 R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
+	RCons *cons = NULL;
 	RSocketHTTPOptions so;
 	int c;
 	int dodaemon = 0;
@@ -123,7 +124,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		return 1;
 	}
 
-	(void)r_cons_new ();
+	cons = r_cons_new ();
 
 	while (!r_cons_singleton ()->context->breaked) {
 		char *res = NULL;
@@ -172,7 +173,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		r_socket_http_close (rs);
 		R_FREE (res);
 	}
-	r_cons_free ();
+	r_kons_free (cons);
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);

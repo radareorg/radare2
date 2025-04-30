@@ -200,7 +200,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 			free (core->theme);
 			core->theme = strdup (_arg);
 		}
-		r_cons_pal_init (core->cons->context);
+		r_cons_pal_init (core->cons);
 		return true;
 	}
 	bool ret = false;
@@ -208,7 +208,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (R_STR_ISNOTEMPTY (theme_script)) {
 		core->cmdfilter = "ec ";
 		r_core_cmd_lines (core, theme_script);
-		r_cons_pal_reload ();
+		r_cons_pal_reload (core->cons);
 		core->cmdfilter = NULL;
 		ret = true; // maybe the script fails?
 	} else {
@@ -395,7 +395,7 @@ static bool is_static_theme(const char *th) {
 static bool cmd_ec(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 'd': // "ecd"
-		r_cons_pal_init (core->cons->context);
+		r_cons_pal_init (core->cons);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_ec);
@@ -477,33 +477,33 @@ static bool cmd_ec(RCore *core, const char *input) {
 		}
 		break;
 	case 's': // "ecs"
-		r_cons_pal_show ();
+		r_cons_pal_show (core->cons);
 		break;
 	case '*': // "ec*"
-		r_cons_pal_list (1, NULL);
+		r_cons_pal_list (core->cons, 1, NULL);
 		break;
 	case 'h': // echo
 		if (input[2] == 'o') {
 			r_core_echo (core, input + 3);
 		} else {
-			r_cons_pal_list ('h', NULL);
+			r_cons_pal_list (core->cons, 'h', NULL);
 		}
 		break;
 	case 'j': // "ecj"
-		r_cons_pal_list ('j', NULL);
+		r_cons_pal_list (core->cons, 'j', NULL);
 		break;
 	case 'c': // "ecc"
 		if (input[2]) {
-			r_cons_pal_list ('c', input + 2);
+			r_cons_pal_list (core->cons, 'c', input + 2);
 		} else {
-			r_cons_pal_list ('c', r_config_get (core->config, "scr.css.prefix"));
+			r_cons_pal_list (core->cons, 'c', r_config_get (core->config, "scr.css.prefix"));
 		}
 		break;
 	case '\0': // "ec"
-		r_cons_pal_list (0, NULL);
+		r_cons_pal_list (core->cons, 0, NULL);
 		break;
 	case 'r': // "ecr"
-		r_cons_pal_random ();
+		r_cons_pal_random (core->cons);
 		break;
 	case 'n': // "ecn"
 		nextpal (core, 'n');
@@ -552,7 +552,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 				  if (argc) {
 					  char *dup = r_str_newf ("bgonly %s", argv[0]);
 					  color_code = r_cons_pal_parse (dup, NULL);
-					  R_FREE (dup);
+					  free (dup);
 					  if (!color_code) {
 						  R_LOG_ERROR ("Unknown color %s", argv[0]);
 						  r_str_argv_free (argv);
@@ -605,12 +605,12 @@ static bool cmd_ec(RCore *core, const char *input) {
 			 if (q) {
 				 // Set color
 				 *q++ = 0;
-				 if (r_cons_pal_set (p, q)) {
-					 r_cons_pal_reload ();
+				 if (r_cons_pal_set (core->cons, p, q)) {
+					 r_cons_pal_reload (core->cons);
 				 }
 			 } else {
 				 char color[32] = {0};
-				 RColor rcolor = r_cons_pal_get (p);
+				 RColor rcolor = r_cons_pal_get (core->cons, p);
 				 r_cons_rgb_str (color, sizeof (color), &rcolor);
 				 if (*color) {
 					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2025 - pancake, thestr4ng3r */
 
 #include <r_core.h>
 
@@ -139,15 +139,14 @@ R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler) {
 
 static void task_join(RCoreTask *task) {
 	RThreadSemaphore *sem = task->running_sem;
-	if (!sem) {
-		return;
+	if (sem) {
+		r_th_sem_wait (sem);
+		r_th_sem_post (sem);
 	}
-
-	r_th_sem_wait (sem);
-	r_th_sem_post (sem);
 }
 
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id) {
+//	return;
 	if (current && id == current->id) {
 		return;
 	}
@@ -219,9 +218,6 @@ static void task_free(RCoreTask *task) {
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
-	if (!task) {
-		goto hell;
-	}
 	task->thread = NULL;
 	task->cmd = cmd ? strdup (cmd) : NULL;
 	task->cmd_log = false;
@@ -235,7 +231,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	}
 
 	if (create_cons) {
-		task->cons_context = r_cons_context_new (r_cons_singleton ()->context);
+		task->cons_context = r_cons_context_clone (core->cons->context);
 		if (!task->cons_context) {
 			goto hell;
 		}
@@ -258,6 +254,7 @@ hell:
 }
 
 R_API void r_core_task_incref(RCoreTask *task) {
+	return;
 	if (!task) {
 		return;
 	}
@@ -268,6 +265,7 @@ R_API void r_core_task_incref(RCoreTask *task) {
 }
 
 R_API void r_core_task_decref(RCoreTask *task) {
+	return;
 	if (!task) {
 		return;
 	}
@@ -353,6 +351,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 }
 
 static void task_wakeup(RCoreTask *current) {
+	return;
 	if (!current) {
 		return;
 	}
@@ -390,7 +389,9 @@ static void task_wakeup(RCoreTask *current) {
 
 	scheduler->current_task = current;
 
+	eprintf ("JAPUTA\n");
 	if (current->cons_context) {
+		// core->cons->context = current->cons_context;
 		r_cons_context_load (current->cons_context);
 	} else {
 		r_cons_context_reset ();

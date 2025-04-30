@@ -58,7 +58,8 @@ static char *fs_abspath(RFSShell *shell, const char *input) {
 static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	RFSFile *file;
 	RListIter *iter;
-	PrintfCallback cb_printf = fs->csb.cb_printf;
+	RConsPrintfCallback cb_printf = fs->csb.cb_printf;
+	RCons *cons = fs->csb.cons;
 	if (*buf == ':') {
 		char *msg = fs->cob.cmdStr (fs->cob.core, buf + 1);
 		printf ("%s", msg);
@@ -68,7 +69,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	} else if (r_str_startswith (buf, "echo")) {
 		char *msg = r_str_trim_dup (buf + 4);
 		if (!handlePipes (fs, msg, NULL, shell->cwd)) {
-			cb_printf ("%s\n", msg);
+			cb_printf (cons, "%s\n", msg);
 		}
 		free (msg);
 	} else if (r_str_startswith (buf, "getall")) {
@@ -103,9 +104,9 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		if (list) {
 			r_list_foreach (list, iter, file) {
 				if (minus_ele) {
-					cb_printf ("%c %8d %s\n", file->type, file->size, file->name);
+					cb_printf (cons, "%c %8d %s\n", file->type, file->size, file->name);
 				} else {
-					cb_printf ("%c %s\n", file->type, file->name);
+					cb_printf (cons, "%c %s\n", file->type, file->name);
 				}
 			}
 		} else {
@@ -124,13 +125,13 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				*ls = 0;
 			}
 			if (r_str_startswith (base, shell->cwd)) {
-				cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+				cb_printf (cons, "m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 			}
 			free (base);
 		}
 		free (cwd);
 	} else if (r_str_startswith (buf, "pwd")) {
-		cb_printf ("%s\n", shell->cwd);
+		cb_printf (cons, "%s\n", shell->cwd);
 	} else if (r_str_startswith (buf, "cd ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);
@@ -178,7 +179,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
 		r_list_foreach (fs->roots, iter, r) {
-			cb_printf ("%s %s\n", r->path, r->p->meta.name);
+			cb_printf (cons, "%s %s\n", r->path, r->p->meta.name);
 		}
 	} else if (r_str_startswith (buf, "cat ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
@@ -197,7 +198,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			}
 			if (file->data && !handlePipes (fs, abspath, file->data, fname)) {
 				char *s = r_str_ndup ((const char *)file->data, file->size);
-				cb_printf ("%s", s);
+				cb_printf (cons, "%s", s);
 				free (s);
 			}
 			r_fs_close (fs, file);
@@ -246,7 +247,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (data);
 	} else if (r_str_startswith (buf, "help") || r_str_startswith (buf, "?")) {
-		cb_printf (
+		cb_printf (cons,
 			"Usage: [command (arguments)]([~grep-expression])\n"
 			" !cmd        ; escape to system\n"
 			" :cmd        ; escape to the r2 repl\n"
@@ -321,9 +322,9 @@ R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
 			break;
 		}
 		if (wave) {
-			fs->csb.cb_grep (wave);
+			fs->csb.cb_grep (fs->csb.cons, wave);
 		}
-		fs->csb.cb_flush ();
+		fs->csb.cb_flush (fs->csb.cons);
 	}
 	clearerr (stdin);
 	return true;

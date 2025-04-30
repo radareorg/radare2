@@ -645,8 +645,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode);
 /* fortune */
 R_IPI void cmd_aei(RCore *core);
 R_IPI RList *r_core_fortune_types(void);
-R_API void r_core_fortune_list_types(void);
-R_API void r_core_fortune_list(RCore *core);
+R_API void r_core_fortune_list(RCore *core, bool types);
 R_API void r_core_fortune_print_random(RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1

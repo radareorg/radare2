@@ -258,10 +258,10 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 		if (map) {
 			RPrint *p = core->print;
 			int scr_rows;
-			if (!p->consbind.get_size) {
+			if (!p->consb.get_size) {
 				break;
 			}
-			(void)p->consbind.get_size (&scr_rows);
+			(void)p->consb.get_size (p->consb.cons, &scr_rows);
 			ut64 scols = r_config_get_i (core->config, "hex.cols");
 			ret = r_core_seek (core, r_io_map_end (map) - (scr_rows - 2) * scols, true);
 		}
@@ -502,13 +502,13 @@ R_API bool r_core_visual_hud(RCore *core) {
 
 	r_core_visual_showcursor (core, true);
 	if (R_STR_ISNOTEMPTY (c) && r_file_exists (c)) {
-		res = r_cons_hud_file (c);
+		res = r_cons_hud_file (core->cons, c);
 	}
 	if (!res && homehud) {
-		res = r_cons_hud_file (homehud);
+		res = r_cons_hud_file (core->cons, homehud);
 	}
 	if (!res && r_file_exists (f)) {
-		res = r_cons_hud_file (f);
+		res = r_cons_hud_file (core->cons, f);
 	}
 	if (!res) {
 		r_cons_message ("Cannot find hud file");
@@ -598,6 +598,7 @@ repeat:
 	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
 	r_cons_printf ("%s", r_strbuf_get (q));
 	r_cons_flush ();
+	const char *lesstr = NULL;
 	switch (r_cons_readchar ()) {
 	case 'q':
 		r_strbuf_free (p);
@@ -609,7 +610,7 @@ repeat:
 	case '?':
 		r_core_visual_append_help (p, "Visual Mode Help (full)", help_msg_visual);
 		r_core_visual_append_help (p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'v':
 		r_strbuf_append (p, "Visual Views:\n\n");
@@ -624,7 +625,7 @@ repeat:
 			" C   -> rotate scr.color=0,1,2,3\n"
 			" R   -> rotate color theme with ecr command which honors scr.randpal\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'p':
 		r_strbuf_append (p, "Visual Print Modes:\n\n");
@@ -633,7 +634,7 @@ repeat:
 			" TAB    rotate between all the configurations for the current print mode\n"
 			" SPACE  toggle between graph/disasm or similar hex modes\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'e':
 		r_strbuf_append (p, "Visual Evals:\n\n");
@@ -641,7 +642,7 @@ repeat:
 			" E   toggle asm.hint.lea\n"
 			" &   rotate asm.bits=16,32,64\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'c':
 		setcursor (core, !core->print->cur_enabled);
@@ -656,7 +657,7 @@ repeat:
 			" +   increment value of byte\n"
 			" -   decrement value of byte\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'd':
 		r_strbuf_append (p, "Visual Debugger Help:\n\n");
@@ -667,7 +668,7 @@ repeat:
 			" B    toggle breakpoint\n"
 			" :dc  continue\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'm':
 		r_strbuf_append (p, "Visual Moving Around:\n\n");
@@ -681,7 +682,7 @@ repeat:
 			" c        toggle cursor mode (use hjkl to move and HJKL to select a range)\n"
 			" mK/'K    mark/go to Key (any key)\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
 	case 'a':
 		r_strbuf_append (p, "Visual Analysis:\n\n");
@@ -694,23 +695,28 @@ repeat:
 			" dd  define current block or selected bytes as data\n"
 			" V   view graph (same as press the 'space' key)\n"
 		);
-		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		lesstr = r_strbuf_get (p);
 		break;
+	}
+	if (lesstr) {
+		ret = r_cons_less_str (core->cons, lesstr, "?");
+		lesstr = NULL;
+
 	}
 	r_strbuf_free (p);
 	r_strbuf_free (q);
 	goto repeat;
 }
 
-static bool prompt_read(const char *p, char *buf, int buflen) {
+static bool prompt_read(RCore *core, const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
 		return false;
 	}
 	*buf = 0;
 	r_line_set_prompt (p);
-	r_core_visual_showcursor (NULL, true);
-	r_cons_fgets (buf, buflen, 0, NULL);
-	r_core_visual_showcursor (NULL, false);
+	r_core_visual_showcursor (core, true);
+	r_cons_fgets (core->cons, buf, buflen, 0, NULL);
+	r_core_visual_showcursor (core, false);
 	return *buf != 0;
 }
 
@@ -806,7 +812,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	}
 	r_line_set_prompt ("> ");
 	r_core_visual_showcursor (core, true);
-	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
 		return 0;
 	}
@@ -980,10 +986,10 @@ static int visual_nkey(RCore *core, int ch) {
 
 static void setdiff(RCore *core) {
 	char from[64], to[64];
-	if (prompt_read ("diff from: ", from, sizeof (from))) {
+	if (prompt_read (core, "diff from: ", from, sizeof (from))) {
 		r_config_set (core->config, "diff.from", from);
 	}
-	if (prompt_read ("diff to: ", to, sizeof (to))) {
+	if (prompt_read (core, "diff to: ", to, sizeof (to))) {
 		r_config_set (core->config, "diff.to", to);
 	}
 }
@@ -1092,7 +1098,7 @@ static void visual_search(RCore *core) {
 	char str[128], buf[sizeof (str) * 2 + 1];
 
 	r_line_set_prompt ("search byte/string in block: ");
-	r_cons_fgets (str, sizeof (str), 0, NULL);
+	r_cons_fgets (core->cons, str, sizeof (str), 0, NULL);
 	len = r_hex_str2bin (str, (ut8 *) buf);
 	if (*str == '"') {
 		r_str_ncpy (buf, str + 1, sizeof (buf));
@@ -1341,7 +1347,7 @@ R_API void r_core_visual_offset(RCore *core) {
 		&r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strncpy (buf, "s ", sizeof (buf));
-	if (r_cons_fgets (buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
+	if (r_cons_fgets (core->cons, buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
 			__core_visual_gogo (core, buf[2]);
 		} else {
@@ -1362,14 +1368,14 @@ R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 }
 
 static void addComment(RCore *core, ut64 addr) {
-	r_cons_printf ("Enter comment for reference:\n");
+	r_kons_printf (core->cons, "Enter comment for reference:\n");
 	r_core_visual_showcursor (core, true);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_cons_set_raw (false);
 	r_line_set_prompt ("> ");
 	r_cons_enable_mouse (false);
 	char buf[1024];
-	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
+	if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr, buf);
@@ -1380,7 +1386,7 @@ static void addComment(RCore *core, ut64 addr) {
 
 static void add_ref(RCore *core) {
 	// read name provided by user
-	char *fn = r_cons_input ("Reference From: ");
+	char *fn = r_cons_input (core->cons, "Reference From: ");
 	if (R_STR_ISNOTEMPTY (fn)) {
 		r_core_cmd_callf (core, "ax $$ %s", fn);
 	}
@@ -1644,7 +1650,7 @@ repeat:
 		r_cons_clear00 ();
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
-		ret = r_cons_less_str (r_strbuf_get (rsb), "?");
+		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
 		r_strbuf_free (rsb);
 		goto repeat;
 	case 9: // TAB
@@ -1983,7 +1989,7 @@ static void visual_comma(RCore *core) {
 	char *cmtfile = r_str_between (comment, ",(", ")");
 	char *cwd = getcommapath (core);
 	if (!cmtfile) {
-		char *fn = r_cons_input ("<comment-file> ");
+		char *fn = r_cons_input (core->cons, "<comment-file> ");
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (R_STR_ISEMPTY (comment)) {
@@ -2368,7 +2374,7 @@ static void visual_windows(RCore *core) {
 	r_list_append (pmodes, strdup ("4:0 code dump"));
 	r_list_append (pmodes, strdup ("4:1 assembly code"));
 	r_list_append (pmodes, strdup ("4:2 hex bytes"));
-	char *res = r_cons_hud (pmodes, NULL);
+	char *res = r_cons_hud (core->cons, pmodes, NULL);
 	if (R_STR_ISNOTEMPTY (res)) {
 		int a, b;
 		sscanf (res, "%d:%d", &a, &b);
@@ -2558,7 +2564,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->visual.ime = false;
 		break;
 	case '?':
-		r_cons_less_str ("\nVisual Insert Mode:\n\n"
+		r_cons_less_str (core->cons, "\nVisual Insert Mode:\n\n"
 			" tab          - toggle between ascii and hex columns\n"
 			" q (or alt-q) - quit insert mode\n"
 			"\nHex column:\n"
@@ -3048,7 +3054,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt ("> ");
 			r_cons_enable_mouse (false);
-			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
+			if (r_cons_fgets (core->cons, buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
 			strcat (buf, "\"");
@@ -3156,7 +3162,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '@':
 			if (core->print->cur_enabled) {
 				char buf[128];
-				if (prompt_read ("cursor at:", buf, sizeof (buf))) {
+				if (prompt_read (core, "cursor at:", buf, sizeof (buf))) {
 					core->print->cur = (st64) r_num_math (core->num, buf);
 				}
 			}
@@ -3186,7 +3192,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			char name[256], *n;
 			r_line_set_prompt ("flag name: ");
 			r_core_visual_showcursor (core, true);
-			if (r_cons_fgets (name, sizeof (name), 0, NULL) >= 0 && *name) {
+			if (r_cons_fgets (core->cons, name, sizeof (name), 0, NULL) >= 0 && *name) {
 				n = name;
 				r_str_trim (n);
 				if (core->print->ocur != -1) {
@@ -3263,7 +3269,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						RCoreVisualTab *tab = visual_newtab (core);
 						if (tab) {
 							tab->name[0] = ':';
-							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 1, 0, NULL);
+							r_cons_fgets (core->cons, tab->name + 1, sizeof (tab->name) - 1, 0, NULL);
 						}
 					}
 					break;
@@ -3314,7 +3320,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->seltab == 0) {
 					addr = r_debug_reg_get (core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
-					if (prompt_read ("new-reg-value> ", buf, sizeof (buf))) {
+					if (prompt_read (core, "new-reg-value> ", buf, sizeof (buf))) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							r_core_cmdf (core, "dr %s = %s", creg, buf);
@@ -3329,7 +3335,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt ("insert hexpair block: ");
-				if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
+				if (r_cons_fgets (core->cons, buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				char *p = strdup (buf);
@@ -3346,7 +3352,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->col == 2) {
 				strcpy (buf, "\"w ");
 				r_line_set_prompt ("insert string: ");
-				if (r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL) < 0) {
+				if (r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat (buf, "\"");
@@ -3359,7 +3365,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					strcpy (buf, "wx ");
 				}
-				if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
+				if (r_cons_fgets (core->cons, buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 			}
@@ -3955,7 +3961,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				char buf[128];
 				// TODO autocomplete filenames
-				if (prompt_read ("dump to file: ", buf, sizeof (buf))) {
+				if (prompt_read (core, "dump to file: ", buf, sizeof (buf))) {
 					ut64 from = core->addr + core->print->ocur;
 					ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
 					r_core_dump (core, buf, from, size, false);
@@ -3969,7 +3975,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				char buf[128];
 				// TODO autocomplete filenames
-				if (prompt_read ("load from file: ", buf, sizeof (buf))) {
+				if (prompt_read (core, "load from file: ", buf, sizeof (buf))) {
 					size_t sz;
 					char *data = r_file_slurp (buf, &sz);
 					if (data) {

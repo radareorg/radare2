@@ -5161,10 +5161,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		ds_print_as_string (ds);
 	}
 	if (!ds->show_cmt_right && ds->cmtcount > 0) {
-		const char *p = r_cons_get_buffer ();
-		if (p) {
-			int l = strlen (p);
-			if (p[l - 1] != '\n') {
+		size_t len;
+		const char *p = r_kons_get_buffer (core->cons, &len);
+		if (p && len > 0) {
+			if (p[len - 1] != '\n') {
 				ds_newline (ds);
 			}
 		}
