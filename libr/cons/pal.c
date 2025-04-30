@@ -728,13 +728,13 @@ R_API void r_cons_pal_reload(RCons *cons) {
 	pal_refresh (cons, false);
 }
 
-R_API void r_cons_rainbow_new(RCons *cons, int sz) {
+R_API void r_cons_rainbow_new(RCons *cons, size_t sz) {
 	if (sz < 1) {
 		R_LOG_ERROR ("Negative rainbow");
 	}
 	cons->context->pal.rainbow_sz = sz;
 	if (!cons->context->pal.rainbow) {
-		cons->context->pal.rainbow = calloc (sizeof (char *), sz);
+		cons->context->pal.rainbow = (char **)calloc (sizeof (char *), sz);
 	}
 	int i;
 	for (i = 0; i < sz; i++) {

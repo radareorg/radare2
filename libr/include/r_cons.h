@@ -307,8 +307,8 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_trufae;
 	char *graph_traced;
 	char *graph_current;
-	char **rainbow; // rainbow
-	int rainbow_sz; // size of rainbow
+	char **rainbow;
+	size_t rainbow_sz;
 } RConsPrintablePalette;
 
 typedef void (*RConsEvent)(void *);
@@ -1002,7 +1002,7 @@ R_API int r_cons_arrow_to_hjkl(int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RCons *ctx);
-R_API void r_cons_rainbow_new(RCons *ctx, int sz);
+R_API void r_cons_rainbow_new(RCons *ctx, size_t sz);
 
 R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv);
 R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt);
