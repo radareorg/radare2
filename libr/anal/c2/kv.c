@@ -457,14 +457,13 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			char *mt = kvctoken_tostring (member_type);
 			char *mn = kvctoken_tostring (member_name);
 			char *md = kvctoken_tostring (member_dimm);
-			char full_scope[512];
 			if (!*mn) {
 				free (mt);
 				free (mn);
 				free (md);
 				break;
 			}
-			snprintf (full_scope, sizeof (full_scope), "%s.%s", struct_tag, mn);
+			r_strf_var (full_scope, 512, "%s.%s", struct_tag, mn);
 			if (R_STR_ISNOTEMPTY (md)) {
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n",
 						struct_tag, mn, mt, off, md);
@@ -643,14 +642,13 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		char *mt = kvctoken_tostring (member_type);
 		char *mn = kvctoken_tostring (member_name);
 		char *md = kvctoken_tostring (member_dimm);
-		char full_scope[512];
 		if (!*mn) {
 			free (mt);
 			free (mn);
 			free (md);
 			break;
 		}
-		snprintf (full_scope, sizeof (full_scope), "%s.%s", sn, mn);
+		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
 		if (md) {
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
 		} else {
@@ -738,17 +736,20 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			return false;
 		}
 
-		char full_scope[512];
 		char *mn = kvctoken_tostring (member_name);
 		apply_attributes (kvc, "enum", en);
-		snprintf (full_scope, sizeof (full_scope), "%s.%s", en, mn);
+		r_strf_var (full_scope, 512, "%s.%s", en, mn);
 		if (member_value.a) {
 			st64 nv = r_num_get (NULL, member_value.a);
-			if (r_str_startswith (member_value.a, "0x")) {
-				r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
-			} else {
-				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
-			}
+#if 0
+			// new style, stuff breaks, but full enum scope makes sense imho
+			r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+			r_strbuf_appendf (kvc->sb, "enum.0x%"PFMT64x"=%s\n", nv, full_scope);
+#else
+			// old style, backward compat, everything works.
+			r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+			r_strbuf_appendf (kvc->sb, "enum.%s.0x%"PFMT64x"=%s\n", en, nv, mn);
+#endif
 			value = nv; // r_num_get (NULL, member_value.a);
 		} else {
 			r_strbuf_appendf (kvc->sb, "enum.%s=%d\n", full_scope, value);
@@ -756,7 +757,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		if (enumstr) {
 			r_strbuf_appendf (enumstr, ",%s", mn);
 		} else {
-			enumstr = r_strbuf_new (en);
+			enumstr = r_strbuf_new (mn);
 		}
 		free (mn);
 		value++;
