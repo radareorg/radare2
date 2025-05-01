@@ -279,7 +279,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
-	"abm", "", "list instruction bytes and mask for the current basic block",
+	"abm", "[j]", "list instruction bytes and mask for the current basic block",
 	"abp", "[?] [addr]", "follow basic blocks paths from $$ to `addr`",
 	"abt", "[tag] ([color])", "no args = show current trace tag, otherwise set the color",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
@@ -4250,11 +4250,15 @@ static void _abo(RAnalBlock *bb) {
 	}
 }
 
-static void abm(RCore *core) {
+static void abm(RCore *core, int mode) {
+	if (mode == '?') {
+		r_core_cmd_help_contains (core, help_msg_ab, "abm");
+		return;
+	}
 	RAnalBlock *bb = r_anal_get_block_at (core->anal, core->addr);
 	if (bb) {
 		int i;
-		const bool smart_mask = true; // r_config_get_b (core->config, "anal.mask");
+		const bool smart_mask = true; // honor anal.mask?
 		RStrBuf *sb0 = r_strbuf_new ("");
 		RStrBuf *sb1 = r_strbuf_new ("");
 		for (i = 0; i < bb->ninstr; i++) {
@@ -4264,16 +4268,32 @@ static void abm(RCore *core) {
 			r_strbuf_append (sb0, bytes);
 			free (bytes);
 			if (smart_mask) {
-				char *maskstr = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'aobm", aop->addr);
-				r_str_trim (maskstr);
-				r_strbuf_append (sb1, maskstr);
-				free (maskstr);
+				char *maskstr = r_core_cmd_strf (core, "'0x%08"PFMT64x"'aobm", aop->addr);
+				if (maskstr) {
+					r_str_trim (maskstr);
+					r_strbuf_append (sb1, maskstr);
+					free (maskstr);
+				}
 			}
 			r_anal_op_free (aop);
 		}
 		char *s0 = r_strbuf_drain (sb0);
 		char *s1 = r_strbuf_drain (sb1);
-		r_kons_printf (core->cons, "%s:%s\n", s0, s1);
+		if (mode == 'j') {
+			PJ *pj = r_core_pj_new (core);
+			pj_o (pj);
+			pj_ks (pj, "type", "basicblock");
+			pj_kn (pj, "addr", bb->addr);
+			pj_kn (pj, "size", bb->size);
+			pj_ks (pj, "data", s0);
+			pj_ks (pj, "mask", s1);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_kons_println (core->cons, s);
+			free (s);
+		} else {
+			r_kons_printf (core->cons, "%s:%s\n", s0, s1);
+		}
 		free (s0);
 		free (s1);
 	}
@@ -15559,7 +15579,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		cmd_afbc (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'm': // "abm"
-		abm (core);
+		abm (core, input[1]);
 		break;
 	case 'o': // "abo"
 		abo (core);
@@ -15634,8 +15654,11 @@ static void cmd_ab(RCore *core, const char *input) {
 		}
 		r_core_cmd_call_at (core, addr, "afbi");
 		break;
-	default:
+	case '?':
 		r_core_cmd_help (core, help_msg_ab);
+		break;
+	default:
+		r_core_return_invalid_command (core, "ab", input[0]);
 		break;
 	}
 }
