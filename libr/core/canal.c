@@ -3191,8 +3191,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		}
 
 	}
-	pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
-	pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
+	pj_kn (pj, "minaddr", r_anal_function_min_addr (fcn));
+	pj_kn (pj, "maxaddr", r_anal_function_max_addr (fcn));
 	{
 		int _maxbbins = maxbbins (fcn);
 		double _midbbins = midbbins (fcn);
@@ -3479,8 +3479,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\nnum-instrs: %d", r_anal_function_instrcount (fcn));
 	r_cons_printf ("\nedges: %d", r_anal_function_count_edges (fcn, &ebbs));
-	r_cons_printf ("\nminbound: 0x%08" PFMT64x, r_anal_function_min_addr (fcn));
-	r_cons_printf ("\nmaxbound: 0x%08" PFMT64x, r_anal_function_max_addr (fcn));
+	r_cons_printf ("\nminaddr: 0x%08" PFMT64x, r_anal_function_min_addr (fcn));
+	r_cons_printf ("\nmaxaddr: 0x%08" PFMT64x, r_anal_function_max_addr (fcn));
 	r_cons_printf ("\nis-lineal: %s" , r_str_bool (r_anal_function_islineal (fcn)));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	const int coverage = r_anal_function_coverage (fcn);

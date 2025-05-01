@@ -303,8 +303,8 @@ type: sym [NEW]
 num-bbs: 1
 num-instrs: 8
 edges: 0
-minbound: 0x00001119
-maxbound: 0x00001133
+minaddr: 0x00001119
+maxaddr: 0x00001133
 is-lineal: true
 end-bbs: 1
 maxbbins: 8

@@ -43,8 +43,8 @@ type: fcn [NEW]
 num-bbs: 5
 num-instrs: 19
 edges: 6
-minbound: 0x00004438
-maxbound: 0x00004476
+minaddr: 0x00004438
+maxaddr: 0x00004476
 is-lineal: true
 end-bbs: 0
 maxbbins: 9

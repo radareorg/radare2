@@ -660,6 +660,8 @@ afi @ main ~addr
 EOF
 EXPECT=<<EOF
 addr: 0x000038b0
+minaddr: 0x000038b0
+maxaddr: 0x000051b6
 EOF
 RUN
 

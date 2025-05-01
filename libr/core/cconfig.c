@@ -4169,7 +4169,7 @@ R_API int r_core_config_init(RCore *core) {
 	} else {
 		r_config_set_i (cfg, "dbg.follow", 32);
 	}
-	r_config_desc (cfg, "dbg.follow", "follow program counter when pc > core->offset + dbg.follow");
+	r_config_desc (cfg, "dbg.follow", "follow program counter when pc > core->addr + dbg.follow");
 	SETB ("dbg.rebase", "true", "rebase anal/meta/comments/flags when reopening file in debugger");
 	SETCB ("dbg.swstep", "false", &cb_swstep, "force use of software steps (code analysis+breakpoint)");
 	SETB ("dbg.exitkills", "true", "kill process on exit");
