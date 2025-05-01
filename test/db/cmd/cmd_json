@@ -36,7 +36,7 @@ CMDS=/j ConsoleApplication1.pdb~{}
 EXPECT=<<EOF
 [
   {
-    "offset": 4203952,
+    "addr": 4203952,
     "type": "string",
     "data": "cation1\\Release\\ConsoleApplication1.pdb  "
   }

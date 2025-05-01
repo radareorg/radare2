@@ -381,7 +381,7 @@ NAME=/j escaped
 FILE=bins/mach0/escaped
 CMDS=/j hello
 EXPECT=<<EOF
-[{"offset":8019,"type":"string","data":"]c:\\hello\\worldM"}]
+[{"addr":8019,"type":"string","data":"]c:\\hello\\worldM"}]
 EOF
 RUN
 
@@ -421,7 +421,7 @@ wx 666f6f005c
 /j foo
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"string","data":"foo\\"}]
+[{"addr":0,"type":"string","data":"foo\\"}]
 EOF
 RUN
 
@@ -434,7 +434,7 @@ wx 666f6f005c
 /j foo
 EOF
 EXPECT=<<EOF
-[{"offset":"0x0","type":"string","data":"foo\\"}]
+[{"addr":"0x0","type":"string","data":"foo\\"}]
 EOF
 RUN
 
@@ -447,7 +447,7 @@ wx 666f6f005c
 /j foo
 EOF
 EXPECT=<<EOF
-[{"offset":"0x0","len":3}]
+[{"addr":"0x0","len":3}]
 EOF
 RUN
 
@@ -569,7 +569,7 @@ EXPECT=<<EOF
 0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
 --
-[{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
+[{"addr":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"addr":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 --
 []
 EOF
@@ -593,9 +593,9 @@ EXPECT=<<EOF
 0x08048515               8b1c24  mov ebx, dword [esp]
 0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
-[{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
+[{"addr":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"addr":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 --
-[{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
+[{"addr":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"addr":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 EOF
 RUN
 
@@ -712,7 +712,7 @@ e asm.bits=32
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"offset":0,"size":3,"opcode":"add esp, 8","type":"add"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":1,"size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+[{"opcodes":[{"addr":0,"size":3,"opcode":"add esp, 8","type":"add"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":1,"size":2,"opcode":"les ecx, [eax]","type":"null"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
 EOF
 RUN
 
@@ -728,7 +728,7 @@ e cfg.json.num=hex
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"offset":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":"0x1","size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+[{"opcodes":[{"addr":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":"0x1","size":2,"opcode":"les ecx, [eax]","type":"null"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
 EOF
 RUN
 
@@ -904,7 +904,7 @@ wx 0x12345678aabbccddeeff12345678
 /v4j 0x78563412
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"hexpair","data":"12345678"},{"offset":10,"type":"hexpair","data":"12345678"}]
+[{"addr":0,"type":"hexpair","data":"12345678"},{"addr":10,"type":"hexpair","data":"12345678"}]
 EOF
 RUN
 
@@ -926,7 +926,7 @@ wx 0x12345678aabbccddeeff12345678
 /V4j 0x78563412 0x78563420
 EOF
 EXPECT=<<EOF
-[{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+[{"addr":0,"value":2018915346},{"addr":10,"value":2018915346}]
 EOF
 RUN
 
@@ -938,7 +938,7 @@ wx 0x12345678aabbccddeeff12345678
 /V4j 0x78563412 0x78563420
 EOF
 EXPECT=<<EOF
-[{"offset":"0x0","value":"0x78563412"},{"offset":"0xa","value":"0x78563412"}]
+[{"addr":"0x0","value":"0x78563412"},{"addr":"0xa","value":"0x78563412"}]
 EOF
 RUN
 

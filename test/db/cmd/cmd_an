@@ -12,7 +12,7 @@ EOF
 EXPECT=<<EOF
 0x00000844 1 test_label1
 0x00000844 1 test_label2
-[{"name":"test_label2","realname":"test_label2","type":"flag","offset":2116}]
+[{"name":"test_label2","realname":"test_label2","type":"flag","addr":2116}]
 EOF
 RUN
 
@@ -27,8 +27,8 @@ anj
 afi. @ 1632
 EOF
 EXPECT=<<EOF
-[{"name":"sym.imp.strlen","type":"function","offset":1632}]
-[{"name":"renamed_strlen","type":"function","offset":1632}]
+[{"name":"sym.imp.strlen","type":"function","addr":1632}]
+[{"name":"renamed_strlen","type":"function","addr":1632}]
 renamed_strlen
 EOF
 RUN
