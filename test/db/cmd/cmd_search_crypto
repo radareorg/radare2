@@ -26,7 +26,7 @@ NAME=cmd.hit for /caj
 FILE=bins/other/aes_192.dump
 CMDS=/caj aes
 EXPECT=<<EOF
-[{"offset":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
+[{"addr":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
 EOF
 RUN
 

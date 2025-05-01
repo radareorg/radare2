@@ -20,7 +20,7 @@ psz @@/j hello
 EOF
 EXPECT=<<EOF
 hello
-[{"offset":10,"type":"string","data":"hello"}]
+[{"addr":10,"type":"string","data":"hello"}]
 EOF
 RUN
 
@@ -31,7 +31,7 @@ wx 005c
 /xj 005c
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"hexpair","data":"005c"}]
+[{"addr":0,"type":"hexpair","data":"005c"}]
 EOF
 RUN
 
@@ -42,7 +42,7 @@ wx 0067
 /j g
 EOF
 EXPECT=<<EOF
-[{"offset":1,"type":"string","data":"g"}]
+[{"addr":1,"type":"string","data":"g"}]
 EOF
 RUN
 

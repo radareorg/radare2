@@ -400,7 +400,7 @@ e search.to=0x100007eec
 "/adj add;ret"
 EOF
 EXPECT=<<EOF
-[{"offset":4294999692,"len":8,"code":"add sp, sp, 0x40; ret"},{"offset":4294999780,"len":8,"code":"add sp, sp, 0x30; ret"}]
+[{"addr":4294999692,"len":8,"code":"add sp, sp, 0x40; ret"},{"addr":4294999780,"len":8,"code":"add sp, sp, 0x30; ret"}]
 EOF
 RUN
 
@@ -414,7 +414,7 @@ e cfg.json.num=hex
 "/adj add;ret"
 EOF
 EXPECT=<<EOF
-[{"offset":"0x100007e8c","len":8,"code":"add sp, sp, 0x40; ret"},{"offset":"0x100007ee4","len":8,"code":"add sp, sp, 0x30; ret"}]
+[{"addr":"0x100007e8c","len":8,"code":"add sp, sp, 0x40; ret"},{"addr":"0x100007ee4","len":8,"code":"add sp, sp, 0x30; ret"}]
 EOF
 RUN
 
