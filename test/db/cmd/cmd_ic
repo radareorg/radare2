@@ -40,30 +40,30 @@ icg _JNIEnv
 icg System
 EOF
 EXPECT=<<EOF
-agn _JNIEnv
-agn SystemClassLoaderInjector
-agn std
-agn std::exception
-agn std::bad_exception
-agn __cxxabiv1::__forced_unwind
-agn __cxxabiv1::__foreign_exception
-agn __eh_globals_init
-agn __cxxabiv1
-agn __cxxabiv1::__fundamental_type_info
-agn std::type_info
-agn __cxxabiv1::__pointer_type_info
-agn __cxxabiv1::__pbase_type_info
-agn __cxxabiv1::__si_class_type_info
-agn __cxxabiv1::__class_type_info
-agn __gnu_cxx
-agn __gnu_cxx::__concurrence_lock_error
-agn __gnu_cxx::__concurrence_unlock_error
-agn std::bad_cast
-agn std::bad_typeid
+'agn _JNIEnv
+'agn SystemClassLoaderInjector
+'agn std
+'agn std::exception
+'agn std::bad_exception
+'agn __cxxabiv1::__forced_unwind
+'agn __cxxabiv1::__foreign_exception
+'agn __eh_globals_init
+'agn __cxxabiv1
+'agn __cxxabiv1::__fundamental_type_info
+'agn std::type_info
+'agn __cxxabiv1::__pointer_type_info
+'agn __cxxabiv1::__pbase_type_info
+'agn __cxxabiv1::__si_class_type_info
+'agn __cxxabiv1::__class_type_info
+'agn __gnu_cxx
+'agn __gnu_cxx::__concurrence_lock_error
+'agn __gnu_cxx::__concurrence_unlock_error
+'agn std::bad_cast
+'agn std::bad_typeid
 
-agn _JNIEnv
+'agn _JNIEnv
 
-agn SystemClassLoaderInjector
+'agn SystemClassLoaderInjector
 EOF
 RUN
 
@@ -915,10 +915,10 @@ icg Hello
 icg no_match
 EOF
 EXPECT=<<EOF
-agn Hello
-agn java/lang/Object
-age java/lang/Object Hello
-agn Hello
+'agn Hello
+'agn java/lang/Object
+'age java/lang/Object Hello
+'agn Hello
 EOF
 RUN
 
