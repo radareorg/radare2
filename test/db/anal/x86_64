@@ -2762,8 +2762,8 @@ type: fcn [NEW]
 num-bbs: 2
 num-instrs: 1
 edges: 2
-minbound: 0x00000000
-maxbound: 0x00000007
+minaddr: 0x00000000
+maxaddr: 0x00000007
 is-lineal: true
 end-bbs: 0
 maxbbins: 1
@@ -2825,8 +2825,8 @@ type: fcn [NEW]
 num-bbs: 2
 num-instrs: 5
 edges: 1
-minbound: 0x00000000
-maxbound: 0x0000000d
+minaddr: 0x00000000
+maxaddr: 0x0000000d
 is-lineal: false
 end-bbs: 1
 maxbbins: 3
@@ -2903,8 +2903,8 @@ type: fcn [NEW]
 num-bbs: 2
 num-instrs: 5
 edges: 2
-minbound: 0x00000000
-maxbound: 0x0000000e
+minaddr: 0x00000000
+maxaddr: 0x0000000e
 is-lineal: false
 end-bbs: 0
 maxbbins: 3
@@ -2989,8 +2989,8 @@ type: fcn [NEW]
 num-bbs: 3
 num-instrs: 5
 edges: 3
-minbound: 0x00000000
-maxbound: 0x0000000e
+minaddr: 0x00000000
+maxaddr: 0x0000000e
 is-lineal: false
 end-bbs: 0
 maxbbins: 3
@@ -3084,8 +3084,8 @@ type: fcn [NEW]
 num-bbs: 4
 num-instrs: 7
 edges: 4
-minbound: 0x00000000
-maxbound: 0x00000013
+minaddr: 0x00000000
+maxaddr: 0x00000013
 is-lineal: false
 end-bbs: 0
 maxbbins: 3
