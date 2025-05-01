@@ -52,7 +52,8 @@ static RCoreHelpMessage help_msg_p8 = {
 	"p8*", "", "display r2 commands to write this block",
 	"p8b", "", "print hexpairs of basic block",
 	"p8d", "", "space separated list of byte values in decimal",
-	"p8f", "", "print hexpairs of function (linear)",
+	"p8f", "[j]", "print hexpairs of function (linear)",
+	"p8fm", "[j]", "print linear function byte:mask pattern (zero-filled bbgaps)",
 	"p8j", "", "print hexpairs in JSON array",
 	"p8x", "", "print hexpairs honoring hex.cols",
 	NULL
@@ -6478,6 +6479,67 @@ static void print_pascal_string(RCore *core, const char *input, int len) {
 	}
 }
 
+static void p8fm(RCore *core, ut64 addr, int mode) {
+	if (mode == '?') {
+		r_core_cmd_help_contains (core, help_msg_p8, "p8fm");
+		return;
+	}
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+	if (!fcn) {
+		R_LOG_ERROR ("Cannot p8fm at 0x%08"PFMT64x, addr);
+		return;
+	}
+	RStrBuf *sbb = r_strbuf_new (""); // bytes
+	RStrBuf *sbm = r_strbuf_new (""); // mask
+	ut64 minat = r_anal_function_min_addr (fcn);
+	ut64 maxat = r_anal_function_max_addr (fcn);
+	bool linear = true;
+	ut64 at;
+	for (at = minat; at < maxat; at++) {
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, at);
+		if (bb) {
+			char *bbdata = r_core_cmd_strf (core, "'0x%"PFMT64x"'abm", at);
+			r_str_trim (bbdata);
+			char *bbmask = strchr (bbdata, ':');
+			if (bbmask) {
+				*bbmask++ = 0;
+				r_strbuf_append (sbb, bbdata);
+				r_strbuf_append (sbm, bbmask);
+			} else {
+				R_LOG_ERROR ("Unexpected output from abm: (0x%08"PFMT64x")=(%s)", at, bbdata);
+			}
+			free (bbdata);
+			at = bb->addr + bb->size - 1;
+		} else {
+			// data gap.. skipping byte
+			r_strbuf_append (sbb, "00");
+			r_strbuf_append (sbm, "00");
+			linear = false;
+		}
+	}
+
+	char *sb = r_strbuf_drain (sbb);
+	char *sm = r_strbuf_drain (sbm);
+	if (mode == 'j') {
+		PJ *pj = r_core_pj_new (core);
+		pj_o (pj);
+		pj_ks (pj, "type", "function");
+		pj_kb (pj, "linear", linear);
+		pj_kn (pj, "addr", fcn->addr);
+		pj_kn (pj, "size", maxat - minat);
+		pj_ks (pj, "data", sb);
+		pj_ks (pj, "mask", sm);
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_kons_println (core->cons, s);
+		free (s);
+	} else {
+		r_kons_printf (core->cons, "%s:%s\n", sb, sm);
+	}
+	free (sb);
+	free (sm);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -8777,7 +8839,26 @@ static int cmd_print(void *data, const char *input) {
 			} else if (input[1] == 'b') { // "p8b"
 				r_core_cmdf (core, "p8 $BS @ $BB");
 			} else if (input[1] == 'f') { // "p8f"
-				r_core_cmdf (core, "p8 $FS @ $FB");
+				ut64 at = core->addr;
+				switch (input[2]) {
+				case 'm':
+					p8fm (core, at, input[3]);
+					break;
+				case 'j':
+				case 0:
+					if (r_anal_get_function_at (core->anal, at)) {
+						r_core_cmdf (core, "p8%c $FS @ $FB", input[2]);
+					} else {
+						R_LOG_ERROR ("Cannot find function here");
+					}
+					break;
+				case '?':
+					r_core_cmd_help_contains (core, help_msg_p8, "p8f");
+					break;
+				default:
+					r_core_return_invalid_command (core, "p8f", input[2]);
+					break;
+				}
 			} else {
 				r_core_block_read (core);
 				block = core->block;
@@ -9048,7 +9129,7 @@ static int cmd_print(void *data, const char *input) {
 		if (*input && input[1] == 'j') {
 			r_core_cmd_help_json (core, help_msg_p);
 		} else {
-			r_core_return_invalid_command (core, "p", ch0); // *input);
+			r_core_return_invalid_command (core, "p", ch0);
 		}
 		break;
 	}
