@@ -933,18 +933,13 @@ R_API void r_cons_set_utf8(bool b);
 R_API void r_cons_grep(const char *grep);
 
 /* output */
-// DEPRECATE R2_600
-
-#define r_cons_strcat r_cons_print
-#define r_cons_strcat_at r_cons_print_at
-#define r_cons_strcat_justify r_cons_print_justify
 
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_print(const char *str);
 R_API void r_cons_print_at(const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);
-R_API void r_cons_print_justify(const char *str, int j, char c);
+R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c);
 R_API void r_cons_printat(const char *str, int x, char y);
 R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
@@ -1012,9 +1007,11 @@ R_API char *r_cons_hud_string(RCons *cons, const char *s);
 R_API char *r_cons_hud_file(RCons *cons, const char *f);
 
 #if 1
+// R2_600 - DEPRECATED!
 R_API const char *r_cons_get_buffer(void);
 R_API int r_cons_get_buffer_len(void);
 #endif
+
 R_API void r_cons_grep_help(RCons *cons);
 R_API void r_cons_grep_expression(RCons *cons, const char *str);
 R_API void r_cons_grep_parsecmd(RCons *cons, char *cmd, const char *quotestr);
@@ -1233,7 +1230,6 @@ R_API void r_kons_reset_colors(RCons *cons);
 R_API void r_kons_clear(RCons *cons);
 R_API void r_kons_clear00(RCons *cons);
 R_API void r_kons_reset(RCons *cons);
-R_API int r_kons_get_buffer_len(RCons *cons);
 R_API const char *r_kons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_kons_filter(RCons *cons);
 R_API void r_kons_push(RCons *cons);

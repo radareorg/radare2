@@ -1467,7 +1467,7 @@ R_API void r_kons_column(RCons *cons, int c) {
 	b[ctx->buffer_len] = 0;
 	r_kons_reset (cons);
 	// align current buffer N chars right
-	r_cons_print_justify (b, c, 0);
+	r_cons_print_justify (cons, b, c, 0);
 	free (b);
 	r_kons_gotoxy (cons, 0, 0);
 }
