@@ -660,7 +660,7 @@ static JSValue qjs_r2pipe_open(JSContext *ctx, JSValueConst this_val, int argc, 
 	}
 	char *args = strdup ("");
 	if (argc == 2) {
-		if (JS_IsArray (ctx, argv[1])) {
+		if (JS_IsArray (argv[1])) {
 			int i;
 			RStrBuf *sb = r_strbuf_new ("");
 			JSValue array = argv[1];
