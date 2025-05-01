@@ -117,25 +117,25 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 	}
 }
 
-R_API void r_cons_print_justify(const char *str, int j, char c) {
+R_API void r_cons_print_justify(RCons *cons, const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
-			r_cons_memset (' ', j);
+			r_kons_memset (cons, ' ', j);
 			if (c) {
-				r_cons_memset (c, 1);
-				r_cons_memset (' ', 1);
+				r_kons_memset (cons, c, 1);
+				r_kons_memset (cons, ' ', 1);
 			}
 			r_cons_write (str + o, len);
 			if (str[o + len] == '\n') {
-				r_cons_newline ();
+				r_kons_newline (cons);
 			}
 			o = i + 1;
 			len = 0;
 		}
 	}
 	if (len > 1) {
-		r_cons_write (str + o, len);
+		r_kons_write (cons, str + o, len);
 	}
 }
 
