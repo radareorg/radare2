@@ -9,6 +9,9 @@ sources = [
 ]
 
 incs = include_directories('.')
+
+qjs_c_args = ['-DWIN32_LEAN_AND_MEAN', '-D_WIN32_WINNT=0x0602']
+
 visibility_flags = [
   '-fvisibility=hidden',
   '-Dutf8_encode=utf8_encode_r2'
@@ -17,7 +20,7 @@ visibility_flags = [
 qjs_static = static_library(
   'qjs', sources,
   gnu_symbol_visibility: 'hidden',
-  c_args: visibility_flags,
+  c_args: visibility_flags + qjs_c_args,
   include_directories: incs
 )
 
