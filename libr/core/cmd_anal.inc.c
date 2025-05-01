@@ -664,7 +664,7 @@ static RCoreHelpMessage help_msg_afC = {
 
 static RCoreHelpMessage help_msg_afi_fields = {
 	"Fields:", "", "afi",
-	"offset", "", "absolute address of the function entrypoint", // rename to addr
+	"addr", "", "absolute address of the function entrypoint",
 	"name", "", "name of the function",
 	"size", "", "size of the function", // rename to bbsize
 	"realsz", "", "linear size ((maxbb+maxxbsz) - minbb)", // rename to linearsize
@@ -1775,7 +1775,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 			pj_o (pj);
 			pj_ks (pj, "name", var->name);
 			pj_ks (pj, "type", "var");
-			pj_kn (pj, "offset", tgt_addr);
+			pj_kn (pj, "addr", tgt_addr);
 			pj_end (pj);
 		} else {
 			r_cons_println (var->name);
@@ -1798,7 +1798,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 				pj_o (pj);
 				pj_ks (pj, "name", fcn->name);
 				pj_ks (pj, "type", "function");
-				pj_kn (pj, "offset", tgt_addr);
+				pj_kn (pj, "addr", tgt_addr);
 				pj_end (pj);
 			} else {
 				r_cons_println (fcn->name);
@@ -1827,7 +1827,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 						pj_ks (pj, "realname", f->realname);
 					}
 					pj_ks (pj, "type", "flag");
-					pj_kn (pj, "offset", tgt_addr);
+					pj_kn (pj, "addr", tgt_addr);
 					pj_end (pj);
 				} else {
 					r_cons_println (f->name);
@@ -1855,7 +1855,7 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					pj_o (pj);
 					pj_ks (pj, "name", name);
 					pj_ks (pj, "type", "address");
-					pj_kn (pj, "offset", tgt_addr);
+					pj_kn (pj, "addr", tgt_addr);
 					pj_end (pj);
 				} else {
 					r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
@@ -5429,7 +5429,7 @@ static int cmd_af(RCore *core, const char *input) {
 			pj_o (pj);
 			if (fcn) {
 				pj_ks (pj, "name", fcn->name);
-				pj_ki (pj, "offset", (int)(addr - fcn->addr));
+				pj_ki (pj, "addr", (int)(addr - fcn->addr));
 			}
 			pj_end (pj);
 			r_cons_println (pj_string (pj));
