@@ -633,7 +633,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				member_name.b = member_dimm.a - 1;
 				member_dimm.b = kvctoken_find (member_dimm, "]");
 				if (member_dimm.b) {
-					kvc_skipn (kvc, kvctoken_len (member_dimm));
+					// Dimensions already consumed by kvc_find_semicolon; no need to skip
 				} else {
 					R_LOG_ERROR ("Missing ] in struct field dimension");
 				}
@@ -748,8 +748,13 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 			r_strbuf_appendf (kvc->sb, "enum.0x%"PFMT64x"=%s\n", nv, full_scope);
 #else
 			// old style, backward compat, everything works.
-			r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
-			r_strbuf_appendf (kvc->sb, "enum.%s.0x%"PFMT64x"=%s\n", en, nv, mn);
+			if ((st64)nv < 0) {
+				r_strbuf_appendf (kvc->sb, "enum.%s=%"PFMT64d"\n", full_scope, nv);
+				r_strbuf_appendf (kvc->sb, "enum.%s.%"PFMT64d"=%s\n", en, nv, mn);
+			} else {
+				r_strbuf_appendf (kvc->sb, "enum.%s=0x%"PFMT64x"\n", full_scope, nv);
+				r_strbuf_appendf (kvc->sb, "enum.%s.0x%"PFMT64x"=%s\n", en, nv, mn);
+			}
 #endif
 			value = nv; // r_num_get (NULL, member_value.a);
 		} else {
