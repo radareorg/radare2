@@ -1,0 +1,6 @@
+spam=struct
+struct.spam.ham=int,0,0
+struct.spam._foo=struct foo,4,0
+struct.spam.eggs=int,8,0
+struct.spam=ham,_foo,eggs
+
