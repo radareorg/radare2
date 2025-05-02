@@ -546,7 +546,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		char *alias_str = kvctoken_tostring (alias);
 		char *type_str = kvctoken_tostring (orig_type);
 		r_strbuf_appendf (kvc->sb, "typedef.%s=%s\n", alias_str, type_str);
-		r_strbuf_appendf (kvc->sb, "%s=typedef\n", type_str, alias_str);
+		r_strbuf_appendf (kvc->sb, "%s=typedef\n", type_str);
 		free (alias_str);
 		free (type_str);
 		kvc_skipn (kvc, semicolon - kvc->s.a);
