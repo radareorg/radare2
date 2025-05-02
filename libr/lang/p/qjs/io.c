@@ -71,7 +71,7 @@ static int qjs_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			JS_NewInt32 (ctx, count),
 		};
 		JSValue res = JS_Call (ctx, plugin->fn_read_js, JS_UNDEFINED, countof (args), args);
-		if (JS_IsArray (ctx, res)) {
+		if (JS_IsArray (res)) {
 			// JSObject *jo = JS_VALUE_GET_OBJ (res);
 			int len = 10; //eS_ToArrayLengthFree (ctx, &le, res, true);
 			// jint length = JS_GetProperty (ctx, res, JS_ATOM_Array);

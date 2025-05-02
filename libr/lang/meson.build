@@ -3,7 +3,7 @@ r_lang_sources = [
 ]
 
 spp_inc = [platform_inc, include_directories('../../shlr/spp')]
-# qjs_inc = [ include_directories('../../shlr/qjs/src') ]
+
 qjs = subproject('qjs')
 qjs_inc = qjs.get_variable('incs')
 qjs_static = qjs.get_variable('qjs_static')
@@ -20,7 +20,7 @@ r_lang = library('r_lang', r_lang_sources,
     r_arch_dep,
     r_esil_dep,
     r_crypto_dep,
-    r_cons_dep
+    r_cons_dep,
   ],
   link_with: qjs_static,
   install: true,
@@ -41,7 +41,7 @@ r_lang_static = static_library('r_lang_static', r_lang_sources,
     r_arch_static_dep,
     r_esil_static_dep,
     r_crypto_static_dep,
-    r_cons_static_dep
+    r_cons_static_dep,
   ],
   link_with: qjs_static,
   install: true,
