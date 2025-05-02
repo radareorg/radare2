@@ -326,7 +326,7 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	// eprintf ("i TYPENAME n (%s)\n", kvctoken_tostring (*fun_name));
 	const char *p = fun_rtyp->b - 1;
 	while (p > fun_rtyp->a) {
-		if (!isalnum (*p) || isspace (*p)) {
+		if ((!isalnum (*p) && *p != '_') || isspace (*p)) {
 			if (*p != '[' && *p != ']') {
 				p++;
 				break;
