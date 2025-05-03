@@ -1829,8 +1829,79 @@ bad:
 	return result;
 }
 
+#if USE_NEW_ESIL
+static bool search_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
+	RCore *core = mem;
+	if (!addr && r_config_get_b (core->config, "esil.nonull")) {
+		return false;
+	}
+	return r_io_read_at (core->io, addr, buf, len);
+}
+
+static bool search_esil_mem_write_ro (void *mem, ut64 addr, const ut8 *buf, int len) {
+	RCore *core = mem;
+	if (!addr && r_config_get_b (core->config, "esil.nonull")) {
+		return false;
+	}
+	RIORegion region;
+	if (!r_io_get_region_at (core->io, &region, addr)) {
+		//maybe check voidwrites config here
+		return true;
+	}
+	if (!(region.perm & R_PERM_W)) {
+		return false;
+	}
+	if (r_itv_contain (region.itv, addr + len - 1)) {
+		return true;
+	}
+	return search_esil_mem_write_ro (mem, r_itv_end (region.itv),
+		NULL, addr + len - r_itv_end (region.itv));	//no need to pass buf, because this is RO mode
+}
+
+REsilMemInterface search_esil_mem_if = {
+	.mem_read = search_esil_mem_read,
+	.mem_write = search_esil_mem_write_ro,
+};
+
+static bool search_esil_is_reg (void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	r_unref (ri);
+	return true;
+}
+
+static bool search_esil_reg_read (void *reg, const char *name, ut64 *val) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	*val = r_reg_get_value ((RReg *)reg, ri);
+	r_unref (ri);
+	return true;
+}
+
+static const ut32 search_esil_reg_size (void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	const ut32 size = ri->size;
+	r_unref (ri);
+	return size;
+}
+
+REsilRegInterface search_esil_reg_if = {
+	.is_reg = search_esil_is_reg,
+	.reg_read = search_esil_reg_read,
+	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_size = search_esil_reg_size,
+};
+#endif
+
 static bool esil_addrinfo(REsil *esil) {
-	RCore *core = (RCore *) esil->cb.user;
+	RCore *core = esil->user;
 	ut64 num = 0;
 	char *src = r_esil_pop (esil);
 	if (src && *src && r_esil_get_parm (esil, src, &num)) {
@@ -1865,26 +1936,43 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_core_cmd_help (core, help_msg_slash_esil);
 		return;
 	}
-	const unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const ut32 addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int stacksize = r_config_get_i (core->config, "esil.stack.size");
-	const int nonull = r_config_get_i (core->config, "esil.nonull");
-	const int romem = r_config_get_i (core->config, "esil.romem");
-	const int stats = r_config_get_i (core->config, "esil.stats");
-	if (stacksize < 16) {
-		stacksize = 16;
+	const int stacksize = R_MAX (r_config_get_i (core->config, "esil.stack.size"), 16);
+#if USE_NEW_ESIL
+	search_esil_reg_if.user = core->anal->reg;
+	search_esil_mem_if.user = core;
+	REsil stack_located_esil = {0};
+	if (!r_esil_init (&stack_located_esil, stacksize, iotrap, addrsize,
+		&search_esil_reg_if, &search_esil_mem_if)) {
+		R_LOG_ERROR ("Cannot initialize search esil instance");
+		return;
 	}
+	if (!r_reg_arena_push (core->anal->reg)) {
+		r_esil_fini (&stack_located_esil);
+		R_LOG_ERROR ("Cannot push reg arena instance");
+		return;
+	}
+	REsil *esil = &stack_located_esil;
+#else
+	const int nonull = r_config_get_i (core->config, "esil.nonull");
+//	const int romem = r_config_get_i (core->config, "esil.romem");
+//	const int stats = r_config_get_i (core->config, "esil.stats");
 	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
 	if (!esil) {
 		R_LOG_ERROR ("Cannot create an esil instance");
 		return;
 	}
+//	r_esil_setup (esil, core->anal, romem, stats, nonull);
+	r_esil_setup (esil, core->anal, true, false, nonull);
+#endif
+	esil->user = core;	//this is fine, because no arch plugin custom ops are registered
 	r_esil_set_op (esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
-	esil->cb.user = core;
+	/* hook addrinfo */
+	r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 	// TODO:? cmd_aei (core);
 	RIOMap *map;
 	RListIter *iter;
-	r_esil_setup (esil, core->anal, romem, stats, nonull);
 	r_list_foreach (param->boundaries, iter, map) {
 		bool hit_happens = false;
 		size_t hit_combo = 0;
@@ -1892,10 +1980,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		ut64 nres, addr;
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
-		/* hook addrinfo */
-		r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
-		/* hook addrinfo */
-		r_esil_setup (esil, core->anal, 1, 0, nonull);
+		//r_esil_setup (esil, core->anal, 1, 0, nonull);
 		r_esil_stack_free (esil);
 		esil->verbose = 0;
 
@@ -1921,7 +2006,12 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
+#if USE_NEW_ESIL
+			const char *pc_name = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
+			r_reg_setv (core->anal->reg, pc_name, core->addr);
+#else
 			r_esil_set_pc (esil, addr);
+#endif
 			if (!r_esil_parse (esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
@@ -1978,7 +2068,12 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
+#if USE_NEW_ESIL
+	r_esil_fini (&stack_located_esil);
+	r_reg_arena_pop (core->anal->reg);
+#else
 	r_esil_free (esil);
+#endif
 }
 
 #define MAXINSTR 8
@@ -2069,29 +2164,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RAnalOp aop = {0};
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	RIOMap* map;
+	RIOMap *map;
 	RListIter *iter;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	REsil *esil;
 	int align = core->search->align;
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const bool isx86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
 
-	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
-		return;
-	}
 	int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
 	if (!previnstr) {
-		r_esil_free (esil);
 		return;
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
-		r_esil_free (esil);
 		free (previnstr);
 		return;
 	}
