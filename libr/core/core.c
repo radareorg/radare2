@@ -2710,6 +2710,10 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->fs->iob));
 	r_cons_bind (core->cons, &(core->fs->csb));
 	r_cons_bind (core->cons, &(core->search->consb));
+#if USE_NEW_ESIL
+	core->anal->esil = r_esil_new_simple (1, core->anal->reg, &core->anal->iob);
+	core->anal->esil->anal = core->anal;
+#endif
 	r_core_bind (core, &(core->fs->cob));
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
