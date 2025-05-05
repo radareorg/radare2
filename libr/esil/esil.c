@@ -44,8 +44,10 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	r_esil_plugins_init (esil);
 	esil->addrmask = r_num_genmask (addrsize - 1);
 	esil->trace = r_esil_trace_new (esil);
+#if USE_NEW_ESIL == 0
 	int stats = 1;
 	r_esil_stats (esil, NULL, stats);
+#endif
 	r_esil_setup_ops (esil);
 	return esil;
 }
@@ -1106,7 +1108,9 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 		esil->cb.mem_write = internal_esil_mem_write;
 	}
 	r_esil_mem_ro (esil, romem);
+#if USE_NEW_ESIL == 0
 	r_esil_stats (esil, NULL, stats);
+#endif
 	r_esil_setup_ops (esil);
 
 	// Try arch esil init cb first, then anal as fallback
