@@ -198,8 +198,13 @@ static void esil2c_setup(REsil *esil) {
 	REsilC *user = R_NEW (REsilC);
 	esil->user = user;
 	esil->verbose = true; // r_config_get_b (core->config, "esil.verbose");
+#if USE_NEW_ESIL
+	r_esil_add_voyeur (esil, NULL, esil2c_mw, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (esil, NULL, esil2c_mr, R_ESIL_VOYEUR_MEM_READ);
+#else
 	esil->cb.mem_read = esil2c_mr;
 	esil->cb.mem_write = esil2c_mw;
+#endif
 	r_esil_set_op (esil, "=", esil2c_eq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
 	r_esil_set_op (esil, ":=", esil2c_eq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
 	r_esil_set_op (esil, "-", esil2c_sub, 1, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
@@ -221,14 +226,21 @@ static void esil2c_setup(REsil *esil) {
 R_API REsilC *r_esil_toc_new(RAnal *anal, const int bits) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	REsilC *ec = R_NEW0 (REsilC);
-	int ss = 16 * 1024;
-	REsil *esil = r_esil_new (ss, 0, bits);
-	if (esil) {
-		esil2c_setup (esil);
-		ec->anal = anal;
-		ec->esil = esil;
-	} else {
-		R_FREE (ec);
+	if (ec) {
+#if USE_NEW_ESIL
+		REsil *esil = r_esil_new_simple (bits, anal->reg, &anal->iob);
+		esil->anal = anal;
+#else
+		int ss = 16 * 1024;
+		REsil *esil = r_esil_new (ss, 0, bits);
+#endif
+		if (esil) {
+			esil2c_setup (esil);
+			ec->anal = anal;
+			ec->esil = esil;
+		} else {
+			R_FREE (ec);
+		}
 	}
 	return ec;
 }
