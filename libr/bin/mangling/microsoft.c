@@ -177,7 +177,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sym, char **demangled_name, size_t *chars_read);
 static EDemanglerErr parse_microsoft_rtti_mangled_name(SDemangler *sd, const char *sym, char **demangled_name, size_t *chars_read);
 
-static const char *str_skip_report(const char *s, R_NULLABLE size_t *len, size_t n) {
+static const char *str_skip_report(const char *s, size_t * R_NULLABLE len, size_t n) {
 	size_t i;
 	R_RETURN_VAL_IF_FAIL (s, "");
 	for (i = 0; i < n && *s != 0; i++) {

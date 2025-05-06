@@ -47,15 +47,13 @@ static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
-	if (data) {
-		data->offset = offset;
-		data->size = size;
-		data->file_count = file_count;
-		data->metadata = metadata;
-		data->loaded = false;
-		// don't slice twice TODO. review this
-		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
-	}
+	data->offset = offset;
+	data->size = size;
+	data->file_count = file_count;
+	data->metadata = metadata;
+	data->loaded = false;
+	// don't slice twice TODO. review this
+	data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	return data;
 }
 
@@ -104,7 +102,7 @@ R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, 
 	opt->rawstr = rawstr;
 }
 
-R_API void r_bin_arch_options_init(RBinArchOptions *opt, R_NULLABLE const char *arch, int bits) {
+R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char * R_NULLABLE arch, int bits) {
 	R_RETURN_IF_FAIL (opt);
 	opt->arch = arch? arch: R_SYS_ARCH;
 	opt->bits = bits? bits: R_SYS_BITS;
@@ -172,11 +170,9 @@ R_API void r_bin_import_free(RBinImport *imp) {
 R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (sym) {
-		sym->name = r_bin_name_new (name);
-		sym->paddr = paddr;
-		sym->vaddr = vaddr;
-	}
+	sym->name = r_bin_name_new (name);
+	sym->paddr = paddr;
+	sym->vaddr = vaddr;
 	return sym;
 }
 
@@ -848,9 +844,6 @@ R_API RBin *r_bin_new(void) {
 	RBinXtrPlugin *static_xtr_plugin;
 	RBinLdrPlugin *static_ldr_plugin;
 	RBin *bin = R_NEW0 (RBin);
-	if (!bin) {
-		return NULL;
-	}
 	if (!r_str_constpool_init (&bin->constpool)) {
 		goto trashbin;
 	}
@@ -890,9 +883,6 @@ R_API RBin *r_bin_new(void) {
 		bin->binxtrs->free = free;
 		for (i = 0; bin_xtr_static_plugins[i]; i++) {
 			static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
-			if (!static_xtr_plugin) {
-				goto trashbin_binxtrs;
-			}
 			*static_xtr_plugin = *bin_xtr_static_plugins[i];
 			if (r_bin_xtr_add (bin, static_xtr_plugin) == false) {
 				free (static_xtr_plugin);
@@ -905,9 +895,6 @@ R_API RBin *r_bin_new(void) {
 		bin->binldrs->free = free;
 		for (i = 0; bin_ldr_static_plugins[i]; i++) {
 			static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
-			if (!static_ldr_plugin) {
-				goto trashbin_binldrs;
-			}
 			*static_ldr_plugin = *bin_ldr_static_plugins[i];
 			if (r_bin_ldr_add (bin, static_ldr_plugin) == false) {
 				free (static_ldr_plugin);
@@ -1377,19 +1364,17 @@ R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 }
 
 /* RBinField */
-R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, R_NULLABLE const char *comment, R_NULLABLE const char *format, bool format_named) {
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, const char * R_NULLABLE comment, const char * R_NULLABLE format, bool format_named) {
 	RBinField *ptr = R_NEW0 (RBinField);
-	if (ptr) {
-		ptr->name = r_bin_name_new (name);
-		ptr->comment = R_STR_ISNOTEMPTY (comment)? strdup (comment): NULL;
-		ptr->format = R_STR_ISNOTEMPTY (format)? strdup (format): NULL;
-		ptr->format_named = format_named;
-		ptr->vaddr = vaddr;
-		ptr->paddr = paddr;
-		ptr->size = size;
-		ptr->value = value;
-	//	ptr->attr = default attributes for fields?
-	}
+	ptr->name = r_bin_name_new (name);
+	ptr->comment = R_STR_ISNOTEMPTY (comment)? strdup (comment): NULL;
+	ptr->format = R_STR_ISNOTEMPTY (format)? strdup (format): NULL;
+	ptr->format_named = format_named;
+	ptr->vaddr = vaddr;
+	ptr->paddr = paddr;
+	ptr->size = size;
+	ptr->value = value;
+	// ptr->attr = default attributes for fields?
 	return ptr;
 }
 
@@ -1406,19 +1391,15 @@ R_API void r_bin_field_free(void *_field) {
 
 R_IPI RBinSection *r_bin_section_new(const char *name) {
 	RBinSection *s = R_NEW0 (RBinSection);
-	if (s) {
-		s->name = name? strdup (name): NULL;
-	}
+	s->name = name? strdup (name): NULL;
 	return s;
 }
 
 R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	RBinSection *d = R_NEW0 (RBinSection);
-	if (d) {
-		memcpy (d, s, sizeof (RBinSection));
-		d->name = s->name? strdup (s->name): NULL;
-		d->format = s->format? strdup (s->format): NULL;
-	}
+	memcpy (d, s, sizeof (RBinSection));
+	d->name = s->name? strdup (s->name): NULL;
+	d->format = s->format? strdup (s->format): NULL;
 	return d;
 }
 
@@ -1451,13 +1432,11 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 
 R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter) {
 	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
-	if (tc) {
-		tc->source = source;
-		tc->from = from;
-		tc->to = to;
-		tc->handler = handler;
-		tc->filter = filter;
-	}
+	tc->source = source;
+	tc->from = from;
+	tc->to = to;
+	tc->handler = handler;
+	tc->filter = filter;
 	return tc;
 }
 
@@ -1480,18 +1459,14 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 R_API RBinName *r_bin_name_new_from(R_OWN char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	if (R_LIKELY (bn)) {
-		bn->oname = name;
-	}
+	bn->oname = name;
 	return bn;
 }
 
 R_API RBinName *r_bin_name_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	if (R_LIKELY (bn)) {
-		bn->oname = strdup (name);
-	}
+	bn->oname = strdup (name);
 	return bn;
 }
 

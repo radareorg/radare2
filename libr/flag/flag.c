@@ -127,7 +127,7 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 	return res;
 }
 
-static char *filter_item_name(R_NONNULL const char *name) {
+static char *filter_item_name(const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	char *res = strdup (name);
 	if (R_LIKELY (res)) {
@@ -386,7 +386,7 @@ static bool print_flag_orig_name(RFlagItem *fi, void *user) {
 }
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
-R_API void r_flag_list(RFlag *f, int rad, R_NULLABLE const char *pfx) {
+R_API void r_flag_list(RFlag *f, int rad, const char * R_NULLABLE pfx) {
 	R_RETURN_IF_FAIL (f);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
@@ -862,7 +862,7 @@ R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char
 }
 
 /* add/replace/remove the color of a flag item */
-R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, R_NULLABLE const char *color) {
+R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, const char * R_NULLABLE color) {
 	R_RETURN_VAL_IF_FAIL (f && fi, NULL);
 	RFlagItemMeta *fim;
 	if (color) {
@@ -893,7 +893,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	return update_flag_item_name (f, item, name, false);
 }
 
-R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, R_NULLABLE const char *type) {
+R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char * R_NULLABLE type) {
 	R_RETURN_VAL_IF_FAIL (fi && type, NULL);
 	RFlagItemMeta *fim = r_flag_get_meta2 (f, fi->id);
 	free (fim->type);
@@ -901,7 +901,7 @@ R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, R_NULLABLE const
 	return fim->type;
 }
 
-R_API R_NULLABLE RFlagItemMeta *r_flag_get_meta(RFlag *f, ut32 id) {
+R_API RFlagItemMeta * R_NULLABLE r_flag_get_meta(RFlag *f, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	return (RFlagItemMeta *)ht_up_find (f->ht_meta, id, NULL);
 }
@@ -1059,7 +1059,7 @@ static bool flag_count_foreach(RFlagItem *fi, void *user) {
 	return true;
 }
 
-R_API int r_flag_count(RFlag *f, R_NULLABLE const char *glob) {
+R_API int r_flag_count(RFlag *f, const char * R_NULLABLE glob) {
 	R_RETURN_VAL_IF_FAIL (f, -1);
 	int count = 0;
 	r_flag_foreach_glob (f, glob, flag_count_foreach, &count);

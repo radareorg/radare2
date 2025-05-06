@@ -62,7 +62,7 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 }
 
 // TODO : make them internal?
-R_API char *r_asm_parse_subvar(RAsm *a, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, const char *data) {
+R_API char *r_asm_parse_subvar(RAsm *a, RAnalFunction * R_NULLABLE f, ut64 addr, int oplen, const char *data) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	RAsmPlugin *pcur = R_UNWRAP3 (a, cur, plugin);
 	if (pcur && pcur->subvar) {

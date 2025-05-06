@@ -97,13 +97,11 @@ static void dyn_init(void) {
 
 #endif
 
-R_API RRunProfile *r_run_new(R_NULLABLE const char *str) {
+R_API RRunProfile *r_run_new(const char * R_NULLABLE str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
-	if (p) {
-		r_run_reset (p); // TODO: rename to r_run_init
-		if (str) {
-			r_run_parsefile (p, str);
-		}
+	r_run_reset (p); // TODO: rename to r_run_init
+	if (str) {
+		r_run_parsefile (p, str);
 	}
 	return p;
 }
@@ -199,7 +197,7 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
+static char *getstr(const char *src, size_t * R_NULLABLE out_len) {
 	size_t len = 0;
 	char *ret = NULL;
 
