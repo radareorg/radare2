@@ -93,9 +93,9 @@ static RCoreHelpMessage help_msg_iic = {
 
 static RCoreHelpMessage help_msg_ie = {
 	"Usage: ie", "[qj=]", "Show entrypoints and constructors",
-	"ie", "", "show entrypointsie=entrypoint",
-	"iee", "", "list constructors and destructors",
-	"ies", "", "list entrypoint symbols (see 'ise')",
+	"ie", "[j]", "show entrypointsie=entrypoint",
+	"iee", "[j]", "list constructors and destructors",
+	"ies", "[j]", "list entrypoint symbols (see 'ise')",
 	NULL
 };
 
@@ -1920,7 +1920,14 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 		R_VEC_FOREACH (symbols, sym) {
 			const char *name = r_bin_name_tostring2 (sym->name, 'o');
 			if (is_entrypoint_symbol (name)) {
-				r_kons_printf (core->cons, "0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+				if (pj) {
+					pj_o (pj);
+					pj_kn (pj, "addr", sym->vaddr);
+					pj_ks (pj, "name", name);
+					pj_end (pj);
+				} else {
+					r_kons_printf (core->cons, "0x%08"PFMT64x"  %s\n", sym->vaddr, name);
+				}
 			}
 		}
 	}
@@ -1941,19 +1948,42 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 				const char *name = r_bin_name_tostring2 (method->name, 'o');
 				if (is_entrypoint_symbol (name)) {
 					const char *kname = r_bin_name_tostring2 (klass->name, 'o');
-					r_kons_printf (core->cons, "0x%08"PFMT64x"  %s.%s\n",
-						method->vaddr, kname, name);
+					if (pj) {
+						pj_o (pj);
+						pj_kn (pj, "addr", method->vaddr);
+						char *fname = r_str_newf ("%s.%s", kname, name);
+						pj_ks (pj, "name", fname);
+						free (fname);
+						pj_end (pj);
+					} else {
+						r_kons_printf (core->cons, "0x%08"PFMT64x"  %s.%s\n",
+								method->vaddr, kname, name);
+					}
 				}
 			}
 		}
 	}
 	RFlagItem *fi = r_flag_get (core->flags, "main");
 	if (fi) {
-		r_kons_printf (core->cons, "0x%08"PFMT64x"  main\n", fi->addr);
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "addr", fi->addr);
+			pj_ks (pj, "name", "main");
+			pj_end (pj);
+		} else {
+			r_kons_printf (core->cons, "0x%08"PFMT64x"  main\n", fi->addr);
+		}
 	}
 	fi = r_flag_get (core->flags, "entry0");
 	if (fi) {
-		r_kons_printf (core->cons, "0x%08"PFMT64x"  entry0\n", fi->addr);
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "addr", fi->addr);
+			pj_ks (pj, "name", "entry0");
+			pj_end (pj);
+		} else {
+			r_kons_printf (core->cons, "0x%08"PFMT64x"  entry0\n", fi->addr);
+		}
 	}
 }
 
@@ -2074,22 +2104,24 @@ static int cmd_info(void *data, const char *input) {
 	if (mode == R_MODE_JSON) {
 		INIT_PJ ();
 		int suffix_shift = 0;
-		if (r_str_startswith (input, "SS") || r_str_startswith (input, "ee") || r_str_startswith (input, "zz")) {
+		if (r_str_startswith (input, "SS") || r_str_startswith (input, "es") || r_str_startswith (input, "zz")) {
+			// very ugly
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
 			is_array = true;
-		}
-		if (r_str_startswith (input, "zzz")) {
+		} else if (r_str_startswith (input, "esj")) {
+			is_array = true;
+		} else if (r_str_startswith (input, "zzz")) {
 			is_izzzj = true;
-		}
-		if (r_str_startswith (input, "dpi")) {
+		} else if (r_str_startswith (input, "dpi")) {
 			is_idpij = true;
 		}
 	}
 	r_core_return_value (core, 0);
 	if (is_array && !is_izzzj && !is_idpij) {
-		pj_o (pj);
+		pj_a (pj);
+		// pj_o (pj);
 	}
 	if (!*input) {
 		cmd_info_bin (core, va, pj, mode);
