@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_cons.h>
 
@@ -195,7 +195,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && isdigit (ptr[2])) {
 				// bg color is kind of ignored, but no glitch so far
-				r_cons_gotoxy (0, 0);
 				ptr += 4;
 				esc = 0;
 				str = ptr;
