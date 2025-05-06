@@ -109,11 +109,11 @@ R_API SdbGperf *r_anal_get_gperf_types(const char *k) {
 	return NULL;
 }
 #else
-R_API SdbGperf *r_anal_get_gperf_cc(R_NULLABLE const char *k) {
+R_API SdbGperf *r_anal_get_gperf_cc(const char * R_NULLABLE k) {
 	return NULL;
 }
 
-R_API SdbGperf *r_anal_get_gperf_types(R_NULLABLE const char *k) {
+R_API SdbGperf *r_anal_get_gperf_types(const char * R_NULLABLE k) {
 	return NULL;
 }
 #endif
