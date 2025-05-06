@@ -1959,6 +1959,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 
 static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_array, int va) {
 	char i1 = input[1];
+	char i2 = input[2];
 	if (i1 == ',') {
 		i1 = 0;
 		R_FREE (core->table_query);
@@ -1967,13 +1968,13 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 	if (i1 == '?') {
 		r_core_cmd_help (core, help_msg_ie);
 	} else if (i1 == 's') {
-		if (input[2] == '?') {
+		if (i2 == '?') {
 			r_core_cmd_help_contains (core, help_msg_ie, "ies");
 		} else {
 			cmd_ies (core, input, pj, mode, va);
 		}
 	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
-		if (input[2] == '?') {
+		if (i1 && i2 == '?') {
 			r_core_cmd_help (core, help_msg_ie);
 			return;
 		}
