@@ -2301,6 +2301,17 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			D.gcomp_idx = 0;
 			D.gcomp = 0;
 			goto _end;
+		case '7':
+			// ignore most CSI fixterms - https://www.leonerd.org.uk/hacks/fixterms/
+			while (true) {
+				ch = r_cons_readchar ();
+				if (ch == 126) {
+					// consider shift+return is the same as the return key
+					ch = '\n';
+					break;
+				}
+			}
+			break;
 		default:
 			if (D.gcomp > 0) {
 				D.gcomp++;
