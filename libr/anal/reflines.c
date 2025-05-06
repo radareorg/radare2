@@ -21,7 +21,7 @@ static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static R_NONNULL ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
+static ReflineEnd * R_NONNULL refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	ReflineEnd *re = R_NEW0 (struct refline_end);
 	re->val = val;
 	re->is_from = is_from;

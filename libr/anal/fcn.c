@@ -2323,7 +2323,7 @@ R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 	return totalCycles;
 }
 
-R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs) {
+R_API int r_anal_function_count_edges(const RAnalFunction *fcn, int * R_NULLABLE ebbs) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
 	RListIter *iter;
 	RAnalBlock *bb;

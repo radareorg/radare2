@@ -1649,7 +1649,7 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 }
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
-static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const char *name) {
+static char *construct_reloc_name(RBinReloc * R_NONNULL reloc, const char * R_NULLABLE name) {
 	RStrBuf *buf = r_strbuf_new ("");
 
 	// (optional) libname_

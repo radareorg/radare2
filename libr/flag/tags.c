@@ -9,7 +9,7 @@ R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 	return NULL;
 }
 
-R_API RList *r_flag_tags_list(RFlag *f, R_NULLABLE const char *name) {
+R_API RList *r_flag_tags_list(RFlag *f, const char * R_NULLABLE name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (name) {
 		r_strf_var (k, 64, "tag.%s", name);
@@ -31,7 +31,7 @@ R_API RList *r_flag_tags_list(RFlag *f, R_NULLABLE const char *name) {
 	return res;
 }
 
-R_API void r_flag_tags_reset(RFlag *f, R_NULLABLE const char *name) {
+R_API void r_flag_tags_reset(RFlag *f, const char * R_NULLABLE name) {
 	R_RETURN_IF_FAIL (f);
 	if (name) {
 		r_strf_var (k, 64, "tag.%s", name);

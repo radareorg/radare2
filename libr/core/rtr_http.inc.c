@@ -28,7 +28,7 @@ static const ExtAndType eat[] = {
 	{NULL, NULL}
 };
 
-static R_NONNULL char *guess_filetype(const char *path) {
+static char * R_NONNULL guess_filetype(const char *path) {
 	const char *lastdot = r_str_lchr (path, '.');
 	if (lastdot) {
 		const ExtAndType *neat = eat;

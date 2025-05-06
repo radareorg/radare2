@@ -135,7 +135,7 @@ static inline bool valid_var_kind(char kind) {
 	}
 }
 
-R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
+R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
 	if (existing && (existing->kind != kind || existing->delta != delta)) {
@@ -1758,8 +1758,8 @@ R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache) {
 	r_list_free (cache->svars);
 }
 
-R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
-		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post) {
+R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R_NONNULL fcn, char * R_NULLABLE fcn_name,
+		RAnalFcnVarsCache * R_NULLABLE reuse_cache, const char * R_NULLABLE fcn_name_pre, const char * R_NULLABLE fcn_name_post) {
 	RAnalFcnVarsCache *cache = NULL;
 
 	const char *comma = "";
@@ -1771,10 +1771,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 	}
 
 	RStrBuf *buf = r_strbuf_new (NULL);
-	if (!buf) {
-		return NULL;
-	}
-
 	Sdb *TDB = anal->sdb_types;
 	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
 	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {

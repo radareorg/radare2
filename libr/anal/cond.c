@@ -55,7 +55,7 @@ R_API void r_anal_cond_fini(RAnalCond *c) {
 	c->left = c->right = NULL;
 }
 
-R_API void r_anal_cond_free(R_NULLABLE RAnalCond *c) {
+R_API void r_anal_cond_free(RAnalCond * R_NULLABLE c) {
 	if (c) {
 		r_anal_cond_fini (c);
 		free (c);

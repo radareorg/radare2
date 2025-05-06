@@ -67,7 +67,7 @@ R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW char * R_NONNULL cmd, char spec, bool exact) {
 	RVector/*<int>*/ *match_indices = r_vector_new (sizeof (int), NULL, NULL);
 	char **matches = NULL;
 	size_t num_matches;

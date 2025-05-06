@@ -471,6 +471,7 @@ include_files = [
   'include/r_th.h',
   'include/r_types.h',
   'include/r_types_base.h',
+  'include/r_types_null.h',
   'include/r_types_overflow.h',
   'include/r_util.h',
   'include/r_vector.h',

@@ -175,7 +175,7 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
-static void error(R_NULLABLE RNum *num, const char *err_str) {
+static void error(RNum * R_NULLABLE num, const char *err_str) {
 	if (num) {
 		if (err_str) {
 			num->nc.errors++;
@@ -232,7 +232,7 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-R_API ut64 r_num_get(R_NULLABLE RNum *num, const char *str) {
+R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 	int i, j;
 	char lch;
 	ut64 ret = 0LL;
@@ -547,7 +547,7 @@ R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize) {
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
-R_API int r_num_conditional(R_NULLABLE RNum *num, const char *str) {
+R_API int r_num_conditional(RNum * R_NULLABLE num, const char *str) {
 	char *lgt, *t, *p, *s = strdup (str);
 	int res = 0;
 	ut64 n, a, b;
@@ -625,7 +625,7 @@ R_API int r_num_is_valid_input(RNum *num, const char *input_value) {
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
-R_API ut64 r_num_get_input_value(R_NULLABLE RNum *num, const char *input_value) {
+R_API ut64 r_num_get_input_value(RNum * R_NULLABLE num, const char *input_value) {
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return value;
 }
@@ -680,7 +680,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	return NULL;
 }
 
-R_API bool r_is_valid_input_num_value(R_NULLABLE RNum *num, const char *input_value) {
+R_API bool r_is_valid_input_num_value(RNum * R_NULLABLE num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}

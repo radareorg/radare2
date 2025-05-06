@@ -442,7 +442,7 @@ beach:
 }
 
 // returns null terminated buffer with contents of the file
-R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
+R_API char *r_file_slurp(const char *str, size_t * R_NULLABLE usz) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
 	if (usz) {
 		*usz = 0;
@@ -1275,7 +1275,7 @@ R_API char *r_file_temp(const char *prefix) {
 	return res;
 }
 
-R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char *ex) {
+R_API char *r_file_temp_ex(const char * R_NULLABLE prefix, const char * R_NULLABLE ex) {
 	prefix = R_STR_ISEMPTY (prefix)? "r2": prefix;
 	ex = R_STR_ISEMPTY (ex)? "": ex;
 	char *path = r_file_tmpdir ();
@@ -1307,7 +1307,7 @@ static inline char *file_fmt_split(const char *fmt) {
 	return name;
 }
 
-R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
+R_API int r_file_mkstemp(const char * R_NULLABLE prefix, char **oname) {
 	int h = -1;
 	if (!prefix) {
 		prefix = "r2";

@@ -261,7 +261,7 @@ typedef struct r_run_profile_t {
 	bool _stderrout;
 } RRunProfile;
 
-R_API RRunProfile *r_run_new(R_NULLABLE const char *str);
+R_API RRunProfile *r_run_new(const char * R_NULLABLE str);
 R_API bool r_run_parse(RRunProfile *pf, const char *profile);
 R_API void r_run_free(RRunProfile *r);
 R_API bool r_run_parseline(RRunProfile *p, const char *b);

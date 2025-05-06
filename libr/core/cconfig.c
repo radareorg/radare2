@@ -3566,7 +3566,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Space separated list of base URLs for Microsoft symbol servers");
 	{
 		char *pdb_path = r_xdg_datadir ("pdb");
-		SETS ("pdb.symstore", pdb_path, "path to downstream symbol store"); // XXX rename to dir.pdb
+		SETS ("pdb.symstore", pdb_path? pdb_path: "", "path to downstream symbol store"); // XXX rename to dir.pdb
 		R_FREE(pdb_path);
 	}
 	SETI ("pdb.extract", 1, "avoid extract of the pdb file, just download");
@@ -4064,19 +4064,19 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	p = r_sys_getenv (R_SYS_HOME);
 #endif
-	SETCB ("dir.home", r_str_get_fail (p, "/"), &cb_dirhome, "path for the home directory");
+	SETCB ("dir.home", r_str_get_fail (r_str_get (p), "/"), &cb_dirhome, "path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "path of the tmp directory");
 	free (p);
 	char *cd = r_xdg_cachedir (NULL);
-	SETCB ("dir.cache", cd, &cb_dir_cache, "override default cache directory (XDG_CACHE_HOME)");
+	SETCB ("dir.cache", r_str_get (cd), &cb_dir_cache, "override default cache directory (XDG_CACHE_HOME)");
 	free (cd);
 	char *prjdir = r_xdg_datadir ("projects");
-	SETCB ("dir.projects", prjdir, &cb_dir_projects, "default path for projects");
+	SETCB ("dir.projects", r_str_get (prjdir), &cb_dir_projects, "default path for projects");
 	free (prjdir);
 	char *zigndir = r_xdg_datadir ("zigns");
-	SETCB ("dir.zigns", zigndir, &cb_dirzigns, "default path for zignatures (see zo command)");
+	SETCB ("dir.zigns", r_str_get (zigndir), &cb_dirzigns, "default path for zignatures (see zo command)");
 	free (zigndir);
 	SETS ("stack.reg", "SP", "which register to use as stack pointer in the visual debug");
 	SETB ("stack.bytes", "true", "show bytes instead of words in stack");

@@ -548,7 +548,7 @@ R_API bool r_config_rm(RConfig *cfg, const char *name) {
 	return false;
 }
 
-R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node) {
+R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RConfigNode * R_NULLABLE node) {
 	if (node && r_config_node_is_bool (node)) {
 		r_str_ncpy (buf, r_str_bool ((int) i), buf_size);
 		return;
@@ -773,7 +773,7 @@ R_API void r_config_bump(RConfig *cfg, const char *key) {
 	}
 }
 
-R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db) {
+R_API void r_config_serialize(RConfig * R_NONNULL config, Sdb * R_NONNULL db) {
 	RListIter *iter;
 	RConfigNode *node;
 	r_list_foreach (config->nodes, iter, node) {
@@ -790,7 +790,7 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
+R_API bool r_config_unserialize(RConfig * R_NONNULL config, Sdb * R_NONNULL db, char ** R_NULLABLE err) {
 	R_RETURN_VAL_IF_FAIL (config && db, false);
 	*err = NULL;
 	sdb_foreach (db, load_config_cb, config);

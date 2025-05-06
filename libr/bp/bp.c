@@ -162,7 +162,7 @@ static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static RBreakpointItem *r_bp_add(RBreakpoint *bp, R_NULLABLE const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
+static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes, ut64 addr, int size, int hw, int perm) {
 	R_RETURN_VAL_IF_FAIL (bp, NULL);
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;

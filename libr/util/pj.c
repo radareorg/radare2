@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2024 - pancake */
+/* radare - LGPL - Copyright 2018-2025 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -24,7 +24,7 @@ static void pj_comma(PJ *j) {
 	j->is_key = false;
 }
 
-R_API R_NONNULL PJ *pj_new(void) {
+R_API PJ * R_NONNULL pj_new(void) {
 	PJ *j = R_NEW0 (PJ);
 	r_strbuf_init (&j->sb);
 	j->is_first = true;

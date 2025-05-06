@@ -381,7 +381,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE const char *filenameuri) {
+static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NULLABLE filenameuri) {
 	RIODesc *desc = r->io->desc;
 	RBinFile *bf = NULL;
 	RBinPlugin *plugin;

@@ -571,7 +571,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 	return ret;
 }
 
-R_API RAnalEsilCFG *r_anal_esil_cfg_op(R_NULLABLE RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG * R_NULLABLE cfg, RAnal *anal, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (anal && op, NULL);
 	if (!anal->reg || !anal->esil) {
 		return NULL;

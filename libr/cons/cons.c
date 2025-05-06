@@ -839,7 +839,7 @@ R_API const char* r_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
-R_API void r_cons_breakword(R_NULLABLE const char *s) {
+R_API void r_cons_breakword(const char * R_NULLABLE s) {
 	r_kons_breakword (I, s);
 }
 

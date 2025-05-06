@@ -199,7 +199,7 @@ static bool is_bin(const ut8 *buf, int size) {
 }
 
 // TODO: add is_flag, is comment?
-R_API char *r_anal_data_tostring(RAnalData *d, R_NULLABLE RConsPrintablePalette *pal) {
+R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABLE pal) {
 	R_RETURN_VAL_IF_FAIL (d, NULL);
 	int i, len, mallocsz = 1024;
 	ut32 n32;
@@ -533,7 +533,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API R_NULLABLE const char *r_anal_datatype_tostring(RAnalDataType t) {
+R_API const char * R_NULLABLE r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
 		return NULL;

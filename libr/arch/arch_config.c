@@ -19,7 +19,7 @@ R_API void r_arch_config_free(RArchConfig *r) {
 	}
 }
 
-R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch) {
+R_API void r_arch_config_use(RArchConfig *config, const char * R_NULLABLE arch) {
 	R_RETURN_IF_FAIL (config);
 	if (arch && !strcmp (arch, "null")) {
 		return;
@@ -33,7 +33,7 @@ R_API bool r_arch_config_iseq(RArchConfig *a, RArchConfig *b) {
 	return false;
 }
 
-R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
+R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cpu) {
 	R_RETURN_IF_FAIL (config);
 	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
 	free (config->cpu);

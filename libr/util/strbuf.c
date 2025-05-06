@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2013-2024 - pancake */
+/* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_util.h>
 
-R_API RStrBuf *r_strbuf_new(const char *str) {
+R_API RStrBuf * R_NONNULL r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
 	if (str) {
 		r_strbuf_set (s, str);

@@ -259,7 +259,7 @@ typedef struct r_event_callback_handle_t {
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
 R_API void r_event_hook(REvent *ev, ut32 type, REventCallback cb, void *data);
-R_API bool r_event_unhook(R_NULLABLE REvent *ev, ut32 event_hook, REventCallback cb);
+R_API bool r_event_unhook(REvent * R_NULLABLE ev, ut32 event_hook, REventCallback cb);
 R_API void r_event_send(REvent *ev, ut32 type, void *data);
 
 #ifdef __cplusplus

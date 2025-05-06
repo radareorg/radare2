@@ -80,7 +80,7 @@ static char *addr2fileline(RBin *bin, ut64 addr) {
 
 // given an address, return the filename:line:column\tcode or filename:line:column if the file doesnt exist
 // origin can be 0, 1 or 2
-R_API R_NULLABLE char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin) {
+R_API char * R_NULLABLE r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin) {
 	if (origin == 3) {
 		return addr2fileline (bin, addr);
 	}

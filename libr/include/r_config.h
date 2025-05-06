@@ -96,8 +96,8 @@ R_API bool r_config_readonly(RConfig *cfg, const char *key);
 R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb);
 R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb);
 
-R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db);
-R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err);
+R_API void r_config_serialize(RConfig * R_NONNULL config, Sdb * R_NONNULL db);
+R_API bool r_config_unserialize(RConfig * R_NONNULL config, Sdb * R_NONNULL db, char ** R_NULLABLE err);
 
 // RConfigNode
 R_API RConfigNode *r_config_node_desc(RConfigNode *node, const char *desc);
@@ -108,18 +108,18 @@ R_API void r_config_node_purge_options(RConfigNode *node);
 R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
-R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
+R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RConfigNode * R_NULLABLE node);
 
-static inline bool r_config_node_is_bool(RConfigNode *node) {
+static inline bool r_config_node_is_bool(RConfigNode *R_NONNULL node) {
 	return node->flags & CN_BOOL;
 }
-static inline bool r_config_node_is_int(RConfigNode *node) {
+static inline bool r_config_node_is_int(RConfigNode *R_NONNULL node) {
 	return node->flags & CN_INT;
 }
-static inline bool r_config_node_is_ro(RConfigNode *node) {
+static inline bool r_config_node_is_ro(RConfigNode * R_NONNULL node) {
 	return node->flags & CN_RO;
 }
-static inline bool r_config_node_is_str(RConfigNode *node) {
+static inline bool r_config_node_is_str(RConfigNode * R_NONNULL node) {
 	return node->flags & CN_STR;
 }
 #endif

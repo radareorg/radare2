@@ -42,10 +42,10 @@ R_API char *r_type_format(Sdb *TDB, const char *t);
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_cc(Sdb *TDB, const char *func_name);
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name);
-R_API int r_type_func_args_count(Sdb *TDB, R_NONNULL const char *func_name);
-R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i);
-R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i);
-R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name);
+R_API int r_type_func_args_count(Sdb *TDB, const char * R_NONNULL func_name);
+R_API R_OWN char *r_type_func_args_type(Sdb *TDB, const char * R_NONNULL func_name, int i);
+R_API const char *r_type_func_args_name(Sdb *TDB, const char * R_NONNULL func_name, int i);
+R_API R_OWN char *r_type_func_guess(Sdb *TDB, char * R_NONNULL func_name);
 R_API R_OWN char *r_type_func_name(Sdb *types, const char *fname);
 
 #ifdef __cplusplus

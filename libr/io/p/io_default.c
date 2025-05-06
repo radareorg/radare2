@@ -97,7 +97,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	return mmo->fd != -1;
 }
 
-static void mmap_free(R_NULLABLE RIOMMapFileObj *mmo) {
+static void mmap_free(RIOMMapFileObj * R_NULLABLE mmo) {
 	if (mmo) {
 		free (mmo->filename);
 		r_buf_free (mmo->buf);

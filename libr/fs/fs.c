@@ -120,7 +120,7 @@ R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
 }
 
 /* mountpoint */
-R_API RFSRoot* r_fs_mount(RFS* fs, R_NULLABLE const char* fstype, const char* path, ut64 delta) {
+R_API RFSRoot* r_fs_mount(RFS* fs, const char * R_NULLABLE fstype, const char* path, ut64 delta) {
 	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
 	RFSRoot* root;
 	RListIter* iter;

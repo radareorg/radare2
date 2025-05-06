@@ -62,6 +62,6 @@ typedef struct r_bin_plan9_obj_t {
 #define KERNEL_MASK 0xffff800000000000ULL
 
 /* Reads four bytes from b. */
-bool r_bin_p9_get_arch(R_NONNULL RBuffer *b, R_NONNULL const char **arch, R_NONNULL int *bits, R_NONNULL int *big_endian);
+bool r_bin_p9_get_arch(RBuffer * R_NONNULL b, const char ** R_NONNULL arch, int * R_NONNULL bits, int * R_NONNULL big_endian);
 
 #endif

@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-R_API R_NULLABLE RUStrpool* r_ustrpool_new(void) {
+R_API RUStrpool * R_NULLABLE r_ustrpool_new(void) {
 	RUStrpool *p = R_NEW0 (RUStrpool);
 	p->size = 128;
 	p->isize = 16;

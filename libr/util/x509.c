@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2024 - wargio */
+/* radare2 - LGPL - Copyright 2017-2025 - pancake, wargio */
 
 #include <r_util.h>
 #include "x509.h"
@@ -43,7 +43,7 @@ static void fini_validity(RX509Validity *validity) {
 	r_asn1_string_free (validity->notBefore);
 }
 
-static void crlentry_free(R_NULLABLE RX509CRLEntry *entry) {
+static void crlentry_free(RX509CRLEntry * R_NULLABLE entry) {
 	if (entry) {
 		r_asn1_binary_free (entry->userCertificate);
 		r_asn1_string_free (entry->revocationDate);
@@ -177,7 +177,7 @@ static bool r_x509_extension_parse(RX509Extension *ext, RASN1Object *object) {
 	return true;
 }
 
-R_API void r_x509_extension_free(R_NULLABLE RX509Extension *ex) {
+R_API void r_x509_extension_free(RX509Extension * R_NULLABLE ex) {
 	if (ex) {
 		r_asn1_string_free (ex->extnID);
 		r_asn1_binary_free (ex->extnValue);
@@ -296,9 +296,6 @@ static RX509CRLEntry *r_x509_crlentry_parse(RASN1Object *object) {
 		return NULL;
 	}
 	RX509CRLEntry *entry = R_NEW0 (RX509CRLEntry);
-	if (!entry) {
-		return NULL;
-	}
 	struct r_asn1_object_t *obj0 = object->list.objects[0];
 	if (!obj0) {
 		free (entry);
@@ -332,9 +329,6 @@ R_IPI void r_x509_name_dump(RX509Name *name, const char *pad, RStrBuf *sb) {
 R_API RX509Certificate *r_x509_certificate_parse(RASN1Object *object) {
 	R_RETURN_VAL_IF_FAIL (object, NULL);
 	RX509Certificate *cert = R_NEW0 (RX509Certificate);
-	if (!cert) {
-		goto fail;
-	}
 	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
 		R_FREE (cert);
 		goto fail;
@@ -360,7 +354,7 @@ fail:
 	return cert;
 }
 
-R_API void r_x509_certificate_free(R_NULLABLE RX509Certificate *certificate) {
+R_API void r_x509_certificate_free(RX509Certificate * R_NULLABLE certificate) {
 	if (certificate) {
 		r_asn1_binary_free (certificate->signature);
 		r_x509_algorithmidentifier_fini (&certificate->algorithmIdentifier);
@@ -375,9 +369,6 @@ R_API RX509CertificateRevocationList *r_x509_crl_parse(RASN1Object *object) {
 		return NULL;
 	}
 	RX509CertificateRevocationList *crl = R_NEW0 (RX509CertificateRevocationList);
-	if (!crl) {
-		return NULL;
-	}
 	RASN1Object **elems = object->list.objects;
 	if (!elems) {
 		free (crl);
@@ -411,7 +402,7 @@ R_API RX509CertificateRevocationList *r_x509_crl_parse(RASN1Object *object) {
 	return crl;
 }
 
-R_IPI void r_x509_crl_free(R_NULLABLE RX509CertificateRevocationList *crl) {
+R_IPI void r_x509_crl_free(RX509CertificateRevocationList * R_NULLABLE crl) {
 	if (crl) {
 		r_x509_algorithmidentifier_fini (&crl->signature);
 		r_x509_name_fini (&crl->issuer);

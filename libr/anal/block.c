@@ -697,7 +697,7 @@ static ut64 bb_addr_for(RAnal *a, ut64 n) {
 	return n;
 }
 
-R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock *block, ut64 dst) {
+R_API RList/*<RAnalBlock *>*/ * R_NULLABLE r_anal_block_shortest_path(RAnalBlock *block, ut64 dst) {
 	ut64 dstbb_addr = bb_addr_for (block->anal, dst);
 
 	RList *ret = NULL;

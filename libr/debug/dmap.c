@@ -302,7 +302,7 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, in
 	}
 }
 
-R_API R_NONNULL RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
+R_API RDebugMap * R_NONNULL r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
 		R_LOG_ERROR ("r_debug_map_new: invalid (0x%" PFMT64x " > 0x%" PFMT64x ")", addr, addr_end);

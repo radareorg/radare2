@@ -1095,7 +1095,7 @@ static void cmd_fd(RCore *core, const char *input) {
 
 static int cmd_flag(void *data, const char *input);
 
-static bool cmd_flag_add(R_NONNULL RCore *core, const char *str, bool addsign) {
+static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) {
 	const char *cstr = r_str_trim_head_ro (str);
 	char* eq = strchr (cstr, '=');
 	char* b64 = strstr (cstr, "base64:");

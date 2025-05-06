@@ -55,7 +55,7 @@ R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut6
 }
 #endif
 
-static R_NONNULL RAnalSwitchOp *__switch_op_new(void) {
+static RAnalSwitchOp * R_NONNULL __switch_op_new(void) {
 	RAnalSwitchOp *swop = R_NEW0 (RAnalSwitchOp);
 	swop->cases = r_list_new ();
 	swop->cases->free = (void *)free;
@@ -72,7 +72,7 @@ R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val,
 	return swop;
 }
 
-R_API R_NONNULL RAnalCaseOp *r_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
+R_API RAnalCaseOp * R_NONNULL r_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
 	RAnalCaseOp *c = R_NEW0 (RAnalCaseOp);
 	c->addr = addr;
 	c->value = val;

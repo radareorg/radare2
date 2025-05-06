@@ -925,7 +925,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
 // return one shortest path from block to dst or NULL if none exists.
-R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock *block, ut64 dst);
+R_API RList/*<RAnalBlock *>*/ * R_NULLABLE r_anal_block_shortest_path(RAnalBlock *block, ut64 dst);
 
 // Add a case to the block's switch_op.
 // If block->switch_op is NULL, it will be created with the given switch_addr.
@@ -1070,7 +1070,7 @@ R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 
 /* fcn.c */
 R_API ut32 r_anal_function_cost(RAnalFunction *fcn);
-R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs);
+R_API int r_anal_function_count_edges(const RAnalFunction *fcn, int * R_NULLABLE ebbs);
 
 R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
 
@@ -1154,7 +1154,7 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
 R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
-R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
+R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name);
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList /*<RAnalVarProt>*/ *l);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API RList *r_anal_var_deserialize(const char *ser);
@@ -1198,12 +1198,12 @@ typedef struct r_anal_function_vars_cache {
 	RList *rvars;
 	RList *svars;
 } RAnalFcnVarsCache;
+
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache);
 
-R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
-		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post);
-
+R_API char *r_anal_function_format_sig(RAnal *anal, RAnalFunction *fcn, char * R_NULLABLE fcn_name,
+		RAnalFcnVarsCache * R_NULLABLE reuse_cache, const char * R_NULLABLE fcn_name_pre, const char * R_NULLABLE fcn_name_post);
 
 /* project */
 #define R_ANAL_THRESHOLDFCN 0.7F
@@ -1328,7 +1328,7 @@ R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr);
 R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 
 // Returns the item with given type that starts at addr in the current space or NULL. The size of this item  optionally returned through size.
-R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT R_NULLABLE ut64 *size);
+R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT ut64 * R_NULLABLE size);
 
 // Returns the node for one meta item with the given type that contains addr in the current space or NULL.
 // To get all the nodes, use r_meta_get_all_in().
@@ -1382,7 +1382,7 @@ R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v);
-R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, R_NULLABLE const char *arch); // arch == NULL => use global default
+R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char * R_NULLABLE arch); // arch == NULL => use global default
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 R_API void r_anal_hint_unset_val(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
@@ -1402,10 +1402,10 @@ R_API void r_anal_hint_unset_newbits(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
-R_API R_NULLABLE const RVector/*<const RAnalAddrHintRecord>*/ *r_anal_addr_hints_at(RAnal *anal, ut64 addr);
+R_API const RVector/*<const RAnalAddrHintRecord>*/ * R_NULLABLE r_anal_addr_hints_at(RAnal * R_NONNULL anal, ut64 addr);
 typedef bool (*RAnalAddrHintRecordsCb)(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user);
 R_API void r_anal_addr_hints_foreach(RAnal *anal, RAnalAddrHintRecordsCb cb, void *user);
-typedef bool (*RAnalArchHintCb)(ut64 addr, R_NULLABLE const char *arch, void *user);
+typedef bool (*RAnalArchHintCb)(ut64 addr, const char * R_NULLABLE arch, void *user);
 R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user);
 typedef bool (*RAnalBitsHintCb)(ut64 addr, int bits, void *user);
 R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user);
@@ -1413,12 +1413,12 @@ R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user
 // get the hint-specified arch value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
 // if there is no hint affecting addr.
-R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+R_API R_BORROW const char * R_NULLABLE  r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr);
 
 // get the hint-specified bits value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
 // if there is no hint affecting addr.
-R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr);
 
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 
