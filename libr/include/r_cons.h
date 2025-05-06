@@ -1053,7 +1053,7 @@ typedef struct {
 
 R_API RConsPixel *r_cons_pixel_new(int w, int h);
 R_API void r_cons_pixel_free(RConsPixel *p);
-R_API void r_cons_pixel_flush(RConsPixel *p, int sx, int sy);
+R_API void r_cons_pixel_flush(RCons *cons, RConsPixel *p, int sx, int sy);
 R_API char *r_cons_pixel_drain(RConsPixel *p);
 R_API ut8 r_cons_pixel_get(RConsPixel *p, int x, int y);
 R_API void r_cons_pixel_set(RConsPixel *p, int x, int y, ut8 v);

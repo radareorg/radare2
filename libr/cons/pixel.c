@@ -142,7 +142,7 @@ R_API char *r_cons_pixel_tostring(RConsPixel *p) {
 	return r_strbuf_drain (sb);
 }
 
-static inline void cons_pixel_paint(RConsPixel *p, int sx, int sy, int x, int y, int cols, int rows) {
+static inline void cons_pixel_paint(RCons *cons, RConsPixel *p, int sx, int sy, int x, int y, int cols, int rows) {
 	int u = pixel_get (p, x, y);
 	if (u) {
 		RBraile b = r_print_braile (u);
@@ -158,13 +158,13 @@ static inline void cons_pixel_paint(RConsPixel *p, int sx, int sy, int x, int y,
 	}
 }
 
-R_API void r_cons_pixel_flush(RConsPixel *p, int sx, int sy) {
+R_API void r_cons_pixel_flush(RCons *cons, RConsPixel *p, int sx, int sy) {
 	R_RETURN_IF_FAIL (p);
-	int rows, cols = r_cons_get_size (&rows);
+	int rows, cols = r_kons_get_size (cons, &rows);
 	size_t x, y;
 	for (y = 0; y + 4 < p->h; y += 4) {
 		for (x = 0; x + 2 < p->w; x += 2) {
-			cons_pixel_paint (p, sx, sy, x, y, cols, rows);
+			cons_pixel_paint (cons, p, sx, sy, x, y, cols, rows);
 		}
 	}
 }
