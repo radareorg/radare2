@@ -1,6 +1,10 @@
 #ifndef R_TYPES_NULL_H
 #define R_TYPES_NULL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO: use this new syntax instead: #define R_NONNULL(type) type * _Nonnull
 
 // -Wno-nullability-completeness
@@ -37,6 +41,10 @@
   #define ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #else
   #define ATTR_NONNULL(...)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // NULLABILITY_H
