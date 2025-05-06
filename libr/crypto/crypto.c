@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_crypto.h>
 #include <r_hash.h>
@@ -42,7 +42,7 @@ R_API RCrypto *r_crypto_new(void) {
 	return cry;
 }
 
-R_API void r_crypto_job_free(R_NULLABLE RCryptoJob *cj) {
+R_API void r_crypto_job_free(RCryptoJob * R_NULLABLE cj) {
 	if (cj) {
 		if (cj->h->fini) {
 			cj->h->fini (cj);
@@ -189,7 +189,7 @@ static inline void print_plugin_verbose(RCryptoPlugin *cp, PrintfCallback cb_pri
 	cb_printf ("%c %12s  %s\n", type, cp->meta.name, desc);
 }
 
-R_API void r_crypto_list(RCrypto *cry, R_NULLABLE PrintfCallback cb_printf, int mode, RCryptoType type) {
+R_API void r_crypto_list(RCrypto *cry, PrintfCallback R_NULLABLE cb_printf, int mode, RCryptoType type) {
 	R_RETURN_IF_FAIL (cry);
 	if (!cb_printf) {
 		cb_printf = (PrintfCallback)printf;

@@ -572,7 +572,7 @@ R_API int r_type_func_args_count(Sdb *TDB, const char *func_name) {
 	return sdb_num_get (TDB, query, 0);
 }
 
-R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i) {
+R_API R_OWN char *r_type_func_args_type(Sdb *TDB, const char * R_NONNULL func_name, int i) {
 	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (TDB, query, 0);
 	free (query);
@@ -600,7 +600,7 @@ const char *const argnames[10] = {
 	"arg9",
 };
 
-R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
+R_API const char *r_type_func_args_name(Sdb *TDB, const char * R_NONNULL func_name, int i) {
 	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
 	const char *row = sdb_const_get (TDB, query, 0);
 	free (query);
@@ -623,7 +623,7 @@ static inline bool is_function(const char *name) {
 	return name && !strcmp ("func", name);
 }
 
-static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
+static R_OWN char *type_func_try_guess(Sdb *TDB, char * R_NONNULL name) {
 	if (strlen (name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
@@ -687,7 +687,7 @@ static void clean_function_name(char *func_name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
-R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
+R_API R_OWN char *r_type_func_guess(Sdb *TDB, char * R_NONNULL func_name) {
 	char *str = func_name;
 	char *result = NULL;
 	R_RETURN_VAL_IF_FAIL (TDB, false);

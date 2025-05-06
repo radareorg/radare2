@@ -67,7 +67,7 @@ static void drawPieChart(char *out, int diameter, int numSlices, int sliceSizes[
 	}
 }
 
-R_API void r_print_pie(R_NULLABLE RPrint *p, int nvalues, int *values, const char **text, int size) {
+R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const char **text, int size) {
 	if (size < 1) {
 		R_LOG_WARN ("No one cant eat such smol pie");
 		return;

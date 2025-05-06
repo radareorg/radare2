@@ -136,7 +136,7 @@ redo_spec:
 	return buf - save;
 }
 
-R_API int r_str_printf(R_NONNULL char * buf, size_t buf_size, R_NONNULL const char * fmt, ...) {
+R_API int r_str_printf(char * R_NONNULL buf, size_t buf_size, const char * R_NONNULL fmt, ...) {
 	va_list va;
 	va_start (va,fmt);
 	int ret = my_vsnprintf (buf, buf_size, fmt, va);

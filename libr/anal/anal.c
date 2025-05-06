@@ -248,7 +248,7 @@ R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	return ret;
 }
 
-R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE const char *arch, int bits) {
+R_API bool r_anal_set_triplet(RAnal *anal, const char * R_NULLABLE os, const char * R_NULLABLE arch, int bits) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
@@ -487,7 +487,7 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 #define K_NORET_ADDR(x) r_strf ("addr.%"PFMT64x".noreturn", x)
 #define K_NORET_FUNC(x) r_strf ("func.%s.noreturn", x)
 
-R_API bool r_anal_noreturn_add(RAnal *anal, R_NULLABLE const char *name, ut64 addr) {
+R_API bool r_anal_noreturn_add(RAnal *anal, const char * R_NULLABLE name, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
 	r_strf_buffer (128);
 	const char *tmp_name = NULL;

@@ -860,7 +860,7 @@ typedef struct {
 	int bufsz;
 } StringSearchOptions;
 
-static int cb_strhit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 where) {
+static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
 	if (where - sso->addr >= sso->bufsz) {
 		r_core_cmd_call_at (sso->core, where, "Cz");

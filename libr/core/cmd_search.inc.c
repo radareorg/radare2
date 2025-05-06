@@ -767,7 +767,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	return true;
 }
 
-static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
+static int _cb_hit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 addr) {
 	RSearchKeyword kw_fake = {0};
 	RSearchKeyword *kw_used = &kw_fake;
 	int klen = 0;

@@ -48,7 +48,7 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *consumed, int *dstLen)
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
 R_API char *r_stdin_slurp(int *sz);
 R_API char *r_stdin_readline(int *sz);
-R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz);
+R_API char *r_file_slurp(const char *str, size_t * R_NULLABLE usz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 R_API char *r_file_slurp_random_line(const char *file);
 R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
@@ -64,7 +64,7 @@ R_API bool r_file_fexists(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API char *r_file_slurp_lines(const char *file, int line, int count);
 R_API char *r_file_slurp_lines_from_bottom(const char *file, int line);
-R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char *ex);
+R_API char *r_file_temp_ex(const char * R_NULLABLE prefix, const char * R_NULLABLE ex);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
@@ -79,9 +79,9 @@ R_API R_MUSTUSE char *r_file_home(const char *str);
 R_API R_MUSTUSE char *r_file_homef(const char *fmt, ...);
 
 // XDG
-R_API char *r_xdg_configdir(const char *s);
-R_API char *r_xdg_datadir(const char *s);
-R_API char *r_xdg_cachedir(const char *s);
+R_API char * R_NULLABLE r_xdg_configdir(const char *s);
+R_API char * R_NULLABLE r_xdg_datadir(const char *s);
+R_API char * R_NULLABLE r_xdg_cachedir(const char *s);
 
 #ifdef __cplusplus
 }

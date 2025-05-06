@@ -105,7 +105,7 @@ typedef struct r_flag_bind_t {
 #ifdef R_API
 
 /* flag */
-R_API R_NULLABLE RFlagItemMeta *r_flag_get_meta(RFlag *f, ut32 id);
+R_API RFlagItemMeta * R_NULLABLE r_flag_get_meta(RFlag *f, ut32 id);
 R_API RFlagItemMeta *r_flag_get_meta2(RFlag *f, ut32 id);
 R_API void r_flag_del_meta(RFlag *f, ut32 id);
 
@@ -133,11 +133,11 @@ R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 si
 R_API void r_flag_item_free(RFlagItem *item);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 
-R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, R_NULLABLE const char *type);
-R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *item, R_NULLABLE const char *alias);
-R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, R_NULLABLE const char *comment);
-R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *fi, R_NULLABLE const char *realname);
-R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, R_NULLABLE const char *color);
+R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char * R_NULLABLE type);
+R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *item, const char * R_NULLABLE alias);
+R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, const char * R_NULLABLE comment);
+R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *fi, const char * R_NULLABLE realname);
+R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, const char * R_NULLABLE color);
 
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);

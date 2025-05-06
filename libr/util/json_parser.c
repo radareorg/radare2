@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2023 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
+/* radare - LGPL - Copyright 2020-2025 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
 
 #define R_LOG_ORIGIN "json.parse"
 
@@ -11,9 +11,6 @@
 
 static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 	RJson *js = R_NEW0 (RJson);
-	if (!js) {
-		return NULL;
-	}
 	js->type = type;
 	js->key = key;
 	if (!parent->children.last) {
@@ -209,7 +206,7 @@ static char *parse_key(const char **key, char *p) {
 	return NULL; // error
 }
 
-static char *parse_value(RJson *parent, R_NULLABLE const char *key, char *p) {
+static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 	R_RETURN_VAL_IF_FAIL (parent && p, NULL);
 	RJson *js;
 	p = skip_whitespace (p); // TODO: use r_str_trim_head_ro()

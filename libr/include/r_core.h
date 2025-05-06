@@ -550,13 +550,13 @@ R_API int r_core_seek_base(RCore *core, const char *hex);
 R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_seek_next(RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
-R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch);
+R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bits, R_OUT R_BORROW const char ** R_NULLABLE arch);
 R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
-R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
+R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
 R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input(RCore *core);
@@ -963,10 +963,10 @@ R_API RTable *r_core_table_new(RCore *core, const char *title);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);
 R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help);
-R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd);
-R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd);
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec);
-R_API void r_core_cmd_help_contains_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec);
+R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd);
+R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, R_BORROW char * R_NONNULL cmd);
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW char * R_NONNULL cmd, char spec);
+R_API void r_core_cmd_help_contains_spec(const RCore *core, const char * const help[], R_BORROW char * R_NONNULL cmd, char spec);
 
 /* anal stats */
 

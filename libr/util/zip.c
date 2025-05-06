@@ -89,7 +89,7 @@ err_exit:
 	return NULL;
 }
 
-R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, R_NULLABLE int *consumed, int *dstLen) {
+R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int * R_NULLABLE consumed, int *dstLen) {
 	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
 	ut32 osz = srcLen * 5;
 	int pp = 0;
@@ -139,12 +139,12 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, R_NULLABLE int *consumed, i
 	return NULL;
 }
 
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, R_NULLABLE int *consumed, int *dstLen) {
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int * R_NULLABLE consumed, int *dstLen) {
 	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
 	return inflatew (src, srcLen, consumed, dstLen, MAX_WBITS + 32);
 }
 
-R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, R_NULLABLE int *consumed, int *dstLen) {
+R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, int * R_NULLABLE consumed, int *dstLen) {
 	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
 	return inflatew (src, srcLen, consumed, dstLen, -MAX_WBITS);
 }

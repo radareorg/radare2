@@ -925,7 +925,7 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 
 #define ADDARG(x) if (!strncmp (buf->data+chr, x, strlen (buf->data+chr))) { r_line_completion_push (completion, x); }
 
-static void autocomplete_default(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+static void autocomplete_default(RCore * R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf) {
 	RCoreAutocomplete *a = core ? core->autocomplete : NULL;
 	int i;
 	if (a) {
@@ -1387,7 +1387,7 @@ static bool check_tabhelp_exceptions(const char *s) {
 	return false;
 }
 
-R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;

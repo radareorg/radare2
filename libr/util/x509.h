@@ -11,7 +11,7 @@ R_IPI void r_x509_name_fini(RX509Name *name);
 
 R_IPI void r_x509_extension_fini(RX509Extension *ex);
 
-R_IPI void r_x509_crl_free(R_NULLABLE RX509CertificateRevocationList *crl);
+R_IPI void r_x509_crl_free(RX509CertificateRevocationList * R_NULLABLE crl);
 R_IPI void r_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
 R_IPI void r_x509_name_json(PJ *pj, RX509Name *name);
 R_IPI void r_x509_crl_free(RX509CertificateRevocationList *crl);

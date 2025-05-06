@@ -338,7 +338,7 @@ R_API void r_cons_pal_random(RCons *cons) {
 	r_cons_pal_reload (cons);
 }
 
-R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
+R_API char *r_cons_pal_parse(const char *str, RColor * R_NULLABLE outcol) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
 	RColor rcolor = (RColor) RColor_BLACK;
 	rcolor.id16 = -1;

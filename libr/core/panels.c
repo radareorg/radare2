@@ -641,7 +641,7 @@ static void __set_decompiler_cache(RCore *core, char *s) {
 }
 #endif
 
-static void __set_read_only(RCore *core, RPanel *p, R_NULLABLE const char *s) {
+static void __set_read_only(RCore *core, RPanel *p, const char * R_NULLABLE s) {
 	free (p->model->readOnly);
 	p->model->readOnly = R_STR_DUP (s);
 	__set_dcb (core, p);
@@ -2011,7 +2011,7 @@ static void __replace_cmd(RCore *core, const char *title, const char *cmd) {
 	__set_refresh_all (core, false, true);
 }
 
-static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd) {
+static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title, const char *cmd) {
 	if (!__check_panel_num (core)) {
 		return;
 	}
@@ -2031,7 +2031,7 @@ static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R
 	}
 }
 
-static void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
 	char *cmd = sdb_get (core->panels->db, title, 0);
 	if (!cmd) {
@@ -2042,7 +2042,7 @@ static void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir,
 	__cache_white_list (core, p);
 }
 
-static void __create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
 	char *cmd = __show_status_input (core, "Command: ");
 	if (cmd) {
@@ -2050,7 +2050,7 @@ static void __create_panel_input(void *user, RPanel *panel, const RPanelLayout d
 	}
 }
 
-static void __replace_current_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __replace_current_panel_input(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
 	char *cmd = __show_status_input (core, "New command: ");
 	if (R_STR_ISNOTEMPTY (cmd)) {
@@ -2068,14 +2068,14 @@ static char *__search_strings(RCore *core, bool whole) {
 	return ret;
 }
 
-static void __search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
 	char *str = __search_strings (core, false);
 	__create_panel (core, panel, dir, title, str);
 	free (str);
 }
 
-static void __search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
 	char *str = __search_strings (core, true);
 	__create_panel (core, panel, dir, title, str);
@@ -2195,7 +2195,7 @@ static int __continue_cb(void *user) {
 	return 0;
 }
 
-static void __continue_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+static void __continue_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
 	__continue_cb (user);
 	__update_disassembly_or_open ((RCore *)user);
 }
@@ -2237,7 +2237,7 @@ static int __step_over_cb(void *user) {
 	return 0;
 }
 
-static void __step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+static void __step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
 	__step_cb (user);
 }
 
@@ -2265,11 +2265,11 @@ static int __break_points_cb(void *user) {
 	return 0;
 }
 
-static void __put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+static void __put_breakpoints_cb(void *user, RPanel * R_UNUSED panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
 	__break_points_cb (user);
 }
 
-static void __step_over_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+static void __step_over_modal_cb(void *user, RPanel * R_UNUSED panel, R_UNUSED const RPanelLayout dir, R_UNUSED const char * R_NULLABLE title) {
 	__step_over_cb (user);
 }
 
@@ -2307,7 +2307,7 @@ static int __show_all_decompiler_cb(void *user) {
 	return 0;
 }
 
-static void __delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+static void __delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	(void)__show_all_decompiler_cb ((RCore *)user);
 }
 
@@ -2538,9 +2538,6 @@ static bool __init(RCore *core, RPanels *panels, int w, int h) {
 
 static RPanels *__panels_new(RCore *core) {
 	RPanels *panels = R_NEW0 (RPanels);
-	if (!panels) {
-		return NULL;
-	}
 	int h, w = r_cons_get_size (&h);
 	core->visual.firstRun = true;
 	if (!__init (core, panels, w, h)) {
@@ -4193,11 +4190,9 @@ static void __delete_modal(RCore *core, RModal *modal, Sdb *menu_db) {
 
 static RModal *__init_modal(void) {
 	RModal *modal = R_NEW0 (RModal);
-	if (modal) {
-		__set_pos (&modal->pos, 0, 0);
-		modal->idx = 0;
-		modal->offset = 0;
-	}
+	__set_pos (&modal->pos, 0, 0);
+	modal->idx = 0;
+	modal->offset = 0;
 	return modal;
 }
 
@@ -5235,9 +5230,6 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	RPanels *panels = core->panels;
 	RPanelsMenuItem *p_item;
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
-	if (!item) {
-		return;
-	}
 	r_strf_buffer (128);
 	if (parent) {
 		void *addr = ht_pp_find (panels->mht, parent, NULL);
@@ -5851,14 +5843,7 @@ static void __load_config_menu(RCore *core) {
 static bool __init_panels_menu(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *panels_menu = R_NEW0 (RPanelsMenu);
-	if (!panels_menu) {
-		return false;
-	}
 	RPanelsMenuItem *root = R_NEW0 (RPanelsMenuItem);
-	if (!root) {
-		R_FREE (panels_menu);
-		return false;
-	}
 	panels->panels_menu = panels_menu;
 	panels_menu->root = root;
 	root->n_sub = 0;
@@ -7567,9 +7552,6 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	core->visual.fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = R_NEW0 (RPanelsRoot);
-		if (!panels_root) {
-			return false;
-		}
 		core->panels_root = panels_root;
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 0;

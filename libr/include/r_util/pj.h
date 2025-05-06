@@ -35,8 +35,8 @@ typedef struct pj_t {
 } PJ;
 
 /* lifecycle */
-R_API R_NONNULL PJ *pj_new(void);
-R_API R_NONNULL PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding);
+R_API PJ * R_NONNULL pj_new(void);
+R_API PJ * R_NONNULL pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding);
 R_API void pj_free(PJ *j);
 R_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 R_API char *pj_drain(PJ *j);

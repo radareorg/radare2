@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2024 - condret */
+/* radare - LGPL - Copyright 2019-2025 - condret */
 
 #include <r_anal.h>
 
@@ -30,7 +30,7 @@ typedef struct r_anal_esil_dfg_const_reducer_t {
 
 // TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
 
-R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, R_NULLABLE const char *c) {
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char * R_NULLABLE c) {
 	R_RETURN_VAL_IF_FAIL (edf, NULL);
 	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
 	ret->content = r_strbuf_new (c);
@@ -1641,7 +1641,7 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 	}
 }
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, R_NULLABLE RAnalEsilDFG *dfg, const char *expr,
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG * R_NULLABLE dfg, const char *expr,
 	bool use_map_info, bool use_maps) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, NULL);
 	REsil *esil = r_esil_new (4096, 0, 1);

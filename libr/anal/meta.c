@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, R_NULLABLE const RSpace *space) {
+static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, const RSpace * R_NULLABLE space) {
 	return (type == R_META_TYPE_ANY || item->type == type) && (!space || item->space == space);
 }
 
@@ -21,7 +21,7 @@ static bool find_node_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RIntervalNode *find_node_at(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RIntervalNode *find_node_at(RAnal *anal, RAnalMetaType type, const RSpace * R_NULLABLE space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -31,7 +31,7 @@ static RIntervalNode *find_node_at(RAnal *anal, RAnalMetaType type, R_NULLABLE c
 	return ctx.node;
 }
 
-static RIntervalNode *find_node_in(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RIntervalNode *find_node_in(RAnal *anal, RAnalMetaType type, const RSpace * R_NULLABLE space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -56,7 +56,7 @@ static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, const RSpace * R_NULLABLE space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -69,7 +69,7 @@ static RPVector *collect_nodes_at(RAnal *anal, RAnalMetaType type, R_NULLABLE co
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, const RSpace * R_NULLABLE space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -82,7 +82,7 @@ static RPVector *collect_nodes_in(RAnal *anal, RAnalMetaType type, R_NULLABLE co
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, R_NULLABLE const RSpace *space, ut64 start, ut64 end) {
+static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, const RSpace * R_NULLABLE space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -95,7 +95,7 @@ static RPVector *collect_nodes_intersect(RAnal *anal, RAnalMetaType type, R_NULL
 	return ctx.result;
 }
 
-static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, R_NULLABLE const char *str) {
+static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 to, const char * R_NULLABLE str) {
 	if (to < from) {
 		return false;
 	}
@@ -178,7 +178,7 @@ R_API void r_meta_del(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size) {
 	del (a, type, r_spaces_current (&a->meta_spaces), addr, size);
 }
 
-R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, R_NULLABLE const char *str) {
+R_API bool r_meta_set(RAnal *a, RAnalMetaType type, ut64 addr, ut64 size, const char * R_NULLABLE str) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	return r_meta_set_with_subtype (a, type, 0, addr, size, str);
 }
@@ -192,7 +192,7 @@ R_API bool r_meta_set_with_subtype(RAnal *m, RAnalMetaType type, int subtype, ut
 	return meta_set (m, type, subtype, addr, end, str);
 }
 
-R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT R_NULLABLE ut64 *size) {
+R_API RAnalMetaItem *r_meta_get_at(RAnal *a, ut64 addr, RAnalMetaType type, R_OUT ut64 * R_NULLABLE size) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
 	RIntervalNode *node = find_node_at (a, type, r_spaces_current (&a->meta_spaces), addr);
 	if (node && size) {

@@ -54,7 +54,7 @@ static RVecREventHook *get_cbs(REvent *ev, int type) {
 	return cbs;
 }
 
-R_API void r_event_hook(R_NULLABLE REvent *ev, ut32 type, REventCallback cb, void *user) {
+R_API void r_event_hook(REvent * R_NULLABLE ev, ut32 type, REventCallback cb, void *user) {
 	if (!ev) {
 		return;
 	}
@@ -89,7 +89,7 @@ static inline bool del_hook(RVecREventHook *hooks, const ut64 k, REventCallback 
 	return false;
 }
 
-R_API bool r_event_unhook(R_NULLABLE REvent *ev, ut32 event_type, REventCallback cb) {
+R_API bool r_event_unhook(REvent * R_NULLABLE ev, ut32 event_type, REventCallback cb) {
 	bool res = false;
 	if (!ev) {
 		return res;
@@ -109,8 +109,8 @@ R_API bool r_event_unhook(R_NULLABLE REvent *ev, ut32 event_type, REventCallback
 	return res;
 }
 
-//  r_event_send (core->ev, R_EVENT_ANALYSIS_START, "");
-R_API void r_event_send(R_NULLABLE REvent *ev, ut32 event_type, void *data) {
+// r_event_send (core->ev, R_EVENT_ANALYSIS_START, "");
+R_API void r_event_send(REvent * R_NULLABLE ev, ut32 event_type, void *data) {
 	if (!ev || event_type == R_EVENT_ALL) {
 		return;
 	}

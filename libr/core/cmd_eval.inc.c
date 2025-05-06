@@ -628,7 +628,7 @@ static bool cmd_ec(RCore *core, const char *input) {
 	return true;
 }
 
-static void r2rc_set(RCore *core, R_NULLABLE const char *k, R_NULLABLE const char *v) {
+static void r2rc_set(RCore *core, const char * R_NULLABLE k, const char * R_NULLABLE v) {
 	char *rcfile = r_file_home (".radare2rc");
 	char *rcdata = r_file_slurp (rcfile, NULL);
 	if (k) {

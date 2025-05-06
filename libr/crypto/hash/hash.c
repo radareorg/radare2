@@ -332,7 +332,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSeed *seed) {
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed * R_NULLABLE seed) {
 	R_RETURN_IF_FAIL (ctx);
 	int i, len, hlen = r_hash_size (algo);
 	size_t buf_len = hlen + (seed? seed->len: 0);
@@ -359,7 +359,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 	free (buf);
 }
 
-R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (name && len >= 0 && data, NULL);
 	char *digest_hex = NULL;
 	int digest_size = 0;

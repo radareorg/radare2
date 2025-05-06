@@ -224,7 +224,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 #endif
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
-R_API int r_kons_get_size(RCons *cons, R_NULLABLE int *rows) {
+R_API int r_kons_get_size(RCons *cons, int * R_NULLABLE rows) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
 #if R2__WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -692,7 +692,7 @@ static void cons_context_deinit(RConsContext *ctx) {
 }
 #endif
 
-static void init_cons_context(RCons *cons, R_NULLABLE RConsContext *parent) {
+static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
 	ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	ctx->breaked = false;
@@ -824,7 +824,7 @@ R_API RCons *r_kons_new(void) {
 	return cons;
 }
 
-R_API void r_kons_free(R_NULLABLE RCons *cons) {
+R_API void r_kons_free(RCons * R_NULLABLE cons) {
 	if (!cons) {
 		return;
 	}
@@ -973,7 +973,7 @@ R_API void r_kons_filter(RCons *cons) {
 	}
 }
 
-R_API void r_cons_context_free(R_NULLABLE RConsContext *ctx) {
+R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 	if (ctx) {
 		// TODO: free more stuff
 #if 0
@@ -1633,7 +1633,7 @@ R_API void r_kons_trim(RCons *cons) {
 	}
 }
 
-R_API void r_kons_breakword(RCons *cons, R_NULLABLE const char *s) {
+R_API void r_kons_breakword(RCons *cons, const char * R_NULLABLE s) {
 	free (cons->break_word);
 	if (s) {
 		cons->break_word = strdup (s);

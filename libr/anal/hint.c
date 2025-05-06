@@ -401,7 +401,7 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 	}
 }
 
-R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
+R_API R_BORROW const char * R_NULLABLE r_anal_hint_arch_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (R_LIKELY (node)) {
 		RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
@@ -416,7 +416,7 @@ R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr
 	return NULL;
 }
 
-R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
+R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, ut64 * R_NULLABLE hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->bits_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		if (hint_addr) {
@@ -431,7 +431,7 @@ R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr
 	return record->bits;
 }
 
-R_API R_NULLABLE const RVector/*<const RAnalAddrHintRecord>*/ *r_anal_addr_hints_at(RAnal *anal, ut64 addr) {
+R_API const RVector/*<const RAnalAddrHintRecord>*/ * R_NULLABLE r_anal_addr_hints_at(RAnal *anal, ut64 addr) {
 	return ht_up_find (anal->addr_hints, addr, NULL);
 }
 

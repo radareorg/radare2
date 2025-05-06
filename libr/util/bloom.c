@@ -24,7 +24,7 @@ static ut32 default_bloom_hash(const void *data, size_t len, ut32 seed) {
 	return hash;
 }
 
-R_API R_NULLABLE RBloom *r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_funcs) {
+R_API RBloom * R_NULLABLE r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_funcs) {
 	if (m == 0 || k == 0) {
 		return NULL;
 	}
@@ -71,13 +71,13 @@ R_API void r_bloom_reset(RBloom *bf) {
 	free (funcs);
 }
 
-R_API void r_bloom_fini(R_NONNULL RBloom *bf) {
+R_API void r_bloom_fini(RBloom * R_NULLABLE bf) {
 	R_RETURN_IF_FAIL (bf);
 	free (bf->bit_array);
 	free (bf->hash_funcs);
 }
 
-R_API void r_bloom_free(R_NULLABLE RBloom *bf) {
+R_API void r_bloom_free(RBloom * R_NULLABLE bf) {
 	if (bf) {
 		r_bloom_fini (bf);
 		free (bf);

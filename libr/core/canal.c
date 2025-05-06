@@ -1510,7 +1510,7 @@ static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRec
 	return true;
 }
 
-static bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
+static bool print_arch_hint_cb(ut64 addr, const char * R_NULLABLE arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
 	node->addr = addr;
 	node->type = HINT_NODE_ARCH;
@@ -6735,7 +6735,7 @@ static int __addrs_cmp(void *_a, void *_b) {
 	return 0;
 }
 
-R_API void r_core_anal_inflags(RCore *core, R_NULLABLE const char *glob) {
+R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 	R_RETURN_IF_FAIL (core);
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;

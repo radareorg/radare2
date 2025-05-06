@@ -301,7 +301,7 @@ R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefi
 	}
 	return str;
 }
-static inline char *R_STR_NDUP(R_NULLABLE const char *x, int len) {
+static inline char *R_STR_NDUP(const char * R_NULLABLE x, int len) {
 	int _len = len; return (_len > 0) ? r_str_ndup (x, _len) : NULL;
 }
 R_API bool r_str_endswith(const char *str, const char *needle);
@@ -321,9 +321,9 @@ R_API char *r_str_version(const char *program);
 R_API char *r_str_ss(const char* msg, const char *nl, int cs);
 
 R_API char *r_str_after(char *s, char c);
-R_API int r_str_printf(R_NONNULL char *buffer, size_t buffer_size, R_NONNULL const char *format, ...);
+R_API int r_str_printf(char * R_NONNULL buffer, size_t buffer_size, const char * R_NONNULL format, ...);
   /// __attribute__ ((format (printf, 3, 4)));
-R_API int r_str_scanf(R_NONNULL const char *buffer, R_NONNULL const char *format, ...);
+R_API int r_str_scanf(const char * R_NONNULL buffer, const char * R_NONNULL format, ...);
   /// __attribute__ ((format (scanf, 2, 3)));
 
 // rstr
@@ -335,8 +335,8 @@ R_API RString r_string_from(const char *is, int len);
 R_API void r_string_unweak(RString *a);
 R_API void r_string_trim(RString *s);
 R_API R_WIP RString r_string_newf(const char *fmt, ...);
-R_API bool r_string_append(RString *a, const char *s);
-R_API void r_string_appendf(RString *a, const char *fmt, ...);
+R_API bool r_string_append(RString *a, const char * R_NONNULL s);
+R_API void r_string_appendf(RString *a, const char * R_NONNULL fmt, ...);
 
 #ifdef __cplusplus
 }

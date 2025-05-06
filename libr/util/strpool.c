@@ -4,7 +4,7 @@
 
 #include <r_util.h>
 
-R_API R_NULLABLE RStrpool* r_strpool_new(void) {
+R_API RStrpool* R_NULLABLE r_strpool_new(void) {
 	RStrpool *p = R_NEW0 (RStrpool);
 	p->size = 1024;
 	p->str = malloc (p->size);
