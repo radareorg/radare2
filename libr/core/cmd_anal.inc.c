@@ -5720,7 +5720,7 @@ static int cmd_af(RCore *core, const char *input) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					// TODO: add info about xrefs and call counts
-					int nargs = r_type_func_args_count (core->anal->sdb_types, 0);
+					int nargs = r_type_func_args_count (core->anal->sdb_types, fcn->name);
 					int nvars = r_anal_var_count_locals (fcn);
 					int nins = r_anal_function_instrcount (fcn);
 					int ebbs = 0;

@@ -567,7 +567,7 @@ R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	return sdb_const_get (TDB, query, 0);
 }
 
-R_API int r_type_func_args_count(Sdb *TDB, const char *func_name) {
+R_API int r_type_func_args_count(Sdb *TDB, const char * R_NONNULL func_name) {
 	r_strf_var (query, 64, "func.%s.args", func_name);
 	return sdb_num_get (TDB, query, 0);
 }
