@@ -1967,8 +1967,16 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 	if (i1 == '?') {
 		r_core_cmd_help (core, help_msg_ie);
 	} else if (i1 == 's') {
-		cmd_ies (core, input, pj, mode, va);
+		if (input[2] == '?') {
+			r_core_cmd_help_contains (core, help_msg_ie, "ies");
+		} else {
+			cmd_ies (core, input, pj, mode, va);
+		}
 	} else if (i1 == ' ' || i1 == '*' || i1 == 'e' || i1 == 'j' || i1 == '=' || i1 == 'q' || !i1) {
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_ie);
+			return;
+		}
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
 		RBinFile *bf;
@@ -2120,11 +2128,11 @@ static int cmd_info(void *data, const char *input) {
 		case 'd': // "id?"
 			r_core_cmd_help (core, help_msg_id);
 			break;
-		case '?':
-			r_core_cmd_help_contains (core, help_msg_i, cmd);
+		case 'e': // "ie?"
+			r_core_cmd_help (core, help_msg_ie);
 			break;
 		default:
-			r_core_return_invalid_command (core, "i", *input);
+			r_core_cmd_help_contains (core, help_msg_i, cmd);
 			break;
 		}
 		return 0;
