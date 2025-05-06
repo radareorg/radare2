@@ -902,13 +902,13 @@ R_API RBin *r_bin_new(void) {
 		}
 	}
 	return bin;
-trashbin_binldrs:
+#if 0
 	r_list_free (bin->binldrs);
-trashbin_binxtrs:
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->binfiles);
 	r_id_storage_free (bin->ids);
 	r_str_constpool_fini (&bin->constpool);
+#endif
 trashbin:
 	free (bin);
 	return NULL;
