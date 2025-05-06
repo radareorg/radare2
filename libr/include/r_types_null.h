@@ -5,7 +5,9 @@
 
 // -Wno-nullability-completeness
 
+#ifdef __clang__
 #pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
 
 #if defined(__clang__)
   // Clang supports _Nonnull / _Nullable with -fnullability
