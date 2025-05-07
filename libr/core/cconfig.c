@@ -2704,7 +2704,7 @@ static bool cb_scr_histblock(void *user, void *data) {
 
 static bool cb_scr_histsize(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_line_hist_set_size(node->i_value);
+	r_line_hist_set_size (node->i_value);
 	return true;
 }
 

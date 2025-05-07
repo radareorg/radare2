@@ -409,7 +409,7 @@ static int inithist(void) {
 }
 
 /* initialize history stuff */
-R_API int r_line_dietline_init(void) {
+R_API bool r_line_dietline_init(void) {
 	ZERO_FILL (I.completion);
 	if (!inithist ()) {
 		return false;

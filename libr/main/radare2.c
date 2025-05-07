@@ -1957,6 +1957,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (mustSaveHistory (r->config)) {
 		char *history_file = r_xdg_cachedir ("history");
+		eprintf ("SAVING HITSTYURU\n");
 		if (history_file) {
 			r_line_hist_save (history_file);
 			free (history_file);
