@@ -76,7 +76,7 @@ bool r_strbuf_append(SStrBuf *sb, const char *s) {
 	return true;
 }
 
-char *r_strbuf_get(SStrBuf *sb) {
+char *r_strbuf_tostring(SStrBuf *sb) {
 	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 

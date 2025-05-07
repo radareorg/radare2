@@ -652,7 +652,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
-			if (!database_load (db, r_strbuf_get (&subpath), depth - 1)) {
+			if (!database_load (db, r_strbuf_tostring (&subpath), depth - 1)) {
 				ret = false;
 				break;
 			}
@@ -781,11 +781,11 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
-			if (r_file_is_directory (r_strbuf_get (&subpath))) {
+			if (r_file_is_directory (r_strbuf_tostring (&subpath))) {
 				// only load 1 level deep
 				continue;
 			}
-			database_load_fuzz_file (db, path, r_strbuf_get (&subpath));
+			database_load_fuzz_file (db, path, r_strbuf_tostring (&subpath));
 		}
 		r_strbuf_fini (&subpath);
 		r_list_free (dir);

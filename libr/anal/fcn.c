@@ -984,7 +984,7 @@ noskip:
 		case R_ANAL_OP_TYPE_MOV:
 			last_is_reg_mov_lea = false;
 			if (is_arm) { // mov lr, pc
-				const char *esil = r_strbuf_get (&op->esil);
+				const char *esil = r_strbuf_tostring (&op->esil);
 				if (!strcmp (esil, "pc,lr,=")) {
 					last_is_mov_lr_pc = true;
 				}
@@ -1133,7 +1133,7 @@ noskip:
 				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
 					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
 					if (is_mips && anal->opt.jmptbl) {
-						const char *esil = r_strbuf_get (&op->esil);
+						const char *esil = r_strbuf_tostring (&op->esil);
 						if (strstr (esil, "v1,=")) {
 							// eprintf("iftarget is v1 (%s)\n", esil);
 							// eprintf ("LOAD FROM %llx -> %llx\n", op->ptr, da);
@@ -1160,7 +1160,7 @@ noskip:
 		case R_ANAL_OP_TYPE_ADD:
 			if (is_mips) {
 				if (anal->opt.jmptbl && v1 != UT64_MAX) {
-					// TODO: ensure we add in v1 // const char *esil = r_strbuf_get (&op->esil);
+					// TODO: ensure we add in v1 // const char *esil = r_strbuf_tostring (&op->esil);
 					v1 += (st32)op->val;
 					// align v1
 					while (v1 & 3) {

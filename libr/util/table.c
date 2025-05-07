@@ -421,7 +421,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 	r_list_foreach (t->cols, iter, col) {
 		__strbuf_append_col_aligned_fancy (t, sb, col, col->name);
 	}
-	int len = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
+	int len = r_str_len_utf8_ansi (r_strbuf_tostring (sb)) - 1;
 	int maxlen = len;
 	char *h_line_str = r_str_repeat (h_line, maxlen);
 	{
@@ -552,7 +552,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 			int ll = __strbuf_append_col_aligned (sb, col, col->name, nopad);
 			maxlen = R_MAX (maxlen, ll);
 		}
-		int len = r_str_len_utf8_ansi (r_strbuf_get (sb));
+		int len = r_str_len_utf8_ansi (r_strbuf_tostring (sb));
 		char *l = r_str_repeat (h_line, R_MAX (maxlen, len));
 		if (R_LIKELY (l)) {
 			r_strbuf_appendf (sb, "\n%s\n", l);

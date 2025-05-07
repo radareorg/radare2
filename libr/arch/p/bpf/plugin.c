@@ -324,7 +324,7 @@ static const char *token_next(BPFAsmParser *t) {
 
 	if (is_single_char_token (t->str[0])) {
 		r_strbuf_append_n (token, t->str++, 1);
-		return r_strbuf_get (token);
+		return r_strbuf_tostring (token);
 	}
 
 	// Gather a handful of chars
@@ -339,7 +339,7 @@ static const char *token_next(BPFAsmParser *t) {
 	if (i == TOKEN_MAX_LEN) {
 		return NULL; // token too long
 	}
-	return r_strbuf_get (token);
+	return r_strbuf_tostring (token);
 }
 
 static bool is_k_tok(const char *tok) {

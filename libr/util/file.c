@@ -69,12 +69,12 @@ R_API char *r_file_new(const char *root, ...) {
 	}
 	const char *arg = va_arg (ap, char *);
 	if (arg) {
-		if (!r_str_endswith (r_strbuf_get (sb), R_SYS_DIR)) {
+		if (!r_str_endswith (r_strbuf_tostring (sb), R_SYS_DIR)) {
 			r_strbuf_append (sb, R_SYS_DIR);
 		}
 	}
 	while (arg) {
-		if (!r_str_endswith (r_strbuf_get (sb), R_SYS_DIR)) {
+		if (!r_str_endswith (r_strbuf_tostring (sb), R_SYS_DIR)) {
 			r_strbuf_append (sb, R_SYS_DIR);
 		}
 		r_strbuf_append (sb, arg);
@@ -380,7 +380,7 @@ R_API char *r_stdin_readline(int *sz) {
 	}
 	*sz = l;
 	// NOTE that r_strbuf_drain uses r_str_ndup which chops strings with null bytes
-	char *res = r_mem_dup (r_strbuf_getbin (sb, NULL), l + 1);
+	char *res = r_mem_dup (r_strbuf_tostringbin (sb, NULL), l + 1);
 	r_strbuf_free (sb);
 	return res;
 }

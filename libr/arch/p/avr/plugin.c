@@ -542,12 +542,12 @@ static void _inst__cbi(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, i
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	r_strbuf_appendf (&op->esil, "0xff,%d,1,<<,^,%s,&,", b, r_strbuf_get (io_port));
+	r_strbuf_appendf (&op->esil, "0xff,%d,1,<<,^,%s,&,", b, r_strbuf_tostring (io_port));
 	r_strbuf_free (io_port);
 
 	// write result to port a
 	io_port = __generic_io_dest (a, 1, cpu);
-	r_strbuf_appendf (&op->esil, "%s,", r_strbuf_get (io_port));
+	r_strbuf_appendf (&op->esil, "%s,", r_strbuf_tostring (io_port));
 	r_strbuf_free (io_port);
 }
 
@@ -785,7 +785,7 @@ static void _inst__in(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, in
 	op->type2 = 0;
 	op->val = a;
 	op->family = R_ANAL_OP_FAMILY_IO;
-	r_strbuf_appendf (&op->esil, "%s,r%d,=,", r_strbuf_get (io_src), r);
+	r_strbuf_appendf (&op->esil, "%s,r%d,=,", r_strbuf_tostring (io_src), r);
 	r_strbuf_free (io_src);
 }
 
@@ -1150,7 +1150,7 @@ static void _inst__out(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, i
 	op->type2 = 1;
 	op->val = a;
 	op->family = R_ANAL_OP_FAMILY_IO;
-	r_strbuf_appendf (&op->esil, "r%d,%s,", r, r_strbuf_get (io_dst));
+	r_strbuf_appendf (&op->esil, "r%d,%s,", r, r_strbuf_tostring (io_dst));
 	r_strbuf_free (io_dst);
 }
 
@@ -1331,12 +1331,12 @@ static void _inst__sbi(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, i
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	r_strbuf_appendf (&op->esil, "0xff,%d,1,<<,|,%s,&,", b, r_strbuf_get (io_port));
+	r_strbuf_appendf (&op->esil, "0xff,%d,1,<<,|,%s,&,", b, r_strbuf_tostring (io_port));
 	r_strbuf_free (io_port);
 
 	// write result to port a
 	io_port = __generic_io_dest (a, 1, cpu);
-	r_strbuf_appendf (&op->esil, "%s,", r_strbuf_get (io_port));
+	r_strbuf_appendf (&op->esil, "%s,", r_strbuf_tostring (io_port));
 	r_strbuf_free (io_port);
 }
 
@@ -1375,7 +1375,7 @@ static void _inst__sbix(RArchSession *as, RAnalOp *op, const ut8 *buf, int len, 
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
-	r_strbuf_appendf (&op->esil, "%d,1,<<,%s,&,", b, r_strbuf_get (io_port)); // IO(A,b)
+	r_strbuf_appendf (&op->esil, "%d,1,<<,%s,&,", b, r_strbuf_tostring (io_port)); // IO(A,b)
 	r_strbuf_append (&op->esil, (buf[1] & 0xe) == 0xc ? "!," // SBIC => branch if 0
 							   : "!,!,"); // SBIS => branch if 1
 	r_strbuf_appendf (&op->esil, "?{,0x%"PFMT64x",pc,:=,},", op->jump); // ?true => jmp
@@ -1678,7 +1678,7 @@ static OPCODE_DESC *avr_op_analyze(RArchSession *as, RAnalOp *op, ut64 addr, con
 			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
 
 			// remove trailing coma (COMETE LA COMA)
-			t = r_strbuf_get (&op->esil);
+			t = r_strbuf_tostring (&op->esil);
 			if (t && strlen (t) > 1) {
 				t += strlen (t) - 1;
 				if (*t == ',') {

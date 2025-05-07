@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 					dostdin = 0;
 
 					if (!out.fout) {
-						D printf ("%s\n", r_strbuf_get (out.cout));
+						D printf ("%s\n", r_strbuf_tostring (out.cout));
 						r_strbuf_free (out.cout);
 					}
 				}

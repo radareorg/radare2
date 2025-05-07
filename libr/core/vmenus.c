@@ -274,7 +274,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->addr);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
-			expr = strdup (r_strbuf_get (&analop.esil));
+			expr = strdup (r_strbuf_tostring (&analop.esil));
 			r_asm_op_fini (&asmop);
 		}
 		{
@@ -544,7 +544,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				free (op);
 			}
 		}
-		r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
+		r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_tostring (&analop.esil));
 		r_cons_printf ("[w]:");
 		int nbyte = (x / 8);
 		char first = '/';
@@ -3831,7 +3831,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_visual_append_help (rsb, "Funcs/Vars Visual Analysis Mode (Vv) Help", (const char *[]){ NULL });
 			r_core_visual_append_help (rsb, "Actions Supported", help_visual_anal_actions);
 			r_core_visual_append_help (rsb, "Keys", help_visual_anal_keys);
-			r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
+			r_cons_less_str (core->cons, r_strbuf_tostring (rsb), "?");
 			r_strbuf_free (rsb);
 			break;
 		case 9:

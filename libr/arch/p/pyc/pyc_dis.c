@@ -203,7 +203,7 @@ static char *generic_array_obj_tostring(RList *l) {
 		r_strbuf_append (rbuf, ",");
 	}
 
-	char *buf = r_strbuf_get (rbuf);
+	char *buf = r_strbuf_tostring (rbuf);
 	if (*buf) {
 		/* remove last , */
 		buf[strlen (buf) - 1] = '\0';

@@ -275,7 +275,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	spp_proc_set (&proc, "spp", 1);
 	spp_eval (data, &out);
 	free (data);
-	data = strdup (r_strbuf_get (out.cout));
+	data = strdup (r_strbuf_tostring (out.cout));
 	char *save_ptr = NULL;
 	char *bol = r_str_tok_r (data, "\n", &save_ptr);
 	while (bol) {

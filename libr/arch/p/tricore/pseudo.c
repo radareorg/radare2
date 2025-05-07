@@ -209,21 +209,21 @@ static void parse_localvar(RAsm *a, char *newstr, size_t newstr_len, const char 
 			if (ireg) {
 				r_strbuf_setf (sb, "(%%%s)", ireg);
 			}
-			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_get (sb));
+			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_tostring (sb));
 		} else {
 			if (ireg) {
 				r_strbuf_setf (sb, ", %%%s", ireg);
 			}
-			snprintf (newstr, newstr_len - 1, "%s(%%%s%s)", var, reg, r_strbuf_get (sb));
+			snprintf (newstr, newstr_len - 1, "%s(%%%s%s)", var, reg, r_strbuf_tostring (sb));
 		}
 	} else {
 		if (ireg) {
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
 		if (p->localvar_only) {
-			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_get (sb));
+			snprintf (newstr, newstr_len - 1, "%s%s", var, r_strbuf_tostring (sb));
 		} else {
-			snprintf (newstr, newstr_len - 1, "%s%s %c %s", reg, r_strbuf_get (sb), sign, var);
+			snprintf (newstr, newstr_len - 1, "%s%s %c %s", reg, r_strbuf_tostring (sb), sign, var);
 		}
 	}
 	r_strbuf_free (sb);
@@ -236,22 +236,22 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 			r_strbuf_setf (sb, ", %%%s", ireg);
 		}
 		if (delta == 0) {
-			snprintf (dest, len - 1, "(%%%s%s)", regname, r_strbuf_get (sb));
+			snprintf (dest, len - 1, "(%%%s%s)", regname, r_strbuf_tostring (sb));
 		} else if (delta < 10) {
-			snprintf (dest, len - 1, "%s%d(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
+			snprintf (dest, len - 1, "%s%d(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_tostring (sb));
 		} else {
-			snprintf (dest, len - 1, "%s0x%x(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_get (sb));
+			snprintf (dest, len - 1, "%s0x%x(%%%s%s)", sign ? "" : "-", delta, regname, r_strbuf_tostring (sb));
 		}
 	} else {
 		if (ireg) {
 			r_strbuf_setf (sb, " + %s", ireg);
 		}
 		if (delta == 0) {
-			snprintf (dest, len - 1, "%s%s", regname, r_strbuf_get (sb));
+			snprintf (dest, len - 1, "%s%s", regname, r_strbuf_tostring (sb));
 		} else if (delta < 10) {
-			snprintf (dest, len - 1, "%s%s %c %d", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+			snprintf (dest, len - 1, "%s%s %c %d", regname, r_strbuf_tostring (sb), sign ? '+':'-', delta);
 		} else {
-			snprintf (dest, len - 1, "%s%s %c 0x%x", regname, r_strbuf_get (sb), sign ? '+':'-', delta);
+			snprintf (dest, len - 1, "%s%s %c 0x%x", regname, r_strbuf_tostring (sb), sign ? '+':'-', delta);
 		}
 	}
 	r_strbuf_free (sb);

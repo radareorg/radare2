@@ -2603,7 +2603,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
 				r_strbuf_appendf (sb, "%02x ", buf[i]);
 			}
-			R_LOG_ERROR ("Oops at 0x%08" PFMT64x " (%s...)", core->addr + idx, r_strbuf_get (sb));
+			R_LOG_ERROR ("Oops at 0x%08" PFMT64x " (%s...)", core->addr + idx, r_strbuf_tostring (sb));
 			r_strbuf_free (sb);
 			free (mnem);
 			break;
@@ -3096,7 +3096,7 @@ static char *fcnjoin(RList *list) {
 	r_list_foreach (list, iter, n) {
 		r_strbuf_appendf (&buf, " 0x%08" PFMT64x, n->addr);
 	}
-	char *s = strdup (r_strbuf_get (&buf));
+	char *s = strdup (r_strbuf_tostring (&buf));
 	r_strbuf_fini (&buf);
 	return s;
 }
@@ -3109,7 +3109,7 @@ static char *ut64join(RList *list) {
 	r_list_foreach (list, iter, n) {
 		r_strbuf_appendf (&buf, " 0x%08" PFMT64x, *n);
 	}
-	char *s = strdup (r_strbuf_get (&buf));
+	char *s = strdup (r_strbuf_tostring (&buf));
 	r_strbuf_fini (&buf);
 	return s;
 }
@@ -8473,7 +8473,7 @@ static char *_aeg_get_body(void *data, void *user) {
 	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
 	return r_str_newf ("%s%s",
 		(enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
-		r_strbuf_get (enode->content));
+		r_strbuf_tostring (enode->content));
 }
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
@@ -8489,7 +8489,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			if (!aop) {
 				return;
 			}
-			const char *esilstr = r_strbuf_get (&aop->esil);
+			const char *esilstr = r_strbuf_tostring (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
 				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr,
 					r_config_get_b (core->config, "esil.dfg.mapinfo"),
@@ -8549,7 +8549,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			if (!aop) {
 				return;
 			}
-			const char *esilstr = r_strbuf_get (&aop->esil);
+			const char *esilstr = r_strbuf_tostring (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
 				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr,
 					r_config_get_b (core->config, "esil.dfg.mapinfo"),
@@ -8595,7 +8595,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			r_config_get_b (core->config, "esil.dfg.mapinfo"),
 			r_config_get_b (core->config, "esil.dfg.maps"));
 		if (filtered) {
-			r_cons_printf ("%s\n", r_strbuf_get (filtered));
+			r_cons_printf ("%s\n", r_strbuf_tostring (filtered));
 			r_strbuf_free (filtered);
 		}
 	}
@@ -8611,7 +8611,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		if (argv[0][1] == 'f') {	// "aegcf"
 			RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
 			if (filtered) {
-				r_cons_printf ("%s\n", r_strbuf_get (filtered));
+				r_cons_printf ("%s\n", r_strbuf_tostring (filtered));
 				r_strbuf_free (filtered);
 			}
 		} else {

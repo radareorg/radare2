@@ -69,7 +69,7 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		RStrBuf tmp;
 		r_strbuf_init (&tmp);
 		r_strbuf_append_n (&tmp, s, slen);
-		c->attr = r_str_constpool_get (&c->constpool, r_strbuf_get (&tmp));
+		c->attr = r_str_constpool_get (&c->constpool, r_strbuf_tostring (&tmp));
 		r_strbuf_fini (&tmp);
 	}
 	return p;
@@ -575,10 +575,10 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	}
 	for (i = 1; i < h - 1; i++) {
 		if (G (x, y + i)) {
-			W (r_strbuf_get (vline));
+			W (r_strbuf_tostring (vline));
 		}
 		if (G (x + w - 1, y + i)) {
-			W (r_strbuf_get (vline));
+			W (r_strbuf_tostring (vline));
 		}
 	}
 	free (row);

@@ -1184,7 +1184,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		if (proc->ret != 0) {
 			goto rip;
 		}
-		char *hex = r_strbuf_get (&proc->out);
+		char *hex = r_strbuf_tostring (&proc->out);
 		size_t hexlen = strlen (hex);
 		if (!hexlen) {
 			goto rip;

@@ -596,7 +596,7 @@ repeat:
 	}
 	r_cons_clear00 ();
 	r_core_visual_append_help (q, "Visual Mode Help (short)", help_visual);
-	r_cons_printf ("%s", r_strbuf_get (q));
+	r_cons_printf ("%s", r_strbuf_tostring (q));
 	r_cons_flush ();
 	const char *lesstr = NULL;
 	switch (r_cons_readchar ()) {
@@ -610,7 +610,7 @@ repeat:
 	case '?':
 		r_core_visual_append_help (p, "Visual Mode Help (full)", help_msg_visual);
 		r_core_visual_append_help (p, "Function Keys Defaults  # Use `e key.` to owerwrite", help_msg_visual_fn);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'v':
 		r_strbuf_append (p, "Visual Views:\n\n");
@@ -625,7 +625,7 @@ repeat:
 			" C   -> rotate scr.color=0,1,2,3\n"
 			" R   -> rotate color theme with ecr command which honors scr.randpal\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'p':
 		r_strbuf_append (p, "Visual Print Modes:\n\n");
@@ -634,7 +634,7 @@ repeat:
 			" TAB    rotate between all the configurations for the current print mode\n"
 			" SPACE  toggle between graph/disasm or similar hex modes\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'e':
 		r_strbuf_append (p, "Visual Evals:\n\n");
@@ -642,7 +642,7 @@ repeat:
 			" E   toggle asm.hint.lea\n"
 			" &   rotate asm.bits=16,32,64\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'c':
 		setcursor (core, !core->print->cur_enabled);
@@ -657,7 +657,7 @@ repeat:
 			" +   increment value of byte\n"
 			" -   decrement value of byte\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'd':
 		r_strbuf_append (p, "Visual Debugger Help:\n\n");
@@ -668,7 +668,7 @@ repeat:
 			" B    toggle breakpoint\n"
 			" :dc  continue\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'm':
 		r_strbuf_append (p, "Visual Moving Around:\n\n");
@@ -682,7 +682,7 @@ repeat:
 			" c        toggle cursor mode (use hjkl to move and HJKL to select a range)\n"
 			" mK/'K    mark/go to Key (any key)\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	case 'a':
 		r_strbuf_append (p, "Visual Analysis:\n\n");
@@ -695,7 +695,7 @@ repeat:
 			" dd  define current block or selected bytes as data\n"
 			" V   view graph (same as press the 'space' key)\n"
 		);
-		lesstr = r_strbuf_get (p);
+		lesstr = r_strbuf_tostring (p);
 		break;
 	}
 	if (lesstr) {
@@ -1650,7 +1650,7 @@ repeat:
 		r_cons_clear00 ();
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
-		ret = r_cons_less_str (core->cons, r_strbuf_get (rsb), "?");
+		ret = r_cons_less_str (core->cons, r_strbuf_tostring (rsb), "?");
 		r_strbuf_free (rsb);
 		goto repeat;
 	case 9: // TAB

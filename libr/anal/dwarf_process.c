@@ -1465,8 +1465,8 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						} else {
 							var->name = r_str_newf ("arg%d", argNumber);
 						}
-						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), var->name);
-						var->type = strdup (r_strbuf_get (&type));
+						r_strbuf_appendf (args, "%s %s,", r_strbuf_tostring (&type), var->name);
+						var->type = strdup (r_strbuf_tostring (&type));
 						r_list_append (variables, var);
 					} else {
 						variable_free (var);
@@ -1475,7 +1475,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				} else { /* DW_TAG_variable */
 					if (name && type.len) {
 						var->name = strdup (name);
-						var->type = strdup (r_strbuf_get (&type));
+						var->type = strdup (r_strbuf_tostring (&type));
 						r_list_append (variables, var);
 					} else {
 						variable_free (var);
@@ -1582,7 +1582,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 		r_strbuf_slice (&vars, 0, vars.len - 1); /* leaks? */
 	}
 	char *vars_key = r_str_newf ("fcn.%s.vars", sname);
-	char *vars_val = r_str_newf ("%s", r_strbuf_get (&vars));
+	char *vars_val = r_str_newf ("%s", r_strbuf_tostring (&vars));
 	sdb_set (sdb, vars_key, vars_val, 0);
 	free (vars_key);
 	free (vars_val);
@@ -1691,7 +1691,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			free (mangled_name);
 		}
 	}
-	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
+	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_tostring (&ret_type), fcn.name, r_strbuf_tostring (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
 	free (fcn.signature);

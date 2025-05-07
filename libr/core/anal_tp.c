@@ -194,7 +194,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 	} else {
 		r_strbuf_set (sb, type);
 	}
-	if (r_str_startswith (r_strbuf_get (sb), "const ")) {
+	if (r_str_startswith (r_strbuf_tostring (sb), "const ")) {
 		// Dropping const from type
 		//TODO: Inferring const type
 		r_strbuf_setf (sb, "%s", type + 6);
@@ -204,14 +204,14 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 		r_strbuf_append (sb, " *");
 	}
 	if (ref) {
-		if (r_str_endswith (r_strbuf_get (sb), "*")) { // type * => type **
+		if (r_str_endswith (r_strbuf_tostring (sb), "*")) { // type * => type **
 			r_strbuf_append (sb, "*");
 		} else {   //  type => type *
 			r_strbuf_append (sb, " *");
 		}
 	}
 
-	char* tmp1 = r_strbuf_get (sb);
+	char* tmp1 = r_strbuf_tostring (sb);
 	if (r_str_startswith (tmp1, "unsigned long long")) {
 		r_strbuf_set (sb, "uint64_t");
 	} else if (r_str_startswith (tmp1, "unsigned")) {
@@ -219,7 +219,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 	} else if (r_str_startswith (tmp1, "int")) {
 		r_strbuf_set (sb, "int32_t");
 	}
-	r_anal_var_set_type (var, r_strbuf_get (sb));
+	r_anal_var_set_type (var, r_strbuf_tostring (sb));
 	r_strbuf_free (sb);
 }
 
@@ -232,7 +232,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 		r_anal_op_free (op);
 		return;
 	}
-	char *op_esil = r_strbuf_get (&op->esil);
+	char *op_esil = r_strbuf_tostring (&op->esil);
 	char *tmp = strchr (op_esil, ',');
 	if (tmp) {
 		*tmp = '\0';

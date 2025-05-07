@@ -25,7 +25,7 @@ R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 	if (sa->len != sb->len) {
 		return false;
 	}
-	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
+	return strcmp (r_strbuf_tostring (sa), r_strbuf_tostring (sb)) == 0;
 }
 
 R_API bool r_strbuf_is_empty(RStrBuf *sb) {
@@ -125,7 +125,7 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 	if (from < 1 && len >= sb->len) {
 		return false;
 	}
-	const char *s = r_strbuf_get (sb);
+	const char *s = r_strbuf_tostring (sb);
 	const char *fr = r_str_ansi_chrn (s, from + 1);
 	const char *to = r_str_ansi_chrn (s, from + len + 1);
 	char *r = R_STR_NDUP (fr, to - fr);
@@ -159,14 +159,14 @@ R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	if (!s) {
 		r_strbuf_init (sb);
-		return r_strbuf_get (sb);
+		return r_strbuf_tostring (sb);
 	}
 	size_t len = strlen (s);
 	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
 		return NULL;
 	}
 	sb->len = len;
-	return r_strbuf_get (sb);
+	return r_strbuf_tostring (sb);
 }
 
 R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
@@ -417,12 +417,12 @@ R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) {
 	return ret;
 }
 
-R_API char *r_strbuf_get(RStrBuf *sb) {
+R_API char *r_strbuf_tostring(RStrBuf *sb) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
-R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
+R_API ut8 *r_strbuf_tostringbin(RStrBuf *sb, int *len) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	if (len) {
 		*len = sb->len;
@@ -461,7 +461,7 @@ R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
 	R_RETURN_VAL_IF_FAIL (sb && key && val, false);
-	char *tmp = r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0);
+	char *tmp = r_str_replace (strdup (r_strbuf_tostring (sb)), key, val, 0);
 	if (!tmp) {
 		return false;
 	}
@@ -475,7 +475,7 @@ R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...)
 	if (!sb_tmp) {
 		return false;
 	}
-	char *tmp = strdup (r_strbuf_get (sb));
+	char *tmp = strdup (r_strbuf_tostring (sb));
 	if (!tmp) {
 		r_strbuf_free (sb_tmp);
 		return false;
@@ -489,7 +489,7 @@ R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...)
 		free (tmp);
 		return false;
 	}
-	tmp = r_str_replace (tmp, key, r_strbuf_get (sb_tmp), 0);
+	tmp = r_str_replace (tmp, key, r_strbuf_tostring (sb_tmp), 0);
 	r_strbuf_free (sb_tmp);
 	if (!tmp) {
 		return false;
@@ -514,7 +514,7 @@ R_API void r_strbuf_fini(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_trim(RStrBuf *sb) {
-	char *s = strdup (r_strbuf_get (sb));
+	char *s = strdup (r_strbuf_tostring (sb));
 	r_str_trim (s);
 	r_strbuf_set (sb, s);
 }

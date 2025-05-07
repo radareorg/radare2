@@ -1325,7 +1325,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 			goto fail;
 		}
 		char *sanitized_name = r_str_sanitize_sdb_key (name);
-		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
+		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_tostring (&format), r_strbuf_tostring (&member_names));
 
 		if (to_free_name) { // name can be generated or part of the PDB data
 			R_FREE (name);

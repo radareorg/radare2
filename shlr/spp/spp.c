@@ -62,7 +62,7 @@ static char *spp_run_str(char *buf, int *rv) {
 	tmp.fout = NULL;
 	tmp.cout = r_strbuf_new ("");
 	int rc = spp_run (buf, &tmp);
-	b = strdup (r_strbuf_get (tmp.cout));
+	b = strdup (r_strbuf_tostring (tmp.cout));
 	r_strbuf_free (tmp.cout);
 	if (rv) {
 		*rv = rc;

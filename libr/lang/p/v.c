@@ -111,9 +111,9 @@ static bool __run(RLangSession *s, const char *code, int len) {
 	if (fd) {
 		VParse vcode = vcode_parse (code);
 		fputs (r2v_head, fd);
-		fputs (r_strbuf_get (vcode.head), fd);
+		fputs (r_strbuf_tostring (vcode.head), fd);
 		fputs (r2v_body, fd);
-		const char *body = r_strbuf_get (vcode.body);
+		const char *body = r_strbuf_tostring (vcode.body);
 		if (!strstr (body, "fn entry")) {
 			fputs ("pub fn entry(r2 &R2) {\n", fd);
 		}

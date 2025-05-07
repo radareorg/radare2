@@ -291,7 +291,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	R_RETURN_IF_FAIL (esil && op);
-	const char *expr = r_strbuf_get (&op->esil);
+	const char *expr = r_strbuf_tostring (&op->esil);
 	if (!esil->trace) {
 		esil->trace = r_esil_trace_new (esil);
 		if (!esil->trace) {

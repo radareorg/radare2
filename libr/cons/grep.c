@@ -1052,7 +1052,7 @@ continuation:
 		cons->context->buffer_sz = ob_len + 1;
 		cons->context->buffer = r_strbuf_drain (ob);
 	} else {
-		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
+		memcpy (cons->context->buffer, r_strbuf_tostringbin (ob, NULL), ob_len);
 		cons->context->buffer[ob_len] = 0;
 		r_strbuf_free (ob);
 	}

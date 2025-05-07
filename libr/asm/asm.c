@@ -1194,7 +1194,7 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 		lbuf = replace_directives (lbuf);
 		spp_eval (lbuf, &out);
 		free (lbuf);
-		lbuf = strdup (r_strbuf_get (out.cout));
+		lbuf = strdup (r_strbuf_tostring (out.cout));
 	}
 	RAsmCode *acode = r_asm_massemble (a, lbuf);
 	free (lbuf);

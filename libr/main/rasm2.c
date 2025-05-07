@@ -123,7 +123,7 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 			pj_kn (pj, "ptr", op->ptr);
 		}
 		pj_ks (pj, "stackop", stackop);
-		pj_ks (pj, "esil", r_strbuf_get (&op->esil));
+		pj_ks (pj, "esil", r_strbuf_tostring (&op->esil));
 		pj_kn (pj, "stackptr", op->stackptr);
 		pj_end (pj);
 	} else {
@@ -142,7 +142,7 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 			printf ("value:    0x%08" PFMT64x "\n", op->val);
 		}
 		printf ("stackop:  %s\n", stackop);
-		printf ("esil:     %s\n", r_strbuf_get (&op->esil));
+		printf ("esil:     %s\n", r_strbuf_tostring (&op->esil));
 		printf ("stackptr: %" PFMT64d "\n", op->stackptr);
 		// produces (null) printf ("decode str: %s\n", r_anal_op_tostring (anal, op));
 		printf ("\n");

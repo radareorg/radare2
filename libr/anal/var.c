@@ -946,7 +946,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	if (!ptr) {
-		const char *op_esil = r_strbuf_get (&op->esil);
+		const char *op_esil = r_strbuf_tostring (&op->esil);
 		if (!op_esil) {
 			return;
 		}

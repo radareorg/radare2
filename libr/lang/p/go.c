@@ -95,9 +95,9 @@ static bool __gorun(RLangSession *session, const char *code, int len) {
 	if (fd) {
 		GOParse gocode = gocode_parse (code);
 		fputs (r2go_head, fd);
-		fputs (r_strbuf_get (gocode.head), fd);
+		fputs (r_strbuf_tostring (gocode.head), fd);
 		fputs (r2go_body, fd);
-		const char *body = r_strbuf_get (gocode.body);
+		const char *body = r_strbuf_tostring (gocode.body);
 		bool has_entry = strstr (body, "func entry");
 		if (!has_entry) {
 			fputs ("//export entry\n", fd);

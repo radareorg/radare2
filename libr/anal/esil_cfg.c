@@ -399,7 +399,7 @@ void _round_2_cb (RGraphNode *n, RGraphVisitor *vi) {
 		// use r_id_storage_take here to start fini for the atoms
 		r_strbuf_appendf (buf, "%s,", (char *)r_id_storage_take (gen->atoms, id));
 	}
-	bb->expr = strdup (r_strbuf_get (buf));
+	bb->expr = strdup (r_strbuf_tostring (buf));
 	r_strbuf_free (buf);
 	r_crbtree_delete (gen->blocks, n, _graphnode_esilbb_insert_cmp, NULL);
 }
@@ -587,7 +587,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG * R_NULLABLE cfg, RAnal *ana
 	}
 	const char *pc = r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC);
 	r_strbuf_setf (glue, "0x%" PFMT64x ",%s,:=,", op->addr + op->size, pc);
-	glue_bb->expr = strdup (r_strbuf_get (glue));
+	glue_bb->expr = strdup (r_strbuf_tostring (glue));
 	r_strbuf_free (glue);
 	if (!glue_bb->expr) {
 		free (glue_bb);
@@ -600,7 +600,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG * R_NULLABLE cfg, RAnal *ana
 	RAnalEsilCFG *ret;
 
 	if (!cfg) {
-		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
+		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_tostring (&op->esil));
 		RGraphNode *glue_node = r_graph_add_node (ret->g, glue_bb);
 		glue_node->free = _free_bb_cb;
 		r_graph_add_edge (ret->g, glue_node, ret->start);
@@ -613,7 +613,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG * R_NULLABLE cfg, RAnal *ana
 		cfg->end->data = glue_node->data;
 		glue_node->data = foo;
 		cfg->end = glue_node;
-		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
+		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_tostring (&op->esil));
 	}
 	return ret;
 }
@@ -643,7 +643,7 @@ static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *bloc
 	r_graph_del_node (cfg->g, block);
 	r_strbuf_appendf (buf, "\n%s", node_bb->expr);
 	free (node_bb->expr);
-	node_bb->expr = strdup (r_strbuf_get (buf));
+	node_bb->expr = strdup (r_strbuf_tostring (buf));
 	if (block == cfg->start) {
 		cfg->start = node;
 	}

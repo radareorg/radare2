@@ -15,7 +15,7 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 	while (iob->is_valid_offset (io, cur, R_PERM_R) && (opsize = wsdis (mn, buf, 128))) {
 	// TODO: also check for R_PERM_X, but would probably break with io.va = false, because text files are usually not opened as exec
 //	while (iob.is_valid_offset (iob->io, cur, R_PERM_R | R_PERM_X) && (opsize = wsdis (mn, buf, 128))) {
-		const char *buf_asm = r_strbuf_get (mn);
+		const char *buf_asm = r_strbuf_tostring (mn);
 		if (buf_asm && r_str_startswith (buf_asm, "mark ") && l == atoi (buf_asm + 5)) {
 			r_strbuf_free (mn);
 			return cur;

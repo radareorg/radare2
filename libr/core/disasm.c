@@ -8280,7 +8280,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 		r_esil_set_pc (core->anal->esil, op_addr);
 		r_reg_set_value (reg, pc, op_addr + op.size);
-		const char *e = r_strbuf_get (&op.esil);
+		const char *e = r_strbuf_tostring (&op.esil);
 		if (R_STR_ISNOTEMPTY (e)) {
 			r_esil_parse (esil, e);
 		}

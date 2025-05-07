@@ -113,13 +113,13 @@ R_API bool r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 				pj_kb (j, "current", dbg->tid == p->pid);
 				pj_ki (j, "pid", p->pid);
 				pj_ks (j, "status", &p->status);
-				pj_ks (j, "path", r_strbuf_get (path));
+				pj_ks (j, "path", r_strbuf_tostring (path));
 				pj_end (j);
 				break;
 			default:
 				dbg->cb_printf (" %c %d %c %s\n",
 					dbg->tid == p->pid? '*': '-',
-					p->pid, p->status, r_strbuf_get (path));
+					p->pid, p->status, r_strbuf_tostring (path));
 				break;
 			}
 			r_strbuf_free (path);

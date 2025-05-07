@@ -70,7 +70,7 @@ int printDisassembledInstruction(RArchSession *as, avrDisassembleContext *contex
 		/* Print the operand and free if it's not NULL */
 		r_strbuf_append (sb, strOperand);
 	}
-	const char *src = r_strbuf_get (sb);
+	const char *src = r_strbuf_tostring (sb);
 	r_str_ncpy (out, src, out_len);
 	r_strbuf_free (sb);
 	return 1;
@@ -107,7 +107,7 @@ int analPrintDisassembledInstruction(RArchSession *as, avrDisassembleContext *co
 		/* Print the operand and free if it's not NULL */
 		r_strbuf_append (sb, strOperand);
 	}
-	char *src = r_strbuf_get (sb);
+	char *src = r_strbuf_tostring (sb);
 	r_str_ncpy (out, src, out_len);
 	r_strbuf_free (sb);
 	return 1;

@@ -240,7 +240,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 #if 1
 	Sdb *asm_db = sdb_new0 ();
 	sdb_open_gperf (asm_db, (SdbGperf *)&gperf_i4004);
-	char *hex_output = sdb_get (asm_db, r_strbuf_get (sbuf), NULL);
+	char *hex_output = sdb_get (asm_db, r_strbuf_tostring (sbuf), NULL);
 	sdb_free (asm_db);
 	r_strbuf_free (sbuf);
 	if (hex_output) {

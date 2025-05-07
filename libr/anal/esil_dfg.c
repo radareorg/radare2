@@ -860,8 +860,8 @@ static bool edf_dup(REsil *esil) {
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	r_esil_push (esil, r_strbuf_get (result->content));
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
+	r_esil_push (esil, r_strbuf_tostring (result->content));
 
 	result = r_anal_esil_dfg_node_new (edf, "result_");
 	result->type = R_ANAL_ESIL_DFG_TAG_RESULT | R_ANAL_ESIL_DFG_TAG_SIBLING;
@@ -871,8 +871,8 @@ static bool edf_dup(REsil *esil) {
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	return r_esil_push (esil, r_strbuf_get (result->content));
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
+	return r_esil_push (esil, r_strbuf_tostring (result->content));
 }
 #endif
 
@@ -928,8 +928,8 @@ static bool edf_consume_2_push_1(REsil *esil) {
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	r_esil_push (esil, r_strbuf_get (result->content));
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
+	r_esil_push (esil, r_strbuf_tostring (result->content));
 	return true;
 }
 
@@ -981,8 +981,8 @@ static bool edf_consume_1_push_1(REsil *esil) {
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	r_esil_push (esil, r_strbuf_get (result->content));
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
+	r_esil_push (esil, r_strbuf_tostring (result->content));
 	return true;
 }
 
@@ -1044,9 +1044,9 @@ static bool edf_consume_1_get_mem_push_1(REsil *esil) {
 		src_node = _edf_reg_get (edf, src);
 		if (((RAnalEsilDFGNode *)src_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, src_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			ut64 src_addr = r_reg_getv (edf->reg, src);
-			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_get (expr), src_addr);
+			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_tostring (expr), src_addr);
 			r_strbuf_free (expr);
 			r_esil_stack_free (edf->esil);
 			edf->iob.system (edf->iob.io, "reset");
@@ -1063,9 +1063,9 @@ static bool edf_consume_1_get_mem_push_1(REsil *esil) {
 		if (((RAnalEsilDFGNode *)src_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 //		if (_edf_is_stack_or_mem_const_node (edf, src_node)) {
 			RStrBuf *expr = filter_gnode_expr(edf, src_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			char *src_addr_str = r_esil_pop (edf->esil);
-			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_get (expr), src_addr_str);
+			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_tostring (expr), src_addr_str);
 			r_strbuf_free (expr);
 			ut64 src_addr;
 			r_esil_get_parm (esil, src_addr_str, &src_addr);
@@ -1092,8 +1092,8 @@ static bool edf_consume_1_get_mem_push_1(REsil *esil) {
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	r_esil_push (esil, r_strbuf_get (result->content));
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
+	r_esil_push (esil, r_strbuf_tostring (result->content));
 	return true;
 }
 
@@ -1140,9 +1140,9 @@ static bool edf_consume_2_set_mem(REsil *esil) {
 		ev_node->type |= R_ANAL_ESIL_DFG_TAG_PTR;
 		if (ev_node->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			dst_addr = r_reg_getv (edf->reg, dst);
-			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_get (expr), dst_addr);
+			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_tostring (expr), dst_addr);
 			r_strbuf_free (expr);
 			r_esil_stack_free (edf->esil);
 			edf->iob.system (edf->iob.io, "reset");
@@ -1165,9 +1165,9 @@ static bool edf_consume_2_set_mem(REsil *esil) {
 //		if (_edf_is_stack_or_mem_const_node (edf, dst_node)) {
 		if (((RAnalEsilDFGNode *)dst_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			char *dst_addr_str = r_esil_pop (edf->esil);
-			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_get (expr), dst_addr_str);
+			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_tostring (expr), dst_addr_str);
 			r_strbuf_free (expr);
 			r_esil_get_parm (esil, dst_addr_str, &dst_addr);
 			free (dst_addr_str);
@@ -1194,7 +1194,7 @@ static bool edf_consume_2_set_mem(REsil *esil) {
 	r_graph_add_edge (edf->flow, dst_node, op_node);
 	r_graph_add_edge (edf->flow, src_node, op_node);
 	char *content = r_str_newf ("[%d]@<%s>:mem_var_%d", mem_size,
-		dst_type == R_ESIL_PARM_REG? r_strbuf_get (((RAnalEsilDFGNode *)dst_node->data)->content): dst,
+		dst_type == R_ESIL_PARM_REG? r_strbuf_tostring (((RAnalEsilDFGNode *)dst_node->data)->content): dst,
 		edf->idx + 1);
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, content);
 	free (content);
@@ -1252,9 +1252,9 @@ static bool edf_consume_2_use_set_mem(REsil *esil) {
 		ev_node->type |= R_ANAL_ESIL_DFG_TAG_PTR;
 		if (ev_node->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			dst_addr = r_reg_getv (edf->reg, dst);
-			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_get (expr), dst_addr);
+			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_tostring (expr), dst_addr);
 			r_strbuf_free (expr);
 			r_esil_stack_free (edf->esil);
 			edf->iob.system (edf->iob.io, "reset");
@@ -1277,9 +1277,9 @@ static bool edf_consume_2_use_set_mem(REsil *esil) {
 //		if (_edf_is_stack_or_mem_const_node (edf, dst_node)) {
 		if (((RAnalEsilDFGNode *)dst_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			char *dst_addr_str = r_esil_pop (edf->esil);
-			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_get (expr), dst_addr_str);
+			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_tostring (expr), dst_addr_str);
 			r_strbuf_free (expr);
 			r_esil_get_parm (esil, dst_addr_str, &dst_addr);
 			free (dst_addr_str);
@@ -1310,7 +1310,7 @@ static bool edf_consume_2_use_set_mem(REsil *esil) {
 		RGraphNode *o_dst_node = _edf_mem_get (edf, dst_addr, mem_size);
 		r_graph_add_edge (edf->flow, o_dst_node, op_node);
 		char *content = r_str_newf ("[%d]@<%s>:mem_var_%d", mem_size,
-			dst_type == R_ESIL_PARM_REG? r_strbuf_get (((RAnalEsilDFGNode *)dst_node->data)->content):
+			dst_type == R_ESIL_PARM_REG? r_strbuf_tostring (((RAnalEsilDFGNode *)dst_node->data)->content):
 			dst, edf->idx + 1);
 		result = r_anal_esil_dfg_node_new (edf, content);
 		free (content);
@@ -1321,7 +1321,7 @@ static bool edf_consume_2_use_set_mem(REsil *esil) {
 		_edf_mem_set (edf, dst_addr, mem_size, dst_node);
 	} else {
 		char *content = r_str_newf ("[%d]@<%s>:mem_var_%d", mem_size,
-			dst_type == R_ESIL_PARM_REG? r_strbuf_get (((RAnalEsilDFGNode *)dst_node->data)->content):
+			dst_type == R_ESIL_PARM_REG? r_strbuf_tostring (((RAnalEsilDFGNode *)dst_node->data)->content):
 			dst, edf->idx + 1);
 		result = r_anal_esil_dfg_node_new (edf, content);
 		free (content);
@@ -1364,9 +1364,9 @@ static bool edf_consume_1_set_mem(REsil *esil) {
 		ev_node->type |= R_ANAL_ESIL_DFG_TAG_PTR;
 		if (ev_node->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			dst_addr = r_reg_getv (edf->reg, dst);
-			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_get (expr), dst_addr);
+			R_LOG_DEBUG ("resolved: %s => 0x%"PFMT64x, r_strbuf_tostring (expr), dst_addr);
 			r_strbuf_free (expr);
 			r_esil_stack_free (edf->esil);
 			edf->iob.system (edf->iob.io, "reset");
@@ -1389,9 +1389,9 @@ static bool edf_consume_1_set_mem(REsil *esil) {
 //		if (_edf_is_stack_or_mem_const_node (edf, dst_node)) {
 		if (((RAnalEsilDFGNode *)dst_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			RStrBuf *expr = filter_gnode_expr(edf, dst_node);
-			r_esil_parse (edf->esil, r_strbuf_get (expr));
+			r_esil_parse (edf->esil, r_strbuf_tostring (expr));
 			char *dst_addr_str = r_esil_pop (edf->esil);
-			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_get (expr), dst_addr_str);
+			R_LOG_DEBUG ("resolved: %s => %s", r_strbuf_tostring (expr), dst_addr_str);
 			r_strbuf_free (expr);
 			r_esil_get_parm (esil, dst_addr_str, &dst_addr);
 			free (dst_addr_str);
@@ -1419,7 +1419,7 @@ static bool edf_consume_1_set_mem(REsil *esil) {
 		RGraphNode *o_dst_node = _edf_mem_get (edf, dst_addr, mem_size);
 		r_graph_add_edge (edf->flow, o_dst_node, op_node);
 		char *content = r_str_newf ("[%d]@<%s>:mem_var_%d", mem_size,
-			dst_type == R_ESIL_PARM_REG? r_strbuf_get (((RAnalEsilDFGNode *)dst_node->data)->content):
+			dst_type == R_ESIL_PARM_REG? r_strbuf_tostring (((RAnalEsilDFGNode *)dst_node->data)->content):
 			dst, edf->idx + 1);
 		result = r_anal_esil_dfg_node_new (edf, content);
 		free (content);
@@ -1429,7 +1429,7 @@ static bool edf_consume_1_set_mem(REsil *esil) {
 		_edf_mem_set (edf, dst_addr, mem_size, dst_node);
 	} else {
 		char *content = r_str_newf ("[%d]@<%s>:mem_var_%d", mem_size,
-			dst_type == R_ESIL_PARM_REG? r_strbuf_get (((RAnalEsilDFGNode *)dst_node->data)->content):
+			dst_type == R_ESIL_PARM_REG? r_strbuf_tostring (((RAnalEsilDFGNode *)dst_node->data)->content):
 			dst, edf->idx + 1);
 		result = r_anal_esil_dfg_node_new (edf, content);
 		free (content);
@@ -1453,13 +1453,13 @@ static bool edf_use_new_push_1(REsil *esil, const char *op_string, AddConstraint
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
 	if (cb) {
 		RAnalEsilDFGNode *e_new_node = (RAnalEsilDFGNode *)latest_new->data;
-		cb (result->content, r_strbuf_get (e_new_node->content));
+		cb (result->content, r_strbuf_tostring (e_new_node->content));
 	}
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
 	r_graph_add_edge (edf->flow, latest_new, op_node);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	return r_esil_push (esil, r_strbuf_get (result->content));
+	return r_esil_push (esil, r_strbuf_tostring (result->content));
 }
 
 static bool edf_consume_1_use_old_new_push_1(REsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb) {
@@ -1497,15 +1497,15 @@ static bool edf_consume_1_use_old_new_push_1(REsil *esil, const char *op_string,
 		RAnalEsilDFGNode *e_src_node = (RAnalEsilDFGNode *)src_node->data;
 		RAnalEsilDFGNode *e_new_node = (RAnalEsilDFGNode *)latest_new->data;
 		RAnalEsilDFGNode *e_old_node = (RAnalEsilDFGNode *)latest_old->data;
-		cb (result->content, r_strbuf_get (e_src_node->content),
-			r_strbuf_get (e_new_node->content), r_strbuf_get (e_old_node->content));
+		cb (result->content, r_strbuf_tostring (e_src_node->content),
+			r_strbuf_tostring (e_new_node->content), r_strbuf_tostring (e_old_node->content));
 	}
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
+	_edf_var_set (edf, r_strbuf_tostring (result->content), result_node);
 	r_graph_add_edge (edf->flow, latest_new, op_node);
 	r_graph_add_edge (edf->flow, latest_old, op_node);
 	r_graph_add_edge (edf->flow, op_node, result_node);
-	return r_esil_push (esil, r_strbuf_get (result->content));
+	return r_esil_push (esil, r_strbuf_tostring (result->content));
 }
 
 static bool _dfg_mem_read (REsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -1845,7 +1845,7 @@ static void _dfg_filter_rev_dfs(RGraphNode *n, RAnalEsilDFGFilter *filter) {
 			}
 			return;
 		}
-		sdb_ptr_set (filter->results, r_strbuf_get (node->content), previous, 0);
+		sdb_ptr_set (filter->results, r_strbuf_tostring (node->content), previous, 0);
 	}
 }
 
@@ -1883,7 +1883,7 @@ static char *condrets_strtok(char *str, const char tok) {
 }
 
 static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *node) {
-	char *expr = strdup (r_strbuf_get (node->content));
+	char *expr = strdup (r_strbuf_tostring (node->content));
 	RStrBuf *res = r_strbuf_new ("");
 	if (!expr) { //empty expressions. can this happen?
 		return res;
@@ -1905,7 +1905,7 @@ static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *
 				r_list_foreach (gn->out_nodes, iter, outgn) {
 					RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)outgn->data;
 					if (enode->type & R_ANAL_ESIL_DFG_TAG_SIBLING) {
-						if (!strcmp (c, r_strbuf_get (enode->content))) {
+						if (!strcmp (c, r_strbuf_tostring (enode->content))) {
 							node = enode;
 						} else {
 							sib = enode;
@@ -1913,14 +1913,14 @@ static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *
 					}
 				}
 				if (sib) {
-					if (sdb_ptr_get (filter->results, r_strbuf_get (sib->content), 0)) {
+					if (sdb_ptr_get (filter->results, r_strbuf_tostring (sib->content), 0)) {
 						if (node->idx < sib->idx) {
 							cont = true;
 							break;
 						}
 					} else {
 						gn = (RGraphNode *)r_list_first (gn->in_nodes);
-						c = r_strbuf_get (((RAnalEsilDFGNode *)gn->data)->content);
+						c = r_strbuf_tostring (((RAnalEsilDFGNode *)gn->data)->content);
 						gn = (RGraphNode *)r_list_first (gn->in_nodes);
 					}
 				}
@@ -1929,7 +1929,7 @@ static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *
 				continue;
 			}
 			RStrBuf *r = get_resolved_expr (filter, (RAnalEsilDFGNode *)gn->data);
-			r_strbuf_appendf (res, ",%s,", r_strbuf_get (r));
+			r_strbuf_appendf (res, ",%s,", r_strbuf_tostring (r));
 			r_strbuf_free (r);
 		}
 	}
@@ -1960,13 +1960,13 @@ static RStrBuf *filter_gnode_expr(RAnalEsilDFG *dfg, RGraphNode *gnode) {	//TODO
 			node = (RAnalEsilDFGNode *)ator->data;
 			// resolve results to opstr here
 			RStrBuf *resolved = get_resolved_expr (&filter, node);
-			r_strbuf_append (filtered, r_strbuf_get (resolved));
+			r_strbuf_append (filtered, r_strbuf_tostring (resolved));
 			r_strbuf_free (resolved);
 			ator = r_rbnode_next (ator);
 		}
 	}
 	{
-		char *sanitized = r_str_replace (r_str_replace (strdup (r_strbuf_get (filtered)), ",,", ",", 1), ",,", ",", 1);
+		char *sanitized = r_str_replace (r_str_replace (strdup (r_strbuf_tostring (filtered)), ",,", ",", 1), ",,", ",", 1);
 		r_strbuf_set (filtered, (sanitized[0] == ',') ? &sanitized[1] : sanitized);
 		free (sanitized);
 	}
@@ -2018,7 +2018,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 
 		RStrBuf *filtered = get_resolved_expr (&reducer.filter, enode);
 		{
-			char *sanitized = r_str_replace (r_str_replace (strdup (r_strbuf_get (filtered)), ",,", ",", 1), ",,", ",", 1);
+			char *sanitized = r_str_replace (r_str_replace (strdup (r_strbuf_tostring (filtered)), ",,", ",", 1), ",,", ",", 1);
 			r_strbuf_set (filtered, (sanitized[0] == ',') ? &sanitized[1] : sanitized);
 			free (sanitized);
 		}
@@ -2026,7 +2026,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 		sdb_free (reducer.filter.results);
 
 		// running filtered const-expression in esil
-		r_esil_parse (esil, r_strbuf_get (filtered));
+		r_esil_parse (esil, r_strbuf_tostring (filtered));
 		char *reduced_const = r_esil_pop (esil);
 		r_strbuf_free (filtered);
 
@@ -2047,8 +2047,8 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 			// Cannot assume that there is another operation
 			// Fix string reference
 			RAnalEsilDFGNode *next_enode = (RAnalEsilDFGNode *)next_gnode->data;
-			char *fixed = r_str_replace (strdup (r_strbuf_get (next_enode->content)),
-				r_strbuf_get (enode->content), reduced_const, 0);
+			char *fixed = r_str_replace (strdup (r_strbuf_tostring (next_enode->content)),
+				r_strbuf_tostring (enode->content), reduced_const, 0);
 			r_strbuf_set (next_enode->content, fixed);
 			free (fixed);
 		}

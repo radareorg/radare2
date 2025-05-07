@@ -401,7 +401,7 @@ R_API const char *r_anal_optype_tostring(int t) {
 }
 
 R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
-	return r_strbuf_get (&op->esil);
+	return r_strbuf_tostring (&op->esil);
 }
 
 // TODO: use esil here?

@@ -363,7 +363,7 @@ static RList *entries(RBinFile *bf) {
 
 static void headers(RBinFile *bf) {
 	s390user *su = bf->bo->bin_obj;
-	char *s = r_strbuf_get (su->sb);
+	char *s = r_strbuf_tostring (su->sb);
 	bf->rbin->cb_printf ("%s\n", s);
 }
 

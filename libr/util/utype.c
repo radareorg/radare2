@@ -548,7 +548,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		RStrBuf buf;
 		r_strbuf_init (&buf);
 		r_strbuf_setf (&buf, "typedef.%s", name);
-		sdb_unset (TDB, r_strbuf_get (&buf), 0);
+		sdb_unset (TDB, r_strbuf_tostring (&buf), 0);
 		r_strbuf_fini (&buf);
 		sdb_unset (TDB, name, 0);
 	} else {

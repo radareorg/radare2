@@ -1986,7 +1986,7 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 					r_strbuf_append (b , " ");
 					r_strbuf_append (b, word);
 				}
-				r_core_cmd0 (core, r_strbuf_get (b));
+				r_core_cmd0 (core, r_strbuf_tostring (b));
 				r_strbuf_free (args);
 				r_strbuf_free (b);
 				}
@@ -1998,7 +1998,7 @@ static void load_table_csv(RCore *core, RTable *t, RList *lines) {
 					r_strbuf_append (b, " ");
 					r_strbuf_append (b, word);
 				}
-				r_core_cmd0 (core, r_strbuf_get (b));
+				r_core_cmd0 (core, r_strbuf_tostring (b));
 				r_strbuf_free (b);
 				}
 				break;

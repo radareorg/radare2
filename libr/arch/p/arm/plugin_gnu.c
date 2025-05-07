@@ -299,7 +299,7 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
 		op->size = 4;
-	} else if (strstr (r_strbuf_get (insn_buffer), "UNDEF")) {
+	} else if (strstr (r_strbuf_tostring (insn_buffer), "UNDEF")) {
 		op->mnemonic = strdup ("undefined");
 		op->size = 2;
 		opsize = 2;

@@ -2041,7 +2041,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (core->dbg->reg, reg_pc, curpc + 1);
 			} else {
-				const char *ee = r_strbuf_get (&aop.esil);
+				const char *ee = r_strbuf_tostring (&aop.esil);
 				r_esil_parse (core->anal->esil, ee);
 				// r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
@@ -2520,7 +2520,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 			if (ret) {
 				r_esil_set_pc (core->anal->esil, at);
 				r_reg_setv (core->anal->reg, "PC", at);
-				const char *esil = r_strbuf_get (&aop.esil);
+				const char *esil = r_strbuf_tostring (&aop.esil);
 				bool res = r_esil_parse (core->anal->esil, esil);
 				if (res) {
 					ut64 d = r_reg_getv (core->anal->reg, "PC");
@@ -2640,7 +2640,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 				lastch = at;
 			} else if (lastch != UT64_MAX) {
 				if (r_strbuf_length (sb) > minstr) { // maybe 2
-					const char *s = r_strbuf_get (sb);
+					const char *s = r_strbuf_tostring (sb);
 					if (!check_false_positive (s)) {
 						s = "";
 					}
@@ -2792,7 +2792,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 					lastch = at;
 				} else if (lastch != UT64_MAX) { //  && firstch != UT64_MAX) {
 					if (r_strbuf_length (sb) > minstr) { // maybe 2
-						const char *s = r_strbuf_get (sb);
+						const char *s = r_strbuf_tostring (sb);
 						if (quiet) {
 							if (!check_false_positive (s)) {
 								s = "";

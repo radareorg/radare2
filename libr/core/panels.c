@@ -773,12 +773,12 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 	}
 	if (panel->view->pos.w > 16) {
 		if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w
-					- r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
-			r_cons_canvas_write (can, r_strbuf_get (cache_title));
+					- r_str_ansi_len (r_strbuf_tostring (cache_title)) - 2, panel->view->pos.y + 1)) {
+			r_cons_canvas_write (can, r_strbuf_tostring (cache_title));
 		}
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		char *s = r_str_ndup (r_strbuf_get (title), panel->view->pos.w - 1);
+		char *s = r_str_ndup (r_strbuf_tostring (title), panel->view->pos.w - 1);
 		r_cons_canvas_write (can, s);
 		free (s);
 	}
@@ -885,11 +885,11 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 	}
 	r_strbuf_slice (title, 0, panel->view->pos.w);
 	r_strbuf_slice (cache_title, 0, panel->view->pos.w);
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_get (cache_title));
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (r_strbuf_tostring (cache_title)) - 2, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_tostring (cache_title));
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_get (title));
+		r_cons_canvas_write (can, r_strbuf_tostring (title));
 	}
 	r_strbuf_free (title);
 	r_strbuf_free (cache_title);
@@ -1577,7 +1577,7 @@ ut64 __parse_string_on_cursor(RCore *core, RPanel *panel, int idx) {
 				r_strbuf_append_n (buf, s, 1);
 				s++;
 			}
-			ut64 ret = r_num_math (core->num, r_strbuf_get (buf));
+			ut64 ret = r_num_math (core->num, r_strbuf_tostring (buf));
 			r_strbuf_free (buf);
 			return ret;
 		}
@@ -3892,9 +3892,9 @@ static char *__get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) 
 	r_strbuf_init (&rsb);
 	char *cs = r_cons_canvas_tostring (panels->can);
 	r_strbuf_setf (&rsb, " %s", cs);
-	char *R = r_str_ansi_crop (r_strbuf_get (&rsb), 0, y - 1, x + 1024, y);
+	char *R = r_str_ansi_crop (r_strbuf_tostring (&rsb), 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
-	char *r = r_str_ansi_crop (r_strbuf_get (&rsb), x - 1, y - 1, x + 1024, y);
+	char *r = r_str_ansi_crop (r_strbuf_tostring (&rsb), x - 1, y - 1, x + 1024, y);
 	r_str_ansi_filter (r, NULL, NULL, -1);
 	char *pos = strstr (R, r);
 	if (!pos) {
@@ -4143,7 +4143,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) 
 	r_cons_gotoxy (0, 0);
 	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
 	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
-	r_cons_canvas_write (can, r_strbuf_get (modal->data));
+	r_cons_canvas_write (can, r_strbuf_tostring (modal->data));
 	r_strbuf_free (modal->data);
 
 	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, PANEL_HL_COLOR);
@@ -5369,9 +5369,9 @@ static int __config_value_cb(void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
-	(void)r_str_split (r_strbuf_get(tmp), ':');
+	(void)r_str_split (r_strbuf_tostring(tmp), ':');
 	const char *v = __show_status_input (core, "New value: ");
-	r_config_set (core->config, r_strbuf_get (tmp), v);
+	r_config_set (core->config, r_strbuf_tostring (tmp), v);
 	r_strbuf_free (tmp);
 	free (parent->p->model->title);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
@@ -5396,8 +5396,8 @@ static int __config_toggle_cb(void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
-	(void)r_str_split (r_strbuf_get (tmp), ':');
-	r_config_toggle (core->config, r_strbuf_get (tmp));
+	(void)r_str_split (r_strbuf_tostring (tmp), ':');
+	r_config_toggle (core->config, r_strbuf_tostring (tmp));
 	r_strbuf_free (tmp);
 	free (parent->p->model->title);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
@@ -5425,9 +5425,9 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 		r_strbuf_append (rsb, ": ");
 		r_strbuf_append (rsb, r_config_get (core->config, menu));
 		if (!strcmp (menus_settings_screen[i], "scr.color")) {
-			__add_menu (core, parent, r_strbuf_get (rsb), __config_value_cb);
+			__add_menu (core, parent, r_strbuf_tostring (rsb), __config_value_cb);
 		} else {
-			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_tostring (rsb), __config_toggle_cb);
 		}
 		i++;
 	}
@@ -5532,10 +5532,10 @@ static int __esil_step_range_cb(void *user) {
 	RStrBuf *rsb = r_strbuf_new (NULL);
 	RCore *core = (RCore *)user;
 	r_strbuf_append (rsb, "start addr: ");
-	char *s = __show_status_input (core, r_strbuf_get (rsb));
+	char *s = __show_status_input (core, r_strbuf_tostring (rsb));
 	r_strbuf_append (rsb, s);
 	r_strbuf_append (rsb, " end addr: ");
-	char *d = __show_status_input (core, r_strbuf_get (rsb));
+	char *d = __show_status_input (core, r_strbuf_tostring (rsb));
 	r_strbuf_free (rsb);
 	ut64 s_a = r_num_math (core->num, s);
 	ut64 d_a = r_num_math (core->num, d);
@@ -5776,7 +5776,7 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	r_list_foreach (list, iter, pos) {
 		if (pos && !strcmp (now, pos)) {
 			r_strbuf_setf (buf, "%s%s", PANEL_HL_COLOR, pos);
-			__add_menu (core, parent, r_strbuf_get (buf), __settings_colors_cb);
+			__add_menu (core, parent, r_strbuf_tostring (buf), __settings_colors_cb);
 			continue;
 		}
 		__add_menu (core, parent, pos, __settings_colors_cb);
@@ -5800,7 +5800,7 @@ static void __init_menu_disasm_settings_layout(void *_core, const char *parent) 
 			r_strbuf_set (rsb, pos);
 			r_strbuf_append (rsb, ": ");
 			r_strbuf_append (rsb, r_config_get (core->config, pos));
-			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_tostring (rsb), __config_toggle_cb);
 		}
 	}
 	r_list_free (list);
@@ -5821,9 +5821,9 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 				!strcmp (pos, "asm.arch") ||
 				!strcmp (pos, "asm.bits") ||
 				!strcmp (pos, "asm.cpu")) {
-			__add_menu (core, parent, r_strbuf_get (rsb), __config_value_cb);
+			__add_menu (core, parent, r_strbuf_tostring (rsb), __config_value_cb);
 		} else {
-			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_tostring (rsb), __config_toggle_cb);
 		}
 	}
 	r_list_free (list);
@@ -6262,16 +6262,16 @@ static void __panels_refresh(RCore *core) {
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
 		r_cons_canvas_write (can, Color_YELLOW);
-		r_cons_canvas_write (can, r_strbuf_get (title));
+		r_cons_canvas_write (can, r_strbuf_tostring (title));
 		r_cons_canvas_write (can, Color_RESET);
 	} else {
 		r_cons_canvas_write (can, Color_RESET);
-		r_cons_canvas_write (can, r_strbuf_get (title));
+		r_cons_canvas_write (can, r_strbuf_tostring (title));
 	}
 	r_strbuf_setf (title, "[0x%08"PFMT64x "]", core->addr);
 	i = -can->sx + w - r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
-	r_cons_canvas_write (can, r_strbuf_get (title));
+	r_cons_canvas_write (can, r_strbuf_tostring (title));
 
 	int tab_pos = i;
 	for (i = core->panels_root->n_panels; i > 0; i--) {
@@ -6283,7 +6283,7 @@ static void __panels_refresh(RCore *core) {
 			} else {
 				r_strbuf_setf (title, "%s(%d) "Color_RESET, PANEL_HL_COLOR, i);
 			}
-			tab_pos -= r_str_ansi_len (r_strbuf_get (title));
+			tab_pos -= r_str_ansi_len (r_strbuf_tostring (title));
 		} else {
 			if (!name) {
 				r_strbuf_setf (title, "%d ", i);
@@ -6293,12 +6293,12 @@ static void __panels_refresh(RCore *core) {
 			tab_pos -= r_strbuf_length (title);
 		}
 		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-		r_cons_canvas_write (can, r_strbuf_get (title));
+		r_cons_canvas_write (can, r_strbuf_tostring (title));
 	}
 	r_strbuf_setf (title, "%s[t]%sab ", PANEL_HL_COLOR, Color_RESET);
-	tab_pos -= r_str_ansi_len (r_strbuf_get (title));
+	tab_pos -= r_str_ansi_len (r_strbuf_tostring (title));
 	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-	r_cons_canvas_write (can, r_strbuf_get (title));
+	r_cons_canvas_write (can, r_strbuf_tostring (title));
 	r_strbuf_free (title);
 
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {

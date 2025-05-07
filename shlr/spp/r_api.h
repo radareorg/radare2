@@ -14,7 +14,7 @@
 SStrBuf *r_strbuf_new(const char *s);
 bool r_strbuf_set(SStrBuf *sb, const char *s);
 bool r_strbuf_append(SStrBuf *sb, const char *s);
-char *r_strbuf_get(SStrBuf *sb);
+char *r_strbuf_tostring(SStrBuf *sb);
 char *r_strbuf_drain(SStrBuf *sb);
 void r_strbuf_free(SStrBuf *sb);
 void r_strbuf_fini(SStrBuf *sb);

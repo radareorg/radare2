@@ -199,7 +199,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					continue;
 				}
 				// opsz = analop.size;
-				opst = strdup (r_strbuf_get (&analop.esil));
+				opst = strdup (r_strbuf_tostring (&analop.esil));
 				r_anal_op_fini (&analop);
 			} else {
 				RAnalOp op;

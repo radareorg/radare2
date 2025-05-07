@@ -66,7 +66,7 @@ R_API char *pj_drain(PJ *pj) {
 }
 
 R_API const char *pj_string(PJ *j) {
-	return j? r_strbuf_get (&j->sb): NULL;
+	return j? r_strbuf_tostring (&j->sb): NULL;
 }
 
 static PJ *pj_begin(PJ *j, char type) {

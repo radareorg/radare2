@@ -313,7 +313,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			needle -= 2;
 		}
 		if (runes >= min) {
-			const char *tmpstr = r_strbuf_get (sb);
+			const char *tmpstr = r_strbuf_tostring (sb);
 			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives
 			int j, num_blocks;
