@@ -1999,7 +1999,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 
 static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_array, int va) {
 	char i1 = input[1];
-	char i2 = input[2];
+	char i2 = input[1]? input[2]: 0;
 	if (i1 == ',') {
 		i1 = 0;
 		R_FREE (core->table_query);

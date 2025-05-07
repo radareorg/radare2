@@ -1770,6 +1770,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.echo && cons->context->color_mode) {
 			r_cons_clear_line (0);
 		}
+repeat:
 		(void) r_cons_get_size (&rows);
 		switch (*buf) {
 		case 0:	// control-space
@@ -1985,6 +1986,18 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			buf[0] = r_cons_readchar_timeout (50);
 #endif
 			switch (buf[0]) {
+			case 91: // CSI fixterms - https://www.leonerd.org.uk/hacks/fixterms/
+				while (true) {
+					ch = r_cons_readchar ();
+					// 'i' is the CSI fixterm for insert
+					if (ch == 126 || ch == 'i' || ch < 15) {
+						// consider shift+return is the same as the return key
+						*buf = '\n';
+						goto repeat;
+						break;
+					}
+				}
+				break;
 			case 127:	// alt+bkspace
 				backward_kill_word (MINOR_BREAK);
 				break;
@@ -2293,7 +2306,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				selection_widget_select ();
 				break;
 			}
-			if (D.gcomp > 0&& I.buffer.length > 0) {
+			if (D.gcomp > 0 && I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
 				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
@@ -2301,18 +2314,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			D.gcomp_idx = 0;
 			D.gcomp = 0;
 			goto _end;
-		case '7':
-			// ignore most CSI fixterms - https://www.leonerd.org.uk/hacks/fixterms/
-			while (true) {
-				ch = r_cons_readchar ();
-				// 'i' is the CSI fixterm for insert
-				if (ch == 126 || ch == 'i' || ch < 15) {
-					// consider shift+return is the same as the return key
-					ch = '\n';
-					break;
-				}
-			}
-			break;
 		default:
 			if (D.gcomp > 0) {
 				D.gcomp++;
