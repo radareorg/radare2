@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2014-2022 - inisider */
+/* radare - LGPL - Copyright 2014-2025 - inisider */
 
-#include <string.h>
-#include <r_util.h>
 #include <r_core.h>
 #include "pdb_downloader.h"
 
@@ -170,8 +168,7 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int r_bin_pdb_download(RCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
-	int ret;
+int r_bin_pdb_download(RCore *core, PJ *pj, SPDBOptions *options) {
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
 	RBinInfo *info = r_bin_get_info (core->bin);
@@ -199,9 +196,10 @@ int r_bin_pdb_download(RCore *core, PJ *pj, int isradjson, SPDBOptions *options)
 	opt.extract = options->extract;
 
 	init_pdb_downloader (&opt, &pdb_downloader);
-	ret = pdb_downloader.download? pdb_downloader.download (&pdb_downloader): 0;
-	if (isradjson) {
-		pj_ko (pj, "pdb");
+	int ret = pdb_downloader.download? pdb_downloader.download (&pdb_downloader): 0;
+	if (pj) {
+		// pj_ko (pj, "pdb");
+		pj_o (pj);
 		pj_ks (pj, "file", opt.dbg_file);
 		pj_kb (pj, "download", (bool) ret);
 		pj_end (pj);

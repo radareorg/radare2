@@ -1329,19 +1329,19 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		mode = 'd'; // default
 		break;
 	}
-	if (pj || mode == 'j') {
+
+	if (mode == 'j') {
 		pj_o (pj);
 	}
-
 	pdb.print_types (&pdb, pj, mode);
 	pdb.print_gvars (&pdb, baddr, pj, mode);
 	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
-
-	if (pj || mode == 'j') {
+	if (mode == 'j') {
 		pj_end (pj);
 	}
+
 	return true;
 }
 
@@ -4824,7 +4824,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	if ((action & R_CORE_BIN_ACC_MAIN)) {
 		ret &= bin_main (core, pj, mode, va);
 	}
-	if ((action & R_CORE_BIN_ACC_DWARF)) { // R2_600 : Rename R_CORE_BIN_ACC_DWARF to _ADDRLINE
+	if ((action & R_CORE_BIN_ACC_ADDRLINE)) {
 		ret &= bin_addrline (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_PDB)) {

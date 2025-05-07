@@ -27,7 +27,7 @@ CMDS=<<EOF
 idpdj
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true}}
+{"file":"user32.pdb","download":true}
 EOF
 RUN
 
