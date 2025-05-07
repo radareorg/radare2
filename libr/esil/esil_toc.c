@@ -185,7 +185,11 @@ static void esil2c_free(REsilC *user) {
 	free (user);
 }
 
+#if USE_NEW_ESIL
+static bool esil2c_mw(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+#else
 static bool esil2c_mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+#endif
 	R_LOG_TODO ("poke%d 0x%08"PFMT64x" %d", len, addr, *buf);
 	return true;
 }
