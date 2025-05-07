@@ -2305,7 +2305,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			// ignore most CSI fixterms - https://www.leonerd.org.uk/hacks/fixterms/
 			while (true) {
 				ch = r_cons_readchar ();
-				if (ch == 126) {
+				// 'i' is the CSI fixterm for insert
+				if (ch == 126 || ch == 'i' || ch < 15) {
 					// consider shift+return is the same as the return key
 					ch = '\n';
 					break;
