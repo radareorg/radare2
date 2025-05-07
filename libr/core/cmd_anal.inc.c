@@ -2574,22 +2574,35 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-
+#if USE_NEW_ESIL
+static bool mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+#else
 static bool mw2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
+#endif
 	return true;
 }
 
+#if USE_NEW_ESIL
+static bool mr2(void *null, ut64 addr, const ut8 *buf, int len) {
+#else
 static bool mr2(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_LOG_INFO ("READ 0x%08"PFMT64x" %d", addr, len);
+#endif
 	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
+#if USE_NEW_ESIL
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+#else
 	REsil *e = r_esil_new (256, 0, 0);
 	r_esil_setup (e, core->anal, false, false, false);
 	e->cb.mem_read = mr2;
 	e->cb.mem_write = mw2;
+#endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 }
@@ -2607,20 +2620,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 1
-	REsil *esil = r_esil_new (256, 0, 0);
-	r_esil_setup (esil, core->anal, false, false, false);
-	esil->user = &core;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#else
-	REsil *esil = core->anal->esil;
-	//esil->user = &ec;
-	esil->cb.mem_read = mr;
-	esil->cb.mem_write = mw;
-#endif
 
-	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
@@ -3099,7 +3099,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
-	r_esil_free (esil);
 }
 
 static int bb_cmp(const void *a, const void *b) {
@@ -8461,6 +8460,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 }
 
 R_IPI void cmd_aei(RCore *core) {
+//TODO use core_esil here
 	REsil *esil = esil_new_setup (core);
 	if (esil) {
 		r_esil_free (core->anal->esil);
