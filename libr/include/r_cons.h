@@ -58,9 +58,9 @@ extern "C" {
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 
-// R2_600 - remove more limits
-#define R_CONS_GREP_TOKENS 64
-#define R_CONS_GREP_COUNT 10
+// Grep token and count limits removed: dynamic allocation used
+#undef R_CONS_GREP_TOKENS
+#undef R_CONS_GREP_COUNT
 
 R_LIB_VERSION_HEADER(r_cons);
 
@@ -121,8 +121,9 @@ typedef struct r_cons_grep_t {
 	bool sort_invert;
 	int f_line; //first line
 	int l_line; //last line
-	int tokens[R_CONS_GREP_TOKENS];
-	int tokens_used;
+	// dynamic list of token indices for column selection
+	int *tokens;           // allocated array of token indices
+	size_t tokens_count;    // number of tokens in array
 	int amp;
 	int zoom;
 	int zoomy; // if set then its scaled unproportionally
