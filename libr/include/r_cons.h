@@ -1137,7 +1137,6 @@ struct r_line_t {
 	RLineEditorCb cb_editor;
 	// RLineFunctionKeyCb cb_fkey;
 	RConsFunctionKey cb_fkey;
-	/* state , TODO: use more bool */
 	bool echo;
 	char *prompt;
 	RList/*<str>*/ *kill_ring;
@@ -1151,7 +1150,7 @@ struct r_line_t {
 	char *contents;
 	bool zerosep;
 	bool enable_vi_mode; // can be merged with vi_mode
-	int vi_mode; // TODO bool ?
+	int vi_mode;
 	bool prompt_mode;
 	RLinePromptType prompt_type;
 	int offset_hist_index;
@@ -1168,7 +1167,7 @@ struct r_line_t {
 #ifdef R_API
 
 R_API RLine *r_line_new(void);
-R_API int r_line_dietline_init(void); // XXX rename to r_line_init?
+R_API bool r_line_dietline_init(void); // XXX rename to r_line_init?
 R_API RLine *r_line_singleton(void);
 R_API void r_line_free(void);
 R_API char *r_line_get_prompt(void);

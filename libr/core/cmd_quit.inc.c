@@ -26,6 +26,7 @@ static int cmd_Quit(void *data, const char *input) {
 	}
 	const int rv = arg? r_num_math (core->num, arg): 0;
 	if (input[0] == '!') { // "q!"
+		r_config_set_b (core->config, "scr.hist.save", false);
 		if (input[1] == '!' || !input[1]) { // "q!!"
 			if (!r_sandbox_enable (false)) {
 				r_cons_flush ();
@@ -33,7 +34,6 @@ static int cmd_Quit(void *data, const char *input) {
 			}
 			return R_CMD_RC_QUIT;
 		}
-		r_config_set_b (core->config, "scr.hist.save", false);
 	}
 	r_core_return_code (core, rv);
 	return R_CMD_RC_QUIT;
