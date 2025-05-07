@@ -83,6 +83,24 @@ static void kvc_error(KVCParser *kvc, const char *msg) {
 	kvc->s.a = kvc->s.b;
 }
 
+static void massage_type(char **s) {
+	char *star = strchr (*s, '*');
+	if (star) {
+		char *ostar = star;
+		while (star > *s) {
+			if (!isspace (*star)) {
+				break;
+			}
+			star--;
+		}
+		char *type = r_str_ndup (*s, star - *s);
+		char *res = r_str_newf ("%s %s", type, ostar);
+		free (*s);
+		free (type);
+		*s = res;
+	}
+}
+
 static const char *kvc_peekn(KVCParser *kvc, size_t amount) {
 	return (kvctoken_len (kvc->s) >= amount)? kvc->s.a: NULL;
 }
@@ -649,6 +667,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			free (md);
 			break;
 		}
+		massage_type (&mt);
 		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
 		if (md) {
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
@@ -859,6 +878,7 @@ static bool parse_function(KVCParser *kvc) {
 #endif
 			char *an = kvctoken_tostring (arg_name);
 			char *at = kvctoken_tostring (arg_type);
+			massage_type (&at);
 			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
 				// TODO: check if its the only arg
 				arg_idx--;
