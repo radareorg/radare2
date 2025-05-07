@@ -585,7 +585,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	const char *do_demangle = NULL;
 	const char *query = NULL;
-	int c, bits = 0, actions = 0;
+	int c, bits = 0;
 	char* create = NULL;
 	bool va = true;
 	ut64 action = R_BIN_REQ_UNK;
@@ -690,7 +690,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 
 #define is_active(x) (action & (x))
-#define set_action(x) { actions++; action |= (x); }
+#define set_action(x) { action |= (x); }
 #define unset_action(x) action &= ~x
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
@@ -713,7 +713,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
 			set_action (R_BIN_REQ_FIELDS);
-			set_action (R_BIN_REQ_DWARF);
+			set_action (R_BIN_REQ_ADDRLINE);
 			set_action (R_BIN_REQ_ENTRIES);
 			set_action (R_BIN_REQ_INITFINI);
 			set_action (R_BIN_REQ_MAIN);
@@ -793,7 +793,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'H':
 			set_action (R_BIN_REQ_FIELDS);
 			break;
-		case 'd': set_action (R_BIN_REQ_DWARF); break;
+		case 'd':
+			set_action (R_BIN_REQ_ADDRLINE);
+			break;
 		case 'P':
 			if (is_active (R_BIN_REQ_PDB)) {
 				set_action (R_BIN_REQ_PDB_DWNLD);
@@ -1197,10 +1199,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (state.stdin_buf);
 		return 0;
 	}
-#define isradjson ((rad == R_MODE_JSON) && (actions > 0))
-#define run_action(n,x,y) {\
+#define run_action(n, x, y) {\
 	if (action & (x)) {\
-		if (isradjson) { pj_k (pj, n); } \
+		if (pj) { pj_k (pj, n); } \
 		if (!r_core_bin_info (&core, y, pj, rad, va, &filter, chksum)) {\
 			R_LOG_ERROR ("Missing bin header %s", n);\
 		};\
@@ -1212,7 +1213,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	filter.name = name;
 	core.cons->context->is_interactive = false;
 
-	if (isradjson) {
+	if (pj) {
 		pj_o (pj);
 	}
 	// List fatmach0 sub-binaries, etc
@@ -1236,7 +1237,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			R_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)r_config_get (core.config, "pdb.symstore");
-		r_bin_pdb_download (&core, pj, isradjson, &pdbopts);
+		if (pj) {
+			pj_k (pj, "pdb");
+		}
+		r_bin_pdb_download (&core, pj, &pdbopts);
+		if (pj) {
+			pj_end (pj);
+		}
 	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {
@@ -1260,11 +1267,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	run_action ("header", R_BIN_REQ_HEADER, R_CORE_BIN_ACC_HEADER);
 	run_action ("libs", R_BIN_REQ_LIBS, R_CORE_BIN_ACC_LIBS);
 	run_action ("relocs", R_BIN_REQ_RELOCS, R_CORE_BIN_ACC_RELOCS);
-	run_action ("dwarf", R_BIN_REQ_DWARF, R_CORE_BIN_ACC_DWARF);
+	run_action ("addrline", R_BIN_REQ_ADDRLINE, R_CORE_BIN_ACC_ADDRLINE);
 	run_action ("pdb", R_BIN_REQ_PDB, R_CORE_BIN_ACC_PDB);
+	// run_action ("pdb", R_BIN_REQ_PDB_DWNLD, R_CORE_BIN_ACC_PDB);
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
-	run_action ("sections", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("signature", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
 	if (action & R_BIN_REQ_SRCLINE) {
@@ -1281,7 +1289,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (op && action & R_BIN_REQ_OPERATION) {
 		rabin_do_operation (bin, op, rad, output, file);
 	}
-	if (isradjson) {
+	if (pj) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 	}

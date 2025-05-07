@@ -247,6 +247,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	}
 	char *res = demangle_internal (core, lang_type, text);
 	if (mode == R_MODE_JSON) {
+		pj_o (pj);
 		pj_ks (pj, "lang", lang);
 		pj_ks (pj, "mangled", text);
 		if (res) {
@@ -254,6 +255,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		} else {
 			pj_ks (pj, "error", err);
 		}
+		pj_end (pj);
 	} else {
 		if (res) {
 			r_kons_printf (core->cons, "%s\n", res);
@@ -1030,9 +1032,6 @@ static bool isjvm(RCore *core) {
 }
 
 #define RBININFO(n,x,y,z)\
-	if (is_array) {\
-		pj_k (pj, n);\
-	}\
 	if (z) { tts_say (core, n, z); }\
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
@@ -1634,125 +1633,136 @@ static void cmd_it(RCore *core, PJ *pj) {
 	r_list_free (old_hashes);
 }
 
+static void cmd_idp (RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
+	SPDBOptions pdbopts;
+	RBinInfo *info;
+	bool file_found;
+	char *filename;
+
+	switch (input[2]) {
+	case ' ': // "idp file.pdb"
+		r_core_cmdf (core, ".idpi* %s", input + 3);
+		break;
+	case '\0': // "idp"
+		r_core_cmd0 (core, ".idpi*");
+		break;
+	case 'd': // "idpd"
+		if (input[3] == '?') {
+			r_core_cmd_help_contains (core, help_msg_id, "idpd");
+			break;
+		}
+		pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
+		pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
+		pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
+		char *str = strdup (r_config_get (core->config, "pdb.server"));
+		RList *server_l = r_str_split_list (str, " ", 0);
+		RListIter *it;
+		char *server;
+		int r = 1;
+		r_list_foreach (server_l, it, server) {
+			pdbopts.symbol_server = server;
+			r = r_bin_pdb_download (core, pj, &pdbopts);
+			if (!r) {
+				break;
+			}
+		}
+		if (r > 0) {
+			R_LOG_ERROR ("Cannot download the pdb file");
+		}
+		free (str);
+		r_list_free (server_l);
+		input++;
+		break;
+	case 'i': // "idpi"
+		if (input[3] == '?') {
+			r_core_cmd_help_contains (core, help_msg_id, "idpi");
+			break;
+		}
+		info = r_bin_get_info (core->bin);
+		filename = strchr (input, ' ');
+		while (input[2]) {
+			input++;
+		}
+		if (filename) {
+			*filename++ = '\0';
+			filename = strdup (filename);
+			file_found = r_file_exists (filename);
+		} else {
+			/* Autodetect local file */
+			if (!info || !info->debug_file_name) {
+				R_LOG_ERROR ("Cannot get file's debug information");
+				break;
+			}
+			// Check raw path for debug filename
+			const char *dfn = r_file_basename (info->debug_file_name);
+			file_found = r_file_exists (dfn);
+			if (file_found) {
+				filename = strdup (dfn);
+			} else {
+				// Check debug filename basename in current directory
+				char* basename = (char*) r_file_basename (dfn);
+				file_found = r_file_exists (basename);
+				if (!file_found) {
+					// Check if debug file is in file directory
+					char *dir = r_file_dirname (core->bin->cur->file);
+					filename = r_str_newf ("%s/%s", dir, basename);
+					file_found = r_file_exists (filename);
+					free (dir);
+				} else {
+					filename = strdup (basename);
+				}
+			}
+
+			// Last chance: Check if file is in downstream symbol store
+			if (!file_found) {
+				const char* symstore_path = r_config_get (core->config, "pdb.symstore");
+				const char *base_file = r_file_basename (info->debug_file_name);
+				char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
+						symstore_path, base_file, info->guid, base_file);
+				file_found = r_file_exists (pdb_path);
+				if (file_found) {
+					free (filename);
+					filename = pdb_path;
+				} else {
+					free (pdb_path);
+				}
+			}
+		}
+		if (!file_found) {
+			if (info->debug_file_name) {
+				const char *fn = r_file_basename (info->debug_file_name);
+				R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
+			} else {
+				R_LOG_ERROR ("Cannot open file");
+			}
+			r_core_return_value (core, 1);
+			free (filename);
+			break;
+		}
+		r_core_pdb_info (core, filename, pj, mode);
+		free (filename);
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_id);
+		break;
+	default:
+		r_core_return_invalid_command (core, "id", input[1]);
+		break;
+	}
+}
+
 static void cmd_id(RCore *core, PJ *pj, const char *input, bool is_array, int mode) {
 	const bool va = r_config_get_b (core->config, "io.va");
 	const char input1 = input[1];
 	if (input1 == 'x') { // "idx" "iX"
 		RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
 	} else if (input1 == 'p') { // "idp"
-		SPDBOptions pdbopts;
-		RBinInfo *info;
-		bool file_found;
-		char *filename;
-
-		switch (input[2]) {
-		case ' ': // "idp file.pdb"
-			r_core_cmdf (core, ".idpi* %s", input + 3);
-			while (input[2]) {
-				input++;
-			}
-			break;
-		case '\0': // "idp"
-			r_core_cmd0 (core, ".idpi*");
-			break;
-		case 'd': // "idpd"
-			pdbopts.user_agent = (char*) r_config_get (core->config, "pdb.useragent");
-			pdbopts.extract = r_config_get_i (core->config, "pdb.extract");
-			pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
-			char *str = strdup (r_config_get (core->config, "pdb.server"));
-			RList *server_l = r_str_split_list (str, " ", 0);
-			RListIter *it;
-			char *server;
-			int r = 1;
-			r_list_foreach (server_l, it, server) {
-				pdbopts.symbol_server = server;
-				r = r_bin_pdb_download (core, pj, input[3] == 'j', &pdbopts);
-				if (!r) {
-					break;
-				}
-			}
-			if (r > 0) {
-				R_LOG_ERROR ("Cannot download the pdb file");
-			}
-			free (str);
-			r_list_free (server_l);
-			input++;
-			break;
-		case 'i': // "idpi"
-			info = r_bin_get_info (core->bin);
-			filename = strchr (input, ' ');
-			while (input[2]) input++;
-			if (filename) {
-				*filename++ = '\0';
-				filename = strdup (filename);
-				file_found = r_file_exists (filename);
-			} else {
-				/* Autodetect local file */
-				if (!info || !info->debug_file_name) {
-					R_LOG_ERROR ("Cannot get file's debug information");
-					break;
-				}
-				// Check raw path for debug filename
-				const char *dfn = r_file_basename (info->debug_file_name);
-				file_found = r_file_exists (dfn);
-				if (file_found) {
-					filename = strdup (dfn);
-				} else {
-					// Check debug filename basename in current directory
-					char* basename = (char*) r_file_basename (dfn);
-					file_found = r_file_exists (basename);
-					if (!file_found) {
-						// Check if debug file is in file directory
-						char* dir = r_file_dirname (core->bin->cur->file);
-						filename = r_str_newf ("%s/%s", dir, basename);
-						file_found = r_file_exists (filename);
-						free (dir);
-					} else {
-						filename = strdup (basename);
-					}
-				}
-
-				// Last chance: Check if file is in downstream symbol store
-				if (!file_found) {
-					const char* symstore_path = r_config_get (core->config, "pdb.symstore");
-					const char *base_file = r_file_basename (info->debug_file_name);
-					char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
-							symstore_path, base_file, info->guid, base_file);
-					file_found = r_file_exists (pdb_path);
-					if (file_found) {
-						free (filename);
-						filename = pdb_path;
-					} else {
-						free (pdb_path);
-					}
-				}
-			}
-			if (!file_found) {
-				if (info->debug_file_name) {
-					const char *fn = r_file_basename (info->debug_file_name);
-					R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
-				} else {
-					R_LOG_ERROR ("Cannot open file");
-				}
-				r_core_return_value (core, 1);
-				free (filename);
-				break;
-			}
-			r_core_pdb_info (core, filename, pj, mode);
-			free (filename);
-			break;
-		case '?':
-		default:
-			r_core_cmd_help (core, help_msg_id);
-			input++;
-			break;
-		}
-		input++;
+		cmd_idp (core, pj, input, is_array, mode);
 	} else if (input1 == '?') { // "id?"
 		r_core_cmd_help (core, help_msg_id);
 		input++;
 	} else if (input1 == 'q' || input1 == 'j' || !input1 || input1 == '*') { // "idj"
-		RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
+		RBININFO ("dwarf", R_CORE_BIN_ACC_ADDRLINE, NULL, -1);
 	} else {
 		r_core_return_invalid_command (core, "id", input[1]);
 	}
@@ -2012,44 +2022,37 @@ static void cmd_ie(RCore *core, const char *input, PJ *pj, int mode, bool is_arr
 		RListIter *iter;
 		RBinFile *bf;
 		RBinFile *cur = core->bin->cur;
-		// ie = show entries
-		// iee = show constructors
+		size_t objs_count = r_list_length (objs);
 		bool show_constructors = r_str_startswith (input, "ee"); // "iee"
-		if (r_list_empty (objs)) {
-			if (mode & R_MODE_JSON) {
-				r_kons_print (core->cons, "[]");
+		if (objs_count == 1) {
+			if (show_constructors) {
+				RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+			} else {
+				RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
 			}
 		} else {
-			if (r_list_length (objs) == 1) {
+			if (mode & R_MODE_JSON) {
+				pj_a (pj);
+			}
+			r_list_foreach (objs, iter, bf) {
+				if (mode & R_MODE_JSON) {
+					pj_o (pj);
+					pj_kn (pj, "id", bf->id);
+					pj_ks (pj, "filename", bf->file);
+					pj_k (pj, "data");
+				}
+				core->bin->cur = bf;
 				if (show_constructors) {
 					RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
 				} else {
 					RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
 				}
-			} else {
-				if (mode & R_MODE_JSON) {
-					pj_a (pj);
-				}
-				r_list_foreach (objs, iter, bf) {
-					if (mode & R_MODE_JSON) {
-						pj_o (pj);
-						pj_kn (pj, "id", bf->id);
-						pj_ks (pj, "filename", bf->file);
-						pj_k (pj, "data");
-					}
-					core->bin->cur = bf;
-					if (show_constructors) {
-						RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-					} else {
-						RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-					}
-					if (mode & R_MODE_JSON) {
-						pj_end (pj);
-					}
-				}
 				if (mode & R_MODE_JSON) {
 					pj_end (pj);
 				}
+			}
+			if (mode & R_MODE_JSON) {
+				pj_end (pj);
 			}
 		}
 		core->bin->cur = cur;
@@ -2066,8 +2069,6 @@ static int cmd_info(void *data, const char *input) {
 	int i;
 	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
 	bool is_array = false;
-	bool is_izzzj = false;
-	bool is_idpij = false;
 	PJ *pj = NULL;
 
 	if (r_str_startswith (input, "ddqd")) {
@@ -2104,26 +2105,8 @@ static int cmd_info(void *data, const char *input) {
 		}
 	if (mode == R_MODE_JSON) {
 		INIT_PJ ();
-		int suffix_shift = 0;
-		if (r_str_startswith (input, "SS") || r_str_startswith (input, "es") || r_str_startswith (input, "zz")) {
-			// very ugly
-			suffix_shift = 1;
-		}
-		if (strlen (input + 1 + suffix_shift) > 1) {
-			is_array = true;
-		} else if (r_str_startswith (input, "esj")) {
-			is_array = true;
-		} else if (r_str_startswith (input, "zzz")) {
-			is_izzzj = true;
-		} else if (r_str_startswith (input, "dpi")) {
-			is_idpij = true;
-		}
 	}
 	r_core_return_value (core, 0);
-	if (is_array && !is_izzzj && !is_idpij) {
-		pj_a (pj);
-		// pj_o (pj);
-	}
 	if (!*input) {
 		cmd_info_bin (core, va, pj, mode);
 	}
@@ -2551,9 +2534,11 @@ static int cmd_info(void *data, const char *input) {
 	}
 	R_FREE (core->table_query);
 	if (pj || mode & R_MODE_JSON) {
+#if 0
 		if (is_array && !is_izzzj && !is_idpij) {
 			pj_end (pj);
 		}
+#endif
 		r_kons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}

@@ -837,7 +837,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_BIN_ACC_FIELDS	0x100
 #define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
-#define R_CORE_BIN_ACC_DWARF	0x800
+#define R_CORE_BIN_ACC_ADDRLINE 0x800
 #define R_CORE_BIN_ACC_SIZE     0x1000
 #define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_MEM	0x4000
