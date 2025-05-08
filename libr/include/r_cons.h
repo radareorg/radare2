@@ -906,7 +906,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(const char *file, const char *str);
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
 R_API void r_cons_print_clear(void);
@@ -1174,9 +1174,9 @@ R_API char *r_line_get_prompt(void);
 R_API void r_line_set_prompt(const char *prompt);
 R_API void r_line_clipboard_push(const char *str);
 
-typedef int (RLineReadCallback)(void *user, const char *line);
-R_API const char *r_line_readline(void);
-R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
+typedef int (RLineReadCallback)(RCons *cons, void *user, const char *line);
+R_API const char *r_line_readline(RCons *cons);
+R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *user);
 
 R_API void r_line_hist_free(void);
 R_API bool r_line_hist_load(const char *file);

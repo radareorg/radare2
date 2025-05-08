@@ -34,7 +34,7 @@ static int cmd_macro(void *data, const char *_input) {
 			r_line_set_prompt ("> ");
 			bool closepar = true;
 			while (true) {
-				const char *ptr = r_line_readline ();
+				const char *ptr = r_line_readline (core->cons);
 				if (R_STR_ISEMPTY (ptr)) {
 					break;
 				}

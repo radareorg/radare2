@@ -4607,7 +4607,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			const char *cmd = r_config_get (core->config, "cmd.gprompt");
 			r_line_set_prompt ("cmd.gprompt> ");
 			core->cons->line->contents = strdup (cmd);
-			const char *buf = r_line_readline ();
+			const char *buf = r_line_readline (core->cons);
 			core->cons->line->contents = NULL;
 			r_config_set (core->config, "cmd.gprompt", buf);
 			showcursor (core, false);

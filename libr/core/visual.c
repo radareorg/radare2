@@ -1920,7 +1920,7 @@ static void visual_textlogs(RCore *core) {
 				const char *cmd = r_config_get (core->config, "cmd.vprompt");
 				r_line_set_prompt ("cmd.vprompt> ");
 				I->line->contents = strdup (cmd);
-				buf = r_line_readline ();
+				buf = r_line_readline (core->cons);
 				I->line->contents = NULL;
 				(void)r_config_set (core->config, "cmd.vprompt", buf);
 				r_core_visual_showcursor (core, false);
@@ -3084,9 +3084,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt ("cmd.vprompt> ");
-			I->line->contents = strdup (cmd);
-			buf = r_line_readline ();
-			I->line->contents = NULL;
+			core->cons->line->contents = strdup (cmd);
+			buf = r_line_readline (core->cons);
+			core->cons->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}
@@ -3098,7 +3098,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
 			r_line_set_prompt ("cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
-			const char *buf = r_line_readline ();
+			const char *buf = r_line_readline (core->cons);
 			if (buf && !strcmp (buf, "|")) {
 				R_FREE (I->line->contents);
 				core->print->cur_enabled = true;

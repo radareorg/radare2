@@ -84,7 +84,7 @@ static int down(void *n) {
 	return 0;
 }
 
-R_API char *r_cons_editor(const char *file, const char *str) {
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 	// bool visual = false; // TODO: should be an argument
 	if (I->cb_editor) {
 		return I->cb_editor (I->user, file, str);
@@ -113,7 +113,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 	I->echo = false;
 	for (;;) {
 		setcurline ();
-		const char *line = r_line_readline ();
+		const char *line = r_line_readline (cons);
 		if (R_STR_ISNOTEMPTY (line)) {
 			r_str_trim ((char *)line);
 			if (!strcmp (line, ".")) {

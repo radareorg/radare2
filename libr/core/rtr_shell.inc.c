@@ -214,7 +214,7 @@ static void __rtr_shell(RCore *core, int nth) {
 	snprintf (prompt2, sizeof (prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
 		r_line_set_prompt (prompt);
-		res = r_line_readline ();
+		res = r_line_readline (core->cons);
 		if (R_STR_ISEMPTY (res)) {
 			break;
 		}
@@ -224,7 +224,7 @@ static void __rtr_shell(RCore *core, int nth) {
 		if (!strcmp (res, "!sh")) {
 			for (;;) {
 				r_line_set_prompt (prompt2);
-				res = r_line_readline ();
+				res = r_line_readline (core->cons);
 				if (!res || !*res || !strcmp (res, "exit")) {
 					break;
 				}

@@ -1655,7 +1655,7 @@ R_API int r_core_fgets(char *buf, int len) {
 		rli->completion.run = NULL;
 		rli->completion.run_user = NULL;
 	}
-	const char *ptr = r_line_readline ();
+	const char *ptr = r_line_readline (cons);
 	if (!ptr) {
 		return -1;
 	}
@@ -3614,7 +3614,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		RCons *cons = r_cons_singleton ();
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;
-		r_cons_editor (name, NULL);
+		r_cons_editor (cons, name, NULL);
 		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {

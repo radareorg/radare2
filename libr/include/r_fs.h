@@ -83,9 +83,10 @@ typedef struct r_fs_partition_t {
 } RFSPartition;
 
 typedef struct r_fs_shell_t {
+	RCons *cons;
 	char *cwd;
 	void (*set_prompt)(const char *prompt);
-	const char* (*readline)(void);
+	const char* (*readline)(RCons *cons);
 	bool (*hist_add)(const char *line);
 } RFSShell;
 

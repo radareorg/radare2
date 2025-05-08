@@ -1101,8 +1101,8 @@ R_API void r_line_autocomplete(void) {
 	fflush (stdout);
 }
 
-R_API const char *r_line_readline(void) {
-	return r_line_readline_cb (NULL, NULL);
+R_API const char *r_line_readline(RCons *cons) {
+	return r_line_readline_cb (cons, NULL, NULL);
 }
 
 static inline void rotate_kill_ring(void) {
@@ -1147,9 +1147,9 @@ static inline void delete_till_end(void) {
 	I.buffer.index = I.buffer.index > 0? I.buffer.index - 1: 0;
 }
 
-static const char *promptcolor(void) {
+static const char *promptcolor(RCons *cons) {
 	if (I.demo) {
-		return r_cons_singleton ()->context->pal.prompt;
+		return cons->context->pal.prompt;
 	}
 	return Color_RESET;
 }
@@ -1165,7 +1165,7 @@ static void __print_prompt(void) {
 	// printf ("%s", promptcolor ());
 	r_cons_clear_line (0);
 	if (cons->context->color_mode > 0) {
-		printf ("\r%s%s%s", Color_RESET, promptcolor (), I.prompt);
+		printf ("\r%s%s%s", Color_RESET, promptcolor (cons), I.prompt);
 	} else {
 		printf ("\r%s", I.prompt);
 	}
@@ -1186,9 +1186,9 @@ static void __print_prompt(void) {
 		char *kc = (char *) r_str_ansi_chrn (kb, 3);
 		char *b = r_str_ndup (kb, kc - kb);
 		char *c = strdup (kc);
-		char *rb = r_str_newf (Color_WHITE "%s%s", b, promptcolor ());
+		char *rb = r_str_newf (Color_WHITE "%s%s", b, promptcolor (cons));
 		*kb = 0;
-		printf ("\r%s%s%s%s%s", promptcolor (), a, rb, c, Color_RESET);
+		printf ("\r%s%s%s%s%s", promptcolor (cons), a, rb, c, Color_RESET);
 		free (a);
 		free (b);
 		free (rb);
@@ -1198,7 +1198,7 @@ static void __print_prompt(void) {
 			D.count = 0;
 		}
 	} else {
-		printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
+		printf ("\r%s%s%s", promptcolor (cons), I.prompt, promptcolor (cons));
 	}
 	if (I.buffer.index > cols) {
 		printf ("< ");
@@ -1667,7 +1667,7 @@ static void dietline_print_risprompt(const char *gcomp_line) {
 	}
 }
 
-R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
+R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *user) {
 	int rows;
 	const char *gcomp_line = "";
 	signed char buf[10];
@@ -1677,7 +1677,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int ch = 0, key, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
-	RCons *cons = r_cons_singleton ();
+	// RCons *cons = r_cons_singleton ();
 
 	if (!I.hud || (I.hud && !I.hud->activate)) {
 		I.buffer.index = I.buffer.length = 0;
@@ -1705,12 +1705,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	}
 
 	memset (&buf, 0, sizeof buf);
-	r_cons_set_raw (1);
+	r_kons_set_raw (cons, 1);
 
 	if (I.echo) {
 		__print_prompt ();
 	}
-	r_cons_break_push (NULL, NULL);
+	r_kons_break_push (cons, NULL, NULL);
 	r_cons_enable_mouse (I.hud);
 	for (;;) {
 		D.yank_flag = false;
@@ -1727,7 +1727,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 		I.buffer.data[I.buffer.length] = '\0';
 		if (cb) {
-			int cbret = cb (user, I.buffer.data);
+			int cbret = cb (cons, user, I.buffer.data);
 			if (cbret == 0) {
 				I.buffer.data[0] = 0;
 				I.buffer.length = 0;
@@ -2405,7 +2405,7 @@ _end:
 	}
 #endif
 	if (I.echo) {
-		printf ("\r%s%s%s%s\n", I.prompt, promptcolor (), I.buffer.data, Color_RESET);
+		printf ("\r%s%s%s%s\n", I.prompt, promptcolor (cons), I.buffer.data, Color_RESET);
 		fflush (stdout);
 	}
 

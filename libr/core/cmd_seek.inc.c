@@ -886,7 +886,7 @@ static int cmd_seek(void *data, const char *input) {
 					// open shell
 					r_line_set_prompt ("sh> ");
 					for (;;) {
-						const char *line = r_line_readline ();
+						const char *line = r_line_readline (core->cons);
 						if (!line || !strcmp (line, "exit")) {
 							break;
 						}

@@ -315,7 +315,7 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 		r_list_free (filtered_list);
 #endif
 		r_cons_visual_flush ();
-		(void) r_line_readline ();
+		(void) r_line_readline (cons);
 		r_str_ncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE);
 
 		if (!hud->activate) {
@@ -400,8 +400,8 @@ static char *r_cons_hud_line(RCons *cons, RList *list, const char *prompt) {
 		r_list_free (filtered_list);
 #endif
 		r_cons_printf ("]");
-		r_cons_flush ();
-		(void) r_line_readline ();
+		r_kons_flush (cons);
+		(void) r_line_readline (cons);
 		r_str_ncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE);
 
 		if (!hud->activate) {

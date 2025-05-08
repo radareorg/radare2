@@ -17,11 +17,11 @@ typedef struct {
 	char *otherstr;
 } RCoreVisualAsm;
 
-static int readline_callback(void *_a, const char *str) {
+static int readline_callback(RCons *cons, void *_a, const char *str) {
 	RCoreVisualAsm *a = _a;
 	RCore *core = a->core;
 	r_cons_clear00 ();
-	r_cons_printf ("Write %s-%" PFMT64d " %s... (! for %s, ^C to quit)\n\n",
+	r_kons_printf (cons, "Write %s-%" PFMT64d " %s... (! for %s, ^C to quit)\n\n",
 		r_config_get (a->core->config, "asm.arch"),
 		r_config_get_i (a->core->config, "asm.bits"),
 		a->amode? "assembly": "hexpairs",
@@ -114,7 +114,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 	r_io_read_at (core->io, off, cva.buf, sizeof (cva.buf));
 	cva.blocklen = r_hex_bin2str (cva.buf, sizeof (cva.buf), cva.blockbuf);
 
-	r_line_readline_cb (readline_callback, &cva);
+	r_line_readline_cb (core->cons, readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {

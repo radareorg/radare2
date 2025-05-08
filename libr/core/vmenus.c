@@ -355,7 +355,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt ("cmd.vprompt> ");
 			I->line->contents = strdup (cmd);
-			buf = r_line_readline ();
+			buf = r_line_readline (core->cons);
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -802,7 +802,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'i':
 			{
 				r_line_set_prompt ("> ");
-				const char *line = r_line_readline ();
+				const char *line = r_line_readline (core->cons);
 				ut64 num = r_num_math (core->num, line);
 				if (num || (!num && *line == '0')) {
 					buf[x / 8] = num;
@@ -824,7 +824,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt ("cmd.vprompt> ");
 			I->line->contents = strdup (cmd);
-			buf = r_line_readline ();
+			buf = r_line_readline (core->cons);
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -1986,7 +1986,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	int cur = 0;
 
 	r_line_set_prompt ("rop regexp: ");
-	const char *line = r_line_readline ();
+	const char *line = r_line_readline (core->cons);
 
 	int scr_h, scr_w = r_cons_get_size (&scr_h);
 
@@ -2124,7 +2124,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case 'o':
 			{
 				r_line_set_prompt ("offset: ");
-				const char *line = r_line_readline ();
+				const char *line = r_line_readline (core->cons);
 				if (R_STR_ISNOTEMPTY (line)) {
 					ut64 off = r_num_math (core->num, line);
 					r_core_seek (core, off, true);
@@ -2137,7 +2137,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case 'r':
 			{
 				r_line_set_prompt ("rop regexp: ");
-				const char *line = r_line_readline ();
+				const char *line = r_line_readline (core->cons);
 				if (line && *line) {
 					free (cursearch);
 					delta = 0;
@@ -2157,7 +2157,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case 'i':
 			{
 				r_line_set_prompt ("insert value: ");
-				const char *line = r_line_readline ();
+				const char *line = r_line_readline (core->cons);
 				if (line && *line) {
 					ut64 n = r_num_math (core->num, line);
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x, n));
@@ -2167,7 +2167,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case ';':
 			{
 				r_line_set_prompt ("comment: ");
-				const char *line = r_line_readline ();
+				const char *line = r_line_readline (core->cons);
 				if (R_STR_ISNOTEMPTY (line)) {
 					r_core_cmdf (core, "'@0x%08"PFMT64x"'CC %s", addr + delta, line);
 				}
