@@ -26,7 +26,7 @@ static void setcurline(RCons *cons) {
 	setprompt (cons);
 	const char *nline = r_list_get_n (G.lines, G.n);
 	const char *curline = r_str_get (nline);
-	RConsLine *line = cons->line;
+	RLine *line = cons->line;
 	r_str_ncpy (line->buffer.data, curline, sizeof (line->buffer.data) - 1);
 	line->buffer.data[sizeof (line->buffer.data) - 1] = '\0';
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
@@ -105,7 +105,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str) {
 		}
 	}
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (G.lines));
-	RConsLine *line = cons->line;
+	RLine *line = cons->line;
 	line->hist_up = up;
 	line->hist_down = down;
 	line->contents = line->buffer.data;

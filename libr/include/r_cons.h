@@ -1106,7 +1106,6 @@ typedef struct r_hud_t {
 } RLineHud;
 
 typedef struct r_line_t RLine; // forward declaration
-#define RConsLine RLine /* TODO remove alias */
 typedef struct r_line_comp_t RLineCompletion;
 
 typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE } RLinePromptType;
