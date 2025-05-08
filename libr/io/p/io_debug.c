@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -295,6 +295,7 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 	}
 }
 
+// macos
 static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
 	posix_spawn_file_actions_t fileActions;
@@ -381,8 +382,9 @@ static void fork_child_callback(void *user) {
 	exit (1);
 }
 
+// unix
 static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-	RCons *cons = io->coreb.core->cons;
+	RCons *cons = ((RCore *)(io->coreb.core))->cons;
 	int ret, status, child_pid;
 	void *bed = NULL;
 	fork_child_data child_data;
