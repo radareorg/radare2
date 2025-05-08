@@ -2027,7 +2027,6 @@ repeat:
 				}
 				break;
 			default:;
-				eprintf ("Default %d %c\n", buf[0], buf[0]);
 #if !R2__WINDOWS__
 				if (I.vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (50);
@@ -2043,7 +2042,6 @@ repeat:
 				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
 					buf[0] = '[';
 				}
-				eprintf ("buf1 %d %c\n", buf[1], buf[1]);
 				if (buf[0] == '[') { // [
 					switch (buf[1]) {
 					case '2': // termfix
