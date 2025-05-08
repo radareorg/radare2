@@ -744,7 +744,6 @@ static inline void init_cons_input(InputState *state) {
 
 R_API RCons *r_kons_new(void) {
 	RCons *cons = R_NEW0 (RCons);
-	cons->refcnt++;
 #if 0
 	if (cons->refcnt != 1) {
 		return cons;
@@ -765,7 +764,6 @@ R_API RCons *r_kons_new(void) {
 	cons->lock = r_th_lock_new (false);
 	cons->use_utf8 = r_cons_is_utf8 ();
 	cons->rgbstr = r_cons_rgb_str_off;
-	cons->line = r_line_new ();
 	cons->enable_highlight = true;
 	cons->highlight = NULL;
 	cons->is_wine = -1;
@@ -821,6 +819,7 @@ R_API RCons *r_kons_new(void) {
 	r_kons_reset (cons);
 	r_kons_rgb_init (cons);
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+	cons->line = r_line_new (cons);
 	return cons;
 }
 
@@ -836,14 +835,8 @@ R_API void r_kons_free(RCons * R_NULLABLE cons) {
 		(void)r_sys_cmdf ("chcp %u > NUL", cons->old_cp);
 	}
 #endif
-#if 0
-	cons->refcnt--;
-	if (cons->refcnt != 0) {
-		return;
-	}
-#endif
 	if (cons->line) {
-		r_line_free ();
+		r_line_free (cons->line);
 		cons->line = NULL;
 	}
 	while (!r_list_empty (cons->ctx_stack)) {

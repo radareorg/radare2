@@ -850,20 +850,24 @@ R_API void r_cons_clear_buffer(void) {
 // conceptually wrong, needs redesign
 R_API void r_cons_thready(void) {
 	I = &s_cons_thread;
+#if 0
 	if (I->refcnt > 0) {
 		R_CRITICAL_ENTER (I);
 	}
+#endif
 	RConsContext *ctx = getctx ();
 	if (ctx) {
 		C->unbreakable = true;
 	}
 	r_sys_signable (false); // disable signal handling
+#if 0
 	if (I->refcnt == 0) {
 		r_cons_new ();
 	}
 	if (I->refcnt > 0) {
 		R_CRITICAL_LEAVE (I);
 	}
+#endif
 }
 
 #if WITH_STATIC_THEMES

@@ -1638,7 +1638,7 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 
 R_API int r_core_fgets(char *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf, -1);
-	RCons *cons = r_cons_singleton ();
+	RCons *cons = r_cons_singleton (); // XXX no globals pls
 	RLine *rli = cons->line;
 #if R2_590
 	cons->maxlength = len; /// R2_590
@@ -1650,12 +1650,12 @@ R_API int r_core_fgets(char *buf, int len) {
 		rli->completion.run = autocomplete;
 		rli->completion.run_user = rli->user;
 	} else {
-		r_line_hist_free ();
+		r_line_hist_free (cons->line);
 		r_line_completion_set (&rli->completion, 0, NULL);
 		rli->completion.run = NULL;
 		rli->completion.run_user = NULL;
 	}
-	const char *ptr = r_line_readline ();
+	const char *ptr = r_line_readline (cons);
 	if (!ptr) {
 		return -1;
 	}
@@ -2616,7 +2616,8 @@ R_API bool r_core_init(RCore *core) {
 	core->theme = strdup ("default");
 	/* initialize libraries */
 	core->cons = r_cons_new ();
-	if (core->cons->refcnt == 1) {
+#if 0
+	if (true || core->cons->refcnt == 1) {
 		core->cons = r_cons_singleton ();
 		if (core->cons->line) {
 			core->cons->line->user = core;
@@ -2631,6 +2632,7 @@ R_API bool r_core_init(RCore *core) {
 #endif
 		// r_line_singleton ()->user = (void *)core;
 	}
+#endif
 	r_cons_bind (core->cons, &core->print->consb);
 	core->cmdlog = NULL;
 	// XXX causes uaf
@@ -2638,6 +2640,7 @@ R_API bool r_core_init(RCore *core) {
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
+	core->lang->cons = core->cons;
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (RCoreCmdF)r_core_cmdf;
 	core->lang->call_at = (RCoreCallAtCallback) r_core_cmd_call_str_at;
@@ -2975,7 +2978,7 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 
 static void set_prompt(RCore *core) {
 	if (core->incomment) {
-		r_line_set_prompt (" * ");
+		r_line_set_prompt (core->cons, " * ");
 		return;
 	}
 	char tmp[128];
@@ -3049,7 +3052,7 @@ static void set_prompt(RCore *core) {
 	} else {
 		prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote, tmp, END);
 	}
-	r_line_set_prompt (r_str_get (prompt));
+	r_line_set_prompt (core->cons, r_str_get (prompt));
 
 	R_FREE (filename);
 	R_FREE (prompt);
@@ -3614,7 +3617,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		RCons *cons = r_cons_singleton ();
 		void *tmp = cons->cb_editor;
 		cons->cb_editor = NULL;
-		r_cons_editor (name, NULL);
+		r_cons_editor (cons, name, NULL);
 		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {

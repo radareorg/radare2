@@ -11,7 +11,11 @@ R_API RLine *r_line_singleton(void) {
 	return &r_line_instance;
 }
 
-R_API RLine *r_line_new(void) {
+R_API RLine *r_line_new(RCons *cons) {
+	RLine *line = R_NEW0 (RLine);
+	line->cons = cons;
+
+	I.cons = cons;
 	I.hist_up = NULL;
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
@@ -29,14 +33,16 @@ R_API RLine *r_line_new(void) {
 	return &I;
 }
 
-R_API void r_line_free(void) {
-return;
-	// XXX: prompt out of the heap?
-	free ((void *)I.prompt);
-	I.prompt = NULL;
-	r_list_free (I.kill_ring);
-	r_line_hist_free ();
-	r_line_completion_fini (&I.completion);
+R_API void r_line_free(RLine *line) {
+#if R2_600
+	if (line) {
+		free ((void *)line->prompt);
+		line->prompt = NULL;
+		r_list_free (line->kill_ring);
+		r_line_hist_free (line);
+		r_line_completion_fini (&line->completion);
+	}
+#endif
 }
 
 R_API void r_line_clipboard_push(const char *str) {
@@ -45,10 +51,9 @@ R_API void r_line_clipboard_push(const char *str) {
 }
 
 // handle const or dynamic prompts?
-R_API void r_line_set_prompt(const char *prompt) {
+R_API void r_line_set_prompt(RCons *cons, const char *prompt) {
 	free (I.prompt);
 	I.prompt = strdup (prompt);
-	RCons *cons = r_cons_singleton ();
 	I.cb_fkey = cons->cb_fkey;
 }
 

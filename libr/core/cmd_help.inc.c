@@ -854,7 +854,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'F': // "?F"
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 		break;
 	case 'f': // "?f"
 		if (input[1] == ' ') {
@@ -1591,11 +1591,11 @@ static int cmd_help(void *data, const char *input) {
 			case 'e': // "?ie"
 				{
 				char foo[1024];
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				input = r_str_trim_head_ro (input + 2);
 				// TODO: r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
-				r_line_set_prompt (foo);
+				r_line_set_prompt (core->cons, foo);
 				r_cons_fgets (core->cons, foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
 				r_cons_printf ("%s\n", foo);
@@ -1618,11 +1618,11 @@ static int cmd_help(void *data, const char *input) {
 				 break;
 			default: {
 				char foo[1024];
-				r_cons_flush ();
+				r_kons_flush (core->cons);
 				input = r_str_trim_head_ro (input + 1);
 				// TODO: use r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
-				r_line_set_prompt (foo);
+				r_line_set_prompt (core->cons, foo);
 				r_cons_fgets (core->cons, foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);

@@ -78,9 +78,9 @@ TODO:
 #endif
 					char buf[1024];
 					if (COLORFLAGS) {
-						r_line_set_prompt (Color_RESET":> ");
+						r_line_set_prompt (core->cons, Color_RESET":> ");
 					} else {
-						r_line_set_prompt (":> ");
+						r_line_set_prompt (core->cons, ":> ");
 					}
 					showcursor (core, true);
 					r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 3, 0, NULL);
@@ -112,9 +112,9 @@ TODO:
 					do {
 						char buf[1024];
 #if R2__UNIX__
-						r_line_set_prompt (Color_RESET":> ");
+						r_line_set_prompt (core->cons, Color_RESET":> ");
 #else
-						r_line_set_prompt (":> ");
+						r_line_set_prompt (core->cons, ":> ");
 #endif
 						showcursor (core, true);
 						r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
@@ -213,8 +213,8 @@ static void __rtr_shell(RCore *core, int nth) {
 	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ", proto, host, port, file);
 	snprintf (prompt2, sizeof (prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
-		r_line_set_prompt (prompt);
-		res = r_line_readline ();
+		r_line_set_prompt (core->cons, prompt);
+		res = r_line_readline (core->cons);
 		if (R_STR_ISEMPTY (res)) {
 			break;
 		}
@@ -223,8 +223,8 @@ static void __rtr_shell(RCore *core, int nth) {
 		}
 		if (!strcmp (res, "!sh")) {
 			for (;;) {
-				r_line_set_prompt (prompt2);
-				res = r_line_readline ();
+				r_line_set_prompt (core->cons, prompt2);
+				res = r_line_readline (core->cons);
 				if (!res || !*res || !strcmp (res, "exit")) {
 					break;
 				}

@@ -835,9 +835,9 @@ static int cmd_eval(void *data, const char *input) {
 			}
 		} else {
 			char *file = r_file_home (".radare2rc");
-			if (r_cons_is_interactive ()) {
+			if (r_kons_is_interactive (core->cons)) {
 				r_file_touch (file);
-				char *res = r_cons_editor (file, NULL);
+				char *res = r_cons_editor (core->cons, file, NULL);
 				if (res) {
 					if (r_cons_yesno ('y', "Reload? (Y/n)")) {
 						r_core_run_script (core, file);

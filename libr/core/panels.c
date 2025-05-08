@@ -493,7 +493,7 @@ static char *__search_db(RCore *core, const char *title) {
 static int __show_status(RCore *core, const char *msg) {
 	r_cons_gotoxy (0, 0);
 	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_cons_set_raw (true);
 	return r_cons_readchar ();
 }
@@ -507,7 +507,7 @@ static bool __show_status_yesno(RCore *core, int def, const char *msg) {
 static char *__show_status_input(RCore *core, const char *msg) {
 	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	r_cons_gotoxy (0, 0);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	char *out = r_cons_input (core->cons, n_msg);
 	r_cons_set_raw (true);
 	free (n_msg);
@@ -1420,7 +1420,7 @@ static void show_cursor(RCore *core) {
 	if (keyCursor) {
 		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
 		r_cons_show_cursor (1);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 	}
 }
 
@@ -2191,7 +2191,7 @@ static int __help_manpage_rasign2_cb(void *user) {
 static int __continue_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmd (core, "dc", 0);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return 0;
 }
 
@@ -2242,7 +2242,7 @@ static void __step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const R
 }
 
 static void __panel_prompt(RCore *core, const char *prompt, char *buf, int len) {
-	r_line_set_prompt (prompt);
+	r_line_set_prompt (core->cons, prompt);
 	*buf = 0;
 	r_cons_fgets (core->cons, buf, len, 0, NULL);
 }
@@ -2746,7 +2746,7 @@ static void __handleComment(RCore *core) {
 	}
 	char buf[4095];
 	char *cmd = NULL;
-	r_line_set_prompt ("[Comment]> ");
+	r_line_set_prompt (core->cons, "[Comment]> ");
 	if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) > 0) {
 		ut64 addr, orig;
 		addr = orig = core->addr;
@@ -4150,7 +4150,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) 
 
 	print_notch (core);
 	r_cons_canvas_print (can);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	show_cursor (core);
 }
 
@@ -4438,7 +4438,7 @@ static void __handle_vmark(RCore *core) {
 		r_cons_gotoxy (0, 0);
 		if (r_core_vmark_dump (core, 0)) {
 			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
 			r_core_vmark_del (core, ch);
@@ -4447,7 +4447,7 @@ static void __handle_vmark(RCore *core) {
 	case '\'':
 		r_cons_gotoxy (0, 0);
 		if (r_core_vmark_dump (core, 0)) {
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
 			r_core_vmark_seek (core, ch, NULL);
@@ -5445,7 +5445,7 @@ static int __calculator_cb(void *user) {
 		r_cons_clear00 ();
 		r_cons_printf ("\n> %s\n", s);
 		r_core_cmdf (core, "? %s", s);
-		r_cons_flush ();
+		r_kons_flush (core->cons);
 		free (s);
 	}
 	return 0;
@@ -5469,8 +5469,9 @@ static int __r2_shell_cb(void *user) {
 }
 
 static int __system_shell_cb(void *user) {
-	r_cons_set_raw (0);
-	r_cons_flush ();
+	RCore *core = (RCore *)user;
+	r_kons_set_raw (core->cons, 0);
+	r_kons_flush (core->cons);
 	r_sys_cmd ("$SHELL");
 	return 0;
 }
@@ -5590,7 +5591,7 @@ static int __program_cb(void *user) {
 	__del_menu (core);
 	__panels_refresh (core);
 	r_cons_gotoxy (0, 3);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_core_cmdf (core, "aaa");
 	return 0;
 }
@@ -5668,7 +5669,7 @@ static int __version2_cb(void *user) {
 	r_core_cmd0 (core, "$a~{}~..");
 	r_core_cmd0 (core, "rm $a");
 	r_cons_set_raw (true);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return 0;
 }
 
@@ -5685,7 +5686,7 @@ static int __r2rc_cb(void *user) {
 	r_cons_set_raw (false);
 	r_core_cmd0 (core, "edit");
 	r_cons_set_raw (true);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	return 0;
 }
 
@@ -6120,7 +6121,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 			r_cons_clear00 ();
 			r_cons_gotoxy (0, (h / 2) - (H / 2));
 			r_cons_print (r);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			free (r);
 			r_sys_usleep (5000);
 		}
@@ -6150,7 +6151,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 			r_cons_gotoxy (0, (h / 2) - (H / 2)); // center
 			//r_cons_gotoxy (0, h-H); // bottom
 			r_cons_print (r);
-			r_cons_flush ();
+			r_kons_flush (core->cons);
 			free (r);
 			r_sys_usleep (3000);
 		}
@@ -6324,7 +6325,7 @@ static void __panels_refresh(RCore *core) {
 		r_core_cmd_call (core, "pg");
 	}
 	show_cursor (core);
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	if (r_cons_singleton ()->fps) {
 		r_cons_print_fps (40);
 	}
@@ -6736,7 +6737,7 @@ static void __handle_tab(RCore *core) {
 		r_cons_printf (R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:newWithCurPanel -:del =:setName"Color_RESET,
 				PANEL_HL_COLOR, min, max);
 	}
-	r_cons_flush ();
+	r_kons_flush (core->cons);
 	r_cons_set_raw (true);
 	const int ch = r_cons_readchar ();
 

@@ -671,9 +671,10 @@ static int cmd_mount(void *data, const char *_input) {
 			return false;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
-		r_cons_set_raw (false);
+		r_kons_set_raw (core->cons, false);
 		{
 			free (core->rfs->cwd);
+			core->rfs->cons = core->cons;
 			core->rfs->cwd = strdup (r_config_get (core->config, "fs.cwd"));
 			core->rfs->set_prompt = r_line_set_prompt;
 			core->rfs->readline = r_line_readline;

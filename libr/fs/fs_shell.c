@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2022 - pancake */
+/* radare2 - LGPL - Copyright 2018-2025 - pancake */
 
 #define R_LOG_ORIGIN "fs.shell"
 
@@ -282,10 +282,10 @@ R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, shell->cwd);
 		if (shell) {
 			if (shell->set_prompt) {
-				shell->set_prompt (prompt);
+				shell->set_prompt (shell->cons, prompt);
 			}
 			if (shell->readline) {
-				const char* ptr = shell->readline ();
+				const char* ptr = shell->readline (shell->cons);
 				if (!ptr) {
 					break;
 				}

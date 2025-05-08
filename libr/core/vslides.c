@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2024 - pancake */
+/* radare - LGPL - Copyright 2021-2025 - pancake */
 
 #include <r_core.h>
 
@@ -279,7 +279,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			while (1) {
 				char cmd[1024];
 				*cmd = 0;
-				r_line_set_prompt (":> ");
+				r_line_set_prompt (core->cons, ":> ");
 				if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}

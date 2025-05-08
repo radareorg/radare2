@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -295,8 +295,8 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 	}
 }
 
-// R2__UNIX__ (not windows)
-static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
+// macos
+static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
 	posix_spawn_file_actions_t fileActions;
 	ut32 ps_flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
@@ -382,7 +382,9 @@ static void fork_child_callback(void *user) {
 	exit (1);
 }
 
-static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
+// unix
+static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
+	RCons *cons = ((RCore *)(io->coreb.core))->cons;
 	int ret, status, child_pid;
 	void *bed = NULL;
 	fork_child_data child_data;
@@ -399,14 +401,14 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 			r_sys_perror ("waitpid");
 			return -1;
 		}
-		bed = r_cons_sleep_begin ();
+		bed = r_kons_sleep_begin (cons);
 		usleep (100000);
-		r_cons_sleep_end (bed);
-	} while (ret != child_pid && !r_cons_is_breaked ());
+		r_kons_sleep_end (cons, bed);
+	} while (ret != child_pid && !r_kons_is_breaked (cons));
 	if (!WIFSTOPPED (status)) {
 		return -1;
 	}
-	if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked ()) {
+	if (WEXITSTATUS (status) == MAGIC_EXIT || r_kons_is_breaked (cons)) {
 		R_LOG_INFO ("Killing child process %d due to an error", (int)child_pid);
 		kill (child_pid, SIGSTOP);
 		return -1;
@@ -416,13 +418,8 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 #endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-	// Before calling the platform implementation, append arguments to the command if they have been provided
-	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup(cmd);
-#if __APPLE__ && !__POWERPC__
-	int r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
-#else
-	int r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
-#endif
+	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup (cmd);
+	int r = platform_fork_and_ptraceme (io, bits, _eff_cmd);
 	free (_eff_cmd);
 	return r;
 }

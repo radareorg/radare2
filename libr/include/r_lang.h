@@ -17,6 +17,7 @@ typedef char *(*RCoreCallAtCallback)(void* core, ut64 addr, const char *s);
 
 typedef struct r_lang_t {
 	void *user;
+	RCons *cons;
 	RList *defs;
 	RList *langs;
 	PrintfCallback cb_printf;

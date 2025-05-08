@@ -523,8 +523,7 @@ typedef struct r_cons_t {
 	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
 	const char **vline;
-	int refcnt;
-	R_DEPRECATE bool newline;
+	R_DEPRECATE bool newline; // R2_600
 	int vtmode;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
@@ -906,7 +905,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(const char *file, const char *str);
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
 R_API void r_cons_print_clear(void);
@@ -1122,11 +1121,12 @@ struct r_line_comp_t {
 	void *run_user;
 };
 
-typedef char* (*RLineEditorCb)(void *core, const char *str);
+typedef char* (*RLineEditorCb)(void *core, const char *file, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
 typedef int (*RLineHistoryDownCb)(RLine* line);
 
 struct r_line_t {
+	struct r_cons_t *cons;
 	RLineCompletion completion;
 	RLineBuffer buffer;
 	RLineHistory history;
@@ -1145,8 +1145,8 @@ struct r_line_t {
 	bool disable;
 	void *user;
 	bool histfilter;
-	int (*hist_up)(void *user);
-	int (*hist_down)(void *user);
+	int (*hist_up)(RCons *cons, void *user);
+	int (*hist_down)(RCons *cons, void *user);
 	char *contents;
 	bool zerosep;
 	bool enable_vi_mode; // can be merged with vi_mode
@@ -1166,19 +1166,18 @@ struct r_line_t {
 
 #ifdef R_API
 
-R_API RLine *r_line_new(void);
+R_API RLine *r_line_new(RCons *cons);
 R_API bool r_line_dietline_init(void); // XXX rename to r_line_init?
-R_API RLine *r_line_singleton(void);
-R_API void r_line_free(void);
+R_API void r_line_free(RLine *line);
 R_API char *r_line_get_prompt(void);
-R_API void r_line_set_prompt(const char *prompt);
+R_API void r_line_set_prompt(RCons *cons, const char *prompt);
 R_API void r_line_clipboard_push(const char *str);
 
-typedef int (RLineReadCallback)(void *user, const char *line);
-R_API const char *r_line_readline(void);
-R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
+typedef int (RLineReadCallback)(RCons *cons, void *user, const char *line);
+R_API const char *r_line_readline(RCons *cons);
+R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *user);
 
-R_API void r_line_hist_free(void);
+R_API void r_line_hist_free(RLine *line);
 R_API bool r_line_hist_load(const char *file);
 R_API bool r_line_hist_add(const char *line);
 R_API bool r_line_hist_save(const char *file);

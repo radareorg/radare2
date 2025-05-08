@@ -400,15 +400,15 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			{
 				char cmd[1024];
 				r_cons_show_cursor (true);
-				r_cons_set_raw (0);
-				cmd[0]='\0';
-				r_line_set_prompt (":> ");
+				r_kons_set_raw (core->cons, 0);
+				cmd[0] = '\0';
+				r_line_set_prompt (core->cons, ":> ");
 				if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				r_config_set (core->config, "scr.highlight", cmd);
-				//r_core_cmd_task_sync (core, cmd, 1);
-				r_cons_set_raw (1);
+				// r_core_cmd_task_sync (core, cmd, 1);
+				r_kons_set_raw (core->cons, 1);
 				r_cons_show_cursor (false);
 				r_cons_clear ();
 			}
@@ -419,20 +419,20 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			{
 			char cmd[1024];
 			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_kons_set_raw (core->cons, 0);
 			cmd[0]='\0';
-			r_line_set_prompt (":> ");
+			r_line_set_prompt (core->cons, ":> ");
 			if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd0 (core, cmd);
 			//r_core_cmd_task_sync (core, cmd, 1);
-			r_cons_set_raw (1);
+			r_kons_set_raw (core->cons, 1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
 				r_cons_any_key (NULL);
 			}
-			r_cons_clear ();
+			r_kons_clear (core->cons);
 			}
 			break;
 		case '!': {
